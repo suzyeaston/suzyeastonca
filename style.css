@@ -17,6 +17,24 @@ body {
     padding: 20px;
 }
 
+.piano-key {
+    width: 60px;
+    height: 180px;
+    margin: 0 5px;
+    background: #fff;
+    text-align: center;
+    line-height: 180px;
+    cursor: pointer;
+    box-shadow: 0 0 10px #00ff00;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.piano-key:active {
+    transform: scale(0.9);
+    box-shadow: 0 0 20px #00ff00;
+    background: #ccc;
+}
+
 #site-footer {
     text-align: center;
     padding: 20px;
