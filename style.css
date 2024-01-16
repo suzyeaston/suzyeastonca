@@ -40,6 +40,7 @@ body {
     padding: 20px;
 }
 
+
 .piano-key {
     width: 60px;
     height: 180px;
@@ -56,6 +57,19 @@ body {
     transform: scale(0.9);
     box-shadow: 0 0 20px #00ff00;
     background: #ccc;
+}
+
+#retro-game-header {
+    text-align: center;
+    font-size: 28px; /* Adjust size as needed */
+    color: #fff;
+    background-color: #111; /* Dark background */
+    padding: 20px;
+    border-bottom: 3px solid #00ff00; /* Green border for a retro feel */
+    margin-bottom: 20px;
+    letter-spacing: 3px; /* Spacing for retro gaming effect */
+    text-shadow: 2px 2px #00ff00; /* Retro glow */
+    font-family: 'Press Start 2P', cursive; /* Retro game font */
 }
 
 #site-footer {
