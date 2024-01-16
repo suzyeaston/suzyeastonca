@@ -2,8 +2,31 @@
 Theme Name: Retro Game Music Lets Go Party Vancouver Theme
 Author: Suzy Easton
 Description: An '80s video game inspired music WordPress theme, complete with a virtual piano and a Blades of Steel touch.
-Version: 1.0
+Version: 1.1
 */
+
+#menu-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 50px;
+    text-align: center;
+}
+
+.menu-item {
+    background-color: #111;
+    color: #00ff00;
+    padding: 20px;
+    font-size: 20px;
+    border: 2px solid #00ff00;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.menu-item:hover {
+    background-color: #00ff00;
+    color: #000;
+}
 
 body {
     font-family: 'Press Start 2P', cursive;
