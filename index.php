@@ -1,6 +1,9 @@
 <?php get_header(); ?>
 
 <main id="main-content">
+<header id="retro-game-header">
+Suzy Easton - Born and raised from Vancouver, BC
+</header>
     <section id="menu-container">
         <div class="menu-item" onclick="location.href='link-to-social-media'">Social Media</div>
         <div class="menu-item" onclick="location.href='link-to-career'">Career</div>
