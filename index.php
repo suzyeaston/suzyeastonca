@@ -2,7 +2,7 @@
 
 <main id="main-content">
 <header id="retro-game-header">
-Suzy Easton - Born and raised from Vancouver, BC
+Suzy Easton - Stacked Nerd
 </header>
     <section id="menu-container">
         <div class="menu-item" onclick="location.href='https://twitter.com/officialsuzye'">Twitter</div>
