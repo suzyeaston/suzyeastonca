@@ -6,12 +6,12 @@ function retro_game_music_theme_scripts() {
 
     wp_enqueue_style('main-styles', get_stylesheet_uri());
     
-    // Fixed the missing closing parenthesis and semicolon here
     wp_enqueue_script('piano-script', get_template_directory_uri() . '/js/piano-script.js', array(), '1.0.1', true);
 
-    wp_enqueue_script('game-like-init', get_template_directory_uri() . '/js/game-like-init.js', array());
+    wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', array(), '1.0.0', true);
 }
 
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
+
 
 ?>
