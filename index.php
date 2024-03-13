@@ -1,9 +1,9 @@
 <?php get_header(); ?>
 
 <main id="main-content">
-<header id="retro-game-header">
-Suzy Easton - Stacked Nerd
-</header>
+    <header id="retro-game-header">
+        <div id="stacked-nerd-title">Stacked Nerd</div>
+    </header>
     <section id="menu-container">
         <div class="menu-item" onclick="location.href='https://twitter.com/officialsuzye'">Twitter</div>
         <div class="menu-item" onclick="location.href='https://www.linkedin.com/in/suzyeaston/'">Linkedin</div>
