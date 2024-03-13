@@ -83,13 +83,37 @@ body {
 }
 
 #sparkly-name {
-    position: absolute;
-    top: calc(50% + 60px);
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
+    top: 20px;
+    left: 0;
+    transform: none;
     font-family: 'Press Start 2P', cursive;
     font-size: 40px;
     color: white;
     z-index: 1001;
     animation: sparkle 1s ease-in-out infinite alternate;
+}
+
+@keyframes sparkle {
+    0%, 100% { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #e60073, 0 0 40px #e60073, 0 0 50px #e60073, 0 0 60px #e60073, 0 0 70px #e60073; }
+    50% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #e60073, 0 0 20px #e60073, 0 0 25px #e60073, 0 0 30px #e60073, 0 0 35px #e60073; }
+}
+
+#retro-game-header:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+#sparkly-name {
+    display: block;
+    margin: 20px auto;
+    text-align: center;
+}
+
+
+@media (max-width: 768px) {
+    #sparkly-name {
+        font-size: 24px;
+    }
 }
