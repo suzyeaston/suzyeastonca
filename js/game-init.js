@@ -5,17 +5,16 @@ document.addEventListener('DOMContentLoaded', function() {
     overlay.innerHTML = 'Press anywhere to begin';
     document.body.appendChild(overlay);
 
-    // Add click event to overlay
     overlay.addEventListener('click', function() {
         overlay.style.display = 'none'; // Hide overlay
-        displayPixelatedName();
+        createSparklyName();
     });
 
-    function displayPixelatedName() {
-        var nameContainer = document.createElement('div');
-        nameContainer.setAttribute('id', 'pixelated-name');
-        nameContainer.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);font-family:pixel-font;color:white;font-size:40px;z-index:10001;';
-        nameContainer.innerHTML = 'Suzy Easton';
-        document.body.appendChild(nameContainer);
+    function createSparklyName() {
+        var sparklyNameContainer = document.createElement('div');
+        sparklyNameContainer.setAttribute('id', 'sparkly-name');
+        sparklyNameContainer.className = 'sparkle';
+        sparklyNameContainer.innerHTML = 'Suzy Easton';
+        document.getElementById('retro-game-header').appendChild(sparklyNameContainer);
     }
 });
