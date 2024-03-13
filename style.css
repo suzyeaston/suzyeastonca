@@ -81,3 +81,15 @@ body {
 #pixelated-name {
     font-family: 'Press Start 2P', cursive;
 }
+
+#sparkly-name {
+    position: absolute;
+    top: calc(50% + 60px);
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Press Start 2P', cursive;
+    font-size: 40px;
+    color: white;
+    z-index: 1001;
+    animation: sparkle 1s ease-in-out infinite alternate;
+}
