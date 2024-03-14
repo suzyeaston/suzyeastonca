@@ -13,6 +13,7 @@
         <div class="menu-item" onclick="location.href='bio'">Bio</div>
         <div class="menu-item" onclick="location.href='music-lessons'">Music Lessons</div>
         <div class="menu-item" onclick="location.href='coming-soon'">Suzy's Musical Adventure - Video Game (Coming Soon)</div>
+        <div class="menu-item" onclick="location.href='contact'">Contact</div>
     </section>
 </main>
 
