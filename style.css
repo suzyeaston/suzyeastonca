@@ -99,6 +99,18 @@ body {
     50% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #e60073, 0 0 20px #e60073, 0 0 25px #e60073, 0 0 30px #e60073, 0 0 35px #e60073; }
 }
 
+@keyframes flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.glowing-header {
+  font-family: 'Press Start 2P', cursive; /* Retro font */
+  color: #00FF00; /* Bright green color */
+  text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00, 0 0 30px #00FF00, 0 0 40px #00FF00, 0 0 50px #00FF00, 0 0 60px #00FF00, 0 0 70px #00FF00;
+  animation: flash 1.5s infinite;
+}
+
 #retro-game-header:after {
     content: "";
     display: table;
