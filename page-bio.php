@@ -9,12 +9,12 @@ get_header();
     <section class="page-content">
         <?php
         while ( have_posts() ) : the_post();
-            the_content();
+        ?>
+        <div id="bio-container" class="scrolling-text"><?php the_content(); ?></div>
+        <?php
         endwhile;
         ?>
     </section>
 </main>
 
-<?php
-get_footer();
-?>
+<?php get_footer(); ?>
