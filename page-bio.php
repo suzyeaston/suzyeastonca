@@ -1,4 +1,7 @@
 <?php
+/*
+Template Name: Bio Page
+*/
 get_header();
 ?>
 
