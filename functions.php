@@ -16,8 +16,3 @@ function retro_game_music_theme_scripts() {
     }
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
-}
-
-add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
-
-?>
