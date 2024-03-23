@@ -112,12 +112,29 @@ body {
 }
 
 .scrolling-text {
+    position: absolute;
+    top: 100%;
+    width: 100%;
+    text-align: justify;
     color: #00ff00;
     background-color: #000;
     font-family: 'Press Start 2P', cursive;
     padding: 20px;
     line-height: 1.5;
     white-space: pre-wrap;
+    transform-origin: 50% 100%;
+    animation: crawl 60s linear infinite;
+}
+
+@keyframes crawl {
+    0% {
+        top: 100%;
+        transform: perspective(300px) rotateX(20deg);
+    }
+    100% {
+        top: -600%;
+        transform: perspective(300px) rotateX(25deg);
+    }
 }
 
 #retro-game-header:after {
