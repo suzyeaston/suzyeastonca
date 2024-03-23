@@ -113,13 +113,13 @@ body {
 
 .scrolling-text {
     position: absolute;
-    top: 100%;
+    top: 75%; /* Start higher on the page */
     width: 100%;
     text-align: justify;
     color: #00ff00;
     background-color: #000;
     font-family: 'Press Start 2P', cursive;
-    padding: 20px;
+    font-size: 24px; /* Larger font size for better readability */
     line-height: 1.5;
     white-space: pre-wrap;
     transform-origin: 50% 100%;
@@ -128,12 +128,12 @@ body {
 
 @keyframes crawl {
     0% {
-        top: 100%;
-        transform: perspective(300px) rotateX(20deg);
+        top: 75%; /* Adjust start position */
+        transform: perspective(500px) rotateX(30deg); /* Make the text more visible at start */
     }
     100% {
         top: -600%;
-        transform: perspective(300px) rotateX(25deg);
+        transform: perspective(500px) rotateX(30deg);
     }
 }
 
@@ -153,5 +153,10 @@ body {
 @media (max-width: 768px) {
     #sparkly-name {
         font-size: 24px;
+    }
+    .scrolling-text {
+        font-size: 16px; /* Adjust font size for smaller screens */
+        top: 50%; /* Start even higher for visibility on smaller devices */
+        animation: crawl 120s linear infinite;
     }
 }
