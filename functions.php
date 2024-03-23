@@ -10,9 +10,5 @@ function retro_game_music_theme_scripts() {
     if (is_front_page()) {
         wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', array(), '1.0.0', true);
     }
-
-    if (is_page('bio')) {
-        wp_enqueue_script('bio-scroll', get_template_directory_uri() . '/js/bio-scroll.js', array(), '1.0.0', true);
-    }
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
