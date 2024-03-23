@@ -34,31 +34,6 @@ body {
     color: #fff;
 }
 
-#piano-container {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-}
-
-
-.piano-key {
-    width: 60px;
-    height: 180px;
-    margin: 0 5px;
-    background: #fff;
-    text-align: center;
-    line-height: 180px;
-    cursor: pointer;
-    box-shadow: 0 0 10px #00ff00;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-.piano-key:active {
-    transform: scale(0.9);
-    box-shadow: 0 0 20px #00ff00;
-    background: #ccc;
-}
-
 #retro-game-header {
     text-align: center;
     font-size: 28px;
@@ -111,32 +86,6 @@ body {
   animation: flash 1.5s infinite;
 }
 
-.scrolling-text {
-    position: absolute;
-    top: 75%; /* Start higher on the page */
-    width: 100%;
-    text-align: justify;
-    color: #00ff00;
-    background-color: #000;
-    font-family: 'Press Start 2P', cursive;
-    font-size: 24px; /* Larger font size for better readability */
-    line-height: 1.5;
-    white-space: pre-wrap;
-    transform-origin: 50% 100%;
-    animation: crawl 60s linear infinite;
-}
-
-@keyframes crawl {
-    0% {
-        top: 75%; /* Adjust start position */
-        transform: perspective(500px) rotateX(30deg); /* Make the text more visible at start */
-    }
-    100% {
-        top: -600%;
-        transform: perspective(500px) rotateX(30deg);
-    }
-}
-
 #retro-game-header:after {
     content: "";
     display: table;
@@ -153,10 +102,5 @@ body {
 @media (max-width: 768px) {
     #sparkly-name {
         font-size: 24px;
-    }
-    .scrolling-text {
-        font-size: 16px; /* Adjust font size for smaller screens */
-        top: 50%; /* Start even higher for visibility on smaller devices */
-        animation: crawl 120s linear infinite;
     }
 }
