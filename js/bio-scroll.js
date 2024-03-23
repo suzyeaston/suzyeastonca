@@ -1,24 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     const bioContainer = document.getElementById('bio-container');
     if (bioContainer) {
-        
+        // Initialize the container for the crawl effect
         bioContainer.style.position = 'absolute';
-        bioContainer.style.whiteSpace = 'nowrap';
-        bioContainer.style.left = '-100%';
-        bioContainer.style.top = '0';
-
-        animateBio();
-    }
-
-    function animateBio() {
-        let startLeft = -bioContainer.offsetWidth; // Start from the left
-        const endPosition = window.innerWidth;
-
-        const interval = setInterval(() => {
-            startLeft += 2;
-            if (startLeft >= endPosition) clearInterval(interval);
-
-            bioContainer.style.left = `${startLeft}px`;
-        }, 20); // Adjust for smoother or faster animation
+        bioContainer.style.top = '100%'; // Start off-screen at the bottom
+        bioContainer.style.left = '0';
+        bioContainer.style.width = '100%';
+        bioContainer.style.textAlign = 'center';
     }
 });
