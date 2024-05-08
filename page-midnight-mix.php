@@ -6,8 +6,8 @@ Template Name: Midnight Mix Page
 get_header();
 ?>
 <main id="main-content">
-    <header class="standard-header">
-        Midnight Mix with Suzy Easton: Live Stream Music Sessions
+    <header id="retro-game-header">
+        <div id="stacked-nerd-title">Midnight Mix with Suzy Easton</div>
     </header>
     <section class="page-content">
         <?php
