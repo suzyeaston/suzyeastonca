@@ -6,8 +6,8 @@ Template Name: Social Media Page
 get_header();
 ?>
 <main id="main-content">
-    <header class="page-header">
-        <h1 class="glowing-header">Social Media</h1>
+    <header class="standard-header">
+        Social Media
     </header>
     <section class="page-content">
         <div class="menu-item" onclick="location.href='https://twitter.com/officialsuzye'">Twitter</div>
