@@ -1,4 +1,4 @@
-
+<?php
 /*
 Template Name: Contact Page
 */
@@ -6,8 +6,8 @@ Template Name: Contact Page
 get_header();
 ?>
 <main id="main-content">
-    <header class="standard-header">
-        Ways to Contact Suzy
+    <header id="retro-game-header">
+        <div id="stacked-nerd-title">Ways to Contact Suzy</div>
     </header>
     <section class="page-content">
         <p>Email: <a href="mailto:info@suzyeaston.ca">info@suzyeaston.ca</a></p>
