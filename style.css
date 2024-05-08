@@ -114,6 +114,16 @@ body {
     text-shadow: 0 0 3px #00FF00, 0 0 5px #00FF00, 0 0 7px #00FF00, 0 0 10px #00FF00;
 }
 
+.standard-header {
+    font-family: 'Press Start 2P', cursive;
+    color: #00FF00;
+    font-style: italic;
+    font-size: 24px;
+    text-shadow: 0 0 3px #00FF00, 0 0 5px #00FF00, 0 0 7px #00FF00;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
 #retro-game-header:after {
     content: "";
     display: table;
