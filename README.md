@@ -1,19 +1,19 @@
-# suzyeaston.ca :musical_keyboard: :joystick:
+# Breakaway with Suzy Easton: Unplugged Sessions & Unchecked Games :guitar: :computer:
 
-Welcome to the digital arcade of suzyeaston.ca, where IT wizardry meets hockey, 90s hip-hop, and retro gaming. This isn't just a website; it's a time machine powered by kick ass awesomeness.
+Welcome to the digital stage of suzyeaston.ca, where music meets a radness of digital and acoustic experiences.
 
-## What's on the Playbill?
+## What's Streaming?
 
-:ice_hockey: **Blades of Steel Meets Beats of Steel**: You'll see lol
+:notes: **Live Sessions**: Tune in for live acoustic sets, exclusive performances, and spontaneous musical explorations, all streamed right from my home studio to your screen. 
 
-:musical_note: **Hip-Hop Harmony**: Ahhh yeah
+:clapper: **Behind the Music**: Dive into the stories behind the songs and the journey from chords to melodies.
 
-:video_game: **Retro Gaming**: Jump into a pixel-perfect paradise baby
+:video_game: **Gamer's Corner**: While the music plays, the games stay. Retro gaming sessions and pixel adventures continue to color the backdrop of our musical journey.
 
-## Behind the Keyboard
+## Meet Suzy Easton
 
-I'm Suzy Easton, a former professional bassist who recorded with Steve Albini in Chicago and am a complete nerd.
+I'm Suzy Easton, acoustic singer-songwriter, recently featured on CiTR, UBC's radio station hah! that's so rad, thanks CiTR. With a history as a professional bassist who's recorded with legends and a passion for all things tech and music, I blend my loves into every stream and song.
 
 ## Stay Tuned
 
-`Powered by keyboards, fueled by love.`
+Powered by passion and fueled by fans. Tune in and rock on.
