@@ -108,13 +108,9 @@ body {
     50% { opacity: 0; }
 }
 
-.glowing-header {
+.glowing-header, .glowing-text {
     font-family: 'Press Start 2P', cursive;
     color: #00FF00;
-    text-shadow: 0 0 3px #00FF00, 0 0 5px #00FF00, 0 0 7px #00FF00, 0 0 10px #00FF00;
-}
-
-.glowing-text {
     text-shadow: 0 0 3px #00FF00, 0 0 5px #00FF00, 0 0 7px #00FF00, 0 0 10px #00FF00;
 }
 
