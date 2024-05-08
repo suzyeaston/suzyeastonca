@@ -10,7 +10,7 @@ get_header();
         <div id="stacked-nerd-title">Ways to Contact Suzy</div>
     </header>
     <section class="page-content">
-        <p>Email: <a href="mailto:info@suzyeaston.ca">info@suzyeaston.ca</a></p>
+        <p>Email: <a href="suzyeaston@icloud.com">suzyeaston@icloud.com</a></p>
         <?php
         while ( have_posts() ) : the_post();
             the_content();
