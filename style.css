@@ -2,7 +2,7 @@
 Theme Name: Suzys Music Theme Lets Go Vancouver BC
 Author: Suzy Easton
 Description: An '80s video game inspired music WordPress theme, thanks much.
-Version: 1.5
+Version: 1.6
 */
 
 #menu-container {
@@ -21,6 +21,11 @@ Version: 1.5
     border: 2px solid #00ff00;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
+}
+
+.menu-item:hover {
+    background-color: #00ff00;
+    color: #000;
 }
 
 #bio-container {
@@ -52,11 +57,6 @@ Version: 1.5
     border: 3px solid #000;
 }
 
-.menu-item:hover {
-    background-color: #00ff00;
-    color: #000;
-}
-
 body {
     font-family: 'Press Start 2P', cursive;
     background-color: #000;
@@ -72,7 +72,7 @@ body {
     border-bottom: 3px solid #00ff00;
     margin-bottom: 20px;
     letter-spacing: 3px;
-    text-shadow: 2px 2px #00ff00;
+    text-shadow: 0 0 3px #00ff00, 0 0 5px #00ff00, 0 0 7px #00ff00, 0 0 10px #00ff00;
     font-family: 'Press Start 2P', cursive;
 }
 
@@ -104,15 +104,18 @@ body {
 }
 
 @keyframes flash {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 .glowing-header {
-  font-family: 'Press Start 2P', cursive;
-  color: #00FF00;
-  text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00, 0 0 30px #00FF00, 0 0 40px #00FF00, 0 0 50px #00FF00, 0 0 60px #00FF00, 0 0 70px #00FF00;
-  animation: flash 1.5s infinite;
+    font-family: 'Press Start 2P', cursive;
+    color: #00FF00;
+    text-shadow: 0 0 3px #00FF00, 0 0 5px #00FF00, 0 0 7px #00FF00, 0 0 10px #00FF00;
+}
+
+.glowing-text {
+    text-shadow: 0 0 3px #00FF00, 0 0 5px #00FF00, 0 0 7px #00FF00, 0 0 10px #00FF00;
 }
 
 #retro-game-header:after {
@@ -127,6 +130,18 @@ body {
     text-align: center;
 }
 
+.animated-image {
+    width: 200px; 
+    height: auto;
+    display: block;
+    margin: 20px auto;
+    animation: float 2s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
 
 @media (max-width: 768px) {
     #sparkly-name {
