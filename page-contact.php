@@ -1,4 +1,4 @@
-<?php
+
 /*
 Template Name: Contact Page
 */
@@ -6,8 +6,8 @@ Template Name: Contact Page
 get_header();
 ?>
 <main id="main-content">
-    <header class="page-header">
-        <h1 class="glowing-header">Ways to Contact Suzy</h1>
+    <header class="standard-header">
+        Ways to Contact Suzy
     </header>
     <section class="page-content">
         <p>Email: <a href="mailto:info@suzyeaston.ca">info@suzyeaston.ca</a></p>
@@ -18,7 +18,6 @@ get_header();
         ?>
     </section>
 </main>
-
 <?php
 get_footer();
 ?>
