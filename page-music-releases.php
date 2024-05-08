@@ -6,8 +6,8 @@ Template Name: Music Releases Page
 get_header();
 ?>
 <main id="main-content">
-    <header class="page-header">
-        <h1 class="glowing-header">Music Releases</h1>
+    <header class="standard-header">
+        Music Releases
     </header>
     <section class="page-content">
         <?php
