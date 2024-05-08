@@ -124,6 +124,15 @@ body {
     margin-bottom: 20px;
 }
 
+#stacked-nerd-title {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 32px;
+    text-align: center;
+    color: #00FF00;
+    text-shadow: 0 0 2px #00FF00, 0 0 4px #00FF00;
+    margin: 20px 0;
+}
+
 #retro-game-header:after {
     content: "";
     display: table;
