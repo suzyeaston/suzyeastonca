@@ -6,8 +6,8 @@ Template Name: Social Media Page
 get_header();
 ?>
 <main id="main-content">
-    <header class="standard-header">
-        Social Media
+    <header id="retro-game-header">
+        <div id="stacked-nerd-title">Social Media</div>
     </header>
     <section class="page-content">
         <div class="menu-item" onclick="location.href='https://twitter.com/officialsuzye'">Twitter</div>
