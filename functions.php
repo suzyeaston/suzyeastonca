@@ -11,3 +11,10 @@ function retro_game_music_theme_scripts() {
     }
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
+
+function disable_autop_formatting() {
+    remove_filter('the_content', 'wpautop');
+    remove_filter('the_excerpt', 'wpautop');
+}
+
+add_action('init', 'disable_autop_formatting');
