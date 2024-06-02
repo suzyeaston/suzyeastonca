@@ -2,7 +2,7 @@
 Theme Name: Suzys Music Theme Lets Go Vancouver BC
 Author: Suzy Easton
 Description: An '80s video game inspired music WordPress theme, thanks much.
-Version: 1.7
+Version: 1.8
 */
 
 #menu-container {
@@ -57,11 +57,7 @@ Version: 1.7
     border: 3px solid #000;
 }
 
-.main-content p {
-    margin-bottom: 10px !important;
-}
-
-body {
+.body {
     font-family: 'Press Start 2P', cursive;
     background-color: #000;
     color: #fff;
@@ -127,7 +123,8 @@ body {
     text-align: center;
     margin-bottom: 20px;
 }
-bio-content {
+
+.bio-content {
     color: #00ff00;
     letter-spacing: 2px;
     line-height: 1.6;
@@ -142,6 +139,10 @@ bio-content {
     margin-bottom: 8px;
 }
 
+.bio-content::-webkit-scrollbar {
+    width: 12px;
+}
+
 .bio-content::-webkit-scrollbar-track {
     background: #000;
 }
@@ -151,7 +152,6 @@ bio-content {
     border-radius: 20px;
     border: 3px solid #000;
 }
-
 
 #stacked-nerd-title {
     font-family: 'Press Start 2P', cursive;
