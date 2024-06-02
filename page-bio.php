@@ -9,7 +9,7 @@ get_header();
     <section class="page-content">
         <?php
         while ( have_posts() ) : the_post();
-            the_content();
+            echo '<div class="bio-content">' . get_the_content() . '</div>';
         endwhile;
         ?>
     </section>
