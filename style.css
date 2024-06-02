@@ -123,6 +123,34 @@ body {
     text-align: center;
     margin-bottom: 20px;
 }
+.bio-content {
+    color: #00ff00;
+    letter-spacing: 2px;
+    line-height: 1.6;
+    padding: 20px;
+    font-size: 18px;
+    white-space: pre-wrap;
+    font-family: 'Press Start 2P', cursive;
+    overflow-y: auto;  // Changed from scroll to auto
+    height: auto;      // Removed fixed height to adapt based on content
+    scrollbar-width: thin;
+    scrollbar-color: #00ff00 #000;
+}
+
+.bio-content::-webkit-scrollbar {
+    width: 12px;
+}
+
+.bio-content::-webkit-scrollbar-track {
+    background: #000;
+}
+
+.bio-content::-webkit-scrollbar-thumb {
+    background-color: #00ff00;
+    border-radius: 20px;
+    border: 3px solid #000;
+}
+
 
 #stacked-nerd-title {
     font-family: 'Press Start 2P', cursive;
