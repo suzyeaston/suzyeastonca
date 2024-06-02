@@ -57,6 +57,10 @@ Version: 1.7
     border: 3px solid #000;
 }
 
+.main-content p {
+    margin-bottom: 10px !important;
+}
+
 body {
     font-family: 'Press Start 2P', cursive;
     background-color: #000;
