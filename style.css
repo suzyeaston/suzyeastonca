@@ -128,6 +128,18 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     border: 3px solid #000;
 }
 
+.music-embeds iframe {
+    border: 2px solid #00ff00; /* Matching the green color for the retro feel */
+    background-color: #111; /* Background color to blend with the theme */
+    margin: 20px 0; /* Space between embeds */
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.music-embeds iframe:hover {
+    transform: scale(1.05); /* Slight zoom effect on hover */
+    box-shadow: 0 0 10px #00ff00; /* Glow effect */
+}
+
 #stacked-nerd-title {
     font-family: 'Press Start 2P', cursive;
     font-size: 32px;
