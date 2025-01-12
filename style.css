@@ -155,6 +155,43 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     clear: both;
 }
 
+/* Canucks Retro Scoreboard Styles */
+.canucks-scoreboard {
+    background: #000;
+    color: #00FF00;
+    font-family: 'Press Start 2P', cursive;
+    padding: 20px;
+    border: 3px solid #00FF00;
+    margin: 20px auto;
+    text-align: center;
+    max-width: 600px;
+}
+
+.canucks-scoreboard h2 {
+    color: #FF0000;
+    text-shadow: 0 0 10px #00FF00;
+    margin-bottom: 20px;
+}
+
+.canucks-game {
+    border: 2px solid #00FF00;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #111;
+}
+
+.canucks-error {
+    color: #FF0000;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+    border: 2px solid #FF0000;
+    margin: 20px auto;
+    max-width: 600px;
+    background-color: #000;
+}
+
+
 #sparkly-name {
     display: block;
     margin: 20px auto;
