@@ -11,8 +11,6 @@ function retro_game_music_theme_scripts() {
         wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', array(), '1.0.0', true);
     }
 
-    // Enqueue the Canucks Retro Stats styles
-    wp_enqueue_style('retro-scoreboard', get_template_directory_uri() . '/css/retro-scoreboard.css', [], '1.0');
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
 
