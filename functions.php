@@ -10,7 +10,6 @@ function retro_game_music_theme_scripts() {
     if (is_front_page()) {
         wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', array(), '1.0.0', true);
     }
-
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
 
@@ -29,8 +28,8 @@ function get_canucks_scoreboard() {
         return $cached_data;
     }
 
-    // API endpoint for Canucks scoreboard
-    $api_url = 'https://api-web.nhle.com/v1/scoreboard/VAN/now';
+    // API endpoint for today's schedule
+    $api_url = 'https://statsapi.web.nhl.com/api/v1/schedule';
 
     // Fetch data from the NHL API
     $response = wp_remote_get($api_url);
@@ -42,44 +41,55 @@ function get_canucks_scoreboard() {
 
     // Decode the JSON response
     $body = wp_remote_retrieve_body($response);
-    $data = json_decode($body);
+    $data = json_decode($body, true);
 
     // Check for valid data
-    if (empty($data) || !isset($data->games)) {
-        return 'No data available.';
+    if (empty($data) || !isset($data['dates'][0]['games'])) {
+        return 'No games scheduled for today.';
+    }
+
+    // Find the Canucks game
+    $canucks_game = null;
+    foreach ($data['dates'][0]['games'] as $game) {
+        if ($game['teams']['home']['team']['name'] == 'Vancouver Canucks' || $game['teams']['away']['team']['name'] == 'Vancouver Canucks') {
+            $canucks_game = $game;
+            break;
+        }
+    }
+
+    if (!$canucks_game) {
+        return 'No Canucks game scheduled for today.';
     }
 
     // Cache the data for 10 minutes to reduce API requests
-    set_transient('canucks_scoreboard', $data, 10 * MINUTE_IN_SECONDS);
+    set_transient('canucks_scoreboard', $canucks_game, 10 * MINUTE_IN_SECONDS);
 
-    return $data;
+    return $canucks_game;
 }
 
 // Shortcode to display the Canucks scoreboard
 function canucks_scoreboard_shortcode() {
     // Fetch the scoreboard data
-    $data = get_canucks_scoreboard();
+    $game = get_canucks_scoreboard();
 
     // Handle errors and return early
-    if (is_string($data)) {
-        return '<div class="canucks-error">' . esc_html($data) . '</div>';
+    if (is_string($game)) {
+        return '<div class="canucks-error">' . esc_html($game) . '</div>';
     }
 
     // Build the HTML for the scoreboard
     $html = '<div class="canucks-scoreboard">';
     $html .= '<h2>Canucks Retro Scoreboard</h2>';
+    $html .= '<p><strong>Matchup:</strong> ' . esc_html($game['teams']['away']['team']['name']) . ' at ' . esc_html($game['teams']['home']['team']['name']) . '</p>';
+    $html .= '<p><strong>Game Time:</strong> ' . esc_html(date('g:i A', strtotime($game['gameDate']))) . '</p>';
+    $html .= '<p><strong>Status:</strong> ' . esc_html($game['status']['detailedState']) . '</p>';
 
-    // Loop through games and display each one
-    foreach ($data->games as $game) {
-        $html .= '<div class="canucks-game">';
-        $html .= '<p><strong>Opponent:</strong> ' . esc_html($game->opponent->name) . '</p>';
-        $html .= '<p><strong>Score:</strong> ' . esc_html($game->score->canucks) . ' - ' . esc_html($game->score->opponent) . '</p>';
-        $html .= '<p><strong>Status:</strong> ' . esc_html($game->status) . '</p>';
-        $html .= '</div>';
+    // Display score if the game has started
+    if (isset($game['linescore'])) {
+        $html .= '<p><strong>Score:</strong> ' . esc_html($game['teams']['away']['score']) . ' - ' . esc_html($game['teams']['home']['score']) . '</p>';
     }
 
     $html .= '</div>';
     return $html;
 }
 add_shortcode('canucks_scoreboard', 'canucks_scoreboard_shortcode');
-
