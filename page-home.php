@@ -8,6 +8,7 @@
     <section id="menu-container">
         <div class="menu-item" onclick="location.href='/home'">Home</div>
         <div class="menu-item" onclick="location.href='/bio'">About</div>
+        <div class="menu-item" onclick="location.href='/canucks-app'">Canucks App</div> <!-- New Link -->
         <div class="menu-item" onclick="location.href='/the-midnight-mix'">Midnight Mix with Suzy Easton</div>
         <div class="menu-item" onclick="location.href='/music-releases'">Music Releases</div>
         <div class="menu-item" onclick="location.href='/social-media'">Social Media</div>
