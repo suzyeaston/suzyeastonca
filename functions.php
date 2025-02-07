@@ -5,7 +5,7 @@ function retro_game_music_theme_scripts() {
     wp_enqueue_style('main-styles', get_stylesheet_uri());
     wp_enqueue_script('piano-script', get_template_directory_uri() . '/js/piano-script.js', array(), '1.0.1', true);
 
-    // Load game-init.js only on the front page
+    // Load `game-init.js` only on the front page
     if (is_front_page()) {
         wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', array(), '1.0.0', true);
     }
@@ -19,7 +19,7 @@ function disable_autop_formatting() {
 }
 add_action('init', 'disable_autop_formatting');
 
-// Fetch the Canucks schedule data using the newer endpoint and normalize the response
+// Fetch the Canucks schedule data using a newer endpoint and normalize the response
 function get_canucks_schedule() {
     // Check if cached data exists
     $cached_data = get_transient('canucks_schedule');
@@ -27,7 +27,7 @@ function get_canucks_schedule() {
         return $cached_data;
     }
 
-    // Updated API endpoint: using "VAN" as the team code for Vancouver Canucks
+    // Updated API endpoint using the team's three-letter code "VAN" (for Vancouver Canucks)
     $api_url = 'https://api-web.nhle.com/v1/club-schedule-season/VAN/now';
 
     // Fetch data from the NHL API
@@ -42,15 +42,16 @@ function get_canucks_schedule() {
     $body = wp_remote_retrieve_body($response);
     $data = json_decode($body, true);
 
-    // Debug: log the entire API response so you can check its structure
+    // Log the raw API response for debugging
     error_log("Canucks API response: " . print_r($data, true));
 
     if (empty($data)) {
         return 'No data available from API.';
     }
 
+    // Normalize the data: if the response contains a "dates" key, flatten it;
+    // otherwise, assume it's already a list of game objects.
     $games = array();
-    // If the response has a "dates" key, flatten that array
     if (isset($data['dates']) && is_array($data['dates'])) {
         foreach ($data['dates'] as $date_entry) {
             if (isset($date_entry['games']) && is_array($date_entry['games'])) {
@@ -59,13 +60,7 @@ function get_canucks_schedule() {
                 }
             }
         }
-    }
-    // Otherwise, if the response has a "games" key, use it directly
-    elseif (isset($data['games']) && is_array($data['games'])) {
-        $games = $data['games'];
-    }
-    // Otherwise, if the data is a plain array, assume it's the list of games
-    elseif (is_array($data)) {
+    } elseif (is_array($data)) {
         $games = $data;
     }
 
@@ -94,23 +89,14 @@ function canucks_schedule_shortcode() {
 
     // Loop through each game and output details
     foreach ($games as $game) {
-        // Use startTime as a fallback if gameDate is not available
-        $gameDate = isset($game['gameDate']) ? $game['gameDate'] : (isset($game['startTime']) ? $game['startTime'] : '');
+        // Extract game details using safe defaults
+        $gameDate = isset($game['gameDate']) ? $game['gameDate'] : '';
         $formattedDate = $gameDate ? esc_html(date('F j, Y', strtotime($gameDate))) : 'Unknown Date';
 
-        // Extract team names: adjust key paths based on the response structure
-        $awayTeam = isset($game['teams']['away']['teamName']) ? $game['teams']['away']['teamName'] : 'Unknown';
-        $homeTeam = isset($game['teams']['home']['teamName']) ? $game['teams']['home']['teamName'] : 'Unknown';
-
-        // Extract game status
-        $status = '';
-        if (isset($game['status']['detailedState'])) {
-            $status = $game['status']['detailedState'];
-        } elseif (isset($game['status']['state'])) {
-            $status = $game['status']['state'];
-        } else {
-            $status = 'Status Unknown';
-        }
+        // Extract team names; adjust keys if necessary based on your API's structure
+        $awayTeam = isset($game['teams']['away']['team']['name']) ? $game['teams']['away']['team']['name'] : 'Unknown';
+        $homeTeam = isset($game['teams']['home']['team']['name']) ? $game['teams']['home']['team']['name'] : 'Unknown';
+        $status = isset($game['status']['detailedState']) ? $game['status']['detailedState'] : 'Status Unknown';
 
         $html .= '<div class="canucks-game">';
         $html .= '<p><strong>Date:</strong> ' . $formattedDate . '</p>';
