@@ -35,10 +35,17 @@ function get_canucks_schedule() {
     }
 
     $body = wp_remote_retrieve_body($response);
+
+    // Log the raw API response
+    error_log("Raw API Response: " . $body);
+
     $data = json_decode($body, true);
 
-    // Debugging: Log the full API response
-    error_log("Canucks API response: " . print_r($data, true));
+    // Check for JSON decoding errors
+    if ( json_last_error() !== JSON_ERROR_NONE ) {
+        error_log("JSON Decode Error: " . json_last_error_msg());
+        return 'Error decoding JSON data.';
+    }
 
     if ( empty($data) ) {
         return 'No data available from API.';
