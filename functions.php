@@ -42,18 +42,20 @@ function get_canucks_schedule() {
     $body = wp_remote_retrieve_body($response);
     $data = json_decode($body, true);
 
+    // Log the raw API response for debugging
+    error_log("Canucks API response: " . print_r($data, true));
+
     if (empty($data)) {
-        return 'No data available.';
+        return 'No data available from API.';
     }
 
-    // Normalize the data: if the response contains a "dates" key (old structure), flatten it;
-    // otherwise, assume the response is already a list of game objects.
+    // Normalize the data: if the response contains a "dates" key, flatten it;
+    // otherwise, assume it's already a list of game objects.
     $games = array();
-
-    if (isset($data['dates'])) {
-        foreach ($data['dates'] as $date) {
-            if (isset($date['games']) && is_array($date['games'])) {
-                foreach ($date['games'] as $game) {
+    if (isset($data['dates']) && is_array($data['dates'])) {
+        foreach ($data['dates'] as $date_entry) {
+            if (isset($date_entry['games']) && is_array($date_entry['games'])) {
+                foreach ($date_entry['games'] as $game) {
                     $games[] = $game;
                 }
             }
@@ -63,7 +65,7 @@ function get_canucks_schedule() {
     }
 
     if (empty($games)) {
-        return 'No data available.';
+        return 'No games found in the schedule data.';
     }
 
     // Cache the normalized games data for 10 minutes
@@ -72,12 +74,12 @@ function get_canucks_schedule() {
     return $games;
 }
 
-// Shortcode to display the Canucks schedule with updated data structure handling
+// Shortcode to display the Canucks schedule (registered as "canucks_scoreboard")
 function canucks_schedule_shortcode() {
     // Fetch the normalized schedule data (flat list of games)
     $games = get_canucks_schedule();
 
-    // If there's an error message or no data, display it
+    // If an error message (string) is returned, show it
     if (is_string($games)) {
         return '<div class="canucks-error">' . esc_html($games) . '</div>';
     }
@@ -85,12 +87,13 @@ function canucks_schedule_shortcode() {
     $html = '<div class="canucks-schedule">';
     $html .= '<h2>Canucks Retro Schedule</h2>';
 
-    // Loop through the list of games
+    // Loop through each game and output details
     foreach ($games as $game) {
-        // Safely extract game details
+        // Extract game details using safe defaults
         $gameDate = isset($game['gameDate']) ? $game['gameDate'] : '';
         $formattedDate = $gameDate ? esc_html(date('F j, Y', strtotime($gameDate))) : 'Unknown Date';
 
+        // Extract team names; adjust keys if necessary based on your API's structure
         $awayTeam = isset($game['teams']['away']['team']['name']) ? $game['teams']['away']['team']['name'] : 'Unknown';
         $homeTeam = isset($game['teams']['home']['team']['name']) ? $game['teams']['home']['team']['name'] : 'Unknown';
         $status = isset($game['status']['detailedState']) ? $game['status']['detailedState'] : 'Status Unknown';
@@ -105,5 +108,5 @@ function canucks_schedule_shortcode() {
     $html .= '</div>';
     return $html;
 }
-add_shortcode('canucks_schedule', 'canucks_schedule_shortcode');
+add_shortcode('canucks_scoreboard', 'canucks_schedule_shortcode');
 ?>
