@@ -6,7 +6,7 @@ function retro_game_music_theme_scripts() {
     wp_enqueue_script('piano-script', get_template_directory_uri() . '/js/piano-script.js', array(), '1.0.1', true);
 
     // Load game-init.js only on the front page
-    if ( is_front_page() ) {
+    if (is_front_page()) {
         wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', array(), '1.0.0', true);
     }
 }
@@ -19,62 +19,62 @@ function disable_autop_formatting() {
 }
 add_action('init', 'disable_autop_formatting');
 
-// Fetch the Canucks schedule data using the updated endpoint and normalize the response
+// Fetch the Canucks schedule data using the newer endpoint and normalize the response
 function get_canucks_schedule() {
     // Check if cached data exists
     $cached_data = get_transient('canucks_schedule');
-    if ( $cached_data ) {
+    if ($cached_data) {
         return $cached_data;
     }
 
-    // Updated API endpoint using "VAN" (Vancouver Canucks)
+    // Updated API endpoint: using "VAN" as the team code for Vancouver Canucks
     $api_url = 'https://api-web.nhle.com/v1/club-schedule-season/VAN/now';
 
     // Fetch data from the NHL API
-    $response = wp_remote_get( $api_url );
+    $response = wp_remote_get($api_url);
 
     // Handle API errors
-    if ( is_wp_error( $response ) ) {
+    if (is_wp_error($response)) {
         return 'Error fetching data: ' . $response->get_error_message();
     }
 
     // Decode the JSON response
-    $body = wp_remote_retrieve_body( $response );
-    $data = json_decode( $body, true );
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
 
-    // Log the entire API response for debugging (check your PHP error log)
+    // Debug: log the entire API response so you can check its structure
     error_log("Canucks API response: " . print_r($data, true));
 
-    if ( empty( $data ) ) {
+    if (empty($data)) {
         return 'No data available from API.';
     }
 
     $games = array();
-    // Check if the response has a "dates" key (legacy structure)
-    if ( isset($data['dates']) && is_array($data['dates']) ) {
-        foreach ( $data['dates'] as $date_entry ) {
-            if ( isset($date_entry['games']) && is_array($date_entry['games']) ) {
-                foreach ( $date_entry['games'] as $game ) {
+    // If the response has a "dates" key, flatten that array
+    if (isset($data['dates']) && is_array($data['dates'])) {
+        foreach ($data['dates'] as $date_entry) {
+            if (isset($date_entry['games']) && is_array($date_entry['games'])) {
+                foreach ($date_entry['games'] as $game) {
                     $games[] = $game;
                 }
             }
         }
     }
-    // Otherwise, if there is a "games" key, use that array directly
-    elseif ( isset($data['games']) && is_array($data['games']) ) {
+    // Otherwise, if the response has a "games" key, use it directly
+    elseif (isset($data['games']) && is_array($data['games'])) {
         $games = $data['games'];
     }
-    // Otherwise, if $data is a plain array, assume it's the list of games
-    elseif ( is_array($data) ) {
+    // Otherwise, if the data is a plain array, assume it's the list of games
+    elseif (is_array($data)) {
         $games = $data;
     }
 
-    if ( empty( $games ) ) {
+    if (empty($games)) {
         return 'No games found in the schedule data.';
     }
 
     // Cache the normalized games data for 10 minutes
-    set_transient( 'canucks_schedule', $games, 10 * MINUTE_IN_SECONDS );
+    set_transient('canucks_schedule', $games, 10 * MINUTE_IN_SECONDS);
 
     return $games;
 }
@@ -84,8 +84,8 @@ function canucks_schedule_shortcode() {
     // Fetch the normalized schedule data (flat list of games)
     $games = get_canucks_schedule();
 
-    // If an error message (string) is returned, display it
-    if ( is_string($games) ) {
+    // If an error message (string) is returned, show it
+    if (is_string($games)) {
         return '<div class="canucks-error">' . esc_html($games) . '</div>';
     }
 
@@ -93,63 +93,23 @@ function canucks_schedule_shortcode() {
     $html .= '<h2>Canucks Retro Schedule</h2>';
 
     // Loop through each game and output details
-    foreach ( $games as $game ) {
-        // Determine the game date: try gameDate, then date, then startTime
-        $gameDate = '';
-        if ( isset($game['gameDate']) ) {
-            $gameDate = $game['gameDate'];
-        } elseif ( isset($game['date']) ) {
-            $gameDate = $game['date'];
-        } elseif ( isset($game['startTime']) ) {
-            $gameDate = $game['startTime'];
-        }
+    foreach ($games as $game) {
+        // Use startTime as a fallback if gameDate is not available
+        $gameDate = isset($game['gameDate']) ? $game['gameDate'] : (isset($game['startTime']) ? $game['startTime'] : '');
         $formattedDate = $gameDate ? esc_html(date('F j, Y', strtotime($gameDate))) : 'Unknown Date';
 
-        // Extract team names. First try the nested structure.
-        $awayTeam = '';
-        $homeTeam = '';
-        if ( isset($game['teams']) && is_array($game['teams']) ) {
-            if ( isset($game['teams']['away']) ) {
-                if ( isset($game['teams']['away']['team']['name']) ) {
-                    $awayTeam = $game['teams']['away']['team']['name'];
-                } elseif ( isset($game['teams']['away']['teamName']) ) {
-                    $awayTeam = $game['teams']['away']['teamName'];
-                }
-            }
-            if ( isset($game['teams']['home']) ) {
-                if ( isset($game['teams']['home']['team']['name']) ) {
-                    $homeTeam = $game['teams']['home']['team']['name'];
-                } elseif ( isset($game['teams']['home']['teamName']) ) {
-                    $homeTeam = $game['teams']['home']['teamName'];
-                }
-            }
-        }
-        // Fallback to flat keys if not set
-        if ( !$awayTeam && isset($game['awayTeam']) ) {
-            $awayTeam = $game['awayTeam'];
-        }
-        if ( !$homeTeam && isset($game['homeTeam']) ) {
-            $homeTeam = $game['homeTeam'];
-        }
-        if ( !$awayTeam ) {
-            $awayTeam = 'Unknown';
-        }
-        if ( !$homeTeam ) {
-            $homeTeam = 'Unknown';
-        }
+        // Extract team names: adjust key paths based on the response structure
+        $awayTeam = isset($game['teams']['away']['teamName']) ? $game['teams']['away']['teamName'] : 'Unknown';
+        $homeTeam = isset($game['teams']['home']['teamName']) ? $game['teams']['home']['teamName'] : 'Unknown';
 
-        // Extract status information
-        $status = 'Status Unknown';
-        if ( isset($game['status']) ) {
-            if ( is_array($game['status']) ) {
-                if ( isset($game['status']['detailedState']) ) {
-                    $status = $game['status']['detailedState'];
-                } elseif ( isset($game['status']['state']) ) {
-                    $status = $game['status']['state'];
-                }
-            } else {
-                $status = $game['status'];
-            }
+        // Extract game status
+        $status = '';
+        if (isset($game['status']['detailedState'])) {
+            $status = $game['status']['detailedState'];
+        } elseif (isset($game['status']['state'])) {
+            $status = $game['status']['state'];
+        } else {
+            $status = 'Status Unknown';
         }
 
         $html .= '<div class="canucks-game">';
@@ -163,5 +123,4 @@ function canucks_schedule_shortcode() {
     return $html;
 }
 add_shortcode('canucks_scoreboard', 'canucks_schedule_shortcode');
-
-// End of file; no closing PHP tag to prevent accidental whitespace.
+?>
