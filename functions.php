@@ -1,5 +1,4 @@
 <?php
-
 // Load styles and scripts for the theme
 function retro_game_music_theme_scripts() {
     wp_enqueue_style('retro-font', 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -20,76 +19,108 @@ function disable_autop_formatting() {
 }
 add_action('init', 'disable_autop_formatting');
 
-// Fetch the Canucks scoreboard data
-function get_canucks_scoreboard() {
-    $cached_data = get_transient('canucks_scoreboard');
+// Fetch the Canucks game data
+function get_canucks_game_data() {
+    // Check if cached data exists
+    $cached_data = get_transient('canucks_game_data');
     if ($cached_data) {
         return $cached_data;
     }
 
-    $api_url = 'https://api-web.nhle.com/v1/scoreboard/VAN/now';
+    // API endpoint for the Canucks schedule
+    $api_url = 'https://statsapi.web.nhl.com/api/v1/schedule?teamId=23&startDate=' . date('Y-m-d') . '&endDate=' . date('Y-m-d');
+
+    // Fetch data from the NHL API
     $response = wp_remote_get($api_url);
 
+    // Handle API errors
     if (is_wp_error($response)) {
         return 'Error fetching data: ' . $response->get_error_message();
     }
 
+    // Decode the JSON response
     $body = wp_remote_retrieve_body($response);
     $data = json_decode($body, true);
 
-    if (empty($data) || !isset($data['games'])) {
-        return 'No data available.';
+    // Check for valid data
+    if (empty($data) || !isset($data['dates'][0]['games'])) {
+        return 'No games scheduled for today.';
     }
 
-    set_transient('canucks_scoreboard', $data, 10 * MINUTE_IN_SECONDS);
-    return $data;
+    // Cache the data for 10 minutes to reduce API requests
+    set_transient('canucks_game_data', $data['dates'][0]['games'][0], 10 * MINUTE_IN_SECONDS);
+
+    return $data['dates'][0]['games'][0];
 }
 
 // Fetch Canucks advanced stats
-function get_canucks_analytics() {
-    $api_url = 'https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=seasonId=20232024%20and%20teamId=23';
+function get_canucks_advanced_stats() {
+    // Check if cached data exists
+    $cached_data = get_transient('canucks_advanced_stats');
+    if ($cached_data) {
+        return $cached_data;
+    }
+
+    // API endpoint for team stats
+    $api_url = 'https://statsapi.web.nhl.com/api/v1/teams/23/stats';
+
+    // Fetch data from the NHL API
     $response = wp_remote_get($api_url);
 
+    // Handle API errors
     if (is_wp_error($response)) {
         return 'Error fetching advanced stats: ' . $response->get_error_message();
     }
 
+    // Decode the JSON response
     $body = wp_remote_retrieve_body($response);
     $data = json_decode($body, true);
 
-    if (empty($data) || !isset($data['data'][0])) {
+    // Check for valid data
+    if (empty($data) || !isset($data['stats'][0]['splits'][0]['stat'])) {
         return 'No advanced stats available.';
     }
-    return $data['data'][0];
+
+    // Cache the data for 10 minutes to reduce API requests
+    set_transient('canucks_advanced_stats', $data['stats'][0]['splits'][0]['stat'], 10 * MINUTE_IN_SECONDS);
+
+    return $data['stats'][0]['splits'][0]['stat'];
 }
 
 // Shortcode to display the Canucks scoreboard and analytics
 function canucks_scoreboard_shortcode() {
-    $data = get_canucks_scoreboard();
-    $analytics = get_canucks_analytics();
+    // Fetch the game data
+    $game = get_canucks_game_data();
 
-    if (is_string($data)) {
-        return '<div class="canucks-error">' . esc_html($data) . '</div>';
+    // Handle errors and return early
+    if (is_string($game)) {
+        return '<div class="canucks-error">' . esc_html($game) . '</div>';
     }
 
+    // Fetch the advanced stats
+    $stats = get_canucks_advanced_stats();
+
+    // Build the HTML for the scoreboard
     $html = '<div class="canucks-scoreboard">';
     $html .= '<h2>Canucks Retro Scoreboard</h2>';
+    $html .= '<p><strong>Matchup:</strong> ' . esc_html($game['teams']['away']['team']['name']) . ' at ' . esc_html($game['teams']['home']['team']['name']) . '</p>';
+    $html .= '<p><strong>Game Time:</strong> ' . esc_html(date('g:i A', strtotime($game['gameDate']))) . '</p>';
+    $html .= '<p><strong>Status:</strong> ' . esc_html($game['status']['detailedState']) . '</p>';
 
-    foreach ($data['games'] as $game) {
-        $html .= '<div class="canucks-game">';
-        $html .= '<p><strong>Opponent:</strong> ' . esc_html($game['opponent']['name']) . '</p>';
-        $html .= '<p><strong>Score:</strong> ' . esc_html($game['score']['canucks']) . ' - ' . esc_html($game['score']['opponent']) . '</p>';
-        $html .= '<p><strong>Status:</strong> ' . esc_html($game['status']) . '</p>';
-        $html .= '</div>';
+    // Display score if the game has started
+    if (isset($game['linescore'])) {
+        $html .= '<p><strong>Score:</strong> ' . esc_html($game['teams']['away']['score']) . ' - ' . esc_html($game['teams']['home']['score']) . '</p>';
     }
 
-    if (!is_string($analytics)) {
+    // Display advanced stats
+    if (!is_string($stats)) {
         $html .= '<div class="canucks-analytics">';
         $html .= '<h3>Advanced Stats</h3>';
-        $html .= '<p><strong>Corsi For %:</strong> ' . esc_html($analytics['corsiForPercentage']) . '%</p>';
-        $html .= '<p><strong>Expected Goals %:</strong> ' . esc_html($analytics['expectedGoalsPercentage']) . '%</p>';
-        $html .= '<p><strong>Power Play %:</strong> ' . esc_html($analytics['powerPlayPercentage']) . '%</p>';
-        $html .= '<p><strong>Penalty Kill %:</strong> ' . esc_html($analytics['penaltyKillPercentage']) . '%</p>';
+        $html .= '<p><strong>Goals Per Game:</strong> ' . esc_html($stats['goalsPerGame']) . '</p>';
+        $html .= '<p><strong>Power Play Percentage:</strong> ' . esc_html($stats['powerPlayPercentage']) . '%</p>';
+        $html .= '<p><strong>Penalty Kill Percentage:</strong> ' . esc_html($stats['penaltyKillPercentage']) . '%</p>';
+        $html .= '<p><strong>Shots Per Game:</strong> ' . esc_html($stats['shotsPerGame']) . '</p>';
+        $html .= '<p><strong>Shots Allowed:</strong> ' . esc_html($stats['shotsAllowed']) . '</p>';
         $html .= '</div>';
     }
 
@@ -97,3 +128,4 @@ function canucks_scoreboard_shortcode() {
     return $html;
 }
 add_shortcode('canucks_scoreboard', 'canucks_scoreboard_shortcode');
+?>
