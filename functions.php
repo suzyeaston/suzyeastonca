@@ -47,28 +47,11 @@ function get_canucks_schedule() {
         return 'Error decoding JSON data.';
     }
 
-    if ( empty($data) ) {
+    if ( empty($data) || !isset($data['games']) ) {
         return 'No data available from API.';
     }
 
-    $games = array();
-
-    // Check if response has a 'games' array and extract it
-    if ( isset($data['games']) && is_array($data['games']) ) {
-        $games = $data['games'];
-    } elseif ( isset($data['dates']) && is_array($data['dates']) ) {
-        foreach ( $data['dates'] as $date_entry ) {
-            if ( isset($date_entry['games']) && is_array($date_entry['games']) ) {
-                foreach ( $date_entry['games'] as $game ) {
-                    $games[] = $game;
-                }
-            }
-        }
-    }
-
-    if ( empty($games) ) {
-        return 'No games found in the schedule data.';
-    }
+    $games = $data['games'];
 
     // Store in cache for 1 hour
     set_transient('canucks_schedule', $games, HOUR_IN_SECONDS);
@@ -89,15 +72,16 @@ if ( ! is_admin() ) {
         $html .= '<h2>Canucks Retro Schedule</h2>';
 
         foreach ( $games as $game ) {
-            $gameDate = isset($game['gameDate']) ? $game['gameDate'] : (isset($game['date']) ? $game['date'] : (isset($game['startTime']) ? $game['startTime'] : 'Unknown Date'));
+            // Extract and format the game date
+            $gameDate = isset($game['gameDate']) ? $game['gameDate'] : 'Unknown Date';
             $formattedDate = esc_html($gameDate ? date('F j, Y', strtotime($gameDate)) : 'Unknown Date');
 
             // Extract team names safely
-            $awayTeam = isset($game['teams']['away']['team']['name']) ? $game['teams']['away']['team']['name'] : 'Unknown';
-            $homeTeam = isset($game['teams']['home']['team']['name']) ? $game['teams']['home']['team']['name'] : 'Unknown';
+            $awayTeam = isset($game['awayTeam']['placeName']['default']) && isset($game['awayTeam']['commonName']['default']) ? $game['awayTeam']['placeName']['default'] . ' ' . $game['awayTeam']['commonName']['default'] : 'Unknown';
+            $homeTeam = isset($game['homeTeam']['placeName']['default']) && isset($game['homeTeam']['commonName']['default']) ? $game['homeTeam']['placeName']['default'] . ' ' . $game['homeTeam']['commonName']['default'] : 'Unknown';
 
             // Extract status safely
-            $status = isset($game['status']['detailedState']) ? $game['status']['detailedState'] : (isset($game['status']['state']) ? $game['status']['state'] : 'Status Unknown');
+            $status = isset($game['gameState']) ? $game['gameState'] : 'Status Unknown';
 
             // Build game display
             $html .= '<div class="canucks-game">';
