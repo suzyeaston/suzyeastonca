@@ -8,23 +8,22 @@ get_header();
 <div id="primary" class="content-area">
     <main id="main" class="site-main">
 
+        <!-- X (Twitter) Feed (may require you to be logged in, or for your account to be public) -->
         <div class="canucks-twitter-feed">
             <h2>Real-Time Canucks News</h2>
-            <!-- This blockquote embed is how Twitter recommends you embed a timeline -->
-            <blockquote class="twitter-timeline" data-width="600" data-height="600" data-theme="dark" 
-                href="https://twitter.com/officialsuzye?ref_src=twsrc%5Etfw">
-                Tweets by officialsuzye
-            </blockquote>
+            <a class="twitter-timeline"
+               href="https://twitter.com/officialsuzye?ref_src=twsrc%5Etfw">
+               Tweets from Suzy Easton, not sure if this will work lol
+            </a>
             <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
         </div>
 
-        <?php
-          // This outputs the Canucks scoreboard from the shortcode
-          echo do_shortcode('[canucks_scoreboard]');
-        ?>
-        
+        <!-- Now the combined scoreboard + news feed -->
+        <?php echo do_shortcode('[canucks_app]'); ?>
+
     </main><!-- #main -->
 </div><!-- #primary -->
 
 <?php get_footer(); ?>
+
 
