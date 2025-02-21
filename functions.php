@@ -1,5 +1,7 @@
 <?php
-// Load styles and scripts for the theme
+// =========================
+// 1. THEME SCRIPTS & STYLES
+// =========================
 function retro_game_music_theme_scripts() {
     wp_enqueue_style('retro-font', 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     wp_enqueue_style('main-styles', get_stylesheet_uri());
@@ -12,21 +14,26 @@ function retro_game_music_theme_scripts() {
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
 
-// Disable automatic paragraph formatting in content
+// =============================================
+// 2. DISABLE AUTOMATIC PARAGRAPH FORMATTING
+// =============================================
 function disable_autop_formatting() {
     remove_filter('the_content', 'wpautop');
     remove_filter('the_excerpt', 'wpautop');
 }
 add_action('init', 'disable_autop_formatting');
 
-// Fetch the Canucks schedule data using the updated API endpoint and normalize the response
+// =============================
+// 3. FETCH & CACHE CANUCKS GAMES
+// =============================
 function get_canucks_schedule() {
+    // Try pulling from WordPress transient first
     $cached_data = get_transient('canucks_schedule');
     if ( $cached_data ) {
         return $cached_data;
     }
 
-    // Updated API endpoint using the team code "VAN" for Vancouver Canucks
+    // The schedule endpoint for the Vancouver Canucks
     $api_url = 'https://api-web.nhle.com/v1/club-schedule-season/VAN/now';
     $response = wp_remote_get($api_url);
 
@@ -35,16 +42,10 @@ function get_canucks_schedule() {
     }
 
     $body = wp_remote_retrieve_body($response);
-
-    // Log the raw API response (useful for debugging in your error logs)
-    error_log("Raw API Response: " . $body);
-
     $data = json_decode($body, true);
 
-    // Check for JSON decoding errors
     if ( json_last_error() !== JSON_ERROR_NONE ) {
-        error_log("JSON Decode Error: " . json_last_error_msg());
-        return 'Error decoding JSON data.';
+        return 'Error decoding JSON data: ' . json_last_error_msg();
     }
 
     if ( empty($data) || !isset($data['games']) ) {
@@ -53,78 +54,156 @@ function get_canucks_schedule() {
 
     $games = $data['games'];
 
-    // Store in cache for 1 hour
+    // Cache for 1 hour
     set_transient('canucks_schedule', $games, HOUR_IN_SECONDS);
 
     return $games;
 }
 
-// Register the shortcode only on the front end
+// =======================
+// 4. FETCH LOCAL NEWS (RSS)
+// =======================
+// Example using The Province’s Canucks RSS feed.
+// If you find a better or more official feed, just swap the URL below.
+function get_canucks_news() {
+    // Transient for caching news for 10 minutes
+    $cached_news = get_transient('canucks_news');
+    if ( $cached_news ) {
+        return $cached_news;
+    }
+
+    // Example feed: The Province - Vancouver Canucks
+    // If this feed changes or you want a different source, update the URL:
+    $feed_url = 'https://theprovince.com/category/sports/hockey/nhl/vancouver-canucks/feed';
+
+    // WordPress has a built-in feed parser if SimplePie is enabled
+    include_once( ABSPATH . WPINC . '/feed.php' );
+    $feed = fetch_feed($feed_url);
+
+    if ( is_wp_error($feed) ) {
+        return 'Error fetching news: ' . $feed->get_error_message();
+    }
+
+    $maxitems = $feed->get_item_quantity(5); // Number of items to fetch
+    $items = $feed->get_items(0, $maxitems);
+
+    // We'll build a simple array of [ 'title' => ..., 'link' => ..., 'date' => ... ]
+    $news_items = array();
+    foreach ( $items as $item ) {
+        $news_items[] = array(
+            'title' => $item->get_title(),
+            'link'  => $item->get_permalink(),
+            'date'  => $item->get_date('F j, Y g:ia')
+        );
+    }
+
+    // Cache for 10 minutes
+    set_transient('canucks_news', $news_items, 10 * MINUTE_IN_SECONDS);
+
+    return $news_items;
+}
+
+// ==========================
+// 5. SHORTCODE: CANUCKS APP
+// ==========================
+// This single shortcode will display both the schedule and news in one go.
+// Alternatively, you could separate them into multiple shortcodes if you prefer.
 if ( ! is_admin() ) {
-    function canucks_schedule_shortcode() {
+    function canucks_app_shortcode() {
+        // 5A. Get the schedule data
         $games = get_canucks_schedule();
 
-        // If we got an error message instead of an array
+        // If $games is a string, it's an error message
         if ( is_string($games) ) {
-            return '<div class="canucks-error">' . esc_html($games) . '</div>';
-        }
-
-        // Filter out past games, showing only today's and future
-        $today = new DateTime('today');
-        $upcoming_games = array_filter($games, function($game) use ($today) {
-            if (!isset($game['gameDate'])) {
-                return false;
-            }
-            $gameDateTime = new DateTime($game['gameDate']);
-            // Include games that are today or in the future
-            return $gameDateTime >= $today;
-        });
-
-        $html = '<div class="canucks-scoreboard">';
-        $html .= '<h2>Canucks Retro Schedule</h2>';
-
-        // If no upcoming games
-        if (empty($upcoming_games)) {
-            $html .= '<div class="canucks-game"><p>No upcoming games found.</p></div>';
+            $schedule_html = '<div class="canucks-error">' . esc_html($games) . '</div>';
         } else {
-            // Loop through each future or in-progress game
-            foreach ( $upcoming_games as $game ) {
-                // Extract and format the game date
-                $gameDate = isset($game['gameDate']) ? $game['gameDate'] : 'Unknown Date';
-                $formattedDate = esc_html($gameDate ? date('F j, Y, g:ia', strtotime($gameDate)) : 'Unknown Date');
+            // Filter out past games
+            $today = new DateTime('today', new DateTimeZone('America/Vancouver'));
+            $upcoming_games = array_filter($games, function($game) use ($today) {
+                if (!isset($game['gameDate'])) return false;
+                $gameDateTime = new DateTime($game['gameDate'], new DateTimeZone('UTC'));
+                // Convert to Pacific
+                $gameDateTime->setTimezone(new DateTimeZone('America/Vancouver'));
+                return $gameDateTime >= $today;
+            });
 
-                // Extract team names
-                $awayTeam = isset($game['awayTeam']['placeName']['default'], $game['awayTeam']['commonName']['default'])
-                    ? $game['awayTeam']['placeName']['default'] . ' ' . $game['awayTeam']['commonName']['default']
-                    : 'Unknown';
-                $homeTeam = isset($game['homeTeam']['placeName']['default'], $game['homeTeam']['commonName']['default'])
-                    ? $game['homeTeam']['placeName']['default'] . ' ' . $game['homeTeam']['commonName']['default']
-                    : 'Unknown';
+            // Random fun facts / quips
+            $fun_facts = array(
+                "Towel Power originated in Vancouver back in '82! Same year I was born, baby!",
+            );
+            $random_fact = $fun_facts[array_rand($fun_facts)];
 
-                // Extract status (e.g., OFF, FUT, LIVE, FINAL)
-                $status = isset($game['gameState']) ? $game['gameState'] : 'Status Unknown';
+            $schedule_html = '<div class="canucks-scoreboard">';
+            $schedule_html .= '<h2>Canucks Retro Schedule</h2>';
 
-                // Scores if available
-                $awayScore = isset($game['awayTeam']['score']) ? $game['awayTeam']['score'] : '';
-                $homeScore = isset($game['homeTeam']['score']) ? $game['homeTeam']['score'] : '';
+            // Show random fun fact
+            $schedule_html .= '<div class="canucks-fun-fact">';
+            $schedule_html .= '<p><em>Did you know? ' . esc_html($random_fact) . '</em></p>';
+            $schedule_html .= '</div>';
 
-                $html .= '<div class="canucks-game">';
-                $html .= '<p><strong>Date:</strong> ' . $formattedDate . '</p>';
-                $html .= '<p><strong>Matchup:</strong> ' . esc_html($awayTeam) . ' at ' . esc_html($homeTeam) . '</p>';
-                $html .= '<p><strong>Status:</strong> ' . esc_html($status) . '</p>';
+            if (empty($upcoming_games)) {
+                $schedule_html .= '<div class="canucks-game"><p>No upcoming games found.</p></div>';
+            } else {
+                foreach ( $upcoming_games as $game ) {
+                    $gameDateTime = new DateTime($game['gameDate'], new DateTimeZone('UTC'));
+                    $gameDateTime->setTimezone(new DateTimeZone('America/Vancouver'));
+                    $formattedDate = $gameDateTime->format('F j, Y, g:ia T');
 
-                // Only show scores if the game has them
-                if ($awayScore !== '' && $homeScore !== '') {
-                    $html .= '<p><strong>Score:</strong> ' . esc_html($awayScore) . ' - ' . esc_html($homeScore) . '</p>';
+                    $awayTeam = 'Unknown';
+                    $homeTeam = 'Unknown';
+                    if (isset($game['awayTeam']['placeName']['default'], $game['awayTeam']['commonName']['default'])) {
+                        $awayTeam = $game['awayTeam']['placeName']['default'] . ' ' . $game['awayTeam']['commonName']['default'];
+                    }
+                    if (isset($game['homeTeam']['placeName']['default'], $game['homeTeam']['commonName']['default'])) {
+                        $homeTeam = $game['homeTeam']['placeName']['default'] . ' ' . $game['homeTeam']['commonName']['default'];
+                    }
+
+                    $status = isset($game['gameState']) ? $game['gameState'] : 'Status Unknown';
+                    $awayScore = isset($game['awayTeam']['score']) ? $game['awayTeam']['score'] : '';
+                    $homeScore = isset($game['homeTeam']['score']) ? $game['homeTeam']['score'] : '';
+
+                    // Start building the single game block
+                    $schedule_html .= '<div class="canucks-game">';
+                    $schedule_html .= '<p><strong>Date:</strong> ' . esc_html($formattedDate) . '</p>';
+                    $schedule_html .= '<p><strong>Matchup:</strong> ' . esc_html($awayTeam) . ' at ' . esc_html($homeTeam) . '</p>';
+                    $schedule_html .= '<p><strong>Status:</strong> ' . esc_html($status) . '</p>';
+
+                    // If we have scores, show them
+                    if ($awayScore !== '' && $homeScore !== '') {
+                        // If the game is in progress or final, highlight it
+                        $schedule_html .= '<p><strong>Score:</strong> ' . esc_html($awayScore) . ' - ' . esc_html($homeScore) . '</p>';
+                    }
+                    $schedule_html .= '</div>'; // .canucks-game
                 }
-
-                $html .= '</div>';
             }
+            $schedule_html .= '</div>'; // .canucks-scoreboard
         }
 
-        $html .= '</div>';
-        return $html;
+        // 5B. Get the local news
+        $news_items = get_canucks_news();
+        if ( is_string($news_items) ) {
+            // It's an error message
+            $news_html = '<div class="canucks-error">' . esc_html($news_items) . '</div>';
+        } else if ( empty($news_items) ) {
+            $news_html = '<div class="canucks-news"><p>No current news available.</p></div>';
+        } else {
+            // Build HTML for the news feed
+            $news_html = '<div class="canucks-news">';
+            $news_html .= '<h2>Latest Canucks Headlines</h2>';
+            foreach ( $news_items as $item ) {
+                $news_html .= '<div class="canucks-news-item">';
+                $news_html .= '<p><a href="' . esc_url($item['link']) . '" target="_blank">';
+                $news_html .= esc_html($item['title']);
+                $news_html .= '</a></p>';
+                $news_html .= '<p class="news-date">' . esc_html($item['date']) . '</p>';
+                $news_html .= '</div>';
+            }
+            $news_html .= '</div>';
+        }
+
+        // Return final output: the schedule + the news
+        return $schedule_html . $news_html;
     }
-    add_shortcode('canucks_scoreboard', 'canucks_schedule_shortcode');
+    add_shortcode('canucks_app', 'canucks_app_shortcode');
 }
 ?>
