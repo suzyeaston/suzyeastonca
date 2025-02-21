@@ -36,7 +36,7 @@ function get_canucks_schedule() {
 
     $body = wp_remote_retrieve_body($response);
 
-    // Log the raw API response
+    // Log the raw API response (useful for debugging in your error logs)
     error_log("Raw API Response: " . $body);
 
     $data = json_decode($body, true);
@@ -55,6 +55,7 @@ function get_canucks_schedule() {
 
     // Store in cache for 1 hour
     set_transient('canucks_schedule', $games, HOUR_IN_SECONDS);
+
     return $games;
 }
 
@@ -63,33 +64,64 @@ if ( ! is_admin() ) {
     function canucks_schedule_shortcode() {
         $games = get_canucks_schedule();
 
-        // Check if $games is a string (error message) and return it
+        // If we got an error message instead of an array
         if ( is_string($games) ) {
             return '<div class="canucks-error">' . esc_html($games) . '</div>';
         }
 
+        // Filter out past games, showing only today's and future
+        $today = new DateTime('today');
+        $upcoming_games = array_filter($games, function($game) use ($today) {
+            if (!isset($game['gameDate'])) {
+                return false;
+            }
+            $gameDateTime = new DateTime($game['gameDate']);
+            // Include games that are today or in the future
+            return $gameDateTime >= $today;
+        });
+
         $html = '<div class="canucks-scoreboard">';
         $html .= '<h2>Canucks Retro Schedule</h2>';
 
-        foreach ( $games as $game ) {
-            // Extract and format the game date
-            $gameDate = isset($game['gameDate']) ? $game['gameDate'] : 'Unknown Date';
-            $formattedDate = esc_html($gameDate ? date('F j, Y', strtotime($gameDate)) : 'Unknown Date');
+        // If no upcoming games
+        if (empty($upcoming_games)) {
+            $html .= '<div class="canucks-game"><p>No upcoming games found.</p></div>';
+        } else {
+            // Loop through each future or in-progress game
+            foreach ( $upcoming_games as $game ) {
+                // Extract and format the game date
+                $gameDate = isset($game['gameDate']) ? $game['gameDate'] : 'Unknown Date';
+                $formattedDate = esc_html($gameDate ? date('F j, Y, g:ia', strtotime($gameDate)) : 'Unknown Date');
 
-            // Extract team names safely
-            $awayTeam = isset($game['awayTeam']['placeName']['default']) && isset($game['awayTeam']['commonName']['default']) ? $game['awayTeam']['placeName']['default'] . ' ' . $game['awayTeam']['commonName']['default'] : 'Unknown';
-            $homeTeam = isset($game['homeTeam']['placeName']['default']) && isset($game['homeTeam']['commonName']['default']) ? $game['homeTeam']['placeName']['default'] . ' ' . $game['homeTeam']['commonName']['default'] : 'Unknown';
+                // Extract team names
+                $awayTeam = isset($game['awayTeam']['placeName']['default'], $game['awayTeam']['commonName']['default'])
+                    ? $game['awayTeam']['placeName']['default'] . ' ' . $game['awayTeam']['commonName']['default']
+                    : 'Unknown';
+                $homeTeam = isset($game['homeTeam']['placeName']['default'], $game['homeTeam']['commonName']['default'])
+                    ? $game['homeTeam']['placeName']['default'] . ' ' . $game['homeTeam']['commonName']['default']
+                    : 'Unknown';
 
-            // Extract status safely
-            $status = isset($game['gameState']) ? $game['gameState'] : 'Status Unknown';
+                // Extract status (e.g., OFF, FUT, LIVE, FINAL)
+                $status = isset($game['gameState']) ? $game['gameState'] : 'Status Unknown';
 
-            // Build game display
-            $html .= '<div class="canucks-game">';
-            $html .= '<p><strong>Date:</strong> ' . $formattedDate . '</p>';
-            $html .= '<p><strong>Matchup:</strong> ' . esc_html($awayTeam) . ' at ' . esc_html($homeTeam) . '</p>';
-            $html .= '<p><strong>Status:</strong> ' . esc_html($status) . '</p>';
-            $html .= '</div>';
+                // Scores if available
+                $awayScore = isset($game['awayTeam']['score']) ? $game['awayTeam']['score'] : '';
+                $homeScore = isset($game['homeTeam']['score']) ? $game['homeTeam']['score'] : '';
+
+                $html .= '<div class="canucks-game">';
+                $html .= '<p><strong>Date:</strong> ' . $formattedDate . '</p>';
+                $html .= '<p><strong>Matchup:</strong> ' . esc_html($awayTeam) . ' at ' . esc_html($homeTeam) . '</p>';
+                $html .= '<p><strong>Status:</strong> ' . esc_html($status) . '</p>';
+
+                // Only show scores if the game has them
+                if ($awayScore !== '' && $homeScore !== '') {
+                    $html .= '<p><strong>Score:</strong> ' . esc_html($awayScore) . ' - ' . esc_html($homeScore) . '</p>';
+                }
+
+                $html .= '</div>';
+            }
         }
+
         $html .= '</div>';
         return $html;
     }
