@@ -2,13 +2,14 @@
 Theme Name: Suzys Music Theme Lets Go Vancouver BC
 Author: Suzy Easton
 Description: An '80s video game inspired music WordPress theme, thanks much.
-Version: 1.9
+Version: 2.0
 */
 
+/* Base Retro Styling */
 body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #site-footer {
-    font-family: 'Press Start 2P', cursive; /* Ensuring font consistency */
-    background-color: #000; /* Setting black as the default background */
-    color: #00ff00; /* Maintaining green text color for the retro feel */
+    font-family: 'Press Start 2P', cursive;
+    background-color: #000;
+    color: #00ff00;
 }
 
 #menu-container {
@@ -28,12 +29,12 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
 }
-
 .menu-item:hover {
     background-color: #00ff00;
     color: #000;
 }
 
+/* Bio container styling */
 #bio-container {
     color: #00ff00;
     letter-spacing: 2px;
@@ -41,28 +42,24 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     padding: 20px;
     font-size: 18px;
     white-space: pre-wrap;
-    font-family: 'Press Start 2P', cursive;
     overflow-y: scroll;
     height: 400px;
     scrollbar-width: thin;
     scrollbar-color: #00ff00 #000;
 }
-
-/* Styling for scrollbar for webkit browsers */
 #bio-container::-webkit-scrollbar {
     width: 12px;
 }
-
 #bio-container::-webkit-scrollbar-track {
     background: #000;
 }
-
 #bio-container::-webkit-scrollbar-thumb {
     background-color: #00ff00;
     border-radius: 20px;
     border: 3px solid #000;
 }
 
+/* Header styling */
 #retro-game-header {
     text-align: center;
     font-size: 28px;
@@ -73,7 +70,11 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     margin-bottom: 20px;
     letter-spacing: 3px;
     text-shadow: 0 0 2px #00ff00, 0 0 4px #00ff00;
-    font-family: 'Press Start 2P', cursive;
+}
+#retro-game-header:after {
+    content: "";
+    display: table;
+    clear: both;
 }
 
 #site-footer {
@@ -82,31 +83,44 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     background: #111;
 }
 
+/* Sparkly name animation */
 #sparkly-name {
     position: relative;
     top: 20px;
     left: 0;
     transform: none;
-    font-family: 'Press Start 2P', cursive;
     font-size: 40px;
     color: white;
     z-index: 1001;
     animation: sparkle 1s ease-in-out infinite alternate;
+    display: block;
+    margin: 20px auto;
+    text-align: center;
 }
-
 @keyframes sparkle {
     0%, 100% {
-        text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #e60073,
-                     0 0 40px #e60073, 0 0 50px #e60073, 0 0 60px #e60073,
-                     0 0 70px #e60073;
+        text-shadow:
+          0 0 10px #fff,
+          0 0 20px #fff,
+          0 0 30px #e60073,
+          0 0 40px #e60073,
+          0 0 50px #e60073,
+          0 0 60px #e60073,
+          0 0 70px #e60073;
     }
     50% {
-        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #e60073,
-                     0 0 20px #e60073, 0 0 25px #e60073, 0 0 30px #e60073,
-                     0 0 35px #e60073;
+        text-shadow:
+          0 0 5px #fff,
+          0 0 10px #fff,
+          0 0 15px #e60073,
+          0 0 20px #e60073,
+          0 0 25px #e60073,
+          0 0 30px #e60073,
+          0 0 35px #e60073;
     }
 }
 
+/* Bio content styling */
 .bio-content {
     color: #00ff00;
     letter-spacing: 2px;
@@ -114,40 +128,36 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     padding: 10px;
     font-size: 18px;
     white-space: pre-wrap;
-    font-family: 'Press Start 2P', cursive;
     overflow-y: auto;
 }
-
 .bio-content p {
     margin-bottom: 8px;
 }
-
 .bio-content::-webkit-scrollbar {
     width: 12px;
 }
-
 .bio-content::-webkit-scrollbar-track {
     background: #000;
 }
-
 .bio-content::-webkit-scrollbar-thumb {
     background-color: #00ff00;
     border-radius: 20px;
     border: 3px solid #000;
 }
 
+/* Music embeds styling */
 .music-embeds iframe {
-    border: 2px solid #00ff00; /* Matching the green color for the retro feel */
-    background-color: #111; /* Background color to blend with the theme */
-    margin: 20px 0; /* Space between embeds */
+    border: 2px solid #00ff00;
+    background-color: #111;
+    margin: 20px 0;
     transition: transform 0.3s, box-shadow 0.3s;
 }
-
 .music-embeds iframe:hover {
-    transform: scale(1.05); /* Slight zoom effect on hover */
-    box-shadow: 0 0 10px #00ff00; /* Glow effect */
+    transform: scale(1.05);
+    box-shadow: 0 0 10px #00ff00;
 }
 
+/* Some other heading styling */
 #stacked-nerd-title {
     font-family: 'Press Start 2P', cursive;
     font-size: 32px;
@@ -157,13 +167,29 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     margin: 20px 0;
 }
 
-#retro-game-header:after {
-    content: "";
-    display: table;
-    clear: both;
+/* Animated images */
+.animated-image {
+    width: 200px;
+    height: auto;
+    display: block;
+    margin: 20px auto;
+    animation: float 2s ease-in-out infinite;
+}
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-20px); }
 }
 
-/* Canucks Retro Scoreboard Styles */
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #sparkly-name {
+        font-size: 24px;
+    }
+}
+
+/* ====================== */
+/* CANUCKS SCOREBOARD CSS */
+/* ====================== */
 .canucks-scoreboard {
     background: #000;
     color: #00FF00;
@@ -174,20 +200,17 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     text-align: center;
     max-width: 600px;
 }
-
 .canucks-scoreboard h2 {
     color: #FF0000;
     text-shadow: 0 0 10px #00FF00;
     margin-bottom: 20px;
 }
-
 .canucks-game {
     border: 2px solid #00FF00;
     padding: 10px;
     margin-bottom: 10px;
     background-color: #111;
 }
-
 .canucks-error {
     color: #FF0000;
     font-weight: bold;
@@ -199,32 +222,17 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     background-color: #000;
 }
 
-#sparkly-name {
-    display: block;
-    margin: 20px auto;
-    text-align: center;
+/* Random fun fact block */
+.canucks-fun-fact {
+    border: 2px dashed #FF0000;
+    padding: 10px;
+    margin-bottom: 20px;
+    background-color: #111;
 }
 
-.animated-image {
-    width: 200px;
-    height: auto;
-    display: block;
-    margin: 20px auto;
-    animation: float 2s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-20px); }
-}
-
-@media (max-width: 768px) {
-    #sparkly-name {
-        font-size: 24px;
-    }
-}
-
-/* ============= NEW TWITTER FEED AREA ============= */
+/* ====================== */
+/* TWITTER FEED EMBED CSS */
+/* ====================== */
 .canucks-twitter-feed {
     margin: 20px auto;
     max-width: 600px;
@@ -233,9 +241,42 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     border: 3px solid #00FF00;
     padding: 20px;
 }
-
 .canucks-twitter-feed h2 {
     color: #FF0000;
     text-shadow: 0 0 10px #00FF00;
     margin-bottom: 20px;
+}
+
+/* ====================== */
+/* CANUCKS NEWS FEED CSS  */
+/* ====================== */
+.canucks-news {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 3px solid #00FF00;
+    background-color: #000;
+    text-align: center;
+}
+.canucks-news h2 {
+    color: #FF0000;
+    text-shadow: 0 0 10px #00FF00;
+    margin-bottom: 20px;
+}
+.canucks-news-item {
+    border: 2px solid #00FF00;
+    background-color: #111;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.canucks-news-item a {
+    color: #00FF00;
+    text-decoration: none;
+}
+.canucks-news-item a:hover {
+    color: #FF0000;
+}
+.news-date {
+    font-size: 12px;
+    color: #999999;
 }
