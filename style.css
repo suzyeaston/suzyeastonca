@@ -2,7 +2,7 @@
 Theme Name: Suzys Music Theme Lets Go Vancouver BC
 Author: Suzy Easton
 Description: An '80s video game inspired music WordPress theme, thanks much.
-Version: 1.8
+Version: 1.9
 */
 
 body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #site-footer {
@@ -95,8 +95,16 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
 }
 
 @keyframes sparkle {
-    0%, 100% { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #e60073, 0 0 40px #e60073, 0 0 50px #e60073, 0 0 60px #e60073, 0 0 70px #e60073; }
-    50% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #e60073, 0 0 20px #e60073, 0 0 25px #e60073, 0 0 30px #e60073, 0 0 35px #e60073; }
+    0%, 100% {
+        text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #e60073,
+                     0 0 40px #e60073, 0 0 50px #e60073, 0 0 60px #e60073,
+                     0 0 70px #e60073;
+    }
+    50% {
+        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #e60073,
+                     0 0 20px #e60073, 0 0 25px #e60073, 0 0 30px #e60073,
+                     0 0 35px #e60073;
+    }
 }
 
 .bio-content {
@@ -191,7 +199,6 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     background-color: #000;
 }
 
-
 #sparkly-name {
     display: block;
     margin: 20px auto;
@@ -199,7 +206,7 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
 }
 
 .animated-image {
-    width: 200px; 
+    width: 200px;
     height: auto;
     display: block;
     margin: 20px auto;
@@ -208,11 +215,27 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
 
 @keyframes float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
+    50%      { transform: translateY(-20px); }
 }
 
 @media (max-width: 768px) {
     #sparkly-name {
         font-size: 24px;
     }
+}
+
+/* ============= NEW TWITTER FEED AREA ============= */
+.canucks-twitter-feed {
+    margin: 20px auto;
+    max-width: 600px;
+    text-align: center;
+    background-color: #111;
+    border: 3px solid #00FF00;
+    padding: 20px;
+}
+
+.canucks-twitter-feed h2 {
+    color: #FF0000;
+    text-shadow: 0 0 10px #00FF00;
+    margin-bottom: 20px;
 }
