@@ -72,19 +72,20 @@ add_action('update_canucks_data_event', 'update_canucks_data');
 
 function update_canucks_data() {
     // --- Update Schedule Data using NHL API ---
-    $schedule_api = 'https://statsapi.web.nhl.com/api/v1/schedule?teamId=26&startDate=' . date('Y-m-d') . '&endDate=' . date('Y-m-d', strtotime('+7 days'));
+    $startDate = date('Y-m-d');
+    $endDate = date('Y-m-d', strtotime('+7 days'));
+    $schedule_api = 'https://statsapi.web.nhl.com/api/v1/schedule?teamId=26&startDate=' . $startDate . '&endDate=' . $endDate;
     $schedule_response = wp_remote_get($schedule_api);
     if ( ! is_wp_error($schedule_response) ) {
         $schedule_body = wp_remote_retrieve_body($schedule_response);
         $schedule_data = json_decode($schedule_body, true);
-        // For simplicity, we store the raw schedule data; you might want to filter/format it.
         if ( json_last_error() === JSON_ERROR_NONE ) {
             update_option('canucks_schedule_data', $schedule_data);
         }
     }
 
     // --- Update News Data ---
-    // Replace this with actual API
+    // Replace actual news API endpoint.
     $news_api = 'https://api.alternative-source.com/v1/news?team=Vancouver+Canucks';
     $news_response = wp_remote_get($news_api);
     if ( ! is_wp_error($news_response) ) {
@@ -96,14 +97,12 @@ function update_canucks_data() {
     }
 
     // --- Update Betting Data using TheOddsAPI ---
-    
     $betting_api = 'https://api.the-odds-api.com/v4/sports/ice_hockey_nhl/odds?regions=us&markets=h2h,spreads&apiKey=c7b1ad088542ae4e9262844141ecb250';
     $betting_response = wp_remote_get($betting_api);
     if ( ! is_wp_error($betting_response) ) {
          $betting_body = wp_remote_retrieve_body($betting_response);
          $betting_data_all = json_decode($betting_body, true);
          if ( json_last_error() === JSON_ERROR_NONE ) {
-              // Filter for games that include the Canucks
               $canucks_betting = array_filter($betting_data_all, function($game) {
                   $home = isset($game['home_team']) ? $game['home_team'] : '';
                   $away = isset($game['away_team']) ? $game['away_team'] : '';
@@ -114,23 +113,24 @@ function update_canucks_data() {
     }
 }
 
+// Uncomment below for manual testing (remove after verifying data updates):
+// update_canucks_data();
+
 // =============================================
 // 5. SHORTCODE: DISPLAY THE CANUCKS APP
 // =============================================
 function canucks_app_shortcode() {
-    // Retrieve stored data
     $schedule_data = get_option('canucks_schedule_data', array());
     $news_data = get_option('canucks_news_data', array());
     $betting_data = get_option('canucks_betting_data', array());
 
     $output = '<div class="canucks-app">';
 
-    // --- News Section (at the top) ---
+    // --- News Section ---
     $output .= '<h2>Latest News</h2>';
     if ( empty($news_data) ) {
          $output .= '<p>No news data available at the moment.</p>';
     } else {
-         // Adjust loop
          foreach ( $news_data as $news_item ) {
              $title = isset($news_item['title']) ? $news_item['title'] : 'No Title';
              $link  = isset($news_item['link']) ? $news_item['link'] : '#';
@@ -149,7 +149,6 @@ function canucks_app_shortcode() {
     if ( empty($schedule_data) ) {
          $output .= '<p>No schedule data available at the moment.</p>';
     } else {
-         // Assuming NHL API returns a "dates" array lolol
          if ( isset($schedule_data['dates']) && is_array($schedule_data['dates']) ) {
              foreach ( $schedule_data['dates'] as $date ) {
                  if ( isset($date['games']) && is_array($date['games']) ) {
@@ -206,11 +205,6 @@ function canucks_app_shortcode() {
     }
 
     $output .= '</div>';
-    return $output;
-}
-add_shortcode('canucks_app', 'canucks_app_shortcode');
-?>
-
     return $output;
 }
 add_shortcode('canucks_app', 'canucks_app_shortcode');
