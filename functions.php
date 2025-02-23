@@ -63,7 +63,7 @@ add_action('update_canucks_data_event', 'update_canucks_data');
 
 function update_canucks_data() {
     // --- Update Schedule Data ---
-    $schedule_api = 'https://api.alternative-source.com/v1/schedule'; // REPLACE with your actual API endpoint
+    $schedule_api = 'https://api.alternative-source.com/v1/schedule'; // REPLACE
     $schedule_response = wp_remote_get($schedule_api);
     if ( ! is_wp_error($schedule_response) ) {
         $schedule_body = wp_remote_retrieve_body($schedule_response);
@@ -74,7 +74,7 @@ function update_canucks_data() {
     }
 
     // --- Update News Data ---
-    $news_api = 'https://api.alternative-source.com/v1/news'; // REPLACE with your actual API endpoint
+    $news_api = 'https://api.alternative-source.com/v1/news'; // REPLACE
     $news_response = wp_remote_get($news_api);
     if ( ! is_wp_error($news_response) ) {
         $news_body = wp_remote_retrieve_body($news_response);
@@ -120,7 +120,7 @@ function canucks_app_shortcode() {
          $output .= '<p>No schedule data available at the moment.</p>';
     } else {
          foreach ( $schedule_data as $game ) {
-             // Adjust the keys according to your API response structure.
+             // Adjust the keys according to API response structure.
              $date   = isset($game['date']) ? $game['date'] : 'Unknown Date';
              $away   = isset($game['awayTeam']) ? $game['awayTeam'] : 'Unknown';
              $home   = isset($game['homeTeam']) ? $game['homeTeam'] : 'Unknown';
