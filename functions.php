@@ -1,6 +1,6 @@
 <?php
 /**
- * Functions file for Suzys Music Theme – Updated Canucks App Integration
+ * Functions file for Suzys Music Theme – Updated Canucks App Integration with alternate API sources
  */
 
 // =========================
@@ -62,7 +62,7 @@ function get_custom_canucks_betting(WP_REST_Request $request) {
 }
 
 // =============================================
-// 4. UPDATE CANUCKS DATA VIA WP‑CRON
+// 4. UPDATE CANUCKS DATA VIA WP‑CRON (or manual trigger)
 // =============================================
 // Schedule the event if not already scheduled.
 if ( ! wp_next_scheduled('update_canucks_data_event') ) {
@@ -71,38 +71,49 @@ if ( ! wp_next_scheduled('update_canucks_data_event') ) {
 add_action('update_canucks_data_event', 'update_canucks_data');
 
 function update_canucks_data() {
-    // --- Update Schedule Data using NHL API ---
-    $startDate = date('Y-m-d');
-    $endDate = date('Y-m-d', strtotime('+7 days'));
-    $schedule_api = 'https://statsapi.web.nhl.com/api/v1/schedule?teamId=26&startDate=' . $startDate . '&endDate=' . $endDate;
+    // --- Update Schedule Data using alternate NHL schedule source ---
+    $schedule_api = 'https://live.nhle.com/GameData/SeasonScheduleScoreboard.json';
     $schedule_response = wp_remote_get($schedule_api);
+    $filtered_games = array();
+    
     if ( ! is_wp_error($schedule_response) ) {
         $schedule_body = wp_remote_retrieve_body($schedule_response);
-        $schedule_data = json_decode($schedule_body, true);
-        if ( json_last_error() === JSON_ERROR_NONE ) {
-            update_option('canucks_schedule_data', $schedule_data);
+        $all_data = json_decode($schedule_body, true);
+        
+        if ( isset($all_data['games']) && is_array($all_data['games']) ) {
+            foreach ( $all_data['games'] as $game ) {
+                // Filtering: Check if the game involves the Canucks.
+                
+                $homeTeam = isset($game['homeTeam']) ? $game['homeTeam'] : '';
+                $awayTeam = isset($game['awayTeam']) ? $game['awayTeam'] : '';
+                if ( stripos($homeTeam, 'Canucks') !== false || stripos($awayTeam, 'Canucks') !== false ) {
+                    $filtered_games[] = $game;
+                }
+            }
         }
+        update_option('canucks_schedule_data', $filtered_games);
     }
-
-    // --- Update News Data ---
-    // Replace actual news API endpoint.
-    $news_api = 'https://api.alternative-source.com/v1/news?team=Vancouver+Canucks';
+    
+    // --- Update News Data using rss2json conversion of The Province's feed ---
+    $news_api = 'https://api.rss2json.com/v1/api.json?rss_url=https://theprovince.com/category/sports/hockey/nhl/vancouver-canucks/feed';
     $news_response = wp_remote_get($news_api);
     if ( ! is_wp_error($news_response) ) {
         $news_body = wp_remote_retrieve_body($news_response);
         $news_data = json_decode($news_body, true);
-        if ( json_last_error() === JSON_ERROR_NONE ) {
-            update_option('canucks_news_data', $news_data);
+        
+        if ( isset($news_data['items']) && json_last_error() === JSON_ERROR_NONE ) {
+            update_option('canucks_news_data', $news_data['items']);
         }
     }
-
-    // --- Update Betting Data using TheOddsAPI ---
+    
+    // --- Update Betting Data using The Odds API ---
     $betting_api = 'https://api.the-odds-api.com/v4/sports/ice_hockey_nhl/odds?regions=us&markets=h2h,spreads&apiKey=c7b1ad088542ae4e9262844141ecb250';
     $betting_response = wp_remote_get($betting_api);
     if ( ! is_wp_error($betting_response) ) {
          $betting_body = wp_remote_retrieve_body($betting_response);
          $betting_data_all = json_decode($betting_body, true);
          if ( json_last_error() === JSON_ERROR_NONE ) {
+              // Filter for games that include the Canucks
               $canucks_betting = array_filter($betting_data_all, function($game) {
                   $home = isset($game['home_team']) ? $game['home_team'] : '';
                   $away = isset($game['away_team']) ? $game['away_team'] : '';
@@ -113,7 +124,7 @@ function update_canucks_data() {
     }
 }
 
-// Uncomment below for manual testing (remove after verifying data updates):
+// Uncomment the next line for manual testing (remove after verifying data updates):
 // update_canucks_data();
 
 // =============================================
@@ -134,11 +145,11 @@ function canucks_app_shortcode() {
          foreach ( $news_data as $news_item ) {
              $title = isset($news_item['title']) ? $news_item['title'] : 'No Title';
              $link  = isset($news_item['link']) ? $news_item['link'] : '#';
-             $date  = isset($news_item['date']) ? $news_item['date'] : '';
+             $pubDate = isset($news_item['pubDate']) ? $news_item['pubDate'] : '';
              $output .= '<div class="canucks-news-item">';
              $output .= '<p><a href="' . esc_url($link) . '" target="_blank">' . esc_html($title) . '</a></p>';
-             if ( $date ) {
-                 $output .= '<p>' . esc_html($date) . '</p>';
+             if ( $pubDate ) {
+                 $output .= '<p>' . esc_html($pubDate) . '</p>';
              }
              $output .= '</div>';
          }
@@ -149,25 +160,17 @@ function canucks_app_shortcode() {
     if ( empty($schedule_data) ) {
          $output .= '<p>No schedule data available at the moment.</p>';
     } else {
-         if ( isset($schedule_data['dates']) && is_array($schedule_data['dates']) ) {
-             foreach ( $schedule_data['dates'] as $date ) {
-                 if ( isset($date['games']) && is_array($date['games']) ) {
-                     foreach ( $date['games'] as $game ) {
-                         $gameDate = isset($game['gameDate']) ? $game['gameDate'] : 'Unknown Date';
-                         $awayTeam = isset($game['teams']['away']['team']['name']) ? $game['teams']['away']['team']['name'] : 'Unknown';
-                         $homeTeam = isset($game['teams']['home']['team']['name']) ? $game['teams']['home']['team']['name'] : 'Unknown';
-                         $status = isset($game['status']['detailedState']) ? $game['status']['detailedState'] : 'Status Unknown';
-                         
-                         $output .= '<div class="canucks-game">';
-                         $output .= '<p><strong>Date:</strong> ' . esc_html($gameDate) . '</p>';
-                         $output .= '<p><strong>Matchup:</strong> ' . esc_html($awayTeam) . ' @ ' . esc_html($homeTeam) . '</p>';
-                         $output .= '<p><strong>Status:</strong> ' . esc_html($status) . '</p>';
-                         $output .= '</div>';
-                     }
-                 }
-             }
-         } else {
-             $output .= '<p>No upcoming games found.</p>';
+         foreach ( $schedule_data as $game ) {
+             // Adjust keys based on the structure from the alternate source.
+             $gameDate = isset($game['gameDate']) ? $game['gameDate'] : 'Unknown Date';
+             $homeTeam = isset($game['homeTeam']) ? $game['homeTeam'] : 'Unknown';
+             $awayTeam = isset($game['awayTeam']) ? $game['awayTeam'] : 'Unknown';
+             $status   = isset($game['status']) ? $game['status'] : 'Status Unknown';
+             $output .= '<div class="canucks-game">';
+             $output .= '<p><strong>Date:</strong> ' . esc_html($gameDate) . '</p>';
+             $output .= '<p><strong>Matchup:</strong> ' . esc_html($awayTeam) . ' @ ' . esc_html($homeTeam) . '</p>';
+             $output .= '<p><strong>Status:</strong> ' . esc_html($status) . '</p>';
+             $output .= '</div>';
          }
     }
 
