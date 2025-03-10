@@ -5,15 +5,18 @@
         <div id="stacked-nerd-title" class="glowing-text">Stacked Nerd</div>
         <img src="https://suzyeaston.ca/wp-content/uploads/2024/03/suzy2.jpeg" alt="Suzy Easton" class="animated-image">
     </header>
-    <section id="menu-container">
-        <div class="menu-item" onclick="location.href='/home'">Home</div>
-        <div class="menu-item" onclick="location.href='/bio'">About</div>
-        <div class="menu-item" onclick="location.href='/canucks-app'">Canucks App</div> <!-- New Link -->
-        <div class="menu-item" onclick="location.href='/the-midnight-mix'">Midnight Mix with Suzy Easton</div>
-        <div class="menu-item" onclick="location.href='/music-releases'">Music Releases</div>
-        <div class="menu-item" onclick="location.href='/social-media'">Social Media</div>
-        <div class="menu-item" onclick="location.href='/contact'">Contact</div>
-    </section>
+<section id="menu-container">
+    <div class="menu-item" onclick="location.href='/home'">Home</div>
+    <div class="menu-item" onclick="location.href='/bio'">About</div>
+    <div class="menu-item" onclick="location.href='/easy-living-with-suzy-easton'">All New Podcast - Easy Living with Suzy Easton</div>
+    <div class="menu-item" onclick="location.href='/the-midnight-mix'">Live Music with Suzy Easton</div>
+    <div class="menu-item" onclick="location.href='/canucks-app'">Canucks App</div>
+    <div class="menu-item" onclick="location.href='/music-releases'">Bandcamp Music Releases</div>
+    <div class="menu-item" onclick="location.href='/social-media'">Social Media</div>
+    <div class="menu-item" onclick="location.href='/contact'">Contact</div>
+    
+</section>
+
 </main>
 
 <style>
