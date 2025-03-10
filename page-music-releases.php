@@ -16,6 +16,7 @@ get_header();
         endwhile;
         ?>
         <div class="music-embeds">
+            <iframe style="border: 0; width: 100%; height: 120px;" src="https://bandcamp.com/EmbeddedPlayer/album=1616992883/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true/" seamless><a href="https://suzyeaston.bandcamp.com/album/guiding-currents">Guiding Currents by Suzy Easton</a></iframe>
             <iframe style="border: 0; width: 100%; height: 120px;" src="https://bandcamp.com/EmbeddedPlayer/album=901825062/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true/" seamless><a href="https://suzyeaston.bandcamp.com/album/a-little-louder">A Little Louder by Suzy Easton</a></iframe>
             <iframe style="border: 0; width: 100%; height: 120px;" src="https://bandcamp.com/EmbeddedPlayer/album=3277261011/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true/" seamless><a href="https://suzyeaston.bandcamp.com/album/victoria-day">Victoria Day by Suzy Easton</a></iframe>
             <iframe style="border: 0; width: 100%; height: 120px;" src="https://bandcamp.com/EmbeddedPlayer/album=2300901547/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true/" seamless><a href="https://suzyeaston.bandcamp.com/album/on-cambie-street">On Cambie Street by Suzy Easton</a></iframe>
