@@ -10,18 +10,33 @@ get_header();
     <section class="page-content">
         <div class="bio-content">
             <h1>Easy Living with Suzy Easton</h1>
+            
             <p>
-                Suzy Easton is a Vancouver, BC-born and raised musician, tech professional, and storyteller. 
-                From touring Canada, appearing on MuchMusic, and recording with Steve Albini in Chicago to 
-                navigating Vancouver’s unique challenges, Suzy blends humour, wit, and insight to share 
-                authentic stories and reflections about life in one of Canada’s most dynamic cities.
+                Welcome, brave traveler of the internet, to Easy Living with Suzy Easton. 
+                I’m Suzy: Vancouver-born musician, tech pro, occasional troublemaker, and full-time cheese enthusiast.
             </p>
 
             <p>
-                Check out the latest episodes here:<br>
+                I use to rock out on bass across Canada, recording in Chicago with legendary producer Steve Albini, nearly froze my fingers off on 
+                Prairie tours, and popped up on MuchMusic (when that was still a thing). Now, I work in tech.
+            </p>
+
+            <p>
+                In “Easy Living with Suzy Easton,” I share comedic stories about navigating Vancouver’s weird and wonderful 
+                quirks, plus behind-the-scenes glimpses of my musical adventures.
+            </p>
+
+            <p>
+                Intrigued? Hop on over to the latest episodes and join me for a fun, unfiltered look at 
+                life, music, and a little bit of chaos. 
+                <br><br>
                 <a href="https://easylivingwithsuzyeaston.podbean.com/" target="_blank">
-                    Easy Living with Suzy Easton on PodBean
+                    Listen to “Easy Living with Suzy Easton” on PodBean
                 </a>
+            </p>
+
+            <p>
+                Thanks for stopping by, and remember: it’s never too late to turn it up to 11.
             </p>
         </div>
     </section>
