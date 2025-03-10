@@ -1,11 +1,36 @@
-# Suzy Easton Showcase: Unplugged Sessions & Rock n Roll :guitar:
+# Suzy Easton Showcase: Unplugged Sessions & Rock n Roll 🎸
 
-Welcome to the digital stage of suzyeaston.ca, where music meets a radness of digital and acoustic experiences.
+**Version:** 2.1  
+**License:** MIT
 
-## What's Going Down, baby!?
+Welcome to the digital stage of [suzyeaston.ca](https://suzyeaston.ca), where music meets retro-inspired digital experiences.
 
-:notes: **Live Sessions**: Tune in for live acoustic sets, exclusive performances, and spontaneous musical explorations, all streamed right from my home studio to your screen. 
+## What's Going Down?
 
-:clapper: **Behind the Music**: Dive into the stories behind the songs and the journey from chords to melodies.
+- **Live Sessions:** Tune in for live acoustic sets, exclusive performances, and spontaneous musical explorations, all streamed from my home studio to your screen.
+- **Podcast:** Check out the brand-new podcast, [**Easy Living with Suzy Easton**](https://easylivingwithsuzyeaston.podbean.com/), for stories, insights, and comedic takes on life in Vancouver, BC.
 
-Well hi there, I'm Suzy Easton, from Vancouver, BC, an acoustic singer-songwriter, recently featured on CiTR, UBC's radio station hah! that's so rad, thanks CiTR. With a history as a professional bassist who's recorded in Chicago, and a passion for all things tech and music, let's go friends, let's goooooooooooooo!!!!
+## Tech & Theme Features
+
+- Retro gaming aesthetics using `'Press Start 2P'` font.
+- Custom pages:
+  - **Bio Page** (`page-bio.php`): Learn about my music and tech background.
+  - **Canucks App** (`page-canucks-app.php`): Displays Vancouver Canucks news and betting odds.
+  - **Midnight Mix** (`page-midnight-mix.php`): Late-night music sessions and updates.
+  - **Podcast Page** (`page-podcast.php`): New page dedicated to “Easy Living with Suzy Easton.”
+- Custom REST endpoints for hockey news and betting (in `functions.php`).
+- A custom scoreboard for Vancouver Canucks fans.
+
+## Getting Started
+
+1. **Install the Theme:** Upload to your WordPress `themes` directory, activate in WP Admin.
+2. **Configure Pages:** Create pages for Bio, Podcast, etc. Assign each the correct page template.
+3. **Enjoy the Retro Vibe:** Tweak styling in `style.css` or via a child theme.
+
+## Contributing
+
+Feel free to fork this repository and submit pull requests. Feedback is always welcome!
+
+---
+
+_Made with ❤️ in Vancouver, BC. Let’s rock!_
