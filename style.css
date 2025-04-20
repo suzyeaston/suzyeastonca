@@ -176,6 +176,22 @@ body::before {
   0%,18%,22%,25%,53%,57%,100% { opacity:1; }
   20%,24%,55%                  { opacity:0.8; }
 }
+/* ========================= */
+/*  STARFIELD BACKGROUND     */
+/* ========================= */
+#starfield {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 0;
+  background: #000;
+}
+  
+/* push all your content above the stars */
+header, main, footer, .menu-item, .albini-qa-page {
+  position: relative;
+  z-index: 1;
+}
 
 /* ====================== */
 /*  BIO & MUSIC EMBEDS    */
@@ -235,3 +251,5 @@ body::before {
     padding: 10px 6px;
   }
 }
+
+
