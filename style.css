@@ -297,3 +297,65 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
     font-size: 12px;
     color: #999999;
 }
+
+.albini-qa-page {
+  padding: 2rem;
+  background: #000;
+}
+.albini-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 0 5px #0f0;
+}
+.albini-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 2rem;
+  color: #0f0;
+}
+.albini-subtitle {
+  font-family: monospace;
+  color: #0f0;
+}
+
+.qa-input {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+#albini-question {
+  background: #000;
+  color: #0f0;
+  border: 2px solid #0f0;
+  font-family: 'Press Start 2P', cursive;
+  padding: 1rem;
+  resize: vertical;
+}
+#albini-submit {
+  align-self: flex-end;
+  background: #0f0;
+  color: #000;
+  font-family: 'Press Start 2P', cursive;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  animation: glow 1s infinite alternate;
+}
+@keyframes glow {
+  from { box-shadow: 0 0 5px #0f0; }
+  to   { box-shadow: 0 0 20px #0f0; }
+}
+
+.qa-response {
+  max-width: 600px;
+  margin: 0 auto;
+  background: #111;
+  border: 2px solid #0f0;
+  padding: 1.5rem;
+  color: #0f0;
+  font-family: 'Courier New', monospace;
+  white-space: pre-wrap;
+  min-height: 100px;
+}
+
