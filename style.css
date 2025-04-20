@@ -359,3 +359,48 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
   min-height: 100px;
 }
 
+/* ========== HERO ========== */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+}
+.hero-image img {
+  max-width: 100%;
+  height: auto;
+  border: 3px solid #00ff00;
+  box-shadow: 0 0 10px #00ff00;
+  margin-top: 1rem;
+}
+
+/* ========== MENU GRID ========== */
+#menu-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+/* ========== ALBINI BUTTON ========== */
+.menu-item.albini-menu {
+  border-color: #e60073;
+  color: #e60073;
+  animation: flicker 4s infinite both;
+}
+
+/* ========== MOBILE ADJUSTMENTS ========== */
+@media (max-width: 480px) {
+  .hero {
+    padding: 1rem 0.5rem;
+  }
+  #stacked-nerd-title {
+    font-size: 1.5rem;
+  }
+  .menu-item {
+    font-size: 14px;
+    padding: 12px;
+  }
+}
+
+
