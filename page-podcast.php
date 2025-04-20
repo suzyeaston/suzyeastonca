@@ -33,14 +33,21 @@ get_header();
   <!-- Embeds Section -->
   <section class="embeds-container">
 
-    <!-- PodBean Player -->
+        <!-- PodBean Player -->
     <div class="embed-panel">
       <h2 class="panel-title">▶ Listen on PodBean</h2>
       <div class="music-embeds">
         <iframe 
-          src="https://easylivingwithsuzyeaston.podbean.com/e/suzy-guide-to-vancouvers-april-5th-cutting-by-election/embed/"
-          height="200" width="100%" scrolling="no" frameborder="0"
-          allow="autoplay; encrypted-media"
+          title="Suzy's Guide to Vancouver's April 5th By-Election"
+          allowtransparency="true"
+          height="300" 
+          width="100%"
+          style="border: none; min-width: min(100%, 430px); height:300px;"
+          scrolling="no" 
+          data-name="pb-iframe-player"
+          src="https://www.podbean.com/player-v2/?from=embed&i=3tpfa-1836893-pb&square=1&share=1&download=1&fonts=Arial&skin=1&font-color=auto&rtl=0&logo_link=episode_page&btn-skin=7&size=300"
+          loading="lazy"
+          allowfullscreen
         ></iframe>
       </div>
     </div>
