@@ -3,7 +3,10 @@
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
  *   - Albini Q&A React widget
- *   - Security hardening: disable XML‑RPC
+ *   - Security hardening: disable XML‑RPC, hide users, block author archives
+ *
+ * NOTE: Be sure to define your OpenAI key in wp-config.php, e.g.:
+ * define('OPENAI_API_KEY', getenv('OPENAI_API_KEY'));
  */
 
 // =========================================
@@ -14,13 +17,14 @@ function retro_game_music_theme_scripts() {
     wp_enqueue_style('retro-font', 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     wp_enqueue_style('main-styles', get_stylesheet_uri());
 
-    // Your existing piano script & game init
-    wp_enqueue_script('piano-script', get_template_directory_uri() . '/js/piano-script.js', array(), '1.0.1', true);
+    // Game & piano scripts
+    wp_enqueue_script('piano-script', get_template_directory_uri() . '/js/piano-script.js', [], '1.0.1', true);
     if ( is_front_page() ) {
-        wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', array(), '1.0.0', true);
+        wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', [], '1.0.0', true);
     }
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
+
 
 // =========================================
 // 2. DISABLE AUTOMATIC PARAGRAPH FORMATTING
@@ -31,25 +35,28 @@ function disable_autop_formatting() {
 }
 add_action('init', 'disable_autop_formatting');
 
+
 // =========================================
 // 3. ON-DEMAND DATA UPDATE (NO CRON)
 //    Fetches Canucks news and betting odds
 // =========================================
 function update_canucks_data() {
-    // News via rss2json
+    // --- News via rss2json ---
     $news_api      = 'https://api.rss2json.com/v1/api.json?rss_url=https://theprovince.com/category/sports/hockey/nhl/vancouver-canucks/feed';
     $news_response = wp_remote_get($news_api);
+
     if ( ! is_wp_error($news_response) ) {
         $news_body = wp_remote_retrieve_body($news_response);
         $news_data = json_decode($news_body, true);
         if ( isset($news_data['items']) && json_last_error() === JSON_ERROR_NONE ) {
-            set_transient('canucks_news_data', $news_data['items'], HOUR_IN_SECONDS);
+            set_transient('suzyeaston_canucks_news', $news_data['items'], HOUR_IN_SECONDS);
         }
     }
 
-    // Betting via The Odds API (American odds)
+    // --- Betting via The Odds API ---
     $betting_api      = 'https://api.the-odds-api.com/v4/sports/icehockey_nhl/odds?regions=us&markets=h2h,spreads,totals&oddsFormat=american&apiKey=c7b1ad088542ae4e9262844141ecb250';
     $betting_response = wp_remote_get($betting_api);
+
     if ( ! is_wp_error($betting_response) ) {
         $betting_body     = wp_remote_retrieve_body($betting_response);
         $betting_data_all = json_decode($betting_body, true);
@@ -60,116 +67,115 @@ function update_canucks_data() {
                 $away = $game['away_team'] ?? '';
                 return stripos($home, 'Canucks') !== false || stripos($away, 'Canucks') !== false;
             });
-            set_transient('canucks_betting_data', $canucks_betting, HOUR_IN_SECONDS);
+            set_transient('suzyeaston_canucks_betting', $canucks_betting, HOUR_IN_SECONDS);
         }
     }
 }
 
+
 // =========================================
-// 4. CUSTOM CANUCKS API ENDPOINTS
+// 4. REGISTER CUSTOM REST API ENDPOINTS
 // =========================================
-function register_canucks_api_endpoints() {
-    register_rest_route('canucks/v1', '/news', array(
+add_action('rest_api_init', function() {
+    register_rest_route('canucks/v1', '/news', [
         'methods'  => 'GET',
         'callback' => 'get_custom_canucks_news'
-    ));
-    register_rest_route('canucks/v1', '/betting', array(
+    ]);
+
+    register_rest_route('canucks/v1', '/betting', [
         'methods'  => 'GET',
         'callback' => 'get_custom_canucks_betting'
-    ));
-}
-add_action('rest_api_init', 'register_canucks_api_endpoints');
+    ]);
 
-function get_custom_canucks_news(WP_REST_Request $request) {
-    $data = get_transient('canucks_news_data');
-    if ( false === $data ) {
-        update_canucks_data();
-        $data = get_transient('canucks_news_data');
-    }
-    return rest_ensure_response($data);
-}
+    register_rest_route('albini/v1', '/ask', [
+        'methods'             => 'POST',
+        'callback'            => 'albini_handle_query',
+        'permission_callback' => '__return_true',
+    ]);
+});
 
-function get_custom_canucks_betting(WP_REST_Request $request) {
-    $data = get_transient('canucks_betting_data');
-    if ( false === $data ) {
-        update_canucks_data();
-        $data = get_transient('canucks_betting_data');
-    }
-    return rest_ensure_response($data);
-}
 
 // =========================================
-// 5. SHORTCODE: DISPLAY THE CANUCKS APP
+// 5. ENDPOINT CALLBACKS: CANUCKS DATA
+// =========================================
+function get_custom_canucks_news( WP_REST_Request $request ) {
+    $items = get_transient('suzyeaston_canucks_news');
+    if ( false === $items ) {
+        update_canucks_data();
+        $items = get_transient('suzyeaston_canucks_news');
+    }
+    return rest_ensure_response( $items );
+}
+
+function get_custom_canucks_betting( WP_REST_Request $request ) {
+    $odds = get_transient('suzyeaston_canucks_betting');
+    if ( false === $odds ) {
+        update_canucks_data();
+        $odds = get_transient('suzyeaston_canucks_betting');
+    }
+    return rest_ensure_response( $odds );
+}
+
+
+// =========================================
+// 6. SHORTCODE: DISPLAY THE CANUCKS APP
 // =========================================
 function canucks_app_shortcode() {
-    $news_data    = get_transient('canucks_news_data');
-    $betting_data = get_transient('canucks_betting_data');
+    $news_data    = get_transient('suzyeaston_canucks_news');
+    $betting_data = get_transient('suzyeaston_canucks_betting');
 
     if ( false === $news_data || false === $betting_data ) {
         update_canucks_data();
-        $news_data    = get_transient('canucks_news_data');
-        $betting_data = get_transient('canucks_betting_data');
+        $news_data    = get_transient('suzyeaston_canucks_news');
+        $betting_data = get_transient('suzyeaston_canucks_betting');
     }
 
-    $output = '<div class="canucks-app">';
-    // News
-    $output .= '<h2>Latest News</h2>';
-    if ( empty($news_data) ) {
-        $output .= '<p>No news data available at the moment.</p>';
-    } else {
-        foreach ( $news_data as $item ) {
-            $t = esc_html( $item['title'] ?? 'No Title' );
-            $u = esc_url( $item['link'] ?? '#' );
-            $d = esc_html( $item['pubDate'] ?? '' );
-            $output .= "<div class=\"canucks-news-item\"><p><a href=\"{$u}\" target=\"_blank\">{$t}</a></p>";
-            if ( $d ) $output .= "<p>{$d}</p>";
-            $output .= '</div>';
-        }
-    }
-    // Betting
-    $output .= '<h2>Latest Betting Odds</h2>';
-    if ( empty($betting_data) ) {
-        $output .= '<p>No betting data available at the moment.</p>';
-    } else {
-        foreach ( $betting_data as $bet ) {
-            $home = esc_html( $bet['home_team'] ?? 'Unknown' );
-            $away = esc_html( $bet['away_team'] ?? 'Unknown' );
-            $time = $bet['commence_time'] ?? '';
-            $output .= "<div class=\"canucks-betting\"><p><strong>Matchup:</strong> {$away} @ {$home}</p>";
-            if ( $time ) {
-                $fmt  = date_i18n('F j, Y g:i a', strtotime($time));
-                $output .= "<p><strong>Start Time:</strong> {$fmt}</p>";
-            }
-            if ( ! empty($bet['bookmakers']) ) {
-                foreach ( $bet['bookmakers'] as $bm ) {
-                    $bm_name = esc_html( $bm['title'] ?? 'Bookmaker' );
-                    if ( ! empty($bm['markets']) ) {
-                        foreach ( $bm['markets'] as $mkt ) {
-                            $key  = esc_html( $mkt['key'] ?? '' );
-                            $info = '';
-                            if ( ! empty($mkt['outcomes']) ) {
-                                foreach ( $mkt['outcomes'] as $o ) {
-                                    $team  = esc_html( $o['name'] ?? '' );
-                                    $price = esc_html( $o['price'] ?? '' );
-                                    $pt    = $o['point'] !== '' ? ', ' . esc_html($o['point']) : '';
-                                    $info .= "{$team} ({$price}{$pt}) ";
-                                }
-                            }
-                            $output .= "<p><strong>{$bm_name}</strong> – {$key}: {$info}</p>";
-                        }
-                    }
-                }
-            }
-            $output .= '</div>';
-        }
-    }
-    $output .= '</div>';
-    return $output;
+    ob_start();
+    ?>
+    <div class="canucks-app">
+      <h2>Latest News</h2>
+      <?php if ( empty($news_data) ): ?>
+        <p>No news data available at the moment.</p>
+      <?php else: foreach ( $news_data as $item ): ?>
+        <div class="canucks-news-item">
+          <p><a href="<?php echo esc_url($item['link']); ?>" target="_blank"><?php echo esc_html($item['title']); ?></a></p>
+          <?php if ( ! empty($item['pubDate']) ): ?>
+            <p><?php echo esc_html($item['pubDate']); ?></p>
+          <?php endif; ?>
+        </div>
+      <?php endforeach; endif; ?>
+
+      <h2>Latest Betting Odds</h2>
+      <?php if ( empty($betting_data) ): ?>
+        <p>No betting data available at the moment.</p>
+      <?php else: foreach ( $betting_data as $bet ): ?>
+        <div class="canucks-betting">
+          <p><strong>Matchup:</strong> <?php echo esc_html($bet['away_team']); ?> @ <?php echo esc_html($bet['home_team']); ?></p>
+          <?php if ( ! empty($bet['commence_time']) ): ?>
+            <p><strong>Start Time:</strong> <?php echo date_i18n('F j, Y g:i a', strtotime($bet['commence_time'])); ?></p>
+          <?php endif; ?>
+          <?php if ( ! empty($bet['bookmakers']) ): foreach ( $bet['bookmakers'] as $bm ): ?>
+            <?php if ( ! empty($bm['markets']) ): foreach ( $bm['markets'] as $mkt ): ?>
+              <p><strong><?php echo esc_html($bm['title']); ?></strong> – <?php echo esc_html($mkt['key']); ?>:
+                <?php
+                  $info = array_map(function($o){
+                    return esc_html($o['name']) . ' (' . esc_html($o['price']) . ( $o['point'] !== '' ? ', ' . esc_html($o['point']) : '' ) . ')';
+                  }, $mkt['outcomes']);
+                  echo implode(' ', $info);
+                ?>
+              </p>
+            <?php endforeach; endif; ?>
+          <?php endforeach; endif; ?>
+        </div>
+      <?php endforeach; endif; ?>
+    </div>
+    <?php
+    return ob_get_clean();
 }
 add_shortcode('canucks_app', 'canucks_app_shortcode');
 
 // =========================================
-// 6. ALBINI Q&A SHORTCODE & ASSETS
+// 7. ALBINI Q&A SHORTCODE & ASSETS
 // =========================================
 function albini_qa_shortcode() {
     return '<div id="albini-qa-root"></div>';
@@ -177,42 +183,64 @@ function albini_qa_shortcode() {
 add_shortcode('albini_qa', 'albini_qa_shortcode');
 
 function enqueue_albini_qa_assets() {
-    wp_enqueue_script(
-        'albini-qa-js',
-        get_template_directory_uri() . '/albini-qa/static/js/main.js',
-        array(), null, true
-    );
-    wp_enqueue_style(
-        'albini-qa-css',
-        get_template_directory_uri() . '/albini-qa/static/css/main.css',
-        array(), null
-    );
+    $build_dir = get_template_directory_uri() . '/albini-qa/build';
+    wp_enqueue_script('albini-qa-js',  $build_dir . '/static/js/main.js',   [], null, true);
+    wp_enqueue_style('albini-qa-css',  $build_dir . '/static/css/main.css', [], null);
 }
 add_action('wp_enqueue_scripts', 'enqueue_albini_qa_assets');
 
 
 // =========================================
-// 7. SECURITY HARDENING
+// 8. ALBINI HANDLER (OpenAI Proxy)
 // =========================================
+function albini_handle_query( WP_REST_Request $req ) {
+    $question = sanitize_textarea_field( $req->get_param('question') );
 
-// 7a) Disable XML-RPC completely
+    $response = wp_remote_post('https://api.openai.com/v1/chat/completions', [
+        'headers' => [
+            'Authorization' => 'Bearer ' . OPENAI_API_KEY,
+            'Content-Type'  => 'application/json',
+        ],
+        'body'    => wp_json_encode([
+            'model'    => 'gpt-4o-mini',
+            'messages' => [
+                ['role'=>'system', 'content'=>"You are Steve Albini, legendary producer—blunt, no‑BS. Answer questions as he would."],
+                ['role'=>'user',   'content'=>$question],
+            ],
+            'max_tokens' => 300,
+        ]),
+        'timeout' => 15,
+    ]);
+
+    if ( is_wp_error($response) ) {
+        return new WP_Error('openai_error', $response->get_error_message(), ['status'=>500]);
+    }
+
+    $body   = wp_remote_retrieve_body($response);
+    $data   = json_decode($body, true);
+    $answer = $data['choices'][0]['message']['content'] ?? 'Hmm, I got nothing back.';
+
+    return rest_ensure_response([ 'answer' => wp_kses_post($answer) ]);
+}
+
+
+// =========================================
+// 9. SECURITY HARDENING
+// =========================================
+// 9a) Disable XML-RPC completely
 add_filter('xmlrpc_enabled', '__return_false');
 
-// 7b) Hide REST API user endpoints
+// 9b) Hide REST API user endpoints
 add_filter('rest_endpoints', function($endpoints) {
-    if ( isset($endpoints['/wp/v2/users']) ) {
-        unset($endpoints['/wp/v2/users']);
-    }
-    if ( isset($endpoints['/wp/v2/users/(?P<id>[\d]+)']) ) {
-        unset($endpoints['/wp/v2/users/(?P<id>[\d]+)']);
-    }
+    unset($endpoints['/wp/v2/users']);
+    unset($endpoints['/wp/v2/users/(?P<id>[\d]+)']);
     return $endpoints;
 });
 
-// 7c) Block author archive pages (stops ?author=1 enumeration)
+// 9c) Block author archives
 add_action('template_redirect', function() {
     if ( is_author() ) {
-        wp_redirect( home_url(), 301 );
+        wp_redirect(home_url(), 301);
         exit;
     }
 });
