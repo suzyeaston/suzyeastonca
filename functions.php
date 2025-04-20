@@ -3,6 +3,7 @@
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
  *   - Albini Q&A React widget
+ *   - Security hardening: disable XML‑RPC
  */
 
 // =========================================
@@ -57,7 +58,7 @@ function update_canucks_data() {
             $canucks_betting = array_filter($betting_data_all, function($game) {
                 $home = $game['home_team'] ?? '';
                 $away = $game['away_team'] ?? '';
-                return (stripos($home, 'Canucks') !== false || stripos($away, 'Canucks') !== false);
+                return stripos($home, 'Canucks') !== false || stripos($away, 'Canucks') !== false;
             });
             set_transient('canucks_betting_data', $canucks_betting, HOUR_IN_SECONDS);
         }
@@ -167,25 +168,20 @@ function canucks_app_shortcode() {
 }
 add_shortcode('canucks_app', 'canucks_app_shortcode');
 
-
 // =========================================
 // 6. ALBINI Q&A SHORTCODE & ASSETS
 // =========================================
-// Shortcode: mounts your React app
 function albini_qa_shortcode() {
     return '<div id="albini-qa-root"></div>';
 }
 add_shortcode('albini_qa', 'albini_qa_shortcode');
 
-// Enqueue the React build (assumes your build is in /albini-qa/)
 function enqueue_albini_qa_assets() {
-    // JS bundle
     wp_enqueue_script(
         'albini-qa-js',
         get_template_directory_uri() . '/albini-qa/static/js/main.js',
         array(), null, true
     );
-    // CSS bundle
     wp_enqueue_style(
         'albini-qa-css',
         get_template_directory_uri() . '/albini-qa/static/css/main.css',
@@ -193,3 +189,30 @@ function enqueue_albini_qa_assets() {
     );
 }
 add_action('wp_enqueue_scripts', 'enqueue_albini_qa_assets');
+
+
+// =========================================
+// 7. SECURITY HARDENING
+// =========================================
+
+// 7a) Disable XML-RPC completely
+add_filter('xmlrpc_enabled', '__return_false');
+
+// 7b) Hide REST API user endpoints
+add_filter('rest_endpoints', function($endpoints) {
+    if ( isset($endpoints['/wp/v2/users']) ) {
+        unset($endpoints['/wp/v2/users']);
+    }
+    if ( isset($endpoints['/wp/v2/users/(?P<id>[\d]+)']) ) {
+        unset($endpoints['/wp/v2/users/(?P<id>[\d]+)']);
+    }
+    return $endpoints;
+});
+
+// 7c) Block author archive pages (stops ?author=1 enumeration)
+add_action('template_redirect', function() {
+    if ( is_author() ) {
+        wp_redirect( home_url(), 301 );
+        exit;
+    }
+});
