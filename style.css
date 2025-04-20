@@ -2,13 +2,18 @@
 Theme Name: Suzys Music Theme Lets Go Vancouver BC
 Author: Suzy Easton
 Description: An '80s video game inspired music WordPress theme, thanks much.
-Version: 2.4
+Version: 2.5
 */
 
 /* ====================== */
 /*     BASE RETRO STYLES  */
 /* ====================== */
-body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #site-footer {
+body,
+h1, h2, h3, h4, h5, h6,
+p, a,
+.menu-item,
+#bio-container, .bio-content,
+#site-footer {
   font-family: 'Press Start 2P', cursive;
   background-color: #000;
   color: #00ff00;
@@ -94,6 +99,7 @@ body::before {
   background-color: #00ff00;
   color: #000;
   transform: scale(1.05);
+  animation: glitch 0.3s ease-in-out;
 }
 .menu-item:hover::before {
   opacity: 1;
@@ -107,9 +113,6 @@ body::before {
   60% { transform: translate(-1px, -1px); }
   80% { transform: translate(1px, 1px); }
   100% { transform: translate(0); }
-}
-.menu-item:hover {
-  animation: glitch 0.3s ease-in-out;
 }
 
 /* ====================== */
@@ -176,9 +179,10 @@ body::before {
   0%,18%,22%,25%,53%,57%,100% { opacity:1; }
   20%,24%,55%                  { opacity:0.8; }
 }
-/* ========================= */
-/*  STARFIELD BACKGROUND     */
-/* ========================= */
+
+/* ====================== */
+/*  STARFIELD BACKGROUND  */
+/* ====================== */
 #starfield {
   position: fixed;
   top: 0; left: 0;
@@ -186,8 +190,7 @@ body::before {
   z-index: 0;
   background: #000;
 }
-  
-/* push all your content above the stars */
+/* push content above the stars */
 header, main, footer, .menu-item, .albini-qa-page {
   position: relative;
   z-index: 1;
@@ -232,24 +235,40 @@ header, main, footer, .menu-item, .albini-qa-page {
 }
 
 /* ====================== */
-/*  CANUCKS + TWITTER CSS */
-/* (unchanged, omitted for brevity) */
-/* … your existing styles … */
-
-/* ====================== */
-/*    MOBILE ADJUSTMENTS   */
+/*    MOBILE ADJUSTMENTS  */
 /* ====================== */
 @media (max-width: 480px) {
-  #stacked-nerd-title { font-size: 1.6rem; }
-  .hero-img, .hero-image img {
-    width: 90vw;
-    border-width: 2px;
-    box-shadow: 0 0 8px #00ff00;
+  /* Hide or shrink starfield */
+  #starfield { display: none; }
+
+  /* Reset header */
+  #retro-game-header {
+    position: relative;
+    top: 0;
+    padding: 1rem 0;
+    margin-bottom: 0.5rem;
+  }
+  #main-content {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  /* Tighter grid */
+  #menu-container {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.75rem;
+    padding: 0.5rem;
   }
   .menu-item {
     font-size: 14px;
     padding: 10px 6px;
   }
+
+  /* Fluid hero image */
+  .hero-img, .hero-image img {
+    width: 90vw;
+    max-width: none;
+    border-width: 2px;
+    box-shadow: 0 0 8px #00ff00;
+  }
 }
-
-
