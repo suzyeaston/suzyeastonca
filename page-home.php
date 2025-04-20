@@ -6,7 +6,7 @@ get_header();
 <main id="homepage-content">
   <header id="retro-game-header">
     <div id="stacked-nerd-title" class="glowing-text">Stacked Nerd</div>
-    <img src="https://suzyeaston.ca/wp-content/uploads/2024/03/suzy2.jpeg"
+    <img src="<?php echo get_template_directory_uri(); ?>/assets/suzy2.jpeg"
          alt="Suzy Easton" class="animated-image">
   </header>
 
@@ -18,16 +18,16 @@ get_header();
       About
     </div>
     <div class="menu-item" onclick="location.href='<?php echo home_url('/easy-living-with-suzy-easton'); ?>'">
-      All New Podcast – Easy Living with Suzy Easton
+      Podcast - Easy Living
     </div>
     <div class="menu-item" onclick="location.href='<?php echo home_url('/the-midnight-mix'); ?>'">
-      Live Music with Suzy Easton
+      Live Music
     </div>
     <div class="menu-item" onclick="location.href='<?php echo home_url('/canucks-app'); ?>'">
       Canucks App
     </div>
     <div class="menu-item" onclick="location.href='<?php echo home_url('/music-releases'); ?>'">
-      Bandcamp Music Releases
+      Bandcamp Releases
     </div>
     <div class="menu-item" onclick="location.href='<?php echo home_url('/social-media'); ?>'">
       Social Media
@@ -35,8 +35,12 @@ get_header();
     <div class="menu-item" onclick="location.href='<?php echo home_url('/contact'); ?>'">
       Contact
     </div>
+
+    <!-- New Albini link -->
+    <div class="menu-item albini-menu" onclick="location.href='<?php echo home_url('/albini-qa'); ?>'">
+      Albini Q&A
+    </div>
   </section>
 </main>
 
-<?php
-get_footer();
+<?php get_footer(); ?>
