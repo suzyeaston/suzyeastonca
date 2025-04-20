@@ -2,7 +2,7 @@
 Theme Name: Suzys Music Theme Lets Go Vancouver BC
 Author: Suzy Easton
 Description: An '80s video game inspired music WordPress theme, thanks much.
-Version: 2.5
+Version: 2.6
 */
 
 /* ====================== */
@@ -50,8 +50,8 @@ body::before {
 }
 .hero-img,
 .hero-image img {
-  width: 80vw;        /* fluid on phones */
-  max-width: 300px;   /* cap on desktop */
+  width: 80vw;
+  max-width: 300px;
   border: 4px solid #00ff00;
   box-shadow: 0 0 18px #00ff00;
   margin-top: 1rem;
@@ -78,14 +78,13 @@ body::before {
   font-size: 1rem;
   line-height: 1.2;
   cursor: pointer;
-  white-space: normal;       /* allow wrapping */
+  white-space: normal;
   transition: transform 0.2s, background-color 0.3s, color 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* arrow indicator */
 .menu-item::before {
   content: "▶";
   position: absolute;
@@ -94,7 +93,6 @@ body::before {
   transition: opacity 0.2s;
 }
 
-/* hover states */
 .menu-item:hover {
   background-color: #00ff00;
   color: #000;
@@ -105,7 +103,6 @@ body::before {
   opacity: 1;
 }
 
-/* glitch effect */
 @keyframes glitch {
   0% { transform: translate(0); }
   20% { transform: translate(-1px, 1px); }
@@ -190,7 +187,6 @@ body::before {
   z-index: 0;
   background: #000;
 }
-/* push content above the stars */
 header, main, footer, .menu-item, .albini-qa-page {
   position: relative;
   z-index: 1;
@@ -238,36 +234,45 @@ header, main, footer, .menu-item, .albini-qa-page {
 /*    MOBILE ADJUSTMENTS  */
 /* ====================== */
 @media (max-width: 480px) {
-  /* Hide or shrink starfield */
-  #starfield { display: none; }
+  /* hide CRT scan‑lines to clear up the blur */
+  body::before        { display: none; }
+  #starfield          { display: none; }
 
-  /* Reset header */
-  #retro-game-header {
+  /* header sits at the top */
+  #retro-game-header  {
     position: relative;
     top: 0;
     padding: 1rem 0;
     margin-bottom: 0.5rem;
   }
-  #main-content {
+  #main-content       {
     margin-top: 0;
     padding-top: 0;
   }
 
-  /* Tighter grid */
-  #menu-container {
+  /* tighter, wrapping grid */
+  #menu-container     {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 0.75rem;
     padding: 0.5rem;
   }
-  .menu-item {
+  .menu-item          {
     font-size: 14px;
     padding: 10px 6px;
   }
 
-  /* Fluid hero image */
-  .hero-img, .hero-image img {
+  /* simpler, crisper glow on small headers */
+  #stacked-nerd-title,
+  #sparkly-name,
+  .albini-title      {
+    text-shadow: 0 0 2px #0f0, 0 0 4px #0f0;
+    animation: none; /* optional: disable neonPulse/flickerSlow */
+  }
+
+  /* fluid hero image on phones */
+  .hero-img,
+  .hero-image img    {
     width: 90vw;
-    max-width: none;
     border-width: 2px;
     box-shadow: 0 0 8px #00ff00;
   }
