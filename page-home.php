@@ -4,43 +4,40 @@ get_header();
 ?>
 
 <main id="homepage-content">
-  <header id="retro-game-header">
-    <div id="stacked-nerd-title" class="glowing-text">Stacked Nerd</div>
-    <img src="<?php echo get_template_directory_uri(); ?>/assets/suzy2.jpeg"
-         alt="Suzy Easton" class="animated-image">
-  </header>
 
-  <section id="menu-container">
-    <div class="menu-item" onclick="location.href='<?php echo home_url(); ?>'">
-      Home
-    </div>
-    <div class="menu-item" onclick="location.href='<?php echo home_url('/bio'); ?>'">
-      About
-    </div>
-    <div class="menu-item" onclick="location.href='<?php echo home_url('/easy-living-with-suzy-easton'); ?>'">
-      Podcast - Easy Living
-    </div>
-    <div class="menu-item" onclick="location.href='<?php echo home_url('/the-midnight-mix'); ?>'">
-      Live Music
-    </div>
-    <div class="menu-item" onclick="location.href='<?php echo home_url('/canucks-app'); ?>'">
-      Canucks App
-    </div>
-    <div class="menu-item" onclick="location.href='<?php echo home_url('/music-releases'); ?>'">
-      Bandcamp Releases
-    </div>
-    <div class="menu-item" onclick="location.href='<?php echo home_url('/social-media'); ?>'">
-      Social Media
-    </div>
-    <div class="menu-item" onclick="location.href='<?php echo home_url('/contact'); ?>'">
-      Contact
-    </div>
-
-    <!-- New Albini link -->
-    <div class="menu-item albini-menu" onclick="location.href='<?php echo home_url('/albini-qa'); ?>'">
-      Albini Q&A
+  <section class="hero">
+    <h1 id="stacked-nerd-title" class="glowing-text">Stacked Nerd</h1>
+    <div class="hero-image">
+      <img
+        src="<?php echo get_template_directory_uri(); ?>/assets/suzy2.jpeg"
+        srcset="<?php echo get_template_directory_uri(); ?>/assets/suzy2.jpeg 1x,
+                <?php echo get_template_directory_uri(); ?>/assets/suzy2@2x.jpeg 2x"
+        alt="Suzy Easton"
+      />
     </div>
   </section>
+
+  <section id="menu-container">
+    <?php
+      $items = [
+        ['Home',      home_url('/')],
+        ['About',     home_url('/bio')],
+        ['Podcast',   home_url('/easy-living-with-suzy-easton')],
+        ['Live Music',home_url('/the-midnight-mix')],
+        ['Canucks App',home_url('/canucks-app')],
+        ['Bandcamp Releases',home_url('/music-releases')],
+        ['Social Media',home_url('/social-media')],
+        ['Contact',   home_url('/contact')],
+        ['Albini Q&A',home_url('/albini-qa')],
+      ];
+      foreach($items as $item): ?>
+        <div class="menu-item<?php echo $item[0]==='Albini Q&A' ? ' albini-menu' : ''?>"
+             onclick="location.href='<?php echo esc_url($item[1]); ?>'">
+          <?php echo esc_html($item[0]); ?>
+        </div>
+    <?php endforeach; ?>
+  </section>
+
 </main>
 
 <?php get_footer(); ?>
