@@ -5,8 +5,6 @@
  *   - Albini Q&A React widget
  *   - Security hardening: disable XML‑RPC, hide users, block author archives
  *
- * NOTE: Be sure to define your OpenAI key in wp-config.php, e.g.:
- * define('OPENAI_API_KEY', getenv('OPENAI_API_KEY'));
  */
 
 // =========================================
