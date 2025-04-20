@@ -276,6 +276,23 @@ body, h1, h2, h3, h4, h5, h6, p, a, .menu-item, #bio-container, .bio-content, #s
 .canucks-news-item a:hover {
     color: #FF0000;
 }
+
+/* 3-col layout for homepage menu */
+#menu-container {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* Neon‑punk flicker for Albini link */
+.menu-item.albini-menu {
+  border-color: #e60073;
+  color: #e60073;
+  animation: flicker 4s infinite both;
+}
+
+@keyframes flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.4; }
+}
 .news-date {
     font-size: 12px;
     color: #999999;
