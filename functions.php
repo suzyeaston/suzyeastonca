@@ -113,6 +113,14 @@ function get_custom_canucks_betting( WP_REST_Request $request ) {
     }
     return rest_ensure_response( $odds );
 }
+function enqueue_starfield() {
+  wp_enqueue_script(
+    'starfield',
+    get_template_directory_uri() . '/js/starfield.js',
+    [], '1.0', true
+  );
+}
+add_action('wp_enqueue_scripts', 'enqueue_starfield');
 
 
 // =========================================
