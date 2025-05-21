@@ -6,41 +6,34 @@ get_header();
 <main id="homepage-content">
     <div class="hero-section">
         <h1 class="pixel-font">Suzy Easton</h1>
-        <p class="tagline">Vancouver Musician • Indie Artist • Pixel Punk</p>
+        <p class="tagline">Vancouver musician, Canucks fan, and creative technologist who builds weird musical stuff on the internet.</p>
         
         <div class="cta-buttons">
-            <a href="https://suzyeaston.bandcamp.com" class="action-button" target="_blank">🎧 Listen Everywhere</a>
-            <a href="/riff-generator" class="action-button">🕹️ Riff Generator</a>
-            <a href="/arcade" class="action-button">🎮 Play Arcade Games</a>
-            <a href="/podcast" class="action-button">🎙️ Easy Living</a>
+            <a href="https://suzyeaston.bandcamp.com" class="action-button" target="_blank">🎧 Listen on Bandcamp</a>
+            <a href="/arcade" class="action-button">🎮 Play Canucks Game</a>
+            <a href="/riff-generator" class="action-button">🎸 Riff Generator</a>
+            <a href="/podcast" class="action-button">🎙️ Podcast: Easy Living</a>
+            <a href="/social-media" class="action-button">📡 Watch Livestream</a>
+        </div>
+
+        <!-- Bio Panel -->
+        <div class="bio-panel">
+            <div class="bio-content">
+                <p>Former touring bassist turned creative builder.</p>
+                <p>I write music, make tools, break things on purpose, and try to make tech feel human.</p>
+                <p>Based in Gastown.</p>
+            </div>
         </div>
     </div>
 
-    <!-- About Me Panels -->
-    <section class="about-me-section">
-        <h2 class="pixel-font">About Me</h2>
-        <div class="panel-container">
-            <div class="panel music-panel">
-                <h3 class="panel-title">Music</h3>
-                <div class="panel-content">
-                    <p>Indie rock artist with a passion for retro sounds and modern production.</p>
-                    <p>Latest album: <strong>Pixel Punk Dreams</strong></p>
-                </div>
-            </div>
-            <div class="panel art-panel">
-                <h3 class="panel-title">Art & Creativity</h3>
-                <div class="panel-content">
-                    <p>Indie artist blending retro aesthetics with modern creativity.</p>
-                    <p>Creator of Suzy's Retro Arcade</p>
-                </div>
-            </div>
-            <div class="panel projects-panel">
-                <h3 class="panel-title">Projects</h3>
-                <div class="panel-content">
-                    <p>Retro game development</p>
-                    <p>Live streaming setup</p>
-                    <p>Music production tools</p>
-                </div>
+    <!-- What's New Section -->
+    <section class="whats-new-section">
+        <h2 class="pixel-font">In the Wild</h2>
+        <div class="news-grid">
+            <div class="news-item">
+                <h3>Live Jams</h3>
+                <p>Every Friday @ 8PM PST</p>
+                <a href="/social-media" class="more-button">Join the Stream</a>
             </div>
         </div>
     </section>
