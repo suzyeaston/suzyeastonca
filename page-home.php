@@ -8,43 +8,39 @@ get_header();
         <h1 class="pixel-font">Suzy Easton</h1>
         <p class="tagline">Vancouver Musician • Tech Pro • Pixel Punk</p>
         
-        <div class="bio-section">
-            <p class="pixel-font">Hello! I'm Suzy Easton, a 42-year-old, Vancouver-born musician and tech enthusiast. My musical journey began with childhood piano lessons, leading to open mic performances in my teens. After studying classical music and recording arts, I joined the psychedelic rock band Seafoam, delved into the punk scene, and eventually played bass for rock band The Smokes/Minto, touring across Canada and recording in Chicago with the legendary Steve Albini (Pixies/Nirvana).</p>
-            
-            <p class="pixel-font">Alongside music, I ventured into technology, building a successful career in IT, QA, WebDev, Software Development and software operations, self-taught, building experience through contracting. It's been awesome, I've worked with companies like Electronic Arts, IBM, Western Forest Products, ADP Canada, Crisis Intervention & Suicide Prevention Centre of BC, WineDirect, and Alida.</p>
-        </div>
-        
         <div class="cta-buttons">
-            <a href="/support" class="action-button">Support the Artist</a>
-            <a href="/riff-generator" class="action-button">Generate a Riff</a>
-            <a href="/arcade" class="action-button">Play Arcade Games</a>
-            <a href="/podcast" class="action-button">Listen to Podcast</a>
+            <a href="https://suzyeaston.bandcamp.com" class="action-button" target="_blank">🎧 Listen on Bandcamp</a>
+            <a href="/riff-generator" class="action-button">🕹️ Riff Generator</a>
+            <a href="/arcade" class="action-button">🎮 Play Arcade Games</a>
+            <a href="/podcast" class="action-button">🎙️ Podcast</a>
         </div>
     </div>
 
     <section class="featured-content">
         <div class="featured-item">
             <h2 class="pixel-font">Latest Music</h2>
-            <?php
-            $latest_post = new WP_Query(array(
-                'posts_per_page' => 1,
-                'post_type' => 'post'
-            ));
-            
-            if ($latest_post->have_posts()) :
-                while ($latest_post->have_posts()) :
-                    $latest_post->the_post();
-                    ?>
-                    <div class="music-preview">
-                        <h3><?php the_title(); ?></h3>
-                        <?php the_excerpt(); ?>
-                        <a href="<?php the_permalink(); ?>" class="more-button">Listen Now</a>
-                    </div>
-                    <?php
-                endwhile;
-                wp_reset_postdata();
-            endif;
-            ?>
+            <div class="music-grid">
+                <?php
+                $latest_posts = new WP_Query(array(
+                    'posts_per_page' => 3,
+                    'post_type' => 'post'
+                ));
+                
+                if ($latest_posts->have_posts()) :
+                    while ($latest_posts->have_posts()) :
+                        $latest_posts->the_post();
+                        ?>
+                        <div class="music-item">
+                            <h3><?php the_title(); ?></h3>
+                            <?php the_excerpt(); ?>
+                            <a href="<?php the_permalink(); ?>" class="more-button">Listen Now</a>
+                        </div>
+                        <?php
+                    endwhile;
+                    wp_reset_postdata();
+                endif;
+                ?>
+            </div>
         </div>
 
         <div class="featured-item">
