@@ -40,7 +40,7 @@ gameCanvas.height = CANVAS_HEIGHT;
 const player = {
     x: CANVAS_WIDTH / 2,
     y: CANVAS_HEIGHT - 50,
-    width: 20,
+    width: 40,
     height: 20,
     speed: 5,
     color: '#001F5B'
@@ -50,7 +50,7 @@ const player = {
 const puck = {
     x: CANVAS_WIDTH / 2,
     y: 50,
-    radius: 5,
+    radius: 10,
     speedX: 3,
     speedY: 3,
     color: '#FFFFFF'
@@ -142,7 +142,7 @@ function updateGame(deltaTime) {
     if (puck.y + puck.radius > CANVAS_HEIGHT) {
         puck.x = CANVAS_WIDTH / 2;
         puck.y = 50;
-        puck.speedX = 3;
+        puck.speedX = Math.random() * 6 - 3;
         puck.speedY = 3;
         score = 0;
     }
@@ -158,46 +158,8 @@ document.addEventListener('keyup', (e) => {
 });
 
 // Start game
-requestAnimationFrame(gameLoop);        score++;
-        puck.y = 50;
-        puck.speedX = Math.random() * 6 - 3;
-        puck.speedY = 3;
-    }
-}
-
-// Draw game
-function drawGame() {
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    drawPlayer();
-    drawPuck();
-    
-    // Draw score
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '16px Press Start 2P';
-    ctx.fillText(`Score: ${score}`, 10, 20);
-}
-
-// Game loop
-function gameLoop() {
-    if (!gameRunning) return;
-    updateGame();
-    drawGame();
-    requestAnimationFrame(gameLoop);
-}
-
-// Keyboard controls
-const keys = {};
-window.addEventListener('keydown', (e) => {
-    keys[e.key] = true;
-});
-window.addEventListener('keyup', (e) => {
-    keys[e.key] = false;
-});
-
-// Start game
-window.addEventListener('load', () => {
-    gameLoop();
-});
+requestAnimationFrame(gameLoop);
+</script>
 
 // Share game
 function shareGame() {

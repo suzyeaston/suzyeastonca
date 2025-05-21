@@ -6,7 +6,7 @@ get_header();
 <main id="homepage-content">
     <div class="hero-section">
         <h1 class="pixel-font">Suzy Easton</h1>
-        <p class="tagline">Vancouver Musician • Tech Pro • Pixel Punk</p>
+        <p class="tagline">Vancouver Musician • Indie Artist • Pixel Punk</p>
         
         <div class="cta-buttons">
             <a href="https://suzyeaston.bandcamp.com" class="action-button" target="_blank">🎧 Listen Everywhere</a>
@@ -27,10 +27,10 @@ get_header();
                     <p>Latest album: <strong>Pixel Punk Dreams</strong></p>
                 </div>
             </div>
-            <div class="panel tech-panel">
-                <h3 class="panel-title">Tech</h3>
+            <div class="panel art-panel">
+                <h3 class="panel-title">Art & Creativity</h3>
                 <div class="panel-content">
-                    <p>Web developer specializing in creative web experiences.</p>
+                    <p>Indie artist blending retro aesthetics with modern creativity.</p>
                     <p>Creator of Suzy's Retro Arcade</p>
                 </div>
             </div>
