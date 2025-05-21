@@ -54,21 +54,50 @@ function generateRiff() {
     const riffLength = Math.floor(Math.random() * 4) + 4;
     const riff = [];
     
+    // Generate a sequence of notes
     for (let i = 0; i < riffLength; i++) {
-        riff.push(notes[Math.floor(Math.random() * notes.length)]);
+        const note = notes[Math.floor(Math.random() * notes.length)];
+        riff.push(note);
     }
     
     // Display riff
     document.getElementById('riff-text').textContent = riff.join(' - ');
     
-    // Generate audio
+    // Create audio context
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    oscillator.type = 'sawtooth';
-    oscillator.frequency.setValueAtTime(notes[0].replace(/[A-G]/, ''), audioCtx.currentTime);
-    oscillator.connect(audioCtx.destination);
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 2);
+    
+    // Play each note in sequence
+    let currentTime = audioCtx.currentTime;
+    
+    riff.forEach((note, index) => {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        // Map MIDI notes to frequencies
+        const frequency = 440 * Math.pow(2, (note.charCodeAt(0) - 69) / 12);
+        
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.value = frequency;
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        // Add envelope
+        gainNode.gain.setValueAtTime(0, currentTime);
+        gainNode.gain.linearRampToValueAtTime(1, currentTime + 0.01);
+        gainNode.gain.linearRampToValueAtTime(0.5, currentTime + 0.3);
+        gainNode.gain.linearRampToValueAtTime(0, currentTime + 0.5);
+        
+        oscillator.start(currentTime);
+        oscillator.stop(currentTime + 0.5);
+        
+        currentTime += 0.6; // Add delay between notes
+    });
+    
+    // Update audio element
+    const audioElement = document.getElementById('riff-audio');
+    audioElement.src = '';
+    audioElement.controls = false;
+    audioElement.style.display = 'none';
 }
 
 // Initialize

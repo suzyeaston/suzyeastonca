@@ -9,37 +9,61 @@ get_header();
         <p class="tagline">Vancouver Musician • Tech Pro • Pixel Punk</p>
         
         <div class="cta-buttons">
-            <a href="https://suzyeaston.bandcamp.com" class="action-button" target="_blank">🎧 Listen on Bandcamp</a>
+            <a href="https://suzyeaston.bandcamp.com" class="action-button" target="_blank">🎧 Listen Everywhere</a>
             <a href="/riff-generator" class="action-button">🕹️ Riff Generator</a>
             <a href="/arcade" class="action-button">🎮 Play Arcade Games</a>
-            <a href="/podcast" class="action-button">🎙️ Podcast</a>
+            <a href="/podcast" class="action-button">🎙️ Easy Living</a>
         </div>
     </div>
 
+    <!-- About Me Panels -->
+    <section class="about-me-section">
+        <h2 class="pixel-font">About Me</h2>
+        <div class="panel-container">
+            <div class="panel music-panel">
+                <h3 class="panel-title">Music</h3>
+                <div class="panel-content">
+                    <p>Indie rock artist with a passion for retro sounds and modern production.</p>
+                    <p>Latest album: <strong>Pixel Punk Dreams</strong></p>
+                </div>
+            </div>
+            <div class="panel tech-panel">
+                <h3 class="panel-title">Tech</h3>
+                <div class="panel-content">
+                    <p>Web developer specializing in creative web experiences.</p>
+                    <p>Creator of Suzy's Retro Arcade</p>
+                </div>
+            </div>
+            <div class="panel projects-panel">
+                <h3 class="panel-title">Projects</h3>
+                <div class="panel-content">
+                    <p>Retro game development</p>
+                    <p>Live streaming setup</p>
+                    <p>Music production tools</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="featured-content">
         <div class="featured-item">
-            <h2 class="pixel-font">Latest Music</h2>
-            <div class="music-grid">
-                <?php
-                $latest_posts = new WP_Query(array(
-                    'posts_per_page' => 3,
-                    'post_type' => 'post'
-                ));
-                
-                if ($latest_posts->have_posts()) :
-                    while ($latest_posts->have_posts()) :
-                        $latest_posts->the_post();
-                        ?>
-                        <div class="music-item">
-                            <h3><?php the_title(); ?></h3>
-                            <?php the_excerpt(); ?>
-                            <a href="<?php the_permalink(); ?>" class="more-button">Listen Now</a>
-                        </div>
-                        <?php
-                    endwhile;
-                    wp_reset_postdata();
-                endif;
-                ?>
+            <h2 class="pixel-font">What's New</h2>
+            <div class="news-grid">
+                <div class="news-item">
+                    <h3>Featured in Vancouver Weekly</h3>
+                    <p>"Suzy Easton's retro arcade brings Vancouver's music scene to life"</p>
+                    <a href="#" class="more-button">Read More</a>
+                </div>
+                <div class="news-item">
+                    <h3>New Album Release</h3>
+                    <p>Pixel Punk Dreams - Available now on all platforms</p>
+                    <a href="https://suzyeaston.bandcamp.com" class="more-button" target="_blank">Listen Now</a>
+                </div>
+                <div class="news-item">
+                    <h3>Live Stream Schedule</h3>
+                    <p>Join me every Friday at 8PM PST</p>
+                    <a href="/social-media" class="more-button">Watch Live</a>
+                </div>
             </div>
         </div>
 

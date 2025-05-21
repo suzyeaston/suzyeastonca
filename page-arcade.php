@@ -59,6 +59,36 @@ const puck = {
 // Game state
 let gameRunning = true;
 let score = 0;
+let keys = {};
+let lastTime = 0;
+
+// Game loop
+function gameLoop(timestamp) {
+    const deltaTime = timestamp - lastTime;
+    lastTime = timestamp;
+
+    // Clear canvas
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Draw score
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px pixel-font';
+    ctx.fillText(`Score: ${score}`, 10, 20);
+
+    // Draw player
+    drawPlayer();
+
+    // Draw puck
+    drawPuck();
+
+    // Update game state
+    updateGame(deltaTime);
+
+    if (gameRunning) {
+        requestAnimationFrame(gameLoop);
+    }
+}
 
 // Draw player
 function drawPlayer() {
@@ -75,7 +105,7 @@ function drawPuck() {
 }
 
 // Update game state
-function updateGame() {
+function updateGame(deltaTime) {
     // Move puck
     puck.x += puck.speedX;
     puck.y += puck.speedY;
@@ -85,21 +115,50 @@ function updateGame() {
         puck.speedX *= -1;
     }
     
-    if (puck.y + puck.radius > CANVAS_HEIGHT || puck.y - puck.radius < 0) {
+    if (puck.y - puck.radius < 0) {
         puck.speedY *= -1;
     }
 
     // Player movement
     if (keys.ArrowLeft && player.x > 0) {
-        player.x -= player.speed;
+        player.x -= player.speed * (deltaTime / 1000);
     }
     if (keys.ArrowRight && player.x < CANVAS_WIDTH - player.width) {
-        player.x += player.speed;
+        player.x += player.speed * (deltaTime / 1000);
+    }
+
+    // Puck collision with player
+    if (puck.y + puck.radius > player.y &&
+        puck.y - puck.radius < player.y + player.height &&
+        puck.x > player.x &&
+        puck.x < player.x + player.width) {
+        puck.speedY *= -1;
+        score++;
+        puck.speedX += Math.sign(puck.speedX) * 0.2; // Increase speed
+        puck.speedY += Math.sign(puck.speedY) * 0.2;
     }
 
     // Score when puck hits bottom
     if (puck.y + puck.radius > CANVAS_HEIGHT) {
-        score++;
+        puck.x = CANVAS_WIDTH / 2;
+        puck.y = 50;
+        puck.speedX = 3;
+        puck.speedY = 3;
+        score = 0;
+    }
+}
+
+// Event listeners
+document.addEventListener('keydown', (e) => {
+    keys[e.code] = true;
+});
+
+document.addEventListener('keyup', (e) => {
+    keys[e.code] = false;
+});
+
+// Start game
+requestAnimationFrame(gameLoop);        score++;
         puck.y = 50;
         puck.speedX = Math.random() * 6 - 3;
         puck.speedY = 3;
