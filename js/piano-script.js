@@ -1,6 +1,10 @@
-document.addEventListener('DOMContentLoaded', (event) => {
+document.addEventListener('DOMContentLoaded', () => {
   const keys = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C2'];
   const piano = document.getElementById('piano-container');
+
+  if (!piano) {
+    return;
+  }
 
   keys.forEach((key) => {
     let pianoKey = document.createElement('div');
@@ -15,4 +19,4 @@ document.addEventListener('DOMContentLoaded', (event) => {
     let audio = new Audio(`.wav`);
     audio.play();
   }
-})
+});

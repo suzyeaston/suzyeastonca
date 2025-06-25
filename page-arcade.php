@@ -13,7 +13,7 @@ get_header();
             <div class="game-selection">
                 <div class="game-card">
                     <h2 class="pixel-font">Canucks Puck Bash</h2>
-                    <div id="canucks-game" class="game-canvas"></div>
+                    <canvas id="canucks-game" class="game-canvas"></canvas>
                     <div id="scoreboard" class="scoreboard">Score: 0</div>
                     <div id="game-overlay" class="game-overlay">Click to Start</div>
                     <div class="controls">

@@ -36,7 +36,7 @@
       const k = 128.0 / s.z;
       const px = (s.x - width/2) * k + width/2;
       const py = (s.y - height/2) * k + height/2;
-      const size = (1 - s.z/width) * 3;
+      const size = Math.max((1 - s.z/width) * 3, 0);
       ctx.beginPath();
       ctx.fillStyle = `rgba(255,255,255,${s.o})`;
       ctx.arc(px, py, size, 0, Math.PI*2);
