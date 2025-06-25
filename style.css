@@ -596,6 +596,19 @@ header, main, footer, .menu-item, .albini-qa-page {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
 }
+.arcade-subtext {
+  font-family: 'Press Start 2P', monospace;
+  color: #ffcc00;
+  opacity: 0.8;
+  animation: pulse 3s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
+}
+
 .puck-icon {
   font-size: 24px;
   display: inline-block;
