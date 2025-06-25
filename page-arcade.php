@@ -14,6 +14,8 @@ get_header();
                 <div class="game-card">
                     <h2 class="pixel-font">Canucks Puck Bash</h2>
                     <div id="canucks-game" class="game-canvas"></div>
+                    <div id="scoreboard" class="scoreboard">Score: 0 | High Score: 0</div>
+                    <div id="game-overlay" class="game-overlay">Click to Start</div>
                     <div class="controls">
                         <p class="pixel-font">Controls:</p>
                         <p>Arrow Keys - Move</p>
@@ -29,6 +31,8 @@ get_header();
 // Canucks Puck Bash Game
 const gameCanvas = document.getElementById('canucks-game');
 const ctx = gameCanvas.getContext('2d');
+const scoreboardEl = document.getElementById('scoreboard');
+const overlay = document.getElementById('game-overlay');
 
 // Game dimensions
 const CANVAS_WIDTH = 800;
@@ -57,10 +61,12 @@ const puck = {
 };
 
 // Game state
-let gameRunning = true;
+let gameRunning = false;
 let score = 0;
+let highScore = 0;
 let keys = {};
 let lastTime = 0;
+scoreboardEl.textContent = `Score: ${score} | High Score: ${highScore}`;
 
 // Game loop
 function gameLoop(timestamp) {
@@ -71,10 +77,11 @@ function gameLoop(timestamp) {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Draw score
+    // Draw score on canvas
     ctx.fillStyle = '#fff';
     ctx.font = '20px pixel-font';
     ctx.fillText(`Score: ${score}`, 10, 20);
+    scoreboardEl.textContent = `Score: ${score} | High Score: ${highScore}`;
 
     // Draw player
     drawPlayer();
@@ -132,14 +139,17 @@ function updateGame(deltaTime) {
         puck.y - puck.radius < player.y + player.height &&
         puck.x > player.x &&
         puck.x < player.x + player.width) {
+        const hit = (puck.x - (player.x + player.width/2)) / (player.width/2);
+        puck.speedX = hit * 5;
         puck.speedY *= -1;
         score++;
-        puck.speedX += Math.sign(puck.speedX) * 0.2; // Increase speed
+        if(score > highScore) highScore = score;
         puck.speedY += Math.sign(puck.speedY) * 0.2;
     }
 
     // Score when puck hits bottom
     if (puck.y + puck.radius > CANVAS_HEIGHT) {
+        if(score > highScore) highScore = score;
         puck.x = CANVAS_WIDTH / 2;
         puck.y = 50;
         puck.speedX = Math.random() * 6 - 3;
@@ -150,15 +160,31 @@ function updateGame(deltaTime) {
 
 // Event listeners
 document.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
+    if(e.code === 'KeyP') {
+        gameRunning = !gameRunning;
+        if(gameRunning) {
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+    } else {
+        keys[e.code] = true;
+    }
 });
 
 document.addEventListener('keyup', (e) => {
     keys[e.code] = false;
 });
 
-// Start game
-requestAnimationFrame(gameLoop);
+function startGame() {
+    if(!gameRunning) {
+        gameRunning = true;
+        overlay.style.display = 'none';
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+    }
+}
+
+overlay.addEventListener('click', startGame);
 </script>
 
 // Share game
