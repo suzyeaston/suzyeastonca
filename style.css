@@ -575,6 +575,101 @@ header, main, footer, .menu-item, .albini-qa-page {
 }
 
 /* ====================== */
+/*    HOMEPAGE HERO       */
+/* ====================== */
+.hero-section {
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 40px 20px;
+}
+.tagline {
+  margin: 20px auto;
+  max-width: 800px;
+}
+.terminal-line {
+  color: var(--accent-color);
+  margin: 10px 0 30px;
+  animation: blinkCursor 1s steps(2, start) infinite;
+}
+@keyframes blinkCursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.puck-icon {
+  font-size: 24px;
+  display: inline-block;
+  margin-bottom: 20px;
+  animation: bounce 2s infinite;
+}
+.puck-icon:hover {
+  animation: bounceHover 0.5s infinite;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes bounceHover {
+  0%, 100% { transform: translateY(-4px); }
+  50% { transform: translateY(0); }
+}
+
+/* ====================== */
+/*   BUTTON CLUSTERS      */
+/* ====================== */
+.button-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  margin-top: 30px;
+}
+.button-group { text-align: center; }
+.group-title {
+  margin-bottom: 10px;
+  color: var(--accent-color);
+}
+.group-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.pixel-button {
+  background: #000;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  padding: 10px 16px;
+  text-decoration: none;
+  font-size: 14px;
+  font-family: 'Press Start 2P', cursive;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.pixel-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 8px var(--accent-color);
+}
+
+/* ====================== */
+/*    FOOTER MARQUEE      */
+/* ====================== */
+.footer-marquee {
+  width: 100%;
+  overflow: hidden;
+  background: #111;
+  border-top: 2px solid var(--primary-color);
+}
+.footer-marquee span {
+  display: inline-block;
+  padding: 10px;
+  white-space: nowrap;
+  animation: marquee 12s linear infinite;
+}
+@keyframes marquee {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(-100%); }
+}
+
+/* ====================== */
 /*    MOBILE ADJUSTMENTS  */
 /* ====================== */
 @media (max-width: 480px) {

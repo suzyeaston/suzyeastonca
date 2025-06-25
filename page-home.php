@@ -5,22 +5,42 @@ get_header();
 
 <main id="homepage-content">
     <div class="hero-section">
-        <h1 class="pixel-font">Suzy Easton</h1>
-        <p class="tagline">Vancouver musician, Canucks fan, and creative technologist who builds weird musical stuff on the internet.</p>
-        
-        <div class="cta-buttons">
-            <a href="https://suzyeaston.bandcamp.com" class="action-button" target="_blank">🎧 Listen on Bandcamp</a>
-            <a href="/arcade" class="action-button">🎮 Play Canucks Game</a>
-            <a href="/riff-generator" class="action-button">🎸 Riff Generator</a>
-            <a href="/podcast" class="action-button">🎙️ Podcast: Easy Living</a>
-            <a href="/social-media" class="action-button">📡 Watch Livestream</a>
+        <h1 class="pixel-font">Hi, I&rsquo;m Suzy Easton.</h1>
+        <p class="tagline">I&rsquo;ve toured across Canada, recorded with Steve Albini, and now I build QA test suites and odd web tools while fighting for safer housing from a tiny apartment in Gastown. I might run for Vancouver City Council in 2026.</p>
+        <p class="terminal-line">&gt; suzyeaston.ca/_loading // press start to begin your journey</p>
+        <div class="puck-icon">🏒</div>
+
+        <div class="button-cluster">
+            <div class="button-group">
+                <h3 class="group-title">🎵 Listen</h3>
+                <div class="group-buttons">
+                    <a href="https://suzyeaston.bandcamp.com" class="pixel-button" target="_blank">Bandcamp</a>
+                    <a href="/podcast" class="pixel-button">Podcast: Easy Living</a>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <h3 class="group-title">🛠 Play / Build</h3>
+                <div class="group-buttons">
+                    <a href="/riff-generator" class="pixel-button">Riff Generator</a>
+                    <a href="/arcade" class="pixel-button">Canucks Game</a>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <h3 class="group-title">📺 Watch</h3>
+                <div class="group-buttons">
+                    <a href="/social-media" class="pixel-button">Livestream</a>
+                    <a href="/music-releases" class="pixel-button">Upcoming Events</a>
+                </div>
+            </div>
         </div>
 
         <!-- Bio Panel -->
         <div class="bio-panel">
             <div class="bio-content">
-                <p>Former touring bassist turned creative builder.</p>
-                <p>I write music, make tools, break things on purpose, and try to make tech feel human.</p>
+                <p>Ex-touring bassist turned web-weirdness maker and accidental tenant organizer.</p>
+                <p>I mix music, code, and advocacy to build tools that blur the line between art, community, and tech.</p>
                 <p>Based in Gastown.</p>
             </div>
         </div>
