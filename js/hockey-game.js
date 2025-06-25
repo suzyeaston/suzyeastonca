@@ -3,6 +3,12 @@
 
 (function() {
   const canvas = document.getElementById('canucks-game');
+  if (!canvas || !canvas.getContext) {
+    console.warn('Game canvas not found');
+    const overlayEl = document.getElementById('game-overlay');
+    if (overlayEl) overlayEl.textContent = 'Game failed to load';
+    return;
+  }
   const ctx = canvas.getContext('2d');
   const scoreboardEl = document.getElementById('scoreboard');
   const overlay = document.getElementById('game-overlay');
