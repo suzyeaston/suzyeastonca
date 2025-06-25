@@ -14,7 +14,7 @@ get_header();
                 <div class="game-card">
                     <h2 class="pixel-font">Canucks Puck Bash</h2>
                     <div id="canucks-game" class="game-canvas"></div>
-                    <div id="scoreboard" class="scoreboard">Score: 0 | High Score: 0</div>
+                    <div id="scoreboard" class="scoreboard">Score: 0</div>
                     <div id="game-overlay" class="game-overlay">Click to Start</div>
                     <div class="controls">
                         <p class="pixel-font">Controls:</p>
@@ -27,166 +27,9 @@ get_header();
     </main>
 </div>
 
+<script src="<?php echo get_template_directory_uri(); ?>/js/hockey-game.js"></script>
+
 <script>
-// Canucks Puck Bash Game
-const gameCanvas = document.getElementById('canucks-game');
-const ctx = gameCanvas.getContext('2d');
-const scoreboardEl = document.getElementById('scoreboard');
-const overlay = document.getElementById('game-overlay');
-
-// Game dimensions
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 400;
-gameCanvas.width = CANVAS_WIDTH;
-gameCanvas.height = CANVAS_HEIGHT;
-
-// Player properties
-const player = {
-    x: CANVAS_WIDTH / 2,
-    y: CANVAS_HEIGHT - 50,
-    width: 40,
-    height: 20,
-    speed: 5,
-    color: '#001F5B'
-};
-
-// Puck properties
-const puck = {
-    x: CANVAS_WIDTH / 2,
-    y: 50,
-    radius: 10,
-    speedX: 3,
-    speedY: 3,
-    color: '#FFFFFF'
-};
-
-// Game state
-let gameRunning = false;
-let score = 0;
-let highScore = 0;
-let keys = {};
-let lastTime = 0;
-scoreboardEl.textContent = `Score: ${score} | High Score: ${highScore}`;
-
-// Game loop
-function gameLoop(timestamp) {
-    const deltaTime = timestamp - lastTime;
-    lastTime = timestamp;
-
-    // Clear canvas
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-    // Draw score on canvas
-    ctx.fillStyle = '#fff';
-    ctx.font = '20px pixel-font';
-    ctx.fillText(`Score: ${score}`, 10, 20);
-    scoreboardEl.textContent = `Score: ${score} | High Score: ${highScore}`;
-
-    // Draw player
-    drawPlayer();
-
-    // Draw puck
-    drawPuck();
-
-    // Update game state
-    updateGame(deltaTime);
-
-    if (gameRunning) {
-        requestAnimationFrame(gameLoop);
-    }
-}
-
-// Draw player
-function drawPlayer() {
-    ctx.fillStyle = player.color;
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-}
-
-// Draw puck
-function drawPuck() {
-    ctx.beginPath();
-    ctx.arc(puck.x, puck.y, puck.radius, 0, Math.PI * 2);
-    ctx.fillStyle = puck.color;
-    ctx.fill();
-}
-
-// Update game state
-function updateGame(deltaTime) {
-    // Move puck
-    puck.x += puck.speedX;
-    puck.y += puck.speedY;
-
-    // Puck collision with walls
-    if (puck.x + puck.radius > CANVAS_WIDTH || puck.x - puck.radius < 0) {
-        puck.speedX *= -1;
-    }
-    
-    if (puck.y - puck.radius < 0) {
-        puck.speedY *= -1;
-    }
-
-    // Player movement
-    if (keys.ArrowLeft && player.x > 0) {
-        player.x -= player.speed * (deltaTime / 1000);
-    }
-    if (keys.ArrowRight && player.x < CANVAS_WIDTH - player.width) {
-        player.x += player.speed * (deltaTime / 1000);
-    }
-
-    // Puck collision with player
-    if (puck.y + puck.radius > player.y &&
-        puck.y - puck.radius < player.y + player.height &&
-        puck.x > player.x &&
-        puck.x < player.x + player.width) {
-        const hit = (puck.x - (player.x + player.width/2)) / (player.width/2);
-        puck.speedX = hit * 5;
-        puck.speedY *= -1;
-        score++;
-        if(score > highScore) highScore = score;
-        puck.speedY += Math.sign(puck.speedY) * 0.2;
-    }
-
-    // Score when puck hits bottom
-    if (puck.y + puck.radius > CANVAS_HEIGHT) {
-        if(score > highScore) highScore = score;
-        puck.x = CANVAS_WIDTH / 2;
-        puck.y = 50;
-        puck.speedX = Math.random() * 6 - 3;
-        puck.speedY = 3;
-        score = 0;
-    }
-}
-
-// Event listeners
-document.addEventListener('keydown', (e) => {
-    if(e.code === 'KeyP') {
-        gameRunning = !gameRunning;
-        if(gameRunning) {
-            lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
-        }
-    } else {
-        keys[e.code] = true;
-    }
-});
-
-document.addEventListener('keyup', (e) => {
-    keys[e.code] = false;
-});
-
-function startGame() {
-    if(!gameRunning) {
-        gameRunning = true;
-        overlay.style.display = 'none';
-        lastTime = performance.now();
-        requestAnimationFrame(gameLoop);
-    }
-}
-
-overlay.addEventListener('click', startGame);
-</script>
-
 // Share game
 function shareGame() {
     const shareData = {
@@ -194,7 +37,7 @@ function shareGame() {
         text: 'Check out this retro Canucks hockey game! Score points and help Suzy Easton fight for affordable housing.',
         url: window.location.href
     };
-    
+
     if (navigator.share) {
         navigator.share(shareData)
             .catch(console.error);
