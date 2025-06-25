@@ -6,8 +6,8 @@ get_header();
 <main id="homepage-content">
     <div class="hero-section">
         <h1 class="pixel-font">Hi, I&rsquo;m Suzy Easton.</h1>
-        <p class="tagline">I&rsquo;ve toured across Canada, recorded with Steve Albini, and now I build QA test suites and odd web tools while fighting for safer housing from a tiny apartment in Gastown. I might run for Vancouver City Council in 2026.</p>
-        <p class="terminal-line">&gt; suzyeaston.ca/_loading // press start to begin your journey</p>
+        <p class="tagline">I&rsquo;m a musician, technologist, and creative builder based in Vancouver.<br>I&rsquo;ve toured across Canada, recorded with Steve Albini, and I&rsquo;m currently releasing new music while building QA systems and interactive tools online.<br>I&rsquo;m also active in local advocacy work—and exploring a run for Vancouver City Council in 2026.</p>
+        <p class="arcade-subtext">Insert coin to explore</p>
         <div class="puck-icon">🏒</div>
 
         <div class="button-cluster">
