@@ -13,7 +13,7 @@ get_header();
             <div class="game-selection">
                 <div class="game-card">
                     <h2 class="pixel-font">Canucks Puck Bash</h2>
-                    <div id="canucks-game" class="game-canvas"></div>
+                    <canvas id="canucks-game" class="game-canvas"></canvas>
                     <div class="controls">
                         <p class="pixel-font">Controls:</p>
                         <p>Arrow Keys - Move</p>
@@ -49,16 +49,18 @@ const player = {
 // Puck properties
 const puck = {
     x: CANVAS_WIDTH / 2,
-    y: 50,
+    y: CANVAS_HEIGHT - 70,
     radius: 10,
-    speedX: 3,
-    speedY: 3,
-    color: '#FFFFFF'
+    speedX: 0,
+    speedY: 0,
+    color: '#FFFFFF',
+    inMotion: false
 };
 
 // Game state
 let gameRunning = true;
 let score = 0;
+let goalMessageTimer = 0;
 let keys = {};
 let lastTime = 0;
 
@@ -81,6 +83,14 @@ function gameLoop(timestamp) {
 
     // Draw puck
     drawPuck();
+
+    // Draw goal message if needed
+    if (goalMessageTimer > 0) {
+        ctx.fillStyle = '#ff0';
+        ctx.font = '30px pixel-font';
+        ctx.fillText('Goal!', CANVAS_WIDTH / 2 - 50, CANVAS_HEIGHT / 2);
+        goalMessageTimer -= 1;
+    }
 
     // Update game state
     updateGame(deltaTime);
@@ -106,51 +116,77 @@ function drawPuck() {
 
 // Update game state
 function updateGame(deltaTime) {
-    // Move puck
-    puck.x += puck.speedX;
-    puck.y += puck.speedY;
-
-    // Puck collision with walls
-    if (puck.x + puck.radius > CANVAS_WIDTH || puck.x - puck.radius < 0) {
-        puck.speedX *= -1;
-    }
-    
-    if (puck.y - puck.radius < 0) {
-        puck.speedY *= -1;
-    }
-
     // Player movement
     if (keys.ArrowLeft && player.x > 0) {
-        player.x -= player.speed * (deltaTime / 1000);
+        player.x -= player.speed * (deltaTime / 16);
     }
     if (keys.ArrowRight && player.x < CANVAS_WIDTH - player.width) {
-        player.x += player.speed * (deltaTime / 1000);
+        player.x += player.speed * (deltaTime / 16);
     }
 
-    // Puck collision with player
-    if (puck.y + puck.radius > player.y &&
-        puck.y - puck.radius < player.y + player.height &&
-        puck.x > player.x &&
-        puck.x < player.x + player.width) {
-        puck.speedY *= -1;
-        score++;
-        puck.speedX += Math.sign(puck.speedX) * 0.2; // Increase speed
-        puck.speedY += Math.sign(puck.speedY) * 0.2;
-    }
+    if (puck.inMotion) {
+        // Move puck
+        puck.x += puck.speedX;
+        puck.y += puck.speedY;
 
-    // Score when puck hits bottom
-    if (puck.y + puck.radius > CANVAS_HEIGHT) {
-        puck.x = CANVAS_WIDTH / 2;
-        puck.y = 50;
-        puck.speedX = Math.random() * 6 - 3;
-        puck.speedY = 3;
-        score = 0;
+        // Puck collision with walls
+        if (puck.x + puck.radius > CANVAS_WIDTH || puck.x - puck.radius < 0) {
+            puck.speedX *= -1;
+        }
+
+        // Goal scored
+        if (puck.y - puck.radius <= 0) {
+            score++;
+            goalMessageTimer = 60;
+            resetPuck();
+            return;
+        }
+
+        // Missed shot
+        if (puck.y + puck.radius >= CANVAS_HEIGHT) {
+            resetPuck();
+            return;
+        }
+
+        // Puck collision with player
+        if (puck.speedY > 0 &&
+            puck.y + puck.radius > player.y &&
+            puck.y - puck.radius < player.y + player.height &&
+            puck.x > player.x &&
+            puck.x < player.x + player.width) {
+            puck.speedY *= -1;
+            puck.y = player.y - puck.radius;
+        }
+    } else {
+        // Keep puck on player's stick before shooting
+        puck.x = player.x + player.width / 2;
+        puck.y = player.y - puck.radius;
+    }
+}
+
+function resetPuck() {
+    puck.inMotion = false;
+    puck.speedX = 0;
+    puck.speedY = 0;
+}
+
+function shootPuck() {
+    if (!puck.inMotion) {
+        puck.inMotion = true;
+        puck.speedX = Math.random() * 4 - 2;
+        puck.speedY = -5;
     }
 }
 
 // Event listeners
 document.addEventListener('keydown', (e) => {
     keys[e.code] = true;
+    if (['ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+        e.preventDefault();
+    }
+    if (e.code === 'Space') {
+        shootPuck();
+    }
 });
 
 document.addEventListener('keyup', (e) => {
@@ -158,9 +194,11 @@ document.addEventListener('keyup', (e) => {
 });
 
 // Start game
+resetPuck();
 requestAnimationFrame(gameLoop);
 </script>
 
+<script>
 // Share game
 function shareGame() {
     const shareData = {
