@@ -34,6 +34,9 @@
         <div class="footer-bottom">
             <p>&copy; <?php echo date('Y'); ?> Suzy Easton. All rights reserved.</p>
         </div>
+        <div class="footer-marquee">
+            <span>Made in Vancouver &middot; Built with coffee, riffs, and command line confidence.</span>
+        </div>
     </div>
 </footer>
 <?php wp_footer(); ?>
