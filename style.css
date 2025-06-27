@@ -718,6 +718,32 @@ header, main, footer, .menu-item, .albini-qa-page {
   white-space: nowrap;
   animation: marquee 12s linear infinite;
 }
+
+/* ================================== */
+/*   NOW LISTENING & ADVOCACY STYLES  */
+/* ================================== */
+.now-listening {
+  margin: 40px 0;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #fff;
+  border-radius: 10px;
+}
+
+#now-playing-container img {
+  max-width: 80px;
+  display: block;
+  margin: 0 auto 10px;
+}
+
+.advocacy-section {
+  margin: 40px 0;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #fff;
+  border-radius: 10px;
+  text-align: center;
+}
 @keyframes marquee {
   from { transform: translateX(100%); }
   to   { transform: translateX(-100%); }

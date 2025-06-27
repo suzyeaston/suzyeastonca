@@ -123,6 +123,19 @@ function enqueue_starfield() {
 }
 add_action('wp_enqueue_scripts', 'enqueue_starfield');
 
+function enqueue_now_playing() {
+  wp_enqueue_script(
+    'now-playing',
+    get_template_directory_uri() . '/js/now-playing.js',
+    [], '1.0', true
+  );
+  wp_localize_script('now-playing', 'nowPlaying', [
+    'username' => 'YOUR_LASTFM_USER',
+    'api_key'  => 'YOUR_LASTFM_API_KEY'
+  ]);
+}
+add_action('wp_enqueue_scripts', 'enqueue_now_playing');
+
 
 // =========================================
 // 6. SHORTCODE: DISPLAY THE CANUCKS APP

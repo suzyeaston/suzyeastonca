@@ -34,6 +34,14 @@ get_header();
                     <a href="/music-releases" class="pixel-button">Upcoming Events</a>
                 </div>
             </div>
+
+            <div class="button-group">
+                <h3 class="group-title">📖 Read</h3>
+                <div class="group-buttons">
+                    <a href="/bio" class="pixel-button">About Suzy</a>
+                    <a href="/albini-qa" class="pixel-button">Albini Q&A</a>
+                </div>
+            </div>
         </div>
 
         <!-- Bio Panel -->
@@ -62,11 +70,6 @@ get_header();
         <div class="featured-item">
             <h2 class="pixel-font">What's New</h2>
             <div class="news-grid">
-                <div class="news-item">
-                    <h3>Featured in Vancouver Weekly</h3>
-                    <p>"Suzy Easton's retro arcade brings Vancouver's music scene to life"</p>
-                    <a href="#" class="more-button">Read More</a>
-                </div>
                 <div class="news-item">
                     <h3>New Album Release</h3>
                     <p>Pixel Punk Dreams - Available now on all platforms</p>
@@ -115,11 +118,20 @@ get_header();
         </div>
     </section>
 
-    <section class="newsletter">
-        <h2 class="pixel-font">Join the Pixel Punk Squad</h2>
-        <p class="pixel-font">Get exclusive updates, new music drops, and secret arcade codes!</p>
-        <?php echo do_shortcode('[newsletter_form]'); ?>
+    <section class="now-listening">
+        <h2 class="pixel-font">Now Listening</h2>
+        <div id="now-playing-container" class="news-grid"></div>
     </section>
+
+    <section class="advocacy-section">
+        <h2 class="pixel-font">DTES & City Council Advocacy</h2>
+        <p>I'm working with neighbours in the Downtown Eastside to keep vulnerable residents housed and heard. I'm also laying the groundwork for a 2026 City Council campaign focused on housing justice.</p>
+        <div class="group-buttons">
+            <a href="/advocacy" class="pixel-button">Learn More</a>
+            <a href="/contact" class="pixel-button">Get Involved</a>
+        </div>
+    </section>
+
 
     <section class="support-section">
         <h2 class="pixel-font">Support My Creative Journey</h2>
