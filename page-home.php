@@ -9,9 +9,9 @@ get_header();
        <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
     <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
 
-    <p>I toured nationally as a bassist, recorded with Steve Albini in Chicago, and appeared on MuchMusic. These days, I keep creating — releasing new music at night while shipping infrastructure scripts by day.</p>
+    <p>Toured nationally as a bassist, recorded with Steve Albini in Chicago, and appeared on MuchMusic. Today, I keep creating, playing around with programming/coding and releasing new music at night while shipping infrastructure code by day hah!</p>
 
-    <p>After navigating tenancy issues in my own building and helping neighbours do the same, I’ve started to get involved in civic life — and I’m exploring a possible run for Vancouver City Council in 2026.</p>
+    <p>After navigating tenancy issues in my own building and helping neighbours do the same, I’ve started to get involved in civic life, and exploring a possible run for Vancouver City Council in 2026.</p>
 </section>
 
         <p class="arcade-subtext">Insert coin to explore</p>
