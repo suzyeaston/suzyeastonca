@@ -7,7 +7,6 @@ get_header();
     <div class="hero-section">
         <h1 class="pixel-font">Hi, I&rsquo;m Suzy Easton.</h1>
         <section class="pixel-intro">
-            <h2 class="pixel-font">Hi, I&rsquo;m Suzy Easton.</h2>
             <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
             <p>I&rsquo;ve toured nationally as a bassist, recorded with Steve Albini, and continue to release new music — while building QA systems, interactive tools, and learning how tech can support community-led change.</p>
             <p>I&rsquo;m starting to get more involved in civic work and tenant rights, and I&rsquo;m exploring a possible run for Vancouver City Council in 2026.</p>
