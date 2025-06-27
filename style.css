@@ -728,12 +728,51 @@ header, main, footer, .menu-item, .albini-qa-page {
   background: rgba(255, 255, 255, 0.1);
   border: 2px solid #fff;
   border-radius: 10px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
-#now-playing-container img {
+#now-listening-widget img {
   max-width: 80px;
+  border: 2px solid #00FF00;
   display: block;
   margin: 0 auto 10px;
+}
+
+.listening-inner {
+  font-family: 'Press Start 2P', monospace;
+  color: #00FF00;
+}
+
+.fade-in {
+  animation: fadeIn 1s ease-in;
+}
+
+.now-listening::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    to right,
+    rgba(0, 255, 0, 0.2) 0,
+    rgba(0, 255, 0, 0.2) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  animation: equalizer 1s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes equalizer {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .advocacy-section {

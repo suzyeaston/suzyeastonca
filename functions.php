@@ -130,8 +130,8 @@ function enqueue_now_playing() {
     [], '1.0', true
   );
   wp_localize_script('now-playing', 'nowPlaying', [
-    'username' => 'YOUR_LASTFM_USER',
-    'api_key'  => 'YOUR_LASTFM_API_KEY'
+    'username' => 'suzyeaston',
+    'api_key'  => 'b8c00d13eccb3a3973dd087d84c0e5b3'
   ]);
 }
 add_action('wp_enqueue_scripts', 'enqueue_now_playing');

@@ -54,27 +54,10 @@ get_header();
         </div>
     </div>
 
-    <!-- What's New Section -->
-    <section class="whats-new-section">
-        <h2 class="pixel-font">In the Wild</h2>
-        <div class="news-grid">
-            <div class="news-item">
-                <h3>Live Jams</h3>
-                <p>Every Friday @ 8PM PST</p>
-                <a href="/social-media" class="more-button">Join the Stream</a>
-            </div>
-        </div>
-    </section>
-
     <section class="featured-content">
         <div class="featured-item">
             <h2 class="pixel-font">What's New</h2>
             <div class="news-grid">
-                <div class="news-item">
-                    <h3>New Album Release</h3>
-                    <p>Pixel Punk Dreams - Available now on all platforms</p>
-                    <a href="https://suzyeaston.bandcamp.com" class="more-button" target="_blank">Listen Now</a>
-                </div>
                 <div class="news-item">
                     <h3>Live Stream Schedule</h3>
                     <p>Join me every Friday at 8PM PST</p>
@@ -108,19 +91,11 @@ get_header();
             ?>
         </div>
 
-        <div class="featured-item">
-            <h2 class="pixel-font">Tech & Music Projects</h2>
-            <ul class="project-list">
-                <li>Live video jam sessions</li>
-                <li>New music releases</li>
-                <li>Comedic documentary filmmaking about life in Vancouver</li>
-            </ul>
-        </div>
     </section>
 
     <section class="now-listening">
         <h2 class="pixel-font">Now Listening</h2>
-        <div id="now-playing-container" class="news-grid"></div>
+        <div id="now-listening-widget"></div>
     </section>
 
     <section class="advocacy-section">
@@ -129,6 +104,7 @@ get_header();
         <div class="group-buttons">
             <a href="/advocacy" class="pixel-button">Learn More</a>
             <a href="/contact" class="pixel-button">Get Involved</a>
+            <a href="https://www.carnegiehousingproject.ca/events" class="pixel-button" target="_blank">See Local Housing Events</a>
         </div>
     </section>
 
