@@ -6,7 +6,12 @@ get_header();
 <main id="homepage-content">
     <div class="hero-section">
         <h1 class="pixel-font">Hi, I&rsquo;m Suzy Easton.</h1>
-        <p class="tagline">I&rsquo;m a musician, technologist, and creative builder based in Vancouver.<br>I&rsquo;ve toured across Canada, recorded with Steve Albini, and I&rsquo;m currently releasing new music while building QA systems and interactive tools online.<br>I&rsquo;m also active in local advocacy work—and exploring a run for Vancouver City Council in 2026.</p>
+        <section class="pixel-intro">
+            <h2 class="pixel-font">Hi, I&rsquo;m Suzy Easton.</h2>
+            <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
+            <p>I&rsquo;ve toured nationally as a bassist, recorded with Steve Albini, and continue to release new music — while building QA systems, interactive tools, and learning how tech can support community-led change.</p>
+            <p>I&rsquo;m starting to get more involved in civic work and tenant rights, and I&rsquo;m exploring a possible run for Vancouver City Council in 2026.</p>
+        </section>
         <p class="arcade-subtext">Insert coin to explore</p>
         <div class="puck-icon">🏒</div>
 
@@ -44,15 +49,22 @@ get_header();
             </div>
         </div>
 
-        <!-- Bio Panel -->
-        <div class="bio-panel">
-            <div class="bio-content">
-                <p>Ex-touring bassist turned web-weirdness maker and accidental tenant organizer.</p>
-                <p>I mix music, code, and advocacy to build tools that blur the line between art, community, and tech.</p>
-                <p>Based in Gastown.</p>
-            </div>
-        </div>
     </div>
+
+    <section class="now-listening">
+        <h2 class="pixel-font">Now Listening</h2>
+        <div id="now-listening-widget"></div>
+    </section>
+
+    <section class="advocacy-section">
+        <h2 class="pixel-font">City &amp; Housing</h2>
+        <p>I&rsquo;m learning alongside neighbours in the Downtown Eastside to keep residents housed and heard. I&rsquo;m also considering a 2026 City Council run focused on housing justice.</p>
+        <div class="group-buttons">
+            <a href="/advocacy" class="pixel-button">Learn More</a>
+            <a href="/contact" class="pixel-button">Get Involved</a>
+            <a href="https://www.carnegiehousingproject.ca/events" class="pixel-button" target="_blank">See Local Housing Events</a>
+        </div>
+    </section>
 
     <section class="featured-content">
         <div class="featured-item">
@@ -93,20 +105,6 @@ get_header();
 
     </section>
 
-    <section class="now-listening">
-        <h2 class="pixel-font">Now Listening</h2>
-        <div id="now-listening-widget"></div>
-    </section>
-
-    <section class="advocacy-section">
-        <h2 class="pixel-font">DTES & City Council Advocacy</h2>
-        <p>I'm working with neighbours in the Downtown Eastside to keep vulnerable residents housed and heard. I'm also laying the groundwork for a 2026 City Council campaign focused on housing justice.</p>
-        <div class="group-buttons">
-            <a href="/advocacy" class="pixel-button">Learn More</a>
-            <a href="/contact" class="pixel-button">Get Involved</a>
-            <a href="https://www.carnegiehousingproject.ca/events" class="pixel-button" target="_blank">See Local Housing Events</a>
-        </div>
-    </section>
 
 
     <section class="support-section">
