@@ -11,7 +11,10 @@
   }
   const ctx = canvas.getContext('2d');
   const scoreboardEl = document.getElementById('scoreboard');
+  const teamDisplayEl = document.getElementById('team-display');
   const overlay = document.getElementById('game-overlay');
+  let startButton = document.getElementById('start-button');
+  const overlayDefault = overlay.innerHTML;
 
   const WIDTH = 800;
   const HEIGHT = 400;
@@ -19,6 +22,19 @@
   canvas.height = HEIGHT;
 
   const goal = { x: WIDTH / 2 - 60, width: 120, height: 10 };
+
+  const teams = ['Oilers','Flames','Leafs','Bruins','Sharks','Jets','Senators','Kings'];
+  let opponent = teams[Math.floor(Math.random()*teams.length)];
+
+  const goalie = {
+    x: goal.x + goal.width / 2 - 20,
+    y: 10,
+    width: 40,
+    height: 10,
+    speed: 120,
+    dir: 1,
+    color: '#ff5555'
+  };
 
   const player = {
     x: WIDTH / 2 - 10,
@@ -40,7 +56,9 @@
 
   let lastTime = 0;
   let keys = {};
-  let score = 0;
+  let canucksScore = 0;
+  let opponentScore = 0;
+  let timeLeft = 60;
   let running = false;
 
   function drawRink() {
@@ -58,6 +76,19 @@
     ctx.fillRect(player.x, player.y, player.width, player.height);
   }
 
+  function drawGoalie() {
+    ctx.fillStyle = goalie.color;
+    ctx.fillRect(goalie.x, goalie.y, goalie.width, goalie.height);
+  }
+
+  function updateGoalie(dt) {
+    goalie.x += goalie.speed * dt * goalie.dir;
+    if (goalie.x < goal.x || goalie.x + goalie.width > goal.x + goal.width) {
+      goalie.dir *= -1;
+      goalie.x = Math.max(goal.x, Math.min(goalie.x, goal.x + goal.width - goalie.width));
+    }
+  }
+
   function drawPuck() {
     ctx.beginPath();
     ctx.arc(puck.x, puck.y, puck.radius, 0, Math.PI * 2);
@@ -72,6 +103,7 @@
     if (keys.ArrowRight && player.x + player.width < WIDTH) {
       player.x += player.speed * dt;
     }
+
     if (!isPuckMoving()) {
       puck.x = player.x + player.width / 2;
       puck.y = player.y - 5;
@@ -79,23 +111,42 @@
       puck.x += puck.vx * dt * 60;
       puck.y += puck.vy * dt * 60;
 
+      // friction
+      puck.vx *= 0.99;
+      puck.vy *= 0.99;
+
       if (puck.x - puck.radius < 0 || puck.x + puck.radius > WIDTH) {
         puck.vx *= -1;
       }
       if (puck.y - puck.radius < 0) {
-        // goal?
-        if (puck.x > goal.x && puck.x < goal.x + goal.width) {
-          score += 1;
+        if (puck.x > goal.x && puck.x < goal.x + goal.width && !(puck.x > goalie.x && puck.x < goalie.x + goalie.width)) {
+          canucksScore += 1;
+          showGoal();
           resetPuck();
         } else {
           puck.vy *= -1;
         }
       }
       if (puck.y + puck.radius > HEIGHT) {
+        opponentScore += 1;
         resetPuck();
       }
+
+      // goalie collision
+      if (puck.y - puck.radius <= goalie.y + goalie.height &&
+          puck.y - puck.radius >= goalie.y &&
+          puck.x > goalie.x && puck.x < goalie.x + goalie.width && puck.vy < 0) {
+        puck.vy *= -1;
+        puck.y = goalie.y + goalie.height + puck.radius;
+      }
     }
-    scoreboardEl.textContent = `Score: ${score}`;
+
+    timeLeft -= dt;
+    if (timeLeft <= 0) {
+      endGame();
+    }
+
+    scoreboardEl.textContent = `Canucks ${canucksScore} – ${opponent} ${opponentScore} | ${Math.ceil(timeLeft)}`;
   }
 
   function resetPuck() {
@@ -103,6 +154,28 @@
     puck.vy = 0;
     puck.x = player.x + player.width / 2;
     puck.y = player.y - 5;
+  }
+
+  function showGoal() {
+    overlay.innerHTML = '<div class="overlay-content"><p>GOAL!</p></div>';
+    overlay.style.display = 'flex';
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      overlay.innerHTML = overlayDefault;
+    }, 800);
+  }
+
+  function endGame() {
+    running = false;
+    const result = canucksScore >= opponentScore ? 'You Win!' : 'You Lose!';
+    overlay.innerHTML = `<div class="overlay-content"><p>${result}</p><button id="start-button" class="pixel-button">Play Again</button></div>`;
+    overlay.style.display = 'flex';
+    document.getElementById('start-button').addEventListener('click', () => {
+      overlay.innerHTML = overlayDefault;
+      startButton = document.getElementById('start-button');
+      startButton.addEventListener('click', start);
+      start();
+    });
   }
 
   function isPuckMoving() {
@@ -123,7 +196,9 @@
 
     drawRink();
     drawPlayer();
+    drawGoalie();
     drawPuck();
+    updateGoalie(dt);
     update(dt);
 
     requestAnimationFrame(loop);
@@ -131,6 +206,12 @@
 
   function start() {
     if (!running) {
+      canucksScore = 0;
+      opponentScore = 0;
+      timeLeft = 60;
+      opponent = teams[Math.floor(Math.random()*teams.length)];
+      teamDisplayEl.textContent = `Vancouver Canucks vs. ${opponent}`;
+      scoreboardEl.textContent = `Canucks 0 – ${opponent} 0 | 60`;
       running = true;
       lastTime = performance.now();
       overlay.style.display = 'none';
@@ -138,7 +219,7 @@
     }
   }
 
-  overlay.addEventListener('click', start);
+  startButton.addEventListener('click', start);
 
   document.addEventListener('keydown', e => {
     if (e.code === 'Space') {
