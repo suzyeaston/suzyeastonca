@@ -622,17 +622,25 @@ header, main, footer, .menu-item, .albini-qa-page {
   max-width: 1000px;
   margin: 0 auto;
   text-align: center;
-  padding: 40px 20px;
+  padding: 4rem 1rem 2rem;
 }
 .tagline {
   margin: 20px auto;
   max-width: 800px;
 }
 
-.pixel-intro {
-  margin: 20px auto;
-  max-width: 800px;
+.hero-section h1.pixel-font {
+  margin-bottom: 1.5rem;
+}
+
+.hero-section .pixel-intro {
+  max-width: 36em;
+  margin: 0 auto 2rem;
+  line-height: 1.8;
   text-align: center;
+}
+.hero-section .pixel-intro p {
+  margin-bottom: 1.5rem;
 }
 
 .pixel-font {
@@ -652,6 +660,8 @@ header, main, footer, .menu-item, .albini-qa-page {
   color: #ffcc00;
   opacity: 0.8;
   animation: pulse 3s infinite ease-in-out;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
 }
 
 @keyframes pulse {
@@ -663,7 +673,7 @@ header, main, footer, .menu-item, .albini-qa-page {
 .puck-icon {
   font-size: 24px;
   display: inline-block;
-  margin-bottom: 20px;
+  margin-bottom: 2.5rem;
   animation: bounce 2s infinite;
 }
 .puck-icon:hover {
@@ -833,5 +843,12 @@ header, main, footer, .menu-item, .albini-qa-page {
     width: 90vw;
     border-width: 2px;
     box-shadow: 0 0 8px #00ff00;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-section .pixel-intro {
+    padding: 0 1rem;
+    font-size: 0.95rem;
   }
 }
