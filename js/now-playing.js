@@ -1,19 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const cont = document.getElementById('now-playing-container');
-  if (!cont || typeof nowPlaying === 'undefined') return;
+  const container = document.getElementById('now-listening-widget');
+  if (!container || typeof nowPlaying === 'undefined') return;
 
-  const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${nowPlaying.username}&api_key=${nowPlaying.api_key}&format=json&limit=1`;
+  const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${nowPlaying.username}&api_key=${nowPlaying.api_key}&format=json`;
 
   fetch(url)
-    .then(r => r.json())
+    .then(res => res.json())
     .then(data => {
-      const track = data.recenttracks && data.recenttracks.track ? data.recenttracks.track[0] : null;
-      if (!track) return;
-      const img = track.image.pop()['#text'] || '';
+      const track = data.recenttracks.track[0];
+      const title = track.name;
       const artist = track.artist['#text'];
-      const name = track.name;
-      const html = `<div class="news-item"><img src="${img}" alt=""/><p>${artist} - ${name}</p></div>`;
-      cont.innerHTML = html;
+      const image = track.image[2]['#text'];
+      const playing = track['@attr'] && track['@attr'].nowplaying;
+
+      container.innerHTML = `
+        <div class="listening-inner fade-in">
+          <p><strong>Now Listening:</strong></p>
+          <img src="${image}" alt="album art" />
+          <p>${title} — ${artist} ${playing ? '🎵 (Now Playing)' : ''}</p>
+        </div>
+      `;
     })
     .catch(() => {});
 });
