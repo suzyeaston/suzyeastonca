@@ -6,11 +6,14 @@ get_header();
 <main id="homepage-content">
     <div class="hero-section">
         <h1 class="pixel-font">Hi, I&rsquo;m Suzy Easton.</h1>
-        <section class="pixel-intro">
+       <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
     <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
-    <p>Toured nationally as a bassist, recorded with Steve Albini in Chicago, appeared on MuchMusic and continue to release new music at night while shipping infrastructure scripts by day</p>
-    <p>After navigating tenancy issues in my own building and helping others do the same, I&rsquo;m starting to engage more in civic life, and exploring a possible run for Vancouver City Council in 2026.</p>
-        </section>
+
+    <p>I toured nationally as a bassist, recorded with Steve Albini in Chicago, and appeared on MuchMusic. These days, I keep creating — releasing new music at night while shipping infrastructure scripts by day.</p>
+
+    <p>After navigating tenancy issues in my own building and helping neighbours do the same, I’ve started to get involved in civic life — and I’m exploring a possible run for Vancouver City Council in 2026.</p>
+</section>
+
         <p class="arcade-subtext">Insert coin to explore</p>
         <div class="puck-icon">🏒</div>
 
