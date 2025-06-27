@@ -628,6 +628,16 @@ header, main, footer, .menu-item, .albini-qa-page {
   margin: 20px auto;
   max-width: 800px;
 }
+
+.pixel-intro {
+  margin: 20px auto;
+  max-width: 800px;
+  text-align: center;
+}
+
+.pixel-font {
+  font-family: 'Press Start 2P', cursive;
+}
 .terminal-line {
   color: var(--accent-color);
   margin: 10px 0 30px;
