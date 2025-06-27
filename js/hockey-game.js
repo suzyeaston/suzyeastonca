@@ -15,6 +15,7 @@
   const overlay = document.getElementById('game-overlay');
   let startButton = document.getElementById('start-button');
   const overlayDefault = overlay.innerHTML;
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
   const WIDTH = 800;
   const HEIGHT = 400;
@@ -60,6 +61,7 @@
   let opponentScore = 0;
   let timeLeft = 60;
   let running = false;
+  let shotTimer = 0;
 
   function drawRink() {
     ctx.fillStyle = '#eef';
@@ -97,17 +99,19 @@
   }
 
   function update(dt) {
-    if (keys.ArrowLeft && player.x > 0) {
+    if ((keys.ArrowLeft || keys.KeyA) && player.x > 0) {
       player.x -= player.speed * dt;
     }
-    if (keys.ArrowRight && player.x + player.width < WIDTH) {
+    if ((keys.ArrowRight || keys.KeyD) && player.x + player.width < WIDTH) {
       player.x += player.speed * dt;
     }
 
     if (!isPuckMoving()) {
       puck.x = player.x + player.width / 2;
       puck.y = player.y - 5;
+      shotTimer = 0;
     } else {
+      shotTimer += dt;
       puck.x += puck.vx * dt * 60;
       puck.y += puck.vy * dt * 60;
 
@@ -115,7 +119,12 @@
       puck.vx *= 0.99;
       puck.vy *= 0.99;
 
-      if (puck.x - puck.radius < 0 || puck.x + puck.radius > WIDTH) {
+      if (puck.x - puck.radius < 0) {
+        puck.x = puck.radius;
+        puck.vx *= -1;
+      }
+      if (puck.x + puck.radius > WIDTH) {
+        puck.x = WIDTH - puck.radius;
         puck.vx *= -1;
       }
       if (puck.y - puck.radius < 0) {
@@ -124,6 +133,7 @@
           showGoal();
           resetPuck();
         } else {
+          puck.y = puck.radius;
           puck.vy *= -1;
         }
       }
@@ -138,6 +148,10 @@
           puck.x > goalie.x && puck.x < goalie.x + goalie.width && puck.vy < 0) {
         puck.vy *= -1;
         puck.y = goalie.y + goalie.height + puck.radius;
+      }
+
+      if (shotTimer > 2 && Math.abs(puck.vx) < 0.2 && Math.abs(puck.vy) < 0.2) {
+        resetPuck();
       }
     }
 
@@ -156,9 +170,24 @@
     puck.y = player.y - 5;
   }
 
+  function playGoalSound() {
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    } catch(err) {}
+  }
+
   function showGoal() {
-    overlay.innerHTML = '<div class="overlay-content"><p>GOAL!</p></div>';
+    overlay.innerHTML = '<div class="overlay-content goal-animation"><p>GOAL!</p></div>';
     overlay.style.display = 'flex';
+    playGoalSound();
     setTimeout(() => {
       overlay.style.display = 'none';
       overlay.innerHTML = overlayDefault;
@@ -168,7 +197,7 @@
   function endGame() {
     running = false;
     const result = canucksScore >= opponentScore ? 'You Win!' : 'You Lose!';
-    overlay.innerHTML = `<div class="overlay-content"><p>${result}</p><button id="start-button" class="pixel-button">Play Again</button></div>`;
+    overlay.innerHTML = `<div class="overlay-content"><p>${result}<br>Final: Canucks ${canucksScore} - ${opponent} ${opponentScore}</p><button id="start-button" class="pixel-button">Play Again</button></div>`;
     overlay.style.display = 'flex';
     document.getElementById('start-button').addEventListener('click', () => {
       overlay.innerHTML = overlayDefault;
@@ -221,14 +250,23 @@
 
   startButton.addEventListener('click', start);
 
-  document.addEventListener('keydown', e => {
-    if (e.code === 'Space') {
-      shoot();
-    } else {
-      keys[e.code] = true;
+  function handleKeyDown(e) {
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyA','KeyD','KeyW','KeyS'].includes(e.code)) {
+      e.preventDefault();
     }
-  });
-  document.addEventListener('keyup', e => {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      shoot();
+    }
+    keys[e.code] = true;
+  }
+
+  function handleKeyUp(e) {
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyA','KeyD','KeyW','KeyS'].includes(e.code)) {
+      e.preventDefault();
+    }
     keys[e.code] = false;
-  });
+  }
+
+  document.addEventListener('keydown', handleKeyDown, {passive:false});
+  document.addEventListener('keyup', handleKeyUp, {passive:false});
 })();

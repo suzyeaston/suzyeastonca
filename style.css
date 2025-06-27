@@ -260,6 +260,16 @@ body::before {
   z-index: 5;
 }
 
+.goal-animation {
+  animation: goalPop 0.8s ease-out;
+}
+
+@keyframes goalPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* ====================== */
 /*    FEATURED CONTENT   */
 /* ====================== */
