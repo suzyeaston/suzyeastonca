@@ -24,9 +24,10 @@ get_header();
     </div>
 
     <!-- Response box -->
-    <div id="albini-response" class="qa-response">
-      <!-- Albini’s answer will appear here -->
-    </div>
+      <div id="albini-response" class="qa-response">
+        <!-- Albini’s answer will appear here -->
+      </div>
+      <button id="albini-speak" class="pixel-button" style="margin-top:10px;">Let Albini Speak</button>
 
   </section>
 
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('albini-submit');
   const randomBtn = document.getElementById('albini-random');
   const resp = document.getElementById('albini-response');
+  const speakBtn = document.getElementById('albini-speak');
 
   const albiniQuotes = [
     "Record like you mean it. Edit like you don’t care.",
@@ -92,12 +94,27 @@ document.addEventListener('DOMContentLoaded', () => {
     resp.innerHTML = `<p>${randomQuote()}</p>`;
   }
 
+  function speakAlbini() {
+    const text = resp.textContent.trim();
+    if (!text) return;
+    const synth = window.speechSynthesis;
+    const voices = synth.getVoices();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const preferred = voices.find(v => v.name.includes('Google UK English Male') || v.name.includes('Microsoft David'));
+    utterance.voice = preferred || voices.find(v => /en/i.test(v.lang));
+    utterance.pitch = 0.7;
+    utterance.rate = 0.7;
+    synth.cancel();
+    synth.speak(utterance);
+  }
+
   btn.addEventListener('click', () => {
     if (!qEl.value.trim()) return;
     showQuote();
   });
 
   randomBtn.addEventListener('click', showQuote);
+  speakBtn.addEventListener('click', speakAlbini);
 });
 </script>
 <p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support my music on Bandcamp</a></p>
