@@ -812,6 +812,30 @@ footer,
 
 .hero-section h1.pixel-font {
   margin-bottom: 1.5rem;
+  color: var(--secondary-color);
+  animation: neonFlicker 4s linear infinite;
+}
+
+@keyframes neonFlicker {
+  0%,
+  18%,
+  22%,
+  25%,
+  53%,
+  57%,
+  100% {
+    text-shadow:
+      0 0 6px var(--secondary-color),
+      0 0 12px var(--secondary-color),
+      0 0 18px var(--secondary-color);
+    opacity: 1;
+  }
+  20%,
+  24%,
+  55% {
+    text-shadow: none;
+    opacity: 0.7;
+  }
 }
 
 .hero-section .pixel-intro {
@@ -928,6 +952,7 @@ footer,
 .pixel-button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 8px var(--accent-color);
+  animation: glitch 0.3s ease-in-out;
 }
 
 /* ====================== */
