@@ -7,11 +7,24 @@ $data = file_exists($countFile)
 $data['count']++;
 
 $country = 'Unknown';
+
+// Try ipapi first
 $apiResp = @file_get_contents('https://ipapi.co/json/');
 if ($apiResp !== false) {
     $info = json_decode($apiResp, true);
     if (json_last_error() === JSON_ERROR_NONE && !empty($info['country_name'])) {
         $country = $info['country_name'];
+    }
+}
+
+// Fallback to ipinfo if needed
+if ($country === 'Unknown') {
+    $apiResp = @file_get_contents('https://ipinfo.io/json');
+    if ($apiResp !== false) {
+        $info = json_decode($apiResp, true);
+        if (json_last_error() === JSON_ERROR_NONE && !empty($info['country'])) {
+            $country = $info['country'];
+        }
     }
 }
 
