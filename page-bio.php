@@ -14,7 +14,9 @@ get_header();
             
             <p>My creative pursuits include live video jam sessions, new music releases, and comedic documentary filmmaking about life in Vancouver. I'm also excited to announce my brand-new podcast, <strong>“Easy Living with Suzy Easton”</strong>, where I share stories, insights, and laughter about life in Vancouver.</p>
             
-            <p>For collaborations or just to chat, reach out at <a href="mailto:suzyeaston@icloud.com">suzyeaston@icloud.com</a>. If you'd like to support my creative and technical endeavors, consider buying me a coffee on <a href="https://www.buymeacoffee.com/wi0amge" target="_blank">Buy Me a Coffee</a></p>
+            <p>For collaborations or just to chat, reach out at <a href="mailto:suzyeaston@icloud.com">suzyeaston@icloud.com</a>.</p>
+            <p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support on Bandcamp</a></p>
+            <p style="text-align:center;">New demo drops this weekend. Stay noisy.</p>
         </div>
     </section>
 </main>

@@ -27,7 +27,6 @@ get_header();
     <div id="albini-response" class="qa-response">
       <!-- Albini’s answer will appear here -->
     </div>
-<p class="albini-example">Try asking:<br>“Should I record to tape or digital?”<br>“What’s the best mic for snare?”<br>“Do I need a manager?”<br>“How do I split money fairly in a band?”<br>“Will streaming ever pay my rent?”<br>“What would Fugazi do?”<br>“Should we autotune the singer?”</p>
 
   </section>
 
@@ -101,4 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
   randomBtn.addEventListener('click', showQuote);
 });
 </script>
+<p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support on Bandcamp</a></p>
+<p style="text-align:center;">New demo drops this weekend. Stay noisy.</p>
 <?php get_footer(); ?>

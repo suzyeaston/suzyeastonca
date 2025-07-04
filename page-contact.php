@@ -70,22 +70,8 @@ get_header(); ?>
         “Early Riser Challenge” QA post</a> <!-- :contentReference[oaicite:8]{index=8} -->
     </p>
 
-    <p>
-      <strong>Buy Me a Coffee:</strong><br>
-      <script
-        type="text/javascript"
-        src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
-        data-name="bmc-button"
-        data-slug="wi0amge"
-        data-color="#FFDD00"
-        data-emoji="🍺"
-        data-font="Cookie"
-        data-text="Buy me a beer"
-        data-outline-color="#000000"
-        data-font-color="#000000"
-        data-coffee-color="#ffffff">
-      </script>
-    </p>
+    <p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support on Bandcamp</a></p>
+    <p style="text-align:center;">New demo drops this weekend. Stay noisy.</p>
 
   </section>
 </main>
