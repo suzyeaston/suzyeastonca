@@ -15,7 +15,6 @@ get_header();
         <div class="menu-item" onclick="location.href='https://suzyeaston.bandcamp.com/'">Bandcamp</div>
         <div class="menu-item" onclick="location.href='https://www.youtube.com/user/anabsolutepitch'">YouTube</div>
         <div class="menu-item" onclick="location.href='https://www.instagram.com/officialsuzyeaston/'">Instagram</div>
-        <div class="menu-item" onclick="location.href='https://www.patreon.com/SuzyEaston'">Patreon</div>
         
     </section>
 </main>

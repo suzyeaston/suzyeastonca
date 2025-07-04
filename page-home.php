@@ -16,10 +16,18 @@ get_header();
 
         <p class="arcade-subtext">Insert coin to explore</p>
         <div class="puck-icon">🏒</div>
+        <?php
+        $visitor_data = include get_template_directory() . '/visitor-tracker.php';
+        $total = intval($visitor_data['count']);
+        $countries = implode(', ', array_keys($visitor_data['locations']));
+        ?>
+        <div class="visitor-counter">
+          <p><?php echo "$total people from $countries have dared to ask Albini."; ?></p>
+        </div>
 
         <div class="button-cluster">
             <div class="button-group">
-                <h3 class="group-title">🎵 Listen</h3>
+                <h3 class="group-title">🎵 Music &amp; Podcasts</h3>
                 <div class="group-buttons">
                     <a href="https://suzyeaston.bandcamp.com" class="pixel-button" target="_blank">Bandcamp</a>
                     <a href="/podcast" class="pixel-button">Podcast: Easy Living</a>
@@ -27,15 +35,16 @@ get_header();
             </div>
 
             <div class="button-group">
-                <h3 class="group-title">🛠 Play / Build</h3>
+                <h3 class="group-title">🎮 Games &amp; Tools</h3>
                 <div class="group-buttons">
                     <a href="/riff-generator" class="pixel-button">Riff Generator</a>
                     <a href="/arcade" class="pixel-button">Canucks Game</a>
+                    <a href="/albini-qa" class="pixel-button">Albini Q&amp;A</a>
                 </div>
             </div>
 
             <div class="button-group">
-                <h3 class="group-title">📺 Watch</h3>
+                <h3 class="group-title">📺 Livestream &amp; Events</h3>
                 <div class="group-buttons">
                     <a href="/social-media" class="pixel-button">Livestream</a>
                     <a href="/music-releases" class="pixel-button">Upcoming Events</a>
@@ -43,10 +52,9 @@ get_header();
             </div>
 
             <div class="button-group">
-                <h3 class="group-title">📖 Read</h3>
+                <h3 class="group-title">📚 About &amp; Info</h3>
                 <div class="group-buttons">
                     <a href="/bio" class="pixel-button">About Suzy</a>
-                    <a href="/albini-qa" class="pixel-button">Albini Q&A</a>
                 </div>
             </div>
         </div>
@@ -112,17 +120,9 @@ get_header();
     <section class="support-section">
         <h2 class="pixel-font">Support My Creative Journey</h2>
         <p class="pixel-font">For collaborations or just to chat, reach out at <a href="mailto:suzyeaston@icloud.com" class="support-link">suzyeaston@icloud.com</a></p>
-        <p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support on Bandcamp</a></p>
+        <p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support my music on Bandcamp</a></p>
         <p style="text-align:center;">New demo drops this weekend. Stay noisy.</p>
     </section>
-<?php
-$visitor_data = include get_template_directory() . '/visitor-tracker.php';
-$total = intval($visitor_data['count']);
-$countries = implode(', ', array_keys($visitor_data['locations']));
-?>
-<div class="visitor-counter">
-  <p><?php echo "$total people from $countries have dared to ask Albini."; ?></p>
-</div>
 </main>
 
 <?php get_footer(); ?>

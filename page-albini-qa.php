@@ -100,6 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
   randomBtn.addEventListener('click', showQuote);
 });
 </script>
-<p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support on Bandcamp</a></p>
+<p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support my music on Bandcamp</a></p>
 <p style="text-align:center;">New demo drops this weekend. Stay noisy.</p>
 <?php get_footer(); ?>
