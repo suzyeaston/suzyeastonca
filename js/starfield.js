@@ -2,6 +2,8 @@
   const canvas = document.getElementById('starfield');
   const ctx = canvas.getContext('2d');
   let stars = [], width, height;
+  let offsetX = 0,
+      offsetY = 0;
 
   function init() {
     resize();
@@ -32,10 +34,10 @@
         s.x = Math.random() * width;
         s.y = Math.random() * height;
       }
-      // project 3D to 2D
+      // project 3D to 2D with parallax offset
       const k = 128.0 / s.z;
-      const px = (s.x - width/2) * k + width/2;
-      const py = (s.y - height/2) * k + height/2;
+      const px = (s.x - width/2 + offsetX) * k + width/2;
+      const py = (s.y - height/2 + offsetY) * k + height/2;
       const size = Math.max((1 - s.z/width) * 3, 0);
       ctx.beginPath();
       ctx.fillStyle = `rgba(255,255,255,${s.o})`;
@@ -45,6 +47,22 @@
     requestAnimationFrame(update);
   }
 
+  function onMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    offsetX = (x - 0.5) * 50;
+    offsetY = (y - 0.5) * 50;
+  }
+
+  function onTilt(e) {
+    if (e.beta == null || e.gamma == null) return;
+    offsetX = (e.gamma / 45) * 30;
+    offsetY = (e.beta / 45) * 30;
+  }
+
   window.addEventListener('resize', resize);
+  canvas.addEventListener('mousemove', onMove);
+  window.addEventListener('deviceorientation', onTilt);
   document.addEventListener('DOMContentLoaded', init);
 })();
