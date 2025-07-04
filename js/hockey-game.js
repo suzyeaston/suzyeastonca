@@ -176,22 +176,27 @@
   }
 
   function playGoalMelody() {
-    const sequence = [
-      [349.23, 0.32], [293.66, 0.28],
-      [261.63, 0.28], [293.66, 0.28],
-      [349.23, 0.32], [440.00, 0.40],
+    const melody = [
+      [466.16, 320],
+      [311.13, 280],
+      [392.0, 280],
+      [415.3, 280],
+      [392.0, 280],
+      [349.23, 280],
+      [311.13, 360],
     ];
-    let t = audioCtx.currentTime;
-    sequence.forEach(([freq, dur]) => {
-      const osc  = audioCtx.createOscillator();
+
+    let startTime = audioCtx.currentTime;
+    melody.forEach(([freq, dur]) => {
+      const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'square';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.25, t);
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(0.25, startTime);
       osc.connect(gain).connect(audioCtx.destination);
-      osc.start(t);
-      osc.stop(t + dur);
-      t += dur * 1.05;
+      osc.start(startTime);
+      osc.stop(startTime + dur / 1000);
+      startTime += (dur + 40) / 1000;
     });
   }
 
