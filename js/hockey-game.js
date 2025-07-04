@@ -177,17 +177,19 @@
 
   function playGoalMelody() {
     const melody = [
-      [466.16, 320],
-      [311.13, 280],
-      [392.0, 280],
-      [415.3, 280],
-      [392.0, 280],
-      [349.23, 280],
-      [311.13, 360],
+      // First two notes hold longer like "Don't" and "you"
+      [466.16, 600], // Bb4
+      [392.0,  600], // G4
+      // Remaining notes play quicker
+      [349.23, 250], // F4
+      [392.0,  250], // G4
+      [440.0,  250], // A4
+      [392.0,  250], // G4
+      [349.23, 350], // F4
     ];
 
     let startTime = audioCtx.currentTime;
-    melody.forEach(([freq, dur]) => {
+    melody.forEach(([freq, dur], idx) => {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'square';
@@ -196,7 +198,8 @@
       osc.connect(gain).connect(audioCtx.destination);
       osc.start(startTime);
       osc.stop(startTime + dur / 1000);
-      startTime += (dur + 40) / 1000;
+      // Add a small pause after the second note
+      startTime += (dur + (idx === 1 ? 400 : 40)) / 1000;
     });
   }
 
