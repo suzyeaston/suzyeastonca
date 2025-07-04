@@ -24,6 +24,13 @@ function retro_game_music_theme_scripts() {
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
 
+function suzy_enqueue_scripts() {
+  $ver = wp_get_theme()->get( 'Version' ) . '-' . substr( md5( filemtime( get_stylesheet_directory() . '/assets/js/canucksPuckBash.js' ) ), 0, 8 );
+  wp_enqueue_style( 'suzy-style', get_stylesheet_uri(), [], $ver );
+  wp_enqueue_script( 'canucks-game', get_stylesheet_directory_uri() . '/assets/js/canucksPuckBash.js', [], $ver, true );
+}
+add_action( 'wp_enqueue_scripts', 'suzy_enqueue_scripts' );
+
 
 // =========================================
 // 2. DISABLE AUTOMATIC PARAGRAPH FORMATTING

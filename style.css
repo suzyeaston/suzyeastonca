@@ -854,16 +854,25 @@ header, main, footer, .menu-item, .albini-qa-page {
 }
 
 #touch-controls {
-  position: fixed; bottom: 12px; left: 0; right: 0;
-  display: flex; justify-content: center; gap: 16px;
+  position: fixed;
+  bottom: 12px; left: 0; right: 0;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
   pointer-events: none;
+  z-index: 9999;
+}
+#touch-controls .row {
+  display: flex; gap: 14px;
 }
 #touch-controls button {
   pointer-events: auto;
   background: rgba(0,255,0,0.15);
   border: 2px solid #0f0;
   border-radius: 10px;
-  padding: 14px;
-  font-size: 22px;
+  padding: 14px 18px;
+  font-size: 24px;
+  color: #0f0;
 }
-@media (hover: hover) { #touch-controls { display:none; } }
+@media (hover: hover) {
+  #touch-controls { display: none; }
+}
