@@ -17,6 +17,18 @@
   const overlayDefault = overlay.innerHTML;
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+  // ensure audio context is running on first user interaction
+  let audioUnlocked = false;
+  function unlockAudio() {
+    if (!audioUnlocked && audioCtx.state !== "running") {
+      audioCtx.resume().then(() => {
+        audioUnlocked = true;
+      });
+    }
+  }
+  document.addEventListener("click", unlockAudio, { once: true });
+  document.addEventListener("touchstart", unlockAudio, { once: true });
+
 
   const maxW = 480; // cap phone portrait
   function sizeCanvas() {
@@ -202,28 +214,26 @@
 
   function playGoalMelody() {
     const melody = [
-      [466.16, 320], // A#4
-      [311.13, 280], // D#4
-      [392.0, 280], // G4
-      [415.3, 280], // G#4
-      [392.0, 280], // G4
-      [349.23, 280], // F4
-      [311.13, 360], // D#4
+      [466.16, 320],
+      [311.13, 280],
+      [392.0, 280],
+      [415.3, 280],
+      [392.0, 280],
+      [349.23, 280],
+      [311.13, 360],
     ];
 
-    let delay = 0;
+    let startTime = audioCtx.currentTime;
     melody.forEach(([freq, dur]) => {
-      setTimeout(() => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = "square";
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-        osc.connect(gain).connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + dur / 1000);
-      }, delay);
-      delay += dur + 30;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(0.25, startTime);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + dur / 1000);
+      startTime += (dur + 40) / 1000;
     });
   }
 
