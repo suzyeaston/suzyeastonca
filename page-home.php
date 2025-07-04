@@ -85,7 +85,13 @@ get_header();
 
     <section class="now-listening">
         <h2 class="pixel-font">Now Listening</h2>
-        <div id="now-listening-widget"></div>
+        <iframe width="100%" height="360" src="https://www.youtube.com/embed/GwetNnBkgQM?autoplay=0" title="Metric – Full Performance (Live on KEXP)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <p class="pixel-font now-listening-caption">🎶 Metric — Live on KEXP. Raw energy, shimmering synths, no AI weapons funding here.</p>
+        <div class="info-callout pixel-font">
+            <p>Spotify CEO Daniel Ek used his investment firm Prima Materia to lead a <strong>€600M (~US $694M)</strong> Series D funding round in June 2025 for Helsing, a German defense‑AI startup now valued at $12&nbsp;billion.</p>
+            <p>Helsing develops AI‑enabled drones, aircraft and submarines for defense, and Ek also sits on its board as chairman.</p>
+            <p>At least one indie band – Deerhoof – pulled their music from Spotify in protest, citing ethical concerns over music &ldquo;killing people&rdquo; due to this connection.</p>
+        </div>
     </section>
 
     <section class="advocacy-section">

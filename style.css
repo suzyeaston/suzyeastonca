@@ -1001,6 +1001,23 @@ footer,
   animation: fadeIn 1s ease-in;
 }
 
+.now-listening-caption {
+  margin-top: 10px;
+  margin-bottom: 15px;
+}
+
+.info-callout {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed var(--secondary-color);
+  padding: 15px;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.info-callout p {
+  margin: 0 0 10px;
+}
+
 .now-listening::before {
   content: "";
   position: absolute;
