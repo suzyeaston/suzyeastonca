@@ -18,11 +18,33 @@ get_header();
         <div class="puck-icon">🏒</div>
         <?php
         $visitor_data = include get_template_directory() . '/visitor-tracker.php';
-        $total = intval($visitor_data['count']);
-        $countries = implode(', ', array_keys($visitor_data['locations']));
+        $phrases = [
+            '⚡ %d poor souls from %s woke the Albini bot today.',
+            '🎸 %d noise-makers from %s just asked why their band sucks.',
+            '🤖 Albini\'s circuit board has processed %d fragile egos from %s.',
+            '👁️ %d lurkers from %s looking for validation. None found.',
+            '🔥 %d punks from %s have faced the wrath of Albini\'s sarcasm.',
+            '💀 %d existential crises triggered in %s.',
+            '🚀 %s launched %d useless questions into the void.'
+        ];
         ?>
         <div class="visitor-counter">
-          <p><?php echo "$total people from $countries have dared to ask Albini."; ?></p>
+          <?php foreach ($visitor_data['locations'] as $c => $cnt): ?>
+            <p><?php printf(esc_html($phrases[array_rand($phrases)]), $cnt, $c); ?></p>
+          <?php endforeach; ?>
+          <?php if (!empty($visitor_data['locations'])): ?>
+            <p>
+              <?php
+              arsort($visitor_data['locations']);
+              $leaders = array_slice($visitor_data['locations'], 0, 3, true);
+              $leaderboard = [];
+              foreach ($leaders as $cc => $ct) {
+                  $leaderboard[] = "$cc ($ct)";
+              }
+              echo 'Leaderboard: ' . esc_html(implode(', ', $leaderboard));
+              ?>
+            </p>
+          <?php endif; ?>
         </div>
 
         <div class="button-cluster">
