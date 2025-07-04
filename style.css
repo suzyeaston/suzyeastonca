@@ -387,9 +387,9 @@ body::before {
 .albini-qa-page {
   background: var(--background-medium);
   border: 2px solid var(--secondary-color);
-  padding: 40px;
+  padding: 2.5rem;
   border-radius: 8px;
-  margin: 40px 0;
+  margin: 2.5rem 0;
 }
 
 .prompt-button {
@@ -417,6 +417,52 @@ body::before {
   object-fit: contain;
 }
 
+/* Albini Q&A layout */
+.albini-qa-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+}
+
+.qa-input {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 1rem;
+}
+
+.qa-input textarea,
+.qa-input input,
+.qa-input button {
+  width: 90%;
+  max-width: 500px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.qa-input textarea,
+.qa-input input {
+  font-size: 1rem;
+  min-height: 4rem;
+}
+
+.qa-response {
+  width: 90%;
+  max-width: 600px;
+}
+
+@media (max-width: 600px) {
+  .qa-input {
+    flex-direction: column;
+  }
+}
+
 .response-container {
   background: var(--background-light);
   border: 2px solid var(--secondary-color);
@@ -435,7 +481,7 @@ body::before {
 .qa-response p {
   font-family: 'Press Start 2P', monospace;
   color: #00ff00;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: bold;
   margin-top: 20px;
   white-space: pre-wrap;
@@ -444,7 +490,7 @@ body::before {
 .albini-example {
   font-family: 'Press Start 2P', monospace;
   color: #00ff00;
-  font-size: 14px;
+  font-size: 0.875rem;
   margin-top: 12px;
   line-height: 1.6;
 }
@@ -646,6 +692,7 @@ body::before {
 #sparkly-name,
 .albini-title {
   color: #0f0;
+  font-size: clamp(1.2rem, 5vw, 2rem);
   text-shadow:
     0 0 4px #0f0,
     0 0 8px #0f0,
