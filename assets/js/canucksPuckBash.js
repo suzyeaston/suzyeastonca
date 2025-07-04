@@ -17,20 +17,6 @@
   const overlayDefault = overlay.innerHTML;
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  if (window.matchMedia("(hover: none)").matches) {
-    const ctrls = document.createElement("div");
-    ctrls.id = "touch-controls";
-    ctrls.innerHTML = `
-      <button id="btn-up">⬆️</button>
-      <div class="row">
-        <button id="btn-left">⬅️</button>
-        <button id="btn-shoot">🏒</button>
-        <button id="btn-right">➡️</button>
-      </div>
-      <button id="btn-down">⬇️</button>
-    `;
-    document.body.appendChild(ctrls);
-  }
 
   const maxW = 480; // cap phone portrait
   function sizeCanvas() {

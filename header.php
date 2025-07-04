@@ -13,7 +13,13 @@
   <meta charset="<?php bloginfo( 'charset' ); ?>">
   <link rel="profile" href="http://gmpg.org/xfn/11">
 
-  <title><?php wp_title( '|', true, 'right' ); bloginfo( 'name' ); ?></title>
+  <title>Suzy's Retro Arcade - Canucks Puck Bash Game</title>
+  <meta name="description" content="Play a retro pixel hockey game starring the Vancouver Canucks. Shoot, score, and hear the Simple Minds goal horn. Built by Suzy Easton.">
+  <meta name="keywords" content="Canucks hockey arcade, retro pixel games, 80s hockey, simple minds hockey song, Vancouver indie dev, free hockey games, nostalgic arcade, suzyeaston.ca, Canucks Puck Bash">
+  <meta property="og:title" content="Canucks Puck Bash - Retro Hockey Arcade">
+  <meta property="og:description" content="Shoot, score, and hear 'Don't You Forget About Me' in this 80s-style hockey arcade game.">
+  <meta property="og:image" content="https://suzyeaston.ca/arcade/og-image.png">
+  <meta property="og:url" content="https://suzyeaston.ca/arcade/">
 
   <!-- Main stylesheet -->
   <link rel="stylesheet" href="<?php bloginfo( 'stylesheet_url' ); ?>">

@@ -1,36 +1,20 @@
-# Suzy Easton Showcase: Unplugged Sessions & Rock n Roll 🎸
+# Suzy's Retro Arcade – v3.0
+A retro WordPress theme and pixel hockey arcade game by Suzy Easton.
 
-**Version:** 2.1  
-**License:** MIT
+## Features
+- Retro pixel-art inspired WordPress theme with neon CRT vibes
+- Includes **Canucks Puck Bash**, an original hockey arcade game
+- Features the Simple Minds riff from "Don't You Forget About Me" as the Canucks goal horn
+- Mobile-friendly drag & tap controls
+- Powered by HTML5 canvas and vanilla JS
+- Inspired by 80s sports video games and the Vancouver Canucks
 
-Welcome to the digital stage of [suzyeaston.ca](https://suzyeaston.ca), where music meets retro-inspired digital experiences.
+## About Suzy Easton
+- Vancouver-based musician, technologist, and creative
+- Played bass in bands that toured Canada and recorded with Steve Albini in Chicago
+- Formerly appeared on MuchMusic
+- Currently an IT Operations & QA professional with a passion for civic tech and arcade projects
+- Likes hockey, punk rock, 8-bit aesthetics, and fixing things that break in production
 
-## What's Going Down?
-
-- **Live Sessions:** Tune in for live acoustic sets, exclusive performances, and spontaneous musical explorations, all streamed from my home studio to your screen.
-- **Podcast:** Check out the brand-new podcast, [**Easy Living with Suzy Easton**](https://easylivingwithsuzyeaston.podbean.com/), for stories, insights, and comedic takes on life in Vancouver, BC.
-
-## Tech & Theme Features
-
-- Retro gaming aesthetics using `'Press Start 2P'` font.
-- Custom pages:
-  - **Bio Page** (`page-bio.php`): Learn about my music and tech background.
-  - **Canucks App** (`page-canucks-app.php`): Displays Vancouver Canucks news and betting odds.
-  - **Midnight Mix** (`page-midnight-mix.php`): Late-night music sessions and updates.
-  - **Podcast Page** (`page-podcast.php`): New page dedicated to “Easy Living with Suzy Easton.”
-- Custom REST endpoints for hockey news and betting (in `functions.php`).
-- A custom scoreboard for Vancouver Canucks fans.
-
-## Getting Started
-
-1. **Install the Theme:** Upload to your WordPress `themes` directory, activate in WP Admin.
-2. **Configure Pages:** Create pages for Bio, Podcast, etc. Assign each the correct page template.
-3. **Enjoy the Retro Vibe:** Tweak styling in `style.css` or via a child theme.
-
-## Contributing
-
-Feel free to fork this repository and submit pull requests. Feedback is always welcome!
-
----
-
-_Made with ❤️ in Vancouver, BC. Let’s rock!_
+## License
+MIT License. Play nice.
