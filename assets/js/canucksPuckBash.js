@@ -1,25 +1,25 @@
 // Simple retro hockey game
 // Inspired by classic 8-bit hockey titles
 
-(function() {
-  const canvas = document.getElementById('canucks-game');
+(function () {
+  const canvas = document.getElementById("canucks-game");
   if (!canvas || !canvas.getContext) {
-    console.warn('Game canvas not found');
-    const overlayEl = document.getElementById('game-overlay');
-    if (overlayEl) overlayEl.textContent = 'Game failed to load';
+    console.warn("Game canvas not found");
+    const overlayEl = document.getElementById("game-overlay");
+    if (overlayEl) overlayEl.textContent = "Game failed to load";
     return;
   }
-  const ctx = canvas.getContext('2d');
-  const scoreboardEl = document.getElementById('scoreboard');
-  const teamDisplayEl = document.getElementById('team-display');
-  const overlay = document.getElementById('game-overlay');
-  let startButton = document.getElementById('start-button');
+  const ctx = canvas.getContext("2d");
+  const scoreboardEl = document.getElementById("scoreboard");
+  const teamDisplayEl = document.getElementById("team-display");
+  const overlay = document.getElementById("game-overlay");
+  let startButton = document.getElementById("start-button");
   const overlayDefault = overlay.innerHTML;
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  if (window.matchMedia('(hover: none)').matches) {
-    const ctrls = document.createElement('div');
-    ctrls.id = 'touch-controls';
+  if (window.matchMedia("(hover: none)").matches) {
+    const ctrls = document.createElement("div");
+    ctrls.id = "touch-controls";
     ctrls.innerHTML = `
       <button id="btn-up">⬆️</button>
       <div class="row">
@@ -32,20 +32,29 @@
     document.body.appendChild(ctrls);
   }
 
-  const maxW = 480;               // cap phone portrait
+  const maxW = 480; // cap phone portrait
   function sizeCanvas() {
     const w = Math.min(window.innerWidth * 0.9, maxW);
-    const h = w * 0.5;            // keep 2:1 aspect
-    canvas.width  = w;
+    const h = w * 0.5; // keep 2:1 aspect
+    canvas.width = w;
     canvas.height = h;
   }
   sizeCanvas();
-  window.addEventListener('resize', sizeCanvas);
+  window.addEventListener("resize", sizeCanvas);
 
   const goal = { x: canvas.width / 2 - 60, width: 120, height: 10 };
 
-  const teams = ['Oilers','Flames','Leafs','Bruins','Sharks','Jets','Senators','Kings'];
-  let opponent = teams[Math.floor(Math.random()*teams.length)];
+  const teams = [
+    "Oilers",
+    "Flames",
+    "Leafs",
+    "Bruins",
+    "Sharks",
+    "Jets",
+    "Senators",
+    "Kings",
+  ];
+  let opponent = teams[Math.floor(Math.random() * teams.length)];
 
   const goalie = {
     x: goal.x + goal.width / 2 - 20,
@@ -54,7 +63,7 @@
     height: 10,
     speed: 120,
     dir: 1,
-    color: '#ff5555'
+    color: "#ff5555",
   };
 
   const player = {
@@ -63,7 +72,7 @@
     width: 20,
     height: 20,
     speed: 200,
-    color: '#0055aa'
+    color: "#0055aa",
   };
 
   const puck = {
@@ -72,7 +81,7 @@
     radius: 6,
     vx: 0,
     vy: 0,
-    color: '#000'
+    color: "#000",
   };
 
   let lastTime = 0;
@@ -82,14 +91,15 @@
   let timeLeft = 60;
   let running = false;
   let shotTimer = 0;
+  let isDragging = false;
 
   function drawRink() {
-    ctx.fillStyle = '#eef';
+    ctx.fillStyle = "#eef";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#3399ff';
+    ctx.strokeStyle = "#3399ff";
     ctx.lineWidth = 4;
     ctx.strokeRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#66bbff';
+    ctx.fillStyle = "#66bbff";
     ctx.fillRect(goal.x, 0, goal.width, goal.height);
   }
 
@@ -107,7 +117,10 @@
     goalie.x += goalie.speed * dt * goalie.dir;
     if (goalie.x < goal.x || goalie.x + goalie.width > goal.x + goal.width) {
       goalie.dir *= -1;
-      goalie.x = Math.max(goal.x, Math.min(goalie.x, goal.x + goal.width - goalie.width));
+      goalie.x = Math.max(
+        goal.x,
+        Math.min(goalie.x, goal.x + goal.width - goalie.width),
+      );
     }
   }
 
@@ -122,7 +135,10 @@
     if ((keys.ArrowLeft || keys.KeyA) && player.x > 0) {
       player.x -= player.speed * dt;
     }
-    if ((keys.ArrowRight || keys.KeyD) && player.x + player.width < canvas.width) {
+    if (
+      (keys.ArrowRight || keys.KeyD) &&
+      player.x + player.width < canvas.width
+    ) {
       player.x += player.speed * dt;
     }
 
@@ -148,7 +164,11 @@
         puck.vx *= -1;
       }
       if (puck.y - puck.radius < 0) {
-        if (puck.x > goal.x && puck.x < goal.x + goal.width && !(puck.x > goalie.x && puck.x < goalie.x + goalie.width)) {
+        if (
+          puck.x > goal.x &&
+          puck.x < goal.x + goal.width &&
+          !(puck.x > goalie.x && puck.x < goalie.x + goalie.width)
+        ) {
           canucksScore += 1;
           showGoal();
           resetPuck();
@@ -163,9 +183,13 @@
       }
 
       // goalie collision
-      if (puck.y - puck.radius <= goalie.y + goalie.height &&
-          puck.y - puck.radius >= goalie.y &&
-          puck.x > goalie.x && puck.x < goalie.x + goalie.width && puck.vy < 0) {
+      if (
+        puck.y - puck.radius <= goalie.y + goalie.height &&
+        puck.y - puck.radius >= goalie.y &&
+        puck.x > goalie.x &&
+        puck.x < goalie.x + goalie.width &&
+        puck.vy < 0
+      ) {
         puck.vy *= -1;
         puck.y = goalie.y + goalie.height + puck.radius;
       }
@@ -192,47 +216,51 @@
 
   function playGoalMelody() {
     const melody = [
-      [466.16, 0.32],   // A♯4
-      [311.13, 0.28],   // D♯4
-      [392.00, 0.28],   // G4
-      [415.30, 0.28],   // G♯4
-      [392.00, 0.28],   // G4
-      [349.23, 0.28],   // F4
-      [311.13, 0.36],   // D♯4
+      [466.16, 320], // A#4
+      [311.13, 280], // D#4
+      [392.0, 280], // G4
+      [415.3, 280], // G#4
+      [392.0, 280], // G4
+      [349.23, 280], // F4
+      [311.13, 360], // D#4
     ];
-    let t = audioCtx.currentTime;
+
+    let delay = 0;
     melody.forEach(([freq, dur]) => {
-      const osc  = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.25, t);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start(t);
-      osc.stop(t + dur);
-      t += dur * 1.05;
+      setTimeout(() => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "square";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur / 1000);
+      }, delay);
+      delay += dur + 30;
     });
   }
 
   function showGoal() {
-    overlay.innerHTML = '<div class="overlay-content goal-animation"><p>GOAL!</p></div>';
-    overlay.style.display = 'flex';
+    overlay.innerHTML =
+      '<div class="overlay-content goal-animation"><p>GOAL!</p></div>';
+    overlay.style.display = "flex";
     playGoalMelody();
     setTimeout(() => {
-      overlay.style.display = 'none';
+      overlay.style.display = "none";
       overlay.innerHTML = overlayDefault;
     }, 800);
   }
 
   function endGame() {
     running = false;
-    const result = canucksScore >= opponentScore ? 'You Win!' : 'You Lose!';
+    const result = canucksScore >= opponentScore ? "You Win!" : "You Lose!";
     overlay.innerHTML = `<div class="overlay-content"><p>${result}<br>Final: Canucks ${canucksScore} - ${opponent} ${opponentScore}</p><button id="start-button" class="pixel-button">Play Again</button></div>`;
-    overlay.style.display = 'flex';
-    document.getElementById('start-button').addEventListener('click', () => {
+    overlay.style.display = "flex";
+    document.getElementById("start-button").addEventListener("click", () => {
       overlay.innerHTML = overlayDefault;
-      startButton = document.getElementById('start-button');
-      startButton.addEventListener('click', start);
+      startButton = document.getElementById("start-button");
+      startButton.addEventListener("click", start);
       start();
     });
   }
@@ -268,60 +296,126 @@
       canucksScore = 0;
       opponentScore = 0;
       timeLeft = 60;
-      opponent = teams[Math.floor(Math.random()*teams.length)];
+      opponent = teams[Math.floor(Math.random() * teams.length)];
       teamDisplayEl.textContent = `Vancouver Canucks vs. ${opponent}`;
       scoreboardEl.textContent = `Canucks 0 – ${opponent} 0 | 60`;
       running = true;
       lastTime = performance.now();
-      overlay.style.display = 'none';
+      overlay.style.display = "none";
       requestAnimationFrame(loop);
     }
   }
 
-  startButton.addEventListener('click', start);
+  startButton.addEventListener("click", start);
 
   function handleKeyDown(e) {
-    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyA','KeyD','KeyW','KeyS'].includes(e.code)) {
+    if (
+      [
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "ArrowDown",
+        "Space",
+        "KeyA",
+        "KeyD",
+        "KeyW",
+        "KeyS",
+      ].includes(e.code)
+    ) {
       e.preventDefault();
     }
-    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+    if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
       shoot();
     }
     keys[e.code] = true;
   }
 
   function handleKeyUp(e) {
-    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyA','KeyD','KeyW','KeyS'].includes(e.code)) {
+    if (
+      [
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "ArrowDown",
+        "Space",
+        "KeyA",
+        "KeyD",
+        "KeyW",
+        "KeyS",
+      ].includes(e.code)
+    ) {
       e.preventDefault();
     }
     keys[e.code] = false;
   }
 
-  document.addEventListener('keydown', handleKeyDown, {passive:false});
-  document.addEventListener('keyup', handleKeyUp, {passive:false});
+  document.addEventListener("keydown", handleKeyDown, { passive: false });
+  document.addEventListener("keyup", handleKeyUp, { passive: false });
 
   const keyMap = {
-    'btn-up':    'ArrowUp',
-    'btn-down':  'ArrowDown',
-    'btn-left':  'ArrowLeft',
-    'btn-right': 'ArrowRight',
-    'btn-shoot': 'Space'
+    "btn-up": "ArrowUp",
+    "btn-down": "ArrowDown",
+    "btn-left": "ArrowLeft",
+    "btn-right": "ArrowRight",
+    "btn-shoot": "Space",
   };
-  Object.keys(keyMap).forEach(id => {
+  Object.keys(keyMap).forEach((id) => {
     const btn = document.getElementById(id);
     if (!btn) return;
-    ['touchstart','mousedown'].forEach(evt =>
-      btn.addEventListener(evt, e => {
-        e.preventDefault();
-        handleKeyDown({ code: keyMap[id] });
-      }, { passive:false })
+    ["touchstart", "mousedown"].forEach((evt) =>
+      btn.addEventListener(
+        evt,
+        (e) => {
+          e.preventDefault();
+          handleKeyDown({ code: keyMap[id] });
+        },
+        { passive: false },
+      ),
     );
-    ['touchend','mouseup','mouseleave'].forEach(evt =>
-      btn.addEventListener(evt, () => handleKeyUp({ code: keyMap[id] }))
+    ["touchend", "mouseup", "mouseleave"].forEach((evt) =>
+      btn.addEventListener(evt, () => handleKeyUp({ code: keyMap[id] })),
     );
   });
-  canvas.addEventListener('touchstart', e => {
-    e.preventDefault();
-    shoot();
-  }, { passive:false });
+  const rect = () => canvas.getBoundingClientRect();
+
+  canvas.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      const touchX = e.touches[0].clientX - rect().left;
+      player.x = touchX - player.width / 2;
+      shoot();
+      isDragging = true;
+    },
+    { passive: false },
+  );
+
+  canvas.addEventListener(
+    "touchmove",
+    (e) => {
+      e.preventDefault();
+      if (!isDragging) return;
+      const touchX = e.touches[0].clientX - rect().left;
+      player.x = touchX - player.width / 2;
+    },
+    { passive: false },
+  );
+
+  canvas.addEventListener("touchend", () => {
+    isDragging = false;
+  });
+
+  canvas.addEventListener("mousedown", (e) => {
+    const mouseX = e.clientX - rect().left;
+    player.x = mouseX - player.width / 2;
+    isDragging = true;
+  });
+  canvas.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    const mouseX = e.clientX - rect().left;
+    player.x = mouseX - player.width / 2;
+  });
+  canvas.addEventListener("mouseup", () => {
+    isDragging = false;
+  });
 })();
