@@ -17,12 +17,17 @@
   const overlayDefault = overlay.innerHTML;
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  const WIDTH = 800;
-  const HEIGHT = 400;
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
+  const maxW = 480;               // cap phone portrait
+  function sizeCanvas() {
+    const w = Math.min(window.innerWidth * 0.9, maxW);
+    const h = w * 0.5;            // keep 2:1 aspect
+    canvas.width  = w;
+    canvas.height = h;
+  }
+  sizeCanvas();
+  window.addEventListener('resize', sizeCanvas);
 
-  const goal = { x: WIDTH / 2 - 60, width: 120, height: 10 };
+  const goal = { x: canvas.width / 2 - 60, width: 120, height: 10 };
 
   const teams = ['Oilers','Flames','Leafs','Bruins','Sharks','Jets','Senators','Kings'];
   let opponent = teams[Math.floor(Math.random()*teams.length)];
@@ -38,8 +43,8 @@
   };
 
   const player = {
-    x: WIDTH / 2 - 10,
-    y: HEIGHT - 40,
+    x: canvas.width / 2 - 10,
+    y: canvas.height - 40,
     width: 20,
     height: 20,
     speed: 200,
@@ -65,10 +70,10 @@
 
   function drawRink() {
     ctx.fillStyle = '#eef';
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = '#3399ff';
     ctx.lineWidth = 4;
-    ctx.strokeRect(0, 0, WIDTH, HEIGHT);
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#66bbff';
     ctx.fillRect(goal.x, 0, goal.width, goal.height);
   }
@@ -102,7 +107,7 @@
     if ((keys.ArrowLeft || keys.KeyA) && player.x > 0) {
       player.x -= player.speed * dt;
     }
-    if ((keys.ArrowRight || keys.KeyD) && player.x + player.width < WIDTH) {
+    if ((keys.ArrowRight || keys.KeyD) && player.x + player.width < canvas.width) {
       player.x += player.speed * dt;
     }
 
@@ -123,8 +128,8 @@
         puck.x = puck.radius;
         puck.vx *= -1;
       }
-      if (puck.x + puck.radius > WIDTH) {
-        puck.x = WIDTH - puck.radius;
+      if (puck.x + puck.radius > canvas.width) {
+        puck.x = canvas.width - puck.radius;
         puck.vx *= -1;
       }
       if (puck.y - puck.radius < 0) {
@@ -137,7 +142,7 @@
           puck.vy *= -1;
         }
       }
-      if (puck.y + puck.radius > HEIGHT) {
+      if (puck.y + puck.radius > canvas.height) {
         opponentScore += 1;
         resetPuck();
       }
@@ -170,24 +175,30 @@
     puck.y = player.y - 5;
   }
 
-  function playGoalSound() {
-    try {
-      const osc = audioCtx.createOscillator();
+  function playGoalMelody() {
+    const sequence = [
+      [349.23, 0.32], [293.66, 0.28],
+      [261.63, 0.28], [293.66, 0.28],
+      [349.23, 0.32], [440.00, 0.40],
+    ];
+    let t = audioCtx.currentTime;
+    sequence.forEach(([freq, dur]) => {
+      const osc  = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'square';
-      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.3);
-    } catch(err) {}
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.25, t);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + dur);
+      t += dur * 1.05;
+    });
   }
 
   function showGoal() {
     overlay.innerHTML = '<div class="overlay-content goal-animation"><p>GOAL!</p></div>';
     overlay.style.display = 'flex';
-    playGoalSound();
+    playGoalMelody();
     setTimeout(() => {
       overlay.style.display = 'none';
       overlay.innerHTML = overlayDefault;
@@ -269,4 +280,31 @@
 
   document.addEventListener('keydown', handleKeyDown, {passive:false});
   document.addEventListener('keyup', handleKeyUp, {passive:false});
+
+  if (window.matchMedia('(hover: none)').matches) {
+    const tc = document.createElement('div');
+    tc.id = 'touch-controls';
+    tc.innerHTML = `
+      <button id="btn-up">⬆️</button>
+      <div>
+        <button id="btn-left">⬅️</button>
+        <button id="btn-shoot">🏒</button>
+        <button id="btn-right">➡️</button>
+      </div>
+      <button id="btn-down">⬇️</button>
+    `;
+    document.body.appendChild(tc);
+    const map = {
+      'btn-up': 'ArrowUp',
+      'btn-down': 'ArrowDown',
+      'btn-left': 'ArrowLeft',
+      'btn-right': 'ArrowRight',
+      'btn-shoot': 'Space'
+    };
+    Object.entries(map).forEach(([id, code]) => {
+      const el = document.getElementById(id);
+      el.addEventListener('touchstart', e => { e.preventDefault(); handleKeyDown({code}); });
+      el.addEventListener('touchend', e => { e.preventDefault(); handleKeyUp({code}); });
+    });
+  }
 })();

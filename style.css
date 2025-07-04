@@ -852,3 +852,18 @@ header, main, footer, .menu-item, .albini-qa-page {
     font-size: 0.95rem;
   }
 }
+
+#touch-controls {
+  position: fixed; bottom: 12px; left: 0; right: 0;
+  display: flex; justify-content: center; gap: 16px;
+  pointer-events: none;
+}
+#touch-controls button {
+  pointer-events: auto;
+  background: rgba(0,255,0,0.15);
+  border: 2px solid #0f0;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 22px;
+}
+@media (hover: hover) { #touch-controls { display:none; } }
