@@ -32,12 +32,14 @@
 </head>
 
 <body <?php body_class(); ?>>
-<?php 
+<?php
   // Fires immediately after the opening <body> tag for plugins/themes
   if ( function_exists( 'wp_body_open' ) ) {
     wp_body_open();
   }
 ?>
+
+<a href="/" class="home-link" aria-label="Home">🏠 Home</a>
 
 <!-- Full‑screen moving starfield background -->
 <canvas id="starfield"></canvas>

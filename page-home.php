@@ -5,7 +5,7 @@ get_header();
 
 <main id="homepage-content">
     <div class="hero-section">
-        <h1 class="pixel-font">Hi, I&rsquo;m Suzy Easton.</h1>
+        <h1 id="home-title" class="pixel-font color-cycle">Hi, I&rsquo;m Suzy Easton.</h1>
        <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
     <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
 

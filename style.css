@@ -810,32 +810,17 @@ footer,
   max-width: 800px;
 }
 
-.hero-section h1.pixel-font {
+.hero-section h1.color-cycle {
   margin-bottom: 1.5rem;
-  color: var(--secondary-color);
-  animation: neonFlicker 4s linear infinite;
-}
-
-@keyframes neonFlicker {
-  0%,
-  18%,
-  22%,
-  25%,
-  53%,
-  57%,
-  100% {
-    text-shadow:
-      0 0 6px var(--secondary-color),
-      0 0 12px var(--secondary-color),
-      0 0 18px var(--secondary-color);
-    opacity: 1;
-  }
-  20%,
-  24%,
-  55% {
-    text-shadow: none;
-    opacity: 0.7;
-  }
+  background-image: linear-gradient(90deg, #ff0099, #00ffff, #00ff00, #ffff00, #ff0099);
+  background-size: 300%;
+  background-position: 0%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 0 4px var(--accent-color),
+    0 0 8px var(--accent-color);
 }
 
 .hero-section .pixel-intro {
@@ -846,6 +831,21 @@ footer,
 }
 .hero-section .pixel-intro p {
   margin-bottom: 1.5rem;
+}
+
+.home-link {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 10000;
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.85rem;
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.home-link:hover {
+  text-shadow: 0 0 4px var(--accent-color);
 }
 
 .pixel-font {
