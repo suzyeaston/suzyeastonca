@@ -8,7 +8,7 @@ get_header();
 <div id="primary" class="content-area">
     <main id="main" class="site-main">
         <div class="riff-generator-container">
-            <h1 class="pixel-font">Riff Generator 8000</h1>
+            <!--<h1 class="pixel-font">Riff Generator 8000</h1>-->
             
             <div class="generator-panel">
                 <div class="controls">
@@ -17,6 +17,7 @@ get_header();
                         <option value="punk">Punk</option>
                         <option value="metal">Metal</option>
                         <option value="jazz">Jazz</option>
+                        <option value="classical">Classical</option>
                     </select>
                     
                     <button id="generate-riff" class="action-button">Generate Riff</button>
@@ -46,27 +47,33 @@ get_header();
 // ==============================================
 const genres = {
     rock:  {
-        notes: ['E4','A4','B4','E5'],
+        notes: ['E4','G4','A4','B4','C5'],
         type: 'square',
-        tempo: 180,
-        distortion: 40
+        tempo: 150,
+        distortion: 20
     },
     punk:  {
-        notes: ['C4','F4','G4','C5'],
+        notes: ['A4','D5','E5'],
         type: 'square',
-        tempo: 200,
-        distortion: 30
+        tempo: 210,
+        distortion: 40
     },
     metal: {
-        notes: ['D4','E4','F4','A4','Bb4','C5'],
+        notes: ['E2','G2','A2','D3','F3'],
         type: 'sawtooth',
-        tempo: 160,
-        distortion: 70
+        tempo: 130,
+        distortion: 80
     },
     jazz:  {
-        notes: ['F4','G4','A4','C5','Eb5'],
+        notes: ['F2','G2','Bb2','C3','Eb3'],
         type: 'triangle',
-        tempo: 100,
+        tempo: 90,
+        distortion: 10
+    },
+    classical: {
+        notes: ['C4','E4','G4','A4','B4','C5'],
+        type: 'sine',
+        tempo: 120,
         distortion: 0
     }
 };
@@ -75,27 +82,41 @@ const instrumentMap = {
     rock: 'electric_guitar_clean',
     punk: 'electric_guitar_muted',
     metal: 'distortion_guitar',
-    jazz: 'acoustic_grand_piano'
+    jazz: 'electric_bass_finger',
+    classical: 'violin'
 };
 
 const bassMap = {
     rock: 'electric_bass_finger',
     punk: 'electric_bass_pick',
     metal: 'electric_bass_pick',
-    jazz: 'acoustic_bass'
+    jazz: 'acoustic_bass',
+    classical: null
 };
 
 const drumTags = {
     rock: 'rock drum hit',
     punk: 'punk drum hit',
     metal: 'metal drum hit',
-    jazz: 'brush drum hit'
+    jazz: 'brush drum hit',
+    classical: ''
 };
 
-const FS_TOKEN = 'YOUR_FREESOUND_API_KEY';
+// Freesound token is optional; when absent we simply skip drum samples
+const FS_TOKEN = '';
 const sampleCache = {};
 
+const HUMANIZE = {
+    time: 0.04,
+    gain: 0.2,
+    freq: 0.02
+};
+
 async function loadDrumSample(genre){
+    if(!FS_TOKEN){
+        sampleCache[genre] = null;
+        return null; // skip fetching when token isn't provided
+    }
     if(sampleCache[genre]) return sampleCache[genre];
     const query = encodeURIComponent(drumTags[genre] || 'drum');
     const url = `https://freesound.org/apiv2/search/text/?query=${query}&page_size=5&token=${FS_TOKEN}`;
@@ -119,6 +140,7 @@ async function playDrums(genre){
         const player = new Tone.Player(url).toDestination();
         player.autostart = true;
     }
+    // silently skip drums when no sample is available
 }
 
 function noteToFreq(note){
@@ -191,9 +213,12 @@ async function playWithSamples(genre, riff, noteDur){
     const bass  = await Soundfont.instrument(ac, bassMap[genre]);
     const start = ac.currentTime + 0.1;
     riff.forEach((note, i) => {
-        inst.play(note, start + i*noteDur);
+        const tOffset = (Math.random() - 0.5) * HUMANIZE.time;
+        const vol    = 0.8 + (Math.random()-0.5) * HUMANIZE.gain;
+        inst.play(note, start + i*noteDur + tOffset, { gain: vol });
         const bassNote = Tone.Frequency(note).transpose(-12).toNote();
-        bass.play(bassNote, start + i*noteDur, { gain: 0.7 });
+        const bassVol  = 0.7 + (Math.random()-0.5) * HUMANIZE.gain;
+        bass.play(bassNote, start + i*noteDur + tOffset, { gain: bassVol });
     });
     playDrums(genre);
     const audioElement = document.getElementById('riff-audio');
@@ -210,7 +235,8 @@ function playWithOscillator(data, riff, noteDur){
     riff.forEach(note => {
         const osc = offline.createOscillator();
         osc.type = type;
-        osc.frequency.value = noteToFreq(note);
+        const baseFreq = noteToFreq(note);
+        osc.frequency.value = baseFreq * (1 + (Math.random()-0.5)*HUMANIZE.freq);
         const gain = offline.createGain();
         osc.connect(gain);
 
@@ -224,12 +250,14 @@ function playWithOscillator(data, riff, noteDur){
         }
 
         dest.connect(offline.destination);
-        gain.gain.setValueAtTime(0, currentTime);
-        gain.gain.linearRampToValueAtTime(1, currentTime + 0.02);
-        gain.gain.linearRampToValueAtTime(0.7, currentTime + noteDur*0.8);
-        gain.gain.linearRampToValueAtTime(0, currentTime + noteDur);
-        osc.start(currentTime);
-        osc.stop(currentTime + noteDur);
+        const vol = 0.7 + (Math.random()-0.5)*HUMANIZE.gain;
+        const startTime = currentTime + (Math.random()-0.5)*HUMANIZE.time;
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(vol, startTime + 0.02);
+        gain.gain.linearRampToValueAtTime(vol*0.7, startTime + noteDur*0.8);
+        gain.gain.linearRampToValueAtTime(0, startTime + noteDur);
+        osc.start(startTime);
+        osc.stop(startTime + noteDur);
         currentTime += noteDur;
     });
 
