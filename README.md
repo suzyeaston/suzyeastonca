@@ -7,7 +7,7 @@ A custom WordPress theme powering [suzyeaston.ca](https://suzyeaston.ca), comple
 - **Riff Generator 8000** for instant rock, punk, metal or jazz riffs
 - **Easy Living with Suzy Easton** podcast page with embeds from PodBean, iHeartRadio and YouTube
 - **Albini Q&A** widget that channels legendary producer Steve Albini via OpenAI
-- Music releases, livestream schedules and a "Now Listening" widget
+- Music releases, livestream schedules and a "Now Listening" section featuring a static YouTube embed
 - Downtown Eastside advocacy section and notes on Suzy's possible 2026 city council run
 - Custom REST endpoints for Canucks news and betting odds
 - Mobile friendly with drag & tap controls

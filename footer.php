@@ -5,10 +5,6 @@
             <span class="icon">🎵</span>
             <span class="label">Bandcamp</span>
         </a>
-        <a href="https://open.spotify.com/artist/your-spotify-id" target="_blank" class="floating-link">
-            <span class="icon">🎶</span>
-            <span class="label">Spotify</span>
-        </a>
         <a href="https://soundcloud.com/suzyeaston" target="_blank" class="floating-link">
             <span class="icon">🔊</span>
             <span class="label">SoundCloud</span>

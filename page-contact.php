@@ -36,10 +36,6 @@ get_header(); ?>
       <a href="https://suzyeaston.bandcamp.com/" target="_blank">suzyeaston.bandcamp.com</a> <!-- :contentReference[oaicite:3]{index=3} -->
     </p>
 
-    <p><strong>Spotify (Single “A Little Louder”):</strong>
-      <a href="https://open.spotify.com/album/6Q42CjL7OnDlip49fp7dRE?si=xGIWlKm0QSm7nFEPBL6roA" target="_blank">
-        open.spotify.com/album/6Q42CjL7…</a> <!-- :contentReference[oaicite:4]{index=4} -->
-    </p>
 
     <p><strong>Podcast (Easy Living with Suzy Easton):</strong><br>
       <iframe title="Suzy's Guide to Vancouver's April 5th By-Election"
