@@ -114,6 +114,14 @@ get_header();
         <p class="pixel-font">If you'd like to support my creative and technical endeavors, consider buying me a coffee on <a href="https://www.buymeacoffee.com/wi0amge" target="_blank" class="support-link">Buy Me a Coffee</a></p>
         <p class="pixel-font">For collaborations or just to chat, reach out at <a href="mailto:suzyeaston@icloud.com" class="support-link">suzyeaston@icloud.com</a></p>
     </section>
+<?php
+$visitor_data = include get_template_directory() . '/visitor-tracker.php';
+arsort($visitor_data['locations']);
+?>
+<div class="visitor-counter">
+  <p>🎯 Visitors since July 3, 2025: <?php echo intval($visitor_data['count']); ?></p>
+  <p>🌍 Top Locations: <?php $locs=[]; foreach($visitor_data['locations'] as $k=>$v){$locs[]=$k.' ('.$v.')';} echo implode(', ', array_slice($locs,0,3)); ?></p>
+</div>
 </main>
 
 <?php get_footer(); ?>

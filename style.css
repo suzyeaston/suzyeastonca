@@ -345,6 +345,17 @@ body::before {
 }
 
 /* ====================== */
+/*    VISITOR COUNTER   */
+/* ====================== */
+.visitor-counter {
+  font-family: 'Press Start 2P', monospace;
+  color: #00ff00;
+  margin-top: 2rem;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ====================== */
 /*    SUPPORT SECTION    */
 /* ====================== */
 .support-section {
@@ -419,6 +430,23 @@ body::before {
   height: 64px;
   border-radius: 50%;
   margin-bottom: 10px;
+}
+/* Albini Q&A terminal response */
+.qa-response p {
+  font-family: 'Press Start 2P', monospace;
+  color: #00ff00;
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 20px;
+  white-space: pre-wrap;
+}
+
+.albini-example {
+  font-family: 'Press Start 2P', monospace;
+  color: #00ff00;
+  font-size: 14px;
+  margin-top: 12px;
+  line-height: 1.6;
 }
 
 /* ====================== */
