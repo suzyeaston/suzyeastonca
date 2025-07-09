@@ -26,6 +26,11 @@ function analyze_audio( $filepath ) {
         return __( 'Uploaded file missing on server.', 'suzys-music-theme' );
     }
 
+    if ( ! function_exists( 'curl_file_create' ) ) {
+        error_log( 'curl_file_create function missing.' );
+        return __( 'Server misconfiguration: cURL support missing.', 'suzys-music-theme' );
+    }
+
     $file_resource = curl_file_create( $filepath, 'audio/mpeg', basename( $filepath ) );
 
     $transcription = wp_remote_post( 'https://api.openai.com/v1/audio/transcriptions', [
@@ -45,12 +50,17 @@ function analyze_audio( $filepath ) {
 
     $code = wp_remote_retrieve_response_code( $transcription );
     $body = wp_remote_retrieve_body( $transcription );
+    error_log( 'Whisper response (' . $code . '): ' . substr( $body, 0, 200 ) );
     if ( 200 !== $code ) {
         error_log( 'Whisper API HTTP ' . $code . ': ' . $body );
         return sprintf( __( 'Audio transcription failed (HTTP %s).', 'suzys-music-theme' ), $code );
     }
 
     $data = json_decode( $body, true );
+    if ( null === $data || json_last_error() !== JSON_ERROR_NONE ) {
+        error_log( 'Whisper JSON error: ' . json_last_error_msg() . ' - ' . $body );
+        return __( 'Invalid transcription response.', 'suzys-music-theme' );
+    }
     $text = $data['text'] ?? '';
 
     if ( ! $text ) {
@@ -78,14 +88,19 @@ function analyze_audio( $filepath ) {
         return __( 'Analysis request failed.', 'suzys-music-theme' );
     }
 
-    $code     = wp_remote_retrieve_response_code( $response );
-    $body     = wp_remote_retrieve_body( $response );
+    $code = wp_remote_retrieve_response_code( $response );
+    $body = wp_remote_retrieve_body( $response );
+    error_log( 'GPT response (' . $code . '): ' . substr( $body, 0, 200 ) );
     if ( 200 !== $code ) {
         error_log( 'GPT-4 HTTP ' . $code . ': ' . $body );
         return sprintf( __( 'Analysis failed (HTTP %s).', 'suzys-music-theme' ), $code );
     }
 
-    $data     = json_decode( $body, true );
+    $data = json_decode( $body, true );
+    if ( null === $data || json_last_error() !== JSON_ERROR_NONE ) {
+        error_log( 'GPT JSON error: ' . json_last_error_msg() . ' - ' . $body );
+        return __( 'Invalid analysis response.', 'suzys-music-theme' );
+    }
     $analysis = $data['choices'][0]['message']['content'] ?? '';
 
     if ( ! $analysis ) {
