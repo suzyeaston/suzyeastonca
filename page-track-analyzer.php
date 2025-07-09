@@ -33,28 +33,35 @@ function analyze_audio( $filepath ) {
 
     $file_resource = curl_file_create( $filepath, 'audio/mpeg', basename( $filepath ) );
 
-    $transcription = wp_remote_post( 'https://api.openai.com/v1/audio/transcriptions', [
-        'headers' => [ 'Authorization' => 'Bearer ' . OPENAI_API_KEY ],
-        'body'    => [
+    $ch = curl_init( 'https://api.openai.com/v1/audio/transcriptions' );
+    curl_setopt_array( $ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 60,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => [ 'Authorization: Bearer ' . OPENAI_API_KEY ],
+        CURLOPT_POSTFIELDS     => [
             'model'           => 'whisper-1',
             'file'            => $file_resource,
             'response_format' => 'json',
         ],
-        'timeout' => 60,
     ] );
 
-    if ( is_wp_error( $transcription ) ) {
-        error_log( 'Whisper API error: ' . $transcription->get_error_message() );
+    $body = curl_exec( $ch );
+    if ( false === $body ) {
+        error_log( 'Whisper cURL error: ' . curl_error( $ch ) );
+        curl_close( $ch );
         return __( 'Failed to transcribe audio.', 'suzys-music-theme' );
     }
 
-    $code = wp_remote_retrieve_response_code( $transcription );
-    $body = wp_remote_retrieve_body( $transcription );
+    $code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+    curl_close( $ch );
     error_log( 'Whisper response (' . $code . '): ' . substr( $body, 0, 200 ) );
+
     if ( 200 !== $code ) {
         error_log( 'Whisper API HTTP ' . $code . ': ' . $body );
         return sprintf( __( 'Audio transcription failed (HTTP %s).', 'suzys-music-theme' ), $code );
     }
+
 
     $data = json_decode( $body, true );
     if ( null === $data || json_last_error() !== JSON_ERROR_NONE ) {

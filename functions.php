@@ -32,6 +32,12 @@ function suzy_enqueue_scripts() {
   if ( is_page_template( 'page-arcade.php' ) ) {
     wp_enqueue_script( 'canucks-game', get_stylesheet_directory_uri() . '/assets/js/canucksPuckBash.js', [], $ver, true );
   }
+
+  if ( is_page_template( 'page-albini-qa.php' ) ) {
+    $build_dir = get_template_directory_uri() . '/albini-qa/build';
+    wp_enqueue_script( 'albini-qa-js',  $build_dir . '/static/js/main.js', [], null, true );
+    wp_enqueue_style( 'albini-qa-css',  $build_dir . '/static/css/main.css', [], null );
+  }
 }
 add_action( 'wp_enqueue_scripts', 'suzy_enqueue_scripts' );
 
@@ -213,14 +219,6 @@ function albini_qa_shortcode() {
 }
 add_shortcode('albini_qa', 'albini_qa_shortcode');
 
-function enqueue_albini_qa_assets() {
-    if ( is_page_template( 'page-albini-qa.php' ) ) {
-        $build_dir = get_template_directory_uri() . '/albini-qa/build';
-        wp_enqueue_script('albini-qa-js',  $build_dir . '/static/js/main.js',   [], null, true);
-        wp_enqueue_style('albini-qa-css',  $build_dir . '/static/css/main.css', [], null);
-    }
-}
-add_action('wp_enqueue_scripts', 'enqueue_albini_qa_assets');
 
 
 // =========================================
