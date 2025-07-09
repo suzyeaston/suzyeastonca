@@ -21,26 +21,40 @@ function analyze_audio( $filepath ) {
         return __( 'OpenAI API key is not configured.', 'suzys-music-theme' );
     }
 
+    if ( ! file_exists( $filepath ) ) {
+        error_log( 'Whisper API: file missing - ' . $filepath );
+        return __( 'Uploaded file missing on server.', 'suzys-music-theme' );
+    }
+
     $file_resource = curl_file_create( $filepath, 'audio/mpeg', basename( $filepath ) );
 
     $transcription = wp_remote_post( 'https://api.openai.com/v1/audio/transcriptions', [
         'headers' => [ 'Authorization' => 'Bearer ' . OPENAI_API_KEY ],
         'body'    => [
-            'model' => 'whisper-1',
-            'file'  => $file_resource,
+            'model'           => 'whisper-1',
+            'file'            => $file_resource,
+            'response_format' => 'json',
         ],
         'timeout' => 60,
     ] );
 
     if ( is_wp_error( $transcription ) ) {
+        error_log( 'Whisper API error: ' . $transcription->get_error_message() );
         return __( 'Failed to transcribe audio.', 'suzys-music-theme' );
     }
 
+    $code = wp_remote_retrieve_response_code( $transcription );
     $body = wp_remote_retrieve_body( $transcription );
+    if ( 200 !== $code ) {
+        error_log( 'Whisper API HTTP ' . $code . ': ' . $body );
+        return sprintf( __( 'Audio transcription failed (HTTP %s).', 'suzys-music-theme' ), $code );
+    }
+
     $data = json_decode( $body, true );
     $text = $data['text'] ?? '';
 
     if ( ! $text ) {
+        error_log( 'Whisper API missing text: ' . $body );
         return __( 'Audio transcription failed.', 'suzys-music-theme' );
     }
 
@@ -60,14 +74,26 @@ function analyze_audio( $filepath ) {
     ] );
 
     if ( is_wp_error( $response ) ) {
+        error_log( 'GPT-4 request error: ' . $response->get_error_message() );
         return __( 'Analysis request failed.', 'suzys-music-theme' );
     }
 
+    $code     = wp_remote_retrieve_response_code( $response );
     $body     = wp_remote_retrieve_body( $response );
+    if ( 200 !== $code ) {
+        error_log( 'GPT-4 HTTP ' . $code . ': ' . $body );
+        return sprintf( __( 'Analysis failed (HTTP %s).', 'suzys-music-theme' ), $code );
+    }
+
     $data     = json_decode( $body, true );
     $analysis = $data['choices'][0]['message']['content'] ?? '';
 
-    return $analysis ? $analysis : __( 'Could not generate analysis.', 'suzys-music-theme' );
+    if ( ! $analysis ) {
+        error_log( 'GPT-4 missing content: ' . $body );
+        return __( 'Could not generate analysis.', 'suzys-music-theme' );
+    }
+
+    return $analysis;
 }
 
 $analysis = '';
@@ -86,12 +112,15 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
                 $analysis = analyze_audio( $upload['file'] );
                 @unlink( $upload['file'] );
             } else {
-                $error = isset( $upload['error'] ) ? $upload['error'] : __( 'There was an error uploading your file.', 'suzys-music-theme' );
+                $error_msg = isset( $upload['error'] ) ? $upload['error'] : __( 'There was an error uploading your file.', 'suzys-music-theme' );
+                error_log( 'File upload error: ' . $error_msg );
+                $error = $error_msg;
             }
         } else {
             $error = __( 'Please upload a valid MP3 file.', 'suzys-music-theme' );
         }
     } else {
+        error_log( 'Upload failed code: ' . $file['error'] );
         $error = __( 'Upload failed. Please try again.', 'suzys-music-theme' );
     }
 }
@@ -116,8 +145,16 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
       <label for="track_file">Upload MP3 File</label>
       <input type="file" name="track_file" id="track_file" accept=".mp3,audio/mpeg" required>
       <button type="submit" class="pixel-button">Analyze Track</button>
+      <p id="loading-message" style="display:none;" class="pixel-font">Analyzing your track...</p>
     </form>
   </section>
 </main>
+
+<script>
+  document.querySelector('.analyzer-form').addEventListener('submit', function(){
+    var msg = document.getElementById('loading-message');
+    if(msg){ msg.style.display = 'block'; }
+  });
+</script>
 
 <?php get_footer(); ?>
