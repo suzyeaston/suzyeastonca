@@ -28,7 +28,10 @@ add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
 function suzy_enqueue_scripts() {
   $ver = wp_get_theme()->get( 'Version' ) . '-' . substr( md5( filemtime( get_stylesheet_directory() . '/assets/js/canucksPuckBash.js' ) ), 0, 8 );
   wp_enqueue_style( 'suzy-style', get_stylesheet_uri(), [], $ver );
-  wp_enqueue_script( 'canucks-game', get_stylesheet_directory_uri() . '/assets/js/canucksPuckBash.js', [], $ver, true );
+
+  if ( is_page_template( 'page-arcade.php' ) ) {
+    wp_enqueue_script( 'canucks-game', get_stylesheet_directory_uri() . '/assets/js/canucksPuckBash.js', [], $ver, true );
+  }
 }
 add_action( 'wp_enqueue_scripts', 'suzy_enqueue_scripts' );
 
@@ -211,9 +214,11 @@ function albini_qa_shortcode() {
 add_shortcode('albini_qa', 'albini_qa_shortcode');
 
 function enqueue_albini_qa_assets() {
-    $build_dir = get_template_directory_uri() . '/albini-qa/build';
-    wp_enqueue_script('albini-qa-js',  $build_dir . '/static/js/main.js',   [], null, true);
-    wp_enqueue_style('albini-qa-css',  $build_dir . '/static/css/main.css', [], null);
+    if ( is_page_template( 'page-albini-qa.php' ) ) {
+        $build_dir = get_template_directory_uri() . '/albini-qa/build';
+        wp_enqueue_script('albini-qa-js',  $build_dir . '/static/js/main.js',   [], null, true);
+        wp_enqueue_style('albini-qa-css',  $build_dir . '/static/css/main.css', [], null);
+    }
 }
 add_action('wp_enqueue_scripts', 'enqueue_albini_qa_assets');
 
