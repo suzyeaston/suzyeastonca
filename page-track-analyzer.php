@@ -18,6 +18,9 @@ get_header();
  * Upload the file and return its path or WP_Error on failure.
  */
 function upload_track_file( array $file ) {
+    if ( ! function_exists( 'wp_handle_upload' ) ) {
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+    }
     if ( UPLOAD_ERR_OK !== $file['error'] ) {
         return new WP_Error( 'upload_error', __( 'Upload failed. Please try again.', 'suzys-music-theme' ) );
     }
