@@ -356,6 +356,30 @@ body::before {
 }
 
 /* ====================== */
+/*  TRACK ANALYZER PROMO  */
+/* ====================== */
+.track-analyzer-feature {
+  margin: 40px auto;
+  padding: 25px 20px;
+  max-width: 800px;
+  text-align: center;
+  background: var(--background-medium);
+  border: 4px dotted var(--accent-color);
+  border-radius: 8px;
+  box-shadow: 0 0 10px var(--accent-color);
+}
+
+.track-analyzer-feature .pixel-button.analyzer-cta {
+  margin-top: 15px;
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.track-analyzer-feature .pixel-button.analyzer-cta:hover {
+  box-shadow: 0 0 8px var(--accent-color);
+}
+
+/* ====================== */
 /*    SUPPORT SECTION    */
 /* ====================== */
 .support-section {
