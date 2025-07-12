@@ -5,7 +5,7 @@ get_header();
 
 <main id="homepage-content">
     <div class="hero-section">
-        <h1 id="home-title" class="pixel-font color-cycle">Hi, I&rsquo;m Suzy Easton.</h1>
+        <h1 id="home-title" class="pixel-font color-cycle">Suzy Easton &ndash; Vancouver Musician &amp; Creative Technologist</h1>
        <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
     <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
 
@@ -15,7 +15,7 @@ get_header();
 </section>
 
         <p class="arcade-subtext">Insert coin to explore</p>
-        <div class="puck-icon">🏒</div>
+        <div class="puck-icon" role="img" aria-label="retro hockey puck icon">🏒</div>
         <?php
         $visitor_data = include get_template_directory() . '/visitor-tracker.php';
         $phrases = [

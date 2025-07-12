@@ -19,7 +19,7 @@ get_header();
                         <div id="scoreboard" class="scoreboard"></div>
                     </div>
 
-                    <canvas id="canucks-game" class="game-canvas"></canvas>
+                    <canvas id="canucks-game" class="game-canvas" role="img" aria-label="Canucks retro hockey game"></canvas>
 
                     <div class="controls">
                         <p class="pixel-font">CONTROLS:</p>
