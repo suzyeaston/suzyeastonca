@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.suzyeaston.ca/sitemap.xml

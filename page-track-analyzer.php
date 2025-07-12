@@ -184,7 +184,7 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
 
 <main id="main-content">
   <section class="page-content track-analyzer">
-    <h1 class="pixel-font">Track Analyzer</h1>
+    <h1 class="pixel-font">Suzy's Track Analyzer &ndash; AI Vibe Checker</h1>
     <p>Curious how your song stacks up? Drop an MP3 below and I’ll deliver a quick vibe check—think shimmering synths, fuzzy guitars and friendly tips.</p>
 
     <?php if ( $error ) : ?>

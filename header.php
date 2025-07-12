@@ -13,13 +13,55 @@
   <meta charset="<?php bloginfo( 'charset' ); ?>">
   <link rel="profile" href="http://gmpg.org/xfn/11">
 
-  <title>Suzy's Retro Arcade - Canucks Puck Bash Game</title>
-  <meta name="description" content="Play a retro pixel hockey game starring the Vancouver Canucks. Shoot, score, and hear the Simple Minds goal horn. Built by Suzy Easton.">
-  <meta name="keywords" content="Canucks hockey arcade, retro pixel games, 80s hockey, simple minds hockey song, Vancouver indie dev, free hockey games, nostalgic arcade, suzyeaston.ca, Canucks Puck Bash">
-  <meta property="og:title" content="Canucks Puck Bash - Retro Hockey Arcade">
-  <meta property="og:description" content="Shoot, score, and hear 'Don't You Forget About Me' in this 80s-style hockey arcade game.">
-  <meta property="og:image" content="https://suzyeaston.ca/arcade/og-image.png">
-  <meta property="og:url" content="https://suzyeaston.ca/arcade/">
+  <?php
+    global $wp;
+    $site_name   = 'Suzy Easton';
+    $default_img = 'https://suzyeaston.ca/arcade/og-image.png';
+
+    if ( is_front_page() ) {
+      $meta_title = 'Suzy Easton – Retro Music Tools, Games & AI Experiments';
+      $meta_desc  = 'Home base for Vancouver musician and developer Suzy Easton. Explore retro arcade games, AI music tools and podcasts.';
+      $meta_img   = $default_img;
+    } elseif ( is_page_template( 'page-track-analyzer.php' ) ) {
+      $meta_title = "Suzy's Track Analyzer – AI Vibe Checker for Musicians";
+      $meta_desc  = 'Upload an MP3 and get a quick vibe check powered by AI—perfect for indie producers and music tech fans.';
+      $meta_img   = $default_img;
+    } elseif ( is_page_template( 'page-arcade.php' ) ) {
+      $meta_title = 'Canucks Puck Bash - Retro Hockey Arcade';
+      $meta_desc  = "Shoot, score, and hear 'Don't You Forget About Me' in this 80s-style hockey arcade game.";
+      $meta_img   = $default_img;
+    } else {
+      $meta_title = wp_title( '|', false, 'right' ) . $site_name;
+      $meta_desc  = get_bloginfo( 'description' );
+      $meta_img   = $default_img;
+    }
+    $meta_url = home_url( add_query_arg( [], $wp->request ) );
+  ?>
+  <title><?php echo esc_html( $meta_title ); ?></title>
+  <meta name="description" content="<?php echo esc_attr( $meta_desc ); ?>">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="<?php echo esc_attr( $meta_title ); ?>">
+  <meta property="og:description" content="<?php echo esc_attr( $meta_desc ); ?>">
+  <meta property="og:image" content="<?php echo esc_url( $meta_img ); ?>">
+  <meta property="og:url" content="<?php echo esc_url( $meta_url ); ?>">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<?php echo esc_attr( $meta_title ); ?>">
+  <meta name="twitter:description" content="<?php echo esc_attr( $meta_desc ); ?>">
+  <meta name="twitter:image" content="<?php echo esc_url( $meta_img ); ?>">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Suzy Easton",
+    "url": "https://www.suzyeaston.ca",
+    "jobTitle": "Musician and Creative Technologist",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Vancouver",
+      "addressCountry": "CA"
+    }
+  }
+  </script>
 
   <!-- Main stylesheet -->
   <link rel="stylesheet" href="<?php bloginfo( 'stylesheet_url' ); ?>">
@@ -42,7 +84,7 @@
 <a href="/" class="home-link" aria-label="Home">🏠 Home</a>
 
 <!-- Full‑screen moving starfield background -->
-<canvas id="starfield"></canvas>
+<canvas id="starfield" role="img" aria-label="Animated starfield background"></canvas>
 
 <?php
   // You can drop in your site header/branding or navigation here if you like,
