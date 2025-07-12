@@ -866,15 +866,12 @@ footer,
 
 .hero-section h1.color-cycle {
   margin-bottom: 1.5rem;
-  background-image: linear-gradient(90deg, #ff0099, #00ffff, #00ff00, #ffff00, #ff0099);
-  background-size: 300%;
-  background-position: 0%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  text-shadow:
-    0 0 4px var(--accent-color),
-    0 0 8px var(--accent-color);
+  color: #ffff00;
+  background: none;
+  text-shadow: 0 0 1px #ffff00;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
 }
 
 .hero-section .pixel-intro {
@@ -904,6 +901,9 @@ footer,
 
 .pixel-font {
   font-family: "Press Start 2P", cursive;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
 }
 .terminal-line {
   color: var(--accent-color);
