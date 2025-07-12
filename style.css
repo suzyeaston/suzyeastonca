@@ -744,7 +744,8 @@ body::before {
 }
 #stacked-nerd-title,
 #sparkly-name,
-.albini-title {
+.albini-title,
+#home-title {
   color: #0f0;
   font-size: clamp(1.2rem, 5vw, 2rem);
   text-shadow:
@@ -866,12 +867,27 @@ footer,
 
 .hero-section h1.color-cycle {
   margin-bottom: 1.5rem;
-  color: #ffff00;
-  background: none;
-  text-shadow: 0 0 1px #ffff00;
+  background: linear-gradient(90deg, #ff004c, #ffcc00, #00ffff, #ff004c);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 0 4px #ff004c,
+    0 0 8px #ffcc00,
+    0 0 12px #00ffff;
+  animation:
+    gradientShift 8s linear infinite,
+    neonPulse 1.5s ease-in-out infinite alternate,
+    flickerSlow 3s infinite;
   -webkit-font-smoothing: none;
   font-smooth: never;
   text-rendering: optimizeSpeed;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .hero-section .pixel-intro {
@@ -1155,7 +1171,8 @@ footer,
 
   #stacked-nerd-title,
   #sparkly-name,
-  .albini-title {
+  .albini-title,
+  #home-title {
     text-shadow:
       0 0 2px #0f0,
       0 0 4px #0f0;
