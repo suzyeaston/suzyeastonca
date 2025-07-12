@@ -47,6 +47,12 @@ get_header();
           <?php endif; ?>
         </div>
 
+        <section class="track-analyzer-feature">
+            <h2 class="pixel-font">Suzy's Track Analyzer</h2>
+            <p class="pixel-font">Drop an MP3, channel the chaos, get an instant vibe check.</p>
+            <a href="https://www.suzyeaston.ca/suzys-track-analyzer/" class="pixel-button analyzer-cta">Analyze a Track</a>
+        </section>
+
         <div class="button-cluster">
             <div class="button-group">
                 <h3 class="group-title">🎵 Music &amp; Podcasts</h3>
