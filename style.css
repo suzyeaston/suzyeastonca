@@ -1246,3 +1246,26 @@ footer,
   80%, 100% { color: transparent; }
 }
 
+.title-flicker {
+  animation: titleFlicker 2s steps(2, start) forwards;
+}
+@keyframes titleFlicker {
+  0%,20%,40% { opacity: 0; }
+  10%,30%,50%,100% { opacity: 1; }
+}
+.hacking {
+  font-family: "Courier New", monospace;
+  color: #0f0;
+}
+.glow {
+  animation: glowDrop 1s ease-out forwards;
+}
+@keyframes glowDrop {
+  from { box-shadow: 0 0 2px transparent; }
+  to   { box-shadow: 0 0 15px var(--accent-color); }
+}
+#secret-track {
+  margin-bottom: 10px;
+  display: block;
+}
+
