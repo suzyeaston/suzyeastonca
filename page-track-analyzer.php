@@ -187,16 +187,24 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
     <span class="page-title">Suzy's Track Analyzer</span>
     <div class="header-actions">
       <button id="reset-button" class="pixel-button">Reset</button>
-      <button id="music-toggle" class="pixel-button">Play Music</button>
     </div>
     <audio id="bg-music" src="<?php echo get_template_directory_uri(); ?>/assets/bg-loop.mp3" loop></audio>
   </header>
   <section class="page-content track-analyzer">
-    <h1 class="pixel-font">Suzy's Track Analyzer &ndash; AI Vibe Checker</h1>
+    <h1 class="pixel-font title-flicker">Suzy's Track Analyzer &ndash; Sonic Intel Console</h1>
     <div class="intro-text pixel-font">
       <p>Curious how your song stacks up?</p>
       <p>Drop an MP3 below and I’ll channel the data ghosts, sift through the dream logic and decode future club signals.</p>
     </div>
+<?php
+  $quotes = array(
+    "\"The future's a mix tape.\" - Grimes",
+    "\"Keep your frequencies weird.\" - DJ-3000",
+    "\"Albini would hate this — perfect.\" - Club Oracle"
+  );
+  $oracle_quote = $quotes[array_rand($quotes)];
+?>
+<p class="oracle-quote pixel-font"><?php echo esc_html( $oracle_quote ); ?></p>
 
     <?php if ( $error ) : ?>
       <p class="error-message"><?php echo esc_html( $error ); ?></p>
@@ -212,7 +220,7 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
       <label for="track_file">Upload MP3 File</label>
       <input type="file" name="track_file" id="track_file" accept=".mp3,audio/mpeg" required>
       <button type="submit" class="pixel-button">Analyze Track</button>
-      <p id="loading-message" style="display:none;" class="pixel-font">Analyzing your track<span class="loading-dots"></span></p>
+      <p id="loading-message" style="display:none;" class="pixel-font">Decrypting audio stream<span class="loading-dots"></span></p>
     </form>
     <canvas id="analyzer-bg"></canvas>
   </section>
@@ -224,37 +232,47 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
     var msg    = document.getElementById('loading-message');
     var result = document.querySelector('.analysis-result');
     var reset  = document.getElementById('reset-button');
-    var music  = document.getElementById('music-toggle');
     var audio  = document.getElementById('bg-music');
+
+    if (sessionStorage.getItem('bg-playing') && audio) {
+      audio.play();
+    }
 
     if (form) {
       form.addEventListener('submit', function() {
-        if (msg) msg.style.display = 'block';
+        if (msg) {
+          msg.style.display = 'block';
+          msg.classList.add('hacking');
+        }
+        var btn = form.querySelector('button[type="submit"]');
+        if (btn) btn.disabled = true;
+        sessionStorage.setItem('bg-playing', '1');
+        if (audio) audio.play();
+        if (msg) {
+          window.hexInterval = setInterval(function(){
+            msg.textContent = 'Decrypting 0x' + Math.floor(Math.random()*0xffffff).toString(16);
+          }, 200);
+        }
       });
     }
 
     if (result) {
+      if (window.hexInterval) clearInterval(window.hexInterval);
+      result.classList.add('glow');
       result.scrollIntoView({ behavior: 'smooth' });
+      var utter = new SpeechSynthesisUtterance(result.textContent);
+      utter.pitch = 0.6;
+      var voices = speechSynthesis.getVoices();
+      for (var i = 0; i < voices.length; i++) {
+        if (/UK.*Male|English.*Male/.test(voices[i].name)) { utter.voice = voices[i]; break; }
+      }
+      speechSynthesis.speak(utter);
     }
 
     if (reset) {
       reset.addEventListener('click', function() {
-        if (form) form.reset();
-        if (result) result.innerHTML = '';
-        if (msg) msg.style.display = 'none';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    }
-
-    if (music && audio) {
-      music.addEventListener('click', function() {
-        if (audio.paused) {
-          audio.play();
-          music.textContent = 'Stop Music';
-        } else {
-          audio.pause();
-          music.textContent = 'Play Music';
-        }
+        sessionStorage.removeItem('bg-playing');
+        window.location.reload();
       });
     }
 
@@ -270,8 +288,9 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
       function draw() {
         ctx.clearRect(0,0,width,height);
         ctx.beginPath();
+        var amp = 20 + 10*Math.sin(t/50);
         for (var x=0; x<width; x++) {
-          var y = height/2 + Math.sin((x + t)/20)*20;
+          var y = height/2 + Math.sin((x + t)/20)*amp;
           ctx.lineTo(x, y);
         }
         ctx.strokeStyle = 'rgba(0,255,255,0.4)';
@@ -282,7 +301,25 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
       window.addEventListener('resize', resize);
       resize();
       draw();
+    
     }
+var konami = [38,38,40,40,37,39,37,39,66,65];
+    var buffer = [];
+    window.addEventListener("keydown", function(e){
+      buffer.push(e.keyCode);
+      if(buffer.toString().indexOf(konami) >= 0){
+        if(!document.getElementById("secret-track")){
+          var s = document.createElement("input");
+          s.type = "text";
+          s.id = "secret-track";
+          s.name = "track_name";
+          s.placeholder = "Secret Track Name";
+          s.className = "pixel-button";
+          if(form) form.prepend(s);
+        }
+      }
+      if(buffer.length > konami.length) buffer.shift();
+    });
   });
 </script>
 
