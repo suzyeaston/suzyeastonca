@@ -183,16 +183,27 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
 ?>
 
 <main id="main-content">
+  <header class="analyzer-header pixel-font">
+    <span class="page-title">Suzy's Track Analyzer</span>
+    <div class="header-actions">
+      <button id="reset-button" class="pixel-button">Reset</button>
+      <button id="music-toggle" class="pixel-button">Play Music</button>
+    </div>
+    <audio id="bg-music" src="<?php echo get_template_directory_uri(); ?>/assets/bg-loop.mp3" loop></audio>
+  </header>
   <section class="page-content track-analyzer">
     <h1 class="pixel-font">Suzy's Track Analyzer &ndash; AI Vibe Checker</h1>
-    <p>Curious how your song stacks up? Drop an MP3 below and I’ll deliver a quick vibe check—think shimmering synths, fuzzy guitars and friendly tips.</p>
+    <div class="intro-text pixel-font">
+      <p>Curious how your song stacks up?</p>
+      <p>Drop an MP3 below and I’ll channel the data ghosts, sift through the dream logic and decode future club signals.</p>
+    </div>
 
     <?php if ( $error ) : ?>
       <p class="error-message"><?php echo esc_html( $error ); ?></p>
     <?php endif; ?>
 
     <?php if ( $analysis ) : ?>
-      <div class="analysis-result">
+      <div class="analysis-result fade-in">
         <p><?php echo esc_html( $analysis ); ?></p>
       </div>
     <?php endif; ?>
@@ -201,15 +212,77 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
       <label for="track_file">Upload MP3 File</label>
       <input type="file" name="track_file" id="track_file" accept=".mp3,audio/mpeg" required>
       <button type="submit" class="pixel-button">Analyze Track</button>
-      <p id="loading-message" style="display:none;" class="pixel-font">Analyzing your track...</p>
+      <p id="loading-message" style="display:none;" class="pixel-font">Analyzing your track<span class="loading-dots"></span></p>
     </form>
+    <canvas id="analyzer-bg"></canvas>
   </section>
 </main>
 
 <script>
-  document.querySelector('.analyzer-form').addEventListener('submit', function(){
-    var msg = document.getElementById('loading-message');
-    if(msg){ msg.style.display = 'block'; }
+  document.addEventListener('DOMContentLoaded', function() {
+    var form   = document.querySelector('.analyzer-form');
+    var msg    = document.getElementById('loading-message');
+    var result = document.querySelector('.analysis-result');
+    var reset  = document.getElementById('reset-button');
+    var music  = document.getElementById('music-toggle');
+    var audio  = document.getElementById('bg-music');
+
+    if (form) {
+      form.addEventListener('submit', function() {
+        if (msg) msg.style.display = 'block';
+      });
+    }
+
+    if (result) {
+      result.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    if (reset) {
+      reset.addEventListener('click', function() {
+        if (form) form.reset();
+        if (result) result.innerHTML = '';
+        if (msg) msg.style.display = 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    if (music && audio) {
+      music.addEventListener('click', function() {
+        if (audio.paused) {
+          audio.play();
+          music.textContent = 'Stop Music';
+        } else {
+          audio.pause();
+          music.textContent = 'Play Music';
+        }
+      });
+    }
+
+    // simple waveform background
+    var canvas = document.getElementById('analyzer-bg');
+    if (canvas) {
+      var ctx = canvas.getContext('2d');
+      var width, height, t = 0;
+      function resize() {
+        width = canvas.width  = canvas.parentElement.offsetWidth;
+        height = canvas.height = canvas.parentElement.offsetHeight;
+      }
+      function draw() {
+        ctx.clearRect(0,0,width,height);
+        ctx.beginPath();
+        for (var x=0; x<width; x++) {
+          var y = height/2 + Math.sin((x + t)/20)*20;
+          ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(0,255,255,0.4)';
+        ctx.stroke();
+        t += 2;
+        requestAnimationFrame(draw);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+      draw();
+    }
   });
 </script>
 
