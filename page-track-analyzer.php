@@ -102,7 +102,7 @@ function whisper_transcribe( $filepath ) {
  * Send transcript to GPT-4 and return analysis or WP_Error.
  */
 function gpt4_analyze( $transcript ) {
-    $prompt = 'Provide a playful yet insightful critique of this track. Channel the futuristic vibes of Grimes with the dance-floor savvy of James Murphy. Transcript: ' . $transcript;
+    $prompt = 'You are legendary producer Rick Rubin offering thoughtful insight. Analyze this song with a focus on emotional resonance, creativity, production quality and artist development advice. Transcript: ' . $transcript;
 
     $response = wp_remote_post( 'https://api.openai.com/v1/chat/completions', [
         'headers' => [
@@ -188,13 +188,13 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
     <div class="header-actions">
       <button id="reset-button" class="pixel-button">Reset</button>
     </div>
-    <audio id="bg-music" src="<?php echo get_template_directory_uri(); ?>/assets/bg-loop.mp3" loop></audio>
   </header>
+  <div id="loading-overlay" class="loading-overlay pixel-font" style="display:none;">Analyzing track<span class="loading-dots"></span></div>
   <section class="page-content track-analyzer">
     <h1 class="pixel-font title-flicker">Suzy's Track Analyzer &ndash; Sonic Intel Console</h1>
     <div class="intro-text pixel-font">
       <p>Curious how your song stacks up?</p>
-      <p>Drop an MP3 below and I’ll channel the data ghosts, sift through the dream logic and decode future club signals.</p>
+      <p>Drop your track, and let\xE2\x80\x99s tap into the vibe—discover what resonates, what elevates, and what could transform your sound.</p>
     </div>
 <?php
   $quotes = array(
@@ -212,7 +212,7 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
 
     <?php if ( $analysis ) : ?>
       <div class="analysis-result fade-in">
-        <p><?php echo esc_html( $analysis ); ?></p>
+        <p><?php echo nl2br( esc_html( $analysis ) ); ?></p>
       </div>
     <?php endif; ?>
 
@@ -232,11 +232,7 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
     var msg    = document.getElementById('loading-message');
     var result = document.querySelector('.analysis-result');
     var reset  = document.getElementById('reset-button');
-    var audio  = document.getElementById('bg-music');
-
-    if (sessionStorage.getItem('bg-playing') && audio) {
-      audio.play();
-    }
+    var overlay = document.getElementById('loading-overlay');
 
     if (form) {
       form.addEventListener('submit', function() {
@@ -246,8 +242,7 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
         }
         var btn = form.querySelector('button[type="submit"]');
         if (btn) btn.disabled = true;
-        sessionStorage.setItem('bg-playing', '1');
-        if (audio) audio.play();
+        if (overlay) overlay.style.display = 'flex';
         if (msg) {
           window.hexInterval = setInterval(function(){
             msg.textContent = 'Decrypting 0x' + Math.floor(Math.random()*0xffffff).toString(16);
@@ -256,22 +251,34 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
       });
     }
 
-    if (result) {
-      if (window.hexInterval) clearInterval(window.hexInterval);
-      result.classList.add('glow');
-      result.scrollIntoView({ behavior: 'smooth' });
-      var utter = new SpeechSynthesisUtterance(result.textContent);
-      utter.pitch = 0.6;
-      var voices = speechSynthesis.getVoices();
-      for (var i = 0; i < voices.length; i++) {
-        if (/UK.*Male|English.*Male/.test(voices[i].name)) { utter.voice = voices[i]; break; }
+      if (result) {
+        if (window.hexInterval) clearInterval(window.hexInterval);
+        if (overlay) overlay.style.display = 'none';
+        result.classList.add('glow');
+        result.scrollIntoView({ behavior: 'smooth' });
+        var utter = new SpeechSynthesisUtterance(result.textContent);
+        utter.pitch = 0.6;
+        function setVoice(){
+          for (var i = 0; i < voices.length; i++) {
+            if (/UK.*Male|English.*Male/.test(voices[i].name)) { utter.voice = voices[i]; break; }
+          }
+        }
+        var voices = speechSynthesis.getVoices();
+        if (!voices.length) {
+          speechSynthesis.addEventListener('voiceschanged', function handler(){
+            voices = speechSynthesis.getVoices();
+            setVoice();
+            speechSynthesis.speak(utter);
+            speechSynthesis.removeEventListener('voiceschanged', handler);
+          });
+        } else {
+          setVoice();
+          speechSynthesis.speak(utter);
+        }
       }
-      speechSynthesis.speak(utter);
-    }
 
     if (reset) {
       reset.addEventListener('click', function() {
-        sessionStorage.removeItem('bg-playing');
         window.location.reload();
       });
     }
