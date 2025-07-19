@@ -19,8 +19,8 @@
     $default_img = 'https://suzyeaston.ca/arcade/og-image.png';
 
     if ( is_front_page() ) {
-      $meta_title = 'Suzy Easton – Retro Music Tools, Games & AI Experiments';
-      $meta_desc  = 'Home base for Vancouver musician and developer Suzy Easton. Explore retro arcade games, AI music tools and podcasts.';
+      $meta_title = 'Suzy Easton – Vancouver Musician & Creative Technologist';
+      $meta_desc  = 'Home base for Vancouver, BC, Canada musician Suzy Easton. Explore music reviews, rock demos, retro games and AI-powered tools.';
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-track-analyzer.php' ) ) {
       $meta_title = "Suzy's Track Analyzer – AI Vibe Checker for Musicians";
@@ -59,7 +59,13 @@
       "@type": "PostalAddress",
       "addressLocality": "Vancouver",
       "addressCountry": "CA"
-    }
+    },
+    "sameAs": [
+      "https://suzyeaston.bandcamp.com",
+      "https://soundcloud.com/suzyeaston",
+      "https://instagram.com/suzyeaston",
+      "https://youtube.com/@suzyeaston"
+    ]
   }
   </script>
 

@@ -99,13 +99,24 @@ const app = Vue.createApp({
   },
   methods:{
     async generate(){
+      const statusEl = document.getElementById('riff-status');
+      if(statusEl){
+        statusEl.textContent = 'Generating...';
+        statusEl.style.display = 'block';
+      }
       const root = NOTE_NAMES[Math.floor(Math.random()*NOTE_NAMES.length)];
       const pattern = PROGRESSIONS[Math.floor(Math.random()*PROGRESSIONS.length)];
       const chords = pattern.map(d=> chordNotes(root,this.mode,d));
       const scale = scaleSemis(root,this.mode);
       const melody = chords.flatMap(ch => generateMelody(scale,ch.map(n=>NOTE_NAMES.indexOf(n.slice(0,-1))),2));
       this.progressionText = chords.map(c=>c.map(n=>n.slice(0,-1)).join('-')).join(' | ');
-      await this.play(chords, melody);
+      try {
+        await this.play(chords, melody);
+        if(statusEl) statusEl.textContent = 'Riff ready!';
+      } catch(e){
+        if(statusEl) statusEl.textContent = 'Error generating riff';
+        console.error(e);
+      }
       this.tip = TIPS[Math.floor(Math.random()*TIPS.length)];
     },
     async play(chords, melody){

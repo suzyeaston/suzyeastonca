@@ -12,6 +12,7 @@ get_header();
       <h3 class="pixel-font">Your Riff:</h3>
       <p id="riff-text"></p>
       <audio id="riff-audio" controls style="display:none;"></audio>
+      <p id="riff-status" class="pixel-font" style="display:none;"></p>
     </div>
   </main>
 </div>
