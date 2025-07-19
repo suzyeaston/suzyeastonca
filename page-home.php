@@ -47,17 +47,7 @@ get_header();
           <?php endif; ?>
         </div>
 
-        <section class="track-analyzer-feature">
-            <h2 class="pixel-font">Suzy's Track Analyzer</h2>
-            <p class="pixel-font">Drop an MP3, channel the chaos, get an instant vibe check.</p>
-            <a href="https://www.suzyeaston.ca/suzys-track-analyzer/" class="pixel-button analyzer-cta">Analyze a Track</a>
-        </section>
 
-        <section class="riff-generator-feature">
-            <h2 class="pixel-font">Riff Generator</h2>
-            <p class="pixel-font">Cook up rad riffs with a click &ndash; unleash your inner shredder.</p>
-            <a href="/riff-generator" class="pixel-button riff-cta">Make a Riff</a>
-        </section>
 
         <div class="button-cluster">
             <div class="button-group">
@@ -106,54 +96,12 @@ get_header();
         </div>
     </section>
 
-    <section class="advocacy-section">
-        <h2 class="pixel-font">City &amp; Housing</h2>
-        <p>I&rsquo;m learning alongside neighbours in the Downtown Eastside to keep residents housed and heard. I&rsquo;m also considering a 2026 City Council run focused on housing justice.</p>
-        <div class="group-buttons">
-            <a href="/advocacy" class="pixel-button">Learn More</a>
-            <a href="/contact" class="pixel-button">Get Involved</a>
-            <a href="https://www.carnegiehousingproject.ca/events" class="pixel-button" target="_blank">See Local Housing Events</a>
-        </div>
+    <section class="roommate-callout">
+        <h2 class="pixel-font">Seeking Musical Roommate! 🎸</h2>
+        <p class="pixel-font">Moving at the end of October 2025—if you're a creative soul looking to jam, collaborate, or simply coexist in harmony, reach out!</p>
+        <p class="pixel-font">Contact: <a href="mailto:suzyeaston@icloud.com" class="pixel-button">suzyeaston@icloud.com</a></p>
     </section>
 
-    <section class="featured-content">
-        <div class="featured-item">
-            <h2 class="pixel-font">What's New</h2>
-            <div class="news-grid">
-                <div class="news-item">
-                    <h3>Live Stream Schedule</h3>
-                    <p>Join me every Friday at 8PM PST</p>
-                    <a href="/social-media" class="more-button">Watch Live</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="featured-item">
-            <h2 class="pixel-font">Latest Podcast</h2>
-            <p class="pixel-font">"Easy Living with Suzy Easton" - Stories, insights, and laughter about life in Vancouver</p>
-            <?php
-            $latest_podcast = new WP_Query(array(
-                'posts_per_page' => 1,
-                'post_type' => 'podcast'
-            ));
-            
-            if ($latest_podcast->have_posts()) :
-                while ($latest_podcast->have_posts()) :
-                    $latest_podcast->the_post();
-                    ?>
-                    <div class="podcast-preview">
-                        <h3><?php the_title(); ?></h3>
-                        <?php the_excerpt(); ?>
-                        <a href="<?php the_permalink(); ?>" class="more-button">Listen Now</a>
-                    </div>
-                    <?php
-                endwhile;
-                wp_reset_postdata();
-            endif;
-            ?>
-        </div>
-
-    </section>
 
 
 

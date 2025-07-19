@@ -1176,6 +1176,14 @@ footer,
   border-radius: 10px;
   text-align: center;
 }
+.roommate-callout {
+  margin: 40px 0;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #fff;
+  border-radius: 10px;
+  text-align: center;
+}
 @keyframes marquee {
   from {
     transform: translateX(100%);
@@ -1310,6 +1318,29 @@ footer,
 #secret-track {
   margin-bottom: 10px;
   display: block;
+}
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f0;
+  font-size: 1.2rem;
+  z-index: 6000;
+}
+.error-message {
+  background: #330000;
+  color: #ff6666;
+  padding: 10px;
+  border: 2px solid #ff6666;
+  border-radius: 6px;
+  text-align: center;
+  margin-top: 10px;
 }
 
 
