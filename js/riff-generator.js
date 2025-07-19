@@ -49,6 +49,13 @@ function scaleSemis(rootName, mode){
   return MODE_INTERVALS[mode].map(s=> (s+base)%12);
 }
 
+const SYNTH_SETTINGS = {
+  electric_guitar_clean: { oscillator: { type: 'square' } },
+  acoustic_grand_piano:  { oscillator: { type: 'triangle' } },
+  electric_bass_finger:  { oscillator: { type: 'sawtooth' } },
+  distortion_guitar:     { oscillator: { type: 'sawtooth' } }
+};
+
 const app = Vue.createApp({
   template: `
     <div>
@@ -104,26 +111,21 @@ const app = Vue.createApp({
     async play(chords, melody){
       this.isPlaying = true;
       await Tone.start();
-      const sampler = new Tone.Sampler({
-        urls:{ 'A1':'A1.mp3','C2':'C2.mp3','D#2':'Ds2.mp3','F#2':'Fs2.mp3','A2':'A2.mp3' },
-        release:1,
-        baseUrl:`https://gleitz.github.io/midi-js-soundfonts/MusyngKite/${this.instrument}/`
-      });
+      const synth = new Tone.PolySynth(Tone.Synth, SYNTH_SETTINGS[this.instrument]);
       const reverb = new Tone.Reverb({decay:2,wet:0.3}).toDestination();
       const delay  = new Tone.FeedbackDelay({delayTime:'8n',feedback:0.2,wet:0.2});
-      sampler.chain(delay,reverb);
-      await Tone.loaded();
+      synth.chain(delay,reverb);
       const recorder = new Tone.Recorder();
-      sampler.connect(recorder);
+      synth.connect(recorder);
       recorder.start();
       const noteDur = 60/this.tempo;
       let t = Tone.now()+0.3;
       chords.forEach(ch => {
-        ch.forEach(n=> sampler.triggerAttackRelease(n,noteDur,t));
+        ch.forEach(n=> synth.triggerAttackRelease(n,noteDur,t));
         t += noteDur;
       });
       melody.forEach((n,i)=>{
-        sampler.triggerAttackRelease(n,noteDur/2, Tone.now()+0.3+i*(noteDur/2));
+        synth.triggerAttackRelease(n,noteDur/2, Tone.now()+0.3+i*(noteDur/2));
       });
       setTimeout(async()=>{
         const rec = await recorder.stop();
