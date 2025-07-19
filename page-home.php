@@ -53,6 +53,12 @@ get_header();
             <a href="https://www.suzyeaston.ca/suzys-track-analyzer/" class="pixel-button analyzer-cta">Analyze a Track</a>
         </section>
 
+        <section class="riff-generator-feature">
+            <h2 class="pixel-font">Riff Generator</h2>
+            <p class="pixel-font">Cook up rad riffs with a click &ndash; unleash your inner shredder.</p>
+            <a href="/riff-generator" class="pixel-button riff-cta">Make a Riff</a>
+        </section>
+
         <div class="button-cluster">
             <div class="button-group">
                 <h3 class="group-title">🎵 Music &amp; Podcasts</h3>

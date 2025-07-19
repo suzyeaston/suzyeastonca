@@ -409,6 +409,49 @@ body::before {
   box-shadow: 0 0 8px var(--accent-color);
 }
 
+/*  RIFF GENERATOR PROMO  */
+.riff-generator-feature {
+  position: relative;
+  margin: 40px auto;
+  padding: 25px 20px;
+  max-width: 800px;
+  text-align: center;
+  background: var(--background-medium);
+  border-radius: 8px;
+  box-shadow: 0 0 10px var(--secondary-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.riff-generator-feature::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, var(--secondary-color) 0 5px, transparent 5px 10px) top/100% 4px repeat-x,
+    repeating-linear-gradient(90deg, var(--secondary-color) 0 5px, transparent 5px 10px) bottom/100% 4px repeat-x,
+    repeating-linear-gradient(0deg,  var(--secondary-color) 0 5px, transparent 5px 10px) left/4px 100% repeat-y,
+    repeating-linear-gradient(0deg,  var(--secondary-color) 0 5px, transparent 5px 10px) right/4px 100% repeat-y;
+  animation: border-dance 4s linear infinite;
+}
+
+.riff-generator-feature .pixel-button.riff-cta {
+  margin-top: 15px;
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+}
+
+.riff-generator-feature .pixel-button.riff-cta:hover {
+  box-shadow: 0 0 8px var(--secondary-color);
+}
+
 /* ====================== */
 /*    SUPPORT SECTION    */
 /* ====================== */

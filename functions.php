@@ -1,4 +1,11 @@
 <?php
+// Auto-configure OpenAI key from environment if not defined
+if ( ! defined( 'OPENAI_API_KEY' ) ) {
+    $env_key = getenv( 'OPENAI_API_KEY' );
+    if ( $env_key ) {
+        define( 'OPENAI_API_KEY', $env_key );
+    }
+}
 /**
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
@@ -233,7 +240,7 @@ function albini_handle_query( WP_REST_Request $req ) {
             'Content-Type'  => 'application/json',
         ],
         'body'    => wp_json_encode([
-            'model'    => 'gpt-4o-mini',
+            'model'    => 'gpt-4o',
             'messages' => [
                 ['role'=>'system', 'content'=>"You are Steve Albini, legendary producer—blunt, no‑BS. Answer questions as he would."],
                 ['role'=>'user',   'content'=>$question],

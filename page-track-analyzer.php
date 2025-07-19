@@ -110,7 +110,7 @@ function gpt4_analyze( $transcript ) {
             'Content-Type'  => 'application/json',
         ],
         'body'    => wp_json_encode( [
-            'model'    => 'gpt-4o-mini',
+            'model'    => 'gpt-4o',
             'messages' => [ [ 'role' => 'user', 'content' => $prompt ] ],
             'max_tokens' => 150,
         ] ),
