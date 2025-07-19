@@ -96,9 +96,15 @@ get_header();
         </div>
     </section>
 
+    <section class="track-analyzer-feature">
+        <h2 class="pixel-font">Track Analyzer</h2>
+        <p class="pixel-font">Upload an MP3 and get instant feedback on your mix.</p>
+        <a href="/suzys-track-analyzer" class="pixel-button analyzer-cta">Analyze Your Track</a>
+    </section>
+
     <section class="roommate-callout">
         <h2 class="pixel-font">Seeking Musical Roommate! 🎸</h2>
-        <p class="pixel-font">Moving at the end of October 2025—if you're a creative soul looking to jam, collaborate, or simply coexist in harmony, reach out!</p>
+        <p class="pixel-font">Moving at the end of October 2025. If you're a fellow musician or creative looking for a rad roommate situation in Vancouver, let's connect!</p>
         <p class="pixel-font">Contact: <a href="mailto:suzyeaston@icloud.com" class="pixel-button">suzyeaston@icloud.com</a></p>
     </section>
 
