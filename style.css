@@ -1269,3 +1269,32 @@ footer,
   display: block;
 }
 
+
+/* ====================== */
+/*   Riff Generator App   */
+/* ====================== */
+.riff-generator {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.riff-generator select,
+.riff-generator input,
+.riff-generator button {
+  padding: 8px 12px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: none;
+}
+.riff-generator button {
+  background: var(--primary-color);
+  color: #000;
+  cursor: pointer;
+}
+.producer-tip {
+  background: var(--background-medium);
+  padding: 10px;
+  border-left: 4px solid var(--accent-color);
+}
