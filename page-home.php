@@ -5,7 +5,7 @@ get_header();
 
 <main id="homepage-content">
     <div class="hero-section">
-        <h1 id="home-title" class="pixel-font color-cycle">Suzy Easton &ndash; Vancouver Musician &amp; Creative Technologist</h1>
+        <?php get_template_part( 'parts/hero-title' ); ?>
        <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
     <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
 

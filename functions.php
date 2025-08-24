@@ -21,6 +21,9 @@ function retro_game_music_theme_scripts() {
     // Retro font + main stylesheet
     wp_enqueue_style('retro-font', 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     wp_enqueue_style('main-styles', get_stylesheet_uri());
+    if ( is_front_page() ) {
+        wp_enqueue_style('retro-title', get_template_directory_uri() . '/assets/css/retro-title.css', [], '1.0.0');
+    }
 
     // Game & piano scripts
     wp_enqueue_script('piano-script', get_template_directory_uri() . '/js/piano-script.js', [], '1.0.1', true);

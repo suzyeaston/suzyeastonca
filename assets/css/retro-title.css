@@ -1,0 +1,55 @@
+.retro-title {
+  --neon: #00ff66;
+  --neon-dim: #0bff94;
+  --scanline-opacity: 0.07;
+  font-family: 'Press Start 2P', 'VT323', monospace;
+  font-size: clamp(1.2rem, 5vw, 2.5rem);
+  letter-spacing: 0.02em;
+  color: var(--neon);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  position: relative;
+  text-shadow:
+    0 0 1px var(--neon),
+    0 0 2px var(--neon),
+    0 0 6px var(--neon-dim),
+    0 0 14px var(--neon-dim);
+}
+
+.retro-title.glow-lite {
+  text-shadow:
+    0 0 1px var(--neon),
+    0 0 2px var(--neon),
+    0 0 4px var(--neon-dim),
+    0 0 8px var(--neon-dim);
+}
+
+.retro-title.glow-heavy {
+  text-shadow:
+    0 0 2px var(--neon),
+    0 0 4px var(--neon),
+    0 0 8px var(--neon-dim),
+    0 0 16px var(--neon-dim);
+}
+
+.retro-title::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,var(--scanline-opacity)) 0 1px,
+    transparent 1px 3px
+  );
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.retro-title:hover {
+  letter-spacing: 0.03em;
+  text-shadow:
+    0 0 2px var(--neon),
+    0 0 4px var(--neon),
+    0 0 8px var(--neon-dim),
+    0 0 16px var(--neon-dim);
+}
