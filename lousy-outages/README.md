@@ -1,6 +1,6 @@
 # Lousy Outages
 
-Monitor third‑party service status and get SMS alerts when things break.
+Monitor third‑party service status and get SMS and email alerts when things break.
 
 ## Providers
 
@@ -13,13 +13,16 @@ Monitor third‑party service status and get SMS alerts when things break.
 | aws | AWS | https://status.aws.amazon.com/rss/all.rss |
 | azure | Azure | https://azurestatuscdn.azureedge.net/en-us/status/feed/ |
 | gcp | Google Cloud | https://status.cloud.google.com/feed.atom |
+| digitalocean | DigitalOcean | https://status.digitalocean.com/api/v2/summary.json |
+| netlify | Netlify | https://www.netlifystatus.com/api/v2/summary.json |
+| vercel | Vercel | https://www.vercel-status.com/api/v2/summary.json |
 
 To add or remove a provider, edit `includes/Providers.php` or use the checkboxes under **Settings → Lousy Outages** in wp-admin.
 
-## Twilio Setup
+## Notifications
 
-1. Sign up for Twilio and obtain your **Account SID**, **Auth Token**, and a verified **From** number.
-2. In wp-admin go to **Settings → Lousy Outages** and enter the SID, token, from number and your destination phone number.
+1. (Optional) Sign up for Twilio and obtain your **Account SID**, **Auth Token**, and a verified **From** number to enable SMS alerts.
+2. In wp-admin go to **Settings → Lousy Outages** and enter the SID, token, from number, your destination phone number, and a notification email address.
 3. Choose which providers to monitor and set the polling interval (default 5 minutes).
 
 ## Shortcode

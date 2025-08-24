@@ -57,6 +57,27 @@ class Providers {
                 'type'     => 'rss',
                 'url'      => 'https://status.cloud.google.com/'
             ],
+            'digitalocean' => [
+                'id'       => 'digitalocean',
+                'name'     => 'DigitalOcean',
+                'endpoint' => 'https://status.digitalocean.com/api/v2/summary.json',
+                'type'     => 'statuspage',
+                'url'      => 'https://status.digitalocean.com/'
+            ],
+            'netlify' => [
+                'id'       => 'netlify',
+                'name'     => 'Netlify',
+                'endpoint' => 'https://www.netlifystatus.com/api/v2/summary.json',
+                'type'     => 'statuspage',
+                'url'      => 'https://www.netlifystatus.com/'
+            ],
+            'vercel' => [
+                'id'       => 'vercel',
+                'name'     => 'Vercel',
+                'endpoint' => 'https://www.vercel-status.com/api/v2/summary.json',
+                'type'     => 'statuspage',
+                'url'      => 'https://www.vercel-status.com/'
+            ],
         ];
     }
 

@@ -2,7 +2,7 @@
 declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
- * Description: Aggregates service status and sends SMS alerts on incidents.
+ * Description: Aggregates service status and sends SMS/email alerts on incidents.
  * Version: 0.1.0
  * Author: Suzy Easton
  */
@@ -18,6 +18,7 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Store.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Fetcher.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Detector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/SMS.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Email.php';
 require_once LOUSY_OUTAGES_PATH . 'public/shortcode.php';
 
 use LousyOutages\Providers;
@@ -25,6 +26,7 @@ use LousyOutages\Store;
 use LousyOutages\Fetcher;
 use LousyOutages\Detector;
 use LousyOutages\SMS;
+use LousyOutages\Email;
 
 /**
  * Schedule polling event on activation and create page.
@@ -67,6 +69,7 @@ function lousy_outages_run_poll() {
     $store    = new Store();
     $detector = new Detector( $store );
     $sms      = new SMS();
+    $email    = new Email();
     $providers = Providers::enabled();
     foreach ( $providers as $id => $prov ) {
         $data = $fetcher->fetch( $prov );
@@ -78,8 +81,10 @@ function lousy_outages_run_poll() {
         if ( $transition ) {
             if ( in_array( $transition['new'], [ 'degraded', 'partial_outage', 'major_outage' ], true ) ) {
                 $sms->send_alert( $prov['name'], $transition['new'], $data['message'], $prov['url'] );
+                $email->send_alert( $prov['name'], $transition['new'], $data['message'], $prov['url'] );
             } elseif ( 'operational' === $transition['new'] && in_array( $transition['old'], [ 'degraded', 'partial_outage', 'major_outage' ], true ) ) {
                 $sms->send_recovery( $prov['name'], $prov['url'] );
+                $email->send_recovery( $prov['name'], $prov['url'] );
             }
         }
     }
@@ -113,6 +118,7 @@ add_action( 'admin_init', function () {
     register_setting( 'lousy_outages', 'lousy_outages_twilio_token' );
     register_setting( 'lousy_outages', 'lousy_outages_twilio_from' );
     register_setting( 'lousy_outages', 'lousy_outages_phone' );
+    register_setting( 'lousy_outages', 'lousy_outages_email' );
     register_setting( 'lousy_outages', 'lousy_outages_interval' );
     register_setting( 'lousy_outages', 'lousy_outages_providers' );
 } );
@@ -142,6 +148,10 @@ function lousy_outages_settings_page() {
                 <tr>
                     <th scope="row"><label for="lo_phone">Destination Phone</label></th>
                     <td><input id="lo_phone" type="text" name="lousy_outages_phone" value="<?php echo esc_attr( get_option( 'lousy_outages_phone' ) ); ?>" class="regular-text"></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="lo_email">Notification Email</label></th>
+                    <td><input id="lo_email" type="email" name="lousy_outages_email" value="<?php echo esc_attr( get_option( 'lousy_outages_email', get_option( 'admin_email' ) ) ); ?>" class="regular-text"></td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="lo_interval">Poll Interval (seconds)</label></th>
