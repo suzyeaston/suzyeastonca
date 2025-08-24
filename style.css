@@ -894,6 +894,22 @@ footer,
   max-width: 800px;
 }
 
+.retro-title {
+  font-family: "Press Start 2P", cursive;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
+  color: var(--primary-color);
+  text-shadow: 0 0 4px var(--primary-color);
+  margin: 0.5rem 0;
+  line-height: 1.2;
+}
+
+.glow-lite {
+  color: var(--primary-color);
+  text-shadow: 0 0 6px rgba(0,255,0,0.6);
+}
+
 .hero-section h1.color-cycle {
   margin-bottom: 1.5rem;
   background: linear-gradient(90deg, #ff004c, #ffcc00, #00ffff, #ff004c);
@@ -924,6 +940,22 @@ footer,
 }
 .hero-section .pixel-intro p {
   margin-bottom: 1.5rem;
+}
+
+.lousy-outages-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.lousy-outages-page h1 {
+  margin-bottom: 1.5rem;
+}
+
+.lousy-outages-page .lousy-outages-list table {
+  font-family: "Press Start 2P", monospace;
+  width: 100%;
 }
 
 .home-link {
