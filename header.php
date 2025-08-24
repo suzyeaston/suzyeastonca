@@ -87,8 +87,10 @@
   }
 ?>
 
-<a href="/" class="home-link" aria-label="Home">🏠 Home</a>
-<?php get_template_part('parts/bmc-button'); ?>
+<header class="main-header">
+  <a href="/" class="logo">Suzy Easton</a>
+  <?php get_template_part( 'parts/bmc-button' ); ?>
+</header>
 
 <!-- Full‑screen moving starfield background -->
 <canvas id="starfield" role="img" aria-label="Animated starfield background"></canvas>
