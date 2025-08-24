@@ -968,18 +968,33 @@ footer,
   width: 100%;
 }
 
-.home-link {
+
+body {
+  padding-top: 60px;
+}
+
+.main-header {
   position: fixed;
-  top: 10px;
-  left: 10px;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.85);
+  border-bottom: 2px solid var(--accent-color);
   z-index: 10000;
+}
+
+.main-header .logo {
   font-family: "Press Start 2P", cursive;
   font-size: 0.85rem;
   color: var(--accent-color);
   text-decoration: none;
 }
 
-.home-link:hover {
+.main-header .logo:hover {
   text-shadow: 0 0 4px var(--accent-color);
 }
 
