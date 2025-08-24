@@ -21,8 +21,25 @@ function retro_game_music_theme_scripts() {
     // Retro font + main stylesheet
     wp_enqueue_style('retro-font', 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     wp_enqueue_style('main-styles', get_stylesheet_uri());
+    wp_enqueue_style(
+        'buttons',
+        get_template_directory_uri() . '/assets/css/buttons.css',
+        [],
+        filemtime( get_template_directory() . '/assets/css/buttons.css' )
+    );
     if ( is_front_page() ) {
-        wp_enqueue_style('retro-title', get_template_directory_uri() . '/assets/css/retro-title.css', [], '1.0.0');
+        wp_enqueue_style(
+            'retro-title',
+            get_template_directory_uri() . '/assets/css/retro-title.css',
+            [],
+            filemtime( get_template_directory() . '/assets/css/retro-title.css' )
+        );
+        wp_enqueue_style(
+            'lousy-outages-teaser',
+            get_template_directory_uri() . '/assets/css/lousy-outages-teaser.css',
+            [],
+            filemtime( get_template_directory() . '/assets/css/lousy-outages-teaser.css' )
+        );
     }
 
     // Game & piano scripts
@@ -31,6 +48,13 @@ function retro_game_music_theme_scripts() {
     if ( is_front_page() ) {
         wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', [], '1.0.0', true);
         wp_enqueue_script('title-color', get_template_directory_uri() . '/js/title-color.js', [], '1.0.0', true);
+        wp_enqueue_script(
+            'lousy-outages-teaser',
+            get_template_directory_uri() . '/assets/js/lousy-outages-teaser.js',
+            [],
+            filemtime( get_template_directory() . '/assets/js/lousy-outages-teaser.js' ),
+            true
+        );
     }
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');

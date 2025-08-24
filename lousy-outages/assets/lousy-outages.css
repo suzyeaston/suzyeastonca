@@ -12,3 +12,9 @@
 .lousy-outages-list .status.partial_outage { color: #d90; }
 .lousy-outages-list .status.major_outage { color: #d00; }
 .lousy-outages-list .last-updated { font-size: 0.9rem; margin-bottom: 0.5rem; }
+.lo-arcade { text-align: center; font-family: 'Press Start 2P', monospace; }
+.lo-arcade table { width: 100%; border-collapse: collapse; }
+.lo-arcade .ticker { margin-top: 1rem; font-size: 0.8rem; height: 1rem; overflow: hidden; }
+.lo-arcade .coin-btn { margin-top: 1rem; padding: 0.5rem 1rem; background: #111; color: #0f0; border: 2px solid #0f0; cursor: pointer; }
+.lo-arcade.spinning .coin-btn { animation: spin 1s linear; }
+@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
