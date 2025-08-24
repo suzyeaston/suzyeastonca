@@ -7,7 +7,6 @@ get_header();
     <div class="hero-section">
         <h1 class="retro-title glow-lite">Suzy Easton &mdash; Vancouver</h1>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
-        <?php get_template_part('parts/bmc-button'); ?>
         <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
     <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
 

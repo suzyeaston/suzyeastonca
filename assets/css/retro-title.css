@@ -4,8 +4,9 @@
   font-size: clamp(1.6rem, 6vw, 3rem); /* slightly larger for clarity */
   letter-spacing: .01em;
   color: var(--neon);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
   position: relative;
   text-shadow:
     0 0 1px var(--neon),

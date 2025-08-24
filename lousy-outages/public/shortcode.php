@@ -4,18 +4,25 @@ namespace LousyOutages;
 add_shortcode( 'lousy_outages', __NAMESPACE__ . '\\render_shortcode' );
 
 function render_shortcode(): string {
-    $base = plugin_dir_path( __DIR__ ) . 'assets/';
+    $base_path = plugin_dir_path( __DIR__ ) . 'assets/';
+    $theme_path = get_template_directory() . '/lousy-outages/assets/';
+    if ( file_exists( $theme_path ) ) {
+        $base_path = $theme_path;
+        $base_url  = get_template_directory_uri() . '/lousy-outages/assets/';
+    } else {
+        $base_url = plugin_dir_url( __DIR__ ) . 'assets/';
+    }
     wp_enqueue_style(
         'lousy-outages',
-        plugins_url( 'assets/lousy-outages.css', dirname( __FILE__ ) ),
+        $base_url . 'lousy-outages.css',
         [],
-        filemtime( $base . 'lousy-outages.css' )
+        filemtime( $base_path . 'lousy-outages.css' )
     );
     wp_enqueue_script(
         'lousy-outages',
-        plugins_url( 'assets/lousy-outages.js', dirname( __FILE__ ) ),
+        $base_url . 'lousy-outages.js',
         [],
-        filemtime( $base . 'lousy-outages.js' ),
+        filemtime( $base_path . 'lousy-outages.js' ),
         true
     );
     wp_localize_script( 'lousy-outages', 'LousyOutages', [ 'endpoint' => rest_url( 'lousy-outages/v1/status' ) ] );
@@ -47,6 +54,7 @@ function render_shortcode(): string {
             </table>
             <div class="ticker" aria-live="polite"></div>
             <button type="button" class="coin-btn">Coin</button>
+            <p class="microcopy">Vancouver weather: cloudy with a chance of outages.</p>
         </div>
     </div>
     <?php
