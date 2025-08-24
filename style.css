@@ -888,6 +888,8 @@ footer,
   margin: 0 auto;
   text-align: center;
   padding: 4rem 1rem 2rem;
+  position: relative;
+  z-index: 2;
 }
 
 .hero-section h1 {
@@ -915,7 +917,7 @@ footer,
 
 .glow-lite {
   color: var(--primary-color);
-  text-shadow: 0 0 6px rgba(0,255,0,0.6);
+  text-shadow: 0 0 3px rgba(0,255,0,0.8);
 }
 
 .hero-section h1.color-cycle {
