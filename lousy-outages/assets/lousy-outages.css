@@ -1,20 +1,45 @@
-.lousy-outages-list table {
+.lo-arcade {
+  font-family: 'Press Start 2P', monospace;
+  background: #000;
+  color: #0f0;
+  padding: 1rem;
+  border: 4px solid #0f0;
+  box-shadow: 0 0 10px #0f0;
+  max-width: 960px;
+  margin: 0 auto;
+  text-align: center;
+}
+.lo-arcade table {
   width: 100%;
   border-collapse: collapse;
 }
-.lousy-outages-list th,
-.lousy-outages-list td {
+.lo-arcade th,
+.lo-arcade td {
   padding: 0.5rem;
+  border-bottom: 1px solid #0f0;
   text-align: left;
 }
-.lousy-outages-list .status.operational { color: #0a0; }
-.lousy-outages-list .status.degraded,
-.lousy-outages-list .status.partial_outage { color: #d90; }
-.lousy-outages-list .status.major_outage { color: #d00; }
-.lousy-outages-list .last-updated { font-size: 0.9rem; margin-bottom: 0.5rem; }
-.lo-arcade { text-align: center; font-family: 'Press Start 2P', monospace; }
-.lo-arcade table { width: 100%; border-collapse: collapse; }
-.lo-arcade .ticker { margin-top: 1rem; font-size: 0.8rem; height: 1rem; overflow: hidden; }
-.lo-arcade .coin-btn { margin-top: 1rem; padding: 0.5rem 1rem; background: #111; color: #0f0; border: 2px solid #0f0; cursor: pointer; }
+.lousy-outages-list .last-updated { font-size: 0.8rem; margin-bottom: 0.5rem; color: #0ff; }
+.status { text-transform: capitalize; }
+.status.operational { color: #00ff66; }
+.status.degraded,
+.status.partial_outage { color: #ffcc00; }
+.status.major_outage { color: #ff004c; animation: alert-pulse 1s infinite; }
+@keyframes alert-pulse { 0%{ text-shadow:0 0 2px #ff004c; }50%{ text-shadow:0 0 10px #ff004c; }100%{ text-shadow:0 0 2px #ff004c; } }
+.lo-arcade .ticker { margin-top: 1rem; font-size: 0.8rem; height: 1rem; overflow: hidden; color: #0ff; }
+.lo-arcade .coin-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #111;
+  color: #0f0;
+  border: 2px solid #0f0;
+  cursor: pointer;
+  box-shadow: 0 0 6px #0f0;
+}
+.lo-arcade .coin-btn:hover {
+  background: #0f0;
+  color: #111;
+}
 .lo-arcade.spinning .coin-btn { animation: spin 1s linear; }
 @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+.microcopy { margin-top: 1rem; font-size: 0.7rem; color: #0ff; }

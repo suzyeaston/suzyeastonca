@@ -10,9 +10,16 @@
   margin-bottom: 1rem;
 }
 .lo-teaser .card {
+  display: block;
   background: #111;
   border: 2px solid #0f0;
   padding: 0.5rem;
+  text-decoration: none;
+  color: #0f0;
+}
+.lo-teaser .card:hover {
+  background: #0f0;
+  color: #111;
 }
 .lo-teaser .dot {
   display: inline-block;

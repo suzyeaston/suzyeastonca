@@ -75,6 +75,12 @@ function suzy_enqueue_scripts() {
 }
 add_action( 'wp_enqueue_scripts', 'suzy_enqueue_scripts' );
 
+// Load bundled Lousy Outages plugin so shortcode and REST endpoint work
+$lousy_outages = get_template_directory() . '/lousy-outages/lousy-outages.php';
+if ( file_exists( $lousy_outages ) ) {
+    require_once $lousy_outages;
+}
+
 
 // =========================================
 // 2. DISABLE AUTOMATIC PARAGRAPH FORMATTING

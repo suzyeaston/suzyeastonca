@@ -2,6 +2,7 @@
   const container = document.getElementById('lousy-outages-teaser');
   if(!container) return;
   const grid = container.querySelector('.providers');
+  const names = { github:'GitHub', slack:'Slack', cloudflare:'Cloudflare', openai:'OpenAI', aws:'AWS', azure:'Azure', gcp:'GCP' };
   function statusClass(s){
     if(s === 'operational') return 'status-up';
     if(s === 'major_outage') return 'status-down';
@@ -11,13 +12,14 @@
     grid.innerHTML='';
     Object.keys(data).slice(0,6).forEach(id => {
       const state = data[id];
-      const card = document.createElement('div');
+      const card = document.createElement('a');
       card.className = 'card';
+      card.href = '/lousy-outages/';
       const dot = document.createElement('span');
       dot.className = 'dot ' + statusClass(state.status);
       card.appendChild(dot);
       const name = document.createElement('span');
-      name.textContent = id;
+      name.textContent = names[id] || id;
       card.appendChild(name);
       grid.appendChild(card);
     });
