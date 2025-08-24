@@ -171,7 +171,19 @@ add_action( 'rest_api_init', function () {
         'permission_callback' => '__return_true',
         'callback'            => function () {
             $store = new Store();
-            return rest_ensure_response( $store->get_all() );
+            $data  = $store->get_all();
+            if ( empty( $data ) ) {
+                $fetcher   = new Fetcher();
+                $providers = Providers::enabled();
+                foreach ( $providers as $id => $prov ) {
+                    $state = $fetcher->fetch( $prov );
+                    if ( $state ) {
+                        $data[ $id ] = $state;
+                        $store->update( $id, $state );
+                    }
+                }
+            }
+            return rest_ensure_response( $data );
         },
     ] );
 } );

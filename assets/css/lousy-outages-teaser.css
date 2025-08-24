@@ -3,6 +3,9 @@
   text-align: center;
   font-family: 'Press Start 2P', monospace;
 }
+.lo-teaser h2 {
+  margin-bottom: 1rem;
+}
 .lo-teaser .providers {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px,1fr));
