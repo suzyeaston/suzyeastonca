@@ -88,6 +88,7 @@
 ?>
 
 <a href="/" class="home-link" aria-label="Home">🏠 Home</a>
+<?php get_template_part('parts/bmc-button'); ?>
 
 <!-- Full‑screen moving starfield background -->
 <canvas id="starfield" role="img" aria-label="Animated starfield background"></canvas>

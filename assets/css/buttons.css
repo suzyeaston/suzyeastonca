@@ -1,0 +1,24 @@
+.btn-bmc {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 2px solid #0f0;
+  border-radius: 9999px;
+  background: #111;
+  color: #0f0;
+  text-decoration: none;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.75rem;
+}
+.btn-bmc:hover,
+.btn-bmc:focus {
+  background: #0f0;
+  color: #111;
+}
+.hero-section .btn-bmc {
+  position: static;
+  margin-top: 1rem;
+}

@@ -11,6 +11,8 @@ A custom WordPress theme powering [suzyeaston.ca](https://suzyeaston.ca), comple
 - Music releases, livestream schedules and a "Now Listening" section featuring a static YouTube embed
 - Downtown Eastside advocacy section and notes on Suzy's possible 2026 city council run
 - Custom REST endpoints for Canucks news and betting odds
+- **Lousy Outages** arcade‑style status board with homepage teaser
+- "Buy Me a Coffee" buttons to support Suzy's work
 - Mobile friendly with drag & tap controls
 
 ## Track Analyzer
