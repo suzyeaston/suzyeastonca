@@ -889,6 +889,14 @@ footer,
   text-align: center;
   padding: 4rem 1rem 2rem;
 }
+
+.hero-section h1 {
+  font-size: 2rem;
+}
+
+.hero-section h2 {
+  font-size: 1.25rem;
+}
 .tagline {
   margin: 20px auto;
   max-width: 800px;
