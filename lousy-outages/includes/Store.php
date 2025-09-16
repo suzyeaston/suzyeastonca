@@ -15,10 +15,14 @@ class Store {
     }
 
     public function update( string $id, array $data ): void {
+        $status = $data['status'] ?? 'unknown';
+        if ( empty( $data['status_label'] ) ) {
+            $data['status_label'] = Fetcher::status_label( $status );
+        }
         $all        = $this->get_all();
         $all[ $id ] = $data;
         update_option( $this->option, $all, false );
-        $this->log( $id, $data['status'] );
+        $this->log( $id, $status );
     }
 
     private function log( string $id, string $status ): void {

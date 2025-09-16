@@ -19,14 +19,15 @@
   border-bottom: 1px solid #0f0;
   text-align: left;
 }
+.lousy-outages-list table { transition: opacity 0.2s ease-in-out; }
 .lousy-outages-list .last-updated { font-size: 0.8rem; margin-bottom: 0.5rem; color: #0ff; }
 .status { text-transform: capitalize; }
-.status.operational { color: #00ff66; }
-.status.degraded,
-.status.partial_outage { color: #ffcc00; }
-.status.major_outage { color: #ff004c; animation: alert-pulse 1s infinite; }
+.status--operational { color: #00ff66; }
+.status--degraded { color: #ffcc00; }
+.status--outage { color: #ff004c; animation: alert-pulse 1s infinite; }
+.status--unknown { color: #cccccc; }
 @keyframes alert-pulse { 0%{ text-shadow:0 0 2px #ff004c; }50%{ text-shadow:0 0 10px #ff004c; }100%{ text-shadow:0 0 2px #ff004c; } }
-.lo-arcade .ticker { margin-top: 1rem; font-size: 0.8rem; height: 1rem; overflow: hidden; color: #0ff; }
+.lo-arcade .ticker { margin-top: 1rem; font-size: 0.8rem; min-height: 1rem; overflow: hidden; color: #0ff; transition: opacity 0.2s ease-in-out; }
 .lo-arcade .coin-btn {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
@@ -35,11 +36,32 @@
   border: 2px solid #0f0;
   cursor: pointer;
   box-shadow: 0 0 6px #0f0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .lo-arcade .coin-btn:hover {
   background: #0f0;
   color: #111;
 }
-.lo-arcade.spinning .coin-btn { animation: spin 1s linear; }
-@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+.coin-btn .loader {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid rgba(0, 255, 0, 0.3);
+  border-top-color: #0f0;
+  border-radius: 50%;
+  animation: coin-spin 0.8s linear infinite;
+  display: none;
+}
+.coin-btn.is-loading .loader { display: inline-block; }
+.coin-btn.is-loading .label { opacity: 0.6; }
+.lousy-outages-list.is-refreshing table,
+.lousy-outages-list.is-refreshing .ticker,
+.lousy-outages-list.is-refreshing .status,
+.lousy-outages-list.is-refreshing .msg {
+  opacity: 0.85;
+}
+@keyframes coin-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .microcopy { margin-top: 1rem; font-size: 0.7rem; color: #0ff; }
+.weather { margin-top: 0.5rem; font-size: 0.7rem; color: #0ff; }
