@@ -16,6 +16,7 @@ define( 'LOUSY_OUTAGES_PATH', plugin_dir_path( __FILE__ ) );
 require_once LOUSY_OUTAGES_PATH . 'includes/Providers.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Store.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Fetcher.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/I18n.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Detector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/SMS.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Email.php';
@@ -65,29 +66,56 @@ add_filter( 'cron_schedules', function ( $schedules ) {
  */
 add_action( 'lousy_outages_poll', 'lousy_outages_run_poll' );
 function lousy_outages_run_poll() {
-    $fetcher  = new Fetcher();
-    $store    = new Store();
-    $detector = new Detector( $store );
-    $sms      = new SMS();
-    $email    = new Email();
-    $providers = Providers::enabled();
-    foreach ( $providers as $id => $prov ) {
-        $data = $fetcher->fetch( $prov );
-        if ( ! $data ) {
+    $store     = new Store();
+    $detector  = new Detector( $store );
+    $sms       = new SMS();
+    $email     = new Email();
+    $statuses  = lousy_outages_collect_statuses();
+
+    foreach ( $statuses as $id => $state ) {
+        $transition = $detector->detect( $id, $state );
+        $store->update( $id, $state );
+        if ( ! $transition ) {
             continue;
         }
-        $transition = $detector->detect( $id, $data );
-        $store->update( $id, $data );
-        if ( $transition ) {
-            if ( in_array( $transition['new'], [ 'degraded', 'partial_outage', 'major_outage' ], true ) ) {
-                $sms->send_alert( $prov['name'], $transition['new'], $data['message'], $prov['url'] );
-                $email->send_alert( $prov['name'], $transition['new'], $data['message'], $prov['url'] );
-            } elseif ( 'operational' === $transition['new'] && in_array( $transition['old'], [ 'degraded', 'partial_outage', 'major_outage' ], true ) ) {
-                $sms->send_recovery( $prov['name'], $prov['url'] );
-                $email->send_recovery( $prov['name'], $prov['url'] );
-            }
+
+        if ( in_array( $transition['new'], [ 'degraded', 'outage' ], true ) ) {
+            $sms->send_alert( $state['name'], $transition['new'], $state['message'], $state['url'] );
+            $email->send_alert( $state['name'], $transition['new'], $state['message'], $state['url'] );
+        } elseif ( 'operational' === $transition['new'] && in_array( $transition['old'], [ 'degraded', 'outage' ], true ) ) {
+            $sms->send_recovery( $state['name'], $state['url'] );
+            $email->send_recovery( $state['name'], $state['url'] );
         }
     }
+}
+
+function lousy_outages_collect_statuses(): array {
+    $fetcher   = new Fetcher();
+    $providers = Providers::enabled();
+    $results   = [];
+
+    foreach ( $providers as $id => $provider ) {
+        $results[ $id ] = $fetcher->fetch( $provider );
+    }
+
+    return $results;
+}
+
+function lousy_outages_get_poll_interval(): int {
+    $env = getenv( 'LOUSY_OUTAGES_POLL_INTERVAL' );
+    if ( $env ) {
+        $interval = (int) $env;
+    } else {
+        $configured = (int) get_option( 'lousy_outages_interval', 300 );
+        $interval   = $configured * 1000;
+    }
+
+    $interval = max( 60000, $interval );
+
+    /**
+     * Filter the polling interval in milliseconds for the public dashboard.
+     */
+    return (int) apply_filters( 'lousy_outages_poll_interval', $interval );
 }
 
 /**
@@ -180,20 +208,41 @@ add_action( 'rest_api_init', function () {
         'methods'             => 'GET',
         'permission_callback' => '__return_true',
         'callback'            => function () {
-            $store = new Store();
-            $data  = $store->get_all();
-            if ( empty( $data ) ) {
-                $fetcher   = new Fetcher();
-                $providers = Providers::enabled();
-                foreach ( $providers as $id => $prov ) {
-                    $state = $fetcher->fetch( $prov );
-                    if ( $state ) {
-                        $data[ $id ] = $state;
-                        $store->update( $id, $state );
-                    }
-                }
+            $store      = new Store();
+            $fetched_at = gmdate( 'c' );
+            $data       = lousy_outages_collect_statuses();
+
+            foreach ( $data as $id => $state ) {
+                $store->update( $id, $state );
             }
-            return rest_ensure_response( $data );
+
+            $providers = [];
+            foreach ( $data as $id => $state ) {
+                $providers[] = [
+                    'provider'   => $id,
+                    'name'       => $state['name'],
+                    'status'     => $state['status_label'] ?? Fetcher::status_label( $state['status'] ?? 'unknown' ),
+                    'statusCode' => $state['status'] ?? 'unknown',
+                    'message'    => $state['message'] ?? '',
+                    'updatedAt'  => $state['updated_at'] ?? $fetched_at,
+                    'url'        => $state['url'] ?? '',
+                    'error'      => $state['error'] ?? null,
+                ];
+            }
+
+            $response = rest_ensure_response(
+                [
+                    'providers' => $providers,
+                    'meta'      => [
+                        'fetchedAt' => $fetched_at,
+                    ],
+                ]
+            );
+            $response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate' );
+            $response->header( 'Pragma', 'no-cache' );
+            $response->header( 'Expires', '0' );
+
+            return $response;
         },
     ] );
 } );

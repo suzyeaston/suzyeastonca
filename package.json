@@ -1,0 +1,8 @@
+{
+  "name": "suzyeastonca",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test \"./__tests__/**/*.test.js\""
+  }
+}

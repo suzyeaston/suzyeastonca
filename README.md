@@ -15,6 +15,9 @@ A custom WordPress theme powering [suzyeaston.ca](https://suzyeaston.ca), comple
 - "Buy Me a Coffee" buttons to support Suzy's work
 - Mobile friendly with drag & tap controls
 
+## Lousy Outages refresh
+The arcade-style status board now pulls fresh data from `/wp-json/lousy-outages/v1/status` on load and every five minutes (override with the `LOUSY_OUTAGES_POLL_INTERVAL` env var or the `lousy_outages_interval` option). Each request skips caches, times out quickly and stores per-provider results so one failure shows as **Unknown** without blocking the others. WordPress cron still drives the background poller—run `wp cron event run lousy_outages_poll` (or let traffic trigger it) to keep the datastore warm between interactive refreshes.
+
 ## Track Analyzer
 Uploads are sent to OpenAI's Whisper and GPT‑4 APIs for a quick analysis of your
 MP3. Results appear with a fun retro overlay and clear loading indicators. For
