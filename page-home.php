@@ -108,7 +108,7 @@ get_header();
     <section class="party-announcement crt-block">
         <h2>Grunge &amp; Rock Video Party (Instagram)</h2>
         <p>We’re cueing up a feed of loud guitars, grainy VHS vibes, and deep cuts.
-           Follow <a href="https://instagram.com/your-handle" target="_blank">@your-handle</a>
+           Follow <a href="https://instagram.com/officialsuzyeaston" target="_blank">@officialsuzyeaston</a>
            for the kickoff date &amp; set list. Requests welcome. Bring flannel.</p>
     </section>
 

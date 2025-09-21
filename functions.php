@@ -81,6 +81,8 @@ if ( file_exists( $lousy_outages ) ) {
     require_once $lousy_outages;
 }
 
+add_filter( 'lousy_outages_voice_enabled', '__return_true' );
+
 
 // =========================================
 // 2. DISABLE AUTOMATIC PARAGRAPH FORMATTING
