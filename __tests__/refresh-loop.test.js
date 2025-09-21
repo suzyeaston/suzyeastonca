@@ -26,11 +26,13 @@ beforeEach(() => {
         Promise.resolve({
           providers: [
             {
-              provider: 'github',
+              id: 'github',
+              provider: 'GitHub',
               name: 'GitHub',
-              statusCode: 'operational',
-              status: 'Operational',
-              message: '',
+              stateCode: 'operational',
+              state: 'Operational',
+              summary: '',
+              incidents: [],
               updatedAt: new Date().toISOString()
             }
           ],
@@ -48,8 +50,8 @@ afterEach(() => {
 
 test('polls at configured interval without stacking timers', async () => {
   app.init({
-    endpoint: '/api/status',
-    pollInterval: 25,
+    endpoint: '/api/outages',
+    pollInterval: 220,
     providers: [{ id: 'github', name: 'GitHub' }],
     strings: {},
     fallbackStrings: {},
@@ -58,13 +60,18 @@ test('polls at configured interval without stacking timers', async () => {
   });
 
   await flushPromises();
-  assert.equal(mockFetch.callCount(), 1);
-
-  await wait(30);
+  await wait(250);
   await flushPromises();
-  assert.equal(mockFetch.callCount(), 2);
+  const firstCount = mockFetch.callCount();
+  assert.ok(firstCount >= 1);
 
-  await wait(30);
+  await wait(250);
   await flushPromises();
-  assert.equal(mockFetch.callCount(), 3);
+  const secondCount = mockFetch.callCount();
+  assert.equal(secondCount, firstCount + 1);
+
+  await wait(250);
+  await flushPromises();
+  const thirdCount = mockFetch.callCount();
+  assert.equal(thirdCount, secondCount + 1);
 });

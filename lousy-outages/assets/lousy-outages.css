@@ -1,35 +1,293 @@
+
 .lo-arcade {
   font-family: 'Press Start 2P', monospace;
-  background: #000;
+  background: radial-gradient(circle at top left, #020d02, #000);
   color: #0f0;
-  padding: 1rem;
+  padding: 1.25rem;
   border: 4px solid #0f0;
-  box-shadow: 0 0 10px #0f0;
-  max-width: 960px;
+  box-shadow: 0 0 12px #0f0;
+  max-width: 1080px;
   margin: 0 auto;
   text-align: center;
 }
-.lo-arcade table {
-  width: 100%;
-  border-collapse: collapse;
+
+.lousy-outages-board {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
-.lo-arcade th,
-.lo-arcade td {
-  padding: 0.5rem;
-  border-bottom: 1px solid #0f0;
+
+.lousy-outages-board::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(0, 255, 170, 0.03) 0,
+    rgba(0, 255, 170, 0.03) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  opacity: 0.7;
+  mix-blend-mode: screen;
+}
+
+.board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  z-index: 1;
+}
+
+.lousy-outages-board .last-updated {
+  font-size: 0.85rem;
+  margin: 0;
+  color: #7af7c9;
+}
+
+.board-subtitle {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #afffdf;
+  margin: 0;
+  z-index: 1;
+}
+
+.providers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.provider-card {
+  background: rgba(0, 32, 0, 0.65);
+  border: 2px solid rgba(0, 255, 170, 0.4);
+  border-radius: 12px;
+  box-shadow: inset 0 0 8px rgba(0, 255, 170, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.provider-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 12px rgba(0, 255, 170, 0.35);
+}
+
+.provider-card__inner {
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   text-align: left;
 }
-.lousy-outages-list table { transition: opacity 0.2s ease-in-out; }
-.lousy-outages-list .last-updated { font-size: 0.8rem; margin-bottom: 0.5rem; color: #0ff; }
-.status { text-transform: capitalize; }
-.status--operational { color: #00ff66; }
-.status--degraded { color: #ffcc00; }
-.status--outage { color: #ff004c; animation: alert-pulse 1s infinite; }
-.status--unknown { color: #cccccc; }
-@keyframes alert-pulse { 0%{ text-shadow:0 0 2px #ff004c; }50%{ text-shadow:0 0 10px #ff004c; }100%{ text-shadow:0 0 2px #ff004c; } }
-.lo-arcade .ticker { margin-top: 1rem; font-size: 0.8rem; min-height: 1rem; overflow: hidden; color: #0ff; transition: opacity 0.2s ease-in-out; }
-.lo-arcade .coin-btn {
-  margin-top: 1rem;
+
+.provider-card__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.provider-card__name {
+  font-size: 0.85rem;
+  margin: 0;
+  color: #d8ffef;
+}
+
+.status-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+.status--operational {
+  color: #3cff9a;
+}
+
+.status--degraded {
+  color: #ffda6a;
+}
+
+.status--outage {
+  color: #ff5f89;
+  animation: alert-pulse 1s ease-in-out infinite;
+}
+
+.status--maintenance {
+  color: #8fd1ff;
+}
+
+.status--unknown {
+  color: #c6c6c6;
+}
+
+.provider-card__summary {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #c9ffe9;
+  margin: 0;
+  min-height: 2.6em;
+}
+
+.provider-card__snark {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: #9fffd6;
+  min-height: 2.2em;
+  margin: 0;
+}
+
+.details-toggle {
+  align-self: flex-start;
+  background: rgba(0, 0, 0, 0.6);
+  color: #afffdf;
+  border: 1px solid rgba(175, 255, 223, 0.6);
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.details-toggle:hover,
+.details-toggle:focus {
+  background: rgba(175, 255, 223, 0.2);
+  color: #fff;
+}
+
+.provider-details {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  padding: 0.75rem;
+  border: 1px solid rgba(0, 255, 170, 0.15);
+}
+
+.provider-details[hidden] {
+  display: none;
+}
+
+.incidents {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.incident-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.incident-item {
+  border: 1px solid rgba(0, 255, 170, 0.2);
+  border-radius: 6px;
+  padding: 0.65rem 0.75rem;
+  background: rgba(0, 16, 0, 0.5);
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.incident-title {
+  font-size: 0.8rem;
+  margin: 0 0 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #e6ffee;
+}
+
+.impact-badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.impact--minor .impact-badge {
+  color: #7fffd4;
+}
+
+.impact--major .impact-badge {
+  color: #ffd166;
+}
+
+.impact--critical .impact-badge {
+  color: #ff6b81;
+}
+
+.incident-start,
+.incident-summary,
+.incident-eta,
+.incident-updated {
+  font-size: 0.72rem;
+  margin: 0.25rem 0;
+  color: #c1ffe4;
+}
+
+.incident-summary {
+  color: #f1fff7;
+}
+
+.incident-empty {
+  font-size: 0.75rem;
+  color: #94ffce;
+  margin: 0;
+}
+
+.provider-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: #9fffd6;
+  text-decoration: none;
+}
+
+.provider-link:hover,
+.provider-link:focus {
+  text-decoration: underline;
+  color: #fff;
+}
+
+.lousy-outages-board .ticker {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  min-height: 1rem;
+  color: #7af7c9;
+  z-index: 1;
+}
+
+.lousy-outages-board.is-refreshing .provider-card__inner,
+.lousy-outages-board.is-refreshing .ticker,
+.lousy-outages-board.is-refreshing .provider-card__summary,
+.lousy-outages-board.is-refreshing .provider-card__snark {
+  opacity: 0.85;
+}
+
+.coin-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.5rem 1rem;
   background: #111;
   color: #0f0;
@@ -37,14 +295,15 @@
   cursor: pointer;
   box-shadow: 0 0 6px #0f0;
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
 }
-.lo-arcade .coin-btn:hover {
+
+.coin-btn:hover {
   background: #0f0;
   color: #111;
 }
+
 .coin-btn .loader {
   width: 0.75rem;
   height: 0.75rem;
@@ -54,14 +313,50 @@
   animation: coin-spin 0.8s linear infinite;
   display: none;
 }
-.coin-btn.is-loading .loader { display: inline-block; }
-.coin-btn.is-loading .label { opacity: 0.6; }
-.lousy-outages-list.is-refreshing table,
-.lousy-outages-list.is-refreshing .ticker,
-.lousy-outages-list.is-refreshing .status,
-.lousy-outages-list.is-refreshing .msg {
-  opacity: 0.85;
+
+.coin-btn.is-loading .loader {
+  display: inline-block;
 }
-@keyframes coin-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.microcopy { margin-top: 1rem; font-size: 0.7rem; color: #0ff; }
-.weather { margin-top: 0.5rem; font-size: 0.7rem; color: #0ff; }
+
+.coin-btn.is-loading .label {
+  opacity: 0.6;
+}
+
+.microcopy,
+.weather {
+  font-size: 0.7rem;
+  color: #7fffd4;
+  margin: 0;
+  z-index: 1;
+}
+
+.weather {
+  opacity: 0.8;
+}
+
+@keyframes alert-pulse {
+  0% {
+    text-shadow: 0 0 2px currentColor;
+  }
+  50% {
+    text-shadow: 0 0 10px currentColor;
+  }
+  100% {
+    text-shadow: 0 0 2px currentColor;
+  }
+}
+
+@keyframes coin-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+  .board-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .coin-btn {
+    margin-left: 0;
+  }
+}

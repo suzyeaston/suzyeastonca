@@ -105,13 +105,12 @@ get_header();
         <a href="/suzys-track-analyzer" class="pixel-button analyzer-cta">Analyze Your Track</a>
     </section>
 
-    <section class="roommate-callout">
-        <h2 class="pixel-font">Seeking Musical Roommate! 🎸</h2>
-        <p class="pixel-font">Moving at the end of October 2025. If you're a fellow musician or creative looking for a rad roommate situation in Vancouver, let's connect!</p>
-        <p class="pixel-font">Contact: <a href="mailto:suzyeaston@icloud.com" class="pixel-button">suzyeaston@icloud.com</a></p>
+    <section class="party-announcement crt-block">
+        <h2>Grunge &amp; Rock Video Party (Instagram)</h2>
+        <p>We’re cueing up a feed of loud guitars, grainy VHS vibes, and deep cuts.
+           Follow <a href="https://instagram.com/your-handle" target="_blank">@your-handle</a>
+           for the kickoff date &amp; set list. Requests welcome. Bring flannel.</p>
     </section>
-
-
 
 
     <section class="support-section">

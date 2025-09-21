@@ -38,6 +38,9 @@ function lousy_outages_activate() {
         wp_schedule_event( time() + 60, 'lousy_outages_interval', 'lousy_outages_poll' );
     }
     lousy_outages_create_page();
+    if ( function_exists( 'flush_rewrite_rules' ) ) {
+        flush_rewrite_rules( false );
+    }
 }
 register_activation_hook( __FILE__, 'lousy_outages_activate' );
 
@@ -46,6 +49,9 @@ register_activation_hook( __FILE__, 'lousy_outages_activate' );
  */
 function lousy_outages_deactivate() {
     wp_clear_scheduled_hook( 'lousy_outages_poll' );
+    if ( function_exists( 'flush_rewrite_rules' ) ) {
+        flush_rewrite_rules( false );
+    }
 }
 register_deactivation_hook( __FILE__, 'lousy_outages_deactivate' );
 
@@ -70,7 +76,7 @@ function lousy_outages_run_poll() {
     $detector  = new Detector( $store );
     $sms       = new SMS();
     $email     = new Email();
-    $statuses  = lousy_outages_collect_statuses();
+    $statuses  = lousy_outages_collect_statuses( true );
 
     foreach ( $statuses as $id => $state ) {
         $transition = $detector->detect( $id, $state );
@@ -89,8 +95,17 @@ function lousy_outages_run_poll() {
     }
 }
 
-function lousy_outages_collect_statuses(): array {
-    $fetcher   = new Fetcher();
+function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
+    $cache_key = 'lousy_outages_cached_statuses';
+    if ( ! $bypass_cache ) {
+        $cached = get_transient( $cache_key );
+        if ( is_array( $cached ) && ! empty( $cached ) ) {
+            return $cached;
+        }
+    }
+
+    $timeout   = (int) apply_filters( 'lousy_outages_fetch_timeout', 10 );
+    $fetcher   = new Fetcher( $timeout );
     $providers = Providers::enabled();
     $results   = [];
 
@@ -98,16 +113,28 @@ function lousy_outages_collect_statuses(): array {
         $results[ $id ] = $fetcher->fetch( $provider );
     }
 
+    $ttl = (int) apply_filters( 'lousy_outages_cache_ttl', 90 );
+    set_transient( $cache_key, $results, max( 30, $ttl ) );
+
     return $results;
 }
 
 function lousy_outages_get_poll_interval(): int {
-    $env = getenv( 'LOUSY_OUTAGES_POLL_INTERVAL' );
+    $env = getenv( 'OUTAGES_POLL_MS' );
+    if ( ! $env ) {
+        $legacy = getenv( 'LOUSY_OUTAGES_POLL_INTERVAL' );
+        $env    = $legacy ?: null;
+    }
+
     if ( $env ) {
         $interval = (int) $env;
     } else {
         $configured = (int) get_option( 'lousy_outages_interval', 300 );
         $interval   = $configured * 1000;
+    }
+
+    if ( $interval <= 0 ) {
+        $interval = 300000;
     }
 
     $interval = max( 60000, $interval );
@@ -200,6 +227,45 @@ function lousy_outages_settings_page() {
     <?php
 }
 
+function lousy_outages_build_provider_payload( string $id, array $state, string $fetched_at ): array {
+    $status     = $state['status'] ?? 'unknown';
+    $label      = Fetcher::status_label( $status );
+    $updated_at = ! empty( $state['updated_at'] ) ? (string) $state['updated_at'] : $fetched_at;
+    $incidents  = [];
+
+    if ( ! empty( $state['incidents'] ) && is_array( $state['incidents'] ) ) {
+        foreach ( $state['incidents'] as $incident ) {
+            if ( ! is_array( $incident ) ) {
+                continue;
+            }
+            $incidents[] = [
+                'id'        => (string) ( $incident['id'] ?? md5( $id . wp_json_encode( $incident ) ) ),
+                'title'     => $incident['title'] ?? 'Incident',
+                'summary'   => $incident['summary'] ?? '',
+                'startedAt' => $incident['started_at'] ?? '',
+                'updatedAt' => $incident['updated_at'] ?? '',
+                'impact'    => $incident['impact'] ?? 'minor',
+                'eta'       => $incident['eta'] ?? 'investigating',
+                'url'       => $incident['url'] ?? ( $state['url'] ?? '' ),
+            ];
+        }
+    }
+
+    return [
+        'id'         => $id,
+        'provider'   => $state['provider'] ?? $state['name'] ?? $id,
+        'name'       => $state['name'] ?? $state['provider'] ?? $id,
+        'state'      => $label,
+        'stateCode'  => $status,
+        'summary'    => $state['summary'] ?? $label,
+        'updatedAt'  => $updated_at,
+        'url'        => $state['url'] ?? '',
+        'snark'      => $state['snark'] ?? '',
+        'incidents'  => $incidents,
+        'error'      => $state['error'] ?? null,
+    ];
+}
+
 /**
  * REST endpoint exposing current status.
  */
@@ -207,10 +273,12 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'lousy-outages/v1', '/status', [
         'methods'             => 'GET',
         'permission_callback' => '__return_true',
-        'callback'            => function () {
-            $store      = new Store();
-            $fetched_at = gmdate( 'c' );
-            $data       = lousy_outages_collect_statuses();
+        'callback'            => function ( \WP_REST_Request $request ) {
+            $store    = new Store();
+            $refresh  = $request->get_param( 'refresh' );
+            $bypass   = null !== $refresh ? filter_var( $refresh, FILTER_VALIDATE_BOOLEAN ) : false;
+            $fetched  = gmdate( 'c' );
+            $data     = lousy_outages_collect_statuses( $bypass );
 
             foreach ( $data as $id => $state ) {
                 $store->update( $id, $state );
@@ -218,31 +286,69 @@ add_action( 'rest_api_init', function () {
 
             $providers = [];
             foreach ( $data as $id => $state ) {
-                $providers[] = [
-                    'provider'   => $id,
-                    'name'       => $state['name'],
-                    'status'     => $state['status_label'] ?? Fetcher::status_label( $state['status'] ?? 'unknown' ),
-                    'statusCode' => $state['status'] ?? 'unknown',
-                    'message'    => $state['message'] ?? '',
-                    'updatedAt'  => $state['updated_at'] ?? $fetched_at,
-                    'url'        => $state['url'] ?? '',
-                    'error'      => $state['error'] ?? null,
-                ];
+                $providers[] = lousy_outages_build_provider_payload( $id, $state, $fetched );
             }
 
-            $response = rest_ensure_response(
-                [
-                    'providers' => $providers,
-                    'meta'      => [
-                        'fetchedAt' => $fetched_at,
-                    ],
-                ]
-            );
-            $response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate' );
+            $payload  = [
+                'providers' => $providers,
+                'meta'      => [
+                    'fetchedAt'   => $fetched,
+                    'generatedAt' => gmdate( 'c' ),
+                    'fresh'       => (bool) $bypass,
+                ],
+            ];
+            $response = rest_ensure_response( $payload );
+            $response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
             $response->header( 'Pragma', 'no-cache' );
             $response->header( 'Expires', '0' );
 
             return $response;
         },
     ] );
+} );
+
+add_filter( 'query_vars', function ( $vars ) {
+    $vars[] = 'lousy_outages_api';
+    return $vars;
+} );
+
+add_action( 'init', function () {
+    add_rewrite_rule( '^api/outages/?$', 'index.php?lousy_outages_api=1', 'top' );
+} );
+
+add_action( 'template_redirect', function () {
+    $flag = get_query_var( 'lousy_outages_api' );
+    if ( empty( $flag ) ) {
+        return;
+    }
+
+    $store   = new Store();
+    $refresh = isset( $_GET['refresh'] ) ? filter_var( wp_unslash( $_GET['refresh'] ), FILTER_VALIDATE_BOOLEAN ) : false;
+    $fetched = gmdate( 'c' );
+    $data    = lousy_outages_collect_statuses( (bool) $refresh );
+
+    foreach ( $data as $id => $state ) {
+        $store->update( $id, $state );
+    }
+
+    $providers = [];
+    foreach ( $data as $id => $state ) {
+        $providers[] = lousy_outages_build_provider_payload( $id, $state, $fetched );
+    }
+
+    if ( function_exists( 'nocache_headers' ) ) {
+        nocache_headers();
+    }
+
+    $payload = [
+        'providers' => $providers,
+        'meta'      => [
+            'fetchedAt'   => $fetched,
+            'generatedAt' => gmdate( 'c' ),
+            'fresh'       => (bool) $refresh,
+        ],
+    ];
+
+    wp_send_json( $payload );
+    exit;
 } );

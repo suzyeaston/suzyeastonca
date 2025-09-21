@@ -455,7 +455,7 @@ body::before {
 @media (max-width: 600px) {
   .track-analyzer-feature,
   .riff-generator-feature,
-  .roommate-callout {
+  .party-announcement {
     margin: 20px 10px;
     padding: 15px;
   }
@@ -963,9 +963,8 @@ footer,
   margin-bottom: 1.5rem;
 }
 
-.lousy-outages-page .lousy-outages-list table {
-  font-family: "Press Start 2P", monospace;
-  width: 100%;
+.lousy-outages-page .lousy-outages-board {
+  font-family: 'Press Start 2P', monospace;
 }
 
 
@@ -1216,16 +1215,65 @@ body {
   border-radius: 10px;
   text-align: center;
 }
-.roommate-callout {
+.crt-block {
   position: relative;
   z-index: 1;
+  background: radial-gradient(circle at top left, rgba(0, 64, 0, 0.6), rgba(0, 16, 0, 0.95));
+  border: 2px solid var(--primary-color);
+  box-shadow: 0 0 12px rgba(0, 255, 170, 0.25), inset 0 0 6px rgba(0, 255, 170, 0.15);
+  color: var(--primary-color);
+  overflow: hidden;
+}
+
+.crt-block::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 255, 150, 0.08) 0,
+    rgba(0, 255, 150, 0.08) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.4;
+}
+
+.party-announcement {
   margin: 40px auto;
-  padding: 20px;
-  max-width: 800px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid #fff;
-  border-radius: 10px;
-  text-align: center;
+  padding: 24px 28px;
+  max-width: 780px;
+  text-align: left;
+  border-radius: 12px;
+}
+
+.party-announcement h2 {
+  font-family: 'Press Start 2P', monospace;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #b6ffd7;
+}
+
+.party-announcement p {
+  font-family: 'IBM Plex Sans', sans-serif;
+  line-height: 1.8;
+  color: #e8ffee;
+  margin: 0;
+}
+
+.party-announcement a {
+  color: var(--secondary-color);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.party-announcement a:hover,
+.party-announcement a:focus {
+  text-decoration: underline;
+  text-shadow: 0 0 6px rgba(0, 255, 190, 0.6);
 }
 @keyframes marquee {
   from {
