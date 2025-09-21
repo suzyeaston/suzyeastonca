@@ -37,20 +37,24 @@ test('renders Unknown when a provider times out', async () => {
         Promise.resolve({
           providers: [
             {
-              provider: 'openai',
+              id: 'openai',
+              provider: 'OpenAI',
               name: 'OpenAI',
-              statusCode: 'unknown',
-              status: 'Unknown',
-              message: 'Request timed out',
+              stateCode: 'unknown',
+              state: 'Unknown',
+              summary: 'Request timed out',
+              incidents: [],
               error: 'timeout',
               updatedAt: now
             },
             {
-              provider: 'github',
+              id: 'github',
+              provider: 'GitHub',
               name: 'GitHub',
-              statusCode: 'operational',
-              status: 'Operational',
-              message: '',
+              stateCode: 'operational',
+              state: 'Operational',
+              summary: '',
+              incidents: [],
               updatedAt: now
             }
           ],
@@ -60,7 +64,7 @@ test('renders Unknown when a provider times out', async () => {
   );
 
   app.init({
-    endpoint: '/api/status',
+    endpoint: '/api/outages',
     pollInterval: 50,
     providers: [
       { id: 'openai', name: 'OpenAI' },
@@ -73,10 +77,12 @@ test('renders Unknown when a provider times out', async () => {
   });
 
   await flushPromises();
+  await wait(150);
+  await flushPromises();
 
-  const openAiRow = document.querySelector('tr[data-id="openai"] .status');
-  const messageCell = document.querySelector('tr[data-id="openai"] .msg');
-  assert.equal(openAiRow.textContent, 'Unknown');
-  assert.ok(openAiRow.className.includes('status--unknown'));
-  assert.equal(messageCell.textContent, 'Request timed out');
+  const statusBadge = document.querySelector('.provider-card[data-id="openai"] .status-badge');
+  const summary = document.querySelector('.provider-card[data-id="openai"] .provider-card__summary');
+  assert.equal(statusBadge.textContent, 'Unknown');
+  assert.ok(statusBadge.className.includes('status--unknown'));
+  assert.equal(summary.textContent, 'Request timed out');
 });

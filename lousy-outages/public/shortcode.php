@@ -1,7 +1,8 @@
+
 <?php
 namespace LousyOutages;
 
-add_shortcode( 'lousy_outages', __NAMESPACE__ . '\\render_shortcode' );
+add_shortcode( 'lousy_outages', __NAMESPACE__ . '\render_shortcode' );
 
 function render_shortcode(): string {
     $base_path  = plugin_dir_path( __DIR__ ) . 'assets/';
@@ -50,22 +51,24 @@ function render_shortcode(): string {
     }
 
     $config = [
-        'endpoint'        => esc_url_raw( rest_url( 'lousy-outages/v1/status' ) ),
-        'pollInterval'    => lousy_outages_get_poll_interval(),
-        'fetchTimeout'    => 8000,
-        'locale'          => $locale,
-        'strings'         => $strings,
-        'fallbackStrings' => $fallback_strings,
-        'providers'       => array_values(
+        'endpoint'         => esc_url_raw( home_url( '/api/outages' ) ),
+        'pollInterval'     => lousy_outages_get_poll_interval(),
+        'fetchTimeout'     => 10000,
+        'locale'           => $locale,
+        'strings'          => $strings,
+        'fallbackStrings'  => $fallback_strings,
+        'providers'        => array_values(
             array_map(
                 static fn( $prov ) => [
                     'id'   => $prov['id'],
                     'name' => $prov['name'],
+                    'url'  => $prov['url'] ?? '',
                 ],
                 $providers
             )
         ),
         'initialTimestamp' => $initial_iso,
+        'voiceEnabled'     => (bool) apply_filters( 'lousy_outages_voice_enabled', false ),
         'debug'            => function_exists( 'wp_get_environment_type' ) ? 'production' !== wp_get_environment_type() : ( defined( 'WP_DEBUG' ) && WP_DEBUG ),
     ];
 
@@ -74,36 +77,71 @@ function render_shortcode(): string {
     ob_start();
     ?>
     <div class="lo-arcade">
-        <div id="lousy-outages" class="lousy-outages-list" aria-live="polite">
-            <p class="last-updated"><?php echo esc_html( $strings['updatedLabel'] ); ?> <span data-initial="<?php echo esc_attr( $initial_iso ); ?>"></span></p>
-            <table>
-                <thead>
-                    <tr>
-                        <th><?php echo esc_html( $strings['providerHeader'] ); ?></th>
-                        <th><?php echo esc_html( $strings['statusHeader'] ); ?></th>
-                        <th><?php echo esc_html( $strings['messageHeader'] ); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
+        <div
+            id="lousy-outages"
+            class="lousy-outages-board"
+            aria-live="polite"
+            data-voice-enabled="<?php echo $config['voiceEnabled'] ? '1' : '0'; ?>"
+        >
+            <header class="board-header">
+                <p class="last-updated"><?php echo esc_html( $strings['updatedLabel'] ); ?> <span data-initial="<?php echo esc_attr( $initial_iso ); ?>"></span></p>
+                <button type="button" class="coin-btn" data-loading-label="<?php echo esc_attr( $strings['buttonLoading'] ); ?>">
+                    <span class="label"><?php echo esc_html( $strings['buttonShortLabel'] ); ?></span>
+                    <span class="loader" aria-hidden="true"></span>
+                </button>
+            </header>
+            <p class="board-subtitle"><?php echo esc_html( $strings['teaserCaption'] ); ?></p>
+            <div class="providers-grid" role="list">
                 <?php foreach ( $providers as $id => $prov ) :
                     $state        = $states[ $id ] ?? [];
                     $status_code  = $state['status'] ?? 'unknown';
                     $status_label = $state['status_label'] ?? Fetcher::status_label( $status_code );
-                    $message      = $state['message'] ?? '';
+                    $summary      = $state['summary'] ?? ( $state['message'] ?? $status_label );
+                    $details_id   = 'lo-details-' . sanitize_html_class( $id );
+                    $provider_url = $state['url'] ?? ( $prov['url'] ?? '' );
                     ?>
-                    <tr data-id="<?php echo esc_attr( $id ); ?>" data-name="<?php echo esc_attr( $prov['name'] ); ?>">
-                        <td><?php echo esc_html( $prov['name'] ); ?></td>
-                        <td class="status status--<?php echo esc_attr( $status_code ); ?>" data-status="<?php echo esc_attr( $status_code ); ?>"><?php echo esc_html( $status_label ); ?></td>
-                        <td class="msg"><?php echo esc_html( $message ); ?></td>
-                    </tr>
+                    <article
+                        class="provider-card"
+                        role="listitem"
+                        data-id="<?php echo esc_attr( $id ); ?>"
+                        data-name="<?php echo esc_attr( $prov['name'] ); ?>"
+                    >
+                        <div class="provider-card__inner">
+                            <header class="provider-card__header">
+                                <h3 class="provider-card__name"><?php echo esc_html( $prov['name'] ); ?></h3>
+                                <span class="status-badge status--<?php echo esc_attr( $status_code ); ?>" data-status="<?php echo esc_attr( $status_code ); ?>">
+                                    <?php echo esc_html( $status_label ); ?>
+                                </span>
+                            </header>
+                            <p class="provider-card__summary"><?php echo esc_html( $summary ); ?></p>
+                            <p class="provider-card__snark" data-snark="true">&nbsp;</p>
+                            <button
+                                type="button"
+                                class="details-toggle"
+                                aria-expanded="false"
+                                aria-controls="<?php echo esc_attr( $details_id ); ?>"
+                            >
+                                <span class="toggle-label"><?php echo esc_html( $strings['detailsLabel'] ); ?></span>
+                            </button>
+                            <section class="provider-details" id="<?php echo esc_attr( $details_id ); ?>" hidden>
+                                <div class="incidents" data-empty-text="<?php echo esc_attr( $strings['noIncidents'] ); ?>">
+                                    <p class="incident-empty"><?php echo esc_html( $strings['noIncidents'] ); ?></p>
+                                </div>
+                                <a
+                                    class="provider-link"
+                                    data-default-url="<?php echo esc_attr( $provider_url ); ?>"
+                                    href="<?php echo esc_url( $provider_url ?: '#' ); ?>"
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    <?php echo esc_html( $strings['viewProvider'] ); ?>
+                                </a>
+                            </section>
+                        </div>
+                    </article>
                 <?php endforeach; ?>
-                </tbody>
-            </table>
+            </div>
             <div class="ticker" aria-live="polite"></div>
-            <button type="button" class="coin-btn" data-loading-label="<?php echo esc_attr( $strings['buttonLoading'] ); ?>">
-                <span class="label"><?php echo esc_html( $strings['buttonShortLabel'] ); ?></span>
-                <span class="loader" aria-hidden="true"></span>
-            </button>
             <p class="microcopy"><?php echo esc_html( $strings['buttonLabel'] ); ?></p>
             <p class="weather"><?php echo esc_html( $strings['microcopy'] ); ?></p>
         </div>

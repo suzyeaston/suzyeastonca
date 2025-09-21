@@ -171,6 +171,10 @@ class TestElement {
   querySelector(selector) {
     return querySelectorFrom(this, selector);
   }
+
+  querySelectorAll(selector) {
+    return querySelectorAllFrom(this, selector);
+  }
 }
 
 function matches(element, selector) {
@@ -178,8 +182,22 @@ function matches(element, selector) {
     return false;
   }
   if (selector.startsWith('.')) {
-    const target = selector.slice(1);
-    return element.className.split(/\s+/).includes(target);
+    const attrIndex = selector.indexOf('[');
+    const className = attrIndex >= 0 ? selector.slice(1, attrIndex) : selector.slice(1);
+    const hasClass = element.className.split(/\s+/).includes(className);
+    if (!hasClass) {
+      return false;
+    }
+    if (attrIndex >= 0) {
+      const attrPart = selector.slice(attrIndex);
+      const attrMatch = attrPart.match(/\[data-id="([^"]+)"\]/i);
+      if (!attrMatch) {
+        return hasClass;
+      }
+      const value = attrMatch[1];
+      return element.dataset.id === value || element.attributes['data-id'] === value;
+    }
+    return true;
   }
   const attrMatch = selector.match(/^([a-z]+)\[data-id="([^"]+)"\]$/i);
   if (attrMatch) {
@@ -217,6 +235,16 @@ function querySelectorFrom(root, selector) {
   return scope[0] === root ? null : scope[0];
 }
 
+function querySelectorAllFrom(root, selector) {
+  const results = [];
+  if (!selector) {
+    return results;
+  }
+  collectMatches(root, selector, results);
+  return results;
+}
+
+
 function findInChildren(node, selector) {
   for (const child of node.children) {
     if (matches(child, selector)) {
@@ -230,47 +258,77 @@ function findInChildren(node, selector) {
   return null;
 }
 
+function collectMatches(node, selector, results) {
+  for (const child of node.children) {
+    if (matches(child, selector)) {
+      results.push(child);
+    }
+    collectMatches(child, selector, results);
+  }
+}
+
+
 function buildDashboardDom(providers) {
   const container = new TestElement('div', {
     id: 'lousy-outages',
-    className: 'lousy-outages-list'
+    className: 'lousy-outages-board'
   });
-  const lastUpdated = container.appendChild(
-    new TestElement('p', { className: 'last-updated' })
-  );
+  const header = container.appendChild(new TestElement('div', { className: 'board-header' }));
+  const lastUpdated = header.appendChild(new TestElement('p', { className: 'last-updated' }));
   const span = lastUpdated.appendChild(new TestElement('span'));
   span.setAttribute('data-initial', '');
-  const table = container.appendChild(new TestElement('table'));
-  const tbody = table.appendChild(new TestElement('tbody'));
-
-  providers.forEach(provider => {
-    const row = tbody.appendChild(new TestElement('tr'));
-    row.setAttribute('data-id', provider.id);
-    row.dataset.id = provider.id;
-    row.appendChild(new TestElement('td', { textContent: provider.name }));
-    const statusCell = row.appendChild(
-      new TestElement('td', {
-        className: provider.statusClass || 'status status--operational',
-        textContent: provider.statusLabel || 'Operational'
-      })
-    );
-    statusCell.dataset.status = provider.statusCode || 'operational';
-    const messageCell = row.appendChild(
-      new TestElement('td', {
-        className: 'msg',
-        textContent: provider.message || ''
-      })
-    );
-    messageCell.dataset.id = provider.id + '-message';
-  });
-
-  const ticker = container.appendChild(new TestElement('div', { className: 'ticker' }));
-  const button = container.appendChild(
-    new TestElement('button', { className: 'coin-btn' })
-  );
-  button.setAttribute('data-loading-label', 'Loading…');
+  const button = header.appendChild(new TestElement('button', { className: 'coin-btn' }));
+  button.setAttribute('data-loading-label', 'Refreshing…');
   button.appendChild(new TestElement('span', { className: 'label', textContent: 'Insert coin' }));
   button.appendChild(new TestElement('span', { className: 'loader' }));
+
+  container.appendChild(new TestElement('p', { className: 'board-subtitle', textContent: '' }));
+
+  const grid = container.appendChild(new TestElement('div', { className: 'providers-grid' }));
+
+  providers.forEach(provider => {
+    const article = grid.appendChild(new TestElement('article', { className: 'provider-card' }));
+    article.setAttribute('data-id', provider.id);
+    article.setAttribute('data-name', provider.name);
+
+    const inner = article.appendChild(new TestElement('div', { className: 'provider-card__inner' }));
+    const headerRow = inner.appendChild(new TestElement('header', { className: 'provider-card__header' }));
+    headerRow.appendChild(new TestElement('h3', { className: 'provider-card__name', textContent: provider.name }));
+    const status = headerRow.appendChild(new TestElement('span', {
+      className: provider.statusClass || 'status-badge status--operational',
+      textContent: provider.statusLabel || 'Operational'
+    }));
+    status.dataset.status = provider.statusCode || 'operational';
+
+    inner.appendChild(new TestElement('p', {
+      className: 'provider-card__summary',
+      textContent: provider.message || ''
+    }));
+    inner.appendChild(new TestElement('p', { className: 'provider-card__snark', textContent: '' }));
+
+    const toggle = inner.appendChild(new TestElement('button', { className: 'details-toggle' }));
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.appendChild(new TestElement('span', { className: 'toggle-label', textContent: 'Details' }));
+
+    const details = inner.appendChild(new TestElement('section', { className: 'provider-details' }));
+    details.setAttribute('id', 'lo-details-' + provider.id);
+    details.setAttribute('hidden', '');
+
+    const incidents = details.appendChild(new TestElement('div', { className: 'incidents' }));
+    incidents.appendChild(new TestElement('p', {
+      className: 'incident-empty',
+      textContent: 'No active incidents. Go write a chorus.'
+    }));
+
+    details.appendChild(new TestElement('a', {
+      className: 'provider-link',
+      textContent: 'View provider status →'
+    }));
+  });
+
+  container.appendChild(new TestElement('div', { className: 'ticker' }));
+  container.appendChild(new TestElement('p', { className: 'microcopy', textContent: '' }));
+  container.appendChild(new TestElement('p', { className: 'weather', textContent: '' }));
 
   const doc = {
     readyState: 'complete',
@@ -280,13 +338,18 @@ function buildDashboardDom(providers) {
     querySelector(selector) {
       return container.querySelector(selector);
     },
+    querySelectorAll(selector) {
+      return container.querySelectorAll(selector);
+    },
+    createElement(tag) {
+      return new TestElement(tag);
+    },
     addEventListener() {},
-    body: { }
+    body: {}
   };
 
   return { container, document: doc };
 }
-
 function installMockFetch() {
   const calls = [];
   const fetchFn = function (...args) {

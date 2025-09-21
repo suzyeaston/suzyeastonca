@@ -11,6 +11,7 @@ class Providers {
             'github' => [
                 'id'       => 'github',
                 'name'     => 'GitHub',
+                'provider' => 'GitHub',
                 'endpoint' => 'https://www.githubstatus.com/api/v2/summary.json',
                 'type'     => 'statuspage',
                 'url'      => 'https://www.githubstatus.com/'
@@ -18,6 +19,7 @@ class Providers {
             'slack' => [
                 'id'       => 'slack',
                 'name'     => 'Slack',
+                'provider' => 'Slack',
                 'endpoint' => 'https://status.slack.com/api/v2.0.0/summary.json',
                 'type'     => 'statuspage',
                 'url'      => 'https://status.slack.com/'
@@ -25,6 +27,7 @@ class Providers {
             'cloudflare' => [
                 'id'       => 'cloudflare',
                 'name'     => 'Cloudflare',
+                'provider' => 'Cloudflare',
                 'endpoint' => 'https://www.cloudflarestatus.com/api/v2/summary.json',
                 'type'     => 'statuspage',
                 'url'      => 'https://www.cloudflarestatus.com/'
@@ -32,6 +35,7 @@ class Providers {
             'openai' => [
                 'id'       => 'openai',
                 'name'     => 'OpenAI',
+                'provider' => 'OpenAI',
                 'endpoint' => 'https://status.openai.com/api/v2/summary.json',
                 'type'     => 'statuspage',
                 'url'      => 'https://status.openai.com/'
@@ -39,6 +43,7 @@ class Providers {
             'aws' => [
                 'id'       => 'aws',
                 'name'     => 'AWS',
+                'provider' => 'AWS',
                 'endpoint' => 'https://status.aws.amazon.com/rss/all.rss',
                 'type'     => 'rss',
                 'url'      => 'https://status.aws.amazon.com/'
@@ -46,37 +51,18 @@ class Providers {
             'azure' => [
                 'id'       => 'azure',
                 'name'     => 'Azure',
-                'endpoint' => 'https://azurestatuscdn.azureedge.net/en-us/status/feed/',
+                'provider' => 'Azure',
+                'endpoint' => 'https://status.azure.com/en-us/status/feed',
                 'type'     => 'rss',
                 'url'      => 'https://status.azure.com/'
             ],
             'gcp' => [
                 'id'       => 'gcp',
                 'name'     => 'Google Cloud',
-                'endpoint' => 'https://status.cloud.google.com/feed.atom',
-                'type'     => 'rss',
+                'provider' => 'Google Cloud',
+                'endpoint' => 'https://status.cloud.google.com/feed.json',
+                'type'     => 'json',
                 'url'      => 'https://status.cloud.google.com/'
-            ],
-            'digitalocean' => [
-                'id'       => 'digitalocean',
-                'name'     => 'DigitalOcean',
-                'endpoint' => 'https://status.digitalocean.com/api/v2/summary.json',
-                'type'     => 'statuspage',
-                'url'      => 'https://status.digitalocean.com/'
-            ],
-            'netlify' => [
-                'id'       => 'netlify',
-                'name'     => 'Netlify',
-                'endpoint' => 'https://www.netlifystatus.com/api/v2/summary.json',
-                'type'     => 'statuspage',
-                'url'      => 'https://www.netlifystatus.com/'
-            ],
-            'vercel' => [
-                'id'       => 'vercel',
-                'name'     => 'Vercel',
-                'endpoint' => 'https://www.vercel-status.com/api/v2/summary.json',
-                'type'     => 'statuspage',
-                'url'      => 'https://www.vercel-status.com/'
             ],
         ];
     }

@@ -16,7 +16,9 @@ A custom WordPress theme powering [suzyeaston.ca](https://suzyeaston.ca), comple
 - Mobile friendly with drag & tap controls
 
 ## Lousy Outages refresh
-The arcade-style status board now pulls fresh data from `/wp-json/lousy-outages/v1/status` on load and every five minutes (override with the `LOUSY_OUTAGES_POLL_INTERVAL` env var or the `lousy_outages_interval` option). Each request skips caches, times out quickly and stores per-provider results so one failure shows as **Unknown** without blocking the others. WordPress cron still drives the background poller—run `wp cron event run lousy_outages_poll` (or let traffic trigger it) to keep the datastore warm between interactive refreshes.
+The neon dashboard now streams live provider data from `/api/outages` on load and every five minutes (override with the `OUTAGES_POLL_MS` env var or the `lousy_outages_interval` option in wp-admin). Each request fan-outs to the official status APIs with 10s timeouts, caches the merged JSON in a transient for ~90 seconds and then renders per-incident drawers with start time, latest update/ETA and impact badges. Albini-style snark is generated client-side with speech synth support when enabled, and the homepage teaser reuses the same copy: “Check if your favourite services are up. Insert coin to refresh.”
+
+The legacy REST endpoint at `/wp-json/lousy-outages/v1/status` still works and returns the expanded payload, while the new `/api/outages` edge route emits uncached JSON with `Cache-Control: no-store`. WordPress cron keeps polling in the background—run `wp cron event run lousy_outages_poll` if you need to warm the datastore manually.
 
 ## Track Analyzer
 Uploads are sent to OpenAI's Whisper and GPT‑4 APIs for a quick analysis of your

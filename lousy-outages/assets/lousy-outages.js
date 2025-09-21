@@ -1,3 +1,4 @@
+
 (function (global, factory) {
   if (typeof module === 'object' && typeof module.exports === 'object') {
     module.exports = factory(global);
@@ -14,34 +15,83 @@
     messageHeader: 'Message',
     buttonLabel: 'Insert coin to refresh',
     buttonShortLabel: 'Insert coin',
-    buttonLoading: 'Loading…',
+    buttonLoading: 'Refreshing…',
     teaserCaption: 'Check if your favourite services are up. Insert coin to refresh.',
     microcopy: 'Vancouver weather: cloudy with a chance of outages.',
     offlineMessage: 'Unable to reach the arcade right now. Try again soon.',
     tickerFallback: 'All quiet on the outage front.',
     unknownStatus: 'Unknown',
-    noPublicStatus: 'No public status API'
+    noPublicStatus: 'No public status API',
+    detailsLabel: 'Details',
+    detailsHide: 'Hide details',
+    noIncidents: 'No active incidents. Go write a chorus.',
+    etaInvestigating: 'ETA: investigating — translation: nobody knows yet.',
+    viewProvider: 'View provider status →'
+  };
+
+  var snarkPre = ['Look.', 'Honestly?', 'Sure, fine.', 'Stop overthinking it.', ''];
+  var snarkLines = {
+    Operational: [
+      "It works. Don’t write a post-mortem for uptime.",
+      "Green light means ‘go’. Resist the urge to refactor prod."
+    ],
+    Degraded: [
+      "It’s limping, not dying. Tape it up and keep playing.",
+      "Minor outage. Major panic in Slack. Breathe."
+    ],
+    Outage: [
+      "It’s down. Stop refreshing and start reading logs.",
+      "Put the runbook where your anxiety is."
+    ],
+    Maintenance: [
+      "Scheduled pain now so you don’t suffer later."
+    ],
+    Unknown: [
+      "No signal. Either it’s fine or they’re hiding."
+    ],
+    byProvider: {
+      Cloudflare: [
+        "If the edge sneezes, your site catches a cold."
+      ],
+      OpenAI: [
+        "The model’s fine. Your prompt isn’t. Kidding. It’s probably rate limits."
+      ],
+      AWS: [
+        "us-east-1 is a lifestyle choice. You chose chaos."
+      ],
+      Azure: [
+        "Azure’s blue because you are. Keep refreshing the portal."
+      ],
+      'Google Cloud': [
+        "If it ain’t in Stackdriver, did it even happen?"
+      ],
+      GitHub: [
+        "If pushes fail, touch grass. CI will still betray you later."
+      ],
+      Slack: [
+        "When Slack dies, meetings rise. Choose wisely."
+      ]
+    }
   };
 
   var state = {
     container: null,
-    tableBody: null,
+    grid: null,
     tickerEl: null,
-    tickerMessages: [],
-    tickerIndex: 0,
-    tickerTimer: null,
     refreshButton: null,
     lastUpdatedSpan: null,
     pollTimer: null,
     inFlight: null,
     lastFetchedAt: null,
+    cards: Object.create(null),
     strings: defaultStrings,
     config: {
       endpoint: '',
       pollInterval: 300000,
-      fetchTimeout: 8000,
+      fetchTimeout: 10000,
       locale: 'en-CA',
       providers: [],
+      voiceEnabled: false,
       debug: false
     }
   };
@@ -51,6 +101,7 @@
     if (customConfig && typeof customConfig === 'object') {
       baseConfig = Object.assign({}, baseConfig, customConfig);
     }
+
     state.config.endpoint = baseConfig.endpoint || state.config.endpoint;
     var interval = Number(baseConfig.pollInterval);
     var timeout = Number(baseConfig.fetchTimeout);
@@ -58,14 +109,17 @@
     state.config.fetchTimeout = timeout && timeout > 0 ? timeout : state.config.fetchTimeout;
     state.config.locale = baseConfig.locale || state.config.locale;
     state.config.providers = Array.isArray(baseConfig.providers) ? baseConfig.providers : state.config.providers;
+    state.config.voiceEnabled = Boolean(baseConfig.voiceEnabled);
     state.config.debug = Boolean(baseConfig.debug);
+
     if (state.config.debug) {
       state.config.pollInterval = Math.max(10, state.config.pollInterval);
       state.config.fetchTimeout = Math.max(500, state.config.fetchTimeout);
     } else {
       state.config.pollInterval = Math.max(60000, state.config.pollInterval);
-      state.config.fetchTimeout = Math.max(2000, state.config.fetchTimeout);
+      state.config.fetchTimeout = Math.max(3000, state.config.fetchTimeout);
     }
+
     var mergedStrings = Object.assign({}, defaultStrings);
     if (baseConfig.fallbackStrings && typeof baseConfig.fallbackStrings === 'object') {
       mergedStrings = Object.assign(mergedStrings, baseConfig.fallbackStrings);
@@ -76,24 +130,11 @@
     state.strings = mergedStrings;
   }
 
-  function normalizeStatus(statusCode, label) {
-    var code = (statusCode || '').toLowerCase();
-    var known = {
-      operational: label || 'Operational',
-      degraded: label || 'Degraded',
-      outage: label || 'Outage',
-      unknown: label || state.strings.unknownStatus || 'Unknown'
-    };
-    if (!known[code]) {
-      code = 'unknown';
+  function sanitizeText(text) {
+    if (typeof text !== 'string') {
+      return '';
     }
-    var resolved = known[code];
-    var className = 'status--' + code;
-    return {
-      code: code,
-      label: label || resolved,
-      className: className
-    };
+    return text.replace(/\s+/g, ' ').trim();
   }
 
   function formatTimestamp(isoString) {
@@ -109,10 +150,10 @@
       day: '2-digit',
       month: 'short',
       year: 'numeric',
-      hour: '2-digit',
+      hour: 'numeric',
       minute: '2-digit',
       second: '2-digit',
-      hour12: false,
+      hour12: true,
       timeZoneName: 'short'
     });
     var gmtFormatter = new Intl.DateTimeFormat('en-GB', {
@@ -125,32 +166,127 @@
     return localFormatter.format(date) + ' (' + gmtFormatter.format(date) + ' GMT)';
   }
 
-  function tickTicker() {
-    if (!state.tickerEl) {
-      return;
+  function formatRelativeShort(diffMs) {
+    if (!isFinite(diffMs)) {
+      return '';
     }
-    if (!state.tickerMessages.length) {
-      state.tickerEl.textContent = '';
-      return;
+    var abs = Math.abs(diffMs);
+    var minute = 60 * 1000;
+    var hour = 60 * minute;
+    var day = 24 * hour;
+    if (abs < minute) {
+      return 'just now';
     }
-    state.tickerEl.textContent = state.tickerMessages[state.tickerIndex];
-    state.tickerIndex = (state.tickerIndex + 1) % state.tickerMessages.length;
+    if (abs < hour) {
+      return Math.round(abs / minute) + 'm ago';
+    }
+    if (abs < day) {
+      return Math.round(abs / hour) + 'h ago';
+    }
+    return Math.round(abs / day) + 'd ago';
   }
 
-  function updateTicker(messages) {
-    if (!state.tickerEl) {
-      return;
+  function buildStartLine(isoString) {
+    if (!isoString) {
+      return '';
     }
-    if (state.tickerTimer) {
-      global.clearInterval(state.tickerTimer);
-      state.tickerTimer = null;
+    var date = new Date(isoString);
+    if (isNaN(date.getTime())) {
+      return '';
     }
-    state.tickerMessages = messages && messages.length ? messages : [];
-    state.tickerIndex = 0;
-    tickTicker();
-    if (state.tickerMessages.length > 1 && !global.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      state.tickerTimer = global.setInterval(tickTicker, 4000);
+    var startFormatter = new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+    var relative = formatRelativeShort(Date.now() - date.getTime());
+    var label = 'Started: ' + startFormatter.format(date);
+    if (relative) {
+      label += ' (' + relative + ')';
     }
+    return label;
+  }
+
+  function buildUpdatedLine(isoString) {
+    if (!isoString) {
+      return '';
+    }
+    var date = new Date(isoString);
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    var formatter = new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+    var relative = formatRelativeShort(Date.now() - date.getTime());
+    var label = 'Latest update: ' + formatter.format(date);
+    if (relative) {
+      label += ' (' + relative + ')';
+    }
+    return label;
+  }
+
+  function normalizeStatus(statusCode, label) {
+    var code = (statusCode || '').toLowerCase();
+    var known = {
+      operational: label || 'Operational',
+      degraded: label || 'Degraded',
+      outage: label || 'Outage',
+      maintenance: label || 'Maintenance',
+      unknown: label || state.strings.unknownStatus || 'Unknown'
+    };
+    if (!known[code]) {
+      code = 'unknown';
+    }
+    var resolved = known[code];
+    var className = 'status--' + code;
+    return {
+      code: code,
+      label: label || resolved,
+      className: className
+    };
+  }
+
+  function snarkOutage(providerName, stateLabel, summary) {
+    var provider = sanitizeText(providerName) || 'Unknown';
+    var status = sanitizeText(stateLabel);
+    if (!status) {
+      status = 'Unknown';
+    }
+    var cleanedSummary = sanitizeText(summary);
+    var stateLines = snarkLines[status] || snarkLines.Unknown;
+    var pre = snarkPre[Math.floor(Math.random() * snarkPre.length)];
+    var stateLine = stateLines[Math.floor(Math.random() * stateLines.length)];
+    var providerQuips = snarkLines.byProvider[provider] || (function () {
+      if (!Array.isArray(state.config.providers)) {
+        return [];
+      }
+      for (var i = 0; i < state.config.providers.length; i += 1) {
+        var meta = state.config.providers[i];
+        if (meta && meta.name === provider && snarkLines.byProvider[meta.name]) {
+          return snarkLines.byProvider[meta.name];
+        }
+      }
+      return [];
+    })();
+    var providerLine = providerQuips.length
+      ? providerQuips[Math.floor(Math.random() * providerQuips.length)]
+      : '';
+    var parts = [pre, stateLine];
+    if (providerLine) {
+      parts.push(providerLine);
+    } else if (cleanedSummary) {
+      parts.push(cleanedSummary);
+    }
+    var text = sanitizeText(parts.join(' '));
+    if (!text && cleanedSummary) {
+      text = cleanedSummary;
+    }
+    return text;
   }
 
   function setLoading(isLoading) {
@@ -170,71 +306,75 @@
     }
   }
 
-  function logError(error) {
-    if (!error) {
+  function speakSnark(text) {
+    if (!text || !state.config.voiceEnabled) {
       return;
     }
-    if (state.config.debug) {
-      console.error('Lousy Outages fetch failed', error);
-    } else if (error && error.message) {
-      console.error('Lousy Outages fetch failed:', error.message);
+    var synth = global.speechSynthesis;
+    if (!synth || typeof synth.cancel !== 'function') {
+      return;
     }
+    var utterance = new global.SpeechSynthesisUtterance(text);
+    var voices = typeof synth.getVoices === 'function' ? synth.getVoices() : [];
+    var preferred = voices.find(function (voice) {
+      return /English/i.test(voice.lang) && /Google UK English Male|Microsoft David/i.test(voice.name);
+    }) || voices.find(function (voice) {
+      return /en/i.test(voice.lang);
+    });
+    if (preferred) {
+      utterance.voice = preferred;
+    }
+    utterance.pitch = 0.7;
+    utterance.rate = 0.7;
+    synth.cancel();
+    synth.speak(utterance);
   }
 
-  function ensureAllProviders(providers) {
-    var existing = Object.create(null);
-    if (Array.isArray(providers)) {
-      providers.forEach(function (provider) {
-        existing[provider.provider] = provider;
-      });
+  function prefersReducedMotion() {
+    if (!global.matchMedia) {
+      return false;
     }
-    state.config.providers.forEach(function (meta) {
-      if (!existing[meta.id]) {
-        providers.push({
-          provider: meta.id,
-          name: meta.name,
-          statusCode: 'unknown',
-          status: state.strings.unknownStatus,
-          message: state.strings.noPublicStatus,
-          updatedAt: state.lastFetchedAt || new Date().toISOString(),
-          url: ''
-        });
+    return global.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function typewriter(element, text) {
+    if (!element) {
+      return;
+    }
+    if (!text) {
+      element.textContent = '';
+      return;
+    }
+    if (prefersReducedMotion()) {
+      element.textContent = text;
+      return;
+    }
+    element.textContent = '';
+    var i = 0;
+    var chars = text.split('');
+    var timer = global.setInterval(function () {
+      element.textContent += chars[i++];
+      if (i >= chars.length) {
+        global.clearInterval(timer);
       }
-    });
-    return providers;
+    }, 30);
   }
 
-  function renderProviders(providers) {
-    if (!state.tableBody || !Array.isArray(providers)) {
-      return Promise.resolve([]);
+  function applySnark(record, provider) {
+    if (!record || !record.snarkEl) {
+      return;
     }
-    var updatePromises = providers.map(function (provider) {
-      return Promise.resolve().then(function () {
-        var row = state.tableBody.querySelector('tr[data-id="' + provider.provider + '"]');
-        if (!row) {
-          return provider;
-        }
-        var statusCell = row.querySelector('.status');
-        var messageCell = row.querySelector('.msg');
-        var normalized = normalizeStatus(provider.statusCode, provider.status);
-        statusCell.textContent = normalized.label;
-        statusCell.dataset.status = normalized.code;
-        statusCell.className = 'status ' + normalized.className;
-        var message = provider.message || '';
-        messageCell.textContent = message;
-        if (normalized.code === 'unknown' && provider.error) {
-          messageCell.title = provider.error;
-        } else if (messageCell.title) {
-          messageCell.removeAttribute('title');
-        }
-        return provider;
-      });
-    });
-    return Promise.allSettled(updatePromises).then(function (results) {
-      return results
-        .filter(function (result) { return result.status === 'fulfilled'; })
-        .map(function (result) { return result.value; });
-    });
+    var text = snarkOutage(provider.name || provider.provider, provider.state || provider.stateCode, provider.summary || '');
+    if (!text) {
+      record.snarkEl.textContent = '';
+      return;
+    }
+    if (record.lastSnark === text) {
+      return;
+    }
+    record.lastSnark = text;
+    typewriter(record.snarkEl, text);
+    speakSnark(text);
   }
 
   function updateTimestamp(iso) {
@@ -246,18 +386,379 @@
     state.lastFetchedAt = iso;
   }
 
+  function ensureCard(meta) {
+    var id = meta && (meta.id || meta.provider || meta.name);
+    if (!id) {
+      return null;
+    }
+    if (state.cards[id]) {
+      return state.cards[id];
+    }
+    if (!state.grid || !global.document) {
+      return null;
+    }
+    var card = createCard(meta);
+    state.grid.appendChild(card.card);
+    state.cards[id] = card;
+    return card;
+  }
+
+  function createCard(meta) {
+    var doc = global.document;
+    var card = doc.createElement('article');
+    card.className = 'provider-card';
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('data-id', meta.id);
+    card.setAttribute('data-name', meta.name || meta.provider || meta.id);
+
+    var inner = doc.createElement('div');
+    inner.className = 'provider-card__inner';
+    card.appendChild(inner);
+
+    var header = doc.createElement('header');
+    header.className = 'provider-card__header';
+    inner.appendChild(header);
+
+    var nameEl = doc.createElement('h3');
+    nameEl.className = 'provider-card__name';
+    nameEl.textContent = meta.name || meta.provider || meta.id;
+    header.appendChild(nameEl);
+
+    var status = doc.createElement('span');
+    status.className = 'status-badge status--unknown';
+    status.setAttribute('data-status', 'unknown');
+    status.textContent = state.strings.unknownStatus;
+    header.appendChild(status);
+
+    var summary = doc.createElement('p');
+    summary.className = 'provider-card__summary';
+    summary.textContent = '';
+    inner.appendChild(summary);
+
+    var snark = doc.createElement('p');
+    snark.className = 'provider-card__snark';
+    snark.setAttribute('data-snark', 'true');
+    snark.innerHTML = '&nbsp;';
+    inner.appendChild(snark);
+
+    var toggle = doc.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'details-toggle';
+    toggle.setAttribute('aria-expanded', 'false');
+    var toggleLabel = doc.createElement('span');
+    toggleLabel.className = 'toggle-label';
+    toggleLabel.textContent = state.strings.detailsLabel;
+    toggle.appendChild(toggleLabel);
+    inner.appendChild(toggle);
+
+    var details = doc.createElement('section');
+    var detailsId = 'lo-details-' + meta.id;
+    details.className = 'provider-details';
+    details.id = detailsId;
+    details.hidden = true;
+    toggle.setAttribute('aria-controls', detailsId);
+    inner.appendChild(details);
+
+    var incidents = doc.createElement('div');
+    incidents.className = 'incidents';
+    incidents.setAttribute('data-empty-text', state.strings.noIncidents);
+    var empty = doc.createElement('p');
+    empty.className = 'incident-empty';
+    empty.textContent = state.strings.noIncidents;
+    incidents.appendChild(empty);
+    details.appendChild(incidents);
+
+    var link = doc.createElement('a');
+    link.className = 'provider-link';
+    link.setAttribute('data-default-url', meta.url || '');
+    link.href = meta.url || '#';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = state.strings.viewProvider;
+    details.appendChild(link);
+
+    toggle.addEventListener('click', function () {
+      toggleDetails(id);
+    });
+
+    return {
+      card: card,
+      header: header,
+      nameEl: nameEl,
+      statusEl: status,
+      summaryEl: summary,
+      snarkEl: snark,
+      toggle: toggle,
+      details: details,
+      incidents: incidents,
+      link: link,
+      lastSnark: ''
+    };
+  }
+
+  function prepareExistingCards() {
+    if (!state.container || !global.document) {
+      return;
+    }
+    state.cards = Object.create(null);
+    var cards = state.container.querySelectorAll('.provider-card');
+    cards.forEach(function (card) {
+      var id = card.getAttribute('data-id');
+      if (!id) {
+        return;
+      }
+      var record = {
+        card: card,
+        header: card.querySelector('.provider-card__header'),
+        nameEl: card.querySelector('.provider-card__name'),
+        statusEl: card.querySelector('.status-badge'),
+        summaryEl: card.querySelector('.provider-card__summary'),
+        snarkEl: card.querySelector('.provider-card__snark'),
+        toggle: card.querySelector('.details-toggle'),
+        details: card.querySelector('.provider-details'),
+        incidents: card.querySelector('.provider-details .incidents'),
+        link: card.querySelector('.provider-link'),
+        lastSnark: ''
+      };
+      state.cards[id] = record;
+      if (record.toggle) {
+        record.toggle.addEventListener('click', function () {
+          toggleDetails(id);
+        });
+      }
+    });
+  }
+
+  function toggleDetails(id) {
+    var record = state.cards[id];
+    if (!record || !record.details || !record.toggle) {
+      return;
+    }
+    var isExpanded = record.toggle.getAttribute('aria-expanded') === 'true';
+    record.toggle.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
+    record.details.hidden = isExpanded;
+    var label = isExpanded ? state.strings.detailsLabel : state.strings.detailsHide;
+    var labelEl = record.toggle.querySelector('.toggle-label');
+    if (labelEl) {
+      labelEl.textContent = label;
+    } else {
+      record.toggle.textContent = label;
+    }
+  }
+
+  function formatImpact(impact) {
+    var value = sanitizeText(impact).toLowerCase();
+    if (value === 'critical' || value === 'major' || value === 'minor') {
+      return value;
+    }
+    return 'minor';
+  }
+
+  function impactLabel(impact) {
+    var value = formatImpact(impact);
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  }
+
+  function updateIncidents(record, provider) {
+    if (!record || !record.incidents) {
+      return;
+    }
+    while (record.incidents.firstChild) {
+      record.incidents.removeChild(record.incidents.firstChild);
+    }
+    var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+    if (!incidents.length) {
+      var empty = global.document ? global.document.createElement('p') : { textContent: '' };
+      empty.className = 'incident-empty';
+      empty.textContent = state.strings.noIncidents;
+      record.incidents.appendChild(empty);
+      return;
+    }
+    var list = global.document ? global.document.createElement('ul') : null;
+    if (list) {
+      list.className = 'incident-list';
+      record.incidents.appendChild(list);
+    }
+    incidents.forEach(function (incident) {
+      var item = global.document ? global.document.createElement('li') : null;
+      if (!item) {
+        return;
+      }
+      var impact = formatImpact(incident.impact);
+      item.className = 'incident-item impact--' + impact;
+      item.setAttribute('data-impact', impact);
+
+      var title = global.document.createElement('h4');
+      title.className = 'incident-title';
+      title.textContent = incident.title || 'Incident';
+      item.appendChild(title);
+
+      var badge = global.document.createElement('span');
+      badge.className = 'impact-badge';
+      badge.textContent = impactLabel(impact);
+      title.appendChild(badge);
+
+      var startedLine = buildStartLine(incident.startedAt || incident.started_at);
+      if (startedLine) {
+        var startEl = global.document.createElement('p');
+        startEl.className = 'incident-start';
+        startEl.textContent = startedLine;
+        item.appendChild(startEl);
+      }
+
+      var summary = sanitizeText(incident.summary || '');
+      if (summary) {
+        var summaryEl = global.document.createElement('p');
+        summaryEl.className = 'incident-summary';
+        summaryEl.textContent = summary;
+        item.appendChild(summaryEl);
+      }
+
+      var eta = sanitizeText(incident.eta || '');
+      var etaLabel = eta && eta.toLowerCase() !== 'investigating'
+        ? 'ETA: ' + eta
+        : state.strings.etaInvestigating;
+      var etaEl = global.document.createElement('p');
+      etaEl.className = 'incident-eta';
+      etaEl.textContent = etaLabel;
+      item.appendChild(etaEl);
+
+      var updatedLine = buildUpdatedLine(incident.updatedAt || incident.updated_at);
+      if (updatedLine) {
+        var updatedEl = global.document.createElement('p');
+        updatedEl.className = 'incident-updated';
+        updatedEl.textContent = updatedLine;
+        item.appendChild(updatedEl);
+      }
+
+      if (list) {
+        list.appendChild(item);
+      } else {
+        record.incidents.appendChild(item);
+      }
+    });
+  }
+
+  function updateProviderLink(record, provider) {
+    if (!record || !record.link) {
+      return;
+    }
+    var url = sanitizeText(provider.url || (provider.metaUrl || ''));
+    if (!url) {
+      url = record.link.getAttribute('data-default-url') || '#';
+    }
+    record.link.href = url || '#';
+    if (url === '#') {
+      record.link.setAttribute('aria-disabled', 'true');
+    } else {
+      record.link.removeAttribute('aria-disabled');
+    }
+  }
+
+  function ensureAllProviders(providers) {
+    var existing = Object.create(null);
+    if (Array.isArray(providers)) {
+      providers.forEach(function (provider) {
+        var id = provider.id || provider.provider;
+        if (id) {
+          existing[id] = true;
+        }
+      });
+    }
+    state.config.providers.forEach(function (meta) {
+      if (!existing[meta.id]) {
+        var record = ensureCard(meta);
+        if (!record) {
+          providers.push({
+            id: meta.id,
+            provider: meta.name,
+            name: meta.name,
+            state: state.strings.unknownStatus,
+            stateCode: 'unknown',
+            summary: state.strings.noPublicStatus,
+            incidents: [],
+            url: meta.url || ''
+          });
+        }
+      }
+    });
+    return providers;
+  }
+
+  function updateTicker(messages) {
+    if (!state.tickerEl) {
+      return;
+    }
+    if (!messages || !messages.length) {
+      state.tickerEl.textContent = state.strings.tickerFallback || '';
+      return;
+    }
+    var unique = [];
+    messages.forEach(function (message) {
+      if (!message) {
+        return;
+      }
+      if (unique.indexOf(message) === -1) {
+        unique.push(message);
+      }
+    });
+    state.tickerEl.textContent = unique.join(' • ');
+  }
+
+  function renderProviders(providers) {
+    if (!Array.isArray(providers)) {
+      return [];
+    }
+    providers = ensureAllProviders(providers);
+    var summaries = [];
+    providers.forEach(function (provider) {
+      var id = provider.id || provider.provider;
+      if (!id) {
+        return;
+      }
+      var record = state.cards[id];
+      if (!record) {
+        record = ensureCard({ id: id, name: provider.name || provider.provider || id, url: provider.url || '' });
+      }
+      if (!record) {
+        return;
+      }
+      record.nameEl.textContent = provider.name || provider.provider || id;
+      var normalized = normalizeStatus(provider.stateCode || provider.statusCode, provider.state || provider.status);
+      record.statusEl.textContent = normalized.label;
+      record.statusEl.dataset.status = normalized.code;
+      record.statusEl.className = 'status-badge ' + normalized.className;
+      var summary = sanitizeText(provider.summary || provider.message || '');
+      record.summaryEl.textContent = summary;
+      updateIncidents(record, provider);
+      updateProviderLink(record, provider);
+      applySnark(record, provider);
+      summaries.push(summary);
+    });
+    return summaries;
+  }
+
+  function logError(error) {
+    if (!error) {
+      return;
+    }
+    if (state.config.debug) {
+      console.error('Lousy Outages fetch failed', error);
+    } else if (error && error.message) {
+      console.error('Lousy Outages fetch failed:', error.message);
+    }
+  }
+
   function handleSuccess(payload) {
     var providers = Array.isArray(payload.providers) ? payload.providers.slice() : [];
-    providers = ensureAllProviders(providers);
-    return renderProviders(providers).then(function (updatedProviders) {
-      var tickerMessages = updatedProviders
-        .map(function (provider) { return provider.message ? provider.message.trim() : ''; })
-        .filter(function (msg, index, arr) { return msg && arr.indexOf(msg) === index; });
-      updateTicker(tickerMessages.length ? tickerMessages : [state.strings.tickerFallback]);
-      var fetchedAt = payload.meta && payload.meta.fetchedAt ? payload.meta.fetchedAt : new Date().toISOString();
-      updateTimestamp(fetchedAt);
-      return updatedProviders;
+    var summaries = renderProviders(providers);
+    var tickerMessages = summaries.filter(function (msg) {
+      return sanitizeText(msg);
     });
+    updateTicker(tickerMessages.length ? tickerMessages : [state.strings.tickerFallback]);
+    var fetchedAt = payload.meta && payload.meta.fetchedAt ? payload.meta.fetchedAt : new Date().toISOString();
+    updateTimestamp(fetchedAt);
+    return providers;
   }
 
   function handleFailure(error) {
@@ -347,10 +848,14 @@
     if (!state.container) {
       return state;
     }
-    state.tableBody = state.container.querySelector('tbody');
+    state.grid = state.container.querySelector('.providers-grid');
     state.tickerEl = state.container.querySelector('.ticker');
     state.refreshButton = state.container.querySelector('.coin-btn');
     state.lastUpdatedSpan = state.container.querySelector('.last-updated span');
+    state.config.voiceEnabled = state.config.voiceEnabled || state.container.getAttribute('data-voice-enabled') === '1';
+
+    prepareExistingCards();
+    attachButton();
 
     if (state.lastUpdatedSpan) {
       var initial = state.lastUpdatedSpan.getAttribute('data-initial');
@@ -361,8 +866,9 @@
       }
     }
 
-    attachButton();
-    fetchStatuses({ force: true });
+    global.setTimeout(function () {
+      fetchStatuses({ force: true });
+    }, 100);
     startAutoRefresh();
     return state;
   }
@@ -384,6 +890,7 @@
     stopAutoRefresh: stopAutoRefresh,
     normalizeStatus: normalizeStatus,
     formatTimestamp: formatTimestamp,
+    snarkOutage: snarkOutage,
     _state: state
   };
 });
