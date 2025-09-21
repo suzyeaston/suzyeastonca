@@ -306,15 +306,16 @@
     }
   }
 
-  function speakSnark(text) {
+  function speakText(text) {
     if (!text || !state.config.voiceEnabled) {
       return;
     }
     var synth = global.speechSynthesis;
-    if (!synth || typeof synth.cancel !== 'function') {
+    var Utterance = global.SpeechSynthesisUtterance;
+    if (!synth || typeof synth.cancel !== 'function' || typeof Utterance !== 'function') {
       return;
     }
-    var utterance = new global.SpeechSynthesisUtterance(text);
+    var utterance = new Utterance(text);
     var voices = typeof synth.getVoices === 'function' ? synth.getVoices() : [];
     var preferred = voices.find(function (voice) {
       return /English/i.test(voice.lang) && /Google UK English Male|Microsoft David/i.test(voice.name);
@@ -328,6 +329,42 @@
     utterance.rate = 0.7;
     synth.cancel();
     synth.speak(utterance);
+  }
+
+  function speakSnark(text) {
+    speakText(text);
+  }
+
+  function announceProviderStatus(record) {
+    if (!record) {
+      return;
+    }
+    var parts = [];
+    if (record.nameEl && record.nameEl.textContent) {
+      parts.push(sanitizeText(record.nameEl.textContent));
+    }
+    if (record.statusEl && record.statusEl.textContent) {
+      parts.push('Status: ' + sanitizeText(record.statusEl.textContent));
+    }
+    if (record.summaryEl && record.summaryEl.textContent) {
+      parts.push(sanitizeText(record.summaryEl.textContent));
+    }
+    if (record.details && typeof record.details.querySelector === 'function') {
+      var incidentSummary = record.details.querySelector('.incident-item .incident-summary');
+      if (!incidentSummary) {
+        incidentSummary = record.details.querySelector('.incident-empty');
+      }
+      if (incidentSummary && incidentSummary.textContent) {
+        var incidentText = sanitizeText(incidentSummary.textContent);
+        if (incidentText) {
+          parts.push(incidentText);
+        }
+      }
+    }
+    var announcement = sanitizeText(parts.join('. '));
+    if (announcement) {
+      speakText(announcement);
+    }
   }
 
   function prefersReducedMotion() {
@@ -535,14 +572,18 @@
       return;
     }
     var isExpanded = record.toggle.getAttribute('aria-expanded') === 'true';
-    record.toggle.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
-    record.details.hidden = isExpanded;
-    var label = isExpanded ? state.strings.detailsLabel : state.strings.detailsHide;
+    var nextExpanded = !isExpanded;
+    record.toggle.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
+    record.details.hidden = !nextExpanded;
+    var label = nextExpanded ? state.strings.detailsHide : state.strings.detailsLabel;
     var labelEl = record.toggle.querySelector('.toggle-label');
     if (labelEl) {
       labelEl.textContent = label;
     } else {
       record.toggle.textContent = label;
+    }
+    if (nextExpanded) {
+      announceProviderStatus(record);
     }
   }
 
