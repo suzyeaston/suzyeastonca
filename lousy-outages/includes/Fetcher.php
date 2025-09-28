@@ -124,7 +124,8 @@ class Fetcher {
             ];
         }
 
-        $indicator = strtolower( $decoded['status']['indicator'] ?? 'none' );
+        $indicator    = strtolower( (string) ( $decoded['status']['indicator'] ?? '' ) );
+        $description  = strtolower( (string) ( $decoded['status']['description'] ?? '' ) );
         $map       = [
             'none'           => 'operational',
             'minor'          => 'degraded',
@@ -134,19 +135,39 @@ class Fetcher {
             'partial_outage' => 'degraded',
         ];
         $status    = $map[ $indicator ] ?? 'unknown';
+        if ( 'unknown' === $status && $description ) {
+            if ( false !== strpos( $description, 'operational' ) ) {
+                $status = 'operational';
+            } elseif ( false !== strpos( $description, 'degrad' ) || false !== strpos( $description, 'partial' ) ) {
+                $status = 'degraded';
+            } elseif ( false !== strpos( $description, 'outage' ) || false !== strpos( $description, 'disruption' ) ) {
+                $status = 'outage';
+            }
+        }
         $summary   = $decoded['status']['description'] ?? '';
 
         $incidents = [];
-        if ( ! empty( $decoded['incidents'] ) && is_array( $decoded['incidents'] ) ) {
-            foreach ( $decoded['incidents'] as $incident ) {
+        $sources   = [];
+        foreach ( [ 'incidents', 'active_incidents' ] as $key ) {
+            if ( empty( $decoded[ $key ] ) || ! is_array( $decoded[ $key ] ) ) {
+                continue;
+            }
+            foreach ( $decoded[ $key ] as $incident ) {
                 if ( ! is_array( $incident ) ) {
                     continue;
                 }
-                $state = strtolower( $incident['status'] ?? '' );
+                $state = strtolower( (string) ( $incident['status'] ?? '' ) );
                 if ( in_array( $state, [ 'resolved', 'completed', 'postmortem', 'scheduled' ], true ) ) {
                     continue;
                 }
-                $incidents[] = $this->normalize_statuspage_incident( $incident );
+                $normalised = $this->normalize_statuspage_incident( $incident );
+                if ( $normalised['id'] && isset( $sources[ $normalised['id'] ] ) ) {
+                    continue;
+                }
+                if ( $normalised['id'] ) {
+                    $sources[ $normalised['id'] ] = true;
+                }
+                $incidents[] = $normalised;
             }
         }
 

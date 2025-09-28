@@ -98,6 +98,12 @@ function render_shortcode(): string {
                     $summary      = $state['summary'] ?? ( $state['message'] ?? $status_label );
                     $details_id   = 'lo-details-' . sanitize_html_class( $id );
                     $provider_url = $state['url'] ?? ( $prov['url'] ?? '' );
+                    $incidents    = $state['incidents'] ?? [];
+                    $has_incident = ! empty( $incidents ) && is_array( $incidents );
+                    $degraded     = ! in_array( $status_code, [ 'operational', 'unknown' ], true );
+                    $empty_text   = ( $degraded && ! $has_incident )
+                        ? ( $strings['degradedNoIncidents'] ?? $strings['noIncidents'] )
+                        : $strings['noIncidents'];
                     ?>
                     <article
                         class="provider-card"
@@ -123,8 +129,8 @@ function render_shortcode(): string {
                                 <span class="toggle-label"><?php echo esc_html( $strings['detailsLabel'] ); ?></span>
                             </button>
                             <section class="provider-details" id="<?php echo esc_attr( $details_id ); ?>" hidden>
-                                <div class="incidents" data-empty-text="<?php echo esc_attr( $strings['noIncidents'] ); ?>">
-                                    <p class="incident-empty"><?php echo esc_html( $strings['noIncidents'] ); ?></p>
+                                <div class="incidents" data-empty-text="<?php echo esc_attr( $empty_text ); ?>">
+                                    <p class="incident-empty"><?php echo esc_html( $empty_text ); ?></p>
                                 </div>
                                 <a
                                     class="provider-link"

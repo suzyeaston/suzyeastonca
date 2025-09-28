@@ -1,48 +1,103 @@
 .retro-title {
-  --neon: #00ff66; --neon-dim: #0bff94; --scanline-opacity: 0.07;
+  --neon-primary: #00ff9a;
+  --neon-secondary: #00c3ff;
+  --neon-hot: #ff4fd8;
+  --neon-gold: #ffe066;
+  --scanline-opacity: 0.07;
   font-family: 'Press Start 2P','VT323',monospace;
   font-size: clamp(1.6rem, 6vw, 3rem); /* slightly larger for clarity */
   letter-spacing: .01em;
-  color: var(--neon);
-  -webkit-font-smoothing: none;
-  font-smooth: never;
-  text-rendering: optimizeSpeed;
   position: relative;
+  color: transparent;
+  background-image: linear-gradient(
+    100deg,
+    var(--neon-primary) 0%,
+    var(--neon-secondary) 25%,
+    var(--neon-hot) 50%,
+    var(--neon-gold) 75%,
+    var(--neon-primary) 100%
+  );
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-smooth: always;
   text-shadow:
-    0 0 1px var(--neon),
-    0 0 2px var(--neon),
-    0 0 6px var(--neon-dim),
-    0 0 14px var(--neon-dim);
-  will-change: letter-spacing;
+    0 0 2px rgba(0, 255, 154, 0.85),
+    0 0 10px rgba(0, 179, 255, 0.45);
+  filter: drop-shadow(0 0 6px rgba(0, 255, 154, 0.4));
+  animation: retro-spectrum 6s linear infinite;
+  will-change: background-position, text-shadow;
 }
 
 .retro-title.glow-lite {
   text-shadow:
-    0 0 1px var(--neon),
-    0 0 2px var(--neon),
-    0 0 4px var(--neon-dim),
-    0 0 8px var(--neon-dim);
+    0 0 2px rgba(0, 255, 154, 0.9),
+    0 0 12px rgba(0, 195, 255, 0.4),
+    0 0 18px rgba(255, 79, 216, 0.25);
 }
 
 .retro-title.glow-heavy {
   text-shadow:
-    0 0 2px var(--neon),
-    0 0 4px var(--neon),
-    0 0 8px var(--neon-dim),
-    0 0 16px var(--neon-dim);
+    0 0 3px rgba(0, 255, 154, 0.95),
+    0 0 16px rgba(0, 195, 255, 0.6),
+    0 0 22px rgba(255, 79, 216, 0.45);
 }
 
+.retro-title::before,
 .retro-title::after {
   content: "";
   position: absolute;
   inset: 0;
+  pointer-events: none;
+}
+
+.retro-title::before {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.35), transparent 55%),
+    radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.2), transparent 55%);
+  mix-blend-mode: screen;
+  opacity: 0.65;
+  animation: retro-shimmer 5s ease-in-out infinite;
+}
+
+.retro-title::after {
   background: repeating-linear-gradient(
     to bottom,
     rgba(255,255,255,var(--scanline-opacity)) 0 1px,
     transparent 1px 3px
   );
   mix-blend-mode: overlay;
-  pointer-events: none;
 }
 
 .retro-title:hover { letter-spacing: .015em; }  /* no extra blur */
+
+@keyframes retro-spectrum {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes retro-shimmer {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: translate3d(0, 0, 0);
+  }
+  40% {
+    opacity: 0.85;
+    transform: translate3d(2px, -2px, 0);
+  }
+  70% {
+    opacity: 0.5;
+    transform: translate3d(-2px, 1px, 0);
+  }
+}
