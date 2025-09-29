@@ -32,6 +32,14 @@ class Providers {
                 'type'     => 'statuspage',
                 'url'      => 'https://www.cloudflarestatus.com/'
             ],
+            'zscaler' => [
+                'id'       => 'zscaler',
+                'name'     => 'Zscaler',
+                'provider' => 'Zscaler',
+                'endpoint' => 'https://status.zscaler.com/api/v2/summary.json',
+                'type'     => 'statuspage',
+                'url'      => 'https://status.zscaler.com/'
+            ],
             'openai' => [
                 'id'       => 'openai',
                 'name'     => 'OpenAI',

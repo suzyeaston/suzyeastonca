@@ -18,13 +18,14 @@
     buttonLoading: 'Refreshing…',
     teaserCaption: 'Check if your favourite services are up. Insert coin to refresh.',
     microcopy: 'Vancouver weather: cloudy with a chance of outages.',
-    offlineMessage: 'Unable to reach the arcade right now. Try again soon.',
+    offlineMessage: 'Arcade link is jittery. Data might be stale—try again soon.',
     tickerFallback: 'All quiet on the outage front.',
     unknownStatus: 'Unknown',
     noPublicStatus: 'No public status API',
     detailsLabel: 'Details',
     detailsHide: 'Hide details',
     noIncidents: 'No active incidents. Go write a chorus.',
+    degradedNoIncidents: 'Status page shows degraded performance. Pop over there for the detailed log.',
     etaInvestigating: 'ETA: investigating — translation: nobody knows yet.',
     viewProvider: 'View provider status →'
   };
@@ -70,6 +71,9 @@
       ],
       Slack: [
         "When Slack dies, meetings rise. Choose wisely."
+      ],
+      Zscaler: [
+        "Secure edge hiccup? Double-check the tunnels before blaming the Wi-Fi."
       ]
     }
   };
@@ -604,6 +608,8 @@
     if (!record || !record.incidents) {
       return;
     }
+    var stateCode = sanitizeText(provider.stateCode || provider.statusCode || '').toLowerCase();
+    var degraded = stateCode && stateCode !== 'operational' && stateCode !== 'unknown';
     while (record.incidents.firstChild) {
       record.incidents.removeChild(record.incidents.firstChild);
     }
@@ -611,10 +617,15 @@
     if (!incidents.length) {
       var empty = global.document ? global.document.createElement('p') : { textContent: '' };
       empty.className = 'incident-empty';
-      empty.textContent = state.strings.noIncidents;
+      var emptyMessage = degraded && state.strings.degradedNoIncidents
+        ? state.strings.degradedNoIncidents
+        : state.strings.noIncidents;
+      empty.textContent = emptyMessage;
+      record.incidents.setAttribute('data-empty-text', emptyMessage);
       record.incidents.appendChild(empty);
       return;
     }
+    record.incidents.setAttribute('data-empty-text', state.strings.noIncidents);
     var list = global.document ? global.document.createElement('ul') : null;
     if (list) {
       list.className = 'incident-list';
