@@ -20,9 +20,10 @@ class Providers {
                 'id'       => 'slack',
                 'name'     => 'Slack',
                 'provider' => 'Slack',
-                'endpoint' => 'https://status.slack.com/api/v2.0.0/summary.json',
-                'type'     => 'statuspage',
-                'url'      => 'https://status.slack.com/'
+                'endpoint' => 'https://status.slack.com/api/v2.0.0/current',
+                'type'     => 'slack',
+                'url'      => 'https://status.slack.com/',
+                'scrape'   => true,
             ],
             'cloudflare' => [
                 'id'       => 'cloudflare',
@@ -68,9 +69,10 @@ class Providers {
                 'id'       => 'gcp',
                 'name'     => 'Google Cloud',
                 'provider' => 'Google Cloud',
-                'endpoint' => 'https://status.cloud.google.com/feed.json',
+                'endpoint' => 'https://status.cloud.google.com/incidents.json',
                 'type'     => 'json',
-                'url'      => 'https://status.cloud.google.com/'
+                'url'      => 'https://status.cloud.google.com/',
+                'scrape'   => true,
             ],
         ];
     }

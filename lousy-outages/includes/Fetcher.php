@@ -70,6 +70,11 @@ class Fetcher {
 
         $code = (int) wp_remote_retrieve_response_code( $response );
         if ( $code < 200 || $code >= 400 ) {
+            $fallback = $this->scrape_status_page( $provider );
+            if ( $fallback ) {
+                return array_merge( $defaults, $fallback );
+            }
+
             $defaults['summary'] = sprintf( 'HTTP %d from status API', $code );
             $defaults['message'] = $defaults['summary'];
             $defaults['error']   = 'http_error';
@@ -78,6 +83,11 @@ class Fetcher {
 
         $body = wp_remote_retrieve_body( $response );
         if ( ! $body ) {
+            $fallback = $this->scrape_status_page( $provider );
+            if ( $fallback ) {
+                return array_merge( $defaults, $fallback );
+            }
+
             $defaults['summary'] = 'Empty response from status API';
             $defaults['message'] = $defaults['summary'];
             $defaults['error']   = 'empty_body';
@@ -85,6 +95,14 @@ class Fetcher {
         }
 
         $parsed  = $this->parse_body( $provider, $body );
+        if ( ! empty( $provider['scrape'] ) ) {
+            if ( empty( $parsed['summary'] ) || 'unknown' === ( $parsed['status'] ?? 'unknown' ) ) {
+                $fallback = $this->scrape_status_page( $provider );
+                if ( $fallback ) {
+                    $parsed = array_merge( $parsed, $fallback );
+                }
+            }
+        }
         $result  = array_merge( $defaults, $parsed );
         $summary = $result['summary'] ?? $result['message'] ?? '';
         if ( ! $summary ) {
@@ -103,6 +121,9 @@ class Fetcher {
 
     private function parse_body( array $provider, string $body ): array {
         $type = strtolower( $provider['type'] ?? 'statuspage' );
+        if ( 'slack' === $type ) {
+            return $this->parse_slack( $provider, $body );
+        }
         if ( 'statuspage' === $type ) {
             return $this->parse_statuspage( $body );
         }
@@ -349,6 +370,245 @@ class Fetcher {
             'incidents'  => $incidents,
             'updated_at' => $updated,
         ];
+    }
+
+    private function parse_slack( array $provider, string $body ): array {
+        $decoded = json_decode( $body, true );
+        if ( ! is_array( $decoded ) ) {
+            return [
+                'status'    => 'unknown',
+                'summary'   => 'Unrecognized response payload',
+                'incidents' => [],
+            ];
+        }
+
+        $raw_incidents = [];
+        if ( isset( $decoded['active_incidents'] ) && is_array( $decoded['active_incidents'] ) ) {
+            $raw_incidents = $decoded['active_incidents'];
+        } elseif ( isset( $decoded['incidents'] ) && is_array( $decoded['incidents'] ) ) {
+            $raw_incidents = $decoded['incidents'];
+        }
+
+        $incidents = [];
+        foreach ( $raw_incidents as $incident ) {
+            if ( ! is_array( $incident ) ) {
+                continue;
+            }
+
+            $updates = [];
+            if ( isset( $incident['updates'] ) && is_array( $incident['updates'] ) ) {
+                $updates = $incident['updates'];
+                $self    = $this;
+                usort(
+                    $updates,
+                    static function ( $a, $b ) use ( $self ) {
+                        $aTime = $self->slack_update_timestamp( $a );
+                        $bTime = $self->slack_update_timestamp( $b );
+                        return $bTime <=> $aTime;
+                    }
+                );
+            }
+
+            $latest  = $updates[0] ?? [];
+            $summary = '';
+            if ( is_array( $latest ) ) {
+                $summary = $latest['body'] ?? $latest['text'] ?? ( $latest['description'] ?? '' );
+            } elseif ( is_string( $latest ) ) {
+                $summary = $latest;
+            }
+
+            if ( ! $summary && isset( $incident['summary'] ) ) {
+                $summary = $incident['summary'];
+            }
+
+            $start = $incident['created'] ?? $incident['begin'] ?? $this->combine_datetime( $incident['date'] ?? '', $incident['time'] ?? '' );
+            $end   = $incident['updated'] ?? ( is_array( $latest ) ? ( $latest['updated'] ?? $this->combine_datetime( $latest['date'] ?? '', $latest['time'] ?? '' ) ) : null );
+
+            $incidents[] = [
+                'id'         => (string) ( $incident['id'] ?? md5( wp_json_encode( $incident ) ) ),
+                'title'      => $this->sanitize( $incident['title'] ?? $incident['name'] ?? 'Incident' ),
+                'summary'    => $this->sanitize( $summary ?: ( $incident['description'] ?? '' ) ),
+                'started_at' => $this->iso( $start ),
+                'updated_at' => $this->iso( $end ),
+                'impact'     => $this->normalize_impact( $incident['status'] ?? 'major' ),
+                'eta'        => $this->extract_eta_from_text( $incident['next_update'] ?? ( is_array( $latest ) ? ( $latest['next_update'] ?? $latest['next'] ?? '' ) : '' ) ),
+                'url'        => $incident['url'] ?? $incident['permalink'] ?? $provider['url'] ?? '',
+            ];
+        }
+
+        $status_code = strtolower( (string) ( $decoded['status'] ?? '' ) );
+        $map         = [
+            'ok'          => 'operational',
+            'active'      => 'degraded',
+            'incident'    => 'degraded',
+            'minor'       => 'degraded',
+            'notice'      => 'maintenance',
+            'maintenance' => 'maintenance',
+            'major'       => 'outage',
+            'critical'    => 'outage',
+            'outage'      => 'outage',
+        ];
+        $status      = $map[ $status_code ] ?? 'unknown';
+        if ( 'unknown' === $status ) {
+            $status = $incidents ? 'degraded' : 'operational';
+        }
+
+        $summary = '';
+        if ( isset( $decoded['current_status'] ) && is_array( $decoded['current_status'] ) ) {
+            $summary = $decoded['current_status']['title'] ?? $decoded['current_status']['body'] ?? '';
+        }
+        if ( ! $summary ) {
+            $summary = $incidents ? ( $incidents[0]['title'] ?? '' ) : '';
+        }
+        if ( ! $summary ) {
+            $summary = 'All systems operational';
+        }
+
+        $updated = $this->iso( $this->combine_datetime( $decoded['date'] ?? '', $decoded['time'] ?? '' ) );
+        if ( ! $updated && $incidents ) {
+            $updated = $incidents[0]['updated_at'] ?? '';
+        }
+        if ( ! $updated ) {
+            $updated = gmdate( 'c' );
+        }
+
+        return [
+            'status'     => $status,
+            'summary'    => $summary,
+            'incidents'  => $incidents,
+            'updated_at' => $updated,
+        ];
+    }
+
+    private function slack_update_timestamp( $update ): int {
+        if ( ! is_array( $update ) ) {
+            return 0;
+        }
+
+        foreach ( [ 'updated', 'timestamp', 'ts', 'created', 'when' ] as $field ) {
+            if ( ! empty( $update[ $field ] ) ) {
+                $time = strtotime( (string) $update[ $field ] );
+                if ( $time ) {
+                    return $time;
+                }
+            }
+        }
+
+        $combined = $this->combine_datetime( $update['date'] ?? '', $update['time'] ?? '' );
+        if ( $combined ) {
+            $time = strtotime( $combined );
+            if ( $time ) {
+                return $time;
+            }
+        }
+
+        return 0;
+    }
+
+    private function combine_datetime( ?string $date, ?string $time ): string {
+        $date = $date ? trim( $date ) : '';
+        $time = $time ? trim( $time ) : '';
+        if ( ! $date && ! $time ) {
+            return '';
+        }
+        if ( $date && $time ) {
+            return $date . ' ' . $time;
+        }
+        return $date ?: $time;
+    }
+
+    private function scrape_status_page( array $provider ): ?array {
+        if ( empty( $provider['scrape'] ) ) {
+            return null;
+        }
+
+        $url = $provider['scrape_url'] ?? $provider['url'] ?? '';
+        if ( ! $url ) {
+            return null;
+        }
+
+        $response = wp_remote_get(
+            $url,
+            [
+                'timeout' => min( $this->timeout, 6 ),
+                'headers' => [
+                    'Accept'     => 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+                    'User-Agent' => 'LousyOutagesBot/2.0 (' . home_url() . ')',
+                ],
+            ]
+        );
+
+        if ( is_wp_error( $response ) ) {
+            return null;
+        }
+
+        $code = (int) wp_remote_retrieve_response_code( $response );
+        if ( $code < 200 || $code >= 400 ) {
+            return null;
+        }
+
+        $body = wp_remote_retrieve_body( $response );
+        if ( ! $body ) {
+            return null;
+        }
+
+        $summary = $this->extract_summary_from_html( $body );
+        if ( ! $summary ) {
+            return null;
+        }
+
+        $status = $this->infer_status_from_text( $summary );
+
+        return [
+            'status'     => $status,
+            'summary'    => $summary,
+            'message'    => $summary,
+            'incidents'  => [],
+            'updated_at' => gmdate( 'c' ),
+        ];
+    }
+
+    private function extract_summary_from_html( string $html ): string {
+        $candidates = [];
+        if ( preg_match( '/<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']+)/i', $html, $matches ) ) {
+            $candidates[] = $matches[1];
+        }
+        if ( preg_match( '/<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\']+)/i', $html, $matches ) ) {
+            $candidates[] = $matches[1];
+        }
+        if ( preg_match( '/<h1[^>]*>(.*?)<\/h1>/is', $html, $matches ) ) {
+            $candidates[] = $matches[1];
+        }
+
+        foreach ( $candidates as $candidate ) {
+            $decoded = html_entity_decode( $candidate, ENT_QUOTES | ENT_HTML5 );
+            $clean   = $this->sanitize( $decoded );
+            if ( $clean ) {
+                return $clean;
+            }
+        }
+
+        return '';
+    }
+
+    private function infer_status_from_text( string $text ): string {
+        $text = strtolower( $text );
+        if ( preg_match( '/maintenance|scheduled work|planned work/', $text ) ) {
+            return 'maintenance';
+        }
+        if ( preg_match( '/outage|disruption|downtime|major incident|service interruption|degraded/', $text ) ) {
+            if ( preg_match( '/partial|intermittent|degrad/', $text ) ) {
+                return 'degraded';
+            }
+            return 'outage';
+        }
+        if ( preg_match( '/degrad|intermittent|partial outage/', $text ) ) {
+            return 'degraded';
+        }
+        if ( preg_match( '/all systems operational|no incidents reported|operating normally|running normally/', $text ) ) {
+            return 'operational';
+        }
+        return 'unknown';
     }
 
     private function normalize_impact( $value ): string {
