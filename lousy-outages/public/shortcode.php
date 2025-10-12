@@ -49,6 +49,41 @@ function render_shortcode(): string {
         }
     }
 
+    $issues       = [];
+    $unknown      = 0;
+    foreach ( $providers as $id => $prov ) {
+        $state       = $states[ $id ] ?? [];
+        $status_code = strtolower( (string) ( $state['status'] ?? 'unknown' ) );
+        $incidents   = $state['incidents'] ?? [];
+        $has_issue   = in_array( $status_code, [ 'degraded', 'outage', 'maintenance' ], true ) || ( is_array( $incidents ) && ! empty( $incidents ) );
+
+        if ( $has_issue ) {
+            $summary_text = isset( $state['summary'] ) ? wp_strip_all_tags( (string) $state['summary'] ) : '';
+            $issues[] = [
+                'id'      => $id,
+                'name'    => $prov['name'],
+                'status'  => $status_code,
+                'label'   => $state['status_label'] ?? Fetcher::status_label( $status_code ),
+                'summary' => $summary_text,
+            ];
+        }
+
+        if ( 'unknown' === $status_code ) {
+            $unknown++;
+        }
+    }
+
+    $feed_url     = home_url( '/outages/feed/' );
+    $alert_email  = 'suzanneeaston@gmail.com';
+    $summary_data = [
+        'total'     => count( $providers ),
+        'affected'  => count( $issues ),
+        'unknown'   => $unknown,
+        'providers' => array_values( $issues ),
+        'feedUrl'   => esc_url_raw( $feed_url ),
+        'alertEmail' => $alert_email,
+    ];
+
     $config = [
         'endpoint'         => esc_url_raw( home_url( '/api/outages' ) ),
         'pollInterval'     => lousy_outages_get_poll_interval(),
@@ -69,6 +104,9 @@ function render_shortcode(): string {
         'initialTimestamp' => $initial_iso,
         'voiceEnabled'     => (bool) apply_filters( 'lousy_outages_voice_enabled', false ),
         'debug'            => function_exists( 'wp_get_environment_type' ) ? 'production' !== wp_get_environment_type() : ( defined( 'WP_DEBUG' ) && WP_DEBUG ),
+        'feedUrl'          => esc_url_raw( $feed_url ),
+        'alertEmail'       => $alert_email,
+        'initialSummary'   => $summary_data,
     ];
 
     wp_localize_script( 'lousy-outages', 'LousyOutagesConfig', $config );
@@ -89,6 +127,30 @@ function render_shortcode(): string {
                     <span class="loader" aria-hidden="true"></span>
                 </button>
             </header>
+            <section class="status-summary" data-summary aria-live="polite">
+                <div class="status-summary__copy">
+                    <p class="status-summary__headline" data-summary-primary>Scanning providers…</p>
+                    <p class="status-summary__details" data-summary-secondary></p>
+                    <ul class="status-summary__list" data-summary-list></ul>
+                </div>
+                <div class="status-summary__actions">
+                    <a
+                        class="status-summary__rss"
+                        data-feed-link
+                        href="<?php echo esc_url( $feed_url ); ?>"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        Subscribe via RSS
+                    </a>
+                    <p class="status-summary__email">
+                        Alerts email:
+                        <a data-email-link href="mailto:<?php echo esc_attr( $alert_email ); ?>?subject=<?php echo rawurlencode( 'Lousy Outages alerts' ); ?>">
+                            <?php echo esc_html( $alert_email ); ?>
+                        </a>
+                    </p>
+                </div>
+            </section>
             <p class="board-subtitle"><?php echo esc_html( $strings['teaserCaption'] ); ?></p>
             <div class="providers-grid" role="list">
                 <?php foreach ( $providers as $id => $prov ) :
