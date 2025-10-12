@@ -29,6 +29,15 @@ use LousyOutages\Detector;
 use LousyOutages\SMS;
 use LousyOutages\Email;
 
+add_action(
+    'lousy_outages_log',
+    static function ( string $event, $data ): void {
+        error_log( '[lousy_outages] ' . $event . ' ' . wp_json_encode( $data ) );
+    },
+    10,
+    2
+);
+
 /**
  * Schedule polling event on activation and create page.
  */
@@ -76,16 +85,18 @@ add_filter( 'cron_schedules', function ( $schedules ) {
  * Poll providers and handle transitions.
  */
 add_action( 'lousy_outages_poll', 'lousy_outages_run_poll' );
-function lousy_outages_run_poll() {
+function lousy_outages_run_poll(): int {
     $store     = new Store();
     $detector  = new Detector( $store );
     $sms       = new SMS();
     $email     = new Email();
     $statuses  = lousy_outages_collect_statuses( true );
+    $processed = 0;
 
     foreach ( $statuses as $id => $state ) {
         $transition = $detector->detect( $id, $state );
         $store->update( $id, $state );
+        $processed++;
         if ( ! $transition ) {
             continue;
         }
@@ -98,6 +109,12 @@ function lousy_outages_run_poll() {
             $email->send_recovery( $state['name'], $state['url'] );
         }
     }
+
+    $timestamp = gmdate( 'c' );
+    update_option( 'lousy_outages_last_poll', $timestamp, false );
+    do_action( 'lousy_outages_log', 'poll_complete', [ 'count' => $processed, 'ts' => $timestamp ] );
+
+    return $processed;
 }
 
 function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
@@ -184,12 +201,54 @@ add_action( 'admin_init', function () {
 } );
 
 function lousy_outages_settings_page() {
-    $providers = Providers::list();
-    $enabled   = get_option( 'lousy_outages_providers', array_keys( $providers ) );
+    $providers       = Providers::list();
+    $default_enabled = array_keys( array_filter( $providers, static fn( $prov ) => $prov['enabled'] ?? true ) );
+    $enabled         = get_option( 'lousy_outages_providers', $default_enabled );
     $interval  = get_option( 'lousy_outages_interval', 300 );
+    $store     = new Store();
+    $states    = $store->get_all();
+    $notice    = get_transient( 'lousy_outages_notice' );
+    if ( $notice ) {
+        $type = ! empty( $notice['type'] ) && 'error' === $notice['type'] ? 'notice-error' : 'notice-success';
+        printf( '<div class="notice %1$s"><p>%2$s</p></div>', esc_attr( $type ), esc_html( (string) $notice['message'] ) );
+        delete_transient( 'lousy_outages_notice' );
+    }
+
+    $format_datetime = static function ( ?string $iso ): string {
+        if ( empty( $iso ) ) {
+            return '—';
+        }
+        $timestamp = strtotime( $iso );
+        if ( ! $timestamp ) {
+            return '—';
+        }
+        $format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+        return wp_date( $format, $timestamp );
+    };
+
+    $last_email      = get_option( 'lousy_outages_last_email' );
+    $last_email_text = 'No email sent yet.';
+    if ( is_array( $last_email ) ) {
+        $status = ! empty( $last_email['ok'] ) ? 'Delivered' : 'Failed';
+        $parts  = [
+            $format_datetime( $last_email['ts'] ?? null ),
+            $status,
+        ];
+        if ( ! empty( $last_email['to'] ) ) {
+            $parts[] = 'to ' . $last_email['to'];
+        }
+        if ( ! empty( $last_email['subject'] ) ) {
+            $parts[] = $last_email['subject'];
+        }
+        $last_email_text = implode( ' — ', array_filter( $parts, static fn ( $part ) => '' !== (string) $part ) );
+    }
+
+    $last_poll      = get_option( 'lousy_outages_last_poll' );
+    $last_poll_text = $format_datetime( $last_poll ?: null );
     ?>
     <div class="wrap">
         <h1>Lousy Outages Settings</h1>
+        <?php settings_errors( 'lousy_outages' ); ?>
         <form method="post" action="options.php">
             <?php settings_fields( 'lousy_outages' ); ?>
             <table class="form-table" role="presentation">
@@ -220,23 +279,132 @@ function lousy_outages_settings_page() {
                 <tr>
                     <th scope="row">Providers</th>
                     <td>
-                        <?php foreach ( $providers as $id => $prov ) : ?>
-                            <label><input type="checkbox" name="lousy_outages_providers[]" value="<?php echo esc_attr( $id ); ?>" <?php checked( in_array( $id, $enabled, true ) ); ?>> <?php echo esc_html( $prov['name'] ); ?></label><br>
+                        <?php foreach ( $providers as $id => $prov ) :
+                            $enabled_default = $prov['enabled'] ?? true;
+                            $is_enabled      = in_array( $id, (array) $enabled, true );
+                            ?>
+                            <label>
+                                <input type="checkbox" name="lousy_outages_providers[]" value="<?php echo esc_attr( $id ); ?>" <?php checked( $is_enabled ); ?>>
+                                <?php echo esc_html( $prov['name'] ); ?><?php if ( ! $enabled_default ) : ?> <span class="description">(optional)</span><?php endif; ?>
+                            </label><br>
                         <?php endforeach; ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Last email sent</th>
+                    <td>
+                        <p><?php echo esc_html( $last_email_text ); ?></p>
+                        <p class="description">Use the test button below to verify delivery to <?php echo esc_html( get_option( 'lousy_outages_email', get_option( 'admin_email' ) ) ); ?>.</p>
                     </td>
                 </tr>
             </table>
             <?php submit_button(); ?>
         </form>
+
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 1rem;">
+            <?php wp_nonce_field( 'lousy_outages_test_email' ); ?>
+            <input type="hidden" name="action" value="lousy_outages_test_email">
+            <?php submit_button( 'Send Test Email', 'secondary' ); ?>
+        </form>
+
+        <h2>Debug panel</h2>
+        <p><strong>Last poll:</strong> <?php echo esc_html( $last_poll_text ); ?></p>
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-bottom: 1rem;">
+            <?php wp_nonce_field( 'lousy_outages_poll_now' ); ?>
+            <input type="hidden" name="action" value="lousy_outages_poll_now">
+            <?php submit_button( 'Poll Now', 'secondary', 'submit', false ); ?>
+        </form>
+        <table class="widefat striped">
+            <thead>
+                <tr>
+                    <th scope="col">Provider</th>
+                    <th scope="col">Enabled</th>
+                    <th scope="col">Last state</th>
+                    <th scope="col">Updated</th>
+                    <th scope="col">Error</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ( $providers as $id => $prov ) :
+                    $state    = $states[ $id ] ?? [];
+                    $status   = $state['status_label'] ?? Fetcher::status_label( (string) ( $state['status'] ?? 'unknown' ) );
+                    $updated  = $format_datetime( $state['updated_at'] ?? null );
+                    $error    = $state['error'] ?? '';
+                    $is_enabled = in_array( $id, (array) $enabled, true );
+                    ?>
+                    <tr>
+                        <td><?php echo esc_html( $prov['name'] ); ?></td>
+                        <td><?php echo esc_html( $is_enabled ? 'Yes' : 'No' ); ?></td>
+                        <td><?php echo esc_html( $status ); ?></td>
+                        <td><?php echo esc_html( $updated ); ?></td>
+                        <td><?php echo esc_html( (string) $error ); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
     <?php
 }
+
+add_action( 'admin_post_lousy_outages_test_email', function () {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lousy-outages' ) );
+    }
+
+    check_admin_referer( 'lousy_outages_test_email' );
+
+    $email = new Email();
+    $email->send_alert( 'Test Provider', 'degraded', 'Test alert from settings', (string) home_url() );
+
+    set_transient(
+        'lousy_outages_notice',
+        [
+            'message' => 'Test email sent. Check the log below for confirmation.',
+            'type'    => 'success',
+        ],
+        30
+    );
+
+    $redirect = add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) );
+    wp_safe_redirect( $redirect );
+    exit;
+} );
+
+add_action( 'admin_post_lousy_outages_poll_now', function () {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lousy-outages' ) );
+    }
+
+    check_admin_referer( 'lousy_outages_poll_now' );
+
+    $count = lousy_outages_run_poll();
+
+    set_transient(
+        'lousy_outages_notice',
+        [
+            'message' => sprintf( 'Poll completed (%d providers).', $count ),
+            'type'    => 'success',
+        ],
+        30
+    );
+
+    $redirect = add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) );
+    wp_safe_redirect( $redirect );
+    exit;
+} );
 
 function lousy_outages_build_provider_payload( string $id, array $state, string $fetched_at ): array {
     $status     = $state['status'] ?? 'unknown';
     $label      = Fetcher::status_label( $status );
     $updated_at = ! empty( $state['updated_at'] ) ? (string) $state['updated_at'] : $fetched_at;
     $incidents  = [];
+    static $provider_urls = null;
+    if ( null === $provider_urls ) {
+        $provider_urls = [];
+        foreach ( Providers::list() as $provider_id => $provider ) {
+            $provider_urls[ $provider_id ] = $provider['status_url'] ?? '';
+        }
+    }
 
     if ( ! empty( $state['incidents'] ) && is_array( $state['incidents'] ) ) {
         foreach ( $state['incidents'] as $incident ) {
@@ -256,6 +424,11 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
         }
     }
 
+    $url = $state['url'] ?? '';
+    if ( ! $url && isset( $provider_urls[ $id ] ) ) {
+        $url = $provider_urls[ $id ];
+    }
+
     return [
         'id'         => $id,
         'provider'   => $state['provider'] ?? $state['name'] ?? $id,
@@ -264,7 +437,7 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
         'stateCode'  => $status,
         'summary'    => $state['summary'] ?? $label,
         'updatedAt'  => $updated_at,
-        'url'        => $state['url'] ?? '',
+        'url'        => $url,
         'snark'      => $state['snark'] ?? '',
         'incidents'  => $incidents,
         'error'      => $state['error'] ?? null,
