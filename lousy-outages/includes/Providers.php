@@ -1,88 +1,147 @@
 <?php
+declare(strict_types=1);
+
 namespace LousyOutages;
 
 class Providers {
     /**
-     * Return all providers.
-     * @return array
+     * Return the provider configuration map.
      */
     public static function list(): array {
-        return [
-            'github' => [
-                'id'       => 'github',
-                'name'     => 'GitHub',
-                'provider' => 'GitHub',
-                'endpoint' => 'https://www.githubstatus.com/api/v2/summary.json',
-                'type'     => 'statuspage',
-                'url'      => 'https://www.githubstatus.com/'
-            ],
-            'slack' => [
-                'id'       => 'slack',
-                'name'     => 'Slack',
-                'provider' => 'Slack',
-                'endpoint' => 'https://status.slack.com/api/v2.0.0/current',
-                'type'     => 'slack',
-                'url'      => 'https://status.slack.com/',
-                'scrape'   => true,
-            ],
-            'cloudflare' => [
-                'id'       => 'cloudflare',
-                'name'     => 'Cloudflare',
-                'provider' => 'Cloudflare',
-                'endpoint' => 'https://www.cloudflarestatus.com/api/v2/summary.json',
-                'type'     => 'statuspage',
-                'url'      => 'https://www.cloudflarestatus.com/'
-            ],
-            'zscaler' => [
-                'id'       => 'zscaler',
-                'name'     => 'Zscaler',
-                'provider' => 'Zscaler',
-                'endpoint' => 'https://status.zscaler.com/api/v2/summary.json',
-                'type'     => 'statuspage',
-                'url'      => 'https://status.zscaler.com/'
-            ],
-            'openai' => [
-                'id'       => 'openai',
-                'name'     => 'OpenAI',
-                'provider' => 'OpenAI',
-                'endpoint' => 'https://status.openai.com/api/v2/summary.json',
-                'type'     => 'statuspage',
-                'url'      => 'https://status.openai.com/'
-            ],
-            'aws' => [
-                'id'       => 'aws',
-                'name'     => 'AWS',
-                'provider' => 'AWS',
-                'endpoint' => 'https://status.aws.amazon.com/rss/all.rss',
-                'type'     => 'rss',
-                'url'      => 'https://status.aws.amazon.com/'
-            ],
-            'azure' => [
-                'id'       => 'azure',
-                'name'     => 'Azure',
-                'provider' => 'Azure',
-                'endpoint' => 'https://status.azure.com/en-us/status/feed',
-                'type'     => 'rss',
-                'url'      => 'https://status.azure.com/'
-            ],
-            'gcp' => [
-                'id'       => 'gcp',
-                'name'     => 'Google Cloud',
-                'provider' => 'Google Cloud',
-                'endpoint' => 'https://status.cloud.google.com/incidents.json',
-                'type'     => 'json',
-                'url'      => 'https://status.cloud.google.com/',
-                'scrape'   => true,
-            ],
-        ];
+        $providers = apply_filters(
+            'lousy_outages_providers',
+            [
+                'github' => [
+                    'name'   => 'GitHub',
+                    'type'   => 'statuspage',
+                    'summary'=> 'https://www.githubstatus.com/api/v2/summary.json',
+                    'status_url' => 'https://www.githubstatus.com/',
+                ],
+                'slack' => [
+                    'name'   => 'Slack',
+                    'type'   => 'statuspage',
+                    'summary'=> 'https://status.slack.com/api/v2.0.0/summary.json',
+                    'status_url' => 'https://status.slack.com/',
+                ],
+                'cloudflare' => [
+                    'name'   => 'Cloudflare',
+                    'type'   => 'statuspage',
+                    'summary'=> 'https://www.cloudflarestatus.com/api/v2/summary.json',
+                    'status_url' => 'https://www.cloudflarestatus.com/',
+                ],
+                'openai' => [
+                    'name'   => 'OpenAI',
+                    'type'   => 'statuspage',
+                    'summary'=> 'https://status.openai.com/api/v2/summary.json',
+                    'status_url' => 'https://status.openai.com/',
+                ],
+                'aws' => [
+                    'name'      => 'AWS',
+                    'type'      => 'rss',
+                    'rss'       => 'https://status.aws.amazon.com/rss/all.rss',
+                    'status_url'=> 'https://status.aws.amazon.com/',
+                ],
+                'azure' => [
+                    'name'      => 'Azure',
+                    'type'      => 'rss',
+                    'rss'       => 'https://azurestatuscdn.azureedge.net/en-us/status/feed/',
+                    'status_url'=> 'https://status.azure.com/',
+                ],
+                'gcp' => [
+                    'name'      => 'Google Cloud',
+                    'type'      => 'atom',
+                    'atom'      => 'https://status.cloud.google.com/feed.atom',
+                    'status_url'=> 'https://status.cloud.google.com/',
+                ],
+                'digitalocean' => [
+                    'name'   => 'DigitalOcean',
+                    'type'   => 'statuspage',
+                    'summary'=> 'https://status.digitalocean.com/api/v2/summary.json',
+                    'status_url' => 'https://status.digitalocean.com/',
+                ],
+                'netlify' => [
+                    'name'   => 'Netlify',
+                    'type'   => 'statuspage',
+                    'summary'=> 'https://www.netlifystatus.com/api/v2/summary.json',
+                    'status_url' => 'https://www.netlifystatus.com/',
+                ],
+                'vercel' => [
+                    'name'   => 'Vercel',
+                    'type'   => 'statuspage',
+                    'summary'=> 'https://www.vercel-status.com/api/v2/summary.json',
+                    'status_url' => 'https://www.vercel-status.com/',
+                ],
+                'downdetector-ca' => [
+                    'name'      => 'Downdetector (CA Aggregate)',
+                    'type'      => 'rss-optional',
+                    'enabled'   => false,
+                    'rss'       => 'https://downdetector.ca/archive/?format=rss',
+                    'status_url'=> 'https://downdetector.ca/',
+                ],
+            ]
+        );
+
+        foreach ( $providers as $id => &$provider ) {
+            if ( ! is_array( $provider ) ) {
+                unset( $providers[ $id ] );
+                continue;
+            }
+
+            $provider['id']       = $provider['id'] ?? $id;
+            $provider['enabled']  = array_key_exists( 'enabled', $provider ) ? (bool) $provider['enabled'] : true;
+            $provider['status_url'] = $provider['status_url'] ?? self::derive_status_url( $provider );
+        }
+        unset( $provider );
+
+        return $providers;
     }
 
     /**
-     * Return enabled providers from options or default all.
+     * Return enabled providers from options or defaults.
      */
     public static function enabled(): array {
-        $all     = self::list();
-        $enabled = get_option( 'lousy_outages_providers', array_keys( $all ) );
-        return array_intersect_key( $all, array_flip( $enabled ) );
+        $all            = self::list();
+        $default_enabled = array_keys( array_filter( $all, static fn( array $prov ): bool => $prov['enabled'] ) );
+        $saved           = get_option( 'lousy_outages_providers', false );
+        $enabled_ids     = is_array( $saved ) ? $saved : $default_enabled;
+
+        $enabled = [];
+        foreach ( $enabled_ids as $id ) {
+            if ( isset( $all[ $id ] ) ) {
+                $enabled[ $id ] = $all[ $id ];
+            }
+        }
+
+        return $enabled;
+    }
+
+    private static function derive_status_url( array $provider ): string {
+        foreach ( ['summary', 'rss', 'atom'] as $key ) {
+            if ( empty( $provider[ $key ] ) || ! is_string( $provider[ $key ] ) ) {
+                continue;
+            }
+
+            $url = $provider[ $key ];
+            if ( 'summary' === $key ) {
+                $url = preg_replace( '#/api/v\d+(?:\.\d+)*?/summary\.json$#', '/', $url );
+            }
+
+            $parts = wp_parse_url( $url );
+            if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+                continue;
+            }
+
+            $base = $parts['scheme'] . '://' . $parts['host'];
+            if ( 'summary' === $key ) {
+                $path = isset( $parts['path'] ) ? trim( (string) $parts['path'], '/' ) : '';
+                if ( $path && '/' !== $path ) {
+                    $base .= '/' . $path;
+                }
+            }
+
+            return trailingslashit( $base );
+        }
+
+        return trailingslashit( home_url( '/' ) );
     }
 }

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace LousyOutages;
 
 add_shortcode( 'lousy_outages', __NAMESPACE__ . '\render_shortcode' );
@@ -17,200 +19,135 @@ function render_shortcode(): string {
         'lousy-outages',
         $base_url . 'lousy-outages.css',
         [],
-        filemtime( $base_path . 'lousy-outages.css' )
+        file_exists( $base_path . 'lousy-outages.css' ) ? filemtime( $base_path . 'lousy-outages.css' ) : null
     );
 
     wp_enqueue_script(
         'lousy-outages',
         $base_url . 'lousy-outages.js',
         [],
-        filemtime( $base_path . 'lousy-outages.js' ),
+        file_exists( $base_path . 'lousy-outages.js' ) ? filemtime( $base_path . 'lousy-outages.js' ) : null,
         true
     );
 
-    $locale           = I18n::determine_locale();
-    $strings          = I18n::strings( $locale );
-    $fallback_strings = I18n::strings( 'en-US' );
-    $store            = new Store();
-    $providers        = Providers::enabled();
-    $states           = $store->get_all();
-    $initial_iso      = '';
+    $store      = new Store();
+    $providers  = Providers::enabled();
+    $states     = $store->get_all();
+    $fetched_at = get_option( 'lousy_outages_last_poll' );
 
-    foreach ( $states as $state ) {
-        if ( empty( $state['updated_at'] ) ) {
-            continue;
-        }
-        $timestamp = strtotime( (string) $state['updated_at'] );
-        if ( ! $timestamp ) {
-            continue;
-        }
-        if ( ! $initial_iso || $timestamp > strtotime( $initial_iso ) ) {
-            $initial_iso = gmdate( 'c', $timestamp );
-        }
-    }
-
-    $issues       = [];
-    $unknown      = 0;
-    foreach ( $providers as $id => $prov ) {
-        $state       = $states[ $id ] ?? [];
-        $status_code = strtolower( (string) ( $state['status'] ?? 'unknown' ) );
-        $incidents   = $state['incidents'] ?? [];
-        $has_issue   = in_array( $status_code, [ 'degraded', 'outage', 'maintenance' ], true ) || ( is_array( $incidents ) && ! empty( $incidents ) );
-
-        if ( $has_issue ) {
-            $summary_text = isset( $state['summary'] ) ? wp_strip_all_tags( (string) $state['summary'] ) : '';
-            $issues[] = [
-                'id'      => $id,
-                'name'    => $prov['name'],
-                'status'  => $status_code,
-                'label'   => $state['status_label'] ?? Fetcher::status_label( $status_code ),
-                'summary' => $summary_text,
-            ];
-        }
-
-        if ( 'unknown' === $status_code ) {
-            $unknown++;
+    if ( ! $fetched_at ) {
+        foreach ( $states as $state ) {
+            if ( empty( $state['updated_at'] ) ) {
+                continue;
+            }
+            $candidate = strtotime( (string) $state['updated_at'] );
+            if ( ! $candidate ) {
+                continue;
+            }
+            if ( ! $fetched_at || $candidate > strtotime( (string) $fetched_at ) ) {
+                $fetched_at = gmdate( 'c', $candidate );
+            }
         }
     }
 
-    $feed_url     = home_url( '/outages/feed/' );
-    $alert_email  = 'suzanneeaston@gmail.com';
-    $summary_data = [
-        'total'     => count( $providers ),
-        'affected'  => count( $issues ),
-        'unknown'   => $unknown,
-        'providers' => array_values( $issues ),
-        'feedUrl'   => esc_url_raw( $feed_url ),
-        'alertEmail' => $alert_email,
-    ];
+    $fetched_at         = $fetched_at ?: gmdate( 'c' );
+    $provider_payloads  = [];
+    foreach ( $providers as $id => $provider ) {
+        $state    = $states[ $id ] ?? [];
+        $payload  = lousy_outages_build_provider_payload( $id, $state, $fetched_at );
+        if ( empty( $payload['url'] ) && ! empty( $provider['status_url'] ) ) {
+            $payload['url'] = $provider['status_url'];
+        }
+        $provider_payloads[] = $payload;
+    }
 
     $config = [
-        'endpoint'         => esc_url_raw( home_url( '/api/outages' ) ),
-        'pollInterval'     => lousy_outages_get_poll_interval(),
-        'fetchTimeout'     => 10000,
-        'locale'           => $locale,
-        'strings'          => $strings,
-        'fallbackStrings'  => $fallback_strings,
-        'providers'        => array_values(
-            array_map(
-                static fn( $prov ) => [
-                    'id'   => $prov['id'],
-                    'name' => $prov['name'],
-                    'url'  => $prov['url'] ?? '',
-                ],
-                $providers
-            )
-        ),
-        'initialTimestamp' => $initial_iso,
-        'voiceEnabled'     => (bool) apply_filters( 'lousy_outages_voice_enabled', false ),
-        'debug'            => function_exists( 'wp_get_environment_type' ) ? 'production' !== wp_get_environment_type() : ( defined( 'WP_DEBUG' ) && WP_DEBUG ),
-        'feedUrl'          => esc_url_raw( $feed_url ),
-        'alertEmail'       => $alert_email,
-        'initialSummary'   => $summary_data,
+        'endpoint'     => esc_url_raw( rest_url( 'lousy-outages/v1/status' ) ),
+        'pollInterval' => lousy_outages_get_poll_interval(),
+        'initial'      => [
+            'providers' => $provider_payloads,
+            'meta'      => [ 'fetchedAt' => $fetched_at ],
+        ],
     ];
 
     wp_localize_script( 'lousy-outages', 'LousyOutagesConfig', $config );
 
+    $format_datetime = static function ( ?string $iso ): string {
+        if ( empty( $iso ) ) {
+            return '—';
+        }
+        $timestamp = strtotime( $iso );
+        if ( ! $timestamp ) {
+            return '—';
+        }
+        $format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+        return wp_date( $format, $timestamp );
+    };
+
     ob_start();
     ?>
-    <div class="lo-arcade">
-        <div
-            id="lousy-outages"
-            class="lousy-outages-board"
-            aria-live="polite"
-            data-voice-enabled="<?php echo $config['voiceEnabled'] ? '1' : '0'; ?>"
-        >
-            <header class="board-header">
-                <p class="last-updated"><?php echo esc_html( $strings['updatedLabel'] ); ?> <span data-initial="<?php echo esc_attr( $initial_iso ); ?>"></span></p>
-                <button type="button" class="coin-btn" data-loading-label="<?php echo esc_attr( $strings['buttonLoading'] ); ?>">
-                    <span class="label"><?php echo esc_html( $strings['buttonShortLabel'] ); ?></span>
-                    <span class="loader" aria-hidden="true"></span>
-                </button>
-            </header>
-            <section class="status-summary" data-summary aria-live="polite">
-                <div class="status-summary__copy">
-                    <p class="status-summary__headline" data-summary-primary>Scanning providers…</p>
-                    <p class="status-summary__details" data-summary-secondary></p>
-                    <ul class="status-summary__list" data-summary-list></ul>
-                </div>
-                <div class="status-summary__actions">
-                    <a
-                        class="status-summary__rss"
-                        data-feed-link
-                        href="<?php echo esc_url( $feed_url ); ?>"
-                        target="_blank"
-                        rel="noopener"
-                    >
-                        Subscribe via RSS
-                    </a>
-                    <p class="status-summary__email">
-                        Alerts email:
-                        <a data-email-link href="mailto:<?php echo esc_attr( $alert_email ); ?>?subject=<?php echo rawurlencode( 'Lousy Outages alerts' ); ?>">
-                            <?php echo esc_html( $alert_email ); ?>
-                        </a>
-                    </p>
-                </div>
-            </section>
-            <p class="board-subtitle"><?php echo esc_html( $strings['teaserCaption'] ); ?></p>
-            <div class="providers-grid" role="list">
-                <?php foreach ( $providers as $id => $prov ) :
-                    $state        = $states[ $id ] ?? [];
-                    $status_code  = $state['status'] ?? 'unknown';
-                    $status_label = $state['status_label'] ?? Fetcher::status_label( $status_code );
-                    $summary      = $state['summary'] ?? ( $state['message'] ?? $status_label );
-                    $details_id   = 'lo-details-' . sanitize_html_class( $id );
-                    $provider_url = $state['url'] ?? ( $prov['url'] ?? '' );
-                    $incidents    = $state['incidents'] ?? [];
-                    $has_incident = ! empty( $incidents ) && is_array( $incidents );
-                    $degraded     = ! in_array( $status_code, [ 'operational', 'unknown' ], true );
-                    $empty_text   = ( $degraded && ! $has_incident )
-                        ? ( $strings['degradedNoIncidents'] ?? $strings['noIncidents'] )
-                        : $strings['noIncidents'];
-                    ?>
-                    <article
-                        class="provider-card"
-                        role="listitem"
-                        data-id="<?php echo esc_attr( $id ); ?>"
-                        data-name="<?php echo esc_attr( $prov['name'] ); ?>"
-                    >
-                        <div class="provider-card__inner">
-                            <header class="provider-card__header">
-                                <h3 class="provider-card__name"><?php echo esc_html( $prov['name'] ); ?></h3>
-                                <span class="status-badge status--<?php echo esc_attr( $status_code ); ?>" data-status="<?php echo esc_attr( $status_code ); ?>">
-                                    <?php echo esc_html( $status_label ); ?>
-                                </span>
-                            </header>
-                            <p class="provider-card__summary"><?php echo esc_html( $summary ); ?></p>
-                            <p class="provider-card__snark" data-snark="true">&nbsp;</p>
-                            <button
-                                type="button"
-                                class="details-toggle"
-                                aria-expanded="false"
-                                aria-controls="<?php echo esc_attr( $details_id ); ?>"
-                            >
-                                <span class="toggle-label"><?php echo esc_html( $strings['detailsLabel'] ); ?></span>
-                            </button>
-                            <section class="provider-details" id="<?php echo esc_attr( $details_id ); ?>" hidden>
-                                <div class="incidents" data-empty-text="<?php echo esc_attr( $empty_text ); ?>">
-                                    <p class="incident-empty"><?php echo esc_html( $empty_text ); ?></p>
-                                </div>
-                                <a
-                                    class="provider-link"
-                                    data-default-url="<?php echo esc_attr( $provider_url ); ?>"
-                                    href="<?php echo esc_url( $provider_url ?: '#' ); ?>"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    <?php echo esc_html( $strings['viewProvider'] ); ?>
-                                </a>
-                            </section>
-                        </div>
-                    </article>
-                <?php endforeach; ?>
-            </div>
-            <div class="ticker" aria-live="polite"></div>
-            <p class="microcopy"><?php echo esc_html( $strings['buttonLabel'] ); ?></p>
-            <p class="weather"><?php echo esc_html( $strings['microcopy'] ); ?></p>
+    <div class="lousy-outages" data-lo-endpoint="<?php echo esc_url( $config['endpoint'] ); ?>">
+        <div class="lo-meta" aria-live="polite">
+            <span>Fetched: <strong data-lo-fetched><?php echo esc_html( $format_datetime( $fetched_at ) ); ?></strong></span>
+            <span data-lo-countdown>Refreshing…</span>
+            <button type="button" class="lo-btn" data-lo-refresh>Refresh now</button>
+        </div>
+        <div class="lo-grid" data-lo-grid>
+            <?php foreach ( $provider_payloads as $provider ) :
+                $state_code = $provider['stateCode'] ?? 'unknown';
+                $incidents  = $provider['incidents'] ?? [];
+                ?>
+                <article class="lo-card" data-provider-id="<?php echo esc_attr( $provider['id'] ); ?>">
+                    <div class="lo-head">
+                        <h3 class="lo-title"><?php echo esc_html( $provider['name'] ); ?></h3>
+                        <span class="lo-pill <?php echo esc_attr( $state_code ); ?>">
+                            <?php echo esc_html( $provider['state'] ); ?>
+                        </span>
+                    </div>
+                    <?php if ( ! empty( $provider['error'] ) ) : ?>
+                        <span class="lo-error">Error: <?php echo esc_html( (string) $provider['error'] ); ?></span>
+                    <?php endif; ?>
+                    <p class="lo-summary"><?php echo esc_html( $provider['summary'] ); ?></p>
+                    <?php if ( ! empty( $provider['snark'] ) ) : ?>
+                        <p class="lo-snark"><?php echo esc_html( (string) $provider['snark'] ); ?></p>
+                    <?php endif; ?>
+                    <div class="lo-inc">
+                        <strong>Incidents</strong>
+                        <?php if ( empty( $incidents ) ) : ?>
+                            <p class="lo-empty">No active incidents</p>
+                        <?php else : ?>
+                            <ul class="lo-inc-list">
+                                <?php foreach ( $incidents as $incident ) :
+                                    $impact       = ucfirst( (string) ( $incident['impact'] ?? 'unknown' ) );
+                                    $updated      = $format_datetime( $incident['updatedAt'] ?? $incident['startedAt'] ?? '' );
+                                    $incident_url = $incident['url'] ?? '';
+                                    $meta_bits    = array_filter(
+                                        [
+                                            $impact,
+                                            '—' !== $updated ? $updated : '',
+                                        ],
+                                        static fn ( $bit ) => '' !== (string) $bit
+                                    );
+                                    $meta_text = implode( ' • ', $meta_bits );
+                                    ?>
+                                    <li class="lo-inc-item">
+                                        <p class="lo-inc-title"><?php echo esc_html( $incident['title'] ?? 'Incident' ); ?></p>
+                                        <?php if ( $meta_text ) : ?>
+                                            <p class="lo-inc-meta"><?php echo esc_html( $meta_text ); ?></p>
+                                        <?php endif; ?>
+                                        <?php if ( $incident_url ) : ?>
+                                            <a class="lo-status-link" href="<?php echo esc_url( $incident_url ); ?>" target="_blank" rel="noopener noreferrer">Open incident</a>
+                                        <?php endif; ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ( ! empty( $provider['url'] ) ) : ?>
+                        <a class="lo-status-link" href="<?php echo esc_url( $provider['url'] ); ?>" target="_blank" rel="noopener noreferrer">View status →</a>
+                    <?php endif; ?>
+                </article>
+            <?php endforeach; ?>
         </div>
     </div>
     <?php

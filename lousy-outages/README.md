@@ -16,6 +16,9 @@ Monitor third‑party service status and get SMS and email alerts when things br
 | digitalocean | DigitalOcean | https://status.digitalocean.com/api/v2/summary.json |
 | netlify | Netlify | https://www.netlifystatus.com/api/v2/summary.json |
 | vercel | Vercel | https://www.vercel-status.com/api/v2/summary.json |
+| downdetector-ca | Downdetector (CA Aggregate) | https://downdetector.ca/archive/?format=rss |
+
+Downdetector is disabled by default because the RSS feed is unofficial and can disappear; enable it from the settings page if it loads for you. When the feed is unreachable, the adapter reports an `unknown` state with an error badge rather than failing the whole poll.
 
 To add or remove a provider, edit `includes/Providers.php` or use the checkboxes under **Settings → Lousy Outages** in wp-admin.
 
@@ -24,6 +27,9 @@ To add or remove a provider, edit `includes/Providers.php` or use the checkboxes
 1. (Optional) Sign up for Twilio and obtain your **Account SID**, **Auth Token**, and a verified **From** number to enable SMS alerts.
 2. In wp-admin go to **Settings → Lousy Outages** and enter the SID, token, from number, your destination phone number, and a notification email address.
 3. Choose which providers to monitor and set the polling interval (default 5 minutes).
+4. Click **Send Test Email** to verify delivery; the panel shows the status and the latest subject/recipient recorded.
+
+Use the **Poll Now** button in the debug panel to run an immediate poll. The panel also shows the last poll timestamp, each provider’s most recent status, and any fetch errors captured during the run.
 
 ## Shortcode
 
