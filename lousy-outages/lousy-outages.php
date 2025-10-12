@@ -38,6 +38,11 @@ function lousy_outages_activate() {
         wp_schedule_event( time() + 60, 'lousy_outages_interval', 'lousy_outages_poll' );
     }
     lousy_outages_create_page();
+    $default_email = 'suzanneeaston@gmail.com';
+    $stored_email  = get_option( 'lousy_outages_email' );
+    if ( empty( $stored_email ) && is_email( $default_email ) ) {
+        update_option( 'lousy_outages_email', sanitize_email( $default_email ) );
+    }
     if ( function_exists( 'flush_rewrite_rules' ) ) {
         flush_rewrite_rules( false );
     }

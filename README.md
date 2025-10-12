@@ -20,6 +20,8 @@ The neon dashboard now streams live provider data from `/api/outages` on load an
 
 The legacy REST endpoint at `/wp-json/lousy-outages/v1/status` still works and returns the expanded payload, while the new `/api/outages` edge route emits uncached JSON with `Cache-Control: no-store`. WordPress cron keeps polling in the background—run `wp cron event run lousy_outages_poll` if you need to warm the datastore manually.
 
+The status arcade now opens with an "at-a-glance" headline that calls out any degraded providers, links straight to the custom RSS feed at `/outages/feed/` and highlights the alerts inbox (`suzanneeaston@gmail.com`) so you can wire it into whatever mail filters you prefer. Unknown telemetry also surfaces in the banner, making it obvious when a provider's API stops responding.
+
 ## Track Analyzer
 Uploads are sent to OpenAI's Whisper and GPT‑4 APIs for a quick analysis of your
 MP3. Results appear with a fun retro overlay and clear loading indicators. For

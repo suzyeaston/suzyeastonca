@@ -84,6 +84,12 @@
     tickerEl: null,
     refreshButton: null,
     lastUpdatedSpan: null,
+    summarySection: null,
+    summaryPrimary: null,
+    summarySecondary: null,
+    summaryList: null,
+    feedLink: null,
+    emailLink: null,
     pollTimer: null,
     inFlight: null,
     lastFetchedAt: null,
@@ -96,7 +102,10 @@
       locale: 'en-CA',
       providers: [],
       voiceEnabled: false,
-      debug: false
+      debug: false,
+      feedUrl: '',
+      alertEmail: '',
+      initialSummary: null
     }
   };
 
@@ -115,6 +124,9 @@
     state.config.providers = Array.isArray(baseConfig.providers) ? baseConfig.providers : state.config.providers;
     state.config.voiceEnabled = Boolean(baseConfig.voiceEnabled);
     state.config.debug = Boolean(baseConfig.debug);
+    state.config.feedUrl = baseConfig.feedUrl || state.config.feedUrl;
+    state.config.alertEmail = baseConfig.alertEmail || state.config.alertEmail;
+    state.config.initialSummary = baseConfig.initialSummary || state.config.initialSummary;
 
     if (state.config.debug) {
       state.config.pollInterval = Math.max(10, state.config.pollInterval);
@@ -253,6 +265,161 @@
       label: label || resolved,
       className: className
     };
+  }
+
+  function computeSummary(providers) {
+    var summary = {
+      total: 0,
+      affected: 0,
+      unknown: 0,
+      providers: [],
+      feedUrl: state.config.feedUrl,
+      alertEmail: state.config.alertEmail
+    };
+    if (!Array.isArray(providers)) {
+      return summary;
+    }
+    summary.total = providers.length;
+    providers.forEach(function (provider) {
+      if (!provider) {
+        return;
+      }
+      var status = sanitizeText(provider.stateCode || provider.statusCode || provider.status || '').toLowerCase();
+      if (status === 'unknown') {
+        summary.unknown += 1;
+      }
+      var incidents = Array.isArray(provider.incidents) ? provider.incidents.length : 0;
+      var hasIssue = incidents > 0 || status === 'degraded' || status === 'outage' || status === 'maintenance';
+      if (!status && hasIssue) {
+        status = 'degraded';
+      }
+      if (!hasIssue) {
+        return;
+      }
+      summary.affected += 1;
+      summary.providers.push({
+        id: provider.id || provider.provider || provider.name || '',
+        name: sanitizeText(provider.name || provider.provider || provider.id || 'Unknown provider'),
+        label: sanitizeText(provider.state || provider.status || ''),
+        status: status || 'unknown',
+        summary: sanitizeText(provider.summary || provider.message || '')
+      });
+    });
+    return summary;
+  }
+
+  function renderSummary(summary) {
+    if (!state.summarySection) {
+      return;
+    }
+    state.summarySection.classList.remove('is-offline');
+
+    summary = summary || {};
+    var total = Number(summary.total);
+    if (!isFinite(total)) {
+      total = state.config.providers.length;
+    }
+    var affected = Number(summary.affected) || 0;
+    var unknown = Number(summary.unknown) || 0;
+    var providers = Array.isArray(summary.providers) ? summary.providers.slice(0, 4) : [];
+    var feedUrl = summary.feedUrl || state.config.feedUrl || '';
+    var alertEmail = summary.alertEmail || state.config.alertEmail || '';
+
+    state.config.feedUrl = feedUrl;
+    state.config.alertEmail = alertEmail;
+    state.config.lastSummary = summary;
+
+    state.summarySection.classList.toggle('has-alerts', affected > 0);
+    state.summarySection.classList.toggle('has-unknown', affected === 0 && unknown > 0);
+
+    if (state.feedLink) {
+      if (feedUrl) {
+        state.feedLink.href = feedUrl;
+        state.feedLink.removeAttribute('hidden');
+      } else {
+        state.feedLink.setAttribute('hidden', 'hidden');
+      }
+    }
+
+    if (state.emailLink) {
+      if (alertEmail) {
+        state.emailLink.textContent = alertEmail;
+        state.emailLink.href = 'mailto:' + alertEmail + '?subject=' + encodeURIComponent('Lousy Outages alerts');
+        state.emailLink.removeAttribute('hidden');
+      } else {
+        state.emailLink.setAttribute('hidden', 'hidden');
+      }
+    }
+
+    var headline = '';
+    var details = '';
+
+    if (affected > 0) {
+      headline = affected === 1
+        ? 'Heads up: one provider is having trouble.'
+        : 'Heads up: ' + affected + ' providers are having trouble.';
+      var names = providers.map(function (prov) {
+        var normalized = normalizeStatus(prov.status, prov.label);
+        var label = sanitizeText(normalized.label);
+        return prov.name + (label ? ' (' + label + ')' : '');
+      });
+      if (names.length) {
+        details = names.join(', ');
+        var remainder = affected - names.length;
+        if (remainder > 0) {
+          details += ' +' + remainder + ' more';
+        }
+      }
+    } else if (unknown > 0) {
+      headline = 'Monitoring ' + (total || state.config.providers.length || 0) + ' providers.';
+      var plural = unknown === 1 ? 'provider is' : 'providers are';
+      details = unknown + ' ' + plural + ' currently unknown.';
+    } else {
+      var count = total || state.config.providers.length || 0;
+      headline = count
+        ? 'All systems operational across ' + count + ' providers.'
+        : 'All systems operational.';
+      details = 'No incidents detected right now.';
+    }
+
+    if (state.summaryPrimary) {
+      state.summaryPrimary.textContent = headline;
+    }
+    if (state.summarySecondary) {
+      state.summarySecondary.textContent = details;
+      state.summarySecondary.hidden = !details;
+    }
+
+    if (state.summaryList) {
+      while (state.summaryList.firstChild) {
+        state.summaryList.removeChild(state.summaryList.firstChild);
+      }
+      if (affected > 0 && providers.length && global.document) {
+        state.summaryList.hidden = false;
+        providers.forEach(function (prov) {
+          var item = global.document.createElement('li');
+          item.className = 'status-summary__item';
+          var normalized = normalizeStatus(prov.status, prov.label);
+          var chip = global.document.createElement('span');
+          chip.className = 'status-chip ' + normalized.className;
+          chip.textContent = normalized.label;
+          item.appendChild(chip);
+          var name = global.document.createElement('span');
+          name.className = 'status-summary__provider';
+          name.textContent = ' ' + prov.name;
+          item.appendChild(name);
+          if (prov.summary) {
+            var note = global.document.createElement('span');
+            note.className = 'status-summary__note';
+            note.textContent = ' — ' + prov.summary;
+            item.appendChild(note);
+          }
+          state.summaryList.appendChild(item);
+        });
+      } else {
+        state.summaryList.hidden = true;
+      }
+    }
   }
 
   function snarkOutage(providerName, stateLabel, summary) {
@@ -810,6 +977,7 @@
     updateTicker(tickerMessages.length ? tickerMessages : [state.strings.tickerFallback]);
     var fetchedAt = payload.meta && payload.meta.fetchedAt ? payload.meta.fetchedAt : new Date().toISOString();
     updateTimestamp(fetchedAt);
+    renderSummary(computeSummary(providers));
     return providers;
   }
 
@@ -817,6 +985,31 @@
     logError(error);
     if (state.tickerEl) {
       state.tickerEl.textContent = state.strings.offlineMessage || '';
+    }
+    if (state.summarySection) {
+      state.summarySection.classList.add('is-offline');
+      state.summarySection.classList.remove('has-alerts');
+      state.summarySection.classList.remove('has-unknown');
+    }
+    if (state.summaryPrimary) {
+      state.summaryPrimary.textContent = state.strings.offlineMessage || 'Status feed unreachable. Data might be stale.';
+    }
+    if (state.summarySecondary) {
+      var fallback = '';
+      if (state.lastFetchedAt) {
+        var last = new Date(state.lastFetchedAt);
+        if (!isNaN(last.getTime())) {
+          fallback = 'Last good update ' + formatRelativeShort(Date.now() - last.getTime()) + '.';
+        }
+      }
+      state.summarySecondary.textContent = fallback;
+      state.summarySecondary.hidden = !fallback;
+    }
+    if (state.summaryList) {
+      while (state.summaryList.firstChild) {
+        state.summaryList.removeChild(state.summaryList.firstChild);
+      }
+      state.summaryList.hidden = true;
     }
     return [];
   }
@@ -904,10 +1097,30 @@
     state.tickerEl = state.container.querySelector('.ticker');
     state.refreshButton = state.container.querySelector('.coin-btn');
     state.lastUpdatedSpan = state.container.querySelector('.last-updated span');
+    state.summarySection = state.container.querySelector('[data-summary]');
+    state.summaryPrimary = state.container.querySelector('[data-summary-primary]');
+    state.summarySecondary = state.container.querySelector('[data-summary-secondary]');
+    state.summaryList = state.container.querySelector('[data-summary-list]');
+    state.feedLink = state.container.querySelector('[data-feed-link]');
+    state.emailLink = state.container.querySelector('[data-email-link]');
     state.config.voiceEnabled = state.config.voiceEnabled || state.container.getAttribute('data-voice-enabled') === '1';
+
+    if (state.feedLink && state.config.feedUrl) {
+      state.feedLink.href = state.config.feedUrl;
+    }
+    if (state.emailLink && state.config.alertEmail) {
+      state.emailLink.textContent = state.config.alertEmail;
+      state.emailLink.href = 'mailto:' + state.config.alertEmail + '?subject=' + encodeURIComponent('Lousy Outages alerts');
+    }
 
     prepareExistingCards();
     attachButton();
+
+    if (state.config.initialSummary) {
+      renderSummary(state.config.initialSummary);
+    } else {
+      renderSummary(computeSummary([]));
+    }
 
     if (state.lastUpdatedSpan) {
       var initial = state.lastUpdatedSpan.getAttribute('data-initial');
