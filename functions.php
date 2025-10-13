@@ -10,8 +10,7 @@ if ( ! defined( 'OPENAI_API_KEY' ) ) {
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
  *   - Albini Q&A React widget
- *   - Security hardening: disable XML‑RPC, hide users, block author archives
- *
+ *   - Security hardening: disable XML-RPC, hide users, block author archives
  */
 
 // =========================================
@@ -60,18 +59,18 @@ function retro_game_music_theme_scripts() {
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
 
 function suzy_enqueue_scripts() {
-  $ver = wp_get_theme()->get( 'Version' ) . '-' . substr( md5( filemtime( get_stylesheet_directory() . '/assets/js/canucksPuckBash.js' ) ), 0, 8 );
-  wp_enqueue_style( 'suzy-style', get_stylesheet_uri(), [], $ver );
+    $ver = wp_get_theme()->get( 'Version' ) . '-' . substr( md5( filemtime( get_stylesheet_directory() . '/assets/js/canucksPuckBash.js' ) ), 0, 8 );
+    wp_enqueue_style( 'suzy-style', get_stylesheet_uri(), [], $ver );
 
-  if ( is_page_template( 'page-arcade.php' ) ) {
-    wp_enqueue_script( 'canucks-game', get_stylesheet_directory_uri() . '/assets/js/canucksPuckBash.js', [], $ver, true );
-  }
+    if ( is_page_template( 'page-arcade.php' ) ) {
+        wp_enqueue_script( 'canucks-game', get_stylesheet_directory_uri() . '/assets/js/canucksPuckBash.js', [], $ver, true );
+    }
 
-  if ( is_page_template( 'page-albini-qa.php' ) ) {
-    $build_dir = get_template_directory_uri() . '/albini-qa/build';
-    wp_enqueue_script( 'albini-qa-js',  $build_dir . '/static/js/main.js', [], null, true );
-    wp_enqueue_style( 'albini-qa-css',  $build_dir . '/static/css/main.css', [], null );
-  }
+    if ( is_page_template( 'page-albini-qa.php' ) ) {
+        $build_dir = get_template_directory_uri() . '/albini-qa/build';
+        wp_enqueue_script( 'albini-qa-js',  $build_dir . '/static/js/main.js', [], null, true );
+        wp_enqueue_style( 'albini-qa-css',  $build_dir . '/static/css/main.css', [], null );
+    }
 }
 add_action( 'wp_enqueue_scripts', 'suzy_enqueue_scripts' );
 
@@ -83,7 +82,6 @@ if ( file_exists( $lousy_outages ) ) {
 
 add_filter( 'lousy_outages_voice_enabled', '__return_true' );
 
-
 // =========================================
 // 2. DISABLE AUTOMATIC PARAGRAPH FORMATTING
 // =========================================
@@ -93,10 +91,8 @@ function disable_autop_formatting() {
 }
 add_action('init', 'disable_autop_formatting');
 
-
 // =========================================
 // 3. ON-DEMAND DATA UPDATE (NO CRON)
-//    Fetches Canucks news and betting odds
 // =========================================
 function update_canucks_data() {
     // --- News via rss2json ---
@@ -130,7 +126,6 @@ function update_canucks_data() {
     }
 }
 
-
 // =========================================
 // 4. REGISTER CUSTOM REST API ENDPOINTS
 // =========================================
@@ -152,7 +147,6 @@ add_action('rest_api_init', function() {
     ]);
 });
 
-
 // =========================================
 // 5. ENDPOINT CALLBACKS: CANUCKS DATA
 // =========================================
@@ -173,28 +167,28 @@ function get_custom_canucks_betting( WP_REST_Request $request ) {
     }
     return rest_ensure_response( $odds );
 }
+
 function enqueue_starfield() {
-  wp_enqueue_script(
-    'starfield',
-    get_template_directory_uri() . '/js/starfield.js',
-    [], '1.0', true
-  );
+    wp_enqueue_script(
+        'starfield',
+        get_template_directory_uri() . '/js/starfield.js',
+        [], '1.0', true
+    );
 }
 add_action('wp_enqueue_scripts', 'enqueue_starfield');
 
 function enqueue_now_playing() {
-  wp_enqueue_script(
-    'now-playing',
-    get_template_directory_uri() . '/js/now-playing.js',
-    [], '1.0', true
-  );
-  wp_localize_script('now-playing', 'nowPlaying', [
-    'username' => 'suzyeaston',
-    'api_key'  => 'b8c00d13eccb3a3973dd087d84c0e5b3'
-  ]);
+    wp_enqueue_script(
+        'now-playing',
+        get_template_directory_uri() . '/js/now-playing.js',
+        [], '1.0', true
+    );
+    wp_localize_script('now-playing', 'nowPlaying', [
+        'username' => 'suzyeaston',
+        'api_key'  => 'b8c00d13eccb3a3973dd087d84c0e5b3'
+    ]);
 }
 add_action('wp_enqueue_scripts', 'enqueue_now_playing');
-
 
 // =========================================
 // 6. SHORTCODE: DISPLAY THE CANUCKS APP
@@ -238,9 +232,10 @@ function canucks_app_shortcode() {
               <p><strong><?php echo esc_html($bm['title']); ?></strong> – <?php echo esc_html($mkt['key']); ?>:
                 <?php
                   $info = array_map(function($o){
-                    return esc_html($o['name']) . ' (' . esc_html($o['price']) . ( $o['point'] !== '' ? ', ' . esc_html($o['point']) : '' ) . ')';
+                    $pt = (isset($o['point']) && $o['point'] !== '') ? ', ' . esc_html($o['point']) : '';
+                    return esc_html($o['name']) . ' (' . esc_html($o['price']) . $pt . ')';
                   }, $mkt['outcomes']);
-                  echo implode(' ', $info);
+                  echo implode(' ', $info);
                 ?>
               </p>
             <?php endforeach; endif; ?>
@@ -261,8 +256,6 @@ function albini_qa_shortcode() {
 }
 add_shortcode('albini_qa', 'albini_qa_shortcode');
 
-
-
 // =========================================
 // 8. ALBINI HANDLER (OpenAI Proxy)
 // =========================================
@@ -277,7 +270,7 @@ function albini_handle_query( WP_REST_Request $req ) {
         'body'    => wp_json_encode([
             'model'    => 'gpt-4o',
             'messages' => [
-                ['role'=>'system', 'content'=>"You are Steve Albini, legendary producer—blunt, no‑BS. Answer questions as he would."],
+                ['role'=>'system', 'content'=>"You are Steve Albini, legendary producer—blunt, no-BS. Answer questions as he would."],
                 ['role'=>'user',   'content'=>$question],
             ],
             'max_tokens' => 300,
@@ -295,7 +288,6 @@ function albini_handle_query( WP_REST_Request $req ) {
 
     return rest_ensure_response([ 'answer' => wp_kses_post($answer) ]);
 }
-
 
 // =========================================
 // 9. SECURITY HARDENING
