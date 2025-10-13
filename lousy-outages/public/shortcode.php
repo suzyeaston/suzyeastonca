@@ -84,13 +84,22 @@ function render_shortcode(): string {
         return wp_date( $format, $timestamp );
     };
 
+    $feed_url         = home_url( '/outages/feed/' );
+    $feed_refresh_url = add_query_arg( 'refresh', '1', $feed_url );
+
     ob_start();
     ?>
     <div class="lousy-outages" data-lo-endpoint="<?php echo esc_url( $config['endpoint'] ); ?>">
-        <div class="lo-meta" aria-live="polite">
-            <span>Fetched: <strong data-lo-fetched><?php echo esc_html( $format_datetime( $fetched_at ) ); ?></strong></span>
-            <span data-lo-countdown>Refreshing…</span>
-            <button type="button" class="lo-btn" data-lo-refresh>Refresh now</button>
+        <div class="lo-header">
+            <div class="lo-meta" aria-live="polite">
+                <span>Fetched at <strong data-lo-fetched><?php echo esc_html( $format_datetime( $fetched_at ) ); ?></strong></span>
+                <span data-lo-countdown>Calculating refresh…</span>
+            </div>
+            <div class="lo-actions">
+                <button type="button" class="lo-link" data-lo-refresh>Refresh now</button>
+                <a class="lo-link" href="<?php echo esc_url( $feed_url ); ?>" target="_blank" rel="noopener noreferrer">Subscribe (RSS)</a>
+                <a class="lo-link" href="<?php echo esc_url( $feed_refresh_url ); ?>" target="_blank" rel="noopener noreferrer">Refresh RSS</a>
+            </div>
         </div>
         <div class="lo-grid" data-lo-grid>
             <?php foreach ( $provider_payloads as $provider ) :

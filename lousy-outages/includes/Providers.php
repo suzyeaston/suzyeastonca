@@ -18,9 +18,9 @@ class Providers {
                     'status_url' => 'https://www.githubstatus.com/',
                 ],
                 'slack' => [
-                    'name'   => 'Slack',
-                    'type'   => 'statuspage',
-                    'summary'=> 'https://status.slack.com/api/v2.0.0/summary.json',
+                    'name'       => 'Slack',
+                    'type'       => 'slack',
+                    'current'    => 'https://status.slack.com/api/v2.0.0/current',
                     'status_url' => 'https://status.slack.com/',
                 ],
                 'cloudflare' => [

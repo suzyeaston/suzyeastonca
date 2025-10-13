@@ -307,6 +307,14 @@ function lousy_outages_settings_page() {
             <?php submit_button( 'Send Test Email', 'secondary' ); ?>
         </form>
 
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5rem;">
+            <?php wp_nonce_field( 'lousy_outages_test_sms' ); ?>
+            <input type="hidden" name="action" value="lousy_outages_test_sms">
+            <?php submit_button( 'Send Test SMS', 'secondary' ); ?>
+        </form>
+
+        <p class="description">SMS requires Twilio SID/Auth/From and your phone set. Alternatively subscribe to RSS on your phone.</p>
+
         <h2>Debug panel</h2>
         <p><strong>Last poll:</strong> <?php echo esc_html( $last_poll_text ); ?></p>
         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-bottom: 1rem;">
@@ -364,6 +372,46 @@ add_action( 'admin_post_lousy_outages_test_email', function () {
         ],
         30
     );
+
+    $redirect = add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) );
+    wp_safe_redirect( $redirect );
+    exit;
+} );
+
+add_action( 'admin_post_lousy_outages_test_sms', function () {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lousy-outages' ) );
+    }
+
+    check_admin_referer( 'lousy_outages_test_sms' );
+
+    $sid   = get_option( 'lousy_outages_twilio_sid' );
+    $token = get_option( 'lousy_outages_twilio_token' );
+    $from  = get_option( 'lousy_outages_twilio_from' );
+    $to    = get_option( 'lousy_outages_phone' );
+
+    if ( ! $sid || ! $token || ! $from || ! $to ) {
+        set_transient(
+            'lousy_outages_notice',
+            [
+                'message' => 'Add your Twilio SID/Auth/From and destination phone number before sending a test SMS.',
+                'type'    => 'error',
+            ],
+            30
+        );
+    } else {
+        $sms = new SMS();
+        $sms->send_alert( 'Test Provider', 'degraded', 'Test alert from settings', (string) home_url( '/lousy-outages/' ) );
+
+        set_transient(
+            'lousy_outages_notice',
+            [
+                'message' => 'Test SMS sent. Check your phone shortly.',
+                'type'    => 'success',
+            ],
+            30
+        );
+    }
 
     $redirect = add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) );
     wp_safe_redirect( $redirect );
