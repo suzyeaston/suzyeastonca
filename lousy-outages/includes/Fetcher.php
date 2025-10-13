@@ -12,7 +12,8 @@ class Fetcher {
         'unknown'     => 'Unknown',
     ];
 
-    private int $timeout;
+    // Remove typed property for PHP 7.x compatibility
+    private $timeout;
 
     public function __construct( int $timeout = 8 ) {
         $this->timeout = max( 2, $timeout );
@@ -28,12 +29,12 @@ class Fetcher {
         $name      = (string) ( $provider['name'] ?? $id );
         $type      = strtolower( (string) ( $provider['type'] ?? 'statuspage' ) );
         $endpoint  = $this->resolve_endpoint( $provider );
-        $statusUrl = $provider['status_url'] ?? ( $provider['url'] ?? '' );
+        $statusUrl = isset($provider['status_url']) ? $provider['status_url'] : ( isset($provider['url']) ? $provider['url'] : '' );
 
         $defaults = [
             'id'           => $id,
             'name'         => $name,
-            'provider'     => $provider['provider'] ?? $name,
+            'provider'     => isset($provider['provider']) ? $provider['provider'] : $name,
             'status'       => 'unknown',
             'status_label' => self::status_label( 'unknown' ),
             'summary'      => 'Waiting for status…',
@@ -68,7 +69,6 @@ class Fetcher {
             if ( $optional ) {
                 return $this->optional_unavailable( $defaults, $response->get_error_message() );
             }
-
             return $this->failed_defaults( $defaults, 'request_failed', $response->get_error_message() );
         }
 
@@ -77,7 +77,6 @@ class Fetcher {
             if ( $optional ) {
                 return $this->optional_unavailable( $defaults, 'HTTP ' . $code );
             }
-
             return $this->failed_defaults( $defaults, 'http_error', sprintf( 'HTTP %d response', $code ) );
         }
 
@@ -86,32 +85,25 @@ class Fetcher {
             if ( $optional ) {
                 return $this->optional_unavailable( $defaults, 'Empty body' );
             }
-
             return $this->failed_defaults( $defaults, 'empty_body', 'Empty response from status endpoint' );
         }
 
-        switch ( $type ) {
-            case 'atom':
-                $parsed = $this->parse_feed( $provider, $body, 'atom' );
-                break;
-            case 'rss':
-            case 'rss-optional':
-                $parsed = $this->parse_feed( $provider, $body, 'rss' );
-                break;
-            case 'statuspage':
-            default:
-                $parsed = $this->parse_statuspage( $body );
-                break;
+        if ( 'atom' === $type ) {
+            $parsed = $this->parse_feed( $provider, $body, 'atom' );
+        } elseif ( 'rss' === $type || 'rss-optional' === $type ) {
+            $parsed = $this->parse_feed( $provider, $body, 'rss' );
+        } else {
+            $parsed = $this->parse_statuspage( $body );
         }
 
         $result = array_merge( $defaults, $parsed );
 
-        $result['status']       = $this->normalize_status_code( $result['status'] ?? 'unknown' );
+        $result['status']       = $this->normalize_status_code( isset($result['status']) ? $result['status'] : 'unknown' );
         $result['status_label'] = self::status_label( $result['status'] );
-        $result['summary']      = $this->sanitize( $result['summary'] ?? '' ) ?: self::status_label( $result['status'] );
+        $result['summary']      = $this->sanitize( isset($result['summary']) ? $result['summary'] : '' ) ?: self::status_label( $result['status'] );
         $result['message']      = $result['summary'];
-        $result['updated_at']   = $result['updated_at'] ?? gmdate( 'c' );
-        $result['incidents']    = $this->normalize_incidents( $result['incidents'] ?? [] );
+        $result['updated_at']   = isset($result['updated_at']) ? $result['updated_at'] : gmdate( 'c' );
+        $result['incidents']    = $this->normalize_incidents( isset($result['incidents']) ? $result['incidents'] : [] );
 
         return $result;
     }
@@ -125,13 +117,12 @@ class Fetcher {
             'atom'         => 'atom',
         ];
 
-        $key = $keys[ $type ] ?? 'summary';
-        $url = $provider[ $key ] ?? ( $provider['endpoint'] ?? null );
+        $key = isset($keys[$type]) ? $keys[$type] : 'summary';
+        $url = isset($provider[$key]) ? $provider[$key] : ( isset($provider['endpoint']) ? $provider['endpoint'] : null );
 
         if ( ! $url || ! is_string( $url ) ) {
             return null;
         }
-
         return $url;
     }
 
@@ -144,8 +135,8 @@ class Fetcher {
             ];
         }
 
-        $indicator   = strtolower( (string) ( $decoded['status']['indicator'] ?? '' ) );
-        $description = (string) ( $decoded['status']['description'] ?? '' );
+        $indicator   = strtolower( (string) ( isset($decoded['status']['indicator']) ? $decoded['status']['indicator'] : '' ) );
+        $description = (string) ( isset($decoded['status']['description']) ? $decoded['status']['description'] : '' );
         $map         = [
             'none'           => 'operational',
             'minor'          => 'degraded',
@@ -154,7 +145,7 @@ class Fetcher {
             'maintenance'    => 'maintenance',
             'partial_outage' => 'degraded',
         ];
-        $status      = $map[ $indicator ] ?? $this->guess_status_from_text( $description );
+        $status      = isset($map[$indicator]) ? $map[$indicator] : $this->guess_status_from_text( $description );
 
         $incidents = [];
         foreach ( [ 'incidents', 'active_incidents' ] as $key ) {
@@ -172,7 +163,7 @@ class Fetcher {
             }
         }
 
-        $summary = $description ?: ( $incidents[0]['title'] ?? '' );
+        $summary = $description ?: ( isset($incidents[0]['title']) ? $incidents[0]['title'] : '' );
         if ( ! $summary ) {
             $summary = 'All systems operational';
         }
@@ -181,7 +172,7 @@ class Fetcher {
             'status'     => $status,
             'summary'    => $summary,
             'incidents'  => $incidents,
-            'updated_at' => $this->iso( $decoded['page']['updated_at'] ?? null ) ?? gmdate( 'c' ),
+            'updated_at' => $this->iso( isset($decoded['page']['updated_at']) ? $decoded['page']['updated_at'] : null ) ?: gmdate( 'c' ),
         ];
     }
 
@@ -211,8 +202,8 @@ class Fetcher {
 
         if ( ! $entries ) {
             return [
-                'status'  => 'operational',
-                'summary' => 'All systems operational',
+                'status'    => 'operational',
+                'summary'   => 'All systems operational',
                 'incidents' => [],
             ];
         }
@@ -238,8 +229,8 @@ class Fetcher {
             $status = 'degraded';
         }
 
-        $summary = $incidents ? ( $incidents[0]['title'] ?? 'Service disruption detected' ) : 'All systems operational';
-        $updated = $incidents ? ( $incidents[0]['updated_at'] ?? $incidents[0]['started_at'] ?? null ) : null;
+        $summary = $incidents ? ( isset($incidents[0]['title']) ? $incidents[0]['title'] : 'Service disruption detected' ) : 'All systems operational';
+        $updated = $incidents ? ( isset($incidents[0]['updated_at']) ? $incidents[0]['updated_at'] : ( isset($incidents[0]['started_at']) ? $incidents[0]['started_at'] : null ) ) : null;
 
         return [
             'status'     => $status,
@@ -250,8 +241,8 @@ class Fetcher {
     }
 
     private function normalize_feed_entry( \SimpleXMLElement $entry, array $provider ): ?array {
-        $title   = $this->sanitize( (string) ( $entry->title ?? '' ) );
-        $summary = $this->sanitize( (string) ( $entry->summary ?? $entry->description ?? '' ) );
+        $title   = $this->sanitize( (string) ( isset($entry->title) ? $entry->title : '' ) );
+        $summary = $this->sanitize( (string) ( isset($entry->summary) ? $entry->summary : ( isset($entry->description) ? $entry->description : '' ) ) );
         $link    = '';
 
         if ( isset( $entry->link ) ) {
@@ -266,34 +257,34 @@ class Fetcher {
             $link = (string) $entry->guid;
         }
 
-        $published = (string) ( $entry->pubDate ?? $entry->published ?? $entry->updated ?? '' );
+        $published = (string) ( isset($entry->pubDate) ? $entry->pubDate : ( isset($entry->published) ? $entry->published : ( isset($entry->updated) ? $entry->updated : '' ) ) );
         $timestamp = $published ? strtotime( $published ) : false;
         if ( $timestamp && $timestamp < strtotime( '-7 days' ) ) {
             return null;
         }
         $isoStart = $this->iso( $published );
 
-        $text     = strtolower( $title . ' ' . $summary );
-        $impact   = $this->guess_status_from_text( $text );
+        $text   = strtolower( $title . ' ' . $summary );
+        $impact = $this->guess_status_from_text( $text );
 
         if ( 'operational' === $impact && ! $summary ) {
             return null;
         }
 
         return [
-            'id'         => substr( md5( (string) ( $entry->guid ?? $title ) . $published ), 0, 12 ),
+            'id'         => substr( md5( (string) ( isset($entry->guid) ? $entry->guid : $title ) . $published ), 0, 12 ),
             'title'      => $title ?: 'Incident',
             'summary'    => $summary ?: $title,
             'started_at' => $isoStart,
-            'updated_at' => $this->iso( (string) ( $entry->updated ?? $published ) ) ?? $isoStart,
+            'updated_at' => $this->iso( (string) ( isset($entry->updated) ? $entry->updated : $published ) ) ?: $isoStart,
             'impact'     => $impact,
             'eta'        => '',
-            'url'        => $link ?: ( $provider['status_url'] ?? '' ),
+            'url'        => $link ?: ( isset($provider['status_url']) ? $provider['status_url'] : '' ),
         ];
     }
 
     private function normalize_statuspage_incident( array $incident ): ?array {
-        $state = strtolower( (string) ( $incident['status'] ?? '' ) );
+        $state = strtolower( (string) ( isset($incident['status']) ? $incident['status'] : '' ) );
         if ( in_array( $state, [ 'resolved', 'completed', 'postmortem' ], true ) ) {
             return null;
         }
@@ -311,18 +302,18 @@ class Fetcher {
             );
         }
 
-        $latest = $updates[0] ?? [];
-        $body   = is_array( $latest ) ? ( $latest['body'] ?? $latest['display_at'] ?? '' ) : '';
+        $latest = isset($updates[0]) ? $updates[0] : [];
+        $body   = is_array( $latest ) ? ( isset($latest['body']) ? $latest['body'] : ( isset($latest['display_at']) ? $latest['display_at'] : '' ) ) : '';
 
         return [
-            'id'         => (string) ( $incident['id'] ?? md5( wp_json_encode( $incident ) ) ),
-            'title'      => $this->sanitize( $incident['name'] ?? 'Incident' ),
-            'summary'    => $this->sanitize( $body ?: ( $incident['impact_override'] ?? '' ) ),
-            'started_at' => $this->iso( $incident['started_at'] ?? $incident['created_at'] ?? null ),
-            'updated_at' => $this->iso( $incident['updated_at'] ?? null ),
-            'impact'     => $this->map_impact( $incident['impact'] ?? $state ),
+            'id'         => (string) ( isset($incident['id']) ? $incident['id'] : md5( wp_json_encode( $incident ) ) ),
+            'title'      => $this->sanitize( isset($incident['name']) ? $incident['name'] : 'Incident' ),
+            'summary'    => $this->sanitize( $body ?: ( isset($incident['impact_override']) ? $incident['impact_override'] : '' ) ),
+            'started_at' => $this->iso( isset($incident['started_at']) ? $incident['started_at'] : ( isset($incident['created_at']) ? $incident['created_at'] : null ) ),
+            'updated_at' => $this->iso( isset($incident['updated_at']) ? $incident['updated_at'] : null ),
+            'impact'     => $this->map_impact( isset($incident['impact']) ? $incident['impact'] : $state ),
             'eta'        => '',
-            'url'        => $incident['shortlink'] ?? $incident['postmortem_body'] ?? '',
+            'url'        => isset($incident['shortlink']) ? $incident['shortlink'] : ( isset($incident['postmortem_body']) ? $incident['postmortem_body'] : '' ),
         ];
     }
 
@@ -334,17 +325,16 @@ class Fetcher {
             }
 
             $normalized[] = [
-                'id'         => (string) ( $incident['id'] ?? md5( wp_json_encode( $incident ) ) ),
-                'title'      => $this->sanitize( $incident['title'] ?? 'Incident' ),
-                'summary'    => $this->sanitize( $incident['summary'] ?? '' ),
-                'started_at' => $this->iso( $incident['started_at'] ?? null ),
-                'updated_at' => $this->iso( $incident['updated_at'] ?? null ),
-                'impact'     => $this->map_impact( $incident['impact'] ?? 'minor' ),
-                'eta'        => $this->sanitize( $incident['eta'] ?? '' ),
-                'url'        => $incident['url'] ?? '',
+                'id'         => (string) ( isset($incident['id']) ? $incident['id'] : md5( wp_json_encode( $incident ) ) ),
+                'title'      => $this->sanitize( isset($incident['title']) ? $incident['title'] : 'Incident' ),
+                'summary'    => $this->sanitize( isset($incident['summary']) ? $incident['summary'] : '' ),
+                'started_at' => $this->iso( isset($incident['started_at']) ? $incident['started_at'] : null ),
+                'updated_at' => $this->iso( isset($incident['updated_at']) ? $incident['updated_at'] : null ),
+                'impact'     => $this->map_impact( isset($incident['impact']) ? $incident['impact'] : 'minor' ),
+                'eta'        => $this->sanitize( isset($incident['eta']) ? $incident['eta'] : '' ),
+                'url'        => isset($incident['url']) ? $incident['url'] : '',
             ];
         }
-
         return $normalized;
     }
 
@@ -387,12 +377,21 @@ class Fetcher {
 
     private function map_impact( $impact ): string {
         $impact = strtolower( (string) $impact );
-        return match ( $impact ) {
-            'critical', 'major', 'outage' => 'outage',
-            'maintenance'                => 'maintenance',
-            'minor', 'degraded', 'partial', 'partial_outage' => 'degraded',
-            default                      => 'minor',
-        };
+        switch ( $impact ) {
+            case 'critical':
+            case 'major':
+            case 'outage':
+                return 'outage';
+            case 'maintenance':
+                return 'maintenance';
+            case 'minor':
+            case 'degraded':
+            case 'partial':
+            case 'partial_outage':
+                return 'degraded';
+            default:
+                return 'minor';
+        }
     }
 
     private function guess_status_from_text( string $text ): string {
@@ -425,12 +424,24 @@ class Fetcher {
 
     private function normalize_status_code( string $status ): string {
         $status = strtolower( $status );
-        return match ( $status ) {
-            'operational', 'up'     => 'operational',
-            'degraded', 'partial', 'minor' => 'degraded',
-            'outage', 'major', 'critical', 'down' => 'outage',
-            'maintenance', 'scheduled' => 'maintenance',
-            default => 'unknown',
-        };
+        switch ( $status ) {
+            case 'operational':
+            case 'up':
+                return 'operational';
+            case 'degraded':
+            case 'partial':
+            case 'minor':
+                return 'degraded';
+            case 'outage':
+            case 'major':
+            case 'critical':
+            case 'down':
+                return 'outage';
+            case 'maintenance':
+            case 'scheduled':
+                return 'maintenance';
+            default:
+                return 'unknown';
+        }
     }
 }
