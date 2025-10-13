@@ -11,6 +11,15 @@
   color: #2af200;
 }
 
+.lo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
 .lo-meta {
   color: #a7ff9a;
   font-size: 0.95rem;
@@ -18,7 +27,6 @@
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 12px;
 }
 
 .lo-meta span {
@@ -27,24 +35,36 @@
   gap: 4px;
 }
 
-.lo-btn {
+.lo-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.lo-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: 1px solid #2af200;
-  color: #2af200;
-  background: transparent;
   padding: 4px 10px;
   border-radius: 8px;
-  cursor: pointer;
+  text-decoration: none;
+  color: #2af200;
+  background: transparent;
   font-size: 0.9rem;
+  cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
-.lo-btn:hover,
-.lo-btn:focus {
-  background: #2af200;
-  color: #000;
+.lo-link:hover,
+.lo-link:focus {
+  text-decoration: underline;
 }
 
-.lo-btn[disabled] {
+.lo-link[disabled] {
   opacity: 0.5;
   cursor: progress;
 }
@@ -185,7 +205,7 @@
     font-size: 0.85rem;
   }
 
-  .lo-btn {
+  .lo-link {
     width: 100%;
     text-align: center;
   }

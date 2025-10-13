@@ -92,6 +92,8 @@ class Fetcher {
             $parsed = $this->parse_feed( $provider, $body, 'atom' );
         } elseif ( 'rss' === $type || 'rss-optional' === $type ) {
             $parsed = $this->parse_feed( $provider, $body, 'rss' );
+        } elseif ( 'slack' === $type ) {
+            $parsed = $this->parse_slack_current( $body );
         } else {
             $parsed = $this->parse_statuspage( $body );
         }
@@ -110,6 +112,15 @@ class Fetcher {
 
     private function resolve_endpoint( array $provider ): ?string {
         $type = strtolower( (string) ( $provider['type'] ?? 'statuspage' ) );
+
+        if ( 'slack' === $type ) {
+            $url = isset($provider['current']) ? $provider['current'] : ( isset($provider['endpoint']) ? $provider['endpoint'] : null );
+            if ( ! $url || ! is_string( $url ) ) {
+                return null;
+            }
+            return $url;
+        }
+
         $keys = [
             'statuspage'   => 'summary',
             'rss'          => 'rss',
@@ -124,6 +135,68 @@ class Fetcher {
             return null;
         }
         return $url;
+    }
+
+    private function parse_slack_current( string $body ): array {
+        $decoded = json_decode( $body, true );
+        if ( ! is_array( $decoded ) ) {
+            return [
+                'status'  => 'unknown',
+                'summary' => 'Unable to parse Slack status',
+            ];
+        }
+
+        $title   = $this->sanitize( isset($decoded['title']) ? (string) $decoded['title'] : '' );
+        $date    = isset($decoded['date']) ? $this->iso( $decoded['date'] ) : null;
+        $checks  = [ 'connection', 'service', 'api' ];
+        $all_ok  = true;
+        $signals = [];
+
+        foreach ( $checks as $check ) {
+            $value = strtolower( (string) ( isset($decoded[ $check ]) ? $decoded[ $check ] : '' ) );
+            $signals[] = $value;
+            if ( $value && 'ok' !== $value ) {
+                $all_ok = false;
+            }
+        }
+
+        $status_text = strtolower(
+            trim(
+                implode(
+                    ' ',
+                    array_filter(
+                        [
+                            isset($decoded['status']) ? (string) $decoded['status'] : '',
+                            implode( ' ', $signals ),
+                            $title,
+                        ],
+                        static function ( $part ) {
+                            return '' !== trim( (string) $part );
+                        }
+                    )
+                )
+            )
+        );
+
+        $status = 'operational';
+        if ( ! $all_ok ) {
+            $status = 'degraded';
+            foreach ( [ 'outage', 'major', 'critical', 'down' ] as $keyword ) {
+                if ( false !== strpos( $status_text, $keyword ) ) {
+                    $status = 'outage';
+                    break;
+                }
+            }
+        }
+
+        $summary = $title ?: 'All systems operational';
+
+        return [
+            'status'     => $status,
+            'summary'    => $summary,
+            'updated_at' => $date ?: gmdate( 'c' ),
+            'incidents'  => [],
+        ];
     }
 
     private function parse_statuspage( string $body ): array {

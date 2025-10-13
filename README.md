@@ -22,6 +22,10 @@ The legacy REST endpoint at `/wp-json/lousy-outages/v1/status` still works and r
 
 The status arcade now opens with an "at-a-glance" headline that calls out any degraded providers, links straight to the custom RSS feed at `/outages/feed/` and highlights the alerts inbox (`suzanneeaston@gmail.com`) so you can wire it into whatever mail filters you prefer. Unknown telemetry also surfaces in the banner, making it obvious when a provider's API stops responding.
 
+## Get alerts on your phone
+- **RSS**: Subscribe to https://<your-site>/outages/feed in any mobile RSS app (NetNewsWire, Reeder, Feedly). You’ll get a push/badge when incidents publish.
+- **SMS (optional)**: Enter your Twilio SID/Auth/From and your phone under Settings → Lousy Outages. Use “Send Test SMS” to verify.
+
 ## Track Analyzer
 Uploads are sent to OpenAI's Whisper and GPT‑4 APIs for a quick analysis of your
 MP3. Results appear with a fun retro overlay and clear loading indicators. For
