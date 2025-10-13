@@ -84,22 +84,30 @@ function render_shortcode(): string {
         return wp_date( $format, $timestamp );
     };
 
-    $feed_url         = home_url( '/outages/feed/' );
-    $feed_refresh_url = add_query_arg( 'refresh', '1', $feed_url );
+    $raw_feed_url  = home_url( '/outages/feed' );
+    $feed_url      = esc_url( $raw_feed_url );
+    $fallback_feed = esc_url( add_query_arg( 'lousy_outages_feed', '1', home_url( '/' ) ) );
 
     ob_start();
     ?>
     <div class="lousy-outages" data-lo-endpoint="<?php echo esc_url( $config['endpoint'] ); ?>">
         <div class="lo-header">
-            <div class="lo-meta" aria-live="polite">
-                <span>Fetched at <strong data-lo-fetched><?php echo esc_html( $format_datetime( $fetched_at ) ); ?></strong></span>
-                <span data-lo-countdown>Calculating refresh…</span>
-            </div>
             <div class="lo-actions">
-                <button type="button" class="lo-link" data-lo-refresh>Refresh now</button>
-                <a class="lo-link" href="<?php echo esc_url( $feed_url ); ?>" target="_blank" rel="noopener noreferrer">Subscribe (RSS)</a>
-                <a class="lo-link" href="<?php echo esc_url( $feed_refresh_url ); ?>" target="_blank" rel="noopener noreferrer">Refresh RSS</a>
+                <span class="lo-meta" aria-live="polite">
+                    Fetched: <strong id="lo-fetched-at" data-lo-fetched><?php echo esc_html( $format_datetime( $fetched_at ) ); ?></strong>
+                    <span id="lo-countdown" data-lo-countdown>Calculating refresh…</span>
+                </span>
+                <button type="button" class="lo-link" id="lo-refresh-btn" data-lo-refresh>Refresh now</button>
+                <a class="lo-link" href="<?php echo $feed_url; ?>" target="_blank" rel="noopener">
+                    <svg class="lo-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M6 17a2 2 0 11.001 3.999A2 2 0 016 17zm-2-7v3a8 8 0 018 8h3c0-6.075-4.925-11-11-11zm0-5v3c9.389 0 17 7.611 17 17h3C24 13.85 10.15 0 4 0z" />
+                    </svg>
+                    Subscribe (RSS)
+                </a>
             </div>
+            <noscript>
+                <p><a class="lo-link" href="<?php echo $fallback_feed; ?>">RSS (fallback)</a></p>
+            </noscript>
         </div>
         <div class="lo-grid" data-lo-grid>
             <?php foreach ( $provider_payloads as $provider ) :

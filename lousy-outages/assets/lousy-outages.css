@@ -11,11 +11,10 @@
   color: #2af200;
 }
 
+
 .lo-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -23,40 +22,33 @@
 .lo-meta {
   color: #a7ff9a;
   font-size: 0.95rem;
-  display: flex;
-  gap: 12px;
+  display: inline-flex;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
-}
-
-.lo-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .lo-actions {
   display: flex;
   gap: 10px;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin: 10px 0 16px;
 }
 
 .lo-link {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 1px solid #2af200;
-  padding: 4px 10px;
-  border-radius: 8px;
-  text-decoration: none;
+  gap: 8px;
+  border: 2px solid #2af200;
   color: #2af200;
   background: transparent;
-  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .lo-link:hover,
@@ -67,6 +59,12 @@
 .lo-link[disabled] {
   opacity: 0.5;
   cursor: progress;
+}
+
+.lo-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
 }
 
 .lo-grid {
