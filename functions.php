@@ -309,3 +309,11 @@ add_action('template_redirect', function() {
         exit;
     }
 });
+
+// Advertise Lousy Outages RSS feed for readers (auto-discovery)
+add_action('wp_head', function () {
+    if (function_exists('home_url')) {
+        $href = esc_url( home_url('/outages/feed') );
+        echo "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"Lousy Outages Alerts\" href=\"{$href}\" />\n";
+    }
+});
