@@ -113,6 +113,10 @@ function render_shortcode(): string {
             <?php foreach ( $provider_payloads as $provider ) :
                 $state_code = $provider['stateCode'] ?? 'unknown';
                 $incidents  = $provider['incidents'] ?? [];
+                $prealert   = ( isset( $provider['prealert'] ) && is_array( $provider['prealert'] ) ) ? $provider['prealert'] : [];
+                $risk       = isset( $prealert['risk'] ) ? (int) $prealert['risk'] : ( isset( $provider['risk'] ) ? (int) $provider['risk'] : 0 );
+                $prealert_summary = isset( $prealert['summary'] ) ? (string) $prealert['summary'] : '';
+                $prealert_measures = isset( $prealert['measures'] ) && is_array( $prealert['measures'] ) ? $prealert['measures'] : [];
                 ?>
                 <article class="lo-card" data-provider-id="<?php echo esc_attr( $provider['id'] ); ?>">
                     <div class="lo-head">
@@ -120,11 +124,33 @@ function render_shortcode(): string {
                         <span class="lo-pill <?php echo esc_attr( $state_code ); ?>">
                             <?php echo esc_html( $provider['state'] ); ?>
                         </span>
+                        <?php if ( $risk >= 20 ) : ?>
+                            <span class="lo-pill risk">
+                                RISK: <?php echo esc_html( $risk ); ?>/100
+                            </span>
+                        <?php endif; ?>
                     </div>
                     <?php if ( ! empty( $provider['error'] ) ) : ?>
                         <span class="lo-error">Error: <?php echo esc_html( (string) $provider['error'] ); ?></span>
                     <?php endif; ?>
                     <p class="lo-summary"><?php echo esc_html( $provider['summary'] ); ?></p>
+                    <?php if ( $risk > 0 ) :
+                        $measure_bits = [];
+                        if ( isset( $prealert_measures['latency_ms'] ) && '' !== (string) $prealert_measures['latency_ms'] ) {
+                            $measure_bits[] = 'Latency ' . (int) $prealert_measures['latency_ms'] . ' ms';
+                        }
+                        if ( isset( $prealert_measures['baseline_ms'] ) && '' !== (string) $prealert_measures['baseline_ms'] ) {
+                            $measure_bits[] = 'Baseline ' . (int) $prealert_measures['baseline_ms'] . ' ms';
+                        }
+                        ?>
+                        <div class="lo-prealert">
+                            <strong>Pre-alerts</strong>
+                            <p class="lo-prealert-summary"><?php echo esc_html( $prealert_summary ?: 'Early warning signals detected.' ); ?></p>
+                            <?php if ( ! empty( $measure_bits ) ) : ?>
+                                <p class="lo-prealert-metrics"><?php echo esc_html( implode( ' • ', $measure_bits ) ); ?></p>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
                     <?php if ( ! empty( $provider['snark'] ) ) : ?>
                         <p class="lo-snark"><?php echo esc_html( (string) $provider['snark'] ); ?></p>
                     <?php endif; ?>

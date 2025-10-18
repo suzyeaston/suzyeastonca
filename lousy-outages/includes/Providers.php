@@ -23,6 +23,12 @@ class Providers {
                     'current'    => 'https://status.slack.com/api/v2.0.0/current',
                     'status_url' => 'https://status.slack.com/',
                 ],
+                'zscaler' => [
+                    'name'       => 'Zscaler',
+                    'type'       => 'statuspage',
+                    'summary'    => 'https://status.zscaler.com/api/v2/summary.json',
+                    'status_url' => 'https://status.zscaler.com/',
+                ],
                 'cloudflare' => [
                     'name'   => 'Cloudflare',
                     'type'   => 'statuspage',
