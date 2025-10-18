@@ -122,6 +122,12 @@
     card.className = 'lo-card';
     card.dataset.providerId = provider.id;
 
+    var prealert = provider && typeof provider.prealert === 'object' ? provider.prealert : {};
+    var risk = Number(prealert && prealert.risk != null ? prealert.risk : provider.risk || 0);
+    if (!isFinite(risk)) {
+      risk = 0;
+    }
+
     var head = document.createElement('div');
     head.className = 'lo-head';
 
@@ -136,6 +142,13 @@
     pill.textContent = provider.state || formatImpact(stateCode);
     head.appendChild(pill);
 
+    if (risk >= 20) {
+      var riskPill = document.createElement('span');
+      riskPill.className = 'lo-pill risk';
+      riskPill.textContent = 'RISK: ' + Math.round(risk) + '/100';
+      head.appendChild(riskPill);
+    }
+
     card.appendChild(head);
 
     if (provider.error) {
@@ -149,6 +162,39 @@
     summary.className = 'lo-summary';
     summary.textContent = provider.summary || 'No status summary available.';
     card.appendChild(summary);
+
+    if (risk > 0) {
+      var measures = prealert && typeof prealert.measures === 'object' ? prealert.measures : {};
+      var measureBits = [];
+      if (measures && measures.latency_ms !== undefined && measures.latency_ms !== null && measures.latency_ms !== '') {
+        measureBits.push('Latency ' + Number(measures.latency_ms) + ' ms');
+      }
+      if (measures && measures.baseline_ms !== undefined && measures.baseline_ms !== null && measures.baseline_ms !== '') {
+        measureBits.push('Baseline ' + Number(measures.baseline_ms) + ' ms');
+      }
+
+      var prealertBlock = document.createElement('div');
+      prealertBlock.className = 'lo-prealert';
+
+      var preTitle = document.createElement('strong');
+      preTitle.textContent = 'Pre-alerts';
+      prealertBlock.appendChild(preTitle);
+
+      var preSummary = document.createElement('p');
+      preSummary.className = 'lo-prealert-summary';
+      var summaryText = prealert && prealert.summary ? String(prealert.summary) : 'Early warning signals detected.';
+      preSummary.textContent = summaryText;
+      prealertBlock.appendChild(preSummary);
+
+      if (measureBits.length) {
+        var preMeasures = document.createElement('p');
+        preMeasures.className = 'lo-prealert-metrics';
+        preMeasures.textContent = measureBits.join(' • ');
+        prealertBlock.appendChild(preMeasures);
+      }
+
+      card.appendChild(prealertBlock);
+    }
 
     if (provider.snark) {
       var snark = document.createElement('p');

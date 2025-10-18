@@ -20,6 +20,7 @@ require_once LOUSY_OUTAGES_PATH . 'includes/I18n.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Detector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/SMS.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Email.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Precursor.php';
 require_once LOUSY_OUTAGES_PATH . 'public/shortcode.php';
 
 use LousyOutages\Providers;
@@ -28,6 +29,7 @@ use LousyOutages\Fetcher;
 use LousyOutages\Detector;
 use LousyOutages\SMS;
 use LousyOutages\Email;
+use LousyOutages\Precursor;
 
 add_action(
     'lousy_outages_log',
@@ -92,22 +94,60 @@ function lousy_outages_run_poll(): int {
     $email     = new Email();
     $statuses  = lousy_outages_collect_statuses( true );
     $processed = 0;
+    $threshold = (int) get_option( 'lousy_outages_prealert_threshold', 60 );
+    if ( $threshold < 0 ) {
+        $threshold = 0;
+    }
+    if ( $threshold > 100 ) {
+        $threshold = 100;
+    }
+    $email_prealerts = ! empty( get_option( 'lousy_outages_prealert_email', '1' ) );
+    $sms_prealerts   = ! empty( get_option( 'lousy_outages_prealert_sms', '1' ) );
+    $prealert_last   = get_option( 'lousy_outages_prealert_last', [] );
+    if ( ! is_array( $prealert_last ) ) {
+        $prealert_last = [];
+    }
+    $prealert_updated = false;
 
     foreach ( $statuses as $id => $state ) {
         $transition = $detector->detect( $id, $state );
         $store->update( $id, $state );
         $processed++;
-        if ( ! $transition ) {
-            continue;
-        }
+        $prealert = ( isset( $state['prealert'] ) && is_array( $state['prealert'] ) ) ? $state['prealert'] : [];
+        $risk     = isset( $prealert['risk'] ) ? (int) $prealert['risk'] : ( isset( $state['risk'] ) ? (int) $state['risk'] : 0 );
 
-        if ( in_array( $transition['new'], [ 'degraded', 'outage' ], true ) ) {
-            $sms->send_alert( $state['name'], $transition['new'], $state['message'], $state['url'] );
-            $email->send_alert( $state['name'], $transition['new'], $state['message'], $state['url'] );
-        } elseif ( 'operational' === $transition['new'] && in_array( $transition['old'], [ 'degraded', 'outage' ], true ) ) {
-            $sms->send_recovery( $state['name'], $state['url'] );
-            $email->send_recovery( $state['name'], $state['url'] );
+        if ( $transition ) {
+            if ( in_array( $transition['new'], [ 'degraded', 'outage' ], true ) ) {
+                $sms->send_alert( $state['name'], $transition['new'], $state['message'], $state['url'] );
+                $email->send_alert( $state['name'], $transition['new'], $state['message'], $state['url'] );
+            } elseif ( 'operational' === $transition['new'] && in_array( $transition['old'], [ 'degraded', 'outage' ], true ) ) {
+                $sms->send_recovery( $state['name'], $state['url'] );
+                $email->send_recovery( $state['name'], $state['url'] );
+            }
+        } else {
+            $status_code = strtolower( (string) ( $state['status'] ?? '' ) );
+            if ( 'operational' === $status_code && $risk >= $threshold && $risk > 0 && ( $email_prealerts || $sms_prealerts ) ) {
+                $last_sent = isset( $prealert_last[ $id ] ) ? (int) $prealert_last[ $id ] : 0;
+                $elapsed   = time() - $last_sent;
+                if ( $last_sent <= 0 || $elapsed >= 3600 ) {
+                    $summary = ! empty( $prealert['summary'] ) ? $prealert['summary'] : 'Early warning detected';
+                    if ( $email_prealerts ) {
+                        $email->send_alert( $state['name'], 'early-warning', $summary, $state['url'] );
+                    }
+                    if ( $sms_prealerts ) {
+                        $sms->send_alert( $state['name'], 'early-warning', $summary, $state['url'] );
+                    }
+                    if ( $email_prealerts || $sms_prealerts ) {
+                        $prealert_last[ $id ] = time();
+                        $prealert_updated      = true;
+                    }
+                }
+            }
         }
+    }
+
+    if ( $prealert_updated ) {
+        update_option( 'lousy_outages_prealert_last', $prealert_last, false );
     }
 
     $timestamp = gmdate( 'c' );
@@ -130,9 +170,17 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
     $fetcher   = new Fetcher( $timeout );
     $providers = Providers::enabled();
     $results   = [];
+    $precursor = new Precursor();
 
     foreach ( $providers as $id => $provider ) {
-        $results[ $id ] = $fetcher->fetch( $provider );
+        if ( ! isset( $provider['id'] ) ) {
+            $provider['id'] = $id;
+        }
+        $state = $fetcher->fetch( $provider );
+        $pre   = $precursor->evaluate( $provider, $state );
+        $state['risk']     = $pre['risk'];
+        $state['prealert'] = $pre;
+        $results[ $id ]    = $state;
     }
 
     $ttl = (int) apply_filters( 'lousy_outages_cache_ttl', 90 );
@@ -186,6 +234,77 @@ function lousy_outages_create_page() {
 /**
  * Settings page.
  */
+function lousy_outages_sanitize_prealert_threshold( $value ) {
+    $value = is_numeric( $value ) ? (int) $value : 0;
+    if ( $value < 0 ) {
+        $value = 0;
+    }
+    if ( $value > 100 ) {
+        $value = 100;
+    }
+    return $value;
+}
+
+function lousy_outages_sanitize_checkbox( $value ) {
+    return empty( $value ) ? '0' : '1';
+}
+
+function lousy_outages_sanitize_probes_option( $value ) {
+    $output = [];
+
+    if ( is_string( $value ) ) {
+        $lines = preg_split( '/\r\n|\r|\n/', $value );
+        if ( is_array( $lines ) ) {
+            foreach ( $lines as $line ) {
+                $line = trim( (string) $line );
+                if ( '' === $line ) {
+                    continue;
+                }
+                $parts = explode( '|', $line, 2 );
+                $id    = isset( $parts[0] ) ? sanitize_key( trim( (string) $parts[0] ) ) : '';
+                $url   = isset( $parts[1] ) ? esc_url_raw( trim( (string) $parts[1] ) ) : '';
+                if ( '' === $id || '' === $url ) {
+                    continue;
+                }
+                if ( ! isset( $output[ $id ] ) ) {
+                    $output[ $id ] = [];
+                }
+                if ( ! in_array( $url, $output[ $id ], true ) ) {
+                    $output[ $id ][] = $url;
+                }
+            }
+        }
+        return $output;
+    }
+
+    if ( is_array( $value ) ) {
+        foreach ( $value as $id => $urls ) {
+            $key = sanitize_key( (string) $id );
+            if ( '' === $key ) {
+                continue;
+            }
+            $urls = is_array( $urls ) ? $urls : [ $urls ];
+            foreach ( $urls as $url ) {
+                if ( ! is_string( $url ) ) {
+                    continue;
+                }
+                $url = esc_url_raw( trim( $url ) );
+                if ( '' === $url ) {
+                    continue;
+                }
+                if ( ! isset( $output[ $key ] ) ) {
+                    $output[ $key ] = [];
+                }
+                if ( ! in_array( $url, $output[ $key ], true ) ) {
+                    $output[ $key ][] = $url;
+                }
+            }
+        }
+    }
+
+    return $output;
+}
+
 add_action( 'admin_menu', function () {
     add_options_page( 'Lousy Outages', 'Lousy Outages', 'manage_options', 'lousy-outages', 'lousy_outages_settings_page' );
 } );
@@ -198,16 +317,76 @@ add_action( 'admin_init', function () {
     register_setting( 'lousy_outages', 'lousy_outages_email' );
     register_setting( 'lousy_outages', 'lousy_outages_interval' );
     register_setting( 'lousy_outages', 'lousy_outages_providers' );
+    register_setting(
+        'lousy_outages',
+        'lousy_outages_prealert_threshold',
+        [
+            'sanitize_callback' => 'lousy_outages_sanitize_prealert_threshold',
+            'default'           => 60,
+        ]
+    );
+    register_setting(
+        'lousy_outages',
+        'lousy_outages_prealert_email',
+        [
+            'sanitize_callback' => 'lousy_outages_sanitize_checkbox',
+            'default'           => '1',
+        ]
+    );
+    register_setting(
+        'lousy_outages',
+        'lousy_outages_prealert_sms',
+        [
+            'sanitize_callback' => 'lousy_outages_sanitize_checkbox',
+            'default'           => '1',
+        ]
+    );
+    register_setting(
+        'lousy_outages',
+        'lousy_outages_probes',
+        [
+            'sanitize_callback' => 'lousy_outages_sanitize_probes_option',
+            'default'           => [],
+        ]
+    );
 } );
 
 function lousy_outages_settings_page() {
     $providers       = Providers::list();
     $default_enabled = array_keys( array_filter( $providers, static fn( $prov ) => $prov['enabled'] ?? true ) );
     $enabled         = get_option( 'lousy_outages_providers', $default_enabled );
-    $interval  = get_option( 'lousy_outages_interval', 300 );
-    $store     = new Store();
-    $states    = $store->get_all();
-    $notice    = get_transient( 'lousy_outages_notice' );
+    $interval        = get_option( 'lousy_outages_interval', 300 );
+    $store           = new Store();
+    $states          = $store->get_all();
+    $notice          = get_transient( 'lousy_outages_notice' );
+    $threshold       = (int) get_option( 'lousy_outages_prealert_threshold', 60 );
+    if ( $threshold < 0 ) {
+        $threshold = 0;
+    }
+    if ( $threshold > 100 ) {
+        $threshold = 100;
+    }
+    $prealert_email = get_option( 'lousy_outages_prealert_email', '1' );
+    $prealert_sms   = get_option( 'lousy_outages_prealert_sms', '1' );
+    $probes_config  = get_option( 'lousy_outages_probes', [] );
+    if ( ! is_array( $probes_config ) ) {
+        $probes_config = [];
+    }
+    $probe_lines = [];
+    foreach ( $probes_config as $prov_id => $urls ) {
+        $urls = is_array( $urls ) ? $urls : [ $urls ];
+        foreach ( $urls as $url ) {
+            if ( ! is_string( $url ) ) {
+                continue;
+            }
+            $url = trim( $url );
+            if ( '' === $url ) {
+                continue;
+            }
+            $probe_lines[] = sanitize_key( (string) $prov_id ) . '|' . $url;
+        }
+    }
+    $probes_text = implode( "\n", $probe_lines );
     if ( $notice ) {
         $type = ! empty( $notice['type'] ) && 'error' === $notice['type'] ? 'notice-error' : 'notice-success';
         printf( '<div class="notice %1$s"><p>%2$s</p></div>', esc_attr( $type ), esc_html( (string) $notice['message'] ) );
@@ -288,6 +467,30 @@ function lousy_outages_settings_page() {
                                 <?php echo esc_html( $prov['name'] ); ?><?php if ( ! $enabled_default ) : ?> <span class="description">(optional)</span><?php endif; ?>
                             </label><br>
                         <?php endforeach; ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="lo_prealert_threshold">Early-warning threshold</label></th>
+                    <td>
+                        <input id="lo_prealert_threshold" type="number" min="0" max="100" name="lousy_outages_prealert_threshold" value="<?php echo esc_attr( $threshold ); ?>">
+                        <p class="description">Send early-warning notifications when the risk score meets or exceeds this value.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Pre-alert notifications</th>
+                    <td>
+                        <input type="hidden" name="lousy_outages_prealert_email" value="0">
+                        <label><input type="checkbox" name="lousy_outages_prealert_email" value="1" <?php checked( ! empty( $prealert_email ) ); ?>> Email</label><br>
+                        <input type="hidden" name="lousy_outages_prealert_sms" value="0">
+                        <label><input type="checkbox" name="lousy_outages_prealert_sms" value="1" <?php checked( ! empty( $prealert_sms ) ); ?>> SMS</label>
+                        <p class="description">Control whether early-warning emails and SMS messages are sent.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="lo_probes">Probe URLs</label></th>
+                    <td>
+                        <textarea id="lo_probes" name="lousy_outages_probes" rows="5" cols="60"><?php echo esc_textarea( $probes_text ); ?></textarea>
+                        <p class="description">One per line: provider_id|https://probe.example.com/ping. Leave blank for defaults.</p>
                     </td>
                 </tr>
                 <tr>
@@ -446,6 +649,24 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
     $label      = Fetcher::status_label( $status );
     $updated_at = ! empty( $state['updated_at'] ) ? (string) $state['updated_at'] : $fetched_at;
     $incidents  = [];
+    $prealert   = [];
+    if ( isset( $state['prealert'] ) && is_array( $state['prealert'] ) ) {
+        $prealert = $state['prealert'];
+    }
+    $risk = isset( $prealert['risk'] ) ? (int) $prealert['risk'] : ( isset( $state['risk'] ) ? (int) $state['risk'] : 0 );
+    $prealert['risk'] = $risk;
+    if ( ! isset( $prealert['summary'] ) ) {
+        $prealert['summary'] = $risk > 0 ? 'Early warning detected' : 'No early signals';
+    }
+    if ( ! isset( $prealert['signals'] ) || ! is_array( $prealert['signals'] ) ) {
+        $prealert['signals'] = [];
+    }
+    if ( ! isset( $prealert['measures'] ) || ! is_array( $prealert['measures'] ) ) {
+        $prealert['measures'] = [];
+    }
+    if ( ! isset( $prealert['updated_at'] ) ) {
+        $prealert['updated_at'] = $updated_at;
+    }
     static $provider_urls = null;
     if ( null === $provider_urls ) {
         $provider_urls = [];
@@ -489,6 +710,8 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
         'snark'      => $state['snark'] ?? '',
         'incidents'  => $incidents,
         'error'      => $state['error'] ?? null,
+        'risk'       => $risk,
+        'prealert'   => $prealert,
     ];
 }
 
@@ -570,6 +793,13 @@ add_action( 'template_redirect', function () {
         }
 
         $items = [];
+        $prealert_threshold = (int) get_option( 'lousy_outages_prealert_threshold', 60 );
+        if ( $prealert_threshold < 0 ) {
+            $prealert_threshold = 0;
+        }
+        if ( $prealert_threshold > 100 ) {
+            $prealert_threshold = 100;
+        }
         foreach ( $providers as $provider ) {
             $provider_id      = $provider['id'];
             $provider_name    = $provider['name'];
@@ -577,6 +807,11 @@ add_action( 'template_redirect', function () {
             $provider_url     = $provider['url'] ?: home_url( '/lousy-outages/' );
             $provider_state   = $provider['stateCode'];
             $provider_updated = $provider['updatedAt'];
+            $prealert         = ( isset( $provider['prealert'] ) && is_array( $provider['prealert'] ) ) ? $provider['prealert'] : [];
+            $prealert_risk    = isset( $prealert['risk'] ) ? (int) $prealert['risk'] : ( isset( $provider['risk'] ) ? (int) $provider['risk'] : 0 );
+            $prealert_signals = isset( $prealert['signals'] ) && is_array( $prealert['signals'] ) ? $prealert['signals'] : [];
+            $prealert_summary = isset( $prealert['summary'] ) ? (string) $prealert['summary'] : '';
+            $prealert_measures = isset( $prealert['measures'] ) && is_array( $prealert['measures'] ) ? $prealert['measures'] : [];
 
             if ( ! empty( $provider['incidents'] ) ) {
                 foreach ( $provider['incidents'] as $incident ) {
@@ -600,6 +835,34 @@ add_action( 'template_redirect', function () {
                     'link'        => $provider_url,
                     'guid'        => $provider_id . '-' . md5( $provider_state . $provider_summary ),
                     'pubDate'     => lousy_outages_format_rss_date( $provider_updated ?: $fetched ),
+                ];
+            }
+
+            if ( empty( $provider['incidents'] ) && 'operational' === $provider_state && $prealert_risk >= $prealert_threshold ) {
+                $signals_text = $prealert_signals ? implode( ', ', $prealert_signals ) : 'early-warning';
+                $measure_bits = [];
+                if ( isset( $prealert_measures['latency_ms'] ) && '' !== (string) $prealert_measures['latency_ms'] ) {
+                    $measure_bits[] = 'Latency ' . (int) $prealert_measures['latency_ms'] . ' ms';
+                }
+                if ( isset( $prealert_measures['baseline_ms'] ) && '' !== (string) $prealert_measures['baseline_ms'] ) {
+                    $measure_bits[] = 'Baseline ' . (int) $prealert_measures['baseline_ms'] . ' ms';
+                }
+                $description_bits = [];
+                if ( $prealert_summary ) {
+                    $description_bits[] = $prealert_summary;
+                }
+                if ( ! empty( $measure_bits ) ) {
+                    $description_bits[] = implode( ' • ', $measure_bits );
+                }
+                if ( empty( $description_bits ) ) {
+                    $description_bits[] = $provider_summary;
+                }
+                $items[] = [
+                    'title'       => sprintf( '[EARLY WARNING] %s: %s (RISK %d)', $provider_name, $signals_text, $prealert_risk ),
+                    'description' => implode( ' — ', $description_bits ),
+                    'link'        => $provider_url,
+                    'guid'        => $provider_id . '-early-' . md5( $signals_text . $prealert_risk . $provider_updated ),
+                    'pubDate'     => lousy_outages_format_rss_date( ( isset( $prealert['updated_at'] ) ? $prealert['updated_at'] : $provider_updated ) ?: $fetched ),
                 ];
             }
         }

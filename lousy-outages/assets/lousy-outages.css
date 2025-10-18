@@ -124,6 +124,10 @@
 .lo-pill.maintenance {
   color: #aaa;
 }
+.lo-pill.risk {
+  color: #ffb347;
+  border-color: #ffb347;
+}
 
 .lo-summary,
 .lo-snark {
@@ -147,6 +151,31 @@
 .lo-status-link:hover,
 .lo-status-link:focus {
   text-decoration: underline;
+}
+.lo-prealert {
+  background: rgba(255, 179, 71, 0.15);
+  border: 1px solid rgba(255, 179, 71, 0.4);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #ffe9c2;
+}
+.lo-prealert strong {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.lo-prealert-summary {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #fff2d6;
+}
+.lo-prealert-metrics {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #ffd9a0;
 }
 
 .lo-inc {
