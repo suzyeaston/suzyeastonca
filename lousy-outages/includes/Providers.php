@@ -41,6 +41,12 @@ class Providers {
                     'summary'=> 'https://status.openai.com/api/v2/summary.json',
                     'status_url' => 'https://status.openai.com/',
                 ],
+                'atlassian' => [
+                    'name'       => 'Atlassian',
+                    'type'       => 'statuspage',
+                    'summary'    => 'https://status.atlassian.com/api/v2/summary.json',
+                    'status_url' => 'https://status.atlassian.com/',
+                ],
                 'aws' => [
                     'name'      => 'AWS',
                     'type'      => 'rss',
@@ -65,6 +71,12 @@ class Providers {
                     'summary'=> 'https://status.digitalocean.com/api/v2/summary.json',
                     'status_url' => 'https://status.digitalocean.com/',
                 ],
+                'gitlab' => [
+                    'name'       => 'GitLab',
+                    'type'       => 'statuspage',
+                    'summary'    => 'https://status.gitlab.com/api/v2/summary.json',
+                    'status_url' => 'https://status.gitlab.com/',
+                ],
                 'netlify' => [
                     'name'   => 'Netlify',
                     'type'   => 'statuspage',
@@ -76,6 +88,24 @@ class Providers {
                     'type'   => 'statuspage',
                     'summary'=> 'https://www.vercel-status.com/api/v2/summary.json',
                     'status_url' => 'https://www.vercel-status.com/',
+                ],
+                'okta' => [
+                    'name'       => 'Okta',
+                    'type'       => 'statuspage',
+                    'summary'    => 'https://status.okta.com/api/v2/summary.json',
+                    'status_url' => 'https://status.okta.com/',
+                ],
+                'pagerduty' => [
+                    'name'       => 'PagerDuty',
+                    'type'       => 'statuspage',
+                    'summary'    => 'https://status.pagerduty.com/api/v2/summary.json',
+                    'status_url' => 'https://status.pagerduty.com/',
+                ],
+                'zoom' => [
+                    'name'       => 'Zoom',
+                    'type'       => 'statuspage',
+                    'summary'    => 'https://status.zoom.us/api/v2/summary.json',
+                    'status_url' => 'https://status.zoom.us/',
                 ],
                 'downdetector-ca' => [
                     'name'      => 'Downdetector (CA Aggregate)',

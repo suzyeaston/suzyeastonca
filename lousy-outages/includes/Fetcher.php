@@ -56,7 +56,7 @@ class Fetcher {
             'headers' => [
                 'Accept'        => 'application/json, application/xml, text/xml;q=0.9,*/*;q=0.8',
                 'Cache-Control' => 'no-cache',
-                'User-Agent'    => 'LousyOutagesBot/3.0 (' . home_url() . ')',
+                'User-Agent'    => 'Mozilla/5.0 (compatible; LousyOutagesBot/3.1; +' . home_url() . ')',
             ],
         ]);
 

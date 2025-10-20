@@ -10,15 +10,22 @@ Monitor third‑party service status and get SMS and email alerts when things br
 | slack | Slack | https://status.slack.com/api/v2.0.0/summary.json |
 | cloudflare | Cloudflare | https://www.cloudflarestatus.com/api/v2/summary.json |
 | openai | OpenAI | https://status.openai.com/api/v2/summary.json |
+| atlassian | Atlassian | https://status.atlassian.com/api/v2/summary.json |
 | aws | AWS | https://status.aws.amazon.com/rss/all.rss |
 | azure | Azure | https://azurestatuscdn.azureedge.net/en-us/status/feed/ |
 | gcp | Google Cloud | https://status.cloud.google.com/feed.atom |
 | digitalocean | DigitalOcean | https://status.digitalocean.com/api/v2/summary.json |
+| gitlab | GitLab | https://status.gitlab.com/api/v2/summary.json |
 | netlify | Netlify | https://www.netlifystatus.com/api/v2/summary.json |
 | vercel | Vercel | https://www.vercel-status.com/api/v2/summary.json |
+| okta | Okta | https://status.okta.com/api/v2/summary.json |
+| pagerduty | PagerDuty | https://status.pagerduty.com/api/v2/summary.json |
+| zoom | Zoom | https://status.zoom.us/api/v2/summary.json |
 | downdetector-ca | Downdetector (CA Aggregate) | https://downdetector.ca/archive/?format=rss |
 
 Downdetector is disabled by default because the RSS feed is unofficial and can disappear; enable it from the settings page if it loads for you. When the feed is unreachable, the adapter reports an `unknown` state with an error badge rather than failing the whole poll.
+
+When enabled, downdetector trends are folded into the early-warning engine. If Downdetector publishes fresh reports for a service, the dashboard raises the provider’s risk score, surfaces the headlines in the card UI, and pushes a `[EARLY WARNING]` item into the RSS feed for quick triage.
 
 To add or remove a provider, edit `includes/Providers.php` or use the checkboxes under **Settings → Lousy Outages** in wp-admin.
 
