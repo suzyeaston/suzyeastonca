@@ -1,3 +1,299 @@
+if (typeof window === 'undefined') {
+  const root = typeof globalThis !== 'undefined' ? globalThis : global;
+  const state = {
+    root,
+    pollMs: 300000,
+    countdownTimer: null,
+    refreshTimer: null,
+    lastFetched: null,
+    providers: [],
+    config: {},
+    fetch: null,
+    doc: null,
+    container: null,
+    grid: null,
+    metaFetched: null,
+    metaCountdown: null,
+    refreshButton: null
+  };
+
+  const STATUS_MAP = {
+    operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
+    degraded: { code: 'degraded', label: 'Degraded', className: 'status--degraded' },
+    outage: { code: 'outage', label: 'Outage', className: 'status--outage' },
+    maintenance: { code: 'maintenance', label: 'Maintenance', className: 'status--maintenance' },
+    unknown: { code: 'unknown', label: 'Unknown', className: 'status--unknown' }
+  };
+
+  const SNARKS = {
+    aws: [
+      'us-east-1 is a lifestyle choice.',
+      'Somewhere a Lambda forgot to set its alarm.'
+    ],
+    github: ['Push it real good, but maybe later.'],
+    slack: ['Time to revive the email thread.'],
+    default: ['Hold tight—someone’s jiggling the ethernet cable.']
+  };
+
+  function normalizeStatus(status) {
+    const key = String(status || '').toLowerCase();
+    return STATUS_MAP[key] || STATUS_MAP.unknown;
+  }
+
+  function snarkOutage(provider, status, summary) {
+    const statusKey = String(status || '').toLowerCase();
+    if ('operational' === statusKey || 'maintenance' === statusKey) {
+      return summary || 'All systems operational.';
+    }
+    const providerKey = String(provider || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const lines = SNARKS[providerKey] || SNARKS.default;
+    const index = Math.min(lines.length - 1, Math.floor(Math.random() * lines.length));
+    const chosen = lines[index] || '';
+    return chosen ? chosen : summary || 'Something feels off.';
+  }
+
+  function formatTimestamp(iso) {
+    if (!iso) {
+      return '';
+    }
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    return new Intl.DateTimeFormat(undefined, {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }).format(date);
+  }
+
+  function formatRelative(ms) {
+    if (!Number.isFinite(ms)) {
+      return '';
+    }
+    if (ms <= 0) {
+      return 'Ready to refresh';
+    }
+    const seconds = Math.round(ms / 1000);
+    if (seconds < 60) {
+      return seconds + 's until refresh';
+    }
+    const minutes = Math.floor(seconds / 60);
+    const rem = seconds % 60;
+    return minutes + 'm ' + rem + 's until refresh';
+  }
+
+  function setLoading(isLoading) {
+    if (state.refreshButton) {
+      state.refreshButton.disabled = !!isLoading;
+    }
+  }
+
+  function updateMeta(meta) {
+    if (!meta) {
+      return;
+    }
+    if (meta.fetchedAt) {
+      state.lastFetched = meta.fetchedAt;
+    }
+    if (state.metaFetched) {
+      state.metaFetched.textContent = state.lastFetched ? formatTimestamp(state.lastFetched) : '—';
+    }
+  }
+
+  function tickCountdown() {
+    if (!state.metaCountdown) {
+      return;
+    }
+    if (!state.lastFetched) {
+      state.metaCountdown.textContent = 'Waiting for first refresh…';
+      return;
+    }
+    const diff = state.pollMs - (Date.now() - new Date(state.lastFetched).getTime());
+    state.metaCountdown.textContent = formatRelative(diff);
+  }
+
+  function startCountdown() {
+    if (state.countdownTimer) {
+      state.root.clearInterval(state.countdownTimer);
+    }
+    tickCountdown();
+    state.countdownTimer = state.root.setInterval(tickCountdown, 1000);
+  }
+
+  function scheduleNextRefresh() {
+    if (state.refreshTimer) {
+      state.root.clearTimeout(state.refreshTimer);
+    }
+    const delay = Math.max(60, state.pollMs);
+    state.refreshTimer = state.root.setTimeout(function () {
+      refreshNow(false);
+    }, delay);
+  }
+
+  function renderProviders(list) {
+    state.providers = Array.isArray(list) ? list : [];
+    if (!state.doc) {
+      return;
+    }
+    state.providers.forEach(provider => {
+      if (!provider || !provider.id) {
+        return;
+      }
+      const selector = '.provider-card[data-id="' + provider.id + '"]';
+      const card = state.doc.querySelector(selector);
+      if (!card) {
+        return;
+      }
+      const normalized = normalizeStatus(provider.stateCode || provider.status || provider.statusCode);
+      const badge = card.querySelector('.status-badge');
+      if (badge) {
+        badge.textContent = normalized.label;
+        badge.className = 'status-badge ' + normalized.className;
+        if (badge.dataset) {
+          badge.dataset.status = normalized.code;
+        }
+      }
+      const summary = card.querySelector('.provider-card__summary');
+      if (summary) {
+        summary.textContent = provider.summary || provider.message || '';
+      }
+      const snark = card.querySelector('.provider-card__snark');
+      if (snark) {
+        snark.textContent = snarkOutage(provider.name || provider.provider || provider.id, normalized.label, provider.summary || provider.message || '');
+      }
+      const link = card.querySelector('.provider-details .provider-link');
+      if (link && provider.url) {
+        link.setAttribute('href', provider.url);
+      }
+      const incidentsWrap = card.querySelector('.provider-details .incidents');
+      if (incidentsWrap) {
+        incidentsWrap.children.length = 0;
+        const incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+        if (!incidents.length) {
+          const empty = state.doc.createElement('p');
+          empty.className = 'incident-empty';
+          empty.textContent = 'No active incidents. Go write a chorus.';
+          incidentsWrap.appendChild(empty);
+        } else {
+          incidents.forEach(item => {
+            const entry = state.doc.createElement('article');
+            entry.className = 'incident';
+            const heading = state.doc.createElement('h4');
+            heading.className = 'incident__title';
+            heading.textContent = item.title || 'Incident';
+            entry.appendChild(heading);
+            const meta = state.doc.createElement('p');
+            meta.className = 'incident__meta';
+            const impact = item.impact ? String(item.impact).replace(/^[a-z]/, c => c.toUpperCase()) : 'Unknown';
+            const updated = item.updatedAt || item.updated_at;
+            meta.textContent = impact + (updated ? ' • ' + formatTimestamp(updated) : '');
+            entry.appendChild(meta);
+            const body = state.doc.createElement('p');
+            body.className = 'incident__summary';
+            body.textContent = item.summary || '';
+            entry.appendChild(body);
+            incidentsWrap.appendChild(entry);
+          });
+        }
+      }
+    });
+  }
+
+  function refreshNow(force) {
+    if (!state.fetch || !state.config || !state.config.endpoint) {
+      return Promise.resolve();
+    }
+    let url = state.config.endpoint;
+    const separator = url.indexOf('?') === -1 ? '?' : '&';
+    url += separator + '_=' + Date.now();
+    if (force) {
+      url += '&refresh=1';
+    }
+    setLoading(true);
+    return state.fetch(url, { credentials: 'same-origin' })
+      .then(res => {
+        if (!res || !res.ok) {
+          const status = res ? res.status : 0;
+          throw new Error('HTTP ' + status);
+        }
+        return res.json();
+      })
+      .then(payload => {
+        renderProviders(payload.providers || []);
+        updateMeta(payload.meta || {});
+        startCountdown();
+        scheduleNextRefresh();
+      })
+      .catch(error => {
+        if (state.metaCountdown) {
+          state.metaCountdown.textContent = 'Refresh failed: ' + error.message;
+        }
+        scheduleNextRefresh();
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }
+
+  function stopAutoRefresh() {
+    if (state.countdownTimer) {
+      state.root.clearInterval(state.countdownTimer);
+      state.countdownTimer = null;
+    }
+    if (state.refreshTimer) {
+      state.root.clearTimeout(state.refreshTimer);
+      state.refreshTimer = null;
+    }
+  }
+
+  function init(config) {
+    stopAutoRefresh();
+    state.config = config || {};
+    state.pollMs = Number(state.config.pollInterval) || 300000;
+    if (!Number.isFinite(state.pollMs) || state.pollMs <= 0) {
+      state.pollMs = 300000;
+    }
+    state.doc = state.config.document || state.root.document || (typeof document !== 'undefined' ? document : null);
+    if (!state.doc || typeof state.doc.querySelector !== 'function') {
+      return;
+    }
+    state.container = state.config.container || state.doc.getElementById('lousy-outages') || state.doc.querySelector('.lousy-outages-board');
+    if (!state.container) {
+      return;
+    }
+    state.grid = state.container.querySelector('.providers-grid') || state.container.querySelector('[data-lo-grid]');
+    state.metaFetched = state.container.querySelector('[data-lo-fetched]') || state.container.querySelector('.last-updated span');
+    state.metaCountdown = state.container.querySelector('[data-lo-countdown]') || state.container.querySelector('.board-subtitle');
+    state.refreshButton = state.container.querySelector('[data-lo-refresh]') || state.container.querySelector('.coin-btn');
+    state.fetch = state.config.fetch || state.root.fetch;
+    state.lastFetched = state.config.initial && state.config.initial.meta ? state.config.initial.meta.fetchedAt : null;
+
+    renderProviders((state.config.initial && state.config.initial.providers) || state.providers);
+    updateMeta(state.config.initial ? state.config.initial.meta : null);
+
+    if (state.refreshButton && typeof state.refreshButton.addEventListener === 'function') {
+      state.refreshButton.addEventListener('click', function () {
+        refreshNow(true);
+      });
+    }
+
+    refreshNow(false);
+  }
+
+  module.exports = {
+    init,
+    stopAutoRefresh,
+    normalizeStatus,
+    snarkOutage
+  };
+  return;
+}
+
 (function (window) {
   'use strict';
 
@@ -171,6 +467,24 @@
       }
       if (measures && measures.baseline_ms !== undefined && measures.baseline_ms !== null && measures.baseline_ms !== '') {
         measureBits.push('Baseline ' + Number(measures.baseline_ms) + ' ms');
+      }
+      if (
+        measures &&
+        measures.downdetector_reports !== undefined &&
+        measures.downdetector_reports !== null &&
+        measures.downdetector_reports !== ''
+      ) {
+        var reportCount = Number(measures.downdetector_reports);
+        if (isFinite(reportCount) && reportCount > 0) {
+          var reportLabel = reportCount === 1 ? 'report' : 'reports';
+          var reportText = 'Downdetector ' + reportCount + ' ' + reportLabel;
+          var age = measures.downdetector_age_minutes;
+          var ageNumber = Number(age);
+          if (isFinite(ageNumber) && ageNumber >= 0) {
+            reportText += ' (latest ' + Math.round(ageNumber) + 'm ago)';
+          }
+          measureBits.push(reportText);
+        }
       }
 
       var prealertBlock = document.createElement('div');

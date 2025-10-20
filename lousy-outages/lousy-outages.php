@@ -16,6 +16,7 @@ define( 'LOUSY_OUTAGES_PATH', plugin_dir_path( __FILE__ ) );
 require_once LOUSY_OUTAGES_PATH . 'includes/Providers.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Store.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Fetcher.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Downdetector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/I18n.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Detector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/SMS.php';
@@ -663,6 +664,9 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
     }
     if ( ! isset( $prealert['measures'] ) || ! is_array( $prealert['measures'] ) ) {
         $prealert['measures'] = [];
+    }
+    if ( ! isset( $prealert['details'] ) || ! is_array( $prealert['details'] ) ) {
+        $prealert['details'] = [];
     }
     if ( ! isset( $prealert['updated_at'] ) ) {
         $prealert['updated_at'] = $updated_at;

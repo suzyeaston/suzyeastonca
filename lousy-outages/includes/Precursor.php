@@ -5,9 +5,11 @@ namespace LousyOutages;
 
 class Precursor {
     private $timeout;
+    private $downdetector;
 
-    public function __construct($timeout = 5) {
-        $this->timeout = max(2, (int) $timeout);
+    public function __construct($timeout = 5, ?Downdetector $downdetector = null) {
+        $this->timeout      = max(2, (int) $timeout);
+        $this->downdetector = $downdetector ?: new Downdetector();
     }
 
     public function evaluate(array $provider, array $current_state): array {
@@ -15,6 +17,7 @@ class Precursor {
         $signals  = array();
         $measures = array('latency_ms' => null, 'baseline_ms' => null, 'http_ok' => null);
         $summary  = 'No early signals';
+        $details  = array();
         $probes   = $this->probe_urls_for($provider);
 
         $lat_ms  = null;
@@ -26,6 +29,7 @@ class Precursor {
             $resp      = wp_remote_request($probe_url, array(
                 'method'  => 'HEAD',
                 'timeout' => $this->timeout,
+                'headers' => array('User-Agent' => $this->user_agent()),
             ));
             $lat_ms = (int) round((microtime(true) - $t0) * 1000);
             $measures['latency_ms'] = $lat_ms;
@@ -34,11 +38,12 @@ class Precursor {
                 $http_ok = false;
             } else {
                 $code = (int) wp_remote_retrieve_response_code($resp);
-                if (405 === $code) {
+                if (in_array($code, array(401, 403, 405), true)) {
                     $t0   = microtime(true);
                     $resp = wp_remote_request($probe_url, array(
                         'method'  => 'GET',
                         'timeout' => $this->timeout,
+                        'headers' => array('User-Agent' => $this->user_agent()),
                     ));
                     $lat_ms = (int) round((microtime(true) - $t0) * 1000);
                     $measures['latency_ms'] = $lat_ms;
@@ -78,8 +83,17 @@ class Precursor {
             $signals[] = 'component_degraded';
         }
 
+        $this->enrich_with_downdetector($provider, $signals, $measures, $details, $risk);
+
         if ($risk > 0) {
-            $summary = 'Early warning: ' . implode(', ', $signals);
+            $summary_bits = array();
+            if (!empty($details['downdetector']['titles'])) {
+                $summary_bits[] = implode(' • ', $details['downdetector']['titles']);
+            }
+            if (empty($summary_bits)) {
+                $summary_bits[] = 'signals detected: ' . implode(', ', $signals);
+            }
+            $summary = 'Early warning: ' . implode(' • ', array_filter($summary_bits));
         }
 
         return array(
@@ -88,7 +102,46 @@ class Precursor {
             'signals'    => $signals,
             'measures'   => $measures,
             'updated_at' => gmdate('c'),
+            'details'    => $details,
         );
+    }
+
+    private function enrich_with_downdetector(array $provider, array &$signals, array &$measures, array &$details, int &$risk): void
+    {
+        if (!$this->downdetector) {
+            return;
+        }
+
+        $matches = $this->downdetector->matches($provider);
+        if (empty($matches)) {
+            return;
+        }
+
+        $signals[] = 'downdetector_trend';
+        $count     = count($matches);
+        $latest    = $matches[0];
+        $age       = isset($latest['age_minutes']) ? (int) $latest['age_minutes'] : null;
+
+        $measures['downdetector_reports']     = $count;
+        $measures['downdetector_age_minutes'] = $age;
+
+        $titles = array();
+        foreach (array_slice($matches, 0, 3) as $match) {
+            if (!empty($match['title'])) {
+                $titles[] = (string) $match['title'];
+            }
+        }
+
+        $details['downdetector'] = array(
+            'matches' => $matches,
+            'titles'  => $titles,
+        );
+
+        if ($age !== null && $age <= 30) {
+            $risk += 55;
+        } else {
+            $risk += 40;
+        }
     }
 
     private function probe_urls_for(array $provider): array {
@@ -157,5 +210,10 @@ class Precursor {
         update_option($key, $all, false);
 
         return (int) round((float) $entry['avg']);
+    }
+
+    private function user_agent(): string {
+        $site = home_url();
+        return 'Mozilla/5.0 (compatible; LousyOutagesBot/3.1; +' . $site . ')';
     }
 }
