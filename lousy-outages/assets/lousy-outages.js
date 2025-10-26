@@ -292,6 +292,28 @@ if (typeof window === 'undefined') {
       showStatusMessage(state.refreshingLabel);
     }
 
+    const fetchStatusPayload = () => {
+      let url = state.config.endpoint;
+      const separator = url.indexOf('?') === -1 ? '?' : '&';
+      url += separator + '_=' + Date.now();
+      if (force) {
+        url += '&refresh=1';
+      }
+      return state.fetch(url, { credentials: 'same-origin' })
+        .then(res => {
+          if (!res || !res.ok) {
+            const status = res ? res.status : 0;
+            throw new Error('HTTP ' + status);
+          }
+          return res.json();
+        })
+        .then(payload => {
+          processPayload(payload, force);
+          scheduleNextRefresh();
+          return payload;
+        });
+    };
+
     let manualRequest = Promise.resolve(null);
     if (force && state.refreshEndpoint) {
       const options = {
@@ -319,29 +341,15 @@ if (typeof window === 'undefined') {
           scheduleNextRefresh();
           return payload;
         }
-        let url = state.config.endpoint;
-        const separator = url.indexOf('?') === -1 ? '?' : '&';
-        url += separator + '_=' + Date.now();
-        if (force) {
-          url += '&refresh=1';
-        }
-        return state.fetch(url, { credentials: 'same-origin' })
-          .then(res => {
-            if (!res || !res.ok) {
-              const status = res ? res.status : 0;
-              throw new Error('HTTP ' + status);
-            }
-            return res.json();
-          })
-          .then(payload => {
-            processPayload(payload, force);
-            scheduleNextRefresh();
-            return payload;
-          });
+        return fetchStatusPayload();
       })
       .catch(error => {
         if (force) {
-          showStatusMessage('Status fetch failed: ' + error.message, 6000);
+          return fetchStatusPayload().catch(fallbackError => {
+            showStatusMessage('Status fetch failed: ' + fallbackError.message, 6000);
+            scheduleNextRefresh();
+            throw fallbackError;
+          });
         }
         scheduleNextRefresh();
         throw error;
@@ -857,9 +865,11 @@ if (typeof window === 'undefined') {
         }
         return fetchStatus(true);
       })
-      .catch(function (error) {
-        showStatusMessage('Status fetch failed: ' + error.message, 6000);
-        throw error;
+      .catch(function () {
+        return fetchStatus(true).catch(function (error) {
+          showStatusMessage('Status fetch failed: ' + error.message, 6000);
+          throw error;
+        });
       })
       .finally(function () {
         setLoading(false);
