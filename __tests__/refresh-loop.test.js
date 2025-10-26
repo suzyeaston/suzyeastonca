@@ -75,3 +75,73 @@ test('polls at configured interval without stacking timers', async () => {
   const thirdCount = mockFetch.callCount();
   assert.equal(thirdCount, secondCount + 1);
 });
+
+test('manual refresh falls back to status endpoint when refresh endpoint fails', async () => {
+  const now = new Date().toISOString();
+  mockFetch.mockImplementation((url, options = {}) => {
+    if (options && options.method === 'POST') {
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({})
+      });
+    }
+    return Promise.resolve({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          providers: [
+            {
+              id: 'github',
+              provider: 'GitHub',
+              name: 'GitHub',
+              stateCode: 'operational',
+              state: 'Operational',
+              summary: '',
+              incidents: [],
+              updatedAt: now
+            }
+          ],
+          meta: { fetchedAt: now }
+        })
+    });
+  });
+
+  app.init({
+    endpoint: '/wp-json/lousy-outages/v1/status',
+    pollInterval: 200,
+    refreshEndpoint: '/wp-json/lousy/v1/refresh',
+    refreshNonce: 'test-nonce',
+    initial: {
+      meta: { fetchedAt: now },
+      providers: [
+        {
+          id: 'github',
+          name: 'GitHub',
+          state: 'Operational',
+          summary: '',
+          incidents: []
+        }
+      ]
+    }
+  });
+
+  await flushPromises();
+
+  const button = document.querySelector('.coin-btn');
+  button.dispatchEvent({ type: 'click' });
+
+  await flushPromises();
+  await wait(50);
+  await flushPromises();
+
+  const calls = mockFetch.calls;
+  assert.equal(calls.length, 3);
+  assert.equal(calls[1][0], '/wp-json/lousy/v1/refresh');
+  assert.ok(calls[2][0].includes('/wp-json/lousy-outages/v1/status'));
+  assert.ok(calls[2][0].includes('refresh=1'));
+
+  const countdown = document.querySelector('.board-subtitle');
+  assert.ok(!countdown.textContent.startsWith('Status fetch failed'));
+  assert.equal(button.disabled, false);
+});
