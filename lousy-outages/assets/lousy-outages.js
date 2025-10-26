@@ -418,8 +418,7 @@ if (typeof window === 'undefined') {
     normalizeStatus,
     snarkOutage
   };
-  return;
-}
+} else {
 
 (function (window) {
   'use strict';
@@ -886,3 +885,5 @@ if (typeof window === 'undefined') {
   updateMeta(config.initial ? config.initial.meta : null);
   startCountdown();
 })(window);
+
+}
