@@ -82,6 +82,13 @@ if ( file_exists( $lousy_outages ) ) {
 
 add_filter( 'lousy_outages_voice_enabled', '__return_true' );
 
+function lousy_outages_feed_autodiscovery() {
+    if ( is_front_page() || is_page_template( 'page-lousy-outages.php' ) || is_page( 'lousy-outages' ) ) {
+        echo '\n<link rel="alternate" type="application/rss+xml" title="Lousy Outages" href="' . esc_url( home_url( '/lousy-outages/feed/' ) ) . '" />\n';
+    }
+}
+add_action( 'wp_head', 'lousy_outages_feed_autodiscovery' );
+
 // =========================================
 // 2. DISABLE AUTOMATIC PARAGRAPH FORMATTING
 // =========================================

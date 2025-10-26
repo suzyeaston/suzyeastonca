@@ -23,52 +23,40 @@
   color: #a7ff9a;
 }
 
-.lo-teaser .lo-teaser-meta {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.lo-status-line {
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+  font-weight: 700;
 }
 
-.lo-teaser .providers {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 1rem;
-  margin: 0 auto;
+.lo-status-line--alert {
+  color: #ff8299;
 }
 
-.lo-teaser .card {
-  display: block;
-  background: #111;
-  border: 2px solid #0f0;
-  padding: 0.5rem;
+.lo-status-line--ok {
+  color: #a7ff9a;
+}
+
+.lo-status-line .lo-status-link {
+  color: inherit;
   text-decoration: none;
-  color: #0f0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.lo-teaser .card:hover {
-  background: #0f0;
-  color: #111;
+.lo-status-line .lo-status-link:hover {
+  text-decoration: underline;
 }
 
-.lo-teaser .dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 4px;
-}
-
-.lo-teaser .status-up {
-  background: #00ff66;
-}
-
-.lo-teaser .status-warn {
-  background: #ffcc00;
-}
-
+.lo-teaser .lo-teaser-meta,
+.lo-teaser .providers,
+.lo-teaser .card,
+.lo-teaser .dot,
+.lo-teaser .status-up,
+.lo-teaser .status-warn,
 .lo-teaser .status-down {
-  background: #ff004c;
+  display: none;
 }
 
 .lo-teaser .caption {

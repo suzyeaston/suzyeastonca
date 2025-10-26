@@ -61,16 +61,28 @@ function render_shortcode(): string {
         $provider_payloads[] = $payload;
     }
 
+    $refresh_nonce = wp_create_nonce( 'wp_rest' );
+
     $config = [
-        'endpoint'     => esc_url_raw( rest_url( 'lousy-outages/v1/status' ) ),
-        'pollInterval' => lousy_outages_get_poll_interval(),
-        'initial'      => [
+        'endpoint'        => esc_url_raw( rest_url( 'lousy-outages/v1/status' ) ),
+        'pollInterval'    => lousy_outages_get_poll_interval(),
+        'refreshEndpoint' => esc_url_raw( rest_url( 'lousy/v1/refresh' ) ),
+        'refreshNonce'    => $refresh_nonce,
+        'initial'         => [
             'providers' => $provider_payloads,
             'meta'      => [ 'fetchedAt' => $fetched_at ],
         ],
     ];
 
     wp_localize_script( 'lousy-outages', 'LousyOutagesConfig', $config );
+    wp_localize_script(
+        'lousy-outages',
+        'LOUSY_OUTAGES',
+        [
+            'restUrl' => esc_url_raw( rest_url( 'lousy/v1/refresh' ) ),
+            'nonce'   => $refresh_nonce,
+        ]
+    );
 
     $format_datetime = static function ( ?string $iso ): string {
         if ( empty( $iso ) ) {
@@ -84,9 +96,8 @@ function render_shortcode(): string {
         return wp_date( $format, $timestamp );
     };
 
-    $raw_feed_url  = home_url( '/outages/feed' );
+    $raw_feed_url  = home_url( '/lousy-outages/feed/' );
     $feed_url      = esc_url( $raw_feed_url );
-    $fallback_feed = esc_url( add_query_arg( 'lousy_outages_feed', '1', home_url( '/' ) ) );
 
     ob_start();
     ?>
@@ -106,7 +117,7 @@ function render_shortcode(): string {
                 </a>
             </div>
             <noscript>
-                <p><a class="lo-link" href="<?php echo $fallback_feed; ?>">RSS (fallback)</a></p>
+                <p><a class="lo-link" href="<?php echo $feed_url; ?>">RSS (fallback)</a></p>
             </noscript>
         </div>
         <div class="lo-grid" data-lo-grid>
@@ -117,8 +128,9 @@ function render_shortcode(): string {
                 $risk       = isset( $prealert['risk'] ) ? (int) $prealert['risk'] : ( isset( $provider['risk'] ) ? (int) $provider['risk'] : 0 );
                 $prealert_summary = isset( $prealert['summary'] ) ? (string) $prealert['summary'] : '';
                 $prealert_measures = isset( $prealert['measures'] ) && is_array( $prealert['measures'] ) ? $prealert['measures'] : [];
+                $anchor     = sanitize_title( $provider['id'] );
                 ?>
-                <article class="lo-card" data-provider-id="<?php echo esc_attr( $provider['id'] ); ?>">
+                <article id="provider-<?php echo esc_attr( $anchor ); ?>" class="lo-card" data-provider-id="<?php echo esc_attr( $provider['id'] ); ?>">
                     <div class="lo-head">
                         <h3 class="lo-title"><?php echo esc_html( $provider['name'] ); ?></h3>
                         <span class="lo-pill <?php echo esc_attr( $state_code ); ?>">

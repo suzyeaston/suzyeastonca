@@ -50,3 +50,8 @@ Place `[lousy_outages]` in any page or post to render the status table. A page t
 ## Development
 
 Polling runs via WP-Cron (`lousy_outages_poll`). Results are stored in an option and also exposed at `/wp-json/lousy-outages/v1/status`.
+
+## How to subscribe to RSS
+
+- RSS reader: add `https://suzyeaston.ca/lousy-outages/feed/` to NetNewsWire, Feedly, or your preferred client to receive incident alerts.
+- Slack or email: point an automation tool such as IFTTT or Zapier at the same feed (trigger: “New RSS item”) and forward the payload to a Slack webhook, email address, or other notification channel.
