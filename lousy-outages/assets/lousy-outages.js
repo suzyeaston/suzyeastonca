@@ -14,7 +14,13 @@ if (typeof window === 'undefined') {
     grid: null,
     metaFetched: null,
     metaCountdown: null,
-    refreshButton: null
+    refreshButton: null,
+    statusMessageTimer: null,
+    countdownPaused: false,
+    refreshEndpoint: '',
+    refreshNonce: '',
+    refreshLabel: 'Refresh now',
+    refreshingLabel: 'Refreshing…'
   };
 
   const STATUS_MAP = {
@@ -87,9 +93,48 @@ if (typeof window === 'undefined') {
     return minutes + 'm ' + rem + 's until refresh';
   }
 
+  function slugify(value) {
+    if (!value) {
+      return '';
+    }
+    return String(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function showStatusMessage(message, revertAfterMs) {
+    if (!state.metaCountdown) {
+      return;
+    }
+    state.countdownPaused = true;
+    state.metaCountdown.textContent = message;
+    if (state.statusMessageTimer) {
+      state.root.clearTimeout(state.statusMessageTimer);
+      state.statusMessageTimer = null;
+    }
+    if (revertAfterMs && revertAfterMs > 0) {
+      state.statusMessageTimer = state.root.setTimeout(function () {
+        state.statusMessageTimer = null;
+        resumeCountdown();
+      }, revertAfterMs);
+    }
+  }
+
+  function resumeCountdown() {
+    if (state.statusMessageTimer) {
+      state.root.clearTimeout(state.statusMessageTimer);
+      state.statusMessageTimer = null;
+    }
+    state.countdownPaused = false;
+    tickCountdown();
+  }
+
   function setLoading(isLoading) {
     if (state.refreshButton) {
       state.refreshButton.disabled = !!isLoading;
+      state.refreshButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+      state.refreshButton.textContent = isLoading ? state.refreshingLabel : state.refreshLabel;
     }
   }
 
@@ -107,6 +152,9 @@ if (typeof window === 'undefined') {
 
   function tickCountdown() {
     if (!state.metaCountdown) {
+      return;
+    }
+    if (state.countdownPaused) {
       return;
     }
     if (!state.lastFetched) {
@@ -204,39 +252,104 @@ if (typeof window === 'undefined') {
     });
   }
 
+  function processPayload(payload, fromManual) {
+    if (!payload) {
+      throw new Error('Empty payload');
+    }
+    renderProviders(payload.providers || []);
+    const meta = payload.meta || {};
+    if (fromManual && payload.refreshedAt && !meta.fetchedAt) {
+      meta.fetchedAt = payload.refreshedAt;
+    }
+    updateMeta(meta);
+    const errors = Array.isArray(payload.errors) ? payload.errors : [];
+    if (fromManual && errors.length) {
+      const names = errors
+        .map(item => {
+          if (!item) {
+            return '';
+          }
+          return item.name || item.provider || item.id || '';
+        })
+        .filter(Boolean);
+      const message = names.length
+        ? 'Refreshed with issues: ' + names.join(', ')
+        : 'Refreshed with provider errors.';
+      showStatusMessage(message, 6000);
+    } else {
+      resumeCountdown();
+    }
+    startCountdown();
+    return payload;
+  }
+
   function refreshNow(force) {
     if (!state.fetch || !state.config || !state.config.endpoint) {
       return Promise.resolve();
     }
-    let url = state.config.endpoint;
-    const separator = url.indexOf('?') === -1 ? '?' : '&';
-    url += separator + '_=' + Date.now();
     if (force) {
-      url += '&refresh=1';
+      setLoading(true);
+      showStatusMessage(state.refreshingLabel);
     }
-    setLoading(true);
-    return state.fetch(url, { credentials: 'same-origin' })
-      .then(res => {
-        if (!res || !res.ok) {
-          const status = res ? res.status : 0;
-          throw new Error('HTTP ' + status);
-        }
-        return res.json();
-      })
+
+    let manualRequest = Promise.resolve(null);
+    if (force && state.refreshEndpoint) {
+      const options = {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {}
+      };
+      if (state.refreshNonce) {
+        options.headers['X-WP-Nonce'] = state.refreshNonce;
+      }
+      manualRequest = state.fetch(state.refreshEndpoint, options)
+        .then(res => {
+          if (!res || !res.ok) {
+            const status = res ? res.status : 0;
+            throw new Error('HTTP ' + status);
+          }
+          return res.json();
+        })
+        .then(payload => processPayload(payload, true));
+    }
+
+    return manualRequest
       .then(payload => {
-        renderProviders(payload.providers || []);
-        updateMeta(payload.meta || {});
-        startCountdown();
-        scheduleNextRefresh();
+        if (payload && payload.providers) {
+          scheduleNextRefresh();
+          return payload;
+        }
+        let url = state.config.endpoint;
+        const separator = url.indexOf('?') === -1 ? '?' : '&';
+        url += separator + '_=' + Date.now();
+        if (force) {
+          url += '&refresh=1';
+        }
+        return state.fetch(url, { credentials: 'same-origin' })
+          .then(res => {
+            if (!res || !res.ok) {
+              const status = res ? res.status : 0;
+              throw new Error('HTTP ' + status);
+            }
+            return res.json();
+          })
+          .then(payload => {
+            processPayload(payload, force);
+            scheduleNextRefresh();
+            return payload;
+          });
       })
       .catch(error => {
-        if (state.metaCountdown) {
-          state.metaCountdown.textContent = 'Refresh failed: ' + error.message;
+        if (force) {
+          showStatusMessage('Status fetch failed: ' + error.message, 6000);
         }
         scheduleNextRefresh();
+        throw error;
       })
       .finally(() => {
-        setLoading(false);
+        if (force) {
+          setLoading(false);
+        }
       });
   }
 
@@ -271,6 +384,12 @@ if (typeof window === 'undefined') {
     state.metaCountdown = state.container.querySelector('[data-lo-countdown]') || state.container.querySelector('.board-subtitle');
     state.refreshButton = state.container.querySelector('[data-lo-refresh]') || state.container.querySelector('.coin-btn');
     state.fetch = state.config.fetch || state.root.fetch;
+    state.refreshEndpoint = state.config.refreshEndpoint || (state.config.refresh && state.config.refresh.endpoint) || state.refreshEndpoint;
+    state.refreshNonce = state.config.refreshNonce || (state.config.refresh && state.config.refresh.nonce) || state.refreshNonce;
+    state.refreshingLabel = state.config.refreshingLabel || state.refreshingLabel;
+    if (state.refreshButton) {
+      state.refreshLabel = state.refreshButton.textContent || state.refreshLabel;
+    }
     state.lastFetched = state.config.initial && state.config.initial.meta ? state.config.initial.meta.fetchedAt : null;
 
     renderProviders((state.config.initial && state.config.initial.providers) || state.providers);
@@ -307,11 +426,18 @@ if (typeof window === 'undefined') {
   var metaCountdown = container.querySelector('[data-lo-countdown]');
   var refreshButton = container.querySelector('[data-lo-refresh]');
   var grid = container.querySelector('[data-lo-grid]');
+  var refreshConfig = window.LOUSY_OUTAGES || {};
+  var refreshEndpoint = config.refreshEndpoint || refreshConfig.restUrl || '';
+  var refreshNonce = refreshConfig.nonce || '';
 
   var pollMs = Number(config.pollInterval) || 300000;
   var countdownTimer = null;
   var lastFetched = config.initial && config.initial.meta ? config.initial.meta.fetchedAt : null;
   var providers = (config.initial && config.initial.providers) || [];
+  var refreshDefaultLabel = refreshButton ? (refreshButton.textContent || 'Refresh now') : 'Refresh now';
+  var refreshingLabel = 'Refreshing…';
+  var countdownPaused = false;
+  var statusMessageTimer = null;
 
   function formatTimestamp(iso) {
     if (!iso) {
@@ -354,6 +480,43 @@ if (typeof window === 'undefined') {
     }
     impact = String(impact);
     return impact.charAt(0).toUpperCase() + impact.slice(1);
+  }
+
+  function slugify(input) {
+    if (!input) {
+      return '';
+    }
+    return String(input)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function showStatusMessage(message, revertAfterMs) {
+    if (!metaCountdown) {
+      return;
+    }
+    countdownPaused = true;
+    metaCountdown.textContent = message;
+    if (statusMessageTimer) {
+      window.clearTimeout(statusMessageTimer);
+      statusMessageTimer = null;
+    }
+    if (revertAfterMs && revertAfterMs > 0) {
+      statusMessageTimer = window.setTimeout(function () {
+        statusMessageTimer = null;
+        resumeCountdown();
+      }, revertAfterMs);
+    }
+  }
+
+  function resumeCountdown() {
+    if (statusMessageTimer) {
+      window.clearTimeout(statusMessageTimer);
+      statusMessageTimer = null;
+    }
+    countdownPaused = false;
+    tickCountdown();
   }
 
   function buildIncidents(incidentList) {
@@ -417,6 +580,10 @@ if (typeof window === 'undefined') {
     var card = document.createElement('article');
     card.className = 'lo-card';
     card.dataset.providerId = provider.id;
+    var slug = slugify(provider && provider.id ? provider.id : '');
+    if (slug) {
+      card.id = 'provider-' + slug;
+    }
 
     var prealert = provider && typeof provider.prealert === 'object' ? provider.prealert : {};
     var risk = Number(prealert && prealert.risk != null ? prealert.risk : provider.risk || 0);
@@ -569,6 +736,9 @@ if (typeof window === 'undefined') {
     if (!metaCountdown) {
       return;
     }
+    if (countdownPaused) {
+      return;
+    }
     if (!lastFetched) {
       metaCountdown.textContent = 'Waiting for first refresh…';
       return;
@@ -589,14 +759,15 @@ if (typeof window === 'undefined') {
     if (!refreshButton) {
       return;
     }
-    refreshButton.disabled = isLoading;
+    refreshButton.disabled = !!isLoading;
+    refreshButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+    refreshButton.textContent = isLoading ? refreshingLabel : refreshDefaultLabel;
   }
 
-  function refreshNow(force) {
+  function fetchStatus(force) {
     if (!config.endpoint) {
-      return;
+      return Promise.resolve(null);
     }
-    setLoading(true);
     var url = config.endpoint;
     var separator = url.indexOf('?') === -1 ? '?' : '&';
     url += separator + '_=' + Date.now();
@@ -604,7 +775,7 @@ if (typeof window === 'undefined') {
       url += '&refresh=1';
     }
 
-    fetch(url, { credentials: 'same-origin' })
+    return fetch(url, { credentials: 'same-origin' })
       .then(function (res) {
         if (!res.ok) {
           throw new Error('HTTP ' + res.status);
@@ -617,12 +788,78 @@ if (typeof window === 'undefined') {
         }
         renderProviders(payload.providers || []);
         updateMeta(payload.meta || {});
+        resumeCountdown();
         startCountdown();
+        return payload;
       })
       .catch(function (error) {
-        if (metaCountdown) {
-          metaCountdown.textContent = 'Refresh failed: ' + error.message;
+        showStatusMessage('Status fetch failed: ' + error.message, 6000);
+        throw error;
+      });
+  }
+
+  function triggerManualRefresh() {
+    setLoading(true);
+    showStatusMessage(refreshingLabel);
+
+    var request;
+    if (refreshEndpoint) {
+      var options = {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {}
+      };
+      if (refreshNonce) {
+        options.headers['X-WP-Nonce'] = refreshNonce;
+      }
+      request = fetch(refreshEndpoint, options).then(function (res) {
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
         }
+        return res.json();
+      });
+    } else {
+      request = Promise.resolve(null);
+    }
+
+    return request
+      .then(function (payload) {
+        if (payload && typeof payload === 'object') {
+          var meta = payload.meta || {};
+          if (payload.refreshedAt && !meta.fetchedAt) {
+            meta.fetchedAt = payload.refreshedAt;
+          }
+          if (payload.providers) {
+            renderProviders(payload.providers);
+          }
+          if (meta) {
+            updateMeta(meta);
+          }
+          var errors = Array.isArray(payload.errors) ? payload.errors : [];
+          if (errors.length) {
+            var names = errors
+              .map(function (item) {
+                if (!item) {
+                  return '';
+                }
+                return item.name || item.provider || item.id || '';
+              })
+              .filter(Boolean);
+            var message = names.length
+              ? 'Refreshed with issues: ' + names.join(', ')
+              : 'Refreshed with provider errors.';
+            showStatusMessage(message, 6000);
+          } else {
+            resumeCountdown();
+          }
+          startCountdown();
+          return payload;
+        }
+        return fetchStatus(true);
+      })
+      .catch(function (error) {
+        showStatusMessage('Status fetch failed: ' + error.message, 6000);
+        throw error;
       })
       .finally(function () {
         setLoading(false);
@@ -631,7 +868,7 @@ if (typeof window === 'undefined') {
 
   if (refreshButton) {
     refreshButton.addEventListener('click', function () {
-      refreshNow(true);
+      triggerManualRefresh();
     });
   }
 

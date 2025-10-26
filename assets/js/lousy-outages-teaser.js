@@ -1,36 +1,45 @@
 (function(){
   const container = document.getElementById('lousy-outages-teaser');
-  if(!container) return;
-  const grid = container.querySelector('.providers');
-  const names = { github:'GitHub', slack:'Slack', cloudflare:'Cloudflare', openai:'OpenAI', aws:'AWS', azure:'Azure', gcp:'GCP' };
-  function statusClass(s){
-    if(s === 'operational') return 'status-up';
-    if(s === 'major_outage') return 'status-down';
-    return 'status-warn';
+  if (!container) return;
+
+  const summaryEl = container.querySelector('[data-lo-summary]');
+  if (!summaryEl) return;
+
+  const iso = summaryEl.getAttribute('data-incident-start');
+  if (!iso) return;
+
+  function formatRelative(date) {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    if (!isFinite(diff) || diff < 0) {
+      return 'just now';
+    }
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) {
+      return 'just now';
+    }
+    if (minutes < 60) {
+      return minutes + ' minute' + (minutes === 1 ? '' : 's') + ' ago';
+    }
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+      const rem = minutes % 60;
+      if (rem === 0) {
+        return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
+      }
+      return hours + 'h ' + rem + 'm ago';
+    }
+    const days = Math.floor(hours / 24);
+    return days + ' day' + (days === 1 ? '' : 's') + ' ago';
   }
-  function render(data){
-    grid.innerHTML='';
-    Object.keys(data).slice(0,6).forEach(id => {
-      const state = data[id];
-      const card = document.createElement('a');
-      card.className = 'card';
-      card.href = '/lousy-outages/';
-      const dot = document.createElement('span');
-      dot.className = 'dot ' + statusClass(state.status);
-      card.appendChild(dot);
-      const name = document.createElement('span');
-      name.textContent = names[id] || id;
-      card.appendChild(name);
-      grid.appendChild(card);
-    });
+
+  const startDate = new Date(iso);
+  if (isNaN(startDate.getTime())) return;
+
+  function update() {
+    summaryEl.setAttribute('data-relative', formatRelative(startDate));
   }
-  async function update(){
-    try {
-      const res = await fetch('/wp-json/lousy-outages/v1/status');
-      const data = await res.json();
-      render(data);
-    } catch(e) {}
-  }
+
   update();
   setInterval(update, 60000);
 })();

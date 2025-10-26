@@ -22,6 +22,9 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Detector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/SMS.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Email.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Precursor.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Api.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Feed.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Summary.php';
 require_once LOUSY_OUTAGES_PATH . 'public/shortcode.php';
 
 use LousyOutages\Providers;
@@ -31,6 +34,11 @@ use LousyOutages\Detector;
 use LousyOutages\SMS;
 use LousyOutages\Email;
 use LousyOutages\Precursor;
+use LousyOutages\Api;
+use LousyOutages\Feed;
+
+Api::bootstrap();
+Feed::bootstrap();
 
 add_action(
     'lousy_outages_log',
@@ -719,14 +727,6 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
     ];
 }
 
-function lousy_outages_format_rss_date( string $time ): string {
-    $timestamp = strtotime( $time );
-    if ( ! $timestamp ) {
-        $timestamp = time();
-    }
-    return gmdate( 'D, d M Y H:i:s +0000', $timestamp );
-}
-
 /**
  * REST endpoint exposing current status.
  */
@@ -768,186 +768,3 @@ add_action( 'rest_api_init', function () {
     ] );
 } );
 
-add_filter( 'query_vars', function ( $vars ) {
-    $vars[] = 'lousy_outages_api';
-    $vars[] = 'lousy_outages_feed';
-    return $vars;
-} );
-
-add_action( 'init', function () {
-    add_rewrite_rule( '^api/outages/?$', 'index.php?lousy_outages_api=1', 'top' );
-    add_rewrite_rule( '^outages/feed/?$', 'index.php?lousy_outages_feed=1', 'top' );
-} );
-
-add_action( 'template_redirect', function () {
-    $feed_flag = get_query_var( 'lousy_outages_feed' );
-    if ( ! empty( $feed_flag ) ) {
-        $store   = new Store();
-        $refresh = isset( $_GET['refresh'] ) ? filter_var( wp_unslash( $_GET['refresh'] ), FILTER_VALIDATE_BOOLEAN ) : false;
-        $fetched = gmdate( 'c' );
-        $data    = lousy_outages_collect_statuses( (bool) $refresh );
-
-        foreach ( $data as $id => $state ) {
-            $store->update( $id, $state );
-        }
-
-        $providers = [];
-        foreach ( $data as $id => $state ) {
-            $providers[] = lousy_outages_build_provider_payload( $id, $state, $fetched );
-        }
-
-        $items = [];
-        $prealert_threshold = (int) get_option( 'lousy_outages_prealert_threshold', 60 );
-        if ( $prealert_threshold < 0 ) {
-            $prealert_threshold = 0;
-        }
-        if ( $prealert_threshold > 100 ) {
-            $prealert_threshold = 100;
-        }
-        foreach ( $providers as $provider ) {
-            $provider_id      = $provider['id'];
-            $provider_name    = $provider['name'];
-            $provider_summary = $provider['summary'];
-            $provider_url     = $provider['url'] ?: home_url( '/lousy-outages/' );
-            $provider_state   = $provider['stateCode'];
-            $provider_updated = $provider['updatedAt'];
-            $prealert         = ( isset( $provider['prealert'] ) && is_array( $provider['prealert'] ) ) ? $provider['prealert'] : [];
-            $prealert_risk    = isset( $prealert['risk'] ) ? (int) $prealert['risk'] : ( isset( $provider['risk'] ) ? (int) $provider['risk'] : 0 );
-            $prealert_signals = isset( $prealert['signals'] ) && is_array( $prealert['signals'] ) ? $prealert['signals'] : [];
-            $prealert_summary = isset( $prealert['summary'] ) ? (string) $prealert['summary'] : '';
-            $prealert_measures = isset( $prealert['measures'] ) && is_array( $prealert['measures'] ) ? $prealert['measures'] : [];
-
-            if ( ! empty( $provider['incidents'] ) ) {
-                foreach ( $provider['incidents'] as $incident ) {
-                    $title       = sprintf( '%s: %s', $provider_name, $incident['title'] );
-                    $description = $incident['summary'] ?: $provider_summary;
-                    $link        = $incident['url'] ?: $provider_url;
-                    $updated     = $incident['updatedAt'] ?: $incident['startedAt'] ?: $provider_updated;
-
-                    $items[] = [
-                        'title'       => $title,
-                        'description' => $description,
-                        'link'        => $link,
-                        'guid'        => $provider_id . '-' . $incident['id'],
-                        'pubDate'     => lousy_outages_format_rss_date( $updated ?: $fetched ),
-                    ];
-                }
-            } elseif ( 'operational' !== $provider_state ) {
-                $items[] = [
-                    'title'       => sprintf( '%s: %s', $provider_name, $provider['state'] ),
-                    'description' => $provider_summary,
-                    'link'        => $provider_url,
-                    'guid'        => $provider_id . '-' . md5( $provider_state . $provider_summary ),
-                    'pubDate'     => lousy_outages_format_rss_date( $provider_updated ?: $fetched ),
-                ];
-            }
-
-            if ( empty( $provider['incidents'] ) && 'operational' === $provider_state && $prealert_risk >= $prealert_threshold ) {
-                $signals_text = $prealert_signals ? implode( ', ', $prealert_signals ) : 'early-warning';
-                $measure_bits = [];
-                if ( isset( $prealert_measures['latency_ms'] ) && '' !== (string) $prealert_measures['latency_ms'] ) {
-                    $measure_bits[] = 'Latency ' . (int) $prealert_measures['latency_ms'] . ' ms';
-                }
-                if ( isset( $prealert_measures['baseline_ms'] ) && '' !== (string) $prealert_measures['baseline_ms'] ) {
-                    $measure_bits[] = 'Baseline ' . (int) $prealert_measures['baseline_ms'] . ' ms';
-                }
-                $description_bits = [];
-                if ( $prealert_summary ) {
-                    $description_bits[] = $prealert_summary;
-                }
-                if ( ! empty( $measure_bits ) ) {
-                    $description_bits[] = implode( ' • ', $measure_bits );
-                }
-                if ( empty( $description_bits ) ) {
-                    $description_bits[] = $provider_summary;
-                }
-                $items[] = [
-                    'title'       => sprintf( '[EARLY WARNING] %s: %s (RISK %d)', $provider_name, $signals_text, $prealert_risk ),
-                    'description' => implode( ' — ', $description_bits ),
-                    'link'        => $provider_url,
-                    'guid'        => $provider_id . '-early-' . md5( $signals_text . $prealert_risk . $provider_updated ),
-                    'pubDate'     => lousy_outages_format_rss_date( ( isset( $prealert['updated_at'] ) ? $prealert['updated_at'] : $provider_updated ) ?: $fetched ),
-                ];
-            }
-        }
-
-        if ( empty( $items ) ) {
-            $items[] = [
-                'title'       => 'All systems operational',
-                'description' => 'No active incidents detected across monitored providers.',
-                'link'        => home_url( '/lousy-outages/' ),
-                'guid'        => 'lousy-outages-' . gmdate( 'Ymd' ),
-                'pubDate'     => lousy_outages_format_rss_date( $fetched ),
-            ];
-        }
-
-        $items      = array_slice( $items, 0, 30 );
-        $feed_title = get_bloginfo( 'name' ) . ' – Lousy Outages Alerts';
-        $feed_link  = home_url( '/lousy-outages/' );
-        $feed_desc  = 'Live incident alerts from the Lousy Outages dashboard.';
-
-        if ( function_exists( 'nocache_headers' ) ) {
-            nocache_headers();
-        }
-
-        header( 'Content-Type: application/rss+xml; charset=UTF-8' );
-
-        echo '<?xml version="1.0" encoding="UTF-8"?>';
-        ?>
-<rss version="2.0">
-  <channel>
-    <title><?php echo esc_html( $feed_title ); ?></title>
-    <link><?php echo esc_url( $feed_link ); ?></link>
-    <description><?php echo esc_html( $feed_desc ); ?></description>
-    <language>en-US</language>
-    <lastBuildDate><?php echo esc_html( lousy_outages_format_rss_date( gmdate( 'c' ) ) ); ?></lastBuildDate>
-    <?php foreach ( $items as $item ) : ?>
-      <item>
-        <title><?php echo esc_html( $item['title'] ); ?></title>
-        <link><?php echo esc_url( $item['link'] ); ?></link>
-        <guid isPermaLink="false"><?php echo esc_html( $item['guid'] ); ?></guid>
-        <pubDate><?php echo esc_html( $item['pubDate'] ); ?></pubDate>
-        <description><?php echo esc_html( $item['description'] ); ?></description>
-      </item>
-    <?php endforeach; ?>
-  </channel>
-</rss>
-        <?php
-        exit;
-    }
-
-    $flag = get_query_var( 'lousy_outages_api' );
-    if ( empty( $flag ) ) {
-        return;
-    }
-
-    $store   = new Store();
-    $refresh = isset( $_GET['refresh'] ) ? filter_var( wp_unslash( $_GET['refresh'] ), FILTER_VALIDATE_BOOLEAN ) : false;
-    $fetched = gmdate( 'c' );
-    $data    = lousy_outages_collect_statuses( (bool) $refresh );
-
-    foreach ( $data as $id => $state ) {
-        $store->update( $id, $state );
-    }
-
-    $providers = [];
-    foreach ( $data as $id => $state ) {
-        $providers[] = lousy_outages_build_provider_payload( $id, $state, $fetched );
-    }
-
-    if ( function_exists( 'nocache_headers' ) ) {
-        nocache_headers();
-    }
-
-    $payload = [
-        'providers' => $providers,
-        'meta'      => [
-            'fetchedAt'   => $fetched,
-            'generatedAt' => gmdate( 'c' ),
-            'fresh'       => (bool) $refresh,
-        ],
-    ];
-
-    wp_send_json( $payload );
-    exit;
-} );
