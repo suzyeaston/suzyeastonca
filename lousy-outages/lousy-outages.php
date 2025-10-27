@@ -194,10 +194,61 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
         $results[ $id ]    = $state;
     }
 
-    $ttl = (int) apply_filters( 'lousy_outages_cache_ttl', 90 );
-    set_transient( $cache_key, $results, max( 30, $ttl ) );
+    $ttl     = (int) apply_filters( 'lousy_outages_cache_ttl', 90 );
+    $payload = lousy_outages_make_serializable( $results );
+    set_transient( $cache_key, $payload, max( 30, $ttl ) );
 
-    return $results;
+    return $payload;
+}
+
+/**
+ * Ensure cached payload contains only serializable values.
+ *
+ * WordPress calls serialize() on transient payloads. If any provider response
+ * includes objects that implement __sleep() incorrectly (for example
+ * SimpleXMLElement instances coming from poorly formed RSS feeds) the
+ * serialization step fatals. To guard against that we recursively normalise
+ * provider results into arrays, scalars, or null.
+ */
+function lousy_outages_make_serializable( $value ) {
+    if ( is_array( $value ) ) {
+        $clean = [];
+        foreach ( $value as $key => $item ) {
+            $clean[ $key ] = lousy_outages_make_serializable( $item );
+        }
+        return $clean;
+    }
+
+    if ( $value instanceof \DateTimeInterface ) {
+        return gmdate( 'c', (int) $value->getTimestamp() );
+    }
+
+    if ( $value instanceof \JsonSerializable ) {
+        return lousy_outages_make_serializable( $value->jsonSerialize() );
+    }
+
+    if ( $value instanceof \SimpleXMLElement ) {
+        return lousy_outages_make_serializable( json_decode( wp_json_encode( $value ), true ) );
+    }
+
+    if ( is_object( $value ) ) {
+        if ( method_exists( $value, '__toString' ) ) {
+            return (string) $value;
+        }
+
+        $vars = get_object_vars( $value );
+        if ( ! empty( $vars ) ) {
+            return lousy_outages_make_serializable( $vars );
+        }
+
+        return null;
+    }
+
+    if ( is_resource( $value ) ) {
+        return null;
+    }
+
+    return $value;
 }
 
 function lousy_outages_get_poll_interval(): int {
