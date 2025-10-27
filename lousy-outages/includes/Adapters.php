@@ -134,6 +134,6 @@ function from_rss_atom(string $xml): array {
         'state'      => $state,
         'incidents'  => $items,
         'updated_at' => $items[0]['updated_at'] ?? null,
-        'raw'        => $feed,
+        'raw'        => $xml,
     ];
 }
