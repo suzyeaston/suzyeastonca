@@ -14,6 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'LOUSY_OUTAGES_PATH', plugin_dir_path( __FILE__ ) );
 
 require_once LOUSY_OUTAGES_PATH . 'includes/Providers.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Fetch.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Adapters.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Store.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Fetcher.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Downdetector.php';

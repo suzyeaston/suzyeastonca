@@ -3,6 +3,11 @@ declare(strict_types=1);
 
 namespace LousyOutages;
 
+use function Lousy\http_get;
+use function Lousy\Adapters\from_rss_atom;
+use function Lousy\Adapters\from_slack_current;
+use function Lousy\Adapters\from_statuspage_summary;
+
 class Fetcher {
     private const STATUS_LABELS = [
         'operational' => 'Operational',
@@ -12,7 +17,6 @@ class Fetcher {
         'unknown'     => 'Unknown',
     ];
 
-    // PHP 7.x safe (no typed property)
     private $timeout;
 
     public function __construct(int $timeout = 8) {
@@ -25,16 +29,16 @@ class Fetcher {
     }
 
     public function fetch(array $provider): array {
-        $id        = (string)($provider['id'] ?? '');
-        $name      = (string)($provider['name'] ?? $id);
-        $type      = strtolower((string)($provider['type'] ?? 'statuspage'));
-        $endpoint  = $this->resolve_endpoint($provider);
-        $statusUrl = isset($provider['status_url']) ? $provider['status_url'] : (isset($provider['url']) ? $provider['url'] : '');
+        $id        = (string) ($provider['id'] ?? '');
+        $name      = (string) ($provider['name'] ?? $id);
+        $type      = strtolower((string) ($provider['type'] ?? 'statuspage'));
+        $endpoint  = $this->resolve_endpoint($provider, $type);
+        $statusUrl = isset($provider['status_url']) ? $provider['status_url'] : ($provider['url'] ?? '');
 
         $defaults = [
             'id'           => $id,
             'name'         => $name,
-            'provider'     => isset($provider['provider']) ? $provider['provider'] : $name,
+            'provider'     => $provider['provider'] ?? $name,
             'status'       => 'unknown',
             'status_label' => self::status_label('unknown'),
             'summary'      => 'Waiting for status…',
@@ -45,252 +49,242 @@ class Fetcher {
             'error'        => null,
         ];
 
-        if (!$endpoint) {
+        if (! $endpoint) {
             $defaults['summary'] = 'No public status endpoint available';
             $defaults['message'] = $defaults['summary'];
             return $defaults;
         }
 
-        $response = wp_remote_get($endpoint, [
+        $optional = !empty($provider['optional']) || ('rss-optional' === $type);
+        $headers  = $this->build_headers($type);
+        $response = http_get($endpoint, [
             'timeout' => $this->timeout,
-            'headers' => [
-                'Accept'        => 'application/json, application/xml, text/xml;q=0.9,*/*;q=0.8',
-                'Cache-Control' => 'no-cache',
-                'User-Agent'    => 'Mozilla/5.0 (compatible; LousyOutagesBot/3.1; +' . home_url() . ')',
-            ],
+            'headers' => $headers,
         ]);
+        $adapterType = $type;
 
-        $optional = ('rss-optional' === $type);
-
-        if (is_wp_error($response)) {
-            if ($optional) { return $this->optional_unavailable($defaults, $response->get_error_message()); }
-            return $this->failed_defaults($defaults, 'request_failed', $response->get_error_message());
+        if (! $response['ok'] && 'statuspage' === $type && in_array((int) $response['status'], [401, 403, 404], true)) {
+            $fallback = $this->attempt_statuspage_history($provider);
+            if ($fallback) {
+                $response    = $fallback['response'];
+                $adapterType = $fallback['adapter'];
+            }
         }
 
-        $code = (int)wp_remote_retrieve_response_code($response);
-        if ($code >= 400) {
-            if ($optional) { return $this->optional_unavailable($defaults, 'HTTP ' . $code); }
-            return $this->failed_defaults($defaults, 'http_error', sprintf('HTTP %d response', $code));
+        if (! $response['ok']) {
+            $message = (string) ($response['message'] ?? '');
+            if ($optional) {
+                return $this->optional_unavailable($defaults, $message);
+            }
+            $error = (string) ($response['error'] ?? 'request_failed');
+            return $this->failed_defaults($defaults, $error, $message);
         }
 
-        $body = (string)wp_remote_retrieve_body($response);
+        $body = (string) ($response['body'] ?? '');
         if ('' === trim($body)) {
-            if ($optional) { return $this->optional_unavailable($defaults, 'Empty body'); }
+            if ($optional) {
+                return $this->optional_unavailable($defaults, 'Empty body');
+            }
             return $this->failed_defaults($defaults, 'empty_body', 'Empty response from status endpoint');
         }
 
-        if ('atom' === $type) {
-            $parsed = $this->parse_feed($provider, $body, 'atom');
-        } elseif ('rss' === $type || 'rss-optional' === $type) {
-            $parsed = $this->parse_feed($provider, $body, 'rss');
-        } elseif ('slack' === $type) {
-            $parsed = $this->parse_slack_current($body);
-        } else {
-            $parsed = $this->parse_statuspage($body);
-        }
-
-        $result = array_merge($defaults, $parsed);
-        $result['status']       = $this->normalize_status_code(isset($result['status']) ? $result['status'] : 'unknown');
-        $result['status_label'] = self::status_label($result['status']);
-        $result['summary']      = $this->sanitize(isset($result['summary']) ? $result['summary'] : '') ?: self::status_label($result['status']);
-        $result['message']      = $result['summary'];
-        $result['updated_at']   = isset($result['updated_at']) ? $result['updated_at'] : gmdate('c');
-        $result['incidents']    = $this->normalize_incidents(isset($result['incidents']) ? $result['incidents'] : []);
+        $normalized = $this->adapt_response($adapterType, $body);
+        $result     = $this->assemble_result($defaults, $normalized, $provider);
 
         return $result;
     }
 
-    private function resolve_endpoint(array $provider): ?string {
-        $type = strtolower((string)($provider['type'] ?? 'statuspage'));
-        $keys = [
-            'statuspage'   => 'summary',
-            'rss'          => 'rss',
-            'rss-optional' => 'rss',
-            'atom'         => 'atom',
-            'slack'        => 'current',
+    private function build_headers(string $type): array {
+        $ua      = 'LousyOutages/1.0 (+https://suzyeaston.ca)';
+        $accept  = 'application/json, application/xml, text/xml;q=0.9,*/*;q=0.8';
+        if (in_array($type, ['rss', 'atom'], true)) {
+            $accept = 'application/rss+xml, application/atom+xml, application/xml;q=0.9,*/*;q=0.8';
+        }
+
+        return [
+            'User-Agent'    => $ua,
+            'Accept'        => $accept,
+            'Cache-Control' => 'no-cache',
         ];
-        $key = isset($keys[$type]) ? $keys[$type] : 'summary';
-        $url = isset($provider[$key]) ? $provider[$key] : (isset($provider['endpoint']) ? $provider['endpoint'] : null);
-        if (!$url || !is_string($url)) { return null; }
-        return $url;
     }
 
-    private function parse_statuspage(string $body): array {
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            return ['status' => 'unknown', 'summary' => 'Unrecognized Statuspage payload'];
-        }
-        $indicator   = strtolower((string)($decoded['status']['indicator'] ?? ''));
-        $description = (string)($decoded['status']['description'] ?? '');
-        $map = [
-            'none'           => 'operational',
-            'minor'          => 'degraded',
-            'major'          => 'outage',
-            'critical'       => 'outage',
-            'maintenance'    => 'maintenance',
-            'partial_outage' => 'degraded',
-        ];
-        $status = isset($map[$indicator]) ? $map[$indicator] : $this->guess_status_from_text($description);
+    private function resolve_endpoint(array $provider, string $type): ?string {
+        $keys = ['url', 'summary', 'rss', 'atom', 'current', 'endpoint'];
 
-        $incidents = [];
-        foreach (['incidents','active_incidents'] as $key) {
-            if (empty($decoded[$key]) || !is_array($decoded[$key])) { continue; }
-            foreach ($decoded[$key] as $incident) {
-                if (!is_array($incident)) { continue; }
-                $norm = $this->normalize_statuspage_incident($incident);
-                if ($norm) { $incidents[] = $norm; }
+        foreach ($keys as $key) {
+            if (empty($provider[$key]) || ! is_string($provider[$key])) {
+                continue;
+            }
+            return $provider[$key];
+        }
+
+        return null;
+    }
+
+    private function attempt_statuspage_history(array $provider): ?array {
+        $urls = $this->statuspage_history_urls($provider);
+        if (!$urls) {
+            return null;
+        }
+
+        foreach ($urls as $entry) {
+            [$url, $adapter] = $entry;
+            $response = http_get($url, [
+                'timeout' => $this->timeout,
+                'headers' => $this->build_headers($adapter),
+            ]);
+
+            if ($response['ok'] && '' !== trim((string) ($response['body'] ?? ''))) {
+                return [
+                    'response' => $response,
+                    'adapter'  => $adapter,
+                ];
             }
         }
 
-        $summary = $description ?: (isset($incidents[0]['title']) ? $incidents[0]['title'] : 'All systems operational');
-
-        return [
-            'status'     => $status,
-            'summary'    => $summary,
-            'incidents'  => $incidents,
-            'updated_at' => $this->iso($decoded['page']['updated_at'] ?? null) ?: gmdate('c'),
-        ];
+        return null;
     }
 
-    private function parse_slack_current(string $body): array {
-        $data = json_decode($body, true);
-        if (!is_array($data)) {
-            return ['status'=>'unknown','summary'=>'Unrecognized Slack payload'];
+    private function statuspage_history_urls(array $provider): array {
+        $urls = [];
+        $base = '';
+
+        if (! empty($provider['status_url']) && is_string($provider['status_url'])) {
+            $base = trailingslashit($provider['status_url']);
+        } else {
+            $endpoint = $this->resolve_endpoint($provider, 'statuspage');
+            if ($endpoint) {
+                $trimmed = preg_replace('#/api/v\d+(?:\.\d+)*?/summary\.json$#', '/', $endpoint);
+                $base    = trailingslashit($trimmed ?? $endpoint);
+            }
         }
-        $title = (string)($data['title'] ?? '');
-        $date  = (string)($data['date'] ?? '');
-        $parts = ['connection','service','api','presence','notifications'];
-        $bad   = false;
-        foreach ($parts as $p) {
-            if (isset($data[$p]) && strtolower((string)$data[$p]) !== 'ok') { $bad = true; break; }
+
+        if ($base) {
+            $urls[] = [$base . 'history.rss', 'rss'];
+            $urls[] = [$base . 'history.atom', 'atom'];
         }
-        $text = strtolower($title);
-        $status = 'operational';
-        if ($bad) { $status = (strpos($text,'outage')!==false || strpos($text,'major')!==false || strpos($text,'critical')!==false || strpos($text,'down')!==false) ? 'outage' : 'degraded'; }
-        return [
-            'status'     => $status,
-            'summary'    => $title ?: 'All systems operational',
-            'incidents'  => [],
-            'updated_at' => $this->iso($date) ?: gmdate('c'),
-        ];
+
+        return $urls;
     }
 
-    private function parse_feed(array $provider, string $body, string $format): array {
-        $prev = libxml_use_internal_errors(true);
-        $xml  = simplexml_load_string($body);
-        libxml_clear_errors();
-        libxml_use_internal_errors($prev);
-        if (!$xml) { return ['status'=>'unknown','summary'=>'Unable to parse status feed']; }
-
-        $entries = [];
-        if ('atom' === $format && isset($xml->entry)) {
-            foreach ($xml->entry as $e) { $entries[] = $e; }
-        } elseif (isset($xml->channel->item)) {
-            foreach ($xml->channel->item as $i) { $entries[] = $i; }
+    private function adapt_response(string $type, string $body): array {
+        switch ($type) {
+            case 'slack':
+            case 'slack_current':
+                return from_slack_current($body);
+            case 'rss':
+            case 'atom':
+            case 'rss-optional':
+                return from_rss_atom($body);
+            default:
+                return from_statuspage_summary($body);
         }
-
-        if (!$entries) { return ['status'=>'operational','summary'=>'All systems operational','incidents'=>[]]; }
-
-        $incidents = [];
-        $highest = 'operational';
-        foreach ($entries as $entry) {
-            $data = $this->normalize_feed_entry($entry, $provider);
-            if (!$data) { continue; }
-            $incidents[] = $data;
-            if ('outage' === $data['impact']) { $highest = 'outage'; }
-            elseif ('degraded' === $data['impact'] && 'outage' !== $highest) { $highest = 'degraded'; }
-        }
-
-        $status  = $highest;
-        if ('operational' === $status && !empty($incidents)) { $status = 'degraded'; }
-
-        $summary = $incidents ? ($incidents[0]['title'] ?? 'Service disruption detected') : 'All systems operational';
-        $updated = $incidents ? ($incidents[0]['updated_at'] ?? ($incidents[0]['started_at'] ?? null)) : null;
-
-        return [
-            'status'     => $status,
-            'summary'    => $summary,
-            'incidents'  => $incidents,
-            'updated_at' => $updated ? $this->iso($updated) : gmdate('c'),
-        ];
     }
 
-    private function normalize_feed_entry(\SimpleXMLElement $entry, array $provider): ?array {
-        $title   = $this->sanitize((string)($entry->title ?? ''));
-        $summary = $this->sanitize((string)($entry->summary ?? ($entry->description ?? '')));
-        $link    = '';
+    private function assemble_result(array $defaults, array $normalized, array $provider): array {
+        $state   = strtolower((string) ($normalized['state'] ?? 'unknown'));
+        $status  = $this->normalize_status_code($state);
+        $incidents = $this->normalize_incidents($normalized['incidents'] ?? [], $provider, $status);
+        $summary   = $this->summarize($normalized, $incidents, $status);
 
-        if (isset($entry->link)) {
-            if (isset($entry->link['href'])) { $link = (string)$entry->link['href']; }
-            else { $link = (string)$entry->link; }
+        $result = $defaults;
+        $result['status']       = $status;
+        $result['status_label'] = self::status_label($status);
+        $result['summary']      = $summary;
+        $result['message']      = $summary;
+        $result['incidents']    = $incidents;
+        $result['state']        = $state;
+        $result['raw']          = $normalized['raw'] ?? null;
+
+        $updated = $this->iso($normalized['updated_at'] ?? null);
+        if (! $updated && ! empty($incidents)) {
+            $updated = $incidents[0]['updated_at'] ?? ($incidents[0]['started_at'] ?? null);
         }
-        if (isset($entry->guid) && !$link) { $link = (string)$entry->guid; }
+        $result['updated_at'] = $updated ?: $defaults['updated_at'];
 
-        $published = (string)($entry->pubDate ?? ($entry->published ?? ($entry->updated ?? '')));
-        $ts = $published ? strtotime($published) : false;
-        if ($ts && $ts < strtotime('-7 days')) { return null; }
-        $isoStart = $this->iso($published);
-
-        $text = strtolower($title . ' ' . $summary);
-        $impact = $this->guess_status_from_text($text);
-        if ('operational' === $impact && !$summary) { return null; }
-
-        return [
-            'id'         => substr(md5((string)($entry->guid ?? $title) . $published), 0, 12),
-            'title'      => $title ?: 'Incident',
-            'summary'    => $summary ?: $title,
-            'started_at' => $isoStart,
-            'updated_at' => $this->iso((string)($entry->updated ?? $published)) ?: $isoStart,
-            'impact'     => $impact,
-            'eta'        => '',
-            'url'        => $link ?: (isset($provider['status_url']) ? $provider['status_url'] : ''),
-        ];
+        return $result;
     }
 
-    private function normalize_statuspage_incident(array $incident): ?array {
-        $state = strtolower((string)($incident['status'] ?? ''));
-        if (in_array($state, ['resolved','completed','postmortem'], true)) { return null; }
-
-        $updates = [];
-        if (!empty($incident['incident_updates']) && is_array($incident['incident_updates'])) {
-            $updates = $incident['incident_updates'];
-            usort($updates, static function($a,$b){
-                $aTime = isset($a['created_at']) ? strtotime((string)$a['created_at']) : 0;
-                $bTime = isset($b['created_at']) ? strtotime((string)$b['created_at']) : 0;
-                return $bTime <=> $aTime;
-            });
+    private function summarize(array $normalized, array $incidents, string $status): string {
+        $summary = '';
+        if (isset($normalized['summary'])) {
+            $summary = $this->sanitize((string) $normalized['summary']);
         }
-        $latest = isset($updates[0]) ? $updates[0] : [];
-        $body   = is_array($latest) ? ($latest['body'] ?? ($latest['display_at'] ?? '')) : '';
+        if (! $summary && ! empty($incidents)) {
+            $summary = $incidents[0]['title'] ?? ($incidents[0]['summary'] ?? '');
+        }
+        if (! $summary) {
+            switch ($status) {
+                case 'operational':
+                    $summary = 'All systems operational';
+                    break;
+                case 'degraded':
+                    $summary = 'Service degradation reported';
+                    break;
+                case 'outage':
+                    $summary = 'Major outage reported';
+                    break;
+                case 'maintenance':
+                    $summary = 'Maintenance in progress';
+                    break;
+                default:
+                    $summary = 'Status unavailable';
+                    break;
+            }
+        }
 
-        return [
-            'id'         => (string)($incident['id'] ?? md5(wp_json_encode($incident))),
-            'title'      => $this->sanitize($incident['name'] ?? 'Incident'),
-            'summary'    => $this->sanitize($body ?: ($incident['impact_override'] ?? '')),
-            'started_at' => $this->iso($incident['started_at'] ?? ($incident['created_at'] ?? null)),
-            'updated_at' => $this->iso($incident['updated_at'] ?? null),
-            'impact'     => $this->map_impact($incident['impact'] ?? $state),
-            'eta'        => '',
-            'url'        => $incident['shortlink'] ?? ($incident['postmortem_body'] ?? ''),
-        ];
+        return $this->sanitize($summary);
     }
 
-    private function normalize_incidents(array $incidents): array {
+    private function normalize_incidents(array $incidents, array $provider, string $status): array {
         $out = [];
         foreach ($incidents as $incident) {
-            if (!is_array($incident)) { continue; }
+            if (! is_array($incident)) {
+                continue;
+            }
+
+            $rawStatus = strtolower((string) ($incident['status'] ?? ''));
+            if (in_array($rawStatus, ['resolved', 'completed', 'postmortem'], true)) {
+                continue;
+            }
+
+            $title   = $this->sanitize($incident['title'] ?? ($incident['name'] ?? 'Incident'));
+            $summary = $this->sanitize($incident['summary'] ?? '');
+            if (! $summary && $rawStatus) {
+                $summary = ucfirst(str_replace('_', ' ', $rawStatus));
+            }
+            if (! $summary) {
+                $summary = $title ?: 'Incident';
+            }
+
+            $started = $this->iso($incident['started_at'] ?? ($incident['startedAt'] ?? null));
+            $updated = $this->iso($incident['updated_at'] ?? ($incident['updatedAt'] ?? null)) ?: $started;
+
+            $impactSource = $incident['impact'] ?? $rawStatus ?: $status;
+            $impact       = $this->map_impact($impactSource);
+
+            $url = '';
+            if (! empty($incident['url']) && is_string($incident['url'])) {
+                $url = $incident['url'];
+            } elseif (! empty($incident['shortlink']) && is_string($incident['shortlink'])) {
+                $url = $incident['shortlink'];
+            } elseif (! empty($provider['status_url']) && is_string($provider['status_url'])) {
+                $url = $provider['status_url'];
+            }
+
             $out[] = [
-                'id'         => (string)($incident['id'] ?? md5(wp_json_encode($incident))),
-                'title'      => $this->sanitize($incident['title'] ?? 'Incident'),
-                'summary'    => $this->sanitize($incident['summary'] ?? ''),
-                'started_at' => $this->iso($incident['started_at'] ?? null),
-                'updated_at' => $this->iso($incident['updated_at'] ?? null),
-                'impact'     => $this->map_impact($incident['impact'] ?? 'minor'),
+                'id'         => (string) ($incident['id'] ?? md5(wp_json_encode($incident))),
+                'title'      => $title ?: 'Incident',
+                'summary'    => $summary,
+                'started_at' => $started,
+                'updated_at' => $updated,
+                'impact'     => $impact,
                 'eta'        => $this->sanitize($incident['eta'] ?? ''),
-                'url'        => $incident['url'] ?? '',
+                'url'        => $url,
             ];
         }
-        return $out;
+
+        return array_slice($out, 0, 10);
     }
 
     private function optional_unavailable(array $defaults, string $error): array {
@@ -310,66 +304,69 @@ class Fetcher {
     }
 
     private function sanitize(?string $text): string {
-        if (!$text) { return ''; }
+        if (! $text) {
+            return '';
+        }
         return trim(wp_strip_all_tags($text));
     }
 
     private function iso($value): ?string {
-        if (!$value) { return null; }
-        if ($value instanceof \DateTimeInterface) {
-            return gmdate('c', (int)$value->getTimestamp());
+        if (! $value) {
+            return null;
         }
-        $ts = strtotime((string)$value);
-        if (!$ts) { return null; }
+        if ($value instanceof \DateTimeInterface) {
+            return gmdate('c', (int) $value->getTimestamp());
+        }
+        $ts = strtotime((string) $value);
+        if (! $ts) {
+            return null;
+        }
         return gmdate('c', $ts);
     }
 
     private function map_impact($impact): string {
-        $impact = strtolower((string)$impact);
+        $impact = strtolower((string) $impact);
         switch ($impact) {
             case 'critical':
             case 'major':
+            case 'major_outage':
             case 'outage':
                 return 'outage';
             case 'maintenance':
+            case 'scheduled':
                 return 'maintenance';
             case 'minor':
             case 'degraded':
             case 'partial':
             case 'partial_outage':
+            case 'investigating':
+            case 'identified':
+            case 'monitoring':
+            case 'in_progress':
+            case 'reported':
+            case 'active':
+            case 'warning':
                 return 'degraded';
             default:
                 return 'minor';
         }
     }
 
-    private function guess_status_from_text(string $text): string {
-        $text = strtolower($text);
-        if (!$text) { return 'unknown'; }
-        if (strpos($text,'partial outage')!==false || strpos($text,'degrad')!==false || strpos($text,'partial')!==false || strpos($text,'performance')!==false) {
-            return 'degraded';
-        }
-        if (strpos($text,'outage')!==false || strpos($text,'disruption')!==false || strpos($text,'major')!==false || strpos($text,'critical')!==false || strpos($text,'down')!==false) {
-            return 'outage';
-        }
-        if (strpos($text,'operational')!==false || strpos($text,'normal')!==false) {
-            return 'operational';
-        }
-        return 'unknown';
-    }
-
     private function normalize_status_code(string $status): string {
         $status = strtolower($status);
         switch ($status) {
             case 'operational':
-            case 'up':
+            case 'ok':
+            case 'none':
                 return 'operational';
             case 'degraded':
             case 'partial':
             case 'minor':
+            case 'warning':
                 return 'degraded';
             case 'outage':
             case 'major':
+            case 'major_outage':
             case 'critical':
             case 'down':
                 return 'outage';
