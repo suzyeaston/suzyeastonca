@@ -59,6 +59,8 @@ class Api {
             $providers[] = lousy_outages_build_provider_payload($id, $state, $timestamp);
         }
 
+        $providers = \lousy_outages_sort_providers($providers);
+
         $response = [
             'refreshedAt'   => $timestamp,
             'providerCount' => count($providers),

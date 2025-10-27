@@ -730,6 +730,64 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
 }
 
 /**
+ * Sort providers so that the most severe issues appear first.
+ */
+function lousy_outages_sort_providers( array $providers ): array {
+    $state_priority = [
+        'outage'      => 0,
+        'degraded'    => 1,
+        'maintenance' => 2,
+        'unknown'     => 3,
+        'operational' => 4,
+    ];
+
+    $sort_key = static function ( array $provider ) use ( $state_priority ): array {
+        $state      = strtolower( (string) ( $provider['stateCode'] ?? 'unknown' ) );
+        $state_rank = $state_priority[ $state ] ?? $state_priority['unknown'];
+
+        $has_incidents = ! empty( $provider['incidents'] );
+        $has_error     = ! empty( $provider['error'] );
+        $risk          = isset( $provider['risk'] ) ? (int) $provider['risk'] : 0;
+        if ( ! $risk && isset( $provider['prealert']['risk'] ) ) {
+            $risk = (int) $provider['prealert']['risk'];
+        }
+
+        $name = strtolower( (string) ( $provider['name'] ?? $provider['id'] ?? '' ) );
+
+        return [
+            $has_incidents ? 0 : 1,
+            $state_rank,
+            $has_error ? 0 : 1,
+            -1 * $risk,
+            $name,
+        ];
+    };
+
+    usort(
+        $providers,
+        static function ( array $a, array $b ) use ( $sort_key ): int {
+            $a_key = $sort_key( $a );
+            $b_key = $sort_key( $b );
+
+            foreach ( $a_key as $index => $value ) {
+                $a_value = $value;
+                $b_value = $b_key[ $index ] ?? null;
+
+                if ( $a_value === $b_value ) {
+                    continue;
+                }
+
+                return $a_value <=> $b_value;
+            }
+
+            return 0;
+        }
+    );
+
+    return $providers;
+}
+
+/**
  * REST endpoint exposing current status.
  */
 add_action( 'rest_api_init', function () {
@@ -751,6 +809,8 @@ add_action( 'rest_api_init', function () {
             foreach ( $data as $id => $state ) {
                 $providers[] = lousy_outages_build_provider_payload( $id, $state, $fetched );
             }
+
+            $providers = lousy_outages_sort_providers( $providers );
 
             $payload  = [
                 'providers' => $providers,

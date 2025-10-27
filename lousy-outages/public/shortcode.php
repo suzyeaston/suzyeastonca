@@ -61,6 +61,8 @@ function render_shortcode(): string {
         $provider_payloads[] = $payload;
     }
 
+    $provider_payloads = \lousy_outages_sort_providers( $provider_payloads );
+
     $refresh_nonce = wp_create_nonce( 'wp_rest' );
 
     $config = [
