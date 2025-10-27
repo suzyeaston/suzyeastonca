@@ -162,7 +162,7 @@ class Precursor {
             }
         }
         if ('zscaler' === $id) {
-            return array('https://status.zscaler.com/');
+            return array('https://trust.zscaler.com/');
         }
         return array();
     }

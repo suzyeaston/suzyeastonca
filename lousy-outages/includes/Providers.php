@@ -177,6 +177,10 @@ namespace LousyOutages {
                     $adjusted = preg_replace( '#/api/v\d+(?:\.\d+)*?/history\.(?:rss|atom)$#', '/', (string) $adjusted );
                 }
 
+                if ( in_array( $type, [ 'rss', 'atom', 'rss-optional' ], true ) ) {
+                    $adjusted = preg_replace( '#/(?:feed(?:s)?/?)?(?:[^/]*\.(?:rss|atom|xml))/?$#i', '/', (string) $adjusted );
+                }
+
                 $parts = wp_parse_url( $adjusted ?: $candidate );
                 if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
                     continue;
@@ -188,6 +192,21 @@ namespace LousyOutages {
                     if ( '' !== $path ) {
                         if ( in_array( $type, [ 'statuspage', 'slack', 'slack_current' ], true ) ) {
                             $path = preg_replace( '#^api/.*$#', '', $path );
+                        } elseif ( in_array( $type, [ 'rss', 'atom', 'rss-optional' ], true ) ) {
+                            $segments = array_filter( explode( '/', $path ), static fn( $seg ) => '' !== $seg );
+                            while ( $segments ) {
+                                $last = strtolower( (string) end( $segments ) );
+                                if ( '' === $last ) {
+                                    array_pop( $segments );
+                                    continue;
+                                }
+                                if ( preg_match( '#\.(?:rss|atom|xml)$#', $last ) || in_array( $last, [ 'feed', 'feeds', 'rss', 'atom' ], true ) ) {
+                                    array_pop( $segments );
+                                    continue;
+                                }
+                                break;
+                            }
+                            $path = implode( '/', $segments );
                         }
                         $path = trim( (string) $path, '/' );
                         if ( '' !== $path ) {
