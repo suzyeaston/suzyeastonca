@@ -25,13 +25,13 @@ Monitor third‑party service status and get SMS and email alerts when things br
 | notion | Notion | https://www.notionstatus.com/api/v2/summary.json |
 | linear | Linear | https://status.linear.app/api/v2/summary.json |
 | sentry | Sentry | https://status.sentry.io/api/v2/summary.json |
-| slack | Slack | https://status.slack.com/api/v2.0.0/current |
+| slack | Slack | https://slack-status.com/api/v2.0.0/current |
 | aws | AWS | https://status.aws.amazon.com/rss/all.rss |
 | azure | Azure | https://azurestatuscdn.azureedge.net/en-us/status/feed/ |
 | gcp | Google Cloud | https://status.cloud.google.com/feed.atom |
 | downdetector-ca | Downdetector (CA Aggregate) | https://downdetector.ca/archive/?format=rss |
 
-Slack now uses the official `/api/v2.0.0/current` endpoint so green states render the "All systems operational" headline, and Zscaler is polled from `https://trust.zscaler.com` to dodge intermittent DNS failures. New default providers include Stripe, Twilio, Fastly, Datadog, Notion, Linear, and Sentry—toggle any of them from **Settings → Lousy Outages**.
+Slack now uses the official `slack-status.com/api/v2.0.0/current` endpoint so green states render the "All systems operational" headline, and Zscaler is polled from `https://trust.zscaler.com` to dodge intermittent DNS failures. New default providers include Stripe, Twilio, Fastly, Datadog, Notion, Linear, and Sentry—toggle any of them from **Settings → Lousy Outages**.
 
 Downdetector is disabled by default because the RSS feed is unofficial and can disappear; enable it from the settings page if it loads for you. When the feed is unreachable, the adapter reports an `unknown` state with an error badge rather than failing the whole poll.
 

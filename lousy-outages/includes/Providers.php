@@ -28,7 +28,7 @@ namespace {
             ['id' => 'sentry', 'name' => 'Sentry', 'type' => 'statuspage', 'url' => 'https://status.sentry.io/api/v2/summary.json'],
 
             // Vendor APIs
-            ['id' => 'slack', 'name' => 'Slack', 'type' => 'slack_current', 'url' => 'https://status.slack.com/api/v2.0.0/current'],
+            ['id' => 'slack', 'name' => 'Slack', 'type' => 'slack_current', 'url' => 'https://slack-status.com/api/v2.0.0/current'],
 
             // RSS/Atom feeds
             ['id' => 'aws', 'name' => 'AWS', 'type' => 'rss', 'url' => 'https://status.aws.amazon.com/rss/all.rss'],
