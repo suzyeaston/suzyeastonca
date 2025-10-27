@@ -1,183 +1,205 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages;
+namespace {
+    function lousy_outages_default_providers(): array {
+        return [
+            // Statuspage JSON
+            ['id' => 'github', 'name' => 'GitHub', 'type' => 'statuspage', 'url' => 'https://www.githubstatus.com/api/v2/summary.json'],
+            ['id' => 'cloudflare', 'name' => 'Cloudflare', 'type' => 'statuspage', 'url' => 'https://www.cloudflarestatus.com/api/v2/summary.json'],
+            ['id' => 'openai', 'name' => 'OpenAI', 'type' => 'statuspage', 'url' => 'https://status.openai.com/api/v2/summary.json'],
+            ['id' => 'atlassian', 'name' => 'Atlassian', 'type' => 'statuspage', 'url' => 'https://status.atlassian.com/api/v2/summary.json'],
+            ['id' => 'digitalocean', 'name' => 'DigitalOcean', 'type' => 'statuspage', 'url' => 'https://status.digitalocean.com/api/v2/summary.json'],
+            ['id' => 'gitlab', 'name' => 'GitLab', 'type' => 'statuspage', 'url' => 'https://status.gitlab.com/api/v2/summary.json'],
+            ['id' => 'netlify', 'name' => 'Netlify', 'type' => 'statuspage', 'url' => 'https://www.netlifystatus.com/api/v2/summary.json'],
+            ['id' => 'vercel', 'name' => 'Vercel', 'type' => 'statuspage', 'url' => 'https://www.vercel-status.com/api/v2/summary.json'],
+            ['id' => 'okta', 'name' => 'Okta', 'type' => 'statuspage', 'url' => 'https://status.okta.com/api/v2/summary.json'],
+            ['id' => 'pagerduty', 'name' => 'PagerDuty', 'type' => 'statuspage', 'url' => 'https://status.pagerduty.com/api/v2/summary.json'],
+            ['id' => 'zoom', 'name' => 'Zoom', 'type' => 'statuspage', 'url' => 'https://status.zoom.us/api/v2/summary.json'],
+            ['id' => 'zscaler', 'name' => 'Zscaler', 'type' => 'statuspage', 'url' => 'https://trust.zscaler.com/api/v2/summary.json'],
 
-class Providers {
-    /**
-     * Return the provider configuration map.
-     */
-    public static function list(): array {
-        $providers = apply_filters(
-            'lousy_outages_providers',
-            [
-                'github' => [
-                    'name'   => 'GitHub',
-                    'type'   => 'statuspage',
-                    'summary'=> 'https://www.githubstatus.com/api/v2/summary.json',
-                    'status_url' => 'https://www.githubstatus.com/',
-                ],
-                'slack' => [
-                    'name'       => 'Slack',
-                    'type'       => 'slack',
-                    'current'    => 'https://status.slack.com/api/v2.0.0/current',
-                    'status_url' => 'https://status.slack.com/',
-                ],
-                'zscaler' => [
-                    'name'       => 'Zscaler',
-                    'type'       => 'statuspage',
-                    'summary'    => 'https://status.zscaler.com/api/v2/summary.json',
-                    'status_url' => 'https://status.zscaler.com/',
-                ],
-                'cloudflare' => [
-                    'name'   => 'Cloudflare',
-                    'type'   => 'statuspage',
-                    'summary'=> 'https://www.cloudflarestatus.com/api/v2/summary.json',
-                    'status_url' => 'https://www.cloudflarestatus.com/',
-                ],
-                'openai' => [
-                    'name'   => 'OpenAI',
-                    'type'   => 'statuspage',
-                    'summary'=> 'https://status.openai.com/api/v2/summary.json',
-                    'status_url' => 'https://status.openai.com/',
-                ],
-                'atlassian' => [
-                    'name'       => 'Atlassian',
-                    'type'       => 'statuspage',
-                    'summary'    => 'https://status.atlassian.com/api/v2/summary.json',
-                    'status_url' => 'https://status.atlassian.com/',
-                ],
-                'aws' => [
-                    'name'      => 'AWS',
-                    'type'      => 'rss',
-                    'rss'       => 'https://status.aws.amazon.com/rss/all.rss',
-                    'status_url'=> 'https://status.aws.amazon.com/',
-                ],
-                'azure' => [
-                    'name'      => 'Azure',
-                    'type'      => 'rss',
-                    'rss'       => 'https://azurestatuscdn.azureedge.net/en-us/status/feed/',
-                    'status_url'=> 'https://status.azure.com/',
-                ],
-                'gcp' => [
-                    'name'      => 'Google Cloud',
-                    'type'      => 'atom',
-                    'atom'      => 'https://status.cloud.google.com/feed.atom',
-                    'status_url'=> 'https://status.cloud.google.com/',
-                ],
-                'digitalocean' => [
-                    'name'   => 'DigitalOcean',
-                    'type'   => 'statuspage',
-                    'summary'=> 'https://status.digitalocean.com/api/v2/summary.json',
-                    'status_url' => 'https://status.digitalocean.com/',
-                ],
-                'gitlab' => [
-                    'name'       => 'GitLab',
-                    'type'       => 'statuspage',
-                    'summary'    => 'https://status.gitlab.com/api/v2/summary.json',
-                    'status_url' => 'https://status.gitlab.com/',
-                ],
-                'netlify' => [
-                    'name'   => 'Netlify',
-                    'type'   => 'statuspage',
-                    'summary'=> 'https://www.netlifystatus.com/api/v2/summary.json',
-                    'status_url' => 'https://www.netlifystatus.com/',
-                ],
-                'vercel' => [
-                    'name'   => 'Vercel',
-                    'type'   => 'statuspage',
-                    'summary'=> 'https://www.vercel-status.com/api/v2/summary.json',
-                    'status_url' => 'https://www.vercel-status.com/',
-                ],
-                'okta' => [
-                    'name'       => 'Okta',
-                    'type'       => 'statuspage',
-                    'summary'    => 'https://status.okta.com/api/v2/summary.json',
-                    'status_url' => 'https://status.okta.com/',
-                ],
-                'pagerduty' => [
-                    'name'       => 'PagerDuty',
-                    'type'       => 'statuspage',
-                    'summary'    => 'https://status.pagerduty.com/api/v2/summary.json',
-                    'status_url' => 'https://status.pagerduty.com/',
-                ],
-                'zoom' => [
-                    'name'       => 'Zoom',
-                    'type'       => 'statuspage',
-                    'summary'    => 'https://status.zoom.us/api/v2/summary.json',
-                    'status_url' => 'https://status.zoom.us/',
-                ],
-                'downdetector-ca' => [
-                    'name'      => 'Downdetector (CA Aggregate)',
-                    'type'      => 'rss-optional',
-                    'enabled'   => false,
-                    'rss'       => 'https://downdetector.ca/archive/?format=rss',
-                    'status_url'=> 'https://downdetector.ca/',
-                ],
-            ]
-        );
+            // High-value adds (Statuspage JSON)
+            ['id' => 'stripe', 'name' => 'Stripe', 'type' => 'statuspage', 'url' => 'https://status.stripe.com/api/v2/summary.json'],
+            ['id' => 'twilio', 'name' => 'Twilio', 'type' => 'statuspage', 'url' => 'https://status.twilio.com/api/v2/summary.json'],
+            ['id' => 'fastly', 'name' => 'Fastly', 'type' => 'statuspage', 'url' => 'https://status.fastly.com/api/v2/summary.json'],
+            ['id' => 'datadog', 'name' => 'Datadog', 'type' => 'statuspage', 'url' => 'https://status.datadoghq.com/api/v2/summary.json'],
+            ['id' => 'notion', 'name' => 'Notion', 'type' => 'statuspage', 'url' => 'https://www.notionstatus.com/api/v2/summary.json'],
+            ['id' => 'linear', 'name' => 'Linear', 'type' => 'statuspage', 'url' => 'https://status.linear.app/api/v2/summary.json'],
+            ['id' => 'sentry', 'name' => 'Sentry', 'type' => 'statuspage', 'url' => 'https://status.sentry.io/api/v2/summary.json'],
 
-        foreach ( $providers as $id => &$provider ) {
-            if ( ! is_array( $provider ) ) {
-                unset( $providers[ $id ] );
-                continue;
-            }
+            // Vendor APIs
+            ['id' => 'slack', 'name' => 'Slack', 'type' => 'slack_current', 'url' => 'https://status.slack.com/api/v2.0.0/current'],
 
-            $provider['id']       = $provider['id'] ?? $id;
-            $provider['enabled']  = array_key_exists( 'enabled', $provider ) ? (bool) $provider['enabled'] : true;
-            $provider['status_url'] = $provider['status_url'] ?? self::derive_status_url( $provider );
-        }
-        unset( $provider );
+            // RSS/Atom feeds
+            ['id' => 'aws', 'name' => 'AWS', 'type' => 'rss', 'url' => 'https://status.aws.amazon.com/rss/all.rss'],
+            ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://azurestatuscdn.azureedge.net/en-us/status/feed/'],
+            ['id' => 'gcp', 'name' => 'Google Cloud', 'type' => 'atom', 'url' => 'https://status.cloud.google.com/feed.atom'],
 
-        return $providers;
+            // Optional aggregate (disabled by default in settings)
+            ['id' => 'downdetector-ca', 'name' => 'Downdetector (CA Aggregate)', 'type' => 'rss', 'url' => 'https://downdetector.ca/archive/?format=rss', 'disabled' => true, 'optional' => true],
+        ];
     }
+}
 
-    /**
-     * Return enabled providers from options or defaults.
-     */
-    public static function enabled(): array {
-        $all            = self::list();
-        $default_enabled = array_keys( array_filter( $all, static fn( array $prov ): bool => $prov['enabled'] ) );
-        $saved           = get_option( 'lousy_outages_providers', false );
-        $enabled_ids     = is_array( $saved ) ? $saved : $default_enabled;
+namespace LousyOutages {
 
-        $enabled = [];
-        foreach ( $enabled_ids as $id ) {
-            if ( isset( $all[ $id ] ) ) {
-                $enabled[ $id ] = $all[ $id ];
+    class Providers {
+        /**
+         * Return the provider configuration map.
+         */
+        public static function list(): array {
+            $defaults  = \lousy_outages_default_providers();
+            $providers = [];
+
+            foreach ( $defaults as $provider ) {
+                if ( ! is_array( $provider ) ) {
+                    continue;
+                }
+
+                $id = isset( $provider['id'] ) ? (string) $provider['id'] : '';
+                if ( '' === $id ) {
+                    continue;
+                }
+
+                $providers[ $id ] = $provider;
             }
+
+            $providers = apply_filters( 'lousy_outages_providers', $providers );
+            if ( ! is_array( $providers ) ) {
+                $providers = [];
+            }
+
+            foreach ( $providers as $id => &$provider ) {
+                if ( ! is_array( $provider ) ) {
+                    unset( $providers[ $id ] );
+                    continue;
+                }
+
+                $provider = self::prepare_provider( (string) $id, $provider );
+            }
+            unset( $provider );
+
+            return $providers;
         }
 
-        return $enabled;
-    }
+        /**
+         * Return enabled providers from options or defaults.
+         */
+        public static function enabled(): array {
+            $all             = self::list();
+            $default_enabled = array_keys( array_filter( $all, static fn( array $prov ): bool => $prov['enabled'] ) );
+            $saved           = get_option( 'lousy_outages_providers', false );
+            $enabled_ids     = is_array( $saved ) ? $saved : $default_enabled;
 
-    private static function derive_status_url( array $provider ): string {
-        foreach ( ['summary', 'rss', 'atom'] as $key ) {
-            if ( empty( $provider[ $key ] ) || ! is_string( $provider[ $key ] ) ) {
-                continue;
-            }
-
-            $url = $provider[ $key ];
-            if ( 'summary' === $key ) {
-                $url = preg_replace( '#/api/v\d+(?:\.\d+)*?/summary\.json$#', '/', $url );
-            }
-
-            $parts = wp_parse_url( $url );
-            if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
-                continue;
-            }
-
-            $base = $parts['scheme'] . '://' . $parts['host'];
-            if ( 'summary' === $key ) {
-                $path = isset( $parts['path'] ) ? trim( (string) $parts['path'], '/' ) : '';
-                if ( $path && '/' !== $path ) {
-                    $base .= '/' . $path;
+            $enabled = [];
+            foreach ( $enabled_ids as $id ) {
+                if ( isset( $all[ $id ] ) ) {
+                    $enabled[ $id ] = $all[ $id ];
                 }
             }
 
-            return trailingslashit( $base );
+            return $enabled;
         }
 
-        return trailingslashit( home_url( '/' ) );
+        private static function prepare_provider( string $id, array $provider ): array {
+            $provider['id']   = $id;
+            $provider['name'] = (string) ( $provider['name'] ?? $id );
+            $provider['type'] = strtolower( (string) ( $provider['type'] ?? 'statuspage' ) );
+
+            if ( ! isset( $provider['url'] ) ) {
+                $endpoint = self::coalesce_endpoint( $provider );
+                if ( null !== $endpoint ) {
+                    $provider['url'] = $endpoint;
+                }
+            }
+
+            $provider['enabled'] = array_key_exists( 'enabled', $provider )
+                ? (bool) $provider['enabled']
+                : ! ( isset( $provider['disabled'] ) && $provider['disabled'] );
+            unset( $provider['disabled'] );
+
+            $provider['optional'] = ! empty( $provider['optional'] );
+
+            if ( empty( $provider['status_url'] ) || ! is_string( $provider['status_url'] ) ) {
+                $provider['status_url'] = self::derive_status_url( $provider );
+            }
+
+            // Maintain legacy endpoint keys for backwards compatibility with filters.
+            if ( 'statuspage' === $provider['type'] && empty( $provider['summary'] ) && ! empty( $provider['url'] ) ) {
+                $provider['summary'] = $provider['url'];
+            }
+            if ( 'rss' === $provider['type'] && empty( $provider['rss'] ) && ! empty( $provider['url'] ) ) {
+                $provider['rss'] = $provider['url'];
+            }
+            if ( 'atom' === $provider['type'] && empty( $provider['atom'] ) && ! empty( $provider['url'] ) ) {
+                $provider['atom'] = $provider['url'];
+            }
+            if ( in_array( $provider['type'], [ 'slack', 'slack_current' ], true ) && empty( $provider['current'] ) && ! empty( $provider['url'] ) ) {
+                $provider['current'] = $provider['url'];
+            }
+
+            return $provider;
+        }
+
+        private static function coalesce_endpoint( array $provider ): ?string {
+            foreach ( [ 'summary', 'url', 'rss', 'atom', 'current', 'endpoint' ] as $key ) {
+                if ( empty( $provider[ $key ] ) || ! is_string( $provider[ $key ] ) ) {
+                    continue;
+                }
+
+                return $provider[ $key ];
+            }
+
+            return null;
+        }
+
+        private static function derive_status_url( array $provider ): string {
+            $type           = strtolower( (string) ( $provider['type'] ?? 'statuspage' ) );
+            $candidates     = [];
+            $candidate_keys = [ 'status_url', 'url', 'summary', 'rss', 'atom', 'current', 'endpoint' ];
+
+            foreach ( $candidate_keys as $key ) {
+                if ( empty( $provider[ $key ] ) || ! is_string( $provider[ $key ] ) ) {
+                    continue;
+                }
+                $candidates[] = $provider[ $key ];
+            }
+
+            foreach ( $candidates as $candidate ) {
+                $candidate = trim( $candidate );
+                if ( '' === $candidate ) {
+                    continue;
+                }
+
+                $adjusted = $candidate;
+                if ( in_array( $type, [ 'statuspage', 'slack', 'slack_current' ], true ) ) {
+                    $adjusted = preg_replace( '#/api/v\d+(?:\.\d+)*?/(summary\.json|current|status\.json)$#', '/', $adjusted );
+                    $adjusted = preg_replace( '#/api/v\d+(?:\.\d+)*?/history\.(?:rss|atom)$#', '/', (string) $adjusted );
+                }
+
+                $parts = wp_parse_url( $adjusted ?: $candidate );
+                if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+                    continue;
+                }
+
+                $base = $parts['scheme'] . '://' . $parts['host'];
+                if ( ! empty( $parts['path'] ) ) {
+                    $path = trim( (string) $parts['path'], '/' );
+                    if ( '' !== $path ) {
+                        if ( in_array( $type, [ 'statuspage', 'slack', 'slack_current' ], true ) ) {
+                            $path = preg_replace( '#^api/.*$#', '', $path );
+                        }
+                        $path = trim( (string) $path, '/' );
+                        if ( '' !== $path ) {
+                            $base .= '/' . $path;
+                        }
+                    }
+                }
+
+                return trailingslashit( $base );
+            }
+
+            return trailingslashit( home_url( '/' ) );
+        }
     }
 }
