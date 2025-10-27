@@ -35,6 +35,8 @@ class Feed {
             $providers[] = lousy_outages_build_provider_payload($id, $state, $fetched_at);
         }
 
+        $providers = \lousy_outages_sort_providers($providers);
+
         $items = self::build_items($providers, $fetched_at);
 
         echo '<?xml version="1.0" encoding="UTF-8"?>';
