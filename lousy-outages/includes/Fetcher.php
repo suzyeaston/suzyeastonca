@@ -9,6 +9,7 @@ namespace LousyOutages;
 use function Lousy\http_get;
 use function Lousy\Adapters\from_rss_atom;
 use function Lousy\Adapters\from_slack_current;
+use function Lousy\Adapters\from_statuspage_status;
 use function Lousy\Adapters\from_statuspage_summary;
 use function Lousy\Adapters\Statuspage\detect_state_from_error;
 
@@ -71,10 +72,16 @@ class Fetcher {
 
         $status          = (int) ($response['status'] ?? 0);
         $fallbackSummary = null;
-        if (in_array($status, [401, 403], true)) {
-            $fallbackSummary = 'Unauthorized or forbidden at API; trying history feed…';
-        } elseif (404 === $status) {
-            $fallbackSummary = 'Summary endpoint missing; trying history feed…';
+        $statusFallback  = false;
+
+        if (! $response['ok'] && in_array($status, [401, 403, 404], true)) {
+            $statuspageStatus = $this->attempt_statuspage_status($provider, $endpoint);
+            if ($statuspageStatus) {
+                $response       = $statuspageStatus['response'];
+                $adapterType    = $statuspageStatus['adapter'];
+                $status         = (int) ($response['status'] ?? 0);
+                $statusFallback = true;
+            }
         }
 
         if (! $response['ok'] && in_array($status, [401, 403, 404], true)) {
@@ -93,7 +100,9 @@ class Fetcher {
             $errorCode    = $status > 0
                 ? 'http_error:' . $status
                 : 'network_error:' . ($networkKind ?: ((string) ($response['error'] ?? 'request_failed')));
-            $summary      = $fallbackSummary ?: $this->failure_summary($status, $networkKind);
+            if (! $fallbackSummary) {
+                $fallbackSummary = $this->failure_summary($status, $networkKind);
+            }
             $statusResult = 'unknown';
 
             if ('statuspage' === $type && $status >= 500 && $status < 600) {
@@ -125,6 +134,11 @@ class Fetcher {
 
         $normalized = $this->adapt_response($adapterType, $body);
         $result     = $this->assemble_result($defaults, $normalized, $provider);
+
+        if ($statusFallback) {
+            $result['summary'] = $this->status_only_summary($result['summary'], $result['status_label']);
+            $result['message'] = $result['summary'];
+        }
 
         return $result;
     }
@@ -196,6 +210,39 @@ class Fetcher {
             [$base . 'history.rss', 'rss'],
             [$base . 'history.atom', 'atom'],
         ];
+    }
+
+    private function attempt_statuspage_status(array $provider, ?string $endpoint = null): ?array {
+        $candidates = [];
+
+        if (! empty($provider['status_endpoint']) && is_string($provider['status_endpoint'])) {
+            $candidates[] = $provider['status_endpoint'];
+        }
+
+        $base = $this->derive_statuspage_base($provider, $endpoint);
+        if ($base) {
+            $candidates[] = $base . 'api/v2/status.json';
+            $candidates[] = $base . 'status.json';
+        }
+
+        foreach ($candidates as $candidate) {
+            $headers  = $this->build_headers('status');
+            $response = http_get($candidate, [
+                'timeout'     => $this->timeout,
+                'headers'     => $headers,
+                'redirection' => 3,
+            ]);
+            $response = $this->maybe_retry_ipv4($response, $candidate, $headers);
+
+            if ($response['ok'] && '' !== trim((string) ($response['body'] ?? ''))) {
+                return [
+                    'response' => $response,
+                    'adapter'  => 'status',
+                ];
+            }
+        }
+
+        return null;
     }
 
     private function derive_statuspage_base(array $provider, ?string $endpoint = null): string {
@@ -275,6 +322,8 @@ class Fetcher {
             case 'atom':
             case 'rss-optional':
                 return from_rss_atom($body);
+            case 'status':
+                return from_statuspage_status($body);
             default:
                 return from_statuspage_summary($body);
         }
@@ -330,6 +379,19 @@ class Fetcher {
                     $summary = 'Status unavailable';
                     break;
             }
+        }
+
+        return $this->sanitize($summary);
+    }
+
+    private function status_only_summary(string $summary, string $label): string {
+        $summary = $this->sanitize($summary);
+        if ('' === $summary) {
+            $summary = $label ? sprintf('Overall status: %s', $label) : 'Overall status reported';
+        }
+
+        if (false === stripos($summary, 'incident')) {
+            $summary .= ' (incidents unavailable)';
         }
 
         return $this->sanitize($summary);
