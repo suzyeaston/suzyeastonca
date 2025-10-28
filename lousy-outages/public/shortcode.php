@@ -35,27 +35,50 @@ function render_shortcode(): string {
     $cached    = ($cache_key) ? get_transient($cache_key) : null;
 
     $providers_config = Providers::enabled();
-    $fetched_at       = gmdate('c');
-    $normalized       = [];
-    $config           = null;
+    $fetcher          = new Lousy_Outages_Fetcher();
+    $provider_map     = $fetcher->get_provider_map();
+    if (is_array($provider_map) && $provider_map) {
+        $providers_config = array_intersect_key($providers_config, $provider_map);
+        if (empty($providers_config)) {
+            foreach ($provider_map as $slug => $provider_info) {
+                $providers_config[$slug] = [
+                    'id'         => $slug,
+                    'name'       => $provider_info['name'],
+                    'status_url' => $provider_info['status_url'],
+                ];
+            }
+        }
+    }
+
+    $fetched_at = gmdate('c');
+    $normalized = [];
+    $config     = null;
 
     if (is_array($cached) && isset($cached['html'], $cached['config'])) {
         $config     = $cached['config'];
         $normalized = [];
         if (isset($config['initial']['providers']) && is_array($config['initial']['providers'])) {
             foreach ($config['initial']['providers'] as $provider) {
-                if (!is_array($provider) || empty($provider['provider'])) {
+                if (!is_array($provider)) {
                     continue;
                 }
-                $normalized[$provider['provider']] = $provider;
+                $slug = '';
+                if (!empty($provider['id'])) {
+                    $slug = (string) $provider['id'];
+                } elseif (!empty($provider['provider'])) {
+                    $slug = \sanitize_title((string) $provider['provider']);
+                }
+                if ('' === $slug) {
+                    continue;
+                }
+                $normalized[$slug] = $provider;
             }
         }
         $fetched_at = $config['initial']['fetched_at'] ?? $config['initial']['fetchedAt'] ?? $fetched_at;
     }
 
     if (!$config) {
-        $fetcher  = new Lousy_Outages_Fetcher();
-        $result   = $fetcher->get_all(array_keys($providers_config));
+        $result    = $fetcher->get_all(array_keys($providers_config));
         $normalized = $result['providers'];
         $fetched_at = $result['fetched_at'];
         $config     = [
@@ -113,19 +136,22 @@ function render_shortcode(): string {
         <div class="lo-grid" data-lo-grid>
             <?php foreach ($providers_config as $id => $provider_config) :
                 $state = $normalized[$id] ?? [
-                    'provider'       => $id,
-                    'name'           => $provider_config['name'] ?? $id,
-                    'overall_status' => 'unknown',
-                    'status_label'   => 'Unknown',
-                    'summary'        => 'Status unavailable',
-                    'components'     => [],
-                    'incidents'      => [],
-                    'fetched_at'     => $fetched_at,
-                    'url'            => $provider_config['status_url'] ?? '',
-                    'error'          => null,
+                    'id'           => $id,
+                    'provider'     => $provider_config['name'] ?? $id,
+                    'name'         => $provider_config['name'] ?? $id,
+                    'overall'      => 'unknown',
+                    'status_label' => 'Unknown',
+                    'status_class' => 'status--unknown',
+                    'summary'      => 'Status unavailable',
+                    'components'   => [],
+                    'incidents'    => [],
+                    'fetched_at'   => $fetched_at,
+                    'url'          => $provider_config['status_url'] ?? '',
+                    'error'        => null,
+                    'stale'        => false,
                 ];
-                $status     = strtolower((string) ($state['overall_status'] ?? 'unknown'));
-                $status_cls = preg_replace('/[^a-z0-9_-]+/i', '-', $status) ?: 'unknown';
+                $status     = strtolower((string) ($state['overall'] ?? 'unknown'));
+                $status_cls = 'status--' . (preg_replace('/[^a-z0-9_-]+/i', '-', $status) ?: 'unknown');
                 $label      = $state['status_label'] ?? ucfirst($status);
                 $components = array_filter(
                     is_array($state['components'] ?? null) ? $state['components'] : [],

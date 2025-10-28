@@ -942,6 +942,62 @@ footer,
   100% { background-position: 0% 50%; }
 }
 
+.hero-section .hero-quote {
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.8rem;
+  color: rgba(244, 255, 240, 0.85);
+  text-align: center;
+  margin: 0.75rem auto 1.5rem;
+  max-width: 32em;
+  position: relative;
+  padding: 0.75rem 0;
+  opacity: 0.85;
+}
+
+.hero-section .hero-quote::before,
+.hero-section .hero-quote::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 60%;
+  max-width: 220px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 255, 170, 0), rgba(0, 255, 170, 0.7), rgba(0, 255, 170, 0));
+  transform: translateX(-50%);
+  opacity: 0.6;
+}
+
+.hero-section .hero-quote::before {
+  top: 0;
+}
+
+.hero-section .hero-quote::after {
+  bottom: 0;
+}
+
+.hero-section .hero-quote__text {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.hero-section .hero-quote__attr {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.hero-section .hero-quote a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(0, 255, 170, 0.5);
+}
+
+.hero-section .hero-quote a:hover,
+.hero-section .hero-quote a:focus {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+}
+
 .hero-section .pixel-intro {
   max-width: 36em;
   margin: 0 auto 2rem;

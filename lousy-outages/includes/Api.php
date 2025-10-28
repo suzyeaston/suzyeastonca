@@ -258,6 +258,10 @@ class Api {
             return [];
         }
         $parts = array_filter(array_map('trim', explode(',', $raw)));
+        $parts = array_map(static function ($part) {
+            return strtolower((string) $part);
+        }, $parts);
+
         return array_values(array_unique($parts));
     }
 
