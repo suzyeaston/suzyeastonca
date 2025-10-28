@@ -14,7 +14,7 @@
   var globalRoot = rootRef && typeof rootRef.setTimeout === 'function' ? rootRef : (typeof globalThis !== 'undefined' ? globalThis : rootRef);
 
   var POLL_MS = 60000;
-  var ERROR_BACKOFF_STEPS = [30000, 45000, 60000, 90000, 120000];
+  var ERROR_BACKOFF_STEPS = [30000, 45000, 60000, 120000];
 
   var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
@@ -261,7 +261,7 @@
       if (!card) {
         return;
       }
-      var normalized = normalizeStatus(provider.overall || provider.overall_status || provider.status || provider.stateCode);
+      var normalized = normalizeStatus(provider.status || provider.overall || provider.overall_status || provider.stateCode);
       if (card.classList && card.classList.contains('provider-card')) {
         updateLegacyCard(card, provider, normalized);
       } else {
@@ -283,7 +283,7 @@
       badge.textContent = provider.status_label || normalized.label;
       badge.className = 'status-badge ' + (provider.status_class || normalized.className);
       if (badge.dataset) {
-        badge.dataset.status = provider.overall || provider.overall_status || normalized.code;
+        badge.dataset.status = provider.status || provider.overall || provider.overall_status || normalized.code;
       }
     }
     var summary = card.querySelector('.provider-card__summary');
@@ -330,7 +330,8 @@
     }
     var error = card.querySelector('[data-lo-error]');
     if (error) {
-      var hasError = !!provider.error;
+      var httpCode = typeof provider.http_code === 'number' ? provider.http_code : null;
+      var hasError = !!provider.error && (httpCode === null || httpCode === 0 || httpCode >= 500);
       error.textContent = hasError ? String(provider.error) : '';
       if (hasError) {
         error.removeAttribute('hidden');
@@ -417,8 +418,9 @@
     }
     var statusLink = card.querySelector('[data-lo-status-url]');
     if (statusLink) {
-      if (provider.url) {
-        statusLink.href = provider.url;
+      var destination = provider.url || provider.link;
+      if (destination) {
+        statusLink.href = destination;
         statusLink.removeAttribute('hidden');
       } else {
         statusLink.setAttribute('hidden', 'hidden');
@@ -657,7 +659,10 @@
           state.etag = etag;
         }
         if (!res.ok) {
-          throw new Error('HTTP ' + res.status);
+          if (res.status >= 500) {
+            throw new Error('HTTP ' + res.status);
+          }
+          return res.json().catch(function () { return null; });
         }
         return res.json();
       })
@@ -688,7 +693,17 @@
           updateTrendingBanner({ trending: false, signals: [] });
         }
       })
-      .catch(function () {
+      .catch(function (err) {
+        var message = err && err.message ? String(err.message) : '';
+        if (message && /^HTTP 4\d\d/.test(message)) {
+          state.errorLevel = 0;
+          showDegraded(false);
+          var elapsedSoft = Date.now() - startedAt;
+          var softDelay = Math.max(10, state.pollInterval - elapsedSoft);
+          scheduleNext(softDelay);
+          scheduled = true;
+          return;
+        }
         var index = Math.min(state.errorLevel, ERROR_BACKOFF_STEPS.length - 1);
         var targetDelay = ERROR_BACKOFF_STEPS[index];
         state.errorLevel = Math.min(state.errorLevel + 1, ERROR_BACKOFF_STEPS.length - 1);

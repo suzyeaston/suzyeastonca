@@ -139,10 +139,18 @@ class Api {
             $payload['errors'] = $result['errors'];
         }
 
-        $etag       = '"' . md5(wp_json_encode($payload)) . '"';
+        $json = wp_json_encode($payload);
+        $etag = '"' . sha1($json) . '"';
         $ifNoneMatch = trim((string) $request->get_header('if-none-match'));
 
-        if ('' !== $ifNoneMatch && $ifNoneMatch === $etag) {
+        if ('' !== $ifNoneMatch) {
+            $candidates = array_map('trim', explode(',', $ifNoneMatch));
+            $matched = in_array($etag, $candidates, true) || in_array('W/' . $etag, $candidates, true);
+        } else {
+            $matched = false;
+        }
+
+        if ($matched) {
             $response = new WP_REST_Response(null, 304);
             $response->header('ETag', $etag);
             $response->header('Cache-Control', 'no-cache, must-revalidate');
