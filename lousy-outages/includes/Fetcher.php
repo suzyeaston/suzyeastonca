@@ -1184,22 +1184,52 @@ class Lousy_Outages_Fetcher {
 
     private function map_indicator(string $indicator): string {
         $indicator = strtolower($indicator);
-        return match ($indicator) {
-            'none', 'operational', 'ok', 'green' => 'operational',
-            'maintenance', 'maintainance' => 'maintenance',
-            'minor', 'minor_outage', 'degraded', 'partial_outage', 'warning' => 'degraded',
-            'major', 'major_outage', 'critical', 'outage' => 'outage',
-            default => 'unknown',
-        };
+
+        switch ($indicator) {
+            case 'none':
+            case 'operational':
+            case 'ok':
+            case 'green':
+                return 'operational';
+
+            case 'maintenance':
+            case 'maintainance':
+                return 'maintenance';
+
+            case 'minor':
+            case 'minor_outage':
+            case 'degraded':
+            case 'partial_outage':
+            case 'warning':
+                return 'degraded';
+
+            case 'major':
+            case 'major_outage':
+            case 'critical':
+            case 'outage':
+                return 'outage';
+
+            default:
+                return 'unknown';
+        }
     }
 
     private function status_label(string $status): string {
-        return match (strtolower($status)) {
-            'operational' => 'Operational',
-            'degraded'    => 'Degraded',
-            'outage'      => 'Outage',
-            'maintenance' => 'Maintenance',
-            default       => 'Unknown',
-        };
+        switch (strtolower($status)) {
+            case 'operational':
+                return 'Operational';
+
+            case 'degraded':
+                return 'Degraded';
+
+            case 'outage':
+                return 'Outage';
+
+            case 'maintenance':
+                return 'Maintenance';
+
+            default:
+                return 'Unknown';
+        }
     }
 }
