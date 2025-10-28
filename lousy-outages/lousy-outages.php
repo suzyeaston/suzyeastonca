@@ -18,6 +18,7 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Fetch.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Adapters.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Adapters/Statuspage.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Store.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Trending.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Fetcher.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Downdetector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/I18n.php';

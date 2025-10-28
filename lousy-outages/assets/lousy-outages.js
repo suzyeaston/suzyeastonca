@@ -14,7 +14,7 @@
   var globalRoot = rootRef && typeof rootRef.setTimeout === 'function' ? rootRef : (typeof globalThis !== 'undefined' ? globalThis : rootRef);
 
   var POLL_MS = 60000;
-  var MAX_BACKOFF_MS = 300000;
+  var ERROR_BACKOFF_STEPS = [30000, 45000, 60000, 90000, 120000];
 
   var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
@@ -48,13 +48,17 @@
     countdownTimer: null,
     nextRefreshAt: null,
     etag: null,
-    backoff: POLL_MS,
+    errorLevel: 0,
+    visibilityPaused: false,
     container: null,
     grid: null,
     fetchedEl: null,
     countdownEl: null,
     refreshButton: null,
     degradedBadge: null,
+    trendingBanner: null,
+    trendingText: null,
+    trendingReasons: null,
     fetchedAt: null,
     isRefreshing: false,
     pendingManual: false
@@ -126,6 +130,15 @@
     if (state.timer) {
       state.root.clearTimeout(state.timer);
       state.timer = null;
+    }
+    if (!isDocumentVisible()) {
+      state.visibilityPaused = true;
+      state.nextRefreshAt = null;
+      stopCountdown();
+      if (state.countdownEl) {
+        state.countdownEl.textContent = 'Auto-refresh paused';
+      }
+      return;
     }
     var nextDelay = Math.max(10, delay);
     state.nextRefreshAt = Date.now() + nextDelay;
@@ -216,6 +229,7 @@
       return;
     }
     if (active) {
+      state.degradedBadge.textContent = 'AUTO-REFRESH DEGRADED';
       state.degradedBadge.removeAttribute('hidden');
     } else {
       state.degradedBadge.setAttribute('hidden', 'hidden');
@@ -525,17 +539,85 @@
     });
   }
 
+  function isDocumentVisible() {
+    if (!state.doc || typeof state.doc.visibilityState !== 'string') {
+      return true;
+    }
+    return state.doc.visibilityState === 'visible';
+  }
+
+  function updateTrendingBanner(data) {
+    if (!state.trendingBanner) {
+      return;
+    }
+
+    var info = data || {};
+    var active = !!info.trending;
+    var signals = Array.isArray(info.signals) ? info.signals.filter(Boolean) : [];
+
+    if (active) {
+      state.trendingBanner.removeAttribute('hidden');
+    } else {
+      state.trendingBanner.setAttribute('hidden', 'hidden');
+    }
+
+    if (state.trendingText) {
+      state.trendingText.textContent = 'Potential widespread issues detected — check affected providers';
+    }
+
+    if (state.trendingReasons) {
+      if (signals.length) {
+        state.trendingReasons.textContent = 'Signals: ' + signals.slice(0, 6).join(', ');
+        state.trendingReasons.removeAttribute('hidden');
+      } else {
+        state.trendingReasons.textContent = '';
+        state.trendingReasons.setAttribute('hidden', 'hidden');
+      }
+    }
+
+    if (info.generated_at && state.trendingBanner) {
+      state.trendingBanner.setAttribute('data-lo-trending-generated', info.generated_at);
+    }
+  }
+
+  function handleVisibilityChange() {
+    if (isDocumentVisible()) {
+      state.visibilityPaused = false;
+      if (!state.isRefreshing) {
+        refreshSummary(false, true);
+      }
+    } else {
+      state.visibilityPaused = true;
+      if (state.timer && state.root) {
+        state.root.clearTimeout(state.timer);
+        state.timer = null;
+      }
+      state.nextRefreshAt = null;
+      stopCountdown();
+      if (state.countdownEl) {
+        state.countdownEl.textContent = 'Auto-refresh paused';
+      }
+    }
+  }
+
   function refreshSummary(manual, force) {
     if (!state.fetchImpl || !state.endpoint || state.isRefreshing) {
+      return Promise.resolve();
+    }
+    if (!manual && !force && !isDocumentVisible()) {
+      state.visibilityPaused = true;
+      state.nextRefreshAt = null;
+      if (state.countdownEl) {
+        state.countdownEl.textContent = 'Auto-refresh paused';
+      }
       return Promise.resolve();
     }
     var startedAt = Date.now();
     var scheduled = false;
     state.isRefreshing = true;
     if (manual) {
-      state.backoff = state.pollInterval;
-      state.nextRefreshAt = Date.now() + state.pollInterval;
-      updateCountdown();
+      state.errorLevel = 0;
+      state.visibilityPaused = false;
     }
     var url = state.endpoint;
     if (!url) {
@@ -561,7 +643,8 @@
           throw new Error('No response');
         }
         if (res.status === 304) {
-          state.backoff = state.pollInterval;
+          state.errorLevel = 0;
+          state.visibilityPaused = false;
           showDegraded(false);
           var elapsed304 = Date.now() - startedAt;
           var delay304 = Math.max(10, state.pollInterval - elapsed304);
@@ -580,7 +663,8 @@
       })
       .then(function (body) {
         if (!scheduled) {
-          state.backoff = state.pollInterval;
+          state.errorLevel = 0;
+          state.visibilityPaused = false;
           showDegraded(false);
           var elapsed = Date.now() - startedAt;
           var delay = Math.max(10, state.pollInterval - elapsed);
@@ -598,12 +682,19 @@
           state.fetchedAt = fetched;
           updateFetched();
         }
+        if (body.trending) {
+          updateTrendingBanner(body.trending);
+        } else {
+          updateTrendingBanner({ trending: false, signals: [] });
+        }
       })
       .catch(function () {
-        state.backoff = Math.min(state.backoff * 2, MAX_BACKOFF_MS);
+        var index = Math.min(state.errorLevel, ERROR_BACKOFF_STEPS.length - 1);
+        var targetDelay = ERROR_BACKOFF_STEPS[index];
+        state.errorLevel = Math.min(state.errorLevel + 1, ERROR_BACKOFF_STEPS.length - 1);
         showDegraded(true);
         var elapsedError = Date.now() - startedAt;
-        var backoffDelay = Math.max(10, state.backoff - elapsedError);
+        var backoffDelay = Math.max(10, targetDelay - elapsedError);
         scheduleNext(backoffDelay);
         scheduled = true;
       })
@@ -694,6 +785,9 @@
     state.countdownEl = state.container.querySelector('[data-lo-countdown]') || state.container.querySelector('.board-subtitle');
     state.refreshButton = state.container.querySelector('[data-lo-refresh]') || state.container.querySelector('.coin-btn');
     state.degradedBadge = state.container.querySelector('[data-lo-degraded]');
+    state.trendingBanner = state.container.querySelector('[data-lo-trending]');
+    state.trendingText = state.container.querySelector('[data-lo-trending-text]');
+    state.trendingReasons = state.container.querySelector('[data-lo-trending-reasons]');
     state.endpoint = config.endpoint || '';
     state.refreshEndpoint = config.refreshEndpoint || '';
     state.refreshNonce = config.refreshNonce || '';
@@ -702,7 +796,8 @@
     if (!Number.isFinite(state.pollInterval) || state.pollInterval <= 0) {
       state.pollInterval = POLL_MS;
     }
-    state.backoff = state.pollInterval;
+    state.errorLevel = 0;
+    state.visibilityPaused = !isDocumentVisible();
 
     var initial = config.initial || {};
     var initialProviders = [];
@@ -721,14 +816,25 @@
     state.fetchedAt = initialFetched || null;
     updateFetched();
 
+    var initialTrending = null;
+    if (initial && typeof initial.trending === 'object') {
+      initialTrending = initial.trending;
+    } else if (config.meta && typeof config.meta.trending === 'object') {
+      initialTrending = config.meta.trending;
+    }
+    updateTrendingBanner(initialTrending || { trending: false, signals: [] });
+
     if (state.refreshButton) {
       state.refreshButton.addEventListener('click', manualRefresh);
     }
 
     enhanceSubscribeForms();
 
-    state.nextRefreshAt = Date.now() + state.pollInterval;
-    startCountdown();
+    if (state.doc && typeof state.doc.addEventListener === 'function') {
+      state.doc.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    scheduleNext(state.pollInterval);
 
     refreshSummary(false, true).catch(function () {
       // Ignore initial failure; countdown/backoff already handled inside refreshSummary.
@@ -744,6 +850,8 @@
     state.nextRefreshAt = null;
     updateCountdown();
     showDegraded(false);
+    state.visibilityPaused = true;
+    state.errorLevel = 0;
   }
 
   return {

@@ -126,9 +126,14 @@ class Api {
         $result   = $fetcher->get_all($filters ?: null);
         $providers = array_values($result['providers']);
 
+        $trending = isset($result['trending']) && is_array($result['trending'])
+            ? $result['trending']
+            : ['trending' => false, 'signals' => [], 'generated_at' => gmdate('c')];
+
         $payload = [
             'providers'  => $providers,
             'fetched_at' => $result['fetched_at'],
+            'trending'   => $trending,
         ];
         if (!empty($result['errors'])) {
             $payload['errors'] = $result['errors'];
