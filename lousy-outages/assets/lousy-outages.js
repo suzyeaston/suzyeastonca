@@ -1,29 +1,22 @@
-if (typeof window === 'undefined') {
-  const root = typeof globalThis !== 'undefined' ? globalThis : global;
-  const state = {
-    root,
-    pollMs: 300000,
-    countdownTimer: null,
-    refreshTimer: null,
-    lastFetched: null,
-    providers: [],
-    config: {},
-    fetch: null,
-    doc: null,
-    container: null,
-    grid: null,
-    metaFetched: null,
-    metaCountdown: null,
-    refreshButton: null,
-    statusMessageTimer: null,
-    countdownPaused: false,
-    refreshEndpoint: '',
-    refreshNonce: '',
-    refreshLabel: 'Refresh now',
-    refreshingLabel: 'Refreshing…'
-  };
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory(root);
+  } else {
+    var api = factory(root);
+    root.LousyOutagesApp = api;
+    if (root && root.document && root.LousyOutagesConfig) {
+      api.init(root.LousyOutagesConfig);
+    }
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof self !== 'undefined' ? self : this), function (rootRef) {
+  'use strict';
 
-  const STATUS_MAP = {
+  var globalRoot = rootRef && typeof rootRef.setTimeout === 'function' ? rootRef : (typeof globalThis !== 'undefined' ? globalThis : rootRef);
+
+  var POLL_MS = 60000;
+  var MAX_BACKOFF_MS = 300000;
+
+  var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
     degraded: { code: 'degraded', label: 'Degraded', className: 'status--degraded' },
     outage: { code: 'outage', label: 'Outage', className: 'status--outage' },
@@ -31,7 +24,7 @@ if (typeof window === 'undefined') {
     unknown: { code: 'unknown', label: 'Unknown', className: 'status--unknown' }
   };
 
-  const SNARKS = {
+  var SNARKS = {
     aws: [
       'us-east-1 is a lifestyle choice.',
       'Somewhere a Lambda forgot to set its alarm.'
@@ -41,849 +34,705 @@ if (typeof window === 'undefined') {
     default: ['Hold tight—someone’s jiggling the ethernet cable.']
   };
 
-  function normalizeStatus(status) {
-    const key = String(status || '').toLowerCase();
+  var state = {
+    root: globalRoot,
+    doc: null,
+    fetchImpl: null,
+    endpoint: '',
+    refreshEndpoint: '',
+    refreshNonce: '',
+    subscribeEndpoint: '',
+    pollInterval: POLL_MS,
+    timer: null,
+    countdownTimer: null,
+    nextRefreshAt: null,
+    etag: null,
+    backoff: POLL_MS,
+    container: null,
+    grid: null,
+    fetchedEl: null,
+    countdownEl: null,
+    refreshButton: null,
+    degradedBadge: null,
+    fetchedAt: null,
+    isRefreshing: false,
+    pendingManual: false
+  };
+
+  function normalizeStatus(code) {
+    var key = String(code || '').toLowerCase();
     return STATUS_MAP[key] || STATUS_MAP.unknown;
   }
 
   function snarkOutage(provider, status, summary) {
-    const statusKey = String(status || '').toLowerCase();
-    if ('operational' === statusKey || 'maintenance' === statusKey) {
-      return summary || 'All systems operational.';
+    var normalized = normalizeStatus(status);
+    if ('operational' === normalized.code || 'maintenance' === normalized.code) {
+      return summary || normalized.label;
     }
-    const providerKey = String(provider || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-    const lines = SNARKS[providerKey] || SNARKS.default;
-    const index = Math.min(lines.length - 1, Math.floor(Math.random() * lines.length));
-    const chosen = lines[index] || '';
-    return chosen ? chosen : summary || 'Something feels off.';
+    var providerKey = String(provider || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+    var lines = SNARKS[providerKey] || SNARKS.default;
+    if (!lines.length) {
+      return summary || 'Something feels off.';
+    }
+    var index = Math.floor(Math.random() * lines.length);
+    return lines[index] || summary || 'Something feels off.';
   }
 
-  function formatTimestamp(iso) {
-    if (!iso) {
+  function escapeSelector(id) {
+    if (typeof id !== 'string') {
       return '';
     }
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) {
-      return '';
+    if (typeof CSS !== 'undefined' && CSS.escape) {
+      return CSS.escape(id);
     }
-    return new Intl.DateTimeFormat(undefined, {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }).format(date);
+    return id.replace(/[^a-zA-Z0-9_-]/g, '\\$&');
   }
 
-  function formatRelative(ms) {
-    if (!Number.isFinite(ms)) {
-      return '';
-    }
-    if (ms <= 0) {
-      return 'Ready to refresh';
-    }
-    const seconds = Math.round(ms / 1000);
-    if (seconds < 60) {
-      return seconds + 's until refresh';
-    }
-    const minutes = Math.floor(seconds / 60);
-    const rem = seconds % 60;
-    return minutes + 'm ' + rem + 's until refresh';
+  function appendQuery(url, key, value) {
+    var separator = url.indexOf('?') === -1 ? '?' : '&';
+    return url + separator + key + '=' + encodeURIComponent(value);
   }
 
-  function slugify(value) {
-    if (!value) {
-      return '';
-    }
-    return String(value)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  }
-
-  function showStatusMessage(message, revertAfterMs) {
-    if (!state.metaCountdown) {
+  function clearChildren(el) {
+    if (!el) {
       return;
     }
-    state.countdownPaused = true;
-    state.metaCountdown.textContent = message;
-    if (state.statusMessageTimer) {
-      state.root.clearTimeout(state.statusMessageTimer);
-      state.statusMessageTimer = null;
+    if (typeof el.innerHTML === 'string') {
+      el.innerHTML = '';
     }
-    if (revertAfterMs && revertAfterMs > 0) {
-      state.statusMessageTimer = state.root.setTimeout(function () {
-        state.statusMessageTimer = null;
-        resumeCountdown();
-      }, revertAfterMs);
+    if (Array.isArray(el.children)) {
+      el.children.length = 0;
     }
   }
 
-  function resumeCountdown() {
-    if (state.statusMessageTimer) {
-      state.root.clearTimeout(state.statusMessageTimer);
-      state.statusMessageTimer = null;
+  function scheduleNext(delay) {
+    if (state.timer) {
+      state.root.clearTimeout(state.timer);
+      state.timer = null;
     }
-    state.countdownPaused = false;
-    tickCountdown();
-  }
-
-  function setLoading(isLoading) {
-    if (state.refreshButton) {
-      state.refreshButton.disabled = !!isLoading;
-      state.refreshButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
-      state.refreshButton.textContent = isLoading ? state.refreshingLabel : state.refreshLabel;
-    }
-  }
-
-  function updateMeta(meta) {
-    if (!meta) {
-      return;
-    }
-    if (meta.fetchedAt) {
-      state.lastFetched = meta.fetchedAt;
-    }
-    if (state.metaFetched) {
-      state.metaFetched.textContent = state.lastFetched ? formatTimestamp(state.lastFetched) : '—';
-    }
-  }
-
-  function tickCountdown() {
-    if (!state.metaCountdown) {
-      return;
-    }
-    if (state.countdownPaused) {
-      return;
-    }
-    if (!state.lastFetched) {
-      state.metaCountdown.textContent = 'Waiting for first refresh…';
-      return;
-    }
-    const diff = state.pollMs - (Date.now() - new Date(state.lastFetched).getTime());
-    state.metaCountdown.textContent = formatRelative(diff);
+    var nextDelay = Math.max(10, delay);
+    state.nextRefreshAt = Date.now() + nextDelay;
+    state.timer = state.root.setTimeout(function () {
+      state.timer = null;
+      refreshSummary(false);
+    }, nextDelay);
+    startCountdown();
   }
 
   function startCountdown() {
+    if (!state.root || !state.countdownEl) {
+      return;
+    }
     if (state.countdownTimer) {
       state.root.clearInterval(state.countdownTimer);
     }
-    tickCountdown();
-    state.countdownTimer = state.root.setInterval(tickCountdown, 1000);
+    updateCountdown();
+    state.countdownTimer = state.root.setInterval(updateCountdown, 1000);
   }
 
-  function scheduleNextRefresh() {
-    if (state.refreshTimer) {
-      state.root.clearTimeout(state.refreshTimer);
+  function stopCountdown() {
+    if (state.countdownTimer && state.root) {
+      state.root.clearInterval(state.countdownTimer);
+      state.countdownTimer = null;
     }
-    const delay = Math.max(60, state.pollMs);
-    state.refreshTimer = state.root.setTimeout(function () {
-      refreshNow(false);
-    }, delay);
+  }
+
+  function updateCountdown() {
+    if (!state.countdownEl) {
+      return;
+    }
+    if (!state.nextRefreshAt) {
+      state.countdownEl.textContent = 'Auto-refresh paused';
+      return;
+    }
+    var diff = state.nextRefreshAt - Date.now();
+    if (diff <= 0) {
+      state.countdownEl.textContent = 'Refreshing…';
+      return;
+    }
+    var seconds = Math.round(diff / 1000);
+    if (seconds < 60) {
+      state.countdownEl.textContent = 'Next refresh in ' + seconds + 's';
+      return;
+    }
+    var minutes = Math.floor(seconds / 60);
+    var rem = seconds % 60;
+    state.countdownEl.textContent = 'Next refresh in ' + minutes + 'm ' + rem + 's';
+  }
+
+  function updateFetched() {
+    if (!state.fetchedEl || !state.fetchedAt) {
+      return;
+    }
+    var date = new Date(state.fetchedAt);
+    if (Number.isNaN(date.getTime())) {
+      state.fetchedEl.textContent = state.fetchedAt;
+      return;
+    }
+    try {
+      var formatted = new Intl.DateTimeFormat(undefined, {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).format(date);
+      state.fetchedEl.textContent = formatted;
+    } catch (err) {
+      state.fetchedEl.textContent = date.toISOString();
+    }
+  }
+
+  function setLoading(isLoading) {
+    if (!state.refreshButton) {
+      return;
+    }
+    state.refreshButton.disabled = !!isLoading;
+    state.refreshButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+    state.refreshButton.textContent = isLoading ? 'Refreshing…' : 'Refresh now';
+  }
+
+  function showDegraded(active) {
+    if (!state.degradedBadge) {
+      return;
+    }
+    if (active) {
+      state.degradedBadge.removeAttribute('hidden');
+    } else {
+      state.degradedBadge.setAttribute('hidden', 'hidden');
+    }
   }
 
   function renderProviders(list) {
-    state.providers = Array.isArray(list) ? list : [];
-    if (!state.doc) {
+    if (!Array.isArray(list)) {
       return;
     }
-    state.providers.forEach(provider => {
-      if (!provider || !provider.id) {
+    list.forEach(function (provider) {
+      if (!provider) {
         return;
       }
-      const selector = '.provider-card[data-id="' + provider.id + '"]';
-      const card = state.doc.querySelector(selector);
+      var id = provider.id || provider.provider;
+      if (!id) {
+        return;
+      }
+      var card = null;
+      if (state.grid) {
+        card = state.grid.querySelector('[data-provider-id="' + escapeSelector(String(id)) + '"]');
+        if (!card) {
+          card = state.grid.querySelector('.provider-card[data-id="' + String(id) + '"]');
+        }
+      }
+      if (!card && state.doc) {
+        card = state.doc.querySelector('[data-provider-id="' + escapeSelector(String(id)) + '"]') || state.doc.querySelector('.provider-card[data-id="' + String(id) + '"]');
+      }
       if (!card) {
         return;
       }
-      const normalized = normalizeStatus(provider.stateCode || provider.status || provider.statusCode);
-      const badge = card.querySelector('.status-badge');
-      if (badge) {
-        badge.textContent = normalized.label;
-        badge.className = 'status-badge ' + normalized.className;
-        if (badge.dataset) {
-          badge.dataset.status = normalized.code;
-        }
-      }
-      const summary = card.querySelector('.provider-card__summary');
-      if (summary) {
-        summary.textContent = provider.summary || provider.message || '';
-      }
-      const snark = card.querySelector('.provider-card__snark');
-      if (snark) {
-        snark.textContent = snarkOutage(provider.name || provider.provider || provider.id, normalized.label, provider.summary || provider.message || '');
-      }
-      const link = card.querySelector('.provider-details .provider-link');
-      if (link && provider.url) {
-        link.setAttribute('href', provider.url);
-      }
-      const incidentsWrap = card.querySelector('.provider-details .incidents');
-      if (incidentsWrap) {
-        incidentsWrap.children.length = 0;
-        const incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
-        if (!incidents.length) {
-          const empty = state.doc.createElement('p');
-          empty.className = 'incident-empty';
-          empty.textContent = 'No active incidents. Go write a chorus.';
-          incidentsWrap.appendChild(empty);
-        } else {
-          incidents.forEach(item => {
-            const entry = state.doc.createElement('article');
-            entry.className = 'incident';
-            const heading = state.doc.createElement('h4');
-            heading.className = 'incident__title';
-            heading.textContent = item.title || 'Incident';
-            entry.appendChild(heading);
-            const meta = state.doc.createElement('p');
-            meta.className = 'incident__meta';
-            const impact = item.impact ? String(item.impact).replace(/^[a-z]/, c => c.toUpperCase()) : 'Unknown';
-            const updated = item.updatedAt || item.updated_at;
-            meta.textContent = impact + (updated ? ' • ' + formatTimestamp(updated) : '');
-            entry.appendChild(meta);
-            const body = state.doc.createElement('p');
-            body.className = 'incident__summary';
-            body.textContent = item.summary || '';
-            entry.appendChild(body);
-            incidentsWrap.appendChild(entry);
-          });
-        }
+      var normalized = normalizeStatus(provider.overall_status || provider.status || provider.stateCode);
+      if (card.classList && card.classList.contains('provider-card')) {
+        updateLegacyCard(card, provider, normalized);
+      } else {
+        updateModernCard(card, provider, normalized);
       }
     });
   }
 
-  function processPayload(payload, fromManual) {
-    if (!payload) {
-      throw new Error('Empty payload');
+  function getSummaryText(provider) {
+    if (!provider) {
+      return '';
     }
-    renderProviders(payload.providers || []);
-    const meta = payload.meta || {};
-    if (fromManual && payload.refreshedAt && !meta.fetchedAt) {
-      meta.fetchedAt = payload.refreshedAt;
-    }
-    updateMeta(meta);
-    const errors = Array.isArray(payload.errors) ? payload.errors : [];
-    if (fromManual && errors.length) {
-      const names = errors
-        .map(item => {
-          if (!item) {
-            return '';
-          }
-          return item.name || item.provider || item.id || '';
-        })
-        .filter(Boolean);
-      const message = names.length
-        ? 'Refreshed with issues: ' + names.join(', ')
-        : 'Refreshed with provider errors.';
-      showStatusMessage(message, 6000);
-    } else {
-      resumeCountdown();
-    }
-    startCountdown();
-    return payload;
+    return provider.summary || provider.message || '';
   }
 
-  function refreshNow(force) {
-    if (!state.fetch || !state.config || !state.config.endpoint) {
-      return Promise.resolve();
-    }
-    if (force) {
-      setLoading(true);
-      showStatusMessage(state.refreshingLabel);
-    }
-
-    const fetchStatusPayload = () => {
-      let url = state.config.endpoint;
-      const separator = url.indexOf('?') === -1 ? '?' : '&';
-      url += separator + '_=' + Date.now();
-      if (force) {
-        url += '&refresh=1';
+  function updateLegacyCard(card, provider, normalized) {
+    var badge = card.querySelector('.status-badge');
+    if (badge) {
+      badge.textContent = normalized.label;
+      badge.className = 'status-badge ' + normalized.className;
+      if (badge.dataset) {
+        badge.dataset.status = normalized.code;
       }
-      return state.fetch(url, { credentials: 'same-origin' })
-        .then(res => {
-          if (!res || !res.ok) {
-            const status = res ? res.status : 0;
-            throw new Error('HTTP ' + status);
-          }
-          return res.json();
-        })
-        .then(payload => {
-          processPayload(payload, force);
-          scheduleNextRefresh();
-          return payload;
+    }
+    var summary = card.querySelector('.provider-card__summary');
+    if (summary) {
+      summary.textContent = getSummaryText(provider);
+    }
+    var snark = card.querySelector('.provider-card__snark');
+    if (snark) {
+      snark.textContent = snarkOutage(provider.name || provider.provider || provider.id, normalized.label, getSummaryText(provider));
+    }
+    var incidentsWrap = card.querySelector('.incidents');
+    if (incidentsWrap) {
+      clearChildren(incidentsWrap);
+      incidentsWrap.textContent = '';
+      var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+      if (!incidents.length) {
+        incidentsWrap.textContent = 'No active incidents. Go write a chorus.';
+      } else if (state.doc && typeof state.doc.createElement === 'function') {
+        incidents.forEach(function (incident) {
+          var item = state.doc.createElement('p');
+          var impact = incident.impact ? String(incident.impact).replace(/^[a-z]/, function (c) { return c.toUpperCase(); }) : 'Unknown';
+          var updated = formatTimestamp(incident.updated_at || incident.updatedAt);
+          var summaryText = incident.summary ? ' — ' + String(incident.summary) : '';
+          item.textContent = impact + (updated ? ' • ' + updated : '') + summaryText;
+          incidentsWrap.appendChild(item);
         });
-    };
-
-    let manualRequest = Promise.resolve(null);
-    if (force && state.refreshEndpoint) {
-      const options = {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {}
-      };
-      if (state.refreshNonce) {
-        options.headers['X-WP-Nonce'] = state.refreshNonce;
       }
-      manualRequest = state.fetch(state.refreshEndpoint, options)
-        .then(res => {
-          if (!res || !res.ok) {
-            const status = res ? res.status : 0;
-            throw new Error('HTTP ' + status);
+    }
+    var link = card.querySelector('.provider-link');
+    if (link && provider.url) {
+      link.setAttribute('href', provider.url);
+    }
+  }
+
+  function updateModernCard(card, provider, normalized) {
+    var badge = card.querySelector('[data-lo-badge]');
+    if (badge) {
+      badge.textContent = normalized.label;
+      badge.className = 'lo-pill ' + normalized.className;
+    }
+    var summary = card.querySelector('[data-lo-summary]');
+    if (summary) {
+      summary.textContent = getSummaryText(provider);
+    }
+    var error = card.querySelector('[data-lo-error]');
+    if (error) {
+      var hasError = !!provider.error;
+      error.textContent = hasError ? String(provider.error) : '';
+      if (hasError) {
+        error.removeAttribute('hidden');
+      } else {
+        error.setAttribute('hidden', 'hidden');
+      }
+    }
+    var componentsWrap = card.querySelector('[data-lo-components]');
+    if (componentsWrap) {
+      componentsWrap.innerHTML = '';
+      var components = Array.isArray(provider.components) ? provider.components.filter(function (component) {
+        if (!component) {
+          return false;
+        }
+        var status = String(component.status || '').toLowerCase();
+        return status && status !== 'operational';
+      }) : [];
+      if (components.length) {
+        var title = state.doc.createElement('h4');
+        title.className = 'lo-components__title';
+        title.textContent = 'Impacted components';
+        componentsWrap.appendChild(title);
+        var listEl = state.doc.createElement('ul');
+        listEl.className = 'lo-components__list';
+        components.forEach(function (component) {
+          var item = state.doc.createElement('li');
+          var name = state.doc.createElement('span');
+          name.className = 'lo-component-name';
+          name.textContent = component.name || 'Component';
+          item.appendChild(name);
+          var statusEl = state.doc.createElement('span');
+          statusEl.className = 'lo-component-status';
+          statusEl.textContent = component.status_label || normalizeStatus(component.status).label;
+          item.appendChild(statusEl);
+          listEl.appendChild(item);
+        });
+        componentsWrap.appendChild(listEl);
+      }
+    }
+    var incidentsWrap = card.querySelector('[data-lo-incidents]');
+    if (incidentsWrap) {
+      incidentsWrap.innerHTML = '';
+      var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+      if (!incidents.length) {
+        var empty = state.doc.createElement('p');
+        empty.className = 'lo-empty';
+        empty.textContent = 'No active incidents.';
+        incidentsWrap.appendChild(empty);
+      } else {
+        var ul = state.doc.createElement('ul');
+        ul.className = 'lo-inc-list';
+        incidents.forEach(function (incident) {
+          var li = state.doc.createElement('li');
+          li.className = 'lo-inc-item';
+          var title = state.doc.createElement('p');
+          title.className = 'lo-inc-title';
+          title.textContent = incident.name || 'Incident';
+          li.appendChild(title);
+          var meta = state.doc.createElement('p');
+          meta.className = 'lo-inc-meta';
+          var impact = incident.impact ? String(incident.impact).replace(/^[a-z]/, function (c) { return c.toUpperCase(); }) : 'Unknown';
+          var updated = formatTimestamp(incident.updated_at || incident.updatedAt || incident.started_at || incident.startedAt);
+          meta.textContent = impact + (updated ? ' • ' + updated : '');
+          li.appendChild(meta);
+          if (incident.summary) {
+            var details = state.doc.createElement('p');
+            details.className = 'lo-inc-summary';
+            details.textContent = String(incident.summary);
+            li.appendChild(details);
           }
-          return res.json();
-        })
-        .then(payload => processPayload(payload, true));
+          if (incident.url) {
+            var link = state.doc.createElement('a');
+            link.className = 'lo-status-link';
+            link.href = incident.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = 'View incident';
+            li.appendChild(link);
+          }
+          ul.appendChild(li);
+        });
+        incidentsWrap.appendChild(ul);
+      }
     }
-
-    return manualRequest
-      .then(payload => {
-        if (payload && payload.providers) {
-          scheduleNextRefresh();
-          return payload;
-        }
-        return fetchStatusPayload();
-      })
-      .catch(error => {
-        if (force) {
-          return fetchStatusPayload().catch(fallbackError => {
-            showStatusMessage('Status fetch failed: ' + fallbackError.message, 6000);
-            scheduleNextRefresh();
-            throw fallbackError;
-          });
-        }
-        scheduleNextRefresh();
-        throw error;
-      })
-      .finally(() => {
-        if (force) {
-          setLoading(false);
-        }
-      });
-  }
-
-  function stopAutoRefresh() {
-    if (state.countdownTimer) {
-      state.root.clearInterval(state.countdownTimer);
-      state.countdownTimer = null;
-    }
-    if (state.refreshTimer) {
-      state.root.clearTimeout(state.refreshTimer);
-      state.refreshTimer = null;
+    var statusLink = card.querySelector('[data-lo-status-url]');
+    if (statusLink) {
+      if (provider.url) {
+        statusLink.href = provider.url;
+        statusLink.removeAttribute('hidden');
+      } else {
+        statusLink.setAttribute('hidden', 'hidden');
+      }
     }
   }
-
-  function init(config) {
-    stopAutoRefresh();
-    state.config = config || {};
-    state.pollMs = Number(state.config.pollInterval) || 300000;
-    if (!Number.isFinite(state.pollMs) || state.pollMs <= 0) {
-      state.pollMs = 300000;
-    }
-    state.doc = state.config.document || state.root.document || (typeof document !== 'undefined' ? document : null);
-    if (!state.doc || typeof state.doc.querySelector !== 'function') {
-      return;
-    }
-    state.container = state.config.container || state.doc.getElementById('lousy-outages') || state.doc.querySelector('.lousy-outages-board');
-    if (!state.container) {
-      return;
-    }
-    state.grid = state.container.querySelector('.providers-grid') || state.container.querySelector('[data-lo-grid]');
-    state.metaFetched = state.container.querySelector('[data-lo-fetched]') || state.container.querySelector('.last-updated span');
-    state.metaCountdown = state.container.querySelector('[data-lo-countdown]') || state.container.querySelector('.board-subtitle');
-    state.refreshButton = state.container.querySelector('[data-lo-refresh]') || state.container.querySelector('.coin-btn');
-    state.fetch = state.config.fetch || state.root.fetch;
-    state.refreshEndpoint = state.config.refreshEndpoint || (state.config.refresh && state.config.refresh.endpoint) || state.refreshEndpoint;
-    state.refreshNonce = state.config.refreshNonce || (state.config.refresh && state.config.refresh.nonce) || state.refreshNonce;
-    state.refreshingLabel = state.config.refreshingLabel || state.refreshingLabel;
-    if (state.refreshButton) {
-      state.refreshLabel = state.refreshButton.textContent || state.refreshLabel;
-    }
-    state.lastFetched = state.config.initial && state.config.initial.meta ? state.config.initial.meta.fetchedAt : null;
-
-    renderProviders((state.config.initial && state.config.initial.providers) || state.providers);
-    updateMeta(state.config.initial ? state.config.initial.meta : null);
-
-    if (state.refreshButton && typeof state.refreshButton.addEventListener === 'function') {
-      state.refreshButton.addEventListener('click', function () {
-        refreshNow(true);
-      });
-    }
-
-    refreshNow(false);
-  }
-
-  module.exports = {
-    init,
-    stopAutoRefresh,
-    normalizeStatus,
-    snarkOutage
-  };
-} else {
-
-(function (window) {
-  'use strict';
-
-  var config = window.LousyOutagesConfig || {};
-  var container = document.querySelector('.lousy-outages');
-  if (!container) {
-    return;
-  }
-
-  var metaFetched = container.querySelector('[data-lo-fetched]');
-  var metaCountdown = container.querySelector('[data-lo-countdown]');
-  var refreshButton = container.querySelector('[data-lo-refresh]');
-  var grid = container.querySelector('[data-lo-grid]');
-  var refreshConfig = window.LOUSY_OUTAGES || {};
-  var refreshEndpoint = config.refreshEndpoint || refreshConfig.restUrl || '';
-  var refreshNonce = refreshConfig.nonce || '';
-
-  var pollMs = Number(config.pollInterval) || 300000;
-  var countdownTimer = null;
-  var lastFetched = config.initial && config.initial.meta ? config.initial.meta.fetchedAt : null;
-  var providers = (config.initial && config.initial.providers) || [];
-  var refreshDefaultLabel = refreshButton ? (refreshButton.textContent || 'Refresh now') : 'Refresh now';
-  var refreshingLabel = 'Refreshing…';
-  var countdownPaused = false;
-  var statusMessageTimer = null;
-
   function formatTimestamp(iso) {
     if (!iso) {
       return '';
     }
     var date = new Date(iso);
-    if (isNaN(date.getTime())) {
+    if (Number.isNaN(date.getTime())) {
       return '';
     }
-    return new Intl.DateTimeFormat(undefined, {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }).format(date);
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    } catch (err) {
+      return date.toISOString();
+    }
   }
 
-  function formatRelative(ms) {
-    if (!isFinite(ms)) {
-      return '';
-    }
-    if (ms <= 0) {
-      return 'Ready to refresh';
-    }
-    var seconds = Math.round(ms / 1000);
-    if (seconds < 60) {
-      return seconds + 's until refresh';
-    }
-    var minutes = Math.floor(seconds / 60);
-    var rem = seconds % 60;
-    return minutes + 'm ' + rem + 's until refresh';
-  }
-
-  function formatImpact(impact) {
-    if (!impact) {
-      return 'Unknown impact';
-    }
-    impact = String(impact);
-    return impact.charAt(0).toUpperCase() + impact.slice(1);
-  }
-
-  function slugify(input) {
-    if (!input) {
-      return '';
-    }
-    return String(input)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  }
-
-  function showStatusMessage(message, revertAfterMs) {
-    if (!metaCountdown) {
+  function handleSubscribeSubmit(event) {
+    event.preventDefault();
+    var form = event.currentTarget;
+    if (!form) {
       return;
     }
-    countdownPaused = true;
-    metaCountdown.textContent = message;
-    if (statusMessageTimer) {
-      window.clearTimeout(statusMessageTimer);
-      statusMessageTimer = null;
+    var statusEl = form.querySelector('[data-lo-subscribe-status]');
+    var emailInput = form.querySelector('input[name="email"]');
+    var honeypot = form.querySelector('input[name="website"]');
+    var nonceInput = form.querySelector('input[name="_wpnonce"]');
+    var endpoint = form.getAttribute('action') || state.subscribeEndpoint;
+    if (!endpoint || !state.fetchImpl) {
+      return;
     }
-    if (revertAfterMs && revertAfterMs > 0) {
-      statusMessageTimer = window.setTimeout(function () {
-        statusMessageTimer = null;
-        resumeCountdown();
-      }, revertAfterMs);
+    var email = emailInput ? emailInput.value.trim() : '';
+    if (!email) {
+      setSubscribeStatus(statusEl, 'Please enter your email.', true);
+      return;
     }
-  }
-
-  function resumeCountdown() {
-    if (statusMessageTimer) {
-      window.clearTimeout(statusMessageTimer);
-      statusMessageTimer = null;
+    if (honeypot && honeypot.value) {
+      setSubscribeStatus(statusEl, 'Submission blocked.', true);
+      return;
     }
-    countdownPaused = false;
-    tickCountdown();
-  }
-
-  function buildIncidents(incidentList) {
-    var wrapper = document.createElement('div');
-    wrapper.className = 'lo-inc';
-
-    var heading = document.createElement('strong');
-    heading.textContent = 'Incidents';
-    wrapper.appendChild(heading);
-
-    if (!incidentList || !incidentList.length) {
-      var empty = document.createElement('p');
-      empty.className = 'lo-empty';
-      empty.textContent = 'No active incidents';
-      wrapper.appendChild(empty);
-      return wrapper;
-    }
-
-    var list = document.createElement('ul');
-    list.className = 'lo-inc-list';
-
-    incidentList.forEach(function (incident) {
-      var item = document.createElement('li');
-      item.className = 'lo-inc-item';
-
-      var title = document.createElement('p');
-      title.className = 'lo-inc-title';
-      title.textContent = incident.title || 'Incident';
-      item.appendChild(title);
-
-      var meta = document.createElement('p');
-      meta.className = 'lo-inc-meta';
-      var bits = [];
-      if (incident.impact) {
-        bits.push(formatImpact(incident.impact));
-      }
-      if (incident.updatedAt) {
-        bits.push(formatTimestamp(incident.updatedAt));
-      }
-      meta.textContent = bits.join(' • ');
-      item.appendChild(meta);
-
-      if (incident.url) {
-        var link = document.createElement('a');
-        link.href = incident.url;
-        link.textContent = 'Open incident';
-        link.className = 'lo-status-link';
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        item.appendChild(link);
-      }
-
-      list.appendChild(item);
+    setSubscribeStatus(statusEl, 'Sending…');
+    form.querySelectorAll('button, input[type="submit"]').forEach(function (btn) {
+      btn.disabled = true;
     });
+    var payload = {
+      email: email,
+      website: honeypot ? honeypot.value : '',
+      _wpnonce: nonceInput ? nonceInput.value : ''
+    };
 
-    wrapper.appendChild(list);
-    return wrapper;
-  }
-
-  function buildCard(provider) {
-    var card = document.createElement('article');
-    card.className = 'lo-card';
-    card.dataset.providerId = provider.id;
-    var slug = slugify(provider && provider.id ? provider.id : '');
-    if (slug) {
-      card.id = 'provider-' + slug;
-    }
-
-    var prealert = provider && typeof provider.prealert === 'object' ? provider.prealert : {};
-    var risk = Number(prealert && prealert.risk != null ? prealert.risk : provider.risk || 0);
-    if (!isFinite(risk)) {
-      risk = 0;
-    }
-
-    var head = document.createElement('div');
-    head.className = 'lo-head';
-
-    var title = document.createElement('h3');
-    title.className = 'lo-title';
-    title.textContent = provider.name || provider.provider || provider.id;
-    head.appendChild(title);
-
-    var pill = document.createElement('span');
-    var stateCode = provider.stateCode || 'unknown';
-    pill.className = 'lo-pill ' + stateCode;
-    pill.textContent = provider.state || formatImpact(stateCode);
-    head.appendChild(pill);
-
-    if (risk >= 20) {
-      var riskPill = document.createElement('span');
-      riskPill.className = 'lo-pill risk';
-      riskPill.textContent = 'RISK: ' + Math.round(risk) + '/100';
-      head.appendChild(riskPill);
-    }
-
-    card.appendChild(head);
-
-    if (provider.error) {
-      var error = document.createElement('span');
-      error.className = 'lo-error';
-      error.textContent = 'Error: ' + provider.error;
-      card.appendChild(error);
-    }
-
-    var summary = document.createElement('p');
-    summary.className = 'lo-summary';
-    summary.textContent = provider.summary || 'No status summary available.';
-    card.appendChild(summary);
-
-    if (risk > 0) {
-      var measures = prealert && typeof prealert.measures === 'object' ? prealert.measures : {};
-      var measureBits = [];
-      if (measures && measures.latency_ms !== undefined && measures.latency_ms !== null && measures.latency_ms !== '') {
-        measureBits.push('Latency ' + Number(measures.latency_ms) + ' ms');
-      }
-      if (measures && measures.baseline_ms !== undefined && measures.baseline_ms !== null && measures.baseline_ms !== '') {
-        measureBits.push('Baseline ' + Number(measures.baseline_ms) + ' ms');
-      }
-      if (
-        measures &&
-        measures.downdetector_reports !== undefined &&
-        measures.downdetector_reports !== null &&
-        measures.downdetector_reports !== ''
-      ) {
-        var reportCount = Number(measures.downdetector_reports);
-        if (isFinite(reportCount) && reportCount > 0) {
-          var reportLabel = reportCount === 1 ? 'report' : 'reports';
-          var reportText = 'Downdetector ' + reportCount + ' ' + reportLabel;
-          var age = measures.downdetector_age_minutes;
-          var ageNumber = Number(age);
-          if (isFinite(ageNumber) && ageNumber >= 0) {
-            reportText += ' (latest ' + Math.round(ageNumber) + 'm ago)';
-          }
-          measureBits.push(reportText);
-        }
-      }
-
-      var prealertBlock = document.createElement('div');
-      prealertBlock.className = 'lo-prealert';
-
-      var preTitle = document.createElement('strong');
-      preTitle.textContent = 'Pre-alerts';
-      prealertBlock.appendChild(preTitle);
-
-      var preSummary = document.createElement('p');
-      preSummary.className = 'lo-prealert-summary';
-      var summaryText = prealert && prealert.summary ? String(prealert.summary) : 'Early warning signals detected.';
-      preSummary.textContent = summaryText;
-      prealertBlock.appendChild(preSummary);
-
-      if (measureBits.length) {
-        var preMeasures = document.createElement('p');
-        preMeasures.className = 'lo-prealert-metrics';
-        preMeasures.textContent = measureBits.join(' • ');
-        prealertBlock.appendChild(preMeasures);
-      }
-
-      card.appendChild(prealertBlock);
-    }
-
-    if (provider.snark) {
-      var snark = document.createElement('p');
-      snark.className = 'lo-snark';
-      snark.textContent = provider.snark;
-      card.appendChild(snark);
-    }
-
-    card.appendChild(buildIncidents(provider.incidents || []));
-
-    if (provider.url) {
-      var view = document.createElement('a');
-      view.href = provider.url;
-      view.target = '_blank';
-      view.rel = 'noopener noreferrer';
-      view.className = 'lo-status-link';
-      view.textContent = 'View status →';
-      card.appendChild(view);
-    }
-
-    return card;
-  }
-
-  function renderProviders(list) {
-    providers = Array.isArray(list) ? list : [];
-    if (!grid) {
-      return;
-    }
-    grid.innerHTML = '';
-
-    if (!providers.length) {
-      var emptyCard = document.createElement('article');
-      emptyCard.className = 'lo-card';
-      var message = document.createElement('p');
-      message.className = 'lo-summary';
-      message.textContent = 'No providers selected yet.';
-      emptyCard.appendChild(message);
-      grid.appendChild(emptyCard);
-      return;
-    }
-
-    providers.forEach(function (provider) {
-      grid.appendChild(buildCard(provider));
-    });
-  }
-
-  function updateMeta(meta) {
-    if (!meta) {
-      return;
-    }
-    lastFetched = meta.fetchedAt || lastFetched;
-    if (metaFetched) {
-      metaFetched.textContent = lastFetched ? formatTimestamp(lastFetched) : '—';
-    }
-  }
-
-  function tickCountdown() {
-    if (!metaCountdown) {
-      return;
-    }
-    if (countdownPaused) {
-      return;
-    }
-    if (!lastFetched) {
-      metaCountdown.textContent = 'Waiting for first refresh…';
-      return;
-    }
-    var diff = pollMs - (Date.now() - new Date(lastFetched).getTime());
-    metaCountdown.textContent = formatRelative(diff);
-  }
-
-  function startCountdown() {
-    if (countdownTimer) {
-      window.clearInterval(countdownTimer);
-    }
-    tickCountdown();
-    countdownTimer = window.setInterval(tickCountdown, 1000);
-  }
-
-  function setLoading(isLoading) {
-    if (!refreshButton) {
-      return;
-    }
-    refreshButton.disabled = !!isLoading;
-    refreshButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
-    refreshButton.textContent = isLoading ? refreshingLabel : refreshDefaultLabel;
-  }
-
-  function fetchStatus(force) {
-    if (!config.endpoint) {
-      return Promise.resolve(null);
-    }
-    var url = config.endpoint;
-    var separator = url.indexOf('?') === -1 ? '?' : '&';
-    url += separator + '_=' + Date.now();
-    if (force) {
-      url += '&refresh=1';
-    }
-
-    return fetch(url, { credentials: 'same-origin' })
+    state.fetchImpl(endpoint, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
       .then(function (res) {
-        if (!res.ok) {
-          throw new Error('HTTP ' + res.status);
+        if (!res) {
+          throw new Error('No response');
         }
-        return res.json();
+        if (res.status === 204) {
+          return {};
+        }
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          if (!res.ok) {
+            var message = body && body.message ? body.message : 'Subscription failed.';
+            throw new Error(message);
+          }
+          return body;
+        });
       })
-      .then(function (payload) {
-        if (!payload) {
-          throw new Error('Empty payload');
-        }
-        renderProviders(payload.providers || []);
-        updateMeta(payload.meta || {});
-        resumeCountdown();
-        startCountdown();
-        return payload;
+      .then(function (body) {
+        setSubscribeStatus(statusEl, (body && body.message) ? body.message : 'Check your email to confirm.');
+        form.reset();
       })
       .catch(function (error) {
-        showStatusMessage('Status fetch failed: ' + error.message, 6000);
-        throw error;
+        setSubscribeStatus(statusEl, error && error.message ? error.message : 'Subscription failed.', true);
+      })
+      .finally(function () {
+        form.querySelectorAll('button, input[type="submit"]').forEach(function (btn) {
+          btn.disabled = false;
+        });
       });
   }
 
-  function triggerManualRefresh() {
-    setLoading(true);
-    showStatusMessage(refreshingLabel);
+  function setSubscribeStatus(el, message, isError) {
+    if (!el) {
+      return;
+    }
+    el.textContent = message || '';
+    if (isError) {
+      el.classList.add('lo-subscribe__status--error');
+    } else {
+      el.classList.remove('lo-subscribe__status--error');
+    }
+  }
 
-    var request;
-    if (refreshEndpoint) {
-      var options = {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {}
-      };
-      if (refreshNonce) {
-        options.headers['X-WP-Nonce'] = refreshNonce;
+  function enhanceSubscribeForms() {
+    if (!state.doc) {
+      return;
+    }
+    var forms = state.doc.querySelectorAll('[data-lo-subscribe-form]');
+    forms.forEach(function (form) {
+      if (!form || form.dataset.loEnhanced) {
+        return;
       }
-      request = fetch(refreshEndpoint, options).then(function (res) {
+      form.dataset.loEnhanced = '1';
+      form.addEventListener('submit', handleSubscribeSubmit);
+    });
+  }
+
+  function refreshSummary(manual, force) {
+    if (!state.fetchImpl || !state.endpoint || state.isRefreshing) {
+      return Promise.resolve();
+    }
+    var startedAt = Date.now();
+    var scheduled = false;
+    state.isRefreshing = true;
+    if (manual) {
+      state.backoff = state.pollInterval;
+      state.nextRefreshAt = Date.now() + state.pollInterval;
+      updateCountdown();
+    }
+    var url = state.endpoint;
+    if (!url) {
+      state.isRefreshing = false;
+      return Promise.resolve();
+    }
+    var headers = { Accept: 'application/json' };
+    if (manual || force) {
+      url = appendQuery(url, '_', Date.now());
+    }
+    if (manual) {
+      url = appendQuery(url, 'refresh', '1');
+    }
+    if (state.etag && !force) {
+      headers['If-None-Match'] = state.etag;
+    }
+    return state.fetchImpl(url, {
+      credentials: 'same-origin',
+      headers: headers
+    })
+      .then(function (res) {
+        if (!res) {
+          throw new Error('No response');
+        }
+        if (res.status === 304) {
+          state.backoff = state.pollInterval;
+          showDegraded(false);
+          var elapsed304 = Date.now() - startedAt;
+          var delay304 = Math.max(10, state.pollInterval - elapsed304);
+          scheduleNext(delay304);
+          scheduled = true;
+          return null;
+        }
+        var etag = res.headers ? res.headers.get('ETag') : null;
+        if (etag) {
+          state.etag = etag;
+        }
         if (!res.ok) {
           throw new Error('HTTP ' + res.status);
         }
         return res.json();
-      });
-    } else {
-      request = Promise.resolve(null);
-    }
-
-    return request
-      .then(function (payload) {
-        if (payload && typeof payload === 'object') {
-          var meta = payload.meta || {};
-          if (payload.refreshedAt && !meta.fetchedAt) {
-            meta.fetchedAt = payload.refreshedAt;
-          }
-          if (payload.providers) {
-            renderProviders(payload.providers);
-          }
-          if (meta) {
-            updateMeta(meta);
-          }
-          var errors = Array.isArray(payload.errors) ? payload.errors : [];
-          if (errors.length) {
-            var names = errors
-              .map(function (item) {
-                if (!item) {
-                  return '';
-                }
-                return item.name || item.provider || item.id || '';
-              })
-              .filter(Boolean);
-            var message = names.length
-              ? 'Refreshed with issues: ' + names.join(', ')
-              : 'Refreshed with provider errors.';
-            showStatusMessage(message, 6000);
-          } else {
-            resumeCountdown();
-          }
-          startCountdown();
-          return payload;
+      })
+      .then(function (body) {
+        if (!scheduled) {
+          state.backoff = state.pollInterval;
+          showDegraded(false);
+          var elapsed = Date.now() - startedAt;
+          var delay = Math.max(10, state.pollInterval - elapsed);
+          scheduleNext(delay);
+          scheduled = true;
         }
-        return fetchStatus(true);
+        if (!body) {
+          return;
+        }
+        if (Array.isArray(body.providers)) {
+          renderProviders(body.providers);
+        }
+        var fetched = body.fetched_at || (body.meta && body.meta.fetchedAt);
+        if (fetched) {
+          state.fetchedAt = fetched;
+          updateFetched();
+        }
       })
       .catch(function () {
-        return fetchStatus(true).catch(function (error) {
-          showStatusMessage('Status fetch failed: ' + error.message, 6000);
-          throw error;
-        });
+        state.backoff = Math.min(state.backoff * 2, MAX_BACKOFF_MS);
+        showDegraded(true);
+        var elapsedError = Date.now() - startedAt;
+        var backoffDelay = Math.max(10, state.backoff - elapsedError);
+        scheduleNext(backoffDelay);
+        scheduled = true;
+      })
+      .finally(function () {
+        state.isRefreshing = false;
+        if (state.pendingManual) {
+          state.pendingManual = false;
+          if (state.root && typeof state.root.setTimeout === 'function') {
+            state.root.setTimeout(function () {
+              manualRefresh();
+            }, 0);
+          } else {
+            manualRefresh();
+          }
+        }
+      });
+  }
+
+  function callRefreshEndpoint() {
+    if (!state.refreshEndpoint || !state.fetchImpl) {
+      return Promise.resolve();
+    }
+    var headers = {};
+    if (state.refreshNonce) {
+      headers['X-WP-Nonce'] = state.refreshNonce;
+    }
+    return state.fetchImpl(state.refreshEndpoint, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: headers
+    }).then(function (res) {
+      if (!res) {
+        throw new Error('No response');
+      }
+      if (!res.ok) {
+        throw new Error('HTTP ' + res.status);
+      }
+      return res.json().catch(function () { return null; });
+    });
+  }
+
+  function manualRefresh() {
+    if (state.isRefreshing) {
+      state.pendingManual = true;
+      return;
+    }
+    state.pendingManual = false;
+    setLoading(true);
+    callRefreshEndpoint()
+      .catch(function () {
+        return null;
+      })
+      .then(function () {
+        return refreshSummary(true, true);
       })
       .finally(function () {
         setLoading(false);
       });
   }
 
-  if (refreshButton) {
-    refreshButton.addEventListener('click', function () {
-      triggerManualRefresh();
+  function init(config) {
+    config = config || {};
+    state.doc = config.document || (state.root ? state.root.document : null);
+    if (!state.doc) {
+      return;
+    }
+    if (typeof config.window === 'object' && config.window) {
+      state.root = config.window;
+    }
+    var fetchImpl = null;
+    if (typeof config.fetch === 'function') {
+      fetchImpl = config.fetch;
+    } else if (state.root && typeof state.root.fetch === 'function') {
+      fetchImpl = state.root.fetch.bind(state.root);
+    } else if (typeof fetch === 'function') {
+      fetchImpl = fetch.bind(globalRoot || null);
+    }
+    state.fetchImpl = fetchImpl;
+    if (!state.fetchImpl) {
+      return;
+    }
+    state.container = config.container || state.doc.querySelector('.lousy-outages') || state.doc.getElementById('lousy-outages') || state.doc.querySelector('.lousy-outages-board');
+    if (!state.container) {
+      return;
+    }
+    state.grid = state.container.querySelector('[data-lo-grid]') || state.container.querySelector('.providers-grid') || state.container;
+    state.fetchedEl = state.container.querySelector('[data-lo-fetched]') || state.container.querySelector('.last-updated span');
+    state.countdownEl = state.container.querySelector('[data-lo-countdown]') || state.container.querySelector('.board-subtitle');
+    state.refreshButton = state.container.querySelector('[data-lo-refresh]') || state.container.querySelector('.coin-btn');
+    state.degradedBadge = state.container.querySelector('[data-lo-degraded]');
+    state.endpoint = config.endpoint || '';
+    state.refreshEndpoint = config.refreshEndpoint || '';
+    state.refreshNonce = config.refreshNonce || '';
+    state.subscribeEndpoint = config.subscribeEndpoint || '';
+    state.pollInterval = Number(config.pollInterval) || POLL_MS;
+    if (!Number.isFinite(state.pollInterval) || state.pollInterval <= 0) {
+      state.pollInterval = POLL_MS;
+    }
+    state.backoff = state.pollInterval;
+
+    var initial = config.initial || {};
+    var initialProviders = [];
+    if (Array.isArray(initial.providers)) {
+      initialProviders = initial.providers;
+    } else if (Array.isArray(config.providers)) {
+      initialProviders = config.providers;
+    }
+    if (initialProviders.length) {
+      renderProviders(initialProviders);
+    }
+    var initialFetched = initial.fetched_at || initial.fetchedAt;
+    if (!initialFetched && config.meta && (config.meta.fetched_at || config.meta.fetchedAt)) {
+      initialFetched = config.meta.fetched_at || config.meta.fetchedAt;
+    }
+    state.fetchedAt = initialFetched || null;
+    updateFetched();
+
+    if (state.refreshButton) {
+      state.refreshButton.addEventListener('click', manualRefresh);
+    }
+
+    enhanceSubscribeForms();
+
+    state.nextRefreshAt = Date.now() + state.pollInterval;
+    startCountdown();
+
+    refreshSummary(false, true).catch(function () {
+      // Ignore initial failure; countdown/backoff already handled inside refreshSummary.
     });
   }
 
-  renderProviders(providers);
-  updateMeta(config.initial ? config.initial.meta : null);
-  startCountdown();
-})(window);
+  function stopAutoRefresh() {
+    if (state.timer && state.root) {
+      state.root.clearTimeout(state.timer);
+      state.timer = null;
+    }
+    stopCountdown();
+    state.nextRefreshAt = null;
+    updateCountdown();
+    showDegraded(false);
+  }
 
-}
+  return {
+    init: init,
+    stopAutoRefresh: stopAutoRefresh,
+    normalizeStatus: normalizeStatus,
+    snarkOutage: snarkOutage
+  };
+});

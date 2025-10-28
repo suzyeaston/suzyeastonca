@@ -23,7 +23,7 @@ namespace {
             ['id' => 'twilio', 'name' => 'Twilio', 'type' => 'statuspage', 'url' => 'https://status.twilio.com/api/v2/summary.json'],
             ['id' => 'fastly', 'name' => 'Fastly', 'type' => 'statuspage', 'url' => 'https://status.fastly.com/api/v2/summary.json', 'status_endpoint' => 'https://status.fastly.com/api/v2/status.json'],
             ['id' => 'datadog', 'name' => 'Datadog', 'type' => 'statuspage', 'url' => 'https://status.datadoghq.com/api/v2/summary.json'],
-            ['id' => 'notion', 'name' => 'Notion', 'type' => 'statuspage', 'url' => 'https://status.notion.so/api/v2/summary.json', 'status_endpoint' => 'https://status.notion.so/api/v2/status.json'],
+            ['id' => 'notion', 'name' => 'Notion', 'type' => 'statuspage', 'url' => 'https://www.notionstatus.com/api/v2/summary.json', 'status_endpoint' => 'https://www.notionstatus.com/api/v2/status.json'],
             ['id' => 'linear', 'name' => 'Linear', 'type' => 'statuspage', 'url' => 'https://status.linear.app/api/v2/summary.json'],
             ['id' => 'sentry', 'name' => 'Sentry', 'type' => 'statuspage', 'url' => 'https://status.sentry.io/api/v2/summary.json'],
 
@@ -159,7 +159,7 @@ namespace LousyOutages {
                 'zscaler' => 'https://trust.zscaler.com/',
                 'stripe'  => 'https://status.stripe.com/',
                 'gitlab'  => 'https://status.gitlab.com/',
-                'notion'  => 'https://status.notion.so/',
+                'notion'  => 'https://www.notionstatus.com/',
             ];
 
             if ( ! empty( $provider['id'] ) && isset( $wellKnown[ $provider['id'] ] ) ) {
