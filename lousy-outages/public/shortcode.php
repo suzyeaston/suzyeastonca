@@ -53,6 +53,11 @@ function render_shortcode(): string {
     $fetched_at = gmdate('c');
     $normalized = [];
     $config     = null;
+    $initial_trending = [
+        'trending'     => false,
+        'signals'      => [],
+        'generated_at' => gmdate('c'),
+    ];
 
     if (is_array($cached) && isset($cached['html'], $cached['config'])) {
         $config     = $cached['config'];
@@ -74,13 +79,19 @@ function render_shortcode(): string {
                 $normalized[$slug] = $provider;
             }
         }
-        $fetched_at = $config['initial']['fetched_at'] ?? $config['initial']['fetchedAt'] ?? $fetched_at;
+        $fetched_at       = $config['initial']['fetched_at'] ?? $config['initial']['fetchedAt'] ?? $fetched_at;
+        if (isset($config['initial']['trending']) && is_array($config['initial']['trending'])) {
+            $initial_trending = $config['initial']['trending'];
+        }
     }
 
     if (!$config) {
         $result    = $fetcher->get_all(array_keys($providers_config));
         $normalized = $result['providers'];
         $fetched_at = $result['fetched_at'];
+        if (isset($result['trending']) && is_array($result['trending'])) {
+            $initial_trending = $result['trending'];
+        }
         $config     = [
             'endpoint'          => esc_url_raw(rest_url('lousy-outages/v1/summary')),
             'pollInterval'      => 60000,
@@ -90,8 +101,15 @@ function render_shortcode(): string {
             'initial'           => [
                 'providers'  => array_values($normalized),
                 'fetched_at' => $fetched_at,
+                'trending'   => $initial_trending,
             ],
         ];
+    } else {
+        if (!isset($config['initial']['trending']) || !is_array($config['initial']['trending'])) {
+            $config['initial']['trending'] = $initial_trending;
+        } else {
+            $initial_trending = $config['initial']['trending'];
+        }
     }
 
     $rss_url = esc_url(home_url('/lousy-outages/feed/'));
@@ -120,6 +138,13 @@ function render_shortcode(): string {
 
     ob_start();
     ?>
+    <?php
+    $trending_active = !empty($initial_trending['trending']);
+    $trending_signals = isset($initial_trending['signals']) && is_array($initial_trending['signals'])
+        ? array_filter(array_map('strval', $initial_trending['signals']))
+        : [];
+    $trending_generated = isset($initial_trending['generated_at']) ? (string) $initial_trending['generated_at'] : '';
+    ?>
     <div class="lousy-outages" data-lo-endpoint="<?php echo esc_url($config['endpoint']); ?>">
         <div class="lo-header">
             <div class="lo-actions">
@@ -132,6 +157,14 @@ function render_shortcode(): string {
                 <button type="button" class="lo-link" data-lo-refresh>Refresh now</button>
                 <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
             </div>
+        </div>
+        <div class="lo-trending" data-lo-trending<?php echo $trending_active ? '' : ' hidden'; ?> data-lo-trending-generated="<?php echo esc_attr($trending_generated); ?>" aria-live="assertive">
+            <span class="lo-trending__icon" aria-hidden="true">⚡</span>
+            <div class="lo-trending__body">
+                <strong data-lo-trending-text>Potential widespread issues detected — check affected providers</strong>
+                <span class="lo-trending__reasons" data-lo-trending-reasons<?php echo $trending_signals ? '' : ' hidden'; ?>><?php echo esc_html($trending_signals ? 'Signals: ' . implode(', ', array_slice($trending_signals, 0, 6)) : ''); ?></span>
+            </div>
+            <a class="lo-link" href="https://downdetector.com/" target="_blank" rel="noopener">Downdetector →</a>
         </div>
         <div class="lo-grid" data-lo-grid>
             <?php foreach ($providers_config as $id => $provider_config) :

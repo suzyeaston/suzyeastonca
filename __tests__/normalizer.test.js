@@ -15,11 +15,11 @@ test('normalizeStatus returns normalized code and label for operational', () => 
   });
 });
 
-test('normalizeStatus falls back to unknown for unexpected values', () => {
+test('normalizeStatus maps critical to major outage', () => {
   const normalized = app.normalizeStatus('critical');
-  assert.equal(normalized.code, 'unknown');
-  assert.equal(normalized.label, 'Unknown');
-  assert.equal(normalized.className, 'status--unknown');
+  assert.equal(normalized.code, 'major');
+  assert.equal(normalized.label, 'Major Outage');
+  assert.equal(normalized.className, 'status--outage');
 });
 test('snarkOutage uses provider-specific quip when available', () => {
   const originalRandom = Math.random;
