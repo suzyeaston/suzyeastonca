@@ -3,209 +3,223 @@ declare(strict_types=1);
 
 namespace LousyOutages;
 
-add_shortcode( 'lousy_outages', __NAMESPACE__ . '\render_shortcode' );
+add_shortcode('lousy_outages', __NAMESPACE__ . '\render_shortcode');
+add_shortcode('lousy_outages_subscribe', __NAMESPACE__ . '\render_subscribe_shortcode');
 
 function render_shortcode(): string {
-    $base_path  = plugin_dir_path( __DIR__ ) . 'assets/';
+    $base_path  = plugin_dir_path(__DIR__) . 'assets/';
     $theme_path = get_template_directory() . '/lousy-outages/assets/';
-    if ( file_exists( $theme_path ) ) {
+    if (file_exists($theme_path)) {
         $base_path = $theme_path;
         $base_url  = get_template_directory_uri() . '/lousy-outages/assets/';
     } else {
-        $base_url = plugin_dir_url( __DIR__ ) . 'assets/';
+        $base_url = plugin_dir_url(__DIR__) . 'assets/';
     }
 
     wp_enqueue_style(
         'lousy-outages',
         $base_url . 'lousy-outages.css',
         [],
-        file_exists( $base_path . 'lousy-outages.css' ) ? filemtime( $base_path . 'lousy-outages.css' ) : null
+        file_exists($base_path . 'lousy-outages.css') ? filemtime($base_path . 'lousy-outages.css') : null
     );
 
     wp_enqueue_script(
         'lousy-outages',
         $base_url . 'lousy-outages.js',
         [],
-        file_exists( $base_path . 'lousy-outages.js' ) ? filemtime( $base_path . 'lousy-outages.js' ) : null,
+        file_exists($base_path . 'lousy-outages.js') ? filemtime($base_path . 'lousy-outages.js') : null,
         true
     );
 
-    $store      = new Store();
-    $providers  = Providers::enabled();
-    $states     = $store->get_all();
-    $fetched_at = get_option( 'lousy_outages_last_poll' );
+    $cache_key = is_user_logged_in() ? null : 'lousy_outages_fragment_public';
+    $cached    = ($cache_key) ? get_transient($cache_key) : null;
 
-    if ( ! $fetched_at ) {
-        foreach ( $states as $state ) {
-            if ( empty( $state['updated_at'] ) ) {
-                continue;
-            }
-            $candidate = strtotime( (string) $state['updated_at'] );
-            if ( ! $candidate ) {
-                continue;
-            }
-            if ( ! $fetched_at || $candidate > strtotime( (string) $fetched_at ) ) {
-                $fetched_at = gmdate( 'c', $candidate );
+    $providers_config = Providers::enabled();
+    $fetched_at       = gmdate('c');
+    $normalized       = [];
+    $config           = null;
+
+    if (is_array($cached) && isset($cached['html'], $cached['config'])) {
+        $config     = $cached['config'];
+        $normalized = [];
+        if (isset($config['initial']['providers']) && is_array($config['initial']['providers'])) {
+            foreach ($config['initial']['providers'] as $provider) {
+                if (!is_array($provider) || empty($provider['provider'])) {
+                    continue;
+                }
+                $normalized[$provider['provider']] = $provider;
             }
         }
+        $fetched_at = $config['initial']['fetched_at'] ?? $config['initial']['fetchedAt'] ?? $fetched_at;
     }
 
-    $fetched_at         = $fetched_at ?: gmdate( 'c' );
-    $provider_payloads  = [];
-    foreach ( $providers as $id => $provider ) {
-        $state    = $states[ $id ] ?? [];
-        $payload  = lousy_outages_build_provider_payload( $id, $state, $fetched_at );
-        if ( empty( $payload['url'] ) && ! empty( $provider['status_url'] ) ) {
-            $payload['url'] = $provider['status_url'];
-        }
-        $provider_payloads[] = $payload;
+    if (!$config) {
+        $fetcher  = new Lousy_Outages_Fetcher();
+        $result   = $fetcher->get_all(array_keys($providers_config));
+        $normalized = $result['providers'];
+        $fetched_at = $result['fetched_at'];
+        $config     = [
+            'endpoint'          => esc_url_raw(rest_url('lousy-outages/v1/summary')),
+            'pollInterval'      => 60000,
+            'refreshEndpoint'   => esc_url_raw(rest_url('lousy/v1/refresh')),
+            'refreshNonce'      => wp_create_nonce('wp_rest'),
+            'subscribeEndpoint' => esc_url_raw(rest_url('lousy-outages/v1/subscribe')),
+            'initial'           => [
+                'providers'  => array_values($normalized),
+                'fetched_at' => $fetched_at,
+            ],
+        ];
     }
 
-    $provider_payloads = \lousy_outages_sort_providers( $provider_payloads );
+    $rss_url = esc_url(home_url('/lousy-outages/feed/'));
 
-    $refresh_nonce = wp_create_nonce( 'wp_rest' );
-
-    $config = [
-        'endpoint'        => esc_url_raw( rest_url( 'lousy-outages/v1/status' ) ),
-        'pollInterval'    => lousy_outages_get_poll_interval(),
-        'refreshEndpoint' => esc_url_raw( rest_url( 'lousy/v1/refresh' ) ),
-        'refreshNonce'    => $refresh_nonce,
-        'initial'         => [
-            'providers' => $provider_payloads,
-            'meta'      => [ 'fetchedAt' => $fetched_at ],
-        ],
-    ];
-
-    wp_localize_script( 'lousy-outages', 'LousyOutagesConfig', $config );
+    wp_localize_script('lousy-outages', 'LousyOutagesConfig', $config);
     wp_localize_script(
         'lousy-outages',
         'LOUSY_OUTAGES',
         [
-            'restUrl' => esc_url_raw( rest_url( 'lousy/v1/refresh' ) ),
-            'nonce'   => $refresh_nonce,
+            'restUrl' => esc_url_raw(rest_url('lousy/v1/refresh')),
+            'nonce'   => $config['refreshNonce'] ?? wp_create_nonce('wp_rest'),
         ]
     );
 
-    $format_datetime = static function ( ?string $iso ): string {
-        if ( empty( $iso ) ) {
+    $format_datetime = static function (?string $iso): string {
+        if (empty($iso)) {
             return '—';
         }
-        $timestamp = strtotime( $iso );
-        if ( ! $timestamp ) {
+        $timestamp = strtotime($iso);
+        if (!$timestamp) {
             return '—';
         }
-        $format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
-        return wp_date( $format, $timestamp );
+        $format = get_option('date_format') . ' ' . get_option('time_format');
+        return wp_date($format, $timestamp);
     };
-
-    $raw_feed_url  = home_url( '/lousy-outages/feed/' );
-    $feed_url      = esc_url( $raw_feed_url );
 
     ob_start();
     ?>
-    <div class="lousy-outages" data-lo-endpoint="<?php echo esc_url( $config['endpoint'] ); ?>">
+    <div class="lousy-outages" data-lo-endpoint="<?php echo esc_url($config['endpoint']); ?>">
         <div class="lo-header">
             <div class="lo-actions">
                 <span class="lo-meta" aria-live="polite">
-                    Fetched: <strong id="lo-fetched-at" data-lo-fetched><?php echo esc_html( $format_datetime( $fetched_at ) ); ?></strong>
-                    <span id="lo-countdown" data-lo-countdown>Calculating refresh…</span>
+                    <span>Fetched:</span>
+                    <strong data-lo-fetched><?php echo esc_html($format_datetime($fetched_at)); ?></strong>
+                    <span data-lo-countdown>Auto-refresh ready</span>
                 </span>
-                <button type="button" class="lo-link" id="lo-refresh-btn" data-lo-refresh>Refresh now</button>
-                <a class="lo-link" href="<?php echo $feed_url; ?>" target="_blank" rel="noopener">
-                    <svg class="lo-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill="currentColor" d="M6 17a2 2 0 11.001 3.999A2 2 0 016 17zm-2-7v3a8 8 0 018 8h3c0-6.075-4.925-11-11-11zm0-5v3c9.389 0 17 7.611 17 17h3C24 13.85 10.15 0 4 0z" />
-                    </svg>
-                    Subscribe (RSS)
-                </a>
+                <span class="lo-pill lo-pill--degraded" data-lo-degraded hidden>Auto-refresh degraded</span>
+                <button type="button" class="lo-link" data-lo-refresh>Refresh now</button>
+                <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
             </div>
-            <noscript>
-                <p><a class="lo-link" href="<?php echo $feed_url; ?>">RSS (fallback)</a></p>
-            </noscript>
         </div>
         <div class="lo-grid" data-lo-grid>
-            <?php foreach ( $provider_payloads as $provider ) :
-                $state_code = $provider['stateCode'] ?? 'unknown';
-                $incidents  = $provider['incidents'] ?? [];
-                $prealert   = ( isset( $provider['prealert'] ) && is_array( $provider['prealert'] ) ) ? $provider['prealert'] : [];
-                $risk       = isset( $prealert['risk'] ) ? (int) $prealert['risk'] : ( isset( $provider['risk'] ) ? (int) $provider['risk'] : 0 );
-                $prealert_summary = isset( $prealert['summary'] ) ? (string) $prealert['summary'] : '';
-                $prealert_measures = isset( $prealert['measures'] ) && is_array( $prealert['measures'] ) ? $prealert['measures'] : [];
-                $anchor     = sanitize_title( $provider['id'] );
+            <?php foreach ($providers_config as $id => $provider_config) :
+                $state = $normalized[$id] ?? [
+                    'provider'       => $id,
+                    'name'           => $provider_config['name'] ?? $id,
+                    'overall_status' => 'unknown',
+                    'status_label'   => 'Unknown',
+                    'summary'        => 'Status unavailable',
+                    'components'     => [],
+                    'incidents'      => [],
+                    'fetched_at'     => $fetched_at,
+                    'url'            => $provider_config['status_url'] ?? '',
+                    'error'          => null,
+                ];
+                $status     = strtolower((string) ($state['overall_status'] ?? 'unknown'));
+                $status_cls = preg_replace('/[^a-z0-9_-]+/i', '-', $status) ?: 'unknown';
+                $label      = $state['status_label'] ?? ucfirst($status);
+                $components = array_filter(
+                    is_array($state['components'] ?? null) ? $state['components'] : [],
+                    static fn($component) => is_array($component) && strtolower((string) ($component['status'] ?? '')) !== 'operational'
+                );
+                $incidents = is_array($state['incidents'] ?? null) ? $state['incidents'] : [];
                 ?>
-                <article id="provider-<?php echo esc_attr( $anchor ); ?>" class="lo-card" data-provider-id="<?php echo esc_attr( $provider['id'] ); ?>">
+                <article class="lo-card" data-provider-id="<?php echo esc_attr($id); ?>">
                     <div class="lo-head">
-                        <h3 class="lo-title"><?php echo esc_html( $provider['name'] ); ?></h3>
-                        <span class="lo-pill <?php echo esc_attr( $state_code ); ?>">
-                            <?php echo esc_html( $provider['state'] ); ?>
-                        </span>
-                        <?php if ( $risk >= 20 ) : ?>
-                            <span class="lo-pill risk">
-                                RISK: <?php echo esc_html( $risk ); ?>/100
-                            </span>
+                        <h3 class="lo-title"><?php echo esc_html($state['name'] ?? $id); ?></h3>
+                        <span class="lo-pill <?php echo esc_attr($status_cls); ?>" data-lo-badge><?php echo esc_html($label); ?></span>
+                    </div>
+                    <p class="lo-error" data-lo-error<?php echo empty($state['error']) ? ' hidden' : ''; ?>><?php echo esc_html((string) ($state['error'] ?? '')); ?></p>
+                    <p class="lo-summary" data-lo-summary><?php echo esc_html($state['summary'] ?? 'Status unavailable'); ?></p>
+                    <div class="lo-components" data-lo-components>
+                        <?php if (!empty($components)) : ?>
+                            <h4 class="lo-components__title">Impacted components</h4>
+                            <ul class="lo-components__list">
+                                <?php foreach ($components as $component) :
+                                    $component_status = strtolower((string) ($component['status'] ?? 'unknown'));
+                                    $component_label  = $component['status_label'] ?? ucfirst($component_status);
+                                    ?>
+                                    <li>
+                                        <span class="lo-component-name"><?php echo esc_html($component['name'] ?? 'Component'); ?></span>
+                                        <span class="lo-component-status"><?php echo esc_html($component_label); ?></span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
                         <?php endif; ?>
                     </div>
-                    <?php if ( ! empty( $provider['error'] ) ) : ?>
-                        <span class="lo-error">Error: <?php echo esc_html( (string) $provider['error'] ); ?></span>
-                    <?php endif; ?>
-                    <p class="lo-summary"><?php echo esc_html( $provider['summary'] ); ?></p>
-                    <?php if ( $risk > 0 ) :
-                        $measure_bits = [];
-                        if ( isset( $prealert_measures['latency_ms'] ) && '' !== (string) $prealert_measures['latency_ms'] ) {
-                            $measure_bits[] = 'Latency ' . (int) $prealert_measures['latency_ms'] . ' ms';
-                        }
-                        if ( isset( $prealert_measures['baseline_ms'] ) && '' !== (string) $prealert_measures['baseline_ms'] ) {
-                            $measure_bits[] = 'Baseline ' . (int) $prealert_measures['baseline_ms'] . ' ms';
-                        }
-                        ?>
-                        <div class="lo-prealert">
-                            <strong>Pre-alerts</strong>
-                            <p class="lo-prealert-summary"><?php echo esc_html( $prealert_summary ?: 'Early warning signals detected.' ); ?></p>
-                            <?php if ( ! empty( $measure_bits ) ) : ?>
-                                <p class="lo-prealert-metrics"><?php echo esc_html( implode( ' • ', $measure_bits ) ); ?></p>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ( ! empty( $provider['snark'] ) ) : ?>
-                        <p class="lo-snark"><?php echo esc_html( (string) $provider['snark'] ); ?></p>
-                    <?php endif; ?>
-                    <div class="lo-inc">
-                        <strong>Incidents</strong>
-                        <?php if ( empty( $incidents ) ) : ?>
-                            <p class="lo-empty">No active incidents</p>
+                    <div class="lo-inc" data-lo-incidents>
+                        <?php if (empty($incidents)) : ?>
+                            <p class="lo-empty">No active incidents.</p>
                         <?php else : ?>
                             <ul class="lo-inc-list">
-                                <?php foreach ( $incidents as $incident ) :
-                                    $impact       = ucfirst( (string) ( $incident['impact'] ?? 'unknown' ) );
-                                    $updated      = $format_datetime( $incident['updatedAt'] ?? $incident['startedAt'] ?? '' );
-                                    $incident_url = $incident['url'] ?? '';
-                                    $meta_bits    = array_filter(
-                                        [
-                                            $impact,
-                                            '—' !== $updated ? $updated : '',
-                                        ],
-                                        static fn ( $bit ) => '' !== (string) $bit
-                                    );
-                                    $meta_text = implode( ' • ', $meta_bits );
+                                <?php foreach ($incidents as $incident) :
+                                    $impact  = isset($incident['impact']) ? ucfirst((string) $incident['impact']) : 'Unknown';
+                                    $updated = $format_datetime($incident['updated_at'] ?? null);
+                                    $summary = isset($incident['summary']) ? (string) $incident['summary'] : '';
+                                    $url     = isset($incident['url']) ? (string) $incident['url'] : '';
                                     ?>
                                     <li class="lo-inc-item">
-                                        <p class="lo-inc-title"><?php echo esc_html( $incident['title'] ?? 'Incident' ); ?></p>
-                                        <?php if ( $meta_text ) : ?>
-                                            <p class="lo-inc-meta"><?php echo esc_html( $meta_text ); ?></p>
+                                        <p class="lo-inc-title"><?php echo esc_html($incident['name'] ?? 'Incident'); ?></p>
+                                        <p class="lo-inc-meta"><?php echo esc_html(trim($impact . ($updated ? ' • ' . $updated : ''))); ?></p>
+                                        <?php if ($summary) : ?>
+                                            <p class="lo-inc-summary"><?php echo esc_html($summary); ?></p>
                                         <?php endif; ?>
-                                        <?php if ( $incident_url ) : ?>
-                                            <a class="lo-status-link" href="<?php echo esc_url( $incident_url ); ?>" target="_blank" rel="noopener noreferrer">Open incident</a>
+                                        <?php if ($url) : ?>
+                                            <a class="lo-status-link" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener">View incident</a>
                                         <?php endif; ?>
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
                         <?php endif; ?>
                     </div>
-                    <?php if ( ! empty( $provider['url'] ) ) : ?>
-                        <a class="lo-status-link" href="<?php echo esc_url( $provider['url'] ); ?>" target="_blank" rel="noopener noreferrer">View status →</a>
+                    <?php if (!empty($state['url'])) : ?>
+                        <a class="lo-status-link" data-lo-status-url href="<?php echo esc_url($state['url']); ?>" target="_blank" rel="noopener">View status →</a>
                     <?php endif; ?>
                 </article>
             <?php endforeach; ?>
         </div>
+    </div>
+    <?php
+    $output = (string) ob_get_clean();
+
+    if ($cache_key) {
+        set_transient($cache_key, [
+            'html'   => $output,
+            'config' => $config,
+        ], 90);
+    }
+
+    return $output;
+}
+
+function render_subscribe_shortcode(): string {
+    $endpoint = esc_url_raw(rest_url('lousy-outages/v1/subscribe'));
+    $nonce    = wp_create_nonce('lousy_outages_subscribe');
+    $rss_url  = esc_url(home_url('/lousy-outages/feed/'));
+
+    ob_start();
+    ?>
+    <div class="lo-subscribe" data-lo-subscribe>
+        <p class="lo-subscribe__intro">Subscribe by email or <a href="<?php echo $rss_url; ?>" target="_blank" rel="noopener">RSS</a>.</p>
+        <form class="lo-subscribe__form" method="post" action="<?php echo esc_url($endpoint); ?>" data-lo-subscribe-form>
+            <label class="lo-subscribe__label">
+                <span>Email</span>
+                <input type="email" name="email" required autocomplete="email" />
+            </label>
+            <input type="text" name="website" class="lo-hp" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px" />
+            <input type="hidden" name="_wpnonce" value="<?php echo esc_attr($nonce); ?>" />
+            <button type="submit" class="lo-subscribe__button">Subscribe</button>
+            <p class="lo-subscribe__status" data-lo-subscribe-status aria-live="polite"></p>
+        </form>
     </div>
     <?php
     return (string) ob_get_clean();

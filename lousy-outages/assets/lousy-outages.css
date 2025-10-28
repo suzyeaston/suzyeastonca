@@ -237,3 +237,124 @@
     text-align: center;
   }
 }
+
+.lo-pill--degraded {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffd400;
+  border-color: #ffd400;
+  background: rgba(255, 212, 0, 0.15);
+}
+
+.lo-components {
+  margin-top: 8px;
+}
+
+.lo-components__title {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ffecc7;
+}
+
+.lo-components__list {
+  list-style: disc;
+  margin: 0;
+  padding-left: 18px;
+  color: #fff1d8;
+  font-size: 0.85rem;
+}
+
+.lo-component-name {
+  font-weight: 600;
+}
+
+.lo-component-status {
+  margin-left: 6px;
+  color: #ffd400;
+}
+
+.lo-inc-summary {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: #c9ffc4;
+}
+
+.lo-subscribe {
+  margin: 24px auto;
+  padding: 16px;
+  max-width: 480px;
+  border: 2px solid #2af200;
+  border-radius: 14px;
+  background: rgba(42, 242, 0, 0.08);
+  color: #c9ffc4;
+}
+
+.lo-subscribe__intro {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: #e0ffe0;
+}
+
+.lo-subscribe__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.lo-subscribe__label {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 220px;
+  font-size: 0.9rem;
+}
+
+.lo-subscribe__label input[type="email"] {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(42, 242, 0, 0.6);
+  background: rgba(0, 0, 0, 0.6);
+  color: #f4fff0;
+}
+
+.lo-subscribe__button {
+  background: #2af200;
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lo-subscribe__button:hover,
+.lo-subscribe__button:focus {
+  background: #51ff2a;
+}
+
+.lo-subscribe__status {
+  flex-basis: 100%;
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 0.85rem;
+  color: #a7ff9a;
+}
+
+.lo-subscribe__status--error {
+  color: #ff8484;
+}
+
+@media (max-width: 600px) {
+  .lo-subscribe__form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lo-subscribe__button {
+    width: 100%;
+  }
+}

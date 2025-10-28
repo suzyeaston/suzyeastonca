@@ -25,6 +25,7 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Detector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/SMS.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Email.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Precursor.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Subscriptions.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Api.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Feed.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Summary.php';
@@ -41,11 +42,14 @@ use LousyOutages\Detector;
 use LousyOutages\SMS;
 use LousyOutages\Email;
 use LousyOutages\Precursor;
+use LousyOutages\Subscriptions;
 use LousyOutages\Api;
 use LousyOutages\Feed;
 
 Api::bootstrap();
 Feed::bootstrap();
+
+add_action('lousy_outages_purge_pending', [Subscriptions::class, 'purge_stale_pending']);
 
 add_action(
     'lousy_outages_log',
@@ -65,6 +69,8 @@ function lousy_outages_activate() {
         wp_schedule_event( time() + 60, 'lousy_outages_interval', 'lousy_outages_poll' );
     }
     lousy_outages_create_page();
+    Subscriptions::create_table();
+    Subscriptions::schedule_purge();
     $default_email = 'suzanneeaston@gmail.com';
     $stored_email  = get_option( 'lousy_outages_email' );
     if ( empty( $stored_email ) && is_email( $default_email ) ) {
@@ -81,6 +87,7 @@ register_activation_hook( __FILE__, 'lousy_outages_activate' );
  */
 function lousy_outages_deactivate() {
     wp_clear_scheduled_hook( 'lousy_outages_poll' );
+    Subscriptions::clear_schedule();
     if ( function_exists( 'flush_rewrite_rules' ) ) {
         flush_rewrite_rules( false );
     }
