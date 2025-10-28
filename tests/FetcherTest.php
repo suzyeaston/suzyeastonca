@@ -68,6 +68,37 @@ namespace LousyOutages\Tests {
 
     $tests = [];
 
+    $tests['statuspage_status_fallback_after_403'] = static function (): void {
+        $status = wp_json_encode([
+            'page'   => ['updated_at' => gmdate('c')],
+            'status' => ['indicator' => 'none', 'description' => 'All Systems Operational'],
+        ]);
+
+        HttpMock::queue([
+            [ 'ok' => false, 'status' => 403, 'error' => 'http_error', 'message' => 'HTTP 403 response', 'body' => '' ],
+            [ 'ok' => true, 'status' => 200, 'error' => null, 'message' => null, 'body' => $status ],
+        ]);
+
+        $fetcher = new Fetcher( 4 );
+        $result  = $fetcher->fetch([
+            'id'              => 'status-only',
+            'name'            => 'Status Only',
+            'type'            => 'statuspage',
+            'url'             => 'https://status.example.com/api/v2/summary.json',
+            'status_endpoint' => 'https://status.example.com/api/v2/status.json',
+        ]);
+
+        if ( 'operational' !== $result['status'] ) {
+            throw new \RuntimeException( 'Expected status fallback to mark provider operational.' );
+        }
+        if ( null !== $result['error'] ) {
+            throw new \RuntimeException( 'Expected error to be cleared after status fallback.' );
+        }
+        if ( false === strpos( (string) $result['summary'], 'incidents unavailable' ) ) {
+            throw new \RuntimeException( 'Expected summary to mention missing incidents.' );
+        }
+    };
+
     $tests['statuspage_rss_fallback_after_404'] = static function (): void {
         $rss = sprintf(
             '<?xml version="1.0"?><rss><channel><item><title>Outage</title><pubDate>%s</pubDate></item></channel></rss>',
@@ -75,6 +106,8 @@ namespace LousyOutages\Tests {
         );
 
         HttpMock::queue([
+            [ 'ok' => false, 'status' => 404, 'error' => 'http_error', 'message' => 'HTTP 404 response', 'body' => '' ],
+            [ 'ok' => false, 'status' => 404, 'error' => 'http_error', 'message' => 'HTTP 404 response', 'body' => '' ],
             [ 'ok' => false, 'status' => 404, 'error' => 'http_error', 'message' => 'HTTP 404 response', 'body' => '' ],
             [ 'ok' => true, 'status' => 200, 'error' => null, 'message' => null, 'body' => $rss ],
         ]);
@@ -104,6 +137,8 @@ namespace LousyOutages\Tests {
 
         HttpMock::queue([
             [ 'ok' => false, 'status' => 401, 'error' => 'http_error', 'message' => 'HTTP 401 response', 'body' => '' ],
+            [ 'ok' => false, 'status' => 404, 'error' => 'http_error', 'message' => 'HTTP 404 response', 'body' => '' ],
+            [ 'ok' => false, 'status' => 404, 'error' => 'http_error', 'message' => 'HTTP 404 response', 'body' => '' ],
             [ 'ok' => false, 'status' => 404, 'error' => 'http_error', 'message' => 'HTTP 404 response', 'body' => '' ],
             [ 'ok' => true, 'status' => 200, 'error' => null, 'message' => null, 'body' => $atom ],
         ]);

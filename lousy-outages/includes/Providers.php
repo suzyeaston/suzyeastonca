@@ -10,20 +10,20 @@ namespace {
             ['id' => 'openai', 'name' => 'OpenAI', 'type' => 'statuspage', 'url' => 'https://status.openai.com/api/v2/summary.json'],
             ['id' => 'atlassian', 'name' => 'Atlassian', 'type' => 'statuspage', 'url' => 'https://status.atlassian.com/api/v2/summary.json'],
             ['id' => 'digitalocean', 'name' => 'DigitalOcean', 'type' => 'statuspage', 'url' => 'https://status.digitalocean.com/api/v2/summary.json'],
-            ['id' => 'gitlab', 'name' => 'GitLab', 'type' => 'statuspage', 'url' => 'https://status.gitlab.com/api/v2/summary.json'],
+            ['id' => 'gitlab', 'name' => 'GitLab', 'type' => 'statuspage', 'url' => 'https://status.gitlab.com/api/v2/summary.json', 'status_endpoint' => 'https://status.gitlab.com/api/v2/status.json'],
             ['id' => 'netlify', 'name' => 'Netlify', 'type' => 'statuspage', 'url' => 'https://www.netlifystatus.com/api/v2/summary.json'],
             ['id' => 'vercel', 'name' => 'Vercel', 'type' => 'statuspage', 'url' => 'https://www.vercel-status.com/api/v2/summary.json'],
-            ['id' => 'okta', 'name' => 'Okta', 'type' => 'statuspage', 'url' => 'https://status.okta.com/api/v2/summary.json'],
+            ['id' => 'okta', 'name' => 'Okta', 'type' => 'statuspage', 'url' => 'https://status.okta.com/api/v2/summary.json', 'status_endpoint' => 'https://status.okta.com/api/v2/status.json'],
             ['id' => 'pagerduty', 'name' => 'PagerDuty', 'type' => 'statuspage', 'url' => 'https://status.pagerduty.com/api/v2/summary.json'],
             ['id' => 'zoom', 'name' => 'Zoom', 'type' => 'statuspage', 'url' => 'https://status.zoom.us/api/v2/summary.json'],
-            ['id' => 'zscaler', 'name' => 'Zscaler', 'type' => 'statuspage', 'url' => 'https://trust.zscaler.com/api/v2/summary.json'],
+            ['id' => 'zscaler', 'name' => 'Zscaler', 'type' => 'statuspage', 'url' => 'https://trust.zscaler.com/api/v2/summary.json', 'status_endpoint' => 'https://trust.zscaler.com/api/v2/status.json'],
 
             // High-value adds (Statuspage JSON)
-            ['id' => 'stripe', 'name' => 'Stripe', 'type' => 'statuspage', 'url' => 'https://status.stripe.com/api/v2/summary.json'],
+            ['id' => 'stripe', 'name' => 'Stripe', 'type' => 'statuspage', 'url' => 'https://status.stripe.com/api/v2/summary.json', 'status_endpoint' => 'https://status.stripe.com/api/v2/status.json'],
             ['id' => 'twilio', 'name' => 'Twilio', 'type' => 'statuspage', 'url' => 'https://status.twilio.com/api/v2/summary.json'],
-            ['id' => 'fastly', 'name' => 'Fastly', 'type' => 'statuspage', 'url' => 'https://status.fastly.com/api/v2/summary.json'],
+            ['id' => 'fastly', 'name' => 'Fastly', 'type' => 'statuspage', 'url' => 'https://status.fastly.com/api/v2/summary.json', 'status_endpoint' => 'https://status.fastly.com/api/v2/status.json'],
             ['id' => 'datadog', 'name' => 'Datadog', 'type' => 'statuspage', 'url' => 'https://status.datadoghq.com/api/v2/summary.json'],
-            ['id' => 'notion', 'name' => 'Notion', 'type' => 'statuspage', 'url' => 'https://www.notionstatus.com/api/v2/summary.json'],
+            ['id' => 'notion', 'name' => 'Notion', 'type' => 'statuspage', 'url' => 'https://status.notion.so/api/v2/summary.json', 'status_endpoint' => 'https://status.notion.so/api/v2/status.json'],
             ['id' => 'linear', 'name' => 'Linear', 'type' => 'statuspage', 'url' => 'https://status.linear.app/api/v2/summary.json'],
             ['id' => 'sentry', 'name' => 'Sentry', 'type' => 'statuspage', 'url' => 'https://status.sentry.io/api/v2/summary.json'],
 
@@ -159,7 +159,7 @@ namespace LousyOutages {
                 'zscaler' => 'https://trust.zscaler.com/',
                 'stripe'  => 'https://status.stripe.com/',
                 'gitlab'  => 'https://status.gitlab.com/',
-                'notion'  => 'https://www.notionstatus.com/',
+                'notion'  => 'https://status.notion.so/',
             ];
 
             if ( ! empty( $provider['id'] ) && isset( $wellKnown[ $provider['id'] ] ) ) {

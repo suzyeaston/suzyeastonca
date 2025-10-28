@@ -47,6 +47,35 @@ function from_statuspage_summary(string $json): array {
     ];
 }
 
+function from_statuspage_status(string $json): array {
+    $data = json_decode($json, true);
+    if (! is_array($data)) {
+        return ['state' => 'unknown', 'incidents' => [], 'raw' => null];
+    }
+
+    $indicator = strtolower((string) ($data['status']['indicator'] ?? 'unknown'));
+    $map       = [
+        'none'        => 'operational',
+        'minor'       => 'degraded',
+        'minor_outage'=> 'degraded',
+        'partial'     => 'degraded',
+        'degraded'    => 'degraded',
+        'major'       => 'major',
+        'critical'    => 'major',
+        'maintenance' => 'maintenance',
+    ];
+
+    $state = $map[$indicator] ?? 'unknown';
+
+    return [
+        'state'      => $state,
+        'incidents'  => [],
+        'updated_at' => $data['page']['updated_at'] ?? null,
+        'summary'    => $data['status']['description'] ?? '',
+        'raw'        => $data,
+    ];
+}
+
 function from_slack_current(string $json): array {
     $data = json_decode($json, true);
     if (!is_array($data)) {
