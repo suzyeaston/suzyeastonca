@@ -3,10 +3,14 @@ declare(strict_types=1);
 
 namespace LousyOutages;
 
+// Changelog:
+// - 2024-06-05: Improve HTTP resilience, add history fallbacks, enhance error reporting.
+
 use function Lousy\http_get;
 use function Lousy\Adapters\from_rss_atom;
 use function Lousy\Adapters\from_slack_current;
 use function Lousy\Adapters\from_statuspage_summary;
+use function Lousy\Adapters\Statuspage\detect_state_from_error;
 
 class Fetcher {
     private const STATUS_LABELS = [
@@ -55,29 +59,60 @@ class Fetcher {
             return $defaults;
         }
 
-        $optional = !empty($provider['optional']) || ('rss-optional' === $type);
+        $optional = ! empty($provider['optional']) || ('rss-optional' === $type);
         $headers  = $this->build_headers($type);
         $response = http_get($endpoint, [
-            'timeout' => $this->timeout,
-            'headers' => $headers,
+            'timeout'     => $this->timeout,
+            'headers'     => $headers,
+            'redirection' => 3,
         ]);
+        $response    = $this->maybe_retry_ipv4($response, $endpoint, $headers);
         $adapterType = $type;
 
-        if (! $response['ok'] && 'statuspage' === $type && in_array((int) $response['status'], [401, 403, 404], true)) {
-            $fallback = $this->attempt_statuspage_history($provider);
+        $status          = (int) ($response['status'] ?? 0);
+        $fallbackSummary = null;
+        if (in_array($status, [401, 403], true)) {
+            $fallbackSummary = 'Unauthorized or forbidden at API; trying history feed…';
+        } elseif (404 === $status) {
+            $fallbackSummary = 'Summary endpoint missing; trying history feed…';
+        }
+
+        if (! $response['ok'] && in_array($status, [401, 403, 404], true)) {
+            $fallback = $this->attempt_statuspage_history($provider, $endpoint);
             if ($fallback) {
-                $response    = $fallback['response'];
-                $adapterType = $fallback['adapter'];
+                $response        = $fallback['response'];
+                $adapterType     = $fallback['adapter'];
+                $fallbackSummary = null;
+                $status          = (int) ($response['status'] ?? 0);
             }
         }
 
         if (! $response['ok']) {
-            $message = (string) ($response['message'] ?? '');
-            if ($optional) {
-                return $this->optional_unavailable($defaults, $message);
+            $message      = (string) ($response['message'] ?? '');
+            $networkKind  = $response['retry_kind'] ?? $this->classify_network_error($message);
+            $errorCode    = $status > 0
+                ? 'http_error:' . $status
+                : 'network_error:' . ($networkKind ?: ((string) ($response['error'] ?? 'request_failed')));
+            $summary      = $fallbackSummary ?: $this->failure_summary($status, $networkKind);
+            $statusResult = 'unknown';
+
+            if ('statuspage' === $type && $status >= 500 && $status < 600) {
+                $detected = detect_state_from_error((string) ($response['body'] ?? ''));
+                if ($detected) {
+                    $statusResult = $detected;
+                    if (! $fallbackSummary) {
+                        $summary = ('outage' === $detected)
+                            ? 'Status API error indicates major outage'
+                            : 'Status API error indicates active incident';
+                    }
+                }
             }
-            $error = (string) ($response['error'] ?? 'request_failed');
-            return $this->failed_defaults($defaults, $error, $message);
+
+            if ($optional) {
+                return $this->optional_unavailable($defaults, $message ?: $summary);
+            }
+
+            return $this->failed_defaults($defaults, $errorCode, $summary, $statusResult);
         }
 
         $body = (string) ($response['body'] ?? '');
@@ -85,7 +120,7 @@ class Fetcher {
             if ($optional) {
                 return $this->optional_unavailable($defaults, 'Empty body');
             }
-            return $this->failed_defaults($defaults, 'empty_body', 'Empty response from status endpoint');
+            return $this->failed_defaults($defaults, 'data_error:empty_body', 'Empty response from status endpoint');
         }
 
         $normalized = $this->adapt_response($adapterType, $body);
@@ -104,6 +139,7 @@ class Fetcher {
         return [
             'User-Agent'    => $ua,
             'Accept'        => $accept,
+            'Accept-Language' => 'en',
             'Cache-Control' => 'no-cache',
         ];
     }
@@ -121,18 +157,21 @@ class Fetcher {
         return null;
     }
 
-    private function attempt_statuspage_history(array $provider): ?array {
-        $urls = $this->statuspage_history_urls($provider);
+    private function attempt_statuspage_history(array $provider, ?string $endpoint = null): ?array {
+        $urls = $this->statuspage_history_urls($provider, $endpoint);
         if (!$urls) {
             return null;
         }
 
         foreach ($urls as $entry) {
             [$url, $adapter] = $entry;
+            $headers  = $this->build_headers($adapter);
             $response = http_get($url, [
-                'timeout' => $this->timeout,
-                'headers' => $this->build_headers($adapter),
+                'timeout'     => $this->timeout,
+                'headers'     => $headers,
+                'redirection' => 3,
             ]);
+            $response = $this->maybe_retry_ipv4($response, $url, $headers);
 
             if ($response['ok'] && '' !== trim((string) ($response['body'] ?? ''))) {
                 return [
@@ -145,26 +184,86 @@ class Fetcher {
         return null;
     }
 
-    private function statuspage_history_urls(array $provider): array {
-        $urls = [];
-        $base = '';
+    private function statuspage_history_urls(array $provider, ?string $endpoint = null): array {
+        $base = $this->derive_statuspage_base($provider, $endpoint);
+        if (! $base) {
+            return [];
+        }
+
+        $base = trailingslashit($base);
+
+        return [
+            [$base . 'history.rss', 'rss'],
+            [$base . 'history.atom', 'atom'],
+        ];
+    }
+
+    private function derive_statuspage_base(array $provider, ?string $endpoint = null): string {
+        $candidates = [];
 
         if (! empty($provider['status_url']) && is_string($provider['status_url'])) {
-            $base = trailingslashit($provider['status_url']);
-        } else {
-            $endpoint = $this->resolve_endpoint($provider, 'statuspage');
-            if ($endpoint) {
-                $trimmed = preg_replace('#/api/v\d+(?:\.\d+)*?/summary\.json$#', '/', $endpoint);
-                $base    = trailingslashit($trimmed ?? $endpoint);
+            $candidates[] = $provider['status_url'];
+        }
+
+        if ($endpoint) {
+            $candidates[] = $endpoint;
+        }
+
+        $resolved = $this->resolve_endpoint($provider, 'statuspage');
+        if ($resolved) {
+            $candidates[] = $resolved;
+        }
+
+        foreach ($candidates as $candidate) {
+            $normalized = $this->normalize_statuspage_base((string) $candidate);
+            if ($normalized) {
+                return $normalized;
             }
         }
 
-        if ($base) {
-            $urls[] = [$base . 'history.rss', 'rss'];
-            $urls[] = [$base . 'history.atom', 'atom'];
+        return '';
+    }
+
+    private function normalize_statuspage_base(string $candidate): string {
+        $candidate = trim($candidate);
+        if ('' === $candidate) {
+            return '';
         }
 
-        return $urls;
+        $candidate = preg_replace('#/api/v\d+(?:\.\d+)*?/(summary\.json|status\.json|current)$#', '/', $candidate);
+        $candidate = preg_replace('#/api/v\d+(?:\.\d+)*?/history\.(?:rss|atom)$#', '/', $candidate);
+        $candidate = preg_replace('#/history\.(?:rss|atom)$#', '/', $candidate);
+
+        $parts = wp_parse_url($candidate);
+        if (empty($parts['scheme']) || empty($parts['host'])) {
+            return '';
+        }
+
+        $base = $parts['scheme'] . '://' . $parts['host'];
+
+        $path = isset($parts['path']) ? trim((string) $parts['path'], '/') : '';
+        if ('' !== $path) {
+            $segments = array_filter(explode('/', $path), static fn($segment) => '' !== $segment);
+            $cleaned  = [];
+            foreach ($segments as $segment) {
+                $lower = strtolower($segment);
+                if (preg_match('#^(summary\.json|status\.json|current|history\.(?:rss|atom))$#', $lower)) {
+                    continue;
+                }
+                if ('api' === $lower) {
+                    continue;
+                }
+                if (preg_match('#^v\d#', $lower)) {
+                    continue;
+                }
+                $cleaned[] = $segment;
+            }
+            if ($cleaned) {
+                $base .= '/' . implode('/', $cleaned);
+            }
+        }
+
+        return trailingslashit($base);
     }
 
     private function adapt_response(string $type, string $body): array {
@@ -287,6 +386,108 @@ class Fetcher {
         return array_slice($out, 0, 10);
     }
 
+    private function maybe_retry_ipv4(array $response, string $endpoint, array $headers): array {
+        if ($response['ok'] ?? false) {
+            return $response;
+        }
+
+        $status  = (int) ($response['status'] ?? 0);
+        $message = (string) ($response['message'] ?? '');
+
+        if (0 !== $status) {
+            return $response;
+        }
+
+        $kind = $this->classify_network_error($message);
+        if (! $kind) {
+            return $response;
+        }
+
+        $retry = http_get($endpoint, [
+            'timeout'     => $this->timeout,
+            'headers'     => $headers,
+            'redirection' => 3,
+            'force_ipv4'  => true,
+        ]);
+
+        if (! ($retry['ok'] ?? false) && empty($retry['message']) && $message) {
+            $retry['message'] = $message;
+        }
+
+        if (! ($retry['ok'] ?? false) && ! isset($retry['retry_kind'])) {
+            $retry['retry_kind'] = $kind;
+        }
+
+        return $retry;
+    }
+
+    private function classify_network_error(string $message): ?string {
+        $needle = strtolower($message);
+        if ('' === $needle) {
+            return null;
+        }
+
+        $dns_patterns = [
+            'could not resolve host',
+            "couldn't resolve host",
+            'name or service not known',
+            'no address associated',
+        ];
+
+        foreach ($dns_patterns as $pattern) {
+            if (false !== strpos($needle, $pattern)) {
+                return 'dns';
+            }
+        }
+
+        if (preg_match('/\bdns\b/', $needle)) {
+            return 'dns';
+        }
+
+        $tls_patterns = [
+            'ssl',
+            'tls',
+            'certificate',
+            'handshake',
+        ];
+
+        foreach ($tls_patterns as $pattern) {
+            if (false !== strpos($needle, $pattern)) {
+                return 'tls';
+            }
+        }
+
+        return null;
+    }
+
+    private function failure_summary(int $status, ?string $networkKind): string {
+        if (in_array($status, [401, 403], true)) {
+            return 'Unauthorized or forbidden at API; trying history feed…';
+        }
+
+        if (404 === $status) {
+            return 'Summary endpoint missing; trying history feed…';
+        }
+
+        if ('dns' === $networkKind) {
+            return 'Could not resolve host';
+        }
+
+        if ('tls' === $networkKind) {
+            return 'TLS handshake failed';
+        }
+
+        if ($status >= 500 && $status < 600) {
+            return 'Status API error';
+        }
+
+        if (0 === $status) {
+            return 'Network request failed';
+        }
+
+        return 'Status fetch failed';
+    }
+
     private function optional_unavailable(array $defaults, string $error): array {
         $defaults['status']  = 'unknown';
         $defaults['summary'] = 'Optional source unavailable';
@@ -295,11 +496,13 @@ class Fetcher {
         return $defaults;
     }
 
-    private function failed_defaults(array $defaults, string $code, string $message): array {
-        $defaults['status']  = 'unknown';
-        $defaults['summary'] = 'Status fetch failed';
-        $defaults['message'] = $defaults['summary'];
-        $defaults['error']   = $code . ($message ? ': ' . $message : '');
+    private function failed_defaults(array $defaults, string $code, string $summary, string $status = 'unknown'): array {
+        $summary = $summary ?: 'Status fetch failed';
+        $defaults['status']       = $status ?: 'unknown';
+        $defaults['status_label'] = self::status_label($defaults['status']);
+        $defaults['summary']      = $summary;
+        $defaults['message']      = $summary;
+        $defaults['error']        = $code;
         return $defaults;
     }
 

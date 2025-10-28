@@ -154,6 +154,18 @@ namespace LousyOutages {
         }
 
         private static function derive_status_url( array $provider ): string {
+            $wellKnown = [
+                'fastly'  => 'https://www.fastlystatus.com/',
+                'zscaler' => 'https://trust.zscaler.com/',
+                'stripe'  => 'https://status.stripe.com/',
+                'gitlab'  => 'https://status.gitlab.com/',
+                'notion'  => 'https://www.notionstatus.com/',
+            ];
+
+            if ( ! empty( $provider['id'] ) && isset( $wellKnown[ $provider['id'] ] ) ) {
+                return trailingslashit( $wellKnown[ $provider['id'] ] );
+            }
+
             $type           = strtolower( (string) ( $provider['type'] ?? 'statuspage' ) );
             $candidates     = [];
             $candidate_keys = [ 'status_url', 'url', 'summary', 'rss', 'atom', 'current', 'endpoint' ];

@@ -7,6 +7,11 @@ namespace Lousy;
  * Perform an HTTP GET request with sane defaults and graceful error handling.
  */
 function http_get(string $url, array $args = []): array {
+    $force_ipv4 = ! empty($args['force_ipv4']);
+    if ($force_ipv4) {
+        unset($args['force_ipv4']);
+    }
+
     $defaults = [
         'timeout'     => 12,
         'redirection' => 3,
@@ -26,6 +31,15 @@ function http_get(string $url, array $args = []): array {
     $merged['headers']     = isset($merged['headers']) && is_array($merged['headers'])
         ? array_merge($defaults['headers'], $merged['headers'])
         : $defaults['headers'];
+
+    if ($force_ipv4) {
+        $merged['force_ipv4'] = true;
+        $curl_response = http_get_via_curl($url, $merged, 'forced_ipv4');
+        if (null !== $curl_response) {
+            return $curl_response;
+        }
+        unset($merged['force_ipv4']);
+    }
 
     $response = wp_remote_get($url, $merged);
     if (is_wp_error($response)) {
@@ -95,7 +109,7 @@ function http_get_via_curl(string $url, array $args, string $reason): ?array {
         CURLOPT_ENCODING       => '',
     ];
 
-    if (defined('CURLOPT_IPRESOLVE') && defined('CURL_IPRESOLVE_V4')) {
+    if (!empty($args['force_ipv4']) && defined('CURLOPT_IPRESOLVE') && defined('CURL_IPRESOLVE_V4')) {
         $options[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V4;
     }
     if (defined('CURLOPT_HTTP_VERSION_1_1')) {
