@@ -8,173 +8,156 @@ namespace LousyOutages;
  */
 class Trending
 {
-    private const OPTION_KEY     = 'lousy_outages_trending_buffer';
-    private const BUFFER_WINDOW  = 3600; // seconds to retain historical signals (60 minutes)
-    private const SIGNAL_WINDOW  = 900;  // seconds for co-occurring signals (15 minutes)
-    private const MAX_SIGNAL_LOG = 24;
+    private const ERROR_HISTORY_OPTION = 'lousy_outages_error_history';
+    private const ERROR_WINDOW         = 600; // 10 minutes
 
-    /**
-     * Evaluate the latest provider states and return a trending summary.
-     */
-    public function evaluate(array $providers, array $map): array
+    public function evaluate(array $providers): array
     {
-        $timestamp = time();
-        $signals   = $this->collect_signals($providers, $timestamp);
-
-        $buffer   = $this->load_buffer();
-        $buffer[] = [
-            'ts'      => $timestamp,
-            'signals' => $signals,
-        ];
-        $buffer = $this->prune_buffer($buffer, $timestamp);
-        $this->store_buffer($buffer);
-
-        $recentSignals = $this->recent_signals($buffer, $timestamp);
-        $unique        = array_values(array_unique($recentSignals));
-        $active        = count($unique) >= 2;
-
-        return [
-            'trending'     => $active,
-            'signals'      => array_slice($unique, 0, self::MAX_SIGNAL_LOG),
-            'generated_at' => gmdate('c', $timestamp),
-        ];
-    }
-
-    /**
-     * Convert provider payloads into normalized signal identifiers.
-     */
-    private function collect_signals(array $providers, int $timestamp): array
-    {
-        $signals = [];
+        $timestamp      = time();
+        $history        = $this->update_error_history($providers, $timestamp);
+        $statuspageHits = [];
+        $cloudHits      = [];
 
         foreach ($providers as $provider) {
             if (!is_array($provider)) {
                 continue;
             }
 
-            $slug = strtolower((string) ($provider['id'] ?? $provider['provider'] ?? ''));
+            $slug = strtolower((string) ($provider['provider'] ?? $provider['id'] ?? ''));
+            $kind = strtolower((string) ($provider['kind'] ?? ''));
+            $status = strtolower((string) ($provider['status'] ?? ''));
+            $indicator = strtolower((string) ($provider['indicator'] ?? ''));
+
+            if ('statuspage' === $kind) {
+                if (('' !== $indicator && 'none' !== $indicator) || in_array($status, ['degraded', 'major'], true)) {
+                    $statuspageHits[] = $slug ?: 'statuspage';
+                }
+            }
+
+            if (in_array($slug, ['aws', 'azure', 'gcp'], true)) {
+                $hasIncident = !empty($provider['incidents']);
+                if ($hasIncident || in_array($status, ['degraded', 'major'], true)) {
+                    $cloudHits[] = $slug;
+                }
+            }
+        }
+
+        $errorProviders = $this->recent_error_providers($history, $timestamp);
+
+        $active  = false;
+        $signals = [];
+
+        if ($statuspageHits && ($cloudHits || count($errorProviders) >= 3)) {
+            $active = true;
+
+            if ($statuspageHits) {
+                $signals[] = 'Statuspage alerts: ' . $this->format_list($statuspageHits);
+            }
+            if ($cloudHits) {
+                $signals[] = 'Cloud incidents: ' . $this->format_list($cloudHits);
+            }
+            if (count($errorProviders) >= 3) {
+                $signals[] = 'HTTP errors from ' . count($errorProviders) . ' providers';
+            }
+        }
+
+        return [
+            'trending'     => $active,
+            'signals'      => array_slice($signals, 0, 6),
+            'generated_at' => gmdate('c', $timestamp),
+        ];
+    }
+
+    private function update_error_history(array $providers, int $timestamp): array
+    {
+        $history = get_option(self::ERROR_HISTORY_OPTION, []);
+        if (!is_array($history)) {
+            $history = [];
+        }
+
+        $indexed = [];
+        foreach ($history as $entry) {
+            if (!is_array($entry) || empty($entry['slug']) || empty($entry['ts'])) {
+                continue;
+            }
+            $slug = strtolower((string) $entry['slug']);
+            $ts   = (int) $entry['ts'];
+            if (($timestamp - $ts) <= self::ERROR_WINDOW) {
+                $indexed[$slug] = $ts;
+            }
+        }
+
+        foreach ($providers as $provider) {
+            if (!is_array($provider)) {
+                continue;
+            }
+            $code = (int) ($provider['http_code'] ?? 0);
+            if ($code < 400 || $code >= 600) {
+                continue;
+            }
+            $slug = strtolower((string) ($provider['provider'] ?? $provider['id'] ?? ''));
             if ('' === $slug) {
                 continue;
             }
-
-            $overall = strtolower((string) ($provider['overall'] ?? $provider['status'] ?? ''));
-            if (in_array($overall, ['degraded', 'major', 'outage'], true)) {
-                $signals[] = $slug . ':status=' . $overall;
-            }
-
-            if (!empty($provider['error'])) {
-                $signals[] = $slug . ':fetch_error';
-            }
-
-            if (!empty($provider['probe']) && is_array($provider['probe'])) {
-                $probe = $provider['probe'];
-                $rate  = isset($probe['window_error_rate']) ? (float) $probe['window_error_rate'] : 0.0;
-                if ($rate >= 0.3) {
-                    $signals[] = $slug . ':probe=' . round($rate * 100) . '%';
-                } elseif (!empty($probe['recent_failure'])) {
-                    $signals[] = $slug . ':probe';
-                }
-            }
-
-            $incidents = is_array($provider['incidents'] ?? null) ? $provider['incidents'] : [];
-            foreach ($incidents as $incident) {
-                if (!is_array($incident)) {
-                    continue;
-                }
-                $reference = $this->latest_timestamp($incident);
-                if ($reference && ($timestamp - $reference) <= self::SIGNAL_WINDOW) {
-                    switch ($slug) {
-                        case 'aws':
-                            $signals[] = 'aws:rss+new_item';
-                            break;
-                        case 'azure':
-                            $signals[] = 'azure:rss+new_item';
-                            break;
-                        case 'gcp':
-                            $signals[] = 'gcp:json+new_item';
-                            break;
-                        default:
-                            $signals[] = $slug . ':incident';
-                            break;
-                    }
-                    break;
-                }
-            }
-
-            if ('cloudflare' === $slug && in_array($overall, ['degraded', 'major', 'outage'], true)) {
-                $signals[] = 'cloudflare:indicator=' . $overall;
-            }
+            $indexed[$slug] = $timestamp;
         }
 
-        return $signals;
-    }
-
-    private function latest_timestamp(array $incident): int
-    {
-        foreach (['updated_at', 'updatedAt', 'started_at', 'startedAt'] as $key) {
-            if (empty($incident[$key])) {
-                continue;
-            }
-            $time = strtotime((string) $incident[$key]);
-            if ($time) {
-                return $time;
-            }
+        $history = [];
+        foreach ($indexed as $slug => $ts) {
+            $history[] = [
+                'slug' => $slug,
+                'ts'   => $ts,
+            ];
         }
 
-        return 0;
+        update_option(self::ERROR_HISTORY_OPTION, $history, false);
+
+        return $history;
     }
 
-    private function recent_signals(array $buffer, int $timestamp): array
+    private function recent_error_providers(array $history, int $timestamp): array
     {
-        $signals = [];
-
-        foreach ($buffer as $entry) {
-            if (!is_array($entry) || empty($entry['signals']) || empty($entry['ts'])) {
+        $providers = [];
+        foreach ($history as $entry) {
+            if (!is_array($entry) || empty($entry['slug']) || empty($entry['ts'])) {
                 continue;
             }
-
             $ts = (int) $entry['ts'];
-            if (($timestamp - $ts) > self::SIGNAL_WINDOW) {
-                continue;
-            }
-
-            if (is_array($entry['signals'])) {
-                $signals = array_merge($signals, $entry['signals']);
+            if (($timestamp - $ts) <= self::ERROR_WINDOW) {
+                $providers[] = strtolower((string) $entry['slug']);
             }
         }
 
-        return $signals;
+        return array_values(array_unique($providers));
     }
 
-    private function prune_buffer(array $buffer, int $timestamp): array
+    private function format_list(array $slugs): string
     {
-        $cutoff = $timestamp - self::BUFFER_WINDOW;
-
-        $buffer = array_filter(
-            $buffer,
-            static function ($entry) use ($cutoff) {
-                if (!is_array($entry) || empty($entry['ts'])) {
-                    return false;
+        $unique = array_values(array_unique($slugs));
+        $labels = array_map(
+            static function ($slug) {
+                $slug = (string) $slug;
+                if ('' === $slug) {
+                    return '';
                 }
-                return ((int) $entry['ts']) >= $cutoff;
-            }
+                $special = [
+                    'aws'   => 'AWS',
+                    'gcp'   => 'GCP',
+                    'gcp-json' => 'GCP',
+                    'azure' => 'Azure',
+                ];
+                if (isset($special[$slug])) {
+                    return $special[$slug];
+                }
+                return ucwords(str_replace(['-', '_'], ' ', $slug));
+            },
+            $unique
         );
 
-        if (count($buffer) > self::MAX_SIGNAL_LOG) {
-            $buffer = array_slice(array_values($buffer), -1 * self::MAX_SIGNAL_LOG);
-        }
+        $labels = array_filter($labels, static function ($label) {
+            return '' !== $label;
+        });
 
-        return array_values($buffer);
-    }
-
-    private function load_buffer(): array
-    {
-        $buffer = get_option(self::OPTION_KEY, []);
-        return is_array($buffer) ? $buffer : [];
-    }
-
-    private function store_buffer(array $buffer): void
-    {
-        update_option(self::OPTION_KEY, $buffer, false);
+        return implode(', ', $labels);
     }
 }

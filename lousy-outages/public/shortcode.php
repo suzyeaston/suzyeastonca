@@ -166,26 +166,33 @@ function render_shortcode(): string {
             </div>
             <a class="lo-link" href="https://downdetector.com/" target="_blank" rel="noopener">Downdetector →</a>
         </div>
+        <?php echo render_subscribe_shortcode(); ?>
         <div class="lo-grid" data-lo-grid>
             <?php foreach ($providers_config as $id => $provider_config) :
                 $state = $normalized[$id] ?? [
                     'id'           => $id,
-                    'provider'     => $provider_config['name'] ?? $id,
+                    'provider'     => $id,
                     'name'         => $provider_config['name'] ?? $id,
+                    'status'       => 'unknown',
                     'overall'      => 'unknown',
-                    'status_label' => 'Unknown',
+                    'status_label' => 'UNKNOWN',
                     'status_class' => 'status--unknown',
                     'summary'      => 'Status unavailable',
+                    'message'      => 'Status unavailable',
                     'components'   => [],
                     'incidents'    => [],
                     'fetched_at'   => $fetched_at,
                     'url'          => $provider_config['status_url'] ?? '',
+                    'link'         => $provider_config['status_url'] ?? '',
+                    'http_code'    => 0,
                     'error'        => null,
                     'stale'        => false,
+                    'indicator'    => null,
+                    'kind'         => $provider_config['kind'] ?? 'link-only',
                 ];
-                $status     = strtolower((string) ($state['overall'] ?? 'unknown'));
-                $status_cls = 'status--' . (preg_replace('/[^a-z0-9_-]+/i', '-', $status) ?: 'unknown');
-                $label      = $state['status_label'] ?? ucfirst($status);
+                $status      = strtolower((string) ($state['status'] ?? $state['overall'] ?? 'unknown'));
+                $status_cls  = $state['status_class'] ?? ('status--' . (preg_replace('/[^a-z0-9_-]+/i', '-', $status) ?: 'unknown'));
+                $label       = $state['status_label'] ?? ucfirst($status);
                 $components = array_filter(
                     is_array($state['components'] ?? null) ? $state['components'] : [],
                     static fn($component) => is_array($component) && strtolower((string) ($component['status'] ?? '')) !== 'operational'
