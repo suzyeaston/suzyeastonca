@@ -19,6 +19,7 @@
   var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
     degraded: { code: 'degraded', label: 'Degraded', className: 'status--degraded' },
+    major: { code: 'major', label: 'Major Outage', className: 'status--outage' },
     outage: { code: 'outage', label: 'Outage', className: 'status--outage' },
     maintenance: { code: 'maintenance', label: 'Maintenance', className: 'status--maintenance' },
     unknown: { code: 'unknown', label: 'Unknown', className: 'status--unknown' }
@@ -61,6 +62,22 @@
 
   function normalizeStatus(code) {
     var key = String(code || '').toLowerCase();
+
+    switch (key) {
+      case 'none':
+        key = 'operational';
+        break;
+      case 'minor_outage':
+      case 'partial_outage':
+      case 'degraded_performance':
+        key = 'degraded';
+        break;
+      case 'major_outage':
+      case 'critical':
+        key = 'major';
+        break;
+    }
+
     return STATUS_MAP[key] || STATUS_MAP.unknown;
   }
 
@@ -230,7 +247,7 @@
       if (!card) {
         return;
       }
-      var normalized = normalizeStatus(provider.overall_status || provider.status || provider.stateCode);
+      var normalized = normalizeStatus(provider.overall || provider.overall_status || provider.status || provider.stateCode);
       if (card.classList && card.classList.contains('provider-card')) {
         updateLegacyCard(card, provider, normalized);
       } else {
@@ -249,10 +266,10 @@
   function updateLegacyCard(card, provider, normalized) {
     var badge = card.querySelector('.status-badge');
     if (badge) {
-      badge.textContent = normalized.label;
-      badge.className = 'status-badge ' + normalized.className;
+      badge.textContent = provider.status_label || normalized.label;
+      badge.className = 'status-badge ' + (provider.status_class || normalized.className);
       if (badge.dataset) {
-        badge.dataset.status = normalized.code;
+        badge.dataset.status = provider.overall || provider.overall_status || normalized.code;
       }
     }
     var summary = card.querySelector('.provider-card__summary');
@@ -290,8 +307,8 @@
   function updateModernCard(card, provider, normalized) {
     var badge = card.querySelector('[data-lo-badge]');
     if (badge) {
-      badge.textContent = normalized.label;
-      badge.className = 'lo-pill ' + normalized.className;
+      badge.textContent = provider.status_label || normalized.label;
+      badge.className = 'lo-pill ' + (provider.status_class || normalized.className);
     }
     var summary = card.querySelector('[data-lo-summary]');
     if (summary) {

@@ -6,13 +6,17 @@ get_header();
 <main id="homepage-content">
     <div class="hero-section">
         <h1 class="retro-title glow-lite">Suzy Easton &mdash; Vancouver</h1>
+        <div class="hero-quote">
+            <span class="hero-quote__text">&ldquo;This is what it feels like to be hunted by something smarter than you.&rdquo;</span>
+            <span class="hero-quote__attr">&mdash; <a href="https://www.youtube.com/watch?v=NQr9EcRyIFs" target="_blank" rel="noopener">Grimes, Artificial Angels</a></span>
+        </div>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
         <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
     <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
 
     <p>Toured nationally as a bassist, recorded with Steve Albini in Chicago, and appeared on MuchMusic. Today, I keep creating, playing around with programming/coding and releasing new music at night while shipping infrastructure code by day hah!</p>
 
-    <p>After digging into local housing issues, I’m focusing my energy on building and shipping tech—more prototypes, fewer arguments.</p>
+    <p>i was going to run for vancouver city council in 2026, but instead i&rsquo;m going to focus on building weird/beautiful creative tools</p>
 </section>
 
         <p class="arcade-subtext">Insert coin to explore</p>
