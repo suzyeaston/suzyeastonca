@@ -16,6 +16,7 @@ define( 'LOUSY_OUTAGES_PATH', plugin_dir_path( __FILE__ ) );
 require_once LOUSY_OUTAGES_PATH . 'includes/Providers.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Fetch.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Adapters.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Adapters/Statuspage.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Store.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Fetcher.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Downdetector.php';
@@ -28,6 +29,10 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Api.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Feed.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Summary.php';
 require_once LOUSY_OUTAGES_PATH . 'public/shortcode.php';
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    require_once LOUSY_OUTAGES_PATH . 'wp-cli/class-wp-cli-lousy.php';
+}
 
 use LousyOutages\Providers;
 use LousyOutages\Store;
