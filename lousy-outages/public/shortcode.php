@@ -5,18 +5,52 @@ namespace LousyOutages;
 
 const LO_SHOW_WIDESPREAD = false;
 
+/**
+ * Determine the filesystem path and URL for the plugin assets.
+ *
+ * When the plugin is bundled with the theme (as it is on suzyeaston.ca),
+ * plugin_dir_url() incorrectly points to wp-content/plugins/, which results in
+ * 404s for front-end assets. This helper checks for copies that live alongside
+ * the active theme before falling back to the plugin directory.
+ *
+ * @return array{string, string} An array containing the absolute path and the
+ *                               public URL for the assets directory.
+ */
+function locate_assets_base(): array
+{
+    $candidates = [];
+
+    if (function_exists('get_stylesheet_directory') && function_exists('get_stylesheet_directory_uri')) {
+        $stylesheet_path = rtrim(get_stylesheet_directory(), '/\\') . '/lousy-outages/assets/';
+        $stylesheet_url  = rtrim(get_stylesheet_directory_uri(), '/\\') . '/lousy-outages/assets/';
+        $candidates[] = [$stylesheet_path, $stylesheet_url];
+    }
+
+    if (function_exists('get_template_directory') && function_exists('get_template_directory_uri')) {
+        $template_path = rtrim(get_template_directory(), '/\\') . '/lousy-outages/assets/';
+        $template_url  = rtrim(get_template_directory_uri(), '/\\') . '/lousy-outages/assets/';
+        $candidates[] = [$template_path, $template_url];
+    }
+
+    $plugin_path = rtrim(plugin_dir_path(__DIR__), '/\\') . '/assets/';
+    $plugin_url  = rtrim(plugin_dir_url(__DIR__), '/\\') . '/assets/';
+    $candidates[] = [$plugin_path, $plugin_url];
+
+    foreach ($candidates as $candidate) {
+        [$path, $url] = $candidate;
+        if ($path && file_exists($path)) {
+            return [$path, $url];
+        }
+    }
+
+    return [$plugin_path, $plugin_url];
+}
+
 add_shortcode('lousy_outages', __NAMESPACE__ . '\render_shortcode');
 add_shortcode('lousy_outages_subscribe', __NAMESPACE__ . '\render_subscribe_shortcode');
 
 function render_shortcode(): string {
-    $base_path  = plugin_dir_path(__DIR__) . 'assets/';
-    $theme_path = get_template_directory() . '/lousy-outages/assets/';
-    if (file_exists($theme_path)) {
-        $base_path = $theme_path;
-        $base_url  = get_template_directory_uri() . '/lousy-outages/assets/';
-    } else {
-        $base_url = plugin_dir_url(__DIR__) . 'assets/';
-    }
+    [$base_path, $base_url] = locate_assets_base();
 
     wp_enqueue_style(
         'lousy-outages',
@@ -440,8 +474,7 @@ function render_subscribe_shortcode(): string {
     $captcha_token = isset($challenge['token']) ? $challenge['token'] : '';
     $captcha_expires = isset($challenge['expires_at']) ? $challenge['expires_at'] : gmdate('c', time() + 120);
 
-    $assets_url = plugin_dir_url(__DIR__) . 'assets/';
-    $assets_path = plugin_dir_path(__DIR__) . 'assets/';
+    [$assets_path, $assets_url] = locate_assets_base();
 
     wp_enqueue_script(
         'lousy-outages-captcha',
