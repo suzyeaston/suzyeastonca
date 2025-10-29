@@ -158,8 +158,11 @@ function lousy_outages_run_poll(): int {
 
         if ( $transition ) {
             if ( in_array( $transition['new'], [ 'degraded', 'outage' ], true ) ) {
-                $sms->send_alert( $state['name'], $transition['new'], $state['message'], $state['url'] );
-                $email->send_alert( $state['name'], $transition['new'], $state['message'], $state['url'] );
+                $already_unhealthy = in_array( $transition['old'], [ 'degraded', 'outage' ], true );
+                if ( ! $already_unhealthy ) {
+                    $sms->send_alert( $state['name'], $transition['new'], $state['message'], $state['url'] );
+                    $email->send_alert( $state['name'], $transition['new'], $state['message'], $state['url'] );
+                }
             } elseif ( 'operational' === $transition['new'] && in_array( $transition['old'], [ 'degraded', 'outage' ], true ) ) {
                 $sms->send_recovery( $state['name'], $state['url'] );
                 $email->send_recovery( $state['name'], $state['url'] );

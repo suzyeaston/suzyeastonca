@@ -16,6 +16,16 @@ class IncidentAlerts {
     private const RSS_PROVIDERS = [
         'cloudflare' => 'https://www.cloudflarestatus.com/history.rss',
         'aws'        => 'https://status.aws.amazon.com/rss/all.rss',
+        'azure'      => [
+            'https://rssfeed.azure.status.microsoft/en-us/status/feed/',
+            'https://azurestatuscdn.azureedge.net/en-us/status/feed/',
+        ],
+    ];
+
+    private const RSS_HEADERS = [
+        'User-Agent'    => 'LousyOutages/1.2 (+https://suzyeaston.ca)',
+        'Accept'        => 'application/rss+xml, application/atom+xml;q=0.9,*/*;q=0.8',
+        'Cache-Control' => 'no-cache',
     ];
 
     private const OPTION_SUBSCRIBERS      = 'lo_subscribers';
@@ -150,8 +160,9 @@ class IncidentAlerts {
             }
         }
 
-        foreach (self::RSS_PROVIDERS as $provider => $url) {
-            $result = self::fetch_rss($provider, $url);
+        foreach (self::RSS_PROVIDERS as $provider => $endpoints) {
+            $urls = is_array($endpoints) ? array_filter(array_map('strval', $endpoints)) : [(string) $endpoints];
+            $result = self::fetch_rss($provider, $urls);
             if (!empty($result)) {
                 $incidents = array_merge($incidents, $result);
             }
@@ -238,29 +249,60 @@ class IncidentAlerts {
     /**
      * @return array<int, array<string, mixed>>
      */
-    private static function fetch_rss(string $provider, string $url): array {
-        $response = wp_remote_get($url, ['timeout' => 15]);
+    private static function fetch_rss(string $provider, array $urls): array {
+        $errors = [];
+
+        foreach ($urls as $url) {
+            $url = trim($url);
+            if ('' === $url) {
+                continue;
+            }
+
+            [$incidents, $error] = self::fetch_rss_from_url($provider, $url);
+
+            if ($incidents) {
+                return $incidents;
+            }
+
+            if ($error) {
+                $errors[] = $error;
+            }
+        }
+
+        if ($errors) {
+            $unique = array_values(array_unique($errors));
+            self::log_error($provider, implode(' | ', $unique));
+        }
+
+        return [];
+    }
+
+    /**
+     * @return array{0: array<int, array<string, mixed>>, 1: string}
+     */
+    private static function fetch_rss_from_url(string $provider, string $url): array {
+        $response = wp_remote_get($url, [
+            'timeout' => 15,
+            'headers' => self::RSS_HEADERS,
+        ]);
+
         if (is_wp_error($response)) {
-            self::log_error($provider, $response->get_error_message());
-            return [];
+            return [[], $response->get_error_message() . ' (' . $url . ')'];
         }
 
         $code = (int) wp_remote_retrieve_response_code($response);
         if ($code < 200 || $code >= 300) {
-            self::log_error($provider, 'HTTP ' . $code);
-            return [];
+            return [[], 'HTTP ' . $code . ' (' . $url . ')'];
         }
 
         $body = wp_remote_retrieve_body($response);
         if (!is_string($body) || '' === trim($body)) {
-            self::log_error($provider, 'empty RSS body');
-            return [];
+            return [[], 'empty RSS body (' . $url . ')'];
         }
 
         $xml = @simplexml_load_string($body);
         if (false === $xml) {
-            self::log_error($provider, 'unable to parse RSS');
-            return [];
+            return [[], 'unable to parse RSS (' . $url . ')'];
         }
 
         $items = [];
@@ -271,7 +313,7 @@ class IncidentAlerts {
         }
 
         $incidents = [];
-        $keywords  = ['major outage', 'critical', 'service disruption'];
+        $keywords  = ['major outage', 'critical', 'service disruption', 'service issue', 'service interruption'];
 
         foreach ($items as $item) {
             $title = isset($item->title) ? strtolower((string) $item->title) : '';
@@ -288,10 +330,17 @@ class IncidentAlerts {
                 continue;
             }
 
-            $guid       = isset($item->guid) ? (string) $item->guid : (isset($item->id) ? (string) $item->id : (string) $item->link);
-            $link       = isset($item->link) ? (string) $item->link : '';
-            if (is_object($item->link) && isset($item->link['href'])) {
-                $link = (string) $item->link['href'];
+            $guid = isset($item->guid) ? (string) $item->guid : '';
+            if (!$guid && isset($item->id)) {
+                $guid = (string) $item->id;
+            }
+
+            $link = '';
+            if (isset($item->link)) {
+                $link = (string) $item->link;
+                if (is_object($item->link) && isset($item->link['href'])) {
+                    $link = (string) $item->link['href'];
+                }
             }
 
             $started = '';
@@ -302,7 +351,7 @@ class IncidentAlerts {
             }
 
             $incidents[] = [
-                'id'         => $provider . ':' . hash('sha256', $guid ?: $link ?: (string) $item->title),
+                'id'         => $provider . ':' . hash('sha256', $guid ?: $link ?: (string) ($item->title ?? 'incident')),
                 'provider'   => $provider,
                 'name'       => (string) ($item->title ?? 'Incident'),
                 'impact'     => 'major',
@@ -312,7 +361,7 @@ class IncidentAlerts {
             ];
         }
 
-        return $incidents;
+        return [$incidents, ''];
     }
 
     public static function add_subscriber(string $email): void {

@@ -4,11 +4,11 @@ declare(strict_types=1);
 namespace LousyOutages;
 
 class Mailer {
-    public static function send(string $email, string $subject, string $text_body, string $html_body): void {
+    public static function send(string $email, string $subject, string $text_body, string $html_body): bool {
         $email = sanitize_email($email);
         if (!$email || !is_email($email)) {
             do_action('lousy_outages_log', 'email_skip', ['reason' => 'invalid_recipient']);
-            return;
+            return false;
         }
 
         $boundary = 'lo-' . wp_generate_password(24, false, false);
@@ -64,6 +64,6 @@ class Mailer {
 
         $message = implode("\r\n", $parts);
 
-        wp_mail($email, $subject, $message, $headers);
+        return wp_mail($email, $subject, $message, $headers);
     }
 }
