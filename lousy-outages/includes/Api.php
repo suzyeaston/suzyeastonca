@@ -49,25 +49,6 @@ class Api {
             ]
         );
 
-        register_rest_route(
-            'lousy-outages/v1',
-            '/confirm',
-            [
-                'methods'             => 'GET',
-                'permission_callback' => '__return_true',
-                'callback'            => [self::class, 'handle_confirm'],
-            ]
-        );
-
-        register_rest_route(
-            'lousy-outages/v1',
-            '/unsubscribe',
-            [
-                'methods'             => 'GET',
-                'permission_callback' => '__return_true',
-                'callback'            => [self::class, 'handle_unsubscribe'],
-            ]
-        );
     }
 
     public static function verify_nonce(): bool {
@@ -189,17 +170,17 @@ class Api {
 
         $nonce = $params['_wpnonce'] ?? $params['nonce'] ?? $request->get_header('X-WP-Nonce');
         if (!is_string($nonce) || !wp_verify_nonce($nonce, 'lousy_outages_subscribe')) {
-            return self::json_or_redirect(false, 'Invalid security token.', 403, $request);
+            return self::respond_with_message(false, 'Invalid security token.', 403, $request);
         }
 
         $honeypot = isset($params['website']) ? trim((string) $params['website']) : '';
         if ('' !== $honeypot) {
-            return self::json_or_redirect(false, 'Something went wrong.', 400, $request);
+            return self::respond_with_message(false, 'Something went wrong.', 400, $request);
         }
 
         $email = isset($params['email']) ? sanitize_email((string) $params['email']) : '';
         if (!$email || !is_email($email)) {
-            return self::json_or_redirect(false, 'Please provide a valid email address.', 400, $request);
+            return self::respond_with_message(false, 'Please provide a valid email address.', 400, $request);
         }
 
         $ip      = self::detect_ip($request);
@@ -207,7 +188,7 @@ class Api {
         $rateKey = self::rate_limit_key($ip_hash);
         $count   = (int) get_transient($rateKey);
         if ($count >= 5) {
-            return self::json_or_redirect(false, 'Too many requests. Try again soon.', 429, $request);
+            return self::respond_with_message(false, 'Too many requests. Try again soon.', 429, $request);
         }
         set_transient($rateKey, $count + 1, 60);
 
@@ -227,76 +208,40 @@ class Api {
 
         wp_mail($email, $subject, $message, ['Content-Type: text/plain; charset=UTF-8']);
 
-        return self::json_or_redirect(true, 'Check your email to confirm your subscription.', 200, $request);
+        return self::respond_with_message(true, 'Check your email to confirm your subscription.', 200, $request);
     }
 
-
-    public static function handle_confirm(WP_REST_Request $request): WP_REST_Response {
-        $token = sanitize_text_field((string) $request->get_param('token'));
-        if ('' === $token) {
-            return self::html_response('Missing token', 'This confirmation link is missing a token.', 400);
-        }
-
-        $record = Subscriptions::find_by_token($token);
-        if (!$record) {
-            return self::html_response('Link expired', 'This confirmation link is invalid or has expired.', 404);
-        }
-
-        $status  = strtolower((string) ($record['status'] ?? ''));
-        $created = isset($record['created_at']) ? strtotime((string) $record['created_at']) : false;
-        $cutoff  = time() - 14 * DAY_IN_SECONDS;
-
-        if (Subscriptions::STATUS_PENDING === $status) {
-            if (!$created || $created < $cutoff) {
-                Subscriptions::update_status_by_token($token, Subscriptions::STATUS_UNSUBSCRIBED);
-                return self::html_response('Link expired', 'This confirmation link has expired. Please subscribe again.', 410);
-            }
-
-            Subscriptions::update_status_by_token($token, Subscriptions::STATUS_SUBSCRIBED);
-            return self::html_response('Subscription confirmed', 'Thanks! You will now receive outage alerts by email.');
-        }
-
-        if (Subscriptions::STATUS_SUBSCRIBED === $status) {
-            return self::html_response('Already confirmed', 'This email address is already confirmed.');
-        }
-
-        return self::html_response('Unsubscribed', 'This subscription has been unsubscribed.');
-    }
-
-    public static function handle_unsubscribe(WP_REST_Request $request): WP_REST_Response {
-        $token = sanitize_text_field((string) $request->get_param('token'));
-        if ('' === $token) {
-            return self::html_response('Missing token', 'No unsubscribe token was provided.', 400);
-        }
-
-        $record = Subscriptions::find_by_token($token);
-        if (!$record) {
-            return self::html_response('Link invalid', 'This unsubscribe link is invalid or has already been used.', 404);
-        }
-
-        if (Subscriptions::STATUS_UNSUBSCRIBED !== strtolower((string) $record['status'] ?? '')) {
-            Subscriptions::update_status_by_token($token, Subscriptions::STATUS_UNSUBSCRIBED);
-        }
-
-        return self::html_response('You have been unsubscribed', 'You will no longer receive outage alerts.');
-    }
-
-    private static function json_or_redirect(bool $success, string $message, int $status, WP_REST_Request $request): WP_REST_Response {
+    private static function respond_with_message(bool $success, string $message, int $status, WP_REST_Request $request): WP_REST_Response {
         $accept = $request->get_header('accept');
         $wantsHtml = is_string($accept) && false !== stripos($accept, 'text/html');
 
-        if ($wantsHtml) {
-            $target = home_url('/subscribe/thanks/');
-            if (!$success) {
-                $target = add_query_arg('error', '1', $target);
-            }
-            wp_safe_redirect($target);
-            exit;
-        }
-
         if ($success) {
+            if ($wantsHtml) {
+                status_header(303);
+                header('Location: ' . home_url('/lousy-outages/?sub=check-email'));
+                header('Content-Type: application/json; charset=utf-8');
+                $payload = wp_json_encode([
+                    'success' => true,
+                    'data'    => ['message' => $message],
+                ]);
+                echo is_string($payload) ? $payload : '{}';
+                exit;
+            }
+
             wp_send_json_success(['message' => $message], $status);
             wp_die();
+        }
+
+        if ($wantsHtml) {
+            status_header(303);
+            header('Location: ' . home_url('/lousy-outages/?sub=invalid'));
+            header('Content-Type: application/json; charset=utf-8');
+            $payload = wp_json_encode([
+                'success' => false,
+                'data'    => ['message' => $message],
+            ]);
+            echo is_string($payload) ? $payload : '{}';
+            exit;
         }
 
         wp_send_json_error(['message' => $message], $status);
@@ -349,19 +294,4 @@ class Api {
         return 'lousy_outages_subscribe_' . substr($ip_hash, 0, 20);
     }
 
-    private static function html_response(string $title, string $message, int $status = 200): WP_REST_Response {
-        $title   = esc_html($title);
-        $message = esc_html($message);
-        $body    = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>' . $title . '</title>'
-            . '<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#101410;color:#f4fff0;padding:48px;display:flex;justify-content:center;}'
-            . '.lo-card{max-width:520px;background:#1a261a;border-radius:16px;padding:32px;box-shadow:0 12px 32px rgba(0,0,0,0.35);}'
-            . '.lo-card h1{margin-top:0;font-size:1.6rem;} .lo-card p{margin:12px 0 0;font-size:1rem;line-height:1.5;}</style>'
-            . '</head><body><main class="lo-card"><h1>' . $title . '</h1><p>' . $message . '</p></main></body></html>';
-
-        $response = new WP_REST_Response($body, $status);
-        $response->header('Content-Type', 'text/html; charset=utf-8');
-        $response->header('Cache-Control', 'no-store, max-age=0');
-
-        return $response;
-    }
 }

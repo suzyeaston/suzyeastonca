@@ -673,11 +673,6 @@ class Lousy_Outages_Fetcher {
         // PagerDuty (HTML scrape of dashboard headline)
         'pagerduty'  => ['kind' => 'scrape', 'url' => 'https://status.pagerduty.com/posts/dashboard'],
 
-        // Okta / Fastly / Notion: keep Statuspage JSON but retain robust fallback
-        'okta'       => ['kind' => 'statuspage', 'base' => 'https://status.okta.com'],
-        'fastly'     => ['kind' => 'statuspage', 'base' => 'https://www.fastlystatus.com'],
-        'notion'     => ['kind' => 'statuspage', 'base' => 'https://www.notionstatus.com'],
-
         // Clouds
         'aws' => [
             'kind'  => 'rss-multi',
@@ -703,9 +698,6 @@ class Lousy_Outages_Fetcher {
         'zscaler'    => 'Zscaler',
         'gcp'        => 'Google Cloud',
         'pagerduty'  => 'PagerDuty',
-        'okta'       => 'Okta',
-        'fastly'     => 'Fastly',
-        'notion'     => 'Notion',
         'aws'        => 'Amazon Web Services',
         'crowdstrike'=> 'CrowdStrike',
     ];
@@ -796,22 +788,18 @@ class Lousy_Outages_Fetcher {
         return $selected ? array_values(array_unique($selected)) : $available;
     }
 
-    public static function severity_rank($status) {
-        switch ($status) {
-            case 'major':
-                return 3;
-            case 'degraded':
-                return 2;
-            case 'unknown':
-                return 1;
-            default:
-                return 0;
-        }
-    }
-
     private static function compare_tiles(array $a, array $b): int {
-        $ra = self::severity_rank(strtolower((string) ($a['status'] ?? 'unknown')));
-        $rb = self::severity_rank(strtolower((string) ($b['status'] ?? 'unknown')));
+        $rank = [
+            'major'       => 3,
+            'outage'      => 3,
+            'degraded'    => 2,
+            'unknown'     => 1,
+            'operational' => 0,
+        ];
+        $statusA = strtolower((string) ($a['status'] ?? 'unknown'));
+        $statusB = strtolower((string) ($b['status'] ?? 'unknown'));
+        $ra = isset($rank[$statusA]) ? $rank[$statusA] : 0;
+        $rb = isset($rank[$statusB]) ? $rank[$statusB] : 0;
         if ($ra !== $rb) {
             return $rb - $ra;
         }

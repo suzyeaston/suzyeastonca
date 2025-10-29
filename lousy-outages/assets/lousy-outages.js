@@ -499,7 +499,10 @@
     state.fetchImpl(endpoint, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(payload)
     })
       .then(function (res) {
@@ -674,7 +677,7 @@
           scheduleNext(state.baseDelay);
           return null;
         }
-        if (res.status >= 500) {
+        if (!res.ok) {
           throw new Error('HTTP ' + res.status);
         }
         return res.json();
