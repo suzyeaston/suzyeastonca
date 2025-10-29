@@ -72,18 +72,20 @@ class Api {
             'ts'    => $timestamp,
         ]);
 
-        $providers = [];
-        foreach ($states as $id => $state) {
-            $providers[] = lousy_outages_build_provider_payload($id, $state, $timestamp);
-        }
+        $snapshot  = \lousy_outages_refresh_snapshot($states, $timestamp, 'live');
+        $providers = isset($snapshot['providers']) && is_array($snapshot['providers']) ? $snapshot['providers'] : [];
 
-        $providers = \lousy_outages_sort_providers($providers);
+        if (empty($errors) && isset($snapshot['errors']) && is_array($snapshot['errors'])) {
+            $errors = $snapshot['errors'];
+        }
 
         $response = [
             'refreshedAt'   => $timestamp,
             'providerCount' => count($providers),
             'errors'        => $errors,
             'providers'     => $providers,
+            'trending'      => $snapshot['trending'] ?? ['trending' => false, 'signals' => []],
+            'source'        => 'live',
         ];
 
         return rest_ensure_response($response);
@@ -93,12 +95,28 @@ class Api {
         $providerParam = $request->get_param('provider');
         $filters       = self::sanitize_provider_list(is_string($providerParam) ? $providerParam : null);
 
-        $fetcher = new Lousy_Outages_Fetcher();
-        $result  = $fetcher->get_all($filters ?: null);
-        $providers = isset($result['providers']) && is_array($result['providers']) ? array_values($result['providers']) : [];
-        $trending  = isset($result['trending']) && is_array($result['trending'])
-            ? $result['trending']
+        $snapshot = \lousy_outages_get_snapshot(false);
+        if (empty($snapshot['providers'])) {
+            $snapshot = \lousy_outages_get_snapshot(true);
+        }
+
+        $providers = isset($snapshot['providers']) && is_array($snapshot['providers']) ? array_values($snapshot['providers']) : [];
+        if (!empty($filters)) {
+            $providers = array_values(array_filter($providers, static function ($provider) use ($filters) {
+                if (!is_array($provider)) {
+                    return false;
+                }
+                $slug = strtolower((string) ($provider['provider'] ?? $provider['id'] ?? ''));
+                return $slug && in_array($slug, $filters, true);
+            }));
+        }
+
+        $trending = isset($snapshot['trending']) && is_array($snapshot['trending'])
+            ? $snapshot['trending']
             : ['trending' => false, 'signals' => [], 'generated_at' => gmdate('c')];
+        $source = isset($snapshot['source']) ? (string) $snapshot['source'] : 'snapshot';
+        $fetched_at = isset($snapshot['fetched_at']) ? (string) $snapshot['fetched_at'] : gmdate('c');
+        $errors = isset($snapshot['errors']) && is_array($snapshot['errors']) ? $snapshot['errors'] : [];
 
         $isLite = false;
         $liteParam = $request->get_param('lite');
@@ -114,11 +132,12 @@ class Api {
         } else {
             $payload = [
                 'providers'  => $providers,
-                'fetched_at' => $result['fetched_at'] ?? gmdate('c'),
+                'fetched_at' => $fetched_at,
                 'trending'   => $trending,
+                'source'     => $source,
             ];
-            if (!empty($result['errors']) && is_array($result['errors'])) {
-                $payload['errors'] = $result['errors'];
+            if (!empty($errors)) {
+                $payload['errors'] = $errors;
             }
         }
 

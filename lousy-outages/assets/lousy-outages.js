@@ -56,12 +56,15 @@
     container: null,
     grid: null,
     fetchedEl: null,
+    fetchedLabelEl: null,
+    fetchedLabel: 'Fetched',
     countdownEl: null,
     refreshButton: null,
     degradedBadge: null,
     trendingBanner: null,
     trendingText: null,
     trendingReasons: null,
+    loadingEl: null,
     fetchedAt: null,
     isRefreshing: false,
     pendingManual: false
@@ -201,6 +204,9 @@
     if (!state.fetchedEl || !state.fetchedAt) {
       return;
     }
+    if (state.fetchedLabelEl) {
+      state.fetchedLabelEl.textContent = state.fetchedLabel || 'Fetched';
+    }
     var date = new Date(state.fetchedAt);
     if (Number.isNaN(date.getTime())) {
       state.fetchedEl.textContent = state.fetchedAt;
@@ -229,6 +235,17 @@
     state.refreshButton.disabled = !!isLoading;
     state.refreshButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
     state.refreshButton.textContent = isLoading ? 'Refreshing…' : 'Refresh now';
+  }
+
+  function toggleSpinner(visible) {
+    if (!state.loadingEl) {
+      return;
+    }
+    if (visible) {
+      state.loadingEl.removeAttribute('hidden');
+    } else {
+      state.loadingEl.setAttribute('hidden', 'hidden');
+    }
   }
 
   function showDegraded(active) {
@@ -278,6 +295,17 @@
         updateModernCard(card, provider, normalized);
       }
     });
+    if (state.loadingEl) {
+      if (Array.isArray(list) && list.length) {
+        toggleSpinner(false);
+      } else {
+        var hasAnyCard = false;
+        if (state.grid) {
+          hasAnyCard = !!state.grid.querySelector('[data-provider-id]');
+        }
+        toggleSpinner(!hasAnyCard);
+      }
+    }
     if (state.grid && orderedCards.length) {
       orderedCards.forEach(function (card) {
         if (card.parentNode === state.grid) {
@@ -704,6 +732,13 @@
 
     state.isRefreshing = true;
 
+    if (state.loadingEl && state.grid) {
+      var hasCards = !!state.grid.querySelector('[data-provider-id]');
+      if (!hasCards) {
+        toggleSpinner(true);
+      }
+    }
+
     var headers = { Accept: 'application/json' };
     if (state.etag) {
       headers['If-None-Match'] = state.etag;
@@ -745,6 +780,19 @@
         if (fetched) {
           state.fetchedAt = fetched;
           updateFetched();
+        }
+        var responseSource = body.source || (body.meta && body.meta.source) || state.container && state.container.getAttribute && state.container.getAttribute('data-lo-source');
+        if (responseSource) {
+          var normalizedSource = String(responseSource).toLowerCase();
+          state.fetchedLabel = normalizedSource === 'snapshot' ? 'Last fetched' : 'Fetched';
+          if (state.container && state.container.setAttribute) {
+            state.container.setAttribute('data-lo-source', String(responseSource));
+          }
+        } else {
+          state.fetchedLabel = 'Fetched';
+        }
+        if (state.fetchedLabelEl) {
+          state.fetchedLabelEl.textContent = state.fetchedLabel;
         }
         if (body.trending) {
           updateTrendingBanner(body.trending);
@@ -836,12 +884,14 @@
     }
     state.grid = state.container.querySelector('[data-lo-grid]') || state.container.querySelector('.providers-grid') || state.container;
     state.fetchedEl = state.container.querySelector('[data-lo-fetched]') || state.container.querySelector('.last-updated span');
+    state.fetchedLabelEl = state.container.querySelector('[data-lo-fetched-label]');
     state.countdownEl = state.container.querySelector('[data-lo-countdown]') || state.container.querySelector('.board-subtitle');
     state.refreshButton = state.container.querySelector('[data-lo-refresh]') || state.container.querySelector('.coin-btn');
     state.degradedBadge = state.container.querySelector('[data-lo-degraded]');
     state.trendingBanner = state.container.querySelector('[data-lo-trending]');
     state.trendingText = state.container.querySelector('[data-lo-trending-text]');
     state.trendingReasons = state.container.querySelector('[data-lo-trending-reasons]');
+    state.loadingEl = state.container.querySelector('[data-lo-loading]');
     state.endpoint = config.endpoint || '';
     state.refreshEndpoint = config.refreshEndpoint || '';
     state.refreshNonce = config.refreshNonce || '';
@@ -858,8 +908,19 @@
     } else if (Array.isArray(config.providers)) {
       initialProviders = config.providers;
     }
+    var containerSource = state.container.getAttribute ? state.container.getAttribute('data-lo-source') : '';
+    var initialSource = initial.source || (config.meta && config.meta.source) || containerSource || '';
+    if (initialSource) {
+      state.fetchedLabel = String(initialSource).toLowerCase() === 'snapshot' ? 'Last fetched' : 'Fetched';
+    }
+    if (state.fetchedLabelEl) {
+      state.fetchedLabelEl.textContent = state.fetchedLabel;
+    }
     if (initialProviders.length) {
       renderProviders(initialProviders);
+    }
+    if (state.loadingEl) {
+      toggleSpinner(!initialProviders.length);
     }
     var initialFetched = initial.fetched_at || initial.fetchedAt;
     if (!initialFetched && config.meta && (config.meta.fetched_at || config.meta.fetchedAt)) {
