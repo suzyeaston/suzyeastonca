@@ -100,8 +100,17 @@ class Lousy_Outages_Subscribe {
             return;
         }
 
-        $confirm_url     = add_query_arg('token', rawurlencode($token), rest_url('lousy-outages/v1/confirm'));
-        $unsubscribe_url = add_query_arg('token', rawurlencode($token), rest_url('lousy-outages/v1/unsubscribe'));
+        $confirm_url = add_query_arg('token', rawurlencode($token), rest_url('lousy-outages/v1/confirm'));
+
+        $unsubscribe_token = IncidentAlerts::build_unsubscribe_token($email);
+        $unsubscribe_url   = add_query_arg(
+            [
+                'lo_unsub' => 1,
+                'email'    => rawurlencode($email),
+                'token'    => $unsubscribe_token,
+            ],
+            home_url('/lousy-outages/')
+        );
 
         $subject = '👾 jack in to Lousy Outages (confirm your email)';
 
@@ -114,7 +123,7 @@ click to confirm your human-ness and join the swarm:
 CONFIRM ▶ {$confirm_url}
 
 if you didn't request this, chill—no packets were harmed.
-ignore this or nuke it here: {$unsubscribe_url}
+ignore this or nuke it here: <{$unsubscribe_url}>
 
 — lousy outages • inspired by wrangling third-party providers in IT. built by a bassist-turned-builder
 TEXT;
@@ -212,8 +221,16 @@ HTML;
     }
 
     private static function send_welcome_email(string $email, string $token): void {
-        $unsubscribe_url = add_query_arg('token', rawurlencode($token), rest_url('lousy-outages/v1/unsubscribe'));
-        $dashboard_url   = home_url('/lousy-outages/');
+        $unsubscribe_token = IncidentAlerts::build_unsubscribe_token($email);
+        $unsubscribe_url   = add_query_arg(
+            [
+                'lo_unsub' => 1,
+                'email'    => rawurlencode($email),
+                'token'    => $unsubscribe_token,
+            ],
+            home_url('/lousy-outages/')
+        );
+        $dashboard_url = home_url('/lousy-outages/');
 
         $subject = '✅ link established: you\'re on the outage radar';
 
@@ -229,7 +246,7 @@ open the live dashboard any time:
 {$dashboard_url}
 
 need out? one-click escape hatch:
-{$unsubscribe_url}
+<{$unsubscribe_url}>
 
 "This is what it feels like to be hunted by something smarter than you."
 — Grimes, Artificial Angels
@@ -260,15 +277,23 @@ HTML;
     }
 
     private static function send_already_subscribed_email(string $email, string $token): void {
-        $dashboard_url   = home_url('/lousy-outages/');
-        $unsubscribe_url = add_query_arg('token', rawurlencode($token), rest_url('lousy-outages/v1/unsubscribe'));
+        $dashboard_url      = home_url('/lousy-outages/');
+        $unsubscribe_token  = IncidentAlerts::build_unsubscribe_token($email);
+        $unsubscribe_url    = add_query_arg(
+            [
+                'lo_unsub' => 1,
+                'email'    => rawurlencode($email),
+                'token'    => $unsubscribe_token,
+            ],
+            home_url('/lousy-outages/')
+        );
 
         $subject = 'you\'re already on the radar (all good)';
 
         $text_body = <<<TEXT
 no double-hacking needed—your email is already subscribed.
 dashboard: {$dashboard_url}
-unsubscribe: {$unsubscribe_url}
+unsubscribe: <{$unsubscribe_url}>
 TEXT;
 
         $html_body = <<<HTML
@@ -354,10 +379,11 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
     $unsubscribe_token = IncidentAlerts::build_unsubscribe_token($email);
     $unsubscribe_url   = add_query_arg(
         [
-            'email' => $email,
-            'token' => $unsubscribe_token,
+            'lo_unsub' => 1,
+            'email'    => rawurlencode($email),
+            'token'    => $unsubscribe_token,
         ],
-        rest_url('lousy-outages/v1/unsubscribe-email')
+        home_url('/lousy-outages/')
     );
 
     $headers = [
@@ -380,60 +406,20 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
         ]);
     }
 
-    $subject  = 'Lousy Outages — you’re on the radar';
-    $bodyHtml = <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Lousy Outages — welcome aboard</title>
-</head>
-<body style="margin:0;padding:32px;background-color:#0b0b0b;color:#ffe9c4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#130700;border-radius:14px;border:1px solid rgba(255,184,28,0.35);box-shadow:0 18px 42px rgba(0,0,0,0.45);overflow:hidden;">
-          <tr>
-            <td style="padding:32px 32px 18px;background:linear-gradient(140deg,#050505,#201000);color:#ffe9c4;text-align:left;">
-              <p style="margin:0 0 6px;font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:0.85;">suzyeaston.ca/lousy-outages</p>
-              <h1 style="margin:0;font-size:26px;line-height:1.3;">Welcome to <span style="color:#ffb81c;">Lousy Outages</span></h1>
-              <p style="margin:12px 0 0;font-size:15px;line-height:1.5;max-width:460px;">You’re locked in for concise rundowns on third-party provider incidents, mitigation tactics, and security quirks that could sideswipe your stack.</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:28px 32px 14px;background-color:#0b0b0b;">
-              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#ffe9c4;">Here’s what to expect in your inbox:</p>
-              <ul style="margin:0 0 20px;padding-left:20px;font-size:14px;line-height:1.7;color:#fddca6;">
-                <li>Signal boosts on the outages and degradations hitting providers like Cloudflare, AWS, Azure, Stripe, and more.</li>
-                <li>Quick-hit postmortems with timelines, affected components, and lessons learned.</li>
-                <li>Security watch notes so you can harden your own services before things go sideways.</li>
-              </ul>
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 28px;">
-                <tr>
-                  <td style="border-radius:999px;background:#f04e23;">
-                    <a href="https://www.suzyeaston.ca/lousy-outages/" style="display:inline-block;padding:14px 26px;font-size:14px;font-weight:600;color:#050505;text-decoration:none;border-radius:999px;border:2px solid #ffb81c;">View the latest briefing</a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#fddca6;">Need to tune your alerts? Hop into the dashboard above for live incident tracking, archives, and more utilities from the status bunker.</p>
-              <p style="margin:0;font-size:13px;line-height:1.6;color:#fddca6;">Pro tip: add suzyeaston.ca to your safe-sender list so alerts don’t get trapped in spam.</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:20px 32px;background-color:#140a00;border-top:1px solid rgba(255,184,28,0.35);font-size:12px;line-height:1.6;color:#fddca6;">
-              <p style="margin:0 0 8px;">If this wasn’t you, or you’re done hearing about outage chaos, you can <a href="{$unsubscribe_url}" style="color:#ffb81c;font-weight:600;text-decoration:none;">unsubscribe instantly</a>.</p>
-              <p style="margin:0;">Questions or tips? Reply to this email or ping me on the site — no robots, just Suzy.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-HTML;
+    $subject = 'You’re in — Lousy Outages';
+    $body    = '';
+    $body   .= '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Lousy Outages welcome</title></head>';
+    $body   .= '<body style="margin:0;padding:32px;background-color:#0b0b0b;color:#ffe9c4;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Arial,sans-serif;">';
+    $body   .= '<div style="max-width:600px;margin:0 auto;background-color:#130700;border-radius:14px;border:1px solid rgba(255,184,28,0.35);box-shadow:0 18px 42px rgba(0,0,0,0.45);padding:32px;">';
+    $body   .= '<p>Welcome to <strong>Lousy Outages</strong> — you’re locked in.</p>';
+    $body   .= '<p>Here’s what to expect: outage alerts, mitigation notes, and security intel to keep your stack steady.</p>';
+    $body   .= '<p><em>Pro tip:</em> add <strong>suzyeaston.ca</strong> to your safe-sender list.</p>';
+    $body   .= '<hr style="border:none;border-top:1px solid #ddd;margin:20px 0;">';
+    $body   .= '<p>If this wasn’t you, or you’re done hearing about outage chaos, you can <a href="' . esc_url($unsubscribe_url) . '">unsubscribe instantly</a>.</p>';
+    $body   .= '<p style="margin-top:16px;font-size:12px;color:#fddca6;">Unsubscribe link (plain text): &lt;' . esc_html($unsubscribe_url) . '&gt;</p>';
+    $body   .= '</div></body></html>';
 
-    $ok_user = wp_mail($email, $subject, $bodyHtml, $headers);
+    $ok_user = wp_mail($email, $subject, $body, $headers);
 
     $admin_email = get_option('admin_email');
     $ok_admin    = false;
