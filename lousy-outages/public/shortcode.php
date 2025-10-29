@@ -332,6 +332,17 @@ function render_subscribe_shortcode(): string {
     $endpoint = esc_url_raw(rest_url('lousy-outages/v1/subscribe'));
     $nonce    = wp_create_nonce('lousy_outages_subscribe');
     $rss_url  = esc_url(home_url('/lousy-outages/feed/'));
+    $challenge = \lo_build_subscribe_challenge();
+    if (!is_array($challenge) || empty($challenge['prompt']) || empty($challenge['hash'])) {
+        $challenge = [
+            'prompt' => 'Type the word outage (all lowercase) to unlock alerts.',
+            'hash'   => \lo_hash_subscribe_answer('outage'),
+        ];
+    }
+    $form_uid  = uniqid('lo-subscribe-');
+    $email_id  = $form_uid . '-email';
+    $challenge_id = $form_uid . '-challenge';
+    $challenge_hint_id = $challenge_id . '-hint';
 
     ob_start();
     ?>
@@ -339,16 +350,39 @@ function render_subscribe_shortcode(): string {
         <h2 class="lo-subscribe__title">Subscribe by email or RSS</h2>
         <p class="lo-subscribe__intro">Get outage alerts in your inbox or follow the <a href="<?php echo $rss_url; ?>" target="_blank" rel="noopener">RSS feed</a>.</p>
         <form class="lo-subscribe__form" method="post" action="<?php echo esc_url($endpoint); ?>" data-lo-subscribe-form>
-            <label class="lo-subscribe__label">
+            <label class="lo-subscribe__label" for="<?php echo esc_attr($email_id); ?>">
                 <span>Email</span>
-                <input type="email" name="email" required autocomplete="email" />
+                <input
+                    id="<?php echo esc_attr($email_id); ?>"
+                    class="lo-subscribe__input"
+                    type="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    required
+                    autocomplete="email"
+                />
+            </label>
+            <label class="lo-subscribe__label lo-subscribe__challenge" for="<?php echo esc_attr($challenge_id); ?>">
+                <span><?php echo esc_html($challenge['prompt']); ?></span>
+                <input
+                    id="<?php echo esc_attr($challenge_id); ?>"
+                    class="lo-subscribe__input"
+                    type="text"
+                    name="challenge_response"
+                    placeholder="Type it here"
+                    autocomplete="off"
+                    aria-describedby="<?php echo esc_attr($challenge_hint_id); ?>"
+                    required
+                />
+                <p class="lo-subscribe__note" id="<?php echo esc_attr($challenge_hint_id); ?>">Humans only: answer the secret word challenge so we know you’re real.</p>
             </label>
             <input type="text" name="website" class="lo-hp" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px" />
             <input type="hidden" name="_wpnonce" value="<?php echo esc_attr($nonce); ?>" />
+            <input type="hidden" name="challenge_expected" value="<?php echo esc_attr($challenge['hash']); ?>" />
             <button type="submit" class="lo-subscribe__button">Subscribe</button>
             <p class="lo-subscribe__status" data-lo-subscribe-status aria-live="polite"></p>
         </form>
-        <p class="lo-subscribe__help">Watch for the confirmation email (and check spam if it’s missing). Every briefing ships with a one-click unsubscribe link.</p>
+        <p class="lo-subscribe__help">Watch for the confirmation email (check spam if it’s missing). Every briefing ships with a one-click unsubscribe link, and we use a secret word challenge to stop spam bots.</p>
     </div>
     <?php
     return (string) ob_get_clean();

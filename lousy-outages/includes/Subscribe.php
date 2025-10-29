@@ -343,6 +343,22 @@ HTML;
 }
 
 function lo_handle_subscribe(\WP_REST_Request $request) {
+    $expectedParam  = $request->get_param('challenge_expected');
+    $responseParam  = $request->get_param('challenge_response');
+    $expectedHash   = is_string($expectedParam) ? trim($expectedParam) : '';
+    $challengeReply = is_string($responseParam) ? trim((string) $responseParam) : '';
+
+    if (!lo_validate_subscribe_challenge($expectedHash, $challengeReply)) {
+        return new \WP_Error(
+            'invalid_challenge',
+            'Please solve the human check to subscribe.',
+            [
+                'status' => 400,
+                'ok'     => false,
+            ]
+        );
+    }
+
     $emailParam = $request->get_param('email');
     $email      = is_string($emailParam) ? sanitize_email($emailParam) : '';
     if (!$email || !is_email($email)) {
@@ -444,6 +460,60 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
     }
 
     return rest_ensure_response(['ok' => true]);
+}
+
+if (!function_exists('lo_validate_subscribe_challenge')) {
+    function lo_validate_subscribe_challenge(string $expectedHash, string $response): bool {
+        if ('' === $expectedHash || '' === $response) {
+            return false;
+        }
+
+        $computed = lo_hash_subscribe_answer($response);
+
+        return hash_equals($expectedHash, $computed);
+    }
+}
+
+if (!function_exists('lo_hash_subscribe_answer')) {
+    function lo_hash_subscribe_answer(string $answer): string {
+        $normalized = strtolower(trim($answer));
+
+        return hash_hmac('sha256', $normalized, wp_salt('lo_subscribe_challenge'));
+    }
+}
+
+if (!function_exists('lo_build_subscribe_challenge')) {
+    function lo_build_subscribe_challenge(): array {
+        $challenges = [
+            [
+                'prompt' => 'Type the word outage (all lowercase) to unlock alerts.',
+                'answer' => 'outage',
+            ],
+            [
+                'prompt' => 'Spell the word human (no caps).',
+                'answer' => 'human',
+            ],
+            [
+                'prompt' => 'Bots hate the word signal. Type it below.',
+                'answer' => 'signal',
+            ],
+            [
+                'prompt' => 'Prove you read this: enter the word steady.',
+                'answer' => 'steady',
+            ],
+            [
+                'prompt' => 'Write the word uptime to join the list.',
+                'answer' => 'uptime',
+            ],
+        ];
+
+        $choice = $challenges[array_rand($challenges)];
+
+        return [
+            'prompt' => $choice['prompt'],
+            'hash'   => lo_hash_subscribe_answer($choice['answer']),
+        ];
+    }
 }
 
 Lousy_Outages_Subscribe::bootstrap();
