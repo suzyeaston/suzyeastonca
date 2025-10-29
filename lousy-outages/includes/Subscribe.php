@@ -218,15 +218,17 @@ HTML;
         $subject = '✅ link established: you\'re on the outage radar';
 
         $text_body = <<<TEXT
-confirmed. welcome to the status underground. 🛰️
+confirmed. you're now getting the Lousy Outages briefings. 🛰️
 
-you'll get tidy alerts when third-party providers wobble:
-cloudflare • aws • azure • gcp • stripe • pagerduty • zscaler (and friends)
+expect:
+- outage and degradation alerts for cloudflare, aws, azure, gcp, stripe, pagerduty, zscaler (and their friends)
+- mini postmortems with timelines + impact notes
+- security watch items so you can harden things before the next wobble
 
-pro tip: bookmark the live dashboard:
+open the live dashboard any time:
 {$dashboard_url}
 
-done with the fun? one-click escape hatch:
+need out? one-click escape hatch:
 {$unsubscribe_url}
 
 "This is what it feels like to be hunted by something smarter than you."
@@ -364,60 +366,48 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
         ]);
     }
 
-    $subject  = 'you’re in — suzy easton updates';
+    $subject  = 'Lousy Outages — you’re on the radar';
     $bodyHtml = <<<HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>you’re in — suzy easton updates</title>
+  <title>Lousy Outages — welcome aboard</title>
 </head>
-<body style="margin:0;padding:0;background-color:#050505;color:#00ff9d;font-family:'Press Start 2P','Courier New',monospace;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#050505;">
+<body style="margin:0;padding:32px;background-color:#f3f4f6;color:#1b1b1b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
-      <td align="center" style="padding:40px 10px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#111111;border:3px solid #00ff9d;box-shadow:0 0 25px rgba(0,255,157,0.35);">
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:12px;border:1px solid #d0d7de;box-shadow:0 10px 30px rgba(15,23,42,0.08);overflow:hidden;">
           <tr>
-            <td style="padding:30px 30px 20px;text-align:center;background-color:#0b0b0b;border-bottom:3px solid #e60073;">
-              <p style="margin:0;font-size:12px;letter-spacing:4px;color:#f5fff8;text-transform:uppercase;">Neon Transmission</p>
-              <h1 style="margin:16px 0 0;font-size:20px;letter-spacing:3px;color:#00ff9d;text-transform:uppercase;">you’re in</h1>
-              <p style="margin:12px 0 0;font-size:10px;color:#ffffff;opacity:0.8;letter-spacing:2px;text-transform:uppercase;">suzy easton updates</p>
+            <td style="padding:32px 32px 16px;background:linear-gradient(135deg,#1f2937,#0f766e);color:#f3f4f6;text-align:left;">
+              <p style="margin:0 0 4px;font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:0.85;">Suzy Easton Signal</p>
+              <h1 style="margin:0;font-size:26px;line-height:1.3;">Welcome to <span style="color:#5eead4;">Lousy Outages</span></h1>
+              <p style="margin:12px 0 0;font-size:15px;line-height:1.5;max-width:460px;">You’re locked in for concise rundowns on third-party provider incidents, mitigation tactics, and security quirks that could sideswipe your stack.</p>
             </td>
           </tr>
           <tr>
-            <td style="padding:30px;background-color:#111111;">
-              <p style="margin:0 0 18px;font-size:12px;line-height:1.6;color:#00ff9d;">
-                Hey legend — thanks for stepping into the <span style="color:#e60073;">retro signal</span>.
-              </p>
-              <p style="margin:0 0 18px;font-size:12px;line-height:1.6;color:#c1ffe2;">
-                Your inbox is now cleared for dispatches about new tracks, live shows, midnight mixes, and whatever neon trouble I’m coding next.
-              </p>
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:30px auto;">
+            <td style="padding:28px 32px 12px;">
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Here’s what to expect in your inbox:</p>
+              <ul style="margin:0 0 20px;padding-left:20px;font-size:14px;line-height:1.7;color:#1f2933;">
+                <li>Signal boosts on the outages and degradations hitting providers like Cloudflare, AWS, Azure, Stripe, and more.</li>
+                <li>Quick-hit postmortems with timelines, affected components, and lessons learned.</li>
+                <li>Security watch notes so you can harden your own services before things go sideways.</li>
+              </ul>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 28px;">
                 <tr>
-                  <td align="center" style="background-color:#e60073;border:2px solid #00ff9d;padding:14px 28px;">
-                    <a href="https://www.suzyeaston.ca" style="display:inline-block;text-decoration:none;font-size:12px;letter-spacing:2px;color:#0b0b0b;font-weight:bold;text-transform:uppercase;">Visit the Website</a>
+                  <td style="border-radius:999px;" bgcolor="#0f766e">
+                    <a href="https://www.suzyeaston.ca/lousy-outages/" style="display:inline-block;padding:14px 26px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">View the latest briefing</a>
                   </td>
                 </tr>
               </table>
-              <p style="margin:0 0 18px;font-size:11px;line-height:1.6;color:#9efff3;">
-                Want the latest now? Dive into the arcade, spin the midnight mixes, or meet the Canucks app that started it all.
-              </p>
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:20px;">
-                <tr>
-                  <td style="padding:12px;border:1px solid #1f1f1f;background-color:#0b0b0b;color:#00ff9d;font-size:10px;text-transform:uppercase;letter-spacing:2px;">Signal Boosts</td>
-                  <td style="padding:12px;border:1px solid #1f1f1f;background-color:#161616;color:#c1ffe2;font-size:10px;">
-                    <a href="https://www.suzyeaston.ca/page-music-releases.php" style="color:#c1ffe2;text-decoration:none;">New Releases</a> •
-                    <a href="https://www.suzyeaston.ca/page-podcast.php" style="color:#c1ffe2;text-decoration:none;">Podcasts</a> •
-                    <a href="https://www.suzyeaston.ca/page-arcade.php" style="color:#c1ffe2;text-decoration:none;">Arcade</a>
-                  </td>
-                </tr>
-              </table>
+              <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#374151;">Need to tune your alerts? Hop into the dashboard above for live incident tracking, archives, and more utilities from the status bunker.</p>
             </td>
           </tr>
           <tr>
-            <td style="padding:24px 30px 36px;background-color:#0b0b0b;border-top:3px solid #00ff9d;text-align:center;">
-              <p style="margin:0 0 12px;font-size:10px;color:#8afff7;letter-spacing:2px;text-transform:uppercase;">Stay neon. Stay loud.</p>
-              <p style="margin:0;font-size:9px;color:#586d6d;letter-spacing:1px;">If you ever need to bail, slam the unsubscribe link in any email. No hard feelings.</p>
+            <td style="padding:20px 32px;background-color:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;line-height:1.6;color:#4b5563;">
+              <p style="margin:0 0 8px;">If this wasn’t you, or you’re done hearing about outage chaos, you can <a href="{$unsubscribe_url}" style="color:#0f766e;font-weight:600;text-decoration:none;">unsubscribe instantly</a>.</p>
+              <p style="margin:0;">Questions or tips? Reply to this email or ping me on the site — no robots, just Suzy.</p>
             </td>
           </tr>
         </table>
