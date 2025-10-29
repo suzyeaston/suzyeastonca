@@ -35,6 +35,8 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Api.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Feed.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Summary.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/IncidentAlerts.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Snapshot.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Cron.php';
 require_once LOUSY_OUTAGES_PATH . 'public/shortcode.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -59,6 +61,9 @@ Feed::bootstrap();
 MailTransport::bootstrap();
 IncidentAlerts::bootstrap();
 
+lo_snapshot_bootstrap();
+lo_cron_bootstrap();
+
 add_action('lousy_outages_purge_pending', [Subscriptions::class, 'purge_stale_pending']);
 
 add_action(
@@ -81,6 +86,9 @@ function lousy_outages_activate() {
     if ( ! wp_next_scheduled( 'lo_check_statuses' ) ) {
         wp_schedule_event( time() + 60, 'lo_five_minutes', 'lo_check_statuses' );
     }
+    if ( function_exists( 'lo_cron_activate' ) ) {
+        lo_cron_activate();
+    }
     lousy_outages_create_page();
     Subscriptions::create_table();
     Subscriptions::schedule_purge();
@@ -102,6 +110,9 @@ function lousy_outages_deactivate() {
     wp_clear_scheduled_hook( 'lousy_outages_poll' );
     wp_clear_scheduled_hook( 'lo_check_statuses' );
     Subscriptions::clear_schedule();
+    if ( function_exists( 'lo_cron_deactivate' ) ) {
+        lo_cron_deactivate();
+    }
     if ( function_exists( 'flush_rewrite_rules' ) ) {
         flush_rewrite_rules( false );
     }
@@ -299,6 +310,25 @@ function lousy_outages_store_snapshot( array $snapshot ): void {
 function lousy_outages_refresh_snapshot( array $states, string $timestamp, string $source = 'snapshot' ): array {
     $snapshot = lousy_outages_build_snapshot( $states, $timestamp, $source );
     lousy_outages_store_snapshot( $snapshot );
+
+    if ( function_exists( 'lo_snapshot_store' ) && function_exists( 'lo_snapshot_normalize_service' ) ) {
+        $services = [];
+        if ( isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] ) ) {
+            foreach ( $snapshot['providers'] as $provider ) {
+                if ( ! is_array( $provider ) ) {
+                    continue;
+                }
+                $services[] = lo_snapshot_normalize_service( $provider, $timestamp );
+            }
+        }
+
+        lo_snapshot_store(
+            [
+                'updated_at' => $timestamp,
+                'services'   => $services,
+            ]
+        );
+    }
 
     return $snapshot;
 }

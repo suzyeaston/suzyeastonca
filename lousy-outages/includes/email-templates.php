@@ -72,18 +72,18 @@ if (!function_exists('send_lo_confirmation_email')) {
         $confirm_raw  = esc_url_raw($confirm_url);
         $confirm_html = esc_url($confirm_url);
 
-        $subject = '🕹️ Confirm Access: Lousy Outages Command Console';
+        $subject = '🔔 You’re subscribed to Lousy Outages';
 
         $text_body_lines = [
-            'Rogue signal detected. Ready to jack in?',
+            'Welcome to the Lousy Outages alert list!',
             '',
-            'Confirm your access to the Lousy Outages command bunker:',
+            'Tap the link below to confirm and start receiving outage intel:',
             $confirm_raw,
             '',
-            'If this wasn\'t you, cut the wire instantly:',
-            $unsubscribe_raw,
+            'Dashboard anytime: ' . home_url('/lousy-outages/'),
             '',
-            'Stay sharp – Lousy Outages',
+            'Unsubscribe instantly if this wasn’t you:',
+            $unsubscribe_raw,
         ];
         $text_body = implode("\n", $text_body_lines);
 
@@ -95,21 +95,21 @@ if (!function_exists('send_lo_confirmation_email')) {
             <meta charset="utf-8">
             <title>Lousy Outages Confirmation</title>
         </head>
-        <body style="margin:0;background:#000;color:#FFD700;font-family:'Courier New','Lucida Console',monospace;">
-            <div style="max-width:640px;margin:0 auto;padding:36px 18px;">
-                <div style="border:3px solid #00FF00;background:linear-gradient(155deg,rgba(0,0,0,0.95),rgba(12,20,0,0.92));border-radius:20px;padding:30px 26px;box-shadow:0 0 32px rgba(0,255,0,0.3);">
-                    <p style="margin:0 0 12px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#00FF00;">rogue signal detected</p>
-                    <h1 style="margin:0 0 16px;font-size:28px;color:#FFD700;letter-spacing:0.08em;text-transform:uppercase;">Confirm bunker access</h1>
-                    <p style="margin:0 0 18px;font-size:16px;line-height:1.6;color:#FDF5A6;">One tap locks your feed into outage intel and neon-lit play-by-play. No confirmation, no transmissions.</p>
+        <body style="margin:0;background:#05050a;color:#f7f4ff;font-family:Segoe UI,Roboto,system-ui,-apple-system,sans-serif;">
+            <div style="max-width:640px;margin:0 auto;padding:32px 20px;">
+                <div style="border-radius:18px;border:1px solid rgba(119,85,255,0.4);background:linear-gradient(145deg,#0d0c1f,#1b1540);box-shadow:0 22px 46px rgba(26,17,68,0.45);padding:32px 30px;">
+                    <p style="margin:0 0 12px;font-size:14px;letter-spacing:0.12em;text-transform:uppercase;color:#8f80ff;">Welcome aboard</p>
+                    <h1 style="margin:0 0 16px;font-size:30px;color:#f9f7ff;letter-spacing:0.04em;">You’re subscribed to Lousy Outages</h1>
+                    <p style="margin:0 0 18px;font-size:16px;line-height:1.6;color:rgba(255,255,255,0.82);">Confirm your email to receive outage alerts, post-mortems, and status intel. One click keeps you in the loop.</p>
                     <p style="margin:0 0 22px;">
-                        <a href="<?php echo esc_url($confirm_html); ?>" style="display:inline-block;padding:16px 26px;border-radius:999px;border:2px solid #00FF00;background:#111;color:#00FF00;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:0.12em;">Confirm &amp; Jack In</a>
+                        <a href="<?php echo esc_url($confirm_html); ?>" style="display:inline-block;padding:16px 28px;border-radius:999px;border:2px solid rgba(170,144,255,0.9);background:#6c5ce7;color:#fff;font-weight:700;text-decoration:none;letter-spacing:0.08em;">Confirm subscription</a>
                     </p>
-                    <p style="margin:0 0 18px;font-size:13px;color:#FDF5A6;">If the button stalls, copy this access link:<br><span style="color:#00FF00;"><?php echo esc_html($confirm_raw); ?></span></p>
-                    <div style="margin:24px 0;padding:16px 18px;border:1px dashed rgba(0,255,0,0.6);border-radius:14px;background:rgba(4,25,4,0.7);color:#BFFFBF;font-size:13px;">
-                        <strong style="display:block;font-size:11px;letter-spacing:0.18em;color:#7BFF7B;margin-bottom:6px;text-transform:uppercase;">Unsubscribe</strong>
-                        Back out anytime: <a style="color:#7BFF7B;text-decoration:none;" href="<?php echo esc_url($unsubscribe_html); ?>"><?php echo esc_html($unsubscribe_raw); ?></a>
+                    <p style="margin:0 0 18px;font-size:14px;color:rgba(255,255,255,0.75);">Button sleepy? Copy this link instead:<br><span style="word-break:break-all;color:#b6a9ff;"><?php echo esc_html($confirm_raw); ?></span></p>
+                    <p style="margin:0 0 18px;font-size:14px;color:rgba(255,255,255,0.75);">Visit the live dashboard any time:<br><a href="<?php echo esc_url(home_url('/lousy-outages/')); ?>" style="color:#8f80ff;"><?php echo esc_html(home_url('/lousy-outages/')); ?></a></p>
+                    <div style="margin:24px 0 0;padding:16px 18px;border:1px dashed rgba(143,128,255,0.6);border-radius:14px;background:rgba(24,20,58,0.7);color:rgba(255,255,255,0.8);font-size:13px;">
+                        <strong style="display:block;font-size:11px;letter-spacing:0.16em;color:#d0c6ff;margin-bottom:6px;text-transform:uppercase;">Unsubscribe</strong>
+                        Leave immediately if this wasn’t you:<br><a style="color:#d0c6ff;text-decoration:none;" href="<?php echo esc_url($unsubscribe_html); ?>"><?php echo esc_html($unsubscribe_raw); ?></a>
                     </div>
-                    <p style="margin:0;font-size:12px;color:rgba(255,215,0,0.75);">Console tip: whitelist suzyeaston.ca so the alerts don&rsquo;t get ghosted.</p>
                 </div>
             </div>
         </body>

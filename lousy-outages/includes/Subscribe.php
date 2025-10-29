@@ -35,6 +35,19 @@ class Lousy_Outages_Subscribe {
             'callback'            => [self::class, 'unsubscribe'],
             'permission_callback' => '__return_true',
         ]);
+
+        register_rest_route('lousy/v1', '/captcha', [
+            'methods'             => 'GET',
+            'permission_callback' => '__return_true',
+            'callback'            => static function () {
+                $challenge = lo_build_subscribe_challenge();
+                if (!is_array($challenge) || empty($challenge['token'])) {
+                    $challenge = lo_fallback_subscribe_challenge();
+                }
+
+                return rest_ensure_response($challenge);
+            },
+        ]);
     }
 
     public static function confirm(\WP_REST_Request $request) {
@@ -294,12 +307,14 @@ HTML;
 }
 
 function lo_handle_subscribe(\WP_REST_Request $request) {
-    $expectedParam  = $request->get_param('challenge_expected');
+    $tokenParam     = $request->get_param('challenge_token');
     $responseParam  = $request->get_param('challenge_response');
-    $expectedHash   = is_string($expectedParam) ? trim($expectedParam) : '';
+    $noscriptParam  = $request->get_param('lo_noscript_challenge');
+    $token          = is_string($tokenParam) ? trim($tokenParam) : '';
     $challengeReply = is_string($responseParam) ? trim((string) $responseParam) : '';
+    $noscriptFlag   = !empty($noscriptParam);
 
-    if (!lo_validate_subscribe_challenge($expectedHash, $challengeReply)) {
+    if (!lo_validate_lyric_captcha($token, $challengeReply, $noscriptFlag)) {
         return new \WP_Error(
             'invalid_challenge',
             'Please solve the human check to subscribe.',
@@ -397,56 +412,166 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
     return rest_ensure_response(['ok' => true]);
 }
 
-if (!function_exists('lo_validate_subscribe_challenge')) {
-    function lo_validate_subscribe_challenge(string $expectedHash, string $response): bool {
-        if ('' === $expectedHash || '' === $response) {
-            return false;
-        }
-
-        $computed = lo_hash_subscribe_answer($response);
-
-        return hash_equals($expectedHash, $computed);
+if (!function_exists('lo_captcha_ttl_seconds')) {
+    function lo_captcha_ttl_seconds(): int
+    {
+        return 120;
     }
 }
 
-if (!function_exists('lo_hash_subscribe_answer')) {
-    function lo_hash_subscribe_answer(string $answer): string {
-        $normalized = strtolower(trim($answer));
+if (!function_exists('lo_validate_lyric_captcha')) {
+    function lo_validate_lyric_captcha(string $token, string $response, bool $allowFallback = false): bool
+    {
+        $normalized = lo_normalize_lyric_answer($response);
 
-        return hash_hmac('sha256', $normalized, wp_salt('lo_subscribe_challenge'));
+        if ($allowFallback && 'hotel' === $normalized) {
+            return true;
+        }
+
+        if ('' === $token || '' === $normalized) {
+            return false;
+        }
+
+        $key = lo_captcha_storage_key($token);
+        $stored = get_transient($key);
+        delete_transient($key);
+
+        if (!is_array($stored) || empty($stored['answer'])) {
+            return false;
+        }
+
+        $expires = isset($stored['expires']) ? (int) $stored['expires'] : 0;
+        if ($expires > 0 && $expires < time()) {
+            return false;
+        }
+
+        return hash_equals((string) $stored['answer'], $normalized);
+    }
+}
+
+if (!function_exists('lo_normalize_lyric_answer')) {
+    function lo_normalize_lyric_answer(string $value): string
+    {
+        $value = strtolower($value);
+        $value = preg_replace('/[^a-z0-9]+/i', '', $value);
+
+        return (string) $value;
+    }
+}
+
+if (!function_exists('lo_captcha_storage_key')) {
+    function lo_captcha_storage_key(string $token): string
+    {
+        $clean = strtolower(preg_replace('/[^a-z0-9-]+/i', '', $token));
+        if ('' === $clean) {
+            $clean = md5($token ?: wp_generate_uuid4());
+        }
+
+        return 'lo_captcha_' . $clean;
+    }
+}
+
+if (!function_exists('lo_store_lyric_challenge')) {
+    function lo_store_lyric_challenge(string $token, string $answer, int $ttl): void
+    {
+        set_transient(
+            lo_captcha_storage_key($token),
+            [
+                'answer'  => $answer,
+                'expires' => time() + $ttl,
+            ],
+            $ttl
+        );
+    }
+}
+
+if (!function_exists('lo_lyric_fragment_bank')) {
+    function lo_lyric_fragment_bank(): array
+    {
+        return [
+            'desert_highway' => [
+                'fragment' => 'On a dark desert highway',
+                'answer'   => 'cool wind in my hair',
+            ],
+            'warm_smell' => [
+                'fragment' => 'Warm smell of colitas',
+                'answer'   => 'rising up through the air',
+            ],
+            'distance_light' => [
+                'fragment' => 'Up ahead in the distance',
+                'answer'   => 'I saw a shimmering light',
+            ],
+            'tiffany_twisted' => [
+                'fragment' => 'Her mind is Tiffany-twisted',
+                'answer'   => 'she got the Mercedes bends',
+            ],
+            'mirrors_ceiling' => [
+                'fragment' => 'Mirrors on the ceiling',
+                'answer'   => 'the pink champagne on ice',
+            ],
+            'programmed_receive' => [
+                'fragment' => 'We are programmed to receive',
+                'answer'   => 'you can check out any time you like but you can never leave',
+            ],
+            'welcome_chorus' => [
+                'fragment' => 'Welcome to the Hotel California',
+                'answer'   => 'such a lovely place',
+            ],
+        ];
     }
 }
 
 if (!function_exists('lo_build_subscribe_challenge')) {
-    function lo_build_subscribe_challenge(): array {
-        $challenges = [
-            [
-                'prompt' => 'Type the word outage (all lowercase) to unlock alerts.',
-                'answer' => 'outage',
-            ],
-            [
-                'prompt' => 'Spell the word human (no caps).',
-                'answer' => 'human',
-            ],
-            [
-                'prompt' => 'Bots hate the word signal. Type it below.',
-                'answer' => 'signal',
-            ],
-            [
-                'prompt' => 'Prove you read this: enter the word steady.',
-                'answer' => 'steady',
-            ],
-            [
-                'prompt' => 'Write the word uptime to join the list.',
-                'answer' => 'uptime',
-            ],
-        ];
+    function lo_build_subscribe_challenge(): array
+    {
+        $bank = lo_lyric_fragment_bank();
+        if (empty($bank)) {
+            return lo_fallback_subscribe_challenge();
+        }
 
-        $choice = $challenges[array_rand($challenges)];
+        $keys = array_keys($bank);
+        $last_key = get_transient('lo_captcha_last_fragment');
+        $choice_key = $keys[array_rand($keys)];
+
+        if ($last_key && count($keys) > 1) {
+            $tries = 0;
+            while ($choice_key === $last_key && $tries < 5) {
+                $choice_key = $keys[array_rand($keys)];
+                $tries++;
+            }
+        }
+
+        $choice = $bank[$choice_key];
+        $token  = wp_generate_uuid4();
+        $ttl    = lo_captcha_ttl_seconds();
+
+        lo_store_lyric_challenge($token, lo_normalize_lyric_answer($choice['answer']), $ttl);
+        set_transient('lo_captcha_last_fragment', $choice_key, $ttl * 2);
 
         return [
-            'prompt' => $choice['prompt'],
-            'hash'   => lo_hash_subscribe_answer($choice['answer']),
+            'prompt'     => 'Finish the lyric from “Hotel California”.',
+            'fragment'   => $choice['fragment'],
+            'token'      => $token,
+            'expires_at' => gmdate('c', time() + $ttl),
+            'ttl'        => $ttl,
+        ];
+    }
+}
+
+if (!function_exists('lo_fallback_subscribe_challenge')) {
+    function lo_fallback_subscribe_challenge(): array
+    {
+        $token = wp_generate_uuid4();
+        $ttl   = lo_captcha_ttl_seconds();
+        $answer = 'cool wind in my hair';
+        lo_store_lyric_challenge($token, lo_normalize_lyric_answer($answer), $ttl);
+
+        return [
+            'prompt'     => 'Finish the lyric from “Hotel California”.',
+            'fragment'   => 'On a dark desert highway',
+            'token'      => $token,
+            'expires_at' => gmdate('c', time() + $ttl),
+            'ttl'        => $ttl,
         ];
     }
 }
