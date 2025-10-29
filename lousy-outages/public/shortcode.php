@@ -333,7 +333,9 @@ function render_shortcode(): string {
         return wp_date($format, $timestamp);
     };
 
-    $fetched_label = ('snapshot' === strtolower((string) $source)) ? 'Last fetched:' : 'Fetched:';
+    $fetched_label = ('snapshot' === strtolower((string) $source))
+        ? 'Outage info last refreshed:'
+        : 'Outage info fetched:';
 
     ob_start();
     ?>
