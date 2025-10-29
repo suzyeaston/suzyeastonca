@@ -5,7 +5,7 @@ namespace LousyOutages;
 
 class Mailer {
     /**
-     * Send a multipart/alternative email with optional extra headers.
+     * Send an HTML email via WordPress with optional extra headers and plain-text fallback.
      *
      * @param array<int,string> $extra_headers
      */
@@ -15,8 +15,6 @@ class Mailer {
             do_action('lousy_outages_log', 'email_skip', ['reason' => 'invalid_recipient']);
             return false;
         }
-
-        $boundary = 'lo-' . wp_generate_password(24, false, false);
 
         $from_email = get_option('admin_email');
         if (!is_email($from_email)) {
@@ -42,7 +40,7 @@ class Mailer {
 
         $headers  = [
             'MIME-Version: 1.0',
-            'Content-Type: multipart/alternative; boundary="' . $boundary . '"; charset=UTF-8',
+            'Content-Type: text/html; charset=UTF-8',
         ];
 
         if (!empty($extra_headers)) {
@@ -66,23 +64,20 @@ class Mailer {
             $headers[] = 'Reply-To: ' . $reply_to;
         }
 
-        $parts = [];
-        $parts[] = '--' . $boundary;
-        $parts[] = 'Content-Type: text/plain; charset=UTF-8';
-        $parts[] = 'Content-Transfer-Encoding: 8bit';
-        $parts[] = '';
-        $parts[] = $text_body;
-        $parts[] = '--' . $boundary;
-        $parts[] = 'Content-Type: text/html; charset=UTF-8';
-        $parts[] = 'Content-Transfer-Encoding: 8bit';
-        $parts[] = '';
-        $parts[] = $html_body;
-        $parts[] = '--' . $boundary . '--';
-        $parts[] = '';
+        $alt_body_callback = static function ($phpmailer) use ($text_body): void {
+            if (!is_string($text_body) || '' === $text_body) {
+                return;
+            }
+            if (is_object($phpmailer) && property_exists($phpmailer, 'AltBody')) {
+                $phpmailer->AltBody = $text_body;
+            }
+        };
 
-        $message = implode("\r\n", $parts);
+        add_action('phpmailer_init', $alt_body_callback);
 
-        $sent = wp_mail($email, $subject, $message, $headers);
+        $sent = wp_mail($email, $subject, $html_body, $headers);
+
+        remove_action('phpmailer_init', $alt_body_callback);
 
         if (! $sent && defined('WP_DEBUG') && WP_DEBUG) {
             error_log(sprintf('[lousy_outages] mail_send_failed recipient=%s subject=%s', $email, $subject));
