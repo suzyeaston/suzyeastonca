@@ -200,13 +200,7 @@ class Api {
 
         Subscriptions::save_pending($email, $token, $ip_hash, 'form');
 
-        $confirm_url     = add_query_arg('token', rawurlencode($token), rest_url('lousy-outages/v1/confirm'));
-        $unsubscribe_url = add_query_arg('token', rawurlencode($token), rest_url('lousy-outages/v1/unsubscribe'));
-
-        $subject = 'Confirm your Lousy Outages subscription';
-        $message = "Hi there!\n\nPlease confirm your email to receive Lousy Outages alerts.\n\nConfirm subscription: {$confirm_url}\n\nIf you didn't request this, ignore this email or unsubscribe here: {$unsubscribe_url}\n\n— Lousy Outages";
-
-        wp_mail($email, $subject, $message, ['Content-Type: text/plain; charset=UTF-8']);
+        \Lousy_Outages_Subscribe::send_confirm_email($email, $token);
 
         return self::respond_with_message(true, 'Check your email to confirm your subscription.', 200, $request);
     }

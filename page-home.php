@@ -8,13 +8,13 @@ get_header();
         <h1 class="retro-title glow-lite">Suzy Easton &mdash; Vancouver</h1>
         <div class="hero-quote">
             <span class="hero-quote__text">&ldquo;This is what it feels like to be hunted by something smarter than you.&rdquo;</span>
-            <span class="hero-quote__attr">&mdash; <a href="https://www.youtube.com/watch?v=NQr9EcRyIFs" target="_blank" rel="noopener">Grimes, Artificial Angels</a></span>
+            <span class="hero-quote__attr">&mdash; <a href="https://www.youtube.com/watch?v=tvGnYM14-1A" target="_blank" rel="noopener">Grimes, Artificial Angels</a></span>
         </div>
         <div class="lo-home-promo">
             <div class="lo-home-promo__card crt-block">
                 <span class="lo-home-promo__badge" data-lo-home-badge hidden>⚡ Trending now</span>
                 <h3 class="lo-home-promo__title">Lousy Outages — live status radar</h3>
-                <p class="lo-home-promo__subtitle">Cloudflare, AWS, Azure, GCP, Stripe, Okta and more. Auto-refreshing. Built by a bassist-turned-builder.</p>
+                <p class="lo-home-promo__subtitle">Cloudflare, AWS, Azure, GCP, Stripe, Okta and more. Auto-refreshing. Inspired by wrangling third-party providers in IT. Built by a bassist-turned-builder.</p>
                 <a class="pixel-button lo-home-promo__button" href="/lousy-outages/">Open dashboard →</a>
             </div>
         </div>

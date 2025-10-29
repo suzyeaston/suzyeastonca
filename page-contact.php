@@ -20,10 +20,6 @@ get_header(); ?>
       <a href="https://www.suzyeaston.ca">suzyeaston.ca</a>
     </p>
 
-    <p><strong>LinkedIn:</strong>
-      <a href="https://ca.linkedin.com/in/suzyeaston" target="_blank">ca.linkedin.com/in/suzyeaston</a> <!-- :contentReference[oaicite:0]{index=0} -->
-    </p>
-
     <p><strong>Instagram:</strong>
       <a href="https://www.instagram.com/officialsuzyeaston/" target="_blank">@officialsuzyeaston</a> <!-- :contentReference[oaicite:1]{index=1} -->
     </p>
@@ -55,15 +51,6 @@ get_header(); ?>
           easylivingwithsuzyeaston.podbean.com
         </a>
       </noscript>
-    </p>
-
-    <p><strong>More LinkedIn Posts:</strong><br>
-      • <a href="https://www.linkedin.com/posts/suzyeaston_a-little-louder-activity-7289087085448179712-NjhS" target="_blank">
-        “A Little Louder” reminder on Spotify</a> <!-- :contentReference[oaicite:6]{index=6} --><br>
-      • <a href="https://www.linkedin.com/posts/suzyeaston_suzys-guide-to-vancouvers-april-5th-city-activity-7305153007908790272-P-6s" target="_blank">
-        Podcast launch post</a> <!-- :contentReference[oaicite:7]{index=7} --><br>
-      • <a href="https://www.linkedin.com/posts/suzyeaston_earlyriserchallenge-formerpromusicianturnedqa-activity-7122588141936406528-lQRW" target="_blank">
-        “Early Riser Challenge” QA post</a> <!-- :contentReference[oaicite:8]{index=8} -->
     </p>
 
     <p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support on Bandcamp</a></p>
