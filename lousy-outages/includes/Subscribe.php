@@ -334,6 +334,11 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
         update_option('suzy_newsletter', array_values(array_unique($subscribers)), false);
     }
 
+    $token   = lo_generate_subscribe_token($email);
+    $ip      = lo_detect_subscribe_ip($request);
+    $ip_hash = lo_hash_subscriber_ip($ip);
+    Subscriptions::save_pending($email, $token, $ip_hash, 'form');
+
     $domain = wp_parse_url(home_url(), PHP_URL_HOST);
     if (!is_string($domain) || '' === $domain) {
         $domain = (string) parse_url(site_url('/'), PHP_URL_HOST);
@@ -360,9 +365,15 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
         ]);
     }
 
-    $confirm_url_filter = apply_filters('lo_subscribe_confirmation_url', '', $email, $request);
+    $default_confirm_url = add_query_arg(
+        'token',
+        rawurlencode($token),
+        rest_url('lousy-outages/v1/confirm')
+    );
+
+    $confirm_url_filter = apply_filters('lo_subscribe_confirmation_url', '', $email, $request, $token);
     if (!is_string($confirm_url_filter) || '' === trim($confirm_url_filter)) {
-        $confirm_url_filter = null;
+        $confirm_url_filter = $default_confirm_url;
     }
 
     $sent = lo_send_confirmation($email, $confirm_url_filter);
@@ -424,6 +435,76 @@ HTML;
     }
 
     return rest_ensure_response(['ok' => true]);
+}
+
+if (!function_exists('lo_detect_subscribe_ip')) {
+    function lo_detect_subscribe_ip(\WP_REST_Request $request): string
+    {
+        $candidates = [];
+
+        foreach (['cf-connecting-ip', 'x-forwarded-for', 'x-real-ip'] as $header) {
+            $value = $request->get_header($header);
+            if (is_string($value) && '' !== trim($value)) {
+                $candidates[] = $value;
+            }
+        }
+
+        foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR'] as $serverKey) {
+            if (!empty($_SERVER[$serverKey])) {
+                $candidates[] = (string) $_SERVER[$serverKey];
+            }
+        }
+
+        foreach ($candidates as $candidate) {
+            $parts = explode(',', (string) $candidate);
+            foreach ($parts as $part) {
+                $ip = trim($part);
+                if ('' === $ip) {
+                    continue;
+                }
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('lo_hash_subscriber_ip')) {
+    function lo_hash_subscriber_ip(string $ip): string
+    {
+        $payload = '' !== $ip ? $ip : 'unknown';
+
+        if (function_exists('wp_salt')) {
+            $salt = wp_salt('nonce');
+            return hash_hmac('sha256', $payload, $salt);
+        }
+
+        return hash('sha256', $payload);
+    }
+}
+
+if (!function_exists('lo_generate_subscribe_token')) {
+    function lo_generate_subscribe_token(string $email): string
+    {
+        if (function_exists('wp_rand')) {
+            $random = wp_rand();
+        } else {
+            $random = random_int(PHP_INT_MIN, PHP_INT_MAX);
+        }
+
+        if (function_exists('wp_generate_uuid4')) {
+            $uuid = wp_generate_uuid4();
+        } else {
+            $uuid = bin2hex(random_bytes(16));
+        }
+
+        $entropy = $email . '|' . microtime(true) . '|' . $random . '|' . $uuid;
+
+        return hash('sha256', $entropy);
+    }
 }
 
 if (!function_exists('lo_normalize_lyric_answer')) {
