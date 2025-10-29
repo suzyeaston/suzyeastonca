@@ -26,6 +26,7 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Detector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/SMS.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Mailer.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/MailTransport.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/email-templates.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Email.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Precursor.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Subscriptions.php';

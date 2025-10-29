@@ -112,38 +112,12 @@ class Lousy_Outages_Subscribe {
             home_url('/lousy-outages/')
         );
 
-        $subject = '👾 jack in to Lousy Outages (confirm your email)';
+        $sent = send_lo_confirmation_email($email, $unsubscribe_url, $confirm_url);
 
-        $text_body = <<<TEXT
-hey there, console cowboy ⚡
-
-you (or a very stylish bot) asked to receive Lousy Outages alerts.
-click to confirm your human-ness and join the swarm:
-
-CONFIRM ▶ {$confirm_url}
-
-if you didn't request this, chill—no packets were harmed.
-ignore this or nuke it here: <{$unsubscribe_url}>
-
-— lousy outages • inspired by wrangling third-party providers in IT. built by a bassist-turned-builder
-TEXT;
-
-        $html_body = <<<HTML
-<!doctype html>
-<meta charset="utf-8">
-<body style="font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:#050505; color:#ffe9c4;">
-  <div style="max-width:560px;margin:24px auto;padding:20px;border:2px solid #ffb81c;border-radius:14px;background:linear-gradient(140deg,#0b0b0b,#1a0b00);box-shadow:0 18px 36px rgba(0,0,0,0.45);">
-    <h2 style="margin:0 0 8px;font-size:20px;color:#ffb81c;letter-spacing:0.05em;text-transform:uppercase;">👾 jack in to Lousy Outages</h2>
-    <p style="margin:0 0 16px;">you (or a very stylish bot) asked to receive outage alerts.</p>
-    <p style="margin:0 0 18px;"><a href="{$confirm_url}" style="display:inline-block;padding:12px 18px;border-radius:999px;border:2px solid #ffb81c;background:#f04e23;color:#050505;font-weight:700;text-decoration:none;">CONFIRM SUBSCRIPTION</a></p>
-    <p style="margin:0 0 12px;opacity:.85;">not you? <a href="{$unsubscribe_url}" style="color:#ffb81c;">unsubscribe here</a> or just ignore this.</p>
-    <hr style="border:none;border-top:1px dashed rgba(255,184,28,0.5);margin:18px 0;">
-    <p style="margin:0;font-size:12px;opacity:.75;">lousy outages — inspired by wrangling third-party providers in IT.</p>
-  </div>
-</body>
-HTML;
-
-        Mailer::send($email, $subject, $text_body, $html_body);
+        do_action('lousy_outages_log', 'confirmation_email_dispatched', [
+            'email' => $email,
+            'sent'  => $sent,
+        ]);
     }
 
     private static function mark_confirmed(string $token): bool {
@@ -232,7 +206,7 @@ HTML;
         );
         $dashboard_url = home_url('/lousy-outages/');
 
-        $subject = '✅ link established: you\'re on the outage radar';
+        $subject = '🔔 Subscribed to Lousy Outages';
 
         $text_body = <<<TEXT
 confirmed. you're now getting the Lousy Outages briefings. 🛰️
