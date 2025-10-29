@@ -27,6 +27,7 @@ require_once LOUSY_OUTAGES_PATH . 'includes/SMS.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Email.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Precursor.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Subscriptions.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Subscribe.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Api.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Feed.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Summary.php';

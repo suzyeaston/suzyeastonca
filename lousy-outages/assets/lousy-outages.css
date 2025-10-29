@@ -378,6 +378,40 @@
   color: #ff8484;
 }
 
+.lo-banner {
+  margin: 24px 0;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: rgba(16, 26, 16, 0.88);
+  border: 2px solid rgba(122, 255, 156, 0.35);
+  color: #f4fff0;
+  box-shadow: 0 20px 36px rgba(0, 0, 0, 0.4);
+}
+
+.lo-banner p {
+  margin: 0;
+}
+
+.lo-banner--success {
+  border-color: rgba(122, 255, 156, 0.55);
+  color: #e5ffe7;
+}
+
+.lo-banner--info {
+  border-color: rgba(140, 206, 255, 0.55);
+  color: #e6f3ff;
+}
+
+.lo-banner--warning {
+  border-color: rgba(255, 214, 160, 0.55);
+  color: #fff2dc;
+}
+
+.lo-banner--error {
+  border-color: rgba(255, 150, 150, 0.55);
+  color: #ffe6e6;
+}
+
 @media (max-width: 600px) {
   .lo-subscribe__form {
     flex-direction: column;
