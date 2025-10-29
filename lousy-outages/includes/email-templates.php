@@ -5,6 +5,43 @@
 
 declare(strict_types=1);
 
+if (!function_exists('lo_unsubscribe_url_for')) {
+    function lo_unsubscribe_url_for(string $email): string {
+        $email = sanitize_email($email);
+        if (!$email || !is_email($email)) {
+            return home_url('/lousy-outages/');
+        }
+
+        if (!class_exists('LousyOutages\\IncidentAlerts')) {
+            return home_url('/lousy-outages/');
+        }
+
+        $token = \LousyOutages\IncidentAlerts::build_unsubscribe_token($email);
+
+        return add_query_arg(
+            [
+                'lo_unsub' => 1,
+                'email'    => rawurlencode($email),
+                'token'    => $token,
+            ],
+            home_url('/lousy-outages/')
+        );
+    }
+}
+
+if (!function_exists('lo_send_confirmation')) {
+    function lo_send_confirmation(string $email, ?string $confirm_url = null): bool {
+        $unsubscribe_url = lo_unsubscribe_url_for($email);
+
+        do_action('lousy_outages_log', 'confirm_email_unsub_url', [
+            'email' => sanitize_email($email),
+            'unsub' => $unsubscribe_url,
+        ]);
+
+        return send_lo_confirmation_email($email, $unsubscribe_url, $confirm_url);
+    }
+}
+
 if (!function_exists('send_lo_confirmation_email')) {
     /**
      * Sends the Lousy Outages confirmation email.
@@ -16,7 +53,9 @@ if (!function_exists('send_lo_confirmation_email')) {
             return false;
         }
 
-        $unsubscribe_url = $unsubscribe_url ?: home_url('/lousy-outages/');
+        if ('' === trim((string) $unsubscribe_url)) {
+            $unsubscribe_url = lo_unsubscribe_url_for($email);
+        }
         $unsubscribe_raw = esc_url_raw($unsubscribe_url);
         $unsubscribe_html = esc_url($unsubscribe_url);
 
@@ -144,18 +183,8 @@ if (!function_exists('send_lo_outage_alert_email')) {
         $unsubscribe_url = '';
         if (isset($incident_data['unsubscribe_url']) && '' !== trim((string) $incident_data['unsubscribe_url'])) {
             $unsubscribe_url = (string) $incident_data['unsubscribe_url'];
-        } elseif (class_exists('LousyOutages\\IncidentAlerts')) {
-            $token = \LousyOutages\IncidentAlerts::build_unsubscribe_token($email);
-            $unsubscribe_url = add_query_arg(
-                [
-                    'lo_unsub' => 1,
-                    'email'    => rawurlencode($email),
-                    'token'    => $token,
-                ],
-                home_url('/lousy-outages/')
-            );
         } else {
-            $unsubscribe_url = home_url('/lousy-outages/');
+            $unsubscribe_url = lo_unsubscribe_url_for($email);
         }
         $unsubscribe_raw  = esc_url_raw($unsubscribe_url);
         $unsubscribe_html = esc_url($unsubscribe_url);
