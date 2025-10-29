@@ -239,6 +239,7 @@
       state.degradedBadge.textContent = 'AUTO-REFRESH DEGRADED';
       state.degradedBadge.removeAttribute('hidden');
     } else {
+      state.degradedBadge.textContent = '';
       state.degradedBadge.setAttribute('hidden', 'hidden');
     }
   }
@@ -625,6 +626,7 @@
   }
 
   function resetAutoRefresh() {
+    state.baseDelay = POLL_MS;
     state.delay = state.baseDelay;
     showDegraded(false);
   }

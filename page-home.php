@@ -10,6 +10,11 @@ get_header();
             <span class="hero-quote__text">&ldquo;This is what it feels like to be hunted by something smarter than you.&rdquo;</span>
             <span class="hero-quote__attr">&mdash; <a href="https://www.youtube.com/watch?v=tvGnYM14-1A" target="_blank" rel="noopener">Grimes, Artificial Angels</a></span>
         </div>
+        <section class="lo-callout lo-8bit">
+          <h2>Weekly Show: <span>Lousy Outages</span></h2>
+          <p>Status chaos, quick demos, and riffs — real third-party wobbles, explained fast.</p>
+          <a class="btn-8bit" href="/lousy-outages/">Open the live dashboard →</a>
+        </section>
         <div class="lo-home-promo">
             <div class="lo-home-promo__card crt-block">
                 <span class="lo-home-promo__badge" data-lo-home-badge hidden>⚡ Trending now</span>
