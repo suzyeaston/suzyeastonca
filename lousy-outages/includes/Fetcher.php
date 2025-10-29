@@ -592,6 +592,14 @@ class Fetcher {
         return false;
     }
 
+    private function is_dns_error(string $message): bool {
+        if ('' === trim($message)) {
+            return false;
+        }
+
+        return 'dns' === $this->classify_network_error($message);
+    }
+
     private function sanitize(?string $text): string {
         if (! $text) {
             return '';
