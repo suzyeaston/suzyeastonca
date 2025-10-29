@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace LousyOutages;
 
+const LO_SHOW_WIDESPREAD = false;
+
 add_shortcode('lousy_outages', __NAMESPACE__ . '\render_shortcode');
 add_shortcode('lousy_outages_subscribe', __NAMESPACE__ . '\render_subscribe_shortcode');
 
@@ -232,6 +234,7 @@ function render_shortcode(): string {
                 <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
             </div>
         </div>
+        <?php if (LO_SHOW_WIDESPREAD) : ?>
         <div class="lo-trending" data-lo-trending<?php echo $trending_active ? '' : ' hidden'; ?> data-lo-trending-generated="<?php echo esc_attr($trending_generated); ?>" aria-live="assertive">
             <span class="lo-trending__icon" aria-hidden="true">⚡</span>
             <div class="lo-trending__body">
@@ -240,6 +243,7 @@ function render_shortcode(): string {
             </div>
             <a class="lo-link" href="https://downdetector.com/" target="_blank" rel="noopener">Downdetector →</a>
         </div>
+        <?php endif; ?>
         <?php echo render_subscribe_shortcode(); ?>
         <div class="lo-grid" data-lo-grid>
             <?php foreach ($ordered_tiles as $tile) :
