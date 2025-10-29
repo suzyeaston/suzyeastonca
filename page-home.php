@@ -12,17 +12,9 @@ get_header();
         </div>
         <section class="lo-callout lo-8bit">
           <h2>Weekly Show: <span>Lousy Outages</span></h2>
-          <p>Status chaos, quick demos, and riffs — real third-party wobbles, explained fast.</p>
+          <p>New weekly YouTube chaos — status meltdowns, longer riffs, and plenty of fun with real third-party wobbles.</p>
           <a class="btn-8bit" href="/lousy-outages/">Open the live dashboard →</a>
         </section>
-        <div class="lo-home-promo">
-            <div class="lo-home-promo__card crt-block">
-                <span class="lo-home-promo__badge" data-lo-home-badge hidden>⚡ Trending now</span>
-                <h3 class="lo-home-promo__title">Lousy Outages — live status radar</h3>
-                <p class="lo-home-promo__subtitle">Cloudflare, AWS, Azure, GCP, Stripe, Okta and more. Auto-refreshing. Inspired by wrangling third-party providers in IT. Built by a bassist-turned-builder.</p>
-                <a class="pixel-button lo-home-promo__button" href="/lousy-outages/">Open dashboard →</a>
-            </div>
-        </div>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
         <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
     <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
@@ -81,6 +73,7 @@ get_header();
                 <div class="group-buttons">
                     <a href="/riff-generator" class="pixel-button">Riff Generator</a>
                     <a href="/arcade" class="pixel-button">Canucks Game</a>
+                    <a href="/canucks-stats" class="pixel-button">Canucks Stats</a>
                     <a href="/albini-qa" class="pixel-button">Albini Q&amp;A</a>
                 </div>
             </div>
