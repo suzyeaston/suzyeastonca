@@ -332,7 +332,8 @@ function render_subscribe_shortcode(): string {
     ob_start();
     ?>
     <div class="lo-subscribe" data-lo-subscribe>
-        <p class="lo-subscribe__intro">Subscribe by email or <a href="<?php echo $rss_url; ?>" target="_blank" rel="noopener">RSS</a>.</p>
+        <h2 class="lo-subscribe__title">Subscribe by email or RSS</h2>
+        <p class="lo-subscribe__intro">Get outage alerts in your inbox or follow the <a href="<?php echo $rss_url; ?>" target="_blank" rel="noopener">RSS feed</a>.</p>
         <form class="lo-subscribe__form" method="post" action="<?php echo esc_url($endpoint); ?>" data-lo-subscribe-form>
             <label class="lo-subscribe__label">
                 <span>Email</span>

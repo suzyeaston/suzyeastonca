@@ -153,7 +153,6 @@ class Downdetector {
             'vercel'      => ['vercel'],
             'atlassian'   => ['atlassian', 'jira', 'confluence', 'bitbucket'],
             'pagerduty'   => ['pagerduty', 'pager duty'],
-            'okta'        => ['okta'],
             'zoom'        => ['zoom'],
         ];
 

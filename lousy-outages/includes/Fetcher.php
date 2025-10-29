@@ -18,6 +18,7 @@ class Fetcher {
         'operational' => 'Operational',
         'degraded'    => 'Degraded',
         'outage'      => 'Outage',
+        'major'       => 'Major Outage',
         'maintenance' => 'Maintenance',
         'unknown'     => 'Unknown',
     ];
@@ -100,17 +101,15 @@ class Fetcher {
             $errorCode    = $status > 0
                 ? 'http_error:' . $status
                 : 'network_error:' . ($networkKind ?: ((string) ($response['error'] ?? 'request_failed')));
-            if (! $fallbackSummary) {
-                $fallbackSummary = $this->failure_summary($status, $networkKind);
-            }
+            $summaryText = $fallbackSummary ?: $this->failure_summary($status, $networkKind);
             $statusResult = 'unknown';
 
             if ('statuspage' === $type && $status >= 500 && $status < 600) {
                 $detected = detect_state_from_error((string) ($response['body'] ?? ''));
                 if ($detected) {
                     $statusResult = $detected;
-                    if (! $fallbackSummary) {
-                        $summary = ('outage' === $detected)
+                    if (!$fallbackSummary) {
+                        $summaryText = ('outage' === $detected)
                             ? 'Status API error indicates major outage'
                             : 'Status API error indicates active incident';
                     }
@@ -118,10 +117,10 @@ class Fetcher {
             }
 
             if ($optional) {
-                return $this->optional_unavailable($defaults, $message ?: $summary);
+                return $this->optional_unavailable($defaults, $message ?: $summaryText);
             }
 
-            return $this->failed_defaults($defaults, $errorCode, $summary, $statusResult);
+            return $this->failed_defaults($defaults, $errorCode, $summaryText, $statusResult, $status, $networkKind, $message);
         }
 
         $body = (string) ($response['body'] ?? '');
@@ -558,14 +557,39 @@ class Fetcher {
         return $defaults;
     }
 
-    private function failed_defaults(array $defaults, string $code, string $summary, string $status = 'unknown'): array {
-        $summary = $summary ?: 'Status fetch failed';
+    private function failed_defaults(array $defaults, string $code, string $summary, string $status = 'unknown', int $httpStatus = 0, ?string $networkKind = null, string $rawMessage = ''): array {
         $defaults['status']       = $status ?: 'unknown';
         $defaults['status_label'] = self::status_label($defaults['status']);
-        $defaults['summary']      = $summary;
-        $defaults['message']      = $summary;
-        $defaults['error']        = $code;
+
+        $suppress = $this->should_suppress_error($httpStatus, $code, $networkKind, $rawMessage);
+        $displaySummary = $suppress ? 'Status temporarily unavailable.' : ($summary ?: 'Status fetch failed');
+
+        $defaults['summary'] = $displaySummary;
+        $defaults['message'] = $displaySummary;
+        $defaults['error']   = $suppress ? null : $code;
+
         return $defaults;
+    }
+
+    private function should_suppress_error(int $httpStatus, string $code, ?string $networkKind, string $rawMessage): bool {
+        if (in_array($httpStatus, [401, 403, 404], true)) {
+            return true;
+        }
+
+        if (0 === $httpStatus) {
+            $codeLower = strtolower($code);
+            if (0 === strpos($codeLower, 'network_error:dns')) {
+                return true;
+            }
+            if ('dns' === strtolower((string) $networkKind)) {
+                return true;
+            }
+            if ($rawMessage && $this->is_dns_error($rawMessage)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function sanitize(?string $text): string {
@@ -669,6 +693,7 @@ class Lousy_Outages_Fetcher {
         'gitlab'     => ['kind' => 'rss', 'feed' => 'https://status.gitlab.com/pages/5b36dc6502d06804c08349f7/rss', 'link' => 'https://status.gitlab.com/'],
         'zscaler'    => ['kind' => 'rss', 'feed' => 'https://trust.zscaler.com/rss-feed', 'link' => 'https://trust.zscaler.com/cloud-status'],
         'gcp'        => ['kind' => 'atom', 'feed' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom', 'link' => 'https://www.google.com/appsstatus/dashboard/'],
+        'azure'      => ['kind' => 'rss', 'feed' => 'https://azurestatuscdn.azureedge.net/en-us/status/feed/', 'link' => 'https://status.azure.com/en-us/status'],
 
         // PagerDuty (HTML scrape of dashboard headline)
         'pagerduty'  => ['kind' => 'scrape', 'url' => 'https://status.pagerduty.com/posts/dashboard'],
@@ -697,6 +722,7 @@ class Lousy_Outages_Fetcher {
         'gitlab'     => 'GitLab',
         'zscaler'    => 'Zscaler',
         'gcp'        => 'Google Cloud',
+        'azure'      => 'Microsoft Azure',
         'pagerduty'  => 'PagerDuty',
         'aws'        => 'Amazon Web Services',
         'crowdstrike'=> 'CrowdStrike',
@@ -706,6 +732,8 @@ class Lousy_Outages_Fetcher {
         'operational' => 'Operational',
         'degraded'    => 'Degraded',
         'major'       => 'Major Outage',
+        'outage'      => 'Outage',
+        'maintenance' => 'Maintenance',
         'unknown'     => 'Unknown',
     ];
 
@@ -713,7 +741,18 @@ class Lousy_Outages_Fetcher {
         'operational' => 'status--operational',
         'degraded'    => 'status--degraded',
         'major'       => 'status--outage',
+        'outage'      => 'status--outage',
+        'maintenance' => 'status--maintenance',
         'unknown'     => 'status--unknown',
+    ];
+
+    private const STATUS_PRIORITY = [
+        'major'       => 4,
+        'outage'      => 4,
+        'degraded'    => 3,
+        'maintenance' => 2,
+        'unknown'     => 1,
+        'operational' => 0,
     ];
 
     public function get_provider_map(): array {
@@ -789,21 +828,18 @@ class Lousy_Outages_Fetcher {
     }
 
     private static function compare_tiles(array $a, array $b): int {
-        $rank = [
-            'major'       => 3,
-            'outage'      => 3,
-            'degraded'    => 2,
-            'unknown'     => 1,
-            'operational' => 0,
-        ];
+        $rank = self::STATUS_PRIORITY;
         $statusA = strtolower((string) ($a['status'] ?? 'unknown'));
         $statusB = strtolower((string) ($b['status'] ?? 'unknown'));
-        $ra = isset($rank[$statusA]) ? $rank[$statusA] : 0;
-        $rb = isset($rank[$statusB]) ? $rank[$statusB] : 0;
+        $ra = $rank[$statusA] ?? $rank['unknown'];
+        $rb = $rank[$statusB] ?? $rank['unknown'];
         if ($ra !== $rb) {
-            return $rb - $ra;
+            return $rb <=> $ra;
         }
-        return strcmp((string) ($a['provider'] ?? ''), (string) ($b['provider'] ?? ''));
+
+        $nameA = strtolower((string) ($a['name'] ?? $a['provider'] ?? ''));
+        $nameB = strtolower((string) ($b['name'] ?? $b['provider'] ?? ''));
+        return $nameA <=> $nameB;
     }
 
     private function fetch_provider(string $slug, array $config, array &$cache): array {
@@ -894,10 +930,17 @@ class Lousy_Outages_Fetcher {
         }
 
         $message = $statusCode ? sprintf('HTTP %d fetching status.', $statusCode) : 'Status unavailable.';
-        return $this->build_tile($slug, $config, 'unknown', $message, [], $statusCode ?: 0, [
-            'error'      => $message,
+        $extra = [
             'fetched_at' => $summaryFetchedAt,
-        ]);
+        ];
+
+        if ($this->should_suppress_http_error($statusCode ?: 0, $message)) {
+            $message = 'Status temporarily unavailable.';
+        } else {
+            $extra['error'] = $message;
+        }
+
+        return $this->build_tile($slug, $config, 'unknown', $message, [], $statusCode ?: 0, $extra);
     }
 
     private function fetch_feed(string $slug, array $config, array &$cache, array $feeds, string $kind): array {
@@ -1055,7 +1098,7 @@ class Lousy_Outages_Fetcher {
             'error'        => $error,
         ];
 
-        if ('unknown' === $status && !$error && $http_code >= 400) {
+        if ('unknown' === $status && !$error && $http_code >= 500) {
             $tile['error'] = sprintf('HTTP %d response from provider.', $http_code);
         }
 
@@ -1067,10 +1110,32 @@ class Lousy_Outages_Fetcher {
     }
 
     private function error_tile_from_request(string $slug, array $config, string $message, int $http_code): array {
-        $status = $this->is_dns_error($message) ? 'unknown' : 'unknown';
-        return $this->build_tile($slug, $config, $status, $message, [], $http_code ?: 0, [
-            'error' => $message,
-        ]);
+        $http = $http_code ?: 0;
+        $display = $message ?: 'Status fetch failed.';
+        $suppress = $this->should_suppress_http_error($http, $message);
+
+        $extra = [];
+        if (!$suppress && '' !== $display) {
+            $extra['error'] = $display;
+        }
+
+        if ($suppress) {
+            $display = 'Status temporarily unavailable.';
+        }
+
+        return $this->build_tile($slug, $config, 'unknown', $display, [], $http, $extra);
+    }
+
+    private function should_suppress_http_error(int $code, string $message): bool {
+        if (in_array($code, [401, 403, 404], true)) {
+            return true;
+        }
+
+        if (0 === $code && $this->is_dns_error($message)) {
+            return true;
+        }
+
+        return false;
     }
 
     private function parse_statuspage_summary(string $body): ?array {

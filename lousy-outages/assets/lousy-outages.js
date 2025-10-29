@@ -13,8 +13,10 @@
 
   var globalRoot = rootRef && typeof rootRef.setTimeout === 'function' ? rootRef : (typeof globalThis !== 'undefined' ? globalThis : rootRef);
 
-  var POLL_MS = 30000;
-  var ERROR_BACKOFF_STEPS = [30000, 45000, 60000, 90000, 120000];
+  var POLL_MS = 10000;
+  var MAX_DELAY = 60000;
+  var DEGRADE_THRESHOLD = 0.5;
+  var RECOVER_THRESHOLD = 0.7;
 
   var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
@@ -45,8 +47,7 @@
     subscribeEndpoint: '',
     baseDelay: POLL_MS,
     delay: POLL_MS,
-    maxDelay: 120000,
-    fails: 0,
+    maxDelay: MAX_DELAY,
     timer: null,
     countdownTimer: null,
     nextRefreshAt: null,
@@ -623,19 +624,53 @@
     }
   }
 
-  function resetBackoff() {
-    state.fails = 0;
+  function resetAutoRefresh() {
     state.delay = state.baseDelay;
     showDegraded(false);
   }
 
-  function applyErrorBackoff() {
-    state.fails += 1;
-    var index = Math.min(state.fails - 1, ERROR_BACKOFF_STEPS.length - 1);
-    var target = ERROR_BACKOFF_STEPS[index];
-    var jitter = Math.floor(Math.random() * 3000);
-    state.delay = Math.min(state.maxDelay, target + jitter);
+  function degradeAutoRefresh() {
+    var current = state.delay || state.baseDelay;
+    var next = current * 2;
+    if (next > state.maxDelay) {
+      next = state.maxDelay;
+    }
+    if (next < state.baseDelay) {
+      next = state.baseDelay;
+    }
+    state.delay = next;
     showDegraded(true);
+  }
+
+  function evaluateProviderHealth(list) {
+    if (!Array.isArray(list) || !list.length) {
+      degradeAutoRefresh();
+      return;
+    }
+
+    var total = 0;
+    var okCount = 0;
+    list.forEach(function (provider) {
+      if (!provider) {
+        return;
+      }
+      total += 1;
+      if (!provider.error) {
+        okCount += 1;
+      }
+    });
+
+    if (!total) {
+      degradeAutoRefresh();
+      return;
+    }
+
+    var ratio = okCount / total;
+    if (ratio >= RECOVER_THRESHOLD) {
+      resetAutoRefresh();
+    } else if (ratio < DEGRADE_THRESHOLD) {
+      degradeAutoRefresh();
+    }
   }
 
   function refreshSummary(manual, force) {
@@ -673,7 +708,7 @@
           state.etag = etag;
         }
         if (res.status === 304) {
-          resetBackoff();
+          resetAutoRefresh();
           scheduleNext(state.baseDelay);
           return null;
         }
@@ -687,7 +722,10 @@
           return;
         }
         if (Array.isArray(body.providers)) {
+          evaluateProviderHealth(body.providers);
           renderProviders(body.providers);
+        } else {
+          resetAutoRefresh();
         }
         var fetched = body.fetched_at || (body.meta && (body.meta.fetched_at || body.meta.fetchedAt));
         if (fetched) {
@@ -699,11 +737,10 @@
         } else {
           updateTrendingBanner({ trending: false, signals: [] });
         }
-        resetBackoff();
-        scheduleNext(state.baseDelay);
+        scheduleNext(state.delay);
       })
       .catch(function () {
-        applyErrorBackoff();
+        degradeAutoRefresh();
         scheduleNext(state.delay);
       })
       .finally(function () {
@@ -797,8 +834,7 @@
     state.subscribeEndpoint = config.subscribeEndpoint || '';
     state.baseDelay = POLL_MS;
     state.delay = state.baseDelay;
-    state.maxDelay = Math.max(state.maxDelay || 0, 120000);
-    state.fails = 0;
+    state.maxDelay = Math.max(state.maxDelay || 0, MAX_DELAY);
     state.visibilityPaused = !isDocumentVisible();
 
     var initial = config.initial || {};
@@ -853,7 +889,6 @@
     updateCountdown();
     showDegraded(false);
     state.visibilityPaused = true;
-    state.fails = 0;
     state.delay = state.baseDelay;
   }
 

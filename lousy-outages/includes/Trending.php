@@ -3,132 +3,121 @@ declare(strict_types=1);
 
 namespace LousyOutages;
 
-/**
- * Lightweight trending detector that looks for correlated outage signals.
- */
 class Trending
 {
-    private const ERROR_HISTORY_OPTION = 'lousy_outages_error_history';
-    private const ERROR_WINDOW         = 600; // 10 minutes
+    private const CLOUD_SLUGS = ['aws', 'azure', 'gcp'];
+    private const MAJOR_STATES = ['major', 'outage'];
+    private const DEGRADED_STATES = ['degraded', 'major', 'outage'];
 
     public function evaluate(array $providers): array
     {
-        $timestamp      = time();
-        $history        = $this->update_error_history($providers, $timestamp);
-        $statuspageHits = [];
-        $cloudHits      = [];
+        $timestamp = time();
+        $degraded = [];
+        $major = [];
+        $cloudRecent = [];
 
         foreach ($providers as $provider) {
             if (!is_array($provider)) {
                 continue;
             }
 
-            $slug = strtolower((string) ($provider['provider'] ?? $provider['id'] ?? ''));
-            $kind = strtolower((string) ($provider['kind'] ?? ''));
-            $status = strtolower((string) ($provider['status'] ?? ''));
-            $indicator = strtolower((string) ($provider['indicator'] ?? ''));
-
-            if ('statuspage' === $kind) {
-                if (('' !== $indicator && 'none' !== $indicator) || in_array($status, ['degraded', 'major'], true)) {
-                    $statuspageHits[] = $slug ?: 'statuspage';
-                }
-            }
-
-            if (in_array($slug, ['aws', 'azure', 'gcp'], true)) {
-                $hasIncident = !empty($provider['incidents']);
-                if ($hasIncident || in_array($status, ['degraded', 'major'], true)) {
-                    $cloudHits[] = $slug;
-                }
-            }
-        }
-
-        $errorProviders = $this->recent_error_providers($history, $timestamp);
-
-        $active  = false;
-        $signals = [];
-
-        if ($statuspageHits && ($cloudHits || count($errorProviders) >= 3)) {
-            $active = true;
-
-            if ($statuspageHits) {
-                $signals[] = 'Statuspage alerts: ' . $this->format_list($statuspageHits);
-            }
-            if ($cloudHits) {
-                $signals[] = 'Cloud incidents: ' . $this->format_list($cloudHits);
-            }
-            if (count($errorProviders) >= 3) {
-                $signals[] = 'HTTP errors from ' . count($errorProviders) . ' providers';
-            }
-        }
-
-        return [
-            'trending'     => $active,
-            'signals'      => array_slice($signals, 0, 6),
-            'generated_at' => gmdate('c', $timestamp),
-        ];
-    }
-
-    private function update_error_history(array $providers, int $timestamp): array
-    {
-        $history = get_option(self::ERROR_HISTORY_OPTION, []);
-        if (!is_array($history)) {
-            $history = [];
-        }
-
-        $indexed = [];
-        foreach ($history as $entry) {
-            if (!is_array($entry) || empty($entry['slug']) || empty($entry['ts'])) {
-                continue;
-            }
-            $slug = strtolower((string) $entry['slug']);
-            $ts   = (int) $entry['ts'];
-            if (($timestamp - $ts) <= self::ERROR_WINDOW) {
-                $indexed[$slug] = $ts;
-            }
-        }
-
-        foreach ($providers as $provider) {
-            if (!is_array($provider)) {
-                continue;
-            }
-            $code = (int) ($provider['http_code'] ?? 0);
-            if ($code < 400 || $code >= 600) {
-                continue;
-            }
             $slug = strtolower((string) ($provider['provider'] ?? $provider['id'] ?? ''));
             if ('' === $slug) {
                 continue;
             }
-            $indexed[$slug] = $timestamp;
+
+            $status = strtolower((string) ($provider['status'] ?? $provider['overall'] ?? $provider['stateCode'] ?? 'unknown'));
+
+            if (in_array($status, self::DEGRADED_STATES, true)) {
+                $degraded[] = $slug;
+            }
+
+            if (in_array($status, self::MAJOR_STATES, true)) {
+                $major[] = $slug;
+            }
+
+            if (in_array($slug, self::CLOUD_SLUGS, true) && $this->has_recent_cloud_incident($provider, $timestamp)) {
+                $cloudRecent[] = $slug;
+            }
         }
 
-        $history = [];
-        foreach ($indexed as $slug => $ts) {
-            $history[] = [
-                'slug' => $slug,
-                'ts'   => $ts,
-            ];
+        $degraded = array_values(array_unique($degraded));
+        $major = array_values(array_unique($major));
+        $cloudRecent = array_values(array_unique($cloudRecent));
+
+        $active = false;
+        $signals = [];
+
+        if (count($degraded) >= 2) {
+            $active = true;
+            $signals[] = 'Multiple providers impacted: ' . $this->format_list($degraded);
         }
 
-        update_option(self::ERROR_HISTORY_OPTION, $history, false);
+        if ($major && $cloudRecent) {
+            if (!$active) {
+                $active = true;
+                $signals[] = 'Major outages: ' . $this->format_list($major);
+                $signals[] = 'Cloud incidents (last 6h): ' . $this->format_list($cloudRecent);
+            } else {
+                $signals[] = 'Major outages: ' . $this->format_list($major);
+                $signals[] = 'Cloud incidents (last 6h): ' . $this->format_list($cloudRecent);
+            }
+        } elseif ($active && $major) {
+            $signals[] = 'Major outages: ' . $this->format_list($major);
+        }
 
-        return $history;
+        return [
+            'trending'     => $active,
+            'signals'      => array_slice(array_filter($signals), 0, 6),
+            'generated_at' => gmdate('c', $timestamp),
+        ];
     }
 
-    private function recent_error_providers(array $history, int $timestamp): array
+    private function has_recent_cloud_incident(array $provider, int $now): bool
     {
-        $providers = [];
-        foreach ($history as $entry) {
-            if (!is_array($entry) || empty($entry['slug']) || empty($entry['ts'])) {
+        if (empty($provider['incidents']) || !is_array($provider['incidents'])) {
+            return false;
+        }
+
+        $window = $this->cloud_window_seconds();
+
+        foreach ($provider['incidents'] as $incident) {
+            if (!is_array($incident)) {
                 continue;
             }
-            $ts = (int) $entry['ts'];
-            if (($timestamp - $ts) <= self::ERROR_WINDOW) {
-                $providers[] = strtolower((string) $entry['slug']);
+
+            $timestamps = [];
+            foreach (['updated_at', 'updatedAt', 'started_at', 'startedAt'] as $field) {
+                if (empty($incident[$field])) {
+                    continue;
+                }
+                $time = strtotime((string) $incident[$field]);
+                if ($time) {
+                    $timestamps[] = $time;
+                }
+            }
+
+            if (isset($incident['timestamp'])) {
+                $raw = (int) $incident['timestamp'];
+                if ($raw > 0) {
+                    $timestamps[] = $raw;
+                }
+            }
+
+            foreach ($timestamps as $time) {
+                if (($now - $time) <= $window) {
+                    return true;
+                }
             }
         }
 
-        return array_values(array_unique($providers));
+        return false;
+    }
+
+    private function cloud_window_seconds(): int
+    {
+        $base = defined('HOUR_IN_SECONDS') ? (int) HOUR_IN_SECONDS : 3600;
+        return $base * 6;
     }
 
     private function format_list(array $slugs): string
@@ -142,9 +131,9 @@ class Trending
                 }
                 $special = [
                     'aws'   => 'AWS',
+                    'azure' => 'Azure',
                     'gcp'   => 'GCP',
                     'gcp-json' => 'GCP',
-                    'azure' => 'Azure',
                 ];
                 if (isset($special[$slug])) {
                     return $special[$slug];
@@ -161,3 +150,4 @@ class Trending
         return implode(', ', $labels);
     }
 }
+

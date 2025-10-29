@@ -322,6 +322,13 @@
   color: #c9ffc4;
 }
 
+.lo-subscribe__title {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f4fff0;
+}
+
 .lo-subscribe__intro {
   margin: 0 0 12px;
   font-size: 0.95rem;
