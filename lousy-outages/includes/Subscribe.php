@@ -365,7 +365,68 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
     }
 
     $subject  = 'you’re in — suzy easton updates';
-    $bodyHtml = '<p>thanks for subscribing</p>';
+    $bodyHtml = <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>you’re in — suzy easton updates</title>
+</head>
+<body style="margin:0;padding:0;background-color:#050505;color:#00ff9d;font-family:'Press Start 2P','Courier New',monospace;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#050505;">
+    <tr>
+      <td align="center" style="padding:40px 10px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#111111;border:3px solid #00ff9d;box-shadow:0 0 25px rgba(0,255,157,0.35);">
+          <tr>
+            <td style="padding:30px 30px 20px;text-align:center;background-color:#0b0b0b;border-bottom:3px solid #e60073;">
+              <p style="margin:0;font-size:12px;letter-spacing:4px;color:#f5fff8;text-transform:uppercase;">Neon Transmission</p>
+              <h1 style="margin:16px 0 0;font-size:20px;letter-spacing:3px;color:#00ff9d;text-transform:uppercase;">you’re in</h1>
+              <p style="margin:12px 0 0;font-size:10px;color:#ffffff;opacity:0.8;letter-spacing:2px;text-transform:uppercase;">suzy easton updates</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px;background-color:#111111;">
+              <p style="margin:0 0 18px;font-size:12px;line-height:1.6;color:#00ff9d;">
+                Hey legend — thanks for stepping into the <span style="color:#e60073;">retro signal</span>.
+              </p>
+              <p style="margin:0 0 18px;font-size:12px;line-height:1.6;color:#c1ffe2;">
+                Your inbox is now cleared for dispatches about new tracks, live shows, midnight mixes, and whatever neon trouble I’m coding next.
+              </p>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:30px auto;">
+                <tr>
+                  <td align="center" style="background-color:#e60073;border:2px solid #00ff9d;padding:14px 28px;">
+                    <a href="https://www.suzyeaston.ca" style="display:inline-block;text-decoration:none;font-size:12px;letter-spacing:2px;color:#0b0b0b;font-weight:bold;text-transform:uppercase;">Visit the Website</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 18px;font-size:11px;line-height:1.6;color:#9efff3;">
+                Want the latest now? Dive into the arcade, spin the midnight mixes, or meet the Canucks app that started it all.
+              </p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:20px;">
+                <tr>
+                  <td style="padding:12px;border:1px solid #1f1f1f;background-color:#0b0b0b;color:#00ff9d;font-size:10px;text-transform:uppercase;letter-spacing:2px;">Signal Boosts</td>
+                  <td style="padding:12px;border:1px solid #1f1f1f;background-color:#161616;color:#c1ffe2;font-size:10px;">
+                    <a href="https://www.suzyeaston.ca/page-music-releases.php" style="color:#c1ffe2;text-decoration:none;">New Releases</a> •
+                    <a href="https://www.suzyeaston.ca/page-podcast.php" style="color:#c1ffe2;text-decoration:none;">Podcasts</a> •
+                    <a href="https://www.suzyeaston.ca/page-arcade.php" style="color:#c1ffe2;text-decoration:none;">Arcade</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 30px 36px;background-color:#0b0b0b;border-top:3px solid #00ff9d;text-align:center;">
+              <p style="margin:0 0 12px;font-size:10px;color:#8afff7;letter-spacing:2px;text-transform:uppercase;">Stay neon. Stay loud.</p>
+              <p style="margin:0;font-size:9px;color:#586d6d;letter-spacing:1px;">If you ever need to bail, slam the unsubscribe link in any email. No hard feelings.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+HTML;
 
     $ok_user = wp_mail($email, $subject, $bodyHtml, $headers);
 
