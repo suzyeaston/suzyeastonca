@@ -344,7 +344,7 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
     $domain = strtolower($domain);
 
     $headers = [
-        'Content-Type: text/plain; charset=UTF-8',
+        'Content-Type: text/html; charset=UTF-8',
     ];
 
     $transport    = getenv('SMTP_HOST') ? 'smtp' : 'mail';
@@ -367,12 +367,40 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
 
     $sent = lo_send_confirmation($email, $confirm_url_filter);
 
-    $admin_email = get_option('admin_email');
+    $admin_email = apply_filters('lo_admin_notification_email', 'admin@suzyeaston.ca', $email, $request);
     $ok_admin    = false;
     if ($admin_email && is_email($admin_email)) {
-        $admin_subject = 'new subscriber';
-        $admin_body    = sprintf('New Lousy Outages subscriber: %s', $email);
-        $ok_admin      = wp_mail($admin_email, $admin_subject, $admin_body, $headers);
+        $subscriber_email   = esc_html($email);
+        $subscriber_count   = count($subscribers);
+        $subscriber_counter = number_format_i18n($subscriber_count);
+        $timestamp_display  = esc_html(wp_date('F j, Y g:i A T'));
+        $list_manage_url    = esc_url(admin_url('admin.php?page=lousy-outages'));
+
+        $admin_subject = '🌩️ Neon ping: a new Lousy Outages subscriber';
+        $admin_body    = <<<HTML
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;background:#0d0221;color:#f8f6ff;font-family:Helvetica,Arial,sans-serif;">
+    <div style="max-width:520px;margin:0 auto;padding:32px 28px;">
+        <div style="background:linear-gradient(135deg,#341671,#f72585);padding:24px 26px;border-radius:18px;box-shadow:0 14px 35px rgba(247,37,133,0.32);">
+            <h1 style="margin:0 0 12px;font-size:26px;letter-spacing:0.08em;text-transform:uppercase;color:#fdf8ff;">New Signal Locked</h1>
+            <p style="margin:0;font-size:15px;line-height:1.6;">A fresh human just hacked into the neon grid.</p>
+        </div>
+        <div style="background:#140631;padding:28px;border-radius:18px;margin-top:22px;border:1px solid rgba(255,184,28,0.28);">
+            <p style="margin:0 0 12px;font-size:14px;color:#ffb81c;letter-spacing:0.12em;text-transform:uppercase;">Subscriber Intel</p>
+            <p style="margin:0 0 10px;font-size:16px;font-weight:600;color:#fef4ff;">{$subscriber_email}</p>
+            <p style="margin:0 0 4px;font-size:13px;color:#d0c6ff;">Captured: {$timestamp_display}</p>
+            <p style="margin:0;font-size:13px;color:#d0c6ff;">Total crew on deck: <strong style="color:#ff4ecd;">{$subscriber_counter}</strong></p>
+        </div>
+        <p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#bfb6ff;">Need to audit the roster? <a href="{$list_manage_url}" style="color:#ffb81c;text-decoration:none;font-weight:600;">Beam into the dashboard</a> anytime.</p>
+        <p style="margin:18px 0 0;font-size:12px;color:#8c7dd6;text-transform:uppercase;letter-spacing:0.18em;">Stay rad &middot; Stay noisy</p>
+    </div>
+</body>
+</html>
+HTML;
+
+        $ok_admin = wp_mail($admin_email, $admin_subject, $admin_body, $headers);
     }
 
     do_action('lousy_outages_log', 'subscribe_confirmation_send', [
