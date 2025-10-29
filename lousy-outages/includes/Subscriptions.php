@@ -68,12 +68,13 @@ class Subscriptions {
                 [
                     'status'         => self::STATUS_PENDING,
                     'token'          => $token,
+                    'created_at'     => $now,
                     'updated_at'     => $now,
                     'ip_hash'        => $ip_hash,
                     'consent_source' => $source,
                 ],
                 ['id' => (int) $existing->id],
-                ['%s', '%s', '%s', '%s', '%s'],
+                ['%s', '%s', '%s', '%s', '%s', '%s'],
                 ['%d']
             );
         } else {
