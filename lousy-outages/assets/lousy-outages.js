@@ -13,8 +13,8 @@
 
   var globalRoot = rootRef && typeof rootRef.setTimeout === 'function' ? rootRef : (typeof globalThis !== 'undefined' ? globalThis : rootRef);
 
-  var POLL_MS = 60000;
-  var ERROR_BACKOFF_STEPS = [30000, 45000, 60000, 120000];
+  var POLL_MS = 30000;
+  var ERROR_BACKOFF_STEPS = [30000, 45000, 60000, 90000, 120000];
 
   var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
@@ -43,12 +43,14 @@
     refreshEndpoint: '',
     refreshNonce: '',
     subscribeEndpoint: '',
-    pollInterval: POLL_MS,
+    baseDelay: POLL_MS,
+    delay: POLL_MS,
+    maxDelay: 120000,
+    fails: 0,
     timer: null,
     countdownTimer: null,
     nextRefreshAt: null,
     etag: null,
-    errorLevel: 0,
     visibilityPaused: false,
     container: null,
     grid: null,
@@ -127,7 +129,7 @@
   }
 
   function scheduleNext(delay) {
-    if (state.timer) {
+    if (state.timer && state.root) {
       state.root.clearTimeout(state.timer);
       state.timer = null;
     }
@@ -140,13 +142,17 @@
       }
       return;
     }
-    var nextDelay = Math.max(10, delay);
+    var nextDelay = Math.max(1000, delay || state.delay || state.baseDelay || POLL_MS);
+    state.delay = nextDelay;
+    state.visibilityPaused = false;
     state.nextRefreshAt = Date.now() + nextDelay;
-    state.timer = state.root.setTimeout(function () {
-      state.timer = null;
-      refreshSummary(false);
-    }, nextDelay);
     startCountdown();
+    if (state.root) {
+      state.timer = state.root.setTimeout(function () {
+        state.timer = null;
+        refreshSummary(false, false);
+      }, nextDelay);
+    }
   }
 
   function startCountdown() {
@@ -240,6 +246,7 @@
     if (!Array.isArray(list)) {
       return;
     }
+    var orderedCards = [];
     list.forEach(function (provider) {
       if (!provider) {
         return;
@@ -261,6 +268,7 @@
       if (!card) {
         return;
       }
+      orderedCards.push(card);
       var normalized = normalizeStatus(provider.status || provider.overall || provider.overall_status || provider.stateCode);
       if (card.classList && card.classList.contains('provider-card')) {
         updateLegacyCard(card, provider, normalized);
@@ -268,7 +276,15 @@
         updateModernCard(card, provider, normalized);
       }
     });
+    if (state.grid && orderedCards.length) {
+      orderedCards.forEach(function (card) {
+        if (card.parentNode === state.grid) {
+          state.grid.appendChild(card);
+        }
+      });
+    }
   }
+
 
   function getSummaryText(provider) {
     if (!provider) {
@@ -331,7 +347,7 @@
     var error = card.querySelector('[data-lo-error]');
     if (error) {
       var httpCode = typeof provider.http_code === 'number' ? provider.http_code : null;
-      var hasError = !!provider.error && (httpCode === null || httpCode === 0 || httpCode >= 500);
+      var hasError = !!provider.error && (httpCode === null || httpCode === 0 || httpCode >= 400);
       error.textContent = hasError ? String(provider.error) : '';
       if (hasError) {
         error.removeAttribute('hidden');
@@ -490,19 +506,21 @@
         if (!res) {
           throw new Error('No response');
         }
-        if (res.status === 204) {
-          return {};
-        }
         return res.json().catch(function () { return {}; }).then(function (body) {
-          if (!res.ok) {
-            var message = body && body.message ? body.message : 'Subscription failed.';
-            throw new Error(message);
+          var payload = body;
+          if (body && typeof body === 'object' && body.data) {
+            payload = body.data;
           }
-          return body;
+          var message = payload && payload.message ? String(payload.message) : null;
+          var success = res.ok && (!body || body.success !== false);
+          if (!success) {
+            throw new Error(message || 'Subscription failed.');
+          }
+          return { message: message || 'Check your email to confirm your subscription.' };
         });
       })
-      .then(function (body) {
-        setSubscribeStatus(statusEl, (body && body.message) ? body.message : 'Check your email to confirm.');
+      .then(function (result) {
+        setSubscribeStatus(statusEl, result && result.message ? result.message : 'Check your email to confirm your subscription.');
         form.reset();
       })
       .catch(function (error) {
@@ -602,41 +620,44 @@
     }
   }
 
+  function resetBackoff() {
+    state.fails = 0;
+    state.delay = state.baseDelay;
+    showDegraded(false);
+  }
+
+  function applyErrorBackoff() {
+    state.fails += 1;
+    var index = Math.min(state.fails - 1, ERROR_BACKOFF_STEPS.length - 1);
+    var target = ERROR_BACKOFF_STEPS[index];
+    var jitter = Math.floor(Math.random() * 3000);
+    state.delay = Math.min(state.maxDelay, target + jitter);
+    showDegraded(true);
+  }
+
   function refreshSummary(manual, force) {
-    if (!state.fetchImpl || !state.endpoint || state.isRefreshing) {
+    if (!state.fetchImpl || !state.endpoint) {
       return Promise.resolve();
     }
-    if (!manual && !force && !isDocumentVisible()) {
-      state.visibilityPaused = true;
-      state.nextRefreshAt = null;
-      if (state.countdownEl) {
-        state.countdownEl.textContent = 'Auto-refresh paused';
+    if (state.isRefreshing) {
+      if (manual) {
+        state.pendingManual = true;
       }
       return Promise.resolve();
     }
-    var startedAt = Date.now();
-    var scheduled = false;
-    state.isRefreshing = true;
-    if (manual) {
-      state.errorLevel = 0;
-      state.visibilityPaused = false;
-    }
-    var url = state.endpoint;
-    if (!url) {
-      state.isRefreshing = false;
+    if (!manual && !force && !isDocumentVisible()) {
+      scheduleNext(state.delay);
       return Promise.resolve();
     }
+
+    state.isRefreshing = true;
+
     var headers = { Accept: 'application/json' };
-    if (manual || force) {
-      url = appendQuery(url, '_', Date.now());
-    }
-    if (manual) {
-      url = appendQuery(url, 'refresh', '1');
-    }
-    if (state.etag && !force) {
+    if (state.etag) {
       headers['If-None-Match'] = state.etag;
     }
-    return state.fetchImpl(url, {
+
+    return state.fetchImpl(state.endpoint, {
       credentials: 'same-origin',
       headers: headers
     })
@@ -644,45 +665,28 @@
         if (!res) {
           throw new Error('No response');
         }
-        if (res.status === 304) {
-          state.errorLevel = 0;
-          state.visibilityPaused = false;
-          showDegraded(false);
-          var elapsed304 = Date.now() - startedAt;
-          var delay304 = Math.max(10, state.pollInterval - elapsed304);
-          scheduleNext(delay304);
-          scheduled = true;
-          return null;
-        }
         var etag = res.headers ? res.headers.get('ETag') : null;
         if (etag) {
           state.etag = etag;
         }
-        if (!res.ok) {
-          if (res.status >= 500) {
-            throw new Error('HTTP ' + res.status);
-          }
-          return res.json().catch(function () { return null; });
+        if (res.status === 304) {
+          resetBackoff();
+          scheduleNext(state.baseDelay);
+          return null;
+        }
+        if (res.status >= 500) {
+          throw new Error('HTTP ' + res.status);
         }
         return res.json();
       })
       .then(function (body) {
-        if (!scheduled) {
-          state.errorLevel = 0;
-          state.visibilityPaused = false;
-          showDegraded(false);
-          var elapsed = Date.now() - startedAt;
-          var delay = Math.max(10, state.pollInterval - elapsed);
-          scheduleNext(delay);
-          scheduled = true;
-        }
         if (!body) {
           return;
         }
         if (Array.isArray(body.providers)) {
           renderProviders(body.providers);
         }
-        var fetched = body.fetched_at || (body.meta && body.meta.fetchedAt);
+        var fetched = body.fetched_at || (body.meta && (body.meta.fetched_at || body.meta.fetchedAt));
         if (fetched) {
           state.fetchedAt = fetched;
           updateFetched();
@@ -692,41 +696,22 @@
         } else {
           updateTrendingBanner({ trending: false, signals: [] });
         }
+        resetBackoff();
+        scheduleNext(state.baseDelay);
       })
-      .catch(function (err) {
-        var message = err && err.message ? String(err.message) : '';
-        if (message && /^HTTP 4\d\d/.test(message)) {
-          state.errorLevel = 0;
-          showDegraded(false);
-          var elapsedSoft = Date.now() - startedAt;
-          var softDelay = Math.max(10, state.pollInterval - elapsedSoft);
-          scheduleNext(softDelay);
-          scheduled = true;
-          return;
-        }
-        var index = Math.min(state.errorLevel, ERROR_BACKOFF_STEPS.length - 1);
-        var targetDelay = ERROR_BACKOFF_STEPS[index];
-        state.errorLevel = Math.min(state.errorLevel + 1, ERROR_BACKOFF_STEPS.length - 1);
-        showDegraded(true);
-        var elapsedError = Date.now() - startedAt;
-        var backoffDelay = Math.max(10, targetDelay - elapsedError);
-        scheduleNext(backoffDelay);
-        scheduled = true;
+      .catch(function () {
+        applyErrorBackoff();
+        scheduleNext(state.delay);
       })
       .finally(function () {
         state.isRefreshing = false;
         if (state.pendingManual) {
           state.pendingManual = false;
-          if (state.root && typeof state.root.setTimeout === 'function') {
-            state.root.setTimeout(function () {
-              manualRefresh();
-            }, 0);
-          } else {
-            manualRefresh();
-          }
+          refreshSummary(true, true);
         }
       });
   }
+
 
   function callRefreshEndpoint() {
     if (!state.refreshEndpoint || !state.fetchImpl) {
@@ -807,11 +792,10 @@
     state.refreshEndpoint = config.refreshEndpoint || '';
     state.refreshNonce = config.refreshNonce || '';
     state.subscribeEndpoint = config.subscribeEndpoint || '';
-    state.pollInterval = Number(config.pollInterval) || POLL_MS;
-    if (!Number.isFinite(state.pollInterval) || state.pollInterval <= 0) {
-      state.pollInterval = POLL_MS;
-    }
-    state.errorLevel = 0;
+    state.baseDelay = POLL_MS;
+    state.delay = state.baseDelay;
+    state.maxDelay = Math.max(state.maxDelay || 0, 120000);
+    state.fails = 0;
     state.visibilityPaused = !isDocumentVisible();
 
     var initial = config.initial || {};
@@ -849,7 +833,7 @@
       state.doc.addEventListener('visibilitychange', handleVisibilityChange);
     }
 
-    scheduleNext(state.pollInterval);
+    scheduleNext(state.baseDelay);
 
     refreshSummary(false, true).catch(function () {
       // Ignore initial failure; countdown/backoff already handled inside refreshSummary.
@@ -866,7 +850,8 @@
     updateCountdown();
     showDegraded(false);
     state.visibilityPaused = true;
-    state.errorLevel = 0;
+    state.fails = 0;
+    state.delay = state.baseDelay;
   }
 
   return {

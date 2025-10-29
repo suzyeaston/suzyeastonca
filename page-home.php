@@ -10,6 +10,14 @@ get_header();
             <span class="hero-quote__text">&ldquo;This is what it feels like to be hunted by something smarter than you.&rdquo;</span>
             <span class="hero-quote__attr">&mdash; <a href="https://www.youtube.com/watch?v=NQr9EcRyIFs" target="_blank" rel="noopener">Grimes, Artificial Angels</a></span>
         </div>
+        <div class="lo-home-promo">
+            <div class="lo-home-promo__card crt-block">
+                <span class="lo-home-promo__badge" data-lo-home-badge hidden>⚡ Trending now</span>
+                <h3 class="lo-home-promo__title">Lousy Outages — live status radar</h3>
+                <p class="lo-home-promo__subtitle">Cloudflare, AWS, Azure, GCP, Stripe, Okta and more. Auto-refreshing. Built by a bassist-turned-builder.</p>
+                <a class="pixel-button lo-home-promo__button" href="/lousy-outages/">Open dashboard →</a>
+            </div>
+        </div>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
         <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
     <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
@@ -125,4 +133,38 @@ get_header();
     </section>
 </main>
 
+    <script>
+      (function () {
+        var badge = document.querySelector('[data-lo-home-badge]');
+        if (!badge || typeof window.fetch !== 'function') {
+          return;
+        }
+        var endpoint = '<?php echo esc_url_raw(rest_url('lousy-outages/v1/summary')); ?>?lite=1';
+        fetch(endpoint, {
+          headers: { 'Accept': 'application/json' },
+          credentials: 'same-origin',
+          cache: 'no-store'
+        })
+          .then(function (res) {
+            if (!res) {
+              return null;
+            }
+            if (res.status === 204) {
+              return null;
+            }
+            if (res.status >= 200 && res.status < 300) {
+              return res.json().catch(function () { return null; });
+            }
+            return null;
+          })
+          .then(function (data) {
+            if (data && data.trending) {
+              badge.removeAttribute('hidden');
+            }
+          })
+          .catch(function () {
+            // ignore errors on homepage badge
+          });
+      }());
+    </script>
 <?php get_footer(); ?>
