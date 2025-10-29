@@ -61,6 +61,8 @@ function render_shortcode(): string {
         'signals'      => [],
         'generated_at' => gmdate('c'),
     ];
+    $source = 'live';
+    $snapshot_errors = [];
 
     if (is_array($cached) && isset($cached['config'])) {
         $config = $cached['config'];
@@ -80,17 +82,47 @@ function render_shortcode(): string {
         if (isset($config['initial']['trending']) && is_array($config['initial']['trending'])) {
             $initial_trending = $config['initial']['trending'];
         }
+        if (isset($config['initial']['source'])) {
+            $source = (string) $config['initial']['source'];
+        }
+        if (isset($config['initial']['errors']) && is_array($config['initial']['errors'])) {
+            $snapshot_errors = $config['initial']['errors'];
+        }
     }
 
     if (!$config) {
-        $result = $fetcher->get_all(array_keys($provider_map));
-        $tiles = isset($result['providers']) && is_array($result['providers']) ? $result['providers'] : [];
-        if (isset($result['fetched_at'])) {
-            $fetched_at = (string) $result['fetched_at'];
+        $snapshot = \lousy_outages_get_snapshot(false);
+        if (empty($snapshot['providers'])) {
+            $snapshot = \lousy_outages_get_snapshot(true);
         }
-        if (isset($result['trending']) && is_array($result['trending'])) {
-            $initial_trending = $result['trending'];
+
+        if (isset($snapshot['providers']) && is_array($snapshot['providers']) && $snapshot['providers']) {
+            $tiles = array_values($snapshot['providers']);
+            if (isset($snapshot['fetched_at'])) {
+                $fetched_at = (string) $snapshot['fetched_at'];
+            }
+            if (isset($snapshot['trending']) && is_array($snapshot['trending'])) {
+                $initial_trending = $snapshot['trending'];
+            }
+            if (!empty($snapshot['errors']) && is_array($snapshot['errors'])) {
+                $snapshot_errors = $snapshot['errors'];
+            }
+            $source = isset($snapshot['source']) ? (string) $snapshot['source'] : 'snapshot';
+        } else {
+            $result = $fetcher->get_all(array_keys($provider_map));
+            $tiles = isset($result['providers']) && is_array($result['providers']) ? $result['providers'] : [];
+            if (isset($result['fetched_at'])) {
+                $fetched_at = (string) $result['fetched_at'];
+            }
+            if (isset($result['trending']) && is_array($result['trending'])) {
+                $initial_trending = $result['trending'];
+            }
+            if (isset($result['errors']) && is_array($result['errors'])) {
+                $snapshot_errors = $result['errors'];
+            }
+            $source = 'live';
         }
+
         $config = [
             'endpoint'          => esc_url_raw(rest_url('lousy-outages/v1/summary')),
             'pollInterval'      => 60000,
@@ -101,6 +133,8 @@ function render_shortcode(): string {
                 'providers'  => $tiles,
                 'fetched_at' => $fetched_at,
                 'trending'   => $initial_trending,
+                'source'     => $source,
+                'errors'     => $snapshot_errors,
             ],
         ];
     } else {
@@ -108,6 +142,16 @@ function render_shortcode(): string {
             $config['initial']['trending'] = $initial_trending;
         } else {
             $initial_trending = $config['initial']['trending'];
+        }
+        if (isset($config['initial']['source'])) {
+            $source = (string) $config['initial']['source'];
+        } else {
+            $config['initial']['source'] = $source;
+        }
+        if (isset($config['initial']['errors']) && is_array($config['initial']['errors'])) {
+            $snapshot_errors = $config['initial']['errors'];
+        } else {
+            $config['initial']['errors'] = $snapshot_errors;
         }
     }
 
@@ -187,6 +231,8 @@ function render_shortcode(): string {
     }
 
     $config['initial']['providers'] = array_values($ordered_tiles);
+    $config['initial']['source']    = $source;
+    $config['initial']['errors']    = $snapshot_errors;
 
     $rss_url = esc_url(home_url('/lousy-outages/feed/'));
 
@@ -212,6 +258,8 @@ function render_shortcode(): string {
         return wp_date($format, $timestamp);
     };
 
+    $fetched_label = ('snapshot' === strtolower((string) $source)) ? 'Last fetched:' : 'Fetched:';
+
     ob_start();
     ?>
     <?php
@@ -221,11 +269,11 @@ function render_shortcode(): string {
         : [];
     $trending_generated = isset($initial_trending['generated_at']) ? (string) $initial_trending['generated_at'] : '';
     ?>
-    <div class="lousy-outages" data-lo-endpoint="<?php echo esc_url($config['endpoint']); ?>">
+    <div class="lousy-outages" data-lo-endpoint="<?php echo esc_url($config['endpoint']); ?>" data-lo-source="<?php echo esc_attr($source); ?>">
         <div class="lo-header">
             <div class="lo-actions">
                 <span class="lo-meta" aria-live="polite">
-                    <span>Fetched:</span>
+                    <span data-lo-fetched-label><?php echo esc_html($fetched_label); ?></span>
                     <strong data-lo-fetched><?php echo esc_html($format_datetime($fetched_at)); ?></strong>
                     <span data-lo-countdown>Auto-refresh ready</span>
                 </span>
@@ -245,6 +293,10 @@ function render_shortcode(): string {
         </div>
         <?php endif; ?>
         <?php echo render_subscribe_shortcode(); ?>
+        <div class="lo-loading" data-lo-loading<?php echo $ordered_tiles ? ' hidden' : ''; ?> role="status">
+            <span class="lo-loading__spinner" aria-hidden="true"></span>
+            <span class="lo-loading__text">Dialing interstellar relays…</span>
+        </div>
         <div class="lo-grid" data-lo-grid>
             <?php foreach ($ordered_tiles as $tile) :
                 $slug = (string) ($tile['provider'] ?? '');

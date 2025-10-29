@@ -196,6 +196,7 @@ function lousy_outages_run_poll(): int {
 
     $timestamp = gmdate( 'c' );
     update_option( 'lousy_outages_last_poll', $timestamp, false );
+    lousy_outages_refresh_snapshot( $statuses, $timestamp );
     do_action( 'lousy_outages_log', 'poll_complete', [ 'count' => $processed, 'ts' => $timestamp ] );
 
     return $processed;
@@ -206,15 +207,18 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
     if ( ! $bypass_cache ) {
         $cached = get_transient( $cache_key );
         if ( is_array( $cached ) && ! empty( $cached ) ) {
+            error_log( '[lousy_outages] fetch_cache_hit count=' . count( $cached ) . ' ts=' . gmdate( 'c' ) );
             return $cached;
         }
     }
 
+    $start_time = microtime( true );
     $timeout   = (int) apply_filters( 'lousy_outages_fetch_timeout', 10 );
     $fetcher   = new Fetcher( $timeout );
     $providers = Providers::enabled();
     $results   = [];
     $precursor = new Precursor();
+    $failures  = [];
 
     foreach ( $providers as $id => $provider ) {
         if ( ! isset( $provider['id'] ) ) {
@@ -225,13 +229,107 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
         $state['risk']     = $pre['risk'];
         $state['prealert'] = $pre;
         $results[ $id ]    = $state;
+
+        if ( is_array( $state ) ) {
+            $error_message = '';
+            if ( ! empty( $state['error'] ) ) {
+                $error_message = (string) $state['error'];
+            } elseif ( isset( $state['message'] ) && '' !== trim( (string) $state['message'] ) ) {
+                $error_message = (string) $state['message'];
+            }
+            if ( '' !== $error_message ) {
+                $failures[ $id ] = $error_message;
+            }
+        }
     }
 
     $ttl     = (int) apply_filters( 'lousy_outages_cache_ttl', 90 );
     $payload = lousy_outages_make_serializable( $results );
     set_transient( $cache_key, $payload, max( 30, $ttl ) );
 
+    $duration_ms = ( microtime( true ) - $start_time ) * 1000;
+    error_log( sprintf( '[lousy_outages] fetch_complete count=%d duration_ms=%.2f failures=%d', count( $payload ), $duration_ms, count( $failures ) ) );
+    foreach ( $failures as $provider_id => $message ) {
+        error_log( sprintf( '[lousy_outages] fetch_failure provider=%s message=%s', $provider_id, $message ) );
+    }
+
     return $payload;
+}
+
+function lousy_outages_snapshot_cache_key(): string {
+    return 'lousy_status_snapshot';
+}
+
+function lousy_outages_build_snapshot( array $states, string $timestamp, string $source = 'snapshot' ): array {
+    $providers = [];
+    $errors    = [];
+
+    foreach ( $states as $id => $state ) {
+        $providers[] = lousy_outages_build_provider_payload( $id, $state, $timestamp );
+
+        if ( is_array( $state ) && ! empty( $state['error'] ) ) {
+            $provider_name = isset( $state['name'] ) ? (string) $state['name'] : ( isset( $state['provider'] ) ? (string) $state['provider'] : $id );
+            $errors[]      = [
+                'id'       => $id,
+                'provider' => $provider_name,
+                'message'  => (string) $state['error'],
+            ];
+        }
+    }
+
+    $providers = lousy_outages_sort_providers( $providers );
+    $trending  = ( new \LousyOutages\Trending() )->evaluate( $providers );
+
+    return [
+        'providers'  => $providers,
+        'fetched_at' => $timestamp,
+        'trending'   => $trending,
+        'errors'     => $errors,
+        'source'     => $source,
+    ];
+}
+
+function lousy_outages_store_snapshot( array $snapshot ): void {
+    $cache_key = lousy_outages_snapshot_cache_key();
+    $ttl       = (int) apply_filters( 'lousy_outages_snapshot_ttl', 5 * MINUTE_IN_SECONDS );
+    set_transient( $cache_key, $snapshot, max( 60, $ttl ) );
+    update_option( 'lousy_outages_snapshot', $snapshot, false );
+}
+
+function lousy_outages_refresh_snapshot( array $states, string $timestamp, string $source = 'snapshot' ): array {
+    $snapshot = lousy_outages_build_snapshot( $states, $timestamp, $source );
+    lousy_outages_store_snapshot( $snapshot );
+
+    return $snapshot;
+}
+
+function lousy_outages_get_snapshot( bool $force_refresh = false ): array {
+    $cache_key = lousy_outages_snapshot_cache_key();
+    if ( ! $force_refresh ) {
+        $cached = get_transient( $cache_key );
+        if ( is_array( $cached ) && ! empty( $cached['providers'] ) ) {
+            return $cached;
+        }
+    }
+
+    $stored = get_option( 'lousy_outages_snapshot', [] );
+    if ( ! $force_refresh && is_array( $stored ) && ! empty( $stored['providers'] ) ) {
+        lousy_outages_store_snapshot( $stored );
+        return $stored;
+    }
+
+    $store  = new Store();
+    $states = $store->get_all();
+    if ( empty( $states ) ) {
+        $states = lousy_outages_collect_statuses( $force_refresh );
+    }
+
+    $timestamp = get_option( 'lousy_outages_last_poll' );
+    if ( ! $timestamp ) {
+        $timestamp = gmdate( 'c' );
+    }
+
+    return lousy_outages_refresh_snapshot( $states, $timestamp );
 }
 
 /**

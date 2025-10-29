@@ -4,7 +4,12 @@ declare(strict_types=1);
 namespace LousyOutages;
 
 class Mailer {
-    public static function send(string $email, string $subject, string $text_body, string $html_body): bool {
+    /**
+     * Send a multipart/alternative email with optional extra headers.
+     *
+     * @param array<int,string> $extra_headers
+     */
+    public static function send(string $email, string $subject, string $text_body, string $html_body, array $extra_headers = []): bool {
         $email = sanitize_email($email);
         if (!$email || !is_email($email)) {
             do_action('lousy_outages_log', 'email_skip', ['reason' => 'invalid_recipient']);
@@ -39,6 +44,19 @@ class Mailer {
             'MIME-Version: 1.0',
             'Content-Type: multipart/alternative; boundary="' . $boundary . '"; charset=UTF-8',
         ];
+
+        if (!empty($extra_headers)) {
+            foreach ($extra_headers as $header) {
+                if (!is_string($header)) {
+                    continue;
+                }
+                $header = trim($header);
+                if ('' === $header) {
+                    continue;
+                }
+                $headers[] = $header;
+            }
+        }
 
         if (is_email($from_email)) {
             $headers[] = 'From: ' . trim($from_name ? sprintf('%s <%s>', $from_name, $from_email) : $from_email);

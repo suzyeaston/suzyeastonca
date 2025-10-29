@@ -5,38 +5,6 @@
 
 declare(strict_types=1);
 
-if (!class_exists('Lousy_Outages_Email_Helper')) {
-    class Lousy_Outages_Email_Helper {
-        /** @var string */
-        private static $alt_body = '';
-
-        public static function set_alt_body(string $body): void {
-            self::$alt_body = $body;
-        }
-
-        public static function get_alt_body(): string {
-            return self::$alt_body;
-        }
-
-        public static function reset(): void {
-            self::$alt_body = '';
-        }
-
-        public static function html_content_type(): string {
-            return 'text/html; charset=UTF-8';
-        }
-
-        public static function inject_alt_body($phpmailer): void {
-            if ($phpmailer instanceof \PHPMailer\PHPMailer\PHPMailer) {
-                $alt = self::get_alt_body();
-                if ('' !== $alt) {
-                    $phpmailer->AltBody = $alt;
-                }
-            }
-        }
-    }
-}
-
 if (!function_exists('send_lo_confirmation_email')) {
     /**
      * Sends the Lousy Outages confirmation email.
@@ -80,43 +48,42 @@ if (!function_exists('send_lo_confirmation_email')) {
         ];
         $text_body = implode("\n", $text_body_lines);
 
-        $html_body = '<!doctype html>' .
-            '<meta charset="utf-8">' .
-            '<body style="margin:0;background:#000;color:#FFD700;font-family:\'Courier New\',\'Lucida Console\',monospace;">' .
-            '  <div style="max-width:640px;margin:0 auto;padding:36px 18px;">' .
-            '    <div style="border:3px solid #00FF00;background:linear-gradient(155deg,rgba(0,0,0,0.95),rgba(12,20,0,0.92));border-radius:20px;padding:30px 26px;box-shadow:0 0 32px rgba(0,255,0,0.3);">' .
-            '      <p style="margin:0 0 12px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#00FF00;">rogue signal detected</p>' .
-            '      <h1 style="margin:0 0 16px;font-size:28px;color:#FFD700;letter-spacing:0.08em;text-transform:uppercase;">Confirm bunker access</h1>' .
-            '      <p style="margin:0 0 18px;font-size:16px;line-height:1.6;color:#FDF5A6;">One tap locks your feed into outage intel and neon-lit play-by-play. No confirmation, no transmissions.</p>' .
-            '      <p style="margin:0 0 22px;">' .
-            '        <a href="' . $confirm_html . '" style="display:inline-block;padding:16px 26px;border-radius:999px;border:2px solid #00FF00;background:#111;color:#00FF00;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:0.12em;">Confirm &amp; Jack In</a>' .
-            '      </p>' .
-            '      <p style="margin:0 0 18px;font-size:13px;color:#FDF5A6;">If the button stalls, copy this access link:<br><span style="color:#00FF00;">' . esc_html($confirm_raw) . '</span></p>' .
-            '      <div style="margin:24px 0;padding:16px 18px;border:1px dashed rgba(0,255,0,0.6);border-radius:14px;background:rgba(4,25,4,0.7);color:#BFFFBF;font-size:13px;">' .
-            '        <strong style="display:block;font-size:11px;letter-spacing:0.18em;color:#7BFF7B;margin-bottom:6px;text-transform:uppercase;">Unsubscribe</strong>' .
-            '        Back out anytime: <a style="color:#7BFF7B;text-decoration:none;" href="' . $unsubscribe_html . '">' . esc_html($unsubscribe_raw) . '</a>' .
-            '      </div>' .
-            '      <p style="margin:0;font-size:12px;color:rgba(255,215,0,0.75);">Console tip: whitelist suzyeaston.ca so the alerts don\'t get ghosted.</p>' .
-            '    </div>' .
-            '  </div>' .
-            '</body>';
+        ob_start();
+        ?>
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <title>Lousy Outages Confirmation</title>
+        </head>
+        <body style="margin:0;background:#000;color:#FFD700;font-family:'Courier New','Lucida Console',monospace;">
+            <div style="max-width:640px;margin:0 auto;padding:36px 18px;">
+                <div style="border:3px solid #00FF00;background:linear-gradient(155deg,rgba(0,0,0,0.95),rgba(12,20,0,0.92));border-radius:20px;padding:30px 26px;box-shadow:0 0 32px rgba(0,255,0,0.3);">
+                    <p style="margin:0 0 12px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#00FF00;">rogue signal detected</p>
+                    <h1 style="margin:0 0 16px;font-size:28px;color:#FFD700;letter-spacing:0.08em;text-transform:uppercase;">Confirm bunker access</h1>
+                    <p style="margin:0 0 18px;font-size:16px;line-height:1.6;color:#FDF5A6;">One tap locks your feed into outage intel and neon-lit play-by-play. No confirmation, no transmissions.</p>
+                    <p style="margin:0 0 22px;">
+                        <a href="<?php echo esc_url($confirm_html); ?>" style="display:inline-block;padding:16px 26px;border-radius:999px;border:2px solid #00FF00;background:#111;color:#00FF00;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:0.12em;">Confirm &amp; Jack In</a>
+                    </p>
+                    <p style="margin:0 0 18px;font-size:13px;color:#FDF5A6;">If the button stalls, copy this access link:<br><span style="color:#00FF00;"><?php echo esc_html($confirm_raw); ?></span></p>
+                    <div style="margin:24px 0;padding:16px 18px;border:1px dashed rgba(0,255,0,0.6);border-radius:14px;background:rgba(4,25,4,0.7);color:#BFFFBF;font-size:13px;">
+                        <strong style="display:block;font-size:11px;letter-spacing:0.18em;color:#7BFF7B;margin-bottom:6px;text-transform:uppercase;">Unsubscribe</strong>
+                        Back out anytime: <a style="color:#7BFF7B;text-decoration:none;" href="<?php echo esc_url($unsubscribe_html); ?>"><?php echo esc_html($unsubscribe_raw); ?></a>
+                    </div>
+                    <p style="margin:0;font-size:12px;color:rgba(255,215,0,0.75);">Console tip: whitelist suzyeaston.ca so the alerts don&rsquo;t get ghosted.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        $html_body = trim((string) ob_get_clean());
 
         $headers = [
-            'MIME-Version: 1.0',
-            'Content-Type: text/html; charset=UTF-8',
             'List-Unsubscribe: <' . $unsubscribe_raw . '>',
             'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
         ];
 
-        Lousy_Outages_Email_Helper::set_alt_body($text_body);
-        add_filter('wp_mail_content_type', ['Lousy_Outages_Email_Helper', 'html_content_type']);
-        add_action('phpmailer_init', ['Lousy_Outages_Email_Helper', 'inject_alt_body']);
-
-        $sent = wp_mail($email, $subject, $html_body, $headers);
-
-        remove_filter('wp_mail_content_type', ['Lousy_Outages_Email_Helper', 'html_content_type']);
-        remove_action('phpmailer_init', ['Lousy_Outages_Email_Helper', 'inject_alt_body']);
-        Lousy_Outages_Email_Helper::reset();
+        $sent = \LousyOutages\Mailer::send($email, $subject, $text_body, $html_body, $headers);
 
         if (!$sent) {
             error_log('[lousy_outages] confirmation_email send failed for ' . $email);
@@ -214,62 +181,69 @@ if (!function_exists('send_lo_outage_alert_email')) {
         ];
         $text_body = implode("\n", $text_body_lines);
 
-        $service_html = esc_html($service_label);
-        $status_html  = esc_html($status_label);
-        $timestamp_html = esc_html($timestamp_display);
-        $summary_html = nl2br(esc_html($clean_summary));
-        $components_html = esc_html($component_line);
-
-        $html_body = '<!doctype html>' .
-            '<meta charset="utf-8">' .
-            '<body style="margin:0;background:#000;color:#FFD700;font-family:\'Courier New\',\'Lucida Console\',monospace;">' .
-            '  <div style="max-width:680px;margin:0 auto;padding:36px 18px;">' .
-            '    <div style="border:3px solid #FF3131;background:linear-gradient(155deg,rgba(24,0,0,0.95),rgba(6,0,12,0.92));border-radius:22px;padding:32px 28px;box-shadow:0 0 36px rgba(255,49,49,0.4);">' .
-            '      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;text-transform:uppercase;">' .
-            '        <span style="font-size:14px;letter-spacing:0.16em;color:#FF3131;">lousy outages alert</span>' .
-            '        <span style="font-size:12px;color:rgba(255,215,0,0.75);">command bunker feed</span>' .
-            '      </header>' .
-            '      <h1 style="margin:0 0 10px;font-size:30px;color:#FF3131;letter-spacing:0.1em;">' . $service_html . '</h1>' .
-            '      <p style="margin:0 0 18px;font-size:20px;color:#FFD700;text-transform:uppercase;letter-spacing:0.08em;">' . $status_html . '</p>' .
-            '      <div style="display:grid;gap:14px;margin:0 0 22px;">' .
-            '        <div style="background:rgba(255,49,49,0.12);border:1px dashed rgba(255,49,49,0.6);border-radius:14px;padding:14px 18px;color:#FDF5A6;font-size:13px;">' .
-            '          <strong style="display:block;font-size:11px;letter-spacing:0.18em;color:#FF9797;margin-bottom:4px;text-transform:uppercase;">detected</strong>' .
-            '          ' . $timestamp_html .
-            '        </div>' .
-            '        <div style="background:rgba(0,255,0,0.08);border:1px dashed rgba(0,255,0,0.35);border-radius:14px;padding:14px 18px;color:#D6FFD6;font-size:13px;">' .
-            '          <strong style="display:block;font-size:11px;letter-spacing:0.18em;color:#7BFF7B;margin-bottom:4px;text-transform:uppercase;">components</strong>' .
-            '          ' . $components_html .
-            '        </div>' .
-            '      </div>' .
-            '      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#FDF5A6;">' . $summary_html . '</p>' .
-            '      <p style="margin:0 0 24px;">' .
-            '        <a href="' . $status_url_html . '" style="display:inline-block;padding:16px 28px;border-radius:999px;border:2px solid #FF3131;background:#000;color:#FF3131;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:0.12em;">View live status</a>' .
-            '      </p>' .
-            '      <p style="margin:0 0 18px;font-size:12px;color:rgba(255,215,0,0.7);">Manual override URL: <a style="color:#FF9797;" href="' . $status_url_html . '">' . esc_html($status_url_raw) . '</a></p>' .
-            '      <footer style="margin-top:26px;padding-top:18px;border-top:1px dashed rgba(255,49,49,0.4);font-size:12px;color:rgba(255,215,0,0.7);">' .
-            '        Want out? <a style="color:#7BFF7B;" href="' . $unsubscribe_html . '">Unsubscribe instantly</a><br>' .
-            '        Raw link: <span style="color:#7BFF7B;">' . esc_html($unsubscribe_raw) . '</span>' .
-            '      </footer>' .
-            '    </div>' .
-            '  </div>' .
-            '</body>';
+        ob_start();
+        ?>
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <title>Lousy Outages Alert</title>
+        </head>
+        <body style="margin:0;background:#050607;color:#FFEB3B;font-family:'Courier New','Lucida Console',monospace;">
+            <div style="max-width:720px;margin:0 auto;padding:40px 24px;">
+                <div style="border:3px solid #FFEB3B;border-radius:24px;padding:34px 30px;background:linear-gradient(160deg,rgba(7,12,20,0.95),rgba(20,6,40,0.92));box-shadow:0 0 32px rgba(255,235,59,0.35);">
+                    <p style="margin:0 0 10px;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#FF1744;">alert: <?php echo esc_html($service_label); ?></p>
+                    <h1 style="margin:0 0 14px;font-size:32px;color:#FFEB3B;text-transform:uppercase;letter-spacing:0.05em;"><?php echo esc_html($service_label); ?> status: <?php echo esc_html(strtoupper($status_label)); ?></h1>
+                    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#FFF59D;"><?php echo esc_html($clean_summary); ?></p>
+                    <dl style="margin:0 0 20px;color:#FFF59D;font-size:14px;line-height:1.6;">
+                        <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:10px;">
+                            <dt style="width:120px;text-transform:uppercase;letter-spacing:0.08em;color:#80D8FF;">Status</dt>
+                            <dd style="margin:0;font-weight:700;"><?php echo esc_html($status_label); ?></dd>
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:10px;">
+                            <dt style="width:120px;text-transform:uppercase;letter-spacing:0.08em;color:#80D8FF;">Components</dt>
+                            <dd style="margin:0;"><?php echo esc_html($component_line); ?></dd>
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:10px;">
+                            <dt style="width:120px;text-transform:uppercase;letter-spacing:0.08em;color:#80D8FF;">Detected</dt>
+                            <dd style="margin:0;"><?php echo esc_html($timestamp_display); ?></dd>
+                        </div>
+                    </dl>
+                    <p style="margin:0 0 18px;font-size:14px;color:#FFCCBC;">Keep eyes on the incident console:</p>
+                    <p style="margin:0 0 24px;">
+                        <a href="<?php echo esc_url($status_url_html); ?>" style="display:inline-block;padding:16px 28px;border-radius:999px;border:2px solid #FF1744;background:#0A0418;color:#FFEB3B;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:0.14em;">View live status feed</a>
+                    </p>
+                    <p style="margin:0 0 14px;font-size:13px;color:#FFF59D;">Backup link:<br><span style="color:#FFAB40;"><?php echo esc_html($status_url_raw); ?></span></p>
+                    <?php if ($extra_notes) : ?>
+                        <p style="margin:0 0 28px;font-size:13px;color:#FFCDD2;"><?php echo esc_html($extra_notes); ?></p>
+                    <?php endif; ?>
+                    <div style="margin:26px 0;padding:18px;border:1px dashed rgba(255,235,59,0.7);border-radius:16px;background:rgba(29,8,48,0.8);color:#FFEB3B;font-size:13px;">
+                        <strong style="display:block;font-size:11px;letter-spacing:0.18em;color:#FF1744;margin-bottom:6px;text-transform:uppercase;">Need to bail?</strong>
+                        Unsubscribe instantly: <a style="color:#FFAB40;text-decoration:none;" href="<?php echo esc_url($unsubscribe_html); ?>"><?php echo esc_html($unsubscribe_raw); ?></a>
+                    </div>
+                    <p style="margin:0;font-size:12px;color:rgba(255,235,59,0.75);">Stay patched &mdash; Lousy Outages monitoring team.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        $html_body = trim((string) ob_get_clean());
 
         $headers = [
-            'MIME-Version: 1.0',
-            'Content-Type: text/html; charset=UTF-8',
             'List-Unsubscribe: <' . $unsubscribe_raw . '>',
             'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
         ];
 
-        Lousy_Outages_Email_Helper::set_alt_body($text_body);
-        add_filter('wp_mail_content_type', ['Lousy_Outages_Email_Helper', 'html_content_type']);
-        add_action('phpmailer_init', ['Lousy_Outages_Email_Helper', 'inject_alt_body']);
+        if (isset($incident_data['headers']) && is_array($incident_data['headers'])) {
+            foreach ($incident_data['headers'] as $header) {
+                if (!is_string($header)) {
+                    continue;
+                }
+                $headers[] = $header;
+            }
+        }
 
-        $sent = wp_mail($email, $subject, $html_body, $headers);
-
-        remove_filter('wp_mail_content_type', ['Lousy_Outages_Email_Helper', 'html_content_type']);
-        remove_action('phpmailer_init', ['Lousy_Outages_Email_Helper', 'inject_alt_body']);
-        Lousy_Outages_Email_Helper::reset();
+        $sent = \LousyOutages\Mailer::send($email, $subject, $text_body, $html_body, $headers);
 
         if (!$sent) {
             error_log('[lousy_outages] outage_email send failed for ' . $email . ' subject=' . $subject);
