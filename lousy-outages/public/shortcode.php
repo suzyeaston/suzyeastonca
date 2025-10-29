@@ -348,6 +348,7 @@ function render_subscribe_shortcode(): string {
             <button type="submit" class="lo-subscribe__button">Subscribe</button>
             <p class="lo-subscribe__status" data-lo-subscribe-status aria-live="polite"></p>
         </form>
+        <p class="lo-subscribe__help">Watch for the confirmation email (and check spam if it’s missing). Every briefing ships with a one-click unsubscribe link.</p>
     </div>
     <?php
     return (string) ob_get_clean();

@@ -122,14 +122,14 @@ TEXT;
         $html_body = <<<HTML
 <!doctype html>
 <meta charset="utf-8">
-<body style="font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:#0b0b0b; color:#e6ffe6;">
-  <div style="max-width:560px;margin:24px auto;padding:16px;border:2px solid #39ff14;border-radius:12px;">
-    <h2 style="margin:0 0 8px;font-size:20px;">👾 jack in to Lousy Outages</h2>
-    <p>you (or a very stylish bot) asked to receive outage alerts.</p>
-    <p><a href="{$confirm_url}" style="display:inline-block;padding:10px 14px;border:2px solid #39ff14;border-radius:10px;text-decoration:none;color:#39ff14;">CONFIRM SUBSCRIPTION</a></p>
-    <p style="opacity:.8">not you? <a href="{$unsubscribe_url}" style="color:#39ff14;">unsubscribe</a> or just ignore this.</p>
-    <hr style="border:none;border-top:1px dashed #39ff14;opacity:.4">
-    <p style="font-size:12px;opacity:.75;">lousy outages — inspired by wrangling third-party providers in IT.</p>
+<body style="font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:#050505; color:#ffe9c4;">
+  <div style="max-width:560px;margin:24px auto;padding:20px;border:2px solid #ffb81c;border-radius:14px;background:linear-gradient(140deg,#0b0b0b,#1a0b00);box-shadow:0 18px 36px rgba(0,0,0,0.45);">
+    <h2 style="margin:0 0 8px;font-size:20px;color:#ffb81c;letter-spacing:0.05em;text-transform:uppercase;">👾 jack in to Lousy Outages</h2>
+    <p style="margin:0 0 16px;">you (or a very stylish bot) asked to receive outage alerts.</p>
+    <p style="margin:0 0 18px;"><a href="{$confirm_url}" style="display:inline-block;padding:12px 18px;border-radius:999px;border:2px solid #ffb81c;background:#f04e23;color:#050505;font-weight:700;text-decoration:none;">CONFIRM SUBSCRIPTION</a></p>
+    <p style="margin:0 0 12px;opacity:.85;">not you? <a href="{$unsubscribe_url}" style="color:#ffb81c;">unsubscribe here</a> or just ignore this.</p>
+    <hr style="border:none;border-top:1px dashed rgba(255,184,28,0.5);margin:18px 0;">
+    <p style="margin:0;font-size:12px;opacity:.75;">lousy outages — inspired by wrangling third-party providers in IT.</p>
   </div>
 </body>
 HTML;
@@ -233,22 +233,25 @@ need out? one-click escape hatch:
 
 "This is what it feels like to be hunted by something smarter than you."
 — Grimes, Artificial Angels
+ 
+ ps: make sure the alerts land — add suzyeaston.ca to your safe senders and peek at spam if nothing shows up.
 TEXT;
 
         $html_body = <<<HTML
 <!doctype html>
 <meta charset="utf-8">
-<body style="font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:#0b0b0b; color:#e6ffe6;">
-  <div style="max-width:560px;margin:24px auto;padding:16px;border:2px solid #39ff14;border-radius:12px;">
-    <h2 style="margin:0 0 8px;font-size:20px;">✅ link established</h2>
-    <p>welcome to the status underground.</p>
-    <p>you'll get alerts when providers wobble: cloudflare • aws • azure • gcp • stripe • pagerduty • zscaler.</p>
-    <p><a href="{$dashboard_url}" style="display:inline-block;padding:10px 14px;border:2px solid #39ff14;border-radius:10px;text-decoration:none;color:#39ff14;">OPEN LIVE DASHBOARD</a></p>
-    <blockquote style="margin:12px 0;padding:8px 12px;border-left:3px solid #39ff14;opacity:.85;">
+<body style="font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:#050505; color:#ffe9c4;">
+  <div style="max-width:560px;margin:24px auto;padding:20px;border:2px solid #ffb81c;border-radius:14px;background:linear-gradient(140deg,#0b0b0b,#1a0b00);box-shadow:0 18px 36px rgba(0,0,0,0.45);">
+    <h2 style="margin:0 0 10px;font-size:20px;color:#ffb81c;text-transform:uppercase;letter-spacing:0.05em;">✅ link established</h2>
+    <p style="margin:0 0 12px;">welcome to the status underground.</p>
+    <p style="margin:0 0 18px;">you'll get alerts when providers wobble: cloudflare • aws • azure • gcp • stripe • pagerduty • zscaler.</p>
+    <p style="margin:0 0 18px;"><a href="{$dashboard_url}" style="display:inline-block;padding:12px 18px;border-radius:999px;border:2px solid #ffb81c;background:#f04e23;color:#050505;font-weight:700;text-decoration:none;">OPEN LIVE DASHBOARD</a></p>
+    <blockquote style="margin:12px 0;padding:10px 14px;border-left:3px solid rgba(255,184,28,0.8);background:rgba(255,184,28,0.08);">
       “This is what it feels like to be hunted by something smarter than you.”<br>
-      — Grimes, <a href="https://www.youtube.com/watch?v=tvGnYM14-1A" style="color:#39ff14;">Artificial Angels</a>
+      — Grimes, <a href="https://www.youtube.com/watch?v=tvGnYM14-1A" style="color:#ffb81c;">Artificial Angels</a>
     </blockquote>
-    <p style="font-size:12px;opacity:.75;">unsubscribe anytime: <a href="{$unsubscribe_url}" style="color:#39ff14;">{$unsubscribe_url}</a></p>
+    <p style="margin:14px 0 0;font-size:13px;opacity:.85;">unsubscribe anytime: <a href="{$unsubscribe_url}" style="color:#ffb81c;">{$unsubscribe_url}</a></p>
+    <p style="margin:10px 0 0;font-size:12px;opacity:.85;">pro tip: add suzyeaston.ca to your safe senders so outage intel doesn’t get iced in spam.</p>
   </div>
 </body>
 HTML;
@@ -271,11 +274,11 @@ TEXT;
         $html_body = <<<HTML
 <!doctype html>
 <meta charset="utf-8">
-<body style="font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:#0b0b0b; color:#e6ffe6;">
-  <div style="max-width:560px;margin:24px auto;padding:16px;border:2px solid #39ff14;border-radius:12px;">
-    <h2 style="margin:0 0 8px;font-size:20px;">already connected</h2>
-    <p>no double-hacking needed—your email is already subscribed.</p>
-    <p><a href="{$dashboard_url}" style="color:#39ff14;">open the dashboard</a> • <a href="{$unsubscribe_url}" style="color:#39ff14;">unsubscribe</a></p>
+<body style="font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:#050505; color:#ffe9c4;">
+  <div style="max-width:560px;margin:24px auto;padding:20px;border:2px solid #ffb81c;border-radius:14px;background:linear-gradient(140deg,#0b0b0b,#1a0b00);box-shadow:0 18px 36px rgba(0,0,0,0.45);">
+    <h2 style="margin:0 0 8px;font-size:20px;color:#ffb81c;text-transform:uppercase;letter-spacing:0.05em;">already connected</h2>
+    <p style="margin:0 0 14px;">no double-hacking needed—your email is already subscribed.</p>
+    <p style="margin:0;font-weight:600;"><a href="{$dashboard_url}" style="color:#ffb81c;">open the dashboard</a> • <a href="{$unsubscribe_url}" style="color:#f04e23;">unsubscribe</a></p>
   </div>
 </body>
 HTML;
@@ -300,12 +303,12 @@ TEXT;
         $html_body = <<<HTML
 <!doctype html>
 <meta charset="utf-8">
-<body style="font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:#0b0b0b; color:#e6ffe6;">
-  <div style="max-width:560px;margin:24px auto;padding:16px;border:2px solid #39ff14;border-radius:12px;">
-    <h2 style="margin:0 0 8px;font-size:20px;">🧹 wire cut</h2>
-    <p>you're unsubscribed and off the grid.</p>
-    <p style="opacity:.85">if that was accidental, <a href="{$resubscribe_url}" style="color:#39ff14;">re-subscribe</a> any time.</p>
-    <p style="font-size:12px;opacity:.7;">built in vancouver with coffee, riffs, and command-line confidence.</p>
+<body style="font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:#050505; color:#ffe9c4;">
+  <div style="max-width:560px;margin:24px auto;padding:20px;border:2px solid #ffb81c;border-radius:14px;background:linear-gradient(140deg,#0b0b0b,#1a0b00);box-shadow:0 18px 36px rgba(0,0,0,0.45);">
+    <h2 style="margin:0 0 10px;font-size:20px;color:#ffb81c;text-transform:uppercase;letter-spacing:0.05em;">🧹 wire cut</h2>
+    <p style="margin:0 0 12px;">you're unsubscribed and off the grid.</p>
+    <p style="margin:0 0 10px;opacity:.85;">if that was accidental, <a href="{$resubscribe_url}" style="color:#f04e23;">re-subscribe</a> any time.</p>
+    <p style="margin:0;font-size:12px;opacity:.7;">built in vancouver with coffee, riffs, and command-line confidence.</p>
   </div>
 </body>
 HTML;
@@ -374,39 +377,40 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
   <meta charset="UTF-8">
   <title>Lousy Outages — welcome aboard</title>
 </head>
-<body style="margin:0;padding:32px;background-color:#f3f4f6;color:#1b1b1b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+<body style="margin:0;padding:32px;background-color:#0b0b0b;color:#ffe9c4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
       <td align="center">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:12px;border:1px solid #d0d7de;box-shadow:0 10px 30px rgba(15,23,42,0.08);overflow:hidden;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#130700;border-radius:14px;border:1px solid rgba(255,184,28,0.35);box-shadow:0 18px 42px rgba(0,0,0,0.45);overflow:hidden;">
           <tr>
-            <td style="padding:32px 32px 16px;background:linear-gradient(135deg,#1f2937,#0f766e);color:#f3f4f6;text-align:left;">
-              <p style="margin:0 0 4px;font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:0.85;">Suzy Easton Signal</p>
-              <h1 style="margin:0;font-size:26px;line-height:1.3;">Welcome to <span style="color:#5eead4;">Lousy Outages</span></h1>
+            <td style="padding:32px 32px 18px;background:linear-gradient(140deg,#050505,#201000);color:#ffe9c4;text-align:left;">
+              <p style="margin:0 0 6px;font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:0.85;">suzyeaston.ca/lousy-outages</p>
+              <h1 style="margin:0;font-size:26px;line-height:1.3;">Welcome to <span style="color:#ffb81c;">Lousy Outages</span></h1>
               <p style="margin:12px 0 0;font-size:15px;line-height:1.5;max-width:460px;">You’re locked in for concise rundowns on third-party provider incidents, mitigation tactics, and security quirks that could sideswipe your stack.</p>
             </td>
           </tr>
           <tr>
-            <td style="padding:28px 32px 12px;">
-              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Here’s what to expect in your inbox:</p>
-              <ul style="margin:0 0 20px;padding-left:20px;font-size:14px;line-height:1.7;color:#1f2933;">
+            <td style="padding:28px 32px 14px;background-color:#0b0b0b;">
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#ffe9c4;">Here’s what to expect in your inbox:</p>
+              <ul style="margin:0 0 20px;padding-left:20px;font-size:14px;line-height:1.7;color:#fddca6;">
                 <li>Signal boosts on the outages and degradations hitting providers like Cloudflare, AWS, Azure, Stripe, and more.</li>
                 <li>Quick-hit postmortems with timelines, affected components, and lessons learned.</li>
                 <li>Security watch notes so you can harden your own services before things go sideways.</li>
               </ul>
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 28px;">
                 <tr>
-                  <td style="border-radius:999px;" bgcolor="#0f766e">
-                    <a href="https://www.suzyeaston.ca/lousy-outages/" style="display:inline-block;padding:14px 26px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">View the latest briefing</a>
+                  <td style="border-radius:999px;background:#f04e23;">
+                    <a href="https://www.suzyeaston.ca/lousy-outages/" style="display:inline-block;padding:14px 26px;font-size:14px;font-weight:600;color:#050505;text-decoration:none;border-radius:999px;border:2px solid #ffb81c;">View the latest briefing</a>
                   </td>
                 </tr>
               </table>
-              <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#374151;">Need to tune your alerts? Hop into the dashboard above for live incident tracking, archives, and more utilities from the status bunker.</p>
+              <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#fddca6;">Need to tune your alerts? Hop into the dashboard above for live incident tracking, archives, and more utilities from the status bunker.</p>
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#fddca6;">Pro tip: add suzyeaston.ca to your safe-sender list so alerts don’t get trapped in spam.</p>
             </td>
           </tr>
           <tr>
-            <td style="padding:20px 32px;background-color:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;line-height:1.6;color:#4b5563;">
-              <p style="margin:0 0 8px;">If this wasn’t you, or you’re done hearing about outage chaos, you can <a href="{$unsubscribe_url}" style="color:#0f766e;font-weight:600;text-decoration:none;">unsubscribe instantly</a>.</p>
+            <td style="padding:20px 32px;background-color:#140a00;border-top:1px solid rgba(255,184,28,0.35);font-size:12px;line-height:1.6;color:#fddca6;">
+              <p style="margin:0 0 8px;">If this wasn’t you, or you’re done hearing about outage chaos, you can <a href="{$unsubscribe_url}" style="color:#ffb81c;font-weight:600;text-decoration:none;">unsubscribe instantly</a>.</p>
               <p style="margin:0;">Questions or tips? Reply to this email or ping me on the site — no robots, just Suzy.</p>
             </td>
           </tr>

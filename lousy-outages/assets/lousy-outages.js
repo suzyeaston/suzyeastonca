@@ -521,11 +521,11 @@
           if (!success) {
             throw new Error(message || 'Subscription failed.');
           }
-          return { message: message || 'Check your email to confirm your subscription.' };
+          return { message: message || 'Check your email to confirm your subscription (peek at spam if it’s missing).' };
         });
       })
       .then(function (result) {
-        setSubscribeStatus(statusEl, result && result.message ? result.message : 'Check your email to confirm your subscription.');
+        setSubscribeStatus(statusEl, result && result.message ? result.message : 'Check your email to confirm your subscription (peek at spam if it’s missing).');
         form.reset();
       })
       .catch(function (error) {

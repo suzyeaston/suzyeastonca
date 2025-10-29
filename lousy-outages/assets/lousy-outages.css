@@ -3,12 +3,12 @@
   margin: 0 auto;
   padding: 8px 16px;
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
-  background: #000;
-  color: #2af200;
+  background: #050505;
+  color: #ffe9c4;
 }
 
 .lousy-outages a {
-  color: #2af200;
+  color: #ffb81c;
 }
 
 
@@ -20,7 +20,7 @@
 }
 
 .lo-meta {
-  color: #a7ff9a;
+  color: rgba(255, 233, 196, 0.85);
   font-size: 0.95rem;
   display: inline-flex;
   gap: 8px;
@@ -41,12 +41,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 212, 0, 0.12);
-  border: 2px solid #ffd400;
+  background: rgba(240, 78, 35, 0.18);
+  border: 2px solid rgba(240, 78, 35, 0.85);
   border-radius: 14px;
   padding: 10px 14px;
   margin-bottom: 18px;
-  color: #ffd400;
+  color: #ffb81c;
   font-weight: 600;
 }
 
@@ -64,15 +64,15 @@
 
 .lo-trending__reasons {
   font-size: 0.85rem;
-  color: #fff8c7;
+  color: rgba(255, 233, 196, 0.85);
 }
 
 .lo-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 2px solid #2af200;
-  color: #2af200;
+  border: 2px solid #ffb81c;
+  color: #ffb81c;
   background: transparent;
   padding: 6px 12px;
   border-radius: 10px;
@@ -104,18 +104,18 @@
 }
 
 .lo-card {
-  background: #000;
-  border: 2px solid #2af200;
+  background: #080808;
+  border: 2px solid rgba(255, 184, 28, 0.85);
   border-radius: 14px;
   padding: 12px;
-  box-shadow: 0 0 8px rgba(42, 242, 0, 0.2);
+  box-shadow: 0 0 14px rgba(240, 78, 35, 0.25);
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .lo-title {
-  color: #2af200;
+  color: #ffb81c;
   font-weight: 700;
   margin: 0 0 6px;
   font-size: 1.05rem;
@@ -138,16 +138,17 @@
   letter-spacing: 0.08em;
 }
 
+
 .lo-pill.operational {
-  color: #2af200;
+  color: #ffb81c;
 }
 
 .lo-pill.degraded {
-  color: #ffd400;
+  color: #f5a300;
 }
 
 .lo-pill.outage {
-  color: #ff3b3b;
+  color: #f04e23;
 }
 
 .lo-pill.unknown,
@@ -162,13 +163,13 @@
 .lo-summary,
 .lo-snark {
   margin: 0;
-  color: #c9ffc4;
+  color: rgba(255, 233, 196, 0.9);
   font-size: 0.95rem;
   line-height: 1.4;
 }
 
 .lo-snark {
-  color: #8cff72;
+  color: #ffb81c;
   font-style: italic;
 }
 
@@ -176,6 +177,7 @@
   margin-top: auto;
   font-weight: 700;
   text-decoration: none;
+  color: #f04e23;
 }
 
 .lo-status-link:hover,
@@ -183,19 +185,20 @@
   text-decoration: underline;
 }
 .lo-prealert {
-  background: rgba(255, 179, 71, 0.15);
-  border: 1px solid rgba(255, 179, 71, 0.4);
+  background: rgba(240, 78, 35, 0.15);
+  border: 1px solid rgba(240, 78, 35, 0.45);
   border-radius: 10px;
   padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  color: #ffe9c2;
+  color: rgba(255, 233, 196, 0.9);
 }
 .lo-prealert strong {
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  color: #ffb81c;
 }
 .lo-prealert-summary {
   margin: 0;
@@ -225,8 +228,8 @@
 }
 
 .lo-inc-item {
-  background: rgba(42, 242, 0, 0.08);
-  border-left: 3px solid rgba(42, 242, 0, 0.35);
+  background: rgba(240, 78, 35, 0.12);
+  border-left: 3px solid rgba(255, 184, 28, 0.45);
   padding: 6px 8px;
   border-radius: 6px;
 }
@@ -234,18 +237,18 @@
 .lo-inc-title {
   font-weight: 600;
   margin: 0 0 4px;
-  color: #f3fff1;
+  color: #ffb81c;
 }
 
 .lo-inc-meta {
   font-size: 0.8rem;
-  color: #a7ff9a;
+  color: rgba(255, 233, 196, 0.75);
   margin: 0;
 }
 
 .lo-empty {
   font-size: 0.85rem;
-  color: #7ddd6d;
+  color: rgba(255, 233, 196, 0.7);
 }
 
 .lo-error {
@@ -272,9 +275,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #ffd400;
-  border-color: #ffd400;
-  background: rgba(255, 212, 0, 0.15);
+  color: #f5a300;
+  border-color: #f5a300;
+  background: rgba(245, 163, 0, 0.15);
 }
 
 .lo-components {
@@ -303,36 +306,38 @@
 
 .lo-component-status {
   margin-left: 6px;
-  color: #ffd400;
+  color: #f5a300;
 }
 
 .lo-inc-summary {
   margin: 4px 0 0;
   font-size: 0.85rem;
-  color: #c9ffc4;
+  color: rgba(255, 233, 196, 0.85);
 }
+
 
 .lo-subscribe {
   margin: 24px auto;
-  padding: 16px;
-  max-width: 480px;
-  border: 2px solid #2af200;
+  padding: 18px;
+  max-width: 520px;
+  border: 2px solid rgba(255, 184, 28, 0.9);
   border-radius: 14px;
-  background: rgba(42, 242, 0, 0.08);
-  color: #c9ffc4;
+  background: rgba(240, 78, 35, 0.15);
+  color: rgba(255, 233, 196, 0.92);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
 }
 
 .lo-subscribe__title {
   margin: 0 0 6px;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #f4fff0;
+  color: #ffb81c;
 }
 
 .lo-subscribe__intro {
   margin: 0 0 12px;
   font-size: 0.95rem;
-  color: #e0ffe0;
+  color: rgba(255, 233, 196, 0.85);
 }
 
 .lo-subscribe__form {
@@ -351,26 +356,29 @@
 
 .lo-subscribe__label input[type="email"] {
   margin-top: 6px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(42, 242, 0, 0.6);
-  background: rgba(0, 0, 0, 0.6);
-  color: #f4fff0;
+  border: 1px solid rgba(255, 184, 28, 0.6);
+  background: rgba(8, 8, 8, 0.75);
+  color: #ffe9c4;
 }
 
 .lo-subscribe__button {
-  background: #2af200;
-  color: #000;
-  border: none;
+  background: #f04e23;
+  color: #050505;
+  border: 2px solid #ffb81c;
   border-radius: 10px;
-  padding: 10px 18px;
+  padding: 10px 22px;
   font-weight: 700;
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .lo-subscribe__button:hover,
 .lo-subscribe__button:focus {
-  background: #51ff2a;
+  background: #ff6a3a;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(240, 78, 35, 0.35);
 }
 
 .lo-subscribe__status {
@@ -378,20 +386,26 @@
   margin: 0;
   min-height: 1.2em;
   font-size: 0.85rem;
-  color: #a7ff9a;
+  color: rgba(255, 233, 196, 0.85);
 }
 
 .lo-subscribe__status--error {
-  color: #ff8484;
+  color: #ff6b6b;
+}
+
+.lo-subscribe__help {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: rgba(255, 233, 196, 0.75);
 }
 
 .lo-banner {
   margin: 24px 0;
   padding: 16px 20px;
   border-radius: 14px;
-  background: rgba(16, 26, 16, 0.88);
-  border: 2px solid rgba(122, 255, 156, 0.35);
-  color: #f4fff0;
+  background: rgba(32, 16, 0, 0.88);
+  border: 2px solid rgba(255, 184, 28, 0.45);
+  color: #ffe9c4;
   box-shadow: 0 20px 36px rgba(0, 0, 0, 0.4);
 }
 
@@ -400,23 +414,23 @@
 }
 
 .lo-banner--success {
-  border-color: rgba(122, 255, 156, 0.55);
-  color: #e5ffe7;
+  border-color: rgba(255, 184, 28, 0.7);
+  color: #ffecc7;
 }
 
 .lo-banner--info {
-  border-color: rgba(140, 206, 255, 0.55);
-  color: #e6f3ff;
+  border-color: rgba(255, 124, 67, 0.6);
+  color: #ffe3cc;
 }
 
 .lo-banner--warning {
-  border-color: rgba(255, 214, 160, 0.55);
-  color: #fff2dc;
+  border-color: rgba(245, 163, 0, 0.7);
+  color: #ffe9c4;
 }
 
 .lo-banner--error {
-  border-color: rgba(255, 150, 150, 0.55);
-  color: #ffe6e6;
+  border-color: rgba(240, 78, 35, 0.7);
+  color: #ffd7ca;
 }
 
 @media (max-width: 600px) {
