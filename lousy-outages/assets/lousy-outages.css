@@ -97,6 +97,10 @@
   display: inline-block;
 }
 
+.lousy-outages [hidden] {
+  display: none !important;
+}
+
 .lo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
