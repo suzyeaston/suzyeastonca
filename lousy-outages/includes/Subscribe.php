@@ -102,21 +102,14 @@ class Lousy_Outages_Subscribe {
 
         $confirm_url = add_query_arg('token', rawurlencode($token), rest_url('lousy-outages/v1/confirm'));
 
-        $unsubscribe_token = IncidentAlerts::build_unsubscribe_token($email);
-        $unsubscribe_url   = add_query_arg(
-            [
-                'lo_unsub' => 1,
-                'email'    => rawurlencode($email),
-                'token'    => $unsubscribe_token,
-            ],
-            home_url('/lousy-outages/')
-        );
-
-        $sent = send_lo_confirmation_email($email, $unsubscribe_url, $confirm_url);
+        $unsubscribe_url = lo_unsubscribe_url_for($email);
+        $sent            = lo_send_confirmation($email, $confirm_url);
 
         do_action('lousy_outages_log', 'confirmation_email_dispatched', [
-            'email' => $email,
-            'sent'  => $sent,
+            'email'           => $email,
+            'sent'            => $sent,
+            'confirm_url'     => $confirm_url,
+            'unsubscribe_url' => $unsubscribe_url,
         ]);
     }
 
@@ -195,15 +188,7 @@ class Lousy_Outages_Subscribe {
     }
 
     private static function send_welcome_email(string $email, string $token): void {
-        $unsubscribe_token = IncidentAlerts::build_unsubscribe_token($email);
-        $unsubscribe_url   = add_query_arg(
-            [
-                'lo_unsub' => 1,
-                'email'    => rawurlencode($email),
-                'token'    => $unsubscribe_token,
-            ],
-            home_url('/lousy-outages/')
-        );
+        $unsubscribe_url = lo_unsubscribe_url_for($email);
         $dashboard_url = home_url('/lousy-outages/');
 
         $subject = '🔔 Subscribed to Lousy Outages';
@@ -252,15 +237,7 @@ HTML;
 
     private static function send_already_subscribed_email(string $email, string $token): void {
         $dashboard_url      = home_url('/lousy-outages/');
-        $unsubscribe_token  = IncidentAlerts::build_unsubscribe_token($email);
-        $unsubscribe_url    = add_query_arg(
-            [
-                'lo_unsub' => 1,
-                'email'    => rawurlencode($email),
-                'token'    => $unsubscribe_token,
-            ],
-            home_url('/lousy-outages/')
-        );
+        $unsubscribe_url    = lo_unsubscribe_url_for($email);
 
         $subject = 'you\'re already on the radar (all good)';
 
@@ -363,25 +340,10 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
     if ('' === $domain) {
         $domain = 'example.com';
     }
-    $domain  = strtolower($domain);
-    $address = sprintf('no-reply@%s', $domain);
-
-    $unsubscribe_token = IncidentAlerts::build_unsubscribe_token($email);
-    $unsubscribe_url   = add_query_arg(
-        [
-            'lo_unsub' => 1,
-            'email'    => rawurlencode($email),
-            'token'    => $unsubscribe_token,
-        ],
-        home_url('/lousy-outages/')
-    );
+    $domain = strtolower($domain);
 
     $headers = [
-        sprintf('From: <%s>', $address),
-        sprintf('Reply-To: <%s>', $address),
-        'Content-Type: text/html; charset=UTF-8',
-        'List-Unsubscribe: <' . esc_url_raw($unsubscribe_url) . '>',
-        'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+        'Content-Type: text/plain; charset=UTF-8',
     ];
 
     $transport    = getenv('SMTP_HOST') ? 'smtp' : 'mail';
@@ -391,35 +353,34 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
         return rest_ensure_response([
             'transport'     => $transport,
             'headers'       => $headers,
+            'mailer'        => 'LousyOutages\\Mailer',
             'domain'        => $domain,
             'sendmail_path' => $sendmailPath,
         ]);
     }
 
-    $subject = 'You’re in — Lousy Outages';
-    $body    = '';
-    $body   .= '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Lousy Outages welcome</title></head>';
-    $body   .= '<body style="margin:0;padding:32px;background-color:#0b0b0b;color:#ffe9c4;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Arial,sans-serif;">';
-    $body   .= '<div style="max-width:600px;margin:0 auto;background-color:#130700;border-radius:14px;border:1px solid rgba(255,184,28,0.35);box-shadow:0 18px 42px rgba(0,0,0,0.45);padding:32px;">';
-    $body   .= '<p>Welcome to <strong>Lousy Outages</strong> — you’re locked in.</p>';
-    $body   .= '<p>Here’s what to expect: outage alerts, mitigation notes, and security intel to keep your stack steady.</p>';
-    $body   .= '<p><em>Pro tip:</em> add <strong>suzyeaston.ca</strong> to your safe-sender list.</p>';
-    $body   .= '<hr style="border:none;border-top:1px solid #ddd;margin:20px 0;">';
-    $body   .= '<p>If this wasn’t you, or you’re done hearing about outage chaos, you can <a href="' . esc_url($unsubscribe_url) . '">unsubscribe instantly</a>.</p>';
-    $body   .= '<p style="margin-top:16px;font-size:12px;color:#fddca6;">Unsubscribe link (plain text): &lt;' . esc_html($unsubscribe_url) . '&gt;</p>';
-    $body   .= '</div></body></html>';
+    $confirm_url_filter = apply_filters('lo_subscribe_confirmation_url', '', $email, $request);
+    if (!is_string($confirm_url_filter) || '' === trim($confirm_url_filter)) {
+        $confirm_url_filter = null;
+    }
 
-    $ok_user = wp_mail($email, $subject, $body, $headers);
+    $sent = lo_send_confirmation($email, $confirm_url_filter);
 
     $admin_email = get_option('admin_email');
     $ok_admin    = false;
     if ($admin_email && is_email($admin_email)) {
-        $ok_admin = wp_mail($admin_email, 'new subscriber', esc_html($email), $headers);
+        $admin_subject = 'new subscriber';
+        $admin_body    = sprintf('New Lousy Outages subscriber: %s', $email);
+        $ok_admin      = wp_mail($admin_email, $admin_subject, $admin_body, $headers);
     }
 
-    error_log(sprintf('subscribe email=%s ok_user=%d ok_admin=%d', $email, $ok_user ? 1 : 0, $ok_admin ? 1 : 0));
+    do_action('lousy_outages_log', 'subscribe_confirmation_send', [
+        'email'        => $email,
+        'sent'         => $sent,
+        'admin_notice' => $ok_admin,
+    ]);
 
-    if (!$ok_user) {
+    if (!$sent) {
         return new \WP_Error(
             'send_fail',
             'Mail send failed — check SMTP or server mailer',
@@ -427,8 +388,8 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
                 'status'     => 500,
                 'ok'         => false,
                 'transport'  => $transport,
-                'ok_admin'   => (bool) $ok_admin,
                 'sendmail'   => $sendmailPath,
+                'ok_admin'   => (bool) $ok_admin,
             ]
         );
     }
