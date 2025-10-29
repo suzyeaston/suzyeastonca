@@ -67,7 +67,9 @@
     loadingEl: null,
     fetchedAt: null,
     isRefreshing: false,
-    pendingManual: false
+    pendingManual: false,
+    lastFetchStartedAt: null,
+    manualQueued: false
   };
 
   function normalizeStatus(code) {
@@ -146,7 +148,17 @@
       }
       return;
     }
-    var nextDelay = Math.max(1000, delay || state.delay || state.baseDelay || POLL_MS);
+    var base = state.baseDelay || POLL_MS;
+    var hasExplicitDelay = typeof delay === 'number' && !Number.isNaN(delay);
+    var desired = hasExplicitDelay ? delay : (state.delay || base);
+    if (desired < 0) {
+      desired = 0;
+    }
+    var minimum = hasExplicitDelay ? 0 : (base < POLL_MS ? Math.max(100, base) : 1000);
+    var nextDelay = desired;
+    if (!hasExplicitDelay && nextDelay < minimum) {
+      nextDelay = minimum;
+    }
     state.delay = nextDelay;
     state.visibilityPaused = false;
     state.nextRefreshAt = Date.now() + nextDelay;
@@ -504,7 +516,6 @@
     var honeypot = form.querySelector('input[name="website"]');
     var nonceInput = form.querySelector('input[name="_wpnonce"]');
     var challengeInput = form.querySelector('input[name="challenge_response"]');
-    var challengeTokenInput = form.querySelector('input[name="challenge_token"]');
     var endpoint = form.getAttribute('action') || state.subscribeEndpoint;
     if (!endpoint || !state.fetchImpl) {
       return;
@@ -522,10 +533,6 @@
       setSubscribeStatus(statusEl, 'Please answer the human check.', true);
       return;
     }
-    if (!challengeTokenInput || !challengeTokenInput.value) {
-      setSubscribeStatus(statusEl, 'Challenge missing. Reload and try again.', true);
-      return;
-    }
     setSubscribeStatus(statusEl, 'Sending…');
     form.querySelectorAll('button, input[type="submit"]').forEach(function (btn) {
       btn.disabled = true;
@@ -534,8 +541,7 @@
       email: email,
       website: honeypot ? honeypot.value : '',
       _wpnonce: nonceInput ? nonceInput.value : '',
-      challenge_response: challengeInput ? challengeInput.value.trim() : '',
-      challenge_token: challengeTokenInput ? challengeTokenInput.value : ''
+      challenge_response: challengeInput ? challengeInput.value.trim() : ''
     };
 
     state.fetchImpl(endpoint, {
@@ -666,21 +672,18 @@
   }
 
   function resetAutoRefresh() {
-    state.baseDelay = POLL_MS;
+    if (!state.baseDelay || state.baseDelay <= 0) {
+      state.baseDelay = POLL_MS;
+    }
     state.delay = state.baseDelay;
     showDegraded(false);
   }
 
   function degradeAutoRefresh() {
-    var current = state.delay || state.baseDelay;
-    var next = current * 2;
-    if (next > state.maxDelay) {
-      next = state.maxDelay;
+    if (!state.baseDelay || state.baseDelay <= 0) {
+      state.baseDelay = POLL_MS;
     }
-    if (next < state.baseDelay) {
-      next = state.baseDelay;
-    }
-    state.delay = next;
+    state.delay = state.baseDelay;
     showDegraded(true);
   }
 
@@ -739,12 +742,19 @@
       }
     }
 
+    state.lastFetchStartedAt = Date.now();
+
     var headers = { Accept: 'application/json' };
     if (state.etag) {
       headers['If-None-Match'] = state.etag;
     }
 
-    return state.fetchImpl(state.endpoint, {
+    var requestUrl = state.endpoint;
+    if (manual && requestUrl) {
+      requestUrl = appendQuery(requestUrl, 'refresh', '1');
+    }
+
+    return state.fetchImpl(requestUrl, {
       credentials: 'same-origin',
       headers: headers
     })
@@ -799,14 +809,36 @@
         } else {
           updateTrendingBanner({ trending: false, signals: [] });
         }
-        scheduleNext(state.delay);
+        var elapsed = 0;
+        if (typeof state.lastFetchStartedAt === 'number' && state.lastFetchStartedAt > 0) {
+          elapsed = Date.now() - state.lastFetchStartedAt;
+        }
+        var targetDelay = state.delay || state.baseDelay || POLL_MS;
+        var remainder = targetDelay - elapsed;
+        if (remainder < 0) {
+          remainder = 0;
+        }
+        scheduleNext(remainder);
       })
       .catch(function () {
         degradeAutoRefresh();
-        scheduleNext(state.delay);
+        var retryDelay = state.delay || state.baseDelay || POLL_MS;
+        if (typeof state.lastFetchStartedAt === 'number' && state.lastFetchStartedAt > 0) {
+          var elapsedSinceStart = Date.now() - state.lastFetchStartedAt;
+          if (elapsedSinceStart > 0 && elapsedSinceStart < retryDelay) {
+            retryDelay = retryDelay - elapsedSinceStart;
+          }
+        }
+        scheduleNext(Math.max(0, retryDelay));
       })
       .finally(function () {
         state.isRefreshing = false;
+        var replayManual = state.manualQueued;
+        state.manualQueued = false;
+        if (replayManual) {
+          manualRefresh();
+          return;
+        }
         if (state.pendingManual) {
           state.pendingManual = false;
           refreshSummary(true, true);
@@ -840,9 +872,10 @@
 
   function manualRefresh() {
     if (state.isRefreshing) {
-      state.pendingManual = true;
+      state.manualQueued = true;
       return;
     }
+    state.manualQueued = false;
     state.pendingManual = false;
     setLoading(true);
     callRefreshEndpoint()
@@ -896,7 +929,11 @@
     state.refreshEndpoint = config.refreshEndpoint || '';
     state.refreshNonce = config.refreshNonce || '';
     state.subscribeEndpoint = config.subscribeEndpoint || '';
-    state.baseDelay = POLL_MS;
+    var configuredDelay = parseInt(config.pollInterval || config.refreshInterval || config.pollMs || config.poll_delay, 10);
+    if (!Number.isFinite(configuredDelay) || configuredDelay <= 0) {
+      configuredDelay = POLL_MS;
+    }
+    state.baseDelay = configuredDelay;
     state.delay = state.baseDelay;
     state.maxDelay = Math.max(state.maxDelay || 0, MAX_DELAY);
     state.visibilityPaused = !isDocumentVisible();

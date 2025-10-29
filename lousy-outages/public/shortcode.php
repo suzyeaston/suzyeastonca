@@ -467,34 +467,26 @@ function render_subscribe_shortcode(): string {
     $endpoint = esc_url_raw(rest_url('lousy-outages/v1/subscribe'));
     $nonce    = wp_create_nonce('lousy_outages_subscribe');
     $rss_url  = esc_url(home_url('/lousy-outages/feed/'));
-    $challenge = \lo_build_subscribe_challenge();
-    if (!is_array($challenge) || empty($challenge['fragment']) || empty($challenge['token'])) {
-        $challenge = \lo_fallback_subscribe_challenge();
+    $lyric_lines = [];
+    foreach (\lo_lyric_fragment_bank() as $entry) {
+        if (!is_array($entry)) {
+            continue;
+        }
+        $fragment = isset($entry['fragment']) ? trim((string) $entry['fragment']) : '';
+        $answer   = isset($entry['answer']) ? trim((string) $entry['answer']) : '';
+        if ('' === $fragment && '' === $answer) {
+            continue;
+        }
+        $lyric_lines[] = [
+            'fragment' => $fragment,
+            'answer'   => $answer,
+        ];
     }
-    $captcha_prompt = isset($challenge['prompt']) ? $challenge['prompt'] : 'Complete this lyric from “Hotel California”.';
-    $captcha_fragment = isset($challenge['fragment']) ? $challenge['fragment'] : 'On a dark desert highway';
-    $captcha_token = isset($challenge['token']) ? $challenge['token'] : '';
-    $captcha_expires = isset($challenge['expires_at']) ? $challenge['expires_at'] : gmdate('c', time() + 120);
 
-    [$assets_path, $assets_url] = locate_assets_base();
-
-    wp_enqueue_script(
-        'lousy-outages-captcha',
-        $assets_url . 'captcha.js',
-        [],
-        file_exists($assets_path . 'captcha.js') ? filemtime($assets_path . 'captcha.js') : null,
-        true
-    );
-
-    wp_localize_script(
-        'lousy-outages-captcha',
-        'LoLyricCaptcha',
-        [
-            'endpoint' => esc_url_raw(rest_url('lousy/v1/captcha')),
-            'nonce'    => wp_create_nonce('wp_rest'),
-            'ttl'      => \lo_captcha_ttl_seconds(),
-        ]
-    );
+    $lyric_lines = apply_filters('lo_subscribe_lyric_lines', $lyric_lines);
+    if (!is_array($lyric_lines)) {
+        $lyric_lines = [];
+    }
     $form_uid  = uniqid('lo-subscribe-');
     $email_id  = $form_uid . '-email';
     $challenge_id = $form_uid . '-challenge';
@@ -518,36 +510,48 @@ function render_subscribe_shortcode(): string {
                     autocomplete="email"
                 />
             </label>
-            <div
-                class="lo-subscribe__label lo-subscribe__challenge"
-                data-lo-captcha
-                data-token="<?php echo esc_attr($captcha_token); ?>"
-                data-expires="<?php echo esc_attr($captcha_expires); ?>"
-                data-fragment="<?php echo esc_attr($captcha_fragment); ?>"
-            >
-                <span data-lo-captcha-prompt><?php echo esc_html($captcha_prompt); ?></span>
-                <blockquote class="lo-lyric" data-lo-captcha-fragment>
-                    “<?php echo esc_html($captcha_fragment); ?>” …
-                </blockquote>
+            <div class="lo-subscribe__label lo-subscribe__challenge">
+                <p class="lo-subscribe__prompt">Type any lyric line from “Hotel California” exactly as printed below.</p>
+                <?php if (!empty($lyric_lines)) : ?>
+                    <ul class="lo-subscribe__lyric-list">
+                        <?php foreach ($lyric_lines as $line) :
+                            $fragment = isset($line['fragment']) ? (string) $line['fragment'] : '';
+                            $answer   = isset($line['answer']) ? (string) $line['answer'] : '';
+                            if ('' === $fragment && '' === $answer) {
+                                continue;
+                            }
+                            ?>
+                            <li class="lo-subscribe__lyric-line">
+                                <?php if ($fragment) : ?>
+                                    <span class="lo-lyric-fragment"><?php echo esc_html($fragment); ?></span>
+                                    <?php if ($answer) : ?>
+                                        <span class="lo-lyric-sep" aria-hidden="true">→</span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                                <?php if ($answer) : ?>
+                                    <span class="lo-lyric-answer"><?php echo esc_html($answer); ?></span>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
                 <label for="<?php echo esc_attr($challenge_id); ?>" class="lo-subscribe__lyric-label">
-                    <span class="screen-reader-text">Finish the lyric</span>
+                    <span class="screen-reader-text">Type a lyric line</span>
                     <input
                         id="<?php echo esc_attr($challenge_id); ?>"
                         class="lo-subscribe__input"
                         type="text"
                         name="challenge_response"
-                        placeholder="Finish the lyric here"
+                        placeholder="Copy a line from the list"
                         autocomplete="off"
                         aria-describedby="<?php echo esc_attr($challenge_hint_id); ?>"
                         required
                         data-lo-captcha-input
                     />
                 </label>
-                <button type="button" class="lo-subscribe__refresh" data-lo-captcha-refresh>Give me another lyric</button>
-                <p class="lo-subscribe__note" id="<?php echo esc_attr($challenge_hint_id); ?>">Answer within 2 minutes. Case doesn’t matter, punctuation optional.</p>
-                <input type="hidden" name="challenge_token" value="<?php echo esc_attr($captcha_token); ?>" data-lo-captcha-token />
+                <p class="lo-subscribe__note" id="<?php echo esc_attr($challenge_hint_id); ?>">Case doesn’t matter, punctuation optional.</p>
                 <noscript>
-                    <p class="lo-subscribe__noscript">No JavaScript? Just type the word <strong>hotel</strong> above.</p>
+                    <p class="lo-subscribe__noscript">No JavaScript? Type the word <strong>hotel</strong> above.</p>
                     <input type="hidden" name="lo_noscript_challenge" value="1" />
                 </noscript>
             </div>
@@ -556,7 +560,7 @@ function render_subscribe_shortcode(): string {
             <button type="submit" class="lo-subscribe__button">Subscribe</button>
             <p class="lo-subscribe__status" data-lo-subscribe-status aria-live="polite"></p>
         </form>
-        <p class="lo-subscribe__help">Watch for the confirmation email (check spam if it’s missing). Every briefing ships with a one-click unsubscribe link, and we use a secret word challenge to stop spam bots.</p>
+        <p class="lo-subscribe__help">Watch for the confirmation email (check spam if it’s missing). Every briefing ships with a one-click unsubscribe link, and we use a lyric challenge you can copy from the list above to stop spam bots.</p>
     </div>
     <?php
     return (string) ob_get_clean();
