@@ -1024,6 +1024,7 @@ footer,
 
 .lousy-outages-page h1 {
   margin-bottom: 1.5rem;
+  color: #ffb81c;
 }
 
 .lousy-outages-page .lousy-outages-board {
@@ -1528,16 +1529,17 @@ body {
 }
 
 /* Weekly show callout */
+
 .lo-callout {
     margin: 36px auto 40px;
     max-width: 760px;
     padding: 26px 32px;
     text-align: center;
-    background: linear-gradient(140deg, rgba(6, 18, 8, 0.95), rgba(14, 28, 18, 0.9));
-    border: 4px solid #39ff14;
+    background: linear-gradient(145deg, rgba(12, 6, 0, 0.95), rgba(26, 12, 0, 0.92));
+    border: 4px solid #ffb81c;
     border-radius: 18px;
-    box-shadow: 0 0 0 4px rgba(4, 20, 6, 0.85), 0 0 24px rgba(57, 255, 20, 0.35);
-    color: #eaffea;
+    box-shadow: 0 0 0 4px rgba(12, 6, 0, 0.85), 0 0 28px rgba(240, 78, 35, 0.4);
+    color: #ffe9c4;
 }
 
 .lo-callout h2 {
@@ -1546,22 +1548,22 @@ body {
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #39ff14;
+    color: #ffb81c;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-shadow: 0 0 0.5rem rgba(57, 255, 20, 0.7);
+    text-shadow: 0 0 0.6rem rgba(240, 78, 35, 0.6);
 }
 
 .lo-callout h2 span {
     display: inline-block;
-    color: #ffffff;
+    color: #f04e23;
 }
 
 .lo-callout p {
     margin: 0 0 22px;
     font-size: clamp(1rem, 2.4vw, 1.1rem);
     line-height: 1.7;
-    color: rgba(234, 255, 234, 0.9);
+    color: rgba(255, 233, 196, 0.9);
 }
 
 .btn-8bit {
@@ -1570,11 +1572,11 @@ body {
     font-size: 0.95rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    background: #39ff14;
-    color: #032407;
-    border: 3px solid #39ff14;
+    background: #f04e23;
+    color: #050505;
+    border: 3px solid #ffb81c;
     border-radius: 10px;
-    box-shadow: 0 4px 0 #1c6512, 0 0 14px rgba(57, 255, 20, 0.4);
+    box-shadow: 0 4px 0 #b5121b, 0 0 14px rgba(240, 78, 35, 0.4);
     text-decoration: none;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -1582,8 +1584,8 @@ body {
 .btn-8bit:hover,
 .btn-8bit:focus {
     transform: translateY(-2px);
-    box-shadow: 0 6px 0 #1c6512, 0 0 18px rgba(57, 255, 20, 0.5);
-    color: #032407;
+    box-shadow: 0 6px 0 #b5121b, 0 0 20px rgba(255, 184, 28, 0.45);
+    color: #050505;
 }
 
 .btn-8bit:focus {
@@ -1638,12 +1640,12 @@ body {
 }
 .lo-home-promo__card {
     position: relative;
-    border: 2px solid rgba(113, 255, 206, 0.7);
+    border: 2px solid rgba(255, 184, 28, 0.6);
     border-radius: 20px;
     padding: 28px 32px 32px;
-    background: linear-gradient(135deg, rgba(8, 18, 12, 0.95), rgba(18, 28, 20, 0.92));
-    color: #e4ffee;
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    background: linear-gradient(135deg, rgba(18, 9, 0, 0.96), rgba(34, 16, 0, 0.9));
+    color: #ffe9c4;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
     overflow: hidden;
 }
 .lo-home-promo__card::after {
@@ -1663,11 +1665,13 @@ body {
 .lo-home-promo__title {
     font-size: 1.6rem;
     margin: 0 0 12px;
+    color: #ffb81c;
 }
 .lo-home-promo__subtitle {
     font-size: 1.05rem;
     margin: 0 0 20px;
     line-height: 1.6;
+    color: rgba(255, 233, 196, 0.9);
 }
 .lo-home-promo__button {
     margin-top: 8px;
@@ -1683,7 +1687,8 @@ body {
     font-size: 0.75rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(240, 78, 35, 0.3);
+    color: #ffe9c4;
     border-radius: 999px;
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
 }

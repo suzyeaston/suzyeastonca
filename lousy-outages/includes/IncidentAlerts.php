@@ -450,36 +450,36 @@ class IncidentAlerts {
         $impactLabel = esc_html($impact);
         $componentsLabel = esc_html($components ?: 'components unknown');
         $startedLabel = esc_html($started_at ?: 'time TBD');
-        $cta = $url ? sprintf('<a href="%s" style="color:#39ff14;">open incident log</a>', esc_url($url)) : '';
+        $cta = $url ? sprintf('<a href="%s" style="color:#f04e23;">open incident log</a>', esc_url($url)) : '';
         $unsubscribeLink = esc_url($unsubscribe);
 
         return <<<HTML
 <!doctype html>
 <meta charset="utf-8">
-<body style="margin:0;background:#07040c;color:#e0f2ff;font-family:'Space Grotesk',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<body style="margin:0;background:#050505;color:#ffe9c4;font-family:'Space Grotesk',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <div style="max-width:640px;margin:0 auto;padding:32px 24px;">
-    <div style="background:linear-gradient(135deg,#1f0937 0%,#0b1d3a 100%);border:2px solid #7d29ff;box-shadow:0 0 25px rgba(125,41,255,0.4);border-radius:18px;padding:28px;">
+    <div style="background:linear-gradient(140deg,#160800 0%,#2d1300 100%);border:2px solid #ffb81c;box-shadow:0 0 28px rgba(240,78,35,0.4);border-radius:18px;padding:28px;">
       <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;">
-        <span style="font-size:18px;letter-spacing:0.08em;text-transform:uppercase;color:#39ff14;">lousy outages</span>
-        <span style="font-size:14px;color:#b3c7ff;">retro-synth uptime intel</span>
+        <span style="font-size:18px;letter-spacing:0.08em;text-transform:uppercase;color:#ffb81c;">lousy outages</span>
+        <span style="font-size:14px;color:rgba(255,233,196,0.85);">old-school outage intel</span>
       </header>
-      <h1 style="margin:0 0 12px;font-size:26px;color:#fdfcff;">{$impactLabel} — {$provider}</h1>
-      <p style="margin:0 0 18px;font-size:20px;color:#f0d9ff;">{$title}</p>
+      <h1 style="margin:0 0 12px;font-size:26px;color:#ffe9c4;">{$impactLabel} — {$provider}</h1>
+      <p style="margin:0 0 18px;font-size:20px;color:#ffb81c;">{$title}</p>
       <div style="display:grid;gap:12px;margin:20px 0;">
-        <div style="background:#120720;border-radius:14px;padding:14px 16px;color:#bce3ff;font-size:15px;">
-          <strong style="display:block;font-size:12px;letter-spacing:0.1em;color:#8efc9d;margin-bottom:4px;">components</strong>
+        <div style="background:rgba(20,10,0,0.65);border-radius:14px;padding:14px 16px;color:#ffe3b5;font-size:15px;">
+          <strong style="display:block;font-size:12px;letter-spacing:0.1em;color:#ffb81c;margin-bottom:4px;">components</strong>
           {$componentsLabel}
         </div>
-        <div style="background:#120720;border-radius:14px;padding:14px 16px;color:#bce3ff;font-size:15px;">
-          <strong style="display:block;font-size:12px;letter-spacing:0.1em;color:#8efc9d;margin-bottom:4px;">started</strong>
+        <div style="background:rgba(20,10,0,0.65);border-radius:14px;padding:14px 16px;color:#ffe3b5;font-size:15px;">
+          <strong style="display:block;font-size:12px;letter-spacing:0.1em;color:#ffb81c;margin-bottom:4px;">started</strong>
           {$startedLabel}
         </div>
       </div>
-      <p style="font-size:15px;color:#9bc1ff;line-height:1.6;">massive systems turbulence detected. stay frosty, reroute workloads if you can, and keep the synthwave looping.</p>
+      <p style="font-size:15px;color:rgba(255,233,196,0.85);line-height:1.6;">massive systems turbulence detected. stay frosty, reroute workloads if you can, and keep the synthwave looping.</p>
       <p style="margin:20px 0;">{$cta}</p>
-      <footer style="margin-top:24px;border-top:1px dashed rgba(61,255,20,0.4);padding-top:16px;color:#7aa0ff;font-size:12px;">
+      <footer style="margin-top:24px;border-top:1px dashed rgba(255,184,28,0.4);padding-top:16px;color:rgba(255,233,196,0.75);font-size:12px;">
         broadcasting for <em>console cowboys</em> &amp; dream logic engineers.<br>
-        <a href="{$unsubscribeLink}" style="color:#39ff14;">unsubscribe instantly</a> • keep hacking the planet.
+        <a href="{$unsubscribeLink}" style="color:#ffb81c;">unsubscribe instantly</a> • keep hacking the planet.
       </footer>
     </div>
   </div>

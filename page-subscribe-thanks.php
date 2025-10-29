@@ -9,7 +9,9 @@ get_header();
       <p style="font-size:1.1rem;margin-bottom:16px;">We couldn’t add that email address. Please head back and try again.</p>
     <?php else : ?>
       <p style="font-size:1.1rem;margin-bottom:16px;">Check your inbox for a confirmation email. Once you click the link you’ll start receiving outage alerts.</p>
+      <p style="font-size:1rem;margin-bottom:18px;">Heads-up: add <strong>suzyeaston.ca</strong> to your safe senders so the briefings don’t hide in spam or junk folders.</p>
     <?php endif; ?>
+    <p style="font-size:0.95rem;margin-bottom:22px;">Need to bail later? Every Lousy Outages email ships with a one-click unsubscribe link.</p>
     <a class="pixel-button" href="<?php echo esc_url(home_url('/lousy-outages/')); ?>">Return to dashboard →</a>
   </section>
 </main>
