@@ -351,10 +351,21 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
     $domain  = strtolower($domain);
     $address = sprintf('no-reply@%s', $domain);
 
+    $unsubscribe_token = IncidentAlerts::build_unsubscribe_token($email);
+    $unsubscribe_url   = add_query_arg(
+        [
+            'email' => $email,
+            'token' => $unsubscribe_token,
+        ],
+        rest_url('lousy-outages/v1/unsubscribe-email')
+    );
+
     $headers = [
         sprintf('From: <%s>', $address),
         sprintf('Reply-To: <%s>', $address),
         'Content-Type: text/html; charset=UTF-8',
+        'List-Unsubscribe: <' . esc_url_raw($unsubscribe_url) . '>',
+        'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
     ];
 
     $transport    = getenv('SMTP_HOST') ? 'smtp' : 'mail';
