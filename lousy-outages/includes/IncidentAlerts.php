@@ -18,9 +18,10 @@ class IncidentAlerts {
         'aws'        => 'https://status.aws.amazon.com/rss/all.rss',
     ];
 
-    private const OPTION_SUBSCRIBERS = 'lo_subscribers';
-    private const OPTION_SEEN        = 'lo_seen_incidents';
-    private const OPTION_LAST_CHECK  = 'lo_last_status_check';
+    private const OPTION_SUBSCRIBERS      = 'lo_subscribers';
+    private const OPTION_UNSUB_TOKENS     = 'lo_unsub_tokens';
+    private const OPTION_SEEN             = 'lo_seen_incidents';
+    private const OPTION_LAST_CHECK       = 'lo_last_status_check';
     private const TRANSIENT_PREFIX   = 'lo_cooldown_';
     private static $altBody = '';
 
@@ -61,16 +62,16 @@ class IncidentAlerts {
 
     public static function handle_unsubscribe(WP_REST_Request $request) {
         $rawEmail = $request->get_param('email');
-        $email    = is_string($rawEmail) ? sanitize_email($rawEmail) : '';
+        $emailRaw = is_string($rawEmail) ? rawurldecode($rawEmail) : '';
+        $email    = is_string($emailRaw) ? sanitize_email($emailRaw) : '';
         $token    = sanitize_text_field((string) $request->get_param('token'));
 
         if (!$email || !is_email($email) || '' === $token) {
             return self::redirect_with_status('invalid');
         }
 
-        $email = strtolower($email);
-        $expected = self::build_unsubscribe_token($email);
-        if (!hash_equals($expected, $token)) {
+        $saved = self::get_saved_unsubscribe_token($email);
+        if ('' === $saved || !hash_equals($saved, $token)) {
             return self::redirect_with_status('invalid');
         }
 
@@ -329,6 +330,8 @@ class IncidentAlerts {
             $subscribers[] = $email;
             update_option(self::OPTION_SUBSCRIBERS, array_values($subscribers), false);
         }
+
+        self::build_unsubscribe_token($email);
     }
 
     public static function remove_subscriber(string $email): void {
@@ -349,6 +352,8 @@ class IncidentAlerts {
         if ($updated !== $subscribers) {
             update_option(self::OPTION_SUBSCRIBERS, $updated, false);
         }
+
+        self::delete_unsubscribe_token($email);
     }
 
     public static function get_subscribers(): array {
@@ -360,10 +365,94 @@ class IncidentAlerts {
         return array_values(array_filter(array_map('sanitize_email', $subscribers)));
     }
 
+    private static function normalize_unsubscribe_email(string $email): string {
+        $normalized = strtolower(trim((string) sanitize_email($email)));
+        return $normalized;
+    }
+
+    private static function get_unsubscribe_tokens(): array {
+        $tokens = get_option(self::OPTION_UNSUB_TOKENS, []);
+        if (!is_array($tokens)) {
+            return [];
+        }
+
+        $sanitized = [];
+        foreach ($tokens as $rawEmail => $rawToken) {
+            if (!is_string($rawToken) || '' === trim($rawToken)) {
+                continue;
+            }
+
+            $normalized = self::normalize_unsubscribe_email((string) $rawEmail);
+            if ('' === $normalized) {
+                continue;
+            }
+
+            $sanitized[$normalized] = (string) $rawToken;
+        }
+
+        if ($sanitized !== $tokens) {
+            self::save_unsubscribe_tokens($sanitized);
+        }
+
+        return $sanitized;
+    }
+
+    private static function save_unsubscribe_tokens(array $tokens): void {
+        $sanitized = [];
+        foreach ($tokens as $email => $token) {
+            if (!is_string($token) || '' === trim($token)) {
+                continue;
+            }
+            $normalized = self::normalize_unsubscribe_email((string) $email);
+            if ('' === $normalized) {
+                continue;
+            }
+            $sanitized[$normalized] = (string) $token;
+        }
+
+        update_option(self::OPTION_UNSUB_TOKENS, $sanitized, false);
+    }
+
+    public static function get_saved_unsubscribe_token(string $email): string {
+        $normalized = self::normalize_unsubscribe_email($email);
+        if ('' === $normalized) {
+            return '';
+        }
+
+        $tokens = self::get_unsubscribe_tokens();
+        $value  = $tokens[$normalized] ?? '';
+
+        return is_string($value) ? (string) $value : '';
+    }
+
+    public static function delete_unsubscribe_token(string $email): void {
+        $normalized = self::normalize_unsubscribe_email($email);
+        if ('' === $normalized) {
+            return;
+        }
+
+        $tokens = self::get_unsubscribe_tokens();
+        if (!isset($tokens[$normalized])) {
+            return;
+        }
+
+        unset($tokens[$normalized]);
+        self::save_unsubscribe_tokens($tokens);
+    }
+
     public static function build_unsubscribe_token(string $email): string {
-        $email = strtolower(trim($email));
-        $secret = wp_salt('auth');
-        return hash_hmac('sha256', $email, $secret);
+        $normalized = self::normalize_unsubscribe_email($email);
+        if ('' === $normalized) {
+            return '';
+        }
+
+        $tokens = self::get_unsubscribe_tokens();
+        if (!isset($tokens[$normalized]) || '' === trim((string) $tokens[$normalized])) {
+            $tokens[$normalized] = wp_generate_uuid4();
+            self::save_unsubscribe_tokens($tokens);
+        }
+
+        return (string) $tokens[$normalized];
     }
 
     private static function email_incident(array $incident): bool {
@@ -387,10 +476,11 @@ class IncidentAlerts {
             $token = self::build_unsubscribe_token($email);
             $unsubscribe = add_query_arg(
                 [
-                    'email' => $email,
-                    'token' => $token,
+                    'lo_unsub' => 1,
+                    'email'    => rawurlencode($email),
+                    'token'    => $token,
                 ],
-                rest_url('lousy-outages/v1/unsubscribe-email')
+                home_url('/lousy-outages/')
             );
 
             $html_body = self::build_html_email(

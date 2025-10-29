@@ -157,3 +157,38 @@ class Subscriptions {
         return false !== $updated && $updated > 0;
     }
 }
+
+add_action('template_redirect', static function (): void {
+    if (!isset($_GET['lo_unsub'])) {
+        return;
+    }
+
+    $raw_email = isset($_GET['email']) ? wp_unslash((string) $_GET['email']) : '';
+    if ('' !== $raw_email) {
+        $raw_email = rawurldecode($raw_email);
+    }
+    $raw_token = isset($_GET['token']) ? wp_unslash((string) $_GET['token']) : '';
+
+    $email = sanitize_email($raw_email);
+    $token = sanitize_text_field($raw_token);
+
+    if (!$email || !is_email($email) || '' === $token) {
+        wp_die('Invalid unsubscribe link.', 'Unsubscribe', ['response' => 400]);
+    }
+
+    $saved = IncidentAlerts::get_saved_unsubscribe_token($email);
+    if ('' === $saved) {
+        wp_die('Subscriber not found.', 'Unsubscribe', ['response' => 404]);
+    }
+
+    if (!hash_equals((string) $saved, (string) $token)) {
+        wp_die('Invalid or expired unsubscribe link.', 'Unsubscribe', ['response' => 403]);
+    }
+
+    IncidentAlerts::remove_subscriber($email);
+    Subscriptions::mark_unsubscribed_by_email($email);
+
+    $redirect = add_query_arg('lo_unsub_success', 1, home_url('/lousy-outages/'));
+    wp_safe_redirect($redirect);
+    exit;
+});

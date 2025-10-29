@@ -13,26 +13,35 @@ if (isset($_COOKIE['lo_sub_msg'])) {
         setcookie('lo_sub_msg', '', time() - HOUR_IN_SECONDS, '/', '', is_ssl(), false);
     }
 }
-$banner     = '';
-$tone       = 'info';
+$banner        = '';
+$tone          = 'info';
+$unsub_success = 0;
+if (isset($_GET['lo_unsub_success'])) {
+    $unsub_success = absint(wp_unslash($_GET['lo_unsub_success']));
+}
 
-switch ($sub_status) {
-    case 'confirmed':
-        $banner = "You're in! You'll get outage alerts soon.";
-        $tone   = 'success';
-        break;
-    case 'check-email':
-        $banner = 'Check your inbox for a confirmation link to finish subscribing.';
-        $tone   = 'info';
-        break;
-    case 'invalid':
-        $banner = 'That link is invalid or has expired. Please try subscribing again.';
-        $tone   = 'error';
-        break;
-    case 'unsubscribed':
-        $banner = "You have been unsubscribed from Lousy Outages alerts.";
-        $tone   = 'warning';
-        break;
+if ($unsub_success) {
+    $banner = 'You’ve been unsubscribed. All the best!';
+    $tone   = 'success';
+} else {
+    switch ($sub_status) {
+        case 'confirmed':
+            $banner = "You're in! You'll get outage alerts soon.";
+            $tone   = 'success';
+            break;
+        case 'check-email':
+            $banner = 'Check your inbox for a confirmation link to finish subscribing.';
+            $tone   = 'info';
+            break;
+        case 'invalid':
+            $banner = 'That link is invalid or has expired. Please try subscribing again.';
+            $tone   = 'error';
+            break;
+        case 'unsubscribed':
+            $banner = "You have been unsubscribed from Lousy Outages alerts.";
+            $tone   = 'warning';
+            break;
+    }
 }
 ?>
 
