@@ -1,0 +1,42 @@
+.lo-hud {
+  position: relative;
+}
+
+.lo-hud-spinner {
+  display: none;
+  margin-left: 0.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #8f80ff;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.lo-hud-spinner::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: lo-hud-spin 0.9s linear infinite;
+}
+
+.lo-hud--dialing .lo-hud-spinner {
+  display: inline-flex;
+}
+
+@keyframes lo-hud-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lo-hud [data-lo-degraded] {
+  transition: opacity 0.25s ease;
+}

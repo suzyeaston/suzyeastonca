@@ -82,6 +82,12 @@ class Mailer {
 
         $message = implode("\r\n", $parts);
 
-        return wp_mail($email, $subject, $message, $headers);
+        $sent = wp_mail($email, $subject, $message, $headers);
+
+        if (! $sent && defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf('[lousy_outages] mail_send_failed recipient=%s subject=%s', $email, $subject));
+        }
+
+        return (bool) $sent;
     }
 }

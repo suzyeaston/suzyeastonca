@@ -25,6 +25,13 @@ function render_shortcode(): string {
         file_exists($base_path . 'lousy-outages.css') ? filemtime($base_path . 'lousy-outages.css') : null
     );
 
+    wp_enqueue_style(
+        'lousy-outages-hud',
+        $base_url . 'hud.css',
+        ['lousy-outages'],
+        file_exists($base_path . 'hud.css') ? filemtime($base_path . 'hud.css') : null
+    );
+
     wp_enqueue_script(
         'lousy-outages',
         $base_url . 'lousy-outages.js',
@@ -33,8 +40,17 @@ function render_shortcode(): string {
         true
     );
 
+    wp_enqueue_script(
+        'lousy-outages-hud',
+        $base_url . 'hud.js',
+        ['lousy-outages'],
+        file_exists($base_path . 'hud.js') ? filemtime($base_path . 'hud.js') : null,
+        true
+    );
+
     $cache_key = is_user_logged_in() ? null : 'lousy_outages_fragment_public';
     $cached    = ($cache_key) ? get_transient($cache_key) : null;
+    $snapshot_endpoint = esc_url_raw(rest_url('lousy/v1/snapshot'));
 
     $fetcher      = new Lousy_Outages_Fetcher();
     $provider_map = $fetcher->get_provider_map();
@@ -56,6 +72,7 @@ function render_shortcode(): string {
     $fetched_at = gmdate('c');
     $tiles      = [];
     $config     = null;
+    $refresh_interval = 60000;
     $initial_trending = [
         'trending'     => false,
         'signals'      => [],
@@ -92,8 +109,11 @@ function render_shortcode(): string {
 
     if (!$config) {
         $snapshot = \lousy_outages_get_snapshot(false);
-        if (empty($snapshot['providers'])) {
-            $snapshot = \lousy_outages_get_snapshot(true);
+        if (!isset($snapshot['providers']) || !is_array($snapshot['providers']) || !$snapshot['providers']) {
+            $stored_snapshot = get_option('lousy_outages_snapshot', []);
+            if (isset($stored_snapshot['providers']) && is_array($stored_snapshot['providers']) && $stored_snapshot['providers']) {
+                $snapshot = $stored_snapshot;
+            }
         }
 
         if (isset($snapshot['providers']) && is_array($snapshot['providers']) && $snapshot['providers']) {
@@ -109,26 +129,43 @@ function render_shortcode(): string {
             }
             $source = isset($snapshot['source']) ? (string) $snapshot['source'] : 'snapshot';
         } else {
-            $result = $fetcher->get_all(array_keys($provider_map));
-            $tiles = isset($result['providers']) && is_array($result['providers']) ? $result['providers'] : [];
-            if (isset($result['fetched_at'])) {
-                $fetched_at = (string) $result['fetched_at'];
+            $normalized_snapshot = \lo_snapshot_get_cached();
+            if (!empty($normalized_snapshot['services'])) {
+                foreach ($normalized_snapshot['services'] as $service) {
+                    if (!is_array($service)) {
+                        continue;
+                    }
+                    $service_id = (string) ($service['id'] ?? '');
+                    if ('' === $service_id) {
+                        continue;
+                    }
+                    $tiles[] = [
+                        'id'          => $service_id,
+                        'provider'    => $service_id,
+                        'name'        => $service['name'] ?? $service_id,
+                        'status'      => $service['status'] ?? 'unknown',
+                        'status_label'=> $service['status_text'] ?? ucfirst((string) ($service['status'] ?? 'unknown')),
+                        'state'       => $service['status_text'] ?? '',
+                        'stateCode'   => $service['status'] ?? 'unknown',
+                        'summary'     => $service['summary'] ?? '',
+                        'url'         => $service['url'] ?? '',
+                        'updated_at'  => $service['updated_at'] ?? $normalized_snapshot['updated_at'],
+                        'incidents'   => [],
+                    ];
+                }
+                $fetched_at = $normalized_snapshot['updated_at'];
+                $snapshot_errors = [];
+                $source = $normalized_snapshot['stale'] ? 'stale' : 'snapshot';
             }
-            if (isset($result['trending']) && is_array($result['trending'])) {
-                $initial_trending = $result['trending'];
-            }
-            if (isset($result['errors']) && is_array($result['errors'])) {
-                $snapshot_errors = $result['errors'];
-            }
-            $source = 'live';
         }
 
         $config = [
             'endpoint'          => esc_url_raw(rest_url('lousy-outages/v1/summary')),
-            'pollInterval'      => 60000,
+            'pollInterval'      => $refresh_interval,
             'refreshEndpoint'   => esc_url_raw(rest_url('lousy/v1/refresh')),
             'refreshNonce'      => wp_create_nonce('wp_rest'),
             'subscribeEndpoint' => esc_url_raw(rest_url('lousy-outages/v1/subscribe')),
+            'snapshotEndpoint'  => $snapshot_endpoint,
             'initial'           => [
                 'providers'  => $tiles,
                 'fetched_at' => $fetched_at,
@@ -152,6 +189,10 @@ function render_shortcode(): string {
             $snapshot_errors = $config['initial']['errors'];
         } else {
             $config['initial']['errors'] = $snapshot_errors;
+        }
+
+        if (!isset($config['snapshotEndpoint'])) {
+            $config['snapshotEndpoint'] = $snapshot_endpoint;
         }
     }
 
@@ -269,7 +310,13 @@ function render_shortcode(): string {
         : [];
     $trending_generated = isset($initial_trending['generated_at']) ? (string) $initial_trending['generated_at'] : '';
     ?>
-    <div class="lousy-outages" data-lo-endpoint="<?php echo esc_url($config['endpoint']); ?>" data-lo-source="<?php echo esc_attr($source); ?>">
+    <div
+        class="lousy-outages"
+        data-lo-endpoint="<?php echo esc_url($config['endpoint']); ?>"
+        data-lo-source="<?php echo esc_attr($source); ?>"
+        data-lo-snapshot="<?php echo esc_url($config['snapshotEndpoint'] ?? $snapshot_endpoint); ?>"
+        data-lo-refresh-interval="<?php echo esc_attr((string) $refresh_interval); ?>"
+    >
         <div class="lo-header">
             <div class="lo-actions">
                 <span class="lo-meta" aria-live="polite">
@@ -385,12 +432,34 @@ function render_subscribe_shortcode(): string {
     $nonce    = wp_create_nonce('lousy_outages_subscribe');
     $rss_url  = esc_url(home_url('/lousy-outages/feed/'));
     $challenge = \lo_build_subscribe_challenge();
-    if (!is_array($challenge) || empty($challenge['prompt']) || empty($challenge['hash'])) {
-        $challenge = [
-            'prompt' => 'Type the word outage (all lowercase) to unlock alerts.',
-            'hash'   => \lo_hash_subscribe_answer('outage'),
-        ];
+    if (!is_array($challenge) || empty($challenge['fragment']) || empty($challenge['token'])) {
+        $challenge = \lo_fallback_subscribe_challenge();
     }
+    $captcha_prompt = isset($challenge['prompt']) ? $challenge['prompt'] : 'Complete this lyric from “Hotel California”.';
+    $captcha_fragment = isset($challenge['fragment']) ? $challenge['fragment'] : 'On a dark desert highway';
+    $captcha_token = isset($challenge['token']) ? $challenge['token'] : '';
+    $captcha_expires = isset($challenge['expires_at']) ? $challenge['expires_at'] : gmdate('c', time() + 120);
+
+    $assets_url = plugin_dir_url(__DIR__) . 'assets/';
+    $assets_path = plugin_dir_path(__DIR__) . 'assets/';
+
+    wp_enqueue_script(
+        'lousy-outages-captcha',
+        $assets_url . 'captcha.js',
+        [],
+        file_exists($assets_path . 'captcha.js') ? filemtime($assets_path . 'captcha.js') : null,
+        true
+    );
+
+    wp_localize_script(
+        'lousy-outages-captcha',
+        'LoLyricCaptcha',
+        [
+            'endpoint' => esc_url_raw(rest_url('lousy/v1/captcha')),
+            'nonce'    => wp_create_nonce('wp_rest'),
+            'ttl'      => \lo_captcha_ttl_seconds(),
+        ]
+    );
     $form_uid  = uniqid('lo-subscribe-');
     $email_id  = $form_uid . '-email';
     $challenge_id = $form_uid . '-challenge';
@@ -414,23 +483,41 @@ function render_subscribe_shortcode(): string {
                     autocomplete="email"
                 />
             </label>
-            <label class="lo-subscribe__label lo-subscribe__challenge" for="<?php echo esc_attr($challenge_id); ?>">
-                <span><?php echo esc_html($challenge['prompt']); ?></span>
-                <input
-                    id="<?php echo esc_attr($challenge_id); ?>"
-                    class="lo-subscribe__input"
-                    type="text"
-                    name="challenge_response"
-                    placeholder="Type it here"
-                    autocomplete="off"
-                    aria-describedby="<?php echo esc_attr($challenge_hint_id); ?>"
-                    required
-                />
-                <p class="lo-subscribe__note" id="<?php echo esc_attr($challenge_hint_id); ?>">Humans only: answer the secret word challenge so we know you’re real.</p>
-            </label>
+            <div
+                class="lo-subscribe__label lo-subscribe__challenge"
+                data-lo-captcha
+                data-token="<?php echo esc_attr($captcha_token); ?>"
+                data-expires="<?php echo esc_attr($captcha_expires); ?>"
+                data-fragment="<?php echo esc_attr($captcha_fragment); ?>"
+            >
+                <span data-lo-captcha-prompt><?php echo esc_html($captcha_prompt); ?></span>
+                <blockquote class="lo-lyric" data-lo-captcha-fragment>
+                    “<?php echo esc_html($captcha_fragment); ?>” …
+                </blockquote>
+                <label for="<?php echo esc_attr($challenge_id); ?>" class="lo-subscribe__lyric-label">
+                    <span class="screen-reader-text">Finish the lyric</span>
+                    <input
+                        id="<?php echo esc_attr($challenge_id); ?>"
+                        class="lo-subscribe__input"
+                        type="text"
+                        name="challenge_response"
+                        placeholder="Finish the lyric here"
+                        autocomplete="off"
+                        aria-describedby="<?php echo esc_attr($challenge_hint_id); ?>"
+                        required
+                        data-lo-captcha-input
+                    />
+                </label>
+                <button type="button" class="lo-subscribe__refresh" data-lo-captcha-refresh>Give me another lyric</button>
+                <p class="lo-subscribe__note" id="<?php echo esc_attr($challenge_hint_id); ?>">Answer within 2 minutes. Case doesn’t matter, punctuation optional.</p>
+                <input type="hidden" name="challenge_token" value="<?php echo esc_attr($captcha_token); ?>" data-lo-captcha-token />
+                <noscript>
+                    <p class="lo-subscribe__noscript">No JavaScript? Just type the word <strong>hotel</strong> above.</p>
+                    <input type="hidden" name="lo_noscript_challenge" value="1" />
+                </noscript>
+            </div>
             <input type="text" name="website" class="lo-hp" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px" />
             <input type="hidden" name="_wpnonce" value="<?php echo esc_attr($nonce); ?>" />
-            <input type="hidden" name="challenge_expected" value="<?php echo esc_attr($challenge['hash']); ?>" />
             <button type="submit" class="lo-subscribe__button">Subscribe</button>
             <p class="lo-subscribe__status" data-lo-subscribe-status aria-live="polite"></p>
         </form>
