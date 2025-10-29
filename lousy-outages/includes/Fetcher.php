@@ -645,15 +645,76 @@ class Fetcher {
 }
 
 class Lousy_Outages_Fetcher {
-    private const TRANSIENT_PREFIX       = 'lousy_outages_provider_';
-    private const CACHE_TTL              = 90;
-    private const REQUEST_TIMEOUT        = 8;
-    private const USER_AGENT             = 'LousyOutages/1.1 (+https://suzyeaston.ca)';
+    private const TRANSIENT_PREFIX = 'lousy_outages_provider_';
+    private const CACHE_TTL = 90;
+    private const REQUEST_TIMEOUT = 8;
+    private const USER_AGENT = 'LousyOutages/1.2 (+https://suzyeaston.ca)';
+    private const ACCEPT_HEADER = 'application/json, application/rss+xml, application/atom+xml, text/html, */*';
+
+    /**
+     * Manual verification checklist:
+     * - Simulate HTTP 401/403/404/DNS errors to ensure tiles surface UNKNOWN with helpful copy.
+     * - Trigger two sequential fetches to hit the 304 path and confirm the degraded banner clears.
+     * - Confirm severity sorting bubbles major/degraded tiles above operational ones.
+     * - Exercise the subscribe endpoint with valid/invalid emails and non-JS POST fallback.
+     */
+    private static $PROVIDERS = [
+        // Statuspage JSON (keep as JSON)
+        'cloudflare' => ['kind' => 'statuspage', 'base' => 'https://www.cloudflarestatus.com'],
+        'datadog'    => ['kind' => 'statuspage', 'base' => 'https://status.datadoghq.com'],
+        'zoom'       => ['kind' => 'statuspage', 'base' => 'https://status.zoom.us'],
+
+        // Switch these to RSS/Atom (per Suzy’s feeds)
+        'stripe'     => ['kind' => 'rss', 'feed' => 'https://www.stripestatus.com/history.rss', 'link' => 'https://www.stripestatus.com/'],
+        'gitlab'     => ['kind' => 'rss', 'feed' => 'https://status.gitlab.com/pages/5b36dc6502d06804c08349f7/rss', 'link' => 'https://status.gitlab.com/'],
+        'zscaler'    => ['kind' => 'rss', 'feed' => 'https://trust.zscaler.com/rss-feed', 'link' => 'https://trust.zscaler.com/cloud-status'],
+        'gcp'        => ['kind' => 'atom', 'feed' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom', 'link' => 'https://www.google.com/appsstatus/dashboard/'],
+
+        // PagerDuty (HTML scrape of dashboard headline)
+        'pagerduty'  => ['kind' => 'scrape', 'url' => 'https://status.pagerduty.com/posts/dashboard'],
+
+        // Okta / Fastly / Notion: keep Statuspage JSON but retain robust fallback
+        'okta'       => ['kind' => 'statuspage', 'base' => 'https://status.okta.com'],
+        'fastly'     => ['kind' => 'statuspage', 'base' => 'https://www.fastlystatus.com'],
+        'notion'     => ['kind' => 'statuspage', 'base' => 'https://www.notionstatus.com'],
+
+        // Clouds
+        'aws' => [
+            'kind'  => 'rss-multi',
+            'feeds' => [
+                'https://status.aws.amazon.com/rss/clouddirectory-us-east-1.rss',
+                'https://status.aws.amazon.com/rss/clouddirectory-ca-central-1.rss',
+                'https://status.aws.amazon.com/rss/apigateway-us-east-2.rss',
+                'https://status.aws.amazon.com/rss/bedrock-us-west-2.rss',
+            ],
+            'link' => 'https://status.aws.amazon.com/',
+        ],
+
+        // CrowdStrike: trust center only
+        'crowdstrike' => ['kind' => 'link-only', 'url' => 'https://trust.crowdstrike.com'],
+    ];
+
+    private static $NAMES = [
+        'cloudflare' => 'Cloudflare',
+        'datadog'    => 'Datadog',
+        'zoom'       => 'Zoom',
+        'stripe'     => 'Stripe',
+        'gitlab'     => 'GitLab',
+        'zscaler'    => 'Zscaler',
+        'gcp'        => 'Google Cloud',
+        'pagerduty'  => 'PagerDuty',
+        'okta'       => 'Okta',
+        'fastly'     => 'Fastly',
+        'notion'     => 'Notion',
+        'aws'        => 'Amazon Web Services',
+        'crowdstrike'=> 'CrowdStrike',
+    ];
+
     private const STATUS_LABELS = [
         'operational' => 'Operational',
         'degraded'    => 'Degraded',
         'major'       => 'Major Outage',
-        'unknown'     => 'UNKNOWN',
+        'unknown'     => 'Unknown',
     ];
 
     private const STATUS_CLASSES = [
@@ -663,448 +724,313 @@ class Lousy_Outages_Fetcher {
         'unknown'     => 'status--unknown',
     ];
 
-    private static $PROVIDERS = [
-        // Statuspage-backed vendors.
-        'cloudflare' => [
-            'name' => 'Cloudflare',
-            'kind' => 'statuspage',
-            'base' => 'https://www.cloudflarestatus.com',
-        ],
-        'okta' => [
-            'name' => 'Okta',
-            'kind' => 'statuspage',
-            'base' => 'https://status.okta.com',
-        ],
-        'gitlab' => [
-            'name' => 'GitLab',
-            'kind' => 'statuspage',
-            'base' => 'https://status.gitlab.com',
-        ],
-        'stripe' => [
-            'name' => 'Stripe',
-            'kind' => 'statuspage',
-            'base' => 'https://status.stripe.com',
-        ],
-        'pagerduty' => [
-            'name' => 'PagerDuty',
-            'kind' => 'statuspage',
-            'base' => 'https://status.pagerduty.com',
-        ],
-        'fastly' => [
-            'name' => 'Fastly',
-            'kind' => 'statuspage',
-            'base' => 'https://www.fastlystatus.com',
-        ],
-        'datadog' => [
-            'name' => 'Datadog',
-            'kind' => 'statuspage',
-            'base' => 'https://status.datadoghq.com',
-        ],
-        'zoom' => [
-            'name' => 'Zoom',
-            'kind' => 'statuspage',
-            'base' => 'https://status.zoom.us',
-        ],
-        'notion' => [
-            'name' => 'Notion',
-            'kind' => 'statuspage',
-            'base' => 'https://www.notionstatus.com',
-        ],
-
-        // Clouds.
-        'aws' => [
-            'name' => 'Amazon Web Services',
-            'kind' => 'aws-rss',
-            'rss'  => 'https://health.aws.amazon.com/health/status',
-            'link' => 'https://health.aws.amazon.com/health/status',
-        ],
-        'azure' => [
-            'name' => 'Microsoft Azure',
-            'kind' => 'azure-rss',
-            'rss'  => 'https://azure.status.microsoft/en-us/status/feed',
-            'link' => 'https://status.azure.com/en-us/status',
-        ],
-        'gcp' => [
-            'name' => 'Google Cloud',
-            'kind' => 'gcp-json',
-            'json' => 'https://status.cloud.google.com/incidents.json',
-            'link' => 'https://status.cloud.google.com',
-        ],
-
-        // Trust-only tiles.
-        'zscaler' => [
-            'name' => 'Zscaler',
-            'kind' => 'link-only',
-            'link' => 'https://trust.zscaler.com/cloud-status',
-        ],
-        'crowdstrike' => [
-            'name' => 'CrowdStrike',
-            'kind' => 'link-only',
-            'link' => 'https://trust.crowdstrike.com',
-        ],
-    ];
-
     public function get_provider_map(): array {
         $map = [];
-
-        foreach (self::$PROVIDERS as $slug => $provider) {
+        foreach (self::$PROVIDERS as $slug => $config) {
             $slug = (string) $slug;
-            $name = $provider['name'] ?? ucfirst($slug);
-            $link = $provider['link'] ?? ($provider['base'] ?? ($provider['url'] ?? ''));
-
             $map[$slug] = [
                 'slug'       => $slug,
-                'name'       => $name,
-                'kind'       => $provider['kind'] ?? 'link-only',
-                'base'       => $provider['base'] ?? '',
-                'rss'        => $provider['rss'] ?? '',
-                'json'       => $provider['json'] ?? '',
-                'status_url' => $link,
-                'link'       => $link,
+                'name'       => $this->display_name($slug),
+                'kind'       => $config['kind'],
+                'status_url' => $this->provider_link($slug, $config),
+                'link'       => $this->provider_link($slug, $config),
             ];
         }
-
         return $map;
     }
 
     public function get_all(?array $filters = null): array {
-        $map = $this->get_provider_map();
-        $slugs = [];
-
-        if ($filters) {
-            foreach ($filters as $filter) {
-                if (!is_string($filter) || '' === trim($filter)) {
-                    continue;
-                }
-                $slugs[] = strtolower(trim($filter));
-            }
-            $slugs = array_values(array_unique($slugs));
-        }
-
-        if (!$slugs) {
-            $slugs = array_keys($map);
-        }
-
+        $slugs = $this->resolve_slugs($filters);
         $providers = [];
-        $errors    = [];
-        $latest    = null;
+        $errors = [];
+        $latest = 0;
 
         foreach ($slugs as $slug) {
-            $info  = $map[$slug] ?? [
-                'slug'       => $slug,
-                'name'       => ucfirst($slug),
-                'kind'       => 'link-only',
-                'status_url' => '',
-                'link'       => '',
-            ];
-            $cache = $this->get_cache($slug);
-            $tile  = $this->fetch_provider($slug, $info, $cache);
-
+            $config = self::$PROVIDERS[$slug];
+            $cache  = $this->get_cache($slug);
+            $tile   = $this->fetch_provider($slug, $config, $cache);
             $providers[$slug] = $tile;
 
             if (!empty($tile['error'])) {
                 $errors[] = [
-                    'id'       => $slug,
-                    'provider' => $tile['name'] ?? $info['name'],
-                    'message'  => (string) $tile['error'],
+                    'id'      => $slug,
+                    'provider'=> $tile['name'],
+                    'message' => (string) $tile['error'],
                 ];
             }
 
-            if (!empty($tile['fetched_at'])) {
-                $timestamp = strtotime((string) $tile['fetched_at']);
-                if ($timestamp && (null === $latest || $timestamp > $latest)) {
-                    $latest = $timestamp;
-                }
+            $timestamp = strtotime($tile['fetched_at'] ?? '');
+            if ($timestamp) {
+                $latest = max($latest, $timestamp);
             }
+
+            $this->save_cache($slug, $cache);
         }
 
+        $sorted = array_values($providers);
+        usort($sorted, [self::class, 'compare_tiles']);
+
         $fetched_at = $latest ? gmdate('c', $latest) : gmdate('c');
-        $trending   = (new Trending())->evaluate($providers);
+        $trending   = (new Trending())->evaluate($sorted);
 
         return [
-            'providers'  => $providers,
+            'providers'  => $sorted,
             'fetched_at' => $fetched_at,
             'errors'     => $errors,
             'trending'   => $trending,
         ];
     }
 
-    private function fetch_provider(string $slug, array $info, ?array $cache): array {
-        $kind = $info['kind'] ?? 'link-only';
+    private function resolve_slugs(?array $filters): array {
+        $available = array_keys(self::$PROVIDERS);
+        if (!$filters) {
+            return $available;
+        }
+        $selected = [];
+        foreach ($filters as $slug) {
+            $slug = strtolower(trim((string) $slug));
+            if ($slug && in_array($slug, $available, true)) {
+                $selected[] = $slug;
+            }
+        }
+        return $selected ? array_values(array_unique($selected)) : $available;
+    }
 
+    public static function severity_rank($status) {
+        switch ($status) {
+            case 'major':
+                return 3;
+            case 'degraded':
+                return 2;
+            case 'unknown':
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
+    private static function compare_tiles(array $a, array $b): int {
+        $ra = self::severity_rank(strtolower((string) ($a['status'] ?? 'unknown')));
+        $rb = self::severity_rank(strtolower((string) ($b['status'] ?? 'unknown')));
+        if ($ra !== $rb) {
+            return $rb - $ra;
+        }
+        return strcmp((string) ($a['provider'] ?? ''), (string) ($b['provider'] ?? ''));
+    }
+
+    private function fetch_provider(string $slug, array $config, array &$cache): array {
+        $kind = $config['kind'];
         switch ($kind) {
             case 'statuspage':
-                return $this->fetch_statuspage($info, $cache);
-            case 'gcp-json':
-                return $this->fetch_gcp($info, $cache);
-            case 'azure-rss':
-                return $this->fetch_rss($info, $cache, 'azure');
-            case 'aws-rss':
-                return $this->fetch_rss($info, $cache, 'aws');
+                $tile = $this->fetch_statuspage($slug, $config, $cache);
+                break;
+            case 'rss':
+            case 'atom':
+                $feeds = !empty($config['feed']) ? [(string) $config['feed']] : [];
+                $tile  = $this->fetch_feed($slug, $config, $cache, $feeds, $kind);
+                break;
+            case 'rss-multi':
+                $feeds = isset($config['feeds']) && is_array($config['feeds']) ? array_filter(array_map('strval', $config['feeds'])) : [];
+                $tile  = $this->fetch_feed($slug, $config, $cache, $feeds, 'rss');
+                break;
+            case 'scrape':
+                $tile = $this->fetch_scrape($slug, $config, $cache);
+                break;
+            case 'link-only':
             default:
-                return $this->build_link_only_tile($info, $cache);
+                $tile = $this->build_tile($slug, $config, 'unknown', 'View status →', [], 0, []);
+                break;
         }
+
+        $cache['tile'] = $tile;
+        return $tile;
     }
 
-    private function fetch_statuspage(array $info, ?array $cache): array {
-        $base   = rtrim((string) ($info['base'] ?? $info['status_url'] ?? ''), '/');
-        $slug   = $info['slug'] ?? 'provider';
-        $link   = $info['link'] ?? $info['status_url'] ?? $base;
-        $summaryUrl   = $base ? $base . '/api/v2/summary.json' : '';
-        $fallbackUrl  = $base ? $base . '/api/v2/incidents/unresolved.json' : '';
-
-        if ('' === $summaryUrl) {
-            return $this->build_link_only_tile($info, $cache);
+    private function fetch_statuspage(string $slug, array $config, array &$cache): array {
+        $base = rtrim((string) ($config['base'] ?? ''), '/');
+        if ('' === $base) {
+            return $this->build_tile($slug, $config, 'unknown', 'Status endpoint unavailable.', [], 0, ['error' => 'missing_endpoint']);
         }
 
-        $request = $this->perform_request($summaryUrl, $cache, 'application/json');
+        $summaryUrl  = $base . '/api/v2/summary.json';
+        $fallbackUrl = $base . '/api/v2/incidents/unresolved.json';
 
+        $request = $this->request_with_cache($slug, $cache, 'summary', $summaryUrl);
         if (!empty($request['error'])) {
-            return $this->build_error_tile($info, $cache, (string) $request['error'], 0);
+            return $this->error_tile_from_request($slug, $config, $request['error'], 0);
         }
 
-        $status = (int) $request['status'];
+        $summaryFetchedAt = isset($cache['segments']['summary']['fetched_at']) ? $cache['segments']['summary']['fetched_at'] : gmdate('c');
+        $statusCode = (int) $request['status'];
+        $body       = (string) ($request['body'] ?? '');
 
-        if (304 === $status && $cache) {
-            return $this->use_cached($slug, $cache, 304);
-        }
-
-        if ($status >= 200 && $status < 300) {
-            $body = (string) ($request['body'] ?? '');
-            $data = json_decode($body, true);
-
-            if (!is_array($data)) {
-                return $this->build_error_tile($info, $cache, 'Invalid JSON response.', $status);
-            }
-
-            $indicator = isset($data['status']['indicator']) ? (string) $data['status']['indicator'] : '';
-            $statusCode = $this->map_indicator($indicator);
-            $description = isset($data['status']['description']) ? trim((string) $data['status']['description']) : '';
-            $message = $description ?: ('operational' === $statusCode ? 'All systems operational.' : 'Active incidents detected.');
-            $incidents = $this->normalize_statuspage_incidents(isset($data['incidents']) ? $data['incidents'] : []);
-
-            $tile = $this->build_tile($info, $statusCode, $message, $incidents, $status, [
-                'indicator'  => $indicator ?: $statusCode,
-                'fetched_at' => gmdate('c'),
-                'link'       => $link,
-            ]);
-
-            $this->store_cache($slug, $tile, $request['response'], $summaryUrl, $status, $body);
-
-            return $tile;
-        }
-
-        if (in_array($status, [401, 403, 404], true) && '' !== $fallbackUrl) {
-            $fallbackCache = $cache && !empty($cache['endpoint']) && $cache['endpoint'] === $fallbackUrl ? $cache : null;
-            $fallback      = $this->perform_request($fallbackUrl, $fallbackCache, 'application/json');
-
-            if (!empty($fallback['error'])) {
-                return $this->build_status_unavailable_tile($info, $cache, $status);
-            }
-
-            $fallbackStatus = (int) $fallback['status'];
-
-            if (304 === $fallbackStatus && $fallbackCache) {
-                return $this->use_cached($slug, $fallbackCache, 304);
-            }
-
-            if ($fallbackStatus >= 200 && $fallbackStatus < 300) {
-                $body = (string) ($fallback['body'] ?? '');
-                $data = json_decode($body, true);
-                if (!is_array($data)) {
-                    return $this->build_error_tile($info, $cache, 'Invalid JSON response.', $fallbackStatus);
+        if (($statusCode >= 200 && $statusCode < 300) || 304 === $statusCode) {
+            $parsed = $this->parse_statuspage_summary($body);
+            if ($parsed) {
+                $indicator = strtolower((string) $parsed['indicator']);
+                $status    = $this->map_indicator($indicator);
+                $message   = $parsed['description'] ?: $this->default_message($status);
+                $incidents = $parsed['incidents'];
+                if ($incidents) {
+                    $message = $incidents[0]['name'];
                 }
 
-                $incidents = $this->normalize_statuspage_incidents($data);
-                $severity  = $incidents ? $this->severity_from_incidents($incidents) : 'operational';
-                $indicator = $incidents ? ('major' === $severity ? 'major' : 'minor') : 'none';
-                $message   = $incidents ? ($incidents[0]['name'] ?? 'Active incident') : 'No active incidents.';
-
-                $tile = $this->build_tile($info, $severity, $message, $incidents, $fallbackStatus, [
-                    'indicator'  => $indicator,
-                    'fetched_at' => gmdate('c'),
-                    'link'       => $link,
+                return $this->build_tile($slug, $config, $status, $message, $incidents, $statusCode, [
+                    'indicator' => $indicator,
+                    'link'      => $this->provider_link($slug, $config),
+                    'fetched_at' => $summaryFetchedAt,
                 ]);
+            }
+        }
 
-                $this->store_cache($slug, $tile, $fallback['response'], $fallbackUrl, $fallbackStatus, $body);
+        if (in_array($statusCode, [401, 403, 404], true)) {
+            $fallback = $this->request_with_cache($slug, $cache, 'unresolved', $fallbackUrl);
+            if (!empty($fallback['error'])) {
+                return $this->error_tile_from_request($slug, $config, $fallback['error'], $statusCode);
+            }
+            $fallbackFetchedAt = isset($cache['segments']['unresolved']['fetched_at']) ? $cache['segments']['unresolved']['fetched_at'] : $summaryFetchedAt;
+            $fbStatus = (int) $fallback['status'];
+            $fbBody   = (string) ($fallback['body'] ?? '');
+            if (($fbStatus >= 200 && $fbStatus < 300) || 304 === $fbStatus) {
+                $incidents = $this->parse_statuspage_incidents($fbBody);
+                if ($incidents) {
+                    $severity = $this->severity_from_incidents($incidents);
+                    $message  = $incidents[0]['name'];
+                    return $this->build_tile($slug, $config, $severity, $message, $incidents, $fbStatus, [
+                        'indicator' => 'major' === $severity ? 'critical' : 'minor',
+                        'link'      => $this->provider_link($slug, $config),
+                        'fetched_at' => $fallbackFetchedAt,
+                    ]);
+                }
+            }
+        }
 
-                return $tile;
+        $message = $statusCode ? sprintf('HTTP %d fetching status.', $statusCode) : 'Status unavailable.';
+        return $this->build_tile($slug, $config, 'unknown', $message, [], $statusCode ?: 0, [
+            'error'      => $message,
+            'fetched_at' => $summaryFetchedAt,
+        ]);
+    }
+
+    private function fetch_feed(string $slug, array $config, array &$cache, array $feeds, string $kind): array {
+        if (!$feeds) {
+            return $this->build_tile($slug, $config, 'unknown', 'Feed URL unavailable.', [], 0, ['error' => 'missing_feed']);
+        }
+
+        $items = [];
+        $httpStatus = 0;
+        $errors = [];
+        $fetchedTimes = [];
+
+        foreach ($feeds as $index => $feedUrl) {
+            $key = 'feed_' . $index;
+            $request = $this->request_with_cache($slug, $cache, $key, $feedUrl);
+            if (!empty($request['error'])) {
+                $errors[] = $request['error'];
+                continue;
+            }
+            $httpStatus = (int) $request['status'];
+            if ($httpStatus >= 400 && $httpStatus < 600) {
+                $errors[] = 'HTTP ' . $httpStatus . ' fetching feed.';
+                continue;
+            }
+            $body = (string) ($request['body'] ?? '');
+            $items = array_merge($items, $this->parse_feed_items($body, $kind));
+            if (isset($cache['segments']['feed_' . $index]['fetched_at'])) {
+                $fetchedTimes[] = $cache['segments']['feed_' . $index]['fetched_at'];
+            }
+        }
+
+        if (!$items && $errors) {
+            return $this->error_tile_from_request($slug, $config, $errors[0], $httpStatus ?: 0);
+        }
+
+        $feedFetchedAt = gmdate('c');
+        if ($fetchedTimes) {
+            $latestTs = 0;
+            foreach ($fetchedTimes as $timeStr) {
+                $timeVal = strtotime((string) $timeStr);
+                if ($timeVal && $timeVal > $latestTs) {
+                    $latestTs = $timeVal;
+                }
+            }
+            if ($latestTs) {
+                $feedFetchedAt = gmdate('c', $latestTs);
+            }
+        }
+
+        if (!$items) {
+            return $this->build_tile($slug, $config, 'operational', 'No incidents reported in the last 24 hours.', [], $httpStatus ?: 200, ['fetched_at' => $feedFetchedAt]);
+        }
+
+        usort($items, static function ($a, $b) {
+            return ($b['timestamp'] ?? 0) <=> ($a['timestamp'] ?? 0);
+        });
+
+        $recent = [];
+        $incidents = [];
+        $threshold = time() - DAY_IN_SECONDS;
+
+        foreach ($items as $item) {
+            $text = strtolower($item['summary'] . ' ' . $item['title']);
+            $isRecent = ($item['timestamp'] ?? 0) >= $threshold;
+            $isOngoing = $this->contains_open_keyword($text);
+            if ($isRecent || $isOngoing) {
+                $recent[] = $item;
             }
 
-            return $this->build_status_unavailable_tile($info, $cache, $status);
+            $incidents[] = [
+                'name'       => $item['title'],
+                'status'     => $this->infer_incident_status($text),
+                'started_at' => $item['iso'],
+                'updated_at' => $item['iso'],
+                'url'        => $item['link'],
+            ];
+
+            if (count($incidents) >= 10) {
+                break;
+            }
         }
 
-        return $this->build_status_unavailable_tile($info, $cache, $status);
+        $status = $recent ? 'degraded' : 'operational';
+        $message = $recent ? ('Recent incident: ' . $recent[0]['title']) : 'All systems operational.';
+
+        return $this->build_tile($slug, $config, $status, $message, $incidents, $httpStatus ?: 200, [
+            'fetched_at' => $feedFetchedAt,
+        ]);
     }
 
-    private function fetch_gcp(array $info, ?array $cache): array {
-        $url  = $info['json'] ?? '';
-        $slug = $info['slug'] ?? 'gcp';
-
+    private function fetch_scrape(string $slug, array $config, array &$cache): array {
+        $url = (string) ($config['url'] ?? '');
         if ('' === $url) {
-            return $this->build_link_only_tile($info, $cache);
+            return $this->build_tile($slug, $config, 'unknown', 'Status page unavailable.', [], 0, ['error' => 'missing_url']);
         }
-
-        $request = $this->perform_request($url, $cache, 'application/json');
-
+        $request = $this->request_with_cache($slug, $cache, 'scrape', $url);
         if (!empty($request['error'])) {
-            return $this->build_error_tile($info, $cache, (string) $request['error'], 0);
+            return $this->error_tile_from_request($slug, $config, $request['error'], 0);
         }
-
-        $status = (int) $request['status'];
-
-        if (304 === $status && $cache) {
-            return $this->use_cached($slug, $cache, 304);
-        }
-
-        if ($status < 200 || $status >= 300) {
-            return $this->build_status_unavailable_tile($info, $cache, $status);
-        }
-
+        $scrapeFetchedAt = isset($cache['segments']['scrape']['fetched_at']) ? $cache['segments']['scrape']['fetched_at'] : gmdate('c');
         $body = (string) ($request['body'] ?? '');
-        $data = json_decode($body, true);
-
-        if (!is_array($data)) {
-            return $this->build_error_tile($info, $cache, 'Invalid JSON response.', $status);
+        $headline = $this->extract_headline($body);
+        if ('' === $headline) {
+            $headline = 'Unable to read status headline.';
         }
-
-        $incidents = $this->normalize_gcp_incidents($data);
-        $severity  = $incidents ? $this->severity_from_incidents($incidents) : 'operational';
-        if ('operational' !== $severity && 'major' !== $severity) {
-            $severity = 'degraded';
-        }
-        $message = $incidents ? ($incidents[0]['name'] ?? 'Active incident') : 'All systems operational.';
-
-        $tile = $this->build_tile($info, $severity, $message, $incidents, $status, [
-            'indicator'  => $incidents ? $severity : 'none',
-            'fetched_at' => gmdate('c'),
-            'link'       => $info['link'] ?? $info['status_url'] ?? '',
-        ]);
-
-        $this->store_cache($slug, $tile, $request['response'], $url, $status, $body);
-
-        return $tile;
-    }
-
-    private function fetch_rss(array $info, ?array $cache, string $type): array {
-        $url  = $info['rss'] ?? '';
-        $slug = $info['slug'] ?? $type;
-
-        if ('' === $url) {
-            return $this->build_link_only_tile($info, $cache);
-        }
-
-        $request = $this->perform_request($url, $cache, 'application/atom+xml, application/rss+xml;q=0.9, */*;q=0.5');
-
-        if (!empty($request['error'])) {
-            return $this->build_error_tile($info, $cache, (string) $request['error'], 0);
-        }
-
-        $status = (int) $request['status'];
-
-        if (304 === $status && $cache) {
-            return $this->use_cached($slug, $cache, 304);
-        }
-
-        if ($status < 200 || $status >= 300) {
-            return $this->build_status_unavailable_tile($info, $cache, $status);
-        }
-
-        $body  = (string) ($request['body'] ?? '');
-        if ('aws' === $type) {
-            // AWS recommends EventBridge for programmatic consumption, but the RSS feed works for this dashboard tile.
-        }
-        $items = $this->parse_feed_items($body);
-        $recent = $this->recent_feed_incidents($items, 24 * HOUR_IN_SECONDS);
-
-        $hasRecent = !empty($recent);
-        $message   = $hasRecent ? ($recent[0]['name'] ?? 'Recent incident') : 'No active incidents.';
-        $severity  = $hasRecent ? 'degraded' : 'operational';
-        if ('aws' === $slug && $hasRecent) {
-            $severity = 'degraded';
-        }
-
-        $tile = $this->build_tile($info, $severity, $message, $recent, $status, [
-            'indicator'  => $hasRecent ? 'minor' : 'none',
-            'fetched_at' => gmdate('c'),
-            'link'       => $info['link'] ?? $info['status_url'] ?? '',
-        ]);
-
-        $this->store_cache($slug, $tile, $request['response'], $url, $status, $body);
-
-        return $tile;
-    }
-
-    private function build_link_only_tile(array $info, ?array $cache): array {
-        $message = 'Status unknown — view status page for updates.';
-        $incidents = [];
-        if ($cache && isset($cache['tile']['incidents']) && is_array($cache['tile']['incidents'])) {
-            $incidents = $cache['tile']['incidents'];
-        }
-
-        return $this->build_tile($info, 'unknown', $message, $incidents, 0, [
-            'indicator'  => null,
-            'fetched_at' => $cache['tile']['fetched_at'] ?? gmdate('c'),
-            'link'       => $info['link'] ?? $info['status_url'] ?? '',
-            'error'      => null,
+        $status = (stripos($headline, 'running smoothly') !== false) ? 'operational' : 'degraded';
+        return $this->build_tile($slug, $config, $status, $headline, [], (int) $request['status'], [
+            'fetched_at' => $scrapeFetchedAt,
         ]);
     }
 
-    private function build_status_unavailable_tile(array $info, ?array $cache, int $httpCode): array {
-        $message = 'Status temporarily unavailable (HTTP ' . $httpCode . ')';
-        $incidents = [];
-        if ($cache && isset($cache['tile']['incidents']) && is_array($cache['tile']['incidents'])) {
-            $incidents = $cache['tile']['incidents'];
-        }
-
-        $meta = [
-            'indicator'  => null,
-            'fetched_at' => $cache['tile']['fetched_at'] ?? gmdate('c'),
-            'link'       => $info['link'] ?? $info['status_url'] ?? '',
-            'error'      => $message,
-        ];
-
-        if ($cache && isset($cache['tile']['fetched_at'])) {
-            $meta['stale'] = true;
-            $meta['last_success'] = $cache['tile']['fetched_at'];
-        }
-
-        return $this->build_tile($info, 'unknown', $message, $incidents, $httpCode, $meta);
-    }
-
-    private function build_error_tile(array $info, ?array $cache, string $message, int $httpCode): array {
-        $incidents = [];
-        if ($cache && isset($cache['tile']['incidents']) && is_array($cache['tile']['incidents'])) {
-            $incidents = $cache['tile']['incidents'];
-        }
-
-        $meta = [
-            'indicator'  => null,
-            'fetched_at' => $cache['tile']['fetched_at'] ?? gmdate('c'),
-            'link'       => $info['link'] ?? $info['status_url'] ?? '',
-            'error'      => $message,
-            'stale'      => isset($cache['tile']['fetched_at']),
-        ];
-
-        if ($cache && isset($cache['tile']['fetched_at'])) {
-            $meta['last_success'] = $cache['tile']['fetched_at'];
-        }
-
-        return $this->build_tile($info, 'unknown', $message, $incidents, $httpCode, $meta);
-    }
-
-    private function build_tile(array $info, string $status, string $message, array $incidents, int $httpCode, array $meta = []): array {
-        $slug = $info['slug'] ?? sanitize_title($info['name'] ?? 'provider');
-        $name = $info['name'] ?? ucfirst($slug);
+    private function build_tile(string $slug, array $config, string $status, string $message, array $incidents, int $http_code, array $extra): array {
         $status = strtolower($status ?: 'unknown');
         if (!isset(self::STATUS_LABELS[$status])) {
             $status = 'unknown';
         }
 
-        $label = self::STATUS_LABELS[$status];
-        $class = self::STATUS_CLASSES[$status] ?? self::STATUS_CLASSES['unknown'];
-        $fetchedAt = $meta['fetched_at'] ?? gmdate('c');
-        $link = $meta['link'] ?? ($info['link'] ?? $info['status_url'] ?? '');
+        $link = $extra['link'] ?? $this->provider_link($slug, $config);
+        $fetchedAt = $extra['fetched_at'] ?? gmdate('c');
+        $indicator = $extra['indicator'] ?? null;
+        $error = $extra['error'] ?? null;
 
         $normalizedIncidents = [];
         foreach ($incidents as $incident) {
@@ -1112,178 +1038,208 @@ class Lousy_Outages_Fetcher {
                 continue;
             }
             $normalizedIncidents[] = [
-                'name'       => isset($incident['name']) ? (string) $incident['name'] : '',
-                'status'     => isset($incident['status']) ? (string) $incident['status'] : '',
-                'impact'     => isset($incident['impact']) ? (string) $incident['impact'] : '',
-                'summary'    => isset($incident['summary']) ? (string) $incident['summary'] : '',
-                'started_at' => $incident['started_at'] ?? ($incident['startedAt'] ?? ''),
-                'updated_at' => $incident['updated_at'] ?? ($incident['updatedAt'] ?? ''),
-                'url'        => isset($incident['url']) ? (string) $incident['url'] : '',
+                'name'       => $this->clean_string($incident['name'] ?? 'Incident'),
+                'status'     => strtolower($incident['status'] ?? 'unknown'),
+                'started_at' => $incident['started_at'] ?? '',
+                'updated_at' => $incident['updated_at'] ?? '',
+                'url'        => $incident['url'] ?? '',
             ];
         }
 
         $tile = [
             'id'           => $slug,
             'provider'     => $slug,
-            'name'         => $name,
-            'kind'         => $info['kind'] ?? 'link-only',
-            'overall'      => $status,
+            'name'         => $this->display_name($slug),
+            'kind'         => $config['kind'] ?? 'link-only',
             'status'       => $status,
-            'status_label' => $label,
-            'status_class' => $class,
-            'summary'      => wp_strip_all_tags($message ?: ''),
-            'message'      => wp_strip_all_tags($message ?: ''),
+            'status_label' => self::STATUS_LABELS[$status],
+            'status_class' => self::STATUS_CLASSES[$status],
+            'overall'      => $status,
+            'message'      => $this->clean_string($message),
+            'summary'      => $this->clean_string($message),
             'incidents'    => $normalizedIncidents,
             'components'   => [],
             'fetched_at'   => $fetchedAt,
-            'http_code'    => $httpCode,
-            'indicator'    => $meta['indicator'] ?? null,
+            'http_code'    => $http_code,
+            'indicator'    => $indicator,
             'link'         => $link,
             'url'          => $link,
-            'error'        => $meta['error'] ?? null,
-            'stale'        => !empty($meta['stale']),
+            'error'        => $error,
         ];
 
-        if (isset($meta['last_success'])) {
-            $tile['last_success'] = $meta['last_success'];
+        if ('unknown' === $status && !$error && $http_code >= 400) {
+            $tile['error'] = sprintf('HTTP %d response from provider.', $http_code);
+        }
+
+        if (!empty($tile['error'])) {
+            $tile['error'] = $this->clean_string($tile['error']);
         }
 
         return $tile;
     }
 
-    private function perform_request(string $url, ?array $cache, string $accept): array {
-        $headers = [
-            'User-Agent'      => self::USER_AGENT,
-            'Accept'          => $accept,
-            'Accept-Language' => 'en',
-        ];
-
-        if ($cache && isset($cache['endpoint']) && $cache['endpoint'] === $url) {
-            if (!empty($cache['etag'])) {
-                $headers['If-None-Match'] = $cache['etag'];
-            }
-            if (!empty($cache['last_modified'])) {
-                $headers['If-Modified-Since'] = $cache['last_modified'];
-            }
-        }
-
-        $response = wp_remote_get($url, [
-            'timeout'     => self::REQUEST_TIMEOUT,
-            'headers'     => $headers,
-            'redirection' => 3,
+    private function error_tile_from_request(string $slug, array $config, string $message, int $http_code): array {
+        $status = $this->is_dns_error($message) ? 'unknown' : 'unknown';
+        return $this->build_tile($slug, $config, $status, $message, [], $http_code ?: 0, [
+            'error' => $message,
         ]);
+    }
 
-        if (is_wp_error($response)) {
-            return [
-                'status'   => 0,
-                'body'     => null,
-                'response' => $response,
-                'error'    => $response->get_error_message(),
-            ];
+    private function parse_statuspage_summary(string $body): ?array {
+        $data = json_decode($body, true);
+        if (!is_array($data)) {
+            return null;
         }
-
+        $indicator = $data['status']['indicator'] ?? 'none';
+        $description = isset($data['status']['description']) ? $this->clean_string($data['status']['description']) : '';
+        $incidents = $this->normalize_statuspage_incident_array($data['incidents'] ?? []);
         return [
-            'status'   => (int) wp_remote_retrieve_response_code($response),
-            'body'     => wp_remote_retrieve_body($response),
-            'response' => $response,
+            'indicator'    => $indicator,
+            'description'  => $description,
+            'incidents'    => $incidents,
         ];
     }
 
-    private function get_cache(string $slug): ?array {
-        $cached = get_transient(self::TRANSIENT_PREFIX . $slug);
-        return is_array($cached) ? $cached : null;
-    }
-
-    private function use_cached(string $slug, array $cache, int $httpCode): array {
-        $tile = isset($cache['tile']) && is_array($cache['tile']) ? $cache['tile'] : null;
-        if (!$tile) {
-            return $this->build_error_tile(['slug' => $slug, 'name' => ucfirst($slug), 'kind' => 'link-only'], null, 'Cached data unavailable.', $httpCode);
+    private function parse_statuspage_incidents(string $body): array {
+        $data = json_decode($body, true);
+        if (!is_array($data)) {
+            return [];
         }
-
-        $tile['http_code'] = $httpCode;
-        $tile['stale']     = !empty($tile['stale']);
-
-        set_transient(self::TRANSIENT_PREFIX . $slug, $cache, self::CACHE_TTL);
-
-        return $tile;
+        return $this->normalize_statuspage_incident_array($data);
     }
 
-    private function store_cache(string $slug, array $tile, $response, string $endpoint, int $status, string $body): void {
-        $etag         = is_array($response) ? wp_remote_retrieve_header($response, 'etag') : '';
-        $lastModified = is_array($response) ? wp_remote_retrieve_header($response, 'last-modified') : '';
-
-        $payload = [
-            'tile'          => $tile,
-            'etag'          => is_string($etag) ? $etag : '',
-            'last_modified' => is_string($lastModified) ? $lastModified : '',
-            'endpoint'      => $endpoint,
-            'http_code'     => $status,
-            'body'          => $body,
-        ];
-
-        set_transient(self::TRANSIENT_PREFIX . $slug, $payload, self::CACHE_TTL);
-    }
-
-    private function normalize_statuspage_incidents($value): array {
+    private function normalize_statuspage_incident_array($value): array {
         if (!is_array($value)) {
             return [];
         }
-
         $incidents = [];
         foreach ($value as $incident) {
             if (!is_array($incident)) {
                 continue;
             }
-
-            $updates = isset($incident['incident_updates']) && is_array($incident['incident_updates'])
-                ? $incident['incident_updates']
-                : [];
-            $latestUpdate = $this->latest_statuspage_update($updates);
-
+            $status = strtolower((string) ($incident['status'] ?? 'unknown'));
+            if ('resolved' === $status) {
+                continue;
+            }
+            $name = $this->clean_string($incident['name'] ?? 'Incident');
+            $updates = isset($incident['incident_updates']) && is_array($incident['incident_updates']) ? $incident['incident_updates'] : [];
+            $summary = $this->latest_statuspage_summary($updates);
+            $started = $this->normalize_time($incident['started_at'] ?? $incident['created_at'] ?? '');
+            $updated = $this->normalize_time($incident['updated_at'] ?? $incident['resolved_at'] ?? '');
+            $url = isset($incident['shortlink']) ? (string) $incident['shortlink'] : ((isset($incident['url']) && is_string($incident['url'])) ? $incident['url'] : '');
             $incidents[] = [
-                'name'       => isset($incident['name']) ? (string) $incident['name'] : 'Incident',
-                'status'     => isset($incident['status']) ? (string) $incident['status'] : '',
-                'impact'     => isset($incident['impact']) ? (string) $incident['impact'] : '',
-                'summary'    => $latestUpdate['body'] ?? '',
-                'started_at' => $this->extract_time($incident, ['started_at', 'created_at', 'start_time']),
-                'updated_at' => $this->extract_time($incident, ['updated_at', 'resolved_at', 'end_time']),
-                'url'        => isset($incident['shortlink']) ? (string) $incident['shortlink'] : ($incident['url'] ?? ''),
+                'name'       => $name,
+                'status'     => $status ?: 'unknown',
+                'started_at' => $started,
+                'updated_at' => $updated ?: $started,
+                'url'        => $url,
             ];
         }
-
         return $incidents;
     }
 
-    private function latest_statuspage_update(array $updates): array {
-        $latest = [];
+    private function latest_statuspage_summary(array $updates): string {
+        $latest = '';
         $latestTs = 0;
-
         foreach ($updates as $update) {
             if (!is_array($update)) {
                 continue;
             }
-            $timestamp = isset($update['updated_at']) ? strtotime((string) $update['updated_at']) : 0;
-            if ($timestamp && $timestamp > $latestTs) {
-                $latest   = $update;
-                $latestTs = $timestamp;
+            $ts = strtotime((string) ($update['updated_at'] ?? $update['created_at'] ?? ''));
+            if ($ts && $ts > $latestTs) {
+                $latestTs = $ts;
+                $latest = $this->clean_string($update['body'] ?? '');
             }
         }
-
         return $latest;
     }
 
-    private function extract_time(array $source, array $keys): string {
-        foreach ($keys as $key) {
-            if (empty($source[$key])) {
-                continue;
+    private function parse_feed_items(string $body, string $kind): array {
+        if ('' === trim($body)) {
+            return [];
+        }
+        $xml = @simplexml_load_string($body, 'SimpleXMLElement', LIBXML_NOCDATA);
+        if (false === $xml) {
+            return [];
+        }
+        $items = [];
+        if (isset($xml->channel->item)) {
+            foreach ($xml->channel->item as $item) {
+                $title = $this->clean_string((string) ($item->title ?? ''));
+                $link  = (string) ($item->link ?? '');
+                $timestamp = strtotime((string) ($item->pubDate ?? $item->date ?? ''));
+                $iso = $timestamp ? gmdate('c', $timestamp) : '';
+                $summary = $this->clean_string((string) ($item->description ?? ''));
+                $items[] = [
+                    'title'     => $title ?: 'Incident',
+                    'link'      => $link,
+                    'summary'   => $summary,
+                    'timestamp' => $timestamp ?: 0,
+                    'iso'       => $iso,
+                ];
             }
-            $time = strtotime((string) $source[$key]);
-            if ($time) {
-                return gmdate('c', $time);
+        } elseif (isset($xml->entry)) {
+            foreach ($xml->entry as $entry) {
+                $title = $this->clean_string((string) ($entry->title ?? ''));
+                $link  = '';
+                if (isset($entry->link)) {
+                    foreach ($entry->link as $linkNode) {
+                        $rel = (string) ($linkNode['rel'] ?? '');
+                        if ('' === $rel || 'alternate' === $rel) {
+                            $link = (string) ($linkNode['href'] ?? '');
+                            break;
+                        }
+                    }
+                }
+                $timestamp = strtotime((string) ($entry->updated ?? $entry->published ?? ''));
+                $iso = $timestamp ? gmdate('c', $timestamp) : '';
+                $summary = $this->clean_string((string) ($entry->summary ?? $entry->content ?? ''));
+                $items[] = [
+                    'title'     => $title ?: 'Incident',
+                    'link'      => $link,
+                    'summary'   => $summary,
+                    'timestamp' => $timestamp ?: 0,
+                    'iso'       => $iso,
+                ];
             }
         }
+        return $items;
+    }
 
-        return '';
+    private function contains_open_keyword(string $text): bool {
+        foreach (['ongoing', 'open', 'investigat', 'monitoring'] as $needle) {
+            if (false !== strpos($text, $needle)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function infer_incident_status(string $text): string {
+        if (false !== strpos($text, 'investigat')) {
+            return 'investigating';
+        }
+        if (false !== strpos($text, 'identify')) {
+            return 'identified';
+        }
+        if (false !== strpos($text, 'monitor')) {
+            return 'monitoring';
+        }
+        if (false !== strpos($text, 'resolved') || false !== strpos($text, 'restored')) {
+            return 'resolved';
+        }
+        return 'unknown';
+    }
+
+    private function extract_headline(string $body): string {
+        if (preg_match('/<h1[^>]*>(.*?)<\/h1>/is', $body, $matches)) {
+            return $this->clean_string($matches[1]);
+        }
+        if (preg_match('/aria-label="([^"]*dashboard[^"]*)"/i', $body, $matches)) {
+            return $this->clean_string($matches[1]);
+        }
+        $text = $this->clean_string(wp_strip_all_tags($body));
+        return $text ? mb_substr($text, 0, 140) : '';
     }
 
     private function map_indicator(string $indicator): string {
@@ -1306,113 +1262,158 @@ class Lousy_Outages_Fetcher {
 
     private function severity_from_incidents(array $incidents): string {
         foreach ($incidents as $incident) {
-            $impact = strtolower((string) ($incident['impact'] ?? ''));
             $status = strtolower((string) ($incident['status'] ?? ''));
-
-            if (in_array($impact, ['critical', 'major'], true) || in_array($status, ['critical', 'major_outage', 'major'], true)) {
+            if (in_array($status, ['critical', 'major', 'major_outage'], true)) {
                 return 'major';
             }
         }
-
         return $incidents ? 'degraded' : 'operational';
     }
 
-    private function normalize_gcp_incidents(array $incidents): array {
-        $normalized = [];
-        foreach ($incidents as $incident) {
-            if (!is_array($incident)) {
-                continue;
-            }
+    private function request_with_cache(string $slug, array &$cache, string $key, string $url): array {
+        if ('' === $url) {
+            return ['status' => 0, 'body' => null, 'error' => ''];
+        }
 
-            $status = strtolower((string) ($incident['status'] ?? ''));
-            if ('resolved' === $status) {
-                continue;
-            }
+        if (!isset($cache['segments']) || !is_array($cache['segments'])) {
+            $cache['segments'] = [];
+        }
+        $segment = isset($cache['segments'][$key]) && is_array($cache['segments'][$key]) ? $cache['segments'][$key] : null;
+        if ($segment && !empty($segment['url']) && $segment['url'] !== $url) {
+            $segment = null;
+        }
 
-            $updates = isset($incident['most_recent_update']) && is_array($incident['most_recent_update'])
-                ? $incident['most_recent_update']
-                : [];
-            $updateStatus = strtolower((string) ($updates['status'] ?? ''));
-            if ('resolved' === $updateStatus) {
-                continue;
+        $headers = [
+            'User-Agent'      => self::USER_AGENT,
+            'Accept'          => self::ACCEPT_HEADER,
+            'Cache-Control'   => 'no-cache',
+        ];
+        if ($segment) {
+            if (!empty($segment['etag'])) {
+                $headers['If-None-Match'] = $segment['etag'];
             }
-
-            $impact = strtolower((string) ($incident['impact'] ?? ''));
-            $severity = 'degraded';
-            if (in_array($impact, ['service outage', 'service disruption - high'], true)) {
-                $severity = 'major';
+            if (!empty($segment['last_modified'])) {
+                $headers['If-Modified-Since'] = $segment['last_modified'];
             }
+        }
 
-            $link = 'https://status.cloud.google.com';
-            if (!empty($incident['uri']) && is_string($incident['uri'])) {
-                $link = (string) $incident['uri'];
-            }
+        $response = wp_remote_get($url, [
+            'timeout'     => self::REQUEST_TIMEOUT,
+            'headers'     => $headers,
+            'redirection' => 3,
+        ]);
 
-            $normalized[] = [
-                'name'       => isset($incident['name']) ? (string) $incident['name'] : 'Incident',
-                'status'     => $severity,
-                'impact'     => $impact,
-                'summary'    => isset($updates['text']) ? (string) $updates['text'] : '',
-                'started_at' => $this->extract_time($incident, ['begin', 'start_time', 'creation_time']),
-                'updated_at' => $this->extract_time($incident, ['end', 'end_time', 'update_time']),
-                'url'        => $link,
+        if (is_wp_error($response)) {
+            return [
+                'status' => 0,
+                'body'   => null,
+                'error'  => $response->get_error_message(),
             ];
         }
 
-        return $normalized;
+        $status = (int) wp_remote_retrieve_response_code($response);
+        if (304 === $status && $segment && isset($segment['body'])) {
+            return [
+                'status'     => 304,
+                'body'       => $segment['body'],
+                'http_code'  => $segment['http_code'] ?? 304,
+                'etag'       => $segment['etag'] ?? '',
+                'fetched_at' => $segment['fetched_at'] ?? gmdate('c'),
+            ];
+        }
+
+        $body = (string) wp_remote_retrieve_body($response);
+        $etag = wp_remote_retrieve_header($response, 'etag');
+        $last = wp_remote_retrieve_header($response, 'last-modified');
+
+        $cache['segments'][$key] = [
+            'url'           => $url,
+            'body'          => $body,
+            'etag'          => is_string($etag) ? $etag : '',
+            'last_modified' => is_string($last) ? $last : '',
+            'http_code'     => $status,
+            'fetched_at'    => gmdate('c'),
+        ];
+
+        return [
+            'status' => $status,
+            'body'   => $body,
+        ];
     }
 
-    private function parse_feed_items(string $body): array {
-        if ('' === trim($body)) {
+    private function get_cache(string $slug): array {
+        $cached = get_transient(self::TRANSIENT_PREFIX . $slug);
+        if (!is_array($cached)) {
             return [];
         }
-
-        $items = [];
-        $xml = @simplexml_load_string($body);
-        if (false === $xml) {
-            return [];
+        if (!isset($cached['segments']) || !is_array($cached['segments'])) {
+            $cached['segments'] = [];
         }
-
-        if (isset($xml->channel->item)) {
-            foreach ($xml->channel->item as $item) {
-                $items[] = [
-                    'name' => isset($item->title) ? (string) $item->title : 'Incident',
-                    'url'  => isset($item->link) ? (string) $item->link : '',
-                    'date' => isset($item->pubDate) ? strtotime((string) $item->pubDate) : 0,
-                ];
-            }
-        } elseif (isset($xml->entry)) {
-            foreach ($xml->entry as $entry) {
-                $items[] = [
-                    'name' => isset($entry->title) ? (string) $entry->title : 'Incident',
-                    'url'  => isset($entry->link['href']) ? (string) $entry->link['href'] : '',
-                    'date' => isset($entry->updated) ? strtotime((string) $entry->updated) : 0,
-                ];
-            }
-        }
-
-        return $items;
+        return $cached;
     }
 
-    private function recent_feed_incidents(array $items, int $window): array {
-        $threshold = time() - $window;
-        $recent = [];
+    private function save_cache(string $slug, array $cache): void {
+        set_transient(self::TRANSIENT_PREFIX . $slug, $cache, self::CACHE_TTL);
+    }
 
-        foreach ($items as $item) {
-            $timestamp = isset($item['date']) ? (int) $item['date'] : 0;
-            if ($timestamp && $timestamp >= $threshold) {
-                $recent[] = [
-                    'name'       => $item['name'] ?? 'Incident',
-                    'status'     => 'degraded',
-                    'impact'     => 'recent',
-                    'summary'    => '',
-                    'started_at' => gmdate('c', $timestamp),
-                    'updated_at' => gmdate('c', $timestamp),
-                    'url'        => $item['url'] ?? '',
-                ];
+    private function provider_link(string $slug, array $config): string {
+        if (!empty($config['link'])) {
+            return (string) $config['link'];
+        }
+        if (!empty($config['base'])) {
+            return rtrim((string) $config['base'], '/') . '/';
+        }
+        if (!empty($config['url'])) {
+            return (string) $config['url'];
+        }
+        if (!empty($config['feed'])) {
+            return (string) $config['feed'];
+        }
+        return '';
+    }
+
+    private function display_name(string $slug): string {
+        if (isset(self::$NAMES[$slug])) {
+            return self::$NAMES[$slug];
+        }
+        $slug = str_replace(['-', '_'], ' ', $slug);
+        $slug = ucwords($slug);
+        return $slug ?: 'Provider';
+    }
+
+    private function normalize_time($value): string {
+        if (empty($value)) {
+            return '';
+        }
+        $timestamp = strtotime((string) $value);
+        return $timestamp ? gmdate('c', $timestamp) : '';
+    }
+
+    private function default_message(string $status): string {
+        switch ($status) {
+            case 'operational':
+                return 'All systems operational.';
+            case 'degraded':
+                return 'Service degradation detected.';
+            case 'major':
+                return 'Major outage detected.';
+            default:
+                return 'Status unavailable.';
+        }
+    }
+
+    private function clean_string($value): string {
+        return trim(wp_strip_all_tags((string) $value));
+    }
+
+    private function is_dns_error(string $message): bool {
+        $needle = strtolower($message);
+        foreach (['could not resolve host', "couldn't resolve host", 'name or service not known', 'no address associated', 'cURL error 6'] as $pattern) {
+            if (false !== strpos($needle, strtolower($pattern))) {
+                return true;
             }
         }
-
-        return $recent;
+        return false;
     }
 }
+

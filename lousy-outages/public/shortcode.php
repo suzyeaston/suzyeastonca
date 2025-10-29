@@ -34,9 +34,10 @@ function render_shortcode(): string {
     $cache_key = is_user_logged_in() ? null : 'lousy_outages_fragment_public';
     $cached    = ($cache_key) ? get_transient($cache_key) : null;
 
+    $fetcher      = new Lousy_Outages_Fetcher();
+    $provider_map = $fetcher->get_provider_map();
+
     $providers_config = Providers::enabled();
-    $fetcher          = new Lousy_Outages_Fetcher();
-    $provider_map     = $fetcher->get_provider_map();
     if (is_array($provider_map) && $provider_map) {
         $providers_config = array_intersect_key($providers_config, $provider_map);
         if (empty($providers_config)) {
@@ -51,7 +52,7 @@ function render_shortcode(): string {
     }
 
     $fetched_at = gmdate('c');
-    $normalized = [];
+    $tiles      = [];
     $config     = null;
     $initial_trending = [
         'trending'     => false,
@@ -59,47 +60,43 @@ function render_shortcode(): string {
         'generated_at' => gmdate('c'),
     ];
 
-    if (is_array($cached) && isset($cached['html'], $cached['config'])) {
-        $config     = $cached['config'];
-        $normalized = [];
+    if (is_array($cached) && isset($cached['config'])) {
+        $config = $cached['config'];
         if (isset($config['initial']['providers']) && is_array($config['initial']['providers'])) {
-            foreach ($config['initial']['providers'] as $provider) {
-                if (!is_array($provider)) {
+            foreach ($config['initial']['providers'] as $tile) {
+                if (!is_array($tile)) {
                     continue;
                 }
-                $slug = '';
-                if (!empty($provider['id'])) {
-                    $slug = (string) $provider['id'];
-                } elseif (!empty($provider['provider'])) {
-                    $slug = \sanitize_title((string) $provider['provider']);
-                }
+                $slug = (string) ($tile['provider'] ?? '');
                 if ('' === $slug) {
                     continue;
                 }
-                $normalized[$slug] = $provider;
+                $tiles[] = $tile;
             }
         }
-        $fetched_at       = $config['initial']['fetched_at'] ?? $config['initial']['fetchedAt'] ?? $fetched_at;
+        $fetched_at = $config['initial']['fetched_at'] ?? $config['initial']['fetchedAt'] ?? $fetched_at;
         if (isset($config['initial']['trending']) && is_array($config['initial']['trending'])) {
             $initial_trending = $config['initial']['trending'];
         }
     }
 
     if (!$config) {
-        $result    = $fetcher->get_all(array_keys($providers_config));
-        $normalized = $result['providers'];
-        $fetched_at = $result['fetched_at'];
+        $result = $fetcher->get_all(array_keys($provider_map));
+        $tiles = isset($result['providers']) && is_array($result['providers']) ? $result['providers'] : [];
+        if (isset($result['fetched_at'])) {
+            $fetched_at = (string) $result['fetched_at'];
+        }
         if (isset($result['trending']) && is_array($result['trending'])) {
             $initial_trending = $result['trending'];
         }
-        $config     = [
+        $config = [
             'endpoint'          => esc_url_raw(rest_url('lousy-outages/v1/summary')),
             'pollInterval'      => 60000,
             'refreshEndpoint'   => esc_url_raw(rest_url('lousy/v1/refresh')),
             'refreshNonce'      => wp_create_nonce('wp_rest'),
             'subscribeEndpoint' => esc_url_raw(rest_url('lousy-outages/v1/subscribe')),
             'initial'           => [
-                'providers'  => array_values($normalized),
+                'providers'  => $tiles,
                 'fetched_at' => $fetched_at,
                 'trending'   => $initial_trending,
             ],
@@ -111,6 +108,83 @@ function render_shortcode(): string {
             $initial_trending = $config['initial']['trending'];
         }
     }
+
+    $tiles_by_slug = [];
+    foreach ($tiles as $tile) {
+        if (!is_array($tile)) {
+            continue;
+        }
+        $slug = (string) ($tile['provider'] ?? '');
+        if ('' === $slug) {
+            continue;
+        }
+        $tiles_by_slug[$slug] = $tile;
+    }
+
+    $ordered_tiles = [];
+    foreach ($tiles as $tile) {
+        if (!is_array($tile)) {
+            continue;
+        }
+        $slug = (string) ($tile['provider'] ?? '');
+        if ('' === $slug) {
+            continue;
+        }
+        if (!empty($providers_config) && !isset($providers_config[$slug])) {
+            continue;
+        }
+        $ordered_tiles[] = $tile;
+    }
+
+    foreach ($providers_config as $slug => $provider_config) {
+        if (isset($tiles_by_slug[$slug])) {
+            continue;
+        }
+        $ordered_tiles[] = [
+            'id'           => $slug,
+            'provider'     => $slug,
+            'name'         => $provider_config['name'] ?? ucfirst($slug),
+            'status'       => 'unknown',
+            'status_label' => 'UNKNOWN',
+            'status_class' => 'status--unknown',
+            'overall'      => 'unknown',
+            'message'      => 'Status unavailable',
+            'summary'      => 'Status unavailable',
+            'components'   => [],
+            'incidents'    => [],
+            'fetched_at'   => $fetched_at,
+            'http_code'    => 0,
+            'indicator'    => null,
+            'link'         => $provider_config['status_url'] ?? '',
+            'url'          => $provider_config['status_url'] ?? '',
+            'error'        => null,
+        ];
+    }
+
+    if (!$ordered_tiles && $provider_map) {
+        foreach ($provider_map as $slug => $provider_info) {
+            $ordered_tiles[] = [
+                'provider'     => $slug,
+                'name'         => $provider_info['name'],
+                'status'       => 'unknown',
+                'status_label' => 'UNKNOWN',
+                'status_class' => 'status--unknown',
+                'overall'      => 'unknown',
+                'message'      => 'Status unavailable',
+                'summary'      => 'Status unavailable',
+                'components'   => [],
+                'incidents'    => [],
+                'fetched_at'   => $fetched_at,
+                'http_code'    => 0,
+                'indicator'    => null,
+                'link'         => $provider_info['status_url'],
+                'url'          => $provider_info['status_url'],
+                'error'        => null,
+            ];
+        }
+    }
+
+    $config['initial']['providers'] = array_values($ordered_tiles);
 
     $rss_url = esc_url(home_url('/lousy-outages/feed/'));
 
@@ -168,44 +242,24 @@ function render_shortcode(): string {
         </div>
         <?php echo render_subscribe_shortcode(); ?>
         <div class="lo-grid" data-lo-grid>
-            <?php foreach ($providers_config as $id => $provider_config) :
-                $state = $normalized[$id] ?? [
-                    'id'           => $id,
-                    'provider'     => $id,
-                    'name'         => $provider_config['name'] ?? $id,
-                    'status'       => 'unknown',
-                    'overall'      => 'unknown',
-                    'status_label' => 'UNKNOWN',
-                    'status_class' => 'status--unknown',
-                    'summary'      => 'Status unavailable',
-                    'message'      => 'Status unavailable',
-                    'components'   => [],
-                    'incidents'    => [],
-                    'fetched_at'   => $fetched_at,
-                    'url'          => $provider_config['status_url'] ?? '',
-                    'link'         => $provider_config['status_url'] ?? '',
-                    'http_code'    => 0,
-                    'error'        => null,
-                    'stale'        => false,
-                    'indicator'    => null,
-                    'kind'         => $provider_config['kind'] ?? 'link-only',
-                ];
-                $status      = strtolower((string) ($state['status'] ?? $state['overall'] ?? 'unknown'));
-                $status_cls  = $state['status_class'] ?? ('status--' . (preg_replace('/[^a-z0-9_-]+/i', '-', $status) ?: 'unknown'));
-                $label       = $state['status_label'] ?? ucfirst($status);
+            <?php foreach ($ordered_tiles as $tile) :
+                $slug = (string) ($tile['provider'] ?? '');
+                $status = strtolower((string) ($tile['status'] ?? 'unknown'));
+                $status_class = $tile['status_class'] ?? ('status--' . (preg_replace('/[^a-z0-9_-]+/i', '-', $status) ?: 'unknown'));
+                $label = $tile['status_label'] ?? ucfirst($status);
                 $components = array_filter(
-                    is_array($state['components'] ?? null) ? $state['components'] : [],
+                    is_array($tile['components'] ?? null) ? $tile['components'] : [],
                     static fn($component) => is_array($component) && strtolower((string) ($component['status'] ?? '')) !== 'operational'
                 );
-                $incidents = is_array($state['incidents'] ?? null) ? $state['incidents'] : [];
+                $incidents = is_array($tile['incidents'] ?? null) ? $tile['incidents'] : [];
                 ?>
-                <article class="lo-card" data-provider-id="<?php echo esc_attr($id); ?>">
+                <article class="lo-card" data-provider-id="<?php echo esc_attr($slug ?: 'provider'); ?>">
                     <div class="lo-head">
-                        <h3 class="lo-title"><?php echo esc_html($state['name'] ?? $id); ?></h3>
-                        <span class="lo-pill <?php echo esc_attr($status_cls); ?>" data-lo-badge><?php echo esc_html($label); ?></span>
+                        <h3 class="lo-title"><?php echo esc_html($tile['name'] ?? ucfirst($slug)); ?></h3>
+                        <span class="lo-pill <?php echo esc_attr($status_class); ?>" data-lo-badge><?php echo esc_html($label); ?></span>
                     </div>
-                    <p class="lo-error" data-lo-error<?php echo empty($state['error']) ? ' hidden' : ''; ?>><?php echo esc_html((string) ($state['error'] ?? '')); ?></p>
-                    <p class="lo-summary" data-lo-summary><?php echo esc_html($state['summary'] ?? 'Status unavailable'); ?></p>
+                    <p class="lo-error" data-lo-error<?php echo empty($tile['error']) ? ' hidden' : ''; ?>><?php echo esc_html((string) ($tile['error'] ?? '')); ?></p>
+                    <p class="lo-summary" data-lo-summary><?php echo esc_html($tile['summary'] ?? 'Status unavailable'); ?></p>
                     <div class="lo-components" data-lo-components>
                         <?php if (!empty($components)) : ?>
                             <h4 class="lo-components__title">Impacted components</h4>
@@ -228,7 +282,7 @@ function render_shortcode(): string {
                         <?php else : ?>
                             <ul class="lo-inc-list">
                                 <?php foreach ($incidents as $incident) :
-                                    $impact  = isset($incident['impact']) ? ucfirst((string) $incident['impact']) : 'Unknown';
+                                    $impact  = isset($incident['status']) ? ucfirst((string) $incident['status']) : 'Unknown';
                                     $updated = $format_datetime($incident['updated_at'] ?? null);
                                     $summary = isset($incident['summary']) ? (string) $incident['summary'] : '';
                                     $url     = isset($incident['url']) ? (string) $incident['url'] : '';
@@ -247,8 +301,8 @@ function render_shortcode(): string {
                             </ul>
                         <?php endif; ?>
                     </div>
-                    <?php if (!empty($state['url'])) : ?>
-                        <a class="lo-status-link" data-lo-status-url href="<?php echo esc_url($state['url']); ?>" target="_blank" rel="noopener">View status →</a>
+                    <?php if (!empty($tile['url'])) : ?>
+                        <a class="lo-status-link" data-lo-status-url href="<?php echo esc_url($tile['url']); ?>" target="_blank" rel="noopener">View status →</a>
                     <?php endif; ?>
                 </article>
             <?php endforeach; ?>
@@ -266,6 +320,9 @@ function render_shortcode(): string {
 
     return $output;
 }
+
+
+
 
 function render_subscribe_shortcode(): string {
     $endpoint = esc_url_raw(rest_url('lousy-outages/v1/subscribe'));

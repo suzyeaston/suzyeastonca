@@ -118,68 +118,88 @@ class Api {
         return rest_ensure_response($response);
     }
 
-    public static function handle_summary(WP_REST_Request $request): WP_REST_Response {
+    public static function handle_summary(WP_REST_Request $request) {
         $providerParam = $request->get_param('provider');
         $filters       = self::sanitize_provider_list(is_string($providerParam) ? $providerParam : null);
 
-        $fetcher  = new Lousy_Outages_Fetcher();
-        $result   = $fetcher->get_all($filters ?: null);
-        $providers = array_values($result['providers']);
-
-        $trending = isset($result['trending']) && is_array($result['trending'])
+        $fetcher = new Lousy_Outages_Fetcher();
+        $result  = $fetcher->get_all($filters ?: null);
+        $providers = isset($result['providers']) && is_array($result['providers']) ? array_values($result['providers']) : [];
+        $trending  = isset($result['trending']) && is_array($result['trending'])
             ? $result['trending']
             : ['trending' => false, 'signals' => [], 'generated_at' => gmdate('c')];
 
-        $payload = [
-            'providers'  => $providers,
-            'fetched_at' => $result['fetched_at'],
-            'trending'   => $trending,
-        ];
-        if (!empty($result['errors'])) {
-            $payload['errors'] = $result['errors'];
+        $isLite = false;
+        $liteParam = $request->get_param('lite');
+        if (null !== $liteParam) {
+            $value = strtolower((string) $liteParam);
+            $isLite = in_array($value, ['1', 'true', 'yes', 'on'], true);
+        }
+
+        if ($isLite) {
+            $payload = [
+                'trending' => !empty($trending['trending']),
+            ];
+        } else {
+            $payload = [
+                'providers'  => $providers,
+                'fetched_at' => $result['fetched_at'] ?? gmdate('c'),
+                'trending'   => $trending,
+            ];
+            if (!empty($result['errors']) && is_array($result['errors'])) {
+                $payload['errors'] = $result['errors'];
+            }
         }
 
         $json = wp_json_encode($payload);
+        if (!is_string($json)) {
+            $json = '{}';
+        }
         $etag = '"' . sha1($json) . '"';
-        $ifNoneMatch = trim((string) $request->get_header('if-none-match'));
-
-        if ('' !== $ifNoneMatch) {
-            $candidates = array_map('trim', explode(',', $ifNoneMatch));
-            $matched = in_array($etag, $candidates, true) || in_array('W/' . $etag, $candidates, true);
-        } else {
-            $matched = false;
+        $incoming = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim((string) $_SERVER['HTTP_IF_NONE_MATCH']) : '';
+        $matched = false;
+        if ('' !== $incoming) {
+            $candidates = array_map('trim', explode(',', $incoming));
+            foreach ($candidates as $candidate) {
+                if ($candidate === $etag || $candidate === 'W/' . $etag) {
+                    $matched = true;
+                    break;
+                }
+            }
         }
 
         if ($matched) {
-            $response = new WP_REST_Response(null, 304);
-            $response->header('ETag', $etag);
-            $response->header('Cache-Control', 'no-cache, must-revalidate');
-            return $response;
+            status_header(304);
+            header('ETag: ' . $etag);
+            header('Cache-Control: no-cache, must-revalidate');
+            exit;
         }
 
-        $response = new WP_REST_Response($payload, 200);
-        $response->header('ETag', $etag);
-        $response->header('Cache-Control', 'no-cache, must-revalidate');
-
-        return $response;
+        status_header(200);
+        header('ETag: ' . $etag);
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Content-Type: application/json; charset=utf-8');
+        echo $json;
+        exit;
     }
+
 
     public static function handle_subscribe(WP_REST_Request $request): WP_REST_Response {
         $params = self::extract_body_params($request);
 
         $nonce = $params['_wpnonce'] ?? $params['nonce'] ?? $request->get_header('X-WP-Nonce');
         if (!is_string($nonce) || !wp_verify_nonce($nonce, 'lousy_outages_subscribe')) {
-            return new WP_REST_Response(['message' => 'Invalid security token.'], 403);
+            return self::json_or_redirect(false, 'Invalid security token.', 403, $request);
         }
 
         $honeypot = isset($params['website']) ? trim((string) $params['website']) : '';
         if ('' !== $honeypot) {
-            return new WP_REST_Response(['message' => 'Something went wrong.'], 400);
+            return self::json_or_redirect(false, 'Something went wrong.', 400, $request);
         }
 
         $email = isset($params['email']) ? sanitize_email((string) $params['email']) : '';
         if (!$email || !is_email($email)) {
-            return new WP_REST_Response(['message' => 'Please provide a valid email address.'], 400);
+            return self::json_or_redirect(false, 'Please provide a valid email address.', 400, $request);
         }
 
         $ip      = self::detect_ip($request);
@@ -187,7 +207,7 @@ class Api {
         $rateKey = self::rate_limit_key($ip_hash);
         $count   = (int) get_transient($rateKey);
         if ($count >= 5) {
-            return new WP_REST_Response(['message' => 'Too many requests. Try again soon.'], 429);
+            return self::json_or_redirect(false, 'Too many requests. Try again soon.', 429, $request);
         }
         set_transient($rateKey, $count + 1, 60);
 
@@ -203,18 +223,13 @@ class Api {
         $unsubscribe_url = add_query_arg('token', rawurlencode($token), rest_url('lousy-outages/v1/unsubscribe'));
 
         $subject = 'Confirm your Lousy Outages subscription';
-        $message = "Hi there!\n\nPlease confirm your email to receive Lousy Outages alerts.\n\nConfirm subscription: {$confirm_url}\n\nIf you didn\'t request this, ignore this email or unsubscribe here: {$unsubscribe_url}\n\n— Lousy Outages";
+        $message = "Hi there!\n\nPlease confirm your email to receive Lousy Outages alerts.\n\nConfirm subscription: {$confirm_url}\n\nIf you didn't request this, ignore this email or unsubscribe here: {$unsubscribe_url}\n\n— Lousy Outages";
 
         wp_mail($email, $subject, $message, ['Content-Type: text/plain; charset=UTF-8']);
 
-        $response = new WP_REST_Response([
-            'message' => 'Check your email to confirm your subscription.',
-            'status'  => 'pending',
-        ], 200);
-        $response->header('Cache-Control', 'no-store, max-age=0');
-
-        return $response;
+        return self::json_or_redirect(true, 'Check your email to confirm your subscription.', 200, $request);
     }
+
 
     public static function handle_confirm(WP_REST_Request $request): WP_REST_Response {
         $token = sanitize_text_field((string) $request->get_param('token'));
@@ -264,6 +279,30 @@ class Api {
         }
 
         return self::html_response('You have been unsubscribed', 'You will no longer receive outage alerts.');
+    }
+
+    private static function json_or_redirect(bool $success, string $message, int $status, WP_REST_Request $request): WP_REST_Response {
+        $accept = $request->get_header('accept');
+        $wantsHtml = is_string($accept) && false !== stripos($accept, 'text/html');
+
+        if ($wantsHtml) {
+            $target = home_url('/subscribe/thanks/');
+            if (!$success) {
+                $target = add_query_arg('error', '1', $target);
+            }
+            wp_safe_redirect($target);
+            exit;
+        }
+
+        if ($success) {
+            wp_send_json_success(['message' => $message], $status);
+            wp_die();
+        }
+
+        wp_send_json_error(['message' => $message], $status);
+        wp_die();
+
+        return new WP_REST_Response(['message' => $message], $status);
     }
 
     private static function sanitize_provider_list(?string $raw): array {
