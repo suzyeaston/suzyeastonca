@@ -29,7 +29,7 @@ namespace {
 
             // RSS/Atom feeds
             ['id' => 'aws', 'name' => 'AWS', 'type' => 'rss', 'url' => 'https://status.aws.amazon.com/rss/all.rss'],
-            ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://azurestatuscdn.azureedge.net/en-us/status/feed/'],
+            ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://rssfeed.azure.status.microsoft/en-us/status/feed/'],
             ['id' => 'gcp', 'name' => 'Google Cloud', 'type' => 'atom', 'url' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom'],
 
             // Optional aggregate (disabled by default in settings)

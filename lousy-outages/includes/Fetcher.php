@@ -693,7 +693,14 @@ class Lousy_Outages_Fetcher {
         'gitlab'     => ['kind' => 'rss', 'feed' => 'https://status.gitlab.com/pages/5b36dc6502d06804c08349f7/rss', 'link' => 'https://status.gitlab.com/'],
         'zscaler'    => ['kind' => 'rss', 'feed' => 'https://trust.zscaler.com/rss-feed', 'link' => 'https://trust.zscaler.com/cloud-status'],
         'gcp'        => ['kind' => 'atom', 'feed' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom', 'link' => 'https://www.google.com/appsstatus/dashboard/'],
-        'azure'      => ['kind' => 'rss', 'feed' => 'https://azurestatuscdn.azureedge.net/en-us/status/feed/', 'link' => 'https://status.azure.com/en-us/status'],
+        'azure'      => [
+            'kind' => 'rss',
+            'feed' => [
+                'https://rssfeed.azure.status.microsoft/en-us/status/feed/',
+                'https://azurestatuscdn.azureedge.net/en-us/status/feed/',
+            ],
+            'link' => 'https://status.azure.com/en-us/status',
+        ],
 
         // PagerDuty (HTML scrape of dashboard headline)
         'pagerduty'  => ['kind' => 'scrape', 'url' => 'https://status.pagerduty.com/posts/dashboard'],
@@ -850,8 +857,15 @@ class Lousy_Outages_Fetcher {
                 break;
             case 'rss':
             case 'atom':
-                $feeds = !empty($config['feed']) ? [(string) $config['feed']] : [];
-                $tile  = $this->fetch_feed($slug, $config, $cache, $feeds, $kind);
+                $feeds = [];
+                if (isset($config['feed'])) {
+                    if (is_array($config['feed'])) {
+                        $feeds = array_values(array_filter(array_map('strval', $config['feed'])));
+                    } elseif (is_string($config['feed']) && '' !== trim($config['feed'])) {
+                        $feeds = [(string) $config['feed']];
+                    }
+                }
+                $tile = $this->fetch_feed($slug, $config, $cache, $feeds, $kind);
                 break;
             case 'rss-multi':
                 $feeds = isset($config['feeds']) && is_array($config['feeds']) ? array_filter(array_map('strval', $config['feeds'])) : [];
