@@ -82,6 +82,32 @@ if ( file_exists( $lousy_outages ) ) {
 
 add_filter( 'lousy_outages_voice_enabled', '__return_true' );
 
+add_action( 'phpmailer_init', function( $phpmailer ) {
+    $host = getenv( 'SMTP_HOST' );
+    if ( ! $host ) {
+        return;
+    }
+
+    $phpmailer->isSMTP();
+    $phpmailer->Host = $host;
+
+    $auth_env = getenv( 'SMTP_AUTH' );
+    if ( false === $auth_env || null === $auth_env ) {
+        $phpmailer->SMTPAuth = true;
+    } else {
+        $phpmailer->SMTPAuth = filter_var( $auth_env, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+        if ( null === $phpmailer->SMTPAuth ) {
+            $phpmailer->SMTPAuth = true;
+        }
+    }
+
+    $phpmailer->Port       = (int) ( getenv( 'SMTP_PORT' ) ?: 587 );
+    $phpmailer->SMTPSecure = getenv( 'SMTP_SECURE' ) ?: 'tls';
+    $phpmailer->Username   = getenv( 'SMTP_USER' ) ?: '';
+    $phpmailer->Password   = getenv( 'SMTP_PASS' ) ?: '';
+    $phpmailer->Timeout    = 10;
+} );
+
 function lousy_outages_feed_autodiscovery() {
     if ( is_front_page() || is_page_template( 'page-lousy-outages.php' ) || is_page( 'lousy-outages' ) ) {
         echo '\n<link rel="alternate" type="application/rss+xml" title="Lousy Outages" href="' . esc_url( home_url( '/lousy-outages/feed/' ) ) . '" />\n';

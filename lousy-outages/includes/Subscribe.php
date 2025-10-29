@@ -10,6 +10,19 @@ class Lousy_Outages_Subscribe {
     }
 
     public static function register_routes(): void {
+        register_rest_route('lousy-outages/v1', '/subscribe', [
+            'methods'             => 'POST',
+            'permission_callback' => '__return_true',
+            'args'                => [
+                'email' => [
+                    'required'          => true,
+                    'sanitize_callback' => 'sanitize_email',
+                    'validate_callback' => 'is_email',
+                ],
+            ],
+            'callback'            => 'lo_handle_subscribe',
+        ]);
+
         register_rest_route('lousy-outages/v1', '/confirm', [
             'methods'             => 'GET',
             'callback'            => [self::class, 'confirm'],
@@ -294,6 +307,88 @@ HTML;
 
         Mailer::send($email, $subject, $text_body, $html_body);
     }
+}
+
+function lo_handle_subscribe(\WP_REST_Request $request) {
+    $emailParam = $request->get_param('email');
+    $email      = is_string($emailParam) ? sanitize_email($emailParam) : '';
+    if (!$email || !is_email($email)) {
+        return new \WP_Error(
+            'invalid_email',
+            'Please provide a valid email address.',
+            [
+                'status' => 400,
+                'ok'     => false,
+            ]
+        );
+    }
+
+    $email = strtolower($email);
+    $subscribers = get_option('suzy_newsletter', []);
+    if (!is_array($subscribers)) {
+        $subscribers = [];
+    }
+    if (!in_array($email, $subscribers, true)) {
+        $subscribers[] = $email;
+        update_option('suzy_newsletter', array_values(array_unique($subscribers)), false);
+    }
+
+    $domain = wp_parse_url(home_url(), PHP_URL_HOST);
+    if (!is_string($domain) || '' === $domain) {
+        $domain = (string) parse_url(site_url('/'), PHP_URL_HOST);
+    }
+    if ('' === $domain) {
+        $domain = 'example.com';
+    }
+    $domain  = strtolower($domain);
+    $address = sprintf('no-reply@%s', $domain);
+
+    $headers = [
+        sprintf('From: <%s>', $address),
+        sprintf('Reply-To: <%s>', $address),
+        'Content-Type: text/html; charset=UTF-8',
+    ];
+
+    $transport    = getenv('SMTP_HOST') ? 'smtp' : 'mail';
+    $sendmailPath = ini_get('sendmail_path') ?: '';
+    $debugParam   = $request->get_param('deliverability');
+    if (is_string($debugParam) && 'debug' === strtolower($debugParam)) {
+        return rest_ensure_response([
+            'transport'     => $transport,
+            'headers'       => $headers,
+            'domain'        => $domain,
+            'sendmail_path' => $sendmailPath,
+        ]);
+    }
+
+    $subject  = 'you’re in — suzy easton updates';
+    $bodyHtml = '<p>thanks for subscribing</p>';
+
+    $ok_user = wp_mail($email, $subject, $bodyHtml, $headers);
+
+    $admin_email = get_option('admin_email');
+    $ok_admin    = false;
+    if ($admin_email && is_email($admin_email)) {
+        $ok_admin = wp_mail($admin_email, 'new subscriber', esc_html($email), $headers);
+    }
+
+    error_log(sprintf('subscribe email=%s ok_user=%d ok_admin=%d', $email, $ok_user ? 1 : 0, $ok_admin ? 1 : 0));
+
+    if (!$ok_user) {
+        return new \WP_Error(
+            'send_fail',
+            'Mail send failed — check SMTP or server mailer',
+            [
+                'status'     => 500,
+                'ok'         => false,
+                'transport'  => $transport,
+                'ok_admin'   => (bool) $ok_admin,
+                'sendmail'   => $sendmailPath,
+            ]
+        );
+    }
+
+    return rest_ensure_response(['ok' => true]);
 }
 
 Lousy_Outages_Subscribe::bootstrap();
