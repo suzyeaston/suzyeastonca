@@ -3,6 +3,16 @@
 get_header();
 
 $sub_status = isset($_GET['sub']) ? sanitize_key(wp_unslash($_GET['sub'])) : '';
+$cookie_status = '';
+if (isset($_COOKIE['lo_sub_msg'])) {
+    $cookie_status = sanitize_key(wp_unslash($_COOKIE['lo_sub_msg']));
+    if ('' === $sub_status && '' !== $cookie_status) {
+        $sub_status = $cookie_status;
+    }
+    if (!headers_sent()) {
+        setcookie('lo_sub_msg', '', time() - HOUR_IN_SECONDS, '/', '', is_ssl(), false);
+    }
+}
 $banner     = '';
 $tone       = 'info';
 

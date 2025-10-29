@@ -212,42 +212,45 @@ class Api {
     }
 
     private static function respond_with_message(bool $success, string $message, int $status, WP_REST_Request $request): WP_REST_Response {
-        $accept = $request->get_header('accept');
-        $wantsHtml = is_string($accept) && false !== stripos($accept, 'text/html');
-
-        if ($success) {
-            if ($wantsHtml) {
-                status_header(303);
-                header('Location: ' . home_url('/lousy-outages/?sub=check-email'));
-                header('Content-Type: application/json; charset=utf-8');
-                $payload = wp_json_encode([
-                    'success' => true,
-                    'data'    => ['message' => $message],
-                ]);
-                echo is_string($payload) ? $payload : '{}';
-                exit;
-            }
-
-            wp_send_json_success(['message' => $message], $status);
-            wp_die();
-        }
-
-        if ($wantsHtml) {
+        if (self::wants_html($request)) {
+            $slug = $success ? 'check-email' : 'invalid';
+            self::store_flash_cookie($slug);
             status_header(303);
-            header('Location: ' . home_url('/lousy-outages/?sub=invalid'));
-            header('Content-Type: application/json; charset=utf-8');
-            $payload = wp_json_encode([
-                'success' => false,
-                'data'    => ['message' => $message],
-            ]);
-            echo is_string($payload) ? $payload : '{}';
+            header('Location: ' . home_url('/lousy-outages/?sub=' . $slug));
             exit;
         }
 
-        wp_send_json_error(['message' => $message], $status);
-        wp_die();
-
         return new WP_REST_Response(['message' => $message], $status);
+    }
+
+    private static function wants_html(WP_REST_Request $request): bool {
+        $accept = $request->get_header('accept');
+        if (!is_string($accept)) {
+            return false;
+        }
+
+        return false !== stripos($accept, 'text/html');
+    }
+
+    private static function store_flash_cookie(string $status): void {
+        if (headers_sent()) {
+            return;
+        }
+
+        $value = sanitize_key($status);
+        if ('' === $value) {
+            return;
+        }
+
+        $params = [
+            'expires'  => time() + 300,
+            'path'     => '/',
+            'secure'   => is_ssl(),
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ];
+
+        setcookie('lo_sub_msg', $value, $params);
     }
 
     private static function sanitize_provider_list(?string $raw): array {

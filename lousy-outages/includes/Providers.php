@@ -10,20 +10,17 @@ namespace {
             ['id' => 'openai', 'name' => 'OpenAI', 'type' => 'statuspage', 'url' => 'https://status.openai.com/api/v2/summary.json'],
             ['id' => 'atlassian', 'name' => 'Atlassian', 'type' => 'statuspage', 'url' => 'https://status.atlassian.com/api/v2/summary.json'],
             ['id' => 'digitalocean', 'name' => 'DigitalOcean', 'type' => 'statuspage', 'url' => 'https://status.digitalocean.com/api/v2/summary.json'],
-            ['id' => 'gitlab', 'name' => 'GitLab', 'type' => 'statuspage', 'url' => 'https://status.gitlab.com/api/v2/summary.json', 'status_endpoint' => 'https://status.gitlab.com/api/v2/status.json'],
+            ['id' => 'gitlab', 'name' => 'GitLab', 'type' => 'rss', 'url' => 'https://status.gitlab.com/pages/5b36dc6502d06804c08349f7/rss'],
             ['id' => 'netlify', 'name' => 'Netlify', 'type' => 'statuspage', 'url' => 'https://www.netlifystatus.com/api/v2/summary.json'],
             ['id' => 'vercel', 'name' => 'Vercel', 'type' => 'statuspage', 'url' => 'https://www.vercel-status.com/api/v2/summary.json'],
-            ['id' => 'okta', 'name' => 'Okta', 'type' => 'statuspage', 'url' => 'https://status.okta.com/api/v2/summary.json', 'status_endpoint' => 'https://status.okta.com/api/v2/status.json'],
             ['id' => 'pagerduty', 'name' => 'PagerDuty', 'type' => 'statuspage', 'url' => 'https://status.pagerduty.com/api/v2/summary.json'],
             ['id' => 'zoom', 'name' => 'Zoom', 'type' => 'statuspage', 'url' => 'https://status.zoom.us/api/v2/summary.json'],
-            ['id' => 'zscaler', 'name' => 'Zscaler', 'type' => 'statuspage', 'url' => 'https://trust.zscaler.com/api/v2/summary.json', 'status_endpoint' => 'https://trust.zscaler.com/api/v2/status.json'],
+            ['id' => 'zscaler', 'name' => 'Zscaler', 'type' => 'rss', 'url' => 'https://trust.zscaler.com/rss-feed'],
 
             // High-value adds (Statuspage JSON)
-            ['id' => 'stripe', 'name' => 'Stripe', 'type' => 'statuspage', 'url' => 'https://status.stripe.com/api/v2/summary.json', 'status_endpoint' => 'https://status.stripe.com/api/v2/status.json'],
+            ['id' => 'stripe', 'name' => 'Stripe', 'type' => 'rss', 'url' => 'https://www.stripestatus.com/history.rss'],
             ['id' => 'twilio', 'name' => 'Twilio', 'type' => 'statuspage', 'url' => 'https://status.twilio.com/api/v2/summary.json'],
-            ['id' => 'fastly', 'name' => 'Fastly', 'type' => 'statuspage', 'url' => 'https://status.fastly.com/api/v2/summary.json', 'status_endpoint' => 'https://status.fastly.com/api/v2/status.json'],
             ['id' => 'datadog', 'name' => 'Datadog', 'type' => 'statuspage', 'url' => 'https://status.datadoghq.com/api/v2/summary.json'],
-            ['id' => 'notion', 'name' => 'Notion', 'type' => 'statuspage', 'url' => 'https://www.notionstatus.com/api/v2/summary.json', 'status_endpoint' => 'https://www.notionstatus.com/api/v2/status.json'],
             ['id' => 'linear', 'name' => 'Linear', 'type' => 'statuspage', 'url' => 'https://status.linear.app/api/v2/summary.json'],
             ['id' => 'sentry', 'name' => 'Sentry', 'type' => 'statuspage', 'url' => 'https://status.sentry.io/api/v2/summary.json'],
 
@@ -33,7 +30,7 @@ namespace {
             // RSS/Atom feeds
             ['id' => 'aws', 'name' => 'AWS', 'type' => 'rss', 'url' => 'https://status.aws.amazon.com/rss/all.rss'],
             ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://azurestatuscdn.azureedge.net/en-us/status/feed/'],
-            ['id' => 'gcp', 'name' => 'Google Cloud', 'type' => 'atom', 'url' => 'https://status.cloud.google.com/feed.atom'],
+            ['id' => 'gcp', 'name' => 'Google Cloud', 'type' => 'atom', 'url' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom'],
 
             // Optional aggregate (disabled by default in settings)
             ['id' => 'downdetector-ca', 'name' => 'Downdetector (CA Aggregate)', 'type' => 'rss', 'url' => 'https://downdetector.ca/archive/?format=rss', 'disabled' => true, 'optional' => true],
@@ -155,11 +152,9 @@ namespace LousyOutages {
 
         private static function derive_status_url( array $provider ): string {
             $wellKnown = [
-                'fastly'  => 'https://www.fastlystatus.com/',
                 'zscaler' => 'https://trust.zscaler.com/',
                 'stripe'  => 'https://status.stripe.com/',
                 'gitlab'  => 'https://status.gitlab.com/',
-                'notion'  => 'https://www.notionstatus.com/',
             ];
 
             if ( ! empty( $provider['id'] ) && isset( $wellKnown[ $provider['id'] ] ) ) {
