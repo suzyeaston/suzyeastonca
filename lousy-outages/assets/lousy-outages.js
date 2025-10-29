@@ -504,7 +504,7 @@
     var honeypot = form.querySelector('input[name="website"]');
     var nonceInput = form.querySelector('input[name="_wpnonce"]');
     var challengeInput = form.querySelector('input[name="challenge_response"]');
-    var challengeExpected = form.querySelector('input[name="challenge_expected"]');
+    var challengeTokenInput = form.querySelector('input[name="challenge_token"]');
     var endpoint = form.getAttribute('action') || state.subscribeEndpoint;
     if (!endpoint || !state.fetchImpl) {
       return;
@@ -522,7 +522,7 @@
       setSubscribeStatus(statusEl, 'Please answer the human check.', true);
       return;
     }
-    if (!challengeExpected || !challengeExpected.value) {
+    if (!challengeTokenInput || !challengeTokenInput.value) {
       setSubscribeStatus(statusEl, 'Challenge missing. Reload and try again.', true);
       return;
     }
@@ -535,7 +535,7 @@
       website: honeypot ? honeypot.value : '',
       _wpnonce: nonceInput ? nonceInput.value : '',
       challenge_response: challengeInput ? challengeInput.value.trim() : '',
-      challenge_expected: challengeExpected ? challengeExpected.value : ''
+      challenge_token: challengeTokenInput ? challengeTokenInput.value : ''
     };
 
     state.fetchImpl(endpoint, {
