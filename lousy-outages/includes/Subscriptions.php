@@ -134,4 +134,26 @@ class Subscriptions {
 
         return false !== $updated && $updated > 0;
     }
+
+    public static function mark_unsubscribed_by_email(string $email): bool {
+        global $wpdb;
+        $email = sanitize_email($email);
+        if (!$email) {
+            return false;
+        }
+
+        $table = self::table_name();
+        $updated = $wpdb->update(
+            $table,
+            [
+                'status'     => self::STATUS_UNSUBSCRIBED,
+                'updated_at' => gmdate('Y-m-d H:i:s'),
+            ],
+            ['email' => $email],
+            ['%s', '%s'],
+            ['%s']
+        );
+
+        return false !== $updated && $updated > 0;
+    }
 }

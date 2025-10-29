@@ -33,6 +33,7 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Subscribe.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Api.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Feed.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Summary.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/IncidentAlerts.php';
 require_once LOUSY_OUTAGES_PATH . 'public/shortcode.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -50,10 +51,12 @@ use LousyOutages\Subscriptions;
 use LousyOutages\Api;
 use LousyOutages\Feed;
 use LousyOutages\MailTransport;
+use LousyOutages\IncidentAlerts;
 
 Api::bootstrap();
 Feed::bootstrap();
 MailTransport::bootstrap();
+IncidentAlerts::bootstrap();
 
 add_action('lousy_outages_purge_pending', [Subscriptions::class, 'purge_stale_pending']);
 
@@ -74,6 +77,9 @@ function lousy_outages_activate() {
         $interval = (int) get_option( 'lousy_outages_interval', 300 );
         wp_schedule_event( time() + 60, 'lousy_outages_interval', 'lousy_outages_poll' );
     }
+    if ( ! wp_next_scheduled( 'lo_check_statuses' ) ) {
+        wp_schedule_event( time() + 60, 'lo_five_minutes', 'lo_check_statuses' );
+    }
     lousy_outages_create_page();
     Subscriptions::create_table();
     Subscriptions::schedule_purge();
@@ -93,6 +99,7 @@ register_activation_hook( __FILE__, 'lousy_outages_activate' );
  */
 function lousy_outages_deactivate() {
     wp_clear_scheduled_hook( 'lousy_outages_poll' );
+    wp_clear_scheduled_hook( 'lo_check_statuses' );
     Subscriptions::clear_schedule();
     if ( function_exists( 'flush_rewrite_rules' ) ) {
         flush_rewrite_rules( false );
@@ -108,6 +115,10 @@ add_filter( 'cron_schedules', function ( $schedules ) {
     $schedules['lousy_outages_interval'] = [
         'interval' => max( 60, $interval ),
         'display'  => 'Lousy Outages Interval',
+    ];
+    $schedules['lo_five_minutes'] = [
+        'interval' => 5 * MINUTE_IN_SECONDS,
+        'display'  => 'Lousy Outages – 5 minutes',
     ];
     return $schedules;
 } );

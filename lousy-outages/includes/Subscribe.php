@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use LousyOutages\IncidentAlerts;
 use LousyOutages\Mailer;
 use LousyOutages\Subscriptions;
 
@@ -62,6 +63,7 @@ class Lousy_Outages_Subscribe {
         }
 
         if ($email && is_email($email)) {
+            IncidentAlerts::add_subscriber($email);
             self::send_welcome_email($email, $token);
         }
 
@@ -85,6 +87,7 @@ class Lousy_Outages_Subscribe {
 
         $email = isset($record['email']) ? sanitize_email((string) $record['email']) : '';
         if ($email && is_email($email)) {
+            IncidentAlerts::remove_subscriber($email);
             self::send_unsubscribed_email($email);
         }
 
