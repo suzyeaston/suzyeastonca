@@ -17,6 +17,8 @@
   var MAX_DELAY = 60000;
   var DEGRADE_THRESHOLD = 0.5;
   var RECOVER_THRESHOLD = 0.7;
+  var MANUAL_REFRESH_RETRY_DELAY = 1500;
+  var MANUAL_REFRESH_MAX_ATTEMPTS = 4;
 
   var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
@@ -71,6 +73,19 @@
     lastFetchStartedAt: null,
     manualQueued: false
   };
+
+  function delay(ms) {
+    return new Promise(function (resolve) {
+      var timerRoot = state.root && typeof state.root.setTimeout === 'function'
+        ? state.root
+        : (globalRoot && typeof globalRoot.setTimeout === 'function' ? globalRoot : null);
+      if (timerRoot) {
+        timerRoot.setTimeout(resolve, ms);
+      } else {
+        setTimeout(resolve, ms);
+      }
+    });
+  }
 
   function normalizeStatus(code) {
     var key = String(code || '').toLowerCase();
@@ -870,13 +885,32 @@
     }
     state.manualQueued = false;
     state.pendingManual = false;
+    var previousFetched = state.fetchedAt;
     setLoading(true);
+    var refreshFailed = false;
     callRefreshEndpoint()
       .catch(function () {
+        refreshFailed = true;
         return null;
       })
       .then(function () {
-        return refreshSummary(true, true);
+        if (refreshFailed) {
+          return refreshSummary(true, true);
+        }
+        function ensureUpdated(attempt) {
+          return refreshSummary(true, true).then(function () {
+            if (!previousFetched || !state.fetchedAt || state.fetchedAt !== previousFetched) {
+              return null;
+            }
+            if (attempt >= MANUAL_REFRESH_MAX_ATTEMPTS) {
+              return null;
+            }
+            return delay(MANUAL_REFRESH_RETRY_DELAY).then(function () {
+              return ensureUpdated(attempt + 1);
+            });
+          });
+        }
+        return ensureUpdated(0);
       })
       .finally(function () {
         setLoading(false);

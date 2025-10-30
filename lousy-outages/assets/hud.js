@@ -116,6 +116,8 @@
     if (!Number.isFinite(refreshInterval) || refreshInterval <= 0) {
       refreshInterval = 60000;
     }
+    var manualRetryDelay = 1500;
+    var manualRetryAttempts = 4;
 
     var spinnerEl = doc.createElement('span');
     spinnerEl.className = 'lo-hud-spinner';
@@ -275,9 +277,25 @@
       }
     }
 
-    function fetchSnapshot(manual) {
+    function delay(ms) {
+      return new Promise(function (resolve) {
+        if (root && typeof root.setTimeout === 'function') {
+          root.setTimeout(resolve, ms);
+        } else {
+          setTimeout(resolve, ms);
+        }
+      });
+    }
+
+    function fetchSnapshot(manual, attempt, baselineTimestamp) {
       if (!snapshotEndpoint || state.fetchInFlight) {
         return;
+      }
+      var keepActive = false;
+      var currentAttempt = typeof attempt === 'number' ? attempt : 0;
+      var baseline = baselineTimestamp;
+      if (manual && currentAttempt === 0) {
+        baseline = state.lastSnapshot && state.lastSnapshot.updated_at ? state.lastSnapshot.updated_at : null;
       }
       state.fetchInFlight = true;
       setRefreshing(true);
@@ -294,12 +312,25 @@
         return response.json();
       }).then(function (payload) {
         var snapshot = normalizeSnapshot(payload, refreshInterval);
-        applySnapshot(snapshot);
+        if (snapshot) {
+          applySnapshot(snapshot);
+          var updatedAt = snapshot.updated_at;
+          if (manual && baseline && updatedAt === baseline && currentAttempt < manualRetryAttempts) {
+            keepActive = true;
+            state.fetchInFlight = false;
+            return delay(manualRetryDelay).then(function () {
+              fetchSnapshot(true, currentAttempt + 1, baseline);
+            });
+          }
+        }
         scheduleRefresh(refreshInterval);
       }).catch(function () {
         setDegraded(true, 'Auto-refresh unavailable – retrying');
         scheduleRefresh(Math.min(refreshInterval, 30000));
       }).finally(function () {
+        if (keepActive) {
+          return;
+        }
         state.fetchInFlight = false;
         setRefreshing(false);
         setSpinner(false);
