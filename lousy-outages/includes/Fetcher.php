@@ -709,9 +709,6 @@ class Lousy_Outages_Fetcher {
         ],
         'qubeyond'   => ['kind' => 'atom', 'feed' => 'https://status.qubeyond.com/state_feed/feed.atom', 'link' => 'https://status.qubeyond.com/'],
 
-        // PagerDuty (HTML scrape of dashboard headline)
-        'pagerduty'  => ['kind' => 'scrape', 'url' => 'https://status.pagerduty.com/posts/dashboard'],
-
         // Clouds
         'aws' => [
             'kind'  => 'rss-multi',
@@ -736,7 +733,6 @@ class Lousy_Outages_Fetcher {
         'gcp'        => 'Google Cloud',
         'azure'      => 'Microsoft Azure',
         'qubeyond'   => 'Qubeyond',
-        'pagerduty'  => 'PagerDuty',
         'aws'        => 'Amazon Web Services',
         'crowdstrike'=> 'CrowdStrike',
     ];

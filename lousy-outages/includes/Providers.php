@@ -12,7 +12,6 @@ namespace {
             ['id' => 'digitalocean', 'name' => 'DigitalOcean', 'type' => 'statuspage', 'url' => 'https://status.digitalocean.com/api/v2/summary.json'],
             ['id' => 'netlify', 'name' => 'Netlify', 'type' => 'statuspage', 'url' => 'https://www.netlifystatus.com/api/v2/summary.json'],
             ['id' => 'vercel', 'name' => 'Vercel', 'type' => 'statuspage', 'url' => 'https://www.vercel-status.com/api/v2/summary.json'],
-            ['id' => 'pagerduty', 'name' => 'PagerDuty', 'type' => 'statuspage', 'url' => 'https://status.pagerduty.com/api/v2/summary.json'],
             ['id' => 'zoom', 'name' => 'Zoom', 'type' => 'statuspage', 'url' => 'https://status.zoom.us/api/v2/summary.json'],
             ['id' => 'zscaler', 'name' => 'Zscaler', 'type' => 'rss', 'url' => 'https://trust.zscaler.com/rss-feed'],
 

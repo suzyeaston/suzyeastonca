@@ -151,7 +151,6 @@ class Downdetector {
             'netlify'     => ['netlify'],
             'vercel'      => ['vercel'],
             'atlassian'   => ['atlassian', 'jira', 'confluence', 'bitbucket'],
-            'pagerduty'   => ['pagerduty', 'pager duty'],
             'zoom'        => ['zoom'],
             'qubeyond'    => ['qubeyond'],
         ];
