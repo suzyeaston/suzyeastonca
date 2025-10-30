@@ -693,12 +693,10 @@ class Lousy_Outages_Fetcher {
     private static $PROVIDERS = [
         // Statuspage JSON (keep as JSON)
         'cloudflare' => ['kind' => 'statuspage', 'base' => 'https://www.cloudflarestatus.com'],
-        'datadog'    => ['kind' => 'statuspage', 'base' => 'https://status.datadoghq.com'],
         'zoom'       => ['kind' => 'statuspage', 'base' => 'https://status.zoom.us'],
 
         // Switch these to RSS/Atom (per Suzy’s feeds)
-        'stripe'     => ['kind' => 'rss', 'feed' => 'https://www.stripestatus.com/history.rss', 'link' => 'https://www.stripestatus.com/'],
-        'gitlab'     => ['kind' => 'rss', 'feed' => 'https://status.gitlab.com/pages/5b36dc6502d06804c08349f7/rss', 'link' => 'https://status.gitlab.com/'],
+        'slack'      => ['kind' => 'rss', 'feed' => 'https://slack-status.com/feed/rss', 'link' => 'https://status.slack.com/'],
         'zscaler'    => ['kind' => 'rss', 'feed' => 'https://trust.zscaler.com/rss-feed', 'link' => 'https://trust.zscaler.com/cloud-status'],
         'gcp'        => ['kind' => 'atom', 'feed' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom', 'link' => 'https://www.google.com/appsstatus/dashboard/'],
         'azure'      => [
@@ -709,6 +707,7 @@ class Lousy_Outages_Fetcher {
             ],
             'link' => 'https://status.azure.com/en-us/status',
         ],
+        'qubeyond'   => ['kind' => 'atom', 'feed' => 'https://status.qubeyond.com/state_feed/feed.atom', 'link' => 'https://status.qubeyond.com/'],
 
         // PagerDuty (HTML scrape of dashboard headline)
         'pagerduty'  => ['kind' => 'scrape', 'url' => 'https://status.pagerduty.com/posts/dashboard'],
@@ -731,13 +730,12 @@ class Lousy_Outages_Fetcher {
 
     private static $NAMES = [
         'cloudflare' => 'Cloudflare',
-        'datadog'    => 'Datadog',
         'zoom'       => 'Zoom',
-        'stripe'     => 'Stripe',
-        'gitlab'     => 'GitLab',
+        'slack'      => 'Slack',
         'zscaler'    => 'Zscaler',
         'gcp'        => 'Google Cloud',
         'azure'      => 'Microsoft Azure',
+        'qubeyond'   => 'Qubeyond',
         'pagerduty'  => 'PagerDuty',
         'aws'        => 'Amazon Web Services',
         'crowdstrike'=> 'CrowdStrike',

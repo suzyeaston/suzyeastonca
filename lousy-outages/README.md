@@ -11,24 +11,22 @@ Monitor third‑party service status and get SMS and email alerts when things br
 | openai | OpenAI | https://status.openai.com/api/v2/summary.json |
 | atlassian | Atlassian | https://status.atlassian.com/api/v2/summary.json |
 | digitalocean | DigitalOcean | https://status.digitalocean.com/api/v2/summary.json |
-| gitlab | GitLab | https://status.gitlab.com/pages/5b36dc6502d06804c08349f7/rss |
 | netlify | Netlify | https://www.netlifystatus.com/api/v2/summary.json |
 | vercel | Vercel | https://www.vercel-status.com/api/v2/summary.json |
 | pagerduty | PagerDuty | https://status.pagerduty.com/api/v2/summary.json |
 | zoom | Zoom | https://status.zoom.us/api/v2/summary.json |
 | zscaler | Zscaler | https://trust.zscaler.com/rss-feed |
-| stripe | Stripe | https://www.stripestatus.com/history.rss |
 | twilio | Twilio | https://status.twilio.com/api/v2/summary.json |
-| datadog | Datadog | https://status.datadoghq.com/api/v2/summary.json |
 | linear | Linear | https://status.linear.app/api/v2/summary.json |
 | sentry | Sentry | https://status.sentry.io/api/v2/summary.json |
-| slack | Slack | https://slack-status.com/api/v2.0.0/current |
+| slack | Slack | https://slack-status.com/feed/rss |
 | aws | AWS | https://status.aws.amazon.com/rss/all.rss |
 | azure | Azure | https://azurestatuscdn.azureedge.net/en-us/status/feed/ |
 | gcp | Google Cloud | https://www.google.com/appsstatus/dashboard/en-CA/feed.atom |
+| qubeyond | Qubeyond | https://status.qubeyond.com/state_feed/feed.atom |
 | downdetector-ca | Downdetector (CA Aggregate) | https://downdetector.ca/archive/?format=rss |
 
-Slack now uses the official `slack-status.com/api/v2.0.0/current` endpoint so green states render the "All systems operational" headline, and Zscaler is polled from `https://trust.zscaler.com` to dodge intermittent DNS failures. New default providers include Stripe, Twilio, Datadog, Linear, and Sentry—toggle any of them from **Settings → Lousy Outages**.
+Slack is polled from the official RSS feed at `https://slack-status.com/feed/rss`, and Zscaler is queried from `https://trust.zscaler.com` to dodge intermittent DNS failures. New default providers include Slack, Twilio, Linear, Sentry, and Qubeyond—toggle any of them from **Settings → Lousy Outages**.
 
 Downdetector is disabled by default because the RSS feed is unofficial and can disappear; enable it from the settings page if it loads for you. When the feed is unreachable, the adapter reports an `unknown` state with an error badge rather than failing the whole poll.
 

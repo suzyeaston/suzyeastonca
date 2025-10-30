@@ -10,7 +10,6 @@ namespace {
             ['id' => 'openai', 'name' => 'OpenAI', 'type' => 'statuspage', 'url' => 'https://status.openai.com/api/v2/summary.json'],
             ['id' => 'atlassian', 'name' => 'Atlassian', 'type' => 'statuspage', 'url' => 'https://status.atlassian.com/api/v2/summary.json'],
             ['id' => 'digitalocean', 'name' => 'DigitalOcean', 'type' => 'statuspage', 'url' => 'https://status.digitalocean.com/api/v2/summary.json'],
-            ['id' => 'gitlab', 'name' => 'GitLab', 'type' => 'rss', 'url' => 'https://status.gitlab.com/pages/5b36dc6502d06804c08349f7/rss'],
             ['id' => 'netlify', 'name' => 'Netlify', 'type' => 'statuspage', 'url' => 'https://www.netlifystatus.com/api/v2/summary.json'],
             ['id' => 'vercel', 'name' => 'Vercel', 'type' => 'statuspage', 'url' => 'https://www.vercel-status.com/api/v2/summary.json'],
             ['id' => 'pagerduty', 'name' => 'PagerDuty', 'type' => 'statuspage', 'url' => 'https://status.pagerduty.com/api/v2/summary.json'],
@@ -18,19 +17,16 @@ namespace {
             ['id' => 'zscaler', 'name' => 'Zscaler', 'type' => 'rss', 'url' => 'https://trust.zscaler.com/rss-feed'],
 
             // High-value adds (Statuspage JSON)
-            ['id' => 'stripe', 'name' => 'Stripe', 'type' => 'rss', 'url' => 'https://www.stripestatus.com/history.rss'],
             ['id' => 'twilio', 'name' => 'Twilio', 'type' => 'statuspage', 'url' => 'https://status.twilio.com/api/v2/summary.json'],
-            ['id' => 'datadog', 'name' => 'Datadog', 'type' => 'statuspage', 'url' => 'https://status.datadoghq.com/api/v2/summary.json'],
             ['id' => 'linear', 'name' => 'Linear', 'type' => 'statuspage', 'url' => 'https://status.linear.app/api/v2/summary.json'],
             ['id' => 'sentry', 'name' => 'Sentry', 'type' => 'statuspage', 'url' => 'https://status.sentry.io/api/v2/summary.json'],
 
-            // Vendor APIs
-            ['id' => 'slack', 'name' => 'Slack', 'type' => 'slack_current', 'url' => 'https://slack-status.com/api/v2.0.0/current'],
-
             // RSS/Atom feeds
+            ['id' => 'slack', 'name' => 'Slack', 'type' => 'rss', 'url' => 'https://slack-status.com/feed/rss'],
             ['id' => 'aws', 'name' => 'AWS', 'type' => 'rss', 'url' => 'https://status.aws.amazon.com/rss/all.rss'],
             ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://rssfeed.azure.status.microsoft/en-us/status/feed/'],
             ['id' => 'gcp', 'name' => 'Google Cloud', 'type' => 'atom', 'url' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom'],
+            ['id' => 'qubeyond', 'name' => 'Qubeyond', 'type' => 'atom', 'url' => 'https://status.qubeyond.com/state_feed/feed.atom'],
 
             // Optional aggregate (disabled by default in settings)
             ['id' => 'downdetector-ca', 'name' => 'Downdetector (CA Aggregate)', 'type' => 'rss', 'url' => 'https://downdetector.ca/archive/?format=rss', 'disabled' => true, 'optional' => true],
@@ -152,9 +148,9 @@ namespace LousyOutages {
 
         private static function derive_status_url( array $provider ): string {
             $wellKnown = [
-                'zscaler' => 'https://trust.zscaler.com/',
-                'stripe'  => 'https://status.stripe.com/',
-                'gitlab'  => 'https://status.gitlab.com/',
+                'zscaler'  => 'https://trust.zscaler.com/',
+                'slack'    => 'https://status.slack.com/',
+                'qubeyond' => 'https://status.qubeyond.com/',
             ];
 
             if ( ! empty( $provider['id'] ) && isset( $wellKnown[ $provider['id'] ] ) ) {
