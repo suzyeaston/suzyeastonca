@@ -696,7 +696,6 @@ class Lousy_Outages_Fetcher {
         'zoom'       => ['kind' => 'statuspage', 'base' => 'https://status.zoom.us'],
 
         // Switch these to RSS/Atom (per Suzy’s feeds)
-        'slack'      => ['kind' => 'rss', 'feed' => 'https://slack-status.com/feed/rss', 'link' => 'https://status.slack.com/'],
         'zscaler'    => ['kind' => 'rss', 'feed' => 'https://trust.zscaler.com/rss-feed', 'link' => 'https://trust.zscaler.com/cloud-status'],
         'gcp'        => ['kind' => 'atom', 'feed' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom', 'link' => 'https://www.google.com/appsstatus/dashboard/'],
         'azure'      => [
@@ -731,7 +730,6 @@ class Lousy_Outages_Fetcher {
     private static $NAMES = [
         'cloudflare' => 'Cloudflare',
         'zoom'       => 'Zoom',
-        'slack'      => 'Slack',
         'zscaler'    => 'Zscaler',
         'gcp'        => 'Google Cloud',
         'azure'      => 'Microsoft Azure',

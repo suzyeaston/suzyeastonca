@@ -37,7 +37,6 @@
       'Somewhere a Lambda forgot to set its alarm.'
     ],
     github: ['Push it real good, but maybe later.'],
-    slack: ['Time to revive the email thread.'],
     default: ['Hold tight—someone’s jiggling the ethernet cable.']
   };
 
