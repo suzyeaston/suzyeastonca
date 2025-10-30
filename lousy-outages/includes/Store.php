@@ -6,7 +6,20 @@ class Store {
     private string $log_option = 'lousy_outages_log';
 
     public function get_all(): array {
-        return get_option( $this->option, [] );
+        $stored = get_option( $this->option, [] );
+
+        if ( ! is_array( $stored ) || empty( $stored ) ) {
+            return [];
+        }
+
+        $enabled = Providers::enabled();
+        if ( ! is_array( $enabled ) || empty( $enabled ) ) {
+            return [];
+        }
+
+        $allowed = array_fill_keys( array_keys( $enabled ), true );
+
+        return array_intersect_key( $stored, $allowed );
     }
 
     public function get( string $id ): ?array {
