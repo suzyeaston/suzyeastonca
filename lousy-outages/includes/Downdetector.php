@@ -143,7 +143,6 @@ class Downdetector {
             'azure'       => ['microsoft', 'microsoft azure'],
             'gcp'         => ['google cloud', 'google'],
             'github'      => ['github'],
-            'slack'       => ['slack'],
             'zscaler'     => ['zscaler'],
             'cloudflare'  => ['cloudflare'],
             'openai'      => ['openai'],
