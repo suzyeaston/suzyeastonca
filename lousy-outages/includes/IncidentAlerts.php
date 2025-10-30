@@ -28,6 +28,8 @@ class IncidentAlerts {
         'Cache-Control' => 'no-cache',
     ];
 
+    private const ALERTABLE_STATES = ['degraded', 'outage', 'major', 'maintenance'];
+
     private const OPTION_SUBSCRIBERS      = 'lo_subscribers';
     private const OPTION_UNSUB_TOKENS     = 'lo_unsub_tokens';
     private const OPTION_SEEN             = 'lo_seen_incidents';
@@ -179,6 +181,37 @@ class IncidentAlerts {
      * @return array<int, array<string, mixed>>
      */
     public static function collect_incidents(): array {
+        $primary = self::collect_from_snapshot();
+        $legacy  = self::collect_from_legacy_feeds();
+
+        if (empty($primary)) {
+            return $legacy;
+        }
+
+        if (empty($legacy)) {
+            return $primary;
+        }
+
+        $seen = [];
+        foreach ($primary as $incident) {
+            if (!isset($incident['id'])) {
+                continue;
+            }
+            $seen[(string) $incident['id']] = true;
+        }
+
+        foreach ($legacy as $incident) {
+            $id = isset($incident['id']) ? (string) $incident['id'] : '';
+            if ('' !== $id && isset($seen[$id])) {
+                continue;
+            }
+            $primary[] = $incident;
+        }
+
+        return $primary;
+    }
+
+    private static function collect_from_legacy_feeds(): array {
         $incidents = [];
 
         foreach (self::SUMMARY_PROVIDERS as $provider => $url) {
@@ -197,6 +230,133 @@ class IncidentAlerts {
         }
 
         return $incidents;
+    }
+
+    private static function collect_from_snapshot(): array {
+        $snapshot  = \lousy_outages_get_snapshot(true);
+        $providers = [];
+        $fetchedAt = gmdate('c');
+
+        if (is_array($snapshot)) {
+            if (!empty($snapshot['providers']) && is_array($snapshot['providers'])) {
+                $providers = $snapshot['providers'];
+            }
+            if (!empty($snapshot['fetched_at']) && is_string($snapshot['fetched_at'])) {
+                $fetchedAt = (string) $snapshot['fetched_at'];
+            }
+        }
+
+        if (empty($providers)) {
+            $states = \lousy_outages_collect_statuses(true);
+            $stored = get_option('lousy_outages_last_poll');
+            if (is_string($stored) && '' !== trim($stored)) {
+                $fetchedAt = $stored;
+            }
+            foreach ($states as $id => $state) {
+                if (!is_array($state)) {
+                    continue;
+                }
+                $providers[] = \lousy_outages_build_provider_payload((string) $id, $state, $fetchedAt);
+            }
+        }
+
+        if (empty($providers)) {
+            return [];
+        }
+
+        $incidents = [];
+
+        foreach ($providers as $provider) {
+            if (!is_array($provider)) {
+                continue;
+            }
+
+            $providerId = isset($provider['id']) ? (string) $provider['id'] : '';
+            if ('' === $providerId) {
+                continue;
+            }
+
+            $providerName = (string) ($provider['name'] ?? $providerId);
+            $statusCode   = strtolower((string) ($provider['stateCode'] ?? 'unknown'));
+            $statusLabel  = (string) ($provider['state'] ?? ($statusCode ? ucfirst($statusCode) : 'Status change'));
+            if ('' === $statusLabel) {
+                $statusLabel = $statusCode ? ucfirst($statusCode) : 'Status change';
+            }
+            $summary    = (string) ($provider['summary'] ?? $statusLabel);
+            $updatedAt  = isset($provider['updatedAt']) ? (string) $provider['updatedAt'] : $fetchedAt;
+            $url        = isset($provider['url']) ? (string) $provider['url'] : '';
+            $components = isset($provider['components']) && is_array($provider['components']) ? $provider['components'] : [];
+            $incidentList = isset($provider['incidents']) && is_array($provider['incidents']) ? $provider['incidents'] : [];
+
+            if (!empty($incidentList)) {
+                foreach ($incidentList as $incident) {
+                    if (!is_array($incident)) {
+                        continue;
+                    }
+                    $rawId = isset($incident['id']) ? (string) $incident['id'] : '';
+                    if ('' === $rawId) {
+                        $rawId = md5($providerId . wp_json_encode($incident));
+                    }
+                    $incidentId      = $providerId . ':' . $rawId;
+                    $incidentSummary = (string) ($incident['summary'] ?? $summary);
+                    $impact          = strtolower((string) ($incident['impact'] ?? ($statusCode ?: 'major')));
+
+                    $incidents[$incidentId] = [
+                        'id'         => $incidentId,
+                        'provider'   => $providerId,
+                        'name'       => (string) ($incident['title'] ?? $incidentSummary ?: 'Incident'),
+                        'impact'     => $impact,
+                        'status'     => $statusLabel,
+                        'started_at' => self::normalize_timestamp($incident['startedAt'] ?? $incident['started_at'] ?? $updatedAt, $updatedAt),
+                        'url'        => (string) ($incident['url'] ?? $url),
+                        'components' => $components,
+                        'body'       => $incidentSummary,
+                    ];
+                }
+                continue;
+            }
+
+            if (!in_array($statusCode, self::ALERTABLE_STATES, true)) {
+                continue;
+            }
+
+            $statusId = $providerId . ':status:' . md5($statusCode . '|' . $summary . '|' . $updatedAt);
+            $incidents[$statusId] = [
+                'id'         => $statusId,
+                'provider'   => $providerId,
+                'name'       => sprintf('%s status: %s', $providerName, $statusLabel),
+                'impact'     => $statusCode,
+                'status'     => $statusLabel,
+                'started_at' => self::normalize_timestamp($updatedAt, $fetchedAt),
+                'url'        => $url,
+                'components' => $components,
+                'body'       => $summary,
+            ];
+        }
+
+        return array_values($incidents);
+    }
+
+    private static function normalize_timestamp($value, string $fallback): string {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format(DATE_ATOM);
+        }
+
+        if (is_int($value) || is_float($value)) {
+            $timestamp = (int) round((float) $value);
+            if ($timestamp > 0) {
+                return gmdate('c', $timestamp);
+            }
+        }
+
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ('' !== $trimmed) {
+                return $trimmed;
+            }
+        }
+
+        return $fallback;
     }
 
     /**
