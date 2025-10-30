@@ -143,7 +143,6 @@ class Downdetector {
             'azure'       => ['microsoft', 'microsoft azure'],
             'gcp'         => ['google cloud', 'google'],
             'github'      => ['github'],
-            'gitlab'      => ['gitlab'],
             'slack'       => ['slack'],
             'zscaler'     => ['zscaler'],
             'cloudflare'  => ['cloudflare'],
@@ -154,6 +153,7 @@ class Downdetector {
             'atlassian'   => ['atlassian', 'jira', 'confluence', 'bitbucket'],
             'pagerduty'   => ['pagerduty', 'pager duty'],
             'zoom'        => ['zoom'],
+            'qubeyond'    => ['qubeyond'],
         ];
 
         $keywords = [];
