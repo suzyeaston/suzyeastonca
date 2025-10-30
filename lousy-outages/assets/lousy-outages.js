@@ -15,6 +15,8 @@
 
   var POLL_MS = 10000;
   var MAX_DELAY = 60000;
+  var STALE_REFRESH_THRESHOLD_MS = 6 * 60 * 1000;
+  var STALE_REFRESH_COOLDOWN_MS = 3 * 60 * 1000;
   var DEGRADE_THRESHOLD = 0.5;
   var RECOVER_THRESHOLD = 0.7;
   var MANUAL_REFRESH_RETRY_DELAY = 1500;
@@ -71,7 +73,11 @@
     isRefreshing: false,
     pendingManual: false,
     lastFetchStartedAt: null,
-    manualQueued: false
+    manualQueued: false,
+    staleRefreshQueued: false,
+    staleRefreshInFlight: false,
+    lastStaleRefreshAttempt: null,
+    degradedDueToStale: false
   };
 
   function delay(ms) {
@@ -268,17 +274,89 @@
     }
   }
 
-  function showDegraded(active) {
+  function showDegraded(active, message) {
     if (!state.degradedBadge) {
       return;
     }
     if (active) {
-      state.degradedBadge.textContent = 'AUTO-REFRESH DEGRADED';
+      state.degradedBadge.textContent = message || 'AUTO-REFRESH DEGRADED';
       state.degradedBadge.removeAttribute('hidden');
     } else {
       state.degradedBadge.textContent = '';
       state.degradedBadge.setAttribute('hidden', 'hidden');
     }
+  }
+
+  function triggerStaleRefresh() {
+    if (!state.refreshEndpoint || !state.fetchImpl) {
+      return Promise.resolve();
+    }
+    if (state.staleRefreshInFlight) {
+      return Promise.resolve();
+    }
+
+    state.staleRefreshQueued = false;
+    state.staleRefreshInFlight = true;
+
+    return callRefreshEndpoint()
+      .catch(function () {
+        return null;
+      })
+      .then(function () {
+        return refreshSummary(false, true);
+      })
+      .finally(function () {
+        state.staleRefreshInFlight = false;
+      });
+  }
+
+  function maybeQueueStaleRefresh(fetchedIso) {
+    if (!state.refreshEndpoint || !state.fetchImpl) {
+      return;
+    }
+
+    var iso = typeof fetchedIso === 'string' ? fetchedIso : '';
+    if (!iso) {
+      if (state.degradedDueToStale) {
+        state.degradedDueToStale = false;
+        showDegraded(false);
+      }
+      return;
+    }
+
+    var parsed = Date.parse(iso);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+
+    var age = Date.now() - parsed;
+    if (age < STALE_REFRESH_THRESHOLD_MS) {
+      if (state.degradedDueToStale) {
+        state.degradedDueToStale = false;
+        showDegraded(false);
+      }
+      return;
+    }
+
+    if (state.staleRefreshInFlight) {
+      return;
+    }
+
+    var now = Date.now();
+    if (state.lastStaleRefreshAttempt && (now - state.lastStaleRefreshAttempt) < STALE_REFRESH_COOLDOWN_MS) {
+      return;
+    }
+
+    state.lastStaleRefreshAttempt = now;
+    state.degradedDueToStale = true;
+    showDegraded(true, 'AUTO-REFRESH STALE — refreshing feed');
+
+    if (state.isRefreshing) {
+      state.staleRefreshQueued = true;
+      return;
+    }
+
+    triggerStaleRefresh();
   }
 
   function renderProviders(list) {
@@ -684,6 +762,7 @@
       state.baseDelay = POLL_MS;
     }
     state.delay = state.baseDelay;
+    state.degradedDueToStale = false;
     showDegraded(false);
   }
 
@@ -692,6 +771,7 @@
       state.baseDelay = POLL_MS;
     }
     state.delay = state.baseDelay;
+    state.degradedDueToStale = false;
     showDegraded(true);
   }
 
@@ -777,6 +857,9 @@
         if (res.status === 304) {
           resetAutoRefresh();
           scheduleNext(state.baseDelay);
+          if (state.fetchedAt) {
+            maybeQueueStaleRefresh(state.fetchedAt);
+          }
           return null;
         }
         if (!res.ok) {
@@ -812,6 +895,9 @@
         if (state.fetchedLabelEl) {
           state.fetchedLabelEl.textContent = state.fetchedLabel;
         }
+        if (state.fetchedAt) {
+          maybeQueueStaleRefresh(state.fetchedAt);
+        }
         if (body.trending) {
           updateTrendingBanner(body.trending);
         } else {
@@ -841,6 +927,10 @@
       })
       .finally(function () {
         state.isRefreshing = false;
+        var shouldTriggerStale = state.staleRefreshQueued && !state.staleRefreshInFlight;
+        if (shouldTriggerStale) {
+          state.staleRefreshQueued = false;
+        }
         var replayManual = state.manualQueued;
         state.manualQueued = false;
         if (replayManual) {
@@ -850,6 +940,10 @@
         if (state.pendingManual) {
           state.pendingManual = false;
           refreshSummary(true, true);
+          return;
+        }
+        if (shouldTriggerStale) {
+          triggerStaleRefresh();
         }
       });
   }
