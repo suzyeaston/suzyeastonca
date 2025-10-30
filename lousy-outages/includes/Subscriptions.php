@@ -9,6 +9,45 @@ class Subscriptions {
     public const STATUS_SUBSCRIBED = 'subscribed';
     public const STATUS_UNSUBSCRIBED = 'unsubscribed';
 
+    /** @var bool */
+    private static $schema_checked = false;
+
+    private static function ensure_schema(): void {
+        if (self::$schema_checked) {
+            return;
+        }
+
+        global $wpdb;
+
+        $table = self::table_name();
+        $needs_upgrade = false;
+
+        $like = $wpdb->esc_like($table);
+        $existing = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $like));
+        if (!$existing) {
+            $needs_upgrade = true;
+        } else {
+            $columns = $wpdb->get_col("SHOW COLUMNS FROM `{$table}`");
+            if (!is_array($columns)) {
+                $columns = [];
+            }
+
+            $columns = array_map('strtolower', $columns);
+            foreach (['email', 'status', 'token', 'created_at', 'updated_at', 'ip_hash', 'consent_source'] as $required) {
+                if (!in_array($required, $columns, true)) {
+                    $needs_upgrade = true;
+                    break;
+                }
+            }
+        }
+
+        if ($needs_upgrade) {
+            self::create_table();
+        }
+
+        self::$schema_checked = true;
+    }
+
     public static function table_name(): string {
         global $wpdb;
         return $wpdb->prefix . self::TABLE;
@@ -57,6 +96,9 @@ class Subscriptions {
 
     public static function save_pending(string $email, string $token, string $ip_hash, string $source = 'form'): void {
         global $wpdb;
+
+        self::ensure_schema();
+
         $table  = self::table_name();
         $now    = gmdate('Y-m-d H:i:s');
 
@@ -96,6 +138,9 @@ class Subscriptions {
 
     public static function find_by_token(string $token): ?array {
         global $wpdb;
+
+        self::ensure_schema();
+
         $table = self::table_name();
         $row   = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE token = %s", $token), ARRAY_A);
         return $row ?: null;
@@ -103,6 +148,9 @@ class Subscriptions {
 
     public static function update_status_by_token(string $token, string $status): bool {
         global $wpdb;
+
+        self::ensure_schema();
+
         $table = self::table_name();
         $updated = $wpdb->update(
             $table,
@@ -120,6 +168,9 @@ class Subscriptions {
 
     public static function update_token_for_email(string $email, string $token): bool {
         global $wpdb;
+
+        self::ensure_schema();
+
         $table = self::table_name();
         $updated = $wpdb->update(
             $table,
@@ -141,6 +192,8 @@ class Subscriptions {
         if (!$email) {
             return false;
         }
+
+        self::ensure_schema();
 
         $table = self::table_name();
         $updated = $wpdb->update(
