@@ -36,6 +36,8 @@ namespace {
 namespace LousyOutages {
 
     class Providers {
+        private const OPTION_DEFAULT_ENABLED = 'lousy_outages_default_enabled_providers';
+
         /**
          * Return the provider configuration map.
          */
@@ -79,9 +81,63 @@ namespace LousyOutages {
          */
         public static function enabled(): array {
             $all             = self::list();
-            $default_enabled = array_keys( array_filter( $all, static fn( array $prov ): bool => $prov['enabled'] ) );
-            $saved           = get_option( 'lousy_outages_providers', false );
-            $enabled_ids     = is_array( $saved ) ? $saved : $default_enabled;
+            $default_enabled = array_keys(
+                array_filter(
+                    $all,
+                    static fn( array $prov ): bool => ! empty( $prov['enabled'] )
+                )
+            );
+            $saved               = get_option( 'lousy_outages_providers', false );
+            $stored_default_list = get_option( self::OPTION_DEFAULT_ENABLED, null );
+            $previous_defaults   = is_array( $stored_default_list )
+                ? array_values(
+                    array_filter(
+                        array_map( 'strval', $stored_default_list ),
+                        static fn( $value ): bool => '' !== (string) $value
+                    )
+                )
+                : [];
+
+            if ( is_array( $saved ) ) {
+                $enabled_ids = [];
+                foreach ( $saved as $id ) {
+                    if ( ! is_scalar( $id ) ) {
+                        continue;
+                    }
+                    $id = (string) $id;
+                    if ( '' === $id ) {
+                        continue;
+                    }
+                    $enabled_ids[] = $id;
+                }
+
+                $new_defaults = array_diff( $default_enabled, $previous_defaults );
+                $updated      = false;
+
+                if ( ! empty( $new_defaults ) ) {
+                    foreach ( $new_defaults as $id ) {
+                        if ( ! in_array( $id, $enabled_ids, true ) ) {
+                            $enabled_ids[] = $id;
+                            $updated       = true;
+                        }
+                    }
+                }
+
+                if ( $updated ) {
+                    $enabled_ids = array_values( array_unique( $enabled_ids ) );
+                    update_option( 'lousy_outages_providers', $enabled_ids, false );
+                }
+
+                if ( $previous_defaults !== $default_enabled ) {
+                    update_option( self::OPTION_DEFAULT_ENABLED, $default_enabled, false );
+                }
+            } else {
+                $enabled_ids = $default_enabled;
+
+                if ( $previous_defaults !== $default_enabled ) {
+                    update_option( self::OPTION_DEFAULT_ENABLED, $default_enabled, false );
+                }
+            }
 
             $enabled = [];
             foreach ( $enabled_ids as $id ) {
