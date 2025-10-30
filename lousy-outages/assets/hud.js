@@ -190,14 +190,7 @@
         countdownEl.textContent = 'Refreshing…';
         return;
       }
-      var seconds = Math.round(diff / 1000);
-      if (seconds < 60) {
-        countdownEl.textContent = 'Next refresh in ' + seconds + 's';
-        return;
-      }
-      var minutes = Math.floor(seconds / 60);
-      var remaining = seconds % 60;
-      countdownEl.textContent = 'Next refresh in ' + minutes + 'm ' + (remaining < 10 ? '0' : '') + remaining + 's';
+      countdownEl.textContent = '';
     }
 
     function startCountdown() {

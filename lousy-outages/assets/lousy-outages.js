@@ -202,14 +202,7 @@
       state.countdownEl.textContent = 'Refreshing…';
       return;
     }
-    var seconds = Math.round(diff / 1000);
-    if (seconds < 60) {
-      state.countdownEl.textContent = 'Next refresh in ' + seconds + 's';
-      return;
-    }
-    var minutes = Math.floor(seconds / 60);
-    var rem = seconds % 60;
-    state.countdownEl.textContent = 'Next refresh in ' + minutes + 'm ' + rem + 's';
+    state.countdownEl.textContent = '';
   }
 
   function updateFetched() {
