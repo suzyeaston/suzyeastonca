@@ -521,33 +521,33 @@ if (!function_exists('lo_lyric_fragment_bank')) {
     function lo_lyric_fragment_bank(): array
     {
         return [
-            'desert_highway' => [
-                'fragment' => 'On a dark desert highway',
-                'answer'   => 'cool wind in my hair',
+            'ultraviolet_choir' => [
+                'fragment' => 'Grimes says',
+                'answer'   => 'the ai choir keeps humming in ultraviolet',
             ],
-            'warm_smell' => [
-                'fragment' => 'Warm smell of colitas',
-                'answer'   => 'rising up through the air',
+            'entropy_dance' => [
+                'fragment' => 'Grimes says',
+                'answer'   => 'entropy is just the universe freestyle dancing',
             ],
-            'distance_light' => [
-                'fragment' => 'Up ahead in the distance',
-                'answer'   => 'I saw a shimmering light',
+            'drum_machine_halo' => [
+                'fragment' => 'Grimes says',
+                'answer'   => 'i traded my sleep schedule for a drum machine halo',
             ],
-            'tiffany_twisted' => [
-                'fragment' => 'Her mind is Tiffany-twisted',
-                'answer'   => 'she got the Mercedes bends',
+            'glitch_doorways' => [
+                'fragment' => 'Grimes says',
+                'answer'   => 'glitches are just secret doorways for weirdos',
             ],
-            'mirrors_ceiling' => [
-                'fragment' => 'Mirrors on the ceiling',
-                'answer'   => 'the pink champagne on ice',
+            'satellite_tuner' => [
+                'fragment' => 'Grimes says',
+                'answer'   => 'i tune satellites the way other people tune guitars',
             ],
-            'programmed_receive' => [
-                'fragment' => 'We are programmed to receive',
-                'answer'   => 'you can check out any time you like but you can never leave',
+            'moon_memes' => [
+                'fragment' => 'Grimes says',
+                'answer'   => 'the moon texts me memes when mars goes offline',
             ],
-            'welcome_chorus' => [
-                'fragment' => 'Welcome to the Hotel California',
-                'answer'   => 'such a lovely place',
+            'cyber_sprites' => [
+                'fragment' => 'Grimes says',
+                'answer'   => 'cyber sprites keep my coffee warm at 3am shows',
             ],
         ];
     }
@@ -605,7 +605,7 @@ if (!function_exists('lo_validate_lyric_captcha')) {
         }
 
         if ($allowFallback) {
-            $fallback = lo_normalize_lyric_answer(apply_filters('lo_subscribe_noscript_word', 'hotel'));
+            $fallback = lo_normalize_lyric_answer(apply_filters('lo_subscribe_noscript_word', 'grimes'));
             if ('' !== $fallback && hash_equals($fallback, $normalized)) {
                 return true;
             }
