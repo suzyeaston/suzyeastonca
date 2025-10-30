@@ -267,11 +267,72 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
     return $payload;
 }
 
+function lousy_outages_filter_states_to_enabled( array $states ): array {
+    if ( empty( $states ) ) {
+        return [];
+    }
+
+    $enabled = Providers::enabled();
+    if ( ! is_array( $enabled ) || empty( $enabled ) ) {
+        return [];
+    }
+
+    $allowed = array_fill_keys( array_keys( $enabled ), true );
+
+    return array_intersect_key( $states, $allowed );
+}
+
+function lousy_outages_filter_snapshot( array $snapshot ): array {
+    $providers = isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] )
+        ? $snapshot['providers']
+        : [];
+
+    if ( empty( $providers ) ) {
+        $snapshot['providers'] = [];
+        $snapshot['trending']  = ( new \LousyOutages\Trending() )->evaluate( [] );
+        return $snapshot;
+    }
+
+    $enabled = Providers::enabled();
+    if ( ! is_array( $enabled ) || empty( $enabled ) ) {
+        $snapshot['providers'] = [];
+        $snapshot['trending']  = ( new \LousyOutages\Trending() )->evaluate( [] );
+        return $snapshot;
+    }
+
+    $allowed = array_fill_keys( array_keys( $enabled ), true );
+
+    $snapshot['providers'] = array_values(
+        array_filter(
+            $providers,
+            static function ( $provider ) use ( $allowed ): bool {
+                if ( ! is_array( $provider ) ) {
+                    return false;
+                }
+
+                $id = isset( $provider['id'] ) ? (string) $provider['id'] : '';
+
+                if ( '' === $id ) {
+                    return false;
+                }
+
+                return isset( $allowed[ $id ] );
+            }
+        )
+    );
+
+    $snapshot['trending'] = ( new \LousyOutages\Trending() )->evaluate( $snapshot['providers'] );
+
+    return $snapshot;
+}
+
 function lousy_outages_snapshot_cache_key(): string {
     return 'lousy_status_snapshot';
 }
 
 function lousy_outages_build_snapshot( array $states, string $timestamp, string $source = 'snapshot' ): array {
+    $states = lousy_outages_filter_states_to_enabled( $states );
+
     $providers = [];
     $errors    = [];
 
@@ -291,13 +352,13 @@ function lousy_outages_build_snapshot( array $states, string $timestamp, string 
     $providers = lousy_outages_sort_providers( $providers );
     $trending  = ( new \LousyOutages\Trending() )->evaluate( $providers );
 
-    return [
+    return lousy_outages_filter_snapshot( [
         'providers'  => $providers,
         'fetched_at' => $timestamp,
         'trending'   => $trending,
         'errors'     => $errors,
         'source'     => $source,
-    ];
+    ] );
 }
 
 function lousy_outages_store_snapshot( array $snapshot ): void {
@@ -338,14 +399,15 @@ function lousy_outages_get_snapshot( bool $force_refresh = false ): array {
     if ( ! $force_refresh ) {
         $cached = get_transient( $cache_key );
         if ( is_array( $cached ) && ! empty( $cached['providers'] ) ) {
-            return $cached;
+            return lousy_outages_filter_snapshot( $cached );
         }
     }
 
     $stored = get_option( 'lousy_outages_snapshot', [] );
     if ( ! $force_refresh && is_array( $stored ) && ! empty( $stored['providers'] ) ) {
-        lousy_outages_store_snapshot( $stored );
-        return $stored;
+        $filtered = lousy_outages_filter_snapshot( $stored );
+        lousy_outages_store_snapshot( $filtered );
+        return $filtered;
     }
 
     $store  = new Store();
