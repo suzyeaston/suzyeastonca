@@ -72,10 +72,10 @@ if (!function_exists('send_lo_confirmation_email')) {
         $confirm_raw  = esc_url_raw($confirm_url);
         $confirm_html = esc_url($confirm_url);
 
-        $subject = '🔔 You’re subscribed to Lousy Outages';
+        $subject = '🔔 Please confirm your subscription to Lousy Outages';
 
         $text_body_lines = [
-            'Welcome to the Lousy Outages alert list!',
+            'Please confirm your subscription to Lousy Outages.',
             '',
             'Tap the link below to confirm and start receiving outage intel:',
             $confirm_raw,
@@ -98,8 +98,8 @@ if (!function_exists('send_lo_confirmation_email')) {
         <body style="margin:0;background:#05050a;color:#f7f4ff;font-family:Segoe UI,Roboto,system-ui,-apple-system,sans-serif;">
             <div style="max-width:640px;margin:0 auto;padding:32px 20px;">
                 <div style="border-radius:18px;border:1px solid rgba(119,85,255,0.4);background:linear-gradient(145deg,#0d0c1f,#1b1540);box-shadow:0 22px 46px rgba(26,17,68,0.45);padding:32px 30px;">
-                    <p style="margin:0 0 12px;font-size:14px;letter-spacing:0.12em;text-transform:uppercase;color:#8f80ff;">Welcome aboard</p>
-                    <h1 style="margin:0 0 16px;font-size:30px;color:#f9f7ff;letter-spacing:0.04em;">You’re subscribed to Lousy Outages</h1>
+                    <p style="margin:0 0 12px;font-size:14px;letter-spacing:0.12em;text-transform:uppercase;color:#8f80ff;">Confirm required</p>
+                    <h1 style="margin:0 0 16px;font-size:30px;color:#f9f7ff;letter-spacing:0.04em;">Please confirm your subscription to Lousy Outages</h1>
                     <p style="margin:0 0 18px;font-size:16px;line-height:1.6;color:rgba(255,255,255,0.82);">Confirm your email to receive outage alerts, post-mortems, and status intel. One click keeps you in the loop.</p>
                     <p style="margin:0 0 22px;">
                         <a href="<?php echo esc_url($confirm_html); ?>" style="display:inline-block;padding:16px 28px;border-radius:999px;border:2px solid rgba(170,144,255,0.9);background:#6c5ce7;color:#fff;font-weight:700;text-decoration:none;letter-spacing:0.08em;">Confirm subscription</a>
