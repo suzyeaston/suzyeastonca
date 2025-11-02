@@ -6,14 +6,20 @@ get_header();
 <main id="homepage-content">
     <div class="hero-section">
         <h1 class="retro-title glow-lite">Suzy Easton &mdash; Vancouver</h1>
-        <div class="hero-quote">
-            <span class="hero-quote__text">&ldquo;This is what it feels like to be hunted by something smarter than you.&rdquo;</span>
-            <span class="hero-quote__attr">&mdash; <a href="https://www.youtube.com/watch?v=tvGnYM14-1A" target="_blank" rel="noopener">Grimes, Artificial Angels</a></span>
+        <div id="quote-rotator" aria-live="polite">
+            <figure class="quote q-grimes">
+                <blockquote>&ldquo;This is what it feels like to be hunted by something smarter than you.&rdquo;</blockquote>
+                <figcaption>&mdash; Grimes, <em>Artificial Angels</em></figcaption>
+            </figure>
+            <figure class="quote q-willie" hidden>
+                <blockquote>&ldquo;Hands on the Wheel&rdquo; &mdash; Willie Nelson. tender, road-worn, and steady at the helm.</blockquote>
+                <figcaption><a href="https://www.youtube.com/watch?v=71cIYDnDZUk" target="_blank" rel="noopener">Watch on YouTube</a></figcaption>
+            </figure>
         </div>
         <section class="lo-callout lo-8bit">
           <h2>Weekly Show: <span>Lousy Outages</span></h2>
           <p>New weekly YouTube chaos — status meltdowns, longer riffs, and plenty of fun with real third-party wobbles.</p>
-          <a class="btn-8bit" href="/lousy-outages/">Open the live dashboard →</a>
+          <a class="btn-8bit" href="/lousy-outages/">OPEN THE LIVE DASHBOARD →</a>
         </section>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
         <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
@@ -101,7 +107,7 @@ get_header();
     <section class="now-listening">
         <h2 class="pixel-font">Now Listening</h2>
         <iframe width="100%" height="360" src="https://www.youtube.com/embed/GwetNnBkgQM?autoplay=0" title="Metric – Full Performance (Live on KEXP)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        <p class="pixel-font now-listening-caption">🎶 Metric — Live on KEXP. Raw energy, shimmering synths, no AI weapons funding here.</p>
+        <p class="pixel-font now-listening-caption">🎶 Metric — Live on KEXP. stripped-down, all-acoustic set. no AI-weapons funding here.</p>
         <div class="info-callout pixel-font">
             <p>Spotify CEO Daniel Ek used his investment firm Prima Materia to lead a <strong>€600M (~US $694M)</strong> Series D funding round in June 2025 for Helsing, a German defense‑AI startup now valued at $12&nbsp;billion.</p>
             <p>Helsing develops AI‑enabled drones, aircraft and submarines for defense, and Ek also sits on its board as chairman.</p>
@@ -130,6 +136,50 @@ get_header();
         <p style="text-align:center;">New demo drops this weekend. Stay noisy.</p>
     </section>
 </main>
+
+    <script>
+      (function () {
+        var rotator = document.getElementById('quote-rotator');
+        if (!rotator) {
+          return;
+        }
+        var grimes = rotator.querySelector('.q-grimes');
+        var willie = rotator.querySelector('.q-willie');
+        if (!grimes || !willie) {
+          return;
+        }
+        var mq = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+        if (mq && mq.matches) {
+          return;
+        }
+        var showingGrimes = true;
+        var toggleQuotes = function () {
+          if (showingGrimes) {
+            grimes.setAttribute('hidden', '');
+            willie.removeAttribute('hidden');
+          } else {
+            willie.setAttribute('hidden', '');
+            grimes.removeAttribute('hidden');
+          }
+          showingGrimes = !showingGrimes;
+        };
+        var intervalId = window.setInterval(toggleQuotes, 12000);
+        if (mq) {
+          var handleChange = function (event) {
+            if (event.matches) {
+              window.clearInterval(intervalId);
+              willie.setAttribute('hidden', '');
+              grimes.removeAttribute('hidden');
+            }
+          };
+          if (typeof mq.addEventListener === 'function') {
+            mq.addEventListener('change', handleChange);
+          } else if (typeof mq.addListener === 'function') {
+            mq.addListener(handleChange);
+          }
+        }
+      }());
+    </script>
 
     <script>
       (function () {
