@@ -6,10 +6,12 @@ get_header();
 <main id="homepage-content">
     <div class="hero-section">
         <h1 class="retro-title glow-lite">Suzy Easton &mdash; Vancouver</h1>
-        <div id="quote-rotator" aria-live="polite">
+        <div class="hero-quote" id="quote-rotator" aria-live="polite">
             <figure class="quote q-willie">
                 <blockquote>&ldquo;Hands on the Wheel&rdquo; &mdash; Willie Nelson. tender, road-worn, and steady at the helm.</blockquote>
-                <figcaption><a href="https://www.youtube.com/watch?v=71cIYDnDZUk" target="_blank" rel="noopener">Watch on YouTube</a></figcaption>
+                <figcaption>
+                    <a href="https://www.youtube.com/watch?v=71cIYDnDZUk" target="_blank" rel="noopener">Watch on YouTube</a>
+                </figcaption>
             </figure>
             <figure class="quote q-grimes" hidden>
                 <blockquote>&ldquo;This is what it feels like to be hunted by something smarter than you.&rdquo;</blockquote>
@@ -143,44 +145,57 @@ get_header();
         if (!rotator) {
           return;
         }
-        var grimes = rotator.querySelector('.q-grimes');
+
         var willie = rotator.querySelector('.q-willie');
-        if (!grimes || !willie) {
+        var grimes = rotator.querySelector('.q-grimes');
+        if (!willie || !grimes) {
           return;
         }
-        var mq = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+        var mq = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+          ? window.matchMedia('(prefers-reduced-motion: reduce)')
+          : null;
+        var intervalId = null;
+        var showingWillie = true;
+
+        var showWillieFirst = function () {
+          willie.removeAttribute('hidden');
+          grimes.setAttribute('hidden', '');
+          showingWillie = true;
+        };
+
+        var toggleQuotes = function () {
+          showingWillie = !showingWillie;
+          if (showingWillie) {
+            willie.removeAttribute('hidden');
+            grimes.setAttribute('hidden', '');
+          } else {
+            grimes.removeAttribute('hidden');
+            willie.setAttribute('hidden', '');
+          }
+        };
+
+        showWillieFirst();
+
         if (mq && mq.matches) {
           return;
         }
-        willie.removeAttribute('hidden');
-        grimes.setAttribute('hidden', '');
-        var showingGrimes = false;
-        var toggleQuotes = function () {
-          if (showingGrimes) {
-            grimes.setAttribute('hidden', '');
-            willie.removeAttribute('hidden');
-          } else {
-            willie.setAttribute('hidden', '');
-            grimes.removeAttribute('hidden');
-          }
-          showingGrimes = !showingGrimes;
-        };
-        var intervalId = window.setInterval(toggleQuotes, 12000);
+
+        intervalId = window.setInterval(toggleQuotes, 12000);
+
         if (mq) {
           var handleChange = function (event) {
             if (event.matches) {
-              window.clearInterval(intervalId);
-              grimes.setAttribute('hidden', '');
-              willie.removeAttribute('hidden');
-              showingGrimes = false;
-            } else {
-              window.clearInterval(intervalId);
-              willie.removeAttribute('hidden');
-              grimes.setAttribute('hidden', '');
-              showingGrimes = false;
+              if (intervalId) {
+                window.clearInterval(intervalId);
+                intervalId = null;
+              }
+              showWillieFirst();
+            } else if (!intervalId) {
               intervalId = window.setInterval(toggleQuotes, 12000);
             }
           };
+
           if (typeof mq.addEventListener === 'function') {
             mq.addEventListener('change', handleChange);
           } else if (typeof mq.addListener === 'function') {
