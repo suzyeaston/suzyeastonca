@@ -4,17 +4,28 @@ get_header();
 ?>
 
 <main id="homepage-content">
-    <div class="hero-section">
-        <h1 class="retro-title glow-lite">Suzy Easton &mdash; Vancouver</h1>
-        <div id="quote-rotator" aria-live="polite" aria-atomic="true" data-quote-rotator>
-            <figure class="quote q-grimes">
-                <blockquote>&ldquo;This is what it feels like to be hunted by something smarter than you.&rdquo;</blockquote>
-                <figcaption>&mdash; Grimes, <em>Artificial Angels</em></figcaption>
-            </figure>
-            <figure class="quote q-willie" hidden aria-hidden="true">
-                <blockquote>&ldquo;Hands on the Wheel&rdquo; &mdash; Willie Nelson. tender, road-worn, and steady at the helm.</blockquote>
-                <figcaption><a href="https://www.youtube.com/watch?v=71cIYDnDZUk" target="_blank" rel="noopener">Watch on YouTube</a></figcaption>
-            </figure>
+    <div class="hero-section folk-crt">
+        <div class="hero-grid">
+            <div class="hero-main">
+                <p class="hero-eyebrow pixel-font">Now headlining the trail</p>
+                <h1 class="retro-title glow-lite hero-title">Willie on the Wheel</h1>
+                <p class="hero-copy">Willie Nelson is steering this week&rsquo;s vibes &mdash; old steel strings, tender harmonies, a steady hand on the reins. It&rsquo;s Oregon Trail heartland folk running on arcade power: love-forward, hopeful, and still wired for hard rock, soul, and future electronics.</p>
+                <div class="hero-cta-row">
+                    <a class="btn-8bit hero-cta" href="https://www.youtube.com/watch?v=71cIYDnDZUk" target="_blank" rel="noopener">Ride with Willie &rarr;</a>
+                    <a class="pixel-button hero-cta-alt" href="/music-releases/">Read the tour journal</a>
+                </div>
+                <div class="influence-ticker" aria-live="polite" aria-atomic="true">
+                    <span class="influence-label pixel-font">Traveling companions:</span>
+                    <span class="influence-current" data-influence-rotator data-influences='["Metric","Cat Stevens","Neil Young","Grateful Dead"]'>Metric</span>
+                </div>
+            </div>
+            <aside class="hero-side">
+                <div class="prairie-lantern" aria-hidden="true"></div>
+                <figure class="grimes-sidequest">
+                    <figcaption class="pixel-font">Side quest signal</figcaption>
+                    <p>Grimes is still transmitting neon coordinates. <a href="https://www.youtube.com/watch?v=b6pomaq30G0" target="_blank" rel="noopener">Catch the artificial angels &rarr;</a></p>
+                </figure>
+            </aside>
         </div>
         <section class="lo-callout lo-8bit">
           <h2>Weekly Show: <span>Lousy Outages</span></h2>
@@ -139,56 +150,33 @@ get_header();
 
     <script>
       (function () {
-        var rotator = document.querySelector('[data-quote-rotator]');
-        if (!rotator) {
+        var ticker = document.querySelector('[data-influence-rotator]');
+        if (!ticker) {
           return;
         }
-        var grimes = rotator.querySelector('.q-grimes');
-        var willie = rotator.querySelector('.q-willie');
-        if (!grimes || !willie) {
+        var influences;
+        try {
+          influences = JSON.parse(ticker.getAttribute('data-influences') || '[]');
+        } catch (err) {
+          influences = [];
+        }
+        if (!Array.isArray(influences) || influences.length === 0) {
           return;
         }
-        grimes.removeAttribute('aria-hidden');
-        if (willie.hasAttribute('hidden')) {
-          willie.setAttribute('aria-hidden', 'true');
-        } else {
-          willie.removeAttribute('aria-hidden');
-        }
+        var index = 0;
         var mq = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
-        if (mq && mq.matches) {
-          return;
-        }
-        var showingGrimes = true;
-        var toggleQuotes = function () {
-          if (showingGrimes) {
-            grimes.setAttribute('hidden', '');
-            grimes.setAttribute('aria-hidden', 'true');
-            willie.removeAttribute('hidden');
-            willie.removeAttribute('aria-hidden');
-          } else {
-            willie.setAttribute('hidden', '');
-            willie.setAttribute('aria-hidden', 'true');
-            grimes.removeAttribute('hidden');
-            grimes.removeAttribute('aria-hidden');
-          }
-          showingGrimes = !showingGrimes;
+        var update = function () {
+          ticker.classList.remove('influence-swap');
+          void ticker.offsetWidth;
+          ticker.textContent = influences[index];
+          ticker.classList.add('influence-swap');
+          index = (index + 1) % influences.length;
         };
-        var intervalId = window.setInterval(toggleQuotes, 12000);
-        if (mq) {
-          var handleChange = function (event) {
-            if (event.matches) {
-              window.clearInterval(intervalId);
-              willie.setAttribute('hidden', '');
-              willie.setAttribute('aria-hidden', 'true');
-              grimes.removeAttribute('hidden');
-              grimes.removeAttribute('aria-hidden');
-            }
-          };
-          if (typeof mq.addEventListener === 'function') {
-            mq.addEventListener('change', handleChange);
-          } else if (typeof mq.addListener === 'function') {
-            mq.addListener(handleChange);
-          }
+        if (!mq || !mq.matches) {
+          update();
+          window.setInterval(update, 7000);
+        } else {
+          ticker.textContent = influences[0];
         }
       }());
     </script>
