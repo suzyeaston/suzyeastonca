@@ -20,7 +20,7 @@ get_header();
                 </div>
             </div>
             <aside class="hero-side">
-                <div class="prairie-lantern" aria-hidden="true"></div>
+                <header class="hero-side-header pixel-font">Signal log</header>
                 <figure class="grimes-sidequest">
                     <figcaption class="pixel-font">Side quest signal</figcaption>
                     <p>Grimes is still transmitting neon coordinates. <a href="https://www.youtube.com/watch?v=b6pomaq30G0" target="_blank" rel="noopener">Catch the artificial angels &rarr;</a></p>
