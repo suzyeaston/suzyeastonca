@@ -957,8 +957,23 @@ footer,
   padding: 0.75rem 0;
 }
 
+#quote-rotator,
+.hero-section .hero-quote {
+  font-family: "Press Start 2P", cursive;
+  font-size: 0.8rem;
+  color: rgba(244, 255, 240, 0.85);
+  text-align: center;
+  margin: 0.75rem auto 1.5rem;
+  max-width: 32em;
+  position: relative;
+  padding: 0.75rem 0;
+  opacity: 0.85;
+}
+
 #quote-rotator::before,
-#quote-rotator::after {
+#quote-rotator::after,
+.hero-section .hero-quote::before,
+.hero-section .hero-quote::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -970,21 +985,29 @@ footer,
   opacity: 0.6;
 }
 
-#quote-rotator::before {
+#quote-rotator::before,
+.hero-section .hero-quote::before {
   top: 0;
 }
 
-#quote-rotator::after {
+#quote-rotator::after,
+.hero-section .hero-quote::after {
   bottom: 0;
 }
 
 #quote-rotator .quote {
-  font-family: "Press Start 2P", cursive;
-  font-size: 0.8rem;
-  color: rgba(244, 255, 240, 0.85);
   margin: 0;
   opacity: 1;
   transition: opacity 500ms ease-in-out;
+}
+
+.hero-section .hero-quote__text,
+.hero-section .hero-quote__attr {
+  display: block;
+}
+
+.hero-section .hero-quote__text {
+  margin-bottom: 0.35rem;
 }
 
 #quote-rotator .quote blockquote {
@@ -996,14 +1019,17 @@ footer,
   opacity: 0.75;
 }
 
-#quote-rotator .quote a {
+#quote-rotator .quote a,
+.hero-section .hero-quote a {
   color: inherit;
   text-decoration: none;
   border-bottom: 1px dotted rgba(0, 255, 170, 0.5);
 }
 
 #quote-rotator .quote a:hover,
-#quote-rotator .quote a:focus {
+#quote-rotator .quote a:focus,
+.hero-section .hero-quote a:hover,
+.hero-section .hero-quote a:focus {
   color: var(--accent-color);
   border-bottom-color: var(--accent-color);
 }
@@ -1017,6 +1043,17 @@ footer,
 
 #quote-rotator .quote:not([hidden]) {
   opacity: 1;
+}
+
+.hero-section .hero-quote__attr {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #quote-rotator .quote {
+    transition: none;
+  }
 }
 
 .hero-section .pixel-intro {

@@ -6,12 +6,12 @@ get_header();
 <main id="homepage-content">
     <div class="hero-section">
         <h1 class="retro-title glow-lite">Suzy Easton &mdash; Vancouver</h1>
-        <div id="quote-rotator" aria-live="polite">
+        <div id="quote-rotator" aria-live="polite" aria-atomic="true" data-quote-rotator>
             <figure class="quote q-grimes">
                 <blockquote>&ldquo;This is what it feels like to be hunted by something smarter than you.&rdquo;</blockquote>
                 <figcaption>&mdash; Grimes, <em>Artificial Angels</em></figcaption>
             </figure>
-            <figure class="quote q-willie" hidden>
+            <figure class="quote q-willie" hidden aria-hidden="true">
                 <blockquote>&ldquo;Hands on the Wheel&rdquo; &mdash; Willie Nelson. tender, road-worn, and steady at the helm.</blockquote>
                 <figcaption><a href="https://www.youtube.com/watch?v=71cIYDnDZUk" target="_blank" rel="noopener">Watch on YouTube</a></figcaption>
             </figure>
@@ -139,7 +139,7 @@ get_header();
 
     <script>
       (function () {
-        var rotator = document.getElementById('quote-rotator');
+        var rotator = document.querySelector('[data-quote-rotator]');
         if (!rotator) {
           return;
         }
@@ -147,6 +147,12 @@ get_header();
         var willie = rotator.querySelector('.q-willie');
         if (!grimes || !willie) {
           return;
+        }
+        grimes.removeAttribute('aria-hidden');
+        if (willie.hasAttribute('hidden')) {
+          willie.setAttribute('aria-hidden', 'true');
+        } else {
+          willie.removeAttribute('aria-hidden');
         }
         var mq = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
         if (mq && mq.matches) {
@@ -156,10 +162,14 @@ get_header();
         var toggleQuotes = function () {
           if (showingGrimes) {
             grimes.setAttribute('hidden', '');
+            grimes.setAttribute('aria-hidden', 'true');
             willie.removeAttribute('hidden');
+            willie.removeAttribute('aria-hidden');
           } else {
             willie.setAttribute('hidden', '');
+            willie.setAttribute('aria-hidden', 'true');
             grimes.removeAttribute('hidden');
+            grimes.removeAttribute('aria-hidden');
           }
           showingGrimes = !showingGrimes;
         };
@@ -169,7 +179,9 @@ get_header();
             if (event.matches) {
               window.clearInterval(intervalId);
               willie.setAttribute('hidden', '');
+              willie.setAttribute('aria-hidden', 'true');
               grimes.removeAttribute('hidden');
+              grimes.removeAttribute('aria-hidden');
             }
           };
           if (typeof mq.addEventListener === 'function') {
