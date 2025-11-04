@@ -9,9 +9,9 @@ get_header();
             <div class="hero-main">
                 <p class="hero-eyebrow pixel-font">Now headlining the trail</p>
                 <h1 class="retro-title glow-lite hero-title">Willie on the Wheel</h1>
-                <p class="hero-copy">Willie Nelson is steering this week&rsquo;s vibes &mdash; old steel strings, tender harmonies, a steady hand on the reins. It&rsquo;s Oregon Trail heartland folk running on arcade power: love-forward, hopeful, and still wired for hard rock, soul, and future electronics.</p>
+                <p class="hero-copy">At a time when the world feels like it’s spinning out of control, Willie pulls you back to center. “Hands on the Wheel” closes Red Headed Stranger with soft steel, steady time, and a simple truth: love steadies the hands. Minimal production, maximum heart—redemption you can hum.</p>
                 <div class="hero-cta-row">
-                    <a class="btn-8bit hero-cta" href="https://www.youtube.com/watch?v=71cIYDnDZUk" target="_blank" rel="noopener">Ride with Willie &rarr;</a>
+                    <a class="btn-8bit hero-cta" href="https://www.youtube.com/watch?v=71cIYDnDZUk" target="_blank" rel="noopener">Ride with “Hands on the Wheel” →</a>
                     <a class="pixel-button hero-cta-alt" href="/music-releases/">Read the tour journal</a>
                 </div>
                 <div class="influence-ticker" aria-live="polite" aria-atomic="true">
@@ -22,8 +22,10 @@ get_header();
             <aside class="hero-side">
                 <header class="hero-side-header pixel-font">Signal log</header>
                 <figure class="grimes-sidequest">
-                    <figcaption class="pixel-font">Side quest signal</figcaption>
-                    <p>Grimes is still transmitting neon coordinates. <a href="https://www.youtube.com/watch?v=b6pomaq30G0" target="_blank" rel="noopener">Catch the artificial angels &rarr;</a></p>
+                    <figcaption class="pixel-font">SIDE QUEST SIGNAL</figcaption>
+                    <p>Grimes is still transmitting.<br/>
+New coordinates: “Artificial Angels.”<br/>
+An AI voice stalks the melody—“this is what it feels like to be hunted by something smarter than you.” <a href="https://www.youtube.com/watch?v=b6pomaq30G0" target="_blank" rel="noopener">Catch the neon sermon →</a></p>
                 </figure>
             </aside>
         </div>
