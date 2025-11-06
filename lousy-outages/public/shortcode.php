@@ -82,6 +82,16 @@ function render_shortcode(): string {
         true
     );
 
+    if (file_exists($base_path . 'js/outages.js')) {
+        wp_enqueue_script(
+            'lousy-outages-auto-refresh',
+            $base_url . 'js/outages.js',
+            [],
+            filemtime($base_path . 'js/outages.js'),
+            true
+        );
+    }
+
     $cache_key = is_user_logged_in() ? null : 'lousy_outages_fragment_public';
     $cached    = ($cache_key) ? get_transient($cache_key) : null;
     $snapshot_endpoint = esc_url_raw(rest_url('lousy/v1/snapshot'));
@@ -196,7 +206,7 @@ function render_shortcode(): string {
         $config = [
             'endpoint'          => esc_url_raw(rest_url('lousy-outages/v1/summary')),
             'pollInterval'      => $refresh_interval,
-            'refreshEndpoint'   => esc_url_raw(rest_url('lousy/v1/refresh')),
+            'refreshEndpoint'   => esc_url_raw(rest_url('lousy-outages/v1/refresh')),
             'refreshNonce'      => wp_create_nonce('wp_rest'),
             'subscribeEndpoint' => esc_url_raw(rest_url('lousy-outages/v1/subscribe')),
             'snapshotEndpoint'  => $snapshot_endpoint,

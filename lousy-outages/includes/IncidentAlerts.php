@@ -3,14 +3,21 @@ declare(strict_types=1);
 
 namespace LousyOutages;
 
+use LousyOutages\Email\Composer;
+use LousyOutages\Model\Incident;
+use LousyOutages\Mailer;
+use LousyOutages\Providers;
+use LousyOutages\Sources\Sources;
+use LousyOutages\Sources\StatuspageSource;
+use LousyOutages\Storage\IncidentStore;
 use WP_REST_Request;
 
 class IncidentAlerts {
     private const SUMMARY_PROVIDERS = [
         'github'    => 'https://www.githubstatus.com/api/v2/summary.json',
         'atlassian' => 'https://status.atlassian.com/api/v2/summary.json',
-        'openai'    => 'https://status.openai.com/api/v2/summary.json',
         'vercel'    => 'https://www.vercel-status.com/api/v2/summary.json',
+        'digitalocean' => 'https://status.digitalocean.com/api/v2/summary.json',
     ];
 
     private const RSS_PROVIDERS = [
@@ -28,13 +35,12 @@ class IncidentAlerts {
         'Cache-Control' => 'no-cache',
     ];
 
-    private const ALERTABLE_STATES = ['degraded', 'outage', 'major', 'maintenance'];
+    private const ALERTABLE_STATES = ['degraded', 'partial_outage', 'major_outage', 'maintenance', 'major', 'outage'];
 
     private const OPTION_SUBSCRIBERS      = 'lo_subscribers';
     private const OPTION_UNSUB_TOKENS     = 'lo_unsub_tokens';
     private const OPTION_SEEN             = 'lo_seen_incidents';
     private const OPTION_LAST_CHECK       = 'lo_last_status_check';
-    private const TRANSIENT_PREFIX   = 'lo_cooldown_';
 
     public static function bootstrap(): void {
         add_action('init', [self::class, 'ensure_schedule']);
@@ -130,85 +136,432 @@ class IncidentAlerts {
     public static function run(): void {
         do_action('lousy_outages_log', 'lo_check_statuses_run', ['ts' => gmdate('c')]);
 
+        $store     = new IncidentStore();
         $incidents = self::collect_incidents();
+        $store->persistIncidents($incidents);
         update_option(self::OPTION_LAST_CHECK, gmdate('c'), false);
 
         if (empty($incidents)) {
             return;
         }
 
-        $seen = get_option(self::OPTION_SEEN, []);
-        if (!is_array($seen)) {
-            $seen = [];
-        }
-
-        $changed = false;
-
+        $eligible = [];
         foreach ($incidents as $incident) {
-            if (!isset($incident['id'])) {
-                continue;
-            }
-            $id        = (string) $incident['id'];
-            $provider  = (string) ($incident['provider'] ?? 'unknown');
-
-            if (isset($seen[$id])) {
+            if (! $incident instanceof Incident) {
                 continue;
             }
 
-            if (self::is_on_cooldown($provider)) {
-                continue;
-            }
-
-            $sent = self::email_incident($incident);
-            if ($sent) {
-                $seen[$id] = time();
-                $changed   = true;
-                self::start_cooldown($provider);
+            if ($store->shouldSend($incident)) {
+                $store->pushDigestCandidate($incident);
+                $eligible[] = $incident;
             }
         }
 
-        if ($changed) {
-            $limit = 200;
-            if (count($seen) > $limit) {
-                asort($seen);
-                $seen = array_slice($seen, -$limit, null, true);
+        if (empty($eligible)) {
+            return;
+        }
+
+        if (count($eligible) > 3) {
+            if (self::email_digest($eligible)) {
+                $store->recordDigest($eligible);
+                $keys = array_map(function (Incident $incident) use ($store): string {
+                    return $store->keyFor($incident);
+                }, $eligible);
+                $store->clearDigestEntries($keys);
             }
-            update_option(self::OPTION_SEEN, $seen, false);
+            return;
+        }
+
+        foreach ($eligible as $incident) {
+            self::email_incident($incident);
         }
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return Incident[]
      */
     public static function collect_incidents(): array {
-        $primary = self::collect_from_snapshot();
-        $legacy  = self::collect_from_legacy_feeds();
+        $combined = [];
 
-        if (empty($primary)) {
-            return $legacy;
+        foreach (self::collect_from_registered_sources() as $incident) {
+            $normalized = self::normalize_incident($incident);
+            if ($normalized instanceof Incident) {
+                $combined[$normalized->provider . '|' . $normalized->id] = $normalized;
+            }
         }
 
-        if (empty($legacy)) {
-            return $primary;
+        foreach (self::collect_from_snapshot() as $incident) {
+            $normalized = self::normalize_incident($incident);
+            if ($normalized instanceof Incident) {
+                $combined[$normalized->provider . '|' . $normalized->id] = $normalized;
+            }
         }
 
-        $seen = [];
-        foreach ($primary as $incident) {
-            if (!isset($incident['id'])) {
+        foreach (self::collect_from_legacy_feeds() as $incident) {
+            $normalized = self::normalize_incident($incident);
+            if ($normalized instanceof Incident) {
+                $combined[$normalized->provider . '|' . $normalized->id] = $normalized;
+            }
+        }
+
+        return array_values($combined);
+    }
+
+    /**
+     * @return array<int, Incident>
+     */
+    private static function collect_from_registered_sources(): array {
+        $incidents = [];
+
+        foreach (Sources::all() as $slug => $source) {
+            if (! $source instanceof StatuspageSource) {
                 continue;
             }
-            $seen[(string) $incident['id']] = true;
-        }
 
-        foreach ($legacy as $incident) {
-            $id = isset($incident['id']) ? (string) $incident['id'] : '';
-            if ('' !== $id && isset($seen[$id])) {
-                continue;
+            $payload = $source->fetch();
+            $status  = isset($payload['status']) ? (string) $payload['status'] : 'operational';
+            $updated = isset($payload['updated']) ? (int) $payload['updated'] : time();
+
+            foreach ($payload['incidents'] as $incident) {
+                if (! $incident instanceof Incident) {
+                    continue;
+                }
+
+                $incidents[] = new Incident(
+                    self::provider_label($slug, $incident->provider),
+                    $slug . ':' . $incident->id,
+                    $incident->title,
+                    $incident->status,
+                    $incident->url ?: self::provider_url($slug),
+                    $incident->component,
+                    $incident->impact,
+                    $incident->detected_at,
+                    $incident->resolved_at
+                );
             }
-            $primary[] = $incident;
+
+            if (empty($payload['incidents']) && in_array($status, ['degraded', 'partial_outage', 'major_outage', 'maintenance'], true)) {
+                $label = self::provider_label($slug, '');
+                $incidents[] = new Incident(
+                    $label,
+                    $slug . ':status:' . md5($status . '|' . $updated),
+                    sprintf('%s status: %s', $label, ucfirst(str_replace('_', ' ', $status))),
+                    $status,
+                    self::provider_url($slug),
+                    null,
+                    self::impact_from_status($status),
+                    $updated,
+                    null
+                );
+            }
         }
 
-        return $primary;
+        return $incidents;
+    }
+
+    private static function normalize_incident($incident): ?Incident {
+        if ($incident instanceof Incident) {
+            return $incident;
+        }
+
+        if (! is_array($incident)) {
+            return null;
+        }
+
+        return self::incident_from_array($incident);
+    }
+
+    private static function incident_from_array(array $data): ?Incident {
+        $provider = '';
+        if (isset($data['provider'])) {
+            $provider = (string) $data['provider'];
+        } elseif (isset($data['service'])) {
+            $provider = sanitize_key((string) $data['service']);
+        }
+
+        if ('' === $provider && isset($data['id']) && is_string($data['id'])) {
+            $parts = explode(':', $data['id']);
+            if (count($parts) > 1) {
+                $provider = (string) array_shift($parts);
+            }
+        }
+
+        $provider = sanitize_key($provider);
+        if ('' === $provider) {
+            return null;
+        }
+
+        $id = isset($data['id']) ? (string) $data['id'] : md5($provider . '|' . wp_json_encode($data));
+
+        $title = '';
+        foreach (['title', 'name', 'summary', 'body'] as $field) {
+            if (! empty($data[$field]) && is_string($data[$field])) {
+                $title = trim((string) $data[$field]);
+                if ('' !== $title) {
+                    break;
+                }
+            }
+        }
+        if ('' === $title && isset($data['status']) && is_string($data['status'])) {
+            $title = trim((string) $data['status']);
+        }
+        if ('' === $title) {
+            $title = 'Incident';
+        }
+
+        $statusRaw = '';
+        foreach (['status', 'state', 'status_code'] as $field) {
+            if (! empty($data[$field]) && is_string($data[$field])) {
+                $statusRaw = (string) $data[$field];
+                break;
+            }
+        }
+        $impactRaw = isset($data['impact']) ? (string) $data['impact'] : '';
+
+        $status = self::normalize_status_code($statusRaw, $impactRaw);
+        $impact = self::normalize_impact($impactRaw ?: self::impact_from_status($status));
+
+        $url = '';
+        foreach (['url', 'shortlink', 'link'] as $field) {
+            if (! empty($data[$field]) && is_string($data[$field])) {
+                $url = (string) $data[$field];
+                break;
+            }
+        }
+        if ('' === $url) {
+            $url = self::provider_url($provider);
+        }
+
+        $components = self::components_to_string($data['components'] ?? null);
+
+        $detected = self::to_epoch($data['detected_at'] ?? $data['started_at'] ?? $data['startedAt'] ?? $data['timestamp'] ?? $data['updated_at'] ?? null) ?? time();
+        $resolved = null;
+        if ('resolved' === $status) {
+            $resolved = self::to_epoch($data['resolved_at'] ?? $data['updated_at'] ?? null) ?? $detected;
+        }
+
+        return new Incident(
+            self::provider_label($provider, isset($data['service']) ? (string) $data['service'] : ''),
+            $id,
+            $title,
+            $status,
+            $url,
+            $components,
+            $impact,
+            $detected,
+            $resolved
+        );
+    }
+
+    private static function normalize_status_code(string $status, string $impact): string {
+        $status = self::slugify_status($status);
+        $impact = self::slugify_status($impact);
+
+        if ('resolved' === $status || 'postmortem' === $status) {
+            return 'resolved';
+        }
+
+        if ('operational' === $status || 'none' === $status) {
+            return 'operational';
+        }
+
+        if ('maintenance' === $status) {
+            return 'maintenance';
+        }
+
+        switch ($status) {
+            case 'minor':
+            case 'degraded':
+            case 'investigating':
+            case 'identified':
+            case 'monitoring':
+            case 'in_progress':
+            case 'warning':
+                return 'degraded';
+            case 'partial':
+            case 'partial_outage':
+            case 'major':
+                return 'partial_outage';
+            case 'major_outage':
+            case 'outage':
+            case 'critical':
+                return 'major_outage';
+        }
+
+        switch ($impact) {
+            case 'critical':
+                return 'major_outage';
+            case 'major':
+                return 'partial_outage';
+            case 'maintenance':
+                return 'maintenance';
+            case 'minor':
+                return 'degraded';
+        }
+
+        return 'degraded';
+    }
+
+    private static function normalize_impact(?string $impact): ?string {
+        $impact = self::slugify_status((string) $impact);
+        if ('' === $impact) {
+            return null;
+        }
+
+        if (in_array($impact, ['minor', 'major', 'critical', 'none'], true)) {
+            return $impact;
+        }
+
+        switch ($impact) {
+            case 'maintenance':
+                return 'none';
+            case 'partial':
+            case 'partial_outage':
+            case 'major_outage':
+            case 'outage':
+                return 'critical';
+            case 'degraded':
+            case 'investigating':
+            case 'identified':
+            case 'monitoring':
+            case 'warning':
+                return 'minor';
+            default:
+                return 'minor';
+        }
+    }
+
+    private static function impact_from_status(string $status): string {
+        switch ($status) {
+            case 'major_outage':
+                return 'critical';
+            case 'partial_outage':
+                return 'major';
+            case 'maintenance':
+            case 'resolved':
+            case 'operational':
+                return 'none';
+            default:
+                return 'minor';
+        }
+    }
+
+    private static function to_epoch($value): ?int {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->getTimestamp();
+        }
+
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ('' === $trimmed) {
+                return null;
+            }
+            if (ctype_digit($trimmed)) {
+                return (int) $trimmed;
+            }
+            $time = strtotime($trimmed);
+            if (false !== $time) {
+                return $time;
+            }
+        }
+
+        return null;
+    }
+
+    private static function components_to_string($components): ?string {
+        if (empty($components)) {
+            return null;
+        }
+
+        $names = [];
+        if (is_array($components)) {
+            foreach ($components as $component) {
+                if (is_array($component) && isset($component['name'])) {
+                    $names[] = (string) $component['name'];
+                } elseif (is_string($component)) {
+                    $names[] = $component;
+                }
+            }
+        } elseif (is_string($components)) {
+            $names[] = $components;
+        }
+
+        $names = array_values(array_filter(array_map('trim', $names)));
+        if (empty($names)) {
+            return null;
+        }
+
+        return implode(', ', array_unique($names));
+    }
+
+    private static function provider_label(string $slug, string $fallback = ''): string {
+        static $providers;
+        if (null === $providers) {
+            $providers = Providers::list();
+        }
+
+        if (isset($providers[$slug]['name'])) {
+            return (string) $providers[$slug]['name'];
+        }
+
+        if ('' !== $fallback) {
+            return $fallback;
+        }
+
+        return ucwords(str_replace(['-', '_'], ' ', $slug));
+    }
+
+    private static function provider_url(string $slug): string {
+        static $providers;
+        if (null === $providers) {
+            $providers = Providers::list();
+        }
+
+        if (isset($providers[$slug]['status_url']) && is_string($providers[$slug]['status_url'])) {
+            return (string) $providers[$slug]['status_url'];
+        }
+
+        if (isset($providers[$slug]['url']) && is_string($providers[$slug]['url'])) {
+            return (string) $providers[$slug]['url'];
+        }
+
+        return (string) home_url('/lousy-outages/');
+    }
+
+    private static function slugify_status(string $status): string {
+        $status = strtolower(trim($status));
+        if ('' === $status) {
+            return '';
+        }
+
+        $slug = preg_replace('/[^a-z0-9]+/', '_', $status);
+        if (null === $slug) {
+            return $status;
+        }
+
+        return trim($slug, '_');
+    }
+
+    private static function status_label(string $status): string {
+        $status = self::slugify_status($status);
+        $map = [
+            'degraded'       => 'Degraded',
+            'partial_outage' => 'Partial Outage',
+            'major_outage'   => 'Major Outage',
+            'maintenance'    => 'Maintenance',
+            'resolved'       => 'Resolved',
+            'operational'    => 'Operational',
+        ];
+
+        if (isset($map[$status])) {
+            return $map[$status];
+        }
+
+        return ucfirst(str_replace('_', ' ', $status ?: 'Status'));
     }
 
     private static function collect_from_legacy_feeds(): array {
@@ -692,22 +1045,20 @@ class IncidentAlerts {
         return (string) $tokens[$normalized];
     }
 
-    private static function email_incident(array $incident): bool {
+    private static function email_incident(Incident $incident): bool {
         $subscribers = self::get_subscribers();
         if (empty($subscribers)) {
             return false;
         }
 
-        $provider = ucfirst((string) ($incident['provider'] ?? 'Provider'));
-        $impact    = (string) ($incident['impact'] ?? 'major incident');
-        $status    = isset($incident['status']) ? (string) $incident['status'] : '';
-        $statusLabel = $status ? $status : ucwords(strtolower($impact));
-        $components  = isset($incident['components']) && is_array($incident['components']) ? $incident['components'] : [];
-        $componentLine = $components ? implode(' • ', $components) : 'All tracked components';
-        $started_at  = (string) ($incident['started_at'] ?? '');
-        $url         = (string) ($incident['url'] ?? '');
-        $summary     = isset($incident['name']) ? (string) $incident['name'] : '';
-        $notes       = isset($incident['body']) ? (string) $incident['body'] : '';
+        $provider      = $incident->provider;
+        $statusLabel   = self::status_label($incident->status);
+        $impact        = $incident->impact ?? self::impact_from_status($incident->status);
+        $timestamp     = gmdate('c', $incident->detected_at);
+        $components    = $incident->component ? array_map('trim', explode(',', $incident->component)) : [];
+        $componentLine = $incident->component ?: 'All monitored components';
+        $url           = $incident->url ?: self::provider_url(sanitize_key($provider));
+        $summary       = $incident->title;
 
         foreach ($subscribers as $email) {
             $token = self::build_unsubscribe_token($email);
@@ -722,11 +1073,11 @@ class IncidentAlerts {
 
             $incident_payload = [
                 'service'         => $provider,
-                'status'          => $statusLabel,
+                'status'          => $incident->status,
                 'impact'          => $impact,
                 'summary'         => $summary,
-                'notes'           => $notes,
-                'timestamp'       => $started_at,
+                'notes'           => '',
+                'timestamp'       => $timestamp,
                 'components'      => $componentLine,
                 'components_list' => $components,
                 'url'             => $url,
@@ -735,8 +1086,8 @@ class IncidentAlerts {
 
             $sent = send_lo_outage_alert_email($email, $incident_payload);
 
-            if (!$sent) {
-                self::log_error((string) ($incident['provider'] ?? 'incident'), 'mail send failed for ' . $email);
+            if (! $sent) {
+                self::log_error($provider, 'mail send failed for ' . $email);
                 return false;
             }
         }
@@ -744,14 +1095,86 @@ class IncidentAlerts {
         return true;
     }
 
-    private static function is_on_cooldown(string $provider): bool {
-        $key = self::TRANSIENT_PREFIX . sanitize_key($provider);
-        return false !== get_transient($key);
-    }
+    /**
+     * @param Incident[] $incidents
+     */
+    private static function email_digest(array $incidents): bool {
+        $subscribers = self::get_subscribers();
+        if (empty($subscribers)) {
+            return false;
+        }
 
-    private static function start_cooldown(string $provider): void {
-        $key = self::TRANSIENT_PREFIX . sanitize_key($provider);
-        set_transient($key, 1, 30 * MINUTE_IN_SECONDS);
+        $items = [];
+        foreach ($incidents as $incident) {
+            if (! $incident instanceof Incident) {
+                continue;
+            }
+
+            $items[] = [
+                'provider' => $incident->provider,
+                'title'    => Composer::shortTitle($incident->title),
+                'status'   => self::status_label($incident->status),
+                'url'      => $incident->url ?: self::provider_url(sanitize_key($incident->provider)),
+            ];
+        }
+
+        if (empty($items)) {
+            return false;
+        }
+
+        $count   = count($items);
+        $subject = sprintf('[Outage Digest] %d incidents in the last 15 minutes', $count);
+
+        $textLines = ['Multiple outage signals fired:', ''];
+        foreach ($items as $item) {
+            $textLines[] = sprintf('- %s: %s (%s) → %s', $item['provider'], $item['title'], $item['status'], $item['url']);
+        }
+        $textLines[] = '';
+        $textLines[] = 'Stay sharp — Lousy Outages';
+        $textBody = implode("\n", $textLines);
+
+        $htmlItems = [];
+        foreach ($items as $item) {
+            $htmlItems[] = sprintf(
+                '<li><strong>%s:</strong> %s <em>(%s)</em> — <a href="%s">View status</a></li>',
+                esc_html($item['provider']),
+                esc_html($item['title']),
+                esc_html($item['status']),
+                esc_url($item['url'])
+            );
+        }
+
+        $htmlBody = sprintf(
+            '<p>Multiple outage alerts fired within the last fifteen minutes:</p><ul>%s</ul><p>Stay sharp — Lousy Outages</p>',
+            implode('', $htmlItems)
+        );
+
+        foreach ($subscribers as $email) {
+            $token = self::build_unsubscribe_token($email);
+            $unsubscribe = add_query_arg(
+                [
+                    'lo_unsub' => 1,
+                    'email'    => rawurlencode($email),
+                    'token'    => $token,
+                ],
+                home_url('/lousy-outages/')
+            );
+
+            $text = $textBody . "\n\nUnsubscribe: " . $unsubscribe;
+            $html = $htmlBody . sprintf('<p><a href="%s">Unsubscribe</a></p>', esc_url($unsubscribe));
+
+            $headers = [
+                'List-Unsubscribe: <' . esc_url_raw($unsubscribe) . '>',
+                'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+            ];
+
+            if (! Mailer::send($email, $subject, $text, $html, $headers)) {
+                self::log_error('digest', 'mail send failed for ' . $email);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static function log_error(string $provider, string $message): void {
