@@ -372,3 +372,14 @@ add_action('wp_head', function () {
         echo "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"Lousy Outages Alerts\" href=\"{$href}\" />\n";
     }
 });
+
+function se_enqueue_header_tweak_css() {
+    $dir = get_stylesheet_directory();
+    $uri = get_stylesheet_directory_uri();
+    $path = '/assets/brand/header-tweak.css';
+    if ( file_exists( $dir . $path ) ) {
+        wp_enqueue_style('se-header-tweak', $uri . $path, array(), filemtime($dir . $path));
+    }
+}
+add_action('wp_enqueue_scripts', 'se_enqueue_header_tweak_css');
+
