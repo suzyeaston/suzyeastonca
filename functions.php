@@ -74,6 +74,18 @@ function suzy_enqueue_scripts() {
 }
 add_action( 'wp_enqueue_scripts', 'suzy_enqueue_scripts' );
 
+function se_enqueue_brand_assets() {
+    $dir = get_stylesheet_directory();
+    $uri = get_stylesheet_directory_uri();
+    wp_enqueue_style(
+        'se-brand-logo',
+        $uri . '/assets/brand/brand-logo.css',
+        array(),
+        file_exists( $dir . '/assets/brand/brand-logo.css' ) ? filemtime( $dir . '/assets/brand/brand-logo.css' ) : null
+    );
+}
+add_action( 'wp_enqueue_scripts', 'se_enqueue_brand_assets' );
+
 // Load bundled Lousy Outages plugin so shortcode and REST endpoint work
 $lousy_outages = get_template_directory() . '/lousy-outages/lousy-outages.php';
 if ( file_exists( $lousy_outages ) ) {

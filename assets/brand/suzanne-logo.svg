@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="420" height="150" viewBox="0 0 420 150" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Suzanne (Suzy) Easton logo">
+  <defs>
+    <!-- Neon gradient for strokes -->
+    <linearGradient id="neon" x1="0" y1="0" x2="420" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B9FF66"/>
+      <stop offset="0.5" stop-color="#66FCF1"/>
+      <stop offset="1" stop-color="#D36CFF"/>
+    </linearGradient>
+    <!-- Outer glow -->
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Subtle bevel highlight -->
+    <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0B0C10"/>
+      <stop offset="0.55" stop-color="#14161b"/>
+      <stop offset="1" stop-color="#0B0C10"/>
+    </linearGradient>
+    <!-- Star speckles -->
+    <radialGradient id="star" r="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Scanlines (consumed by CSS overlay, left here if you inline the SVG later) -->
+    <pattern id="scan" width="2" height="3" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="2" height="1" fill="#FFFFFF" opacity="0.05"/>
+    </pattern>
+  </defs>
+
+  <!-- BG badge (soft edge) -->
+  <rect x="4" y="4" width="412" height="142" rx="14" fill="#030405" stroke="url(#neon)" stroke-width="2" opacity="0.6" filter="url(#glow)"/>
+
+  <!-- Sparkles -->
+  <g opacity="0.45">
+    <circle cx="40"  cy="24"  r="1.8" fill="url(#star)"/>
+    <circle cx="365" cy="40"  r="1.2" fill="url(#star)"/>
+    <circle cx="300" cy="20"  r="1.4" fill="url(#star)"/>
+    <circle cx="120" cy="36"  r="1.0" fill="url(#star)"/>
+    <circle cx="210" cy="14"  r="1.3" fill="url(#star)"/>
+  </g>
+
+  <!-- Wordmark -->
+  <g filter="url(#glow)">
+    <!-- SUZANNE -->
+    <text x="210" y="54" text-anchor="middle"
+          font-family="'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
+          font-size="18" letter-spacing="1"
+          fill="url(#fillGrad)" stroke="url(#neon)" stroke-width="1.6">SUZANNE</text>
+
+    <!-- (SUZY) -->
+    <text x="210" y="74" text-anchor="middle"
+          font-family="'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
+          font-size="10" letter-spacing="0.5"
+          fill="url(#fillGrad)" stroke="url(#neon)" stroke-width="1.2">(SUZY)</text>
+
+    <!-- EASTON -->
+    <text x="210" y="112" text-anchor="middle"
+          font-family="'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
+          font-size="34" letter-spacing="1"
+          fill="url(#fillGrad)" stroke="url(#neon)" stroke-width="3">EASTON</text>
+  </g>
+</svg>
