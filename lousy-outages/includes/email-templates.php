@@ -134,6 +134,123 @@ if (!function_exists('send_lo_confirmation_email')) {
     }
 }
 
+if (!function_exists('LO_compose_daily_digest')) {
+    /**
+     * Compose the daily digest email subject and bodies.
+     *
+     * @param array<int,array<string,mixed>> $incidents
+     * @return array{subject:string,html:string,text:string}
+     */
+    function LO_compose_daily_digest(array $incidents): array {
+        $items = [];
+        foreach ($incidents as $incident) {
+            if (!is_array($incident)) {
+                continue;
+            }
+
+            $provider = isset($incident['provider']) ? trim((string) $incident['provider']) : '';
+            $title    = isset($incident['title']) ? trim((string) $incident['title']) : '';
+            $status   = isset($incident['status']) ? trim((string) $incident['status']) : '';
+            $url      = isset($incident['url']) ? trim((string) $incident['url']) : '';
+
+            if ('' === $provider || '' === $title) {
+                continue;
+            }
+
+            if ('' === $status && isset($incident['statusRaw'])) {
+                $status = trim((string) $incident['statusRaw']);
+            }
+
+            if ('' !== $url) {
+                $url = esc_url_raw($url);
+            }
+
+            $items[] = [
+                'provider' => $provider,
+                'title'    => \LousyOutages\Email\Composer::shortTitle($title),
+                'status'   => $status ?: 'Status update',
+                'url'      => $url,
+            ];
+        }
+
+        if (empty($items)) {
+            return [];
+        }
+
+        $dateLabel = wp_date('M j');
+        $subject   = sprintf('[Daily Digest] Lousy Outages — %s', $dateLabel);
+        $subject   = (string) apply_filters('lo_daily_digest_subject', $subject, $items);
+
+        $intro = 'You’ll get a single alert when an issue is first reported, then a once-daily digest for updates. Follow the incident link for live changes.';
+        $intro = (string) apply_filters('lo_daily_digest_intro', $intro, $items);
+
+        $heading = sprintf('Daily Digest — %s', $dateLabel);
+        $heading = (string) apply_filters('lo_daily_digest_heading', $heading, $items);
+
+        $signoff_text = (string) apply_filters('lo_daily_digest_signoff', 'Stay vigilant — Lousy Outages', $items);
+        $signoff_html = (string) apply_filters('lo_daily_digest_signoff_html', $signoff_text, $items);
+
+        $text_lines = [$heading, $intro, ''];
+        $rows_html  = '';
+        foreach ($items as $item) {
+            $provider = $item['provider'];
+            $title    = $item['title'];
+            $status   = $item['status'];
+            $url      = $item['url'];
+
+            $text_line = sprintf('%s — %s (%s)', $provider, $title, $status);
+            if ('' !== $url) {
+                $text_line .= ' → ' . $url;
+            }
+            $text_lines[] = $text_line;
+
+            $rows_html .= sprintf(
+                '<tr><td style="padding:14px 0;border-bottom:1px solid rgba(143,128,255,0.25);"><strong style="display:block;font-size:16px;color:#f7f4ff;">%s</strong><span style="display:block;font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">%s</span><span style="display:block;font-size:13px;color:#8f80ff;margin-top:6px;">%s</span>%s</td></tr>',
+                esc_html($provider),
+                esc_html($title),
+                esc_html($status),
+                $url ? sprintf(' <a href="%s" style="display:inline-block;margin-top:10px;font-size:14px;color:#8f80ff;text-decoration:none;">%s</a>', esc_url($url), esc_html(apply_filters('lo_daily_digest_link_label', 'View incident', $item))) : ''
+            );
+        }
+
+        $text_lines[] = '';
+        $text_lines[] = $signoff_text;
+        $text_body = implode("\n", $text_lines);
+
+        ob_start();
+        ?>
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <title><?php echo esc_html($heading); ?></title>
+        </head>
+        <body style="margin:0;background:#070412;color:#f7f4ff;font-family:Segoe UI,Roboto,system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;">
+            <div style="max-width:680px;margin:0 auto;padding:36px 24px;">
+                <div style="border-radius:20px;border:1px solid rgba(143,128,255,0.35);background:linear-gradient(155deg,rgba(18,11,45,0.95),rgba(9,6,28,0.92));box-shadow:0 26px 48px rgba(20,14,46,0.6);padding:32px 28px;">
+                    <h1 style="margin:0 0 12px;font-size:26px;letter-spacing:0.04em;color:#d0c6ff;"><?php echo esc_html($heading); ?></h1>
+                    <p style="margin:0 0 20px;font-size:16px;line-height:1.5;color:rgba(255,255,255,0.85);"><?php echo esc_html($intro); ?></p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+                        <tbody>
+                            <?php echo $rows_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        </tbody>
+                    </table>
+                    <p style="margin:24px 0 0;font-size:14px;line-height:1.5;color:#c5bfff;"><?php echo esc_html($signoff_html); ?></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        $html_body = trim((string) ob_get_clean());
+
+        return [
+            'subject' => $subject,
+            'html'    => $html_body,
+            'text'    => $text_body,
+        ];
+    }
+}
+
 if (!function_exists('send_lo_outage_alert_email')) {
     /**
      * Sends a themed outage alert email.
@@ -267,6 +384,18 @@ if (!function_exists('send_lo_outage_alert_email')) {
                     <p style="margin:0 0 24px;">
                         <a href="<?php echo esc_url($status_url_html); ?>" style="display:inline-block;padding:16px 28px;border-radius:999px;border:2px solid #FF1744;background:#0A0418;color:#FFEB3B;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:0.14em;">View live status feed</a>
                     </p>
+                    <?php
+                    $follow_line = apply_filters(
+                        'lo_incident_follow_line',
+                        'We won’t email every update. Follow the status page for the latest, and look for the daily digest tonight.',
+                        $incident_data
+                    );
+                    if (is_string($follow_line) && '' !== trim($follow_line)) :
+                    ?>
+                        <p style="margin:0 0 20px;font-size:14px;color:#FFE082;">
+                            <?php echo esc_html($follow_line); ?>
+                        </p>
+                    <?php endif; ?>
                     <p style="margin:0 0 14px;font-size:13px;color:#FFF59D;">Backup link:<br><span style="color:#FFAB40;"><?php echo esc_html($status_url_raw); ?></span></p>
                     <?php if ($extra_notes) : ?>
                         <p style="margin:0 0 28px;font-size:13px;color:#FFCDD2;"><?php echo esc_html($extra_notes); ?></p>

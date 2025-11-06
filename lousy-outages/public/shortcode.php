@@ -266,20 +266,49 @@ function render_shortcode(): string {
         $ordered_tiles[] = $tile;
     }
 
+    $operational_placeholders = apply_filters('lo_operational_placeholder_providers', ['openai', 'twilio']);
+    if (!is_array($operational_placeholders)) {
+        $operational_placeholders = ['openai', 'twilio'];
+    }
+    $operational_placeholders = array_map('sanitize_key', $operational_placeholders);
+
+    $placeholder_label = apply_filters('lo_operational_placeholder_label', 'OPERATIONAL');
+    if (!is_string($placeholder_label) || '' === trim($placeholder_label)) {
+        $placeholder_label = 'OPERATIONAL';
+    }
+
+    $placeholder_summary = apply_filters('lo_operational_placeholder_summary', 'Assuming operational — awaiting the next live sync.');
+    if (!is_string($placeholder_summary) || '' === trim($placeholder_summary)) {
+        $placeholder_summary = 'Assuming operational — awaiting the next live sync.';
+    }
+
+    $placeholder_message = apply_filters('lo_operational_placeholder_message', 'Live status feed quiet; placeholder set to operational.');
+    if (!is_string($placeholder_message) || '' === trim($placeholder_message)) {
+        $placeholder_message = 'Live status feed quiet; placeholder set to operational.';
+    }
+
     foreach ($providers_config as $slug => $provider_config) {
         if (isset($tiles_by_slug[$slug])) {
             continue;
         }
+        $provider_key = sanitize_key($slug);
+        $is_operational_placeholder = in_array($provider_key, $operational_placeholders, true);
+        $status_slug = $is_operational_placeholder ? 'operational' : 'unknown';
+        $status_label = $is_operational_placeholder ? $placeholder_label : 'UNKNOWN';
+        $status_class = $is_operational_placeholder ? 'status--operational' : 'status--unknown';
+        $summary_text = $is_operational_placeholder ? $placeholder_summary : 'Status unavailable';
+        $message_text = $is_operational_placeholder ? $placeholder_message : 'Status unavailable';
+
         $ordered_tiles[] = [
             'id'           => $slug,
             'provider'     => $slug,
             'name'         => $provider_config['name'] ?? ucfirst($slug),
-            'status'       => 'unknown',
-            'status_label' => 'UNKNOWN',
-            'status_class' => 'status--unknown',
-            'overall'      => 'unknown',
-            'message'      => 'Status unavailable',
-            'summary'      => 'Status unavailable',
+            'status'       => $status_slug,
+            'status_label' => $status_label,
+            'status_class' => $status_class,
+            'overall'      => $status_slug,
+            'message'      => $message_text,
+            'summary'      => $summary_text,
             'components'   => [],
             'incidents'    => [],
             'fetched_at'   => $fetched_at,
@@ -293,15 +322,23 @@ function render_shortcode(): string {
 
     if (!$ordered_tiles && $provider_map) {
         foreach ($provider_map as $slug => $provider_info) {
+            $provider_key = sanitize_key($slug);
+            $is_operational_placeholder = in_array($provider_key, $operational_placeholders, true);
+            $status_slug = $is_operational_placeholder ? 'operational' : 'unknown';
+            $status_label = $is_operational_placeholder ? $placeholder_label : 'UNKNOWN';
+            $status_class = $is_operational_placeholder ? 'status--operational' : 'status--unknown';
+            $summary_text = $is_operational_placeholder ? $placeholder_summary : 'Status unavailable';
+            $message_text = $is_operational_placeholder ? $placeholder_message : 'Status unavailable';
+
             $ordered_tiles[] = [
                 'provider'     => $slug,
                 'name'         => $provider_info['name'],
-                'status'       => 'unknown',
-                'status_label' => 'UNKNOWN',
-                'status_class' => 'status--unknown',
-                'overall'      => 'unknown',
-                'message'      => 'Status unavailable',
-                'summary'      => 'Status unavailable',
+                'status'       => $status_slug,
+                'status_label' => $status_label,
+                'status_class' => $status_class,
+                'overall'      => $status_slug,
+                'message'      => $message_text,
+                'summary'      => $summary_text,
                 'components'   => [],
                 'incidents'    => [],
                 'fetched_at'   => $fetched_at,

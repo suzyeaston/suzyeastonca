@@ -12,6 +12,7 @@ class Refresh
         add_filter('cron_schedules', [self::class, 'registerSchedule']);
         add_action('init', [self::class, 'ensureScheduled']);
         add_action('lousy_outages_refresh', [IncidentAlerts::class, 'run']);
+        add_action('lo_send_daily_digest', [IncidentAlerts::class, 'send_daily_digest']);
     }
 
     public static function registerSchedule(array $schedules): array
@@ -23,6 +24,13 @@ class Refresh
             ];
         }
 
+        if (! isset($schedules['lo_daily'])) {
+            $schedules['lo_daily'] = [
+                'interval' => DAY_IN_SECONDS,
+                'display'  => __('Every 24 Hours', 'lousy-outages'),
+            ];
+        }
+
         return $schedules;
     }
 
@@ -30,6 +38,10 @@ class Refresh
     {
         if (! wp_next_scheduled('lousy_outages_refresh')) {
             wp_schedule_event(time() + MINUTE_IN_SECONDS, 'five_minutes', 'lousy_outages_refresh');
+        }
+
+        if (! wp_next_scheduled('lo_send_daily_digest')) {
+            wp_schedule_event(time() + HOUR_IN_SECONDS, 'lo_daily', 'lo_send_daily_digest');
         }
     }
 }

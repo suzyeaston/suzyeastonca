@@ -6,13 +6,15 @@ get_header();
 <main id="homepage-content">
     <div class="hero-section folk-crt">
         <div class="hero-grid">
+            <?php
+            $hero_eyebrow = apply_filters('se_home_hero_eyebrow', 'Now headlining the trail');
+            $hero_title   = apply_filters('se_home_hero_title', 'Creative signals from Suzy Easton');
+            $hero_copy    = apply_filters('se_home_hero_copy', 'Independent music, advocacy, and experimental tools live from Vancouver.');
+            ?>
             <div class="hero-main">
-                <p class="hero-eyebrow pixel-font">Now headlining the trail</p>
-                <h1 class="retro-title glow-lite hero-title">Willie on the Wheel</h1>
-                <p class="hero-copy">Now Playing: Willie Nelson — “Hands on the Wheel”<br><br>At a moment when the world feels off-kilter, “Hands on the Wheel” brings it back to center. The closer from Red Headed Stranger is all soft steel and steady time—minimal production, maximum heart. It’s a simple truth you can hum: love steadies the hands.</p>
-                <div class="hero-cta-row">
-                    <a class="btn-8bit hero-cta" href="https://www.youtube.com/watch?v=71cIYDnDZUk" target="_blank" rel="noopener">Ride with “Hands on the Wheel” →</a>
-                </div>
+                <p class="hero-eyebrow pixel-font"><?php echo esc_html($hero_eyebrow); ?></p>
+                <h1 class="retro-title glow-lite hero-title"><?php echo esc_html($hero_title); ?></h1>
+                <p class="hero-copy"><?php echo esc_html($hero_copy); ?></p>
             </div>
         </div>
         <section class="lo-callout lo-8bit">
@@ -111,6 +113,35 @@ get_header();
             <p>Spotify CEO Daniel Ek used his investment firm Prima Materia to lead a <strong>€600M (~US $694M)</strong> Series D funding round in June 2025 for Helsing, a German defense‑AI startup now valued at $12&nbsp;billion.</p>
             <p>Helsing develops AI‑enabled drones, aircraft and submarines for defense, and Ek also sits on its board as chairman.</p>
             <p>At least one indie band – Deerhoof – pulled their music from Spotify in protest, citing ethical concerns over music &ldquo;killing people&rdquo; due to this connection.</p>
+        </div>
+    </section>
+
+    <?php
+    $grimes_note = apply_filters(
+        'se_home_grimes_note',
+        'Streaming ethics are hotly debated. In 2025, Spotify founder Daniel Ek’s fund Prima Materia led a €600M round into defense-AI company Helsing; some indie artists responded by pulling music from Spotify. Suzy’s site highlights artists directly via embeds and Bandcamp whenever possible.'
+    );
+    $grimes_heading = apply_filters('se_home_grimes_heading', 'Spotlight: Grimes — “Artificial Angels”');
+    ?>
+    <section class="now-listening grimes-feature">
+        <div class="info-callout pixel-font">
+            <p><?php echo wp_kses_post($grimes_note); ?></p>
+        </div>
+        <h2 class="pixel-font"><?php echo esc_html($grimes_heading); ?></h2>
+        <iframe width="100%" height="360" src="https://www.youtube.com/embed/tvGnYM14-1A?autoplay=0" title="Grimes — Artificial Angels (Official Video)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </section>
+
+    <?php
+    $willie_heading = apply_filters('se_home_willie_heading', 'Now Playing: Willie Nelson — “Hands on the Wheel”');
+    $willie_body    = apply_filters('se_home_willie_body', 'At a moment when the world feels off-kilter, “Hands on the Wheel” brings it back to center. Minimal production, maximum heart. Love steadies the hands.');
+    ?>
+    <section class="hero-section folk-crt willie-feature">
+        <div class="hero-grid">
+            <div class="hero-main">
+                <h2 class="retro-title glow-lite"><?php echo esc_html($willie_heading); ?></h2>
+                <p class="hero-copy"><?php echo esc_html($willie_body); ?></p>
+                <iframe width="100%" height="360" src="https://www.youtube.com/embed/71cIYDnDZUk?autoplay=0" title="Willie Nelson — Hands on the Wheel" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
         </div>
     </section>
 

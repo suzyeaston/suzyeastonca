@@ -145,35 +145,146 @@ class IncidentAlerts {
             return;
         }
 
-        $eligible = [];
         foreach ($incidents as $incident) {
             if (! $incident instanceof Incident) {
                 continue;
             }
 
-            if ($store->shouldSend($incident)) {
-                $store->pushDigestCandidate($incident);
-                $eligible[] = $incident;
+            if (! $store->shouldSend($incident)) {
+                continue;
             }
-        }
 
-        if (empty($eligible)) {
-            return;
-        }
-
-        if (count($eligible) > 3) {
-            if (self::email_digest($eligible)) {
-                $store->recordDigest($eligible);
-                $keys = array_map(function (Incident $incident) use ($store): string {
-                    return $store->keyFor($incident);
-                }, $eligible);
-                $store->clearDigestEntries($keys);
-            }
-            return;
-        }
-
-        foreach ($eligible as $incident) {
             self::email_incident($incident);
+        }
+    }
+
+    public static function send_daily_digest(): void {
+        $store = new IncidentStore();
+        $stored = $store->getStoredIncidents();
+
+        if (empty($stored)) {
+            return;
+        }
+
+        $now    = time();
+        $cutoff = $now - DAY_IN_SECONDS;
+        $items  = [];
+
+        foreach ($stored as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $provider = isset($entry['provider']) ? (string) $entry['provider'] : '';
+            $title    = isset($entry['title']) ? (string) $entry['title'] : '';
+            $status   = isset($entry['status']) ? (string) $entry['status'] : '';
+            $url      = isset($entry['url']) ? (string) $entry['url'] : '';
+            $updated  = isset($entry['updated_at']) ? (string) $entry['updated_at'] : '';
+
+            $updatedTs = $updated ? strtotime($updated) : 0;
+            if (! $updatedTs && isset($entry['detected_at'])) {
+                $detected = (int) $entry['detected_at'];
+                if ($detected > 0) {
+                    $updatedTs = $detected;
+                }
+            }
+
+            if ($updatedTs && $updatedTs < $cutoff) {
+                continue;
+            }
+
+            if (! $updatedTs) {
+                continue;
+            }
+
+            if ('' === trim($provider) || '' === trim($title)) {
+                continue;
+            }
+
+            $items[] = [
+                'provider'  => $provider,
+                'title'     => Composer::shortTitle($title),
+                'status'    => self::status_label($status),
+                'statusRaw' => $status,
+                'url'       => $url ? $url : self::provider_url(sanitize_key($provider)),
+                'updated'   => $updatedTs,
+            ];
+        }
+
+        if (empty($items)) {
+            return;
+        }
+
+        $items = apply_filters('lo_daily_digest_items', $items);
+        if (! is_array($items) || empty($items)) {
+            return;
+        }
+
+        $lastSentIso = $store->getLastDigestSent();
+        $lastSentTs  = $lastSentIso ? strtotime($lastSentIso) : 0;
+        if ($lastSentTs && ($now - $lastSentTs) < (20 * HOUR_IN_SECONDS)) {
+            return;
+        }
+
+        $composition = function_exists('LO_compose_daily_digest') ? LO_compose_daily_digest($items) : null;
+        if (! is_array($composition)) {
+            return;
+        }
+
+        $subject = isset($composition['subject']) ? (string) $composition['subject'] : '';
+        $html    = isset($composition['html']) ? (string) $composition['html'] : '';
+        $text    = isset($composition['text']) ? (string) $composition['text'] : '';
+
+        if ('' === trim($subject) || '' === trim($html)) {
+            return;
+        }
+
+        $subscribers = self::get_subscribers();
+        if (empty($subscribers)) {
+            return;
+        }
+
+        $footer_text = apply_filters('lo_daily_digest_unsubscribe_text', 'Unsubscribe');
+        $footer_html = apply_filters('lo_daily_digest_unsubscribe_label', 'Unsubscribe');
+
+        $sentAny = false;
+
+        foreach ($subscribers as $email) {
+            $token = self::build_unsubscribe_token($email);
+            $unsubscribe = add_query_arg(
+                [
+                    'lo_unsub' => 1,
+                    'email'    => rawurlencode($email),
+                    'token'    => $token,
+                ],
+                home_url('/lousy-outages/')
+            );
+
+            $text_body = $text;
+            if ('' !== trim($text_body)) {
+                $text_body .= "\n\n" . $footer_text . ': ' . $unsubscribe;
+            }
+
+            $html_body = $html;
+            $html_body .= sprintf(
+                '<p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:rgba(255,255,255,0.75);">%s: <a href="%s" style="color:#8f80ff;text-decoration:none;">%s</a></p>',
+                esc_html($footer_html),
+                esc_url($unsubscribe),
+                esc_html($unsubscribe)
+            );
+
+            $headers = [
+                'List-Unsubscribe: <' . esc_url_raw($unsubscribe) . '>',
+                'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+            ];
+
+            if (Mailer::send($email, $subject, $text_body, $html_body, $headers)) {
+                $sentAny = true;
+            }
+        }
+
+        if ($sentAny) {
+            $store->updateLastDigestSent(gmdate('c'));
         }
     }
 
@@ -1088,88 +1199,6 @@ class IncidentAlerts {
 
             if (! $sent) {
                 self::log_error($provider, 'mail send failed for ' . $email);
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * @param Incident[] $incidents
-     */
-    private static function email_digest(array $incidents): bool {
-        $subscribers = self::get_subscribers();
-        if (empty($subscribers)) {
-            return false;
-        }
-
-        $items = [];
-        foreach ($incidents as $incident) {
-            if (! $incident instanceof Incident) {
-                continue;
-            }
-
-            $items[] = [
-                'provider' => $incident->provider,
-                'title'    => Composer::shortTitle($incident->title),
-                'status'   => self::status_label($incident->status),
-                'url'      => $incident->url ?: self::provider_url(sanitize_key($incident->provider)),
-            ];
-        }
-
-        if (empty($items)) {
-            return false;
-        }
-
-        $count   = count($items);
-        $subject = sprintf('[Outage Digest] %d incidents in the last 15 minutes', $count);
-
-        $textLines = ['Multiple outage signals fired:', ''];
-        foreach ($items as $item) {
-            $textLines[] = sprintf('- %s: %s (%s) → %s', $item['provider'], $item['title'], $item['status'], $item['url']);
-        }
-        $textLines[] = '';
-        $textLines[] = 'Stay sharp — Lousy Outages';
-        $textBody = implode("\n", $textLines);
-
-        $htmlItems = [];
-        foreach ($items as $item) {
-            $htmlItems[] = sprintf(
-                '<li><strong>%s:</strong> %s <em>(%s)</em> — <a href="%s">View status</a></li>',
-                esc_html($item['provider']),
-                esc_html($item['title']),
-                esc_html($item['status']),
-                esc_url($item['url'])
-            );
-        }
-
-        $htmlBody = sprintf(
-            '<p>Multiple outage alerts fired within the last fifteen minutes:</p><ul>%s</ul><p>Stay sharp — Lousy Outages</p>',
-            implode('', $htmlItems)
-        );
-
-        foreach ($subscribers as $email) {
-            $token = self::build_unsubscribe_token($email);
-            $unsubscribe = add_query_arg(
-                [
-                    'lo_unsub' => 1,
-                    'email'    => rawurlencode($email),
-                    'token'    => $token,
-                ],
-                home_url('/lousy-outages/')
-            );
-
-            $text = $textBody . "\n\nUnsubscribe: " . $unsubscribe;
-            $html = $htmlBody . sprintf('<p><a href="%s">Unsubscribe</a></p>', esc_url($unsubscribe));
-
-            $headers = [
-                'List-Unsubscribe: <' . esc_url_raw($unsubscribe) . '>',
-                'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
-            ];
-
-            if (! Mailer::send($email, $subject, $text, $html, $headers)) {
-                self::log_error('digest', 'mail send failed for ' . $email);
                 return false;
             }
         }

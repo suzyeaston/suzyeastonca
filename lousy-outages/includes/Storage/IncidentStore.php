@@ -10,10 +10,7 @@ class IncidentStore
     private const OPTION_ALERTS = 'lousy_outages_alerts_sent';
     private const OPTION_INCIDENTS = 'lousy_outages_incidents';
     private const OPTION_PROVIDER_CAP_PREFIX = 'lousy_outages_cap_';
-    private const DIGEST_TRACKER = 'lousy_outages_digest_window';
-    private const DIGEST_THRESHOLD = 3;
-    private const DIGEST_WINDOW = 900; // 15 minutes
-    private const COOLDOWN_SECONDS = 90 * MINUTE_IN_SECONDS;
+    private const OPTION_LAST_DIGEST = 'lousy_outages_daily_digest_last_sent';
     private const DAILY_CAP = 5;
 
     /**
@@ -31,41 +28,31 @@ class IncidentStore
             return false;
         }
 
-        if (isset($alerts[$key])) {
-            $last = (int) ($alerts[$key]['ts'] ?? 0);
-            $lastStatus = (string) ($alerts[$key]['status'] ?? '');
-            $elapsed = $now - $last;
-            if ($incident->isResolved() || ($lastStatus && $lastStatus !== $incident->status)) {
-                // Allow resolution or severity change.
-            } elseif ($elapsed < self::COOLDOWN_SECONDS) {
+        $allow = false;
+
+        if (! isset($alerts[$key])) {
+            $allow = true;
+        } else {
+            $lastStatus = isset($alerts[$key]['status']) ? (string) $alerts[$key]['status'] : '';
+            if ($incident->isResolved()) {
+                $allow = true;
+            } elseif ('' !== $lastStatus && $this->isSeverityUpgrade($lastStatus, $incident->status)) {
+                $allow = true;
+            } else {
                 return false;
             }
         }
 
-        $alerts[$key] = [
-            'ts'     => $now,
-            'status' => $incident->status,
-        ];
-        update_option(self::OPTION_ALERTS, $alerts, false);
-        update_option($capKey, $capCount + 1, false);
-
-        return true;
-    }
-
-    public function recordDigest(array $incidents): void
-    {
-        $alerts = $this->getAlerts();
-        $now    = time();
-        foreach ($incidents as $incident) {
-            if (! $incident instanceof Incident) {
-                continue;
-            }
-            $alerts[$this->buildKey($incident)] = [
+        if ($allow) {
+            $alerts[$key] = [
                 'ts'     => $now,
                 'status' => $incident->status,
             ];
+            update_option(self::OPTION_ALERTS, $alerts, false);
+            update_option($capKey, $capCount + 1, false);
         }
-        update_option(self::OPTION_ALERTS, $alerts, false);
+
+        return $allow;
     }
 
     /**
@@ -75,8 +62,14 @@ class IncidentStore
      */
     public function persistIncidents(array $incidents): void
     {
-        $payload = array_map(static function (Incident $incident) {
-            return [
+        $payload = [];
+
+        foreach ($incidents as $incident) {
+            if (! $incident instanceof Incident) {
+                continue;
+            }
+
+            $payload[] = [
                 'provider'    => $incident->provider,
                 'id'          => $incident->id,
                 'title'       => $incident->title,
@@ -86,8 +79,9 @@ class IncidentStore
                 'impact'      => $incident->impact,
                 'detected_at' => $incident->detected_at,
                 'resolved_at' => $incident->resolved_at,
+                'updated_at'  => gmdate('c'),
             ];
-        }, array_values(array_filter($incidents, static fn($item) => $item instanceof Incident)));
+        }
 
         update_option(self::OPTION_INCIDENTS, $payload, false);
     }
@@ -102,48 +96,6 @@ class IncidentStore
             return [];
         }
         return $stored;
-    }
-
-    /**
-     * Push an incident into the digest consideration queue.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public function pushDigestCandidate(Incident $incident): array
-    {
-        $window = get_option(self::DIGEST_TRACKER, []);
-        if (! is_array($window)) {
-            $window = [];
-        }
-        $now = time();
-        $window[] = [
-            'id'       => $this->buildKey($incident),
-            'provider' => $incident->provider,
-            'title'    => $incident->title,
-            'status'   => $incident->status,
-            'url'      => $incident->url,
-            'ts'       => $now,
-        ];
-        $window = array_values(array_filter($window, static function (array $entry) use ($now): bool {
-            return ($now - (int) ($entry['ts'] ?? 0)) <= self::DIGEST_WINDOW;
-        }));
-        update_option(self::DIGEST_TRACKER, $window, false);
-
-        return $window;
-    }
-
-    public function clearDigestEntries(array $ids): void
-    {
-        $window = get_option(self::DIGEST_TRACKER, []);
-        if (! is_array($window)) {
-            return;
-        }
-        $ids = array_fill_keys($ids, true);
-        $window = array_values(array_filter($window, static function (array $entry) use ($ids): bool {
-            $id = isset($entry['id']) ? (string) $entry['id'] : '';
-            return '' !== $id && ! isset($ids[$id]);
-        }));
-        update_option(self::DIGEST_TRACKER, $window, false);
     }
 
     private function providerCapKey(string $provider): string
@@ -171,5 +123,49 @@ class IncidentStore
             return [];
         }
         return $alerts;
+    }
+
+    public function getLastDigestSent(): string
+    {
+        $value = get_option(self::OPTION_LAST_DIGEST, '');
+        return is_string($value) ? (string) $value : '';
+    }
+
+    public function updateLastDigestSent(string $iso): void
+    {
+        update_option(self::OPTION_LAST_DIGEST, $iso, false);
+    }
+
+    private function isSeverityUpgrade(string $previous, string $current): bool
+    {
+        $previousRank = $this->severityRank($previous);
+        $currentRank  = $this->severityRank($current);
+
+        return $currentRank > $previousRank;
+    }
+
+    private function severityRank(string $status): int
+    {
+        $map = [
+            'operational'    => 0,
+            'none'           => 0,
+            'informational'  => 0,
+            'maintenance'    => 1,
+            'minor'          => 1,
+            'degraded'       => 1,
+            'partial_outage' => 2,
+            'major_outage'   => 3,
+            'outage'         => 3,
+            'critical'       => 4,
+            'resolved'       => 0,
+        ];
+
+        $key = strtolower(trim($status));
+
+        if (isset($map[$key])) {
+            return (int) $map[$key];
+        }
+
+        return 0;
     }
 }
