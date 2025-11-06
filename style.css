@@ -638,7 +638,7 @@ body::before {
 /* ====================== */
 .hero {
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 0 1rem;
 }
 .hero-img,
 .hero-image img {
@@ -894,7 +894,7 @@ footer,
   max-width: 1000px;
   margin: 0 auto;
   text-align: center;
-  padding: 4rem 1rem 2rem;
+  padding: clamp(32px, 6vw, 72px) 1rem clamp(24px, 5vw, 40px);
   position: relative;
   z-index: 2;
 }
@@ -1797,32 +1797,6 @@ body {
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
 }
 
-.hero-section.folk-crt {
-  position: relative;
-  padding: 3.25rem 1.25rem 2.25rem;
-  background: linear-gradient(135deg, rgba(20, 26, 32, 0.92) 0%, rgba(24, 38, 34, 0.88) 60%, rgba(36, 28, 24, 0.85) 100%);
-  border: 1px solid rgba(244, 226, 195, 0.28);
-  box-shadow: 0 0 16px rgba(214, 187, 135, 0.16);
-  overflow: hidden;
-}
-
-.hero-section.folk-crt::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle at top left, rgba(255, 214, 153, 0.18), transparent 55%),
-    radial-gradient(circle at bottom right, rgba(118, 224, 255, 0.1), transparent 60%),
-    repeating-linear-gradient(
-      0deg,
-      rgba(248, 240, 220, 0.05) 0,
-      rgba(248, 240, 220, 0.05) 1px,
-      transparent 1px,
-      transparent 4px
-    );
-  opacity: 0.65;
-  pointer-events: none;
-}
-
 .hero-grid {
   position: relative;
   display: grid;
@@ -1840,14 +1814,14 @@ body {
 }
 
 .hero-main {
-  padding: 2.1rem;
-  background: rgba(18, 22, 30, 0.68);
-  border: 1px solid rgba(240, 223, 194, 0.26);
-  box-shadow: inset 0 0 0 1px rgba(137, 212, 255, 0.06);
-  backdrop-filter: blur(3px);
+  padding: clamp(12px, 2vw, 24px) 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
   width: min(100%, 62ch);
-  text-align: left;
-  justify-self: start;
+  text-align: center;
+  justify-self: center;
 }
 
 .hero-eyebrow {
@@ -1858,17 +1832,11 @@ body {
   font-size: 0.82rem;
 }
 
-.hero-title {
-  font-size: clamp(2.2rem, 3vw + 1.1rem, 3.7rem);
-  margin-bottom: 0.85rem;
-  text-shadow: 0 0 6px rgba(255, 198, 125, 0.36), 0 0 12px rgba(96, 168, 255, 0.28);
-}
-
 .hero-copy {
   font-size: 1.05rem;
   line-height: 1.75;
   color: rgba(243, 235, 223, 0.92);
-  margin-bottom: 1.6rem;
+  margin: clamp(18px, 2.4vw, 28px) auto 1.4rem;
 }
 
 .hero-cta-row {
@@ -2019,7 +1987,7 @@ body {
 @media (max-width: 720px) {
   .hero-main,
   .hero-side {
-    padding: 1.75rem 1.5rem;
+    padding: clamp(12px, 4vw, 24px) 0;
     width: 100%;
   }
 

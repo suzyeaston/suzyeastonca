@@ -4,7 +4,7 @@ get_header();
 ?>
 
 <main id="homepage-content">
-    <div class="hero-section folk-crt">
+    <div class="hero hero-section">
         <div class="hero-grid">
             <?php
             $hero_eyebrow = apply_filters('se_home_hero_eyebrow', '');
@@ -21,15 +21,18 @@ get_header();
                 <?php if (!empty($hero_eyebrow)) : ?>
                     <p class="hero-eyebrow pixel-font"><?php echo esc_html($hero_eyebrow); ?></p>
                 <?php endif; ?>
-                <h1 class="retro-title glow-lite hero-title" aria-label="<?php echo esc_attr($hero_logo_label); ?>">
-                    <div class="hero-wordmark" aria-label="<?php echo esc_attr($hero_logo_label); ?>">
-                        <span class="line1">
-                            <?php echo esc_html($hero_logo_top_text); ?>
-                            <small><?php echo esc_html($hero_logo_mid_text); ?></small>
-                        </span>
-                        <span class="line2"><?php echo esc_html($hero_logo_bottom_text); ?></span>
+                <h1 class="screen-reader-text"><?php echo esc_html($hero_logo_label); ?></h1>
+                <div class="hero-wordmark-wrap">
+                    <div class="hero-badge">
+                        <p class="hero-wordmark" aria-label="<?php echo esc_attr($hero_logo_label); ?>">
+                            <span class="line1">
+                                <?php echo esc_html($hero_logo_top_text); ?>
+                                <small><?php echo esc_html($hero_logo_mid_text); ?></small>
+                            </span>
+                            <span class="line2"><?php echo esc_html($hero_logo_bottom_text); ?></span>
+                        </p>
                     </div>
-                </h1>
+                </div>
                 <p class="hero-copy"><?php echo esc_html($hero_copy); ?></p>
             </div>
         </div>

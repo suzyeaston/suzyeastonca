@@ -1,74 +1,84 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 
-/* Container for the hero title wordmark */
-.hero-wordmark {
-  display: inline-block;
-  padding: 10px 14px;
-  border-radius: 14px;
+/* Centered hero container (text + subtle badge) */
+.hero-wordmark-wrap {
+  display: grid;
+  place-items: center;
+  margin: clamp(8px, 2vw, 16px) auto 0;
+}
+
+/* Panel behind the text (replaces green bitmap panel) */
+.hero-badge {
   position: relative;
-  text-decoration: none;
-  line-height: 1.15;
-  /* subtle badge bg so neon reads on dark */
-  background: rgba(10, 12, 16, 0.7);
-}
-
-/* Two-line layout */
-.hero-wordmark .line1 {
-  display: block;
-  font-family: "Press Start 2P", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  font-size: clamp(16px, 2.6vw, 22px);
-  letter-spacing: 0.6px;
-  color: #cfffff;
-  text-shadow:
-    0 0 1px #b9ff66,
-    0 0 6px #66fcf1,
-    0 0 12px #66fcf1;
-  text-align: center;
-}
-.hero-wordmark .line1 small { opacity: 0.85; font-size: 0.8em; }
-
-.hero-wordmark .line2 {
-  display: block;
-  margin-top: 6px;
-  font-family: "Press Start 2P", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  font-size: clamp(22px, 4.2vw, 34px);
-  letter-spacing: 0.6px;
-  color: #eaffff;
-  text-shadow:
-    0 0 1px #aaffdd,
-    0 0 8px #66fcf1,
-    0 0 16px #66fcf1,
-    0 0 18px #b9ff66;
-  text-align: center;
-}
-
-/* Subtle scanlines (motion-safe fallback below) */
-.hero-wordmark::after {
-  content: "";
-  position: absolute; inset: -6px -8px;
+  max-width: clamp(320px, 78vw, 860px);
+  padding: clamp(12px, 2.2vw, 18px) clamp(14px, 3vw, 24px);
   border-radius: 16px;
+  background: rgba(8, 10, 14, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(185,255,102,.25),
+    0 8px 28px rgba(102,252,241,.10);
+  overflow: hidden;
+}
+
+/* Very light scanlines; we killed the old heavy ones */
+.hero-badge::after {
+  content: "";
+  position: absolute; inset: 0;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255,255,255,0.025) 0 1px,
+    rgba(255,255,255,0.02) 0 1px,
     transparent 1px 3px
   );
   mix-blend-mode: soft-light;
   pointer-events: none;
 }
+@media (prefers-reduced-motion: reduce) {
+  .hero-badge::after { display: none; }
+}
 
-/* Remove the previous hero logo image, only in hero */
+/* The actual wordmark */
+.hero-wordmark {
+  text-align: center;
+  line-height: 1.12;
+  font-family: "Press Start 2P", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  margin: 0;
+}
+
+/* Top line */
+.hero-wordmark .line1 {
+  display: block;
+  font-size: clamp(16px, 2.4vw, 22px);
+  letter-spacing: .5px;
+  color: #cffefe;
+  text-shadow:
+    0 0 1px #b9ff66,
+    0 0 6px #66fcf1,
+    0 0 12px #66fcf1;
+}
+.hero-wordmark .line1 small { opacity: .9; font-size: .8em; }
+
+/* Bottom line (bigger, but not chunky) */
+.hero-wordmark .line2 {
+  display: block;
+  margin-top: .35em;
+  font-size: clamp(22px, 4vw, 36px);
+  letter-spacing: .5px;
+  color: #eaffff;
+  text-shadow:
+    0 0 1px #aaffdd,
+    0 0 8px #66fcf1,
+    0 0 16px #66fcf1,
+    0 0 20px #b9ff66;
+}
+
+/* Kill the old bitmap/logo in hero only */
 .home .hero img[alt*="EASTON"],
 .home .hero img[src*="east"],
-.home .hero .hero-logo,
+.home .hero .logo,
 .home .hero .site-logo {
   display: none !important;
 }
 
-/* Tighten hero spacing so tagline sits cleanly */
+/* Tighten layout so the tagline follows neatly */
 .home .hero,
-.home .hero .inner { padding-top: clamp(8px, 1.5vw, 16px); min-height: 0; }
-
-/* Motion/contrast safety */
-@media (prefers-reduced-motion: reduce) {
-  .hero-wordmark::after { display: none; }
-}
+.home .hero .inner { padding-top: clamp(6px, 1.2vw, 12px); min-height: 0; }
