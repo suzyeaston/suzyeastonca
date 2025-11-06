@@ -208,8 +208,8 @@ open the live dashboard any time:
 need out? one-click escape hatch:
 <{$unsubscribe_url}>
 
-"This is what it feels like to be hunted by something smarter than you."
-— Grimes, Artificial Angels
+"Stay hungry. Stay foolish."
+— Steve Jobs
  
  ps: make sure the alerts land — add suzyeaston.ca to your safe senders and peek at spam if nothing shows up.
 TEXT;
@@ -224,8 +224,8 @@ TEXT;
     <p style="margin:0 0 18px;">you'll get alerts when providers wobble: cloudflare • aws • azure • gcp • pagerduty • zscaler • qubeyond.</p>
     <p style="margin:0 0 18px;"><a href="{$dashboard_url}" style="display:inline-block;padding:12px 18px;border-radius:999px;border:2px solid #ffb81c;background:#f04e23;color:#050505;font-weight:700;text-decoration:none;">OPEN LIVE DASHBOARD</a></p>
     <blockquote style="margin:12px 0;padding:10px 14px;border-left:3px solid rgba(255,184,28,0.8);background:rgba(255,184,28,0.08);">
-      “This is what it feels like to be hunted by something smarter than you.”<br>
-      — Grimes, <a href="https://www.youtube.com/watch?v=tvGnYM14-1A" style="color:#ffb81c;">Artificial Angels</a>
+      "Stay hungry. Stay foolish."<br>
+      — Steve Jobs
     </blockquote>
     <p style="margin:14px 0 0;font-size:13px;opacity:.85;">unsubscribe anytime: <a href="{$unsubscribe_url}" style="color:#ffb81c;">{$unsubscribe_url}</a></p>
     <p style="margin:10px 0 0;font-size:12px;opacity:.85;">pro tip: add suzyeaston.ca to your safe senders so outage intel doesn’t get iced in spam.</p>
@@ -510,10 +510,12 @@ if (!function_exists('lo_generate_subscribe_token')) {
 if (!function_exists('lo_normalize_lyric_answer')) {
     function lo_normalize_lyric_answer(string $value): string
     {
-        $value = strtolower($value);
-        $value = preg_replace('/[^a-z0-9]+/i', '', $value);
+        $clean = preg_replace('/\W+/', '', $value);
+        if (null === $clean) {
+            $clean = '';
+        }
 
-        return (string) $value;
+        return strtolower($clean);
     }
 }
 
@@ -521,34 +523,11 @@ if (!function_exists('lo_lyric_fragment_bank')) {
     function lo_lyric_fragment_bank(): array
     {
         return [
-            'ultraviolet_choir' => [
-                'fragment' => 'Grimes says',
-                'answer'   => 'the ai choir keeps humming in ultraviolet',
-            ],
-            'entropy_dance' => [
-                'fragment' => 'Grimes says',
-                'answer'   => 'entropy is just the universe freestyle dancing',
-            ],
-            'drum_machine_halo' => [
-                'fragment' => 'Grimes says',
-                'answer'   => 'i traded my sleep schedule for a drum machine halo',
-            ],
-            'glitch_doorways' => [
-                'fragment' => 'Grimes says',
-                'answer'   => 'glitches are just secret doorways for weirdos',
-            ],
-            'satellite_tuner' => [
-                'fragment' => 'Grimes says',
-                'answer'   => 'i tune satellites the way other people tune guitars',
-            ],
-            'moon_memes' => [
-                'fragment' => 'Grimes says',
-                'answer'   => 'the moon texts me memes when mars goes offline',
-            ],
-            'cyber_sprites' => [
-                'fragment' => 'Grimes says',
-                'answer'   => 'cyber sprites keep my coffee warm at 3am shows',
-            ],
+            ['fragment' => 'Jobs says', 'answer' => 'stay hungry stay foolish'],
+            ['fragment' => 'Jobs says', 'answer' => 'real artists ship'],
+            ['fragment' => 'Jobs says', 'answer' => 'innovation distinguishes between a leader and a follower'],
+            ['fragment' => 'Jobs says', 'answer' => 'design is how it works'],
+            ['fragment' => 'Jobs says', 'answer' => 'the journey is the reward'],
         ];
     }
 }
@@ -605,7 +584,7 @@ if (!function_exists('lo_validate_lyric_captcha')) {
         }
 
         if ($allowFallback) {
-            $fallback = lo_normalize_lyric_answer(apply_filters('lo_subscribe_noscript_word', 'grimes'));
+            $fallback = lo_normalize_lyric_answer(apply_filters('lo_subscribe_noscript_word', 'jobs'));
             if ('' !== $fallback && hash_equals($fallback, $normalized)) {
                 return true;
             }

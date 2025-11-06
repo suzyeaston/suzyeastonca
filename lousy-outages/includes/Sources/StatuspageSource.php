@@ -1,212 +1,125 @@
 <?php
-declare(strict_types=1);
+// Compat class (no namespaces, no typed properties).
+if ( ! class_exists('LO_StatuspageSource') ) {
+  class LO_StatuspageSource {
+    /** @var string */ public $name;
+    /** @var string */ public $api;
+    /** @var string */ public $home;
 
-namespace LousyOutages\Sources;
-
-use LousyOutages\Model\Incident;
-
-class StatuspageSource
-{
-    private string $provider;
-    private string $summaryUrl;
-    private string $statusUrl;
-
-    public function __construct(string $provider, string $summaryUrl, string $statusUrl)
-    {
-        $this->provider  = $provider;
-        $this->summaryUrl = $summaryUrl;
-        $this->statusUrl = rtrim($statusUrl, '/');
+    function __construct($name, $api, $home) {
+      $this->name = (string)$name;
+      $this->api  = (string)$api;
+      $this->home = (string)$home;
     }
 
-    /**
-     * @return array{status: string, incidents: Incident[], updated: int}
-     */
-    public function fetch(): array
-    {
-        $response = wp_remote_get($this->summaryUrl, [
-            'timeout' => 12,
-            'headers' => [
-                'Accept'     => 'application/json',
-                'User-Agent' => 'LousyOutages/2.0 (+https://suzyeaston.ca)',
-            ],
-        ]);
+    /** Return shape expected by callers: ['status'=>string,'incidents'=>LO_Incident[],'updated'=>int] */
+    function fetch() {
+      $incidents = $this->fetch_incidents();
+      $overall   = 'operational';
+      $updated   = time();
 
-        if (is_wp_error($response)) {
-            return [
-                'status'    => 'unknown',
-                'incidents' => [],
-                'updated'   => time(),
-            ];
-        }
-
-        $body = wp_remote_retrieve_body($response);
-        $data = json_decode((string) $body, true);
-        if (! is_array($data)) {
-            return [
-                'status'    => 'unknown',
-                'incidents' => [],
-                'updated'   => time(),
-            ];
-        }
-
-        $indicator = strtolower((string) ($data['status']['indicator'] ?? 'none'));
-        $status    = $this->mapIndicator($indicator);
-        $updated   = isset($data['page']['updated_at']) ? strtotime((string) $data['page']['updated_at']) : time();
-        if (! $updated) {
-            $updated = time();
-        }
-
-        $incidents = [];
-        foreach ($data['incidents'] ?? [] as $incident) {
-            if (! is_array($incident)) {
-                continue;
+      $res = wp_remote_get($this->api, array('timeout'=>10));
+      if ( ! is_wp_error($res) ) {
+        $code = (int) wp_remote_retrieve_response_code($res);
+        if ($code >= 200 && $code < 300) {
+          $body = wp_remote_retrieve_body($res);
+          $json = json_decode($body, true);
+          if (is_array($json)) {
+            $ind = isset($json['status']['indicator']) ? strtolower((string)$json['status']['indicator']) : 'none';
+            // 'none','minor','major','critical','maintenance'
+            $overall = ($ind==='none') ? 'operational'
+              : ($ind==='minor' ? 'degraded'
+              : ($ind==='major' ? 'partial_outage'
+              : ($ind==='critical' ? 'major_outage' : 'maintenance')));
+            if (!empty($json['page']['updated_at'])) {
+              $ts = strtotime((string)$json['page']['updated_at']);
+              if ($ts) $updated = $ts;
             }
-            $incidents[] = $this->transformIncident($incident);
+          }
         }
+      }
 
-        return [
-            'status'    => $status,
-            'incidents' => array_filter($incidents),
-            'updated'   => $updated,
-        ];
+      return array(
+        'status'    => $overall,
+        'incidents' => $incidents,
+        'updated'   => $updated,
+      );
     }
 
-    private function transformIncident(array $incident): ?Incident
-    {
-        $rawStatus = strtolower((string) ($incident['status'] ?? '')); 
-        $impact    = strtolower((string) ($incident['impact'] ?? 'none'));
-        $id        = (string) ($incident['id'] ?? md5(wp_json_encode($incident)));
-        $title     = $this->resolveTitle($incident);
-        $url       = (string) ($incident['shortlink'] ?? ($this->statusUrl ? $this->statusUrl . '/incidents/' . $id : ''));
-        $component = null;
-        if (! empty($incident['components']) && is_array($incident['components'])) {
-            $names = array_map(static function ($component) {
-                if (is_array($component) && ! empty($component['name'])) {
-                    return (string) $component['name'];
-                }
-                return null;
-            }, $incident['components']);
-            $names = array_filter($names);
-            if ($names) {
-                $component = implode(', ', $names);
-            }
-        }
+    /** @return array LO_Incident[] */
+    function fetch_incidents() {
+      $res = wp_remote_get($this->api, array('timeout'=>10));
+      if (is_wp_error($res)) return array();
+      $code = (int) wp_remote_retrieve_response_code($res);
+      if ($code < 200 || $code >= 300) return array();
+      $json = json_decode((string) wp_remote_retrieve_body($res), true);
+      if (!is_array($json)) return array();
 
-        $detectedAt = $this->timestamp($incident['started_at'] ?? $incident['created_at'] ?? $incident['scheduled_for'] ?? null);
-        if (! $detectedAt) {
-            $detectedAt = time();
-        }
-        $resolvedAt = null;
-        $status     = $this->mapIncidentStatus($rawStatus, $impact);
-        if ('resolved' === $status) {
-            $resolvedAt = $this->timestamp($incident['resolved_at'] ?? $incident['updated_at'] ?? null);
-            if (! $resolvedAt) {
-                $resolvedAt = time();
-            }
-        }
+      $out = array();
 
-        return new Incident(
-            $this->provider,
-            $id,
+      if (isset($json['incidents']) && is_array($json['incidents'])) {
+        foreach ($json['incidents'] as $i) {
+          if (!is_array($i)) continue;
+          $raw   = isset($i['status']) ? strtolower((string)$i['status']) : '';
+          $impact = isset($i['impact']) ? strtolower((string)$i['impact']) : '';
+          $map   = array('investigating'=>'degraded','identified'=>'degraded','monitoring'=>'degraded','postmortem'=>'resolved','resolved'=>'resolved');
+          $state = isset($map[$raw]) ? $map[$raw] : 'degraded';
+          if ($state !== 'resolved' && $impact) {
+            $impact_map = array('minor'=>'degraded','major'=>'partial_outage','critical'=>'major_outage','maintenance'=>'maintenance');
+            if (isset($impact_map[$impact])) {
+              $state = $impact_map[$impact];
+            }
+          }
+
+          $title = isset($i['name']) ? (string)$i['name'] : 'Incident';
+          $url   = !empty($i['shortlink']) ? (string)$i['shortlink'] : $this->home;
+          $det   = !empty($i['started_at']) ? strtotime((string)$i['started_at'])
+                : (!empty($i['created_at']) ? strtotime((string)$i['created_at']) : time());
+          $resd  = ($state==='resolved' && !empty($i['resolved_at'])) ? strtotime((string)$i['resolved_at']) : null;
+
+          $out[] = LO_Incident::create(
+            $this->name,
+            LO_Incident::make_id($this->name, $title, $det ?: time()),
             $title,
-            $status,
+            $state,
             $url,
-            $component,
-            $impact ?: null,
-            $detectedAt,
-            $resolvedAt
-        );
+            null,
+            null,
+            $det ?: time(),
+            $resd
+          );
+        }
+      }
+
+      // If no listed incidents, still show a card (operational/degraded by indicator)
+      if (empty($out) && isset($json['status']['indicator'])) {
+        $ind = strtolower((string)$json['status']['indicator']);
+        if ($ind === 'none') {
+          $out[] = LO_Incident::operational($this->name, $this->home);
+        } else {
+          $title = 'Provider reports ' . $ind . ' impact';
+          $state = ($ind==='minor' ? 'degraded' : ($ind==='major' ? 'partial_outage' : ($ind==='critical' ? 'major_outage' : 'maintenance')));
+          $out[] = LO_Incident::create($this->name, LO_Incident::make_id($this->name, $title, time()), $title, $state, $this->home, null, null, time(), null);
+        }
+      }
+
+      return $out;
     }
+  }
+}
 
-    private function resolveTitle(array $incident): string
-    {
-        $title = isset($incident['name']) ? (string) $incident['name'] : '';
-        if ('' !== trim($title)) {
-            return $title;
-        }
+// Bridge the namespaced calls to this compat class.
+if ( ! class_exists('LousyOutages\\Sources\\StatuspageSource') ) {
+  class_alias('LO_StatuspageSource', 'LousyOutages\\Sources\\StatuspageSource');
+}
 
-        $updates = isset($incident['incident_updates']) && is_array($incident['incident_updates'])
-            ? $incident['incident_updates']
-            : [];
-        if ($updates) {
-            usort($updates, static function ($a, $b) {
-                $tsA = isset($a['updated_at']) ? strtotime((string) $a['updated_at']) : 0;
-                $tsB = isset($b['updated_at']) ? strtotime((string) $b['updated_at']) : 0;
-                return $tsB <=> $tsA;
-            });
-            foreach ($updates as $update) {
-                if (! is_array($update)) {
-                    continue;
-                }
-                $body = isset($update['body']) ? trim((string) $update['body']) : '';
-                if ('' !== $body) {
-                    return $body;
-                }
-            }
-        }
-
-        return 'Incident';
-    }
-
-    private function mapIndicator(string $indicator): string
-    {
-        switch ($indicator) {
-            case 'none':
-                return 'operational';
-            case 'maintenance':
-                return 'maintenance';
-            case 'minor':
-                return 'degraded';
-            case 'major':
-                return 'partial_outage';
-            case 'critical':
-                return 'major_outage';
-            default:
-                return 'degraded';
-        }
-    }
-
-    private function mapIncidentStatus(string $status, string $impact): string
-    {
-        $status = strtolower($status);
-        if (in_array($status, ['resolved', 'completed', 'postmortem'], true)) {
-            return 'resolved';
-        }
-
-        $impact = strtolower($impact);
-        switch ($impact) {
-            case 'minor':
-                return 'degraded';
-            case 'major':
-                return 'partial_outage';
-            case 'critical':
-                return 'major_outage';
-            case 'maintenance':
-                return 'maintenance';
-            default:
-                return 'degraded';
-        }
-    }
-
-    private function timestamp($value): ?int
-    {
-        if (! $value) {
-            return null;
-        }
-        if ($value instanceof \DateTimeInterface) {
-            return $value->getTimestamp();
-        }
-        $string = is_numeric($value) ? (string) $value : (string) $value;
-        if ('' === trim($string)) {
-            return null;
-        }
-        if (preg_match('/^\d+$/', $string)) {
-            return (int) $string;
-        }
-        $time = strtotime($string);
-        if (false === $time) {
-            return null;
-        }
-        return $time;
-    }
+// Incident compat (if not already present)
+if ( ! class_exists('LO_Incident') ) {
+  $compat = __DIR__ . '/../compat.php';
+  if ( file_exists($compat) ) {
+    require_once $compat;
+  }
+}
+if ( ! class_exists('LO_Incident') ) {
+  require_once __DIR__ . '/../Model/Incident.php';
 }
