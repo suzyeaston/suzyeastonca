@@ -101,13 +101,12 @@ function render_shortcode(): string {
 
     $providers_config = Providers::enabled();
     if (is_array($provider_map) && $provider_map) {
-        $providers_config = array_intersect_key($providers_config, $provider_map);
-        if (empty($providers_config)) {
-            foreach ($provider_map as $slug => $provider_info) {
+        foreach ($provider_map as $slug => $info) {
+            if (!isset($providers_config[$slug]) && is_array($info)) {
                 $providers_config[$slug] = [
                     'id'         => $slug,
-                    'name'       => $provider_info['name'],
-                    'status_url' => $provider_info['status_url'],
+                    'name'       => isset($info['name']) ? (string) $info['name'] : ucfirst((string) $slug),
+                    'status_url' => isset($info['status_url']) ? (string) $info['status_url'] : '',
                 ];
             }
         }
