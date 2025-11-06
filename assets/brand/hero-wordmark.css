@@ -2,15 +2,19 @@
 
 /* Centered hero container (text + subtle badge) */
 .hero-wordmark-wrap {
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;           /* hard center */
+  align-items: center;
   margin: clamp(8px, 2vw, 16px) auto 0;
+  width: 100%;
 }
 
 /* Panel behind the text (replaces green bitmap panel) */
 .hero-badge {
   position: relative;
-  max-width: clamp(320px, 78vw, 860px);
+  margin: 0 auto;
+  width: fit-content;
+  max-width: min(92vw, 860px);
   padding: clamp(12px, 2.2vw, 18px) clamp(14px, 3vw, 24px);
   border-radius: 16px;
   background: rgba(8, 10, 14, 0.72);
@@ -43,6 +47,9 @@
   font-family: "Press Start 2P", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   margin: 0;
 }
+
+/* If a parent section has text-align:left, override here */
+.home .hero { text-align: initial; }
 
 /* Top line */
 .hero-wordmark .line1 {
@@ -79,6 +86,6 @@
   display: none !important;
 }
 
-/* Tighten layout so the tagline follows neatly */
+/* Trim hero top padding only if needed */
 .home .hero,
-.home .hero .inner { padding-top: clamp(6px, 1.2vw, 12px); min-height: 0; }
+.home .hero .inner { padding-top: clamp(4px, 1vw, 10px); min-height: 0; }
