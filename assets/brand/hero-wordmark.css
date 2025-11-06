@@ -1,0 +1,74 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+/* Container for the hero title wordmark */
+.hero-wordmark {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 14px;
+  position: relative;
+  text-decoration: none;
+  line-height: 1.15;
+  /* subtle badge bg so neon reads on dark */
+  background: rgba(10, 12, 16, 0.7);
+}
+
+/* Two-line layout */
+.hero-wordmark .line1 {
+  display: block;
+  font-family: "Press Start 2P", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size: clamp(16px, 2.6vw, 22px);
+  letter-spacing: 0.6px;
+  color: #cfffff;
+  text-shadow:
+    0 0 1px #b9ff66,
+    0 0 6px #66fcf1,
+    0 0 12px #66fcf1;
+  text-align: center;
+}
+.hero-wordmark .line1 small { opacity: 0.85; font-size: 0.8em; }
+
+.hero-wordmark .line2 {
+  display: block;
+  margin-top: 6px;
+  font-family: "Press Start 2P", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size: clamp(22px, 4.2vw, 34px);
+  letter-spacing: 0.6px;
+  color: #eaffff;
+  text-shadow:
+    0 0 1px #aaffdd,
+    0 0 8px #66fcf1,
+    0 0 16px #66fcf1,
+    0 0 18px #b9ff66;
+  text-align: center;
+}
+
+/* Subtle scanlines (motion-safe fallback below) */
+.hero-wordmark::after {
+  content: "";
+  position: absolute; inset: -6px -8px;
+  border-radius: 16px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.025) 0 1px,
+    transparent 1px 3px
+  );
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+/* Remove the previous hero logo image, only in hero */
+.home .hero img[alt*="EASTON"],
+.home .hero img[src*="east"],
+.home .hero .hero-logo,
+.home .hero .site-logo {
+  display: none !important;
+}
+
+/* Tighten hero spacing so tagline sits cleanly */
+.home .hero,
+.home .hero .inner { padding-top: clamp(8px, 1.5vw, 16px); min-height: 0; }
+
+/* Motion/contrast safety */
+@media (prefers-reduced-motion: reduce) {
+  .hero-wordmark::after { display: none; }
+}
