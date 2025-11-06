@@ -4,30 +4,38 @@
 .brand-logo { position: relative; display: inline-block; line-height: 0; }
 .brand-logo img { width: clamp(220px, 28vw, 420px); height: auto; }
 
-/* CRT scanlines overlay */
-.brand-logo::after {
-  content: "";
-  position: absolute; inset: 0;
+/* Softer scanlines */
+.brand-logo::after{
+  content:""; position:absolute; inset:0;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255,255,255,0.05) 0 1px,
+    rgba(255,255,255,0.03) 0 1px,
     transparent 1px 3px
   );
   mix-blend-mode: soft-light;
-  pointer-events: none;
+  pointer-events:none;
 }
 
-/* Tiny flicker */
-@keyframes se-flicker {
-  0%, 100% { opacity: 1; }
-  50%     { opacity: 0.98; }
-}
-.brand-logo { animation: se-flicker 120ms steps(2, end) infinite; }
+/* Tiny flicker -> barely there */
+@keyframes se-flicker{ 0%,100%{opacity:1;} 50%{opacity:.992;} }
+.brand-logo{ animation: se-flicker 160ms steps(2,end) infinite; }
 
-@media (prefers-reduced-motion: reduce) {
-  .brand-logo { animation: none; }
-  .brand-logo::after { display: none; }
+@media (prefers-reduced-motion: reduce){
+  .brand-logo{ animation:none; }
+  .brand-logo::after{ display:none; }
 }
+
+/* TEMP: hide the old hero logo image */
+.hero .old-logo,
+.home .hero img[src*="easton_old"],
+.home .hero img[alt*="EASTON old"]{
+  display: none !important;
+}
+
+/* Make sure the header isn’t clipping the SVG */
+.site-header .brand-logo{ padding-block: 8px; }
+.site-header{ overflow: visible; position: relative; z-index: 2; }
+.buy-coffee{ position: relative; z-index: 3; }
 
 /* Light-surface variant if you ever drop this on a light header */
 .on-light .brand-logo { padding: 6px 10px; border-radius: 12px; background: #111; }
