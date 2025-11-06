@@ -7,19 +7,28 @@ get_header();
     <div class="hero-section folk-crt">
         <div class="hero-grid">
             <?php
-            $hero_eyebrow = apply_filters('se_home_hero_eyebrow', 'Now headlining the trail');
-            $hero_title   = apply_filters('se_home_hero_title', 'Creative signals from Suzy Easton');
-            $hero_copy    = apply_filters('se_home_hero_copy', 'Independent music, advocacy, and experimental tools live from Vancouver.');
+            $hero_eyebrow = apply_filters('se_home_hero_eyebrow', '');
+            $hero_logo_label = apply_filters('se_home_hero_title', 'Suzanne (Suzy) Easton');
+            $hero_logo_top = apply_filters('se_home_hero_logo_top', 'Suzanne');
+            $hero_logo_mid = apply_filters('se_home_hero_logo_mid', '(Suzy)');
+            $hero_logo_bottom = apply_filters('se_home_hero_logo_bottom', 'Easton');
+            $hero_copy    = apply_filters('se_home_hero_copy', 'Independent music, infrastructure nerdiness, and creative experiments direct from Vancouver.');
             ?>
             <div class="hero-main">
-                <p class="hero-eyebrow pixel-font"><?php echo esc_html($hero_eyebrow); ?></p>
-                <h1 class="retro-title glow-lite hero-title"><?php echo esc_html($hero_title); ?></h1>
+                <?php if (!empty($hero_eyebrow)) : ?>
+                    <p class="hero-eyebrow pixel-font"><?php echo esc_html($hero_eyebrow); ?></p>
+                <?php endif; ?>
+                <h1 class="retro-title glow-lite hero-title galaga-logo" aria-label="<?php echo esc_attr($hero_logo_label); ?>">
+                    <span class="galaga-logo__top"><?php echo esc_html($hero_logo_top); ?></span>
+                    <span class="galaga-logo__mid"><?php echo esc_html($hero_logo_mid); ?></span>
+                    <span class="galaga-logo__bottom"><?php echo esc_html($hero_logo_bottom); ?></span>
+                </h1>
                 <p class="hero-copy"><?php echo esc_html($hero_copy); ?></p>
             </div>
         </div>
         <section class="lo-callout lo-8bit">
           <h2>Weekly Show: <span>Lousy Outages</span></h2>
-          <p>New weekly YouTube chaos — status meltdowns, longer riffs, and plenty of fun with real third-party wobbles.</p>
+          <p>New episodes drop every week on YouTube where Suzanne unpacks outage chaos, security quirks, and her sharp tech riffs.</p>
           <a class="btn-8bit" href="/lousy-outages/">OPEN THE LIVE DASHBOARD →</a>
         </section>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
@@ -107,19 +116,25 @@ get_header();
 
     <section class="now-listening">
         <h2 class="pixel-font">Now Listening</h2>
-        <iframe width="100%" height="360" src="https://www.youtube.com/embed/GwetNnBkgQM?autoplay=0" title="Metric – Full Performance (Live on KEXP)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        <p class="pixel-font now-listening-caption">🎶 Metric — Live on KEXP. stripped-down, all-acoustic set. no AI-weapons funding here.</p>
-        <div class="info-callout pixel-font">
-            <p>Spotify CEO Daniel Ek used his investment firm Prima Materia to lead a <strong>€600M (~US $694M)</strong> Series D funding round in June 2025 for Helsing, a German defense‑AI startup now valued at $12&nbsp;billion.</p>
-            <p>Helsing develops AI‑enabled drones, aircraft and submarines for defense, and Ek also sits on its board as chairman.</p>
-            <p>At least one indie band – Deerhoof – pulled their music from Spotify in protest, citing ethical concerns over music &ldquo;killing people&rdquo; due to this connection.</p>
+        <div class="now-listening-item">
+            <iframe width="100%" height="360" src="https://www.youtube.com/embed/GwetNnBkgQM?autoplay=0" title="Metric – Full Performance (Live on KEXP)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <p class="pixel-font now-listening-caption">🎶 Metric — Live on KEXP. stripped-down, all-acoustic set. no AI-weapons funding here.</p>
+        </div>
+        <?php
+        $willie_heading = apply_filters('se_home_willie_heading', 'Now Playing: Willie Nelson — “Hands on the Wheel”');
+        $willie_body    = apply_filters('se_home_willie_body', 'At a moment when the world feels off-kilter, “Hands on the Wheel” brings it back to center. Minimal production, maximum heart. Love steadies the hands.');
+        ?>
+        <div class="now-listening-item">
+            <h3 class="pixel-font now-listening-subhead"><?php echo esc_html($willie_heading); ?></h3>
+            <p class="pixel-font now-listening-caption"><?php echo esc_html($willie_body); ?></p>
+            <iframe width="100%" height="360" src="https://www.youtube.com/embed/71cIYDnDZUk?autoplay=0" title="Willie Nelson — Hands on the Wheel" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
     </section>
 
     <?php
     $grimes_note = apply_filters(
         'se_home_grimes_note',
-        'Streaming ethics are hotly debated. In 2025, Spotify founder Daniel Ek’s fund Prima Materia led a €600M round into defense-AI company Helsing; some indie artists responded by pulling music from Spotify. Suzy’s site highlights artists directly via embeds and Bandcamp whenever possible.'
+        'Spotify founder Daniel Ek’s fund Prima Materia poured €600M into defense-AI company Helsing in 2025. Indie mainstays like Deerhoof yanked catalogues in protest, calling out the weapons tie-in. Sharing Grimes here keeps the conversation loud: artists deserve platforms that aren’t bankrolled by war tech.'
     );
     $grimes_heading = apply_filters('se_home_grimes_heading', 'Spotlight: Grimes — “Artificial Angels”');
     ?>
@@ -129,20 +144,6 @@ get_header();
         </div>
         <h2 class="pixel-font"><?php echo esc_html($grimes_heading); ?></h2>
         <iframe width="100%" height="360" src="https://www.youtube.com/embed/tvGnYM14-1A?autoplay=0" title="Grimes — Artificial Angels (Official Video)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    </section>
-
-    <?php
-    $willie_heading = apply_filters('se_home_willie_heading', 'Now Playing: Willie Nelson — “Hands on the Wheel”');
-    $willie_body    = apply_filters('se_home_willie_body', 'At a moment when the world feels off-kilter, “Hands on the Wheel” brings it back to center. Minimal production, maximum heart. Love steadies the hands.');
-    ?>
-    <section class="hero-section folk-crt willie-feature">
-        <div class="hero-grid">
-            <div class="hero-main">
-                <h2 class="retro-title glow-lite"><?php echo esc_html($willie_heading); ?></h2>
-                <p class="hero-copy"><?php echo esc_html($willie_body); ?></p>
-                <iframe width="100%" height="360" src="https://www.youtube.com/embed/71cIYDnDZUk?autoplay=0" title="Willie Nelson — Hands on the Wheel" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            </div>
-        </div>
     </section>
 
     <section class="track-analyzer-feature">
