@@ -3,20 +3,23 @@ declare(strict_types=1);
 
 namespace LousyOutages;
 
+use LousyOutages\Email\Composer;
+
 class Email {
     private const STATUS_LABELS = [
-        'degraded'      => 'degraded performance',
-        'outage'        => 'service outage',
-        'early-warning' => 'early warning',
-        'maintenance'   => 'maintenance window',
-        'operational'   => 'operational',
-        'recovered'     => 'recovered',
+        'degraded'       => 'degraded performance',
+        'partial_outage' => 'partial outage',
+        'major_outage'   => 'major outage',
+        'maintenance'    => 'maintenance window',
+        'operational'    => 'operational',
+        'resolved'       => 'resolved',
+        'recovered'      => 'recovered',
     ];
 
     public function send_alert(string $provider, string $status, string $message, string $link): void {
-        $status_slug  = strtolower(trim($status));
-        $status_label = $this->describe_status($status_slug ?: 'status change');
-        $subject      = sprintf('⚠️ Lousy Outages: %s %s', $provider, $status_label);
+        $status_slug  = strtolower(trim($status)) ?: 'degraded';
+        $status_label = $this->describe_status($status_slug);
+        $subject      = Composer::subjectForProvider($provider, $status_slug, $message);
 
         [$text_body, $html_body] = $this->build_bodies($provider, $status_label, $message, $link, false);
         $this->dispatch($subject, $text_body, $html_body);
@@ -24,7 +27,7 @@ class Email {
 
     public function send_recovery(string $provider, string $link): void {
         $status_label = $this->describe_status('recovered');
-        $subject      = sprintf('✅ Lousy Outages: %s %s', $provider, $status_label);
+        $subject      = Composer::subjectForProvider($provider, 'resolved', '');
 
         [$text_body, $html_body] = $this->build_bodies($provider, $status_label, 'Systems stabilized — back to nominal performance.', $link, true);
         $this->dispatch($subject, $text_body, $html_body);

@@ -37,6 +37,13 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Summary.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/IncidentAlerts.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Snapshot.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Cron.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Model/Incident.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Storage/IncidentStore.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Email/Composer.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Sources/Sources.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Sources/StatuspageSource.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Sources/index.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Cron/Refresh.php';
 require_once LOUSY_OUTAGES_PATH . 'public/shortcode.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -55,11 +62,13 @@ use LousyOutages\Api;
 use LousyOutages\Feed;
 use LousyOutages\MailTransport;
 use LousyOutages\IncidentAlerts;
+use LousyOutages\Cron\Refresh as RefreshCron;
 
 Api::bootstrap();
 Feed::bootstrap();
 MailTransport::bootstrap();
 IncidentAlerts::bootstrap();
+RefreshCron::bootstrap();
 
 lo_snapshot_bootstrap();
 lo_cron_bootstrap();

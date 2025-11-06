@@ -12,6 +12,30 @@ namespace {
         define('DAY_IN_SECONDS', 86400);
     }
 
+    if (!defined('ABSPATH')) {
+        define('ABSPATH', __DIR__ . '/');
+    }
+
+    if (!function_exists('add_action')) {
+        function add_action($hook, $callback, $priority = 10, $accepted_args = 1)
+        {
+        }
+    }
+
+    if (!function_exists('wp_next_scheduled')) {
+        function wp_next_scheduled($hook)
+        {
+            return false;
+        }
+    }
+
+    if (!function_exists('wp_schedule_event')) {
+        function wp_schedule_event($timestamp, $recurrence, $hook)
+        {
+            return true;
+        }
+    }
+
     require_once __DIR__ . '/../lousy-outages/includes/Subscriptions.php';
 
     class FakeWpdb {
@@ -114,6 +138,16 @@ namespace {
 
         public function query($query) { // phpcs:ignore
             return 0;
+        }
+
+        public function esc_like($text)
+        {
+            return addslashes((string) $text);
+        }
+
+        public function get_var($query)
+        {
+            return null;
         }
     }
 }

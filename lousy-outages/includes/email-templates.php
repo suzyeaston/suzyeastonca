@@ -148,16 +148,25 @@ if (!function_exists('send_lo_outage_alert_email')) {
         }
 
         $service = isset($incident_data['service']) ? (string) $incident_data['service'] : 'Service';
-        $status  = isset($incident_data['status']) ? (string) $incident_data['status'] : 'Status Change';
+        $status  = isset($incident_data['status']) ? strtolower(trim((string) $incident_data['status'])) : 'degraded';
         $summary = isset($incident_data['summary']) ? (string) $incident_data['summary'] : '';
-        $impact  = isset($incident_data['impact']) ? (string) $incident_data['impact'] : $status;
+        $impact  = isset($incident_data['impact']) ? strtolower((string) $incident_data['impact']) : 'minor';
         $timestamp_raw = isset($incident_data['timestamp']) ? (string) $incident_data['timestamp'] : '';
         $components = isset($incident_data['components']) ? (string) $incident_data['components'] : '';
         $status_url = isset($incident_data['url']) ? (string) $incident_data['url'] : '';
         $extra_notes = isset($incident_data['notes']) ? (string) $incident_data['notes'] : '';
 
         $service_label = trim($service) ?: 'Service';
-        $status_label  = trim($status) ?: (trim($impact) ?: 'Status Change');
+        $status_slug   = $status ?: 'degraded';
+        $status_map = [
+            'degraded'       => 'Degraded',
+            'partial_outage' => 'Partial Outage',
+            'major_outage'   => 'Major Outage',
+            'maintenance'    => 'Maintenance',
+            'resolved'       => 'Resolved',
+            'operational'    => 'Operational',
+        ];
+        $status_label  = $status_map[$status_slug] ?? ucfirst(str_replace('_', ' ', $status_slug));
         $summary_text  = trim($summary) ?: trim($extra_notes);
         $status_url    = $status_url ?: home_url('/lousy-outages/');
         $status_url_raw  = esc_url_raw($status_url);
@@ -191,7 +200,23 @@ if (!function_exists('send_lo_outage_alert_email')) {
 
         $clean_summary = $summary_text ?: sprintf('%s status changed to %s.', $service_label, $status_label);
 
-        $subject = sprintf('🚨 Outage Alert: %s – %s', $service_label, $status_label);
+        $impact_slug = in_array($impact, ['none', 'minor', 'major', 'critical'], true) ? $impact : 'minor';
+        $detected_epoch = strtotime($timestamp_raw) ?: time();
+        $resolved_epoch = ('resolved' === $status_slug) ? $detected_epoch : null;
+
+        $incident_object = new \LousyOutages\Model\Incident(
+            $service_label,
+            md5($service_label . '|' . $clean_summary . '|' . $status_slug . '|' . $timestamp_display),
+            $clean_summary,
+            $status_slug,
+            $status_url,
+            $components ?: null,
+            $impact_slug,
+            $detected_epoch,
+            $resolved_epoch
+        );
+
+        $subject = \LousyOutages\Email\Composer::subjectForIncident($incident_object, $status_slug);
 
         $text_body_lines = [
             sprintf('%s outage alert', strtoupper($service_label)),

@@ -24,6 +24,16 @@ class Api {
 
         register_rest_route(
             'lousy-outages/v1',
+            '/refresh',
+            [
+                'methods'             => ['POST', 'GET'],
+                'permission_callback' => '__return_true',
+                'callback'            => [self::class, 'handle_refresh'],
+            ]
+        );
+
+        register_rest_route(
+            'lousy-outages/v1',
             '/summary',
             [
                 'methods'             => 'GET',
@@ -79,7 +89,10 @@ class Api {
             $errors = $snapshot['errors'];
         }
 
+        $epoch = time();
         $response = [
+            'ok'            => true,
+            'refreshed_at'  => $epoch,
             'refreshedAt'   => $timestamp,
             'providerCount' => count($providers),
             'errors'        => $errors,
