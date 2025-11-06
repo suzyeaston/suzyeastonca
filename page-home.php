@@ -12,16 +12,23 @@ get_header();
             $hero_logo_top = apply_filters('se_home_hero_logo_top', 'Suzanne');
             $hero_logo_mid = apply_filters('se_home_hero_logo_mid', '(Suzy)');
             $hero_logo_bottom = apply_filters('se_home_hero_logo_bottom', 'Easton');
+            $hero_logo_top_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_top, 'UTF-8') : strtoupper($hero_logo_top);
+            $hero_logo_mid_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_mid, 'UTF-8') : strtoupper($hero_logo_mid);
+            $hero_logo_bottom_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_bottom, 'UTF-8') : strtoupper($hero_logo_bottom);
             $hero_copy    = apply_filters('se_home_hero_copy', 'Independent music, infrastructure nerdiness, and creative experiments direct from Vancouver.');
             ?>
             <div class="hero-main">
                 <?php if (!empty($hero_eyebrow)) : ?>
                     <p class="hero-eyebrow pixel-font"><?php echo esc_html($hero_eyebrow); ?></p>
                 <?php endif; ?>
-                <h1 class="retro-title glow-lite hero-title galaga-logo" aria-label="<?php echo esc_attr($hero_logo_label); ?>">
-                    <span class="galaga-logo__top"><?php echo esc_html($hero_logo_top); ?></span>
-                    <span class="galaga-logo__mid"><?php echo esc_html($hero_logo_mid); ?></span>
-                    <span class="galaga-logo__bottom"><?php echo esc_html($hero_logo_bottom); ?></span>
+                <h1 class="retro-title glow-lite hero-title" aria-label="<?php echo esc_attr($hero_logo_label); ?>">
+                    <div class="hero-wordmark" aria-label="<?php echo esc_attr($hero_logo_label); ?>">
+                        <span class="line1">
+                            <?php echo esc_html($hero_logo_top_text); ?>
+                            <small><?php echo esc_html($hero_logo_mid_text); ?></small>
+                        </span>
+                        <span class="line2"><?php echo esc_html($hero_logo_bottom_text); ?></span>
+                    </div>
                 </h1>
                 <p class="hero-copy"><?php echo esc_html($hero_copy); ?></p>
             </div>
