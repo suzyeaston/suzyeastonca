@@ -541,7 +541,7 @@ function render_subscribe_shortcode(): string {
                 />
             </label>
             <div class="lo-subscribe__label lo-subscribe__challenge">
-                <p class="lo-subscribe__prompt">Type the cosmic Grimes sentence shown below to prove you&rsquo;re not a bot.</p>
+                <p class="lo-subscribe__prompt">Type the Steve Jobs line shown below to prove you&rsquo;re not a bot.</p>
                 <?php if ($challenge_phrase) : ?>
                     <p class="lo-subscribe__challenge-quote" aria-live="polite"><?php echo esc_html($challenge_phrase); ?></p>
                 <?php endif; ?>
@@ -560,8 +560,8 @@ function render_subscribe_shortcode(): string {
                     />
                 </label>
                 <p class="lo-subscribe__note" id="<?php echo esc_attr($challenge_hint_id); ?>">Case doesn&rsquo;t matter, punctuation optional.</p>
-                <noscript>
-                    <p class="lo-subscribe__noscript">No JavaScript? Type the word <strong>grimes</strong> above.</p>
+                  <noscript>
+                      <p class="lo-subscribe__noscript">No JavaScript? Type the word <strong>jobs</strong> above.</p>
                     <input type="hidden" name="lo_noscript_challenge" value="1" />
                 </noscript>
             </div>
@@ -570,7 +570,7 @@ function render_subscribe_shortcode(): string {
             <button type="submit" class="lo-subscribe__button">Subscribe</button>
             <p class="lo-subscribe__status" data-lo-subscribe-status aria-live="polite"></p>
         </form>
-        <p class="lo-subscribe__help">Watch for the confirmation email (check spam if it’s missing). Every briefing ships with a one-click unsubscribe link, and we use a rotating Grimes quote to stop spam bots.</p>
+        <p class="lo-subscribe__help">Watch for the confirmation email (check spam if it’s missing). Every briefing ships with a one-click unsubscribe link, and we rotate a Steve Jobs quote to stop spam bots.</p>
     </div>
     <?php
     return (string) ob_get_clean();

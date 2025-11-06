@@ -9,25 +9,11 @@ get_header();
             <div class="hero-main">
                 <p class="hero-eyebrow pixel-font">Now headlining the trail</p>
                 <h1 class="retro-title glow-lite hero-title">Willie on the Wheel</h1>
-                <p class="hero-copy">At a time when the world feels like it’s spinning out of control, Willie pulls you back to center. “Hands on the Wheel” closes Red Headed Stranger with soft steel, steady time, and a simple truth: love steadies the hands. Minimal production, maximum heart—redemption you can hum.</p>
+                <p class="hero-copy">Now Playing: Willie Nelson — “Hands on the Wheel”<br><br>At a moment when the world feels off-kilter, “Hands on the Wheel” brings it back to center. The closer from Red Headed Stranger is all soft steel and steady time—minimal production, maximum heart. It’s a simple truth you can hum: love steadies the hands.</p>
                 <div class="hero-cta-row">
                     <a class="btn-8bit hero-cta" href="https://www.youtube.com/watch?v=71cIYDnDZUk" target="_blank" rel="noopener">Ride with “Hands on the Wheel” →</a>
-                    <a class="pixel-button hero-cta-alt" href="/music-releases/">Read the tour journal</a>
-                </div>
-                <div class="influence-ticker" aria-live="polite" aria-atomic="true">
-                    <span class="influence-label pixel-font">Traveling companions:</span>
-                    <span class="influence-current" data-influence-rotator data-influences='["Metric","Cat Stevens","Neil Young","Grateful Dead"]'>Metric</span>
                 </div>
             </div>
-            <aside class="hero-side">
-                <header class="hero-side-header pixel-font">Signal log</header>
-                <figure class="grimes-sidequest">
-                    <figcaption class="pixel-font">SIDE QUEST SIGNAL</figcaption>
-                    <p>Grimes is still transmitting.<br/>
-New coordinates: “Artificial Angels.”<br/>
-An AI voice stalks the melody—“this is what it feels like to be hunted by something smarter than you.” <a href="https://www.youtube.com/watch?v=b6pomaq30G0" target="_blank" rel="noopener">Catch the neon sermon →</a></p>
-                </figure>
-            </aside>
         </div>
         <section class="lo-callout lo-8bit">
           <h2>Weekly Show: <span>Lousy Outages</span></h2>

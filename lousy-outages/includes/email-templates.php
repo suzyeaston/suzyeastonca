@@ -95,12 +95,12 @@ if (!function_exists('send_lo_confirmation_email')) {
             <meta charset="utf-8">
             <title>Lousy Outages Confirmation</title>
         </head>
-        <body style="margin:0;background:#05050a;color:#f7f4ff;font-family:Segoe UI,Roboto,system-ui,-apple-system,sans-serif;">
+        <body style="margin:0;background:#05050a;color:#f7f4ff;font-family:Segoe UI,Roboto,system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;">
             <div style="max-width:640px;margin:0 auto;padding:32px 20px;">
                 <div style="border-radius:18px;border:1px solid rgba(119,85,255,0.4);background:linear-gradient(145deg,#0d0c1f,#1b1540);box-shadow:0 22px 46px rgba(26,17,68,0.45);padding:32px 30px;">
                     <p style="margin:0 0 12px;font-size:14px;letter-spacing:0.12em;text-transform:uppercase;color:#8f80ff;">Confirm required</p>
                     <h1 style="margin:0 0 16px;font-size:30px;color:#f9f7ff;letter-spacing:0.04em;">Please confirm your subscription to Lousy Outages</h1>
-                    <p style="margin:0 0 18px;font-size:16px;line-height:1.6;color:rgba(255,255,255,0.82);">Confirm your email to receive outage alerts, post-mortems, and status intel. One click keeps you in the loop.</p>
+                    <p style="margin:0 0 18px;font-size:16px;line-height:1.5;color:rgba(255,255,255,0.82);">Confirm your email to receive outage alerts, post-mortems, and status intel. One click keeps you in the loop.</p>
                     <p style="margin:0 0 22px;">
                         <a href="<?php echo esc_url($confirm_html); ?>" style="display:inline-block;padding:16px 28px;border-radius:999px;border:2px solid rgba(170,144,255,0.9);background:#6c5ce7;color:#fff;font-weight:700;text-decoration:none;letter-spacing:0.08em;">Confirm subscription</a>
                     </p>
@@ -243,13 +243,13 @@ if (!function_exists('send_lo_outage_alert_email')) {
             <meta charset="utf-8">
             <title>Lousy Outages Alert</title>
         </head>
-        <body style="margin:0;background:#050607;color:#FFEB3B;font-family:'Courier New','Lucida Console',monospace;">
+        <body style="margin:0;background:#050607;color:#FFEB3B;font-family:'Courier New','Lucida Console',monospace;font-size:16px;line-height:1.5;">
             <div style="max-width:720px;margin:0 auto;padding:40px 24px;">
                 <div style="border:3px solid #FFEB3B;border-radius:24px;padding:34px 30px;background:linear-gradient(160deg,rgba(7,12,20,0.95),rgba(20,6,40,0.92));box-shadow:0 0 32px rgba(255,235,59,0.35);">
                     <p style="margin:0 0 10px;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#FF1744;">alert: <?php echo esc_html($service_label); ?></p>
                     <h1 style="margin:0 0 14px;font-size:32px;color:#FFEB3B;text-transform:uppercase;letter-spacing:0.05em;"><?php echo esc_html($service_label); ?> status: <?php echo esc_html(strtoupper($status_label)); ?></h1>
-                    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#FFF59D;"><?php echo esc_html($clean_summary); ?></p>
-                    <dl style="margin:0 0 20px;color:#FFF59D;font-size:14px;line-height:1.6;">
+                    <p style="margin:0 0 18px;font-size:16px;line-height:1.5;color:#FFF59D;"><?php echo esc_html($clean_summary); ?></p>
+                    <dl style="margin:0 0 20px;color:#FFF59D;font-size:14px;line-height:1.5;">
                         <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:10px;">
                             <dt style="width:120px;text-transform:uppercase;letter-spacing:0.08em;color:#80D8FF;">Status</dt>
                             <dd style="margin:0;font-weight:700;"><?php echo esc_html($status_label); ?></dd>
