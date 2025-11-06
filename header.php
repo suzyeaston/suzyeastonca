@@ -112,7 +112,13 @@
 ?>
 
 <header class="main-header">
-  <a href="/" class="logo">Suzy Easton</a>
+  <a class="brand-logo" href="<?php echo esc_url( home_url( '/' ) ); ?>" aria-label="Home">
+    <img
+      src="<?php echo esc_url( get_stylesheet_directory_uri() . '/assets/brand/suzanne-logo.svg' ); ?>"
+      alt="Suzanne (Suzy) Easton"
+      width="420" height="150"
+      decoding="async" loading="eager" />
+  </a>
   <?php get_template_part( 'parts/bmc-button' ); ?>
 </header>
 
