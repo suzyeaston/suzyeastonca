@@ -906,6 +906,44 @@ footer,
 .hero-section h2 {
   font-size: 1.25rem;
 }
+
+.galaga-logo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1rem 1.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 12px rgba(0, 255, 170, 0.45);
+  background: radial-gradient(circle at top, rgba(0, 255, 128, 0.4), rgba(0, 0, 0, 0.85));
+  text-transform: uppercase;
+  letter-spacing: 0.25rem;
+}
+
+.galaga-logo span {
+  display: block;
+  width: 100%;
+}
+
+.galaga-logo__top {
+  font-size: 1.1rem;
+  color: #ffdd57;
+  text-shadow: 0 0 6px rgba(255, 221, 87, 0.9);
+}
+
+.galaga-logo__mid {
+  font-size: 0.85rem;
+  color: #00e5ff;
+  text-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
+}
+
+.galaga-logo__bottom {
+  font-size: 1.6rem;
+  color: #ff3bf0;
+  text-shadow:
+    0 0 6px rgba(255, 59, 240, 0.7),
+    0 0 14px rgba(0, 255, 170, 0.4);
+}
 .tagline {
   margin: 20px auto;
   max-width: 800px;
@@ -1250,6 +1288,21 @@ body {
   text-align: center;
   position: relative;
   overflow: hidden;
+}
+
+.now-listening-item {
+  margin-bottom: 30px;
+}
+
+.now-listening-item:last-of-type {
+  margin-bottom: 0;
+}
+
+.now-listening-subhead {
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 #now-listening-widget img {
