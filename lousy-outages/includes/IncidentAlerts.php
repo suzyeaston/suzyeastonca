@@ -1,28 +1,15 @@
 <?php
 declare(strict_types=1);
 
-namespace {
-    if (! function_exists('lo_is_scheduled_maintenance')) {
-        /**
-         * Detects scheduled or planned maintenance announcements.
-         */
-        function lo_is_scheduled_maintenance(string $title, string $description): bool
-        {
-            $haystack = $title . ' ' . $description;
-            return 1 === preg_match('/\b(scheduled|planned).{0,40}maintenance\b/i', $haystack);
-        }
-    }
-}
+namespace SuzyEaston\LousyOutages;
 
-namespace LousyOutages;
-
-use LousyOutages\Email\Composer;
-use LousyOutages\Model\Incident;
-use LousyOutages\Mailer;
-use LousyOutages\Providers;
-use LousyOutages\Sources\Sources;
-use LousyOutages\Sources\StatuspageSource;
-use LousyOutages\Storage\IncidentStore;
+use SuzyEaston\LousyOutages\Email\Composer;
+use SuzyEaston\LousyOutages\Mailer;
+use SuzyEaston\LousyOutages\Model\Incident;
+use SuzyEaston\LousyOutages\Providers;
+use SuzyEaston\LousyOutages\Sources\Sources;
+use SuzyEaston\LousyOutages\Sources\StatuspageSource;
+use SuzyEaston\LousyOutages\Storage\IncidentStore;
 use WP_REST_Request;
 
 class IncidentAlerts {
@@ -479,7 +466,7 @@ class IncidentAlerts {
         }
 
         $status = self::normalize_status_code($statusRaw, $impactRaw);
-        if (lo_is_scheduled_maintenance($title, $bodyText)) {
+        if (self::isScheduledMaintenance($title, $bodyText)) {
             $status = 'maintenance';
         }
         $impact = self::normalize_impact($impactRaw ?: self::impact_from_status($status));
@@ -1260,6 +1247,13 @@ class IncidentAlerts {
         }
 
         return true;
+    }
+
+    private static function isScheduledMaintenance(string $title, string $description): bool
+    {
+        $haystack = $title . ' ' . $description;
+
+        return 1 === preg_match('/\\b(scheduled|planned).{0,40}maintenance\\b/i', $haystack);
     }
 
     private static function log_error(string $provider, string $message): void {

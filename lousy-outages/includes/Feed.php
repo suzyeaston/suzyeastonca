@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
 class Feed {
     public static function bootstrap(): void {

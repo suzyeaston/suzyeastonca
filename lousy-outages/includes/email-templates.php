@@ -12,11 +12,11 @@ if (!function_exists('lo_unsubscribe_url_for')) {
             return home_url('/lousy-outages/');
         }
 
-        if (!class_exists('LousyOutages\\IncidentAlerts')) {
+        if (!class_exists('SuzyEaston\\LousyOutages\\IncidentAlerts')) {
             return home_url('/lousy-outages/');
         }
 
-        $token = \LousyOutages\IncidentAlerts::build_unsubscribe_token($email);
+        $token = \SuzyEaston\LousyOutages\IncidentAlerts::build_unsubscribe_token($email);
 
         return add_query_arg(
             [
@@ -122,7 +122,7 @@ if (!function_exists('send_lo_confirmation_email')) {
             'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
         ];
 
-        $sent = \LousyOutages\Mailer::send($email, $subject, $text_body, $html_body, $headers);
+        $sent = \SuzyEaston\LousyOutages\Mailer::send($email, $subject, $text_body, $html_body, $headers);
 
         if (!$sent) {
             error_log('[lousy_outages] confirmation_email send failed for ' . $email);
@@ -167,7 +167,7 @@ if (!function_exists('LO_compose_daily_digest')) {
 
             $items[] = [
                 'provider' => $provider,
-                'title'    => \LousyOutages\Email\Composer::shortTitle($title),
+                'title'    => \SuzyEaston\LousyOutages\Email\Composer::shortTitle($title),
                 'status'   => $status ?: 'Status update',
                 'url'      => $url,
             ];
@@ -322,7 +322,7 @@ if (!function_exists('send_lo_outage_alert_email')) {
         $detected_epoch = strtotime($timestamp_raw) ?: time();
         $resolved_epoch = ('resolved' === $status_slug) ? $detected_epoch : null;
 
-        $incident_object = new \LousyOutages\Model\Incident(
+        $incident_object = new \SuzyEaston\LousyOutages\Model\Incident(
             $service_label,
             md5($service_label . '|' . $clean_summary . '|' . $status_slug . '|' . $timestamp_display),
             $clean_summary,
@@ -334,7 +334,7 @@ if (!function_exists('send_lo_outage_alert_email')) {
             $resolved_epoch
         );
 
-        $subject = \LousyOutages\Email\Composer::subjectForIncident($incident_object, $status_slug);
+        $subject = \SuzyEaston\LousyOutages\Email\Composer::subjectForIncident($incident_object, $status_slug);
 
         $text_body_lines = [
             sprintf('%s outage alert', strtoupper($service_label)),
@@ -427,7 +427,7 @@ if (!function_exists('send_lo_outage_alert_email')) {
             }
         }
 
-        $sent = \LousyOutages\Mailer::send($email, $subject, $text_body, $html_body, $headers);
+        $sent = \SuzyEaston\LousyOutages\Mailer::send($email, $subject, $text_body, $html_body, $headers);
 
         if (!$sent) {
             error_log('[lousy_outages] outage_email send failed for ' . $email . ' subject=' . $subject);

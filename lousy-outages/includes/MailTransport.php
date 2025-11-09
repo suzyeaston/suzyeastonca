@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use WP_Error;

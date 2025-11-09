@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages\Sources;
+namespace SuzyEaston\LousyOutages\Sources;
 
 Sources::register('openai', new StatuspageSource('OpenAI', 'https://status.openai.com/api/v2/summary.json', 'https://status.openai.com'));
 Sources::register('twilio', new StatuspageSource('Twilio', 'https://status.twilio.com/api/v2/summary.json', 'https://status.twilio.com'));

@@ -109,6 +109,10 @@ if ( ! class_exists('LO_StatuspageSource') ) {
 }
 
 // Bridge the namespaced calls to this compat class.
+if ( ! class_exists('SuzyEaston\\LousyOutages\\Sources\\StatuspageSource') ) {
+  class_alias('LO_StatuspageSource', 'SuzyEaston\\LousyOutages\\Sources\\StatuspageSource');
+}
+
 if ( ! class_exists('LousyOutages\\Sources\\StatuspageSource') ) {
   class_alias('LO_StatuspageSource', 'LousyOutages\\Sources\\StatuspageSource');
 }

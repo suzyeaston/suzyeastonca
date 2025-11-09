@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
 class Subscriptions {
     public const TABLE = 'lousy_outages_subs';

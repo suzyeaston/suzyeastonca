@@ -1,5 +1,5 @@
 <?php
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
 class I18n {
     private const STRINGS = [

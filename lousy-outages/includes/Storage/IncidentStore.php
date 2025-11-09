@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages\Storage;
+namespace SuzyEaston\LousyOutages\Storage;
 
-use LousyOutages\Model\Incident;
+use SuzyEaston\LousyOutages\Model\Incident;
 
 class IncidentStore
 {

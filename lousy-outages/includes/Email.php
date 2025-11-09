@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
-use LousyOutages\Email\Composer;
+use SuzyEaston\LousyOutages\Email\Composer;
 
 class Email {
     private const STATUS_LABELS = [

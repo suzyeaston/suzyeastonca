@@ -1,11 +1,15 @@
 <?php
 // Legacy incident shim so older integrations keep working alongside the namespaced classes.
 if ( ! class_exists('LO_Incident') ) {
-    if ( ! class_exists('LousyOutages\\Model\\Incident') ) {
+    if ( ! class_exists('SuzyEaston\\LousyOutages\\Model\\Incident') ) {
         require_once __DIR__ . '/Model/Incident.php';
     }
 
-    class LO_Incident extends \LousyOutages\Model\Incident {
+    if ( ! class_exists('LousyOutages\\Model\\Incident') && class_exists('SuzyEaston\\LousyOutages\\Model\\Incident') ) {
+        class_alias('SuzyEaston\\LousyOutages\\Model\\Incident', 'LousyOutages\\Model\\Incident');
+    }
+
+    class LO_Incident extends \SuzyEaston\LousyOutages\Model\Incident {
         public function __construct($provider, $id, $title, $status, $url, $component = null, $impact = null, $detected_at = null, $resolved_at = null) {
             $detected = (null === $detected_at || '' === $detected_at) ? time() : (int) $detected_at;
             $resolved = (null === $resolved_at || '' === $resolved_at) ? null : (int) $resolved_at;
@@ -56,6 +60,10 @@ if ( ! class_exists('LO_Incident') ) {
 }
 
 // Allow legacy code referencing the old namespaced alias to continue working if needed.
+if ( ! class_exists('SuzyEaston\\LousyOutages\\Model\\LegacyIncident') ) {
+    class_alias('LO_Incident', 'SuzyEaston\\LousyOutages\\Model\\LegacyIncident');
+}
+
 if ( ! class_exists('LousyOutages\\Model\\LegacyIncident') ) {
     class_alias('LO_Incident', 'LousyOutages\\Model\\LegacyIncident');
 }

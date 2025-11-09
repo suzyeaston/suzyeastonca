@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use LousyOutages\IncidentAlerts;
-use LousyOutages\Mailer;
-use LousyOutages\Subscriptions;
+use SuzyEaston\LousyOutages\IncidentAlerts;
+use SuzyEaston\LousyOutages\Mailer;
+use SuzyEaston\LousyOutages\Subscriptions;
 
 class Lousy_Outages_Subscribe {
     public static function bootstrap(): void {
@@ -359,7 +359,7 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
         return rest_ensure_response([
             'transport'     => $transport,
             'headers'       => $headers,
-            'mailer'        => 'LousyOutages\\Mailer',
+            'mailer'        => 'SuzyEaston\\LousyOutages\\Mailer',
             'domain'        => $domain,
             'sendmail_path' => $sendmailPath,
         ]);

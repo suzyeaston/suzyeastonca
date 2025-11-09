@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages\Email;
+namespace SuzyEaston\LousyOutages\Email;
 
-use LousyOutages\Model\Incident;
+use SuzyEaston\LousyOutages\Model\Incident;
 
 class Composer
 {

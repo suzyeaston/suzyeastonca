@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
 use WP_REST_Request;
 use WP_REST_Response;

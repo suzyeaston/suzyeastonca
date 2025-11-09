@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages\Cron;
+namespace SuzyEaston\LousyOutages\Cron;
 
-use LousyOutages\IncidentAlerts;
+use SuzyEaston\LousyOutages\IncidentAlerts;
 
 class Refresh
 {
