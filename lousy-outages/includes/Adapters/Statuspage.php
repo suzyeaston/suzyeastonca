@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Lousy\Adapters\Statuspage;
+namespace SuzyEaston\LousyOutages\Adapters\Statuspage;
 
 /**
  * Attempt to infer a service state from a Statuspage error payload or body.

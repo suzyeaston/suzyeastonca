@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages\Model;
+namespace SuzyEaston\LousyOutages\Model;
 
 class Incident
 {

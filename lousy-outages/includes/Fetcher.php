@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
 // Changelog:
 // - 2024-06-05: Improve HTTP resilience, add history fallbacks, enhance error reporting.
 
-use function Lousy\http_get;
-use function Lousy\Adapters\from_rss_atom;
-use function Lousy\Adapters\from_slack_current;
-use function Lousy\Adapters\from_statuspage_status;
-use function Lousy\Adapters\from_statuspage_summary;
-use function Lousy\Adapters\Statuspage\detect_state_from_error;
+use function SuzyEaston\LousyOutages\http_get;
+use function SuzyEaston\LousyOutages\Adapters\from_rss_atom;
+use function SuzyEaston\LousyOutages\Adapters\from_slack_current;
+use function SuzyEaston\LousyOutages\Adapters\from_statuspage_status;
+use function SuzyEaston\LousyOutages\Adapters\from_statuspage_summary;
+use function SuzyEaston\LousyOutages\Adapters\Statuspage\detect_state_from_error;
 
 class Fetcher {
     private const STATUS_LABELS = [

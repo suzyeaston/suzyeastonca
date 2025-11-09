@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Lousy;
+namespace SuzyEaston\LousyOutages;
 
 /**
  * Perform an HTTP GET request with sane defaults and graceful error handling.

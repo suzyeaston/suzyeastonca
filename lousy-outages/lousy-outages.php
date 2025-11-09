@@ -51,19 +51,19 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
     require_once LOUSY_OUTAGES_PATH . 'wp-cli/class-wp-cli-lousy.php';
 }
 
-use LousyOutages\Providers;
-use LousyOutages\Store;
-use LousyOutages\Fetcher;
-use LousyOutages\Detector;
-use LousyOutages\SMS;
-use LousyOutages\Email;
-use LousyOutages\Precursor;
-use LousyOutages\Subscriptions;
-use LousyOutages\Api;
-use LousyOutages\Feed;
-use LousyOutages\MailTransport;
-use LousyOutages\IncidentAlerts;
-use LousyOutages\Cron\Refresh as RefreshCron;
+use SuzyEaston\LousyOutages\Providers;
+use SuzyEaston\LousyOutages\Store;
+use SuzyEaston\LousyOutages\Fetcher;
+use SuzyEaston\LousyOutages\Detector;
+use SuzyEaston\LousyOutages\SMS;
+use SuzyEaston\LousyOutages\Email;
+use SuzyEaston\LousyOutages\Precursor;
+use SuzyEaston\LousyOutages\Subscriptions;
+use SuzyEaston\LousyOutages\Api;
+use SuzyEaston\LousyOutages\Feed;
+use SuzyEaston\LousyOutages\MailTransport;
+use SuzyEaston\LousyOutages\IncidentAlerts;
+use SuzyEaston\LousyOutages\Cron\Refresh as RefreshCron;
 
 Api::bootstrap();
 Feed::bootstrap();
@@ -299,14 +299,14 @@ function lousy_outages_filter_snapshot( array $snapshot ): array {
 
     if ( empty( $providers ) ) {
         $snapshot['providers'] = [];
-        $snapshot['trending']  = ( new \LousyOutages\Trending() )->evaluate( [] );
+        $snapshot['trending']  = ( new \SuzyEaston\LousyOutages\Trending() )->evaluate( [] );
         return $snapshot;
     }
 
     $enabled = Providers::enabled();
     if ( ! is_array( $enabled ) || empty( $enabled ) ) {
         $snapshot['providers'] = [];
-        $snapshot['trending']  = ( new \LousyOutages\Trending() )->evaluate( [] );
+        $snapshot['trending']  = ( new \SuzyEaston\LousyOutages\Trending() )->evaluate( [] );
         return $snapshot;
     }
 
@@ -331,7 +331,7 @@ function lousy_outages_filter_snapshot( array $snapshot ): array {
         )
     );
 
-    $snapshot['trending'] = ( new \LousyOutages\Trending() )->evaluate( $snapshot['providers'] );
+    $snapshot['trending'] = ( new \SuzyEaston\LousyOutages\Trending() )->evaluate( $snapshot['providers'] );
 
     return $snapshot;
 }
@@ -360,7 +360,7 @@ function lousy_outages_build_snapshot( array $states, string $timestamp, string 
     }
 
     $providers = lousy_outages_sort_providers( $providers );
-    $trending  = ( new \LousyOutages\Trending() )->evaluate( $providers );
+    $trending  = ( new \SuzyEaston\LousyOutages\Trending() )->evaluate( $providers );
 
     return lousy_outages_filter_snapshot( [
         'providers'  => $providers,

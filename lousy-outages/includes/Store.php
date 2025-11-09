@@ -1,5 +1,5 @@
 <?php
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
 class Store {
     private string $option = 'lousy_outages_states';

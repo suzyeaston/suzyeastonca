@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages\CLI;
+namespace SuzyEaston\LousyOutages\CLI;
 
-use LousyOutages\Fetcher;
-use LousyOutages\Providers;
+use SuzyEaston\LousyOutages\Fetcher;
+use SuzyEaston\LousyOutages\Providers;
 use WP_CLI;
 use function WP_CLI\Utils\format_items;
 

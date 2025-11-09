@@ -1,5 +1,5 @@
 <?php
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
 class SMS {
     private function send( string $body ): void {

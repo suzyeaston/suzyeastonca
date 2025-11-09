@@ -1,5 +1,5 @@
 <?php
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
 class Detector {
     private Store $store;

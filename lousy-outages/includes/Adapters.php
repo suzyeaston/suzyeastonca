@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Lousy\Adapters;
+namespace SuzyEaston\LousyOutages\Adapters;
 
 function from_statuspage_summary(string $json): array {
     $data = json_decode($json, true);

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages;
+namespace SuzyEaston\LousyOutages;
 
 class Downdetector {
     private const CACHE_KEY = 'lousy_outages_downdetector_trends';

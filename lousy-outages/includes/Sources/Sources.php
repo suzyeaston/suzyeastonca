@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace LousyOutages\Sources;
+namespace SuzyEaston\LousyOutages\Sources;
 
 /**
  * Registry for incident sources.
