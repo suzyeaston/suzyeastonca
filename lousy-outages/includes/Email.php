@@ -14,6 +14,10 @@ class Email {
         'operational'    => 'operational',
         'resolved'       => 'resolved',
         'recovered'      => 'recovered',
+        'partial'        => 'partial outage',
+        'major'          => 'major outage',
+        'critical'       => 'critical incident',
+        'incident'       => 'incident',
     ];
 
     public function send_alert(string $provider, string $status, string $message, string $link): void {

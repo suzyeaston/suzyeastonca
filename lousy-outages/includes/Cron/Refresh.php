@@ -40,8 +40,30 @@ class Refresh
             wp_schedule_event(time() + MINUTE_IN_SECONDS, 'five_minutes', 'lousy_outages_refresh');
         }
 
-        if (! wp_next_scheduled('lo_send_daily_digest')) {
-            wp_schedule_event(time() + HOUR_IN_SECONDS, 'lo_daily', 'lo_send_daily_digest');
+        $target = self::nextDigestTimestamp();
+        $scheduled = wp_next_scheduled('lo_send_daily_digest');
+
+        if (! $scheduled || abs($scheduled - $target) > MINUTE_IN_SECONDS) {
+            if ($scheduled) {
+                wp_unschedule_event($scheduled, 'lo_send_daily_digest');
+            }
+            wp_schedule_event($target, 'lo_daily', 'lo_send_daily_digest');
         }
+    }
+
+    /**
+     * Calculate the UTC timestamp for the next nightly digest run.
+     */
+    private static function nextDigestTimestamp(): int
+    {
+        $tz     = new \DateTimeZone('America/Vancouver');
+        $now    = new \DateTimeImmutable('now', $tz);
+        $target = $now->setTime(23, 59, 30);
+
+        if ($target <= $now) {
+            $target = $target->modify('+1 day');
+        }
+
+        return $target->setTimezone(new \DateTimeZone('UTC'))->getTimestamp();
     }
 }

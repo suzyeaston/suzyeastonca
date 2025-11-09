@@ -159,6 +159,50 @@ namespace LousyOutages\Tests {
         }
     };
 
+    $tests['slack_feed_uses_pubdate_sort'] = static function (): void {
+        $older = gmdate( 'D, d M Y H:i:s \G\M\T', strtotime( '-3 hours' ) );
+        $newer = gmdate( 'D, d M Y H:i:s \G\M\T', strtotime( '-1 hour' ) );
+
+        $rss = <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<rss><channel>
+  <item>
+    <title>Connectivity hiccup</title>
+    <link>https://status.slack.com/older</link>
+    <pubDate>{$older}</pubDate>
+    <description>Earlier maintenance window</description>
+  </item>
+  <item>
+    <title>Workspace logins failing</title>
+    <link>https://status.slack.com/newer</link>
+    <pubDate>{$newer}</pubDate>
+    <description>Newest outage</description>
+  </item>
+</channel></rss>
+XML;
+
+        $fetcher = new \LousyOutages\Lousy_Outages_Fetcher();
+        $reflector = new \ReflectionClass( \LousyOutages\Lousy_Outages_Fetcher::class );
+        $method    = $reflector->getMethod( 'parse_feed_items' );
+        $method->setAccessible( true );
+
+        $items = $method->invoke( $fetcher, $rss, 'rss' );
+        if ( empty( $items ) ) {
+            throw new \RuntimeException( 'Expected Slack RSS parser to yield items.' );
+        }
+
+        usort(
+            $items,
+            static function ( array $a, array $b ): int {
+                return (int) ( ( $b['timestamp'] ?? 0 ) <=> ( $a['timestamp'] ?? 0 ) );
+            }
+        );
+
+        if ( 'Workspace logins failing' !== ( $items[0]['title'] ?? '' ) ) {
+            throw new \RuntimeException( 'Expected newest Slack incident to be first after sorting by pubDate.' );
+        }
+    };
+
     $tests['optional_empty_body'] = static function (): void {
         HttpMock::queue([
             [ 'ok' => true, 'status' => 200, 'error' => null, 'message' => null, 'body' => '   ' ],

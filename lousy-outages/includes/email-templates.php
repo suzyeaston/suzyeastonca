@@ -177,14 +177,15 @@ if (!function_exists('LO_compose_daily_digest')) {
             return [];
         }
 
-        $dateLabel = wp_date('M j');
-        $subject   = sprintf('[Daily Digest] Lousy Outages — %s', $dateLabel);
+        $tz        = new \DateTimeZone('America/Vancouver');
+        $dateLabel = wp_date('Y-m-d', null, $tz);
+        $subject   = sprintf('[Outage Digest] Lousy Outages — %s (Local)', $dateLabel);
         $subject   = (string) apply_filters('lo_daily_digest_subject', $subject, $items);
 
-        $intro = 'You’ll get a single alert when an issue is first reported, then a once-daily digest for updates. Follow the incident link for live changes.';
+        $intro = sprintf('Summary of outages and maintenance observed on %s (local time). Each provider is grouped below with the first detected timestamp.', $dateLabel);
         $intro = (string) apply_filters('lo_daily_digest_intro', $intro, $items);
 
-        $heading = sprintf('Daily Digest — %s', $dateLabel);
+        $heading = sprintf('Outage Digest — %s (Local)', $dateLabel);
         $heading = (string) apply_filters('lo_daily_digest_heading', $heading, $items);
 
         $signoff_text = (string) apply_filters('lo_daily_digest_signoff', 'Stay vigilant — Lousy Outages', $items);

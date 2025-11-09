@@ -7,83 +7,103 @@ use LousyOutages\Model\Incident;
 
 class IncidentStore
 {
-    private const OPTION_ALERTS = 'lousy_outages_alerts_sent';
-    private const OPTION_INCIDENTS = 'lousy_outages_incidents';
-    private const OPTION_PROVIDER_CAP_PREFIX = 'lousy_outages_cap_';
+    private const OPTION_EVENTS = 'lo_event_log';
     private const OPTION_LAST_DIGEST = 'lousy_outages_daily_digest_last_sent';
-    private const DAILY_CAP = 5;
+    private const ALERT_COOLDOWN = 90; // Minutes.
+    private const EVENT_RETENTION = 36; // Hours.
 
     /**
-     * Determine whether an email for the given incident should be sent.
+     * Determine whether an alert email should fire for the incident.
      */
     public function shouldSend(Incident $incident): bool
     {
-        $alerts = $this->getAlerts();
-        $key    = $this->buildKey($incident);
-        $now    = time();
+        $providerKey = $this->providerKey($incident);
+        $guid        = $this->incidentGuid($incident);
+        $status      = $this->normalizeStatus($incident->status);
 
-        $capKey = $this->providerCapKey($incident->provider);
-        $capCount = (int) get_option($capKey, 0);
-        if ($capCount >= self::DAILY_CAP && ! $incident->isResolved()) {
+        $this->updateLastStatus($providerKey, $status);
+
+        if ('operational' === $status) {
+            update_option($this->lastGuidOption($providerKey), '', false);
             return false;
         }
 
-        $allow = false;
-
-        if (! isset($alerts[$key])) {
-            $allow = true;
-        } else {
-            $lastStatus = isset($alerts[$key]['status']) ? (string) $alerts[$key]['status'] : '';
-            if ($incident->isResolved()) {
-                $allow = true;
-            } elseif ('' !== $lastStatus && $this->isSeverityUpgrade($lastStatus, $incident->status)) {
-                $allow = true;
-            } else {
-                return false;
-            }
+        if ('maintenance' === $status) {
+            return false;
         }
 
-        if ($allow) {
-            $alerts[$key] = [
-                'ts'     => $now,
-                'status' => $incident->status,
-            ];
-            update_option(self::OPTION_ALERTS, $alerts, false);
-            update_option($capKey, $capCount + 1, false);
+        if (! in_array($status, ['incident', 'degraded', 'partial', 'major', 'critical'], true)) {
+            return false;
         }
 
-        return $allow;
+        $lastGuid = (string) get_option($this->lastGuidOption($providerKey), '');
+        if ('' !== $lastGuid && '' !== $guid && hash_equals($lastGuid, $guid)) {
+            return false;
+        }
+
+        $lastAlertAt = (int) get_option($this->lastAlertOption($providerKey), 0);
+        $now         = time();
+        if ($lastAlertAt && ($now - $lastAlertAt) < (self::ALERT_COOLDOWN * MINUTE_IN_SECONDS)) {
+            return false;
+        }
+
+        update_option($this->lastGuidOption($providerKey), $guid, false);
+        update_option($this->lastAlertOption($providerKey), $now, false);
+        update_option($this->lastStatusOption($providerKey), $status, false);
+
+        return true;
     }
 
     /**
-     * Persist the most recent incident snapshot.
+     * Persist incident snapshots for digest and history.
      *
      * @param Incident[] $incidents
      */
     public function persistIncidents(array $incidents): void
     {
-        $payload = [];
+        $events = $this->loadEvents();
+        $now    = time();
 
         foreach ($incidents as $incident) {
             if (! $incident instanceof Incident) {
                 continue;
             }
 
-            $payload[] = [
-                'provider'    => $incident->provider,
-                'id'          => $incident->id,
-                'title'       => $incident->title,
-                'status'      => $incident->status,
-                'url'         => $incident->url,
-                'component'   => $incident->component,
-                'impact'      => $incident->impact,
-                'detected_at' => $incident->detected_at,
-                'resolved_at' => $incident->resolved_at,
-                'updated_at'  => gmdate('c'),
+            $providerKey = $this->providerKey($incident);
+            $eventKey    = $this->eventKey($providerKey, $incident);
+            $status      = $this->normalizeStatus($incident->status);
+
+            $components = [];
+            if ($incident->component) {
+                $components[] = $incident->component;
+            }
+
+            $publishedTs = $incident->detected_at ?: $now;
+
+            $entry = [
+                'provider'       => $providerKey,
+                'provider_label' => $incident->provider,
+                'guid'           => $this->incidentGuid($incident),
+                'title'          => $incident->title,
+                'description'    => $incident->title,
+                'status'         => $status,
+                'components'     => $components,
+                'published'      => gmdate('Y-m-d H:i:s T', $publishedTs),
+                'first_seen'     => $publishedTs,
+                'last_seen'      => $now,
+                'url'            => $incident->url,
+                'raw'            => null,
             ];
+
+            if (isset($events[$eventKey]['first_seen'])) {
+                $entry['first_seen'] = (int) $events[$eventKey]['first_seen'];
+            }
+
+            $events[$eventKey] = $entry;
         }
 
-        update_option(self::OPTION_INCIDENTS, $payload, false);
+        $events = $this->pruneEvents($events, $now - (self::EVENT_RETENTION * HOUR_IN_SECONDS));
+        update_option(self::OPTION_EVENTS, $events, false);
     }
 
     /**
@@ -91,44 +111,14 @@ class IncidentStore
      */
     public function getStoredIncidents(): array
     {
-        $stored = get_option(self::OPTION_INCIDENTS, []);
-        if (! is_array($stored)) {
-            return [];
-        }
-        return $stored;
-    }
-
-    private function providerCapKey(string $provider): string
-    {
-        return self::OPTION_PROVIDER_CAP_PREFIX . sanitize_key($provider) . '_' . gmdate('Ymd');
-    }
-
-    private function buildKey(Incident $incident): string
-    {
-        return $incident->provider . '|' . $incident->id;
-    }
-
-    public function keyFor(Incident $incident): string
-    {
-        return $this->buildKey($incident);
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function getAlerts(): array
-    {
-        $alerts = get_option(self::OPTION_ALERTS, []);
-        if (! is_array($alerts)) {
-            return [];
-        }
-        return $alerts;
+        $stored = $this->loadEvents();
+        return array_values($stored);
     }
 
     public function getLastDigestSent(): string
     {
         $value = get_option(self::OPTION_LAST_DIGEST, '');
-        return is_string($value) ? (string) $value : '';
+        return is_string($value) ? $value : '';
     }
 
     public function updateLastDigestSent(string $iso): void
@@ -136,36 +126,115 @@ class IncidentStore
         update_option(self::OPTION_LAST_DIGEST, $iso, false);
     }
 
-    private function isSeverityUpgrade(string $previous, string $current): bool
+    private function providerKey(Incident $incident): string
     {
-        $previousRank = $this->severityRank($previous);
-        $currentRank  = $this->severityRank($current);
-
-        return $currentRank > $previousRank;
-    }
-
-    private function severityRank(string $status): int
-    {
-        $map = [
-            'operational'    => 0,
-            'none'           => 0,
-            'informational'  => 0,
-            'maintenance'    => 1,
-            'minor'          => 1,
-            'degraded'       => 1,
-            'partial_outage' => 2,
-            'major_outage'   => 3,
-            'outage'         => 3,
-            'critical'       => 4,
-            'resolved'       => 0,
-        ];
-
-        $key = strtolower(trim($status));
-
-        if (isset($map[$key])) {
-            return (int) $map[$key];
+        $slug = '';
+        if (false !== strpos($incident->id, ':')) {
+            $slug = substr($incident->id, 0, (int) strpos($incident->id, ':')) ?: '';
         }
 
-        return 0;
+        if ('' === $slug) {
+            $slug = $incident->provider;
+        }
+
+        $slug = sanitize_key((string) $slug);
+
+        return $slug ?: 'provider';
+    }
+
+    private function incidentGuid(Incident $incident): string
+    {
+        $guid = trim((string) $incident->id);
+        if ('' !== $guid) {
+            return $guid;
+        }
+
+        return sha1($incident->provider . '|' . $incident->title . '|' . $incident->detected_at);
+    }
+
+    private function normalizeStatus(string $status): string
+    {
+        $status = strtolower(trim($status));
+
+        switch ($status) {
+            case 'resolved':
+            case 'operational':
+            case 'none':
+                return 'operational';
+            case 'maintenance':
+            case 'maintenance_window':
+                return 'maintenance';
+            case 'degraded':
+            case 'minor':
+            case 'investigating':
+            case 'identified':
+            case 'monitoring':
+                return 'degraded';
+            case 'partial':
+            case 'partial_outage':
+                return 'partial';
+            case 'major_outage':
+            case 'major':
+            case 'outage':
+                return 'major';
+            case 'critical':
+                return 'critical';
+        }
+
+        return $status ? 'incident' : 'incident';
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function loadEvents(): array
+    {
+        $stored = get_option(self::OPTION_EVENTS, []);
+        if (! is_array($stored)) {
+            return [];
+        }
+
+        return $stored;
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $events
+     * @return array<string, array<string, mixed>>
+     */
+    private function pruneEvents(array $events, int $cutoff): array
+    {
+        foreach ($events as $key => $event) {
+            $lastSeen = isset($event['last_seen']) ? (int) $event['last_seen'] : 0;
+            if ($cutoff > 0 && $lastSeen && $lastSeen < $cutoff) {
+                unset($events[$key]);
+            }
+        }
+
+        return $events;
+    }
+
+    private function eventKey(string $providerKey, Incident $incident): string
+    {
+        return $providerKey . '|' . $this->incidentGuid($incident);
+    }
+
+    private function lastGuidOption(string $providerKey): string
+    {
+        return 'lo_last_guid_' . $providerKey;
+    }
+
+    private function lastStatusOption(string $providerKey): string
+    {
+        return 'lo_last_status_' . $providerKey;
+    }
+
+    private function lastAlertOption(string $providerKey): string
+    {
+        return 'lo_last_alert_at_' . $providerKey;
+    }
+
+    private function updateLastStatus(string $providerKey, string $status): void
+    {
+        update_option($this->lastStatusOption($providerKey), $status, false);
     }
 }

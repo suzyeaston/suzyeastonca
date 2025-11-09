@@ -1,6 +1,19 @@
 <?php
 declare(strict_types=1);
 
+namespace {
+    if (! function_exists('lo_is_scheduled_maintenance')) {
+        /**
+         * Detects scheduled or planned maintenance announcements.
+         */
+        function lo_is_scheduled_maintenance(string $title, string $description): bool
+        {
+            $haystack = $title . ' ' . $description;
+            return 1 === preg_match('/\b(scheduled|planned).{0,40}maintenance\b/i', $haystack);
+        }
+    }
+}
+
 namespace LousyOutages;
 
 use LousyOutages\Email\Composer;
@@ -27,6 +40,8 @@ class IncidentAlerts {
             'https://rssfeed.azure.status.microsoft/en-us/status/feed/',
             'https://azurestatuscdn.azureedge.net/en-us/status/feed/',
         ],
+        'slack'      => 'https://slack-status.com/feed/rss',
+        'zscaler'    => 'https://trust.zscaler.com/rss-feed',
     ];
 
     private const RSS_HEADERS = [
@@ -159,61 +174,82 @@ class IncidentAlerts {
     }
 
     public static function send_daily_digest(): void {
-        $store = new IncidentStore();
+        $store  = new IncidentStore();
         $stored = $store->getStoredIncidents();
 
         if (empty($stored)) {
             return;
         }
 
-        $now    = time();
-        $cutoff = $now - DAY_IN_SECONDS;
-        $items  = [];
+        $timezone = new \DateTimeZone('America/Vancouver');
+        $nowLocal = new \DateTimeImmutable('now', $timezone);
+        $today    = $nowLocal->setTime(0, 0, 0);
+        $startTs  = $today->getTimestamp();
+        $endTs    = $startTs + DAY_IN_SECONDS;
+
+        $items = [];
 
         foreach ($stored as $entry) {
             if (! is_array($entry)) {
                 continue;
             }
 
-            $provider = isset($entry['provider']) ? (string) $entry['provider'] : '';
-            $title    = isset($entry['title']) ? (string) $entry['title'] : '';
-            $status   = isset($entry['status']) ? (string) $entry['status'] : '';
-            $url      = isset($entry['url']) ? (string) $entry['url'] : '';
-            $updated  = isset($entry['updated_at']) ? (string) $entry['updated_at'] : '';
-
-            $updatedTs = $updated ? strtotime($updated) : 0;
-            if (! $updatedTs && isset($entry['detected_at'])) {
-                $detected = (int) $entry['detected_at'];
-                if ($detected > 0) {
-                    $updatedTs = $detected;
-                }
-            }
-
-            if ($updatedTs && $updatedTs < $cutoff) {
+            $status = isset($entry['status']) ? (string) $entry['status'] : '';
+            if ('operational' === strtolower($status)) {
                 continue;
             }
 
-            if (! $updatedTs) {
+            $firstSeen = isset($entry['first_seen']) ? (int) $entry['first_seen'] : 0;
+            if ($firstSeen <= 0) {
                 continue;
             }
 
-            if ('' === trim($provider) || '' === trim($title)) {
+            $firstLocal = (new \DateTimeImmutable('@' . $firstSeen))->setTimezone($timezone)->getTimestamp();
+            if ($firstLocal < $startTs || $firstLocal >= $endTs) {
                 continue;
+            }
+
+            $providerLabel = trim((string) ($entry['provider_label'] ?? $entry['provider'] ?? ''));
+            if ('' === $providerLabel) {
+                $providerLabel = ucwords(str_replace(['-', '_'], ' ', (string) ($entry['provider'] ?? 'Provider')));
+            }
+
+            $title = isset($entry['title']) ? (string) $entry['title'] : '';
+            if ('' === trim($title)) {
+                continue;
+            }
+
+            $slug = sanitize_key((string) ($entry['provider'] ?? $providerLabel));
+            $url  = isset($entry['url']) ? (string) $entry['url'] : '';
+            if ('' === $url) {
+                $url = self::provider_url($slug);
             }
 
             $items[] = [
-                'provider'  => $provider,
+                'provider'  => $providerLabel,
                 'title'     => Composer::shortTitle($title),
                 'status'    => self::status_label($status),
                 'statusRaw' => $status,
-                'url'       => $url ? $url : self::provider_url(sanitize_key($provider)),
-                'updated'   => $updatedTs,
+                'url'       => $url,
+                'updated'   => $firstSeen,
             ];
         }
 
         if (empty($items)) {
             return;
         }
+
+        usort(
+            $items,
+            static function (array $a, array $b): int {
+                $providerCompare = strcmp((string) ($a['provider'] ?? ''), (string) ($b['provider'] ?? ''));
+                if (0 !== $providerCompare) {
+                    return $providerCompare;
+                }
+
+                return (int) (($a['updated'] ?? 0) <=> ($b['updated'] ?? 0));
+            }
+        );
 
         $items = apply_filters('lo_daily_digest_items', $items);
         if (! is_array($items) || empty($items)) {
@@ -222,8 +258,11 @@ class IncidentAlerts {
 
         $lastSentIso = $store->getLastDigestSent();
         $lastSentTs  = $lastSentIso ? strtotime($lastSentIso) : 0;
-        if ($lastSentTs && ($now - $lastSentTs) < (20 * HOUR_IN_SECONDS)) {
-            return;
+        if ($lastSentTs) {
+            $lastLocal = (new \DateTimeImmutable('@' . $lastSentTs))->setTimezone($timezone);
+            if ($lastLocal->format('Y-m-d') === $nowLocal->format('Y-m-d')) {
+                return;
+            }
         }
 
         $composition = function_exists('LO_compose_daily_digest') ? LO_compose_daily_digest($items) : null;
@@ -285,6 +324,7 @@ class IncidentAlerts {
 
         if ($sentAny) {
             $store->updateLastDigestSent(gmdate('c'));
+            $store->persistIncidents([]); // prune stale records.
         }
     }
 
@@ -428,8 +468,20 @@ class IncidentAlerts {
             }
         }
         $impactRaw = isset($data['impact']) ? (string) $data['impact'] : '';
+        $bodyText  = '';
+        foreach (['body', 'summary', 'description'] as $field) {
+            if (! empty($data[$field]) && is_string($data[$field])) {
+                $bodyText = trim((string) $data[$field]);
+                if ('' !== $bodyText) {
+                    break;
+                }
+            }
+        }
 
         $status = self::normalize_status_code($statusRaw, $impactRaw);
+        if (lo_is_scheduled_maintenance($title, $bodyText)) {
+            $status = 'maintenance';
+        }
         $impact = self::normalize_impact($impactRaw ?: self::impact_from_status($status));
 
         $url = '';
@@ -666,6 +718,10 @@ class IncidentAlerts {
             'maintenance'    => 'Maintenance',
             'resolved'       => 'Resolved',
             'operational'    => 'Operational',
+            'incident'       => 'Incident',
+            'partial'        => 'Partial Outage',
+            'major'          => 'Major Outage',
+            'critical'       => 'Critical Outage',
         ];
 
         if (isset($map[$status])) {

@@ -55,13 +55,6 @@ namespace {
                 'status_url' => 'https://www.vercel-status.com/',
             ],
             [
-                'id'         => 'pagerduty',
-                'name'       => 'PagerDuty',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.pagerduty.com/api/v2/summary.json',
-                'status_url' => 'https://status.pagerduty.com/',
-            ],
-            [
                 'id'         => 'zoom',
                 'name'       => 'Zoom',
                 'type'       => 'statuspage',
@@ -101,6 +94,13 @@ namespace {
 
             // RSS/Atom feeds
             ['id' => 'aws', 'name' => 'AWS', 'type' => 'rss', 'url' => 'https://status.aws.amazon.com/rss/all.rss'],
+            [
+                'id'         => 'slack',
+                'name'       => 'Slack',
+                'type'       => 'rss',
+                'url'        => 'https://slack-status.com/feed/rss',
+                'status_url' => 'https://status.slack.com/',
+            ],
             ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://rssfeed.azure.status.microsoft/en-us/status/feed/'],
             ['id' => 'gcp', 'name' => 'Google Cloud', 'type' => 'atom', 'url' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom'],
             ['id' => 'qubeyond', 'name' => 'Qubeyond', 'type' => 'atom', 'url' => 'https://status.qubeyond.com/state_feed/feed.atom'],
