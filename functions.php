@@ -107,6 +107,36 @@ function se_enqueue_lousy_outages_page_styles() {
 }
 add_action( 'wp_enqueue_scripts', 'se_enqueue_lousy_outages_page_styles' );
 
+// LO: trim header spacing for outages dashboard only.
+function se_enqueue_header_tweak_css() {
+    if ( is_admin() ) {
+        return;
+    }
+    if ( ! is_page_template( 'page-lousy-outages.php' ) && ! is_page( 'lousy-outages' ) ) {
+        return;
+    }
+
+    $dir  = get_stylesheet_directory();
+    $uri  = get_stylesheet_directory_uri();
+    $path = '/assets/brand/header-tweak.css';
+    if ( file_exists( $dir . $path ) ) {
+        $handle = 'se-header-tweak';
+        wp_enqueue_style( $handle, $uri . $path, [], filemtime( $dir . $path ) );
+
+        // LO: provide inline fallback for classless template renderings.
+        $page = get_page_by_path( 'lousy-outages' );
+        if ( $page instanceof WP_Post ) {
+            $id     = (int) $page->ID;
+            $inline = '.page-id-' . $id . ' .main-header{min-height:auto;padding-block:8px 12px}'
+                . '.page-id-' . $id . ' .main-header .logo img{max-height:48px;height:auto}'
+                . '.page-id-' . $id . ' .entry-header h1{margin-top:.5rem;line-height:1.15;overflow:visible}'
+                . '.page-id-' . $id . ' .entry-header{scroll-margin-top:80px}';
+            wp_add_inline_style( $handle, $inline );
+        }
+    }
+}
+add_action( 'wp_enqueue_scripts', 'se_enqueue_header_tweak_css' );
+
 // Load bundled Lousy Outages plugin so shortcode and REST endpoint work
 $lousy_outages = get_template_directory() . '/lousy-outages/lousy-outages.php';
 if ( file_exists( $lousy_outages ) ) {

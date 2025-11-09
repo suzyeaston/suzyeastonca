@@ -152,6 +152,11 @@ class IncidentAlerts {
                 continue;
             }
 
+            if ('maintenance' === strtolower((string) $incident->impact)) {
+                // LO: scheduled maintenance is digest-only.
+                continue;
+            }
+
             if (! $store->shouldSend($incident)) {
                 continue;
             }
@@ -558,13 +563,11 @@ class IncidentAlerts {
             return null;
         }
 
-        if (in_array($impact, ['minor', 'major', 'critical', 'none'], true)) {
+        if (in_array($impact, ['minor', 'major', 'critical', 'none', 'maintenance'], true)) {
             return $impact;
         }
 
         switch ($impact) {
-            case 'maintenance':
-                return 'none';
             case 'partial':
             case 'partial_outage':
             case 'major_outage':
@@ -588,6 +591,7 @@ class IncidentAlerts {
             case 'partial_outage':
                 return 'major';
             case 'maintenance':
+                return 'maintenance';
             case 'resolved':
             case 'operational':
                 return 'none';
@@ -743,6 +747,7 @@ class IncidentAlerts {
         $snapshot  = \lousy_outages_get_snapshot(true);
         $providers = [];
         $fetchedAt = gmdate('c');
+        $providerDirectory = Providers::list();
 
         if (is_array($snapshot)) {
             if (!empty($snapshot['providers']) && is_array($snapshot['providers'])) {
@@ -794,6 +799,12 @@ class IncidentAlerts {
             $url        = isset($provider['url']) ? (string) $provider['url'] : '';
             $components = isset($provider['components']) && is_array($provider['components']) ? $provider['components'] : [];
             $incidentList = isset($provider['incidents']) && is_array($provider['incidents']) ? $provider['incidents'] : [];
+            $sourceType = strtolower((string) ($provider['sourceType'] ?? ($providerDirectory[$providerId]['type'] ?? '')));
+
+            if (in_array($sourceType, ['manual', 'unknown', ''], true) && empty($incidentList)) {
+                // LO: manual providers (e.g., CrowdStrike) should not trigger fallback alerts.
+                continue;
+            }
 
             if (!empty($incidentList)) {
                 foreach ($incidentList as $incident) {

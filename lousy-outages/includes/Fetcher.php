@@ -6,6 +6,12 @@ namespace SuzyEaston\LousyOutages;
 // Changelog:
 // - 2024-06-05: Improve HTTP resilience, add history fallbacks, enhance error reporting.
 
+require_once __DIR__ . '/Fetch.php';
+
+if (! defined('DAY_IN_SECONDS')) {
+    define('DAY_IN_SECONDS', 24 * 60 * 60);
+}
+
 use function SuzyEaston\LousyOutages\http_get;
 use function SuzyEaston\LousyOutages\Adapters\from_rss_atom;
 use function SuzyEaston\LousyOutages\Adapters\from_slack_current;
@@ -53,10 +59,16 @@ class Fetcher {
             'url'          => is_string($statusUrl) ? $statusUrl : '',
             'incidents'    => [],
             'error'        => null,
+            'source_type'  => $type,
         ];
 
         if (! $endpoint) {
-            $defaults['summary'] = 'No public status endpoint available';
+            if ('manual' === $type) {
+                // LO: manual providers have human-updated messaging only.
+                $defaults['summary'] = 'No public feed available. We’ll update status here if CrowdStrike publishes a public advisory feed.';
+            } else {
+                $defaults['summary'] = 'No public status endpoint available';
+            }
             $defaults['message'] = $defaults['summary'];
             return $defaults;
         }
@@ -397,7 +409,8 @@ class Fetcher {
     }
 
     private function normalize_incidents(array $incidents, array $provider, string $status): array {
-        $out = [];
+        $out            = [];
+        $historyCutoff  = time() - (35 * DAY_IN_SECONDS);
         foreach ($incidents as $incident) {
             if (! is_array($incident)) {
                 continue;
@@ -419,9 +432,22 @@ class Fetcher {
 
             $started = $this->iso($incident['started_at'] ?? ($incident['startedAt'] ?? null));
             $updated = $this->iso($incident['updated_at'] ?? ($incident['updatedAt'] ?? null)) ?: $started;
+            $updatedTs = $updated ? strtotime($updated) : null;
+            $startedTs = $started ? strtotime($started) : null;
+            $effective = $updatedTs ?? $startedTs ?? 0;
+            if ($effective && $effective < $historyCutoff) {
+                continue;
+            }
 
             $impactSource = $incident['impact'] ?? $rawStatus ?: $status;
             $impact       = $this->map_impact($impactSource);
+            $maint = preg_match(
+                '/\b(scheduled|planned).{0,40}maintenance\b/i',
+                ($title . ' ' . $summary)
+            ) === 1;
+            if ($maint) {
+                $impact = 'maintenance';
+            }
 
             $url = '';
             if (! empty($incident['url']) && is_string($incident['url'])) {
@@ -438,6 +464,7 @@ class Fetcher {
                 'summary'    => $summary,
                 'started_at' => $started,
                 'updated_at' => $updated,
+                'status'     => $impact,
                 'impact'     => $impact,
                 'eta'        => $this->sanitize($incident['eta'] ?? ''),
                 'url'        => $url,
@@ -632,6 +659,9 @@ class Fetcher {
             case 'maintenance':
             case 'scheduled':
                 return 'maintenance';
+            case 'operational':
+            case 'ok':
+                return 'operational';
             case 'minor':
             case 'degraded':
             case 'partial':
@@ -1006,29 +1036,76 @@ class Lousy_Outages_Fetcher {
             }
         }
 
+        if ($items) {
+            usort(
+                $items,
+                static function ($a, $b) {
+                    return ($b['timestamp'] ?? 0) <=> ($a['timestamp'] ?? 0);
+                }
+            );
+
+            // LO: trim feed noise to last 35 days and dedupe noisy providers.
+            $cutoff = time() - (35 * DAY_IN_SECONDS);
+            $items  = array_values(
+                array_filter(
+                    $items,
+                    static function ($item) use ($cutoff) {
+                        return ($item['timestamp'] ?? 0) >= $cutoff;
+                    }
+                )
+            );
+
+            $seen = [];
+            $items = array_values(
+                array_filter(
+                    $items,
+                    static function ($item) use (&$seen) {
+                        $key = sha1(
+                            ($item['title'] ?? '') . '|' . ($item['iso'] ?? '') . '|' . ($item['link'] ?? '')
+                        );
+                        if (isset($seen[$key])) {
+                            return false;
+                        }
+                        $seen[$key] = true;
+                        return true;
+                    }
+                )
+            );
+        }
+
         if (!$items) {
             return $this->build_tile($slug, $config, 'operational', 'No incidents reported in the last 24 hours.', [], $httpStatus ?: 200, ['fetched_at' => $feedFetchedAt]);
         }
 
-        usort($items, static function ($a, $b) {
-            return ($b['timestamp'] ?? 0) <=> ($a['timestamp'] ?? 0);
-        });
-
         $recent = [];
         $incidents = [];
         $threshold = time() - DAY_IN_SECONDS;
+        $severityRank = [
+            'outage'      => 0,
+            'degraded'    => 1,
+            'maintenance' => 2,
+            'unknown'     => 3,
+        ];
+        $activeStatus = 'operational';
 
         foreach ($items as $item) {
             $text = strtolower($item['summary'] . ' ' . $item['title']);
-            $isRecent = ($item['timestamp'] ?? 0) >= $threshold;
-            $isOngoing = $this->contains_open_keyword($text);
-            if ($isRecent || $isOngoing) {
+            $timestamp = (int) ($item['timestamp'] ?? 0);
+            $statusCode = $this->infer_incident_status($text);
+            $impact     = $this->map_impact($statusCode);
+            if ($timestamp >= $threshold && 'operational' !== $statusCode) {
                 $recent[] = $item;
+                $rank     = $severityRank[$impact] ?? $severityRank['unknown'];
+                $current  = $severityRank[$activeStatus] ?? PHP_INT_MAX;
+                if ($rank < $current) {
+                    $activeStatus = $impact;
+                }
             }
 
             $incidents[] = [
                 'name'       => $item['title'],
-                'status'     => $this->infer_incident_status($text),
+                'status'     => $statusCode,
+                'impact'     => $impact,
                 'started_at' => $item['iso'],
                 'updated_at' => $item['iso'],
                 'url'        => $item['link'],
@@ -1039,8 +1116,8 @@ class Lousy_Outages_Fetcher {
             }
         }
 
-        $status = $recent ? 'degraded' : 'operational';
-        $message = $recent ? ('Recent incident: ' . $recent[0]['title']) : 'All systems operational.';
+        $status  = $recent ? $activeStatus : 'operational';
+        $message = $recent ? ('Recent incident: ' . $recent[0]['title']) : 'No active incidents in the last 24 hours.';
 
         return $this->build_tile($slug, $config, $status, $message, $incidents, $httpStatus ?: 200, [
             'fetched_at' => $feedFetchedAt,
@@ -1275,16 +1352,19 @@ class Lousy_Outages_Fetcher {
         return $items;
     }
 
-    private function contains_open_keyword(string $text): bool {
-        foreach (['ongoing', 'open', 'investigat', 'monitoring'] as $needle) {
-            if (false !== strpos($text, $needle)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private function infer_incident_status(string $text): string {
+        if (preg_match('/\b(scheduled|planned).{0,40}maintenance\b/i', $text)) {
+            return 'maintenance';
+        }
+        if (preg_match('/\b(operational|restored|resolved)\b/i', $text)) {
+            return 'operational';
+        }
+        if (preg_match('/\b(major|critical|outage)\b/i', $text)) {
+            return 'major_outage';
+        }
+        if (preg_match('/\b(connectivity|incident|degraded|partial)\b/i', $text)) {
+            return 'degraded';
+        }
         if (false !== strpos($text, 'investigat')) {
             return 'investigating';
         }
@@ -1293,9 +1373,6 @@ class Lousy_Outages_Fetcher {
         }
         if (false !== strpos($text, 'monitor')) {
             return 'monitoring';
-        }
-        if (false !== strpos($text, 'resolved') || false !== strpos($text, 'restored')) {
-            return 'resolved';
         }
         return 'unknown';
     }
@@ -1484,5 +1561,13 @@ class Lousy_Outages_Fetcher {
         }
         return false;
     }
+}
+
+if (! class_exists('LousyOutages\\Fetcher')) {
+    class_alias(__NAMESPACE__ . '\\Fetcher', 'LousyOutages\\Fetcher');
+}
+
+if (! class_exists('LousyOutages\\Lousy_Outages_Fetcher')) {
+    class_alias(__NAMESPACE__ . '\\Lousy_Outages_Fetcher', 'LousyOutages\\Lousy_Outages_Fetcher');
 }
 

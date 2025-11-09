@@ -11,6 +11,12 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// LO: allow hard shutdown via constant for emergency maintenance.
+if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
+    error_log( '[LO] disabled via constant' );
+    return;
+}
+
 define( 'LOUSY_OUTAGES_PATH', plugin_dir_path( __FILE__ ) );
 
 require_once LOUSY_OUTAGES_PATH . 'includes/Providers.php';
@@ -75,6 +81,14 @@ lo_snapshot_bootstrap();
 lo_cron_bootstrap();
 
 add_action('lousy_outages_purge_pending', [Subscriptions::class, 'purge_stale_pending']);
+
+// LO: pretty URL for custom incidents feed.
+add_action(
+    'init',
+    static function () {
+        add_rewrite_rule( '^lousy-outages/feed/incidents/?$', 'index.php?feed=lousy-outages-incidents', 'top' );
+    }
+);
 
 add_action(
     'lousy_outages_log',
@@ -245,7 +259,22 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
         if ( ! isset( $provider['id'] ) ) {
             $provider['id'] = $id;
         }
-        $state = $fetcher->fetch( $provider );
+        try {
+            $state = $fetcher->fetch( $provider );
+        } catch ( \Throwable $e ) {
+            error_log( '[LO] fetch failed: ' . $e->getMessage() );
+            $state = [
+                'status'      => 'unknown',
+                'summary'     => 'Status unavailable',
+                'error'       => 'exception:' . $e->getMessage(),
+                'incidents'   => [],
+                'url'         => $provider['status_url'] ?? '',
+                'updated_at'  => gmdate( 'c' ),
+                'name'        => $provider['name'] ?? $provider['id'],
+                'provider'    => $provider['name'] ?? $provider['id'],
+                'source_type' => $provider['type'] ?? '',
+            ];
+        }
         $pre   = $precursor->evaluate( $provider, $state );
         $state['risk']     = $pre['risk'];
         $state['prealert'] = $pre;
@@ -1010,6 +1039,7 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
         'error'      => $state['error'] ?? null,
         'risk'       => $risk,
         'prealert'   => $prealert,
+        'sourceType' => $state['source_type'] ?? '',
     ];
 }
 

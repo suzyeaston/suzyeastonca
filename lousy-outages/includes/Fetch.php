@@ -41,6 +41,21 @@ function http_get(string $url, array $args = []): array {
         unset($merged['force_ipv4']);
     }
 
+    if (! function_exists('wp_remote_get')) {
+        if (function_exists('Lousy\\http_get')) {
+            // LO: test harness stub.
+            return \Lousy\http_get($url, $merged);
+        }
+
+        return [
+            'ok'      => false,
+            'status'  => 0,
+            'error'   => 'request_failed',
+            'message' => 'wp_remote_get unavailable',
+            'body'    => null,
+        ];
+    }
+
     $response = wp_remote_get($url, $merged);
     if (is_wp_error($response)) {
         $fallback = http_get_via_curl($url, $merged, $response->get_error_message());

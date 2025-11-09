@@ -9,6 +9,7 @@ class Summary {
         $states = $store->get_all();
         $latest = null;
         $fallback = null;
+        $recent_cutoff = time() - DAY_IN_SECONDS;
 
         foreach ($states as $id => $state) {
             if (!is_array($state)) {
@@ -22,7 +23,14 @@ class Summary {
                 if (!is_array($incident)) {
                     continue;
                 }
-                $updated = self::parse_time($incident['updated_at'] ?? $incident['updatedAt'] ?? $incident['started_at'] ?? $incident['startedAt'] ?? null);
+                $updatedRaw = $incident['updated_at'] ?? $incident['updatedAt'] ?? null;
+                $startedRaw = $incident['started_at'] ?? $incident['startedAt'] ?? null;
+                $updated = self::parse_time($updatedRaw ?? $startedRaw);
+                $started = self::parse_time($startedRaw);
+                $effective = $updated ?? $started;
+                if ($effective && $effective < $recent_cutoff) {
+                    continue;
+                }
                 if (null === $latest || $updated > $latest['timestamp']) {
                     $latest = [
                         'provider_id'   => $id,
@@ -37,8 +45,12 @@ class Summary {
                 }
             }
 
-            if ('operational' !== $status && null === $latest) {
+            $eligibleFallbackStates = ['degraded', 'outage', 'major', 'partial', 'monitoring', 'investigating'];
+            if (in_array($status, $eligibleFallbackStates, true) && null === $latest) {
                 $updated = self::parse_time($state['updated_at'] ?? $state['updatedAt'] ?? null);
+                if ($updated && $updated < $recent_cutoff) {
+                    continue;
+                }
                 if (null === $fallback || $updated > $fallback['timestamp']) {
                     $fallback = [
                         'provider_id'   => $id,

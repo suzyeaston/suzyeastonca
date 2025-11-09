@@ -67,3 +67,8 @@ if ( ! class_exists('SuzyEaston\\LousyOutages\\Model\\LegacyIncident') ) {
 if ( ! class_exists('LousyOutages\\Model\\LegacyIncident') ) {
     class_alias('LO_Incident', 'LousyOutages\\Model\\LegacyIncident');
 }
+
+if ( ! class_exists('LousyOutages\\Fetcher') && class_exists('SuzyEaston\\LousyOutages\\Fetcher') ) {
+    // LO: keep legacy namespace compatibility for tests and old hooks.
+    class_alias('SuzyEaston\\LousyOutages\\Fetcher', 'LousyOutages\\Fetcher');
+}
