@@ -70,7 +70,7 @@ class Providers {
                 'name'       => 'Zscaler',
                 'type'       => 'statuspage',
                 'url'        => 'https://status.zscaler.com/api/v2/summary.json',
-                'status_url' => 'https://status.zscaler.com/',
+                'status_url' => 'https://trust.zscaler.com/zscaler.net/',
             ],
 
             // High-value adds (Statuspage JSON)
@@ -104,6 +104,13 @@ class Providers {
                 'type'       => 'rss',
                 'url'        => 'https://slack-status.com/feed/rss',
                 'status_url' => 'https://status.slack.com/',
+            ],
+            [
+                'id'         => 'crowdstrike',
+                'name'       => 'CrowdStrike',
+                'type'       => 'manual', // LO: manual provider with no feed.
+                'url'        => '',
+                'status_url' => 'https://trust.crowdstrike.com/',
             ],
             ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://rssfeed.azure.status.microsoft/en-us/status/feed/'],
             ['id' => 'gcp', 'name' => 'Google Cloud', 'type' => 'atom', 'url' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom'],

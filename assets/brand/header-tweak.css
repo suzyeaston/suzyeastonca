@@ -1,31 +1,17 @@
-/* Header: more left/right, less top/bottom */
-.site-header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;   /* logo | spacer | CTA */
-  align-items: center;
-  padding: 6px 22px;                      /* ↓ top/bottom, ↑ left/right */
-  gap: 12px;
-  min-height: 56px;
+/* Lousy Outages header adjustments (only on that page/template) */
+.page-template-page-lousy-outages .main-header {
+  min-height: auto;
+  padding-block: 8px 12px;
+}
+.page-template-page-lousy-outages .main-header .logo img {
+  max-height: 48px;
+  height: auto;
+}
+.page-template-page-lousy-outages .entry-header h1 {
+  margin-top: .5rem;
+  line-height: 1.15;
   overflow: visible;
 }
-
-/* Keep logo snug on the left */
-.site-header .brand-logo,
-.site-header .brand-wordmark {
-  margin-inline: 0;                        /* no random side margins */
-}
-
-/* Make sure the middle column actually flexes */
-.site-header::before { content: ""; }
-
-/* Right-side CTA stays tight */
-.buy-coffee, .header-cta {
-  white-space: nowrap;
-  margin-left: 8px;
-  font-size: clamp(12px, 1.7vw, 16px);
-}
-
-/* If your theme wraps content inside an inner container: ensure it fills */
-.site-header .wrap, .site-header .container {
-  display: contents;                       /* let grid above control layout */
+.page-template-page-lousy-outages .entry-header {
+  scroll-margin-top: 80px;
 }
