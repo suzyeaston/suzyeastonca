@@ -72,3 +72,13 @@ if ( ! class_exists('LousyOutages\\Fetcher') && class_exists('SuzyEaston\\LousyO
     // LO: keep legacy namespace compatibility for tests and old hooks.
     class_alias('SuzyEaston\\LousyOutages\\Fetcher', 'LousyOutages\\Fetcher');
 }
+
+if ( ! class_exists('LousyOutages\\Summary') && class_exists('SuzyEaston\\LousyOutages\\Summary') ) {
+    // LO: surface incident summary data to legacy templates.
+    class_alias('SuzyEaston\\LousyOutages\\Summary', 'LousyOutages\\Summary');
+}
+
+if ( ! class_exists('LousyOutages\\I18n') && class_exists('SuzyEaston\\LousyOutages\\I18n') ) {
+    // LO: allow legacy front-end strings lookup.
+    class_alias('SuzyEaston\\LousyOutages\\I18n', 'LousyOutages\\I18n');
+}
