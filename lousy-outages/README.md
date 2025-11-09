@@ -13,9 +13,9 @@ Monitor third‑party service status and get SMS and email alerts when things br
 | digitalocean | DigitalOcean | https://status.digitalocean.com/api/v2/summary.json |
 | netlify | Netlify | https://www.netlifystatus.com/api/v2/summary.json |
 | vercel | Vercel | https://www.vercel-status.com/api/v2/summary.json |
-| pagerduty | PagerDuty | https://status.pagerduty.com/api/v2/summary.json |
 | zoom | Zoom | https://status.zoom.us/api/v2/summary.json |
 | zscaler | Zscaler | https://trust.zscaler.com/rss-feed |
+| slack | Slack | https://slack-status.com/feed/rss |
 | twilio | Twilio | https://status.twilio.com/api/v2/summary.json |
 | linear | Linear | https://status.linear.app/api/v2/summary.json |
 | sentry | Sentry | https://status.sentry.io/api/v2/summary.json |

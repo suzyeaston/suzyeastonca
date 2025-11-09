@@ -96,6 +96,17 @@ function se_enqueue_hero_wordmark_styles() {
 }
 add_action('wp_enqueue_scripts', 'se_enqueue_hero_wordmark_styles');
 
+function se_enqueue_lousy_outages_page_styles() {
+    if ( is_page_template( 'page-lousy-outages.php' ) || is_page( 'lousy-outages' ) ) {
+        $dir = get_stylesheet_directory();
+        $uri = get_stylesheet_directory_uri();
+        $path = '/assets/css/lousy-outages-page.css';
+        $version = file_exists( $dir . $path ) ? filemtime( $dir . $path ) : null;
+        wp_enqueue_style( 'se-lousy-outages-page', $uri . $path, array(), $version );
+    }
+}
+add_action( 'wp_enqueue_scripts', 'se_enqueue_lousy_outages_page_styles' );
+
 // Load bundled Lousy Outages plugin so shortcode and REST endpoint work
 $lousy_outages = get_template_directory() . '/lousy-outages/lousy-outages.php';
 if ( file_exists( $lousy_outages ) ) {

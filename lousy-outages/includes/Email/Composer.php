@@ -7,13 +7,6 @@ use LousyOutages\Model\Incident;
 
 class Composer
 {
-    private const STATUS_LABELS = [
-        'degraded'       => 'Degraded',
-        'partial_outage' => 'Partial Outage',
-        'major_outage'   => 'Major Outage',
-        'maintenance'    => 'Maintenance',
-    ];
-
     public static function subjectForIncident(Incident $incident, ?string $fallbackStatus = null): string
     {
         $shortTitle = self::shortTitle($incident->title);
@@ -23,16 +16,15 @@ class Composer
             return sprintf('[Resolved] %s: %s', $provider, $shortTitle);
         }
 
-        $label = self::STATUS_LABELS[$incident->status] ?? null;
-        if (! $label && $fallbackStatus) {
-            $fallback = strtolower($fallbackStatus);
-            $label = self::STATUS_LABELS[$fallback] ?? ucfirst($fallbackStatus);
-        }
-        if (! $label) {
-            $label = self::STATUS_LABELS['degraded'];
+        $statusSlug = strtolower($incident->status ?: 'incident');
+        if (! $statusSlug && $fallbackStatus) {
+            $statusSlug = strtolower($fallbackStatus);
         }
 
-        return sprintf('[Outage Alert] %s: %s — %s', $provider, $label, $shortTitle);
+        $headline = self::statusHeadline($statusSlug);
+        $short    = self::shortTitle($incident->title ?: $headline);
+
+        return sprintf('[Outage Alert] %s: %s', $provider, $short ?: $headline);
     }
 
     public static function subjectForProvider(string $provider, string $status, string $title = ''): string
@@ -44,10 +36,10 @@ class Composer
             return sprintf('[Resolved] %s: %s', $provider, $short);
         }
 
-        $label = self::STATUS_LABELS[$status] ?? ucfirst($status ?: 'Degraded');
-        $short = self::shortTitle($title ?: $label);
+        $headline = self::statusHeadline($status);
+        $short    = self::shortTitle($title ?: $headline);
 
-        return sprintf('[Outage Alert] %s: %s — %s', $provider, $label, $short);
+        return sprintf('[Outage Alert] %s: %s', $provider, $short ?: $headline);
     }
 
     public static function shortTitle(string $title): string
@@ -64,5 +56,30 @@ class Composer
         }
         $clean = rtrim($clean);
         return $clean ?: 'Incident';
+    }
+
+    private static function statusHeadline(string $status): string
+    {
+        $status = strtolower(trim($status));
+        $map = [
+            'degraded'       => 'Degraded service',
+            'partial_outage' => 'Partial outage',
+            'partial'        => 'Partial outage',
+            'major_outage'   => 'Major outage',
+            'major'          => 'Major outage',
+            'critical'       => 'Critical incident',
+            'maintenance'    => 'Maintenance window',
+            'incident'       => 'Connectivity incident',
+        ];
+
+        if (isset($map[$status])) {
+            return $map[$status];
+        }
+
+        if ('' === $status) {
+            return 'Incident';
+        }
+
+        return ucfirst(str_replace('_', ' ', $status));
     }
 }

@@ -697,6 +697,7 @@ class Lousy_Outages_Fetcher {
 
         // Switch these to RSS/Atom (per Suzy’s feeds)
         'zscaler'    => ['kind' => 'rss', 'feed' => 'https://trust.zscaler.com/rss-feed', 'link' => 'https://trust.zscaler.com/cloud-status'],
+        'slack'      => ['kind' => 'rss', 'feed' => 'https://slack-status.com/feed/rss', 'link' => 'https://status.slack.com'],
         'gcp'        => ['kind' => 'atom', 'feed' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom', 'link' => 'https://www.google.com/appsstatus/dashboard/'],
         'azure'      => [
             'kind' => 'rss',
@@ -707,9 +708,6 @@ class Lousy_Outages_Fetcher {
             'link' => 'https://status.azure.com/en-us/status',
         ],
         'qubeyond'   => ['kind' => 'atom', 'feed' => 'https://status.qubeyond.com/state_feed/feed.atom', 'link' => 'https://status.qubeyond.com/'],
-
-        // PagerDuty (HTML scrape of dashboard headline)
-        'pagerduty'  => ['kind' => 'scrape', 'url' => 'https://status.pagerduty.com/posts/dashboard'],
 
         // Clouds
         'aws' => [
@@ -731,10 +729,10 @@ class Lousy_Outages_Fetcher {
         'cloudflare' => 'Cloudflare',
         'zoom'       => 'Zoom',
         'zscaler'    => 'Zscaler',
+        'slack'      => 'Slack',
         'gcp'        => 'Google Cloud',
         'azure'      => 'Microsoft Azure',
         'qubeyond'   => 'Qubeyond',
-        'pagerduty'  => 'PagerDuty',
         'aws'        => 'Amazon Web Services',
         'crowdstrike'=> 'CrowdStrike',
     ];
