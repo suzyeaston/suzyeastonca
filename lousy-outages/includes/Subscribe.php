@@ -528,6 +528,11 @@ if (!function_exists('lo_lyric_fragment_bank')) {
             ['fragment' => 'Jobs says', 'answer' => 'innovation distinguishes between a leader and a follower'],
             ['fragment' => 'Jobs says', 'answer' => 'design is how it works'],
             ['fragment' => 'Jobs says', 'answer' => 'the journey is the reward'],
+            ['fragment' => 'Jobs says', 'answer' => 'creativity is just connecting things'],
+            ['fragment' => 'Jobs says', 'answer' => 'deciding what not to do is as important as deciding what to do'],
+            ['fragment' => 'Jobs says', 'answer' => 'have the courage to follow your heart and intuition'],
+            ['fragment' => 'Jobs says', 'answer' => 'the only way to do great work is to love what you do'],
+            ['fragment' => 'Jobs says', 'answer' => 'the people who are crazy enough to think they can change the world are the ones who do'],
         ];
     }
 }
