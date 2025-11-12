@@ -472,8 +472,15 @@ class IncidentAlerts {
 
         $status = self::normalize_status_code($statusRaw, $impactRaw);
         if (self::isScheduledMaintenance($title, $bodyText)) {
-            $status = 'maintenance';
+            $status    = 'maintenance';
+            $impactRaw = 'maintenance';
         }
+
+        if ('zscaler' === $provider && self::isZscalerIpRangeAdvisory($title, $bodyText)) {
+            $status    = 'maintenance';
+            $impactRaw = 'maintenance';
+        }
+
         $impact = self::normalize_impact($impactRaw ?: self::impact_from_status($status));
 
         $url = '';
@@ -1273,6 +1280,17 @@ class IncidentAlerts {
         $haystack = $title . ' ' . $description;
 
         return 1 === preg_match('/\\b(scheduled|planned).{0,40}maintenance\\b/i', $haystack);
+    }
+
+    private static function isZscalerIpRangeAdvisory(string $title, string $description): bool
+    {
+        $haystack = strtolower($title . ' ' . $description);
+
+        if (false === strpos($haystack, 'ip address')) {
+            return false;
+        }
+
+        return 1 === preg_match('/\\b(additions?|updates?|changes?)\\b.{0,80}\\b(ip address ranges?)\\b/i', $haystack);
     }
 
     private static function log_error(string $provider, string $message): void {
