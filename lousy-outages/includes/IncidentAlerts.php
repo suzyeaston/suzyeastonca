@@ -838,7 +838,15 @@ class IncidentAlerts {
                 continue;
             }
 
-            $statusId = $providerId . ':status:' . md5($statusCode . '|' . $summary . '|' . $updatedAt);
+            // Use a stable hash that ignores timestamp churn so we only alert once per
+            // ongoing status incident. Some providers (notably Zscaler) bump the
+            // `updatedAt` field every few hours while the same maintenance reminder is
+            // active, which used to produce a new GUID each poll and re-trigger emails.
+            // By basing the hash on the status code + summary we preserve uniqueness for
+            // distinct incidents, while IncidentStore::shouldSend() clears the cached
+            // GUID once the provider returns to "operational", allowing future events to
+            // alert correctly.
+            $statusId = $providerId . ':status:' . md5($statusCode . '|' . $summary);
             $incidents[$statusId] = [
                 'id'         => $statusId,
                 'provider'   => $providerId,
