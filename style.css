@@ -508,9 +508,9 @@ body::before {
   font-size: clamp(2.4rem, 4vw, 3.4rem);
   color: #39ff14;
   text-shadow:
-    0 0 4px #39ff14,
-    0 0 10px #39ff14,
-    0 0 18px #008000;
+    0 0 2px #39ff14,
+    0 0 6px #39ff14,
+    0 0 10px #006400;
   filter: none;
   letter-spacing: 1.5px;
   line-height: 1.2;
@@ -520,7 +520,7 @@ body::before {
   font-family: var(--arcade-body-font, 'Press Start 2P'), monospace;
   font-size: clamp(0.9rem, 1.6vw, 1.1rem);
   color: #b7ffce;
-  text-shadow: 0 0 4px #39ff14;
+  text-shadow: 0 0 2px #39ff14;
   margin-top: 0.75rem;
   line-height: 1.6;
 }
