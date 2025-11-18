@@ -6,6 +6,8 @@ if ( ! defined( 'OPENAI_API_KEY' ) ) {
         define( 'OPENAI_API_KEY', $env_key );
     }
 }
+
+require_once get_template_directory() . '/inc/albini-quotes.php';
 /**
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
@@ -362,6 +364,18 @@ add_shortcode('albini_qa', 'albini_qa_shortcode');
 function albini_handle_query( WP_REST_Request $req ) {
     $question = sanitize_textarea_field( $req->get_param('question') );
 
+    if ( empty( $question ) ) {
+        return new WP_Error( 'albini_invalid_question', 'Please ask a question.', [ 'status' => 400 ] );
+    }
+
+    $matched_quotes = suzy_albini_match_quotes( $question );
+    $system_prompt  = "You are a neutral music and recording engineer who is very familiar with Steve Albini's publicly documented views. You will be given a user question and a small library of short Steve Albini quotes with topics and sources. Your job: pick the provided quotes that best relate to the question, do not invent new quotes, and output JSON with keys \"quotes\" (the selected quotes with attribution), \"commentary\" (a short neutral explanation in your own voice), and \"topics\" (optional keywords). Never speak in the first person as Steve Albini or claim to be him.";
+
+    $user_payload = [
+        'question' => $question,
+        'quotes'   => $matched_quotes,
+    ];
+
     $response = wp_remote_post('https://api.openai.com/v1/chat/completions', [
         'headers' => [
             'Authorization' => 'Bearer ' . OPENAI_API_KEY,
@@ -370,10 +384,17 @@ function albini_handle_query( WP_REST_Request $req ) {
         'body'    => wp_json_encode([
             'model'    => 'gpt-4o',
             'messages' => [
-                ['role'=>'system', 'content'=>"You are Steve Albini, legendary producer—blunt, no-BS. Answer questions as he would."],
-                ['role'=>'user',   'content'=>$question],
+                [
+                    'role'    => 'system',
+                    'content' => $system_prompt,
+                ],
+                [
+                    'role'    => 'user',
+                    'content' => wp_json_encode( $user_payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ),
+                ],
             ],
-            'max_tokens' => 300,
+            'max_tokens' => 350,
+            'temperature' => 0.4,
         ]),
         'timeout' => 15,
     ]);
@@ -382,11 +403,28 @@ function albini_handle_query( WP_REST_Request $req ) {
         return new WP_Error('openai_error', $response->get_error_message(), ['status'=>500]);
     }
 
-    $body   = wp_remote_retrieve_body($response);
-    $data   = json_decode($body, true);
-    $answer = $data['choices'][0]['message']['content'] ?? 'Hmm, I got nothing back.';
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
 
-    return rest_ensure_response([ 'answer' => wp_kses_post($answer) ]);
+    $content = isset( $data['choices'][0]['message']['content'] )
+        ? trim( $data['choices'][0]['message']['content'] )
+        : '';
+
+    $decoded = json_decode( $content, true );
+
+    if ( json_last_error() !== JSON_ERROR_NONE || empty( $decoded ) ) {
+        return rest_ensure_response([
+            'quotes'     => $matched_quotes,
+            'commentary' => $content,
+            'topics'     => [],
+        ]);
+    }
+
+    return rest_ensure_response([
+        'quotes'     => isset( $decoded['quotes'] ) ? $decoded['quotes'] : $matched_quotes,
+        'commentary' => isset( $decoded['commentary'] ) ? wp_kses_post( $decoded['commentary'] ) : '',
+        'topics'     => isset( $decoded['topics'] ) ? (array) $decoded['topics'] : [],
+    ]);
 }
 
 // =========================================

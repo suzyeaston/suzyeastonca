@@ -8,7 +8,7 @@ get_header();
   <!-- Header Section -->
   <section class="albini-header">
     <h1 class="albini-title">What Would Steve Albini Do?</h1>
-    <p class="albini-subtitle">Ask the legend anything. He’ll answer in his signature no‑BS style.</p>
+    <p class="albini-subtitle">Ask your question and we’ll surface real Steve Albini quotes plus a bit of context.</p>
   </section>
 
   <!-- Q&A Widget Section -->
@@ -20,7 +20,7 @@ get_header();
                 placeholder="Type your question here…"
                 rows="4"></textarea>
       <button id="albini-submit">Ask Albini</button>
-      <button id="albini-random" title="Random quote">🎲</button>
+      <button id="albini-random" title="Try a sample question">🎲</button>
     </div>
 
     <!-- Response box -->
@@ -35,95 +35,107 @@ get_header();
 
 
 <script>
+// Albini Q&A client-side behavior (pulls curated quotes + neutral commentary)
 document.addEventListener('DOMContentLoaded', () => {
   const qEl = document.getElementById('albini-question');
   const btn = document.getElementById('albini-submit');
   const randomBtn = document.getElementById('albini-random');
   const resp = document.getElementById('albini-response');
 
-  const albiniQuotes = [
-    "Record like you mean it. Edit like you don’t care.",
-    "The best mic is the one you already have plugged in.",
-    "Don’t EQ it. Move the mic.",
-    "Analog tape never froze during a plugin update.",
-    "Turn it up until it scares you, then back it off a little.",
-    "You don’t need a compressor. You need to play tighter.",
-    "No one ever said, 'Man, that mix needed more automation.'",
-    "The click track isn’t the problem. You are.",
-    "Stop asking what mic to use. Point something at it and hit record.",
-    "If you’re waiting for Spotify royalties to pay rent, I have bad news.",
-    "Managers are parasites. Work with people, not leeches.",
-    "A record deal is a loan shark with a press kit.",
-    "You’ll earn more playing one honest gig than from 10,000 streams.",
-    "The label will take the master. Keep the friends.",
-    "You don’t own your music if you owe someone money for it.",
-    "Nobody owes you attention.",
-    "Be good to your bandmates. They’re the only ones who’ll carry your amp.",
-    "DIY doesn’t mean amateur. It means accountable.",
-    "Art isn’t a competition unless you’re insecure.",
-    "Being broke together is better than selling out alone.",
-    "Sure, put another fuzz pedal on it. That’ll fix your songwriting.",
-    "Stop tweaking the hi-hat and write a chorus.",
-    "Do you think Fugazi worried about their social media engagement?",
-    "Your bedroom demo has more heart than your $1000/day studio session.",
-    "Loud guitars solve everything except your relationship problems.",
-    "No one cares what DAW you use except you.",
-    "Pro Tools isn’t your enemy. Your taste is."
+  const sampleQuestions = [
+    'How should my band think about signing with a label?',
+    'Is it worth chasing streaming royalties or should we focus on shows?',
+    'What does Albini think about engineers acting like producers?',
+    'How do we keep our recordings honest without big budgets?'
   ];
 
-  const preambles = [
-    "Look.",
-    "Honestly?",
-    "No.",
-    "Sure, fine.",
-    "Why are you wasting your time asking me that?",
-    "You already know the answer.",
-    "Stop overthinking it.",
-    "Hell if I know, but here’s what I’d do:",
-    ""
-  ];
-
-  function randomQuote() {
-    const pre = preambles[Math.floor(Math.random() * preambles.length)];
-    const quote = albiniQuotes[Math.floor(Math.random() * albiniQuotes.length)];
-    return `${pre} ${quote}`.trim();
+  function escapeHTML(str) {
+    const safe = (str === undefined || str === null) ? '' : String(str);
+    return safe.replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[c]));
   }
 
-  function typeText(id, text) {
-    const el = document.getElementById(id);
-    el.textContent = '';
-    let i = 0;
-    const typing = setInterval(() => {
-      el.textContent += text[i++];
-      if (i >= text.length) clearInterval(typing);
-    }, 30);
+  function setLoading(message) {
+    resp.innerHTML = `<p class="albini-loading">${message}</p>`;
   }
 
-  function showQuote() {
-    const text = randomQuote();
-    speakAlbini(text);
-    typeText('albini-response', text);
+  function renderQuotes(quotes) {
+    if (!quotes || !quotes.length) {
+      return '<p class="albini-empty">No quotes matched, but here are some to explore.</p>';
+    }
+
+    const items = quotes.map((q) => {
+      const source = q.source ? ` — Steve Albini, ${escapeHTML(q.source)}` : ' — Steve Albini';
+      const year = q.year ? ` (${escapeHTML(String(q.year))})` : '';
+      return `
+        <li class="albini-quote">
+          <blockquote>“${escapeHTML(q.quote)}”</blockquote>
+          <p class="albini-quote-meta">${source}${year}</p>
+        </li>
+      `;
+    }).join('');
+
+    return `<ul class="albini-quote-list">${items}</ul>`;
   }
 
-  function speakAlbini(text) {
-    if (!text) return;
-    const synth = window.speechSynthesis;
-    const voices = synth.getVoices();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const preferred = voices.find(v => v.name.includes('Google UK English Male') || v.name.includes('Microsoft David'));
-    utterance.voice = preferred || voices.find(v => /en/i.test(v.lang));
-    utterance.pitch = 0.7;
-    utterance.rate = 0.7;
-    synth.cancel();
-    synth.speak(utterance);
+  function renderResponse(data) {
+    const quotes = data.quotes || [];
+    const commentary = data.commentary || '';
+
+    resp.innerHTML = `
+      <section class="albini-response">
+        <h3 class="albini-response-heading">From the archives: Steve Albini on this</h3>
+        ${renderQuotes(quotes)}
+        ${commentary ? `<div class="albini-commentary"><h4>Why these quotes</h4><p>${escapeHTML(commentary)}</p></div>` : ''}
+      </section>
+    `;
+  }
+
+  async function askAlbini(question) {
+    setLoading('Looking up real Albini quotes…');
+    btn.disabled = true;
+    randomBtn.disabled = true;
+
+    try {
+      const result = await fetch('/wp-json/albini/v1/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+
+      if (!result.ok) {
+        throw new Error('Request failed. Please try again.');
+      }
+
+      const data = await result.json();
+      renderResponse(data);
+    } catch (err) {
+      resp.innerHTML = `<p class="albini-error">${err.message}</p>`;
+    } finally {
+      btn.disabled = false;
+      randomBtn.disabled = false;
+    }
   }
 
   btn.addEventListener('click', () => {
-    if (!qEl.value.trim()) return;
-    showQuote();
+    const question = qEl.value.trim();
+    if (!question) {
+      resp.innerHTML = '<p class="albini-error">Please enter a question.</p>';
+      return;
+    }
+    askAlbini(question);
   });
 
-  randomBtn.addEventListener('click', showQuote);
+  randomBtn.addEventListener('click', () => {
+    const example = sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)];
+    qEl.value = example;
+    askAlbini(example);
+  });
 });
 </script>
 <p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support my music on Bandcamp</a></p>
