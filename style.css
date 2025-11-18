@@ -498,6 +498,33 @@ body::before {
   margin: 2.5rem 0;
 }
 
+.albini-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.albini-qa-page .albini-title {
+  font-family: var(--arcade-heading-font, 'Press Start 2P'), monospace;
+  font-size: clamp(2.4rem, 4vw, 3.4rem);
+  color: #39ff14;
+  text-shadow:
+    0 0 4px #39ff14,
+    0 0 10px #39ff14,
+    0 0 18px #008000;
+  filter: none;
+  letter-spacing: 1.5px;
+  line-height: 1.2;
+}
+
+.albini-qa-page .albini-subtitle {
+  font-family: var(--arcade-body-font, 'Press Start 2P'), monospace;
+  font-size: clamp(0.9rem, 1.6vw, 1.1rem);
+  color: #b7ffce;
+  text-shadow: 0 0 4px #39ff14;
+  margin-top: 0.75rem;
+  line-height: 1.6;
+}
+
 .prompt-button {
   display: inline-flex;
   align-items: center;
@@ -561,6 +588,68 @@ body::before {
 .qa-response {
   width: 90%;
   max-width: 600px;
+}
+
+.albini-response {
+  background: var(--background-light);
+  border: 2px solid var(--secondary-color);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.albini-response-heading {
+  font-family: var(--arcade-heading-font, 'Press Start 2P'), monospace;
+  font-size: 1.1rem;
+  color: #39ff14;
+  margin-bottom: 1rem;
+}
+
+.albini-quote-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.albini-quote blockquote {
+  margin: 0 0 0.35rem 0;
+  font-family: 'Press Start 2P', monospace;
+  color: #e6ffe6;
+  line-height: 1.6;
+}
+
+.albini-quote-meta {
+  margin: 0;
+  color: #b7ffce;
+  font-size: 0.9rem;
+}
+
+.albini-commentary {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--secondary-color);
+  color: #d8f8d8;
+  line-height: 1.6;
+}
+
+.albini-commentary h4 {
+  margin: 0 0 0.35rem 0;
+  font-size: 1rem;
+  color: #39ff14;
+}
+
+.albini-loading,
+.albini-error,
+.albini-empty {
+  font-family: 'Press Start 2P', monospace;
+  color: #39ff14;
+  margin-top: 0.5rem;
+}
+
+.albini-error {
+  color: #ff6b6b;
 }
 
 @media (max-width: 600px) {
