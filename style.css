@@ -1120,6 +1120,107 @@ footer,
   font-family: 'Press Start 2P', monospace;
 }
 
+.lo-home-teaser {
+  margin-top: 3rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 999px;
+  border: 2px solid var(--arcade-neon-green, #39ff14);
+  background: rgba(0, 0, 0, 0.85);
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 48rem;
+}
+
+.lo-home-heading {
+  font-family: var(--arcade-heading-font, inherit);
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--arcade-neon-green, #39ff14);
+}
+
+.lo-home-pacman-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--arcade-body-font, inherit);
+  font-size: 0.95rem;
+  color: #e5f9ff;
+}
+
+.lo-home-pacman-alert--clear {
+  color: #9bffc6;
+}
+
+.lo-pacman {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: #ffd800;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.lo-pacman::before {
+  content: "";
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  background: #000;
+  transform-origin: center;
+  clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
+  animation: lo-pacman-chomp 0.35s infinite alternate;
+}
+
+.lo-pacman-dots {
+  flex: 1;
+  display: inline-block;
+  position: relative;
+  height: 0.3rem;
+  overflow: hidden;
+}
+
+.lo-pacman-dots::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, #ffd800 25%, transparent 35%);
+  background-size: 0.5rem 0.5rem;
+  animation: lo-pacman-dots-move 1.4s linear infinite;
+  opacity: 0.9;
+}
+
+.lo-alert-text strong {
+  color: #ffea7a;
+}
+
+.lo-home-teaser-link {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--arcade-neon-green, #39ff14);
+  color: var(--arcade-neon-green, #39ff14);
+  background: rgba(57, 255, 20, 0.05);
+}
+
+@keyframes lo-pacman-chomp {
+  from { transform: rotate(35deg); }
+  to   { transform: rotate(-35deg); }
+}
+
+@keyframes lo-pacman-dots-move {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-1.5rem); }
+}
+
 
 body {
   padding-top: 60px;

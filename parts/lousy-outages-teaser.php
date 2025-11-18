@@ -15,52 +15,56 @@ if ( class_exists( '\\LousyOutages\\I18n' ) ) {
     $teaser_strings = array_merge( $teaser_strings, array_intersect_key( $localized, $teaser_strings ) );
 }
 
-$summary_data = [
-    'message'      => 'All systems operational',
-    'href'         => home_url( '/lousy-outages/' ),
-    'incident'     => false,
-    'incidentDate' => '',
-    'relative'     => '',
-];
+$latest_incident = null;
+$relative_started = '';
+$teaser_href = home_url( '/lousy-outages/' );
 
 if ( class_exists( '\\LousyOutages\\Summary' ) ) {
     $current = Summary::current();
     if ( ! empty( $current['hasIncident'] ) ) {
-        $provider = $current['provider'] ?? '';
-        $title    = $current['title'] ?? '';
-        $slug     = sanitize_title( (string) ( $current['providerId'] ?? $provider ) );
-        $summary_data['incident']     = true;
-        $summary_data['message']      = trim( sprintf( '⚠️ Outage detected: %s — %s', $provider, $title ) );
-        if ( ! empty( $current['relative'] ) ) {
-            $summary_data['message'] .= sprintf( ' (started %s)', $current['relative'] );
+        $latest_incident = (object) [
+            'provider'   => $current['provider'] ?? '',
+            'title'      => $current['title'] ?? '',
+            'relative'   => $current['relative'] ?? '',
+            'started_at' => $current['started_at'] ?? '',
+        ];
+        $relative_started = $latest_incident->relative;
+        if ( ! empty( $current['href'] ) ) {
+            $teaser_href = $current['href'];
         }
-        $summary_data['href']         = $slug ? home_url( '/lousy-outages/#provider-' . $slug ) : home_url( '/lousy-outages/' );
-        $summary_data['incidentDate'] = $current['started_at'] ?? '';
-        $summary_data['relative']     = $current['relative'] ?? '';
     }
 }
-
-$status_classes = $summary_data['incident'] ? 'lo-status-line lo-status-line--alert' : 'lo-status-line lo-status-line--ok';
-$summary_attrs  = '';
-if ( $summary_data['incidentDate'] ) {
-    $summary_attrs .= ' data-incident-start="' . esc_attr( $summary_data['incidentDate'] ) . '"';
-}
-if ( $summary_data['relative'] ) {
-    $summary_attrs .= ' data-relative="' . esc_attr( $summary_data['relative'] ) . '"';
-}
 ?>
-<section id="lousy-outages-teaser" aria-live="polite">
-  <div class="lo-teaser">
-    <h2 class="pixel-font">Lousy Outages</h2>
-    <p class="<?php echo esc_attr( $status_classes ); ?>">
-      <a class="lo-status-link" href="<?php echo esc_url( $summary_data['href'] ); ?>" data-lo-summary<?php echo $summary_attrs; ?>>
-        <?php echo esc_html( $summary_data['message'] ); ?>
-      </a>
-    </p>
+<section id="lousy-outages-teaser" class="lo-home-teaser" aria-live="polite">
+    <h2 class="lo-home-heading">Lousy Outages</h2>
+
+    <?php if ( $latest_incident ) : ?>
+        <p class="lo-home-pacman-alert" data-incident-start="<?php echo esc_attr( $latest_incident->started_at ); ?>" data-relative="<?php echo esc_attr( $relative_started ); ?>">
+            <span class="lo-pacman" aria-hidden="true"></span>
+            <span class="lo-pacman-dots" aria-hidden="true"></span>
+            <span class="lo-alert-text">
+                Outage detected:
+                <strong><?php echo esc_html( $latest_incident->provider ); ?></strong>
+                — <?php echo esc_html( $latest_incident->title ); ?>
+                <?php if ( $relative_started ) : ?>
+                    (started <?php echo esc_html( $relative_started ); ?>)
+                <?php endif; ?>
+            </span>
+        </p>
+    <?php else : ?>
+        <p class="lo-home-pacman-alert lo-home-pacman-alert--clear">
+            <span class="lo-pacman" aria-hidden="true"></span>
+            <span class="lo-pacman-dots" aria-hidden="true"></span>
+            <span class="lo-alert-text">
+                All clear: no active incidents right now. Insert coin to refresh.
+            </span>
+        </p>
+    <?php endif; ?>
+
     <p class="caption"><?php echo esc_html( $teaser_strings['teaserCaption'] ); ?></p>
-    <div class="lo-actions lo-actions--primary">
-      <a class="view-all pixel-button" href="/lousy-outages/"><?php echo esc_html( $teaser_strings['viewDashboard'] ); ?></a>
-    </div>
+
+    <a class="lo-home-teaser-link" href="<?php echo esc_url( $teaser_href ); ?>"><?php echo esc_html( $teaser_strings['viewDashboard'] ); ?></a>
+
     <div class="lo-actions lo-actions--rss">
       <a class="lo-link" href="<?php echo $feed_url; ?>" target="_blank" rel="noopener">
         <svg class="lo-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -69,5 +73,4 @@ if ( $summary_data['relative'] ) {
         Subscribe (RSS)
       </a>
     </div>
-  </div>
 </section>
