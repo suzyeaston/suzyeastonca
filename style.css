@@ -1234,21 +1234,53 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
   background: rgba(0, 0, 0, 0.85);
   border-bottom: 2px solid var(--accent-color);
   z-index: 10000;
 }
 
-.main-header .logo {
-  font-family: "Press Start 2P", cursive;
-  font-size: 0.85rem;
-  color: var(--accent-color);
-  text-decoration: none;
+.main-header .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.main-header .logo:hover {
-  text-shadow: 0 0 4px var(--accent-color);
+.se-header-branding {
+  display: flex;
+  align-items: center;
+}
+
+.se-header-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-family: var(--arcade-heading-font, 'Press Start 2P', monospace);
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--arcade-neon-green, #39ff14);
+  line-height: 1.2;
+}
+
+.se-header-name-main,
+.se-header-name-last {
+  font-weight: 700;
+}
+
+.se-header-name-nick {
+  font-size: 0.7em;
+  opacity: 0.85;
+}
+
+@media (max-width: 768px) {
+  .se-header-wordmark {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    flex-wrap: wrap;
+  }
 }
 
 .pixel-font {
