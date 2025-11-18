@@ -112,16 +112,20 @@
 ?>
 
 <header class="main-header">
-  <a class="brand-logo" href="<?php echo esc_url( home_url( '/' ) ); ?>" aria-label="Home">
-    <img
-      src="<?php echo esc_url( get_stylesheet_directory_uri() . '/assets/brand/suzanne-logo.svg' ); ?>"
-      alt="Suzanne (Suzy) Easton"
-      width="420" height="150"
-      decoding="async" loading="eager" />
-  </a>
-  <?php get_template_part( 'parts/bmc-button' ); ?>
+  <!-- Header wordmark (compact bar) -->
+  <div class="se-header-branding">
+    <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="se-header-wordmark">
+      <span class="se-header-name-main">SUZANNE</span>
+      <span class="se-header-name-nick">(SUZY)</span>
+      <span class="se-header-name-last">EASTON</span>
+    </a>
+  </div>
+  <div class="header-actions">
+    <?php get_template_part( 'parts/bmc-button' ); ?>
+  </div>
 </header>
 
+<!-- Hero banner lives in page templates (e.g., homepage hero); this header stays compact above it -->
 <!-- Full‑screen moving starfield background -->
 <canvas id="starfield" role="img" aria-label="Animated starfield background"></canvas>
 
