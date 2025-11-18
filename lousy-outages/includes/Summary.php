@@ -17,7 +17,9 @@ class Summary {
                 'provider'    => $latestIncident['provider_name'],
                 'title'       => $latestIncident['title'],
                 'status'      => $latestIncident['status'],
-                'relative'    => self::relative_time_from_timestamp($latestIncident['timestamp']),
+                'relative'    => self::relative_time_from_timestamp(
+                    (int) ($latestIncident['started_timestamp'] ?? $latestIncident['sort_timestamp'])
+                ),
                 'started_at'  => $latestIncident['started_at'],
                 'href'        => $slug ? home_url('/lousy-outages/#provider-' . $slug) : home_url('/lousy-outages/'),
             ];
@@ -33,7 +35,9 @@ class Summary {
                 'provider'    => $fallback['provider_name'],
                 'title'       => $fallback['title'],
                 'status'      => $fallback['status'],
-                'relative'    => self::relative_time_from_timestamp($fallback['timestamp']),
+                'relative'    => self::relative_time_from_timestamp(
+                    (int) ($fallback['started_timestamp'] ?? $fallback['sort_timestamp'])
+                ),
                 'started_at'  => $fallback['started_at'],
                 'href'        => $slug ? home_url('/lousy-outages/#provider-' . $slug) : home_url('/lousy-outages/'),
             ];
@@ -133,21 +137,24 @@ class Summary {
                     continue;
                 }
 
-                $timestamp = self::incident_timestamp($incident);
-                if (null === $timestamp || $timestamp < $recent_cutoff) {
+                $sortTimestamp = self::incident_timestamp($incident);
+                $startedTimestamp = self::incident_started_timestamp($incident);
+
+                if (null === $sortTimestamp || $sortTimestamp < $recent_cutoff) {
                     continue;
                 }
 
-                if (null === $latest || $timestamp > $latest['timestamp']) {
-                    $startedIso = self::incident_start_iso($incident, $timestamp);
+                if (null === $latest || $sortTimestamp > $latest['sort_timestamp']) {
+                    $startedIso = self::incident_start_iso($incident, $sortTimestamp);
 
                     $latest = [
-                        'provider_id'   => $providerId,
-                        'provider_name' => $providerName ?: $providerId,
-                        'title'         => (string) ($incident['title'] ?? $incident['name'] ?? 'Incident'),
-                        'status'        => Fetcher::status_label($statusCode ?: 'incident'),
-                        'started_at'    => $startedIso,
-                        'timestamp'     => $timestamp,
+                        'provider_id'        => $providerId,
+                        'provider_name'      => $providerName ?: $providerId,
+                        'title'              => (string) ($incident['title'] ?? $incident['name'] ?? 'Incident'),
+                        'status'             => Fetcher::status_label($statusCode ?: 'incident'),
+                        'started_at'         => $startedIso,
+                        'sort_timestamp'     => $sortTimestamp,
+                        'started_timestamp'  => $startedTimestamp ?? $sortTimestamp,
                     ];
                 }
             }
@@ -175,18 +182,20 @@ class Summary {
             $providerId = (string) ($provider['id'] ?? $provider['provider'] ?? '');
             $providerName = (string) ($provider['name'] ?? $provider['provider'] ?? $providerId);
             $updated = self::parse_time($provider['updatedAt'] ?? $provider['updated_at'] ?? null);
+            $sortTimestamp = $updated ?? time();
             if ($updated && $updated < $recent_cutoff) {
                 continue;
             }
 
-            if (null === $fallback || $updated > $fallback['timestamp']) {
+            if (null === $fallback || $sortTimestamp > $fallback['sort_timestamp']) {
                 $fallback = [
-                    'provider_id'   => $providerId,
-                    'provider_name' => $providerName,
-                    'title'         => (string) ($provider['summary'] ?? Fetcher::status_label($status)),
-                    'status'        => Fetcher::status_label($status),
-                    'started_at'    => (string) ($provider['updatedAt'] ?? $provider['updated_at'] ?? ''),
-                    'timestamp'     => $updated ?? time(),
+                    'provider_id'        => $providerId,
+                    'provider_name'      => $providerName,
+                    'title'              => (string) ($provider['summary'] ?? Fetcher::status_label($status)),
+                    'status'             => Fetcher::status_label($status),
+                    'started_at'         => (string) ($provider['updatedAt'] ?? $provider['updated_at'] ?? ''),
+                    'sort_timestamp'     => $sortTimestamp,
+                    'started_timestamp'  => $updated ?? $sortTimestamp,
                 ];
             }
         }
@@ -196,14 +205,38 @@ class Summary {
 
     private static function incident_timestamp(array $incident): ?int
     {
+        // Effective time for sorting incidents (generally the last update time).
         $candidates = [
-            $incident['detected_at'] ?? null,
-            $incident['detectedAt'] ?? null,
             $incident['timestamp'] ?? null,
             $incident['updated_at'] ?? null,
             $incident['updatedAt'] ?? null,
+            $incident['detected_at'] ?? null,
+            $incident['detectedAt'] ?? null,
             $incident['started_at'] ?? null,
             $incident['startedAt'] ?? null,
+        ];
+
+        foreach ($candidates as $value) {
+            $parsed = self::parse_time($value);
+            if (null !== $parsed) {
+                return $parsed;
+            }
+        }
+
+        return null;
+    }
+
+    private static function incident_started_timestamp(array $incident): ?int
+    {
+        // Prefer the earliest plausible "start" field.
+        $candidates = [
+            $incident['detected_at'] ?? null,
+            $incident['detectedAt'] ?? null,
+            $incident['started_at'] ?? null,
+            $incident['startedAt'] ?? null,
+            $incident['timestamp'] ?? null,
+            $incident['updated_at'] ?? null,
+            $incident['updatedAt'] ?? null,
         ];
 
         foreach ($candidates as $value) {
