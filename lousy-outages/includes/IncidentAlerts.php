@@ -43,6 +43,9 @@ class IncidentAlerts {
     private const OPTION_UNSUB_TOKENS     = 'lo_unsub_tokens';
     private const OPTION_SEEN             = 'lo_seen_incidents';
     private const OPTION_LAST_CHECK       = 'lo_last_status_check';
+    private const OPTION_ALERTED_INCIDENTS = 'lousy_outages_alerted_incidents';
+
+    private const ALERT_RETENTION_HOURS = 48;
 
     public static function bootstrap(): void {
         add_action('init', [self::class, 'ensure_schedule']);
@@ -143,13 +146,19 @@ class IncidentAlerts {
         $store->persistIncidents($incidents);
         update_option(self::OPTION_LAST_CHECK, gmdate('c'), false);
 
-        if (empty($incidents)) {
-            return;
-        }
+        $alertedIncidents = self::get_alerted_incidents();
+        $activeKeys       = [];
+        $nowUtc           = current_time('timestamp', true);
 
         foreach ($incidents as $incident) {
             if (! $incident instanceof Incident) {
                 continue;
+            }
+
+            $incidentKey      = self::make_incident_key($incident);
+            $isAlertableState = self::is_alertable_incident($incident);
+            if ($isAlertableState && '' !== $incidentKey) {
+                $activeKeys[] = $incidentKey;
             }
 
             if ('maintenance' === strtolower((string) $incident->impact)) {
@@ -161,8 +170,45 @@ class IncidentAlerts {
                 continue;
             }
 
-            self::email_incident($incident);
+            if (! $isAlertableState) {
+                continue;
+            }
+
+            if ('' === $incidentKey) {
+                do_action('lousy_outages_log', 'alert_skip', [
+                    'provider'      => $incident->provider,
+                    'reason'        => 'missing_incident_key',
+                    'incident_data' => $incident->title,
+                ]);
+                continue;
+            }
+
+            if (isset($alertedIncidents[$incidentKey])) {
+                do_action('lousy_outages_log', 'alert_skip', [
+                    'provider'     => $incident->provider,
+                    'incident_key' => $incidentKey,
+                    'reason'       => 'duplicate',
+                ]);
+                continue;
+            }
+
+            if (self::send_incident_alert_email($incident)) {
+                $alertedIncidents[$incidentKey] = [
+                    'first_notified_at' => $nowUtc,
+                    'status'            => strtolower((string) $incident->status),
+                    'impact'            => strtolower((string) ($incident->impact ?? '')),
+                    'url'               => $incident->url,
+                ];
+
+                do_action('lousy_outages_log', 'alert_send', [
+                    'provider'     => $incident->provider,
+                    'incident_key' => $incidentKey,
+                ]);
+            }
         }
+
+        $alertedIncidents = self::prune_alerted_incidents($alertedIncidents, $activeKeys, $nowUtc);
+        self::set_alerted_incidents($alertedIncidents);
     }
 
     public static function send_daily_digest(): void {
@@ -1225,7 +1271,7 @@ class IncidentAlerts {
         return (string) $tokens[$normalized];
     }
 
-    private static function email_incident(Incident $incident): bool {
+    private static function send_incident_alert_email(Incident $incident): bool {
         $subscribers = self::get_subscribers();
         if (empty($subscribers)) {
             return false;
@@ -1273,6 +1319,120 @@ class IncidentAlerts {
         }
 
         return true;
+    }
+
+    /**
+     * Backwards compatible alias for sending realtime incident alerts.
+     */
+    private static function email_incident(Incident $incident): bool {
+        return self::send_incident_alert_email($incident);
+    }
+
+    /**
+     * Determine if the incident is eligible for realtime alerts.
+     */
+    private static function is_alertable_incident(Incident $incident): bool
+    {
+        $status = strtolower((string) $incident->status);
+        $impact = strtolower((string) ($incident->impact ?? ''));
+
+        if (in_array($status, ['operational', 'resolved'], true)) {
+            return false;
+        }
+
+        if (in_array($status, self::ALERTABLE_STATES, true)) {
+            return true;
+        }
+
+        if ('' !== $impact && in_array($impact, self::ALERTABLE_STATES, true)) {
+            return true;
+        }
+
+        return in_array($impact, ['minor', 'critical', 'partial', 'partial_outage', 'major_outage', 'major', 'outage'], true);
+    }
+
+    /**
+     * Build a stable key for de-duplicating incident alerts.
+     */
+    private static function make_incident_key(Incident $incident): string
+    {
+        $providerSlug = sanitize_key((string) $incident->provider) ?: 'provider';
+        $identifier   = trim((string) $incident->id);
+
+        if ('' === $identifier && '' !== trim((string) $incident->url)) {
+            $identifier = (string) $incident->url;
+        }
+
+        if ('' === $identifier) {
+            $identifier = $incident->title . '|' . (int) $incident->detected_at;
+        }
+
+        if ('' === trim($identifier)) {
+            return '';
+        }
+
+        $normalizedId = sanitize_title_with_dashes($identifier);
+        if ('' === $normalizedId) {
+            $normalizedId = md5($identifier);
+        }
+
+        return $providerSlug . ':' . $normalizedId;
+    }
+
+    /**
+     * Retrieve stored incident keys that have already been alerted.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function get_alerted_incidents(): array
+    {
+        $stored = get_option(self::OPTION_ALERTED_INCIDENTS, []);
+
+        return is_array($stored) ? $stored : [];
+    }
+
+    /**
+     * Persist the map of alerted incidents.
+     *
+     * @param array<string, array<string, mixed>> $map
+     */
+    private static function set_alerted_incidents(array $map): void
+    {
+        update_option(self::OPTION_ALERTED_INCIDENTS, $map, false);
+    }
+
+    /**
+     * Remove stale or resolved incident keys to keep the option small.
+     *
+     * @param array<string, array<string, mixed>> $map
+     * @param array<int, string>                  $activeKeys
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function prune_alerted_incidents(array $map, array $activeKeys, int $nowUtc): array
+    {
+        $activeLookup = array_fill_keys($activeKeys, true);
+        $retention    = self::ALERT_RETENTION_HOURS * HOUR_IN_SECONDS;
+
+        foreach ($map as $key => $meta) {
+            $firstNotified = isset($meta['first_notified_at']) ? (int) $meta['first_notified_at'] : 0;
+            $isActive      = isset($activeLookup[$key]);
+
+            if (! $isActive) {
+                $map[$key]['resolved_at'] = $nowUtc;
+            }
+
+            if ($firstNotified && ($nowUtc - $firstNotified) > $retention) {
+                unset($map[$key]);
+                continue;
+            }
+
+            if (! $isActive && 0 === $firstNotified) {
+                unset($map[$key]);
+            }
+        }
+
+        return $map;
     }
 
     private static function isScheduledMaintenance(string $title, string $description): bool
