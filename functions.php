@@ -372,10 +372,11 @@ function albini_handle_query( WP_REST_Request $req ) {
     $system_prompt  = "You are a neutral engineer and writer who is very familiar with Steve Albini's publicly documented views. "
         . "You will be given a user question and a small library of short Steve Albini quotes with topics and sources. "
         . "Your job: pick the provided quotes that best relate to the question, do not invent new quotes, "
-        . "and return STRICT JSON with keys: "
+        . "and return STRICT JSON with these keys: "
         . "\"quotes\" (array of the chosen quotes with id, quote, source, year, topics), "
         . "\"commentary\" (a short neutral explanation in your own voice), "
         . "and optionally \"topics\" (array of keywords). "
+        . "The ENTIRE response must be a single JSON object with no surrounding text, no Markdown, and NO ``` code fences. "
         . "Never write in the first person as Steve Albini or claim to be him.";
 
     $user_payload = [
@@ -416,6 +417,11 @@ function albini_handle_query( WP_REST_Request $req ) {
     $content = isset( $data['choices'][0]['message']['content'] )
         ? trim( $data['choices'][0]['message']['content'] )
         : '';
+
+    // If the model wrapped the JSON in a markdown code block, strip the fences.
+    if ( preg_match( '/```(?:json)?\\s*(.+?)```/is', $content, $matches ) ) {
+        $content = trim( $matches[1] );
+    }
 
     $decoded = json_decode( $content, true );
 
