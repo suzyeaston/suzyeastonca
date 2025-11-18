@@ -369,7 +369,14 @@ function albini_handle_query( WP_REST_Request $req ) {
     }
 
     $matched_quotes = suzy_albini_match_quotes( $question );
-    $system_prompt  = "You are a neutral music and recording engineer who is very familiar with Steve Albini's publicly documented views. You will be given a user question and a small library of short Steve Albini quotes with topics and sources. Your job: pick the provided quotes that best relate to the question, do not invent new quotes, and output JSON with keys \"quotes\" (the selected quotes with attribution), \"commentary\" (a short neutral explanation in your own voice), and \"topics\" (optional keywords). Never speak in the first person as Steve Albini or claim to be him.";
+    $system_prompt  = "You are a neutral engineer and writer who is very familiar with Steve Albini's publicly documented views. "
+        . "You will be given a user question and a small library of short Steve Albini quotes with topics and sources. "
+        . "Your job: pick the provided quotes that best relate to the question, do not invent new quotes, "
+        . "and return STRICT JSON with keys: "
+        . "\"quotes\" (array of the chosen quotes with id, quote, source, year, topics), "
+        . "\"commentary\" (a short neutral explanation in your own voice), "
+        . "and optionally \"topics\" (array of keywords). "
+        . "Never write in the first person as Steve Albini or claim to be him.";
 
     $user_payload = [
         'question' => $question,
