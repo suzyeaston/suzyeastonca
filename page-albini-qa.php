@@ -83,6 +83,31 @@ document.addEventListener('DOMContentLoaded', () => {
     return `<ul class="albini-quote-list">${items}</ul>`;
   }
 
+  function speakResponse(text) {
+    if (!text || !('speechSynthesis' in window)) return;
+    const synth = window.speechSynthesis;
+    const utterance = new SpeechSynthesisUtterance(text);
+    let voices = synth.getVoices();
+    const pickVoice = () => {
+      voices = synth.getVoices();
+      const preferred = voices.find(v =>
+        v.name.includes('Google UK English Male') ||
+        v.name.includes('Microsoft David') ||
+        /en/i.test(v.lang)
+      );
+      utterance.voice = preferred || null;
+      utterance.rate = 0.9;
+      utterance.pitch = 0.9;
+      synth.cancel();
+      synth.speak(utterance);
+    };
+    if (!voices || voices.length === 0) {
+      synth.addEventListener('voiceschanged', pickVoice, { once: true });
+    } else {
+      pickVoice();
+    }
+  }
+
   function renderResponse(data) {
     const quotes = data.quotes || [];
     const commentary = data.commentary || '';
@@ -94,6 +119,11 @@ document.addEventListener('DOMContentLoaded', () => {
         ${commentary ? `<div class="albini-commentary"><h4>Why these quotes</h4><p>${escapeHTML(commentary)}</p></div>` : ''}
       </section>
     `;
+    if (commentary) {
+      speakResponse(commentary);
+    } else if (quotes && quotes.length) {
+      speakResponse(quotes[0].quote);
+    }
   }
 
   async function askAlbini(question) {
