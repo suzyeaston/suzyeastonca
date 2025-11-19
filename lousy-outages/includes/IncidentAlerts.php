@@ -39,13 +39,16 @@ class IncidentAlerts {
 
     private const ALERTABLE_STATES = ['degraded', 'partial_outage', 'major_outage', 'maintenance', 'major', 'outage'];
 
-    private const OPTION_SUBSCRIBERS      = 'lo_subscribers';
-    private const OPTION_UNSUB_TOKENS     = 'lo_unsub_tokens';
-    private const OPTION_SEEN             = 'lo_seen_incidents';
-    private const OPTION_LAST_CHECK       = 'lo_last_status_check';
+    private const OPTION_SUBSCRIBERS       = 'lo_subscribers';
+    private const OPTION_UNSUB_TOKENS      = 'lo_unsub_tokens';
+    private const OPTION_SEEN              = 'lo_seen_incidents';
+    private const OPTION_LAST_CHECK        = 'lo_last_status_check';
     private const OPTION_ALERTED_INCIDENTS = 'lousy_outages_alerted_incidents';
+    private const OPTION_ALERTED_SUBJECTS  = 'lousy_outages_alerted_subjects';
 
-    private const ALERT_RETENTION_HOURS = 48;
+    private const ALERT_RETENTION_HOURS        = 48;
+    private const SUBJECT_ALERT_WINDOW_HOURS   = 12;
+    private const REALTIME_ALERT_WINDOW_HOURS  = 12;
 
     public static function bootstrap(): void {
         add_action('init', [self::class, 'ensure_schedule']);
@@ -147,8 +150,10 @@ class IncidentAlerts {
         update_option(self::OPTION_LAST_CHECK, gmdate('c'), false);
 
         $alertedIncidents = self::get_alerted_incidents();
+        $alertedSubjects  = self::get_alerted_subjects();
         $activeKeys       = [];
         $nowUtc           = current_time('timestamp', true);
+        $subjectWindow    = self::SUBJECT_ALERT_WINDOW_HOURS * HOUR_IN_SECONDS;
 
         foreach ($incidents as $incident) {
             if (! $incident instanceof Incident) {
@@ -156,6 +161,8 @@ class IncidentAlerts {
             }
 
             $incidentKey      = self::make_incident_key($incident);
+            $subjectKey       = self::make_subject_key($incident);
+            $effectiveTs      = self::incident_effective_timestamp($incident);
             $isAlertableState = self::is_alertable_incident($incident);
             if ($isAlertableState && '' !== $incidentKey) {
                 $activeKeys[] = $incidentKey;
@@ -174,22 +181,63 @@ class IncidentAlerts {
                 continue;
             }
 
-            if ('' === $incidentKey) {
+            if (null !== $effectiveTs && ($nowUtc - $effectiveTs) > (self::REALTIME_ALERT_WINDOW_HOURS * HOUR_IN_SECONDS)) {
                 do_action('lousy_outages_log', 'alert_skip', [
                     'provider'      => $incident->provider,
-                    'reason'        => 'missing_incident_key',
-                    'incident_data' => $incident->title,
+                    'incident_key'  => $incidentKey,
+                    'subject_key'   => $subjectKey,
+                    'reason'        => 'stale_incident',
+                    'effective_ts'  => $effectiveTs,
+                ]);
+                continue;
+            }
+
+            if ('' === $incidentKey) {
+                do_action('lousy_outages_log', 'alert_skip', [
+                    'provider'     => $incident->provider,
+                    'reason'       => 'missing_incident_key',
+                    'incident_key' => $incidentKey,
+                    'subject_key'  => $subjectKey,
+                    'status'       => strtolower((string) $incident->status),
+                    'impact'       => strtolower((string) ($incident->impact ?? '')),
                 ]);
                 continue;
             }
 
             if (isset($alertedIncidents[$incidentKey])) {
                 do_action('lousy_outages_log', 'alert_skip', [
-                    'provider'     => $incident->provider,
-                    'incident_key' => $incidentKey,
-                    'reason'       => 'duplicate',
+                    'provider'      => $incident->provider,
+                    'incident_key'  => $incidentKey,
+                    'subject_key'   => $subjectKey,
+                    'reason'        => 'duplicate',
+                    'effective_ts'  => $effectiveTs,
                 ]);
                 continue;
+            }
+
+            if ('' === $subjectKey) {
+                do_action('lousy_outages_log', 'alert_subject_key_missing', [
+                    'provider'      => $incident->provider,
+                    'incident_key'  => $incidentKey,
+                    'subject_key'   => $subjectKey,
+                    'reason'        => 'missing_subject_key',
+                    'effective_ts'  => $effectiveTs,
+                ]);
+            } elseif (isset($alertedSubjects[$subjectKey])) {
+                $meta = $alertedSubjects[$subjectKey];
+                $last = isset($meta['last_notified_at']) ? (int) $meta['last_notified_at'] : 0;
+
+                if ($last && ($nowUtc - $last) <= $subjectWindow) {
+                    do_action('lousy_outages_log', 'alert_skip_subject', [
+                        'provider'      => $incident->provider,
+                        'incident_key'  => $incidentKey,
+                        'subject_key'   => $subjectKey,
+                        'reason'        => 'subject_throttle',
+                        'last_notified' => $last,
+                        'effective_ts'  => $effectiveTs,
+                    ]);
+                    continue;
+                }
             }
 
             if (self::send_incident_alert_email($incident)) {
@@ -200,15 +248,29 @@ class IncidentAlerts {
                     'url'               => $incident->url,
                 ];
 
+                if ('' !== $subjectKey) {
+                    $first = isset($alertedSubjects[$subjectKey]['first_notified_at']) ? (int) $alertedSubjects[$subjectKey]['first_notified_at'] : 0;
+                    $alertedSubjects[$subjectKey] = [
+                        'first_notified_at' => $first ?: $nowUtc,
+                        'last_notified_at'  => $nowUtc,
+                    ];
+                }
+
                 do_action('lousy_outages_log', 'alert_send', [
-                    'provider'     => $incident->provider,
-                    'incident_key' => $incidentKey,
+                    'provider'      => $incident->provider,
+                    'incident_key'  => $incidentKey,
+                    'subject_key'   => $subjectKey,
+                    'impact'        => strtolower((string) ($incident->impact ?? '')),
+                    'status'        => strtolower((string) $incident->status),
+                    'effective_ts'  => $effectiveTs,
                 ]);
             }
         }
 
         $alertedIncidents = self::prune_alerted_incidents($alertedIncidents, $activeKeys, $nowUtc);
+        $alertedSubjects  = self::prune_alerted_subjects($alertedSubjects, $nowUtc);
         self::set_alerted_incidents($alertedIncidents);
+        self::set_alerted_subjects($alertedSubjects);
     }
 
     public static function send_daily_digest(): void {
@@ -1351,6 +1413,31 @@ class IncidentAlerts {
         return in_array($impact, ['minor', 'critical', 'partial', 'partial_outage', 'major_outage', 'major', 'outage'], true);
     }
 
+    private static function incident_effective_timestamp(Incident $incident): ?int
+    {
+        $data = (array) $incident;
+
+        $candidates = [
+            $data['detected_at'] ?? null,
+            $data['detectedAt'] ?? null,
+            $data['started_at'] ?? null,
+            $data['startedAt'] ?? null,
+            $data['timestamp'] ?? null,
+            $data['updated_at'] ?? null,
+            $data['updatedAt'] ?? null,
+            $data['resolved_at'] ?? null,
+        ];
+
+        foreach ($candidates as $value) {
+            $parsed = self::parse_time($value);
+            if (null !== $parsed) {
+                return $parsed;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Build a stable key for de-duplicating incident alerts.
      */
@@ -1387,6 +1474,30 @@ class IncidentAlerts {
         return implode(':', $keyParts);
     }
 
+    private static function make_subject_key(Incident $incident): string
+    {
+        $providerSlug = sanitize_key((string) $incident->provider) ?: '';
+
+        $title = trim((string) ($incident->title ?? ''));
+        if ('' === $title) {
+            $title = trim((string) ($incident->summary ?? ''));
+        }
+        if ('' === $title) {
+            $title = 'incident';
+        }
+
+        $normalizedTitle = sanitize_title_with_dashes($title);
+        if ('' === $normalizedTitle) {
+            $normalizedTitle = md5($title);
+        }
+
+        if ('' === $providerSlug || '' === $normalizedTitle) {
+            return '';
+        }
+
+        return $providerSlug . ':' . $normalizedTitle;
+    }
+
     /**
      * Retrieve stored incident keys that have already been alerted.
      *
@@ -1407,6 +1518,28 @@ class IncidentAlerts {
     private static function set_alerted_incidents(array $map): void
     {
         update_option(self::OPTION_ALERTED_INCIDENTS, $map, false);
+    }
+
+    /**
+     * Retrieve stored subject keys that have already been alerted.
+     *
+     * @return array<string, array<string, int>>
+     */
+    private static function get_alerted_subjects(): array
+    {
+        $stored = get_option(self::OPTION_ALERTED_SUBJECTS, []);
+
+        return is_array($stored) ? $stored : [];
+    }
+
+    /**
+     * Persist the map of alerted subjects.
+     *
+     * @param array<string, array<string, int>> $map
+     */
+    private static function set_alerted_subjects(array $map): void
+    {
+        update_option(self::OPTION_ALERTED_SUBJECTS, $map, false);
     }
 
     /**
@@ -1441,6 +1574,57 @@ class IncidentAlerts {
         }
 
         return $map;
+    }
+
+    /**
+     * Remove stale subject keys to keep the option small.
+     *
+     * @param array<string, array<string, int>> $map
+     *
+     * @return array<string, array<string, int>>
+     */
+    private static function prune_alerted_subjects(array $map, int $nowUtc): array
+    {
+        $retention = self::ALERT_RETENTION_HOURS * HOUR_IN_SECONDS;
+
+        foreach ($map as $key => $meta) {
+            $firstNotified = isset($meta['first_notified_at']) ? (int) $meta['first_notified_at'] : 0;
+            $lastNotified  = isset($meta['last_notified_at']) ? (int) $meta['last_notified_at'] : 0;
+
+            if ($lastNotified && ($nowUtc - $lastNotified) > $retention) {
+                unset($map[$key]);
+                continue;
+            }
+
+            if ($firstNotified && ($nowUtc - $firstNotified) > $retention) {
+                unset($map[$key]);
+            }
+        }
+
+        return $map;
+    }
+
+    private static function parse_time($value): ?int
+    {
+        if (is_int($value)) {
+            return $value > 0 ? $value : null;
+        }
+
+        if (is_string($value) && ctype_digit($value)) {
+            $int = (int) $value;
+            return $int > 0 ? $int : null;
+        }
+
+        if (empty($value)) {
+            return null;
+        }
+
+        $timestamp = strtotime((string) $value);
+        if (false === $timestamp) {
+            return null;
+        }
+
+        return $timestamp;
     }
 
     private static function isScheduledMaintenance(string $title, string $description): bool
