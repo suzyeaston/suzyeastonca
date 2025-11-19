@@ -355,7 +355,7 @@ function render_shortcode(): string {
     $config['initial']['source']    = $source;
     $config['initial']['errors']    = $snapshot_errors;
 
-    $rss_url = esc_url(get_feed_link('lousy_outages_status'));
+    $rss_url = home_url('/?feed=lousy_outages_status'); // Pretty /feed/lousy_outages_status/ works after a permalink flush, but the query form is safer.
 
     wp_localize_script('lousy-outages', 'LousyOutagesConfig', $config);
     wp_localize_script(
@@ -512,7 +512,7 @@ function render_shortcode(): string {
 function render_subscribe_shortcode(): string {
     $endpoint = esc_url_raw(rest_url('lousy-outages/v1/subscribe'));
     $nonce    = wp_create_nonce('lousy_outages_subscribe');
-    $rss_url  = esc_url(home_url('/lousy-outages/feed/'));
+    $rss_url  = esc_url(home_url('/?feed=lousy_outages_status'));
     $lyric_lines = [];
     foreach (\lo_lyric_fragment_bank() as $entry) {
         if (!is_array($entry)) {
