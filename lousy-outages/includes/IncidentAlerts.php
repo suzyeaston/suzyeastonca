@@ -1357,26 +1357,34 @@ class IncidentAlerts {
     private static function make_incident_key(Incident $incident): string
     {
         $providerSlug = sanitize_key((string) $incident->provider) ?: 'provider';
-        $identifier   = trim((string) $incident->id);
 
-        if ('' === $identifier && '' !== trim((string) $incident->url)) {
-            $identifier = (string) $incident->url;
+        $title = trim((string) ($incident->title ?? ''));
+        if ('' === $title) {
+            $title = trim((string) ($incident->summary ?? ''));
+        }
+        if ('' === $title) {
+            $title = 'incident';
         }
 
-        if ('' === $identifier) {
-            $identifier = $incident->title . '|' . (int) $incident->detected_at;
+        $normalizedTitle = sanitize_title_with_dashes($title);
+        if ('' === $normalizedTitle) {
+            $normalizedTitle = md5($title);
         }
 
-        if ('' === trim($identifier)) {
-            return '';
+        $idPart = '';
+        $rawId  = trim((string) ($incident->id ?? ''));
+        if ('' !== $rawId) {
+            $idPart = sanitize_title_with_dashes($rawId);
+        } elseif (! empty($incident->url)) {
+            $idPart = sanitize_title_with_dashes((string) $incident->url);
         }
 
-        $normalizedId = sanitize_title_with_dashes($identifier);
-        if ('' === $normalizedId) {
-            $normalizedId = md5($identifier);
+        $keyParts = [$providerSlug, $normalizedTitle];
+        if ('' !== $idPart) {
+            $keyParts[] = $idPart;
         }
 
-        return $providerSlug . ':' . $normalizedId;
+        return implode(':', $keyParts);
     }
 
     /**
