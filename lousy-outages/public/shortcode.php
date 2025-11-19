@@ -355,7 +355,7 @@ function render_shortcode(): string {
     $config['initial']['source']    = $source;
     $config['initial']['errors']    = $snapshot_errors;
 
-    $rss_url = esc_url(home_url('/lousy-outages/feed/'));
+    $rss_url = esc_url(get_feed_link('lousy_outages_status'));
 
     wp_localize_script('lousy-outages', 'LousyOutagesConfig', $config);
     wp_localize_script(

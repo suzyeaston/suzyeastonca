@@ -7,7 +7,7 @@ $teaser_strings = [
     'viewDashboard' => 'View Full Dashboard →',
 ];
 
-$feed_url     = esc_url( home_url('/lousy-outages/feed/') );
+$feed_url     = esc_url( get_feed_link( 'lousy_outages_status' ) );
 
 if ( class_exists( '\\LousyOutages\\I18n' ) ) {
     $locale         = I18n::determine_locale();
