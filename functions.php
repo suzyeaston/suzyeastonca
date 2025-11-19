@@ -179,7 +179,8 @@ add_action( 'phpmailer_init', function( $phpmailer ) {
 
 function lousy_outages_feed_autodiscovery() {
     if ( is_front_page() || is_page_template( 'page-lousy-outages.php' ) || is_page( 'lousy-outages' ) ) {
-        echo '\n<link rel="alternate" type="application/rss+xml" title="Lousy Outages" href="' . esc_url( home_url( '/lousy-outages/feed/' ) ) . '" />\n';
+        $feed_url = home_url( '/?feed=lousy_outages_status' ); // Pretty /feed/lousy_outages_status/ works once permalinks flush, but we keep the query form for reliability.
+        echo '\n<link rel="alternate" type="application/rss+xml" title="Lousy Outages" href="' . esc_url( $feed_url ) . '" />\n';
     }
 }
 add_action( 'wp_head', 'lousy_outages_feed_autodiscovery' );

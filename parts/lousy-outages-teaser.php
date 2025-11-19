@@ -7,7 +7,7 @@ $teaser_strings = [
     'viewDashboard' => 'View Full Dashboard →',
 ];
 
-$feed_url     = esc_url( get_feed_link( 'lousy_outages_status' ) );
+$feed_url     = home_url( '/?feed=lousy_outages_status' ); // Pretty /feed/lousy_outages_status/ works after a permalink flush, but the query form is more reliable.
 
 if ( class_exists( '\\LousyOutages\\I18n' ) ) {
     $locale         = I18n::determine_locale();
@@ -66,7 +66,7 @@ if ( class_exists( '\\LousyOutages\\Summary' ) ) {
     <a class="lo-home-teaser-link" href="<?php echo esc_url( $teaser_href ); ?>"><?php echo esc_html( $teaser_strings['viewDashboard'] ); ?></a>
 
     <div class="lo-actions lo-actions--rss">
-      <a class="lo-link" href="<?php echo $feed_url; ?>" target="_blank" rel="noopener">
+      <a class="lo-link" href="<?php echo esc_url( $feed_url ); ?>" target="_blank" rel="noopener">
         <svg class="lo-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path fill="currentColor" d="M6 17a2 2 0 11.001 3.999A2 2 0 016 17zm-2-7v3a8 8 0 018 8h3c0-6.075-4.925-11-11-11zm0-5v3c9.389 0 17 7.611 17 17h3C24 13.85 10.15 0 4 0z"/>
         </svg>
