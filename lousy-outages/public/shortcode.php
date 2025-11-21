@@ -67,17 +67,9 @@ function render_shortcode(): string {
     );
 
     wp_enqueue_script(
-        'chart.js',
-        'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js',
-        [],
-        '4.4.3',
-        true
-    );
-
-    wp_enqueue_script(
         'lousy-outages',
         $base_url . 'lousy-outages.js',
-        ['chart.js'],
+        [],
         file_exists($base_path . 'lousy-outages.js') ? filemtime($base_path . 'lousy-outages.js') : null,
         true
     );
@@ -426,13 +418,21 @@ function render_shortcode(): string {
                 <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
             </div>
         </div>
-        <div class="lo-chart" data-lo-chart>
-            <div class="lo-chart__heading">
-                <h3 class="lo-block-title">Recent incidents (GitHub)</h3>
-                <p class="lo-chart__meta">Last 30 days of non-operational blips.</p>
+        <section class="lo-history" data-lo-history>
+            <div class="lo-history__heading">
+                <div>
+                    <h3 class="lo-block-title">Recent incidents (GitHub)</h3>
+                    <p class="lo-history__meta">Last 30 days of non-operational blips.</p>
+                </div>
             </div>
-            <canvas id="lo-outage-chart" aria-label="GitHub incidents over time" role="img"></canvas>
-        </div>
+            <div class="lo-history__body">
+                <ol class="lo-history__list" data-lo-history-list>
+                    <li class="lo-history__item lo-history__item--placeholder">Loading incidents…</li>
+                </ol>
+                <p class="lo-history__empty" data-lo-history-empty hidden>No incidents in the past 30 days.</p>
+                <p class="lo-history__error" data-lo-history-error hidden>Unable to load incident history right now.</p>
+            </div>
+        </section>
         <?php if (LO_SHOW_WIDESPREAD) : ?>
         <div class="lo-trending" data-lo-trending<?php echo $trending_active ? '' : ' hidden'; ?> data-lo-trending-generated="<?php echo esc_attr($trending_generated); ?>" aria-live="assertive">
             <span class="lo-trending__icon" aria-hidden="true">⚡</span>
