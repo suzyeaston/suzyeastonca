@@ -21,6 +21,7 @@
   var RECOVER_THRESHOLD = 0.7;
   var MANUAL_REFRESH_RETRY_DELAY = 1500;
   var MANUAL_REFRESH_MAX_ATTEMPTS = 4;
+  var THEME_STORAGE_KEY = 'lo-theme-preference';
 
   var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
@@ -67,6 +68,10 @@
     trendingBanner: null,
     trendingText: null,
     trendingReasons: null,
+    themeToggle: null,
+    exportCSVButton: null,
+    exportPDFButton: null,
+    mediaQuery: null,
     loadingEl: null,
     fetchedAt: null,
     isRefreshing: false,
@@ -140,6 +145,169 @@
   function appendQuery(url, key, value) {
     var separator = url.indexOf('?') === -1 ? '?' : '&';
     return url + separator + key + '=' + encodeURIComponent(value);
+  }
+
+  function getStoredTheme() {
+    if (!state.root || !state.root.localStorage) {
+      return null;
+    }
+    try {
+      return state.root.localStorage.getItem(THEME_STORAGE_KEY);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function storeTheme(theme) {
+    if (!state.root || !state.root.localStorage) {
+      return;
+    }
+    try {
+      state.root.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (err) {
+      // Ignore storage errors (private mode, etc.).
+    }
+  }
+
+  function clearStoredTheme() {
+    if (!state.root || !state.root.localStorage) {
+      return;
+    }
+    try {
+      state.root.localStorage.removeItem(THEME_STORAGE_KEY);
+    } catch (err) {
+      // Ignore storage errors.
+    }
+  }
+
+  function updateThemeToggleLabel(theme) {
+    if (!state.themeToggle) {
+      return;
+    }
+    var isLight = theme === 'light';
+    var next = isLight ? 'dark' : 'light';
+    state.themeToggle.textContent = isLight ? 'Switch to dark mode' : 'Switch to light mode';
+    state.themeToggle.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+    state.themeToggle.setAttribute('aria-label', 'Switch to ' + next + ' mode');
+  }
+
+  function applyTheme(theme, persist) {
+    if (!state.container || !state.container.classList) {
+      return;
+    }
+    var desired = theme === 'light' ? 'light' : 'dark';
+    state.container.classList.remove('lo-theme-light', 'lo-theme-dark');
+    state.container.classList.add(desired === 'light' ? 'lo-theme-light' : 'lo-theme-dark');
+    updateThemeToggleLabel(desired);
+    if (persist) {
+      storeTheme(desired);
+    }
+  }
+
+  function handleSystemThemeChange(event) {
+    if (getStoredTheme()) {
+      return;
+    }
+    applyTheme(event.matches ? 'light' : 'dark', false);
+  }
+
+  function initThemePreference() {
+    var stored = getStoredTheme();
+    var preferred = stored;
+
+    if (state.root && state.root.matchMedia) {
+      state.mediaQuery = state.root.matchMedia('(prefers-color-scheme: light)');
+      if (!preferred) {
+        preferred = state.mediaQuery.matches ? 'light' : 'dark';
+      }
+      if (state.mediaQuery.addEventListener) {
+        state.mediaQuery.addEventListener('change', handleSystemThemeChange);
+      } else if (state.mediaQuery.addListener) {
+        state.mediaQuery.addListener(handleSystemThemeChange);
+      }
+    }
+
+    applyTheme(preferred || 'dark', Boolean(stored));
+  }
+
+  function toggleTheme() {
+    var isLight = state.container && state.container.classList.contains('lo-theme-light');
+    var next = isLight ? 'dark' : 'light';
+    applyTheme(next, true);
+  }
+
+  function getText(target, selector) {
+    if (!target) {
+      return '';
+    }
+    var node = selector ? target.querySelector(selector) : target;
+    if (!node || typeof node.textContent !== 'string') {
+      return '';
+    }
+    return node.textContent.trim();
+  }
+
+  function collectExportRows() {
+    if (!state.container || !state.container.querySelectorAll) {
+      return [];
+    }
+    var rows = [];
+    var cards = state.container.querySelectorAll('.lo-card');
+    if (!cards || !cards.length) {
+      return rows;
+    }
+    cards.forEach(function (card) {
+      rows.push([
+        getText(card, '.lo-title'),
+        getText(card, '.lo-pill'),
+        getText(card, '.lo-summary')
+      ]);
+    });
+    return rows.filter(function (row) {
+      return row.some(function (cell) { return cell; });
+    });
+  }
+
+  function downloadCSV() {
+    var rows = collectExportRows();
+    var allRows = [['Provider', 'Status', 'Summary']].concat(rows);
+    if (allRows.length <= 1) {
+      return;
+    }
+    var csvContent = allRows.map(function (row) {
+      return row.map(function (field) {
+        var safe = (field || '').replace(/"/g, '""');
+        return '"' + safe + '"';
+      }).join(',');
+    }).join('\n');
+    var blob = new Blob([csvContent], { type: 'text/csv' });
+    var urlCreator = (state.root && state.root.URL) ? state.root.URL : (typeof URL !== 'undefined' ? URL : null);
+    if (!urlCreator || !urlCreator.createObjectURL) {
+      return;
+    }
+    var url = urlCreator.createObjectURL(blob);
+    var link = state.doc.createElement('a');
+    link.href = url;
+    link.download = 'lousy-outages-report.csv';
+    state.doc.body.appendChild(link);
+    link.click();
+    state.doc.body.removeChild(link);
+    if (urlCreator.revokeObjectURL) {
+      urlCreator.revokeObjectURL(url);
+    }
+  }
+
+  function exportPDF() {
+    if (!state.root || typeof state.root.print !== 'function') {
+      return;
+    }
+    if (state.root.requestAnimationFrame) {
+      state.root.requestAnimationFrame(function () {
+        state.root.print();
+      });
+    } else {
+      state.root.print();
+    }
   }
 
   function clearChildren(el) {
@@ -1044,6 +1212,9 @@
     state.trendingBanner = state.container.querySelector('[data-lo-trending]');
     state.trendingText = state.container.querySelector('[data-lo-trending-text]');
     state.trendingReasons = state.container.querySelector('[data-lo-trending-reasons]');
+    state.themeToggle = state.container.querySelector('[data-lo-theme-toggle]');
+    state.exportCSVButton = state.container.querySelector('[data-lo-export-csv]');
+    state.exportPDFButton = state.container.querySelector('[data-lo-export-pdf]');
     state.loadingEl = state.container.querySelector('[data-lo-loading]');
     state.endpoint = config.endpoint || '';
     state.refreshEndpoint = config.refreshEndpoint || '';
@@ -1094,8 +1265,22 @@
     }
     updateTrendingBanner(initialTrending || { trending: false, signals: [] });
 
+    initThemePreference();
+
     if (state.refreshButton) {
       state.refreshButton.addEventListener('click', manualRefresh);
+    }
+
+    if (state.themeToggle) {
+      state.themeToggle.addEventListener('click', toggleTheme);
+    }
+
+    if (state.exportCSVButton) {
+      state.exportCSVButton.addEventListener('click', downloadCSV);
+    }
+
+    if (state.exportPDFButton) {
+      state.exportPDFButton.addEventListener('click', exportPDF);
     }
 
     enhanceSubscribeForms();
