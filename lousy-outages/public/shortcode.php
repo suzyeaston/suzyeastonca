@@ -484,7 +484,12 @@ function render_shortcode(): string {
                         <span class="lo-pill <?php echo esc_attr($status_class); ?>" data-lo-badge><?php echo esc_html($label); ?></span>
                     </div>
                     <p class="lo-error" data-lo-error<?php echo empty($tile['error']) ? ' hidden' : ''; ?>><?php echo esc_html((string) ($tile['error'] ?? '')); ?></p>
-                    <p class="lo-summary" data-lo-summary><?php echo esc_html($tile['summary'] ?? 'Status unavailable'); ?></p>
+                    <?php
+                    $summary_text = isset($tile['summary']) && '' !== trim((string) $tile['summary'])
+                        ? (string) $tile['summary']
+                        : 'Status unavailable — awaiting live data.';
+                    ?>
+                    <p class="lo-summary" data-lo-summary><?php echo esc_html($summary_text); ?></p>
                     <div class="lo-components" data-lo-components>
                         <?php if (!empty($components)) : ?>
                             <h4 class="lo-components__title">Impacted components</h4>

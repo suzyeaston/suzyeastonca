@@ -87,7 +87,8 @@
     historyEndpoint: '',
     chartCanvas: null,
     chartInstance: null,
-    visibleProviders: {}
+    visibleProviders: {},
+    postPaintStarted: false
   };
 
   function delay(ms) {
@@ -1565,15 +1566,46 @@
       state.doc.addEventListener('visibilitychange', handleVisibilityChange);
     }
 
-    scheduleNext(state.baseDelay);
+    queuePostPaintWork();
+  }
 
-    fetchHistoryData().catch(function () {
-      // Chart is optional; ignore failures.
-    });
+  function queuePostPaintWork() {
+    if (state.postPaintStarted) {
+      return;
+    }
+    state.postPaintStarted = true;
+    var kickOff = function () {
+      scheduleNext(state.baseDelay);
 
-    refreshSummary(false, true).catch(function () {
-      // Ignore initial failure; countdown/backoff already handled inside refreshSummary.
-    });
+      if (state.root && typeof state.root.setTimeout === 'function') {
+        state.root.setTimeout(fetchHistoryData, 350);
+        state.root.setTimeout(function () {
+          refreshSummary(false, true).catch(function () {
+            // Ignore initial failure; countdown/backoff already handled inside refreshSummary.
+          });
+        }, 0);
+      } else {
+        fetchHistoryData().catch(function () {
+          // Chart is optional; ignore failures.
+        });
+        refreshSummary(false, true).catch(function () {
+          // Ignore initial failure; countdown/backoff already handled inside refreshSummary.
+        });
+      }
+    };
+
+    if (state.root && typeof state.root.requestAnimationFrame === 'function') {
+      state.root.requestAnimationFrame(function () {
+        // Wait a tick to let the initial HTML paint before network calls kick in (helps LCP).
+        if (state.root && typeof state.root.setTimeout === 'function') {
+          state.root.setTimeout(kickOff, 0);
+        } else {
+          kickOff();
+        }
+      });
+    } else {
+      kickOff();
+    }
   }
 
   function stopAutoRefresh() {
