@@ -68,9 +68,9 @@ function render_shortcode(): string {
 
     wp_enqueue_script(
         'chart.js',
-        'https://cdn.jsdelivr.net/npm/chart.js',
+        'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js',
         [],
-        null,
+        '4.4.3',
         true
     );
 
