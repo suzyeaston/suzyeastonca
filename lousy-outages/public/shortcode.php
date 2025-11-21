@@ -408,6 +408,9 @@ function render_shortcode(): string {
                 </span>
                 <span class="lo-pill lo-pill--degraded" data-lo-degraded hidden>Auto-refresh degraded</span>
                 <button type="button" class="lo-link" data-lo-refresh>Refresh now</button>
+                <button type="button" class="lo-link" data-lo-theme-toggle aria-pressed="false">Switch to light mode</button>
+                <button type="button" class="lo-link" data-lo-export-csv>Export CSV</button>
+                <button type="button" class="lo-link" data-lo-export-pdf>Save PDF</button>
                 <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
             </div>
         </div>
