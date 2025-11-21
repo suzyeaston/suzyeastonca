@@ -22,6 +22,7 @@
   var MANUAL_REFRESH_RETRY_DELAY = 1500;
   var MANUAL_REFRESH_MAX_ATTEMPTS = 4;
   var THEME_STORAGE_KEY = 'lo-theme-preference';
+  var VISIBILITY_STORAGE_KEY = 'lo-visible-providers';
 
   var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
@@ -71,6 +72,7 @@
     themeToggle: null,
     exportCSVButton: null,
     exportPDFButton: null,
+    providerToggles: [],
     mediaQuery: null,
     loadingEl: null,
     fetchedAt: null,
@@ -81,7 +83,11 @@
     staleRefreshQueued: false,
     staleRefreshInFlight: false,
     lastStaleRefreshAttempt: null,
-    degradedDueToStale: false
+    degradedDueToStale: false,
+    historyEndpoint: '',
+    chartCanvas: null,
+    chartInstance: null,
+    visibleProviders: {}
   };
 
   function delay(ms) {
@@ -202,6 +208,105 @@
     if (persist) {
       storeTheme(desired);
     }
+    updateHistoryChartTheme();
+  }
+
+  function loadVisibleProviders() {
+    if (!state.root || !state.root.localStorage) {
+      return {};
+    }
+    try {
+      var raw = state.root.localStorage.getItem(VISIBILITY_STORAGE_KEY);
+      if (!raw) {
+        return {};
+      }
+      var parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function persistVisibleProviders(prefs) {
+    if (!state.root || !state.root.localStorage) {
+      return;
+    }
+    try {
+      state.root.localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(prefs || {}));
+    } catch (err) {
+      // Ignore storage errors.
+    }
+  }
+
+  function applyProviderVisibility() {
+    if (!state.container) {
+      return;
+    }
+    var cards = state.container.querySelectorAll('.lo-card');
+    if (!cards || !cards.length) {
+      return;
+    }
+    var prefs = state.visibleProviders || {};
+    var hasPrefs = Object.keys(prefs).length > 0;
+    cards.forEach(function (card) {
+      var slug = card.getAttribute('data-provider-id');
+      var show = true;
+      if (slug) {
+        if (hasPrefs) {
+          show = prefs[slug] !== false;
+        }
+      }
+      if (show) {
+        card.classList.remove('lo-card--hidden');
+        card.removeAttribute('data-lo-hidden');
+        card.setAttribute('aria-hidden', 'false');
+      } else {
+        card.classList.add('lo-card--hidden');
+        card.setAttribute('data-lo-hidden', 'true');
+        card.setAttribute('aria-hidden', 'true');
+      }
+    });
+  }
+
+  function syncProviderToggleUI() {
+    if (!state.providerToggles || !state.providerToggles.length) {
+      return;
+    }
+    var prefs = state.visibleProviders || {};
+    var hasPrefs = Object.keys(prefs).length > 0;
+    state.providerToggles.forEach(function (input) {
+      var slug = input.value;
+      if (!slug) {
+        return;
+      }
+      var checked = hasPrefs ? prefs[slug] !== false : true;
+      input.checked = checked;
+    });
+  }
+
+  function handleProviderToggle(event) {
+    var target = event.target;
+    if (!target || !target.value) {
+      return;
+    }
+    var prefs = state.visibleProviders || {};
+    prefs[target.value] = !!target.checked;
+    state.visibleProviders = prefs;
+    persistVisibleProviders(prefs);
+    applyProviderVisibility();
+  }
+
+  function initProviderVisibility() {
+    state.visibleProviders = loadVisibleProviders();
+    var toggles = state.container ? state.container.querySelectorAll('[data-lo-provider-toggle]') : [];
+    state.providerToggles = toggles ? Array.prototype.slice.call(toggles) : [];
+    if (state.providerToggles.length) {
+      state.providerToggles.forEach(function (input) {
+        input.addEventListener('change', handleProviderToggle);
+      });
+      syncProviderToggleUI();
+    }
+    applyProviderVisibility();
   }
 
   function handleSystemThemeChange(event) {
@@ -257,6 +362,13 @@
       return rows;
     }
     cards.forEach(function (card) {
+      var isHidden = card.classList && card.classList.contains('lo-card--hidden');
+      if (!isHidden && card.getAttribute) {
+        isHidden = card.getAttribute('data-lo-hidden') === 'true';
+      }
+      if (isHidden) {
+        return;
+      }
       rows.push([
         getText(card, '.lo-title'),
         getText(card, '.lo-pill'),
@@ -578,6 +690,7 @@
         }
       });
     }
+    applyProviderVisibility();
   }
 
 
@@ -756,6 +869,166 @@
     } catch (err) {
       return date.toISOString();
     }
+  }
+
+  function getChartPalette() {
+    var isLight = state.container && state.container.classList && state.container.classList.contains('lo-theme-light');
+    return {
+      line: isLight ? '#b35b00' : '#ffb81c',
+      point: isLight ? '#b35b00' : '#ffb81c',
+      grid: isLight ? 'rgba(32, 32, 32, 0.15)' : 'rgba(255, 233, 196, 0.15)',
+      text: isLight ? '#202020' : '#ffe9c4'
+    };
+  }
+
+  function updateHistoryChartTheme() {
+    if (!state.chartInstance) {
+      return;
+    }
+    var palette = getChartPalette();
+    var chart = state.chartInstance;
+    if (chart.data && chart.data.datasets && chart.data.datasets[0]) {
+      chart.data.datasets[0].borderColor = palette.line;
+      chart.data.datasets[0].pointBackgroundColor = palette.point;
+      chart.data.datasets[0].pointBorderColor = palette.point;
+    }
+    if (chart.options && chart.options.scales) {
+      if (chart.options.scales.x && chart.options.scales.x.ticks) {
+        chart.options.scales.x.ticks.color = palette.text;
+      }
+      if (chart.options.scales.y && chart.options.scales.y.ticks) {
+        chart.options.scales.y.ticks.color = palette.text;
+      }
+      if (chart.options.scales.y && chart.options.scales.y.grid) {
+        chart.options.scales.y.grid.color = palette.grid;
+      }
+      if (chart.options.scales.x && chart.options.scales.x.grid) {
+        chart.options.scales.x.grid.color = palette.grid;
+      }
+    }
+    if (chart.options && chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+      chart.options.plugins.legend.labels.color = palette.text;
+    }
+    chart.update();
+  }
+
+  function formatChartDate(input) {
+    if (!input) {
+      return '';
+    }
+    var date = new Date(input + 'T00:00:00Z');
+    if (Number.isNaN(date.getTime())) {
+      return input;
+    }
+    try {
+      return new Intl.DateTimeFormat(undefined, { month: 'short', day: '2-digit' }).format(date);
+    } catch (err) {
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  function renderHistoryChart(history) {
+    if (!state.chartCanvas || !state.chartCanvas.getContext || typeof Chart !== 'function') {
+      return;
+    }
+    var palette = getChartPalette();
+    var ctx = state.chartCanvas.getContext('2d');
+    var entries = Array.isArray(history) ? history.slice(-30) : [];
+    var labels = [];
+    var points = [];
+
+    entries.forEach(function (entry) {
+      if (!entry) {
+        return;
+      }
+      labels.push(formatChartDate(entry.date));
+      points.push(typeof entry.incidents === 'number' ? entry.incidents : 0);
+    });
+
+    if (!labels.length) {
+      labels = ['No history'];
+      points = [0];
+    }
+
+    var data = {
+      labels: labels,
+      datasets: [{
+        label: 'Incidents',
+        data: points,
+        borderColor: palette.line,
+        backgroundColor: 'transparent',
+        pointBackgroundColor: palette.point,
+        pointBorderColor: palette.point,
+        tension: 0.2
+      }]
+    };
+
+    var options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: palette.text
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: palette.text },
+          grid: { color: palette.grid }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: palette.text, precision: 0 },
+          grid: { color: palette.grid }
+        }
+      }
+    };
+
+    if (state.chartInstance) {
+      state.chartInstance.data = data;
+      state.chartInstance.options = options;
+      state.chartInstance.update();
+      return;
+    }
+
+    state.chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: data,
+      options: options
+    });
+  }
+
+  function fetchHistoryData() {
+    if (!state.historyEndpoint || !state.fetchImpl) {
+      return Promise.resolve();
+    }
+    var url = appendQuery(state.historyEndpoint, 'provider', 'github');
+    url = appendQuery(url, 'days', '30');
+
+    return state.fetchImpl(url, { headers: { Accept: 'application/json' } })
+      .then(function (res) {
+        if (!res || !res.ok) {
+          throw new Error('history unavailable');
+        }
+        return res.json();
+      })
+      .then(function (body) {
+        if (!body || !Array.isArray(body.providers)) {
+          return;
+        }
+        var target = body.providers.find(function (provider) {
+          return provider && String(provider.id || '').toLowerCase() === 'github';
+        }) || body.providers[0];
+        if (!target || !Array.isArray(target.history)) {
+          return;
+        }
+        renderHistoryChart(target.history);
+      })
+      .catch(function () {
+        // Fail silently; chart is decorative.
+      });
   }
 
   function handleSubscribeSubmit(event) {
@@ -1216,6 +1489,8 @@
     state.exportCSVButton = state.container.querySelector('[data-lo-export-csv]');
     state.exportPDFButton = state.container.querySelector('[data-lo-export-pdf]');
     state.loadingEl = state.container.querySelector('[data-lo-loading]');
+    state.chartCanvas = state.container.querySelector('#lo-outage-chart');
+    state.historyEndpoint = config.historyEndpoint || '';
     state.endpoint = config.endpoint || '';
     state.refreshEndpoint = config.refreshEndpoint || '';
     state.refreshNonce = config.refreshNonce || '';
@@ -1266,6 +1541,7 @@
     updateTrendingBanner(initialTrending || { trending: false, signals: [] });
 
     initThemePreference();
+    initProviderVisibility();
 
     if (state.refreshButton) {
       state.refreshButton.addEventListener('click', manualRefresh);
@@ -1290,6 +1566,10 @@
     }
 
     scheduleNext(state.baseDelay);
+
+    fetchHistoryData().catch(function () {
+      // Chart is optional; ignore failures.
+    });
 
     refreshSummary(false, true).catch(function () {
       // Ignore initial failure; countdown/backoff already handled inside refreshSummary.

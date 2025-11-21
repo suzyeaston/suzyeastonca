@@ -25,6 +25,11 @@
       $meta_desc  = 'Suzanne (Suzy) Easton shares indie music spotlights, outage stories, retro-inspired tools, and Vancouver-based creative tech experiments.';
       $meta_keywords = 'Suzy Easton, Suzanne Easton, Vancouver musician, creative technologist, Lousy Outages, indie music, retro arcade website, outage analysis';
       $meta_img   = $default_img;
+    } elseif ( is_page_template( 'page-lousy-outages.php' ) ) {
+      $meta_title = 'Lousy Outages – Retro outage dashboard for modern chaos';
+      $meta_desc  = 'A retro terminal-style dashboard that tracks popular services, highlights incidents, and can send alerts when things go sideways.';
+      $meta_keywords = 'lousy outages status dashboard, outage tracker, retro status board';
+      $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-track-analyzer.php' ) ) {
       $meta_title = "Suzy's Track Analyzer – AI Vibe Checker for Musicians";
       $meta_desc  = 'Upload an MP3 and get a quick vibe check powered by AI—perfect for indie producers and music tech fans.';
