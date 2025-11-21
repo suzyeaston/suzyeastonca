@@ -75,11 +75,11 @@ class Providers {
 
             // High-value adds (Statuspage JSON)
             [
-                'id'         => 'twilio',
-                'name'       => 'Twilio',
+                'id'         => 'teamviewer',
+                'name'       => 'TeamViewer',
                 'type'       => 'statuspage',
-                'url'        => 'https://status.twilio.com/api/v2/summary.json',
-                'status_url' => 'https://status.twilio.com/',
+                'url'        => 'https://status.teamviewer.com/api/v2/summary.json',
+                'status_url' => 'https://status.teamviewer.com/',
             ],
             [
                 'id'         => 'linear',
@@ -94,6 +94,27 @@ class Providers {
                 'type'       => 'statuspage',
                 'url'        => 'https://status.sentry.io/api/v2/summary.json',
                 'status_url' => 'https://status.sentry.io/',
+            ],
+            [
+                'id'         => 'rogers',
+                'name'       => 'Rogers',
+                'type'       => 'statuspage',
+                'url'        => 'https://status.rogers.com/api/v2/summary.json',
+                'status_url' => 'https://status.rogers.com/',
+            ],
+            [
+                'id'         => 'bell',
+                'name'       => 'Bell Canada',
+                'type'       => 'statuspage',
+                'url'        => 'https://status.bell.ca/api/v2/summary.json',
+                'status_url' => 'https://status.bell.ca/',
+            ],
+            [
+                'id'         => 'telus',
+                'name'       => 'TELUS',
+                'type'       => 'statuspage',
+                'url'        => 'https://status.telus.com/api/v2/summary.json',
+                'status_url' => 'https://status.telus.com/',
             ],
 
             // RSS/Atom feeds
@@ -114,8 +135,6 @@ class Providers {
             ],
             ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://rssfeed.azure.status.microsoft/en-us/status/feed/'],
             ['id' => 'gcp', 'name' => 'Google Cloud', 'type' => 'atom', 'url' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom'],
-            ['id' => 'qubeyond', 'name' => 'Qubeyond', 'type' => 'atom', 'url' => 'https://status.qubeyond.com/state_feed/feed.atom'],
-
             // Optional aggregate (disabled by default in settings)
             ['id' => 'downdetector-ca', 'name' => 'Downdetector (CA Aggregate)', 'type' => 'rss', 'url' => 'https://downdetector.ca/archive/?format=rss', 'disabled' => true, 'optional' => true],
         ];
