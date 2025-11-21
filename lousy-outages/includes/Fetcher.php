@@ -724,6 +724,10 @@ class Lousy_Outages_Fetcher {
         // Statuspage JSON (keep as JSON)
         'cloudflare' => ['kind' => 'statuspage', 'base' => 'https://www.cloudflarestatus.com'],
         'zoom'       => ['kind' => 'statuspage', 'base' => 'https://status.zoom.us'],
+        'teamviewer' => ['kind' => 'statuspage', 'base' => 'https://status.teamviewer.com'],
+        'rogers'     => ['kind' => 'statuspage', 'base' => 'https://status.rogers.com'],
+        'bell'       => ['kind' => 'statuspage', 'base' => 'https://status.bell.ca'],
+        'telus'      => ['kind' => 'statuspage', 'base' => 'https://status.telus.com'],
 
         // Switch these to RSS/Atom (per Suzy’s feeds)
         'zscaler'    => ['kind' => 'rss', 'feed' => 'https://trust.zscaler.com/rss-feed', 'link' => 'https://trust.zscaler.com/cloud-status'],
@@ -737,8 +741,6 @@ class Lousy_Outages_Fetcher {
             ],
             'link' => 'https://status.azure.com/en-us/status',
         ],
-        'qubeyond'   => ['kind' => 'atom', 'feed' => 'https://status.qubeyond.com/state_feed/feed.atom', 'link' => 'https://status.qubeyond.com/'],
-
         // Clouds
         'aws' => [
             'kind'  => 'rss-multi',
@@ -758,11 +760,14 @@ class Lousy_Outages_Fetcher {
     private static $NAMES = [
         'cloudflare' => 'Cloudflare',
         'zoom'       => 'Zoom',
+        'teamviewer' => 'TeamViewer',
+        'rogers'     => 'Rogers',
+        'bell'       => 'Bell Canada',
+        'telus'      => 'TELUS',
         'zscaler'    => 'Zscaler',
         'slack'      => 'Slack',
         'gcp'        => 'Google Cloud',
         'azure'      => 'Microsoft Azure',
-        'qubeyond'   => 'Qubeyond',
         'aws'        => 'Amazon Web Services',
         'crowdstrike'=> 'CrowdStrike',
     ];

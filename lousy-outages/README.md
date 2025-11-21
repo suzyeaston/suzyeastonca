@@ -16,16 +16,18 @@ Monitor third‑party service status and get SMS and email alerts when things br
 | zoom | Zoom | https://status.zoom.us/api/v2/summary.json |
 | zscaler | Zscaler | https://trust.zscaler.com/rss-feed |
 | slack | Slack | https://slack-status.com/feed/rss |
-| twilio | Twilio | https://status.twilio.com/api/v2/summary.json |
+| teamviewer | TeamViewer | https://status.teamviewer.com/api/v2/summary.json |
 | linear | Linear | https://status.linear.app/api/v2/summary.json |
 | sentry | Sentry | https://status.sentry.io/api/v2/summary.json |
+| rogers | Rogers | https://status.rogers.com/api/v2/summary.json |
+| bell | Bell Canada | https://status.bell.ca/api/v2/summary.json |
+| telus | TELUS | https://status.telus.com/api/v2/summary.json |
 | aws | AWS | https://status.aws.amazon.com/rss/all.rss |
 | azure | Azure | https://azurestatuscdn.azureedge.net/en-us/status/feed/ |
 | gcp | Google Cloud | https://www.google.com/appsstatus/dashboard/en-CA/feed.atom |
-| qubeyond | Qubeyond | https://status.qubeyond.com/state_feed/feed.atom |
 | downdetector-ca | Downdetector (CA Aggregate) | https://downdetector.ca/archive/?format=rss |
 
-Zscaler is queried from `https://trust.zscaler.com` to dodge intermittent DNS failures. New default providers include Twilio, Linear, Sentry, and Qubeyond—toggle any of them from **Settings → Lousy Outages**.
+Zscaler is queried from `https://trust.zscaler.com` to dodge intermittent DNS failures. New default providers include TeamViewer, Linear, Sentry, and Canadian telcos—toggle any of them from **Settings → Lousy Outages**.
 
 Downdetector is disabled by default because the RSS feed is unofficial and can disappear; enable it from the settings page if it loads for you. When the feed is unreachable, the adapter reports an `unknown` state with an error badge rather than failing the whole poll.
 
