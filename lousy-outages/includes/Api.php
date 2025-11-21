@@ -49,6 +49,28 @@ class Api {
             ]
         );
 
+        register_rest_route(
+            'lousy-outages/v1',
+            '/history',
+            [
+                'methods'             => 'GET',
+                'permission_callback' => '__return_true',
+                'callback'            => [self::class, 'handle_history'],
+                'args'                => [
+                    'provider' => [
+                        'description'       => 'Optional provider filter (comma-separated)',
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'days' => [
+                        'description'       => 'How many days of history to return (default 30)',
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                    ],
+                ],
+            ]
+        );
+
     }
 
     public static function verify_nonce(): bool {
@@ -184,6 +206,91 @@ class Api {
         header('Content-Type: application/json; charset=utf-8');
         echo $json;
         exit;
+    }
+
+    /**
+     * Return a compact history document for each provider.
+     *
+     * Schema (per provider):
+     * {
+     *   id: "github",
+     *   history: [ { date: "2024-06-01", incidents: 2, last_status: "degraded" }, ... ]
+     * }
+     */
+    public static function handle_history(WP_REST_Request $request): WP_REST_Response {
+        $providerParam = $request->get_param('provider');
+        $filters       = self::sanitize_provider_list(is_string($providerParam) ? $providerParam : null);
+
+        $daysParam = $request->get_param('days');
+        $days = (int) (is_numeric($daysParam) ? $daysParam : 30);
+        if ($days <= 0) {
+            $days = 30;
+        }
+        if ($days > 90) {
+            $days = 90;
+        }
+
+        $cutoff = time() - ($days * DAY_IN_SECONDS);
+        $store  = new Store();
+        $log    = $store->get_history_log();
+
+        $providers = [];
+
+        foreach ($log as $entry) {
+            if (!is_array($entry) || empty($entry['id']) || !isset($entry['time'])) {
+                continue;
+            }
+            $timestamp = (int) $entry['time'];
+            if ($timestamp < $cutoff) {
+                continue;
+            }
+            $slug = sanitize_key((string) $entry['id']);
+            if ('' === $slug) {
+                continue;
+            }
+            if (!empty($filters) && !in_array($slug, $filters, true)) {
+                continue;
+            }
+            $date   = gmdate('Y-m-d', $timestamp);
+            $status = strtolower((string) ($entry['status'] ?? 'unknown'));
+            $isIncident = !in_array($status, ['operational', 'none', 'ok'], true);
+
+            if (!isset($providers[$slug])) {
+                $providers[$slug] = [
+                    'id'      => $slug,
+                    'history' => [],
+                ];
+            }
+
+            if (!isset($providers[$slug]['history'][$date])) {
+                $providers[$slug]['history'][$date] = [
+                    'date'        => $date,
+                    'incidents'   => 0,
+                    'last_status' => $status,
+                ];
+            }
+
+            if ($isIncident) {
+                $providers[$slug]['history'][$date]['incidents'] += 1;
+            }
+            $providers[$slug]['history'][$date]['last_status'] = $status;
+        }
+
+        $response = [
+            'generated_at' => gmdate('c'),
+            'providers'    => [],
+        ];
+
+        foreach ($providers as $provider) {
+            $history = $provider['history'];
+            ksort($history);
+            $response['providers'][] = [
+                'id'      => $provider['id'],
+                'history' => array_values($history),
+            ];
+        }
+
+        return rest_ensure_response($response);
     }
 
 

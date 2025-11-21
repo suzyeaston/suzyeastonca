@@ -67,9 +67,17 @@ function render_shortcode(): string {
     );
 
     wp_enqueue_script(
+        'chart.js',
+        'https://cdn.jsdelivr.net/npm/chart.js',
+        [],
+        null,
+        true
+    );
+
+    wp_enqueue_script(
         'lousy-outages',
         $base_url . 'lousy-outages.js',
-        [],
+        ['chart.js'],
         file_exists($base_path . 'lousy-outages.js') ? filemtime($base_path . 'lousy-outages.js') : null,
         true
     );
@@ -209,6 +217,7 @@ function render_shortcode(): string {
             'refreshNonce'      => wp_create_nonce('wp_rest'),
             'subscribeEndpoint' => esc_url_raw(rest_url('lousy-outages/v1/subscribe')),
             'snapshotEndpoint'  => $snapshot_endpoint,
+            'historyEndpoint'   => esc_url_raw(rest_url('lousy-outages/v1/history')),
             'initial'           => [
                 'providers'  => $tiles,
                 'fetched_at' => $fetched_at,
@@ -236,6 +245,9 @@ function render_shortcode(): string {
 
         if (!isset($config['snapshotEndpoint'])) {
             $config['snapshotEndpoint'] = $snapshot_endpoint;
+        }
+        if (!isset($config['historyEndpoint'])) {
+            $config['historyEndpoint'] = esc_url_raw(rest_url('lousy-outages/v1/history'));
         }
     }
 
@@ -414,6 +426,13 @@ function render_shortcode(): string {
                 <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
             </div>
         </div>
+        <div class="lo-chart" data-lo-chart>
+            <div class="lo-chart__heading">
+                <h3 class="lo-block-title">Recent incidents (GitHub)</h3>
+                <p class="lo-chart__meta">Last 30 days of non-operational blips.</p>
+            </div>
+            <canvas id="lo-outage-chart" aria-label="GitHub incidents over time" role="img"></canvas>
+        </div>
         <?php if (LO_SHOW_WIDESPREAD) : ?>
         <div class="lo-trending" data-lo-trending<?php echo $trending_active ? '' : ' hidden'; ?> data-lo-trending-generated="<?php echo esc_attr($trending_generated); ?>" aria-live="assertive">
             <span class="lo-trending__icon" aria-hidden="true">⚡</span>
@@ -425,6 +444,24 @@ function render_shortcode(): string {
         </div>
         <?php endif; ?>
         <?php echo render_subscribe_shortcode(); ?>
+        <div class="lo-settings" data-lo-settings>
+            <h3 class="lo-block-title">Customize view</h3>
+            <p class="lo-settings__hint">Pick which providers appear below. Preferences stay on this browser only.</p>
+            <div class="lo-settings__options">
+                <?php foreach ($ordered_tiles as $tile) :
+                    $slug = (string) ($tile['provider'] ?? '');
+                    if ('' === $slug) {
+                        continue;
+                    }
+                    $provider_label = $tile['name'] ?? ucfirst($slug);
+                    ?>
+                    <label class="lo-checkbox">
+                        <input type="checkbox" data-lo-provider-toggle value="<?php echo esc_attr($slug); ?>" checked>
+                        <span><?php echo esc_html($provider_label); ?></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
         <div class="lo-loading" data-lo-loading<?php echo $ordered_tiles ? ' hidden' : ''; ?> role="status">
             <span class="lo-loading__spinner" aria-hidden="true"></span>
             <span class="lo-loading__text">Dialing interstellar relays…</span>

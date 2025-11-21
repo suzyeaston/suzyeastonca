@@ -46,4 +46,13 @@ class Store {
         }
         update_option( $this->log_option, $log, false );
     }
+
+    public function get_history_log(): array {
+        $log = get_option( $this->log_option, [] );
+        if ( ! is_array( $log ) ) {
+            return [];
+        }
+
+        return array_values( $log );
+    }
 }
