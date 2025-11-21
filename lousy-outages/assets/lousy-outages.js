@@ -85,8 +85,9 @@
     lastStaleRefreshAttempt: null,
     degradedDueToStale: false,
     historyEndpoint: '',
-    chartCanvas: null,
-    chartInstance: null,
+    historyList: null,
+    historyEmpty: null,
+    historyError: null,
     visibleProviders: {},
     postPaintStarted: false
   };
@@ -209,7 +210,6 @@
     if (persist) {
       storeTheme(desired);
     }
-    updateHistoryChartTheme();
   }
 
   function loadVisibleProviders() {
@@ -872,139 +872,150 @@
     }
   }
 
-  function getChartPalette() {
-    var isLight = state.container && state.container.classList && state.container.classList.contains('lo-theme-light');
-    return {
-      line: isLight ? '#b35b00' : '#ffb81c',
-      point: isLight ? '#b35b00' : '#ffb81c',
-      grid: isLight ? 'rgba(32, 32, 32, 0.15)' : 'rgba(255, 233, 196, 0.15)',
-      text: isLight ? '#202020' : '#ffe9c4'
-    };
+  function mapHistoryStatus(code) {
+    var key = String(code || '').toLowerCase();
+    if (key === 'major_outage' || key === 'critical' || key === 'outage' || key === 'major') {
+      return { label: 'Outage', className: 'outage' };
+    }
+    if (key === 'minor_outage' || key === 'partial_outage' || key === 'degraded_performance' || key === 'partial') {
+      return { label: 'Degraded', className: 'degraded' };
+    }
+    if (key === 'maintenance' || key === 'maintenance_window') {
+      return { label: 'Maintenance', className: 'maintenance' };
+    }
+    if (key === 'operational' || key === 'none' || key === 'ok') {
+      return { label: 'Operational', className: 'operational' };
+    }
+    return { label: 'Unknown', className: 'unknown' };
   }
 
-  function updateHistoryChartTheme() {
-    if (!state.chartInstance) {
-      return;
-    }
-    var palette = getChartPalette();
-    var chart = state.chartInstance;
-    if (chart.data && chart.data.datasets && chart.data.datasets[0]) {
-      chart.data.datasets[0].borderColor = palette.line;
-      chart.data.datasets[0].pointBackgroundColor = palette.point;
-      chart.data.datasets[0].pointBorderColor = palette.point;
-    }
-    if (chart.options && chart.options.scales) {
-      if (chart.options.scales.x && chart.options.scales.x.ticks) {
-        chart.options.scales.x.ticks.color = palette.text;
-      }
-      if (chart.options.scales.y && chart.options.scales.y.ticks) {
-        chart.options.scales.y.ticks.color = palette.text;
-      }
-      if (chart.options.scales.y && chart.options.scales.y.grid) {
-        chart.options.scales.y.grid.color = palette.grid;
-      }
-      if (chart.options.scales.x && chart.options.scales.x.grid) {
-        chart.options.scales.x.grid.color = palette.grid;
-      }
-    }
-    if (chart.options && chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
-      chart.options.plugins.legend.labels.color = palette.text;
-    }
-    chart.update();
-  }
-
-  function formatChartDate(input) {
-    if (!input) {
+  function formatHistoryDate(value) {
+    if (!value) {
       return '';
     }
-    var date = new Date(input + 'T00:00:00Z');
-    if (Number.isNaN(date.getTime())) {
-      return input;
+    var parsed = Date.parse(value + 'T00:00:00Z');
+    if (Number.isNaN(parsed)) {
+      return value;
     }
     try {
-      return new Intl.DateTimeFormat(undefined, { month: 'short', day: '2-digit' }).format(date);
+      return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric'
+      }).format(new Date(parsed));
     } catch (err) {
-      return date.toISOString().slice(0, 10);
+      return new Date(parsed).toISOString().slice(0, 10);
     }
   }
 
-  function renderHistoryChart(history) {
-    if (!state.chartCanvas || !state.chartCanvas.getContext || typeof Chart !== 'function') {
+  function formatIncidentCount(count) {
+    var safe = Number.isFinite(count) ? count : 0;
+    if (safe === 1) {
+      return '1 incident';
+    }
+    return safe + ' incidents';
+  }
+
+  function setHistoryLoading() {
+    if (!state.historyList || !state.doc) {
       return;
     }
-    var palette = getChartPalette();
-    var ctx = state.chartCanvas.getContext('2d');
-    var entries = Array.isArray(history) ? history.slice(-30) : [];
-    var labels = [];
-    var points = [];
+    state.historyList.innerHTML = '';
+    var placeholder = state.doc.createElement('li');
+    placeholder.className = 'lo-history__item lo-history__item--placeholder';
+    placeholder.textContent = 'Loading incidents…';
+    state.historyList.appendChild(placeholder);
+    if (state.historyEmpty) {
+      state.historyEmpty.setAttribute('hidden', 'hidden');
+    }
+    if (state.historyError) {
+      state.historyError.setAttribute('hidden', 'hidden');
+    }
+  }
+
+  function renderHistoryList(history) {
+    if (!state.historyList || !state.doc) {
+      return;
+    }
+    state.historyList.innerHTML = '';
+    if (state.historyError) {
+      state.historyError.setAttribute('hidden', 'hidden');
+    }
+
+    var entries = Array.isArray(history)
+      ? history.filter(function (entry) {
+          return entry && Number.isFinite(entry.incidents) && entry.incidents > 0;
+        })
+      : [];
+
+    entries.sort(function (a, b) {
+      var left = Date.parse((b && b.date ? b.date : '') + 'T00:00:00Z');
+      var right = Date.parse((a && a.date ? a.date : '') + 'T00:00:00Z');
+      return left - right;
+    });
+
+    if (!entries.length) {
+      if (state.historyEmpty) {
+        state.historyEmpty.removeAttribute('hidden');
+      }
+      return;
+    }
+
+    if (state.historyEmpty) {
+      state.historyEmpty.setAttribute('hidden', 'hidden');
+    }
 
     entries.forEach(function (entry) {
-      if (!entry) {
-        return;
-      }
-      labels.push(formatChartDate(entry.date));
-      points.push(typeof entry.incidents === 'number' ? entry.incidents : 0);
+      var li = state.doc.createElement('li');
+      li.className = 'lo-history__item';
+
+      var timeWrap = state.doc.createElement('div');
+      timeWrap.className = 'lo-history__time';
+      var timeEl = state.doc.createElement('time');
+      timeEl.setAttribute('datetime', (entry.date || '') + 'T00:00:00Z');
+      timeEl.textContent = formatHistoryDate(entry.date);
+      timeWrap.appendChild(timeEl);
+
+      var countEl = state.doc.createElement('span');
+      countEl.className = 'lo-history__count';
+      countEl.textContent = formatIncidentCount(entry.incidents);
+      timeWrap.appendChild(countEl);
+
+      var details = state.doc.createElement('div');
+      details.className = 'lo-history__details';
+      var mapped = mapHistoryStatus(entry.last_status);
+      details.textContent = mapped.label + ' reported';
+
+      var badge = state.doc.createElement('span');
+      badge.className = 'lo-pill ' + mapped.className + ' lo-history__badge';
+      badge.textContent = mapped.label;
+
+      li.appendChild(timeWrap);
+      li.appendChild(details);
+      li.appendChild(badge);
+
+      state.historyList.appendChild(li);
     });
+  }
 
-    if (!labels.length) {
-      labels = ['No history'];
-      points = [0];
+  function renderHistoryError(message) {
+    if (state.historyList) {
+      state.historyList.innerHTML = '';
     }
-
-    var data = {
-      labels: labels,
-      datasets: [{
-        label: 'Incidents',
-        data: points,
-        borderColor: palette.line,
-        backgroundColor: 'transparent',
-        pointBackgroundColor: palette.point,
-        pointBorderColor: palette.point,
-        tension: 0.2
-      }]
-    };
-
-    var options = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          labels: {
-            color: palette.text
-          }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: palette.text },
-          grid: { color: palette.grid }
-        },
-        y: {
-          beginAtZero: true,
-          ticks: { color: palette.text, precision: 0 },
-          grid: { color: palette.grid }
-        }
-      }
-    };
-
-    if (state.chartInstance) {
-      state.chartInstance.data = data;
-      state.chartInstance.options = options;
-      state.chartInstance.update();
-      return;
+    if (state.historyEmpty) {
+      state.historyEmpty.setAttribute('hidden', 'hidden');
     }
-
-    state.chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: data,
-      options: options
-    });
+    if (state.historyError) {
+      state.historyError.textContent = message || 'Unable to load incidents right now.';
+      state.historyError.removeAttribute('hidden');
+    }
   }
 
   function fetchHistoryData() {
     if (!state.historyEndpoint || !state.fetchImpl) {
       return Promise.resolve();
     }
+    setHistoryLoading();
     var url = appendQuery(state.historyEndpoint, 'provider', 'github');
     url = appendQuery(url, 'days', '30');
 
@@ -1017,18 +1028,20 @@
       })
       .then(function (body) {
         if (!body || !Array.isArray(body.providers)) {
+          renderHistoryList([]);
           return;
         }
         var target = body.providers.find(function (provider) {
           return provider && String(provider.id || '').toLowerCase() === 'github';
         }) || body.providers[0];
         if (!target || !Array.isArray(target.history)) {
+          renderHistoryList([]);
           return;
         }
-        renderHistoryChart(target.history);
+        renderHistoryList(target.history);
       })
       .catch(function () {
-        // Fail silently; chart is decorative.
+        renderHistoryError('Unable to load incident history right now.');
       });
   }
 
@@ -1490,7 +1503,9 @@
     state.exportCSVButton = state.container.querySelector('[data-lo-export-csv]');
     state.exportPDFButton = state.container.querySelector('[data-lo-export-pdf]');
     state.loadingEl = state.container.querySelector('[data-lo-loading]');
-    state.chartCanvas = state.container.querySelector('#lo-outage-chart');
+    state.historyList = state.container.querySelector('[data-lo-history-list]');
+    state.historyEmpty = state.container.querySelector('[data-lo-history-empty]');
+    state.historyError = state.container.querySelector('[data-lo-history-error]');
     state.historyEndpoint = config.historyEndpoint || '';
     state.endpoint = config.endpoint || '';
     state.refreshEndpoint = config.refreshEndpoint || '';

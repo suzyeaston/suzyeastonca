@@ -132,23 +132,20 @@
   cursor: progress;
 }
 
-.lo-chart {
+.lo-history {
   background: #0a0a0a;
   border: 2px solid rgba(255, 184, 28, 0.65);
   border-radius: 12px;
   padding: 12px;
   margin-bottom: 16px;
-  position: relative;
-  overflow: hidden;
-  min-height: 320px;
 }
 
-.lousy-outages.lo-theme-light .lo-chart {
+.lousy-outages.lo-theme-light .lo-history {
   background: #ffffff;
   border-color: #d2b48c;
 }
 
-.lo-chart__heading {
+.lo-history__heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -156,21 +153,111 @@
   flex-wrap: wrap;
 }
 
-.lo-chart__meta {
+.lo-history__meta {
   margin: 0;
   color: rgba(255, 233, 196, 0.8);
   font-size: 0.9rem;
 }
 
-.lousy-outages.lo-theme-light .lo-chart__meta {
+.lousy-outages.lo-theme-light .lo-history__meta {
   color: rgba(32, 32, 32, 0.75);
 }
 
-#lo-outage-chart {
-  display: block;
-  width: 100%;
-  height: 260px;
-  min-height: 220px;
+.lo-history__body {
+  margin-top: 12px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.lo-history__list {
+  list-style: decimal;
+  list-style-position: inside;
+  margin: 0;
+  padding-left: 8px;
+}
+
+.lo-history__item + .lo-history__item {
+  margin-top: 10px;
+}
+
+.lo-history__item {
+  background: rgba(240, 78, 35, 0.12);
+  border: 1px solid rgba(255, 184, 28, 0.35);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #ffe9c4;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.lousy-outages.lo-theme-light .lo-history__item {
+  background: rgba(240, 78, 35, 0.07);
+  border-color: rgba(179, 91, 0, 0.4);
+  color: #202020;
+}
+
+.lo-history__item--placeholder {
+  font-style: italic;
+  color: rgba(255, 233, 196, 0.75);
+}
+
+.lousy-outages.lo-theme-light .lo-history__item--placeholder {
+  color: rgba(32, 32, 32, 0.6);
+}
+
+.lo-history__time {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lo-history__time time {
+  font-weight: 700;
+  color: #ffb81c;
+}
+
+.lousy-outages.lo-theme-light .lo-history__time time {
+  color: #b35b00;
+}
+
+.lo-history__details {
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.lo-history__count {
+  font-size: 0.85rem;
+  color: rgba(255, 233, 196, 0.8);
+}
+
+.lousy-outages.lo-theme-light .lo-history__count {
+  color: rgba(32, 32, 32, 0.7);
+}
+
+.lo-history__badge {
+  justify-self: end;
+}
+
+.lo-history__empty,
+.lo-history__error {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+  color: rgba(255, 233, 196, 0.8);
+}
+
+.lo-history__error {
+  color: #ff6b6b;
+}
+
+.lousy-outages.lo-theme-light .lo-history__empty {
+  color: rgba(32, 32, 32, 0.7);
+}
+
+.lousy-outages.lo-theme-light .lo-history__error {
+  color: #b00020;
 }
 
 .lo-icon {
