@@ -242,8 +242,8 @@ class Api {
         if ($days <= 0) {
             $days = 30;
         }
-        if ($days > 90) {
-            $days = 90;
+        if ($days > 365) {
+            $days = 365;
         }
 
         $cutoff        = time() - ($days * DAY_IN_SECONDS);
@@ -436,6 +436,30 @@ class Api {
             $deduped = array_slice($deduped, 0, $limit);
         }
 
+        $windowStart = $cutoff;
+        $windowEnd   = time();
+
+        foreach ($chartEvents as $event) {
+            $firstSeen = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
+            $lastSeen  = isset($event['last_seen']) ? (int) $event['last_seen'] : $firstSeen;
+            $startTs   = $firstSeen ?: $lastSeen;
+            $endTs     = $lastSeen ?: $firstSeen;
+
+            if ($startTs && $startTs < $windowStart) {
+                $windowStart = $startTs;
+            }
+            if ($endTs && $endTs > $windowEnd) {
+                $windowEnd = $endTs;
+            }
+        }
+
+        if ($windowStart <= 0) {
+            $windowStart = $cutoff;
+        }
+        if ($windowEnd <= 0) {
+            $windowEnd = time();
+        }
+
         foreach ($deduped as $event) {
             $slug  = $event['provider'];
             $label = $event['provider_label'] ?? ucfirst($slug);
@@ -538,6 +562,8 @@ class Api {
                 'daily_counts'     => $dailyCounts,
                 'important_only'   => $importantOnly,
                 'window_days'      => $days,
+                'window_start'     => gmdate('Y-m-d', $windowStart),
+                'window_end'       => gmdate('Y-m-d', $windowEnd),
                 'deduped_incidents' => count($deduped),
             ],
             'providers'    => [],

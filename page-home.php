@@ -37,8 +37,9 @@ get_header();
             </div>
         </div>
         <section class="lo-callout lo-8bit">
-          <h2>Weekly Show: <span>Lousy Outages</span></h2>
-          <p>New episodes drop every week on YouTube where Suzanne unpacks outage chaos, security quirks, and her sharp tech riffs.</p>
+          <h2>LOUSY OUTAGES<br><span>LIVE STATUS DASHBOARD</span></h2>
+          <p>Track real-world outage chaos in arcade style.<br>
+          Suzanne (Suzy) Easton watches the clouds, ISPs, and tools you rely on — while dropping new indie tracks from Vancouver.</p>
           <a class="btn-8bit" href="/lousy-outages/">OPEN THE LIVE DASHBOARD →</a>
         </section>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
