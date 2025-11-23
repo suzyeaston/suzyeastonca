@@ -12,7 +12,9 @@ class IncidentStore
     private const ALERT_COOLDOWN = 90; // Minutes.
     // Keep events long enough for 30+ day history; previously capped at ~36 hours,
     // which caused the dashboard history to go empty even when recent incidents existed.
-    private const EVENT_RETENTION = 60 * 24; // Hours (~60 days).
+    private const EVENT_RETENTION = 60 * DAY_IN_SECONDS; // (~60 days)
+    private const IMPORTANT_EVENT_RETENTION = 365 * DAY_IN_SECONDS;
+    private const IMPORTANT_EVENT_CAP = 1000;
 
     /**
      * Determine whether an alert email should fire for the incident.
@@ -35,6 +37,11 @@ class IncidentStore
         }
 
         if (! in_array($status, ['incident', 'degraded', 'partial', 'major', 'critical'], true)) {
+            return false;
+        }
+
+        $classification = $this->classifyIncident($providerKey, $incident->title, $status);
+        if (! $classification['important']) {
             return false;
         }
 
@@ -110,7 +117,7 @@ class IncidentStore
             $events[$eventKey] = $entry;
         }
 
-        $events = $this->pruneEvents($events, $now - (self::EVENT_RETENTION * HOUR_IN_SECONDS));
+        $events = $this->pruneEvents($events, $now);
         update_option(self::OPTION_EVENTS, $events, false);
     }
 
@@ -217,7 +224,7 @@ class IncidentStore
     /**
      * @return array{severity: string, important: bool, summary: string}
      */
-    private function classifyIncident(string $providerKey, string $title, string $status): array
+    public function classifyIncident(string $providerKey, string $title, string $status): array
     {
         $normalizedStatus = $this->normalizeStatus($status);
         $severity         = $this->mapSeverity($normalizedStatus);
@@ -350,12 +357,38 @@ class IncidentStore
      * @param array<string, array<string, mixed>> $events
      * @return array<string, array<string, mixed>>
      */
-    private function pruneEvents(array $events, int $cutoff): array
+    private function pruneEvents(array $events, int $now): array
     {
+        $standardCutoff  = $now - self::EVENT_RETENTION;
+        $importantCutoff = $now - self::IMPORTANT_EVENT_RETENTION;
+        $importantEvents = [];
+
         foreach ($events as $key => $event) {
             $lastSeen = isset($event['last_seen']) ? (int) $event['last_seen'] : 0;
+            $severity = isset($event['severity']) ? strtolower((string) $event['severity']) : '';
+            $important = !empty($event['important']);
+            $isImportantIncident = $important && in_array($severity, ['outage', 'degraded'], true);
+            $cutoff = $isImportantIncident ? $importantCutoff : $standardCutoff;
+
             if ($cutoff > 0 && $lastSeen && $lastSeen < $cutoff) {
                 unset($events[$key]);
+                continue;
+            }
+
+            if ($isImportantIncident && $lastSeen) {
+                $importantEvents[$key] = $lastSeen;
+            }
+        }
+
+        if (count($importantEvents) > self::IMPORTANT_EVENT_CAP) {
+            asort($importantEvents, SORT_NUMERIC);
+            $excess = count($importantEvents) - self::IMPORTANT_EVENT_CAP;
+            foreach (array_keys($importantEvents) as $key) {
+                if ($excess <= 0) {
+                    break;
+                }
+                unset($events[$key]);
+                $excess--;
             }
         }
 

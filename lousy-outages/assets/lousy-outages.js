@@ -95,6 +95,7 @@
     historyWindowDays: HISTORY_DEFAULT_DAYS,
     historyProviders: [],
     historyMeta: {},
+    historyIncidents: [],
     visibleProviders: {},
     debug: false,
     postPaintStarted: false
@@ -450,46 +451,37 @@
   }
 
   function downloadCSV() {
-    var data = getHistoryChartData();
-    if (!data) {
+    var incidents = Array.isArray(state.historyIncidents) ? state.historyIncidents : [];
+    if (!incidents.length) {
+      if (state.root && state.root.alert) {
+        state.root.alert('No incidents to export yet. Try refreshing history.');
+      }
       return;
     }
 
-    var rows = [];
+    var rows = [
+      ['first_seen', 'last_seen', 'provider', 'severity', 'status', 'summary', 'url']
+    ];
 
-    var providerEntries = data.providerCounts && Object.keys(data.providerCounts).length
-      ? Object.keys(data.providerCounts).map(function (key) { return { label: key, value: data.providerCounts[key] }; })
-      : [];
-    if (providerEntries.length) {
-      rows.push(['Incidents by provider']);
-      rows.push(['Provider', 'Count']);
-      providerEntries.sort(function (a, b) { return b.value - a.value; }).forEach(function (entry) {
-        rows.push([entry.label, entry.value]);
-      });
-      rows.push(['']);
-    }
-
-    var dailyEntries = data.dailyCounts && Object.keys(data.dailyCounts).length
-      ? Object.keys(data.dailyCounts).sort().map(function (key) { return { label: key, value: data.dailyCounts[key] }; })
-      : [];
-    if (dailyEntries.length) {
-      rows.push(['Incidents per day']);
-      rows.push(['Date', 'Count']);
-      dailyEntries.forEach(function (entry) {
-        rows.push([entry.label, entry.value]);
-      });
-    }
-
-    if (!rows.length) {
-      return;
-    }
+    incidents.forEach(function (entry) {
+      rows.push([
+        entry.first_seen || '',
+        entry.last_seen || '',
+        entry.provider || '',
+        String(entry.severity || '').toUpperCase(),
+        entry.status || '',
+        entry.summary || '',
+        entry.url || ''
+      ]);
+    });
 
     var csvContent = rows.map(function (row) {
       return row.map(function (field) {
-        var safe = (field || '').replace(/"/g, '""');
+        var safe = (field || '').toString().replace(/"/g, '""');
         return '"' + safe + '"';
       }).join(',');
     }).join('\n');
+
     var blob = new Blob([csvContent], { type: 'text/csv' });
     var urlCreator = (state.root && state.root.URL) ? state.root.URL : (typeof URL !== 'undefined' ? URL : null);
     if (!urlCreator || !urlCreator.createObjectURL) {
@@ -498,7 +490,7 @@
     var url = urlCreator.createObjectURL(blob);
     var link = state.doc.createElement('a');
     link.href = url;
-    link.download = 'lousy-outages-report.csv';
+    link.download = 'lousy-outages-history.csv';
     state.doc.body.appendChild(link);
     link.click();
     state.doc.body.removeChild(link);
@@ -1077,6 +1069,47 @@
     return safe + ' incidents';
   }
 
+  function formatDateRange(meta) {
+    if (!meta) {
+      return '';
+    }
+    var startRaw = meta.window_start || meta.windowStart;
+    var endRaw = meta.window_end || meta.windowEnd;
+    if (!startRaw || !endRaw) {
+      return '';
+    }
+
+    var startDate = Date.parse(startRaw + 'T00:00:00Z');
+    var endDate = Date.parse(endRaw + 'T00:00:00Z');
+    if (Number.isNaN(startDate) || Number.isNaN(endDate)) {
+      return '';
+    }
+
+    var startObj = new Date(startDate);
+    var endObj = new Date(endDate);
+    var startYear = startObj.getUTCFullYear();
+    var endYear = endObj.getUTCFullYear();
+
+    var formatter = function (date, includeYear) {
+      try {
+        return new Intl.DateTimeFormat(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: includeYear ? 'numeric' : undefined
+        }).format(date);
+      } catch (err) {
+        var iso = date.toISOString().slice(0, 10);
+        return includeYear ? iso : iso.slice(5);
+      }
+    };
+
+    var startLabel = formatter(startObj, startYear !== endYear);
+    var endLabel = formatter(endObj, true);
+    var suffix = startYear === endYear ? ', ' + endYear : '';
+
+    return startLabel + ' – ' + endLabel + suffix;
+  }
+
   function renderHistoryCharts(providers, meta) {
     if (!state.historyCharts || !state.doc) {
       return;
@@ -1097,20 +1130,26 @@
     state.historyCharts.removeAttribute('hidden');
     var frag = state.doc.createDocumentFragment();
 
+    var subtitle = formatDateRange(meta || {});
+
     if (hasProviders) {
-      var providerChart = buildBarChart(providerCounts, 'Incidents by provider');
+      var providerChart = buildBarChart(providerCounts, 'Incidents by provider', subtitle);
       frag.appendChild(providerChart);
     }
 
     if (hasDaily) {
-      var timelineChart = buildTimelineChart(dailyCounts, (chartData && chartData.windowDays) || HISTORY_DEFAULT_DAYS);
+      var timelineChart = buildTimelineChart(
+        dailyCounts,
+        (chartData && chartData.windowDays) || HISTORY_DEFAULT_DAYS,
+        subtitle
+      );
       frag.appendChild(timelineChart);
     }
 
     state.historyCharts.appendChild(frag);
   }
 
-  function buildBarChart(counts, title) {
+  function buildBarChart(counts, title, subtitle) {
     var chartWrap = state.doc.createElement('div');
     chartWrap.className = 'lo-history__chart';
     if (title) {
@@ -1118,6 +1157,12 @@
       heading.className = 'lo-history__chart-title';
       heading.textContent = title;
       chartWrap.appendChild(heading);
+      if (subtitle) {
+        var sub = state.doc.createElement('div');
+        sub.className = 'lo-history__subtitle';
+        sub.textContent = subtitle;
+        chartWrap.appendChild(sub);
+      }
     }
 
     var entries = Object.keys(counts).map(function (key) {
@@ -1125,7 +1170,9 @@
     }).sort(function (a, b) { return b.value - a.value; }).slice(0, 8);
     var max = entries.reduce(function (acc, item) { return Math.max(acc, item.value || 0); }, 0) || 1;
     var width = Math.max(220, entries.length * 70);
-    var height = 140;
+    var height = 160;
+    var topPadding = 30;
+    var bottomPadding = 30;
     var barWidth = Math.floor((width - 20) / Math.max(entries.length, 1)) - 10;
     var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
@@ -1134,15 +1181,15 @@
 
     var yLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
     yLabel.setAttribute('x', '6');
-    yLabel.setAttribute('y', '14');
+    yLabel.setAttribute('y', '18');
     yLabel.setAttribute('class', 'lo-history__chart-text');
-    yLabel.textContent = 'Incidents (count)';
+    yLabel.textContent = 'Incidents';
     svg.appendChild(yLabel);
 
     entries.forEach(function (entry, index) {
       var x = 10 + index * (barWidth + 10);
-      var scaled = Math.max(4, Math.round(((entry.value || 0) / max) * (height - 40)));
-      var y = height - 30 - scaled;
+      var scaled = Math.max(4, Math.round(((entry.value || 0) / max) * (height - topPadding - bottomPadding)));
+      var y = height - bottomPadding - scaled;
 
       var rect = state.doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('x', String(x));
@@ -1157,13 +1204,15 @@
       rect.appendChild(rectTitle);
       svg.appendChild(rect);
 
-      var valueLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
-      valueLabel.setAttribute('x', String(x + (barWidth / 2)));
-      valueLabel.setAttribute('y', String(Math.max(12, y - 4)));
-      valueLabel.setAttribute('text-anchor', 'middle');
-      valueLabel.setAttribute('class', 'lo-history__chart-text');
-      valueLabel.textContent = String(entry.value);
-      svg.appendChild(valueLabel);
+      if (scaled >= 20) {
+        var valueLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+        valueLabel.setAttribute('x', String(x + (barWidth / 2)));
+        valueLabel.setAttribute('y', String(Math.max(topPadding, y - 6)));
+        valueLabel.setAttribute('text-anchor', 'middle');
+        valueLabel.setAttribute('class', 'lo-history__chart-text');
+        valueLabel.textContent = String(entry.value);
+        svg.appendChild(valueLabel);
+      }
 
       var label = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
       label.setAttribute('x', String(x + (barWidth / 2)));
@@ -1178,13 +1227,19 @@
     return chartWrap;
   }
 
-  function buildTimelineChart(counts, days) {
+  function buildTimelineChart(counts, days, subtitle) {
     var chartWrap = state.doc.createElement('div');
     chartWrap.className = 'lo-history__chart';
     var heading = state.doc.createElement('div');
     heading.className = 'lo-history__chart-title';
     heading.textContent = 'Incidents over time';
     chartWrap.appendChild(heading);
+    if (subtitle) {
+      var sub = state.doc.createElement('div');
+      sub.className = 'lo-history__subtitle';
+      sub.textContent = subtitle;
+      chartWrap.appendChild(sub);
+    }
 
     var today = new Date();
     var labels = [];
@@ -1196,7 +1251,9 @@
     var values = labels.map(function (label) { return counts[label] || 0; });
     var max = values.reduce(function (acc, val) { return Math.max(acc, val); }, 0) || 1;
     var width = Math.max(240, labels.length * 12);
-    var height = 120;
+    var height = 130;
+    var topPadding = 24;
+    var bottomPadding = 22;
     var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
     svg.setAttribute('role', 'img');
@@ -1204,14 +1261,14 @@
 
     var yAxisLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
     yAxisLabel.setAttribute('x', '6');
-    yAxisLabel.setAttribute('y', '14');
+    yAxisLabel.setAttribute('y', '18');
     yAxisLabel.setAttribute('class', 'lo-history__chart-text');
     yAxisLabel.textContent = 'Incidents per day';
     svg.appendChild(yAxisLabel);
 
     var xAxisLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
     xAxisLabel.setAttribute('x', String(width / 2));
-    xAxisLabel.setAttribute('y', String(height - 2));
+    xAxisLabel.setAttribute('y', String(height - 4));
     xAxisLabel.setAttribute('text-anchor', 'middle');
     xAxisLabel.setAttribute('class', 'lo-history__chart-text');
     xAxisLabel.textContent = 'Day';
@@ -1219,8 +1276,8 @@
 
     labels.forEach(function (label, idx) {
       var x = 8 + idx * 8;
-      var scaled = Math.max(2, Math.round((values[idx] / max) * (height - 30)));
-      var y = height - 20 - scaled;
+      var scaled = Math.max(2, Math.round((values[idx] / max) * (height - topPadding - bottomPadding)));
+      var y = height - bottomPadding - scaled;
       var rect = state.doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('x', String(x));
       rect.setAttribute('y', String(y));
@@ -1235,7 +1292,7 @@
       if (scaled > 14 && values[idx] > 0) {
         var countLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
         countLabel.setAttribute('x', String(x + 3));
-        countLabel.setAttribute('y', String(y - 2));
+        countLabel.setAttribute('y', String(Math.max(topPadding, y - 3)));
         countLabel.setAttribute('text-anchor', 'middle');
         countLabel.setAttribute('class', 'lo-history__chart-text');
         countLabel.textContent = String(values[idx]);
@@ -1273,6 +1330,7 @@
       return;
     }
     state.historyList.innerHTML = '';
+    state.historyIncidents = [];
     if (state.historyError) {
       state.historyError.setAttribute('hidden', 'hidden');
     }
@@ -1307,6 +1365,7 @@
             provider: entry.provider || label,
             summary: entry.summary || entry.title || '',
             status: status || 'unknown',
+            severity: (entry.severity || '').toString(),
             first_seen: entry.first_seen || entry.firstSeen || null,
             last_seen: entry.last_seen || entry.lastSeen || null,
             url: entry.url || ''
@@ -1320,6 +1379,8 @@
       var right = Date.parse((b && (b.last_seen || b.first_seen)) || '');
       return right - left;
     });
+
+    state.historyIncidents = incidentEntries.slice();
 
     if (incidentEntries.length) {
       if (state.historyEmpty) {
@@ -1454,6 +1515,7 @@
         if (state.debug && state.root && state.root.console && typeof state.root.console.error === 'function') {
           state.root.console.error(err);
         }
+        state.historyIncidents = [];
         renderHistoryError('Unable to load incident history right now.');
       });
   }
