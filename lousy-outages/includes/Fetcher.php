@@ -65,7 +65,7 @@ class Fetcher {
         if (! $endpoint) {
             if ('manual' === $type) {
                 // LO: manual providers have human-updated messaging only.
-                $defaults['summary'] = 'No public feed available. We’ll update status here if CrowdStrike publishes a public advisory feed.';
+                $defaults['summary'] = 'No public feed available. We’ll update status when the provider posts an advisory.';
             } else {
                 $defaults['summary'] = 'No public status endpoint available';
             }

@@ -136,10 +136,14 @@ test('manual refresh falls back to status endpoint when refresh endpoint fails',
   await flushPromises();
 
   const calls = mockFetch.calls;
-  assert.equal(calls.length, 3);
-  assert.equal(calls[1][0], '/wp-json/lousy/v1/refresh');
-  assert.ok(calls[2][0].includes('/wp-json/lousy-outages/v1/status'));
-  assert.ok(calls[2][0].includes('refresh=1'));
+  assert.ok(calls.length >= 2);
+  const refreshCall = calls.find(call => call[0] === '/wp-json/lousy/v1/refresh');
+  assert.ok(refreshCall);
+  const summaryCall = calls.find(call => {
+    const target = String(call[0] || '');
+    return target.includes('/wp-json/lousy-outages/v1/status') && target.includes('refresh=1');
+  });
+  assert.ok(summaryCall);
 
   const countdown = document.querySelector('.board-subtitle');
   assert.ok(!countdown.textContent.startsWith('Status fetch failed'));

@@ -86,3 +86,104 @@ test('renders Unknown when a provider times out', async () => {
   assert.ok(statusBadge.className.includes('status--unknown'));
   assert.equal(summary.textContent, 'Request timed out');
 });
+
+test('renders recent incidents newest first', async () => {
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const earlierIso = new Date(now.getTime() - 1000 * 60 * 90).toISOString();
+
+  mockFetch.mockImplementation(url => {
+    if (String(url).includes('/history')) {
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            providers: [
+              {
+                id: 'github',
+                label: 'GitHub',
+                incidents: [
+                  {
+                    id: 'inc-2',
+                    provider: 'Cloudflare',
+                    status: 'outage',
+                    summary: 'Major issue',
+                    first_seen: nowIso,
+                    url: 'https://status.cloudflare.com/incidents/outage'
+                  },
+                  {
+                    id: 'inc-1',
+                    provider: 'GitHub',
+                    status: 'degraded',
+                    summary: 'API blips',
+                    first_seen: earlierIso,
+                    last_seen: earlierIso,
+                    url: 'https://www.githubstatus.com/incidents/blip'
+                  }
+                ]
+              }
+            ],
+            meta: { fetchedAt: nowIso }
+          })
+      });
+    }
+
+    return Promise.resolve({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          providers: [
+            {
+              id: 'openai',
+              provider: 'OpenAI',
+              name: 'OpenAI',
+              stateCode: 'operational',
+              state: 'Operational',
+              summary: '',
+              incidents: [],
+              updatedAt: nowIso
+            },
+            {
+              id: 'github',
+              provider: 'GitHub',
+              name: 'GitHub',
+              stateCode: 'operational',
+              state: 'Operational',
+              summary: '',
+              incidents: [],
+              updatedAt: nowIso
+            }
+          ],
+          meta: { fetchedAt: nowIso }
+        })
+    });
+  });
+
+  app.init({
+    endpoint: '/api/outages',
+    historyEndpoint: '/wp-json/lousy-outages/v1/history',
+    pollInterval: 50,
+    providers: [
+      { id: 'openai', name: 'OpenAI' },
+      { id: 'github', name: 'GitHub' }
+    ],
+    strings: {},
+    fallbackStrings: {},
+    debug: true,
+    fetchTimeout: 100
+  });
+
+  await flushPromises();
+  await wait(800);
+  await flushPromises();
+
+  const items = document
+    .querySelector('[data-lo-history-list]')
+    .querySelectorAll('li');
+
+  assert.equal(items.length, 2);
+  assert.ok(items[0].textContent.includes('Cloudflare'));
+  assert.ok(items[1].textContent.includes('GitHub'));
+  const error = document.querySelector('[data-lo-history-error]');
+  assert.ok(error.getAttribute('hidden') !== null);
+});

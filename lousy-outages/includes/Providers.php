@@ -98,23 +98,23 @@ class Providers {
             [
                 'id'         => 'rogers',
                 'name'       => 'Rogers',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.rogers.com/api/v2/summary.json',
-                'status_url' => 'https://status.rogers.com/',
+                'type'       => 'manual',
+                'url'        => 'https://www.rogers.com/support/service-updates',
+                'status_url' => 'https://www.rogers.com/support/service-updates',
             ],
             [
                 'id'         => 'bell',
                 'name'       => 'Bell Canada',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.bell.ca/api/v2/summary.json',
-                'status_url' => 'https://status.bell.ca/',
+                'type'       => 'manual',
+                'url'        => 'https://support.bell.ca/networkstatus',
+                'status_url' => 'https://support.bell.ca/networkstatus',
             ],
             [
                 'id'         => 'telus',
                 'name'       => 'TELUS',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.telus.com/api/v2/summary.json',
-                'status_url' => 'https://status.telus.com/',
+                'type'       => 'manual',
+                'url'        => 'https://www.telus.com/en/support/outages',
+                'status_url' => 'https://www.telus.com/en/support/outages',
             ],
 
             // RSS/Atom feeds
