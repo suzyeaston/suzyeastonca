@@ -89,6 +89,7 @@
     historyEmpty: null,
     historyError: null,
     visibleProviders: {},
+    debug: false,
     postPaintStarted: false
   };
 
@@ -945,7 +946,7 @@
     }
   }
 
-  function renderHistoryList(history, incidents, providerLabel) {
+  function renderHistoryList(providers, meta) {
     if (!state.historyList || !state.doc) {
       return;
     }
@@ -954,12 +955,41 @@
       state.historyError.setAttribute('hidden', 'hidden');
     }
 
-    var incidentEntries = Array.isArray(incidents)
-      ? incidents.filter(function (entry) {
-          var status = entry && entry.status ? String(entry.status) : '';
-          return entry && status.toLowerCase() !== 'operational';
-        })
-      : [];
+    var providerList = Array.isArray(providers) ? providers : [];
+    var prefs = state.visibleProviders || {};
+    var hasPrefs = Object.keys(prefs).length > 0;
+
+    var incidentEntries = [];
+
+    providerList.forEach(function (provider) {
+      if (!provider || typeof provider !== 'object') {
+        return;
+      }
+      var slug = String(provider.id || '').toLowerCase();
+      if (slug && hasPrefs && prefs[slug] === false) {
+        return;
+      }
+      var label = provider.label || provider.name || provider.provider || 'Provider';
+      if (Array.isArray(provider.incidents)) {
+        provider.incidents.forEach(function (entry) {
+          if (!entry || typeof entry !== 'object') {
+            return;
+          }
+          var status = entry && entry.status ? String(entry.status).toLowerCase() : '';
+          if (status === 'operational' || status === 'ok' || status === 'none') {
+            return;
+          }
+          incidentEntries.push({
+            provider: entry.provider || label,
+            summary: entry.summary || entry.title || '',
+            status: status || 'unknown',
+            first_seen: entry.first_seen || entry.firstSeen || null,
+            last_seen: entry.last_seen || entry.lastSeen || null,
+            url: entry.url || ''
+          });
+        });
+      }
+    });
 
     incidentEntries.sort(function (a, b) {
       var left = Date.parse((a && (a.last_seen || a.first_seen)) || '');
@@ -984,7 +1014,7 @@
         timeEl.textContent = formatTimestamp(started) || formatHistoryDate(started);
         timeWrap.appendChild(timeEl);
 
-        if (entry.last_seen) {
+        if (entry.last_seen && entry.last_seen !== entry.first_seen) {
           var range = state.doc.createElement('span');
           range.className = 'lo-history__time-range';
           range.textContent = 'Updated ' + formatTimestamp(entry.last_seen);
@@ -993,7 +1023,7 @@
 
         var details = state.doc.createElement('div');
         details.className = 'lo-history__details';
-        var providerName = entry.provider || providerLabel || 'Provider';
+        var providerName = entry.provider || 'Provider';
         var providerLabelEl = state.doc.createElement('strong');
         providerLabelEl.textContent = providerName;
         details.appendChild(providerLabelEl);
@@ -1025,60 +1055,9 @@
       return;
     }
 
-    var entries = Array.isArray(history)
-      ? history.filter(function (entry) {
-          return entry && Number.isFinite(entry.incidents) && entry.incidents > 0;
-        })
-      : [];
-
-    entries.sort(function (a, b) {
-      var left = Date.parse((b && b.date ? b.date : '') + 'T00:00:00Z');
-      var right = Date.parse((a && a.date ? a.date : '') + 'T00:00:00Z');
-      return left - right;
-    });
-
-    if (!entries.length) {
-      if (state.historyEmpty) {
-        state.historyEmpty.removeAttribute('hidden');
-      }
-      return;
-    }
-
     if (state.historyEmpty) {
-      state.historyEmpty.setAttribute('hidden', 'hidden');
+      state.historyEmpty.removeAttribute('hidden');
     }
-
-    entries.forEach(function (entry) {
-      var li = state.doc.createElement('li');
-      li.className = 'lo-history__item';
-
-      var timeWrap = state.doc.createElement('div');
-      timeWrap.className = 'lo-history__time';
-      var timeEl = state.doc.createElement('time');
-      timeEl.setAttribute('datetime', (entry.date || '') + 'T00:00:00Z');
-      timeEl.textContent = formatHistoryDate(entry.date);
-      timeWrap.appendChild(timeEl);
-
-      var countEl = state.doc.createElement('span');
-      countEl.className = 'lo-history__count';
-      countEl.textContent = formatIncidentCount(entry.incidents);
-      timeWrap.appendChild(countEl);
-
-      var details = state.doc.createElement('div');
-      details.className = 'lo-history__details';
-      var mapped = mapHistoryStatus(entry.last_status);
-      details.textContent = mapped.label + ' reported';
-
-      var badge = state.doc.createElement('span');
-      badge.className = 'lo-pill ' + mapped.className + ' lo-history__badge';
-      badge.textContent = mapped.label;
-
-      li.appendChild(timeWrap);
-      li.appendChild(details);
-      li.appendChild(badge);
-
-      state.historyList.appendChild(li);
-    });
   }
 
   function renderHistoryError(message) {
@@ -1099,8 +1078,29 @@
       return Promise.resolve();
     }
     setHistoryLoading();
-    var url = appendQuery(state.historyEndpoint, 'provider', 'github');
-    url = appendQuery(url, 'days', '30');
+
+    var providerIds = [];
+    var cards = state.container ? state.container.querySelectorAll('[data-provider-id], .provider-card') : [];
+    if (cards && cards.length) {
+      cards.forEach(function (card) {
+        var slug = card.getAttribute ? card.getAttribute('data-provider-id') || card.getAttribute('data-id') : null;
+        if (slug) {
+          providerIds.push(String(slug));
+        }
+      });
+    }
+    var prefs = state.visibleProviders || {};
+    var hasPrefs = Object.keys(prefs).length > 0;
+    if (hasPrefs && providerIds.length) {
+      providerIds = providerIds.filter(function (id) {
+        return prefs[String(id).toLowerCase()] !== false;
+      });
+    }
+
+    var url = appendQuery(state.historyEndpoint, 'days', '30');
+    if (providerIds.length) {
+      url = appendQuery(url, 'provider', providerIds.join(','));
+    }
 
     return state.fetchImpl(url, { headers: { Accept: 'application/json' } })
       .then(function (res) {
@@ -1111,19 +1111,15 @@
       })
       .then(function (body) {
         if (!body || !Array.isArray(body.providers)) {
-          renderHistoryList([]);
-          return;
+          throw new Error('invalid history response');
         }
-        var target = body.providers.find(function (provider) {
-          return provider && String(provider.id || '').toLowerCase() === 'github';
-        }) || body.providers[0];
-        if (!target || !Array.isArray(target.history)) {
-          renderHistoryList([]);
-          return;
-        }
-        renderHistoryList(target.history, target.incidents, target.label);
+
+        renderHistoryList(body.providers, body.meta || {});
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (state.debug && state.root && state.root.console && typeof state.root.console.error === 'function') {
+          state.root.console.error(err);
+        }
         renderHistoryError('Unable to load incident history right now.');
       });
   }
@@ -1557,6 +1553,7 @@
     if (typeof config.window === 'object' && config.window) {
       state.root = config.window;
     }
+    state.debug = !!config.debug;
     var fetchImpl = null;
     if (typeof config.fetch === 'function') {
       fetchImpl = config.fetch;

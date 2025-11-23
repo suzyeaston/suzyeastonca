@@ -107,10 +107,24 @@ class TestElement {
 
   set textContent(value) {
     this._textContent = String(value || '');
+    this.children = [];
   }
 
   get textContent() {
-    return this._textContent || '';
+    const own = this._textContent || '';
+    const childText = (this.children || [])
+      .map(child => (child && child.textContent ? String(child.textContent) : ''))
+      .join('');
+    return own + childText;
+  }
+
+  set innerHTML(value) {
+    this.children = [];
+    this._textContent = String(value || '');
+  }
+
+  get innerHTML() {
+    return this.textContent;
   }
 
   setAttribute(name, value) {
@@ -180,6 +194,18 @@ class TestElement {
 function matches(element, selector) {
   if (!selector) {
     return false;
+  }
+  const dataOnly = selector.match(/^\[data-([^\]]+)\]$/i);
+  if (dataOnly) {
+    const key = dataOnly[1]
+      .replace(/^data-/, '')
+      .replace(/-([a-z])/g, (_, chr) => chr.toUpperCase());
+    const dataset = element && element.dataset ? element.dataset : {};
+    const attributes = element && element.attributes ? element.attributes : {};
+    return (
+      Object.prototype.hasOwnProperty.call(dataset, key) ||
+      Object.prototype.hasOwnProperty.call(attributes, 'data-' + dataOnly[1])
+    );
   }
   if (selector.startsWith('.')) {
     const attrIndex = selector.indexOf('[');
@@ -330,6 +356,17 @@ function buildDashboardDom(providers) {
   container.appendChild(new TestElement('p', { className: 'microcopy', textContent: '' }));
   container.appendChild(new TestElement('p', { className: 'weather', textContent: '' }));
 
+  const history = container.appendChild(new TestElement('section', { className: 'lo-history' }));
+  const historyBody = history.appendChild(new TestElement('div', { className: 'lo-history__body' }));
+  const historyList = historyBody.appendChild(new TestElement('ol', { className: 'lo-history__list' }));
+  historyList.setAttribute('data-lo-history-list', '');
+  const historyEmpty = historyBody.appendChild(new TestElement('p', { className: 'lo-history__empty' }));
+  historyEmpty.setAttribute('data-lo-history-empty', '');
+  historyEmpty.setAttribute('hidden', 'hidden');
+  const historyError = historyBody.appendChild(new TestElement('p', { className: 'lo-history__error' }));
+  historyError.setAttribute('data-lo-history-error', '');
+  historyError.setAttribute('hidden', 'hidden');
+
   const doc = {
     readyState: 'complete',
     getElementById(id) {
@@ -343,6 +380,19 @@ function buildDashboardDom(providers) {
     },
     createElement(tag) {
       return new TestElement(tag);
+    },
+    createTextNode(text) {
+      return {
+        textContent: String(text || ''),
+        parentNode: null,
+        children: [],
+        querySelector() {
+          return null;
+        },
+        querySelectorAll() {
+          return [];
+        }
+      };
     },
     addEventListener() {},
     body: {}

@@ -237,6 +237,38 @@ class Api {
         $log           = $store->get_history_log();
         $events        = $incidentStore->getStoredIncidents();
 
+        $normalizeStatus = static function (string $status): string {
+            $status = strtolower(trim($status));
+            switch ($status) {
+                case 'ok':
+                case 'none':
+                case 'operational':
+                case 'resolved':
+                    return 'operational';
+                case 'maintenance':
+                case 'maintenance_window':
+                    return 'maintenance';
+                case 'minor':
+                case 'minor_outage':
+                case 'degraded':
+                case 'degraded_performance':
+                case 'partial':
+                case 'partial_outage':
+                case 'incident':
+                case 'investigating':
+                case 'identified':
+                case 'monitoring':
+                    return 'degraded';
+                case 'major_outage':
+                case 'outage':
+                case 'major':
+                case 'critical':
+                    return 'major';
+            }
+
+            return $status ?: 'incident';
+        };
+
         $providers = [];
 
         $ensureProvider = static function (string $slug, string $label) use (&$providers): void {
@@ -267,15 +299,20 @@ class Api {
 
             $firstSeen = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
             $lastSeen  = isset($event['last_seen']) ? (int) $event['last_seen'] : $firstSeen;
+            $effective = $lastSeen ?: $firstSeen;
 
-            if ($lastSeen && $lastSeen < $cutoff) {
+            if ($effective && $effective < $cutoff) {
                 continue;
             }
 
-            $status = strtolower((string) ($event['status'] ?? 'unknown'));
+            $status = $normalizeStatus((string) ($event['status'] ?? 'unknown'));
             $label  = $event['provider_label'] ?? ucfirst($slug);
             $date   = gmdate('Y-m-d', $firstSeen ?: $lastSeen ?: time());
-            $isIncident = !in_array($status, ['operational', 'none', 'ok'], true);
+            $isIncident = !in_array($status, ['operational', 'ok', 'none'], true);
+
+            if (!$isIncident) {
+                continue;
+            }
 
             $ensureProvider($slug, (string) $label);
 
@@ -321,8 +358,12 @@ class Api {
                     continue;
                 }
                 $date   = gmdate('Y-m-d', $timestamp);
-                $status = strtolower((string) ($entry['status'] ?? 'unknown'));
+                $status = $normalizeStatus((string) ($entry['status'] ?? 'unknown'));
                 $isIncident = !in_array($status, ['operational', 'none', 'ok'], true);
+
+                if (!$isIncident) {
+                    continue;
+                }
 
                 $ensureProvider($slug, ucfirst($slug));
 
@@ -338,22 +379,49 @@ class Api {
                     $providers[$slug]['history'][$date]['incidents'] += 1;
                 }
                 $providers[$slug]['history'][$date]['last_status'] = $status;
+
+                $providers[$slug]['incidents'][] = [
+                    'id'         => sha1($slug . '|' . $timestamp . '|' . $status),
+                    'provider'   => ucfirst($slug),
+                    'status'     => $status,
+                    'summary'    => sprintf('Status reported: %s', ucfirst($status)),
+                    'first_seen' => gmdate('c', $timestamp),
+                    'last_seen'  => null,
+                    'url'        => '',
+                ];
             }
         }
 
         $response = [
             'generated_at' => gmdate('c'),
+            'meta'         => [
+                'fetchedAt' => gmdate('c'),
+            ],
             'providers'    => [],
         ];
 
         foreach ($providers as $provider) {
             $history = $provider['history'];
             ksort($history);
+            $incidents = $provider['incidents'];
+            usort($incidents, static function ($left, $right): int {
+                $leftTs  = isset($left['last_seen']) ? strtotime((string) $left['last_seen']) : 0;
+                $rightTs = isset($right['last_seen']) ? strtotime((string) $right['last_seen']) : 0;
+                if (!$leftTs) {
+                    $leftTs = isset($left['first_seen']) ? strtotime((string) $left['first_seen']) : 0;
+                }
+                if (!$rightTs) {
+                    $rightTs = isset($right['first_seen']) ? strtotime((string) $right['first_seen']) : 0;
+                }
+
+                return $rightTs <=> $leftTs;
+            });
+
             $response['providers'][] = [
                 'id'        => $provider['id'],
                 'label'     => $provider['label'],
                 'history'   => array_values($history),
-                'incidents' => array_values($provider['incidents']),
+                'incidents' => array_values($incidents),
             ];
         }
 
