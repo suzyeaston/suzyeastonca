@@ -238,6 +238,15 @@ class IncidentStore
                 'aggregate & hub ip',
                 'aggregate and hub ip',
                 'hub ip address ranges',
+                'addition to hub services',
+                'additions to hub services',
+                'hub services',
+                'datacenter network maintenance',
+                'datacentre network maintenance',
+                'critical datacenter network maintenance',
+                'critical datacentre network maintenance',
+                'upcoming new dcs and expansions',
+                'upcoming data center expansions',
                 'allowlist',
                 'allow list',
                 'action required',
@@ -276,10 +285,8 @@ class IncidentStore
         if ('cloudflare' === $providerLower) {
             if (false !== strpos($titleLower, 'provider reports minor impact')) {
                 $important = false;
+                $severity  = 'info';
                 $summary   = 'Minor Cloudflare signal suppressed';
-                if ('info' === $severity) {
-                    $severity = 'degraded';
-                }
             }
         }
 

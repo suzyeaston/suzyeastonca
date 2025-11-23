@@ -1025,6 +1025,13 @@
     svg.setAttribute('role', 'img');
     svg.setAttribute('aria-label', 'Incidents by provider');
 
+    var yLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+    yLabel.setAttribute('x', '6');
+    yLabel.setAttribute('y', '14');
+    yLabel.setAttribute('class', 'lo-history__chart-text');
+    yLabel.textContent = 'Incidents (count)';
+    svg.appendChild(yLabel);
+
     entries.forEach(function (entry, index) {
       var x = 10 + index * (barWidth + 10);
       var scaled = Math.max(4, Math.round(((entry.value || 0) / max) * (height - 40)));
@@ -1038,8 +1045,18 @@
       rect.setAttribute('class', 'lo-history__chart-bar');
       rect.setAttribute('data-count', String(entry.value));
       rect.setAttribute('data-label', entry.label);
-      rect.setAttribute('title', entry.label + ': ' + entry.value);
+      var rectTitle = state.doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+      rectTitle.textContent = entry.label + ' – ' + entry.value + ' incidents';
+      rect.appendChild(rectTitle);
       svg.appendChild(rect);
+
+      var valueLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+      valueLabel.setAttribute('x', String(x + (barWidth / 2)));
+      valueLabel.setAttribute('y', String(Math.max(12, y - 4)));
+      valueLabel.setAttribute('text-anchor', 'middle');
+      valueLabel.setAttribute('class', 'lo-history__chart-text');
+      valueLabel.textContent = String(entry.value);
+      svg.appendChild(valueLabel);
 
       var label = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
       label.setAttribute('x', String(x + (barWidth / 2)));
@@ -1078,6 +1095,21 @@
     svg.setAttribute('role', 'img');
     svg.setAttribute('aria-label', 'Incidents over time');
 
+    var yAxisLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+    yAxisLabel.setAttribute('x', '6');
+    yAxisLabel.setAttribute('y', '14');
+    yAxisLabel.setAttribute('class', 'lo-history__chart-text');
+    yAxisLabel.textContent = 'Incidents per day';
+    svg.appendChild(yAxisLabel);
+
+    var xAxisLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+    xAxisLabel.setAttribute('x', String(width / 2));
+    xAxisLabel.setAttribute('y', String(height - 2));
+    xAxisLabel.setAttribute('text-anchor', 'middle');
+    xAxisLabel.setAttribute('class', 'lo-history__chart-text');
+    xAxisLabel.textContent = 'Day';
+    svg.appendChild(xAxisLabel);
+
     labels.forEach(function (label, idx) {
       var x = 8 + idx * 8;
       var scaled = Math.max(2, Math.round((values[idx] / max) * (height - 30)));
@@ -1088,8 +1120,20 @@
       rect.setAttribute('width', '6');
       rect.setAttribute('height', String(scaled));
       rect.setAttribute('class', 'lo-history__chart-bar lo-history__chart-bar--thin');
-      rect.setAttribute('title', label + ': ' + values[idx]);
+      var barTitle = state.doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+      barTitle.textContent = label + ' – ' + values[idx] + ' incidents';
+      rect.appendChild(barTitle);
       svg.appendChild(rect);
+
+      if (scaled > 14 && values[idx] > 0) {
+        var countLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+        countLabel.setAttribute('x', String(x + 3));
+        countLabel.setAttribute('y', String(y - 2));
+        countLabel.setAttribute('text-anchor', 'middle');
+        countLabel.setAttribute('class', 'lo-history__chart-text');
+        countLabel.textContent = String(values[idx]);
+        svg.appendChild(countLabel);
+      }
     });
 
     chartWrap.appendChild(svg);

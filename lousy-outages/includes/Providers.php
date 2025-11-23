@@ -5,6 +5,7 @@ namespace SuzyEaston\LousyOutages;
 
 class Providers {
     private const OPTION_DEFAULT_ENABLED = 'lousy_outages_default_enabled_providers';
+    private const BLOCKED_PROVIDER_IDS = ['rogers', 'bell', 'telus', 'linear'];
 
     private static function defaultProviders(): array {
         return [
@@ -82,43 +83,11 @@ class Providers {
                 'status_url' => 'https://status.teamviewer.com/',
             ],
             [
-                'id'         => 'linear',
-                'name'       => 'Linear',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.linear.app/api/v2/summary.json',
-                'status_url' => 'https://status.linear.app/',
-                'enabled'    => false,
-            ],
-            [
                 'id'         => 'sentry',
                 'name'       => 'Sentry',
                 'type'       => 'statuspage',
                 'url'        => 'https://status.sentry.io/api/v2/summary.json',
                 'status_url' => 'https://status.sentry.io/',
-            ],
-            [
-                'id'         => 'rogers',
-                'name'       => 'Rogers',
-                'type'       => 'manual',
-                'url'        => 'https://www.rogers.com/support/service-updates',
-                'status_url' => 'https://www.rogers.com/support/service-updates',
-                'enabled'    => false,
-            ],
-            [
-                'id'         => 'bell',
-                'name'       => 'Bell Canada',
-                'type'       => 'manual',
-                'url'        => 'https://support.bell.ca/networkstatus',
-                'status_url' => 'https://support.bell.ca/networkstatus',
-                'enabled'    => false,
-            ],
-            [
-                'id'         => 'telus',
-                'name'       => 'TELUS',
-                'type'       => 'manual',
-                'url'        => 'https://www.telus.com/en/support/outages',
-                'status_url' => 'https://www.telus.com/en/support/outages',
-                'enabled'    => false,
             ],
 
             // RSS/Atom feeds
@@ -151,6 +120,8 @@ class Providers {
         $defaults  = self::defaultProviders();
         $providers = [];
 
+        $blocked = array_fill_keys( self::BLOCKED_PROVIDER_IDS, true );
+
         foreach ( $defaults as $provider ) {
             if ( ! is_array( $provider ) ) {
                 continue;
@@ -158,6 +129,10 @@ class Providers {
 
             $id = isset( $provider['id'] ) ? (string) $provider['id'] : '';
             if ( '' === $id ) {
+                continue;
+            }
+
+            if ( isset( $blocked[ $id ] ) ) {
                 continue;
             }
 
@@ -175,6 +150,11 @@ class Providers {
                 continue;
             }
 
+            if ( isset( $blocked[ $id ] ) ) {
+                unset( $providers[ $id ] );
+                continue;
+            }
+
             $provider = self::prepare_provider( (string) $id, $provider );
         }
         unset( $provider );
@@ -186,6 +166,7 @@ class Providers {
      * Return enabled providers from options or defaults.
      */
     public static function enabled(): array {
+        $blocked         = array_fill_keys( self::BLOCKED_PROVIDER_IDS, true );
         $all             = self::list();
         $default_enabled = array_keys(
             array_filter(
@@ -212,6 +193,9 @@ class Providers {
                 }
                 $id = (string) $id;
                 if ( '' === $id ) {
+                    continue;
+                }
+                if ( isset( $blocked[ $id ] ) ) {
                     continue;
                 }
                 $enabled_ids[] = $id;
@@ -247,6 +231,9 @@ class Providers {
 
         $enabled = [];
         foreach ( $enabled_ids as $id ) {
+            if ( isset( $blocked[ $id ] ) ) {
+                continue;
+            }
             if ( isset( $all[ $id ] ) ) {
                 $enabled[ $id ] = $all[ $id ];
             }
