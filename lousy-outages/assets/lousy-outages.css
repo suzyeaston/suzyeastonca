@@ -751,26 +751,27 @@
 
 
 .lo-subscribe {
-  margin: 20px auto;
-  padding: 18px 20px;
-  max-width: 460px;
-  border: 2px solid rgba(255, 184, 28, 0.9);
-  border-radius: 14px;
-  background: linear-gradient(140deg, rgba(244, 154, 229, 0.16), rgba(10, 10, 10, 0.92));
+  margin: 16px auto;
+  padding: 14px 16px;
+  max-width: 400px;
+  border: 2px solid rgba(255, 184, 28, 0.8);
+  border-radius: 12px;
+  background: linear-gradient(160deg, rgba(244, 154, 229, 0.2), rgba(12, 12, 12, 0.92));
   color: rgba(255, 233, 196, 0.95);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(3px);
 }
 
 .lousy-outages.lo-theme-light .lo-subscribe {
   border-color: rgba(92, 75, 216, 0.9);
-  background: linear-gradient(140deg, rgba(255, 197, 143, 0.55), rgba(255, 255, 255, 0.95));
+  background: linear-gradient(160deg, rgba(255, 197, 143, 0.5), rgba(255, 255, 255, 0.96));
   color: #1f1f1f;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.08);
 }
 
 .lo-subscribe__title {
-  margin: 0 0 6px;
-  font-size: 1.1rem;
+  margin: 0 0 4px;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -782,9 +783,9 @@
 }
 
 .lo-subscribe__intro {
-  margin: 0 0 12px;
-  font-size: 0.9rem;
-  line-height: 1.45;
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+  line-height: 1.4;
   color: rgba(255, 233, 196, 0.88);
 }
 
@@ -795,14 +796,14 @@
 .lo-subscribe__form {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
   align-items: stretch;
 }
 
 .lo-subscribe__label {
   display: flex;
   flex-direction: column;
-  flex: 1 1 220px;
+  flex: 1 1 200px;
   font-size: 0.85rem;
   font-weight: 600;
   color: rgba(255, 233, 196, 0.88);
@@ -819,8 +820,8 @@
 
 .lo-subscribe__input {
   margin-top: 6px;
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 9px 11px;
+  border-radius: 11px;
   border: 2px solid rgba(255, 184, 28, 0.85);
   background: var(--lo-text);
   color: #050505;
@@ -847,7 +848,7 @@
 
 .lo-subscribe__prompt {
   margin: 0 0 6px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--lo-muted);
@@ -858,15 +859,15 @@
 }
 
 .lo-subscribe__challenge-quote {
-  margin: 0 0 10px;
-  padding: 10px 12px;
+  margin: 0 0 8px;
+  padding: 9px 11px;
   border-left: 3px solid var(--lo-border);
-  border-radius: 10px;
-  background: rgba(255, 184, 28, 0.12);
-  font-size: 0.9rem;
-  font-weight: 600;
-  line-height: 1.45;
-  color: rgba(255, 233, 196, 0.92);
+  border-radius: 9px;
+  background: linear-gradient(120deg, rgba(255, 184, 28, 0.12), rgba(255, 72, 164, 0.12));
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: rgba(255, 233, 196, 0.94);
 }
 
 .lousy-outages.lo-theme-light .lo-subscribe__challenge-quote {
@@ -877,7 +878,7 @@
 
 .lo-subscribe__note {
   margin: 6px 0 0;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--lo-muted);
 }
 
@@ -890,9 +891,9 @@
   color: #050505;
   border: 2px solid var(--lo-accent);
   border-radius: 999px;
-  padding: 10px 24px;
+  padding: 9px 18px;
   font-weight: 800;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -926,9 +927,9 @@
 }
 
 .lo-subscribe__help {
-  margin: 14px 0 0;
-  font-size: 0.82rem;
-  line-height: 1.55;
+  margin: 12px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
   color: var(--lo-muted);
 }
 

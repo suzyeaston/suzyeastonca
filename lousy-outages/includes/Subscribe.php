@@ -533,6 +533,11 @@ if (!function_exists('lo_lyric_fragment_bank')) {
             ['fragment' => 'Jobs says', 'answer' => 'have the courage to follow your heart and intuition'],
             ['fragment' => 'Jobs says', 'answer' => 'the only way to do great work is to love what you do'],
             ['fragment' => 'Jobs says', 'answer' => 'the people who are crazy enough to think they can change the world are the ones who do'],
+            ['fragment' => 'Jobs says', 'answer' => 'simplicity is the ultimate sophistication'],
+            ['fragment' => 'Jobs says', 'answer' => 'dont let the noise of others opinions drown out your own inner voice'],
+            ['fragment' => 'Jobs says', 'answer' => 'be a yardstick of quality'],
+            ['fragment' => 'Jobs says', 'answer' => 'your time is limited so dont waste it living someone elses life'],
+            ['fragment' => 'Jobs says', 'answer' => 'great things in business are never done by one person'],
         ];
     }
 }
