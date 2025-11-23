@@ -19,15 +19,12 @@ Monitor third‑party service status and get SMS and email alerts when things br
 | teamviewer | TeamViewer | https://status.teamviewer.com/api/v2/summary.json |
 | linear | Linear | https://status.linear.app/api/v2/summary.json |
 | sentry | Sentry | https://status.sentry.io/api/v2/summary.json |
-| rogers | Rogers | https://status.rogers.com/api/v2/summary.json |
-| bell | Bell Canada | https://status.bell.ca/api/v2/summary.json |
-| telus | TELUS | https://status.telus.com/api/v2/summary.json |
 | aws | AWS | https://status.aws.amazon.com/rss/all.rss |
 | azure | Azure | https://azurestatuscdn.azureedge.net/en-us/status/feed/ |
 | gcp | Google Cloud | https://www.google.com/appsstatus/dashboard/en-CA/feed.atom |
 | downdetector-ca | Downdetector (CA Aggregate) | https://downdetector.ca/archive/?format=rss |
 
-Zscaler is queried from `https://trust.zscaler.com` to dodge intermittent DNS failures. New default providers include TeamViewer, Linear, Sentry, and Canadian telcos—toggle any of them from **Settings → Lousy Outages**.
+Zscaler is queried from `https://trust.zscaler.com` to dodge intermittent DNS failures. New default providers include TeamViewer, Linear, and Sentry—toggle any of them from **Settings → Lousy Outages**.
 
 Downdetector is disabled by default because the RSS feed is unofficial and can disappear; enable it from the settings page if it loads for you. When the feed is unreachable, the adapter reports an `unknown` state with an error badge rather than failing the whole poll.
 

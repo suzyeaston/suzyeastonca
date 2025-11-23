@@ -725,9 +725,6 @@ class Lousy_Outages_Fetcher {
         'cloudflare' => ['kind' => 'statuspage', 'base' => 'https://www.cloudflarestatus.com'],
         'zoom'       => ['kind' => 'statuspage', 'base' => 'https://status.zoom.us'],
         'teamviewer' => ['kind' => 'statuspage', 'base' => 'https://status.teamviewer.com'],
-        'rogers'     => ['kind' => 'statuspage', 'base' => 'https://status.rogers.com'],
-        'bell'       => ['kind' => 'statuspage', 'base' => 'https://status.bell.ca'],
-        'telus'      => ['kind' => 'statuspage', 'base' => 'https://status.telus.com'],
 
         // Switch these to RSS/Atom (per Suzy’s feeds)
         'zscaler'    => ['kind' => 'rss', 'feed' => 'https://trust.zscaler.com/rss-feed', 'link' => 'https://trust.zscaler.com/cloud-status'],
@@ -761,9 +758,6 @@ class Lousy_Outages_Fetcher {
         'cloudflare' => 'Cloudflare',
         'zoom'       => 'Zoom',
         'teamviewer' => 'TeamViewer',
-        'rogers'     => 'Rogers',
-        'bell'       => 'Bell Canada',
-        'telus'      => 'TELUS',
         'zscaler'    => 'Zscaler',
         'slack'      => 'Slack',
         'gcp'        => 'Google Cloud',
