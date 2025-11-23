@@ -346,25 +346,31 @@ class Api {
                 continue;
             }
 
-            $firstSeen = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
-            $lastSeen  = isset($event['last_seen']) ? (int) $event['last_seen'] : $firstSeen;
-            $effective = $lastSeen ?: $firstSeen;
+            $firstSeen     = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
+            $lastSeen      = isset($event['last_seen']) ? (int) $event['last_seen'] : $firstSeen;
+            // Use incident start time to gate the history window (ignore refreshed old posts).
+            $incidentStart = $firstSeen ?: $lastSeen;
 
-            if ($effective && $effective < $cutoff) {
+            if ($incidentStart && $incidentStart < $cutoff) {
                 continue;
             }
 
             $status    = $normalizeStatus((string) ($event['status'] ?? 'unknown'));
             $label     = $providerLabels[$slug] ?? ($event['provider_label'] ?? ucfirst($slug));
-            $severity  = isset($event['severity']) ? (string) $event['severity'] : 'degraded';
+            $severity  = isset($event['severity']) ? strtolower((string) $event['severity']) : 'degraded';
             $important = isset($event['important']) ? (bool) $event['important'] : true;
 
             if (in_array($status, ['operational', 'ok', 'none'], true)) {
                 continue;
             }
 
-            if ($importantOnly && ! $important) {
-                continue;
+            if ($importantOnly) {
+                if (! $important) {
+                    continue;
+                }
+                if (in_array($severity, ['maintenance', 'info'], true)) {
+                    continue;
+                }
             }
 
             if ($minSeverity && isset($severityOrder[$severity]) && isset($severityOrder[$minSeverity])) {
