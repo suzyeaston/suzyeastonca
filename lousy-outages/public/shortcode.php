@@ -462,6 +462,10 @@ function render_shortcode(): string {
         <div class="lo-settings" data-lo-settings>
             <h3 class="lo-block-title">Customize view</h3>
             <p class="lo-settings__hint">Pick which providers appear below. Preferences stay on this browser only.</p>
+            <div class="lo-settings__actions">
+                <button type="button" class="lo-settings__button" data-lo-provider-select="all">Select all</button>
+                <button type="button" class="lo-settings__button lo-settings__button--ghost" data-lo-provider-select="none">Select none</button>
+            </div>
             <div class="lo-settings__options">
                 <?php foreach ($ordered_tiles as $tile) :
                     $slug = (string) ($tile['provider'] ?? '');
