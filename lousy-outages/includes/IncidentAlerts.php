@@ -463,9 +463,14 @@ class IncidentAlerts {
      */
     private static function collect_from_registered_sources(): array {
         $incidents = [];
+        $allowed   = array_fill_keys(array_keys(Providers::enabled()), true);
 
         foreach (Sources::all() as $slug => $source) {
             if (! $source instanceof StatuspageSource) {
+                continue;
+            }
+
+            if (!isset($allowed[$slug])) {
                 continue;
             }
 

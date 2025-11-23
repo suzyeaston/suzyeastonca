@@ -87,6 +87,7 @@ class Providers {
                 'type'       => 'statuspage',
                 'url'        => 'https://status.linear.app/api/v2/summary.json',
                 'status_url' => 'https://status.linear.app/',
+                'enabled'    => false,
             ],
             [
                 'id'         => 'sentry',
@@ -101,6 +102,7 @@ class Providers {
                 'type'       => 'manual',
                 'url'        => 'https://www.rogers.com/support/service-updates',
                 'status_url' => 'https://www.rogers.com/support/service-updates',
+                'enabled'    => false,
             ],
             [
                 'id'         => 'bell',
@@ -108,6 +110,7 @@ class Providers {
                 'type'       => 'manual',
                 'url'        => 'https://support.bell.ca/networkstatus',
                 'status_url' => 'https://support.bell.ca/networkstatus',
+                'enabled'    => false,
             ],
             [
                 'id'         => 'telus',
@@ -115,6 +118,7 @@ class Providers {
                 'type'       => 'manual',
                 'url'        => 'https://www.telus.com/en/support/outages',
                 'status_url' => 'https://www.telus.com/en/support/outages',
+                'enabled'    => false,
             ],
 
             // RSS/Atom feeds
