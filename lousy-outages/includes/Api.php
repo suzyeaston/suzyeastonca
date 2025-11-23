@@ -68,6 +68,21 @@ class Api {
                         'type'              => 'integer',
                         'sanitize_callback' => 'absint',
                     ],
+                    'severity' => [
+                        'description'       => 'Severity filter (e.g., important)',
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'min_severity' => [
+                        'description'       => 'Minimum severity to include (outage|degraded|maintenance|info)',
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'limit' => [
+                        'description'       => 'Maximum number of incidents to return (after dedupe)',
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                    ],
                 ],
             ]
         );
@@ -269,7 +284,33 @@ class Api {
             return $status ?: 'incident';
         };
 
-        $providers = [];
+        $severityParam = $request->get_param('severity');
+        $importantOnly = true;
+        if (null !== $severityParam) {
+            $value         = strtolower((string) $severityParam);
+            $importantOnly = ! in_array($value, ['all', 'any', 'everything'], true);
+        }
+
+        $minSeverityParam = $request->get_param('min_severity');
+        $minSeverity      = in_array(strtolower((string) $minSeverityParam), ['outage', 'degraded', 'maintenance', 'info'], true)
+            ? strtolower((string) $minSeverityParam)
+            : '';
+
+        $limitParam = $request->get_param('limit');
+        $limit      = (int) (is_numeric($limitParam) ? $limitParam : 80);
+        if ($limit <= 0) {
+            $limit = 80;
+        }
+        if ($limit > 150) {
+            $limit = 150;
+        }
+
+        $providers      = [];
+        $providerLabels = [];
+        foreach (Providers::enabled() as $id => $provider) {
+            $providerLabels[$id] = isset($provider['name']) ? (string) $provider['name'] : ucfirst((string) $id);
+        }
+        $allowedProviders = array_fill_keys(array_keys($providerLabels), true);
 
         $ensureProvider = static function (string $slug, string $label) use (&$providers): void {
             if (!isset($providers[$slug])) {
@@ -282,15 +323,23 @@ class Api {
             }
         };
 
-        // Sanity check: calling /wp-json/lousy-outages/v1/history?provider=github&days=30
-        // should include any non-operational incidents persisted within that window.
+        $severityOrder = [
+            'info'        => 0,
+            'maintenance' => 1,
+            'degraded'    => 2,
+            'outage'      => 3,
+        ];
+
+        $prepared = [];
+
         foreach ($events as $event) {
             if (!is_array($event)) {
                 continue;
             }
+            $event = $incidentStore->normalizeEvent($event);
 
             $slug = sanitize_key((string) ($event['provider'] ?? ''));
-            if ('' === $slug) {
+            if ('' === $slug || !isset($allowedProviders[$slug])) {
                 continue;
             }
             if (!empty($filters) && !in_array($slug, $filters, true)) {
@@ -305,14 +354,86 @@ class Api {
                 continue;
             }
 
-            $status = $normalizeStatus((string) ($event['status'] ?? 'unknown'));
-            $label  = $event['provider_label'] ?? ucfirst($slug);
-            $date   = gmdate('Y-m-d', $firstSeen ?: $lastSeen ?: time());
-            $isIncident = !in_array($status, ['operational', 'ok', 'none'], true);
+            $status    = $normalizeStatus((string) ($event['status'] ?? 'unknown'));
+            $label     = $providerLabels[$slug] ?? ($event['provider_label'] ?? ucfirst($slug));
+            $severity  = isset($event['severity']) ? (string) $event['severity'] : 'degraded';
+            $important = isset($event['important']) ? (bool) $event['important'] : true;
 
-            if (!$isIncident) {
+            if (in_array($status, ['operational', 'ok', 'none'], true)) {
                 continue;
             }
+
+            if ($importantOnly && ! $important) {
+                continue;
+            }
+
+            if ($minSeverity && isset($severityOrder[$severity]) && isset($severityOrder[$minSeverity])) {
+                if ($severityOrder[$severity] < $severityOrder[$minSeverity]) {
+                    continue;
+                }
+            }
+
+            $prepared[] = [
+                'id'         => (string) ($event['guid'] ?? sha1($slug . '|' . ($event['title'] ?? '') . '|' . ($firstSeen ?: $lastSeen))),
+                'provider'   => $slug,
+                'provider_label' => (string) $label,
+                'status'     => $status,
+                'severity'   => $severity,
+                'important'  => (bool) $important,
+                'summary'    => (string) ($event['title'] ?? $event['description'] ?? ''),
+                'first_seen' => $firstSeen,
+                'last_seen'  => $lastSeen,
+                'url'        => isset($event['url']) ? (string) $event['url'] : '',
+            ];
+        }
+
+        usort($prepared, static function ($left, $right): int {
+            $leftTs  = isset($left['last_seen']) ? (int) $left['last_seen'] : (int) ($left['first_seen'] ?? 0);
+            $rightTs = isset($right['last_seen']) ? (int) $right['last_seen'] : (int) ($right['first_seen'] ?? 0);
+            return $rightTs <=> $leftTs;
+        });
+
+        $deduped         = [];
+        $latestPerSource = [];
+        $dedupeWindow    = 30 * MINUTE_IN_SECONDS;
+
+        foreach ($prepared as $entry) {
+            $slug      = $entry['provider'];
+            $reference = $entry['last_seen'] ?: $entry['first_seen'];
+
+            if (isset($latestPerSource[$slug])) {
+                $lastIndex = $latestPerSource[$slug];
+                $recent    = $deduped[$lastIndex];
+                $sameTitle = isset($recent['summary'], $entry['summary']) && $recent['summary'] === $entry['summary'];
+                $sameSeverity = isset($recent['severity']) && $recent['severity'] === ($entry['severity'] ?? '');
+                $recentTs     = $recent['last_seen'] ?: $recent['first_seen'];
+
+                if ($sameTitle && $sameSeverity && abs($recentTs - $reference) < $dedupeWindow) {
+                    $deduped[$lastIndex]['first_seen'] = min(
+                        (int) ($deduped[$lastIndex]['first_seen'] ?? $reference),
+                        (int) ($entry['first_seen'] ?? $reference)
+                    );
+                    $deduped[$lastIndex]['last_seen'] = max(
+                        (int) ($deduped[$lastIndex]['last_seen'] ?? $reference),
+                        (int) ($entry['last_seen'] ?? $reference)
+                    );
+                    continue;
+                }
+            }
+
+            $deduped[]              = $entry;
+            $latestPerSource[$slug] = count($deduped) - 1;
+        }
+
+        $chartEvents = $deduped;
+        if (count($deduped) > $limit) {
+            $deduped = array_slice($deduped, 0, $limit);
+        }
+
+        foreach ($deduped as $event) {
+            $slug  = $event['provider'];
+            $label = $event['provider_label'] ?? ucfirst($slug);
+            $date  = gmdate('Y-m-d', $event['first_seen'] ?: ($event['last_seen'] ?: time()));
 
             $ensureProvider($slug, (string) $label);
 
@@ -320,23 +441,23 @@ class Api {
                 $providers[$slug]['history'][$date] = [
                     'date'        => $date,
                     'incidents'   => 0,
-                    'last_status' => $status,
+                    'last_status' => $event['status'],
                 ];
             }
 
-            if ($isIncident) {
-                $providers[$slug]['history'][$date]['incidents'] += 1;
-            }
-            $providers[$slug]['history'][$date]['last_status'] = $status;
+            $providers[$slug]['history'][$date]['incidents'] += 1;
+            $providers[$slug]['history'][$date]['last_status'] = $event['status'];
 
             $providers[$slug]['incidents'][] = [
-                'id'         => (string) ($event['guid'] ?? sha1($slug . '|' . ($event['title'] ?? '') . '|' . ($firstSeen ?: $lastSeen))),
-                'provider'   => (string) $label,
-                'status'     => $status,
-                'summary'    => (string) ($event['title'] ?? $event['description'] ?? ''),
-                'first_seen' => $firstSeen ? gmdate('c', $firstSeen) : null,
-                'last_seen'  => $lastSeen ? gmdate('c', $lastSeen) : null,
-                'url'        => isset($event['url']) ? (string) $event['url'] : '',
+                'id'         => $event['id'],
+                'provider'   => $event['provider_label'],
+                'status'     => $event['status'],
+                'severity'   => $event['severity'],
+                'important'  => $event['important'],
+                'summary'    => $event['summary'],
+                'first_seen' => $event['first_seen'] ? gmdate('c', (int) $event['first_seen']) : null,
+                'last_seen'  => $event['last_seen'] ? gmdate('c', (int) $event['last_seen']) : null,
+                'url'        => $event['url'],
             ];
         }
 
@@ -351,7 +472,7 @@ class Api {
                     continue;
                 }
                 $slug = sanitize_key((string) $entry['id']);
-                if ('' === $slug) {
+                if ('' === $slug || !isset($allowedProviders[$slug])) {
                     continue;
                 }
                 if (!empty($filters) && !in_array($slug, $filters, true)) {
@@ -384,6 +505,8 @@ class Api {
                     'id'         => sha1($slug . '|' . $timestamp . '|' . $status),
                     'provider'   => ucfirst($slug),
                     'status'     => $status,
+                    'severity'   => 'degraded',
+                    'important'  => true,
                     'summary'    => sprintf('Status reported: %s', ucfirst($status)),
                     'first_seen' => gmdate('c', $timestamp),
                     'last_seen'  => null,
@@ -392,10 +515,24 @@ class Api {
             }
         }
 
+        $providerCounts = [];
+        $dailyCounts    = [];
+        foreach ($chartEvents as $event) {
+            $label = $event['provider_label'] ?? ($providerLabels[$event['provider']] ?? $event['provider']);
+            $date  = gmdate('Y-m-d', $event['first_seen'] ?: ($event['last_seen'] ?: time()));
+            $providerCounts[$label] = ($providerCounts[$label] ?? 0) + 1;
+            $dailyCounts[$date]     = ($dailyCounts[$date] ?? 0) + 1;
+        }
+
         $response = [
             'generated_at' => gmdate('c'),
             'meta'         => [
-                'fetchedAt' => gmdate('c'),
+                'fetchedAt'        => gmdate('c'),
+                'provider_counts'  => $providerCounts,
+                'daily_counts'     => $dailyCounts,
+                'important_only'   => $importantOnly,
+                'window_days'      => $days,
+                'deduped_incidents' => count($deduped),
             ],
             'providers'    => [],
         ];

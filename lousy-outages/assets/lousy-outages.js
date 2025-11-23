@@ -23,6 +23,8 @@
   var MANUAL_REFRESH_MAX_ATTEMPTS = 4;
   var THEME_STORAGE_KEY = 'lo-theme-preference';
   var VISIBILITY_STORAGE_KEY = 'lo-visible-providers';
+  var HISTORY_LIMIT = 80;
+  var HISTORY_DEFAULT_DAYS = 30;
 
   var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
@@ -88,6 +90,9 @@
     historyList: null,
     historyEmpty: null,
     historyError: null,
+    historyCharts: null,
+    historyImportantOnly: true,
+    historyWindowDays: HISTORY_DEFAULT_DAYS,
     visibleProviders: {},
     debug: false,
     postPaintStarted: false
@@ -929,6 +934,168 @@
     return safe + ' incidents';
   }
 
+  function renderHistoryCharts(providers, meta) {
+    if (!state.historyCharts || !state.doc) {
+      return;
+    }
+
+    state.historyCharts.innerHTML = '';
+    var providerCounts = meta && meta.provider_counts && typeof meta.provider_counts === 'object'
+      ? meta.provider_counts
+      : null;
+    var dailyCounts = meta && meta.daily_counts && typeof meta.daily_counts === 'object'
+      ? meta.daily_counts
+      : null;
+
+    if (!providerCounts) {
+      providerCounts = {};
+      (Array.isArray(providers) ? providers : []).forEach(function (provider) {
+        if (!provider || !Array.isArray(provider.incidents)) {
+          return;
+        }
+        var label = provider.label || provider.name || provider.provider || 'Provider';
+        providerCounts[label] = (providerCounts[label] || 0) + provider.incidents.length;
+      });
+    }
+
+    if (!dailyCounts) {
+      dailyCounts = {};
+      (Array.isArray(providers) ? providers : []).forEach(function (provider) {
+        if (!provider || !Array.isArray(provider.incidents)) {
+          return;
+        }
+        provider.incidents.forEach(function (incident) {
+          var dateStr = incident.first_seen || incident.firstSeen || incident.last_seen || incident.lastSeen || '';
+          if (!dateStr) {
+            return;
+          }
+          var parsed = Date.parse(dateStr);
+          if (!Number.isNaN(parsed)) {
+            var formatted = new Date(parsed).toISOString().slice(0, 10);
+            dailyCounts[formatted] = (dailyCounts[formatted] || 0) + 1;
+          }
+        });
+      });
+    }
+
+    var hasProviders = providerCounts && Object.keys(providerCounts).length > 0;
+    var hasDaily = dailyCounts && Object.keys(dailyCounts).length > 0;
+
+    if (!hasProviders && !hasDaily) {
+      state.historyCharts.setAttribute('hidden', 'hidden');
+      return;
+    }
+
+    state.historyCharts.removeAttribute('hidden');
+    var frag = state.doc.createDocumentFragment();
+
+    if (hasProviders) {
+      var providerChart = buildBarChart(providerCounts, 'Incidents by provider');
+      frag.appendChild(providerChart);
+    }
+
+    if (hasDaily) {
+      var windowDays = meta && meta.window_days ? parseInt(meta.window_days, 10) : HISTORY_DEFAULT_DAYS;
+      var timelineChart = buildTimelineChart(dailyCounts, windowDays || HISTORY_DEFAULT_DAYS);
+      frag.appendChild(timelineChart);
+    }
+
+    state.historyCharts.appendChild(frag);
+  }
+
+  function buildBarChart(counts, title) {
+    var chartWrap = state.doc.createElement('div');
+    chartWrap.className = 'lo-history__chart';
+    if (title) {
+      var heading = state.doc.createElement('div');
+      heading.className = 'lo-history__chart-title';
+      heading.textContent = title;
+      chartWrap.appendChild(heading);
+    }
+
+    var entries = Object.keys(counts).map(function (key) {
+      return { label: key, value: counts[key] };
+    }).sort(function (a, b) { return b.value - a.value; }).slice(0, 8);
+    var max = entries.reduce(function (acc, item) { return Math.max(acc, item.value || 0); }, 0) || 1;
+    var width = Math.max(220, entries.length * 70);
+    var height = 140;
+    var barWidth = Math.floor((width - 20) / Math.max(entries.length, 1)) - 10;
+    var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Incidents by provider');
+
+    entries.forEach(function (entry, index) {
+      var x = 10 + index * (barWidth + 10);
+      var scaled = Math.max(4, Math.round(((entry.value || 0) / max) * (height - 40)));
+      var y = height - 30 - scaled;
+
+      var rect = state.doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(y));
+      rect.setAttribute('width', String(barWidth));
+      rect.setAttribute('height', String(scaled));
+      rect.setAttribute('class', 'lo-history__chart-bar');
+      rect.setAttribute('data-count', String(entry.value));
+      rect.setAttribute('data-label', entry.label);
+      rect.setAttribute('title', entry.label + ': ' + entry.value);
+      svg.appendChild(rect);
+
+      var label = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', String(x + (barWidth / 2)));
+      label.setAttribute('y', String(height - 12));
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('class', 'lo-history__chart-text');
+      label.textContent = entry.label.length > 8 ? entry.label.slice(0, 8) + '…' : entry.label;
+      svg.appendChild(label);
+    });
+
+    chartWrap.appendChild(svg);
+    return chartWrap;
+  }
+
+  function buildTimelineChart(counts, days) {
+    var chartWrap = state.doc.createElement('div');
+    chartWrap.className = 'lo-history__chart';
+    var heading = state.doc.createElement('div');
+    heading.className = 'lo-history__chart-title';
+    heading.textContent = 'Incidents over time';
+    chartWrap.appendChild(heading);
+
+    var today = new Date();
+    var labels = [];
+    for (var i = days - 1; i >= 0; i -= 1) {
+      var dt = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+      labels.push(dt.toISOString().slice(0, 10));
+    }
+
+    var values = labels.map(function (label) { return counts[label] || 0; });
+    var max = values.reduce(function (acc, val) { return Math.max(acc, val); }, 0) || 1;
+    var width = Math.max(240, labels.length * 12);
+    var height = 120;
+    var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Incidents over time');
+
+    labels.forEach(function (label, idx) {
+      var x = 8 + idx * 8;
+      var scaled = Math.max(2, Math.round((values[idx] / max) * (height - 30)));
+      var y = height - 20 - scaled;
+      var rect = state.doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(y));
+      rect.setAttribute('width', '6');
+      rect.setAttribute('height', String(scaled));
+      rect.setAttribute('class', 'lo-history__chart-bar lo-history__chart-bar--thin');
+      rect.setAttribute('title', label + ': ' + values[idx]);
+      svg.appendChild(rect);
+    });
+
+    chartWrap.appendChild(svg);
+    return chartWrap;
+  }
+
   function setHistoryLoading() {
     if (!state.historyList || !state.doc) {
       return;
@@ -944,6 +1111,10 @@
     if (state.historyError) {
       state.historyError.setAttribute('hidden', 'hidden');
     }
+    if (state.historyCharts) {
+      state.historyCharts.innerHTML = '';
+      state.historyCharts.setAttribute('hidden', 'hidden');
+    }
   }
 
   function renderHistoryList(providers, meta) {
@@ -954,6 +1125,8 @@
     if (state.historyError) {
       state.historyError.setAttribute('hidden', 'hidden');
     }
+
+    renderHistoryCharts(providers, meta || {});
 
     var providerList = Array.isArray(providers) ? providers : [];
     var prefs = state.visibleProviders || {};
@@ -1056,6 +1229,9 @@
     }
 
     if (state.historyEmpty) {
+      state.historyEmpty.textContent = state.historyImportantOnly
+        ? 'No significant incidents in the selected window.'
+        : 'No incidents in the selected window.';
       state.historyEmpty.removeAttribute('hidden');
     }
   }
@@ -1097,7 +1273,12 @@
       });
     }
 
-    var url = appendQuery(state.historyEndpoint, 'days', '30');
+    var windowDays = Number.isFinite(state.historyWindowDays) && state.historyWindowDays > 0
+      ? state.historyWindowDays
+      : HISTORY_DEFAULT_DAYS;
+    var url = appendQuery(state.historyEndpoint, 'days', String(windowDays));
+    url = appendQuery(url, 'limit', String(HISTORY_LIMIT));
+    url = appendQuery(url, 'severity', state.historyImportantOnly ? 'important' : 'all');
     if (providerIds.length) {
       url = appendQuery(url, 'provider', providerIds.join(','));
     }
@@ -1586,6 +1767,24 @@
     state.historyList = state.container.querySelector('[data-lo-history-list]');
     state.historyEmpty = state.container.querySelector('[data-lo-history-empty]');
     state.historyError = state.container.querySelector('[data-lo-history-error]');
+    state.historyCharts = state.container.querySelector('[data-lo-history-charts]');
+    var historyToggle = state.container.querySelector('[data-lo-history-important]');
+    if (historyToggle) {
+      state.historyImportantOnly = historyToggle.checked !== false;
+      historyToggle.addEventListener('change', function (event) {
+        state.historyImportantOnly = event.currentTarget.checked !== false;
+        fetchHistoryData();
+      });
+    }
+    var historyWindow = state.container.querySelector('[data-lo-history-window]');
+    if (historyWindow) {
+      state.historyWindowDays = parseInt(historyWindow.value, 10) || HISTORY_DEFAULT_DAYS;
+      historyWindow.addEventListener('change', function (event) {
+        var next = parseInt(event.currentTarget.value, 10);
+        state.historyWindowDays = Number.isFinite(next) && next > 0 ? next : HISTORY_DEFAULT_DAYS;
+        fetchHistoryData();
+      });
+    }
     state.historyEndpoint = config.historyEndpoint || '';
     state.endpoint = config.endpoint || '';
     state.refreshEndpoint = config.refreshEndpoint || '';

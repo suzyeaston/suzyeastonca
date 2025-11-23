@@ -424,8 +424,23 @@ function render_shortcode(): string {
                     <h3 class="lo-block-title">Recent incidents (GitHub)</h3>
                     <p class="lo-history__meta">Last 30 days of non-operational blips.</p>
                 </div>
+                <div class="lo-history__controls">
+                    <label>
+                        <input type="checkbox" data-lo-history-important checked>
+                        <span>Show only major incidents</span>
+                    </label>
+                    <label>
+                        <span class="sr-only">History window</span>
+                        <select data-lo-history-window>
+                            <option value="1">24h</option>
+                            <option value="7">7d</option>
+                            <option value="30" selected>30d</option>
+                        </select>
+                    </label>
+                </div>
             </div>
             <div class="lo-history__body">
+                <div class="lo-history__charts" data-lo-history-charts hidden></div>
                 <ol class="lo-history__list" data-lo-history-list>
                     <li class="lo-history__item lo-history__item--placeholder">Loading incidents…</li>
                 </ol>

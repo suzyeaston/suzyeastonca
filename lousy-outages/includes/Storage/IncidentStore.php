@@ -97,6 +97,12 @@ class IncidentStore
                 'raw'            => null,
             ];
 
+            $classification          = $this->classifyIncident($providerKey, $incident->title, $status);
+            $entry['severity']       = $classification['severity'];
+            $entry['important']      = $classification['important'];
+            $entry['status_normal']  = $status;
+            $entry['impact_summary'] = $classification['summary'];
+
             if (isset($events[$eventKey]['first_seen'])) {
                 $entry['first_seen'] = (int) $events[$eventKey]['first_seen'];
             }
@@ -115,6 +121,28 @@ class IncidentStore
     {
         $stored = $this->loadEvents();
         return array_values($stored);
+    }
+
+    /**
+     * Ensure historical events carry the latest classification fields.
+     *
+     * @param array<string, mixed> $event
+     * @return array<string, mixed>
+     */
+    public function normalizeEvent(array $event): array
+    {
+        $status     = $this->normalizeStatus((string) ($event['status'] ?? ''));
+        $title      = isset($event['title']) ? (string) $event['title'] : '';
+        $providerId = isset($event['provider']) ? (string) $event['provider'] : '';
+
+        $classification = $this->classifyIncident($providerId, $title, $status);
+
+        $event['severity']       = $event['severity'] ?? $classification['severity'];
+        $event['important']      = isset($event['important']) ? (bool) $event['important'] : $classification['important'];
+        $event['status_normal']  = $event['status_normal'] ?? $status;
+        $event['impact_summary'] = $event['impact_summary'] ?? $classification['summary'];
+
+        return $event;
     }
 
     public function getLastDigestSent(): string
@@ -184,6 +212,118 @@ class IncidentStore
         }
 
         return $status ? 'incident' : 'incident';
+    }
+
+    /**
+     * @return array{severity: string, important: bool, summary: string}
+     */
+    private function classifyIncident(string $providerKey, string $title, string $status): array
+    {
+        $normalizedStatus = $this->normalizeStatus($status);
+        $severity         = $this->mapSeverity($normalizedStatus);
+        $titleLower       = strtolower($title);
+        $providerLower    = strtolower($providerKey);
+        $important        = ! in_array($severity, ['maintenance', 'info'], true);
+        $summary          = '';
+
+        // Zscaler maintenance / expansion advisories are very noisy.
+        if ('zscaler' === $providerLower) {
+            $noisePatterns = [
+                'reminder',
+                'upcoming',
+                'data center expansions',
+                'data centre expansions',
+                'new dcs',
+                'additions to hub ip address ranges',
+                'aggregate & hub ip',
+                'aggregate and hub ip',
+                'hub ip address ranges',
+                'allowlist',
+                'allow list',
+                'action required',
+                'expansion',
+            ];
+            foreach ($noisePatterns as $pattern) {
+                if (false !== strpos($titleLower, $pattern)) {
+                    $severity  = 'maintenance';
+                    $important = false;
+                    $summary   = 'Filtered Zscaler advisory';
+                    break;
+                }
+            }
+
+            if ($important) {
+                $impactWords = [
+                    'traffic forwarding',
+                    'not loading',
+                    'issue',
+                    'degradation',
+                    'customers may experience',
+                    'impact',
+                    'outage',
+                    'disruption',
+                    'failure',
+                ];
+                foreach ($impactWords as $signal) {
+                    if (false !== strpos($titleLower, $signal)) {
+                        $important = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ('cloudflare' === $providerLower) {
+            if (false !== strpos($titleLower, 'provider reports minor impact')) {
+                $important = false;
+                $summary   = 'Minor Cloudflare signal suppressed';
+                if ('info' === $severity) {
+                    $severity = 'degraded';
+                }
+            }
+        }
+
+        if ('maintenance' === $severity && '' === $summary) {
+            $maintenanceNoise = ['upgrade', 'expansion', 'expanding', 'migration', 'deploy', 'capacity'];
+            foreach ($maintenanceNoise as $word) {
+                if (false !== strpos($titleLower, $word)) {
+                    $important = false;
+                    $summary   = 'Maintenance advisory';
+                    break;
+                }
+            }
+        }
+
+        if (! $summary) {
+            $summary = $important ? 'Significant incident' : 'Informational incident';
+        }
+
+        return [
+            'severity'  => $severity,
+            'important' => $important,
+            'summary'   => $summary,
+        ];
+    }
+
+    private function mapSeverity(string $status): string
+    {
+        switch ($status) {
+            case 'major':
+            case 'critical':
+            case 'major_outage':
+            case 'outage':
+                return 'outage';
+            case 'partial':
+            case 'partial_outage':
+            case 'degraded':
+                return 'degraded';
+            case 'maintenance':
+                return 'maintenance';
+            case 'operational':
+                return 'info';
+        }
+
+        return 'degraded';
     }
 
     /**
