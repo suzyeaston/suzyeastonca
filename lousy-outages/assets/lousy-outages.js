@@ -305,6 +305,25 @@
     applyProviderVisibility();
   }
 
+  function setAllProvidersVisibility(visible) {
+    if (!state.providerToggles || !state.providerToggles.length) {
+      return;
+    }
+    var prefs = {};
+    state.providerToggles.forEach(function (input) {
+      if (!input || !input.value) {
+        return;
+      }
+      input.checked = visible;
+      if (!visible) {
+        prefs[input.value] = false;
+      }
+    });
+    state.visibleProviders = prefs;
+    persistVisibleProviders(prefs);
+    applyProviderVisibility();
+  }
+
   function initProviderVisibility() {
     state.visibleProviders = loadVisibleProviders();
     var toggles = state.container ? state.container.querySelectorAll('[data-lo-provider-toggle]') : [];
@@ -314,6 +333,24 @@
         input.addEventListener('change', handleProviderToggle);
       });
       syncProviderToggleUI();
+    }
+
+    var selectAll = state.container ? state.container.querySelector('[data-lo-provider-select="all"]') : null;
+    if (selectAll) {
+      selectAll.addEventListener('click', function (event) {
+        event.preventDefault();
+        setAllProvidersVisibility(true);
+        syncProviderToggleUI();
+      });
+    }
+
+    var selectNone = state.container ? state.container.querySelector('[data-lo-provider-select="none"]') : null;
+    if (selectNone) {
+      selectNone.addEventListener('click', function (event) {
+        event.preventDefault();
+        setAllProvidersVisibility(false);
+        syncProviderToggleUI();
+      });
     }
     applyProviderVisibility();
   }

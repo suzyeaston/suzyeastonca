@@ -1028,6 +1028,43 @@
   background: rgba(255, 255, 255, 0.85);
 }
 
+.lo-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.lo-settings__button {
+  appearance: none;
+  border: 1px solid var(--lo-border);
+  background: var(--lo-accent);
+  color: #0b0b0b;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.lo-settings__button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.lo-settings__button--ghost {
+  background: transparent;
+  color: var(--lo-accent);
+}
+
+.lousy-outages.lo-theme-light .lo-settings__button {
+  color: #0b0b0b;
+}
+
+.lousy-outages.lo-theme-light .lo-settings__button--ghost {
+  background: rgba(92, 75, 216, 0.08);
+}
+
 .lo-settings__hint {
   margin: 0 0 10px;
   font-size: 0.95rem;
