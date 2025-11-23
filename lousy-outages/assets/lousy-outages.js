@@ -93,6 +93,8 @@
     historyCharts: null,
     historyImportantOnly: true,
     historyWindowDays: HISTORY_DEFAULT_DAYS,
+    historyProviders: [],
+    historyMeta: {},
     visibleProviders: {},
     debug: false,
     postPaintStarted: false
@@ -359,41 +361,93 @@
     return node.textContent.trim();
   }
 
-  function collectExportRows() {
-    if (!state.container || !state.container.querySelectorAll) {
-      return [];
+  function getHistoryChartData() {
+    var meta = state.historyMeta || {};
+    var providers = state.historyProviders || [];
+
+    var providerCounts = meta && meta.provider_counts && typeof meta.provider_counts === 'object'
+      ? meta.provider_counts
+      : null;
+    var dailyCounts = meta && meta.daily_counts && typeof meta.daily_counts === 'object'
+      ? meta.daily_counts
+      : null;
+
+    if (!providerCounts) {
+      providerCounts = {};
+      (Array.isArray(providers) ? providers : []).forEach(function (provider) {
+        if (!provider || !Array.isArray(provider.incidents)) {
+          return;
+        }
+        var label = provider.label || provider.name || provider.provider || 'Provider';
+        providerCounts[label] = (providerCounts[label] || 0) + provider.incidents.length;
+      });
     }
-    var rows = [];
-    var cards = state.container.querySelectorAll('.lo-card');
-    if (!cards || !cards.length) {
-      return rows;
+
+    if (!dailyCounts) {
+      dailyCounts = {};
+      (Array.isArray(providers) ? providers : []).forEach(function (provider) {
+        if (!provider || !Array.isArray(provider.incidents)) {
+          return;
+        }
+        provider.incidents.forEach(function (incident) {
+          var dateStr = incident.first_seen || incident.firstSeen || incident.last_seen || incident.lastSeen || '';
+          if (!dateStr) {
+            return;
+          }
+          var parsed = Date.parse(dateStr);
+          if (!Number.isNaN(parsed)) {
+            var formatted = new Date(parsed).toISOString().slice(0, 10);
+            dailyCounts[formatted] = (dailyCounts[formatted] || 0) + 1;
+          }
+        });
+      });
     }
-    cards.forEach(function (card) {
-      var isHidden = card.classList && card.classList.contains('lo-card--hidden');
-      if (!isHidden && card.getAttribute) {
-        isHidden = card.getAttribute('data-lo-hidden') === 'true';
-      }
-      if (isHidden) {
-        return;
-      }
-      rows.push([
-        getText(card, '.lo-title'),
-        getText(card, '.lo-pill'),
-        getText(card, '.lo-summary')
-      ]);
-    });
-    return rows.filter(function (row) {
-      return row.some(function (cell) { return cell; });
-    });
+
+    var windowDays = meta && meta.window_days ? parseInt(meta.window_days, 10) : state.historyWindowDays;
+
+    return {
+      providerCounts: providerCounts,
+      dailyCounts: dailyCounts,
+      windowDays: Number.isFinite(windowDays) && windowDays > 0 ? windowDays : HISTORY_DEFAULT_DAYS
+    };
   }
 
   function downloadCSV() {
-    var rows = collectExportRows();
-    var allRows = [['Provider', 'Status', 'Summary']].concat(rows);
-    if (allRows.length <= 1) {
+    var data = getHistoryChartData();
+    if (!data) {
       return;
     }
-    var csvContent = allRows.map(function (row) {
+
+    var rows = [];
+
+    var providerEntries = data.providerCounts && Object.keys(data.providerCounts).length
+      ? Object.keys(data.providerCounts).map(function (key) { return { label: key, value: data.providerCounts[key] }; })
+      : [];
+    if (providerEntries.length) {
+      rows.push(['Incidents by provider']);
+      rows.push(['Provider', 'Count']);
+      providerEntries.sort(function (a, b) { return b.value - a.value; }).forEach(function (entry) {
+        rows.push([entry.label, entry.value]);
+      });
+      rows.push(['']);
+    }
+
+    var dailyEntries = data.dailyCounts && Object.keys(data.dailyCounts).length
+      ? Object.keys(data.dailyCounts).sort().map(function (key) { return { label: key, value: data.dailyCounts[key] }; })
+      : [];
+    if (dailyEntries.length) {
+      rows.push(['Incidents per day']);
+      rows.push(['Date', 'Count']);
+      dailyEntries.forEach(function (entry) {
+        rows.push([entry.label, entry.value]);
+      });
+    }
+
+    if (!rows.length) {
+      return;
+    }
+
+    var csvContent = rows.map(function (row) {
       return row.map(function (field) {
         var safe = (field || '').replace(/"/g, '""');
         return '"' + safe + '"';
@@ -417,15 +471,67 @@
   }
 
   function exportPDF() {
-    if (!state.root || typeof state.root.print !== 'function') {
+    if (!state.root || !state.historyCharts) {
       return;
     }
-    if (state.root.requestAnimationFrame) {
-      state.root.requestAnimationFrame(function () {
-        state.root.print();
-      });
+
+    var hasCharts = state.historyCharts.querySelector && state.historyCharts.querySelector('svg');
+    if (!hasCharts) {
+      return;
+    }
+
+    var clone = state.historyCharts.cloneNode(true);
+    clone.removeAttribute('hidden');
+
+    var printWindow = state.root.open('', '_blank');
+    if (!printWindow || !printWindow.document || typeof printWindow.document.write !== 'function') {
+      return;
+    }
+
+    var styles = [
+      'body { margin: 0; padding: 24px; font-family: \'Inter\', system-ui, -apple-system, sans-serif; background: #0c0c0c; color: #fefefe; }',
+      '.lo-history__chart { margin-bottom: 24px; }',
+      '.lo-history__chart-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }',
+      '.lo-history__chart svg { width: 100%; height: auto; border: 1px solid #222; background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0, rgba(255, 255, 255, 0.03) 4px, transparent 4px, transparent 8px); }',
+      '.lo-history__chart-bar { fill: #6df28c; stroke: #0c0c0c; stroke-width: 1; }',
+      '.lo-history__chart-bar--thin { fill: #ffb347; }',
+      '.lo-history__chart-text { font-size: 10px; fill: #fefefe; }',
+      '.lo-history__chart text { font-family: \'Inter\', system-ui, -apple-system, sans-serif; }'
+    ].join('\n');
+
+    var title = 'Lousy Outages – Incident charts';
+    var html = [
+      '<!doctype html>',
+      '<html>',
+      '<head>',
+      '<meta charset="utf-8">',
+      '<title>' + title + '</title>',
+      '<style>' + styles + '</style>',
+      '</head>',
+      '<body>',
+      '<h1 style="font-size:18px; margin:0 0 16px;">' + title + '</h1>',
+      clone.innerHTML,
+      '</body>',
+      '</html>'
+    ].join('');
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+
+    var triggerPrint = function () {
+      if (printWindow.focus) {
+        printWindow.focus();
+      }
+      if (typeof printWindow.print === 'function') {
+        printWindow.print();
+      }
+    };
+
+    if (printWindow.document.readyState === 'complete') {
+      triggerPrint();
     } else {
-      state.root.print();
+      printWindow.addEventListener('load', triggerPrint);
     }
   }
 
@@ -940,44 +1046,9 @@
     }
 
     state.historyCharts.innerHTML = '';
-    var providerCounts = meta && meta.provider_counts && typeof meta.provider_counts === 'object'
-      ? meta.provider_counts
-      : null;
-    var dailyCounts = meta && meta.daily_counts && typeof meta.daily_counts === 'object'
-      ? meta.daily_counts
-      : null;
-
-    if (!providerCounts) {
-      providerCounts = {};
-      (Array.isArray(providers) ? providers : []).forEach(function (provider) {
-        if (!provider || !Array.isArray(provider.incidents)) {
-          return;
-        }
-        var label = provider.label || provider.name || provider.provider || 'Provider';
-        providerCounts[label] = (providerCounts[label] || 0) + provider.incidents.length;
-      });
-    }
-
-    if (!dailyCounts) {
-      dailyCounts = {};
-      (Array.isArray(providers) ? providers : []).forEach(function (provider) {
-        if (!provider || !Array.isArray(provider.incidents)) {
-          return;
-        }
-        provider.incidents.forEach(function (incident) {
-          var dateStr = incident.first_seen || incident.firstSeen || incident.last_seen || incident.lastSeen || '';
-          if (!dateStr) {
-            return;
-          }
-          var parsed = Date.parse(dateStr);
-          if (!Number.isNaN(parsed)) {
-            var formatted = new Date(parsed).toISOString().slice(0, 10);
-            dailyCounts[formatted] = (dailyCounts[formatted] || 0) + 1;
-          }
-        });
-      });
-    }
-
+    var chartData = getHistoryChartData();
+    var providerCounts = chartData ? chartData.providerCounts : null;
+    var dailyCounts = chartData ? chartData.dailyCounts : null;
     var hasProviders = providerCounts && Object.keys(providerCounts).length > 0;
     var hasDaily = dailyCounts && Object.keys(dailyCounts).length > 0;
 
@@ -995,8 +1066,7 @@
     }
 
     if (hasDaily) {
-      var windowDays = meta && meta.window_days ? parseInt(meta.window_days, 10) : HISTORY_DEFAULT_DAYS;
-      var timelineChart = buildTimelineChart(dailyCounts, windowDays || HISTORY_DEFAULT_DAYS);
+      var timelineChart = buildTimelineChart(dailyCounts, (chartData && chartData.windowDays) || HISTORY_DEFAULT_DAYS);
       frag.appendChild(timelineChart);
     }
 
@@ -1339,6 +1409,8 @@
           throw new Error('invalid history response');
         }
 
+        state.historyProviders = body.providers;
+        state.historyMeta = body.meta || {};
         renderHistoryList(body.providers, body.meta || {});
       })
       .catch(function (err) {
