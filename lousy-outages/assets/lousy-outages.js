@@ -874,10 +874,22 @@
 
   function mapHistoryStatus(code) {
     var key = String(code || '').toLowerCase();
-    if (key === 'major_outage' || key === 'critical' || key === 'outage' || key === 'major') {
+    if (
+      key === 'major_outage' ||
+      key === 'critical' ||
+      key === 'outage' ||
+      key === 'major'
+    ) {
       return { label: 'Outage', className: 'outage' };
     }
-    if (key === 'minor_outage' || key === 'partial_outage' || key === 'degraded_performance' || key === 'partial') {
+    if (
+      key === 'minor_outage' ||
+      key === 'partial_outage' ||
+      key === 'degraded_performance' ||
+      key === 'partial' ||
+      key === 'degraded' ||
+      key === 'incident'
+    ) {
       return { label: 'Degraded', className: 'degraded' };
     }
     if (key === 'maintenance' || key === 'maintenance_window') {
@@ -933,13 +945,84 @@
     }
   }
 
-  function renderHistoryList(history) {
+  function renderHistoryList(history, incidents, providerLabel) {
     if (!state.historyList || !state.doc) {
       return;
     }
     state.historyList.innerHTML = '';
     if (state.historyError) {
       state.historyError.setAttribute('hidden', 'hidden');
+    }
+
+    var incidentEntries = Array.isArray(incidents)
+      ? incidents.filter(function (entry) {
+          var status = entry && entry.status ? String(entry.status) : '';
+          return entry && status.toLowerCase() !== 'operational';
+        })
+      : [];
+
+    incidentEntries.sort(function (a, b) {
+      var left = Date.parse((a && (a.last_seen || a.first_seen)) || '');
+      var right = Date.parse((b && (b.last_seen || b.first_seen)) || '');
+      return right - left;
+    });
+
+    if (incidentEntries.length) {
+      if (state.historyEmpty) {
+        state.historyEmpty.setAttribute('hidden', 'hidden');
+      }
+
+      incidentEntries.forEach(function (entry) {
+        var li = state.doc.createElement('li');
+        li.className = 'lo-history__item';
+
+        var timeWrap = state.doc.createElement('div');
+        timeWrap.className = 'lo-history__time';
+        var started = entry.first_seen || entry.last_seen;
+        var timeEl = state.doc.createElement('time');
+        timeEl.setAttribute('datetime', started || '');
+        timeEl.textContent = formatTimestamp(started) || formatHistoryDate(started);
+        timeWrap.appendChild(timeEl);
+
+        if (entry.last_seen) {
+          var range = state.doc.createElement('span');
+          range.className = 'lo-history__time-range';
+          range.textContent = 'Updated ' + formatTimestamp(entry.last_seen);
+          timeWrap.appendChild(range);
+        }
+
+        var details = state.doc.createElement('div');
+        details.className = 'lo-history__details';
+        var providerName = entry.provider || providerLabel || 'Provider';
+        var providerLabelEl = state.doc.createElement('strong');
+        providerLabelEl.textContent = providerName;
+        details.appendChild(providerLabelEl);
+        var summaryText = entry.summary || 'Incident reported';
+        details.appendChild(state.doc.createTextNode(' — ' + summaryText));
+        if (entry.url) {
+          var link = state.doc.createElement('a');
+          link.href = entry.url;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.className = 'lo-link';
+          link.textContent = 'Details';
+          details.appendChild(state.doc.createTextNode(' '));
+          details.appendChild(link);
+        }
+
+        var badge = state.doc.createElement('span');
+        var mapped = mapHistoryStatus(entry.status);
+        badge.className = 'lo-pill ' + mapped.className + ' lo-history__badge';
+        badge.textContent = mapped.label;
+
+        li.appendChild(timeWrap);
+        li.appendChild(details);
+        li.appendChild(badge);
+
+        state.historyList.appendChild(li);
+      });
+
+      return;
     }
 
     var entries = Array.isArray(history)
@@ -1038,7 +1121,7 @@
           renderHistoryList([]);
           return;
         }
-        renderHistoryList(target.history);
+        renderHistoryList(target.history, target.incidents, target.label);
       })
       .catch(function () {
         renderHistoryError('Unable to load incident history right now.');

@@ -241,6 +241,11 @@
   color: var(--lo-accent);
 }
 
+.lo-history__time-range {
+  color: #b4b4be;
+  font-size: 0.8rem;
+}
+
 .lousy-outages.lo-theme-light .lo-history__time time {
   color: var(--lo-accent);
 }

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace SuzyEaston\LousyOutages;
 
+use SuzyEaston\LousyOutages\Storage\IncidentStore;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -230,37 +231,53 @@ class Api {
             $days = 90;
         }
 
-        $cutoff = time() - ($days * DAY_IN_SECONDS);
-        $store  = new Store();
-        $log    = $store->get_history_log();
+        $cutoff        = time() - ($days * DAY_IN_SECONDS);
+        $store         = new Store();
+        $incidentStore = new IncidentStore();
+        $log           = $store->get_history_log();
+        $events        = $incidentStore->getStoredIncidents();
 
         $providers = [];
 
-        foreach ($log as $entry) {
-            if (!is_array($entry) || empty($entry['id']) || !isset($entry['time'])) {
+        $ensureProvider = static function (string $slug, string $label) use (&$providers): void {
+            if (!isset($providers[$slug])) {
+                $providers[$slug] = [
+                    'id'        => $slug,
+                    'label'     => $label,
+                    'history'   => [],
+                    'incidents' => [],
+                ];
+            }
+        };
+
+        // Sanity check: calling /wp-json/lousy-outages/v1/history?provider=github&days=30
+        // should include any non-operational incidents persisted within that window.
+        foreach ($events as $event) {
+            if (!is_array($event)) {
                 continue;
             }
-            $timestamp = (int) $entry['time'];
-            if ($timestamp < $cutoff) {
-                continue;
-            }
-            $slug = sanitize_key((string) $entry['id']);
+
+            $slug = sanitize_key((string) ($event['provider'] ?? ''));
             if ('' === $slug) {
                 continue;
             }
             if (!empty($filters) && !in_array($slug, $filters, true)) {
                 continue;
             }
-            $date   = gmdate('Y-m-d', $timestamp);
-            $status = strtolower((string) ($entry['status'] ?? 'unknown'));
+
+            $firstSeen = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
+            $lastSeen  = isset($event['last_seen']) ? (int) $event['last_seen'] : $firstSeen;
+
+            if ($lastSeen && $lastSeen < $cutoff) {
+                continue;
+            }
+
+            $status = strtolower((string) ($event['status'] ?? 'unknown'));
+            $label  = $event['provider_label'] ?? ucfirst($slug);
+            $date   = gmdate('Y-m-d', $firstSeen ?: $lastSeen ?: time());
             $isIncident = !in_array($status, ['operational', 'none', 'ok'], true);
 
-            if (!isset($providers[$slug])) {
-                $providers[$slug] = [
-                    'id'      => $slug,
-                    'history' => [],
-                ];
-            }
+            $ensureProvider($slug, (string) $label);
 
             if (!isset($providers[$slug]['history'][$date])) {
                 $providers[$slug]['history'][$date] = [
@@ -274,6 +291,54 @@ class Api {
                 $providers[$slug]['history'][$date]['incidents'] += 1;
             }
             $providers[$slug]['history'][$date]['last_status'] = $status;
+
+            $providers[$slug]['incidents'][] = [
+                'id'         => (string) ($event['guid'] ?? sha1($slug . '|' . ($event['title'] ?? '') . '|' . ($firstSeen ?: $lastSeen))),
+                'provider'   => (string) $label,
+                'status'     => $status,
+                'summary'    => (string) ($event['title'] ?? $event['description'] ?? ''),
+                'first_seen' => $firstSeen ? gmdate('c', $firstSeen) : null,
+                'last_seen'  => $lastSeen ? gmdate('c', $lastSeen) : null,
+                'url'        => isset($event['url']) ? (string) $event['url'] : '',
+            ];
+        }
+
+        // Fallback for environments without persisted incidents yet: use legacy status log.
+        if (empty($providers)) {
+            foreach ($log as $entry) {
+                if (!is_array($entry) || empty($entry['id']) || !isset($entry['time'])) {
+                    continue;
+                }
+                $timestamp = (int) $entry['time'];
+                if ($timestamp < $cutoff) {
+                    continue;
+                }
+                $slug = sanitize_key((string) $entry['id']);
+                if ('' === $slug) {
+                    continue;
+                }
+                if (!empty($filters) && !in_array($slug, $filters, true)) {
+                    continue;
+                }
+                $date   = gmdate('Y-m-d', $timestamp);
+                $status = strtolower((string) ($entry['status'] ?? 'unknown'));
+                $isIncident = !in_array($status, ['operational', 'none', 'ok'], true);
+
+                $ensureProvider($slug, ucfirst($slug));
+
+                if (!isset($providers[$slug]['history'][$date])) {
+                    $providers[$slug]['history'][$date] = [
+                        'date'        => $date,
+                        'incidents'   => 0,
+                        'last_status' => $status,
+                    ];
+                }
+
+                if ($isIncident) {
+                    $providers[$slug]['history'][$date]['incidents'] += 1;
+                }
+                $providers[$slug]['history'][$date]['last_status'] = $status;
+            }
         }
 
         $response = [
@@ -285,8 +350,10 @@ class Api {
             $history = $provider['history'];
             ksort($history);
             $response['providers'][] = [
-                'id'      => $provider['id'],
-                'history' => array_values($history),
+                'id'        => $provider['id'],
+                'label'     => $provider['label'],
+                'history'   => array_values($history),
+                'incidents' => array_values($provider['incidents']),
             ];
         }
 
