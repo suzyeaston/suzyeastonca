@@ -5,7 +5,7 @@ namespace SuzyEaston\LousyOutages;
 
 class Providers {
     private const OPTION_DEFAULT_ENABLED = 'lousy_outages_default_enabled_providers';
-    private const BLOCKED_PROVIDER_IDS = ['rogers', 'bell', 'telus', 'linear'];
+    private const BLOCKED_PROVIDER_IDS = ['linear'];
 
     private static function defaultProviders(): array {
         return [
