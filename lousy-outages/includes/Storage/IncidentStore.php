@@ -10,7 +10,9 @@ class IncidentStore
     private const OPTION_EVENTS = 'lo_event_log';
     private const OPTION_LAST_DIGEST = 'lousy_outages_daily_digest_last_sent';
     private const ALERT_COOLDOWN = 90; // Minutes.
-    private const EVENT_RETENTION = 36; // Hours.
+    // Keep events long enough for 30+ day history; previously capped at ~36 hours,
+    // which caused the dashboard history to go empty even when recent incidents existed.
+    private const EVENT_RETENTION = 60 * 24; // Hours (~60 days).
 
     /**
      * Determine whether an alert email should fire for the incident.
