@@ -112,7 +112,7 @@ function render_shortcode(): string {
         }
     }
 
-    $fetched_at = gmdate('c');
+    $fetched_at = '';
     $tiles      = [];
     $config     = null;
     $refresh_interval = 60000;
@@ -240,6 +240,14 @@ function render_shortcode(): string {
         }
         if (!isset($config['historyEndpoint'])) {
             $config['historyEndpoint'] = esc_url_raw(rest_url('lousy-outages/v1/history'));
+        }
+    }
+
+    $last_fetched_timestamp = \lousy_outages_get_last_fetched_timestamp();
+    if ($last_fetched_timestamp) {
+        $fetched_at = wp_date('c', $last_fetched_timestamp);
+        if (isset($config['initial']['fetched_at'])) {
+            $config['initial']['fetched_at'] = $fetched_at;
         }
     }
 

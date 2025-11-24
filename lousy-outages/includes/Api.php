@@ -98,48 +98,30 @@ class Api {
      * Trigger a manual refresh of provider statuses.
      */
     public static function handle_refresh(WP_REST_Request $request): WP_REST_Response {
-        $timestamp = gmdate('c');
-        $store     = new Store();
-        $states    = lousy_outages_collect_statuses(true);
-        $errors    = [];
+        $result = \lousy_outages_refresh_data(true);
+        $status = !empty($result['ok']) ? 200 : 503;
 
-        foreach ($states as $id => $state) {
-            $store->update($id, $state);
-            if (!empty($state['error'])) {
-                $errors[] = [
-                    'id'      => $id,
-                    'provider'=> isset($state['name']) ? (string) $state['name'] : (isset($state['provider']) ? (string) $state['provider'] : $id),
-                    'message' => (string) $state['error'],
-                ];
-            }
-        }
+        $providers = isset($result['providers']) && is_array($result['providers']) ? $result['providers'] : [];
+        $errors    = isset($result['errors']) && is_array($result['errors']) ? $result['errors'] : [];
+        $trending  = isset($result['trending']) && is_array($result['trending']) ? $result['trending'] : ['trending' => false, 'signals' => []];
+        $refreshed_at = isset($result['refreshedAt']) ? (string) $result['refreshedAt'] : gmdate('c');
 
-        update_option('lousy_outages_last_poll', $timestamp, false);
-        do_action('lousy_outages_log', 'manual_refresh', [
-            'count' => count($states),
-            'ts'    => $timestamp,
-        ]);
-
-        $snapshot  = \lousy_outages_refresh_snapshot($states, $timestamp, 'live');
-        $providers = isset($snapshot['providers']) && is_array($snapshot['providers']) ? $snapshot['providers'] : [];
-
-        if (empty($errors) && isset($snapshot['errors']) && is_array($snapshot['errors'])) {
-            $errors = $snapshot['errors'];
-        }
-
-        $epoch = time();
         $response = [
-            'ok'            => true,
-            'refreshed_at'  => $epoch,
-            'refreshedAt'   => $timestamp,
+            'ok'            => !empty($result['ok']),
+            'refreshed_at'  => isset($result['refreshed_at']) ? (int) $result['refreshed_at'] : time(),
+            'refreshedAt'   => $refreshed_at,
             'providerCount' => count($providers),
             'errors'        => $errors,
             'providers'     => $providers,
-            'trending'      => $snapshot['trending'] ?? ['trending' => false, 'signals' => []],
+            'trending'      => $trending,
             'source'        => 'live',
         ];
 
-        return rest_ensure_response($response);
+        if (isset($result['message']) && is_string($result['message'])) {
+            $response['message'] = $result['message'];
+        }
+
+        return new WP_REST_Response($response, $status);
     }
 
     public static function handle_summary(WP_REST_Request $request) {

@@ -110,6 +110,9 @@ function lousy_outages_activate() {
         $interval = (int) get_option( 'lousy_outages_interval', 300 );
         wp_schedule_event( time() + 60, 'lousy_outages_interval', 'lousy_outages_poll' );
     }
+    if ( ! wp_next_scheduled( 'lousy_outages_cron_refresh' ) ) {
+        wp_schedule_event( time() + MINUTE_IN_SECONDS, 'lousy_outages_15min', 'lousy_outages_cron_refresh' );
+    }
     if ( ! wp_next_scheduled( 'lo_check_statuses' ) ) {
         wp_schedule_event( time() + 60, 'lo_five_minutes', 'lo_check_statuses' );
     }
@@ -135,6 +138,7 @@ register_activation_hook( __FILE__, 'lousy_outages_activate' );
  */
 function lousy_outages_deactivate() {
     wp_clear_scheduled_hook( 'lousy_outages_poll' );
+    wp_clear_scheduled_hook( 'lousy_outages_cron_refresh' );
     wp_clear_scheduled_hook( 'lo_check_statuses' );
     Subscriptions::clear_schedule();
     if ( function_exists( 'lo_cron_deactivate' ) ) {
@@ -232,8 +236,10 @@ function lousy_outages_run_poll(): int {
         update_option( 'lousy_outages_prealert_last', $prealert_last, false );
     }
 
-    $timestamp = gmdate( 'c' );
+    $timestamp_epoch = current_time( 'timestamp' );
+    $timestamp       = wp_date( 'c', $timestamp_epoch );
     update_option( 'lousy_outages_last_poll', $timestamp, false );
+    update_option( 'lousy_outages_last_fetched', $timestamp_epoch, false );
     lousy_outages_refresh_snapshot( $statuses, $timestamp );
     do_action( 'lousy_outages_log', 'poll_complete', [ 'count' => $processed, 'ts' => $timestamp ] );
 
@@ -307,6 +313,104 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
     }
 
     return $payload;
+}
+
+function lousy_outages_get_last_fetched_timestamp(): ?int {
+    $stored = get_option( 'lousy_outages_last_fetched' );
+    if ( is_numeric( $stored ) ) {
+        return (int) $stored;
+    }
+
+    if ( is_string( $stored ) && '' !== trim( $stored ) ) {
+        $parsed = strtotime( $stored );
+        if ( false !== $parsed ) {
+            return $parsed;
+        }
+    }
+
+    $last_poll = get_option( 'lousy_outages_last_poll' );
+    if ( is_string( $last_poll ) && '' !== trim( $last_poll ) ) {
+        $parsed = strtotime( $last_poll );
+        if ( false !== $parsed ) {
+            return $parsed;
+        }
+    }
+
+    return null;
+}
+
+function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
+    $lock_key = 'lousy_outages_refresh_lock';
+    if ( get_transient( $lock_key ) ) {
+        return [
+            'ok'      => false,
+            'skipped' => true,
+            'message' => 'Refresh already in progress',
+        ];
+    }
+
+    set_transient( $lock_key, 1, 5 * MINUTE_IN_SECONDS );
+
+    $response = [
+        'ok'          => false,
+        'providers'   => [],
+        'errors'      => [],
+        'trending'    => [ 'trending' => false, 'signals' => [] ],
+        'source'      => 'live',
+        'refreshedAt' => null,
+        'refreshed_at' => null,
+    ];
+
+    try {
+        $timestamp    = current_time( 'timestamp' );
+        $timestamp_iso = wp_date( 'c', $timestamp );
+        $store        = new Store();
+        $states       = lousy_outages_collect_statuses( $bypass_cache );
+        $errors       = [];
+
+        foreach ( $states as $id => $state ) {
+            $store->update( $id, $state );
+            if ( is_array( $state ) && ! empty( $state['error'] ) ) {
+                $errors[] = [
+                    'id'       => $id,
+                    'provider' => isset( $state['name'] ) ? (string) $state['name'] : ( isset( $state['provider'] ) ? (string) $state['provider'] : $id ),
+                    'message'  => (string) $state['error'],
+                ];
+            }
+        }
+
+        $snapshot  = lousy_outages_refresh_snapshot( $states, $timestamp_iso, 'live' );
+        $providers = isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] ) ? $snapshot['providers'] : [];
+        $trending  = isset( $snapshot['trending'] ) && is_array( $snapshot['trending'] ) ? $snapshot['trending'] : [ 'trending' => false, 'signals' => [] ];
+
+        if ( empty( $errors ) && isset( $snapshot['errors'] ) && is_array( $snapshot['errors'] ) ) {
+            $errors = $snapshot['errors'];
+        }
+
+        update_option( 'lousy_outages_last_poll', $timestamp_iso, false );
+        update_option( 'lousy_outages_last_fetched', $timestamp, false );
+        do_action( 'lousy_outages_log', 'refresh_complete', [
+            'count' => count( $states ),
+            'ts'    => $timestamp_iso,
+        ] );
+
+        $response = [
+            'ok'           => true,
+            'providers'    => $providers,
+            'errors'       => $errors,
+            'trending'     => $trending,
+            'source'       => 'live',
+            'refreshedAt'  => $timestamp_iso,
+            'refreshed_at' => $timestamp,
+        ];
+    } catch ( \Throwable $e ) {
+        error_log( '[LO] refresh failed: ' . $e->getMessage() );
+        $response['message'] = $e->getMessage();
+    } finally {
+        delete_transient( $lock_key );
+    }
+
+    return $response;
 }
 
 function lousy_outages_filter_states_to_enabled( array $states ): array {

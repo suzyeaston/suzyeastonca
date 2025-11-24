@@ -52,7 +52,7 @@ Place `[lousy_outages]` in any page or post to render the status table. A page t
 
 ## Development
 
-Polling runs via WP-Cron (`lousy_outages_poll`). Results are stored in an option and also exposed at `/wp-json/lousy-outages/v1/status`.
+Polling runs via WP-Cron (`lousy_outages_poll`). A separate background refresh (`lousy_outages_cron_refresh`) updates the snapshot and "Last fetched" timestamp every 15 minutes; on low-traffic sites, point a system cron at `wp-cron.php` to keep it firing. Results are stored in an option and also exposed at `/wp-json/lousy-outages/v1/status`.
 
 ## How to subscribe to RSS
 
