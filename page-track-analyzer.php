@@ -104,42 +104,24 @@ function whisper_transcribe( $filepath ) {
 function gpt4_analyze( $transcript ) {
     $prompt = 'You are legendary producer Rick Rubin offering thoughtful insight. Analyze this song with a focus on emotional resonance, creativity, production quality and artist development advice. Transcript: ' . $transcript;
 
-    $response = wp_remote_post( 'https://api.openai.com/v1/chat/completions', [
-        'headers' => [
-            'Authorization' => 'Bearer ' . OPENAI_API_KEY,
-            'Content-Type'  => 'application/json',
-        ],
-        'body'    => wp_json_encode( [
-            'model'    => 'gpt-4o',
-            'messages' => [ [ 'role' => 'user', 'content' => $prompt ] ],
-            'max_tokens' => 150,
-        ] ),
-        'timeout' => 60,
-    ] );
+    $response = se_openai_chat(
+        [ [ 'role' => 'user', 'content' => $prompt ] ],
+        [
+            'model'       => 'gpt-4o',
+            'max_tokens'  => 150,
+            'timeout'     => 60,
+            'temperature' => 0.7,
+        ]
+    );
 
     if ( is_wp_error( $response ) ) {
         error_log( 'GPT-4 request error: ' . $response->get_error_message() );
         return new WP_Error( 'gpt_request', __( 'Analysis request failed.', 'suzys-music-theme' ) );
     }
 
-    $code = wp_remote_retrieve_response_code( $response );
-    $body = wp_remote_retrieve_body( $response );
-    error_log( 'GPT response (' . $code . '): ' . substr( $body, 0, 200 ) );
-
-    if ( 200 !== $code ) {
-        error_log( 'GPT-4 HTTP ' . $code . ': ' . $body );
-        return new WP_Error( 'gpt_http', sprintf( __( 'Analysis failed (HTTP %s).', 'suzys-music-theme' ), $code ) );
-    }
-
-    $data = json_decode( $body, true );
-    if ( null === $data || json_last_error() !== JSON_ERROR_NONE ) {
-        error_log( 'GPT JSON error: ' . json_last_error_msg() . ' - ' . $body );
-        return new WP_Error( 'gpt_json', __( 'Invalid analysis response.', 'suzys-music-theme' ) );
-    }
-
-    $analysis = $data['choices'][0]['message']['content'] ?? '';
+    $analysis = $response['choices'][0]['message']['content'] ?? '';
     if ( ! $analysis ) {
-        error_log( 'GPT-4 missing content: ' . $body );
+        error_log( 'GPT-4 missing content: ' . wp_json_encode( $response ) );
         return new WP_Error( 'gpt_missing', __( 'Could not generate analysis.', 'suzys-music-theme' ) );
     }
 
