@@ -67,6 +67,9 @@ const INSTRUMENT_PROFILES = {
 };
 
 const instrumentChains = {};
+const masterOutput = new Tone.Gain(1).toDestination();
+const recordingDestination = Tone.getContext().createMediaStreamDestination();
+masterOutput.connect(recordingDestination);
 
 function noteName(semi, oct = 4) {
   const name = NOTE_NAMES[((semi % 12) + 12) % 12];
@@ -111,7 +114,8 @@ async function ensureInstrumentChain(key) {
   });
   await Tone.loaded();
 
-  const reverb = new Tone.Reverb(profile.reverb).toDestination();
+  const reverb = new Tone.Reverb(profile.reverb);
+  reverb.connect(masterOutput);
   let chainEnd = reverb;
 
   if (profile.distortion) {
@@ -140,9 +144,9 @@ async function ensureInstrumentChain(key) {
 }
 
 const app = Vue.createApp({
-  template: `
-    <div>
-      <div class="controls">
+    template: `
+      <div>
+        <div class="controls">
         <label>Mode
           <select v-model="mode">
             <option value="major">Major</option>
@@ -162,22 +166,28 @@ const app = Vue.createApp({
             <option value="distortion_guitar">Distortion Guitar</option>
           </select>
         </label>
-        <label>Bars
-          <select v-model.number="bars">
-            <option value="4">4</option>
-            <option value="8">8</option>
-            <option value="12">12</option>
-            <option value="16">16</option>
-          </select>
-        </label>
-        <button @click="generate" :disabled="isPlaying">Generate Riff</button>
+          <label>Bars
+            <select v-model.number="bars">
+              <option value="4">4</option>
+              <option value="8">8</option>
+              <option value="12">12</option>
+              <option value="16">16</option>
+            </select>
+          </label>
+          <button @click="generate" :disabled="isPlaying || isRecording">Generate Riff</button>
+          <button @click="togglePlay" :disabled="!hasRiff" class="secondary">
+            {{ isPlaying ? 'Stop' : 'Play Riff' }}
+          </button>
+          <button @click="downloadRiff" :disabled="!hasRiff || isRecording" class="secondary">
+            Download Riff (WebM audio)
+          </button>
+        </div>
+        <div class="producer-tip" v-if="tip">
+          <strong>Producer's Tip:</strong> {{ tip }}
+        </div>
+        <textarea v-model="progressionText" rows="2" readonly></textarea>
       </div>
-      <div class="producer-tip" v-if="tip">
-        <strong>Producer's Tip:</strong> {{ tip }}
-      </div>
-      <textarea v-model="progressionText" rows="2" readonly></textarea>
-    </div>
-  `,
+    `,
   data() {
     return {
       tempo: 120,
@@ -186,7 +196,12 @@ const app = Vue.createApp({
       bars: 8,
       progressionText: '',
       tip: TIPS[Math.floor(Math.random() * TIPS.length)],
-      isPlaying: false
+      isPlaying: false,
+      isRecording: false,
+      hasRiff: false,
+      activePart: null,
+      currentChords: [],
+      currentPatterns: []
     };
   },
   computed: {
@@ -258,9 +273,9 @@ const app = Vue.createApp({
       }
       this.tip = this.randomTip();
     },
-    async generate() {
-      const statusEl = document.getElementById('riff-status');
-      if (statusEl) {
+      async generate() {
+        const statusEl = document.getElementById('riff-status');
+        if (statusEl) {
         statusEl.textContent = 'Generating...';
         statusEl.style.display = 'block';
       }
@@ -271,6 +286,9 @@ const app = Vue.createApp({
 
       this.progressionText = chords.map((c) => c.display).join(' | ');
       this.tip = "Producer's Tip: thinking...";
+      this.currentChords = chords;
+      this.currentPatterns = patterns;
+      this.hasRiff = true;
 
       try {
         await this.play(chords, patterns);
@@ -282,40 +300,136 @@ const app = Vue.createApp({
 
       this.fetchProducerTip(this.progressionText + ` @ ${this.tempo} BPM (${this.mode})`);
     },
-    async play(chords, patterns) {
-      this.isPlaying = true;
-      await Tone.start();
-      const chain = await ensureInstrumentChain(this.instrument);
-      const sampler = chain.sampler;
-      const recorder = new Tone.Recorder();
-      chain.output.connect(recorder);
-      recorder.start();
-
+    buildEvents(chords, patterns) {
       const beat = 60 / this.tempo;
       const barDuration = beat * 4;
-      const stepDuration = barDuration / (patterns[0] ? patterns[0].length : 8);
-      const startTime = Tone.now() + 0.4;
+      const steps = patterns[0] ? patterns[0].length : 8;
+      const stepDuration = barDuration / steps;
+      const events = [];
 
       patterns.forEach((pattern, barIndex) => {
-        const barStart = startTime + barIndex * barDuration;
+        const barStart = barIndex * barDuration;
         const chord = chords[barIndex];
-        sampler.triggerAttackRelease(chord.notes, barDuration * 0.9, barStart);
+        events.push({ time: barStart, note: chord.notes, duration: barDuration * 0.9 });
         pattern.forEach((note, step) => {
-          sampler.triggerAttackRelease(note, stepDuration * 0.9, barStart + step * stepDuration);
+          events.push({ time: barStart + step * stepDuration, note, duration: stepDuration * 0.9 });
         });
       });
 
-      const totalDuration = barDuration * patterns.length + 0.8;
-      setTimeout(async () => {
-        const recording = await recorder.stop();
-        const url = URL.createObjectURL(recording);
+      return { events, totalDuration: barDuration * patterns.length };
+    },
+    async play(chords, patterns) {
+      await Tone.start();
+      const chain = await ensureInstrumentChain(this.instrument);
+      const sampler = chain.sampler;
+      this.stopPlayback();
+
+      Tone.Transport.bpm.value = this.tempo;
+      const { events, totalDuration } = this.buildEvents(chords, patterns);
+      const part = new Tone.Part(function(time, event) {
+        sampler.triggerAttackRelease(event.note, event.duration, time);
+      }, events).start(0);
+
+      this.activePart = part;
+      this.isPlaying = true;
+      Tone.Transport.start('+0.1');
+
+      Tone.Transport.scheduleOnce(() => {
+        this.stopPlayback();
+      }, totalDuration + 0.5);
+
+      const statusEl = document.getElementById('riff-status');
+      if (statusEl) statusEl.textContent = 'Playing...';
+    },
+    stopPlayback() {
+      Tone.Transport.stop();
+      Tone.Transport.cancel();
+      if (this.activePart) {
+        this.activePart.dispose();
+        this.activePart = null;
+      }
+      this.isPlaying = false;
+    },
+    async togglePlay() {
+      if (!this.hasRiff) return;
+      if (this.isPlaying) {
+        this.stopPlayback();
+        return;
+      }
+      if (!this.currentChords.length || !this.currentPatterns.length) return;
+      await this.play(this.currentChords, this.currentPatterns);
+    },
+    async downloadRiff() {
+      if (!this.hasRiff || !this.currentChords.length || !this.currentPatterns.length) return;
+      if (typeof MediaRecorder === 'undefined') {
+        const statusEl = document.getElementById('riff-status');
+        if (statusEl) statusEl.textContent = 'Recording not supported in this browser.';
+        return;
+      }
+      this.isRecording = true;
+      this.stopPlayback();
+      await Tone.start();
+      const chain = await ensureInstrumentChain(this.instrument);
+      const sampler = chain.sampler;
+
+      Tone.Transport.bpm.value = this.tempo;
+      const { events, totalDuration } = this.buildEvents(this.currentChords, this.currentPatterns);
+      const part = new Tone.Part(function(time, event) {
+        sampler.triggerAttackRelease(event.note, event.duration, time);
+      }, events).start(0);
+      this.activePart = part;
+      this.isPlaying = true;
+
+      const statusEl = document.getElementById('riff-status');
+      if (statusEl) statusEl.textContent = 'Rendering audio...';
+
+      const chunks = [];
+      let mimeType = 'audio/webm';
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) {
+        mimeType = 'audio/webm';
+      } else if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/wav')) {
+        mimeType = 'audio/wav';
+      }
+
+      const mediaRecorder = new MediaRecorder(recordingDestination.stream, { mimeType: mimeType });
+      const extension = mimeType.indexOf('wav') !== -1 ? 'wav' : 'webm';
+      mediaRecorder.ondataavailable = function(e) {
+        if (e.data && e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = function() {
+        const blob = new Blob(chunks, { type: mediaRecorder.mimeType || mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'suzy-riff.' + extension;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
         const audio = document.getElementById('riff-audio');
         if (audio) {
           audio.src = url;
           audio.style.display = 'block';
         }
-        this.isPlaying = false;
-      }, totalDuration * 1000);
+
+        setTimeout(function() {
+          URL.revokeObjectURL(url);
+        }, 2000);
+      };
+
+      mediaRecorder.start();
+      Tone.Transport.start('+0.1');
+
+      setTimeout(() => {
+        mediaRecorder.stop();
+        this.stopPlayback();
+        this.isRecording = false;
+        const statusEl = document.getElementById('riff-status');
+        if (statusEl) statusEl.textContent = 'Riff rendered!';
+      }, (totalDuration + 0.6) * 1000);
     }
   }
 });
