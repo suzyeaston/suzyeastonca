@@ -67,6 +67,9 @@ const INSTRUMENT_PROFILES = {
 };
 
 const instrumentChains = {};
+let sampleInstrumentCache = null;
+let instrumentsLoaded = false;
+let instrumentsLoading = null;
 const masterOutput = new Tone.Gain(1).toDestination();
 const recordingDestination = Tone.getContext().createMediaStreamDestination();
 masterOutput.connect(recordingDestination);
@@ -103,15 +106,47 @@ function chordDisplay(semis) {
 async function ensureInstrumentChain(key) {
   if (instrumentChains[key]) return instrumentChains[key];
   const profile = INSTRUMENT_PROFILES[key] || INSTRUMENT_PROFILES.piano;
-  if (typeof SampleLibrary === 'undefined') {
-    throw new Error('SampleLibrary not loaded');
+  let sampler = null;
+
+  if (typeof SampleLibrary !== 'undefined') {
+    if (!instrumentsLoading) {
+      instrumentsLoading = Promise.resolve().then(function() {
+        return SampleLibrary.load({
+          instruments: ['piano', 'bass-electric', 'guitar-electric'],
+          baseUrl: 'https://nbrosowsky.github.io/tonejs-instruments/samples/',
+          minify: true,
+          release: 1
+        });
+      }).then(function(loaded) {
+        sampleInstrumentCache = loaded;
+        instrumentsLoaded = true;
+        return loaded;
+      }).catch(function(err) {
+        console.error('SampleLibrary failed to load, falling back to synth', err);
+        instrumentsLoaded = false;
+        sampleInstrumentCache = null;
+        return null;
+      });
+    }
+
+    const loaded = await instrumentsLoading;
+    if (loaded && loaded[profile.library]) {
+      sampler = loaded[profile.library];
+    } else if (!instrumentsLoaded) {
+      console.warn('SampleLibrary unavailable, using Tone.js synth fallback');
+    } else {
+      console.warn('Instrument not found in SampleLibrary, using Tone.js synth fallback');
+    }
+  } else {
+    console.warn('SampleLibrary missing, falling back to basic Tone.js synth');
   }
-  const sampler = SampleLibrary.load({
-    instruments: profile.library,
-    baseUrl: 'https://nbrosowsky.github.io/tonejs-instruments/samples/',
-    minify: true,
-    release: 1
-  });
+
+  if (!sampler) {
+    sampler = new Tone.PolySynth(Tone.Synth, {
+      envelope: { attack: 0.02, decay: 0.1, sustain: 0.4, release: 1.2 }
+    });
+  }
+
   await Tone.loaded();
 
   const reverb = new Tone.Reverb(profile.reverb);
@@ -136,8 +171,13 @@ async function ensureInstrumentChain(key) {
     chainEnd = filter;
   }
 
+  if (typeof sampler.disconnect === 'function') {
+    sampler.disconnect();
+  }
   sampler.connect(chainEnd);
-  sampler.volume.value = profile.volume || 0;
+  if (sampler.volume && typeof sampler.volume.value !== 'undefined') {
+    sampler.volume.value = profile.volume || 0;
+  }
 
   instrumentChains[key] = { sampler, output: reverb };
   return instrumentChains[key];
