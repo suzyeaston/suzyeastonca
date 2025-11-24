@@ -1105,9 +1105,8 @@
 
     var startLabel = formatter(startObj, startYear !== endYear);
     var endLabel = formatter(endObj, true);
-    var suffix = startYear === endYear ? ', ' + endYear : '';
 
-    return startLabel + ' – ' + endLabel + suffix;
+    return startLabel + ' – ' + endLabel;
   }
 
   function renderHistoryCharts(providers, meta) {
@@ -1249,11 +1248,73 @@
     }
 
     var values = labels.map(function (label) { return counts[label] || 0; });
+    var totalIncidents = 0;
+    var activeDays = 0;
+    var maxCount = 0;
+    var peakDate = '';
+
+    values.forEach(function (value, idx) {
+      totalIncidents += value;
+      if (value > 0) {
+        activeDays += 1;
+      }
+      if (value > maxCount) {
+        maxCount = value;
+        peakDate = labels[idx];
+      }
+    });
+
+    var friendlyFormatter = function (dateStr) {
+      if (!dateStr) {
+        return '';
+      }
+      var parsed = Date.parse(dateStr + 'T00:00:00Z');
+      if (Number.isNaN(parsed)) {
+        return dateStr;
+      }
+      try {
+        return new Intl.DateTimeFormat(undefined, {
+          month: 'short',
+          day: 'numeric'
+        }).format(new Date(parsed));
+      } catch (err) {
+        return new Date(parsed).toISOString().slice(0, 10);
+      }
+    };
+
+    var meta = state.doc.createElement('div');
+    meta.className = 'lo-history__meta';
+    if (totalIncidents <= 0) {
+      meta.textContent = 'No incidents recorded during this window.';
+    } else {
+      var dayLabel = labels.length === 1 ? 'day' : 'days';
+      var summary = formatIncidentCount(totalIncidents) + ' across ' + activeDays + ' of ' + labels.length + ' ' + dayLabel;
+      if (maxCount > 0 && peakDate) {
+        summary += ' (busiest: ' + friendlyFormatter(peakDate) + ' with ' + formatIncidentCount(maxCount) + ').';
+      } else {
+        summary += '.';
+      }
+      meta.textContent = summary;
+    }
+    chartWrap.appendChild(meta);
+
+    var tooltip = null;
+    try {
+      tooltip = state.doc.createElement('div');
+      tooltip.className = 'lo-history__chart-tooltip';
+      tooltip.setAttribute('role', 'status');
+      tooltip.setAttribute('aria-live', 'polite');
+      tooltip.textContent = 'Hover or focus a bar to see details.';
+      chartWrap.appendChild(tooltip);
+    } catch (err) {
+      tooltip = null;
+    }
+
     var max = values.reduce(function (acc, val) { return Math.max(acc, val); }, 0) || 1;
     var width = Math.max(240, labels.length * 12);
-    var height = 130;
-    var topPadding = 24;
-    var bottomPadding = 22;
+    var height = 170;
+    var topPadding = 28;
+    var bottomPadding = 46;
     var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
     svg.setAttribute('role', 'img');
@@ -1268,11 +1329,13 @@
 
     var xAxisLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
     xAxisLabel.setAttribute('x', String(width / 2));
-    xAxisLabel.setAttribute('y', String(height - 4));
+    xAxisLabel.setAttribute('y', String(height - 8));
     xAxisLabel.setAttribute('text-anchor', 'middle');
     xAxisLabel.setAttribute('class', 'lo-history__chart-text');
     xAxisLabel.textContent = 'Day';
     svg.appendChild(xAxisLabel);
+
+    var step = Math.max(1, Math.ceil(labels.length / 8));
 
     labels.forEach(function (label, idx) {
       var x = 8 + idx * 8;
@@ -1284,9 +1347,32 @@
       rect.setAttribute('width', '6');
       rect.setAttribute('height', String(scaled));
       rect.setAttribute('class', 'lo-history__chart-bar lo-history__chart-bar--thin');
+      rect.setAttribute('tabindex', '0');
+      var friendlyLabel = friendlyFormatter(label);
+      rect.setAttribute('aria-label', friendlyLabel + ': ' + formatIncidentCount(values[idx]));
       var barTitle = state.doc.createElementNS('http://www.w3.org/2000/svg', 'title');
       barTitle.textContent = label + ' – ' + values[idx] + ' incidents';
       rect.appendChild(barTitle);
+
+      var activateBar = function () {
+        if (tooltip) {
+          tooltip.textContent = friendlyLabel + ': ' + formatIncidentCount(values[idx]);
+        }
+        rect.classList.add('lo-history__chart-bar--active');
+      };
+
+      var deactivateBar = function () {
+        if (tooltip) {
+          tooltip.textContent = 'Hover or focus a bar to see details.';
+        }
+        rect.classList.remove('lo-history__chart-bar--active');
+      };
+
+      rect.addEventListener('mouseenter', activateBar);
+      rect.addEventListener('focus', activateBar);
+      rect.addEventListener('mouseleave', deactivateBar);
+      rect.addEventListener('blur', deactivateBar);
+
       svg.appendChild(rect);
 
       if (scaled > 14 && values[idx] > 0) {
@@ -1297,6 +1383,17 @@
         countLabel.setAttribute('class', 'lo-history__chart-text');
         countLabel.textContent = String(values[idx]);
         svg.appendChild(countLabel);
+      }
+
+      if (idx % step === 0 || idx === labels.length - 1) {
+        var tick = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+        tick.setAttribute('x', String(x + 3));
+        tick.setAttribute('y', String(height - 16));
+        tick.setAttribute('text-anchor', 'middle');
+        tick.setAttribute('class', 'lo-history__chart-text');
+        tick.setAttribute('transform', 'rotate(-45 ' + (x + 3) + ' ' + (height - 16) + ')');
+        tick.textContent = friendlyLabel || label.slice(5);
+        svg.appendChild(tick);
       }
     });
 
