@@ -60,8 +60,8 @@
     if (!value) {
       return '';
     }
-    var parsed = Date.parse(value);
-    if (Number.isNaN(parsed)) {
+    var d = new Date(value);
+    if (Number.isNaN(d.getTime())) {
       return value;
     }
     try {
@@ -72,9 +72,9 @@
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit'
-      }).format(new Date(parsed));
+      }).format(d);
     } catch (err) {
-      return new Date(parsed).toISOString();
+      return d.toISOString();
     }
   }
 

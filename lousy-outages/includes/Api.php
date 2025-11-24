@@ -99,7 +99,14 @@ class Api {
      */
     public static function handle_refresh(WP_REST_Request $request): WP_REST_Response {
         $result = \lousy_outages_refresh_data(true);
-        $status = !empty($result['ok']) ? 200 : 503;
+        $skipped = !empty($result['skipped']);
+        $ok      = !empty($result['ok']);
+
+        if ($skipped && ! $ok) {
+            $status = 200;
+        } else {
+            $status = $ok ? 200 : 503;
+        }
 
         $providers = isset($result['providers']) && is_array($result['providers']) ? $result['providers'] : [];
         $errors    = isset($result['errors']) && is_array($result['errors']) ? $result['errors'] : [];
@@ -107,7 +114,8 @@ class Api {
         $refreshed_at = isset($result['refreshedAt']) ? (string) $result['refreshedAt'] : gmdate('c');
 
         $response = [
-            'ok'            => !empty($result['ok']),
+            'ok'            => $ok,
+            'skipped'       => $skipped,
             'refreshed_at'  => isset($result['refreshed_at']) ? (int) $result['refreshed_at'] : time(),
             'refreshedAt'   => $refreshed_at,
             'providerCount' => count($providers),
@@ -117,7 +125,7 @@ class Api {
             'source'        => 'live',
         ];
 
-        if (isset($result['message']) && is_string($result['message'])) {
+        if (!empty($result['message']) && is_string($result['message'])) {
             $response['message'] = $result['message'];
         }
 
