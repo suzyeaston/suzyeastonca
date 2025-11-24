@@ -236,7 +236,9 @@ function lousy_outages_run_poll(): int {
         update_option( 'lousy_outages_prealert_last', $prealert_last, false );
     }
 
-    $timestamp_epoch = current_time( 'timestamp' );
+    // Use a UTC epoch to avoid applying the site timezone offset twice when formatting
+    // with wp_date(), which already handles the local conversion.
+    $timestamp_epoch = current_time( 'timestamp', true );
     $timestamp       = wp_date( 'c', $timestamp_epoch );
     update_option( 'lousy_outages_last_poll', $timestamp, false );
     update_option( 'lousy_outages_last_fetched', $timestamp_epoch, false );
@@ -384,7 +386,8 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
     ];
 
     try {
-        $timestamp_epoch = current_time( 'timestamp' );
+        // Use UTC to avoid double-applying the site timezone offset when formatting below.
+        $timestamp_epoch = current_time( 'timestamp', true );
         $timestamp_iso   = wp_date( 'c', $timestamp_epoch );
         $store        = new Store();
         $states       = lousy_outages_collect_statuses( $bypass_cache );
