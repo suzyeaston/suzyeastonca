@@ -75,7 +75,14 @@ if (! function_exists('lo_snapshot_refresh')) {
         }
 
         $raw = lousy_outages_get_snapshot($force_refresh);
-        $updated_at = isset($raw['fetched_at']) ? (string) $raw['fetched_at'] : gmdate('c');
+        // Keep snapshot updated_at aligned with the canonical last-fetched option
+        // used by the HUD/meta displays.
+        $last_fetched_iso = function_exists('lousy_outages_get_last_fetched_iso')
+            ? lousy_outages_get_last_fetched_iso()
+            : null;
+        $updated_at = $last_fetched_iso
+            ? $last_fetched_iso
+            : (isset($raw['fetched_at']) ? (string) $raw['fetched_at'] : gmdate('c'));
         $services = [];
         if (! empty($raw['providers']) && is_array($raw['providers'])) {
             foreach ($raw['providers'] as $provider) {
@@ -141,8 +148,13 @@ if (! function_exists('lo_snapshot_prepare_response')) {
     function lo_snapshot_prepare_response(array $stored, bool $stale): array
     {
         $ttl = lo_snapshot_default_ttl();
+        $last_fetched_iso = function_exists('lousy_outages_get_last_fetched_iso')
+            ? lousy_outages_get_last_fetched_iso()
+            : null;
         $response = [
-            'updated_at'  => isset($stored['updated_at']) ? (string) $stored['updated_at'] : gmdate('c'),
+            'updated_at'  => $last_fetched_iso
+                ? $last_fetched_iso
+                : (isset($stored['updated_at']) ? (string) $stored['updated_at'] : gmdate('c')),
             'ttl_seconds' => $ttl,
             'services'    => [],
             'stale'       => $stale,

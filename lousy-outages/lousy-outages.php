@@ -339,6 +339,28 @@ function lousy_outages_get_last_fetched_timestamp(): ?int {
     return null;
 }
 
+/**
+ * Return the canonical "last fetched" timestamp in ISO8601 using the site timezone.
+ *
+ * The canonical value is stored in the `lousy_outages_last_fetched` option as an epoch
+ * integer to avoid timezone drift; this helper applies wp_date() for display.
+ */
+function lousy_outages_get_last_fetched_iso(): ?string {
+    $ts = lousy_outages_get_last_fetched_timestamp();
+    if ( ! $ts ) {
+        return null;
+    }
+
+    return wp_date( 'c', $ts );
+}
+
+/**
+ * Refresh provider data and snapshot caches.
+ *
+ * The canonical "Last fetched" timestamp is stored as an epoch in the
+ * `lousy_outages_last_fetched` option. The snapshot endpoint and HUD both
+ * render their date/time displays from this value via wp_date().
+ */
 function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
     $lock_key = 'lousy_outages_refresh_lock';
     if ( get_transient( $lock_key ) ) {
@@ -352,18 +374,18 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
     set_transient( $lock_key, 1, 5 * MINUTE_IN_SECONDS );
 
     $response = [
-        'ok'          => false,
-        'providers'   => [],
-        'errors'      => [],
-        'trending'    => [ 'trending' => false, 'signals' => [] ],
-        'source'      => 'live',
-        'refreshedAt' => null,
+        'ok'           => false,
+        'providers'    => [],
+        'errors'       => [],
+        'trending'     => [ 'trending' => false, 'signals' => [] ],
+        'source'       => 'live',
+        'refreshedAt'  => null,
         'refreshed_at' => null,
     ];
 
     try {
-        $timestamp    = current_time( 'timestamp' );
-        $timestamp_iso = wp_date( 'c', $timestamp );
+        $timestamp_epoch = current_time( 'timestamp' );
+        $timestamp_iso   = wp_date( 'c', $timestamp_epoch );
         $store        = new Store();
         $states       = lousy_outages_collect_statuses( $bypass_cache );
         $errors       = [];
@@ -388,7 +410,7 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         }
 
         update_option( 'lousy_outages_last_poll', $timestamp_iso, false );
-        update_option( 'lousy_outages_last_fetched', $timestamp, false );
+        update_option( 'lousy_outages_last_fetched', $timestamp_epoch, false );
         do_action( 'lousy_outages_log', 'refresh_complete', [
             'count' => count( $states ),
             'ts'    => $timestamp_iso,
@@ -401,7 +423,7 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
             'trending'     => $trending,
             'source'       => 'live',
             'refreshedAt'  => $timestamp_iso,
-            'refreshed_at' => $timestamp,
+            'refreshed_at' => $timestamp_epoch,
         ];
     } catch ( \Throwable $e ) {
         error_log( '[LO] refresh failed: ' . $e->getMessage() );

@@ -113,6 +113,9 @@ function render_shortcode(): string {
     }
 
     $fetched_at = '';
+    $last_fetched_iso = \function_exists('lousy_outages_get_last_fetched_iso')
+        ? \lousy_outages_get_last_fetched_iso()
+        : '';
     $tiles      = [];
     $config     = null;
     $refresh_interval = 60000;
@@ -243,12 +246,17 @@ function render_shortcode(): string {
         }
     }
 
-    $last_fetched_timestamp = \lousy_outages_get_last_fetched_timestamp();
-    if ($last_fetched_timestamp) {
-        $fetched_at = wp_date('c', $last_fetched_timestamp);
-        if (isset($config['initial']['fetched_at'])) {
-            $config['initial']['fetched_at'] = $fetched_at;
+    if ($last_fetched_iso) {
+        if ('' === $fetched_at) {
+            $fetched_at = $last_fetched_iso;
         }
+        if (isset($config['initial']['fetched_at'])) {
+            $config['initial']['fetched_at'] = $last_fetched_iso;
+        }
+    }
+
+    if ('' === $fetched_at) {
+        $fetched_at = $last_fetched_iso ?: gmdate('c');
     }
 
     $tiles_by_slug = [];

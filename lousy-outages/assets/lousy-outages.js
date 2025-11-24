@@ -1991,10 +1991,13 @@
       if (!res) {
         throw new Error('No response');
       }
-      if (!res.ok) {
-        throw new Error('HTTP ' + res.status);
-      }
-      return res.json().catch(function () { return null; });
+      var statusOk = !!res.ok;
+      return res.json().catch(function () { return null; }).then(function (data) {
+        if (!statusOk && !(data && data.skipped)) {
+          throw new Error('HTTP ' + res.status);
+        }
+        return data;
+      });
     });
   }
 
