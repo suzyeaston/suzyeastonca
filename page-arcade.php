@@ -25,6 +25,7 @@ get_header();
                         <p class="pixel-font">CONTROLS:</p>
                         <p>Arrow Keys – Move Player</p>
                         <p>Spacebar – Shoot Puck</p>
+                        <button id="test-goal-sound" class="pixel-button">Test goal sound</button>
                     </div>
 
                     <div id="game-overlay" class="game-overlay">
