@@ -14,6 +14,7 @@
   const teamDisplayEl = document.getElementById("team-display");
   const overlay = document.getElementById("game-overlay");
   let startButton = document.getElementById("start-button");
+  const testGoalSoundButton = document.getElementById("test-goal-sound");
   const overlayDefault = overlay.innerHTML;
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -89,6 +90,7 @@
   let timeLeft = 60;
   let running = false;
   let shotTimer = 0;
+  let canucksShots = 0;
   let isDragging = false;
 
   function drawRink() {
@@ -112,6 +114,15 @@
   }
 
   function updateGoalie(dt) {
+    // subtle difficulty ramp as the clock winds down
+    if (timeLeft < 20) {
+      goalie.speed = 180;
+    } else if (timeLeft < 40) {
+      goalie.speed = 150;
+    } else {
+      goalie.speed = 120;
+    }
+
     goalie.x += goalie.speed * dt * goalie.dir;
     if (goalie.x < goal.x || goalie.x + goalie.width > goal.x + goal.width) {
       goalie.dir *= -1;
@@ -202,7 +213,7 @@
       endGame();
     }
 
-    scoreboardEl.textContent = `Canucks ${canucksScore} – ${opponent} ${opponentScore} | ${Math.ceil(timeLeft)}`;
+    scoreboardEl.textContent = `Canucks ${canucksScore} – ${opponent} ${opponentScore} | ${Math.ceil(timeLeft)}s | Shots: ${canucksShots}, Goals: ${canucksScore}`;
   }
 
   function resetPuck() {
@@ -213,28 +224,89 @@
   }
 
   function playGoalMelody() {
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+
+    // upbeat two-bar hook (G major) with a stadium-ready synth texture
     const melody = [
-      [466.16, 320],
-      [311.13, 280],
-      [392.0, 280],
-      [415.3, 280],
-      [392.0, 280],
-      [349.23, 280],
-      [311.13, 360],
+      { freq: 392.0, duration: 0.42, start: 0 }, // G4 root hit
+      { freq: 587.33, duration: 0.32, start: 0.48 }, // D5 fifth
+      { freq: 659.25, duration: 0.28, start: 0.82 }, // E5 sixth lift
+      { freq: 587.33, duration: 0.26, start: 1.08 }, // D5 back to fifth
+      { freq: 392.0, duration: 0.24, start: 1.42 }, // G4 reset
+      { freq: 493.88, duration: 0.26, start: 1.68 }, // B4 third
+      { freq: 587.33, duration: 0.28, start: 1.94 }, // D5 fifth
+      { freq: 784.0, duration: 0.44, start: 2.2 }, // G5 octave punch
     ];
 
-    let startTime = audioCtx.currentTime;
-    melody.forEach(([freq, dur]) => {
-      const osc = audioCtx.createOscillator();
+    const baseTime = audioCtx.currentTime;
+    const peakGain = 0.42;
+    let melodyEnd = 0;
+
+    melody.forEach(function (note) {
+      const startTime = baseTime + note.start;
+      const endTime = startTime + note.duration;
+      melodyEnd = Math.max(melodyEnd, endTime);
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(2600, startTime);
+
       const gain = audioCtx.createGain();
-      osc.type = "square";
-      osc.frequency.setValueAtTime(freq, startTime);
-      gain.gain.setValueAtTime(0.25, startTime);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start(startTime);
-      osc.stop(startTime + dur / 1000);
-      startTime += (dur + 40) / 1000;
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.01);
+      gain.gain.linearRampToValueAtTime(0, endTime - 0.02);
+
+      const oscMain = audioCtx.createOscillator();
+      oscMain.type = "sawtooth";
+      oscMain.frequency.setValueAtTime(note.freq, startTime);
+
+      const oscHorn = audioCtx.createOscillator();
+      oscHorn.type = "square";
+      oscHorn.frequency.setValueAtTime(note.freq / 2, startTime);
+
+      const hornGain = audioCtx.createGain();
+      hornGain.gain.setValueAtTime(0.2, startTime);
+
+      oscMain.connect(filter);
+      oscHorn.connect(hornGain).connect(filter);
+      filter.connect(gain).connect(audioCtx.destination);
+
+      oscMain.start(startTime);
+      oscHorn.start(startTime);
+      oscMain.stop(endTime + 0.1);
+      oscHorn.stop(endTime + 0.1);
     });
+
+    function playCrowdNoise(startTime) {
+      const duration = 0.45;
+      const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const bandpass = audioCtx.createBiquadFilter();
+      bandpass.type = "bandpass";
+      bandpass.frequency.setValueAtTime(1400, startTime);
+      bandpass.Q.setValueAtTime(0.9, startTime);
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.18, startTime + 0.06);
+      gain.gain.linearRampToValueAtTime(0, startTime + duration);
+
+      noise.connect(bandpass).connect(gain).connect(audioCtx.destination);
+      noise.start(startTime);
+      noise.stop(startTime + duration + 0.05);
+    }
+
+    playCrowdNoise(baseTime + melodyEnd + 0.05);
   }
 
   function showGoal() {
@@ -267,6 +339,7 @@
 
   function shoot() {
     if (!isPuckMoving()) {
+      canucksShots += 1;
       puck.vy = -5;
       puck.vx = 0;
     }
@@ -291,10 +364,11 @@
     if (!running) {
       canucksScore = 0;
       opponentScore = 0;
+      canucksShots = 0;
       timeLeft = 60;
       opponent = teams[Math.floor(Math.random() * teams.length)];
       teamDisplayEl.textContent = `Vancouver Canucks vs. ${opponent}`;
-      scoreboardEl.textContent = `Canucks 0 – ${opponent} 0 | 60`;
+      scoreboardEl.textContent = `Canucks 0 – ${opponent} 0 | 60s | Shots: 0, Goals: 0`;
       running = true;
       lastTime = performance.now();
       overlay.style.display = "none";
@@ -303,6 +377,12 @@
   }
 
   startButton.addEventListener("click", start);
+  if (testGoalSoundButton) {
+    testGoalSoundButton.addEventListener("click", function () {
+      unlockAudio();
+      playGoalMelody();
+    });
+  }
 
   function handleKeyDown(e) {
     if (
