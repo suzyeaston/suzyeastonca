@@ -11,6 +11,7 @@ class Refresh
     {
         add_filter('cron_schedules', [self::class, 'registerSchedule']);
         add_action('init', [self::class, 'ensureScheduled']);
+        add_action('lousy_outages_cron_refresh', '\\lousy_outages_refresh_data');
         add_action('lousy_outages_refresh', [IncidentAlerts::class, 'run']);
         add_action('lo_send_daily_digest', [IncidentAlerts::class, 'send_daily_digest']);
     }
@@ -21,6 +22,13 @@ class Refresh
             $schedules['five_minutes'] = [
                 'interval' => 5 * MINUTE_IN_SECONDS,
                 'display'  => __('Every 5 Minutes', 'lousy-outages'),
+            ];
+        }
+
+        if (! isset($schedules['lousy_outages_15min'])) {
+            $schedules['lousy_outages_15min'] = [
+                'interval' => 15 * MINUTE_IN_SECONDS,
+                'display'  => __('Every 15 Minutes', 'lousy-outages'),
             ];
         }
 
@@ -36,6 +44,10 @@ class Refresh
 
     public static function ensureScheduled(): void
     {
+        if (! wp_next_scheduled('lousy_outages_cron_refresh')) {
+            wp_schedule_event(time() + MINUTE_IN_SECONDS, 'lousy_outages_15min', 'lousy_outages_cron_refresh');
+        }
+
         if (! wp_next_scheduled('lousy_outages_refresh')) {
             wp_schedule_event(time() + MINUTE_IN_SECONDS, 'five_minutes', 'lousy_outages_refresh');
         }
