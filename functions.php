@@ -8,6 +8,7 @@ if ( ! defined( 'OPENAI_API_KEY' ) ) {
 }
 
 require_once get_template_directory() . '/inc/albini-quotes.php';
+require_once get_template_directory() . '/inc/openai.php';
 /**
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
@@ -248,6 +249,12 @@ add_action('rest_api_init', function() {
         'callback'            => 'albini_handle_query',
         'permission_callback' => '__return_true',
     ]);
+
+    register_rest_route('se/v1', '/riff-tip', [
+        'methods'             => 'POST',
+        'callback'            => 'se_handle_riff_tip',
+        'permission_callback' => '__return_true',
+    ]);
 });
 
 // =========================================
@@ -385,35 +392,30 @@ function albini_handle_query( WP_REST_Request $req ) {
         'quotes'   => $matched_quotes,
     ];
 
-    $response = wp_remote_post('https://api.openai.com/v1/chat/completions', [
-        'headers' => [
-            'Authorization' => 'Bearer ' . OPENAI_API_KEY,
-            'Content-Type'  => 'application/json',
-        ],
-        'body'    => wp_json_encode([
-            'model'    => 'gpt-4o',
-            'messages' => [
-                [
-                    'role'    => 'system',
-                    'content' => $system_prompt,
-                ],
-                [
-                    'role'    => 'user',
-                    'content' => wp_json_encode( $user_payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ),
-                ],
-            ],
-            'max_tokens' => 350,
+    $response = se_openai_chat(
+        array(
+            array(
+                'role'    => 'system',
+                'content' => $system_prompt,
+            ),
+            array(
+                'role'    => 'user',
+                'content' => wp_json_encode( $user_payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ),
+            ),
+        ),
+        array(
+            'model'       => 'gpt-4o',
+            'max_tokens'  => 350,
             'temperature' => 0.4,
-        ]),
-        'timeout' => 15,
-    ]);
+            'timeout'     => 15,
+        )
+    );
 
-    if ( is_wp_error($response) ) {
-        return new WP_Error('openai_error', $response->get_error_message(), ['status'=>500]);
+    if ( is_wp_error( $response ) ) {
+        return new WP_Error( 'openai_error', $response->get_error_message(), array( 'status' => 500 ) );
     }
 
-    $body = wp_remote_retrieve_body($response);
-    $data = json_decode($body, true);
+    $data = $response;
 
     $content = isset( $data['choices'][0]['message']['content'] )
         ? trim( $data['choices'][0]['message']['content'] )
@@ -439,6 +441,61 @@ function albini_handle_query( WP_REST_Request $req ) {
         'commentary' => isset( $decoded['commentary'] ) ? wp_kses_post( $decoded['commentary'] ) : '',
         'topics'     => isset( $decoded['topics'] ) ? (array) $decoded['topics'] : [],
     ]);
+}
+
+function se_handle_riff_tip( WP_REST_Request $req ) {
+    $mode       = sanitize_text_field( $req->get_param( 'mode' ) );
+    $tempo      = absint( $req->get_param( 'tempo' ) );
+    $instrument = sanitize_text_field( $req->get_param( 'instrument' ) );
+    $summary    = sanitize_textarea_field( $req->get_param( 'summary' ) );
+
+    $fallbacks = array(
+        "Leave space for the groove.",
+        "Try muting the high strings for punch.",
+        "Let the melody breathe.",
+        "Focus on emotion over perfection.",
+        "Layer subtle textures for depth.",
+    );
+
+    $user_prompt = sprintf(
+        'Mode: %s. Tempo: %s BPM. Instrument: %s. Riff: %s',
+        $mode ? $mode : 'Unknown',
+        $tempo ? $tempo : 'Unknown',
+        $instrument ? $instrument : 'Unknown',
+        $summary ? wp_trim_words( $summary, 60, '...' ) : 'No summary provided.'
+    );
+
+    $response = se_openai_chat(
+        array(
+            array(
+                'role'    => 'system',
+                'content' => 'You are a concise music producer giving practical arrangement tips. Keep replies to 1-2 sentences.',
+            ),
+            array(
+                'role'    => 'user',
+                'content' => $user_prompt,
+            ),
+        ),
+        array(
+            'temperature' => 0.8,
+            'max_tokens'  => 80,
+            'timeout'     => 15,
+        )
+    );
+
+    if ( is_wp_error( $response ) ) {
+        return rest_ensure_response( array( 'tip' => $fallbacks[ array_rand( $fallbacks ) ] ) );
+    }
+
+    $tip = isset( $response['choices'][0]['message']['content'] )
+        ? trim( $response['choices'][0]['message']['content'] )
+        : '';
+
+    if ( ! $tip ) {
+        $tip = $fallbacks[ array_rand( $fallbacks ) ];
+    }
+
+    return rest_ensure_response( array( 'tip' => $tip ) );
 }
 
 // =========================================
