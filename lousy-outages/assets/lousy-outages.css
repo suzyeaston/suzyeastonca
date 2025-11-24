@@ -253,8 +253,19 @@
   fill: #ffb347;
 }
 
+.lo-history__chart-bar--active {
+  fill: #ffda7a;
+  stroke: #fff4c2;
+  stroke-width: 1.4;
+}
+
 .lousy-outages.lo-theme-light .lo-history__chart-bar {
   stroke: #222;
+}
+
+.lousy-outages.lo-theme-light .lo-history__chart-bar--active {
+  fill: #f9b200;
+  stroke: #d68000;
 }
 
 .lo-history__chart-text {
@@ -274,6 +285,22 @@
 
 .lousy-outages.lo-theme-light .lo-history__meta {
   color: rgba(32, 32, 32, 0.75);
+}
+
+.lo-history__chart-tooltip {
+  margin: 6px 0 10px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.35);
+  color: #f9f9f9;
+  border-radius: 6px;
+}
+
+.lousy-outages.lo-theme-light .lo-history__chart-tooltip {
+  background: rgba(255, 255, 255, 0.9);
+  color: #141414;
+  border-color: rgba(0, 0, 0, 0.16);
 }
 
 .lo-history__body {
