@@ -96,9 +96,12 @@ class Feeds {
                     continue;
                 }
 
-                $firstSeen = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
-                $lastSeen  = isset($event['last_seen']) ? (int) $event['last_seen'] : $firstSeen;
-                $timestamp = $firstSeen ?: $lastSeen;
+                $firstSeen     = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
+                $lastSeen      = isset($event['last_seen']) ? (int) $event['last_seen'] : $firstSeen;
+                $publishedTime = isset($event['published']) && !is_numeric($event['published'])
+                    ? self::parse_time((string) $event['published'])
+                    : (int) ($event['published'] ?? 0);
+                $timestamp     = $firstSeen ?: ($lastSeen ?: $publishedTime);
 
                 if ($timestamp && $timestamp < $cutoff) {
                     continue;
@@ -111,10 +114,12 @@ class Feeds {
 
                 $title_text = trim((string) ($event['title'] ?? $event['description'] ?? 'Incident'));
                 $status     = (string) ($event['status'] ?? $event['status_normal'] ?? '');
-                $guid       = (string) ($event['guid'] ?? '');
+                $guid       = trim((string) ($event['guid'] ?? ''));
+                $eventTime  = $timestamp ? gmdate('c', (int) $timestamp) : $fallback_time;
+                $incidentId = sanitize_key((string) ($event['incident_id'] ?? ($event['id'] ?? '')));
 
                 if ('' === $guid) {
-                    $guid = self::build_guid($provider_id, '', $title_text, $firstSeen ? gmdate('c', (int) $firstSeen) : $fallback_time);
+                    $guid = self::build_guid($provider_id, $incidentId, $title_text, $eventTime);
                 }
 
                 if ($guid && isset($seenGuids[$guid])) {
@@ -150,7 +155,7 @@ class Feeds {
                     'title'       => $itemTitle,
                     'link'        => $incidentLink,
                     'guid'        => $guid,
-                    'pubDate'     => self::format_rss_date($timestamp ? gmdate('c', (int) $timestamp) : $fallback_time),
+                    'pubDate'     => self::format_rss_date($eventTime),
                     'description' => self::build_funny_summary($descriptionArgs),
                     'timestamp'   => $itemTimestamp,
                 ];
@@ -163,11 +168,11 @@ class Feeds {
             $now     = time();
             $nowIso  = gmdate('c', $now);
             $items[] = [
-                'title'       => 'All quiet on the outage front',
+                'title'       => 'No recent major incidents detected',
                 'link'        => home_url('/lousy-outages/'),
-                'guid'        => self::build_guid('lousy-outages-status', 'all-clear', 'All quiet on the outage front', $nowIso),
+                'guid'        => self::build_guid('lousy-outages-status', 'all-clear', 'No recent major incidents detected', $nowIso),
                 'pubDate'     => self::format_rss_date($nowIso),
-                'description' => 'Nothing is on fire (for once). No major outages or degraded incidents in the last 30 days. Check the dashboard if you don\'t trust it.',
+                'description' => 'No major outages or degraded incidents have been detected in the last 30 days. Check the dashboard for current status details.',
                 'timestamp'   => $now,
             ];
 
@@ -198,11 +203,21 @@ class Feeds {
     }
 
     private static function build_guid(string $provider_id, string $incident_id, string $summary, string $time): string {
-        if ('' !== $incident_id) {
-            return $provider_id . ':' . $incident_id;
+        $provider  = sanitize_key($provider_id);
+        $incident  = sanitize_key($incident_id);
+        $normalizedSummary = '';
+
+        if ('' !== $incident) {
+            return $provider . ':' . $incident;
         }
 
-        return sha1($provider_id . '|' . $summary . '|' . $time);
+        if (function_exists('mb_strtolower')) {
+            $normalizedSummary = mb_strtolower(trim((string) $summary), 'UTF-8');
+        } else {
+            $normalizedSummary = strtolower(trim((string) $summary));
+        }
+
+        return sha1($provider . '|' . $normalizedSummary . '|' . trim((string) $time));
     }
 
     private static function provider_link(string $provider_id, string $status_url = ''): string {
