@@ -82,10 +82,16 @@ class Feeds {
 
                 $event = $store->normalizeEvent($event);
 
-                $severity  = strtolower((string) ($event['severity'] ?? ''));
-                $important = isset($event['important']) ? (bool) $event['important'] : false;
+                $severity       = strtolower((string) ($event['severity'] ?? ''));
+                $severityKnown  = in_array($severity, ['outage', 'degraded'], true);
+                $importantField = $event['important'] ?? null;
+                $important      = null === $importantField ? null : (bool) $importantField;
 
-                if (!$important || !in_array($severity, ['outage', 'degraded'], true)) {
+                if (false === $important) {
+                    continue;
+                }
+
+                if (!$severityKnown) {
                     continue;
                 }
 
@@ -141,6 +147,21 @@ class Feeds {
 
                 $timestamps[] = $itemTimestamp;
             }
+        }
+
+        if (0 === count($items)) {
+            $now     = time();
+            $nowIso  = gmdate('c', $now);
+            $items[] = [
+                'title'       => 'All quiet on the outage front',
+                'link'        => home_url('/lousy-outages/'),
+                'guid'        => self::build_guid('lousy-outages-status', 'all-clear', 'All quiet on the outage front', $nowIso),
+                'pubDate'     => self::format_rss_date($nowIso),
+                'description' => 'Nothing is on fire (for once). No major outages or degraded incidents in the last 30 days. Check the dashboard if you don\'t trust it.',
+                'timestamp'   => $now,
+            ];
+
+            $timestamps[] = $now;
         }
 
         usort(
