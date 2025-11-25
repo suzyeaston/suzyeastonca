@@ -62,3 +62,48 @@ class ProbeCommand {
 }
 
 WP_CLI::add_command( 'lousy:probe', ProbeCommand::class );
+
+class RefreshCommand {
+    /**
+     * Run the full Lousy Outages refresh pipeline once.
+     *
+     * ## OPTIONS
+     *
+     * [--bypass-cache=<bool>]
+     * : Whether to bypass any internal caching. Defaults to true.
+     *
+     * ## EXAMPLES
+     *
+     *     wp lousy:refresh
+     *     wp lousy:refresh --bypass-cache=false
+     */
+    public function __invoke( array $args, array $assoc_args ): void {
+        $bypass = true;
+        if ( isset( $assoc_args['bypass-cache'] ) ) {
+            $value  = strtolower( (string) $assoc_args['bypass-cache'] );
+            $bypass = ! in_array( $value, [ '0', 'false', 'no' ], true );
+        }
+
+        if ( ! function_exists( '\lousy_outages_refresh_data' ) ) {
+            WP_CLI::error( 'lousy_outages_refresh_data() not available.' );
+        }
+
+        $result = \lousy_outages_refresh_data( $bypass );
+
+        $ok      = ! empty( $result['ok'] );
+        $skipped = ! empty( $result['skipped'] );
+        $msg     = isset( $result['message'] ) ? (string) $result['message'] : '';
+
+        $refreshedAt = isset( $result['refreshedAt'] ) ? (string) $result['refreshedAt'] : gmdate( 'c' );
+
+        if ( $ok ) {
+            WP_CLI::success( sprintf( 'Refresh completed. skipped=%s refreshedAt=%s %s', $skipped ? 'true' : 'false', $refreshedAt, $msg ) );
+        } elseif ( $skipped ) {
+            WP_CLI::warning( sprintf( 'Refresh skipped. refreshedAt=%s %s', $refreshedAt, $msg ) );
+        } else {
+            WP_CLI::error( sprintf( 'Refresh failed. refreshedAt=%s %s', $refreshedAt, $msg ) );
+        }
+    }
+}
+
+WP_CLI::add_command( 'lousy:refresh', RefreshCommand::class );

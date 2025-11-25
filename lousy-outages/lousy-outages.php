@@ -240,8 +240,10 @@ function lousy_outages_run_poll(): int {
     // with wp_date(), which already handles the local conversion.
     $timestamp_epoch = current_time( 'timestamp', true );
     $timestamp       = wp_date( 'c', $timestamp_epoch );
+    $timestamp_gmt   = gmdate( 'c', $timestamp_epoch );
     update_option( 'lousy_outages_last_poll', $timestamp, false );
     update_option( 'lousy_outages_last_fetched', $timestamp_epoch, false );
+    update_option( 'lousy_outages_last_fetched_iso', $timestamp_gmt, false );
     lousy_outages_refresh_snapshot( $statuses, $timestamp );
     do_action( 'lousy_outages_log', 'poll_complete', [ 'count' => $processed, 'ts' => $timestamp ] );
 
@@ -389,6 +391,7 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         // Use UTC to avoid double-applying the site timezone offset when formatting below.
         $timestamp_epoch = current_time( 'timestamp', true );
         $timestamp_iso   = wp_date( 'c', $timestamp_epoch );
+        $timestamp_gmt   = gmdate( 'c', $timestamp_epoch );
         $store        = new Store();
         $states       = lousy_outages_collect_statuses( $bypass_cache );
         $errors       = [];
@@ -414,6 +417,7 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
 
         update_option( 'lousy_outages_last_poll', $timestamp_iso, false );
         update_option( 'lousy_outages_last_fetched', $timestamp_epoch, false );
+        update_option( 'lousy_outages_last_fetched_iso', $timestamp_gmt, false );
         do_action( 'lousy_outages_log', 'refresh_complete', [
             'count' => count( $states ),
             'ts'    => $timestamp_iso,

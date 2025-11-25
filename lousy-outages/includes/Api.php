@@ -87,6 +87,16 @@ class Api {
             ]
         );
 
+        register_rest_route(
+            'lousy-outages/v1',
+            '/cron-status',
+            [
+                'methods'             => 'GET',
+                'permission_callback' => '__return_true',
+                'callback'            => [self::class, 'handle_cron_status'],
+            ]
+        );
+
     }
 
     public static function verify_nonce(): bool {
@@ -212,6 +222,39 @@ class Api {
         header('Content-Type: application/json; charset=utf-8');
         echo $json;
         exit;
+    }
+
+    public static function handle_cron_status(WP_REST_Request $request): WP_REST_Response {
+        $last_refresh_raw   = get_option('lousy_outages_last_fetched', 0);
+        $last_refresh_epoch = is_numeric($last_refresh_raw) ? (int) $last_refresh_raw : 0;
+
+        $last_refresh_iso_option = get_option('lousy_outages_last_fetched_iso');
+        $last_refresh_gmt        = is_string($last_refresh_iso_option) && '' !== trim($last_refresh_iso_option)
+            ? (string) $last_refresh_iso_option
+            : ($last_refresh_epoch > 0 ? gmdate('c', $last_refresh_epoch) : null);
+
+        $last_refresh_local = $last_refresh_epoch > 0 ? wp_date('c', $last_refresh_epoch) : null;
+
+        $next_refresh      = wp_next_scheduled('lousy_outages_cron_refresh');
+        $next_alert_run    = wp_next_scheduled('lousy_outages_refresh');
+        $next_daily_digest = wp_next_scheduled('lo_send_daily_digest');
+
+        $payload = [
+            'ok'                              => true,
+            'last_refresh_epoch'              => $last_refresh_epoch,
+            'last_refresh_gmt'                => $last_refresh_gmt,
+            'last_refresh_local'              => $last_refresh_local,
+            'next_scheduled_refresh'          => $next_refresh ?: null,
+            'next_scheduled_refresh_gmt'      => $next_refresh ? gmdate('c', (int) $next_refresh) : null,
+            'next_scheduled_alert_run'        => $next_alert_run ?: null,
+            'next_scheduled_alert_run_gmt'    => $next_alert_run ? gmdate('c', (int) $next_alert_run) : null,
+            'next_scheduled_daily_digest'     => $next_daily_digest ?: null,
+            'next_scheduled_daily_digest_gmt' => $next_daily_digest ? gmdate('c', (int) $next_daily_digest) : null,
+            'wp_cron_disabled'                => defined('DISABLE_WP_CRON') && DISABLE_WP_CRON,
+            'alternate_wp_cron'               => defined('ALTERNATE_WP_CRON') && ALTERNATE_WP_CRON,
+        ];
+
+        return new WP_REST_Response($payload, 200);
     }
 
     /**
