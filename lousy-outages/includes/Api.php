@@ -97,6 +97,36 @@ class Api {
             ]
         );
 
+        register_rest_route(
+            'lousy/v1',
+            '/report',
+            [
+                'methods'             => 'POST',
+                'permission_callback' => '__return_true',
+                'callback'            => [self::class, 'handle_report'],
+                'args'                => [
+                    'provider_id' => [
+                        'description'       => 'Provider identifier',
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                        'required'          => true,
+                    ],
+                    'summary' => [
+                        'description'       => 'Summary of the reported issue',
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_textarea_field',
+                        'required'          => true,
+                    ],
+                    'contact' => [
+                        'description'       => 'Optional contact information for follow-up',
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                        'required'          => false,
+                    ],
+                ],
+            ]
+        );
+
     }
 
     public static function verify_nonce(): bool {
@@ -628,6 +658,34 @@ class Api {
         }
 
         return rest_ensure_response($response);
+    }
+
+    public static function handle_report(WP_REST_Request $request): WP_REST_Response {
+        $providerId = sanitize_text_field((string) $request->get_param('provider_id'));
+        $summary    = sanitize_textarea_field((string) $request->get_param('summary'));
+        $contact    = sanitize_text_field((string) $request->get_param('contact'));
+
+        if ('' === trim($providerId) || '' === trim($summary)) {
+            return new WP_REST_Response([
+                'ok'      => false,
+                'message' => 'provider_id and summary are required.',
+            ], 400);
+        }
+
+        $providers     = Providers::list();
+        $providerLabel = $providers[$providerId]['name'] ?? ($providerId ? ucfirst($providerId) : 'provider');
+
+        $store = new IncidentStore();
+        $store->addUserReport($providerId, $summary, $contact, $providerLabel);
+
+        return new WP_REST_Response([
+            'ok'       => true,
+            'provider' => $providerId,
+            'message'  => sprintf(
+                'Thanks – we have logged your report for %s. It will appear in the status history as a community report.',
+                $providerLabel
+            ),
+        ], 200);
     }
 
 

@@ -122,6 +122,50 @@ class IncidentStore
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function addUserReport(string $providerId, string $summary, string $contact = '', string $providerLabel = ''): array
+    {
+        $events = $this->loadEvents();
+        $now    = time();
+
+        $providerKey   = sanitize_key($providerId) ?: 'provider';
+        $providerLabel = '' !== trim($providerLabel) ? trim($providerLabel) : ucfirst($providerKey);
+        $cleanSummary  = trim($summary);
+        $cleanContact  = trim($contact);
+
+        $eventKey = 'user_report|' . $providerKey . '|' . sha1($cleanSummary . '|' . microtime(true));
+
+        $event = [
+            'provider'       => $providerKey,
+            'provider_label' => $providerLabel,
+            'guid'           => $eventKey,
+            'title'          => 'User report',
+            'description'    => $cleanSummary,
+            'status'         => 'User-reported issue',
+            'status_normal'  => 'User-reported issue',
+            'severity'       => 'user_report',
+            'important'      => true,
+            'impact_summary' => $cleanSummary,
+            'source'         => 'user_report',
+            'published'      => gmdate('Y-m-d H:i:s T', $now),
+            'first_seen'     => $now,
+            'last_seen'      => $now,
+        ];
+
+        if ('' !== $cleanContact) {
+            $event['user_contact'] = $cleanContact;
+        }
+
+        $events[$eventKey] = $event;
+
+        $events = $this->pruneEvents($events, $now);
+        update_option(self::OPTION_EVENTS, $events, false);
+
+        return $event;
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     public function getStoredIncidents(): array
