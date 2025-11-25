@@ -97,6 +97,13 @@
     historyMeta: {},
     historyIncidents: [],
     visibleProviders: {},
+    reportForm: null,
+    reportProvider: null,
+    reportSummary: null,
+    reportContact: null,
+    reportStatus: null,
+    reportSubmit: null,
+    reportProvidersInitialized: false,
     debug: false,
     postPaintStarted: false
   };
@@ -1722,6 +1729,156 @@
     });
   }
 
+  function setReportStatus(message, tone) {
+    if (!state.reportStatus) {
+      return;
+    }
+    state.reportStatus.textContent = message || '';
+    state.reportStatus.classList.remove('lo-report__status--success', 'lo-report__status--error');
+    if ('success' === tone) {
+      state.reportStatus.classList.add('lo-report__status--success');
+    } else if ('error' === tone) {
+      state.reportStatus.classList.add('lo-report__status--error');
+    }
+  }
+
+  function populateReportProviders(providers) {
+    var select = state.reportProvider;
+    if (!select || !state.doc) {
+      return;
+    }
+
+    var current = select.value;
+    select.innerHTML = '';
+
+    if (!Array.isArray(providers) || !providers.length) {
+      var unavailable = state.doc.createElement('option');
+      unavailable.value = '';
+      unavailable.textContent = 'Provider list unavailable';
+      unavailable.disabled = true;
+      unavailable.selected = true;
+      select.appendChild(unavailable);
+      state.reportProvidersInitialized = true;
+      return;
+    }
+
+    var placeholder = state.doc.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select a provider…';
+    select.appendChild(placeholder);
+
+    providers.forEach(function (provider) {
+      if (!provider) {
+        return;
+      }
+      var slug = String(provider.provider || provider.id || '').trim().toLowerCase();
+      var label = provider.name || provider.label || (slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : 'Provider');
+      if (!slug) {
+        return;
+      }
+      var option = state.doc.createElement('option');
+      option.value = slug;
+      option.textContent = label;
+      select.appendChild(option);
+    });
+
+    if (current && select.querySelector('option[value="' + escapeSelector(current) + '"]')) {
+      select.value = current;
+    }
+
+    state.reportProvidersInitialized = true;
+  }
+
+  function handleReportSubmit(event) {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    if (!state.fetchImpl || !state.reportProvider || !state.reportSummary || !state.reportSubmit) {
+      return;
+    }
+
+    var providerId = String(state.reportProvider.value || '').trim();
+    var summary = String(state.reportSummary.value || '').trim();
+    var contact = state.reportContact ? String(state.reportContact.value || '').trim() : '';
+
+    if (!providerId) {
+      setReportStatus('Select a provider to report.', 'error');
+      return;
+    }
+
+    if (summary.length < 10) {
+      setReportStatus('Please add a short description (10+ characters).', 'error');
+      return;
+    }
+
+    var originalLabel = state.reportSubmit.textContent;
+    state.reportSubmit.disabled = true;
+    state.reportSubmit.textContent = 'Sending…';
+    setReportStatus('Sending report…');
+
+    var payload = {
+      provider_id: providerId,
+      summary: summary,
+      contact: contact
+    };
+
+    state.fetchImpl('/wp-json/lousy/v1/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) {
+        if (!res) {
+          throw new Error('No response');
+        }
+        var ok = !!res.ok;
+        return res.json().catch(function () { return {}; }).then(function (data) { return { ok: ok, data: data }; });
+      })
+      .then(function (result) {
+        var ok = result && result.ok && result.data && result.data.ok !== false;
+        var message = null;
+        if (result && result.data) {
+          message = result.data.message || result.data.error || null;
+        }
+        if (ok) {
+          if (state.reportSummary) {
+            state.reportSummary.value = '';
+          }
+          if (state.reportContact) {
+            state.reportContact.value = '';
+          }
+          setReportStatus(message || 'Thanks for the report. We will review it shortly.', 'success');
+        } else {
+          setReportStatus(message || 'Could not submit report right now, please try again later.', 'error');
+        }
+      })
+      .catch(function () {
+        setReportStatus('Could not submit report right now, please try again later.', 'error');
+      })
+      .finally(function () {
+        state.reportSubmit.disabled = false;
+        state.reportSubmit.textContent = originalLabel;
+      });
+  }
+
+  function initReportForm() {
+    if (!state.doc) {
+      return;
+    }
+    state.reportForm = state.doc.querySelector('[data-lo-report-form]');
+    state.reportProvider = state.reportForm ? state.reportForm.querySelector('[data-lo-report-provider]') : null;
+    state.reportSummary = state.reportForm ? state.reportForm.querySelector('[data-lo-report-summary]') : null;
+    state.reportContact = state.reportForm ? state.reportForm.querySelector('[data-lo-report-contact]') : null;
+    state.reportStatus = state.reportForm ? state.reportForm.querySelector('[data-lo-report-status]') : null;
+    state.reportSubmit = state.reportForm ? state.reportForm.querySelector('[data-lo-report-submit]') : null;
+
+    if (state.reportForm && !state.reportForm.dataset.loReportEnhanced) {
+      state.reportForm.dataset.loReportEnhanced = '1';
+      state.reportForm.addEventListener('submit', handleReportSubmit);
+    }
+  }
+
   function isDocumentVisible() {
     if (!state.doc || typeof state.doc.visibilityState !== 'string') {
       return true;
@@ -1900,8 +2057,12 @@
         if (Array.isArray(body.providers)) {
           evaluateProviderHealth(body.providers);
           renderProviders(body.providers);
+          populateReportProviders(body.providers);
         } else {
           resetAutoRefresh();
+          if (!state.reportProvidersInitialized) {
+            populateReportProviders(null);
+          }
         }
         var fetched = body.fetched_at || (body.meta && (body.meta.fetched_at || body.meta.fetchedAt));
         if (fetched) {
@@ -1942,6 +2103,9 @@
       })
       .catch(function () {
         degradeAutoRefresh();
+        if (!state.reportProvidersInitialized) {
+          populateReportProviders(null);
+        }
         var retryDelay = state.delay || state.baseDelay || POLL_MS;
         if (typeof state.lastFetchStartedAt === 'number' && state.lastFetchStartedAt > 0) {
           var elapsedSinceStart = Date.now() - state.lastFetchStartedAt;
@@ -2083,6 +2247,7 @@
     state.historyEmpty = state.container.querySelector('[data-lo-history-empty]');
     state.historyError = state.container.querySelector('[data-lo-history-error]');
     state.historyCharts = state.container.querySelector('[data-lo-history-charts]');
+    initReportForm();
     var historyToggle = state.container.querySelector('[data-lo-history-important]');
     if (historyToggle) {
       state.historyImportantOnly = historyToggle.checked !== false;
@@ -2131,6 +2296,9 @@
     }
     if (initialProviders.length) {
       renderProviders(initialProviders);
+    }
+    if (initialProviders.length) {
+      populateReportProviders(initialProviders);
     }
     if (state.loadingEl) {
       toggleSpinner(!initialProviders.length);

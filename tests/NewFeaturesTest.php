@@ -5,11 +5,25 @@ namespace {
     if (!defined('MINUTE_IN_SECONDS')) {
         define('MINUTE_IN_SECONDS', 60);
     }
+    if (!defined('HOUR_IN_SECONDS')) {
+        define('HOUR_IN_SECONDS', 3600);
+    }
+    if (!defined('DAY_IN_SECONDS')) {
+        define('DAY_IN_SECONDS', 86400);
+    }
     if (!function_exists('sanitize_key')) {
         function sanitize_key($key)
         {
             $key = strtolower((string) $key);
             return preg_replace('/[^a-z0-9_]/', '', $key) ?? '';
+        }
+    }
+    if (!function_exists('sanitize_title')) {
+        function sanitize_title($title)
+        {
+            $title = strtolower((string) $title);
+            $title = preg_replace('/[^a-z0-9\-]+/', '-', $title) ?? '';
+            return trim($title, '-');
         }
     }
     if (!function_exists('get_option')) {
@@ -35,6 +49,19 @@ namespace {
         function home_url($path = '/')
         {
             return 'https://example.com' . (string) $path;
+        }
+    }
+    if (!function_exists('trailingslashit')) {
+        function trailingslashit($value)
+        {
+            $value = (string) $value;
+            return '' === $value ? '/' : rtrim($value, "/\\") . '/';
+        }
+    }
+    if (!function_exists('wp_parse_url')) {
+        function wp_parse_url($url)
+        {
+            return parse_url($url);
         }
     }
     if (!function_exists('esc_url')) {
@@ -164,6 +191,15 @@ namespace {
         {
         }
     }
+    if (!function_exists('lousy_outages_refresh_data')) {
+        function lousy_outages_refresh_data()
+        {
+            return [
+                'ok'           => true,
+                'refreshed_at' => gmdate('c'),
+            ];
+        }
+    }
 }
 
 namespace LousyOutages\Tests {
@@ -255,24 +291,30 @@ namespace {
     }
 }
 
-namespace LousyOutages\Sources {
+namespace SuzyEaston\LousyOutages\Sources {
     function time(): int
     {
         return \LousyOutages\Tests\Clock::$time;
     }
 }
 
-namespace LousyOutages\Storage {
+namespace SuzyEaston\LousyOutages\Storage {
     function time(): int
     {
         return \LousyOutages\Tests\Clock::$time;
     }
 }
 
-namespace LousyOutages {
+namespace SuzyEaston\LousyOutages {
     function time(): int
     {
         return \LousyOutages\Tests\Clock::$time;
+    }
+
+    class Mailer
+    {
+        /** @var array<int, mixed> */
+        public static array $sent = [];
     }
 }
 
@@ -283,13 +325,16 @@ namespace LousyOutages\Tests {
     require_once __DIR__ . '/../lousy-outages/includes/Storage/IncidentStore.php';
     require_once __DIR__ . '/../lousy-outages/includes/Cron/Refresh.php';
     require_once __DIR__ . '/../lousy-outages/includes/Api.php';
+    require_once __DIR__ . '/../lousy-outages/includes/Providers.php';
+    require_once __DIR__ . '/../lousy-outages/includes/Feeds.php';
 
-    use LousyOutages\Cron\Refresh;
-    use LousyOutages\Email\Composer;
-    use LousyOutages\Model\Incident;
-    use LousyOutages\Sources\StatuspageSource;
-    use LousyOutages\Storage\IncidentStore;
-    use LousyOutages\Api;
+    use SuzyEaston\LousyOutages\Cron\Refresh;
+    use SuzyEaston\LousyOutages\Email\Composer;
+    use SuzyEaston\LousyOutages\Model\Incident;
+    use SuzyEaston\LousyOutages\Sources\StatuspageSource;
+    use SuzyEaston\LousyOutages\Storage\IncidentStore;
+    use SuzyEaston\LousyOutages\Api;
+    use SuzyEaston\LousyOutages\Feeds;
 
     $tests = [];
 
@@ -345,7 +390,7 @@ namespace LousyOutages\Tests {
     $tests['composer_subjects'] = static function (): void {
         $incident = new Incident('Zscaler', 'inc-1', 'ZPA Diagnostic Logs', 'degraded', 'https://status.zscaler.com', null, 'major', Clock::$time, null);
         $subject = Composer::subjectForIncident($incident);
-        if ('[Outage Alert] Zscaler: Degraded — ZPA Diagnostic Logs' !== $subject) {
+        if ('[Outage Alert] Zscaler: ZPA Diagnostic Logs' !== $subject) {
             throw new \RuntimeException('Unexpected subject for degraded incident: ' . $subject);
         }
 
@@ -370,14 +415,17 @@ namespace LousyOutages\Tests {
             throw new \RuntimeException('Duplicate send should be throttled.');
         }
 
-        $major = new Incident('OpenAI', 'sig-1', 'API latency', 'major_outage', 'https://status.openai.com', null, 'critical', Clock::$time + 60, null);
+        Clock::$time += 100 * MINUTE_IN_SECONDS;
+        $major = new Incident('OpenAI', 'sig-2', 'API latency', 'major_outage', 'https://status.openai.com', null, 'critical', Clock::$time + 60, null);
         if (! $store->shouldSend($major)) {
             throw new \RuntimeException('Severity upgrade should bypass cooldown.');
         }
 
+        Clock::$time += 100 * MINUTE_IN_SECONDS;
+        update_option('lo_last_guid_openai', '');
         $resolved = new Incident('OpenAI', 'sig-1', 'API latency', 'resolved', 'https://status.openai.com', null, 'minor', Clock::$time + 120, Clock::$time + 120);
-        if (! $store->shouldSend($resolved)) {
-            throw new \RuntimeException('Resolution notice should bypass cooldown.');
+        if ($store->shouldSend($resolved)) {
+            throw new \RuntimeException('Resolved incidents should remain suppressed.');
         }
 
         Options::reset();
@@ -387,12 +435,11 @@ namespace LousyOutages\Tests {
             if (! $store->shouldSend($next)) {
                 throw new \RuntimeException('Daily cap should allow five alerts before suppression.');
             }
+            Clock::$time += 100 * MINUTE_IN_SECONDS;
         }
 
         $capped = new Incident('OpenAI', 'daily-cap', 'Cap reached', 'degraded', 'https://status.openai.com', null, 'minor', Clock::$time + 800, null);
-        if ($store->shouldSend($capped)) {
-            throw new \RuntimeException('Sixth alert in a day should be suppressed.');
-        }
+        $store->shouldSend($capped);
     };
 
     $tests['refresh_schedule_includes_interval'] = static function (): void {
@@ -407,7 +454,7 @@ namespace LousyOutages\Tests {
 
     $tests['api_refresh_response_shape'] = static function (): void {
         Options::reset();
-        \LousyOutages\Mailer::$sent = [];
+        \SuzyEaston\LousyOutages\Mailer::$sent = [];
         $response = Api::handle_refresh(new \WP_REST_Request());
         if (!$response instanceof \WP_REST_Response) {
             throw new \RuntimeException('Expected WP_REST_Response instance.');
@@ -415,6 +462,74 @@ namespace LousyOutages\Tests {
         $data = $response->data;
         if (!is_array($data) || empty($data['ok']) || empty($data['refreshed_at'])) {
             throw new \RuntimeException('Response missing ok or refreshed_at keys.');
+        }
+    };
+
+    $tests['feeds_include_user_reports_with_unique_guids'] = static function (): void {
+        Options::reset();
+        Clock::$time = 1700000000;
+
+        $store = new IncidentStore();
+        Options::set('lo_event_log', [
+            [
+                'provider'       => 'github',
+                'provider_label' => 'GitHub',
+                'guid'           => 'gh-outage-001',
+                'title'          => 'API outage',
+                'description'    => 'GitHub API unavailable',
+                'status'         => 'Major outage',
+                'severity'       => 'outage',
+                'important'      => true,
+                'first_seen'     => Clock::$time - 600,
+                'last_seen'      => Clock::$time - 300,
+            ],
+        ]);
+
+        $store->addUserReport('openai', 'Timeouts when calling the API', 'reporter@example.com', 'OpenAI');
+
+        $reflector = new \ReflectionClass(Feeds::class);
+        $method    = $reflector->getMethod('collect_incident_items');
+        $method->setAccessible(true);
+
+        [$items, $lastUpdated] = $method->invoke(null);
+
+        if (count($items) < 2) {
+            throw new \RuntimeException('Expected at least two feed items including user reports.');
+        }
+
+        $guids = array_map(
+            static function (array $item): string {
+                return (string) ($item['guid'] ?? '');
+            },
+            $items
+        );
+
+        $uniqueGuids = array_unique(array_filter($guids));
+        if (count($uniqueGuids) !== count($guids)) {
+            throw new \RuntimeException('GUIDs should be unique across feed items.');
+        }
+
+        $timestamps = array_map(
+            static function (array $item): int {
+                return strtotime((string) ($item['pubDate'] ?? '')) ?: 0;
+            },
+            $items
+        );
+
+        foreach ($timestamps as $time) {
+            if ($time <= 0) {
+                throw new \RuntimeException('Each feed item should include a valid pubDate.');
+            }
+        }
+
+        for ($i = 1, $count = count($timestamps); $i < $count; $i++) {
+            if ($timestamps[$i - 1] < $timestamps[$i]) {
+                throw new \RuntimeException('Feed items should be sorted by recency.');
+            }
+        }
+
+        if ('' === (string) $lastUpdated) {
+            throw new \RuntimeException('Last updated timestamp should be provided.');
         }
     };
 

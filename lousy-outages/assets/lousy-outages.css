@@ -941,6 +941,125 @@
   color: rgba(255, 233, 196, 0.92);
 }
 
+.lo-panel {
+  margin: 0 auto 18px;
+  padding: 14px 16px;
+  border: 2px solid rgba(255, 184, 28, 0.8);
+  border-radius: 12px;
+  background: linear-gradient(160deg, rgba(244, 154, 229, 0.12), rgba(12, 12, 12, 0.92));
+  color: rgba(255, 233, 196, 0.95);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32);
+  text-align: left;
+}
+
+.lo-panel--report {
+  max-width: 760px;
+}
+
+.lo-panel__header {
+  margin-bottom: 10px;
+}
+
+.lo-panel__title {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lo-accent);
+}
+
+.lo-panel__subtitle {
+  margin: 0;
+  color: var(--lo-muted);
+  font-size: 0.9rem;
+}
+
+.lo-report__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lo-label {
+  font-size: 0.85rem;
+  color: rgba(255, 233, 196, 0.9);
+  letter-spacing: 0.04em;
+}
+
+.lo-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--lo-border);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--lo-text);
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.lo-input:focus {
+  outline: 2px solid var(--lo-accent);
+  outline-offset: 2px;
+}
+
+.lo-input--textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.lo-report__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lo-button {
+  background: var(--lo-pop);
+  color: #050505;
+  border: 2px solid var(--lo-accent);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lo-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.lo-button:hover,
+.lo-button:focus {
+  background: #ff6a3a;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(244, 154, 229, 0.35);
+}
+
+.lo-report__status {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: 0.9rem;
+  color: var(--lo-muted);
+}
+
+.lo-report__status--success {
+  color: #6effba;
+}
+
+.lo-report__status--error {
+  color: #ff7b7b;
+}
+
 .lousy-outages.lo-theme-light .lo-subscribe__status {
   color: #1f1f1f;
 }
