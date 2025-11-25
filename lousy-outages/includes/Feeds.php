@@ -47,7 +47,7 @@ class Feeds {
   <channel>
     <title><?php echo esc_html('Suzy Easton – Lousy Outages Status Feed'); ?></title>
     <link><?php echo esc_url(home_url('/lousy-outages/')); ?></link>
-    <description><?php echo esc_html('Major outage shenanigans curated by Suzy Easton. Serious incidents, delightfully unserious commentary.'); ?></description>
+    <description><?php echo esc_html('Aggregated incident and performance updates for third-party providers monitored by the Lousy Outages dashboard.'); ?></description>
     <lastBuildDate><?php echo esc_html(self::format_rss_date($last_updated)); ?></lastBuildDate>
 <?php foreach ($items as $item) : ?>
     <item>
@@ -83,7 +83,8 @@ class Feeds {
                 $event = $store->normalizeEvent($event);
 
                 $severity       = strtolower((string) ($event['severity'] ?? ''));
-                $severityKnown  = in_array($severity, ['outage', 'degraded'], true);
+                $isUserReport   = 'user_report' === $severity || 'user_report' === strtolower((string) ($event['source'] ?? ''));
+                $severityKnown  = $isUserReport || in_array($severity, ['outage', 'degraded', 'maintenance', 'info'], true);
                 $importantField = $event['important'] ?? null;
                 $important      = null === $importantField ? null : (bool) $importantField;
 
@@ -129,19 +130,28 @@ class Feeds {
 
                 $itemTimestamp = $timestamp ?: self::parse_time($fallback_time);
 
+                $itemTitle      = sprintf('[%s] %s – %s', strtoupper($severity ?: 'incident'), $provider_name, $title_text ?: 'Incident');
+                $descriptionArgs = [
+                    'provider_label' => $provider_name,
+                    'severity'       => $severity,
+                    'status'         => $status,
+                    'title'          => $title_text,
+                    'impact_summary' => (string) ($event['impact_summary'] ?? ''),
+                    'summary'        => (string) ($event['description'] ?? ''),
+                ];
+
+                if ($isUserReport) {
+                    $title_text                 = $title_text ?: 'Possible issue reported by a user';
+                    $descriptionArgs['severity'] = 'user_report';
+                    $itemTitle                  = sprintf('[COMMUNITY REPORT] %s – %s', $provider_name, $title_text);
+                }
+
                 $items[] = [
-                    'title'       => sprintf('[%s] %s – %s', strtoupper($severity ?: 'incident'), $provider_name, $title_text ?: 'Incident'),
+                    'title'       => $itemTitle,
                     'link'        => $incidentLink,
                     'guid'        => $guid,
                     'pubDate'     => self::format_rss_date($timestamp ? gmdate('c', (int) $timestamp) : $fallback_time),
-                    'description' => self::build_funny_summary([
-                        'provider_label' => $provider_name,
-                        'severity'       => $severity,
-                        'status'         => $status,
-                        'title'          => $title_text,
-                        'impact_summary' => (string) ($event['impact_summary'] ?? ''),
-                        'summary'        => (string) ($event['description'] ?? ''),
-                    ]),
+                    'description' => self::build_funny_summary($descriptionArgs),
                     'timestamp'   => $itemTimestamp,
                 ];
 
@@ -204,42 +214,66 @@ class Feeds {
     }
 
     /**
-     * Build a theatrical but informative summary for the feed description.
+     * Build a concise, professional summary for the feed description.
      *
      * @param array<string, mixed> $incident
      */
     private static function build_funny_summary(array $incident): string {
-        $provider = trim((string) ($incident['provider_label'] ?? 'The provider'));
-        $severity = strtolower((string) ($incident['severity'] ?? ''));
-        $status   = trim((string) ($incident['status'] ?? ''));
-        $title    = trim((string) ($incident['title'] ?? ''));
-        $notes    = trim((string) ($incident['impact_summary'] ?? ($incident['summary'] ?? '')));
+        $provider      = trim((string) ($incident['provider_label'] ?? 'The provider')) ?: 'The provider';
+        $severity      = strtolower((string) ($incident['severity'] ?? ''));
+        $status        = trim((string) ($incident['status'] ?? ''));
+        $impactSummary = trim((string) ($incident['impact_summary'] ?? ''));
+        $fallback      = trim((string) ($incident['summary'] ?? ''));
+        $details       = '' !== $impactSummary ? $impactSummary : $fallback;
 
-        $statusText = $status ? 'Status: ' . $status . '. ' : '';
+        if ('user_report' === $severity) {
+            $summary = sprintf('Community report for %s.', $provider);
+            if ('' !== $details) {
+                $summary .= ' A user reported a possible issue: ' . self::truncate_text($details, 200) . '.';
+            }
+            $summary .= ' This report has not yet been independently verified.';
 
-        if ('outage' === $severity) {
-            $lead = sprintf(
-                '%1$s just unplugged reality. %2$sThis is the part of the keynote where everything goes dark and we pretend it’s “planned.”',
-                $provider,
-                $statusText
-            );
-        } else {
-            $lead = sprintf(
-                '%1$s is in “reality distortion field” mode: technically running, spiritually napping. %2$sExpect dramatic limping worthy of a method actor.',
-                $provider,
-                $statusText
-            );
+            return trim($summary);
         }
 
-        if ('' !== $title) {
-            $lead .= ' Headline: ' . self::truncate_text($title, 180);
+        $statusText = $status ?: '';
+
+        switch ($severity) {
+            case 'outage':
+                $body = sprintf(
+                    'Service outage reported for %s. Status: %s.',
+                    $provider,
+                    $statusText ?: 'see provider status page for details'
+                );
+                break;
+            case 'degraded':
+                $body = sprintf(
+                    'Performance issues detected for %s. Status: %s.',
+                    $provider,
+                    $statusText ?: 'see provider status page for details'
+                );
+                break;
+            case 'maintenance':
+            case 'info':
+                $body = sprintf(
+                    'Scheduled maintenance or informational update for %s. Status: %s.',
+                    $provider,
+                    $statusText ?: 'see provider status page for details'
+                );
+                break;
+            default:
+                $body = sprintf(
+                    'Incident update for %s. Status: %s.',
+                    $provider,
+                    $statusText ?: 'see incident details'
+                );
         }
 
-        if ('' !== $notes && $notes !== $title) {
-            $lead .= ' Vendor notes: ' . self::truncate_text($notes, 200);
+        if ('' !== $details) {
+            $body .= ' ' . self::truncate_text($details, 200);
         }
 
-        return $lead;
+        return trim($body);
     }
 
     private static function truncate_text(string $text, int $limit = 180): string {
