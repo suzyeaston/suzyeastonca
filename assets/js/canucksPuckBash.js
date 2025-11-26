@@ -13,6 +13,7 @@
   const scoreboardEl = document.getElementById("scoreboard");
   const teamDisplayEl = document.getElementById("team-display");
   const overlay = document.getElementById("game-overlay");
+  const avatarSelect = document.getElementById("avatar-select-input");
   let startButton = document.getElementById("start-button");
   const testGoalSoundButton = document.getElementById("test-goal-sound");
   const overlayDefault = overlay.innerHTML;
@@ -72,6 +73,7 @@
     height: 20,
     speed: 200,
     color: "#0055aa",
+    jersey: "10",
   };
 
   const puck = {
@@ -92,6 +94,21 @@
   let shotTimer = 0;
   let canucksShots = 0;
   let isDragging = false;
+  let activeAvatar = "classic";
+
+  const avatars = {
+    classic: { label: "Classic Canuck", color: "#0055aa", jersey: "10" },
+    gino: { label: "Gino Odjick", color: "#0b6623", jersey: "29" },
+    captain: { label: "The Captain", color: "#003366", jersey: "C" },
+  };
+
+  function applyAvatar(selection) {
+    const avatar = avatars[selection] || avatars.classic;
+    activeAvatar = selection in avatars ? selection : "classic";
+    player.color = avatar.color;
+    player.jersey = avatar.jersey;
+    teamDisplayEl.textContent = `Vancouver Canucks (${avatar.label}) vs. ${opponent}`;
+  }
 
   function drawRink() {
     ctx.fillStyle = "#eef";
@@ -106,6 +123,14 @@
   function drawPlayer() {
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
+    ctx.fillStyle = "#fff";
+    ctx.font = "10px 'Press Start 2P', monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      player.jersey,
+      player.x + player.width / 2,
+      player.y + player.height / 1.6,
+    );
   }
 
   function drawGoalie() {
@@ -173,15 +198,21 @@
         puck.vx *= -1;
       }
       if (puck.y - puck.radius < 0) {
-        if (
-          puck.x > goal.x &&
-          puck.x < goal.x + goal.width &&
-          !(puck.x > goalie.x && puck.x < goalie.x + goalie.width)
-        ) {
+        const isInsideNet =
+          puck.x >= goal.x && puck.x <= goal.x + goal.width;
+        const goalieBlocking =
+          puck.x >= goalie.x && puck.x <= goalie.x + goalie.width;
+
+        if (isInsideNet && !goalieBlocking) {
           canucksScore += 1;
           showGoal();
           resetPuck();
         } else {
+          const missMessage = isInsideNet ? "Saved!" : "Wide!";
+          if (!isInsideNet) {
+            opponentScore += 1;
+          }
+          showMiss(missMessage);
           puck.y = puck.radius;
           puck.vy *= -1;
         }
@@ -213,7 +244,7 @@
       endGame();
     }
 
-    scoreboardEl.textContent = `Canucks ${canucksScore} – ${opponent} ${opponentScore} | ${Math.ceil(timeLeft)}s | Shots: ${canucksShots}, Goals: ${canucksScore}`;
+    scoreboardEl.textContent = `Canucks ${canucksScore} – ${opponent} ${opponentScore} | ${Math.ceil(timeLeft)}s | Shots: ${canucksShots}, Goals: ${canucksScore} | Avatar: ${avatars[activeAvatar].label}`;
   }
 
   function resetPuck() {
@@ -309,15 +340,69 @@
     playCrowdNoise(baseTime + melodyEnd + 0.05);
   }
 
+  function playCrowdCheer() {
+    const startTime = audioCtx.currentTime;
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.25, startTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 1.1);
+
+    const noise = audioCtx.createBufferSource();
+    const duration = 1.1;
+    const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    noise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = 1600;
+
+    noise.connect(filter).connect(gain).connect(audioCtx.destination);
+    noise.start(startTime);
+    noise.stop(startTime + duration);
+  }
+
+  function playBuzzer() {
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.45);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.5);
+  }
+
   function showGoal() {
     overlay.innerHTML =
-      '<div class="overlay-content goal-animation"><p>GOAL!</p></div>';
+      '<div class="overlay-content goal-animation"><div class="goal-light"></div><p class="pixel-font goal-text">GOAL!</p><p class="goal-subtext">Coliseum crowd goes wild!</p></div>';
     overlay.style.display = "flex";
     playGoalMelody();
+    playCrowdCheer();
     setTimeout(() => {
       overlay.style.display = "none";
       overlay.innerHTML = overlayDefault;
     }, 800);
+  }
+
+  function showMiss(message = "Miss!") {
+    overlay.innerHTML =
+      `<div class="overlay-content miss-animation"><p class="pixel-font miss-text">${message}</p><p class="miss-subtext">The rebound springs the other way!</p></div>`;
+    overlay.style.display = "flex";
+    playBuzzer();
+    setTimeout(() => {
+      overlay.style.display = "none";
+      overlay.innerHTML = overlayDefault;
+    }, 700);
   }
 
   function endGame() {
@@ -367,8 +452,8 @@
       canucksShots = 0;
       timeLeft = 60;
       opponent = teams[Math.floor(Math.random() * teams.length)];
-      teamDisplayEl.textContent = `Vancouver Canucks vs. ${opponent}`;
-      scoreboardEl.textContent = `Canucks 0 – ${opponent} 0 | 60s | Shots: 0, Goals: 0`;
+      teamDisplayEl.textContent = `Vancouver Canucks (${avatars[activeAvatar].label}) vs. ${opponent}`;
+      scoreboardEl.textContent = `Canucks 0 – ${opponent} 0 | 60s | Shots: 0, Goals: 0 | Avatar: ${avatars[activeAvatar].label}`;
       running = true;
       lastTime = performance.now();
       overlay.style.display = "none";
@@ -396,12 +481,20 @@
         "KeyD",
         "KeyW",
         "KeyS",
+        "KeyG",
       ].includes(e.code)
     ) {
       e.preventDefault();
     }
     if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
       shoot();
+    }
+    if (e.code === "KeyG") {
+      const nextAvatar = activeAvatar === "gino" ? "classic" : "gino";
+      if (avatarSelect) {
+        avatarSelect.value = nextAvatar;
+      }
+      applyAvatar(nextAvatar);
     }
     keys[e.code] = true;
   }
@@ -427,6 +520,16 @@
 
   document.addEventListener("keydown", handleKeyDown, { passive: false });
   document.addEventListener("keyup", handleKeyUp, { passive: false });
+
+  if (avatarSelect) {
+    activeAvatar = avatarSelect.value;
+    applyAvatar(activeAvatar);
+    avatarSelect.addEventListener("change", (e) => {
+      applyAvatar(e.target.value);
+    });
+  } else {
+    applyAvatar(activeAvatar);
+  }
 
   const keyMap = {
     "btn-up": "ArrowUp",
