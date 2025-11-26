@@ -416,6 +416,9 @@
     var dailyCounts = meta && meta.daily_counts && typeof meta.daily_counts === 'object'
       ? meta.daily_counts
       : null;
+    var yoy = meta && meta.year_over_year && typeof meta.year_over_year === 'object'
+      ? meta.year_over_year
+      : null;
 
     if (!providerCounts) {
       providerCounts = {};
@@ -453,7 +456,8 @@
     return {
       providerCounts: providerCounts,
       dailyCounts: dailyCounts,
-      windowDays: Number.isFinite(windowDays) && windowDays > 0 ? windowDays : HISTORY_DEFAULT_DAYS
+      windowDays: Number.isFinite(windowDays) && windowDays > 0 ? windowDays : HISTORY_DEFAULT_DAYS,
+      yearOverYear: yoy
     };
   }
 
@@ -525,14 +529,20 @@
     }
 
     var styles = [
-      'body { margin: 0; padding: 24px; font-family: \'Inter\', system-ui, -apple-system, sans-serif; background: #0c0c0c; color: #fefefe; }',
-      '.lo-history__chart { margin-bottom: 24px; }',
-      '.lo-history__chart-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }',
-      '.lo-history__chart svg { width: 100%; height: auto; border: 1px solid #222; background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0, rgba(255, 255, 255, 0.03) 4px, transparent 4px, transparent 8px); }',
-      '.lo-history__chart-bar { fill: #6df28c; stroke: #0c0c0c; stroke-width: 1; }',
-      '.lo-history__chart-bar--thin { fill: #ffb347; }',
-      '.lo-history__chart-text { font-size: 10px; fill: #fefefe; }',
-      '.lo-history__chart text { font-family: \'Inter\', system-ui, -apple-system, sans-serif; }'
+      "@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');",
+      'body { margin: 0; padding: 24px; font-family: \"Press Start 2P\", \"VT323\", \"IBM Plex Mono\", monospace; background: #050510; color: #9af3ff; text-shadow: 0 0 6px rgba(0, 255, 255, 0.35); }',
+      '.lo-history__chart { margin-bottom: 24px; padding: 16px; border: 2px solid #1bf0ff; box-shadow: 0 0 0 2px #ff2fb3 inset, 0 0 18px rgba(27, 240, 255, 0.25); background: linear-gradient(135deg, rgba(0, 255, 170, 0.05) 0%, rgba(255, 47, 179, 0.05) 100%), #0b0b1e; }',
+      '.lo-history__chart-title { font-size: 12px; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; color: #f5f5f5; }',
+      '.lo-history__subtitle { color: #72f3ff; font-size: 10px; letter-spacing: 0.5px; margin-bottom: 8px; }',
+      '.lo-history__chart svg, .lo-history__chart canvas { width: 100%; height: auto; border: 1px solid #2affd5; background: repeating-linear-gradient(90deg, rgba(42, 255, 213, 0.08) 0, rgba(42, 255, 213, 0.08) 6px, transparent 6px, transparent 12px), #050510; image-rendering: pixelated; }',
+      '.lo-history__chart-bar { fill: #26ffd6; stroke: #000; stroke-width: 1; }',
+      '.lo-history__chart-bar--thin { fill: #ff2fb3; }',
+      '.lo-history__chart-bar--active { filter: drop-shadow(0 0 4px rgba(255, 47, 179, 0.8)); }',
+      '.lo-history__chart-text { font-size: 9px; fill: #e4f7ff; text-shadow: 0 0 4px rgba(0, 255, 255, 0.25); }',
+      '.lo-history__chart text { font-family: \"Press Start 2P\", \"VT323\", \"IBM Plex Mono\", monospace; }',
+      '.lo-history__chart-tooltip { margin-top: 6px; font-size: 10px; color: #f6ff8f; }',
+      '.lo-retro-legend { display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: 9px; color: #fefefe; }',
+      '.lo-retro-legend__swatch { width: 14px; height: 14px; border: 2px solid #0b0b1e; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); display: inline-block; margin-right: 6px; }'
     ].join('\n');
 
     var title = 'Lousy Outages – Incident charts';
@@ -1125,6 +1135,7 @@
     var chartData = getHistoryChartData();
     var providerCounts = chartData ? chartData.providerCounts : null;
     var dailyCounts = chartData ? chartData.dailyCounts : null;
+    var yoy = chartData ? chartData.yearOverYear : null;
     var hasProviders = providerCounts && Object.keys(providerCounts).length > 0;
     var hasDaily = dailyCounts && Object.keys(dailyCounts).length > 0;
 
@@ -1150,6 +1161,17 @@
         subtitle
       );
       frag.appendChild(timelineChart);
+    }
+
+    if (yoy && yoy.current && yoy.previous) {
+      var yoyChart = buildYearOverYearChart(
+        yoy,
+        subtitle,
+        (chartData && chartData.windowDays) || HISTORY_DEFAULT_DAYS
+      );
+      if (yoyChart) {
+        frag.appendChild(yoyChart);
+      }
     }
 
     state.historyCharts.appendChild(frag);
@@ -1406,6 +1428,146 @@
 
     chartWrap.appendChild(svg);
     return chartWrap;
+  }
+
+  function buildYearOverYearChart(comparison, subtitle, days) {
+    if (!comparison || !comparison.current || !comparison.previous || !state.doc) {
+      return null;
+    }
+
+    var windowDays = Number.isFinite(days) && days > 0 ? days : HISTORY_DEFAULT_DAYS;
+    var chartWrap = state.doc.createElement('div');
+    chartWrap.className = 'lo-history__chart';
+
+    var heading = state.doc.createElement('div');
+    heading.className = 'lo-history__chart-title';
+    heading.textContent = 'Year-over-year incident pulse';
+    chartWrap.appendChild(heading);
+
+    if (subtitle) {
+      var sub = state.doc.createElement('div');
+      sub.className = 'lo-history__subtitle';
+      sub.textContent = subtitle;
+      chartWrap.appendChild(sub);
+    }
+
+    var canvas = state.doc.createElement('canvas');
+    var width = 560;
+    var height = 240;
+    canvas.width = width;
+    canvas.height = height;
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', 'Year-over-year incident comparison');
+
+    var ctx = canvas.getContext && canvas.getContext('2d');
+    if (!ctx) {
+      chartWrap.appendChild(canvas);
+      return chartWrap;
+    }
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0, 0, width, height);
+
+    var plotPadding = 36;
+    var plotWidth = width - (plotPadding * 2);
+    var plotHeight = height - (plotPadding * 2);
+    var baseX = plotPadding;
+    var baseY = height - plotPadding;
+
+    ctx.strokeStyle = 'rgba(42, 255, 213, 0.15)';
+    for (var gx = 0; gx <= plotWidth; gx += 20) {
+      ctx.beginPath();
+      ctx.moveTo(baseX + gx, baseY - plotHeight);
+      ctx.lineTo(baseX + gx, baseY);
+      ctx.stroke();
+    }
+    for (var gy = 0; gy <= plotHeight; gy += 20) {
+      ctx.beginPath();
+      ctx.moveTo(baseX, baseY - gy);
+      ctx.lineTo(baseX + plotWidth, baseY - gy);
+      ctx.stroke();
+    }
+
+    var seriesCurrent = buildSeries(windowDays, comparison.current);
+    var seriesPrevious = buildSeries(windowDays, comparison.previous);
+    var maxCurrent = seriesCurrent.reduce(function (acc, val) { return Math.max(acc, val); }, 0);
+    var maxPrevious = seriesPrevious.reduce(function (acc, val) { return Math.max(acc, val); }, 0);
+    var maxValue = Math.max(1, maxCurrent, maxPrevious);
+    var stepX = plotWidth / Math.max(windowDays - 1, 1);
+
+    var drawSeries = function (series, color, glowColor) {
+      ctx.strokeStyle = glowColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      series.forEach(function (value, idx) {
+        var x = baseX + (idx * stepX);
+        var y = baseY - ((value / maxValue) * plotHeight);
+        if (idx === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      ctx.stroke();
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      series.forEach(function (value, idx) {
+        var x = baseX + (idx * stepX);
+        var y = baseY - ((value / maxValue) * plotHeight);
+        if (idx === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+        ctx.fillStyle = color;
+        ctx.fillRect(x - 3, y - 3, 6, 6);
+      });
+      ctx.stroke();
+    };
+
+    drawSeries(seriesPrevious, '#00c2ff', 'rgba(0, 194, 255, 0.35)');
+    drawSeries(seriesCurrent, '#ff2fb3', 'rgba(255, 47, 179, 0.35)');
+
+    var legend = state.doc.createElement('div');
+    legend.className = 'lo-retro-legend';
+    legend.innerHTML = [
+      '<span class="lo-retro-legend__swatch" style="background:#ff2fb3;"></span>Current window',
+      '<span class="lo-retro-legend__swatch" style="background:#00c2ff;"></span>Previous year'
+    ].join(' ');
+
+    var delta = (comparison.current.total || 0) - (comparison.previous.total || 0);
+    var deltaText = state.doc.createElement('div');
+    deltaText.className = 'lo-history__subtitle';
+    var deltaLabel = delta === 0 ? 'matches last year' : (delta > 0 ? '+' + delta + ' vs last year' : delta + ' vs last year');
+    deltaText.textContent = 'Total incidents: ' + (comparison.current.total || 0) + ' (' + deltaLabel + ').';
+
+    chartWrap.appendChild(canvas);
+    chartWrap.appendChild(legend);
+    chartWrap.appendChild(deltaText);
+
+    return chartWrap;
+  }
+
+  function buildSeries(days, windowData) {
+    var series = [];
+    var counts = windowData && windowData.daily_counts && typeof windowData.daily_counts === 'object'
+      ? windowData.daily_counts
+      : {};
+    var start = windowData && windowData.start ? Date.parse(windowData.start + 'T00:00:00Z') : NaN;
+
+    for (var i = 0; i < days; i++) {
+      var dateKey;
+      if (!Number.isNaN(start)) {
+        var dateObj = new Date(start + (i * 24 * 60 * 60 * 1000));
+        dateKey = dateObj.toISOString().slice(0, 10);
+      }
+      series.push(counts[dateKey] || 0);
+    }
+
+    return series;
   }
 
   function setHistoryLoading() {

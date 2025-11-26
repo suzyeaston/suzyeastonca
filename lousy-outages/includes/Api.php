@@ -632,6 +632,23 @@ class Api {
             'providers'    => [],
         ];
 
+        $yearOverYear = $incidentStore->getYearOverYearWindow($days, $importantOnly);
+        $response['meta']['year_over_year'] = [
+            'current'  => [
+                'start'        => gmdate('Y-m-d', $yearOverYear['current']['start'] ?? $windowStart),
+                'end'          => gmdate('Y-m-d', $yearOverYear['current']['end'] ?? $windowEnd),
+                'total'        => $yearOverYear['current']['total'] ?? 0,
+                'daily_counts' => $yearOverYear['current']['daily_counts'] ?? [],
+            ],
+            'previous' => [
+                'start'        => gmdate('Y-m-d', $yearOverYear['previous']['start'] ?? ($windowStart - YEAR_IN_SECONDS)),
+                'end'          => gmdate('Y-m-d', $yearOverYear['previous']['end'] ?? ($windowEnd - YEAR_IN_SECONDS)),
+                'total'        => $yearOverYear['previous']['total'] ?? 0,
+                'daily_counts' => $yearOverYear['previous']['daily_counts'] ?? [],
+            ],
+            'delta'    => ($yearOverYear['current']['total'] ?? 0) - ($yearOverYear['previous']['total'] ?? 0),
+        ];
+
         foreach ($providers as $provider) {
             $history = $provider['history'];
             ksort($history);

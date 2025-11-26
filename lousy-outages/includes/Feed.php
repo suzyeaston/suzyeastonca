@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace SuzyEaston\LousyOutages;
 
+use SuzyEaston\LousyOutages\Providers;
+use SuzyEaston\LousyOutages\Storage\IncidentStore;
+
 class Feed {
     public static function bootstrap(): void {
         add_action('init', [self::class, 'register']);
@@ -11,6 +14,10 @@ class Feed {
     public static function register(): void {
         add_feed('lousy-outages', [self::class, 'render']);
         add_feed('lousy-outages-incidents', [self::class, 'render']);
+
+        add_rewrite_rule('^lousy-outages/feed/?$', 'index.php?feed=lousy-outages', 'top');
+        add_rewrite_rule('^feed/lousy-outages/?$', 'index.php?feed=lousy-outages', 'top');
+        add_rewrite_rule('^feed/lousy-outages-incidents/?$', 'index.php?feed=lousy-outages-incidents', 'top');
     }
 
     public static function render(): void {
@@ -18,10 +25,12 @@ class Feed {
             nocache_headers();
         }
 
-        header('Content-Type: application/rss+xml; charset=UTF-8');
+        $charset = (string) get_option('blog_charset', 'UTF-8');
+        header('Content-Type: application/rss+xml; charset=' . $charset, true);
 
-        if ('lousy-outages-incidents' === get_query_var('feed')) {
-            self::render_incidents_feed();
+        $feedName = get_query_var('feed');
+        if ('lousy-outages-incidents' === $feedName) {
+            self::render_incidents_feed($charset);
             return;
         }
 
@@ -44,8 +53,13 @@ class Feed {
         $providers = \lousy_outages_sort_providers($providers);
 
         $items = self::build_items($providers, $fetched_at);
+        if (empty($items)) {
+            $items = self::collect_recent_incident_items(7, 25);
+        }
 
-        echo '<?xml version="1.0" encoding="UTF-8"?>';
+        $lastUpdated = !empty($items[0]['pubDate']) ? $items[0]['pubDate'] : self::format_rss_date(gmdate('c'));
+
+        echo '<?xml version="1.0" encoding="' . esc_attr($charset ?: 'UTF-8') . '"?>';
         ?>
 <rss version="2.0">
   <channel>
@@ -53,7 +67,7 @@ class Feed {
     <link><?php echo esc_url(home_url('/lousy-outages/')); ?></link>
     <description><?php echo esc_html('Live incident alerts from the Lousy Outages dashboard.'); ?></description>
     <language>en-US</language>
-    <lastBuildDate><?php echo esc_html(self::format_rss_date(gmdate('c'))); ?></lastBuildDate>
+    <lastBuildDate><?php echo esc_html($lastUpdated); ?></lastBuildDate>
     <?php foreach ($items as $item) : ?>
       <item>
         <title><?php echo esc_html($item['title']); ?></title>
@@ -70,26 +84,11 @@ class Feed {
     }
 
     // LO: custom incidents RSS with Suzy-voice descriptions.
-    private static function render_incidents_feed(): void {
-        $store  = new Store();
-        $states = $store->get_all();
-        if (empty($states)) {
-            $states = lousy_outages_collect_statuses(false);
-        }
+    private static function render_incidents_feed(string $charset = 'UTF-8'): void {
+        $items       = self::collect_recent_incident_items(2, 30, true);
+        $lastUpdated = !empty($items[0]['pubDate']) ? $items[0]['pubDate'] : self::format_rss_date(gmdate('c'));
 
-        $fetched_at = get_option('lousy_outages_last_poll');
-        if (!$fetched_at) {
-            $fetched_at = gmdate('c');
-        }
-
-        $providers = [];
-        foreach ($states as $id => $state) {
-            $providers[] = lousy_outages_build_provider_payload($id, $state, $fetched_at);
-        }
-
-        $items = self::build_incident_items($providers);
-
-        echo '<?xml version="1.0" encoding="UTF-8"?>';
+        echo '<?xml version="1.0" encoding="' . esc_attr($charset ?: 'UTF-8') . '"?>';
         ?>
 <rss version="2.0">
   <channel>
@@ -97,7 +96,7 @@ class Feed {
     <link><?php echo esc_url(home_url('/lousy-outages/')); ?></link>
     <description><?php echo esc_html('Fast, loud, and slightly neon. Outage pings from Suzanne (Suzy) Easton’s console.'); ?></description>
     <language>en-US</language>
-    <lastBuildDate><?php echo esc_html(self::format_rss_date(gmdate('c'))); ?></lastBuildDate>
+    <lastBuildDate><?php echo esc_html($lastUpdated); ?></lastBuildDate>
     <?php foreach ($items as $item) : ?>
       <item>
         <title><?php echo esc_html($item['title']); ?></title>
@@ -142,57 +141,138 @@ class Feed {
                 }
 
                 $impactCode = strtolower((string) ($incident['impact'] ?? $incident['status'] ?? 'unknown'));
-                $statusLabel = Fetcher::status_label($impactCode ?: 'unknown');
-                $emoji = '⚠️';
-                if ('maintenance' === $impactCode) {
-                    $emoji = '🛠️';
-                } elseif ('operational' === $impactCode) {
-                    $emoji = 'ℹ️';
-                } elseif ('outage' === $impactCode) {
-                    $emoji = '🚨';
-                }
+                $summary    = trim((string) ($incident['summary'] ?? 'Details unavailable'));
 
-                $summary = trim((string) ($incident['summary'] ?? 'Details unavailable'));
-                $timeText = $timestamp ? gmdate('M d, h:i A', $timestamp) : gmdate('M d, h:i A');
-                $detailsLine = ('maintenance' === $impactCode)
-                    ? sprintf('%s scheduled maintenance: "%s"', $providerName, $summary)
-                    : sprintf('%s looks cranky: "%s"', $providerName, $summary);
-                $description = $emoji . ' ' . $statusLabel . ' • ' . $timeText . "\n"
-                    . $detailsLine . "\n"
-                    . 'Tap for details. We’ll stash the gritty bits in tonight’s digest.';
-
-                $link = (string) ($incident['url'] ?? $providerLink);
-                if ('' === $link) {
-                    $link = self::provider_link($providerId);
-                }
-
-                $guid = isset($incident['id']) ? (string) $incident['id'] : '';
-                if ('' !== $guid) {
-                    $guid = $providerId . ':' . $guid;
-                } else {
-                    $guid = sha1($providerId . '|' . $summary . '|' . ($updatedIso ?: $startedIso ?: '')); 
-                }
-
-                $items[] = [
-                    'title'       => sprintf('%s: %s', $providerName, $statusLabel),
-                    'link'        => $link,
-                    'guid'        => $guid,
-                    'pubDate'     => self::format_rss_date($updatedIso ?: ($startedIso ?: gmdate('c'))),
-                    'description' => $description,
-                    'timestamp'   => $timestamp ?: time(),
-                ];
+                $items[] = self::format_incident_item(
+                    $providerId,
+                    $providerName,
+                    $providerLink,
+                    $impactCode,
+                    $summary,
+                    $timestamp,
+                    (string) ($incident['url'] ?? ''),
+                    isset($incident['id']) ? (string) $incident['id'] : '',
+                    $updatedIso ?: $startedIso
+                );
             }
         }
 
+        return self::finalize_incident_items($items, 25, 48);
+    }
+
+    /**
+     * Collect recent incidents directly from the persistent incident store.
+     */
+    private static function collect_recent_incident_items(int $windowDays, int $limit = 25, bool $includeMaintenance = false): array {
+        $store          = new IncidentStore();
+        $events         = $store->getStoredIncidents();
+        $cutoff         = time() - ($windowDays * DAY_IN_SECONDS);
+        $providers      = Providers::list();
+        $providerLabels = [];
+
+        foreach ($providers as $id => $provider) {
+            $providerLabels[$id] = isset($provider['name']) ? (string) $provider['name'] : ucfirst((string) $id);
+        }
+
+        $items = [];
+        foreach ($events as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+            $event     = $store->normalizeEvent($event);
+            $provider  = sanitize_key((string) ($event['provider'] ?? ''));
+            $startTs   = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
+            $lastTs    = isset($event['last_seen']) ? (int) $event['last_seen'] : $startTs;
+            $timestamp = $lastTs ?: $startTs;
+            if ($timestamp && $timestamp < $cutoff) {
+                continue;
+            }
+
+            $severity = strtolower((string) ($event['severity'] ?? ''));
+            if (!$includeMaintenance && in_array($severity, ['maintenance', 'info'], true)) {
+                continue;
+            }
+
+            $status       = strtolower((string) ($event['status'] ?? $severity ?: 'incident'));
+            $providerName = $providerLabels[$provider] ?? ($event['provider_label'] ?? ucfirst($provider));
+            $link         = (string) ($event['url'] ?? '');
+            $guid         = isset($event['guid']) ? (string) $event['guid'] : '';
+            $summary      = (string) ($event['title'] ?? $event['description'] ?? 'Incident');
+            $updatedIso   = $timestamp ? gmdate('c', $timestamp) : gmdate('c');
+
+            $items[] = self::format_incident_item(
+                $provider,
+                $providerName,
+                self::provider_link($provider),
+                $status,
+                $summary,
+                $timestamp,
+                $link,
+                $guid,
+                $updatedIso
+            );
+        }
+
+        return self::finalize_incident_items($items, $limit, $windowDays * 24);
+    }
+
+    private static function format_incident_item(
+        string $providerId,
+        string $providerName,
+        string $providerLink,
+        string $impactCode,
+        string $summary,
+        int $timestamp,
+        string $link,
+        string $guid,
+        string $isoTime
+    ): array {
+        $impactCode  = $impactCode ?: 'incident';
+        $statusLabel = Fetcher::status_label($impactCode ?: 'unknown');
+        $emoji       = '⚠️';
+        if ('maintenance' === $impactCode) {
+            $emoji = '🛠️';
+        } elseif ('operational' === $impactCode) {
+            $emoji = 'ℹ️';
+        } elseif ('outage' === $impactCode || 'major' === $impactCode) {
+            $emoji = '🚨';
+        }
+
+        $timeText    = $timestamp ? gmdate('M d, h:i A', $timestamp) : gmdate('M d, h:i A');
+        $detailsLine = ('maintenance' === $impactCode)
+            ? sprintf('%s scheduled maintenance: "%s"', $providerName, $summary)
+            : sprintf('%s looks cranky: "%s"', $providerName, $summary);
+        $description = $emoji . ' ' . $statusLabel . ' • ' . $timeText . "\n"
+            . $detailsLine . "\n"
+            . 'Tap for details. We’ll stash the gritty bits in tonight’s digest.';
+
+        $link = '' !== $link ? $link : $providerLink;
+        if ('' === $guid) {
+            $guid = sha1($providerId . '|' . $summary . '|' . ($isoTime ?: ''));
+        } elseif (false === strpos($guid, ':')) {
+            $guid = $providerId . ':' . $guid;
+        }
+
+        return [
+            'title'       => sprintf('%s: %s', $providerName, $statusLabel),
+            'link'        => $link,
+            'guid'        => $guid,
+            'pubDate'     => self::format_rss_date($isoTime ?: gmdate('c')),
+            'description' => $description,
+            'timestamp'   => $timestamp ?: time(),
+        ];
+    }
+
+    private static function finalize_incident_items(array $items, int $limit, int $emptyWindowHours): array {
         usort($items, static function ($a, $b) {
             return ($b['timestamp'] ?? 0) <=> ($a['timestamp'] ?? 0);
         });
 
         if (empty($items)) {
             $items[] = [
-                'title'       => 'All clear: no incidents in the last 48 hours',
+                'title'       => sprintf('All clear: no incidents in the last %d hours', $emptyWindowHours),
                 'link'        => home_url('/lousy-outages/'),
-                'guid'        => 'lousy-outages-incidents-empty-' . gmdate('Ymd'),
+                'guid'        => 'lousy-outages-incidents-empty-' . gmdate('YmdHis'),
                 'pubDate'     => self::format_rss_date(gmdate('c')),
                 'description' => 'Enjoy the silence. Suzanne will holler if something breaks.',
                 'timestamp'   => time(),
@@ -202,7 +282,7 @@ class Feed {
         return array_map(static function ($item) {
             unset($item['timestamp']);
             return $item;
-        }, array_slice($items, 0, 25));
+        }, array_slice($items, 0, $limit));
     }
 
     private static function build_items(array $providers, string $fallback_time): array {
