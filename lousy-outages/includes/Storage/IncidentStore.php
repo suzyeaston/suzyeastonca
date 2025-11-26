@@ -10,10 +10,9 @@ class IncidentStore
     private const OPTION_EVENTS = 'lo_event_log';
     private const OPTION_LAST_DIGEST = 'lousy_outages_daily_digest_last_sent';
     private const ALERT_COOLDOWN = 90; // Minutes.
-    // Keep events long enough for 30+ day history; previously capped at ~36 hours,
-    // which caused the dashboard history to go empty even when recent incidents existed.
-    private const EVENT_RETENTION = 60 * DAY_IN_SECONDS; // (~60 days)
-    private const IMPORTANT_EVENT_RETENTION = 365 * DAY_IN_SECONDS;
+    // Keep events long enough for multi-year comparisons.
+    private const EVENT_RETENTION = 2 * YEAR_IN_SECONDS; // (~24 months)
+    private const IMPORTANT_EVENT_RETENTION = 4 * YEAR_IN_SECONDS;
     private const IMPORTANT_EVENT_CAP = 1000;
 
     /**
@@ -172,6 +171,94 @@ class IncidentStore
     {
         $stored = $this->loadEvents();
         return array_values($stored);
+    }
+
+    /**
+     * Return incidents between two timestamps, filtered to outage-like severities by default.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getIncidentsInRange(int $start, int $end, bool $importantOnly = true): array
+    {
+        $events   = $this->loadEvents();
+        $filtered = [];
+
+        foreach ($events as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+
+            $event = $this->normalizeEvent($event);
+
+            $firstSeen = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
+            $lastSeen  = isset($event['last_seen']) ? (int) $event['last_seen'] : $firstSeen;
+            $timestamp = $lastSeen ?: $firstSeen;
+
+            if ($timestamp <= 0) {
+                continue;
+            }
+
+            if ($timestamp < $start || $timestamp > $end) {
+                continue;
+            }
+
+            $severity  = isset($event['severity']) ? strtolower((string) $event['severity']) : 'incident';
+            $important = isset($event['important']) ? (bool) $event['important'] : true;
+
+            if ($importantOnly && (! $important || in_array($severity, ['maintenance', 'info'], true))) {
+                continue;
+            }
+
+            if (in_array($severity, ['operational', 'ok', 'none'], true)) {
+                continue;
+            }
+
+            $filtered[] = $event;
+        }
+
+        return $filtered;
+    }
+
+    public function getYearOverYearWindow(int $days, bool $importantOnly = true): array
+    {
+        $now          = time();
+        $currentStart = $now - ($days * DAY_IN_SECONDS);
+        $prevStart    = $currentStart - YEAR_IN_SECONDS;
+        $prevEnd      = $now - YEAR_IN_SECONDS;
+
+        return [
+            'current'  => $this->summarizeWindow($currentStart, $now, $importantOnly),
+            'previous' => $this->summarizeWindow($prevStart, $prevEnd, $importantOnly),
+        ];
+    }
+
+    /**
+     * @return array{start: int, end: int, total: int, daily_counts: array<string, int>, events: array<int, array<string, mixed>>}
+     */
+    private function summarizeWindow(int $start, int $end, bool $importantOnly = true): array
+    {
+        $events       = $this->getIncidentsInRange($start, $end, $importantOnly);
+        $dailyCounts  = [];
+
+        foreach ($events as $event) {
+            $firstSeen = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
+            $lastSeen  = isset($event['last_seen']) ? (int) $event['last_seen'] : $firstSeen;
+            $timestamp = $lastSeen ?: $firstSeen;
+            if (!$timestamp) {
+                continue;
+            }
+
+            $date = gmdate('Y-m-d', $timestamp);
+            $dailyCounts[$date] = ($dailyCounts[$date] ?? 0) + 1;
+        }
+
+        return [
+            'start'        => $start,
+            'end'          => $end,
+            'total'        => count($events),
+            'daily_counts' => $dailyCounts,
+            'events'       => $events,
+        ];
     }
 
     /**
