@@ -19,6 +19,16 @@ get_header();
                         <div id="scoreboard" class="scoreboard"></div>
                     </div>
 
+                    <div class="avatar-select">
+                        <label for="avatar-select-input" class="pixel-font">Choose Your Avatar</label>
+                        <select id="avatar-select-input" aria-label="Choose your Canucks legend" class="pixel-select">
+                            <option value="classic" selected>Classic Canuck</option>
+                            <option value="gino">Gino Odjick</option>
+                            <option value="captain">The Captain</option>
+                        </select>
+                        <p class="avatar-tip">Press "G" anytime to toggle Gino mode for a surprise.</p>
+                    </div>
+
                     <canvas id="canucks-game" class="game-canvas" role="img" aria-label="Canucks retro hockey game"></canvas>
 
                     <div class="controls">
