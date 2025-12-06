@@ -25,7 +25,19 @@ class Feeds {
         );
 
         add_rewrite_rule(
+            '^feed/' . self::FEED_NAME . '/?$',
+            'index.php?feed=' . self::FEED_NAME,
+            'top'
+        );
+
+        add_rewrite_rule(
             '^lousy-outages/feed/status/?$',
+            'index.php?feed=' . self::FEED_NAME,
+            'top'
+        );
+
+        add_rewrite_rule(
+            '^' . self::FEED_NAME . '/feed/?$',
             'index.php?feed=' . self::FEED_NAME,
             'top'
         );
