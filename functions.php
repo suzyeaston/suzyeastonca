@@ -9,6 +9,7 @@ if ( ! defined( 'OPENAI_API_KEY' ) ) {
 
 require_once get_template_directory() . '/inc/albini-quotes.php';
 require_once get_template_directory() . '/inc/openai.php';
+require_once get_template_directory() . '/inc/vancouver-tech-events.php';
 /**
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
