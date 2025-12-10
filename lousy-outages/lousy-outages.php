@@ -38,7 +38,6 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Precursor.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Subscriptions.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Subscribe.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Api.php';
-require_once LOUSY_OUTAGES_PATH . 'includes/Feed.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Feeds.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Summary.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/IncidentAlerts.php';
@@ -67,14 +66,13 @@ use SuzyEaston\LousyOutages\Email;
 use SuzyEaston\LousyOutages\Precursor;
 use SuzyEaston\LousyOutages\Subscriptions;
 use SuzyEaston\LousyOutages\Api;
-use SuzyEaston\LousyOutages\Feed;
 use SuzyEaston\LousyOutages\Feeds;
 use SuzyEaston\LousyOutages\MailTransport;
 use SuzyEaston\LousyOutages\IncidentAlerts;
 use SuzyEaston\LousyOutages\Cron\Refresh as RefreshCron;
 
 Api::bootstrap();
-Feed::bootstrap();
+// LO: Legacy feed slug removed to avoid clashing with the dashboard page; status feed now handled below.
 Feeds::bootstrap();
 MailTransport::bootstrap();
 IncidentAlerts::bootstrap();
@@ -84,14 +82,6 @@ lo_snapshot_bootstrap();
 lo_cron_bootstrap();
 
 add_action('lousy_outages_purge_pending', [Subscriptions::class, 'purge_stale_pending']);
-
-// LO: pretty URL for custom incidents feed.
-add_action(
-    'init',
-    static function () {
-        add_rewrite_rule( '^lousy-outages/feed/incidents/?$', 'index.php?feed=lousy-outages-incidents', 'top' );
-    }
-);
 
 add_action(
     'lousy_outages_log',
