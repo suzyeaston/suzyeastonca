@@ -110,6 +110,7 @@ get_header();
                 <div class="group-buttons">
                     <a href="/social-media" class="pixel-button">Livestream</a>
                     <a href="/music-releases" class="pixel-button">Upcoming Events</a>
+                    <a href="/vancouver-tech-events/" class="pixel-button">Vancouver Tech Events</a>
                 </div>
             </div>
 
