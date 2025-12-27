@@ -606,6 +606,53 @@ function suzy_vte_parse_iso_datetime( ?string $value, DateTimeZone $tz ): ?int {
 }
 
 /**
+ * Parse BC Tech / T-Net event datetime from the detail text.
+ *
+ * Examples seen on the site:
+ * - "January 1, 2026 (6:30 PM to 8:30 PM)"
+ * - "January 22, 2026 (5 PM to 7 PM)"
+ * - "January 12 to 15, 2026."
+ */
+function suzy_vte_parse_tnet_datetime( string $text, DateTimeZone $tz ): ?int {
+    $clean = preg_replace( '/\s+/', ' ', trim( $text ) );
+    if ( empty( $clean ) ) {
+        return null;
+    }
+
+    $date_str = null;
+
+    // Multi-day: "January 12 to 15, 2026"
+    if ( preg_match( '/\b([A-Za-z]+)\s+(\d{1,2})\s+to\s+(\d{1,2}),\s*(\d{4})\b/i', $clean, $m ) ) {
+        $date_str = sprintf( '%s %d, %d', $m[1], (int) $m[2], (int) $m[4] );
+    } elseif ( preg_match( '/\b([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})\b/i', $clean, $m ) ) {
+        // Single day: "January 1, 2026"
+        $date_str = sprintf( '%s %d, %d', $m[1], (int) $m[2], (int) $m[3] );
+    }
+
+    if ( null === $date_str ) {
+        return null;
+    }
+
+    // Prefer the first time in a range: "(6:30 PM to 8:30 PM)" or "(5 PM to 7 PM)"
+    $time_str = null;
+    if ( preg_match( '/\(\s*([0-9]{1,2}(?::[0-9]{2})?\s*[AP]M)\s*(?:to|\-)/i', $clean, $tm ) ) {
+        $time_str = trim( $tm[1] );
+    } elseif ( preg_match( '/\b([0-9]{1,2}(?::[0-9]{2})?\s*[AP]M)\b/i', $clean, $tm ) ) {
+        $time_str = trim( $tm[1] );
+    }
+
+    // If no time is present, default to noon to avoid “midnight weirdness”.
+    $dt_input = $date_str . ' ' . ( $time_str ? $time_str : '12:00 PM' );
+
+    try {
+        $dt = new DateTime( $dt_input, $tz );
+        return $dt->getTimestamp();
+    } catch ( Exception $e ) {
+        return null;
+    }
+}
+
+/**
  * Fetch BC Tech / T-Net HTML events and parse them.
  *
  * @param array<string, mixed> $source Source configuration.
@@ -669,7 +716,23 @@ function suzy_fetch_vancouver_tech_events_from_html_tnet( array $source, bool $d
             $link       = $link_nodes->length > 0 ? $link_nodes->item( 0 )->getAttribute( 'href' ) : '';
             $url        = suzy_vte_make_absolute_url( $link, $source['url'] );
 
-            $start = suzy_vte_parse_human_datetime( $date_text, $tz );
+            $details_text = trim( $title_node->textContent );
+
+            // Use the “real” date that includes year/time inside the details.
+            $start = suzy_vte_parse_tnet_datetime( $details_text, $tz );
+
+            // Fallback: try combined text if the pattern changes.
+            if ( null === $start ) {
+                $start = suzy_vte_parse_human_datetime( $date_text . ' ' . $details_text, $tz );
+            }
+
+            // Optional: make title cleaner (anchor text usually == actual event title).
+            if ( $link_nodes->length > 0 ) {
+                $anchor_title = trim( $link_nodes->item( 0 )->textContent );
+                if ( ! empty( $anchor_title ) ) {
+                    $title = $anchor_title;
+                }
+            }
 
             if ( empty( $title ) || null === $start ) {
                 continue;
