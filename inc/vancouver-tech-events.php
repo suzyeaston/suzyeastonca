@@ -400,25 +400,38 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
     libxml_clear_errors();
     $xpath = new DOMXPath( $dom );
 
-    $events = [];
-    $cards  = $xpath->query( "//a[contains(@href,'/event') or contains(@href,'/events/')]");
-    $seen   = [];
-    $tz     = new DateTimeZone( 'America/Vancouver' );
+    $events  = [];
+    $anchors = $xpath->query( "//a[@href]" );
+    $seen    = [];
+    $tz      = new DateTimeZone( 'America/Vancouver' );
 
-    foreach ( $cards as $anchor ) {
-        $href = $anchor->getAttribute( 'href' );
+    foreach ( $anchors as $anchor ) {
+        $href = trim( $anchor->getAttribute( 'href' ) );
         if ( empty( $href ) ) {
             continue;
         }
 
         $absolute_url = suzy_vte_make_absolute_url( $href, $source['url'] );
-        if ( isset( $seen[ $absolute_url ] ) ) {
+        if ( empty( $absolute_url ) || isset( $seen[ $absolute_url ] ) ) {
+            continue;
+        }
+
+        $parsed = wp_parse_url( $absolute_url );
+        $host   = $parsed['host'] ?? '';
+        $path   = $parsed['path'] ?? '';
+
+        if ( empty( $host ) || ( false === stripos( $host, 'luma.com' ) && false === stripos( $host, 'lu.ma' ) ) ) {
+            continue;
+        }
+
+        if ( ! preg_match( '#^/(event|events)/#', $path ) && ! preg_match( '#^/[A-Za-z0-9]{6,}$#', $path ) ) {
             continue;
         }
 
         $seen[ $absolute_url ] = true;
 
-        $title = trim( $anchor->textContent );
+        $title_node = $xpath->query( './/*[self::h2 or self::h3]', $anchor )->item( 0 );
+        $title      = $title_node ? trim( $title_node->textContent ) : trim( $anchor->textContent );
         if ( empty( $title ) && $anchor->parentNode ) {
             $title = trim( $anchor->parentNode->textContent );
         }
@@ -477,6 +490,15 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
  * @return array<string, mixed>|null
  */
 function suzy_vte_fetch_event_json_ld( string $url, bool $debug = false ) {
+    $transient_key = 'suzy_vte_event_detail_' . md5( $url );
+
+    if ( ! $debug ) {
+        $cached = get_transient( $transient_key );
+        if ( false !== $cached ) {
+            return isset( $cached['missing'] ) ? null : $cached;
+        }
+    }
+
     $response = wp_remote_get(
         $url,
         [
@@ -506,6 +528,8 @@ function suzy_vte_fetch_event_json_ld( string $url, bool $debug = false ) {
 
     $tz = new DateTimeZone( 'America/Vancouver' );
 
+    $detail = null;
+
     foreach ( $nodes as $node ) {
         $json = trim( $node->textContent );
         if ( empty( $json ) ) {
@@ -518,35 +542,68 @@ function suzy_vte_fetch_event_json_ld( string $url, bool $debug = false ) {
         }
 
         if ( isset( $data['@type'] ) && 'Event' === $data['@type'] ) {
-            $start = suzy_vte_parse_iso_datetime( $data['startDate'] ?? null, $tz );
-            $end   = suzy_vte_parse_iso_datetime( $data['endDate'] ?? null, $tz );
-
-            return [
+            $detail = [
                 'title'    => $data['name'] ?? '',
-                'start'    => $start,
-                'end'      => $end,
+                'start'    => suzy_vte_parse_iso_datetime( $data['startDate'] ?? null, $tz ),
+                'end'      => suzy_vte_parse_iso_datetime( $data['endDate'] ?? null, $tz ),
                 'location' => suzy_vte_extract_location_from_json_ld( $data['location'] ?? null ),
             ];
+            break;
         }
 
         if ( isset( $data[0] ) && is_array( $data[0] ) ) {
             foreach ( $data as $item ) {
                 if ( isset( $item['@type'] ) && 'Event' === $item['@type'] ) {
-                    $start = suzy_vte_parse_iso_datetime( $item['startDate'] ?? null, $tz );
-                    $end   = suzy_vte_parse_iso_datetime( $item['endDate'] ?? null, $tz );
-
-                    return [
+                    $detail = [
                         'title'    => $item['name'] ?? '',
-                        'start'    => $start,
-                        'end'      => $end,
+                        'start'    => suzy_vte_parse_iso_datetime( $item['startDate'] ?? null, $tz ),
+                        'end'      => suzy_vte_parse_iso_datetime( $item['endDate'] ?? null, $tz ),
                         'location' => suzy_vte_extract_location_from_json_ld( $item['location'] ?? null ),
                     ];
+                    break 2;
                 }
             }
         }
     }
 
-    return null;
+    if ( ! $detail ) {
+        $title_node = $xpath->query( '//h1' )->item( 0 );
+        $title      = $title_node ? trim( $title_node->textContent ) : '';
+
+        $time_nodes = $xpath->query( '//time' );
+        $start      = null;
+        $end        = null;
+
+        if ( $time_nodes->length > 0 ) {
+            $start_attr = $time_nodes->item( 0 )->getAttribute( 'datetime' );
+            $start_text = $start_attr ?: trim( $time_nodes->item( 0 )->textContent );
+            $start      = $start_attr ? suzy_vte_parse_iso_datetime( $start_attr, $tz ) : suzy_vte_parse_human_datetime( $start_text, $tz );
+        }
+
+        if ( $time_nodes->length > 1 ) {
+            $end_attr = $time_nodes->item( 1 )->getAttribute( 'datetime' );
+            $end_text = $end_attr ?: trim( $time_nodes->item( 1 )->textContent );
+            $end      = $end_attr ? suzy_vte_parse_iso_datetime( $end_attr, $tz ) : suzy_vte_parse_human_datetime( $end_text, $tz );
+        }
+
+        $location_node = $xpath->query( "//*[contains(@class,'location') or contains(@class,'Location')]" )->item( 0 );
+        $location      = $location_node ? trim( $location_node->textContent ) : null;
+
+        if ( $title || null !== $start || $location ) {
+            $detail = [
+                'title'    => $title,
+                'start'    => $start,
+                'end'      => $end,
+                'location' => $location,
+            ];
+        }
+    }
+
+    if ( ! $debug ) {
+        set_transient( $transient_key, $detail ? $detail : [ 'missing' => true ], 30 * MINUTE_IN_SECONDS );
+    }
+
+    return $detail;
 }
 
 /**
@@ -841,18 +898,32 @@ function suzy_fetch_vancouver_tech_events_from_html_meetup_search( array $source
         $xpath = new DOMXPath( $dom );
         $tz    = new DateTimeZone( 'America/Vancouver' );
 
-        $cards = $xpath->query( "//li[contains(@class,'eventCard') or contains(@class,'event-listing')]" );
-        foreach ( $cards as $card ) {
-            $title_node = $xpath->query( './/h3 | .//h2 | .//span[contains(@class,"eventCardHead--title")]', $card )->item( 0 );
-            $title      = $title_node ? trim( $title_node->textContent ) : trim( $card->textContent );
+        $anchors = $xpath->query( "//a[contains(@href,'/events/')]" );
+        $seen    = [];
 
-            $link_node = $xpath->query( './/a', $card )->item( 0 );
-            $url       = $link_node ? suzy_vte_make_absolute_url( $link_node->getAttribute( 'href' ), $source['url'] ) : '';
+        foreach ( $anchors as $anchor ) {
+            $href = trim( $anchor->getAttribute( 'href' ) );
+            if ( empty( $href ) ) {
+                continue;
+            }
 
-            $date_node = $xpath->query( './/*[contains(@class,"eventTimeDisplay")] | .//time', $card )->item( 0 );
-            $date_text = $date_node ? trim( $date_node->textContent ) : trim( $card->textContent );
+            $url = suzy_vte_make_absolute_url( $href, $source['url'] );
+            if ( empty( $url ) || isset( $seen[ $url ] ) ) {
+                continue;
+            }
 
-            $start = suzy_vte_parse_human_datetime( $date_text, $tz );
+            $seen[ $url ] = true;
+
+            $title_node = $xpath->query( './/*[self::h2 or self::h3]', $anchor )->item( 0 );
+            $title      = $title_node ? trim( $title_node->textContent ) : trim( $anchor->textContent );
+
+            $date_node = $xpath->query( './/time', $anchor )->item( 0 );
+            if ( ! $date_node && $anchor->parentNode ) {
+                $date_node = $xpath->query( './/time', $anchor->parentNode )->item( 0 );
+            }
+            $date_text = $date_node ? trim( $date_node->textContent ) : trim( $anchor->textContent );
+
+            $start = suzy_vte_parse_meetup_find_datetime( $date_text, $tz );
 
             if ( empty( $title ) || null === $start ) {
                 continue;
@@ -906,6 +977,39 @@ function suzy_vte_parse_human_datetime( string $text, DateTimeZone $tz ): ?int {
         $fallback = strtotime( $clean );
         return false !== $fallback ? $fallback : null;
     }
+}
+
+/**
+ * Parse Meetup "Find" page dates, inferring the year when missing.
+ *
+ * @param string       $text Date/time text.
+ * @param DateTimeZone $tz   Timezone instance.
+ * @return int|null
+ */
+function suzy_vte_parse_meetup_find_datetime( string $text, DateTimeZone $tz ): ?int {
+    $clean = preg_replace( '/\s+/', ' ', trim( $text ) );
+    if ( empty( $clean ) ) {
+        return null;
+    }
+
+    if ( preg_match( '/\b\d{4}\b/', $clean ) ) {
+        return suzy_vte_parse_human_datetime( $clean, $tz );
+    }
+
+    $year = (int) wp_date( 'Y' );
+
+    try {
+        $dt = new DateTime( $clean . ' ' . $year, $tz );
+    } catch ( Exception $e ) {
+        return suzy_vte_parse_human_datetime( $clean, $tz );
+    }
+
+    $now = new DateTime( 'now', $tz );
+    if ( $dt->getTimestamp() < ( $now->getTimestamp() - DAY_IN_SECONDS ) ) {
+        $dt->modify( '+1 year' );
+    }
+
+    return $dt->getTimestamp();
 }
 
 /**
