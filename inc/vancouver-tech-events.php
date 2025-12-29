@@ -366,9 +366,9 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
         $source['url'],
         [
             'timeout' => 15,
-            'headers' => [
-                'User-Agent' => 'suzy-vancouver-tech-events/1.1',
-                'Accept'     => 'text/html, */*',
+            'user-agent' => 'suzy-vancouver-tech-events/1.1',
+            'headers'    => [
+                'Accept' => 'text/html, */*',
             ],
         ]
     );
@@ -893,12 +893,12 @@ function suzy_fetch_vancouver_tech_events_from_html_meetup_search( array $source
     if ( ! empty( $body ) ) {
         $dom = new DOMDocument();
         libxml_use_internal_errors( true );
-        $dom->loadHTML( $body );
+        $dom->loadHTML( '<?xml encoding="UTF-8">' . $body );
         libxml_clear_errors();
         $xpath = new DOMXPath( $dom );
         $tz    = new DateTimeZone( 'America/Vancouver' );
 
-        $anchors = $xpath->query( "//a[contains(@href,'/events/')]" );
+        $anchors = $xpath->query( "//a[contains(@href,'/events/') or contains(@href,'/e/')]" );
         $seen    = [];
 
         foreach ( $anchors as $anchor ) {
@@ -925,7 +925,7 @@ function suzy_fetch_vancouver_tech_events_from_html_meetup_search( array $source
 
             $date_text   = $date_node ? trim( $date_node->textContent ) : '';
             $date_offset = null;
-            $date_regex  = '/\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:,\s*\d{4})?\s*·\s*\d{1,2}:\d{2}\s*(?:AM|PM)\s*(?:[A-Z]{2,5})?/i';
+            $date_regex  = '/\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:,\s*\d{4})?\s*[·•]?\s*\d{1,2}:\d{2}\s*(?:AM|PM)(?:\s*(?:PST|PDT|PT))?/i';
 
             if ( preg_match( $date_regex, $anchor_text, $matches, PREG_OFFSET_CAPTURE ) ) {
                 $date_text   = trim( $matches[0][0] );
@@ -1017,6 +1017,15 @@ function suzy_vte_parse_meetup_find_datetime( string $text, DateTimeZone $tz ): 
     if ( empty( $clean ) ) {
         return null;
     }
+
+    $clean = str_replace( [ '·', '•' ], ' ', $clean );
+    $clean = preg_replace( '/\b(?:PST|PDT|PT)\b/i', '', $clean );
+    $clean = preg_replace(
+        '/^(?:Every\s+)?(?:Sun|Mon|Tue|Tues|Wed|Thu|Thur|Thurs|Fri|Sat|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)\b[,\s]*/i',
+        '',
+        $clean
+    );
+    $clean = trim( preg_replace( '/\s+/', ' ', $clean ) );
 
     if ( preg_match( '/\b\d{4}\b/', $clean ) ) {
         return suzy_vte_parse_human_datetime( $clean, $tz );
