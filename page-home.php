@@ -118,6 +118,7 @@ get_header();
                 <h3 class="group-title">📚 About &amp; Info</h3>
                 <div class="group-buttons">
                     <a href="/bio" class="pixel-button">About Suzy</a>
+                    <a href="/coffee-for-builders" class="pixel-button">Coffee for Builders</a>
                 </div>
             </div>
         </div>

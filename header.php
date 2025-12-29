@@ -40,6 +40,11 @@
       $meta_desc  = "Shoot, score, and hear 'Don't You Forget About Me' in this 80s-style hockey arcade game.";
       $meta_keywords = 'Canucks arcade game, retro hockey game, Suzy Easton arcade';
       $meta_img   = $default_img;
+    } elseif ( is_page_template( 'page-coffee-for-builders.php' ) ) {
+      $meta_title = 'Coffee for Builders in Vancouver | Suzy Easton';
+      $meta_desc  = 'Coffee chats in Vancouver for people building things—tech, music, civic projects, and sports takes. Low-key, public, and intentional.';
+      $meta_keywords = 'coffee chats Vancouver, builders, Suzy Easton, tech, music, civic projects, sports takes';
+      $meta_img   = $default_img;
     } else {
       $meta_title = wp_title( '|', false, 'right' ) . $site_name;
       $meta_desc  = get_bloginfo( 'description' );
