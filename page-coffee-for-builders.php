@@ -56,7 +56,6 @@ get_header();
         <ul>
             <li>First meet is public. Always.</li>
             <li>No pitches for crypto casinos, “marketing partnerships,” or “let me 10x your SEO.”</li>
-            <li>If you’re reading this as a single person: cool, I’m not allergic to romance, but I’m starting with coffee + conversation like a functioning grown-up.</li>
         </ul>
     </section>
 </main>
