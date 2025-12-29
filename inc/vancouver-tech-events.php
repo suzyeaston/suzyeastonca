@@ -1086,7 +1086,8 @@ function suzy_vte_make_absolute_url( string $url, string $base_url ): string {
  * @return array<int, array<string, mixed>>
  */
 function suzy_get_vancouver_tech_events(): array {
-    $debug          = ( isset( $_GET['vte_debug'] ) && '1' === $_GET['vte_debug'] ) || ( defined( 'WP_DEBUG' ) && WP_DEBUG );
+    // Only show debug output when explicitly requested AND user is an admin.
+    $debug          = ( isset( $_GET['vte_debug'] ) && '1' === $_GET['vte_debug'] && current_user_can( 'manage_options' ) );
     $transient_key  = 'suzy_vancouver_tech_events_cache';
     $cached         = $debug ? false : get_transient( $transient_key );
     $debug_report   = [];
