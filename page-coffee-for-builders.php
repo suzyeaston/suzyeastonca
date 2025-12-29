@@ -8,20 +8,22 @@ get_header();
 <main id="main-content">
     <section class="page-content">
         <h1>Coffee for Builders (Vancouver)</h1>
-        <p>(plus sports takes, riffs, and general civic chaos)</p>
+        <p>(plus sports takes, riffs, and a little civic chaos)</p>
 
-        <p>I’m Suzy — Vancouver-born engineer + musician. I’ve toured as a bassist, recorded in Chicago with Steve Albini, and now I work in the world of identity/cloud/automation/QA/WordPress/DevOps-ish reliability stuff.</p>
-        <p>This page is simple: I want to meet more people outside my existing sphere — folks building things (tech, music, creative projects, startups, community work)… and yes, I also love sports, so I’m never mad if the conversation detours into Canucks pain, NFL picks, or “why did the coach do that?!”</p>
+        <p>I’m Suzy — Vancouver-born engineer + musician. I came up through classical music and recording arts, toured for years as a bassist, and recorded in Chicago with Steve Albini. These days I build and run things in the identity/cloud/automation/QA/WordPress/DevOps-ish reliability universe — the unglamorous but sacred art of making systems behave.</p>
+        <p>Outside work, I run a small lab on this site: tools like Lousy Outages (a retro outage dashboard to keep third-party providers honest) and an audio analysis tool for musicians using OpenAI/Whisper. I also still write, record, and release music.</p>
+        <p>This page is my “meet humans on purpose” experiment — because Vancouver can be a small town socially, and I’m not here to only meet people who already look like my existing circles.</p>
 
         <h2>What this is</h2>
-        <p>A low-key coffee chat with a stranger who builds things. No networking theatre. No “let’s circle back.” Just a human conversation.</p>
+        <p>A low-key coffee chat with someone who’s building something — tech, music, art, startups, community work, whatever. No networking theatre. No “let’s circle back.” Just a real conversation.</p>
 
         <h2>What we can talk about</h2>
         <p>Pick your own adventure:</p>
         <ul>
-            <li>Shipping software, automating boring stuff, keeping systems from melting</li>
-            <li>Music-making, recording, songwriting, gear rabbit holes</li>
-            <li>Side projects (I run a little lab on my site — outage dashboards, audio tools, etc.)</li>
+            <li>Shipping software, automation, incident response, reliability, weird bugs</li>
+            <li>Identity/SSO/SCIM, cloud stuff, testing, CI/CD, “why is this broken at 2am”</li>
+            <li>Recording, songwriting, gear rabbit holes, creative process</li>
+            <li>Side projects, entrepreneurship, maker nonsense</li>
             <li>Vancouver civic stuff (tenant advocacy / city decisions / local weirdness)</li>
             <li>Sports: NHL/NFL/NBA hot takes, analytics, pools, “capper logic,” whatever</li>
         </ul>
@@ -31,7 +33,7 @@ get_header();
             <li>30–45 minutes</li>
             <li>Public spot (coffee shop / lobby / busy place)</li>
             <li>Vancouver proper (I’m not commuting to Mars, sorry)</li>
-            <li>If we vibe, we can do it again. If not, we had a nice coffee and return to our respective caves.</li>
+            <li>If we vibe, we can do it again. If not, we had a decent coffee and return to our respective caves.</li>
         </ul>
 
         <h2>The only rule</h2>
@@ -45,10 +47,8 @@ get_header();
             <li>Your ideal low-key Vancouver hang</li>
             <li>And if you’re a sports nerd: your team + your most controversial take</li>
         </ul>
-        <p>Contact: (use a form here)</p>
-        <p>—or— email: <a href="mailto:suzyeaston@icloud.com?subject=Coffee%20for%20Builders">suzyeaston@icloud.com</a> with subject: Coffee for Builders</p>
-        <p><strong>One tweak I strongly recommend (because it’ll pull better dudes):</strong><br>
-        Subject: Coffee for Builders — [their project]. Lazy guys won’t do it. Good.</p>
+        <p>Email: <a href="mailto:suzyeaston@icloud.com?subject=Coffee%20for%20Builders%20%E2%80%94%20%5Byour%20project%5D">suzyeaston@icloud.com</a></p>
+        <p><strong>Pro tip:</strong> Subject line = <em>Coffee for Builders — [your project]</em>. It helps me spot the good stuff fast.</p>
 
         <h2>Small print (aka the adult section)</h2>
         <ul>

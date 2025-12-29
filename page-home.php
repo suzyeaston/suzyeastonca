@@ -87,6 +87,15 @@ get_header();
 
 
         <div class="button-cluster">
+            <!-- Put the human stuff first. -->
+            <div class="button-group">
+                <h3 class="group-title">📚 About &amp; Info</h3>
+                <div class="group-buttons">
+                    <a href="/bio" class="pixel-button">About Suzy</a>
+                    <a href="/coffee-for-builders" class="pixel-button">Coffee for Builders</a>
+                </div>
+            </div>
+
             <div class="button-group">
                 <h3 class="group-title">🎵 Music &amp; Podcasts</h3>
                 <div class="group-buttons">
@@ -114,13 +123,6 @@ get_header();
                 </div>
             </div>
 
-            <div class="button-group">
-                <h3 class="group-title">📚 About &amp; Info</h3>
-                <div class="group-buttons">
-                    <a href="/bio" class="pixel-button">About Suzy</a>
-                    <a href="/coffee-for-builders" class="pixel-button">Coffee for Builders</a>
-                </div>
-            </div>
         </div>
 
     </div>
