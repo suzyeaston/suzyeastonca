@@ -914,16 +914,42 @@ function suzy_fetch_vancouver_tech_events_from_html_meetup_search( array $source
 
             $seen[ $url ] = true;
 
-            $title_node = $xpath->query( './/*[self::h2 or self::h3]', $anchor )->item( 0 );
-            $title      = $title_node ? trim( $title_node->textContent ) : trim( $anchor->textContent );
+            $anchor_text = preg_replace( '/\s+/', ' ', trim( $anchor->textContent ) );
+            $title_node  = $xpath->query( './/*[self::h2 or self::h3]', $anchor )->item( 0 );
+            $title       = $title_node ? trim( $title_node->textContent ) : $anchor_text;
 
             $date_node = $xpath->query( './/time', $anchor )->item( 0 );
             if ( ! $date_node && $anchor->parentNode ) {
                 $date_node = $xpath->query( './/time', $anchor->parentNode )->item( 0 );
             }
-            $date_text = $date_node ? trim( $date_node->textContent ) : trim( $anchor->textContent );
+
+            $date_text   = $date_node ? trim( $date_node->textContent ) : '';
+            $date_offset = null;
+            $date_regex  = '/\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:,\s*\d{4})?\s*·\s*\d{1,2}:\d{2}\s*(?:AM|PM)\s*(?:[A-Z]{2,5})?/i';
+
+            if ( preg_match( $date_regex, $anchor_text, $matches, PREG_OFFSET_CAPTURE ) ) {
+                $date_text   = trim( $matches[0][0] );
+                $date_offset = (int) $matches[0][1];
+            } elseif ( empty( $date_text ) ) {
+                $date_text = $anchor_text;
+            }
 
             $start = suzy_vte_parse_meetup_find_datetime( $date_text, $tz );
+
+            if ( null !== $date_offset ) {
+                $title_candidate = trim( substr( $anchor_text, $date_offset + strlen( $date_text ) ) );
+                $title_candidate = ltrim( $title_candidate, " ·•-–" );
+                $title_candidate = preg_replace( '/\s+by\s+.+$/i', '', $title_candidate );
+                $title_candidate = preg_replace( '/\b\d+\+?\s+attendees\b/i', '', $title_candidate );
+                $title_candidate = preg_replace( '/\s+Meetup$/i', '', $title_candidate );
+                $title_candidate = trim( preg_replace( '/\s+/', ' ', $title_candidate ) );
+
+                if ( ! empty( $title_candidate ) ) {
+                    $title = $title_candidate;
+                }
+            }
+
+            $location = stripos( $anchor_text, 'online' ) !== false ? 'Online' : null;
 
             if ( empty( $title ) || null === $start ) {
                 continue;
@@ -933,7 +959,7 @@ function suzy_fetch_vancouver_tech_events_from_html_meetup_search( array $source
                 'title'    => $title,
                 'start'    => (int) $start,
                 'end'      => null,
-                'location' => null,
+                'location' => $location,
                 'url'      => $url,
                 'source'   => $source['source'] ?? 'Meetup Search',
             ];
