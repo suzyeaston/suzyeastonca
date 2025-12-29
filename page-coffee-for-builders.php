@@ -8,7 +8,7 @@ get_header();
 <main id="main-content">
     <section class="page-content">
         <h1>Coffee for Builders (Vancouver)</h1>
-        <p>(plus sports takes, riffs, and a little civic chaos)</p>
+        <p class="page-subtitle">(plus sports takes, riffs, and a little civic chaos)</p>
 
         <p>I’m Suzy, Vancouver-born engineer + musician. I came up through classical music and recording arts, toured for years as a bassist, and recorded in Chicago with Steve Albini. These days I build and run things in the identity/cloud/automation/QA/WordPress/DevOps-ish reliability universe — the unglamorous but sacred art of making systems behave.</p>
         <p>Outside work, I run a small lab on this site: tools like Lousy Outages (a retro outage dashboard to keep third-party providers honest) and an audio analysis tool for musicians using OpenAI/Whisper (hah thats a work in progress). I also still write, record, and release music.</p>
@@ -47,8 +47,10 @@ get_header();
             <li>Your ideal low-key Vancouver hang</li>
             <li>And if you’re a sports nerd: your team + your most controversial take</li>
         </ul>
-        <p>Email: <a href="mailto:suzyeaston@icloud.com?subject=Coffee%20for%20Builders%20%E2%80%94%20%5Byour%20project%5D">suzyeaston@icloud.com</a></p>
-        <p><strong>Pro tip:</strong> Subject line = <em>Coffee for Builders — [your project]</em>. It helps me spot the good stuff fast.</p>
+        <div class="coffee-cta">
+            <p>Email: <a href="mailto:suzyeaston@icloud.com?subject=Coffee%20for%20Builders%20%E2%80%94%20%5Byour%20project%5D">suzyeaston@icloud.com</a></p>
+            <p><strong>Pro tip:</strong> Subject line = <em>Coffee for Builders — [your project]</em>. It helps me spot the good stuff fast.</p>
+        </div>
 
         <h2>Small print (aka the adult section)</h2>
         <ul>
