@@ -1,3 +1,4 @@
+.lousy-outages-root,
 .lousy-outages {
   --lo-bg: radial-gradient(circle at 12% 20%, rgba(96, 255, 214, 0.08), transparent 28%),
     radial-gradient(circle at 80% 10%, rgba(255, 168, 255, 0.12), transparent 32%),
@@ -10,17 +11,25 @@
   --lo-pop: #f49ae5;
   --lo-border: rgba(138, 247, 228, 0.42);
   --lo-contrast: #04070f;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  color: var(--lo-text);
+}
+
+.lousy-outages-root {
+  background: var(--lo-bg);
+}
+
+.lousy-outages {
   max-width: 960px;
   margin: 0 auto;
   padding: 8px 16px;
-  font-family: 'IBM Plex Mono', 'Courier New', monospace;
   background: var(--lo-bg);
-  color: var(--lo-text);
   min-height: 60vh;
   position: relative;
   overflow: hidden;
 }
 
+.lousy-outages-root.lo-theme-light,
 .lousy-outages.lo-theme-light {
   --lo-bg: radial-gradient(circle at 22% 16%, rgba(90, 74, 208, 0.09), transparent 32%),
     radial-gradient(circle at 78% 0%, rgba(245, 111, 191, 0.14), transparent 34%),
@@ -1252,6 +1261,14 @@
   text-align: left;
 }
 
+.lousy-outages-root.lo-theme-light .lo-panel,
+.lousy-outages.lo-theme-light .lo-panel {
+  border-color: rgba(92, 75, 216, 0.45);
+  background: linear-gradient(160deg, rgba(245, 111, 191, 0.12), rgba(255, 255, 255, 0.94));
+  color: var(--lo-text);
+  box-shadow: 0 10px 18px rgba(15, 10, 43, 0.12);
+}
+
 .lo-panel--report {
   max-width: 760px;
 }
@@ -1292,6 +1309,11 @@
   letter-spacing: 0.04em;
 }
 
+.lousy-outages-root.lo-theme-light .lo-label,
+.lousy-outages.lo-theme-light .lo-label {
+  color: rgba(32, 32, 32, 0.85);
+}
+
 .lo-input {
   width: 100%;
   padding: 10px 12px;
@@ -1301,6 +1323,18 @@
   color: var(--lo-text);
   font-size: 0.95rem;
   font-family: inherit;
+}
+
+.lousy-outages-root.lo-theme-light .lo-input,
+.lousy-outages.lo-theme-light .lo-input {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1e1c33;
+  border-color: rgba(92, 75, 216, 0.45);
+}
+
+.lousy-outages-root.lo-theme-light .lo-input::placeholder,
+.lousy-outages.lo-theme-light .lo-input::placeholder {
+  color: rgba(30, 28, 51, 0.55);
 }
 
 .lo-input:focus {
@@ -1363,11 +1397,14 @@
   text-decoration: underline;
 }
 
+.lousy-outages-root.lo-theme-light .lo-report__prompt,
 .lousy-outages.lo-theme-light .lo-report__prompt,
+.lousy-outages-root.lo-theme-light .lo-report__help,
 .lousy-outages.lo-theme-light .lo-report__help {
   color: rgba(32, 32, 32, 0.8);
 }
 
+.lousy-outages-root.lo-theme-light .lo-report__captcha-display,
 .lousy-outages.lo-theme-light .lo-report__captcha-display {
   background: rgba(255, 255, 255, 0.9);
   color: #1f1f1f;
@@ -1381,6 +1418,11 @@
   flex-wrap: wrap;
 }
 
+.lo-report-submit {
+  position: relative;
+  z-index: 2;
+}
+
 .lo-button {
   background: var(--lo-pop);
   color: #050505;
@@ -1392,6 +1434,12 @@
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lousy-outages-root.lo-theme-light .lo-button,
+.lousy-outages.lo-theme-light .lo-button {
+  color: #1e1c33;
+  box-shadow: 0 6px 14px rgba(92, 75, 216, 0.2);
 }
 
 .lo-button:disabled {
@@ -1454,6 +1502,7 @@
   box-shadow: 0 20px 36px rgba(0, 0, 0, 0.4);
 }
 
+.lousy-outages-root.lo-theme-light .lo-banner,
 .lousy-outages.lo-theme-light .lo-banner {
   background: #fff6e9;
   border-color: rgba(92, 75, 216, 0.45);
@@ -1470,6 +1519,7 @@
   color: #ffecc7;
 }
 
+.lousy-outages-root.lo-theme-light .lo-banner--success,
 .lousy-outages.lo-theme-light .lo-banner--success {
   border-color: rgba(66, 157, 66, 0.7);
   color: #1f5526;
@@ -1480,6 +1530,7 @@
   color: #ffe3cc;
 }
 
+.lousy-outages-root.lo-theme-light .lo-banner--info,
 .lousy-outages.lo-theme-light .lo-banner--info {
   border-color: rgba(0, 93, 173, 0.4);
   color: #1f1f1f;
@@ -1490,6 +1541,7 @@
   color: var(--lo-text);
 }
 
+.lousy-outages-root.lo-theme-light .lo-banner--warning,
 .lousy-outages.lo-theme-light .lo-banner--warning {
   border-color: rgba(92, 75, 216, 0.7);
   color: #1f1f1f;
@@ -1500,6 +1552,7 @@
   color: #ffd7ca;
 }
 
+.lousy-outages-root.lo-theme-light .lo-banner--error,
 .lousy-outages.lo-theme-light .lo-banner--error {
   border-color: rgba(192, 56, 31, 0.7);
   color: #b00020;
@@ -1626,6 +1679,7 @@
   color: var(--lo-muted);
 }
 
+.lousy-outages-root.lo-theme-light .lo-support,
 .lousy-outages.lo-theme-light .lo-support {
   color: rgba(32, 32, 32, 0.85);
   border-color: rgba(92, 75, 216, 0.35);
@@ -1651,6 +1705,7 @@
 }
 
 @media (prefers-color-scheme: light) {
+  .lousy-outages-root:not(.lo-theme-dark),
   .lousy-outages:not(.lo-theme-dark) {
     background: #faf8f0;
     color: var(--lo-text);
@@ -1662,11 +1717,14 @@
     visibility: hidden;
   }
 
+  .lousy-outages-root,
+  .lousy-outages-root *,
   .lousy-outages,
   .lousy-outages * {
     visibility: visible;
   }
 
+  .lousy-outages-root,
   .lousy-outages {
     position: relative;
     background: #ffffff;
