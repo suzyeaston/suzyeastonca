@@ -26,7 +26,6 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Adapters/Statuspage.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Store.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Trending.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Fetcher.php';
-require_once LOUSY_OUTAGES_PATH . 'includes/Downdetector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/I18n.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Detector.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/SMS.php';
@@ -1269,4 +1268,3 @@ add_action( 'rest_api_init', function () {
         },
     ] );
 } );
-

@@ -5,11 +5,9 @@ namespace SuzyEaston\LousyOutages;
 
 class Precursor {
     private $timeout;
-    private $downdetector;
 
-    public function __construct($timeout = 5, ?Downdetector $downdetector = null) {
+    public function __construct($timeout = 5) {
         $this->timeout      = max(2, (int) $timeout);
-        $this->downdetector = $downdetector ?: new Downdetector();
     }
 
     public function evaluate(array $provider, array $current_state): array {
@@ -83,17 +81,8 @@ class Precursor {
             $signals[] = 'component_degraded';
         }
 
-        $this->enrich_with_downdetector($provider, $signals, $measures, $details, $risk);
-
         if ($risk > 0) {
-            $summary_bits = array();
-            if (!empty($details['downdetector']['titles'])) {
-                $summary_bits[] = implode(' • ', $details['downdetector']['titles']);
-            }
-            if (empty($summary_bits)) {
-                $summary_bits[] = 'signals detected: ' . implode(', ', $signals);
-            }
-            $summary = 'Early warning: ' . implode(' • ', array_filter($summary_bits));
+            $summary = 'Early warning: signals detected: ' . implode(', ', $signals);
         }
 
         return array(
@@ -104,44 +93,6 @@ class Precursor {
             'updated_at' => gmdate('c'),
             'details'    => $details,
         );
-    }
-
-    private function enrich_with_downdetector(array $provider, array &$signals, array &$measures, array &$details, int &$risk): void
-    {
-        if (!$this->downdetector) {
-            return;
-        }
-
-        $matches = $this->downdetector->matches($provider);
-        if (empty($matches)) {
-            return;
-        }
-
-        $signals[] = 'downdetector_trend';
-        $count     = count($matches);
-        $latest    = $matches[0];
-        $age       = isset($latest['age_minutes']) ? (int) $latest['age_minutes'] : null;
-
-        $measures['downdetector_reports']     = $count;
-        $measures['downdetector_age_minutes'] = $age;
-
-        $titles = array();
-        foreach (array_slice($matches, 0, 3) as $match) {
-            if (!empty($match['title'])) {
-                $titles[] = (string) $match['title'];
-            }
-        }
-
-        $details['downdetector'] = array(
-            'matches' => $matches,
-            'titles'  => $titles,
-        );
-
-        if ($age !== null && $age <= 30) {
-            $risk += 55;
-        } else {
-            $risk += 40;
-        }
     }
 
     private function probe_urls_for(array $provider): array {

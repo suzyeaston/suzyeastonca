@@ -756,6 +756,23 @@
   display: none;
 }
 
+.lo-card--external .lo-summary {
+  margin-bottom: 4px;
+}
+
+.lo-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lo-links li {
+  margin: 0;
+}
+
 .lo-title {
   color: var(--lo-accent);
   font-weight: 700;
