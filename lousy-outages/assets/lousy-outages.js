@@ -1111,15 +1111,44 @@
     return { label: 'Unknown', className: 'unknown' };
   }
 
-  function getSeverityRank(entry) {
-    var code = String((entry && (entry.severity || entry.status)) || '').toLowerCase();
-    if (
-      code === 'outage' ||
-      code === 'major_outage' ||
-      code === 'major' ||
-      code === 'critical'
-    ) {
+  function parseIncidentTimestamp(value) {
+    if (typeof value === 'number') {
+      return value;
+    }
+    if (value instanceof Date) {
+      return value.getTime();
+    }
+    var parsed = Date.parse(String(value || ''));
+    if (Number.isNaN(parsed)) {
       return 0;
+    }
+    return parsed;
+  }
+
+  function getIncidentStartTs(incident) {
+    if (!incident || typeof incident !== 'object') {
+      return 0;
+    }
+    return parseIncidentTimestamp(
+      incident.started_at ||
+      incident.first_seen ||
+      incident.detected_at ||
+      incident.updated_at ||
+      incident.last_seen
+    );
+  }
+
+  function getIncidentUpdatedTs(incident) {
+    if (!incident || typeof incident !== 'object') {
+      return 0;
+    }
+    return parseIncidentTimestamp(incident.updated_at || incident.last_seen);
+  }
+
+  function severityRank(sev) {
+    var code = String(sev || '').toLowerCase();
+    if (code === 'outage' || code === 'major_outage' || code === 'major' || code === 'critical') {
+      return 4;
     }
     if (
       code === 'degraded' ||
@@ -1128,12 +1157,46 @@
       code === 'degraded_performance' ||
       code === 'incident'
     ) {
-      return 1;
+      return 3;
     }
-    if (code === 'maintenance' || code === 'info') {
+    if (code === 'maintenance') {
       return 2;
     }
-    return 3;
+    if (code === 'info') {
+      return 1;
+    }
+    return 0;
+  }
+
+  function normalizeIncidentTitle(value) {
+    var text = String(value || '').toLowerCase();
+    text = text.replace(/\bdetails\b/g, '');
+    text = text.replace(/([!?.:,;])\1+/g, '$1');
+    text = text.replace(/\s+/g, ' ').trim();
+    return text;
+  }
+
+  function dedupeIncidents(list) {
+    if (!Array.isArray(list)) {
+      return [];
+    }
+    var seen = {};
+    list.forEach(function (entry) {
+      if (!entry || typeof entry !== 'object') {
+        return;
+      }
+      var providerSlug = String(entry.provider_id || entry.provider || '').toLowerCase();
+      var titleKey = normalizeIncidentTitle(entry.summary || entry.title || '');
+      var startTs = getIncidentStartTs(entry);
+      var key = providerSlug + '|' + titleKey + '|' + Math.floor(startTs / 60000);
+      var updatedTs = getIncidentUpdatedTs(entry);
+      if (!seen[key] || getIncidentUpdatedTs(seen[key]) < updatedTs) {
+        seen[key] = entry;
+      }
+    });
+    return Object.keys(seen).map(function (key) {
+      return seen[key];
+    });
   }
 
   function formatHistoryDate(value) {
@@ -1714,22 +1777,31 @@
             summary: entry.summary || entry.title || '',
             status: status || 'unknown',
             severity: (entry.severity || '').toString(),
+            started_at: entry.started_at || entry.startedAt || null,
             first_seen: entry.first_seen || entry.firstSeen || null,
+            detected_at: entry.detected_at || entry.detectedAt || null,
             last_seen: entry.last_seen || entry.lastSeen || null,
+            updated_at: entry.updated_at || entry.updatedAt || null,
             url: entry.url || ''
           });
         });
       }
     });
 
+    incidentEntries = dedupeIncidents(incidentEntries);
+
     incidentEntries.sort(function (a, b) {
-      var severityDelta = getSeverityRank(a) - getSeverityRank(b);
-      if (severityDelta !== 0) {
-        return severityDelta;
+      var aStart = getIncidentStartTs(a);
+      var bStart = getIncidentStartTs(b);
+      if (aStart !== bStart) {
+        return bStart - aStart;
       }
-      var left = Date.parse((a && (a.last_seen || a.first_seen)) || '');
-      var right = Date.parse((b && (b.last_seen || b.first_seen)) || '');
-      return right - left;
+      var aUpdated = getIncidentUpdatedTs(a);
+      var bUpdated = getIncidentUpdatedTs(b);
+      if (aUpdated !== bUpdated) {
+        return bUpdated - aUpdated;
+      }
+      return severityRank(b.severity || b.status) - severityRank(a.severity || a.status);
     });
 
     state.historyIncidents = incidentEntries.slice();
@@ -1748,7 +1820,7 @@
 
         var timeWrap = state.doc.createElement('div');
         timeWrap.className = 'lo-history__time';
-        var started = entry.first_seen || entry.last_seen;
+        var started = entry.started_at || entry.first_seen || entry.detected_at || entry.updated_at || entry.last_seen;
         var timeEl = state.doc.createElement('time');
         timeEl.setAttribute('datetime', started || '');
         timeEl.textContent = formatTimestamp(started) || formatHistoryDate(started);
