@@ -591,6 +591,13 @@
 .lo-history__details {
   font-size: 0.95rem;
   line-height: 1.35;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.lo-history__summary {
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .lo-history__count {
@@ -615,6 +622,13 @@
 
 .lo-history__error {
   color: #ff6b6b;
+}
+
+.lo-history__toggle {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lousy-outages.lo-theme-light .lo-history__empty {

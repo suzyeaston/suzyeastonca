@@ -369,6 +369,25 @@ class IncidentStore
             $noisePatterns = [
                 'reminder',
                 'upcoming',
+                'url filtering',
+                'url filtering rules',
+                'pagination',
+                'search functionality',
+                'admin',
+                'administrator',
+                'portal',
+                'dashboard',
+                'analytics',
+                'audit log',
+                'policy',
+                'rules',
+                'allowlist',
+                'allow list',
+                'update to',
+                'scheduled update',
+                'security update',
+                'advisory',
+                'react2shell',
                 'data center expansions',
                 'data centre expansions',
                 'new dcs',
@@ -390,33 +409,50 @@ class IncidentStore
                 'action required',
                 'expansion',
             ];
-            foreach ($noisePatterns as $pattern) {
-                if (false !== strpos($titleLower, $pattern)) {
-                    $severity  = 'maintenance';
-                    $important = false;
-                    $summary   = 'Filtered Zscaler advisory';
+            $impactWords = [
+                'traffic forwarding',
+                'not loading',
+                'issue',
+                'degradation',
+                'customers may experience',
+                'impact',
+                'outage',
+                'disruption',
+                'failure',
+            ];
+
+            $filteredNoise = apply_filters('lo_zscaler_noise_patterns', $noisePatterns);
+            if (! is_array($filteredNoise)) {
+                $filteredNoise = $noisePatterns;
+            }
+            $noisePatterns = $filteredNoise;
+
+            $filteredImpact = apply_filters('lo_zscaler_impact_terms', $impactWords);
+            if (! is_array($filteredImpact)) {
+                $filteredImpact = $impactWords;
+            }
+            $impactWords = $filteredImpact;
+
+            $hasImpact = false;
+            foreach ($impactWords as $signal) {
+                if (false !== strpos($titleLower, (string) $signal)) {
+                    $hasImpact = true;
                     break;
                 }
             }
 
-            if ($important) {
-                $impactWords = [
-                    'traffic forwarding',
-                    'not loading',
-                    'issue',
-                    'degradation',
-                    'customers may experience',
-                    'impact',
-                    'outage',
-                    'disruption',
-                    'failure',
-                ];
-                foreach ($impactWords as $signal) {
-                    if (false !== strpos($titleLower, $signal)) {
-                        $important = true;
-                        break;
-                    }
+            $hasNoise = false;
+            foreach ($noisePatterns as $pattern) {
+                if (false !== strpos($titleLower, (string) $pattern)) {
+                    $hasNoise = true;
+                    break;
                 }
+            }
+
+            if ($hasNoise && ! $hasImpact) {
+                $severity  = 'maintenance';
+                $important = false;
+                $summary   = 'Filtered Zscaler advisory';
             }
         }
 

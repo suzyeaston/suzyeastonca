@@ -24,6 +24,7 @@
   var THEME_STORAGE_KEY = 'lo-theme-preference';
   var VISIBILITY_STORAGE_KEY = 'lo-visible-providers';
   var HISTORY_LIMIT = 80;
+  var HISTORY_RENDER_LIMIT = 12;
   var HISTORY_DEFAULT_DAYS = 30;
 
   var STATUS_MAP = {
@@ -96,6 +97,8 @@
     historyProviders: [],
     historyMeta: {},
     historyIncidents: [],
+    historyExpanded: false,
+    historyToggleButton: null,
     visibleProviders: {},
     reportForm: null,
     reportProvider: null,
@@ -860,7 +863,40 @@
     return provider.summary || provider.message || '';
   }
 
+  function condenseIncidentTitle(providerSlug, text) {
+    var raw = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!raw) {
+      return { text: '', title: '' };
+    }
+
+    var display = raw;
+    var slug = String(providerSlug || '').toLowerCase();
+    if (slug === 'zscaler') {
+      var parts = display.split(' - ');
+      if (parts.length > 1) {
+        var rightSide = parts.slice(1).join(' - ').trim();
+        if (rightSide && /(\.com|\.net)/i.test(rightSide) && /,/.test(rightSide)) {
+          display = parts[0].trim();
+        }
+      }
+    }
+
+    if (display.length > 140) {
+      display = display.slice(0, 137).replace(/\s+$/, '') + '…';
+    }
+
+    return { text: display, title: raw };
+  }
+
+  function getProviderSlug(provider) {
+    if (!provider) {
+      return '';
+    }
+    return String(provider.id || provider.slug || provider.provider || provider.name || '').toLowerCase();
+  }
+
   function updateLegacyCard(card, provider, normalized) {
+    var providerSlug = getProviderSlug(provider);
     var badge = card.querySelector('.status-badge');
     if (badge) {
       badge.textContent = provider.status_label || normalized.label;
@@ -889,7 +925,14 @@
           var item = state.doc.createElement('p');
           var impact = incident.impact ? String(incident.impact).replace(/^[a-z]/, function (c) { return c.toUpperCase(); }) : 'Unknown';
           var updated = formatTimestamp(incident.updated_at || incident.updatedAt);
-          var summaryText = incident.summary ? ' — ' + String(incident.summary) : '';
+          var summaryText = '';
+          if (incident.summary) {
+            var condensedSummary = condenseIncidentTitle(providerSlug, incident.summary);
+            summaryText = ' — ' + condensedSummary.text;
+            if (condensedSummary.title && condensedSummary.title !== condensedSummary.text) {
+              item.setAttribute('title', condensedSummary.title);
+            }
+          }
           item.textContent = impact + (updated ? ' • ' + updated : '') + summaryText;
           incidentsWrap.appendChild(item);
         });
@@ -902,6 +945,7 @@
   }
 
   function updateModernCard(card, provider, normalized) {
+    var providerSlug = getProviderSlug(provider);
     var badge = card.querySelector('[data-lo-badge]');
     if (badge) {
       badge.textContent = provider.status_label || normalized.label;
@@ -971,7 +1015,11 @@
           li.className = 'lo-inc-item';
           var title = state.doc.createElement('p');
           title.className = 'lo-inc-title';
-          title.textContent = incident.name || 'Incident';
+          var condensedName = condenseIncidentTitle(providerSlug, incident.name || 'Incident');
+          title.textContent = condensedName.text || 'Incident';
+          if (condensedName.title && condensedName.title !== condensedName.text) {
+            title.setAttribute('title', condensedName.title);
+          }
           li.appendChild(title);
           var meta = state.doc.createElement('p');
           meta.className = 'lo-inc-meta';
@@ -982,7 +1030,11 @@
           if (incident.summary) {
             var details = state.doc.createElement('p');
             details.className = 'lo-inc-summary';
-            details.textContent = String(incident.summary);
+            var condensedSummary = condenseIncidentTitle(providerSlug, incident.summary);
+            details.textContent = condensedSummary.text;
+            if (condensedSummary.title && condensedSummary.title !== condensedSummary.text) {
+              details.setAttribute('title', condensedSummary.title);
+            }
             li.appendChild(details);
           }
           if (incident.url) {
@@ -1057,6 +1109,31 @@
       return { label: 'Operational', className: 'operational' };
     }
     return { label: 'Unknown', className: 'unknown' };
+  }
+
+  function getSeverityRank(entry) {
+    var code = String((entry && (entry.severity || entry.status)) || '').toLowerCase();
+    if (
+      code === 'outage' ||
+      code === 'major_outage' ||
+      code === 'major' ||
+      code === 'critical'
+    ) {
+      return 0;
+    }
+    if (
+      code === 'degraded' ||
+      code === 'partial' ||
+      code === 'partial_outage' ||
+      code === 'degraded_performance' ||
+      code === 'incident'
+    ) {
+      return 1;
+    }
+    if (code === 'maintenance' || code === 'info') {
+      return 2;
+    }
+    return 3;
   }
 
   function formatHistoryDate(value) {
@@ -1597,6 +1674,10 @@
     }
     state.historyList.innerHTML = '';
     state.historyIncidents = [];
+    if (state.historyToggleButton && state.historyToggleButton.parentNode) {
+      state.historyToggleButton.parentNode.removeChild(state.historyToggleButton);
+    }
+    state.historyToggleButton = null;
     if (state.historyError) {
       state.historyError.setAttribute('hidden', 'hidden');
     }
@@ -1629,6 +1710,7 @@
           }
           incidentEntries.push({
             provider: entry.provider || label,
+            provider_id: slug,
             summary: entry.summary || entry.title || '',
             status: status || 'unknown',
             severity: (entry.severity || '').toString(),
@@ -1641,6 +1723,10 @@
     });
 
     incidentEntries.sort(function (a, b) {
+      var severityDelta = getSeverityRank(a) - getSeverityRank(b);
+      if (severityDelta !== 0) {
+        return severityDelta;
+      }
       var left = Date.parse((a && (a.last_seen || a.first_seen)) || '');
       var right = Date.parse((b && (b.last_seen || b.first_seen)) || '');
       return right - left;
@@ -1653,7 +1739,10 @@
         state.historyEmpty.setAttribute('hidden', 'hidden');
       }
 
-      incidentEntries.forEach(function (entry) {
+      var displayLimit = state.historyExpanded ? HISTORY_LIMIT : HISTORY_RENDER_LIMIT;
+      var displayEntries = incidentEntries.slice(0, displayLimit);
+
+      displayEntries.forEach(function (entry) {
         var li = state.doc.createElement('li');
         li.className = 'lo-history__item';
 
@@ -1679,7 +1768,15 @@
         providerLabelEl.textContent = providerName;
         details.appendChild(providerLabelEl);
         var summaryText = entry.summary || 'Incident reported';
-        details.appendChild(state.doc.createTextNode(' — ' + summaryText));
+        var condensedSummary = condenseIncidentTitle(entry.provider_id, summaryText);
+        details.appendChild(state.doc.createTextNode(' — '));
+        var summaryEl = state.doc.createElement('span');
+        summaryEl.className = 'lo-history__summary';
+        summaryEl.textContent = condensedSummary.text || summaryText;
+        if (condensedSummary.title && condensedSummary.title !== condensedSummary.text) {
+          summaryEl.setAttribute('title', condensedSummary.title);
+        }
+        details.appendChild(summaryEl);
         if (entry.url) {
           var link = state.doc.createElement('a');
           link.href = entry.url;
@@ -1702,6 +1799,19 @@
 
         state.historyList.appendChild(li);
       });
+
+      if (incidentEntries.length > HISTORY_RENDER_LIMIT && state.historyList.parentNode) {
+        var toggle = state.doc.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'lo-button lo-history__toggle';
+        toggle.textContent = state.historyExpanded ? 'Show fewer' : 'Show more';
+        toggle.addEventListener('click', function () {
+          state.historyExpanded = !state.historyExpanded;
+          renderHistoryList(state.historyProviders, state.historyMeta);
+        });
+        state.historyToggleButton = toggle;
+        state.historyList.parentNode.appendChild(toggle);
+      }
 
       return;
     }
@@ -1775,6 +1885,7 @@
 
         state.historyProviders = body.providers;
         state.historyMeta = body.meta || {};
+        state.historyExpanded = false;
         renderHistoryList(body.providers, body.meta || {});
       })
       .catch(function (err) {
