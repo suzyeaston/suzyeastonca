@@ -141,7 +141,8 @@ class Downdetector {
         $map = [
             'aws'         => ['amazon web services', 'amazon'],
             'azure'       => ['microsoft', 'microsoft azure'],
-            'gcp'         => ['google cloud', 'google'],
+            'google_cloud' => ['google cloud', 'google'],
+            'google_workspace' => ['google workspace', 'google apps', 'gmail', 'google meet', 'google calendar'],
             'github'      => ['github'],
             'zscaler'     => ['zscaler'],
             'cloudflare'  => ['cloudflare'],

@@ -14,51 +14,56 @@ if ( ! class_exists('LO_StatuspageSource') ) {
 
     /** Return shape expected by callers: ['status'=>string,'incidents'=>LO_Incident[],'updated'=>int] */
     function fetch() {
-      $incidents = $this->fetch_incidents();
-      $overall   = 'operational';
+      $payload   = $this->fetch_payload();
+      $data      = isset($payload['data']) && is_array($payload['data']) ? $payload['data'] : null;
+      $incidents = is_array($data) ? $this->fetch_incidents($data) : array();
+      $overall   = 'unknown';
       $updated   = time();
 
-      $res = wp_remote_get($this->api, array('timeout'=>10));
-      if ( ! is_wp_error($res) ) {
-        $code = (int) wp_remote_retrieve_response_code($res);
-        if ($code >= 200 && $code < 300) {
-          $body = wp_remote_retrieve_body($res);
-          $json = json_decode($body, true);
-          if (is_array($json)) {
-            $ind = isset($json['status']['indicator']) ? strtolower((string)$json['status']['indicator']) : 'none';
-            // 'none','minor','major','critical','maintenance'
-            $overall = ($ind==='none') ? 'operational'
-              : ($ind==='minor' ? 'degraded'
-              : ($ind==='major' ? 'partial_outage'
-              : ($ind==='critical' ? 'major_outage' : 'maintenance')));
-            if (!empty($json['page']['updated_at'])) {
-              $ts = strtotime((string)$json['page']['updated_at']);
-              if ($ts) $updated = $ts;
-            }
-          }
+      if (is_array($data)) {
+        $ind = isset($data['status']['indicator']) ? strtolower((string)$data['status']['indicator']) : 'none';
+        // 'none','minor','major','critical','maintenance'
+        $overall = ($ind==='none') ? 'operational'
+          : ($ind==='minor' ? 'degraded'
+          : ($ind==='major' ? 'partial_outage'
+          : ($ind==='critical' ? 'major_outage' : 'maintenance')));
+        if (!empty($data['page']['updated_at'])) {
+          $ts = strtotime((string)$data['page']['updated_at']);
+          if ($ts) $updated = $ts;
         }
       }
 
-      return array(
+      $result = array(
         'status'    => $overall,
         'incidents' => $incidents,
         'updated'   => $updated,
       );
+
+      if (!empty($payload['stale'])) {
+        $result['stale'] = true;
+      }
+
+      if (!empty($payload['message'])) {
+        $result['message'] = $payload['message'];
+      }
+
+      return $result;
     }
 
     /** @return array LO_Incident[] */
-    function fetch_incidents() {
-      $res = wp_remote_get($this->api, array('timeout'=>10));
-      if (is_wp_error($res)) return array();
-      $code = (int) wp_remote_retrieve_response_code($res);
-      if ($code < 200 || $code >= 300) return array();
-      $json = json_decode((string) wp_remote_retrieve_body($res), true);
-      if (!is_array($json)) return array();
+    function fetch_incidents($payload = null) {
+      if (!is_array($payload)) {
+        $payload_response = $this->fetch_payload();
+        $payload = isset($payload_response['data']) && is_array($payload_response['data']) ? $payload_response['data'] : null;
+      }
+      if (!is_array($payload)) {
+        return array();
+      }
 
       $out = array();
 
-      if (isset($json['incidents']) && is_array($json['incidents'])) {
-        foreach ($json['incidents'] as $i) {
+      if (isset($payload['incidents']) && is_array($payload['incidents'])) {
+        foreach ($payload['incidents'] as $i) {
           if (!is_array($i)) continue;
           $raw   = isset($i['status']) ? strtolower((string)$i['status']) : '';
           $impact = isset($i['impact']) ? strtolower((string)$i['impact']) : '';
@@ -92,8 +97,8 @@ if ( ! class_exists('LO_StatuspageSource') ) {
       }
 
       // If no listed incidents, still show a card (operational/degraded by indicator)
-      if (empty($out) && isset($json['status']['indicator'])) {
-        $ind = strtolower((string)$json['status']['indicator']);
+      if (empty($out) && isset($payload['status']['indicator'])) {
+        $ind = strtolower((string)$payload['status']['indicator']);
         if ($ind === 'none') {
           $out[] = LO_Incident::operational($this->name, $this->home);
         } else {
@@ -102,8 +107,8 @@ if ( ! class_exists('LO_StatuspageSource') ) {
           $slug = sanitize_key($this->name);
           $id = $slug . ':indicator:' . $ind;
           $updated = time();
-          if (!empty($json['page']['updated_at'])) {
-            $ts = strtotime((string)$json['page']['updated_at']);
+          if (!empty($payload['page']['updated_at'])) {
+            $ts = strtotime((string)$payload['page']['updated_at']);
             if ($ts) $updated = $ts;
           }
           $out[] = LO_Incident::create($this->name, $id, $title, $state, $this->home, null, null, $updated, null);
@@ -111,6 +116,127 @@ if ( ! class_exists('LO_StatuspageSource') ) {
       }
 
       return $out;
+    }
+
+    /** @return array{data:?array,stale?:bool,message?:string} */
+    private function fetch_payload() {
+      $cache_key = $this->cache_key();
+      $response  = $this->request_json($this->api);
+
+      if ($response['ok']) {
+        $data = $response['data'];
+        $this->store_cache($cache_key, $data);
+        return array('data' => $data);
+      }
+
+      $fallback = $this->fetch_fallback_payload();
+      if ($fallback) {
+        $this->store_cache($cache_key, $fallback);
+        return array('data' => $fallback);
+      }
+
+      $cached = get_transient($cache_key);
+      if (is_array($cached) && !empty($cached['data']) && is_array($cached['data'])) {
+        return array(
+          'data'  => $cached['data'],
+          'stale' => true,
+          'message' => 'Status temporarily unavailable (using cached data).',
+        );
+      }
+
+      return array(
+        'data' => null,
+        'message' => 'Status temporarily unavailable.',
+      );
+    }
+
+    private function fetch_fallback_payload() {
+      $base = $this->statuspage_base();
+      if (!$base) {
+        return null;
+      }
+
+      $base = trailingslashit($base);
+      $status_response = $this->request_json($base . 'api/v2/status.json');
+      if (! $status_response['ok']) {
+        return null;
+      }
+
+      $status_data = $status_response['data'];
+      $incidents_response = $this->request_json($base . 'api/v2/incidents/unresolved.json');
+      $incidents_data = $incidents_response['ok'] ? $incidents_response['data'] : null;
+
+      if (!is_array($status_data)) {
+        return null;
+      }
+
+      $payload = $status_data;
+      $payload['incidents'] = is_array($incidents_data) && isset($incidents_data['incidents']) && is_array($incidents_data['incidents'])
+        ? $incidents_data['incidents']
+        : [];
+
+      return $payload;
+    }
+
+    private function request_json($url) {
+      $res = wp_remote_get($url, array(
+        'timeout' => 10,
+        'headers' => $this->request_headers(),
+      ));
+
+      if (is_wp_error($res)) {
+        return array('ok' => false, 'code' => 0, 'data' => null);
+      }
+
+      $code = (int) wp_remote_retrieve_response_code($res);
+      if ($code < 200 || $code >= 300) {
+        return array('ok' => false, 'code' => $code, 'data' => null);
+      }
+
+      $body = (string) wp_remote_retrieve_body($res);
+      if ('' === trim($body)) {
+        return array('ok' => false, 'code' => $code, 'data' => null);
+      }
+
+      $json = json_decode($body, true);
+      if (!is_array($json)) {
+        return array('ok' => false, 'code' => $code, 'data' => null);
+      }
+
+      return array('ok' => true, 'code' => $code, 'data' => $json);
+    }
+
+    private function request_headers() {
+      return array(
+        'Accept'     => 'application/json',
+        'User-Agent' => $this->user_agent(),
+      );
+    }
+
+    private function statuspage_base() {
+      $base = preg_replace('#/api/v\\d+(?:\\.\\d+)?/summary\\.json$#', '/', (string)$this->api);
+      if ($base && $base !== $this->api) {
+        return $base;
+      }
+      if (!empty($this->home)) {
+        return $this->home;
+      }
+      return null;
+    }
+
+    private function cache_key() {
+      $slug = sanitize_key($this->name);
+      return 'lo_statuspage_cache_' . ($slug ?: md5($this->api));
+    }
+
+    private function store_cache($key, $data) {
+      $ttl = defined('HOUR_IN_SECONDS') ? 6 * HOUR_IN_SECONDS : 6 * 3600;
+      set_transient($key, array('data' => $data, 'cached_at' => time()), $ttl);
+    }
+
+    private function user_agent() {
+      $site = home_url();
+      return 'LousyOutagesStatus/1.0 (+'.$site.')';
     }
   }
 }

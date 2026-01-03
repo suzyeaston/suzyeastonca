@@ -402,6 +402,21 @@ function render_shortcode(): string {
     $fetched_label = ('snapshot' === strtolower((string) $source))
         ? 'Outage info last refreshed:'
         : 'Outage info fetched:';
+    $external_query = rawurlencode('service outage');
+    $external_links = [
+        [
+            'label' => 'Twitter/X search',
+            'url'   => 'https://x.com/search?q=' . $external_query,
+        ],
+        [
+            'label' => 'Reddit search',
+            'url'   => 'https://www.reddit.com/search/?q=' . $external_query,
+        ],
+        [
+            'label' => 'Web search',
+            'url'   => 'https://duckduckgo.com/?q=' . $external_query,
+        ],
+    ];
 
     ob_start();
     ?>
@@ -511,6 +526,33 @@ function render_shortcode(): string {
                     static fn($component) => is_array($component) && strtolower((string) ($component['status'] ?? '')) !== 'operational'
                 );
                 $incidents = is_array($tile['incidents'] ?? null) ? $tile['incidents'] : [];
+                $resolved_states = ['resolved', 'completed', 'postmortem'];
+                $active_incidents = array_values(
+                    array_filter(
+                        $incidents,
+                        static function ($incident) use ($resolved_states): bool {
+                            if (!is_array($incident)) {
+                                return false;
+                            }
+                            $status = strtolower((string) ($incident['status'] ?? ''));
+                            return !in_array($status, $resolved_states, true);
+                        }
+                    )
+                );
+                $resolved_incidents = array_values(
+                    array_filter(
+                        $incidents,
+                        static function ($incident) use ($resolved_states): bool {
+                            if (!is_array($incident)) {
+                                return false;
+                            }
+                            $status = strtolower((string) ($incident['status'] ?? ''));
+                            return in_array($status, $resolved_states, true);
+                        }
+                    )
+                );
+                $show_resolved = empty($active_incidents) && !empty($resolved_incidents);
+                $display_incidents = $active_incidents ?: ($show_resolved ? [reset($resolved_incidents)] : []);
                 ?>
                 <article class="lo-card" data-provider-id="<?php echo esc_attr($slug ?: 'provider'); ?>">
                     <div class="lo-head">
@@ -540,12 +582,13 @@ function render_shortcode(): string {
                             </ul>
                         <?php endif; ?>
                     </div>
-                    <div class="lo-inc" data-lo-incidents>
-                        <?php if (empty($incidents)) : ?>
-                            <p class="lo-empty">No active incidents.</p>
-                        <?php else : ?>
+                    <?php if (!empty($display_incidents)) : ?>
+                        <div class="lo-inc" data-lo-incidents>
+                            <?php if ($show_resolved) : ?>
+                                <p class="lo-inc-title">Most recent incident (resolved)</p>
+                            <?php endif; ?>
                             <ul class="lo-inc-list">
-                                <?php foreach ($incidents as $incident) :
+                                <?php foreach ($display_incidents as $incident) :
                                     $impact  = isset($incident['status']) ? ucfirst((string) $incident['status']) : 'Unknown';
                                     $updated = $format_datetime($incident['updated_at'] ?? null);
                                     $summary = isset($incident['summary']) ? (string) $incident['summary'] : '';
@@ -563,8 +606,10 @@ function render_shortcode(): string {
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
-                        <?php endif; ?>
-                    </div>
+                        </div>
+                    <?php elseif (empty($incidents)) : ?>
+                        <p class="lo-empty">No active incidents.</p>
+                    <?php endif; ?>
                     <?php if (!empty($tile['url'])) : ?>
                         <a class="lo-status-link" data-lo-status-url href="<?php echo esc_url($tile['url']); ?>" target="_blank" rel="noopener">View status →</a>
                     <?php endif; ?>
@@ -576,9 +621,13 @@ function render_shortcode(): string {
                 </div>
                 <p class="lo-summary">Quick links to community chatter and third-party status hints.</p>
                 <ul class="lo-links">
-                    <li><a class="lo-link" href="https://downdetector.com/" target="_blank" rel="noopener">Downdetector</a></li>
-                    <li><a class="lo-link" href="https://x.com/search?q=outage" target="_blank" rel="noopener">Twitter/X search</a></li>
-                    <li><a class="lo-link" href="https://www.reddit.com/r/sysadmin/" target="_blank" rel="noopener">Reddit r/sysadmin</a></li>
+                    <?php foreach ($external_links as $external_link) : ?>
+                        <li>
+                            <a class="lo-link" href="<?php echo esc_url($external_link['url']); ?>" target="_blank" rel="noopener">
+                                <?php echo esc_html($external_link['label']); ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
                 </ul>
             </article>
         </div>

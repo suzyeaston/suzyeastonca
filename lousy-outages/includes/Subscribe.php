@@ -198,7 +198,7 @@ class Lousy_Outages_Subscribe {
 confirmed. you're now getting the Lousy Outages briefings. 🛰️
 
 expect:
-- outage and degradation alerts for cloudflare, aws, azure, gcp, slack, zscaler, qubeyond (and their friends)
+- outage and degradation alerts for cloudflare, aws, azure, google cloud, google workspace, slack, zscaler, qubeyond (and their friends)
 - mini postmortems with timelines + impact notes
 - security watch items so you can harden things before the next wobble
 
@@ -221,7 +221,7 @@ TEXT;
   <div style="max-width:560px;margin:24px auto;padding:20px;border:2px solid #ffb81c;border-radius:14px;background:linear-gradient(140deg,#0b0b0b,#1a0b00);box-shadow:0 18px 36px rgba(0,0,0,0.45);">
     <h2 style="margin:0 0 10px;font-size:20px;color:#ffb81c;text-transform:uppercase;letter-spacing:0.05em;">✅ link established</h2>
     <p style="margin:0 0 12px;">welcome to the status underground.</p>
-    <p style="margin:0 0 18px;">you'll get alerts when providers wobble: cloudflare • aws • azure • gcp • slack • zscaler • qubeyond.</p>
+    <p style="margin:0 0 18px;">you'll get alerts when providers wobble: cloudflare • aws • azure • google cloud • google workspace • slack • zscaler • qubeyond.</p>
     <p style="margin:0 0 18px;"><a href="{$dashboard_url}" style="display:inline-block;padding:12px 18px;border-radius:999px;border:2px solid #ffb81c;background:#f04e23;color:#050505;font-weight:700;text-decoration:none;">OPEN LIVE DASHBOARD</a></p>
     <blockquote style="margin:12px 0;padding:10px 14px;border-left:3px solid rgba(255,184,28,0.8);background:rgba(255,184,28,0.08);">
       "Stay hungry. Stay foolish."<br>

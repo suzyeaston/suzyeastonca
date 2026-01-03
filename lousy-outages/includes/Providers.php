@@ -107,7 +107,20 @@ class Providers {
                 'status_url' => 'https://trust.crowdstrike.com/',
             ],
             ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://rssfeed.azure.status.microsoft/en-us/status/feed/'],
-            ['id' => 'gcp', 'name' => 'Google Cloud', 'type' => 'atom', 'url' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom'],
+            [
+                'id'         => 'google_workspace',
+                'name'       => 'Google Workspace',
+                'type'       => 'rss',
+                'url'        => 'https://www.google.com/appsstatus/rss/en-CA',
+                'status_url' => 'https://www.google.com/appsstatus/dashboard/',
+            ],
+            [
+                'id'         => 'google_cloud',
+                'name'       => 'Google Cloud',
+                'type'       => 'rss',
+                'url'        => 'https://status.cloud.google.com/rss',
+                'status_url' => 'https://status.cloud.google.com/',
+            ],
         ];
     }
 
