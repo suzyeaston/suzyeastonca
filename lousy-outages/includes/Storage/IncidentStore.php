@@ -8,6 +8,7 @@ use SuzyEaston\LousyOutages\Model\Incident;
 class IncidentStore
 {
     private const OPTION_EVENTS = 'lo_event_log';
+    private const OPTION_EVENTS_COMPACTED = 'lo_event_log_compacted_v1';
     private const OPTION_LAST_DIGEST = 'lousy_outages_daily_digest_last_sent';
     private const ALERT_COOLDOWN = 90; // Minutes.
     // Keep events long enough for multi-year comparisons.
@@ -272,13 +273,26 @@ class IncidentStore
         $status     = $this->normalizeStatus((string) ($event['status'] ?? ''));
         $title      = isset($event['title']) ? (string) $event['title'] : '';
         $providerId = isset($event['provider']) ? (string) $event['provider'] : '';
+        $severity   = isset($event['severity']) ? strtolower((string) $event['severity']) : '';
+        $source     = isset($event['source']) ? (string) $event['source'] : '';
+
+        $isUserReport  = ('user_report' === $source || 'user_report' === $severity);
+        $isOperational = in_array($severity, ['operational', 'ok', 'none'], true);
 
         $classification = $this->classifyIncident($providerId, $title, $status);
 
-        $event['severity']       = $event['severity'] ?? $classification['severity'];
-        $event['important']      = isset($event['important']) ? (bool) $event['important'] : $classification['important'];
-        $event['status_normal']  = $event['status_normal'] ?? $status;
-        $event['impact_summary'] = $event['impact_summary'] ?? $classification['summary'];
+        if (! $isUserReport && ! $isOperational) {
+            $event['severity']       = $classification['severity'];
+            $event['important']      = $classification['important'];
+            $event['impact_summary'] = $classification['summary'];
+            $event['status_normal']  = $status;
+
+            if ('maintenance' === $classification['severity'] && 'degraded' === $status) {
+                $event['status_normal'] = 'maintenance';
+            }
+        } else {
+            $event['status_normal'] = $event['status_normal'] ?? $status;
+        }
 
         return $event;
     }
@@ -517,6 +531,13 @@ class IncidentStore
             return [];
         }
 
+        $compacted = get_option(self::OPTION_EVENTS_COMPACTED, false);
+        if (! $compacted && count($stored) > 1000) {
+            $stored = $this->compactNoisyEvents($stored);
+            update_option(self::OPTION_EVENTS, $stored, false);
+            update_option(self::OPTION_EVENTS_COMPACTED, 1, false);
+        }
+
         return $stored;
     }
 
@@ -556,6 +577,70 @@ class IncidentStore
                 }
                 unset($events[$key]);
                 $excess--;
+            }
+        }
+
+        return $events;
+    }
+
+    /**
+     * Remove noisy duplicate synthetic indicator events.
+     *
+     * @param array<string, array<string, mixed>> $events
+     * @return array<string, array<string, mixed>>
+     */
+    private function compactNoisyEvents(array $events): array
+    {
+        $keepLatest = [];
+        $now = time();
+        $cloudflareCutoff = $now - (7 * DAY_IN_SECONDS);
+        $allowedIndicators = ['minor', 'major', 'critical', 'maintenance'];
+
+        foreach ($events as $key => $event) {
+            if (! is_array($event)) {
+                continue;
+            }
+
+            $provider = isset($event['provider']) ? sanitize_key((string) $event['provider']) : '';
+            $title    = isset($event['title']) ? strtolower((string) $event['title']) : '';
+            $guid     = isset($event['guid']) ? strtolower((string) $event['guid']) : '';
+
+            $indicator = '';
+
+            if (false !== strpos($guid, ':indicator:')) {
+                $parts = explode(':indicator:', $guid);
+                $indicator = isset($parts[1]) ? strtolower((string) $parts[1]) : '';
+            } elseif (0 === strpos($title, 'provider reports ')) {
+                if (preg_match('/^provider reports\s+([a-z]+)\s+impact/', $title, $matches)) {
+                    $indicator = strtolower($matches[1]);
+                }
+            }
+
+            if (! in_array($indicator, $allowedIndicators, true)) {
+                continue;
+            }
+
+            $lastSeen = isset($event['last_seen']) ? (int) $event['last_seen'] : 0;
+            $firstSeen = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
+            $timestamp = $lastSeen ?: $firstSeen;
+
+            if ('cloudflare' === $provider && $timestamp && $timestamp < $cloudflareCutoff) {
+                unset($events[$key]);
+                continue;
+            }
+
+            $dedupeKey = $provider . '|' . $indicator;
+            if (! isset($keepLatest[$dedupeKey])) {
+                $keepLatest[$dedupeKey] = ['key' => $key, 'timestamp' => $timestamp];
+                continue;
+            }
+
+            $existing = $keepLatest[$dedupeKey];
+            if ($timestamp >= $existing['timestamp']) {
+                unset($events[$existing['key']]);
+                $keepLatest[$dedupeKey] = ['key' => $key, 'timestamp' => $timestamp];
+            } else {
+                unset($events[$key]);
             }
         }
 

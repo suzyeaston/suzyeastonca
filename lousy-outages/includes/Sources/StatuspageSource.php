@@ -99,7 +99,14 @@ if ( ! class_exists('LO_StatuspageSource') ) {
         } else {
           $title = 'Provider reports ' . $ind . ' impact';
           $state = ($ind==='minor' ? 'degraded' : ($ind==='major' ? 'partial_outage' : ($ind==='critical' ? 'major_outage' : 'maintenance')));
-          $out[] = LO_Incident::create($this->name, LO_Incident::make_id($this->name, $title, time()), $title, $state, $this->home, null, null, time(), null);
+          $slug = sanitize_key($this->name);
+          $id = $slug . ':indicator:' . $ind;
+          $updated = time();
+          if (!empty($json['page']['updated_at'])) {
+            $ts = strtotime((string)$json['page']['updated_at']);
+            if ($ts) $updated = $ts;
+          }
+          $out[] = LO_Incident::create($this->name, $id, $title, $state, $this->home, null, null, $updated, null);
         }
       }
 
