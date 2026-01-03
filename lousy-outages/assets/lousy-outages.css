@@ -1721,14 +1721,6 @@
   letter-spacing: 0.04em;
 }
 
-@media (prefers-color-scheme: light) {
-  .lousy-outages-root:not(.lo-theme-dark),
-  .lousy-outages:not(.lo-theme-dark) {
-    background: #faf8f0;
-    color: var(--lo-text);
-  }
-}
-
 @media print {
   body * {
     visibility: hidden;
