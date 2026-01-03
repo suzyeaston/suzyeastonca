@@ -231,8 +231,20 @@
       return;
     }
     var desired = theme === 'light' ? 'light' : 'dark';
-    state.container.classList.remove('lo-theme-light', 'lo-theme-dark');
-    state.container.classList.add(desired === 'light' ? 'lo-theme-light' : 'lo-theme-dark');
+    var className = desired === 'light' ? 'lo-theme-light' : 'lo-theme-dark';
+    var targets = [state.container];
+
+    if (!state.container.classList.contains('lousy-outages') && state.container.querySelector) {
+      var nested = state.container.querySelector('.lousy-outages');
+      if (nested && nested.classList) {
+        targets.push(nested);
+      }
+    }
+
+    for (var i = 0; i < targets.length; i += 1) {
+      targets[i].classList.remove('lo-theme-light', 'lo-theme-dark');
+      targets[i].classList.add(className);
+    }
     updateThemeToggleLabel(desired);
     if (persist) {
       storeTheme(desired);
@@ -2693,7 +2705,11 @@
     if (!state.fetchImpl) {
       return;
     }
-    state.container = config.container || state.doc.querySelector('.lousy-outages') || state.doc.getElementById('lousy-outages') || state.doc.querySelector('.lousy-outages-board');
+    state.container = config.container
+      || state.doc.querySelector('.lousy-outages-root')
+      || state.doc.querySelector('.lousy-outages')
+      || state.doc.getElementById('lousy-outages')
+      || state.doc.querySelector('.lousy-outages-board');
     if (!state.container) {
       return;
     }
