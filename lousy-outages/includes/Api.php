@@ -8,8 +8,14 @@ use WP_REST_Request;
 use WP_REST_Response;
 
 class Api {
+    private const REPORT_RATE_LIMIT = 3;
+    private const REPORT_RATE_WINDOW = HOUR_IN_SECONDS;
+    private const REPORT_CAPTCHA_TTL = 600;
+
     public static function bootstrap(): void {
         add_action('rest_api_init', [self::class, 'register_routes']);
+        add_action('wp_ajax_lo_get_report_phrase', [self::class, 'handle_report_phrase']);
+        add_action('wp_ajax_nopriv_lo_get_report_phrase', [self::class, 'handle_report_phrase']);
     }
 
     public static function register_routes(): void {
@@ -111,6 +117,12 @@ class Api {
                         'sanitize_callback' => 'sanitize_text_field',
                         'required'          => true,
                     ],
+                    'provider_name' => [
+                        'description'       => 'Provider name when reporting other providers',
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                        'required'          => false,
+                    ],
                     'summary' => [
                         'description'       => 'Summary of the reported issue',
                         'type'              => 'string',
@@ -123,6 +135,18 @@ class Api {
                         'sanitize_callback' => 'sanitize_text_field',
                         'required'          => false,
                     ],
+                    'captcha_answer' => [
+                        'description'       => 'Captcha phrase response',
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                        'required'          => true,
+                    ],
+                    'captcha_token' => [
+                        'description'       => 'Captcha token',
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                        'required'          => true,
+                    ],
                 ],
             ]
         );
@@ -132,6 +156,110 @@ class Api {
     public static function verify_nonce(): bool {
         $nonce = $_SERVER['HTTP_X_WP_NONCE'] ?? '';
         return is_string($nonce) && wp_verify_nonce($nonce, 'wp_rest');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function report_captcha_phrases(): array {
+        return [
+            'stay noisy vancouver',
+            'keep shipping fixes',
+            'retro radar online',
+            'packets in motion',
+            'less lousy outages',
+        ];
+    }
+
+    private static function normalize_report_captcha(string $value): string {
+        $text = strtolower($value);
+        $text = preg_replace('/[^a-z0-9\\s]+/i', '', $text);
+        if (null === $text) {
+            $text = '';
+        }
+        $text = trim(preg_replace('/\\s+/', ' ', $text) ?? '');
+        return $text;
+    }
+
+    private static function report_captcha_transient_key(string $token): string {
+        return 'lo_report_phrase_' . $token;
+    }
+
+    private static function generate_report_token(): string {
+        if (function_exists('wp_generate_password')) {
+            return wp_generate_password(20, false, false);
+        }
+
+        return bin2hex(random_bytes(16));
+    }
+
+    private static function get_report_ip_hash(WP_REST_Request $request): string {
+        if (function_exists('lo_detect_subscribe_ip') && function_exists('lo_hash_subscriber_ip')) {
+            $ip = lo_detect_subscribe_ip($request);
+            return lo_hash_subscriber_ip($ip);
+        }
+
+        $ip = '';
+        if (!empty($_SERVER['REMOTE_ADDR'])) {
+            $ip = (string) $_SERVER['REMOTE_ADDR'];
+        }
+        $payload = '' !== $ip ? $ip : 'unknown';
+
+        if (function_exists('wp_salt')) {
+            return hash_hmac('sha256', $payload, wp_salt('nonce'));
+        }
+
+        return hash('sha256', $payload);
+    }
+
+    private static function is_report_spam(string $summary): bool {
+        $urlMatches = [];
+        preg_match_all('/https?:\\/\\/|www\\./i', $summary, $urlMatches);
+        if (!empty($urlMatches[0]) && count($urlMatches[0]) > 2) {
+            return true;
+        }
+
+        $tokens = [
+            'viagra',
+            'casino',
+            'bitcoin',
+            'loan',
+            'work from home',
+            'free money',
+            'earn $',
+            'weight loss',
+        ];
+
+        $haystack = strtolower($summary);
+        foreach ($tokens as $token) {
+            if (false !== strpos($haystack, $token)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function handle_report_phrase(): void {
+        $phrases = self::report_captcha_phrases();
+        if (!$phrases) {
+            wp_send_json([
+                'ok'      => false,
+                'message' => 'No phrases available.',
+            ], 500);
+        }
+
+        $token  = self::generate_report_token();
+        $phrase = $phrases[array_rand($phrases)];
+        $normalized = self::normalize_report_captcha($phrase);
+
+        set_transient(self::report_captcha_transient_key($token), $normalized, self::REPORT_CAPTCHA_TTL);
+
+        wp_send_json([
+            'ok'     => true,
+            'token'  => $token,
+            'phrase' => $phrase,
+        ]);
     }
 
     /**
@@ -402,8 +530,16 @@ class Api {
             $event = $incidentStore->normalizeEvent($event);
 
             $slug = sanitize_key((string) ($event['provider'] ?? ''));
-            if ('' === $slug || !isset($allowedProviders[$slug])) {
+            $source = strtolower((string) ($event['source'] ?? ''));
+            $severityValue = strtolower((string) ($event['severity'] ?? ''));
+            $isUserReport = ('user_report' === $source || 'user_report' === $severityValue);
+            $allowOther = ('other' === $slug && $isUserReport);
+
+            if ('' === $slug || (!isset($allowedProviders[$slug]) && !$allowOther)) {
                 continue;
+            }
+            if ($allowOther && !isset($providerLabels[$slug])) {
+                $providerLabels[$slug] = (string) ($event['provider_label'] ?? 'Other');
             }
             if (!empty($filters) && !in_array($slug, $filters, true)) {
                 continue;
@@ -679,8 +815,11 @@ class Api {
 
     public static function handle_report(WP_REST_Request $request): WP_REST_Response {
         $providerId = sanitize_text_field((string) $request->get_param('provider_id'));
+        $providerName = sanitize_text_field((string) $request->get_param('provider_name'));
         $summary    = sanitize_textarea_field((string) $request->get_param('summary'));
         $contact    = sanitize_text_field((string) $request->get_param('contact'));
+        $captchaAnswer = sanitize_text_field((string) $request->get_param('captcha_answer'));
+        $captchaToken  = sanitize_text_field((string) $request->get_param('captcha_token'));
 
         if ('' === trim($providerId) || '' === trim($summary)) {
             return new WP_REST_Response([
@@ -689,8 +828,58 @@ class Api {
             ], 400);
         }
 
+        if (self::is_report_spam($summary)) {
+            return new WP_REST_Response([
+                'ok'      => false,
+                'message' => 'Report blocked due to suspected spam.',
+            ], 400);
+        }
+
+        if ('' === trim($captchaAnswer) || '' === trim($captchaToken)) {
+            return new WP_REST_Response([
+                'ok'      => false,
+                'message' => 'Captcha didn’t match. Try again.',
+            ], 400);
+        }
+
+        $expected = get_transient(self::report_captcha_transient_key($captchaToken));
+        $normalizedAnswer = self::normalize_report_captcha($captchaAnswer);
+        if (!$expected || '' === $normalizedAnswer || !hash_equals((string) $expected, $normalizedAnswer)) {
+            return new WP_REST_Response([
+                'ok'      => false,
+                'message' => 'Captcha didn’t match. Try again.',
+            ], 400);
+        }
+        delete_transient(self::report_captcha_transient_key($captchaToken));
+
+        $rateKey = 'lo_report_rate_' . self::get_report_ip_hash($request);
+        $rateCount = (int) get_transient($rateKey);
+        if ($rateCount >= self::REPORT_RATE_LIMIT) {
+            return new WP_REST_Response([
+                'ok'      => false,
+                'message' => 'Too many reports from this network. Please try again later.',
+            ], 429);
+        }
+        set_transient($rateKey, $rateCount + 1, self::REPORT_RATE_WINDOW);
+
+        $providerName = trim($providerName);
+        if ('other' === $providerId) {
+            if (strlen($providerName) < 2 || strlen($providerName) > 80) {
+                return new WP_REST_Response([
+                    'ok'      => false,
+                    'message' => 'Provider name must be 2-80 characters when reporting Other.',
+                ], 400);
+            }
+        } else {
+            $providerName = '';
+        }
+
         $providers     = Providers::list();
-        $providerLabel = $providers[$providerId]['name'] ?? ($providerId ? ucfirst($providerId) : 'provider');
+        if ('other' === $providerId) {
+            $providerLabel = sprintf('Other — %s', $providerName);
+        } else {
+            $providerLabel = $providers[$providerId]['name'] ?? ($providerId ? ucfirst($providerId) : 'provider');
+        }
 
         $store = new IncidentStore();
         $store->addUserReport($providerId, $summary, $contact, $providerLabel);

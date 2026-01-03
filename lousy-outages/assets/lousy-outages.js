@@ -102,10 +102,18 @@
     visibleProviders: {},
     reportForm: null,
     reportProvider: null,
+    reportProviderNameWrap: null,
+    reportProviderName: null,
     reportSummary: null,
     reportContact: null,
     reportStatus: null,
     reportSubmit: null,
+    reportCaptchaPhrase: null,
+    reportCaptchaInput: null,
+    reportCaptchaToken: null,
+    reportCaptchaRefresh: null,
+    reportPhraseEndpoint: '',
+    reportCaptchaTokenValue: '',
     reportProvidersInitialized: false,
     debug: false,
     postPaintStarted: false
@@ -2087,6 +2095,63 @@
     }
   }
 
+  function setReportProviderOtherVisibility(providerId) {
+    if (!state.reportProviderNameWrap || !state.reportProviderName) {
+      return;
+    }
+    var isOther = providerId === 'other';
+    if (isOther) {
+      state.reportProviderNameWrap.removeAttribute('hidden');
+      state.reportProviderName.setAttribute('required', 'required');
+    } else {
+      state.reportProviderNameWrap.setAttribute('hidden', 'hidden');
+      state.reportProviderName.removeAttribute('required');
+      state.reportProviderName.value = '';
+    }
+  }
+
+  function normalizeReportCaptcha(value) {
+    var text = String(value || '').toLowerCase();
+    text = text.replace(/[^a-z0-9\s]+/gi, '');
+    text = text.replace(/\s+/g, ' ').trim();
+    return text;
+  }
+
+  function requestReportPhrase() {
+    if (!state.fetchImpl || !state.reportPhraseEndpoint || !state.reportCaptchaPhrase || !state.reportCaptchaToken) {
+      return;
+    }
+    state.reportCaptchaPhrase.textContent = 'Loading phrase…';
+    state.reportCaptchaTokenValue = '';
+
+    var url = state.reportPhraseEndpoint;
+    var separator = url.indexOf('?') === -1 ? '?' : '&';
+    url += separator + 'action=lo_get_report_phrase';
+
+    state.fetchImpl(url, { method: 'GET', credentials: 'same-origin' })
+      .then(function (res) {
+        if (!res) {
+          throw new Error('No response');
+        }
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || !data.phrase || !data.token) {
+          throw new Error('Invalid phrase payload');
+        }
+        state.reportCaptchaPhrase.textContent = data.phrase;
+        state.reportCaptchaTokenValue = data.token;
+        state.reportCaptchaToken.value = data.token;
+      })
+      .catch(function () {
+        state.reportCaptchaPhrase.textContent = 'Unable to load phrase.';
+        state.reportCaptchaToken.value = '';
+      });
+  }
+
   function populateReportProviders(providers) {
     var select = state.reportProvider;
     if (!select || !state.doc) {
@@ -2112,6 +2177,11 @@
     placeholder.textContent = 'Select a provider…';
     select.appendChild(placeholder);
 
+    var otherOption = state.doc.createElement('option');
+    otherOption.value = 'other';
+    otherOption.textContent = 'Other (not listed)';
+    select.appendChild(otherOption);
+
     providers.forEach(function (provider) {
       if (!provider) {
         return;
@@ -2131,6 +2201,7 @@
       select.value = current;
     }
 
+    setReportProviderOtherVisibility(select.value);
     state.reportProvidersInitialized = true;
   }
 
@@ -2145,15 +2216,34 @@
 
     var providerId = String(state.reportProvider.value || '').trim();
     var summary = String(state.reportSummary.value || '').trim();
+    var providerName = state.reportProviderName ? String(state.reportProviderName.value || '').trim() : '';
     var contact = state.reportContact ? String(state.reportContact.value || '').trim() : '';
+    var captchaAnswer = state.reportCaptchaInput ? String(state.reportCaptchaInput.value || '').trim() : '';
+    var captchaToken = state.reportCaptchaToken ? String(state.reportCaptchaToken.value || '').trim() : '';
 
     if (!providerId) {
       setReportStatus('Select a provider to report.', 'error');
       return;
     }
 
+    if (providerId === 'other') {
+      if (providerName.length < 2) {
+        setReportStatus('Please enter the provider name (2+ characters).', 'error');
+        return;
+      }
+      if (providerName.length > 80) {
+        setReportStatus('Provider name must be 80 characters or fewer.', 'error');
+        return;
+      }
+    }
+
     if (summary.length < 10) {
       setReportStatus('Please add a short description (10+ characters).', 'error');
+      return;
+    }
+
+    if (!normalizeReportCaptcha(captchaAnswer) || !captchaToken) {
+      setReportStatus('Please complete the phrase check.', 'error');
       return;
     }
 
@@ -2164,8 +2254,11 @@
 
     var payload = {
       provider_id: providerId,
+      provider_name: providerId === 'other' ? providerName : '',
       summary: summary,
-      contact: contact
+      contact: contact,
+      captcha_answer: captchaAnswer,
+      captcha_token: captchaToken
     };
 
     state.fetchImpl('/wp-json/lousy/v1/report', {
@@ -2193,6 +2286,13 @@
           if (state.reportContact) {
             state.reportContact.value = '';
           }
+          if (state.reportProviderName) {
+            state.reportProviderName.value = '';
+          }
+          if (state.reportCaptchaInput) {
+            state.reportCaptchaInput.value = '';
+          }
+          requestReportPhrase();
           setReportStatus(message || 'Thanks for the report. We will review it shortly.', 'success');
         } else {
           setReportStatus(message || 'Could not submit report right now, please try again later.', 'error');
@@ -2213,15 +2313,37 @@
     }
     state.reportForm = state.doc.querySelector('[data-lo-report-form]');
     state.reportProvider = state.reportForm ? state.reportForm.querySelector('[data-lo-report-provider]') : null;
+    state.reportProviderNameWrap = state.reportForm ? state.reportForm.querySelector('[data-lo-report-other]') : null;
+    state.reportProviderName = state.reportForm ? state.reportForm.querySelector('[data-lo-report-provider-name]') : null;
     state.reportSummary = state.reportForm ? state.reportForm.querySelector('[data-lo-report-summary]') : null;
     state.reportContact = state.reportForm ? state.reportForm.querySelector('[data-lo-report-contact]') : null;
     state.reportStatus = state.reportForm ? state.reportForm.querySelector('[data-lo-report-status]') : null;
     state.reportSubmit = state.reportForm ? state.reportForm.querySelector('[data-lo-report-submit]') : null;
+    state.reportCaptchaPhrase = state.reportForm ? state.reportForm.querySelector('[data-lo-report-captcha-phrase]') : null;
+    state.reportCaptchaInput = state.reportForm ? state.reportForm.querySelector('[data-lo-report-captcha-input]') : null;
+    state.reportCaptchaToken = state.reportForm ? state.reportForm.querySelector('[data-lo-report-captcha-token]') : null;
+    state.reportCaptchaRefresh = state.reportForm ? state.reportForm.querySelector('[data-lo-report-captcha-refresh]') : null;
+    state.reportPhraseEndpoint = state.reportForm ? String(state.reportForm.dataset.loReportPhraseEndpoint || '') : '';
 
     if (state.reportForm && !state.reportForm.dataset.loReportEnhanced) {
       state.reportForm.dataset.loReportEnhanced = '1';
       state.reportForm.addEventListener('submit', handleReportSubmit);
     }
+
+    if (state.reportProvider) {
+      state.reportProvider.addEventListener('change', function (event) {
+        var value = event && event.currentTarget ? String(event.currentTarget.value || '').trim() : '';
+        setReportProviderOtherVisibility(value);
+      });
+    }
+
+    if (state.reportCaptchaRefresh) {
+      state.reportCaptchaRefresh.addEventListener('click', function () {
+        requestReportPhrase();
+      });
+    }
+
+    requestReportPhrase();
   }
 
   function isDocumentVisible() {

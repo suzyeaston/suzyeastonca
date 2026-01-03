@@ -63,12 +63,31 @@ if ($unsub_success) {
       </p>
     </header>
 
-    <form class="lo-report__form" data-lo-report-form novalidate>
+    <form
+      class="lo-report__form"
+      data-lo-report-form
+      data-lo-report-phrase-endpoint="<?php echo esc_url(admin_url('admin-ajax.php')); ?>"
+      novalidate
+    >
       <div class="lo-field">
         <label class="lo-label" for="lo-report-provider">Provider</label>
         <select id="lo-report-provider" name="provider_id" class="lo-input" data-lo-report-provider>
           <!-- Options will be populated by JS from the summary API -->
         </select>
+      </div>
+
+      <div class="lo-field lo-report__other" data-lo-report-other hidden>
+        <label class="lo-label" for="lo-report-provider-name">Provider name</label>
+        <input
+          id="lo-report-provider-name"
+          name="provider_name"
+          type="text"
+          class="lo-input"
+          data-lo-report-provider-name
+          maxlength="80"
+          placeholder="e.g., Telus, Shaw, Discord, Notion"
+        />
+        <p class="lo-report__help">Required when “Other (not listed)” is selected.</p>
       </div>
 
       <div class="lo-field">
@@ -93,6 +112,25 @@ if ($unsub_success) {
           data-lo-report-contact
           placeholder="Email or handle (optional)"
         />
+      </div>
+
+      <div class="lo-field lo-report__captcha" data-lo-report-captcha>
+        <p class="lo-report__prompt">Type the 3-word phrase shown below</p>
+        <div class="lo-report__captcha-display" data-lo-report-captcha-phrase aria-live="polite">Loading phrase…</div>
+        <div class="lo-report__captcha-controls">
+          <label class="lo-label" for="lo-report-captcha">Type the phrase</label>
+          <input
+            id="lo-report-captcha"
+            name="captcha_answer"
+            type="text"
+            class="lo-input"
+            data-lo-report-captcha-input
+            placeholder="Type the phrase"
+          />
+          <input type="hidden" name="captcha_token" data-lo-report-captcha-token />
+          <button type="button" class="lo-report__captcha-refresh" data-lo-report-captcha-refresh>New phrase</button>
+        </div>
+        <p class="lo-report__help">Case doesn’t matter, punctuation optional.</p>
       </div>
 
       <div class="lo-report__actions">
