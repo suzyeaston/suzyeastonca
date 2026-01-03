@@ -79,8 +79,7 @@
 }
 
 /* Kill the old bitmap/logo in hero only */
-.home .hero img[alt*="EASTON"],
-.home .hero img[src*="east"],
+.home .hero .old-logo,
 .home .hero .logo,
 .home .hero .site-logo {
   display: none !important;
