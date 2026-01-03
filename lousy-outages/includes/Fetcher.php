@@ -706,6 +706,9 @@ class Lousy_Outages_Fetcher {
     private const REQUEST_TIMEOUT = 8;
     private const USER_AGENT = 'LousyOutages/1.2 (+https://suzyeaston.ca)';
     private const ACCEPT_HEADER = 'application/json, application/rss+xml, application/atom+xml, text/html, */*';
+    // RSS/Atom incident recency windows (filterable).
+    private const FEED_ACTIVE_WINDOW_HOURS = 6;
+    private const FEED_RECENT_INCIDENT_DAYS = 7;
 
     /**
      * Manual verification checklist:
@@ -950,8 +953,13 @@ class Lousy_Outages_Fetcher {
                     $lead    = $incidents[0];
                     $message = $lead['name'] ?? 'Incident';
                     $summary = $this->format_incident_summary($lead);
-                } elseif ('operational' === $status) {
-                    $message = 'All systems operational';
+                } else {
+                    $status = 'operational';
+                    if ($this->is_no_incidents_message($message)) {
+                        $message = 'All systems operational.';
+                    } else {
+                        $message = 'All systems operational.';
+                    }
                 }
 
                 return $this->build_tile($slug, $config, $status, $message, $summary, $incidents, $statusCode, [
@@ -1085,12 +1093,27 @@ class Lousy_Outages_Fetcher {
         }
 
         if (!$items) {
-            return $this->build_tile($slug, $config, 'operational', 'All systems operational', '', [], $httpStatus ?: 200, ['fetched_at' => $feedFetchedAt]);
+            return $this->build_tile($slug, $config, 'operational', 'All systems operational.', '', [], $httpStatus ?: 200, ['fetched_at' => $feedFetchedAt]);
         }
 
         $active = [];
         $incidents = [];
-        $threshold = time() - DAY_IN_SECONDS;
+        $activeWindowHours = apply_filters(
+            'lo_feed_active_window_hours',
+            self::FEED_ACTIVE_WINDOW_HOURS,
+            $slug,
+            $config
+        );
+        $recentIncidentDays = apply_filters(
+            'lo_feed_recent_incident_days',
+            self::FEED_RECENT_INCIDENT_DAYS,
+            $slug,
+            $config
+        );
+        $activeWindowHours = is_numeric($activeWindowHours) ? max(1, (int) $activeWindowHours) : self::FEED_ACTIVE_WINDOW_HOURS;
+        $recentIncidentDays = is_numeric($recentIncidentDays) ? max(1, (int) $recentIncidentDays) : self::FEED_RECENT_INCIDENT_DAYS;
+        $threshold = time() - ($activeWindowHours * HOUR_IN_SECONDS);
+        $recentThreshold = time() - ($recentIncidentDays * DAY_IN_SECONDS);
         $severityRank = [
             'outage'      => 0,
             'degraded'    => 1,
@@ -1101,15 +1124,12 @@ class Lousy_Outages_Fetcher {
 
         foreach ($items as $item) {
             $timestamp = (int) ($item['timestamp'] ?? 0);
-            if ($timestamp < $threshold) {
-                continue;
-            }
             $text = strtolower($item['summary'] . ' ' . $item['title']);
             $statusCode = $this->infer_incident_status($text);
             $impact     = $this->map_impact($statusCode);
-            $isActive   = in_array($impact, ['outage', 'degraded', 'maintenance'], true);
+            $isActive   = in_array($impact, ['outage', 'degraded'], true);
 
-            if (!$isActive) {
+            if (!$isActive || $timestamp < $threshold) {
                 continue;
             }
 
@@ -1135,7 +1155,30 @@ class Lousy_Outages_Fetcher {
         }
 
         if (!$active) {
-            return $this->build_tile($slug, $config, 'operational', 'All systems operational', '', [], $httpStatus ?: 200, [
+            $summary = '';
+            $lastIncident = null;
+            foreach ($items as $item) {
+                $timestamp = (int) ($item['timestamp'] ?? 0);
+                if ($timestamp < $recentThreshold) {
+                    continue;
+                }
+                $text = strtolower($item['summary'] . ' ' . $item['title']);
+                $statusCode = $this->infer_incident_status($text);
+                $impact = $this->map_impact($statusCode);
+                if (!in_array($impact, ['outage', 'degraded'], true)) {
+                    continue;
+                }
+                $lastIncident = $item;
+                break;
+            }
+
+            if ($lastIncident) {
+                $reported = $this->format_local_time((int) ($lastIncident['timestamp'] ?? 0));
+                $reportedText = $reported ? ' (reported ' . $reported . ')' : '';
+                $summary = 'Last incident: ' . $lastIncident['title'] . $reportedText;
+            }
+
+            return $this->build_tile($slug, $config, 'operational', 'All systems operational.', $summary, [], $httpStatus ?: 200, [
                 'fetched_at' => $feedFetchedAt,
             ]);
         }
@@ -1299,7 +1342,7 @@ class Lousy_Outages_Fetcher {
                 continue;
             }
             $status = strtolower((string) ($incident['status'] ?? 'unknown'));
-            if ('resolved' === $status) {
+            if (in_array($status, ['resolved', 'completed', 'postmortem'], true)) {
                 continue;
             }
             $name = $this->clean_string($incident['name'] ?? 'Incident');
@@ -1573,7 +1616,7 @@ class Lousy_Outages_Fetcher {
     private function default_message(string $status): string {
         switch ($status) {
             case 'operational':
-                return 'All systems operational';
+                return 'All systems operational.';
             case 'degraded':
                 return 'Service degradation detected';
             case 'major':
@@ -1588,6 +1631,27 @@ class Lousy_Outages_Fetcher {
         $statusLabel = $status ? ucwords(str_replace('_', ' ', $status)) : 'Incident';
         $updated = $this->format_local_time($incident['updated_at'] ?? ($incident['started_at'] ?? ''));
         return trim($statusLabel . ($updated ? ' • Updated ' . $updated : ''));
+    }
+
+    private function is_no_incidents_message(string $message): bool {
+        $needle = strtolower(trim($message));
+        if ('' === $needle) {
+            return false;
+        }
+        $phrases = [
+            'no active incidents',
+            'no incidents',
+            'no current incidents',
+            'no known incidents',
+            'no reported incidents',
+            'all systems operational',
+        ];
+        foreach ($phrases as $phrase) {
+            if (false !== strpos($needle, $phrase)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private function format_local_time($value): string {
