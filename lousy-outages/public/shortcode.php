@@ -398,6 +398,26 @@ function render_shortcode(): string {
         $format = get_option('date_format') . ' ' . get_option('time_format');
         return wp_date($format, $timestamp);
     };
+    $is_no_incidents_message = static function (string $text): bool {
+        $needle = strtolower(trim($text));
+        if ('' === $needle) {
+            return false;
+        }
+        $phrases = [
+            'no active incidents',
+            'no incidents',
+            'no current incidents',
+            'no known incidents',
+            'no reported incidents',
+            'all systems operational',
+        ];
+        foreach ($phrases as $phrase) {
+            if (false !== strpos($needle, $phrase)) {
+                return true;
+            }
+        }
+        return false;
+    };
 
     $fetched_label = ('snapshot' === strtolower((string) $source))
         ? 'Outage info last refreshed:'
@@ -570,6 +590,12 @@ function render_shortcode(): string {
                     $summary_display = '';
                     if ('' !== $summary_text && strcasecmp($summary_text, $message_text) !== 0) {
                         $summary_display = $summary_text;
+                    }
+                    if ($summary_display && $status === 'operational' && $is_no_incidents_message($summary_display)) {
+                        $summary_display = '';
+                    }
+                    if ($summary_display && $status === 'unknown' && $is_no_incidents_message($summary_display)) {
+                        $summary_display = '';
                     }
                     ?>
                     <p class="lo-message" data-lo-message><?php echo esc_html($message_text); ?></p>
