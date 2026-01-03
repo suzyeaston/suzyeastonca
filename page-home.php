@@ -38,7 +38,7 @@ get_header();
             <div class="hero-side hero-photo-card">
                 <p class="hero-side-header">Feature photo</p>
                 <div class="hero-photo-frame">
-                    <img class="hero-photo" src="https://www.suzyeaston.ca/wp-content/uploads/2026/01/IMG_9003.jpg" alt="Suzanne (Suzy) Easton in a retro-styled portrait" loading="lazy" decoding="async">
+                    <img class="hero-photo" src="<?php echo esc_url(home_url('/wp-content/uploads/2026/01/IMG_9003.jpg')); ?>" alt="Suzanne (Suzy) Easton in a retro-styled portrait" loading="lazy" decoding="async">
                 </div>
                 <p class="hero-photo-caption pixel-font">Vancouver, BC</p>
             </div>
