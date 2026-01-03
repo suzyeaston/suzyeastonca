@@ -1952,6 +1952,14 @@
         return prefs[String(id).toLowerCase()] !== false;
       });
     }
+    if (hasPrefs) {
+      var hasOther = providerIds.some(function (id) {
+        return String(id).toLowerCase() === 'other';
+      });
+      if (!hasOther) {
+        providerIds.push('other');
+      }
+    }
 
     var windowDays = Number.isFinite(state.historyWindowDays) && state.historyWindowDays > 0
       ? state.historyWindowDays
@@ -1959,7 +1967,7 @@
     var url = appendQuery(state.historyEndpoint, 'days', String(windowDays));
     url = appendQuery(url, 'limit', String(HISTORY_LIMIT));
     url = appendQuery(url, 'severity', state.historyImportantOnly ? 'important' : 'all');
-    if (providerIds.length) {
+    if (hasPrefs && providerIds.length) {
       url = appendQuery(url, 'provider', providerIds.join(','));
     }
 
@@ -2306,6 +2314,9 @@
           }
           requestReportPhrase();
           setReportStatus(message || 'Thanks for the report. We will review it shortly.', 'success');
+          fetchHistoryData().catch(function () {
+            // Ignore history refresh errors after submit.
+          });
         } else {
           setReportStatus(message || 'Could not submit report right now, please try again later.', 'error');
         }
