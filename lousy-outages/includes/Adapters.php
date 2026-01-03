@@ -25,9 +25,6 @@ function from_statuspage_summary(string $json): array {
             continue;
         }
         $status = strtolower((string) ($incident['status'] ?? ''));
-        if (in_array($status, ['resolved', 'completed', 'postmortem'], true)) {
-            continue;
-        }
 
         $incidents[] = [
             'id'         => (string) ($incident['id'] ?? ''),
@@ -83,7 +80,6 @@ function from_slack_current(string $json): array {
     }
 
     $overall = strtolower((string) ($data['status'] ?? 'unknown'));
-    $state   = ('ok' === $overall) ? 'operational' : 'degraded';
 
     $incidents = [];
     foreach ($data['active_incidents'] ?? [] as $incident) {
@@ -105,6 +101,8 @@ function from_slack_current(string $json): array {
         ];
     }
 
+    $state = ('ok' === $overall && empty($incidents)) ? 'operational' : 'degraded';
+
     return [
         'state'      => $state,
         'incidents'  => $incidents,
@@ -123,27 +121,32 @@ function from_rss_atom(string $xml): array {
     }
 
     $items = [];
-    $resolve_status = static function (string $title): string {
-        $upper = strtoupper($title);
-        if (false !== strpos($upper, 'RESOLVED')) {
+    $resolve_status = static function (string $title, string $summary): string {
+        $text = strtolower($title . ' ' . $summary);
+        if (preg_match('/\bresolved\b|this issue is now resolved|issue is now resolved|issue has been resolved|ended at/i', $text)) {
             return 'resolved';
         }
-        if (false !== strpos($upper, 'OUTAGE')) {
+        if (preg_match('/\b(scheduled|planned).{0,40}maintenance\b/i', $text)) {
+            return 'maintenance';
+        }
+        if (preg_match('/\b(outage|major|critical)\b/i', $text)) {
             return 'major';
         }
-        if (false !== strpos($upper, 'SERVICE DISRUPTION')
-            || false !== strpos($upper, 'DEGRADED')
-            || false !== strpos($upper, 'INCIDENT')) {
+        if (preg_match('/\b(degraded|partial|service disruption)\b/i', $text)) {
             return 'degraded';
         }
-        return 'investigating';
+        if (preg_match('/\b(investigating|identified|monitoring)\b/i', $text)) {
+            return 'investigating';
+        }
+        return 'unknown';
     };
     if (isset($feed->channel)) {
         foreach ($feed->channel->item as $item) {
             $title = (string) ($item->title ?? 'Incident');
+            $summary = (string) ($item->description ?? '');
             $items[] = [
                 'name'       => $title ?: 'Incident',
-                'status'     => $resolve_status($title),
+                'status'     => $resolve_status($title, $summary),
                 'started_at' => (string) ($item->pubDate ?? ''),
                 'updated_at' => (string) ($item->pubDate ?? ''),
                 'shortlink'  => (string) ($item->link ?? ''),
@@ -152,9 +155,10 @@ function from_rss_atom(string $xml): array {
     } else {
         foreach ($feed->entry as $item) {
             $title = (string) ($item->title ?? 'Incident');
+            $summary = (string) ($item->summary ?? $item->content ?? '');
             $items[] = [
                 'name'       => $title ?: 'Incident',
-                'status'     => $resolve_status($title),
+                'status'     => $resolve_status($title, $summary),
                 'started_at' => (string) ($item->updated ?? ($item->published ?? '')),
                 'updated_at' => (string) ($item->updated ?? ($item->published ?? '')),
                 'shortlink'  => (string) ($item->link['href'] ?? ($item->link ?? '')),
@@ -188,28 +192,36 @@ function from_rss_atom(string $xml): array {
 
     $items = array_slice($items, 0, 10);
 
-    $severity = [
-        'major'         => 3,
-        'outage'        => 3,
-        'degraded'      => 2,
-        'investigating' => 1,
-        'reported'      => 1,
-    ];
-    $resolved_states = ['resolved', 'completed', 'postmortem'];
-    $worst = 0;
+    $resolved_states = ['resolved', 'completed', 'postmortem', 'operational', 'ok'];
+    $hasMajor = false;
+    $hasDegraded = false;
+    $hasMaintenance = false;
+
     foreach ($items as $item) {
         $status = strtolower((string) ($item['status'] ?? ''));
         if (in_array($status, $resolved_states, true)) {
             continue;
         }
-        $worst = max($worst, $severity[$status] ?? 1);
+        if (in_array($status, ['major', 'outage', 'critical'], true)) {
+            $hasMajor = true;
+            continue;
+        }
+        if (in_array($status, ['degraded', 'partial', 'investigating', 'identified', 'monitoring'], true)) {
+            $hasDegraded = true;
+            continue;
+        }
+        if (in_array($status, ['maintenance', 'scheduled'], true)) {
+            $hasMaintenance = true;
+        }
     }
 
     $state = 'operational';
-    if ($worst >= 3) {
+    if ($hasMajor) {
         $state = 'major';
-    } elseif ($worst >= 1) {
+    } elseif ($hasDegraded) {
         $state = 'degraded';
+    } elseif ($hasMaintenance) {
+        $state = 'maintenance';
     }
 
     return [

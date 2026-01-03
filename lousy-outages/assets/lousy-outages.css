@@ -1258,10 +1258,6 @@
   }
 }
 
-.lo-theme-note {
-  font-size: 0.85rem;
-}
-
 .lo-settings {
   border: 2px dashed var(--lo-border);
   border-radius: 12px;

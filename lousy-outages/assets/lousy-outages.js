@@ -804,12 +804,12 @@
         return condensed.text || incidentTitle;
       }
       if (statusInfo.code === 'operational') {
-        return 'All systems operational';
+        return 'All systems operational.';
       }
       if (statusInfo.code === 'unknown') {
-        return 'Status unknown.';
+        return 'Status temporarily unavailable.';
       }
-      return summaryText || statusInfo.label || 'Status unknown.';
+      return summaryText || statusInfo.label || 'Status temporarily unavailable.';
     }
 
     return message;
@@ -833,12 +833,12 @@
       return 'Incident: ' + (condensed.text || 'Incident');
     }
     if (statusInfo.code === 'operational') {
-      return 'All systems operational';
+      return 'All systems operational.';
     }
     if (statusInfo.code === 'unknown') {
-      return 'Status unknown.';
+      return 'Status temporarily unavailable.';
     }
-    return summaryText || statusInfo.label || 'Status unknown.';
+    return summaryText || statusInfo.label || 'Status temporarily unavailable.';
   }
 
   function condenseIncidentTitle(providerSlug, text) {
