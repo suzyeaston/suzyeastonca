@@ -911,7 +911,7 @@ class Lousy_Outages_Fetcher {
                 break;
             case 'link-only':
             default:
-                $tile = $this->build_tile($slug, $config, 'unknown', 'View status →', [], 0, []);
+                $tile = $this->build_tile($slug, $config, 'unknown', 'View status →', '', [], 0, []);
                 break;
         }
 
@@ -922,7 +922,7 @@ class Lousy_Outages_Fetcher {
     private function fetch_statuspage(string $slug, array $config, array &$cache): array {
         $base = rtrim((string) ($config['base'] ?? ''), '/');
         if ('' === $base) {
-            return $this->build_tile($slug, $config, 'unknown', 'Status endpoint unavailable.', [], 0, ['error' => 'missing_endpoint']);
+            return $this->build_tile($slug, $config, 'unknown', 'Status endpoint unavailable.', '', [], 0, ['error' => 'missing_endpoint']);
         }
 
         $summaryUrl  = $base . '/api/v2/summary.json';
@@ -943,12 +943,18 @@ class Lousy_Outages_Fetcher {
                 $indicator = strtolower((string) $parsed['indicator']);
                 $status    = $this->map_indicator($indicator);
                 $message   = $parsed['description'] ?: $this->default_message($status);
+                $summary   = '';
                 $incidents = $parsed['incidents'];
                 if ($incidents) {
-                    $message = $incidents[0]['name'];
+                    $status  = $this->severity_from_incidents($incidents);
+                    $lead    = $incidents[0];
+                    $message = $lead['name'] ?? 'Incident';
+                    $summary = $this->format_incident_summary($lead);
+                } elseif ('operational' === $status) {
+                    $message = 'All systems operational';
                 }
 
-                return $this->build_tile($slug, $config, $status, $message, $incidents, $statusCode, [
+                return $this->build_tile($slug, $config, $status, $message, $summary, $incidents, $statusCode, [
                     'indicator' => $indicator,
                     'link'      => $this->provider_link($slug, $config),
                     'fetched_at' => $summaryFetchedAt,
@@ -968,8 +974,10 @@ class Lousy_Outages_Fetcher {
                 $incidents = $this->parse_statuspage_incidents($fbBody);
                 if ($incidents) {
                     $severity = $this->severity_from_incidents($incidents);
-                    $message  = $incidents[0]['name'];
-                    return $this->build_tile($slug, $config, $severity, $message, $incidents, $fbStatus, [
+                    $lead     = $incidents[0];
+                    $message  = $lead['name'] ?? 'Incident';
+                    $summary  = $this->format_incident_summary($lead);
+                    return $this->build_tile($slug, $config, $severity, $message, $summary, $incidents, $fbStatus, [
                         'indicator' => 'major' === $severity ? 'critical' : 'minor',
                         'link'      => $this->provider_link($slug, $config),
                         'fetched_at' => $fallbackFetchedAt,
@@ -989,12 +997,12 @@ class Lousy_Outages_Fetcher {
             $extra['error'] = $message;
         }
 
-        return $this->build_tile($slug, $config, 'unknown', $message, [], $statusCode ?: 0, $extra);
+        return $this->build_tile($slug, $config, 'unknown', $message, '', [], $statusCode ?: 0, $extra);
     }
 
     private function fetch_feed(string $slug, array $config, array &$cache, array $feeds, string $kind): array {
         if (!$feeds) {
-            return $this->build_tile($slug, $config, 'unknown', 'Feed URL unavailable.', [], 0, ['error' => 'missing_feed']);
+            return $this->build_tile($slug, $config, 'unknown', 'Feed URL unavailable.', '', [], 0, ['error' => 'missing_feed']);
         }
 
         $items = [];
@@ -1077,10 +1085,10 @@ class Lousy_Outages_Fetcher {
         }
 
         if (!$items) {
-            return $this->build_tile($slug, $config, 'operational', 'No incidents reported in the last 24 hours.', [], $httpStatus ?: 200, ['fetched_at' => $feedFetchedAt]);
+            return $this->build_tile($slug, $config, 'operational', 'All systems operational', '', [], $httpStatus ?: 200, ['fetched_at' => $feedFetchedAt]);
         }
 
-        $recent = [];
+        $active = [];
         $incidents = [];
         $threshold = time() - DAY_IN_SECONDS;
         $severityRank = [
@@ -1092,17 +1100,24 @@ class Lousy_Outages_Fetcher {
         $activeStatus = 'operational';
 
         foreach ($items as $item) {
-            $text = strtolower($item['summary'] . ' ' . $item['title']);
             $timestamp = (int) ($item['timestamp'] ?? 0);
+            if ($timestamp < $threshold) {
+                continue;
+            }
+            $text = strtolower($item['summary'] . ' ' . $item['title']);
             $statusCode = $this->infer_incident_status($text);
             $impact     = $this->map_impact($statusCode);
-            if ($timestamp >= $threshold && 'operational' !== $statusCode) {
-                $recent[] = $item;
-                $rank     = $severityRank[$impact] ?? $severityRank['unknown'];
-                $current  = $severityRank[$activeStatus] ?? PHP_INT_MAX;
-                if ($rank < $current) {
-                    $activeStatus = $impact;
-                }
+            $isActive   = in_array($impact, ['outage', 'degraded', 'maintenance'], true);
+
+            if (!$isActive) {
+                continue;
+            }
+
+            $active[] = $item;
+            $rank     = $severityRank[$impact] ?? $severityRank['unknown'];
+            $current  = $severityRank[$activeStatus] ?? PHP_INT_MAX;
+            if ($rank < $current) {
+                $activeStatus = $impact;
             }
 
             $incidents[] = [
@@ -1119,10 +1134,22 @@ class Lousy_Outages_Fetcher {
             }
         }
 
-        $status  = $recent ? $activeStatus : 'operational';
-        $message = $recent ? ('Recent incident: ' . $recent[0]['title']) : 'No active incidents in the last 24 hours.';
+        if (!$active) {
+            return $this->build_tile($slug, $config, 'operational', 'All systems operational', '', [], $httpStatus ?: 200, [
+                'fetched_at' => $feedFetchedAt,
+            ]);
+        }
 
-        return $this->build_tile($slug, $config, $status, $message, $incidents, $httpStatus ?: 200, [
+        $lead = $active[0];
+        $summary = '';
+        if (!empty($lead['timestamp'])) {
+            $summaryTime = $this->format_local_time((int) $lead['timestamp']);
+            if ($summaryTime) {
+                $summary = 'Updated ' . $summaryTime;
+            }
+        }
+
+        return $this->build_tile($slug, $config, $activeStatus, $lead['title'], $summary, $incidents, $httpStatus ?: 200, [
             'fetched_at' => $feedFetchedAt,
         ]);
     }
@@ -1130,7 +1157,7 @@ class Lousy_Outages_Fetcher {
     private function fetch_scrape(string $slug, array $config, array &$cache): array {
         $url = (string) ($config['url'] ?? '');
         if ('' === $url) {
-            return $this->build_tile($slug, $config, 'unknown', 'Status page unavailable.', [], 0, ['error' => 'missing_url']);
+            return $this->build_tile($slug, $config, 'unknown', 'Status page unavailable.', '', [], 0, ['error' => 'missing_url']);
         }
         $request = $this->request_with_cache($slug, $cache, 'scrape', $url);
         if (!empty($request['error'])) {
@@ -1143,12 +1170,12 @@ class Lousy_Outages_Fetcher {
             $headline = 'Unable to read status headline.';
         }
         $status = (stripos($headline, 'running smoothly') !== false) ? 'operational' : 'degraded';
-        return $this->build_tile($slug, $config, $status, $headline, [], (int) $request['status'], [
+        return $this->build_tile($slug, $config, $status, $headline, '', [], (int) $request['status'], [
             'fetched_at' => $scrapeFetchedAt,
         ]);
     }
 
-    private function build_tile(string $slug, array $config, string $status, string $message, array $incidents, int $http_code, array $extra): array {
+    private function build_tile(string $slug, array $config, string $status, string $message, string $summary, array $incidents, int $http_code, array $extra): array {
         $status = strtolower($status ?: 'unknown');
         if (!isset(self::STATUS_LABELS[$status])) {
             $status = 'unknown';
@@ -1173,6 +1200,11 @@ class Lousy_Outages_Fetcher {
             ];
         }
 
+        $summary_text = $summary;
+        if (array_key_exists('summary', $extra)) {
+            $summary_text = (string) $extra['summary'];
+        }
+
         $tile = [
             'id'           => $slug,
             'provider'     => $slug,
@@ -1183,7 +1215,7 @@ class Lousy_Outages_Fetcher {
             'status_class' => self::STATUS_CLASSES[$status],
             'overall'      => $status,
             'message'      => $this->clean_string($message),
-            'summary'      => $this->clean_string($message),
+            'summary'      => $this->clean_string($summary_text),
             'incidents'    => $normalizedIncidents,
             'components'   => [],
             'fetched_at'   => $fetchedAt,
@@ -1219,7 +1251,7 @@ class Lousy_Outages_Fetcher {
             $display = 'Status temporarily unavailable.';
         }
 
-        return $this->build_tile($slug, $config, 'unknown', $display, [], $http, $extra);
+        return $this->build_tile($slug, $config, 'unknown', $display, '', [], $http, $extra);
     }
 
     private function should_suppress_http_error(int $code, string $message): bool {
@@ -1541,14 +1573,33 @@ class Lousy_Outages_Fetcher {
     private function default_message(string $status): string {
         switch ($status) {
             case 'operational':
-                return 'All systems operational.';
+                return 'All systems operational';
             case 'degraded':
-                return 'Service degradation detected.';
+                return 'Service degradation detected';
             case 'major':
-                return 'Major outage detected.';
+                return 'Major outage detected';
             default:
-                return 'Status unavailable.';
+                return 'Status unavailable';
         }
+    }
+
+    private function format_incident_summary(array $incident): string {
+        $status = isset($incident['status']) ? (string) $incident['status'] : '';
+        $statusLabel = $status ? ucwords(str_replace('_', ' ', $status)) : 'Incident';
+        $updated = $this->format_local_time($incident['updated_at'] ?? ($incident['started_at'] ?? ''));
+        return trim($statusLabel . ($updated ? ' • Updated ' . $updated : ''));
+    }
+
+    private function format_local_time($value): string {
+        if (empty($value)) {
+            return '';
+        }
+        $timestamp = is_numeric($value) ? (int) $value : strtotime((string) $value);
+        if (!$timestamp) {
+            return '';
+        }
+        $format = get_option('date_format') . ' ' . get_option('time_format');
+        return wp_date($format, $timestamp);
     }
 
     private function clean_string($value): string {
