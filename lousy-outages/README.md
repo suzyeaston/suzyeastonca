@@ -22,13 +22,9 @@ Monitor third‑party service status and get SMS and email alerts when things br
 | aws | AWS | https://status.aws.amazon.com/rss/all.rss |
 | azure | Azure | https://azurestatuscdn.azureedge.net/en-us/status/feed/ |
 | gcp | Google Cloud | https://www.google.com/appsstatus/dashboard/en-CA/feed.atom |
-| downdetector-ca | Downdetector (CA Aggregate) | https://downdetector.ca/archive/?format=rss |
 
 Zscaler is queried from `https://trust.zscaler.com` to dodge intermittent DNS failures. New default providers include TeamViewer, Linear, and Sentry—toggle any of them from **Settings → Lousy Outages**.
 
-Downdetector is disabled by default because the RSS feed is unofficial and can disappear; enable it from the settings page if it loads for you. When the feed is unreachable, the adapter reports an `unknown` state with an error badge rather than failing the whole poll.
-
-When enabled, downdetector trends are folded into the early-warning engine. If Downdetector publishes fresh reports for a service, the dashboard raises the provider’s risk score, surfaces the headlines in the card UI, and pushes a `[EARLY WARNING]` item into the RSS feed for quick triage.
 
 To add or remove a provider, edit `includes/Providers.php` or use the checkboxes under **Settings → Lousy Outages** in wp-admin.
 

@@ -471,7 +471,6 @@ function render_shortcode(): string {
                 <strong data-lo-trending-text>Potential widespread issues detected — check affected providers</strong>
                 <span class="lo-trending__reasons" data-lo-trending-reasons<?php echo $trending_signals ? '' : ' hidden'; ?>><?php echo esc_html($trending_signals ? 'Signals: ' . implode(', ', array_slice($trending_signals, 0, 6)) : ''); ?></span>
             </div>
-            <a class="lo-link" href="https://downdetector.com/" target="_blank" rel="noopener">Downdetector →</a>
         </div>
         <?php endif; ?>
         <?php echo render_subscribe_shortcode(); ?>
@@ -571,6 +570,17 @@ function render_shortcode(): string {
                     <?php endif; ?>
                 </article>
             <?php endforeach; ?>
+            <article class="lo-card lo-card--external" data-provider-id="external-signals">
+                <div class="lo-head">
+                    <h3 class="lo-title">External signals</h3>
+                </div>
+                <p class="lo-summary">Quick links to community chatter and third-party status hints.</p>
+                <ul class="lo-links">
+                    <li><a class="lo-link" href="https://downdetector.com/" target="_blank" rel="noopener">Downdetector</a></li>
+                    <li><a class="lo-link" href="https://x.com/search?q=outage" target="_blank" rel="noopener">Twitter/X search</a></li>
+                    <li><a class="lo-link" href="https://www.reddit.com/r/sysadmin/" target="_blank" rel="noopener">Reddit r/sysadmin</a></li>
+                </ul>
+            </article>
         </div>
     </div>
     <?php

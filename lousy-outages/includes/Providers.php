@@ -108,8 +108,6 @@ class Providers {
             ],
             ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://rssfeed.azure.status.microsoft/en-us/status/feed/'],
             ['id' => 'gcp', 'name' => 'Google Cloud', 'type' => 'atom', 'url' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom'],
-            // Optional aggregate (disabled by default in settings)
-            ['id' => 'downdetector-ca', 'name' => 'Downdetector (CA Aggregate)', 'type' => 'rss', 'url' => 'https://downdetector.ca/archive/?format=rss', 'disabled' => true, 'optional' => true],
         ];
     }
 
