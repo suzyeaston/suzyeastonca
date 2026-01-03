@@ -36,11 +36,21 @@ get_header();
                 <p class="hero-copy"><?php echo esc_html($hero_copy); ?></p>
             </div>
             <div class="hero-side hero-photo-card">
-                <p class="hero-side-header">Feature photo</p>
+                <p class="hero-side-header">
+                    <a class="hero-photo-link" href="<?php echo esc_url(home_url('/bio/')); ?>">
+                        <?php echo esc_html('About Suzy'); ?>
+                    </a>
+                </p>
                 <div class="hero-photo-frame">
-                    <img class="hero-photo" src="<?php echo esc_url(home_url('/wp-content/uploads/2026/01/IMG_9003.jpg')); ?>" alt="Suzanne (Suzy) Easton in a retro-styled portrait" loading="lazy" decoding="async">
+                    <a class="hero-photo-link hero-photo-link-block" href="<?php echo esc_url(home_url('/bio/')); ?>">
+                        <img class="hero-photo" src="<?php echo esc_url(home_url('/wp-content/uploads/2026/01/IMG_9003.jpg')); ?>" alt="<?php echo esc_attr('Suzy Easton smiling with a guitar'); ?>" loading="lazy" decoding="async">
+                    </a>
                 </div>
-                <p class="hero-photo-caption pixel-font">Vancouver, BC</p>
+                <p class="hero-photo-caption pixel-font">
+                    <a class="hero-photo-link" href="<?php echo esc_url(home_url('/bio/')); ?>">
+                        <?php echo esc_html('Vancouver, BC / Read bio →'); ?>
+                    </a>
+                </p>
             </div>
         </div>
         <section class="lo-callout lo-8bit">
