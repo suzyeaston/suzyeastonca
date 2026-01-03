@@ -35,6 +35,13 @@ get_header();
                 </div>
                 <p class="hero-copy"><?php echo esc_html($hero_copy); ?></p>
             </div>
+            <div class="hero-side hero-photo-card">
+                <p class="hero-side-header">Feature photo</p>
+                <div class="hero-photo-frame">
+                    <img class="hero-photo" src="https://www.suzyeaston.ca/wp-content/uploads/2026/01/IMG_9003.jpg" alt="Suzanne (Suzy) Easton in a retro-styled portrait" loading="lazy" decoding="async">
+                </div>
+                <p class="hero-photo-caption pixel-font">Vancouver, BC</p>
+            </div>
         </div>
         <section class="lo-callout lo-8bit">
           <h2>LOUSY OUTAGES<br><span>LIVE STATUS DASHBOARD</span></h2>
