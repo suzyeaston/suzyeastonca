@@ -47,7 +47,7 @@ class Summary {
             'hasIncident' => false,
             'providerId'  => '',
             'provider'    => '',
-            'title'       => 'All systems operational',
+            'title'       => 'All systems operational.',
             'status'      => 'Operational',
             'relative'    => '',
             'started_at'  => '',

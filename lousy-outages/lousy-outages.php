@@ -267,7 +267,7 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
             error_log( '[LO] fetch failed: ' . $e->getMessage() );
             $state = [
                 'status'      => 'unknown',
-                'summary'     => 'Status unavailable',
+                'summary'     => 'Status temporarily unavailable.',
                 'error'       => 'exception:' . $e->getMessage(),
                 'incidents'   => [],
                 'url'         => $provider['status_url'] ?? '',
@@ -1098,6 +1098,7 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
     $label      = Fetcher::status_label( $status );
     $updated_at = ! empty( $state['updated_at'] ) ? (string) $state['updated_at'] : $fetched_at;
     $incidents  = [];
+    $recent_incidents = [];
     $prealert   = [];
     if ( isset( $state['prealert'] ) && is_array( $state['prealert'] ) ) {
         $prealert = $state['prealert'];
@@ -1127,12 +1128,30 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
         }
     }
 
+    // LO: Split active vs recent incidents so resolved history never drives badges or sorting.
     if ( ! empty( $state['incidents'] ) && is_array( $state['incidents'] ) ) {
         foreach ( $state['incidents'] as $incident ) {
             if ( ! is_array( $incident ) ) {
                 continue;
             }
             $incidents[] = [
+                'id'        => (string) ( $incident['id'] ?? md5( $id . wp_json_encode( $incident ) ) ),
+                'title'     => $incident['title'] ?? 'Incident',
+                'summary'   => $incident['summary'] ?? '',
+                'startedAt' => $incident['started_at'] ?? '',
+                'updatedAt' => $incident['updated_at'] ?? '',
+                'impact'    => $incident['impact'] ?? 'minor',
+                'eta'       => $incident['eta'] ?? 'investigating',
+                'url'       => $incident['url'] ?? ( $state['url'] ?? '' ),
+            ];
+        }
+    }
+    if ( ! empty( $state['recent_incidents'] ) && is_array( $state['recent_incidents'] ) ) {
+        foreach ( $state['recent_incidents'] as $incident ) {
+            if ( ! is_array( $incident ) ) {
+                continue;
+            }
+            $recent_incidents[] = [
                 'id'        => (string) ( $incident['id'] ?? md5( $id . wp_json_encode( $incident ) ) ),
                 'title'     => $incident['title'] ?? 'Incident',
                 'summary'   => $incident['summary'] ?? '',
@@ -1161,6 +1180,7 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
         'url'        => $url,
         'snark'      => $state['snark'] ?? '',
         'incidents'  => $incidents,
+        'recentIncidents' => $recent_incidents,
         'error'      => $state['error'] ?? null,
         'risk'       => $risk,
         'prealert'   => $prealert,

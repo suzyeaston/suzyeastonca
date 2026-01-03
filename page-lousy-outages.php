@@ -46,7 +46,7 @@ if ($unsub_success) {
 ?>
 
 <main class="lousy-outages-page">
-  <div class="lousy-outages-root lo-theme-dark">
+  <div class="lousy-outages-root">
     <div class="lo-atmosphere">
       <h1 class="retro-title glow-lite">Lousy Outages</h1>
       <p class="lo-atmosphere__lede">Retro radar for when the internet goes sideways.</p>

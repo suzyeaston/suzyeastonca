@@ -36,7 +36,7 @@ if ( ! class_exists('LO_Incident') ) {
             return new self(
                 $provider,
                 self::make_id($provider, 'operational', $now),
-                'All systems operational',
+                'All systems operational.',
                 'operational',
                 $url,
                 null,

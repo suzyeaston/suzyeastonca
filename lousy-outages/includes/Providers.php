@@ -95,8 +95,9 @@ class Providers {
             [
                 'id'         => 'slack',
                 'name'       => 'Slack',
-                'type'       => 'rss',
-                'url'        => 'https://slack-status.com/feed/rss',
+                // LO: Use the current-status endpoint for live state; RSS is only for history.
+                'type'       => 'slack_current',
+                'url'        => 'https://status.slack.com/api/v2.0.0/current',
                 'status_url' => 'https://status.slack.com/',
             ],
             [

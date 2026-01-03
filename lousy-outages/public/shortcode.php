@@ -316,8 +316,8 @@ function render_shortcode(): string {
         $status_slug = $is_operational_placeholder ? 'operational' : 'unknown';
         $status_label = $is_operational_placeholder ? $placeholder_label : 'UNKNOWN';
         $status_class = $is_operational_placeholder ? 'status--operational' : 'status--unknown';
-        $summary_text = $is_operational_placeholder ? '' : 'Status unavailable';
-        $message_text = $is_operational_placeholder ? 'All systems operational' : 'Status unavailable';
+        $summary_text = $is_operational_placeholder ? '' : 'Status temporarily unavailable.';
+        $message_text = $is_operational_placeholder ? 'All systems operational.' : 'Status temporarily unavailable.';
 
         $ordered_tiles[] = [
             'id'           => $slug,
@@ -347,8 +347,8 @@ function render_shortcode(): string {
             $status_slug = $is_operational_placeholder ? 'operational' : 'unknown';
             $status_label = $is_operational_placeholder ? $placeholder_label : 'UNKNOWN';
             $status_class = $is_operational_placeholder ? 'status--operational' : 'status--unknown';
-            $summary_text = $is_operational_placeholder ? '' : 'Status unavailable';
-            $message_text = $is_operational_placeholder ? 'All systems operational' : 'Status unavailable';
+            $summary_text = $is_operational_placeholder ? '' : 'Status temporarily unavailable.';
+            $message_text = $is_operational_placeholder ? 'All systems operational.' : 'Status temporarily unavailable.';
 
             $ordered_tiles[] = [
                 'provider'     => $slug,
@@ -448,7 +448,7 @@ function render_shortcode(): string {
     $trending_generated = isset($initial_trending['generated_at']) ? (string) $initial_trending['generated_at'] : '';
     ?>
     <div
-        class="lousy-outages lo-theme-dark"
+        class="lousy-outages"
         data-lo-endpoint="<?php echo esc_url($config['endpoint']); ?>"
         data-lo-source="<?php echo esc_attr($source); ?>"
         data-lo-snapshot="<?php echo esc_url($config['snapshotEndpoint'] ?? $snapshot_endpoint); ?>"
@@ -579,9 +579,9 @@ function render_shortcode(): string {
                             $lead_incident = $active_incidents[0]['name'] ?? ($active_incidents[0]['title'] ?? ($active_incidents[0]['summary'] ?? 'Incident'));
                             $message_text = $lead_incident;
                         } elseif ($status === 'operational') {
-                            $message_text = 'All systems operational';
+                            $message_text = 'All systems operational.';
                         } elseif ($status === 'unknown') {
-                            $message_text = 'Status unknown.';
+                            $message_text = 'Status temporarily unavailable.';
                         } else {
                             $message_text = $summary_text ?: ($label ?: 'Status update');
                         }

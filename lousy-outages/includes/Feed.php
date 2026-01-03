@@ -357,7 +357,7 @@ class Feed {
 
         if (empty($items)) {
             $items[] = self::make_item(
-                'All systems operational',
+                'All systems operational.',
                 'lousy-outages',
                 $fallback_time,
                 'No active incidents detected across monitored providers.',

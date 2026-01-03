@@ -350,8 +350,10 @@ class Fetcher {
     private function assemble_result(array $defaults, array $normalized, array $provider): array {
         $state   = strtolower((string) ($normalized['state'] ?? 'unknown'));
         $status  = $this->normalize_status_code($state);
-        $incidents = $this->normalize_incidents($normalized['incidents'] ?? [], $provider, $status);
-        $summary   = $this->summarize($normalized, $incidents, $status);
+        $incidentBuckets = $this->normalize_incident_buckets($normalized['incidents'] ?? [], $provider, $status);
+        $incidents       = $incidentBuckets['active'];
+        $recentIncidents = $incidentBuckets['recent'];
+        $summary         = $this->summarize($normalized, $incidents, $status);
 
         $result = $defaults;
         $result['status']       = $status;
@@ -359,6 +361,7 @@ class Fetcher {
         $result['summary']      = $summary;
         $result['message']      = $summary;
         $result['incidents']    = $incidents;
+        $result['recent_incidents'] = $recentIncidents;
         $result['state']        = $state;
         $result['raw']          = $normalized['raw'] ?? null;
 
@@ -373,28 +376,31 @@ class Fetcher {
 
     private function summarize(array $normalized, array $incidents, string $status): string {
         $summary = '';
-        if (isset($normalized['summary'])) {
-            $summary = $this->sanitize((string) $normalized['summary']);
-        }
         if (! $summary && ! empty($incidents)) {
             $summary = $incidents[0]['title'] ?? ($incidents[0]['summary'] ?? '');
         }
         if (! $summary) {
+            if ('operational' === $status) {
+                $summary = 'All systems operational.';
+            } elseif ('unknown' === $status) {
+                $summary = 'Status temporarily unavailable.';
+            } elseif (isset($normalized['summary'])) {
+                $summary = $this->sanitize((string) $normalized['summary']);
+            }
+        }
+        if (! $summary) {
             switch ($status) {
-                case 'operational':
-                    $summary = 'All systems operational';
-                    break;
                 case 'degraded':
-                    $summary = 'Service degradation reported';
+                    $summary = 'Service degradation reported.';
                     break;
                 case 'outage':
-                    $summary = 'Major outage reported';
+                    $summary = 'Major outage reported.';
                     break;
                 case 'maintenance':
-                    $summary = 'Maintenance in progress';
+                    $summary = 'Maintenance in progress.';
                     break;
                 default:
-                    $summary = 'Status unavailable';
+                    $summary = 'Status temporarily unavailable.';
                     break;
             }
         }
@@ -402,8 +408,9 @@ class Fetcher {
         return $this->sanitize($summary);
     }
 
-    private function normalize_incidents(array $incidents, array $provider, string $status): array {
-        $out            = [];
+    private function normalize_incident_buckets(array $incidents, array $provider, string $status): array {
+        $active         = [];
+        $recent         = [];
         $historyCutoff  = time() - (35 * DAY_IN_SECONDS);
         foreach ($incidents as $incident) {
             if (! is_array($incident)) {
@@ -411,7 +418,8 @@ class Fetcher {
             }
 
             $rawStatus = strtolower((string) ($incident['status'] ?? ''));
-            if (in_array($rawStatus, ['resolved', 'completed', 'postmortem'], true)) {
+            $isResolved = in_array($rawStatus, ['resolved', 'completed', 'postmortem'], true);
+            if (! $isResolved && in_array($rawStatus, ['unknown', ''], true) && empty($incident['impact'])) {
                 continue;
             }
 
@@ -442,6 +450,9 @@ class Fetcher {
             if ($maint) {
                 $impact = 'maintenance';
             }
+            if ($isResolved) {
+                $impact = 'operational';
+            }
 
             $url = '';
             if (! empty($incident['url']) && is_string($incident['url'])) {
@@ -452,7 +463,7 @@ class Fetcher {
                 $url = $provider['status_url'];
             }
 
-            $out[] = [
+            $entry = [
                 'id'         => (string) ($incident['id'] ?? md5(wp_json_encode($incident))),
                 'title'      => $title ?: 'Incident',
                 'summary'    => $summary,
@@ -463,9 +474,19 @@ class Fetcher {
                 'eta'        => $this->sanitize($incident['eta'] ?? ''),
                 'url'        => $url,
             ];
+
+            if ($isResolved) {
+                $recent[] = $entry;
+                continue;
+            }
+
+            $active[] = $entry;
         }
 
-        return array_slice($out, 0, 10);
+        return [
+            'active' => array_slice($active, 0, 10),
+            'recent' => array_slice($recent, 0, 10),
+        ];
     }
 
     private function maybe_retry_ipv4(array $response, string $endpoint, array $headers): array {
@@ -954,11 +975,10 @@ class Lousy_Outages_Fetcher {
                     $message = $lead['name'] ?? 'Incident';
                     $summary = $this->format_incident_summary($lead);
                 } else {
-                    $status = 'operational';
-                    if ($this->is_no_incidents_message($message)) {
+                    if ('operational' === $status || $this->is_no_incidents_message($message)) {
                         $message = 'All systems operational.';
-                    } else {
-                        $message = 'All systems operational.';
+                    } elseif ('unknown' === $status) {
+                        $message = 'Status temporarily unavailable.';
                     }
                 }
 
@@ -994,7 +1014,7 @@ class Lousy_Outages_Fetcher {
             }
         }
 
-        $message = $statusCode ? sprintf('HTTP %d fetching status.', $statusCode) : 'Status unavailable.';
+        $message = $statusCode ? sprintf('HTTP %d fetching status.', $statusCode) : 'Status temporarily unavailable.';
         $extra = [
             'fetched_at' => $summaryFetchedAt,
         ];
@@ -1431,16 +1451,16 @@ class Lousy_Outages_Fetcher {
     }
 
     private function infer_incident_status(string $text): string {
+        if (preg_match('/\bresolved\b|this issue is now resolved|issue is now resolved|issue has been resolved|ended at|postmortem/i', $text)) {
+            return 'operational';
+        }
         if (preg_match('/\b(scheduled|planned).{0,40}maintenance\b/i', $text)) {
             return 'maintenance';
-        }
-        if (preg_match('/\b(operational|restored|resolved)\b/i', $text)) {
-            return 'operational';
         }
         if (preg_match('/\b(major|critical|outage)\b/i', $text)) {
             return 'major_outage';
         }
-        if (preg_match('/\b(connectivity|incident|degraded|partial)\b/i', $text)) {
+        if (preg_match('/\b(degraded|partial|service disruption|connectivity)\b/i', $text)) {
             return 'degraded';
         }
         if (false !== strpos($text, 'investigat')) {
@@ -1622,7 +1642,7 @@ class Lousy_Outages_Fetcher {
             case 'major':
                 return 'Major outage detected';
             default:
-                return 'Status unavailable';
+                return 'Status temporarily unavailable.';
         }
     }
 
