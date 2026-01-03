@@ -21,7 +21,6 @@
   var RECOVER_THRESHOLD = 0.7;
   var MANUAL_REFRESH_RETRY_DELAY = 1500;
   var MANUAL_REFRESH_MAX_ATTEMPTS = 4;
-  var THEME_STORAGE_KEY = 'lo-theme-preference';
   var VISIBILITY_STORAGE_KEY = 'lo-visible-providers';
   var HISTORY_LIMIT = 80;
   var HISTORY_RENDER_LIMIT = 12;
@@ -72,7 +71,6 @@
     trendingBanner: null,
     trendingText: null,
     trendingReasons: null,
-    themeToggle: null,
     exportCSVButton: null,
     exportPDFButton: null,
     providerToggles: [],
@@ -182,74 +180,6 @@
     return url + separator + key + '=' + encodeURIComponent(value);
   }
 
-  function getStoredTheme() {
-    if (!state.root || !state.root.localStorage) {
-      return null;
-    }
-    try {
-      return state.root.localStorage.getItem(THEME_STORAGE_KEY);
-    } catch (err) {
-      return null;
-    }
-  }
-
-  function storeTheme(theme) {
-    if (!state.root || !state.root.localStorage) {
-      return;
-    }
-    try {
-      state.root.localStorage.setItem(THEME_STORAGE_KEY, theme);
-    } catch (err) {
-      // Ignore storage errors (private mode, etc.).
-    }
-  }
-
-  function clearStoredTheme() {
-    if (!state.root || !state.root.localStorage) {
-      return;
-    }
-    try {
-      state.root.localStorage.removeItem(THEME_STORAGE_KEY);
-    } catch (err) {
-      // Ignore storage errors.
-    }
-  }
-
-  function updateThemeToggleLabel(theme) {
-    if (!state.themeToggle) {
-      return;
-    }
-    var isLight = theme === 'light';
-    var next = isLight ? 'dark' : 'light';
-    state.themeToggle.textContent = isLight ? 'Switch to dark mode' : 'Switch to light mode';
-    state.themeToggle.setAttribute('aria-pressed', isLight ? 'true' : 'false');
-    state.themeToggle.setAttribute('aria-label', 'Switch to ' + next + ' mode');
-  }
-
-  function applyTheme(theme, persist) {
-    if (!state.container || !state.container.classList) {
-      return;
-    }
-    var desired = theme === 'light' ? 'light' : 'dark';
-    var className = desired === 'light' ? 'lo-theme-light' : 'lo-theme-dark';
-    var targets = [state.container];
-
-    if (!state.container.classList.contains('lousy-outages') && state.container.querySelector) {
-      var nested = state.container.querySelector('.lousy-outages');
-      if (nested && nested.classList) {
-        targets.push(nested);
-      }
-    }
-
-    for (var i = 0; i < targets.length; i += 1) {
-      targets[i].classList.remove('lo-theme-light', 'lo-theme-dark');
-      targets[i].classList.add(className);
-    }
-    updateThemeToggleLabel(desired);
-    if (persist) {
-      storeTheme(desired);
-    }
-  }
 
   function loadVisibleProviders() {
     if (!state.root || !state.root.localStorage) {
@@ -386,37 +316,6 @@
     applyProviderVisibility();
   }
 
-  function handleSystemThemeChange(event) {
-    if (getStoredTheme()) {
-      return;
-    }
-    applyTheme(event.matches ? 'light' : 'dark', false);
-  }
-
-  function initThemePreference() {
-    var stored = getStoredTheme();
-    var preferred = stored;
-
-    if (state.root && state.root.matchMedia) {
-      state.mediaQuery = state.root.matchMedia('(prefers-color-scheme: light)');
-      if (!preferred) {
-        preferred = state.mediaQuery.matches ? 'light' : 'dark';
-      }
-      if (state.mediaQuery.addEventListener) {
-        state.mediaQuery.addEventListener('change', handleSystemThemeChange);
-      } else if (state.mediaQuery.addListener) {
-        state.mediaQuery.addListener(handleSystemThemeChange);
-      }
-    }
-
-    applyTheme(preferred || 'dark', Boolean(stored));
-  }
-
-  function toggleTheme() {
-    var isLight = state.container && state.container.classList.contains('lo-theme-light');
-    var next = isLight ? 'dark' : 'light';
-    applyTheme(next, true);
-  }
 
   function getText(target, selector) {
     if (!target) {
@@ -883,6 +782,32 @@
     return provider.summary || provider.message || '';
   }
 
+  function getStatusLine(provider, normalized, providerSlug) {
+    var summaryText = getSummaryText(provider);
+    var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+    var hasIncidents = incidents.length > 0;
+    var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
+    var hasUnavailableSummary = summaryText && /temporarily unavailable/i.test(summaryText);
+    var hasError = !!provider.error || hasUnavailableSummary;
+
+    if (hasError) {
+      return hasUnavailableSummary ? summaryText : 'Status temporarily unavailable.';
+    }
+    if (hasIncidents) {
+      var lead = incidents[0];
+      var incidentTitle = lead && (lead.name || lead.title || lead.summary) ? (lead.name || lead.title || lead.summary) : 'Incident';
+      var condensed = condenseIncidentTitle(providerSlug, incidentTitle);
+      return 'Incident: ' + (condensed.text || 'Incident');
+    }
+    if (statusInfo.code === 'operational') {
+      return 'All systems operational.';
+    }
+    if (statusInfo.code === 'unknown') {
+      return 'Status unknown.';
+    }
+    return summaryText || statusInfo.label || 'Status unknown.';
+  }
+
   function condenseIncidentTitle(providerSlug, text) {
     var raw = String(text || '').replace(/\s+/g, ' ').trim();
     if (!raw) {
@@ -927,7 +852,7 @@
     }
     var summary = card.querySelector('.provider-card__summary');
     if (summary) {
-      summary.textContent = getSummaryText(provider);
+      summary.textContent = getStatusLine(provider, normalized, providerSlug);
     }
     var snark = card.querySelector('.provider-card__snark');
     if (snark) {
@@ -938,9 +863,11 @@
       clearChildren(incidentsWrap);
       incidentsWrap.textContent = '';
       var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
-      if (!incidents.length) {
-        incidentsWrap.textContent = 'No active incidents. Go write a chorus.';
+      var hasError = !!provider.error || (/temporarily unavailable/i.test(getSummaryText(provider)) && !(provider.incidents || []).length);
+      if (!incidents.length || hasError) {
+        incidentsWrap.setAttribute('hidden', 'hidden');
       } else if (state.doc && typeof state.doc.createElement === 'function') {
+        incidentsWrap.removeAttribute('hidden');
         incidents.forEach(function (incident) {
           var item = state.doc.createElement('p');
           var impact = incident.impact ? String(incident.impact).replace(/^[a-z]/, function (c) { return c.toUpperCase(); }) : 'Unknown';
@@ -973,7 +900,7 @@
     }
     var summary = card.querySelector('[data-lo-summary]');
     if (summary) {
-      summary.textContent = getSummaryText(provider);
+      summary.textContent = getStatusLine(provider, normalized, providerSlug);
     }
     var error = card.querySelector('[data-lo-error]');
     if (error) {
@@ -1022,12 +949,11 @@
     if (incidentsWrap) {
       incidentsWrap.innerHTML = '';
       var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
-      if (!incidents.length) {
-        var empty = state.doc.createElement('p');
-        empty.className = 'lo-empty';
-        empty.textContent = 'No active incidents.';
-        incidentsWrap.appendChild(empty);
+      var hasError = !!provider.error || /temporarily unavailable/i.test(getSummaryText(provider));
+      if (!incidents.length || hasError) {
+        incidentsWrap.setAttribute('hidden', 'hidden');
       } else {
+        incidentsWrap.removeAttribute('hidden');
         var ul = state.doc.createElement('ul');
         ul.className = 'lo-inc-list';
         incidents.forEach(function (incident) {
@@ -2733,7 +2659,6 @@
     state.trendingBanner = state.container.querySelector('[data-lo-trending]');
     state.trendingText = state.container.querySelector('[data-lo-trending-text]');
     state.trendingReasons = state.container.querySelector('[data-lo-trending-reasons]');
-    state.themeToggle = state.container.querySelector('[data-lo-theme-toggle]');
     state.exportCSVButton = state.container.querySelector('[data-lo-export-csv]');
     state.exportPDFButton = state.container.querySelector('[data-lo-export-pdf]');
     state.loadingEl = state.container.querySelector('[data-lo-loading]');
@@ -2812,16 +2737,12 @@
     }
     updateTrendingBanner(initialTrending || { trending: false, signals: [] });
 
-    initThemePreference();
     initProviderVisibility();
 
     if (state.refreshButton) {
       state.refreshButton.addEventListener('click', manualRefresh);
     }
 
-    if (state.themeToggle) {
-      state.themeToggle.addEventListener('click', toggleTheme);
-    }
 
     if (state.exportCSVButton) {
       state.exportCSVButton.addEventListener('click', downloadCSV);

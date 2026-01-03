@@ -428,7 +428,7 @@ function render_shortcode(): string {
     $trending_generated = isset($initial_trending['generated_at']) ? (string) $initial_trending['generated_at'] : '';
     ?>
     <div
-        class="lousy-outages"
+        class="lousy-outages lo-theme-dark"
         data-lo-endpoint="<?php echo esc_url($config['endpoint']); ?>"
         data-lo-source="<?php echo esc_attr($source); ?>"
         data-lo-snapshot="<?php echo esc_url($config['snapshotEndpoint'] ?? $snapshot_endpoint); ?>"
@@ -443,7 +443,6 @@ function render_shortcode(): string {
                 </span>
                 <span class="lo-pill lo-pill--degraded" data-lo-degraded hidden>Auto-refresh degraded</span>
                 <button type="button" class="lo-link" data-lo-refresh>Refresh now</button>
-                <button type="button" class="lo-link" data-lo-theme-toggle aria-pressed="false">Switch to light mode</button>
                 <button type="button" class="lo-link" data-lo-export-csv>Export CSV</button>
                 <button type="button" class="lo-link" data-lo-export-pdf>Save PDF</button>
                 <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
@@ -539,20 +538,6 @@ function render_shortcode(): string {
                         }
                     )
                 );
-                $resolved_incidents = array_values(
-                    array_filter(
-                        $incidents,
-                        static function ($incident) use ($resolved_states): bool {
-                            if (!is_array($incident)) {
-                                return false;
-                            }
-                            $status = strtolower((string) ($incident['status'] ?? ''));
-                            return in_array($status, $resolved_states, true);
-                        }
-                    )
-                );
-                $show_resolved = empty($active_incidents) && !empty($resolved_incidents);
-                $display_incidents = $active_incidents ?: ($show_resolved ? [reset($resolved_incidents)] : []);
                 ?>
                 <article class="lo-card" data-provider-id="<?php echo esc_attr($slug ?: 'provider'); ?>">
                     <div class="lo-head">
@@ -561,9 +546,17 @@ function render_shortcode(): string {
                     </div>
                     <p class="lo-error" data-lo-error<?php echo empty($tile['error']) ? ' hidden' : ''; ?>><?php echo esc_html((string) ($tile['error'] ?? '')); ?></p>
                     <?php
-                    $summary_text = isset($tile['summary']) && '' !== trim((string) $tile['summary'])
-                        ? (string) $tile['summary']
-                        : 'Status unavailable — awaiting live data.';
+                    $summary_text = (string) ($tile['summary'] ?? '');
+                    if (!empty($tile['error'])) {
+                        $summary_text = 'Status temporarily unavailable.';
+                    } elseif (!empty($active_incidents)) {
+                        $lead_incident = $active_incidents[0]['name'] ?? ($active_incidents[0]['title'] ?? ($active_incidents[0]['summary'] ?? 'Incident'));
+                        $summary_text = 'Incident: ' . $lead_incident;
+                    } elseif ($status === 'operational') {
+                        $summary_text = 'All systems operational.';
+                    } elseif ($status === 'unknown' || '' === trim($summary_text)) {
+                        $summary_text = 'Status unknown.';
+                    }
                     ?>
                     <p class="lo-summary" data-lo-summary><?php echo esc_html($summary_text); ?></p>
                     <div class="lo-components" data-lo-components>
@@ -582,13 +575,10 @@ function render_shortcode(): string {
                             </ul>
                         <?php endif; ?>
                     </div>
-                    <?php if (!empty($display_incidents)) : ?>
+                    <?php if (!empty($active_incidents)) : ?>
                         <div class="lo-inc" data-lo-incidents>
-                            <?php if ($show_resolved) : ?>
-                                <p class="lo-inc-title">Most recent incident (resolved)</p>
-                            <?php endif; ?>
                             <ul class="lo-inc-list">
-                                <?php foreach ($display_incidents as $incident) :
+                                <?php foreach ($active_incidents as $incident) :
                                     $impact  = isset($incident['status']) ? ucfirst((string) $incident['status']) : 'Unknown';
                                     $updated = $format_datetime($incident['updated_at'] ?? null);
                                     $summary = isset($incident['summary']) ? (string) $incident['summary'] : '';
@@ -607,8 +597,6 @@ function render_shortcode(): string {
                                 <?php endforeach; ?>
                             </ul>
                         </div>
-                    <?php elseif (empty($incidents)) : ?>
-                        <p class="lo-empty">No active incidents.</p>
                     <?php endif; ?>
                     <?php if (!empty($tile['url'])) : ?>
                         <a class="lo-status-link" data-lo-status-url href="<?php echo esc_url($tile['url']); ?>" target="_blank" rel="noopener">View status →</a>

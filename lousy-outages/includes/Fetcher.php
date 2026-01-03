@@ -85,15 +85,14 @@ class Fetcher {
 
         $status          = (int) ($response['status'] ?? 0);
         $fallbackSummary = null;
-        $statusFallback  = false;
+        $historyFallback = false;
 
         if (! $response['ok'] && in_array($status, [401, 403, 404], true)) {
             $statuspageStatus = $this->attempt_statuspage_status($provider, $endpoint);
             if ($statuspageStatus) {
-                $response       = $statuspageStatus['response'];
-                $adapterType    = $statuspageStatus['adapter'];
-                $status         = (int) ($response['status'] ?? 0);
-                $statusFallback = true;
+                $response    = $statuspageStatus['response'];
+                $adapterType = $statuspageStatus['adapter'];
+                $status      = (int) ($response['status'] ?? 0);
             }
         }
 
@@ -104,6 +103,7 @@ class Fetcher {
                 $adapterType     = $fallback['adapter'];
                 $fallbackSummary = null;
                 $status          = (int) ($response['status'] ?? 0);
+                $historyFallback = true;
             }
         }
 
@@ -146,9 +146,16 @@ class Fetcher {
         $normalized = $this->adapt_response($adapterType, $body);
         $result     = $this->assemble_result($defaults, $normalized, $provider);
 
-        if ($statusFallback) {
-            $result['summary'] = $this->status_only_summary($result['summary'], $result['status_label']);
-            $result['message'] = $result['summary'];
+        if ($historyFallback) {
+            $result = $this->failed_defaults(
+                $defaults,
+                'status_history_fallback',
+                'Status temporarily unavailable.',
+                'unknown',
+                0,
+                null,
+                'Status history fallback'
+            );
         }
 
         return $result;
@@ -390,19 +397,6 @@ class Fetcher {
                     $summary = 'Status unavailable';
                     break;
             }
-        }
-
-        return $this->sanitize($summary);
-    }
-
-    private function status_only_summary(string $summary, string $label): string {
-        $summary = $this->sanitize($summary);
-        if ('' === $summary) {
-            $summary = $label ? sprintf('Overall status: %s', $label) : 'Overall status reported';
-        }
-
-        if (false === stripos($summary, 'incident')) {
-            $summary .= ' (incidents unavailable)';
         }
 
         return $this->sanitize($summary);
