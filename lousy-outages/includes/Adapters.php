@@ -123,11 +123,27 @@ function from_rss_atom(string $xml): array {
     }
 
     $items = [];
+    $resolve_status = static function (string $title): string {
+        $upper = strtoupper($title);
+        if (false !== strpos($upper, 'RESOLVED')) {
+            return 'resolved';
+        }
+        if (false !== strpos($upper, 'OUTAGE')) {
+            return 'major';
+        }
+        if (false !== strpos($upper, 'SERVICE DISRUPTION')
+            || false !== strpos($upper, 'DEGRADED')
+            || false !== strpos($upper, 'INCIDENT')) {
+            return 'degraded';
+        }
+        return 'investigating';
+    };
     if (isset($feed->channel)) {
         foreach ($feed->channel->item as $item) {
+            $title = (string) ($item->title ?? 'Incident');
             $items[] = [
-                'name'       => (string) ($item->title ?? 'Incident'),
-                'status'     => 'reported',
+                'name'       => $title ?: 'Incident',
+                'status'     => $resolve_status($title),
                 'started_at' => (string) ($item->pubDate ?? ''),
                 'updated_at' => (string) ($item->pubDate ?? ''),
                 'shortlink'  => (string) ($item->link ?? ''),
@@ -135,9 +151,10 @@ function from_rss_atom(string $xml): array {
         }
     } else {
         foreach ($feed->entry as $item) {
+            $title = (string) ($item->title ?? 'Incident');
             $items[] = [
-                'name'       => (string) ($item->title ?? 'Incident'),
-                'status'     => 'reported',
+                'name'       => $title ?: 'Incident',
+                'status'     => $resolve_status($title),
                 'started_at' => (string) ($item->updated ?? ($item->published ?? '')),
                 'updated_at' => (string) ($item->updated ?? ($item->published ?? '')),
                 'shortlink'  => (string) ($item->link['href'] ?? ($item->link ?? '')),
@@ -147,16 +164,52 @@ function from_rss_atom(string $xml): array {
     libxml_clear_errors();
     libxml_use_internal_errors($previous);
 
+    $items = array_map(
+        static function (array $item): array {
+            $timestamp = 0;
+            if (! empty($item['updated_at'])) {
+                $timestamp = strtotime((string) $item['updated_at']) ?: 0;
+            }
+            if (! $timestamp && ! empty($item['started_at'])) {
+                $timestamp = strtotime((string) $item['started_at']) ?: 0;
+            }
+            $item['timestamp'] = $timestamp;
+            return $item;
+        },
+        $items
+    );
+
+    usort(
+        $items,
+        static function (array $a, array $b): int {
+            return (int) ($b['timestamp'] ?? 0) <=> (int) ($a['timestamp'] ?? 0);
+        }
+    );
+
     $items = array_slice($items, 0, 10);
 
-    $recent_threshold = strtotime('-48 hours');
-    $state            = 'operational';
+    $severity = [
+        'major'         => 3,
+        'outage'        => 3,
+        'degraded'      => 2,
+        'investigating' => 1,
+        'reported'      => 1,
+    ];
+    $resolved_states = ['resolved', 'completed', 'postmortem'];
+    $worst = 0;
     foreach ($items as $item) {
-        $ts = strtotime($item['started_at']);
-        if ($ts && $ts >= $recent_threshold) {
-            $state = 'degraded';
-            break;
+        $status = strtolower((string) ($item['status'] ?? ''));
+        if (in_array($status, $resolved_states, true)) {
+            continue;
         }
+        $worst = max($worst, $severity[$status] ?? 1);
+    }
+
+    $state = 'operational';
+    if ($worst >= 3) {
+        $state = 'major';
+    } elseif ($worst >= 1) {
+        $state = 'degraded';
     }
 
     return [

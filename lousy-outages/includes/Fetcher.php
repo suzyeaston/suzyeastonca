@@ -729,7 +729,16 @@ class Lousy_Outages_Fetcher {
         // Switch these to RSS/Atom (per Suzy’s feeds)
         'zscaler'    => ['kind' => 'rss', 'feed' => 'https://trust.zscaler.com/rss-feed', 'link' => 'https://trust.zscaler.com/cloud-status'],
         'slack'      => ['kind' => 'rss', 'feed' => 'https://slack-status.com/feed/rss', 'link' => 'https://status.slack.com'],
-        'gcp'        => ['kind' => 'atom', 'feed' => 'https://www.google.com/appsstatus/dashboard/en-CA/feed.atom', 'link' => 'https://www.google.com/appsstatus/dashboard/'],
+        'google_workspace' => [
+            'kind' => 'rss',
+            'feed' => 'https://www.google.com/appsstatus/rss/en-CA',
+            'link' => 'https://www.google.com/appsstatus/dashboard/',
+        ],
+        'google_cloud' => [
+            'kind' => 'rss',
+            'feed' => 'https://status.cloud.google.com/rss',
+            'link' => 'https://status.cloud.google.com/',
+        ],
         'azure'      => [
             'kind' => 'rss',
             'feed' => [
@@ -760,7 +769,8 @@ class Lousy_Outages_Fetcher {
         'teamviewer' => 'TeamViewer',
         'zscaler'    => 'Zscaler',
         'slack'      => 'Slack',
-        'gcp'        => 'Google Cloud',
+        'google_workspace' => 'Google Workspace',
+        'google_cloud'     => 'Google Cloud',
         'azure'      => 'Microsoft Azure',
         'aws'        => 'Amazon Web Services',
         'crowdstrike'=> 'CrowdStrike',
@@ -1569,4 +1579,3 @@ if (! class_exists('LousyOutages\\Fetcher')) {
 if (! class_exists('LousyOutages\\Lousy_Outages_Fetcher')) {
     class_alias(__NAMESPACE__ . '\\Lousy_Outages_Fetcher', 'LousyOutages\\Lousy_Outages_Fetcher');
 }
-

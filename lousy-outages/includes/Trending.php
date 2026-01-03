@@ -5,7 +5,7 @@ namespace SuzyEaston\LousyOutages;
 
 class Trending
 {
-    private const CLOUD_SLUGS = ['aws', 'azure', 'gcp'];
+    private const CLOUD_SLUGS = ['aws', 'azure', 'google_cloud'];
     private const MAJOR_STATES = ['major', 'outage'];
     private const DEGRADED_STATES = ['degraded', 'major', 'outage'];
 
@@ -132,8 +132,7 @@ class Trending
                 $special = [
                     'aws'   => 'AWS',
                     'azure' => 'Azure',
-                    'gcp'   => 'GCP',
-                    'gcp-json' => 'GCP',
+                    'google_cloud' => 'Google Cloud',
                 ];
                 if (isset($special[$slug])) {
                     return $special[$slug];
@@ -150,4 +149,3 @@ class Trending
         return implode(', ', $labels);
     }
 }
-
