@@ -782,6 +782,39 @@
     return provider.summary || provider.message || '';
   }
 
+  function getMessageText(provider, normalized, providerSlug) {
+    if (!provider) {
+      return '';
+    }
+    var message = String(provider.message || '').trim();
+    var summaryText = String(provider.summary || '').trim();
+    var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+    var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
+    var hasUnavailableSummary = summaryText && /temporarily unavailable/i.test(summaryText);
+    var hasError = !!provider.error || hasUnavailableSummary;
+
+    if (!message) {
+      if (hasError) {
+        return hasUnavailableSummary ? summaryText : 'Status temporarily unavailable.';
+      }
+      if (incidents.length) {
+        var lead = incidents[0];
+        var incidentTitle = lead && (lead.name || lead.title || lead.summary) ? (lead.name || lead.title || lead.summary) : 'Incident';
+        var condensed = condenseIncidentTitle(providerSlug, incidentTitle);
+        return condensed.text || incidentTitle;
+      }
+      if (statusInfo.code === 'operational') {
+        return 'All systems operational';
+      }
+      if (statusInfo.code === 'unknown') {
+        return 'Status unknown.';
+      }
+      return summaryText || statusInfo.label || 'Status unknown.';
+    }
+
+    return message;
+  }
+
   function getStatusLine(provider, normalized, providerSlug) {
     var summaryText = getSummaryText(provider);
     var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
@@ -800,7 +833,7 @@
       return 'Incident: ' + (condensed.text || 'Incident');
     }
     if (statusInfo.code === 'operational') {
-      return 'All systems operational.';
+      return 'All systems operational';
     }
     if (statusInfo.code === 'unknown') {
       return 'Status unknown.';
@@ -898,9 +931,34 @@
       badge.textContent = provider.status_label || normalized.label;
       badge.className = 'lo-pill ' + (provider.status_class || normalized.className);
     }
+    var messageText = getMessageText(provider, normalized, providerSlug);
+    var messageEl = card.querySelector('[data-lo-message]');
+    if (messageEl) {
+      messageEl.textContent = messageText;
+    }
+    var summaryText = String(provider.summary || '').trim();
+    if (summaryText && messageText && summaryText.toLowerCase() === messageText.toLowerCase()) {
+      summaryText = '';
+    }
     var summary = card.querySelector('[data-lo-summary]');
-    if (summary) {
-      summary.textContent = getStatusLine(provider, normalized, providerSlug);
+    if (summaryText) {
+      if (!summary && state.doc) {
+        summary = state.doc.createElement('p');
+        summary.className = 'lo-summary';
+        summary.setAttribute('data-lo-summary', '');
+        if (messageEl && messageEl.parentNode) {
+          messageEl.parentNode.insertBefore(summary, messageEl.nextSibling);
+        } else {
+          card.appendChild(summary);
+        }
+      }
+      if (summary) {
+        summary.textContent = summaryText;
+        summary.removeAttribute('hidden');
+      }
+    } else if (summary) {
+      summary.textContent = '';
+      summary.setAttribute('hidden', 'hidden');
     }
     var error = card.querySelector('[data-lo-error]');
     if (error) {

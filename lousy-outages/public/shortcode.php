@@ -316,8 +316,8 @@ function render_shortcode(): string {
         $status_slug = $is_operational_placeholder ? 'operational' : 'unknown';
         $status_label = $is_operational_placeholder ? $placeholder_label : 'UNKNOWN';
         $status_class = $is_operational_placeholder ? 'status--operational' : 'status--unknown';
-        $summary_text = $is_operational_placeholder ? $placeholder_summary : 'Status unavailable';
-        $message_text = $is_operational_placeholder ? $placeholder_message : 'Status unavailable';
+        $summary_text = $is_operational_placeholder ? '' : 'Status unavailable';
+        $message_text = $is_operational_placeholder ? 'All systems operational' : 'Status unavailable';
 
         $ordered_tiles[] = [
             'id'           => $slug,
@@ -347,8 +347,8 @@ function render_shortcode(): string {
             $status_slug = $is_operational_placeholder ? 'operational' : 'unknown';
             $status_label = $is_operational_placeholder ? $placeholder_label : 'UNKNOWN';
             $status_class = $is_operational_placeholder ? 'status--operational' : 'status--unknown';
-            $summary_text = $is_operational_placeholder ? $placeholder_summary : 'Status unavailable';
-            $message_text = $is_operational_placeholder ? $placeholder_message : 'Status unavailable';
+            $summary_text = $is_operational_placeholder ? '' : 'Status unavailable';
+            $message_text = $is_operational_placeholder ? 'All systems operational' : 'Status unavailable';
 
             $ordered_tiles[] = [
                 'provider'     => $slug,
@@ -546,19 +546,36 @@ function render_shortcode(): string {
                     </div>
                     <p class="lo-error" data-lo-error<?php echo empty($tile['error']) ? ' hidden' : ''; ?>><?php echo esc_html((string) ($tile['error'] ?? '')); ?></p>
                     <?php
-                    $summary_text = (string) ($tile['summary'] ?? '');
+                    $message_text = trim((string) ($tile['message'] ?? ''));
+                    $summary_text = trim((string) ($tile['summary'] ?? ''));
                     if (!empty($tile['error'])) {
-                        $summary_text = 'Status temporarily unavailable.';
-                    } elseif (!empty($active_incidents)) {
-                        $lead_incident = $active_incidents[0]['name'] ?? ($active_incidents[0]['title'] ?? ($active_incidents[0]['summary'] ?? 'Incident'));
-                        $summary_text = 'Incident: ' . $lead_incident;
-                    } elseif ($status === 'operational') {
-                        $summary_text = 'All systems operational.';
-                    } elseif ($status === 'unknown' || '' === trim($summary_text)) {
-                        $summary_text = 'Status unknown.';
+                        if ('' === $message_text) {
+                            $message_text = 'Status temporarily unavailable.';
+                        }
+                        $summary_text = '';
+                    }
+                    if ('' === $message_text) {
+                        if (!empty($active_incidents)) {
+                            $lead_incident = $active_incidents[0]['name'] ?? ($active_incidents[0]['title'] ?? ($active_incidents[0]['summary'] ?? 'Incident'));
+                            $message_text = $lead_incident;
+                        } elseif ($status === 'operational') {
+                            $message_text = 'All systems operational';
+                        } elseif ($status === 'unknown') {
+                            $message_text = 'Status unknown.';
+                        } else {
+                            $message_text = $summary_text ?: ($label ?: 'Status update');
+                        }
+                    }
+
+                    $summary_display = '';
+                    if ('' !== $summary_text && strcasecmp($summary_text, $message_text) !== 0) {
+                        $summary_display = $summary_text;
                     }
                     ?>
-                    <p class="lo-summary" data-lo-summary><?php echo esc_html($summary_text); ?></p>
+                    <p class="lo-message" data-lo-message><?php echo esc_html($message_text); ?></p>
+                    <?php if ('' !== $summary_display) : ?>
+                        <p class="lo-summary" data-lo-summary><?php echo esc_html($summary_display); ?></p>
+                    <?php endif; ?>
                     <div class="lo-components" data-lo-components>
                         <?php if (!empty($components)) : ?>
                             <h4 class="lo-components__title">Impacted components</h4>
