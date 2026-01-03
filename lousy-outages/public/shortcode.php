@@ -437,7 +437,7 @@ function render_shortcode(): string {
         <section class="lo-history" data-lo-history>
             <div class="lo-history__heading">
                 <div>
-                    <h3 class="lo-block-title">Recent incidents (GitHub)</h3>
+                    <h3 class="lo-block-title">Recent incidents (Status feeds + community)</h3>
                     <p class="lo-history__meta">Last 30 days of non-operational blips.</p>
                 </div>
                 <div class="lo-history__controls">
