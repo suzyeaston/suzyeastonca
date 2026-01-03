@@ -1313,6 +1313,67 @@
   resize: vertical;
 }
 
+.lo-report__prompt {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--lo-muted);
+}
+
+.lo-report__help {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--lo-muted);
+}
+
+.lo-report__captcha-display {
+  margin: 6px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--lo-border);
+  background: rgba(0, 0, 0, 0.45);
+  color: #f6ff8f;
+  font-family: "IBM Plex Mono", "VT323", monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+.lo-report__captcha-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lo-report__captcha-refresh {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  color: var(--lo-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+}
+
+.lo-report__captcha-refresh:hover,
+.lo-report__captcha-refresh:focus {
+  color: #ff6a3a;
+  text-decoration: underline;
+}
+
+.lousy-outages.lo-theme-light .lo-report__prompt,
+.lousy-outages.lo-theme-light .lo-report__help {
+  color: rgba(32, 32, 32, 0.8);
+}
+
+.lousy-outages.lo-theme-light .lo-report__captcha-display {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1f1f1f;
+  border-color: rgba(92, 75, 216, 0.55);
+}
+
 .lo-report__actions {
   display: flex;
   align-items: center;
