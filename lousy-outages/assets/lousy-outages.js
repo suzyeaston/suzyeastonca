@@ -22,9 +22,12 @@
   var MANUAL_REFRESH_RETRY_DELAY = 1500;
   var MANUAL_REFRESH_MAX_ATTEMPTS = 4;
   var VISIBILITY_STORAGE_KEY = 'lo-visible-providers';
+  var LAST_OK_STORAGE_PREFIX = 'lo_last_ok_';
   var HISTORY_LIMIT = 80;
   var HISTORY_RENDER_LIMIT = 12;
   var HISTORY_DEFAULT_DAYS = 30;
+  var UNKNOWN_MESSAGE = 'Can\u2019t verify status right now.';
+  var UNKNOWN_HINT = 'Provider page may still be operational \u2014 click \u2018View status\u2019.';
 
   var STATUS_MAP = {
     operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
@@ -178,6 +181,60 @@
   function appendQuery(url, key, value) {
     var separator = url.indexOf('?') === -1 ? '?' : '&';
     return url + separator + key + '=' + encodeURIComponent(value);
+  }
+
+  function hasUnavailableCopy(text) {
+    return /temporarily unavailable|can[’']t verify/i.test(String(text || ''));
+  }
+
+  function getProviderId(provider) {
+    if (!provider) {
+      return '';
+    }
+    var id = provider.id || provider.provider || provider.slug || provider.name || '';
+    return String(id || '').toLowerCase();
+  }
+
+  function writeLastKnown(provider, normalized) {
+    if (!state.root || !state.root.localStorage || !provider) {
+      return;
+    }
+    var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
+    if (statusInfo.code === 'unknown') {
+      return;
+    }
+    var providerId = getProviderId(provider);
+    if (!providerId) {
+      return;
+    }
+    var payload = {
+      status: statusInfo.code,
+      status_label: provider.status_label || statusInfo.label,
+      message: provider.message || '',
+      summary: provider.summary || '',
+      fetched_at: provider.fetched_at || provider.fetchedAt || provider.updated_at || provider.updatedAt || ''
+    };
+    try {
+      state.root.localStorage.setItem(LAST_OK_STORAGE_PREFIX + providerId, JSON.stringify(payload));
+    } catch (err) {
+      // Ignore storage errors.
+    }
+  }
+
+  function readLastKnown(providerId) {
+    if (!state.root || !state.root.localStorage || !providerId) {
+      return null;
+    }
+    try {
+      var raw = state.root.localStorage.getItem(LAST_OK_STORAGE_PREFIX + providerId);
+      if (!raw) {
+        return null;
+      }
+      var parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (err) {
+      return null;
+    }
   }
 
 
@@ -791,7 +848,8 @@
       'service degradation reported.',
       'major outage reported.',
       'maintenance in progress.',
-      'status temporarily unavailable.'
+      'status temporarily unavailable.',
+      'can\u2019t verify status right now.'
     ];
     return phrases.indexOf(needle) !== -1;
   }
@@ -830,12 +888,12 @@
     var summaryText = String(provider.summary || '').trim();
     var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
     var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
-    var hasUnavailableSummary = summaryText && /temporarily unavailable/i.test(summaryText);
+    var hasUnavailableSummary = summaryText && hasUnavailableCopy(summaryText);
     var hasError = !!provider.error || hasUnavailableSummary;
     var signalOnlyCopy = getSignalOnlyCopy(provider, normalized, providerSlug);
 
     if (hasError) {
-      return hasUnavailableSummary ? summaryText : 'Status temporarily unavailable.';
+      return hasUnavailableSummary ? summaryText : UNKNOWN_MESSAGE;
     }
     if (signalOnlyCopy) {
       return signalOnlyCopy.message;
@@ -852,9 +910,9 @@
         return 'All systems operational.';
       }
       if (statusInfo.code === 'unknown') {
-        return 'Status temporarily unavailable.';
+        return UNKNOWN_MESSAGE;
       }
-      return summaryText || statusInfo.label || 'Status temporarily unavailable.';
+      return summaryText || statusInfo.label || UNKNOWN_MESSAGE;
     }
 
     return message;
@@ -865,12 +923,12 @@
     var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
     var hasIncidents = incidents.length > 0;
     var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
-    var hasUnavailableSummary = summaryText && /temporarily unavailable/i.test(summaryText);
+    var hasUnavailableSummary = summaryText && hasUnavailableCopy(summaryText);
     var hasError = !!provider.error || hasUnavailableSummary;
     var signalOnlyCopy = getSignalOnlyCopy(provider, normalized, providerSlug);
 
     if (hasError) {
-      return hasUnavailableSummary ? summaryText : 'Status temporarily unavailable.';
+      return hasUnavailableSummary ? summaryText : UNKNOWN_MESSAGE;
     }
     if (signalOnlyCopy) {
       return signalOnlyCopy.summary;
@@ -885,9 +943,9 @@
       return 'All systems operational.';
     }
     if (statusInfo.code === 'unknown') {
-      return 'Status temporarily unavailable.';
+      return UNKNOWN_MESSAGE;
     }
-    return summaryText || statusInfo.label || 'Status temporarily unavailable.';
+    return summaryText || statusInfo.label || UNKNOWN_MESSAGE;
   }
 
   function condenseIncidentTitle(providerSlug, text) {
@@ -945,7 +1003,7 @@
       clearChildren(incidentsWrap);
       incidentsWrap.textContent = '';
       var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
-      var hasError = !!provider.error || (/temporarily unavailable/i.test(getSummaryText(provider)) && !(provider.incidents || []).length);
+      var hasError = !!provider.error || (hasUnavailableCopy(getSummaryText(provider)) && !(provider.incidents || []).length);
       if (!incidents.length || hasError) {
         incidentsWrap.setAttribute('hidden', 'hidden');
       } else if (state.doc && typeof state.doc.createElement === 'function') {
@@ -971,6 +1029,7 @@
     if (link && provider.url) {
       link.setAttribute('href', provider.url);
     }
+    updateCardMeta(card, provider, normalized);
   }
 
   function updateModernCard(card, provider, normalized) {
@@ -1010,17 +1069,6 @@
       summary.textContent = '';
       summary.setAttribute('hidden', 'hidden');
     }
-    var error = card.querySelector('[data-lo-error]');
-    if (error) {
-      var httpCode = typeof provider.http_code === 'number' ? provider.http_code : null;
-      var hasError = !!provider.error && (httpCode === null || httpCode === 0 || httpCode >= 400);
-      error.textContent = hasError ? String(provider.error) : '';
-      if (hasError) {
-        error.removeAttribute('hidden');
-      } else {
-        error.setAttribute('hidden', 'hidden');
-      }
-    }
     var componentsWrap = card.querySelector('[data-lo-components]');
     if (componentsWrap) {
       componentsWrap.innerHTML = '';
@@ -1057,7 +1105,7 @@
     if (incidentsWrap) {
       incidentsWrap.innerHTML = '';
       var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
-      var hasError = !!provider.error || /temporarily unavailable/i.test(getSummaryText(provider));
+      var hasError = !!provider.error || hasUnavailableCopy(getSummaryText(provider));
       if (!incidents.length || hasError) {
         incidentsWrap.setAttribute('hidden', 'hidden');
       } else {
@@ -1113,6 +1161,121 @@
         statusLink.removeAttribute('hidden');
       } else {
         statusLink.setAttribute('hidden', 'hidden');
+      }
+    }
+    updateCardMeta(card, provider, normalized);
+  }
+
+  function ensureMetaWrap(card) {
+    if (!card || !state.doc) {
+      return null;
+    }
+    var wrap = card.querySelector('[data-lo-meta]');
+    if (wrap) {
+      return wrap;
+    }
+    wrap = state.doc.createElement('div');
+    wrap.className = 'lo-card-meta-wrap';
+    wrap.setAttribute('data-lo-meta', '');
+    var anchor = card.querySelector('[data-lo-summary]')
+      || card.querySelector('.provider-card__summary')
+      || card.querySelector('[data-lo-message]')
+      || card.querySelector('.provider-card__snark');
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(wrap, anchor.nextSibling);
+    } else {
+      card.appendChild(wrap);
+    }
+    return wrap;
+  }
+
+  function ensureMetaLine(wrap, attr, className) {
+    if (!wrap || !state.doc) {
+      return null;
+    }
+    var selector = '[' + attr + ']';
+    var line = wrap.querySelector(selector);
+    if (!line) {
+      line = state.doc.createElement('p');
+      line.className = className;
+      line.setAttribute(attr, '');
+      wrap.appendChild(line);
+    }
+    return line;
+  }
+
+  function buildDebugLine(provider) {
+    var httpCode = typeof provider.http_code === 'number' ? provider.http_code : null;
+    var errorText = provider && provider.error ? String(provider.error) : '';
+    if (httpCode !== null && httpCode !== 0) {
+      return 'debug: HTTP ' + httpCode + (errorText ? ' (' + errorText + ')' : '');
+    }
+    if (errorText) {
+      return 'debug: ' + errorText;
+    }
+    return '';
+  }
+
+  function updateCardMeta(card, provider, normalized) {
+    if (!card || !provider) {
+      return;
+    }
+    var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
+    writeLastKnown(provider, statusInfo);
+    var wrap = ensureMetaWrap(card);
+    if (!wrap) {
+      return;
+    }
+    var fetchedAt = provider.fetched_at || provider.fetchedAt || provider.updated_at || provider.updatedAt || '';
+    var lastChecked = formatTimestamp(fetchedAt) || '—';
+    var lastCheckedEl = ensureMetaLine(wrap, 'data-lo-last-checked', 'lo-card-meta');
+    if (lastCheckedEl) {
+      lastCheckedEl.textContent = 'Last checked: ' + lastChecked;
+    }
+    var lastKnownEl = ensureMetaLine(wrap, 'data-lo-last-known', 'lo-card-meta lo-card-meta--hint');
+    var hintEl = ensureMetaLine(wrap, 'data-lo-unknown-hint', 'lo-card-meta lo-card-meta--hint');
+    var lastKnown = statusInfo.code === 'unknown' ? readLastKnown(getProviderId(provider)) : null;
+    if (statusInfo.code === 'unknown') {
+      if (lastKnown && lastKnown.status) {
+        var lastKnownLabel = lastKnown.status_label || normalizeStatus(lastKnown.status).label;
+        var lastKnownTime = formatTimestamp(lastKnown.fetched_at) || '—';
+        if (lastKnownEl) {
+          lastKnownEl.textContent = 'Last known: ' + lastKnownLabel + (lastKnownTime ? ' (' + lastKnownTime + ')' : '');
+          lastKnownEl.removeAttribute('hidden');
+        }
+        if (hintEl) {
+          hintEl.textContent = UNKNOWN_HINT;
+          hintEl.setAttribute('hidden', 'hidden');
+        }
+      } else {
+        if (lastKnownEl) {
+          lastKnownEl.textContent = '';
+          lastKnownEl.setAttribute('hidden', 'hidden');
+        }
+        if (hintEl) {
+          hintEl.textContent = UNKNOWN_HINT;
+          hintEl.removeAttribute('hidden');
+        }
+      }
+    } else {
+      if (lastKnownEl) {
+        lastKnownEl.textContent = '';
+        lastKnownEl.setAttribute('hidden', 'hidden');
+      }
+      if (hintEl) {
+        hintEl.textContent = '';
+        hintEl.setAttribute('hidden', 'hidden');
+      }
+    }
+    var debugEl = ensureMetaLine(wrap, 'data-lo-debug', 'lo-card-debug');
+    if (debugEl) {
+      var debugLine = state.debug ? buildDebugLine(provider) : '';
+      if (debugLine) {
+        debugEl.textContent = debugLine;
+        debugEl.removeAttribute('hidden');
+      } else {
+        debugEl.textContent = '';
+        debugEl.setAttribute('hidden', 'hidden');
       }
     }
   }
@@ -2737,7 +2900,16 @@
     if (typeof config.window === 'object' && config.window) {
       state.root = config.window;
     }
-    state.debug = !!config.debug;
+    var debugQuery = false;
+    if (state.root && state.root.location && typeof state.root.location.search === 'string') {
+      try {
+        var params = new URLSearchParams(state.root.location.search);
+        debugQuery = params.get('lo_debug') === '1';
+      } catch (err) {
+        debugQuery = /(?:\?|&)lo_debug=1(?:&|$)/.test(state.root.location.search);
+      }
+    }
+    state.debug = !!config.debug || debugQuery;
     var fetchImpl = null;
     if (typeof config.fetch === 'function') {
       fetchImpl = config.fetch;
