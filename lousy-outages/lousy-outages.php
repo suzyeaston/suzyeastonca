@@ -1175,6 +1175,9 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
         'name'       => $state['name'] ?? $state['provider'] ?? $id,
         'state'      => $label,
         'stateCode'  => $status,
+        'tile_kind'  => $state['tile_kind'] ?? null,
+        'sort_key'   => $state['sort_key'] ?? null,
+        'confidence'=> $state['confidence'] ?? null,
         'summary'    => $state['summary'] ?? $label,
         'updatedAt'  => $updated_at,
         'url'        => $url,
@@ -1199,8 +1202,27 @@ function lousy_outages_sort_providers( array $providers ): array {
         'unknown'     => 3,
         'operational' => 4,
     ];
+    $tile_priority = [
+        'outage'      => 0,
+        'signal'      => 1,
+        'unknown'     => 2,
+        'manual'      => 3,
+        'operational' => 4,
+    ];
 
-    $sort_key = static function ( array $provider ) use ( $state_priority ): array {
+    $sort_key = static function ( array $provider ) use ( $state_priority, $tile_priority ): array {
+        $sort_key_value = $provider['sort_key'] ?? null;
+        $tile_kind = strtolower( (string) ( $provider['tile_kind'] ?? '' ) );
+        if ( is_numeric( $sort_key_value ) ) {
+            $name = strtolower( (string) ( $provider['name'] ?? $provider['id'] ?? '' ) );
+            $tile_rank = $tile_priority[ $tile_kind ] ?? $tile_priority['unknown'];
+            return [
+                (int) $sort_key_value,
+                $tile_rank,
+                $name,
+            ];
+        }
+
         $state      = strtolower( (string) ( $provider['stateCode'] ?? 'unknown' ) );
         $state_rank = $state_priority[ $state ] ?? $state_priority['unknown'];
 

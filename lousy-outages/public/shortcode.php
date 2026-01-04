@@ -699,6 +699,8 @@ function render_shortcode(): string {
                     <?php endif; ?>
                 </article>
             <?php endforeach; ?>
+        </div>
+        <div class="lo-external" data-lo-external>
             <article class="lo-card lo-card--external" data-provider-id="external-signals">
                 <div class="lo-head">
                     <h3 class="lo-title">External signals</h3>

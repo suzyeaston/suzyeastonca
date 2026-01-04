@@ -231,3 +231,79 @@ function from_rss_atom(string $xml): array {
         'raw'        => $xml,
     ];
 }
+
+function from_gcp_incidents_json(string $json): array {
+    $data = json_decode($json, true);
+    if (!is_array($data)) {
+        return ['state' => 'unknown', 'incidents' => [], 'raw' => null];
+    }
+
+    $incidentsRaw = $data['incidents'] ?? null;
+    if (!is_array($incidentsRaw)) {
+        return ['state' => 'unknown', 'incidents' => [], 'raw' => $data];
+    }
+
+    $activeIncidents = [];
+    $hasDisruption = false;
+    foreach ($incidentsRaw as $incident) {
+        if (!is_array($incident)) {
+            continue;
+        }
+        $end = $incident['end'] ?? null;
+        if (!empty($end)) {
+            continue;
+        }
+
+        $updates = isset($incident['updates']) && is_array($incident['updates']) ? $incident['updates'] : [];
+        $mostRecent = isset($incident['most_recent_update']) && is_array($incident['most_recent_update'])
+            ? $incident['most_recent_update']
+            : null;
+        if (!$mostRecent && !empty($updates)) {
+            $mostRecent = end($updates);
+            if (!is_array($mostRecent)) {
+                $mostRecent = null;
+            }
+        }
+
+        $updateStatus = strtoupper((string) ($mostRecent['status'] ?? ''));
+        if ('SERVICE_DISRUPTION' === $updateStatus) {
+            $hasDisruption = true;
+        }
+
+        $incidentStatus = 'investigating';
+        if ('SERVICE_DISRUPTION' === $updateStatus) {
+            $incidentStatus = 'identified';
+        } elseif ('SERVICE_INFORMATION' === $updateStatus) {
+            $incidentStatus = 'monitoring';
+        } elseif ('AVAILABLE' === $updateStatus) {
+            $incidentStatus = 'monitoring';
+        }
+
+        $name = (string) ($incident['external_desc'] ?? $incident['service_name'] ?? 'Google Cloud incident');
+        $activeIncidents[] = [
+            'id'         => (string) ($incident['id'] ?? ''),
+            'name'       => $name ?: 'Google Cloud incident',
+            'status'     => $incidentStatus,
+            'started_at' => $incident['begin'] ?? null,
+            'updated_at' => $mostRecent['when'] ?? ($incident['modified'] ?? null),
+            'shortlink'  => $incident['status_url'] ?? null,
+        ];
+    }
+
+    $state = 'operational';
+    if (!empty($activeIncidents)) {
+        $state = $hasDisruption ? 'major' : 'degraded';
+    }
+
+    $updatedAt = null;
+    if (!empty($activeIncidents)) {
+        $updatedAt = $activeIncidents[0]['updated_at'] ?? null;
+    }
+
+    return [
+        'state'      => $state,
+        'incidents'  => $activeIncidents,
+        'updated_at' => $updatedAt,
+        'raw'        => $data,
+    ];
+}

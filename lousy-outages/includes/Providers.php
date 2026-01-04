@@ -118,8 +118,8 @@ class Providers {
             [
                 'id'         => 'google_cloud',
                 'name'       => 'Google Cloud',
-                'type'       => 'rss',
-                'url'        => 'https://status.cloud.google.com/rss',
+                'type'       => 'gcp_json',
+                'url'        => 'https://status.cloud.google.com/incidents.json',
                 'status_url' => 'https://status.cloud.google.com/',
             ],
         ];
