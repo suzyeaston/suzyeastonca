@@ -23,6 +23,7 @@
   var MANUAL_REFRESH_MAX_ATTEMPTS = 4;
   var VISIBILITY_STORAGE_KEY = 'lo-visible-providers';
   var LAST_OK_STORAGE_PREFIX = 'lo_last_ok_';
+  var HISTORY_CHART_MODE_KEY = 'lo_history_chart_mode';
   var HISTORY_LIMIT = 80;
   var HISTORY_RENDER_LIMIT = 12;
   var HISTORY_DEFAULT_DAYS = 30;
@@ -514,6 +515,28 @@
     var clone = state.historyCharts.cloneNode(true);
     clone.removeAttribute('hidden');
 
+    var originalCanvases = state.historyCharts.querySelectorAll ? state.historyCharts.querySelectorAll('canvas') : [];
+    var clonedCanvases = clone.querySelectorAll ? clone.querySelectorAll('canvas') : [];
+    if (originalCanvases.length && clonedCanvases.length) {
+      clonedCanvases.forEach(function (canvas, idx) {
+        var original = originalCanvases[idx];
+        if (!original || !original.toDataURL) {
+          return;
+        }
+        try {
+          var dataUrl = original.toDataURL('image/png');
+          var img = state.doc.createElement('img');
+          img.src = dataUrl;
+          img.alt = original.getAttribute('aria-label') || 'Chart image';
+          img.style.width = '100%';
+          img.style.height = 'auto';
+          canvas.parentNode.replaceChild(img, canvas);
+        } catch (err) {
+          // Ignore canvas export errors.
+        }
+      });
+    }
+
     var printWindow = state.root.open('', '_blank');
     if (!printWindow || !printWindow.document || typeof printWindow.document.write !== 'function') {
       return;
@@ -523,9 +546,10 @@
       "@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');",
       'body { margin: 0; padding: 24px; font-family: \"Press Start 2P\", \"VT323\", \"IBM Plex Mono\", monospace; background: #050510; color: #9af3ff; text-shadow: 0 0 6px rgba(0, 255, 255, 0.35); }',
       '.lo-history__chart { margin-bottom: 24px; padding: 16px; border: 2px solid #1bf0ff; box-shadow: 0 0 0 2px #ff2fb3 inset, 0 0 18px rgba(27, 240, 255, 0.25); background: linear-gradient(135deg, rgba(0, 255, 170, 0.05) 0%, rgba(255, 47, 179, 0.05) 100%), #0b0b1e; }',
+      '.lo-history__report { margin-bottom: 24px; padding: 16px; border: 2px solid #1bf0ff; box-shadow: 0 0 0 2px #ff2fb3 inset, 0 0 18px rgba(27, 240, 255, 0.25); background: linear-gradient(135deg, rgba(0, 255, 170, 0.05) 0%, rgba(255, 47, 179, 0.05) 100%), #0b0b1e; }',
       '.lo-history__chart-title { font-size: 12px; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; color: #f5f5f5; }',
       '.lo-history__subtitle { color: #72f3ff; font-size: 10px; letter-spacing: 0.5px; margin-bottom: 8px; }',
-      '.lo-history__chart svg, .lo-history__chart canvas { width: 100%; height: auto; border: 1px solid #2affd5; background: repeating-linear-gradient(90deg, rgba(42, 255, 213, 0.08) 0, rgba(42, 255, 213, 0.08) 6px, transparent 6px, transparent 12px), #050510; image-rendering: pixelated; }',
+      '.lo-history__chart svg, .lo-history__chart canvas, .lo-history__chart img { width: 100%; height: auto; border: 1px solid #2affd5; background: repeating-linear-gradient(90deg, rgba(42, 255, 213, 0.08) 0, rgba(42, 255, 213, 0.08) 6px, transparent 6px, transparent 12px), #050510; image-rendering: pixelated; }',
       '.lo-history__chart-bar { fill: #26ffd6; stroke: #000; stroke-width: 1; }',
       '.lo-history__chart-bar--thin { fill: #ff2fb3; }',
       '.lo-history__chart-bar--active { filter: drop-shadow(0 0 4px rgba(255, 47, 179, 0.8)); }',
@@ -533,7 +557,28 @@
       '.lo-history__chart text { font-family: \"Press Start 2P\", \"VT323\", \"IBM Plex Mono\", monospace; }',
       '.lo-history__chart-tooltip { margin-top: 6px; font-size: 10px; color: #f6ff8f; }',
       '.lo-retro-legend { display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: 9px; color: #fefefe; }',
-      '.lo-retro-legend__swatch { width: 14px; height: 14px; border: 2px solid #0b0b1e; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); display: inline-block; margin-right: 6px; }'
+      '.lo-retro-legend__swatch { width: 14px; height: 14px; border: 2px solid #0b0b1e; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); display: inline-block; margin-right: 6px; }',
+      '.lo-history__report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }',
+      '.lo-history__report-stat { padding: 10px; border: 1px solid rgba(42, 255, 213, 0.5); background: rgba(5, 5, 16, 0.6); }',
+      '.lo-history__report-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #9af3ff; margin-bottom: 4px; }',
+      '.lo-history__report-value { font-size: 12px; color: #fefefe; }',
+      '.lo-history__report-sub { font-size: 9px; color: #f6ff8f; margin-top: 4px; }',
+      '.lo-history__report-table { width: 100%; border-collapse: collapse; font-size: 9px; }',
+      '.lo-history__report-table th, .lo-history__report-table td { padding: 6px 8px; border: 1px solid rgba(42, 255, 213, 0.4); text-align: left; }',
+      '.lo-history__view-toggle { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 10px; }',
+      '.lo-history__view-button { border: 1px solid #1bf0ff; background: rgba(11, 11, 30, 0.75); color: #9af3ff; padding: 6px 10px; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }',
+      '.lo-history__view-button.is-active { background: #9af3ff; color: #050510; }',
+      '.lo-heatmap__cell--level-0 { fill: rgba(255, 255, 255, 0.08); }',
+      '.lo-heatmap__cell--level-1 { fill: rgba(42, 255, 213, 0.35); }',
+      '.lo-heatmap__cell--level-2 { fill: rgba(42, 255, 213, 0.55); }',
+      '.lo-heatmap__cell--level-3 { fill: rgba(255, 47, 179, 0.55); }',
+      '.lo-heatmap__cell--level-4 { fill: rgba(255, 47, 179, 0.85); }',
+      '.lo-heatmap__legend { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 9px; color: #9af3ff; }',
+      '.lo-heatmap__swatch { width: 12px; height: 12px; border: 1px solid #0b0b1e; display: inline-block; }',
+      '.lo-trend__line { fill: none; stroke: #ff2fb3; stroke-width: 2; }',
+      '.lo-trend__point { fill: #26ffd6; }',
+      '.lo-trend__point--active { fill: #f6ff8f; }',
+      '.lo-history__chart, .lo-history__report { page-break-inside: avoid; break-inside: avoid; }'
     ].join('\n');
 
     var title = 'Lousy Outages – Incident charts';
@@ -1777,6 +1822,112 @@
     return startLabel + ' – ' + endLabel;
   }
 
+  function formatShortDate(dateStr, includeYear) {
+    if (!dateStr) {
+      return '';
+    }
+    var parsed = Date.parse(dateStr + 'T00:00:00Z');
+    if (Number.isNaN(parsed)) {
+      return dateStr;
+    }
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: includeYear ? 'numeric' : undefined
+      }).format(new Date(parsed));
+    } catch (err) {
+      var iso = new Date(parsed).toISOString().slice(0, 10);
+      return includeYear ? iso : iso.slice(5);
+    }
+  }
+
+  function buildDailySeries(counts, days) {
+    var today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    var labels = [];
+    for (var i = days - 1; i >= 0; i -= 1) {
+      var dt = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+      labels.push(dt.toISOString().slice(0, 10));
+    }
+
+    var values = labels.map(function (label) { return counts[label] || 0; });
+    var totalIncidents = 0;
+    var activeDays = 0;
+    var maxCount = 0;
+    var peakDate = '';
+
+    values.forEach(function (value, idx) {
+      totalIncidents += value;
+      if (value > 0) {
+        activeDays += 1;
+      }
+      if (value > maxCount) {
+        maxCount = value;
+        peakDate = labels[idx];
+      }
+    });
+
+    return {
+      labels: labels,
+      values: values,
+      totalIncidents: totalIncidents,
+      activeDays: activeDays,
+      maxCount: maxCount,
+      peakDate: peakDate
+    };
+  }
+
+  function buildTimelineMeta(series) {
+    var meta = state.doc.createElement('div');
+    meta.className = 'lo-history__meta';
+    if (!series || series.totalIncidents <= 0) {
+      meta.textContent = 'No incidents recorded during this window.';
+      return meta;
+    }
+    var dayLabel = series.labels.length === 1 ? 'day' : 'days';
+    var summary = formatIncidentCount(series.totalIncidents) + ' across ' + series.activeDays + ' of ' + series.labels.length + ' ' + dayLabel;
+    if (series.maxCount > 0 && series.peakDate) {
+      summary += ' (busiest: ' + formatShortDate(series.peakDate) + ' with ' + formatIncidentCount(series.maxCount) + ').';
+    } else {
+      summary += '.';
+    }
+    meta.textContent = summary;
+    return meta;
+  }
+
+  function resolveHistoryChartMode(windowDays) {
+    var stored = '';
+    if (state.root && state.root.localStorage) {
+      try {
+        stored = state.root.localStorage.getItem(HISTORY_CHART_MODE_KEY) || '';
+      } catch (err) {
+        stored = '';
+      }
+    }
+    if (stored === 'heatmap' || stored === 'bars' || stored === 'trend') {
+      return stored;
+    }
+    if (windowDays > 45) {
+      return 'heatmap';
+    }
+    if (windowDays <= 30) {
+      return 'bars';
+    }
+    return 'trend';
+  }
+
+  function persistHistoryChartMode(mode) {
+    if (!state.root || !state.root.localStorage) {
+      return;
+    }
+    try {
+      state.root.localStorage.setItem(HISTORY_CHART_MODE_KEY, mode);
+    } catch (err) {
+      // Ignore storage errors.
+    }
+  }
+
   function renderHistoryCharts(providers, meta) {
     if (!state.historyCharts || !state.doc) {
       return;
@@ -1800,13 +1951,20 @@
 
     var subtitle = formatDateRange(meta || {});
 
+    if (hasDaily) {
+      var reportCard = buildHistoryReportCard(chartData, subtitle);
+      if (reportCard) {
+        frag.appendChild(reportCard);
+      }
+    }
+
     if (hasProviders) {
       var providerChart = buildBarChart(providerCounts, 'Incidents by provider', subtitle);
       frag.appendChild(providerChart);
     }
 
     if (hasDaily) {
-      var timelineChart = buildTimelineChart(
+      var timelineChart = buildTimelineSection(
         dailyCounts,
         (chartData && chartData.windowDays) || HISTORY_DEFAULT_DAYS,
         subtitle
@@ -1826,6 +1984,183 @@
     }
 
     state.historyCharts.appendChild(frag);
+  }
+
+  function buildHistoryReportCard(chartData, subtitle) {
+    if (!chartData || !state.doc) {
+      return null;
+    }
+    var counts = chartData.dailyCounts || {};
+    var series = buildDailySeries(counts, chartData.windowDays || HISTORY_DEFAULT_DAYS);
+    var providerCounts = chartData.providerCounts || {};
+    var providers = Object.keys(providerCounts).map(function (key) {
+      return { label: key, value: providerCounts[key] || 0 };
+    }).sort(function (a, b) { return b.value - a.value; }).slice(0, 5);
+
+    var wrap = state.doc.createElement('div');
+    wrap.className = 'lo-history__report';
+
+    var heading = state.doc.createElement('div');
+    heading.className = 'lo-history__chart-title';
+    heading.textContent = 'Report Card';
+    wrap.appendChild(heading);
+
+    if (subtitle) {
+      var sub = state.doc.createElement('div');
+      sub.className = 'lo-history__subtitle';
+      sub.textContent = subtitle;
+      wrap.appendChild(sub);
+    }
+
+    var grid = state.doc.createElement('div');
+    grid.className = 'lo-history__report-grid';
+
+    var makeStat = function (label, value, subtext) {
+      var stat = state.doc.createElement('div');
+      stat.className = 'lo-history__report-stat';
+      var statLabel = state.doc.createElement('div');
+      statLabel.className = 'lo-history__report-label';
+      statLabel.textContent = label;
+      var statValue = state.doc.createElement('div');
+      statValue.className = 'lo-history__report-value';
+      statValue.textContent = value;
+      stat.appendChild(statLabel);
+      stat.appendChild(statValue);
+      if (subtext) {
+        var statSub = state.doc.createElement('div');
+        statSub.className = 'lo-history__report-sub';
+        statSub.textContent = subtext;
+        stat.appendChild(statSub);
+      }
+      return stat;
+    };
+
+    grid.appendChild(makeStat('Total incidents', formatIncidentCount(series.totalIncidents)));
+    grid.appendChild(makeStat('Active days', series.activeDays + ' / ' + series.labels.length));
+    if (series.maxCount > 0 && series.peakDate) {
+      grid.appendChild(makeStat('Peak day', formatShortDate(series.peakDate, true), formatIncidentCount(series.maxCount) + ' incidents'));
+    } else {
+      grid.appendChild(makeStat('Peak day', '—', 'No incidents yet'));
+    }
+
+    wrap.appendChild(grid);
+
+    var tableWrap = state.doc.createElement('div');
+    tableWrap.className = 'lo-history__report-table-wrap';
+    var tableTitle = state.doc.createElement('div');
+    tableTitle.className = 'lo-history__report-label';
+    tableTitle.textContent = 'Top 5 providers';
+    tableWrap.appendChild(tableTitle);
+
+    var table = state.doc.createElement('table');
+    table.className = 'lo-history__report-table';
+    var thead = state.doc.createElement('thead');
+    thead.innerHTML = '<tr><th scope="col">Provider</th><th scope="col">Incidents</th></tr>';
+    table.appendChild(thead);
+    var tbody = state.doc.createElement('tbody');
+
+    if (providers.length) {
+      providers.forEach(function (entry) {
+        var row = state.doc.createElement('tr');
+        var labelCell = state.doc.createElement('td');
+        labelCell.textContent = entry.label;
+        var valueCell = state.doc.createElement('td');
+        valueCell.textContent = String(entry.value);
+        row.appendChild(labelCell);
+        row.appendChild(valueCell);
+        tbody.appendChild(row);
+      });
+    } else {
+      var emptyRow = state.doc.createElement('tr');
+      var emptyCell = state.doc.createElement('td');
+      emptyCell.setAttribute('colspan', '2');
+      emptyCell.textContent = 'No incidents logged.';
+      emptyRow.appendChild(emptyCell);
+      tbody.appendChild(emptyRow);
+    }
+
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    wrap.appendChild(tableWrap);
+
+    return wrap;
+  }
+
+  function buildTimelineSection(counts, days, subtitle) {
+    var chartWrap = state.doc.createElement('div');
+    chartWrap.className = 'lo-history__chart lo-history__chart--timeline';
+    var heading = state.doc.createElement('div');
+    heading.className = 'lo-history__chart-title';
+    heading.textContent = 'Incidents over time';
+    chartWrap.appendChild(heading);
+    if (subtitle) {
+      var sub = state.doc.createElement('div');
+      sub.className = 'lo-history__subtitle';
+      sub.textContent = subtitle;
+      chartWrap.appendChild(sub);
+    }
+
+    var toggle = state.doc.createElement('div');
+    toggle.className = 'lo-history__view-toggle';
+
+    var buttons = {};
+    var modes = [
+      { mode: 'heatmap', label: 'Heatmap' },
+      { mode: 'bars', label: 'Bars' },
+      { mode: 'trend', label: 'Trend' }
+    ];
+
+    modes.forEach(function (entry) {
+      var button = state.doc.createElement('button');
+      button.type = 'button';
+      button.className = 'lo-history__view-button';
+      button.textContent = entry.label;
+      button.setAttribute('data-history-view', entry.mode);
+      button.setAttribute('aria-pressed', 'false');
+      toggle.appendChild(button);
+      buttons[entry.mode] = button;
+    });
+
+    chartWrap.appendChild(toggle);
+
+    var content = state.doc.createElement('div');
+    content.className = 'lo-history__chart-content';
+    chartWrap.appendChild(content);
+
+    var setActiveMode = function (mode) {
+      if (mode !== 'heatmap' && mode !== 'bars' && mode !== 'trend') {
+        mode = 'bars';
+      }
+      persistHistoryChartMode(mode);
+      Object.keys(buttons).forEach(function (key) {
+        var isActive = key === mode;
+        buttons[key].classList.toggle('is-active', isActive);
+        buttons[key].setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      clearChildren(content);
+      var chartBody = null;
+      if (mode === 'heatmap') {
+        chartBody = buildCalendarHeatmap(counts, days);
+      } else if (mode === 'trend') {
+        chartBody = buildTrendChart(counts, days);
+      } else {
+        chartBody = buildTimelineChart(counts, days);
+      }
+      if (chartBody) {
+        content.appendChild(chartBody);
+      }
+    };
+
+    var initialMode = resolveHistoryChartMode(days);
+    setActiveMode(initialMode);
+
+    Object.keys(buttons).forEach(function (mode) {
+      buttons[mode].addEventListener('click', function () {
+        setActiveMode(mode);
+      });
+    });
+
+    return chartWrap;
   }
 
   function buildBarChart(counts, title, subtitle) {
@@ -1906,77 +2241,15 @@
     return chartWrap;
   }
 
-  function buildTimelineChart(counts, days, subtitle) {
-    var chartWrap = state.doc.createElement('div');
-    chartWrap.className = 'lo-history__chart';
-    var heading = state.doc.createElement('div');
-    heading.className = 'lo-history__chart-title';
-    heading.textContent = 'Incidents over time';
-    chartWrap.appendChild(heading);
-    if (subtitle) {
-      var sub = state.doc.createElement('div');
-      sub.className = 'lo-history__subtitle';
-      sub.textContent = subtitle;
-      chartWrap.appendChild(sub);
-    }
+  function buildTimelineChart(counts, days) {
+    var chartBody = state.doc.createElement('div');
+    chartBody.className = 'lo-history__chart-body';
 
-    var today = new Date();
-    var labels = [];
-    for (var i = days - 1; i >= 0; i -= 1) {
-      var dt = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
-      labels.push(dt.toISOString().slice(0, 10));
-    }
+    var series = buildDailySeries(counts, days);
+    var labels = series.labels;
+    var values = series.values;
 
-    var values = labels.map(function (label) { return counts[label] || 0; });
-    var totalIncidents = 0;
-    var activeDays = 0;
-    var maxCount = 0;
-    var peakDate = '';
-
-    values.forEach(function (value, idx) {
-      totalIncidents += value;
-      if (value > 0) {
-        activeDays += 1;
-      }
-      if (value > maxCount) {
-        maxCount = value;
-        peakDate = labels[idx];
-      }
-    });
-
-    var friendlyFormatter = function (dateStr) {
-      if (!dateStr) {
-        return '';
-      }
-      var parsed = Date.parse(dateStr + 'T00:00:00Z');
-      if (Number.isNaN(parsed)) {
-        return dateStr;
-      }
-      try {
-        return new Intl.DateTimeFormat(undefined, {
-          month: 'short',
-          day: 'numeric'
-        }).format(new Date(parsed));
-      } catch (err) {
-        return new Date(parsed).toISOString().slice(0, 10);
-      }
-    };
-
-    var meta = state.doc.createElement('div');
-    meta.className = 'lo-history__meta';
-    if (totalIncidents <= 0) {
-      meta.textContent = 'No incidents recorded during this window.';
-    } else {
-      var dayLabel = labels.length === 1 ? 'day' : 'days';
-      var summary = formatIncidentCount(totalIncidents) + ' across ' + activeDays + ' of ' + labels.length + ' ' + dayLabel;
-      if (maxCount > 0 && peakDate) {
-        summary += ' (busiest: ' + friendlyFormatter(peakDate) + ' with ' + formatIncidentCount(maxCount) + ').';
-      } else {
-        summary += '.';
-      }
-      meta.textContent = summary;
-    }
-    chartWrap.appendChild(meta);
+    chartBody.appendChild(buildTimelineMeta(series));
 
     var tooltip = null;
     try {
@@ -1985,16 +2258,20 @@
       tooltip.setAttribute('role', 'status');
       tooltip.setAttribute('aria-live', 'polite');
       tooltip.textContent = 'Hover or focus a bar to see details.';
-      chartWrap.appendChild(tooltip);
+      chartBody.appendChild(tooltip);
     } catch (err) {
       tooltip = null;
     }
 
     var max = values.reduce(function (acc, val) { return Math.max(acc, val); }, 0) || 1;
-    var width = Math.max(240, labels.length * 12);
+    var width = Math.max(240, labels.length * 10);
     var height = 170;
     var topPadding = 28;
-    var bottomPadding = 46;
+    var bottomPadding = 36;
+    var gap = 2;
+    var barWidth = Math.max(2, Math.floor((width - 16 - ((labels.length - 1) * gap)) / Math.max(labels.length, 1)));
+    var stepX = barWidth + gap;
+
     var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
     svg.setAttribute('role', 'img');
@@ -2007,28 +2284,57 @@
     yAxisLabel.textContent = 'Incidents per day';
     svg.appendChild(yAxisLabel);
 
-    var xAxisLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
-    xAxisLabel.setAttribute('x', String(width / 2));
-    xAxisLabel.setAttribute('y', String(height - 8));
-    xAxisLabel.setAttribute('text-anchor', 'middle');
-    xAxisLabel.setAttribute('class', 'lo-history__chart-text');
-    xAxisLabel.textContent = 'Day';
-    svg.appendChild(xAxisLabel);
+    var tickIndices = [];
+    labels.forEach(function (label, idx) {
+      if (idx === 0 || idx === labels.length - 1) {
+        tickIndices.push(idx);
+        return;
+      }
+      var parsed = Date.parse(label + 'T00:00:00Z');
+      if (Number.isNaN(parsed)) {
+        return;
+      }
+      var date = new Date(parsed);
+      if (days > 45) {
+        if (date.getUTCDate() === 1) {
+          tickIndices.push(idx);
+        }
+      } else if (date.getUTCDay() === 0) {
+        tickIndices.push(idx);
+      }
+    });
 
-    var step = Math.max(1, Math.ceil(labels.length / 8));
+    if (tickIndices.length < 4) {
+      var fallbackStep = Math.max(1, Math.ceil(labels.length / 6));
+      for (var i = 0; i < labels.length; i += fallbackStep) {
+        tickIndices.push(i);
+      }
+    }
+
+    tickIndices = tickIndices.filter(function (value, idx, arr) {
+      return arr.indexOf(value) === idx;
+    }).sort(function (a, b) { return a - b; });
+
+    if (tickIndices.length > 8) {
+      var dropStep = Math.ceil(tickIndices.length / 8);
+      tickIndices = tickIndices.filter(function (_, idx) { return idx % dropStep === 0; });
+      if (tickIndices[tickIndices.length - 1] !== labels.length - 1) {
+        tickIndices.push(labels.length - 1);
+      }
+    }
 
     labels.forEach(function (label, idx) {
-      var x = 8 + idx * 8;
+      var x = 8 + idx * stepX;
       var scaled = Math.max(2, Math.round((values[idx] / max) * (height - topPadding - bottomPadding)));
       var y = height - bottomPadding - scaled;
       var rect = state.doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('x', String(x));
       rect.setAttribute('y', String(y));
-      rect.setAttribute('width', '6');
+      rect.setAttribute('width', String(barWidth));
       rect.setAttribute('height', String(scaled));
       rect.setAttribute('class', 'lo-history__chart-bar lo-history__chart-bar--thin');
       rect.setAttribute('tabindex', '0');
-      var friendlyLabel = friendlyFormatter(label);
+      var friendlyLabel = formatShortDate(label);
       rect.setAttribute('aria-label', friendlyLabel + ': ' + formatIncidentCount(values[idx]));
       var barTitle = state.doc.createElementNS('http://www.w3.org/2000/svg', 'title');
       barTitle.textContent = label + ' – ' + values[idx] + ' incidents';
@@ -2055,9 +2361,9 @@
 
       svg.appendChild(rect);
 
-      if (scaled > 14 && values[idx] > 0) {
+      if (days <= 21 && scaled > 12 && values[idx] > 0) {
         var countLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
-        countLabel.setAttribute('x', String(x + 3));
+        countLabel.setAttribute('x', String(x + (barWidth / 2)));
         countLabel.setAttribute('y', String(Math.max(topPadding, y - 3)));
         countLabel.setAttribute('text-anchor', 'middle');
         countLabel.setAttribute('class', 'lo-history__chart-text');
@@ -2065,20 +2371,273 @@
         svg.appendChild(countLabel);
       }
 
-      if (idx % step === 0 || idx === labels.length - 1) {
+      if (tickIndices.indexOf(idx) !== -1) {
         var tick = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
-        tick.setAttribute('x', String(x + 3));
-        tick.setAttribute('y', String(height - 16));
+        tick.setAttribute('x', String(x + (barWidth / 2)));
+        tick.setAttribute('y', String(height - 12));
         tick.setAttribute('text-anchor', 'middle');
         tick.setAttribute('class', 'lo-history__chart-text');
-        tick.setAttribute('transform', 'rotate(-45 ' + (x + 3) + ' ' + (height - 16) + ')');
-        tick.textContent = friendlyLabel || label.slice(5);
+        tick.textContent = formatShortDate(label);
         svg.appendChild(tick);
       }
     });
 
-    chartWrap.appendChild(svg);
-    return chartWrap;
+    chartBody.appendChild(svg);
+    return chartBody;
+  }
+
+  function buildCalendarHeatmap(counts, days) {
+    var chartBody = state.doc.createElement('div');
+    chartBody.className = 'lo-history__chart-body';
+
+    var series = buildDailySeries(counts, days);
+    chartBody.appendChild(buildTimelineMeta(series));
+
+    var tooltip = null;
+    try {
+      tooltip = state.doc.createElement('div');
+      tooltip.className = 'lo-history__chart-tooltip';
+      tooltip.setAttribute('role', 'status');
+      tooltip.setAttribute('aria-live', 'polite');
+      tooltip.textContent = 'Hover or focus a day to see details.';
+      chartBody.appendChild(tooltip);
+    } catch (err) {
+      tooltip = null;
+    }
+
+    var cellSize = 12;
+    var gap = 3;
+    var padding = 12;
+    var startDate = new Date();
+    startDate.setUTCHours(0, 0, 0, 0);
+    startDate = new Date(startDate.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+    var leading = startDate.getUTCDay();
+    var totalCells = leading + series.labels.length;
+    var weeks = Math.ceil(totalCells / 7);
+    var width = padding * 2 + weeks * (cellSize + gap) - gap;
+    var height = padding * 2 + 7 * (cellSize + gap) - gap;
+
+    var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Incident heatmap');
+
+    series.labels.forEach(function (label, idx) {
+      var cellIndex = leading + idx;
+      var col = Math.floor(cellIndex / 7);
+      var row = cellIndex % 7;
+      var x = padding + col * (cellSize + gap);
+      var y = padding + row * (cellSize + gap);
+      var value = series.values[idx] || 0;
+      var intensity = 0;
+      if (series.maxCount > 0 && value > 0) {
+        var ratio = value / series.maxCount;
+        if (ratio <= 0.25) {
+          intensity = 1;
+        } else if (ratio <= 0.5) {
+          intensity = 2;
+        } else if (ratio <= 0.75) {
+          intensity = 3;
+        } else {
+          intensity = 4;
+        }
+      }
+
+      var rect = state.doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(y));
+      rect.setAttribute('width', String(cellSize));
+      rect.setAttribute('height', String(cellSize));
+      rect.setAttribute('rx', '2');
+      rect.setAttribute('class', 'lo-heatmap__cell lo-heatmap__cell--level-' + intensity);
+      rect.setAttribute('tabindex', '0');
+      rect.setAttribute('aria-label', formatShortDate(label) + ': ' + formatIncidentCount(value));
+      var cellTitle = state.doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+      cellTitle.textContent = label + ' – ' + value + ' incidents';
+      rect.appendChild(cellTitle);
+
+      var activateCell = function () {
+        if (tooltip) {
+          tooltip.textContent = formatShortDate(label) + ': ' + formatIncidentCount(value);
+        }
+        rect.classList.add('lo-heatmap__cell--active');
+      };
+
+      var deactivateCell = function () {
+        if (tooltip) {
+          tooltip.textContent = 'Hover or focus a day to see details.';
+        }
+        rect.classList.remove('lo-heatmap__cell--active');
+      };
+
+      rect.addEventListener('mouseenter', activateCell);
+      rect.addEventListener('focus', activateCell);
+      rect.addEventListener('mouseleave', deactivateCell);
+      rect.addEventListener('blur', deactivateCell);
+
+      svg.appendChild(rect);
+    });
+
+    chartBody.appendChild(svg);
+
+    var legend = state.doc.createElement('div');
+    legend.className = 'lo-heatmap__legend';
+    legend.innerHTML = [
+      '<span class="lo-heatmap__legend-label">0</span>',
+      '<span class="lo-heatmap__swatch lo-heatmap__cell--level-0" aria-hidden="true"></span>',
+      '<span class="lo-heatmap__swatch lo-heatmap__cell--level-1" aria-hidden="true"></span>',
+      '<span class="lo-heatmap__swatch lo-heatmap__cell--level-2" aria-hidden="true"></span>',
+      '<span class="lo-heatmap__swatch lo-heatmap__cell--level-3" aria-hidden="true"></span>',
+      '<span class="lo-heatmap__swatch lo-heatmap__cell--level-4" aria-hidden="true"></span>',
+      '<span class="lo-heatmap__legend-label">Peak</span>'
+    ].join('');
+    chartBody.appendChild(legend);
+
+    var peak = state.doc.createElement('div');
+    peak.className = 'lo-history__meta lo-heatmap__peak';
+    if (series.maxCount > 0 && series.peakDate) {
+      peak.textContent = 'Peak day: ' + formatShortDate(series.peakDate, true) + ' (' + formatIncidentCount(series.maxCount) + ').';
+    } else {
+      peak.textContent = 'Peak day: none yet.';
+    }
+    chartBody.appendChild(peak);
+
+    return chartBody;
+  }
+
+  function buildTrendChart(counts, days) {
+    var chartBody = state.doc.createElement('div');
+    chartBody.className = 'lo-history__chart-body';
+
+    var series = buildDailySeries(counts, days);
+    chartBody.appendChild(buildTimelineMeta(series));
+
+    var tooltip = null;
+    try {
+      tooltip = state.doc.createElement('div');
+      tooltip.className = 'lo-history__chart-tooltip';
+      tooltip.setAttribute('role', 'status');
+      tooltip.setAttribute('aria-live', 'polite');
+      tooltip.textContent = 'Hover or focus a point to see details.';
+      chartBody.appendChild(tooltip);
+    } catch (err) {
+      tooltip = null;
+    }
+
+    var rolling = series.values.map(function (_, idx) {
+      var start = Math.max(0, idx - 6);
+      var sum = 0;
+      for (var i = start; i <= idx; i++) {
+        sum += series.values[i] || 0;
+      }
+      var count = idx - start + 1;
+      return sum / count;
+    });
+
+    var max = rolling.reduce(function (acc, val) { return Math.max(acc, val); }, 0) || 1;
+    var width = Math.max(240, series.labels.length * 10);
+    var height = 170;
+    var topPadding = 28;
+    var bottomPadding = 30;
+    var plotHeight = height - topPadding - bottomPadding;
+    var plotWidth = width - 16;
+    var stepX = plotWidth / Math.max(series.labels.length - 1, 1);
+
+    var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', '7-day rolling average trend');
+
+    var axisLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+    axisLabel.setAttribute('x', '6');
+    axisLabel.setAttribute('y', '18');
+    axisLabel.setAttribute('class', 'lo-history__chart-text');
+    axisLabel.textContent = '7-day rolling avg';
+    svg.appendChild(axisLabel);
+
+    var line = state.doc.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    var points = rolling.map(function (value, idx) {
+      var x = 8 + idx * stepX;
+      var y = height - bottomPadding - ((value / max) * plotHeight);
+      return x + ',' + y;
+    }).join(' ');
+    line.setAttribute('points', points);
+    line.setAttribute('class', 'lo-trend__line');
+    svg.appendChild(line);
+
+    var tickIndices = [0, series.labels.length - 1];
+    series.labels.forEach(function (label, idx) {
+      if (idx === 0 || idx === series.labels.length - 1) {
+        return;
+      }
+      var parsed = Date.parse(label + 'T00:00:00Z');
+      if (Number.isNaN(parsed)) {
+        return;
+      }
+      var date = new Date(parsed);
+      if (date.getUTCDate() === 1) {
+        tickIndices.push(idx);
+      }
+    });
+
+    tickIndices = tickIndices.filter(function (value, idx, arr) {
+      return arr.indexOf(value) === idx;
+    }).sort(function (a, b) { return a - b; });
+
+    if (tickIndices.length > 6) {
+      var reduceStep = Math.ceil(tickIndices.length / 6);
+      tickIndices = tickIndices.filter(function (_, idx) { return idx % reduceStep === 0; });
+    }
+
+    tickIndices.forEach(function (idx) {
+      var tickLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+      tickLabel.setAttribute('x', String(8 + idx * stepX));
+      tickLabel.setAttribute('y', String(height - 10));
+      tickLabel.setAttribute('text-anchor', idx === 0 ? 'start' : (idx === series.labels.length - 1 ? 'end' : 'middle'));
+      tickLabel.setAttribute('class', 'lo-history__chart-text');
+      tickLabel.textContent = formatShortDate(series.labels[idx]);
+      svg.appendChild(tickLabel);
+    });
+
+    rolling.forEach(function (value, idx) {
+      var x = 8 + idx * stepX;
+      var y = height - bottomPadding - ((value / max) * plotHeight);
+      var point = state.doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      point.setAttribute('cx', String(x));
+      point.setAttribute('cy', String(y));
+      point.setAttribute('r', '3');
+      point.setAttribute('class', 'lo-trend__point');
+      point.setAttribute('tabindex', '0');
+      var avgText = value ? value.toFixed(1) : '0.0';
+      point.setAttribute('aria-label', formatShortDate(series.labels[idx]) + ': ' + formatIncidentCount(series.values[idx]) + ' (avg ' + avgText + ')');
+      var pointTitle = state.doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+      pointTitle.textContent = series.labels[idx] + ' – ' + series.values[idx] + ' incidents (avg ' + avgText + ')';
+      point.appendChild(pointTitle);
+
+      var activatePoint = function () {
+        if (tooltip) {
+          tooltip.textContent = formatShortDate(series.labels[idx]) + ': ' + formatIncidentCount(series.values[idx]) + ' (avg ' + avgText + ')';
+        }
+        point.classList.add('lo-trend__point--active');
+      };
+
+      var deactivatePoint = function () {
+        if (tooltip) {
+          tooltip.textContent = 'Hover or focus a point to see details.';
+        }
+        point.classList.remove('lo-trend__point--active');
+      };
+
+      point.addEventListener('mouseenter', activatePoint);
+      point.addEventListener('focus', activatePoint);
+      point.addEventListener('mouseleave', deactivatePoint);
+      point.addEventListener('blur', deactivatePoint);
+
+      svg.appendChild(point);
+    });
+
+    chartBody.appendChild(svg);
+    return chartBody;
   }
 
   function buildYearOverYearChart(comparison, subtitle, days) {
