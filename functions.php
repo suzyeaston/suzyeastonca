@@ -558,7 +558,9 @@ function albini_handle_query( WP_REST_Request $req ) {
             'model'       => 'gpt-4o',
             'max_tokens'  => 350,
             'temperature' => 0.4,
-            'timeout'     => 15,
+        ),
+        array(
+            'timeout' => 15,
         )
     );
 
@@ -630,7 +632,9 @@ function se_handle_riff_tip( WP_REST_Request $req ) {
         array(
             'temperature' => 0.8,
             'max_tokens'  => 80,
-            'timeout'     => 15,
+        ),
+        array(
+            'timeout' => 15,
         )
     );
 
