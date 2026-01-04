@@ -17,6 +17,7 @@ use function SuzyEaston\LousyOutages\Adapters\from_rss_atom;
 use function SuzyEaston\LousyOutages\Adapters\from_slack_current;
 use function SuzyEaston\LousyOutages\Adapters\from_statuspage_status;
 use function SuzyEaston\LousyOutages\Adapters\from_statuspage_summary;
+use function SuzyEaston\LousyOutages\Adapters\from_gcp_incidents_json;
 use function SuzyEaston\LousyOutages\Adapters\Statuspage\detect_state_from_error;
 
 class Fetcher {
@@ -28,6 +29,7 @@ class Fetcher {
         'maintenance' => 'Maintenance',
         'unknown'     => 'Unknown',
     ];
+    private const UNCERTAIN_SUMMARY = 'Can’t verify right now — provider page may still be operational.';
 
     private $timeout;
 
@@ -42,6 +44,7 @@ class Fetcher {
 
     public function fetch(array $provider): array {
         $id        = (string) ($provider['id'] ?? '');
+        $providerId = strtolower($id);
         $name      = (string) ($provider['name'] ?? $id);
         $type      = strtolower((string) ($provider['type'] ?? 'statuspage'));
         $endpoint  = $this->resolve_endpoint($provider, $type);
@@ -70,7 +73,7 @@ class Fetcher {
                 $defaults['summary'] = 'No public status endpoint available';
             }
             $defaults['message'] = $defaults['summary'];
-            return $defaults;
+            return $this->apply_tile_metadata($defaults, $provider, true);
         }
 
         $optional = ! empty($provider['optional']) || ('rss-optional' === $type);
@@ -108,39 +111,30 @@ class Fetcher {
         }
 
         if (! $response['ok']) {
-            $message      = (string) ($response['message'] ?? '');
-            $networkKind  = $response['retry_kind'] ?? $this->classify_network_error($message);
-            $errorCode    = $status > 0
-                ? 'http_error:' . $status
-                : 'network_error:' . ($networkKind ?: ((string) ($response['error'] ?? 'request_failed')));
-            $summaryText = $fallbackSummary ?: $this->failure_summary($status, $networkKind);
-            $statusResult = 'unknown';
-
-            if ('statuspage' === $type && $status >= 500 && $status < 600) {
-                $detected = detect_state_from_error((string) ($response['body'] ?? ''));
-                if ($detected) {
-                    $statusResult = $detected;
-                    if (!$fallbackSummary) {
-                        $summaryText = ('outage' === $detected)
-                            ? 'Status API error indicates major outage'
-                            : 'Status API error indicates active incident';
-                    }
-                }
-            }
-
-            if ($optional) {
-                return $this->optional_unavailable($defaults, $message ?: $summaryText);
-            }
-
-            return $this->failed_defaults($defaults, $errorCode, $summaryText, $statusResult, $status, $networkKind, $message);
+            return $this->handle_failed_response($defaults, $provider, $type, $response, $fallbackSummary, $optional);
         }
 
         $body = (string) ($response['body'] ?? '');
         if ('' === trim($body)) {
             if ($optional) {
-                return $this->optional_unavailable($defaults, 'Empty body');
+                return $this->apply_tile_metadata($this->optional_unavailable($defaults, 'Empty body'), $provider, true);
             }
-            return $this->failed_defaults($defaults, 'data_error:empty_body', 'Empty response from status endpoint');
+            return $this->apply_tile_metadata(
+                $this->failed_defaults($defaults, 'data_error:empty_body', 'Empty response from status endpoint'),
+                $provider,
+                true
+            );
+        }
+
+        if ('zscaler' === $providerId && $this->is_html_response($body)) {
+            $response = [
+                'ok'      => false,
+                'status'  => (int) ($response['status'] ?? 0),
+                'error'   => 'html_response',
+                'message' => 'Unexpected HTML response',
+                'body'    => $body,
+            ];
+            return $this->handle_failed_response($defaults, $provider, $type, $response, $fallbackSummary, $optional);
         }
 
         $normalized = $this->adapt_response($adapterType, $body);
@@ -181,7 +175,7 @@ class Fetcher {
             );
         }
 
-        return $result;
+        return $this->apply_tile_metadata($result, $provider, $historyFallback);
     }
 
     private function build_headers(string $type): array {
@@ -365,9 +359,53 @@ class Fetcher {
                 return from_rss_atom($body);
             case 'status':
                 return from_statuspage_status($body);
+            case 'gcp_json':
+                return from_gcp_incidents_json($body);
             default:
                 return from_statuspage_summary($body);
         }
+    }
+
+    private function handle_failed_response(array $defaults, array $provider, string $type, array $response, ?string $fallbackSummary, bool $optional): array {
+        $status          = (int) ($response['status'] ?? 0);
+        $message         = (string) ($response['message'] ?? '');
+        $networkKind     = $response['retry_kind'] ?? $this->classify_network_error($message);
+        $errorCode       = $status > 0
+            ? 'http_error:' . $status
+            : 'network_error:' . ($networkKind ?: ((string) ($response['error'] ?? 'request_failed')));
+        $summaryText     = $fallbackSummary ?: $this->failure_summary($status, $networkKind);
+        $statusResult    = 'unknown';
+
+        if ('statuspage' === $type && $status >= 500 && $status < 600) {
+            $detected = detect_state_from_error((string) ($response['body'] ?? ''));
+            if ($detected) {
+                $statusResult = $detected;
+                if (!$fallbackSummary) {
+                    $summaryText = ('outage' === $detected)
+                        ? 'Status API error indicates major outage'
+                        : 'Status API error indicates active incident';
+                }
+            }
+        }
+
+        if ($optional) {
+            return $this->apply_tile_metadata(
+                $this->optional_unavailable($defaults, $message ?: $summaryText),
+                $provider,
+                true
+            );
+        }
+
+        $providerId = strtolower((string) ($provider['id'] ?? $defaults['id'] ?? ''));
+        if ('zscaler' === $providerId) {
+            $cached = $this->get_recent_cached_state($providerId, 6 * HOUR_IN_SECONDS);
+            if ($cached) {
+                return $this->build_cached_unknown_result($defaults, $cached, self::UNCERTAIN_SUMMARY);
+            }
+        }
+
+        $failed = $this->failed_defaults($defaults, $errorCode, $summaryText, $statusResult, $status, $networkKind, $message);
+        return $this->apply_tile_metadata($failed, $provider, true);
     }
 
     private function assemble_result(array $defaults, array $normalized, array $provider): array {
@@ -395,6 +433,70 @@ class Fetcher {
         $result['updated_at'] = $updated ?: $defaults['updated_at'];
 
         return $result;
+    }
+
+    private function apply_tile_metadata(array $result, array $provider, bool $fetchFailed): array {
+        $status    = strtolower((string) ($result['status'] ?? 'unknown'));
+        $incidents = is_array($result['incidents'] ?? null) ? $result['incidents'] : [];
+        $type      = strtolower((string) ($provider['type'] ?? $result['source_type'] ?? ''));
+
+        $tileKind = $this->determine_tile_kind($status, $incidents, $type, $fetchFailed);
+        $result['tile_kind'] = $tileKind;
+        $result['sort_key']  = $this->sort_key_for_tile($tileKind, $status);
+
+        return $result;
+    }
+
+    private function determine_tile_kind(string $status, array $incidents, string $type, bool $fetchFailed): string {
+        if ('manual' === $type) {
+            return 'manual';
+        }
+        if ($fetchFailed) {
+            return 'unknown';
+        }
+        if ('operational' === $status) {
+            return 'operational';
+        }
+        if ('unknown' === $status) {
+            return 'unknown';
+        }
+        if (!empty($incidents)) {
+            return 'outage';
+        }
+        return 'signal';
+    }
+
+    private function sort_key_for_tile(string $tileKind, string $status): int {
+        $status = strtolower($status);
+        $isMajor = in_array($status, ['outage', 'major', 'critical', 'major_outage'], true);
+        $isDegraded = in_array($status, ['degraded', 'partial', 'minor', 'warning'], true);
+        $isMaintenance = in_array($status, ['maintenance', 'scheduled'], true);
+
+        if ('outage' === $tileKind) {
+            if ($isMajor) {
+                return 10;
+            }
+            if ($isMaintenance) {
+                return 30;
+            }
+            return 20;
+        }
+        if ('signal' === $tileKind) {
+            if ($isMajor) {
+                return 40;
+            }
+            if ($isMaintenance) {
+                return 60;
+            }
+            return 50;
+        }
+        if ('unknown' === $tileKind) {
+            return 90;
+        }
+        if ('manual' === $tileKind) {
+            return 95;
+        }
+        return 100;
     }
 
     private function summarize(array $normalized, array $incidents, string $status): string {
@@ -429,6 +531,72 @@ class Fetcher {
         }
 
         return $this->sanitize($summary);
+    }
+
+    private function is_html_response(string $body): bool {
+        $trimmed = ltrim($body);
+        if ('' === $trimmed) {
+            return false;
+        }
+        if (0 === strpos($trimmed, '<')) {
+            return true;
+        }
+        return false !== stripos($trimmed, 'enable JavaScript');
+    }
+
+    private function get_recent_cached_state(string $providerId, int $maxAgeSeconds): ?array {
+        if ('' === $providerId) {
+            return null;
+        }
+        if (! class_exists(Store::class)) {
+            return null;
+        }
+
+        $store  = new Store();
+        $cached = $store->get($providerId);
+        if (! is_array($cached)) {
+            return null;
+        }
+
+        $updated = $cached['updated_at'] ?? ($cached['updatedAt'] ?? null);
+        if (! $updated) {
+            return null;
+        }
+        $timestamp = strtotime((string) $updated);
+        if (! $timestamp) {
+            return null;
+        }
+        if ((time() - $timestamp) > $maxAgeSeconds) {
+            return null;
+        }
+
+        $status = $this->normalize_status_code((string) ($cached['status'] ?? 'unknown'));
+        if ('unknown' === $status) {
+            return null;
+        }
+
+        return $cached;
+    }
+
+    private function build_cached_unknown_result(array $defaults, array $cached, string $summary): array {
+        $status = $this->normalize_status_code((string) ($cached['status'] ?? 'unknown'));
+
+        $result = $defaults;
+        $result['status']       = $status;
+        $result['status_label'] = self::status_label($status);
+        $result['summary']      = $summary;
+        $result['message']      = $summary;
+        $result['updated_at']   = $this->iso($cached['updated_at'] ?? ($cached['updatedAt'] ?? null)) ?: $defaults['updated_at'];
+        $result['incidents']    = (isset($cached['incidents']) && is_array($cached['incidents'])) ? $cached['incidents'] : [];
+        $result['recent_incidents'] = (isset($cached['recent_incidents']) && is_array($cached['recent_incidents']))
+            ? $cached['recent_incidents']
+            : [];
+        $result['error']       = 'cached_fallback';
+        $result['confidence']  = 'low';
+        $result['tile_kind']   = 'unknown';
+        $result['sort_key']    = $this->sort_key_for_tile('unknown', $status);
+
+        return $result;
     }
 
     private function should_verify_cloudflare_status(array $provider, string $type, array $result): bool {

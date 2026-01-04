@@ -780,8 +780,9 @@
     if (!Array.isArray(list)) {
       return;
     }
+    var orderedList = sortProviders(list);
     var orderedCards = [];
-    list.forEach(function (provider) {
+    orderedList.forEach(function (provider) {
       if (!provider) {
         return;
       }
@@ -829,6 +830,112 @@
       });
     }
     applyProviderVisibility();
+  }
+
+  function sortProviders(list) {
+    if (!Array.isArray(list)) {
+      return [];
+    }
+    var hasSortKey = list.some(function (provider) {
+      if (!provider) {
+        return false;
+      }
+      var value = provider.sort_key;
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return true;
+      }
+      if (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value))) {
+        return true;
+      }
+      return false;
+    });
+
+    if (!hasSortKey) {
+      return list.slice().sort(compareProvidersLegacy);
+    }
+
+    return list.slice().sort(compareProvidersBySortKey);
+  }
+
+  function compareProvidersBySortKey(a, b) {
+    var keyA = resolveSortKey(a);
+    var keyB = resolveSortKey(b);
+    if (keyA.sortKey !== keyB.sortKey) {
+      return keyA.sortKey - keyB.sortKey;
+    }
+    if (keyA.tileRank !== keyB.tileRank) {
+      return keyA.tileRank - keyB.tileRank;
+    }
+    if (keyA.name !== keyB.name) {
+      return keyA.name < keyB.name ? -1 : 1;
+    }
+    return 0;
+  }
+
+  function resolveSortKey(provider) {
+    var tilePriority = {
+      outage: 0,
+      signal: 1,
+      unknown: 2,
+      manual: 3,
+      operational: 4
+    };
+    var name = provider && (provider.name || provider.id || provider.provider || '');
+    var tileKind = String((provider && (provider.tile_kind || provider.tileKind)) || '').toLowerCase();
+    var sortKey = null;
+    if (provider && typeof provider.sort_key === 'number' && Number.isFinite(provider.sort_key)) {
+      sortKey = provider.sort_key;
+    } else if (provider && typeof provider.sort_key === 'string' && provider.sort_key.trim() !== '' && !Number.isNaN(Number(provider.sort_key))) {
+      sortKey = Number(provider.sort_key);
+    }
+    if (sortKey === null) {
+      sortKey = resolveLegacySortKey(provider);
+    }
+    return {
+      sortKey: sortKey,
+      tileRank: tilePriority[tileKind] !== undefined ? tilePriority[tileKind] : tilePriority.unknown,
+      name: String(name || '').toLowerCase()
+    };
+  }
+
+  function compareProvidersLegacy(a, b) {
+    var keyA = resolveLegacySortTuple(a);
+    var keyB = resolveLegacySortTuple(b);
+    for (var i = 0; i < keyA.length; i += 1) {
+      if (keyA[i] === keyB[i]) {
+        continue;
+      }
+      return keyA[i] < keyB[i] ? -1 : 1;
+    }
+    return 0;
+  }
+
+  function resolveLegacySortKey(provider) {
+    return resolveLegacySortTuple(provider)[0];
+  }
+
+  function resolveLegacySortTuple(provider) {
+    var statePriority = {
+      outage: 0,
+      degraded: 1,
+      maintenance: 2,
+      unknown: 3,
+      operational: 4
+    };
+    var normalized = normalizeStatus(provider && (provider.status || provider.overall || provider.overall_status || provider.stateCode));
+    var stateRank = statePriority[normalized.code] !== undefined ? statePriority[normalized.code] : statePriority.unknown;
+    var incidents = Array.isArray(provider && provider.incidents) ? provider.incidents : [];
+    var hasIncidents = incidents.length ? 0 : 1;
+    var hasError = provider && provider.error ? 0 : 1;
+    var risk = provider && typeof provider.risk === 'number' ? provider.risk : 0;
+    var name = String((provider && (provider.name || provider.id || provider.provider || '')) || '').toLowerCase();
+    return [
+      hasIncidents,
+      stateRank,
+      hasError,
+      -1 * risk,
+      name
+    ];
   }
 
 
