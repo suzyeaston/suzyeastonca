@@ -187,6 +187,156 @@ function lousy_outages_feed_autodiscovery() {
 }
 add_action( 'wp_head', 'lousy_outages_feed_autodiscovery' );
 
+if ( ! defined( 'LOUSY_OUTAGES_HOME_OUTAGE_WINDOW_HOURS' ) ) {
+    define( 'LOUSY_OUTAGES_HOME_OUTAGE_WINDOW_HOURS', 24 );
+}
+
+if ( ! defined( 'LOUSY_OUTAGES_HOME_DEGRADED_WINDOW_HOURS' ) ) {
+    define( 'LOUSY_OUTAGES_HOME_DEGRADED_WINDOW_HOURS', 2 );
+}
+
+if ( ! defined( 'LOUSY_OUTAGES_HOME_COMMUNITY_WINDOW_HOURS' ) ) {
+    define( 'LOUSY_OUTAGES_HOME_COMMUNITY_WINDOW_HOURS', 2 );
+}
+
+function get_lousy_outages_home_teaser_from_feed(): array {
+    $feed_url = home_url( '/?feed=lousy_outages_status' );
+    $default = [
+        'headline' => 'All clear: no active incidents right now.',
+        'href'     => home_url( '/lousy-outages/' ),
+        'status'   => 'clear',
+        'footnote' => '',
+        'feed_url' => $feed_url,
+    ];
+
+    if ( ! function_exists( 'fetch_feed' ) ) {
+        include_once ABSPATH . WPINC . '/feed.php';
+    }
+
+    static $cache_filter_added = false;
+    if ( ! $cache_filter_added ) {
+        add_filter(
+            'wp_feed_cache_transient_lifetime',
+            static function ( $lifetime, $url ) use ( $feed_url ) {
+                if ( $url === $feed_url ) {
+                    return 5 * MINUTE_IN_SECONDS;
+                }
+                return $lifetime;
+            },
+            10,
+            2
+        );
+        $cache_filter_added = true;
+    }
+
+    $feed = fetch_feed( $feed_url );
+    if ( is_wp_error( $feed ) ) {
+        return $default;
+    }
+
+    $items = $feed->get_items( 0, 25 );
+    if ( empty( $items ) ) {
+        return $default;
+    }
+
+    $now               = current_time( 'timestamp' );
+    $recent_outage     = null;
+    $recent_degraded   = null;
+    $community_reports = 0;
+    $seen              = [];
+
+    foreach ( $items as $item ) {
+        if ( ! $item instanceof SimplePie_Item ) {
+            continue;
+        }
+
+        $guid      = trim( (string) $item->get_id() );
+        $title     = trim( (string) $item->get_title() );
+        $link      = trim( (string) $item->get_link() );
+        $pub_date  = $item->get_date( 'U' );
+        $timestamp = is_numeric( $pub_date ) ? (int) $pub_date : ( $pub_date ? strtotime( (string) $pub_date ) : 0 );
+
+        $dedupe_key = $guid ?: sprintf( '%s|%s|%s', $title, $timestamp ?: '', $link );
+        if ( $dedupe_key && isset( $seen[ $dedupe_key ] ) ) {
+            continue;
+        }
+        if ( $dedupe_key ) {
+            $seen[ $dedupe_key ] = true;
+        }
+
+        if ( ! preg_match( '/^\\[(OUTAGE|DEGRADED|COMMUNITY REPORT)\\]\\s*/i', $title, $matches ) ) {
+            continue;
+        }
+
+        if ( ! $timestamp ) {
+            continue;
+        }
+
+        $kind        = strtoupper( $matches[1] );
+        $clean_title = trim( preg_replace( '/^\\[[^\\]]+\\]\\s*/', '', $title ) );
+        $parts       = preg_split( '/\\s+[–-]\\s+/', $clean_title, 2 );
+        $provider    = trim( $parts[0] ?? '' );
+        $incident    = trim( $parts[1] ?? '' );
+        $age         = $now - $timestamp;
+
+        if ( 'OUTAGE' === $kind && $age <= (int) LOUSY_OUTAGES_HOME_OUTAGE_WINDOW_HOURS * HOUR_IN_SECONDS ) {
+            if ( ! $recent_outage || $timestamp > $recent_outage['timestamp'] ) {
+                $recent_outage = [
+                    'provider'  => $provider ?: $clean_title,
+                    'incident'  => $incident ?: $clean_title,
+                    'timestamp' => $timestamp,
+                    'link'      => $link,
+                ];
+            }
+        }
+
+        if ( 'DEGRADED' === $kind && $age <= (int) LOUSY_OUTAGES_HOME_DEGRADED_WINDOW_HOURS * HOUR_IN_SECONDS ) {
+            if ( ! $recent_degraded || $timestamp > $recent_degraded['timestamp'] ) {
+                $recent_degraded = [
+                    'provider'  => $provider ?: $clean_title,
+                    'timestamp' => $timestamp,
+                ];
+            }
+        }
+
+        if ( 'COMMUNITY REPORT' === $kind && $age <= (int) LOUSY_OUTAGES_HOME_COMMUNITY_WINDOW_HOURS * HOUR_IN_SECONDS ) {
+            $community_reports++;
+        }
+    }
+
+    if ( $recent_outage ) {
+        $relative = human_time_diff( $recent_outage['timestamp'], $now );
+        $headline = sprintf(
+            'Outage detected: %s — %s (started %s ago)',
+            $recent_outage['provider'],
+            $recent_outage['incident'],
+            $relative
+        );
+
+        return [
+            'headline' => $headline,
+            'href'     => $recent_outage['link'] ?: $default['href'],
+            'status'   => 'outage',
+            'footnote' => '',
+            'feed_url' => $feed_url,
+        ];
+    }
+
+    $footnote = '';
+    if ( $recent_degraded ) {
+        $footnote = sprintf(
+            'Signals: %s degraded (no outage posted).',
+            $recent_degraded['provider']
+        );
+    } elseif ( $community_reports > 0 ) {
+        $footnote = sprintf( 'Community reports: %d unverified.', $community_reports );
+    }
+
+    $default['footnote'] = $footnote;
+
+    return $default;
+}
+
 // =========================================
 // 2. DISABLE AUTOMATIC PARAGRAPH FORMATTING
 // =========================================
@@ -527,4 +677,3 @@ add_action('wp_head', function () {
         echo "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"Lousy Outages Alerts\" href=\"{$href}\" />\n";
     }
 });
-
