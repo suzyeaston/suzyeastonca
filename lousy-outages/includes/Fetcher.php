@@ -146,6 +146,29 @@ class Fetcher {
         $normalized = $this->adapt_response($adapterType, $body);
         $result     = $this->assemble_result($defaults, $normalized, $provider);
 
+        if (! $historyFallback && $this->should_verify_cloudflare_status($provider, $type, $result)) {
+            $verification = $this->attempt_statuspage_status($provider, $endpoint);
+            if ($verification && ! empty($verification['response']['body'])) {
+                $verified = $this->adapt_response($verification['adapter'], (string) $verification['response']['body']);
+                $verifiedState = strtolower((string) ($verified['state'] ?? 'unknown'));
+                $verifiedStatus = $this->normalize_status_code($verifiedState);
+                if ('operational' === $verifiedStatus) {
+                    $result['status'] = 'operational';
+                    $result['status_label'] = self::status_label('operational');
+                    $result['summary'] = 'All systems operational.';
+                    $result['message'] = 'All systems operational.';
+                    $result['state'] = 'operational';
+                    $result['status_class'] = 'status--operational';
+                    $result['verified_via'] = 'status.json';
+                    $result['verification_note'] = 'summary.json reported degraded with no incidents; status.json reported operational';
+                    $verifiedUpdated = $this->iso($verified['updated_at'] ?? null);
+                    if ($verifiedUpdated) {
+                        $result['updated_at'] = $verifiedUpdated;
+                    }
+                }
+            }
+        }
+
         if ($historyFallback) {
             $result = $this->failed_defaults(
                 $defaults,
@@ -406,6 +429,49 @@ class Fetcher {
         }
 
         return $this->sanitize($summary);
+    }
+
+    private function should_verify_cloudflare_status(array $provider, string $type, array $result): bool {
+        if (strtolower((string) ($provider['id'] ?? '')) !== 'cloudflare') {
+            return false;
+        }
+        if ('statuspage' !== strtolower($type)) {
+            return false;
+        }
+
+        $status = strtolower((string) ($result['status'] ?? 'unknown'));
+        if (in_array($status, ['operational', 'unknown'], true)) {
+            return false;
+        }
+
+        $incidents = is_array($result['incidents'] ?? null) ? $result['incidents'] : [];
+        if (! empty($incidents)) {
+            return false;
+        }
+
+        $summary = (string) ($result['summary'] ?? '');
+        $message = (string) ($result['message'] ?? '');
+        if (! $this->is_generic_summary_message($summary) || ! $this->is_generic_summary_message($message)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function is_generic_summary_message(string $text): bool {
+        $needle = strtolower(trim($text));
+        if ('' === $needle) {
+            return true;
+        }
+
+        $phrases = [
+            'service degradation reported.',
+            'major outage reported.',
+            'maintenance in progress.',
+            'status temporarily unavailable.',
+        ];
+
+        return in_array($needle, $phrases, true);
     }
 
     private function normalize_incident_buckets(array $incidents, array $provider, string $status): array {
