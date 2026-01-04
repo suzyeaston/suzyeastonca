@@ -496,6 +496,9 @@ class Fetcher {
         if ('manual' === $tileKind) {
             return 95;
         }
+        if ('operational' === $tileKind) {
+            return 70;
+        }
         return 100;
     }
 
