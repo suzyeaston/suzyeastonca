@@ -60,13 +60,16 @@ get_header();
           <a class="btn-8bit" href="/lousy-outages/">OPEN THE LIVE DASHBOARD →</a>
         </section>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
-        <section class="pixel-intro" style="max-width: 720px; margin: 0 auto; line-height: 1.8; font-size: 1.05rem;">
-    <p>I&rsquo;m a musician, technologist, and creative builder based in Vancouver.</p>
-
-    <p>Toured nationally as a bassist, recorded with Steve Albini in Chicago, and appeared on MuchMusic. Today, I keep creating, playing around with programming/coding and releasing new music at night while shipping infrastructure code by day hah!</p>
-
-    <p>i was going to run for vancouver city council in 2026, but instead i&rsquo;m going to focus on building weird/beautiful creative tools</p>
-</section>
+        <section class="pixel-intro hero-intro">
+            <p class="hero-tagline pixel-font">Vancouver-based musician + creative technologist.</p>
+            <p>By day I ship infrastructure work; by night I build weird, beautiful tools and release indie music.</p>
+            <ul class="hero-build-list">
+                <li>I build: playful music tech &amp; track tools.</li>
+                <li>I build: arcade-style dashboards for real-world systems.</li>
+                <li>I build: creative experiments that mix art, sound, and code.</li>
+            </ul>
+            <a href="/bio/" class="pixel-button hero-bio-button">Read full bio</a>
+        </section>
 
         <p class="arcade-subtext">Insert coin to explore</p>
         <div class="puck-icon" role="img" aria-label="retro hockey puck icon">🏒</div>
@@ -125,6 +128,7 @@ get_header();
                 <h3 class="group-title">🎮 Games &amp; Tools</h3>
                 <div class="group-buttons">
                     <a href="/riff-generator" class="pixel-button">Riff Generator</a>
+                    <a href="/suzys-track-analyzer/" class="pixel-button">Track Analyzer</a>
                     <a href="/arcade" class="pixel-button">Canucks Game</a>
                     <a href="/canucks-stats" class="pixel-button">Canucks Stats</a>
                     <a href="/albini-qa" class="pixel-button">Albini Q&amp;A</a>
@@ -161,8 +165,6 @@ get_header();
         </div>
     </section>
 
-    <?php get_template_part('parts/lousy-outages-teaser'); ?>
-
     <?php
     $grimes_note = apply_filters(
         'se_home_grimes_note',
@@ -181,8 +183,10 @@ get_header();
     <section class="track-analyzer-feature">
         <h2 class="pixel-font">Track Analyzer</h2>
         <p class="pixel-font">Upload an MP3 and get instant feedback on your mix.</p>
-        <a href="/suzys-track-analyzer" class="pixel-button analyzer-cta">Analyze Your Track</a>
+        <a href="/suzys-track-analyzer/" class="pixel-button analyzer-cta">Analyze Your Track</a>
     </section>
+
+    <?php get_template_part('parts/lousy-outages-teaser'); ?>
 
     <section class="party-announcement crt-block">
         <h2>Grunge &amp; Rock Video Party (Instagram)</h2>
