@@ -53,22 +53,30 @@ get_header();
                 </p>
             </div>
         </div>
-        <section class="lo-callout lo-8bit">
-          <h2>LOUSY OUTAGES<br><span>LIVE STATUS DASHBOARD</span></h2>
-          <p>Track real-world outage chaos in arcade style.<br>
-          Suzanne (Suzy) Easton watches the clouds, ISPs, and tools you rely on — while dropping new indie tracks from Vancouver.</p>
-          <a class="btn-8bit" href="/lousy-outages/">OPEN THE LIVE DASHBOARD →</a>
-        </section>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
         <section class="pixel-intro hero-intro">
-            <p class="hero-tagline pixel-font">Vancouver-based musician + creative technologist.</p>
-            <p>By day I ship infrastructure work; by night I build weird, beautiful tools and release indie music.</p>
-            <ul class="hero-build-list">
-                <li>I build: playful music tech &amp; track tools.</li>
-                <li>I build: arcade-style dashboards for real-world systems.</li>
-                <li>I build: creative experiments that mix art, sound, and code.</li>
-            </ul>
-            <a href="/bio/" class="pixel-button hero-bio-button">Read full bio</a>
+            <p class="hero-headline pixel-font">Hi, I’m Suzy Easton — I build art you can click.</p>
+            <p class="hero-subhead">Vancouver-born musician + creative technologist. I’ve toured, ended up on MuchMusic, and recorded in Chicago with Steve Albini — and I’m still chasing that same feeling: something loud, honest, and useful.</p>
+            <p class="hero-microproof">I make indie rock and arcade-style tools for people who live in the real world (where dashboards lie and software breaks at the worst time).</p>
+            <div class="hero-lanes">
+                <div class="hero-lane">
+                    <p class="hero-lane-title pixel-font">Music</p>
+                    <p>Indie rock, covers, originals. New stuff always loading.</p>
+                </div>
+                <div class="hero-lane">
+                    <p class="hero-lane-title pixel-font">Tools</p>
+                    <p>Track Analyzer, Lousy Outages, and other experiments.</p>
+                </div>
+                <div class="hero-lane">
+                    <p class="hero-lane-title pixel-font">Work with me</p>
+                    <p>QA / automation / reliability help for teams who want fewer “WTF just happened” afternoons.</p>
+                </div>
+            </div>
+            <div class="hero-cta-group">
+                <a href="/suzys-track-analyzer/" class="pixel-button hero-primary-cta">Start here: Track Analyzer</a>
+                <a href="/lousy-outages/" class="pixel-button hero-secondary-cta">Open Lousy Outages</a>
+                <a href="/bio/" class="pixel-button hero-bio-button">Read full bio</a>
+            </div>
         </section>
 
         <p class="arcade-subtext">Insert coin to explore</p>
@@ -127,8 +135,8 @@ get_header();
             <div class="button-group">
                 <h3 class="group-title">🎮 Games &amp; Tools</h3>
                 <div class="group-buttons">
-                    <a href="/riff-generator" class="pixel-button">Riff Generator</a>
                     <a href="/suzys-track-analyzer/" class="pixel-button">Track Analyzer</a>
+                    <a href="/riff-generator" class="pixel-button">Riff Generator</a>
                     <a href="/arcade" class="pixel-button">Canucks Game</a>
                     <a href="/canucks-stats" class="pixel-button">Canucks Stats</a>
                     <a href="/albini-qa" class="pixel-button">Albini Q&amp;A</a>
