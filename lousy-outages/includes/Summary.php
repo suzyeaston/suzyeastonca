@@ -7,12 +7,17 @@ class Summary {
     public static function current(): array {
         $providers = self::providers();
         $latestIncident = self::latest_incident($providers);
+        $latestSignal = self::latest_signal_provider($providers);
+        $outageCount = self::count_outages($providers);
+        $signalCount = self::count_signals($providers);
 
         if ($latestIncident) {
             $slug = sanitize_title($latestIncident['provider_id'] ?: $latestIncident['provider_name']);
 
             return [
+                'kind'        => 'outage',
                 'hasIncident' => true,
+                'hasSignal'   => false,
                 'providerId'  => $latestIncident['provider_id'],
                 'provider'    => $latestIncident['provider_name'],
                 'title'       => $latestIncident['title'],
@@ -22,29 +27,37 @@ class Summary {
                 ),
                 'started_at'  => $latestIncident['started_at'],
                 'href'        => $slug ? home_url('/lousy-outages/#provider-' . $slug) : home_url('/lousy-outages/'),
+                'outageCount' => $outageCount,
+                'signalCount' => $signalCount,
             ];
         }
 
-        $fallback = self::latest_degraded_provider($providers);
-        if ($fallback) {
-            $slug = sanitize_title($fallback['provider_id'] ?: $fallback['provider_name']);
+        // Degraded indicators without unresolved incidents are treated as signals.
+        if ($latestSignal) {
+            $slug = sanitize_title($latestSignal['provider_id'] ?: $latestSignal['provider_name']);
 
             return [
-                'hasIncident' => true,
-                'providerId'  => $fallback['provider_id'],
-                'provider'    => $fallback['provider_name'],
-                'title'       => $fallback['title'],
-                'status'      => $fallback['status'],
+                'kind'        => 'signal',
+                'hasIncident' => false,
+                'hasSignal'   => true,
+                'providerId'  => $latestSignal['provider_id'],
+                'provider'    => $latestSignal['provider_name'],
+                'title'       => $latestSignal['title'],
+                'status'      => $latestSignal['status'],
                 'relative'    => self::relative_time_from_timestamp(
-                    (int) ($fallback['started_timestamp'] ?? $fallback['sort_timestamp'])
+                    (int) ($latestSignal['started_timestamp'] ?? $latestSignal['sort_timestamp'])
                 ),
-                'started_at'  => $fallback['started_at'],
+                'started_at'  => $latestSignal['started_at'],
                 'href'        => $slug ? home_url('/lousy-outages/#provider-' . $slug) : home_url('/lousy-outages/'),
+                'outageCount' => $outageCount,
+                'signalCount' => $signalCount,
             ];
         }
 
         return [
+            'kind'        => 'clear',
             'hasIncident' => false,
+            'hasSignal'   => false,
             'providerId'  => '',
             'provider'    => '',
             'title'       => 'All systems operational.',
@@ -52,6 +65,8 @@ class Summary {
             'relative'    => '',
             'started_at'  => '',
             'href'        => home_url('/lousy-outages/'),
+            'outageCount' => $outageCount,
+            'signalCount' => $signalCount,
         ];
     }
 
@@ -128,12 +143,7 @@ class Summary {
                     continue;
                 }
 
-                $statusCode = strtolower((string) ($incident['impact'] ?? $incident['status'] ?? ''));
-                if (in_array($statusCode, ['operational', 'resolved', 'maintenance'], true)) {
-                    continue;
-                }
-
-                if (!empty($incident['resolved_at']) || !empty($incident['resolvedAt'])) {
+                if (!self::is_unresolved_incident($incident)) {
                     continue;
                 }
 
@@ -146,6 +156,7 @@ class Summary {
 
                 if (null === $latest || $sortTimestamp > $latest['sort_timestamp']) {
                     $startedIso = self::incident_start_iso($incident, $sortTimestamp);
+                    $statusCode = strtolower((string) ($incident['impact'] ?? $incident['status'] ?? ''));
 
                     $latest = [
                         'provider_id'        => $providerId,
@@ -163,10 +174,10 @@ class Summary {
         return $latest;
     }
 
-    private static function latest_degraded_provider(array $providers): ?array
+    private static function latest_signal_provider(array $providers): ?array
     {
         $fallback = null;
-        $recent_cutoff = time() - DAY_IN_SECONDS;
+        $recent_cutoff = time() - (4 * HOUR_IN_SECONDS);
         $eligibleFallbackStates = ['degraded', 'outage', 'major', 'partial', 'monitoring', 'investigating'];
 
         foreach ($providers as $provider) {
@@ -174,13 +185,23 @@ class Summary {
                 continue;
             }
 
+            $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
             $status = strtolower((string) ($provider['stateCode'] ?? $provider['status'] ?? 'unknown'));
-            if (!in_array($status, $eligibleFallbackStates, true)) {
+            $isSignal = $tileKind === 'signal' || in_array($status, $eligibleFallbackStates, true);
+
+            if (!$isSignal) {
                 continue;
             }
 
             $providerId = (string) ($provider['id'] ?? $provider['provider'] ?? '');
             $providerName = (string) ($provider['name'] ?? $provider['provider'] ?? $providerId);
+            $incidents = isset($provider['incidents']) && is_array($provider['incidents']) ? $provider['incidents'] : [];
+
+            // Only treat degraded indicators as signals when there are no unresolved incidents.
+            if (self::has_unresolved_incident($incidents)) {
+                continue;
+            }
+
             $updated = self::parse_time($provider['updatedAt'] ?? $provider['updated_at'] ?? null);
             $sortTimestamp = $updated ?? time();
             if ($updated && $updated < $recent_cutoff) {
@@ -201,6 +222,102 @@ class Summary {
         }
 
         return $fallback;
+    }
+
+    private static function count_outages(array $providers): int
+    {
+        $recent_cutoff = time() - (2 * DAY_IN_SECONDS);
+        $count = 0;
+
+        foreach ($providers as $provider) {
+            if (!is_array($provider)) {
+                continue;
+            }
+
+            $incidents = isset($provider['incidents']) && is_array($provider['incidents']) ? $provider['incidents'] : [];
+
+            foreach ($incidents as $incident) {
+                if (!is_array($incident)) {
+                    continue;
+                }
+
+                if (!self::is_unresolved_incident($incident)) {
+                    continue;
+                }
+
+                $sortTimestamp = self::incident_timestamp($incident);
+                if (null === $sortTimestamp || $sortTimestamp < $recent_cutoff) {
+                    continue;
+                }
+
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    private static function count_signals(array $providers): int
+    {
+        $recent_cutoff = time() - (4 * HOUR_IN_SECONDS);
+        $eligibleFallbackStates = ['degraded', 'outage', 'major', 'partial', 'monitoring', 'investigating'];
+        $count = 0;
+
+        foreach ($providers as $provider) {
+            if (!is_array($provider)) {
+                continue;
+            }
+
+            $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
+            $status = strtolower((string) ($provider['stateCode'] ?? $provider['status'] ?? 'unknown'));
+            $isSignal = $tileKind === 'signal' || in_array($status, $eligibleFallbackStates, true);
+            if (!$isSignal) {
+                continue;
+            }
+
+            $incidents = isset($provider['incidents']) && is_array($provider['incidents']) ? $provider['incidents'] : [];
+            if (self::has_unresolved_incident($incidents)) {
+                continue;
+            }
+
+            $updated = self::parse_time($provider['updatedAt'] ?? $provider['updated_at'] ?? null);
+            if ($updated && $updated < $recent_cutoff) {
+                continue;
+            }
+
+            $count++;
+        }
+
+        return $count;
+    }
+
+    private static function has_unresolved_incident(array $incidents): bool
+    {
+        foreach ($incidents as $incident) {
+            if (!is_array($incident)) {
+                continue;
+            }
+
+            if (self::is_unresolved_incident($incident)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function is_unresolved_incident(array $incident): bool
+    {
+        $statusCode = strtolower((string) ($incident['impact'] ?? $incident['status'] ?? ''));
+        if (in_array($statusCode, ['operational', 'resolved', 'maintenance'], true)) {
+            return false;
+        }
+
+        if (!empty($incident['resolved_at']) || !empty($incident['resolvedAt'])) {
+            return false;
+        }
+
+        return true;
     }
 
     private static function incident_timestamp(array $incident): ?int

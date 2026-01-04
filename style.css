@@ -1454,6 +1454,10 @@ footer,
   color: #9bffc6;
 }
 
+.lo-home-pacman-alert--signal {
+  color: #ffe48a;
+}
+
 .lo-pacman {
   width: 1.6rem;
   height: 1.6rem;
