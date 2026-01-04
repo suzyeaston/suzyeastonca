@@ -16,12 +16,14 @@ if ( class_exists( '\\LousyOutages\\I18n' ) ) {
 }
 
 $latest_incident = null;
+$latest_signal = null;
 $relative_started = '';
 $teaser_href = home_url( '/lousy-outages/' );
 
 if ( class_exists( '\\LousyOutages\\Summary' ) ) {
     $current = Summary::current();
-    if ( ! empty( $current['hasIncident'] ) ) {
+    $kind = $current['kind'] ?? ( ! empty( $current['hasIncident'] ) ? 'outage' : 'clear' );
+    if ( 'outage' === $kind ) {
         $latest_incident = (object) [
             'provider'   => $current['provider'] ?? '',
             'title'      => $current['title'] ?? '',
@@ -29,6 +31,17 @@ if ( class_exists( '\\LousyOutages\\Summary' ) ) {
             'started_at' => $current['started_at'] ?? '',
         ];
         $relative_started = $latest_incident->relative;
+        if ( ! empty( $current['href'] ) ) {
+            $teaser_href = $current['href'];
+        }
+    } elseif ( 'signal' === $kind ) {
+        $latest_signal = (object) [
+            'provider'   => $current['provider'] ?? '',
+            'status'     => $current['status'] ?? '',
+            'relative'   => $current['relative'] ?? '',
+            'started_at' => $current['started_at'] ?? '',
+        ];
+        $relative_started = $latest_signal->relative;
         if ( ! empty( $current['href'] ) ) {
             $teaser_href = $current['href'];
         }
@@ -48,6 +61,20 @@ if ( class_exists( '\\LousyOutages\\Summary' ) ) {
                 — <?php echo esc_html( $latest_incident->title ); ?>
                 <?php if ( $relative_started ) : ?>
                     (started <?php echo esc_html( $relative_started ); ?>)
+                <?php endif; ?>
+            </span>
+        </p>
+    <?php elseif ( $latest_signal ) : ?>
+        <p class="lo-home-pacman-alert lo-home-pacman-alert--signal" data-signal-start="<?php echo esc_attr( $latest_signal->started_at ); ?>" data-relative="<?php echo esc_attr( $relative_started ); ?>">
+            <span class="lo-pacman" aria-hidden="true"></span>
+            <span class="lo-pacman-dots" aria-hidden="true"></span>
+            <span class="lo-alert-text">
+                Signal detected:
+                <strong><?php echo esc_html( $latest_signal->provider ); ?></strong>
+                — <?php echo esc_html( $latest_signal->status ); ?>.
+                No active incident posted yet.
+                <?php if ( $relative_started ) : ?>
+                    (checked <?php echo esc_html( $relative_started ); ?>)
                 <?php endif; ?>
             </span>
         </p>
