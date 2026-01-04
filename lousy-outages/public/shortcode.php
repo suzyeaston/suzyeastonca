@@ -316,8 +316,8 @@ function render_shortcode(): string {
         $status_slug = $is_operational_placeholder ? 'operational' : 'unknown';
         $status_label = $is_operational_placeholder ? $placeholder_label : 'UNKNOWN';
         $status_class = $is_operational_placeholder ? 'status--operational' : 'status--unknown';
-        $summary_text = $is_operational_placeholder ? '' : 'Status temporarily unavailable.';
-        $message_text = $is_operational_placeholder ? 'All systems operational.' : 'Status temporarily unavailable.';
+        $summary_text = $is_operational_placeholder ? '' : 'Can’t verify status right now.';
+        $message_text = $is_operational_placeholder ? 'All systems operational.' : 'Can’t verify status right now.';
 
         $ordered_tiles[] = [
             'id'           => $slug,
@@ -347,8 +347,8 @@ function render_shortcode(): string {
             $status_slug = $is_operational_placeholder ? 'operational' : 'unknown';
             $status_label = $is_operational_placeholder ? $placeholder_label : 'UNKNOWN';
             $status_class = $is_operational_placeholder ? 'status--operational' : 'status--unknown';
-            $summary_text = $is_operational_placeholder ? '' : 'Status temporarily unavailable.';
-            $message_text = $is_operational_placeholder ? 'All systems operational.' : 'Status temporarily unavailable.';
+            $summary_text = $is_operational_placeholder ? '' : 'Can’t verify status right now.';
+            $message_text = $is_operational_placeholder ? 'All systems operational.' : 'Can’t verify status right now.';
 
             $ordered_tiles[] = [
                 'provider'     => $slug,
@@ -428,6 +428,7 @@ function render_shortcode(): string {
             'major outage reported.',
             'maintenance in progress.',
             'status temporarily unavailable.',
+            'can’t verify status right now.',
         ];
         return in_array($needle, $phrases, true);
     };
@@ -571,19 +572,39 @@ function render_shortcode(): string {
                         }
                     )
                 );
+                $last_checked = $format_datetime(
+                    $tile['fetched_at']
+                    ?? $tile['fetchedAt']
+                    ?? $tile['updated_at']
+                    ?? $tile['updatedAt']
+                    ?? null
+                );
+                $debug_mode = isset($_GET['lo_debug']) && '1' === $_GET['lo_debug'];
+                $debug_line = '';
+                if ($debug_mode) {
+                    $http_code = isset($tile['http_code']) ? (int) $tile['http_code'] : 0;
+                    $error_text = isset($tile['error']) ? trim((string) $tile['error']) : '';
+                    if ($http_code > 0) {
+                        $debug_line = 'debug: HTTP ' . $http_code;
+                        if ('' !== $error_text) {
+                            $debug_line .= ' (' . $error_text . ')';
+                        }
+                    } elseif ('' !== $error_text) {
+                        $debug_line = 'debug: ' . $error_text;
+                    }
+                }
                 ?>
                 <article class="lo-card" data-provider-id="<?php echo esc_attr($slug ?: 'provider'); ?>">
                     <div class="lo-head">
                         <h3 class="lo-title"><?php echo esc_html($tile['name'] ?? ucfirst($slug)); ?></h3>
                         <span class="lo-pill <?php echo esc_attr($status_class); ?>" data-lo-badge><?php echo esc_html($label); ?></span>
                     </div>
-                    <p class="lo-error" data-lo-error<?php echo empty($tile['error']) ? ' hidden' : ''; ?>><?php echo esc_html((string) ($tile['error'] ?? '')); ?></p>
                     <?php
                     $message_text = trim((string) ($tile['message'] ?? ''));
                     $summary_text = trim((string) ($tile['summary'] ?? ''));
                     if (!empty($tile['error'])) {
                         if ('' === $message_text) {
-                            $message_text = 'Status temporarily unavailable.';
+                            $message_text = 'Can’t verify status right now.';
                         }
                         $summary_text = '';
                     }
@@ -594,7 +615,7 @@ function render_shortcode(): string {
                         } elseif ($status === 'operational') {
                             $message_text = 'All systems operational.';
                         } elseif ($status === 'unknown') {
-                            $message_text = 'Status temporarily unavailable.';
+                            $message_text = 'Can’t verify status right now.';
                         } else {
                             $message_text = $summary_text ?: ($label ?: 'Status update');
                         }
@@ -626,6 +647,14 @@ function render_shortcode(): string {
                     <?php if ('' !== $summary_display) : ?>
                         <p class="lo-summary" data-lo-summary><?php echo esc_html($summary_display); ?></p>
                     <?php endif; ?>
+                    <div class="lo-card-meta-wrap" data-lo-meta>
+                        <p class="lo-card-meta" data-lo-last-checked>Last checked: <?php echo esc_html($last_checked); ?></p>
+                        <p class="lo-card-meta lo-card-meta--hint" data-lo-last-known hidden></p>
+                        <p class="lo-card-meta lo-card-meta--hint" data-lo-unknown-hint<?php echo $status === 'unknown' ? '' : ' hidden'; ?>>
+                            Provider page may still be operational — click ‘View status’.
+                        </p>
+                        <p class="lo-card-debug" data-lo-debug<?php echo '' !== $debug_line ? '' : ' hidden'; ?>><?php echo esc_html($debug_line); ?></p>
+                    </div>
                     <div class="lo-components" data-lo-components>
                         <?php if (!empty($components)) : ?>
                             <h4 class="lo-components__title">Impacted components</h4>

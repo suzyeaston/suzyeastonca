@@ -737,6 +737,30 @@
   line-height: 1.4;
 }
 
+.lo-card-meta-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lo-card-meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--lo-muted);
+  line-height: 1.3;
+}
+
+.lo-card-meta--hint {
+  color: rgba(232, 243, 255, 0.6);
+}
+
+.lo-card-debug {
+  margin: 0;
+  font-size: 0.75rem;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  color: #ffd9a0;
+}
+
 .lo-snark {
   color: var(--lo-accent);
   font-style: italic;
