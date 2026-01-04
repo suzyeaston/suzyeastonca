@@ -109,14 +109,16 @@ function gpt4_analyze( $transcript ) {
         [
             'model'       => 'gpt-4o',
             'max_tokens'  => 150,
-            'timeout'     => 60,
             'temperature' => 0.7,
+        ],
+        [
+            'timeout' => 60,
         ]
     );
 
     if ( is_wp_error( $response ) ) {
         error_log( 'GPT-4 request error: ' . $response->get_error_message() );
-        return new WP_Error( 'gpt_request', __( 'Analysis request failed.', 'suzys-music-theme' ) );
+        return $response;
     }
 
     $analysis = $response['choices'][0]['message']['content'] ?? '';
@@ -155,7 +157,16 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
     } else {
         $analysis_result = analyze_audio( $upload_result );
         if ( is_wp_error( $analysis_result ) ) {
-            $error = $analysis_result->get_error_message();
+            $show_debug = isset( $_GET['ta_debug'] ) && '1' === $_GET['ta_debug'] && current_user_can( 'manage_options' );
+            if ( $show_debug ) {
+                $error = sprintf(
+                    '%s %s',
+                    __( 'Analysis request failed.', 'suzys-music-theme' ),
+                    $analysis_result->get_error_message()
+                );
+            } else {
+                $error = __( 'Analysis request failed. Please try again shortly.', 'suzys-music-theme' );
+            }
         } else {
             $analysis = $analysis_result;
         }
