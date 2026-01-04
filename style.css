@@ -1458,6 +1458,34 @@ footer,
   color: #ffe48a;
 }
 
+.lo-home-footnote {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(229, 249, 255, 0.7);
+}
+
+.lo-home-teaser .lo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.lo-home-teaser .lo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--arcade-neon-green, #39ff14);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  color: var(--arcade-neon-green, #39ff14);
+  background: rgba(57, 255, 20, 0.05);
+}
+
 .lo-pacman {
   width: 1.6rem;
   height: 1.6rem;

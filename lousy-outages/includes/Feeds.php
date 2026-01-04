@@ -77,14 +77,13 @@ class Feeds {
     }
 
     private static function collect_incident_items(): array {
-        $items          = [];
+        $itemsByKey     = [];
         $timestamps     = [];
         $fallback_time  = gmdate('c');
         $cutoff         = time() - (self::INCIDENT_WINDOW_DAYS * DAY_IN_SECONDS);
         $store          = new IncidentStore();
         $providers      = Providers::list();
         $events         = $store->getStoredIncidents();
-        $seenGuids      = [];
 
         if (is_array($events)) {
             foreach ($events as $event) {
@@ -126,19 +125,11 @@ class Feeds {
 
                 $title_text = trim((string) ($event['title'] ?? $event['description'] ?? 'Incident'));
                 $status     = (string) ($event['status'] ?? $event['status_normal'] ?? '');
-                $guid       = trim((string) ($event['guid'] ?? ''));
                 $eventTime  = $timestamp ? gmdate('c', (int) $timestamp) : $fallback_time;
                 $incidentId = sanitize_key((string) ($event['incident_id'] ?? ($event['id'] ?? '')));
 
-                if ('' === $guid) {
-                    $guid = self::build_guid($provider_id, $incidentId, $title_text, $eventTime);
-                }
-
-                if ($guid && isset($seenGuids[$guid])) {
-                    continue;
-                }
-
-                $seenGuids[$guid] = true;
+                $incidentKey = self::build_incident_key($provider_id, $incidentId, $title_text, $eventTime);
+                $guid        = self::build_guid($provider_id, $incidentId, $title_text, $eventTime);
 
                 $incidentLink = (string) ($event['url'] ?? '');
                 if ('' === $incidentLink) {
@@ -163,7 +154,7 @@ class Feeds {
                     $itemTitle                  = sprintf('[COMMUNITY REPORT] %s – %s', $provider_name, $title_text);
                 }
 
-                $items[] = [
+                $item = [
                     'title'       => $itemTitle,
                     'link'        => $incidentLink,
                     'guid'        => $guid,
@@ -172,14 +163,21 @@ class Feeds {
                     'timestamp'   => $itemTimestamp,
                 ];
 
-                $timestamps[] = $itemTimestamp;
+                if ('' !== $incidentKey) {
+                    $existing = $itemsByKey[$incidentKey] ?? null;
+                    if (! $existing || ($existing['timestamp'] ?? 0) < $itemTimestamp) {
+                        $itemsByKey[$incidentKey] = $item;
+                    }
+                } else {
+                    $itemsByKey[] = $item;
+                }
             }
         }
 
-        if (0 === count($items)) {
+        if (0 === count($itemsByKey)) {
             $now     = time();
             $nowIso  = gmdate('c', $now);
-            $items[] = [
+            $itemsByKey[] = [
                 'title'       => 'No recent major incidents detected',
                 'link'        => home_url('/lousy-outages/'),
                 'guid'        => self::build_guid('lousy-outages-status', 'all-clear', 'No recent major incidents detected', $nowIso),
@@ -187,9 +185,19 @@ class Feeds {
                 'description' => 'No major outages or degraded incidents have been detected in the last 30 days. Check the dashboard for current status details.',
                 'timestamp'   => $now,
             ];
-
-            $timestamps[] = $now;
         }
+
+        $items = array_values($itemsByKey);
+        $timestamps = array_values(
+            array_filter(
+                array_map(
+                    static function (array $item): int {
+                        return (int) ($item['timestamp'] ?? 0);
+                    },
+                    $items
+                )
+            )
+        );
 
         usort(
             $items,
@@ -215,6 +223,10 @@ class Feeds {
     }
 
     private static function build_guid(string $provider_id, string $incident_id, string $summary, string $time): string {
+        return self::build_incident_key($provider_id, $incident_id, $summary, $time);
+    }
+
+    private static function build_incident_key(string $provider_id, string $incident_id, string $summary, string $time): string {
         $provider  = sanitize_key($provider_id);
         $incident  = sanitize_key($incident_id);
         $normalizedSummary = '';
@@ -229,7 +241,10 @@ class Feeds {
             $normalizedSummary = strtolower(trim((string) $summary));
         }
 
-        return sha1($provider . '|' . $normalizedSummary . '|' . trim((string) $time));
+        $timestamp = self::parse_time($time);
+        $dateKey   = $timestamp ? gmdate('Y-m-d', $timestamp) : trim((string) $time);
+
+        return sha1($provider . '|' . $normalizedSummary . '|' . $dateKey);
     }
 
     private static function provider_link(string $provider_id, string $status_url = ''): string {
