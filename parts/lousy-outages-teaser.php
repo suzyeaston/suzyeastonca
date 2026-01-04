@@ -15,10 +15,10 @@ if ( class_exists( '\\LousyOutages\\I18n' ) ) {
     $teaser_strings = array_merge( $teaser_strings, array_intersect_key( $localized, $teaser_strings ) );
 }
 
-$teaser_data  = function_exists( 'get_lousy_outages_home_teaser_from_feed' )
-    ? get_lousy_outages_home_teaser_from_feed()
+$teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
+    ? get_lousy_outages_home_teaser_data()
     : [
-        'headline' => 'All clear: no active incidents right now.',
+        'headline' => 'All clear — no active outages right now.',
         'href'     => home_url( '/lousy-outages/' ),
         'status'   => 'clear',
         'footnote' => '',
@@ -26,7 +26,9 @@ $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_from_feed' )
     ];
 $teaser_href  = $teaser_data['href'] ?? home_url( '/lousy-outages/' );
 $feed_url     = $teaser_data['feed_url'] ?? $feed_url;
-$status_class = ( $teaser_data['status'] ?? 'clear' ) === 'outage' ? '' : ' lo-home-pacman-alert--clear';
+$status       = $teaser_data['status'] ?? 'clear';
+$status_class = 'clear' === $status ? ' lo-home-pacman-alert--clear' : ' lo-home-pacman-alert--outage';
+$footnote     = $teaser_data['footnote'] ?? '';
 ?>
 <section id="lousy-outages-teaser" class="lo-home-teaser" aria-live="polite">
     <h2 class="lo-home-heading">Lousy Outages</h2>
@@ -39,8 +41,8 @@ $status_class = ( $teaser_data['status'] ?? 'clear' ) === 'outage' ? '' : ' lo-h
         </span>
     </p>
 
-    <?php if ( ! empty( $teaser_data['footnote'] ) ) : ?>
-        <p class="lo-home-footnote"><?php echo esc_html( $teaser_data['footnote'] ); ?></p>
+    <?php if ( ! empty( $footnote ) ) : ?>
+        <p class="lo-home-footnote"><?php echo wp_kses_post( $footnote ); ?></p>
     <?php endif; ?>
 
     <p class="caption"><?php echo esc_html( $teaser_strings['teaserCaption'] ); ?></p>

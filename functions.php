@@ -188,7 +188,7 @@ function lousy_outages_feed_autodiscovery() {
 add_action( 'wp_head', 'lousy_outages_feed_autodiscovery' );
 
 if ( ! defined( 'LOUSY_OUTAGES_HOME_OUTAGE_WINDOW_HOURS' ) ) {
-    define( 'LOUSY_OUTAGES_HOME_OUTAGE_WINDOW_HOURS', 24 );
+    define( 'LOUSY_OUTAGES_HOME_OUTAGE_WINDOW_HOURS', 1 );
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_HOME_DEGRADED_WINDOW_HOURS' ) ) {
@@ -199,15 +199,173 @@ if ( ! defined( 'LOUSY_OUTAGES_HOME_COMMUNITY_WINDOW_HOURS' ) ) {
     define( 'LOUSY_OUTAGES_HOME_COMMUNITY_WINDOW_HOURS', 2 );
 }
 
-function get_lousy_outages_home_teaser_from_feed(): array {
+function get_lousy_outages_home_teaser_data(): array {
     $feed_url = home_url( '/?feed=lousy_outages_status' );
     $default = [
-        'headline' => 'All clear: no active incidents right now.',
+        'headline' => 'All clear — no active outages right now.',
         'href'     => home_url( '/lousy-outages/' ),
         'status'   => 'clear',
         'footnote' => '',
         'feed_url' => $feed_url,
     ];
+
+    $summary = get_lousy_outages_home_teaser_from_summary( $default );
+    if ( $summary ) {
+        return $summary;
+    }
+
+    return get_lousy_outages_home_teaser_from_feed( $default );
+}
+
+function get_lousy_outages_home_teaser_from_summary( array $default ): ?array {
+    $endpoint = home_url( '/wp-json/lousy-outages/v1/summary' );
+    $response = wp_remote_get(
+        $endpoint,
+        [
+            'timeout' => 3,
+            'headers' => [
+                'Accept' => 'application/json',
+            ],
+        ]
+    );
+
+    if ( is_wp_error( $response ) ) {
+        return null;
+    }
+
+    $status = wp_remote_retrieve_response_code( $response );
+    if ( $status < 200 || $status >= 300 ) {
+        return null;
+    }
+
+    $payload = json_decode( wp_remote_retrieve_body( $response ), true );
+    if ( ! is_array( $payload ) ) {
+        return null;
+    }
+
+    $meta = $payload['summary_meta'] ?? $payload['meta'] ?? [];
+    if ( ! is_array( $meta ) ) {
+        $meta = [];
+    }
+
+    $outage_count = (int) ( $meta['outage_count'] ?? $meta['active_outage_count'] ?? 0 );
+    $signal_count = (int) ( $meta['signal_count'] ?? 0 );
+    $unverified_count = (int) ( $meta['unverified_count'] ?? 0 );
+    $generated_at_raw = $meta['generated_at'] ?? $payload['generated_at'] ?? $payload['fetched_at'] ?? '';
+    $generated_at = lousy_outages_home_format_generated_at( $generated_at_raw );
+
+    $dashboard_url = $default['href'];
+    $footnote_link = sprintf( '<a href="%s">%s</a>', esc_url( $dashboard_url ), esc_html__( 'View the dashboard', 'suzyeastonca' ) );
+
+    if ( $outage_count > 0 ) {
+        $provider = lousy_outages_home_find_top_provider( $payload['providers'] ?? [] );
+        $provider_name = $provider['name'] ?? $provider['label'] ?? $provider['provider'] ?? '';
+        $provider_name = is_string( $provider_name ) ? trim( $provider_name ) : '';
+        if ( '' === $provider_name ) {
+            $provider_name = 'Multiple providers';
+        }
+
+        $incident_title = '';
+        if ( ! empty( $provider['incidents'] ) && is_array( $provider['incidents'] ) ) {
+            $lead_incident = $provider['incidents'][0];
+            if ( is_array( $lead_incident ) ) {
+                $incident_title = $lead_incident['name'] ?? $lead_incident['title'] ?? $lead_incident['summary'] ?? '';
+            }
+        }
+        $incident_title = is_string( $incident_title ) ? trim( $incident_title ) : '';
+        if ( '' === $incident_title ) {
+            $incident_title = 'Incident posted';
+        }
+
+        $headline = sprintf( 'Outage detected: %s — %s', $provider_name, $incident_title );
+        $footnote_text = $generated_at ? sprintf( 'Last checked: %s. %s', $generated_at, $footnote_link ) : sprintf( 'Last checked recently. %s', $footnote_link );
+
+        return [
+            'headline' => $headline,
+            'href'     => $dashboard_url,
+            'status'   => 'outage',
+            'footnote' => $footnote_text,
+            'feed_url' => $default['feed_url'],
+        ];
+    }
+
+    $signal_note = '';
+    if ( $signal_count > 0 || $unverified_count > 0 ) {
+        $signal_note = 'Signals detected (degraded/unverified).';
+    }
+
+    if ( $generated_at ) {
+        $signal_suffix = $signal_note ? ' ' . $signal_note : '';
+        $footnote_text = sprintf(
+            'Last checked: %s.%s <a href="%s">%s</a>',
+            $generated_at,
+            $signal_suffix,
+            esc_url( $dashboard_url ),
+            esc_html__( 'View the dashboard for signals + history.', 'suzyeastonca' )
+        );
+    } else {
+        $prefix = $signal_note ? $signal_note . ' ' : '';
+        $footnote_text = sprintf(
+            '%s<a href="%s">%s</a>',
+            $prefix,
+            esc_url( $dashboard_url ),
+            esc_html__( 'View the dashboard for signals + history.', 'suzyeastonca' )
+        );
+    }
+
+    return [
+        'headline' => 'All clear — no active outages right now.',
+        'href'     => $dashboard_url,
+        'status'   => 'clear',
+        'footnote' => $footnote_text,
+        'feed_url' => $default['feed_url'],
+    ];
+}
+
+function lousy_outages_home_find_top_provider( array $providers ): array {
+    $top = null;
+    $top_sort_key = null;
+
+    foreach ( $providers as $provider ) {
+        if ( ! is_array( $provider ) ) {
+            continue;
+        }
+        $tile_kind = strtolower( (string) ( $provider['tile_kind'] ?? $provider['tileKind'] ?? '' ) );
+        $status = strtolower( (string) ( $provider['status'] ?? $provider['stateCode'] ?? '' ) );
+        $has_incidents = ! empty( $provider['incidents'] );
+        $is_outage = 'outage' === $tile_kind
+            || in_array( $status, [ 'outage', 'major', 'critical', 'major_outage' ], true )
+            || $has_incidents;
+
+        if ( ! $is_outage ) {
+            continue;
+        }
+
+        $sort_key_value = $provider['sort_key'] ?? null;
+        $sort_key = is_numeric( $sort_key_value ) ? (int) $sort_key_value : 999;
+
+        if ( null === $top || $sort_key < $top_sort_key ) {
+            $top = $provider;
+            $top_sort_key = $sort_key;
+        }
+    }
+
+    return $top ?: [];
+}
+
+function lousy_outages_home_format_generated_at( $value ): string {
+    if ( empty( $value ) ) {
+        return '';
+    }
+    $timestamp = is_numeric( $value ) ? (int) $value : strtotime( (string) $value );
+    if ( ! $timestamp ) {
+        return '';
+    }
+    return date_i18n( 'M j, Y g:i a', $timestamp );
+}
+
+function get_lousy_outages_home_teaser_from_feed( array $default ): array {
+    $feed_url = $default['feed_url'] ?? home_url( '/?feed=lousy_outages_status' );
 
     if ( ! function_exists( 'fetch_feed' ) ) {
         include_once ABSPATH . WPINC . '/feed.php';
@@ -241,7 +399,6 @@ function get_lousy_outages_home_teaser_from_feed(): array {
 
     $now               = current_time( 'timestamp' );
     $recent_outage     = null;
-    $recent_degraded   = null;
     $community_reports = 0;
     $seen              = [];
 
@@ -290,15 +447,6 @@ function get_lousy_outages_home_teaser_from_feed(): array {
             }
         }
 
-        if ( 'DEGRADED' === $kind && $age <= (int) LOUSY_OUTAGES_HOME_DEGRADED_WINDOW_HOURS * HOUR_IN_SECONDS ) {
-            if ( ! $recent_degraded || $timestamp > $recent_degraded['timestamp'] ) {
-                $recent_degraded = [
-                    'provider'  => $provider ?: $clean_title,
-                    'timestamp' => $timestamp,
-                ];
-            }
-        }
-
         if ( 'COMMUNITY REPORT' === $kind && $age <= (int) LOUSY_OUTAGES_HOME_COMMUNITY_WINDOW_HOURS * HOUR_IN_SECONDS ) {
             $community_reports++;
         }
@@ -323,13 +471,8 @@ function get_lousy_outages_home_teaser_from_feed(): array {
     }
 
     $footnote = '';
-    if ( $recent_degraded ) {
-        $footnote = sprintf(
-            'Signals: %s degraded (no outage posted).',
-            $recent_degraded['provider']
-        );
-    } elseif ( $community_reports > 0 ) {
-        $footnote = sprintf( 'Community reports: %d unverified.', $community_reports );
+    if ( $community_reports > 0 ) {
+        $footnote = 'Signals detected (unverified). View the dashboard for details.';
     }
 
     $default['footnote'] = $footnote;
