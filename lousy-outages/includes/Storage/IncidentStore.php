@@ -476,6 +476,13 @@ class IncidentStore
                 $severity  = 'info';
                 $summary   = 'Minor Cloudflare signal suppressed';
             }
+
+            // Suppress status-only Cloudflare indicator events (digest-only).
+            if (preg_match('/^cloudflare status:\s*(degraded|partial(?: outage)?|major(?: outage)?|critical)$/', $titleLower)) {
+                $important = false;
+                $severity  = 'info';
+                $summary   = 'Cloudflare status-only indicator suppressed (digest-only)';
+            }
         }
 
         if ('maintenance' === $severity && '' === $summary) {
