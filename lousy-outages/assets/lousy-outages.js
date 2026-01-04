@@ -782,6 +782,46 @@
     return provider.summary || provider.message || '';
   }
 
+  function isGenericDegradedCopy(text) {
+    var needle = String(text || '').trim().toLowerCase();
+    if (!needle) {
+      return true;
+    }
+    var phrases = [
+      'service degradation reported.',
+      'major outage reported.',
+      'maintenance in progress.',
+      'status temporarily unavailable.'
+    ];
+    return phrases.indexOf(needle) !== -1;
+  }
+
+  function getSignalOnlyCopy(provider, normalized, providerSlug) {
+    if (!provider) {
+      return null;
+    }
+    if (String(providerSlug || '').toLowerCase() !== 'cloudflare') {
+      return null;
+    }
+    var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+    if (incidents.length) {
+      return null;
+    }
+    var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
+    if (statusInfo.code === 'operational' || statusInfo.code === 'unknown') {
+      return null;
+    }
+    var message = String(provider.message || '').trim();
+    var summaryText = String(provider.summary || '').trim();
+    if (!isGenericDegradedCopy(summaryText) || !isGenericDegradedCopy(message)) {
+      return null;
+    }
+    return {
+      message: 'Degraded signal detected',
+      summary: 'No active incident listed yet — may be transient. Click \'View status\' or hit Refresh.'
+    };
+  }
+
   function getMessageText(provider, normalized, providerSlug) {
     if (!provider) {
       return '';
@@ -792,11 +832,16 @@
     var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
     var hasUnavailableSummary = summaryText && /temporarily unavailable/i.test(summaryText);
     var hasError = !!provider.error || hasUnavailableSummary;
+    var signalOnlyCopy = getSignalOnlyCopy(provider, normalized, providerSlug);
+
+    if (hasError) {
+      return hasUnavailableSummary ? summaryText : 'Status temporarily unavailable.';
+    }
+    if (signalOnlyCopy) {
+      return signalOnlyCopy.message;
+    }
 
     if (!message) {
-      if (hasError) {
-        return hasUnavailableSummary ? summaryText : 'Status temporarily unavailable.';
-      }
       if (incidents.length) {
         var lead = incidents[0];
         var incidentTitle = lead && (lead.name || lead.title || lead.summary) ? (lead.name || lead.title || lead.summary) : 'Incident';
@@ -822,9 +867,13 @@
     var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
     var hasUnavailableSummary = summaryText && /temporarily unavailable/i.test(summaryText);
     var hasError = !!provider.error || hasUnavailableSummary;
+    var signalOnlyCopy = getSignalOnlyCopy(provider, normalized, providerSlug);
 
     if (hasError) {
       return hasUnavailableSummary ? summaryText : 'Status temporarily unavailable.';
+    }
+    if (signalOnlyCopy) {
+      return signalOnlyCopy.summary;
     }
     if (hasIncidents) {
       var lead = incidents[0];
@@ -936,7 +985,8 @@
     if (messageEl) {
       messageEl.textContent = messageText;
     }
-    var summaryText = String(provider.summary || '').trim();
+    var signalOnlyCopy = getSignalOnlyCopy(provider, normalized, providerSlug);
+    var summaryText = signalOnlyCopy ? signalOnlyCopy.summary : String(provider.summary || '').trim();
     if (summaryText && messageText && summaryText.toLowerCase() === messageText.toLowerCase()) {
       summaryText = '';
     }

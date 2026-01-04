@@ -418,6 +418,19 @@ function render_shortcode(): string {
         }
         return false;
     };
+    $is_generic_degraded_message = static function (string $text): bool {
+        $needle = strtolower(trim($text));
+        if ('' === $needle) {
+            return true;
+        }
+        $phrases = [
+            'service degradation reported.',
+            'major outage reported.',
+            'maintenance in progress.',
+            'status temporarily unavailable.',
+        ];
+        return in_array($needle, $phrases, true);
+    };
 
     $fetched_label = ('snapshot' === strtolower((string) $source))
         ? 'Outage info last refreshed:'
@@ -585,6 +598,17 @@ function render_shortcode(): string {
                         } else {
                             $message_text = $summary_text ?: ($label ?: 'Status update');
                         }
+                    }
+                    if (
+                        empty($tile['error'])
+                        && 'cloudflare' === $slug
+                        && !in_array($status, ['operational', 'unknown'], true)
+                        && empty($active_incidents)
+                        && $is_generic_degraded_message($summary_text)
+                        && $is_generic_degraded_message($message_text)
+                    ) {
+                        $message_text = 'Degraded signal detected';
+                        $summary_text = 'No active incident listed yet — may be transient. Click \'View status\' or hit Refresh.';
                     }
 
                     $summary_display = '';
