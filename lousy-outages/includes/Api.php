@@ -12,6 +12,44 @@ class Api {
     private const REPORT_RATE_WINDOW = HOUR_IN_SECONDS;
     private const REPORT_CAPTCHA_TTL = 600;
 
+    private static function build_summary_meta(array $providers): array {
+        $counts = [
+            'active_outage_count' => 0,
+            'signal_count'        => 0,
+            'unverified_count'    => 0,
+            'generated_at'        => gmdate('c'),
+        ];
+
+        foreach ($providers as $provider) {
+            if (!is_array($provider)) {
+                continue;
+            }
+            $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
+            if ('' === $tileKind) {
+                $status = strtolower((string) ($provider['status'] ?? $provider['stateCode'] ?? 'unknown'));
+                if ('operational' === $status) {
+                    $tileKind = 'operational';
+                } elseif ('unknown' === $status) {
+                    $tileKind = 'unknown';
+                } elseif (!empty($provider['incidents'])) {
+                    $tileKind = 'outage';
+                } else {
+                    $tileKind = 'signal';
+                }
+            }
+
+            if ('outage' === $tileKind) {
+                $counts['active_outage_count'] += 1;
+            } elseif ('signal' === $tileKind) {
+                $counts['signal_count'] += 1;
+            } elseif ('unknown' === $tileKind || 'manual' === $tileKind) {
+                $counts['unverified_count'] += 1;
+            }
+        }
+
+        return $counts;
+    }
+
     public static function bootstrap(): void {
         add_action('rest_api_init', [self::class, 'register_routes']);
         add_action('wp_ajax_lo_get_report_phrase', [self::class, 'handle_report_phrase']);
@@ -339,11 +377,13 @@ class Api {
                 'trending' => !empty($trending['trending']),
             ];
         } else {
+            $meta = self::build_summary_meta($providers);
             $payload = [
                 'providers'  => $providers,
                 'fetched_at' => $fetched_at,
                 'trending'   => $trending,
                 'source'     => $source,
+                'meta'       => $meta,
             ];
             if (!empty($errors)) {
                 $payload['errors'] = $errors;

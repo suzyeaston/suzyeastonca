@@ -76,6 +76,16 @@
     trendingReasons: null,
     exportCSVButton: null,
     exportPDFButton: null,
+    modeToggle: null,
+    modeButtons: {},
+    viewMode: 'incidents',
+    incidentsWrap: null,
+    allProvidersWrap: null,
+    heroWrap: null,
+    heroTime: null,
+    sectionGrids: {},
+    sectionBodies: {},
+    sectionToggles: {},
     providerToggles: [],
     mediaQuery: null,
     loadingEl: null,
@@ -117,6 +127,8 @@
     reportCaptchaTokenValue: '',
     reportProvidersInitialized: false,
     debug: false,
+    latestProviders: [],
+    incidentsMeta: {},
     postPaintStarted: false
   };
 
@@ -780,8 +792,12 @@
     if (!Array.isArray(list)) {
       return;
     }
+    state.latestProviders = list.slice();
     var orderedList = sortProviders(list);
     var orderedCards = [];
+    var incidentsCards = [];
+    var signalCards = [];
+    var unverifiedCards = [];
     orderedList.forEach(function (provider) {
       if (!provider) {
         return;
@@ -791,11 +807,8 @@
         return;
       }
       var card = null;
-      if (state.grid) {
-        card = state.grid.querySelector('[data-provider-id="' + escapeSelector(String(id)) + '"]');
-        if (!card) {
-          card = state.grid.querySelector('.provider-card[data-id="' + String(id) + '"]');
-        }
+      if (state.container) {
+        card = state.container.querySelector('[data-provider-id="' + escapeSelector(String(id)) + '"]');
       }
       if (!card && state.doc) {
         card = state.doc.querySelector('[data-provider-id="' + escapeSelector(String(id)) + '"]') || state.doc.querySelector('.provider-card[data-id="' + String(id) + '"]');
@@ -810,19 +823,37 @@
       } else {
         updateModernCard(card, provider, normalized);
       }
+      if (state.viewMode === 'incidents') {
+        var kind = resolveTileKind(provider, normalized);
+        if (kind === 'outage') {
+          incidentsCards.push(card);
+        } else if (kind === 'signal') {
+          signalCards.push(card);
+        } else if (kind === 'unknown' || kind === 'manual') {
+          unverifiedCards.push(card);
+        } else if (state.grid) {
+          state.grid.appendChild(card);
+        }
+      } else if (state.grid) {
+        state.grid.appendChild(card);
+      }
     });
     if (state.loadingEl) {
       if (Array.isArray(list) && list.length) {
         toggleSpinner(false);
       } else {
         var hasAnyCard = false;
-        if (state.grid) {
-          hasAnyCard = !!state.grid.querySelector('[data-provider-id]');
+        if (state.container) {
+          hasAnyCard = !!state.container.querySelector('[data-provider-id]');
         }
         toggleSpinner(!hasAnyCard);
       }
     }
-    if (state.grid && orderedCards.length) {
+    if (state.viewMode === 'incidents') {
+      appendCardsToSection(state.sectionGrids.incidents, incidentsCards);
+      appendCardsToSection(state.sectionGrids.signals, signalCards);
+      appendCardsToSection(state.sectionGrids.unverified, unverifiedCards);
+    } else if (state.grid && orderedCards.length) {
       orderedCards.forEach(function (card) {
         if (card.parentNode === state.grid) {
           state.grid.appendChild(card);
@@ -830,6 +861,34 @@
       });
     }
     applyProviderVisibility();
+  }
+
+  function appendCardsToSection(section, cards) {
+    if (!section || !cards || !cards.length) {
+      return;
+    }
+    cards.forEach(function (card) {
+      section.appendChild(card);
+    });
+  }
+
+  function resolveTileKind(provider, normalizedStatus) {
+    var tileKind = String((provider && (provider.tile_kind || provider.tileKind)) || '').toLowerCase();
+    if (tileKind) {
+      return tileKind;
+    }
+    var statusInfo = normalizedStatus || normalizeStatus(provider && (provider.status || provider.overall || provider.overall_status || provider.stateCode));
+    if (statusInfo.code === 'operational') {
+      return 'operational';
+    }
+    if (statusInfo.code === 'unknown') {
+      return 'unknown';
+    }
+    var incidents = Array.isArray(provider && provider.incidents) ? provider.incidents : [];
+    if (incidents.length) {
+      return 'outage';
+    }
+    return 'signal';
   }
 
   function sortProviders(list) {
@@ -908,6 +967,134 @@
       return keyA[i] < keyB[i] ? -1 : 1;
     }
     return 0;
+  }
+
+  function buildIncidentsMeta(providers, meta) {
+    var counts = {
+      active_outage_count: 0,
+      signal_count: 0,
+      unverified_count: 0,
+      generated_at: ''
+    };
+    if (meta && typeof meta === 'object') {
+      if (typeof meta.active_outage_count === 'number' && Number.isFinite(meta.active_outage_count)) {
+        counts.active_outage_count = meta.active_outage_count;
+      }
+      if (typeof meta.signal_count === 'number' && Number.isFinite(meta.signal_count)) {
+        counts.signal_count = meta.signal_count;
+      }
+      if (typeof meta.unverified_count === 'number' && Number.isFinite(meta.unverified_count)) {
+        counts.unverified_count = meta.unverified_count;
+      }
+      if (meta.generated_at) {
+        counts.generated_at = String(meta.generated_at);
+      }
+    }
+
+    var needsFallback = counts.active_outage_count === 0 && counts.signal_count === 0 && counts.unverified_count === 0;
+    if (needsFallback && Array.isArray(providers)) {
+      providers.forEach(function (provider) {
+        if (!provider) {
+          return;
+        }
+        var kind = resolveTileKind(provider);
+        if (kind === 'outage') {
+          counts.active_outage_count += 1;
+        } else if (kind === 'signal') {
+          counts.signal_count += 1;
+        } else if (kind === 'unknown' || kind === 'manual') {
+          counts.unverified_count += 1;
+        }
+      });
+    }
+
+    if (!counts.generated_at && state.fetchedAt) {
+      counts.generated_at = String(state.fetchedAt);
+    }
+
+    return counts;
+  }
+
+  function updateHero(metaCounts) {
+    if (!state.heroWrap) {
+      return;
+    }
+    var showHero = state.viewMode === 'incidents' && metaCounts && metaCounts.active_outage_count === 0;
+    if (showHero) {
+      state.heroWrap.removeAttribute('hidden');
+      if (state.heroTime) {
+        var time = metaCounts.generated_at || state.fetchedAt || '';
+        state.heroTime.textContent = formatTimestamp(time) || '—';
+      }
+    } else {
+      state.heroWrap.setAttribute('hidden', 'hidden');
+    }
+  }
+
+  function updateSectionLabels(metaCounts) {
+    if (state.sectionToggles.signals) {
+      state.sectionToggles.signals.textContent = 'Signals (' + (metaCounts.signal_count || 0) + ')';
+    }
+    if (state.sectionToggles.unverified) {
+      state.sectionToggles.unverified.textContent = 'Can\u2019t verify (' + (metaCounts.unverified_count || 0) + ')';
+    }
+    if (state.modeButtons.incidents) {
+      state.modeButtons.incidents.textContent = 'Incidents (' + (metaCounts.active_outage_count || 0) + ')';
+    }
+  }
+
+  function updateIncidentsUI(providers, meta) {
+    var metaCounts = buildIncidentsMeta(providers, meta);
+    state.incidentsMeta = metaCounts;
+    updateSectionLabels(metaCounts);
+    updateHero(metaCounts);
+  }
+
+  function setViewMode(mode) {
+    var nextMode = mode === 'all' ? 'all' : 'incidents';
+    state.viewMode = nextMode;
+    if (state.modeButtons.incidents) {
+      state.modeButtons.incidents.classList.toggle('is-active', nextMode === 'incidents');
+      state.modeButtons.incidents.setAttribute('aria-pressed', nextMode === 'incidents' ? 'true' : 'false');
+    }
+    if (state.modeButtons.all) {
+      state.modeButtons.all.classList.toggle('is-active', nextMode === 'all');
+      state.modeButtons.all.setAttribute('aria-pressed', nextMode === 'all' ? 'true' : 'false');
+    }
+    if (state.incidentsWrap) {
+      if (nextMode === 'incidents') {
+        state.incidentsWrap.removeAttribute('hidden');
+      } else {
+        state.incidentsWrap.setAttribute('hidden', 'hidden');
+      }
+    }
+    if (state.allProvidersWrap) {
+      if (nextMode === 'all') {
+        state.allProvidersWrap.removeAttribute('hidden');
+      } else {
+        state.allProvidersWrap.setAttribute('hidden', 'hidden');
+      }
+    }
+    updateHero(state.incidentsMeta || {});
+    if (state.latestProviders && state.latestProviders.length) {
+      renderProviders(state.latestProviders);
+    }
+  }
+
+  function toggleSection(key) {
+    var body = state.sectionBodies[key];
+    var toggle = state.sectionToggles[key];
+    if (!body || !toggle) {
+      return;
+    }
+    var isOpen = !body.hasAttribute('hidden');
+    if (isOpen) {
+      body.setAttribute('hidden', 'hidden');
+      toggle.setAttribute('aria-expanded', 'false');
+    } else {
+      body.removeAttribute('hidden');
+      toggle.setAttribute('aria-expanded', 'true');
+    }
   }
 
   function resolveLegacySortKey(provider) {
@@ -2800,8 +2987,8 @@
 
     state.isRefreshing = true;
 
-    if (state.loadingEl && state.grid) {
-      var hasCards = !!state.grid.querySelector('[data-provider-id]');
+    if (state.loadingEl && state.container) {
+      var hasCards = !!state.container.querySelector('[data-provider-id]');
       if (!hasCards) {
         toggleSpinner(true);
       }
@@ -2852,6 +3039,7 @@
           evaluateProviderHealth(body.providers);
           renderProviders(body.providers);
           populateReportProviders(body.providers);
+          updateIncidentsUI(body.providers, body.meta || null);
         } else {
           resetAutoRefresh();
           if (!state.reportProvidersInitialized) {
@@ -3038,6 +3226,28 @@
       return;
     }
     state.grid = state.container.querySelector('[data-lo-grid]') || state.container.querySelector('.providers-grid') || state.container;
+    state.allProvidersWrap = state.container.querySelector('[data-lo-all]');
+    state.incidentsWrap = state.container.querySelector('[data-lo-incidents]');
+    state.heroWrap = state.container.querySelector('[data-lo-hero]');
+    state.heroTime = state.container.querySelector('[data-lo-hero-time]');
+    state.modeToggle = state.container.querySelector('[data-lo-mode-toggle]');
+    state.modeButtons = {
+      incidents: state.container.querySelector('[data-lo-mode="incidents"]'),
+      all: state.container.querySelector('[data-lo-mode="all"]')
+    };
+    state.sectionGrids = {
+      incidents: state.container.querySelector('[data-lo-section-grid="incidents"]'),
+      signals: state.container.querySelector('[data-lo-section-grid="signals"]'),
+      unverified: state.container.querySelector('[data-lo-section-grid="unverified"]')
+    };
+    state.sectionBodies = {
+      signals: state.sectionGrids.signals,
+      unverified: state.sectionGrids.unverified
+    };
+    state.sectionToggles = {
+      signals: state.container.querySelector('[data-lo-section-toggle="signals"]'),
+      unverified: state.container.querySelector('[data-lo-section-toggle="unverified"]')
+    };
     state.fetchedEl = state.container.querySelector('[data-lo-fetched]') || state.container.querySelector('.last-updated span');
     state.fetchedLabelEl = state.container.querySelector('[data-lo-fetched-label]');
     state.countdownEl = state.container.querySelector('[data-lo-countdown]') || state.container.querySelector('.board-subtitle');
@@ -3116,6 +3326,15 @@
     state.fetchedAt = initialFetched || null;
     updateFetched();
 
+    var initialMeta = null;
+    if (initial && typeof initial.meta === 'object') {
+      initialMeta = initial.meta;
+    } else if (config.meta && typeof config.meta === 'object') {
+      initialMeta = config.meta;
+    }
+    updateIncidentsUI(initialProviders, initialMeta);
+    setViewMode('incidents');
+
     var initialTrending = null;
     if (initial && typeof initial.trending === 'object') {
       initialTrending = initial.trending;
@@ -3137,6 +3356,30 @@
 
     if (state.exportPDFButton) {
       state.exportPDFButton.addEventListener('click', exportPDF);
+    }
+
+    if (state.modeButtons.incidents) {
+      state.modeButtons.incidents.addEventListener('click', function () {
+        setViewMode('incidents');
+      });
+    }
+
+    if (state.modeButtons.all) {
+      state.modeButtons.all.addEventListener('click', function () {
+        setViewMode('all');
+      });
+    }
+
+    if (state.sectionToggles.signals) {
+      state.sectionToggles.signals.addEventListener('click', function () {
+        toggleSection('signals');
+      });
+    }
+
+    if (state.sectionToggles.unverified) {
+      state.sectionToggles.unverified.addEventListener('click', function () {
+        toggleSection('unverified');
+      });
     }
 
     enhanceSubscribeForms();
