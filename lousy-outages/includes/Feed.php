@@ -33,6 +33,7 @@ class Feed {
             self::render_incidents_feed($charset);
             return;
         }
+        $self = esc_url(get_feed_link($feedName ?: 'lousy-outages'));
 
         $store  = new Store();
         $states = $store->get_all();
@@ -61,9 +62,10 @@ class Feed {
 
         echo '<?xml version="1.0" encoding="' . esc_attr($charset ?: 'UTF-8') . '"?>';
         ?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title><?php echo esc_html(get_bloginfo('name') . ' – Lousy Outages Alerts'); ?></title>
+    <atom:link href="<?php echo $self; ?>" rel="self" type="application/rss+xml" />
     <link><?php echo esc_url(home_url('/lousy-outages/')); ?></link>
     <description><?php echo esc_html('Live incident alerts from the Lousy Outages dashboard.'); ?></description>
     <language>en-US</language>
@@ -87,12 +89,14 @@ class Feed {
     private static function render_incidents_feed(string $charset = 'UTF-8'): void {
         $items       = self::collect_recent_incident_items(2, 30, true);
         $lastUpdated = !empty($items[0]['pubDate']) ? $items[0]['pubDate'] : self::format_rss_date(gmdate('c'));
+        $self        = esc_url(get_feed_link('lousy-outages-incidents'));
 
         echo '<?xml version="1.0" encoding="' . esc_attr($charset ?: 'UTF-8') . '"?>';
         ?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title><?php echo esc_html('Lousy Outages — Arcade Ops Feed'); ?></title>
+    <atom:link href="<?php echo $self; ?>" rel="self" type="application/rss+xml" />
     <link><?php echo esc_url(home_url('/lousy-outages/')); ?></link>
     <description><?php echo esc_html('Fast, loud, and slightly neon. Outage pings from Suzanne (Suzy) Easton’s console.'); ?></description>
     <language>en-US</language>
