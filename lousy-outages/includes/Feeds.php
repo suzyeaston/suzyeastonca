@@ -53,11 +53,12 @@ class Feeds {
 
         [$items, $last_updated] = self::collect_incident_items();
 
-        $feed_link = function_exists('get_feed_link')
-            ? get_feed_link(self::FEED_NAME)
-            : home_url('/?feed=' . self::FEED_NAME);
+        // Use the current request URL so query-string vs pretty permalink access matches validator expectations.
+        $feed_link = function_exists('get_self_link')
+            ? get_self_link()
+            : home_url(add_query_arg(null, null));
         if (! $feed_link) {
-            $feed_link = home_url('/?feed=' . self::FEED_NAME);
+            $feed_link = home_url(add_query_arg(null, null));
         }
 
         echo '<?xml version="1.0" encoding="' . esc_attr($charset ?: 'UTF-8') . '"?>' . "\n";
