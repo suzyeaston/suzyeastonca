@@ -53,13 +53,24 @@ class Feeds {
 
         [$items, $last_updated] = self::collect_incident_items();
 
-        echo '<?xml version="1.0" encoding="' . esc_attr($charset ?: 'UTF-8') . '"?>';
+        $feed_link = function_exists('get_feed_link')
+            ? get_feed_link(self::FEED_NAME)
+            : home_url('/?feed=' . self::FEED_NAME);
+        if (! $feed_link) {
+            $feed_link = home_url('/?feed=' . self::FEED_NAME);
+        }
+
+        echo '<?xml version="1.0" encoding="' . esc_attr($charset ?: 'UTF-8') . '"?>' . "\n";
         ?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title><?php echo esc_html('Suzy Easton – Lousy Outages Status Feed'); ?></title>
     <link><?php echo esc_url(home_url('/lousy-outages/')); ?></link>
     <description><?php echo esc_html('Aggregated incident and performance updates for third-party providers monitored by the Lousy Outages dashboard.'); ?></description>
+    <atom:link href="<?php echo esc_url($feed_link); ?>" rel="self" type="application/rss+xml" />
+    <language><?php echo esc_html('en-CA'); ?></language>
+    <generator><?php echo esc_html('Lousy Outages'); ?></generator>
+    <ttl><?php echo esc_html('10'); ?></ttl>
     <lastBuildDate><?php echo esc_html(self::format_rss_date($last_updated)); ?></lastBuildDate>
 <?php foreach ($items as $item) : ?>
     <item>
@@ -68,6 +79,11 @@ class Feeds {
       <guid isPermaLink="false"><?php echo esc_html($item['guid']); ?></guid>
       <pubDate><?php echo esc_html($item['pubDate']); ?></pubDate>
       <description><?php echo esc_html($item['description']); ?></description>
+<?php if (!empty($item['categories'])) : ?>
+<?php foreach ($item['categories'] as $category) : ?>
+      <category><?php echo esc_html($category); ?></category>
+<?php endforeach; ?>
+<?php endif; ?>
     </item>
 <?php endforeach; ?>
   </channel>
@@ -131,7 +147,7 @@ class Feeds {
                 $incidentKey = self::build_incident_key($provider_id, $incidentId, $title_text, $eventTime);
                 $guid        = self::build_guid($provider_id, $incidentId, $title_text, $eventTime);
 
-                $incidentLink = (string) ($event['url'] ?? '');
+                $incidentLink = (string) ($event['incident_url'] ?? ($event['url'] ?? ''));
                 if ('' === $incidentLink) {
                     $incidentLink = self::provider_link($provider_id, $status_url);
                 }
@@ -154,6 +170,22 @@ class Feeds {
                     $itemTitle                  = sprintf('[COMMUNITY REPORT] %s – %s', $provider_name, $title_text);
                 }
 
+                $categories = array_values(
+                    array_filter(
+                        array_unique(
+                            array_map(
+                                'trim',
+                                [
+                                    $provider_name,
+                                    $severity,
+                                    $status,
+                                    (string) ($event['kind'] ?? ''),
+                                ]
+                            )
+                        )
+                    )
+                );
+
                 $item = [
                     'title'       => $itemTitle,
                     'link'        => $incidentLink,
@@ -161,6 +193,7 @@ class Feeds {
                     'pubDate'     => self::format_rss_date($eventTime),
                     'description' => self::build_funny_summary($descriptionArgs),
                     'timestamp'   => $itemTimestamp,
+                    'categories'  => $categories,
                 ];
 
                 if ('' !== $incidentKey) {
@@ -184,6 +217,7 @@ class Feeds {
                 'pubDate'     => self::format_rss_date($nowIso),
                 'description' => 'No major outages or degraded incidents have been detected in the last 30 days. Check the dashboard for current status details.',
                 'timestamp'   => $now,
+                'categories'  => [],
             ];
         }
 
