@@ -33,7 +33,8 @@ class Feed {
             self::render_incidents_feed($charset);
             return;
         }
-        $self = esc_url(get_feed_link($feedName ?: 'lousy-outages'));
+        // Use the current request URL to avoid mismatch between query-string and pretty permalinks.
+        $self = esc_url(function_exists('get_self_link') ? get_self_link() : home_url(add_query_arg(null, null)));
 
         $store  = new Store();
         $states = $store->get_all();
@@ -89,7 +90,8 @@ class Feed {
     private static function render_incidents_feed(string $charset = 'UTF-8'): void {
         $items       = self::collect_recent_incident_items(2, 30, true);
         $lastUpdated = !empty($items[0]['pubDate']) ? $items[0]['pubDate'] : self::format_rss_date(gmdate('c'));
-        $self        = esc_url(get_feed_link('lousy-outages-incidents'));
+        // Use the current request URL to avoid mismatch between query-string and pretty permalinks.
+        $self        = esc_url(function_exists('get_self_link') ? get_self_link() : home_url(add_query_arg(null, null)));
 
         echo '<?xml version="1.0" encoding="' . esc_attr($charset ?: 'UTF-8') . '"?>';
         ?>
