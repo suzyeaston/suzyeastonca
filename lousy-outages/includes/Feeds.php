@@ -9,6 +9,7 @@ class Feeds {
     private const FEED_NAME = 'lousy_outages_status';
     private const INCIDENT_WINDOW_DAYS = 30;
     private const INCIDENT_LIMIT = 25;
+    private const OPTION_STATUS_FEED_LAST_BUILD = 'lousy_outages_status_feed_last_build';
 
     public static function bootstrap(): void {
         add_action('init', [self::class, 'register']);
@@ -101,6 +102,7 @@ class Feeds {
         $store          = new IncidentStore();
         $providers      = Providers::list();
         $events         = $store->getStoredIncidents();
+        $default_last_build = '2000-01-01T00:00:00Z';
 
         if (is_array($events)) {
             foreach ($events as $event) {
@@ -208,20 +210,6 @@ class Feeds {
             }
         }
 
-        if (0 === count($itemsByKey)) {
-            $now     = time();
-            $nowIso  = gmdate('c', $now);
-            $itemsByKey[] = [
-                'title'       => 'No recent major incidents detected',
-                'link'        => home_url('/lousy-outages/'),
-                'guid'        => self::build_guid('lousy-outages-status', 'all-clear', 'No recent major incidents detected', $nowIso),
-                'pubDate'     => self::format_rss_date($nowIso),
-                'description' => 'No major outages or degraded incidents have been detected in the last 30 days. Check the dashboard for current status details.',
-                'timestamp'   => $now,
-                'categories'  => [],
-            ];
-        }
-
         $items = array_values($itemsByKey);
         $timestamps = array_values(
             array_filter(
@@ -245,6 +233,17 @@ class Feeds {
             $items = array_slice($items, 0, self::INCIDENT_LIMIT);
         }
 
+        if ($timestamps) {
+            $last_updated = gmdate('c', max($timestamps));
+            update_option(self::OPTION_STATUS_FEED_LAST_BUILD, $last_updated, false);
+        } else {
+            $stored_last_build = get_option(self::OPTION_STATUS_FEED_LAST_BUILD);
+            $last_updated = is_string($stored_last_build) && '' !== trim($stored_last_build)
+                ? $stored_last_build
+                : $default_last_build;
+            update_option(self::OPTION_STATUS_FEED_LAST_BUILD, $last_updated, false);
+        }
+
         return [
             array_map(
                 static function (array $item): array {
@@ -253,7 +252,7 @@ class Feeds {
                 },
                 $items
             ),
-            $timestamps ? gmdate('c', max($timestamps)) : $fallback_time,
+            $last_updated,
         ];
     }
 
