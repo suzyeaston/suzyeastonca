@@ -1212,7 +1212,8 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                     $timezone = wp_timezone();
                     $date_dt  = DateTime::createFromFormat( 'Y-m-d H:i:s', $date_key . ' 12:00:00', $timezone );
                     $date_ts  = $date_dt ? $date_dt->getTimestamp() : (int) ( $date_events[0]['start'] ?? time() );
-                    echo esc_html( wp_date( get_option( 'date_format' ), $date_ts ) );
+                    $format = 'l, ' . get_option( 'date_format' );
+                    echo esc_html( wp_date( $format, $date_ts ) );
                     ?>
                 </h2>
                 <ul class="vte-event-list">
