@@ -95,11 +95,13 @@
   let canucksShots = 0;
   let isDragging = false;
   let activeAvatar = "classic";
+  let saveShownThisShot = false;
 
   const avatars = {
-    classic: { label: "Classic Canuck", color: "#0055aa", jersey: "10" },
+    classic: { label: "Pavel Bure", color: "#0055aa", jersey: "10" },
     gino: { label: "Gino Odjick", color: "#0b6623", jersey: "29" },
     captain: { label: "The Captain", color: "#003366", jersey: "C" },
+    larionov: { label: "Igor Larionov", color: "#003366", jersey: "18" },
   };
 
   function applyAvatar(selection) {
@@ -165,6 +167,22 @@
     ctx.fill();
   }
 
+  function puckOverlapsGoalieX() {
+    const puckLeft = puck.x - puck.radius;
+    const puckRight = puck.x + puck.radius;
+    const goalieLeft = goalie.x;
+    const goalieRight = goalie.x + goalie.width;
+    return puckRight >= goalieLeft && puckLeft <= goalieRight;
+  }
+
+  function puckInsideNetX() {
+    const puckLeft = puck.x - puck.radius;
+    const puckRight = puck.x + puck.radius;
+    const netLeft = goal.x;
+    const netRight = goal.x + goal.width;
+    return puckRight >= netLeft && puckLeft <= netRight;
+  }
+
   function update(dt) {
     if ((keys.ArrowLeft || keys.KeyA) && player.x > 0) {
       player.x -= player.speed * dt;
@@ -180,6 +198,7 @@
       puck.x = player.x + player.width / 2;
       puck.y = player.y - 5;
       shotTimer = 0;
+      saveShownThisShot = false;
     } else {
       shotTimer += dt;
       puck.x += puck.vx * dt * 60;
@@ -198,10 +217,8 @@
         puck.vx *= -1;
       }
       if (puck.y - puck.radius < 0) {
-        const isInsideNet =
-          puck.x >= goal.x && puck.x <= goal.x + goal.width;
-        const goalieBlocking =
-          puck.x >= goalie.x && puck.x <= goalie.x + goalie.width;
+        const isInsideNet = puckInsideNetX();
+        const goalieBlocking = puckOverlapsGoalieX();
 
         if (isInsideNet && !goalieBlocking) {
           canucksScore += 1;
@@ -213,6 +230,9 @@
             opponentScore += 1;
           }
           showMiss(missMessage);
+          if (isInsideNet) {
+            saveShownThisShot = true;
+          }
           puck.y = puck.radius;
           puck.vy *= -1;
         }
@@ -226,12 +246,15 @@
       if (
         puck.y - puck.radius <= goalie.y + goalie.height &&
         puck.y - puck.radius >= goalie.y &&
-        puck.x > goalie.x &&
-        puck.x < goalie.x + goalie.width &&
+        puckOverlapsGoalieX() &&
         puck.vy < 0
       ) {
         puck.vy *= -1;
         puck.y = goalie.y + goalie.height + puck.radius;
+        if (!saveShownThisShot) {
+          showMiss("Saved!");
+          saveShownThisShot = true;
+        }
       }
 
       if (shotTimer > 2 && Math.abs(puck.vx) < 0.2 && Math.abs(puck.vy) < 0.2) {
@@ -252,6 +275,7 @@
     puck.vy = 0;
     puck.x = player.x + player.width / 2;
     puck.y = player.y - 5;
+    saveShownThisShot = false;
   }
 
   function playGoalMelody() {

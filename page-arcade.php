@@ -22,9 +22,10 @@ get_header();
                     <div class="avatar-select">
                         <label for="avatar-select-input" class="pixel-font">Choose Your Avatar</label>
                         <select id="avatar-select-input" aria-label="Choose your Canucks legend" class="pixel-select">
-                            <option value="classic" selected>Classic Canuck</option>
+                            <option value="classic" selected>Pavel Bure (Classic Canuck)</option>
                             <option value="gino">Gino Odjick</option>
                             <option value="captain">The Captain</option>
+                            <option value="larionov">Igor Larionov</option>
                         </select>
                         <p class="avatar-tip">Press "G" anytime to toggle Gino mode for a surprise.</p>
                     </div>
@@ -49,8 +50,6 @@ get_header();
         </div>
     </main>
 </div>
-
-<script src="<?php echo get_template_directory_uri(); ?>/js/hockey-game.js"></script>
 
 <script>
 // Share game
