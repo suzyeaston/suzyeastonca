@@ -143,49 +143,36 @@ get_header();
                 </div>
             </div>
 
-            <div class="button-group">
-                <h3 class="group-title">📺 Livestream &amp; Events</h3>
-                <div class="group-buttons">
-                    <a href="/social-media" class="pixel-button">Livestream</a>
-                    <a href="/music-releases" class="pixel-button">Upcoming Events</a>
-                    <a href="/vancouver-tech-events/" class="pixel-button">Vancouver Tech Events</a>
-                </div>
-            </div>
-
         </div>
 
     </div>
 
-    <section class="now-listening">
-        <h2 class="pixel-font">Now Listening</h2>
-        <div class="now-listening-item">
-            <iframe width="100%" height="360" src="https://www.youtube.com/embed/GwetNnBkgQM?autoplay=0" title="Metric – Full Performance (Live on KEXP)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            <p class="pixel-font now-listening-caption">🎶 Metric — Live on KEXP. stripped-down, all-acoustic set. no AI-weapons funding here.</p>
+    <section class="ai-film-feature crt-block">
+        <div class="ai-film-feature__video">
+            <div class="ai-film-feature__embed-wrap">
+                <iframe
+                    src="<?php echo esc_url('https://www.youtube-nocookie.com/embed/FrjuKGj91Pw'); ?>"
+                    title="<?php echo esc_attr('AI Film Club: Rain City Roll Reserve'); ?>"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen>
+                </iframe>
+            </div>
         </div>
-        <?php
-        $willie_heading = apply_filters('se_home_willie_heading', 'Now Playing: Willie Nelson — “Hands on the Wheel”');
-        $willie_body    = apply_filters('se_home_willie_body', 'At a moment when the world feels off-kilter, “Hands on the Wheel” brings it back to center. Minimal production, maximum heart. Love steadies the hands.');
-        ?>
-        <div class="now-listening-item">
-            <h3 class="pixel-font now-listening-subhead"><?php echo esc_html($willie_heading); ?></h3>
-            <p class="pixel-font now-listening-caption"><?php echo esc_html($willie_body); ?></p>
-            <iframe width="100%" height="360" src="https://www.youtube.com/embed/71cIYDnDZUk?autoplay=0" title="Willie Nelson — Hands on the Wheel" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <div class="ai-film-feature__copy">
+            <h2 class="pixel-font">AI Film Club: Rain City Roll Reserve</h2>
+            <p class="pixel-font ai-film-feature__kicker">BC + AI Film Club Prompt Challenge • Tiny Ghost Studios</p>
+            <p>My first AI short got screened in a room full of filmmakers — which still feels unreal. It’s a 19-second, retro-future Vancouver toilet paper ad because apparently that’s my brand now. More experiments incoming.</p>
+            <p class="ai-film-feature__credit">
+                Built for
+                <a href="<?php echo esc_url('https://vancouver.bc-ai.net/ai-film-club-launch'); ?>" target="_blank" rel="noopener noreferrer">BC + AI Film Club — Prompt Challenge (Tiny Ghost Studios)</a>
+            </p>
+            <div class="ai-film-feature__actions">
+                <a href="<?php echo esc_url('https://www.youtube.com/watch?v=FrjuKGj91Pw'); ?>" target="_blank" rel="noopener noreferrer" class="pixel-button">Watch on YouTube</a>
+                <a href="<?php echo esc_url(home_url('/suzys-track-analyzer/')); ?>" class="pixel-button">More AI Builds</a>
+            </div>
         </div>
-    </section>
-
-    <?php
-    $grimes_note = apply_filters(
-        'se_home_grimes_note',
-        'Spotify founder Daniel Ek’s fund Prima Materia poured €600M into defense-AI company Helsing in 2025. Indie mainstays like Deerhoof yanked catalogues in protest, calling out the weapons tie-in. Sharing Grimes here keeps the conversation loud: artists deserve platforms that aren’t bankrolled by war tech.'
-    );
-    $grimes_heading = apply_filters('se_home_grimes_heading', 'Spotlight: Grimes — “Artificial Angels”');
-    ?>
-    <section class="now-listening grimes-feature">
-        <div class="info-callout pixel-font">
-            <p><?php echo wp_kses_post($grimes_note); ?></p>
-        </div>
-        <h2 class="pixel-font"><?php echo esc_html($grimes_heading); ?></h2>
-        <iframe width="100%" height="360" src="https://www.youtube.com/embed/tvGnYM14-1A?autoplay=0" title="Grimes — Artificial Angels (Official Video)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     </section>
 
     <section class="track-analyzer-feature">
@@ -193,8 +180,6 @@ get_header();
         <p class="pixel-font">Upload an MP3 and get instant feedback on your mix.</p>
         <a href="/suzys-track-analyzer/" class="pixel-button analyzer-cta">Analyze Your Track</a>
     </section>
-
-    <?php get_template_part('parts/lousy-outages-teaser'); ?>
 
     <section class="party-announcement crt-block">
         <h2>Grunge &amp; Rock Video Party (Instagram)</h2>
@@ -245,38 +230,4 @@ get_header();
       }());
     </script>
 
-    <script>
-      (function () {
-        var badge = document.querySelector('[data-lo-home-badge]');
-        if (!badge || typeof window.fetch !== 'function') {
-          return;
-        }
-        var endpoint = '<?php echo esc_url_raw(rest_url('lousy-outages/v1/summary')); ?>?lite=1';
-        fetch(endpoint, {
-          headers: { 'Accept': 'application/json' },
-          credentials: 'same-origin',
-          cache: 'no-store'
-        })
-          .then(function (res) {
-            if (!res) {
-              return null;
-            }
-            if (res.status === 204) {
-              return null;
-            }
-            if (res.status >= 200 && res.status < 300) {
-              return res.json().catch(function () { return null; });
-            }
-            return null;
-          })
-          .then(function (data) {
-            if (data && data.trending) {
-              badge.removeAttribute('hidden');
-            }
-          })
-          .catch(function () {
-            // ignore errors on homepage badge
-          });
-      }());
-    </script>
 <?php get_footer(); ?>
