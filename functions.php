@@ -37,12 +37,6 @@ function retro_game_music_theme_scripts() {
             [],
             filemtime( get_template_directory() . '/assets/css/retro-title.css' )
         );
-        wp_enqueue_style(
-            'lousy-outages-teaser',
-            get_template_directory_uri() . '/assets/css/lousy-outages-teaser.css',
-            [],
-            filemtime( get_template_directory() . '/assets/css/lousy-outages-teaser.css' )
-        );
     }
 
     // Game & piano scripts
@@ -51,13 +45,6 @@ function retro_game_music_theme_scripts() {
     if ( is_front_page() ) {
         wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', [], '1.0.0', true);
         wp_enqueue_script('title-color', get_template_directory_uri() . '/js/title-color.js', [], '1.0.0', true);
-        wp_enqueue_script(
-            'lousy-outages-teaser',
-            get_template_directory_uri() . '/assets/js/lousy-outages-teaser.js',
-            [],
-            filemtime( get_template_directory() . '/assets/js/lousy-outages-teaser.js' ),
-            true
-        );
     }
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
@@ -580,19 +567,6 @@ function enqueue_starfield() {
     );
 }
 add_action('wp_enqueue_scripts', 'enqueue_starfield');
-
-function enqueue_now_playing() {
-    wp_enqueue_script(
-        'now-playing',
-        get_template_directory_uri() . '/js/now-playing.js',
-        [], '1.0', true
-    );
-    wp_localize_script('now-playing', 'nowPlaying', [
-        'username' => 'suzyeaston',
-        'api_key'  => 'b8c00d13eccb3a3973dd087d84c0e5b3'
-    ]);
-}
-add_action('wp_enqueue_scripts', 'enqueue_now_playing');
 
 // =========================================
 // 6. SHORTCODE: DISPLAY THE CANUCKS APP
