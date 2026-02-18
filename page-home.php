@@ -120,7 +120,7 @@ get_header();
                 <h3 class="group-title">📚 About &amp; Info</h3>
                 <div class="group-buttons">
                     <a href="/bio" class="pixel-button">About Suzy</a>
-                    <a href="/coffee-for-builders" class="pixel-button">Coffee for Builders</a>
+                    <a href="https://buymeacoffee.com/wi0amge" class="pixel-button" target="_blank" rel="noopener noreferrer">Support</a>
                 </div>
             </div>
 
@@ -189,12 +189,7 @@ get_header();
     </section>
 
 
-    <section class="support-section">
-        <h2 class="pixel-font">Support My Creative Journey</h2>
-        <p class="pixel-font">For collaborations or just to chat, reach out at <a href="mailto:suzyeaston@icloud.com" class="support-link">suzyeaston@icloud.com</a></p>
-        <p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support my music on Bandcamp</a></p>
-        <p style="text-align:center;">New demo drops this weekend. Stay noisy.</p>
-    </section>
+    
 </main>
 
     <script>

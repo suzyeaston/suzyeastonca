@@ -131,7 +131,13 @@
     </a>
   </div>
   <div class="header-actions">
-    <?php get_template_part( 'parts/bmc-button' ); ?>
+    <a class="pixel-button header-support-link"
+       href="https://buymeacoffee.com/wi0amge"
+       target="_blank"
+       rel="noopener noreferrer"
+       aria-label="Support Suzy">
+       Support
+    </a>
   </div>
 </header>
 
