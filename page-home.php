@@ -15,7 +15,7 @@ get_header();
             $hero_logo_top_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_top, 'UTF-8') : strtoupper($hero_logo_top);
             $hero_logo_mid_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_mid, 'UTF-8') : strtoupper($hero_logo_mid);
             $hero_logo_bottom_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_bottom, 'UTF-8') : strtoupper($hero_logo_bottom);
-            $hero_copy    = apply_filters('se_home_hero_copy', 'Independent music, infrastructure nerdiness, and creative experiments direct from Vancouver.');
+            $hero_copy    = apply_filters('se_home_hero_copy', 'Independent music, infrastructure nerdery, and creative experiments from downtown Vancouver.');
             ?>
             <div class="hero-main">
                 <?php if (!empty($hero_eyebrow)) : ?>
@@ -55,21 +55,21 @@ get_header();
         </div>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
         <section class="pixel-intro hero-intro">
-            <p class="hero-headline pixel-font">Hi, I’m Suzy Easton — I build art you can click.</p>
-            <p class="hero-subhead">Vancouver-born musician + creative technologist. I’ve toured, ended up on MuchMusic, and recorded in Chicago with Steve Albini — and I’m still chasing that same feeling: something loud, honest, and useful.</p>
-            <p class="hero-microproof">I make indie rock and arcade-style tools for people who live in the real world (where dashboards lie and software breaks at the worst time).</p>
+            <p class="hero-headline pixel-font">Hi, I am Suzy Easton. Musician and creative technologist.</p>
+            <p class="hero-subhead">Vancouver born and living downtown. I am 43, single, and a generalist by nature. I make indie rock, small tools, and creative experiments. If it helps someone feel a little more grounded, I am into it.</p>
+            <p class="hero-microproof">I have toured, appeared on MuchMusic, and recorded in Chicago with Steve Albini. Lately I have been building Track Analyzer, experimenting with short AI films with BC + AI Film Club, and writing new songs.</p>
             <div class="hero-lanes">
                 <div class="hero-lane">
                     <p class="hero-lane-title pixel-font">Music</p>
-                    <p>Indie rock, covers, originals. New stuff always loading.</p>
+                    <p>Indie rock, covers, originals. Always down to jam. New stuff always loading.</p>
                 </div>
                 <div class="hero-lane">
                     <p class="hero-lane-title pixel-font">Tools</p>
-                    <p>Track Analyzer, Lousy Outages, and other experiments.</p>
+                    <p>Track Analyzer, Lousy Outages, AI Film Club shorts, and other experiments.</p>
                 </div>
                 <div class="hero-lane">
                     <p class="hero-lane-title pixel-font">Work with me</p>
-                    <p>QA / automation / reliability help for teams who want fewer “WTF just happened” afternoons.</p>
+                    <p>QA, automation, reliability. Help for teams who want fewer WTF just happened afternoons.</p>
                 </div>
             </div>
             <div class="hero-cta-group">
@@ -84,13 +84,13 @@ get_header();
         <?php
         $visitor_data = include get_template_directory() . '/visitor-tracker.php';
         $phrases = [
-            '⚡ %d poor souls from %s woke the Albini bot today.',
-            '🎸 %d noise-makers from %s just asked why their band sucks.',
-            '🤖 Albini\'s circuit board has processed %d fragile egos from %s.',
-            '👁️ %d lurkers from %s looking for validation. None found.',
-            '🔥 %d punks from %s have faced the wrath of Albini\'s sarcasm.',
-            '💀 %d existential crises triggered in %s.',
-            '🚀 %s launched %d useless questions into the void.'
+            '⚡ %d ping(s) from %s today.',
+            '🎸 %d riff request(s) from %s.',
+            '🤖 %d Albini bot run(s) from %s.',
+            '👁️ %d drop-in(s) from %s.',
+            '🔥 %d spark(s) from %s.',
+            '💭 %d thought(s) from %s.',
+            '🚀 %d prompt(s) launched from %s.'
         ];
         ?>
         <div class="visitor-counter">
@@ -162,11 +162,11 @@ get_header();
         </div>
         <div class="ai-film-feature__copy">
             <h2 class="pixel-font">AI Film Club: Rain City Roll Reserve</h2>
-            <p class="pixel-font ai-film-feature__kicker">BC + AI Film Club Prompt Challenge • Tiny Ghost Studios</p>
-            <p>My first AI short got screened in a room full of filmmakers — which still feels unreal. It’s a 19-second, retro-future Vancouver toilet paper ad because apparently that’s my brand now. More experiments incoming.</p>
+            <p class="pixel-font ai-film-feature__kicker">BC + AI Film Club Prompt Challenge. Tiny Ghost Studios</p>
+            <p>My first AI short got screened in a room full of filmmakers. It is a 19 second retro future Vancouver toilet paper ad. More experiments incoming.</p>
             <p class="ai-film-feature__credit">
                 Built for
-                <a href="<?php echo esc_url('https://vancouver.bc-ai.net/ai-film-club-launch'); ?>" target="_blank" rel="noopener noreferrer">BC + AI Film Club — Prompt Challenge (Tiny Ghost Studios)</a>
+                <a href="<?php echo esc_url('https://vancouver.bc-ai.net/ai-film-club-launch'); ?>" target="_blank" rel="noopener noreferrer">BC + AI Film Club Prompt Challenge. Tiny Ghost Studios</a>
             </p>
             <div class="ai-film-feature__actions">
                 <a href="<?php echo esc_url('https://www.youtube.com/watch?v=FrjuKGj91Pw'); ?>" target="_blank" rel="noopener noreferrer" class="pixel-button">Watch on YouTube</a>
