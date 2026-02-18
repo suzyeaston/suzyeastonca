@@ -12,7 +12,7 @@ A custom WordPress theme powering [suzyeaston.ca](https://suzyeaston.ca), comple
 - Downtown Eastside advocacy section and notes on Suzy's possible 2026 city council run
 - Custom REST endpoints for Canucks news and betting odds
 - **Lousy Outages** arcade‑style status board with homepage teaser
-- "Buy Me a Coffee" buttons to support Suzy's work
+- A single Support link (header + homepage About group) for supporting Suzy's work
 - Mobile friendly with drag & tap controls
 
 ## Lousy Outages refresh

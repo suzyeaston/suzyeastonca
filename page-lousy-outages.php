@@ -162,11 +162,7 @@ if ($unsub_success) {
     </section>
     <footer class="lo-support">
       <p class="lo-support__lead">If this dashboard makes your on-call a little less lousy, you can help keep it running:</p>
-      <ul class="lo-support__links">
-        <li>☕ <a class="lo-link" href="https://buymeacoffee.com/wi0amge" target="_blank" rel="noopener">Buy Me a Coffee</a></li>
-        <li>💖 <a class="lo-link" href="https://paypal.me/suzyeaston" target="_blank" rel="noopener">Donate via PayPal</a></li>
-        <li>🎵 <a class="lo-link" href="https://suzyeaston.bandcamp.com/" target="_blank" rel="noopener">Listen on Bandcamp (new release coming soon!)</a></li>
-      </ul>
+      <p><a class="lo-link" href="https://buymeacoffee.com/wi0amge" target="_blank" rel="noopener noreferrer">Support this project</a></p>
       <p class="lo-support__note">Thanks for fueling the retro outage radar.</p>
     </footer>
   </div>
