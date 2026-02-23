@@ -56,25 +56,25 @@ get_header();
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
         <section class="pixel-intro hero-intro">
             <p class="hero-headline pixel-font">Hi, I’m Suzy Easton — musician and creative technologist.</p>
-            <p class="hero-subhead">Vancouver-born, generalist by nature. I make indie rock, small tools, and creative experiments — the kind that (hopefully) make life feel a bit more grounded.</p>
-            <p class="hero-microproof">I’ve toured, landed on MuchMusic, and recorded in Chicago with Steve Albini. These days I’m building Track Analyzer, making short AI film experiments with BC + AI Film Club, and writing new songs.</p>
+            <p class="hero-subhead">Vancouver-born and generalist by nature, I build things that make noise — sometimes guitars, sometimes dashboards. My background spans classical training, bass-heavy grunge, jazz curiosity, and five years behind the counter at HMV talking records and discovering new sounds.</p>
+            <p class="hero-microproof">I’ve toured across Canada, appeared on MuchMusic, and recorded in Chicago with Steve Albini. These days, I’m building Track Analyzer, experimenting with short AI films through BC + AI Film Club, and writing whatever songs show up next.</p>
             <div class="hero-lanes">
                 <div class="hero-lane">
                     <p class="hero-lane-title pixel-font">Music</p>
-                    <p>Indie rock, covers, originals. Always down to jam. New stuff always loading.</p>
+                    <p>Classical roots. Indie and grunge instincts. Jazz influence. Originals, covers, collaborations — always evolving.</p>
                 </div>
                 <div class="hero-lane">
                     <p class="hero-lane-title pixel-font">Tools</p>
-                    <p>Track Analyzer, Lousy Outages, AI Film Club shorts, and other experiments.</p>
+                    <p>Track Analyzer, Lousy Outages, AI film experiments, and other projects that blend creativity with infrastructure.</p>
                 </div>
                 <div class="hero-lane">
-                    <p class="hero-lane-title pixel-font">Work with me</p>
-                    <p>QA, automation, reliability. Help for teams who want fewer WTF just happened afternoons.</p>
+                    <p class="hero-lane-title pixel-font">Jam With Me</p>
+                    <p>Whether it’s music, automation, QA, or building reliable systems, I’m always open to collaboration. If you’re into fewer “what just happened?” afternoons — or louder guitars — we’ll get along.</p>
                 </div>
             </div>
             <div class="hero-cta-group">
-                <a href="/suzys-track-analyzer/" class="pixel-button hero-primary-cta">Start here: Track Analyzer</a>
-                <a href="/lousy-outages/" class="pixel-button hero-secondary-cta">Open Lousy Outages</a>
+                <a href="/suzys-track-analyzer/" class="pixel-button hero-primary-cta">Start with: Track Analyzer</a>
+                <a href="/lousy-outages/" class="pixel-button hero-secondary-cta">Or explore: Lousy Outages</a>
                 <a href="/bio/" class="pixel-button hero-bio-button">Read full bio</a>
             </div>
         </section>
