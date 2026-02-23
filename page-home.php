@@ -56,8 +56,8 @@ get_header();
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
         <section class="pixel-intro hero-intro">
             <p class="hero-headline pixel-font">Hi, I’m Suzy Easton — musician and creative technologist.</p>
-            <p class="hero-subhead">Vancouver-born and downtown-based. I’m a generalist by nature — I make indie rock, small tools, and creative experiments. </p>
-            <p class="hero-microproof">I have toured, appeared on MuchMusic, and recorded in Chicago with Steve Albini. Lately I have been building Track Analyzer, experimenting with short AI films with BC + AI Film Club, and writing new songs.</p>
+            <p class="hero-subhead">Vancouver-born, generalist by nature. I make indie rock, small tools, and creative experiments — the kind that (hopefully) make life feel a bit more grounded.</p>
+            <p class="hero-microproof">I’ve toured, landed on MuchMusic, and recorded in Chicago with Steve Albini. These days I’m building Track Analyzer, making short AI film experiments with BC + AI Film Club, and writing new songs.</p>
             <div class="hero-lanes">
                 <div class="hero-lane">
                     <p class="hero-lane-title pixel-font">Music</p>
