@@ -15,7 +15,7 @@ get_header();
             $hero_logo_top_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_top, 'UTF-8') : strtoupper($hero_logo_top);
             $hero_logo_mid_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_mid, 'UTF-8') : strtoupper($hero_logo_mid);
             $hero_logo_bottom_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_bottom, 'UTF-8') : strtoupper($hero_logo_bottom);
-            $hero_copy    = apply_filters('se_home_hero_copy', 'Independent music, infrastructure nerdery, and creative experiments from downtown Vancouver.');
+            $hero_copy    = apply_filters('se_home_hero_copy', 'Music and tech experiments from Vancouver, BC.');
             ?>
             <div class="hero-main">
                 <?php if (!empty($hero_eyebrow)) : ?>
@@ -56,22 +56,8 @@ get_header();
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
         <section class="pixel-intro hero-intro">
             <p class="hero-headline pixel-font">Hi, I’m Suzy Easton — musician and creative technologist.</p>
-            <p class="hero-subhead">Vancouver-born and generalist by nature, I build things that make noise — sometimes guitars, sometimes dashboards. My background spans classical training, bass-heavy grunge, jazz curiosity, and five years behind the counter at HMV talking records and discovering new sounds.</p>
-            <p class="hero-microproof">I’ve toured across Canada, appeared on MuchMusic, and recorded in Chicago with Steve Albini. These days, I’m building Track Analyzer, experimenting with short AI films through BC + AI Film Club, and writing whatever songs show up next.</p>
-            <div class="hero-lanes">
-                <div class="hero-lane">
-                    <p class="hero-lane-title pixel-font">Music</p>
-                    <p>Classical roots. Indie and grunge instincts. Jazz influence. Originals, covers, collaborations — always evolving.</p>
-                </div>
-                <div class="hero-lane">
-                    <p class="hero-lane-title pixel-font">Tools</p>
-                    <p>Track Analyzer, Lousy Outages, AI film experiments, and other projects that blend creativity with infrastructure.</p>
-                </div>
-                <div class="hero-lane">
-                    <p class="hero-lane-title pixel-font">Jam With Me</p>
-                    <p>Whether it’s music, automation, QA, or building reliable systems, I’m always open to collaboration. If you’re into fewer “what just happened?” afternoons — or louder guitars — we’ll get along.</p>
-                </div>
-            </div>
+            <p class="hero-subhead">Born in Vancouver, BC and a generalist by nature, I build things, play guitars, and live by one motto: always be creating. My background spans classical music training, plus five years behind the counter at HMV talking records and discovering new sounds.</p>
+            <p class="hero-microproof">I’ve toured across Canada as a bassist, appeared on MuchMusic, and recorded in Chicago with Steve Albini. These days, I’m building apps, exploring AI models, experimenting with short AI films through BC + AI Film Club, and writing whatever songs show up next.</p>
             <div class="hero-cta-group">
                 <a href="/suzys-track-analyzer/" class="pixel-button hero-primary-cta">Start with: Track Analyzer</a>
                 <a href="/lousy-outages/" class="pixel-button hero-secondary-cta">Or explore: Lousy Outages</a>
