@@ -55,8 +55,8 @@ get_header();
         </div>
         <h2 class="retro-title glow-lite">Musician &amp; Creative Technologist</h2>
         <section class="pixel-intro hero-intro">
-            <p class="hero-headline pixel-font">Hi, I am Suzy Easton. Musician and creative technologist.</p>
-            <p class="hero-subhead">Vancouver born and living downtown. I am 43, single, and a generalist by nature. I make indie rock, small tools, and creative experiments. If it helps someone feel a little more grounded, I am into it.</p>
+            <p class="hero-headline pixel-font">Hi, I’m Suzy Easton — musician and creative technologist.</p>
+            <p class="hero-subhead">Vancouver-born and downtown-based. I’m a generalist by nature — I make indie rock, small tools, and creative experiments. </p>
             <p class="hero-microproof">I have toured, appeared on MuchMusic, and recorded in Chicago with Steve Albini. Lately I have been building Track Analyzer, experimenting with short AI films with BC + AI Film Club, and writing new songs.</p>
             <div class="hero-lanes">
                 <div class="hero-lane">
@@ -83,33 +83,21 @@ get_header();
         <div class="puck-icon" role="img" aria-label="retro hockey puck icon">🏒</div>
         <?php
         $visitor_data = include get_template_directory() . '/visitor-tracker.php';
-        $phrases = [
-            '⚡ %d ping(s) from %s today.',
-            '🎸 %d riff request(s) from %s.',
-            '🤖 %d Albini bot run(s) from %s.',
-            '👁️ %d drop-in(s) from %s.',
-            '🔥 %d spark(s) from %s.',
-            '💭 %d thought(s) from %s.',
-            '🚀 %d prompt(s) launched from %s.'
-        ];
         ?>
         <div class="visitor-counter">
-          <?php foreach ($visitor_data['locations'] as $c => $cnt): ?>
-            <p><?php printf(esc_html($phrases[array_rand($phrases)]), $cnt, $c); ?></p>
-          <?php endforeach; ?>
-          <?php if (!empty($visitor_data['locations'])): ?>
-            <p>
-              <?php
-              arsort($visitor_data['locations']);
-              $leaders = array_slice($visitor_data['locations'], 0, 3, true);
-              $leaderboard = [];
-              foreach ($leaders as $cc => $ct) {
-                  $leaderboard[] = "$cc ($ct)";
-              }
-              echo 'Leaderboard: ' . esc_html(implode(', ', $leaderboard));
-              ?>
-            </p>
-          <?php endif; ?>
+          <?php
+            $total = isset($visitor_data['count']) ? (int) $visitor_data['count'] : 0;
+            $total = max(0, $total);
+            $globalPhrases = [
+                '👁️ %d drop-in(s) so far.',
+                '⚡ %d pixel ping(s) logged.',
+                '🎸 %d riff request(s) processed.',
+                '🚀 %d prompt(s) launched.',
+                '🔥 %d spark(s) on the dashboard.'
+            ];
+            $phrase = $globalPhrases[array_rand($globalPhrases)];
+          ?>
+          <p><?php printf(esc_html($phrase), $total); ?></p>
         </div>
 
 
