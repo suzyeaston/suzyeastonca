@@ -2540,7 +2540,6 @@ body {
   .page-template-page-home-php .hero-ship,
   .home .hero-ship,
   .front-page .hero-ship {
-    /* Retro ship decal: visual-only layer behind hero copy/photo, never interactive. */
     display: block;
     position: absolute;
     left: clamp(52%, 58%, 64%);
@@ -2551,9 +2550,15 @@ body {
     transform: translate(-50%, -50%);
     transform-origin: 50% 50%;
     z-index: 1;
-    pointer-events: none;
     overflow: visible;
-    animation: heroShipPatrol 10.5s linear infinite;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    animation: none;
   }
 
   .page-template-page-home-php .hero-ship::before,
@@ -2584,6 +2589,31 @@ body {
     opacity: 0.44;
     animation: heroShipThruster 380ms steps(3, end) infinite;
   }
+
+  .page-template-page-home-php .hero-ship.hero-ship--autopilot,
+  .home .hero-ship.hero-ship--autopilot,
+  .front-page .hero-ship.hero-ship--autopilot {
+    animation: heroShipPatrol 10.5s linear infinite;
+  }
+
+  .page-template-page-home-php .hero-ship.is-dragging,
+  .home .hero-ship.is-dragging,
+  .front-page .hero-ship.is-dragging {
+    cursor: grabbing;
+    animation: none !important;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.page-template-page-home-php .hero-ship-trail,
+.home .hero-ship-trail,
+.front-page .hero-ship-trail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
 }
 
 @media (max-width: 859px) {
@@ -2606,7 +2636,10 @@ body {
   .front-page .hero-ship::after,
   .page-template-page-home-php .hero-grid::before,
   .home .hero-grid::before,
-  .front-page .hero-grid::before {
+  .front-page .hero-grid::before,
+  .page-template-page-home-php .hero-ship-trail,
+  .home .hero-ship-trail,
+  .front-page .hero-ship-trail {
     animation: none !important;
   }
 }
