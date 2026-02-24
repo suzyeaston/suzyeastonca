@@ -2521,17 +2521,28 @@ body {
     /* Retro ship decal: visual-only layer behind hero copy/photo, never interactive. */
     display: block;
     position: absolute;
-    left: clamp(52%, 58%, 64%);
-    top: clamp(90px, 20vh, 180px);
+    left: clamp(56%, 62%, 70%);
+    top: clamp(260px, 70%, 520px);
     width: clamp(140px, 18vw, 240px);
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 1 / 1;
     transform: translate(-50%, -50%);
-    transform-origin: center;
+    transform-origin: 50% 50%;
     z-index: 1;
     pointer-events: none;
+    overflow: visible;
+    animation: heroShipDrift 14s ease-in-out infinite;
+  }
+
+  .page-template-page-home-php .hero-ship::before,
+  .home .hero-ship::before,
+  .front-page .hero-ship::before {
+    content: "";
+    position: absolute;
+    inset: 0;
     background: url('assets/brand/hero-ship.svg') center / contain no-repeat;
-    filter: drop-shadow(0 0 10px rgba(73, 255, 173, 0.35)) drop-shadow(0 0 22px rgba(40, 220, 255, 0.2));
-    animation: heroShipFloat 14s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(73, 255, 173, 0.35)) drop-shadow(0 0 24px rgba(40, 220, 255, 0.22));
+    transform-origin: 50% 60%;
+    animation: heroShipBob 3.6s ease-in-out infinite, heroShipBank 2.4s ease-in-out infinite, heroShipGlow 4.8s ease-in-out infinite;
   }
 
   .page-template-page-home-php .hero-ship::after,
@@ -2539,15 +2550,15 @@ body {
   .front-page .hero-ship::after {
     content: "";
     position: absolute;
-    left: 7%;
-    top: 50%;
+    left: 50%;
+    top: 92%;
     width: 20%;
-    height: 34%;
-    transform: translate(-60%, -50%);
+    height: 26%;
+    transform: translate(-50%, -50%);
     border-radius: 999px;
-    background: radial-gradient(circle at 65% 50%, rgba(157, 255, 248, 0.9) 0%, rgba(90, 255, 235, 0.42) 42%, rgba(21, 186, 168, 0) 100%);
+    background: radial-gradient(circle at 50% 28%, rgba(157, 255, 248, 0.88) 0%, rgba(90, 255, 235, 0.44) 45%, rgba(21, 186, 168, 0) 100%);
     filter: blur(1px);
-    opacity: 0.58;
+    opacity: 0.52;
     animation: heroShipThruster 380ms steps(3, end) infinite;
   }
 }
@@ -2562,22 +2573,60 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .page-template-page-home-php .hero-ship,
+  .page-template-page-home-php .hero-ship::before,
   .page-template-page-home-php .hero-ship::after,
   .home .hero-ship,
+  .home .hero-ship::before,
   .home .hero-ship::after,
   .front-page .hero-ship,
+  .front-page .hero-ship::before,
   .front-page .hero-ship::after {
     animation: none !important;
   }
 }
 
-@keyframes heroShipFloat {
+@keyframes heroShipDrift {
   0%,
   100% {
-    transform: translate(-50%, -50%) translate(-18px, -6px);
+    transform: translate(-50%, -50%) translate(-10px, -10px);
+  }
+  40% {
+    transform: translate(-50%, -50%) translate(12px, 8px);
+  }
+  70% {
+    transform: translate(-50%, -50%) translate(4px, 14px);
+  }
+}
+
+@keyframes heroShipBob {
+  0%,
+  100% {
+    transform: translateY(-3px);
   }
   50% {
-    transform: translate(-50%, -50%) translate(18px, 6px);
+    transform: translateY(4px);
+  }
+}
+
+@keyframes heroShipBank {
+  0%,
+  100% {
+    rotate: -2.5deg;
+  }
+  50% {
+    rotate: 2.5deg;
+  }
+}
+
+@keyframes heroShipGlow {
+  0%,
+  100% {
+    opacity: 0.92;
+    filter: drop-shadow(0 0 8px rgba(73, 255, 173, 0.28)) drop-shadow(0 0 18px rgba(40, 220, 255, 0.16));
+  }
+  45% {
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(73, 255, 173, 0.4)) drop-shadow(0 0 26px rgba(40, 220, 255, 0.25));
   }
 }
 
@@ -2585,15 +2634,15 @@ body {
   0%,
   100% {
     opacity: 0.45;
-    transform: translate(-60%, -50%) scale(0.9, 0.85);
+    transform: translate(-50%, -50%) scale(0.82, 0.78);
   }
   40% {
     opacity: 0.75;
-    transform: translate(-60%, -50%) scale(1.06, 1.1);
+    transform: translate(-50%, -50%) scale(1.02, 1.08);
   }
   70% {
     opacity: 0.55;
-    transform: translate(-60%, -50%) scale(0.95, 0.95);
+    transform: translate(-50%, -50%) scale(0.9, 0.9);
   }
 }
 
