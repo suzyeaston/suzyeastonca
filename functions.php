@@ -46,6 +46,16 @@ function retro_game_music_theme_scripts() {
         wp_enqueue_script('game-init', get_template_directory_uri() . '/js/game-init.js', [], '1.0.0', true);
         wp_enqueue_script('title-color', get_template_directory_uri() . '/js/title-color.js', [], '1.0.0', true);
     }
+
+    if ( is_front_page() || is_page_template( 'page-home.php' ) ) {
+        wp_enqueue_script(
+            'hero-ship-drag',
+            get_template_directory_uri() . '/js/hero-ship-drag.js',
+            array(),
+            filemtime( get_template_directory() . '/js/hero-ship-drag.js' ),
+            true
+        );
+    }
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
 
