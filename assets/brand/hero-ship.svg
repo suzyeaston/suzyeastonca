@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" role="img" aria-hidden="true" shape-rendering="crispEdges">
+  <title>Retro hero ship decal</title>
+  <rect width="160" height="120" fill="none"/>
+
+  <!-- Thruster rail (rear) -->
+  <rect x="14" y="56" width="8" height="8" fill="#73fff4"/>
+  <rect x="22" y="54" width="8" height="12" fill="#12d6ca"/>
+
+  <!-- Wing tips -->
+  <rect x="44" y="44" width="10" height="8" fill="#00ff66"/>
+  <rect x="44" y="68" width="10" height="8" fill="#00ff66"/>
+  <rect x="54" y="40" width="10" height="12" fill="#7dffc7"/>
+  <rect x="54" y="68" width="10" height="12" fill="#7dffc7"/>
+
+  <!-- Hull -->
+  <rect x="32" y="52" width="68" height="16" fill="#00ff88"/>
+  <rect x="64" y="48" width="56" height="24" fill="#00ffa2"/>
+  <rect x="96" y="52" width="30" height="16" fill="#2afed0"/>
+
+  <!-- Cockpit and nose -->
+  <rect x="76" y="54" width="20" height="12" fill="#072f2d"/>
+  <rect x="100" y="54" width="8" height="12" fill="#b5fff3"/>
+  <rect x="120" y="56" width="12" height="8" fill="#d5fff9"/>
+  <rect x="132" y="58" width="8" height="4" fill="#efffff"/>
+
+  <!-- Scanline accents -->
+  <rect x="40" y="58" width="54" height="2" fill="#03221f" opacity="0.45"/>
+  <rect x="44" y="62" width="50" height="2" fill="#03221f" opacity="0.35"/>
+
+  <!-- Outline pass -->
+  <rect x="30" y="50" width="2" height="20" fill="#00b85f"/>
+  <rect x="32" y="50" width="94" height="2" fill="#00b85f"/>
+  <rect x="32" y="68" width="94" height="2" fill="#00b85f"/>
+  <rect x="126" y="54" width="2" height="12" fill="#00b85f"/>
+</svg>

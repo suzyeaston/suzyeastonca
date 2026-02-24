@@ -2491,6 +2491,112 @@ body {
   z-index: 1;
 }
 
+/* Homepage hero-only decorative filler to make the starfield gap intentional on desktop. */
+.page-template-page-home-php .hero-grid,
+.home .hero-grid,
+.front-page .hero-grid {
+  isolation: isolate;
+}
+
+.page-template-page-home-php .hero-main,
+.page-template-page-home-php .hero-side,
+.home .hero-main,
+.home .hero-side,
+.front-page .hero-main,
+.front-page .hero-side {
+  position: relative;
+  z-index: 2;
+}
+
+.page-template-page-home-php .hero-ship,
+.home .hero-ship,
+.front-page .hero-ship {
+  display: none;
+}
+
+@media (min-width: 860px) {
+  .page-template-page-home-php .hero-ship,
+  .home .hero-ship,
+  .front-page .hero-ship {
+    /* Retro ship decal: visual-only layer behind hero copy/photo, never interactive. */
+    display: block;
+    position: absolute;
+    left: clamp(52%, 58%, 64%);
+    top: clamp(90px, 20vh, 180px);
+    width: clamp(140px, 18vw, 240px);
+    aspect-ratio: 4 / 3;
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+    z-index: 1;
+    pointer-events: none;
+    background: url('assets/brand/hero-ship.svg') center / contain no-repeat;
+    filter: drop-shadow(0 0 10px rgba(73, 255, 173, 0.35)) drop-shadow(0 0 22px rgba(40, 220, 255, 0.2));
+    animation: heroShipFloat 14s ease-in-out infinite;
+  }
+
+  .page-template-page-home-php .hero-ship::after,
+  .home .hero-ship::after,
+  .front-page .hero-ship::after {
+    content: "";
+    position: absolute;
+    left: 7%;
+    top: 50%;
+    width: 20%;
+    height: 34%;
+    transform: translate(-60%, -50%);
+    border-radius: 999px;
+    background: radial-gradient(circle at 65% 50%, rgba(157, 255, 248, 0.9) 0%, rgba(90, 255, 235, 0.42) 42%, rgba(21, 186, 168, 0) 100%);
+    filter: blur(1px);
+    opacity: 0.58;
+    animation: heroShipThruster 380ms steps(3, end) infinite;
+  }
+}
+
+@media (max-width: 859px) {
+  .page-template-page-home-php .hero-ship,
+  .home .hero-ship,
+  .front-page .hero-ship {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-template-page-home-php .hero-ship,
+  .page-template-page-home-php .hero-ship::after,
+  .home .hero-ship,
+  .home .hero-ship::after,
+  .front-page .hero-ship,
+  .front-page .hero-ship::after {
+    animation: none !important;
+  }
+}
+
+@keyframes heroShipFloat {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate(-18px, -6px);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(18px, 6px);
+  }
+}
+
+@keyframes heroShipThruster {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translate(-60%, -50%) scale(0.9, 0.85);
+  }
+  40% {
+    opacity: 0.75;
+    transform: translate(-60%, -50%) scale(1.06, 1.1);
+  }
+  70% {
+    opacity: 0.55;
+    transform: translate(-60%, -50%) scale(0.95, 0.95);
+  }
+}
+
 @media (min-width: 860px) {
   .hero-grid {
     grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr);
