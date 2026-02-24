@@ -35,6 +35,7 @@ get_header();
                 </div>
                 <p class="hero-copy"><?php echo esc_html($hero_copy); ?></p>
             </div>
+            <div class="hero-deco hero-ship" aria-hidden="true"></div>
             <div class="hero-side hero-photo-card">
                 <p class="hero-side-header">
                     <a class="hero-photo-link" href="<?php echo esc_url(home_url('/bio/')); ?>">
