@@ -2496,6 +2496,11 @@ body {
     grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr);
     align-items: stretch;
   }
+
+  /* Shift the main hero block toward the photo card on desktop while keeping its content centered. */
+  .hero-main {
+    justify-self: end;
+  }
 }
 
 .hero-main {
