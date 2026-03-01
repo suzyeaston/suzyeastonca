@@ -2686,7 +2686,36 @@ body {
   color: var(--accent-color);
   border: 1px solid rgba(128, 225, 255, 0.35);
   background: rgba(0, 0, 0, 0.62);
-  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.page-template-page-home-php .hero-galaga-start,
+.home .hero-galaga-start,
+.front-page .hero-galaga-start {
+  appearance: none;
+  border: 1px solid var(--primary-color);
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--primary-color);
+  font: inherit;
+  font-size: 0.5rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.page-template-page-home-php .hero-galaga-start:hover,
+.page-template-page-home-php .hero-galaga-start:focus-visible,
+.home .hero-galaga-start:hover,
+.home .hero-galaga-start:focus-visible,
+.front-page .hero-galaga-start:hover,
+.front-page .hero-galaga-start:focus-visible {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 .page-template-page-home-php .hero-grid.is-galaga .hero-galaga-canvas,
