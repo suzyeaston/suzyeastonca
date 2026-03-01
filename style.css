@@ -2882,13 +2882,40 @@ body {
 
 @media (min-width: 860px) {
   .hero-grid {
-    grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) clamp(260px, 28vw, 340px);
     align-items: stretch;
   }
 
   /* Shift the main hero block toward the photo card on desktop while keeping its content centered. */
   .hero-main {
     justify-self: end;
+  }
+
+  .hero-photo-card {
+    padding: 1.25rem;
+  }
+
+  .hero-photo-frame {
+    padding: 0.6rem;
+    max-height: clamp(260px, 46vh, 420px);
+    aspect-ratio: 3 / 4;
+  }
+
+  .hero-photo {
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+@media (min-width: 860px) and (max-height: 820px) {
+  .hero-section {
+    padding-top: clamp(16px, 3vh, 30px);
+    padding-bottom: clamp(12px, 2.4vh, 24px);
+  }
+
+  .hero-grid {
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
   }
 }
 
