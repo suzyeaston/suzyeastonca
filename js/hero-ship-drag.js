@@ -28,6 +28,10 @@
 
   const getReducedMotion = () => reducedMotionQuery.matches;
 
+  function isGalagaActive() {
+    return Boolean(window.__SE_GALAGA_ACTIVE);
+  }
+
   function resizeCanvas() {
     dpr = Math.max(1, window.devicePixelRatio || 1);
     const width = heroGrid.clientWidth;
@@ -141,7 +145,7 @@
   }
 
   function onPointerMove(event) {
-    if (!dragging || event.pointerId !== pointerId) {
+    if (isGalagaActive() || !dragging || event.pointerId !== pointerId) {
       return;
     }
 
@@ -160,7 +164,7 @@
   }
 
   function endDrag(event) {
-    if (!dragging || event.pointerId !== pointerId) {
+    if (isGalagaActive() || !dragging || event.pointerId !== pointerId) {
       return;
     }
 
@@ -188,6 +192,10 @@
   }
 
   ship.addEventListener('pointerdown', function (event) {
+    if (isGalagaActive()) {
+      return;
+    }
+
     if (event.button !== 0 && event.pointerType !== 'touch' && event.pointerType !== 'pen') {
       return;
     }
