@@ -55,6 +55,13 @@ function retro_game_music_theme_scripts() {
             filemtime( get_template_directory() . '/js/hero-ship-drag.js' ),
             true
         );
+        wp_enqueue_script(
+            'hero-galaga',
+            get_template_directory_uri() . '/js/hero-galaga.js',
+            array( 'hero-ship-drag' ),
+            filemtime( get_template_directory() . '/js/hero-galaga.js' ),
+            true
+        );
     }
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');

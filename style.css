@@ -2616,6 +2616,100 @@ body {
   pointer-events: none;
 }
 
+
+.page-template-page-home-php .hero-galaga-canvas,
+.home .hero-galaga-canvas,
+.front-page .hero-galaga-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  z-index: 4;
+  pointer-events: auto;
+}
+
+.page-template-page-home-php .hero-galaga-ui,
+.home .hero-galaga-ui,
+.front-page .hero-galaga-ui {
+  position: absolute;
+  inset: 12px 12px auto;
+  display: none;
+  z-index: 5;
+  pointer-events: none;
+  font-size: 0.55rem;
+  line-height: 1.55;
+  color: var(--primary-color);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+}
+
+.page-template-page-home-php .hero-galaga-status,
+.page-template-page-home-php .hero-galaga-help,
+.home .hero-galaga-status,
+.home .hero-galaga-help,
+.front-page .hero-galaga-status,
+.front-page .hero-galaga-help {
+  margin: 0;
+  background: rgba(0, 0, 0, 0.68);
+  border: 1px solid rgba(128, 225, 255, 0.44);
+  padding: 7px 10px;
+}
+
+.page-template-page-home-php .hero-galaga-help,
+.home .hero-galaga-help,
+.front-page .hero-galaga-help {
+  margin-top: 6px;
+  color: var(--accent-color);
+}
+
+.page-template-page-home-php .hero-galaga-gameover,
+.home .hero-galaga-gameover,
+.front-page .hero-galaga-gameover {
+  margin-top: 10px;
+  max-width: min(90%, 560px);
+  background: rgba(10, 10, 10, 0.84);
+  border: 2px solid var(--secondary-color);
+  color: var(--accent-color);
+  padding: 10px;
+}
+
+.page-template-page-home-php .hero-galaga-hint,
+.home .hero-galaga-hint,
+.front-page .hero-galaga-hint {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  padding: 6px 10px;
+  font-size: 0.52rem;
+  letter-spacing: 0.04em;
+  color: var(--accent-color);
+  border: 1px solid rgba(128, 225, 255, 0.35);
+  background: rgba(0, 0, 0, 0.62);
+  pointer-events: none;
+}
+
+.page-template-page-home-php .hero-grid.is-galaga .hero-galaga-canvas,
+.page-template-page-home-php .hero-grid.is-galaga .hero-galaga-ui,
+.home .hero-grid.is-galaga .hero-galaga-canvas,
+.home .hero-grid.is-galaga .hero-galaga-ui,
+.front-page .hero-grid.is-galaga .hero-galaga-canvas,
+.front-page .hero-grid.is-galaga .hero-galaga-ui {
+  display: block;
+}
+
+.page-template-page-home-php .hero-grid.is-galaga .hero-galaga-hint,
+.home .hero-grid.is-galaga .hero-galaga-hint,
+.front-page .hero-grid.is-galaga .hero-galaga-hint,
+.page-template-page-home-php .hero-grid.is-galaga .hero-ship,
+.page-template-page-home-php .hero-grid.is-galaga .hero-ship-trail,
+.home .hero-grid.is-galaga .hero-ship,
+.home .hero-grid.is-galaga .hero-ship-trail,
+.front-page .hero-grid.is-galaga .hero-ship,
+.front-page .hero-grid.is-galaga .hero-ship-trail {
+  display: none;
+}
+
 @media (max-width: 859px) {
   .page-template-page-home-php .hero-ship,
   .home .hero-ship,
