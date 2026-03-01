@@ -15,6 +15,8 @@
       return;
     }
 
+    const heroMain = heroGrid.querySelector('.hero-main');
+
     const rootStyles = window.getComputedStyle(document.documentElement);
     const colors = {
       primary: (rootStyles.getPropertyValue('--primary-color') || '#00ff00').trim(),
@@ -28,7 +30,7 @@
 
     const ui = document.createElement('div');
     ui.className = 'hero-galaga-ui';
-    ui.innerHTML = '<p class="hero-galaga-status">Score: <span data-galaga-score>0</span> · Lives: <span data-galaga-lives>3</span> · Wave: <span data-galaga-wave>1</span></p><p class="hero-galaga-help">Move: ←/→ or A/D · Shoot: Space · Esc: Quit</p><div class="hero-galaga-gameover" data-galaga-gameover hidden></div>';
+    ui.innerHTML = '<p class="hero-galaga-status">Score: <span data-galaga-score>0</span> · Lives: <span data-galaga-lives>3</span> · Wave: <span data-galaga-wave>1</span></p><p class="hero-galaga-help">←/→ (A/D) · Space · Esc</p><div class="hero-galaga-gameover" data-galaga-gameover hidden></div>';
 
     const hint = document.createElement('div');
     hint.className = 'hero-galaga-hint';
@@ -78,7 +80,33 @@
       lastShotAt: 0,
       lastFrame: 0,
       idleTick: 0,
+      playfield: {
+        x: 0,
+        y: 0,
+        w: 1,
+        h: 1,
+      },
     };
+
+    function clampPlayerToPlayfield() {
+      if (!state.player) {
+        return;
+      }
+
+      const maxX = state.playfield.x + state.playfield.w - state.player.w;
+      state.player.x = Math.max(state.playfield.x, Math.min(maxX, state.player.x));
+      state.player.y = state.playfield.y + state.playfield.h - 64;
+    }
+
+    function positionOverlayUI() {
+      const hintBottom = Math.max(12, state.height - (state.playfield.y + state.playfield.h) + 12);
+      ui.style.left = state.playfield.x + 12 + 'px';
+      ui.style.top = state.playfield.y + 12 + 'px';
+      ui.style.maxWidth = Math.max(200, state.playfield.w - 24) + 'px';
+
+      hint.style.left = state.playfield.x + 12 + 'px';
+      hint.style.bottom = hintBottom + 'px';
+    }
 
     function isActiveMode() {
       return state.mode === 'active';
@@ -92,8 +120,16 @@
       state.dpr = Math.max(1, window.devicePixelRatio || 1);
       const width = Math.max(1, heroGrid.clientWidth);
       const height = Math.max(1, heroGrid.clientHeight);
+      const heroGridRect = heroGrid.getBoundingClientRect();
+      const mainRect = heroMain ? heroMain.getBoundingClientRect() : heroGridRect;
       state.width = width;
       state.height = height;
+      state.playfield = {
+        x: Math.max(0, Math.round(mainRect.left - heroGridRect.left)),
+        y: Math.max(0, Math.round(mainRect.top - heroGridRect.top)),
+        w: Math.min(state.width, Math.max(1, Math.round(mainRect.width))),
+        h: Math.min(state.height, Math.max(1, Math.round(mainRect.height))),
+      };
       canvas.width = Math.round(width * state.dpr);
       canvas.height = Math.round(height * state.dpr);
       canvas.style.width = width + 'px';
@@ -101,10 +137,8 @@
       ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
       ctx.imageSmoothingEnabled = false;
 
-      if (state.player) {
-        state.player.x = Math.min(state.width - state.player.w, Math.max(0, state.player.x));
-        state.player.y = state.height - 64;
-      }
+      clampPlayerToPlayfield();
+      positionOverlayUI();
 
       if (!isActiveMode()) {
         render();
@@ -133,16 +167,17 @@
       }
     }
 
-    function spawnWave() {
-      const cols = 8;
-      const rows = 4;
+    function spawnWave(config) {
+      const options = config || {};
+      const cols = options.cols || 8;
+      const rows = options.rows || 4;
       const enemyW = 22;
       const enemyH = 16;
-      const gapX = 18;
-      const gapY = 14;
+      const gapX = options.gapX || 18;
+      const gapY = options.gapY || 14;
       const totalW = cols * enemyW + (cols - 1) * gapX;
-      const startX = Math.max(20, (state.width - totalW) / 2);
-      const startY = 56;
+      const startX = state.playfield.x + Math.max(10, (state.playfield.w - totalW) / 2);
+      const startY = state.playfield.y + (options.startY || 70);
 
       state.enemies = [];
       for (let row = 0; row < rows; row += 1) {
@@ -168,11 +203,26 @@
       state.player = {
         w: 24,
         h: 14,
-        x: state.width / 2 - 12,
-        y: state.height - 64,
+        x: state.playfield.x + state.playfield.w / 2 - 12,
+        y: state.playfield.y + state.playfield.h - 64,
         speed: 300,
       };
       spawnWave();
+      clampPlayerToPlayfield();
+    }
+
+    function initIdleScene() {
+      state.playerBullets = [];
+      state.enemyBullets = [];
+      state.player = {
+        w: 24,
+        h: 14,
+        x: state.playfield.x + state.playfield.w / 2 - 12,
+        y: state.playfield.y + state.playfield.h - 64,
+        speed: 300,
+      };
+      spawnWave({ cols: 5, rows: 2, gapX: 16, gapY: 12, startY: 86 });
+      clampPlayerToPlayfield();
     }
 
     function resetGame() {
@@ -219,6 +269,7 @@
       canvas.style.pointerEvents = 'none';
       gameOverEl.hidden = true;
       gameOverEl.textContent = '';
+      initIdleScene();
 
       updateHint();
       render();
@@ -267,7 +318,7 @@
 
       const dir = (state.keys.right ? 1 : 0) - (state.keys.left ? 1 : 0);
       state.player.x += dir * state.player.speed * dt;
-      state.player.x = Math.max(0, Math.min(state.width - state.player.w, state.player.x));
+      clampPlayerToPlayfield();
 
       if (state.keys.fire && now - state.lastShotAt > 180) {
         state.playerBullets.push({ x: state.player.x + state.player.w / 2 - 2, y: state.player.y - 8, w: 4, h: 10, vy: -430 });
@@ -299,7 +350,8 @@
           nextMaxX = Math.max(nextMaxX, nextX + enemy.w);
         });
 
-        const hitEdge = nextMinX <= 8 || nextMaxX >= state.width - 8;
+        const playfieldRight = state.playfield.x + state.playfield.w;
+        const hitEdge = nextMinX <= state.playfield.x + 8 || nextMaxX >= playfieldRight - 8;
 
         state.enemies.forEach(function (enemy) {
           if (!enemy.alive) {
@@ -346,10 +398,16 @@
       });
 
       state.playerBullets = state.playerBullets.filter(function (bullet) {
-        return bullet.y + bullet.h > 0;
+        return bullet.x + bullet.w > state.playfield.x &&
+          bullet.x < state.playfield.x + state.playfield.w &&
+          bullet.y + bullet.h > state.playfield.y &&
+          bullet.y < state.playfield.y + state.playfield.h;
       });
       state.enemyBullets = state.enemyBullets.filter(function (bullet) {
-        return bullet.y < state.height + bullet.h;
+        return bullet.x + bullet.w > state.playfield.x &&
+          bullet.x < state.playfield.x + state.playfield.w &&
+          bullet.y < state.playfield.y + state.playfield.h &&
+          bullet.y + bullet.h > state.playfield.y;
       });
     }
 
@@ -395,7 +453,7 @@
       }
 
       const invaded = state.enemies.some(function (enemy) {
-        return enemy.alive && enemy.y + enemy.h >= state.height - 56;
+        return enemy.alive && enemy.y + enemy.h >= state.playfield.y + state.playfield.h - 56;
       });
 
       if (invaded && !state.gameOver) {
@@ -449,8 +507,12 @@
 
     function render() {
       ctx.clearRect(0, 0, state.width, state.height);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
-      ctx.fillRect(0, 0, state.width, state.height);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(state.playfield.x, state.playfield.y, state.playfield.w, state.playfield.h);
+      ctx.clip();
+      ctx.fillStyle = isActiveMode() ? 'rgba(0, 0, 0, 0.45)' : 'rgba(0, 0, 0, 0.18)';
+      ctx.fillRect(state.playfield.x, state.playfield.y, state.playfield.w, state.playfield.h);
 
       drawPlayer();
 
@@ -465,9 +527,11 @@
       drawBullets();
 
       if (!isActiveMode()) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
-        ctx.fillRect(0, state.height - 74, state.width, 74);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+        ctx.fillRect(state.playfield.x, state.playfield.y + state.playfield.h - 74, state.playfield.w, 74);
       }
+
+      ctx.restore();
     }
 
     function loop(now) {

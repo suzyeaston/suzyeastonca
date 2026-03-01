@@ -2636,15 +2636,17 @@ body {
   top: 12px;
   left: 12px;
   right: auto;
-  width: max-content;
-  max-width: calc(100% - 24px);
+  width: auto;
+  max-width: min(320px, calc(100vw - 24px));
   display: none;
   z-index: 5;
   pointer-events: none;
-  font-size: 0.55rem;
-  line-height: 1.3;
+  font-size: 0.53rem;
+  line-height: 1.25;
   color: var(--primary-color);
   text-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+  flex-direction: column;
+  gap: 6px;
 }
 
 .page-template-page-home-php .hero-galaga-status,
@@ -2654,15 +2656,21 @@ body {
 .front-page .hero-galaga-status,
 .front-page .hero-galaga-help {
   margin: 0;
-  background: rgba(0, 0, 0, 0.68);
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+  background: rgba(0, 0, 0, 0.7);
   border: 1px solid rgba(128, 225, 255, 0.44);
-  padding: 5px 8px;
+  border-radius: 999px;
+  padding: 4px 7px;
 }
 
 .page-template-page-home-php .hero-galaga-help,
 .home .hero-galaga-help,
 .front-page .hero-galaga-help {
-  margin-top: 4px;
+  margin-top: 0;
   color: var(--accent-color);
 }
 
@@ -2740,12 +2748,15 @@ body {
 }
 
 .page-template-page-home-php .hero-grid.is-galaga .hero-galaga-canvas,
-.page-template-page-home-php .hero-grid.is-galaga .hero-galaga-ui,
 .home .hero-grid.is-galaga .hero-galaga-canvas,
-.home .hero-grid.is-galaga .hero-galaga-ui,
-.front-page .hero-grid.is-galaga .hero-galaga-canvas,
-.front-page .hero-grid.is-galaga .hero-galaga-ui {
+.front-page .hero-grid.is-galaga .hero-galaga-canvas {
   display: block;
+}
+
+.page-template-page-home-php .hero-grid.is-galaga .hero-galaga-ui,
+.home .hero-grid.is-galaga .hero-galaga-ui,
+.front-page .hero-grid.is-galaga .hero-galaga-ui {
+  display: flex;
 }
 
 .page-template-page-home-php .hero-grid.is-galaga .hero-ship,
