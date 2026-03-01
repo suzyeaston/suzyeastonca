@@ -6,6 +6,11 @@
 
     window.__SE_GALAGA_ACTIVE = false;
 
+    if (heroGrid) {
+      heroGrid.dataset.galagaReady = 'true';
+      heroGrid.dataset.galagaActive = 'false';
+    }
+
     if (!heroGrid || !desktopQuery.matches) {
     return;
   }
@@ -27,7 +32,9 @@
 
   const hint = document.createElement('div');
   hint.className = 'hero-galaga-hint';
-  hint.textContent = reducedMotionQuery.matches ? 'Press G to play (manual motion)' : 'Press G to play';
+  hint.innerHTML = '<span class="hero-galaga-hint-text">'
+    + (reducedMotionQuery.matches ? 'Press G to play (manual motion)' : 'Press G to play')
+    + '</span><button type="button" class="hero-galaga-start">Play</button>';
 
   heroGrid.appendChild(canvas);
   heroGrid.appendChild(ui);
@@ -44,6 +51,7 @@
   const livesEl = ui.querySelector('[data-galaga-lives]');
   const waveEl = ui.querySelector('[data-galaga-wave]');
   const gameOverEl = ui.querySelector('[data-galaga-gameover]');
+  const startButton = hint.querySelector('.hero-galaga-start');
 
   const state = {
     active: false,
@@ -152,11 +160,14 @@
       return;
     }
 
+    canvas.tabIndex = 0;
     state.active = true;
     state.running = true;
     window.__SE_GALAGA_ACTIVE = true;
+    heroGrid.dataset.galagaActive = 'true';
     heroGrid.classList.add('is-galaga');
     resetGame();
+    canvas.focus({ preventScroll: true });
     state.lastFrame = performance.now();
     state.rafId = window.requestAnimationFrame(loop);
   }
@@ -169,6 +180,7 @@
     state.keys.right = false;
     state.keys.fire = false;
     window.__SE_GALAGA_ACTIVE = false;
+    heroGrid.dataset.galagaActive = 'false';
     heroGrid.classList.remove('is-galaga');
     if (state.rafId) {
       window.cancelAnimationFrame(state.rafId);
@@ -418,13 +430,32 @@
     return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
   }
 
+  function shouldBlockGameplayEvent(event) {
+    if (!state.active) {
+      return false;
+    }
+
+    const code = event.code;
+    return code === 'ArrowLeft' || code === 'ArrowRight' || code === 'KeyA' || code === 'KeyD' || code === 'Space';
+  }
+
+  if (startButton) {
+    startButton.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      startGame();
+      canvas.focus({ preventScroll: true });
+    });
+  }
+
   window.addEventListener('keydown', function (event) {
-    const key = event.key.toLowerCase();
+    const code = event.code;
     const typing = isTypingTarget(event.target);
 
-    if (!state.active && !typing && key === 'g') {
+    if (!state.active && !typing && code === 'KeyG') {
       startGame();
       event.preventDefault();
+      event.stopPropagation();
       return;
     }
 
@@ -432,53 +463,67 @@
       return;
     }
 
-    if (key === 'escape') {
-      stopGame();
-      event.preventDefault();
+    if (typing) {
       return;
     }
 
-    if (state.gameOver && key === 'enter') {
+    if (code === 'Escape') {
+      stopGame();
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    if (state.gameOver && code === 'Enter') {
       resetGame();
       state.running = true;
       state.lastFrame = performance.now();
       event.preventDefault();
+      event.stopPropagation();
       return;
     }
 
-    if (key === 'arrowleft' || key === 'a') {
+    if (code === 'ArrowLeft' || code === 'KeyA') {
       state.keys.left = true;
-      event.preventDefault();
     }
-    if (key === 'arrowright' || key === 'd') {
+    if (code === 'ArrowRight' || code === 'KeyD') {
       state.keys.right = true;
-      event.preventDefault();
     }
-    if (key === ' ' || key === 'spacebar') {
+    if (code === 'Space') {
       state.keys.fire = true;
-      event.preventDefault();
     }
-  });
+
+    if (shouldBlockGameplayEvent(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, { capture: true });
 
   window.addEventListener('keyup', function (event) {
     if (!state.active) {
       return;
     }
 
-    const key = event.key.toLowerCase();
-    if (key === 'arrowleft' || key === 'a') {
+    if (isTypingTarget(event.target)) {
+      return;
+    }
+
+    const code = event.code;
+    if (code === 'ArrowLeft' || code === 'KeyA') {
       state.keys.left = false;
-      event.preventDefault();
     }
-    if (key === 'arrowright' || key === 'd') {
+    if (code === 'ArrowRight' || code === 'KeyD') {
       state.keys.right = false;
-      event.preventDefault();
     }
-    if (key === ' ' || key === 'spacebar') {
+    if (code === 'Space') {
       state.keys.fire = false;
-      event.preventDefault();
     }
-  });
+
+    if (shouldBlockGameplayEvent(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, { capture: true });
 
   desktopQuery.addEventListener('change', function (event) {
     if (!event.matches && state.active) {
