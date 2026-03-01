@@ -95,7 +95,7 @@
 
       const maxX = state.playfield.x + state.playfield.w - state.player.w;
       state.player.x = Math.max(state.playfield.x, Math.min(maxX, state.player.x));
-      state.player.y = state.playfield.y + state.playfield.h - 64;
+      state.player.y = state.playfield.y + state.playfield.h - state.player.h - 18;
     }
 
     function positionOverlayUI() {
@@ -122,13 +122,14 @@
       const height = Math.max(1, heroGrid.clientHeight);
       const heroGridRect = heroGrid.getBoundingClientRect();
       const mainRect = heroMain ? heroMain.getBoundingClientRect() : heroGridRect;
+      const visibleH = Math.min(mainRect.height, window.innerHeight - mainRect.top - 16);
       state.width = width;
       state.height = height;
       state.playfield = {
         x: Math.max(0, Math.round(mainRect.left - heroGridRect.left)),
         y: Math.max(0, Math.round(mainRect.top - heroGridRect.top)),
         w: Math.min(state.width, Math.max(1, Math.round(mainRect.width))),
-        h: Math.min(state.height, Math.max(1, Math.round(mainRect.height))),
+        h: Math.min(state.height, Math.max(260, Math.round(visibleH))),
       };
       canvas.width = Math.round(width * state.dpr);
       canvas.height = Math.round(height * state.dpr);
@@ -204,7 +205,7 @@
         w: 24,
         h: 14,
         x: state.playfield.x + state.playfield.w / 2 - 12,
-        y: state.playfield.y + state.playfield.h - 64,
+        y: state.playfield.y + state.playfield.h - 14 - 18,
         speed: 300,
       };
       spawnWave();
@@ -218,7 +219,7 @@
         w: 24,
         h: 14,
         x: state.playfield.x + state.playfield.w / 2 - 12,
-        y: state.playfield.y + state.playfield.h - 64,
+        y: state.playfield.y + state.playfield.h - 14 - 18,
         speed: 300,
       };
       spawnWave({ cols: 5, rows: 2, gapX: 16, gapY: 12, startY: 86 });
