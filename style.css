@@ -3169,51 +3169,38 @@ body {
   }
 }
 
-/* Bio page: opening-crawl vibe (desktop-first, respects reduced motion) */
-body.page-template-page-bio .bio-crawl-wrap,
-.bio-page .bio-crawl-wrap,
-.page-bio .bio-crawl-wrap {
+/* Bio crawl: scroll-based (no CSS animation) */
+.bio-crawl-wrap {
   position: relative;
-  overflow: hidden;
+  overflow: auto;
   height: min(78vh, 780px);
-  padding: 24px 0;
+  padding: 0;
   border-radius: 16px;
+  scroll-behavior: auto;
+  cursor: grab;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Fallback in case no body class exists: scope via .bio-content parent */
-.bio-content .bio-crawl-wrap {
-  position: relative;
-  overflow: hidden;
-  height: min(78vh, 780px);
-  padding: 24px 0;
-  border-radius: 16px;
-}
+/* Hide scrollbar (still scrollable) */
+.bio-crawl-wrap::-webkit-scrollbar { width: 0; height: 0; }
+.bio-crawl-wrap { scrollbar-width: none; }
 
-.bio-crawl-wrap::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.55) 100%);
-}
+.bio-crawl-wrap.is-dragging { cursor: grabbing; }
 
 .bio-crawl {
-  position: absolute;
-  z-index: 1;
-  left: 50%;
-  bottom: 0;
-  width: min(680px, 88%);
+  width: min(720px, 90%);
+  margin: 0 auto;
+  padding-top: clamp(180px, 34vh, 360px);
+  padding-bottom: clamp(260px, 40vh, 520px);
+  transform: perspective(900px) rotateX(18deg);
   transform-origin: 50% 100%;
   text-align: justify;
-  font-size: clamp(18px, 1.6vw, 24px);
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.03em;
-  line-height: 1.75;
+  line-height: 1.8;
+  font-size: clamp(18px, 1.6vw, 24px);
   color: #f5d24a;
   text-shadow: 0 2px 10px rgba(0,0,0,0.6);
-  animation: bioCrawl 80s linear 1 both;
-  will-change: transform;
 }
 
 .bio-crawl,
@@ -3223,16 +3210,15 @@ body.page-template-page-bio .bio-crawl-wrap,
 
 .bio-crawl-title {
   text-align: center;
-  letter-spacing: 0.12em;
-  margin: 0 0 8px 0;
-  font-size: clamp(34px, 3.6vw, 52px);
+  letter-spacing: 0.14em;
+  margin: 0 0 10px 0;
+  font-size: clamp(36px, 4vw, 56px);
 }
 
 .bio-crawl-subtitle {
   text-align: center;
-  margin: 0 0 20px 0;
-  font-size: clamp(20px, 2vw, 30px);
-  opacity: 0.95;
+  margin: 0 0 26px 0;
+  font-size: clamp(16px, 1.8vw, 22px);
 }
 
 .bio-crawl p {
@@ -3255,29 +3241,32 @@ body.page-template-page-bio .bio-crawl-wrap,
   margin-top: 22px;
 }
 
-@keyframes bioCrawl {
-  0%   { transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(48%); }
-  12%  { transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(48%); }
-  100% { transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(-240%); }
+/* Vignette fade (top and bottom) */
+.bio-crawl-wrap::before,
+.bio-crawl-wrap::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 90px;
+  pointer-events: none;
+  z-index: 2;
 }
 
-/* Reduced motion: no animation, no tilt, keep readable */
+.bio-crawl-wrap::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0));
+}
+
+.bio-crawl-wrap::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0));
+}
+
+/* Reduced motion: remove tilt for readability, still scrollable */
 @media (prefers-reduced-motion: reduce) {
-  .bio-crawl-wrap {
-    height: auto;
-    overflow: visible;
-  }
-
-  .bio-crawl-wrap::before {
-    display: none;
-  }
-
   .bio-crawl {
-    position: static;
-    width: min(680px, 92%);
     transform: none;
-    animation: none;
-    margin: 0 auto;
     text-align: left;
   }
 }
