@@ -8,16 +8,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const holdMs = 1800;
-  const speed = 18; // px/sec
-  const resumeDelayMs = 900;
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const holdMs = 1400;
+  const speedPxPerSec = 14;
+  const pauseMs = 900;
   const dragThreshold = 6;
+  const pageScroller = document.scrollingElement || document.documentElement;
+  const debugEnabled = new URLSearchParams(window.location.search).get('debug') === '1';
 
-  let rafId = null;
-  let lastTime = null;
-  let holdUntil = performance.now() + holdMs;
-  let autoScrollEnabled = !prefersReducedMotion;
+  let scroller = null;
+  let rafId = 0;
+  let lastTs = 0;
+  let pausedUntil = 0;
 
   let isPointerDown = false;
   let isDragging = false;
@@ -26,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let startScrollTop = 0;
   let maxMovement = 0;
   let suppressClick = false;
-  let resumeTimer = null;
-  let hintTimer = null;
+  let holdTimer = 0;
+  let hintTimer = 0;
   let pointerHintShown = false;
 
   const hint = document.createElement('div');
@@ -35,90 +37,77 @@ document.addEventListener('DOMContentLoaded', () => {
   hint.textContent = 'Drag / Scroll';
   wrap.appendChild(hint);
 
-  const resetToStart = () => {
-    wrap.scrollTop = 0;
-    window.scrollTo(0, 0);
-  };
-
-  const ensureTitleVisible = () => {
-    const title = wrap.querySelector('.bio-crawl-title');
-    if (!title) {
-      return;
+  function getScroller(candidateWrap) {
+    if (!candidateWrap) {
+      return pageScroller;
     }
 
-    const titleRect = title.getBoundingClientRect();
-    const wrapRect = wrap.getBoundingClientRect();
-    if (titleRect.top > wrapRect.bottom - 40) {
-      wrap.scrollTop = Math.max(0, title.offsetTop - Math.round(wrap.clientHeight * 0.35));
+    if (candidateWrap.scrollHeight > candidateWrap.clientHeight + 2) {
+      return candidateWrap;
     }
-  };
 
-  const resetAndReveal = () => {
-    resetToStart();
-    ensureTitleVisible();
-  };
+    return pageScroller;
+  }
 
-  const showHintBriefly = (duration = 2500) => {
+  function refreshScroller() {
+    scroller = getScroller(wrap);
+  }
+
+  function atEnd(targetScroller) {
+    return targetScroller.scrollTop >= (targetScroller.scrollHeight - targetScroller.clientHeight - 2);
+  }
+
+  function showHintBriefly(duration = 2500) {
     hint.classList.remove('is-hidden');
     window.clearTimeout(hintTimer);
     hintTimer = window.setTimeout(() => {
       hint.classList.add('is-hidden');
     }, duration);
-  };
+  }
 
-  resetAndReveal();
-  requestAnimationFrame(() => {
-    resetAndReveal();
-    requestAnimationFrame(resetAndReveal);
-  });
-  window.setTimeout(resetAndReveal, 50);
-  window.setTimeout(resetAndReveal, 250);
-  window.addEventListener('pageshow', resetAndReveal);
-  showHintBriefly();
+  function pauseAutoScroll(delay = pauseMs) {
+    pausedUntil = performance.now() + delay;
+  }
 
-  const maxScrollTop = () => wrap.scrollHeight - wrap.clientHeight;
-
-  const pauseAutoScroll = () => {
-    autoScrollEnabled = false;
-  };
-
-  const resumeAutoScroll = (delay = 0) => {
-    if (prefersReducedMotion) {
-      return;
+  function tick(ts) {
+    if (!lastTs) {
+      lastTs = ts;
     }
 
-    window.clearTimeout(resumeTimer);
-    resumeTimer = window.setTimeout(() => {
-      autoScrollEnabled = true;
-      holdUntil = performance.now();
-      if (!rafId) {
-        rafId = requestAnimationFrame(step);
+    const dt = (ts - lastTs) / 1000;
+    lastTs = ts;
+
+    if (!reduceMotion && ts > pausedUntil && !atEnd(scroller)) {
+      scroller.scrollTop += speedPxPerSec * dt;
+    }
+
+    if (!atEnd(scroller)) {
+      rafId = requestAnimationFrame(tick);
+    } else {
+      rafId = 0;
+    }
+  }
+
+  function startAuto() {
+    window.clearTimeout(holdTimer);
+    cancelAnimationFrame(rafId);
+    rafId = 0;
+    lastTs = 0;
+
+    holdTimer = window.setTimeout(() => {
+      if (!reduceMotion) {
+        rafId = requestAnimationFrame(tick);
       }
-    }, delay);
-  };
+    }, holdMs);
+  }
 
-  const step = (now) => {
-    if (lastTime === null) {
-      lastTime = now;
-    }
+  function resetToStart() {
+    refreshScroller();
+    window.scrollTo(0, 0);
+    scroller.scrollTop = 0;
+  }
 
-    const deltaSeconds = Math.max(0, now - lastTime) / 1000;
-    lastTime = now;
-
-    if (autoScrollEnabled && !isDragging && now >= holdUntil) {
-      const nextScrollTop = Math.min(maxScrollTop(), wrap.scrollTop + speed * deltaSeconds);
-      wrap.scrollTop = nextScrollTop;
-
-      if (wrap.scrollTop >= maxScrollTop() - 2) {
-        rafId = null;
-        return;
-      }
-    }
-
-    rafId = requestAnimationFrame(step);
-  };
-
-  const endDrag = () => {
+  function endDrag() {
     if (!isPointerDown) {
       return;
     }
@@ -135,8 +124,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     isDragging = false;
-    resumeAutoScroll(resumeDelayMs);
-  };
+    pauseAutoScroll();
+  }
+
+  resetToStart();
+  if (debugEnabled) {
+    console.log('[bio-crawl] wrap metrics', {
+      scrollHeight: wrap.scrollHeight,
+      clientHeight: wrap.clientHeight,
+      usingPageScroller: scroller !== wrap,
+    });
+  }
+  requestAnimationFrame(() => {
+    resetToStart();
+    requestAnimationFrame(resetToStart);
+  });
+  window.setTimeout(resetToStart, 50);
+  window.setTimeout(resetToStart, 250);
+  window.addEventListener('pageshow', () => {
+    resetToStart();
+    startAuto();
+  });
+
+  showHintBriefly();
+  startAuto();
 
   wrap.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) {
@@ -152,14 +163,13 @@ document.addEventListener('DOMContentLoaded', () => {
       showHintBriefly(1200);
     }
 
-    window.clearTimeout(resumeTimer);
     pauseAutoScroll();
 
     isPointerDown = true;
     isDragging = false;
     activePointerId = event.pointerId;
     startY = event.clientY;
-    startScrollTop = wrap.scrollTop;
+    startScrollTop = scroller.scrollTop;
     maxMovement = 0;
 
     wrap.setPointerCapture(event.pointerId);
@@ -180,7 +190,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isDragging) {
       event.preventDefault();
-      wrap.scrollTop = startScrollTop - (event.clientY - startY);
+      scroller.scrollTop = startScrollTop - (event.clientY - startY);
+      pauseAutoScroll();
     }
   });
 
@@ -200,9 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
   wrap.addEventListener('lostpointercapture', endDrag);
 
   wrap.addEventListener('wheel', () => {
-    window.clearTimeout(resumeTimer);
     pauseAutoScroll();
-    resumeAutoScroll(resumeDelayMs);
   }, { passive: true });
 
   wrap.addEventListener('click', (event) => {
@@ -217,7 +226,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, true);
 
-  if (!prefersReducedMotion) {
-    rafId = requestAnimationFrame(step);
-  }
+  window.addEventListener('resize', refreshScroller, { passive: true });
 });
