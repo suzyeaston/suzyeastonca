@@ -3189,38 +3189,65 @@ body.page-template-page-bio .bio-crawl-wrap,
   border-radius: 16px;
 }
 
+.bio-crawl-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.55) 100%);
+}
+
 .bio-crawl {
   position: absolute;
+  z-index: 1;
   left: 50%;
-  bottom: -35%;
+  bottom: 6%;
   width: min(680px, 88%);
-  transform: translateX(-50%) perspective(900px) rotateX(18deg);
+  transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(20%);
   transform-origin: 50% 100%;
   text-align: justify;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  line-height: 1.65;
-  color: #f5d24a; /* warm “crawl” yellow */
+  font-size: clamp(18px, 1.6vw, 24px);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.75;
+  color: #f5d24a;
   text-shadow: 0 2px 10px rgba(0,0,0,0.6);
   animation: bioCrawl 55s linear 1 both;
+}
+
+.bio-crawl,
+.bio-crawl * {
+  color: #f5d24a !important;
 }
 
 .bio-crawl-title {
   text-align: center;
   letter-spacing: 0.12em;
   margin: 0 0 8px 0;
-  font-size: clamp(26px, 3.2vw, 40px);
+  font-size: clamp(34px, 3.6vw, 52px);
 }
 
 .bio-crawl-subtitle {
   text-align: center;
   margin: 0 0 20px 0;
-  font-size: clamp(14px, 1.6vw, 18px);
+  font-size: clamp(20px, 2vw, 30px);
   opacity: 0.95;
 }
 
 .bio-crawl p {
   margin: 0 0 16px 0;
+}
+
+.bio-crawl a {
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+  transition: color 180ms ease;
+}
+
+.bio-crawl a:hover,
+.bio-crawl a:focus-visible {
+  color: #ffe37a !important;
 }
 
 .bio-crawl-bandcamp {
@@ -3229,8 +3256,8 @@ body.page-template-page-bio .bio-crawl-wrap,
 }
 
 @keyframes bioCrawl {
-  0%   { transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(0); }
-  100% { transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(-210%); }
+  0%   { transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(20%); }
+  100% { transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(-220%); }
 }
 
 /* Reduced motion: no animation, no tilt, keep readable */
@@ -3239,6 +3266,11 @@ body.page-template-page-bio .bio-crawl-wrap,
     height: auto;
     overflow: visible;
   }
+
+  .bio-crawl-wrap::before {
+    display: none;
+  }
+
   .bio-crawl {
     position: static;
     width: min(680px, 92%);
