@@ -3190,8 +3190,8 @@ body {
 .bio-crawl {
   width: min(720px, 90%);
   margin: 0 auto;
-  padding-top: clamp(180px, 34vh, 360px);
-  padding-bottom: clamp(260px, 40vh, 520px);
+  padding-top: clamp(36px, 10vh, 120px);
+  padding-bottom: clamp(220px, 30vh, 520px);
   transform: perspective(900px) rotateX(18deg);
   transform-origin: 50% 100%;
   text-align: justify;
@@ -3206,6 +3206,26 @@ body {
 .bio-crawl,
 .bio-crawl * {
   color: #f5d24a !important;
+  white-space: normal;
+}
+
+.bio-crawl-hint {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  z-index: 3;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245, 210, 74, 0.9);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+  opacity: 0.92;
+  transition: opacity 260ms ease;
+}
+
+.bio-crawl-hint.is-hidden {
+  opacity: 0;
 }
 
 .bio-crawl-title {
