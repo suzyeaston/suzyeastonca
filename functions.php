@@ -63,6 +63,16 @@ function retro_game_music_theme_scripts() {
             true
         );
     }
+
+    if ( is_page_template( 'page-bio.php' ) || is_page( 'bio' ) ) {
+        wp_enqueue_script(
+            'bio-crawl',
+            get_template_directory_uri() . '/js/bio-crawl.js',
+            array(),
+            filemtime( get_template_directory() . '/js/bio-crawl.js' ),
+            true
+        );
+    }
 }
 add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
 
