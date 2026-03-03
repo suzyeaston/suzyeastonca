@@ -1,11 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+
   const wrap = document.querySelector('.bio-crawl-wrap');
   if (!wrap) {
     return;
   }
-
-  window.scrollTo(0, 0);
-  wrap.scrollTop = 0;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const holdMs = 1800;
@@ -26,6 +27,54 @@ document.addEventListener('DOMContentLoaded', () => {
   let maxMovement = 0;
   let suppressClick = false;
   let resumeTimer = null;
+  let hintTimer = null;
+  let pointerHintShown = false;
+
+  const hint = document.createElement('div');
+  hint.className = 'bio-crawl-hint';
+  hint.textContent = 'Drag / Scroll';
+  wrap.appendChild(hint);
+
+  const resetToStart = () => {
+    wrap.scrollTop = 0;
+    window.scrollTo(0, 0);
+  };
+
+  const ensureTitleVisible = () => {
+    const title = wrap.querySelector('.bio-crawl-title');
+    if (!title) {
+      return;
+    }
+
+    const titleRect = title.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    if (titleRect.top > wrapRect.bottom - 40) {
+      wrap.scrollTop = Math.max(0, title.offsetTop - Math.round(wrap.clientHeight * 0.35));
+    }
+  };
+
+  const resetAndReveal = () => {
+    resetToStart();
+    ensureTitleVisible();
+  };
+
+  const showHintBriefly = (duration = 2500) => {
+    hint.classList.remove('is-hidden');
+    window.clearTimeout(hintTimer);
+    hintTimer = window.setTimeout(() => {
+      hint.classList.add('is-hidden');
+    }, duration);
+  };
+
+  resetAndReveal();
+  requestAnimationFrame(() => {
+    resetAndReveal();
+    requestAnimationFrame(resetAndReveal);
+  });
+  window.setTimeout(resetAndReveal, 50);
+  window.setTimeout(resetAndReveal, 250);
+  window.addEventListener('pageshow', resetAndReveal);
+  showHintBriefly();
 
   const maxScrollTop = () => wrap.scrollHeight - wrap.clientHeight;
 
@@ -79,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wrap.classList.remove('is-dragging');
 
     if (isDragging) {
-      suppressClick = true;
+      suppressClick = maxMovement >= dragThreshold;
       window.setTimeout(() => {
         suppressClick = false;
       }, 0);
@@ -96,6 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (event.target.closest('a')) {
       return;
+    }
+
+    if (!pointerHintShown) {
+      pointerHintShown = true;
+      showHintBriefly(1200);
     }
 
     window.clearTimeout(resumeTimer);
@@ -144,6 +198,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   wrap.addEventListener('pointercancel', endDrag);
   wrap.addEventListener('lostpointercapture', endDrag);
+
+  wrap.addEventListener('wheel', () => {
+    window.clearTimeout(resumeTimer);
+    pauseAutoScroll();
+    resumeAutoScroll(resumeDelayMs);
+  }, { passive: true });
 
   wrap.addEventListener('click', (event) => {
     if (!suppressClick) {
