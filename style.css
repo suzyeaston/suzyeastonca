@@ -3172,8 +3172,9 @@ body {
 /* Bio crawl: scroll-based (no CSS animation) */
 .bio-crawl-wrap {
   position: relative;
-  overflow: auto;
-  height: min(78vh, 780px);
+  overflow: auto !important;
+  height: min(78vh, 780px) !important;
+  max-height: min(78vh, 780px) !important;
   padding: 0;
   border-radius: 16px;
   scroll-behavior: auto;
