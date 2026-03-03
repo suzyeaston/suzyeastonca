@@ -3168,3 +3168,83 @@ body {
     text-align: center;
   }
 }
+
+/* Bio page: opening-crawl vibe (desktop-first, respects reduced motion) */
+body.page-template-page-bio .bio-crawl-wrap,
+.bio-page .bio-crawl-wrap,
+.page-bio .bio-crawl-wrap {
+  position: relative;
+  overflow: hidden;
+  height: min(70vh, 720px);
+  padding: 24px 0;
+  border-radius: 16px;
+}
+
+/* Fallback in case no body class exists: scope via .bio-content parent */
+.bio-content .bio-crawl-wrap {
+  position: relative;
+  overflow: hidden;
+  height: min(70vh, 720px);
+  padding: 24px 0;
+  border-radius: 16px;
+}
+
+.bio-crawl {
+  position: absolute;
+  left: 50%;
+  bottom: -35%;
+  width: min(680px, 88%);
+  transform: translateX(-50%) perspective(900px) rotateX(18deg);
+  transform-origin: 50% 100%;
+  text-align: justify;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.65;
+  color: #f5d24a; /* warm “crawl” yellow */
+  text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+  animation: bioCrawl 55s linear 1 both;
+}
+
+.bio-crawl-title {
+  text-align: center;
+  letter-spacing: 0.12em;
+  margin: 0 0 8px 0;
+  font-size: clamp(26px, 3.2vw, 40px);
+}
+
+.bio-crawl-subtitle {
+  text-align: center;
+  margin: 0 0 20px 0;
+  font-size: clamp(14px, 1.6vw, 18px);
+  opacity: 0.95;
+}
+
+.bio-crawl p {
+  margin: 0 0 16px 0;
+}
+
+.bio-crawl-bandcamp {
+  text-align: center;
+  margin-top: 22px;
+}
+
+@keyframes bioCrawl {
+  0%   { transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(0); }
+  100% { transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(-210%); }
+}
+
+/* Reduced motion: no animation, no tilt, keep readable */
+@media (prefers-reduced-motion: reduce) {
+  .bio-crawl-wrap {
+    height: auto;
+    overflow: visible;
+  }
+  .bio-crawl {
+    position: static;
+    width: min(680px, 92%);
+    transform: none;
+    animation: none;
+    margin: 0 auto;
+    text-align: left;
+  }
+}
