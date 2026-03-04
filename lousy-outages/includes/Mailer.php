@@ -16,17 +16,10 @@ class Mailer {
             return false;
         }
 
-        $from_email = get_option('admin_email');
-        if (!is_email($from_email)) {
-            $host = wp_parse_url(home_url(), PHP_URL_HOST);
-            if (!is_string($host) || '' === $host) {
-                $host = 'example.com';
-            }
-            $from_email = 'no-reply@' . ltrim($host, '@');
-        }
+        $from_email = 'noreply@suzyeaston.ca';
         $from_email = (string) apply_filters('lousy_outages_mail_from_email', $from_email, $email);
         if (!is_email($from_email)) {
-            $from_email = $email;
+            $from_email = 'noreply@suzyeaston.ca';
         }
 
         $from_name = wp_specialchars_decode(get_bloginfo('name', 'display'), ENT_QUOTES);
@@ -74,10 +67,17 @@ class Mailer {
         };
 
         add_action('phpmailer_init', $alt_body_callback);
+        MailTransport::begin([
+            'from_address' => $from_email,
+            'from_name' => $from_name,
+        ]);
 
-        $sent = wp_mail($email, $subject, $html_body, $headers);
-
-        remove_action('phpmailer_init', $alt_body_callback);
+        try {
+            $sent = wp_mail($email, $subject, $html_body, $headers);
+        } finally {
+            MailTransport::end();
+            remove_action('phpmailer_init', $alt_body_callback);
+        }
 
         if (! $sent && defined('WP_DEBUG') && WP_DEBUG) {
             error_log(sprintf('[lousy_outages] mail_send_failed recipient=%s subject=%s', $email, $subject));
