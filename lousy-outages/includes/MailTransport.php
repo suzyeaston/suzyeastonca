@@ -10,6 +10,9 @@ class MailTransport
 {
     private const SENDMAIL_PATH = '/usr/sbin/sendmail';
 
+    private static bool $active = false;
+    /** @var array<string,mixed> */
+    private static array $context = [];
     private static bool $forceMail = false;
     private static string $transport = 'mail';
     private static bool $fallbackAttempted = false;
@@ -22,27 +25,60 @@ class MailTransport
         add_filter('wp_mail_from_name', [self::class, 'fromName']);
     }
 
+    /**
+     * @param array<string,mixed> $context
+     */
+    public static function begin(array $context = []): void
+    {
+        self::$active = true;
+        self::$context = $context;
+        self::$fallbackAttempted = false;
+    }
+
+    public static function end(): void
+    {
+        self::$active = false;
+        self::$context = [];
+        self::$forceMail = false;
+        self::$fallbackAttempted = false;
+        self::$transport = 'mail';
+    }
+
+    public static function isActive(): bool
+    {
+        return self::$active;
+    }
+
     public static function configure($phpmailer): void
     {
-        if (! $phpmailer instanceof PHPMailer) {
+        if (! self::isActive() || ! $phpmailer instanceof PHPMailer) {
             return;
         }
 
-        self::$fallbackAttempted = false;
+        $fromAddress = self::resolveFromAddress();
+        $envelopeSender = (string) apply_filters('lousy_outages_envelope_from', $fromAddress);
+        $envelopeSender = self::cleanAddress($envelopeSender);
+        if (! is_email($envelopeSender)) {
+            $envelopeSender = $fromAddress;
+        }
+
+        $phpmailer->Sender = $envelopeSender;
 
         if (self::$forceMail) {
             $phpmailer->isMail();
             $phpmailer->Mailer = 'mail';
             self::$transport = 'mail';
             self::$forceMail = false;
+            self::addDebugHeaders($phpmailer, $envelopeSender, $fromAddress);
             return;
         }
 
         $sendmailPath = self::SENDMAIL_PATH;
         if (is_string($sendmailPath) && is_executable($sendmailPath)) {
             $phpmailer->isSendmail();
-            $phpmailer->Sendmail = $sendmailPath . ' -t -i';
+            $phpmailer->Sendmail = $sendmailPath . ' -t -i -f ' . escapeshellarg($envelopeSender);
             self::$transport = 'sendmail';
+            self::addDebugHeaders($phpmailer, $envelopeSender, $fromAddress);
             return;
         }
 
@@ -53,24 +89,49 @@ class MailTransport
         $phpmailer->SMTPAutoTLS = false;
         $phpmailer->SMTPKeepAlive = false;
         self::$transport = 'smtp';
+        self::addDebugHeaders($phpmailer, $envelopeSender, $fromAddress);
     }
 
     public static function fromAddress(string $address = ''): string
     {
+        if (! self::isActive()) {
+            return $address;
+        }
+
         $desired = sanitize_email('noreply@suzyeaston.ca');
+        if (isset(self::$context['from_address'])) {
+            $contextAddress = self::cleanAddress((string) self::$context['from_address']);
+            if (is_email($contextAddress)) {
+                $desired = $contextAddress;
+            }
+        }
 
         return $desired ?: $address;
     }
 
     public static function fromName(string $name = ''): string
     {
+        if (! self::isActive()) {
+            return $name;
+        }
+
         $desired = sanitize_text_field('Lousy Outages');
+        if (isset(self::$context['from_name'])) {
+            $contextName = trim(preg_replace('/[\r\n]+/', ' ', (string) self::$context['from_name']));
+            if ('' !== $contextName) {
+                $desired = sanitize_text_field($contextName);
+            }
+        }
 
         return $desired ?: $name;
     }
 
     public static function handleFailure(WP_Error $error): void
     {
+        if (! self::isActive()) {
+            return;
+        }
+
         self::logFailure($error);
 
         if ('smtp' !== self::$transport || self::$fallbackAttempted) {
@@ -115,5 +176,32 @@ class MailTransport
 
         $target = trailingslashit(WP_CONTENT_DIR) . 'uploads/lo-mail.log';
         error_log($logMessage, 3, $target);
+    }
+
+    private static function resolveFromAddress(): string
+    {
+        $fromAddress = 'noreply@suzyeaston.ca';
+        if (isset(self::$context['from_address'])) {
+            $fromAddress = (string) self::$context['from_address'];
+        }
+
+        $fromAddress = self::cleanAddress((string) sanitize_email($fromAddress));
+        if (! is_email($fromAddress)) {
+            $fromAddress = 'noreply@suzyeaston.ca';
+        }
+
+        return $fromAddress;
+    }
+
+    private static function cleanAddress(string $value): string
+    {
+        return trim(str_replace(["\r", "\n"], '', $value));
+    }
+
+    private static function addDebugHeaders(PHPMailer $phpmailer, string $envelopeSender, string $fromAddress): void
+    {
+        $phpmailer->addCustomHeader('X-Lousy-Outages-Transport', self::$transport);
+        $phpmailer->addCustomHeader('X-Lousy-Outages-Envelope-From', $envelopeSender);
+        $phpmailer->addCustomHeader('X-Lousy-Outages-From', $fromAddress);
     }
 }

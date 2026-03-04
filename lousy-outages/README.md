@@ -41,6 +41,14 @@ Use the **Poll Now** button in the debug panel to run an immediate poll. The pan
 
 Place `[lousy_outages]` in any page or post to render the status table. A page titled *Lousy Outages* is created automatically on activation.
 
+
+## Deliverability checklist
+
+- DMARC passes when either DKIM passes with alignment **or** SPF passes with an envelope-from (Return-Path / MAIL FROM) aligned to the visible From domain.
+- Lousy Outages mail now sets PHPMailer `Sender` and sendmail `-f` to align envelope-from with the `suzyeaston.ca` From domain.
+- In Gmail, open an alert email, choose **Show original**, and verify `dmarc=pass` in Authentication-Results.
+- DNS still matters: SPF, DKIM, and DMARC records must be correctly configured for full deliverability.
+
 ## Filters & Actions
 
 - `lousy_outages_providers` – filter the provider array before polling.
