@@ -9,19 +9,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.scrollTo(0, 0);
+  wrap.classList.add('is-crawl-ready');
 
-  const restartCrawl = () => {
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) {
+      return;
+    }
+
     window.scrollTo(0, 0);
     wrap.classList.remove('is-crawl-ready');
     void wrap.offsetWidth;
-    queueMicrotask(() => {
-      wrap.classList.add('is-crawl-ready');
-    });
-  };
-
-  restartCrawl();
-
-  window.addEventListener('pageshow', () => {
-    restartCrawl();
+    wrap.classList.add('is-crawl-ready');
   });
 });
