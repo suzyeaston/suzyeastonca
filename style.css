@@ -3186,12 +3186,13 @@ body.page-template-page-bio-php .bio-content {
 
 .bio-crawl {
   position: absolute;
+  top: 0;
   left: 50%;
   width: min(720px, 90%);
   margin: 0;
-  transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(8vh);
+  transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(0);
   opacity: 1;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 0;
   text-align: justify;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -3211,11 +3212,11 @@ body.page-template-page-bio-php .bio-content {
 
 @keyframes seBioCrawl {
   0% {
-    transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(8vh);
+    transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(0);
   }
 
   100% {
-    transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(-260vh);
+    transform: translateX(-50%) perspective(900px) rotateX(18deg) translateY(-240vh);
   }
 }
 
@@ -3293,5 +3294,10 @@ body.page-template-page-bio-php .bio-content {
     transform: none;
     animation: none;
     text-align: left;
+  }
+
+  .bio-crawl-wrap::before,
+  .bio-crawl-wrap::after {
+    display: none;
   }
 }
