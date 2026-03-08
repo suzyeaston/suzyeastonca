@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  const surface = wrap.querySelector('.bio-crawl-surface');
   const track = wrap.querySelector('.bio-crawl-track');
   const crawl = wrap.querySelector('.bio-crawl');
   const soundToggle = wrap.querySelector('.bio-crawl-sound-toggle');
@@ -24,23 +25,30 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const label = isOn
+      ? 'Suzy’s Music Bio Theme Song: On'
+      : 'Suzy’s Music Bio Theme Song: Off';
+
     soundToggle.setAttribute('aria-pressed', isOn ? 'true' : 'false');
-    soundToggle.textContent = isOn ? 'Sound: On' : 'Sound: Off';
+    soundToggle.setAttribute('aria-label', label);
+    soundToggle.textContent = label;
   };
 
   const updateCrawlMetrics = () => {
-    if (!track || !crawl) {
+    if (!surface || !track || !crawl) {
       return;
     }
 
     const wrapRect = wrap.getBoundingClientRect();
+    const surfaceRect = surface.getBoundingClientRect();
     const crawlRect = crawl.getBoundingClientRect();
     const wrapHeight = Math.ceil(wrapRect.height);
+    const surfaceHeight = Math.ceil(surfaceRect.height);
     const crawlHeight = Math.ceil(crawlRect.height);
 
-    const start = Math.round(wrapHeight * 0.66);
-    const extraDistance = Math.ceil(wrapHeight * 0.26);
-    const travel = Math.max(crawlHeight + start + extraDistance, wrapHeight + start);
+    const start = Math.round(wrapHeight * 0.58);
+    const farFadeExit = Math.ceil(surfaceHeight * 0.22);
+    const travel = Math.max(crawlHeight + start + farFadeExit, surfaceHeight + start);
 
     wrap.style.setProperty('--crawl-start', `${start}px`);
     wrap.style.setProperty('--crawl-travel', `${travel}px`);
