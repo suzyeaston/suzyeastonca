@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const track = wrap.querySelector('.bio-crawl-track');
   const crawl = wrap.querySelector('.bio-crawl');
+  const crawlContent = wrap.querySelector('.bio-crawl-content');
   const soundToggle = wrap.querySelector('.bio-crawl-sound-toggle');
   const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -34,19 +35,20 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const updateCrawlMetrics = () => {
-    if (!track || !crawl) {
+    if (!track || !crawl || !crawlContent) {
       return;
     }
 
-    const wrapRect = wrap.getBoundingClientRect();
-    const crawlRect = crawl.getBoundingClientRect();
-    const wrapHeight = Math.ceil(wrapRect.height);
-    const crawlHeight = Math.ceil(crawlRect.height);
+    const wrapHeight = Math.ceil(wrap.clientHeight);
+    const contentHeight = Math.ceil(crawlContent.scrollHeight);
 
-    const baseStartRatio = window.innerWidth <= 700 ? 0.66 : 0.62;
-    const start = Math.round(wrapHeight * baseStartRatio);
-    const farFadeExit = Math.ceil(wrapHeight * 0.28);
-    const travel = Math.max(crawlHeight + start + farFadeExit, wrapHeight + start + farFadeExit);
+    // Place opening frame in the lower third/lower quarter like a classic crawl.
+    const startRatio = window.innerWidth <= 700 ? 0.75 : 0.72;
+    const start = Math.round(wrapHeight * startRatio);
+
+    // Extra travel so the final paragraphs clear the top fade completely.
+    const fadeClearance = Math.ceil(wrapHeight * 0.32);
+    const travel = contentHeight + start + fadeClearance;
 
     wrap.style.setProperty('--crawl-start', `${start}px`);
     wrap.style.setProperty('--crawl-travel', `${travel}px`);
