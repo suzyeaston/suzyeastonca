@@ -42,12 +42,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const wrapHeight = Math.ceil(wrap.clientHeight);
     const contentHeight = Math.ceil(crawlContent.scrollHeight);
 
-    // Place opening frame in the lower third/lower quarter like a classic crawl.
-    const startRatio = window.innerWidth <= 700 ? 0.75 : 0.72;
-    const start = Math.round(wrapHeight * startRatio);
+    const title = crawlContent.querySelector('.bio-crawl-title');
+    const subtitle = crawlContent.querySelector('.bio-crawl-subtitle');
+    const firstParagraph = crawlContent.querySelector('p');
 
-    // Extra travel so the final paragraphs clear the top fade completely.
-    const fadeClearance = Math.ceil(wrapHeight * 0.32);
+    const titleHeight = Math.ceil(title ? title.getBoundingClientRect().height : 0);
+    const subtitleHeight = Math.ceil(subtitle ? subtitle.getBoundingClientRect().height : 0);
+    const firstParagraphHeight = Math.ceil(firstParagraph ? firstParagraph.getBoundingClientRect().height : 0);
+    const titleBlockHeight = titleHeight + subtitleHeight;
+
+    // Explicitly anchor opener: title block starts around lower quarter/lower third,
+    // with subtitle + first paragraph intro visible on frame one.
+    const openerTargetY = Math.round(wrapHeight * (window.innerWidth <= 700 ? 0.68 : 0.64));
+    const introVisibility = Math.round(firstParagraphHeight * 0.46);
+    const baseStart = openerTargetY - titleBlockHeight;
+    const minStart = Math.round(wrapHeight * 0.4);
+    const maxStart = Math.round(wrapHeight * 0.8);
+    const start = Math.max(minStart, Math.min(maxStart, baseStart - introVisibility));
+
+    // Ensure enough upward travel to fully clear the horizon fade.
+    const fadeClearance = Math.ceil(wrapHeight * 0.24);
     const travel = contentHeight + start + fadeClearance;
 
     wrap.style.setProperty('--crawl-start', `${start}px`);
