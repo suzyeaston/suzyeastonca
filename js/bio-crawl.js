@@ -4,18 +4,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  const stage = wrap.querySelector('.bio-crawl-stage');
+  const track = wrap.querySelector('.bio-crawl-track');
   const crawl = wrap.querySelector('.bio-crawl');
   const soundToggle = wrap.querySelector('.bio-crawl-sound-toggle');
   const audio = wrap.querySelector('.bio-crawl-audio');
 
   const setCrawlTravel = () => {
-    if (!stage || !crawl) {
+    if (!track || !crawl) {
       return;
     }
 
-    const crawlHeight = Math.ceil(crawl.scrollHeight);
-    stage.style.height = `${crawlHeight}px`;
+    const crawlRect = crawl.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    const crawlHeight = Math.ceil(crawlRect.height);
+    const viewportHeight = Math.ceil(wrapRect.height);
+    const extraDistance = Math.ceil(viewportHeight * 0.72);
+    const travel = Math.max(crawlHeight + viewportHeight + extraDistance, viewportHeight);
+
+    wrap.style.setProperty('--crawl-travel', `${travel}px`);
   };
 
   const setupAudioToggle = () => {
@@ -56,9 +62,22 @@ document.addEventListener('DOMContentLoaded', () => {
       setToggleState(false);
     });
 
-    audio.addEventListener('ended', () => {
-      setToggleState(false);
+    audio.addEventListener('pause', () => {
+      if (!audio.ended) {
+        setToggleState(false);
+      }
     });
+
+    audio.addEventListener('play', () => {
+      setToggleState(true);
+    });
+  };
+
+  const refreshCrawl = () => {
+    setCrawlTravel();
+    wrap.classList.remove('is-crawl-ready');
+    void wrap.offsetWidth;
+    wrap.classList.add('is-crawl-ready');
   };
 
   if ('scrollRestoration' in history) {
@@ -72,15 +91,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('resize', setCrawlTravel);
 
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      refreshCrawl();
+    });
+  }
+
   window.addEventListener('pageshow', (event) => {
     if (!event.persisted) {
       return;
     }
 
     window.scrollTo(0, 0);
-    setCrawlTravel();
-    wrap.classList.remove('is-crawl-ready');
-    void wrap.offsetWidth;
-    wrap.classList.add('is-crawl-ready');
+    refreshCrawl();
   });
 });
