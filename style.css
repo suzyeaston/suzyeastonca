@@ -3177,30 +3177,31 @@ body.page-template-page-bio-php .bio-content {
 }
 
 .bio-crawl-wrap {
-  --crawl-duration: 50s;
-  --crawl-travel: 1400px;
+  --crawl-duration: 52s;
+  --crawl-start: 66%;
+  --crawl-travel: 1600px;
   position: relative;
   overflow: hidden;
   height: min(82vh, 860px);
   border-radius: 16px;
   padding: 0;
-  background: radial-gradient(circle at 50% -40%, rgba(20, 20, 20, 0.45), rgba(0, 0, 0, 0.98) 68%);
+  background: radial-gradient(circle at 50% -30%, rgba(24, 24, 24, 0.55), rgba(0, 0, 0, 0.98) 66%);
 }
 
 .bio-crawl-camera {
   position: absolute;
   inset: 0;
-  perspective: 840px;
+  perspective: 920px;
   perspective-origin: 50% 14%;
   overflow: hidden;
 }
 
 .bio-crawl-track {
   position: absolute;
+  top: 0;
   left: 50%;
-  bottom: -16%;
-  width: min(630px, 78vw);
-  transform: translateX(-50%) translateY(0);
+  width: min(560px, 72vw);
+  transform: translate(-50%, var(--crawl-start));
   animation: seBioCrawlTrack var(--crawl-duration) linear 1 both;
   animation-play-state: paused;
   will-change: transform;
@@ -3212,23 +3213,23 @@ body.page-template-page-bio-php .bio-content {
 
 @keyframes seBioCrawlTrack {
   from {
-    transform: translateX(-50%) translateY(0);
+    transform: translate(-50%, var(--crawl-start));
   }
 
   to {
-    transform: translateX(-50%) translateY(calc(-1 * var(--crawl-travel)));
+    transform: translate(-50%, calc(-1 * var(--crawl-travel)));
   }
 }
 
 .bio-crawl {
   margin: 0;
   transform: rotateX(24deg);
-  transform-origin: 50% 100%;
+  transform-origin: 50% 0;
   text-align: left;
   font-weight: 700;
-  letter-spacing: 0.012em;
-  line-height: 1.58;
-  font-size: clamp(16px, 1.55vw, 20px);
+  letter-spacing: 0.01em;
+  line-height: 1.56;
+  font-size: clamp(15px, 1.35vw, 19px);
   color: #f5d24a;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.56);
 }
@@ -3244,14 +3245,14 @@ body.page-template-page-bio-php .bio-content {
   text-align: center;
   letter-spacing: 0.11em;
   margin: 0 0 10px 0;
-  font-size: clamp(28px, 3.5vw, 44px);
+  font-size: clamp(28px, 3.3vw, 42px);
   line-height: 1.15;
 }
 
 .bio-crawl-subtitle {
   text-align: center;
   margin: 0 0 30px 0;
-  font-size: clamp(13px, 1.45vw, 18px);
+  font-size: clamp(12px, 1.3vw, 17px);
   line-height: 1.35;
 }
 
@@ -3292,10 +3293,6 @@ body.page-template-page-bio-php .bio-content {
   cursor: pointer;
 }
 
-.bio-crawl-sound-toggle[hidden] {
-  display: none;
-}
-
 .bio-crawl-sound-toggle:focus-visible,
 .bio-crawl-sound-toggle:hover {
   border-color: #ffe37a;
@@ -3314,38 +3311,37 @@ body.page-template-page-bio-php .bio-content {
 
 .bio-crawl-wrap::before {
   top: 0;
-  height: 34px;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0));
+  height: 22px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0));
 }
 
 .bio-crawl-wrap::after {
   bottom: 0;
-  height: 130px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0));
+  height: 120px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0));
 }
 
 @media (max-width: 700px) {
   .bio-crawl-wrap {
-    --crawl-duration: 56s;
+    --crawl-duration: 58s;
     height: min(78vh, 760px);
   }
 
   .bio-crawl-track {
-    width: min(94vw, 560px);
-    bottom: -18%;
+    width: min(88vw, 520px);
   }
 
   .bio-crawl {
-    font-size: clamp(14px, 3.3vw, 18px);
+    font-size: clamp(14px, 3.3vw, 17px);
     line-height: 1.54;
   }
 
   .bio-crawl-title {
-    font-size: clamp(24px, 8.2vw, 34px);
+    font-size: clamp(24px, 8vw, 34px);
   }
 
   .bio-crawl-subtitle {
-    font-size: clamp(12px, 3.8vw, 16px);
+    font-size: clamp(12px, 3.8vw, 15px);
   }
 }
 
