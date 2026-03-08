@@ -3191,8 +3191,8 @@ body.page-template-page-bio-php .bio-content {
 .bio-crawl-camera {
   position: absolute;
   inset: 0;
-  perspective: 920px;
-  perspective-origin: 50% 14%;
+  perspective: 700px;
+  perspective-origin: 50% 16%;
   overflow: hidden;
 }
 
@@ -3200,7 +3200,7 @@ body.page-template-page-bio-php .bio-content {
   position: absolute;
   top: 0;
   left: 50%;
-  width: min(560px, 72vw);
+  width: min(520px, 68vw);
   transform: translate(-50%, var(--crawl-start));
   animation: seBioCrawlTrack var(--crawl-duration) linear 1 both;
   animation-play-state: paused;
@@ -3223,7 +3223,7 @@ body.page-template-page-bio-php .bio-content {
 
 .bio-crawl {
   margin: 0;
-  transform: rotateX(24deg);
+  transform: rotateX(31deg);
   transform-origin: 50% 0;
   text-align: left;
   font-weight: 700;
@@ -3311,14 +3311,21 @@ body.page-template-page-bio-php .bio-content {
 
 .bio-crawl-wrap::before {
   top: 0;
-  height: 22px;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0));
+  height: 50%;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.95) 14%,
+    rgba(0, 0, 0, 0.72) 32%,
+    rgba(0, 0, 0, 0.24) 58%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }
 
 .bio-crawl-wrap::after {
   bottom: 0;
-  height: 120px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0));
+  height: 104px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0));
 }
 
 @media (max-width: 700px) {
@@ -3328,7 +3335,7 @@ body.page-template-page-bio-php .bio-content {
   }
 
   .bio-crawl-track {
-    width: min(88vw, 520px);
+    width: min(84vw, 490px);
   }
 
   .bio-crawl {
