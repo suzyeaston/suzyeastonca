@@ -7,77 +7,174 @@ document.addEventListener('DOMContentLoaded', () => {
   const track = wrap.querySelector('.bio-crawl-track');
   const crawl = wrap.querySelector('.bio-crawl');
   const soundToggle = wrap.querySelector('.bio-crawl-sound-toggle');
-  const audio = wrap.querySelector('.bio-crawl-audio');
+  const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  const setCrawlTravel = () => {
+  const state = {
+    loop: null,
+    bassLoop: null,
+    leadSynth: null,
+    bassSynth: null,
+    fxNodes: [],
+    isSoundOn: false,
+    isTransportSetup: false
+  };
+
+  const setToggleState = (isOn) => {
+    if (!soundToggle) {
+      return;
+    }
+
+    soundToggle.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+    soundToggle.textContent = isOn ? 'Sound: On' : 'Sound: Off';
+  };
+
+  const updateCrawlMetrics = () => {
     if (!track || !crawl) {
       return;
     }
 
-    const crawlRect = crawl.getBoundingClientRect();
     const wrapRect = wrap.getBoundingClientRect();
+    const crawlRect = crawl.getBoundingClientRect();
+    const wrapHeight = Math.ceil(wrapRect.height);
     const crawlHeight = Math.ceil(crawlRect.height);
-    const viewportHeight = Math.ceil(wrapRect.height);
-    const extraDistance = Math.ceil(viewportHeight * 0.72);
-    const travel = Math.max(crawlHeight + viewportHeight + extraDistance, viewportHeight);
 
+    const start = Math.round(wrapHeight * 0.66);
+    const extraDistance = Math.ceil(wrapHeight * 0.26);
+    const travel = Math.max(crawlHeight + start + extraDistance, wrapHeight + start);
+
+    wrap.style.setProperty('--crawl-start', `${start}px`);
     wrap.style.setProperty('--crawl-travel', `${travel}px`);
   };
 
-  const setupAudioToggle = () => {
-    if (!soundToggle || !audio) {
-      return;
-    }
-
-    const audioSrc = audio.dataset.audioSrc ? audio.dataset.audioSrc.trim() : '';
-    if (!audioSrc) {
-      soundToggle.hidden = true;
-      soundToggle.disabled = true;
-      return;
-    }
-
-    audio.src = audioSrc;
-    audio.loop = true;
-    soundToggle.hidden = false;
-
-    const setToggleState = (isPlaying) => {
-      soundToggle.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
-      soundToggle.textContent = isPlaying ? 'Sound: On' : 'Sound: Off';
-    };
-
-    setToggleState(false);
-
-    soundToggle.addEventListener('click', async () => {
-      if (audio.paused) {
-        try {
-          await audio.play();
-          setToggleState(true);
-        } catch (error) {
-          setToggleState(false);
-        }
-        return;
-      }
-
-      audio.pause();
-      setToggleState(false);
-    });
-
-    audio.addEventListener('pause', () => {
-      if (!audio.ended) {
-        setToggleState(false);
-      }
-    });
-
-    audio.addEventListener('play', () => {
-      setToggleState(true);
-    });
-  };
-
   const refreshCrawl = () => {
-    setCrawlTravel();
+    if (reduceMotionQuery.matches) {
+      wrap.classList.remove('is-crawl-ready');
+      return;
+    }
+
+    updateCrawlMetrics();
     wrap.classList.remove('is-crawl-ready');
     void wrap.offsetWidth;
     wrap.classList.add('is-crawl-ready');
+  };
+
+  const disposeSound = () => {
+    if (state.loop) {
+      state.loop.stop(0);
+      state.loop.dispose();
+      state.loop = null;
+    }
+
+    if (state.bassLoop) {
+      state.bassLoop.stop(0);
+      state.bassLoop.dispose();
+      state.bassLoop = null;
+    }
+
+    if (state.leadSynth) {
+      state.leadSynth.dispose();
+      state.leadSynth = null;
+    }
+
+    if (state.bassSynth) {
+      state.bassSynth.dispose();
+      state.bassSynth = null;
+    }
+
+    state.fxNodes.forEach((node) => node.dispose());
+    state.fxNodes = [];
+    state.isTransportSetup = false;
+  };
+
+  const buildSoundLoop = () => {
+    if (typeof Tone === 'undefined' || state.isTransportSetup) {
+      return;
+    }
+
+    const leadDelay = new Tone.FeedbackDelay('8n', 0.2);
+    const leadReverb = new Tone.Reverb({ decay: 1.4, wet: 0.23 });
+    const leadGain = new Tone.Gain(0.16).toDestination();
+
+    state.leadSynth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'square8' },
+      envelope: { attack: 0.005, decay: 0.22, sustain: 0.35, release: 0.45 }
+    });
+    state.leadSynth.chain(leadDelay, leadReverb, leadGain);
+
+    const bassGain = new Tone.Gain(0.12).toDestination();
+    state.bassSynth = new Tone.MonoSynth({
+      oscillator: { type: 'pulse' },
+      filter: { Q: 1.2, type: 'lowpass', rolloff: -24 },
+      envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.35 },
+      filterEnvelope: { attack: 0.01, decay: 0.12, sustain: 0.2, release: 0.3, baseFrequency: 90, octaves: 2 }
+    }).connect(bassGain);
+
+    state.fxNodes = [leadDelay, leadReverb, leadGain, bassGain];
+
+    const fanfare = [
+      ['C5', 'E5', 'G5'],
+      ['D5', 'F5', 'A5'],
+      ['E5', 'G5', 'B5'],
+      ['G5', 'B5', 'D6'],
+      ['F5', 'A5', 'C6'],
+      ['E5', 'G5', 'B5'],
+      ['D5', 'F5', 'A5'],
+      ['G4', 'D5', 'G5']
+    ];
+
+    const bassline = ['C2', 'C2', 'D2', 'E2', 'F2', 'E2', 'D2', 'G1'];
+
+    state.loop = new Tone.Sequence((time, chord) => {
+      state.leadSynth.triggerAttackRelease(chord, '8n', time, 0.9);
+    }, fanfare, '8n');
+
+    state.bassLoop = new Tone.Sequence((time, note) => {
+      state.bassSynth.triggerAttackRelease(note, '8n', time, 0.75);
+    }, bassline, '8n');
+
+    Tone.Transport.bpm.value = 126;
+    Tone.Transport.loop = true;
+    Tone.Transport.loopStart = 0;
+    Tone.Transport.loopEnd = '2m';
+
+    state.loop.start(0);
+    state.bassLoop.start(0);
+    state.isTransportSetup = true;
+  };
+
+  const setupSoundToggle = () => {
+    if (!soundToggle) {
+      return;
+    }
+
+    soundToggle.hidden = false;
+    setToggleState(false);
+
+    soundToggle.addEventListener('click', async () => {
+      if (typeof Tone === 'undefined') {
+        return;
+      }
+
+      try {
+        await Tone.start();
+        buildSoundLoop();
+
+        if (!state.isSoundOn) {
+          Tone.Transport.start('+0.05');
+          state.isSoundOn = true;
+          setToggleState(true);
+          return;
+        }
+
+        Tone.Transport.stop();
+        state.isSoundOn = false;
+        setToggleState(false);
+      } catch (error) {
+        console.error('Bio crawl sound toggle failed', error);
+        state.isSoundOn = false;
+        setToggleState(false);
+      }
+    });
   };
 
   if ('scrollRestoration' in history) {
@@ -85,11 +182,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.scrollTo(0, 0);
-  setCrawlTravel();
-  setupAudioToggle();
-  wrap.classList.add('is-crawl-ready');
+  setupSoundToggle();
+  refreshCrawl();
 
-  window.addEventListener('resize', setCrawlTravel);
+  window.addEventListener('resize', updateCrawlMetrics);
+
+  if (reduceMotionQuery.addEventListener) {
+    reduceMotionQuery.addEventListener('change', refreshCrawl);
+  } else if (reduceMotionQuery.addListener) {
+    reduceMotionQuery.addListener(refreshCrawl);
+  }
 
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => {
@@ -104,5 +206,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.scrollTo(0, 0);
     refreshCrawl();
+  });
+
+  window.addEventListener('beforeunload', () => {
+    if (typeof Tone !== 'undefined') {
+      Tone.Transport.stop();
+      Tone.Transport.cancel();
+    }
+    disposeSound();
   });
 });

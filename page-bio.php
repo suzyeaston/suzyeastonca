@@ -8,20 +8,12 @@ get_header();
 <main id="main-content">
     <section class="page-content">
         <div class="bio-content">
-<?php
-$bio_audio_fallback_path = '/assets/audio/bio-crawl-theme.mp3';
-$bio_audio_fallback_src  = file_exists( get_template_directory() . $bio_audio_fallback_path )
-    ? get_template_directory_uri() . $bio_audio_fallback_path
-    : '';
-$bio_audio_src = apply_filters( 'se_bio_crawl_audio_src', $bio_audio_fallback_src );
-?>
 <div class="bio-crawl-wrap" aria-label="Bio opening crawl">
   <button
     class="bio-crawl-sound-toggle"
     type="button"
     aria-pressed="false"
     aria-label="Toggle crawl sound"
-    hidden
   >Sound: Off</button>
   <div class="bio-crawl-camera">
     <div class="bio-crawl-track">
@@ -45,7 +37,6 @@ $bio_audio_src = apply_filters( 'se_bio_crawl_audio_src', $bio_audio_fallback_sr
       </div>
     </div>
   </div>
-  <audio class="bio-crawl-audio" preload="none" data-audio-src="<?php echo esc_attr( $bio_audio_src ); ?>"></audio>
 </div>
         </div>
     </section>
