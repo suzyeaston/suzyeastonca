@@ -3177,80 +3177,87 @@ body.page-template-page-bio-php .bio-content {
 }
 
 .bio-crawl-wrap {
-  --crawl-duration: 48s;
-  --crawl-start-offset: 20%;
-  --crawl-end-offset: 38vh;
+  --crawl-duration: 50s;
+  --crawl-travel: 1400px;
   position: relative;
   overflow: hidden;
-  height: min(80vh, 820px);
+  height: min(82vh, 860px);
   border-radius: 16px;
   padding: 0;
+  background: radial-gradient(circle at 50% -40%, rgba(20, 20, 20, 0.45), rgba(0, 0, 0, 0.98) 68%);
 }
 
-.bio-crawl-stage {
+.bio-crawl-camera {
   position: absolute;
   inset: 0;
-  transform: translateY(var(--crawl-start-offset));
-  animation: seBioCrawlStage var(--crawl-duration) linear 1 both;
-  animation-play-state: paused;
-  will-change: transform;
-  z-index: 1;
+  perspective: 840px;
+  perspective-origin: 50% 14%;
+  overflow: hidden;
 }
 
-.bio-crawl-wrap.is-crawl-ready .bio-crawl-stage {
+.bio-crawl-track {
+  position: absolute;
+  left: 50%;
+  bottom: -16%;
+  width: min(630px, 78vw);
+  transform: translateX(-50%) translateY(0);
+  animation: seBioCrawlTrack var(--crawl-duration) linear 1 both;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.bio-crawl-wrap.is-crawl-ready .bio-crawl-track {
   animation-play-state: running;
 }
 
-@keyframes seBioCrawlStage {
-  0% {
-    transform: translateY(var(--crawl-start-offset));
+@keyframes seBioCrawlTrack {
+  from {
+    transform: translateX(-50%) translateY(0);
   }
 
-  100% {
-    transform: translateY(calc(-100% - var(--crawl-end-offset)));
+  to {
+    transform: translateX(-50%) translateY(calc(-1 * var(--crawl-travel)));
   }
 }
 
 .bio-crawl {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: min(690px, 90%);
   margin: 0;
-  transform: translateX(-50%) perspective(950px) rotateX(20deg);
-  transform-origin: 50% 0;
+  transform: rotateX(24deg);
+  transform-origin: 50% 100%;
   text-align: left;
   font-weight: 700;
-  letter-spacing: 0.018em;
-  line-height: 1.62;
-  font-size: clamp(19px, 1.9vw, 24px);
+  letter-spacing: 0.012em;
+  line-height: 1.58;
+  font-size: clamp(16px, 1.55vw, 20px);
   color: #f5d24a;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.62);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.56);
 }
 
 .bio-crawl,
 .bio-crawl * {
   color: #f5d24a !important;
   white-space: normal;
+  word-spacing: normal;
 }
 
 .bio-crawl-title {
   text-align: center;
-  letter-spacing: 0.12em;
-  margin: 0 0 8px 0;
-  font-size: clamp(36px, 4.6vw, 56px);
+  letter-spacing: 0.11em;
+  margin: 0 0 10px 0;
+  font-size: clamp(28px, 3.5vw, 44px);
   line-height: 1.15;
 }
 
 .bio-crawl-subtitle {
   text-align: center;
-  margin: 0 0 24px 0;
-  font-size: clamp(16px, 1.8vw, 22px);
+  margin: 0 0 30px 0;
+  font-size: clamp(13px, 1.45vw, 18px);
   line-height: 1.35;
 }
 
 .bio-crawl p {
-  margin: 0 0 14px 0;
+  margin: 0 0 16px 0;
+  text-align: left;
 }
 
 .bio-crawl a {
@@ -3266,7 +3273,7 @@ body.page-template-page-bio-php .bio-content {
 
 .bio-crawl-bandcamp {
   text-align: center;
-  margin-top: 18px;
+  margin-top: 20px;
 }
 
 .bio-crawl-sound-toggle {
@@ -3295,7 +3302,6 @@ body.page-template-page-bio-php .bio-content {
   color: #ffe37a;
 }
 
-/* Vignette fade (top and bottom) */
 .bio-crawl-wrap::before,
 .bio-crawl-wrap::after {
   content: "";
@@ -3308,36 +3314,38 @@ body.page-template-page-bio-php .bio-content {
 
 .bio-crawl-wrap::before {
   top: 0;
-  height: 56px;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0));
+  height: 34px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0));
 }
 
 .bio-crawl-wrap::after {
   bottom: 0;
-  height: 110px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0));
+  height: 130px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0));
 }
 
 @media (max-width: 700px) {
   .bio-crawl-wrap {
-    --crawl-duration: 54s;
-    --crawl-start-offset: 16%;
-    --crawl-end-offset: 34vh;
+    --crawl-duration: 56s;
     height: min(78vh, 760px);
   }
 
+  .bio-crawl-track {
+    width: min(94vw, 560px);
+    bottom: -18%;
+  }
+
   .bio-crawl {
-    width: min(92%, 640px);
-    font-size: clamp(17px, 4vw, 21px);
-    line-height: 1.58;
+    font-size: clamp(14px, 3.3vw, 18px);
+    line-height: 1.54;
   }
 
   .bio-crawl-title {
-    font-size: clamp(30px, 9vw, 42px);
+    font-size: clamp(24px, 8.2vw, 34px);
   }
 
   .bio-crawl-subtitle {
-    font-size: clamp(14px, 4.5vw, 18px);
+    font-size: clamp(12px, 3.8vw, 16px);
   }
 }
 
@@ -3345,18 +3353,24 @@ body.page-template-page-bio-php .bio-content {
   .bio-crawl-wrap {
     height: auto;
     overflow: visible;
+    background: transparent;
   }
 
-  .bio-crawl-stage {
+  .bio-crawl-camera {
     position: static;
-    transform: none;
-    animation: none;
+    perspective: none;
+    overflow: visible;
   }
 
-  .bio-crawl {
+  .bio-crawl-track {
     position: static;
     width: min(720px, 92%);
     margin: 0 auto;
+    animation: none;
+    transform: none;
+  }
+
+  .bio-crawl {
     transform: none;
     text-align: left;
     text-shadow: none;
