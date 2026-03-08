@@ -3178,7 +3178,7 @@ body.page-template-page-bio-php .bio-content {
 
 .bio-crawl-wrap {
   --crawl-duration: 52s;
-  --crawl-start: 62%;
+  --crawl-start: 72%;
   --crawl-travel: 1900px;
   position: relative;
   overflow: hidden;
@@ -3192,19 +3192,19 @@ body.page-template-page-bio-php .bio-content {
 .bio-crawl-camera {
   position: absolute;
   inset: 0;
-  perspective: 980px;
-  perspective-origin: 50% 18%;
+  perspective: 900px;
+  perspective-origin: 50% 24%;
   overflow: hidden;
 }
 
 .bio-crawl-track {
   position: absolute;
   left: 50%;
-  bottom: 0;
+  top: 0;
   width: min(880px, 90vw);
   margin: 0;
-  transform-origin: 50% 100%;
-  transform: translate(-50%, var(--crawl-start));
+  transform-origin: 50% 0%;
+  transform: translate3d(-50%, var(--crawl-start), 0);
   animation: seBioCrawlTrack var(--crawl-duration) linear 1 both;
   animation-play-state: paused;
   will-change: transform;
@@ -3216,11 +3216,11 @@ body.page-template-page-bio-php .bio-content {
 
 @keyframes seBioCrawlTrack {
   from {
-    transform: translate(-50%, var(--crawl-start));
+    transform: translate3d(-50%, var(--crawl-start), 0);
   }
 
   to {
-    transform: translate(-50%, calc(-1 * var(--crawl-travel)));
+    transform: translate3d(-50%, calc(-1 * var(--crawl-travel)), 0);
   }
 }
 
@@ -3234,8 +3234,8 @@ body.page-template-page-bio-php .bio-content {
   color: #f5d24a;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.58);
   background: transparent;
-  transform-origin: 50% 100%;
-  transform: rotateX(24deg);
+  transform-origin: 50% 0%;
+  transform: rotateX(19deg);
 }
 
 .bio-crawl,
@@ -3261,6 +3261,10 @@ body.page-template-page-bio-php .bio-content {
   line-height: 1.35;
 }
 
+
+.bio-crawl-content {
+  display: block;
+}
 .bio-crawl p {
   margin: 0 0 16px 0;
   text-align: left;
@@ -3338,7 +3342,7 @@ body.page-template-page-bio-php .bio-content {
 @media (max-width: 700px) {
   .bio-crawl-wrap {
     --crawl-duration: 58s;
-    --crawl-start: 66%;
+    --crawl-start: 74%;
     height: min(80vh, 760px);
   }
 
@@ -3349,7 +3353,7 @@ body.page-template-page-bio-php .bio-content {
   .bio-crawl {
     font-size: clamp(16px, 4.05vw, 21px);
     line-height: 1.54;
-    transform: rotateX(21deg);
+    transform: rotateX(16deg);
   }
 
   .bio-crawl-title {
