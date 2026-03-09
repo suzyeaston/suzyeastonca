@@ -1060,3 +1060,67 @@ add_action('wp_head', function () {
         echo "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"Lousy Outages Alerts\" href=\"{$href}\" />\n";
     }
 });
+
+// =========================================
+// 10. CRAWLABILITY / INDEXING CONTROLS
+// =========================================
+function se_get_utility_page_templates(): array {
+    return array(
+        'page-subscribe-thanks.php',
+    );
+}
+
+function se_get_utility_page_ids(): array {
+    $ids = array();
+    foreach ( se_get_utility_page_templates() as $template ) {
+        $pages = get_pages(
+            array(
+                'meta_key'    => '_wp_page_template',
+                'meta_value'  => $template,
+                'post_status' => 'publish',
+                'fields'      => 'ids',
+                'number'      => 100,
+            )
+        );
+
+        if ( is_array( $pages ) ) {
+            $ids = array_merge( $ids, $pages );
+        }
+    }
+
+    return array_values( array_unique( array_map( 'absint', $ids ) ) );
+}
+
+add_filter(
+    'wp_robots',
+    function ( array $robots ): array {
+        if ( is_page_template( se_get_utility_page_templates() ) ) {
+            $robots['noindex'] = true;
+            $robots['nofollow'] = true;
+            unset( $robots['index'] );
+            unset( $robots['follow'] );
+        }
+
+        return $robots;
+    }
+);
+
+add_filter(
+    'wp_sitemaps_posts_query_args',
+    function ( array $args, string $post_type ): array {
+        if ( 'page' !== $post_type ) {
+            return $args;
+        }
+
+        $excluded_ids = se_get_utility_page_ids();
+        if ( ! empty( $excluded_ids ) ) {
+            $args['post__not_in'] = isset( $args['post__not_in'] )
+                ? array_values( array_unique( array_merge( (array) $args['post__not_in'], $excluded_ids ) ) )
+                : $excluded_ids;
+        }
+
+        return $args;
+    },
+    10,
+    2
+);

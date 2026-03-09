@@ -25,6 +25,11 @@
       $meta_desc  = 'Suzanne (Suzy) Easton shares indie music spotlights, outage stories, retro-inspired tools, and Vancouver-based creative tech experiments.';
       $meta_keywords = 'Suzy Easton, Suzanne Easton, Vancouver musician, creative technologist, Lousy Outages, indie music, retro arcade website, outage analysis';
       $meta_img   = $default_img;
+    } elseif ( is_page_template( 'page-asmr-lab.php' ) ) {
+      $meta_title = 'ASMR Lab – AI sensory ad concepts and 8-bit foley recipes';
+      $meta_desc  = 'Build tactile ad concepts with AI: ASMR-style beats, foley recipes, and model-ready video prompts for creators and creative technologists.';
+      $meta_keywords = 'ASMR lab, AI ad concept generator, foley recipe tool, sensory marketing prompts, Suzy Easton';
+      $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-lousy-outages.php' ) ) {
       $meta_title = 'Lousy Outages – Retro outage dashboard for modern chaos';
       $meta_desc  = 'A retro terminal-style dashboard that tracks popular services, highlights incidents, and can send alerts when things go sideways.';
@@ -51,7 +56,11 @@
       $meta_keywords = 'Suzy Easton, musician, creative technologist, Vancouver artist';
       $meta_img   = $default_img;
     }
-    $meta_url = home_url( add_query_arg( [], $wp->request ) );
+    if ( is_singular() ) {
+      $meta_url = get_permalink();
+    } else {
+      $meta_url = home_url( add_query_arg( [], $wp->request ) );
+    }
     $structured_data = [
       '@context' => 'https://schema.org',
       '@graph'   => [
@@ -90,6 +99,7 @@
   <title><?php echo esc_html( $meta_title ); ?></title>
   <meta name="description" content="<?php echo esc_attr( $meta_desc ); ?>">
   <meta name="keywords" content="<?php echo esc_attr( $meta_keywords ); ?>">
+  <link rel="canonical" href="<?php echo esc_url( $meta_url ); ?>">
   <meta property="og:type" content="website">
   <meta property="og:title" content="<?php echo esc_attr( $meta_title ); ?>">
   <meta property="og:description" content="<?php echo esc_attr( $meta_desc ); ?>">
