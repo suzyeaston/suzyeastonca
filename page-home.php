@@ -150,6 +150,13 @@ get_header();
         </div>
     </section>
 
+    <section class="asmr-lab-teaser crt-block" aria-labelledby="asmr-lab-teaser-title">
+        <p class="asmr-lab-teaser__eyebrow pixel-font">Experimental Machine Online</p>
+        <h2 id="asmr-lab-teaser-title" class="pixel-font">ASMR Lab</h2>
+        <p class="asmr-lab-teaser__description">Step into the noise chamber: AI-generated sensory ad concepts, 8-bit foley recipes, and model-ready video prompts wired for curious makers.</p>
+        <a href="<?php echo esc_url(home_url('/asmr-lab/')); ?>" class="pixel-button asmr-lab-teaser__cta">Enter ASMR Lab</a>
+    </section>
+
     <section class="track-analyzer-feature">
         <h2 class="pixel-font">Track Analyzer</h2>
         <p class="pixel-font">Upload an MP3 and get instant feedback on your mix.</p>

@@ -582,6 +582,10 @@ body::before {
   .ai-film-feature {
     grid-template-columns: 1fr;
   }
+
+  .asmr-lab-teaser {
+    text-align: center;
+  }
 }
 
 /* ====================== */
@@ -2042,6 +2046,40 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  margin-top: 14px;
+}
+
+
+
+.asmr-lab-teaser {
+  margin: 40px auto;
+  max-width: 860px;
+  padding: 24px 28px;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.asmr-lab-teaser__eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.68rem;
+  letter-spacing: 1px;
+  color: var(--secondary-color);
+  text-transform: uppercase;
+}
+
+.asmr-lab-teaser h2 {
+  margin: 0 0 0.8rem;
+  color: #b6ffd7;
+}
+
+.asmr-lab-teaser__description {
+  margin: 0;
+  max-width: 62ch;
+  line-height: 1.7;
+  color: #e8ffee;
+}
+
+.asmr-lab-teaser__cta {
   margin-top: 14px;
 }
 
