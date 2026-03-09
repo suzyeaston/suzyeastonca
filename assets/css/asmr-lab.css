@@ -1,0 +1,15 @@
+.asmr-lab-shell{max-width:980px;margin:2rem auto;padding:1.25rem;background:#0f1222;border:1px solid #31407a;border-radius:10px;color:#d7e2ff;box-shadow:0 0 24px rgba(66,120,255,.2)}
+.asmr-kicker{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#7aa2ff}
+.asmr-title{font-family:'Press Start 2P',monospace;font-size:1.4rem;color:#b5cbff}
+.asmr-lab-form label{display:flex;flex-direction:column;gap:.35rem;font-size:.85rem}
+.asmr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem}
+.asmr-grid input,.asmr-grid textarea{background:#0a0d1c;color:#e6ecff;border:1px solid #33437f;border-radius:6px;padding:.6rem}
+.asmr-actions,.asmr-audio-controls{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
+.pixel-button.secondary{opacity:.86}
+.asmr-status{min-height:1.2rem;color:#7df9c1}
+.asmr-error{color:#ff8ca0;background:#2a0e16;padding:.5rem .7rem;border-radius:6px;border:1px solid #7a2f44}
+.asmr-results{margin-top:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}
+.asmr-card{background:#131830;border:1px solid #2f3f73;border-radius:8px;padding:.8rem}
+.asmr-card h2{margin:.2rem 0 .5rem;font-size:1rem;color:#9ec0ff}
+.asmr-card pre{max-height:240px;overflow:auto;background:#090d1a;padding:.6rem;border-radius:6px}
+.pixel-button.tiny{font-size:.75rem;padding:.25rem .45rem}

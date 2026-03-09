@@ -132,6 +132,47 @@ function se_enqueue_lousy_outages_page_styles() {
 }
 add_action( 'wp_enqueue_scripts', 'se_enqueue_lousy_outages_page_styles' );
 
+function se_enqueue_asmr_lab_assets() {
+    if ( ! is_page_template( 'page-asmr-lab.php' ) ) {
+        return;
+    }
+
+    $dir = get_stylesheet_directory();
+    $uri = get_stylesheet_directory_uri();
+
+    $css_path = '/assets/css/asmr-lab.css';
+    if ( file_exists( $dir . $css_path ) ) {
+        wp_enqueue_style( 'se-asmr-lab', $uri . $css_path, array(), filemtime( $dir . $css_path ) );
+    }
+
+    wp_enqueue_script(
+        'tone-js',
+        'https://unpkg.com/tone@14.7.77/build/Tone.js',
+        array(),
+        '14.7.77',
+        true
+    );
+
+    $engine_path = '/js/asmr-foley-engine.js';
+    if ( file_exists( $dir . $engine_path ) ) {
+        wp_enqueue_script( 'se-asmr-foley-engine', $uri . $engine_path, array( 'tone-js' ), filemtime( $dir . $engine_path ), true );
+    }
+
+    $app_path = '/js/asmr-lab.js';
+    if ( file_exists( $dir . $app_path ) ) {
+        wp_enqueue_script( 'se-asmr-lab', $uri . $app_path, array( 'se-asmr-foley-engine' ), filemtime( $dir . $app_path ), true );
+        wp_localize_script(
+            'se-asmr-lab',
+            'seAsmrLab',
+            array(
+                'endpoint' => esc_url_raw( rest_url( 'se/v1/asmr-generate' ) ),
+                'nonce'    => wp_create_nonce( 'wp_rest' ),
+            )
+        );
+    }
+}
+add_action( 'wp_enqueue_scripts', 'se_enqueue_asmr_lab_assets' );
+
 // Header tweak CSS for the Lousy Outages page/template.
 // Idempotent: safe if this file is included multiple times.
 if ( ! function_exists('se_enqueue_header_tweak_css') ) {
@@ -570,6 +611,12 @@ add_action('rest_api_init', function() {
         'callback'            => 'se_handle_riff_tip',
         'permission_callback' => '__return_true',
     ]);
+
+    register_rest_route('se/v1', '/asmr-generate', [
+        'methods'             => 'POST',
+        'callback'            => 'se_handle_asmr_generate',
+        'permission_callback' => '__return_true',
+    ]);
 });
 
 // =========================================
@@ -802,6 +849,187 @@ function se_handle_riff_tip( WP_REST_Request $req ) {
     }
 
     return rest_ensure_response( array( 'tip' => $tip ) );
+}
+
+function se_get_asmr_allowed_engines() {
+    return array(
+        'plastic_tap',
+        'paper_crinkle',
+        'soft_tear',
+        'adhesive_peel',
+        'rain_hiss',
+        'breath_pulse',
+        'ceramic_tick',
+        'ui_bloop',
+        'low_hum',
+        'fiber_brush',
+    );
+}
+
+function se_extract_json_object( $raw ) {
+    $raw = trim( (string) $raw );
+    if ( preg_match( '/```(?:json)?\s*(.+?)```/is', $raw, $matches ) ) {
+        $raw = trim( $matches[1] );
+    }
+    $start = strpos( $raw, '{' );
+    $end   = strrpos( $raw, '}' );
+    if ( false === $start || false === $end || $end <= $start ) {
+        return '';
+    }
+    return substr( $raw, $start, $end - $start + 1 );
+}
+
+function se_validate_asmr_response( $decoded ) {
+    if ( ! is_array( $decoded ) ) {
+        return new WP_Error( 'asmr_invalid_json', __( 'ASMR Lab returned malformed JSON. Please regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
+    }
+
+    $required = array(
+        'title',
+        'runtime_seconds',
+        'hook',
+        'concept_summary',
+        'sensory_palette',
+        'ai_usage_map',
+        'ai_edge_strategy',
+        'failure_modes_to_embrace',
+        'human_control_notes',
+        'beat_sheet',
+        'edit_notes',
+        'video_prompts',
+        'negative_prompts',
+        'presentation_note',
+        'sound_recipe',
+    );
+
+    $keys = array_keys( $decoded );
+    sort( $keys );
+    $required_sorted = $required;
+    sort( $required_sorted );
+    if ( $keys !== $required_sorted ) {
+        return new WP_Error( 'asmr_shape_error', __( 'ASMR Lab response shape was unexpected. Please regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
+    }
+
+    $decoded['runtime_seconds'] = max( 15, min( 30, absint( $decoded['runtime_seconds'] ) ) );
+
+    if ( ! is_array( $decoded['sound_recipe'] ) ) {
+        return new WP_Error( 'asmr_sound_recipe_invalid', __( 'Sound recipe was invalid. Please regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
+    }
+
+    $recipe = $decoded['sound_recipe'];
+    $recipe['bpm'] = max( 40, min( 220, absint( $recipe['bpm'] ?? 90 ) ) );
+    $recipe['master'] = is_array( $recipe['master'] ?? null ) ? $recipe['master'] : array();
+    $recipe['master'] = array(
+        'bitcrusher_bits' => max( 3, min( 16, absint( $recipe['master']['bitcrusher_bits'] ?? 8 ) ) ),
+        'downsample_factor' => max( 1, min( 12, absint( $recipe['master']['downsample_factor'] ?? 1 ) ) ),
+        'reverb_wet' => max( 0, min( 0.8, floatval( $recipe['master']['reverb_wet'] ?? 0.15 ) ) ),
+        'lowpass_hz' => max( 300, min( 18000, absint( $recipe['master']['lowpass_hz'] ?? 9000 ) ) ),
+    );
+
+    $events = is_array( $recipe['events'] ?? null ) ? $recipe['events'] : array();
+    $allowed_engines = se_get_asmr_allowed_engines();
+    $sanitized_events = array();
+    foreach ( $events as $event ) {
+        if ( ! is_array( $event ) ) {
+            continue;
+        }
+        $engine = sanitize_key( $event['engine'] ?? '' );
+        if ( ! in_array( $engine, $allowed_engines, true ) ) {
+            continue;
+        }
+        $sanitized_events[] = array(
+            'time' => max( 0, floatval( $event['time'] ?? 0 ) ),
+            'engine' => $engine,
+            'duration' => max( 0.03, min( 4, floatval( $event['duration'] ?? 0.2 ) ) ),
+            'params' => is_array( $event['params'] ?? null ) ? $event['params'] : array(),
+        );
+    }
+
+    if ( empty( $sanitized_events ) ) {
+        return new WP_Error( 'asmr_sound_events_missing', __( 'Sound recipe had no usable events. Try regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
+    }
+
+    $recipe['events'] = $sanitized_events;
+    $decoded['sound_recipe'] = $recipe;
+
+    return $decoded;
+}
+
+function se_handle_asmr_generate( WP_REST_Request $req ) {
+    $params = $req->get_json_params();
+    if ( ! is_array( $params ) ) {
+        $params = $req->get_params();
+    }
+
+    $payload = array(
+        'concept' => sanitize_text_field( $params['concept'] ?? '' ),
+        'object' => sanitize_text_field( $params['object'] ?? '' ),
+        'setting' => sanitize_text_field( $params['setting'] ?? '' ),
+        'mood' => sanitize_text_field( $params['mood'] ?? '' ),
+        'duration' => max( 15, min( 30, absint( $params['duration'] ?? 20 ) ) ),
+        'voice_style' => sanitize_text_field( $params['voice_style'] ?? '' ),
+        'weirdness' => max( 1, min( 10, absint( $params['weirdness'] ?? 6 ) ) ),
+        'creative_goal' => sanitize_textarea_field( $params['creative_goal'] ?? '' ),
+        'sound_only' => ! empty( $params['sound_only'] ),
+    );
+
+    if ( empty( $payload['concept'] ) || empty( $payload['object'] ) || empty( $payload['setting'] ) || empty( $payload['mood'] ) ) {
+        return new WP_Error( 'asmr_missing_fields', __( 'Please provide concept, object, setting, and mood.', 'suzys-music-theme' ), array( 'status' => 400 ) );
+    }
+
+    $allowed_engines = implode( ', ', se_get_asmr_allowed_engines() );
+    $system_prompt = 'You are ASMR Lab, a collaboration between human taste and machine excess. '
+        . 'Generate tactile, sonic, visual, and AI-process-aware output for a 15-30 second AI-film sensory ad concept. '
+        . 'Return ONE strict JSON object and no markdown. '
+        . 'Use exactly and only these top-level keys: title, runtime_seconds, hook, concept_summary, sensory_palette, ai_usage_map, ai_edge_strategy, failure_modes_to_embrace, human_control_notes, beat_sheet, edit_notes, video_prompts, negative_prompts, presentation_note, sound_recipe. '
+        . 'sound_recipe must include bpm, master(bitcrusher_bits, downsample_factor, reverb_wet, lowpass_hz), and events[]. '
+        . 'Each event object must have time, engine, duration, params. '
+        . 'Only use these engine names: ' . $allowed_engines . '. '
+        . 'Do not include prose outside JSON.';
+
+    if ( $payload['sound_only'] ) {
+        $system_prompt .= ' If sound_only is true, keep other fields concise but still present and focus creative detail in sound_recipe.';
+    }
+
+    $response = se_openai_chat(
+        array(
+            array(
+                'role'    => 'system',
+                'content' => $system_prompt,
+            ),
+            array(
+                'role'    => 'user',
+                'content' => wp_json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
+            ),
+        ),
+        array(
+            'model'       => 'gpt-4o',
+            'temperature' => 0.9,
+            'max_tokens'  => 1800,
+        ),
+        array(
+            'timeout' => 40,
+        )
+    );
+
+    if ( is_wp_error( $response ) ) {
+        $status = ( 'no_key' === $response->get_error_code() ) ? 503 : 500;
+        return new WP_Error( 'asmr_openai_error', $response->get_error_message(), array( 'status' => $status ) );
+    }
+
+    $raw = trim( $response['choices'][0]['message']['content'] ?? '' );
+    $json = se_extract_json_object( $raw );
+    $decoded = json_decode( $json, true );
+    if ( JSON_ERROR_NONE !== json_last_error() ) {
+        return new WP_Error( 'asmr_decode_error', __( 'The lab output was malformed. Please regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
+    }
+
+    $validated = se_validate_asmr_response( $decoded );
+    if ( is_wp_error( $validated ) ) {
+        return $validated;
+    }
+
+    return rest_ensure_response( $validated );
 }
 
 // =========================================
