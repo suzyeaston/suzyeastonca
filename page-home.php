@@ -61,6 +61,7 @@ get_header();
             <p class="hero-microproof">I’ve toured across Canada as a bassist, appeared on MuchMusic, and recorded in Chicago with Steve Albini. These days, I’m building apps, exploring AI models, experimenting with short AI films through BC + AI Film Club, and writing whatever songs show up next.</p>
             <div class="hero-cta-group">
                 <a href="/suzys-track-analyzer/" class="pixel-button hero-primary-cta">Start with: Track Analyzer</a>
+                <a href="/asmr-lab/" class="pixel-button hero-secondary-cta">Try: ASMR Lab</a>
                 <a href="/lousy-outages/" class="pixel-button hero-secondary-cta">Or explore: Lousy Outages</a>
                 <a href="/bio/" class="pixel-button hero-bio-button">Read full bio</a>
             </div>
@@ -110,6 +111,7 @@ get_header();
             <div class="button-group">
                 <h3 class="group-title">🎮 Games &amp; Tools</h3>
                 <div class="group-buttons">
+                    <a href="/asmr-lab/" class="pixel-button">ASMR Lab</a>
                     <a href="/suzys-track-analyzer/" class="pixel-button">Track Analyzer</a>
                     <a href="/riff-generator" class="pixel-button">Riff Generator</a>
                     <a href="/arcade" class="pixel-button">Canucks Game</a>
@@ -161,6 +163,17 @@ get_header();
         <h2 class="pixel-font">Track Analyzer</h2>
         <p class="pixel-font">Upload an MP3 and get instant feedback on your mix.</p>
         <a href="/suzys-track-analyzer/" class="pixel-button analyzer-cta">Analyze Your Track</a>
+    </section>
+
+    <section class="creative-tool-links crt-block" aria-labelledby="creative-tool-links-title">
+        <h2 id="creative-tool-links-title" class="pixel-font">Creative Tool Deck</h2>
+        <p>Prefer crawl-first browsing? Jump straight to the public tool pages:</p>
+        <ul>
+            <li><a href="<?php echo esc_url(home_url('/asmr-lab/')); ?>">ASMR Lab</a> — AI sensory ad concepts, tactile beat sheets, and retro-foley prompt kits.</li>
+            <li><a href="<?php echo esc_url(home_url('/suzys-track-analyzer/')); ?>">Track Analyzer</a> — upload a mix and get fast AI feedback.</li>
+            <li><a href="<?php echo esc_url(home_url('/riff-generator/')); ?>">Riff Generator</a> — generate guitar ideas in a retro experiment shell.</li>
+            <li><a href="<?php echo esc_url(home_url('/lousy-outages/')); ?>">Lousy Outages</a> — outage tracker with a throwback command-line vibe.</li>
+        </ul>
     </section>
 
     <section class="party-announcement crt-block">
