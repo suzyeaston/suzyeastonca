@@ -1,0 +1,127 @@
+{
+  "title": "Velvet Static",
+  "runtime_seconds": 22,
+  "hook": "A wrapped toilet paper roll is filmed like forbidden jewelry: every crinkle, tear, and fiber pop sounds louder than the rain outside.",
+  "concept_summary": "In a moody Vancouver bathroom at night, a single wrapped toilet paper roll becomes the star of an intimate ASMR ritual. Macro shots push too close: condensation beads on plastic, fingernails drag across seams, the wrapper peels with surgical slowness, and paper fibers bloom like soft architecture. The ad is knowingly machine-made: textures are hyper-real, continuity drifts slightly between cuts, and repetition becomes trance. Human taste shapes pace and restraint while AI over-delivers detail and surreal camera behavior.",
+  "sensory_palette": {
+    "visual": [
+      "rain-streaked window bokeh in cool blue",
+      "warm tungsten skin tones against porcelain whites",
+      "extreme macro of plastic micro-scratches and embossed paper fibers",
+      "subtle continuity shifts in wrapper folds and droplet position"
+    ],
+    "sound": [
+      "close-mic plastic crackle",
+      "fingertip rubs with dry skin detail",
+      "slow adhesive peel",
+      "soft paper bloom and tear",
+      "distant rain and low bathroom hum",
+      "single breath-level whisper line"
+    ],
+    "touch_words": [
+      "silk-dry",
+      "velvet grain",
+      "cool gloss",
+      "feather pull",
+      "soft compression"
+    ]
+  },
+  "ai_usage_map": [
+    {
+      "stage": "concept ideation",
+      "ai_role": "Generate sensory metaphors, tonal variants, and micro-action ideas from the object/setting constraints."
+    },
+    {
+      "stage": "script structure",
+      "ai_role": "Convert concept into second-by-second ASMR beat timing with paired visual and sound cues."
+    },
+    {
+      "stage": "video generation",
+      "ai_role": "Produce impossible macro camera moves, hyper-detailed wrapper/paper textures, and dreamlike continuity drift."
+    },
+    {
+      "stage": "sound prototyping",
+      "ai_role": "Suggest tactile sound map, mic proximity behavior, and rhythm arcs before final human mix."
+    },
+    {
+      "stage": "edit exploration",
+      "ai_role": "Generate alternate cut rhythms and loopable transitions to test trance-like pacing quickly."
+    }
+  ],
+  "ai_edge_strategy": [
+    "Exploit AI macro overreach: camera glides through impossible near-contact paths that feel invasive and luxurious.",
+    "Keep over-precise surfaces (too-clean plastic, mathematically neat droplets) as a deliberate synthetic sensuality.",
+    "Use micro-repetition in finger motions and peel rhythm to create a hypnotic loop instead of hiding model bias.",
+    "Allow continuity drift between cuts so the roll feels like an object remembered by a machine, not documented by a lens.",
+    "Treat AI as a texture engine and variation generator, while human edit imposes emotional restraint."
+  ],
+  "failure_modes_to_embrace": [
+    "Wrapper logos or embossing may mutate frame-to-frame; frame tight so mutation reads as luxury shimmer.",
+    "Finger anatomy may occasionally look uncanny; favor silhouette, partial hand crops, and slower gesture cadence.",
+    "Peel physics may be too smooth or too sticky; sync cuts to sound spikes so perceived tactility carries realism.",
+    "Paper perforations may drift; use match cuts on motion direction rather than exact geometry.",
+    "Specular highlights may flicker; keep it as 'neon rain pulse' motif tied to ambient weather."
+  ],
+  "human_control_notes": [
+    "Human director picks final 4-6 shots from generations based on tactile believability, not novelty alone.",
+    "Human editor sets hold lengths and silence gaps; ASMR impact depends on restraint, not density.",
+    "Human sound designer records or curates final foley layers for skin/plastic/paper intimacy.",
+    "Human writer trims whisper copy to one short line so the piece stays sensory-first.",
+    "Human color pass unifies temperature and contrast so AI shot variance feels intentional."
+  ],
+  "beat_sheet": [
+    {
+      "time": "0.0-3.0s",
+      "visual_action": "Macro push across rain on the bathroom window, then rack focus to a wrapped roll on sink edge like a gem.",
+      "sound_cue": "Distant rain hiss, porcelain room tone, one soft fingernail tap on plastic."
+    },
+    {
+      "time": "3.0-6.0s",
+      "visual_action": "Thumb slowly traces the wrapper seam; condensation smears under skin in extreme close-up.",
+      "sound_cue": "Dry fingertip rub, tiny squeak of skin on film, breath close to mic."
+    },
+    {
+      "time": "6.0-10.0s",
+      "visual_action": "Nail catches the edge; wrapper begins a controlled peel that seems impossibly smooth.",
+      "sound_cue": "Long adhesive peel, crisp crackle bursts, low sub-bass swell at peel midpoint."
+    },
+    {
+      "time": "10.0-14.0s",
+      "visual_action": "Jump-macro transition: plastic disappears between frames; embossed paper fills the screen like a landscape.",
+      "sound_cue": "Soft cut-to-silence, then plush paper brush and a single fiber snap."
+    },
+    {
+      "time": "14.0-18.0s",
+      "visual_action": "Two fingers press the roll lightly; surface compresses and rebounds in slow motion.",
+      "sound_cue": "Muted foam-like thump, fabric sleeve whisper, rain grows slightly louder."
+    },
+    {
+      "time": "18.0-22.0s",
+      "visual_action": "One sheet tears on perforation, held near lens; edge fuzz glows in tungsten light.",
+      "sound_cue": "Clean tear, exhale, whispered copy: 'Soft enough to hear.'"
+    }
+  ],
+  "edit_notes": [
+    "Pacing target: 6 shots total, average 3-4 seconds, with one abrupt micro-jump at 10s for uncanny punctuation.",
+    "Keep cuts motivated by sound transients (tap, peel spike, tear) to preserve tactile coherence.",
+    "Use minimal typography or none; if logo appears, place only in final 0.5s.",
+    "Dynamic range should stay intimate: loudest moment is peel crackle, not music.",
+    "If generated motion feels unstable, freeze 6-10 frame still holds to turn artifacts into deliberate tension."
+  ],
+  "video_prompts": [
+    "Ultra macro cinematic close-up of a wrapped toilet paper roll on porcelain sink at night, rain on window bokeh, moody tungsten and blue contrast, shallow depth of field, tactile plastic micro-scratches, 100mm macro, slow dolly, photoreal but slightly dreamlike.",
+    "Extreme close-up of fingertips tracing condensation over clear plastic wrapper seam, intimate skin texture, controlled slow movement, ASMR ad style, sensual but minimal, rainy bathroom ambience.",
+    "Macro shot of fingernail lifting and peeling wrapper in one smooth motion, hyper-detailed crackle texture, impossible near-contact camera orbit, luxury product worship framing.",
+    "Surreal transition into embossed toilet paper fibers as if landscape terrain, ultra-detailed soft white texture, gentle studio highlights, uncanny continuity drift, cinematic macro.",
+    "Slow motion compression of paper roll by two fingers, subtle rebound, warm practical light, shallow focus, restrained composition, high tactile realism.",
+    "Final macro of single sheet tearing along perforation, fiber strands visible, rain ambience in background, intimate whisper-commercial mood, minimalistic end frame."
+  ],
+  "negative_prompts": [
+    "cartoon look, low-detail texture, overexposed highlights, generic bathroom wide shot",
+    "extra fingers, malformed hands, visible brand warping in center frame",
+    "fast chaotic camera shake, aggressive lens flares, loud music-video style editing",
+    "text-heavy graphics, comedic slapstick expression, broad performance",
+    "plastic-looking skin, muddy audio, robotic voiceover"
+  ],
+  "presentation_note": "This piece is designed as a collaboration between human taste and machine excess. AI is embedded in ideation, beat design, and image generation, then pushed hardest where it excels: impossible macro intimacy, hyper-detailed surfaces, and dreamlike repetition. Instead of hiding artifacts, we turn continuity drift and synthetic perfection into style. Human direction remains the spine: selecting takes, sculpting silence, and enforcing restraint so the ad feels deliberate rather than autogenerated."
+}
