@@ -27,7 +27,7 @@
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-asmr-lab.php' ) ) {
       $meta_title = 'ASMR Lab – AI sensory ad concepts and 8-bit foley recipes';
-      $meta_desc  = 'Build tactile ad concepts with AI: ASMR-style beats, foley recipes, and model-ready video prompts for creators and creative technologists.';
+      $meta_desc  = 'ASMR Lab generates AI sensory ad concepts, tactile beat sheets, retro-foley sound recipes, and model-ready video prompts in one creative package.';
       $meta_keywords = 'ASMR lab, AI ad concept generator, foley recipe tool, sensory marketing prompts, Suzy Easton';
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-lousy-outages.php' ) ) {

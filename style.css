@@ -3438,3 +3438,62 @@ body.page-template-page-bio-php .bio-content {
     display: none;
   }
 }
+
+
+.creative-tool-links {
+  margin: 28px auto 40px;
+  max-width: 860px;
+  padding: 22px 28px;
+  border-radius: 12px;
+}
+
+.creative-tool-links h2 {
+  margin: 0 0 0.8rem;
+  color: #b6ffd7;
+}
+
+.creative-tool-links p {
+  margin: 0 0 0.8rem;
+  color: #e8ffee;
+}
+
+.creative-tool-links ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #e8ffee;
+}
+
+.creative-tool-links li {
+  margin: 0.45rem 0;
+  line-height: 1.5;
+}
+
+.creative-tool-links a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.creative-tool-links a:hover,
+.creative-tool-links a:focus {
+  text-decoration: underline;
+}
+
+.footer-site-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.footer-site-links a {
+  color: #9effd0;
+  text-decoration: none;
+  font-size: 0.86rem;
+}
+
+.footer-site-links a:hover,
+.footer-site-links a:focus {
+  text-decoration: underline;
+}

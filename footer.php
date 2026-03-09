@@ -27,6 +27,12 @@
 <!-- Simple Footer -->
 <footer class="site-footer">
     <div class="footer-content">
+        <nav class="footer-site-links" aria-label="Explore creative projects">
+            <a href="<?php echo esc_url( home_url( '/asmr-lab/' ) ); ?>">ASMR Lab</a>
+            <a href="<?php echo esc_url( home_url( '/suzys-track-analyzer/' ) ); ?>">Track Analyzer</a>
+            <a href="<?php echo esc_url( home_url( '/riff-generator/' ) ); ?>">Riff Generator</a>
+            <a href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>">Lousy Outages</a>
+        </nav>
         <div class="footer-bottom">
             <p>&copy; <?php echo date('Y'); ?> Suzy Easton. All rights reserved.</p>
         </div>

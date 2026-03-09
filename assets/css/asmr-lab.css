@@ -13,3 +13,12 @@
 .asmr-card h2{margin:.2rem 0 .5rem;font-size:1rem;color:#9ec0ff}
 .asmr-card pre{max-height:240px;overflow:auto;background:#090d1a;padding:.6rem;border-radius:6px}
 .pixel-button.tiny{font-size:.75rem;padding:.25rem .45rem}
+.asmr-intro{max-width:68ch;line-height:1.55}
+.asmr-lab-primer,.asmr-lab-how,.asmr-lab-sample{margin-top:1.1rem;padding:.95rem;background:#121833;border:1px solid #2f3f73;border-radius:8px}
+.asmr-lab-primer h2,.asmr-lab-how h2,.asmr-lab-sample h2{margin:.1rem 0 .55rem;font-size:1.02rem;color:#9ec0ff}
+.asmr-lab-primer p,.asmr-lab-how li,.asmr-lab-sample p{line-height:1.55}
+.asmr-lab-primer ul,.asmr-lab-how ol{margin:.35rem 0 .15rem 1.1rem;padding:0}
+.asmr-lab-primer li,.asmr-lab-how li{margin:.38rem 0}
+.asmr-sample-card{padding:.7rem;background:#0a0f23;border:1px dashed #3f5ab6;border-radius:6px}
+.asmr-sample-card h3{margin:.1rem 0 .55rem;color:#b5cbff}
+.asmr-lab-sample-note{color:#7aa2ff;font-size:.9rem}
