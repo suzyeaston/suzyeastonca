@@ -6,7 +6,9 @@
     'paper_crackle', 'steam_hiss', 'tape_stop_drop', 'bit_pulse', 'breath_pulse',
     'low_hum', 'digital_shimmer', 'glass_ping', 'glass_resonance', 'relay_click_cluster',
     'shimmer_swirl', 'crystal_chime', 'ghost_pad', 'spectral_suck', 'voltage_flutter',
-    'halo_tone', 'particle_spark', 'ritual_bass_swell', 'reverse_bloom'
+    'halo_tone', 'particle_spark', 'ritual_bass_swell', 'reverse_bloom',
+    'steam_clock_burst', 'distant_bell_toll', 'cold_air_hush', 'wet_street_shimmer',
+    'harbor_fog_bed', 'metal_resonance', 'snow_muffle', 'city_electrical_hum'
   ];
 
   function clamp(value, min, max) {
@@ -332,6 +334,36 @@
         case 'reverse_bloom':
           this.scheduleNoise(ctx, destination, atTime, duration * 0.75, { freq: p.freq || 2100, q: 0.8, peak: 0.02 + intensity * 0.04, filterType: 'lowpass', pan: 0.18 });
           this.scheduleTone(ctx, destination, atTime + duration * 0.4, duration * 0.6, { from: p.from || 220, to: p.to || 860, peak: 0.016 + intensity * 0.03, type: 'triangle', pan: -0.14 });
+          break;
+        case 'steam_clock_burst':
+          this.scheduleNoise(ctx, destination, atTime, duration * 0.92, { freq: p.freq || 2800, q: 0.44, peak: 0.03 + intensity * 0.07, filterType: 'bandpass', pan: 0.16 });
+          this.scheduleTone(ctx, destination, atTime + 0.06, Math.max(0.1, duration * 0.34), { from: p.from || 620, to: p.to || 420, peak: 0.014 + intensity * 0.03, type: 'triangle', pan: -0.12 });
+          break;
+        case 'distant_bell_toll':
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 540, to: p.to || 420, peak: 0.026 + intensity * 0.05, type: 'sine', pan: 0.05 });
+          this.scheduleTone(ctx, destination, atTime + 0.03, duration * 0.86, { from: (p.from || 540) * 1.5, to: (p.to || 420) * 1.4, peak: 0.012 + intensity * 0.026, type: 'triangle', pan: -0.18 });
+          break;
+        case 'cold_air_hush':
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 1200, q: 0.72, peak: 0.02 + intensity * 0.045, filterType: 'highpass', pan: -0.08 });
+          break;
+        case 'wet_street_shimmer':
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 2400, q: 1.2, peak: 0.014 + intensity * 0.03, filterType: 'bandpass', pan: 0.24 });
+          this.scheduleTone(ctx, destination, atTime + 0.04, duration * 0.7, { from: p.from || 700, to: p.to || 1060, peak: 0.008 + intensity * 0.018, type: 'triangle', pan: -0.2 });
+          break;
+        case 'harbor_fog_bed':
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 74, to: p.to || 66, peak: 0.03 + intensity * 0.055, type: 'sine' });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 620, q: 0.45, peak: 0.016 + intensity * 0.034, filterType: 'lowpass', pan: 0 });
+          break;
+        case 'metal_resonance':
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.12, duration * 0.5), { from: p.from || 980, to: p.to || 340, peak: 0.02 + intensity * 0.04, type: 'triangle', pan: 0.22 });
+          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.7, { from: (p.from || 980) * 1.28, to: (p.to || 340) * 1.5, peak: 0.007 + intensity * 0.02, type: 'sine', pan: -0.24 });
+          break;
+        case 'snow_muffle':
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 840, q: 0.38, peak: 0.015 + intensity * 0.028, filterType: 'lowpass', pan: -0.04 });
+          break;
+        case 'city_electrical_hum':
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 112, to: p.to || 118, peak: 0.022 + intensity * 0.04, type: 'sawtooth', pan: 0.03 });
+          this.scheduleTone(ctx, destination, atTime + 0.01, duration * 0.9, { from: 224, to: 236, peak: 0.008 + intensity * 0.02, type: 'triangle', pan: -0.1 });
           break;
         default:
           break;

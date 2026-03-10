@@ -882,7 +882,144 @@ function se_get_asmr_allowed_engines() {
         'particle_spark',
         'ritual_bass_swell',
         'reverse_bloom',
+        'steam_clock_burst',
+        'distant_bell_toll',
+        'cold_air_hush',
+        'wet_street_shimmer',
+        'harbor_fog_bed',
+        'metal_resonance',
+        'snow_muffle',
+        'city_electrical_hum',
     );
+}
+
+function se_get_asmr_visual_types() {
+    return array(
+        'scanline_field', 'pixel_grid_pulse', 'wireframe_horizon', 'radial_bloom', 'particle_trail',
+        'glitch_flash', 'waveform_ring', 'macro_texture_drift', 'signal_bars', 'text_reveal',
+        'volumetric_fog', 'glass_refraction', 'halo_glyphs', 'cathedral_beam', 'monolith_silhouette',
+        'starfield_drift', 'orbiting_shards', 'pulse_orb', 'energy_column', 'refraction_ripple',
+        'chromatic_veil', 'terminal_runes', 'snow_drift', 'amber_halo', 'wet_reflection_shimmer',
+        'brick_shadow_drift', 'steam_plume_column', 'clock_face_reveal', 'harbor_mist',
+        'neon_wet_reflections', 'winter_particulate_depth',
+    );
+}
+
+function se_get_asmr_semantic_cues( $payload ) {
+    $source = strtolower( implode( ' ', array(
+        (string) ( $payload['concept'] ?? '' ),
+        (string) ( $payload['object'] ?? '' ),
+        (string) ( $payload['setting'] ?? '' ),
+        (string) ( $payload['mood'] ?? '' ),
+        (string) ( $payload['creative_goal'] ?? '' ),
+    ) ) );
+
+    $cue_map = array(
+        'gastown' => array( 'steam_clock', 'cobblestone', 'brick', 'amber', 'urban_night' ),
+        'vancouver' => array( 'harbor', 'fog', 'coastal', 'urban_night' ),
+        'steam clock' => array( 'steam_clock', 'metal', 'bell' ),
+        'snow' => array( 'snow', 'winter_hush', 'cold_air' ),
+        'rain' => array( 'rain', 'wet_reflection' ),
+        'harbor fog' => array( 'harbor', 'fog' ),
+        'amber' => array( 'amber', 'streetlamp' ),
+        'streetlamp' => array( 'streetlamp', 'amber' ),
+        'wet cobblestone' => array( 'wet_reflection', 'cobblestone' ),
+        'cobblestone' => array( 'cobblestone' ),
+        'brick' => array( 'brick' ),
+        'neon reflection' => array( 'neon', 'wet_reflection' ),
+        'winter hush' => array( 'winter_hush', 'snow' ),
+        'spiritual' => array( 'spiritual' ),
+        'reverent' => array( 'spiritual' ),
+        'haunted' => array( 'haunted' ),
+        'cinematic' => array( 'cinematic' ),
+        'city' => array( 'urban_night' ),
+        'urban' => array( 'urban_night' ),
+    );
+
+    $cues = array();
+    foreach ( $cue_map as $needle => $tags ) {
+        if ( false !== strpos( $source, $needle ) ) {
+            $cues = array_merge( $cues, $tags );
+        }
+    }
+
+    if ( false !== strpos( $source, 'vancouver' ) && false !== strpos( $source, 'snow' ) ) {
+        $cues[] = 'vancouver_winter';
+    }
+    if ( false !== strpos( $source, 'gastown' ) && false !== strpos( $source, 'clock' ) ) {
+        $cues[] = 'gastown_clock_focus';
+    }
+
+    return array_values( array_unique( $cues ) );
+}
+
+function se_apply_asmr_semantic_cues( $decoded, $payload ) {
+    $runtime = max( 10, min( 30, floatval( $decoded['runtime_seconds'] ?? 20 ) ) );
+    $cues = se_get_asmr_semantic_cues( $payload );
+    if ( empty( $cues ) ) {
+        return $decoded;
+    }
+
+    $decoded['style_tags'] = array_values( array_unique( array_merge( (array) ( $decoded['style_tags'] ?? array() ), $cues ) ) );
+
+    $audio = is_array( $decoded['audio_events'] ?? null ) ? $decoded['audio_events'] : array();
+    $visual = is_array( $decoded['visual_events'] ?? null ) ? $decoded['visual_events'] : array();
+    $sync = is_array( $decoded['sync_points'] ?? null ) ? $decoded['sync_points'] : array();
+
+    if ( in_array( 'gastown_clock_focus', $cues, true ) || in_array( 'steam_clock', $cues, true ) ) {
+        $audio[] = array( 'time' => 0.55, 'duration' => 1.4, 'engine' => 'steam_clock_burst', 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'steam_clock_identity' );
+        $audio[] = array( 'time' => $runtime * 0.68, 'duration' => 1.1, 'engine' => 'distant_bell_toll', 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'clock_chime_reveal' );
+        $visual[] = array( 'time' => 0.5, 'duration' => 2.1, 'visual_type' => 'clock_face_reveal', 'intensity' => 0.72, 'params' => array(), 'sync_role' => 'clock_face_entry' );
+        $visual[] = array( 'time' => 0.3, 'duration' => 2.2, 'visual_type' => 'steam_plume_column', 'intensity' => 0.64, 'params' => array(), 'sync_role' => 'steam_column' );
+    }
+
+    if ( in_array( 'snow', $cues, true ) || in_array( 'winter_hush', $cues, true ) ) {
+        $audio[] = array( 'time' => 0, 'duration' => min( 8.5, $runtime * 0.5 ), 'engine' => 'snow_muffle', 'intensity' => 0.45, 'params' => array(), 'sync_role' => 'winter_bed' );
+        $audio[] = array( 'time' => 0.2, 'duration' => min( 7.5, $runtime * 0.45 ), 'engine' => 'cold_air_hush', 'intensity' => 0.42, 'params' => array(), 'sync_role' => 'cold_air_layer' );
+        $visual[] = array( 'time' => 0, 'duration' => min( 8, $runtime * 0.52 ), 'visual_type' => 'snow_drift', 'intensity' => 0.68, 'params' => array(), 'sync_role' => 'winter_particles' );
+        $visual[] = array( 'time' => $runtime * 0.12, 'duration' => min( 7, $runtime * 0.4 ), 'visual_type' => 'winter_particulate_depth', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'depth_atmosphere' );
+    }
+
+    if ( in_array( 'harbor', $cues, true ) || in_array( 'fog', $cues, true ) ) {
+        $audio[] = array( 'time' => 0, 'duration' => min( 9, $runtime * 0.6 ), 'engine' => 'harbor_fog_bed', 'intensity' => 0.46, 'params' => array(), 'sync_role' => 'harbor_ambience' );
+        $visual[] = array( 'time' => 0, 'duration' => min( 9, $runtime * 0.64 ), 'visual_type' => 'harbor_mist', 'intensity' => 0.6, 'params' => array(), 'sync_role' => 'harbor_layer' );
+    }
+
+    if ( in_array( 'wet_reflection', $cues, true ) || in_array( 'rain', $cues, true ) ) {
+        $audio[] = array( 'time' => $runtime * 0.15, 'duration' => min( 6.2, $runtime * 0.35 ), 'engine' => 'wet_street_shimmer', 'intensity' => 0.52, 'params' => array(), 'sync_role' => 'wet_street_texture' );
+        $visual[] = array( 'time' => $runtime * 0.12, 'duration' => min( 6.2, $runtime * 0.38 ), 'visual_type' => 'wet_reflection_shimmer', 'intensity' => 0.64, 'params' => array(), 'sync_role' => 'street_reflection' );
+        $visual[] = array( 'time' => $runtime * 0.2, 'duration' => min( 5.5, $runtime * 0.32 ), 'visual_type' => 'neon_wet_reflections', 'intensity' => 0.55, 'params' => array(), 'sync_role' => 'neon_reflection' );
+    }
+
+    if ( in_array( 'brick', $cues, true ) || in_array( 'cobblestone', $cues, true ) ) {
+        $visual[] = array( 'time' => 0.4, 'duration' => min( 6.5, $runtime * 0.45 ), 'visual_type' => 'brick_shadow_drift', 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'material_grounding' );
+        $audio[] = array( 'time' => 0.9, 'duration' => 1.2, 'engine' => 'metal_resonance', 'intensity' => 0.42, 'params' => array(), 'sync_role' => 'urban_material_ping' );
+    }
+
+    if ( in_array( 'amber', $cues, true ) || in_array( 'streetlamp', $cues, true ) ) {
+        $visual[] = array( 'time' => 0.25, 'duration' => min( 8, $runtime * 0.52 ), 'visual_type' => 'amber_halo', 'intensity' => 0.65, 'params' => array(), 'sync_role' => 'streetlamp_glow' );
+    }
+
+    if ( in_array( 'urban_night', $cues, true ) ) {
+        $audio[] = array( 'time' => 0.05, 'duration' => min( 8, $runtime * 0.6 ), 'engine' => 'city_electrical_hum', 'intensity' => 0.35, 'params' => array(), 'sync_role' => 'city_grid_bed' );
+    }
+
+    if ( in_array( 'haunted', $cues, true ) || in_array( 'spiritual', $cues, true ) ) {
+        $audio[] = array( 'time' => $runtime * 0.74, 'duration' => 1.3, 'engine' => 'distant_bell_toll', 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'reverent_release' );
+        $visual[] = array( 'time' => $runtime * 0.78, 'duration' => 1.6, 'visual_type' => 'clock_face_reveal', 'intensity' => 0.44, 'params' => array(), 'sync_role' => 'haunted_reveal' );
+    }
+
+    $sync[] = array( 'time' => 0.55, 'cue' => 'semantic place identity enters', 'importance' => 'high' );
+    $sync[] = array( 'time' => $runtime * 0.68, 'cue' => 'location-specific reveal toll', 'importance' => 'high' );
+
+    usort( $audio, static function( $a, $b ) { return ( floatval( $a['time'] ?? 0 ) <=> floatval( $b['time'] ?? 0 ) ); } );
+    usort( $visual, static function( $a, $b ) { return ( floatval( $a['time'] ?? 0 ) <=> floatval( $b['time'] ?? 0 ) ); } );
+    usort( $sync, static function( $a, $b ) { return ( floatval( $a['time'] ?? 0 ) <=> floatval( $b['time'] ?? 0 ) ); } );
+
+    $decoded['audio_events'] = $audio;
+    $decoded['visual_events'] = $visual;
+    $decoded['sync_points'] = $sync;
+    return $decoded;
 }
 
 function se_enrich_asmr_event_density( $decoded ) {
@@ -1068,13 +1205,7 @@ function se_validate_asmr_response( $decoded ) {
     } );
     $decoded['audio_events'] = $sanitized_events;
 
-    $visual_allowed = array(
-        'scanline_field', 'pixel_grid_pulse', 'wireframe_horizon', 'radial_bloom', 'particle_trail',
-        'glitch_flash', 'waveform_ring', 'macro_texture_drift', 'signal_bars', 'text_reveal',
-        'volumetric_fog', 'glass_refraction', 'halo_glyphs', 'cathedral_beam', 'monolith_silhouette',
-        'starfield_drift', 'orbiting_shards', 'pulse_orb', 'energy_column', 'refraction_ripple',
-        'chromatic_veil', 'terminal_runes',
-    );
+    $visual_allowed = se_get_asmr_visual_types();
     $visual_events = is_array( $decoded['visual_events'] ?? null ) ? $decoded['visual_events'] : array();
     $decoded['visual_events'] = array_values( array_filter( array_map( static function( $event ) use ( $visual_allowed ) {
         if ( ! is_array( $event ) ) {
@@ -1128,7 +1259,7 @@ function se_validate_asmr_response( $decoded ) {
 
     $decoded['presentation_note'] = sanitize_text_field( $decoded['presentation_note'] ?? '' );
 
-    return se_enrich_asmr_event_density( $decoded );
+    return $decoded;
 }
 
 function se_handle_asmr_generate( WP_REST_Request $req ) {
@@ -1164,7 +1295,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'end_card must include: use_end_card, text, reveal_style. '
         . 'edit_rhythm must include: pacing_note, silence_strategy, release_strategy. '
         . 'Only use these engine names: ' . $allowed_engines . '. '
-        . 'Allowed visual_type values: scanline_field, pixel_grid_pulse, wireframe_horizon, radial_bloom, particle_trail, glitch_flash, waveform_ring, macro_texture_drift, signal_bars, text_reveal, volumetric_fog, glass_refraction, halo_glyphs, cathedral_beam, monolith_silhouette, starfield_drift, orbiting_shards, pulse_orb, energy_column, refraction_ripple, chromatic_veil, terminal_runes. '
+        . 'Allowed visual_type values: ' . implode( ', ', se_get_asmr_visual_types() ) . '. '
         . 'Critical visual pacing rules: first frame must show a layered chamber state (background + atmosphere + focal hint). Include meaningful opening visual event in 0.0-0.8s and at least one clear focal event in 0.8-2.0s. '
         . 'Do not back-load all action: craft a textured midsection with evolving layers, at least one pre-climax escalation in the middle third, and at least one bloom/reveal in the final third. '
         . 'Visual event score should be dense but intentional, with practical browser-safe durations and avoid micro-spam faster than 0.05s. '
@@ -1176,6 +1307,10 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'Use micro-events for intimacy, then earned bloom moments instead of random loudness spikes. '
         . 'Visual score should emphasize atmospheric symbolic language, depth, compositional foreground/midground/background layering, glow, parallax-like drift, and terminal/sacred reveal language when appropriate. '
         . 'sync_points must map to real event moments and reinforce audio-visual unity, especially in the first 3 seconds. '
+        . 'When a real place is named (for example Gastown or Vancouver), strongly ground the package in that location with concrete materials, weather, object identity, and environmental acoustics. '
+        . 'Prompt interpretation priority: named location > named object > weather condition > mood adjectives. '
+        . 'For Gastown/Vancouver scenes, favor steam clock cues, harbor fog bed, amber streetlamp halos, wet cobblestone reflections, brick facade texture, neon-on-wet shimmer, and winter hush pacing where relevant. '
+        . 'Avoid generic abstract output when prompts include specific geography or weather terms. '
         . 'The result should feel like an authored short sensory micro-film, not a debug demo. '
         . 'Do not include prose outside JSON.';
 
@@ -1220,6 +1355,8 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     if ( is_wp_error( $validated ) ) {
         return $validated;
     }
+
+    $validated = se_enrich_asmr_event_density( se_apply_asmr_semantic_cues( $validated, $payload ) );
 
     return rest_ensure_response( $validated );
 }
