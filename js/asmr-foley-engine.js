@@ -10,7 +10,8 @@
     'steam_clock_burst', 'distant_bell_toll', 'cold_air_hush', 'wet_street_shimmer',
     'harbor_fog_bed', 'metal_resonance', 'snow_muffle', 'city_electrical_hum',
     'footsteps_wet', 'footsteps_snow', 'rain_close', 'rain_roof', 'puddle_splash',
-    'crowd_murmur', 'laughter_burst', 'skytrain_pass', 'bus_idle', 'car_horn_short', 'seabus_horn', 'ocean_waves', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant'
+    'crowd_murmur', 'laughter_burst', 'skytrain_pass', 'bus_idle', 'car_horn_short', 'seabus_horn', 'ocean_waves', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant',
+    'gastown_clock_whistle', 'church_bells', 'harbour_noon_horn', 'nine_oclock_gun', 'planetarium_hum', 'planetarium_chime'
   ];
 
   function clamp(value, min, max) {
@@ -473,6 +474,42 @@
           this.scheduleTone(ctx, destination, atTime + 0.15, duration * 0.9, { from: 560, to: 380, peak: 0.005 + intensity * 0.011, type: 'sine', pan: 0.18 });
           this.scheduleNoise(ctx, destination, atTime, duration, { freq: 1200, q: 0.9, peak: 0.002 + intensity * 0.006, filterType: 'bandpass' });
           break;
+
+        case 'gastown_clock_whistle': {
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 1600, q: 0.85, peak: 0.012 + intensity * 0.02, filterType: 'bandpass', pan: 0.05 });
+          this.scheduleTone(ctx, destination, atTime + 0.03, duration * 0.88, { from: 540, to: 500, peak: 0.012 + intensity * 0.022, type: 'triangle', pan: -0.08 });
+          this.scheduleTone(ctx, destination, atTime + 0.05, duration * 0.84, { from: 560, to: 520, peak: 0.007 + intensity * 0.014, type: 'sine', pan: 0.08 });
+          break;
+        }
+        case 'church_bells': {
+          this.scheduleTone(ctx, destination, atTime, duration, { from: 392, to: 252, peak: 0.012 + intensity * 0.018, type: 'sine', pan: -0.04 });
+          this.scheduleTone(ctx, destination, atTime + 0.01, duration * 0.94, { from: 645, to: 418, peak: 0.008 + intensity * 0.014, type: 'triangle', pan: 0.06 });
+          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.88, { from: 898, to: 584, peak: 0.006 + intensity * 0.01, type: 'sine', pan: -0.07 });
+          this.scheduleTone(ctx, destination, atTime + 0.03, duration * 0.82, { from: 1132, to: 728, peak: 0.004 + intensity * 0.008, type: 'triangle', pan: 0.09 });
+          break;
+        }
+        case 'harbour_noon_horn': {
+          this.scheduleTone(ctx, destination, atTime, duration, { from: 74, to: 68, peak: 0.014 + intensity * 0.022, type: 'sine', pan: 0 });
+          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.92, { from: 148, to: 136, peak: 0.008 + intensity * 0.014, type: 'triangle', pan: -0.06 });
+          this.scheduleNoise(ctx, destination, atTime + 0.06, duration * 0.72, { freq: 340, q: 0.7, peak: 0.003 + intensity * 0.007, filterType: 'bandpass', pan: 0.04 });
+          break;
+        }
+        case 'nine_oclock_gun': {
+          this.scheduleNoise(ctx, destination, atTime, Math.max(0.2, duration * 0.4), { freq: 220, q: 0.65, peak: 0.018 + intensity * 0.03, filterType: 'lowpass', pan: -0.03 });
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.28, duration * 0.55), { from: 54, to: 40, peak: 0.02 + intensity * 0.032, type: 'sine', pan: 0.02 });
+          this.scheduleNoise(ctx, destination, atTime + 0.06, Math.max(0.25, duration * 0.45), { freq: 880, q: 0.8, peak: 0.005 + intensity * 0.01, filterType: 'bandpass', pan: 0.06 });
+          break;
+        }
+        case 'planetarium_hum': {
+          this.scheduleTone(ctx, destination, atTime, duration, { from: 92, to: 96, peak: 0.005 + intensity * 0.01, type: 'sine', pan: -0.02 });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 780, q: 0.55, peak: 0.003 + intensity * 0.007, filterType: 'lowpass', pan: 0.03 });
+          break;
+        }
+        case 'planetarium_chime': {
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.1, duration * 0.65), { from: 880, to: 660, peak: 0.006 + intensity * 0.01, type: 'square', pan: 0.1 });
+          this.scheduleTone(ctx, destination, atTime + 0.03, Math.max(0.1, duration * 0.56), { from: 1108, to: 830, peak: 0.005 + intensity * 0.008, type: 'triangle', pan: -0.08 });
+          break;
+        }
 
         default:
           break;

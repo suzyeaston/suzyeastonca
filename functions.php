@@ -908,6 +908,12 @@ function se_get_asmr_allowed_engines() {
         'bike_bell',
         'skateboard_roll',
         'siren_distant',
+        'gastown_clock_whistle',
+        'church_bells',
+        'harbour_noon_horn',
+        'nine_oclock_gun',
+        'planetarium_hum',
+        'planetarium_chime',
     );
 }
 
@@ -927,6 +933,7 @@ function se_get_asmr_visual_types() {
         'rain_streaks', 'puddle_reflections',
         'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof',
         'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
+        'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails',
         'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette',
     );
 }
@@ -1205,7 +1212,8 @@ function se_get_asmr_audio_layers_allowed() {
     return array(
         'footsteps', 'footsteps_snow_mode', 'rain_ambience', 'wind_gust', 'crowd_murmur', 'laughter_burst',
         'skytrain_pass', 'bus_pass', 'car_horn_short', 'steam_clock',
-        'seabus_horn', 'ocean_waves', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant'
+        'seabus_horn', 'ocean_waves', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant',
+        'gastown_clock_whistle', 'church_bells', 'harbour_noon_horn', 'nine_oclock_gun', 'planetarium_hum', 'planetarium_chime'
     );
 }
 
@@ -1214,7 +1222,7 @@ function se_get_asmr_visual_layers_allowed() {
         'rain_streaks', 'snow_drift', 'harbor_mist', 'clear_cold_shimmer',
         'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene',
         'gastown_clock_silhouette', 'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof',
-        'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
+        'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails',
         'cobblestone_perspective', 'brick_wall_parallax', 'puddle_reflections', 'streetlamp_halo_row',
         'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
         'scanline_field', 'glitch_flash', 'signal_bars', 'chromatic_veil', 'neon_sign_flicker', 'ocean_surface_shimmer', 'seabus_silhouette',
@@ -1230,7 +1238,9 @@ function se_get_asmr_visual_to_audio_map() {
         'skytrain_pass_visual' => array( 'skytrain_pass' ),
         'bus_pass_visual' => array( 'bus_pass' ),
         'rain_streaks' => array( 'rain_ambience' ),
-        'gastown_scene' => array( 'steam_clock' ),
+        'gastown_scene' => array( 'gastown_clock_whistle' ),
+        'planetarium_dome' => array( 'planetarium_hum' ),
+        'starfield_projection' => array( 'planetarium_chime' ),
     );
 }
 
@@ -1239,7 +1249,7 @@ function se_get_asmr_scene_visual_support_map() {
         'gastown_scene' => array( 'gastown_clock_silhouette', 'streetlamp_halo_row' ),
         'granville_scene' => array( 'granville_neon_marquee', 'puddle_reflections' ),
         'north_shore_scene' => array( 'northshore_mountain_ridge', 'mountain_mist_layers' ),
-        'waterfront_scene' => array( 'ocean_surface_shimmer', 'seabus_silhouette' ),
+        'waterfront_scene' => array( 'ocean_surface_shimmer', 'seabus_silhouette', 'canada_place_sails' ),
     );
 }
 
@@ -1260,6 +1270,11 @@ function se_get_asmr_mapped_visual_layers_from_audio( $audio_layers ) {
         'bus_pass' => 'bus_pass_visual',
         'rain_ambience' => 'rain_streaks',
         'steam_clock' => 'gastown_clock_silhouette',
+        'gastown_clock_whistle' => 'gastown_clock_silhouette',
+        'church_bells' => 'constellation_lines',
+        'harbour_noon_horn' => 'waterfront_scene',
+        'planetarium_hum' => 'planetarium_dome',
+        'planetarium_chime' => 'starfield_projection',
         'ocean_waves' => 'ocean_surface_shimmer',
         'seabus_horn' => 'seabus_silhouette',
     );
@@ -1297,7 +1312,7 @@ function se_get_asmr_motif_brief( $payload ) {
 
     $scene = array_values( array_intersect( $visual_layers, array( 'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene' ) ) );
     $atmosphere = array_values( array_intersect( $visual_layers, array( 'rain_streaks', 'snow_drift', 'harbor_mist', 'clear_cold_shimmer' ) ) );
-    $signature = array_values( array_intersect( $visual_layers, array( 'science_world_dome', 'chinatown_gate', 'lions_gate_bridge', 'gastown_clock_silhouette', 'seabus_silhouette' ) ) );
+    $signature = array_values( array_intersect( $visual_layers, array( 'science_world_dome', 'chinatown_gate', 'lions_gate_bridge', 'gastown_clock_silhouette', 'seabus_silhouette', 'planetarium_dome', 'starfield_projection', 'canada_place_sails' ) ) );
 
     $parts = array();
     if ( ! empty( $scene ) ) {
@@ -1356,7 +1371,8 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
 
     $scene_or_landmark = array(
         'gastown_scene', 'granville_scene', 'north_shore_scene', 'gastown_clock_silhouette', 'science_world_dome',
-        'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'waterfront_scene', 'seabus_silhouette'
+        'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'waterfront_scene', 'seabus_silhouette',
+        'planetarium_dome', 'starfield_projection', 'canada_place_sails'
     );
 
     foreach ( $audio_layers as $layer ) {
@@ -1382,6 +1398,18 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
             $audio[] = array( 'time' => $runtime * 0.64, 'duration' => 0.2, 'engine' => 'car_horn_short', 'intensity' => 0.48, 'params' => array(), 'sync_role' => 'horn_anchor' );
         } elseif ( 'steam_clock' === $layer ) {
             $audio[] = array( 'time' => 0.52, 'duration' => 1.1, 'engine' => 'steam_clock_burst', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'steam_clock_toggle' );
+        } elseif ( 'gastown_clock_whistle' === $layer ) {
+            $audio[] = array( 'time' => 0.54, 'duration' => 1.25, 'engine' => 'gastown_clock_whistle', 'intensity' => 0.64, 'params' => array(), 'sync_role' => 'gastown_clock_whistle' );
+        } elseif ( 'church_bells' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.48, 'duration' => 1.9, 'engine' => 'church_bells', 'intensity' => 0.48, 'params' => array(), 'sync_role' => 'church_bells' );
+        } elseif ( 'harbour_noon_horn' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.34, 'duration' => 2.3, 'engine' => 'harbour_noon_horn', 'intensity' => 0.44, 'params' => array(), 'sync_role' => 'harbour_noon_horn' );
+        } elseif ( 'nine_oclock_gun' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.74, 'duration' => 1.2, 'engine' => 'nine_oclock_gun', 'intensity' => 0.46, 'params' => array(), 'sync_role' => 'nine_oclock_gun' );
+        } elseif ( 'planetarium_hum' === $layer ) {
+            $audio[] = array( 'time' => 0.05, 'duration' => max( 5.4, $runtime * 0.58 ), 'engine' => 'planetarium_hum', 'intensity' => 0.32, 'params' => array(), 'sync_role' => 'planetarium_hum' );
+        } elseif ( 'planetarium_chime' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.41, 'duration' => 0.42, 'engine' => 'planetarium_chime', 'intensity' => 0.32, 'params' => array(), 'sync_role' => 'planetarium_chime' );
         } elseif ( 'seabus_horn' === $layer ) {
             $audio[] = array( 'time' => $runtime * 0.32, 'duration' => 1.8, 'engine' => 'seabus_horn', 'intensity' => 0.36, 'params' => array(), 'sync_role' => 'seabus_horn' );
         } elseif ( 'gulls_distant' === $layer ) {
@@ -1417,6 +1445,13 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
         if ( in_array( $visual_type, array( 'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene' ), true ) ) {
             $visual[] = array( 'time' => 0.18, 'duration' => min( 3.2, $runtime * 0.22 ), 'visual_type' => $visual_type, 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'scene_anchor' );
             $visual[] = array( 'time' => $runtime * 0.44, 'duration' => min( 2.4, $runtime * 0.2 ), 'visual_type' => $visual_type, 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'scene_recur' );
+            continue;
+        }
+        if ( in_array( $visual_type, array( 'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails' ), true ) ) {
+            $visual[] = array( 'time' => 0.16, 'duration' => min( 4.8, $runtime * 0.4 ), 'visual_type' => $visual_type, 'intensity' => 0.66, 'params' => array(), 'sync_role' => 'planetarium_landmark_anchor' );
+            if ( 'planetarium_dome' === $visual_type ) {
+                $visual[] = array( 'time' => 0.42, 'duration' => min( 3.4, $runtime * 0.28 ), 'visual_type' => 'starfield_projection', 'intensity' => 0.54, 'params' => array(), 'sync_role' => 'planetarium_projection_follow' );
+            }
             continue;
         }
         $visual[] = array( 'time' => 0.14, 'duration' => min( 5.2, $runtime * 0.36 ), 'visual_type' => $visual_type, 'intensity' => 0.6, 'params' => array(), 'sync_role' => 'visual_motif_toggle' );
@@ -1506,6 +1541,8 @@ function se_validate_asmr_response( $decoded ) {
         'runtime_seconds',
         'hook',
         'concept_summary',
+        'logline',
+        'story_beats',
         'style_tags',
         'audio_events',
         'visual_events',
@@ -1526,6 +1563,21 @@ function se_validate_asmr_response( $decoded ) {
     $decoded['runtime_seconds'] = max( 10, min( 30, absint( $decoded['runtime_seconds'] ) ) );
 
     $decoded['style_tags'] = array_values( array_filter( array_map( 'sanitize_text_field', (array) ( $decoded['style_tags'] ?? array() ) ) ) );
+
+    $decoded['logline'] = sanitize_text_field( $decoded['logline'] ?? '' );
+
+    $story_beats = is_array( $decoded['story_beats'] ?? null ) ? $decoded['story_beats'] : array();
+    $decoded['story_beats'] = array_values( array_map( static function( $beat ) {
+        if ( ! is_array( $beat ) ) {
+            return array( 't0' => 0.0, 't1' => 0.0, 'beat' => '', 'intent' => '' );
+        }
+        return array(
+            't0' => max( 0, floatval( $beat['t0'] ?? 0 ) ),
+            't1' => max( 0, floatval( $beat['t1'] ?? 0 ) ),
+            'beat' => sanitize_text_field( $beat['beat'] ?? '' ),
+            'intent' => sanitize_text_field( $beat['intent'] ?? '' ),
+        );
+    }, $story_beats ) );
 
     $events = is_array( $decoded['audio_events'] ?? null ) ? $decoded['audio_events'] : array();
     $allowed_engines = se_get_asmr_allowed_engines();
@@ -1657,6 +1709,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         'visual_layers' => $visual_layers,
         'foley' => $raw_legacy_foley,
         'sound_only' => ! empty( $params['sound_only'] ),
+        'story_mode' => true,
     );
 
     $has_freeform = ! empty( $payload['concept'] ) || ! empty( $payload['object'] ) || ! empty( $payload['setting'] ) || ! empty( $payload['mood'] ) || ! empty( $payload['creative_goal'] );
@@ -1675,10 +1728,10 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     $system_prompt = 'You are ASMR Lab, a retro-futurist sensory film composer for a browser performance engine. '
         . 'Generate an original 10-30 second procedural audiovisual score that feels composed, eerie, spiritual, tactile, and cinematic when prompted. '
         . 'Return ONE strict JSON object and no markdown. '
-        . 'Use exactly and only these top-level keys: title, runtime_seconds, hook, concept_summary, style_tags, audio_events, visual_events, sync_points, end_card, edit_rhythm, presentation_note. '
+        . 'Use exactly and only these top-level keys: title, runtime_seconds, hook, concept_summary, logline, story_beats, style_tags, audio_events, visual_events, sync_points, end_card, edit_rhythm, presentation_note. '
         . 'audio_events objects must include: time, duration, engine, intensity, params, sync_role. '
         . 'visual_events objects must include: time, duration, visual_type, intensity, params, sync_role. '
-        . 'sync_points objects must include: time, cue, importance. '
+        . 'sync_points objects must include: time, cue, importance. story_beats must be an array of exactly 4 objects with: t0, t1, beat, intent (Opening, Arrival, Ritual Lift, Resolve). '
         . 'end_card must include: use_end_card, text, reveal_style. '
         . 'edit_rhythm must include: pacing_note, silence_strategy, release_strategy. '
         . 'Only use these engine names: ' . $allowed_engines . '. '
@@ -1697,9 +1750,10 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'When motif tokens imply a place, ground the package in concrete materials, atmospheric lighting, and local acoustics. '
         . 'Prompt interpretation priority: selected visual motifs > selected audio motifs > named object > mood adjectives. '
         . 'For Gastown/Vancouver scenes, favor steam clock cues, harbor fog bed, amber streetlamp halos, wet cobblestone reflections, brick facade texture, neon-on-wet shimmer, and winter hush pacing where relevant. '
+ . 'Vancouver sound palette guide: gastown_clock_whistle=steam whistle toot, iconic Gastown clock, breathy warm; church_bells=distant cathedral bells, warm decay; harbour_noon_horn=harbour ship horn at noon, low and foggy; ocean_waves=waterfront waves, soft swell; skytrain_pass=SkyTrain whoosh and rail hum; seabus_horn=short ferry foghorn; planetarium_hum=quiet dome room tone; planetarium_chime=tiny sparkle chime; nine_oclock_gun=low ceremonial boom. '
         . 'Avoid generic abstract output when prompts include specific motif or geography terms. '
         . 'The result should feel like an authored short sensory micro-film, not a debug demo. '
-        . 'Do not include prose outside JSON.';
+        . 'Every beat transition must be marked by a signature cue pair (audio + visual) from selected motifs when story_mode is true. Do not include prose outside JSON.';
 
     if ( $payload['sound_only'] ) {
         $system_prompt .= ' If sound_only is true, keep other fields concise but still present and focus creative detail in audio_events.';

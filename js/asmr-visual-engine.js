@@ -14,7 +14,9 @@
     'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
     'northshore_mountain_ridge', 'mountain_mist_layers',
     'rain_streaks', 'puddle_reflections',
-    'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette'
+    'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
+    'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails',
+    'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette'
   ];
 
   function clamp(value, min, max) {
@@ -296,7 +298,7 @@
     }
 
     drawSceneLayers(ctx, width, height, t, normalized, overlays) {
-      const landmarkTypes = ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'gastown_clock_silhouette', 'seabus_silhouette', 'waterfront_scene'];
+      const landmarkTypes = ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'planetarium_dome', 'starfield_projection', 'canada_place_sails', 'gastown_clock_silhouette', 'seabus_silhouette', 'waterfront_scene'];
       const atmosphereTypes = ['rain_streaks', 'snow_drift', 'harbor_mist', 'mountain_mist_layers', 'puddle_reflections', 'volumetric_fog', 'clear_cold_shimmer'];
       const weirdness = this.parseWeirdnessLevel();
       const weirdNorm = (weirdness - 1) / 9;
@@ -311,6 +313,8 @@
 
       const hasLandmark = activeEvents.some((item) => landmarkTypes.includes(item.event.visual_type));
       if (hasLandmark) distortion *= 0.6;
+      const hasPlanetarium = activeEvents.some((item) => ['planetarium_dome', 'starfield_projection'].includes(item.event.visual_type));
+      if (hasPlanetarium) distortion *= 0.5;
 
       this.drawBaseChamber(ctx, width, height, t, normalized);
 
@@ -972,6 +976,81 @@
           ctx.moveTo(x - 2, y + h * 0.035);
           ctx.lineTo(x - 24, y + h * 0.052);
           ctx.stroke();
+          break;
+        }
+
+
+        case 'planetarium_dome': {
+          const cx = w * 0.5;
+          const cy = h * 0.74;
+          const r = Math.min(w, h) * 0.28;
+          ctx.fillStyle = `rgba(14,22,40,${0.2 + intensity * 0.18})`;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, Math.PI, 0);
+          ctx.lineTo(cx + r, cy + 18);
+          ctx.lineTo(cx - r, cy + 18);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = `rgba(160,198,236,${0.2 + intensity * 0.24})`;
+          ctx.lineWidth = 2;
+          for (let i = 1; i <= 5; i += 1) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * (i / 5), Math.PI, 0);
+            ctx.stroke();
+          }
+          for (let i = -4; i <= 4; i += 1) {
+            const x = cx + (i * r / 5);
+            ctx.beginPath();
+            ctx.moveTo(x, cy + 2);
+            ctx.lineTo(cx, cy - r + 6);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'starfield_projection': {
+          const cx = w * 0.5;
+          const cy = h * 0.72;
+          const r = Math.min(w, h) * 0.27;
+          ctx.strokeStyle = `rgba(110,180,255,${0.08 + intensity * 0.16})`;
+          for (let i = 0; i < 6; i += 1) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * (0.35 + i * 0.1), Math.PI + 0.14, -0.14);
+            ctx.stroke();
+          }
+          ctx.fillStyle = `rgba(188,226,255,${0.22 + intensity * 0.24})`;
+          for (let i = 0; i < 42; i += 1) {
+            const px = cx + Math.sin(i * 2.1 + normalized * 2.8) * (r * (0.18 + (i % 6) * 0.12));
+            const py = cy - Math.abs(Math.cos(i * 1.7 + normalized * 2.1)) * (r * (0.2 + (i % 5) * 0.13));
+            ctx.fillRect(px, py, 1.5, 1.5);
+          }
+          break;
+        }
+        case 'constellation_lines': {
+          ctx.strokeStyle = `rgba(170,214,255,${0.08 + intensity * 0.13})`;
+          ctx.lineWidth = 1;
+          const pts = [[0.32,0.24],[0.38,0.2],[0.45,0.25],[0.52,0.19],[0.58,0.24],[0.64,0.2]];
+          ctx.beginPath();
+          pts.forEach((pt, idx) => {
+            const x = w * pt[0]; const y = h * pt[1];
+            if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            ctx.moveTo(x, y); ctx.arc(x, y, 1.3, 0, Math.PI * 2);
+          });
+          ctx.stroke();
+          break;
+        }
+        case 'canada_place_sails': {
+          const y = h * 0.58;
+          ctx.strokeStyle = `rgba(196,220,238,${0.2 + intensity * 0.2})`;
+          ctx.lineWidth = 2;
+          for (let i = 0; i < 5; i += 1) {
+            const x = w * (0.34 + i * 0.07);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + w * 0.04, y - h * 0.09);
+            ctx.lineTo(x + w * 0.08, y);
+            ctx.closePath();
+            ctx.stroke();
+          }
           break;
         }
 

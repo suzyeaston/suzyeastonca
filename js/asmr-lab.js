@@ -31,12 +31,12 @@
     seabus_silhouette: ['seabus_horn'],
     rain_streaks: ['rain_ambience'],
     skytrain_pass_visual: ['skytrain_pass'],
-    gastown_scene: ['steam_clock']
+    gastown_scene: ['gastown_clock_whistle']
   };
 
   const OPTIONAL_LINK_AUDIO = {
     waterfront_scene: ['ocean_waves'],
-    gastown_scene: ['steam_clock']
+    gastown_scene: ['gastown_clock_whistle']
   };
 
   const SCENE_TO_SUPPORT_VISUALS = {
@@ -44,19 +44,6 @@
     granville_scene: ['puddle_reflections'],
     north_shore_scene: ['mountain_mist_layers'],
     waterfront_scene: ['ocean_surface_shimmer', 'seabus_silhouette']
-  };
-
-  const VISUAL_CAPS = {
-    scene: 1,
-    atmosphere: 1,
-    landmark: 1,
-    modifier: 3
-  };
-
-  const AUDIO_CAPS = {
-    bed: 1,
-    movement: 2,
-    accent: 2
   };
 
   function applyLayerLinking(audioLayers, visualLayers, isLinked) {
@@ -160,40 +147,26 @@
   }
 
 
-  function enforceLayerCaps(input) {
-    if (!input || !input.checked) return;
-    const name = input.name;
-    const group = String(input.dataset.layerGroup || '').trim();
-    if (!group) return;
-
-    const caps = name === 'visual_layers[]' ? VISUAL_CAPS : (name === 'audio_layers[]' ? AUDIO_CAPS : null);
-    if (!caps || !Object.prototype.hasOwnProperty.call(caps, group)) return;
-
-    const groupBoxes = Array.from(form.querySelectorAll(`input[name="${name}"][data-layer-group="${group}"]`));
-    const checked = groupBoxes.filter((box) => box.checked);
-    if (checked.length <= caps[group]) return;
-
-    input.checked = false;
-    setStatus(`Too many ${group} modules selected (max ${caps[group]}).`);
-  }
-
-  function attachLayerCapHandlers() {
-    if (!form) return;
-    const boxes = form.querySelectorAll('input[name="audio_layers[]"], input[name="visual_layers[]"]');
-    boxes.forEach((box) => {
-      box.addEventListener('change', () => enforceLayerCaps(box));
-    });
-  }
-
   function renderData(data) {
     const concept = document.getElementById('asmr-concept');
     const beats = document.getElementById('asmr-beats');
+    const storyBeats = document.getElementById('asmr-story-beats');
     const prompts = document.getElementById('asmr-video-prompts');
     const edit = document.getElementById('asmr-edit-notes');
     const note = document.getElementById('asmr-presentation');
     const recipe = document.getElementById('asmr-sound-json');
 
     if (concept) concept.textContent = `${data.title} (${data.runtime_seconds}s) — ${data.hook}\n${data.concept_summary}`;
+    if (storyBeats) {
+      storyBeats.innerHTML = '';
+      (Array.isArray(data.story_beats) ? data.story_beats : []).forEach((beat) => {
+        const li = document.createElement('li');
+        const t0 = Number(beat.t0 || 0).toFixed(1);
+        const t1 = Number(beat.t1 || 0).toFixed(1);
+        li.textContent = `${t0}s–${t1}s · ${beat.beat || 'Beat'} — ${beat.intent || ''}`.trim();
+        storyBeats.appendChild(li);
+      });
+    }
     toList(beats, data.sync_points || []);
     toList(prompts, data.style_tags || []);
     if (edit) {
@@ -512,7 +485,6 @@
     });
   }
 
-  attachLayerCapHandlers();
 
   window.addEventListener('resize', function () { if (visuals) visuals.resize(); });
 })();

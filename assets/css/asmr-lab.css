@@ -39,3 +39,6 @@
 .asmr-motif-group h3{margin:0 0 .45rem;font-family:'Press Start 2P',monospace;font-size:.6rem;letter-spacing:.06em;color:#9ec0ff;text-transform:uppercase;border-bottom:1px solid #2a3563;padding-bottom:.35rem}
 .asmr-motif-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.45rem .65rem}
 .asmr-motif-grid label{display:flex;align-items:center;gap:.45rem;font-size:.8rem;background:#090f21;border:1px solid #293867;border-radius:6px;padding:.42rem .5rem}
+
+.asmr-card ol{margin:.2rem 0 .2rem 1.15rem;padding:0}
+.asmr-card ol li{margin:.25rem 0;line-height:1.45}
