@@ -3,7 +3,7 @@
 .asmr-title{font-family:'Press Start 2P',monospace;font-size:1.4rem;color:#b5cbff}
 .asmr-lab-form label{display:flex;flex-direction:column;gap:.35rem;font-size:.85rem}
 .asmr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem}
-.asmr-grid input,.asmr-grid textarea,.asmr-mode-label select{background:#0a0d1c;color:#e6ecff;border:1px solid #33437f;border-radius:6px;padding:.6rem}
+.asmr-grid input,.asmr-grid textarea,.asmr-grid select,.asmr-mode-label select{background:#0a0d1c;color:#e6ecff;border:1px solid #33437f;border-radius:6px;padding:.6rem}
 .asmr-actions,.asmr-audio-controls{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;align-items:center}
 .pixel-button.secondary{opacity:.86}
 .asmr-status{min-height:1.2rem;color:#7df9c1}
@@ -22,3 +22,11 @@
 .asmr-mode-label{font-size:.8rem;display:flex;gap:.35rem;align-items:center}
 .asmr-video-support{font-size:.75rem;color:#9bd9ff;opacity:.9}
 .asmr-audio-feedback{font-size:.82rem;color:#9ed4ff;margin:0}
+.asmr-foley-grid{margin-top:1rem;border:1px solid #33437f;border-radius:8px;padding:.8rem;background:#0c1226;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.55rem .8rem}
+.asmr-foley-grid legend{padding:0 .35rem;color:#9ec0ff;font-size:.85rem}
+.asmr-foley-grid label{display:flex;align-items:center;gap:.45rem;font-size:.82rem;background:#0a0f21;border:1px solid #293867;border-radius:6px;padding:.4rem .5rem}
+.asmr-foley-grid input{accent-color:#7aa2ff}
+.asmr-advanced-fields{margin-top:1rem;border:1px solid #2f3f73;border-radius:8px;background:#111832;padding:.65rem}
+.asmr-advanced-fields summary{cursor:pointer;color:#9ec0ff;font-size:.84rem;list-style:none}
+.asmr-advanced-fields summary::-webkit-details-marker{display:none}
+.asmr-advanced-fields[open] summary{margin-bottom:.65rem}

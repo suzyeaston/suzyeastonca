@@ -8,7 +8,9 @@
     'shimmer_swirl', 'crystal_chime', 'ghost_pad', 'spectral_suck', 'voltage_flutter',
     'halo_tone', 'particle_spark', 'ritual_bass_swell', 'reverse_bloom',
     'steam_clock_burst', 'distant_bell_toll', 'cold_air_hush', 'wet_street_shimmer',
-    'harbor_fog_bed', 'metal_resonance', 'snow_muffle', 'city_electrical_hum'
+    'harbor_fog_bed', 'metal_resonance', 'snow_muffle', 'city_electrical_hum',
+    'footsteps_wet', 'footsteps_snow', 'rain_close', 'rain_roof', 'puddle_splash',
+    'crowd_murmur', 'laughter_burst', 'skytrain_pass', 'bus_idle', 'car_horn_short'
   ];
 
   function clamp(value, min, max) {
@@ -365,6 +367,56 @@
           this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 112, to: p.to || 118, peak: 0.022 + intensity * 0.04, type: 'sawtooth', pan: 0.03 });
           this.scheduleTone(ctx, destination, atTime + 0.01, duration * 0.9, { from: 224, to: 236, peak: 0.008 + intensity * 0.02, type: 'triangle', pan: -0.1 });
           break;
+
+        case 'footsteps_wet':
+        case 'footsteps_snow': {
+          const wet = event.engine === 'footsteps_wet';
+          this.scheduleNoise(ctx, destination, atTime, Math.max(0.08, duration * 0.8), { freq: wet ? 420 : 320, q: 1.25, peak: 0.02 + intensity * 0.05, filterType: 'bandpass', pan: (Math.random() * 0.26) - 0.13 });
+          this.scheduleTone(ctx, destination, atTime + 0.01, Math.max(0.07, duration * 0.5), { from: 92, to: 74, peak: 0.012 + intensity * 0.03, type: 'sine', pan: wet ? 0.05 : -0.05 });
+          if (wet) {
+            this.scheduleNoise(ctx, destination, atTime + 0.02, Math.max(0.06, duration * 0.45), { freq: 1900, q: 1.9, peak: 0.008 + intensity * 0.018, filterType: 'highpass', pan: 0.08 });
+          }
+          break;
+        }
+        case 'rain_close':
+        case 'rain_roof': {
+          const roof = event.engine === 'rain_roof';
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: roof ? 2600 : 3200, q: 0.9, peak: 0.018 + intensity * 0.04, filterType: 'highpass', pan: 0.02 });
+          const drops = Math.max(6, Math.min(36, Math.round(duration * (roof ? 4 : 7) * (0.7 + intensity))));
+          for (let i = 0; i < drops; i += 1) {
+            const dt = (i / drops) * duration;
+            this.scheduleNoise(ctx, destination, atTime + dt, 0.045, { freq: 4600 + (i % 6) * 220, q: 2.6, peak: 0.004 + intensity * 0.012, filterType: 'bandpass', pan: Math.sin(i * 2.1) * 0.35 });
+          }
+          break;
+        }
+        case 'puddle_splash':
+          this.scheduleNoise(ctx, destination, atTime, Math.max(0.1, duration * 0.8), { freq: 1500, q: 1.1, peak: 0.02 + intensity * 0.04, filterType: 'bandpass', pan: -0.12 });
+          this.scheduleTone(ctx, destination, atTime + 0.02, Math.max(0.09, duration * 0.5), { from: 220, to: 110, peak: 0.008 + intensity * 0.018, type: 'triangle', pan: 0.1 });
+          break;
+        case 'crowd_murmur':
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 520, q: 0.65, peak: 0.02 + intensity * 0.032, filterType: 'bandpass', pan: -0.1 });
+          this.scheduleNoise(ctx, destination, atTime + 0.03, duration * 0.95, { freq: 880, q: 0.8, peak: 0.014 + intensity * 0.024, filterType: 'bandpass', pan: 0.12 });
+          this.scheduleTone(ctx, destination, atTime, duration * 0.85, { from: 190, to: 240, peak: 0.004 + intensity * 0.012, type: 'sine', pan: 0.04 });
+          break;
+        case 'laughter_burst':
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.12, duration * 0.7), { from: 280, to: 420, peak: 0.012 + intensity * 0.022, type: 'triangle', pan: 0.2 });
+          this.scheduleNoise(ctx, destination, atTime + 0.015, Math.max(0.11, duration * 0.75), { freq: 1300, q: 1.4, peak: 0.012 + intensity * 0.02, filterType: 'bandpass', pan: -0.16 });
+          break;
+        case 'skytrain_pass':
+          this.scheduleTone(ctx, destination, atTime, duration, { from: 58, to: 46, peak: 0.045 + intensity * 0.07, type: 'sawtooth', pan: -0.25 });
+          this.scheduleTone(ctx, destination, atTime + 0.05, duration * 0.9, { from: 140, to: 220, peak: 0.014 + intensity * 0.026, type: 'triangle', pan: 0.2 });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 2600, q: 0.75, peak: 0.012 + intensity * 0.02, filterType: 'highpass', pan: 0.1 });
+          break;
+        case 'bus_idle':
+          this.scheduleTone(ctx, destination, atTime, duration, { from: 78, to: 74, peak: 0.028 + intensity * 0.045, type: 'sawtooth', pan: -0.06 });
+          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.95, { from: 156, to: 148, peak: 0.01 + intensity * 0.02, type: 'triangle', pan: 0.08 });
+          if (duration > 1) this.scheduleNoise(ctx, destination, atTime + duration * 0.68, 0.22, { freq: 2100, q: 1.3, peak: 0.01 + intensity * 0.018, filterType: 'highpass', pan: 0.18 });
+          break;
+        case 'car_horn_short':
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.12, duration), { from: 410, to: 380, peak: 0.026 + intensity * 0.04, type: 'triangle', pan: 0.05 });
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.1, duration * 0.9), { from: 510, to: 480, peak: 0.018 + intensity * 0.03, type: 'sawtooth', pan: -0.04 });
+          break;
+
         default:
           break;
       }

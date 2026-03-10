@@ -25,14 +25,12 @@
   let currentPackage = null;
 
   const QA_PRESET = {
-    concept: 'A snow-covered Gastown steam clock becomes a winter shrine, breathing light into the empty street',
-    object: 'steam clock',
-    setting: 'midnight Gastown alley with snow, wet cobblestones, amber gaslight glow, brick walls, and harbor mist',
-    mood: 'ghostly calm, urban reverence, cold wonder, then warm luminous release',
+    location: 'gastown',
+    weather: 'snow',
     duration: '20',
     voice_style: 'quiet city prayer',
     weirdness: '8',
-    creative_goal: 'Turn Gastown into a sacred winter signal using steam bursts, bell-like tones, snow drift, lamplight halos, and reflective street shimmer with a final reveal that feels haunted and beautiful.'
+    foley: ['footsteps', 'steam_clock']
   };
 
   const transport = {
@@ -133,6 +131,32 @@
       if (!b) return;
       if (b === exportVideoBtn) b.disabled = !currentPackage || !videoSupport.canExport;
       else b.disabled = !currentPackage;
+    });
+  }
+
+
+  function collectFormPayload() {
+    const formData = new FormData(form);
+    const advanced = {
+      concept: String(formData.get('concept') || '').trim(),
+      object: String(formData.get('object') || '').trim(),
+      setting: String(formData.get('setting') || '').trim(),
+      mood: String(formData.get('mood') || '').trim(),
+      creative_goal: String(formData.get('creative_goal') || '').trim()
+    };
+    const base = {
+      duration: String(formData.get('duration') || '20'),
+      weirdness: String(formData.get('weirdness') || '6'),
+      voice_style: String(formData.get('voice_style') || '').trim()
+    };
+
+    const hasAdvanced = !!(advanced.concept || advanced.object || advanced.setting || advanced.mood || advanced.creative_goal);
+    if (hasAdvanced) return Object.assign({}, base, advanced);
+
+    return Object.assign({}, base, {
+      location: String(formData.get('location') || 'gastown'),
+      weather: String(formData.get('weather') || 'snow'),
+      foley: formData.getAll('foley[]').map((item) => String(item || '').trim()).filter(Boolean)
     });
   }
 
@@ -327,7 +351,7 @@
   if (form) {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      lastPayload = Object.fromEntries(new FormData(form).entries());
+      lastPayload = collectFormPayload();
       try { renderData(await requestGeneration(lastPayload)); }
       catch (err) { setError(err.message || 'Generation failed.'); setStatus(''); }
     });
@@ -336,10 +360,20 @@
   if (qaPresetBtn && form) {
     qaPresetBtn.addEventListener('click', () => {
       Object.entries(QA_PRESET).forEach(([key, value]) => {
+        if (key === 'foley' && Array.isArray(value)) {
+          const boxes = form.querySelectorAll('input[name=\"foley[]\"]');
+          boxes.forEach((box) => { box.checked = value.includes(box.value); });
+          return;
+        }
         const field = form.elements.namedItem(key);
         if (field) field.value = value;
       });
-      setStatus('QA preset loaded. Generate package to test known-good mood arc.');
+      const advancedFields = ['concept', 'object', 'setting', 'mood', 'creative_goal'];
+      advancedFields.forEach((name) => {
+        const field = form.elements.namedItem(name);
+        if (field) field.value = '';
+      });
+      setStatus('QA preset loaded (Vancouver Mode Gastown + Snow). Generate package to test known-good anchors.');
       setError('');
     });
   }
