@@ -942,6 +942,9 @@ function se_validate_asmr_response( $decoded ) {
         return new WP_Error( 'asmr_sound_events_missing', __( 'Sound recipe had no usable events. Try regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
     }
 
+    usort( $sanitized_events, static function( $a, $b ) {
+        return ( $a['time'] <=> $b['time'] );
+    } );
     $decoded['audio_events'] = $sanitized_events;
 
     $visual_allowed = array(
@@ -966,6 +969,9 @@ function se_validate_asmr_response( $decoded ) {
             'sync_role' => sanitize_text_field( $event['sync_role'] ?? '' ),
         );
     }, $visual_events ) ) );
+    usort( $decoded['visual_events'], static function( $a, $b ) {
+        return ( $a['time'] <=> $b['time'] );
+    } );
 
     $sync_points = is_array( $decoded['sync_points'] ?? null ) ? $decoded['sync_points'] : array();
     $decoded['sync_points'] = array_values( array_filter( array_map( static function( $point ) {
@@ -978,6 +984,9 @@ function se_validate_asmr_response( $decoded ) {
             'importance' => sanitize_text_field( $point['importance'] ?? '' ),
         );
     }, $sync_points ) ) );
+    usort( $decoded['sync_points'], static function( $a, $b ) {
+        return ( $a['time'] <=> $b['time'] );
+    } );
 
     $end_card = is_array( $decoded['end_card'] ?? null ) ? $decoded['end_card'] : array();
     $decoded['end_card'] = array(
@@ -1021,8 +1030,8 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     }
 
     $allowed_engines = implode( ', ', se_get_asmr_allowed_engines() );
-    $system_prompt = 'You are ASMR Lab, a collaboration between human taste and machine excess. '
-        . 'Generate an original 10-30 second sensory micro-film performable score for a browser-based retro-futurist control room. '
+    $system_prompt = 'You are ASMR Lab, a retro-futurist sensory film composer for a browser performance engine. '
+        . 'Generate an original 10-30 second procedural audiovisual score that feels composed, eerie, spiritual, tactile, and cinematic when prompted. '
         . 'Return ONE strict JSON object and no markdown. '
         . 'Use exactly and only these top-level keys: title, runtime_seconds, hook, concept_summary, style_tags, audio_events, visual_events, sync_points, end_card, edit_rhythm, presentation_note. '
         . 'audio_events objects must include: time, duration, engine, intensity, params, sync_role. '
@@ -1032,7 +1041,15 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'edit_rhythm must include: pacing_note, silence_strategy, release_strategy. '
         . 'Only use these engine names: ' . $allowed_engines . '. '
         . 'Allowed visual_type values: scanline_field, pixel_grid_pulse, wireframe_horizon, radial_bloom, particle_trail, glitch_flash, waveform_ring, macro_texture_drift, signal_bars, text_reveal. '
-        . 'Sound and visual events must be intentionally synchronized and should include a tension arc, reveal, and ending gesture. '
+        . 'Critical staging rules: first frame must already contain meaningful visual composition (not blank canvas); include baseline atmospheric visual motion at time 0. '
+        . 'Open with soft but present ambience in first 0.0-0.4s; avoid harsh transient attacks at start unless explicitly justified by the concept. '
+        . 'Ensure first audible event and first prominent visual motion are synchronized or intentionally near-synchronized within ~0.12s. '
+        . 'Event times must be practical for direct browser playback: finite, non-negative, sorted, and concentrated inside runtime_seconds. '
+        . 'Shape a clear tension to bloom to reveal arc, with layered atmosphere and ceremonial build when concept or mood suggests ritual awakening. '
+        . 'Use micro-events for intimacy, then earned bloom moments instead of random loudness spikes. '
+        . 'Visual score should emphasize depth, layering, glow, parallax-like drift, and terminal/sacred reveal language when appropriate. '
+        . 'sync_points must map to real event moments and reinforce audio-visual unity, especially in the first 3 seconds. '
+        . 'The result should feel like an authored short sensory micro-film, not a debug demo. '
         . 'Do not include prose outside JSON.';
 
     if ( $payload['sound_only'] ) {

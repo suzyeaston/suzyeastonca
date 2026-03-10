@@ -16,8 +16,11 @@
       this.ctx = null;
       this.masterNode = null;
       this.nodes = [];
-      this.activeOscillators = [];
+      this.activeSources = [];
+      this.activeTimers = [];
       this.isPlaying = false;
+      this.lastPreview = null;
+      this.defaultPrerollSeconds = 0.28;
     }
 
     async ensureContext() {
@@ -31,8 +34,10 @@
     }
 
     clearActiveNodes() {
-      this.activeOscillators.forEach((osc) => { try { osc.stop(); } catch (e) {} });
-      this.activeOscillators = [];
+      this.activeTimers.forEach((timer) => window.clearTimeout(timer));
+      this.activeTimers = [];
+      this.activeSources.forEach((source) => { try { source.stop(); } catch (e) {} });
+      this.activeSources = [];
       this.nodes.forEach((node) => { try { node.disconnect(); } catch (e) {} });
       this.nodes = [];
     }
@@ -40,155 +45,236 @@
     stop() {
       this.clearActiveNodes();
       this.isPlaying = false;
+      this.masterNode = null;
+      this.lastPreview = null;
+    }
+
+    normalizeAudioEvents(pkg) {
+      if (!pkg || !Array.isArray(pkg.audio_events)) return [];
+      const runtime = clamp(Number(pkg.runtime_seconds || 20), 10, 30);
+      const maxEdge = runtime + 0.5;
+      return pkg.audio_events
+        .filter((event) => event && ENGINE_NAMES.includes(event.engine))
+        .map((event) => {
+          const time = clamp(Number(event.time || 0), 0, maxEdge);
+          const duration = clamp(Number(event.duration || 0.2), 0.04, 4.5);
+          const intensity = clamp(Number(event.intensity || 0.5), 0, 1);
+          return {
+            time,
+            duration,
+            intensity,
+            engine: event.engine,
+            params: (event.params && typeof event.params === 'object') ? event.params : {},
+            sync_role: String(event.sync_role || '')
+          };
+        })
+        .sort((a, b) => a.time - b.time)
+        .filter((event) => event.time <= maxEdge);
     }
 
     buildMasterChain(ctx, destination) {
       const input = ctx.createGain();
-      input.gain.value = 0.84;
+      input.gain.value = 0.68;
+
+      const preHP = ctx.createBiquadFilter();
+      preHP.type = 'highpass';
+      preHP.frequency.value = 28;
+
+      const toneLP = ctx.createBiquadFilter();
+      toneLP.type = 'lowpass';
+      toneLP.frequency.value = 10400;
+
       const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -22;
-      comp.ratio.value = 4;
-      const lowpass = ctx.createBiquadFilter();
-      lowpass.type = 'lowpass';
-      lowpass.frequency.value = 12000;
+      comp.threshold.value = -26;
+      comp.knee.value = 16;
+      comp.ratio.value = 3.4;
+      comp.attack.value = 0.01;
+      comp.release.value = 0.25;
+
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = -8;
+      limiter.knee.value = 2;
+      limiter.ratio.value = 14;
+      limiter.attack.value = 0.002;
+      limiter.release.value = 0.1;
+
+      const stereo = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      if (stereo) stereo.pan.value = 0;
+
       const convolver = this.makeTinyReverb(ctx);
       const wet = ctx.createGain();
-      wet.gain.value = 0.16;
+      wet.gain.value = 0.2;
       const dry = ctx.createGain();
-      dry.gain.value = 0.84;
-      const bit = this.makeBitCrusherNode(ctx, { bits: 8, normfreq: 0.8 });
+      dry.gain.value = 0.8;
 
-      input.connect(comp);
-      comp.connect(lowpass);
-      lowpass.connect(dry);
-      lowpass.connect(convolver);
+      input.connect(preHP);
+      preHP.connect(toneLP);
+      toneLP.connect(comp);
+      comp.connect(dry);
+      comp.connect(convolver);
       convolver.connect(wet);
-      dry.connect(bit);
-      wet.connect(bit);
-      bit.connect(destination);
-      this.nodes.push(input, comp, lowpass, convolver, wet, dry, bit);
-      return input;
-    }
+      dry.connect(limiter);
+      wet.connect(limiter);
+      if (stereo) {
+        limiter.connect(stereo);
+        stereo.connect(destination);
+      } else {
+        limiter.connect(destination);
+      }
 
-    makeBitCrusherNode(ctx, options) {
-      const bits = options.bits || 8;
-      const normfreq = options.normfreq || 1;
-      const node = ctx.createScriptProcessor(4096, 1, 1);
-      let phaser = 0;
-      let last = 0;
-      const step = Math.pow(0.5, bits);
-      node.onaudioprocess = function (e) {
-        const input = e.inputBuffer.getChannelData(0);
-        const output = e.outputBuffer.getChannelData(0);
-        for (let i = 0; i < input.length; i += 1) {
-          phaser += normfreq;
-          if (phaser >= 1.0) {
-            phaser -= 1.0;
-            last = step * Math.floor(input[i] / step + 0.5);
-          }
-          output[i] = last;
-        }
-      };
-      return node;
+      this.nodes.push(input, preHP, toneLP, comp, limiter, convolver, wet, dry);
+      if (stereo) this.nodes.push(stereo);
+      return input;
     }
 
     makeTinyReverb(ctx) {
       const c = ctx.createConvolver();
-      const length = Math.floor(ctx.sampleRate * 0.6);
+      const length = Math.floor(ctx.sampleRate * 1.1);
       const i = ctx.createBuffer(2, length, ctx.sampleRate);
       for (let ch = 0; ch < 2; ch += 1) {
         const d = i.getChannelData(ch);
-        for (let n = 0; n < length; n += 1) d[n] = (Math.random() * 2 - 1) * Math.pow(1 - n / length, 2.2);
+        for (let n = 0; n < length; n += 1) {
+          const env = Math.pow(1 - n / length, 2.4);
+          d[n] = (Math.random() * 2 - 1) * env * (0.65 + (ch * 0.06));
+        }
       }
       c.buffer = i;
       return c;
     }
 
+    shapeEnvelope(gainParam, start, duration, peak) {
+      const attack = Math.min(0.18, Math.max(0.025, duration * 0.24));
+      const hold = Math.max(0.01, duration * 0.2);
+      const releaseStart = start + attack + hold;
+      gainParam.setValueAtTime(0.0001, start);
+      gainParam.exponentialRampToValueAtTime(Math.max(0.0025, peak), start + attack);
+      gainParam.exponentialRampToValueAtTime(Math.max(0.0015, peak * 0.75), releaseStart);
+      gainParam.exponentialRampToValueAtTime(0.0001, start + duration);
+    }
+
     scheduleTone(ctx, target, start, duration, opts) {
       const osc = ctx.createOscillator();
       osc.type = opts.type || 'sine';
+      const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      const panAmount = clamp(Number(opts.pan || 0), -1, 1);
+      if (pan) pan.pan.setValueAtTime(panAmount, start);
+
       osc.frequency.setValueAtTime(Math.max(20, opts.from || 220), start);
       if (opts.to) osc.frequency.exponentialRampToValueAtTime(Math.max(20, opts.to), start + duration);
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(Math.max(0.001, opts.peak || 0.2), start + Math.min(0.03, duration * 0.2));
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      this.shapeEnvelope(gain.gain, start, duration, opts.peak || 0.1);
+
       osc.connect(gain);
-      gain.connect(target);
+      if (pan) {
+        gain.connect(pan);
+        pan.connect(target);
+      } else {
+        gain.connect(target);
+      }
+
       osc.start(start);
-      osc.stop(start + duration + 0.03);
-      this.activeOscillators.push(osc);
+      osc.stop(start + duration + 0.05);
+      this.activeSources.push(osc);
       this.nodes.push(osc, gain);
+      if (pan) this.nodes.push(pan);
     }
 
     scheduleNoise(ctx, target, start, duration, opts) {
       const buffer = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * duration)), ctx.sampleRate);
       const data = buffer.getChannelData(0);
-      for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
+      for (let i = 0; i < data.length; i += 1) data[i] = (Math.random() * 2 - 1) * (1 - (i / data.length) * 0.2);
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       const filter = ctx.createBiquadFilter();
       filter.type = opts.filterType || 'bandpass';
       filter.frequency.value = opts.freq || 1400;
       filter.Q.value = opts.q || 1;
+      const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      if (pan) pan.pan.value = clamp(Number(opts.pan || 0), -1, 1);
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(Math.max(0.001, opts.peak || 0.12), start + Math.min(0.05, duration * 0.35));
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      this.shapeEnvelope(gain.gain, start, duration, opts.peak || 0.08);
+
       source.connect(filter);
       filter.connect(gain);
-      gain.connect(target);
+      if (pan) {
+        gain.connect(pan);
+        pan.connect(target);
+      } else {
+        gain.connect(target);
+      }
+
       source.start(start);
-      source.stop(start + duration + 0.02);
+      source.stop(start + duration + 0.03);
+      this.activeSources.push(source);
       this.nodes.push(source, filter, gain);
+      if (pan) this.nodes.push(pan);
     }
 
     renderEvent(ctx, destination, event, atTime) {
-      const duration = clamp(Number(event.duration || 0.2), 0.03, 8);
+      const duration = clamp(Number(event.duration || 0.2), 0.04, 8);
       const intensity = clamp(Number(event.intensity || 0.5), 0, 1);
       const p = event.params || {};
 
       switch (event.engine) {
         case 'glissando_rise':
-          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 160, to: p.to || 1280, peak: 0.12 + intensity * 0.2, type: 'sawtooth' });
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 140, to: p.to || 1180, peak: 0.06 + intensity * 0.12, type: 'sawtooth', pan: -0.15 });
           break;
         case 'synth_bloom':
-          this.scheduleTone(ctx, destination, atTime, duration * 0.9, { from: p.from || 280, to: p.to || 520, peak: 0.08 + intensity * 0.15, type: 'triangle' });
-          this.scheduleTone(ctx, destination, atTime + 0.02, duration, { from: (p.from || 280) * 1.5, to: (p.to || 520) * 1.5, peak: 0.05 + intensity * 0.1, type: 'sine' });
+          this.scheduleTone(ctx, destination, atTime, duration * 0.94, { from: p.from || 240, to: p.to || 530, peak: 0.05 + intensity * 0.11, type: 'triangle', pan: 0.14 });
+          this.scheduleTone(ctx, destination, atTime + 0.02, duration, { from: (p.from || 240) * 1.52, to: (p.to || 530) * 1.52, peak: 0.03 + intensity * 0.08, type: 'sine', pan: -0.14 });
           break;
         case 'sub_swell':
-          this.scheduleTone(ctx, destination, atTime, duration, { from: p.freq || 48, to: (p.freq || 48) * 1.08, peak: 0.13 + intensity * 0.2, type: 'sine' });
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.freq || 44, to: (p.freq || 44) * 1.05, peak: 0.08 + intensity * 0.1, type: 'sine' });
           break;
         case 'filtered_noise_wash':
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 2800, q: 0.7, peak: 0.08 + intensity * 0.12, filterType: 'lowpass' });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 2300, q: 0.65, peak: 0.045 + intensity * 0.08, filterType: 'lowpass', pan: 0.24 });
           break;
         case 'ceramic_tick':
-          this.scheduleTone(ctx, destination, atTime, duration * 0.25, { from: p.pitch || 980, to: 360, peak: 0.06 + intensity * 0.12, type: 'triangle' });
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.08, duration * 0.4), { from: p.pitch || 840, to: 300, peak: 0.025 + intensity * 0.05, type: 'triangle', pan: -0.36 });
           break;
         case 'paper_crackle':
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 2100, q: 1.4, peak: 0.05 + intensity * 0.1, filterType: 'highpass' });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 1700, q: 1.2, peak: 0.025 + intensity * 0.05, filterType: 'highpass', pan: -0.2 });
           break;
         case 'steam_hiss':
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 5200, q: 0.5, peak: 0.04 + intensity * 0.1, filterType: 'lowpass' });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 3900, q: 0.55, peak: 0.025 + intensity * 0.05, filterType: 'lowpass', pan: 0.2 });
           break;
         case 'tape_stop_drop':
-          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 280, to: p.to || 35, peak: 0.1 + intensity * 0.13, type: 'square' });
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 220, to: p.to || 32, peak: 0.05 + intensity * 0.09, type: 'square' });
           break;
         case 'bit_pulse':
-          this.scheduleTone(ctx, destination, atTime, duration * 0.2, { from: p.freq || 420, to: p.freq || 420, peak: 0.08 + intensity * 0.1, type: 'square' });
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.08, duration * 0.5), { from: p.freq || 360, to: p.freq || 360, peak: 0.035 + intensity * 0.06, type: 'square', pan: 0.1 });
           break;
         case 'breath_pulse':
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 780, q: 0.9, peak: 0.05 + intensity * 0.1, filterType: 'bandpass' });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 760, q: 0.8, peak: 0.03 + intensity * 0.05, filterType: 'bandpass' });
           break;
         case 'low_hum':
-          this.scheduleTone(ctx, destination, atTime, duration, { from: p.freq || 72, to: p.freq || 72, peak: 0.06 + intensity * 0.16, type: 'sine' });
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.freq || 66, to: p.freq || 66, peak: 0.035 + intensity * 0.08, type: 'sine' });
           break;
         case 'digital_shimmer':
-          this.scheduleTone(ctx, destination, atTime, duration * 0.7, { from: p.from || 1200, to: p.to || 2400, peak: 0.04 + intensity * 0.08, type: 'triangle' });
+          this.scheduleTone(ctx, destination, atTime, duration * 0.8, { from: p.from || 1000, to: p.to || 2280, peak: 0.02 + intensity * 0.05, type: 'triangle', pan: 0.3 });
           break;
         default:
           break;
       }
+    }
+
+    scheduleBed(ctx, destination, startAt, runtime) {
+      const lowHum = {
+        time: 0,
+        duration: Math.max(1.6, runtime * 0.95),
+        intensity: 0.18,
+        engine: 'low_hum',
+        params: { freq: 58 }
+      };
+      const airy = {
+        time: 0.06,
+        duration: Math.max(1.8, runtime * 0.85),
+        intensity: 0.2,
+        engine: 'filtered_noise_wash',
+        params: { freq: 1800 }
+      };
+      this.renderEvent(ctx, destination, lowHum, startAt + lowHum.time);
+      this.renderEvent(ctx, destination, airy, startAt + airy.time);
     }
 
     validateRecipe(pkg) {
@@ -201,51 +287,75 @@
       await this.ensureContext();
       if (!this.validateRecipe(pkg)) throw new Error('Audio package is invalid or uses unsupported engines.');
       this.stop();
-      const now = this.ctx.currentTime + 0.05;
+
+      const events = this.normalizeAudioEvents(pkg);
+      const runtime = clamp(Number(pkg.runtime_seconds || 20), 10, 30);
+      const preroll = this.defaultPrerollSeconds;
+      const now = this.ctx.currentTime;
+      const audioStartAt = now + preroll;
+
       this.masterNode = this.buildMasterChain(this.ctx, this.ctx.destination);
-      pkg.audio_events.forEach((event) => {
-        const timeOffset = Math.max(0, Number(event.time || 0));
-        this.renderEvent(this.ctx, this.masterNode, event, now + timeOffset);
-      });
-      const total = pkg.audio_events.reduce((max, event) => Math.max(max, Number(event.time || 0) + Number(event.duration || 0.2)), 0);
+      this.scheduleBed(this.ctx, this.masterNode, audioStartAt, runtime);
+      events.forEach((event) => this.renderEvent(this.ctx, this.masterNode, event, audioStartAt + event.time));
+
+      const total = Math.max(runtime, events.reduce((max, event) => Math.max(max, event.time + event.duration), runtime));
       this.isPlaying = true;
-      setTimeout(() => { this.isPlaying = false; this.clearActiveNodes(); }, (total + 1.1) * 1000);
-      return { startAt: now, total };
+      const timer = window.setTimeout(() => {
+        this.isPlaying = false;
+        this.clearActiveNodes();
+      }, (total + preroll + 1.2) * 1000);
+      this.activeTimers.push(timer);
+
+      this.lastPreview = { startAt: audioStartAt, preroll, total, runtime };
+      return this.lastPreview;
+    }
+
+    renderToOfflineBuffer(pkg, sampleRate = 48000) {
+      if (!this.validateRecipe(pkg)) throw new Error('Cannot export: invalid audio events.');
+      const events = this.normalizeAudioEvents(pkg);
+      const runtime = clamp(Number(pkg.runtime_seconds || 20), 10, 30);
+      const lengthSec = Math.max(runtime + 1, events.reduce((max, e) => Math.max(max, e.time + e.duration), runtime) + 1);
+      const offline = new OfflineAudioContext(2, Math.ceil(lengthSec * sampleRate), sampleRate);
+      const master = this.buildMasterChain(offline, offline.destination);
+      this.scheduleBed(offline, master, 0, runtime);
+      events.forEach((event) => this.renderEvent(offline, master, event, event.time));
+      return offline.startRendering();
     }
 
     async exportWav(pkg) {
-      if (!this.validateRecipe(pkg)) throw new Error('Cannot export: invalid audio events.');
-      const sr = 44100;
-      const lengthSec = Math.max(2, pkg.audio_events.reduce((max, e) => Math.max(max, Number(e.time || 0) + Number(e.duration || 0.2)), 0) + 1);
-      const offline = new OfflineAudioContext(1, Math.ceil(lengthSec * sr), sr);
-      const master = this.buildMasterChain(offline, offline.destination);
-      pkg.audio_events.forEach((event) => this.renderEvent(offline, master, event, Math.max(0, Number(event.time || 0))));
-      const rendered = await offline.startRendering();
+      const rendered = await this.renderToOfflineBuffer(pkg, 44100);
       return this.audioBufferToWav(rendered);
     }
 
     audioBufferToWav(buffer) {
-      const channelData = buffer.getChannelData(0);
-      const bytes = 44 + channelData.length * 2;
+      const channels = Math.min(2, buffer.numberOfChannels);
+      const length = buffer.length;
+      const bytes = 44 + length * channels * 2;
       const view = new DataView(new ArrayBuffer(bytes));
       const writeString = (o, s) => { for (let i = 0; i < s.length; i += 1) view.setUint8(o + i, s.charCodeAt(i)); };
       writeString(0, 'RIFF');
-      view.setUint32(4, 36 + channelData.length * 2, true);
+      view.setUint32(4, 36 + length * channels * 2, true);
       writeString(8, 'WAVEfmt ');
       view.setUint32(16, 16, true);
       view.setUint16(20, 1, true);
-      view.setUint16(22, 1, true);
+      view.setUint16(22, channels, true);
       view.setUint32(24, buffer.sampleRate, true);
-      view.setUint32(28, buffer.sampleRate * 2, true);
-      view.setUint16(32, 2, true);
+      view.setUint32(28, buffer.sampleRate * channels * 2, true);
+      view.setUint16(32, channels * 2, true);
       view.setUint16(34, 16, true);
       writeString(36, 'data');
-      view.setUint32(40, channelData.length * 2, true);
+      view.setUint32(40, length * channels * 2, true);
+
+      const channelData = [];
+      for (let ch = 0; ch < channels; ch += 1) channelData.push(buffer.getChannelData(ch));
+
       let o = 44;
-      for (let i = 0; i < channelData.length; i += 1) {
-        const s = Math.max(-1, Math.min(1, channelData[i]));
-        view.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-        o += 2;
+      for (let i = 0; i < length; i += 1) {
+        for (let ch = 0; ch < channels; ch += 1) {
+          const s = Math.max(-1, Math.min(1, channelData[ch][i] || 0));
+          view.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+          o += 2;
+        }
       }
       return new Blob([view], { type: 'audio/wav' });
     }
