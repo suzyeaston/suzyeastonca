@@ -15,6 +15,10 @@
     return Math.min(max, Math.max(min, value));
   }
 
+  function hasAnyTag(tags, needles) {
+    return needles.some((needle) => tags.includes(needle));
+  }
+
   class AsmrVisualEngine {
     constructor(canvas) {
       this.canvas = canvas;
@@ -25,6 +29,7 @@
       this.startPerf = 0;
       this.clockOffset = 0;
       this.currentTime = 0;
+      this.lowResTarget = null;
     }
 
     setCanvas(canvas) {
@@ -135,7 +140,53 @@
         visualEvents,
         syncPoints,
         endCard: pkg.end_card || {},
-        title: String(pkg.title || 'ASMR LAB')
+        title: String(pkg.title || 'ASMR LAB'),
+        renderProfile: this.resolveRenderProfile(pkg)
+      };
+    }
+
+    resolveRenderProfile(pkg) {
+      const tags = (Array.isArray(pkg.style_tags) ? pkg.style_tags : []).map((t) => String(t || '').toLowerCase());
+      const pixelMode = hasAnyTag(tags, ['pixel_art', '8bit', 'arcade', 'dither', 'chiptune']);
+      const vancouverCue = hasAnyTag(tags, ['gastown', 'vancouver', 'snow', 'rain', 'fog', 'amber', 'neon', 'brick', 'cobblestone']);
+      const theme = {
+        bgTop: '#02050c',
+        bgMid: '#070d1e',
+        bgBottom: '#050911',
+        fog: [74, 112, 255],
+        particles: [120, 220, 255],
+        core: [176, 228, 255],
+        amber: [255, 196, 118],
+        neonA: [255, 96, 186],
+        neonB: [120, 255, 220]
+      };
+
+      if (hasAnyTag(tags, ['fog', 'snow', 'rain', 'vancouver'])) {
+        theme.bgTop = '#071020';
+        theme.bgMid = '#10243a';
+        theme.bgBottom = '#0a1a29';
+        theme.fog = [122, 170, 215];
+        theme.particles = [186, 220, 255];
+      }
+      if (hasAnyTag(tags, ['gastown', 'amber', 'brick', 'cobblestone'])) {
+        theme.bgMid = '#211a21';
+        theme.bgBottom = '#160f18';
+        theme.amber = [255, 188, 110];
+      }
+      if (hasAnyTag(tags, ['neon', 'arcade', 'chiptune'])) {
+        theme.neonA = [255, 92, 205];
+        theme.neonB = [108, 250, 225];
+      }
+
+      return {
+        pixelMode,
+        vancouverCue,
+        lowResScale: pixelMode ? 6 : 1,
+        paletteSteps: pixelMode ? 12 : 0,
+        orderedDither: pixelMode && hasAnyTag(tags, ['dither', 'pixel_art', '8bit']),
+        scanlines: true,
+        glow: true,
+        theme
       };
     }
 
@@ -193,11 +244,43 @@
       return (t - start) / duration;
     }
 
-    renderToContext(ctx, width, height, t) {
-      if (!ctx || !this.timeline) return;
-      const runtime = this.timeline.runtime;
-      const normalized = clamp(t / Math.max(1, runtime), 0, 1.2);
+    getLowResTarget(width, height, profile) {
+      const scale = Math.max(2, Number(profile.lowResScale || 6));
+      const lowW = Math.max(160, Math.floor(width / scale));
+      const lowH = Math.max(90, Math.floor(height / scale));
+      if (this.lowResTarget && this.lowResTarget.canvas.width === lowW && this.lowResTarget.canvas.height === lowH) {
+        return this.lowResTarget;
+      }
+      this.lowResTarget = this.createRenderTarget(lowW, lowH);
+      return this.lowResTarget;
+    }
 
+    applyPixelPost(ctx, width, height, profile) {
+      const steps = Math.max(2, Number(profile.paletteSteps || 0));
+      if (steps <= 1) return;
+      const image = ctx.getImageData(0, 0, width, height);
+      const data = image.data;
+      const bayer = [
+        [0, 8, 2, 10],
+        [12, 4, 14, 6],
+        [3, 11, 1, 9],
+        [15, 7, 13, 5]
+      ];
+      const ditherOn = !!profile.orderedDither;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const i = (y * width + x) * 4;
+          const threshold = ditherOn ? ((bayer[y % 4][x % 4] / 16) - 0.5) * (255 / steps) : 0;
+          for (let c = 0; c < 3; c += 1) {
+            const v = clamp(data[i + c] + threshold, 0, 255);
+            data[i + c] = Math.round((v / 255) * (steps - 1)) * (255 / (steps - 1));
+          }
+        }
+      }
+      ctx.putImageData(image, 0, 0);
+    }
+
+    drawSceneLayers(ctx, width, height, t, normalized, overlays) {
       this.drawBaseChamber(ctx, width, height, t, normalized);
 
       this.timeline.visualEvents.forEach((event) => {
@@ -208,8 +291,34 @@
       });
 
       this.drawSyncMarkers(ctx, t, width, height);
-      this.drawScanlines(ctx, width, height, normalized);
-      this.drawGlow(ctx, width, height, normalized);
+      if (overlays) {
+        this.drawScanlines(ctx, width, height, normalized);
+        this.drawGlow(ctx, width, height, normalized);
+      }
+    }
+
+    renderToContext(ctx, width, height, t) {
+      if (!ctx || !this.timeline) return;
+      const runtime = this.timeline.runtime;
+      const normalized = clamp(t / Math.max(1, runtime), 0, 1.2);
+      const profile = this.timeline.renderProfile || this.resolveRenderProfile({});
+
+      if (profile.pixelMode) {
+        const lowRes = this.getLowResTarget(width, height, profile);
+        this.drawSceneLayers(lowRes.ctx, lowRes.canvas.width, lowRes.canvas.height, t, normalized, false);
+        this.applyPixelPost(lowRes.ctx, lowRes.canvas.width, lowRes.canvas.height, profile);
+
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(lowRes.canvas, 0, 0, width, height);
+        ctx.restore();
+
+        if (profile.scanlines) this.drawScanlines(ctx, width, height, normalized);
+        if (profile.glow) this.drawGlow(ctx, width, height, normalized);
+      } else {
+        this.drawSceneLayers(ctx, width, height, t, normalized, true);
+      }
 
       if (this.timeline.endCard && this.timeline.endCard.use_end_card && t > runtime - 1.6) {
         const p = Math.max(0, Math.min(1, (t - (runtime - 1.6)) / 1.4));
@@ -218,18 +327,20 @@
     }
 
     drawBaseChamber(ctx, w, h, t, normalized) {
+      const theme = (this.timeline && this.timeline.renderProfile && this.timeline.renderProfile.theme) || {};
       const horizon = h * 0.6;
       const pulse = 0.5 + 0.5 * Math.sin(t * 1.9);
 
       const bg = ctx.createLinearGradient(0, 0, 0, h);
-      bg.addColorStop(0, '#02050c');
-      bg.addColorStop(0.58, '#070d1e');
-      bg.addColorStop(1, '#050911');
+      bg.addColorStop(0, theme.bgTop || '#02050c');
+      bg.addColorStop(0.58, theme.bgMid || '#070d1e');
+      bg.addColorStop(1, theme.bgBottom || '#050911');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, w, h);
 
       const radial = ctx.createRadialGradient(w * 0.52, h * 0.52, 20, w * 0.52, h * 0.54, Math.max(w, h) * 0.72);
-      radial.addColorStop(0, `rgba(74,112,255,${0.1 + pulse * 0.05})`);
+      const fog = theme.fog || [74, 112, 255];
+      radial.addColorStop(0, `rgba(${fog[0]},${fog[1]},${fog[2]},${0.1 + pulse * 0.05})`);
       radial.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = radial;
       ctx.fillRect(0, 0, w, h);
@@ -244,7 +355,8 @@
         ctx.stroke();
       }
 
-      ctx.fillStyle = `rgba(120,220,255,${0.06 + normalized * 0.1})`;
+      const particles = theme.particles || [120, 220, 255];
+      ctx.fillStyle = `rgba(${particles[0]},${particles[1]},${particles[2]},${0.06 + normalized * 0.1})`;
       for (let i = 0; i < 46; i += 1) {
         const x = (i * 53 + t * (8 + (i % 5))) % w;
         const y = (i * 31 + Math.sin(t + i) * 10) % (h * 0.9);
@@ -254,7 +366,8 @@
       const coreX = w * (0.5 + Math.sin(t * 0.13) * 0.02);
       const coreY = h * (0.5 + Math.cos(t * 0.11) * 0.02);
       const core = ctx.createRadialGradient(coreX, coreY, 2, coreX, coreY, h * 0.28);
-      core.addColorStop(0, `rgba(176,228,255,${0.24 + pulse * 0.18})`);
+      const coreColor = theme.core || [176, 228, 255];
+      core.addColorStop(0, `rgba(${coreColor[0]},${coreColor[1]},${coreColor[2]},${0.24 + pulse * 0.18})`);
       core.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = core;
       ctx.fillRect(0, 0, w, h);
@@ -568,7 +681,10 @@
           break;
         }
         case 'neon_wet_reflections': {
-          const colors = ['rgba(90,190,255,', 'rgba(255,96,186,', 'rgba(120,255,220,'];
+          const theme = (this.timeline && this.timeline.renderProfile && this.timeline.renderProfile.theme) || {};
+          const neonA = theme.neonA || [255, 96, 186];
+          const neonB = theme.neonB || [120, 255, 220];
+          const colors = [`rgba(90,190,255,`, `rgba(${neonA[0]},${neonA[1]},${neonA[2]},`, `rgba(${neonB[0]},${neonB[1]},${neonB[2]},`];
           for (let i = 0; i < 12; i += 1) {
             const x = (i * 83 + normalized * 60) % w;
             const alpha = 0.08 + intensity * 0.12;
@@ -619,12 +735,81 @@
     drawEndCard(ctx, endCard, progress, w, h) {
       ctx.fillStyle = `rgba(1,5,15,${0.5 * progress})`;
       ctx.fillRect(0, 0, w, h);
+      const style = String(endCard.reveal_style || '').toLowerCase();
+      const lines = String(endCard.text || 'END SIGNAL').split(/\n/);
+      const lineHeight = Math.max(20, h * 0.045);
+      const originX = w * 0.08;
+      const originY = h * 0.36;
+      const charsToShow = Math.floor(lines.join('\n').length * progress);
+      let shown = 0;
+
       ctx.globalAlpha = progress;
       ctx.fillStyle = '#dcf7ff';
       ctx.shadowColor = 'rgba(120,236,255,0.85)';
-      ctx.shadowBlur = 14;
-      ctx.font = 'bold 34px monospace';
-      ctx.fillText(String(endCard.text || 'END SIGNAL'), w * 0.1, h * 0.52);
+      ctx.shadowBlur = 10;
+      ctx.textBaseline = 'top';
+
+      if (style === 'event_card') {
+        const cardW = w * 0.76;
+        const cardH = h * 0.56;
+        const cardX = w * 0.12;
+        const cardY = h * 0.2;
+        ctx.fillStyle = 'rgba(6,15,28,0.86)';
+        ctx.fillRect(cardX, cardY, cardW, cardH);
+        ctx.strokeStyle = 'rgba(125,220,255,0.75)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cardX, cardY, cardW, cardH);
+
+        const filtered = lines.filter((l) => l.trim().length || l === '');
+        const header = filtered[0] || 'AI FILM CLUB';
+        const meta = filtered[1] || '';
+        const title = filtered[3] || filtered[2] || 'END SIGNAL';
+        const body = filtered.slice(4);
+        let y = cardY + 24;
+        ctx.fillStyle = '#89e6ff';
+        ctx.font = 'bold 26px monospace';
+        ctx.fillText(header, cardX + 24, y);
+        y += lineHeight * 1.1;
+        ctx.fillStyle = '#b8d7ef';
+        ctx.font = '16px monospace';
+        if (meta) ctx.fillText(meta, cardX + 24, y);
+        y += lineHeight * 1.05;
+        ctx.fillStyle = '#f7fcff';
+        ctx.font = 'bold 30px monospace';
+        ctx.fillText(title, cardX + 24, y);
+        y += lineHeight * 1.3;
+        ctx.fillStyle = '#d4ebff';
+        ctx.font = '18px monospace';
+        body.forEach((line) => {
+          if (!line.trim()) {
+            y += lineHeight * 0.45;
+            return;
+          }
+          ctx.fillText(line, cardX + 24, y);
+          y += lineHeight * 0.95;
+        });
+      } else {
+        ctx.font = 'bold 32px monospace';
+        lines.forEach((line, i) => {
+          let out = line;
+          if (style === 'typewriter') {
+            const remain = Math.max(0, charsToShow - shown);
+            out = line.slice(0, remain);
+            shown += line.length + 1;
+          }
+          if (style === 'glitch_wipe') {
+            const wipe = clamp((progress - (i * 0.08)) * 1.8, 0, 1);
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(originX, originY + i * lineHeight, w * 0.86 * wipe, lineHeight + 4);
+            ctx.clip();
+            ctx.fillText(out, originX, originY + i * lineHeight);
+            ctx.restore();
+          } else {
+            ctx.fillText(out, originX, originY + i * lineHeight);
+          }
+        });
+      }
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
     }

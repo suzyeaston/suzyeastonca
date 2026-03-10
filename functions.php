@@ -928,6 +928,14 @@ function se_get_asmr_semantic_cues( $payload ) {
         'brick' => array( 'brick' ),
         'neon reflection' => array( 'neon', 'wet_reflection' ),
         'winter hush' => array( 'winter_hush', 'snow' ),
+        '8-bit' => array( 'pixel_art', 'arcade' ),
+        '8bit' => array( 'pixel_art', 'arcade' ),
+        'pixel art' => array( 'pixel_art', 'dither' ),
+        'pixel' => array( 'pixel_art' ),
+        'dither' => array( 'dither' ),
+        'arcade' => array( 'arcade' ),
+        'chiptune' => array( 'arcade' ),
+        'sprite' => array( 'pixel_art' ),
         'spiritual' => array( 'spiritual' ),
         'reverent' => array( 'spiritual' ),
         'haunted' => array( 'haunted' ),
@@ -1004,9 +1012,23 @@ function se_apply_asmr_semantic_cues( $decoded, $payload ) {
         $audio[] = array( 'time' => 0.05, 'duration' => min( 8, $runtime * 0.6 ), 'engine' => 'city_electrical_hum', 'intensity' => 0.35, 'params' => array(), 'sync_role' => 'city_grid_bed' );
     }
 
-    if ( in_array( 'haunted', $cues, true ) || in_array( 'spiritual', $cues, true ) ) {
-        $audio[] = array( 'time' => $runtime * 0.74, 'duration' => 1.3, 'engine' => 'distant_bell_toll', 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'reverent_release' );
-        $visual[] = array( 'time' => $runtime * 0.78, 'duration' => 1.6, 'visual_type' => 'clock_face_reveal', 'intensity' => 0.44, 'params' => array(), 'sync_role' => 'haunted_reveal' );
+    if ( in_array( 'pixel_art', $cues, true ) || in_array( 'dither', $cues, true ) || in_array( 'arcade', $cues, true ) ) {
+        $visual[] = array( 'time' => 0.08, 'duration' => min( 3.8, $runtime * 0.24 ), 'visual_type' => 'pixel_grid_pulse', 'intensity' => 0.72, 'params' => array(), 'sync_role' => 'pixel_language_early' );
+        $visual[] = array( 'time' => 0.16, 'duration' => min( 4.2, $runtime * 0.28 ), 'visual_type' => 'scanline_field', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'pixel_scan_early' );
+        $visual[] = array( 'time' => 0.3, 'duration' => min( 3.4, $runtime * 0.22 ), 'visual_type' => 'signal_bars', 'intensity' => 0.56, 'params' => array(), 'sync_role' => 'arcade_signal_early' );
+    }
+
+    $source = strtolower( implode( ' ', array(
+        (string) ( $payload['concept'] ?? '' ),
+        (string) ( $payload['object'] ?? '' ),
+        (string) ( $payload['setting'] ?? '' ),
+        (string) ( $payload['mood'] ?? '' ),
+        (string) ( $payload['creative_goal'] ?? '' ),
+    ) ) );
+    if ( false !== strpos( $source, 'event card' ) || false !== strpos( $source, 'screening' ) || false !== strpos( $source, 'film club' ) || false !== strpos( $source, 'deadline' ) ) {
+        $end_card = is_array( $decoded['end_card'] ?? null ) ? $decoded['end_card'] : array();
+        $end_card['reveal_style'] = 'event_card';
+        $decoded['end_card'] = $end_card;
     }
 
     $sync[] = array( 'time' => 0.55, 'cue' => 'semantic place identity enters', 'importance' => 'high' );
@@ -1246,7 +1268,7 @@ function se_validate_asmr_response( $decoded ) {
     $end_card = is_array( $decoded['end_card'] ?? null ) ? $decoded['end_card'] : array();
     $decoded['end_card'] = array(
         'use_end_card' => ! empty( $end_card['use_end_card'] ),
-        'text' => sanitize_text_field( $end_card['text'] ?? '' ),
+        'text' => sanitize_textarea_field( $end_card['text'] ?? '' ),
         'reveal_style' => sanitize_text_field( $end_card['reveal_style'] ?? '' ),
     );
 
