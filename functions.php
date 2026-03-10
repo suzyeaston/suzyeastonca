@@ -870,7 +870,128 @@ function se_get_asmr_allowed_engines() {
         'bit_pulse',
         'low_hum',
         'digital_shimmer',
+        'glass_ping',
+        'glass_resonance',
+        'relay_click_cluster',
+        'shimmer_swirl',
+        'crystal_chime',
+        'ghost_pad',
+        'spectral_suck',
+        'voltage_flutter',
+        'halo_tone',
+        'particle_spark',
+        'ritual_bass_swell',
+        'reverse_bloom',
     );
+}
+
+function se_enrich_asmr_event_density( $decoded ) {
+    $runtime = max( 10, min( 30, floatval( $decoded['runtime_seconds'] ?? 20 ) ) );
+
+    $visual_events = is_array( $decoded['visual_events'] ?? null ) ? $decoded['visual_events'] : array();
+    $audio_events  = is_array( $decoded['audio_events'] ?? null ) ? $decoded['audio_events'] : array();
+
+    if ( empty( $visual_events ) || ( $visual_events[0]['time'] ?? 99 ) > 0.12 ) {
+        $visual_events[] = array(
+            'time' => 0,
+            'duration' => min( 6.5, $runtime * 0.42 ),
+            'visual_type' => 'volumetric_fog',
+            'intensity' => 0.45,
+            'params' => array( 'drift' => 0.35 ),
+            'sync_role' => 'opening_atmosphere',
+        );
+    }
+
+    $needs_early = true;
+    foreach ( $visual_events as $event ) {
+        if ( ( $event['time'] ?? 99 ) <= 0.8 && ( $event['intensity'] ?? 0 ) >= 0.32 ) {
+            $needs_early = false;
+            break;
+        }
+    }
+    if ( $needs_early ) {
+        $visual_events[] = array(
+            'time' => 0.46,
+            'duration' => 1.35,
+            'visual_type' => 'pulse_orb',
+            'intensity' => 0.56,
+            'params' => array(),
+            'sync_role' => 'early_reveal',
+        );
+    }
+
+    $min_visual_count = max( 8, (int) ceil( $runtime * 0.7 ) );
+    $seed_types = array( 'chromatic_veil', 'starfield_drift', 'refraction_ripple', 'halo_glyphs' );
+    while ( count( $visual_events ) < $min_visual_count ) {
+        $idx = count( $visual_events );
+        $visual_events[] = array(
+            'time' => min( $runtime - 0.15, 0.2 + ( $idx * ( $runtime / ( $min_visual_count + 1 ) ) ) ),
+            'duration' => 0.9 + ( ( $idx % 3 ) * 0.45 ),
+            'visual_type' => $seed_types[ $idx % count( $seed_types ) ],
+            'intensity' => 0.22 + ( ( $idx % 4 ) * 0.08 ),
+            'params' => array(),
+            'sync_role' => 'support_layer',
+        );
+    }
+
+    usort( $visual_events, static function( $a, $b ) {
+        return ( $a['time'] <=> $b['time'] );
+    } );
+
+    $max_gap = max( 2.6, $runtime * 0.2 );
+    $patched_visuals = array();
+    $prev_time = 0;
+    foreach ( $visual_events as $event ) {
+        $time = floatval( $event['time'] ?? 0 );
+        if ( $time - $prev_time > $max_gap ) {
+            $patched_visuals[] = array(
+                'time' => $prev_time + ( $max_gap * 0.48 ),
+                'duration' => min( 2.8, max( 1.1, $max_gap * 0.6 ) ),
+                'visual_type' => 'volumetric_fog',
+                'intensity' => 0.24,
+                'params' => array(),
+                'sync_role' => 'bridge_motion',
+            );
+        }
+        $patched_visuals[] = $event;
+        $prev_time = $time;
+    }
+    $visual_events = $patched_visuals;
+
+    if ( empty( $audio_events ) || ( $audio_events[0]['time'] ?? 99 ) > 0.24 ) {
+        $audio_events[] = array(
+            'time' => 0,
+            'duration' => min( 4.5, $runtime * 0.3 ),
+            'engine' => 'ghost_pad',
+            'intensity' => 0.24,
+            'params' => array( 'from' => 140, 'to' => 188 ),
+            'sync_role' => 'ambient_lead_in',
+        );
+    }
+
+    $min_audio_count = max( 7, (int) ceil( $runtime * 0.42 ) );
+    while ( count( $audio_events ) < $min_audio_count ) {
+        $idx = count( $audio_events );
+        $audio_events[] = array(
+            'time' => min( $runtime - 0.12, 0.3 + ( $idx * ( $runtime / ( $min_audio_count + 2 ) ) ) ),
+            'duration' => 0.3 + ( ( $idx % 4 ) * 0.18 ),
+            'engine' => ( 0 === $idx % 2 ) ? 'shimmer_swirl' : 'particle_spark',
+            'intensity' => 0.18 + ( ( $idx % 5 ) * 0.06 ),
+            'params' => array(),
+            'sync_role' => 'support_texture',
+        );
+    }
+
+    usort( $visual_events, static function( $a, $b ) {
+        return ( $a['time'] <=> $b['time'] );
+    } );
+    usort( $audio_events, static function( $a, $b ) {
+        return ( $a['time'] <=> $b['time'] );
+    } );
+
+    $decoded['visual_events'] = $visual_events;
+    $decoded['audio_events']  = $audio_events;
+    return $decoded;
 }
 
 function se_extract_json_object( $raw ) {
@@ -950,6 +1071,9 @@ function se_validate_asmr_response( $decoded ) {
     $visual_allowed = array(
         'scanline_field', 'pixel_grid_pulse', 'wireframe_horizon', 'radial_bloom', 'particle_trail',
         'glitch_flash', 'waveform_ring', 'macro_texture_drift', 'signal_bars', 'text_reveal',
+        'volumetric_fog', 'glass_refraction', 'halo_glyphs', 'cathedral_beam', 'monolith_silhouette',
+        'starfield_drift', 'orbiting_shards', 'pulse_orb', 'energy_column', 'refraction_ripple',
+        'chromatic_veil', 'terminal_runes',
     );
     $visual_events = is_array( $decoded['visual_events'] ?? null ) ? $decoded['visual_events'] : array();
     $decoded['visual_events'] = array_values( array_filter( array_map( static function( $event ) use ( $visual_allowed ) {
@@ -1004,7 +1128,7 @@ function se_validate_asmr_response( $decoded ) {
 
     $decoded['presentation_note'] = sanitize_text_field( $decoded['presentation_note'] ?? '' );
 
-    return $decoded;
+    return se_enrich_asmr_event_density( $decoded );
 }
 
 function se_handle_asmr_generate( WP_REST_Request $req ) {
@@ -1040,14 +1164,17 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'end_card must include: use_end_card, text, reveal_style. '
         . 'edit_rhythm must include: pacing_note, silence_strategy, release_strategy. '
         . 'Only use these engine names: ' . $allowed_engines . '. '
-        . 'Allowed visual_type values: scanline_field, pixel_grid_pulse, wireframe_horizon, radial_bloom, particle_trail, glitch_flash, waveform_ring, macro_texture_drift, signal_bars, text_reveal. '
-        . 'Critical staging rules: first frame must already contain meaningful visual composition (not blank canvas); include baseline atmospheric visual motion at time 0. '
+        . 'Allowed visual_type values: scanline_field, pixel_grid_pulse, wireframe_horizon, radial_bloom, particle_trail, glitch_flash, waveform_ring, macro_texture_drift, signal_bars, text_reveal, volumetric_fog, glass_refraction, halo_glyphs, cathedral_beam, monolith_silhouette, starfield_drift, orbiting_shards, pulse_orb, energy_column, refraction_ripple, chromatic_veil, terminal_runes. '
+        . 'Critical visual pacing rules: first frame must show a layered chamber state (background + atmosphere + focal hint). Include meaningful opening visual event in 0.0-0.8s and at least one clear focal event in 0.8-2.0s. '
+        . 'Do not back-load all action: craft a textured midsection with evolving layers, at least one pre-climax escalation in the middle third, and at least one bloom/reveal in the final third. '
+        . 'Visual event score should be dense but intentional, with practical browser-safe durations and avoid micro-spam faster than 0.05s. '
+        . 'Audio direction: prioritize eerie depth, layered atmospheres, tactile details, ritual/spiritual/cyber-sacred motion, softened onset, and a stronger buildup into bloom instead of blunt starts. '
         . 'Open with soft but present ambience in first 0.0-0.4s; avoid harsh transient attacks at start unless explicitly justified by the concept. '
-        . 'Ensure first audible event and first prominent visual motion are synchronized or intentionally near-synchronized within ~0.12s. '
+        . 'Ensure first audible event and first prominent visual motion are synchronized or intentionally near-synchronized within ~0.12s; provide strong audiovisual coupling in first 5 seconds. '
         . 'Event times must be practical for direct browser playback: finite, non-negative, sorted, and concentrated inside runtime_seconds. '
         . 'Shape a clear tension to bloom to reveal arc, with layered atmosphere and ceremonial build when concept or mood suggests ritual awakening. '
         . 'Use micro-events for intimacy, then earned bloom moments instead of random loudness spikes. '
-        . 'Visual score should emphasize depth, layering, glow, parallax-like drift, and terminal/sacred reveal language when appropriate. '
+        . 'Visual score should emphasize atmospheric symbolic language, depth, compositional foreground/midground/background layering, glow, parallax-like drift, and terminal/sacred reveal language when appropriate. '
         . 'sync_points must map to real event moments and reinforce audio-visual unity, especially in the first 3 seconds. '
         . 'The result should feel like an authored short sensory micro-film, not a debug demo. '
         . 'Do not include prose outside JSON.';

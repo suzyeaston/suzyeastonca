@@ -3,7 +3,10 @@
 
   const VISUAL_TYPES = [
     'scanline_field', 'pixel_grid_pulse', 'wireframe_horizon', 'radial_bloom', 'particle_trail',
-    'glitch_flash', 'waveform_ring', 'macro_texture_drift', 'signal_bars', 'text_reveal'
+    'glitch_flash', 'waveform_ring', 'macro_texture_drift', 'signal_bars', 'text_reveal',
+    'volumetric_fog', 'glass_refraction', 'halo_glyphs', 'cathedral_beam', 'monolith_silhouette',
+    'starfield_drift', 'orbiting_shards', 'pulse_orb', 'energy_column', 'refraction_ripple',
+    'chromatic_veil', 'terminal_runes'
   ];
 
   function clamp(value, min, max) {
@@ -45,10 +48,69 @@
       return { canvas: c, ctx };
     }
 
+
+
+    enrichVisualEvents(events, runtime, syncPoints) {
+      const out = Array.isArray(events) ? events.slice() : [];
+      if (!out.length || Number(out[0].time || 99) > 0.12) {
+        out.unshift({ time: 0, duration: Math.min(6, runtime * 0.42), visual_type: 'volumetric_fog', intensity: 0.46, params: {}, sync_role: 'opening_atmosphere' });
+      }
+
+      const hasEarly = out.some((e) => Number(e.time || 99) <= 0.8 && Number(e.intensity || 0) >= 0.3);
+      if (!hasEarly) out.push({ time: 0.52, duration: 1.3, visual_type: 'pulse_orb', intensity: 0.58, params: {}, sync_role: 'early_focal' });
+
+      const hasMiddleEsc = out.some((e) => e.time >= runtime * 0.3 && e.time <= runtime * 0.66 && e.intensity >= 0.58);
+      if (!hasMiddleEsc) out.push({ time: runtime * 0.52, duration: 1.4, visual_type: 'energy_column', intensity: 0.64, params: {}, sync_role: 'mid_escalation' });
+
+      const hasFinalBloom = out.some((e) => e.time >= runtime * 0.66 && ['radial_bloom','glass_refraction','chromatic_veil','terminal_runes'].includes(e.visual_type));
+      if (!hasFinalBloom) out.push({ time: runtime * 0.82, duration: 1.5, visual_type: 'glass_refraction', intensity: 0.72, params: {}, sync_role: 'final_bloom' });
+
+      const minEvents = Math.max(9, Math.ceil(runtime * 0.72));
+      const support = ['chromatic_veil', 'starfield_drift', 'refraction_ripple', 'halo_glyphs', 'orbiting_shards'];
+      while (out.length < minEvents) {
+        const i = out.length;
+        out.push({
+          time: clamp(0.2 + i * (runtime / (minEvents + 1)), 0, runtime - 0.1),
+          duration: 0.9 + (i % 4) * 0.34,
+          visual_type: support[i % support.length],
+          intensity: 0.24 + (i % 5) * 0.07,
+          params: {},
+          sync_role: 'support_layer'
+        });
+      }
+
+      syncPoints.forEach((point, i) => {
+        const t = Number(point.time || 0);
+        if (t <= 0.04 || t >= runtime) return;
+        out.push({
+          time: t,
+          duration: 0.45 + (i % 2) * 0.18,
+          visual_type: (i % 2 === 0) ? 'refraction_ripple' : 'pulse_orb',
+          intensity: 0.35 + (i % 3) * 0.12,
+          params: {},
+          sync_role: 'sync_accent'
+        });
+      });
+
+      out.sort((a, b) => a.time - b.time);
+      const maxGap = Math.max(2.4, runtime * 0.2);
+      const withBridges = [];
+      let prev = 0;
+      out.forEach((e) => {
+        if (e.time - prev > maxGap) {
+          withBridges.push({ time: prev + maxGap * 0.5, duration: 1.4, visual_type: 'volumetric_fog', intensity: 0.22, params: {}, sync_role: 'bridge_motion' });
+        }
+        withBridges.push(e);
+        prev = e.time;
+      });
+
+      return withBridges.sort((a, b) => a.time - b.time);
+    }
+
     normalizeVisualTimeline(pkg) {
       const runtime = clamp(Number(pkg.runtime_seconds || 20), 10, 30);
       const events = Array.isArray(pkg.visual_events) ? pkg.visual_events : [];
-      const visualEvents = events
+      let visualEvents = events
         .filter((e) => e && VISUAL_TYPES.includes(e.visual_type))
         .map((e) => ({
           time: clamp(Number(e.time || 0), 0, runtime + 0.5),
@@ -63,6 +125,8 @@
       const syncPoints = Array.isArray(pkg.sync_points) ? pkg.sync_points
         .map((p) => ({ time: clamp(Number(p.time || 0), 0, runtime + 0.5), cue: String(p.cue || ''), importance: String(p.importance || '') }))
         .sort((a, b) => a.time - b.time) : [];
+
+      visualEvents = this.enrichVisualEvents(visualEvents, runtime, syncPoints);
 
       return {
         runtime,
@@ -184,6 +248,14 @@
         const y = (i * 31 + Math.sin(t + i) * 10) % (h * 0.9);
         ctx.fillRect(x, y, 1.6, 1.6);
       }
+
+      const coreX = w * (0.5 + Math.sin(t * 0.13) * 0.02);
+      const coreY = h * (0.5 + Math.cos(t * 0.11) * 0.02);
+      const core = ctx.createRadialGradient(coreX, coreY, 2, coreX, coreY, h * 0.28);
+      core.addColorStop(0, `rgba(176,228,255,${0.24 + pulse * 0.18})`);
+      core.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = core;
+      ctx.fillRect(0, 0, w, h);
     }
 
     render(t) {
@@ -295,6 +367,123 @@
           ctx.font = 'bold 30px monospace';
           ctx.fillText(txt, Math.max(18, w * 0.09), h * 0.5);
           ctx.restore();
+          break;
+        }
+        case 'volumetric_fog': {
+          ctx.fillStyle = `rgba(120,170,255,${0.04 + intensity * 0.08})`;
+          for (let i = 0; i < 22; i += 1) {
+            const x = (i * 63 + normalized * 180 + Math.sin(i + normalized * 7) * 40) % w;
+            const y = (i * 29 + normalized * 90) % h;
+            ctx.fillRect(x, y, 140, 12);
+          }
+          break;
+        }
+        case 'glass_refraction': {
+          ctx.strokeStyle = `rgba(182,236,255,${0.14 + intensity * 0.22})`;
+          ctx.lineWidth = 1.2 + intensity * 1.6;
+          for (let i = 0; i < 8; i += 1) {
+            const yy = h * (0.15 + i * 0.1) + Math.sin(normalized * 8 + i) * 10;
+            ctx.beginPath();
+            ctx.moveTo(w * 0.12, yy);
+            ctx.bezierCurveTo(w * 0.3, yy - 20, w * 0.7, yy + 20, w * 0.88, yy);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'halo_glyphs': {
+          ctx.strokeStyle = `rgba(158,255,238,${0.18 + intensity * 0.26})`;
+          for (let i = 0; i < 6; i += 1) {
+            const r = 38 + i * 22 + Math.sin(normalized * 9 + i) * 6;
+            ctx.beginPath();
+            ctx.arc(w * 0.5, h * 0.5, r, normalized + i, normalized + i + Math.PI * 0.9);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'cathedral_beam': {
+          const beamW = 40 + intensity * 110;
+          const gx = w * 0.5 + Math.sin(normalized * 2.6) * (w * 0.08);
+          const g = ctx.createLinearGradient(gx, h * 0.05, gx, h * 0.92);
+          g.addColorStop(0, `rgba(180,230,255,${0.24 + intensity * 0.24})`);
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(gx - beamW * 0.5, h * 0.05, beamW, h * 0.9);
+          break;
+        }
+        case 'monolith_silhouette': {
+          ctx.fillStyle = `rgba(6,10,18,${0.6 + intensity * 0.3})`;
+          const mw = w * 0.16;
+          const mh = h * 0.52;
+          ctx.fillRect(w * 0.5 - mw * 0.5, h * 0.5 - mh * 0.42, mw, mh);
+          break;
+        }
+        case 'starfield_drift': {
+          ctx.fillStyle = `rgba(186,232,255,${0.2 + intensity * 0.2})`;
+          for (let i = 0; i < 46; i += 1) {
+            const x = (i * 47 + normalized * 140 + Math.sin(i * 2.2) * 18) % w;
+            const y = (i * 31 + normalized * 40) % h;
+            ctx.fillRect(x, y, 1.4, 1.4);
+          }
+          break;
+        }
+        case 'orbiting_shards': {
+          for (let i = 0; i < 7; i += 1) {
+            const a = normalized * 4 + i * (Math.PI * 2 / 7);
+            const r = 90 + i * 18 + Math.sin(normalized * 8 + i) * 10;
+            const x = w * 0.5 + Math.cos(a) * r;
+            const y = h * 0.5 + Math.sin(a) * (r * 0.6);
+            ctx.fillStyle = `rgba(146,220,255,${0.14 + intensity * 0.22})`;
+            ctx.fillRect(x, y, 8, 2);
+          }
+          break;
+        }
+        case 'pulse_orb': {
+          const r = 28 + Math.sin(p * Math.PI) * (130 + intensity * 120);
+          const g = ctx.createRadialGradient(w * 0.5, h * 0.5, 1, w * 0.5, h * 0.5, r);
+          g.addColorStop(0, `rgba(214,248,255,${0.28 + intensity * 0.3})`);
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(w * 0.5, h * 0.5, r, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'energy_column': {
+          const cx = w * (0.5 + Math.sin(normalized * 1.6) * 0.08);
+          ctx.fillStyle = `rgba(128,255,220,${0.07 + intensity * 0.16})`;
+          ctx.fillRect(cx - 22, h * 0.14, 44, h * 0.72);
+          ctx.strokeStyle = `rgba(178,255,236,${0.18 + intensity * 0.24})`;
+          ctx.strokeRect(cx - 14, h * 0.2, 28, h * 0.58);
+          break;
+        }
+        case 'refraction_ripple': {
+          ctx.strokeStyle = `rgba(162,224,255,${0.12 + intensity * 0.2})`;
+          for (let i = 0; i < 5; i += 1) {
+            ctx.beginPath();
+            const rr = 26 + i * 36 + p * 120;
+            ctx.ellipse(w * 0.5, h * 0.5, rr, rr * 0.6, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'chromatic_veil': {
+          const veil = ctx.createLinearGradient(0, 0, w, h);
+          veil.addColorStop(0, `rgba(120,140,255,${0.08 + intensity * 0.08})`);
+          veil.addColorStop(0.5, `rgba(120,255,220,${0.04 + intensity * 0.08})`);
+          veil.addColorStop(1, `rgba(255,120,180,${0.04 + intensity * 0.07})`);
+          ctx.fillStyle = veil;
+          ctx.fillRect(0, 0, w, h);
+          break;
+        }
+        case 'terminal_runes': {
+          const rows = 8;
+          ctx.fillStyle = `rgba(168,255,220,${0.2 + intensity * 0.3})`;
+          ctx.font = '16px monospace';
+          for (let i = 0; i < rows; i += 1) {
+            const yy = h * 0.2 + i * 26;
+            const txt = ['∆','⟟','⌁','⟡','⋄','⟢'][i % 6] + ' SIGNAL-' + (i + 1);
+            ctx.fillText(txt, w * 0.12 + Math.sin(normalized * 6 + i) * 12, yy);
+          }
           break;
         }
         default:
