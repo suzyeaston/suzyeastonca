@@ -8,7 +8,12 @@
     'starfield_drift', 'orbiting_shards', 'pulse_orb', 'energy_column', 'refraction_ripple',
     'chromatic_veil', 'terminal_runes', 'snow_drift', 'amber_halo', 'wet_reflection_shimmer',
     'brick_shadow_drift', 'steam_plume_column', 'clock_face_reveal', 'harbor_mist',
-    'neon_wet_reflections', 'winter_particulate_depth'
+    'neon_wet_reflections', 'winter_particulate_depth',
+    'gastown_clock_silhouette', 'cobblestone_perspective', 'brick_wall_parallax', 'streetlamp_halo_row',
+    'granville_neon_marquee', 'neon_sign_flicker', 'traffic_light_glow',
+    'skytrain_track', 'skytrain_pass_visual',
+    'northshore_mountain_ridge', 'mountain_mist_layers',
+    'rain_streaks', 'puddle_reflections'
   ];
 
   function clamp(value, min, max) {
@@ -148,7 +153,7 @@
     resolveRenderProfile(pkg) {
       const tags = (Array.isArray(pkg.style_tags) ? pkg.style_tags : []).map((t) => String(t || '').toLowerCase());
       const pixelMode = hasAnyTag(tags, ['pixel_art', '8bit', 'arcade', 'dither', 'chiptune']);
-      const vancouverCue = hasAnyTag(tags, ['gastown', 'vancouver', 'snow', 'rain', 'fog', 'amber', 'neon', 'brick', 'cobblestone']);
+      const vancouverCue = hasAnyTag(tags, ['gastown', 'granville', 'north_shore', 'vancouver', 'snow', 'rain', 'fog', 'amber', 'neon', 'brick', 'cobblestone', 'mountains']);
       const theme = {
         bgTop: '#02050c',
         bgMid: '#070d1e',
@@ -173,7 +178,7 @@
         theme.bgBottom = '#160f18';
         theme.amber = [255, 188, 110];
       }
-      if (hasAnyTag(tags, ['neon', 'arcade', 'chiptune'])) {
+      if (hasAnyTag(tags, ['neon', 'arcade', 'chiptune', 'granville'])) {
         theme.neonA = [255, 92, 205];
         theme.neonB = [108, 250, 225];
       }
@@ -181,6 +186,7 @@
       return {
         pixelMode,
         vancouverCue,
+        tags,
         lowResScale: pixelMode ? 6 : 1,
         paletteSteps: pixelMode ? 12 : 0,
         orderedDither: pixelMode && hasAnyTag(tags, ['dither', 'pixel_art', '8bit']),
@@ -365,6 +371,16 @@
 
       const coreX = w * (0.5 + Math.sin(t * 0.13) * 0.02);
       const coreY = h * (0.5 + Math.cos(t * 0.11) * 0.02);
+
+      const tags = (this.timeline && this.timeline.renderProfile && this.timeline.renderProfile.tags) || [];
+      if (tags.includes('gastown') && t <= 0.6) {
+        this.drawEvent(ctx, { visual_type: 'gastown_clock_silhouette', params: {}, intensity: 0.26 }, 0.25, 0.26, w, h, normalized);
+      } else if (tags.includes('granville') && t <= 0.6) {
+        this.drawEvent(ctx, { visual_type: 'granville_neon_marquee', params: {}, intensity: 0.24 }, 0.25, 0.24, w, h, normalized);
+      } else if (tags.includes('north_shore') && t <= 0.6) {
+        this.drawEvent(ctx, { visual_type: 'northshore_mountain_ridge', params: {}, intensity: 0.28 }, 0.25, 0.28, w, h, normalized);
+      }
+
       const core = ctx.createRadialGradient(coreX, coreY, 2, coreX, coreY, h * 0.28);
       const coreColor = theme.core || [176, 228, 255];
       core.addColorStop(0, `rgba(${coreColor[0]},${coreColor[1]},${coreColor[2]},${0.24 + pulse * 0.18})`);
@@ -693,6 +709,124 @@
           }
           break;
         }
+
+        case 'gastown_clock_silhouette': {
+          const cx = w * 0.52;
+          const baseY = h * 0.72;
+          ctx.fillStyle = `rgba(34,24,22,${0.25 + intensity * 0.45})`;
+          ctx.fillRect(cx - 60, baseY, 120, h * 0.2);
+          ctx.fillRect(cx - 24, h * 0.36, 48, h * 0.36);
+          ctx.beginPath();
+          ctx.arc(cx, h * 0.33, 52, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(cx - 86, h * 0.5, 12, h * 0.22);
+          ctx.fillRect(cx + 74, h * 0.5, 12, h * 0.22);
+          const halo = ctx.createRadialGradient(cx, h * 0.33, 10, cx, h * 0.33, 140);
+          halo.addColorStop(0, `rgba(255,190,120,${0.22 + intensity * 0.2})`);
+          halo.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = halo;
+          ctx.fillRect(cx - 150, h * 0.16, 300, 300);
+          break;
+        }
+        case 'cobblestone_perspective': {
+          ctx.strokeStyle = `rgba(148,170,188,${0.12 + intensity * 0.2})`;
+          for (let row = 0; row < 10; row += 1) {
+            const y = h * 0.62 + row * (h * 0.038);
+            const count = 6 + row;
+            for (let i = 0; i < count; i += 1) {
+              const ww = w / count;
+              const x = i * ww + ((row % 2) * ww * 0.5);
+              ctx.strokeRect(x, y, ww - 4, h * 0.03);
+            }
+          }
+          break;
+        }
+        case 'brick_wall_parallax': {
+          ctx.fillStyle = `rgba(88,52,44,${0.14 + intensity * 0.2})`;
+          for (let y = 0; y < h * 0.6; y += 18) {
+            for (let x = 0; x < w * 0.22; x += 36) ctx.fillRect(x + Math.sin(normalized * 4 + y * 0.02) * 2, y, 34, 16);
+            for (let x = w * 0.78; x < w; x += 36) ctx.fillRect(x - Math.sin(normalized * 4 + y * 0.02) * 2, y, 34, 16);
+          }
+          break;
+        }
+        case 'streetlamp_halo_row': {
+          for (let i = 0; i < 4; i += 1) {
+            const lx = w * (0.14 + i * 0.22);
+            const ly = h * 0.26;
+            const glow = ctx.createRadialGradient(lx, ly, 2, lx, ly, 90);
+            glow.addColorStop(0, `rgba(255,196,128,${0.24 + intensity * 0.2})`);
+            glow.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(lx - 90, ly - 90, 180, 180);
+          }
+          break;
+        }
+        case 'granville_neon_marquee': {
+          const neon = (this.timeline.renderProfile.theme.neonA || [255, 96, 186]);
+          ctx.fillStyle = `rgba(${neon[0]},${neon[1]},${neon[2]},${0.22 + intensity * 0.26})`;
+          ctx.fillRect(w * 0.6, h * 0.1, w * 0.08, h * 0.6);
+          ctx.fillRect(w * 0.24, h * 0.2, w * 0.05, h * 0.42);
+          break;
+        }
+        case 'neon_sign_flicker': {
+          const flick = (Math.sin(normalized * 45) > 0.2) ? 1 : 0.35;
+          ctx.fillStyle = `rgba(110,255,230,${(0.16 + intensity * 0.2) * flick})`;
+          for (let i = 0; i < 6; i += 1) ctx.fillRect(w * 0.18 + i * 60, h * 0.22 + (i % 2) * 24, 44, 8);
+          break;
+        }
+        case 'traffic_light_glow': {
+          const x = w * 0.82;
+          const ys = [h * 0.24, h * 0.3, h * 0.36];
+          const cols = ['255,60,60', '255,220,90', '90,255,130'];
+          ys.forEach((y, i) => { const g = ctx.createRadialGradient(x, y, 2, x, y, 30); g.addColorStop(0, `rgba(${cols[i]},${0.2 + intensity * 0.2})`); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(x - 32, y - 32, 64, 64); });
+          break;
+        }
+        case 'skytrain_track': {
+          ctx.strokeStyle = `rgba(160,190,220,${0.16 + intensity * 0.2})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.moveTo(0, h * 0.44); ctx.lineTo(w, h * 0.44); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, h * 0.47); ctx.lineTo(w, h * 0.47); ctx.stroke();
+          break;
+        }
+        case 'skytrain_pass_visual': {
+          const x = ((normalized * 1.4) % 1.2) * w - w * 0.2;
+          ctx.fillStyle = `rgba(190,215,236,${0.2 + intensity * 0.24})`;
+          ctx.fillRect(x, h * 0.38, w * 0.22, h * 0.08);
+          for (let i = 0; i < 7; i += 1) ctx.clearRect(x + 8 + i * 28, h * 0.4, 18, h * 0.03);
+          break;
+        }
+        case 'northshore_mountain_ridge': {
+          ctx.fillStyle = `rgba(40,62,86,${0.24 + intensity * 0.28})`;
+          ctx.beginPath();
+          ctx.moveTo(0, h * 0.62);
+          for (let i = 0; i <= 8; i += 1) ctx.lineTo((i / 8) * w, h * (0.44 + (Math.sin(i * 0.9) * 0.08)));
+          ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill();
+          break;
+        }
+        case 'mountain_mist_layers': {
+          ctx.fillStyle = `rgba(156,186,206,${0.08 + intensity * 0.14})`;
+          for (let i = 0; i < 12; i += 1) {
+            const y = h * 0.45 + i * 14 + Math.sin(normalized * 3 + i) * 6;
+            ctx.fillRect(-6, y, w + 12, 10);
+          }
+          break;
+        }
+        case 'rain_streaks': {
+          ctx.strokeStyle = `rgba(170,210,255,${0.14 + intensity * 0.2})`;
+          for (let i = 0; i < 120; i += 1) {
+            const x = (i * 23 + normalized * 220) % w;
+            const y = (i * 17 + normalized * 320) % h;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 14); ctx.stroke();
+          }
+          break;
+        }
+        case 'puddle_reflections': {
+          const neon = this.timeline.renderProfile.theme.neonB || [120, 255, 220];
+          ctx.fillStyle = `rgba(${neon[0]},${neon[1]},${neon[2]},${0.08 + intensity * 0.14})`;
+          for (let i = 0; i < 14; i += 1) ctx.fillRect((i * 74 + normalized * 30) % w, h * 0.67 + (i % 4) * 16, 28, h * 0.2);
+          break;
+        }
+
         case 'winter_particulate_depth': {
           ctx.fillStyle = `rgba(200,222,255,${0.08 + intensity * 0.16})`;
           for (let i = 0; i < 90; i += 1) {

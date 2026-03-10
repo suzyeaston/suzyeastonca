@@ -25,15 +25,48 @@ get_header();
 
     <form id="asmr-lab-form" class="asmr-lab-form" novalidate>
       <div class="asmr-grid">
-        <label>Concept<input type="text" name="concept" required maxlength="140" placeholder="Retro monolith waking up" /></label>
-        <label>Object<input type="text" name="object" required maxlength="80" placeholder="glass relay core" /></label>
-        <label>Setting<input type="text" name="setting" required maxlength="120" placeholder="midnight signal chamber" /></label>
-        <label>Mood<input type="text" name="mood" required maxlength="80" placeholder="tight tension then bloom" /></label>
+        <label>Location
+          <select name="location">
+            <option value="gastown" selected>Gastown Steam Clock</option>
+            <option value="granville">Granville Street</option>
+            <option value="north_shore">North Shore Mountains</option>
+          </select>
+        </label>
+        <label>Weather
+          <select name="weather">
+            <option value="snow" selected>Snow</option>
+            <option value="rain">Rain</option>
+            <option value="fog">Fog</option>
+            <option value="clear_cold">Clear Cold</option>
+          </select>
+        </label>
         <label>Duration (10-30 sec)<input type="number" name="duration" min="10" max="30" value="20" required /></label>
         <label>Voice Style<input type="text" name="voice_style" maxlength="80" placeholder="composed machine whisper" /></label>
         <label>Weirdness (1-10)<input type="number" name="weirdness" min="1" max="10" value="6" required /></label>
-        <label>Creative Goal<textarea name="creative_goal" rows="2" maxlength="260" placeholder="Favor tactile pulses and a clear terminal reveal."></textarea></label>
       </div>
+
+      <fieldset class="asmr-foley-grid">
+        <legend>Foley Layers</legend>
+        <label><input type="checkbox" name="foley[]" value="footsteps" checked /> footsteps</label>
+        <label><input type="checkbox" name="foley[]" value="rain" /> rain</label>
+        <label><input type="checkbox" name="foley[]" value="chatter" /> chatter</label>
+        <label><input type="checkbox" name="foley[]" value="laughter" /> laughter</label>
+        <label><input type="checkbox" name="foley[]" value="skytrain" /> SkyTrain</label>
+        <label><input type="checkbox" name="foley[]" value="bus" /> bus</label>
+        <label><input type="checkbox" name="foley[]" value="car_horn" /> car horn</label>
+        <label><input type="checkbox" name="foley[]" value="steam_clock" checked /> Gastown steam clock</label>
+      </fieldset>
+
+      <details class="asmr-advanced-fields">
+        <summary>Advanced / Freeform Mode (optional override)</summary>
+        <div class="asmr-grid">
+          <label>Concept<input type="text" name="concept" maxlength="140" placeholder="Retro monolith waking up" /></label>
+          <label>Object<input type="text" name="object" maxlength="80" placeholder="glass relay core" /></label>
+          <label>Setting<input type="text" name="setting" maxlength="120" placeholder="midnight signal chamber" /></label>
+          <label>Mood<input type="text" name="mood" maxlength="80" placeholder="tight tension then bloom" /></label>
+          <label>Creative Goal<textarea name="creative_goal" rows="2" maxlength="260" placeholder="Favor tactile pulses and a clear terminal reveal."></textarea></label>
+        </div>
+      </details>
       <div class="asmr-actions">
         <button type="submit" class="pixel-button">Generate ASMR Package</button>
         <button type="button" id="asmr-qa-preset" class="pixel-button secondary">Load QA Preset</button>
