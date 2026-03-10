@@ -25,14 +25,14 @@
   let currentPackage = null;
 
   const QA_PRESET = {
-    concept: 'Signal Benediction: a glass relay core awakens a dormant monolith like a machine receiving a blessing',
-    object: 'glass relay core',
-    setting: 'midnight signal chamber beneath a neon cathedral grid',
-    mood: 'cyber-sacred tension, crystalline awe, then radiant bloom',
+    concept: 'A snow-covered Gastown steam clock becomes a winter shrine, breathing light into the empty street',
+    object: 'steam clock',
+    setting: 'midnight Gastown alley with snow, wet cobblestones, amber gaslight glow, brick walls, and harbor mist',
+    mood: 'ghostly calm, urban reverence, cold wonder, then warm luminous release',
     duration: '20',
-    voice_style: 'composed machine whisper',
+    voice_style: 'quiet city prayer',
     weirdness: '8',
-    creative_goal: 'Build from near-silence and tactile relay pulses into a spiritual electronic bloom, with synchronized glass shimmer, ceremonial signal motion, and a terminal-style final reveal that feels earned.'
+    creative_goal: 'Turn Gastown into a sacred winter signal using steam bursts, bell-like tones, snow drift, lamplight halos, and reflective street shimmer with a final reveal that feels haunted and beautiful.'
   };
 
   const transport = {

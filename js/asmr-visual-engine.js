@@ -6,7 +6,9 @@
     'glitch_flash', 'waveform_ring', 'macro_texture_drift', 'signal_bars', 'text_reveal',
     'volumetric_fog', 'glass_refraction', 'halo_glyphs', 'cathedral_beam', 'monolith_silhouette',
     'starfield_drift', 'orbiting_shards', 'pulse_orb', 'energy_column', 'refraction_ripple',
-    'chromatic_veil', 'terminal_runes'
+    'chromatic_veil', 'terminal_runes', 'snow_drift', 'amber_halo', 'wet_reflection_shimmer',
+    'brick_shadow_drift', 'steam_plume_column', 'clock_face_reveal', 'harbor_mist',
+    'neon_wet_reflections', 'winter_particulate_depth'
   ];
 
   function clamp(value, min, max) {
@@ -483,6 +485,106 @@
             const yy = h * 0.2 + i * 26;
             const txt = ['∆','⟟','⌁','⟡','⋄','⟢'][i % 6] + ' SIGNAL-' + (i + 1);
             ctx.fillText(txt, w * 0.12 + Math.sin(normalized * 6 + i) * 12, yy);
+          }
+          break;
+        }
+        case 'snow_drift': {
+          ctx.fillStyle = `rgba(218,236,255,${0.12 + intensity * 0.2})`;
+          for (let i = 0; i < 70; i += 1) {
+            const x = (i * 41 + normalized * 50 + Math.sin(i + normalized * 5) * 10) % w;
+            const y = (i * 26 + normalized * 120 + i * 0.5) % h;
+            ctx.fillRect(x, y, 1.8, 1.8);
+          }
+          break;
+        }
+        case 'amber_halo': {
+          for (let i = 0; i < 3; i += 1) {
+            const lx = w * (0.2 + i * 0.3);
+            const ly = h * (0.26 + (i % 2) * 0.08);
+            const r = 44 + intensity * 80;
+            const halo = ctx.createRadialGradient(lx, ly, 1, lx, ly, r);
+            halo.addColorStop(0, `rgba(255,196,118,${0.22 + intensity * 0.22})`);
+            halo.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = halo;
+            ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+          }
+          break;
+        }
+        case 'wet_reflection_shimmer': {
+          ctx.fillStyle = `rgba(120,170,255,${0.06 + intensity * 0.12})`;
+          for (let i = 0; i < 18; i += 1) {
+            const yy = h * 0.62 + i * 9 + Math.sin(normalized * 10 + i) * 2;
+            ctx.fillRect(0, yy, w, 2);
+          }
+          break;
+        }
+        case 'brick_shadow_drift': {
+          ctx.fillStyle = `rgba(78,52,44,${0.1 + intensity * 0.12})`;
+          const brickW = 40;
+          const brickH = 16;
+          for (let y = 0; y < h * 0.6; y += brickH) {
+            for (let x = ((y / brickH) % 2) * (brickW / 2); x < w; x += brickW) {
+              ctx.fillRect(x + Math.sin(normalized * 3 + y * 0.01) * 2, y, brickW - 2, brickH - 2);
+            }
+          }
+          break;
+        }
+        case 'steam_plume_column': {
+          const cx = w * 0.5;
+          ctx.fillStyle = `rgba(206,224,240,${0.08 + intensity * 0.16})`;
+          for (let i = 0; i < 18; i += 1) {
+            const ww = 22 + i * 10;
+            const yy = h * 0.75 - i * 18 - (normalized * 22 % 18);
+            ctx.fillRect(cx - ww * 0.5 + Math.sin(i + normalized * 4) * 8, yy, ww, 12);
+          }
+          break;
+        }
+        case 'clock_face_reveal': {
+          const r = 70 + intensity * 90;
+          ctx.strokeStyle = `rgba(255,236,190,${0.18 + intensity * 0.26})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(w * 0.5, h * 0.45, r, 0, Math.PI * 2);
+          ctx.stroke();
+          for (let i = 0; i < 12; i += 1) {
+            const a = (i / 12) * Math.PI * 2 + normalized * 0.2;
+            const x1 = w * 0.5 + Math.cos(a) * (r - 10);
+            const y1 = h * 0.45 + Math.sin(a) * (r - 10);
+            const x2 = w * 0.5 + Math.cos(a) * r;
+            const y2 = h * 0.45 + Math.sin(a) * r;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'harbor_mist': {
+          ctx.fillStyle = `rgba(142,176,188,${0.06 + intensity * 0.12})`;
+          for (let i = 0; i < 16; i += 1) {
+            const y = h * 0.52 + i * 12 + Math.sin(normalized * 4 + i) * 4;
+            ctx.fillRect(-8, y, w + 16, 10);
+          }
+          break;
+        }
+        case 'neon_wet_reflections': {
+          const colors = ['rgba(90,190,255,', 'rgba(255,96,186,', 'rgba(120,255,220,'];
+          for (let i = 0; i < 12; i += 1) {
+            const x = (i * 83 + normalized * 60) % w;
+            const alpha = 0.08 + intensity * 0.12;
+            ctx.fillStyle = `${colors[i % colors.length]}${alpha})`;
+            ctx.fillRect(x, h * 0.64 + Math.sin(i + normalized * 8) * 9, 22, h * 0.24);
+          }
+          break;
+        }
+        case 'winter_particulate_depth': {
+          ctx.fillStyle = `rgba(200,222,255,${0.08 + intensity * 0.16})`;
+          for (let i = 0; i < 90; i += 1) {
+            const depth = 0.4 + (i % 5) * 0.15;
+            const x = (i * 29 + normalized * 80 * depth) % w;
+            const y = (i * 17 + normalized * 110 * (1.2 - depth)) % h;
+            const size = 1 + depth;
+            ctx.fillRect(x, y, size, size);
           }
           break;
         }
