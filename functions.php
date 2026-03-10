@@ -158,9 +158,14 @@ function se_enqueue_asmr_lab_assets() {
         wp_enqueue_script( 'se-asmr-foley-engine', $uri . $engine_path, array( 'tone-js' ), filemtime( $dir . $engine_path ), true );
     }
 
+    $visual_path = '/js/asmr-visual-engine.js';
+    if ( file_exists( $dir . $visual_path ) ) {
+        wp_enqueue_script( 'se-asmr-visual-engine', $uri . $visual_path, array(), filemtime( $dir . $visual_path ), true );
+    }
+
     $app_path = '/js/asmr-lab.js';
     if ( file_exists( $dir . $app_path ) ) {
-        wp_enqueue_script( 'se-asmr-lab', $uri . $app_path, array( 'se-asmr-foley-engine' ), filemtime( $dir . $app_path ), true );
+        wp_enqueue_script( 'se-asmr-lab', $uri . $app_path, array( 'se-asmr-foley-engine', 'se-asmr-visual-engine' ), filemtime( $dir . $app_path ), true );
         wp_localize_script(
             'se-asmr-lab',
             'seAsmrLab',
@@ -853,16 +858,18 @@ function se_handle_riff_tip( WP_REST_Request $req ) {
 
 function se_get_asmr_allowed_engines() {
     return array(
-        'plastic_tap',
-        'paper_crinkle',
-        'soft_tear',
-        'adhesive_peel',
-        'rain_hiss',
+        'glissando_rise',
+        'synth_bloom',
+        'sub_swell',
+        'filtered_noise_wash',
+        'paper_crackle',
         'breath_pulse',
         'ceramic_tick',
-        'ui_bloop',
+        'steam_hiss',
+        'tape_stop_drop',
+        'bit_pulse',
         'low_hum',
-        'fiber_brush',
+        'digital_shimmer',
     );
 }
 
@@ -889,17 +896,13 @@ function se_validate_asmr_response( $decoded ) {
         'runtime_seconds',
         'hook',
         'concept_summary',
-        'sensory_palette',
-        'ai_usage_map',
-        'ai_edge_strategy',
-        'failure_modes_to_embrace',
-        'human_control_notes',
-        'beat_sheet',
-        'edit_notes',
-        'video_prompts',
-        'negative_prompts',
+        'style_tags',
+        'audio_events',
+        'visual_events',
+        'sync_points',
+        'end_card',
+        'edit_rhythm',
         'presentation_note',
-        'sound_recipe',
     );
 
     $keys = array_keys( $decoded );
@@ -910,23 +913,11 @@ function se_validate_asmr_response( $decoded ) {
         return new WP_Error( 'asmr_shape_error', __( 'ASMR Lab response shape was unexpected. Please regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
     }
 
-    $decoded['runtime_seconds'] = max( 15, min( 30, absint( $decoded['runtime_seconds'] ) ) );
+    $decoded['runtime_seconds'] = max( 10, min( 30, absint( $decoded['runtime_seconds'] ) ) );
 
-    if ( ! is_array( $decoded['sound_recipe'] ) ) {
-        return new WP_Error( 'asmr_sound_recipe_invalid', __( 'Sound recipe was invalid. Please regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
-    }
+    $decoded['style_tags'] = array_values( array_filter( array_map( 'sanitize_text_field', (array) ( $decoded['style_tags'] ?? array() ) ) ) );
 
-    $recipe = $decoded['sound_recipe'];
-    $recipe['bpm'] = max( 40, min( 220, absint( $recipe['bpm'] ?? 90 ) ) );
-    $recipe['master'] = is_array( $recipe['master'] ?? null ) ? $recipe['master'] : array();
-    $recipe['master'] = array(
-        'bitcrusher_bits' => max( 3, min( 16, absint( $recipe['master']['bitcrusher_bits'] ?? 8 ) ) ),
-        'downsample_factor' => max( 1, min( 12, absint( $recipe['master']['downsample_factor'] ?? 1 ) ) ),
-        'reverb_wet' => max( 0, min( 0.8, floatval( $recipe['master']['reverb_wet'] ?? 0.15 ) ) ),
-        'lowpass_hz' => max( 300, min( 18000, absint( $recipe['master']['lowpass_hz'] ?? 9000 ) ) ),
-    );
-
-    $events = is_array( $recipe['events'] ?? null ) ? $recipe['events'] : array();
+    $events = is_array( $decoded['audio_events'] ?? null ) ? $decoded['audio_events'] : array();
     $allowed_engines = se_get_asmr_allowed_engines();
     $sanitized_events = array();
     foreach ( $events as $event ) {
@@ -941,7 +932,9 @@ function se_validate_asmr_response( $decoded ) {
             'time' => max( 0, floatval( $event['time'] ?? 0 ) ),
             'engine' => $engine,
             'duration' => max( 0.03, min( 4, floatval( $event['duration'] ?? 0.2 ) ) ),
+            'intensity' => max( 0, min( 1, floatval( $event['intensity'] ?? 0.5 ) ) ),
             'params' => is_array( $event['params'] ?? null ) ? $event['params'] : array(),
+            'sync_role' => sanitize_text_field( $event['sync_role'] ?? '' ),
         );
     }
 
@@ -949,8 +942,58 @@ function se_validate_asmr_response( $decoded ) {
         return new WP_Error( 'asmr_sound_events_missing', __( 'Sound recipe had no usable events. Try regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
     }
 
-    $recipe['events'] = $sanitized_events;
-    $decoded['sound_recipe'] = $recipe;
+    $decoded['audio_events'] = $sanitized_events;
+
+    $visual_allowed = array(
+        'scanline_field', 'pixel_grid_pulse', 'wireframe_horizon', 'radial_bloom', 'particle_trail',
+        'glitch_flash', 'waveform_ring', 'macro_texture_drift', 'signal_bars', 'text_reveal',
+    );
+    $visual_events = is_array( $decoded['visual_events'] ?? null ) ? $decoded['visual_events'] : array();
+    $decoded['visual_events'] = array_values( array_filter( array_map( static function( $event ) use ( $visual_allowed ) {
+        if ( ! is_array( $event ) ) {
+            return null;
+        }
+        $visual_type = sanitize_key( $event['visual_type'] ?? '' );
+        if ( ! in_array( $visual_type, $visual_allowed, true ) ) {
+            return null;
+        }
+        return array(
+            'time' => max( 0, floatval( $event['time'] ?? 0 ) ),
+            'duration' => max( 0.03, min( 8, floatval( $event['duration'] ?? 0.5 ) ) ),
+            'visual_type' => $visual_type,
+            'intensity' => max( 0, min( 1, floatval( $event['intensity'] ?? 0.5 ) ) ),
+            'params' => is_array( $event['params'] ?? null ) ? $event['params'] : array(),
+            'sync_role' => sanitize_text_field( $event['sync_role'] ?? '' ),
+        );
+    }, $visual_events ) ) );
+
+    $sync_points = is_array( $decoded['sync_points'] ?? null ) ? $decoded['sync_points'] : array();
+    $decoded['sync_points'] = array_values( array_filter( array_map( static function( $point ) {
+        if ( ! is_array( $point ) ) {
+            return null;
+        }
+        return array(
+            'time' => max( 0, floatval( $point['time'] ?? 0 ) ),
+            'cue' => sanitize_text_field( $point['cue'] ?? '' ),
+            'importance' => sanitize_text_field( $point['importance'] ?? '' ),
+        );
+    }, $sync_points ) ) );
+
+    $end_card = is_array( $decoded['end_card'] ?? null ) ? $decoded['end_card'] : array();
+    $decoded['end_card'] = array(
+        'use_end_card' => ! empty( $end_card['use_end_card'] ),
+        'text' => sanitize_text_field( $end_card['text'] ?? '' ),
+        'reveal_style' => sanitize_text_field( $end_card['reveal_style'] ?? '' ),
+    );
+
+    $edit_rhythm = is_array( $decoded['edit_rhythm'] ?? null ) ? $decoded['edit_rhythm'] : array();
+    $decoded['edit_rhythm'] = array(
+        'pacing_note' => sanitize_text_field( $edit_rhythm['pacing_note'] ?? '' ),
+        'silence_strategy' => sanitize_text_field( $edit_rhythm['silence_strategy'] ?? '' ),
+        'release_strategy' => sanitize_text_field( $edit_rhythm['release_strategy'] ?? '' ),
+    );
+
+    $decoded['presentation_note'] = sanitize_text_field( $decoded['presentation_note'] ?? '' );
 
     return $decoded;
 }
@@ -966,7 +1009,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         'object' => sanitize_text_field( $params['object'] ?? '' ),
         'setting' => sanitize_text_field( $params['setting'] ?? '' ),
         'mood' => sanitize_text_field( $params['mood'] ?? '' ),
-        'duration' => max( 15, min( 30, absint( $params['duration'] ?? 20 ) ) ),
+        'duration' => max( 10, min( 30, absint( $params['duration'] ?? 20 ) ) ),
         'voice_style' => sanitize_text_field( $params['voice_style'] ?? '' ),
         'weirdness' => max( 1, min( 10, absint( $params['weirdness'] ?? 6 ) ) ),
         'creative_goal' => sanitize_textarea_field( $params['creative_goal'] ?? '' ),
@@ -979,16 +1022,21 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
 
     $allowed_engines = implode( ', ', se_get_asmr_allowed_engines() );
     $system_prompt = 'You are ASMR Lab, a collaboration between human taste and machine excess. '
-        . 'Generate tactile, sonic, visual, and AI-process-aware output for a 15-30 second AI-film sensory ad concept. '
+        . 'Generate an original 10-30 second sensory micro-film performable score for a browser-based retro-futurist control room. '
         . 'Return ONE strict JSON object and no markdown. '
-        . 'Use exactly and only these top-level keys: title, runtime_seconds, hook, concept_summary, sensory_palette, ai_usage_map, ai_edge_strategy, failure_modes_to_embrace, human_control_notes, beat_sheet, edit_notes, video_prompts, negative_prompts, presentation_note, sound_recipe. '
-        . 'sound_recipe must include bpm, master(bitcrusher_bits, downsample_factor, reverb_wet, lowpass_hz), and events[]. '
-        . 'Each event object must have time, engine, duration, params. '
+        . 'Use exactly and only these top-level keys: title, runtime_seconds, hook, concept_summary, style_tags, audio_events, visual_events, sync_points, end_card, edit_rhythm, presentation_note. '
+        . 'audio_events objects must include: time, duration, engine, intensity, params, sync_role. '
+        . 'visual_events objects must include: time, duration, visual_type, intensity, params, sync_role. '
+        . 'sync_points objects must include: time, cue, importance. '
+        . 'end_card must include: use_end_card, text, reveal_style. '
+        . 'edit_rhythm must include: pacing_note, silence_strategy, release_strategy. '
         . 'Only use these engine names: ' . $allowed_engines . '. '
+        . 'Allowed visual_type values: scanline_field, pixel_grid_pulse, wireframe_horizon, radial_bloom, particle_trail, glitch_flash, waveform_ring, macro_texture_drift, signal_bars, text_reveal. '
+        . 'Sound and visual events must be intentionally synchronized and should include a tension arc, reveal, and ending gesture. '
         . 'Do not include prose outside JSON.';
 
     if ( $payload['sound_only'] ) {
-        $system_prompt .= ' If sound_only is true, keep other fields concise but still present and focus creative detail in sound_recipe.';
+        $system_prompt .= ' If sound_only is true, keep other fields concise but still present and focus creative detail in audio_events.';
     }
 
     $response = se_openai_chat(
