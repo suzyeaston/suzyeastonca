@@ -24,13 +24,40 @@
   let lastPayload = null;
   let currentPackage = null;
 
+
+  const LINKED_LAYER_MAP = {
+    skytrain: 'skytrain_pass_visual',
+    bus: 'bus_pass_visual',
+    rain_ambience: 'rain_streaks',
+    footsteps: 'cobblestone_perspective',
+    steam_clock: 'gastown_clock_silhouette'
+  };
+
+  function applyLayerLinking(audioLayers, visualLayers, isLinked) {
+    const audioSet = new Set(Array.isArray(audioLayers) ? audioLayers : []);
+    const visualSet = new Set(Array.isArray(visualLayers) ? visualLayers : []);
+    if (!isLinked) {
+      return { audio_layers: Array.from(audioSet), visual_layers: Array.from(visualSet) };
+    }
+
+    Object.entries(LINKED_LAYER_MAP).forEach(([audioToken, visualToken]) => {
+      if (audioSet.has(audioToken)) visualSet.add(visualToken);
+      if (visualSet.has(visualToken)) audioSet.add(audioToken);
+    });
+
+    return { audio_layers: Array.from(audioSet), visual_layers: Array.from(visualSet) };
+  }
+
+
   const QA_PRESET = {
     location: 'gastown',
     weather: 'snow',
     duration: '20',
     voice_style: 'quiet city prayer',
     weirdness: '8',
-    foley: ['footsteps', 'steam_clock']
+    link_av: true,
+    audio_layers: ['footsteps'],
+    visual_layers: ['rain_streaks', 'science_world_dome']
   };
 
   const transport = {
@@ -153,10 +180,17 @@
     const hasAdvanced = !!(advanced.concept || advanced.object || advanced.setting || advanced.mood || advanced.creative_goal);
     if (hasAdvanced) return Object.assign({}, base, advanced);
 
+    const linkAV = !!formData.get('link_av');
+    const audioLayers = formData.getAll('audio_layers[]').map((item) => String(item || '').trim()).filter(Boolean);
+    const visualLayers = formData.getAll('visual_layers[]').map((item) => String(item || '').trim()).filter(Boolean);
+    const linked = applyLayerLinking(audioLayers, visualLayers, linkAV);
+
     return Object.assign({}, base, {
       location: String(formData.get('location') || 'gastown'),
       weather: String(formData.get('weather') || 'snow'),
-      foley: formData.getAll('foley[]').map((item) => String(item || '').trim()).filter(Boolean)
+      link_av: linkAV,
+      audio_layers: linked.audio_layers,
+      visual_layers: linked.visual_layers
     });
   }
 
@@ -360,9 +394,14 @@
   if (qaPresetBtn && form) {
     qaPresetBtn.addEventListener('click', () => {
       Object.entries(QA_PRESET).forEach(([key, value]) => {
-        if (key === 'foley' && Array.isArray(value)) {
-          const boxes = form.querySelectorAll('input[name=\"foley[]\"]');
+        if ((key === 'audio_layers' || key === 'visual_layers') && Array.isArray(value)) {
+          const boxes = form.querySelectorAll(`input[name="${key}[]"]`);
           boxes.forEach((box) => { box.checked = value.includes(box.value); });
+          return;
+        }
+        if (key === 'link_av') {
+          const box = form.querySelector('input[name="link_av"]');
+          if (box) box.checked = !!value;
           return;
         }
         const field = form.elements.namedItem(key);
@@ -373,7 +412,7 @@
         const field = form.elements.namedItem(name);
         if (field) field.value = '';
       });
-      setStatus('QA preset loaded (Vancouver Mode Gastown + Snow). Generate package to test known-good anchors.');
+      setStatus('QA preset loaded (separate rain visuals + footsteps audio). Generate package to test A/V separation.');
       setError('');
     });
   }

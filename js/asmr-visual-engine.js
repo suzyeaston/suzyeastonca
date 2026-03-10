@@ -11,9 +11,10 @@
     'neon_wet_reflections', 'winter_particulate_depth',
     'gastown_clock_silhouette', 'cobblestone_perspective', 'brick_wall_parallax', 'streetlamp_halo_row',
     'granville_neon_marquee', 'neon_sign_flicker', 'traffic_light_glow',
-    'skytrain_track', 'skytrain_pass_visual',
+    'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
     'northshore_mountain_ridge', 'mountain_mist_layers',
-    'rain_streaks', 'puddle_reflections'
+    'rain_streaks', 'puddle_reflections',
+    'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof'
   ];
 
   function clamp(value, min, max) {
@@ -286,15 +287,51 @@
       ctx.putImageData(image, 0, 0);
     }
 
+    parseWeirdnessLevel() {
+      const tags = (this.timeline && this.timeline.renderProfile && this.timeline.renderProfile.tags) || [];
+      const found = tags.find((tag) => /^weirdness_\d+$/.test(tag));
+      if (!found) return 6;
+      const level = Number(found.split('_')[1] || 6);
+      return clamp(level, 1, 10);
+    }
+
     drawSceneLayers(ctx, width, height, t, normalized, overlays) {
-      this.drawBaseChamber(ctx, width, height, t, normalized);
+      const landmarkTypes = ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'gastown_clock_silhouette', 'skytrain_pass_visual', 'bus_pass_visual'];
+      const atmosphereTypes = ['rain_streaks', 'snow_drift', 'harbor_mist', 'mountain_mist_layers', 'puddle_reflections', 'volumetric_fog'];
+      const weirdness = this.parseWeirdnessLevel();
+      const weirdNorm = (weirdness - 1) / 9;
+      let distortion = 0.04 + (0.18 - 0.04) * weirdNorm;
+      const activeEvents = [];
 
       this.timeline.visualEvents.forEach((event) => {
         const progress = this.eventProgress(event, t);
         if (progress <= -0.03 || progress >= 1.2) return;
-        const intensity = Math.max(0.05, Math.min(1, Number(event.intensity || 0.5)));
-        this.drawEvent(ctx, event, progress, intensity, width, height, normalized);
+        activeEvents.push({ event, progress });
       });
+
+      const hasLandmark = activeEvents.some((item) => landmarkTypes.includes(item.event.visual_type));
+      if (hasLandmark) distortion *= 0.6;
+
+      this.drawBaseChamber(ctx, width, height, t, normalized);
+
+      activeEvents.filter((item) => atmosphereTypes.includes(item.event.visual_type)).forEach((item) => {
+        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
+        this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
+      });
+
+      activeEvents.filter((item) => !atmosphereTypes.includes(item.event.visual_type)).forEach((item) => {
+        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
+        this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
+      });
+
+      if (distortion > 0) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(0.1, distortion * 0.45);
+        const jitter = Math.sin(t * 13) * distortion * 18;
+        ctx.fillStyle = 'rgba(140,170,255,0.22)';
+        ctx.fillRect(jitter, 0, width, height);
+        ctx.restore();
+      }
 
       this.drawSyncMarkers(ctx, t, width, height);
       if (overlays) {
@@ -793,6 +830,70 @@
           ctx.fillStyle = `rgba(190,215,236,${0.2 + intensity * 0.24})`;
           ctx.fillRect(x, h * 0.38, w * 0.22, h * 0.08);
           for (let i = 0; i < 7; i += 1) ctx.clearRect(x + 8 + i * 28, h * 0.4, 18, h * 0.03);
+          break;
+        }
+        case 'bus_pass_visual': {
+          const x = ((normalized * 1.1) % 1.25) * w - w * 0.25;
+          ctx.fillStyle = `rgba(228,186,110,${0.22 + intensity * 0.25})`;
+          ctx.fillRect(x, h * 0.44, w * 0.26, h * 0.09);
+          ctx.fillStyle = 'rgba(20,26,36,0.55)';
+          for (let i = 0; i < 6; i += 1) ctx.fillRect(x + 10 + i * 30, h * 0.46, 18, h * 0.028);
+          break;
+        }
+        case 'science_world_dome': {
+          const cx = w * 0.5;
+          const cy = h * 0.72;
+          const r = Math.min(w, h) * 0.24;
+          ctx.strokeStyle = `rgba(180,210,230,${0.32 + intensity * 0.34})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, Math.PI, 0);
+          ctx.stroke();
+          for (let i = 1; i < 5; i += 1) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * (i / 5), Math.PI, 0);
+            ctx.stroke();
+          }
+          for (let i = -4; i <= 4; i += 1) {
+            const x1 = cx + i * (r / 4);
+            ctx.beginPath();
+            ctx.moveTo(x1, cy);
+            ctx.lineTo(cx, cy - r);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'chinatown_gate': {
+          const baseY = h * 0.68;
+          ctx.fillStyle = `rgba(170,82,88,${0.28 + intensity * 0.24})`;
+          ctx.fillRect(w * 0.3, baseY - h * 0.16, w * 0.04, h * 0.16);
+          ctx.fillRect(w * 0.66, baseY - h * 0.16, w * 0.04, h * 0.16);
+          ctx.fillRect(w * 0.41, baseY - h * 0.18, w * 0.18, h * 0.18);
+          ctx.fillRect(w * 0.25, baseY - h * 0.22, w * 0.16, h * 0.06);
+          ctx.fillRect(w * 0.59, baseY - h * 0.22, w * 0.16, h * 0.06);
+          ctx.fillStyle = `rgba(240,182,132,${0.2 + intensity * 0.24})`;
+          for (let i = 0; i < 5; i += 1) ctx.beginPath(), ctx.arc(w * (0.34 + i * 0.08), baseY - h * 0.24, 2, 0, Math.PI * 2), ctx.fill();
+          break;
+        }
+        case 'english_bay_inukshuk': {
+          ctx.fillStyle = `rgba(176,188,202,${0.22 + intensity * 0.28})`;
+          ctx.fillRect(w * 0.46, h * 0.5, w * 0.08, h * 0.18);
+          ctx.fillRect(w * 0.4, h * 0.54, w * 0.2, h * 0.05);
+          ctx.fillRect(w * 0.48, h * 0.44, w * 0.04, h * 0.05);
+          ctx.fillRect(w * 0.44, h * 0.68, w * 0.12, h * 0.05);
+          break;
+        }
+        case 'maritime_museum_sailroof': {
+          ctx.strokeStyle = `rgba(186,214,226,${0.28 + intensity * 0.3})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(w * 0.24, h * 0.68);
+          ctx.quadraticCurveTo(w * 0.54, h * 0.28, w * 0.8, h * 0.66);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(w * 0.54, h * 0.68);
+          ctx.lineTo(w * 0.54, h * 0.36);
+          ctx.stroke();
           break;
         }
         case 'northshore_mountain_ridge': {
