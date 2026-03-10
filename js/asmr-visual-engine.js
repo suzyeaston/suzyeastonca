@@ -14,7 +14,7 @@
     'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
     'northshore_mountain_ridge', 'mountain_mist_layers',
     'rain_streaks', 'puddle_reflections',
-    'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'gastown_scene', 'granville_scene', 'north_shore_scene', 'clear_cold_shimmer'
+    'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette'
   ];
 
   function clamp(value, min, max) {
@@ -296,7 +296,7 @@
     }
 
     drawSceneLayers(ctx, width, height, t, normalized, overlays) {
-      const landmarkTypes = ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'gastown_clock_silhouette'];
+      const landmarkTypes = ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'gastown_clock_silhouette', 'seabus_silhouette', 'waterfront_scene'];
       const atmosphereTypes = ['rain_streaks', 'snow_drift', 'harbor_mist', 'mountain_mist_layers', 'puddle_reflections', 'volumetric_fog', 'clear_cold_shimmer'];
       const weirdness = this.parseWeirdnessLevel();
       const weirdNorm = (weirdness - 1) / 9;
@@ -928,6 +928,52 @@
           break;
         }
 
+
+
+        case 'waterfront_scene': {
+          const horizon = h * 0.58;
+          ctx.strokeStyle = `rgba(146,190,220,${0.2 + intensity * 0.2})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, horizon);
+          ctx.lineTo(w, horizon);
+          ctx.stroke();
+          this.drawEvent(ctx, { visual_type: 'port_cranes', params: {}, intensity: intensity * 0.58 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'ocean_surface_shimmer', params: {}, intensity: intensity * 0.78 }, p, intensity, w, h, normalized);
+          const glow = ctx.createLinearGradient(0, horizon - 40, 0, horizon + 80);
+          glow.addColorStop(0, `rgba(255,140,210,${0.06 + intensity * 0.08})`);
+          glow.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = glow;
+          ctx.fillRect(0, horizon - 40, w, 120);
+          break;
+        }
+        case 'ocean_surface_shimmer': {
+          ctx.fillStyle = `rgba(106,170,220,${0.05 + intensity * 0.08})`;
+          for (let i = 0; i < 20; i += 1) {
+            const yy = h * 0.58 + i * 7 + Math.sin(normalized * 9 + i) * 2;
+            const ww = w * (0.44 + (i % 6) * 0.08);
+            const xx = (Math.sin(normalized * 3 + i * 0.6) * 0.24 + 0.5) * (w - ww);
+            ctx.fillRect(xx, yy, ww, 2);
+          }
+          break;
+        }
+        case 'seabus_silhouette': {
+          const progress = (normalized % 1);
+          const x = -w * 0.2 + progress * (w * 1.4);
+          const y = h * 0.57;
+          ctx.fillStyle = `rgba(26,36,48,${0.32 + intensity * 0.28})`;
+          ctx.fillRect(x, y, w * 0.16, h * 0.03);
+          ctx.fillRect(x + w * 0.03, y - h * 0.02, w * 0.06, h * 0.02);
+          ctx.strokeStyle = `rgba(146,190,220,${0.14 + intensity * 0.16})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x - 10, y + h * 0.035);
+          ctx.lineTo(x - 34, y + h * 0.045);
+          ctx.moveTo(x - 2, y + h * 0.035);
+          ctx.lineTo(x - 24, y + h * 0.052);
+          ctx.stroke();
+          break;
+        }
 
         case 'lions_gate_bridge': {
           const y = h * 0.56;

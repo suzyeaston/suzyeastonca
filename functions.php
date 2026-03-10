@@ -901,6 +901,7 @@ function se_get_asmr_allowed_engines() {
         'bus_idle',
         'car_horn_short',
         'seabus_horn',
+        'ocean_waves',
         'gulls_distant',
         'crosswalk_chirp',
         'compass_tap',
@@ -926,7 +927,7 @@ function se_get_asmr_visual_types() {
         'rain_streaks', 'puddle_reflections',
         'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof',
         'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
-        'gastown_scene', 'granville_scene', 'north_shore_scene', 'clear_cold_shimmer',
+        'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette',
     );
 }
 
@@ -1204,39 +1205,41 @@ function se_get_asmr_audio_layers_allowed() {
     return array(
         'footsteps', 'footsteps_snow_mode', 'rain_ambience', 'wind_gust', 'crowd_murmur', 'laughter_burst',
         'skytrain_pass', 'bus_pass', 'car_horn_short', 'steam_clock',
-        'seabus_horn', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant'
+        'seabus_horn', 'ocean_waves', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant'
     );
 }
 
 function se_get_asmr_visual_layers_allowed() {
     return array(
         'rain_streaks', 'snow_drift', 'harbor_mist', 'clear_cold_shimmer',
-        'gastown_scene', 'granville_scene', 'north_shore_scene',
+        'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene',
         'gastown_clock_silhouette', 'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof',
         'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
         'cobblestone_perspective', 'brick_wall_parallax', 'puddle_reflections', 'streetlamp_halo_row',
         'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
-        'scanline_field', 'glitch_flash', 'signal_bars', 'chromatic_veil', 'neon_sign_flicker',
+        'scanline_field', 'glitch_flash', 'signal_bars', 'chromatic_veil', 'neon_sign_flicker', 'ocean_surface_shimmer', 'seabus_silhouette',
         'granville_neon_marquee', 'traffic_light_glow', 'northshore_mountain_ridge', 'mountain_mist_layers', 'volumetric_fog'
     );
 }
 
 function se_get_asmr_visual_to_audio_map() {
     return array(
+        'ocean_surface_shimmer' => array( 'ocean_waves' ),
+        'waterfront_scene' => array( 'ocean_waves' ),
+        'seabus_silhouette' => array( 'seabus_horn' ),
         'skytrain_pass_visual' => array( 'skytrain_pass' ),
         'bus_pass_visual' => array( 'bus_pass' ),
         'rain_streaks' => array( 'rain_ambience' ),
-        'gastown_clock_silhouette' => array( 'steam_clock' ),
         'gastown_scene' => array( 'steam_clock' ),
-        'snow_drift' => array( 'footsteps_snow_mode' ),
     );
 }
 
 function se_get_asmr_scene_visual_support_map() {
     return array(
-        'gastown_scene' => array( 'gastown_clock_silhouette', 'streetlamp_halo_row', 'cobblestone_perspective', 'brick_wall_parallax' ),
-        'granville_scene' => array( 'granville_neon_marquee', 'traffic_light_glow', 'puddle_reflections' ),
-        'north_shore_scene' => array( 'northshore_mountain_ridge', 'mountain_mist_layers', 'harbor_mist' ),
+        'gastown_scene' => array( 'gastown_clock_silhouette', 'streetlamp_halo_row' ),
+        'granville_scene' => array( 'granville_neon_marquee', 'puddle_reflections' ),
+        'north_shore_scene' => array( 'northshore_mountain_ridge', 'mountain_mist_layers' ),
+        'waterfront_scene' => array( 'ocean_surface_shimmer', 'seabus_silhouette' ),
     );
 }
 
@@ -1257,6 +1260,8 @@ function se_get_asmr_mapped_visual_layers_from_audio( $audio_layers ) {
         'bus_pass' => 'bus_pass_visual',
         'rain_ambience' => 'rain_streaks',
         'steam_clock' => 'gastown_clock_silhouette',
+        'ocean_waves' => 'ocean_surface_shimmer',
+        'seabus_horn' => 'seabus_silhouette',
     );
     $visual = array();
     foreach ( (array) $audio_layers as $token ) {
@@ -1272,7 +1277,7 @@ function se_get_asmr_vancouver_derived_payload( $payload ) {
     $audio_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['audio_layers'] ?? array() ) ) ) );
     $visual_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['visual_layers'] ?? array() ) ) ) );
     if ( empty( $visual_layers ) ) {
-        $visual_layers = array( 'granville_scene', 'rain_streaks', 'skytrain_pass_visual' );
+        $visual_layers = array( 'waterfront_scene', 'harbor_mist', 'ocean_surface_shimmer' );
     }
 
     $motif_line = implode( ' + ', $visual_layers );
@@ -1283,6 +1288,32 @@ function se_get_asmr_vancouver_derived_payload( $payload ) {
     $payload['mood'] = 'atmospheric, tactile, and cinematic';
     $payload['creative_goal'] = sprintf( 'Build a readable motif-forward timeline with %s while preserving coherent visual geography.', $foley_text );
     return $payload;
+}
+
+
+function se_get_asmr_motif_brief( $payload ) {
+    $visual_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['visual_layers'] ?? array() ) ) ) );
+    $audio_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['audio_layers'] ?? array() ) ) ) );
+
+    $scene = array_values( array_intersect( $visual_layers, array( 'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene' ) ) );
+    $atmosphere = array_values( array_intersect( $visual_layers, array( 'rain_streaks', 'snow_drift', 'harbor_mist', 'clear_cold_shimmer' ) ) );
+    $signature = array_values( array_intersect( $visual_layers, array( 'science_world_dome', 'chinatown_gate', 'lions_gate_bridge', 'gastown_clock_silhouette', 'seabus_silhouette' ) ) );
+
+    $parts = array();
+    if ( ! empty( $scene ) ) {
+        $parts[] = 'Selected scene: ' . implode( ', ', $scene ) . '.';
+    }
+    if ( ! empty( $atmosphere ) ) {
+        $parts[] = 'Atmosphere: ' . implode( ', ', $atmosphere ) . '.';
+    }
+    if ( ! empty( $signature ) ) {
+        $parts[] = 'Signature: ' . implode( ', ', $signature ) . '.';
+    }
+    if ( ! empty( $audio_layers ) ) {
+        $parts[] = 'Audio: ' . implode( ' + ', $audio_layers ) . '.';
+    }
+
+    return implode( ' ', $parts );
 }
 
 function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
@@ -1325,7 +1356,7 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
 
     $scene_or_landmark = array(
         'gastown_scene', 'granville_scene', 'north_shore_scene', 'gastown_clock_silhouette', 'science_world_dome',
-        'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes'
+        'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'waterfront_scene', 'seabus_silhouette'
     );
 
     foreach ( $audio_layers as $layer ) {
@@ -1352,7 +1383,7 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
         } elseif ( 'steam_clock' === $layer ) {
             $audio[] = array( 'time' => 0.52, 'duration' => 1.1, 'engine' => 'steam_clock_burst', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'steam_clock_toggle' );
         } elseif ( 'seabus_horn' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.36, 'duration' => 1.6, 'engine' => 'seabus_horn', 'intensity' => 0.42, 'params' => array(), 'sync_role' => 'seabus_horn' );
+            $audio[] = array( 'time' => $runtime * 0.32, 'duration' => 1.8, 'engine' => 'seabus_horn', 'intensity' => 0.36, 'params' => array(), 'sync_role' => 'seabus_horn' );
         } elseif ( 'gulls_distant' === $layer ) {
             $audio[] = array( 'time' => 0.48, 'duration' => 2.2, 'engine' => 'gulls_distant', 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'gulls_distant' );
         } elseif ( 'crosswalk_chirp' === $layer ) {
@@ -1383,7 +1414,7 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
             $visual[] = array( 'time' => $runtime * 0.3, 'duration' => 2.0, 'visual_type' => 'bus_pass_visual', 'intensity' => 0.6, 'params' => array(), 'sync_role' => 'bus_visual' );
             continue;
         }
-        if ( in_array( $visual_type, array( 'gastown_scene', 'granville_scene', 'north_shore_scene' ), true ) ) {
+        if ( in_array( $visual_type, array( 'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene' ), true ) ) {
             $visual[] = array( 'time' => 0.18, 'duration' => min( 3.2, $runtime * 0.22 ), 'visual_type' => $visual_type, 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'scene_anchor' );
             $visual[] = array( 'time' => $runtime * 0.44, 'duration' => min( 2.4, $runtime * 0.2 ), 'visual_type' => $visual_type, 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'scene_recur' );
             continue;
@@ -1397,6 +1428,19 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
             $has_scene_or_landmark = true;
             break;
         }
+    }
+
+
+    if ( in_array( 'ocean_waves', $audio_layers, true ) ) {
+        $audio[] = array( 'time' => 0.02, 'duration' => max( 6.2, $runtime * 0.64 ), 'engine' => 'ocean_waves', 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'ocean_wave_anchor' );
+    }
+
+    if ( in_array( 'ocean_surface_shimmer', $visual_layers, true ) ) {
+        $visual[] = array( 'time' => 0.0, 'duration' => max( 5.6, $runtime * 0.68 ), 'visual_type' => 'ocean_surface_shimmer', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'waterfront_shimmer_anchor' );
+    }
+
+    if ( in_array( 'seabus_silhouette', $visual_layers, true ) ) {
+        $visual[] = array( 'time' => 0.5, 'duration' => min( 4.4, $runtime * 0.3 ), 'visual_type' => 'seabus_silhouette', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'seabus_silhouette_anchor' );
     }
 
     if ( $has_scene_or_landmark ) {
@@ -1605,7 +1649,6 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         'setting' => sanitize_text_field( $params['setting'] ?? '' ),
         'mood' => sanitize_text_field( $params['mood'] ?? '' ),
         'duration' => max( 10, min( 30, absint( $params['duration'] ?? 20 ) ) ),
-        'voice_style' => sanitize_text_field( $params['voice_style'] ?? '' ),
         'creative_goal' => sanitize_textarea_field( $params['creative_goal'] ?? '' ),
         'location' => sanitize_key( $params['location'] ?? '' ),
         'weather' => sanitize_key( $params['weather'] ?? '' ),
@@ -1625,6 +1668,8 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
             $payload['style_tags_legacy'] = array( $payload['location'], $payload['weather'] );
         }
     }
+
+    $payload['motif_brief'] = se_get_asmr_motif_brief( $payload );
 
     $allowed_engines = implode( ', ', se_get_asmr_allowed_engines() );
     $system_prompt = 'You are ASMR Lab, a retro-futurist sensory film composer for a browser performance engine. '

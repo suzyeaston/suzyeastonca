@@ -10,7 +10,7 @@
     'steam_clock_burst', 'distant_bell_toll', 'cold_air_hush', 'wet_street_shimmer',
     'harbor_fog_bed', 'metal_resonance', 'snow_muffle', 'city_electrical_hum',
     'footsteps_wet', 'footsteps_snow', 'rain_close', 'rain_roof', 'puddle_splash',
-    'crowd_murmur', 'laughter_burst', 'skytrain_pass', 'bus_idle', 'car_horn_short', 'seabus_horn', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant'
+    'crowd_murmur', 'laughter_burst', 'skytrain_pass', 'bus_idle', 'car_horn_short', 'seabus_horn', 'ocean_waves', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant'
   ];
 
   function clamp(value, min, max) {
@@ -106,7 +106,7 @@
 
     buildMasterChain(ctx, destination) {
       const input = ctx.createGain();
-      input.gain.value = 0.68;
+      input.gain.value = 0.58;
 
       const preHP = ctx.createBiquadFilter();
       preHP.type = 'highpass';
@@ -124,7 +124,7 @@
       comp.release.value = 0.25;
 
       const limiter = ctx.createDynamicsCompressor();
-      limiter.threshold.value = -8;
+      limiter.threshold.value = -9;
       limiter.knee.value = 2;
       limiter.ratio.value = 14;
       limiter.attack.value = 0.002;
@@ -135,9 +135,9 @@
 
       const convolver = this.makeTinyReverb(ctx);
       const wet = ctx.createGain();
-      wet.gain.value = 0.2;
+      wet.gain.value = 0.17;
       const dry = ctx.createGain();
-      dry.gain.value = 0.8;
+      dry.gain.value = 0.83;
 
       input.connect(preHP);
       preHP.connect(toneLP);
@@ -418,11 +418,25 @@
           break;
 
 
-        case 'seabus_horn':
-          this.scheduleTone(ctx, destination, atTime, duration, { from: 86, to: 72, peak: 0.02 + intensity * 0.04, type: 'sine', pan: -0.08 });
-          this.scheduleTone(ctx, destination, atTime + 0.03, duration * 0.92, { from: 118, to: 96, peak: 0.012 + intensity * 0.025, type: 'triangle', pan: 0.06 });
-          this.scheduleNoise(ctx, destination, atTime, duration * 0.7, { freq: 420, q: 0.8, peak: 0.006 + intensity * 0.012, filterType: 'bandpass' });
+        case 'seabus_horn': {
+          const wobble = Math.max(0.1, duration * 0.5);
+          this.scheduleTone(ctx, destination, atTime, duration, { from: 82, to: 74, peak: 0.014 + intensity * 0.022, type: 'triangle', pan: -0.08 });
+          this.scheduleTone(ctx, destination, atTime + 0.04, duration * 0.95, { from: 108, to: 98, peak: 0.01 + intensity * 0.016, type: 'sine', pan: 0.06 });
+          this.scheduleTone(ctx, destination, atTime + 0.08, wobble, { from: 95, to: 89, peak: 0.004 + intensity * 0.008, type: 'sine', pan: 0 });
+          this.scheduleNoise(ctx, destination, atTime + 0.04, duration * 0.58, { freq: 360, q: 0.9, peak: 0.002 + intensity * 0.006, filterType: 'bandpass' });
           break;
+        }
+        case 'ocean_waves': {
+          const swells = Math.max(3, Math.round(duration / 2.4));
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 240, q: 0.55, peak: 0.01 + intensity * 0.02, filterType: 'bandpass', pan: -0.18 });
+          this.scheduleNoise(ctx, destination, atTime + 0.02, duration, { freq: 520, q: 0.7, peak: 0.006 + intensity * 0.014, filterType: 'lowpass', pan: 0.18 });
+          for (let i = 0; i < swells; i += 1) {
+            const dt = (i / Math.max(1, swells - 1)) * Math.max(0.3, duration - 0.6);
+            this.scheduleTone(ctx, destination, atTime + dt, 1.4, { from: 62, to: 52, peak: 0.004 + intensity * 0.01, type: 'sine', pan: (i % 2 ? 0.1 : -0.1) });
+            this.scheduleNoise(ctx, destination, atTime + dt + 0.25, 0.34, { freq: 1900, q: 1.1, peak: 0.002 + intensity * 0.006, filterType: 'highpass', pan: (i % 2 ? -0.14 : 0.14) });
+          }
+          break;
+        }
         case 'gulls_distant': {
           const chirps = Math.max(2, Math.min(6, Math.round(duration * 1.4)));
           for (let i = 0; i < chirps; i += 1) {

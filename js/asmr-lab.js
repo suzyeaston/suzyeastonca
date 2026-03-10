@@ -26,18 +26,37 @@
 
 
   const LINKED_VISUAL_TO_AUDIO = {
-    skytrain_pass_visual: ['skytrain_pass'],
-    bus_pass_visual: ['bus_pass'],
+    ocean_surface_shimmer: ['ocean_waves'],
+    waterfront_scene: ['ocean_waves'],
+    seabus_silhouette: ['seabus_horn'],
     rain_streaks: ['rain_ambience'],
-    gastown_clock_silhouette: ['steam_clock'],
-    gastown_scene: ['steam_clock'],
-    snow_drift: ['footsteps_snow_mode']
+    skytrain_pass_visual: ['skytrain_pass'],
+    gastown_scene: ['steam_clock']
+  };
+
+  const OPTIONAL_LINK_AUDIO = {
+    waterfront_scene: ['ocean_waves'],
+    gastown_scene: ['steam_clock']
   };
 
   const SCENE_TO_SUPPORT_VISUALS = {
-    gastown_scene: ['gastown_clock_silhouette', 'streetlamp_halo_row', 'cobblestone_perspective', 'brick_wall_parallax'],
-    granville_scene: ['granville_neon_marquee', 'traffic_light_glow', 'puddle_reflections'],
-    north_shore_scene: ['northshore_mountain_ridge', 'mountain_mist_layers']
+    gastown_scene: ['gastown_clock_silhouette'],
+    granville_scene: ['puddle_reflections'],
+    north_shore_scene: ['mountain_mist_layers'],
+    waterfront_scene: ['ocean_surface_shimmer', 'seabus_silhouette']
+  };
+
+  const VISUAL_CAPS = {
+    scene: 1,
+    atmosphere: 1,
+    landmark: 1,
+    modifier: 3
+  };
+
+  const AUDIO_CAPS = {
+    bed: 1,
+    movement: 2,
+    accent: 2
   };
 
   function applyLayerLinking(audioLayers, visualLayers, isLinked) {
@@ -47,20 +66,16 @@
       return { audio_layers: Array.from(audioSet), visual_layers: Array.from(visualSet) };
     }
 
-    Object.entries(LINKED_VISUAL_TO_AUDIO).forEach(([visualToken, audioTokens]) => {
-      if (!visualSet.has(visualToken)) return;
-      audioTokens.forEach((audioToken) => {
-        if (audioToken === 'footsteps_snow_mode') {
-          if (audioSet.has('footsteps')) audioSet.add('footsteps_snow_mode');
-        } else {
-          audioSet.add(audioToken);
-        }
-      });
-    });
-
     Object.entries(SCENE_TO_SUPPORT_VISUALS).forEach(([sceneToken, supportVisuals]) => {
       if (!visualSet.has(sceneToken)) return;
-      supportVisuals.forEach((visualToken) => visualSet.add(visualToken));
+      supportVisuals.slice(0, 2).forEach((visualToken) => visualSet.add(visualToken));
+    });
+
+    Object.entries(LINKED_VISUAL_TO_AUDIO).forEach(([visualToken, audioTokens]) => {
+      if (!visualSet.has(visualToken)) return;
+      const isOptional = Object.prototype.hasOwnProperty.call(OPTIONAL_LINK_AUDIO, visualToken);
+      if (isOptional && !isLinked) return;
+      audioTokens.forEach((audioToken) => audioSet.add(audioToken));
     });
 
     return { audio_layers: Array.from(audioSet), visual_layers: Array.from(visualSet) };
@@ -69,10 +84,9 @@
 
   const QA_PRESET = {
     duration: '20',
-    voice_style: 'quiet city prayer',
-    link_av: false,
-    audio_layers: ['footsteps'],
-    visual_layers: ['granville_scene', 'rain_streaks', 'neon_sign_flicker', 'skytrain_pass_visual']
+    link_av: true,
+    audio_layers: ['ocean_waves', 'seabus_horn'],
+    visual_layers: ['waterfront_scene', 'harbor_mist', 'lions_gate_bridge', 'ocean_surface_shimmer']
   };
 
   const transport = {
@@ -145,6 +159,32 @@
     }
   }
 
+
+  function enforceLayerCaps(input) {
+    if (!input || !input.checked) return;
+    const name = input.name;
+    const group = String(input.dataset.layerGroup || '').trim();
+    if (!group) return;
+
+    const caps = name === 'visual_layers[]' ? VISUAL_CAPS : (name === 'audio_layers[]' ? AUDIO_CAPS : null);
+    if (!caps || !Object.prototype.hasOwnProperty.call(caps, group)) return;
+
+    const groupBoxes = Array.from(form.querySelectorAll(`input[name="${name}"][data-layer-group="${group}"]`));
+    const checked = groupBoxes.filter((box) => box.checked);
+    if (checked.length <= caps[group]) return;
+
+    input.checked = false;
+    setStatus(`Too many ${group} modules selected (max ${caps[group]}).`);
+  }
+
+  function attachLayerCapHandlers() {
+    if (!form) return;
+    const boxes = form.querySelectorAll('input[name="audio_layers[]"], input[name="visual_layers[]"]');
+    boxes.forEach((box) => {
+      box.addEventListener('change', () => enforceLayerCaps(box));
+    });
+  }
+
   function renderData(data) {
     const concept = document.getElementById('asmr-concept');
     const beats = document.getElementById('asmr-beats');
@@ -179,20 +219,9 @@
 
   function collectFormPayload() {
     const formData = new FormData(form);
-    const advanced = {
-      concept: String(formData.get('concept') || '').trim(),
-      object: String(formData.get('object') || '').trim(),
-      setting: String(formData.get('setting') || '').trim(),
-      mood: String(formData.get('mood') || '').trim(),
-      creative_goal: String(formData.get('creative_goal') || '').trim()
-    };
     const base = {
-      duration: String(formData.get('duration') || '20'),
-      voice_style: String(formData.get('voice_style') || '').trim()
+      duration: String(formData.get('duration') || '20')
     };
-
-    const hasAdvanced = !!(advanced.concept || advanced.object || advanced.setting || advanced.mood || advanced.creative_goal);
-    if (hasAdvanced) return Object.assign({}, base, advanced);
 
     const linkAV = !!formData.get('link_av');
     const audioLayers = formData.getAll('audio_layers[]').map((item) => String(item || '').trim()).filter(Boolean);
@@ -419,12 +448,7 @@
         const field = form.elements.namedItem(key);
         if (field) field.value = value;
       });
-      const advancedFields = ['concept', 'object', 'setting', 'mood', 'creative_goal'];
-      advancedFields.forEach((name) => {
-        const field = form.elements.namedItem(name);
-        if (field) field.value = '';
-      });
-      setStatus('QA preset loaded (motif rack flow, link OFF). Generate package to test visual-only rain.');
+      setStatus('QA preset loaded (waterfront rack). Generate package to test ocean-linked motifs.');
       setError('');
     });
   }
@@ -487,6 +511,8 @@
       }
     });
   }
+
+  attachLayerCapHandlers();
 
   window.addEventListener('resize', function () { if (visuals) visuals.resize(); });
 })();
