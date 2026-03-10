@@ -1382,7 +1382,7 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
                 $audio[] = array( 'time' => 0.7 + ( $i * ( $runtime * 0.14 ) ), 'duration' => 0.18, 'engine' => $engine, 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'footstep_anchor' );
             }
         } elseif ( 'rain_ambience' === $layer ) {
-            $audio[] = array( 'time' => 0.02, 'duration' => max( 4.2, $runtime * 0.52 ), 'engine' => 'rain_close', 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'rain_bed' );
+            $audio[] = array( 'time' => 0.02, 'duration' => max( 7.5, $runtime * 0.78 ), 'engine' => 'rain_close', 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'rain_bed' );
         } elseif ( 'wind_gust' === $layer ) {
             $audio[] = array( 'time' => $runtime * 0.22, 'duration' => min( 3.8, $runtime * 0.24 ), 'engine' => 'cold_air_hush', 'intensity' => 0.44, 'params' => array(), 'sync_role' => 'wind_gust' );
         } elseif ( 'crowd_murmur' === $layer ) {
@@ -1401,15 +1401,15 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
         } elseif ( 'gastown_clock_whistle' === $layer ) {
             $audio[] = array( 'time' => 0.54, 'duration' => 1.25, 'engine' => 'gastown_clock_whistle', 'intensity' => 0.64, 'params' => array(), 'sync_role' => 'gastown_clock_whistle' );
         } elseif ( 'church_bells' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.48, 'duration' => 1.9, 'engine' => 'church_bells', 'intensity' => 0.48, 'params' => array(), 'sync_role' => 'church_bells' );
+            $audio[] = array( 'time' => $runtime * 0.48, 'duration' => max( 4.0, min( 6.5, $runtime * 0.28 ) ), 'engine' => 'church_bells', 'intensity' => 0.34, 'params' => array( 'decay' => 5.2, 'brightness' => 0.3 ), 'sync_role' => 'church_bells' );
         } elseif ( 'harbour_noon_horn' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.34, 'duration' => 2.3, 'engine' => 'harbour_noon_horn', 'intensity' => 0.44, 'params' => array(), 'sync_role' => 'harbour_noon_horn' );
+            $audio[] = array( 'time' => $runtime * 0.34, 'duration' => max( 3.2, min( 5.0, $runtime * 0.24 ) ), 'engine' => 'harbour_noon_horn', 'intensity' => 0.44, 'params' => array( 'attack' => 0.35, 'release' => 2.2, 'wobble' => 0.08 ), 'sync_role' => 'harbour_noon_horn' );
         } elseif ( 'nine_oclock_gun' === $layer ) {
             $audio[] = array( 'time' => $runtime * 0.74, 'duration' => 1.2, 'engine' => 'nine_oclock_gun', 'intensity' => 0.46, 'params' => array(), 'sync_role' => 'nine_oclock_gun' );
         } elseif ( 'planetarium_hum' === $layer ) {
-            $audio[] = array( 'time' => 0.05, 'duration' => max( 5.4, $runtime * 0.58 ), 'engine' => 'planetarium_hum', 'intensity' => 0.32, 'params' => array(), 'sync_role' => 'planetarium_hum' );
+            $audio[] = array( 'time' => 0.05, 'duration' => max( 6.2, $runtime * 0.72 ), 'engine' => 'planetarium_hum', 'intensity' => 0.32, 'params' => array(), 'sync_role' => 'planetarium_hum' );
         } elseif ( 'planetarium_chime' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.41, 'duration' => 0.42, 'engine' => 'planetarium_chime', 'intensity' => 0.32, 'params' => array(), 'sync_role' => 'planetarium_chime' );
+            $audio[] = array( 'time' => $runtime * 0.41, 'duration' => 0.42, 'engine' => 'planetarium_chime', 'intensity' => 0.26, 'params' => array(), 'sync_role' => 'planetarium_chime' );
         } elseif ( 'seabus_horn' === $layer ) {
             $audio[] = array( 'time' => $runtime * 0.32, 'duration' => 1.8, 'engine' => 'seabus_horn', 'intensity' => 0.36, 'params' => array(), 'sync_role' => 'seabus_horn' );
         } elseif ( 'gulls_distant' === $layer ) {
@@ -1467,7 +1467,7 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
 
 
     if ( in_array( 'ocean_waves', $audio_layers, true ) ) {
-        $audio[] = array( 'time' => 0.02, 'duration' => max( 6.2, $runtime * 0.64 ), 'engine' => 'ocean_waves', 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'ocean_wave_anchor' );
+        $audio[] = array( 'time' => 0.02, 'duration' => max( 8.0, $runtime * 0.85 ), 'engine' => 'ocean_waves', 'intensity' => 0.5, 'params' => array( 'fade_out' => 2.8, 'foam' => 0.5 ), 'sync_role' => 'ocean_wave_anchor' );
     }
 
     if ( in_array( 'ocean_surface_shimmer', $visual_layers, true ) ) {
@@ -1730,6 +1730,10 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'Return ONE strict JSON object and no markdown. '
         . 'Use exactly and only these top-level keys: title, runtime_seconds, hook, concept_summary, logline, story_beats, style_tags, audio_events, visual_events, sync_points, end_card, edit_rhythm, presentation_note. '
         . 'audio_events objects must include: time, duration, engine, intensity, params, sync_role. '
+        . 'ASMR timing rules: bed layers (ocean_waves, rain_close, rain_roof, planetarium_hum, crowd_murmur, harbor_fog_bed) should usually run 60-100% of runtime_seconds with soft fades. '
+        . 'Horns and bells should be sustained and calming with typical durations between 2.5-6.0s, slow attack, and long release. '
+        . 'Avoid tiny durations under 0.5s except intentional micro-textures; prioritize long calming layers. '
+        . 'params must always be a JSON object (use {} when none) and never an array. '
         . 'visual_events objects must include: time, duration, visual_type, intensity, params, sync_role. '
         . 'sync_points objects must include: time, cue, importance. story_beats must be an array of exactly 4 objects with: t0, t1, beat, intent (Opening, Arrival, Ritual Lift, Resolve). '
         . 'end_card must include: use_end_card, text, reveal_style. '
@@ -1751,6 +1755,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'Prompt interpretation priority: selected visual motifs > selected audio motifs > named object > mood adjectives. '
         . 'For Gastown/Vancouver scenes, favor steam clock cues, harbor fog bed, amber streetlamp halos, wet cobblestone reflections, brick facade texture, neon-on-wet shimmer, and winter hush pacing where relevant. '
  . 'Vancouver sound palette guide: gastown_clock_whistle=steam whistle toot, iconic Gastown clock, breathy warm; church_bells=distant cathedral bells, warm decay; harbour_noon_horn=harbour ship horn at noon, low and foggy; ocean_waves=waterfront waves, soft swell; skytrain_pass=SkyTrain whoosh and rail hum; seabus_horn=short ferry foghorn; planetarium_hum=quiet dome room tone; planetarium_chime=tiny sparkle chime; nine_oclock_gun=low ceremonial boom. '
+        . 'When using signature engines (harbour_noon_horn, gastown_clock_whistle, church_bells, ocean_waves, planetarium_hum), include optional shaping params when meaningful so synthesis can be tuned per scene. '
         . 'Avoid generic abstract output when prompts include specific motif or geography terms. '
         . 'The result should feel like an authored short sensory micro-film, not a debug demo. '
         . 'Every beat transition must be marked by a signature cue pair (audio + visual) from selected motifs when story_mode is true. Do not include prose outside JSON.';

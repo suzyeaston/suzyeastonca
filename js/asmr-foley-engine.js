@@ -14,6 +14,11 @@
     'gastown_clock_whistle', 'church_bells', 'harbour_noon_horn', 'nine_oclock_gun', 'planetarium_hum', 'planetarium_chime'
   ];
 
+  const BED_ENGINES = new Set([
+    'ocean_waves', 'rain_close', 'rain_roof', 'harbor_fog_bed', 'city_electrical_hum',
+    'planetarium_hum', 'crowd_murmur', 'filtered_noise_wash', 'low_hum'
+  ]);
+
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
   }
@@ -64,14 +69,20 @@
         .filter((event) => event && ENGINE_NAMES.includes(event.engine))
         .map((event) => {
           const time = clamp(Number(event.time || 0), 0, maxEdge);
-          const duration = clamp(Number(event.duration || 0.2), 0.04, 4.5);
+          const isBed = BED_ENGINES.has(event.engine);
+          const duration = isBed
+            ? clamp(Number(event.duration || 3), 3, runtime + 0.5)
+            : clamp(Number(event.duration || 0.2), 0.12, 8);
           const intensity = clamp(Number(event.intensity || 0.5), 0, 1);
+          const params = (event.params && typeof event.params === 'object' && !Array.isArray(event.params))
+            ? { ...event.params }
+            : {};
           return {
             time,
             duration,
             intensity,
             engine: event.engine,
-            params: (event.params && typeof event.params === 'object') ? event.params : {},
+            params,
             sync_role: String(event.sync_role || '')
           };
         })
@@ -176,13 +187,33 @@
     }
 
     shapeEnvelope(gainParam, start, duration, peak) {
-      const attack = Math.min(0.18, Math.max(0.025, duration * 0.24));
-      const hold = Math.max(0.01, duration * 0.2);
-      const releaseStart = start + attack + hold;
+      return this.shapeEnvelopeEx(gainParam, start, duration, peak, {});
+    }
+
+    shapeEnvelopeEx(gainParam, start, duration, peak, env = {}) {
+      const attack = Math.max(0.01, Math.min(duration * 0.8, Number(env.attack || Math.min(0.18, Math.max(0.025, duration * 0.24)))));
+      const hold = Math.max(0, Math.min(duration - attack, Number(env.hold ?? Math.max(0.01, duration * 0.2))));
+      const release = Math.max(0.03, Number(env.release || Math.max(0.08, duration - attack - hold)));
+      const tail = Math.max(0, Number(env.tail || 0));
+      const sustain = Math.max(0.0009, peak * 0.72);
+      const peakVal = Math.max(0.0015, peak);
+      const attackAt = start + attack;
+      const holdAt = Math.min(start + duration, attackAt + hold);
+      const releaseAt = holdAt + release;
+      const finalAt = releaseAt + tail;
+      const useLinear = env.curve === 'linear';
+
       gainParam.setValueAtTime(0.0001, start);
-      gainParam.exponentialRampToValueAtTime(Math.max(0.0025, peak), start + attack);
-      gainParam.exponentialRampToValueAtTime(Math.max(0.0015, peak * 0.75), releaseStart);
-      gainParam.exponentialRampToValueAtTime(0.0001, start + duration);
+      if (useLinear) {
+        gainParam.linearRampToValueAtTime(peakVal, attackAt);
+        gainParam.linearRampToValueAtTime(sustain, holdAt);
+        gainParam.linearRampToValueAtTime(0.0001, finalAt);
+      } else {
+        gainParam.exponentialRampToValueAtTime(peakVal, attackAt);
+        gainParam.exponentialRampToValueAtTime(Math.max(0.0008, sustain), holdAt);
+        gainParam.exponentialRampToValueAtTime(0.0001, finalAt);
+      }
+      return { tail: release + tail, endAt: finalAt };
     }
 
     scheduleTone(ctx, target, start, duration, opts) {
@@ -195,7 +226,7 @@
       osc.frequency.setValueAtTime(Math.max(20, opts.from || 220), start);
       if (opts.to) osc.frequency.exponentialRampToValueAtTime(Math.max(20, opts.to), start + duration);
       const gain = ctx.createGain();
-      this.shapeEnvelope(gain.gain, start, duration, opts.peak || 0.1);
+      const envResult = this.shapeEnvelopeEx(gain.gain, start, duration, opts.peak || 0.1, opts.env || {});
 
       osc.connect(gain);
       if (pan) {
@@ -206,14 +237,18 @@
       }
 
       osc.start(start);
-      osc.stop(start + duration + 0.05);
+      osc.stop(start + duration + envResult.tail + 0.05);
       this.activeSources.push(osc);
       this.nodes.push(osc, gain);
       if (pan) this.nodes.push(pan);
     }
 
     scheduleNoise(ctx, target, start, duration, opts) {
-      const buffer = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * duration)), ctx.sampleRate);
+      const env = opts.env || {};
+      const envRelease = Math.max(0.03, Number(env.release || Math.max(0.08, duration * 0.5)));
+      const envTail = Math.max(0, Number(env.tail || 0));
+      const sourceDuration = duration + envRelease + envTail + 0.08;
+      const buffer = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * sourceDuration)), ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for (let i = 0; i < data.length; i += 1) data[i] = (Math.random() * 2 - 1) * (1 - (i / data.length) * 0.2);
       const source = ctx.createBufferSource();
@@ -225,7 +260,7 @@
       const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
       if (pan) pan.pan.value = clamp(Number(opts.pan || 0), -1, 1);
       const gain = ctx.createGain();
-      this.shapeEnvelope(gain.gain, start, duration, opts.peak || 0.08);
+      const envResult = this.shapeEnvelopeEx(gain.gain, start, duration, opts.peak || 0.08, opts.env || {});
 
       source.connect(filter);
       filter.connect(gain);
@@ -237,16 +272,17 @@
       }
 
       source.start(start);
-      source.stop(start + duration + 0.03);
+      source.stop(start + duration + envResult.tail + 0.03);
       this.activeSources.push(source);
       this.nodes.push(source, filter, gain);
       if (pan) this.nodes.push(pan);
     }
 
     renderEvent(ctx, destination, event, atTime) {
-      const duration = clamp(Number(event.duration || 0.2), 0.04, 8);
+      const isBed = BED_ENGINES.has(event.engine);
+      const duration = isBed ? Math.max(0.12, Number(event.duration || 3)) : clamp(Number(event.duration || 0.2), 0.12, 8);
       const intensity = clamp(Number(event.intensity || 0.5), 0, 1);
-      const p = event.params || {};
+      const p = (event.params && typeof event.params === 'object' && !Array.isArray(event.params)) ? event.params : {};
 
       switch (event.engine) {
         case 'glissando_rise':
@@ -404,9 +440,18 @@
           this.scheduleNoise(ctx, destination, atTime + 0.015, Math.max(0.11, duration * 0.75), { freq: 1300, q: 1.4, peak: 0.012 + intensity * 0.02, filterType: 'bandpass', pan: -0.16 });
           break;
         case 'skytrain_pass':
-          this.scheduleTone(ctx, destination, atTime, duration, { from: 58, to: 46, peak: 0.045 + intensity * 0.07, type: 'sawtooth', pan: -0.25 });
-          this.scheduleTone(ctx, destination, atTime + 0.05, duration * 0.9, { from: 140, to: 220, peak: 0.014 + intensity * 0.026, type: 'triangle', pan: 0.2 });
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 2600, q: 0.75, peak: 0.012 + intensity * 0.02, filterType: 'highpass', pan: 0.1 });
+          this.scheduleTone(ctx, destination, atTime, duration, {
+            from: 58, to: 46, peak: 0.032 + intensity * 0.05, type: 'sawtooth', pan: -0.22,
+            env: { attack: 0.28, hold: duration * 0.34, release: 1.8, tail: 0.5 }
+          });
+          this.scheduleTone(ctx, destination, atTime + 0.05, duration * 0.9, {
+            from: 140, to: 220, peak: 0.011 + intensity * 0.02, type: 'triangle', pan: 0.18,
+            env: { attack: 0.22, hold: duration * 0.3, release: 1.5, tail: 0.4 }
+          });
+          this.scheduleNoise(ctx, destination, atTime, duration, {
+            freq: 2400, q: 0.62, peak: 0.008 + intensity * 0.014, filterType: 'highpass', pan: 0.08,
+            env: { attack: 0.2, hold: duration * 0.35, release: 1.4, tail: 0.3 }
+          });
           break;
         case 'bus_idle':
           this.scheduleTone(ctx, destination, atTime, duration, { from: 78, to: 74, peak: 0.028 + intensity * 0.045, type: 'sawtooth', pan: -0.06 });
@@ -420,21 +465,60 @@
 
 
         case 'seabus_horn': {
-          const wobble = Math.max(0.1, duration * 0.5);
-          this.scheduleTone(ctx, destination, atTime, duration, { from: 82, to: 74, peak: 0.014 + intensity * 0.022, type: 'triangle', pan: -0.08 });
-          this.scheduleTone(ctx, destination, atTime + 0.04, duration * 0.95, { from: 108, to: 98, peak: 0.01 + intensity * 0.016, type: 'sine', pan: 0.06 });
-          this.scheduleTone(ctx, destination, atTime + 0.08, wobble, { from: 95, to: 89, peak: 0.004 + intensity * 0.008, type: 'sine', pan: 0 });
-          this.scheduleNoise(ctx, destination, atTime + 0.04, duration * 0.58, { freq: 360, q: 0.9, peak: 0.002 + intensity * 0.006, filterType: 'bandpass' });
+          const f0 = Number(p.f0 || 86);
+          const attack = clamp(Number(p.attack || 0.24), 0.12, 0.6);
+          const release = clamp(Number(p.release || 1.8), 1, 3.2);
+          const wobble = clamp(Number(p.wobble || 0.06), 0, 0.2);
+          const drift = clamp(Number(p.drift || 0.012), 0, 0.04);
+          const bright = clamp(Number(p.brightness || 0.28), 0, 1);
+          this.scheduleTone(ctx, destination, atTime, duration, {
+            from: f0 * (1 + drift), to: f0 * (0.985 - drift), peak: 0.012 + intensity * 0.018, type: 'sine', pan: -0.05,
+            env: { attack, hold: duration * 0.34, release, tail: 0.4 }
+          });
+          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.95, {
+            from: f0 * 2.02 * (1 + drift * 0.5), to: f0 * 2.0, peak: (0.005 + intensity * 0.01) * (0.5 + bright * 0.9), type: 'triangle', pan: 0.06,
+            env: { attack: attack * 0.9, hold: duration * 0.3, release: release * 0.9, tail: 0.35 }
+          });
+          this.scheduleTone(ctx, destination, atTime + 0.04, duration * 0.9, {
+            from: f0 * 3.01, to: f0 * (3.01 - wobble * 0.8), peak: (0.002 + intensity * 0.005) * (0.4 + bright), type: 'sine', pan: 0.03,
+            env: { attack: attack * 0.8, hold: duration * 0.2, release: release * 0.8, tail: 0.3 }
+          });
+          this.scheduleNoise(ctx, destination, atTime + 0.02, duration * 0.82, {
+            freq: 360, q: 0.74, peak: 0.002 + intensity * 0.005, filterType: 'bandpass', pan: 0.01,
+            env: { attack: attack * 0.9, hold: duration * 0.26, release: release * 0.75, tail: 0.25 }
+          });
           break;
         }
         case 'ocean_waves': {
-          const swells = Math.max(3, Math.round(duration / 2.4));
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 240, q: 0.55, peak: 0.01 + intensity * 0.02, filterType: 'bandpass', pan: -0.18 });
-          this.scheduleNoise(ctx, destination, atTime + 0.02, duration, { freq: 520, q: 0.7, peak: 0.006 + intensity * 0.014, filterType: 'lowpass', pan: 0.18 });
+          const swellRate = clamp(Number(p.swell_rate || 0.35), 0.18, 0.75);
+          const foam = clamp(Number(p.foam ?? 0.65), 0, 1);
+          const fadeOut = clamp(Number(p.fade_out || 2.8), 2.2, 3.2);
+          const calmTailStart = atTime + Math.max(0.2, duration - fadeOut);
+          const swells = Math.max(2, Math.round(duration * swellRate));
+
+          this.scheduleNoise(ctx, destination, atTime, duration, {
+            freq: 240, q: 0.52, peak: 0.009 + intensity * 0.017, filterType: 'bandpass', pan: -0.16,
+            env: { attack: 0.45, hold: duration * 0.45, release: 2.2, tail: 0.4 }
+          });
+          this.scheduleNoise(ctx, destination, atTime + 0.03, duration, {
+            freq: 520, q: 0.66, peak: 0.005 + intensity * 0.012, filterType: 'lowpass', pan: 0.14,
+            env: { attack: 0.38, hold: duration * 0.4, release: 2, tail: 0.35 }
+          });
+
           for (let i = 0; i < swells; i += 1) {
-            const dt = (i / Math.max(1, swells - 1)) * Math.max(0.3, duration - 0.6);
-            this.scheduleTone(ctx, destination, atTime + dt, 1.4, { from: 62, to: 52, peak: 0.004 + intensity * 0.01, type: 'sine', pan: (i % 2 ? 0.1 : -0.1) });
-            this.scheduleNoise(ctx, destination, atTime + dt + 0.25, 0.34, { freq: 1900, q: 1.1, peak: 0.002 + intensity * 0.006, filterType: 'highpass', pan: (i % 2 ? -0.14 : 0.14) });
+            const dt = (i / Math.max(1, swells - 1)) * Math.max(0.2, duration - 1.2);
+            const swellAt = atTime + dt;
+            const tailFactor = swellAt >= calmTailStart ? Math.max(0.25, (atTime + duration - swellAt) / Math.max(0.4, fadeOut)) : 1;
+            this.scheduleTone(ctx, destination, swellAt, 1.35, {
+              from: 62, to: 53, peak: (0.003 + intensity * 0.008) * tailFactor, type: 'sine', pan: (i % 2 ? 0.1 : -0.08),
+              env: { attack: 0.3, hold: 0.42, release: 1.5, tail: 0.3 }
+            });
+            if (foam > 0.05 && (swellAt + 0.25) < (atTime + duration - 0.8)) {
+              this.scheduleNoise(ctx, destination, swellAt + 0.25, 0.34, {
+                freq: 1900, q: 1.05, peak: (0.0015 + intensity * 0.0045) * foam * tailFactor, filterType: 'highpass', pan: (i % 2 ? -0.12 : 0.12),
+                env: { attack: 0.05, hold: 0.08, release: 0.55, tail: 0.15 }
+              });
+            }
           }
           break;
         }
@@ -476,22 +560,81 @@
           break;
 
         case 'gastown_clock_whistle': {
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 1600, q: 0.85, peak: 0.012 + intensity * 0.02, filterType: 'bandpass', pan: 0.05 });
-          this.scheduleTone(ctx, destination, atTime + 0.03, duration * 0.88, { from: 540, to: 500, peak: 0.012 + intensity * 0.022, type: 'triangle', pan: -0.08 });
-          this.scheduleTone(ctx, destination, atTime + 0.05, duration * 0.84, { from: 560, to: 520, peak: 0.007 + intensity * 0.014, type: 'sine', pan: 0.08 });
+          const f0 = clamp(Number(p.f0 || 540), 520, 560);
+          const interval = clamp(Number(p.interval || 1.06), 1.02, 1.14);
+          const attack = clamp(Number(p.attack || 0.18), 0.1, 0.5);
+          const release = clamp(Number(p.release || 1.8), 1, 3.2);
+          const breathy = clamp(Number(p.breathy ?? 0.7), 0, 1);
+          const vibrato = clamp(Number(p.vibrato ?? 0.55), 0, 1);
+          const bend = 1 + (0.028 + vibrato * 0.02);
+          this.scheduleNoise(ctx, destination, atTime, duration, {
+            freq: 1700, q: 0.8, peak: (0.004 + intensity * 0.01) * (0.35 + breathy), filterType: 'bandpass', pan: 0.03,
+            env: { attack: attack * 0.7, hold: duration * 0.28, release: release * 0.9, tail: 0.25 }
+          });
+          this.scheduleNoise(ctx, destination, atTime + 0.02, duration * 0.95, {
+            freq: 980, q: 0.6, peak: (0.003 + intensity * 0.007) * breathy, filterType: 'lowpass', pan: -0.02,
+            env: { attack: attack * 0.9, hold: duration * 0.3, release: release * 0.8, tail: 0.2 }
+          });
+          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.9, {
+            from: f0 * bend, to: f0 * (1 + vibrato * 0.006), peak: 0.011 + intensity * 0.018, type: 'triangle', pan: -0.06,
+            env: { attack, hold: duration * 0.33, release, tail: 0.35 }
+          });
+          this.scheduleTone(ctx, destination, atTime + 0.05, duration * 0.88, {
+            from: (f0 * interval) * (1 + vibrato * 0.018), to: f0 * interval, peak: 0.008 + intensity * 0.013, type: 'sine', pan: 0.07,
+            env: { attack: attack * 1.1, hold: duration * 0.3, release: release * 0.95, tail: 0.35 }
+          });
           break;
         }
         case 'church_bells': {
-          this.scheduleTone(ctx, destination, atTime, duration, { from: 392, to: 252, peak: 0.012 + intensity * 0.018, type: 'sine', pan: -0.04 });
-          this.scheduleTone(ctx, destination, atTime + 0.01, duration * 0.94, { from: 645, to: 418, peak: 0.008 + intensity * 0.014, type: 'triangle', pan: 0.06 });
-          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.88, { from: 898, to: 584, peak: 0.006 + intensity * 0.01, type: 'sine', pan: -0.07 });
-          this.scheduleTone(ctx, destination, atTime + 0.03, duration * 0.82, { from: 1132, to: 728, peak: 0.004 + intensity * 0.008, type: 'triangle', pan: 0.09 });
+          const root = Number(p.root || 392);
+          const decay = clamp(Number(p.decay || 4.5), 2.5, 7.5);
+          const brightness = clamp(Number(p.brightness || 0.35), 0, 1);
+          const drift = clamp(Number(p.drift || 0.01), 0, 0.04);
+          const partials = [
+            { r: 1.0, amp: 1.0, pan: -0.12, d: 1.0, type: 'sine' },
+            { r: 2.7, amp: 0.62, pan: 0.14, d: 0.82, type: 'triangle' },
+            { r: 5.8, amp: 0.4, pan: -0.18, d: 0.68, type: 'sine' },
+            { r: 8.9, amp: 0.24, pan: 0.2, d: 0.54, type: 'triangle' }
+          ];
+          partials.forEach((part, i) => {
+            this.scheduleTone(ctx, destination, atTime + i * 0.01, Math.max(duration, decay * part.d), {
+              from: root * part.r * (1 + drift),
+              to: root * part.r * (0.62 - drift * 0.5),
+              peak: (0.004 + intensity * 0.012) * part.amp * (0.65 + brightness * 0.7),
+              type: part.type,
+              pan: part.pan,
+              env: { attack: 0.22 + i * 0.03, hold: 0.5, release: decay * part.d, tail: 0.65 }
+            });
+          });
+          this.scheduleNoise(ctx, destination, atTime + 0.03, Math.max(duration, decay * 0.9), {
+            freq: 1800 + brightness * 1000, q: 0.6, peak: 0.0015 + intensity * 0.004, filterType: 'lowpass', pan: 0,
+            env: { attack: 0.14, hold: 0.4, release: decay * 0.75, tail: 0.4 }
+          });
           break;
         }
         case 'harbour_noon_horn': {
-          this.scheduleTone(ctx, destination, atTime, duration, { from: 74, to: 68, peak: 0.014 + intensity * 0.022, type: 'sine', pan: 0 });
-          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.92, { from: 148, to: 136, peak: 0.008 + intensity * 0.014, type: 'triangle', pan: -0.06 });
-          this.scheduleNoise(ctx, destination, atTime + 0.06, duration * 0.72, { freq: 340, q: 0.7, peak: 0.003 + intensity * 0.007, filterType: 'bandpass', pan: 0.04 });
+          const f0 = Number(p.f0 || 74);
+          const attack = clamp(Number(p.attack || 0.35), 0.15, 0.7);
+          const release = clamp(Number(p.release || 2.2), 1.2, 4.8);
+          const wobble = clamp(Number(p.wobble || 0.07), 0, 0.2);
+          const drift = clamp(Number(p.drift || 0.015), 0, 0.04);
+          const brightness = clamp(Number(p.brightness || 0.35), 0, 1);
+          this.scheduleTone(ctx, destination, atTime, duration, {
+            from: f0 * (1 + drift), to: f0 * (0.97 - drift * 0.4), peak: 0.012 + intensity * 0.02, type: 'sine', pan: -0.02,
+            env: { attack, hold: duration * 0.38, release, tail: 0.6 }
+          });
+          this.scheduleTone(ctx, destination, atTime + 0.015, duration * 0.96, {
+            from: f0 * 2.01 * (1 + wobble * 0.03), to: f0 * 2.0, peak: (0.006 + intensity * 0.012) * (0.55 + brightness), type: 'triangle', pan: -0.08,
+            env: { attack: attack * 0.85, hold: duration * 0.3, release: release * 0.92, tail: 0.5 }
+          });
+          this.scheduleTone(ctx, destination, atTime + 0.03, duration * 0.9, {
+            from: f0 * 3.02, to: f0 * (2.95 - wobble * 0.2), peak: (0.003 + intensity * 0.007) * (0.35 + brightness), type: 'sine', pan: 0.06,
+            env: { attack: attack * 0.8, hold: duration * 0.24, release: release * 0.8, tail: 0.45 }
+          });
+          this.scheduleNoise(ctx, destination, atTime + 0.04, duration * 0.86, {
+            freq: 320, q: 0.68, peak: (0.002 + intensity * 0.005) * (0.45 + brightness), filterType: 'bandpass', pan: 0.03,
+            env: { attack: attack * 0.9, hold: duration * 0.25, release: release * 0.72, tail: 0.3 }
+          });
           break;
         }
         case 'nine_oclock_gun': {
@@ -501,13 +644,33 @@
           break;
         }
         case 'planetarium_hum': {
-          this.scheduleTone(ctx, destination, atTime, duration, { from: 92, to: 96, peak: 0.005 + intensity * 0.01, type: 'sine', pan: -0.02 });
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 780, q: 0.55, peak: 0.003 + intensity * 0.007, filterType: 'lowpass', pan: 0.03 });
+          this.scheduleTone(ctx, destination, atTime, duration, {
+            from: 88, to: 94, peak: 0.007 + intensity * 0.013, type: 'sine', pan: -0.02,
+            env: { attack: 0.35, hold: duration * 0.44, release: 2, tail: 0.5 }
+          });
+          this.scheduleTone(ctx, destination, atTime + 0.04, duration * 0.96, {
+            from: 126, to: 121, peak: 0.003 + intensity * 0.007, type: 'triangle', pan: 0.04,
+            env: { attack: 0.3, hold: duration * 0.35, release: 1.8, tail: 0.35 }
+          });
+          this.scheduleNoise(ctx, destination, atTime, duration, {
+            freq: 740, q: 0.52, peak: 0.003 + intensity * 0.009, filterType: 'lowpass', pan: 0.02,
+            env: { attack: 0.4, hold: duration * 0.42, release: 2.1, tail: 0.4 }
+          });
           break;
         }
         case 'planetarium_chime': {
-          this.scheduleTone(ctx, destination, atTime, Math.max(0.1, duration * 0.65), { from: 880, to: 660, peak: 0.006 + intensity * 0.01, type: 'square', pan: 0.1 });
-          this.scheduleTone(ctx, destination, atTime + 0.03, Math.max(0.1, duration * 0.56), { from: 1108, to: 830, peak: 0.005 + intensity * 0.008, type: 'triangle', pan: -0.08 });
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.16, duration * 0.75), {
+            from: 932, to: 690, peak: 0.004 + intensity * 0.008, type: 'triangle', pan: 0.08,
+            env: { attack: 0.08, hold: 0.18, release: 1.4, tail: 0.2 }
+          });
+          this.scheduleTone(ctx, destination, atTime + 0.04, Math.max(0.14, duration * 0.68), {
+            from: 1188, to: 860, peak: 0.003 + intensity * 0.006, type: 'sine', pan: -0.07,
+            env: { attack: 0.07, hold: 0.16, release: 1.2, tail: 0.2 }
+          });
+          this.scheduleNoise(ctx, destination, atTime + 0.03, Math.max(0.15, duration * 0.6), {
+            freq: 2600, q: 1.1, peak: 0.001 + intensity * 0.0025, filterType: 'bandpass', pan: 0,
+            env: { attack: 0.05, hold: 0.08, release: 0.9, tail: 0.15 }
+          });
           break;
         }
 
@@ -535,6 +698,17 @@
       this.renderEvent(ctx, destination, airy, startAt + airy.time);
     }
 
+
+    estimateEventTail(event) {
+      const e = event && event.engine;
+      if (e === 'harbour_noon_horn') return 2.8;
+      if (e === 'seabus_horn') return 2.2;
+      if (e === 'church_bells') return 4.8;
+      if (e === 'gastown_clock_whistle') return 2.1;
+      if (e === 'planetarium_hum' || BED_ENGINES.has(e)) return 2.4;
+      return 0.8;
+    }
+
     validateRecipe(pkg) {
       if (!pkg || typeof pkg !== 'object') return false;
       if (!Array.isArray(pkg.audio_events)) return false;
@@ -547,6 +721,9 @@
       this.stop();
 
       const events = this.normalizeAudioEvents(pkg);
+      if (window && window.console && typeof window.console.log === 'function') {
+        window.console.log('[ASMR] normalized audio events', events.map((event) => ({ time: Number(event.time.toFixed(3)), duration: Number(event.duration.toFixed(3)), engine: event.engine })));
+      }
       const runtime = clamp(Number(pkg.runtime_seconds || 20), 10, 30);
       const preroll = this.defaultPrerollSeconds;
       const now = this.ctx.currentTime;
@@ -556,7 +733,7 @@
       this.scheduleBed(this.ctx, this.masterNode, audioStartAt, runtime);
       events.forEach((event) => this.renderEvent(this.ctx, this.masterNode, event, audioStartAt + event.time));
 
-      const total = Math.max(runtime, events.reduce((max, event) => Math.max(max, event.time + event.duration), runtime));
+      const total = Math.max(runtime, events.reduce((max, event) => Math.max(max, event.time + event.duration + this.estimateEventTail(event)), runtime));
       this.isPlaying = true;
       const timer = window.setTimeout(() => {
         this.isPlaying = false;
@@ -572,7 +749,7 @@
       if (!this.validateRecipe(pkg)) throw new Error('Cannot export: invalid audio events.');
       const events = this.normalizeAudioEvents(pkg);
       const runtime = clamp(Number(pkg.runtime_seconds || 20), 10, 30);
-      const lengthSec = Math.max(runtime + 1, events.reduce((max, e) => Math.max(max, e.time + e.duration), runtime) + 1);
+      const lengthSec = Math.max(runtime + 2, events.reduce((max, e) => Math.max(max, e.time + e.duration + this.estimateEventTail(e)), runtime) + 1.5);
       const offline = new OfflineAudioContext(2, Math.ceil(lengthSec * sampleRate), sampleRate);
       const master = this.buildMasterChain(offline, offline.destination);
       this.scheduleBed(offline, master, 0, runtime);
