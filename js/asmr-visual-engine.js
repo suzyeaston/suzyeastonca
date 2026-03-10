@@ -14,7 +14,7 @@
     'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
     'northshore_mountain_ridge', 'mountain_mist_layers',
     'rain_streaks', 'puddle_reflections',
-    'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof'
+    'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'gastown_scene', 'granville_scene', 'north_shore_scene', 'clear_cold_shimmer'
   ];
 
   function clamp(value, min, max) {
@@ -296,8 +296,8 @@
     }
 
     drawSceneLayers(ctx, width, height, t, normalized, overlays) {
-      const landmarkTypes = ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'gastown_clock_silhouette', 'skytrain_pass_visual', 'bus_pass_visual'];
-      const atmosphereTypes = ['rain_streaks', 'snow_drift', 'harbor_mist', 'mountain_mist_layers', 'puddle_reflections', 'volumetric_fog'];
+      const landmarkTypes = ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'gastown_clock_silhouette'];
+      const atmosphereTypes = ['rain_streaks', 'snow_drift', 'harbor_mist', 'mountain_mist_layers', 'puddle_reflections', 'volumetric_fog', 'clear_cold_shimmer'];
       const weirdness = this.parseWeirdnessLevel();
       const weirdNorm = (weirdness - 1) / 9;
       let distortion = 0.04 + (0.18 - 0.04) * weirdNorm;
@@ -896,6 +896,80 @@
           ctx.stroke();
           break;
         }
+
+        case 'clear_cold_shimmer': {
+          ctx.fillStyle = `rgba(196,226,255,${0.06 + intensity * 0.12})`;
+          for (let i = 0; i < 70; i += 1) {
+            const x = (i * 47 + normalized * 90) % w;
+            const y = (i * 23 + normalized * 60) % (h * 0.8);
+            const s = 1 + ((i % 3) * 0.8);
+            ctx.fillRect(x, y, s, s);
+          }
+          break;
+        }
+        case 'gastown_scene': {
+          this.drawEvent(ctx, { visual_type: 'brick_wall_parallax', params: {}, intensity: intensity * 0.8 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'cobblestone_perspective', params: {}, intensity: intensity * 0.8 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'streetlamp_halo_row', params: {}, intensity: intensity * 0.85 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'gastown_clock_silhouette', params: {}, intensity: intensity * 0.9 }, p, intensity, w, h, normalized);
+          break;
+        }
+        case 'granville_scene': {
+          this.drawEvent(ctx, { visual_type: 'granville_neon_marquee', params: {}, intensity: intensity * 0.9 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'neon_sign_flicker', params: {}, intensity: intensity * 0.85 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'traffic_light_glow', params: {}, intensity: intensity * 0.7 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'puddle_reflections', params: {}, intensity: intensity * 0.72 }, p, intensity, w, h, normalized);
+          break;
+        }
+        case 'north_shore_scene': {
+          this.drawEvent(ctx, { visual_type: 'northshore_mountain_ridge', params: {}, intensity: intensity * 0.9 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'mountain_mist_layers', params: {}, intensity: intensity * 0.9 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'harbor_mist', params: {}, intensity: intensity * 0.75 }, p, intensity, w, h, normalized);
+          break;
+        }
+
+
+        case 'lions_gate_bridge': {
+          const y = h * 0.56;
+          ctx.strokeStyle = `rgba(176,208,224,${0.26 + intensity * 0.3})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.moveTo(w * 0.18, y); ctx.lineTo(w * 0.82, y); ctx.stroke();
+          ctx.fillStyle = `rgba(120,154,180,${0.24 + intensity * 0.26})`;
+          ctx.fillRect(w * 0.2, h * 0.36, w * 0.03, h * 0.2);
+          ctx.fillRect(w * 0.77, h * 0.36, w * 0.03, h * 0.2);
+          for (let i = 0; i < 7; i += 1) {
+            const x = w * (0.23 + i * 0.08);
+            ctx.beginPath(); ctx.moveTo(x, h * 0.38); ctx.lineTo(x, y); ctx.stroke();
+          }
+          break;
+        }
+        case 'bc_place_dome': {
+          const cx = w * 0.52;
+          const cy = h * 0.72;
+          const rx = w * 0.24;
+          const ry = h * 0.14;
+          ctx.strokeStyle = `rgba(182,216,234,${0.28 + intensity * 0.3})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, rx, ry, 0, Math.PI, 0, true);
+          ctx.stroke();
+          for (let i = -4; i <= 4; i += 1) {
+            const x = cx + i * (rx / 4.5);
+            ctx.beginPath(); ctx.moveTo(x, cy); ctx.lineTo(cx, cy - ry * 1.3); ctx.stroke();
+          }
+          break;
+        }
+        case 'port_cranes': {
+          ctx.strokeStyle = `rgba(164,188,208,${0.22 + intensity * 0.26})`;
+          ctx.lineWidth = 3;
+          for (let i = 0; i < 4; i += 1) {
+            const x = w * (0.16 + i * 0.16);
+            const base = h * 0.68;
+            ctx.beginPath(); ctx.moveTo(x, base); ctx.lineTo(x, h * 0.5); ctx.lineTo(x + w * 0.1, h * 0.46); ctx.stroke();
+          }
+          break;
+        }
+
         case 'northshore_mountain_ridge': {
           ctx.fillStyle = `rgba(40,62,86,${0.24 + intensity * 0.28})`;
           ctx.beginPath();
