@@ -25,55 +25,94 @@ get_header();
 
     <form id="asmr-lab-form" class="asmr-lab-form" novalidate>
       <div class="asmr-grid">
-        <label>Location
-          <select name="location">
-            <option value="gastown" selected>Gastown Steam Clock</option>
-            <option value="granville">Granville Street</option>
-            <option value="north_shore">North Shore Mountains</option>
-          </select>
-        </label>
-        <label>Weather
-          <select name="weather">
-            <option value="snow" selected>Snow</option>
-            <option value="rain">Rain</option>
-            <option value="fog">Fog</option>
-            <option value="clear_cold">Clear Cold</option>
-          </select>
-        </label>
         <label>Duration (10-30 sec)<input type="number" name="duration" min="10" max="30" value="20" required /></label>
-        <label>Voice Style<input type="text" name="voice_style" maxlength="80" placeholder="composed machine whisper" /></label>
-        <label>Weirdness (1-10)<input type="number" name="weirdness" min="1" max="10" value="6" required /></label>
       </div>
 
-      <fieldset class="asmr-layer-grid">
+      <fieldset class="asmr-layer-grid asmr-layer-groups">
         <legend>Sound Layers</legend>
-        <label><input type="checkbox" name="audio_layers[]" value="footsteps" checked /> footsteps</label>
-        <label><input type="checkbox" name="audio_layers[]" value="rain_ambience" /> rain ambience</label>
-        <label><input type="checkbox" name="audio_layers[]" value="chatter" /> chatter</label>
-        <label><input type="checkbox" name="audio_layers[]" value="laughter" /> laughter</label>
-        <label><input type="checkbox" name="audio_layers[]" value="skytrain" /> SkyTrain</label>
-        <label><input type="checkbox" name="audio_layers[]" value="bus" /> bus</label>
-        <label><input type="checkbox" name="audio_layers[]" value="car_horn" /> car horn</label>
-        <label><input type="checkbox" name="audio_layers[]" value="steam_clock" checked /> Gastown steam clock</label>
+        <label class="asmr-inline-label">Voice Style<input type="text" name="voice_style" maxlength="80" placeholder="composed machine whisper" /></label>
+        <div class="asmr-motif-group">
+          <h3>Core City Layers</h3>
+          <div class="asmr-motif-grid">
+            <label><input type="checkbox" name="audio_layers[]" value="footsteps" checked /> footsteps</label>
+            <label><input type="checkbox" name="audio_layers[]" value="rain_ambience" /> rain ambience bed</label>
+            <label><input type="checkbox" name="audio_layers[]" value="wind_gust" /> wind gust</label>
+            <label><input type="checkbox" name="audio_layers[]" value="crowd_murmur" /> crowd murmur</label>
+            <label><input type="checkbox" name="audio_layers[]" value="laughter_burst" /> laughter burst</label>
+            <label><input type="checkbox" name="audio_layers[]" value="skytrain_pass" /> SkyTrain pass</label>
+            <label><input type="checkbox" name="audio_layers[]" value="bus_pass" /> bus pass</label>
+            <label><input type="checkbox" name="audio_layers[]" value="car_horn_short" /> car horn short</label>
+            <label><input type="checkbox" name="audio_layers[]" value="steam_clock" checked /> steam clock</label>
+          </div>
+        </div>
+        <div class="asmr-motif-group">
+          <h3>Vancouver Details</h3>
+          <div class="asmr-motif-grid">
+            <label><input type="checkbox" name="audio_layers[]" value="seabus_horn" /> SeaBus horn</label>
+            <label><input type="checkbox" name="audio_layers[]" value="gulls_distant" /> distant gulls</label>
+            <label><input type="checkbox" name="audio_layers[]" value="crosswalk_chirp" /> crosswalk chirp</label>
+            <label><input type="checkbox" name="audio_layers[]" value="compass_tap" /> compass tap</label>
+            <label><input type="checkbox" name="audio_layers[]" value="bike_bell" /> bike bell</label>
+            <label><input type="checkbox" name="audio_layers[]" value="skateboard_roll" /> skateboard roll</label>
+            <label><input type="checkbox" name="audio_layers[]" value="siren_distant" /> distant siren</label>
+          </div>
+        </div>
       </fieldset>
 
-      <fieldset class="asmr-layer-grid">
+      <fieldset class="asmr-layer-grid asmr-layer-groups">
         <legend>Visual Motifs</legend>
-        <label><input type="checkbox" name="visual_layers[]" value="rain_streaks" /> rain streaks</label>
-        <label><input type="checkbox" name="visual_layers[]" value="snow_drift" /> snow drift</label>
-        <label><input type="checkbox" name="visual_layers[]" value="harbor_mist" /> fog / mist</label>
-        <label><input type="checkbox" name="visual_layers[]" value="skytrain_pass_visual" /> skytrain pass</label>
-        <label><input type="checkbox" name="visual_layers[]" value="bus_pass_visual" /> bus pass</label>
-        <label><input type="checkbox" name="visual_layers[]" value="traffic_light_glow" /> traffic glow</label>
-        <label><input type="checkbox" name="visual_layers[]" value="puddle_reflections" /> puddle reflections</label>
-        <label><input type="checkbox" name="visual_layers[]" value="cobblestone_perspective" /> cobblestone perspective</label>
-        <label><input type="checkbox" name="visual_layers[]" value="brick_wall_parallax" /> brick wall parallax</label>
-        <label><input type="checkbox" name="visual_layers[]" value="streetlamp_halo_row" /> streetlamp halos</label>
-        <label><input type="checkbox" name="visual_layers[]" value="science_world_dome" /> Science World dome silhouette</label>
-        <label><input type="checkbox" name="visual_layers[]" value="chinatown_gate" /> Chinatown gate silhouette</label>
-        <label><input type="checkbox" name="visual_layers[]" value="english_bay_inukshuk" /> English Bay inukshuk silhouette</label>
-        <label><input type="checkbox" name="visual_layers[]" value="maritime_museum_sailroof" /> Maritime Museum sail roof silhouette</label>
-        <label><input type="checkbox" name="visual_layers[]" value="gastown_clock_silhouette" /> Gastown clock silhouette</label>
+        <div class="asmr-motif-group">
+          <h3>Atmosphere</h3>
+          <div class="asmr-motif-grid">
+            <label><input type="checkbox" name="visual_layers[]" value="rain_streaks" /> rain streaks</label>
+            <label><input type="checkbox" name="visual_layers[]" value="snow_drift" /> snow drift</label>
+            <label><input type="checkbox" name="visual_layers[]" value="harbor_mist" /> harbor mist</label>
+            <label><input type="checkbox" name="visual_layers[]" value="clear_cold_shimmer" /> clear cold shimmer</label>
+          </div>
+        </div>
+        <div class="asmr-motif-group">
+          <h3>Scenes</h3>
+          <div class="asmr-motif-grid">
+            <label><input type="checkbox" name="visual_layers[]" value="gastown_scene" /> Gastown scene</label>
+            <label><input type="checkbox" name="visual_layers[]" value="granville_scene" checked /> Granville scene</label>
+            <label><input type="checkbox" name="visual_layers[]" value="north_shore_scene" /> North Shore scene</label>
+          </div>
+        </div>
+        <div class="asmr-motif-group">
+          <h3>Landmarks</h3>
+          <div class="asmr-motif-grid">
+            <label><input type="checkbox" name="visual_layers[]" value="gastown_clock_silhouette" /> Gastown clock</label>
+            <label><input type="checkbox" name="visual_layers[]" value="science_world_dome" /> Science World dome</label>
+            <label><input type="checkbox" name="visual_layers[]" value="chinatown_gate" /> Chinatown gate</label>
+            <label><input type="checkbox" name="visual_layers[]" value="english_bay_inukshuk" /> English Bay inukshuk</label>
+            <label><input type="checkbox" name="visual_layers[]" value="maritime_museum_sailroof" /> Maritime Museum sail roof</label>
+            <label><input type="checkbox" name="visual_layers[]" value="lions_gate_bridge" /> Lions Gate Bridge</label>
+            <label><input type="checkbox" name="visual_layers[]" value="bc_place_dome" /> BC Place dome</label>
+            <label><input type="checkbox" name="visual_layers[]" value="port_cranes" /> Port cranes</label>
+          </div>
+        </div>
+        <div class="asmr-motif-group">
+          <h3>Street Texture</h3>
+          <div class="asmr-motif-grid">
+            <label><input type="checkbox" name="visual_layers[]" value="cobblestone_perspective" /> cobblestones</label>
+            <label><input type="checkbox" name="visual_layers[]" value="brick_wall_parallax" /> brick wall parallax</label>
+            <label><input type="checkbox" name="visual_layers[]" value="puddle_reflections" /> puddle reflections</label>
+            <label><input type="checkbox" name="visual_layers[]" value="streetlamp_halo_row" /> streetlamp halos</label>
+          </div>
+        </div>
+        <div class="asmr-motif-group">
+          <h3>Transit + CRT</h3>
+          <div class="asmr-motif-grid">
+            <label><input type="checkbox" name="visual_layers[]" value="skytrain_track" /> SkyTrain track</label>
+            <label><input type="checkbox" name="visual_layers[]" value="skytrain_pass_visual" checked /> SkyTrain pass visual</label>
+            <label><input type="checkbox" name="visual_layers[]" value="bus_pass_visual" /> bus pass visual</label>
+            <label><input type="checkbox" name="visual_layers[]" value="scanline_field" /> scanline field</label>
+            <label><input type="checkbox" name="visual_layers[]" value="glitch_flash" /> glitch flash</label>
+            <label><input type="checkbox" name="visual_layers[]" value="signal_bars" /> signal bars</label>
+            <label><input type="checkbox" name="visual_layers[]" value="chromatic_veil" /> chromatic veil</label>
+            <label><input type="checkbox" name="visual_layers[]" value="neon_sign_flicker" checked /> neon sign flicker</label>
+          </div>
+        </div>
       </fieldset>
 
       <label class="asmr-link-toggle"><input type="checkbox" name="link_av" checked /> Link sound + visual for selected motifs</label>

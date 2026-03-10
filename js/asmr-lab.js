@@ -25,12 +25,19 @@
   let currentPackage = null;
 
 
-  const LINKED_LAYER_MAP = {
-    skytrain: 'skytrain_pass_visual',
-    bus: 'bus_pass_visual',
-    rain_ambience: 'rain_streaks',
-    footsteps: 'cobblestone_perspective',
-    steam_clock: 'gastown_clock_silhouette'
+  const LINKED_VISUAL_TO_AUDIO = {
+    skytrain_pass_visual: ['skytrain_pass'],
+    bus_pass_visual: ['bus_pass'],
+    rain_streaks: ['rain_ambience'],
+    gastown_clock_silhouette: ['steam_clock'],
+    gastown_scene: ['steam_clock'],
+    snow_drift: ['footsteps_snow_mode']
+  };
+
+  const SCENE_TO_SUPPORT_VISUALS = {
+    gastown_scene: ['gastown_clock_silhouette', 'streetlamp_halo_row', 'cobblestone_perspective', 'brick_wall_parallax'],
+    granville_scene: ['granville_neon_marquee', 'traffic_light_glow', 'puddle_reflections'],
+    north_shore_scene: ['northshore_mountain_ridge', 'mountain_mist_layers']
   };
 
   function applyLayerLinking(audioLayers, visualLayers, isLinked) {
@@ -40,9 +47,20 @@
       return { audio_layers: Array.from(audioSet), visual_layers: Array.from(visualSet) };
     }
 
-    Object.entries(LINKED_LAYER_MAP).forEach(([audioToken, visualToken]) => {
-      if (audioSet.has(audioToken)) visualSet.add(visualToken);
-      if (visualSet.has(visualToken)) audioSet.add(audioToken);
+    Object.entries(LINKED_VISUAL_TO_AUDIO).forEach(([visualToken, audioTokens]) => {
+      if (!visualSet.has(visualToken)) return;
+      audioTokens.forEach((audioToken) => {
+        if (audioToken === 'footsteps_snow_mode') {
+          if (audioSet.has('footsteps')) audioSet.add('footsteps_snow_mode');
+        } else {
+          audioSet.add(audioToken);
+        }
+      });
+    });
+
+    Object.entries(SCENE_TO_SUPPORT_VISUALS).forEach(([sceneToken, supportVisuals]) => {
+      if (!visualSet.has(sceneToken)) return;
+      supportVisuals.forEach((visualToken) => visualSet.add(visualToken));
     });
 
     return { audio_layers: Array.from(audioSet), visual_layers: Array.from(visualSet) };
@@ -50,14 +68,11 @@
 
 
   const QA_PRESET = {
-    location: 'gastown',
-    weather: 'snow',
     duration: '20',
     voice_style: 'quiet city prayer',
-    weirdness: '8',
-    link_av: true,
+    link_av: false,
     audio_layers: ['footsteps'],
-    visual_layers: ['rain_streaks', 'science_world_dome']
+    visual_layers: ['granville_scene', 'rain_streaks', 'neon_sign_flicker', 'skytrain_pass_visual']
   };
 
   const transport = {
@@ -173,7 +188,6 @@
     };
     const base = {
       duration: String(formData.get('duration') || '20'),
-      weirdness: String(formData.get('weirdness') || '6'),
       voice_style: String(formData.get('voice_style') || '').trim()
     };
 
@@ -186,8 +200,6 @@
     const linked = applyLayerLinking(audioLayers, visualLayers, linkAV);
 
     return Object.assign({}, base, {
-      location: String(formData.get('location') || 'gastown'),
-      weather: String(formData.get('weather') || 'snow'),
       link_av: linkAV,
       audio_layers: linked.audio_layers,
       visual_layers: linked.visual_layers
@@ -412,7 +424,7 @@
         const field = form.elements.namedItem(name);
         if (field) field.value = '';
       });
-      setStatus('QA preset loaded (separate rain visuals + footsteps audio). Generate package to test A/V separation.');
+      setStatus('QA preset loaded (motif rack flow, link OFF). Generate package to test visual-only rain.');
       setError('');
     });
   }

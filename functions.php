@@ -900,6 +900,13 @@ function se_get_asmr_allowed_engines() {
         'skytrain_pass',
         'bus_idle',
         'car_horn_short',
+        'seabus_horn',
+        'gulls_distant',
+        'crosswalk_chirp',
+        'compass_tap',
+        'bike_bell',
+        'skateboard_roll',
+        'siren_distant',
     );
 }
 
@@ -918,6 +925,8 @@ function se_get_asmr_visual_types() {
         'northshore_mountain_ridge', 'mountain_mist_layers',
         'rain_streaks', 'puddle_reflections',
         'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof',
+        'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
+        'gastown_scene', 'granville_scene', 'north_shore_scene', 'clear_cold_shimmer',
     );
 }
 
@@ -1192,33 +1201,63 @@ function se_enrich_asmr_event_density( $decoded ) {
 
 
 function se_get_asmr_audio_layers_allowed() {
-    return array( 'footsteps', 'rain_ambience', 'chatter', 'laughter', 'skytrain', 'bus', 'car_horn', 'steam_clock' );
+    return array(
+        'footsteps', 'footsteps_snow_mode', 'rain_ambience', 'wind_gust', 'crowd_murmur', 'laughter_burst',
+        'skytrain_pass', 'bus_pass', 'car_horn_short', 'steam_clock',
+        'seabus_horn', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant'
+    );
 }
 
 function se_get_asmr_visual_layers_allowed() {
     return array(
-        'rain_streaks', 'snow_drift', 'harbor_mist', 'skytrain_pass_visual', 'bus_pass_visual',
-        'traffic_light_glow', 'puddle_reflections', 'cobblestone_perspective', 'brick_wall_parallax', 'streetlamp_halo_row',
-        'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'gastown_clock_silhouette'
+        'rain_streaks', 'snow_drift', 'harbor_mist', 'clear_cold_shimmer',
+        'gastown_scene', 'granville_scene', 'north_shore_scene',
+        'gastown_clock_silhouette', 'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof',
+        'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
+        'cobblestone_perspective', 'brick_wall_parallax', 'puddle_reflections', 'streetlamp_halo_row',
+        'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
+        'scanline_field', 'glitch_flash', 'signal_bars', 'chromatic_veil', 'neon_sign_flicker',
+        'granville_neon_marquee', 'traffic_light_glow', 'northshore_mountain_ridge', 'mountain_mist_layers', 'volumetric_fog'
     );
 }
 
-function se_get_asmr_audio_to_visual_map() {
+function se_get_asmr_visual_to_audio_map() {
     return array(
-        'skytrain' => 'skytrain_pass_visual',
-        'bus' => 'bus_pass_visual',
-        'rain_ambience' => 'rain_streaks',
-        'footsteps' => 'cobblestone_perspective',
-        'steam_clock' => 'gastown_clock_silhouette',
+        'skytrain_pass_visual' => array( 'skytrain_pass' ),
+        'bus_pass_visual' => array( 'bus_pass' ),
+        'rain_streaks' => array( 'rain_ambience' ),
+        'gastown_clock_silhouette' => array( 'steam_clock' ),
+        'gastown_scene' => array( 'steam_clock' ),
+        'snow_drift' => array( 'footsteps_snow_mode' ),
+    );
+}
+
+function se_get_asmr_scene_visual_support_map() {
+    return array(
+        'gastown_scene' => array( 'gastown_clock_silhouette', 'streetlamp_halo_row', 'cobblestone_perspective', 'brick_wall_parallax' ),
+        'granville_scene' => array( 'granville_neon_marquee', 'traffic_light_glow', 'puddle_reflections' ),
+        'north_shore_scene' => array( 'northshore_mountain_ridge', 'mountain_mist_layers', 'harbor_mist' ),
     );
 }
 
 function se_get_asmr_legacy_audio_map() {
-    return array( 'rain' => 'rain_ambience' );
+    return array(
+        'rain' => 'rain_ambience',
+        'chatter' => 'crowd_murmur',
+        'laughter' => 'laughter_burst',
+        'skytrain' => 'skytrain_pass',
+        'bus' => 'bus_pass',
+        'car_horn' => 'car_horn_short',
+    );
 }
 
 function se_get_asmr_mapped_visual_layers_from_audio( $audio_layers ) {
-    $map = se_get_asmr_audio_to_visual_map();
+    $map = array(
+        'skytrain_pass' => 'skytrain_pass_visual',
+        'bus_pass' => 'bus_pass_visual',
+        'rain_ambience' => 'rain_streaks',
+        'steam_clock' => 'gastown_clock_silhouette',
+    );
     $visual = array();
     foreach ( (array) $audio_layers as $token ) {
         $key = sanitize_key( $token );
@@ -1230,137 +1269,173 @@ function se_get_asmr_mapped_visual_layers_from_audio( $audio_layers ) {
 }
 
 function se_get_asmr_vancouver_derived_payload( $payload ) {
-    $location = sanitize_key( $payload['location'] ?? '' );
-    $weather = sanitize_key( $payload['weather'] ?? '' );
     $audio_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['audio_layers'] ?? array() ) ) ) );
-
-    $location_meta = array(
-        'gastown' => array(
-            'label' => 'Gastown Steam Clock',
-            'object' => 'steam clock',
-            'setting' => 'midnight Gastown lane with wet cobblestones, brick facades, cast iron rails, and amber lamps',
-            'visual' => 'gastown_clock_silhouette',
-        ),
-        'granville' => array(
-            'label' => 'Granville Street',
-            'object' => 'neon marquee and rain-slick street',
-            'setting' => 'midnight Granville strip with neon marquees, reflective asphalt, bus shelters, and crosswalk paint',
-            'visual' => 'granville_neon_marquee',
-        ),
-        'north_shore' => array(
-            'label' => 'North Shore Mountains',
-            'object' => 'mountain ridge and harbor air',
-            'setting' => 'midnight harbor edge facing North Shore ridges with cedar silhouettes, cold air, and layered mist',
-            'visual' => 'northshore_mountain_ridge',
-        ),
-    );
-    $weather_moods = array(
-        'snow' => 'hushed and holy',
-        'rain' => 'neon melancholy',
-        'fog' => 'dreamlike and liminal',
-        'clear_cold' => 'crisp and electric',
-    );
-
-    if ( ! isset( $location_meta[ $location ] ) || ! isset( $weather_moods[ $weather ] ) ) {
-        return $payload;
+    $visual_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['visual_layers'] ?? array() ) ) ) );
+    if ( empty( $visual_layers ) ) {
+        $visual_layers = array( 'granville_scene', 'rain_streaks', 'skytrain_pass_visual' );
     }
 
+    $motif_line = implode( ' + ', $visual_layers );
     $foley_text = empty( $audio_layers ) ? 'soft civic ambience' : implode( ', ', $audio_layers );
-    $meta = $location_meta[ $location ];
-
-    $payload['concept'] = sprintf( 'A cinematic Vancouver midnight vignette in %s, where urban signals feel sacred.', $meta['label'] );
-    $payload['object'] = $meta['object'];
-    $payload['setting'] = $meta['setting'];
-    $payload['mood'] = $weather_moods[ $weather ];
-    $payload['creative_goal'] = sprintf( 'Compose a sacred urban signal arc with %s cues anchored in %s.', $foley_text, $meta['label'] );
+    $payload['concept'] = sprintf( 'Vancouver Motif Stack: %s', $motif_line );
+    $payload['object'] = 'city motif rack';
+    $payload['setting'] = 'retro arcade CRT Vancouver night world';
+    $payload['mood'] = 'atmospheric, tactile, and cinematic';
+    $payload['creative_goal'] = sprintf( 'Build a readable motif-forward timeline with %s while preserving coherent visual geography.', $foley_text );
     return $payload;
 }
 
 function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
-    $location = sanitize_key( $payload['location'] ?? '' );
-    $weather = sanitize_key( $payload['weather'] ?? '' );
     $link_av = ! array_key_exists( 'link_av', $payload ) || ! empty( $payload['link_av'] );
     $audio_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['audio_layers'] ?? array() ) ) ) );
     $visual_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['visual_layers'] ?? array() ) ) ) );
 
-    if ( empty( $location ) && empty( $weather ) && empty( $audio_layers ) && empty( $visual_layers ) ) {
+    if ( empty( $audio_layers ) && empty( $visual_layers ) ) {
         return $decoded;
     }
 
     if ( $link_av ) {
+        foreach ( se_get_asmr_visual_to_audio_map() as $visual_token => $mapped_audio ) {
+            if ( ! in_array( $visual_token, $visual_layers, true ) ) {
+                continue;
+            }
+            foreach ( $mapped_audio as $audio_token ) {
+                if ( 'footsteps_snow_mode' === $audio_token ) {
+                    if ( in_array( 'footsteps', $audio_layers, true ) ) {
+                        $audio_layers[] = 'footsteps_snow_mode';
+                    }
+                } else {
+                    $audio_layers[] = $audio_token;
+                }
+            }
+        }
+        $audio_layers = array_values( array_unique( $audio_layers ) );
         $visual_layers = array_values( array_unique( array_merge( $visual_layers, se_get_asmr_mapped_visual_layers_from_audio( $audio_layers ) ) ) );
     }
 
+    foreach ( se_get_asmr_scene_visual_support_map() as $scene => $support_visuals ) {
+        if ( in_array( $scene, $visual_layers, true ) ) {
+            $visual_layers = array_values( array_unique( array_merge( $visual_layers, $support_visuals ) ) );
+        }
+    }
+
     $runtime = max( 10, min( 30, floatval( $decoded['runtime_seconds'] ?? 20 ) ) );
-    $audio = is_array( $decoded['audio_events'] ?? null ) ? $decoded['audio_events'] : array();
-    $visual = is_array( $decoded['visual_events'] ?? null ) ? $decoded['visual_events'] : array();
-    $sync = is_array( $decoded['sync_points'] ?? null ) ? $decoded['sync_points'] : array();
+    $audio = array();
+    $visual = array();
 
-    $audio[] = array( 'time' => 0.08, 'duration' => 2.2, 'engine' => 'city_electrical_hum', 'intensity' => 0.28, 'params' => array(), 'sync_role' => 'vancouver_bed' );
-
-    if ( 'gastown' === $location ) {
-        $visual[] = array( 'time' => 0.22, 'duration' => 2.2, 'visual_type' => 'gastown_clock_silhouette', 'intensity' => 0.78, 'params' => array(), 'sync_role' => 'gastown_identity' );
-        $visual[] = array( 'time' => 0.16, 'duration' => 2.4, 'visual_type' => 'streetlamp_halo_row', 'intensity' => 0.6, 'params' => array(), 'sync_role' => 'streetlamp_glow' );
-        $visual[] = array( 'time' => 0.28, 'duration' => 2.8, 'visual_type' => 'cobblestone_perspective', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'street_surface' );
-    } elseif ( 'granville' === $location ) {
-        $visual[] = array( 'time' => 0.22, 'duration' => 2.4, 'visual_type' => 'granville_neon_marquee', 'intensity' => 0.76, 'params' => array(), 'sync_role' => 'granville_identity' );
-        $visual[] = array( 'time' => 0.36, 'duration' => 2.1, 'visual_type' => 'neon_sign_flicker', 'intensity' => 0.68, 'params' => array(), 'sync_role' => 'neon_flicker' );
-        $visual[] = array( 'time' => 0.42, 'duration' => 2.2, 'visual_type' => 'traffic_light_glow', 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'traffic_glow' );
-    } elseif ( 'north_shore' === $location ) {
-        $visual[] = array( 'time' => 0.24, 'duration' => 2.8, 'visual_type' => 'northshore_mountain_ridge', 'intensity' => 0.78, 'params' => array(), 'sync_role' => 'mountain_identity' );
-        $visual[] = array( 'time' => 0.18, 'duration' => 3.0, 'visual_type' => 'mountain_mist_layers', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'mist_layers' );
-    }
-
-    // Weather defaults always influence atmosphere visuals.
-    if ( 'rain' === $weather ) {
-        $visual[] = array( 'time' => 0.08, 'duration' => min( 6, $runtime * 0.44 ), 'visual_type' => 'rain_streaks', 'intensity' => 0.55, 'params' => array(), 'sync_role' => 'weather_rain_default' );
-    } elseif ( 'snow' === $weather ) {
-        $visual[] = array( 'time' => 0.08, 'duration' => min( 6, $runtime * 0.48 ), 'visual_type' => 'snow_drift', 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'weather_snow_default' );
-    } elseif ( 'fog' === $weather ) {
-        $visual[] = array( 'time' => 0.08, 'duration' => min( 6, $runtime * 0.5 ), 'visual_type' => 'harbor_mist', 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'weather_fog_default' );
-    }
+    $scene_or_landmark = array(
+        'gastown_scene', 'granville_scene', 'north_shore_scene', 'gastown_clock_silhouette', 'science_world_dome',
+        'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes'
+    );
 
     foreach ( $audio_layers as $layer ) {
-        if ( 'footsteps' === $layer ) {
-            $engine = ( 'snow' === $weather ) ? 'footsteps_snow' : 'footsteps_wet';
+        if ( 'footsteps' === $layer || 'footsteps_snow_mode' === $layer ) {
+            $engine = in_array( 'footsteps_snow_mode', $audio_layers, true ) ? 'footsteps_snow' : 'footsteps_wet';
             for ( $i = 0; $i < 3; $i++ ) {
-                $audio[] = array( 'time' => 0.7 + ( $i * ( $runtime * 0.14 ) ), 'duration' => 0.18, 'engine' => $engine, 'intensity' => 0.55, 'params' => array(), 'sync_role' => 'footstep_anchor' );
+                $audio[] = array( 'time' => 0.7 + ( $i * ( $runtime * 0.14 ) ), 'duration' => 0.18, 'engine' => $engine, 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'footstep_anchor' );
             }
         } elseif ( 'rain_ambience' === $layer ) {
-            $audio[] = array( 'time' => 0.04, 'duration' => min( 6, $runtime * 0.45 ), 'engine' => 'rain_close', 'intensity' => 0.54, 'params' => array(), 'sync_role' => 'rain_bed' );
-        } elseif ( 'skytrain' === $layer ) {
+            $audio[] = array( 'time' => 0.02, 'duration' => max( 4.2, $runtime * 0.52 ), 'engine' => 'rain_close', 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'rain_bed' );
+        } elseif ( 'wind_gust' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.22, 'duration' => min( 3.8, $runtime * 0.24 ), 'engine' => 'cold_air_hush', 'intensity' => 0.44, 'params' => array(), 'sync_role' => 'wind_gust' );
+        } elseif ( 'crowd_murmur' === $layer ) {
+            $audio[] = array( 'time' => 0.9, 'duration' => 2.4, 'engine' => 'crowd_murmur', 'intensity' => 0.38, 'params' => array(), 'sync_role' => 'crowd_anchor' );
+        } elseif ( 'laughter_burst' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.42, 'duration' => 0.34, 'engine' => 'laughter_burst', 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'laughter_anchor' );
+        } elseif ( 'skytrain_pass' === $layer ) {
             $mid = $runtime * 0.52;
-            $audio[] = array( 'time' => $mid, 'duration' => 2.2, 'engine' => 'skytrain_pass', 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'skytrain_anchor' );
+            $audio[] = array( 'time' => $mid, 'duration' => 2.1, 'engine' => 'skytrain_pass', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'skytrain_anchor' );
+        } elseif ( 'bus_pass' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.3, 'duration' => 1.8, 'engine' => 'bus_idle', 'intensity' => 0.44, 'params' => array(), 'sync_role' => 'bus_anchor' );
+        } elseif ( 'car_horn_short' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.64, 'duration' => 0.2, 'engine' => 'car_horn_short', 'intensity' => 0.48, 'params' => array(), 'sync_role' => 'horn_anchor' );
         } elseif ( 'steam_clock' === $layer ) {
-            $audio[] = array( 'time' => 0.5, 'duration' => 1.1, 'engine' => 'steam_clock_burst', 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'steam_clock_toggle' );
-        } elseif ( 'chatter' === $layer ) {
-            $audio[] = array( 'time' => 1.1, 'duration' => 2.2, 'engine' => 'crowd_murmur', 'intensity' => 0.42, 'params' => array(), 'sync_role' => 'crowd_anchor' );
-        } elseif ( 'laughter' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.4, 'duration' => 0.38, 'engine' => 'laughter_burst', 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'laughter_anchor' );
-        } elseif ( 'bus' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.32, 'duration' => 1.8, 'engine' => 'bus_idle', 'intensity' => 0.48, 'params' => array(), 'sync_role' => 'bus_anchor' );
-        } elseif ( 'car_horn' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.62, 'duration' => 0.22, 'engine' => 'car_horn_short', 'intensity' => 0.6, 'params' => array(), 'sync_role' => 'horn_anchor' );
+            $audio[] = array( 'time' => 0.52, 'duration' => 1.1, 'engine' => 'steam_clock_burst', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'steam_clock_toggle' );
+        } elseif ( 'seabus_horn' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.36, 'duration' => 1.6, 'engine' => 'seabus_horn', 'intensity' => 0.42, 'params' => array(), 'sync_role' => 'seabus_horn' );
+        } elseif ( 'gulls_distant' === $layer ) {
+            $audio[] = array( 'time' => 0.48, 'duration' => 2.2, 'engine' => 'gulls_distant', 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'gulls_distant' );
+        } elseif ( 'crosswalk_chirp' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.56, 'duration' => 0.85, 'engine' => 'crosswalk_chirp', 'intensity' => 0.32, 'params' => array(), 'sync_role' => 'crosswalk_chirp' );
+        } elseif ( 'compass_tap' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.46, 'duration' => 0.2, 'engine' => 'compass_tap', 'intensity' => 0.3, 'params' => array(), 'sync_role' => 'compass_tap' );
+        } elseif ( 'bike_bell' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.38, 'duration' => 0.38, 'engine' => 'bike_bell', 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'bike_bell' );
+        } elseif ( 'skateboard_roll' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.28, 'duration' => 1.6, 'engine' => 'skateboard_roll', 'intensity' => 0.38, 'params' => array(), 'sync_role' => 'skateboard_roll' );
+        } elseif ( 'siren_distant' === $layer ) {
+            $audio[] = array( 'time' => $runtime * 0.62, 'duration' => 1.8, 'engine' => 'siren_distant', 'intensity' => 0.28, 'params' => array(), 'sync_role' => 'siren_distant' );
         }
     }
 
     foreach ( $visual_layers as $visual_type ) {
+        if ( in_array( $visual_type, array( 'rain_streaks', 'snow_drift', 'harbor_mist', 'clear_cold_shimmer' ), true ) ) {
+            $visual[] = array( 'time' => 0.0, 'duration' => max( 4.0, $runtime * 0.56 ), 'visual_type' => $visual_type, 'intensity' => 0.52, 'params' => array(), 'sync_role' => 'atmosphere_bed' );
+            continue;
+        }
         if ( 'skytrain_pass_visual' === $visual_type ) {
             $mid = $runtime * 0.52;
-            $visual[] = array( 'time' => $mid - 0.2, 'duration' => 2.4, 'visual_type' => 'skytrain_pass_visual', 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'skytrain_visual' );
-            $visual[] = array( 'time' => $mid - 0.25, 'duration' => 2.5, 'visual_type' => 'skytrain_track', 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'skytrain_track' );
-        } elseif ( 'bus_pass_visual' === $visual_type ) {
-            $visual[] = array( 'time' => $runtime * 0.3, 'duration' => 2.1, 'visual_type' => 'bus_pass_visual', 'intensity' => 0.64, 'params' => array(), 'sync_role' => 'bus_visual' );
-        } else {
-            $visual[] = array( 'time' => 0.12, 'duration' => min( 5.4, $runtime * 0.4 ), 'visual_type' => $visual_type, 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'visual_motif_toggle' );
+            $visual[] = array( 'time' => $mid - 0.2, 'duration' => 2.4, 'visual_type' => 'skytrain_pass_visual', 'intensity' => 0.66, 'params' => array(), 'sync_role' => 'skytrain_visual' );
+            $visual[] = array( 'time' => $mid - 0.25, 'duration' => 2.5, 'visual_type' => 'skytrain_track', 'intensity' => 0.56, 'params' => array(), 'sync_role' => 'skytrain_track' );
+            continue;
+        }
+        if ( 'bus_pass_visual' === $visual_type ) {
+            $visual[] = array( 'time' => $runtime * 0.3, 'duration' => 2.0, 'visual_type' => 'bus_pass_visual', 'intensity' => 0.6, 'params' => array(), 'sync_role' => 'bus_visual' );
+            continue;
+        }
+        if ( in_array( $visual_type, array( 'gastown_scene', 'granville_scene', 'north_shore_scene' ), true ) ) {
+            $visual[] = array( 'time' => 0.18, 'duration' => min( 3.2, $runtime * 0.22 ), 'visual_type' => $visual_type, 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'scene_anchor' );
+            $visual[] = array( 'time' => $runtime * 0.44, 'duration' => min( 2.4, $runtime * 0.2 ), 'visual_type' => $visual_type, 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'scene_recur' );
+            continue;
+        }
+        $visual[] = array( 'time' => 0.14, 'duration' => min( 5.2, $runtime * 0.36 ), 'visual_type' => $visual_type, 'intensity' => 0.6, 'params' => array(), 'sync_role' => 'visual_motif_toggle' );
+    }
+
+    $has_scene_or_landmark = false;
+    foreach ( $visual_layers as $token ) {
+        if ( in_array( $token, $scene_or_landmark, true ) ) {
+            $has_scene_or_landmark = true;
+            break;
         }
     }
 
-    $weird_tag = 'weirdness_' . max( 1, min( 10, absint( $payload['weirdness'] ?? 6 ) ) );
-    $decoded['style_tags'] = array_values( array_unique( array_merge( (array) ( $decoded['style_tags'] ?? array() ), array( $location, $weather, 'vancouver_mode', $weird_tag ), $audio_layers, $visual_layers ) ) );
+    if ( $has_scene_or_landmark ) {
+        $already_early = false;
+        foreach ( $visual as $event ) {
+            if ( in_array( $event['visual_type'], $scene_or_landmark, true ) && floatval( $event['time'] ) <= 0.6 ) {
+                $already_early = true;
+                break;
+            }
+        }
+        if ( ! $already_early ) {
+            $fallback = 'gastown_clock_silhouette';
+            foreach ( $visual_layers as $token ) {
+                if ( in_array( $token, $scene_or_landmark, true ) ) {
+                    $fallback = $token;
+                    break;
+                }
+            }
+            $visual[] = array( 'time' => 0.24, 'duration' => min( 2.6, $runtime * 0.2 ), 'visual_type' => $fallback, 'intensity' => 0.66, 'params' => array(), 'sync_role' => 'early_readability_anchor' );
+        }
+    }
+
+    usort(
+        $audio,
+        static function( $a, $b ) {
+            return (float) $a['time'] <=> (float) $b['time'];
+        }
+    );
+    usort(
+        $visual,
+        static function( $a, $b ) {
+            return (float) $a['time'] <=> (float) $b['time'];
+        }
+    );
+
+    $decoded['style_tags'] = array_values( array_unique( array_merge( array( 'retro_arcade_crt' ), $audio_layers, $visual_layers ) ) );
     $decoded['audio_events'] = $audio;
     $decoded['visual_events'] = $visual;
-    $decoded['sync_points'] = $sync;
+    $decoded['presentation_note'] = 'Motif-rack composition with conservative A/V pairing and first-frame readability anchors.';
     return $decoded;
 }
 
@@ -1531,7 +1606,6 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         'mood' => sanitize_text_field( $params['mood'] ?? '' ),
         'duration' => max( 10, min( 30, absint( $params['duration'] ?? 20 ) ) ),
         'voice_style' => sanitize_text_field( $params['voice_style'] ?? '' ),
-        'weirdness' => max( 1, min( 10, absint( $params['weirdness'] ?? 6 ) ) ),
         'creative_goal' => sanitize_textarea_field( $params['creative_goal'] ?? '' ),
         'location' => sanitize_key( $params['location'] ?? '' ),
         'weather' => sanitize_key( $params['weather'] ?? '' ),
@@ -1542,15 +1616,14 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         'sound_only' => ! empty( $params['sound_only'] ),
     );
 
-    $has_freeform = ! empty( $payload['concept'] ) && ! empty( $payload['object'] ) && ! empty( $payload['setting'] ) && ! empty( $payload['mood'] );
-    $has_vancouver = in_array( $payload['location'], $allowed_locations, true ) && in_array( $payload['weather'], $allowed_weather, true );
+    $has_freeform = ! empty( $payload['concept'] ) || ! empty( $payload['object'] ) || ! empty( $payload['setting'] ) || ! empty( $payload['mood'] ) || ! empty( $payload['creative_goal'] );
+    $has_legacy_location_weather = in_array( $payload['location'], $allowed_locations, true ) && in_array( $payload['weather'], $allowed_weather, true );
 
-    if ( ! $has_freeform && ! $has_vancouver ) {
-        return new WP_Error( 'asmr_missing_fields', __( 'Provide freeform concept/object/setting/mood or use Vancouver Mode location + weather.', 'suzys-music-theme' ), array( 'status' => 400 ) );
-    }
-
-    if ( $has_vancouver && ! $has_freeform ) {
+    if ( ! $has_freeform ) {
         $payload = se_get_asmr_vancouver_derived_payload( $payload );
+        if ( $has_legacy_location_weather ) {
+            $payload['style_tags_legacy'] = array( $payload['location'], $payload['weather'] );
+        }
     }
 
     $allowed_engines = implode( ', ', se_get_asmr_allowed_engines() );
@@ -1576,10 +1649,10 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'Use micro-events for intimacy, then earned bloom moments instead of random loudness spikes. '
         . 'Visual score should emphasize atmospheric symbolic language, depth, compositional foreground/midground/background layering, glow, parallax-like drift, and terminal/sacred reveal language when appropriate. '
         . 'sync_points must map to real event moments and reinforce audio-visual unity, especially in the first 3 seconds. '
-        . 'When a real place is named (for example Gastown or Vancouver), strongly ground the package in that location with concrete materials, weather, object identity, and environmental acoustics. '
-        . 'Prompt interpretation priority: named location > named object > weather condition > mood adjectives. '
+        . 'When motif tokens imply a place, ground the package in concrete materials, atmospheric lighting, and local acoustics. '
+        . 'Prompt interpretation priority: selected visual motifs > selected audio motifs > named object > mood adjectives. '
         . 'For Gastown/Vancouver scenes, favor steam clock cues, harbor fog bed, amber streetlamp halos, wet cobblestone reflections, brick facade texture, neon-on-wet shimmer, and winter hush pacing where relevant. '
-        . 'Avoid generic abstract output when prompts include specific geography or weather terms. '
+        . 'Avoid generic abstract output when prompts include specific motif or geography terms. '
         . 'The result should feel like an authored short sensory micro-film, not a debug demo. '
         . 'Do not include prose outside JSON.';
 
