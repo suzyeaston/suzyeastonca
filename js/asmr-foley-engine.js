@@ -4,7 +4,9 @@
   const ENGINE_NAMES = [
     'glissando_rise', 'synth_bloom', 'sub_swell', 'filtered_noise_wash', 'ceramic_tick',
     'paper_crackle', 'steam_hiss', 'tape_stop_drop', 'bit_pulse', 'breath_pulse',
-    'low_hum', 'digital_shimmer'
+    'low_hum', 'digital_shimmer', 'glass_ping', 'glass_resonance', 'relay_click_cluster',
+    'shimmer_swirl', 'crystal_chime', 'ghost_pad', 'spectral_suck', 'voltage_flutter',
+    'halo_tone', 'particle_spark', 'ritual_bass_swell', 'reverse_bloom'
   ];
 
   function clamp(value, min, max) {
@@ -53,7 +55,7 @@
       if (!pkg || !Array.isArray(pkg.audio_events)) return [];
       const runtime = clamp(Number(pkg.runtime_seconds || 20), 10, 30);
       const maxEdge = runtime + 0.5;
-      return pkg.audio_events
+      const normalized = pkg.audio_events
         .filter((event) => event && ENGINE_NAMES.includes(event.engine))
         .map((event) => {
           const time = clamp(Number(event.time || 0), 0, maxEdge);
@@ -70,6 +72,32 @@
         })
         .sort((a, b) => a.time - b.time)
         .filter((event) => event.time <= maxEdge);
+
+      if (!normalized.length || normalized[0].time > 0.22) {
+        normalized.unshift({
+          time: 0,
+          duration: Math.min(4, runtime * 0.3),
+          intensity: 0.22,
+          engine: 'ghost_pad',
+          params: { from: 122, to: 178 },
+          sync_role: 'ambient_lead_in'
+        });
+      }
+
+      const minEvents = Math.max(7, Math.ceil(runtime * 0.42));
+      while (normalized.length < minEvents) {
+        const idx = normalized.length;
+        normalized.push({
+          time: clamp(0.24 + idx * (runtime / (minEvents + 1)), 0, runtime - 0.08),
+          duration: 0.24 + (idx % 3) * 0.16,
+          intensity: 0.16 + (idx % 5) * 0.06,
+          engine: idx % 2 === 0 ? 'particle_spark' : 'shimmer_swirl',
+          params: {},
+          sync_role: 'support_texture'
+        });
+      }
+
+      return normalized.sort((a, b) => a.time - b.time);
     }
 
     buildMasterChain(ctx, destination) {
@@ -252,6 +280,58 @@
           break;
         case 'digital_shimmer':
           this.scheduleTone(ctx, destination, atTime, duration * 0.8, { from: p.from || 1000, to: p.to || 2280, peak: 0.02 + intensity * 0.05, type: 'triangle', pan: 0.3 });
+          break;
+        case 'glass_ping':
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.1, duration * 0.35), { from: p.pitch || 1420, to: (p.pitch || 1420) * 0.66, peak: 0.02 + intensity * 0.045, type: 'triangle', pan: -0.24 });
+          break;
+        case 'glass_resonance':
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 620, to: p.to || 470, peak: 0.028 + intensity * 0.05, type: 'sine', pan: 0.22 });
+          this.scheduleTone(ctx, destination, atTime + 0.01, duration * 0.92, { from: (p.from || 620) * 1.51, to: (p.to || 470) * 1.41, peak: 0.01 + intensity * 0.03, type: 'triangle', pan: -0.2 });
+          break;
+        case 'relay_click_cluster': {
+          const clicks = Math.max(2, Math.min(8, Math.round(2 + intensity * 6)));
+          for (let i = 0; i < clicks; i += 1) {
+            this.scheduleTone(ctx, destination, atTime + i * 0.035, 0.08, { from: 950 + i * 40, to: 320, peak: 0.012 + intensity * 0.02, type: 'square', pan: (i % 2 ? 0.22 : -0.22) });
+          }
+          break;
+        }
+        case 'shimmer_swirl':
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 3100, q: 0.7, peak: 0.018 + intensity * 0.04, filterType: 'bandpass', pan: 0.28 });
+          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.85, { from: p.from || 920, to: p.to || 1520, peak: 0.01 + intensity * 0.026, type: 'triangle', pan: -0.26 });
+          break;
+        case 'crystal_chime':
+          this.scheduleTone(ctx, destination, atTime, Math.max(0.14, duration * 0.46), { from: p.from || 1180, to: p.to || 790, peak: 0.014 + intensity * 0.03, type: 'sine', pan: 0.34 });
+          this.scheduleTone(ctx, destination, atTime + 0.04, Math.max(0.16, duration * 0.52), { from: (p.from || 1180) * 1.34, to: (p.to || 790) * 1.25, peak: 0.009 + intensity * 0.024, type: 'triangle', pan: -0.3 });
+          break;
+        case 'ghost_pad':
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 140, to: p.to || 210, peak: 0.03 + intensity * 0.05, type: 'sine', pan: 0 });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 1200, q: 0.6, peak: 0.007 + intensity * 0.02, filterType: 'lowpass', pan: -0.12 });
+          break;
+        case 'spectral_suck':
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 1600, q: 0.85, peak: 0.02 + intensity * 0.04, filterType: 'bandpass', pan: -0.18 });
+          this.scheduleTone(ctx, destination, atTime, duration * 0.8, { from: p.from || 380, to: p.to || 96, peak: 0.01 + intensity * 0.03, type: 'sawtooth', pan: 0.14 });
+          break;
+        case 'voltage_flutter': {
+          const bursts = Math.max(3, Math.min(10, Math.round(3 + intensity * 7)));
+          for (let i = 0; i < bursts; i += 1) {
+            this.scheduleTone(ctx, destination, atTime + i * (duration / (bursts + 1)), 0.07, { from: 280 + i * 36, to: 240 + i * 10, peak: 0.008 + intensity * 0.018, type: 'square', pan: Math.sin(i) * 0.35 });
+          }
+          break;
+        }
+        case 'halo_tone':
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 320, to: p.to || 420, peak: 0.025 + intensity * 0.045, type: 'triangle', pan: -0.08 });
+          this.scheduleTone(ctx, destination, atTime, duration * 0.95, { from: (p.from || 320) * 2.01, to: (p.to || 420) * 1.98, peak: 0.008 + intensity * 0.02, type: 'sine', pan: 0.08 });
+          break;
+        case 'particle_spark':
+          this.scheduleNoise(ctx, destination, atTime, Math.max(0.08, duration * 0.45), { freq: p.freq || 4600, q: 1.8, peak: 0.008 + intensity * 0.02, filterType: 'highpass', pan: 0.12 });
+          break;
+        case 'ritual_bass_swell':
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 48, to: p.to || 72, peak: 0.045 + intensity * 0.065, type: 'sine', pan: 0 });
+          this.scheduleTone(ctx, destination, atTime + 0.03, duration * 0.8, { from: p.from2 || 96, to: p.to2 || 110, peak: 0.018 + intensity * 0.035, type: 'triangle', pan: -0.06 });
+          break;
+        case 'reverse_bloom':
+          this.scheduleNoise(ctx, destination, atTime, duration * 0.75, { freq: p.freq || 2100, q: 0.8, peak: 0.02 + intensity * 0.04, filterType: 'lowpass', pan: 0.18 });
+          this.scheduleTone(ctx, destination, atTime + duration * 0.4, duration * 0.6, { from: p.from || 220, to: p.to || 860, peak: 0.016 + intensity * 0.03, type: 'triangle', pan: -0.14 });
           break;
         default:
           break;

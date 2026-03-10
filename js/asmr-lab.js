@@ -25,14 +25,14 @@
   let currentPackage = null;
 
   const QA_PRESET = {
-    concept: 'Glass relay prayer waking a dormant monolith',
+    concept: 'Signal Benediction: a glass relay core awakens a dormant monolith like a machine receiving a blessing',
     object: 'glass relay core',
-    setting: 'midnight signal chamber',
-    mood: 'spiritual tension, crystalline awe, then radiant bloom',
+    setting: 'midnight signal chamber beneath a neon cathedral grid',
+    mood: 'cyber-sacred tension, crystalline awe, then radiant bloom',
     duration: '20',
     voice_style: 'composed machine whisper',
-    weirdness: '7',
-    creative_goal: 'Build from tiny tactile pulses into a sacred electronic bloom with a terminal-style final reveal.'
+    weirdness: '8',
+    creative_goal: 'Build from near-silence and tactile relay pulses into a spiritual electronic bloom, with synchronized glass shimmer, ceremonial signal motion, and a terminal-style final reveal that feels earned.'
   };
 
   const transport = {
