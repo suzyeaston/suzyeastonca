@@ -45,17 +45,38 @@ get_header();
         <label>Weirdness (1-10)<input type="number" name="weirdness" min="1" max="10" value="6" required /></label>
       </div>
 
-      <fieldset class="asmr-foley-grid">
-        <legend>Foley Layers</legend>
-        <label><input type="checkbox" name="foley[]" value="footsteps" checked /> footsteps</label>
-        <label><input type="checkbox" name="foley[]" value="rain" /> rain</label>
-        <label><input type="checkbox" name="foley[]" value="chatter" /> chatter</label>
-        <label><input type="checkbox" name="foley[]" value="laughter" /> laughter</label>
-        <label><input type="checkbox" name="foley[]" value="skytrain" /> SkyTrain</label>
-        <label><input type="checkbox" name="foley[]" value="bus" /> bus</label>
-        <label><input type="checkbox" name="foley[]" value="car_horn" /> car horn</label>
-        <label><input type="checkbox" name="foley[]" value="steam_clock" checked /> Gastown steam clock</label>
+      <fieldset class="asmr-layer-grid">
+        <legend>Sound Layers</legend>
+        <label><input type="checkbox" name="audio_layers[]" value="footsteps" checked /> footsteps</label>
+        <label><input type="checkbox" name="audio_layers[]" value="rain_ambience" /> rain ambience</label>
+        <label><input type="checkbox" name="audio_layers[]" value="chatter" /> chatter</label>
+        <label><input type="checkbox" name="audio_layers[]" value="laughter" /> laughter</label>
+        <label><input type="checkbox" name="audio_layers[]" value="skytrain" /> SkyTrain</label>
+        <label><input type="checkbox" name="audio_layers[]" value="bus" /> bus</label>
+        <label><input type="checkbox" name="audio_layers[]" value="car_horn" /> car horn</label>
+        <label><input type="checkbox" name="audio_layers[]" value="steam_clock" checked /> Gastown steam clock</label>
       </fieldset>
+
+      <fieldset class="asmr-layer-grid">
+        <legend>Visual Motifs</legend>
+        <label><input type="checkbox" name="visual_layers[]" value="rain_streaks" /> rain streaks</label>
+        <label><input type="checkbox" name="visual_layers[]" value="snow_drift" /> snow drift</label>
+        <label><input type="checkbox" name="visual_layers[]" value="harbor_mist" /> fog / mist</label>
+        <label><input type="checkbox" name="visual_layers[]" value="skytrain_pass_visual" /> skytrain pass</label>
+        <label><input type="checkbox" name="visual_layers[]" value="bus_pass_visual" /> bus pass</label>
+        <label><input type="checkbox" name="visual_layers[]" value="traffic_light_glow" /> traffic glow</label>
+        <label><input type="checkbox" name="visual_layers[]" value="puddle_reflections" /> puddle reflections</label>
+        <label><input type="checkbox" name="visual_layers[]" value="cobblestone_perspective" /> cobblestone perspective</label>
+        <label><input type="checkbox" name="visual_layers[]" value="brick_wall_parallax" /> brick wall parallax</label>
+        <label><input type="checkbox" name="visual_layers[]" value="streetlamp_halo_row" /> streetlamp halos</label>
+        <label><input type="checkbox" name="visual_layers[]" value="science_world_dome" /> Science World dome silhouette</label>
+        <label><input type="checkbox" name="visual_layers[]" value="chinatown_gate" /> Chinatown gate silhouette</label>
+        <label><input type="checkbox" name="visual_layers[]" value="english_bay_inukshuk" /> English Bay inukshuk silhouette</label>
+        <label><input type="checkbox" name="visual_layers[]" value="maritime_museum_sailroof" /> Maritime Museum sail roof silhouette</label>
+        <label><input type="checkbox" name="visual_layers[]" value="gastown_clock_silhouette" /> Gastown clock silhouette</label>
+      </fieldset>
+
+      <label class="asmr-link-toggle"><input type="checkbox" name="link_av" checked /> Link sound + visual for selected motifs</label>
 
       <details class="asmr-advanced-fields">
         <summary>Advanced / Freeform Mode (optional override)</summary>
