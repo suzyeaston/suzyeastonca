@@ -19,7 +19,7 @@ get_header();
         <li><strong>Strict timeline JSON</strong> with synchronized audio + visual events.</li>
         <li><strong>Procedural sound synthesis</strong> using browser-generated textures.</li>
         <li><strong>Reactive CRT-inspired visuals</strong> driven by the same shared clock.</li>
-        <li><strong>Preview, stop, and WAV export</strong> without leaving the control room.</li>
+        <li><strong>Preview, stop, WAV export, and 1080p video export</strong> without leaving the control room.</li>
       </ul>
     </section>
 
@@ -36,6 +36,7 @@ get_header();
       </div>
       <div class="asmr-actions">
         <button type="submit" class="pixel-button">Generate ASMR Package</button>
+        <button type="button" id="asmr-qa-preset" class="pixel-button secondary">Load QA Preset</button>
         <button type="button" id="asmr-sound-only" class="pixel-button secondary" disabled>Regenerate Sound Only</button>
       </div>
       <p id="asmr-status" class="asmr-status" role="status" aria-live="polite"></p>
@@ -52,6 +53,8 @@ get_header();
       <button type="button" id="asmr-preview" class="pixel-button" disabled>Preview</button>
       <button type="button" id="asmr-stop" class="pixel-button secondary" disabled>Stop</button>
       <button type="button" id="asmr-export" class="pixel-button secondary" disabled>Export WAV</button>
+      <button type="button" id="asmr-export-video" class="pixel-button secondary" disabled>Export Video 1080p</button>
+      <span id="asmr-video-support" class="asmr-video-support" aria-live="polite"></span>
       <p id="asmr-audio-feedback" class="asmr-audio-feedback" aria-live="polite"></p>
     </section>
 
