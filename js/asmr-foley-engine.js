@@ -14,6 +14,34 @@
     'gastown_clock_whistle', 'church_bells', 'harbour_noon_horn', 'nine_oclock_gun'
   ];
 
+
+
+  const SOUND_REGISTRY = [
+    { id: 'ocean_waves', label: 'Ocean Waves', category: 'bed', description: 'Layered coastal surf roll.', expected_sound: 'broad low-mid wave wash', preview_duration: 2.4 },
+    { id: 'rain_close', label: 'Rain Close', category: 'bed', description: 'Near-field rainfall texture.', expected_sound: 'fine bright rain hiss', preview_duration: 2.2 },
+    { id: 'rain_roof', label: 'Rain Roof', category: 'texture', description: 'Raindrops pattering on hard roof.', expected_sound: 'tight percussive rain taps', preview_duration: 2.2 },
+    { id: 'harbor_fog_bed', label: 'Harbor Fog Bed', category: 'ambience', description: 'Low harbor fog ambience.', expected_sound: 'distant foggy low wash', preview_duration: 2.6 },
+    { id: 'city_electrical_hum', label: 'City Electrical Hum', category: 'support', description: 'Urban electrical undercurrent.', expected_sound: 'steady warm transformer hum', preview_duration: 2.3 },
+    { id: 'crowd_murmur', label: 'Crowd Murmur', category: 'ambience', description: 'Far crowd movement layer.', expected_sound: 'soft speech-like wash', preview_duration: 2.1 },
+    { id: 'skytrain_pass', label: 'SkyTrain Pass', category: 'transit', description: 'Train pass-by sweep.', expected_sound: 'rising metallic transit whoosh', preview_duration: 2.4 },
+    { id: 'seabus_horn', label: 'SeaBus Horn', category: 'cue', description: 'Harbor horn cue.', expected_sound: 'broad resonant horn call', preview_duration: 2.8 },
+    { id: 'bus_idle', label: 'Bus Idle', category: 'transit', description: 'Bus stop engine idle texture.', expected_sound: 'mid-low engine rumble', preview_duration: 2.0 },
+    { id: 'car_horn_short', label: 'Car Horn Short', category: 'cue', description: 'Quick car horn punctuation.', expected_sound: 'short bright horn chirp', preview_duration: 1.6 },
+    { id: 'crosswalk_chirp', label: 'Crosswalk Chirp', category: 'cue', description: 'Pedestrian crossing indicator.', expected_sound: 'repeating digital chirp', preview_duration: 1.8 },
+    { id: 'bike_bell', label: 'Bike Bell', category: 'cue', description: 'Nearby bike bell strike.', expected_sound: 'small metallic ding', preview_duration: 1.6 },
+    { id: 'gulls_distant', label: 'Gulls Distant', category: 'ambience', description: 'Far gull calls above harbor.', expected_sound: 'sparse airy seagull calls', preview_duration: 2.2 },
+    { id: 'skateboard_roll', label: 'Skateboard Roll', category: 'transit', description: 'Wheel roll over pavement.', expected_sound: 'rolling rattle with soft clicks', preview_duration: 2.0 },
+    { id: 'siren_distant', label: 'Siren Distant', category: 'cue', description: 'Distant city siren pass.', expected_sound: 'muted warbling siren tail', preview_duration: 2.6 },
+    { id: 'gastown_clock_whistle', label: 'Steam Clock Whistle', category: 'cue', description: 'Gastown steam whistle burst.', expected_sound: 'airy whistle puff', preview_duration: 2.4 },
+    { id: 'church_bells', label: 'Church Bells', category: 'cue', description: 'Bell toll accents.', expected_sound: 'slow resonant metallic toll', preview_duration: 2.8 },
+    { id: 'harbour_noon_horn', label: 'Harbour Noon Horn', category: 'cue', description: 'Noon horn marker.', expected_sound: 'deep held horn tone', preview_duration: 2.8 },
+    { id: 'nine_oclock_gun', label: "9 O'Clock Gun", category: 'cue', description: 'Single ceremonial boom.', expected_sound: 'short low transient boom', preview_duration: 1.8 }
+  ];
+
+  const SOUND_REGISTRY_MAP = SOUND_REGISTRY.reduce((acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {});
   const BED_ENGINES = new Set([
     'ocean_waves', 'rain_close', 'rain_roof', 'harbor_fog_bed', 'city_electrical_hum',
     'crowd_murmur', 'filtered_noise_wash', 'low_hum'
@@ -657,6 +685,32 @@
       return 0.8;
     }
 
+
+    getSoundRegistry() {
+      return SOUND_REGISTRY.map((item) => ({ ...item, engine: item.id }));
+    }
+
+    async previewEngineById(engineId, options = {}) {
+      const normalizedId = String(engineId || '').trim();
+      if (!ENGINE_NAMES.includes(normalizedId)) {
+        throw new Error('Unsupported sound engine id: ' + normalizedId);
+      }
+      const meta = SOUND_REGISTRY_MAP[normalizedId] || {};
+      const runtime = clamp(Number(options.preview_duration || meta.preview_duration || 2.2), 1.5, 3);
+      const pkg = {
+        runtime_seconds: runtime,
+        audio_events: [{
+          time: 0,
+          duration: runtime,
+          intensity: clamp(Number(options.intensity || 0.62), 0.2, 0.95),
+          engine: normalizedId,
+          params: (options.params && typeof options.params === 'object') ? { ...options.params } : {},
+          sync_role: 'debug_sound_preview'
+        }]
+      };
+      return this.preview(pkg);
+    }
+
     validateRecipe(pkg) {
       if (!pkg || typeof pkg !== 'object') return false;
       if (!Array.isArray(pkg.audio_events)) return false;
@@ -744,5 +798,6 @@
     }
   }
 
+  window.ASMR_SOUND_REGISTRY = SOUND_REGISTRY;
   window.AsmrFoleyEngine = AsmrFoleyEngine;
 })(window);
