@@ -34,11 +34,11 @@ get_header();
           <h3>Core Modules</h3>
           <div class="asmr-motif-grid">
             <label><input type="checkbox" name="audio_layers[]" value="rain_ambience" /> rain ambience bed</label>
-            <label><input type="checkbox" name="audio_layers[]" value="ocean_waves" checked /> ocean waves bed</label>
+            <label><input type="checkbox" name="audio_layers[]" value="ocean_waves" /> ocean waves bed</label>
             <label><input type="checkbox" name="audio_layers[]" value="wind_gust" /> wind gust</label>
             <label><input type="checkbox" name="audio_layers[]" value="footsteps" /> footsteps</label>
             <label><input type="checkbox" name="audio_layers[]" value="skytrain_pass" /> SkyTrain pass</label>
-            <label><input type="checkbox" name="audio_layers[]" value="seabus_horn" checked /> SeaBus horn</label>
+            <label><input type="checkbox" name="audio_layers[]" value="seabus_horn" /> SeaBus horn</label>
             <label><input type="checkbox" name="audio_layers[]" value="crowd_murmur" /> crowd murmur</label>
             <label><input type="checkbox" name="audio_layers[]" value="steam_clock" /> steam clock</label>
             <label><input type="checkbox" name="audio_layers[]" value="bike_bell" /> bike bell</label>
@@ -72,22 +72,22 @@ get_header();
           <div class="asmr-motif-grid">
             <label><input type="checkbox" name="visual_layers[]" value="rain_streaks" /> rain streaks</label>
             <label><input type="checkbox" name="visual_layers[]" value="snow_drift" /> snow drift</label>
-            <label><input type="checkbox" name="visual_layers[]" value="harbor_mist" checked /> harbor mist</label>
+            <label><input type="checkbox" name="visual_layers[]" value="harbor_mist" /> harbor mist</label>
             <label><input type="checkbox" name="visual_layers[]" value="gastown_scene" /> Gastown scene</label>
             <label><input type="checkbox" name="visual_layers[]" value="granville_scene" /> Granville scene</label>
             <label><input type="checkbox" name="visual_layers[]" value="north_shore_scene" /> North Shore scene</label>
-            <label><input type="checkbox" name="visual_layers[]" value="waterfront_scene" checked /> Waterfront scene</label>
+            <label><input type="checkbox" name="visual_layers[]" value="waterfront_scene" /> Waterfront scene</label>
             <label><input type="checkbox" name="visual_layers[]" value="science_world_dome" /> Science World dome</label>
             <label><input type="checkbox" name="visual_layers[]" value="chinatown_gate" /> Chinatown gate</label>
-            <label><input type="checkbox" name="visual_layers[]" value="lions_gate_bridge" checked /> Lions Gate Bridge</label>
+            <label><input type="checkbox" name="visual_layers[]" value="lions_gate_bridge" /> Lions Gate Bridge</label>
             <label><input type="checkbox" name="visual_layers[]" value="planetarium_dome" /> Planetarium dome</label>
             <label><input type="checkbox" name="visual_layers[]" value="starfield_projection" /> starfield projection</label>
             <label><input type="checkbox" name="visual_layers[]" value="puddle_reflections" /> puddle reflections</label>
             <label><input type="checkbox" name="visual_layers[]" value="neon_sign_flicker" /> neon sign flicker</label>
             <label><input type="checkbox" name="visual_layers[]" value="scanline_field" /> scanline field</label>
             <label><input type="checkbox" name="visual_layers[]" value="skytrain_pass_visual" /> SkyTrain pass visual</label>
-            <label><input type="checkbox" name="visual_layers[]" value="ocean_surface_shimmer" checked /> ocean surface shimmer</label>
-            <label><input type="checkbox" name="visual_layers[]" value="seabus_silhouette" checked /> SeaBus silhouette</label>
+            <label><input type="checkbox" name="visual_layers[]" value="ocean_surface_shimmer" /> ocean surface shimmer</label>
+            <label><input type="checkbox" name="visual_layers[]" value="seabus_silhouette" /> SeaBus silhouette</label>
           </div>
         </div>
         <details class="asmr-motif-more">
@@ -115,13 +115,14 @@ get_header();
         </details>
       </fieldset>
 
-      <label class="asmr-link-toggle"><input type="checkbox" name="link_av" checked /> Link sound + visual for selected motifs</label>
+      <label class="asmr-link-toggle"><input type="checkbox" name="link_av" /> Link sound + visual for selected motifs</label>
       <div class="asmr-actions">
         <button type="submit" class="pixel-button">Generate ASMR Package</button>
         <button type="button" id="asmr-qa-preset" class="pixel-button secondary">Load QA Preset</button>
         <button type="button" id="asmr-sound-only" class="pixel-button secondary" disabled>Regenerate Sound Only</button>
       </div>
       <p id="asmr-status" class="asmr-status" role="status" aria-live="polite"></p>
+      <p id="asmr-debug-status" class="asmr-status asmr-debug-status" aria-live="polite"></p>
       <p id="asmr-error" class="asmr-error" role="alert" hidden></p>
     </form>
 
@@ -149,6 +150,7 @@ get_header();
       <article class="asmr-card"><h2>Story Beats</h2><ol id="asmr-story-beats"></ol></article>
       <article class="asmr-card"><h2>Sync Points</h2><ol id="asmr-beats"></ol></article>
       <article class="asmr-card"><h2>Style Tags</h2><ul id="asmr-video-prompts"></ul></article>
+      <article class="asmr-card"><h2>Active Generation Plan</h2><ul id="asmr-active-plan"></ul></article>
       <article class="asmr-card"><h2>Edit Rhythm</h2><p id="asmr-edit-notes"></p></article>
       <article class="asmr-card"><h2>Presentation Note</h2><p id="asmr-presentation"></p></article>
       <article class="asmr-card"><h2>Timeline JSON</h2>

@@ -1245,9 +1245,7 @@ function se_get_asmr_visual_to_audio_map() {
     return array(
         'seabus_silhouette' => array( 'seabus_horn' ),
         'skytrain_pass_visual' => array( 'skytrain_pass' ),
-        'bus_pass_visual' => array( 'bus_pass' ),
         'rain_streaks' => array( 'rain_ambience' ),
-        'gastown_scene' => array( 'gastown_clock_whistle' ),
     );
 }
 
@@ -1296,11 +1294,7 @@ function se_get_asmr_mapped_visual_layers_from_audio( $audio_layers ) {
 function se_get_asmr_vancouver_derived_payload( $payload ) {
     $audio_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['audio_layers'] ?? array() ) ) ) );
     $visual_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['visual_layers'] ?? array() ) ) ) );
-    if ( empty( $visual_layers ) ) {
-        $visual_layers = array( 'waterfront_scene', 'harbor_mist', 'ocean_surface_shimmer' );
-    }
-
-    $motif_line = implode( ' + ', $visual_layers );
+    $motif_line = empty( $visual_layers ) ? 'unselected motif rack' : implode( ' + ', $visual_layers );
     $foley_text = empty( $audio_layers ) ? 'soft civic ambience' : implode( ', ', $audio_layers );
     $payload['concept'] = sprintf( 'Vancouver Motif Stack: %s', $motif_line );
     $payload['object'] = 'city motif rack';
@@ -1403,14 +1397,8 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
             }
         }
         $audio_layers = array_values( array_unique( $audio_layers ) );
-        $visual_layers = array_values( array_unique( array_merge( $visual_layers, se_get_asmr_mapped_visual_layers_from_audio( $audio_layers ) ) ) );
     }
 
-    foreach ( se_get_asmr_scene_visual_support_map() as $scene => $support_visuals ) {
-        if ( in_array( $scene, $visual_layers, true ) ) {
-            $visual_layers = array_values( array_unique( array_merge( $visual_layers, $support_visuals ) ) );
-        }
-    }
 
     $runtime = max( 10, min( 30, floatval( $decoded['runtime_seconds'] ?? 20 ) ) );
     $audio = is_array( $decoded['audio_events'] ?? null ) ? $decoded['audio_events'] : array();
@@ -1506,7 +1494,7 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
     usort( $audio, static function( $a, $b ) { return (float) ( $a['time'] ?? 0 ) <=> (float) ( $b['time'] ?? 0 ); } );
     usort( $visual, static function( $a, $b ) { return (float) ( $a['time'] ?? 0 ) <=> (float) ( $b['time'] ?? 0 ); } );
 
-    $decoded['style_tags'] = array_values( array_unique( array_merge( (array) ( $decoded['style_tags'] ?? array() ), array( 'retro_arcade_crt' ), $audio_layers, $visual_layers ) ) );
+    $decoded['style_tags'] = se_build_asmr_style_tags( $decoded, array( 'retro_arcade_crt', 'beat_compiled' ) );
     $decoded['audio_events'] = $audio;
     $decoded['visual_events'] = $visual;
     $decoded['presentation_note'] = 'Motif-repair injection: OpenAI composes the story arc, deterministic pass only ensures selected motif presence and readability.';
@@ -1537,6 +1525,85 @@ function se_get_asmr_default_story_beats( $runtime ) {
     );
 }
 
+
+function se_pick_random_from_allowed( $candidates, $allowed ) {
+    $pool = array_values( array_intersect( array_map( 'sanitize_key', (array) $candidates ), array_map( 'sanitize_key', (array) $allowed ) ) );
+    if ( empty( $pool ) ) {
+        return '';
+    }
+    shuffle( $pool );
+    return $pool[0];
+}
+
+function se_restrict_generation_plan_to_selected_motifs( $plan, $audio_layers, $visual_layers ) {
+    $plan = is_array( $plan ) ? $plan : array();
+    $plan['visual_plan'] = is_array( $plan['visual_plan'] ?? null ) ? $plan['visual_plan'] : array();
+    $plan['audio_plan'] = is_array( $plan['audio_plan'] ?? null ) ? $plan['audio_plan'] : array();
+
+    $selected_audio = array_values( array_unique( array_map( 'sanitize_key', (array) $audio_layers ) ) );
+    $selected_visual = array_values( array_unique( array_map( 'sanitize_key', (array) $visual_layers ) ) );
+
+    $visual_slots = array( 'primary_scene', 'landmark', 'motion' );
+    foreach ( $visual_slots as $slot ) {
+        $candidate = sanitize_key( $plan['visual_plan'][ $slot ] ?? '' );
+        $plan['visual_plan'][ $slot ] = in_array( $candidate, $selected_visual, true ) ? $candidate : '';
+    }
+
+    foreach ( array( 'atmosphere', 'texture', 'overlay_family' ) as $slot ) {
+        $candidate = sanitize_key( $plan['visual_plan'][ $slot ] ?? '' );
+        $plan['visual_plan'][ $slot ] = in_array( $candidate, $selected_visual, true ) ? $candidate : '';
+    }
+
+    $hero_scene_pool = array_values( array_intersect( $selected_visual, se_get_asmr_visual_hero_types() ) );
+    if ( empty( $plan['visual_plan']['primary_scene'] ) ) {
+        $plan['visual_plan']['primary_scene'] = se_pick_random_from_allowed( $hero_scene_pool, $hero_scene_pool );
+    }
+    if ( empty( $plan['visual_plan']['landmark'] ) ) {
+        $plan['visual_plan']['landmark'] = se_pick_random_from_allowed( $hero_scene_pool, $hero_scene_pool );
+    }
+
+    $audio_slots = array( 'primary_bed', 'secondary_bed', 'transit_cue' );
+    foreach ( $audio_slots as $slot ) {
+        $candidate = sanitize_key( $plan['audio_plan'][ $slot ] ?? '' );
+        $plan['audio_plan'][ $slot ] = in_array( $candidate, $selected_audio, true ) ? $candidate : '';
+    }
+
+    $signature = array_slice( array_values( array_filter( array_map( 'sanitize_key', (array) ( $plan['audio_plan']['signature_cues'] ?? array() ) ) ) ), 0, 3 );
+    $plan['audio_plan']['signature_cues'] = array_values( array_intersect( $signature, $selected_audio ) );
+
+    if ( empty( $plan['audio_plan']['primary_bed'] ) && ! empty( $selected_audio ) ) {
+        $plan['audio_plan']['primary_bed'] = se_pick_random_from_allowed( $selected_audio, $selected_audio );
+    }
+
+    return $plan;
+}
+
+function se_build_asmr_style_tags( $decoded, $base_tags = array() ) {
+    $base = array_values( array_filter( array_map( 'sanitize_key', (array) $base_tags ) ) );
+    $existing = array_values( array_filter( array_map( 'sanitize_key', (array) ( $decoded['style_tags'] ?? array() ) ) ) );
+    $broad_allowed = array( 'atmospheric', 'cinematic', 'coastal', 'urban_night', 'retro_arcade_crt', 'beat_compiled' );
+    $broad = array_values( array_intersect( $existing, $broad_allowed ) );
+
+    $plan = is_array( $decoded['generation_plan'] ?? null ) ? $decoded['generation_plan'] : array();
+    $visual_plan = is_array( $plan['visual_plan'] ?? null ) ? $plan['visual_plan'] : array();
+    $audio_plan = is_array( $plan['audio_plan'] ?? null ) ? $plan['audio_plan'] : array();
+
+    $hero = array();
+    foreach ( array( 'primary_scene', 'landmark' ) as $slot ) {
+        $token = sanitize_key( $visual_plan[ $slot ] ?? '' );
+        if ( $token ) {
+            $hero[] = $token;
+        }
+    }
+    $primary_bed = sanitize_key( $audio_plan['primary_bed'] ?? '' );
+    if ( $primary_bed ) {
+        $hero[] = $primary_bed;
+    }
+
+    $hero = array_slice( array_values( array_unique( $hero ) ), 0, 2 );
+    return array_values( array_unique( array_merge( $base, $broad, $hero ) ) );
+}
+
 function se_compile_visual_events_from_plan( $plan, $runtime ) {
     $runtime = max( 10, min( 30, floatval( $runtime ) ) );
     $hero_types = se_get_asmr_visual_hero_types();
@@ -1551,9 +1618,6 @@ function se_compile_visual_events_from_plan( $plan, $runtime ) {
     $overlay = sanitize_key( $visual_plan['overlay_family'] ?? '' );
 
     $events = array();
-    if ( ! $primary_scene ) { $primary_scene = 'waterfront_scene'; }
-    if ( ! $atmosphere ) { $atmosphere = 'harbor_mist'; }
-    if ( ! $motion ) { $motion = 'gull_silhouettes'; }
     if ( $atmosphere ) {
         $events[] = array( 'time' => 0.0, 'duration' => min( $runtime - 0.2, 7.6 ), 'visual_type' => $atmosphere, 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'opening_atmosphere' );
     }
@@ -1589,10 +1653,6 @@ function se_compile_visual_events_from_plan( $plan, $runtime ) {
         $events[] = array( 'time' => 15.4, 'duration' => 4.1, 'visual_type' => $atmosphere, 'intensity' => 0.28, 'params' => array(), 'sync_role' => 'resolve_bed' );
     }
 
-    if ( 'gull_silhouettes' === $motion ) {
-        $events[] = array( 'time' => 12.8, 'duration' => 2.4, 'visual_type' => 'gull_silhouettes', 'intensity' => 0.24, 'params' => array(), 'sync_role' => 'support_motion' );
-    }
-
     usort( $events, static function( $a, $b ) { return (float) $a['time'] <=> (float) $b['time']; } );
     return $events;
 }
@@ -1606,8 +1666,6 @@ function se_compile_audio_events_from_plan( $plan, $runtime ) {
     $signature_cues = array_slice( array_values( array_filter( array_map( 'sanitize_key', (array) ( $audio_plan['signature_cues'] ?? array() ) ) ) ), 0, 3 );
 
     $events = array();
-    if ( ! $primary_bed ) { $primary_bed = 'ocean_waves'; }
-    if ( empty( $signature_cues ) ) { $signature_cues = array( 'seabus_horn' ); }
     if ( $primary_bed ) {
         $events[] = array( 'time' => 0.0, 'duration' => min( $runtime - 0.1, 16.8 ), 'engine' => $primary_bed, 'intensity' => 0.4, 'params' => array( 'fade_out' => 2.6 ), 'sync_role' => 'primary_bed' );
     }
@@ -1779,7 +1837,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         $legacy_audio_layers[] = $legacy_audio_map[ $token ] ?? $token;
     }
 
-    $link_av = ! array_key_exists( 'link_av', $params ) || filter_var( $params['link_av'], FILTER_VALIDATE_BOOLEAN );
+    $link_av = array_key_exists( 'link_av', $params ) ? filter_var( $params['link_av'], FILTER_VALIDATE_BOOLEAN ) : false;
     $audio_layers = array_values( array_intersect( $allowed_audio, array_map( 'sanitize_key', (array) ( $params['audio_layers'] ?? array() ) ) ) );
     if ( empty( $audio_layers ) && ! empty( $legacy_audio_layers ) ) {
         $audio_layers = array_values( array_intersect( $allowed_audio, $legacy_audio_layers ) );
@@ -1855,6 +1913,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
 
     $runtime = max( 10, min( 30, absint( $decoded['runtime_seconds'] ?? $payload['duration'] ) ) );
     $plan = is_array( $decoded['generation_plan'] ?? null ) ? $decoded['generation_plan'] : array();
+    $plan = se_restrict_generation_plan_to_selected_motifs( $plan, $audio_layers, $visual_layers );
 
     $decoded['title'] = sanitize_text_field( $decoded['title'] ?? 'ASMR Lab Sequence' );
     $decoded['runtime_seconds'] = $runtime;
@@ -1862,7 +1921,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     $decoded['concept_summary'] = sanitize_text_field( $decoded['concept_summary'] ?? 'Disciplined beat-driven structure.' );
     $decoded['logline'] = sanitize_text_field( $decoded['logline'] ?? ( $plan['logline'] ?? '' ) );
     $decoded['story_beats'] = is_array( $decoded['story_beats'] ?? null ) && count( $decoded['story_beats'] ) === 4 ? $decoded['story_beats'] : se_get_asmr_default_story_beats( $runtime );
-    $decoded['style_tags'] = array_values( array_unique( array_filter( array_merge( (array) ( $decoded['style_tags'] ?? array() ), array( 'retro_arcade_crt', 'beat_compiled' ), $audio_layers, $visual_layers ) ) ) );
+    $decoded['style_tags'] = se_build_asmr_style_tags( array_merge( $decoded, array( 'generation_plan' => $plan ) ), array( 'retro_arcade_crt', 'beat_compiled' ) );
     $decoded['audio_events'] = se_compile_audio_events_from_plan( $plan, $runtime );
     $decoded['visual_events'] = se_compile_visual_events_from_plan( $plan, $runtime );
     $decoded['sync_points'] = array(
