@@ -89,9 +89,11 @@
       this.lastPreview = null;
     }
 
-    normalizeAudioEvents(pkg) {
+    normalizeAudioEvents(pkg, options = {}) {
       if (!pkg || !Array.isArray(pkg.audio_events)) return [];
-      const runtime = clamp(Number(pkg.runtime_seconds || 20), 10, 30);
+      const runtimeMin = Number.isFinite(Number(options.runtimeMin)) ? Number(options.runtimeMin) : 10;
+      const runtimeMax = Number.isFinite(Number(options.runtimeMax)) ? Number(options.runtimeMax) : 30;
+      const runtime = clamp(Number(pkg.runtime_seconds || 20), runtimeMin, runtimeMax);
       const maxEdge = runtime + 0.5;
       const normalized = pkg.audio_events
         .filter((event) => event && ENGINE_NAMES.includes(event.engine))
@@ -117,36 +119,18 @@
         .sort((a, b) => a.time - b.time)
         .filter((event) => event.time <= maxEdge);
 
-      if (!normalized.length || normalized[0].time > 0.22) {
-        normalized.unshift({
-          time: 0,
-          duration: Math.min(4, runtime * 0.3),
-          intensity: 0.22,
-          engine: 'ghost_pad',
-          params: { from: 122, to: 178 },
-          sync_role: 'ambient_lead_in'
-        });
-      }
-
-      const minEvents = Math.max(7, Math.ceil(runtime * 0.42));
-      while (normalized.length < minEvents) {
-        const idx = normalized.length;
-        normalized.push({
-          time: clamp(0.24 + idx * (runtime / (minEvents + 1)), 0, runtime - 0.08),
-          duration: 0.24 + (idx % 3) * 0.16,
-          intensity: 0.16 + (idx % 5) * 0.06,
-          engine: idx % 2 === 0 ? 'particle_spark' : 'shimmer_swirl',
-          params: {},
-          sync_role: 'support_texture'
-        });
-      }
-
       return normalized.sort((a, b) => a.time - b.time);
+    }
+
+    resolveRuntime(pkg, mode = 'full') {
+      const runtime = Number(pkg && pkg.runtime_seconds);
+      if (mode === 'debug') return clamp(Number.isFinite(runtime) ? runtime : 2.2, 1, 5);
+      return clamp(Number.isFinite(runtime) ? runtime : 20, 10, 30);
     }
 
     buildMasterChain(ctx, destination) {
       const input = ctx.createGain();
-      input.gain.value = 0.58;
+      input.gain.value = 0.5;
 
       const preHP = ctx.createBiquadFilter();
       preHP.type = 'highpass';
@@ -157,18 +141,18 @@
       toneLP.frequency.value = 10400;
 
       const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -26;
+      comp.threshold.value = -24;
       comp.knee.value = 16;
-      comp.ratio.value = 3.4;
-      comp.attack.value = 0.01;
-      comp.release.value = 0.25;
+      comp.ratio.value = 2.8;
+      comp.attack.value = 0.015;
+      comp.release.value = 0.33;
 
       const limiter = ctx.createDynamicsCompressor();
-      limiter.threshold.value = -9;
+      limiter.threshold.value = -8;
       limiter.knee.value = 2;
-      limiter.ratio.value = 14;
+      limiter.ratio.value = 12;
       limiter.attack.value = 0.002;
-      limiter.release.value = 0.1;
+      limiter.release.value = 0.16;
 
       const stereo = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
       if (stereo) stereo.pan.value = 0;
@@ -708,7 +692,7 @@
           sync_role: 'debug_sound_preview'
         }]
       };
-      return this.preview(pkg);
+      return this.preview(pkg, { mode: 'debug', includeBaseBed: false });
     }
 
     validateRecipe(pkg) {
@@ -717,22 +701,32 @@
       return pkg.audio_events.every((event) => ENGINE_NAMES.includes(event.engine));
     }
 
-    async preview(pkg) {
+    async preview(pkg, options = {}) {
       await this.ensureContext();
       if (!this.validateRecipe(pkg)) throw new Error('Audio package is invalid or uses unsupported engines.');
       this.stop();
 
-      const events = this.normalizeAudioEvents(pkg);
+      const mode = options.mode === 'debug' ? 'debug' : 'full';
+      const includeBaseBed = Boolean(options.includeBaseBed);
+      const runtime = this.resolveRuntime(pkg, mode);
+      const events = this.normalizeAudioEvents(pkg, {
+        runtimeMin: mode === 'debug' ? 1 : 10,
+        runtimeMax: mode === 'debug' ? 5 : 30
+      });
       if (window && window.console && typeof window.console.log === 'function') {
+        window.console.log('[ASMR] preview diagnostics', {
+          mode,
+          includeBaseBed,
+          normalizedEventCount: events.length
+        });
         window.console.log('[ASMR] normalized audio events', events.map((event) => ({ time: Number(event.time.toFixed(3)), duration: Number(event.duration.toFixed(3)), engine: event.engine })));
       }
-      const runtime = clamp(Number(pkg.runtime_seconds || 20), 10, 30);
       const preroll = this.defaultPrerollSeconds;
       const now = this.ctx.currentTime;
       const audioStartAt = now + preroll;
 
       this.masterNode = this.buildMasterChain(this.ctx, this.ctx.destination);
-      this.scheduleBed(this.ctx, this.masterNode, audioStartAt, runtime);
+      if (includeBaseBed) this.scheduleBed(this.ctx, this.masterNode, audioStartAt, runtime);
       events.forEach((event) => this.renderEvent(this.ctx, this.masterNode, event, audioStartAt + event.time));
 
       const total = Math.max(runtime, events.reduce((max, event) => Math.max(max, event.time + event.duration + this.estimateEventTail(event)), runtime));
@@ -743,18 +737,26 @@
       }, (total + preroll + 1.2) * 1000);
       this.activeTimers.push(timer);
 
-      this.lastPreview = { startAt: audioStartAt, preroll, total, runtime };
+      this.lastPreview = { startAt: audioStartAt, preroll, total, runtime, mode, includeBaseBed };
       return this.lastPreview;
     }
 
-    renderToOfflineBuffer(pkg, sampleRate = 48000) {
+    renderToOfflineBuffer(pkg, sampleRate = 48000, options = {}) {
       if (!this.validateRecipe(pkg)) throw new Error('Cannot export: invalid audio events.');
-      const events = this.normalizeAudioEvents(pkg);
-      const runtime = clamp(Number(pkg.runtime_seconds || 20), 10, 30);
+      const runtime = this.resolveRuntime(pkg, 'full');
+      const includeBaseBed = Boolean(options.includeBaseBed);
+      const events = this.normalizeAudioEvents(pkg, { runtimeMin: 10, runtimeMax: 30 });
+      if (window && window.console && typeof window.console.log === 'function') {
+        window.console.log('[ASMR] export diagnostics', {
+          mode: 'full',
+          includeBaseBed,
+          normalizedEventCount: events.length
+        });
+      }
       const lengthSec = Math.max(runtime + 2, events.reduce((max, e) => Math.max(max, e.time + e.duration + this.estimateEventTail(e)), runtime) + 1.5);
       const offline = new OfflineAudioContext(2, Math.ceil(lengthSec * sampleRate), sampleRate);
       const master = this.buildMasterChain(offline, offline.destination);
-      this.scheduleBed(offline, master, 0, runtime);
+      if (includeBaseBed) this.scheduleBed(offline, master, 0, runtime);
       events.forEach((event) => this.renderEvent(offline, master, event, event.time));
       return offline.startRendering();
     }
