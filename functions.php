@@ -938,9 +938,24 @@ function se_get_asmr_visual_types() {
 
 function se_get_asmr_visual_hero_types() {
     return array(
-        'waterfront_scene', 'north_shore_scene', 'gastown_clock_silhouette', 'lions_gate_bridge',
-        'planetarium_dome', 'science_world_dome', 'seabus_silhouette', 'skytrain_pass_visual',
+        'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene',
+        'gastown_clock_silhouette', 'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk',
+        'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
+        'planetarium_dome', 'starfield_projection', 'canada_place_sails', 'seabus_silhouette',
+        'skytrain_pass_visual',
     );
+}
+
+function se_get_asmr_visual_landmark_types() {
+    return array(
+        'gastown_clock_silhouette', 'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk',
+        'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
+        'planetarium_dome', 'starfield_projection', 'canada_place_sails', 'seabus_silhouette',
+    );
+}
+
+function se_get_asmr_visual_scene_types() {
+    return array( 'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene' );
 }
 
 function se_get_asmr_visual_support_types() {
@@ -1036,12 +1051,20 @@ function se_apply_asmr_semantic_cues( $decoded, $payload ) {
     $audio = is_array( $decoded['audio_events'] ?? null ) ? $decoded['audio_events'] : array();
     $visual = is_array( $decoded['visual_events'] ?? null ) ? $decoded['visual_events'] : array();
     $sync = is_array( $decoded['sync_points'] ?? null ) ? $decoded['sync_points'] : array();
+    $selected_visual = array_values( array_unique( array_map( 'sanitize_key', (array) ( $payload['visual_layers'] ?? array() ) ) ) );
+    $has_selected_visual = static function( $token ) use ( $selected_visual ) {
+        return in_array( sanitize_key( $token ), $selected_visual, true );
+    };
 
     if ( in_array( 'gastown_clock_focus', $cues, true ) || in_array( 'steam_clock', $cues, true ) ) {
         $audio[] = array( 'time' => 0.55, 'duration' => 1.4, 'engine' => 'steam_clock_burst', 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'steam_clock_identity' );
         $audio[] = array( 'time' => $runtime * 0.68, 'duration' => 1.1, 'engine' => 'distant_bell_toll', 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'clock_chime_reveal' );
-        $visual[] = array( 'time' => 0.5, 'duration' => 2.1, 'visual_type' => 'clock_face_reveal', 'intensity' => 0.72, 'params' => array(), 'sync_role' => 'clock_face_entry' );
-        $visual[] = array( 'time' => 0.3, 'duration' => 2.2, 'visual_type' => 'steam_plume_column', 'intensity' => 0.64, 'params' => array(), 'sync_role' => 'steam_column' );
+        if ( $has_selected_visual( 'clock_face_reveal' ) ) {
+            $visual[] = array( 'time' => 0.5, 'duration' => 2.1, 'visual_type' => 'clock_face_reveal', 'intensity' => 0.52, 'params' => array(), 'sync_role' => 'clock_face_entry' );
+        }
+        if ( $has_selected_visual( 'steam_plume_column' ) ) {
+            $visual[] = array( 'time' => 0.3, 'duration' => 2.2, 'visual_type' => 'steam_plume_column', 'intensity' => 0.48, 'params' => array(), 'sync_role' => 'steam_column' );
+        }
     }
 
     if ( in_array( 'snow', $cues, true ) || in_array( 'winter_hush', $cues, true ) ) {
@@ -1058,24 +1081,30 @@ function se_apply_asmr_semantic_cues( $decoded, $payload ) {
 
     if ( in_array( 'wet_reflection', $cues, true ) || in_array( 'rain', $cues, true ) ) {
         $audio[] = array( 'time' => $runtime * 0.15, 'duration' => min( 6.2, $runtime * 0.35 ), 'engine' => 'wet_street_shimmer', 'intensity' => 0.52, 'params' => array(), 'sync_role' => 'wet_street_texture' );
-        $visual[] = array( 'time' => $runtime * 0.12, 'duration' => min( 6.2, $runtime * 0.38 ), 'visual_type' => 'wet_reflection_shimmer', 'intensity' => 0.64, 'params' => array(), 'sync_role' => 'street_reflection' );
+        if ( $has_selected_visual( 'wet_reflection_shimmer' ) ) {
+            $visual[] = array( 'time' => $runtime * 0.12, 'duration' => min( 6.2, $runtime * 0.38 ), 'visual_type' => 'wet_reflection_shimmer', 'intensity' => 0.4, 'params' => array(), 'sync_role' => 'street_reflection' );
+        }
         $visual[] = array( 'time' => $runtime * 0.2, 'duration' => min( 5.5, $runtime * 0.32 ), 'visual_type' => 'neon_wet_reflections', 'intensity' => 0.55, 'params' => array(), 'sync_role' => 'neon_reflection' );
     }
 
     if ( in_array( 'brick', $cues, true ) || in_array( 'cobblestone', $cues, true ) ) {
-        $visual[] = array( 'time' => 0.4, 'duration' => min( 6.5, $runtime * 0.45 ), 'visual_type' => 'brick_shadow_drift', 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'material_grounding' );
+        if ( $has_selected_visual( 'brick_shadow_drift' ) ) {
+            $visual[] = array( 'time' => 0.4, 'duration' => min( 6.5, $runtime * 0.45 ), 'visual_type' => 'brick_shadow_drift', 'intensity' => 0.36, 'params' => array(), 'sync_role' => 'material_grounding' );
+        }
         $audio[] = array( 'time' => 0.9, 'duration' => 1.2, 'engine' => 'metal_resonance', 'intensity' => 0.42, 'params' => array(), 'sync_role' => 'urban_material_ping' );
     }
 
     if ( in_array( 'amber', $cues, true ) || in_array( 'streetlamp', $cues, true ) ) {
-        $visual[] = array( 'time' => 0.25, 'duration' => min( 8, $runtime * 0.52 ), 'visual_type' => 'amber_halo', 'intensity' => 0.65, 'params' => array(), 'sync_role' => 'streetlamp_glow' );
+        if ( $has_selected_visual( 'amber_halo' ) ) {
+            $visual[] = array( 'time' => 0.25, 'duration' => min( 8, $runtime * 0.52 ), 'visual_type' => 'amber_halo', 'intensity' => 0.36, 'params' => array(), 'sync_role' => 'streetlamp_glow' );
+        }
     }
 
     if ( in_array( 'urban_night', $cues, true ) ) {
         $audio[] = array( 'time' => 0.05, 'duration' => min( 8, $runtime * 0.6 ), 'engine' => 'city_electrical_hum', 'intensity' => 0.35, 'params' => array(), 'sync_role' => 'city_grid_bed' );
     }
 
-    if ( in_array( 'scanline_field', $cues, true ) ) {
+    if ( in_array( 'scanline_field', $cues, true ) && $has_selected_visual( 'scanline_field' ) ) {
         $visual[] = array( 'time' => 0.16, 'duration' => min( 4.2, $runtime * 0.28 ), 'visual_type' => 'scanline_field', 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'crt_scan_support' );
     }
 
@@ -1088,13 +1117,13 @@ function se_apply_asmr_semantic_cues( $decoded, $payload ) {
         implode( ' ', (array) ( $payload['audio_layers'] ?? array() ) ),
         implode( ' ', (array) ( $payload['visual_layers'] ?? array() ) ),
     ) ) );
-    if ( false !== strpos( $source, 'event card' ) || false !== strpos( $source, 'screening' ) || false !== strpos( $source, 'film club' ) || false !== strpos( $source, 'deadline' ) ) {
+    if ( ! empty( $payload['use_end_card'] ) && ( false !== strpos( $source, 'event card' ) || false !== strpos( $source, 'screening' ) || false !== strpos( $source, 'film club' ) || false !== strpos( $source, 'deadline' ) ) ) {
         $end_card = is_array( $decoded['end_card'] ?? null ) ? $decoded['end_card'] : array();
+        $end_card['use_end_card'] = true;
         $end_card['reveal_style'] = 'event_card';
         $decoded['end_card'] = $end_card;
     }
 
-    $sync[] = array( 'time' => 0.55, 'cue' => 'semantic place identity enters', 'importance' => 'high' );
     $sync[] = array( 'time' => $runtime * 0.68, 'cue' => 'location-specific reveal toll', 'importance' => 'high' );
 
     usort( $audio, static function( $a, $b ) { return ( floatval( $a['time'] ?? 0 ) <=> floatval( $b['time'] ?? 0 ) ); } );
@@ -1554,13 +1583,24 @@ function se_restrict_generation_plan_to_selected_motifs( $plan, $audio_layers, $
         $plan['visual_plan'][ $slot ] = in_array( $candidate, $selected_visual, true ) ? $candidate : '';
     }
 
-    $hero_scene_pool = array_values( array_intersect( $selected_visual, se_get_asmr_visual_hero_types() ) );
-    if ( empty( $plan['visual_plan']['primary_scene'] ) ) {
-        $plan['visual_plan']['primary_scene'] = se_pick_random_from_allowed( $hero_scene_pool, $hero_scene_pool );
+    $selected_scenes = array_values( array_intersect( $selected_visual, se_get_asmr_visual_scene_types() ) );
+    $selected_landmarks = array_values( array_intersect( $selected_visual, se_get_asmr_visual_landmark_types() ) );
+    $selected_support = array_values( array_intersect( $selected_visual, se_get_asmr_visual_support_types() ) );
+
+    if ( empty( $plan['visual_plan']['primary_scene'] ) || ! in_array( $plan['visual_plan']['primary_scene'], $selected_scenes, true ) ) {
+        $plan['visual_plan']['primary_scene'] = ! empty( $selected_scenes ) ? $selected_scenes[0] : '';
     }
-    if ( empty( $plan['visual_plan']['landmark'] ) ) {
-        $plan['visual_plan']['landmark'] = se_pick_random_from_allowed( $hero_scene_pool, $hero_scene_pool );
+
+    if ( empty( $plan['visual_plan']['landmark'] ) || ! in_array( $plan['visual_plan']['landmark'], $selected_landmarks, true ) ) {
+        $plan['visual_plan']['landmark'] = ! empty( $selected_landmarks ) ? $selected_landmarks[0] : '';
     }
+
+    if ( ! empty( $selected_landmarks ) && empty( $plan['visual_plan']['primary_scene'] ) && 1 === count( $selected_landmarks ) ) {
+        $plan['visual_plan']['primary_scene'] = $selected_landmarks[0];
+    }
+
+    $overlay = sanitize_key( $plan['visual_plan']['overlay_family'] ?? '' );
+    $plan['visual_plan']['overlay_family'] = in_array( $overlay, $selected_support, true ) ? $overlay : '';
 
     $audio_slots = array( 'primary_bed', 'secondary_bed', 'transit_cue' );
     foreach ( $audio_slots as $slot ) {
@@ -1618,19 +1658,30 @@ function se_compile_visual_events_from_plan( $plan, $runtime ) {
     $overlay = sanitize_key( $visual_plan['overlay_family'] ?? '' );
 
     $events = array();
+    $opening_hero = $primary_scene && in_array( $primary_scene, $hero_types, true ) ? $primary_scene : '';
+    if ( ! $opening_hero && $landmark && in_array( $landmark, $hero_types, true ) ) {
+        $opening_hero = $landmark;
+    }
+    $arrival_hero = '';
+    if ( $landmark && in_array( $landmark, $hero_types, true ) && $landmark !== $opening_hero ) {
+        $arrival_hero = $landmark;
+    } elseif ( $primary_scene && in_array( $primary_scene, $hero_types, true ) && $primary_scene !== $opening_hero ) {
+        $arrival_hero = $primary_scene;
+    }
+
     if ( $atmosphere ) {
         $events[] = array( 'time' => 0.0, 'duration' => min( $runtime - 0.2, 7.6 ), 'visual_type' => $atmosphere, 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'opening_atmosphere' );
     }
-    if ( $primary_scene && in_array( $primary_scene, $hero_types, true ) ) {
-        $events[] = array( 'time' => 0.2, 'duration' => 5.4, 'visual_type' => $primary_scene, 'intensity' => 0.64, 'params' => array(), 'sync_role' => 'opening_scene' );
+    if ( $opening_hero ) {
+        $events[] = array( 'time' => 0.2, 'duration' => 5.4, 'visual_type' => $opening_hero, 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'opening_scene' );
     }
     if ( $overlay && in_array( $overlay, $support_types, true ) ) {
-        $events[] = array( 'time' => 0.4, 'duration' => 3.2, 'visual_type' => $overlay, 'intensity' => 0.22, 'params' => array(), 'sync_role' => 'opening_support' );
+        $events[] = array( 'time' => 0.4, 'duration' => 3.2, 'visual_type' => $overlay, 'intensity' => 0.1, 'params' => array(), 'sync_role' => 'opening_support' );
     }
 
-    // Arrival: landmark OR motion.
-    if ( $landmark && in_array( $landmark, $hero_types, true ) ) {
-        $events[] = array( 'time' => 4.6, 'duration' => 4.2, 'visual_type' => $landmark, 'intensity' => 0.68, 'params' => array(), 'sync_role' => 'arrival_landmark' );
+    // Arrival: introduce the other hero, otherwise motion.
+    if ( $arrival_hero ) {
+        $events[] = array( 'time' => 4.6, 'duration' => 4.2, 'visual_type' => $arrival_hero, 'intensity' => 0.72, 'params' => array(), 'sync_role' => 'arrival_landmark' );
     } elseif ( $motion ) {
         $events[] = array( 'time' => 5.0, 'duration' => 3.6, 'visual_type' => $motion, 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'arrival_motion' );
     }
@@ -1863,6 +1914,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         'foley' => $raw_legacy_foley,
         'sound_only' => ! empty( $params['sound_only'] ),
         'story_mode' => true,
+        'use_end_card' => array_key_exists( 'use_end_card', $params ) ? filter_var( $params['use_end_card'], FILTER_VALIDATE_BOOLEAN ) : false,
     );
 
     $has_freeform = ! empty( $payload['concept'] ) || ! empty( $payload['object'] ) || ! empty( $payload['setting'] ) || ! empty( $payload['mood'] ) || ! empty( $payload['creative_goal'] );
@@ -1888,6 +1940,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'Support-only visuals must not be hero reveals: ' . implode( ', ', se_get_asmr_visual_support_types() ) . '. '
         . 'Hero visuals are: ' . implode( ', ', se_get_asmr_visual_hero_types() ) . '. '
         . 'story_beats must have 4 entries with t0,t1,beat,intent and timings for 0-4,4-9,9-15,15-20 when runtime is 20. '
+        . 'Default to end_card.use_end_card=false and keep text empty unless the user explicitly requests an end card. '
         . 'Resolve must simplify and avoid introducing a new landmark. Keep one dominant reveal at a time.';
 
     $response = se_openai_chat(
@@ -1930,7 +1983,10 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         array( 'time' => 10.2, 'cue' => 'Lift reveal', 'importance' => 'high' ),
         array( 'time' => 17.2, 'cue' => 'Resolve cue', 'importance' => 'medium' ),
     );
-    $decoded['end_card'] = is_array( $decoded['end_card'] ?? null ) ? $decoded['end_card'] : array( 'use_end_card' => true, 'text' => 'VANCOUVER SIGNAL', 'reveal_style' => 'event_card' );
+    $decoded['end_card'] = is_array( $decoded['end_card'] ?? null ) ? $decoded['end_card'] : array();
+    if ( empty( $payload['use_end_card'] ) ) {
+        $decoded['end_card'] = array( 'use_end_card' => false, 'text' => '', 'reveal_style' => '' );
+    }
     $decoded['edit_rhythm'] = is_array( $decoded['edit_rhythm'] ?? null ) ? $decoded['edit_rhythm'] : array( 'pacing_note' => 'Beat-plan compiled timeline with one reveal at a time.', 'silence_strategy' => 'Leave breathing space between reveals.', 'release_strategy' => 'Resolve simplifies to core bed and subject.' );
     $decoded['presentation_note'] = sanitize_text_field( $decoded['presentation_note'] ?? 'Compiled from generation_plan for controlled cinematic structure.' );
     $decoded['generation_plan'] = $plan;
@@ -1942,6 +1998,9 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
 
     $validated['generation_plan'] = $plan;
     $validated = se_apply_asmr_semantic_cues( $validated, $payload );
+    if ( empty( $payload['use_end_card'] ) ) {
+        $validated['end_card'] = array( 'use_end_card' => false, 'text' => '', 'reveal_style' => '' );
+    }
 
     return rest_ensure_response( $validated );
 }

@@ -72,7 +72,8 @@
       }
 
       const hasEarly = out.some((e) => Number(e.time || 99) <= 0.8 && Number(e.intensity || 0) >= 0.3);
-      if (!hasEarly) out.push({ time: 0.52, duration: 1.3, visual_type: 'pulse_orb', intensity: 0.58, params: {}, sync_role: 'early_focal' });
+      const hasEarlyHero = out.some((e) => Number(e.time || 99) <= 0.9 && ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'planetarium_dome', 'starfield_projection', 'canada_place_sails', 'gastown_clock_silhouette', 'seabus_silhouette', 'waterfront_scene', 'gastown_scene', 'granville_scene', 'north_shore_scene'].includes(e.visual_type));
+      if (!hasEarly && !hasEarlyHero) out.push({ time: 0.52, duration: 1.3, visual_type: 'pulse_orb', intensity: 0.58, params: {}, sync_role: 'early_focal' });
 
       out.sort((a, b) => a.time - b.time);
       const maxGap = Math.max(2.4, runtime * 0.2);
@@ -209,7 +210,8 @@
       if (!this.running) return;
       this.currentTime = (performance.now() - this.startPerf) / 1000;
       this.render(this.currentTime);
-      if (this.currentTime >= this.timeline.runtime + 1.25) {
+      const linger = this.timeline.endCard && this.timeline.endCard.use_end_card ? 1.25 : 1.75;
+      if (this.currentTime >= this.timeline.runtime + linger) {
         this.stop();
         return;
       }
@@ -323,7 +325,7 @@
       activeEvents.filter((item) => supportOverlays.includes(item.event.visual_type)).forEach((item) => {
         if (item.event.visual_type !== activeSupportType) return;
         let intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
-        if (hasHeroVisual) intensity *= 0.2;
+        if (hasHeroVisual) intensity *= 0.12;
         this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
       });
 
@@ -412,15 +414,6 @@
 
       const coreX = w * (0.5 + Math.sin(t * 0.13) * 0.02);
       const coreY = h * (0.5 + Math.cos(t * 0.11) * 0.02);
-
-      const tags = (this.timeline && this.timeline.renderProfile && this.timeline.renderProfile.tags) || [];
-      if (tags.includes('gastown') && t <= 0.6) {
-        this.drawEvent(ctx, { visual_type: 'gastown_clock_silhouette', params: {}, intensity: 0.26 }, 0.25, 0.26, w, h, normalized);
-      } else if (tags.includes('granville') && t <= 0.6) {
-        this.drawEvent(ctx, { visual_type: 'granville_neon_marquee', params: {}, intensity: 0.24 }, 0.25, 0.24, w, h, normalized);
-      } else if (tags.includes('north_shore') && t <= 0.6) {
-        this.drawEvent(ctx, { visual_type: 'northshore_mountain_ridge', params: {}, intensity: 0.28 }, 0.25, 0.28, w, h, normalized);
-      }
 
       const core = ctx.createRadialGradient(coreX, coreY, 2, coreX, coreY, h * 0.28);
       const coreColor = theme.core || [176, 228, 255];
@@ -880,11 +873,19 @@
           break;
         }
         case 'english_bay_inukshuk': {
-          ctx.fillStyle = `rgba(176,188,202,${0.22 + intensity * 0.28})`;
-          ctx.fillRect(w * 0.46, h * 0.5, w * 0.08, h * 0.18);
-          ctx.fillRect(w * 0.4, h * 0.54, w * 0.2, h * 0.05);
-          ctx.fillRect(w * 0.48, h * 0.44, w * 0.04, h * 0.05);
-          ctx.fillRect(w * 0.44, h * 0.68, w * 0.12, h * 0.05);
+          const alpha = 0.3 + intensity * 0.5;
+          const x = w * 0.5;
+          const y = h * 0.62;
+          const scale = Math.min(w, h);
+          ctx.fillStyle = `rgba(196,206,220,${alpha})`;
+          ctx.strokeStyle = `rgba(220,236,248,${Math.min(0.9, alpha + 0.2)})`;
+          ctx.lineWidth = Math.max(2, scale * 0.006);
+          ctx.fillRect(x - scale * 0.04, y - scale * 0.16, scale * 0.08, scale * 0.18);
+          ctx.fillRect(x - scale * 0.1, y - scale * 0.1, scale * 0.2, scale * 0.05);
+          ctx.fillRect(x - scale * 0.025, y - scale * 0.22, scale * 0.05, scale * 0.05);
+          ctx.fillRect(x - scale * 0.06, y + scale * 0.02, scale * 0.12, scale * 0.05);
+          ctx.strokeRect(x - scale * 0.04, y - scale * 0.16, scale * 0.08, scale * 0.18);
+          ctx.strokeRect(x - scale * 0.1, y - scale * 0.1, scale * 0.2, scale * 0.05);
           break;
         }
         case 'maritime_museum_sailroof': {

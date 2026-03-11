@@ -160,6 +160,8 @@ ${data.concept_summary}`;
         `Primary scene: ${vPlan.primary_scene || '—'}`,
         `Landmark: ${vPlan.landmark || '—'}`,
         `Motion: ${vPlan.motion || '—'}`,
+        `Atmosphere: ${vPlan.atmosphere || '—'}`,
+        `End card: ${data.end_card && data.end_card.use_end_card ? 'on' : 'off'}`,
         `Primary bed: ${aPlan.primary_bed || '—'}`,
         `Signature cues: ${Array.isArray(aPlan.signature_cues) && aPlan.signature_cues.length ? aPlan.signature_cues.join(', ') : '—'}`
       ];
