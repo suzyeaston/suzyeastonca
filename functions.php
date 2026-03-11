@@ -912,8 +912,6 @@ function se_get_asmr_allowed_engines() {
         'church_bells',
         'harbour_noon_horn',
         'nine_oclock_gun',
-        'planetarium_hum',
-        'planetarium_chime',
     );
 }
 
@@ -1213,7 +1211,7 @@ function se_get_asmr_audio_layers_allowed() {
         'footsteps', 'footsteps_snow_mode', 'rain_ambience', 'wind_gust', 'crowd_murmur', 'laughter_burst',
         'skytrain_pass', 'bus_pass', 'car_horn_short', 'steam_clock',
         'seabus_horn', 'ocean_waves', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant',
-        'gastown_clock_whistle', 'church_bells', 'harbour_noon_horn', 'nine_oclock_gun', 'planetarium_hum', 'planetarium_chime'
+        'gastown_clock_whistle', 'church_bells', 'harbour_noon_horn', 'nine_oclock_gun'
     );
 }
 
@@ -1232,15 +1230,11 @@ function se_get_asmr_visual_layers_allowed() {
 
 function se_get_asmr_visual_to_audio_map() {
     return array(
-        'ocean_surface_shimmer' => array( 'ocean_waves' ),
-        'waterfront_scene' => array( 'ocean_waves' ),
         'seabus_silhouette' => array( 'seabus_horn' ),
         'skytrain_pass_visual' => array( 'skytrain_pass' ),
         'bus_pass_visual' => array( 'bus_pass' ),
         'rain_streaks' => array( 'rain_ambience' ),
         'gastown_scene' => array( 'gastown_clock_whistle' ),
-        'planetarium_dome' => array( 'planetarium_hum' ),
-        'starfield_projection' => array( 'planetarium_chime' ),
     );
 }
 
@@ -1273,8 +1267,6 @@ function se_get_asmr_mapped_visual_layers_from_audio( $audio_layers ) {
         'gastown_clock_whistle' => 'gastown_clock_silhouette',
         'church_bells' => 'constellation_lines',
         'harbour_noon_horn' => 'waterfront_scene',
-        'planetarium_hum' => 'planetarium_dome',
-        'planetarium_chime' => 'starfield_projection',
         'ocean_waves' => 'ocean_surface_shimmer',
         'seabus_horn' => 'seabus_silhouette',
     );
@@ -1331,11 +1323,56 @@ function se_get_asmr_motif_brief( $payload ) {
     return implode( ' ', $parts );
 }
 
+function se_stage_selected_visual_motifs( $visual_layers, $runtime, $story_beats ) {
+    $windows = array(
+        'opening' => array( 't0' => 0.0, 't1' => $runtime * 0.25 ),
+        'arrival' => array( 't0' => $runtime * 0.25, 't1' => $runtime * 0.5 ),
+        'lift' => array( 't0' => $runtime * 0.5, 't1' => $runtime * 0.75 ),
+        'resolve' => array( 't0' => $runtime * 0.75, 't1' => $runtime ),
+    );
+
+    $scenes = array( 'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene' );
+    $atmosphere = array( 'rain_streaks', 'snow_drift', 'harbor_mist', 'clear_cold_shimmer', 'ocean_surface_shimmer' );
+    $landmarks = array( 'gastown_clock_silhouette', 'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails', 'seabus_silhouette' );
+    $transit = array( 'skytrain_pass_visual', 'skytrain_track', 'bus_pass_visual', 'seabus_silhouette' );
+
+    $selected = array_values( array_unique( array_values( array_filter( array_map( 'sanitize_key', (array) $visual_layers ) ) ) ) );
+    $opening = array();
+    foreach ( $selected as $token ) {
+        if ( empty( $opening ) && in_array( $token, $scenes, true ) ) { $opening[] = $token; continue; }
+        if ( 0 === count( array_intersect( $opening, $atmosphere ) ) && in_array( $token, $atmosphere, true ) ) { $opening[] = $token; continue; }
+        if ( 0 === count( array_intersect( $opening, $landmarks ) ) && in_array( $token, $landmarks, true ) ) { $opening[] = $token; continue; }
+    }
+
+    $remaining = array_values( array_diff( $selected, $opening ) );
+    $arrival = array_slice( $remaining, 0, min( 2, count( $remaining ) ) );
+    $remaining = array_values( array_diff( $remaining, $arrival ) );
+
+    $lift = array_values( array_intersect( $remaining, $transit ) );
+    if ( empty( $lift ) && ! empty( $remaining ) ) { $lift[] = $remaining[0]; }
+    if ( count( $lift ) > 2 ) { $lift = array_slice( $lift, 0, 2 ); }
+    $remaining = array_values( array_diff( $remaining, $lift ) );
+
+    $resolve = array();
+    if ( ! empty( $remaining ) ) {
+        $resolve[] = $remaining[0];
+    } elseif ( ! empty( $opening ) ) {
+        $resolve[] = $opening[0];
+    }
+
+    return array(
+        'opening' => $opening,
+        'arrival' => $arrival,
+        'lift' => $lift,
+        'resolve' => $resolve,
+        'windows' => $windows,
+    );
+}
+
 function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
     $link_av = ! array_key_exists( 'link_av', $payload ) || ! empty( $payload['link_av'] );
     $audio_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['audio_layers'] ?? array() ) ) ) );
     $visual_layers = array_values( array_filter( array_map( 'sanitize_key', (array) ( $payload['visual_layers'] ?? array() ) ) ) );
-
     if ( empty( $audio_layers ) && empty( $visual_layers ) ) {
         return $decoded;
     }
@@ -1346,13 +1383,10 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
                 continue;
             }
             foreach ( $mapped_audio as $audio_token ) {
-                if ( 'footsteps_snow_mode' === $audio_token ) {
-                    if ( in_array( 'footsteps', $audio_layers, true ) ) {
-                        $audio_layers[] = 'footsteps_snow_mode';
-                    }
-                } else {
-                    $audio_layers[] = $audio_token;
+                if ( 'footsteps_snow_mode' === $audio_token && ! in_array( 'footsteps', $audio_layers, true ) ) {
+                    continue;
                 }
+                $audio_layers[] = $audio_token;
             }
         }
         $audio_layers = array_values( array_unique( $audio_layers ) );
@@ -1366,155 +1400,103 @@ function se_inject_asmr_vancouver_anchors( $decoded, $payload ) {
     }
 
     $runtime = max( 10, min( 30, floatval( $decoded['runtime_seconds'] ?? 20 ) ) );
-    $audio = array();
-    $visual = array();
+    $audio = is_array( $decoded['audio_events'] ?? null ) ? $decoded['audio_events'] : array();
+    $visual = is_array( $decoded['visual_events'] ?? null ) ? $decoded['visual_events'] : array();
+    $story_beats = is_array( $decoded['story_beats'] ?? null ) ? $decoded['story_beats'] : array();
 
-    $scene_or_landmark = array(
-        'gastown_scene', 'granville_scene', 'north_shore_scene', 'gastown_clock_silhouette', 'science_world_dome',
-        'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'waterfront_scene', 'seabus_silhouette',
-        'planetarium_dome', 'starfield_projection', 'canada_place_sails'
+    $has_audio = static function( $events, $engine, $t0, $t1 ) {
+        foreach ( $events as $event ) {
+            $time = floatval( $event['time'] ?? -1 );
+            if ( ( $event['engine'] ?? '' ) === $engine && $time >= $t0 && $time <= $t1 ) {
+                return true;
+            }
+        }
+        return false;
+    };
+    $has_visual = static function( $events, $token, $t0, $t1 ) {
+        foreach ( $events as $event ) {
+            $time = floatval( $event['time'] ?? -1 );
+            if ( ( $event['visual_type'] ?? '' ) === $token && $time >= $t0 && $time <= $t1 ) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    $audio_defaults = array(
+        'rain_ambience' => array( 'engine' => 'rain_close', 'time' => 0.02, 'duration' => max( 7.5, $runtime * 0.78 ), 'intensity' => 0.48, 'params' => array(), 'sync_role' => 'repair_rain_bed' ),
+        'ocean_waves' => array( 'engine' => 'ocean_waves', 'time' => 0.02, 'duration' => max( 8.2, $runtime * 0.82 ), 'intensity' => 0.45, 'params' => array( 'fade_out' => 3.0, 'foam' => 0.35 ), 'sync_role' => 'repair_ocean_bed' ),
+        'seabus_horn' => array( 'engine' => 'seabus_horn', 'time' => $runtime * 0.56, 'duration' => 2.2, 'intensity' => 0.36, 'params' => array( 'attack' => 0.28, 'release' => 1.8 ), 'sync_role' => 'repair_seabus_horn' ),
+        'gastown_clock_whistle' => array( 'engine' => 'gastown_clock_whistle', 'time' => $runtime * 0.34, 'duration' => 2.4, 'intensity' => 0.46, 'params' => array( 'breathy' => 0.72, 'vibrato' => 0.46 ), 'sync_role' => 'repair_gastown_whistle' ),
+        'church_bells' => array( 'engine' => 'church_bells', 'time' => $runtime * 0.62, 'duration' => 5.2, 'intensity' => 0.3, 'params' => array( 'decay' => 5.4, 'brightness' => 0.26 ), 'sync_role' => 'repair_church_bells' ),
+        'harbour_noon_horn' => array( 'engine' => 'harbour_noon_horn', 'time' => $runtime * 0.46, 'duration' => 4.6, 'intensity' => 0.42, 'params' => array( 'attack' => 0.42, 'release' => 3.1, 'wobble' => 0.05 ), 'sync_role' => 'repair_harbour_horn' ),
     );
 
     foreach ( $audio_layers as $layer ) {
-        if ( 'footsteps' === $layer || 'footsteps_snow_mode' === $layer ) {
-            $engine = in_array( 'footsteps_snow_mode', $audio_layers, true ) ? 'footsteps_snow' : 'footsteps_wet';
-            for ( $i = 0; $i < 3; $i++ ) {
-                $audio[] = array( 'time' => 0.7 + ( $i * ( $runtime * 0.14 ) ), 'duration' => 0.18, 'engine' => $engine, 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'footstep_anchor' );
+        if ( ! isset( $audio_defaults[ $layer ] ) ) {
+            continue;
+        }
+        $event = $audio_defaults[ $layer ];
+        if ( ! $has_audio( $audio, $event['engine'], max( 0, $event['time'] - 1.0 ), min( $runtime, $event['time'] + 1.0 ) ) ) {
+            $audio[] = $event;
+        }
+    }
+
+    $staged = se_stage_selected_visual_motifs( $visual_layers, $runtime, $story_beats );
+    $windows = $staged['windows'];
+    foreach ( array( 'opening', 'arrival', 'lift', 'resolve' ) as $beat ) {
+        $tokens = $staged[ $beat ] ?? array();
+        $window = $windows[ $beat ];
+        $count = count( $tokens );
+        if ( 0 === $count ) {
+            continue;
+        }
+        foreach ( array_values( $tokens ) as $idx => $token ) {
+            if ( $has_visual( $visual, $token, $window['t0'], $window['t1'] ) ) {
+                continue;
             }
-        } elseif ( 'rain_ambience' === $layer ) {
-            $audio[] = array( 'time' => 0.02, 'duration' => max( 7.5, $runtime * 0.78 ), 'engine' => 'rain_close', 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'rain_bed' );
-        } elseif ( 'wind_gust' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.22, 'duration' => min( 3.8, $runtime * 0.24 ), 'engine' => 'cold_air_hush', 'intensity' => 0.44, 'params' => array(), 'sync_role' => 'wind_gust' );
-        } elseif ( 'crowd_murmur' === $layer ) {
-            $audio[] = array( 'time' => 0.9, 'duration' => 2.4, 'engine' => 'crowd_murmur', 'intensity' => 0.38, 'params' => array(), 'sync_role' => 'crowd_anchor' );
-        } elseif ( 'laughter_burst' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.42, 'duration' => 0.34, 'engine' => 'laughter_burst', 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'laughter_anchor' );
-        } elseif ( 'skytrain_pass' === $layer ) {
-            $mid = $runtime * 0.52;
-            $audio[] = array( 'time' => $mid, 'duration' => 2.1, 'engine' => 'skytrain_pass', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'skytrain_anchor' );
-        } elseif ( 'bus_pass' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.3, 'duration' => 1.8, 'engine' => 'bus_idle', 'intensity' => 0.44, 'params' => array(), 'sync_role' => 'bus_anchor' );
-        } elseif ( 'car_horn_short' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.64, 'duration' => 0.2, 'engine' => 'car_horn_short', 'intensity' => 0.48, 'params' => array(), 'sync_role' => 'horn_anchor' );
-        } elseif ( 'steam_clock' === $layer ) {
-            $audio[] = array( 'time' => 0.52, 'duration' => 1.1, 'engine' => 'steam_clock_burst', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'steam_clock_toggle' );
-        } elseif ( 'gastown_clock_whistle' === $layer ) {
-            $audio[] = array( 'time' => 0.54, 'duration' => 1.25, 'engine' => 'gastown_clock_whistle', 'intensity' => 0.64, 'params' => array(), 'sync_role' => 'gastown_clock_whistle' );
-        } elseif ( 'church_bells' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.48, 'duration' => max( 4.0, min( 6.5, $runtime * 0.28 ) ), 'engine' => 'church_bells', 'intensity' => 0.34, 'params' => array( 'decay' => 5.2, 'brightness' => 0.3 ), 'sync_role' => 'church_bells' );
-        } elseif ( 'harbour_noon_horn' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.34, 'duration' => max( 3.2, min( 5.0, $runtime * 0.24 ) ), 'engine' => 'harbour_noon_horn', 'intensity' => 0.44, 'params' => array( 'attack' => 0.35, 'release' => 2.2, 'wobble' => 0.08 ), 'sync_role' => 'harbour_noon_horn' );
-        } elseif ( 'nine_oclock_gun' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.74, 'duration' => 1.2, 'engine' => 'nine_oclock_gun', 'intensity' => 0.46, 'params' => array(), 'sync_role' => 'nine_oclock_gun' );
-        } elseif ( 'planetarium_hum' === $layer ) {
-            $audio[] = array( 'time' => 0.05, 'duration' => max( 6.2, $runtime * 0.72 ), 'engine' => 'planetarium_hum', 'intensity' => 0.32, 'params' => array(), 'sync_role' => 'planetarium_hum' );
-        } elseif ( 'planetarium_chime' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.41, 'duration' => 0.42, 'engine' => 'planetarium_chime', 'intensity' => 0.26, 'params' => array(), 'sync_role' => 'planetarium_chime' );
-        } elseif ( 'seabus_horn' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.32, 'duration' => 1.8, 'engine' => 'seabus_horn', 'intensity' => 0.36, 'params' => array(), 'sync_role' => 'seabus_horn' );
-        } elseif ( 'gulls_distant' === $layer ) {
-            $audio[] = array( 'time' => 0.48, 'duration' => 2.2, 'engine' => 'gulls_distant', 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'gulls_distant' );
-        } elseif ( 'crosswalk_chirp' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.56, 'duration' => 0.85, 'engine' => 'crosswalk_chirp', 'intensity' => 0.32, 'params' => array(), 'sync_role' => 'crosswalk_chirp' );
-        } elseif ( 'compass_tap' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.46, 'duration' => 0.2, 'engine' => 'compass_tap', 'intensity' => 0.3, 'params' => array(), 'sync_role' => 'compass_tap' );
-        } elseif ( 'bike_bell' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.38, 'duration' => 0.38, 'engine' => 'bike_bell', 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'bike_bell' );
-        } elseif ( 'skateboard_roll' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.28, 'duration' => 1.6, 'engine' => 'skateboard_roll', 'intensity' => 0.38, 'params' => array(), 'sync_role' => 'skateboard_roll' );
-        } elseif ( 'siren_distant' === $layer ) {
-            $audio[] = array( 'time' => $runtime * 0.62, 'duration' => 1.8, 'engine' => 'siren_distant', 'intensity' => 0.28, 'params' => array(), 'sync_role' => 'siren_distant' );
-        }
-    }
-
-    foreach ( $visual_layers as $visual_type ) {
-        if ( in_array( $visual_type, array( 'rain_streaks', 'snow_drift', 'harbor_mist', 'clear_cold_shimmer' ), true ) ) {
-            $visual[] = array( 'time' => 0.0, 'duration' => max( 4.0, $runtime * 0.56 ), 'visual_type' => $visual_type, 'intensity' => 0.52, 'params' => array(), 'sync_role' => 'atmosphere_bed' );
-            continue;
-        }
-        if ( 'skytrain_pass_visual' === $visual_type ) {
-            $mid = $runtime * 0.52;
-            $visual[] = array( 'time' => $mid - 0.2, 'duration' => 2.4, 'visual_type' => 'skytrain_pass_visual', 'intensity' => 0.66, 'params' => array(), 'sync_role' => 'skytrain_visual' );
-            $visual[] = array( 'time' => $mid - 0.25, 'duration' => 2.5, 'visual_type' => 'skytrain_track', 'intensity' => 0.56, 'params' => array(), 'sync_role' => 'skytrain_track' );
-            continue;
-        }
-        if ( 'bus_pass_visual' === $visual_type ) {
-            $visual[] = array( 'time' => $runtime * 0.3, 'duration' => 2.0, 'visual_type' => 'bus_pass_visual', 'intensity' => 0.6, 'params' => array(), 'sync_role' => 'bus_visual' );
-            continue;
-        }
-        if ( in_array( $visual_type, array( 'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene' ), true ) ) {
-            $visual[] = array( 'time' => 0.18, 'duration' => min( 3.2, $runtime * 0.22 ), 'visual_type' => $visual_type, 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'scene_anchor' );
-            $visual[] = array( 'time' => $runtime * 0.44, 'duration' => min( 2.4, $runtime * 0.2 ), 'visual_type' => $visual_type, 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'scene_recur' );
-            continue;
-        }
-        if ( in_array( $visual_type, array( 'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails' ), true ) ) {
-            $visual[] = array( 'time' => 0.16, 'duration' => min( 4.8, $runtime * 0.4 ), 'visual_type' => $visual_type, 'intensity' => 0.66, 'params' => array(), 'sync_role' => 'planetarium_landmark_anchor' );
-            if ( 'planetarium_dome' === $visual_type ) {
-                $visual[] = array( 'time' => 0.42, 'duration' => min( 3.4, $runtime * 0.28 ), 'visual_type' => 'starfield_projection', 'intensity' => 0.54, 'params' => array(), 'sync_role' => 'planetarium_projection_follow' );
+            $slot = ( $idx + 1 ) / ( $count + 1 );
+            $time = $window['t0'] + ( $window['t1'] - $window['t0'] ) * $slot;
+            if ( 'opening' === $beat && 0 === $idx ) {
+                $time = min( 0.48, max( 0.12, $time ) );
             }
-            continue;
-        }
-        $visual[] = array( 'time' => 0.14, 'duration' => min( 5.2, $runtime * 0.36 ), 'visual_type' => $visual_type, 'intensity' => 0.6, 'params' => array(), 'sync_role' => 'visual_motif_toggle' );
-    }
-
-    $has_scene_or_landmark = false;
-    foreach ( $visual_layers as $token ) {
-        if ( in_array( $token, $scene_or_landmark, true ) ) {
-            $has_scene_or_landmark = true;
-            break;
+            $visual[] = array(
+                'time' => round( $time, 3 ),
+                'duration' => min( max( 1.8, $runtime * 0.2 ), $runtime * 0.34 ),
+                'visual_type' => $token,
+                'intensity' => ( 'resolve' === $beat ) ? 0.5 : 0.62,
+                'params' => array(),
+                'sync_role' => 'repair_' . $beat . '_motif',
+            );
         }
     }
 
-
-    if ( in_array( 'ocean_waves', $audio_layers, true ) ) {
-        $audio[] = array( 'time' => 0.02, 'duration' => max( 8.0, $runtime * 0.85 ), 'engine' => 'ocean_waves', 'intensity' => 0.5, 'params' => array( 'fade_out' => 2.8, 'foam' => 0.5 ), 'sync_role' => 'ocean_wave_anchor' );
-    }
-
-    if ( in_array( 'ocean_surface_shimmer', $visual_layers, true ) ) {
-        $visual[] = array( 'time' => 0.0, 'duration' => max( 5.6, $runtime * 0.68 ), 'visual_type' => 'ocean_surface_shimmer', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'waterfront_shimmer_anchor' );
-    }
-
-    if ( in_array( 'seabus_silhouette', $visual_layers, true ) ) {
-        $visual[] = array( 'time' => 0.5, 'duration' => min( 4.4, $runtime * 0.3 ), 'visual_type' => 'seabus_silhouette', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'seabus_silhouette_anchor' );
-    }
-
-    if ( $has_scene_or_landmark ) {
+    $scene_or_landmark = array(
+        'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'gastown_clock_silhouette', 'science_world_dome',
+        'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'seabus_silhouette',
+        'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails'
+    );
+    $selected_scene_landmarks = array_values( array_intersect( $visual_layers, $scene_or_landmark ) );
+    if ( ! empty( $selected_scene_landmarks ) ) {
         $already_early = false;
         foreach ( $visual as $event ) {
-            if ( in_array( $event['visual_type'], $scene_or_landmark, true ) && floatval( $event['time'] ) <= 0.6 ) {
+            if ( in_array( $event['visual_type'] ?? '', $selected_scene_landmarks, true ) && floatval( $event['time'] ?? 99 ) <= 0.6 ) {
                 $already_early = true;
                 break;
             }
         }
         if ( ! $already_early ) {
-            $fallback = 'gastown_clock_silhouette';
-            foreach ( $visual_layers as $token ) {
-                if ( in_array( $token, $scene_or_landmark, true ) ) {
-                    $fallback = $token;
-                    break;
-                }
-            }
-            $visual[] = array( 'time' => 0.24, 'duration' => min( 2.6, $runtime * 0.2 ), 'visual_type' => $fallback, 'intensity' => 0.66, 'params' => array(), 'sync_role' => 'early_readability_anchor' );
+            $visual[] = array( 'time' => 0.32, 'duration' => min( 2.6, $runtime * 0.2 ), 'visual_type' => $selected_scene_landmarks[0], 'intensity' => 0.66, 'params' => array(), 'sync_role' => 'early_readability_anchor' );
         }
     }
 
-    usort(
-        $audio,
-        static function( $a, $b ) {
-            return (float) $a['time'] <=> (float) $b['time'];
-        }
-    );
-    usort(
-        $visual,
-        static function( $a, $b ) {
-            return (float) $a['time'] <=> (float) $b['time'];
-        }
-    );
+    usort( $audio, static function( $a, $b ) { return (float) ( $a['time'] ?? 0 ) <=> (float) ( $b['time'] ?? 0 ); } );
+    usort( $visual, static function( $a, $b ) { return (float) ( $a['time'] ?? 0 ) <=> (float) ( $b['time'] ?? 0 ); } );
 
-    $decoded['style_tags'] = array_values( array_unique( array_merge( array( 'retro_arcade_crt' ), $audio_layers, $visual_layers ) ) );
+    $decoded['style_tags'] = array_values( array_unique( array_merge( (array) ( $decoded['style_tags'] ?? array() ), array( 'retro_arcade_crt' ), $audio_layers, $visual_layers ) ) );
     $decoded['audio_events'] = $audio;
     $decoded['visual_events'] = $visual;
-    $decoded['presentation_note'] = 'Motif-rack composition with conservative A/V pairing and first-frame readability anchors.';
+    $decoded['presentation_note'] = 'Motif-repair injection: OpenAI composes the story arc, deterministic pass only ensures selected motif presence and readability.';
     return $decoded;
 }
 
@@ -1730,12 +1712,13 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'Return ONE strict JSON object and no markdown. '
         . 'Use exactly and only these top-level keys: title, runtime_seconds, hook, concept_summary, logline, story_beats, style_tags, audio_events, visual_events, sync_points, end_card, edit_rhythm, presentation_note. '
         . 'audio_events objects must include: time, duration, engine, intensity, params, sync_role. '
-        . 'ASMR timing rules: bed layers (ocean_waves, rain_close, rain_roof, planetarium_hum, crowd_murmur, harbor_fog_bed) should usually run 60-100% of runtime_seconds with soft fades. '
+        . 'ASMR timing rules: bed layers (ocean_waves, rain_close, rain_roof, crowd_murmur, harbor_fog_bed) should usually run 60-100% of runtime_seconds with soft fades. '
         . 'Horns and bells should be sustained and calming with typical durations between 2.5-6.0s, slow attack, and long release. '
         . 'Avoid tiny durations under 0.5s except intentional micro-textures; prioritize long calming layers. '
         . 'params must always be a JSON object (use {} when none) and never an array. '
         . 'visual_events objects must include: time, duration, visual_type, intensity, params, sync_role. '
         . 'sync_points objects must include: time, cue, importance. story_beats must be an array of exactly 4 objects with: t0, t1, beat, intent (Opening, Arrival, Ritual Lift, Resolve). '
+        . 'Compose this as a calm ASMR soundscape with a narrative arc. Beds should run long. Signature cues should be sparse and sustained. Avoid rapid-fire event stacking. Distribute reveals across the full runtime. If multiple landmarks/scenes are selected, choose one primary reveal per beat rather than showing all of them at once. '
         . 'end_card must include: use_end_card, text, reveal_style. '
         . 'edit_rhythm must include: pacing_note, silence_strategy, release_strategy. '
         . 'Only use these engine names: ' . $allowed_engines . '. '
@@ -1753,9 +1736,10 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'sync_points must map to real event moments and reinforce audio-visual unity, especially in the first 3 seconds. '
         . 'When motif tokens imply a place, ground the package in concrete materials, atmospheric lighting, and local acoustics. '
         . 'Prompt interpretation priority: selected visual motifs > selected audio motifs > named object > mood adjectives. '
+        . 'Do not schedule all selected motifs in the first quarter. Distribute selected motifs across the full runtime. Prefer one dominant reveal at a time. If planetarium visuals are selected, use only visual motifs and no planetarium sound motif. '
         . 'For Gastown/Vancouver scenes, favor steam clock cues, harbor fog bed, amber streetlamp halos, wet cobblestone reflections, brick facade texture, neon-on-wet shimmer, and winter hush pacing where relevant. '
- . 'Vancouver sound palette guide: gastown_clock_whistle=steam whistle toot, iconic Gastown clock, breathy warm; church_bells=distant cathedral bells, warm decay; harbour_noon_horn=harbour ship horn at noon, low and foggy; ocean_waves=waterfront waves, soft swell; skytrain_pass=SkyTrain whoosh and rail hum; seabus_horn=short ferry foghorn; planetarium_hum=quiet dome room tone; planetarium_chime=tiny sparkle chime; nine_oclock_gun=low ceremonial boom. '
-        . 'When using signature engines (harbour_noon_horn, gastown_clock_whistle, church_bells, ocean_waves, planetarium_hum), include optional shaping params when meaningful so synthesis can be tuned per scene. '
+ . 'Vancouver sound palette guide: gastown_clock_whistle=steam whistle toot, iconic Gastown clock, breathy warm and sustained; church_bells=distant cathedral bells with long warm decay; harbour_noon_horn=harbour ship horn at noon, low and foggy with gentle bloom; ocean_waves=waterfront waves, soft wide bed with smooth fade; skytrain_pass=SkyTrain whoosh and rail hum; seabus_horn=short soft ferry foghorn; nine_oclock_gun=low ceremonial boom. '
+        . 'When using signature engines (harbour_noon_horn, gastown_clock_whistle, church_bells, ocean_waves, seabus_horn), include optional shaping params when meaningful so synthesis can be tuned per scene. '
         . 'Avoid generic abstract output when prompts include specific motif or geography terms. '
         . 'The result should feel like an authored short sensory micro-film, not a debug demo. '
         . 'Every beat transition must be marked by a signature cue pair (audio + visual) from selected motifs when story_mode is true. Do not include prose outside JSON.';
