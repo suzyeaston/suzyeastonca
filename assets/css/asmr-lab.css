@@ -79,4 +79,8 @@
 .asmr-atlas-card h4,.asmr-sound-card h4{margin:.05rem 0 .2rem;color:#c6dcff;font-size:.8rem}
 .asmr-atlas-card p,.asmr-sound-card p{margin:.12rem 0;font-size:.72rem;line-height:1.28}
 .asmr-atlas-card.is-hovered,.asmr-sound-card.is-hovered{border-color:#6b89d6;box-shadow:0 0 0 1px rgba(135,173,255,.24) inset}
+.asmr-inspector-preview.is-hover-active{border-color:#5c79c9;box-shadow:0 0 0 1px rgba(126,168,255,.22) inset}
+#asmr-visual-preview-title.is-previewing{color:#e2edff;text-shadow:0 0 10px rgba(128,188,255,.35)}
+#asmr-visual-preview-title .preview-tag{font-size:.74rem;color:#8fb2ff;font-weight:400;margin-left:.35rem}
+.asmr-atlas-card.is-pinned{border-color:#82a2ff;box-shadow:0 0 0 1px rgba(149,182,255,.34) inset}
 @media (max-width:860px){.asmr-inspector-layout{grid-template-columns:1fr}.asmr-inspector-preview{position:static}}

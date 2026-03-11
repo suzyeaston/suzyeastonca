@@ -30,13 +30,17 @@
   const visualDebugCanvas = document.getElementById('asmr-visual-debug-canvas');
   const pinVisualPreviewBtn = document.getElementById('asmr-pin-visual-preview');
   const stopVisualPreviewBtn = document.getElementById('asmr-stop-visual-preview');
+  const clearVisualPreviewBtn = document.getElementById('asmr-clear-visual-preview');
   const stopSoundPreviewBtn = document.getElementById('asmr-stop-sound-preview');
   const inspectSelectedVisualsBtn = document.getElementById('asmr-inspect-selected-visuals');
   const inspectSelectedSoundsBtn = document.getElementById('asmr-inspect-selected-sounds');
   const previewCurrentHeroBtn = document.getElementById('asmr-preview-current-hero');
+  const visualPreviewPanelEl = document.querySelector('[data-panel="visual"] .asmr-inspector-preview');
+  const visualPreviewTitleEl = document.getElementById('asmr-visual-preview-title');
   const provenanceToggle = document.getElementById('asmr-debug-provenance-toggle');
 
   const engine = new window.AsmrFoleyEngine();
+  const inspectorSoundEngine = new window.AsmrFoleyEngine();
   const visuals = window.AsmrVisualEngine ? new window.AsmrVisualEngine(canvas) : null;
   let lastPayload = null;
   let currentPackage = null;
@@ -45,7 +49,7 @@
     : (window.ASMR_VISUAL_REGISTRY || []);
   const soundRegistry = (window.ASMR_SOUND_REGISTRY && Array.isArray(window.ASMR_SOUND_REGISTRY) && window.ASMR_SOUND_REGISTRY.length)
     ? window.ASMR_SOUND_REGISTRY
-    : (typeof engine.getSoundRegistry === 'function' ? engine.getSoundRegistry() : []);
+    : (typeof inspectorSoundEngine.getSoundRegistry === 'function' ? inspectorSoundEngine.getSoundRegistry() : []);
 
   const inspectorState = {
     activeTab: 'visual',
@@ -55,7 +59,14 @@
     visualHoverTimer: null,
     selectedVisualOnly: false,
     selectedSoundOnly: false,
-    currentSoundId: null
+    currentSoundId: null,
+    hoveredVisualId: null,
+    focusedVisualId: null,
+    currentPreviewVisualId: null,
+    previewPanelHovered: false,
+    pendingCancelTimer: null,
+    visualPreviewState: 'stopped',
+    visualMode: 'hold'
   };
 
   const previewVisuals = window.AsmrVisualEngine ? new window.AsmrVisualEngine(visualDebugCanvas) : null;
@@ -298,35 +309,119 @@ ${data.concept_summary}`;
     return Array.from(form.querySelectorAll(`input[name="${name}[]"]:checked`)).map((el) => el.value);
   }
 
+  function updatePreviewPanelHeader(item) {
+    if (!visualPreviewTitleEl) return;
+    const tag = item ? ` <span class="preview-tag">${item.label} • ${item.priority || 'support'}</span>` : '';
+    visualPreviewTitleEl.innerHTML = `Visual Preview${tag}`;
+    visualPreviewTitleEl.classList.toggle('is-previewing', !!item);
+  }
+
   function updateVisualMeta(item, status) {
     if (!visualMetaEl) return;
     if (!item) {
       visualMetaEl.textContent = 'Hover or focus a motif card to preview.';
+      updatePreviewPanelHeader(null);
       return;
     }
-    visualMetaEl.textContent = `${item.label} (${item.id}) • ${item.category} • ${item.priority || 'support'} • ${status || item.expected_shape || ''}`;
+    updatePreviewPanelHeader(item);
+    const mode = inspectorState.visualMode || 'hold';
+    const state = inspectorState.visualPreviewState || 'stopped';
+    visualMetaEl.textContent = `${item.label} (${item.id}) • ${item.category} • ${item.priority || 'support'} • state:${state} • mode:${mode} • ${status || item.expected_shape || ''}`;
+  }
+
+  function clearPendingVisualCancel() {
+    if (inspectorState.pendingCancelTimer) {
+      window.clearTimeout(inspectorState.pendingCancelTimer);
+      inspectorState.pendingCancelTimer = null;
+    }
+  }
+
+  function isVisualInteractionActive() {
+    if (inspectorState.pinnedVisualId) return true;
+    return !!(inspectorState.hoveredVisualId || inspectorState.focusedVisualId || inspectorState.previewPanelHovered);
+  }
+
+  function refreshVisualCardStates() {
+    if (!atlasGridEl) return;
+    Array.from(atlasGridEl.querySelectorAll('.asmr-atlas-card')).forEach((el) => {
+      const id = el.dataset.id;
+      const isHovered = !!id && (id === inspectorState.hoveredVisualId || id === inspectorState.focusedVisualId || id === inspectorState.currentPreviewVisualId);
+      const isPinned = !!id && id === inspectorState.pinnedVisualId;
+      el.classList.toggle('is-hovered', isHovered);
+      el.classList.toggle('is-pinned', isPinned);
+    });
+    if (visualPreviewPanelEl) {
+      visualPreviewPanelEl.classList.toggle('is-hover-active', isVisualInteractionActive());
+    }
+  }
+
+  function scheduleVisualCancel() {
+    clearPendingVisualCancel();
+    inspectorState.pendingCancelTimer = window.setTimeout(() => {
+      if (isVisualInteractionActive()) return;
+      if (previewVisuals) previewVisuals.cancelPreview({ clearFrame: false, resetTime: false });
+      inspectorState.currentPreviewVisualId = null;
+      inspectorState.visualPreviewState = 'stopped';
+      refreshVisualCardStates();
+    }, 190);
+  }
+
+  function stopVisualPreviewMotion() {
+    if (!previewVisuals) return;
+    previewVisuals.cancelPreview({ clearFrame: false, resetTime: false });
+    inspectorState.visualPreviewState = 'stopped';
+    const item = visualRegistry.find((entry) => entry.id === inspectorState.currentPreviewVisualId) || null;
+    updateVisualMeta(item, item ? (item.expected_shape || 'stopped') : 'stopped');
+    refreshVisualCardStates();
+  }
+
+  function clearVisualPreview() {
+    if (!previewVisuals) return;
+    previewVisuals.cancelPreview({ clearFrame: true, resetTime: true });
+    inspectorState.hoveredVisualId = null;
+    inspectorState.focusedVisualId = null;
+    inspectorState.currentPreviewVisualId = null;
+    inspectorState.visualPreviewState = 'stopped';
+    clearPendingVisualCancel();
+    refreshVisualCardStates();
+    updateVisualMeta(null, 'stopped');
   }
 
   function updateSoundStatus(id, status, expected) {
     if (soundStatusEl) soundStatusEl.textContent = status;
     if (soundMetaEl) {
       if (!id) soundMetaEl.textContent = 'Select a sound engine and click Preview sound.';
-      else soundMetaEl.textContent = `${id}${expected ? ' • ' + expected : ''}`;
+      else soundMetaEl.textContent = `engine:${id}${expected ? ' • expected: ' + expected : ''}`;
     }
   }
 
-  function previewVisualItem(item, sourceCard) {
+  function previewVisualItem(item, sourceCard, mode) {
     if (!item || !previewVisuals) return;
     if (inspectorState.pinnedVisualId && inspectorState.pinnedVisualId !== item.id) return;
+    clearPendingVisualCancel();
     if (inspectorState.visualHoverTimer) window.clearTimeout(inspectorState.visualHoverTimer);
     inspectorState.visualHoverTimer = window.setTimeout(() => {
-      if (!previewVisuals.previewVisualMotifById(item.id, { runtimeSeconds: 1.6 })) {
-        updateVisualMeta(item, 'renderer missing');
+      const isPinned = inspectorState.pinnedVisualId === item.id;
+      const loopPreview = isPinned;
+      const holdLastFrame = !isPinned;
+      inspectorState.visualPreviewState = isPinned ? 'pinned' : (mode || 'hover');
+      inspectorState.visualMode = loopPreview ? 'loop' : (holdLastFrame ? 'hold' : 'oneshot');
+      if (!previewVisuals.previewVisualMotifById(item.id, {
+        runtimeSeconds: isPinned ? 2.2 : 1.8,
+        autoStop: !isPinned,
+        loopPreview,
+        holdLastFrame,
+        preserveFrameOnStop: true
+      })) {
+        inspectorState.visualPreviewState = 'stopped';
+        updateVisualMeta(item, 'Renderer missing');
         return;
       }
-      updateVisualMeta(item, item.expected_shape || 'previewing');
-      Array.from(atlasGridEl.querySelectorAll('.asmr-atlas-card')).forEach((el) => el.classList.remove('is-hovered'));
-      if (sourceCard) sourceCard.classList.add('is-hovered');
+      const report = typeof previewVisuals.getLastPreviewReport === 'function' ? previewVisuals.getLastPreviewReport() : null;
+      const status = report && report.warning ? report.warning : (item.expected_shape || 'previewing');
+      inspectorState.currentPreviewVisualId = item.id;
+      updateVisualMeta(item, status);
+      refreshVisualCardStates();
     }, 130);
   }
 
@@ -356,16 +451,37 @@ ${data.concept_summary}`;
         pinBtn.addEventListener('click', () => {
           inspectorState.pinnedVisualId = inspectorState.pinnedVisualId === item.id ? null : item.id;
           if (pinVisualPreviewBtn) pinVisualPreviewBtn.setAttribute('aria-pressed', inspectorState.pinnedVisualId ? 'true' : 'false');
-          previewVisualItem(item, card);
+          if (inspectorState.pinnedVisualId) {
+            previewVisualItem(item, card, 'pinned');
+          } else {
+            stopVisualPreviewMotion();
+          }
+          refreshVisualCardStates();
         });
         card.appendChild(pinBtn);
-        card.addEventListener('mouseenter', () => previewVisualItem(item, card));
-        card.addEventListener('focus', () => previewVisualItem(item, card));
-        card.addEventListener('mouseleave', () => { if (!inspectorState.pinnedVisualId && previewVisuals) previewVisuals.cancelPreview(); });
+        card.addEventListener('mouseenter', () => {
+          inspectorState.hoveredVisualId = item.id;
+          previewVisualItem(item, card, 'hover');
+        });
+        card.addEventListener('mouseleave', () => {
+          if (inspectorState.hoveredVisualId === item.id) inspectorState.hoveredVisualId = null;
+          scheduleVisualCancel();
+          refreshVisualCardStates();
+        });
+        card.addEventListener('focus', () => {
+          inspectorState.focusedVisualId = item.id;
+          previewVisualItem(item, card, 'hover');
+        });
+        card.addEventListener('blur', () => {
+          if (inspectorState.focusedVisualId === item.id) inspectorState.focusedVisualId = null;
+          scheduleVisualCancel();
+          refreshVisualCardStates();
+        });
         section.appendChild(card);
       });
       atlasGridEl.appendChild(section);
     });
+    refreshVisualCardStates();
   }
 
   function renderSoundInspector() {
@@ -390,11 +506,10 @@ ${data.concept_summary}`;
         btn.className = 'pixel-button tiny secondary';
         btn.textContent = 'Preview sound';
         btn.addEventListener('click', async () => {
-          transport.stopAll();
-          if (previewVisuals) previewVisuals.cancelPreview();
-          engine.stop();
+          inspectorSoundEngine.stop();
+          updateSoundStatus(item.id, 'previewing', item.expected_sound);
           try {
-            await engine.previewEngineById(item.id, { preview_duration: item.preview_duration || 2.2 });
+            await inspectorSoundEngine.previewEngineById(item.id, { preview_duration: item.preview_duration || 2.2 });
             inspectorState.currentSoundId = item.id;
             updateSoundStatus(item.id, 'previewing', item.expected_sound);
           } catch (err) {
@@ -691,7 +806,8 @@ ${data.concept_summary}`;
       transport.stopAll();
       if (visuals) visuals.stop();
       engine.stop();
-      if (previewVisuals) previewVisuals.cancelPreview();
+      inspectorSoundEngine.stop();
+      stopVisualPreviewMotion();
       if (audioFeedback) audioFeedback.textContent = 'Playback stopped.';
     });
   }
@@ -734,6 +850,29 @@ ${data.concept_summary}`;
     btn.addEventListener('click', () => setInspectorTab(btn.dataset.tab));
   });
 
+
+  if (debugInspectorsEl) {
+    debugInspectorsEl.addEventListener('toggle', () => {
+      if (!debugInspectorsEl.open) {
+        clearVisualPreview();
+      }
+    });
+  }
+
+
+  if (visualPreviewPanelEl) {
+    visualPreviewPanelEl.addEventListener('mouseenter', () => {
+      inspectorState.previewPanelHovered = true;
+      clearPendingVisualCancel();
+      refreshVisualCardStates();
+    });
+    visualPreviewPanelEl.addEventListener('mouseleave', () => {
+      inspectorState.previewPanelHovered = false;
+      scheduleVisualCancel();
+      refreshVisualCardStates();
+    });
+  }
+
   if (visualSearchEl) {
     visualSearchEl.addEventListener('input', () => {
       inspectorState.visualFilter = visualSearchEl.value || '';
@@ -762,8 +901,8 @@ ${data.concept_summary}`;
     pinVisualPreviewBtn.addEventListener('click', () => {
       inspectorState.pinnedVisualId = null;
       pinVisualPreviewBtn.setAttribute('aria-pressed', 'false');
-      if (previewVisuals) previewVisuals.cancelPreview();
-      updateVisualMeta(null, 'stopped');
+      stopVisualPreviewMotion();
+      refreshVisualCardStates();
     });
   }
 
@@ -771,14 +910,21 @@ ${data.concept_summary}`;
     stopVisualPreviewBtn.addEventListener('click', () => {
       inspectorState.pinnedVisualId = null;
       if (pinVisualPreviewBtn) pinVisualPreviewBtn.setAttribute('aria-pressed', 'false');
-      if (previewVisuals) previewVisuals.cancelPreview();
-      updateVisualMeta(null, 'stopped');
+      stopVisualPreviewMotion();
+    });
+  }
+
+  if (clearVisualPreviewBtn) {
+    clearVisualPreviewBtn.addEventListener('click', () => {
+      inspectorState.pinnedVisualId = null;
+      if (pinVisualPreviewBtn) pinVisualPreviewBtn.setAttribute('aria-pressed', 'false');
+      clearVisualPreview();
     });
   }
 
   if (stopSoundPreviewBtn) {
     stopSoundPreviewBtn.addEventListener('click', () => {
-      engine.stop();
+      inspectorSoundEngine.stop();
       inspectorState.currentSoundId = null;
       updateSoundStatus(null, 'stopped');
     });
@@ -792,6 +938,8 @@ ${data.concept_summary}`;
   renderVisualAtlas();
   renderSoundInspector();
   setInspectorTab('visual');
+  updateVisualMeta(null, "stopped");
+  updateSoundStatus(null, "stopped");
 
   if (provenanceToggle) {
     provenanceToggle.addEventListener('change', () => {

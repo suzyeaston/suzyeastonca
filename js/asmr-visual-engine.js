@@ -100,6 +100,8 @@
       this.debugFrameState = null;
       this.previewTimeout = null;
       this.previewToken = 0;
+      this.playbackOptions = { loopPlayback: false };
+      this.lastPreviewReport = null;
     }
 
 
@@ -138,6 +140,12 @@
 
     previewVisualMotifById(visualType, options = {}) {
       if (!VISUAL_REGISTRY_MAP[visualType]) {
+        this.lastPreviewReport = {
+          motifId: visualType,
+          rendererMissing: true,
+          pipelineOk: false,
+          warning: 'Renderer missing'
+        };
         if (this.debugOptions && this.debugOptions.enabled && window.console && typeof window.console.warn === 'function') {
           window.console.warn('[ASMR] No visual renderer found for motif id:', visualType);
         }
@@ -152,15 +160,35 @@
       this.previewToken = previewToken;
       const runtimeSeconds = clamp(Number(options.runtimeSeconds || 1.8), 1.2, 6);
       const shouldAutoStop = options.autoStop !== false;
+      const holdLastFrame = options.holdLastFrame !== false;
+      const loopPreview = !!options.loopPreview;
+      const preserveFrameOnStop = options.preserveFrameOnStop !== false;
 
       this.loadTimeline(this.buildSingleVisualTimeline(visualType, runtimeSeconds, options));
-      this.play(0);
+      this.resize();
+      let pipelineOk = true;
+      try {
+        this.render(Math.min(0.25, Math.max(0.08, runtimeSeconds * 0.15)));
+      } catch (err) {
+        pipelineOk = false;
+      }
+      this.play(0, { loopPlayback: loopPreview });
       if (shouldAutoStop) {
         this.previewTimeout = window.setTimeout(() => {
           if (previewToken !== this.previewToken) return;
-          this.stop();
+          this.stop({
+            clearFrame: !(holdLastFrame && preserveFrameOnStop),
+            resetTime: false
+          });
         }, Math.round(runtimeSeconds * 1000));
       }
+      this.lastPreviewReport = {
+        motifId: visualType,
+        rendererMissing: false,
+        pipelineOk,
+        warning: pipelineOk ? '' : 'Rendered, but no visible motif detected',
+        mode: loopPreview ? 'loop' : (holdLastFrame ? 'hold' : 'oneshot')
+      };
       return true;
     }
 
@@ -168,13 +196,20 @@
       return this.previewVisualMotifById(visualType, { runtimeSeconds: runtimeSeconds || 3.2 });
     }
 
-    cancelPreview() {
+    cancelPreview(options = {}) {
       this.previewToken += 1;
       if (this.previewTimeout) {
         window.clearTimeout(this.previewTimeout);
         this.previewTimeout = null;
       }
-      this.stop();
+      this.stop({
+        clearFrame: options.clearFrame === true,
+        resetTime: options.resetTime !== false
+      });
+    }
+
+    getLastPreviewReport() {
+      return this.lastPreviewReport ? { ...this.lastPreviewReport } : null;
     }
 
     setCanvas(canvas) {
@@ -310,24 +345,28 @@
       this.timeline = this.normalizeVisualTimeline(pkg || {});
     }
 
-    play(clockOffset) {
+    play(clockOffset, options = {}) {
       if (!this.ctx || !this.timeline) return;
       this.stop();
       this.resize();
       this.clockOffset = Number(clockOffset || 0);
       this.startPerf = performance.now() - (this.clockOffset * 1000);
+      this.playbackOptions = {
+        loopPlayback: !!options.loopPlayback
+      };
       this.running = true;
       this.loop();
     }
 
-    stop() {
+    stop(options = {}) {
       this.running = false;
       if (this.rafId) {
         cancelAnimationFrame(this.rafId);
         this.rafId = null;
       }
-      this.currentTime = 0;
-      this.clearFrame();
+      this.playbackOptions = { loopPlayback: false };
+      if (options.resetTime !== false) this.currentTime = 0;
+      if (options.clearFrame !== false) this.clearFrame();
     }
 
     seek(seconds) {
@@ -349,6 +388,12 @@
       this.render(this.currentTime);
       const linger = this.timeline.endCard && this.timeline.endCard.use_end_card ? 1.25 : 1.75;
       if (this.currentTime >= this.timeline.runtime + linger) {
+        if (this.playbackOptions && this.playbackOptions.loopPlayback) {
+          this.startPerf = performance.now();
+          this.currentTime = 0;
+          this.rafId = requestAnimationFrame(this.loop.bind(this));
+          return;
+        }
         this.stop();
         return;
       }
