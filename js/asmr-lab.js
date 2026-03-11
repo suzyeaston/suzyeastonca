@@ -19,11 +19,17 @@
   const modeToggle = document.getElementById('asmr-playback-mode');
   const videoSupportEl = document.getElementById('asmr-video-support');
   const canvas = document.getElementById('asmr-visual-canvas');
+  const atlasGridEl = document.getElementById('asmr-visual-atlas-grid');
+  const previewCurrentHeroBtn = document.getElementById('asmr-preview-current-hero');
+  const provenanceToggle = document.getElementById('asmr-debug-provenance-toggle');
 
   const engine = new window.AsmrFoleyEngine();
   const visuals = window.AsmrVisualEngine ? new window.AsmrVisualEngine(canvas) : null;
   let lastPayload = null;
   let currentPackage = null;
+  const visualRegistry = (window.seAsmrLab && Array.isArray(window.seAsmrLab.visualRegistry) && window.seAsmrLab.visualRegistry.length)
+    ? window.seAsmrLab.visualRegistry
+    : (window.ASMR_VISUAL_REGISTRY || []);
 
 
   const LINKED_VISUAL_TO_AUDIO = {
@@ -135,6 +141,7 @@
     const edit = document.getElementById('asmr-edit-notes');
     const note = document.getElementById('asmr-presentation');
     const recipe = document.getElementById('asmr-sound-json');
+    const planVisualSummary = document.getElementById('asmr-plan-visual-summary');
 
     if (concept) concept.textContent = `${data.title} (${data.runtime_seconds}s) — ${data.hook}
 ${data.concept_summary}`;
@@ -172,6 +179,27 @@ ${data.concept_summary}`;
       });
     }
 
+
+    if (planVisualSummary) {
+      const vPlan = (data.generation_plan && data.generation_plan.visual_plan) || {};
+      const heroEvents = (Array.isArray(data.visual_events) ? data.visual_events : []).filter((event) => {
+        const entry = visualRegistry.find((item) => item.id === event.visual_type);
+        return entry && entry.priority === 'hero';
+      }).map((event) => event.visual_type);
+      const planned = [vPlan.primary_scene, vPlan.landmark, vPlan.motion].filter(Boolean);
+      const mismatch = planned.some((id) => !heroEvents.includes(id));
+      const rows = [
+        `Primary scene: ${vPlan.primary_scene || '—'}`,
+        `Landmark: ${vPlan.landmark || '—'}`,
+        `Motion: ${vPlan.motion || '—'}`,
+        `Atmosphere: ${vPlan.atmosphere || '—'}`,
+        `Compiled hero events: ${heroEvents.length ? Array.from(new Set(heroEvents)).join(', ') : '—'}`
+      ];
+      if (mismatch && provenanceToggle && provenanceToggle.checked) {
+        rows.push('⚠️ Debug warning: planned hero visual(s) missing from compiled hero event list.');
+      }
+      toList(planVisualSummary, rows);
+    }
     toList(beats, data.sync_points || []);
     toList(prompts, data.style_tags || []);
     if (edit) {
@@ -218,6 +246,39 @@ ${data.concept_summary}`;
       audio_layers: linked.audio_layers,
       visual_layers: linked.visual_layers
     });
+  }
+
+
+  function renderVisualAtlas() {
+    if (!atlasGridEl) return;
+    atlasGridEl.innerHTML = '';
+    visualRegistry.forEach((item) => {
+      const card = document.createElement('article');
+      card.className = 'asmr-atlas-card';
+      card.innerHTML = `<h4>${item.label}</h4><p><code>${item.id}</code></p><p>${item.category} • ${item.priority}</p><p>${item.description}</p><p><strong>Expected:</strong> ${item.expected_shape}</p>`;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pixel-button tiny secondary';
+      btn.textContent = 'Preview motif';
+      btn.addEventListener('click', () => {
+        if (!visuals) return;
+        visuals.previewVisualType(item.id, 3.2);
+      });
+      card.appendChild(btn);
+      atlasGridEl.appendChild(card);
+    });
+  }
+
+  async function previewCurrentHeroVisuals() {
+    if (!currentPackage || !visuals) return;
+    const vPlan = (currentPackage.generation_plan && currentPackage.generation_plan.visual_plan) || {};
+    const queue = [vPlan.primary_scene, vPlan.landmark, vPlan.motion]
+      .filter(Boolean)
+      .filter((value, index, arr) => arr.indexOf(value) === index);
+    for (let i = 0; i < queue.length; i += 1) {
+      visuals.previewVisualType(queue[i], 2.8);
+      await new Promise((resolve) => window.setTimeout(resolve, 3100));
+    }
   }
 
   async function requestGeneration(payload) {
@@ -495,6 +556,25 @@ ${data.concept_summary}`;
       } catch (err) {
         if (audioFeedback) audioFeedback.textContent = err.message || 'Video export failed in this browser.';
       }
+    });
+  }
+
+
+  if (visuals) {
+    visuals.setDebugOptions({ enabled: false, showProvenance: false });
+  }
+  renderVisualAtlas();
+
+  if (provenanceToggle) {
+    provenanceToggle.addEventListener('change', () => {
+      if (visuals) visuals.setDebugOptions({ enabled: provenanceToggle.checked, showProvenance: provenanceToggle.checked });
+      if (currentPackage && visuals) visuals.seek(0);
+    });
+  }
+
+  if (previewCurrentHeroBtn) {
+    previewCurrentHeroBtn.addEventListener('click', async () => {
+      await previewCurrentHeroVisuals();
     });
   }
 

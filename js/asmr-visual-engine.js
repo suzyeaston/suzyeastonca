@@ -1,23 +1,81 @@
 (function (window) {
   'use strict';
 
-  const VISUAL_TYPES = [
-    'scanline_field', 'pixel_grid_pulse', 'wireframe_horizon', 'radial_bloom', 'particle_trail',
-    'glitch_flash', 'waveform_ring', 'macro_texture_drift', 'signal_bars', 'text_reveal',
-    'volumetric_fog', 'glass_refraction', 'halo_glyphs', 'cathedral_beam', 'monolith_silhouette',
-    'starfield_drift', 'orbiting_shards', 'pulse_orb', 'energy_column', 'refraction_ripple',
-    'chromatic_veil', 'terminal_runes', 'snow_drift', 'amber_halo', 'wet_reflection_shimmer',
-    'brick_shadow_drift', 'steam_plume_column', 'clock_face_reveal', 'harbor_mist',
-    'neon_wet_reflections', 'winter_particulate_depth',
-    'gastown_clock_silhouette', 'cobblestone_perspective', 'brick_wall_parallax', 'streetlamp_halo_row',
-    'granville_neon_marquee', 'neon_sign_flicker', 'traffic_light_glow',
-    'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
-    'northshore_mountain_ridge', 'mountain_mist_layers',
-    'rain_streaks', 'puddle_reflections',
-    'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
-    'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails',
-    'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette', 'gull_silhouettes'
+  const VISUAL_REGISTRY = [
+    { id: 'scanline_field', label: 'Scanline Field', category: 'support', priority: 'support', description: 'CRT line drift overlay.', expected_shape: 'horizontal scan lines', renderer: 'drawScanlineField', intensity: [0.08, 0.4], openingHero: false, supportOnly: true },
+    { id: 'pixel_grid_pulse', label: 'Pixel Grid Pulse', category: 'support', priority: 'support', description: 'Retro pixel grid pulse.', expected_shape: 'small grid cells', renderer: 'drawPixelGridPulse', intensity: [0.1, 0.35], openingHero: false, supportOnly: true },
+    { id: 'wireframe_horizon', label: 'Wireframe Horizon', category: 'scene', priority: 'support', description: 'Perspective horizon lines.', expected_shape: 'vanishing horizon fan', renderer: 'drawWireframeHorizon', intensity: [0.15, 0.45], openingHero: false, supportOnly: true },
+    { id: 'radial_bloom', label: 'Radial Bloom', category: 'atmosphere', priority: 'support', description: 'Soft center bloom.', expected_shape: 'radial glow', renderer: 'drawRadialBloom', intensity: [0.15, 0.45], openingHero: false, supportOnly: true },
+    { id: 'particle_trail', label: 'Particle Trail', category: 'motion', priority: 'support', description: 'Moving particle points.', expected_shape: 'drifting dots', renderer: 'drawParticleTrail', intensity: [0.2, 0.6], openingHero: false, supportOnly: true },
+    { id: 'glitch_flash', label: 'Glitch Flash', category: 'support', priority: 'support', description: 'Brief digital glitch streaks.', expected_shape: 'horizontal flashes', renderer: 'drawGlitchFlash', intensity: [0.05, 0.25], openingHero: false, supportOnly: true },
+    { id: 'waveform_ring', label: 'Waveform Ring', category: 'motion', priority: 'support', description: 'Oscillating ring pulse.', expected_shape: 'wobble ring', renderer: 'drawWaveformRing', intensity: [0.15, 0.5], openingHero: false, supportOnly: true },
+    { id: 'macro_texture_drift', label: 'Macro Texture Drift', category: 'texture', priority: 'support', description: 'Linear texture drift.', expected_shape: 'short bars', renderer: 'drawMacroTextureDrift', intensity: [0.12, 0.35], openingHero: false, supportOnly: true },
+    { id: 'signal_bars', label: 'Signal Bars', category: 'support', priority: 'support', description: 'Diagnostic signal meter bars.', expected_shape: 'small stacked bars', renderer: 'drawSignalBars', intensity: [0.05, 0.2], openingHero: false, supportOnly: true },
+    { id: 'text_reveal', label: 'Text Reveal', category: 'support', priority: 'support', description: 'Short terminal text reveal.', expected_shape: 'single text block', renderer: 'drawTextReveal', intensity: [0.15, 0.5], openingHero: false, supportOnly: true },
+    { id: 'volumetric_fog', label: 'Volumetric Fog', category: 'atmosphere', priority: 'support', description: 'Layered fog drift.', expected_shape: 'horizontal haze bands', renderer: 'drawVolumetricFog', intensity: [0.2, 0.6], openingHero: false, supportOnly: true },
+    { id: 'glass_refraction', label: 'Glass Refraction', category: 'texture', priority: 'support', description: 'Refraction contour lines.', expected_shape: 'curved refractive lines', renderer: 'drawGlassRefraction', intensity: [0.15, 0.5], openingHero: false, supportOnly: true },
+    { id: 'halo_glyphs', label: 'Halo Glyphs', category: 'atmosphere', priority: 'support', description: 'Arc glyph halos.', expected_shape: 'partial circular arcs', renderer: 'drawHaloGlyphs', intensity: [0.15, 0.5], openingHero: false, supportOnly: true },
+    { id: 'cathedral_beam', label: 'Cathedral Beam', category: 'atmosphere', priority: 'support', description: 'Focused light beam.', expected_shape: 'vertical cone beam', renderer: 'drawCathedralBeam', intensity: [0.15, 0.45], openingHero: false, supportOnly: true },
+    { id: 'monolith_silhouette', label: 'Monolith Silhouette', category: 'scene', priority: 'hero', description: 'Large central monolith.', expected_shape: 'single tall slab', renderer: 'drawMonolithSilhouette', intensity: [0.25, 0.75], openingHero: true, supportOnly: false },
+    { id: 'starfield_drift', label: 'Starfield Drift', category: 'atmosphere', priority: 'support', description: 'Sparse moving stars.', expected_shape: 'small drifting stars', renderer: 'drawStarfieldDrift', intensity: [0.08, 0.3], openingHero: false, supportOnly: true },
+    { id: 'orbiting_shards', label: 'Orbiting Shards', category: 'motion', priority: 'support', description: 'Orbiting shard fragments.', expected_shape: 'angular orbit points', renderer: 'drawOrbitingShards', intensity: [0.15, 0.5], openingHero: false, supportOnly: true },
+    { id: 'pulse_orb', label: 'Pulse Orb', category: 'motion', priority: 'support', description: 'Core pulse orb.', expected_shape: 'pulsing circle', renderer: 'drawPulseOrb', intensity: [0.2, 0.58], openingHero: false, supportOnly: true },
+    { id: 'energy_column', label: 'Energy Column', category: 'motion', priority: 'support', description: 'Energy column pulse.', expected_shape: 'soft vertical beam', renderer: 'drawEnergyColumn', intensity: [0.2, 0.55], openingHero: false, supportOnly: true },
+    { id: 'refraction_ripple', label: 'Refraction Ripple', category: 'texture', priority: 'support', description: 'Ripple distortion rings.', expected_shape: 'ripple circles', renderer: 'drawRefractionRipple', intensity: [0.15, 0.45], openingHero: false, supportOnly: true },
+    { id: 'chromatic_veil', label: 'Chromatic Veil', category: 'support', priority: 'support', description: 'Chromatic split veil.', expected_shape: 'subtle RGB haze', renderer: 'drawChromaticVeil', intensity: [0.06, 0.2], openingHero: false, supportOnly: true },
+    { id: 'terminal_runes', label: 'Terminal Runes', category: 'texture', priority: 'support', description: 'Arcade rune marks.', expected_shape: 'tiny glyph strokes', renderer: 'drawTerminalRunes', intensity: [0.1, 0.35], openingHero: false, supportOnly: true },
+    { id: 'snow_drift', label: 'Snow Drift', category: 'atmosphere', priority: 'support', description: 'Snow particles drifting.', expected_shape: 'falling dots', renderer: 'drawSnowDrift', intensity: [0.25, 0.7], openingHero: false, supportOnly: true },
+    { id: 'amber_halo', label: 'Amber Halo', category: 'atmosphere', priority: 'support', description: 'Warm streetlight halos.', expected_shape: 'amber glow circles', renderer: 'drawAmberHalo', intensity: [0.15, 0.4], openingHero: false, supportOnly: true },
+    { id: 'wet_reflection_shimmer', label: 'Wet Reflection Shimmer', category: 'texture', priority: 'support', description: 'Wet streak reflections.', expected_shape: 'vertical reflection strips', renderer: 'drawWetReflectionShimmer', intensity: [0.15, 0.45], openingHero: false, supportOnly: true },
+    { id: 'brick_shadow_drift', label: 'Brick Shadow Drift', category: 'texture', priority: 'support', description: 'Brick shadow texture.', expected_shape: 'brick-like side blocks', renderer: 'drawBrickShadowDrift', intensity: [0.12, 0.38], openingHero: false, supportOnly: true },
+    { id: 'steam_plume_column', label: 'Steam Plume Column', category: 'atmosphere', priority: 'support', description: 'Steam column plume.', expected_shape: 'soft column mist', renderer: 'drawSteamPlumeColumn', intensity: [0.18, 0.5], openingHero: false, supportOnly: true },
+    { id: 'clock_face_reveal', label: 'Clock Face Reveal', category: 'landmark', priority: 'hero', description: 'Clock face reveal motif.', expected_shape: 'round clock face', renderer: 'drawClockFaceReveal', intensity: [0.25, 0.7], openingHero: true, supportOnly: false },
+    { id: 'harbor_mist', label: 'Harbor Mist', category: 'atmosphere', priority: 'support', description: 'Harbor fog sheet.', expected_shape: 'layered mist rows', renderer: 'drawHarborMist', intensity: [0.2, 0.6], openingHero: false, supportOnly: true },
+    { id: 'neon_wet_reflections', label: 'Neon Wet Reflections', category: 'texture', priority: 'support', description: 'Neon wet pavement texture.', expected_shape: 'glowing vertical puddles', renderer: 'drawNeonWetReflections', intensity: [0.2, 0.55], openingHero: false, supportOnly: true },
+    { id: 'winter_particulate_depth', label: 'Winter Particulate Depth', category: 'atmosphere', priority: 'support', description: 'Depth snow particles.', expected_shape: 'layered snow points', renderer: 'drawWinterParticulateDepth', intensity: [0.2, 0.62], openingHero: false, supportOnly: true },
+    { id: 'gastown_clock_silhouette', label: 'Gastown Clock', category: 'landmark', priority: 'hero', description: 'Steam clock silhouette.', expected_shape: 'clock post + face', renderer: 'drawGastownClockSilhouette', intensity: [0.35, 0.8], openingHero: true, supportOnly: false },
+    { id: 'cobblestone_perspective', label: 'Cobblestone Perspective', category: 'texture', priority: 'support', description: 'Cobblestone lane texture.', expected_shape: 'ground grid stones', renderer: 'drawCobblestonePerspective', intensity: [0.18, 0.45], openingHero: false, supportOnly: true },
+    { id: 'brick_wall_parallax', label: 'Brick Wall Parallax', category: 'texture', priority: 'support', description: 'Brick facade sides.', expected_shape: 'left/right brick blocks', renderer: 'drawBrickWallParallax', intensity: [0.18, 0.45], openingHero: false, supportOnly: true },
+    { id: 'streetlamp_halo_row', label: 'Streetlamp Halo Row', category: 'atmosphere', priority: 'support', description: 'Streetlamp halo row.', expected_shape: 'four halo circles', renderer: 'drawStreetlampHaloRow', intensity: [0.18, 0.48], openingHero: false, supportOnly: true },
+    { id: 'granville_neon_marquee', label: 'Granville Neon Marquee', category: 'scene', priority: 'support', description: 'Neon marquee slabs.', expected_shape: 'vertical neon panels', renderer: 'drawGranvilleNeonMarquee', intensity: [0.18, 0.48], openingHero: false, supportOnly: true },
+    { id: 'neon_sign_flicker', label: 'Neon Sign Flicker', category: 'scene', priority: 'support', description: 'Neon strip flicker.', expected_shape: 'horizontal neon bars', renderer: 'drawNeonSignFlicker', intensity: [0.18, 0.5], openingHero: false, supportOnly: true },
+    { id: 'traffic_light_glow', label: 'Traffic Light Glow', category: 'scene', priority: 'support', description: 'Traffic signal glow.', expected_shape: 'three light halos', renderer: 'drawTrafficLightGlow', intensity: [0.15, 0.45], openingHero: false, supportOnly: true },
+    { id: 'skytrain_track', label: 'SkyTrain Track', category: 'motion', priority: 'support', description: 'Elevated track lines.', expected_shape: 'dual horizontal track', renderer: 'drawSkytrainTrack', intensity: [0.2, 0.55], openingHero: false, supportOnly: true },
+    { id: 'skytrain_pass_visual', label: 'SkyTrain Pass', category: 'motion', priority: 'hero', description: 'SkyTrain car pass-through.', expected_shape: 'moving train block', renderer: 'drawSkytrainPassVisual', intensity: [0.25, 0.7], openingHero: true, supportOnly: false },
+    { id: 'bus_pass_visual', label: 'Bus Pass', category: 'motion', priority: 'support', description: 'Bus pass-through.', expected_shape: 'moving bus block', renderer: 'drawBusPassVisual', intensity: [0.2, 0.6], openingHero: false, supportOnly: true },
+    { id: 'northshore_mountain_ridge', label: 'North Shore Ridge', category: 'scene', priority: 'support', description: 'North Shore mountain ridge.', expected_shape: 'mountain silhouette ridge', renderer: 'drawNorthshoreMountainRidge', intensity: [0.22, 0.62], openingHero: false, supportOnly: true },
+    { id: 'mountain_mist_layers', label: 'Mountain Mist Layers', category: 'atmosphere', priority: 'support', description: 'Mist bands for mountain scene.', expected_shape: 'layered mist bands', renderer: 'drawMountainMistLayers', intensity: [0.18, 0.5], openingHero: false, supportOnly: true },
+    { id: 'rain_streaks', label: 'Rain Streaks', category: 'atmosphere', priority: 'support', description: 'Diagonal rain lines.', expected_shape: 'falling streaks', renderer: 'drawRainStreaks', intensity: [0.2, 0.6], openingHero: false, supportOnly: true },
+    { id: 'puddle_reflections', label: 'Puddle Reflections', category: 'texture', priority: 'support', description: 'Puddle neon reflections.', expected_shape: 'vertical reflection pools', renderer: 'drawPuddleReflections', intensity: [0.18, 0.5], openingHero: false, supportOnly: true },
+    { id: 'science_world_dome', label: 'Science World Dome', category: 'landmark', priority: 'hero', description: 'Geodesic dome silhouette with lattice.', expected_shape: 'dome arc + triangle lattice', renderer: 'drawScienceWorldDome', intensity: [0.35, 0.85], openingHero: true, supportOnly: false },
+    { id: 'chinatown_gate', label: 'Chinatown Gate', category: 'landmark', priority: 'hero', description: 'Chinatown gate profile.', expected_shape: 'two pillars + layered roof', renderer: 'drawChinatownGate', intensity: [0.3, 0.8], openingHero: true, supportOnly: false },
+    { id: 'english_bay_inukshuk', label: 'English Bay Inukshuk', category: 'landmark', priority: 'hero', description: 'Stacked stone Inukshuk reveal.', expected_shape: 'base + torso + arm stone + head', renderer: 'drawEnglishBayInukshuk', intensity: [0.35, 0.88], openingHero: true, supportOnly: false },
+    { id: 'maritime_museum_sailroof', label: 'Maritime Museum Sail Roof', category: 'landmark', priority: 'hero', description: 'Sail roof gesture.', expected_shape: 'arched sail roof line', renderer: 'drawMaritimeMuseumSailroof', intensity: [0.28, 0.8], openingHero: true, supportOnly: false },
+    { id: 'lions_gate_bridge', label: 'Lions Gate Bridge', category: 'landmark', priority: 'hero', description: 'Suspension bridge silhouette with two towers, deck, top cable arc, and suspenders.', expected_shape: 'two towers + deck + hanging cable lines', renderer: 'drawLionsGateBridge', intensity: [0.35, 0.9], openingHero: true, supportOnly: false },
+    { id: 'bc_place_dome', label: 'BC Place Dome', category: 'landmark', priority: 'hero', description: 'Stadium dome spoked silhouette.', expected_shape: 'low dome with radial spokes', renderer: 'drawBCPlaceDome', intensity: [0.3, 0.8], openingHero: true, supportOnly: false },
+    { id: 'port_cranes', label: 'Port Cranes', category: 'landmark', priority: 'hero', description: 'Container crane row.', expected_shape: 'angular crane arms', renderer: 'drawPortCranes', intensity: [0.28, 0.75], openingHero: true, supportOnly: false },
+    { id: 'planetarium_dome', label: 'Planetarium Dome', category: 'landmark', priority: 'hero', description: 'Smooth observatory dome.', expected_shape: 'smooth dome + low base', renderer: 'drawPlanetariumDome', intensity: [0.3, 0.82], openingHero: true, supportOnly: false },
+    { id: 'starfield_projection', label: 'Starfield Projection', category: 'landmark', priority: 'hero', description: 'Planetarium star projection.', expected_shape: 'dome projection arcs + stars', renderer: 'drawStarfieldProjection', intensity: [0.25, 0.75], openingHero: true, supportOnly: false },
+    { id: 'constellation_lines', label: 'Constellation Lines', category: 'atmosphere', priority: 'support', description: 'Constellation line overlay.', expected_shape: 'tiny connected stars', renderer: 'drawConstellationLines', intensity: [0.12, 0.35], openingHero: false, supportOnly: true },
+    { id: 'canada_place_sails', label: 'Canada Place Sails', category: 'landmark', priority: 'hero', description: 'Canada Place sail peaks.', expected_shape: 'triangular sail peaks', renderer: 'drawCanadaPlaceSails', intensity: [0.28, 0.78], openingHero: true, supportOnly: false },
+    { id: 'gastown_scene', label: 'Gastown Scene', category: 'scene', priority: 'hero', description: 'Gastown scene background stack.', expected_shape: 'brick + cobblestone + clock support', renderer: 'drawGastownScene', intensity: [0.28, 0.76], openingHero: true, supportOnly: false },
+    { id: 'granville_scene', label: 'Granville Scene', category: 'scene', priority: 'hero', description: 'Granville neon street scene.', expected_shape: 'neon facades + reflections', renderer: 'drawGranvilleScene', intensity: [0.28, 0.76], openingHero: true, supportOnly: false },
+    { id: 'north_shore_scene', label: 'North Shore Scene', category: 'scene', priority: 'hero', description: 'North Shore ridge and mist scene.', expected_shape: 'ridge horizon + mist', renderer: 'drawNorthShoreScene', intensity: [0.3, 0.8], openingHero: true, supportOnly: false },
+    { id: 'waterfront_scene', label: 'Waterfront Scene', category: 'scene', priority: 'hero', description: 'Waterfront horizon and harbor support.', expected_shape: 'waterline + distant structures', renderer: 'drawWaterfrontScene', intensity: [0.28, 0.8], openingHero: true, supportOnly: false },
+    { id: 'clear_cold_shimmer', label: 'Clear Cold Shimmer', category: 'atmosphere', priority: 'support', description: 'Cold air shimmer.', expected_shape: 'soft cool haze', renderer: 'drawClearColdShimmer', intensity: [0.15, 0.45], openingHero: false, supportOnly: true },
+    { id: 'ocean_surface_shimmer', label: 'Ocean Surface Shimmer', category: 'texture', priority: 'support', description: 'Ocean highlight shimmer.', expected_shape: 'horizontal sparkle strips', renderer: 'drawOceanSurfaceShimmer', intensity: [0.18, 0.52], openingHero: false, supportOnly: true },
+    { id: 'seabus_silhouette', label: 'SeaBus Silhouette', category: 'landmark', priority: 'hero', description: 'SeaBus vessel silhouette.', expected_shape: 'low ferry hull', renderer: 'drawSeabusSilhouette', intensity: [0.28, 0.76], openingHero: true, supportOnly: false },
+    { id: 'gull_silhouettes', label: 'Gull Silhouettes', category: 'motion', priority: 'support', description: 'Subtle gull V silhouettes.', expected_shape: '2-4 small V arcs', renderer: 'drawGullSilhouettes', intensity: [0.06, 0.2], openingHero: false, supportOnly: true }
   ];
+
+  const VISUAL_TYPES = VISUAL_REGISTRY.map((item) => item.id);
+  const VISUAL_REGISTRY_MAP = VISUAL_REGISTRY.reduce((acc, item) => { acc[item.id] = item; return acc; }, {});
+  const VISUAL_CATEGORY = VISUAL_REGISTRY.reduce((acc, item) => {
+    if (!acc[item.category]) acc[item.category] = [];
+    acc[item.category].push(item.id);
+    return acc;
+  }, {});
+  const SUPPORT_OVERLAY_TYPES = ['scanline_field', 'chromatic_veil', 'signal_bars', 'pixel_grid_pulse', 'glitch_flash', 'starfield_drift'];
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -38,6 +96,51 @@
       this.clockOffset = 0;
       this.currentTime = 0;
       this.lowResTarget = null;
+      this.debugOptions = { enabled: false, showProvenance: false };
+      this.debugFrameState = null;
+      this.previewTimeout = null;
+    }
+
+
+    getVisualRegistry() {
+      return VISUAL_REGISTRY.slice();
+    }
+
+    setDebugOptions(options) {
+      this.debugOptions = Object.assign({}, this.debugOptions, options || {});
+    }
+
+    buildSingleVisualTimeline(visualType, runtime) {
+      const clampedRuntime = clamp(Number(runtime || 3.2), 2.5, 6);
+      return {
+        runtime: clampedRuntime,
+        visualEvents: [{
+          time: 0,
+          duration: clampedRuntime,
+          visual_type: visualType,
+          intensity: 0.85,
+          params: {},
+          sync_role: 'debug_single_preview'
+        }],
+        syncPoints: [],
+        endCard: { use_end_card: false },
+        title: 'Visual Debug Preview',
+        renderProfile: this.resolveRenderProfile({ style_tags: [] })
+      };
+    }
+
+    previewVisualType(visualType, runtimeSeconds) {
+      if (!VISUAL_REGISTRY_MAP[visualType]) return false;
+      if (this.previewTimeout) {
+        window.clearTimeout(this.previewTimeout);
+        this.previewTimeout = null;
+      }
+      this.loadTimeline(this.buildSingleVisualTimeline(visualType, runtimeSeconds || 3.2));
+      this.play(0);
+      this.previewTimeout = window.setTimeout(() => {
+        this.stop();
+      }, Math.round((runtimeSeconds || 3.2) * 1000));
+      return true;
     }
 
     setCanvas(canvas) {
@@ -269,11 +372,11 @@
     }
 
     drawSceneLayers(ctx, width, height, t, normalized, overlays) {
-      const landmarkTypes = ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'planetarium_dome', 'starfield_projection', 'canada_place_sails', 'gastown_clock_silhouette', 'seabus_silhouette', 'waterfront_scene'];
-      const sceneTypes = ['gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene'];
-      const atmosphereTypes = ['rain_streaks', 'snow_drift', 'harbor_mist', 'mountain_mist_layers', 'puddle_reflections', 'volumetric_fog', 'clear_cold_shimmer'];
-      const motionTypes = ['skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual', 'particle_trail', 'waveform_ring'];
-      const supportOverlays = ['scanline_field', 'chromatic_veil', 'signal_bars', 'pixel_grid_pulse', 'glitch_flash', 'starfield_drift'];
+      const landmarkTypes = VISUAL_CATEGORY.landmark || [];
+      const sceneTypes = VISUAL_CATEGORY.scene || [];
+      const atmosphereTypes = VISUAL_CATEGORY.atmosphere || [];
+      const motionTypes = VISUAL_CATEGORY.motion || [];
+      const supportOverlays = SUPPORT_OVERLAY_TYPES;
       const weirdness = this.parseWeirdnessLevel();
       const weirdNorm = (weirdness - 1) / 9;
       let distortion = 0.04 + (0.18 - 0.04) * weirdNorm;
@@ -298,36 +401,40 @@
 
       this.drawBaseChamber(ctx, width, height, t, normalized);
 
-      activeEvents.filter((item) => atmosphereTypes.includes(item.event.visual_type)).forEach((item) => {
-        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
-        this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
-      });
+      const drawByType = (predicate, dampenSupport) => {
+        activeEvents.filter(predicate).forEach((item) => {
+          let intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
+          if (dampenSupport && hasHeroVisual) intensity *= 0.18;
+          this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
+        });
+      };
 
-      activeEvents.filter((item) => landmarkTypes.includes(item.event.visual_type) || sceneTypes.includes(item.event.visual_type)).forEach((item) => {
-        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
-        this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
-      });
-
-      activeEvents.filter((item) => motionTypes.includes(item.event.visual_type)).forEach((item) => {
-        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
-        this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
-      });
-
-      activeEvents.filter((item) => !atmosphereTypes.includes(item.event.visual_type)
+      drawByType((item) => atmosphereTypes.includes(item.event.visual_type), false);
+      drawByType((item) => landmarkTypes.includes(item.event.visual_type) || sceneTypes.includes(item.event.visual_type), false);
+      drawByType((item) => motionTypes.includes(item.event.visual_type), hasHeroVisual);
+      drawByType((item) => !atmosphereTypes.includes(item.event.visual_type)
           && !landmarkTypes.includes(item.event.visual_type)
           && !sceneTypes.includes(item.event.visual_type)
           && !motionTypes.includes(item.event.visual_type)
-          && !supportOverlays.includes(item.event.visual_type)).forEach((item) => {
-        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
-        this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
-      });
+          && !supportOverlays.includes(item.event.visual_type), false);
 
       activeEvents.filter((item) => supportOverlays.includes(item.event.visual_type)).forEach((item) => {
         if (item.event.visual_type !== activeSupportType) return;
         let intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
-        if (hasHeroVisual) intensity *= 0.12;
+        if (hasHeroVisual) intensity *= 0.1;
         this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
       });
+
+      this.debugFrameState = {
+        activeVisualTypes: activeEvents.map((item) => item.event.visual_type),
+        heroVisualTypes: activeEvents
+          .filter((item) => (VISUAL_REGISTRY_MAP[item.event.visual_type] && VISUAL_REGISTRY_MAP[item.event.visual_type].priority === 'hero'))
+          .map((item) => item.event.visual_type),
+        supportVisualTypes: activeEvents
+          .filter((item) => (VISUAL_REGISTRY_MAP[item.event.visual_type] && VISUAL_REGISTRY_MAP[item.event.visual_type].priority !== 'hero'))
+          .map((item) => item.event.visual_type),
+        beatLabel: this.getBeatLabelAtTime(t)
+      };
 
       if (distortion > 0) {
         ctx.save();
@@ -369,10 +476,44 @@
         this.drawSceneLayers(ctx, width, height, t, normalized, true);
       }
 
+      this.drawDebugProvenance(ctx, width, height);
+
       if (this.timeline.endCard && this.timeline.endCard.use_end_card && t > runtime - 1.6) {
         const p = Math.max(0, Math.min(1, (t - (runtime - 1.6)) / 1.4));
         this.drawEndCard(ctx, this.timeline.endCard, p, width, height);
       }
+    }
+
+
+    getBeatLabelAtTime(t) {
+      const runtime = this.timeline ? Number(this.timeline.runtime || 20) : 20;
+      const beats = [
+        { label: 'Opening', t0: 0, t1: runtime * 0.25 },
+        { label: 'Arrival', t0: runtime * 0.25, t1: runtime * 0.5 },
+        { label: 'Lift', t0: runtime * 0.5, t1: runtime * 0.75 },
+        { label: 'Resolve', t0: runtime * 0.75, t1: runtime + 0.001 }
+      ];
+      const current = beats.find((beat) => t >= beat.t0 && t < beat.t1);
+      return current ? current.label : 'Opening';
+    }
+
+    drawDebugProvenance(ctx, w, h) {
+      if (!this.debugOptions || !this.debugOptions.enabled || !this.debugOptions.showProvenance || !this.debugFrameState) return;
+      const lines = [
+        `Beat: ${this.debugFrameState.beatLabel}`,
+        `Hero: ${(this.debugFrameState.heroVisualTypes || []).join(', ') || '—'}`,
+        `Support: ${(this.debugFrameState.supportVisualTypes || []).join(', ') || '—'}`,
+        `Active: ${(this.debugFrameState.activeVisualTypes || []).join(', ') || '—'}`
+      ];
+      ctx.save();
+      ctx.fillStyle = 'rgba(3,10,24,0.78)';
+      ctx.fillRect(8, 8, w * 0.5, 16 + lines.length * 13);
+      ctx.fillStyle = '#b8dcff';
+      ctx.font = '11px monospace';
+      lines.forEach((line, idx) => {
+        ctx.fillText(line, 14, 22 + idx * 13);
+      });
+      ctx.restore();
     }
 
     drawBaseChamber(ctx, w, h, t, normalized) {
@@ -839,23 +980,26 @@
         }
         case 'science_world_dome': {
           const cx = w * 0.5;
-          const cy = h * 0.72;
-          const r = Math.min(w, h) * 0.24;
-          ctx.strokeStyle = `rgba(180,210,230,${0.32 + intensity * 0.34})`;
+          const cy = h * 0.74;
+          const r = Math.min(w, h) * 0.25;
+          ctx.strokeStyle = `rgba(188,220,240,${0.34 + intensity * 0.36})`;
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.arc(cx, cy, r, Math.PI, 0);
           ctx.stroke();
-          for (let i = 1; i < 5; i += 1) {
+          for (let i = 1; i <= 5; i += 1) {
+            const ratio = i / 6;
             ctx.beginPath();
-            ctx.arc(cx, cy, r * (i / 5), Math.PI, 0);
+            ctx.arc(cx, cy, r * ratio, Math.PI, 0);
             ctx.stroke();
           }
-          for (let i = -4; i <= 4; i += 1) {
-            const x1 = cx + i * (r / 4);
+          for (let ring = 1; ring <= 4; ring += 1) {
+            const ry = r * (ring / 5);
+            const rx = Math.sqrt(Math.max(0.01, (r * r) - (ry * ry)));
+            const y = cy - ry;
             ctx.beginPath();
-            ctx.moveTo(x1, cy);
-            ctx.lineTo(cx, cy - r);
+            ctx.moveTo(cx - rx, y);
+            ctx.lineTo(cx + rx, y);
             ctx.stroke();
           }
           break;
@@ -873,19 +1017,23 @@
           break;
         }
         case 'english_bay_inukshuk': {
-          const alpha = 0.3 + intensity * 0.5;
+          const alpha = 0.45 + intensity * 0.42;
           const x = w * 0.5;
-          const y = h * 0.62;
+          const y = h * 0.68;
           const scale = Math.min(w, h);
-          ctx.fillStyle = `rgba(196,206,220,${alpha})`;
-          ctx.strokeStyle = `rgba(220,236,248,${Math.min(0.9, alpha + 0.2)})`;
+          ctx.fillStyle = `rgba(198,210,224,${alpha})`;
+          ctx.strokeStyle = `rgba(230,240,250,${Math.min(0.95, alpha + 0.2)})`;
           ctx.lineWidth = Math.max(2, scale * 0.006);
-          ctx.fillRect(x - scale * 0.04, y - scale * 0.16, scale * 0.08, scale * 0.18);
-          ctx.fillRect(x - scale * 0.1, y - scale * 0.1, scale * 0.2, scale * 0.05);
-          ctx.fillRect(x - scale * 0.025, y - scale * 0.22, scale * 0.05, scale * 0.05);
-          ctx.fillRect(x - scale * 0.06, y + scale * 0.02, scale * 0.12, scale * 0.05);
-          ctx.strokeRect(x - scale * 0.04, y - scale * 0.16, scale * 0.08, scale * 0.18);
-          ctx.strokeRect(x - scale * 0.1, y - scale * 0.1, scale * 0.2, scale * 0.05);
+          const stones = [
+            [x - scale * 0.09, y, scale * 0.18, scale * 0.05],
+            [x - scale * 0.038, y - scale * 0.16, scale * 0.076, scale * 0.16],
+            [x - scale * 0.13, y - scale * 0.12, scale * 0.26, scale * 0.045],
+            [x - scale * 0.03, y - scale * 0.22, scale * 0.06, scale * 0.045]
+          ];
+          stones.forEach((stone) => {
+            ctx.fillRect(stone[0], stone[1], stone[2], stone[3]);
+            ctx.strokeRect(stone[0], stone[1], stone[2], stone[3]);
+          });
           break;
         }
         case 'maritime_museum_sailroof': {
@@ -943,7 +1091,8 @@
           ctx.moveTo(0, horizon);
           ctx.lineTo(w, horizon);
           ctx.stroke();
-          this.drawEvent(ctx, { visual_type: 'port_cranes', params: {}, intensity: intensity * 0.58 }, p, intensity, w, h, normalized);
+          // Audit note: removed dominant port crane bars from generic waterfront scene helper to avoid mystery landmark-like columns.
+          this.drawEvent(ctx, { visual_type: 'gull_silhouettes', params: {}, intensity: Math.min(0.2, intensity * 0.25) }, p, intensity, w, h, normalized);
           this.drawEvent(ctx, { visual_type: 'ocean_surface_shimmer', params: {}, intensity: intensity * 0.78 }, p, intensity, w, h, normalized);
           const glow = ctx.createLinearGradient(0, horizon - 40, 0, horizon + 80);
           glow.addColorStop(0, `rgba(255,140,210,${0.06 + intensity * 0.08})`);
@@ -983,29 +1132,24 @@
 
         case 'planetarium_dome': {
           const cx = w * 0.5;
-          const cy = h * 0.74;
-          const r = Math.min(w, h) * 0.28;
-          ctx.fillStyle = `rgba(14,22,40,${0.2 + intensity * 0.18})`;
+          const cy = h * 0.75;
+          const r = Math.min(w, h) * 0.24;
+          ctx.fillStyle = `rgba(18,28,48,${0.34 + intensity * 0.24})`;
           ctx.beginPath();
           ctx.arc(cx, cy, r, Math.PI, 0);
-          ctx.lineTo(cx + r, cy + 18);
-          ctx.lineTo(cx - r, cy + 18);
+          ctx.lineTo(cx + r, cy + h * 0.03);
+          ctx.lineTo(cx - r, cy + h * 0.03);
           ctx.closePath();
           ctx.fill();
-          ctx.strokeStyle = `rgba(160,198,236,${0.2 + intensity * 0.24})`;
+          ctx.strokeStyle = `rgba(164,202,238,${0.28 + intensity * 0.25})`;
           ctx.lineWidth = 2;
-          for (let i = 1; i <= 5; i += 1) {
-            ctx.beginPath();
-            ctx.arc(cx, cy, r * (i / 5), Math.PI, 0);
-            ctx.stroke();
-          }
-          for (let i = -4; i <= 4; i += 1) {
-            const x = cx + (i * r / 5);
-            ctx.beginPath();
-            ctx.moveTo(x, cy + 2);
-            ctx.lineTo(cx, cy - r + 6);
-            ctx.stroke();
-          }
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, Math.PI, 0);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(cx - r * 0.95, cy + h * 0.03);
+          ctx.lineTo(cx + r * 0.95, cy + h * 0.03);
+          ctx.stroke();
           break;
         }
         case 'starfield_projection': {
@@ -1056,17 +1200,17 @@
         }
 
         case 'lions_gate_bridge': {
-          const deckY = h * 0.58;
+          const deckY = h * 0.6;
           const leftTowerX = w * 0.34;
           const rightTowerX = w * 0.66;
           const towerTop = h * 0.28;
-          const towerBottom = h * 0.58;
-          ctx.strokeStyle = `rgba(190,220,238,${0.28 + intensity * 0.34})`;
-          ctx.lineWidth = 2;
+          const towerBottom = deckY;
+          ctx.strokeStyle = `rgba(198,224,240,${0.36 + intensity * 0.34})`;
+          ctx.lineWidth = 2.2;
 
           ctx.beginPath();
-          ctx.moveTo(w * 0.16, deckY);
-          ctx.lineTo(w * 0.84, deckY);
+          ctx.moveTo(w * 0.14, deckY);
+          ctx.lineTo(w * 0.86, deckY);
           ctx.stroke();
 
           ctx.beginPath();
@@ -1076,16 +1220,24 @@
           ctx.lineTo(rightTowerX, towerTop);
           ctx.stroke();
 
-          const cableLift = 0.05 + intensity * 0.03;
           ctx.beginPath();
-          ctx.moveTo(w * 0.2, deckY - h * 0.01);
-          ctx.bezierCurveTo(w * 0.3, deckY - h * cableLift, w * 0.7, deckY - h * cableLift, w * 0.8, deckY - h * 0.01);
+          ctx.moveTo(leftTowerX - w * 0.02, towerTop + h * 0.01);
+          ctx.lineTo(leftTowerX + w * 0.02, towerTop + h * 0.01);
+          ctx.moveTo(rightTowerX - w * 0.02, towerTop + h * 0.01);
+          ctx.lineTo(rightTowerX + w * 0.02, towerTop + h * 0.01);
           ctx.stroke();
 
-          const suspenders = 10;
+          const cableLift = 0.08 + intensity * 0.035;
+          ctx.beginPath();
+          ctx.moveTo(w * 0.16, deckY);
+          ctx.bezierCurveTo(w * 0.3, deckY - h * cableLift, w * 0.7, deckY - h * cableLift, w * 0.84, deckY);
+          ctx.stroke();
+
+          const suspenders = 14;
           for (let i = 0; i <= suspenders; i += 1) {
-            const x = w * (0.24 + (i / suspenders) * 0.52);
-            const topY = deckY - h * (0.01 + Math.sin((i / suspenders) * Math.PI) * cableLift);
+            const x = w * (0.18 + (i / suspenders) * 0.64);
+            const curveP = (x - w * 0.16) / (w * 0.68);
+            const topY = deckY - h * (Math.sin(Math.PI * curveP) * cableLift);
             ctx.beginPath();
             ctx.moveTo(x, topY);
             ctx.lineTo(x, deckY);
@@ -1167,7 +1319,7 @@
         case 'gull_silhouettes': {
           ctx.strokeStyle = `rgba(214,232,244,${0.1 + intensity * 0.12})`;
           ctx.lineWidth = 1.6;
-          const gulls = 2 + Math.round(intensity * 2);
+          const gulls = 2 + Math.round(Math.min(0.2, intensity) * 10);
           for (let i = 0; i < gulls; i += 1) {
             const gx = w * (0.2 + i * 0.2) + Math.sin(normalized * 2 + i) * 18;
             const gy = h * (0.18 + (i % 2) * 0.06) + Math.cos(normalized * 1.5 + i) * 6;
@@ -1292,4 +1444,5 @@
   }
 
   window.AsmrVisualEngine = AsmrVisualEngine;
+  window.ASMR_VISUAL_REGISTRY = VISUAL_REGISTRY;
 })(window);

@@ -172,6 +172,7 @@ function se_enqueue_asmr_lab_assets() {
             array(
                 'endpoint' => esc_url_raw( rest_url( 'se/v1/asmr-generate' ) ),
                 'nonce'    => wp_create_nonce( 'wp_rest' ),
+                'visualRegistry' => se_get_asmr_visual_registry(),
             )
         );
     }
@@ -915,54 +916,100 @@ function se_get_asmr_allowed_engines() {
     );
 }
 
-function se_get_asmr_visual_types() {
-    return array(
-        'scanline_field', 'pixel_grid_pulse', 'wireframe_horizon', 'radial_bloom', 'particle_trail',
-        'glitch_flash', 'waveform_ring', 'macro_texture_drift', 'signal_bars', 'text_reveal',
-        'volumetric_fog', 'glass_refraction', 'halo_glyphs', 'cathedral_beam', 'monolith_silhouette',
-        'starfield_drift', 'orbiting_shards', 'pulse_orb', 'energy_column', 'refraction_ripple',
-        'chromatic_veil', 'terminal_runes', 'snow_drift', 'amber_halo', 'wet_reflection_shimmer',
-        'brick_shadow_drift', 'steam_plume_column', 'clock_face_reveal', 'harbor_mist',
-        'neon_wet_reflections', 'winter_particulate_depth',
-        'gastown_clock_silhouette', 'cobblestone_perspective', 'brick_wall_parallax', 'streetlamp_halo_row',
-        'granville_neon_marquee', 'neon_sign_flicker', 'traffic_light_glow',
-        'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
-        'northshore_mountain_ridge', 'mountain_mist_layers',
-        'rain_streaks', 'puddle_reflections',
-        'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof',
-        'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
-        'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails',
-        'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette', 'gull_silhouettes',
+function se_get_asmr_visual_registry() {
+    static $registry = null;
+    if ( null !== $registry ) {
+        return $registry;
+    }
+
+    $registry = array(
+        array( 'id' => 'scanline_field', 'label' => 'Scanline Field', 'category' => 'support', 'priority' => 'support', 'description' => 'CRT line drift overlay.', 'expected_shape' => 'horizontal scan lines', 'renderer' => 'drawScanlineField', 'intensity_min' => 0.08, 'intensity_max' => 0.4, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'pixel_grid_pulse', 'label' => 'Pixel Grid Pulse', 'category' => 'support', 'priority' => 'support', 'description' => 'Retro pixel grid pulse.', 'expected_shape' => 'small grid cells', 'renderer' => 'drawPixelGridPulse', 'intensity_min' => 0.1, 'intensity_max' => 0.35, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'wireframe_horizon', 'label' => 'Wireframe Horizon', 'category' => 'scene', 'priority' => 'support', 'description' => 'Perspective horizon lines.', 'expected_shape' => 'vanishing horizon fan', 'renderer' => 'drawWireframeHorizon', 'intensity_min' => 0.15, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'radial_bloom', 'label' => 'Radial Bloom', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Soft center bloom.', 'expected_shape' => 'radial glow', 'renderer' => 'drawRadialBloom', 'intensity_min' => 0.15, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'particle_trail', 'label' => 'Particle Trail', 'category' => 'motion', 'priority' => 'support', 'description' => 'Moving particle points.', 'expected_shape' => 'drifting dots', 'renderer' => 'drawParticleTrail', 'intensity_min' => 0.2, 'intensity_max' => 0.6, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'glitch_flash', 'label' => 'Glitch Flash', 'category' => 'support', 'priority' => 'support', 'description' => 'Brief digital glitch streaks.', 'expected_shape' => 'horizontal flashes', 'renderer' => 'drawGlitchFlash', 'intensity_min' => 0.05, 'intensity_max' => 0.25, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'waveform_ring', 'label' => 'Waveform Ring', 'category' => 'motion', 'priority' => 'support', 'description' => 'Oscillating ring pulse.', 'expected_shape' => 'wobble ring', 'renderer' => 'drawWaveformRing', 'intensity_min' => 0.15, 'intensity_max' => 0.5, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'macro_texture_drift', 'label' => 'Macro Texture Drift', 'category' => 'texture', 'priority' => 'support', 'description' => 'Linear texture drift.', 'expected_shape' => 'short bars', 'renderer' => 'drawMacroTextureDrift', 'intensity_min' => 0.12, 'intensity_max' => 0.35, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'signal_bars', 'label' => 'Signal Bars', 'category' => 'support', 'priority' => 'support', 'description' => 'Diagnostic signal meter bars.', 'expected_shape' => 'small stacked bars', 'renderer' => 'drawSignalBars', 'intensity_min' => 0.05, 'intensity_max' => 0.2, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'text_reveal', 'label' => 'Text Reveal', 'category' => 'support', 'priority' => 'support', 'description' => 'Short terminal text reveal.', 'expected_shape' => 'single text block', 'renderer' => 'drawTextReveal', 'intensity_min' => 0.15, 'intensity_max' => 0.5, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'volumetric_fog', 'label' => 'Volumetric Fog', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Layered fog drift.', 'expected_shape' => 'horizontal haze bands', 'renderer' => 'drawVolumetricFog', 'intensity_min' => 0.2, 'intensity_max' => 0.6, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'glass_refraction', 'label' => 'Glass Refraction', 'category' => 'texture', 'priority' => 'support', 'description' => 'Refraction contour lines.', 'expected_shape' => 'curved refractive lines', 'renderer' => 'drawGlassRefraction', 'intensity_min' => 0.15, 'intensity_max' => 0.5, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'halo_glyphs', 'label' => 'Halo Glyphs', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Arc glyph halos.', 'expected_shape' => 'partial circular arcs', 'renderer' => 'drawHaloGlyphs', 'intensity_min' => 0.15, 'intensity_max' => 0.5, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'cathedral_beam', 'label' => 'Cathedral Beam', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Focused light beam.', 'expected_shape' => 'vertical cone beam', 'renderer' => 'drawCathedralBeam', 'intensity_min' => 0.15, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'monolith_silhouette', 'label' => 'Monolith Silhouette', 'category' => 'scene', 'priority' => 'hero', 'description' => 'Large central monolith.', 'expected_shape' => 'single tall slab', 'renderer' => 'drawMonolithSilhouette', 'intensity_min' => 0.25, 'intensity_max' => 0.75, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'starfield_drift', 'label' => 'Starfield Drift', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Sparse moving stars.', 'expected_shape' => 'small drifting stars', 'renderer' => 'drawStarfieldDrift', 'intensity_min' => 0.08, 'intensity_max' => 0.3, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'orbiting_shards', 'label' => 'Orbiting Shards', 'category' => 'motion', 'priority' => 'support', 'description' => 'Orbiting shard fragments.', 'expected_shape' => 'angular orbit points', 'renderer' => 'drawOrbitingShards', 'intensity_min' => 0.15, 'intensity_max' => 0.5, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'pulse_orb', 'label' => 'Pulse Orb', 'category' => 'motion', 'priority' => 'support', 'description' => 'Core pulse orb.', 'expected_shape' => 'pulsing circle', 'renderer' => 'drawPulseOrb', 'intensity_min' => 0.2, 'intensity_max' => 0.58, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'energy_column', 'label' => 'Energy Column', 'category' => 'motion', 'priority' => 'support', 'description' => 'Energy column pulse.', 'expected_shape' => 'soft vertical beam', 'renderer' => 'drawEnergyColumn', 'intensity_min' => 0.2, 'intensity_max' => 0.55, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'refraction_ripple', 'label' => 'Refraction Ripple', 'category' => 'texture', 'priority' => 'support', 'description' => 'Ripple distortion rings.', 'expected_shape' => 'ripple circles', 'renderer' => 'drawRefractionRipple', 'intensity_min' => 0.15, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'chromatic_veil', 'label' => 'Chromatic Veil', 'category' => 'support', 'priority' => 'support', 'description' => 'Chromatic split veil.', 'expected_shape' => 'subtle RGB haze', 'renderer' => 'drawChromaticVeil', 'intensity_min' => 0.06, 'intensity_max' => 0.2, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'terminal_runes', 'label' => 'Terminal Runes', 'category' => 'texture', 'priority' => 'support', 'description' => 'Arcade rune marks.', 'expected_shape' => 'tiny glyph strokes', 'renderer' => 'drawTerminalRunes', 'intensity_min' => 0.1, 'intensity_max' => 0.35, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'snow_drift', 'label' => 'Snow Drift', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Snow particles drifting.', 'expected_shape' => 'falling dots', 'renderer' => 'drawSnowDrift', 'intensity_min' => 0.25, 'intensity_max' => 0.7, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'amber_halo', 'label' => 'Amber Halo', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Warm streetlight halos.', 'expected_shape' => 'amber glow circles', 'renderer' => 'drawAmberHalo', 'intensity_min' => 0.15, 'intensity_max' => 0.4, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'wet_reflection_shimmer', 'label' => 'Wet Reflection Shimmer', 'category' => 'texture', 'priority' => 'support', 'description' => 'Wet streak reflections.', 'expected_shape' => 'vertical reflection strips', 'renderer' => 'drawWetReflectionShimmer', 'intensity_min' => 0.15, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'brick_shadow_drift', 'label' => 'Brick Shadow Drift', 'category' => 'texture', 'priority' => 'support', 'description' => 'Brick shadow texture.', 'expected_shape' => 'brick-like side blocks', 'renderer' => 'drawBrickShadowDrift', 'intensity_min' => 0.12, 'intensity_max' => 0.38, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'steam_plume_column', 'label' => 'Steam Plume Column', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Steam column plume.', 'expected_shape' => 'soft column mist', 'renderer' => 'drawSteamPlumeColumn', 'intensity_min' => 0.18, 'intensity_max' => 0.5, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'clock_face_reveal', 'label' => 'Clock Face Reveal', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Clock face reveal motif.', 'expected_shape' => 'round clock face', 'renderer' => 'drawClockFaceReveal', 'intensity_min' => 0.25, 'intensity_max' => 0.7, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'harbor_mist', 'label' => 'Harbor Mist', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Harbor fog sheet.', 'expected_shape' => 'layered mist rows', 'renderer' => 'drawHarborMist', 'intensity_min' => 0.2, 'intensity_max' => 0.6, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'neon_wet_reflections', 'label' => 'Neon Wet Reflections', 'category' => 'texture', 'priority' => 'support', 'description' => 'Neon wet pavement texture.', 'expected_shape' => 'glowing vertical puddles', 'renderer' => 'drawNeonWetReflections', 'intensity_min' => 0.2, 'intensity_max' => 0.55, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'winter_particulate_depth', 'label' => 'Winter Particulate Depth', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Depth snow particles.', 'expected_shape' => 'layered snow points', 'renderer' => 'drawWinterParticulateDepth', 'intensity_min' => 0.2, 'intensity_max' => 0.62, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'gastown_clock_silhouette', 'label' => 'Gastown Clock', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Steam clock silhouette.', 'expected_shape' => 'clock post + face', 'renderer' => 'drawGastownClockSilhouette', 'intensity_min' => 0.35, 'intensity_max' => 0.8, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'cobblestone_perspective', 'label' => 'Cobblestone Perspective', 'category' => 'texture', 'priority' => 'support', 'description' => 'Cobblestone lane texture.', 'expected_shape' => 'ground grid stones', 'renderer' => 'drawCobblestonePerspective', 'intensity_min' => 0.18, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'brick_wall_parallax', 'label' => 'Brick Wall Parallax', 'category' => 'texture', 'priority' => 'support', 'description' => 'Brick facade sides.', 'expected_shape' => 'left/right brick blocks', 'renderer' => 'drawBrickWallParallax', 'intensity_min' => 0.18, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'streetlamp_halo_row', 'label' => 'Streetlamp Halo Row', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Streetlamp halo row.', 'expected_shape' => 'four halo circles', 'renderer' => 'drawStreetlampHaloRow', 'intensity_min' => 0.18, 'intensity_max' => 0.48, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'granville_neon_marquee', 'label' => 'Granville Neon Marquee', 'category' => 'scene', 'priority' => 'support', 'description' => 'Neon marquee slabs.', 'expected_shape' => 'vertical neon panels', 'renderer' => 'drawGranvilleNeonMarquee', 'intensity_min' => 0.18, 'intensity_max' => 0.48, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'neon_sign_flicker', 'label' => 'Neon Sign Flicker', 'category' => 'scene', 'priority' => 'support', 'description' => 'Neon strip flicker.', 'expected_shape' => 'horizontal neon bars', 'renderer' => 'drawNeonSignFlicker', 'intensity_min' => 0.18, 'intensity_max' => 0.5, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'traffic_light_glow', 'label' => 'Traffic Light Glow', 'category' => 'scene', 'priority' => 'support', 'description' => 'Traffic signal glow.', 'expected_shape' => 'three light halos', 'renderer' => 'drawTrafficLightGlow', 'intensity_min' => 0.15, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'skytrain_track', 'label' => 'SkyTrain Track', 'category' => 'motion', 'priority' => 'support', 'description' => 'Elevated track lines.', 'expected_shape' => 'dual horizontal track', 'renderer' => 'drawSkytrainTrack', 'intensity_min' => 0.2, 'intensity_max' => 0.55, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'skytrain_pass_visual', 'label' => 'SkyTrain Pass', 'category' => 'motion', 'priority' => 'hero', 'description' => 'SkyTrain car pass-through.', 'expected_shape' => 'moving train block', 'renderer' => 'drawSkytrainPassVisual', 'intensity_min' => 0.25, 'intensity_max' => 0.7, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'bus_pass_visual', 'label' => 'Bus Pass', 'category' => 'motion', 'priority' => 'support', 'description' => 'Bus pass-through.', 'expected_shape' => 'moving bus block', 'renderer' => 'drawBusPassVisual', 'intensity_min' => 0.2, 'intensity_max' => 0.6, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'northshore_mountain_ridge', 'label' => 'North Shore Ridge', 'category' => 'scene', 'priority' => 'support', 'description' => 'North Shore mountain ridge.', 'expected_shape' => 'mountain silhouette ridge', 'renderer' => 'drawNorthshoreMountainRidge', 'intensity_min' => 0.22, 'intensity_max' => 0.62, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'mountain_mist_layers', 'label' => 'Mountain Mist Layers', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Mist bands for mountain scene.', 'expected_shape' => 'layered mist bands', 'renderer' => 'drawMountainMistLayers', 'intensity_min' => 0.18, 'intensity_max' => 0.5, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'rain_streaks', 'label' => 'Rain Streaks', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Diagonal rain lines.', 'expected_shape' => 'falling streaks', 'renderer' => 'drawRainStreaks', 'intensity_min' => 0.2, 'intensity_max' => 0.6, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'puddle_reflections', 'label' => 'Puddle Reflections', 'category' => 'texture', 'priority' => 'support', 'description' => 'Puddle neon reflections.', 'expected_shape' => 'vertical reflection pools', 'renderer' => 'drawPuddleReflections', 'intensity_min' => 0.18, 'intensity_max' => 0.5, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'science_world_dome', 'label' => 'Science World Dome', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Geodesic dome silhouette with lattice.', 'expected_shape' => 'dome arc + triangle lattice', 'renderer' => 'drawScienceWorldDome', 'intensity_min' => 0.35, 'intensity_max' => 0.85, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'chinatown_gate', 'label' => 'Chinatown Gate', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Chinatown gate profile.', 'expected_shape' => 'two pillars + layered roof', 'renderer' => 'drawChinatownGate', 'intensity_min' => 0.3, 'intensity_max' => 0.8, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'english_bay_inukshuk', 'label' => 'English Bay Inukshuk', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Stacked stone Inukshuk reveal.', 'expected_shape' => 'base + torso + arm stone + head', 'renderer' => 'drawEnglishBayInukshuk', 'intensity_min' => 0.35, 'intensity_max' => 0.88, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'maritime_museum_sailroof', 'label' => 'Maritime Museum Sail Roof', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Sail roof gesture.', 'expected_shape' => 'arched sail roof line', 'renderer' => 'drawMaritimeMuseumSailroof', 'intensity_min' => 0.28, 'intensity_max' => 0.8, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'lions_gate_bridge', 'label' => 'Lions Gate Bridge', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Suspension bridge silhouette with two towers, deck, top cable arc, and suspenders.', 'expected_shape' => 'two towers + deck + hanging cable lines', 'renderer' => 'drawLionsGateBridge', 'intensity_min' => 0.35, 'intensity_max' => 0.9, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'bc_place_dome', 'label' => 'BC Place Dome', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Stadium dome spoked silhouette.', 'expected_shape' => 'low dome with radial spokes', 'renderer' => 'drawBCPlaceDome', 'intensity_min' => 0.3, 'intensity_max' => 0.8, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'port_cranes', 'label' => 'Port Cranes', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Container crane row.', 'expected_shape' => 'angular crane arms', 'renderer' => 'drawPortCranes', 'intensity_min' => 0.28, 'intensity_max' => 0.75, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'planetarium_dome', 'label' => 'Planetarium Dome', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Smooth observatory dome.', 'expected_shape' => 'smooth dome + low base', 'renderer' => 'drawPlanetariumDome', 'intensity_min' => 0.3, 'intensity_max' => 0.82, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'starfield_projection', 'label' => 'Starfield Projection', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Planetarium star projection.', 'expected_shape' => 'dome projection arcs + stars', 'renderer' => 'drawStarfieldProjection', 'intensity_min' => 0.25, 'intensity_max' => 0.75, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'constellation_lines', 'label' => 'Constellation Lines', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Constellation line overlay.', 'expected_shape' => 'tiny connected stars', 'renderer' => 'drawConstellationLines', 'intensity_min' => 0.12, 'intensity_max' => 0.35, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'canada_place_sails', 'label' => 'Canada Place Sails', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Canada Place sail peaks.', 'expected_shape' => 'triangular sail peaks', 'renderer' => 'drawCanadaPlaceSails', 'intensity_min' => 0.28, 'intensity_max' => 0.78, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'gastown_scene', 'label' => 'Gastown Scene', 'category' => 'scene', 'priority' => 'hero', 'description' => 'Gastown scene background stack.', 'expected_shape' => 'brick + cobblestone + clock support', 'renderer' => 'drawGastownScene', 'intensity_min' => 0.28, 'intensity_max' => 0.76, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'granville_scene', 'label' => 'Granville Scene', 'category' => 'scene', 'priority' => 'hero', 'description' => 'Granville neon street scene.', 'expected_shape' => 'neon facades + reflections', 'renderer' => 'drawGranvilleScene', 'intensity_min' => 0.28, 'intensity_max' => 0.76, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'north_shore_scene', 'label' => 'North Shore Scene', 'category' => 'scene', 'priority' => 'hero', 'description' => 'North Shore ridge and mist scene.', 'expected_shape' => 'ridge horizon + mist', 'renderer' => 'drawNorthShoreScene', 'intensity_min' => 0.3, 'intensity_max' => 0.8, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'waterfront_scene', 'label' => 'Waterfront Scene', 'category' => 'scene', 'priority' => 'hero', 'description' => 'Waterfront horizon and harbor support.', 'expected_shape' => 'waterline + distant structures', 'renderer' => 'drawWaterfrontScene', 'intensity_min' => 0.28, 'intensity_max' => 0.8, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'clear_cold_shimmer', 'label' => 'Clear Cold Shimmer', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Cold air shimmer.', 'expected_shape' => 'soft cool haze', 'renderer' => 'drawClearColdShimmer', 'intensity_min' => 0.15, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'ocean_surface_shimmer', 'label' => 'Ocean Surface Shimmer', 'category' => 'texture', 'priority' => 'support', 'description' => 'Ocean highlight shimmer.', 'expected_shape' => 'horizontal sparkle strips', 'renderer' => 'drawOceanSurfaceShimmer', 'intensity_min' => 0.18, 'intensity_max' => 0.52, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'seabus_silhouette', 'label' => 'SeaBus Silhouette', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'SeaBus vessel silhouette.', 'expected_shape' => 'low ferry hull', 'renderer' => 'drawSeabusSilhouette', 'intensity_min' => 0.28, 'intensity_max' => 0.76, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'gull_silhouettes', 'label' => 'Gull Silhouettes', 'category' => 'motion', 'priority' => 'support', 'description' => 'Subtle gull V silhouettes.', 'expected_shape' => '2-4 small V arcs', 'renderer' => 'drawGullSilhouettes', 'intensity_min' => 0.06, 'intensity_max' => 0.2, 'opening_hero' => false, 'support_only' => true ),
     );
+
+    return $registry;
+}
+
+function se_get_asmr_visual_types() {
+    return array_values( array_map( static function( $item ) { return $item['id']; }, se_get_asmr_visual_registry() ) );
 }
 
 function se_get_asmr_visual_hero_types() {
-    return array(
-        'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene',
-        'gastown_clock_silhouette', 'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk',
-        'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
-        'planetarium_dome', 'starfield_projection', 'canada_place_sails', 'seabus_silhouette',
-        'skytrain_pass_visual',
-    );
+    return array_values( array_map( static function( $item ) { return $item['id']; }, array_filter( se_get_asmr_visual_registry(), static function( $item ) { return 'hero' === ( $item['priority'] ?? '' ) && empty( $item['support_only'] ); } ) ) );
 }
 
 function se_get_asmr_visual_landmark_types() {
-    return array(
-        'gastown_clock_silhouette', 'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk',
-        'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
-        'planetarium_dome', 'starfield_projection', 'canada_place_sails', 'seabus_silhouette',
-    );
+    return array_values( array_map( static function( $item ) { return $item['id']; }, array_filter( se_get_asmr_visual_registry(), static function( $item ) { return 'landmark' === ( $item['category'] ?? '' ); } ) ) );
 }
 
 function se_get_asmr_visual_scene_types() {
-    return array( 'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene' );
+    return array_values( array_map( static function( $item ) { return $item['id']; }, array_filter( se_get_asmr_visual_registry(), static function( $item ) { return 'scene' === ( $item['category'] ?? '' ); } ) ) );
 }
 
 function se_get_asmr_visual_support_types() {
-    return array(
-        'scanline_field', 'signal_bars', 'chromatic_veil', 'pixel_grid_pulse', 'starfield_drift',
-        'wet_reflection_shimmer', 'neon_wet_reflections', 'gull_silhouettes',
-    );
+    return array_values( array_map( static function( $item ) { return $item['id']; }, array_filter( se_get_asmr_visual_registry(), static function( $item ) { return ! empty( $item['support_only'] ); } ) ) );
 }
 
 function se_get_asmr_semantic_cues( $payload ) {
@@ -1572,7 +1619,7 @@ function se_restrict_generation_plan_to_selected_motifs( $plan, $audio_layers, $
     $selected_audio = array_values( array_unique( array_map( 'sanitize_key', (array) $audio_layers ) ) );
     $selected_visual = array_values( array_unique( array_map( 'sanitize_key', (array) $visual_layers ) ) );
 
-    $visual_slots = array( 'primary_scene', 'landmark', 'motion' );
+    $visual_slots = array( 'primary_scene', 'landmark', 'motion', 'resolve_landmark' );
     foreach ( $visual_slots as $slot ) {
         $candidate = sanitize_key( $plan['visual_plan'][ $slot ] ?? '' );
         $plan['visual_plan'][ $slot ] = in_array( $candidate, $selected_visual, true ) ? $candidate : '';
@@ -1593,6 +1640,9 @@ function se_restrict_generation_plan_to_selected_motifs( $plan, $audio_layers, $
 
     if ( empty( $plan['visual_plan']['landmark'] ) || ! in_array( $plan['visual_plan']['landmark'], $selected_landmarks, true ) ) {
         $plan['visual_plan']['landmark'] = ! empty( $selected_landmarks ) ? $selected_landmarks[0] : '';
+    }
+    if ( empty( $plan['visual_plan']['resolve_landmark'] ) || ! in_array( $plan['visual_plan']['resolve_landmark'], $selected_landmarks, true ) ) {
+        $plan['visual_plan']['resolve_landmark'] = ! empty( $selected_landmarks ) ? end( $selected_landmarks ) : '';
     }
 
     if ( ! empty( $selected_landmarks ) && empty( $plan['visual_plan']['primary_scene'] ) && 1 === count( $selected_landmarks ) ) {
@@ -1644,6 +1694,71 @@ function se_build_asmr_style_tags( $decoded, $base_tags = array() ) {
     return array_values( array_unique( array_merge( $base, $broad, $hero ) ) );
 }
 
+function se_validate_visual_timeline_matches_plan( $plan, $visual_events ) {
+    $visual_plan = is_array( $plan['visual_plan'] ?? null ) ? $plan['visual_plan'] : array();
+    $events = is_array( $visual_events ) ? $visual_events : array();
+
+    $primary_scene = sanitize_key( $visual_plan['primary_scene'] ?? '' );
+    $landmark = sanitize_key( $visual_plan['landmark'] ?? '' );
+    $motion = sanitize_key( $visual_plan['motion'] ?? '' );
+    $resolve_landmark = sanitize_key( $visual_plan['resolve_landmark'] ?? '' );
+
+    $hero_types = se_get_asmr_visual_hero_types();
+    $support_types = se_get_asmr_visual_support_types();
+
+    $count_type = static function( $token ) use ( $events ) {
+        if ( ! $token ) return 0;
+        return count( array_filter( $events, static function( $event ) use ( $token ) { return sanitize_key( $event['visual_type'] ?? '' ) === $token; } ) );
+    };
+
+    $repairs = array();
+    if ( $primary_scene && 0 === $count_type( $primary_scene ) ) {
+        $repairs[] = array( 'time' => 0.2, 'duration' => 4.8, 'visual_type' => $primary_scene, 'intensity' => 0.76, 'params' => array(), 'sync_role' => 'repair_primary_scene' );
+    }
+    if ( $landmark && 0 === $count_type( $landmark ) ) {
+        $repairs[] = array( 'time' => 9.4, 'duration' => 4.8, 'visual_type' => $landmark, 'intensity' => 0.82, 'params' => array(), 'sync_role' => 'repair_landmark_hero' );
+    }
+    if ( $motion && 0 === $count_type( $motion ) ) {
+        $repairs[] = array( 'time' => 10.2, 'duration' => 3.4, 'visual_type' => $motion, 'intensity' => 0.4, 'params' => array(), 'sync_role' => 'repair_motion' );
+    }
+    if ( $resolve_landmark && 0 === $count_type( $resolve_landmark ) ) {
+        $repairs[] = array( 'time' => 15.3, 'duration' => 4.1, 'visual_type' => $resolve_landmark, 'intensity' => 0.78, 'params' => array(), 'sync_role' => 'repair_resolve_landmark' );
+    }
+
+    $with_repairs = array_merge( $events, $repairs );
+
+    $beat_windows = array(
+        array( 'label' => 'Opening', 't0' => 0.0, 't1' => 5.0 ),
+        array( 'label' => 'Arrival', 't0' => 5.0, 't1' => 10.0 ),
+        array( 'label' => 'Lift', 't0' => 10.0, 't1' => 15.0 ),
+        array( 'label' => 'Resolve', 't0' => 15.0, 't1' => 20.5 ),
+    );
+
+    foreach ( $beat_windows as $beat ) {
+        $beat_events = array_values( array_filter( $with_repairs, static function( $event ) use ( $beat ) {
+            $time = floatval( $event['time'] ?? 0 );
+            return $time >= $beat['t0'] && $time < $beat['t1'];
+        } ) );
+        $hero_count = count( array_filter( $beat_events, static function( $event ) use ( $hero_types ) {
+            return in_array( sanitize_key( $event['visual_type'] ?? '' ), $hero_types, true );
+        } ) );
+        $support_count = count( array_filter( $beat_events, static function( $event ) use ( $support_types ) {
+            return in_array( sanitize_key( $event['visual_type'] ?? '' ), $support_types, true );
+        } ) );
+
+        if ( $support_count > ( $hero_count * 2 + 2 ) && ! empty( $beat_events ) ) {
+            foreach ( $with_repairs as $idx => $event ) {
+                if ( floatval( $event['time'] ?? 0 ) >= $beat['t0'] && floatval( $event['time'] ?? 0 ) < $beat['t1'] && in_array( sanitize_key( $event['visual_type'] ?? '' ), $support_types, true ) ) {
+                    $with_repairs[ $idx ]['intensity'] = min( 0.18, floatval( $event['intensity'] ?? 0.2 ) );
+                }
+            }
+        }
+    }
+
+    usort( $with_repairs, static function( $a, $b ) { return (float) $a['time'] <=> (float) $b['time']; } );
+    return $with_repairs;
+}
+
 function se_compile_visual_events_from_plan( $plan, $runtime ) {
     $runtime = max( 10, min( 30, floatval( $runtime ) ) );
     $hero_types = se_get_asmr_visual_hero_types();
@@ -1656,56 +1771,46 @@ function se_compile_visual_events_from_plan( $plan, $runtime ) {
     $motion = sanitize_key( $visual_plan['motion'] ?? '' );
     $texture = sanitize_key( $visual_plan['texture'] ?? '' );
     $overlay = sanitize_key( $visual_plan['overlay_family'] ?? '' );
+    $resolve_landmark = sanitize_key( $visual_plan['resolve_landmark'] ?? '' );
+
+    if ( ! $resolve_landmark ) {
+        $resolve_landmark = $landmark;
+    }
 
     $events = array();
-    $opening_hero = $primary_scene && in_array( $primary_scene, $hero_types, true ) ? $primary_scene : '';
-    if ( ! $opening_hero && $landmark && in_array( $landmark, $hero_types, true ) ) {
-        $opening_hero = $landmark;
-    }
-    $arrival_hero = '';
-    if ( $landmark && in_array( $landmark, $hero_types, true ) && $landmark !== $opening_hero ) {
-        $arrival_hero = $landmark;
-    } elseif ( $primary_scene && in_array( $primary_scene, $hero_types, true ) && $primary_scene !== $opening_hero ) {
-        $arrival_hero = $primary_scene;
-    }
 
     if ( $atmosphere ) {
-        $events[] = array( 'time' => 0.0, 'duration' => min( $runtime - 0.2, 7.6 ), 'visual_type' => $atmosphere, 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'opening_atmosphere' );
-    }
-    if ( $opening_hero ) {
-        $events[] = array( 'time' => 0.2, 'duration' => 5.4, 'visual_type' => $opening_hero, 'intensity' => 0.7, 'params' => array(), 'sync_role' => 'opening_scene' );
-    }
-    if ( $overlay && in_array( $overlay, $support_types, true ) ) {
-        $events[] = array( 'time' => 0.4, 'duration' => 3.2, 'visual_type' => $overlay, 'intensity' => 0.1, 'params' => array(), 'sync_role' => 'opening_support' );
+        $events[] = array( 'time' => 0.0, 'duration' => min( $runtime - 0.2, 7.6 ), 'visual_type' => $atmosphere, 'intensity' => 0.3, 'params' => array(), 'sync_role' => 'opening_atmosphere' );
     }
 
-    // Arrival: introduce the other hero, otherwise motion.
-    if ( $arrival_hero ) {
-        $events[] = array( 'time' => 4.6, 'duration' => 4.2, 'visual_type' => $arrival_hero, 'intensity' => 0.72, 'params' => array(), 'sync_role' => 'arrival_landmark' );
-    } elseif ( $motion ) {
-        $events[] = array( 'time' => 5.0, 'duration' => 3.6, 'visual_type' => $motion, 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'arrival_motion' );
-    }
-
-    // Lift: strongest reveal.
-    if ( $landmark && in_array( $landmark, $hero_types, true ) ) {
-        $events[] = array( 'time' => 9.4, 'duration' => 5.0, 'visual_type' => $landmark, 'intensity' => 0.82, 'params' => array(), 'sync_role' => 'lift_reveal' );
-    }
-    if ( $motion ) {
-        $events[] = array( 'time' => 10.2, 'duration' => 3.4, 'visual_type' => $motion, 'intensity' => 0.46, 'params' => array(), 'sync_role' => 'lift_motion' );
-    }
-    if ( $texture ) {
-        $events[] = array( 'time' => 10.0, 'duration' => 4.0, 'visual_type' => $texture, 'intensity' => 0.3, 'params' => array(), 'sync_role' => 'lift_texture' );
-    }
-
-    // Resolve: simplify, no new landmark.
     if ( $primary_scene && in_array( $primary_scene, $hero_types, true ) ) {
-        $events[] = array( 'time' => 15.2, 'duration' => 4.3, 'visual_type' => $primary_scene, 'intensity' => 0.48, 'params' => array(), 'sync_role' => 'resolve_return' );
-    } elseif ( $atmosphere ) {
-        $events[] = array( 'time' => 15.4, 'duration' => 4.1, 'visual_type' => $atmosphere, 'intensity' => 0.28, 'params' => array(), 'sync_role' => 'resolve_bed' );
+        $events[] = array( 'time' => 0.2, 'duration' => 5.2, 'visual_type' => $primary_scene, 'intensity' => 0.76, 'params' => array(), 'sync_role' => 'opening_scene_hero' );
     }
 
-    usort( $events, static function( $a, $b ) { return (float) $a['time'] <=> (float) $b['time']; } );
-    return $events;
+    if ( $overlay && in_array( $overlay, $support_types, true ) ) {
+        $events[] = array( 'time' => 0.4, 'duration' => 3.2, 'visual_type' => $overlay, 'intensity' => 0.08, 'params' => array(), 'sync_role' => 'opening_support' );
+    }
+
+    if ( $landmark && in_array( $landmark, $hero_types, true ) ) {
+        $events[] = array( 'time' => 5.0, 'duration' => 4.2, 'visual_type' => $landmark, 'intensity' => 0.78, 'params' => array(), 'sync_role' => 'arrival_landmark_hero' );
+        $events[] = array( 'time' => 9.4, 'duration' => 5.0, 'visual_type' => $landmark, 'intensity' => 0.86, 'params' => array(), 'sync_role' => 'lift_landmark_hero' );
+    }
+
+    if ( $motion ) {
+        $events[] = array( 'time' => 10.2, 'duration' => 3.4, 'visual_type' => $motion, 'intensity' => 0.42, 'params' => array(), 'sync_role' => 'lift_motion' );
+    }
+
+    if ( $texture ) {
+        $events[] = array( 'time' => 10.0, 'duration' => 4.0, 'visual_type' => $texture, 'intensity' => 0.2, 'params' => array(), 'sync_role' => 'lift_texture' );
+    }
+
+    if ( $resolve_landmark && in_array( $resolve_landmark, $hero_types, true ) ) {
+        $events[] = array( 'time' => 15.2, 'duration' => 4.3, 'visual_type' => $resolve_landmark, 'intensity' => 0.74, 'params' => array(), 'sync_role' => 'resolve_landmark_hero' );
+    } elseif ( $primary_scene && in_array( $primary_scene, $hero_types, true ) ) {
+        $events[] = array( 'time' => 15.2, 'duration' => 4.3, 'visual_type' => $primary_scene, 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'resolve_return' );
+    }
+
+    return se_validate_visual_timeline_matches_plan( $plan, $events );
 }
 
 function se_compile_audio_events_from_plan( $plan, $runtime ) {
