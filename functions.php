@@ -932,7 +932,21 @@ function se_get_asmr_visual_types() {
         'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof',
         'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
         'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails',
-        'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette',
+        'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette', 'gull_silhouettes',
+    );
+}
+
+function se_get_asmr_visual_hero_types() {
+    return array(
+        'waterfront_scene', 'north_shore_scene', 'gastown_clock_silhouette', 'lions_gate_bridge',
+        'planetarium_dome', 'science_world_dome', 'seabus_silhouette', 'skytrain_pass_visual',
+    );
+}
+
+function se_get_asmr_visual_support_types() {
+    return array(
+        'scanline_field', 'signal_bars', 'chromatic_veil', 'pixel_grid_pulse', 'starfield_drift',
+        'wet_reflection_shimmer', 'neon_wet_reflections', 'gull_silhouettes',
     );
 }
 
@@ -1224,7 +1238,8 @@ function se_get_asmr_visual_layers_allowed() {
         'cobblestone_perspective', 'brick_wall_parallax', 'puddle_reflections', 'streetlamp_halo_row',
         'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
         'scanline_field', 'glitch_flash', 'signal_bars', 'chromatic_veil', 'neon_sign_flicker', 'ocean_surface_shimmer', 'seabus_silhouette',
-        'granville_neon_marquee', 'traffic_light_glow', 'northshore_mountain_ridge', 'mountain_mist_layers', 'volumetric_fog'
+        'granville_neon_marquee', 'traffic_light_glow', 'northshore_mountain_ridge', 'mountain_mist_layers', 'volumetric_fog',
+        'pixel_grid_pulse', 'starfield_drift', 'wet_reflection_shimmer', 'neon_wet_reflections', 'gull_silhouettes'
     );
 }
 
@@ -1242,8 +1257,8 @@ function se_get_asmr_scene_visual_support_map() {
     return array(
         'gastown_scene' => array( 'gastown_clock_silhouette', 'streetlamp_halo_row' ),
         'granville_scene' => array( 'granville_neon_marquee', 'puddle_reflections' ),
-        'north_shore_scene' => array( 'northshore_mountain_ridge', 'mountain_mist_layers' ),
-        'waterfront_scene' => array( 'ocean_surface_shimmer', 'seabus_silhouette', 'canada_place_sails' ),
+        'north_shore_scene' => array( 'northshore_mountain_ridge', 'mountain_mist_layers', 'gull_silhouettes' ),
+        'waterfront_scene' => array( 'ocean_surface_shimmer', 'seabus_silhouette', 'canada_place_sails', 'gull_silhouettes' ),
     );
 }
 
@@ -1513,6 +1528,108 @@ function se_extract_json_object( $raw ) {
     return substr( $raw, $start, $end - $start + 1 );
 }
 
+
+function se_get_asmr_default_story_beats( $runtime ) {
+    $runtime = max( 10, min( 30, floatval( $runtime ) ) );
+    return array(
+        array( 't0' => 0.0, 't1' => min( 4.0, $runtime * 0.2 ), 'beat' => 'Opening', 'intent' => 'Set the atmosphere and establish the primary subject.' ),
+        array( 't0' => min( 4.0, $runtime * 0.2 ), 't1' => min( 9.0, $runtime * 0.45 ), 'beat' => 'Arrival', 'intent' => 'Introduce movement or a location reveal with restraint.' ),
+        array( 't0' => min( 9.0, $runtime * 0.45 ), 't1' => min( 15.0, $runtime * 0.75 ), 'beat' => 'Lift', 'intent' => 'Deliver the strongest reveal and synchronized signature cue.' ),
+        array( 't0' => min( 15.0, $runtime * 0.75 ), 't1' => $runtime, 'beat' => 'Resolve', 'intent' => 'Simplify and settle back into the primary world.' ),
+    );
+}
+
+function se_compile_visual_events_from_plan( $plan, $runtime ) {
+    $runtime = max( 10, min( 30, floatval( $runtime ) ) );
+    $hero_types = se_get_asmr_visual_hero_types();
+    $support_types = se_get_asmr_visual_support_types();
+    $visual_plan = is_array( $plan['visual_plan'] ?? null ) ? $plan['visual_plan'] : array();
+
+    $primary_scene = sanitize_key( $visual_plan['primary_scene'] ?? '' );
+    $atmosphere = sanitize_key( $visual_plan['atmosphere'] ?? '' );
+    $landmark = sanitize_key( $visual_plan['landmark'] ?? '' );
+    $motion = sanitize_key( $visual_plan['motion'] ?? '' );
+    $texture = sanitize_key( $visual_plan['texture'] ?? '' );
+    $overlay = sanitize_key( $visual_plan['overlay_family'] ?? '' );
+
+    $events = array();
+    if ( ! $primary_scene ) { $primary_scene = 'waterfront_scene'; }
+    if ( ! $atmosphere ) { $atmosphere = 'harbor_mist'; }
+    if ( ! $motion ) { $motion = 'gull_silhouettes'; }
+    if ( $atmosphere ) {
+        $events[] = array( 'time' => 0.0, 'duration' => min( $runtime - 0.2, 7.6 ), 'visual_type' => $atmosphere, 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'opening_atmosphere' );
+    }
+    if ( $primary_scene && in_array( $primary_scene, $hero_types, true ) ) {
+        $events[] = array( 'time' => 0.2, 'duration' => 5.4, 'visual_type' => $primary_scene, 'intensity' => 0.64, 'params' => array(), 'sync_role' => 'opening_scene' );
+    }
+    if ( $overlay && in_array( $overlay, $support_types, true ) ) {
+        $events[] = array( 'time' => 0.4, 'duration' => 3.2, 'visual_type' => $overlay, 'intensity' => 0.22, 'params' => array(), 'sync_role' => 'opening_support' );
+    }
+
+    // Arrival: landmark OR motion.
+    if ( $landmark && in_array( $landmark, $hero_types, true ) ) {
+        $events[] = array( 'time' => 4.6, 'duration' => 4.2, 'visual_type' => $landmark, 'intensity' => 0.68, 'params' => array(), 'sync_role' => 'arrival_landmark' );
+    } elseif ( $motion ) {
+        $events[] = array( 'time' => 5.0, 'duration' => 3.6, 'visual_type' => $motion, 'intensity' => 0.5, 'params' => array(), 'sync_role' => 'arrival_motion' );
+    }
+
+    // Lift: strongest reveal.
+    if ( $landmark && in_array( $landmark, $hero_types, true ) ) {
+        $events[] = array( 'time' => 9.4, 'duration' => 5.0, 'visual_type' => $landmark, 'intensity' => 0.82, 'params' => array(), 'sync_role' => 'lift_reveal' );
+    }
+    if ( $motion ) {
+        $events[] = array( 'time' => 10.2, 'duration' => 3.4, 'visual_type' => $motion, 'intensity' => 0.46, 'params' => array(), 'sync_role' => 'lift_motion' );
+    }
+    if ( $texture ) {
+        $events[] = array( 'time' => 10.0, 'duration' => 4.0, 'visual_type' => $texture, 'intensity' => 0.3, 'params' => array(), 'sync_role' => 'lift_texture' );
+    }
+
+    // Resolve: simplify, no new landmark.
+    if ( $primary_scene && in_array( $primary_scene, $hero_types, true ) ) {
+        $events[] = array( 'time' => 15.2, 'duration' => 4.3, 'visual_type' => $primary_scene, 'intensity' => 0.48, 'params' => array(), 'sync_role' => 'resolve_return' );
+    } elseif ( $atmosphere ) {
+        $events[] = array( 'time' => 15.4, 'duration' => 4.1, 'visual_type' => $atmosphere, 'intensity' => 0.28, 'params' => array(), 'sync_role' => 'resolve_bed' );
+    }
+
+    if ( 'gull_silhouettes' === $motion ) {
+        $events[] = array( 'time' => 12.8, 'duration' => 2.4, 'visual_type' => 'gull_silhouettes', 'intensity' => 0.24, 'params' => array(), 'sync_role' => 'support_motion' );
+    }
+
+    usort( $events, static function( $a, $b ) { return (float) $a['time'] <=> (float) $b['time']; } );
+    return $events;
+}
+
+function se_compile_audio_events_from_plan( $plan, $runtime ) {
+    $runtime = max( 10, min( 30, floatval( $runtime ) ) );
+    $audio_plan = is_array( $plan['audio_plan'] ?? null ) ? $plan['audio_plan'] : array();
+    $primary_bed = sanitize_key( $audio_plan['primary_bed'] ?? '' );
+    $secondary_bed = sanitize_key( $audio_plan['secondary_bed'] ?? '' );
+    $transit_cue = sanitize_key( $audio_plan['transit_cue'] ?? '' );
+    $signature_cues = array_slice( array_values( array_filter( array_map( 'sanitize_key', (array) ( $audio_plan['signature_cues'] ?? array() ) ) ) ), 0, 3 );
+
+    $events = array();
+    if ( ! $primary_bed ) { $primary_bed = 'ocean_waves'; }
+    if ( empty( $signature_cues ) ) { $signature_cues = array( 'seabus_horn' ); }
+    if ( $primary_bed ) {
+        $events[] = array( 'time' => 0.0, 'duration' => min( $runtime - 0.1, 16.8 ), 'engine' => $primary_bed, 'intensity' => 0.4, 'params' => array( 'fade_out' => 2.6 ), 'sync_role' => 'primary_bed' );
+    }
+    if ( $secondary_bed ) {
+        $events[] = array( 'time' => 4.3, 'duration' => 8.0, 'engine' => $secondary_bed, 'intensity' => 0.24, 'params' => array(), 'sync_role' => 'secondary_bed' );
+    }
+    if ( ! empty( $signature_cues ) ) {
+        $cue_times = array( 5.2, 10.9, 17.2 );
+        foreach ( $signature_cues as $i => $cue ) {
+            $events[] = array( 'time' => $cue_times[ $i ], 'duration' => 2.2 + ( $i * 0.4 ), 'engine' => $cue, 'intensity' => 0.48 - ( $i * 0.06 ), 'params' => array(), 'sync_role' => ( 1 === $i ? 'lift_signature' : 'signature_cue' ) );
+        }
+    }
+    if ( $transit_cue ) {
+        $events[] = array( 'time' => 8.8, 'duration' => 2.0, 'engine' => $transit_cue, 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'transit_cue' );
+    }
+
+    usort( $events, static function( $a, $b ) { return (float) $a['time'] <=> (float) $b['time']; } );
+    return $events;
+}
+
 function se_validate_asmr_response( $decoded ) {
     if ( ! is_array( $decoded ) ) {
         return new WP_Error( 'asmr_invalid_json', __( 'ASMR Lab returned malformed JSON. Please regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
@@ -1534,12 +1651,10 @@ function se_validate_asmr_response( $decoded ) {
         'presentation_note',
     );
 
-    $keys = array_keys( $decoded );
-    sort( $keys );
-    $required_sorted = $required;
-    sort( $required_sorted );
-    if ( $keys !== $required_sorted ) {
-        return new WP_Error( 'asmr_shape_error', __( 'ASMR Lab response shape was unexpected. Please regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
+    foreach ( $required as $required_key ) {
+        if ( ! array_key_exists( $required_key, $decoded ) ) {
+            return new WP_Error( 'asmr_shape_error', __( 'ASMR Lab response shape was unexpected. Please regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
+        }
     }
 
     $decoded['runtime_seconds'] = max( 10, min( 30, absint( $decoded['runtime_seconds'] ) ) );
@@ -1707,66 +1822,25 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     $payload['motif_brief'] = se_get_asmr_motif_brief( $payload );
 
     $allowed_engines = implode( ', ', se_get_asmr_allowed_engines() );
-    $system_prompt = 'You are ASMR Lab, a retro-futurist sensory film composer for a browser performance engine. '
-        . 'Generate an original 10-30 second procedural audiovisual score that feels composed, eerie, spiritual, tactile, and cinematic when prompted. '
-        . 'Return ONE strict JSON object and no markdown. '
-        . 'Use exactly and only these top-level keys: title, runtime_seconds, hook, concept_summary, logline, story_beats, style_tags, audio_events, visual_events, sync_points, end_card, edit_rhythm, presentation_note. '
-        . 'audio_events objects must include: time, duration, engine, intensity, params, sync_role. '
-        . 'ASMR timing rules: bed layers (ocean_waves, rain_close, rain_roof, crowd_murmur, harbor_fog_bed) should usually run 60-100% of runtime_seconds with soft fades. '
-        . 'Horns and bells should be sustained and calming with typical durations between 2.5-6.0s, slow attack, and long release. '
-        . 'Avoid tiny durations under 0.5s except intentional micro-textures; prioritize long calming layers. '
-        . 'params must always be a JSON object (use {} when none) and never an array. '
-        . 'visual_events objects must include: time, duration, visual_type, intensity, params, sync_role. '
-        . 'sync_points objects must include: time, cue, importance. story_beats must be an array of exactly 4 objects with: t0, t1, beat, intent (Opening, Arrival, Ritual Lift, Resolve). '
-        . 'Compose this as a calm ASMR soundscape with a narrative arc. Beds should run long. Signature cues should be sparse and sustained. Avoid rapid-fire event stacking. Distribute reveals across the full runtime. If multiple landmarks/scenes are selected, choose one primary reveal per beat rather than showing all of them at once. '
-        . 'end_card must include: use_end_card, text, reveal_style. '
-        . 'edit_rhythm must include: pacing_note, silence_strategy, release_strategy. '
-        . 'Only use these engine names: ' . $allowed_engines . '. '
+    $system_prompt = 'You are ASMR Lab. Return strict JSON only. Compose a disciplined 20-second cinematic beat plan first, not an event-dense timeline. '
+        . 'Use top-level keys: title, runtime_seconds, hook, concept_summary, logline, story_beats, style_tags, generation_plan, audio_events, visual_events, sync_points, end_card, edit_rhythm, presentation_note. '
+        . 'generation_plan must include title, logline, story_beats (Opening, Arrival, Lift, Resolve), visual_plan(primary_scene, atmosphere, landmark, motion, texture, overlay_family), audio_plan(primary_bed, secondary_bed, signature_cues 0-3, transit_cue). '
+        . 'Keep visual_plan and audio_plan sparse with null or one value per slot. signature_cues max 3. '
+        . 'You may include optional audio_events and visual_events, but keep concise because deterministic compiler will build final timeline. '
+        . 'Only use engine names: ' . $allowed_engines . '. '
         . 'Allowed visual_type values: ' . implode( ', ', se_get_asmr_visual_types() ) . '. '
-        . 'Critical visual pacing rules: first frame must show a layered chamber state (background + atmosphere + focal hint). Include meaningful opening visual event in 0.0-0.8s and at least one clear focal event in 0.8-2.0s. '
-        . 'Do not back-load all action: craft a textured midsection with evolving layers, at least one pre-climax escalation in the middle third, and at least one bloom/reveal in the final third. '
-        . 'Visual event score should be dense but intentional, with practical browser-safe durations and avoid micro-spam faster than 0.05s. '
-        . 'Audio direction: prioritize eerie depth, layered atmospheres, tactile details, ritual/spiritual/cyber-sacred motion, softened onset, and a stronger buildup into bloom instead of blunt starts. '
-        . 'Open with soft but present ambience in first 0.0-0.4s; avoid harsh transient attacks at start unless explicitly justified by the concept. '
-        . 'Ensure first audible event and first prominent visual motion are synchronized or intentionally near-synchronized within ~0.12s; provide strong audiovisual coupling in first 5 seconds. '
-        . 'Event times must be practical for direct browser playback: finite, non-negative, sorted, and concentrated inside runtime_seconds. '
-        . 'Shape a clear tension to bloom to reveal arc, with layered atmosphere and ceremonial build when concept or mood suggests ritual awakening. '
-        . 'Use micro-events for intimacy, then earned bloom moments instead of random loudness spikes. '
-        . 'Visual score should emphasize atmospheric symbolic language, depth, compositional foreground/midground/background layering, glow, parallax-like drift, and terminal/sacred reveal language when appropriate. '
-        . 'sync_points must map to real event moments and reinforce audio-visual unity, especially in the first 3 seconds. '
-        . 'When motif tokens imply a place, ground the package in concrete materials, atmospheric lighting, and local acoustics. '
-        . 'Prompt interpretation priority: selected visual motifs > selected audio motifs > named object > mood adjectives. '
-        . 'Do not schedule all selected motifs in the first quarter. Distribute selected motifs across the full runtime. Prefer one dominant reveal at a time. If planetarium visuals are selected, use only visual motifs and no planetarium sound motif. '
-        . 'For Gastown/Vancouver scenes, favor steam clock cues, harbor fog bed, amber streetlamp halos, wet cobblestone reflections, brick facade texture, neon-on-wet shimmer, and winter hush pacing where relevant. '
- . 'Vancouver sound palette guide: gastown_clock_whistle=steam whistle toot, iconic Gastown clock, breathy warm and sustained; church_bells=distant cathedral bells with long warm decay; harbour_noon_horn=harbour ship horn at noon, low and foggy with gentle bloom; ocean_waves=waterfront waves, soft wide bed with smooth fade; skytrain_pass=SkyTrain whoosh and rail hum; seabus_horn=short soft ferry foghorn; nine_oclock_gun=low ceremonial boom. '
-        . 'When using signature engines (harbour_noon_horn, gastown_clock_whistle, church_bells, ocean_waves, seabus_horn), include optional shaping params when meaningful so synthesis can be tuned per scene. '
-        . 'Avoid generic abstract output when prompts include specific motif or geography terms. '
-        . 'The result should feel like an authored short sensory micro-film, not a debug demo. '
-        . 'Every beat transition must be marked by a signature cue pair (audio + visual) from selected motifs when story_mode is true. Do not include prose outside JSON.';
-
-    if ( $payload['sound_only'] ) {
-        $system_prompt .= ' If sound_only is true, keep other fields concise but still present and focus creative detail in audio_events.';
-    }
+        . 'Support-only visuals must not be hero reveals: ' . implode( ', ', se_get_asmr_visual_support_types() ) . '. '
+        . 'Hero visuals are: ' . implode( ', ', se_get_asmr_visual_hero_types() ) . '. '
+        . 'story_beats must have 4 entries with t0,t1,beat,intent and timings for 0-4,4-9,9-15,15-20 when runtime is 20. '
+        . 'Resolve must simplify and avoid introducing a new landmark. Keep one dominant reveal at a time.';
 
     $response = se_openai_chat(
         array(
-            array(
-                'role'    => 'system',
-                'content' => $system_prompt,
-            ),
-            array(
-                'role'    => 'user',
-                'content' => wp_json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
-            ),
+            array( 'role' => 'system', 'content' => $system_prompt ),
+            array( 'role' => 'user', 'content' => wp_json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ),
         ),
-        array(
-            'model'       => 'gpt-4o',
-            'temperature' => 0.9,
-            'max_tokens'  => 1800,
-        ),
-        array(
-            'timeout' => 40,
-        )
+        array( 'model' => 'gpt-4o', 'temperature' => 0.7, 'max_tokens' => 1600 ),
+        array( 'timeout' => 40 )
     );
 
     if ( is_wp_error( $response ) ) {
@@ -1777,20 +1851,44 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     $raw = trim( $response['choices'][0]['message']['content'] ?? '' );
     $json = se_extract_json_object( $raw );
     $decoded = json_decode( $json, true );
-    if ( JSON_ERROR_NONE !== json_last_error() ) {
+    if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $decoded ) ) {
         return new WP_Error( 'asmr_decode_error', __( 'The lab output was malformed. Please regenerate.', 'suzys-music-theme' ), array( 'status' => 500 ) );
     }
+
+    $runtime = max( 10, min( 30, absint( $decoded['runtime_seconds'] ?? $payload['duration'] ) ) );
+    $plan = is_array( $decoded['generation_plan'] ?? null ) ? $decoded['generation_plan'] : array();
+
+    $decoded['title'] = sanitize_text_field( $decoded['title'] ?? 'ASMR Lab Sequence' );
+    $decoded['runtime_seconds'] = $runtime;
+    $decoded['hook'] = sanitize_text_field( $decoded['hook'] ?? 'Cinematic sensory short.' );
+    $decoded['concept_summary'] = sanitize_text_field( $decoded['concept_summary'] ?? 'Disciplined beat-driven structure.' );
+    $decoded['logline'] = sanitize_text_field( $decoded['logline'] ?? ( $plan['logline'] ?? '' ) );
+    $decoded['story_beats'] = is_array( $decoded['story_beats'] ?? null ) && count( $decoded['story_beats'] ) === 4 ? $decoded['story_beats'] : se_get_asmr_default_story_beats( $runtime );
+    $decoded['style_tags'] = array_values( array_unique( array_filter( array_merge( (array) ( $decoded['style_tags'] ?? array() ), array( 'retro_arcade_crt', 'beat_compiled' ), $audio_layers, $visual_layers ) ) ) );
+    $decoded['audio_events'] = se_compile_audio_events_from_plan( $plan, $runtime );
+    $decoded['visual_events'] = se_compile_visual_events_from_plan( $plan, $runtime );
+    $decoded['sync_points'] = array(
+        array( 'time' => 0.2, 'cue' => 'Opening anchor', 'importance' => 'high' ),
+        array( 'time' => 5.2, 'cue' => 'Arrival handoff', 'importance' => 'medium' ),
+        array( 'time' => 10.2, 'cue' => 'Lift reveal', 'importance' => 'high' ),
+        array( 'time' => 17.2, 'cue' => 'Resolve cue', 'importance' => 'medium' ),
+    );
+    $decoded['end_card'] = is_array( $decoded['end_card'] ?? null ) ? $decoded['end_card'] : array( 'use_end_card' => true, 'text' => 'VANCOUVER SIGNAL', 'reveal_style' => 'event_card' );
+    $decoded['edit_rhythm'] = is_array( $decoded['edit_rhythm'] ?? null ) ? $decoded['edit_rhythm'] : array( 'pacing_note' => 'Beat-plan compiled timeline with one reveal at a time.', 'silence_strategy' => 'Leave breathing space between reveals.', 'release_strategy' => 'Resolve simplifies to core bed and subject.' );
+    $decoded['presentation_note'] = sanitize_text_field( $decoded['presentation_note'] ?? 'Compiled from generation_plan for controlled cinematic structure.' );
+    $decoded['generation_plan'] = $plan;
 
     $validated = se_validate_asmr_response( $decoded );
     if ( is_wp_error( $validated ) ) {
         return $validated;
     }
 
-    $validated = se_enrich_asmr_event_density( se_apply_asmr_semantic_cues( $validated, $payload ) );
-    $validated = se_inject_asmr_vancouver_anchors( $validated, $payload );
+    $validated['generation_plan'] = $plan;
+    $validated = se_apply_asmr_semantic_cues( $validated, $payload );
 
     return rest_ensure_response( $validated );
 }
+
 
 // =========================================
 // 9. SECURITY HARDENING

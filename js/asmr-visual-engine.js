@@ -16,7 +16,7 @@
     'rain_streaks', 'puddle_reflections',
     'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes',
     'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails',
-    'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette'
+    'gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene', 'clear_cold_shimmer', 'ocean_surface_shimmer', 'seabus_silhouette', 'gull_silhouettes'
   ];
 
   function clamp(value, min, max) {
@@ -304,6 +304,7 @@
       const weirdNorm = (weirdness - 1) / 9;
       let distortion = 0.04 + (0.18 - 0.04) * weirdNorm;
       const activeEvents = [];
+      const supportOverlays = ['scanline_field', 'signal_bars', 'pixel_grid_pulse', 'chromatic_veil'];
 
       this.timeline.visualEvents.forEach((event) => {
         const progress = this.eventProgress(event, t);
@@ -319,12 +320,22 @@
       this.drawBaseChamber(ctx, width, height, t, normalized);
 
       activeEvents.filter((item) => atmosphereTypes.includes(item.event.visual_type)).forEach((item) => {
-        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
+        let intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
+        if ((hasLandmark || hasPlanetarium) && supportOverlays.includes(item.event.visual_type)) {
+          intensity *= 0.28;
+        }
         this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
       });
 
+      const dominantSupport = activeEvents.filter((item) => supportOverlays.includes(item.event.visual_type)).slice(0, 2).map((item) => item.event.visual_type);
       activeEvents.filter((item) => !atmosphereTypes.includes(item.event.visual_type)).forEach((item) => {
-        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
+        let intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
+        if ((hasLandmark || hasPlanetarium) && supportOverlays.includes(item.event.visual_type)) {
+          intensity *= 0.28;
+        }
+        if (supportOverlays.includes(item.event.visual_type) && !dominantSupport.includes(item.event.visual_type)) {
+          intensity *= 0.55;
+        }
         this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
       });
 
@@ -1055,16 +1066,40 @@
         }
 
         case 'lions_gate_bridge': {
-          const y = h * 0.56;
-          ctx.strokeStyle = `rgba(176,208,224,${0.26 + intensity * 0.3})`;
-          ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.moveTo(w * 0.18, y); ctx.lineTo(w * 0.82, y); ctx.stroke();
-          ctx.fillStyle = `rgba(120,154,180,${0.24 + intensity * 0.26})`;
-          ctx.fillRect(w * 0.2, h * 0.36, w * 0.03, h * 0.2);
-          ctx.fillRect(w * 0.77, h * 0.36, w * 0.03, h * 0.2);
-          for (let i = 0; i < 7; i += 1) {
-            const x = w * (0.23 + i * 0.08);
-            ctx.beginPath(); ctx.moveTo(x, h * 0.38); ctx.lineTo(x, y); ctx.stroke();
+          const deckY = h * 0.58;
+          const leftTowerX = w * 0.34;
+          const rightTowerX = w * 0.66;
+          const towerTop = h * 0.28;
+          const towerBottom = h * 0.58;
+          ctx.strokeStyle = `rgba(190,220,238,${0.28 + intensity * 0.34})`;
+          ctx.lineWidth = 2;
+
+          ctx.beginPath();
+          ctx.moveTo(w * 0.16, deckY);
+          ctx.lineTo(w * 0.84, deckY);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(leftTowerX, towerBottom);
+          ctx.lineTo(leftTowerX, towerTop);
+          ctx.moveTo(rightTowerX, towerBottom);
+          ctx.lineTo(rightTowerX, towerTop);
+          ctx.stroke();
+
+          const cableLift = 0.05 + intensity * 0.03;
+          ctx.beginPath();
+          ctx.moveTo(w * 0.2, deckY - h * 0.01);
+          ctx.bezierCurveTo(w * 0.3, deckY - h * cableLift, w * 0.7, deckY - h * cableLift, w * 0.8, deckY - h * 0.01);
+          ctx.stroke();
+
+          const suspenders = 10;
+          for (let i = 0; i <= suspenders; i += 1) {
+            const x = w * (0.24 + (i / suspenders) * 0.52);
+            const topY = deckY - h * (0.01 + Math.sin((i / suspenders) * Math.PI) * cableLift);
+            ctx.beginPath();
+            ctx.moveTo(x, topY);
+            ctx.lineTo(x, deckY);
+            ctx.stroke();
           }
           break;
         }
@@ -1138,6 +1173,23 @@
           }
           break;
         }
+
+        case 'gull_silhouettes': {
+          ctx.strokeStyle = `rgba(214,232,244,${0.1 + intensity * 0.12})`;
+          ctx.lineWidth = 1.6;
+          const gulls = 2 + Math.round(intensity * 2);
+          for (let i = 0; i < gulls; i += 1) {
+            const gx = w * (0.2 + i * 0.2) + Math.sin(normalized * 2 + i) * 18;
+            const gy = h * (0.18 + (i % 2) * 0.06) + Math.cos(normalized * 1.5 + i) * 6;
+            ctx.beginPath();
+            ctx.moveTo(gx - 8, gy);
+            ctx.quadraticCurveTo(gx - 2, gy - 6, gx + 4, gy);
+            ctx.quadraticCurveTo(gx + 10, gy - 6, gx + 16, gy);
+            ctx.stroke();
+          }
+          break;
+        }
+
         default:
           break;
       }
