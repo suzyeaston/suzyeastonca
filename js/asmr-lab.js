@@ -156,13 +156,27 @@
     if (concept) concept.textContent = `${data.title} (${data.runtime_seconds}s) — ${data.hook}\n${data.concept_summary}`;
     if (storyBeats) {
       storyBeats.innerHTML = '';
-      (Array.isArray(data.story_beats) ? data.story_beats : []).forEach((beat) => {
+      const labelOrder = ['Opening', 'Arrival', 'Lift', 'Resolve'];
+      (Array.isArray(data.story_beats) ? data.story_beats : []).forEach((beat, idx) => {
         const li = document.createElement('li');
         const t0 = Number(beat.t0 || 0).toFixed(1);
         const t1 = Number(beat.t1 || 0).toFixed(1);
-        li.textContent = `${t0}s–${t1}s · ${beat.beat || 'Beat'} — ${beat.intent || ''}`.trim();
+        const label = labelOrder[idx] || beat.beat || 'Beat';
+        li.textContent = `${label} (${t0}s–${t1}s): ${beat.intent || beat.beat || ''}`.trim();
         storyBeats.appendChild(li);
       });
+
+      const plan = data.generation_plan || {};
+      const vPlan = plan.visual_plan || {};
+      const aPlan = plan.audio_plan || {};
+      const summary = [
+        `Primary scene: ${vPlan.primary_scene || '—'}`,
+        `Landmark: ${vPlan.landmark || '—'}`,
+        `Signature cues: ${Array.isArray(aPlan.signature_cues) && aPlan.signature_cues.length ? aPlan.signature_cues.join(', ') : '—'}`
+      ];
+      const li = document.createElement('li');
+      li.textContent = summary.join(' · ');
+      storyBeats.appendChild(li);
     }
     toList(beats, data.sync_points || []);
     toList(prompts, data.style_tags || []);
