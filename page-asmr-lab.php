@@ -167,12 +167,13 @@ get_header();
             <div id="asmr-visual-atlas-grid" class="asmr-visual-atlas-grid"></div>
           </div>
           <aside class="asmr-inspector-preview" aria-live="polite">
-            <h3>Visual Preview</h3>
+            <h3 id="asmr-visual-preview-title">Visual Preview</h3>
             <p id="asmr-visual-inspector-meta" class="asmr-inspector-meta">Hover or focus a motif card to preview.</p>
             <canvas id="asmr-visual-debug-canvas" width="480" height="270"></canvas>
             <div class="asmr-inspector-preview-actions">
               <button type="button" id="asmr-pin-visual-preview" class="pixel-button tiny secondary" aria-pressed="false">Pin preview</button>
               <button type="button" id="asmr-stop-visual-preview" class="pixel-button tiny secondary">Stop</button>
+              <button type="button" id="asmr-clear-visual-preview" class="pixel-button tiny secondary">Clear preview</button>
             </div>
           </aside>
         </div>
