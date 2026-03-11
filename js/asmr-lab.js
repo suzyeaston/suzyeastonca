@@ -6,6 +6,7 @@
 
   const form = document.getElementById('asmr-lab-form');
   const statusEl = document.getElementById('asmr-status');
+  const debugStatusEl = document.getElementById('asmr-debug-status');
   const errorEl = document.getElementById('asmr-error');
   const resultsEl = document.getElementById('asmr-results');
   const previewBtn = document.getElementById('asmr-preview');
@@ -28,19 +29,7 @@
   const LINKED_VISUAL_TO_AUDIO = {
     seabus_silhouette: ['seabus_horn'],
     rain_streaks: ['rain_ambience'],
-    skytrain_pass_visual: ['skytrain_pass'],
-    gastown_scene: ['gastown_clock_whistle']
-  };
-
-  const OPTIONAL_LINK_AUDIO = {
-    gastown_scene: ['gastown_clock_whistle']
-  };
-
-  const SCENE_TO_SUPPORT_VISUALS = {
-    gastown_scene: ['gastown_clock_silhouette'],
-    granville_scene: ['puddle_reflections'],
-    north_shore_scene: ['mountain_mist_layers'],
-    waterfront_scene: ['ocean_surface_shimmer', 'seabus_silhouette']
+    skytrain_pass_visual: ['skytrain_pass']
   };
 
   function applyLayerLinking(audioLayers, visualLayers, isLinked) {
@@ -50,15 +39,8 @@
       return { audio_layers: Array.from(audioSet), visual_layers: Array.from(visualSet) };
     }
 
-    Object.entries(SCENE_TO_SUPPORT_VISUALS).forEach(([sceneToken, supportVisuals]) => {
-      if (!visualSet.has(sceneToken)) return;
-      supportVisuals.slice(0, 2).forEach((visualToken) => visualSet.add(visualToken));
-    });
-
     Object.entries(LINKED_VISUAL_TO_AUDIO).forEach(([visualToken, audioTokens]) => {
       if (!visualSet.has(visualToken)) return;
-      const isOptional = Object.prototype.hasOwnProperty.call(OPTIONAL_LINK_AUDIO, visualToken);
-      if (isOptional && !isLinked) return;
       audioTokens.forEach((audioToken) => audioSet.add(audioToken));
     });
 
@@ -149,11 +131,13 @@
     const beats = document.getElementById('asmr-beats');
     const storyBeats = document.getElementById('asmr-story-beats');
     const prompts = document.getElementById('asmr-video-prompts');
+    const activePlan = document.getElementById('asmr-active-plan');
     const edit = document.getElementById('asmr-edit-notes');
     const note = document.getElementById('asmr-presentation');
     const recipe = document.getElementById('asmr-sound-json');
 
-    if (concept) concept.textContent = `${data.title} (${data.runtime_seconds}s) — ${data.hook}\n${data.concept_summary}`;
+    if (concept) concept.textContent = `${data.title} (${data.runtime_seconds}s) — ${data.hook}
+${data.concept_summary}`;
     if (storyBeats) {
       storyBeats.innerHTML = '';
       const labelOrder = ['Opening', 'Arrival', 'Lift', 'Resolve'];
@@ -165,19 +149,27 @@
         li.textContent = `${label} (${t0}s–${t1}s): ${beat.intent || beat.beat || ''}`.trim();
         storyBeats.appendChild(li);
       });
+    }
 
+    if (activePlan) {
+      activePlan.innerHTML = '';
       const plan = data.generation_plan || {};
       const vPlan = plan.visual_plan || {};
       const aPlan = plan.audio_plan || {};
-      const summary = [
+      const planRows = [
         `Primary scene: ${vPlan.primary_scene || '—'}`,
         `Landmark: ${vPlan.landmark || '—'}`,
+        `Motion: ${vPlan.motion || '—'}`,
+        `Primary bed: ${aPlan.primary_bed || '—'}`,
         `Signature cues: ${Array.isArray(aPlan.signature_cues) && aPlan.signature_cues.length ? aPlan.signature_cues.join(', ') : '—'}`
       ];
-      const li = document.createElement('li');
-      li.textContent = summary.join(' · ');
-      storyBeats.appendChild(li);
+      planRows.forEach((row) => {
+        const li = document.createElement('li');
+        li.textContent = row;
+        activePlan.appendChild(li);
+      });
     }
+
     toList(beats, data.sync_points || []);
     toList(prompts, data.style_tags || []);
     if (edit) {
@@ -200,6 +192,13 @@
     });
   }
 
+
+  function setDebugStatus(payload) {
+    if (!debugStatusEl) return;
+    const audioCount = Array.isArray(payload.audio_layers) ? payload.audio_layers.length : 0;
+    const visualCount = Array.isArray(payload.visual_layers) ? payload.visual_layers.length : 0;
+    debugStatusEl.textContent = `Selection snapshot: audio=${audioCount}, visual=${visualCount}, link_av=${payload.link_av ? 'on' : 'off'}`;
+  }
 
   function collectFormPayload() {
     const formData = new FormData(form);
@@ -411,6 +410,7 @@
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       lastPayload = collectFormPayload();
+      setDebugStatus(lastPayload);
       try { renderData(await requestGeneration(lastPayload)); }
       catch (err) { setError(err.message || 'Generation failed.'); setStatus(''); }
     });
