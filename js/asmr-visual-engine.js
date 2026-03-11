@@ -116,10 +116,9 @@
     buildSingleVisualTimeline(visualType, runtime, options = {}) {
       const clampedRuntime = clamp(Number(runtime || 3.2), 1.2, 6);
       const intensity = clamp(Number(options.intensity || 0.85), 0.1, 1);
-      const profileTags = Array.isArray(options.style_tags) ? options.style_tags : ['debug_preview'];
       return {
-        runtime: clampedRuntime,
-        visualEvents: [{
+        runtime_seconds: clampedRuntime,
+        visual_events: [{
           time: 0,
           duration: clampedRuntime,
           visual_type: visualType,
@@ -131,10 +130,10 @@
           },
           sync_role: 'debug_single_preview'
         }],
-        syncPoints: [],
-        endCard: { use_end_card: false },
+        sync_points: [],
+        end_card: { use_end_card: false },
         title: 'Visual Debug Preview',
-        renderProfile: this.resolveRenderProfile({ style_tags: profileTags })
+        style_tags: Array.isArray(options.style_tags) ? options.style_tags : ['debug_preview']
       };
     }
 
@@ -165,10 +164,18 @@
       const preserveFrameOnStop = options.preserveFrameOnStop !== false;
 
       this.loadTimeline(this.buildSingleVisualTimeline(visualType, runtimeSeconds, options));
+      const timelineEvents = (this.timeline && Array.isArray(this.timeline.visualEvents)) ? this.timeline.visualEvents : [];
+      const hasMotifEvent = timelineEvents.some((event) => event && event.visual_type === visualType);
       this.resize();
       let pipelineOk = true;
       try {
-        this.render(Math.min(0.25, Math.max(0.08, runtimeSeconds * 0.15)));
+        const previewT = Math.min(Math.max(0.15, runtimeSeconds * 0.11), 0.2);
+        const activeAtPreviewT = timelineEvents.some((event) => {
+          const start = Number(event.time || 0);
+          const duration = Math.max(0.01, Number(event.duration || 0));
+          return event.visual_type === visualType && previewT >= start && previewT <= (start + duration);
+        });
+        this.render(activeAtPreviewT ? previewT : 0);
       } catch (err) {
         pipelineOk = false;
       }
@@ -186,9 +193,16 @@
         motifId: visualType,
         rendererMissing: false,
         pipelineOk,
-        warning: pipelineOk ? '' : 'Rendered, but no visible motif detected',
+        warning: !hasMotifEvent
+          ? 'Preview timeline missing motif event'
+          : (pipelineOk ? '' : 'Rendered, but no visible motif detected'),
+        activePreviewMotif: hasMotifEvent ? visualType : '',
+        timelineEventCount: timelineEvents.length,
         mode: loopPreview ? 'loop' : (holdLastFrame ? 'hold' : 'oneshot')
       };
+      if (!hasMotifEvent && this.debugOptions && this.debugOptions.enabled && window.console && typeof window.console.warn === 'function') {
+        window.console.warn('[ASMR] Preview timeline missing motif event for:', visualType, timelineEvents);
+      }
       return true;
     }
 
@@ -239,13 +253,19 @@
 
     enrichVisualEvents(events, runtime, syncPoints) {
       const out = Array.isArray(events) ? events.slice() : [];
-      if (!out.length || Number(out[0].time || 99) > 0.12) {
-        out.unshift({ time: 0, duration: Math.min(6, runtime * 0.42), visual_type: 'volumetric_fog', intensity: 0.46, params: {}, sync_role: 'opening_atmosphere' });
+      const debugPreviewMode = out.some((event) => event && event.params && event.params.debug_preview === true);
+      const hasValidEvents = out.some((event) => event && VISUAL_TYPES.includes(event.visual_type));
+      if ((!out.length || Number(out[0].time || 99) > 0.12) && (!debugPreviewMode || !hasValidEvents)) {
+        out.unshift({ time: 0, duration: Math.min(debugPreviewMode ? 2.4 : 6, runtime * 0.42), visual_type: 'volumetric_fog', intensity: debugPreviewMode ? 0.14 : 0.46, params: {}, sync_role: 'opening_atmosphere' });
       }
 
       const hasEarly = out.some((e) => Number(e.time || 99) <= 0.8 && Number(e.intensity || 0) >= 0.3);
       const hasEarlyHero = out.some((e) => Number(e.time || 99) <= 0.9 && ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'planetarium_dome', 'starfield_projection', 'canada_place_sails', 'gastown_clock_silhouette', 'seabus_silhouette', 'waterfront_scene', 'gastown_scene', 'granville_scene', 'north_shore_scene'].includes(e.visual_type));
-      if (!hasEarly && !hasEarlyHero) out.push({ time: 0.52, duration: 1.3, visual_type: 'pulse_orb', intensity: 0.58, params: {}, sync_role: 'early_focal' });
+      if (!debugPreviewMode && !hasEarly && !hasEarlyHero) out.push({ time: 0.52, duration: 1.3, visual_type: 'pulse_orb', intensity: 0.58, params: {}, sync_role: 'early_focal' });
+
+      if (debugPreviewMode) {
+        return out.sort((a, b) => a.time - b.time);
+      }
 
       out.sort((a, b) => a.time - b.time);
       const maxGap = Math.max(2.4, runtime * 0.2);
@@ -597,6 +617,8 @@
 
     drawBaseChamber(ctx, w, h, t, normalized) {
       const theme = (this.timeline && this.timeline.renderProfile && this.timeline.renderProfile.theme) || {};
+      const debugMinimal = this.timeline && Array.isArray(this.timeline.visualEvents)
+        && this.timeline.visualEvents.some((event) => event && event.params && (event.params.debug_preview === true || event.params.minimal_context === true));
       const horizon = h * 0.6;
       const pulse = 0.5 + 0.5 * Math.sin(t * 1.9);
 
@@ -609,13 +631,13 @@
 
       const radial = ctx.createRadialGradient(w * 0.52, h * 0.52, 20, w * 0.52, h * 0.54, Math.max(w, h) * 0.72);
       const fog = theme.fog || [74, 112, 255];
-      radial.addColorStop(0, `rgba(${fog[0]},${fog[1]},${fog[2]},${0.1 + pulse * 0.05})`);
+      radial.addColorStop(0, `rgba(${fog[0]},${fog[1]},${fog[2]},${debugMinimal ? 0.06 : (0.1 + pulse * 0.05)})`);
       radial.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = radial;
       ctx.fillRect(0, 0, w, h);
 
       ctx.strokeStyle = 'rgba(110,150,255,0.12)';
-      for (let i = 0; i < 14; i += 1) {
+      for (let i = 0; i < (debugMinimal ? 4 : 14); i += 1) {
         const p = i / 13;
         const y = horizon + Math.pow(p, 1.8) * (h - horizon);
         ctx.beginPath();
@@ -625,8 +647,8 @@
       }
 
       const particles = theme.particles || [120, 220, 255];
-      ctx.fillStyle = `rgba(${particles[0]},${particles[1]},${particles[2]},${0.06 + normalized * 0.1})`;
-      for (let i = 0; i < 46; i += 1) {
+      ctx.fillStyle = `rgba(${particles[0]},${particles[1]},${particles[2]},${debugMinimal ? 0.03 : (0.06 + normalized * 0.1)})`;
+      for (let i = 0; i < (debugMinimal ? 10 : 46); i += 1) {
         const x = (i * 53 + t * (8 + (i % 5))) % w;
         const y = (i * 31 + Math.sin(t + i) * 10) % (h * 0.9);
         ctx.fillRect(x, y, 1.6, 1.6);
@@ -637,7 +659,7 @@
 
       const core = ctx.createRadialGradient(coreX, coreY, 2, coreX, coreY, h * 0.28);
       const coreColor = theme.core || [176, 228, 255];
-      core.addColorStop(0, `rgba(${coreColor[0]},${coreColor[1]},${coreColor[2]},${0.24 + pulse * 0.18})`);
+      core.addColorStop(0, `rgba(${coreColor[0]},${coreColor[1]},${coreColor[2]},${debugMinimal ? 0.16 : (0.24 + pulse * 0.18)})`);
       core.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = core;
       ctx.fillRect(0, 0, w, h);

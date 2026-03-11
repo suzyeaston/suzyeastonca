@@ -418,7 +418,10 @@ ${data.concept_summary}`;
         return;
       }
       const report = typeof previewVisuals.getLastPreviewReport === 'function' ? previewVisuals.getLastPreviewReport() : null;
-      const status = report && report.warning ? report.warning : (item.expected_shape || 'previewing');
+      const motifMeta = report && report.activePreviewMotif ? `active preview motif:${report.activePreviewMotif}` : '';
+      const countMeta = report && Number.isFinite(report.timelineEventCount) ? `timeline event count:${report.timelineEventCount}` : '';
+      const baseStatus = report && report.warning ? report.warning : (item.expected_shape || 'previewing');
+      const status = [baseStatus, motifMeta, countMeta].filter(Boolean).join(' • ');
       inspectorState.currentPreviewVisualId = item.id;
       updateVisualMeta(item, status);
       refreshVisualCardStates();
