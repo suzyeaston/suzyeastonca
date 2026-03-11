@@ -26,8 +26,6 @@
 
 
   const LINKED_VISUAL_TO_AUDIO = {
-    ocean_surface_shimmer: ['ocean_waves'],
-    waterfront_scene: ['ocean_waves'],
     seabus_silhouette: ['seabus_horn'],
     rain_streaks: ['rain_ambience'],
     skytrain_pass_visual: ['skytrain_pass'],
@@ -35,7 +33,6 @@
   };
 
   const OPTIONAL_LINK_AUDIO = {
-    waterfront_scene: ['ocean_waves'],
     gastown_scene: ['gastown_clock_whistle']
   };
 

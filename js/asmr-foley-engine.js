@@ -11,12 +11,12 @@
     'harbor_fog_bed', 'metal_resonance', 'snow_muffle', 'city_electrical_hum',
     'footsteps_wet', 'footsteps_snow', 'rain_close', 'rain_roof', 'puddle_splash',
     'crowd_murmur', 'laughter_burst', 'skytrain_pass', 'bus_idle', 'car_horn_short', 'seabus_horn', 'ocean_waves', 'gulls_distant', 'crosswalk_chirp', 'compass_tap', 'bike_bell', 'skateboard_roll', 'siren_distant',
-    'gastown_clock_whistle', 'church_bells', 'harbour_noon_horn', 'nine_oclock_gun', 'planetarium_hum', 'planetarium_chime'
+    'gastown_clock_whistle', 'church_bells', 'harbour_noon_horn', 'nine_oclock_gun'
   ];
 
   const BED_ENGINES = new Set([
     'ocean_waves', 'rain_close', 'rain_roof', 'harbor_fog_bed', 'city_electrical_hum',
-    'planetarium_hum', 'crowd_murmur', 'filtered_noise_wash', 'low_hum'
+    'crowd_murmur', 'filtered_noise_wash', 'low_hum'
   ]);
 
   function clamp(value, min, max) {
@@ -390,8 +390,8 @@
           this.scheduleTone(ctx, destination, atTime + 0.04, duration * 0.7, { from: p.from || 700, to: p.to || 1060, peak: 0.008 + intensity * 0.018, type: 'triangle', pan: -0.2 });
           break;
         case 'harbor_fog_bed':
-          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 74, to: p.to || 66, peak: 0.03 + intensity * 0.055, type: 'sine' });
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 620, q: 0.45, peak: 0.016 + intensity * 0.034, filterType: 'lowpass', pan: 0 });
+          this.scheduleTone(ctx, destination, atTime, duration, { from: p.from || 74, to: p.to || 66, peak: 0.024 + intensity * 0.04, type: 'sine', env: { attack: 0.55, hold: duration * 0.5, release: 2.2, tail: 0.4 } });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: p.freq || 620, q: 0.45, peak: 0.012 + intensity * 0.024, filterType: 'lowpass', pan: 0, env: { attack: 0.5, hold: duration * 0.48, release: 2.0, tail: 0.35 } });
           break;
         case 'metal_resonance':
           this.scheduleTone(ctx, destination, atTime, Math.max(0.12, duration * 0.5), { from: p.from || 980, to: p.to || 340, peak: 0.02 + intensity * 0.04, type: 'triangle', pan: 0.22 });
@@ -418,7 +418,7 @@
         case 'rain_close':
         case 'rain_roof': {
           const roof = event.engine === 'rain_roof';
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: roof ? 2600 : 3200, q: 0.9, peak: 0.018 + intensity * 0.04, filterType: 'highpass', pan: 0.02 });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: roof ? 2600 : 3200, q: 0.9, peak: 0.015 + intensity * 0.03, filterType: 'highpass', pan: 0.02, env: { attack: 0.4, hold: duration * 0.48, release: 1.6, tail: 0.3 } });
           const drops = Math.max(6, Math.min(36, Math.round(duration * (roof ? 4 : 7) * (0.7 + intensity))));
           for (let i = 0; i < drops; i += 1) {
             const dt = (i / drops) * duration;
@@ -431,9 +431,9 @@
           this.scheduleTone(ctx, destination, atTime + 0.02, Math.max(0.09, duration * 0.5), { from: 220, to: 110, peak: 0.008 + intensity * 0.018, type: 'triangle', pan: 0.1 });
           break;
         case 'crowd_murmur':
-          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 520, q: 0.65, peak: 0.02 + intensity * 0.032, filterType: 'bandpass', pan: -0.1 });
-          this.scheduleNoise(ctx, destination, atTime + 0.03, duration * 0.95, { freq: 880, q: 0.8, peak: 0.014 + intensity * 0.024, filterType: 'bandpass', pan: 0.12 });
-          this.scheduleTone(ctx, destination, atTime, duration * 0.85, { from: 190, to: 240, peak: 0.004 + intensity * 0.012, type: 'sine', pan: 0.04 });
+          this.scheduleNoise(ctx, destination, atTime, duration, { freq: 520, q: 0.65, peak: 0.014 + intensity * 0.024, filterType: 'bandpass', pan: -0.1, env: { attack: 0.45, hold: duration * 0.5, release: 1.8, tail: 0.35 } });
+          this.scheduleNoise(ctx, destination, atTime + 0.03, duration * 0.95, { freq: 880, q: 0.8, peak: 0.01 + intensity * 0.018, filterType: 'bandpass', pan: 0.12, env: { attack: 0.4, hold: duration * 0.46, release: 1.7, tail: 0.3 } });
+          this.scheduleTone(ctx, destination, atTime, duration * 0.85, { from: 190, to: 240, peak: 0.003 + intensity * 0.01, type: 'sine', pan: 0.04, env: { attack: 0.45, hold: duration * 0.42, release: 1.6, tail: 0.3 } });
           break;
         case 'laughter_burst':
           this.scheduleTone(ctx, destination, atTime, Math.max(0.12, duration * 0.7), { from: 280, to: 420, peak: 0.012 + intensity * 0.022, type: 'triangle', pan: 0.2 });
@@ -465,27 +465,21 @@
 
 
         case 'seabus_horn': {
-          const f0 = Number(p.f0 || 86);
-          const attack = clamp(Number(p.attack || 0.24), 0.12, 0.6);
-          const release = clamp(Number(p.release || 1.8), 1, 3.2);
-          const wobble = clamp(Number(p.wobble || 0.06), 0, 0.2);
-          const drift = clamp(Number(p.drift || 0.012), 0, 0.04);
-          const bright = clamp(Number(p.brightness || 0.28), 0, 1);
+          const f0 = Number(p.f0 || 82);
+          const attack = clamp(Number(p.attack || 0.26), 0.14, 0.5);
+          const release = clamp(Number(p.release || 1.6), 1.1, 2.6);
+          const wobble = clamp(Number(p.wobble || 0.04), 0, 0.12);
           this.scheduleTone(ctx, destination, atTime, duration, {
-            from: f0 * (1 + drift), to: f0 * (0.985 - drift), peak: 0.012 + intensity * 0.018, type: 'sine', pan: -0.05,
-            env: { attack, hold: duration * 0.34, release, tail: 0.4 }
+            from: f0 * 1.01, to: f0 * (0.985 - wobble * 0.15), peak: 0.01 + intensity * 0.015, type: 'sine', pan: -0.04,
+            env: { attack, hold: duration * 0.36, release, tail: 0.45 }
           });
-          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.95, {
-            from: f0 * 2.02 * (1 + drift * 0.5), to: f0 * 2.0, peak: (0.005 + intensity * 0.01) * (0.5 + bright * 0.9), type: 'triangle', pan: 0.06,
-            env: { attack: attack * 0.9, hold: duration * 0.3, release: release * 0.9, tail: 0.35 }
+          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.92, {
+            from: f0 * 1.98, to: f0 * 1.95, peak: 0.004 + intensity * 0.008, type: 'triangle', pan: 0.05,
+            env: { attack: attack * 0.9, hold: duration * 0.28, release: release * 0.9, tail: 0.36 }
           });
-          this.scheduleTone(ctx, destination, atTime + 0.04, duration * 0.9, {
-            from: f0 * 3.01, to: f0 * (3.01 - wobble * 0.8), peak: (0.002 + intensity * 0.005) * (0.4 + bright), type: 'sine', pan: 0.03,
-            env: { attack: attack * 0.8, hold: duration * 0.2, release: release * 0.8, tail: 0.3 }
-          });
-          this.scheduleNoise(ctx, destination, atTime + 0.02, duration * 0.82, {
-            freq: 360, q: 0.74, peak: 0.002 + intensity * 0.005, filterType: 'bandpass', pan: 0.01,
-            env: { attack: attack * 0.9, hold: duration * 0.26, release: release * 0.75, tail: 0.25 }
+          this.scheduleNoise(ctx, destination, atTime + 0.03, duration * 0.78, {
+            freq: 320, q: 0.7, peak: 0.0016 + intensity * 0.0035, filterType: 'bandpass', pan: 0.01,
+            env: { attack: attack, hold: duration * 0.24, release: release * 0.7, tail: 0.24 }
           });
           break;
         }
@@ -495,6 +489,7 @@
           const fadeOut = clamp(Number(p.fade_out || 2.8), 2.2, 3.2);
           const calmTailStart = atTime + Math.max(0.2, duration - fadeOut);
           const swells = Math.max(2, Math.round(duration * swellRate));
+          const noFoamAfter = atTime + duration - 1.25;
 
           this.scheduleNoise(ctx, destination, atTime, duration, {
             freq: 240, q: 0.52, peak: 0.009 + intensity * 0.017, filterType: 'bandpass', pan: -0.16,
@@ -506,14 +501,14 @@
           });
 
           for (let i = 0; i < swells; i += 1) {
-            const dt = (i / Math.max(1, swells - 1)) * Math.max(0.2, duration - 1.2);
+            const dt = (i / Math.max(1, swells - 1)) * Math.max(0.2, duration - 3.0);
             const swellAt = atTime + dt;
             const tailFactor = swellAt >= calmTailStart ? Math.max(0.25, (atTime + duration - swellAt) / Math.max(0.4, fadeOut)) : 1;
             this.scheduleTone(ctx, destination, swellAt, 1.35, {
               from: 62, to: 53, peak: (0.003 + intensity * 0.008) * tailFactor, type: 'sine', pan: (i % 2 ? 0.1 : -0.08),
-              env: { attack: 0.3, hold: 0.42, release: 1.5, tail: 0.3 }
+              env: { attack: 0.3, hold: 0.42, release: 1.4, tail: 0.25 }
             });
-            if (foam > 0.05 && (swellAt + 0.25) < (atTime + duration - 0.8)) {
+            if (foam > 0.05 && (swellAt + 0.25) < noFoamAfter) {
               this.scheduleNoise(ctx, destination, swellAt + 0.25, 0.34, {
                 freq: 1900, q: 1.05, peak: (0.0015 + intensity * 0.0045) * foam * tailFactor, filterType: 'highpass', pan: (i % 2 ? -0.12 : 0.12),
                 env: { attack: 0.05, hold: 0.08, release: 0.55, tail: 0.15 }
@@ -560,80 +555,63 @@
           break;
 
         case 'gastown_clock_whistle': {
-          const f0 = clamp(Number(p.f0 || 540), 520, 560);
-          const interval = clamp(Number(p.interval || 1.06), 1.02, 1.14);
-          const attack = clamp(Number(p.attack || 0.18), 0.1, 0.5);
-          const release = clamp(Number(p.release || 1.8), 1, 3.2);
-          const breathy = clamp(Number(p.breathy ?? 0.7), 0, 1);
-          const vibrato = clamp(Number(p.vibrato ?? 0.55), 0, 1);
-          const bend = 1 + (0.028 + vibrato * 0.02);
+          const f0 = clamp(Number(p.f0 || 536), 500, 570);
+          const interval = clamp(Number(p.interval || 1.045), 1.02, 1.09);
+          const attack = clamp(Number(p.attack || 0.16), 0.12, 0.22);
+          const release = clamp(Number(p.release || 2.3), 1.8, 3.0);
+          const breathy = clamp(Number(p.breathy ?? 0.72), 0.6, 0.85);
+          const vibrato = clamp(Number(p.vibrato ?? 0.45), 0.35, 0.55);
+          const bend = 1.018 + vibrato * 0.02;
           this.scheduleNoise(ctx, destination, atTime, duration, {
-            freq: 1700, q: 0.8, peak: (0.004 + intensity * 0.01) * (0.35 + breathy), filterType: 'bandpass', pan: 0.03,
-            env: { attack: attack * 0.7, hold: duration * 0.28, release: release * 0.9, tail: 0.25 }
+            freq: 1200, q: 0.7, peak: (0.004 + intensity * 0.009) * breathy, filterType: 'bandpass', pan: 0.02,
+            env: { attack: attack * 0.75, hold: duration * 0.34, release: release * 0.95, tail: 0.3 }
           });
-          this.scheduleNoise(ctx, destination, atTime + 0.02, duration * 0.95, {
-            freq: 980, q: 0.6, peak: (0.003 + intensity * 0.007) * breathy, filterType: 'lowpass', pan: -0.02,
-            env: { attack: attack * 0.9, hold: duration * 0.3, release: release * 0.8, tail: 0.2 }
+          this.scheduleTone(ctx, destination, atTime, duration, {
+            from: f0 * bend, to: f0, peak: 0.01 + intensity * 0.018, type: 'sine', pan: -0.04,
+            env: { attack, hold: duration * 0.36, release, tail: 0.45 }
           });
-          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.9, {
-            from: f0 * bend, to: f0 * (1 + vibrato * 0.006), peak: 0.011 + intensity * 0.018, type: 'triangle', pan: -0.06,
-            env: { attack, hold: duration * 0.33, release, tail: 0.35 }
-          });
-          this.scheduleTone(ctx, destination, atTime + 0.05, duration * 0.88, {
-            from: (f0 * interval) * (1 + vibrato * 0.018), to: f0 * interval, peak: 0.008 + intensity * 0.013, type: 'sine', pan: 0.07,
-            env: { attack: attack * 1.1, hold: duration * 0.3, release: release * 0.95, tail: 0.35 }
+          this.scheduleTone(ctx, destination, atTime + 0.02, duration * 0.96, {
+            from: (f0 * interval) * bend, to: (f0 * interval), peak: 0.008 + intensity * 0.014, type: 'triangle', pan: 0.06,
+            env: { attack: attack * 0.95, hold: duration * 0.34, release: release * 0.92, tail: 0.4 }
           });
           break;
         }
         case 'church_bells': {
-          const root = Number(p.root || 392);
-          const decay = clamp(Number(p.decay || 4.5), 2.5, 7.5);
-          const brightness = clamp(Number(p.brightness || 0.35), 0, 1);
-          const drift = clamp(Number(p.drift || 0.01), 0, 0.04);
-          const partials = [
-            { r: 1.0, amp: 1.0, pan: -0.12, d: 1.0, type: 'sine' },
-            { r: 2.7, amp: 0.62, pan: 0.14, d: 0.82, type: 'triangle' },
-            { r: 5.8, amp: 0.4, pan: -0.18, d: 0.68, type: 'sine' },
-            { r: 8.9, amp: 0.24, pan: 0.2, d: 0.54, type: 'triangle' }
-          ];
-          partials.forEach((part, i) => {
-            this.scheduleTone(ctx, destination, atTime + i * 0.01, Math.max(duration, decay * part.d), {
-              from: root * part.r * (1 + drift),
-              to: root * part.r * (0.62 - drift * 0.5),
-              peak: (0.004 + intensity * 0.012) * part.amp * (0.65 + brightness * 0.7),
-              type: part.type,
-              pan: part.pan,
-              env: { attack: 0.22 + i * 0.03, hold: 0.5, release: decay * part.d, tail: 0.65 }
+          const root = clamp(Number(p.root || 328), 280, 380);
+          const decay = clamp(Number(p.decay || 5.4), 4.5, 6.5);
+          const brightness = clamp(Number(p.brightness || 0.26), 0.12, 0.45);
+          const partials = [1.0, 1.47, 2.11, 2.79];
+          partials.forEach((ratio, i) => {
+            this.scheduleTone(ctx, destination, atTime + i * 0.02, Math.max(duration, decay), {
+              from: root * ratio, to: root * ratio * 0.68,
+              peak: (0.003 + intensity * 0.01) * (1 - i * 0.16), type: i % 2 ? 'triangle' : 'sine', pan: -0.14 + i * 0.1,
+              env: { attack: 0.22 + i * 0.03, hold: 0.5, release: decay * (0.82 - i * 0.1), tail: 0.8 }
             });
           });
           this.scheduleNoise(ctx, destination, atTime + 0.03, Math.max(duration, decay * 0.9), {
-            freq: 1800 + brightness * 1000, q: 0.6, peak: 0.0015 + intensity * 0.004, filterType: 'lowpass', pan: 0,
-            env: { attack: 0.14, hold: 0.4, release: decay * 0.75, tail: 0.4 }
+            freq: 1300 + brightness * 700, q: 0.55, peak: 0.0012 + intensity * 0.0028, filterType: 'lowpass', pan: 0,
+            env: { attack: 0.18, hold: 0.44, release: decay * 0.7, tail: 0.45 }
           });
           break;
         }
         case 'harbour_noon_horn': {
-          const f0 = Number(p.f0 || 74);
-          const attack = clamp(Number(p.attack || 0.35), 0.15, 0.7);
-          const release = clamp(Number(p.release || 2.2), 1.2, 4.8);
-          const wobble = clamp(Number(p.wobble || 0.07), 0, 0.2);
-          const drift = clamp(Number(p.drift || 0.015), 0, 0.04);
-          const brightness = clamp(Number(p.brightness || 0.35), 0, 1);
-          this.scheduleTone(ctx, destination, atTime, duration, {
-            from: f0 * (1 + drift), to: f0 * (0.97 - drift * 0.4), peak: 0.012 + intensity * 0.02, type: 'sine', pan: -0.02,
-            env: { attack, hold: duration * 0.38, release, tail: 0.6 }
+          const f0 = Number(p.f0 || 72);
+          const attack = clamp(Number(p.attack || 0.42), 0.35, 0.55);
+          const release = clamp(Number(p.release || 3.0), 2.2, 4.0);
+          const wobble = clamp(Number(p.wobble || 0.05), 0, 0.12);
+          const drift = clamp(Number(p.drift || 0.01), 0, 0.025);
+          const brightness = clamp(Number(p.brightness || 0.2), 0, 0.35);
+          const partials = [1, 2.01, 2.98];
+          partials.forEach((r, i) => {
+            this.scheduleTone(ctx, destination, atTime + i * 0.018, duration, {
+              from: f0 * r * (1 + drift), to: f0 * r * (0.985 - wobble * 0.05),
+              peak: (0.01 + intensity * 0.018) * (0.95 - i * 0.28), type: i === 0 ? 'sine' : 'triangle', pan: -0.04 + i * 0.08,
+              env: { attack: attack * (1 + i * 0.06), hold: duration * 0.36, release: release * (0.95 - i * 0.08), tail: 0.55 }
+            });
           });
-          this.scheduleTone(ctx, destination, atTime + 0.015, duration * 0.96, {
-            from: f0 * 2.01 * (1 + wobble * 0.03), to: f0 * 2.0, peak: (0.006 + intensity * 0.012) * (0.55 + brightness), type: 'triangle', pan: -0.08,
-            env: { attack: attack * 0.85, hold: duration * 0.3, release: release * 0.92, tail: 0.5 }
-          });
-          this.scheduleTone(ctx, destination, atTime + 0.03, duration * 0.9, {
-            from: f0 * 3.02, to: f0 * (2.95 - wobble * 0.2), peak: (0.003 + intensity * 0.007) * (0.35 + brightness), type: 'sine', pan: 0.06,
-            env: { attack: attack * 0.8, hold: duration * 0.24, release: release * 0.8, tail: 0.45 }
-          });
-          this.scheduleNoise(ctx, destination, atTime + 0.04, duration * 0.86, {
-            freq: 320, q: 0.68, peak: (0.002 + intensity * 0.005) * (0.45 + brightness), filterType: 'bandpass', pan: 0.03,
-            env: { attack: attack * 0.9, hold: duration * 0.25, release: release * 0.72, tail: 0.3 }
+          this.scheduleNoise(ctx, destination, atTime + 0.03, duration * 0.86, {
+            freq: 290 + brightness * 180, q: 0.66, peak: 0.0018 + intensity * 0.0035, filterType: 'bandpass', pan: 0.02,
+            env: { attack: attack * 0.95, hold: duration * 0.28, release: release * 0.75, tail: 0.3 }
           });
           break;
         }
@@ -641,36 +619,6 @@
           this.scheduleNoise(ctx, destination, atTime, Math.max(0.2, duration * 0.4), { freq: 220, q: 0.65, peak: 0.018 + intensity * 0.03, filterType: 'lowpass', pan: -0.03 });
           this.scheduleTone(ctx, destination, atTime, Math.max(0.28, duration * 0.55), { from: 54, to: 40, peak: 0.02 + intensity * 0.032, type: 'sine', pan: 0.02 });
           this.scheduleNoise(ctx, destination, atTime + 0.06, Math.max(0.25, duration * 0.45), { freq: 880, q: 0.8, peak: 0.005 + intensity * 0.01, filterType: 'bandpass', pan: 0.06 });
-          break;
-        }
-        case 'planetarium_hum': {
-          this.scheduleTone(ctx, destination, atTime, duration, {
-            from: 88, to: 94, peak: 0.007 + intensity * 0.013, type: 'sine', pan: -0.02,
-            env: { attack: 0.35, hold: duration * 0.44, release: 2, tail: 0.5 }
-          });
-          this.scheduleTone(ctx, destination, atTime + 0.04, duration * 0.96, {
-            from: 126, to: 121, peak: 0.003 + intensity * 0.007, type: 'triangle', pan: 0.04,
-            env: { attack: 0.3, hold: duration * 0.35, release: 1.8, tail: 0.35 }
-          });
-          this.scheduleNoise(ctx, destination, atTime, duration, {
-            freq: 740, q: 0.52, peak: 0.003 + intensity * 0.009, filterType: 'lowpass', pan: 0.02,
-            env: { attack: 0.4, hold: duration * 0.42, release: 2.1, tail: 0.4 }
-          });
-          break;
-        }
-        case 'planetarium_chime': {
-          this.scheduleTone(ctx, destination, atTime, Math.max(0.16, duration * 0.75), {
-            from: 932, to: 690, peak: 0.004 + intensity * 0.008, type: 'triangle', pan: 0.08,
-            env: { attack: 0.08, hold: 0.18, release: 1.4, tail: 0.2 }
-          });
-          this.scheduleTone(ctx, destination, atTime + 0.04, Math.max(0.14, duration * 0.68), {
-            from: 1188, to: 860, peak: 0.003 + intensity * 0.006, type: 'sine', pan: -0.07,
-            env: { attack: 0.07, hold: 0.16, release: 1.2, tail: 0.2 }
-          });
-          this.scheduleNoise(ctx, destination, atTime + 0.03, Math.max(0.15, duration * 0.6), {
-            freq: 2600, q: 1.1, peak: 0.001 + intensity * 0.0025, filterType: 'bandpass', pan: 0,
-            env: { attack: 0.05, hold: 0.08, release: 0.9, tail: 0.15 }
-          });
           break;
         }
 
@@ -705,7 +653,7 @@
       if (e === 'seabus_horn') return 2.2;
       if (e === 'church_bells') return 4.8;
       if (e === 'gastown_clock_whistle') return 2.1;
-      if (e === 'planetarium_hum' || BED_ENGINES.has(e)) return 2.4;
+      if (BED_ENGINES.has(e)) return 2.8;
       return 0.8;
     }
 

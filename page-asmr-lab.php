@@ -47,8 +47,6 @@ get_header();
             <label><input type="checkbox" name="audio_layers[]" value="church_bells" /> church bells</label>
             <label><input type="checkbox" name="audio_layers[]" value="harbour_noon_horn" /> harbour noon horn</label>
             <label><input type="checkbox" name="audio_layers[]" value="nine_oclock_gun" /> 9 O'Clock Gun boom</label>
-            <label><input type="checkbox" name="audio_layers[]" value="planetarium_hum" /> planetarium hum</label>
-            <label><input type="checkbox" name="audio_layers[]" value="planetarium_chime" /> planetarium chime</label>
           </div>
         </div>
         <details class="asmr-motif-more">
