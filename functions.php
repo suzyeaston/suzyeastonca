@@ -1075,10 +1075,8 @@ function se_apply_asmr_semantic_cues( $decoded, $payload ) {
         $audio[] = array( 'time' => 0.05, 'duration' => min( 8, $runtime * 0.6 ), 'engine' => 'city_electrical_hum', 'intensity' => 0.35, 'params' => array(), 'sync_role' => 'city_grid_bed' );
     }
 
-    if ( in_array( 'pixel_art', $cues, true ) || in_array( 'dither', $cues, true ) || in_array( 'arcade', $cues, true ) ) {
-        $visual[] = array( 'time' => 0.08, 'duration' => min( 3.8, $runtime * 0.24 ), 'visual_type' => 'pixel_grid_pulse', 'intensity' => 0.72, 'params' => array(), 'sync_role' => 'pixel_language_early' );
-        $visual[] = array( 'time' => 0.16, 'duration' => min( 4.2, $runtime * 0.28 ), 'visual_type' => 'scanline_field', 'intensity' => 0.62, 'params' => array(), 'sync_role' => 'pixel_scan_early' );
-        $visual[] = array( 'time' => 0.3, 'duration' => min( 3.4, $runtime * 0.22 ), 'visual_type' => 'signal_bars', 'intensity' => 0.56, 'params' => array(), 'sync_role' => 'arcade_signal_early' );
+    if ( in_array( 'scanline_field', $cues, true ) ) {
+        $visual[] = array( 'time' => 0.16, 'duration' => min( 4.2, $runtime * 0.28 ), 'visual_type' => 'scanline_field', 'intensity' => 0.34, 'params' => array(), 'sync_role' => 'crt_scan_support' );
     }
 
     $source = strtolower( implode( ' ', array(

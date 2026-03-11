@@ -74,46 +74,15 @@
       const hasEarly = out.some((e) => Number(e.time || 99) <= 0.8 && Number(e.intensity || 0) >= 0.3);
       if (!hasEarly) out.push({ time: 0.52, duration: 1.3, visual_type: 'pulse_orb', intensity: 0.58, params: {}, sync_role: 'early_focal' });
 
-      const hasMiddleEsc = out.some((e) => e.time >= runtime * 0.3 && e.time <= runtime * 0.66 && e.intensity >= 0.58);
-      if (!hasMiddleEsc) out.push({ time: runtime * 0.52, duration: 1.4, visual_type: 'energy_column', intensity: 0.64, params: {}, sync_role: 'mid_escalation' });
-
-      const hasFinalBloom = out.some((e) => e.time >= runtime * 0.66 && ['radial_bloom','glass_refraction','chromatic_veil','terminal_runes'].includes(e.visual_type));
-      if (!hasFinalBloom) out.push({ time: runtime * 0.82, duration: 1.5, visual_type: 'glass_refraction', intensity: 0.72, params: {}, sync_role: 'final_bloom' });
-
-      const minEvents = Math.max(9, Math.ceil(runtime * 0.72));
-      const support = ['chromatic_veil', 'starfield_drift', 'refraction_ripple', 'halo_glyphs', 'orbiting_shards'];
-      while (out.length < minEvents) {
-        const i = out.length;
-        out.push({
-          time: clamp(0.2 + i * (runtime / (minEvents + 1)), 0, runtime - 0.1),
-          duration: 0.9 + (i % 4) * 0.34,
-          visual_type: support[i % support.length],
-          intensity: 0.24 + (i % 5) * 0.07,
-          params: {},
-          sync_role: 'support_layer'
-        });
-      }
-
-      syncPoints.forEach((point, i) => {
-        const t = Number(point.time || 0);
-        if (t <= 0.04 || t >= runtime) return;
-        out.push({
-          time: t,
-          duration: 0.45 + (i % 2) * 0.18,
-          visual_type: (i % 2 === 0) ? 'refraction_ripple' : 'pulse_orb',
-          intensity: 0.35 + (i % 3) * 0.12,
-          params: {},
-          sync_role: 'sync_accent'
-        });
-      });
-
       out.sort((a, b) => a.time - b.time);
       const maxGap = Math.max(2.4, runtime * 0.2);
       const withBridges = [];
       let prev = 0;
+      let bridgeAdded = false;
       out.forEach((e) => {
-        if (e.time - prev > maxGap) {
+        if (!bridgeAdded && e.time - prev > maxGap) {
           withBridges.push({ time: prev + maxGap * 0.5, duration: 1.4, visual_type: 'volumetric_fog', intensity: 0.22, params: {}, sync_role: 'bridge_motion' });
+          bridgeAdded = true;
         }
         withBridges.push(e);
         prev = e.time;
@@ -155,7 +124,7 @@
 
     resolveRenderProfile(pkg) {
       const tags = (Array.isArray(pkg.style_tags) ? pkg.style_tags : []).map((t) => String(t || '').toLowerCase());
-      const pixelMode = hasAnyTag(tags, ['pixel_art', '8bit', 'arcade', 'dither', 'chiptune']);
+      const pixelMode = hasAnyTag(tags, ['pixel_art', '8bit', 'lowres_mode']);
       const vancouverCue = hasAnyTag(tags, ['gastown', 'granville', 'north_shore', 'vancouver', 'snow', 'rain', 'fog', 'amber', 'neon', 'brick', 'cobblestone', 'mountains']);
       const theme = {
         bgTop: '#02050c',
@@ -190,9 +159,9 @@
         pixelMode,
         vancouverCue,
         tags,
-        lowResScale: pixelMode ? 6 : 1,
-        paletteSteps: pixelMode ? 12 : 0,
-        orderedDither: pixelMode && hasAnyTag(tags, ['dither', 'pixel_art', '8bit']),
+        lowResScale: pixelMode ? 4 : 1,
+        paletteSteps: pixelMode ? 24 : 0,
+        orderedDither: pixelMode && hasAnyTag(tags, ['dither']),
         scanlines: true,
         glow: true,
         theme
@@ -254,7 +223,7 @@
     }
 
     getLowResTarget(width, height, profile) {
-      const scale = Math.max(2, Number(profile.lowResScale || 6));
+      const scale = Math.max(2, Number(profile.lowResScale || 4));
       const lowW = Math.max(160, Math.floor(width / scale));
       const lowH = Math.max(90, Math.floor(height / scale));
       if (this.lowResTarget && this.lowResTarget.canvas.width === lowW && this.lowResTarget.canvas.height === lowH) {
@@ -299,12 +268,14 @@
 
     drawSceneLayers(ctx, width, height, t, normalized, overlays) {
       const landmarkTypes = ['science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof', 'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'planetarium_dome', 'starfield_projection', 'canada_place_sails', 'gastown_clock_silhouette', 'seabus_silhouette', 'waterfront_scene'];
+      const sceneTypes = ['gastown_scene', 'granville_scene', 'north_shore_scene', 'waterfront_scene'];
       const atmosphereTypes = ['rain_streaks', 'snow_drift', 'harbor_mist', 'mountain_mist_layers', 'puddle_reflections', 'volumetric_fog', 'clear_cold_shimmer'];
+      const motionTypes = ['skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual', 'particle_trail', 'waveform_ring'];
+      const supportOverlays = ['scanline_field', 'chromatic_veil', 'signal_bars', 'pixel_grid_pulse', 'glitch_flash', 'starfield_drift'];
       const weirdness = this.parseWeirdnessLevel();
       const weirdNorm = (weirdness - 1) / 9;
       let distortion = 0.04 + (0.18 - 0.04) * weirdNorm;
       const activeEvents = [];
-      const supportOverlays = ['scanline_field', 'signal_bars', 'pixel_grid_pulse', 'chromatic_veil'];
 
       this.timeline.visualEvents.forEach((event) => {
         const progress = this.eventProgress(event, t);
@@ -313,42 +284,59 @@
       });
 
       const hasLandmark = activeEvents.some((item) => landmarkTypes.includes(item.event.visual_type));
+      const hasScene = activeEvents.some((item) => sceneTypes.includes(item.event.visual_type));
+      const hasHeroVisual = hasLandmark || hasScene;
       if (hasLandmark) distortion *= 0.6;
-      const hasPlanetarium = activeEvents.some((item) => ['planetarium_dome', 'starfield_projection'].includes(item.event.visual_type));
-      if (hasPlanetarium) distortion *= 0.5;
+      if (activeEvents.some((item) => ['planetarium_dome', 'starfield_projection'].includes(item.event.visual_type))) distortion *= 0.5;
+
+      const supportCandidates = activeEvents
+        .filter((item) => supportOverlays.includes(item.event.visual_type))
+        .sort((a, b) => Number(b.event.intensity || 0) - Number(a.event.intensity || 0));
+      const activeSupportType = supportCandidates.length ? supportCandidates[0].event.visual_type : null;
 
       this.drawBaseChamber(ctx, width, height, t, normalized);
 
       activeEvents.filter((item) => atmosphereTypes.includes(item.event.visual_type)).forEach((item) => {
-        let intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
-        if ((hasLandmark || hasPlanetarium) && supportOverlays.includes(item.event.visual_type)) {
-          intensity *= 0.28;
-        }
+        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
         this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
       });
 
-      const dominantSupport = activeEvents.filter((item) => supportOverlays.includes(item.event.visual_type)).slice(0, 2).map((item) => item.event.visual_type);
-      activeEvents.filter((item) => !atmosphereTypes.includes(item.event.visual_type)).forEach((item) => {
+      activeEvents.filter((item) => landmarkTypes.includes(item.event.visual_type) || sceneTypes.includes(item.event.visual_type)).forEach((item) => {
+        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
+        this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
+      });
+
+      activeEvents.filter((item) => motionTypes.includes(item.event.visual_type)).forEach((item) => {
+        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
+        this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
+      });
+
+      activeEvents.filter((item) => !atmosphereTypes.includes(item.event.visual_type)
+          && !landmarkTypes.includes(item.event.visual_type)
+          && !sceneTypes.includes(item.event.visual_type)
+          && !motionTypes.includes(item.event.visual_type)
+          && !supportOverlays.includes(item.event.visual_type)).forEach((item) => {
+        const intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
+        this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
+      });
+
+      activeEvents.filter((item) => supportOverlays.includes(item.event.visual_type)).forEach((item) => {
+        if (item.event.visual_type !== activeSupportType) return;
         let intensity = Math.max(0.05, Math.min(1, Number(item.event.intensity || 0.5)));
-        if ((hasLandmark || hasPlanetarium) && supportOverlays.includes(item.event.visual_type)) {
-          intensity *= 0.28;
-        }
-        if (supportOverlays.includes(item.event.visual_type) && !dominantSupport.includes(item.event.visual_type)) {
-          intensity *= 0.55;
-        }
+        if (hasHeroVisual) intensity *= 0.2;
         this.drawEvent(ctx, item.event, item.progress, intensity, width, height, normalized);
       });
 
       if (distortion > 0) {
         ctx.save();
-        ctx.globalAlpha = Math.min(0.1, distortion * 0.45);
+        const distortionAlpha = hasHeroVisual ? Math.min(0.012, distortion * 0.06) : Math.min(0.04, distortion * 0.16);
+        ctx.globalAlpha = distortionAlpha;
         const jitter = Math.sin(t * 13) * distortion * 18;
         ctx.fillStyle = 'rgba(140,170,255,0.22)';
         ctx.fillRect(jitter, 0, width, height);
         ctx.restore();
       }
 
-      this.drawSyncMarkers(ctx, t, width, height);
       if (overlays) {
         this.drawScanlines(ctx, width, height, normalized);
         this.drawGlow(ctx, width, height, normalized);
@@ -357,6 +345,7 @@
 
     renderToContext(ctx, width, height, t) {
       if (!ctx || !this.timeline) return;
+      // retro CRT styling should not destroy landmark readability.
       const runtime = this.timeline.runtime;
       const normalized = clamp(t / Math.max(1, runtime), 0, 1.2);
       const profile = this.timeline.renderProfile || this.resolveRenderProfile({});
