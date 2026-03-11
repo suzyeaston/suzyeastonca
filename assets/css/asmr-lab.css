@@ -42,3 +42,13 @@
 
 .asmr-card ol{margin:.2rem 0 .2rem 1.15rem;padding:0}
 .asmr-card ol li{margin:.25rem 0;line-height:1.45}
+
+.asmr-debug-atlas{margin-top:1rem;border:1px solid #33437f;border-radius:8px;padding:.8rem;background:#0c1226}
+.asmr-debug-atlas summary{cursor:pointer;color:#9ec0ff;font-size:.9rem}
+.asmr-debug-copy{font-size:.8rem;color:#b8ccff}
+.asmr-debug-actions{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}
+.asmr-debug-toggle{display:flex;align-items:center;gap:.45rem;font-size:.8rem}
+.asmr-visual-atlas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.6rem}
+.asmr-atlas-card{border:1px solid #2f3f73;border-radius:8px;background:#0a1022;padding:.55rem}
+.asmr-atlas-card h4{margin:.1rem 0 .25rem;color:#c6dcff;font-size:.86rem}
+.asmr-atlas-card p{margin:.15rem 0;font-size:.76rem;line-height:1.35}

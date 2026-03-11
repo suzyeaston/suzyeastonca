@@ -141,6 +141,18 @@ get_header();
       <p id="asmr-audio-feedback" class="asmr-audio-feedback" aria-live="polite"></p>
     </section>
 
+
+
+    <details class="asmr-debug-atlas" id="asmr-visual-debug-atlas">
+      <summary>Visual Debug Atlas</summary>
+      <p class="asmr-debug-copy">Inspect each visual motif in isolation and verify hero/support provenance without running generation.</p>
+      <div class="asmr-debug-actions">
+        <button type="button" id="asmr-preview-current-hero" class="pixel-button secondary">Preview current hero visuals</button>
+        <label class="asmr-debug-toggle"><input type="checkbox" id="asmr-debug-provenance-toggle" /> Show render provenance overlay</label>
+      </div>
+      <div id="asmr-visual-atlas-grid" class="asmr-visual-atlas-grid"></div>
+    </details>
+
     <section class="asmr-visual-preview" aria-label="Visual preview canvas">
       <canvas id="asmr-visual-canvas" width="960" height="540"></canvas>
     </section>
@@ -151,6 +163,7 @@ get_header();
       <article class="asmr-card"><h2>Sync Points</h2><ol id="asmr-beats"></ol></article>
       <article class="asmr-card"><h2>Style Tags</h2><ul id="asmr-video-prompts"></ul></article>
       <article class="asmr-card"><h2>Active Generation Plan</h2><ul id="asmr-active-plan"></ul></article>
+      <article class="asmr-card"><h2>Plan → Visual Summary</h2><ul id="asmr-plan-visual-summary"></ul></article>
       <article class="asmr-card"><h2>Edit Rhythm</h2><p id="asmr-edit-notes"></p></article>
       <article class="asmr-card"><h2>Presentation Note</h2><p id="asmr-presentation"></p></article>
       <article class="asmr-card"><h2>Timeline JSON</h2>
