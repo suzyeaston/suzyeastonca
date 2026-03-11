@@ -20,6 +20,19 @@
   const videoSupportEl = document.getElementById('asmr-video-support');
   const canvas = document.getElementById('asmr-visual-canvas');
   const atlasGridEl = document.getElementById('asmr-visual-atlas-grid');
+  const soundGridEl = document.getElementById('asmr-sound-inspector-grid');
+  const visualSearchEl = document.getElementById('asmr-visual-inspector-search');
+  const soundSearchEl = document.getElementById('asmr-sound-inspector-search');
+  const debugInspectorsEl = document.getElementById('asmr-debug-inspectors');
+  const visualMetaEl = document.getElementById('asmr-visual-inspector-meta');
+  const soundMetaEl = document.getElementById('asmr-sound-inspector-meta');
+  const soundStatusEl = document.getElementById('asmr-sound-inspector-status');
+  const visualDebugCanvas = document.getElementById('asmr-visual-debug-canvas');
+  const pinVisualPreviewBtn = document.getElementById('asmr-pin-visual-preview');
+  const stopVisualPreviewBtn = document.getElementById('asmr-stop-visual-preview');
+  const stopSoundPreviewBtn = document.getElementById('asmr-stop-sound-preview');
+  const inspectSelectedVisualsBtn = document.getElementById('asmr-inspect-selected-visuals');
+  const inspectSelectedSoundsBtn = document.getElementById('asmr-inspect-selected-sounds');
   const previewCurrentHeroBtn = document.getElementById('asmr-preview-current-hero');
   const provenanceToggle = document.getElementById('asmr-debug-provenance-toggle');
 
@@ -30,7 +43,22 @@
   const visualRegistry = (window.seAsmrLab && Array.isArray(window.seAsmrLab.visualRegistry) && window.seAsmrLab.visualRegistry.length)
     ? window.seAsmrLab.visualRegistry
     : (window.ASMR_VISUAL_REGISTRY || []);
+  const soundRegistry = (window.ASMR_SOUND_REGISTRY && Array.isArray(window.ASMR_SOUND_REGISTRY) && window.ASMR_SOUND_REGISTRY.length)
+    ? window.ASMR_SOUND_REGISTRY
+    : (typeof engine.getSoundRegistry === 'function' ? engine.getSoundRegistry() : []);
 
+  const inspectorState = {
+    activeTab: 'visual',
+    visualFilter: '',
+    soundFilter: '',
+    pinnedVisualId: null,
+    visualHoverTimer: null,
+    selectedVisualOnly: false,
+    selectedSoundOnly: false,
+    currentSoundId: null
+  };
+
+  const previewVisuals = window.AsmrVisualEngine ? new window.AsmrVisualEngine(visualDebugCanvas) : null;
 
   const LINKED_VISUAL_TO_AUDIO = {
     seabus_silhouette: ['seabus_horn'],
@@ -249,23 +277,134 @@ ${data.concept_summary}`;
   }
 
 
+
+  function groupByCategory(list) {
+    return list.reduce((acc, item) => {
+      const key = String(item.category || 'other');
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(item);
+      return acc;
+    }, {});
+  }
+
+  function matchesFilter(item, needle) {
+    if (!needle) return true;
+    const text = [item.id, item.label, item.category, item.description, item.expected_shape, item.expected_sound, item.priority].filter(Boolean).join(' ').toLowerCase();
+    return text.includes(needle);
+  }
+
+  function getSelectedValues(name) {
+    if (!form) return [];
+    return Array.from(form.querySelectorAll(`input[name="${name}[]"]:checked`)).map((el) => el.value);
+  }
+
+  function updateVisualMeta(item, status) {
+    if (!visualMetaEl) return;
+    if (!item) {
+      visualMetaEl.textContent = 'Hover or focus a motif card to preview.';
+      return;
+    }
+    visualMetaEl.textContent = `${item.label} (${item.id}) • ${item.category} • ${item.priority || 'support'} • ${status || item.expected_shape || ''}`;
+  }
+
+  function updateSoundStatus(id, status, expected) {
+    if (soundStatusEl) soundStatusEl.textContent = status;
+    if (soundMetaEl) {
+      if (!id) soundMetaEl.textContent = 'Select a sound engine and click Preview sound.';
+      else soundMetaEl.textContent = `${id}${expected ? ' • ' + expected : ''}`;
+    }
+  }
+
+  function previewVisualItem(item, sourceCard) {
+    if (!item || !previewVisuals) return;
+    if (inspectorState.pinnedVisualId && inspectorState.pinnedVisualId !== item.id) return;
+    if (inspectorState.visualHoverTimer) window.clearTimeout(inspectorState.visualHoverTimer);
+    inspectorState.visualHoverTimer = window.setTimeout(() => {
+      if (!previewVisuals.previewVisualMotifById(item.id, { runtimeSeconds: 1.6 })) {
+        updateVisualMeta(item, 'renderer missing');
+        return;
+      }
+      updateVisualMeta(item, item.expected_shape || 'previewing');
+      Array.from(atlasGridEl.querySelectorAll('.asmr-atlas-card')).forEach((el) => el.classList.remove('is-hovered'));
+      if (sourceCard) sourceCard.classList.add('is-hovered');
+    }, 130);
+  }
+
   function renderVisualAtlas() {
     if (!atlasGridEl) return;
     atlasGridEl.innerHTML = '';
-    visualRegistry.forEach((item) => {
-      const card = document.createElement('article');
-      card.className = 'asmr-atlas-card';
-      card.innerHTML = `<h4>${item.label}</h4><p><code>${item.id}</code></p><p>${item.category} • ${item.priority}</p><p>${item.description}</p><p><strong>Expected:</strong> ${item.expected_shape}</p>`;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'pixel-button tiny secondary';
-      btn.textContent = 'Preview motif';
-      btn.addEventListener('click', () => {
-        if (!visuals) return;
-        visuals.previewVisualType(item.id, 3.2);
+    const filterNeedle = String(inspectorState.visualFilter || '').trim().toLowerCase();
+    const selected = new Set(getSelectedValues('visual_layers'));
+    const base = visualRegistry.filter((item) => !inspectorState.selectedVisualOnly || selected.has(item.id));
+    const filtered = base.filter((item) => matchesFilter(item, filterNeedle));
+    const grouped = groupByCategory(filtered);
+    ['scene', 'landmark', 'atmosphere', 'motion', 'texture', 'support'].forEach((category) => {
+      if (!grouped[category] || !grouped[category].length) return;
+      const section = document.createElement('section');
+      section.className = 'asmr-inspector-group';
+      section.innerHTML = `<h4 class="asmr-inspector-group-title">${category}</h4>`;
+      grouped[category].forEach((item) => {
+        const card = document.createElement('article');
+        card.className = 'asmr-atlas-card';
+        card.tabIndex = 0;
+        card.dataset.id = item.id;
+        card.innerHTML = `<h4>${item.label}</h4><p><code>${item.id}</code></p><p>${item.description || ''}</p><p>${item.category} • ${item.priority}</p><p><strong>Expected:</strong> ${item.expected_shape || '—'}</p>`;
+        const pinBtn = document.createElement('button');
+        pinBtn.type = 'button';
+        pinBtn.className = 'pixel-button tiny secondary';
+        pinBtn.textContent = 'Pin preview';
+        pinBtn.addEventListener('click', () => {
+          inspectorState.pinnedVisualId = inspectorState.pinnedVisualId === item.id ? null : item.id;
+          if (pinVisualPreviewBtn) pinVisualPreviewBtn.setAttribute('aria-pressed', inspectorState.pinnedVisualId ? 'true' : 'false');
+          previewVisualItem(item, card);
+        });
+        card.appendChild(pinBtn);
+        card.addEventListener('mouseenter', () => previewVisualItem(item, card));
+        card.addEventListener('focus', () => previewVisualItem(item, card));
+        card.addEventListener('mouseleave', () => { if (!inspectorState.pinnedVisualId && previewVisuals) previewVisuals.cancelPreview(); });
+        section.appendChild(card);
       });
-      card.appendChild(btn);
-      atlasGridEl.appendChild(card);
+      atlasGridEl.appendChild(section);
+    });
+  }
+
+  function renderSoundInspector() {
+    if (!soundGridEl) return;
+    soundGridEl.innerHTML = '';
+    const filterNeedle = String(inspectorState.soundFilter || '').trim().toLowerCase();
+    const selected = new Set(getSelectedValues('audio_layers'));
+    const base = soundRegistry.filter((item) => !inspectorState.selectedSoundOnly || selected.has(item.id));
+    const filtered = base.filter((item) => matchesFilter(item, filterNeedle));
+    const grouped = groupByCategory(filtered);
+    ['bed', 'transit', 'cue', 'ambience', 'texture', 'support'].forEach((category) => {
+      if (!grouped[category] || !grouped[category].length) return;
+      const section = document.createElement('section');
+      section.className = 'asmr-inspector-group';
+      section.innerHTML = `<h4 class="asmr-inspector-group-title">${category}</h4>`;
+      grouped[category].forEach((item) => {
+        const card = document.createElement('article');
+        card.className = 'asmr-sound-card';
+        card.innerHTML = `<h4>${item.label}</h4><p><code>${item.id}</code></p><p>${item.description || ''}</p><p>${item.category}</p><p><strong>Expected:</strong> ${item.expected_sound || '—'}</p>`;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pixel-button tiny secondary';
+        btn.textContent = 'Preview sound';
+        btn.addEventListener('click', async () => {
+          transport.stopAll();
+          if (previewVisuals) previewVisuals.cancelPreview();
+          engine.stop();
+          try {
+            await engine.previewEngineById(item.id, { preview_duration: item.preview_duration || 2.2 });
+            inspectorState.currentSoundId = item.id;
+            updateSoundStatus(item.id, 'previewing', item.expected_sound);
+          } catch (err) {
+            updateSoundStatus(item.id, 'stopped', item.expected_sound);
+          }
+        });
+        card.appendChild(btn);
+        section.appendChild(card);
+      });
+      soundGridEl.appendChild(section);
     });
   }
 
@@ -276,11 +415,39 @@ ${data.concept_summary}`;
       .filter(Boolean)
       .filter((value, index, arr) => arr.indexOf(value) === index);
     for (let i = 0; i < queue.length; i += 1) {
-      visuals.previewVisualType(queue[i], 2.8);
+      if (previewVisuals) previewVisuals.previewVisualMotifById(queue[i], { runtimeSeconds: 1.8 });
       await new Promise((resolve) => window.setTimeout(resolve, 3100));
     }
   }
 
+
+
+  function setInspectorTab(tab) {
+    inspectorState.activeTab = tab === 'sound' ? 'sound' : 'visual';
+    document.querySelectorAll('.asmr-inspector-tab').forEach((btn) => {
+      const active = btn.dataset.tab === inspectorState.activeTab;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('.asmr-inspector-panel').forEach((panel) => {
+      const active = panel.dataset.panel === inspectorState.activeTab;
+      panel.classList.toggle('is-active', active);
+      panel.hidden = !active;
+    });
+  }
+
+  function openInspector(tab, selectedOnly) {
+    if (debugInspectorsEl) debugInspectorsEl.open = true;
+    if (tab === 'sound') {
+      inspectorState.selectedSoundOnly = !!selectedOnly;
+      setInspectorTab('sound');
+      renderSoundInspector();
+      return;
+    }
+    inspectorState.selectedVisualOnly = !!selectedOnly;
+    setInspectorTab('visual');
+    renderVisualAtlas();
+  }
   async function requestGeneration(payload) {
     setError('');
     setStatus('Generating synchronized sensory film package...');
@@ -524,6 +691,7 @@ ${data.concept_summary}`;
       transport.stopAll();
       if (visuals) visuals.stop();
       engine.stop();
+      if (previewVisuals) previewVisuals.cancelPreview();
       if (audioFeedback) audioFeedback.textContent = 'Playback stopped.';
     });
   }
@@ -560,10 +728,70 @@ ${data.concept_summary}`;
   }
 
 
+
+
+  document.querySelectorAll('.asmr-inspector-tab').forEach((btn) => {
+    btn.addEventListener('click', () => setInspectorTab(btn.dataset.tab));
+  });
+
+  if (visualSearchEl) {
+    visualSearchEl.addEventListener('input', () => {
+      inspectorState.visualFilter = visualSearchEl.value || '';
+      inspectorState.selectedVisualOnly = false;
+      renderVisualAtlas();
+    });
+  }
+
+  if (soundSearchEl) {
+    soundSearchEl.addEventListener('input', () => {
+      inspectorState.soundFilter = soundSearchEl.value || '';
+      inspectorState.selectedSoundOnly = false;
+      renderSoundInspector();
+    });
+  }
+
+  if (inspectSelectedVisualsBtn) {
+    inspectSelectedVisualsBtn.addEventListener('click', () => openInspector('visual', true));
+  }
+
+  if (inspectSelectedSoundsBtn) {
+    inspectSelectedSoundsBtn.addEventListener('click', () => openInspector('sound', true));
+  }
+
+  if (pinVisualPreviewBtn) {
+    pinVisualPreviewBtn.addEventListener('click', () => {
+      inspectorState.pinnedVisualId = null;
+      pinVisualPreviewBtn.setAttribute('aria-pressed', 'false');
+      if (previewVisuals) previewVisuals.cancelPreview();
+      updateVisualMeta(null, 'stopped');
+    });
+  }
+
+  if (stopVisualPreviewBtn) {
+    stopVisualPreviewBtn.addEventListener('click', () => {
+      inspectorState.pinnedVisualId = null;
+      if (pinVisualPreviewBtn) pinVisualPreviewBtn.setAttribute('aria-pressed', 'false');
+      if (previewVisuals) previewVisuals.cancelPreview();
+      updateVisualMeta(null, 'stopped');
+    });
+  }
+
+  if (stopSoundPreviewBtn) {
+    stopSoundPreviewBtn.addEventListener('click', () => {
+      engine.stop();
+      inspectorState.currentSoundId = null;
+      updateSoundStatus(null, 'stopped');
+    });
+  }
   if (visuals) {
     visuals.setDebugOptions({ enabled: false, showProvenance: false });
   }
+  if (previewVisuals) {
+    previewVisuals.setDebugOptions({ enabled: true, showProvenance: false });
+  }
   renderVisualAtlas();
+  renderSoundInspector();
+  setInspectorTab('visual');
 
   if (provenanceToggle) {
     provenanceToggle.addEventListener('change', () => {

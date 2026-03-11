@@ -52,3 +52,31 @@
 .asmr-atlas-card{border:1px solid #2f3f73;border-radius:8px;background:#0a1022;padding:.55rem}
 .asmr-atlas-card h4{margin:.1rem 0 .25rem;color:#c6dcff;font-size:.86rem}
 .asmr-atlas-card p{margin:.15rem 0;font-size:.76rem;line-height:1.35}
+
+
+.asmr-inspector-shortcuts{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
+.asmr-debug-inspectors{margin-top:.8rem;border:1px solid #33437f;border-radius:8px;background:#0c1226;position:relative}
+.asmr-debug-inspectors summary{cursor:pointer;color:#9ec0ff;font-size:.9rem;padding:.75rem .8rem}
+.asmr-debug-inspectors[open]{padding:0 .8rem .8rem;max-height:min(75vh,820px);overflow:auto}
+.asmr-inspector-tabs{display:flex;gap:.45rem;margin:.4rem 0 .75rem}
+.asmr-inspector-tab{background:#101a38;border:1px solid #2f3f73;color:#bcd3ff;border-radius:6px;padding:.38rem .65rem;font-size:.78rem;cursor:pointer}
+.asmr-inspector-tab.is-active{background:#1c2c5f;color:#e6eeff}
+.asmr-inspector-panel{display:none}
+.asmr-inspector-panel.is-active{display:block}
+.asmr-inspector-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:.75rem;align-items:start}
+.asmr-inspector-list{min-width:0}
+.asmr-inspector-search-label{font-size:.75rem;color:#9ec0ff;margin-bottom:.25rem;display:block}
+#asmr-visual-inspector-search,#asmr-sound-inspector-search{width:100%;background:#0a0d1c;color:#e6ecff;border:1px solid #33437f;border-radius:6px;padding:.5rem .6rem;margin-bottom:.6rem}
+.asmr-inspector-preview{position:sticky;top:.45rem;background:#0a1022;border:1px solid #2f3f73;border-radius:8px;padding:.6rem}
+.asmr-inspector-preview h3{margin:.1rem 0 .45rem;font-size:.86rem;color:#c6dcff}
+.asmr-inspector-meta{font-size:.74rem;color:#b8ccff;line-height:1.35;margin:.2rem 0 .45rem}
+.asmr-inspector-status{font-size:.8rem;color:#9ed4ff}
+#asmr-visual-debug-canvas{display:block;width:100%;height:auto;min-height:170px;background:linear-gradient(180deg,#060c1f,#0a142d 45%,#090f1f);border:1px solid #26396a;border-radius:6px}
+.asmr-inspector-preview-actions{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.5rem}
+.asmr-inspector-group{margin:.5rem 0}
+.asmr-inspector-group-title{margin:0 0 .35rem;font-size:.73rem;color:#8db0ff;text-transform:uppercase;letter-spacing:.04em}
+.asmr-atlas-card,.asmr-sound-card{border:1px solid #2f3f73;border-radius:7px;background:#0a1022;padding:.45rem .5rem;margin-bottom:.45rem}
+.asmr-atlas-card h4,.asmr-sound-card h4{margin:.05rem 0 .2rem;color:#c6dcff;font-size:.8rem}
+.asmr-atlas-card p,.asmr-sound-card p{margin:.12rem 0;font-size:.72rem;line-height:1.28}
+.asmr-atlas-card.is-hovered,.asmr-sound-card.is-hovered{border-color:#6b89d6;box-shadow:0 0 0 1px rgba(135,173,255,.24) inset}
+@media (max-width:860px){.asmr-inspector-layout{grid-template-columns:1fr}.asmr-inspector-preview{position:static}}

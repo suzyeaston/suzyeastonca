@@ -143,14 +143,58 @@ get_header();
 
 
 
-    <details class="asmr-debug-atlas" id="asmr-visual-debug-atlas">
-      <summary>Visual Debug Atlas</summary>
-      <p class="asmr-debug-copy">Inspect each visual motif in isolation and verify hero/support provenance without running generation.</p>
+    <div class="asmr-inspector-shortcuts">
+      <button type="button" id="asmr-inspect-selected-visuals" class="pixel-button secondary">Inspect selected visuals</button>
+      <button type="button" id="asmr-inspect-selected-sounds" class="pixel-button secondary">Inspect selected sounds</button>
+    </div>
+
+    <details class="asmr-debug-inspectors" id="asmr-debug-inspectors">
+      <summary>Debug Inspectors</summary>
       <div class="asmr-debug-actions">
         <button type="button" id="asmr-preview-current-hero" class="pixel-button secondary">Preview current hero visuals</button>
         <label class="asmr-debug-toggle"><input type="checkbox" id="asmr-debug-provenance-toggle" /> Show render provenance overlay</label>
       </div>
-      <div id="asmr-visual-atlas-grid" class="asmr-visual-atlas-grid"></div>
+      <div class="asmr-inspector-tabs" role="tablist" aria-label="Debug inspector tabs">
+        <button type="button" class="asmr-inspector-tab is-active" data-tab="visual" role="tab" aria-selected="true">Visual Inspector</button>
+        <button type="button" class="asmr-inspector-tab" data-tab="sound" role="tab" aria-selected="false">Sound Inspector</button>
+      </div>
+
+      <section class="asmr-inspector-panel is-active" data-panel="visual" role="tabpanel">
+        <div class="asmr-inspector-layout">
+          <div class="asmr-inspector-list">
+            <label for="asmr-visual-inspector-search" class="asmr-inspector-search-label">Search visual motifs</label>
+            <input id="asmr-visual-inspector-search" type="search" placeholder="Search by id, label, category..." />
+            <div id="asmr-visual-atlas-grid" class="asmr-visual-atlas-grid"></div>
+          </div>
+          <aside class="asmr-inspector-preview" aria-live="polite">
+            <h3>Visual Preview</h3>
+            <p id="asmr-visual-inspector-meta" class="asmr-inspector-meta">Hover or focus a motif card to preview.</p>
+            <canvas id="asmr-visual-debug-canvas" width="480" height="270"></canvas>
+            <div class="asmr-inspector-preview-actions">
+              <button type="button" id="asmr-pin-visual-preview" class="pixel-button tiny secondary" aria-pressed="false">Pin preview</button>
+              <button type="button" id="asmr-stop-visual-preview" class="pixel-button tiny secondary">Stop</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="asmr-inspector-panel" data-panel="sound" role="tabpanel" hidden>
+        <div class="asmr-inspector-layout">
+          <div class="asmr-inspector-list">
+            <label for="asmr-sound-inspector-search" class="asmr-inspector-search-label">Search sound engines</label>
+            <input id="asmr-sound-inspector-search" type="search" placeholder="Search by id, label, category..." />
+            <div id="asmr-sound-inspector-grid" class="asmr-sound-inspector-grid"></div>
+          </div>
+          <aside class="asmr-inspector-preview" aria-live="polite">
+            <h3>Sound Preview</h3>
+            <p id="asmr-sound-inspector-meta" class="asmr-inspector-meta">Select a sound engine and click Preview sound.</p>
+            <p id="asmr-sound-inspector-status" class="asmr-inspector-status">stopped</p>
+            <div class="asmr-inspector-preview-actions">
+              <button type="button" id="asmr-stop-sound-preview" class="pixel-button tiny secondary">Stop</button>
+            </div>
+          </aside>
+        </div>
+      </section>
     </details>
 
     <section class="asmr-visual-preview" aria-label="Visual preview canvas">

@@ -99,6 +99,7 @@
       this.debugOptions = { enabled: false, showProvenance: false };
       this.debugFrameState = null;
       this.previewTimeout = null;
+      this.previewToken = 0;
     }
 
 
@@ -110,37 +111,70 @@
       this.debugOptions = Object.assign({}, this.debugOptions, options || {});
     }
 
-    buildSingleVisualTimeline(visualType, runtime) {
-      const clampedRuntime = clamp(Number(runtime || 3.2), 2.5, 6);
+    buildSingleVisualTimeline(visualType, runtime, options = {}) {
+      const clampedRuntime = clamp(Number(runtime || 3.2), 1.2, 6);
+      const intensity = clamp(Number(options.intensity || 0.85), 0.1, 1);
+      const profileTags = Array.isArray(options.style_tags) ? options.style_tags : ['debug_preview'];
       return {
         runtime: clampedRuntime,
         visualEvents: [{
           time: 0,
           duration: clampedRuntime,
           visual_type: visualType,
-          intensity: 0.85,
-          params: {},
+          intensity,
+          params: {
+            debug_preview: true,
+            minimal_context: true,
+            ...(options.params && typeof options.params === 'object' ? options.params : {})
+          },
           sync_role: 'debug_single_preview'
         }],
         syncPoints: [],
         endCard: { use_end_card: false },
         title: 'Visual Debug Preview',
-        renderProfile: this.resolveRenderProfile({ style_tags: [] })
+        renderProfile: this.resolveRenderProfile({ style_tags: profileTags })
       };
     }
 
-    previewVisualType(visualType, runtimeSeconds) {
-      if (!VISUAL_REGISTRY_MAP[visualType]) return false;
+    previewVisualMotifById(visualType, options = {}) {
+      if (!VISUAL_REGISTRY_MAP[visualType]) {
+        if (this.debugOptions && this.debugOptions.enabled && window.console && typeof window.console.warn === 'function') {
+          window.console.warn('[ASMR] No visual renderer found for motif id:', visualType);
+        }
+        return false;
+      }
       if (this.previewTimeout) {
         window.clearTimeout(this.previewTimeout);
         this.previewTimeout = null;
       }
-      this.loadTimeline(this.buildSingleVisualTimeline(visualType, runtimeSeconds || 3.2));
+
+      const previewToken = this.previewToken + 1;
+      this.previewToken = previewToken;
+      const runtimeSeconds = clamp(Number(options.runtimeSeconds || 1.8), 1.2, 6);
+      const shouldAutoStop = options.autoStop !== false;
+
+      this.loadTimeline(this.buildSingleVisualTimeline(visualType, runtimeSeconds, options));
       this.play(0);
-      this.previewTimeout = window.setTimeout(() => {
-        this.stop();
-      }, Math.round((runtimeSeconds || 3.2) * 1000));
+      if (shouldAutoStop) {
+        this.previewTimeout = window.setTimeout(() => {
+          if (previewToken !== this.previewToken) return;
+          this.stop();
+        }, Math.round(runtimeSeconds * 1000));
+      }
       return true;
+    }
+
+    previewVisualType(visualType, runtimeSeconds) {
+      return this.previewVisualMotifById(visualType, { runtimeSeconds: runtimeSeconds || 3.2 });
+    }
+
+    cancelPreview() {
+      this.previewToken += 1;
+      if (this.previewTimeout) {
+        window.clearTimeout(this.previewTimeout);
+        this.previewTimeout = null;
+      }
+      this.stop();
     }
 
     setCanvas(canvas) {
