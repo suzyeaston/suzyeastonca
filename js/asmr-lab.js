@@ -41,6 +41,14 @@
   const provenanceToggle = document.getElementById('asmr-debug-provenance-toggle');
   const resultsTabButtons = document.querySelectorAll('.asmr-results-tab');
   const resultsPanels = document.querySelectorAll('.asmr-results-panel');
+  const modeChips = document.querySelectorAll('.asmr-mode-chip');
+  const lookChips = document.querySelectorAll('.asmr-look-chip');
+  const prevNodeBtn = document.getElementById('asmr-node-prev');
+  const nextNodeBtn = document.getElementById('asmr-node-next');
+  const nodeOrderEl = document.getElementById('asmr-route-node-order');
+  const nodeTitleEl = document.getElementById('asmr-route-node-title');
+  const nodeIdEl = document.getElementById('asmr-route-node-id');
+  const nodeTransitionEl = document.getElementById('asmr-route-node-transition');
 
   const engine = new window.AsmrFoleyEngine();
   const inspectorSoundEngine = new window.AsmrFoleyEngine();
@@ -267,11 +275,65 @@
   }
 
 
+  const ROUTE_PRESETS = {
+    gastown_water_street_walk: {
+      route_id: 'gastown_water_street_walk',
+      title: 'Gastown Water Street Walk',
+      nodes: [
+        {
+          id: 'station_threshold',
+          title: 'Station Threshold',
+          route_order: 1,
+          visual_layers: ['station_threshold_glow', 'water_street_corridor', 'street_corridor_vanishing_point'],
+          audio_layers: ['footsteps', 'skytrain_pass', 'crowd_murmur', 'wind_gust'],
+          look_bias: 'center',
+          transition_targets: ['water_street_corridor']
+        },
+        {
+          id: 'water_street_corridor',
+          title: 'Water Street Corridor',
+          route_order: 2,
+          visual_layers: ['water_street_corridor', 'wet_cobble_axis', 'lamp_rhythm_row', 'brick_wall_parallax'],
+          audio_layers: ['footsteps', 'crowd_murmur', 'bike_bell', 'crosswalk_chirp'],
+          look_bias: 'right',
+          transition_targets: ['steam_clock_approach']
+        },
+        {
+          id: 'steam_clock_approach',
+          title: 'Steam Clock Approach',
+          route_order: 3,
+          visual_layers: ['steam_clock_approach', 'gastown_clock_silhouette', 'water_street_corridor', 'streetlamp_halo_row'],
+          audio_layers: ['steam_clock', 'gastown_clock_whistle', 'footsteps', 'crowd_murmur'],
+          look_bias: 'left',
+          transition_targets: ['split_building_node']
+        },
+        {
+          id: 'split_building_node',
+          title: 'Split / Angled Building Node',
+          route_order: 4,
+          visual_layers: ['angled_building_split', 'water_street_corridor', 'cobblestone_perspective', 'lamp_rhythm_row'],
+          audio_layers: ['footsteps', 'wind_gust', 'crowd_murmur', 'car_horn_short'],
+          look_bias: 'center',
+          transition_targets: []
+        }
+      ]
+    }
+  };
+
   const QA_PRESET = {
     duration: '20',
     link_av: true,
-    audio_layers: ['ocean_waves', 'seabus_horn'],
-    visual_layers: ['waterfront_scene', 'harbor_mist', 'lions_gate_bridge', 'ocean_surface_shimmer']
+    route_preset: 'gastown_water_street_walk',
+    active_node: 'station_threshold',
+    look_bias: 'center'
+  };
+
+  const routeState = {
+    mode: 'compose',
+    routePresetId: 'gastown_water_street_walk',
+    currentNodeId: 'station_threshold',
+    lookBias: 'center',
+    traversal: ['station_threshold']
   };
 
   const transport = {
@@ -306,6 +368,127 @@
       li.textContent = typeof item === 'string' ? item : JSON.stringify(item);
       parent.appendChild(li);
     });
+  }
+
+  function getRoutePreset() {
+    return ROUTE_PRESETS[routeState.routePresetId] || ROUTE_PRESETS.gastown_water_street_walk;
+  }
+
+  function getRouteNode(nodeId) {
+    const route = getRoutePreset();
+    return (route.nodes || []).find((node) => node.id === nodeId) || route.nodes[0] || null;
+  }
+
+  function normalizeLookBias(value) {
+    return value === 'left' || value === 'right' ? value : 'center';
+  }
+
+  function setMode(mode) {
+    routeState.mode = mode === 'explore' || mode === 'record' ? mode : 'compose';
+    modeChips.forEach((chip) => {
+      const active = chip.dataset.asmrMode === routeState.mode;
+      chip.classList.toggle('is-active', active);
+      chip.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    if (audioFeedback) audioFeedback.textContent = `Mode: ${routeState.mode}.`;
+  }
+
+  function setLookBias(value) {
+    routeState.lookBias = normalizeLookBias(value);
+    if (form && form.elements.namedItem('look_bias')) form.elements.namedItem('look_bias').value = routeState.lookBias;
+    lookChips.forEach((chip) => {
+      const active = chip.dataset.lookBias === routeState.lookBias;
+      chip.classList.toggle('is-active', active);
+      chip.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  function syncNodeMeta() {
+    const route = getRoutePreset();
+    const nodes = route.nodes || [];
+    const idx = nodes.findIndex((node) => node.id === routeState.currentNodeId);
+    const node = idx >= 0 ? nodes[idx] : nodes[0];
+    if (!node) return;
+    routeState.currentNodeId = node.id;
+    if (form && form.elements.namedItem('active_node')) form.elements.namedItem('active_node').value = node.id;
+    if (!routeState.traversal.includes(node.id)) routeState.traversal.push(node.id);
+    if (nodeOrderEl) nodeOrderEl.textContent = `Node ${node.route_order || idx + 1} / ${nodes.length}`;
+    if (nodeTitleEl) nodeTitleEl.textContent = node.title || node.id;
+    if (nodeIdEl) nodeIdEl.textContent = node.id;
+    if (nodeTransitionEl) {
+      nodeTransitionEl.textContent = node.transition_targets && node.transition_targets.length
+        ? `Transitions to: ${node.transition_targets.join(', ')}`
+        : 'Transitions to: end of current route corridor';
+    }
+    if (prevNodeBtn) prevNodeBtn.disabled = idx <= 0;
+    if (nextNodeBtn) nextNodeBtn.disabled = idx < 0 || idx >= nodes.length - 1;
+    if (routeState.mode !== 'explore' && routeState.mode !== 'record') return;
+    const look = routeState.lookBias || node.look_bias || 'center';
+    const previewPkg = buildRoutePreviewPackage(node, look);
+    currentPackage = previewPkg;
+    if (visuals) {
+      visuals.loadTimeline(previewPkg);
+      visuals.seek(0);
+    }
+    [previewBtn, stopBtn, exportBtn, soundOnlyBtn, exportVideoBtn].forEach((b) => {
+      if (!b) return;
+      if (b === exportVideoBtn) b.disabled = !currentPackage || !videoSupport.canExport;
+      else b.disabled = !currentPackage;
+    });
+  }
+
+  function moveNode(delta) {
+    const route = getRoutePreset();
+    const nodes = route.nodes || [];
+    const idx = nodes.findIndex((node) => node.id === routeState.currentNodeId);
+    if (idx < 0) return;
+    const target = nodes[idx + delta];
+    if (!target) return;
+    routeState.currentNodeId = target.id;
+    if (!routeState.traversal.includes(target.id)) routeState.traversal.push(target.id);
+    setLookBias(target.look_bias || routeState.lookBias);
+    syncNodeMeta();
+    if (audioFeedback) audioFeedback.textContent = `Moved to ${target.title}.`;
+  }
+
+  function collectAdvancedSelections(name) {
+    return getSelectedValues(name).filter(Boolean);
+  }
+
+  function buildRoutePreviewPackage(node, lookBias) {
+    const runtime = Number((form && form.elements.namedItem('duration') && form.elements.namedItem('duration').value) || 20) || 20;
+    const look = normalizeLookBias(lookBias || node.look_bias || 'center');
+    const lookPan = look === 'left' ? -0.32 : (look === 'right' ? 0.32 : 0);
+    const visualEvents = (node.visual_layers || []).map((visualType) => ({
+      t: 0,
+      duration: runtime,
+      visual_type: visualType,
+      intensity: 0.72,
+      params: {
+        pov: 'first_person_unseen',
+        look_bias: look,
+        pan_bias: lookPan,
+        corridor_bias: 'strong',
+        asymmetry_bias: 'high',
+        route_id: routeState.routePresetId,
+        node_id: node.id
+      }
+    }));
+    return {
+      runtime_seconds: runtime,
+      route_preset: routeState.routePresetId,
+      route_mode: routeState.mode,
+      active_node: node.id,
+      look_bias: look,
+      traversal_nodes: routeState.traversal.slice(),
+      audio_layers: (node.audio_layers || []).slice(),
+      visual_layers: (node.visual_layers || []).slice(),
+      audio_events: [],
+      visual_events: visualEvents,
+      sync_points: [`Start: ${node.title}`, `Look: ${look}`, `Traverse: ${(node.transition_targets || []).join(', ') || 'route_end'}`],
+      style_tags: ['gastown', 'water_street', 'first_person', 'crt'],
+      creative_brief: `Route node preview for ${node.title}`
+    };
   }
 
   function getVideoSupport() {
@@ -461,7 +644,7 @@ ${data.concept_summary}`;
       ? payload.vancouver_world_context.scenes.length
       : 0;
     const sceneStatus = sceneSeedState.loaded ? `sceneSeeds=loaded:${sceneSeedState.total}` : 'sceneSeeds=offline';
-    debugStatusEl.textContent = `Selection snapshot: audio=${audioCount}, visual=${visualCount}, link_av=${payload.link_av ? 'on' : 'off'}, worldScenes=${worldScenes}, ${sceneStatus}`;
+    debugStatusEl.textContent = `Route snapshot: preset=${payload.route_preset || 'none'}, mode=${payload.route_mode || 'compose'}, node=${payload.active_node || 'station_threshold'}, look=${payload.look_bias || 'center'}, audio=${audioCount}, visual=${visualCount}, worldScenes=${worldScenes}, ${sceneStatus}`;
   }
 
   function collectFormPayload() {
@@ -470,16 +653,32 @@ ${data.concept_summary}`;
       duration: String(formData.get('duration') || '20')
     };
 
+    const node = getRouteNode(routeState.currentNodeId);
+    const nodeAudio = (node && Array.isArray(node.audio_layers)) ? node.audio_layers : [];
+    const nodeVisuals = (node && Array.isArray(node.visual_layers)) ? node.visual_layers : [];
+
     const linkAV = !!formData.get('link_av');
-    const audioLayers = formData.getAll('audio_layers[]').map((item) => String(item || '').trim()).filter(Boolean);
-    const visualLayers = formData.getAll('visual_layers[]').map((item) => String(item || '').trim()).filter(Boolean);
+    const audioLayers = Array.from(new Set(nodeAudio.concat(collectAdvancedSelections('audio_layers'))));
+    const visualLayers = Array.from(new Set(nodeVisuals.concat(collectAdvancedSelections('visual_layers'))));
     const linked = applyLayerLinking(audioLayers, visualLayers, linkAV);
 
-    const routeContext = getGastownRouteContext(linked.visual_layers);
-    const worldContext = routeContext ? null : getWorldContextForVisualSelection(linked.visual_layers);
+    const routeContext = getGastownRouteContext(linked.visual_layers) || {
+      route_id: routeState.routePresetId,
+      node_id: node ? node.id : 'station_threshold',
+      look_bias: routeState.lookBias,
+      route_mode: routeState.mode,
+      traversal_nodes: routeState.traversal.slice(),
+      source: 'gastown-route-preset-v2'
+    };
+    const worldContext = null;
 
     return Object.assign({}, base, {
       link_av: linkAV,
+      route_mode: routeState.mode,
+      route_preset: routeState.routePresetId,
+      active_node: node ? node.id : 'station_threshold',
+      look_bias: routeState.lookBias,
+      traversal_nodes: routeState.traversal.slice(),
       audio_layers: linked.audio_layers,
       visual_layers: linked.visual_layers,
       gastown_route_context: routeContext || undefined,
@@ -794,7 +993,16 @@ ${data.concept_summary}`;
     const fullMode = !modeToggle || modeToggle.value === 'audiovisual';
     if (visuals && fullMode) {
       visuals.loadTimeline(currentPackage);
-      visuals.seek(0); // meaningful first frame before audio transport start
+      visuals.seek(0);
+    }
+
+    if (routeState.mode === 'explore') {
+      if (visuals) {
+        visuals.play(0);
+        transport.registerStop(() => visuals.stop());
+      }
+      if (audioFeedback) audioFeedback.textContent = 'Explore preview playing (visual route look-through).';
+      return;
     }
 
     const playback = await engine.preview(currentPackage);
@@ -807,7 +1015,11 @@ ${data.concept_summary}`;
     }
     transport.registerStop(() => engine.stop());
 
-    if (audioFeedback) audioFeedback.textContent = fullMode ? 'Synchronized preview playing.' : 'Sound-only preview playing.';
+    if (audioFeedback) {
+      audioFeedback.textContent = routeState.mode === 'record'
+        ? 'Record mode preview playing.'
+        : (fullMode ? 'Synchronized preview playing.' : 'Sound-only preview playing.');
+    }
   }
 
   async function inspectRecordedBlob(blob) {
@@ -943,7 +1155,8 @@ ${data.concept_summary}`;
     const url = URL.createObjectURL(result.blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `asmr-lab-film-1920x1080.${result.extension}`;
+    const sequenceTag = (routeState.traversal || []).join('-') || 'route';
+    a.download = `asmr-lab-${routeState.routePresetId}-${sequenceTag}-1920x1080.${result.extension}`;
     a.click();
     URL.revokeObjectURL(url);
 
@@ -981,7 +1194,13 @@ ${data.concept_summary}`;
         const field = form.elements.namedItem(key);
         if (field) field.value = value;
       });
-      setStatus('QA preset loaded (waterfront rack). Generate package to test ocean-linked motifs.');
+      routeState.routePresetId = QA_PRESET.route_preset || 'gastown_water_street_walk';
+      routeState.currentNodeId = QA_PRESET.active_node || 'station_threshold';
+      routeState.traversal = [routeState.currentNodeId];
+      setLookBias(QA_PRESET.look_bias || 'center');
+      setMode('compose');
+      syncNodeMeta();
+      setStatus('Route preset loaded for Gastown Water Street walk.');
       setError('');
     });
   }
@@ -1025,7 +1244,8 @@ ${data.concept_summary}`;
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'asmr-lab-preview.wav';
+        const sequenceTag = (routeState.traversal || []).join('-') || 'route';
+        a.download = `asmr-lab-${routeState.routePresetId}-${sequenceTag}.wav`;
         a.click();
         URL.revokeObjectURL(url);
         if (audioFeedback) audioFeedback.textContent = 'WAV export complete.';
@@ -1151,6 +1371,26 @@ ${data.concept_summary}`;
   setInspectorTab('visual');
   updateVisualMeta(null, "stopped");
   updateSoundStatus(null, "stopped");
+  setMode('compose');
+  setLookBias(routeState.lookBias);
+  syncNodeMeta();
+
+  modeChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      setMode(chip.dataset.asmrMode);
+      syncNodeMeta();
+    });
+  });
+
+  lookChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      setLookBias(chip.dataset.lookBias);
+      syncNodeMeta();
+    });
+  });
+
+  if (prevNodeBtn) prevNodeBtn.addEventListener('click', () => moveNode(-1));
+  if (nextNodeBtn) nextNodeBtn.addEventListener('click', () => moveNode(1));
 
   if (provenanceToggle) {
     provenanceToggle.addEventListener('change', () => {
