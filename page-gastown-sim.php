@@ -10,20 +10,19 @@ get_header();
     <header class="gastown-sim-header">
       <p class="gastown-sim-kicker">Prototype route: Waterfront Station → Water Street → Steam Clock</p>
       <h1>Gastown First-Person Simulator</h1>
-      <p class="gastown-sim-intro">A stylized, geographically grounded night walk through one focused Gastown slice. Click Start, lock the pointer, and walk the corridor.</p>
+      <p class="gastown-sim-intro">A stylized, geographically grounded Gastown walk through one focused corridor slice. Click into the scene, look around, and walk the route.</p>
     </header>
 
     <div class="gastown-controls" role="group" aria-label="Simulator controls">
-      <button type="button" class="pixel-button" data-action="start">Start</button>
       <button type="button" class="pixel-button secondary" data-action="pause">Pause</button>
       <button type="button" class="pixel-button secondary" data-action="reset">Reset to route start</button>
       <label>
         Time of day
         <select name="time-of-day">
-          <option value="morning">Morning</option>
+          <option value="morning" selected>Morning</option>
           <option value="afternoon">Afternoon</option>
           <option value="evening">Evening</option>
-          <option value="night" selected>Night</option>
+          <option value="night">Night</option>
         </select>
       </label>
       <label>
@@ -52,7 +51,7 @@ get_header();
         <li><strong>Click scene</strong> to enter look mode</li>
         <li><strong>Mouse</strong> = look around</li>
         <li><strong>W A S D / arrow keys</strong> = move</li>
-        <li><strong>Esc</strong> = release pointer / leave play mode</li>
+        <li><strong>Esc</strong> = release pointer / pause</li>
       </ul>
     </section>
 

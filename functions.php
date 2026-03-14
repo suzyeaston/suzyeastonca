@@ -239,6 +239,7 @@ function se_enqueue_gastown_sim_assets() {
                 'audioBaseUrl'   => esc_url_raw( $uri . '/assets/audio/gastown' ),
                 'defaultWeather' => 'rain',
                 'defaultMood'    => 'eerie',
+                'defaultTimeOfDay' => 'morning',
             )
         );
     }
