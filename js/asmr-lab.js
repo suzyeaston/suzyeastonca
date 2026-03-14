@@ -23,6 +23,7 @@
   const soundGridEl = document.getElementById('asmr-sound-inspector-grid');
   const visualSearchEl = document.getElementById('asmr-visual-inspector-search');
   const soundSearchEl = document.getElementById('asmr-sound-inspector-search');
+  const advancedPanelEl = document.getElementById('asmr-advanced-panel');
   const debugInspectorsEl = document.getElementById('asmr-debug-inspectors');
   const visualMetaEl = document.getElementById('asmr-visual-inspector-meta');
   const soundMetaEl = document.getElementById('asmr-sound-inspector-meta');
@@ -38,6 +39,8 @@
   const visualPreviewPanelEl = document.querySelector('[data-panel="visual"] .asmr-inspector-preview');
   const visualPreviewTitleEl = document.getElementById('asmr-visual-preview-title');
   const provenanceToggle = document.getElementById('asmr-debug-provenance-toggle');
+  const resultsTabButtons = document.querySelectorAll('.asmr-results-tab');
+  const resultsPanels = document.querySelectorAll('.asmr-results-panel');
 
   const engine = new window.AsmrFoleyEngine();
   const inspectorSoundEngine = new window.AsmrFoleyEngine();
@@ -266,6 +269,22 @@
   }
 
 
+
+
+  function setResultsTab(tab) {
+    const activeTab = tab === 'timeline' || tab === 'json' ? tab : 'overview';
+    resultsTabButtons.forEach((btn) => {
+      const active = btn.dataset.resultsTab === activeTab;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    resultsPanels.forEach((panel) => {
+      const active = panel.dataset.resultsPanel === activeTab;
+      panel.classList.toggle('is-active', active);
+      panel.hidden = !active;
+    });
+  }
+
   function renderData(data) {
     const concept = document.getElementById('asmr-concept');
     const beats = document.getElementById('asmr-beats');
@@ -341,6 +360,7 @@ ${data.concept_summary}`;
       edit.textContent = `${er.pacing_note || ''} ${er.silence_strategy || ''} ${er.release_strategy || ''}`.trim();
     }
     if (note) note.textContent = data.presentation_note || '';
+    setResultsTab('overview');
     if (recipe) recipe.textContent = JSON.stringify({ audio_events: data.audio_events, visual_events: data.visual_events, end_card: data.end_card }, null, 2);
 
     currentPackage = data;
@@ -657,6 +677,7 @@ ${data.concept_summary}`;
   }
 
   function openInspector(tab, selectedOnly) {
+    if (advancedPanelEl) advancedPanelEl.open = true;
     if (debugInspectorsEl) debugInspectorsEl.open = true;
     if (tab === 'sound') {
       inspectorState.selectedSoundOnly = !!selectedOnly;
@@ -955,6 +976,10 @@ ${data.concept_summary}`;
     btn.addEventListener('click', () => setInspectorTab(btn.dataset.tab));
   });
 
+  resultsTabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => setResultsTab(btn.dataset.resultsTab));
+  });
+
 
   if (debugInspectorsEl) {
     debugInspectorsEl.addEventListener('toggle', () => {
@@ -1040,6 +1065,9 @@ ${data.concept_summary}`;
   if (previewVisuals) {
     previewVisuals.setDebugOptions({ enabled: true, showProvenance: false });
   }
+  if (advancedPanelEl) advancedPanelEl.open = false;
+  if (debugInspectorsEl) debugInspectorsEl.open = false;
+
   renderVisualAtlas();
   renderSoundInspector();
   setInspectorTab('visual');

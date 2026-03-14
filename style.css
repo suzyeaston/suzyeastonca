@@ -3497,3 +3497,18 @@ body.page-template-page-bio-php .bio-content {
 .footer-site-links a:focus {
   text-decoration: underline;
 }
+
+
+/* ASMR Lab page-level breathing room */
+.asmr-lab-page .asmr-lab-shell {
+  margin-top: 2.4rem;
+  margin-bottom: 2.8rem;
+}
+
+.asmr-lab-page .asmr-lab-primer {
+  margin-bottom: 1.2rem;
+}
+
+.asmr-lab-page .asmr-lab-form {
+  gap: 1rem;
+}
