@@ -68,6 +68,14 @@ get_header();
         </section>
 
         <p class="arcade-subtext">Insert coin to explore</p>
+
+        <section class="gastown-sim-teaser crt-block" aria-labelledby="gastown-sim-teaser-title">
+            <p class="gastown-sim-teaser__eyebrow pixel-font"><span class="gastown-sim-teaser__badge">New</span> In progress. Shipping weird little upgrades constantly.</p>
+            <h2 id="gastown-sim-teaser-title" class="pixel-font">New: Gastown First-Person Simulator</h2>
+            <p class="gastown-sim-teaser__description">A first-person Vancouver experiment inspired by the ASMR Lab and now mutating into a playable Gastown walk. Start near Waterfront Station and head toward Water Street and the Steam Clock.</p>
+            <p class="gastown-sim-teaser__microcopy">Getting tuned up often, sometimes daily. If the world looks haunted, hard refresh or hop into a private window and dive back in.</p>
+            <a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>" class="pixel-button gastown-sim-teaser__cta">Enter Gastown</a>
+        </section>
         <div class="puck-icon" role="img" aria-label="retro hockey puck icon">🏒</div>
         <?php
         $visitor_data = include get_template_directory() . '/visitor-tracker.php';
@@ -159,13 +167,6 @@ get_header();
         <a href="<?php echo esc_url(home_url('/asmr-lab/')); ?>" class="pixel-button asmr-lab-teaser__cta">Enter ASMR Lab</a>
     </section>
 
-    <section class="gastown-sim-teaser crt-block" aria-labelledby="gastown-sim-teaser-title">
-        <p class="gastown-sim-teaser__eyebrow pixel-font"><span class="gastown-sim-teaser__badge">New</span> In progress. Shipping weird little upgrades constantly.</p>
-        <h2 id="gastown-sim-teaser-title" class="pixel-font">New: Gastown First-Person Simulator</h2>
-        <p class="gastown-sim-teaser__description">A first-person Vancouver experiment inspired by the ASMR Lab and now mutating into a playable Gastown walk. Start near Waterfront Station and head toward Water Street and the Steam Clock.</p>
-        <p class="gastown-sim-teaser__microcopy">Getting tuned up often, sometimes daily. If the world looks haunted, hard refresh or hop into a private window and dive back in.</p>
-        <a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>" class="pixel-button gastown-sim-teaser__cta">Enter Gastown</a>
-    </section>
 
     <section class="track-analyzer-feature">
         <h2 class="pixel-font">Track Analyzer</h2>
