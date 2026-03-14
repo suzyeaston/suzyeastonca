@@ -1,0 +1,235 @@
+{
+  "routeId": "gastown_water_street_slice_v1",
+  "meta": {
+    "title": "Waterfront to Steam Clock Corridor",
+    "units": "meters-ish",
+    "source": "hand-authored prototype aligned to Gastown Water Street layout",
+    "lastBuild": "2026-03-14T08:44:41.360Z",
+    "buildNotes": [
+      "Placeholder scaffold only.",
+      "Future: read offline GeoJSON / CSV exports from Open Data and OSM extracts.",
+      "Future: normalize centerline, landmark anchors, and facades into compact runtime format."
+    ]
+  },
+  "spawn": {
+    "x": 0,
+    "y": 1.7,
+    "z": 0,
+    "yaw": 0
+  },
+  "corridor": {
+    "centerline": [
+      {
+        "x": 0,
+        "z": 0
+      },
+      {
+        "x": 8,
+        "z": -26
+      },
+      {
+        "x": 14,
+        "z": -54
+      },
+      {
+        "x": 26,
+        "z": -85
+      },
+      {
+        "x": 44,
+        "z": -112
+      }
+    ],
+    "halfWidth": 7.5,
+    "softBoundary": 10.5
+  },
+  "nodes": [
+    {
+      "id": "station-threshold",
+      "label": "Waterfront Station Threshold",
+      "x": 0,
+      "z": -3
+    },
+    {
+      "id": "mid-water-street",
+      "label": "Mid Water Street",
+      "x": 13,
+      "z": -53
+    },
+    {
+      "id": "steam-clock-approach",
+      "label": "Steam Clock Approach",
+      "x": 24,
+      "z": -82
+    },
+    {
+      "id": "split-building-node",
+      "label": "Split / Angled Building Node",
+      "x": 41,
+      "z": -108
+    }
+  ],
+  "buildingPlanes": [
+    {
+      "side": "left",
+      "x": -12,
+      "z": -10,
+      "width": 16,
+      "depth": 12,
+      "height": 17,
+      "tone": "brickDark"
+    },
+    {
+      "side": "right",
+      "x": 11,
+      "z": -16,
+      "width": 14,
+      "depth": 11,
+      "height": 16,
+      "tone": "brickWarm"
+    },
+    {
+      "side": "left",
+      "x": -7,
+      "z": -40,
+      "width": 17,
+      "depth": 12,
+      "height": 18,
+      "tone": "stoneMuted"
+    },
+    {
+      "side": "right",
+      "x": 18,
+      "z": -46,
+      "width": 15,
+      "depth": 10,
+      "height": 16,
+      "tone": "brickDark"
+    },
+    {
+      "side": "left",
+      "x": -2,
+      "z": -69,
+      "width": 19,
+      "depth": 12,
+      "height": 19,
+      "tone": "brickWarm"
+    },
+    {
+      "side": "right",
+      "x": 24,
+      "z": -76,
+      "width": 18,
+      "depth": 13,
+      "height": 20,
+      "tone": "stoneMuted"
+    },
+    {
+      "side": "left",
+      "x": 8,
+      "z": -100,
+      "width": 20,
+      "depth": 13,
+      "height": 20,
+      "tone": "brickDark"
+    },
+    {
+      "side": "right",
+      "x": 40,
+      "z": -105,
+      "width": 18,
+      "depth": 11,
+      "height": 18,
+      "tone": "brickWarm"
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "steam-clock",
+      "label": "Gastown Steam Clock",
+      "x": 29,
+      "z": -92,
+      "type": "clock"
+    },
+    {
+      "id": "station-front",
+      "label": "Waterfront Entry Plaza",
+      "x": -2,
+      "z": 5,
+      "type": "station"
+    },
+    {
+      "id": "angled-building",
+      "label": "Angled Building Wedge",
+      "x": 44,
+      "z": -111,
+      "type": "split"
+    }
+  ],
+  "audioZones": [
+    {
+      "id": "station-rumble",
+      "x": 2,
+      "z": -5,
+      "radius": 24,
+      "bed": "distant_transit"
+    },
+    {
+      "id": "steam-clock-core",
+      "x": 29,
+      "z": -92,
+      "radius": 16,
+      "bed": "steam_clock_mech"
+    },
+    {
+      "id": "split-nightlife",
+      "x": 43,
+      "z": -108,
+      "radius": 19,
+      "bed": "street_crowd"
+    }
+  ],
+  "weatherPresets": {
+    "clear": {
+      "fogDensity": 0.006,
+      "sky": "#1a2230",
+      "rainIntensity": 0
+    },
+    "rain": {
+      "fogDensity": 0.015,
+      "sky": "#131a24",
+      "rainIntensity": 0.85
+    },
+    "fog": {
+      "fogDensity": 0.03,
+      "sky": "#15181f",
+      "rainIntensity": 0.1
+    }
+  },
+  "moodPresets": {
+    "quiet": {
+      "lightIntensity": 0.55,
+      "audioDensity": 0.3,
+      "voiceFreq": 0.1,
+      "ambientBed": "quiet_night"
+    },
+    "eerie": {
+      "lightIntensity": 0.4,
+      "audioDensity": 0.35,
+      "voiceFreq": 0.12,
+      "ambientBed": "eerie_drones"
+    },
+    "nightlife": {
+      "lightIntensity": 0.75,
+      "audioDensity": 0.9,
+      "voiceFreq": 0.6,
+      "ambientBed": "nightlife_hum"
+    },
+    "commuter": {
+      "lightIntensity": 0.65,
+      "audioDensity": 0.7,
+      "voiceFreq": 0.4,
+      "ambientBed": "commuter_mix"
+    }
+  }
+}

@@ -180,6 +180,72 @@ function se_enqueue_asmr_lab_assets() {
 }
 add_action( 'wp_enqueue_scripts', 'se_enqueue_asmr_lab_assets' );
 
+
+function se_enqueue_gastown_sim_assets() {
+    if ( ! is_page_template( 'page-gastown-sim.php' ) ) {
+        return;
+    }
+
+    $dir = get_stylesheet_directory();
+    $uri = get_stylesheet_directory_uri();
+
+    $css_path = '/assets/css/gastown-sim.css';
+    if ( file_exists( $dir . $css_path ) ) {
+        wp_enqueue_style( 'se-gastown-sim', $uri . $css_path, array(), filemtime( $dir . $css_path ) );
+    }
+
+    wp_enqueue_script(
+        'three-js',
+        'https://unpkg.com/three@0.160.1/build/three.min.js',
+        array(),
+        '0.160.1',
+        true
+    );
+
+    wp_enqueue_script(
+        'howler-js',
+        'https://unpkg.com/howler@2.2.4/dist/howler.min.js',
+        array(),
+        '2.2.4',
+        true
+    );
+
+    $loader_path = '/js/gastown-world-loader.js';
+    if ( file_exists( $dir . $loader_path ) ) {
+        wp_enqueue_script(
+            'se-gastown-world-loader',
+            $uri . $loader_path,
+            array(),
+            filemtime( $dir . $loader_path ),
+            true
+        );
+    }
+
+    $app_path = '/js/gastown-sim.js';
+    if ( file_exists( $dir . $app_path ) ) {
+        wp_enqueue_script(
+            'se-gastown-sim',
+            $uri . $app_path,
+            array( 'three-js', 'howler-js', 'se-gastown-world-loader' ),
+            filemtime( $dir . $app_path ),
+            true
+        );
+
+        wp_localize_script(
+            'se-gastown-sim',
+            'seGastownSim',
+            array(
+                'worldDataUrl'   => esc_url_raw( $uri . '/assets/world/gastown-water-street.json' ),
+                'audioBaseUrl'   => esc_url_raw( $uri . '/assets/audio/gastown' ),
+                'defaultWeather' => 'rain',
+                'defaultMood'    => 'eerie',
+            )
+        );
+    }
+}
+add_action( 'wp_enqueue_scripts', 'se_enqueue_gastown_sim_assets' );
+
+
 // Header tweak CSS for the Lousy Outages page/template.
 // Idempotent: safe if this file is included multiple times.
 if ( ! function_exists('se_enqueue_header_tweak_css') ) {
