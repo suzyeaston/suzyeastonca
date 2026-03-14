@@ -10,23 +10,58 @@ get_header();
     <header class="asmr-lab-header">
       <p class="asmr-kicker">Retro-futurist creative control room</p>
       <h1 class="asmr-title">ASMR Lab</h1>
-      <p class="asmr-intro">Compose short procedural sensory micro-films from a prompt. The lab outputs a strict audiovisual score you can perform directly in the browser.</p>
+      <p class="asmr-intro">Route-first Gastown prototype. Compose, explore, and record a first-person Water Street walk from the Waterfront threshold to the Steam Clock corridor and split-building node.</p>
     </header>
 
     <section class="asmr-lab-primer" aria-labelledby="asmr-lab-primer-title">
-      <h2 id="asmr-lab-primer-title">What ASMR Lab now performs</h2>
+      <h2 id="asmr-lab-primer-title">What this prototype now performs</h2>
       <ul>
-        <li><strong>Strict timeline JSON</strong> with synchronized audio + visual events.</li>
-        <li><strong>Procedural sound synthesis</strong> using browser-generated textures.</li>
-        <li><strong>Reactive CRT-inspired visuals</strong> driven by the same shared clock.</li>
-        <li><strong>Preview, stop, WAV export, and 1080p video export</strong> without leaving the control room.</li>
+        <li><strong>Compose mode</strong> for a single hardcoded route preset: <code>gastown_water_street_walk</code>.</li>
+        <li><strong>Explore mode</strong> with connected scene nodes and left/center/right look bias per node.</li>
+        <li><strong>Record mode</strong> aligned to your active route traversal sequence.</li>
+        <li><strong>CRT-styled playback + export</strong> via synchronized browser audio/visual engines.</li>
       </ul>
     </section>
 
     <form id="asmr-lab-form" class="asmr-lab-form" novalidate>
+      <section class="asmr-route-console" aria-labelledby="asmr-route-title">
+        <h2 id="asmr-route-title">Gastown Route Console</h2>
+        <p class="asmr-route-intro">Preset: <strong>gastown_water_street_walk</strong> (Waterfront Station threshold → Water Street corridor → Steam Clock approach → split / angled-building node).</p>
+        <div class="asmr-route-mode-switch" role="group" aria-label="ASMR Lab mode">
+          <button type="button" class="pixel-button secondary asmr-mode-chip is-active" data-asmr-mode="compose">Compose</button>
+          <button type="button" class="pixel-button secondary asmr-mode-chip" data-asmr-mode="explore">Explore</button>
+          <button type="button" class="pixel-button secondary asmr-mode-chip" data-asmr-mode="record">Record</button>
+        </div>
+
+        <div class="asmr-route-nav" aria-live="polite">
+          <button type="button" id="asmr-node-prev" class="pixel-button secondary">◀ Prev node</button>
+          <div class="asmr-route-node-meta">
+            <p id="asmr-route-node-order" class="asmr-route-node-order">Node 1 / 4</p>
+            <h3 id="asmr-route-node-title">Station Threshold</h3>
+            <p id="asmr-route-node-id" class="asmr-route-node-id">station_threshold</p>
+            <p id="asmr-route-node-transition" class="asmr-route-node-transition"></p>
+          </div>
+          <button type="button" id="asmr-node-next" class="pixel-button secondary">Next node ▶</button>
+        </div>
+
+        <div class="asmr-look-controls" role="group" aria-label="Look bias">
+          <span class="asmr-look-label">Look bias:</span>
+          <button type="button" class="pixel-button tiny secondary asmr-look-chip" data-look-bias="left">Look left</button>
+          <button type="button" class="pixel-button tiny secondary asmr-look-chip is-active" data-look-bias="center">Look center</button>
+          <button type="button" class="pixel-button tiny secondary asmr-look-chip" data-look-bias="right">Look right</button>
+        </div>
+
+        <input type="hidden" name="route_preset" value="gastown_water_street_walk" />
+        <input type="hidden" name="active_node" value="station_threshold" />
+        <input type="hidden" name="look_bias" value="center" />
+      </section>
+
       <div class="asmr-grid">
         <label>Duration (10-30 sec)<input type="number" name="duration" min="10" max="30" value="20" required /></label>
       </div>
+
+      <details class="asmr-advanced-fields">
+        <summary>Motif inspector (advanced override)</summary>
 
       <fieldset class="asmr-layer-grid asmr-layer-groups">
         <legend>Sound Layers</legend>
@@ -116,10 +151,11 @@ get_header();
       </fieldset>
 
       <label class="asmr-link-toggle"><input type="checkbox" name="link_av" /> Link sound + visual for selected motifs</label>
+      </details>
       <div class="asmr-actions">
-        <button type="submit" class="pixel-button">Generate ASMR Package</button>
-        <button type="button" id="asmr-qa-preset" class="pixel-button secondary">Load QA Preset</button>
-        <button type="button" id="asmr-sound-only" class="pixel-button secondary" disabled>Regenerate Sound Only</button>
+        <button type="submit" class="pixel-button">Generate Route Package</button>
+        <button type="button" id="asmr-qa-preset" class="pixel-button secondary">Load Route Preset</button>
+        <button type="button" id="asmr-sound-only" class="pixel-button secondary" disabled>Regenerate Route Audio</button>
       </div>
       <p id="asmr-status" class="asmr-status" role="status" aria-live="polite"></p>
       <p id="asmr-debug-status" class="asmr-status asmr-debug-status" aria-live="polite"></p>
