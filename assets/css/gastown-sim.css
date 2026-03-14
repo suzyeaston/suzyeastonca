@@ -69,3 +69,41 @@
   border-top: 1px dashed rgba(162, 180, 201, 0.28);
   padding-top: 0.8rem;
 }
+
+
+.gastown-help {
+  margin: 0.75rem 0 0.9rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(193, 213, 238, 0.26);
+  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(26, 33, 46, 0.75), rgba(10, 13, 19, 0.85));
+}
+
+.gastown-help h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.gastown-help ul {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.gastown-help li {
+  color: #e4ebf7;
+}
+
+.gastown-status,
+.gastown-pointer-status,
+.gastown-landmark {
+  padding: 0.2rem 0.55rem;
+  border-left: 2px solid rgba(192, 211, 237, 0.45);
+  background: rgba(10, 14, 22, 0.35);
+}
+
+.gastown-pointer-status {
+  color: #bdd8ff;
+  font-size: 0.92rem;
+}
