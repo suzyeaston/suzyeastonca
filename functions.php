@@ -2005,6 +2005,108 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         $visual_layers = array_values( array_intersect( $allowed_visual, se_get_asmr_mapped_visual_layers_from_audio( $legacy_audio_layers ) ) );
     }
 
+    $vancouver_world_context = array();
+    if ( is_array( $params['vancouver_world_context'] ?? null ) ) {
+        $raw_context = $params['vancouver_world_context'];
+
+        if ( is_array( $raw_context['scenes'] ?? null ) ) {
+            $scenes = array();
+            foreach ( $raw_context['scenes'] as $raw_scene ) {
+                if ( ! is_array( $raw_scene ) ) {
+                    continue;
+                }
+
+                $scene = array();
+
+                if ( isset( $raw_scene['scene'] ) ) {
+                    $scene_label = sanitize_text_field( $raw_scene['scene'] );
+                    if ( '' !== $scene_label ) {
+                        $scene['scene'] = $scene_label;
+                    }
+                }
+
+                if ( is_array( $raw_scene['anchors'] ?? null ) ) {
+                    $anchors = array();
+                    foreach ( array_slice( $raw_scene['anchors'], 0, 3 ) as $raw_anchor ) {
+                        if ( ! is_array( $raw_anchor ) ) {
+                            continue;
+                        }
+
+                        $anchor = array();
+                        if ( isset( $raw_anchor['label'] ) ) {
+                            $label = sanitize_text_field( $raw_anchor['label'] );
+                            if ( '' !== $label ) {
+                                $anchor['label'] = $label;
+                            }
+                        }
+                        if ( isset( $raw_anchor['kind'] ) ) {
+                            $kind = sanitize_text_field( $raw_anchor['kind'] );
+                            if ( '' !== $kind ) {
+                                $anchor['kind'] = $kind;
+                            }
+                        }
+
+                        if ( ! empty( $anchor ) ) {
+                            $anchors[] = $anchor;
+                        }
+                    }
+
+                    if ( ! empty( $anchors ) ) {
+                        $scene['anchors'] = $anchors;
+                    }
+                }
+
+                if ( is_array( $raw_scene['geometry_types'] ?? null ) ) {
+                    $geometry_types = array();
+                    foreach ( array_slice( $raw_scene['geometry_types'], 0, 3 ) as $raw_geometry ) {
+                        $geometry = sanitize_text_field( (string) $raw_geometry );
+                        if ( '' !== $geometry ) {
+                            $geometry_types[] = $geometry;
+                        }
+                    }
+                    if ( ! empty( $geometry_types ) ) {
+                        $scene['geometry_types'] = $geometry_types;
+                    }
+                }
+
+                if ( is_array( $raw_scene['hints'] ?? null ) ) {
+                    $hints = array();
+                    foreach ( array_slice( $raw_scene['hints'], 0, 3 ) as $raw_hint ) {
+                        $hint = sanitize_text_field( (string) $raw_hint );
+                        if ( '' !== $hint ) {
+                            $hints[] = $hint;
+                        }
+                    }
+                    if ( ! empty( $hints ) ) {
+                        $scene['hints'] = $hints;
+                    }
+                }
+
+                if ( ! empty( $scene ) ) {
+                    $scenes[] = $scene;
+                }
+            }
+
+            if ( ! empty( $scenes ) ) {
+                $vancouver_world_context['scenes'] = $scenes;
+            }
+        }
+
+        if ( isset( $raw_context['source'] ) ) {
+            $source = sanitize_text_field( $raw_context['source'] );
+            if ( '' !== $source ) {
+                $vancouver_world_context['source'] = $source;
+            }
+        }
+
+        if ( isset( $raw_context['note'] ) ) {
+            $note = sanitize_text_field( $raw_context['note'] );
+            if ( '' !== $note ) {
+                $vancouver_world_context['note'] = $note;
+            }
+        }
+    }
+
     $payload = array(
         'concept' => sanitize_text_field( $params['concept'] ?? '' ),
         'object' => sanitize_text_field( $params['object'] ?? '' ),
@@ -2034,6 +2136,9 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     }
 
     $payload['motif_brief'] = se_get_asmr_motif_brief( $payload );
+    if ( ! empty( $vancouver_world_context ) ) {
+        $payload['vancouver_world_context'] = $vancouver_world_context;
+    }
 
     $allowed_engines = implode( ', ', se_get_asmr_allowed_engines() );
     $system_prompt = 'You are ASMR Lab. Return strict JSON only. Compose a disciplined 20-second cinematic beat plan first, not an event-dense timeline. '
@@ -2047,6 +2152,8 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'Hero visuals are: ' . implode( ', ', se_get_asmr_visual_hero_types() ) . '. '
         . 'story_beats must have 4 entries with t0,t1,beat,intent and timings for 0-4,4-9,9-15,15-20 when runtime is 20. '
         . 'Default to end_card.use_end_card=false and keep text empty unless the user explicitly requests an end card. '
+        . 'When vancouver_world_context is present, use it as soft grounding for scene specificity, texture, and landmark plausibility, while still prioritizing selected motifs and cinematic readability. '
+        . 'Use it to make locations feel geographically anchored, avoid excessive verbatim reuse of raw labels, and never let it override motif constraints or story structure. '
         . 'Resolve must simplify and avoid introducing a new landmark. Keep one dominant reveal at a time.';
 
     $response = se_openai_chat(
