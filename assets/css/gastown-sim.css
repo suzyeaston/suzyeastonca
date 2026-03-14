@@ -1,0 +1,71 @@
+.gastown-sim-page {
+  background: radial-gradient(circle at 20% 10%, #18202d 0, #090b10 54%, #050609 100%);
+  color: #d5dde8;
+  padding: 2rem 1rem 3rem;
+}
+
+.gastown-sim-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  background: rgba(8, 11, 18, 0.75);
+  border: 1px solid rgba(173, 190, 215, 0.18);
+  border-radius: 14px;
+  padding: 1.2rem;
+  box-shadow: 0 14px 48px rgba(0, 0, 0, 0.45);
+}
+
+.gastown-sim-header h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.5vw, 2.4rem);
+}
+
+.gastown-sim-kicker,
+.gastown-sim-intro,
+.gastown-status,
+.gastown-landmark {
+  margin: 0.4rem 0;
+}
+
+.gastown-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.gastown-controls label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.24rem;
+  font-size: 0.85rem;
+}
+
+.gastown-controls select {
+  min-width: 130px;
+  border-radius: 6px;
+  border: 1px solid rgba(200, 214, 236, 0.3);
+  background: #0f131b;
+  color: #dce5f3;
+  padding: 0.35rem;
+}
+
+.gastown-sim-canvas {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(164, 182, 209, 0.25);
+  background: #0b0d12;
+}
+
+.gastown-sim-canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+}
+
+.gastown-debug {
+  margin-top: 1rem;
+  border-top: 1px dashed rgba(162, 180, 201, 0.28);
+  padding-top: 0.8rem;
+}
