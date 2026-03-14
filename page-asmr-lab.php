@@ -143,21 +143,25 @@ get_header();
 
 
 
-    <div class="asmr-inspector-shortcuts">
-      <button type="button" id="asmr-inspect-selected-visuals" class="pixel-button secondary">Inspect selected visuals</button>
-      <button type="button" id="asmr-inspect-selected-sounds" class="pixel-button secondary">Inspect selected sounds</button>
-    </div>
+    <details class="asmr-advanced-panel" id="asmr-advanced-panel">
+      <summary>Advanced / Inspect</summary>
+      <div class="asmr-advanced-intro">Power-user diagnostics, motif inspectors, and render debugging tools.</div>
 
-    <details class="asmr-debug-inspectors" id="asmr-debug-inspectors">
-      <summary>Debug Inspectors</summary>
-      <div class="asmr-debug-actions">
-        <button type="button" id="asmr-preview-current-hero" class="pixel-button secondary">Preview current hero visuals</button>
-        <label class="asmr-debug-toggle"><input type="checkbox" id="asmr-debug-provenance-toggle" /> Show render provenance overlay</label>
+      <div class="asmr-inspector-shortcuts">
+        <button type="button" id="asmr-inspect-selected-visuals" class="pixel-button secondary">Inspect selected visuals</button>
+        <button type="button" id="asmr-inspect-selected-sounds" class="pixel-button secondary">Inspect selected sounds</button>
       </div>
-      <div class="asmr-inspector-tabs" role="tablist" aria-label="Debug inspector tabs">
-        <button type="button" class="asmr-inspector-tab is-active" data-tab="visual" role="tab" aria-selected="true">Visual Inspector</button>
-        <button type="button" class="asmr-inspector-tab" data-tab="sound" role="tab" aria-selected="false">Sound Inspector</button>
-      </div>
+
+      <details class="asmr-debug-inspectors" id="asmr-debug-inspectors">
+        <summary>Debug Inspectors</summary>
+        <div class="asmr-debug-actions">
+          <button type="button" id="asmr-preview-current-hero" class="pixel-button secondary">Preview current hero visuals</button>
+          <label class="asmr-debug-toggle"><input type="checkbox" id="asmr-debug-provenance-toggle" /> Show render provenance overlay</label>
+        </div>
+        <div class="asmr-inspector-tabs" role="tablist" aria-label="Debug inspector tabs">
+          <button type="button" class="asmr-inspector-tab is-active" data-tab="visual" role="tab" aria-selected="true">Visual Inspector</button>
+          <button type="button" class="asmr-inspector-tab" data-tab="sound" role="tab" aria-selected="false">Sound Inspector</button>
+        </div>
 
       <section class="asmr-inspector-panel is-active" data-panel="visual" role="tabpanel">
         <div class="asmr-inspector-layout">
@@ -179,7 +183,7 @@ get_header();
         </div>
       </section>
 
-      <section class="asmr-inspector-panel" data-panel="sound" role="tabpanel" hidden>
+        <section class="asmr-inspector-panel" data-panel="sound" role="tabpanel" hidden>
         <div class="asmr-inspector-layout">
           <div class="asmr-inspector-list">
             <label for="asmr-sound-inspector-search" class="asmr-inspector-search-label">Search sound engines</label>
@@ -195,7 +199,8 @@ get_header();
             </div>
           </aside>
         </div>
-      </section>
+        </section>
+      </details>
     </details>
 
     <section class="asmr-visual-preview" aria-label="Visual preview canvas">
@@ -203,20 +208,30 @@ get_header();
     </section>
 
     <section id="asmr-results" class="asmr-results" hidden>
-      <article class="asmr-card"><h2>Concept</h2><p id="asmr-concept"></p></article>
-      <article class="asmr-card"><h2>Story Beats</h2><ol id="asmr-story-beats"></ol></article>
-      <article class="asmr-card"><h2>Sync Points</h2><ol id="asmr-beats"></ol></article>
-      <article class="asmr-card"><h2>Style Tags</h2><ul id="asmr-video-prompts"></ul></article>
-      <article class="asmr-card"><h2>Active Generation Plan</h2><ul id="asmr-active-plan"></ul></article>
-      <article class="asmr-card"><h2>Plan → Visual Summary</h2><ul id="asmr-plan-visual-summary"></ul></article>
-      <article class="asmr-card"><h2>Edit Rhythm</h2><p id="asmr-edit-notes"></p></article>
-      <article class="asmr-card"><h2>Presentation Note</h2><p id="asmr-presentation"></p></article>
-      <article class="asmr-card"><h2>Timeline JSON</h2>
-        <details>
-          <summary>View JSON package</summary>
-          <pre id="asmr-sound-json"></pre>
-        </details>
-      </article>
+      <header class="asmr-results-header">
+        <h2>Generation Results</h2>
+        <div class="asmr-results-tabs" role="tablist" aria-label="Generation result sections">
+          <button type="button" class="asmr-results-tab is-active" data-results-tab="overview" role="tab" aria-selected="true">Overview</button>
+          <button type="button" class="asmr-results-tab" data-results-tab="timeline" role="tab" aria-selected="false">Timeline</button>
+          <button type="button" class="asmr-results-tab" data-results-tab="json" role="tab" aria-selected="false">JSON</button>
+        </div>
+      </header>
+
+      <section class="asmr-results-panel is-active" data-results-panel="overview" role="tabpanel">
+        <article class="asmr-card asmr-card-brief"><h3>Creative Brief</h3><p id="asmr-concept"></p><p id="asmr-edit-notes"></p><p id="asmr-presentation"></p></article>
+        <article class="asmr-card"><h3>Story Beats</h3><ol id="asmr-story-beats"></ol></article>
+        <article class="asmr-card"><h3>Style Tags</h3><ul id="asmr-video-prompts"></ul></article>
+      </section>
+
+      <section class="asmr-results-panel" data-results-panel="timeline" role="tabpanel" hidden>
+        <article class="asmr-card"><h3>Sync Points</h3><ol id="asmr-beats"></ol></article>
+        <article class="asmr-card"><h3>Active Plan</h3><ul id="asmr-active-plan"></ul></article>
+        <article class="asmr-card"><h3>Plan → Visual Summary</h3><ul id="asmr-plan-visual-summary"></ul></article>
+      </section>
+
+      <section class="asmr-results-panel" data-results-panel="json" role="tabpanel" hidden>
+        <article class="asmr-card asmr-card-json"><h3>Timeline Package JSON</h3><pre id="asmr-sound-json"></pre></article>
+      </section>
     </section>
   </section>
 </main>
