@@ -50,6 +50,8 @@ const referenceTemplate = {
   style_notes: null,
   silhouette_notes: null,
   facade_profile: null,
+  segment_style: null,
+  storefront_notes: null,
   landmark_priority: 'supporting',
 };
 
@@ -73,7 +75,7 @@ function run() {
     'Runtime geometry is compact and static; no live map APIs.',
     'Prepared for offline City of Vancouver footprints/streets/ROW widths + optional OSM route alignment.',
     'Supports hero_landmarks + facade_profiles to prioritize recognizability over photoreal detail.',
-    'Scaffold ready for manually curated heritage references and screenshot-backed style metadata.',
+    'Scaffold includes reference-driven world notes for segment style, silhouette, and storefront cadence.',
   ];
   world.meta.importManifest = importManifest;
 
