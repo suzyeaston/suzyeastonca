@@ -19,6 +19,7 @@
   const moodSelect = app.querySelector('[name="mood"]');
   const debugToggle = app.querySelector('[data-action="debug-toggle"]');
   const debugPanel = app.querySelector('[data-debug-panel]');
+  const routeDebugOverlay = app.querySelector('[data-route-debug-overlay]');
 
   const state = {
     world: null,
@@ -27,6 +28,8 @@
     yaw: 0,
     pitch: 0,
     velocity: new THREE.Vector3(),
+    lastSafePosition: new THREE.Vector3(),
+    debugEnabled: new URLSearchParams(window.location.search).get('gastownDebug') === '1',
     activeWeather: config.defaultWeather || 'rain',
     activeTimeOfDay: config.defaultTimeOfDay || 'night',
     activeMood: config.defaultMood || 'eerie',
@@ -38,6 +41,7 @@
     },
     barkTimer: null,
     clockTimer: null,
+    boundaryNoticeTimer: null,
   };
 
   const scene = new THREE.Scene();
@@ -61,7 +65,12 @@
   scene.add(fillLight);
 
   const rainGroup = new THREE.Group();
+  const worldGroup = new THREE.Group();
+  const debugGroup = new THREE.Group();
+  debugGroup.visible = state.debugEnabled;
+  scene.add(worldGroup);
   scene.add(rainGroup);
+  scene.add(debugGroup);
 
   const visualState = {
     currentWeather: null,
@@ -70,9 +79,10 @@
     roadMaterial: null,
     sidewalkMaterial: null,
     laneMaterial: null,
-    corridorGlowMaterial: null,
+    curbMaterial: null,
     buildingMaterials: [],
     landmarkVisuals: [],
+    groundMeshes: [],
   };
 
   function updateSize() {
@@ -87,6 +97,17 @@
     statusEl.textContent = text;
   }
 
+  function flashBoundaryStatus(text) {
+    setStatus(text);
+    if (state.boundaryNoticeTimer) {
+      clearTimeout(state.boundaryNoticeTimer);
+    }
+    state.boundaryNoticeTimer = setTimeout(() => {
+      if (!state.isRunning) return;
+      setStatus('Play mode active. Click scene for mouse look, then move with WASD / arrow keys.');
+    }, 1900);
+  }
+
   function setPointerStatus(text) {
     if (pointerStatusEl) {
       pointerStatusEl.textContent = text;
@@ -99,60 +120,57 @@
 
   function toneToColor(tone) {
     switch (tone) {
-      case 'brickWarm': return 0x5f3d33;
-      case 'stoneMuted': return 0x4a4f56;
+      case 'brickWarm': return 0x6a4638;
+      case 'stoneMuted': return 0x545b64;
       case 'brickDark':
       default:
         return 0x3f2a2a;
     }
   }
 
-  function addGround(world) {
-    const path = world.corridor.centerline;
-    let minX = path[0].x;
-    let maxX = path[0].x;
-    let minZ = path[0].z;
-    let maxZ = path[0].z;
+  function toShape(points) {
+    const shape = new THREE.Shape();
+    points.forEach((point, index) => {
+      if (index === 0) {
+        shape.moveTo(point.x, point.z);
+      } else {
+        shape.lineTo(point.x, point.z);
+      }
+    });
+    shape.closePath();
+    return shape;
+  }
 
-    path.forEach((point) => {
-      minX = Math.min(minX, point.x);
-      maxX = Math.max(maxX, point.x);
-      minZ = Math.min(minZ, point.z);
-      maxZ = Math.max(maxZ, point.z);
+  function createZoneMesh(points, material, y) {
+    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(toShape(points)), material);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.y = y;
+    worldGroup.add(mesh);
+    visualState.groundMeshes.push(mesh);
+    return mesh;
+  }
+
+  function addGround(world) {
+    visualState.roadMaterial = new THREE.MeshStandardMaterial({ color: 0x232a33, roughness: 0.9, metalness: 0.14 });
+    visualState.sidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0x34404a, roughness: 0.86, metalness: 0.08 });
+    visualState.curbMaterial = new THREE.MeshStandardMaterial({ color: 0x2a3139, roughness: 0.84, metalness: 0.12 });
+    visualState.laneMaterial = new THREE.LineBasicMaterial({ color: 0x698095, transparent: true, opacity: 0.42 });
+
+    world.zones.street.forEach((zone) => createZoneMesh(zone.polygon, visualState.roadMaterial, 0));
+    world.zones.sidewalk.forEach((zone) => createZoneMesh(zone.polygon, visualState.sidewalkMaterial, 0.12));
+
+    world.zones.street.forEach((zone) => {
+      const curb = createZoneMesh(zone.polygon, visualState.curbMaterial, 0.04);
+      curb.scale.set(1.01, 1.01, 1.01);
     });
 
-    const width = (maxX - minX) + 52;
-    const depth = (maxZ - minZ) + 78;
-    const centerX = (minX + maxX) / 2;
-    const centerZ = (minZ + maxZ) / 2 - 8;
-
-    visualState.roadMaterial = new THREE.MeshStandardMaterial({ color: 0x232a33, roughness: 0.9, metalness: 0.14 });
-    const street = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), visualState.roadMaterial);
-    street.rotation.x = -Math.PI / 2;
-    street.position.set(centerX, 0, centerZ);
-    scene.add(street);
-
-    visualState.sidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0x34404a, roughness: 0.88, metalness: 0.08 });
-    const sidewalk = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.88, depth * 0.88), visualState.sidewalkMaterial);
-    sidewalk.rotation.x = -Math.PI / 2;
-    sidewalk.position.set(centerX, 0.015, centerZ);
-    scene.add(sidewalk);
-
-    visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x4f5f6e, roughness: 0.78, metalness: 0.2, transparent: true, opacity: 0.35 });
-    const laneBand = new THREE.Mesh(new THREE.PlaneGeometry(world.corridor.halfWidth * 2.1, depth * 0.84), visualState.laneMaterial);
-    laneBand.rotation.x = -Math.PI / 2;
-    laneBand.position.set(centerX + 2, 0.025, centerZ - 6);
-    scene.add(laneBand);
-
-    visualState.corridorGlowMaterial = new THREE.MeshStandardMaterial({ color: 0x8ea4b7, emissive: 0x0f1824, emissiveIntensity: 0.42, transparent: true, opacity: 0.2 });
-    const corridorGuide = new THREE.Mesh(new THREE.PlaneGeometry(world.corridor.halfWidth * 1.45, depth * 0.72), visualState.corridorGlowMaterial);
-    corridorGuide.rotation.x = -Math.PI / 2;
-    corridorGuide.position.set(centerX + 8, 0.03, centerZ - 14);
-    scene.add(corridorGuide);
+    const routePoints = world.route.centerline.map((point) => new THREE.Vector3(point.x, 0.14, point.z));
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(routePoints), visualState.laneMaterial);
+    worldGroup.add(line);
   }
 
   function addBuildings(world) {
-    world.buildingPlanes.forEach((b) => {
+    world.buildings.forEach((b) => {
       const geom = new THREE.BoxGeometry(b.width, b.height, b.depth);
       const mat = new THREE.MeshStandardMaterial({
         color: toneToColor(b.tone),
@@ -164,14 +182,16 @@
       visualState.buildingMaterials.push(mat);
       const mesh = new THREE.Mesh(geom, mat);
       mesh.position.set(b.x, b.height / 2, b.z);
-      scene.add(mesh);
+      mesh.rotation.y = b.yaw || 0;
+      worldGroup.add(mesh);
 
       const edge = new THREE.LineSegments(
         new THREE.EdgesGeometry(geom),
         new THREE.LineBasicMaterial({ color: 0x6f8197, transparent: true, opacity: 0.28 })
       );
       edge.position.copy(mesh.position);
-      scene.add(edge);
+      edge.rotation.y = mesh.rotation.y;
+      worldGroup.add(edge);
     });
   }
 
@@ -179,23 +199,58 @@
     world.landmarks.forEach((landmark) => {
       const col = landmark.type === 'clock' ? 0xc8a460 : landmark.type === 'split' ? 0x7ea2c7 : 0x8793a1;
       const markerMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.2 });
-      const marker = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 4, 10), markerMaterial);
-      marker.position.set(landmark.x, 2.1, landmark.z);
-      scene.add(marker);
+      const markerHeight = landmark.type === 'clock' ? 7.2 : 4.5;
+      const markerRadius = landmark.type === 'clock' ? 0.38 : 0.7;
+      const marker = new THREE.Mesh(new THREE.CylinderGeometry(markerRadius, markerRadius * 1.05, markerHeight, 12), markerMaterial);
+      marker.position.set(landmark.x, markerHeight / 2, landmark.z);
+      worldGroup.add(marker);
 
-      const haloMaterial = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.12 });
-      const halo = new THREE.Mesh(new THREE.SphereGeometry(2.1, 16, 16), haloMaterial);
-      halo.position.set(landmark.x, 2.5, landmark.z);
-      scene.add(halo);
+      const haloMaterial = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.1 });
+      const halo = new THREE.Mesh(new THREE.SphereGeometry((landmark.radius || 6) * 0.7, 16, 16), haloMaterial);
+      halo.position.set(landmark.x, 2.8, landmark.z);
+      worldGroup.add(halo);
 
       const reflectionMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: 0x1b2533, emissiveIntensity: 0.45, transparent: true, opacity: 0.22, roughness: 0.55, metalness: 0.3 });
-      const reflection = new THREE.Mesh(new THREE.CircleGeometry(2.5, 24), reflectionMaterial);
+      const reflection = new THREE.Mesh(new THREE.CircleGeometry(landmark.radius || 2.7, 24), reflectionMaterial);
       reflection.rotation.x = -Math.PI / 2;
-      reflection.position.set(landmark.x, 0.05, landmark.z);
-      scene.add(reflection);
+      reflection.position.set(landmark.x, 0.11, landmark.z);
+      worldGroup.add(reflection);
 
       visualState.landmarkVisuals.push({ markerMaterial, haloMaterial, reflectionMaterial });
     });
+  }
+
+  function addDebugRoute(world) {
+    while (debugGroup.children.length) {
+      debugGroup.remove(debugGroup.children[0]);
+    }
+
+    const centerlinePoints = world.route.centerline.map((point) => new THREE.Vector3(point.x, 0.35, point.z));
+    const centerline = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(centerlinePoints),
+      new THREE.LineBasicMaterial({ color: 0x8de7ff })
+    );
+    debugGroup.add(centerline);
+
+    const walkBoundPoints = world.route.walkBounds.map((point) => new THREE.Vector3(point.x, 0.33, point.z));
+    walkBoundPoints.push(new THREE.Vector3(world.route.walkBounds[0].x, 0.33, world.route.walkBounds[0].z));
+    const walkBoundLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(walkBoundPoints),
+      new THREE.LineBasicMaterial({ color: 0xffa763 })
+    );
+    debugGroup.add(walkBoundLine);
+
+    world.nodes.forEach((node) => {
+      const marker = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), new THREE.MeshBasicMaterial({ color: 0xd5f3ff }));
+      marker.position.set(node.x, 0.5, node.z);
+      debugGroup.add(marker);
+    });
+
+    if (routeDebugOverlay) {
+      const lines = world.route.centerline.map((point, index) => (index + 1) + '. ' + (point.label || point.id || ('node-' + index)) + ' [' + point.x + ', ' + point.z + ']');
+      routeDebugOverlay.textContent = lines.join('\n');
+      routeDebugOverlay.hidden = !state.debugEnabled;
+    }
   }
 
   function rebuildRain(intensity) {
@@ -218,10 +273,7 @@
     }
 
     geom.setAttribute('position', new THREE.BufferAttribute(points, 3));
-    const rain = new THREE.Points(
-      geom,
-      new THREE.PointsMaterial({ color: 0x9dc3db, size: 0.09, transparent: true, opacity: 0.7 })
-    );
+    const rain = new THREE.Points(geom, new THREE.PointsMaterial({ color: 0x9dc3db, size: 0.09, transparent: true, opacity: 0.7 }));
     rainGroup.add(rain);
   }
 
@@ -251,21 +303,61 @@
     return Math.hypot(point.x - px, point.z - pz);
   }
 
-  function clampToCorridor(position, corridor) {
-    let nearestDistance = Number.POSITIVE_INFINITY;
-    corridor.centerline.forEach((point, index) => {
-      if (!corridor.centerline[index + 1]) return;
-      nearestDistance = Math.min(nearestDistance, distanceToSegment(position, point, corridor.centerline[index + 1]));
-    });
+  function projectToSegment(point, a, b) {
+    const abx = b.x - a.x;
+    const abz = b.z - a.z;
+    const apx = point.x - a.x;
+    const apz = point.z - a.z;
+    const denominator = (abx * abx) + (abz * abz);
+    const t = denominator === 0 ? 0 : Math.max(0, Math.min(1, ((apx * abx) + (apz * abz)) / denominator));
+    return { x: a.x + (abx * t), z: a.z + (abz * t) };
+  }
 
-    if (nearestDistance <= corridor.softBoundary) {
+  function isPointInPolygon(point, polygon) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+      const xi = polygon[i].x;
+      const zi = polygon[i].z;
+      const xj = polygon[j].x;
+      const zj = polygon[j].z;
+      const intersects = ((zi > point.z) !== (zj > point.z)) && (point.x < (((xj - xi) * (point.z - zi)) / ((zj - zi) || 0.00001)) + xi);
+      if (intersects) inside = !inside;
+    }
+    return inside;
+  }
+
+  function closestPointOnPolygon(point, polygon) {
+    let best = { x: polygon[0].x, z: polygon[0].z, distance: Number.POSITIVE_INFINITY };
+    polygon.forEach((node, index) => {
+      const next = polygon[(index + 1) % polygon.length];
+      const projected = projectToSegment(point, node, next);
+      const distance = Math.hypot(point.x - projected.x, point.z - projected.z);
+      if (distance < best.distance) {
+        best = { x: projected.x, z: projected.z, distance };
+      }
+    });
+    return best;
+  }
+
+  function enforceWorldBounds() {
+    const walkBounds = state.world.route.walkBounds;
+    const point = { x: player.position.x, z: player.position.z };
+    if (isPointInPolygon(point, walkBounds)) {
+      state.lastSafePosition.set(player.position.x, player.position.y, player.position.z);
       return;
     }
 
-    const heading = Math.atan2(corridor.centerline[corridor.centerline.length - 1].x - corridor.centerline[0].x, corridor.centerline[corridor.centerline.length - 1].z - corridor.centerline[0].z);
-    const nudge = 0.22;
-    position.x -= Math.sin(heading) * nudge;
-    position.z -= Math.cos(heading) * nudge;
+    const clamped = closestPointOnPolygon(point, walkBounds);
+    player.position.x = clamped.x;
+    player.position.z = clamped.z;
+
+    if (clamped.distance > state.world.route.hardResetDistance) {
+      player.position.copy(state.lastSafePosition.lengthSq() ? state.lastSafePosition : new THREE.Vector3(state.world.spawn.x, state.world.spawn.y, state.world.spawn.z));
+      flashBoundaryStatus((state.world.bounds && state.world.bounds.resetMessage) || 'Returned to the route.');
+      return;
+    }
+
+    flashBoundaryStatus((state.world.bounds && state.world.bounds.edgeMessage) || 'Stayed inside the route corridor.');
   }
 
   function updateNearestNode() {
@@ -289,8 +381,7 @@
     const base = (config.audioBaseUrl || '').replace(/\/$/, '');
     const src = (name) => [base + '/' + name + '.mp3', base + '/' + name + '.ogg'];
 
-    const ambientBeds = ['quiet_night', 'eerie_drones', 'nightlife_hum', 'commuter_mix'];
-    ambientBeds.forEach((id) => {
+    ['quiet_night', 'eerie_drones', 'nightlife_hum', 'commuter_mix'].forEach((id) => {
       state.sounds.beds[id] = new Howl({ src: src('beds/' + id), loop: true, volume: 0, html5: false });
     });
 
@@ -310,10 +401,6 @@
     const mood = state.world.moodPresets[state.activeMood] || state.world.moodPresets.eerie;
     const weather = state.world.weatherPresets[state.activeWeather] || state.world.weatherPresets.rain;
     const timeOfDay = state.world.timeOfDayPresets[state.activeTimeOfDay] || state.world.timeOfDayPresets.night;
-
-    visualState.currentMood = mood;
-    visualState.currentWeather = weather;
-    visualState.currentTime = timeOfDay;
 
     const weatherFogBoost = state.activeWeather === 'fog' ? 0.008 : state.activeWeather === 'rain' ? 0.003 : -0.001;
     const fogDensity = Math.max(0.004, (weather.fogDensity || 0.01) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
@@ -342,14 +429,12 @@
     if (visualState.sidewalkMaterial) {
       visualState.sidewalkMaterial.color.set(timeOfDay.sidewalkColor || '#3a444f');
     }
+    if (visualState.curbMaterial) {
+      visualState.curbMaterial.color.set(timeOfDay.sidewalkColor || '#3a444f').multiplyScalar(0.74);
+    }
     if (visualState.laneMaterial) {
       visualState.laneMaterial.color.set(timeOfDay.laneColor || '#5d6a76');
       visualState.laneMaterial.opacity = 0.2 + ((timeOfDay.pathBrightness || 0.25) * 0.5);
-    }
-    if (visualState.corridorGlowMaterial) {
-      visualState.corridorGlowMaterial.color.set(timeOfDay.guideGlow || '#8da5bd');
-      visualState.corridorGlowMaterial.opacity = 0.14 + ((timeOfDay.pathBrightness || 0.25) * 0.35);
-      visualState.corridorGlowMaterial.emissiveIntensity = 0.28 + ((timeOfDay.pathBrightness || 0.25) * 0.42);
     }
 
     visualState.landmarkVisuals.forEach((landmarkVisual) => {
@@ -439,8 +524,9 @@
 
     player.position.x += state.velocity.x * delta;
     player.position.z += state.velocity.z * delta;
+    player.position.y = Math.max((state.world.bounds && state.world.bounds.floorY) || 0, 1.7);
 
-    clampToCorridor(player.position, state.world.corridor);
+    enforceWorldBounds();
     updateNearestNode();
     updateAudioZones();
   }
@@ -473,11 +559,20 @@
   function resetToStart() {
     const spawn = state.world.spawn || { x: 0, y: 1.7, z: 0, yaw: 0 };
     player.position.set(spawn.x, spawn.y, spawn.z);
+    state.lastSafePosition.copy(player.position);
     state.yaw = spawn.yaw || 0;
     state.pitch = 0;
     player.rotation.y = state.yaw;
     camera.rotation.x = 0;
-    setLandmark('Nearest landmark: Station threshold');
+    updateNearestNode();
+  }
+
+  function setDebugState(enabled) {
+    state.debugEnabled = enabled;
+    debugGroup.visible = enabled;
+    if (routeDebugOverlay) {
+      routeDebugOverlay.hidden = !enabled;
+    }
   }
 
   function startSim() {
@@ -539,12 +634,13 @@
     });
 
     debugToggle.addEventListener('click', () => {
-      const isOpen = debugPanel.hasAttribute('hidden');
-      if (isOpen) {
+      const open = debugPanel.hasAttribute('hidden');
+      if (open) {
         debugPanel.removeAttribute('hidden');
       } else {
         debugPanel.setAttribute('hidden', 'hidden');
       }
+      setDebugState(open);
     });
   }
 
@@ -570,6 +666,7 @@
       addGround(state.world);
       addBuildings(state.world);
       addLandmarks(state.world);
+      addDebugRoute(state.world);
       setupAudio(state.world);
       updateSize();
       applyTimeOfDay(state.activeTimeOfDay);
@@ -577,6 +674,10 @@
       applyWeather(state.activeWeather);
       resetToStart();
       attachEvents();
+      setDebugState(state.debugEnabled);
+      if (state.debugEnabled) {
+        debugPanel.removeAttribute('hidden');
+      }
       scheduleSteamClock();
       setStatus('Prototype ready. Press Start, click the scene, and use Esc to exit pointer lock.');
       setPointerStatus('Pointer unlocked. Click scene after Start to enter look mode.');
