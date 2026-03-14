@@ -956,6 +956,12 @@ function se_get_asmr_visual_registry() {
         array( 'id' => 'neon_wet_reflections', 'label' => 'Neon Wet Reflections', 'category' => 'texture', 'priority' => 'support', 'description' => 'Neon wet pavement texture.', 'expected_shape' => 'glowing vertical puddles', 'renderer' => 'drawNeonWetReflections', 'intensity_min' => 0.2, 'intensity_max' => 0.55, 'opening_hero' => false, 'support_only' => true ),
         array( 'id' => 'winter_particulate_depth', 'label' => 'Winter Particulate Depth', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Depth snow particles.', 'expected_shape' => 'layered snow points', 'renderer' => 'drawWinterParticulateDepth', 'intensity_min' => 0.2, 'intensity_max' => 0.62, 'opening_hero' => false, 'support_only' => true ),
         array( 'id' => 'gastown_clock_silhouette', 'label' => 'Gastown Clock', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Steam clock silhouette.', 'expected_shape' => 'tall steam clock with roof cap, round face, glass body, side pipes, and pedestal base', 'renderer' => 'drawGastownClockSilhouette', 'intensity_min' => 0.35, 'intensity_max' => 0.8, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'steam_clock_approach', 'label' => 'Steam Clock Approach', 'category' => 'landmark', 'priority' => 'hero', 'description' => 'Steam clock reveal embedded in route movement.', 'expected_shape' => 'clock on left/right third inside corridor', 'renderer' => 'drawSteamClockApproach', 'intensity_min' => 0.3, 'intensity_max' => 0.82, 'opening_hero' => true, 'support_only' => false ),
+        array( 'id' => 'water_street_corridor', 'label' => 'Water Street Corridor', 'category' => 'scene', 'priority' => 'support', 'description' => 'Route-first Water Street corridor framing.', 'expected_shape' => 'off-center vanishing corridor with facades', 'renderer' => 'drawWaterStreetCorridor', 'intensity_min' => 0.22, 'intensity_max' => 0.62, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'station_threshold_glow', 'label' => 'Station Threshold Glow', 'category' => 'scene', 'priority' => 'support', 'description' => 'Waterfront threshold entry glow.', 'expected_shape' => 'station-edge glow with corridor entry', 'renderer' => 'drawStationThresholdGlow', 'intensity_min' => 0.2, 'intensity_max' => 0.56, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'angled_building_split', 'label' => 'Angled Building Split', 'category' => 'scene', 'priority' => 'support', 'description' => 'Street split with angled building node.', 'expected_shape' => 'forking curb lines and angled facade mass', 'renderer' => 'drawAngledBuildingSplit', 'intensity_min' => 0.18, 'intensity_max' => 0.6, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'lamp_rhythm_row', 'label' => 'Lamp Rhythm Row', 'category' => 'texture', 'priority' => 'support', 'description' => 'Rhythmic staggered lamp halos along route.', 'expected_shape' => 'receding off-center lamp cadence', 'renderer' => 'drawLampRhythmRow', 'intensity_min' => 0.12, 'intensity_max' => 0.4, 'opening_hero' => false, 'support_only' => true ),
+        array( 'id' => 'wet_cobble_axis', 'label' => 'Wet Cobble Axis', 'category' => 'texture', 'priority' => 'support', 'description' => 'Ground-plane reflective cobble motion axis.', 'expected_shape' => 'wet perspective axis with converging lines', 'renderer' => 'drawWetCobbleAxis', 'intensity_min' => 0.12, 'intensity_max' => 0.44, 'opening_hero' => false, 'support_only' => true ),
         array( 'id' => 'cobblestone_perspective', 'label' => 'Cobblestone Perspective', 'category' => 'texture', 'priority' => 'support', 'description' => 'Cobblestone lane texture.', 'expected_shape' => 'ground grid stones', 'renderer' => 'drawCobblestonePerspective', 'intensity_min' => 0.18, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
         array( 'id' => 'brick_wall_parallax', 'label' => 'Brick Wall Parallax', 'category' => 'texture', 'priority' => 'support', 'description' => 'Brick facade sides.', 'expected_shape' => 'left/right brick blocks', 'renderer' => 'drawBrickWallParallax', 'intensity_min' => 0.18, 'intensity_max' => 0.45, 'opening_hero' => false, 'support_only' => true ),
         array( 'id' => 'streetlamp_halo_row', 'label' => 'Streetlamp Halo Row', 'category' => 'atmosphere', 'priority' => 'support', 'description' => 'Streetlamp halo row.', 'expected_shape' => 'four halo circles', 'renderer' => 'drawStreetlampHaloRow', 'intensity_min' => 0.18, 'intensity_max' => 0.48, 'opening_hero' => false, 'support_only' => true ),
@@ -1033,7 +1039,7 @@ function se_get_asmr_semantic_cues( $payload ) {
     ) ) );
 
     $cue_map = array(
-        'gastown' => array( 'steam_clock', 'cobblestone', 'brick', 'amber', 'urban_night' ),
+        'gastown' => array( 'steam_clock', 'cobblestone', 'brick', 'amber', 'urban_night', 'water_street_route' ),
         'vancouver' => array( 'harbor', 'fog', 'coastal', 'urban_night' ),
         'steam clock' => array( 'steam_clock', 'metal', 'bell' ),
         'snow' => array( 'snow', 'winter_hush', 'cold_air' ),
@@ -1041,6 +1047,7 @@ function se_get_asmr_semantic_cues( $payload ) {
         'harbor fog' => array( 'harbor', 'fog' ),
         'amber' => array( 'amber', 'streetlamp' ),
         'streetlamp' => array( 'streetlamp', 'amber' ),
+        'water street' => array( 'water_street_route', 'corridor_traversal', 'first_person_unseen' ),
         'wet cobblestone' => array( 'wet_reflection', 'cobblestone' ),
         'cobblestone' => array( 'cobblestone' ),
         'brick' => array( 'brick' ),
@@ -1319,6 +1326,7 @@ function se_get_asmr_visual_layers_allowed() {
         'gastown_clock_silhouette', 'science_world_dome', 'chinatown_gate', 'english_bay_inukshuk', 'maritime_museum_sailroof',
         'lions_gate_bridge', 'bc_place_dome', 'port_cranes', 'planetarium_dome', 'starfield_projection', 'constellation_lines', 'canada_place_sails',
         'cobblestone_perspective', 'brick_wall_parallax', 'puddle_reflections', 'streetlamp_halo_row',
+        'water_street_corridor', 'station_threshold_glow', 'steam_clock_approach', 'angled_building_split', 'lamp_rhythm_row', 'wet_cobble_axis',
         'street_corridor_vanishing_point', 'curb_line_perspective', 'facade_plane_bands', 'awning_edge_rows',
         'heritage_window_grid', 'district_sign_columns', 'wet_reflection_axis', 'skyline_mask_lowrise',
         'skytrain_track', 'skytrain_pass_visual', 'bus_pass_visual',
@@ -1338,7 +1346,7 @@ function se_get_asmr_visual_to_audio_map() {
 
 function se_get_asmr_scene_visual_support_map() {
     return array(
-        'gastown_scene' => array( 'street_corridor_vanishing_point', 'curb_line_perspective', 'facade_plane_bands', 'heritage_window_grid', 'gastown_clock_silhouette', 'streetlamp_halo_row' ),
+        'gastown_scene' => array( 'water_street_corridor', 'station_threshold_glow', 'wet_cobble_axis', 'lamp_rhythm_row', 'steam_clock_approach', 'angled_building_split', 'gastown_clock_silhouette' ),
         'granville_scene' => array( 'street_corridor_vanishing_point', 'district_sign_columns', 'wet_reflection_axis', 'granville_neon_marquee', 'puddle_reflections' ),
         'north_shore_scene' => array( 'northshore_mountain_ridge', 'mountain_mist_layers', 'gull_silhouettes' ),
         'waterfront_scene' => array( 'ocean_surface_shimmer', 'seabus_silhouette', 'canada_place_sails', 'gull_silhouettes' ),
@@ -1361,8 +1369,8 @@ function se_get_asmr_mapped_visual_layers_from_audio( $audio_layers ) {
         'skytrain_pass' => 'skytrain_pass_visual',
         'bus_pass' => 'bus_pass_visual',
         'rain_ambience' => 'rain_streaks',
-        'steam_clock' => 'gastown_clock_silhouette',
-        'gastown_clock_whistle' => 'gastown_clock_silhouette',
+        'steam_clock' => 'steam_clock_approach',
+        'gastown_clock_whistle' => 'steam_clock_approach',
         'church_bells' => 'constellation_lines',
         'harbour_noon_horn' => 'waterfront_scene',
         'ocean_waves' => 'ocean_surface_shimmer',
@@ -1622,6 +1630,13 @@ function se_pick_random_from_allowed( $candidates, $allowed ) {
     return $pool[0];
 }
 
+
+function se_is_gastown_route_selection( $visual_layers ) {
+    $visual = array_values( array_unique( array_map( 'sanitize_key', (array) $visual_layers ) ) );
+    $route_tokens = array( 'gastown_scene', 'water_street_corridor', 'station_threshold_glow', 'steam_clock_approach', 'angled_building_split', 'lamp_rhythm_row', 'wet_cobble_axis' );
+    return count( array_intersect( $visual, $route_tokens ) ) >= 2;
+}
+
 function se_restrict_generation_plan_to_selected_motifs( $plan, $audio_layers, $visual_layers ) {
     $plan = is_array( $plan ) ? $plan : array();
     $plan['visual_plan'] = is_array( $plan['visual_plan'] ?? null ) ? $plan['visual_plan'] : array();
@@ -1662,6 +1677,28 @@ function se_restrict_generation_plan_to_selected_motifs( $plan, $audio_layers, $
 
     $overlay = sanitize_key( $plan['visual_plan']['overlay_family'] ?? '' );
     $plan['visual_plan']['overlay_family'] = in_array( $overlay, $selected_support, true ) ? $overlay : '';
+
+    if ( se_is_gastown_route_selection( $selected_visual ) ) {
+        if ( in_array( 'gastown_scene', $selected_visual, true ) ) {
+            $plan['visual_plan']['primary_scene'] = 'gastown_scene';
+        }
+        if ( in_array( 'steam_clock_approach', $selected_visual, true ) ) {
+            $plan['visual_plan']['landmark'] = 'steam_clock_approach';
+            $plan['visual_plan']['resolve_landmark'] = 'steam_clock_approach';
+        } elseif ( in_array( 'gastown_clock_silhouette', $selected_visual, true ) ) {
+            $plan['visual_plan']['landmark'] = 'gastown_clock_silhouette';
+            $plan['visual_plan']['resolve_landmark'] = 'gastown_clock_silhouette';
+        }
+        if ( in_array( 'water_street_corridor', $selected_visual, true ) ) {
+            $plan['visual_plan']['motion'] = 'water_street_corridor';
+        }
+        if ( in_array( 'wet_cobble_axis', $selected_visual, true ) ) {
+            $plan['visual_plan']['texture'] = 'wet_cobble_axis';
+        }
+        if ( in_array( 'lamp_rhythm_row', $selected_visual, true ) ) {
+            $plan['visual_plan']['overlay_family'] = 'lamp_rhythm_row';
+        }
+    }
 
     $audio_slots = array( 'primary_bed', 'secondary_bed', 'transit_cue' );
     foreach ( $audio_slots as $slot ) {
@@ -1789,36 +1826,56 @@ function se_compile_visual_events_from_plan( $plan, $runtime ) {
     }
 
     $events = array();
+    $route_params = array();
+    if ( se_is_gastown_route_selection( array( $primary_scene, $landmark, $motion, $texture, $overlay, $resolve_landmark ) ) || 'gastown_scene' === $primary_scene ) {
+        $route_params = array(
+            'route_id' => 'gastown_water_street_walk',
+            'pov' => 'first_person_unseen',
+            'movement' => 'forward_walk',
+            'framing' => 'off_center_landmark',
+            'corridor_bias' => 'strong',
+            'asymmetry_bias' => 'high',
+        );
+    }
 
     if ( $atmosphere ) {
-        $events[] = array( 'time' => 0.0, 'duration' => min( $runtime - 0.2, 7.6 ), 'visual_type' => $atmosphere, 'intensity' => 0.3, 'params' => array(), 'sync_role' => 'opening_atmosphere' );
+        $events[] = array( 'time' => 0.0, 'duration' => min( $runtime - 0.2, 7.6 ), 'visual_type' => $atmosphere, 'intensity' => 0.3, 'params' => $route_params, 'sync_role' => 'opening_atmosphere' );
     }
 
     if ( $primary_scene && in_array( $primary_scene, $hero_types, true ) ) {
-        $events[] = array( 'time' => 0.2, 'duration' => 5.2, 'visual_type' => $primary_scene, 'intensity' => 0.76, 'params' => array(), 'sync_role' => 'opening_scene_hero' );
+        $events[] = array( 'time' => 0.2, 'duration' => 5.2, 'visual_type' => $primary_scene, 'intensity' => 0.76, 'params' => $route_params, 'sync_role' => 'opening_scene_hero' );
     }
 
     if ( $overlay && in_array( $overlay, $support_types, true ) ) {
-        $events[] = array( 'time' => 0.4, 'duration' => 3.2, 'visual_type' => $overlay, 'intensity' => 0.08, 'params' => array(), 'sync_role' => 'opening_support' );
+        $events[] = array( 'time' => 0.4, 'duration' => 3.2, 'visual_type' => $overlay, 'intensity' => 0.08, 'params' => $route_params, 'sync_role' => 'opening_support' );
     }
 
     if ( $landmark && in_array( $landmark, $hero_types, true ) ) {
-        $events[] = array( 'time' => 5.0, 'duration' => 4.2, 'visual_type' => $landmark, 'intensity' => 0.78, 'params' => array(), 'sync_role' => 'arrival_landmark_hero' );
-        $events[] = array( 'time' => 9.4, 'duration' => 5.0, 'visual_type' => $landmark, 'intensity' => 0.86, 'params' => array(), 'sync_role' => 'lift_landmark_hero' );
+        $events[] = array( 'time' => 5.0, 'duration' => 4.2, 'visual_type' => $landmark, 'intensity' => 0.78, 'params' => $route_params, 'sync_role' => 'arrival_landmark_hero' );
+        $events[] = array( 'time' => 9.4, 'duration' => 5.0, 'visual_type' => $landmark, 'intensity' => 0.86, 'params' => $route_params, 'sync_role' => 'lift_landmark_hero' );
     }
 
     if ( $motion ) {
-        $events[] = array( 'time' => 10.2, 'duration' => 3.4, 'visual_type' => $motion, 'intensity' => 0.42, 'params' => array(), 'sync_role' => 'lift_motion' );
+        $events[] = array( 'time' => 10.2, 'duration' => 3.4, 'visual_type' => $motion, 'intensity' => 0.42, 'params' => $route_params, 'sync_role' => 'lift_motion' );
     }
 
     if ( $texture ) {
-        $events[] = array( 'time' => 10.0, 'duration' => 4.0, 'visual_type' => $texture, 'intensity' => 0.2, 'params' => array(), 'sync_role' => 'lift_texture' );
+        $events[] = array( 'time' => 10.0, 'duration' => 4.0, 'visual_type' => $texture, 'intensity' => 0.2, 'params' => $route_params, 'sync_role' => 'lift_texture' );
+    }
+
+
+    if ( ! empty( $route_params ) ) {
+        $events[] = array( 'time' => 0.0, 'duration' => 4.6, 'visual_type' => 'station_threshold_glow', 'intensity' => 0.42, 'params' => $route_params, 'sync_role' => 'route_start_threshold' );
+        $events[] = array( 'time' => 3.8, 'duration' => 6.1, 'visual_type' => 'water_street_corridor', 'intensity' => 0.58, 'params' => $route_params, 'sync_role' => 'route_mid_corridor' );
+        $events[] = array( 'time' => 8.4, 'duration' => 5.1, 'visual_type' => 'wet_cobble_axis', 'intensity' => 0.36, 'params' => $route_params, 'sync_role' => 'route_ground_motion' );
+        $events[] = array( 'time' => 12.1, 'duration' => 4.9, 'visual_type' => 'steam_clock_approach', 'intensity' => 0.76, 'params' => $route_params, 'sync_role' => 'route_clock_reveal' );
+        $events[] = array( 'time' => 15.1, 'duration' => 4.6, 'visual_type' => 'angled_building_split', 'intensity' => 0.54, 'params' => $route_params, 'sync_role' => 'route_end_split' );
     }
 
     if ( $resolve_landmark && in_array( $resolve_landmark, $hero_types, true ) ) {
-        $events[] = array( 'time' => 15.2, 'duration' => 4.3, 'visual_type' => $resolve_landmark, 'intensity' => 0.74, 'params' => array(), 'sync_role' => 'resolve_landmark_hero' );
+        $events[] = array( 'time' => 15.2, 'duration' => 4.3, 'visual_type' => $resolve_landmark, 'intensity' => 0.74, 'params' => $route_params, 'sync_role' => 'resolve_landmark_hero' );
     } elseif ( $primary_scene && in_array( $primary_scene, $hero_types, true ) ) {
-        $events[] = array( 'time' => 15.2, 'duration' => 4.3, 'visual_type' => $primary_scene, 'intensity' => 0.58, 'params' => array(), 'sync_role' => 'resolve_return' );
+        $events[] = array( 'time' => 15.2, 'duration' => 4.3, 'visual_type' => $primary_scene, 'intensity' => 0.58, 'params' => $route_params, 'sync_role' => 'resolve_return' );
     }
 
     return se_validate_visual_timeline_matches_plan( $plan, $events );
@@ -2117,6 +2174,48 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         }
     }
 
+
+    $gastown_route_context = array();
+    if ( is_array( $params['gastown_route_context'] ?? null ) ) {
+        $raw_route = $params['gastown_route_context'];
+        $route_id = sanitize_key( $raw_route['route_id'] ?? '' );
+        if ( '' !== $route_id ) {
+            $gastown_route_context['route_id'] = $route_id;
+        }
+
+        if ( isset( $raw_route['district'] ) ) {
+            $district = sanitize_key( $raw_route['district'] );
+            if ( '' !== $district ) {
+                $gastown_route_context['district'] = $district;
+            }
+        }
+
+        if ( is_array( $raw_route['continuity'] ?? null ) ) {
+            $gastown_route_context['continuity'] = array(
+                'single_district' => ! empty( $raw_route['continuity']['single_district'] ),
+                'continuous_path' => ! empty( $raw_route['continuity']['continuous_path'] ),
+                'reveal_mode' => sanitize_key( $raw_route['continuity']['reveal_mode'] ?? '' ),
+                'disallow_unrelated_landmarks' => ! empty( $raw_route['continuity']['disallow_unrelated_landmarks'] ),
+            );
+        }
+
+        if ( is_array( $raw_route['camera_grammar'] ?? null ) ) {
+            $gastown_route_context['camera_grammar'] = array(
+                'pov' => sanitize_key( $raw_route['camera_grammar']['pov'] ?? '' ),
+                'movement' => sanitize_key( $raw_route['camera_grammar']['movement'] ?? '' ),
+                'framing' => sanitize_key( $raw_route['camera_grammar']['framing'] ?? '' ),
+                'corridor_bias' => sanitize_key( $raw_route['camera_grammar']['corridor_bias'] ?? '' ),
+                'asymmetry_bias' => sanitize_key( $raw_route['camera_grammar']['asymmetry_bias'] ?? '' ),
+            );
+        }
+
+        foreach ( array( 'waypoint_order', 'landmark_order' ) as $list_key ) {
+            if ( is_array( $raw_route[ $list_key ] ?? null ) ) {
+                $gastown_route_context[ $list_key ] = array_values( array_filter( array_map( 'sanitize_key', array_slice( $raw_route[ $list_key ], 0, 8 ) ) ) );
+            }
+        }
+    }
+
     $payload = array(
         'concept' => sanitize_text_field( $params['concept'] ?? '' ),
         'object' => sanitize_text_field( $params['object'] ?? '' ),
@@ -2149,6 +2248,9 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     if ( ! empty( $vancouver_world_context ) ) {
         $payload['vancouver_world_context'] = $vancouver_world_context;
     }
+    if ( ! empty( $gastown_route_context ) ) {
+        $payload['gastown_route_context'] = $gastown_route_context;
+    }
 
     $allowed_engines = implode( ', ', se_get_asmr_allowed_engines() );
     $system_prompt = 'You are ASMR Lab. Return strict JSON only. Compose a disciplined 20-second cinematic beat plan first, not an event-dense timeline. '
@@ -2164,6 +2266,11 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
         . 'Default to end_card.use_end_card=false and keep text empty unless the user explicitly requests an end card. '
         . 'When vancouver_world_context is present, use it as soft grounding for scene specificity, texture, and landmark plausibility, while still prioritizing selected motifs and cinematic readability. '
         . 'Use it to make locations feel geographically anchored, avoid excessive verbatim reuse of raw labels, and never let it override motif constraints or story structure. '
+        . 'When gastown_route_context is present, treat the piece as a first-person unseen camera traversal down one connected corridor route. '
+        . 'Prioritize route scaffolding first and landmark second: start at the waterfront threshold, move through the brick/lamp/cobblestone corridor, reveal steam clock during approach, then resolve at the street split angled-building node. '
+        . 'Keep one district only, one continuous path, one reveal at a time, and do not jump to unrelated Vancouver landmarks. '
+        . 'Use camera grammar tokens from context (pov first_person_unseen, movement forward_walk/slow_glide, framing off_center_landmark, corridor_bias strong, asymmetry_bias medium/high). '
+        . 'Favor asymmetrical vanishing-point corridor framing with facades cropped into left/right edges, and avoid dead-center hero placement unless explicitly requested. '
         . 'Resolve must simplify and avoid introducing a new landmark. Keep one dominant reveal at a time.';
 
     $response = se_openai_chat(
