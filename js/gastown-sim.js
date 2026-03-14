@@ -91,7 +91,7 @@
     ctx: minimapCanvas ? minimapCanvas.getContext('2d') : null,
     width: minimapCanvas ? minimapCanvas.width : 0,
     height: minimapCanvas ? minimapCanvas.height : 0,
-    routeMetrics: null,
+    worldMetrics: null,
     nearestNode: null,
   };
 
@@ -834,11 +834,45 @@
     return { x: routeStart.x, y: worldSpawn.y || 1.7, z: routeStart.z + 3.6, yaw: -0.3 };
   }
 
-  function getRouteMetrics() {
-    if (!state.world || !state.world.route || !state.world.route.centerline.length) {
+  function getWorldMetrics() {
+    if (!state.world) {
       return null;
     }
-    const points = state.world.route.centerline;
+
+    const points = [];
+    const collectPoint = (point) => {
+      if (!point || typeof point.x !== 'number' || typeof point.z !== 'number') return;
+      points.push(point);
+    };
+
+    if (state.world.route && Array.isArray(state.world.route.walkBounds)) {
+      state.world.route.walkBounds.forEach(collectPoint);
+    }
+    if (state.world.zones && Array.isArray(state.world.zones.street)) {
+      state.world.zones.street.forEach((zone) => (zone.polygon || []).forEach(collectPoint));
+    }
+    if (state.world.zones && Array.isArray(state.world.zones.sidewalk)) {
+      state.world.zones.sidewalk.forEach((zone) => (zone.polygon || []).forEach(collectPoint));
+    }
+    if (Array.isArray(state.world.buildings)) {
+      state.world.buildings.forEach((building) => {
+        if (Array.isArray(building.footprint)) {
+          building.footprint.forEach(collectPoint);
+          return;
+        }
+        const halfW = (building.width || 0) / 2;
+        const halfD = (building.depth || 0) / 2;
+        [
+          { x: building.x - halfW, z: building.z - halfD },
+          { x: building.x + halfW, z: building.z + halfD },
+        ].forEach(collectPoint);
+      });
+    }
+
+    if (!points.length) {
+      return null;
+    }
+
     let minX = Infinity;
     let maxX = -Infinity;
     let minZ = Infinity;
@@ -859,6 +893,57 @@
     };
   }
 
+  function getBuildingPolygon(building) {
+    if (Array.isArray(building.footprint) && building.footprint.length >= 3) {
+      return building.footprint;
+    }
+
+    const cx = building.x || 0;
+    const cz = building.z || 0;
+    const halfW = (building.width || 8) / 2;
+    const halfD = (building.depth || 8) / 2;
+    const yaw = building.yaw || 0;
+    const corners = [
+      { x: -halfW, z: -halfD },
+      { x: halfW, z: -halfD },
+      { x: halfW, z: halfD },
+      { x: -halfW, z: halfD },
+    ];
+
+    const sin = Math.sin(yaw);
+    const cos = Math.cos(yaw);
+    return corners.map((corner) => ({
+      x: cx + (corner.x * cos) - (corner.z * sin),
+      z: cz + (corner.x * sin) + (corner.z * cos),
+    }));
+  }
+
+  function drawPolygon(points, metrics, padding, fillColor, strokeColor, lineWidth) {
+    if (!points || points.length < 3) {
+      return;
+    }
+    const ctx = minimapState.ctx;
+    ctx.beginPath();
+    points.forEach((point, index) => {
+      const mini = toMinimapPoint(point, metrics, padding);
+      if (index === 0) {
+        ctx.moveTo(mini.x, mini.y);
+      } else {
+        ctx.lineTo(mini.x, mini.y);
+      }
+    });
+    ctx.closePath();
+    if (fillColor) {
+      ctx.fillStyle = fillColor;
+      ctx.fill();
+    }
+    if (strokeColor) {
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = lineWidth || 1;
+      ctx.stroke();
+    }
+  }
+
   function toMinimapPoint(point, metrics, padding) {
     const usableW = minimapState.width - (padding * 2);
     const usableH = minimapState.height - (padding * 2);
@@ -869,32 +954,47 @@
   }
 
   function drawMinimap() {
-    if (!minimapState.ctx || !state.world || !minimapState.routeMetrics) {
+    if (!minimapState.ctx || !state.world || !minimapState.worldMetrics) {
       return;
     }
 
     const ctx = minimapState.ctx;
-    const metrics = minimapState.routeMetrics;
-    const pad = 12;
+    const metrics = minimapState.worldMetrics;
+    const pad = 16;
     ctx.clearRect(0, 0, minimapState.width, minimapState.height);
 
-    ctx.fillStyle = '#0d141f';
+    ctx.fillStyle = '#08101a';
     ctx.fillRect(0, 0, minimapState.width, minimapState.height);
-    ctx.strokeStyle = 'rgba(181, 201, 224, 0.36)';
+    ctx.strokeStyle = 'rgba(181, 201, 224, 0.34)';
     ctx.strokeRect(0.5, 0.5, minimapState.width - 1, minimapState.height - 1);
 
-    ctx.strokeStyle = '#92c7e8';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    state.world.route.centerline.forEach((point, index) => {
-      const mini = toMinimapPoint(point, metrics, pad);
-      if (index === 0) {
-        ctx.moveTo(mini.x, mini.y);
-      } else {
-        ctx.lineTo(mini.x, mini.y);
-      }
+    (state.world.zones.sidewalk || []).forEach((zone) => {
+      drawPolygon(zone.polygon, metrics, pad, '#3f4d60', 'rgba(136, 161, 188, 0.4)', 1);
     });
-    ctx.stroke();
+    (state.world.zones.street || []).forEach((zone) => {
+      drawPolygon(zone.polygon, metrics, pad, '#1b2735', 'rgba(125, 148, 173, 0.45)', 1.1);
+    });
+
+    (state.world.buildings || []).forEach((building) => {
+      drawPolygon(getBuildingPolygon(building), metrics, pad, '#6f5047', 'rgba(219, 194, 173, 0.24)', 0.8);
+    });
+
+    if (state.world.route && Array.isArray(state.world.route.centerline) && state.world.route.centerline.length > 1) {
+      ctx.strokeStyle = 'rgba(158, 212, 240, 0.48)';
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      state.world.route.centerline.forEach((point, index) => {
+        const mini = toMinimapPoint(point, metrics, pad);
+        if (index === 0) {
+          ctx.moveTo(mini.x, mini.y);
+        } else {
+          ctx.lineTo(mini.x, mini.y);
+        }
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
     const majorNodes = ['station-threshold', 'water-mid', 'steam-clock'];
     state.world.nodes.forEach((node) => {
@@ -912,25 +1012,41 @@
     const headingX = -Math.sin(heading);
     const headingY = -Math.cos(heading);
 
-    ctx.fillStyle = '#f2f6ff';
-    ctx.beginPath();
-    ctx.arc(playerPoint.x, playerPoint.y, 4.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = 'rgba(133, 205, 245, 0.35)';
+    ctx.fillStyle = 'rgba(133, 205, 245, 0.3)';
     ctx.beginPath();
     ctx.moveTo(playerPoint.x, playerPoint.y);
     const headingAngle = Math.atan2(headingY, headingX);
-    ctx.arc(playerPoint.x, playerPoint.y, dirLength, headingAngle - 0.42, headingAngle + 0.42);
+    ctx.arc(playerPoint.x, playerPoint.y, dirLength, headingAngle - 0.5, headingAngle + 0.5);
+    ctx.closePath();
+    ctx.fill();
+
+    const arrowTipX = playerPoint.x + (headingX * 10);
+    const arrowTipY = playerPoint.y + (headingY * 10);
+    const sideX = -headingY;
+    const sideY = headingX;
+
+    ctx.fillStyle = '#f2f6ff';
+    ctx.beginPath();
+    ctx.moveTo(arrowTipX, arrowTipY);
+    ctx.lineTo(playerPoint.x - (headingX * 6) + (sideX * 4.2), playerPoint.y - (headingY * 6) + (sideY * 4.2));
+    ctx.lineTo(playerPoint.x - (headingX * 6) - (sideX * 4.2), playerPoint.y - (headingY * 6) - (sideY * 4.2));
     ctx.closePath();
     ctx.fill();
 
     ctx.strokeStyle = '#9ce3ff';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.moveTo(playerPoint.x, playerPoint.y);
-    ctx.lineTo(playerPoint.x + headingX * dirLength, playerPoint.y + headingY * dirLength);
+    ctx.arc(playerPoint.x, playerPoint.y, 2.3, 0, Math.PI * 2);
     ctx.stroke();
+
+    ctx.fillStyle = 'rgba(221, 236, 255, 0.82)';
+    ctx.font = '700 11px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', minimapState.width / 2, 9);
+    ctx.fillText('S', minimapState.width / 2, minimapState.height - 9);
+    ctx.fillText('W', 10, minimapState.height / 2);
+    ctx.fillText('E', minimapState.width - 10, minimapState.height / 2);
   }
 
   function setupAudio(world) {
@@ -1165,8 +1281,18 @@
     });
     document.addEventListener('mousemove', onMouseMove);
 
-    document.addEventListener('keydown', (event) => setMoveKey(event.code, true));
-    document.addEventListener('keyup', (event) => setMoveKey(event.code, false));
+    document.addEventListener('keydown', (event) => {
+      setMoveKey(event.code, true);
+      if (event.code.startsWith('Arrow') && (state.isRunning || document.pointerLockElement === renderer.domElement)) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+    document.addEventListener('keyup', (event) => {
+      setMoveKey(event.code, false);
+      if (event.code.startsWith('Arrow') && (state.isRunning || document.pointerLockElement === renderer.domElement)) {
+        event.preventDefault();
+      }
+    }, { passive: false });
 
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
@@ -1230,7 +1356,7 @@
       addLandmarks(state.world);
       addDebugRoute(state.world);
       setupAudio(state.world);
-      minimapState.routeMetrics = getRouteMetrics();
+      minimapState.worldMetrics = getWorldMetrics();
       updateSize();
       applyTimeOfDay(state.activeTimeOfDay);
       applyMood(state.activeMood);
