@@ -36,6 +36,23 @@
     assertPolygon(data.route.walkBounds, 'route.walkBounds');
     data.zones.street.forEach((zone, index) => assertPolygon(zone.polygon, 'zones.street[' + index + ']'));
     data.zones.sidewalk.forEach((zone, index) => assertPolygon(zone.polygon, 'zones.sidewalk[' + index + ']'));
+
+    if (data.hero_landmarks && !Array.isArray(data.hero_landmarks)) {
+      throw new Error('Gastown world data is malformed: hero_landmarks must be an array.');
+    }
+
+    if (data.facade_profiles && typeof data.facade_profiles !== 'object') {
+      throw new Error('Gastown world data is malformed: facade_profiles must be an object.');
+    }
+
+    data.buildings.forEach((building, index) => {
+      if (building.footprint) {
+        assertPolygon(building.footprint, 'buildings[' + index + '].footprint');
+      }
+      if (building.window_bay_count && typeof building.window_bay_count !== 'number') {
+        throw new Error('Gastown world data is malformed: buildings[' + index + '].window_bay_count must be numeric.');
+      }
+    });
   }
 
   window.GastownWorldLoader = {
