@@ -173,6 +173,7 @@ function se_enqueue_asmr_lab_assets() {
                 'endpoint' => esc_url_raw( rest_url( 'se/v1/asmr-generate' ) ),
                 'nonce'    => wp_create_nonce( 'wp_rest' ),
                 'visualRegistry' => se_get_asmr_visual_registry(),
+                'sceneDataUrl'  => esc_url_raw( $uri . '/assets/data/vancouver-scene-seeds.json' ),
             )
         );
     }

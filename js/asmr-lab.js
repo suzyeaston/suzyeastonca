@@ -77,6 +77,101 @@
     skytrain_pass_visual: ['skytrain_pass']
   };
 
+  const SCENE_MOTIF_MAP = {
+    gastown: ['gastown_scene', 'gastown_clock_silhouette', 'cobblestone_perspective', 'brick_wall_parallax', 'streetlamp_halo_row', 'clock_face_reveal'],
+    granville: ['granville_scene', 'granville_neon_marquee', 'neon_sign_flicker', 'traffic_light_glow', 'neon_wet_reflections'],
+    chinatown: ['chinatown_gate']
+  };
+
+  const sceneSeedState = {
+    loaded: false,
+    attempted: false,
+    byScene: {},
+    total: 0
+  };
+
+  async function loadSceneSeedData() {
+    const sceneDataUrl = window.seAsmrLab && window.seAsmrLab.sceneDataUrl;
+    if (!sceneDataUrl || sceneSeedState.attempted) return;
+    sceneSeedState.attempted = true;
+
+    try {
+      const response = await fetch(sceneDataUrl, { credentials: 'same-origin' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const rows = await response.json();
+      if (!Array.isArray(rows)) throw new Error('Scene seed payload was not an array.');
+
+      const grouped = rows.reduce((acc, row) => {
+        const scene = String((row && row.scene) || '').trim().toLowerCase();
+        if (!scene) return acc;
+        if (!acc[scene]) acc[scene] = [];
+        acc[scene].push({
+          label: String((row && row.label) || '').trim() || 'untitled anchor',
+          kind: String((row && row.dataset) || (row && row.geometryType) || 'unknown').trim().toLowerCase(),
+          geometry_type: String((row && row.geometryType) || 'Unknown').trim(),
+          hint: String(((row && row.properties && row.properties.name) || (row && row.label) || '').trim())
+        });
+        return acc;
+      }, {});
+
+      sceneSeedState.byScene = grouped;
+      sceneSeedState.total = rows.length;
+      sceneSeedState.loaded = Object.keys(grouped).length > 0;
+
+      if (debugStatusEl && sceneSeedState.loaded) {
+        debugStatusEl.textContent = `Vancouver scene seeds loaded: ${sceneSeedState.total} records across ${Object.keys(grouped).length} scenes.`;
+      }
+    } catch (error) {
+      console.warn('[ASMR Lab] Vancouver scene seeds unavailable; continuing without world context.', error);
+    }
+  }
+
+  function getWorldContextForVisualSelection(selectedVisuals) {
+    if (!sceneSeedState.loaded || !selectedVisuals || !selectedVisuals.length) return null;
+
+    const selectedSet = new Set(selectedVisuals);
+    const matchedScenes = Object.entries(SCENE_MOTIF_MAP)
+      .filter(([, motifs]) => motifs.some((motif) => selectedSet.has(motif)))
+      .map(([scene]) => scene);
+
+    if (!matchedScenes.length) return null;
+
+    const sceneContexts = matchedScenes
+      .map((scene) => {
+        const records = sceneSeedState.byScene[scene] || [];
+        if (!records.length) return null;
+
+        const anchors = records.slice(0, 3).map((item) => ({ label: item.label, kind: item.kind }));
+        const hints = records
+          .slice(0, 4)
+          .map((item) => item.hint)
+          .filter(Boolean)
+          .filter((value, idx, arr) => arr.indexOf(value) === idx)
+          .slice(0, 3);
+        const geometry_types = records
+          .map((item) => item.geometry_type)
+          .filter(Boolean)
+          .filter((value, idx, arr) => arr.indexOf(value) === idx)
+          .slice(0, 3);
+
+        return {
+          scene,
+          anchors,
+          geometry_types,
+          hints
+        };
+      })
+      .filter(Boolean);
+
+    if (!sceneContexts.length) return null;
+
+    return {
+      scenes: sceneContexts,
+      source: 'vancouver-scene-seeds',
+      version: 1
+    };
+  }
+
   function applyLayerLinking(audioLayers, visualLayers, isLinked) {
     const audioSet = new Set(Array.isArray(audioLayers) ? audioLayers : []);
     const visualSet = new Set(Array.isArray(visualLayers) ? visualLayers : []);
@@ -266,7 +361,11 @@ ${data.concept_summary}`;
     if (!debugStatusEl) return;
     const audioCount = Array.isArray(payload.audio_layers) ? payload.audio_layers.length : 0;
     const visualCount = Array.isArray(payload.visual_layers) ? payload.visual_layers.length : 0;
-    debugStatusEl.textContent = `Selection snapshot: audio=${audioCount}, visual=${visualCount}, link_av=${payload.link_av ? 'on' : 'off'}`;
+    const worldScenes = payload && payload.vancouver_world_context && Array.isArray(payload.vancouver_world_context.scenes)
+      ? payload.vancouver_world_context.scenes.length
+      : 0;
+    const sceneStatus = sceneSeedState.loaded ? `sceneSeeds=loaded:${sceneSeedState.total}` : 'sceneSeeds=offline';
+    debugStatusEl.textContent = `Selection snapshot: audio=${audioCount}, visual=${visualCount}, link_av=${payload.link_av ? 'on' : 'off'}, worldScenes=${worldScenes}, ${sceneStatus}`;
   }
 
   function collectFormPayload() {
@@ -280,10 +379,13 @@ ${data.concept_summary}`;
     const visualLayers = formData.getAll('visual_layers[]').map((item) => String(item || '').trim()).filter(Boolean);
     const linked = applyLayerLinking(audioLayers, visualLayers, linkAV);
 
+    const worldContext = getWorldContextForVisualSelection(linked.visual_layers);
+
     return Object.assign({}, base, {
       link_av: linkAV,
       audio_layers: linked.audio_layers,
-      visual_layers: linked.visual_layers
+      visual_layers: linked.visual_layers,
+      vancouver_world_context: worldContext || undefined
     });
   }
 
@@ -957,6 +1059,7 @@ ${data.concept_summary}`;
     });
   }
 
+  loadSceneSeedData();
 
   window.addEventListener('resize', function () { if (visuals) visuals.resize(); });
 })();
