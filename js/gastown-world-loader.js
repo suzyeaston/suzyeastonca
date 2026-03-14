@@ -45,6 +45,18 @@
       throw new Error('Gastown world data is malformed: facade_profiles must be an object.');
     }
 
+    if (data.streetscape) {
+      if (data.streetscape.surfaceBands && !Array.isArray(data.streetscape.surfaceBands)) {
+        throw new Error('Gastown world data is malformed: streetscape.surfaceBands must be an array.');
+      }
+      if (data.streetscape.lamps && !Array.isArray(data.streetscape.lamps)) {
+        throw new Error('Gastown world data is malformed: streetscape.lamps must be an array.');
+      }
+      if (data.streetscape.trees && !Array.isArray(data.streetscape.trees)) {
+        throw new Error('Gastown world data is malformed: streetscape.trees must be an array.');
+      }
+    }
+
     data.buildings.forEach((building, index) => {
       if (building.footprint) {
         assertPolygon(building.footprint, 'buildings[' + index + '].footprint');

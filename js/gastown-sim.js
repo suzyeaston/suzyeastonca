@@ -129,6 +129,39 @@
   }
 
   const facadeProfilePresets = {
+    waterfront_station_civic: {
+      baseInset: 0.98,
+      windowRows: 2,
+      rooflineLift: 1.4,
+      storefrontBand: 0.1,
+      awningDepth: 0,
+      silhouetteLift: 1.1,
+      columnRhythm: true,
+    },
+    cordova_commercial_transition: {
+      baseInset: 0.96,
+      windowRows: 3,
+      rooflineLift: 1,
+      storefrontBand: 0.15,
+      awningDepth: 0.9,
+      silhouetteLift: 0.7,
+    },
+    gastown_heritage_row: {
+      baseInset: 0.95,
+      windowRows: 3,
+      rooflineLift: 1.2,
+      storefrontBand: 0.18,
+      awningDepth: 1.05,
+      silhouetteLift: 0.95,
+    },
+    gastown_corner_retail: {
+      baseInset: 0.95,
+      windowRows: 3,
+      rooflineLift: 1.3,
+      storefrontBand: 0.2,
+      awningDepth: 1.1,
+      silhouetteLift: 1,
+    },
     gastown_heritage_masonry: {
       baseInset: 0.94,
       windowRows: 3,
@@ -160,6 +193,14 @@
       storefrontBand: 0.12,
       awningDepth: 0,
       silhouetteLift: 0.4,
+    },
+    steam_clock_corner: {
+      baseInset: 0.94,
+      windowRows: 4,
+      rooflineLift: 1.45,
+      storefrontBand: 0.2,
+      awningDepth: 1,
+      silhouetteLift: 1.3,
     },
   };
 
@@ -215,6 +256,61 @@
     const routePoints = world.route.centerline.map((point) => new THREE.Vector3(point.x, 0.14, point.z));
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(routePoints), visualState.laneMaterial);
     worldGroup.add(line);
+
+    (world.streetscape && world.streetscape.surfaceBands || []).forEach((band) => {
+      const segment = world.route.centerline.find((point) => point.id === band.segment_id);
+      if (!segment) return;
+      const paver = new THREE.Mesh(
+        new THREE.PlaneGeometry(band.width || world.route.streetWidth, band.length || 14),
+        new THREE.MeshStandardMaterial({
+          color: band.tone === 'brick' ? 0x634237 : 0x454b53,
+          roughness: 0.88,
+          metalness: 0.05,
+          transparent: true,
+          opacity: 0.92,
+        })
+      );
+      paver.rotation.x = -Math.PI / 2;
+      paver.rotation.y = band.yaw || 0;
+      paver.position.set(segment.x + (band.offset_x || 0), 0.16, segment.z + (band.offset_z || 0));
+      worldGroup.add(paver);
+    });
+  }
+
+  function addStreetscape(world) {
+    const streetscape = world.streetscape || {};
+
+    (streetscape.lamps || []).forEach((lamp) => {
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.1, lamp.height || 4.6, 8),
+        new THREE.MeshStandardMaterial({ color: 0x2b2f35, roughness: 0.6, metalness: 0.35 })
+      );
+      pole.position.set(lamp.x, (lamp.height || 4.6) / 2, lamp.z);
+      worldGroup.add(pole);
+
+      const globe = new THREE.Mesh(
+        new THREE.SphereGeometry(0.3, 12, 10),
+        new THREE.MeshStandardMaterial({ color: 0xe5ddbc, emissive: 0x897b58, emissiveIntensity: 0.52, roughness: 0.3, metalness: 0.06 })
+      );
+      globe.position.set(lamp.x, (lamp.height || 4.6) + 0.25, lamp.z);
+      worldGroup.add(globe);
+    });
+
+    (streetscape.trees || []).forEach((tree) => {
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.16, 0.2, 2, 7),
+        new THREE.MeshStandardMaterial({ color: 0x4a3729, roughness: 0.85, metalness: 0.03 })
+      );
+      trunk.position.set(tree.x, 1, tree.z);
+      worldGroup.add(trunk);
+
+      const canopy = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(tree.radius || 0.9, 0),
+        new THREE.MeshStandardMaterial({ color: 0x476147, roughness: 0.9, metalness: 0.02 })
+      );
+      canopy.position.set(tree.x, 2.5, tree.z);
+      worldGroup.add(canopy);
+    });
   }
 
   function addBuildings(world) {
@@ -300,6 +396,42 @@
         worldGroup.add(awning);
       }
 
+      if (profilePreset.columnRhythm) {
+        const columns = Math.max(6, Math.round((b.width || 20) / 3.2));
+        for (let i = 0; i < columns; i += 1) {
+          const t = (columns === 1 ? 0.5 : i / (columns - 1)) - 0.5;
+          const localX = t * ((b.width || 20) * 0.8);
+          const colHeight = Math.max(4.2, b.height * 0.5);
+          const col = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.24, 0.28, colHeight, 10),
+            new THREE.MeshStandardMaterial({ color: 0xd6d3ca, roughness: 0.5, metalness: 0.08 })
+          );
+          col.position.set(
+            b.x + localX * Math.cos(b.yaw || 0),
+            colHeight / 2,
+            b.z + ((b.depth || 10) * 0.5) * Math.cos((b.yaw || 0) - Math.PI / 2) + localX * Math.sin(b.yaw || 0)
+          );
+          worldGroup.add(col);
+        }
+      }
+
+      if (b.recessed_entry_count) {
+        const entryCount = Math.min(3, Math.max(1, b.recessed_entry_count));
+        for (let i = 0; i < entryCount; i += 1) {
+          const t = (((i + 1) / (entryCount + 1)) - 0.5) * ((b.width || 8) * 0.5);
+          const entry = new THREE.Mesh(
+            new THREE.BoxGeometry(0.9, 2.4, 0.5),
+            new THREE.MeshStandardMaterial({ color: 0x1d222b, roughness: 0.45, metalness: 0.22 })
+          );
+          entry.position.set(
+            b.x + t * Math.cos(b.yaw || 0),
+            1.25,
+            b.z + ((b.depth || 8) * 0.48) * Math.cos((b.yaw || 0) - Math.PI / 2) + t * Math.sin(b.yaw || 0)
+          );
+          worldGroup.add(entry);
+        }
+      }
+
       const edge = new THREE.LineSegments(
         new THREE.EdgesGeometry(geom),
         new THREE.LineBasicMaterial({ color: 0x6f8197, transparent: true, opacity: 0.28 })
@@ -321,25 +453,30 @@
         worldGroup.add(base);
 
         const body = new THREE.Mesh(
-          new THREE.BoxGeometry(1.35, 4.2, 1.35),
+          new THREE.BoxGeometry(1.45, 5.4, 1.45),
           new THREE.MeshStandardMaterial({ color: 0x5d4b40, roughness: 0.66, metalness: 0.18 })
         );
-        body.position.set(hero.x, 4.7, hero.z);
+        body.position.set(hero.x, 5.2, hero.z);
         worldGroup.add(body);
 
         const face = new THREE.Mesh(
           new THREE.CircleGeometry(0.62, 24),
           new THREE.MeshStandardMaterial({ color: 0xf0dfb2, emissive: 0x6b5b3d, emissiveIntensity: 0.36 })
         );
-        face.position.set(hero.x + 0.68, 5.25, hero.z);
+        face.position.set(hero.x + 0.74, 5.8, hero.z);
         face.rotation.y = -Math.PI / 2;
         worldGroup.add(face);
 
+        const faceSouth = face.clone();
+        faceSouth.position.set(hero.x, 5.8, hero.z + 0.74);
+        faceSouth.rotation.y = 0;
+        worldGroup.add(faceSouth);
+
         const cap = new THREE.Mesh(
-          new THREE.ConeGeometry(0.95, 1.1, 10),
+          new THREE.ConeGeometry(1.1, 1.2, 10),
           new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.58, metalness: 0.34 })
         );
-        cap.position.set(hero.x, 7.45, hero.z);
+        cap.position.set(hero.x, 8.35, hero.z);
         worldGroup.add(cap);
 
         [-0.45, 0.45].forEach((offset) => {
@@ -347,7 +484,7 @@
             new THREE.CylinderGeometry(0.08, 0.08, 1.5, 8),
             new THREE.MeshStandardMaterial({ color: 0x78767d, roughness: 0.54, metalness: 0.58 })
           );
-          pipe.position.set(hero.x + offset, 6.2, hero.z + 0.55);
+          pipe.position.set(hero.x + offset, 6.7, hero.z + 0.58);
           pipe.rotation.x = Math.PI / 2.8;
           worldGroup.add(pipe);
         });
@@ -833,6 +970,7 @@
       state.world = await window.GastownWorldLoader.load(config.worldDataUrl);
       addGround(state.world);
       addBuildings(state.world);
+      addStreetscape(state.world);
       addHeroLandmarks(state.world);
       addLandmarks(state.world);
       addDebugRoute(state.world);

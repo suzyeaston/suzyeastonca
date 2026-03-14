@@ -1,15 +1,15 @@
 {
-  "routeId": "gastown_water_street_slice_v3_hero_facades",
+  "routeId": "gastown_water_street_slice_v4_reference_corridor",
   "meta": {
     "title": "Waterfront Station to Steam Clock Corridor",
     "units": "meters-ish",
-    "source": "offline-shaped corridor prototype aligned to 601 W Cordova → 305 Water St, seeded with civic layout cues and heritage facade references",
-    "lastBuild": "2026-03-14T10:07:49.982Z",
+    "source": "reference-driven stylized corridor aligned to Waterfront Station threshold, W Cordova transition, Water Street heritage spine, and Steam Clock corner reveal",
+    "lastBuild": "2026-03-14T10:34:02.938Z",
     "buildNotes": [
       "Runtime geometry is compact and static; no live map APIs.",
       "Prepared for offline City of Vancouver footprints/streets/ROW widths + optional OSM route alignment.",
       "Supports hero_landmarks + facade_profiles to prioritize recognizability over photoreal detail.",
-      "Scaffold ready for manually curated heritage references and screenshot-backed style metadata."
+      "Scaffold includes reference-driven world notes for segment style, silhouette, and storefront cadence."
     ],
     "importManifest": {
       "inputs": {
@@ -43,291 +43,333 @@
     }
   },
   "spawn": {
-    "x": -10,
+    "x": -22,
     "y": 1.7,
-    "z": 8,
-    "yaw": -0.28
+    "z": 18,
+    "yaw": -0.18
   },
   "route": {
-    "name": "Waterfront Station → Water Street → Steam Clock",
+    "name": "Waterfront Station → W Cordova → Water Street → Steam Clock",
     "centerline": [
       {
-        "id": "waterfront-station",
-        "label": "Waterfront Station Threshold",
-        "x": -10,
-        "z": 8
+        "id": "waterfront-station-threshold",
+        "label": "Waterfront Station Civic Frontage",
+        "x": -22,
+        "z": 18,
+        "reference_name": "Waterfront Station CPR frontage",
+        "segment_style": "station_threshold",
+        "facade_profile": "waterfront_station_civic",
+        "silhouette_notes": "Long red-brick civic edge with repeating white columns.",
+        "storefront_notes": "Broad threshold edge, limited retail cadence.",
+        "landmark_priority": "primary"
       },
       {
-        "id": "cordova-to-water",
-        "label": "Cordova Edge / Water Entry",
-        "x": -4,
-        "z": -8
+        "id": "cordova-transition-west",
+        "label": "W Cordova Transition West",
+        "x": -15,
+        "z": 3,
+        "reference_name": "W Cordova station edge",
+        "segment_style": "cordova_transition",
+        "facade_profile": "cordova_commercial_transition",
+        "silhouette_notes": "Road broadens with mixed commercial frontage.",
+        "storefront_notes": "Larger bays starting to break into retail rhythm.",
+        "landmark_priority": "high"
       },
       {
-        "id": "water-west-block",
-        "label": "Water Street West Block",
-        "x": 6,
-        "z": -32
+        "id": "water-entry-wedge",
+        "label": "Water / Cordova Wedge Entry",
+        "x": -8,
+        "z": -14,
+        "reference_name": "Wedge-lot split condition",
+        "segment_style": "edge_transition",
+        "facade_profile": "wedge_corner_block",
+        "silhouette_notes": "Angled prow corner announces shift to Water Street.",
+        "storefront_notes": "Corner retail emphasis with narrow bays.",
+        "landmark_priority": "high"
       },
       {
-        "id": "water-mid-block",
-        "label": "Water Street Mid Block",
-        "x": 18,
-        "z": -58
+        "id": "water-street-west",
+        "label": "Water Street West Heritage Block",
+        "x": 1,
+        "z": -34,
+        "reference_name": "Water Street west block rhythm",
+        "segment_style": "gastown_corridor",
+        "facade_profile": "gastown_heritage_row",
+        "silhouette_notes": "Continuous low/mid-rise streetwall with cornice line.",
+        "storefront_notes": "Repeated storefront bays with awnings.",
+        "landmark_priority": "high"
+      },
+      {
+        "id": "water-street-mid",
+        "label": "Water Street Mid Corridor",
+        "x": 12,
+        "z": -58,
+        "reference_name": "Gastown heritage streetwall",
+        "segment_style": "gastown_corridor",
+        "facade_profile": "gastown_heritage_row",
+        "silhouette_notes": "Brick facades, tight spacing, varied roofline steps.",
+        "storefront_notes": "Frequent storefront rhythm and recessed entries.",
+        "landmark_priority": "high"
       },
       {
         "id": "steam-clock-approach",
         "label": "Steam Clock Approach",
-        "x": 29,
-        "z": -83
+        "x": 22,
+        "z": -80,
+        "reference_name": "Steam Clock approach block",
+        "segment_style": "destination_approach",
+        "facade_profile": "steam_clock_corner",
+        "silhouette_notes": "Denser corner massing framing landmark view.",
+        "storefront_notes": "Active corner retail and pedestrian edge.",
+        "landmark_priority": "primary"
       },
       {
         "id": "steam-clock-node",
-        "label": "Steam Clock at Cambie",
-        "x": 34,
-        "z": -94
-      },
-      {
-        "id": "angled-split",
-        "label": "Angled/Split Street Edge",
-        "x": 45,
-        "z": -108
+        "label": "Steam Clock Corner",
+        "x": 28,
+        "z": -95,
+        "reference_name": "Steam Clock at Water/Cambie",
+        "segment_style": "destination_node",
+        "facade_profile": "steam_clock_corner",
+        "silhouette_notes": "Clock reveals at framed corner plaza.",
+        "storefront_notes": "Pedestrian-focused storefront frontage and gathering space.",
+        "landmark_priority": "primary"
       }
     ],
     "walkBounds": [
       {
-        "x": -24,
-        "z": 17
+        "x": -36,
+        "z": 28
       },
       {
-        "x": 2,
-        "z": 17
+        "x": -8,
+        "z": 28
       },
       {
-        "x": 16,
-        "z": -10
+        "x": 6,
+        "z": 2
       },
       {
-        "x": 31,
-        "z": -43
+        "x": 18,
+        "z": -26
+      },
+      {
+        "x": 30,
+        "z": -54
+      },
+      {
+        "x": 40,
+        "z": -78
       },
       {
         "x": 44,
-        "z": -71
+        "z": -102
       },
       {
-        "x": 57,
-        "z": -95
-      },
-      {
-        "x": 61,
-        "z": -117
-      },
-      {
-        "x": 42,
-        "z": -130
-      },
-      {
-        "x": 20,
+        "x": 26,
         "z": -112
       },
       {
-        "x": 7,
-        "z": -84
+        "x": 12,
+        "z": -88
       },
       {
-        "x": -7,
-        "z": -53
+        "x": 2,
+        "z": -64
       },
       {
-        "x": -18,
-        "z": -25
+        "x": -10,
+        "z": -38
       },
       {
-        "x": -29,
-        "z": 2
+        "x": -22,
+        "z": -8
+      },
+      {
+        "x": -36,
+        "z": 18
       }
     ],
-    "streetWidth": 10,
-    "sidewalkWidth": 4,
+    "streetWidth": 11,
+    "sidewalkWidth": 4.5,
     "softBoundary": 3,
     "hardResetDistance": 14
   },
   "zones": {
     "street": [
       {
-        "id": "water-street-roadway",
+        "id": "water-cordova-roadway",
         "surface": "road",
         "polygon": [
           {
-            "x": -17,
-            "z": 13
+            "x": -31,
+            "z": 23
           },
           {
-            "x": -2,
-            "z": 13
+            "x": -12,
+            "z": 23
           },
           {
-            "x": 12,
-            "z": -16
+            "x": 2,
+            "z": -4
           },
           {
-            "x": 24,
-            "z": -42
+            "x": 14,
+            "z": -31
           },
           {
-            "x": 35,
-            "z": -66
+            "x": 25,
+            "z": -57
           },
           {
-            "x": 46,
-            "z": -88
-          },
-          {
-            "x": 50,
-            "z": -107
+            "x": 34,
+            "z": -79
           },
           {
             "x": 37,
-            "z": -116
+            "z": -99
           },
           {
-            "x": 27,
-            "z": -98
+            "x": 24,
+            "z": -106
           },
           {
-            "x": 16,
-            "z": -74
+            "x": 14,
+            "z": -85
           },
           {
             "x": 4,
-            "z": -47
+            "z": -61
           },
           {
             "x": -7,
-            "z": -20
+            "z": -36
           },
           {
-            "x": -20,
-            "z": 8
+            "x": -18,
+            "z": -9
+          },
+          {
+            "x": -31,
+            "z": 14
           }
         ]
       }
     ],
     "sidewalk": [
       {
-        "id": "north-sidewalk",
+        "id": "north-heritage-sidewalk",
         "surface": "sidewalk",
         "polygon": [
           {
-            "x": -24,
-            "z": 17
+            "x": -36,
+            "z": 28
           },
           {
-            "x": 2,
-            "z": 17
+            "x": -8,
+            "z": 28
           },
           {
-            "x": 16,
-            "z": -10
-          },
-          {
-            "x": 31,
-            "z": -43
-          },
-          {
-            "x": 44,
-            "z": -71
-          },
-          {
-            "x": 57,
-            "z": -95
-          },
-          {
-            "x": 61,
-            "z": -117
-          },
-          {
-            "x": 52,
-            "z": -124
-          },
-          {
-            "x": 41,
-            "z": -106
-          },
-          {
-            "x": 30,
-            "z": -84
+            "x": 6,
+            "z": 2
           },
           {
             "x": 18,
-            "z": -57
+            "z": -26
           },
           {
-            "x": 7,
-            "z": -32
+            "x": 30,
+            "z": -54
           },
           {
-            "x": -4,
-            "z": -5
+            "x": 40,
+            "z": -78
           },
           {
-            "x": -15,
-            "z": 17
+            "x": 44,
+            "z": -102
+          },
+          {
+            "x": 34,
+            "z": -108
+          },
+          {
+            "x": 25,
+            "z": -90
+          },
+          {
+            "x": 15,
+            "z": -66
+          },
+          {
+            "x": 4,
+            "z": -41
+          },
+          {
+            "x": -7,
+            "z": -14
+          },
+          {
+            "x": -19,
+            "z": 10
+          },
+          {
+            "x": -30,
+            "z": 28
           }
         ]
       },
       {
-        "id": "south-sidewalk",
+        "id": "south-heritage-sidewalk",
         "surface": "sidewalk",
         "polygon": [
           {
-            "x": -20,
-            "z": 8
-          },
-          {
-            "x": -7,
-            "z": -20
-          },
-          {
-            "x": 4,
-            "z": -47
-          },
-          {
-            "x": 16,
-            "z": -74
-          },
-          {
-            "x": 27,
-            "z": -98
-          },
-          {
-            "x": 37,
-            "z": -116
-          },
-          {
-            "x": 42,
-            "z": -130
-          },
-          {
-            "x": 20,
-            "z": -112
-          },
-          {
-            "x": 7,
-            "z": -84
-          },
-          {
-            "x": -7,
-            "z": -53
+            "x": -31,
+            "z": 14
           },
           {
             "x": -18,
-            "z": -25
+            "z": -9
           },
           {
-            "x": -29,
-            "z": 2
+            "x": -7,
+            "z": -36
+          },
+          {
+            "x": 4,
+            "z": -61
+          },
+          {
+            "x": 14,
+            "z": -85
+          },
+          {
+            "x": 24,
+            "z": -106
+          },
+          {
+            "x": 26,
+            "z": -112
+          },
+          {
+            "x": 12,
+            "z": -88
+          },
+          {
+            "x": 2,
+            "z": -64
+          },
+          {
+            "x": -10,
+            "z": -38
+          },
+          {
+            "x": -22,
+            "z": -8
+          },
+          {
+            "x": -36,
+            "z": 18
           }
         ]
       }
@@ -337,332 +379,121 @@
     {
       "id": "station-threshold",
       "label": "Waterfront Station Threshold",
-      "x": -10,
-      "z": 8
+      "x": -22,
+      "z": 18,
+      "reference_name": "Waterfront Station frontage",
+      "segment_style": "station_threshold",
+      "facade_profile": "waterfront_station_civic",
+      "silhouette_notes": "Civic red-brick landmark frontage.",
+      "storefront_notes": "Broad station threshold.",
+      "landmark_priority": "primary"
     },
     {
-      "id": "water-entry",
-      "label": "Cordova to Water Street Entry",
-      "x": -3,
-      "z": -10
+      "id": "cordova-transition",
+      "label": "W Cordova Transition",
+      "x": -14,
+      "z": 0,
+      "reference_name": "Cordova transition edge",
+      "segment_style": "cordova_transition",
+      "facade_profile": "cordova_commercial_transition",
+      "silhouette_notes": "Commercial transition between station and Gastown.",
+      "storefront_notes": "Bays become narrower eastbound.",
+      "landmark_priority": "high"
+    },
+    {
+      "id": "water-entry-wedge",
+      "label": "Water Entry Wedge",
+      "x": -8,
+      "z": -14,
+      "reference_name": "Flatiron-like corner",
+      "segment_style": "edge_transition",
+      "facade_profile": "wedge_corner_block",
+      "silhouette_notes": "Angled prow corner anchors route turn.",
+      "storefront_notes": "Corner retail emphasis.",
+      "landmark_priority": "high"
     },
     {
       "id": "water-mid",
       "label": "Water Street Mid Corridor",
-      "x": 18,
-      "z": -58
+      "x": 12,
+      "z": -58,
+      "reference_name": "Heritage block rhythm",
+      "segment_style": "gastown_corridor",
+      "facade_profile": "gastown_heritage_row",
+      "silhouette_notes": "Continuous heritage streetwall.",
+      "storefront_notes": "Awnings + recessed entries pattern.",
+      "landmark_priority": "high"
     },
     {
       "id": "steam-clock",
       "label": "Steam Clock Corner",
-      "x": 34,
-      "z": -94
-    },
-    {
-      "id": "split-wedge",
-      "label": "Angled/Split Block",
-      "x": 47,
-      "z": -111
+      "x": 28,
+      "z": -95,
+      "reference_name": "Steam Clock destination",
+      "segment_style": "destination_node",
+      "facade_profile": "steam_clock_corner",
+      "silhouette_notes": "Clock framed by corner facades and plaza edge.",
+      "storefront_notes": "Dense pedestrian edge.",
+      "landmark_priority": "primary"
     }
   ],
   "buildings": [
     {
-      "id": "station-frontage-a",
-      "x": -25,
-      "z": 3,
-      "width": 18,
-      "depth": 20,
-      "height": 18,
-      "tone": "stoneMuted",
-      "yaw": 0.02,
-      "facade_profile": "warehouse_commercial_front",
-      "roofline_type": "flat",
-      "storefront_rhythm": {
-        "bay_pattern": "wide_module",
-        "base_band": 0.12,
-        "upper_rows": 3
-      },
-      "window_bay_count": 3,
-      "material_palette": {
-        "primary": "stoneMuted",
-        "accent": "brickDark",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": false,
-      "cornice_emphasis": 0.35,
-      "building_style": [
-        "warehouse",
-        "commercial_block"
-      ],
-      "mass_inset": 0.97,
-      "reference_name": null,
-      "reference_address": null,
-      "style_notes": null,
-      "silhouette_notes": null,
-      "landmark_priority": "supporting"
-    },
-    {
-      "id": "station-frontage-b",
-      "x": -6,
-      "z": 16,
-      "width": 16,
-      "depth": 10,
-      "height": 15,
-      "tone": "stoneMuted",
-      "yaw": -0.08,
-      "facade_profile": "warehouse_commercial_front",
-      "roofline_type": "flat",
-      "storefront_rhythm": {
-        "bay_pattern": "wide_module",
-        "base_band": 0.12,
-        "upper_rows": 3
-      },
-      "window_bay_count": 3,
-      "material_palette": {
-        "primary": "stoneMuted",
-        "accent": "brickDark",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": false,
-      "cornice_emphasis": 0.35,
-      "building_style": [
-        "warehouse",
-        "commercial_block"
-      ],
-      "mass_inset": 0.97,
-      "reference_name": null,
-      "reference_address": null,
-      "style_notes": null,
-      "silhouette_notes": null,
-      "landmark_priority": "supporting"
-    },
-    {
-      "id": "water-north-01",
-      "x": 11,
-      "z": -20,
-      "width": 14,
-      "depth": 11,
-      "height": 17,
-      "tone": "brickWarm",
-      "yaw": -0.2,
-      "facade_profile": "victorian_storefront_row",
-      "roofline_type": "stepped",
-      "storefront_rhythm": {
-        "bay_pattern": "narrow_retail",
-        "base_band": 0.2,
-        "upper_rows": 2
-      },
-      "window_bay_count": 5,
-      "material_palette": {
-        "primary": "brickDark",
-        "accent": "brickWarm",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.8,
-      "building_style": [
-        "storefront_row",
-        "victorian"
-      ],
-      "mass_inset": 0.93,
-      "reference_name": null,
-      "reference_address": null,
-      "style_notes": null,
-      "silhouette_notes": null,
-      "landmark_priority": "supporting"
-    },
-    {
-      "id": "water-north-02",
-      "x": 22,
-      "z": -45,
-      "width": 16,
-      "depth": 10,
-      "height": 16,
-      "tone": "brickDark",
-      "yaw": -0.3,
-      "facade_profile": "victorian_storefront_row",
-      "roofline_type": "stepped",
-      "storefront_rhythm": {
-        "bay_pattern": "narrow_retail",
-        "base_band": 0.2,
-        "upper_rows": 2
-      },
-      "window_bay_count": 5,
-      "material_palette": {
-        "primary": "brickDark",
-        "accent": "brickWarm",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.8,
-      "building_style": [
-        "storefront_row",
-        "victorian"
-      ],
-      "mass_inset": 0.93,
-      "reference_name": null,
-      "reference_address": null,
-      "style_notes": null,
-      "silhouette_notes": null,
-      "landmark_priority": "supporting"
-    },
-    {
-      "id": "water-north-03",
-      "x": 33,
-      "z": -69,
-      "width": 14,
-      "depth": 11,
+      "id": "waterfront-station-civic",
+      "x": -30,
+      "z": 14,
+      "width": 46,
+      "depth": 16,
       "height": 20,
       "tone": "brickWarm",
-      "yaw": -0.38,
-      "facade_profile": "gastown_heritage_masonry",
+      "yaw": 0.02,
+      "facade_profile": "waterfront_station_civic",
       "roofline_type": "flat_cornice",
+      "window_bay_count": 12,
+      "recessed_entry_count": 2,
       "storefront_rhythm": {
-        "bay_pattern": "tight_regular",
-        "base_band": 0.17,
-        "upper_rows": 3
+        "bay_pattern": "civic_colonnade",
+        "base_band": 0.1,
+        "upper_rows": 2
       },
-      "window_bay_count": 4,
       "material_palette": {
         "primary": "brickWarm",
         "accent": "stoneMuted",
         "trim": "stoneMuted"
       },
-      "awning_presence": true,
-      "cornice_emphasis": 0.7,
+      "awning_presence": false,
+      "cornice_emphasis": 0.82,
       "building_style": [
-        "heritage_low_rise",
-        "masonry"
+        "civic",
+        "station_frontage"
       ],
-      "mass_inset": 0.93,
-      "reference_name": null,
-      "reference_address": null,
-      "style_notes": null,
-      "silhouette_notes": null,
-      "landmark_priority": "supporting"
+      "mass_inset": 0.99,
+      "reference_name": "Waterfront Station / CPR civic frontage",
+      "reference_address": "601 W Cordova St, Vancouver, BC",
+      "segment_style": "station_threshold",
+      "silhouette_notes": "Long red-brick base with strong white column rhythm.",
+      "storefront_notes": "Broad threshold and restrained retail expression.",
+      "landmark_priority": "primary",
+      "style_notes": null
     },
     {
-      "id": "water-north-04",
-      "x": 45,
-      "z": -91,
-      "width": 12,
+      "id": "station-edge-commercial",
+      "x": -6,
+      "z": 18,
+      "width": 13,
       "depth": 10,
-      "height": 18,
+      "height": 14,
       "tone": "stoneMuted",
-      "yaw": -0.42,
-      "facade_profile": "gastown_heritage_masonry",
-      "roofline_type": "flat_cornice",
-      "storefront_rhythm": {
-        "bay_pattern": "tight_regular",
-        "base_band": 0.17,
-        "upper_rows": 3
-      },
-      "window_bay_count": 4,
-      "material_palette": {
-        "primary": "brickWarm",
-        "accent": "stoneMuted",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.7,
-      "building_style": [
-        "heritage_low_rise",
-        "masonry"
-      ],
-      "mass_inset": 0.93,
-      "reference_name": null,
-      "reference_address": null,
-      "style_notes": null,
-      "silhouette_notes": null,
-      "landmark_priority": "supporting"
-    },
-    {
-      "id": "water-south-01",
-      "x": -23,
-      "z": -19,
-      "width": 18,
-      "depth": 14,
-      "height": 18,
-      "tone": "brickDark",
-      "yaw": -0.18,
-      "facade_profile": "gastown_heritage_masonry",
-      "roofline_type": "flat_cornice",
-      "storefront_rhythm": {
-        "bay_pattern": "tight_regular",
-        "base_band": 0.17,
-        "upper_rows": 3
-      },
-      "window_bay_count": 4,
-      "material_palette": {
-        "primary": "brickWarm",
-        "accent": "stoneMuted",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.7,
-      "building_style": [
-        "heritage_low_rise",
-        "masonry"
-      ],
-      "mass_inset": 0.93,
-      "reference_name": null,
-      "reference_address": null,
-      "style_notes": null,
-      "silhouette_notes": null,
-      "landmark_priority": "supporting"
-    },
-    {
-      "id": "water-south-02",
-      "x": -12,
-      "z": -45,
-      "width": 16,
-      "depth": 12,
-      "height": 16,
-      "tone": "brickWarm",
-      "yaw": -0.26,
-      "facade_profile": "gastown_heritage_masonry",
-      "roofline_type": "flat_cornice",
-      "storefront_rhythm": {
-        "bay_pattern": "tight_regular",
-        "base_band": 0.17,
-        "upper_rows": 3
-      },
-      "window_bay_count": 4,
-      "material_palette": {
-        "primary": "brickWarm",
-        "accent": "stoneMuted",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.7,
-      "building_style": [
-        "heritage_low_rise",
-        "masonry"
-      ],
-      "mass_inset": 0.93,
-      "reference_name": null,
-      "reference_address": null,
-      "style_notes": null,
-      "silhouette_notes": null,
-      "landmark_priority": "supporting"
-    },
-    {
-      "id": "water-south-03",
-      "x": 1,
-      "z": -73,
-      "width": 18,
-      "depth": 12,
-      "height": 19,
-      "tone": "stoneMuted",
-      "yaw": -0.34,
-      "facade_profile": "warehouse_commercial_front",
+      "yaw": -0.06,
+      "facade_profile": "cordova_commercial_transition",
       "roofline_type": "flat",
+      "window_bay_count": 4,
+      "recessed_entry_count": 1,
       "storefront_rhythm": {
         "bay_pattern": "wide_module",
-        "base_band": 0.12,
-        "upper_rows": 3
+        "base_band": 0.13,
+        "upper_rows": 2
       },
-      "window_bay_count": 3,
       "material_palette": {
         "primary": "stoneMuted",
         "accent": "brickDark",
@@ -671,68 +502,67 @@
       "awning_presence": false,
       "cornice_emphasis": 0.35,
       "building_style": [
-        "warehouse",
-        "commercial_block"
+        "commercial_transition"
       ],
       "mass_inset": 0.97,
-      "reference_name": null,
-      "reference_address": null,
-      "style_notes": null,
-      "silhouette_notes": null,
-      "landmark_priority": "supporting"
+      "reference_name": "Cordova commercial edge",
+      "reference_address": "W Cordova corridor, Vancouver, BC",
+      "segment_style": "cordova_transition",
+      "silhouette_notes": "Transitioning block scale at station edge.",
+      "storefront_notes": "Wider bays before Gastown rhythm begins.",
+      "landmark_priority": "supporting",
+      "style_notes": null
     },
     {
-      "id": "steam-corner-block",
-      "x": 16,
-      "z": -97,
-      "width": 15,
-      "depth": 13,
-      "height": 17,
+      "id": "cordova-north-01",
+      "x": -2,
+      "z": -2,
+      "width": 14,
+      "depth": 11,
+      "height": 16,
       "tone": "brickDark",
-      "yaw": -0.4,
-      "facade_profile": "victorian_storefront_row",
+      "yaw": -0.12,
+      "facade_profile": "cordova_commercial_transition",
       "roofline_type": "stepped",
-      "storefront_rhythm": {
-        "bay_pattern": "narrow_retail",
-        "base_band": 0.2,
-        "upper_rows": 2
-      },
       "window_bay_count": 5,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "bay_pattern": "transition_mixed",
+        "base_band": 0.15,
+        "upper_rows": 3
+      },
       "material_palette": {
         "primary": "brickDark",
         "accent": "brickWarm",
         "trim": "stoneMuted"
       },
       "awning_presence": true,
-      "cornice_emphasis": 0.8,
+      "cornice_emphasis": 0.62,
       "building_style": [
-        "storefront_row",
-        "victorian"
+        "commercial_transition"
       ],
-      "mass_inset": 0.93,
-      "reference_name": "Steam Clock corner commercial frontage",
-      "reference_address": "300 block Water St, Vancouver, BC",
-      "style_notes": "Historic storefront cadence with cornice band and awning rhythm.",
-      "silhouette_notes": "Mid-rise corner with active base and articulated parapet.",
-      "landmark_priority": "high"
+      "mass_inset": 0.96,
+      "reference_name": "W Cordova transition storefronts",
+      "reference_address": "W Cordova St, Vancouver, BC",
+      "segment_style": "cordova_transition",
+      "silhouette_notes": "Mid-rise mixed commercial frontage.",
+      "storefront_notes": "Storefront cadence tightens toward Water Street.",
+      "landmark_priority": "supporting",
+      "style_notes": null
     },
     {
-      "id": "cambie-corner-wedge",
-      "x": 50,
-      "z": -111,
+      "id": "water-entry-wedge",
+      "x": -14,
+      "z": -16,
       "width": 13,
-      "depth": 16,
-      "height": 22,
+      "depth": 14,
+      "height": 18,
       "tone": "brickWarm",
-      "yaw": -0.78,
-      "building_style": [
-        "angled_corner",
-        "masonry_commercial"
-      ],
+      "yaw": -0.36,
+      "facade_profile": "wedge_corner_block",
       "roofline_type": "angled_parapet",
       "window_bay_count": 6,
-      "cornice_emphasis": 0.9,
-      "awning_presence": true,
+      "recessed_entry_count": 1,
       "storefront_rhythm": {
         "bay_pattern": "corner_emphasis",
         "base_band": 0.18,
@@ -743,61 +573,367 @@
         "accent": "stoneMuted",
         "trim": "stoneMuted"
       },
+      "awning_presence": true,
+      "cornice_emphasis": 0.9,
+      "building_style": [
+        "angled_corner",
+        "heritage_masonry"
+      ],
+      "mass_inset": 0.94,
       "footprint": [
         {
           "x": -5.8,
-          "z": -7.6
+          "z": -6.1
         },
         {
-          "x": 4.9,
-          "z": -4.7
+          "x": 4.4,
+          "z": -4.6
         },
         {
-          "x": 6.2,
-          "z": 5.8
+          "x": 6.1,
+          "z": 4.9
         },
         {
-          "x": -2.2,
-          "z": 7.4
+          "x": -1.4,
+          "z": 7.2
         },
         {
-          "x": -6.4,
-          "z": 2.1
+          "x": -6.3,
+          "z": 2.3
         }
       ],
-      "reference_name": "Wedge-lot Gastown corner typology",
-      "facade_profile": "wedge_corner_block",
+      "reference_name": "Water/Cordova wedge lot",
+      "reference_address": "Water St & W Cordova St, Vancouver, BC",
+      "segment_style": "edge_transition",
+      "silhouette_notes": "Flatiron prow marks route entry into Water Street.",
+      "storefront_notes": "Corner storefront wraps angled frontage.",
+      "landmark_priority": "high",
+      "style_notes": null
+    },
+    {
+      "id": "water-north-heritage-01",
+      "x": 8,
+      "z": -28,
+      "width": 12,
+      "depth": 10,
+      "height": 15,
+      "tone": "brickWarm",
+      "yaw": -0.26,
+      "facade_profile": "gastown_heritage_row",
+      "roofline_type": "flat_cornice",
+      "window_bay_count": 5,
+      "recessed_entry_count": 2,
+      "storefront_rhythm": {
+        "bay_pattern": "narrow_retail",
+        "base_band": 0.19,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "brickWarm",
+        "accent": "stoneMuted",
+        "trim": "stoneMuted"
+      },
+      "awning_presence": true,
+      "cornice_emphasis": 0.72,
+      "building_style": [
+        "heritage_low_rise"
+      ],
+      "mass_inset": 0.94,
+      "reference_name": "Water Street heritage row",
+      "reference_address": "100 Water St block, Vancouver, BC",
+      "segment_style": "gastown_corridor",
+      "silhouette_notes": "Low/mid-rise heritage facade with cornice.",
+      "storefront_notes": "Narrow repeated bays and awning band.",
+      "landmark_priority": "supporting",
+      "style_notes": null
+    },
+    {
+      "id": "water-north-heritage-02",
+      "x": 18,
+      "z": -50,
+      "width": 11,
+      "depth": 9,
+      "height": 17,
+      "tone": "brickDark",
+      "yaw": -0.3,
+      "facade_profile": "gastown_corner_retail",
+      "roofline_type": "stepped",
+      "window_bay_count": 5,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "bay_pattern": "tight_regular",
+        "base_band": 0.2,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "brickDark",
+        "accent": "brickWarm",
+        "trim": "stoneMuted"
+      },
+      "awning_presence": true,
+      "cornice_emphasis": 0.76,
+      "building_style": [
+        "heritage_low_rise",
+        "corner_retail"
+      ],
+      "mass_inset": 0.94,
+      "reference_name": "Water Street storefront rhythm",
+      "reference_address": "200 Water St block, Vancouver, BC",
+      "segment_style": "gastown_corridor",
+      "silhouette_notes": "Stepped parapet breaks roofline rhythm.",
+      "storefront_notes": "Frequent storefront cadence and signage band.",
+      "landmark_priority": "supporting",
+      "style_notes": null
+    },
+    {
+      "id": "water-north-heritage-03",
+      "x": 29,
+      "z": -75,
+      "width": 12,
+      "depth": 10,
+      "height": 18,
+      "tone": "brickWarm",
+      "yaw": -0.38,
+      "facade_profile": "gastown_heritage_row",
+      "roofline_type": "flat_cornice",
+      "window_bay_count": 4,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "bay_pattern": "tight_regular",
+        "base_band": 0.19,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "brickWarm",
+        "accent": "stoneMuted",
+        "trim": "stoneMuted"
+      },
+      "awning_presence": true,
+      "cornice_emphasis": 0.75,
+      "building_style": [
+        "heritage_low_rise",
+        "masonry"
+      ],
       "mass_inset": 0.93,
-      "reference_address": "Water St / Cambie edge, Vancouver, BC",
-      "style_notes": "Wedge-lot masonry corner inspired by Gastown split-edge blocks.",
-      "silhouette_notes": "Angled prow corner, stepped/angled roofline, strong cornice.",
-      "landmark_priority": "high"
+      "reference_name": "Water Street mid-block massing",
+      "reference_address": "200-300 Water St, Vancouver, BC",
+      "segment_style": "gastown_corridor",
+      "silhouette_notes": "Continuous brick streetwall with subtle cornice.",
+      "storefront_notes": "Historic shopfront rhythm maintains pedestrian edge.",
+      "landmark_priority": "supporting",
+      "style_notes": null
+    },
+    {
+      "id": "steam-clock-frame-north",
+      "x": 34,
+      "z": -95,
+      "width": 14,
+      "depth": 11,
+      "height": 19,
+      "tone": "brickDark",
+      "yaw": -0.42,
+      "facade_profile": "steam_clock_corner",
+      "roofline_type": "stepped",
+      "window_bay_count": 6,
+      "recessed_entry_count": 2,
+      "storefront_rhythm": {
+        "bay_pattern": "corner_emphasis",
+        "base_band": 0.21,
+        "upper_rows": 4
+      },
+      "material_palette": {
+        "primary": "brickDark",
+        "accent": "brickWarm",
+        "trim": "stoneMuted"
+      },
+      "awning_presence": true,
+      "cornice_emphasis": 0.88,
+      "building_style": [
+        "corner_retail",
+        "destination_frame"
+      ],
+      "mass_inset": 0.93,
+      "reference_name": "Steam Clock north framing block",
+      "reference_address": "300 Water St, Vancouver, BC",
+      "segment_style": "destination_node",
+      "silhouette_notes": "Destination corner framing with active base.",
+      "storefront_notes": "Dense corner retail around clock zone.",
+      "landmark_priority": "high",
+      "style_notes": null
+    },
+    {
+      "id": "water-south-heritage-01",
+      "x": -26,
+      "z": -10,
+      "width": 15,
+      "depth": 12,
+      "height": 16,
+      "tone": "brickDark",
+      "yaw": -0.14,
+      "facade_profile": "cordova_commercial_transition",
+      "roofline_type": "flat_cornice",
+      "window_bay_count": 4,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "bay_pattern": "transition_mixed",
+        "base_band": 0.15,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "brickDark",
+        "accent": "stoneMuted",
+        "trim": "stoneMuted"
+      },
+      "awning_presence": true,
+      "cornice_emphasis": 0.6,
+      "building_style": [
+        "transition_row"
+      ],
+      "mass_inset": 0.95,
+      "reference_name": "Cordova south edge transition",
+      "reference_address": "W Cordova south edge, Vancouver, BC",
+      "segment_style": "cordova_transition",
+      "silhouette_notes": "Commercial transition block opposite station side.",
+      "storefront_notes": "Mixed bay widths ahead of heritage corridor.",
+      "landmark_priority": "supporting",
+      "style_notes": null
+    },
+    {
+      "id": "water-south-heritage-02",
+      "x": -14,
+      "z": -36,
+      "width": 13,
+      "depth": 10,
+      "height": 15,
+      "tone": "brickWarm",
+      "yaw": -0.22,
+      "facade_profile": "gastown_heritage_row",
+      "roofline_type": "flat_cornice",
+      "window_bay_count": 5,
+      "recessed_entry_count": 2,
+      "storefront_rhythm": {
+        "bay_pattern": "narrow_retail",
+        "base_band": 0.19,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "brickWarm",
+        "accent": "stoneMuted",
+        "trim": "stoneMuted"
+      },
+      "awning_presence": true,
+      "cornice_emphasis": 0.73,
+      "building_style": [
+        "heritage_row"
+      ],
+      "mass_inset": 0.94,
+      "reference_name": "Water Street south heritage row",
+      "reference_address": "100-200 Water St, Vancouver, BC",
+      "segment_style": "gastown_corridor",
+      "silhouette_notes": "Tight heritage streetwall and cornice line.",
+      "storefront_notes": "Frequent storefront bays and recessed doors.",
+      "landmark_priority": "supporting",
+      "style_notes": null
+    },
+    {
+      "id": "water-south-heritage-03",
+      "x": -2,
+      "z": -62,
+      "width": 12,
+      "depth": 10,
+      "height": 17,
+      "tone": "stoneMuted",
+      "yaw": -0.32,
+      "facade_profile": "gastown_corner_retail",
+      "roofline_type": "stepped",
+      "window_bay_count": 5,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "bay_pattern": "tight_regular",
+        "base_band": 0.19,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "stoneMuted",
+        "accent": "brickWarm",
+        "trim": "stoneMuted"
+      },
+      "awning_presence": true,
+      "cornice_emphasis": 0.78,
+      "building_style": [
+        "heritage_corner"
+      ],
+      "mass_inset": 0.94,
+      "reference_name": "Water Street south mid block",
+      "reference_address": "200 Water St, Vancouver, BC",
+      "segment_style": "gastown_corridor",
+      "silhouette_notes": "Varied mid-rise heritage cadence.",
+      "storefront_notes": "Awnings and sign-band storefront expression.",
+      "landmark_priority": "supporting",
+      "style_notes": null
+    },
+    {
+      "id": "steam-clock-frame-south",
+      "x": 14,
+      "z": -90,
+      "width": 13,
+      "depth": 11,
+      "height": 18,
+      "tone": "brickWarm",
+      "yaw": -0.4,
+      "facade_profile": "steam_clock_corner",
+      "roofline_type": "flat_cornice",
+      "window_bay_count": 5,
+      "recessed_entry_count": 2,
+      "storefront_rhythm": {
+        "bay_pattern": "corner_emphasis",
+        "base_band": 0.2,
+        "upper_rows": 4
+      },
+      "material_palette": {
+        "primary": "brickWarm",
+        "accent": "stoneMuted",
+        "trim": "stoneMuted"
+      },
+      "awning_presence": true,
+      "cornice_emphasis": 0.84,
+      "building_style": [
+        "destination_frame"
+      ],
+      "mass_inset": 0.93,
+      "reference_name": "Steam Clock south framing block",
+      "reference_address": "Water & Cambie corner, Vancouver, BC",
+      "segment_style": "destination_node",
+      "silhouette_notes": "Framing mass defines destination corner space.",
+      "storefront_notes": "Retail frontage wraps toward clock plaza.",
+      "landmark_priority": "high",
+      "style_notes": null
     }
   ],
   "landmarks": [
     {
-      "id": "steam-clock",
-      "label": "Gastown Steam Clock",
-      "x": 34,
-      "z": -94,
-      "type": "clock",
-      "radius": 7
-    },
-    {
       "id": "waterfront-entry",
       "label": "Waterfront Station Entry",
-      "x": -11,
-      "z": 9,
+      "x": -24,
+      "z": 17,
       "type": "station",
+      "radius": 10
+    },
+    {
+      "id": "wedge-corner",
+      "label": "Water/Cordova Wedge Corner",
+      "x": -14,
+      "z": -16,
+      "type": "split",
       "radius": 8
     },
     {
-      "id": "split-building",
-      "label": "Split / Angled Street Wedge",
-      "x": 47,
-      "z": -111,
-      "type": "split",
-      "radius": 7
+      "id": "steam-clock",
+      "label": "Gastown Steam Clock",
+      "x": 28,
+      "z": -95,
+      "type": "clock",
+      "radius": 9
     }
   ],
   "bounds": {
@@ -808,24 +944,24 @@
   "audioZones": [
     {
       "id": "station-rumble",
-      "x": -8,
-      "z": 5,
-      "radius": 24,
+      "x": -22,
+      "z": 16,
+      "radius": 25,
       "bed": "distant_transit"
     },
     {
-      "id": "steam-clock-core",
-      "x": 34,
-      "z": -94,
-      "radius": 17,
-      "bed": "steam_clock_mech"
+      "id": "water-street-crowd",
+      "x": 10,
+      "z": -58,
+      "radius": 30,
+      "bed": "street_crowd"
     },
     {
-      "id": "split-nightlife",
-      "x": 47,
-      "z": -111,
-      "radius": 20,
-      "bed": "street_crowd"
+      "id": "steam-clock-core",
+      "x": 28,
+      "z": -95,
+      "radius": 18,
+      "bed": "steam_clock_mech"
     }
   ],
   "weatherPresets": {
@@ -950,8 +1086,51 @@
     }
   },
   "facade_profiles": {
-    "gastown_heritage_masonry": {
-      "label": "Gastown heritage masonry",
+    "waterfront_station_civic": {
+      "label": "Waterfront station civic frontage",
+      "building_style": [
+        "civic",
+        "station_frontage"
+      ],
+      "roofline_type": "flat_cornice",
+      "storefront_rhythm": {
+        "bay_pattern": "civic_colonnade",
+        "base_band": 0.1,
+        "upper_rows": 2
+      },
+      "window_bay_count": 12,
+      "material_palette": {
+        "primary": "brickWarm",
+        "accent": "stoneMuted",
+        "trim": "stoneMuted"
+      },
+      "awning_presence": false,
+      "cornice_emphasis": 0.82,
+      "massing": "long_civic_frontage"
+    },
+    "cordova_commercial_transition": {
+      "label": "Cordova commercial transition",
+      "building_style": [
+        "commercial_transition"
+      ],
+      "roofline_type": "flat_cornice",
+      "storefront_rhythm": {
+        "bay_pattern": "transition_mixed",
+        "base_band": 0.15,
+        "upper_rows": 3
+      },
+      "window_bay_count": 4,
+      "material_palette": {
+        "primary": "brickDark",
+        "accent": "brickWarm",
+        "trim": "stoneMuted"
+      },
+      "awning_presence": true,
+      "cornice_emphasis": 0.62,
+      "massing": "mixed_transition_row"
+    },
+    "gastown_heritage_row": {
+      "label": "Gastown heritage row",
       "building_style": [
         "heritage_low_rise",
         "masonry"
@@ -959,30 +1138,30 @@
       "roofline_type": "flat_cornice",
       "storefront_rhythm": {
         "bay_pattern": "tight_regular",
-        "base_band": 0.17,
+        "base_band": 0.19,
         "upper_rows": 3
       },
-      "window_bay_count": 4,
+      "window_bay_count": 5,
       "material_palette": {
         "primary": "brickWarm",
         "accent": "stoneMuted",
         "trim": "stoneMuted"
       },
       "awning_presence": true,
-      "cornice_emphasis": 0.7,
-      "massing": "streetwall_continuous"
+      "cornice_emphasis": 0.74,
+      "massing": "narrow_streetwall_continuous"
     },
-    "victorian_storefront_row": {
-      "label": "Victorian storefront row",
+    "gastown_corner_retail": {
+      "label": "Gastown corner retail",
       "building_style": [
-        "storefront_row",
-        "victorian"
+        "corner_retail",
+        "heritage_masonry"
       ],
       "roofline_type": "stepped",
       "storefront_rhythm": {
-        "bay_pattern": "narrow_retail",
+        "bay_pattern": "corner_emphasis",
         "base_band": 0.2,
-        "upper_rows": 2
+        "upper_rows": 3
       },
       "window_bay_count": 5,
       "material_palette": {
@@ -992,7 +1171,7 @@
       },
       "awning_presence": true,
       "cornice_emphasis": 0.8,
-      "massing": "narrow_bay_row"
+      "massing": "corner_emphasis_midrise"
     },
     "wedge_corner_block": {
       "label": "Wedge/flatiron corner block",
@@ -1016,27 +1195,27 @@
       "cornice_emphasis": 0.9,
       "massing": "wedge_flatiron"
     },
-    "warehouse_commercial_front": {
-      "label": "Warehouse/commercial front",
+    "steam_clock_corner": {
+      "label": "Steam Clock destination corner",
       "building_style": [
-        "warehouse",
-        "commercial_block"
+        "destination_corner",
+        "retail_frame"
       ],
-      "roofline_type": "flat",
+      "roofline_type": "stepped",
       "storefront_rhythm": {
-        "bay_pattern": "wide_module",
-        "base_band": 0.12,
-        "upper_rows": 3
+        "bay_pattern": "destination_corner",
+        "base_band": 0.21,
+        "upper_rows": 4
       },
-      "window_bay_count": 3,
+      "window_bay_count": 6,
       "material_palette": {
-        "primary": "stoneMuted",
-        "accent": "brickDark",
+        "primary": "brickDark",
+        "accent": "brickWarm",
         "trim": "stoneMuted"
       },
-      "awning_presence": false,
-      "cornice_emphasis": 0.35,
-      "massing": "deep_block"
+      "awning_presence": true,
+      "cornice_emphasis": 0.88,
+      "massing": "landmark_framing_corner"
     }
   },
   "hero_landmarks": [
@@ -1044,26 +1223,174 @@
       "id": "steam-clock-hero",
       "reference_name": "Gastown Steam Clock",
       "reference_address": "305 Water St, Vancouver, BC",
-      "x": 34,
-      "z": -94,
+      "x": 28,
+      "z": -95,
       "asset_type": "steam_clock",
       "landmark_priority": "primary",
-      "style_notes": "Cast-iron Victorian clock body with visible steam pipes and capped roof.",
-      "silhouette_notes": "Tall base + clock body + round face + cap roof + side steam pipes.",
-      "ground_emphasis_radius": 3.8,
-      "facade_profile": null
+      "segment_style": "destination_node",
+      "facade_profile": "steam_clock_corner",
+      "style_notes": "Tall dark clock body with illuminated face, cap roof, and steam pipes in plaza corner setting.",
+      "silhouette_notes": "Vertical clock shaft + cap roof, visible clock faces, framed by corner blocks.",
+      "storefront_notes": "Surrounding storefront edges create pedestrian destination feel.",
+      "ground_emphasis_radius": 4.6
     },
     {
       "id": "water-cordova-flatiron-hero",
-      "reference_name": "Gastown wedge-lot corner massing",
-      "reference_address": "Water St / W Cordova split edge, Vancouver, BC",
-      "x": 47,
-      "z": -111,
+      "reference_name": "Water/Cordova wedge corner",
+      "reference_address": "Water St / W Cordova St, Vancouver, BC",
+      "x": -14,
+      "z": -16,
       "asset_type": "wedge_corner_block",
       "landmark_priority": "secondary",
-      "style_notes": "Angled masonry corner with narrow prow facing split alignment.",
-      "silhouette_notes": "Flatiron-like wedge footprint and emphasized parapet corner.",
-      "facade_profile": null
+      "segment_style": "edge_transition",
+      "facade_profile": "wedge_corner_block",
+      "style_notes": "Angled masonry wedge announces corridor transition into Gastown.",
+      "silhouette_notes": "Flatiron prow corner with emphasized parapet and narrow frontage.",
+      "storefront_notes": "Corner retail wraps angle with active base."
     }
-  ]
+  ],
+  "streetscape": {
+    "surfaceBands": [
+      {
+        "segment_id": "waterfront-station-threshold",
+        "tone": "asphalt",
+        "width": 12.4,
+        "length": 18,
+        "yaw": -0.04,
+        "offset_x": 2.2,
+        "offset_z": -3
+      },
+      {
+        "segment_id": "water-street-west",
+        "tone": "brick",
+        "width": 10.8,
+        "length": 28,
+        "yaw": -0.34,
+        "offset_x": 0,
+        "offset_z": 0
+      },
+      {
+        "segment_id": "water-street-mid",
+        "tone": "brick",
+        "width": 10.4,
+        "length": 30,
+        "yaw": -0.4,
+        "offset_x": 0,
+        "offset_z": 0
+      },
+      {
+        "segment_id": "steam-clock-node",
+        "tone": "brick",
+        "width": 11,
+        "length": 16,
+        "yaw": -0.44,
+        "offset_x": 0.8,
+        "offset_z": 0.2
+      }
+    ],
+    "lamps": [
+      {
+        "x": -2,
+        "z": -22,
+        "height": 4.5
+      },
+      {
+        "x": 3,
+        "z": -34,
+        "height": 4.6
+      },
+      {
+        "x": 8,
+        "z": -45,
+        "height": 4.6
+      },
+      {
+        "x": 13,
+        "z": -56,
+        "height": 4.6
+      },
+      {
+        "x": 18,
+        "z": -67,
+        "height": 4.7
+      },
+      {
+        "x": 23,
+        "z": -78,
+        "height": 4.7
+      },
+      {
+        "x": 27,
+        "z": -88,
+        "height": 4.8
+      },
+      {
+        "x": 31,
+        "z": -98,
+        "height": 4.8
+      },
+      {
+        "x": -11,
+        "z": -30,
+        "height": 4.5
+      },
+      {
+        "x": -6,
+        "z": -42,
+        "height": 4.6
+      },
+      {
+        "x": -1,
+        "z": -54,
+        "height": 4.6
+      },
+      {
+        "x": 4,
+        "z": -66,
+        "height": 4.6
+      },
+      {
+        "x": 9,
+        "z": -78,
+        "height": 4.7
+      },
+      {
+        "x": 14,
+        "z": -90,
+        "height": 4.8
+      }
+    ],
+    "trees": [
+      {
+        "x": 5,
+        "z": -40,
+        "radius": 1.1
+      },
+      {
+        "x": 11,
+        "z": -53,
+        "radius": 1.05
+      },
+      {
+        "x": 17,
+        "z": -66,
+        "radius": 1
+      },
+      {
+        "x": 22,
+        "z": -78,
+        "radius": 0.95
+      },
+      {
+        "x": -4,
+        "z": -50,
+        "radius": 1
+      },
+      {
+        "x": 2,
+        "z": -64,
+        "radius": 0.95
+      }
+    ]
+  }
 }
