@@ -55,6 +55,9 @@
       if (data.streetscape.trees && !Array.isArray(data.streetscape.trees)) {
         throw new Error('Gastown world data is malformed: streetscape.trees must be an array.');
       }
+      if (data.streetscape.bollards && !Array.isArray(data.streetscape.bollards)) {
+        throw new Error('Gastown world data is malformed: streetscape.bollards must be an array.');
+      }
     }
 
     data.buildings.forEach((building, index) => {

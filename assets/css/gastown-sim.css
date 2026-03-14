@@ -98,7 +98,8 @@
 
 .gastown-status,
 .gastown-pointer-status,
-.gastown-landmark {
+.gastown-landmark,
+.gastown-route-segment {
   padding: 0.2rem 0.55rem;
   border-left: 2px solid rgba(192, 211, 237, 0.45);
   background: rgba(10, 14, 22, 0.35);
@@ -128,4 +129,36 @@
   border-radius: 8px;
   padding: 0.5rem 0.6rem;
   pointer-events: none;
+}
+
+.gastown-minimap {
+  position: absolute;
+  left: 0.85rem;
+  bottom: 0.85rem;
+  width: 220px;
+  padding: 0.45rem;
+  border-radius: 10px;
+  background: rgba(7, 11, 18, 0.86);
+  border: 1px solid rgba(136, 170, 204, 0.42);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.44);
+}
+
+.gastown-minimap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.gastown-minimap-label {
+  margin: 0.38rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: #dbe9ff;
+}
+
+@media (max-width: 740px) {
+  .gastown-minimap {
+    width: 180px;
+  }
 }

@@ -20,6 +20,9 @@
   const debugToggle = app.querySelector('[data-action="debug-toggle"]');
   const debugPanel = app.querySelector('[data-debug-panel]');
   const routeDebugOverlay = app.querySelector('[data-route-debug-overlay]');
+  const minimapCanvas = app.querySelector('[data-sim-minimap]');
+  const minimapLandmarkEl = app.querySelector('[data-sim-minimap-landmark]');
+  const routeSegmentEl = app.querySelector('[data-sim-route-segment]');
 
   const state = {
     world: null,
@@ -83,6 +86,14 @@
     buildingMaterials: [],
     landmarkVisuals: [],
     groundMeshes: [],
+  };
+
+  const minimapState = {
+    ctx: minimapCanvas ? minimapCanvas.getContext('2d') : null,
+    width: minimapCanvas ? minimapCanvas.width : 0,
+    height: minimapCanvas ? minimapCanvas.height : 0,
+    routeMetrics: null,
+    nearestNode: null,
   };
 
   function updateSize() {
@@ -240,22 +251,39 @@
   }
 
   function addGround(world) {
-    visualState.roadMaterial = new THREE.MeshStandardMaterial({ color: 0x232a33, roughness: 0.9, metalness: 0.14 });
-    visualState.sidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0x34404a, roughness: 0.86, metalness: 0.08 });
-    visualState.curbMaterial = new THREE.MeshStandardMaterial({ color: 0x2a3139, roughness: 0.84, metalness: 0.12 });
-    visualState.laneMaterial = new THREE.LineBasicMaterial({ color: 0x698095, transparent: true, opacity: 0.42 });
+    visualState.roadMaterial = new THREE.MeshStandardMaterial({ color: 0x1e232b, roughness: 0.93, metalness: 0.16 });
+    visualState.sidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0x6a3f37, roughness: 0.89, metalness: 0.06 });
+    visualState.curbMaterial = new THREE.MeshStandardMaterial({ color: 0xc4ccd3, roughness: 0.83, metalness: 0.1 });
+    visualState.laneMaterial = new THREE.LineBasicMaterial({ color: 0xa5bdcf, transparent: true, opacity: 0.56 });
 
     world.zones.street.forEach((zone) => createZoneMesh(zone.polygon, visualState.roadMaterial, 0));
     world.zones.sidewalk.forEach((zone) => createZoneMesh(zone.polygon, visualState.sidewalkMaterial, 0.12));
 
     world.zones.street.forEach((zone) => {
-      const curb = createZoneMesh(zone.polygon, visualState.curbMaterial, 0.04);
-      curb.scale.set(1.01, 1.01, 1.01);
+      const curb = createZoneMesh(zone.polygon, visualState.curbMaterial, 0.05);
+      curb.scale.set(1.008, 1.008, 1.008);
     });
 
     const routePoints = world.route.centerline.map((point) => new THREE.Vector3(point.x, 0.14, point.z));
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(routePoints), visualState.laneMaterial);
     worldGroup.add(line);
+
+    world.route.centerline.forEach((point, index) => {
+      if (index % 2 !== 0 || index === world.route.centerline.length - 1) {
+        return;
+      }
+      const next = world.route.centerline[index + 1];
+      if (!next) return;
+      const heading = Math.atan2(next.x - point.x, next.z - point.z);
+      const stripe = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.22, 2.4),
+        new THREE.MeshStandardMaterial({ color: 0xb9c7d5, roughness: 0.78, metalness: 0.22, transparent: true, opacity: 0.38 })
+      );
+      stripe.rotation.x = -Math.PI / 2;
+      stripe.rotation.y = heading;
+      stripe.position.set(point.x, 0.11, point.z);
+      worldGroup.add(stripe);
+    });
 
     (world.streetscape && world.streetscape.surfaceBands || []).forEach((band) => {
       const segment = world.route.centerline.find((point) => point.id === band.segment_id);
@@ -294,6 +322,34 @@
       );
       globe.position.set(lamp.x, (lamp.height || 4.6) + 0.25, lamp.z);
       worldGroup.add(globe);
+    });
+
+    (streetscape.bollards || []).forEach((bollard) => {
+      const post = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.09, 0.11, 0.95, 10),
+        new THREE.MeshStandardMaterial({ color: 0x2f363f, roughness: 0.58, metalness: 0.34 })
+      );
+      post.position.set(bollard.x, 0.48, bollard.z);
+      worldGroup.add(post);
+
+      if (bollard.chain_to) {
+        const chainTo = streetscape.bollards.find((candidate) => candidate.id === bollard.chain_to);
+        if (chainTo) {
+          const dx = chainTo.x - bollard.x;
+          const dz = chainTo.z - bollard.z;
+          const span = Math.hypot(dx, dz);
+          if (span > 0.2) {
+            const chain = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.03, 0.03, span, 8),
+              new THREE.MeshStandardMaterial({ color: 0x5c666f, roughness: 0.46, metalness: 0.62 })
+            );
+            chain.position.set((bollard.x + chainTo.x) / 2, 0.58, (bollard.z + chainTo.z) / 2);
+            chain.rotation.x = Math.PI / 2;
+            chain.rotation.z = Math.atan2(dz, dx);
+            worldGroup.add(chain);
+          }
+        }
+      }
     });
 
     (streetscape.trees || []).forEach((tree) => {
@@ -412,6 +468,16 @@
             b.z + ((b.depth || 10) * 0.5) * Math.cos((b.yaw || 0) - Math.PI / 2) + localX * Math.sin(b.yaw || 0)
           );
           worldGroup.add(col);
+
+          if (b.id === 'waterfront-station-civic') {
+            const base = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.34, 0.38, 0.42, 12),
+              new THREE.MeshStandardMaterial({ color: 0xb4b8bf, roughness: 0.7, metalness: 0.12 })
+            );
+            base.position.copy(col.position);
+            base.position.y = 0.21;
+            worldGroup.add(base);
+          }
         }
       }
 
@@ -429,7 +495,43 @@
             b.z + ((b.depth || 8) * 0.48) * Math.cos((b.yaw || 0) - Math.PI / 2) + t * Math.sin(b.yaw || 0)
           );
           worldGroup.add(entry);
+
+          if (b.id === 'waterfront-station-civic') {
+            const door = new THREE.Mesh(
+              new THREE.PlaneGeometry(1.3, 3),
+              new THREE.MeshStandardMaterial({ color: 0x161d27, emissive: 0x2f3d4f, emissiveIntensity: 0.2, roughness: 0.34, metalness: 0.25 })
+            );
+            door.position.set(entry.position.x, 1.6, entry.position.z + 0.23);
+            door.rotation.y = b.yaw || 0;
+            worldGroup.add(door);
+
+            const transom = new THREE.Mesh(
+              new THREE.PlaneGeometry(1.35, 0.55),
+              new THREE.MeshStandardMaterial({ color: 0x45576c, emissive: 0x29394b, emissiveIntensity: 0.16, roughness: 0.42, metalness: 0.2 })
+            );
+            transom.position.set(entry.position.x, 3.2, entry.position.z + 0.24);
+            transom.rotation.y = b.yaw || 0;
+            worldGroup.add(transom);
+          }
         }
+      }
+
+      if (b.id === 'waterfront-station-civic') {
+        const canopy = new THREE.Mesh(
+          new THREE.BoxGeometry((b.width || 40) * 0.78, 0.42, 1.8),
+          new THREE.MeshStandardMaterial({ color: 0x8a8f96, roughness: 0.62, metalness: 0.2 })
+        );
+        canopy.position.set(b.x, storefrontBandHeight + 1.8, b.z + ((b.depth || 10) * 0.52));
+        canopy.rotation.y = b.yaw || 0;
+        worldGroup.add(canopy);
+
+        const recess = new THREE.Mesh(
+          new THREE.BoxGeometry((b.width || 40) * 0.7, Math.max(3.2, storefrontBandHeight * 0.82), 1.1),
+          new THREE.MeshStandardMaterial({ color: 0x18202a, roughness: 0.76, metalness: 0.08 })
+        );
+        recess.position.set(b.x, Math.max(1.9, storefrontBandHeight * 0.4) + 0.3, b.z + ((b.depth || 10) * 0.49));
+        recess.rotation.y = b.yaw || 0;
+        worldGroup.add(recess);
       }
 
       const edge = new THREE.LineSegments(
@@ -678,8 +780,155 @@
     });
 
     if (nearest) {
+      minimapState.nearestNode = nearest;
       setLandmark('Nearest landmark: ' + nearest.label);
+      if (routeSegmentEl) {
+        const nearestIndex = Math.max(0, state.world.nodes.findIndex((node) => node.id === nearest.id));
+        const total = Math.max(1, state.world.nodes.length - 1);
+        const progress = Math.round((nearestIndex / total) * 100);
+        routeSegmentEl.textContent = 'Route segment: ' + nearest.label + ' (' + progress + '%)';
+      }
+      if (minimapLandmarkEl) {
+        minimapLandmarkEl.textContent = 'Nearest: ' + nearest.label;
+      }
     }
+  }
+
+  function getBuildingCollisionRadius(building) {
+    return (Math.max(building.width || 8, building.depth || 8) / 2) + 0.8;
+  }
+
+  function isSpawnSafe(spawn) {
+    if (!state.world) return true;
+
+    const inWalkBounds = isPointInPolygon(spawn, state.world.route.walkBounds);
+    if (!inWalkBounds) return false;
+
+    const onStreet = state.world.zones.street.some((zone) => isPointInPolygon(spawn, zone.polygon));
+    const onSidewalk = state.world.zones.sidewalk.some((zone) => isPointInPolygon(spawn, zone.polygon));
+    if (!onStreet && !onSidewalk) return false;
+
+    const intersectsBuilding = state.world.buildings.some((building) => {
+      const distance = Math.hypot(spawn.x - building.x, spawn.z - building.z);
+      return distance < getBuildingCollisionRadius(building);
+    });
+
+    return !intersectsBuilding;
+  }
+
+  function resolveSafeSpawn() {
+    const worldSpawn = state.world.spawn || { x: -23, y: 1.7, z: 20, yaw: -0.25 };
+    const fallbackCandidates = [
+      { x: worldSpawn.x, z: worldSpawn.z },
+      { x: worldSpawn.x + 1.2, z: worldSpawn.z + 1.2 },
+      { x: worldSpawn.x + 2.1, z: worldSpawn.z + 2.8 },
+      { x: worldSpawn.x - 1.8, z: worldSpawn.z + 2.6 },
+      { x: -21.2, z: 22.6 },
+    ];
+
+    const safePoint = fallbackCandidates.find((candidate) => isSpawnSafe(candidate));
+    if (safePoint) {
+      return { x: safePoint.x, y: worldSpawn.y || 1.7, z: safePoint.z, yaw: worldSpawn.yaw || -0.25 };
+    }
+
+    const routeStart = state.world.route.centerline[0] || { x: -22, z: 18 };
+    return { x: routeStart.x, y: worldSpawn.y || 1.7, z: routeStart.z + 3.6, yaw: -0.3 };
+  }
+
+  function getRouteMetrics() {
+    if (!state.world || !state.world.route || !state.world.route.centerline.length) {
+      return null;
+    }
+    const points = state.world.route.centerline;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    points.forEach((point) => {
+      minX = Math.min(minX, point.x);
+      maxX = Math.max(maxX, point.x);
+      minZ = Math.min(minZ, point.z);
+      maxZ = Math.max(maxZ, point.z);
+    });
+    return {
+      minX,
+      maxX,
+      minZ,
+      maxZ,
+      width: Math.max(1, maxX - minX),
+      height: Math.max(1, maxZ - minZ),
+    };
+  }
+
+  function toMinimapPoint(point, metrics, padding) {
+    const usableW = minimapState.width - (padding * 2);
+    const usableH = minimapState.height - (padding * 2);
+    return {
+      x: padding + ((point.x - metrics.minX) / metrics.width) * usableW,
+      y: minimapState.height - (padding + ((point.z - metrics.minZ) / metrics.height) * usableH),
+    };
+  }
+
+  function drawMinimap() {
+    if (!minimapState.ctx || !state.world || !minimapState.routeMetrics) {
+      return;
+    }
+
+    const ctx = minimapState.ctx;
+    const metrics = minimapState.routeMetrics;
+    const pad = 12;
+    ctx.clearRect(0, 0, minimapState.width, minimapState.height);
+
+    ctx.fillStyle = '#0d141f';
+    ctx.fillRect(0, 0, minimapState.width, minimapState.height);
+    ctx.strokeStyle = 'rgba(181, 201, 224, 0.36)';
+    ctx.strokeRect(0.5, 0.5, minimapState.width - 1, minimapState.height - 1);
+
+    ctx.strokeStyle = '#92c7e8';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    state.world.route.centerline.forEach((point, index) => {
+      const mini = toMinimapPoint(point, metrics, pad);
+      if (index === 0) {
+        ctx.moveTo(mini.x, mini.y);
+      } else {
+        ctx.lineTo(mini.x, mini.y);
+      }
+    });
+    ctx.stroke();
+
+    const majorNodes = ['station-threshold', 'water-mid', 'steam-clock'];
+    state.world.nodes.forEach((node) => {
+      if (!majorNodes.includes(node.id)) return;
+      const mini = toMinimapPoint(node, metrics, pad);
+      ctx.fillStyle = node.id === 'steam-clock' ? '#d8a968' : '#b7d4ea';
+      ctx.beginPath();
+      ctx.arc(mini.x, mini.y, node.id === 'steam-clock' ? 4.6 : 3.8, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    const playerPoint = toMinimapPoint({ x: player.position.x, z: player.position.z }, metrics, pad);
+    const heading = state.yaw;
+    const dirLength = 16;
+
+    ctx.fillStyle = '#f2f6ff';
+    ctx.beginPath();
+    ctx.arc(playerPoint.x, playerPoint.y, 4.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(133, 205, 245, 0.35)';
+    ctx.beginPath();
+    ctx.moveTo(playerPoint.x, playerPoint.y);
+    ctx.arc(playerPoint.x, playerPoint.y, dirLength, heading - 0.42, heading + 0.42);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#9ce3ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(playerPoint.x, playerPoint.y);
+    ctx.lineTo(playerPoint.x + Math.sin(heading) * dirLength, playerPoint.y - Math.cos(heading) * dirLength);
+    ctx.stroke();
   }
 
   function setupAudio(world) {
@@ -862,7 +1111,7 @@
   }
 
   function resetToStart() {
-    const spawn = state.world.spawn || { x: 0, y: 1.7, z: 0, yaw: 0 };
+    const spawn = resolveSafeSpawn();
     player.position.set(spawn.x, spawn.y, spawn.z);
     state.lastSafePosition.copy(player.position);
     state.yaw = spawn.yaw || 0;
@@ -975,6 +1224,7 @@
       addLandmarks(state.world);
       addDebugRoute(state.world);
       setupAudio(state.world);
+      minimapState.routeMetrics = getRouteMetrics();
       updateSize();
       applyTimeOfDay(state.activeTimeOfDay);
       applyMood(state.activeMood);
@@ -997,6 +1247,7 @@
         }
 
         animateRain(delta);
+        drawMinimap();
         renderer.render(scene, camera);
       });
     } catch (error) {

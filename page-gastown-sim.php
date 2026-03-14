@@ -59,8 +59,13 @@ get_header();
     <p class="gastown-status" data-sim-status aria-live="polite">Loading simulator...</p>
     <p class="gastown-pointer-status" data-sim-pointer-status aria-live="polite">Pointer unlocked.</p>
     <p class="gastown-landmark" data-sim-landmark aria-live="polite">Nearest landmark: Station threshold</p>
+    <p class="gastown-route-segment" data-sim-route-segment aria-live="polite">Route segment: Waterfront Station Threshold</p>
 
     <div class="gastown-sim-canvas" data-sim-canvas>
+      <aside class="gastown-minimap" aria-label="Route navigator minimap">
+        <canvas data-sim-minimap width="220" height="220"></canvas>
+        <p class="gastown-minimap-label" data-sim-minimap-landmark>Nearest: Waterfront Station Threshold</p>
+      </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
     </div>
 
