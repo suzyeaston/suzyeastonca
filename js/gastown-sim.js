@@ -9,10 +9,12 @@
 
   const canvasWrap = app.querySelector('[data-sim-canvas]');
   const statusEl = app.querySelector('[data-sim-status]');
+  const pointerStatusEl = app.querySelector('[data-sim-pointer-status]');
   const landmarkEl = app.querySelector('[data-sim-landmark]');
   const startBtn = app.querySelector('[data-action="start"]');
   const pauseBtn = app.querySelector('[data-action="pause"]');
   const resetBtn = app.querySelector('[data-action="reset"]');
+  const timeOfDaySelect = app.querySelector('[name="time-of-day"]');
   const weatherSelect = app.querySelector('[name="weather"]');
   const moodSelect = app.querySelector('[name="mood"]');
   const debugToggle = app.querySelector('[data-action="debug-toggle"]');
@@ -26,6 +28,7 @@
     pitch: 0,
     velocity: new THREE.Vector3(),
     activeWeather: config.defaultWeather || 'rain',
+    activeTimeOfDay: config.defaultTimeOfDay || 'night',
     activeMood: config.defaultMood || 'eerie',
     sounds: {
       beds: {},
@@ -48,14 +51,29 @@
   player.add(camera);
   scene.add(player);
 
-  const ambient = new THREE.AmbientLight(0x6f7f9f, 0.55);
+  const ambient = new THREE.AmbientLight(0x7f90b2, 0.7);
   scene.add(ambient);
-  const keyLight = new THREE.DirectionalLight(0x9da4ba, 0.5);
+  const keyLight = new THREE.DirectionalLight(0xaab6cb, 0.62);
   keyLight.position.set(7, 20, 14);
   scene.add(keyLight);
+  const fillLight = new THREE.DirectionalLight(0x5f7695, 0.3);
+  fillLight.position.set(-11, 10, -12);
+  scene.add(fillLight);
 
   const rainGroup = new THREE.Group();
   scene.add(rainGroup);
+
+  const visualState = {
+    currentWeather: null,
+    currentTime: null,
+    currentMood: null,
+    roadMaterial: null,
+    sidewalkMaterial: null,
+    laneMaterial: null,
+    corridorGlowMaterial: null,
+    buildingMaterials: [],
+    landmarkVisuals: [],
+  };
 
   function updateSize() {
     const width = canvasWrap.clientWidth;
@@ -67,6 +85,12 @@
 
   function setStatus(text) {
     statusEl.textContent = text;
+  }
+
+  function setPointerStatus(text) {
+    if (pointerStatusEl) {
+      pointerStatusEl.textContent = text;
+    }
   }
 
   function setLandmark(text) {
@@ -97,37 +121,80 @@
       maxZ = Math.max(maxZ, point.z);
     });
 
-    const width = (maxX - minX) + 48;
-    const depth = (maxZ - minZ) + 72;
+    const width = (maxX - minX) + 52;
+    const depth = (maxZ - minZ) + 78;
+    const centerX = (minX + maxX) / 2;
+    const centerZ = (minZ + maxZ) / 2 - 8;
 
-    const street = new THREE.Mesh(
-      new THREE.PlaneGeometry(width, depth),
-      new THREE.MeshStandardMaterial({ color: 0x1a1a1d, roughness: 0.95, metalness: 0.08 })
-    );
+    visualState.roadMaterial = new THREE.MeshStandardMaterial({ color: 0x232a33, roughness: 0.9, metalness: 0.14 });
+    const street = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), visualState.roadMaterial);
     street.rotation.x = -Math.PI / 2;
-    street.position.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2 - 8);
+    street.position.set(centerX, 0, centerZ);
     scene.add(street);
+
+    visualState.sidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0x34404a, roughness: 0.88, metalness: 0.08 });
+    const sidewalk = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.88, depth * 0.88), visualState.sidewalkMaterial);
+    sidewalk.rotation.x = -Math.PI / 2;
+    sidewalk.position.set(centerX, 0.015, centerZ);
+    scene.add(sidewalk);
+
+    visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x4f5f6e, roughness: 0.78, metalness: 0.2, transparent: true, opacity: 0.35 });
+    const laneBand = new THREE.Mesh(new THREE.PlaneGeometry(world.corridor.halfWidth * 2.1, depth * 0.84), visualState.laneMaterial);
+    laneBand.rotation.x = -Math.PI / 2;
+    laneBand.position.set(centerX + 2, 0.025, centerZ - 6);
+    scene.add(laneBand);
+
+    visualState.corridorGlowMaterial = new THREE.MeshStandardMaterial({ color: 0x8ea4b7, emissive: 0x0f1824, emissiveIntensity: 0.42, transparent: true, opacity: 0.2 });
+    const corridorGuide = new THREE.Mesh(new THREE.PlaneGeometry(world.corridor.halfWidth * 1.45, depth * 0.72), visualState.corridorGlowMaterial);
+    corridorGuide.rotation.x = -Math.PI / 2;
+    corridorGuide.position.set(centerX + 8, 0.03, centerZ - 14);
+    scene.add(corridorGuide);
   }
 
   function addBuildings(world) {
     world.buildingPlanes.forEach((b) => {
       const geom = new THREE.BoxGeometry(b.width, b.height, b.depth);
-      const mat = new THREE.MeshStandardMaterial({ color: toneToColor(b.tone), roughness: 0.85 });
+      const mat = new THREE.MeshStandardMaterial({
+        color: toneToColor(b.tone),
+        roughness: 0.8,
+        metalness: 0.16,
+        emissive: 0x11151f,
+        emissiveIntensity: 0.22,
+      });
+      visualState.buildingMaterials.push(mat);
       const mesh = new THREE.Mesh(geom, mat);
       mesh.position.set(b.x, b.height / 2, b.z);
       scene.add(mesh);
+
+      const edge = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geom),
+        new THREE.LineBasicMaterial({ color: 0x6f8197, transparent: true, opacity: 0.28 })
+      );
+      edge.position.copy(mesh.position);
+      scene.add(edge);
     });
   }
 
   function addLandmarks(world) {
     world.landmarks.forEach((landmark) => {
       const col = landmark.type === 'clock' ? 0xc8a460 : landmark.type === 'split' ? 0x7ea2c7 : 0x8793a1;
-      const marker = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.6, 0.6, 4, 8),
-        new THREE.MeshStandardMaterial({ color: col, emissive: 0x111111 })
-      );
+      const markerMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.2 });
+      const marker = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 4, 10), markerMaterial);
       marker.position.set(landmark.x, 2.1, landmark.z);
       scene.add(marker);
+
+      const haloMaterial = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.12 });
+      const halo = new THREE.Mesh(new THREE.SphereGeometry(2.1, 16, 16), haloMaterial);
+      halo.position.set(landmark.x, 2.5, landmark.z);
+      scene.add(halo);
+
+      const reflectionMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: 0x1b2533, emissiveIntensity: 0.45, transparent: true, opacity: 0.22, roughness: 0.55, metalness: 0.3 });
+      const reflection = new THREE.Mesh(new THREE.CircleGeometry(2.5, 24), reflectionMaterial);
+      reflection.rotation.x = -Math.PI / 2;
+      reflection.position.set(landmark.x, 0.05, landmark.z);
+      scene.add(reflection);
+
+      visualState.landmarkVisuals.push({ markerMaterial, haloMaterial, reflectionMaterial });
     });
   }
 
@@ -235,12 +302,75 @@
     });
   }
 
+  function applyVisualState() {
+    if (!state.world) {
+      return;
+    }
+
+    const mood = state.world.moodPresets[state.activeMood] || state.world.moodPresets.eerie;
+    const weather = state.world.weatherPresets[state.activeWeather] || state.world.weatherPresets.rain;
+    const timeOfDay = state.world.timeOfDayPresets[state.activeTimeOfDay] || state.world.timeOfDayPresets.night;
+
+    visualState.currentMood = mood;
+    visualState.currentWeather = weather;
+    visualState.currentTime = timeOfDay;
+
+    const weatherFogBoost = state.activeWeather === 'fog' ? 0.008 : state.activeWeather === 'rain' ? 0.003 : -0.001;
+    const fogDensity = Math.max(0.004, (weather.fogDensity || 0.01) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
+    scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
+    renderer.setClearColor(timeOfDay.sky, 1);
+
+    ambient.color.set(timeOfDay.ambientColor);
+    ambient.intensity = Math.max(0.35, mood.lightIntensity * (timeOfDay.ambientIntensity || 1));
+    keyLight.color.set(timeOfDay.keyColor);
+    keyLight.intensity = (timeOfDay.keyIntensity || 0.6) * (0.8 + (mood.lightIntensity * 0.4));
+    fillLight.color.set(timeOfDay.fillColor || '#526782');
+    fillLight.intensity = timeOfDay.fillIntensity || 0.22;
+
+    const contrast = timeOfDay.buildingContrast || 1;
+    visualState.buildingMaterials.forEach((mat) => {
+      mat.emissive.set(timeOfDay.buildingEdgeColor || '#1a2230');
+      mat.emissiveIntensity = 0.14 + ((contrast - 1) * 0.3);
+      mat.roughness = Math.max(0.56, 0.86 - ((contrast - 1) * 0.24));
+    });
+
+    if (visualState.roadMaterial) {
+      visualState.roadMaterial.color.set(timeOfDay.roadColor || '#2b3138');
+      visualState.roadMaterial.metalness = 0.1 + ((weather.rainIntensity || 0) * 0.22);
+      visualState.roadMaterial.roughness = 0.92 - ((weather.rainIntensity || 0) * 0.26);
+    }
+    if (visualState.sidewalkMaterial) {
+      visualState.sidewalkMaterial.color.set(timeOfDay.sidewalkColor || '#3a444f');
+    }
+    if (visualState.laneMaterial) {
+      visualState.laneMaterial.color.set(timeOfDay.laneColor || '#5d6a76');
+      visualState.laneMaterial.opacity = 0.2 + ((timeOfDay.pathBrightness || 0.25) * 0.5);
+    }
+    if (visualState.corridorGlowMaterial) {
+      visualState.corridorGlowMaterial.color.set(timeOfDay.guideGlow || '#8da5bd');
+      visualState.corridorGlowMaterial.opacity = 0.14 + ((timeOfDay.pathBrightness || 0.25) * 0.35);
+      visualState.corridorGlowMaterial.emissiveIntensity = 0.28 + ((timeOfDay.pathBrightness || 0.25) * 0.42);
+    }
+
+    visualState.landmarkVisuals.forEach((landmarkVisual) => {
+      landmarkVisual.markerMaterial.emissiveIntensity = (timeOfDay.landmarkGlow || 0.3) * (0.6 + (mood.lightIntensity * 0.5));
+      landmarkVisual.haloMaterial.opacity = 0.08 + ((timeOfDay.landmarkGlow || 0.3) * 0.18);
+      landmarkVisual.reflectionMaterial.opacity = 0.12 + ((timeOfDay.landmarkGlow || 0.3) * 0.18) + ((weather.rainIntensity || 0) * 0.12);
+    });
+
+    rebuildRain((weather.rainIntensity || 0) * (timeOfDay.rainVisibility || 1));
+
+    if (!state.sounds.rainLoop.playing()) {
+      state.sounds.rainLoop.play();
+    }
+    state.sounds.rainLoop.fade(state.sounds.rainLoop.volume(), (weather.rainIntensity || 0) * 0.45, 380);
+  }
+
   function applyMood(moodId) {
     state.activeMood = moodId;
     const preset = state.world.moodPresets[moodId] || state.world.moodPresets.eerie;
 
-    ambient.intensity = preset.lightIntensity;
-    keyLight.intensity = preset.lightIntensity * 0.9;
+    applyVisualState();
 
     Object.keys(state.sounds.beds).forEach((id) => {
       const howl = state.sounds.beds[id];
@@ -271,16 +401,12 @@
 
   function applyWeather(weatherId) {
     state.activeWeather = weatherId;
-    const preset = state.world.weatherPresets[weatherId] || state.world.weatherPresets.rain;
-    scene.fog = new THREE.FogExp2(preset.sky, preset.fogDensity);
-    renderer.setClearColor(preset.sky, 1);
+    applyVisualState();
+  }
 
-    rebuildRain(preset.rainIntensity || 0);
-
-    if (!state.sounds.rainLoop.playing()) {
-      state.sounds.rainLoop.play();
-    }
-    state.sounds.rainLoop.fade(state.sounds.rainLoop.volume(), (preset.rainIntensity || 0) * 0.45, 380);
+  function applyTimeOfDay(timeOfDayId) {
+    state.activeTimeOfDay = timeOfDayId;
+    applyVisualState();
   }
 
   function updateAudioZones() {
@@ -356,7 +482,8 @@
 
   function startSim() {
     state.isRunning = true;
-    setStatus('Walking mode active. Click scene to lock pointer. WASD / arrows to move.');
+    setStatus('Play mode active. Click scene for mouse look, then move with WASD / arrow keys.');
+    setPointerStatus('Pointer lock requested… press Esc any time to release.');
     lockPointer();
   }
 
@@ -369,7 +496,8 @@
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
-    setStatus('Paused. Pointer unlocked.');
+    setStatus('Paused. Click Start to continue walking the route.');
+    setPointerStatus('Pointer released. Press Start and click scene to re-enter look mode.');
   }
 
   function attachEvents() {
@@ -388,8 +516,27 @@
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
 
+    if (timeOfDaySelect) {
+      timeOfDaySelect.addEventListener('change', (event) => applyTimeOfDay(event.target.value));
+    }
     weatherSelect.addEventListener('change', (event) => applyWeather(event.target.value));
     moodSelect.addEventListener('change', (event) => applyMood(event.target.value));
+
+    document.addEventListener('pointerlockchange', () => {
+      if (document.pointerLockElement === renderer.domElement) {
+        setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
+      } else if (state.isRunning) {
+        state.move.forward = false;
+        state.move.backward = false;
+        state.move.left = false;
+        state.move.right = false;
+        state.isRunning = false;
+        setStatus('Pointer released. Play mode exited. Press Start to continue the walk.');
+        setPointerStatus('Pointer released. Press Start, then click scene to re-enter look mode.');
+      } else {
+        setPointerStatus('Pointer unlocked.');
+      }
+    });
 
     debugToggle.addEventListener('click', () => {
       const isOpen = debugPanel.hasAttribute('hidden');
@@ -425,12 +572,14 @@
       addLandmarks(state.world);
       setupAudio(state.world);
       updateSize();
+      applyTimeOfDay(state.activeTimeOfDay);
       applyMood(state.activeMood);
       applyWeather(state.activeWeather);
       resetToStart();
       attachEvents();
       scheduleSteamClock();
-      setStatus('Prototype ready. Hit Start to enter first-person mode.');
+      setStatus('Prototype ready. Press Start, click the scene, and use Esc to exit pointer lock.');
+      setPointerStatus('Pointer unlocked. Click scene after Start to enter look mode.');
       renderer.setAnimationLoop((time) => {
         const delta = Math.min(0.03, (time - (init.prevTime || time)) / 1000);
         init.prevTime = time;

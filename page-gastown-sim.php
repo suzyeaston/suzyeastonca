@@ -18,6 +18,15 @@ get_header();
       <button type="button" class="pixel-button secondary" data-action="pause">Pause</button>
       <button type="button" class="pixel-button secondary" data-action="reset">Reset to route start</button>
       <label>
+        Time of day
+        <select name="time-of-day">
+          <option value="morning">Morning</option>
+          <option value="afternoon">Afternoon</option>
+          <option value="evening">Evening</option>
+          <option value="night" selected>Night</option>
+        </select>
+      </label>
+      <label>
         Weather
         <select name="weather">
           <option value="clear">Clear</option>
@@ -37,7 +46,18 @@ get_header();
       <button type="button" class="pixel-button tiny secondary" data-action="debug-toggle">Toggle debug</button>
     </div>
 
+    <section class="gastown-help" aria-label="Simulator controls guide">
+      <h2>Quick controls</h2>
+      <ul>
+        <li><strong>Click scene</strong> to enter look mode</li>
+        <li><strong>Mouse</strong> = look around</li>
+        <li><strong>W A S D / arrow keys</strong> = move</li>
+        <li><strong>Esc</strong> = release pointer / leave play mode</li>
+      </ul>
+    </section>
+
     <p class="gastown-status" data-sim-status aria-live="polite">Loading simulator...</p>
+    <p class="gastown-pointer-status" data-sim-pointer-status aria-live="polite">Pointer unlocked.</p>
     <p class="gastown-landmark" data-sim-landmark aria-live="polite">Nearest landmark: Station threshold</p>
 
     <div class="gastown-sim-canvas" data-sim-canvas></div>
@@ -51,6 +71,14 @@ get_header();
         <li>Audio zones: station rumble, steam clock core, split-building nightlife edge</li>
       </ul>
     </section>
+
+    <!-- Template-ready teaser for homepage placement later.
+      In progress: Gastown first-person simulator.
+      Frequent updates are expected; hard refresh / clear cache may be needed after releases.
+    -->
+    <p class="gastown-teaser-snippet" hidden>
+      In progress: our Gastown first-person simulator is evolving quickly. We ship frequent updates, so if a change looks odd, please hard refresh and clear cache.
+    </p>
   </section>
 </main>
 <?php get_footer(); ?>
