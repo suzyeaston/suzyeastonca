@@ -81,9 +81,58 @@
   };
 
   const SCENE_MOTIF_MAP = {
-    gastown: ['gastown_scene', 'gastown_clock_silhouette', 'cobblestone_perspective', 'brick_wall_parallax', 'streetlamp_halo_row', 'clock_face_reveal'],
+    gastown: ['gastown_scene', 'gastown_clock_silhouette', 'steam_clock_approach', 'water_street_corridor', 'station_threshold_glow', 'angled_building_split', 'lamp_rhythm_row', 'wet_cobble_axis', 'cobblestone_perspective', 'brick_wall_parallax', 'streetlamp_halo_row', 'clock_face_reveal'],
     granville: ['granville_scene', 'granville_neon_marquee', 'neon_sign_flicker', 'traffic_light_glow', 'neon_wet_reflections'],
     chinatown: ['chinatown_gate']
+  };
+
+
+  const GASTOWN_ROUTE_PROFILE = {
+    route_id: 'gastown_water_street_walk',
+    district: 'gastown',
+    continuity: {
+      single_district: true,
+      continuous_path: true,
+      reveal_mode: 'one_at_a_time',
+      disallow_unrelated_landmarks: true
+    },
+    camera_grammar: {
+      pov: 'first_person_unseen',
+      movement: 'forward_walk',
+      framing: 'off_center_landmark',
+      corridor_bias: 'strong',
+      asymmetry_bias: 'high'
+    },
+    waypoint_order: [
+      'waterfront_threshold',
+      'brick_lamp_cobblestone_corridor',
+      'steam_clock_approach',
+      'street_split_angled_building'
+    ],
+    landmark_order: [
+      'station_threshold_glow',
+      'water_street_corridor',
+      'steam_clock_approach',
+      'angled_building_split'
+    ],
+    facade_tendency_by_segment: [
+      { segment: 'waterfront_threshold', left: 'station_mass', right: 'brick_entry' },
+      { segment: 'brick_lamp_cobblestone_corridor', left: 'heritage_brick_dense', right: 'shopfront_neon_sparse' },
+      { segment: 'steam_clock_approach', left: 'compressed_facade_planes', right: 'clock_reveal_candidate' },
+      { segment: 'street_split_angled_building', left: 'receding_curb_line', right: 'angled_node_mass' }
+    ],
+    audio_traits_by_segment: [
+      { segment: 'waterfront_threshold', traits: ['distant_transit_hum', 'cold_air_hush'] },
+      { segment: 'brick_lamp_cobblestone_corridor', traits: ['footstep_cobble_texture', 'lamp_hum_rhythm'] },
+      { segment: 'steam_clock_approach', traits: ['steam_whistle_hint', 'metal_resonance_ping'] },
+      { segment: 'street_split_angled_building', traits: ['open_street_tail', 'reverb_decay_soft'] }
+    ],
+    visual_traits_by_segment: [
+      { segment: 'waterfront_threshold', motifs: ['station_threshold_glow', 'water_street_corridor'] },
+      { segment: 'brick_lamp_cobblestone_corridor', motifs: ['water_street_corridor', 'lamp_rhythm_row', 'wet_cobble_axis'] },
+      { segment: 'steam_clock_approach', motifs: ['steam_clock_approach', 'wet_cobble_axis'] },
+      { segment: 'street_split_angled_building', motifs: ['angled_building_split', 'water_street_corridor'] }
+    ]
   };
 
   const sceneSeedState = {
@@ -172,6 +221,33 @@
       scenes: sceneContexts,
       source: 'vancouver-scene-seeds',
       version: 1
+    };
+  }
+
+
+  function getGastownRouteContext(selectedVisuals) {
+    const selectedSet = new Set(Array.isArray(selectedVisuals) ? selectedVisuals : []);
+    const routeMotifs = ['gastown_scene', 'steam_clock_approach', 'water_street_corridor', 'station_threshold_glow', 'angled_building_split', 'lamp_rhythm_row', 'wet_cobble_axis', 'gastown_clock_silhouette'];
+    const routeSelected = routeMotifs.some((motif) => selectedSet.has(motif));
+    if (!routeSelected) return null;
+
+    const visualTraits = (GASTOWN_ROUTE_PROFILE.visual_traits_by_segment || []).map((segment) => ({
+      segment: segment.segment,
+      motifs: (segment.motifs || []).filter((motif) => selectedSet.has(motif) || motif === 'water_street_corridor' || motif === 'steam_clock_approach')
+    }));
+
+    return {
+      route_id: GASTOWN_ROUTE_PROFILE.route_id,
+      district: GASTOWN_ROUTE_PROFILE.district,
+      continuity: GASTOWN_ROUTE_PROFILE.continuity,
+      camera_grammar: GASTOWN_ROUTE_PROFILE.camera_grammar,
+      waypoint_order: GASTOWN_ROUTE_PROFILE.waypoint_order,
+      landmark_order: GASTOWN_ROUTE_PROFILE.landmark_order,
+      facade_tendency_by_segment: GASTOWN_ROUTE_PROFILE.facade_tendency_by_segment,
+      audio_traits_by_segment: GASTOWN_ROUTE_PROFILE.audio_traits_by_segment,
+      visual_traits_by_segment: visualTraits,
+      selected_route_motifs: Array.from(selectedSet).filter((token) => routeMotifs.includes(token)),
+      source: 'gastown-route-profile-v1'
     };
   }
 
@@ -399,12 +475,14 @@ ${data.concept_summary}`;
     const visualLayers = formData.getAll('visual_layers[]').map((item) => String(item || '').trim()).filter(Boolean);
     const linked = applyLayerLinking(audioLayers, visualLayers, linkAV);
 
-    const worldContext = getWorldContextForVisualSelection(linked.visual_layers);
+    const routeContext = getGastownRouteContext(linked.visual_layers);
+    const worldContext = routeContext ? null : getWorldContextForVisualSelection(linked.visual_layers);
 
     return Object.assign({}, base, {
       link_av: linkAV,
       audio_layers: linked.audio_layers,
       visual_layers: linked.visual_layers,
+      gastown_route_context: routeContext || undefined,
       vancouver_world_context: worldContext || undefined
     });
   }

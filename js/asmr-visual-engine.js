@@ -73,6 +73,12 @@
     { id: 'clear_cold_shimmer', label: 'Clear Cold Shimmer', category: 'atmosphere', priority: 'support', description: 'Cold air shimmer.', expected_shape: 'soft cool haze', renderer: 'drawClearColdShimmer', intensity: [0.15, 0.45], openingHero: false, supportOnly: true },
     { id: 'ocean_surface_shimmer', label: 'Ocean Surface Shimmer', category: 'texture', priority: 'support', description: 'Ocean highlight shimmer.', expected_shape: 'horizontal sparkle strips', renderer: 'drawOceanSurfaceShimmer', intensity: [0.18, 0.52], openingHero: false, supportOnly: true },
     { id: 'seabus_silhouette', label: 'SeaBus Silhouette', category: 'landmark', priority: 'hero', description: 'SeaBus vessel silhouette.', expected_shape: 'low ferry hull', renderer: 'drawSeabusSilhouette', intensity: [0.28, 0.76], openingHero: true, supportOnly: false },
+    { id: 'water_street_corridor', label: 'Water Street Corridor', category: 'scene', priority: 'support', description: 'Route-first Water Street corridor framing.', expected_shape: 'off-center vanishing corridor with facades', renderer: 'drawWaterStreetCorridor', intensity: [0.22, 0.62], openingHero: false, supportOnly: true },
+    { id: 'station_threshold_glow', label: 'Station Threshold Glow', category: 'scene', priority: 'support', description: 'Waterfront threshold entry glow.', expected_shape: 'station-edge glow with corridor entry', renderer: 'drawStationThresholdGlow', intensity: [0.2, 0.56], openingHero: false, supportOnly: true },
+    { id: 'steam_clock_approach', label: 'Steam Clock Approach', category: 'landmark', priority: 'hero', description: 'Steam clock reveal embedded in route movement.', expected_shape: 'clock on left/right third inside corridor', renderer: 'drawSteamClockApproach', intensity: [0.3, 0.82], openingHero: true, supportOnly: false },
+    { id: 'angled_building_split', label: 'Angled Building Split', category: 'scene', priority: 'support', description: 'Street split with angled building node.', expected_shape: 'forking curb lines and angled facade mass', renderer: 'drawAngledBuildingSplit', intensity: [0.18, 0.6], openingHero: false, supportOnly: true },
+    { id: 'lamp_rhythm_row', label: 'Lamp Rhythm Row', category: 'texture', priority: 'support', description: 'Rhythmic staggered lamp halos along route.', expected_shape: 'receding off-center lamp cadence', renderer: 'drawLampRhythmRow', intensity: [0.12, 0.4], openingHero: false, supportOnly: true },
+    { id: 'wet_cobble_axis', label: 'Wet Cobble Axis', category: 'texture', priority: 'support', description: 'Ground-plane reflective cobble motion axis.', expected_shape: 'wet perspective axis with converging lines', renderer: 'drawWetCobbleAxis', intensity: [0.12, 0.44], openingHero: false, supportOnly: true },
     { id: 'gull_silhouettes', label: 'Gull Silhouettes', category: 'motion', priority: 'support', description: 'Subtle gull V silhouettes.', expected_shape: '2-4 small V arcs', renderer: 'drawGullSilhouettes', intensity: [0.06, 0.2], openingHero: false, supportOnly: true }
   ];
 
@@ -326,7 +332,7 @@
     resolveRenderProfile(pkg) {
       const tags = (Array.isArray(pkg.style_tags) ? pkg.style_tags : []).map((t) => String(t || '').toLowerCase());
       const pixelMode = hasAnyTag(tags, ['pixel_art', '8bit', 'lowres_mode']);
-      const vancouverCue = hasAnyTag(tags, ['gastown', 'granville', 'chinatown', 'north_shore', 'waterfront', 'vancouver', 'snow', 'rain', 'fog', 'amber', 'neon', 'brick', 'cobblestone', 'mountains']);
+      const vancouverCue = hasAnyTag(tags, ['gastown', 'granville', 'chinatown', 'north_shore', 'waterfront', 'water_street', 'vancouver', 'snow', 'rain', 'fog', 'amber', 'neon', 'brick', 'cobblestone', 'mountains']);
       const theme = {
         bgTop: '#02050c',
         bgMid: '#070d1e',
@@ -346,7 +352,7 @@
         theme.fog = [122, 170, 215];
         theme.particles = [186, 220, 255];
       }
-      if (hasAnyTag(tags, ['gastown', 'amber', 'brick', 'cobblestone'])) {
+      if (hasAnyTag(tags, ['gastown', 'water_street', 'amber', 'brick', 'cobblestone'])) {
         theme.bgMid = '#211a21';
         theme.bgBottom = '#160f18';
         theme.amber = [255, 188, 110];
@@ -1000,7 +1006,11 @@
         }
 
         case 'gastown_clock_silhouette': {
-          const cx = w * 0.52;
+          const framing = String((p && p.framing) || '').toLowerCase();
+          const offCenter = (framing === 'off_center_landmark' || p.off_center_landmark === true);
+          const sideToken = String((p && p.clock_side) || '').toLowerCase();
+          const side = sideToken === 'right' ? 1 : (sideToken === 'left' ? -1 : ((Math.sin(normalized * 2.1) > 0) ? 1 : -1));
+          const cx = w * (offCenter ? (side > 0 ? 0.68 : 0.32) : 0.52);
           const baseY = h * 0.73;
           const faceY = h * 0.35;
           const faceR = Math.max(18, Math.min(w, h) * 0.07);
@@ -1131,7 +1141,9 @@
           break;
         }
         case 'street_corridor_vanishing_point': {
-          const vx = w * (0.48 + Math.sin(normalized * 1.1) * 0.03);
+          const asymmetry = String((p && p.asymmetry_bias) || '').toLowerCase();
+          const asymmetryShift = asymmetry === 'high' ? 0.09 : (asymmetry === 'medium' ? 0.05 : 0.03);
+          const vx = w * (0.48 + Math.sin(normalized * 1.1) * asymmetryShift);
           const vy = h * 0.34;
           const baseY = h * 0.98;
           ctx.strokeStyle = `rgba(122,170,220,${0.1 + intensity * 0.14})`;
@@ -1151,7 +1163,8 @@
           break;
         }
         case 'curb_line_perspective': {
-          const vx = w * 0.5;
+          const corridorBias = String((p && p.corridor_bias) || '').toLowerCase();
+          const vx = w * (corridorBias === 'strong' ? 0.48 : 0.5);
           const vy = h * 0.38;
           ctx.strokeStyle = `rgba(178,204,228,${0.12 + intensity * 0.16})`;
           ctx.lineWidth = Math.max(1.2, w * 0.0024);
@@ -1166,10 +1179,12 @@
           break;
         }
         case 'facade_plane_bands': {
+          const corridorBias = String((p && p.corridor_bias) || '').toLowerCase();
+          const baseFacade = corridorBias === 'strong' ? 0.3 : 0.26;
           const fade = 0.08 + intensity * 0.14;
           for (let i = 0; i < 7; i += 1) {
             const t = i / 7;
-            const leftW = w * (0.26 - t * 0.16);
+            const leftW = w * (baseFacade - t * 0.16);
             const rightW = leftW;
             const y = h * (0.18 + t * 0.58);
             const bandH = h * (0.085 - t * 0.04);
@@ -1382,14 +1397,68 @@
           break;
         }
         case 'gastown_scene': {
-          this.drawEvent(ctx, { visual_type: 'street_corridor_vanishing_point', params: {}, intensity: intensity * 0.58 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'curb_line_perspective', params: {}, intensity: intensity * 0.52 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'facade_plane_bands', params: {}, intensity: intensity * 0.56 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'heritage_window_grid', params: {}, intensity: intensity * 0.5 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'brick_wall_parallax', params: {}, intensity: intensity * 0.68 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'cobblestone_perspective', params: {}, intensity: intensity * 0.74 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'streetlamp_halo_row', params: {}, intensity: intensity * 0.64 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'gastown_clock_silhouette', params: {}, intensity: intensity * 0.84 }, p, intensity, w, h, normalized);
+          const routeParams = Object.assign({}, p || {}, {
+            pov: (p && p.pov) || 'first_person_unseen',
+            movement: (p && p.movement) || 'forward_walk',
+            framing: (p && p.framing) || 'off_center_landmark',
+            corridor_bias: (p && p.corridor_bias) || 'strong',
+            asymmetry_bias: (p && p.asymmetry_bias) || 'high'
+          });
+          this.drawEvent(ctx, { visual_type: 'water_street_corridor', params: routeParams, intensity: intensity * 0.72 }, routeParams, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'wet_cobble_axis', params: routeParams, intensity: intensity * 0.64 }, routeParams, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'lamp_rhythm_row', params: routeParams, intensity: intensity * 0.56 }, routeParams, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'steam_clock_approach', params: routeParams, intensity: intensity * 0.78 }, routeParams, intensity, w, h, normalized);
+          break;
+        }
+        case 'water_street_corridor': {
+          const routeParams = Object.assign({}, p || {}, { corridor_bias: 'strong', asymmetry_bias: 'high' });
+          this.drawEvent(ctx, { visual_type: 'street_corridor_vanishing_point', params: routeParams, intensity: intensity * 0.7 }, routeParams, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'curb_line_perspective', params: routeParams, intensity: intensity * 0.62 }, routeParams, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'facade_plane_bands', params: routeParams, intensity: intensity * 0.72 }, routeParams, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'heritage_window_grid', params: routeParams, intensity: intensity * 0.56 }, routeParams, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'brick_wall_parallax', params: routeParams, intensity: intensity * 0.62 }, routeParams, intensity, w, h, normalized);
+          break;
+        }
+        case 'station_threshold_glow': {
+          this.drawEvent(ctx, { visual_type: 'water_street_corridor', params: p || {}, intensity: intensity * 0.68 }, p, intensity, w, h, normalized);
+          const glow = ctx.createLinearGradient(0, h * 0.02, 0, h * 0.42);
+          glow.addColorStop(0, `rgba(162,196,236,${0.1 + intensity * 0.16})`);
+          glow.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = glow;
+          ctx.fillRect(0, 0, w, h * 0.44);
+          break;
+        }
+        case 'steam_clock_approach': {
+          this.drawEvent(ctx, { visual_type: 'water_street_corridor', params: p || {}, intensity: intensity * 0.54 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'gastown_clock_silhouette', params: Object.assign({}, p || {}, { framing: 'off_center_landmark' }), intensity: intensity * 0.82 }, p, intensity, w, h, normalized);
+          break;
+        }
+        case 'angled_building_split': {
+          this.drawEvent(ctx, { visual_type: 'water_street_corridor', params: p || {}, intensity: intensity * 0.52 }, p, intensity, w, h, normalized);
+          ctx.fillStyle = `rgba(66,52,64,${0.14 + intensity * 0.16})`;
+          ctx.beginPath();
+          ctx.moveTo(w * 0.58, h * 0.26);
+          ctx.lineTo(w * 0.88, h * 0.22);
+          ctx.lineTo(w * 0.92, h * 0.76);
+          ctx.lineTo(w * 0.64, h * 0.8);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = `rgba(188,174,154,${0.18 + intensity * 0.16})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(w * 0.46, h * 0.98);
+          ctx.lineTo(w * 0.56, h * 0.48);
+          ctx.lineTo(w * 0.7, h * 0.32);
+          ctx.stroke();
+          break;
+        }
+        case 'lamp_rhythm_row': {
+          this.drawEvent(ctx, { visual_type: 'streetlamp_halo_row', params: p || {}, intensity: intensity * 0.8 }, p, intensity, w, h, normalized);
+          break;
+        }
+        case 'wet_cobble_axis': {
+          this.drawEvent(ctx, { visual_type: 'cobblestone_perspective', params: p || {}, intensity: intensity * 0.72 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'wet_reflection_axis', params: p || {}, intensity: intensity * 0.7 }, p, intensity, w, h, normalized);
           break;
         }
         case 'granville_scene': {
