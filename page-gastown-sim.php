@@ -60,14 +60,17 @@ get_header();
     <p class="gastown-pointer-status" data-sim-pointer-status aria-live="polite">Pointer unlocked.</p>
     <p class="gastown-landmark" data-sim-landmark aria-live="polite">Nearest landmark: Station threshold</p>
 
-    <div class="gastown-sim-canvas" data-sim-canvas></div>
+    <div class="gastown-sim-canvas" data-sim-canvas>
+      <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
+    </div>
 
     <section class="gastown-debug" data-debug-panel hidden>
       <h2>Debug notes</h2>
       <ul>
         <li>WASD or arrow keys for movement</li>
         <li>Mouse look while pointer is locked</li>
-        <li>Corridor clamp keeps player in playable route slice</li>
+        <li>Walk bounds clamp keeps the player in the playable corridor slice</li>
+        <li>Route debug can also be enabled with <code>?gastownDebug=1</code></li>
         <li>Audio zones: station rumble, steam clock core, split-building nightlife edge</li>
       </ul>
     </section>
