@@ -583,7 +583,8 @@ body::before {
     grid-template-columns: 1fr;
   }
 
-  .asmr-lab-teaser {
+  .asmr-lab-teaser,
+  .gastown-sim-teaser {
     text-align: center;
   }
 }
@@ -2080,6 +2081,60 @@ body {
 }
 
 .asmr-lab-teaser__cta {
+  margin-top: 14px;
+}
+
+
+.gastown-sim-teaser {
+  margin: 40px auto;
+  max-width: 860px;
+  padding: 24px 28px;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.gastown-sim-teaser__eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.68rem;
+  letter-spacing: 1px;
+  color: var(--secondary-color);
+  text-transform: uppercase;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.gastown-sim-teaser__badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid var(--secondary-color);
+  border-radius: 999px;
+  line-height: 1.2;
+  color: #031c12;
+  background: var(--secondary-color);
+  box-shadow: 0 0 8px rgba(0, 255, 170, 0.35);
+}
+
+.gastown-sim-teaser h2 {
+  margin: 0 0 0.8rem;
+  color: #b6ffd7;
+}
+
+.gastown-sim-teaser__description,
+.gastown-sim-teaser__microcopy {
+  margin: 0;
+  max-width: 65ch;
+  line-height: 1.7;
+  color: #e8ffee;
+}
+
+.gastown-sim-teaser__microcopy {
+  margin-top: 0.8rem;
+  color: #c9fbe0;
+}
+
+.gastown-sim-teaser__cta {
   margin-top: 14px;
 }
 
