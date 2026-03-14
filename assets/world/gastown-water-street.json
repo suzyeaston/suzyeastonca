@@ -43,10 +43,10 @@
     }
   },
   "spawn": {
-    "x": -22,
+    "x": -24.2,
     "y": 1.7,
-    "z": 18,
-    "yaw": -0.18
+    "z": 22.4,
+    "yaw": -0.34
   },
   "route": {
     "name": "Waterfront Station → W Cordova → Water Street → Steam Clock",
@@ -1074,9 +1074,9 @@
       "keyIntensity": 0.48,
       "fillColor": "#4c617e",
       "fillIntensity": 0.19,
-      "roadColor": "#29313b",
-      "sidewalkColor": "#3a4552",
-      "laneColor": "#6b8091",
+      "roadColor": "#20272f",
+      "sidewalkColor": "#6c453b",
+      "laneColor": "#90a8bb",
       "guideGlow": "#84a0b9",
       "pathBrightness": 0.34,
       "buildingContrast": 1.02,
@@ -1290,6 +1290,16 @@
     ],
     "lamps": [
       {
+        "x": -25.5,
+        "z": 19.5,
+        "height": 4.7
+      },
+      {
+        "x": -21.8,
+        "z": 16.2,
+        "height": 4.7
+      },
+      {
         "x": -2,
         "z": -22,
         "height": 4.5
@@ -1359,6 +1369,15 @@
         "z": -90,
         "height": 4.8
       }
+    ],
+    "bollards": [
+      { "id": "b1", "x": -24.8, "z": 20.8, "chain_to": "b2" },
+      { "id": "b2", "x": -22.4, "z": 19.9, "chain_to": "b3" },
+      { "id": "b3", "x": -20.1, "z": 18.9, "chain_to": "b4" },
+      { "id": "b4", "x": -17.8, "z": 17.8 },
+      { "id": "b5", "x": -12.1, "z": 5.2, "chain_to": "b6" },
+      { "id": "b6", "x": -9.4, "z": -1.2, "chain_to": "b7" },
+      { "id": "b7", "x": -6.8, "z": -8.1 }
     ],
     "trees": [
       {
