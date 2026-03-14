@@ -33,7 +33,7 @@
     { id: 'harbor_mist', label: 'Harbor Mist', category: 'atmosphere', priority: 'support', description: 'Harbor fog sheet.', expected_shape: 'layered mist rows', renderer: 'drawHarborMist', intensity: [0.2, 0.6], openingHero: false, supportOnly: true },
     { id: 'neon_wet_reflections', label: 'Neon Wet Reflections', category: 'texture', priority: 'support', description: 'Neon wet pavement texture.', expected_shape: 'glowing vertical puddles', renderer: 'drawNeonWetReflections', intensity: [0.2, 0.55], openingHero: false, supportOnly: true },
     { id: 'winter_particulate_depth', label: 'Winter Particulate Depth', category: 'atmosphere', priority: 'support', description: 'Depth snow particles.', expected_shape: 'layered snow points', renderer: 'drawWinterParticulateDepth', intensity: [0.2, 0.62], openingHero: false, supportOnly: true },
-    { id: 'gastown_clock_silhouette', label: 'Gastown Clock', category: 'landmark', priority: 'hero', description: 'Steam clock silhouette.', expected_shape: 'clock post + face', renderer: 'drawGastownClockSilhouette', intensity: [0.35, 0.8], openingHero: true, supportOnly: false },
+    { id: 'gastown_clock_silhouette', label: 'Gastown Clock', category: 'landmark', priority: 'hero', description: 'Steam clock silhouette.', expected_shape: 'tall steam clock with roof cap, round face, glass body, side pipes, and pedestal base', renderer: 'drawGastownClockSilhouette', intensity: [0.35, 0.8], openingHero: true, supportOnly: false },
     { id: 'cobblestone_perspective', label: 'Cobblestone Perspective', category: 'texture', priority: 'support', description: 'Cobblestone lane texture.', expected_shape: 'ground grid stones', renderer: 'drawCobblestonePerspective', intensity: [0.18, 0.45], openingHero: false, supportOnly: true },
     { id: 'brick_wall_parallax', label: 'Brick Wall Parallax', category: 'texture', priority: 'support', description: 'Brick facade sides.', expected_shape: 'left/right brick blocks', renderer: 'drawBrickWallParallax', intensity: [0.18, 0.45], openingHero: false, supportOnly: true },
     { id: 'streetlamp_halo_row', label: 'Streetlamp Halo Row', category: 'atmosphere', priority: 'support', description: 'Streetlamp halo row.', expected_shape: 'four halo circles', renderer: 'drawStreetlampHaloRow', intensity: [0.18, 0.48], openingHero: false, supportOnly: true },
@@ -988,20 +988,100 @@
 
         case 'gastown_clock_silhouette': {
           const cx = w * 0.52;
-          const baseY = h * 0.72;
-          ctx.fillStyle = `rgba(34,24,22,${0.25 + intensity * 0.45})`;
-          ctx.fillRect(cx - 60, baseY, 120, h * 0.2);
-          ctx.fillRect(cx - 24, h * 0.36, 48, h * 0.36);
+          const baseY = h * 0.73;
+          const faceY = h * 0.35;
+          const faceR = Math.max(18, Math.min(w, h) * 0.07);
+          const columnTop = faceY + faceR * 0.82;
+          const columnBottom = baseY - h * 0.01;
+          const columnW = Math.max(24, w * 0.05);
+          const bodyH = columnBottom - columnTop;
+          const baseW = columnW * 2.35;
+          const baseH = h * 0.12;
+          const shadowAlpha = 0.24 + intensity * 0.4;
+
+          ctx.fillStyle = `rgba(30,22,20,${shadowAlpha})`;
+          ctx.fillRect(cx - baseW * 0.56, baseY - baseH * 0.08, baseW * 1.12, baseH * 0.45);
+          ctx.fillRect(cx - baseW * 0.45, baseY + baseH * 0.24, baseW * 0.9, baseH * 0.7);
+
+          ctx.fillRect(cx - columnW * 0.54, columnTop, columnW * 1.08, bodyH);
+          ctx.fillStyle = `rgba(72,88,96,${0.08 + intensity * 0.14})`;
+          ctx.fillRect(cx - columnW * 0.34, columnTop + h * 0.015, columnW * 0.68, bodyH * 0.8);
+
+          ctx.fillStyle = `rgba(34,24,22,${0.26 + intensity * 0.42})`;
+          ctx.fillRect(cx - columnW * 0.18, columnTop + bodyH * 0.08, columnW * 0.07, bodyH * 0.68);
+          ctx.fillRect(cx + columnW * 0.11, columnTop + bodyH * 0.08, columnW * 0.07, bodyH * 0.68);
+
+          const pipeY = faceY + faceR * 0.95;
+          const pipeW = columnW * 0.42;
+          const pipeH = h * 0.07;
+          ctx.fillRect(cx - columnW * 0.96, pipeY, pipeW, pipeH);
+          ctx.fillRect(cx + columnW * 0.54, pipeY, pipeW, pipeH);
+          ctx.fillRect(cx - columnW * 1.05, pipeY - pipeH * 0.5, pipeW * 0.2, pipeH * 0.5);
+          ctx.fillRect(cx + columnW * 0.85, pipeY - pipeH * 0.5, pipeW * 0.2, pipeH * 0.5);
+
+          const faceGlow = ctx.createRadialGradient(cx, faceY, faceR * 0.3, cx, faceY, faceR * 2.1);
+          faceGlow.addColorStop(0, `rgba(255,214,154,${0.2 + intensity * 0.18})`);
+          faceGlow.addColorStop(1, 'rgba(0,0,0,0)');
+
+          ctx.fillStyle = faceGlow;
+          ctx.fillRect(cx - faceR * 2.2, faceY - faceR * 2.2, faceR * 4.4, faceR * 4.4);
+
+          ctx.fillStyle = `rgba(255,212,152,${0.16 + intensity * 0.2})`;
           ctx.beginPath();
-          ctx.arc(cx, h * 0.33, 52, 0, Math.PI * 2);
+          ctx.arc(cx, faceY, faceR * 0.86, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillRect(cx - 86, h * 0.5, 12, h * 0.22);
-          ctx.fillRect(cx + 74, h * 0.5, 12, h * 0.22);
-          const halo = ctx.createRadialGradient(cx, h * 0.33, 10, cx, h * 0.33, 140);
-          halo.addColorStop(0, `rgba(255,190,120,${0.22 + intensity * 0.2})`);
-          halo.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = halo;
-          ctx.fillRect(cx - 150, h * 0.16, 300, 300);
+
+          ctx.strokeStyle = `rgba(255,232,188,${0.24 + intensity * 0.26})`;
+          ctx.lineWidth = Math.max(1.2, faceR * 0.08);
+          ctx.beginPath();
+          ctx.arc(cx, faceY, faceR, 0, Math.PI * 2);
+          ctx.stroke();
+
+          for (let i = 0; i < 12; i += 1) {
+            const angle = (i / 12) * Math.PI * 2 - Math.PI * 0.5;
+            const major = (i % 3 === 0);
+            const innerR = faceR * (major ? 0.62 : 0.74);
+            const outerR = faceR * 0.93;
+            ctx.lineWidth = major ? Math.max(1.5, faceR * 0.1) : Math.max(1, faceR * 0.05);
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(angle) * innerR, faceY + Math.sin(angle) * innerR);
+            ctx.lineTo(cx + Math.cos(angle) * outerR, faceY + Math.sin(angle) * outerR);
+            ctx.stroke();
+          }
+
+          ctx.strokeStyle = `rgba(255,238,205,${0.36 + intensity * 0.22})`;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = Math.max(1.2, faceR * 0.09);
+          ctx.beginPath();
+          ctx.moveTo(cx, faceY);
+          ctx.lineTo(cx + faceR * 0.02, faceY - faceR * 0.52);
+          ctx.stroke();
+          ctx.lineWidth = Math.max(1.6, faceR * 0.11);
+          ctx.beginPath();
+          ctx.moveTo(cx, faceY);
+          ctx.lineTo(cx + faceR * 0.45, faceY + faceR * 0.14);
+          ctx.stroke();
+          ctx.lineCap = 'butt';
+
+          const capY = faceY - faceR * 1.33;
+          ctx.fillStyle = `rgba(34,24,22,${0.3 + intensity * 0.44})`;
+          ctx.fillRect(cx - columnW * 0.65, capY + faceR * 0.22, columnW * 1.3, faceR * 0.35);
+          ctx.beginPath();
+          ctx.moveTo(cx - columnW * 0.86, capY + faceR * 0.24);
+          ctx.lineTo(cx, capY - faceR * 0.28);
+          ctx.lineTo(cx + columnW * 0.86, capY + faceR * 0.24);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillRect(cx - columnW * 0.07, capY - faceR * 0.44, columnW * 0.14, faceR * 0.2);
+
+          const steam = ctx.createLinearGradient(cx, capY - faceR * 1.1, cx, capY + faceR * 0.2);
+          steam.addColorStop(0, 'rgba(198,220,236,0)');
+          steam.addColorStop(1, `rgba(198,220,236,${0.1 + intensity * 0.1})`);
+          ctx.fillStyle = steam;
+          for (let i = 0; i < 4; i += 1) {
+            const drift = Math.sin(normalized * 4 + i * 0.8) * (faceR * 0.2);
+            ctx.fillRect(cx - faceR * 0.5 + drift, capY - faceR * 1.1 - i * 8, faceR * 0.36, faceR * 0.58);
+          }
           break;
         }
         case 'cobblestone_perspective': {
