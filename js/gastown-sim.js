@@ -11,7 +11,6 @@
   const statusEl = app.querySelector('[data-sim-status]');
   const pointerStatusEl = app.querySelector('[data-sim-pointer-status]');
   const landmarkEl = app.querySelector('[data-sim-landmark]');
-  const startBtn = app.querySelector('[data-action="start"]');
   const pauseBtn = app.querySelector('[data-action="pause"]');
   const resetBtn = app.querySelector('[data-action="reset"]');
   const timeOfDaySelect = app.querySelector('[name="time-of-day"]');
@@ -34,7 +33,7 @@
     lastSafePosition: new THREE.Vector3(),
     debugEnabled: new URLSearchParams(window.location.search).get('gastownDebug') === '1',
     activeWeather: config.defaultWeather || 'rain',
-    activeTimeOfDay: config.defaultTimeOfDay || 'night',
+    activeTimeOfDay: config.defaultTimeOfDay || 'morning',
     activeMood: config.defaultMood || 'eerie',
     sounds: {
       beds: {},
@@ -115,7 +114,7 @@
     }
     state.boundaryNoticeTimer = setTimeout(() => {
       if (!state.isRunning) return;
-      setStatus('Play mode active. Click scene for mouse look, then move with WASD / arrow keys.');
+      setStatus('Play mode active. Mouse look and movement are live.');
     }, 1900);
   }
 
@@ -910,6 +909,8 @@
     const playerPoint = toMinimapPoint({ x: player.position.x, z: player.position.z }, metrics, pad);
     const heading = state.yaw;
     const dirLength = 16;
+    const headingX = -Math.sin(heading);
+    const headingY = -Math.cos(heading);
 
     ctx.fillStyle = '#f2f6ff';
     ctx.beginPath();
@@ -919,7 +920,8 @@
     ctx.fillStyle = 'rgba(133, 205, 245, 0.35)';
     ctx.beginPath();
     ctx.moveTo(playerPoint.x, playerPoint.y);
-    ctx.arc(playerPoint.x, playerPoint.y, dirLength, heading - 0.42, heading + 0.42);
+    const headingAngle = Math.atan2(headingY, headingX);
+    ctx.arc(playerPoint.x, playerPoint.y, dirLength, headingAngle - 0.42, headingAngle + 0.42);
     ctx.closePath();
     ctx.fill();
 
@@ -927,7 +929,7 @@
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(playerPoint.x, playerPoint.y);
-    ctx.lineTo(playerPoint.x + Math.sin(heading) * dirLength, playerPoint.y - Math.cos(heading) * dirLength);
+    ctx.lineTo(playerPoint.x + headingX * dirLength, playerPoint.y + headingY * dirLength);
     ctx.stroke();
   }
 
@@ -1131,9 +1133,16 @@
 
   function startSim() {
     state.isRunning = true;
-    setStatus('Play mode active. Click scene for mouse look, then move with WASD / arrow keys.');
+    setStatus('Play mode active. Mouse look and movement are live.');
     setPointerStatus('Pointer lock requested… press Esc any time to release.');
     lockPointer();
+  }
+
+  function enterPlayMode() {
+    if (state.isRunning && document.pointerLockElement === renderer.domElement) {
+      return;
+    }
+    startSim();
   }
 
   function pauseSim() {
@@ -1145,23 +1154,20 @@
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
-    setStatus('Paused. Click Start to continue walking the route.');
-    setPointerStatus('Pointer released. Press Start and click scene to re-enter look mode.');
+    setStatus('Paused. Click scene to resume look mode and movement.');
+    setPointerStatus('Pointer released. Click scene to re-enter look mode.');
   }
 
   function attachEvents() {
     window.addEventListener('resize', updateSize);
     renderer.domElement.addEventListener('click', () => {
-      if (state.isRunning) {
-        lockPointer();
-      }
+      enterPlayMode();
     });
     document.addEventListener('mousemove', onMouseMove);
 
     document.addEventListener('keydown', (event) => setMoveKey(event.code, true));
     document.addEventListener('keyup', (event) => setMoveKey(event.code, false));
 
-    startBtn.addEventListener('click', startSim);
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
 
@@ -1180,8 +1186,8 @@
         state.move.left = false;
         state.move.right = false;
         state.isRunning = false;
-        setStatus('Pointer released. Play mode exited. Press Start to continue the walk.');
-        setPointerStatus('Pointer released. Press Start, then click scene to re-enter look mode.');
+        setStatus('Paused. Pointer released. Click scene to resume look mode and movement.');
+        setPointerStatus('Pointer released. Click scene to re-enter look mode.');
       } else {
         setPointerStatus('Pointer unlocked.');
       }
@@ -1236,8 +1242,8 @@
         debugPanel.removeAttribute('hidden');
       }
       scheduleSteamClock();
-      setStatus('Prototype ready. Press Start, click the scene, and use Esc to exit pointer lock.');
-      setPointerStatus('Pointer unlocked. Click scene after Start to enter look mode.');
+      setStatus('Prototype ready. Click scene to enter look mode and begin moving.');
+      setPointerStatus('Pointer unlocked. Click scene to enter look mode.');
       renderer.setAnimationLoop((time) => {
         const delta = Math.min(0.03, (time - (init.prevTime || time)) / 1000);
         init.prevTime = time;
