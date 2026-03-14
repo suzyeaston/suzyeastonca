@@ -37,6 +37,14 @@
     { id: 'cobblestone_perspective', label: 'Cobblestone Perspective', category: 'texture', priority: 'support', description: 'Cobblestone lane texture.', expected_shape: 'ground grid stones', renderer: 'drawCobblestonePerspective', intensity: [0.18, 0.45], openingHero: false, supportOnly: true },
     { id: 'brick_wall_parallax', label: 'Brick Wall Parallax', category: 'texture', priority: 'support', description: 'Brick facade sides.', expected_shape: 'left/right brick blocks', renderer: 'drawBrickWallParallax', intensity: [0.18, 0.45], openingHero: false, supportOnly: true },
     { id: 'streetlamp_halo_row', label: 'Streetlamp Halo Row', category: 'atmosphere', priority: 'support', description: 'Streetlamp halo row.', expected_shape: 'four halo circles', renderer: 'drawStreetlampHaloRow', intensity: [0.18, 0.48], openingHero: false, supportOnly: true },
+    { id: 'street_corridor_vanishing_point', label: 'Street Corridor Vanishing Point', category: 'scene', priority: 'support', description: 'Narrow corridor converging to a vanishing point.', expected_shape: 'converging street guides', renderer: 'drawStreetCorridorVanishingPoint', intensity: [0.16, 0.45], openingHero: false, supportOnly: true },
+    { id: 'curb_line_perspective', label: 'Curb Line Perspective', category: 'texture', priority: 'support', description: 'Parallel curb guides into depth.', expected_shape: 'paired curb lines', renderer: 'drawCurbLinePerspective', intensity: [0.14, 0.42], openingHero: false, supportOnly: true },
+    { id: 'facade_plane_bands', label: 'Facade Plane Bands', category: 'texture', priority: 'support', description: 'Receding facade plane blocks.', expected_shape: 'stacked side facade bands', renderer: 'drawFacadePlaneBands', intensity: [0.16, 0.45], openingHero: false, supportOnly: true },
+    { id: 'awning_edge_rows', label: 'Awning Edge Rows', category: 'texture', priority: 'support', description: 'Awning strips receding in perspective.', expected_shape: 'angled awning rows', renderer: 'drawAwningEdgeRows', intensity: [0.14, 0.4], openingHero: false, supportOnly: true },
+    { id: 'heritage_window_grid', label: 'Heritage Window Grid', category: 'texture', priority: 'support', description: 'Tight heritage storefront window rhythm.', expected_shape: 'small repeated window panes', renderer: 'drawHeritageWindowGrid', intensity: [0.12, 0.4], openingHero: false, supportOnly: true },
+    { id: 'district_sign_columns', label: 'District Sign Columns', category: 'scene', priority: 'support', description: 'Vertical sign and marquee columns.', expected_shape: 'tall sign slabs', renderer: 'drawDistrictSignColumns', intensity: [0.16, 0.5], openingHero: false, supportOnly: true },
+    { id: 'wet_reflection_axis', label: 'Wet Reflection Axis', category: 'texture', priority: 'support', description: 'Centerline wet reflection streaks.', expected_shape: 'reflection bands toward horizon', renderer: 'drawWetReflectionAxis', intensity: [0.14, 0.44], openingHero: false, supportOnly: true },
+    { id: 'skyline_mask_lowrise', label: 'Skyline Mask Lowrise', category: 'scene', priority: 'support', description: 'Low-rise skyline silhouette mask.', expected_shape: 'stepped low skyline', renderer: 'drawSkylineMaskLowrise', intensity: [0.12, 0.38], openingHero: false, supportOnly: true },
     { id: 'granville_neon_marquee', label: 'Granville Neon Marquee', category: 'scene', priority: 'support', description: 'Neon marquee slabs.', expected_shape: 'vertical neon panels', renderer: 'drawGranvilleNeonMarquee', intensity: [0.18, 0.48], openingHero: false, supportOnly: true },
     { id: 'neon_sign_flicker', label: 'Neon Sign Flicker', category: 'scene', priority: 'support', description: 'Neon strip flicker.', expected_shape: 'horizontal neon bars', renderer: 'drawNeonSignFlicker', intensity: [0.18, 0.5], openingHero: false, supportOnly: true },
     { id: 'traffic_light_glow', label: 'Traffic Light Glow', category: 'scene', priority: 'support', description: 'Traffic signal glow.', expected_shape: 'three light halos', renderer: 'drawTrafficLightGlow', intensity: [0.15, 0.45], openingHero: false, supportOnly: true },
@@ -318,7 +326,7 @@
     resolveRenderProfile(pkg) {
       const tags = (Array.isArray(pkg.style_tags) ? pkg.style_tags : []).map((t) => String(t || '').toLowerCase());
       const pixelMode = hasAnyTag(tags, ['pixel_art', '8bit', 'lowres_mode']);
-      const vancouverCue = hasAnyTag(tags, ['gastown', 'granville', 'north_shore', 'vancouver', 'snow', 'rain', 'fog', 'amber', 'neon', 'brick', 'cobblestone', 'mountains']);
+      const vancouverCue = hasAnyTag(tags, ['gastown', 'granville', 'chinatown', 'north_shore', 'waterfront', 'vancouver', 'snow', 'rain', 'fog', 'amber', 'neon', 'brick', 'cobblestone', 'mountains']);
       const theme = {
         bgTop: '#02050c',
         bgMid: '#070d1e',
@@ -346,6 +354,11 @@
       if (hasAnyTag(tags, ['neon', 'arcade', 'chiptune', 'granville'])) {
         theme.neonA = [255, 92, 205];
         theme.neonB = [108, 250, 225];
+      }
+      if (hasAnyTag(tags, ['chinatown', 'lantern', 'market'])) {
+        theme.bgMid = '#261a1f';
+        theme.bgBottom = '#170f16';
+        theme.amber = [248, 182, 104];
       }
 
       return {
@@ -1117,6 +1130,128 @@
           }
           break;
         }
+        case 'street_corridor_vanishing_point': {
+          const vx = w * (0.48 + Math.sin(normalized * 1.1) * 0.03);
+          const vy = h * 0.34;
+          const baseY = h * 0.98;
+          ctx.strokeStyle = `rgba(122,170,220,${0.1 + intensity * 0.14})`;
+          ctx.lineWidth = 1;
+          for (let i = 0; i < 7; i += 1) {
+            const leftX = w * (0.04 + i * 0.06);
+            const rightX = w * (0.96 - i * 0.06);
+            ctx.beginPath();
+            ctx.moveTo(leftX, baseY);
+            ctx.lineTo(vx, vy + i * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(rightX, baseY);
+            ctx.lineTo(vx, vy + i * 2);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'curb_line_perspective': {
+          const vx = w * 0.5;
+          const vy = h * 0.38;
+          ctx.strokeStyle = `rgba(178,204,228,${0.12 + intensity * 0.16})`;
+          ctx.lineWidth = Math.max(1.2, w * 0.0024);
+          ctx.beginPath();
+          ctx.moveTo(w * 0.16, h * 0.98);
+          ctx.lineTo(vx - w * 0.08, vy);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(w * 0.84, h * 0.98);
+          ctx.lineTo(vx + w * 0.08, vy);
+          ctx.stroke();
+          break;
+        }
+        case 'facade_plane_bands': {
+          const fade = 0.08 + intensity * 0.14;
+          for (let i = 0; i < 7; i += 1) {
+            const t = i / 7;
+            const leftW = w * (0.26 - t * 0.16);
+            const rightW = leftW;
+            const y = h * (0.18 + t * 0.58);
+            const bandH = h * (0.085 - t * 0.04);
+            ctx.fillStyle = `rgba(86,62,72,${fade})`;
+            ctx.fillRect(0, y, leftW, Math.max(3, bandH));
+            ctx.fillRect(w - rightW, y + h * 0.02, rightW, Math.max(3, bandH));
+          }
+          break;
+        }
+        case 'awning_edge_rows': {
+          ctx.strokeStyle = `rgba(232,154,188,${0.1 + intensity * 0.14})`;
+          ctx.lineWidth = 1;
+          for (let i = 0; i < 6; i += 1) {
+            const y = h * (0.26 + i * 0.08);
+            ctx.beginPath();
+            ctx.moveTo(w * 0.05, y);
+            ctx.lineTo(w * 0.42 - i * 8, y + h * 0.045);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(w * 0.95, y + h * 0.018);
+            ctx.lineTo(w * 0.58 + i * 8, y + h * 0.06);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'heritage_window_grid': {
+          ctx.strokeStyle = `rgba(198,174,144,${0.1 + intensity * 0.16})`;
+          ctx.lineWidth = 1;
+          const rows = 4;
+          const cols = 5;
+          for (let side = 0; side < 2; side += 1) {
+            const originX = side === 0 ? w * 0.03 : w * 0.74;
+            const paneW = w * 0.04;
+            const paneH = h * 0.05;
+            for (let r = 0; r < rows; r += 1) {
+              for (let c = 0; c < cols; c += 1) {
+                const x = originX + c * (paneW * 0.94);
+                const y = h * 0.2 + r * (paneH * 1.05) + c * 2;
+                ctx.strokeRect(x, y, paneW, paneH);
+              }
+            }
+          }
+          break;
+        }
+        case 'district_sign_columns': {
+          const theme = (this.timeline && this.timeline.renderProfile && this.timeline.renderProfile.theme) || {};
+          const neonA = theme.neonA || [255, 96, 186];
+          const neonB = theme.neonB || [120, 255, 220];
+          const cols = [
+            [w * 0.11, h * 0.12, w * 0.05, h * 0.58],
+            [w * 0.22, h * 0.18, w * 0.04, h * 0.46],
+            [w * 0.75, h * 0.14, w * 0.06, h * 0.56],
+            [w * 0.84, h * 0.2, w * 0.04, h * 0.44]
+          ];
+          cols.forEach((col, idx) => {
+            const color = idx % 2 === 0 ? neonA : neonB;
+            ctx.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},${0.08 + intensity * 0.18})`;
+            ctx.fillRect(col[0], col[1], col[2], col[3]);
+          });
+          break;
+        }
+        case 'wet_reflection_axis': {
+          const cx = w * 0.5;
+          for (let i = 0; i < 16; i += 1) {
+            const spread = (i / 16) * w * 0.38;
+            const yy = h * 0.62 + i * (h * 0.02);
+            ctx.fillStyle = `rgba(120,186,244,${0.05 + intensity * 0.08})`;
+            ctx.fillRect(cx - spread * 0.5, yy, spread, Math.max(1, h * 0.008));
+          }
+          break;
+        }
+        case 'skyline_mask_lowrise': {
+          ctx.fillStyle = `rgba(20,26,40,${0.2 + intensity * 0.18})`;
+          let x = 0;
+          while (x < w) {
+            const bw = w * (0.05 + ((x / w * 13) % 1) * 0.07);
+            const bh = h * (0.08 + ((x / w * 17) % 1) * 0.14);
+            ctx.fillRect(x, h * 0.5 - bh, bw, bh);
+            x += bw * 0.9;
+          }
+          break;
+        }
         case 'granville_neon_marquee': {
           const neon = (this.timeline.renderProfile.theme.neonA || [255, 96, 186]);
           ctx.fillStyle = `rgba(${neon[0]},${neon[1]},${neon[2]},${0.22 + intensity * 0.26})`;
@@ -1186,6 +1321,11 @@
           break;
         }
         case 'chinatown_gate': {
+          this.drawEvent(ctx, { visual_type: 'street_corridor_vanishing_point', params: {}, intensity: intensity * 0.38 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'curb_line_perspective', params: {}, intensity: intensity * 0.34 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'awning_edge_rows', params: {}, intensity: intensity * 0.36 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'facade_plane_bands', params: {}, intensity: intensity * 0.3 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'skyline_mask_lowrise', params: {}, intensity: intensity * 0.26 }, p, intensity, w, h, normalized);
           const baseY = h * 0.68;
           ctx.fillStyle = `rgba(170,82,88,${0.28 + intensity * 0.24})`;
           ctx.fillRect(w * 0.3, baseY - h * 0.16, w * 0.04, h * 0.16);
@@ -1242,17 +1382,25 @@
           break;
         }
         case 'gastown_scene': {
-          this.drawEvent(ctx, { visual_type: 'brick_wall_parallax', params: {}, intensity: intensity * 0.8 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'cobblestone_perspective', params: {}, intensity: intensity * 0.8 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'streetlamp_halo_row', params: {}, intensity: intensity * 0.85 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'gastown_clock_silhouette', params: {}, intensity: intensity * 0.9 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'street_corridor_vanishing_point', params: {}, intensity: intensity * 0.58 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'curb_line_perspective', params: {}, intensity: intensity * 0.52 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'facade_plane_bands', params: {}, intensity: intensity * 0.56 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'heritage_window_grid', params: {}, intensity: intensity * 0.5 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'brick_wall_parallax', params: {}, intensity: intensity * 0.68 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'cobblestone_perspective', params: {}, intensity: intensity * 0.74 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'streetlamp_halo_row', params: {}, intensity: intensity * 0.64 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'gastown_clock_silhouette', params: {}, intensity: intensity * 0.84 }, p, intensity, w, h, normalized);
           break;
         }
         case 'granville_scene': {
-          this.drawEvent(ctx, { visual_type: 'granville_neon_marquee', params: {}, intensity: intensity * 0.9 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'neon_sign_flicker', params: {}, intensity: intensity * 0.85 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'traffic_light_glow', params: {}, intensity: intensity * 0.7 }, p, intensity, w, h, normalized);
-          this.drawEvent(ctx, { visual_type: 'puddle_reflections', params: {}, intensity: intensity * 0.72 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'street_corridor_vanishing_point', params: {}, intensity: intensity * 0.62 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'curb_line_perspective', params: {}, intensity: intensity * 0.5 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'district_sign_columns', params: {}, intensity: intensity * 0.76 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'granville_neon_marquee', params: {}, intensity: intensity * 0.78 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'neon_sign_flicker', params: {}, intensity: intensity * 0.72 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'wet_reflection_axis', params: {}, intensity: intensity * 0.68 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'puddle_reflections', params: {}, intensity: intensity * 0.62 }, p, intensity, w, h, normalized);
+          this.drawEvent(ctx, { visual_type: 'traffic_light_glow', params: {}, intensity: intensity * 0.5 }, p, intensity, w, h, normalized);
           break;
         }
         case 'north_shore_scene': {
