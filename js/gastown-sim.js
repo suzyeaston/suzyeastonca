@@ -128,6 +128,54 @@
     }
   }
 
+  const facadeProfilePresets = {
+    gastown_heritage_masonry: {
+      baseInset: 0.94,
+      windowRows: 3,
+      rooflineLift: 1.1,
+      storefrontBand: 0.16,
+      awningDepth: 1.05,
+      silhouetteLift: 0.8,
+    },
+    victorian_storefront_row: {
+      baseInset: 0.96,
+      windowRows: 2,
+      rooflineLift: 0.9,
+      storefrontBand: 0.18,
+      awningDepth: 1.2,
+      silhouetteLift: 0.6,
+    },
+    wedge_corner_block: {
+      baseInset: 0.95,
+      windowRows: 4,
+      rooflineLift: 1.6,
+      storefrontBand: 0.17,
+      awningDepth: 1.1,
+      silhouetteLift: 1.5,
+    },
+    warehouse_commercial_front: {
+      baseInset: 0.97,
+      windowRows: 3,
+      rooflineLift: 0.7,
+      storefrontBand: 0.12,
+      awningDepth: 0,
+      silhouetteLift: 0.4,
+    },
+  };
+
+  function paletteToColors(building) {
+    const profile = (state.world && state.world.facade_profiles && state.world.facade_profiles[building.facade_profile]) || {};
+    const palette = building.material_palette || profile.material_palette || {};
+    const primary = palette.primary || building.tone || 'brickDark';
+    const accent = palette.accent || 'stoneMuted';
+    const trim = palette.trim || 'stoneMuted';
+    return {
+      primary: toneToColor(primary),
+      accent: toneToColor(accent),
+      trim: toneToColor(trim),
+    };
+  }
+
   function toShape(points) {
     const shape = new THREE.Shape();
     points.forEach((point, index) => {
@@ -171,9 +219,24 @@
 
   function addBuildings(world) {
     world.buildings.forEach((b) => {
-      const geom = new THREE.BoxGeometry(b.width, b.height, b.depth);
+      const profilePreset = facadeProfilePresets[b.facade_profile] || facadeProfilePresets.gastown_heritage_masonry;
+      const colors = paletteToColors(b);
+      const massingInset = b.mass_inset || profilePreset.baseInset;
+      const shapePoints = Array.isArray(b.footprint) && b.footprint.length >= 3
+        ? b.footprint
+        : [
+          { x: -b.width / 2, z: -b.depth / 2 },
+          { x: b.width / 2, z: -b.depth / 2 },
+          { x: b.width / 2, z: b.depth / 2 },
+          { x: -b.width / 2, z: b.depth / 2 },
+        ];
+      const geom = new THREE.ExtrudeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, point.z))), {
+        depth: b.height,
+        bevelEnabled: false,
+      });
+      geom.rotateX(-Math.PI / 2);
       const mat = new THREE.MeshStandardMaterial({
-        color: toneToColor(b.tone),
+        color: colors.primary,
         roughness: 0.8,
         metalness: 0.16,
         emissive: 0x11151f,
@@ -181,9 +244,61 @@
       });
       visualState.buildingMaterials.push(mat);
       const mesh = new THREE.Mesh(geom, mat);
-      mesh.position.set(b.x, b.height / 2, b.z);
+      mesh.scale.set(massingInset, 1, massingInset);
+      mesh.position.set(b.x, 0, b.z);
       mesh.rotation.y = b.yaw || 0;
       worldGroup.add(mesh);
+
+      const rooflineType = b.roofline_type || 'flat_cornice';
+      if (rooflineType !== 'flat') {
+        const roofHeight = Math.max(0.5, (b.cornice_emphasis || 0.2) * 2 + profilePreset.rooflineLift * 0.2);
+        const roofGeom = new THREE.CylinderGeometry((Math.max(b.width, b.depth) * 0.5) * 0.92, (Math.max(b.width, b.depth) * 0.5), roofHeight, 6);
+        const roofMat = new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.78, metalness: 0.12 });
+        const roof = new THREE.Mesh(roofGeom, roofMat);
+        roof.position.set(b.x, b.height + roofHeight / 2, b.z);
+        roof.rotation.y = (b.yaw || 0) + (rooflineType === 'angled_parapet' ? 0.45 : 0);
+        if (rooflineType === 'stepped') {
+          roof.scale.set(0.7, 1, 1);
+        } else if (rooflineType === 'gable_shallow') {
+          roof.rotation.z = Math.PI / 2;
+          roof.scale.set(0.5, 1, 1.2);
+        }
+        worldGroup.add(roof);
+      }
+
+      const storefrontBandHeight = Math.max(1.4, b.height * ((b.storefront_rhythm && b.storefront_rhythm.base_band) || profilePreset.storefrontBand));
+      const storefront = new THREE.Mesh(
+        new THREE.BoxGeometry((b.width || 8) * 0.92, storefrontBandHeight, Math.max(2, (b.depth || 8) * 0.15)),
+        new THREE.MeshStandardMaterial({ color: colors.accent, roughness: 0.72, metalness: 0.1 })
+      );
+      storefront.position.set(b.x, storefrontBandHeight / 2 + 0.2, b.z + ((b.depth || 8) * 0.34));
+      storefront.rotation.y = b.yaw || 0;
+      worldGroup.add(storefront);
+
+      const bayCount = Math.max(2, Math.min(8, b.window_bay_count || 4));
+      const windowRows = Math.max(1, Math.min(5, (b.storefront_rhythm && b.storefront_rhythm.upper_rows) || profilePreset.windowRows));
+      const windowMat = new THREE.MeshStandardMaterial({ color: 0x1f2a38, emissive: 0x344d63, emissiveIntensity: 0.14, roughness: 0.42, metalness: 0.22 });
+      for (let row = 0; row < windowRows; row += 1) {
+        for (let bay = 0; bay < bayCount; bay += 1) {
+          const win = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (bayCount + 1.2), (b.height || 12) / (windowRows * 4.3)), windowMat);
+          const xOffset = (((bay + 1) / (bayCount + 1)) - 0.5) * ((b.width || 8) * 0.78);
+          const yOffset = storefrontBandHeight + 1.4 + row * ((b.height - storefrontBandHeight - 2) / windowRows);
+          const depthOffset = (b.depth || 8) * 0.52;
+          win.position.set(b.x + xOffset * Math.cos(b.yaw || 0), yOffset, b.z + depthOffset * Math.cos((b.yaw || 0) - Math.PI / 2) + xOffset * Math.sin(b.yaw || 0));
+          win.rotation.y = b.yaw || 0;
+          worldGroup.add(win);
+        }
+      }
+
+      if (b.awning_presence || (profilePreset.awningDepth > 0.1)) {
+        const awning = new THREE.Mesh(
+          new THREE.BoxGeometry((b.width || 8) * 0.86, 0.3, Math.max(0.8, profilePreset.awningDepth)),
+          new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.64, metalness: 0.08 })
+        );
+        awning.position.set(b.x, storefrontBandHeight + 0.6, b.z + ((b.depth || 8) * 0.45));
+        awning.rotation.y = b.yaw || 0;
+        worldGroup.add(awning);
+      }
 
       const edge = new THREE.LineSegments(
         new THREE.EdgesGeometry(geom),
@@ -192,6 +307,59 @@
       edge.position.copy(mesh.position);
       edge.rotation.y = mesh.rotation.y;
       worldGroup.add(edge);
+    });
+  }
+
+  function addHeroLandmarks(world) {
+    (world.hero_landmarks || []).forEach((hero) => {
+      if (hero.id === 'steam-clock-hero') {
+        const base = new THREE.Mesh(
+          new THREE.CylinderGeometry(1.1, 1.35, 3.2, 12),
+          new THREE.MeshStandardMaterial({ color: 0x4b3d34, roughness: 0.72, metalness: 0.08 })
+        );
+        base.position.set(hero.x, 1.6, hero.z);
+        worldGroup.add(base);
+
+        const body = new THREE.Mesh(
+          new THREE.BoxGeometry(1.35, 4.2, 1.35),
+          new THREE.MeshStandardMaterial({ color: 0x5d4b40, roughness: 0.66, metalness: 0.18 })
+        );
+        body.position.set(hero.x, 4.7, hero.z);
+        worldGroup.add(body);
+
+        const face = new THREE.Mesh(
+          new THREE.CircleGeometry(0.62, 24),
+          new THREE.MeshStandardMaterial({ color: 0xf0dfb2, emissive: 0x6b5b3d, emissiveIntensity: 0.36 })
+        );
+        face.position.set(hero.x + 0.68, 5.25, hero.z);
+        face.rotation.y = -Math.PI / 2;
+        worldGroup.add(face);
+
+        const cap = new THREE.Mesh(
+          new THREE.ConeGeometry(0.95, 1.1, 10),
+          new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.58, metalness: 0.34 })
+        );
+        cap.position.set(hero.x, 7.45, hero.z);
+        worldGroup.add(cap);
+
+        [-0.45, 0.45].forEach((offset) => {
+          const pipe = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.08, 0.08, 1.5, 8),
+            new THREE.MeshStandardMaterial({ color: 0x78767d, roughness: 0.54, metalness: 0.58 })
+          );
+          pipe.position.set(hero.x + offset, 6.2, hero.z + 0.55);
+          pipe.rotation.x = Math.PI / 2.8;
+          worldGroup.add(pipe);
+        });
+
+        const plinth = new THREE.Mesh(
+          new THREE.CircleGeometry((hero.ground_emphasis_radius || 3.2), 28),
+          new THREE.MeshStandardMaterial({ color: 0x43392f, roughness: 0.84, metalness: 0.06 })
+        );
+        plinth.rotation.x = -Math.PI / 2;
+        plinth.position.set(hero.x, 0.15, hero.z);
+        worldGroup.add(plinth);
+      }
     });
   }
 
@@ -665,6 +833,7 @@
       state.world = await window.GastownWorldLoader.load(config.worldDataUrl);
       addGround(state.world);
       addBuildings(state.world);
+      addHeroLandmarks(state.world);
       addLandmarks(state.world);
       addDebugRoute(state.world);
       setupAudio(state.world);

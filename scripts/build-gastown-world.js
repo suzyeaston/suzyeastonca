@@ -19,6 +19,15 @@ const importManifest = {
       buildingFootprints: 'data/cov/buildings.geojson',
       streetCenterlines: 'data/cov/streets.geojson',
       intersections: 'data/cov/intersections.geojson',
+      rightOfWayWidths: 'data/cov/right-of-way-widths.geojson',
+    },
+    gastownHeritageOptional: {
+      register: 'data/heritage/gastown-register.geojson',
+      styleReferenceNotes: 'data/heritage/gastown-style-notes.json',
+    },
+    referenceLibraryOptional: {
+      curatedNotes: 'data/reference/gastown-curated-notes.json',
+      screenshotIndex: 'data/reference/gastown-screenshots.json',
     },
     osmOptional: {
       routeAlignment: 'data/osm/waterfront-to-steam-clock.geojson',
@@ -29,10 +38,28 @@ const importManifest = {
     '2) normalize projection to local meters-ish XY frame',
     '3) simplify centerline and derive walk corridor polygon',
     '4) split surfaces into street + sidewalk polygons',
-    '5) fit building masses from footprint blocks',
-    '6) write compact runtime JSON (no external dependencies)',
+    '5) fit building masses from footprint blocks + choose facade profile presets',
+    '6) attach hero landmark metadata and priority weighting',
+    '7) write compact runtime JSON (no external dependencies)',
   ],
 };
+
+const referenceTemplate = {
+  reference_name: null,
+  reference_address: null,
+  style_notes: null,
+  silhouette_notes: null,
+  facade_profile: null,
+  landmark_priority: 'supporting',
+};
+
+function applyReferenceScaffold(entity) {
+  Object.keys(referenceTemplate).forEach((key) => {
+    if (!(key in entity)) {
+      entity[key] = referenceTemplate[key];
+    }
+  });
+}
 
 function run() {
   if (!fs.existsSync(worldPath)) {
@@ -44,10 +71,14 @@ function run() {
   world.meta.lastBuild = new Date().toISOString();
   world.meta.buildNotes = [
     'Runtime geometry is compact and static; no live map APIs.',
-    'Prepared for future ingestion of offline City of Vancouver streets/buildings + optional OSM route alignment.',
-    'Corridor includes walk bounds, street and sidewalk zones, building masses, and landmark anchors.',
+    'Prepared for offline City of Vancouver footprints/streets/ROW widths + optional OSM route alignment.',
+    'Supports hero_landmarks + facade_profiles to prioritize recognizability over photoreal detail.',
+    'Scaffold ready for manually curated heritage references and screenshot-backed style metadata.',
   ];
   world.meta.importManifest = importManifest;
+
+  (world.buildings || []).forEach((building) => applyReferenceScaffold(building));
+  (world.hero_landmarks || []).forEach((landmark) => applyReferenceScaffold(landmark));
 
   fs.writeFileSync(worldPath, JSON.stringify(world, null, 2) + '\n', 'utf8');
   process.stdout.write('Updated ' + path.relative(root, worldPath) + '\n');
