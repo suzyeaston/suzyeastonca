@@ -936,6 +936,19 @@
       "radius": 9
     }
   ],
+  "navigator": {
+    "orientation": {
+      "northHint": "toward Burrard Inlet / station-side edge",
+      "southHint": "toward Water Street storefront corridor"
+    },
+    "focusCorridor": [
+      "station-threshold",
+      "cordova-transition",
+      "water-entry-wedge",
+      "water-mid",
+      "steam-clock"
+    ]
+  },
   "bounds": {
     "edgeMessage": "You reached the route edge. Staying on the Water Street corridor.",
     "resetMessage": "Returned to the last safe point on the route.",
