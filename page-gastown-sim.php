@@ -50,7 +50,8 @@ get_header();
       <ul>
         <li><strong>Click scene</strong> to enter look mode</li>
         <li><strong>Mouse</strong> = look around</li>
-        <li><strong>W A S D / arrow keys</strong> = move</li>
+        <li><strong>W A S D</strong> = move / strafe</li>
+        <li><strong>Arrow keys</strong> = move forward/back + turn left/right</li>
         <li><strong>Esc</strong> = release pointer / pause</li>
       </ul>
     </section>
@@ -81,7 +82,8 @@ get_header();
     <section class="gastown-debug" data-debug-panel hidden>
       <h2>Debug notes</h2>
       <ul>
-        <li>WASD or arrow keys for movement</li>
+        <li>W/S + Arrow Up/Down move forward/back; A/D strafe</li>
+        <li>Arrow Left/Right turns the player heading</li>
         <li>Mouse look while pointer is locked</li>
         <li>Walk bounds clamp keeps the player in the playable corridor slice</li>
         <li>Route debug can also be enabled with <code>?gastownDebug=1</code></li>
