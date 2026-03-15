@@ -137,3 +137,59 @@
 .asmr-advanced-fields[open]>summary{margin-bottom:.65rem}
 .asmr-layer-groups{margin-top:.55rem}
 @media (max-width:780px){.asmr-route-nav{grid-template-columns:1fr}.asmr-route-nav .pixel-button{width:100%}}
+
+.asmr-rebuild-chamber{
+  margin:1rem 0 1.1rem;
+  padding:1rem;
+  border:1px solid #3a4f8a;
+  border-radius:10px;
+  background:radial-gradient(circle at top right, rgba(110,66,255,.22), rgba(11,17,36,.96) 45%), linear-gradient(180deg,#0b1124,#090f20 75%);
+  box-shadow:0 0 24px rgba(89,125,255,.18) inset;
+}
+.asmr-alert{
+  margin:0 0 .4rem;
+  font-size:.76rem;
+  color:#ffc87a;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.asmr-rebuild-chamber h2{margin:.2rem 0 .55rem;color:#dce7ff}
+.asmr-rebuild-chamber p{margin:.34rem 0;color:#bdd0fb;line-height:1.55}
+.asmr-status-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:.45rem;
+  margin:.75rem 0;
+}
+.asmr-status-grid p{
+  margin:0;
+  font-size:.76rem;
+  border:1px solid #324579;
+  border-radius:8px;
+  padding:.5rem .55rem;
+  background:#0a1124;
+}
+.asmr-lab-voice-panel{
+  margin-top:.7rem;
+  padding:.75rem;
+  border:1px dashed #4862a1;
+  border-radius:8px;
+  background:rgba(7,13,29,.82);
+}
+.asmr-lab-voice-status{margin:.55rem 0 0;font-size:.76rem;color:#9fc0ff}
+.asmr-cta-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.85rem}
+.asmr-legacy-console{
+  margin-top:.9rem;
+  border:1px solid #2f3f73;
+  border-radius:10px;
+  background:#090f20;
+}
+.asmr-legacy-console summary{
+  cursor:pointer;
+  list-style:none;
+  padding:.75rem .9rem;
+  color:#9dbdff;
+  font-size:.84rem;
+}
+.asmr-legacy-console summary::-webkit-details-marker{display:none}
+.asmr-legacy-console[open]{padding:0 .9rem .9rem}
