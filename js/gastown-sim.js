@@ -29,6 +29,7 @@
     world: null,
     isRunning: false,
     move: { forward: false, backward: false, left: false, right: false },
+    turn: { left: false, right: false },
     yaw: 0,
     pitch: 0,
     velocity: new THREE.Vector3(),
@@ -1267,8 +1268,15 @@
 
   function movePlayer(delta) {
     const speed = 9;
+    const turnSpeed = 1.85;
     const forward = Number(state.move.forward) - Number(state.move.backward);
     const strafe = Number(state.move.right) - Number(state.move.left);
+    const turning = Number(state.turn.right) - Number(state.turn.left);
+
+    if (turning !== 0) {
+      state.yaw -= turning * turnSpeed * delta;
+      player.rotation.y = state.yaw;
+    }
 
     const input = new THREE.Vector3(strafe, 0, -forward);
     if (input.lengthSq() > 1) {
@@ -1308,8 +1316,10 @@
   function setMoveKey(code, pressed) {
     if (code === 'KeyW' || code === 'ArrowUp') state.move.forward = pressed;
     if (code === 'KeyS' || code === 'ArrowDown') state.move.backward = pressed;
-    if (code === 'KeyA' || code === 'ArrowLeft') state.move.left = pressed;
-    if (code === 'KeyD' || code === 'ArrowRight') state.move.right = pressed;
+    if (code === 'KeyA') state.move.left = pressed;
+    if (code === 'KeyD') state.move.right = pressed;
+    if (code === 'ArrowLeft') state.turn.left = pressed;
+    if (code === 'ArrowRight') state.turn.right = pressed;
   }
 
   function resetToStart() {
@@ -1351,6 +1361,8 @@
     state.move.backward = false;
     state.move.left = false;
     state.move.right = false;
+    state.turn.left = false;
+    state.turn.right = false;
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
@@ -1402,6 +1414,8 @@
         state.move.backward = false;
         state.move.left = false;
         state.move.right = false;
+        state.turn.left = false;
+        state.turn.right = false;
         state.isRunning = false;
         setStatus('Paused. Pointer released. Click scene to resume look mode and movement.');
         setPointerStatus('Pointer released. Click scene to re-enter look mode.');
