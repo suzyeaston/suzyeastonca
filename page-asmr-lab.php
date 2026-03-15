@@ -4,6 +4,9 @@ Template Name: ASMR Lab
 */
 
 get_header();
+
+$gastown_page     = get_page_by_path( 'page-gastown-sim' );
+$gastown_page_url = $gastown_page ? get_permalink( $gastown_page ) : home_url( '/page-gastown-sim/' );
 ?>
 <main id="primary" class="content-area asmr-lab-page">
   <section class="asmr-lab-shell" id="asmr-lab-app">
@@ -28,7 +31,7 @@ get_header();
         <p id="asmr-lab-voice-status" class="asmr-lab-voice-status" aria-live="polite">Silent mode engaged. Narrator stays quiet until requested.</p>
       </div>
       <div class="asmr-cta-row">
-        <a class="pixel-button" href="<?php echo esc_url( home_url('/gastown-sim/') ); ?>">Enter Gastown prototype</a>
+        <a class="pixel-button" href="<?php echo esc_url( $gastown_page_url ); ?>">Enter Gastown prototype</a>
         <a class="pixel-button secondary" href="https://github.com/suzyeaston/suzyeastonca" target="_blank" rel="noopener noreferrer">View code on GitHub</a>
       </div>
     </section>
