@@ -141,15 +141,58 @@
     </a>
   </div>
   <div class="header-actions">
-    <a class="pixel-button header-support-link"
-       href="https://buymeacoffee.com/wi0amge"
-       target="_blank"
-       rel="noopener noreferrer"
-       aria-label="Support Suzy">
-       Support
-    </a>
+    <button class="pixel-button header-contact-trigger"
+            type="button"
+            data-contact-trigger
+            aria-haspopup="dialog"
+            aria-controls="contact-suzy-modal"
+            aria-label="Contact Suzy">
+      CONTACT SUZY
+    </button>
   </div>
 </header>
+
+<div class="se-contact-modal" id="contact-suzy-modal" data-contact-modal hidden>
+  <div class="se-contact-modal__overlay" data-contact-close tabindex="-1"></div>
+  <div class="se-contact-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="se-contact-title" aria-describedby="se-contact-copy">
+    <button type="button" class="se-contact-modal__close" data-contact-close aria-label="Close contact form">✕</button>
+    <h2 id="se-contact-title" class="pixel-font">Contact Suzy</h2>
+    <p id="se-contact-copy" class="se-contact-modal__copy">Yo, what’s up? Drop a note and Suzy will get back to you.</p>
+
+    <div class="se-contact-modal__audio">
+      <button type="button" class="pixel-button se-contact-modal__audio-btn" data-contact-play-intro>Play intro</button>
+      <p class="se-contact-modal__audio-status" data-contact-audio-status aria-live="polite">Optional voice intro. Click play if you want the full vibe.</p>
+    </div>
+
+    <form class="se-contact-form" data-contact-form data-endpoint="<?php echo esc_url( admin_url( "admin-ajax.php" ) ); ?>" novalidate>
+      <input type="hidden" name="action" value="se_contact_suzy">
+      <input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'se_contact_suzy' ) ); ?>">
+
+      <label for="se-contact-name">Name</label>
+      <input id="se-contact-name" name="name" type="text" autocomplete="name" required>
+
+      <label for="se-contact-email">Email</label>
+      <input id="se-contact-email" name="email" type="email" autocomplete="email" required>
+
+      <label for="se-contact-message">Message</label>
+      <textarea id="se-contact-message" name="message" rows="5" required></textarea>
+
+      <label for="se-contact-chaos">Type “yowhatsup” so I know you’re not a chaos bot.</label>
+      <input id="se-contact-chaos" name="chaos_check" type="text" autocapitalize="off" autocomplete="off" spellcheck="false" required>
+
+      <p class="se-contact-form__status" data-contact-status aria-live="polite"></p>
+
+      <div class="se-contact-form__actions">
+        <button type="submit" class="pixel-button">Send message</button>
+      </div>
+    </form>
+
+    <div class="se-contact-success" data-contact-success hidden>
+      <p class="se-contact-success__headline">Message received. Suzy will get back to you soon.</p>
+      <p>Want to fuel the weird little upgrades? <a href="https://buymeacoffee.com/wi0amge" target="_blank" rel="noopener noreferrer">Buy Suzy a coffee</a> or <a href="<?php echo esc_url( home_url( '/' ) ); ?>">share the site</a>.</p>
+    </div>
+  </div>
+</div>
 
 <!-- Hero banner lives in page templates (e.g., homepage hero); this header stays compact above it -->
 <!-- Full‑screen moving starfield background -->

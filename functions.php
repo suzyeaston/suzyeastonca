@@ -281,6 +281,95 @@ if ( ! has_action('wp_enqueue_scripts', 'se_enqueue_header_tweak_css') ) {
     add_action('wp_enqueue_scripts', 'se_enqueue_header_tweak_css');
 }
 
+if ( ! function_exists( 'se_enqueue_header_contact_assets' ) ) {
+    function se_enqueue_header_contact_assets() {
+        if ( is_admin() ) {
+            return;
+        }
+
+        $dir = get_stylesheet_directory();
+        $uri = get_stylesheet_directory_uri();
+
+        $css_path = '/assets/css/header-contact-modal.css';
+        if ( file_exists( $dir . $css_path ) ) {
+            wp_enqueue_style(
+                'se-header-contact-modal',
+                $uri . $css_path,
+                array(),
+                filemtime( $dir . $css_path )
+            );
+        }
+
+        $js_path = '/assets/js/header-contact-modal.js';
+        if ( file_exists( $dir . $js_path ) ) {
+            wp_enqueue_script(
+                'se-header-contact-modal',
+                $uri . $js_path,
+                array(),
+                filemtime( $dir . $js_path ),
+                true
+            );
+        }
+    }
+}
+add_action( 'wp_enqueue_scripts', 'se_enqueue_header_contact_assets' );
+
+if ( ! function_exists( 'se_handle_contact_suzy_submission' ) ) {
+    function se_handle_contact_suzy_submission() {
+        if ( ! wp_doing_ajax() ) {
+            wp_send_json_error( array( 'message' => 'Invalid request.' ), 400 );
+        }
+
+        $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'se_contact_suzy' ) ) {
+            wp_send_json_error( array( 'message' => 'Security check failed. Please refresh and try again.' ), 403 );
+        }
+
+        $name = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
+        $email = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+        $message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
+        $chaos_check = isset( $_POST['chaos_check'] ) ? sanitize_text_field( wp_unslash( $_POST['chaos_check'] ) ) : '';
+
+        if ( '' === $name || '' === $email || '' === $message || '' === $chaos_check ) {
+            wp_send_json_error( array( 'message' => 'Please fill out every field before sending.' ), 422 );
+        }
+
+        if ( ! is_email( $email ) ) {
+            wp_send_json_error( array( 'message' => 'Please enter a valid email address.' ), 422 );
+        }
+
+        if ( 'yowhatsup' !== strtolower( $chaos_check ) ) {
+            wp_send_json_error( array( 'message' => 'Chaos bot check failed. Type yowhatsup and try again.' ), 422 );
+        }
+
+        $to = 'suzyeaston@icloud.com';
+        $subject = sprintf( 'New site message from %s', $name );
+        $body = "New Contact Suzy submission:
+
+";
+        $body .= "Name: {$name}
+";
+        $body .= "Email: {$email}
+
+";
+        $body .= "Message:
+{$message}
+";
+
+        $headers = array( 'Reply-To: ' . $name . ' <' . $email . '>' );
+
+        $sent = wp_mail( $to, $subject, $body, $headers );
+
+        if ( ! $sent ) {
+            wp_send_json_error( array( 'message' => 'Message failed to send. Please try again in a bit.' ), 500 );
+        }
+
+        wp_send_json_success( array( 'message' => 'Message received. Suzy will get back to you soon.' ) );
+    }
+}
+add_action( 'wp_ajax_se_contact_suzy', 'se_handle_contact_suzy_submission' );
+add_action( 'wp_ajax_nopriv_se_contact_suzy', 'se_handle_contact_suzy_submission' );
+
 // Load bundled Lousy Outages plugin so shortcode and REST endpoint work
 $lousy_outages = get_template_directory() . '/lousy-outages/lousy-outages.php';
 if ( file_exists( $lousy_outages ) ) {
