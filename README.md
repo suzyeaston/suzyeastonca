@@ -1,39 +1,58 @@
-# Suzy's Retro Arcade – v3.0
-A custom WordPress theme powering [suzyeaston.ca](https://suzyeaston.ca), complete with games, music tools and a dash of civic spirit.
+# Suzy's Retro Arcade – v4.0
+A custom WordPress theme powering [suzyeaston.ca](https://suzyeaston.ca) — part retro arcade, part creative-tech lab, part Vancouver build-in-public experiment.
+
+Current highlights:
+- **Gastown First-Person Simulator**, a live Vancouver prototype evolving in public
+- **Track Analyzer** for MP3 vibe checks
+- **Lousy Outages**, an arcade-style status board
+- **Albini Q&A** / "What Would Steve Do" style experiments
+- **ASMR Lab**, the earlier audio/visual prototype that helped inspire the Gastown simulator and is now under major redevelopment
+
+The repo is open source, the process is visible, and the goal is to keep building playful, useful, and strange little things that invite people in. We rise together.
 
 ## What's Included
-- Retro pixel-art inspired design with neon CRT vibes
-- **Canucks Puck Bash** – an 80s style hockey game built with HTML5 canvas
-- **Riff Generator 8000** for instant rock, punk, metal or jazz riffs
-- **Track Analyzer** for quick MP3 vibe checks using OpenAI
-- Album reviews of classic jazz and rock discovered during Suzy's HMV days
-- **Albini Q&A** widget that channels legendary producer Steve Albini via OpenAI
-- Music releases, livestream schedules and a "Now Listening" section featuring a static YouTube embed
-- Downtown Eastside advocacy section and notes on Suzy's possible 2026 city council run
-- Custom REST endpoints for Canucks news and betting odds
-- **Lousy Outages** arcade‑style status board with homepage teaser
-- A single Support link (header + homepage About group) for supporting Suzy's work
-- Mobile friendly with drag & tap controls
+- Custom WordPress theme with neon CRT/pixel styling and arcade energy
+- Homepage + project templates for live creative-tech experiments
+- Gastown simulator page and supporting systems for rapid iteration
+- Track Analyzer workflow for AI-assisted feedback on uploaded MP3s
+- Lousy Outages dashboard and teaser components
+- Experimental voice/tool pages, including Albini Q&A style workflows
+- Legacy + rebuilding ASMR Lab experience (kept online while redevelopment continues)
 
-## Lousy Outages refresh
-The neon dashboard now streams live provider data from `/api/outages` on load and every five minutes (override with the `OUTAGES_POLL_MS` env var or the `lousy_outages_interval` option in wp-admin). Each request fan-outs to the official status APIs with 10s timeouts, caches the merged JSON in a transient for ~90 seconds and then renders per-incident drawers with start time, latest update/ETA and impact badges. Albini-style snark is generated client-side with speech synth support when enabled, and the homepage teaser reuses the same copy: “Check if your favourite services are up. Insert coin to refresh.”
+## Current flagship / live experiments
+### Gastown First-Person Simulator
+The current flagship prototype. A first-person Vancouver corridor build focused on Waterfront Station → Water Street → Steam Clock, with ongoing updates to atmosphere, navigation, and scene detail. It changes often because it is built in public.
 
-The legacy REST endpoint at `/wp-json/lousy-outages/v1/status` still works and returns the expanded payload, while the new `/api/outages` edge route emits uncached JSON with `Cache-Control: no-store`. WordPress cron keeps polling in the background—run `wp cron event run lousy_outages_poll` if you need to warm the datastore manually.
+### Albini Q&A and related experiments
+"What Would Steve Do" style tools are still part of the ecosystem: quote-grounded prompts, commentary workflows, and playful interfaces that test how voice, archives, and creative tooling can coexist.
 
-The status arcade now opens with an "at-a-glance" headline that calls out any degraded providers, links straight to the custom RSS feed at `/outages/feed/` and highlights the alerts inbox (`suzanneeaston@gmail.com`) so you can wire it into whatever mail filters you prefer. Unknown telemetry also surfaces in the banner, making it obvious when a provider's API stops responding.
+## Lousy Outages
+**Lousy Outages** remains active as the arcade-style status board.
 
-## Get alerts on your phone
-- **RSS**: Subscribe to https://<your-site>/outages/feed in any mobile RSS app (NetNewsWire, Reeder, Feedly). You’ll get a push/badge when incidents publish.
-- **SMS (optional)**: Enter your Twilio SID/Auth/From and your phone under Settings → Lousy Outages. Use “Send Test SMS” to verify.
+- `/api/outages` provides live provider pulls with `Cache-Control: no-store`
+- `/wp-json/lousy-outages/v1/status` remains available for legacy consumers
+- Polling cadence can be tuned with `OUTAGES_POLL_MS` or the `lousy_outages_interval` option
+- Background refresh can be warmed manually with `wp cron event run lousy_outages_poll`
+
+It is intentionally practical but still fun: command-line vibes, alert hooks, and very online reliability energy.
 
 ## Track Analyzer
-Uploads are sent to OpenAI's Whisper and GPT‑4 APIs for a quick analysis of your
-MP3. Results appear with a fun retro overlay and clear loading indicators. For
-production use, consider exposing this feature through a custom REST endpoint
-and caching results in case OpenAI is unavailable.
+**Track Analyzer** is still in rotation for MP3 uploads and quick AI-assisted mix feedback. It is designed as a fast creative checkpoint for musicians who want signal, not fluff.
+
+## ASMR Lab status
+**ASMR Lab** is an earlier audio/visual experiment that got weird enough to help inspire the Gastown simulator.
+
+It still matters, it is still in the repo, and parts are still playable — but it is currently under major redevelopment.
+
+## Open source / build in public
+This repo is open source: <https://github.com/suzyeaston/suzyeastonca>
+
+Expect frequent updates, rough edges, and visible iteration. If something looks off right after a deploy, hard refresh, clear cache, or pop into incognito and try again.
+
+Community, collaboration, and shared momentum are core to the project. If you want to contribute ideas, report bugs, or remix experiments, you are welcome here.
 
 ## About Suzy Easton
-Suzy is a Vancouver-based musician, technologist and all-around creative builder. She toured Canada playing bass, recorded with Steve Albini and once appeared on MuchMusic. These days she writes album reviews of jazz and rock classics found during her time at HMV (2007–2012). Inspired by the single "A Little Louder" airing on CiTR, she's crafting new hard rock demos. Suzy loves hockey, punk rock, 8-bit aesthetics and fixing things that break in production, and she's considering a run for Vancouver City Council in 2026.
+Suzy Easton is a Vancouver-based musician and creative technologist working at the intersection of music, software, civic curiosity, and internet-era storytelling. Touring, recording, and production culture still inform the build style: direct, experimental, and always in motion.
 
 ## License
-MIT License. Play nice.
+MIT License. Build kindly.

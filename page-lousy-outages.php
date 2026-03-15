@@ -152,7 +152,7 @@ if ($unsub_success) {
             <p class="lo-status-board__eyebrow">System Status Console</p>
             <h2 class="lo-status-board__title">Current Outages</h2>
           </div>
-          <div class="lo-status-board__badge" aria-hidden="true">v3.0 arcade build</div>
+          <div class="lo-status-board__badge" aria-hidden="true">v4.0 arcade build</div>
         </header>
         <div class="lo-status-board__body">
           <div class="lo-scanline" aria-hidden="true"></div>

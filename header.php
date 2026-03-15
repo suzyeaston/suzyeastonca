@@ -26,9 +26,9 @@
       $meta_keywords = 'Suzy Easton, Suzanne Easton, Vancouver musician, creative technologist, Lousy Outages, indie music, retro arcade website, outage analysis';
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-asmr-lab.php' ) ) {
-      $meta_title = 'ASMR Lab – AI sensory ad concepts and 8-bit foley recipes';
-      $meta_desc  = 'ASMR Lab generates AI sensory ad concepts, tactile beat sheets, retro-foley sound recipes, and model-ready video prompts in one creative package.';
-      $meta_keywords = 'ASMR lab, AI ad concept generator, foley recipe tool, sensory marketing prompts, Suzy Easton';
+      $meta_title = 'ASMR Lab – experimental predecessor now under major redevelopment';
+      $meta_desc  = 'ASMR Lab is Suzy\'s earlier audio/visual prototype that inspired the Gastown simulator and is now being rebuilt in public.';
+      $meta_keywords = 'ASMR Lab, Gastown simulator predecessor, creative tech prototype, Suzy Easton';
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-lousy-outages.php' ) ) {
       $meta_title = 'Lousy Outages – Retro outage dashboard for modern chaos';
