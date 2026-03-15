@@ -45,6 +45,12 @@
       throw new Error('Gastown world data is malformed: facade_profiles must be an object.');
     }
 
+    if (data.navigator) {
+      if (data.navigator.focusCorridor && !Array.isArray(data.navigator.focusCorridor)) {
+        throw new Error('Gastown world data is malformed: navigator.focusCorridor must be an array.');
+      }
+    }
+
     if (data.streetscape) {
       if (data.streetscape.surfaceBands && !Array.isArray(data.streetscape.surfaceBands)) {
         throw new Error('Gastown world data is malformed: streetscape.surfaceBands must be an array.');

@@ -22,6 +22,8 @@
   const minimapCanvas = app.querySelector('[data-sim-minimap]');
   const minimapLandmarkEl = app.querySelector('[data-sim-minimap-landmark]');
   const routeSegmentEl = app.querySelector('[data-sim-route-segment]');
+  const minimapZoomInBtn = app.querySelector('[data-action="minimap-zoom-in"]');
+  const minimapZoomOutBtn = app.querySelector('[data-action="minimap-zoom-out"]');
 
   const state = {
     world: null,
@@ -93,6 +95,10 @@
     height: minimapCanvas ? minimapCanvas.height : 0,
     worldMetrics: null,
     nearestNode: null,
+    zoom: 1.2,
+    minZoom: 0.8,
+    maxZoom: 3.2,
+    zoomStep: 0.2,
   };
 
   function updateSize() {
@@ -834,6 +840,38 @@
     return { x: routeStart.x, y: worldSpawn.y || 1.7, z: routeStart.z + 3.6, yaw: -0.3 };
   }
 
+
+
+  function getHeadingVector() {
+    const baseForward = new THREE.Vector3(0, 0, -1);
+    const direction = baseForward.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), state.yaw);
+    return { x: direction.x, z: direction.z };
+  }
+
+  function clampMinimapZoom(nextZoom) {
+    return Math.max(minimapState.minZoom, Math.min(minimapState.maxZoom, nextZoom));
+  }
+
+  function setMinimapZoom(nextZoom) {
+    minimapState.zoom = clampMinimapZoom(nextZoom);
+    try {
+      window.sessionStorage.setItem('gastownMinimapZoom', String(minimapState.zoom));
+    } catch (error) {
+      // ignore session storage failures
+    }
+  }
+
+  function restoreMinimapZoom() {
+    try {
+      const stored = parseFloat(window.sessionStorage.getItem('gastownMinimapZoom') || '');
+      if (Number.isFinite(stored)) {
+        minimapState.zoom = clampMinimapZoom(stored);
+      }
+    } catch (error) {
+      // ignore session storage failures
+    }
+  }
+
   function getWorldMetrics() {
     if (!state.world) {
       return null;
@@ -918,14 +956,14 @@
     }));
   }
 
-  function drawPolygon(points, metrics, padding, fillColor, strokeColor, lineWidth) {
+  function drawPolygon(points, metrics, padding, fillColor, strokeColor, lineWidth, view) {
     if (!points || points.length < 3) {
       return;
     }
     const ctx = minimapState.ctx;
     ctx.beginPath();
     points.forEach((point, index) => {
-      const mini = toMinimapPoint(point, metrics, padding);
+      const mini = toMinimapPoint(point, metrics, padding, view);
       if (index === 0) {
         ctx.moveTo(mini.x, mini.y);
       } else {
@@ -944,12 +982,37 @@
     }
   }
 
-  function toMinimapPoint(point, metrics, padding) {
+  function getMinimapView(metrics) {
+    const worldCenterX = (metrics.minX + metrics.maxX) / 2;
+    const worldCenterZ = (metrics.minZ + metrics.maxZ) / 2;
+    const playerX = player.position.x || worldCenterX;
+    const playerZ = player.position.z || worldCenterZ;
+    const centerX = ((playerX - worldCenterX) * 0.8) + worldCenterX;
+    const centerZ = ((playerZ - worldCenterZ) * 0.8) + worldCenterZ;
+
+    const zoom = minimapState.zoom || 1;
+    const viewWidth = metrics.width / zoom;
+    const viewHeight = metrics.height / zoom;
+
+    return {
+      centerX,
+      centerZ,
+      minX: centerX - (viewWidth / 2),
+      maxX: centerX + (viewWidth / 2),
+      minZ: centerZ - (viewHeight / 2),
+      maxZ: centerZ + (viewHeight / 2),
+      width: Math.max(1, viewWidth),
+      height: Math.max(1, viewHeight),
+    };
+  }
+
+  function toMinimapPoint(point, metrics, padding, view) {
     const usableW = minimapState.width - (padding * 2);
     const usableH = minimapState.height - (padding * 2);
+    const active = view || metrics;
     return {
-      x: padding + ((point.x - metrics.minX) / metrics.width) * usableW,
-      y: minimapState.height - (padding + ((point.z - metrics.minZ) / metrics.height) * usableH),
+      x: padding + ((point.x - active.minX) / active.width) * usableW,
+      y: minimapState.height - (padding + ((point.z - active.minZ) / active.height) * usableH),
     };
   }
 
@@ -960,6 +1023,7 @@
 
     const ctx = minimapState.ctx;
     const metrics = minimapState.worldMetrics;
+    const view = getMinimapView(metrics);
     const pad = 16;
     ctx.clearRect(0, 0, minimapState.width, minimapState.height);
 
@@ -969,14 +1033,14 @@
     ctx.strokeRect(0.5, 0.5, minimapState.width - 1, minimapState.height - 1);
 
     (state.world.zones.sidewalk || []).forEach((zone) => {
-      drawPolygon(zone.polygon, metrics, pad, '#3f4d60', 'rgba(136, 161, 188, 0.4)', 1);
+      drawPolygon(zone.polygon, metrics, pad, '#3f4d60', 'rgba(136, 161, 188, 0.4)', 1, view);
     });
     (state.world.zones.street || []).forEach((zone) => {
-      drawPolygon(zone.polygon, metrics, pad, '#1b2735', 'rgba(125, 148, 173, 0.45)', 1.1);
+      drawPolygon(zone.polygon, metrics, pad, '#1b2735', 'rgba(125, 148, 173, 0.45)', 1.1, view);
     });
 
     (state.world.buildings || []).forEach((building) => {
-      drawPolygon(getBuildingPolygon(building), metrics, pad, '#6f5047', 'rgba(219, 194, 173, 0.24)', 0.8);
+      drawPolygon(getBuildingPolygon(building), metrics, pad, '#6f5047', 'rgba(219, 194, 173, 0.24)', 0.8, view);
     });
 
     if (state.world.route && Array.isArray(state.world.route.centerline) && state.world.route.centerline.length > 1) {
@@ -985,7 +1049,7 @@
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       state.world.route.centerline.forEach((point, index) => {
-        const mini = toMinimapPoint(point, metrics, pad);
+        const mini = toMinimapPoint(point, metrics, pad, view);
         if (index === 0) {
           ctx.moveTo(mini.x, mini.y);
         } else {
@@ -999,18 +1063,29 @@
     const majorNodes = ['station-threshold', 'water-mid', 'steam-clock'];
     state.world.nodes.forEach((node) => {
       if (!majorNodes.includes(node.id)) return;
-      const mini = toMinimapPoint(node, metrics, pad);
+      const mini = toMinimapPoint(node, metrics, pad, view);
       ctx.fillStyle = node.id === 'steam-clock' ? '#d8a968' : '#b7d4ea';
       ctx.beginPath();
       ctx.arc(mini.x, mini.y, node.id === 'steam-clock' ? 4.6 : 3.8, 0, Math.PI * 2);
       ctx.fill();
+
+      ctx.fillStyle = 'rgba(228, 240, 255, 0.92)';
+      ctx.font = '600 9px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      if (node.id === 'station-threshold') {
+        ctx.fillText('Station', mini.x + 6, mini.y - 5);
+      }
+      if (node.id === 'steam-clock') {
+        ctx.fillText('Steam Clock', mini.x + 6, mini.y - 5);
+      }
     });
 
-    const playerPoint = toMinimapPoint({ x: player.position.x, z: player.position.z }, metrics, pad);
-    const heading = state.yaw;
+    const playerPoint = toMinimapPoint({ x: player.position.x, z: player.position.z }, metrics, pad, view);
+    const heading = getHeadingVector();
     const dirLength = 16;
-    const headingX = -Math.sin(heading);
-    const headingY = -Math.cos(heading);
+    const headingX = heading.x;
+    const headingY = -heading.z;
 
     ctx.fillStyle = 'rgba(133, 205, 245, 0.3)';
     ctx.beginPath();
@@ -1047,6 +1122,15 @@
     ctx.fillText('S', minimapState.width / 2, minimapState.height - 9);
     ctx.fillText('W', 10, minimapState.height / 2);
     ctx.fillText('E', minimapState.width - 10, minimapState.height / 2);
+
+    if (minimapState.nearestNode) {
+      const nearestPoint = toMinimapPoint(minimapState.nearestNode, metrics, pad, view);
+      ctx.strokeStyle = '#8af7cb';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(nearestPoint.x, nearestPoint.y, 7.5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
   }
 
   function setupAudio(world) {
@@ -1294,6 +1378,13 @@
       }
     }, { passive: false });
 
+    if (minimapZoomInBtn) {
+      minimapZoomInBtn.addEventListener('click', () => setMinimapZoom(minimapState.zoom + minimapState.zoomStep));
+    }
+    if (minimapZoomOutBtn) {
+      minimapZoomOutBtn.addEventListener('click', () => setMinimapZoom(minimapState.zoom - minimapState.zoomStep));
+    }
+
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
 
@@ -1357,6 +1448,7 @@
       addDebugRoute(state.world);
       setupAudio(state.world);
       minimapState.worldMetrics = getWorldMetrics();
+      restoreMinimapZoom();
       updateSize();
       applyTimeOfDay(state.activeTimeOfDay);
       applyMood(state.activeMood);
