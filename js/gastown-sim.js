@@ -24,6 +24,7 @@
   const routeSegmentEl = app.querySelector('[data-sim-route-segment]');
   const minimapZoomInBtn = app.querySelector('[data-action="minimap-zoom-in"]');
   const minimapZoomOutBtn = app.querySelector('[data-action="minimap-zoom-out"]');
+  const osmAttributionEl = app.querySelector('[data-gastown-osm-attribution]');
 
   const state = {
     world: null,
@@ -133,6 +134,18 @@
 
   function setLandmark(text) {
     landmarkEl.textContent = text;
+  }
+
+  function updateAttribution(world) {
+    if (!osmAttributionEl) {
+      return;
+    }
+    const source = ((world && world.meta && world.meta.source) || '').toLowerCase();
+    if (source.includes('openstreetmap')) {
+      osmAttributionEl.removeAttribute('hidden');
+    } else {
+      osmAttributionEl.setAttribute('hidden', 'hidden');
+    }
   }
 
   function toneToColor(tone) {
@@ -1454,6 +1467,7 @@
   async function init() {
     try {
       state.world = await window.GastownWorldLoader.load(config.worldDataUrl);
+      updateAttribution(state.world);
       addGround(state.world);
       addBuildings(state.world);
       addStreetscape(state.world);

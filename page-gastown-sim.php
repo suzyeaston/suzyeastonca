@@ -98,6 +98,11 @@ get_header();
     <p class="gastown-teaser-snippet" hidden>
       In progress: our Gastown first-person simulator is evolving quickly. We ship frequent updates, so if a change looks odd, please hard refresh and clear cache.
     </p>
+
+    <footer class="gastown-attribution" aria-live="polite">
+      <p>Contains information licensed under the Open Government Licence – Vancouver.</p>
+      <p data-gastown-osm-attribution hidden>Map data © OpenStreetMap contributors.</p>
+    </footer>
   </section>
 </main>
 <?php get_footer(); ?>
