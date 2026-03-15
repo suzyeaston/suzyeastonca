@@ -3,6 +3,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "test": "node --test \"./__tests__/**/*.test.js\""
+    "test": "node --test \"./__tests__/**/*.test.js\"",
+    "build:gastown-world": "node scripts/build-gastown-world.js"
   }
 }

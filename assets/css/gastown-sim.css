@@ -235,3 +235,14 @@
 .gastown-minimap-legend .dot.nearest {
   background: #8af7cb;
 }
+
+.gastown-attribution {
+  margin-top: 0.8rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: rgba(209, 223, 242, 0.86);
+}
+
+.gastown-attribution p {
+  margin: 0.1rem 0;
+}

@@ -1,0 +1,22 @@
+{
+  "origin": {
+    "label": "Waterfront Station",
+    "lat": 49.2858333333,
+    "lon": -123.1116666667
+  },
+  "dest": {
+    "label": "Gastown Steam Clock",
+    "lat": 49.2843841111,
+    "lon": -123.10889
+  },
+  "mid": [
+    {
+      "id": "water-entry-wedge",
+      "label": "Water/Cordova seam",
+      "hintStreetNames": [
+        "W Cordova St",
+        "Water St"
+      ]
+    }
+  ]
+}

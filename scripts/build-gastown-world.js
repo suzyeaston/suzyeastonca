@@ -9,6 +9,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { buildWorld } = require('./generate-gastown-world');
 
 const root = path.resolve(__dirname, '..');
 const worldPath = path.join(root, 'assets', 'world', 'gastown-water-street.json');
@@ -16,31 +17,22 @@ const worldPath = path.join(root, 'assets', 'world', 'gastown-water-street.json'
 const importManifest = {
   inputs: {
     cityOfVancouver: {
-      buildingFootprints: 'data/cov/buildings.geojson',
-      streetCenterlines: 'data/cov/streets.geojson',
-      intersections: 'data/cov/intersections.geojson',
-      rightOfWayWidths: 'data/cov/right-of-way-widths.geojson',
+      buildingFootprints: 'data/cov/building-footprints.geojson',
+      streetCenterlines: 'data/cov/public-streets.geojson',
+      streetLightingPolesOptional: 'data/cov/street-lighting-poles.geojson',
+      publicTreesOptional: 'data/cov/public-trees.geojson',
     },
-    gastownHeritageOptional: {
-      register: 'data/heritage/gastown-register.geojson',
-      styleReferenceNotes: 'data/heritage/gastown-style-notes.json',
-    },
-    referenceLibraryOptional: {
-      curatedNotes: 'data/reference/gastown-curated-notes.json',
-      screenshotIndex: 'data/reference/gastown-screenshots.json',
-    },
-    osmOptional: {
-      routeAlignment: 'data/osm/waterfront-to-steam-clock.geojson',
+    reference: {
+      routeAnchors: 'data/reference/route-anchors.json',
     },
   },
   pipeline: [
-    '1) load local civic/OSM exports (if present)',
-    '2) normalize projection to local meters-ish XY frame',
-    '3) simplify centerline and derive walk corridor polygon',
-    '4) split surfaces into street + sidewalk polygons',
-    '5) fit building masses from footprint blocks + choose facade profile presets',
-    '6) attach hero landmark metadata and priority weighting',
-    '7) write compact runtime JSON (no external dependencies)',
+    '1) load local civic exports (if present)',
+    '2) project lat/lon to local meter x/z frame anchored at Waterfront Station',
+    '3) merge + simplify Water/Cordova route centerline',
+    '4) derive street, sidewalks, and walk bounds buffers',
+    '5) fit nearby building footprints and optional streetscape points',
+    '6) write compact runtime JSON (no external dependencies)',
   ],
 };
 
@@ -63,7 +55,7 @@ function applyReferenceScaffold(entity) {
   });
 }
 
-function run() {
+function runScaffold() {
   if (!fs.existsSync(worldPath)) {
     throw new Error('Missing base world file at assets/world/gastown-water-street.json');
   }
@@ -77,13 +69,25 @@ function run() {
     'Supports hero_landmarks + facade_profiles to prioritize recognizability over photoreal detail.',
     'Scaffold includes reference-driven world notes for segment style, silhouette, and storefront cadence.',
   ];
-  world.meta.importManifest = importManifest;
+  world.meta.importManifest = world.meta.importManifest || importManifest;
 
   (world.buildings || []).forEach((building) => applyReferenceScaffold(building));
   (world.hero_landmarks || []).forEach((landmark) => applyReferenceScaffold(landmark));
 
   fs.writeFileSync(worldPath, JSON.stringify(world, null, 2) + '\n', 'utf8');
-  process.stdout.write('Updated ' + path.relative(root, worldPath) + '\n');
+  process.stdout.write('Updated scaffold ' + path.relative(root, worldPath) + '\n');
+}
+
+function run() {
+  const generated = buildWorld({ root, outputPath: worldPath });
+  if (generated.generated) {
+    process.stdout.write('Generated offline world data at ' + path.relative(root, worldPath) + '\n');
+    return;
+  }
+
+  process.stdout.write('Offline source data missing; keeping scaffold behavior.\n');
+  process.stdout.write(generated.reason + '\n');
+  runScaffold();
 }
 
 run();
