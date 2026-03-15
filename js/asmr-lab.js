@@ -1,6 +1,65 @@
 (function () {
   'use strict';
 
+  function initLabNarrator() {
+    const trigger = document.getElementById('asmr-lab-voice-trigger');
+    const status = document.getElementById('asmr-lab-voice-status');
+    if (!trigger || !status) return;
+
+    const lines = [
+      'Lab status update. Yes, this prototype is under major development. No, pressing buttons harder will not speed it up.',
+      'ASMR Lab was the glitchy ancestor of the Gastown simulator. It did its job, then demanded a redesign.',
+      'Rebuild chamber active. Legacy code remains in containment. Interface recovery is in progress.',
+      'System note. Prototype unstable, story intact, vibes operational.'
+    ];
+
+    function speakMessage(text) {
+      if (!text || !('speechSynthesis' in window)) return false;
+
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      const pickVoice = () => {
+        const voices = synth.getVoices();
+        const preferred = voices.find((voice) =>
+          voice.name.includes('Google UK English Male') ||
+          voice.name.includes('Microsoft David') ||
+          /en/i.test(voice.lang)
+        );
+
+        utterance.voice = preferred || null;
+        utterance.rate = 0.92;
+        utterance.pitch = 0.84;
+        synth.cancel();
+        synth.speak(utterance);
+      };
+
+      const voices = synth.getVoices();
+      if (!voices || voices.length === 0) {
+        synth.addEventListener('voiceschanged', pickVoice, { once: true });
+      } else {
+        pickVoice();
+      }
+
+      return true;
+    }
+
+    trigger.addEventListener('click', () => {
+      const line = lines[Math.floor(Math.random() * lines.length)];
+      status.textContent = 'Lab narrator online…';
+
+      const supported = speakMessage(line);
+      if (!supported) {
+        status.textContent = line;
+        return;
+      }
+
+      status.textContent = `Lab narrator: "${line}"`;
+    });
+  }
+
+  initLabNarrator();
+
   const app = document.getElementById('asmr-lab-app');
   if (!app || !window.seAsmrLab) return;
 

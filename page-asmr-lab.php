@@ -8,11 +8,33 @@ get_header();
 <main id="primary" class="content-area asmr-lab-page">
   <section class="asmr-lab-shell" id="asmr-lab-app">
     <header class="asmr-lab-header">
-      <p class="asmr-kicker">Retro-futurist creative control room</p>
-      <h1 class="asmr-title">ASMR Lab</h1>
-      <p class="asmr-intro">Route-first Gastown prototype. Compose, explore, and record a first-person Water Street walk from the Waterfront threshold to the Steam Clock corridor and split-building node.</p>
+      <p class="asmr-kicker">Retro-futurist rebuild chamber // archive specimen</p>
+      <h1 class="asmr-title">ASMR Lab: Rebuild in Progress</h1>
+      <p class="asmr-intro">Experimental predecessor to the Gastown simulator. Currently in major reconstruction with unstable modules and dramatic lighting.</p>
     </header>
 
+    <section class="asmr-rebuild-chamber" aria-labelledby="asmr-rebuild-title">
+      <p class="asmr-alert">⚠ Prototype unstable // rebuild chamber online</p>
+      <h2 id="asmr-rebuild-title">ASMR Lab: Under Major Development</h2>
+      <p>This started as a weird audio/visual experiment, survived too many iterations, and eventually got strange enough to help inspire the Gastown simulator.</p>
+      <p>The code survived. The interface is in the shop. Rebuild in progress.</p>
+      <div class="asmr-status-grid" role="list" aria-label="Rebuild status">
+        <p role="listitem"><strong>Status:</strong> major rebuild</p>
+        <p role="listitem"><strong>Stability:</strong> intentionally chaotic</p>
+        <p role="listitem"><strong>Mutation level:</strong> acceptable</p>
+      </div>
+      <div class="asmr-lab-voice-panel">
+        <button type="button" id="asmr-lab-voice-trigger" class="pixel-button">Activate lab narrator</button>
+        <p id="asmr-lab-voice-status" class="asmr-lab-voice-status" aria-live="polite">Silent mode engaged. Narrator stays quiet until requested.</p>
+      </div>
+      <div class="asmr-cta-row">
+        <a class="pixel-button" href="<?php echo esc_url( home_url('/gastown-sim/') ); ?>">Enter Gastown prototype</a>
+        <a class="pixel-button secondary" href="https://github.com/suzyeaston/suzyeastonca" target="_blank" rel="noopener noreferrer">View code on GitHub</a>
+      </div>
+    </section>
+
+    <details class="asmr-legacy-console">
+      <summary>Open legacy ASMR Lab console (experimental predecessor)</summary>
     <section class="asmr-lab-primer" aria-labelledby="asmr-lab-primer-title">
       <h2 id="asmr-lab-primer-title">What this prototype now performs</h2>
       <ul>
@@ -268,6 +290,8 @@ get_header();
       <section class="asmr-results-panel" data-results-panel="json" role="tabpanel" hidden>
         <article class="asmr-card asmr-card-json"><h3>Timeline Package JSON</h3><pre id="asmr-sound-json"></pre></article>
       </section>
+    </details>
+
     </section>
   </section>
 </main>
