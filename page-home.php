@@ -60,8 +60,8 @@ get_header();
             <p class="hero-subhead">Born in Vancouver, BC and a generalist by nature, I build things, play guitars, and live by one motto: always be creating. My background spans classical music training, plus five years behind the counter at HMV talking records and discovering new sounds.</p>
             <p class="hero-microproof">I’ve toured across Canada as a bassist, appeared on MuchMusic, and recorded in Chicago with Steve Albini. These days, I’m building apps, exploring AI models, experimenting with short AI films through BC + AI Film Club, and writing whatever songs show up next.</p>
             <div class="hero-cta-group">
-                <a href="/suzys-track-analyzer/" class="pixel-button hero-primary-cta">Start with: Track Analyzer</a>
-                <a href="/asmr-lab/" class="pixel-button hero-secondary-cta">Try: ASMR Lab</a>
+                <a href="/page-gastown-sim/" class="pixel-button hero-primary-cta">Start with: Gastown Simulator</a>
+                <a href="/suzys-track-analyzer/" class="pixel-button hero-secondary-cta">Try: Track Analyzer</a>
                 <a href="/lousy-outages/" class="pixel-button hero-secondary-cta">Or explore: Lousy Outages</a>
                 <a href="/bio/" class="pixel-button hero-bio-button">Read full bio</a>
             </div>
@@ -70,9 +70,9 @@ get_header();
         <p class="arcade-subtext">Insert coin to explore</p>
 
         <section class="gastown-sim-teaser crt-block" aria-labelledby="gastown-sim-teaser-title">
-            <p class="gastown-sim-teaser__eyebrow pixel-font"><span class="gastown-sim-teaser__badge">New</span> In progress. Shipping weird little upgrades constantly.</p>
-            <h2 id="gastown-sim-teaser-title" class="pixel-font">New: Gastown First-Person Simulator</h2>
-            <p class="gastown-sim-teaser__description">A first-person Vancouver experiment inspired by the ASMR Lab and now mutating into a playable Gastown walk. Start near Waterfront Station and head toward Water Street and the Steam Clock.</p>
+            <p class="gastown-sim-teaser__eyebrow pixel-font"><span class="gastown-sim-teaser__badge">Flagship</span> Live build in public. Shipping weird little upgrades constantly.</p>
+            <h2 id="gastown-sim-teaser-title" class="pixel-font">Gastown First-Person Simulator</h2>
+            <p class="gastown-sim-teaser__description">A first-person Vancouver prototype evolving in public. Drop in near Waterfront Station, walk Water Street, and chase the Steam Clock through sound, weather, and constant iteration.</p>
             <p class="gastown-sim-teaser__microcopy">Getting tuned up often, sometimes daily. If the world looks haunted, hard refresh or hop into a private window and dive back in.</p>
             <a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>" class="pixel-button gastown-sim-teaser__cta">Enter Gastown</a>
         </section>
@@ -161,9 +161,9 @@ get_header();
     </section>
 
     <section class="asmr-lab-teaser crt-block" aria-labelledby="asmr-lab-teaser-title">
-        <p class="asmr-lab-teaser__eyebrow pixel-font">Experimental Machine Online</p>
-        <h2 id="asmr-lab-teaser-title" class="pixel-font">ASMR Lab</h2>
-        <p class="asmr-lab-teaser__description">Step into the noise chamber: AI-generated sensory ad concepts, 8-bit foley recipes, and model-ready video prompts wired for curious makers.</p>
+        <p class="asmr-lab-teaser__eyebrow pixel-font">Earlier Prototype • Rebuild Mode</p>
+        <h2 id="asmr-lab-teaser-title" class="pixel-font">ASMR Lab (Under Major Redevelopment)</h2>
+        <p class="asmr-lab-teaser__description">The earlier audio/visual experiment that got weird enough to inspire Gastown. The legacy console is still playable while the next-gen rebuild happens in public.</p>
         <a href="<?php echo esc_url(home_url('/asmr-lab/')); ?>" class="pixel-button asmr-lab-teaser__cta">Enter ASMR Lab</a>
     </section>
 
@@ -177,13 +177,15 @@ get_header();
     <section class="creative-tool-links crt-block" aria-labelledby="creative-tool-links-title">
         <h2 id="creative-tool-links-title" class="pixel-font">Creative Tool Deck</h2>
         <p>Prefer crawl-first browsing? Jump straight to the public tool pages:</p>
+        <p>Everything here is open source, built in public, and updated often — if a new deploy looks cursed, hard refresh, clear cache, or jump into incognito and roll again.</p>
         <ul>
             <li><a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>">Gastown First-Person Simulator</a> — first-person Vancouver prototype, currently in active daily-ish mutation mode.</li>
-            <li><a href="<?php echo esc_url(home_url('/asmr-lab/')); ?>">ASMR Lab</a> — AI sensory ad concepts, tactile beat sheets, and retro-foley prompt kits.</li>
+            <li><a href="<?php echo esc_url(home_url('/asmr-lab/')); ?>">ASMR Lab</a> — earlier audio/visual prototype, now under major redevelopment after inspiring the Gastown sim.</li>
             <li><a href="<?php echo esc_url(home_url('/suzys-track-analyzer/')); ?>">Track Analyzer</a> — upload a mix and get fast AI feedback.</li>
             <li><a href="<?php echo esc_url(home_url('/riff-generator/')); ?>">Riff Generator</a> — generate guitar ideas in a retro experiment shell.</li>
             <li><a href="<?php echo esc_url(home_url('/lousy-outages/')); ?>">Lousy Outages</a> — outage tracker with a throwback command-line vibe.</li>
         </ul>
+        <p>Build logs + code live at <a href="https://github.com/suzyeaston/suzyeastonca" target="_blank" rel="noopener noreferrer">github.com/suzyeaston/suzyeastonca</a>. Pull requests, bug reports, and kind chaos are welcome.</p>
     </section>
 
     <section class="party-announcement crt-block">
