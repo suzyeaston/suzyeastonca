@@ -62,7 +62,17 @@ get_header();
 
     <div class="gastown-sim-canvas" data-sim-canvas>
       <aside class="gastown-minimap" aria-label="Route navigator minimap">
+        <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap zoom controls">
+          <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
+          <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
+        </div>
         <canvas data-sim-minimap width="220" height="220"></canvas>
+        <ul class="gastown-minimap-legend" aria-label="Minimap legend">
+          <li><span class="dot player"></span> Player</li>
+          <li><span class="dot station"></span> Station</li>
+          <li><span class="dot steam"></span> Steam Clock</li>
+          <li><span class="dot nearest"></span> Nearest landmark</li>
+        </ul>
         <p class="gastown-minimap-label" data-sim-minimap-landmark>Nearest: Waterfront Station Threshold</p>
       </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>

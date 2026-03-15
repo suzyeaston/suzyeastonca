@@ -162,3 +162,76 @@
     width: 180px;
   }
 }
+
+
+.gastown-minimap {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.gastown-minimap-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.gastown-minimap-zoom {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 6px;
+  border: 1px solid rgba(174, 207, 239, 0.5);
+  background: rgba(18, 28, 41, 0.95);
+  color: #e8f3ff;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gastown-minimap-zoom:hover,
+.gastown-minimap-zoom:focus-visible {
+  background: rgba(36, 53, 74, 0.95);
+  outline: none;
+}
+
+.gastown-minimap-legend {
+  list-style: none;
+  margin: 0.12rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.18rem 0.5rem;
+  font-size: 0.68rem;
+  color: rgba(220, 236, 255, 0.9);
+}
+
+.gastown-minimap-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.gastown-minimap-legend .dot {
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  display: inline-block;
+  border: 1px solid rgba(235, 245, 255, 0.58);
+}
+
+.gastown-minimap-legend .dot.player {
+  background: #f2f6ff;
+}
+
+.gastown-minimap-legend .dot.station {
+  background: #84b4d7;
+}
+
+.gastown-minimap-legend .dot.steam {
+  background: #d8a968;
+}
+
+.gastown-minimap-legend .dot.nearest {
+  background: #8af7cb;
+}
