@@ -8,10 +8,11 @@
   var form = modal.querySelector('[data-contact-form]');
   var statusEl = modal.querySelector('[data-contact-status]');
   var successEl = modal.querySelector('[data-contact-success]');
-  var playIntroBtn = modal.querySelector('[data-contact-play-intro]');
   var audioStatus = modal.querySelector('[data-contact-audio-status]');
   var firstInput = modal.querySelector('#se-contact-name');
+  var formBody = modal.querySelector('.se-contact-modal__body');
   var lastFocused = null;
+  var introLine = 'Yo, what\'s up? Write a message and Suzy will get back to you.';
 
   function setStatus(message, isError) {
     if (!statusEl) return;
@@ -19,17 +20,57 @@
     statusEl.classList.toggle('is-error', !!isError);
   }
 
+  function stopIntroVoice() {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }
+
+  function playIntro() {
+    if (!('speechSynthesis' in window)) {
+      if (audioStatus) {
+        audioStatus.textContent = 'Voice intro not supported in this browser, but the form still works great.';
+      }
+      return;
+    }
+
+    stopIntroVoice();
+
+    var utterance = new SpeechSynthesisUtterance(introLine);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.onstart = function () {
+      if (audioStatus) audioStatus.textContent = 'Narrator online…';
+    };
+    utterance.onend = function () {
+      if (audioStatus) audioStatus.textContent = 'Drop your message below.';
+    };
+    utterance.onerror = function () {
+      if (audioStatus) audioStatus.textContent = 'Could not play intro voice on this device.';
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
   function openModal() {
     lastFocused = document.activeElement;
     modal.hidden = false;
     document.body.classList.add('se-modal-open');
+
+    if (formBody) {
+      formBody.scrollTop = 0;
+    }
+
     window.setTimeout(function () {
       if (firstInput) firstInput.focus();
+      playIntro();
     }, 10);
+
     document.addEventListener('keydown', onKeydown);
   }
 
   function closeModal() {
+    stopIntroVoice();
     modal.hidden = true;
     document.body.classList.remove('se-modal-open');
     document.removeEventListener('keydown', onKeydown);
@@ -92,30 +133,6 @@
     }
   }
 
-  function playIntro() {
-    if (!('speechSynthesis' in window)) {
-      if (audioStatus) {
-        audioStatus.textContent = 'Voice intro not supported in this browser, but the form still works great.';
-      }
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-    var utterance = new SpeechSynthesisUtterance('Yo, what\'s up? Write a message and Suzy will get back to you.');
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    utterance.onstart = function () {
-      if (audioStatus) audioStatus.textContent = 'Playing intro voice...';
-    };
-    utterance.onend = function () {
-      if (audioStatus) audioStatus.textContent = 'Intro complete. Drop your message below.';
-    };
-    utterance.onerror = function () {
-      if (audioStatus) audioStatus.textContent = 'Could not play intro voice on this device.';
-    };
-    window.speechSynthesis.speak(utterance);
-  }
-
   trigger.addEventListener('click', openModal);
   closeEls.forEach(function (el) {
     el.addEventListener('click', closeModal);
@@ -123,9 +140,5 @@
 
   if (form) {
     form.addEventListener('submit', submitForm);
-  }
-
-  if (playIntroBtn) {
-    playIntroBtn.addEventListener('click', playIntro);
   }
 })();
