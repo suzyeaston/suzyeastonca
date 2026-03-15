@@ -13,6 +13,9 @@
   position: fixed;
   inset: 0;
   z-index: 10050;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.65rem, 2vh, 1rem);
 }
 
 .se-contact-modal__overlay {
@@ -25,12 +28,21 @@
 .se-contact-modal__dialog {
   position: relative;
   width: min(92vw, 540px);
-  margin: min(12vh, 5rem) auto;
+  max-height: min(92dvh, calc(100dvh - 1.3rem));
   background: linear-gradient(180deg, rgba(6, 8, 20, 0.95), rgba(3, 3, 10, 0.98));
   border: 2px solid var(--accent-color);
   box-shadow: 0 0 22px rgba(57, 255, 20, 0.22);
   color: #d8ffe0;
-  padding: 1rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.se-contact-modal__top {
+  position: relative;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid rgba(126, 252, 170, 0.45);
+  flex: 0 0 auto;
 }
 
 .se-contact-modal__close {
@@ -47,26 +59,21 @@
 }
 
 .se-contact-modal__copy {
-  margin: 0.4rem 0 0.8rem;
+  margin: 0.4rem 0 0.6rem;
   color: #b7ffd8;
-}
-
-.se-contact-modal__audio {
-  border: 1px solid rgba(126, 252, 170, 0.45);
-  background: rgba(5, 20, 22, 0.55);
-  padding: 0.6rem;
-  margin-bottom: 0.8rem;
-}
-
-.se-contact-modal__audio-btn {
-  font-size: 0.58rem;
-  padding: 0.42rem 0.5rem;
+  padding-right: 2.1rem;
 }
 
 .se-contact-modal__audio-status {
-  margin: 0.55rem 0 0;
+  margin: 0;
   font-size: 0.74rem;
   color: #8ceab6;
+}
+
+.se-contact-modal__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0.85rem 1rem;
 }
 
 .se-contact-form {
@@ -90,10 +97,14 @@
   font-size: 0.84rem;
 }
 
+.se-contact-form textarea {
+  min-height: 6.5rem;
+  resize: vertical;
+}
+
 .se-contact-form input:focus,
 .se-contact-form textarea:focus,
-.se-contact-modal__close:focus,
-.se-contact-modal__audio-btn:focus {
+.se-contact-modal__close:focus {
   outline: 2px solid #8eff8e;
   outline-offset: 2px;
 }
@@ -130,18 +141,46 @@
   color: #8de0ff;
 }
 
+.se-contact-modal__footer {
+  flex: 0 0 auto;
+  border-top: 1px solid rgba(126, 252, 170, 0.3);
+  background: rgba(5, 20, 22, 0.4);
+  padding: 0.55rem 1rem 0.7rem;
+}
+
+.se-contact-modal__footer p {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #9ceec0;
+}
+
 @media (max-width: 768px) {
   .main-header .header-contact-trigger {
     font-size: 0.52rem;
     padding: 0.4rem 0.5rem;
   }
 
+  .se-contact-modal {
+    padding: 0.4rem;
+  }
+
   .se-contact-modal__dialog {
-    width: min(94vw, 520px);
-    margin: 9vh auto;
-    padding: 0.88rem;
+    width: min(96vw, 520px);
+    max-height: calc(100dvh - 0.8rem);
+  }
+
+  .se-contact-modal__top,
+  .se-contact-modal__body,
+  .se-contact-modal__footer {
+    padding-left: 0.82rem;
+    padding-right: 0.82rem;
+  }
+
+  .se-contact-modal__copy {
+    padding-right: 2rem;
   }
 }
 
-body.se-modal-open { overflow: hidden; }
-
+body.se-modal-open {
+  overflow: hidden;
+}
