@@ -221,12 +221,23 @@ function se_enqueue_gastown_sim_assets() {
         );
     }
 
+    $normalizer_path = '/js/gastown-building-normalizer.js';
+    if ( file_exists( $dir . $normalizer_path ) ) {
+        wp_enqueue_script(
+            'se-gastown-building-normalizer',
+            $uri . $normalizer_path,
+            array(),
+            filemtime( $dir . $normalizer_path ),
+            true
+        );
+    }
+
     $app_path = '/js/gastown-sim.js';
     if ( file_exists( $dir . $app_path ) ) {
         wp_enqueue_script(
             'se-gastown-sim',
             $uri . $app_path,
-            array( 'three-js', 'howler-js', 'se-gastown-world-loader' ),
+            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer' ),
             filemtime( $dir . $app_path ),
             true
         );

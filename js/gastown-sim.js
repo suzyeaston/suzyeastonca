@@ -3,7 +3,7 @@
 
   const config = window.seGastownSim || {};
   const app = document.getElementById('gastown-sim-app');
-  if (!app || !window.THREE || !window.GastownWorldLoader || !window.Howl || !window.Howler) {
+  if (!app || !window.THREE || !window.GastownWorldLoader || !window.GastownBuildingNormalizer || !window.Howl || !window.Howler) {
     return;
   }
 
@@ -388,21 +388,48 @@
     });
   }
 
+  function localPointToWorld(building, localX, localZ) {
+    const yaw = building.yaw || 0;
+    const cos = Math.cos(yaw);
+    const sin = Math.sin(yaw);
+    return {
+      x: building.x + (localX * cos) - (localZ * sin),
+      z: building.z + (localX * sin) + (localZ * cos),
+    };
+  }
+
+  function toRenderableShapePoints(building) {
+    if (!Array.isArray(building.footprint_local) || building.footprint_local.length < 3) {
+      return [];
+    }
+    const points = building.footprint_local
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.z))
+      .map((point) => ({ x: point.x, z: point.z }));
+
+    if (points.length < 3) {
+      return [];
+    }
+
+    const first = points[0];
+    const last = points[points.length - 1];
+    if (Math.abs(first.x - last.x) < 0.0001 && Math.abs(first.z - last.z) < 0.0001) {
+      points.pop();
+    }
+
+    return points.length >= 3 ? points : [];
+  }
+
   function addBuildings(world) {
+    world.buildings = (world.buildings || []).map((building) => window.GastownBuildingNormalizer.normalizeBuildingForRender(building));
+
     world.buildings.forEach((b) => {
+      if (!Number.isFinite(b.x) || !Number.isFinite(b.z)) return;
+      const shapePoints = toRenderableShapePoints(b);
+      if (shapePoints.length < 3) return;
+
       const profilePreset = facadeProfilePresets[b.facade_profile] || facadeProfilePresets.gastown_heritage_masonry;
       const colors = paletteToColors(b);
       const massingInset = b.mass_inset || profilePreset.baseInset;
-      const shapePoints = Array.isArray(b.footprint_local) && b.footprint_local.length >= 3
-        ? b.footprint_local
-        : (Array.isArray(b.footprint) && b.footprint.length >= 3
-          ? b.footprint.map((point) => ({ x: point.x - (b.x || 0), z: point.z - (b.z || 0) }))
-          : [
-            { x: -b.width / 2, z: -b.depth / 2 },
-            { x: b.width / 2, z: -b.depth / 2 },
-            { x: b.width / 2, z: b.depth / 2 },
-            { x: -b.width / 2, z: b.depth / 2 },
-          ]);
       const geom = new THREE.ExtrudeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, point.z))), {
         depth: b.height,
         bevelEnabled: false,
@@ -444,7 +471,8 @@
         new THREE.BoxGeometry((b.width || 8) * 0.92, storefrontBandHeight, Math.max(2, (b.depth || 8) * 0.15)),
         new THREE.MeshStandardMaterial({ color: colors.accent, roughness: 0.72, metalness: 0.1 })
       );
-      storefront.position.set(b.x, storefrontBandHeight / 2 + 0.2, b.z + ((b.depth || 8) * 0.34));
+      const storefrontPos = localPointToWorld(b, 0, (b.depth || 8) * 0.34);
+      storefront.position.set(storefrontPos.x, storefrontBandHeight / 2 + 0.2, storefrontPos.z);
       storefront.rotation.y = b.yaw || 0;
       worldGroup.add(storefront);
 
@@ -457,7 +485,8 @@
           const xOffset = (((bay + 1) / (bayCount + 1)) - 0.5) * ((b.width || 8) * 0.78);
           const yOffset = storefrontBandHeight + 1.4 + row * ((b.height - storefrontBandHeight - 2) / windowRows);
           const depthOffset = (b.depth || 8) * 0.52;
-          win.position.set(b.x + xOffset * Math.cos(b.yaw || 0), yOffset, b.z + depthOffset * Math.cos((b.yaw || 0) - Math.PI / 2) + xOffset * Math.sin(b.yaw || 0));
+          const winPos = localPointToWorld(b, xOffset, depthOffset);
+          win.position.set(winPos.x, yOffset, winPos.z);
           win.rotation.y = b.yaw || 0;
           worldGroup.add(win);
         }
@@ -468,7 +497,8 @@
           new THREE.BoxGeometry((b.width || 8) * 0.86, 0.3, Math.max(0.8, profilePreset.awningDepth)),
           new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.64, metalness: 0.08 })
         );
-        awning.position.set(b.x, storefrontBandHeight + 0.6, b.z + ((b.depth || 8) * 0.45));
+        const awningPos = localPointToWorld(b, 0, (b.depth || 8) * 0.45);
+        awning.position.set(awningPos.x, storefrontBandHeight + 0.6, awningPos.z);
         awning.rotation.y = b.yaw || 0;
         worldGroup.add(awning);
       }
@@ -483,11 +513,8 @@
             new THREE.CylinderGeometry(0.24, 0.28, colHeight, 10),
             new THREE.MeshStandardMaterial({ color: 0xd6d3ca, roughness: 0.5, metalness: 0.08 })
           );
-          col.position.set(
-            b.x + localX * Math.cos(b.yaw || 0),
-            colHeight / 2,
-            b.z + ((b.depth || 10) * 0.5) * Math.cos((b.yaw || 0) - Math.PI / 2) + localX * Math.sin(b.yaw || 0)
-          );
+          const colPos = localPointToWorld(b, localX, (b.depth || 10) * 0.5);
+          col.position.set(colPos.x, colHeight / 2, colPos.z);
           worldGroup.add(col);
 
           if (b.id === 'waterfront-station-civic') {
@@ -510,11 +537,8 @@
             new THREE.BoxGeometry(0.9, 2.4, 0.5),
             new THREE.MeshStandardMaterial({ color: 0x1d222b, roughness: 0.45, metalness: 0.22 })
           );
-          entry.position.set(
-            b.x + t * Math.cos(b.yaw || 0),
-            1.25,
-            b.z + ((b.depth || 8) * 0.48) * Math.cos((b.yaw || 0) - Math.PI / 2) + t * Math.sin(b.yaw || 0)
-          );
+          const entryPos = localPointToWorld(b, t, (b.depth || 8) * 0.48);
+          entry.position.set(entryPos.x, 1.25, entryPos.z);
           worldGroup.add(entry);
 
           if (b.id === 'waterfront-station-civic') {
@@ -522,7 +546,8 @@
               new THREE.PlaneGeometry(1.3, 3),
               new THREE.MeshStandardMaterial({ color: 0x161d27, emissive: 0x2f3d4f, emissiveIntensity: 0.2, roughness: 0.34, metalness: 0.25 })
             );
-            door.position.set(entry.position.x, 1.6, entry.position.z + 0.23);
+            const doorPos = localPointToWorld(b, t, (b.depth || 8) * 0.48 + 0.23);
+            door.position.set(doorPos.x, 1.6, doorPos.z);
             door.rotation.y = b.yaw || 0;
             worldGroup.add(door);
 
@@ -530,7 +555,8 @@
               new THREE.PlaneGeometry(1.35, 0.55),
               new THREE.MeshStandardMaterial({ color: 0x45576c, emissive: 0x29394b, emissiveIntensity: 0.16, roughness: 0.42, metalness: 0.2 })
             );
-            transom.position.set(entry.position.x, 3.2, entry.position.z + 0.24);
+            const transomPos = localPointToWorld(b, t, (b.depth || 8) * 0.48 + 0.24);
+            transom.position.set(transomPos.x, 3.2, transomPos.z);
             transom.rotation.y = b.yaw || 0;
             worldGroup.add(transom);
           }
@@ -542,7 +568,8 @@
           new THREE.BoxGeometry((b.width || 40) * 0.78, 0.42, 1.8),
           new THREE.MeshStandardMaterial({ color: 0x8a8f96, roughness: 0.62, metalness: 0.2 })
         );
-        canopy.position.set(b.x, storefrontBandHeight + 1.8, b.z + ((b.depth || 10) * 0.52));
+        const canopyPos = localPointToWorld(b, 0, (b.depth || 10) * 0.52);
+        canopy.position.set(canopyPos.x, storefrontBandHeight + 1.8, canopyPos.z);
         canopy.rotation.y = b.yaw || 0;
         worldGroup.add(canopy);
 
@@ -550,7 +577,8 @@
           new THREE.BoxGeometry((b.width || 40) * 0.7, Math.max(3.2, storefrontBandHeight * 0.82), 1.1),
           new THREE.MeshStandardMaterial({ color: 0x18202a, roughness: 0.76, metalness: 0.08 })
         );
-        recess.position.set(b.x, Math.max(1.9, storefrontBandHeight * 0.4) + 0.3, b.z + ((b.depth || 10) * 0.49));
+        const recessPos = localPointToWorld(b, 0, (b.depth || 10) * 0.49);
+        recess.position.set(recessPos.x, Math.max(1.9, storefrontBandHeight * 0.4) + 0.3, recessPos.z);
         recess.rotation.y = b.yaw || 0;
         worldGroup.add(recess);
       }

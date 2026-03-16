@@ -16,6 +16,18 @@
     return data;
   }
 
+
+  function isFiniteNumber(value) {
+    return typeof value === 'number' && Number.isFinite(value);
+  }
+
+  function assertFiniteNumberIfPresent(value, label) {
+    if (value === undefined || value === null) return;
+    if (!isFiniteNumber(value)) {
+      throw new Error('Gastown world data is malformed: ' + label + ' must be a finite number when present.');
+    }
+  }
+
   function assertPolygon(points, label) {
     if (!Array.isArray(points) || points.length < 3) {
       throw new Error('Gastown world data is malformed: ' + label + ' requires at least 3 points.');
@@ -67,11 +79,32 @@
     }
 
     data.buildings.forEach((building, index) => {
-      if (building.footprint) {
+      const hasAbsoluteFootprint = Array.isArray(building.footprint);
+      const hasLocalFootprint = Array.isArray(building.footprint_local);
+      if (hasAbsoluteFootprint) {
         assertPolygon(building.footprint, 'buildings[' + index + '].footprint');
       }
-      if (building.window_bay_count && typeof building.window_bay_count !== 'number') {
+      if (hasLocalFootprint) {
+        assertPolygon(building.footprint_local, 'buildings[' + index + '].footprint_local');
+      }
+      if (!hasAbsoluteFootprint && !hasLocalFootprint) {
+        throw new Error('Gastown world data is malformed: buildings[' + index + '] requires footprint or footprint_local.');
+      }
+
+      if (building.window_bay_count !== undefined && typeof building.window_bay_count !== 'number') {
         throw new Error('Gastown world data is malformed: buildings[' + index + '].window_bay_count must be numeric.');
+      }
+
+      ['x', 'z', 'width', 'depth', 'yaw', 'height', 'cornice_emphasis', 'mass_inset', 'recessed_entry_count'].forEach((field) => {
+        assertFiniteNumberIfPresent(building[field], 'buildings[' + index + '].' + field);
+      });
+
+      if (building.storefront_rhythm && typeof building.storefront_rhythm !== 'object') {
+        throw new Error('Gastown world data is malformed: buildings[' + index + '].storefront_rhythm must be an object when present.');
+      }
+      if (building.storefront_rhythm) {
+        assertFiniteNumberIfPresent(building.storefront_rhythm.base_band, 'buildings[' + index + '].storefront_rhythm.base_band');
+        assertFiniteNumberIfPresent(building.storefront_rhythm.upper_rows, 'buildings[' + index + '].storefront_rhythm.upper_rows');
       }
     });
   }
