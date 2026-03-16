@@ -2,9 +2,9 @@
   "routeId": "gastown_water_street_slice_v4_reference_corridor",
   "meta": {
     "title": "Waterfront Station to Steam Clock Corridor",
-    "units": "meters-ish",
-    "source": "reference-driven stylized corridor aligned to Waterfront Station threshold, W Cordova transition, Water Street heritage spine, and Steam Clock corner reveal",
-    "lastBuild": "2026-03-15T22:00:52.587Z",
+    "units": "meters",
+    "source": "Offline City of Vancouver Open Data exports",
+    "lastBuild": "2026-03-16T00:22:33.192Z",
     "buildNotes": [
       "Runtime geometry is compact and static; no live map APIs.",
       "Prepared for offline City of Vancouver footprints/streets/ROW widths + optional OSM route alignment.",
@@ -43,151 +43,189 @@
     }
   },
   "spawn": {
-    "x": -24.2,
+    "x": -16.48,
     "y": 1.7,
-    "z": 22.4,
+    "z": -57.65,
     "yaw": -0.34
   },
   "route": {
-    "name": "Waterfront Station → W Cordova → Water Street → Steam Clock",
+    "name": "Waterfront Station → Water/Cordova → Steam Clock",
     "centerline": [
       {
-        "id": "waterfront-station-threshold",
-        "label": "Waterfront Station Civic Frontage",
-        "x": -22,
-        "z": 18,
-        "reference_name": "Waterfront Station CPR frontage",
-        "segment_style": "station_threshold",
-        "facade_profile": "waterfront_station_civic",
-        "silhouette_notes": "Long red-brick civic edge with repeating white columns.",
-        "storefront_notes": "Broad threshold edge, limited retail cadence.",
-        "landmark_priority": "primary"
+        "id": "station-threshold",
+        "label": "Waterfront Station Threshold",
+        "x": -16.48,
+        "z": -57.65
       },
       {
-        "id": "cordova-transition-west",
-        "label": "W Cordova Transition West",
-        "x": -15,
-        "z": 3,
-        "reference_name": "W Cordova station edge",
-        "segment_style": "cordova_transition",
-        "facade_profile": "cordova_commercial_transition",
-        "silhouette_notes": "Road broadens with mixed commercial frontage.",
-        "storefront_notes": "Larger bays starting to break into retail rhythm.",
-        "landmark_priority": "high"
+        "id": "beat-1",
+        "label": "Corridor Beat 1",
+        "x": 2.49,
+        "z": -77.34
       },
       {
-        "id": "water-entry-wedge",
-        "label": "Water / Cordova Wedge Entry",
-        "x": -8,
-        "z": -14,
-        "reference_name": "Wedge-lot split condition",
-        "segment_style": "edge_transition",
-        "facade_profile": "wedge_corner_block",
-        "silhouette_notes": "Angled prow corner announces shift to Water Street.",
-        "storefront_notes": "Corner retail emphasis with narrow bays.",
-        "landmark_priority": "high"
+        "id": "beat-2",
+        "label": "Corridor Beat 2",
+        "x": 21.45,
+        "z": -97.03
       },
       {
-        "id": "water-street-west",
-        "label": "Water Street West Heritage Block",
-        "x": 1,
-        "z": -34,
-        "reference_name": "Water Street west block rhythm",
-        "segment_style": "gastown_corridor",
-        "facade_profile": "gastown_heritage_row",
-        "silhouette_notes": "Continuous low/mid-rise streetwall with cornice line.",
-        "storefront_notes": "Repeated storefront bays with awnings.",
-        "landmark_priority": "high"
+        "id": "beat-3",
+        "label": "Corridor Beat 3",
+        "x": 40.41,
+        "z": -116.71
       },
       {
-        "id": "water-street-mid",
-        "label": "Water Street Mid Corridor",
-        "x": 12,
-        "z": -58,
-        "reference_name": "Gastown heritage streetwall",
-        "segment_style": "gastown_corridor",
-        "facade_profile": "gastown_heritage_row",
-        "silhouette_notes": "Brick facades, tight spacing, varied roofline steps.",
-        "storefront_notes": "Frequent storefront rhythm and recessed entries.",
-        "landmark_priority": "high"
+        "id": "beat-4",
+        "label": "Corridor Beat 4",
+        "x": 62.62,
+        "z": -130.08
       },
       {
-        "id": "steam-clock-approach",
-        "label": "Steam Clock Approach",
-        "x": 22,
-        "z": -80,
-        "reference_name": "Steam Clock approach block",
-        "segment_style": "destination_approach",
-        "facade_profile": "steam_clock_corner",
-        "silhouette_notes": "Denser corner massing framing landmark view.",
-        "storefront_notes": "Active corner retail and pedestrian edge.",
-        "landmark_priority": "primary"
+        "id": "beat-5",
+        "label": "Corridor Beat 5",
+        "x": 89.45,
+        "z": -135.08
       },
       {
-        "id": "steam-clock-node",
-        "label": "Steam Clock Corner",
-        "x": 28,
-        "z": -95,
-        "reference_name": "Steam Clock at Water/Cambie",
-        "segment_style": "destination_node",
-        "facade_profile": "steam_clock_corner",
-        "silhouette_notes": "Clock reveals at framed corner plaza.",
-        "storefront_notes": "Pedestrian-focused storefront frontage and gathering space.",
-        "landmark_priority": "primary"
+        "id": "beat-6",
+        "label": "Corridor Beat 6",
+        "x": 115.78,
+        "z": -142.42
+      },
+      {
+        "id": "beat-7",
+        "label": "Corridor Beat 7",
+        "x": 142.12,
+        "z": -149.76
+      },
+      {
+        "id": "beat-8",
+        "label": "Corridor Beat 8",
+        "x": 168.45,
+        "z": -157.09
+      },
+      {
+        "id": "beat-9",
+        "label": "Corridor Beat 9",
+        "x": 194.78,
+        "z": -164.43
+      },
+      {
+        "id": "beat-10",
+        "label": "Corridor Beat 10",
+        "x": 221.11,
+        "z": -171.77
+      },
+      {
+        "id": "water-mid",
+        "label": "Water/Cordova Mid",
+        "x": 247.44,
+        "z": -179.11
+      },
+      {
+        "id": "beat-12",
+        "label": "Corridor Beat 12",
+        "x": 273.77,
+        "z": -186.45
+      },
+      {
+        "id": "beat-13",
+        "label": "Corridor Beat 13",
+        "x": 300.1,
+        "z": -193.78
+      },
+      {
+        "id": "beat-14",
+        "label": "Corridor Beat 14",
+        "x": 326.43,
+        "z": -201.12
+      },
+      {
+        "id": "beat-15",
+        "label": "Corridor Beat 15",
+        "x": 352.77,
+        "z": -208.46
+      },
+      {
+        "id": "beat-16",
+        "label": "Corridor Beat 16",
+        "x": 379.1,
+        "z": -215.8
+      },
+      {
+        "id": "beat-17",
+        "label": "Corridor Beat 17",
+        "x": 405.43,
+        "z": -223.14
+      },
+      {
+        "id": "beat-18",
+        "label": "Corridor Beat 18",
+        "x": 431.76,
+        "z": -230.47
+      },
+      {
+        "id": "beat-19",
+        "label": "Corridor Beat 19",
+        "x": 458.09,
+        "z": -237.81
+      },
+      {
+        "id": "beat-20",
+        "label": "Corridor Beat 20",
+        "x": 484.42,
+        "z": -245.15
+      },
+      {
+        "id": "beat-21",
+        "label": "Corridor Beat 21",
+        "x": 510.75,
+        "z": -252.49
+      },
+      {
+        "id": "steam-clock",
+        "label": "Steam Clock",
+        "x": 537.08,
+        "z": -259.82
       }
     ],
     "walkBounds": [
       {
-        "x": -36,
-        "z": 28
+        "x": -7.111651336873434,
+        "z": -48.63047383569452
       },
       {
-        "x": -8,
-        "z": 28
+        "x": 58.02133584318072,
+        "z": -116.26255397752786
       },
       {
-        "x": 6,
-        "z": 2
+        "x": 84.29735953280704,
+        "z": -120.14891347301175
       },
       {
-        "x": 18,
-        "z": -26
+        "x": 540.5744688214575,
+        "z": -247.30210907347282
       },
       {
-        "x": 30,
-        "z": -54
+        "x": 533.5948601898785,
+        "z": -272.347768644544
       },
       {
-        "x": 40,
-        "z": -78
+        "x": 78.88438394482145,
+        "z": -145.6311550986522
       },
       {
-        "x": 44,
-        "z": -102
+        "x": 45.44502680578135,
+        "z": -140.68530162115317
       },
       {
-        "x": 26,
-        "z": -112
+        "x": -25.839174574912086,
+        "z": -66.66599083323918
       },
       {
-        "x": 12,
-        "z": -88
-      },
-      {
-        "x": 2,
-        "z": -64
-      },
-      {
-        "x": -10,
-        "z": -38
-      },
-      {
-        "x": -22,
-        "z": -8
-      },
-      {
-        "x": -36,
-        "z": 18
+        "x": -7.111651336873434,
+        "z": -48.63047383569452
       }
     ],
     "streetWidth": 11,
@@ -202,174 +240,126 @@
         "surface": "road",
         "polygon": [
           {
-            "x": -31,
-            "z": 23
+            "x": -12.513821501692277,
+            "z": -53.833026815755474
           },
           {
-            "x": -12,
-            "z": 23
+            "x": 54.39355439008475,
+            "z": -123.30757733626594
           },
           {
-            "x": 2,
-            "z": -4
+            "x": 82.73592426704197,
+            "z": -127.49956009579265
           },
           {
-            "x": 14,
-            "z": -31
+            "x": 538.5611201777327,
+            "z": -254.52681856512797
           },
           {
-            "x": 25,
-            "z": -57
+            "x": 535.6082088336033,
+            "z": -265.12305915288886
           },
           {
-            "x": 34,
-            "z": -79
+            "x": 80.44581921058652,
+            "z": -138.2805084758713
           },
           {
-            "x": 37,
-            "z": -99
+            "x": 49.07280825887732,
+            "z": -133.6402782624151
           },
           {
-            "x": 24,
-            "z": -106
+            "x": -20.437004410093245,
+            "z": -61.46343785317822
           },
           {
-            "x": 14,
-            "z": -85
-          },
-          {
-            "x": 4,
-            "z": -61
-          },
-          {
-            "x": -7,
-            "z": -36
-          },
-          {
-            "x": -18,
-            "z": -9
-          },
-          {
-            "x": -31,
-            "z": 14
+            "x": -12.513821501692277,
+            "z": -53.833026815755474
           }
         ]
       }
     ],
     "sidewalk": [
       {
-        "id": "north-heritage-sidewalk",
-        "surface": "sidewalk",
+        "id": "water-cordova-sidewalk-left",
+        "side": "left",
         "polygon": [
           {
-            "x": -36,
-            "z": 28
+            "x": -9.272519402800972,
+            "z": -50.711495027718904
           },
           {
-            "x": -8,
-            "z": 28
+            "x": 56.57022326194233,
+            "z": -119.08056332102309
           },
           {
-            "x": 6,
-            "z": 2
+            "x": 83.67278542650101,
+            "z": -123.08917212212411
           },
           {
-            "x": 18,
-            "z": -26
+            "x": 539.7691293639676,
+            "z": -250.19199287013487
           },
           {
-            "x": 30,
-            "z": -54
+            "x": 538.5611201777327,
+            "z": -254.52681856512797
           },
           {
-            "x": 40,
-            "z": -78
+            "x": 82.73592426704197,
+            "z": -127.49956009579265
           },
           {
-            "x": 44,
-            "z": -102
+            "x": 54.39355439008475,
+            "z": -123.30757733626594
           },
           {
-            "x": 34,
-            "z": -108
+            "x": -12.513821501692277,
+            "z": -53.833026815755474
           },
           {
-            "x": 25,
-            "z": -90
-          },
-          {
-            "x": 15,
-            "z": -66
-          },
-          {
-            "x": 4,
-            "z": -41
-          },
-          {
-            "x": -7,
-            "z": -14
-          },
-          {
-            "x": -19,
-            "z": 10
-          },
-          {
-            "x": -30,
-            "z": 28
+            "x": -9.272519402800972,
+            "z": -50.711495027718904
           }
         ]
       },
       {
-        "id": "south-heritage-sidewalk",
-        "surface": "sidewalk",
+        "id": "water-cordova-sidewalk-right",
+        "side": "right",
         "polygon": [
           {
-            "x": -31,
-            "z": 14
+            "x": -20.437004410093245,
+            "z": -61.46343785317822
           },
           {
-            "x": -18,
-            "z": -9
+            "x": 49.07280825887732,
+            "z": -133.6402782624151
           },
           {
-            "x": -7,
-            "z": -36
+            "x": 80.44581921058652,
+            "z": -138.2805084758713
           },
           {
-            "x": 4,
-            "z": -61
+            "x": 535.6082088336033,
+            "z": -265.12305915288886
           },
           {
-            "x": 14,
-            "z": -85
+            "x": 534.4001996473684,
+            "z": -269.4578848478819
           },
           {
-            "x": 24,
-            "z": -106
+            "x": 79.50895805112748,
+            "z": -142.69089644953985
           },
           {
-            "x": 26,
-            "z": -112
+            "x": 46.896139387019744,
+            "z": -137.86729227765795
           },
           {
-            "x": 12,
-            "z": -88
+            "x": -23.678306508984548,
+            "z": -64.5849696412148
           },
           {
-            "x": 2,
-            "z": -64
-          },
-          {
-            "x": -10,
-            "z": -38
-          },
-          {
-            "x": -22,
-            "z": -8
-          },
-          {
-            "x": -36,
-            "z": 18
+            "x": -20.437004410093245,
+            "z": -61.46343785317822
           }
         ]
       }
@@ -379,535 +369,1393 @@
     {
       "id": "station-threshold",
       "label": "Waterfront Station Threshold",
-      "x": -22,
-      "z": 18,
-      "reference_name": "Waterfront Station frontage",
-      "segment_style": "station_threshold",
-      "facade_profile": "waterfront_station_civic",
-      "silhouette_notes": "Civic red-brick landmark frontage.",
-      "storefront_notes": "Broad station threshold.",
-      "landmark_priority": "primary"
-    },
-    {
-      "id": "cordova-transition",
-      "label": "W Cordova Transition",
-      "x": -14,
-      "z": 0,
-      "reference_name": "Cordova transition edge",
-      "segment_style": "cordova_transition",
-      "facade_profile": "cordova_commercial_transition",
-      "silhouette_notes": "Commercial transition between station and Gastown.",
-      "storefront_notes": "Bays become narrower eastbound.",
-      "landmark_priority": "high"
-    },
-    {
-      "id": "water-entry-wedge",
-      "label": "Water Entry Wedge",
-      "x": -8,
-      "z": -14,
-      "reference_name": "Flatiron-like corner",
-      "segment_style": "edge_transition",
-      "facade_profile": "wedge_corner_block",
-      "silhouette_notes": "Angled prow corner anchors route turn.",
-      "storefront_notes": "Corner retail emphasis.",
-      "landmark_priority": "high"
+      "x": -16.48,
+      "z": -57.65
     },
     {
       "id": "water-mid",
-      "label": "Water Street Mid Corridor",
-      "x": 12,
-      "z": -58,
-      "reference_name": "Heritage block rhythm",
-      "segment_style": "gastown_corridor",
-      "facade_profile": "gastown_heritage_row",
-      "silhouette_notes": "Continuous heritage streetwall.",
-      "storefront_notes": "Awnings + recessed entries pattern.",
-      "landmark_priority": "high"
+      "label": "Water/Cordova Mid",
+      "x": 247.44,
+      "z": -179.11
     },
     {
       "id": "steam-clock",
-      "label": "Steam Clock Corner",
-      "x": 28,
-      "z": -95,
-      "reference_name": "Steam Clock destination",
-      "segment_style": "destination_node",
-      "facade_profile": "steam_clock_corner",
-      "silhouette_notes": "Clock framed by corner facades and plaza edge.",
-      "storefront_notes": "Dense pedestrian edge.",
-      "landmark_priority": "primary"
+      "label": "Steam Clock",
+      "x": 537.08,
+      "z": -259.82
     }
   ],
   "buildings": [
     {
-      "id": "waterfront-station-civic",
-      "x": -30,
-      "z": 14,
-      "width": 46,
-      "depth": 16,
-      "height": 20,
-      "tone": "brickWarm",
-      "yaw": 0.02,
-      "facade_profile": "waterfront_station_civic",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 12,
-      "recessed_entry_count": 2,
-      "storefront_rhythm": {
-        "bay_pattern": "civic_colonnade",
-        "base_band": 0.1,
-        "upper_rows": 2
-      },
-      "material_palette": {
-        "primary": "brickWarm",
-        "accent": "stoneMuted",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": false,
-      "cornice_emphasis": 0.82,
-      "building_style": [
-        "civic",
-        "station_frontage"
-      ],
-      "mass_inset": 0.99,
-      "reference_name": "Waterfront Station / CPR civic frontage",
-      "reference_address": "601 W Cordova St, Vancouver, BC",
-      "segment_style": "station_threshold",
-      "silhouette_notes": "Long red-brick base with strong white column rhythm.",
-      "storefront_notes": "Broad threshold and restrained retail expression.",
-      "landmark_priority": "primary",
-      "style_notes": null
-    },
-    {
-      "id": "station-edge-commercial",
-      "x": -6,
-      "z": 18,
-      "width": 13,
-      "depth": 10,
-      "height": 14,
-      "tone": "stoneMuted",
-      "yaw": -0.06,
-      "facade_profile": "cordova_commercial_transition",
-      "roofline_type": "flat",
-      "window_bay_count": 4,
-      "recessed_entry_count": 1,
-      "storefront_rhythm": {
-        "bay_pattern": "wide_module",
-        "base_band": 0.13,
-        "upper_rows": 2
-      },
-      "material_palette": {
-        "primary": "stoneMuted",
-        "accent": "brickDark",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": false,
-      "cornice_emphasis": 0.35,
-      "building_style": [
-        "commercial_transition"
-      ],
-      "mass_inset": 0.97,
-      "reference_name": "Cordova commercial edge",
-      "reference_address": "W Cordova corridor, Vancouver, BC",
-      "segment_style": "cordova_transition",
-      "silhouette_notes": "Transitioning block scale at station edge.",
-      "storefront_notes": "Wider bays before Gastown rhythm begins.",
-      "landmark_priority": "supporting",
-      "style_notes": null
-    },
-    {
-      "id": "cordova-north-01",
-      "x": -2,
-      "z": -2,
-      "width": 14,
-      "depth": 11,
-      "height": 16,
-      "tone": "brickDark",
-      "yaw": -0.12,
-      "facade_profile": "cordova_commercial_transition",
-      "roofline_type": "stepped",
-      "window_bay_count": 5,
-      "recessed_entry_count": 1,
-      "storefront_rhythm": {
-        "bay_pattern": "transition_mixed",
-        "base_band": 0.15,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "brickDark",
-        "accent": "brickWarm",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.62,
-      "building_style": [
-        "commercial_transition"
-      ],
-      "mass_inset": 0.96,
-      "reference_name": "W Cordova transition storefronts",
-      "reference_address": "W Cordova St, Vancouver, BC",
-      "segment_style": "cordova_transition",
-      "silhouette_notes": "Mid-rise mixed commercial frontage.",
-      "storefront_notes": "Storefront cadence tightens toward Water Street.",
-      "landmark_priority": "supporting",
-      "style_notes": null
-    },
-    {
-      "id": "water-entry-wedge",
-      "x": -14,
-      "z": -16,
-      "width": 13,
-      "depth": 14,
-      "height": 18,
-      "tone": "brickWarm",
-      "yaw": -0.36,
-      "facade_profile": "wedge_corner_block",
-      "roofline_type": "angled_parapet",
-      "window_bay_count": 6,
-      "recessed_entry_count": 1,
-      "storefront_rhythm": {
-        "bay_pattern": "corner_emphasis",
-        "base_band": 0.18,
-        "upper_rows": 4
-      },
-      "material_palette": {
-        "primary": "brickWarm",
-        "accent": "stoneMuted",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.9,
-      "building_style": [
-        "angled_corner",
-        "heritage_masonry"
-      ],
-      "mass_inset": 0.94,
+      "id": "building-86652",
       "footprint": [
         {
-          "x": -5.8,
-          "z": -6.1
+          "x": 299.11,
+          "z": -182.8
         },
         {
-          "x": 4.4,
-          "z": -4.6
+          "x": 310.06,
+          "z": -144.12
         },
         {
-          "x": 6.1,
-          "z": 4.9
+          "x": 358.17,
+          "z": -157.55
         },
         {
-          "x": -1.4,
-          "z": 7.2
+          "x": 347.39,
+          "z": -196.28
         },
         {
-          "x": -6.3,
-          "z": 2.3
+          "x": 337.67,
+          "z": -193.57
+        },
+        {
+          "x": 337.97,
+          "z": -192.49
+        },
+        {
+          "x": 334.74,
+          "z": -192.75
+        },
+        {
+          "x": 334.24,
+          "z": -191.43
+        },
+        {
+          "x": 332.59,
+          "z": -190.96
+        },
+        {
+          "x": 331.5,
+          "z": -191.84
+        },
+        {
+          "x": 327.78,
+          "z": -189.72
+        },
+        {
+          "x": 326.87,
+          "z": -190.55
+        },
+        {
+          "x": 322.97,
+          "z": -188.44
+        },
+        {
+          "x": 321.87,
+          "z": -189.15
+        },
+        {
+          "x": 318.22,
+          "z": -187.14
+        },
+        {
+          "x": 317.16,
+          "z": -187.84
+        },
+        {
+          "x": 313.52,
+          "z": -185.87
+        },
+        {
+          "x": 310.9,
+          "z": -186.09
+        },
+        {
+          "x": 310.39,
+          "z": -184.71
+        },
+        {
+          "x": 305.68,
+          "z": -183.36
+        },
+        {
+          "x": 305.34,
+          "z": -184.54
+        },
+        {
+          "x": 299.11,
+          "z": -182.8
         }
       ],
-      "reference_name": "Water/Cordova wedge lot",
-      "reference_address": "Water St & W Cordova St, Vancouver, BC",
-      "segment_style": "edge_transition",
-      "silhouette_notes": "Flatiron prow marks route entry into Water Street.",
-      "storefront_notes": "Corner storefront wraps angled frontage.",
-      "landmark_priority": "high",
-      "style_notes": null
-    },
-    {
-      "id": "water-north-heritage-01",
-      "x": 8,
-      "z": -28,
-      "width": 12,
-      "depth": 10,
-      "height": 15,
-      "tone": "brickWarm",
-      "yaw": -0.26,
+      "height": 21.3,
       "facade_profile": "gastown_heritage_row",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 5,
-      "recessed_entry_count": 2,
-      "storefront_rhythm": {
-        "bay_pattern": "narrow_retail",
-        "base_band": 0.19,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "brickWarm",
-        "accent": "stoneMuted",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.72,
-      "building_style": [
-        "heritage_low_rise"
-      ],
-      "mass_inset": 0.94,
-      "reference_name": "Water Street heritage row",
-      "reference_address": "100 Water St block, Vancouver, BC",
-      "segment_style": "gastown_corridor",
-      "silhouette_notes": "Low/mid-rise heritage facade with cornice.",
-      "storefront_notes": "Narrow repeated bays and awning band.",
-      "landmark_priority": "supporting",
-      "style_notes": null
-    },
-    {
-      "id": "water-north-heritage-02",
-      "x": 18,
-      "z": -50,
-      "width": 11,
-      "depth": 9,
-      "height": 17,
-      "tone": "brickDark",
-      "yaw": -0.3,
-      "facade_profile": "gastown_corner_retail",
-      "roofline_type": "stepped",
-      "window_bay_count": 5,
-      "recessed_entry_count": 1,
-      "storefront_rhythm": {
-        "bay_pattern": "tight_regular",
-        "base_band": 0.2,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "brickDark",
-        "accent": "brickWarm",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.76,
-      "building_style": [
-        "heritage_low_rise",
-        "corner_retail"
-      ],
-      "mass_inset": 0.94,
-      "reference_name": "Water Street storefront rhythm",
-      "reference_address": "200 Water St block, Vancouver, BC",
-      "segment_style": "gastown_corridor",
-      "silhouette_notes": "Stepped parapet breaks roofline rhythm.",
-      "storefront_notes": "Frequent storefront cadence and signage band.",
-      "landmark_priority": "supporting",
-      "style_notes": null
-    },
-    {
-      "id": "water-north-heritage-03",
-      "x": 29,
-      "z": -75,
-      "width": 12,
-      "depth": 10,
-      "height": 18,
       "tone": "brickWarm",
-      "yaw": -0.38,
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-88913",
+      "footprint": [
+        {
+          "x": 136.97,
+          "z": -136.83
+        },
+        {
+          "x": 145.66,
+          "z": -105.56
+        },
+        {
+          "x": 160.35,
+          "z": -109.54
+        },
+        {
+          "x": 151.61,
+          "z": -140.82
+        },
+        {
+          "x": 149.96,
+          "z": -141.22
+        },
+        {
+          "x": 147.22,
+          "z": -140.45
+        },
+        {
+          "x": 147,
+          "z": -139.56
+        },
+        {
+          "x": 145.88,
+          "z": -139.27
+        },
+        {
+          "x": 145.66,
+          "z": -140.02
+        },
+        {
+          "x": 142.13,
+          "z": -139.04
+        },
+        {
+          "x": 142.33,
+          "z": -138.3
+        },
+        {
+          "x": 137.81,
+          "z": -137.83
+        },
+        {
+          "x": 137.64,
+          "z": -137.02
+        },
+        {
+          "x": 136.97,
+          "z": -136.83
+        }
+      ],
+      "height": 14.2,
       "facade_profile": "gastown_heritage_row",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 4,
-      "recessed_entry_count": 1,
-      "storefront_rhythm": {
-        "bay_pattern": "tight_regular",
-        "base_band": 0.19,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "brickWarm",
-        "accent": "stoneMuted",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.75,
-      "building_style": [
-        "heritage_low_rise",
-        "masonry"
-      ],
-      "mass_inset": 0.93,
-      "reference_name": "Water Street mid-block massing",
-      "reference_address": "200-300 Water St, Vancouver, BC",
-      "segment_style": "gastown_corridor",
-      "silhouette_notes": "Continuous brick streetwall with subtle cornice.",
-      "storefront_notes": "Historic shopfront rhythm maintains pedestrian edge.",
-      "landmark_priority": "supporting",
-      "style_notes": null
-    },
-    {
-      "id": "steam-clock-frame-north",
-      "x": 34,
-      "z": -95,
-      "width": 14,
-      "depth": 11,
-      "height": 19,
-      "tone": "brickDark",
-      "yaw": -0.42,
-      "facade_profile": "steam_clock_corner",
-      "roofline_type": "stepped",
-      "window_bay_count": 6,
-      "recessed_entry_count": 2,
-      "storefront_rhythm": {
-        "bay_pattern": "corner_emphasis",
-        "base_band": 0.21,
-        "upper_rows": 4
-      },
-      "material_palette": {
-        "primary": "brickDark",
-        "accent": "brickWarm",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.88,
-      "building_style": [
-        "corner_retail",
-        "destination_frame"
-      ],
-      "mass_inset": 0.93,
-      "reference_name": "Steam Clock north framing block",
-      "reference_address": "300 Water St, Vancouver, BC",
-      "segment_style": "destination_node",
-      "silhouette_notes": "Destination corner framing with active base.",
-      "storefront_notes": "Dense corner retail around clock zone.",
-      "landmark_priority": "high",
-      "style_notes": null
-    },
-    {
-      "id": "water-south-heritage-01",
-      "x": -26,
-      "z": -10,
-      "width": 15,
-      "depth": 12,
-      "height": 16,
-      "tone": "brickDark",
-      "yaw": -0.14,
-      "facade_profile": "cordova_commercial_transition",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 4,
-      "recessed_entry_count": 1,
-      "storefront_rhythm": {
-        "bay_pattern": "transition_mixed",
-        "base_band": 0.15,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "brickDark",
-        "accent": "stoneMuted",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.6,
-      "building_style": [
-        "transition_row"
-      ],
-      "mass_inset": 0.95,
-      "reference_name": "Cordova south edge transition",
-      "reference_address": "W Cordova south edge, Vancouver, BC",
-      "segment_style": "cordova_transition",
-      "silhouette_notes": "Commercial transition block opposite station side.",
-      "storefront_notes": "Mixed bay widths ahead of heritage corridor.",
-      "landmark_priority": "supporting",
-      "style_notes": null
-    },
-    {
-      "id": "water-south-heritage-02",
-      "x": -14,
-      "z": -36,
-      "width": 13,
-      "depth": 10,
-      "height": 15,
       "tone": "brickWarm",
-      "yaw": -0.22,
-      "facade_profile": "gastown_heritage_row",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 5,
-      "recessed_entry_count": 2,
-      "storefront_rhythm": {
-        "bay_pattern": "narrow_retail",
-        "base_band": 0.19,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "brickWarm",
-        "accent": "stoneMuted",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.73,
-      "building_style": [
-        "heritage_row"
-      ],
-      "mass_inset": 0.94,
-      "reference_name": "Water Street south heritage row",
-      "reference_address": "100-200 Water St, Vancouver, BC",
-      "segment_style": "gastown_corridor",
-      "silhouette_notes": "Tight heritage streetwall and cornice line.",
-      "storefront_notes": "Frequent storefront bays and recessed doors.",
-      "landmark_priority": "supporting",
-      "style_notes": null
+      "reference_name": "Corridor building"
     },
     {
-      "id": "water-south-heritage-03",
-      "x": -2,
-      "z": -62,
-      "width": 12,
-      "depth": 10,
-      "height": 17,
+      "id": "building-149277",
+      "footprint": [
+        {
+          "x": 122.18,
+          "z": -133.34
+        },
+        {
+          "x": 131.92,
+          "z": -98.25
+        },
+        {
+          "x": 146.56,
+          "z": -102.31
+        },
+        {
+          "x": 136.97,
+          "z": -136.83
+        },
+        {
+          "x": 136.21,
+          "z": -137.38
+        },
+        {
+          "x": 132.92,
+          "z": -136.46
+        },
+        {
+          "x": 133.08,
+          "z": -135.78
+        },
+        {
+          "x": 131.76,
+          "z": -135.42
+        },
+        {
+          "x": 131.61,
+          "z": -136.09
+        },
+        {
+          "x": 128.21,
+          "z": -135.14
+        },
+        {
+          "x": 128.37,
+          "z": -134.5
+        },
+        {
+          "x": 122.83,
+          "z": -133.51
+        },
+        {
+          "x": 122.18,
+          "z": -133.34
+        }
+      ],
+      "height": 18.6,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-127777",
+      "footprint": [
+        {
+          "x": 105.53,
+          "z": -164.65
+        },
+        {
+          "x": 88.71,
+          "z": -147.96
+        },
+        {
+          "x": 89.51,
+          "z": -145.21
+        },
+        {
+          "x": 118.19,
+          "z": -153.23
+        },
+        {
+          "x": 112.98,
+          "z": -172.04
+        },
+        {
+          "x": 105.53,
+          "z": -164.65
+        }
+      ],
+      "height": 12.6,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-35180",
+      "footprint": [
+        {
+          "x": 117.91,
+          "z": -176.95
+        },
+        {
+          "x": 112.98,
+          "z": -172.04
+        },
+        {
+          "x": 118.19,
+          "z": -153.23
+        },
+        {
+          "x": 124.08,
+          "z": -154.87
+        },
+        {
+          "x": 117.91,
+          "z": -176.95
+        }
+      ],
+      "height": 20.1,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-63871",
+      "footprint": [
+        {
+          "x": 190.95,
+          "z": -152.66
+        },
+        {
+          "x": 199.16,
+          "z": -123.15
+        },
+        {
+          "x": 210.9,
+          "z": -126.24
+        },
+        {
+          "x": 202.62,
+          "z": -155.95
+        },
+        {
+          "x": 190.95,
+          "z": -152.68
+        },
+        {
+          "x": 190.95,
+          "z": -152.66
+        }
+      ],
+      "height": 16.3,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-52255",
+      "footprint": [
+        {
+          "x": 181.76,
+          "z": -202.62
+        },
+        {
+          "x": 167.13,
+          "z": -198.51
+        },
+        {
+          "x": 175.26,
+          "z": -169.18
+        },
+        {
+          "x": 189.93,
+          "z": -173.27
+        },
+        {
+          "x": 181.76,
+          "z": -202.62
+        }
+      ],
+      "height": 13.9,
+      "facade_profile": "gastown_heritage_row",
       "tone": "stoneMuted",
-      "yaw": -0.32,
-      "facade_profile": "gastown_corner_retail",
-      "roofline_type": "stepped",
-      "window_bay_count": 5,
-      "recessed_entry_count": 1,
-      "storefront_rhythm": {
-        "bay_pattern": "tight_regular",
-        "base_band": 0.19,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "stoneMuted",
-        "accent": "brickWarm",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.78,
-      "building_style": [
-        "heritage_corner"
-      ],
-      "mass_inset": 0.94,
-      "reference_name": "Water Street south mid block",
-      "reference_address": "200 Water St, Vancouver, BC",
-      "segment_style": "gastown_corridor",
-      "silhouette_notes": "Varied mid-rise heritage cadence.",
-      "storefront_notes": "Awnings and sign-band storefront expression.",
-      "landmark_priority": "supporting",
-      "style_notes": null
+      "reference_name": "Corridor building"
     },
     {
-      "id": "steam-clock-frame-south",
-      "x": 14,
-      "z": -90,
-      "width": 13,
-      "depth": 11,
-      "height": 18,
-      "tone": "brickWarm",
-      "yaw": -0.4,
-      "facade_profile": "steam_clock_corner",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 5,
-      "recessed_entry_count": 2,
-      "storefront_rhythm": {
-        "bay_pattern": "corner_emphasis",
-        "base_band": 0.2,
-        "upper_rows": 4
-      },
-      "material_palette": {
-        "primary": "brickWarm",
-        "accent": "stoneMuted",
-        "trim": "stoneMuted"
-      },
-      "awning_presence": true,
-      "cornice_emphasis": 0.84,
-      "building_style": [
-        "destination_frame"
+      "id": "building-52254",
+      "footprint": [
+        {
+          "x": 181.76,
+          "z": -202.62
+        },
+        {
+          "x": 189.93,
+          "z": -173.27
+        },
+        {
+          "x": 197.21,
+          "z": -175.31
+        },
+        {
+          "x": 189.08,
+          "z": -204.68
+        },
+        {
+          "x": 181.76,
+          "z": -202.62
+        }
       ],
-      "mass_inset": 0.93,
-      "reference_name": "Steam Clock south framing block",
-      "reference_address": "Water & Cambie corner, Vancouver, BC",
-      "segment_style": "destination_node",
-      "silhouette_notes": "Framing mass defines destination corner space.",
-      "storefront_notes": "Retail frontage wraps toward clock plaza.",
-      "landmark_priority": "high",
-      "style_notes": null
+      "height": 17.7,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-102056",
+      "footprint": [
+        {
+          "x": 234.06,
+          "z": -229.97
+        },
+        {
+          "x": 244.59,
+          "z": -192.11
+        },
+        {
+          "x": 267.33,
+          "z": -197.88
+        },
+        {
+          "x": 268.09,
+          "z": -195.12
+        },
+        {
+          "x": 281.68,
+          "z": -198.91
+        },
+        {
+          "x": 280.89,
+          "z": -201.76
+        },
+        {
+          "x": 329.43,
+          "z": -215.23
+        },
+        {
+          "x": 330.19,
+          "z": -212.46
+        },
+        {
+          "x": 332.4,
+          "z": -213.08
+        },
+        {
+          "x": 320.89,
+          "z": -254.51
+        },
+        {
+          "x": 250.89,
+          "z": -235.52
+        },
+        {
+          "x": 251.11,
+          "z": -234.7
+        },
+        {
+          "x": 234.06,
+          "z": -229.97
+        }
+      ],
+      "height": 20.9,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-106598",
+      "footprint": [
+        {
+          "x": 205.07,
+          "z": -221.92
+        },
+        {
+          "x": 216.57,
+          "z": -180.73
+        },
+        {
+          "x": 244.86,
+          "z": -188.63
+        },
+        {
+          "x": 243.95,
+          "z": -191.93
+        },
+        {
+          "x": 244.59,
+          "z": -192.11
+        },
+        {
+          "x": 234.06,
+          "z": -229.97
+        },
+        {
+          "x": 205.07,
+          "z": -221.92
+        }
+      ],
+      "height": 19.9,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-13035",
+      "footprint": [
+        {
+          "x": 231.67,
+          "z": -163.33
+        },
+        {
+          "x": 241.79,
+          "z": -126.85
+        },
+        {
+          "x": 251.26,
+          "z": -129.48
+        },
+        {
+          "x": 241.32,
+          "z": -166.04
+        },
+        {
+          "x": 232.33,
+          "z": -163.52
+        },
+        {
+          "x": 231.67,
+          "z": -163.33
+        }
+      ],
+      "height": 15.2,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-87000",
+      "footprint": [
+        {
+          "x": 492.32,
+          "z": -236.62
+        },
+        {
+          "x": 503.07,
+          "z": -198.03
+        },
+        {
+          "x": 528.52,
+          "z": -205.15
+        },
+        {
+          "x": 527.37,
+          "z": -246.57
+        },
+        {
+          "x": 515.98,
+          "z": -243.3
+        },
+        {
+          "x": 492.32,
+          "z": -236.62
+        }
+      ],
+      "height": 19,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-30725",
+      "footprint": [
+        {
+          "x": 415,
+          "z": -215.17
+        },
+        {
+          "x": 425.78,
+          "z": -176.44
+        },
+        {
+          "x": 435.44,
+          "z": -179.14
+        },
+        {
+          "x": 424.76,
+          "z": -217.53
+        },
+        {
+          "x": 417.89,
+          "z": -215.98
+        },
+        {
+          "x": 415,
+          "z": -215.17
+        }
+      ],
+      "height": 16.9,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-123303",
+      "footprint": [
+        {
+          "x": 221.85,
+          "z": -161.22
+        },
+        {
+          "x": 232.6,
+          "z": -122.48
+        },
+        {
+          "x": 241.81,
+          "z": -125.06
+        },
+        {
+          "x": 231.67,
+          "z": -163.33
+        },
+        {
+          "x": 223.08,
+          "z": -161.57
+        },
+        {
+          "x": 221.85,
+          "z": -161.22
+        }
+      ],
+      "height": 12.6,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-25520",
+      "footprint": [
+        {
+          "x": 189.68,
+          "z": -117.55
+        },
+        {
+          "x": 199.32,
+          "z": -120.3
+        },
+        {
+          "x": 190.95,
+          "z": -152.68
+        },
+        {
+          "x": 180.68,
+          "z": -149.81
+        },
+        {
+          "x": 189.68,
+          "z": -117.55
+        }
+      ],
+      "height": 13.5,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-149278",
+      "footprint": [
+        {
+          "x": 46.9,
+          "z": -106.43
+        },
+        {
+          "x": 63.03,
+          "z": -78.93
+        },
+        {
+          "x": 117.29,
+          "z": -94.18
+        },
+        {
+          "x": 107.49,
+          "z": -129.35
+        },
+        {
+          "x": 55.3,
+          "z": -114.75
+        },
+        {
+          "x": 46.9,
+          "z": -106.43
+        }
+      ],
+      "height": 21.4,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-25521",
+      "footprint": [
+        {
+          "x": 167.2,
+          "z": -107.52
+        },
+        {
+          "x": 189.68,
+          "z": -117.55
+        },
+        {
+          "x": 180.68,
+          "z": -149.81
+        },
+        {
+          "x": 157.27,
+          "z": -143.26
+        },
+        {
+          "x": 167.2,
+          "z": -107.52
+        }
+      ],
+      "height": 19.7,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-71448",
+      "footprint": [
+        {
+          "x": 130.56,
+          "z": -188.2
+        },
+        {
+          "x": 138.7,
+          "z": -158.95
+        },
+        {
+          "x": 160.66,
+          "z": -165.09
+        },
+        {
+          "x": 152.51,
+          "z": -194.39
+        },
+        {
+          "x": 134.37,
+          "z": -189.29
+        },
+        {
+          "x": 130.56,
+          "z": -188.2
+        }
+      ],
+      "height": 17.6,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-138188",
+      "footprint": [
+        {
+          "x": 159.79,
+          "z": -196.44
+        },
+        {
+          "x": 152.51,
+          "z": -194.38
+        },
+        {
+          "x": 160.66,
+          "z": -165.09
+        },
+        {
+          "x": 175.26,
+          "z": -169.18
+        },
+        {
+          "x": 167.13,
+          "z": -198.51
+        },
+        {
+          "x": 159.79,
+          "z": -196.44
+        }
+      ],
+      "height": 15.4,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-35179",
+      "footprint": [
+        {
+          "x": 117.91,
+          "z": -176.95
+        },
+        {
+          "x": 124.08,
+          "z": -154.87
+        },
+        {
+          "x": 138.7,
+          "z": -158.95
+        },
+        {
+          "x": 130.56,
+          "z": -188.2
+        },
+        {
+          "x": 128.91,
+          "z": -187.73
+        },
+        {
+          "x": 124.1,
+          "z": -183.09
+        },
+        {
+          "x": 117.91,
+          "z": -176.95
+        }
+      ],
+      "height": 17.2,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-88914",
+      "footprint": [
+        {
+          "x": 117.29,
+          "z": -94.18
+        },
+        {
+          "x": 131.92,
+          "z": -98.25
+        },
+        {
+          "x": 122.18,
+          "z": -133.34
+        },
+        {
+          "x": 107.49,
+          "z": -129.35
+        },
+        {
+          "x": 117.29,
+          "z": -94.18
+        }
+      ],
+      "height": 15.7,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-27092",
+      "footprint": [
+        {
+          "x": 548.64,
+          "z": -221.05
+        },
+        {
+          "x": 571.27,
+          "z": -221.69
+        },
+        {
+          "x": 570.4,
+          "z": -253.16
+        },
+        {
+          "x": 562.11,
+          "z": -255.54
+        },
+        {
+          "x": 547.45,
+          "z": -252.16
+        },
+        {
+          "x": 548.64,
+          "z": -221.05
+        }
+      ],
+      "height": 17.3,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-7526",
+      "footprint": [
+        {
+          "x": 281.32,
+          "z": -177.83
+        },
+        {
+          "x": 292.28,
+          "z": -139.26
+        },
+        {
+          "x": 309.79,
+          "z": -144.27
+        },
+        {
+          "x": 299.11,
+          "z": -182.8
+        },
+        {
+          "x": 281.32,
+          "z": -177.83
+        }
+      ],
+      "height": 18.7,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-144544",
+      "footprint": [
+        {
+          "x": 397.11,
+          "z": -210.18
+        },
+        {
+          "x": 407.99,
+          "z": -171.47
+        },
+        {
+          "x": 425.78,
+          "z": -176.44
+        },
+        {
+          "x": 415,
+          "z": -215.17
+        },
+        {
+          "x": 397.11,
+          "z": -210.18
+        }
+      ],
+      "height": 14.5,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-90507",
+      "footprint": [
+        {
+          "x": 357.06,
+          "z": -198.98
+        },
+        {
+          "x": 367.83,
+          "z": -160.25
+        },
+        {
+          "x": 387.16,
+          "z": -165.65
+        },
+        {
+          "x": 376.38,
+          "z": -204.38
+        },
+        {
+          "x": 357.06,
+          "z": -198.98
+        }
+      ],
+      "height": 16.4,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-90509",
+      "footprint": [
+        {
+          "x": 357.06,
+          "z": -198.98
+        },
+        {
+          "x": 347.39,
+          "z": -196.28
+        },
+        {
+          "x": 358.17,
+          "z": -157.55
+        },
+        {
+          "x": 367.83,
+          "z": -160.25
+        },
+        {
+          "x": 357.06,
+          "z": -198.98
+        }
+      ],
+      "height": 19.3,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-104879",
+      "footprint": [
+        {
+          "x": 473.02,
+          "z": -231.16
+        },
+        {
+          "x": 483.75,
+          "z": -192.64
+        },
+        {
+          "x": 503.07,
+          "z": -198.03
+        },
+        {
+          "x": 492.32,
+          "z": -236.62
+        },
+        {
+          "x": 473.02,
+          "z": -231.16
+        }
+      ],
+      "height": 16.4,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-104880",
+      "footprint": [
+        {
+          "x": 424.76,
+          "z": -217.53
+        },
+        {
+          "x": 435.44,
+          "z": -179.14
+        },
+        {
+          "x": 483.75,
+          "z": -192.64
+        },
+        {
+          "x": 473.02,
+          "z": -231.16
+        },
+        {
+          "x": 424.76,
+          "z": -217.53
+        }
+      ],
+      "height": 16.9,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-62318",
+      "footprint": [
+        {
+          "x": 250.99,
+          "z": -168.72
+        },
+        {
+          "x": 261.58,
+          "z": -130.58
+        },
+        {
+          "x": 270.93,
+          "z": -133.19
+        },
+        {
+          "x": 268.87,
+          "z": -142.17
+        },
+        {
+          "x": 286.49,
+          "z": -147.06
+        },
+        {
+          "x": 278.33,
+          "z": -176.63
+        },
+        {
+          "x": 252.66,
+          "z": -169.18
+        },
+        {
+          "x": 250.99,
+          "z": -168.72
+        }
+      ],
+      "height": 21.5,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-86995",
+      "footprint": [
+        {
+          "x": 340.2,
+          "z": -259.87
+        },
+        {
+          "x": 351.71,
+          "z": -218.47
+        },
+        {
+          "x": 371.01,
+          "z": -223.87
+        },
+        {
+          "x": 359.52,
+          "z": -265.23
+        },
+        {
+          "x": 340.2,
+          "z": -259.87
+        }
+      ],
+      "height": 21.8,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-106591",
+      "footprint": [
+        {
+          "x": 330.52,
+          "z": -257.18
+        },
+        {
+          "x": 342.09,
+          "z": -215.79
+        },
+        {
+          "x": 351.71,
+          "z": -218.47
+        },
+        {
+          "x": 340.2,
+          "z": -259.87
+        },
+        {
+          "x": 330.52,
+          "z": -257.18
+        }
+      ],
+      "height": 13.2,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-104878",
+      "footprint": [
+        {
+          "x": 320.89,
+          "z": -254.51
+        },
+        {
+          "x": 332.4,
+          "z": -213.08
+        },
+        {
+          "x": 342.09,
+          "z": -215.79
+        },
+        {
+          "x": 330.52,
+          "z": -257.18
+        },
+        {
+          "x": 320.89,
+          "z": -254.51
+        }
+      ],
+      "height": 20.2,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-126582",
+      "footprint": [
+        {
+          "x": 391.27,
+          "z": -229.42
+        },
+        {
+          "x": 409.62,
+          "z": -234.54
+        },
+        {
+          "x": 397.94,
+          "z": -276.46
+        },
+        {
+          "x": 379.51,
+          "z": -271.25
+        },
+        {
+          "x": 391.27,
+          "z": -229.42
+        }
+      ],
+      "height": 18.3,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-49567",
+      "footprint": [
+        {
+          "x": 397.94,
+          "z": -276.46
+        },
+        {
+          "x": 409.62,
+          "z": -234.54
+        },
+        {
+          "x": 428.94,
+          "z": -239.94
+        },
+        {
+          "x": 417.23,
+          "z": -281.92
+        },
+        {
+          "x": 397.94,
+          "z": -276.46
+        }
+      ],
+      "height": 12.5,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-34157",
+      "footprint": [
+        {
+          "x": 428.94,
+          "z": -239.94
+        },
+        {
+          "x": 448.4,
+          "z": -245.38
+        },
+        {
+          "x": 436.69,
+          "z": -287.35
+        },
+        {
+          "x": 417.23,
+          "z": -281.92
+        },
+        {
+          "x": 428.94,
+          "z": -239.94
+        }
+      ],
+      "height": 20.9,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-49561",
+      "footprint": [
+        {
+          "x": 446.2,
+          "z": -290.01
+        },
+        {
+          "x": 436.69,
+          "z": -287.35
+        },
+        {
+          "x": 448.4,
+          "z": -245.38
+        },
+        {
+          "x": 457.92,
+          "z": -248.04
+        },
+        {
+          "x": 446.2,
+          "z": -290.01
+        }
+      ],
+      "height": 15.3,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-89521",
+      "footprint": [
+        {
+          "x": 466.51,
+          "z": -295.68
+        },
+        {
+          "x": 446.2,
+          "z": -290.01
+        },
+        {
+          "x": 457.92,
+          "z": -248.04
+        },
+        {
+          "x": 478.15,
+          "z": -253.7
+        },
+        {
+          "x": 466.51,
+          "z": -295.68
+        }
+      ],
+      "height": 14.6,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-126572",
+      "footprint": [
+        {
+          "x": 494.06,
+          "z": -303.37
+        },
+        {
+          "x": 505.78,
+          "z": -261.42
+        },
+        {
+          "x": 526.81,
+          "z": -267.29
+        },
+        {
+          "x": 525.55,
+          "z": -312.17
+        },
+        {
+          "x": 494.06,
+          "z": -303.37
+        }
+      ],
+      "height": 16,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
+    },
+    {
+      "id": "building-49644",
+      "footprint": [
+        {
+          "x": 250.99,
+          "z": -168.72
+        },
+        {
+          "x": 241.32,
+          "z": -166.04
+        },
+        {
+          "x": 250.83,
+          "z": -131.78
+        },
+        {
+          "x": 259.85,
+          "z": -134.27
+        },
+        {
+          "x": 260.77,
+          "z": -133.48
+        },
+        {
+          "x": 250.99,
+          "z": -168.72
+        }
+      ],
+      "height": 18.1,
+      "facade_profile": "gastown_heritage_row",
+      "tone": "stoneMuted",
+      "reference_name": "Corridor building"
     }
   ],
   "landmarks": [
@@ -1301,88 +2149,7 @@
         "offset_z": 0.2
       }
     ],
-    "lamps": [
-      {
-        "x": -25.5,
-        "z": 19.5,
-        "height": 4.7
-      },
-      {
-        "x": -21.8,
-        "z": 16.2,
-        "height": 4.7
-      },
-      {
-        "x": -2,
-        "z": -22,
-        "height": 4.5
-      },
-      {
-        "x": 3,
-        "z": -34,
-        "height": 4.6
-      },
-      {
-        "x": 8,
-        "z": -45,
-        "height": 4.6
-      },
-      {
-        "x": 13,
-        "z": -56,
-        "height": 4.6
-      },
-      {
-        "x": 18,
-        "z": -67,
-        "height": 4.7
-      },
-      {
-        "x": 23,
-        "z": -78,
-        "height": 4.7
-      },
-      {
-        "x": 27,
-        "z": -88,
-        "height": 4.8
-      },
-      {
-        "x": 31,
-        "z": -98,
-        "height": 4.8
-      },
-      {
-        "x": -11,
-        "z": -30,
-        "height": 4.5
-      },
-      {
-        "x": -6,
-        "z": -42,
-        "height": 4.6
-      },
-      {
-        "x": -1,
-        "z": -54,
-        "height": 4.6
-      },
-      {
-        "x": 4,
-        "z": -66,
-        "height": 4.6
-      },
-      {
-        "x": 9,
-        "z": -78,
-        "height": 4.7
-      },
-      {
-        "x": 14,
-        "z": -90,
-        "height": 4.8
-      }
-    ],
+    "lamps": [],
     "bollards": [
       {
         "id": "b1",
@@ -1425,37 +2192,6 @@
         "z": -8.1
       }
     ],
-    "trees": [
-      {
-        "x": 5,
-        "z": -40,
-        "radius": 1.1
-      },
-      {
-        "x": 11,
-        "z": -53,
-        "radius": 1.05
-      },
-      {
-        "x": 17,
-        "z": -66,
-        "radius": 1
-      },
-      {
-        "x": 22,
-        "z": -78,
-        "radius": 0.95
-      },
-      {
-        "x": -4,
-        "z": -50,
-        "radius": 1
-      },
-      {
-        "x": 2,
-        "z": -64,
-        "radius": 0.95
-      }
-    ]
+    "trees": []
   }
 }
