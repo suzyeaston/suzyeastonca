@@ -3705,3 +3705,134 @@ body.page-template-page-bio-php .bio-content {
         text-align: center;
     }
 }
+
+/* Homepage repositioning blocks */
+.selected-work,
+.work-with-suzy-home,
+.music-world,
+.utility-nav-home {
+  margin: 34px auto;
+  max-width: 960px;
+  padding: 24px 28px;
+  border-radius: 12px;
+}
+
+.selected-work h2,
+.work-with-suzy-home h2,
+.music-world h2,
+.utility-nav-home h2 {
+  margin: 0 0 0.85rem;
+  color: #b6ffd7;
+}
+
+.selected-work__intro,
+.work-with-suzy-home p,
+.music-world p,
+.utility-nav-home p {
+  margin-top: 0;
+  color: #e8ffee;
+  line-height: 1.65;
+}
+
+.selected-work__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-top: 1rem;
+}
+
+.selected-work__card {
+  border: 1px solid rgba(0, 255, 170, 0.28);
+  border-radius: 10px;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.selected-work__card h3 {
+  margin: 0;
+  color: #9bffc6;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.selected-work__card p {
+  margin: 0;
+  color: #def9eb;
+  line-height: 1.55;
+  flex: 1;
+}
+
+.work-with-suzy-home {
+  border: 2px solid rgba(0, 255, 170, 0.4);
+  box-shadow: 0 0 20px rgba(0, 255, 170, 0.18);
+}
+
+.work-with-suzy-home__eyebrow {
+  margin: 0 0 0.6rem;
+  color: var(--secondary-color);
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.work-with-suzy-home__list {
+  margin: 1rem 0;
+  padding-left: 1.2rem;
+  color: #e8ffee;
+}
+
+.work-with-suzy-home__list li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.work-with-suzy-home__actions,
+.music-world__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.utility-nav-home__counter {
+  color: #9bffc6;
+  margin-bottom: 0.8rem;
+}
+
+.utility-nav-home__links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px 12px;
+}
+
+.utility-nav-home__links a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.utility-nav-home__links a:hover,
+.utility-nav-home__links a:focus {
+  text-decoration: underline;
+}
+
+@media (max-width: 760px) {
+  .selected-work,
+  .work-with-suzy-home,
+  .music-world,
+  .utility-nav-home {
+    margin: 24px auto;
+    padding: 18px;
+  }
+
+  .selected-work__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-section .hero-cta-group {
+    gap: 0.6rem;
+  }
+}
