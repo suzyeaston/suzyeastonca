@@ -232,19 +232,19 @@ function se_enqueue_gastown_sim_assets() {
         );
     }
 
-    $app_path = '/js/gastown-sim.js';
+    $app_path = '/js/gastown-sim-classic.js';
     if ( file_exists( $dir . $app_path ) ) {
         wp_enqueue_script(
-            'se-gastown-sim',
+            'se-gastown-sim-classic',
             $uri . $app_path,
             array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer' ),
-            filemtime( $dir . $app_path ),
+            filemtime( $dir . $app_path ) . '-classic-recovery-2',
             true
         );
         // TODO: three.min.js global build works for now; perform a full ESM migration later with verified module-safe rendered tags and a dependency strategy for loader/normalizer/app scripts in real WordPress output.
 
         wp_localize_script(
-            'se-gastown-sim',
+            'se-gastown-sim-classic',
             'seGastownSim',
             array(
                 'worldDataUrl'   => esc_url_raw( $uri . '/assets/world/gastown-water-street.json' ),
