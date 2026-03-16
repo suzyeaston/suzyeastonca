@@ -195,14 +195,6 @@ function se_enqueue_gastown_sim_assets() {
     }
 
     wp_enqueue_script(
-        'three-js',
-        'https://unpkg.com/three@0.160.1/build/three.min.js',
-        array(),
-        '0.160.1',
-        true
-    );
-
-    wp_enqueue_script(
         'howler-js',
         'https://unpkg.com/howler@2.2.4/dist/howler.min.js',
         array(),
@@ -237,10 +229,11 @@ function se_enqueue_gastown_sim_assets() {
         wp_enqueue_script(
             'se-gastown-sim',
             $uri . $app_path,
-            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer' ),
+            array( 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer' ),
             filemtime( $dir . $app_path ),
             true
         );
+        wp_script_add_data( 'se-gastown-sim', 'type', 'module' );
 
         wp_localize_script(
             'se-gastown-sim',
