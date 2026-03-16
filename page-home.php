@@ -104,6 +104,7 @@ get_header();
                 <h3 class="group-title">📚 About &amp; Info</h3>
                 <div class="group-buttons">
                     <a href="/bio" class="pixel-button">About Suzy</a>
+                    <a href="/work-with-suzy/" class="pixel-button">Work With Suzy</a>
                     <a href="https://buymeacoffee.com/wi0amge" class="pixel-button" target="_blank" rel="noopener noreferrer">Support</a>
                 </div>
             </div>

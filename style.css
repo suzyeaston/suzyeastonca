@@ -3568,3 +3568,140 @@ body.page-template-page-bio-php .bio-content {
 .asmr-lab-page .asmr-lab-form {
   gap: 1rem;
 }
+
+/* Work With Suzy page */
+.page-template-page-work-with-suzy .work-with-suzy-content {
+    max-width: 980px;
+    display: grid;
+    gap: 24px;
+}
+
+.page-template-page-work-with-suzy .wws-kicker {
+    margin: 0 0 10px;
+    color: rgba(57, 255, 20, 0.88);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+}
+
+.page-template-page-work-with-suzy .wws-hero,
+.page-template-page-work-with-suzy .wws-section,
+.page-template-page-work-with-suzy .wws-final-cta {
+    position: relative;
+    border: 2px solid rgba(57, 255, 20, 0.52);
+    border-radius: 16px;
+    background: linear-gradient(155deg, rgba(6, 10, 6, 0.95), rgba(4, 18, 13, 0.9));
+    box-shadow: inset 0 0 28px rgba(57, 255, 20, 0.08), 0 0 24px rgba(57, 255, 20, 0.2);
+    padding: clamp(20px, 3.8vw, 34px);
+}
+
+.page-template-page-work-with-suzy .wws-hero .retro-title {
+    margin-bottom: 14px;
+    font-size: clamp(2rem, 6vw, 3.25rem);
+}
+
+.page-template-page-work-with-suzy .wws-lead,
+.page-template-page-work-with-suzy .wws-section p,
+.page-template-page-work-with-suzy .wws-section li,
+.page-template-page-work-with-suzy .wws-final-cta p,
+.page-template-page-work-with-suzy .wws-boundaries p {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    line-height: 1.75;
+    color: var(--primary-color);
+}
+
+.page-template-page-work-with-suzy .wws-hero-cta,
+.page-template-page-work-with-suzy .wws-final-button {
+    margin-top: 18px;
+    display: inline-block;
+}
+
+.page-template-page-work-with-suzy .wws-grid {
+    margin-top: 14px;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.page-template-page-work-with-suzy .wws-card {
+    border: 1px solid rgba(57, 255, 20, 0.4);
+    border-radius: 12px;
+    background: rgba(5, 14, 9, 0.72);
+    padding: 16px;
+}
+
+.page-template-page-work-with-suzy .wws-card h3 {
+    margin: 0 0 10px;
+    font-size: 1.02rem;
+    color: #b9ff8a;
+}
+
+.page-template-page-work-with-suzy .wws-card p {
+    margin: 0;
+}
+
+.page-template-page-work-with-suzy .wws-proof-list,
+.page-template-page-work-with-suzy .wws-fit-list {
+    margin: 14px 0 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 10px;
+}
+
+.page-template-page-work-with-suzy .wws-work-modes {
+    margin-top: 14px;
+    display: grid;
+    gap: 10px;
+}
+
+.page-template-page-work-with-suzy .wws-mode {
+    border-left: 3px solid rgba(57, 255, 20, 0.62);
+    padding: 10px 12px;
+    background: rgba(8, 16, 9, 0.6);
+}
+
+.page-template-page-work-with-suzy .wws-mode strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #d5ffb6;
+}
+
+.page-template-page-work-with-suzy .wws-mode span {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    color: rgba(223, 255, 211, 0.88);
+    font-size: 0.98rem;
+}
+
+.page-template-page-work-with-suzy .wws-final-cta {
+    border-color: rgba(255, 80, 214, 0.52);
+    box-shadow: inset 0 0 30px rgba(255, 80, 214, 0.1), 0 0 24px rgba(255, 80, 214, 0.2);
+}
+
+.page-template-page-work-with-suzy .wws-subjects {
+    margin-top: 10px;
+    color: #ffd7f6;
+}
+
+.page-template-page-work-with-suzy .wws-boundaries {
+    border: 1px dashed rgba(57, 255, 20, 0.45);
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: rgba(2, 8, 3, 0.65);
+}
+
+@media (max-width: 700px) {
+    .page-template-page-work-with-suzy .work-with-suzy-content {
+        gap: 18px;
+    }
+
+    .page-template-page-work-with-suzy .wws-proof-list,
+    .page-template-page-work-with-suzy .wws-fit-list {
+        padding-left: 18px;
+    }
+
+    .page-template-page-work-with-suzy .wws-hero-cta,
+    .page-template-page-work-with-suzy .wws-final-button {
+        width: 100%;
+        text-align: center;
+    }
+}
