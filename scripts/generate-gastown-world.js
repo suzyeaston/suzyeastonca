@@ -348,6 +348,106 @@ function deterministicValue(seed, min, max) {
   return min + (max - min) * normalized;
 }
 
+function deriveFootprintMetrics(footprint) {
+  if (!Array.isArray(footprint) || footprint.length < 3) {
+    return {
+      x: 0,
+      z: 0,
+      width: 8,
+      depth: 8,
+      yaw: 0,
+      localFootprint: [
+        { x: -4, z: -4 },
+        { x: 4, z: -4 },
+        { x: 4, z: 4 },
+        { x: -4, z: 4 },
+        { x: -4, z: -4 },
+      ],
+    };
+  }
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  let sumX = 0;
+  let sumZ = 0;
+
+  footprint.forEach((point) => {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minZ = Math.min(minZ, point.z);
+    maxZ = Math.max(maxZ, point.z);
+    sumX += point.x;
+    sumZ += point.z;
+  });
+
+  const centroid = {
+    x: sumX / footprint.length,
+    z: sumZ / footprint.length,
+  };
+
+  let longestEdge = { dx: 0, dz: 0, length: 0 };
+  for (let i = 0; i < footprint.length - 1; i += 1) {
+    const dx = footprint[i + 1].x - footprint[i].x;
+    const dz = footprint[i + 1].z - footprint[i].z;
+    const edgeLength = Math.hypot(dx, dz);
+    if (edgeLength > longestEdge.length) {
+      longestEdge = { dx, dz, length: edgeLength };
+    }
+  }
+
+  const yaw = longestEdge.length > 0.01 ? Math.atan2(longestEdge.dz, longestEdge.dx) : 0;
+  const width = Math.max(3, maxX - minX);
+  const depth = Math.max(3, maxZ - minZ);
+
+  return {
+    x: centroid.x,
+    z: centroid.z,
+    width,
+    depth,
+    yaw,
+    localFootprint: closePolygon(footprint.map((point) => ({ x: point.x - centroid.x, z: point.z - centroid.z }))),
+  };
+}
+
+function proceduralStreetscape(points, options) {
+  const {
+    idPrefix,
+    strideMeters,
+    laneOffset,
+    maxCount,
+    mapper,
+  } = options;
+  const placements = [];
+  if (!points || points.length < 2) return placements;
+
+  const routeLength = polylineLength(points);
+  if (routeLength < 5) return placements;
+
+  const halfCount = Math.max(2, Math.min(maxCount, Math.floor(routeLength / strideMeters)));
+  for (let i = 0; i <= halfCount; i += 1) {
+    const d = (routeLength * i) / halfCount;
+    const center = samplePointAtDistance(points, d);
+    const tangent = normalize({
+      x: samplePointAtDistance(points, Math.min(routeLength, d + 1)).x - samplePointAtDistance(points, Math.max(0, d - 1)).x,
+      z: samplePointAtDistance(points, Math.min(routeLength, d + 1)).z - samplePointAtDistance(points, Math.max(0, d - 1)).z,
+    });
+    const normal = perpendicularLeft(tangent);
+
+    [-1, 1].forEach((side) => {
+      if (placements.length >= maxCount) return;
+      const point = {
+        x: center.x + normal.x * laneOffset * side,
+        z: center.z + normal.z * laneOffset * side,
+      };
+      placements.push(mapper(point, `${idPrefix}-${placements.length}`));
+    });
+  }
+
+  return placements.slice(0, maxCount);
+}
+
 function buildWorld(options = {}) {
   const root = options.root || path.resolve(__dirname, '..');
   const outputPath = options.outputPath || path.join(root, 'assets', 'world', 'gastown-water-street.json');
@@ -474,15 +574,37 @@ function buildWorld(options = {}) {
 
     const props = getProps(feature);
     const id = props.id || props.ID || props.objectid || props.OBJECTID || 'building-' + index;
+    const projectedFootprint = closePolygon(footprint.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })));
+    const metrics = deriveFootprintMetrics(projectedFootprint);
     buildingCandidates.push({
       distance: d,
       building: {
         id: String(id),
-        footprint: closePolygon(footprint.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) }))),
+        footprint: projectedFootprint,
+        footprint_local: metrics.localFootprint.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })),
+        x: Number(metrics.x.toFixed(2)),
+        z: Number(metrics.z.toFixed(2)),
+        width: Number(metrics.width.toFixed(2)),
+        depth: Number(metrics.depth.toFixed(2)),
+        yaw: Number(metrics.yaw.toFixed(4)),
         height: Number(deterministicValue(id, 12, 22).toFixed(1)),
         facade_profile: 'gastown_heritage_row',
         tone: d > 24 ? 'stoneMuted' : 'brickWarm',
         reference_name: props.name || props.civic_address || props.address || 'Corridor building',
+        roofline_type: d > 20 ? 'flat_cornice' : 'angled_parapet',
+        window_bay_count: Math.round(deterministicValue(id + '-bays', 3, 6)),
+        recessed_entry_count: Math.round(deterministicValue(id + '-entries', 1, 2)),
+        storefront_rhythm: {
+          base_band: Number(deterministicValue(id + '-band', 0.14, 0.22).toFixed(2)),
+          upper_rows: Math.round(deterministicValue(id + '-rows', 2, 4)),
+        },
+        material_palette: {
+          primary: d > 24 ? '#8b8f92' : '#7f4f3f',
+          trim: '#c8c2b8',
+          accent: '#4b5968',
+        },
+        cornice_emphasis: Number(deterministicValue(id + '-cornice', 0.18, 0.42).toFixed(2)),
+        mass_inset: Number(deterministicValue(id + '-massing', 0.92, 0.98).toFixed(2)),
       },
     });
   });
@@ -507,12 +629,27 @@ function buildWorld(options = {}) {
     return accepted.map(mapper);
   }
 
+  const lampSource = poles ? 'civic-data' : 'procedural-fallback';
   const lamps = poles
     ? thinPoints(poles.features, 10, 80, (point, index) => ({ id: 'lamp-' + index, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), height: 5.6 }))
-    : [];
+    : proceduralStreetscape(mergedRoute, {
+      idPrefix: 'lamp-fallback',
+      strideMeters: 42,
+      laneOffset: sidewalkOuter - 0.35,
+      maxCount: 28,
+      mapper: (point, id) => ({ id, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), height: 5.6 }),
+    });
+
+  const treeSource = trees ? 'civic-data' : 'procedural-fallback';
   const treePoints = trees
     ? thinPoints(trees.features, 9, 90, (point, index) => ({ id: 'tree-' + index, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), radius: Number(deterministicValue(index, 1.1, 2.4).toFixed(2)) }))
-    : [];
+    : proceduralStreetscape(mergedRoute, {
+      idPrefix: 'tree-fallback',
+      strideMeters: 30,
+      laneOffset: sidewalkOuter + 1.5,
+      maxCount: 40,
+      mapper: (point, id) => ({ id, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), radius: Number(deterministicValue(id, 1.15, 2.1).toFixed(2)) }),
+    });
 
   const existingWorld = fs.existsSync(outputPath) ? readJson(outputPath) : {};
   const existingMeta = existingWorld.meta || {};
@@ -538,6 +675,11 @@ function buildWorld(options = {}) {
             routeAnchors: 'data/reference/route-anchors.json',
           },
         },
+      },
+      generationNotes: {
+        buildings: 'renderer-compatible derived geometry from footprint centroids/extents/headings (footprints preserved)',
+        streetscapeTrees: treeSource,
+        streetscapeLamps: lampSource,
       },
     },
     route: {

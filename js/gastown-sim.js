@@ -393,14 +393,16 @@
       const profilePreset = facadeProfilePresets[b.facade_profile] || facadeProfilePresets.gastown_heritage_masonry;
       const colors = paletteToColors(b);
       const massingInset = b.mass_inset || profilePreset.baseInset;
-      const shapePoints = Array.isArray(b.footprint) && b.footprint.length >= 3
-        ? b.footprint
-        : [
-          { x: -b.width / 2, z: -b.depth / 2 },
-          { x: b.width / 2, z: -b.depth / 2 },
-          { x: b.width / 2, z: b.depth / 2 },
-          { x: -b.width / 2, z: b.depth / 2 },
-        ];
+      const shapePoints = Array.isArray(b.footprint_local) && b.footprint_local.length >= 3
+        ? b.footprint_local
+        : (Array.isArray(b.footprint) && b.footprint.length >= 3
+          ? b.footprint.map((point) => ({ x: point.x - (b.x || 0), z: point.z - (b.z || 0) }))
+          : [
+            { x: -b.width / 2, z: -b.depth / 2 },
+            { x: b.width / 2, z: -b.depth / 2 },
+            { x: b.width / 2, z: b.depth / 2 },
+            { x: -b.width / 2, z: b.depth / 2 },
+          ]);
       const geom = new THREE.ExtrudeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, point.z))), {
         depth: b.height,
         bevelEnabled: false,
