@@ -712,7 +712,7 @@ console.log('[Gastown Sim] classic runtime build 2026-03-15 recovery 2');
   }
 
   function addLandmarks(world) {
-    world.landmarks.forEach((landmark) => {
+    (world.landmarks || []).forEach((landmark) => {
       const col = landmark.type === 'clock' ? 0xc8a460 : landmark.type === 'split' ? 0x7ea2c7 : 0x8793a1;
       const markerMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.2 });
       const markerHeight = landmark.type === 'clock' ? 7.2 : 4.5;
@@ -1315,7 +1315,7 @@ console.log('[Gastown Sim] classic runtime build 2026-03-15 recovery 2');
     state.sounds.rainLoop = new Howl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
     state.sounds.clockBurst = new Howl({ src: src('events/steam_clock_burst'), volume: 0.45 });
 
-    world.audioZones.forEach((zone) => {
+    (world.audioZones || []).forEach((zone) => {
       state.sounds.zoneBeds[zone.id] = new Howl({ src: src('zones/' + zone.bed), loop: true, volume: 0 });
     });
   }
@@ -1325,9 +1325,12 @@ console.log('[Gastown Sim] classic runtime build 2026-03-15 recovery 2');
       return;
     }
 
-    const mood = state.world.moodPresets[state.activeMood] || state.world.moodPresets.eerie;
-    const weather = state.world.weatherPresets[state.activeWeather] || state.world.weatherPresets.rain;
-    const timeOfDay = state.world.timeOfDayPresets[state.activeTimeOfDay] || state.world.timeOfDayPresets.night;
+    const moodPresets = state.world.moodPresets || {};
+    const mood = moodPresets[state.activeMood] || moodPresets.eerie || { ambientBed: 'eerie_drones', audioDensity: 0.65, voiceFreq: 0.2, lightIntensity: 0.78 };
+    const weatherPresets = state.world.weatherPresets || {};
+    const weather = weatherPresets[state.activeWeather] || weatherPresets.rain || { rainIntensity: 0, fogDensity: 0.012 };
+    const timePresets = state.world.timeOfDayPresets || {};
+    const timeOfDay = timePresets[state.activeTimeOfDay] || timePresets.night || { sky: '#101822', ambientColor: '#8aa0b8', ambientIntensity: 0.8, keyColor: '#9eb9d4', keyIntensity: 0.68, fillColor: '#5b6f87', fillIntensity: 0.25, buildingContrast: 1, buildingEdgeColor: '#223142', roadColor: '#2b3138', sidewalkColor: '#8f8780', laneColor: '#aab1b8', landmarkGlow: 0.3, rainVisibility: 1, pathBrightness: 0.22, fogBoost: 0 };
 
     const weatherFogBoost = state.activeWeather === 'fog' ? 0.008 : state.activeWeather === 'rain' ? 0.003 : -0.001;
     const fogDensity = Math.max(0.004, (weather.fogDensity || 0.01) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
@@ -1380,7 +1383,8 @@ console.log('[Gastown Sim] classic runtime build 2026-03-15 recovery 2');
 
   function applyMood(moodId) {
     state.activeMood = moodId;
-    const preset = state.world.moodPresets[moodId] || state.world.moodPresets.eerie;
+    const moodPresets = state.world.moodPresets || {};
+    const preset = moodPresets[moodId] || moodPresets.eerie || { ambientBed: 'eerie_drones', audioDensity: 0.65, voiceFreq: 0.2, lightIntensity: 0.78 };
 
     applyVisualState();
 
@@ -1422,9 +1426,9 @@ console.log('[Gastown Sim] classic runtime build 2026-03-15 recovery 2');
   }
 
   function updateAudioZones() {
-    if (!state.world || !state.world.audioZones) return;
+    if (!state.world) return;
 
-    state.world.audioZones.forEach((zone) => {
+    (state.world.audioZones || []).forEach((zone) => {
       const dist = Math.hypot(zone.x - player.position.x, zone.z - player.position.z);
       const normalized = Math.max(0, 1 - (dist / zone.radius));
       const howl = state.sounds.zoneBeds[zone.id];
@@ -1631,7 +1635,7 @@ console.log('[Gastown Sim] classic runtime build 2026-03-15 recovery 2');
 
     state.clockTimer = setInterval(() => {
       if (!state.isRunning) return;
-      const steamClock = state.world.landmarks.find((landmark) => landmark.id === 'steam-clock');
+      const steamClock = (state.world.landmarks || []).find((landmark) => landmark.id === 'steam-clock');
       if (!steamClock) return;
       const distance = Math.hypot(player.position.x - steamClock.x, player.position.z - steamClock.z);
       if (distance < 20 && Math.random() > 0.48) {
@@ -1644,19 +1648,31 @@ console.log('[Gastown Sim] classic runtime build 2026-03-15 recovery 2');
     try {
       state.world = await window.GastownWorldLoader.load(config.worldDataUrl, config.starterWorldDataUrl);
       updateAttribution(state.world);
-      addGround(state.world);
-      addBuildings(state.world);
-      addStreetscape(state.world);
-      addHeroLandmarks(state.world);
-      addLandmarks(state.world);
-      addDebugRoute(state.world);
-      setupAudio(state.world);
+      try {
+        addGround(state.world);
+        addBuildings(state.world);
+        addStreetscape(state.world);
+        addHeroLandmarks(state.world);
+        addLandmarks(state.world);
+        addDebugRoute(state.world);
+      } catch (phaseError) {
+        throw new Error('failed while adding landmarks/world geometry: ' + phaseError.message);
+      }
+      try {
+        setupAudio(state.world);
+      } catch (phaseError) {
+        throw new Error('failed while setting up audio: ' + phaseError.message);
+      }
       minimapState.worldMetrics = getWorldMetrics();
       restoreMinimapZoom();
       updateSize();
-      applyTimeOfDay(state.activeTimeOfDay);
-      applyMood(state.activeMood);
-      applyWeather(state.activeWeather);
+      try {
+        applyTimeOfDay(state.activeTimeOfDay);
+        applyMood(state.activeMood);
+        applyWeather(state.activeWeather);
+      } catch (phaseError) {
+        throw new Error('failed while applying visual presets: ' + phaseError.message);
+      }
       resetToStart();
       attachEvents();
       setDebugState(state.debugEnabled);
