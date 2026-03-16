@@ -52,6 +52,8 @@ get_header();
         <li><strong>Mouse</strong> = look around</li>
         <li><strong>W A S D</strong> = move / strafe</li>
         <li><strong>Arrow keys</strong> = move forward/back + turn left/right</li>
+        <li><strong>Mouse wheel</strong> = look up/down (while focused/in play mode)</li>
+        <li><strong>Ctrl + ↑ / Ctrl + ↓</strong> = precise look up/down steps</li>
         <li><strong>Esc</strong> = release pointer / pause</li>
       </ul>
     </section>
@@ -85,6 +87,7 @@ get_header();
         <li>W/S + Arrow Up/Down move forward/back; A/D strafe</li>
         <li>Arrow Left/Right turns the player heading</li>
         <li>Mouse look while pointer is locked</li>
+        <li>Wheel and Ctrl+ArrowUp/Down also adjust pitch while focused/in play mode</li>
         <li>Walk bounds clamp keeps the player in the playable corridor slice</li>
         <li>Route debug can also be enabled with <code>?gastownDebug=1</code></li>
         <li>Audio zones: station rumble, steam clock core, split-building nightlife edge</li>

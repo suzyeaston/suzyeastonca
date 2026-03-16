@@ -10,7 +10,7 @@
       "Starter corridor fallback is active because required offline civic source files are missing.",
       "This world is intentionally human-scaled and deterministic for readability; it is not GIS-accurate Gastown reconstruction."
     ],
-    "lastBuild": "2026-03-16T03:48:56.774Z"
+    "lastBuild": "2026-03-16T03:46:45.370Z"
   },
   "route": {
     "name": "Gastown starter block corridor",
@@ -433,7 +433,7 @@
           "z": -3.6
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 3,
@@ -573,7 +573,7 @@
           "z": 4.8
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 4,
@@ -713,7 +713,7 @@
           "z": -3.2
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 3,
@@ -853,7 +853,7 @@
           "z": 6
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 5,
@@ -993,7 +993,7 @@
           "z": 4
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 4,
@@ -1133,7 +1133,7 @@
           "z": -5.2
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 5,
@@ -1273,7 +1273,7 @@
           "z": -4.4
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 4,
@@ -1413,7 +1413,7 @@
           "z": 3.6
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 3,
@@ -1553,7 +1553,7 @@
           "z": 5.6
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 5,
@@ -1693,7 +1693,7 @@
           "z": -4
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 4,
@@ -1833,7 +1833,7 @@
           "z": -3.6
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 3,
@@ -1973,7 +1973,7 @@
           "z": -4.8
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 4,
@@ -2113,7 +2113,7 @@
           "z": -3.2
         }
       ],
-      "facade_profile": "cordova_commercial_transition",
+      "facade_profile": "cordoba_commercial_transition",
       "tone": "stoneMuted",
       "roofline_type": "flat_cornice",
       "window_bay_count": 3,

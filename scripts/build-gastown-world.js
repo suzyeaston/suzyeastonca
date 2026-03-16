@@ -81,7 +81,11 @@ function runScaffold() {
 function run() {
   const generated = buildWorld({ root, outputPath: worldPath });
   if (generated.generated) {
-    process.stdout.write('Generated offline world data at ' + path.relative(root, worldPath) + '\n');
+    if (generated.usedStarterFallback) {
+      process.stdout.write('Generated deterministic starter fallback world at ' + path.relative(root, worldPath) + '\n');
+    } else {
+      process.stdout.write('Generated offline civic-data world at ' + path.relative(root, worldPath) + '\n');
+    }
     return;
   }
 
