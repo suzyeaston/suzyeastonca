@@ -471,6 +471,187 @@ function proceduralStreetscape(points, options) {
   return placements.slice(0, maxCount);
 }
 
+function makeRectFootprint(center, tangent, width, depth) {
+  const normal = perpendicularLeft(tangent);
+  const halfW = width / 2;
+  const halfD = depth / 2;
+  const corners = [
+    { x: (-halfW), z: (-halfD) },
+    { x: halfW, z: (-halfD) },
+    { x: halfW, z: halfD },
+    { x: (-halfW), z: halfD },
+  ];
+  const world = corners.map((corner) => ({
+    x: center.x + (normal.x * corner.x) + (tangent.x * corner.z),
+    z: center.z + (normal.z * corner.x) + (tangent.z * corner.z),
+  }));
+  return closePolygon(world.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })));
+}
+
+function makeStarterWorld(outputPath) {
+  const routePoints = [
+    { x: 0, z: 0 },
+    { x: 4, z: -46 },
+    { x: 8, z: -95 },
+    { x: 12, z: -154 },
+    { x: 15, z: -188 },
+  ];
+  const routeLength = polylineLength(routePoints);
+  const beatCount = 10;
+  const centerline = [];
+  for (let i = 0; i <= beatCount; i += 1) {
+    const at = (routeLength * i) / beatCount;
+    const point = samplePointAtDistance(routePoints, at);
+    centerline.push({
+      id: 'starter-beat-' + i,
+      label: i === 0 ? 'Starter Corridor Start' : i === beatCount ? 'Starter Corridor End' : 'Starter Beat ' + i,
+      x: Number(point.x.toFixed(2)),
+      z: Number(point.z.toFixed(2)),
+    });
+  }
+
+  centerline[0].id = 'starter-corridor-start';
+  centerline[Math.floor(centerline.length / 2)].id = 'starter-mid-block';
+  centerline[centerline.length - 1].id = 'starter-corridor-end';
+
+  const streetWidth = 9.8;
+  const sidewalkWidth = 3.2;
+  const softBoundary = 3.2;
+  const streetHalf = streetWidth / 2;
+  const sidewalkOuter = streetHalf + sidewalkWidth;
+  const walkOuter = sidewalkOuter + softBoundary;
+
+  const streetPolygon = ribbonPolygon(routePoints, streetHalf);
+  const leftSidewalk = closePolygon(lineOffset(routePoints, sidewalkOuter).concat(lineOffset(routePoints, streetHalf).reverse()));
+  const rightSidewalk = closePolygon(lineOffset(routePoints, -streetHalf).concat(lineOffset(routePoints, -sidewalkOuter).reverse()));
+  const walkBounds = ribbonPolygon(routePoints, walkOuter);
+
+  const frontagePattern = [9, 12, 8, 15, 10, 13, 11, 9, 14, 10];
+  const depthPattern = [17, 20, 15, 23, 18, 22, 19, 16, 21, 18];
+  const heightPattern = [10, 14, 12, 18, 11, 20, 15, 9, 16, 13];
+  const buildings = [];
+  let cursor = 8;
+  let i = 0;
+  while (cursor < routeLength - 14 && i < 28) {
+    const frontage = frontagePattern[i % frontagePattern.length];
+    const depth = depthPattern[i % depthPattern.length];
+    const height = heightPattern[i % heightPattern.length];
+    const center = samplePointAtDistance(routePoints, cursor);
+    const ahead = samplePointAtDistance(routePoints, Math.min(routeLength, cursor + 2));
+    const behind = samplePointAtDistance(routePoints, Math.max(0, cursor - 2));
+    const tangent = normalize({ x: ahead.x - behind.x, z: ahead.z - behind.z });
+    const normal = perpendicularLeft(tangent);
+
+    [-1, 1].forEach((side) => {
+      const centerOffset = sidewalkOuter + (depth / 2) + 0.8;
+      const footprintCenter = {
+        x: center.x + (normal.x * centerOffset * side),
+        z: center.z + (normal.z * centerOffset * side),
+      };
+      const footprint = makeRectFootprint(footprintCenter, tangent, frontage, depth);
+      const metrics = deriveFootprintMetrics(footprint);
+      const id = `starter-bldg-${i}-${side < 0 ? 'left' : 'right'}`;
+      buildings.push({
+        id,
+        reference_name: side < 0 ? 'Starter west frontage' : 'Starter east frontage',
+        x: Number(metrics.x.toFixed(2)),
+        z: Number(metrics.z.toFixed(2)),
+        width: Number(metrics.width.toFixed(2)),
+        depth: Number(metrics.depth.toFixed(2)),
+        yaw: Number(metrics.yaw.toFixed(4)),
+        height,
+        footprint,
+        footprint_local: metrics.localFootprint.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })),
+        facade_profile: side < 0 ? 'gastown_heritage_row' : 'cordova_commercial_transition',
+        tone: side < 0 ? 'brickWarm' : 'stoneMuted',
+        roofline_type: 'flat_cornice',
+        window_bay_count: Math.max(3, Math.round(frontage / 2.8)),
+        recessed_entry_count: 1,
+        storefront_rhythm: { base_band: 0.18, upper_rows: height >= 16 ? 4 : 3 },
+        material_palette: {
+          primary: side < 0 ? '#74493c' : '#7f868e',
+          trim: '#c7b8a5',
+          accent: '#4f5f6f',
+        },
+        cornice_emphasis: 0.26,
+        mass_inset: 0.97,
+      });
+    });
+
+    cursor += frontage + 2.5;
+    i += 1;
+  }
+
+  const start = centerline[0];
+  const next = centerline[1] || centerline[0];
+  const dir = normalize({ x: next.x - start.x, z: next.z - start.z });
+  const spawn = {
+    x: Number((start.x + (dir.x * 9)).toFixed(2)),
+    y: 1.7,
+    z: Number((start.z + (dir.z * 9)).toFixed(2)),
+    yaw: Number(Math.atan2(-dir.x, -dir.z).toFixed(4)),
+  };
+
+  const world = {
+    routeId: 'gastown_water_street_starter_corridor',
+    meta: {
+      title: 'Gastown Starter Corridor (deterministic fallback)',
+      units: 'meters',
+      source: 'deterministic starter fallback',
+      fallbackMode: 'starter-corridor',
+      isRealCivicBuild: false,
+      buildNotes: [
+        'Starter corridor fallback is active because required offline civic source files are missing.',
+        'This world is intentionally human-scaled and deterministic for readability; it is not GIS-accurate Gastown reconstruction.',
+      ],
+      lastBuild: new Date().toISOString(),
+    },
+    route: {
+      name: 'Gastown starter block corridor',
+      centerline,
+      walkBounds,
+      streetWidth,
+      sidewalkWidth,
+      softBoundary,
+      hardResetDistance: 12,
+    },
+    nodes: [
+      { ...centerline[0], label: 'Starter start' },
+      { ...centerline[Math.floor(centerline.length / 2)], label: 'Starter mid block' },
+      { ...centerline[centerline.length - 1], label: 'Starter end' },
+    ],
+    zones: {
+      street: [{ id: 'starter-roadway', surface: 'road', polygon: streetPolygon }],
+      sidewalk: [
+        { id: 'starter-sidewalk-left', side: 'left', polygon: leftSidewalk },
+        { id: 'starter-sidewalk-right', side: 'right', polygon: rightSidewalk },
+      ],
+    },
+    buildings,
+    streetscape: {
+      lamps: proceduralStreetscape(routePoints, {
+        idPrefix: 'starter-lamp', strideMeters: 24, laneOffset: sidewalkOuter - 0.5, maxCount: 24,
+        mapper: (point, id) => ({ id, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), height: 5.4 }),
+      }),
+      trees: proceduralStreetscape(routePoints, {
+        idPrefix: 'starter-tree', strideMeters: 30, laneOffset: sidewalkOuter + 2.2, maxCount: 16,
+        mapper: (point, id) => ({ id, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), radius: 1.4 }),
+      }),
+      bollards: [],
+      surfaceBands: [],
+    },
+    spawn,
+    bounds: {
+      floorY: 0,
+      edgeMessage: 'Stayed within the starter street corridor.',
+      resetMessage: 'Returned to the starter street corridor.',
+    },
+  };
+
+  fs.writeFileSync(outputPath, JSON.stringify(world, null, 2) + '\n', 'utf8');
+  return { generated: true, outputPath, routeLength, usedStarterFallback: true };
+}
+
 function buildWorld(options = {}) {
   const root = options.root || path.resolve(__dirname, '..');
   const outputPath = options.outputPath || path.join(root, 'assets', 'world', 'gastown-water-street.json');
@@ -481,10 +662,7 @@ function buildWorld(options = {}) {
   const treesPath = path.join(root, 'data', 'cov', 'public-trees.geojson');
 
   if (!fs.existsSync(routeAnchorsPath) || !fs.existsSync(streetsPath) || !fs.existsSync(buildingsPath)) {
-    return {
-      generated: false,
-      reason: 'Required offline inputs missing (need route-anchors.json + public-streets.geojson + building-footprints.geojson).',
-    };
+    return makeStarterWorld(outputPath);
   }
 
   const anchors = readJson(routeAnchorsPath);

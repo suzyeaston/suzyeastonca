@@ -51,7 +51,7 @@
   };
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 800);
+  const camera = new THREE.PerspectiveCamera(68, 1, 0.08, 700);
   camera.position.set(0, 1.7, 0);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -90,6 +90,23 @@
     landmarkVisuals: [],
     groundMeshes: [],
   };
+
+  const LOOK_PITCH_LIMIT = Math.PI / 2.25;
+  const WHEEL_PITCH_SENSITIVITY = 0.00085;
+  const KEYBOARD_PITCH_STEP = 0.045;
+
+  function clampPitch(value) {
+    return Math.max(-LOOK_PITCH_LIMIT, Math.min(LOOK_PITCH_LIMIT, value));
+  }
+
+  function adjustPitch(delta) {
+    state.pitch = clampPitch(state.pitch + delta);
+    camera.rotation.x = state.pitch;
+  }
+
+  function canUseLookFallbackControls() {
+    return state.isRunning || document.pointerLockElement === renderer.domElement || document.activeElement === renderer.domElement;
+  }
 
   const minimapState = {
     ctx: minimapCanvas ? minimapCanvas.getContext('2d') : null,
@@ -134,6 +151,14 @@
 
   function setLandmark(text) {
     landmarkEl.textContent = text;
+  }
+
+  function setWorldModeStatus(world) {
+    if (!world || !world.meta) return;
+    const isStarter = world.meta.fallbackMode === 'starter-corridor' || world.meta.runtimeFallbackActive || world.meta.isRealCivicBuild === false;
+    if (!isStarter) return;
+    const buildNote = (world.meta.buildNotes && world.meta.buildNotes[0]) || 'Starter corridor fallback world active.';
+    setStatus('Starter fallback world active: ' + buildNote);
   }
 
   function updateAttribution(world) {
@@ -271,7 +296,7 @@
 
   function addGround(world) {
     visualState.roadMaterial = new THREE.MeshStandardMaterial({ color: 0x1b1f25, roughness: 0.94, metalness: 0.14 });
-    visualState.sidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0x755247, roughness: 0.88, metalness: 0.05 });
+    visualState.sidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0xa19486, roughness: 0.9, metalness: 0.02 });
     visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xb8c2cb, transparent: true, opacity: 0.7 });
     visualState.laneMaterial = new THREE.LineBasicMaterial({ color: 0xa5bdcf, transparent: true, opacity: 0.56 });
 
@@ -299,8 +324,8 @@
       if (!next) return;
       const heading = Math.atan2(next.x - point.x, next.z - point.z);
       const stripe = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.22, 2.4),
-        new THREE.MeshStandardMaterial({ color: 0xb9c7d5, roughness: 0.78, metalness: 0.22, transparent: true, opacity: 0.38 })
+        new THREE.PlaneGeometry(0.18, 1.9),
+        new THREE.MeshStandardMaterial({ color: 0xbfc8cf, roughness: 0.8, metalness: 0.1, transparent: true, opacity: 0.34 })
       );
       stripe.rotation.x = -Math.PI / 2;
       stripe.rotation.y = heading;
@@ -738,15 +763,47 @@
         );
         debugGroup.add(arrow);
       }
+
+      if (Array.isArray(building.footprint) && building.footprint.length >= 3) {
+        addPolygonOutline(building.footprint, 0.54, 0x72f194);
+      }
     });
 
+    if (world.spawn) {
+      const spawnMarker = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.2, 12), new THREE.MeshBasicMaterial({ color: 0xffdb6b }));
+      spawnMarker.position.set(world.spawn.x, 0.95, world.spawn.z);
+      spawnMarker.rotation.x = Math.PI;
+      debugGroup.add(spawnMarker);
+    }
+
+    const playerMarker = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 10), new THREE.MeshBasicMaterial({ color: 0xfff9b2 }));
+    playerMarker.position.set(player.position.x, 0.72, player.position.z);
+    playerMarker.userData.role = 'player-marker';
+    debugGroup.add(playerMarker);
+
     if (routeDebugOverlay) {
-      const lines = world.route.centerline.map((point, index) => (index + 1) + '. ' + (point.label || point.id || ('node-' + index)) + ' [' + point.x + ', ' + point.z + ']');
-      routeDebugOverlay.textContent = lines.join('\n');
       routeDebugOverlay.hidden = !state.debugEnabled;
+      refreshDebugRuntimeReadout();
     }
   }
 
+
+
+  function refreshDebugRuntimeReadout() {
+    if (!state.debugEnabled || !routeDebugOverlay || !state.world || !state.world.route) return;
+    const lines = state.world.route.centerline.map((point, index) => (index + 1) + '. ' + (point.label || point.id || ('node-' + index)) + ' [' + point.x + ', ' + point.z + ']');
+    const modeLine = state.world.meta && state.world.meta.fallbackMode === 'starter-corridor'
+      ? 'Mode: starter fallback corridor (not GIS-accurate civic build)'
+      : 'Mode: civic-data-derived world';
+    lines.unshift(modeLine);
+    lines.push('Player: [' + player.position.x.toFixed(2) + ', ' + player.position.z.toFixed(2) + ']');
+    routeDebugOverlay.textContent = lines.join('\n');
+
+    const marker = debugGroup.children.find((child) => child.userData && child.userData.role === 'player-marker');
+    if (marker) {
+      marker.position.set(player.position.x, 0.72, player.position.z);
+    }
+  }
 
   function rebuildRain(intensity) {
     while (rainGroup.children.length) {
@@ -1266,14 +1323,14 @@
       visualState.roadMaterial.roughness = 0.92 - ((weather.rainIntensity || 0) * 0.26);
     }
     if (visualState.sidewalkMaterial) {
-      visualState.sidewalkMaterial.color.set(timeOfDay.sidewalkColor || '#3a444f');
+      visualState.sidewalkMaterial.color.set(timeOfDay.sidewalkColor || '#8f8780');
     }
     if (visualState.curbMaterial) {
       visualState.curbMaterial.color.set(timeOfDay.sidewalkColor || '#8f99a3').multiplyScalar(0.74);
     }
     if (visualState.laneMaterial) {
-      visualState.laneMaterial.color.set(timeOfDay.laneColor || '#5d6a76');
-      visualState.laneMaterial.opacity = 0.2 + ((timeOfDay.pathBrightness || 0.25) * 0.5);
+      visualState.laneMaterial.color.set(timeOfDay.laneColor || '#aab1b8');
+      visualState.laneMaterial.opacity = 0.24 + ((timeOfDay.pathBrightness || 0.2) * 0.4);
     }
 
     visualState.landmarkVisuals.forEach((landmarkVisual) => {
@@ -1388,11 +1445,15 @@
 
     const sensitivity = 0.0018;
     state.yaw -= event.movementX * sensitivity;
-    state.pitch -= event.movementY * sensitivity;
-    state.pitch = Math.max(-Math.PI / 2.25, Math.min(Math.PI / 2.25, state.pitch));
+    adjustPitch(-(event.movementY * sensitivity));
 
     player.rotation.y = state.yaw;
-    camera.rotation.x = state.pitch;
+  }
+
+  function onWheelLook(event) {
+    if (!canUseLookFallbackControls()) return;
+    event.preventDefault();
+    adjustPitch(event.deltaY * WHEEL_PITCH_SENSITIVITY);
   }
 
   function setMoveKey(code, pressed) {
@@ -1404,14 +1465,27 @@
     if (code === 'ArrowRight') state.turn.right = pressed;
   }
 
+  function handlePitchKeyControl(event) {
+    if (!event.ctrlKey || !canUseLookFallbackControls()) return false;
+    if (event.code === 'ArrowUp') {
+      adjustPitch(-KEYBOARD_PITCH_STEP);
+      return true;
+    }
+    if (event.code === 'ArrowDown') {
+      adjustPitch(KEYBOARD_PITCH_STEP);
+      return true;
+    }
+    return false;
+  }
+
   function resetToStart() {
     const spawn = resolveSafeSpawn();
     player.position.set(spawn.x, spawn.y, spawn.z);
     state.lastSafePosition.copy(player.position);
     state.yaw = spawn.yaw || 0;
-    state.pitch = 0;
+    state.pitch = Number.isFinite(spawn.pitch) ? clampPitch(spawn.pitch) : 0;
     player.rotation.y = state.yaw;
-    camera.rotation.x = 0;
+    camera.rotation.x = state.pitch;
     updateNearestNode();
   }
 
@@ -1458,10 +1532,12 @@
       enterPlayMode();
     });
     document.addEventListener('mousemove', onMouseMove);
+    renderer.domElement.addEventListener('wheel', onWheelLook, { passive: false });
 
     document.addEventListener('keydown', (event) => {
+      const consumedPitch = handlePitchKeyControl(event);
       setMoveKey(event.code, true);
-      if (event.code.startsWith('Arrow') && (state.isRunning || document.pointerLockElement === renderer.domElement)) {
+      if (consumedPitch || (event.code.startsWith('Arrow') && (state.isRunning || document.pointerLockElement === renderer.domElement))) {
         event.preventDefault();
       }
     }, { passive: false });
@@ -1535,7 +1611,7 @@
 
   async function init() {
     try {
-      state.world = await window.GastownWorldLoader.load(config.worldDataUrl);
+      state.world = await window.GastownWorldLoader.load(config.worldDataUrl, config.starterWorldDataUrl);
       updateAttribution(state.world);
       addGround(state.world);
       addBuildings(state.world);
@@ -1557,7 +1633,10 @@
         debugPanel.removeAttribute('hidden');
       }
       scheduleSteamClock();
-      setStatus('Prototype ready. Click scene to enter look mode and begin moving.');
+      setWorldModeStatus(state.world);
+      if (!(state.world.meta && state.world.meta.fallbackMode === 'starter-corridor')) {
+        setStatus('Prototype ready. Click scene to enter look mode and begin moving.');
+      }
       setPointerStatus('Pointer unlocked. Click scene to enter look mode.');
       renderer.setAnimationLoop((time) => {
         const delta = Math.min(0.03, (time - (init.prevTime || time)) / 1000);
@@ -1569,6 +1648,7 @@
 
         animateRain(delta);
         drawMinimap();
+        refreshDebugRuntimeReadout();
         renderer.render(scene, camera);
       });
     } catch (error) {

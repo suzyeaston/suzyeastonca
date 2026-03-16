@@ -247,6 +247,7 @@ function se_enqueue_gastown_sim_assets() {
             'seGastownSim',
             array(
                 'worldDataUrl'   => esc_url_raw( $uri . '/assets/world/gastown-water-street.json' ),
+                'starterWorldDataUrl' => esc_url_raw( $uri . '/assets/world/gastown-water-street-starter.json' ),
                 'audioBaseUrl'   => esc_url_raw( $uri . '/assets/audio/gastown' ),
                 'defaultWeather' => 'rain',
                 'defaultMood'    => 'eerie',

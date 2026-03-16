@@ -1,19 +1,32 @@
 (function (window) {
   'use strict';
 
-  async function loadGastownWorldData(url) {
-    if (!url) {
-      throw new Error('Missing world data URL.');
-    }
-
+  async function fetchWorld(url) {
     const response = await fetch(url, { credentials: 'same-origin' });
     if (!response.ok) {
       throw new Error('Could not load Gastown world data.');
     }
-
     const data = await response.json();
     validateWorldData(data);
     return data;
+  }
+
+  async function loadGastownWorldData(url, fallbackUrl) {
+    if (!url) {
+      throw new Error('Missing world data URL.');
+    }
+
+    try {
+      return await fetchWorld(url);
+    } catch (primaryError) {
+      if (!fallbackUrl || fallbackUrl === url) {
+        throw primaryError;
+      }
+      const fallback = await fetchWorld(fallbackUrl);
+      fallback.meta = fallback.meta || {};
+      fallback.meta.runtimeFallbackActive = true;
+      return fallback;
+    }
   }
 
 
