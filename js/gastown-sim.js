@@ -1,9 +1,11 @@
+import * as THREE from 'https://unpkg.com/three@0.160.1/build/three.module.js';
+
 (function (window, document) {
   'use strict';
 
   const config = window.seGastownSim || {};
   const app = document.getElementById('gastown-sim-app');
-  if (!app || !window.THREE || !window.GastownWorldLoader || !window.GastownBuildingNormalizer || !window.Howl || !window.Howler) {
+  if (!app || !window.GastownWorldLoader || !window.GastownBuildingNormalizer || !window.Howl || !window.Howler) {
     return;
   }
 
