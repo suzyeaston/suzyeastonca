@@ -337,6 +337,15 @@ function sanitizeNumber(value, fallback) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+
+function rotatePoint(point, angle) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return {
+    x: (point.x * cos) - (point.z * sin),
+    z: (point.x * sin) + (point.z * cos),
+  };
+}
 function deterministicValue(seed, min, max) {
   let hash = 2166136261;
   const text = String(seed || 'default');
@@ -398,8 +407,22 @@ function deriveFootprintMetrics(footprint) {
   }
 
   const yaw = longestEdge.length > 0.01 ? Math.atan2(longestEdge.dz, longestEdge.dx) : 0;
-  const width = Math.max(3, maxX - minX);
-  const depth = Math.max(3, maxZ - minZ);
+  const centered = footprint.map((point) => ({ x: point.x - centroid.x, z: point.z - centroid.z }));
+  const localFootprint = closePolygon(centered.map((point) => rotatePoint(point, -yaw)));
+
+  let localMinX = Infinity;
+  let localMaxX = -Infinity;
+  let localMinZ = Infinity;
+  let localMaxZ = -Infinity;
+  localFootprint.forEach((point) => {
+    localMinX = Math.min(localMinX, point.x);
+    localMaxX = Math.max(localMaxX, point.x);
+    localMinZ = Math.min(localMinZ, point.z);
+    localMaxZ = Math.max(localMaxZ, point.z);
+  });
+
+  const width = Math.max(3, localMaxX - localMinX);
+  const depth = Math.max(3, localMaxZ - localMinZ);
 
   return {
     x: centroid.x,
@@ -407,7 +430,7 @@ function deriveFootprintMetrics(footprint) {
     width,
     depth,
     yaw,
-    localFootprint: closePolygon(footprint.map((point) => ({ x: point.x - centroid.x, z: point.z - centroid.z }))),
+    localFootprint,
   };
 }
 

@@ -270,17 +270,21 @@
   }
 
   function addGround(world) {
-    visualState.roadMaterial = new THREE.MeshStandardMaterial({ color: 0x1e232b, roughness: 0.93, metalness: 0.16 });
-    visualState.sidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0x6a3f37, roughness: 0.89, metalness: 0.06 });
-    visualState.curbMaterial = new THREE.MeshStandardMaterial({ color: 0xc4ccd3, roughness: 0.83, metalness: 0.1 });
+    visualState.roadMaterial = new THREE.MeshStandardMaterial({ color: 0x1b1f25, roughness: 0.94, metalness: 0.14 });
+    visualState.sidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0x755247, roughness: 0.88, metalness: 0.05 });
+    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xb8c2cb, transparent: true, opacity: 0.7 });
     visualState.laneMaterial = new THREE.LineBasicMaterial({ color: 0xa5bdcf, transparent: true, opacity: 0.56 });
 
     world.zones.street.forEach((zone) => createZoneMesh(zone.polygon, visualState.roadMaterial, 0));
     world.zones.sidewalk.forEach((zone) => createZoneMesh(zone.polygon, visualState.sidewalkMaterial, 0.12));
 
     world.zones.street.forEach((zone) => {
-      const curb = createZoneMesh(zone.polygon, visualState.curbMaterial, 0.05);
-      curb.scale.set(1.008, 1.008, 1.008);
+      if (!Array.isArray(zone.polygon) || zone.polygon.length < 3) return;
+      const borderPoints = zone.polygon.map((point) => new THREE.Vector3(point.x, 0.16, point.z));
+      const first = zone.polygon[0];
+      borderPoints.push(new THREE.Vector3(first.x, 0.16, first.z));
+      const curbLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(borderPoints), visualState.curbMaterial);
+      worldGroup.add(curbLine);
     });
 
     const routePoints = world.route.centerline.map((point) => new THREE.Vector3(point.x, 0.14, point.z));
@@ -696,10 +700,44 @@
     );
     debugGroup.add(walkBoundLine);
 
+    function addPolygonOutline(polygon, y, color) {
+      if (!Array.isArray(polygon) || polygon.length < 3) return;
+      const points = polygon.map((point) => new THREE.Vector3(point.x, y, point.z));
+      const first = polygon[0];
+      points.push(new THREE.Vector3(first.x, y, first.z));
+      debugGroup.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(points),
+        new THREE.LineBasicMaterial({ color })
+      ));
+    }
+
+    (world.zones.street || []).forEach((zone) => addPolygonOutline(zone.polygon, 0.3, 0x49c4ff));
+    (world.zones.sidewalk || []).forEach((zone) => addPolygonOutline(zone.polygon, 0.34, 0xff9c57));
+
     world.nodes.forEach((node) => {
       const marker = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), new THREE.MeshBasicMaterial({ color: 0xd5f3ff }));
       marker.position.set(node.x, 0.5, node.z);
       debugGroup.add(marker);
+    });
+
+    (world.buildings || []).forEach((building) => {
+      if (!Number.isFinite(building.x) || !Number.isFinite(building.z)) return;
+      const marker = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), new THREE.MeshBasicMaterial({ color: 0x98ff9b }));
+      marker.position.set(building.x, 0.62, building.z);
+      debugGroup.add(marker);
+
+      if (Number.isFinite(building.yaw)) {
+        const arrowLen = Math.max(3, Math.min(6, (building.depth || 6) * 0.6));
+        const tip = localPointToWorld(building, 0, arrowLen);
+        const arrow = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(building.x, 0.66, building.z),
+            new THREE.Vector3(tip.x, 0.66, tip.z),
+          ]),
+          new THREE.LineBasicMaterial({ color: 0xa3f9a7 })
+        );
+        debugGroup.add(arrow);
+      }
     });
 
     if (routeDebugOverlay) {
@@ -708,6 +746,7 @@
       routeDebugOverlay.hidden = !state.debugEnabled;
     }
   }
+
 
   function rebuildRain(intensity) {
     while (rainGroup.children.length) {
@@ -1230,7 +1269,7 @@
       visualState.sidewalkMaterial.color.set(timeOfDay.sidewalkColor || '#3a444f');
     }
     if (visualState.curbMaterial) {
-      visualState.curbMaterial.color.set(timeOfDay.sidewalkColor || '#3a444f').multiplyScalar(0.74);
+      visualState.curbMaterial.color.set(timeOfDay.sidewalkColor || '#8f99a3').multiplyScalar(0.74);
     }
     if (visualState.laneMaterial) {
       visualState.laneMaterial.color.set(timeOfDay.laneColor || '#5d6a76');
