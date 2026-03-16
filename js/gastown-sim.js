@@ -1,16 +1,43 @@
-import * as THREE from 'https://unpkg.com/three@0.160.1/build/three.module.js';
 
 (function (window, document) {
   'use strict';
 
   const config = window.seGastownSim || {};
   const app = document.getElementById('gastown-sim-app');
-  if (!app || !window.GastownWorldLoader || !window.GastownBuildingNormalizer || !window.Howl || !window.Howler) {
+  const statusEl = app ? app.querySelector('[data-sim-status]') : null;
+
+  function failStartupDependency(message) {
+    if (statusEl) {
+      statusEl.textContent = message;
+    }
+    if (window.console && typeof window.console.error === 'function') {
+      window.console.error('[Gastown Sim] ' + message);
+    }
+  }
+
+  if (!app) {
+    return;
+  }
+
+  const THREE = window.THREE;
+  if (!THREE) {
+    failStartupDependency('Missing THREE global. Simulator could not start.');
+    return;
+  }
+  if (!window.GastownWorldLoader) {
+    failStartupDependency('Missing world loader. Simulator could not start.');
+    return;
+  }
+  if (!window.GastownBuildingNormalizer) {
+    failStartupDependency('Missing building normalizer. Simulator could not start.');
+    return;
+  }
+  if (!window.Howl || !window.Howler) {
+    failStartupDependency('Missing Howler audio globals. Simulator could not start.');
     return;
   }
 
   const canvasWrap = app.querySelector('[data-sim-canvas]');
-  const statusEl = app.querySelector('[data-sim-status]');
   const pointerStatusEl = app.querySelector('[data-sim-pointer-status]');
   const landmarkEl = app.querySelector('[data-sim-landmark]');
   const pauseBtn = app.querySelector('[data-action="pause"]');
