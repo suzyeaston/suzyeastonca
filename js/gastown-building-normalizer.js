@@ -97,25 +97,50 @@
     return Math.atan2(longest.dz, longest.dx);
   }
 
+  function rotatePoint(point, angle) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return {
+      x: (point.x * cos) - (point.z * sin),
+      z: (point.x * sin) + (point.z * cos),
+    };
+  }
+
+  function hasTrustedLocalFootprint(source, localFootprint) {
+    return localFootprint.length >= 3
+      && uniquePointCount(localFootprint) >= 3
+      && isFiniteNumber(source.x)
+      && isFiniteNumber(source.z)
+      && isFiniteNumber(source.yaw);
+  }
+
   function normalizeBuildingForRender(building) {
     const source = building || {};
     const absoluteFootprint = sanitizePoints(source.footprint);
     const localFromSource = sanitizePoints(source.footprint_local);
     const sourceCentroid = getCentroid(absoluteFootprint);
 
+    const trustedLocal = hasTrustedLocalFootprint(source, localFromSource);
     const x = isFiniteNumber(source.x) ? source.x : sourceCentroid.x;
     const z = isFiniteNumber(source.z) ? source.z : sourceCentroid.z;
 
-    const localFootprint = localFromSource.length >= 3
-      ? localFromSource
-      : absoluteFootprint.map((point) => ({ x: point.x - x, z: point.z - z }));
+    let yaw = deriveYawFromFootprint(absoluteFootprint.length >= 3 ? absoluteFootprint : localFromSource, source.yaw);
+    let localFootprint = localFromSource;
+
+    if (!trustedLocal) {
+      const centered = absoluteFootprint.map((point) => ({
+        x: point.x - x,
+        z: point.z - z,
+      }));
+      localFootprint = centered.map((point) => rotatePoint(point, -yaw));
+    }
 
     const safeLocalFootprint = ensureRenderableFootprint(localFootprint, source.width, source.depth);
     const localBounds = getBounds(safeLocalFootprint);
 
     const width = isFiniteNumber(source.width) ? Math.max(3, Math.abs(source.width)) : localBounds.width;
     const depth = isFiniteNumber(source.depth) ? Math.max(3, Math.abs(source.depth)) : localBounds.depth;
-    const yaw = deriveYawFromFootprint(safeLocalFootprint, source.yaw);
+    yaw = trustedLocal ? deriveYawFromFootprint(safeLocalFootprint, source.yaw) : yaw;
 
     const absolute = absoluteFootprint.length >= 3
       ? absoluteFootprint
