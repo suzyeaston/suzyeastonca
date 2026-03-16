@@ -56,6 +56,38 @@ function getStreetName(feature) {
   );
 }
 
+function parseHblockStreet(feature) {
+  const props = getProps(feature);
+  const hblock = String(props.hblock || '').trim().toUpperCase();
+  if (!hblock) return null;
+
+  const match = hblock.match(/^(\d+(?:\s*-\s*\d+)?)\s+((?:N|S|E|W)\s+)?([A-Z0-9'\- ]+?)\s+(ST|AVE|RD|DR|BLVD|PL|WAY|LANE|LN|CT|CRES|TER|TRL|PKWY)$/);
+  if (!match) return null;
+
+  const block = match[1].replace(/\s+/g, '');
+  const directional = (match[2] || '').trim();
+  const base = normalizeStreet(match[3]);
+  const suffix = normalizeStreet(match[4]);
+  return {
+    hblock,
+    block,
+    street: normalizeStreet(`${directional} ${base} ${suffix}`),
+  };
+}
+
+function isTargetCorridorBlock(parsed) {
+  if (!parsed) return false;
+
+  const validByStreet = {
+    'w cordova st': new Set(['0', '100', '300', '400', '500', '600', '700', '800-900']),
+    'water st': new Set(['0', '100', '200-300']),
+  };
+
+  const blocks = validByStreet[parsed.street];
+  if (!blocks) return false;
+  return blocks.has(parsed.block);
+}
+
 function normalizeStreet(name) {
   return String(name || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
 }
@@ -281,6 +313,26 @@ function mergeCorridorSegments(segments, origin, dest) {
   return route;
 }
 
+function segmentAnchorScore(segment, anchors) {
+  if (!segment.length || !anchors.length) return Infinity;
+  return anchors.reduce((acc, anchor) => {
+    const best = segment.reduce((min, point) => Math.min(min, distance(point, anchor)), Infinity);
+    return acc + best;
+  }, 0);
+}
+
+function sortSegmentsByAnchorProximity(segments, anchors) {
+  return segments
+    .map((segment) => ({ segment: segment.coords, score: segmentAnchorScore(segment.coords, anchors) - segment.arterialBias }))
+    .sort((a, b) => a.score - b.score)
+    .map((entry) => entry.segment);
+}
+
+function getArterialBias(feature) {
+  const streetUse = String(getProps(feature).streetuse || '').toLowerCase();
+  return streetUse.includes('arterial') ? 75 : 0;
+}
+
 function sanitizeNumber(value, fallback) {
   return Number.isFinite(value) ? value : fallback;
 }
@@ -323,11 +375,25 @@ function buildWorld(options = {}) {
   const originProjected = projectLonLat(origin.lon, origin.lat, origin);
   const destProjected = projectLonLat(dest.lon, dest.lat, origin);
 
-  const wantedStreetNames = new Set(['water st', 'w cordova st', 'water street', 'west cordova street', 'cordova st w']);
-  const corridorSegments = (streets.features || [])
-    .filter((feature) => wantedStreetNames.has(normalizeStreet(getStreetName(feature))))
-    .flatMap((feature) => extractLineStrings(feature))
-    .map((line) => line.map((coord) => projectLonLat(coord[0], coord[1], origin)));
+  const corridorAnchorPath = [
+    originProjected,
+    {
+      x: originProjected.x + (destProjected.x - originProjected.x) * 0.4,
+      z: originProjected.z + (destProjected.z - originProjected.z) * 0.4,
+    },
+    {
+      x: originProjected.x + (destProjected.x - originProjected.x) * 0.72,
+      z: originProjected.z + (destProjected.z - originProjected.z) * 0.72,
+    },
+    destProjected,
+  ];
+
+  const corridorSegments = sortSegmentsByAnchorProximity((streets.features || [])
+    .filter((feature) => isTargetCorridorBlock(parseHblockStreet(feature)))
+    .flatMap((feature) => extractLineStrings(feature).map((line) => ({
+      coords: line.map((coord) => projectLonLat(coord[0], coord[1], origin)),
+      arterialBias: getArterialBias(feature),
+    }))), corridorAnchorPath);
 
   if (!corridorSegments.length) {
     return {
@@ -520,4 +586,4 @@ if (require.main === module) {
   process.stdout.write(`Generated ${path.relative(process.cwd(), result.outputPath)} (route ${result.routeLength.toFixed(1)}m)\n`);
 }
 
-module.exports = { buildWorld };
+module.exports = { buildWorld, parseHblockStreet, isTargetCorridorBlock, getArterialBias };
