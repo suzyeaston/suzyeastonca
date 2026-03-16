@@ -21,9 +21,9 @@
     $meta_keywords = 'Suzy Easton, musician, creative technologist';
 
     if ( is_front_page() ) {
-      $meta_title = 'Suzy Easton – Vancouver Musician & Creative Technologist';
-      $meta_desc  = 'Suzanne (Suzy) Easton shares indie music spotlights, outage stories, retro-inspired tools, and Vancouver-based creative tech experiments.';
-      $meta_keywords = 'Suzy Easton, Suzanne Easton, Vancouver musician, creative technologist, Lousy Outages, indie music, retro arcade website, outage analysis';
+      $meta_title = 'Suzy Easton | Vancouver Creative Technologist, Musician, QA & AI Prototyping Support';
+      $meta_desc  = 'Suzy Easton is a Vancouver musician and creative technologist building AI experiments, music tools, and public prototypes. Available for select technical consulting, QA automation, debugging, and WordPress support.';
+      $meta_keywords = 'Suzy Easton, Vancouver creative technologist, Vancouver technical consultant, QA automation, AI prototyping, WordPress developer, debugging support';
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-asmr-lab.php' ) ) {
       $meta_title = 'ASMR Lab – experimental predecessor now under major redevelopment';
@@ -61,6 +61,32 @@
     } else {
       $meta_url = home_url( add_query_arg( [], $wp->request ) );
     }
+    $home_profile_graph = [];
+    if ( is_front_page() ) {
+      $home_profile_graph[] = [
+        '@type' => 'ProfilePage',
+        'name' => 'Suzy Easton',
+        'url' => home_url( '/' ),
+        'description' => $meta_desc,
+        'mainEntity' => [
+          '@type' => 'Person',
+          'name' => 'Suzy Easton',
+          'jobTitle' => 'Musician, Creative Technologist, and Technical Consultant',
+          'address' => [
+            '@type' => 'PostalAddress',
+            'addressLocality' => 'Vancouver',
+            'addressCountry' => 'CA',
+          ],
+          'sameAs' => [
+            'https://suzyeaston.bandcamp.com',
+            'https://soundcloud.com/suzyeaston',
+            'https://instagram.com/suzyeaston',
+            'https://youtube.com/@suzyeaston',
+          ],
+        ],
+      ];
+    }
+
     $structured_data = [
       '@context' => 'https://schema.org',
       '@graph'   => [
@@ -95,6 +121,10 @@
         ],
       ],
     ];
+
+    if ( ! empty( $home_profile_graph ) ) {
+      $structured_data['@graph'] = array_merge( $structured_data['@graph'], $home_profile_graph );
+    }
   ?>
   <title><?php echo esc_html( $meta_title ); ?></title>
   <meta name="description" content="<?php echo esc_attr( $meta_desc ); ?>">
