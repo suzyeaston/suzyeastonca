@@ -1,6 +1,6 @@
 <?php
 /*
-Template Name: Work With Suzy
+Template Name: Select Side Projects
 */
 get_header();
 ?>
@@ -8,10 +8,10 @@ get_header();
 <main id="main-content" class="work-with-suzy-page">
     <article class="page-content work-with-suzy-content">
         <section class="crt-block wws-hero" aria-labelledby="work-with-suzy-title">
-            <p class="wws-kicker pixel-font">Need a systems fixer with musician instincts?</p>
-            <h1 id="work-with-suzy-title" class="retro-title glow-lite">Work With Suzy</h1>
-            <p class="wws-lead">Technical help for weird bugs, messy workflows, AI experiments, and getting unstuck. I’m a Vancouver-based technical operator and creative technologist who helps small teams, founders, and makers make their systems behave.</p>
-            <a class="pixel-button wws-hero-cta" href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy%20%E2%80%94%20%5Bproject%5D">Email Suzy</a>
+            <p class="wws-kicker pixel-font">Select side projects • freelance collaborations • paid technical side quests</p>
+            <h1 id="work-with-suzy-title" class="retro-title glow-lite">Select Side Projects</h1>
+            <p class="wws-lead">I already have a full-time career. I also take on a limited number of paid side projects: weird-bug triage, QA/automation upgrades, advisory support, and creative-technical builds that need to ship.</p>
+            <a class="pixel-button wws-hero-cta" href="mailto:suzyeaston@icloud.com?subject=Select%20Side%20Projects%20%E2%80%94%20%5Bproject%5D">Collaborate With Suzy</a>
         </section>
 
         <section class="crt-block wws-section" aria-labelledby="what-i-help-with">
@@ -59,10 +59,10 @@ get_header();
         <section class="crt-block wws-section" aria-labelledby="good-fit">
             <h2 id="good-fit" class="pixel-font">Good fit if...</h2>
             <ul class="wws-fit-list">
-                <li>You have a weird system issue, a deadline, and no time for blame ping-pong.</li>
-                <li>Your small team needs one person who can debug across product, support, QA, and infrastructure.</li>
+                <li>You need one-off help with a weird system issue and no time for blame ping-pong.</li>
+                <li>Your team needs a sharp outside operator who can debug across product, support, QA, and infrastructure.</li>
                 <li>You are a founder, creative, or operator who wants practical AI help without the hype circus.</li>
-                <li>You need a reliable second brain for messy technical work that keeps stalling out.</li>
+                <li>You want experienced advisory + build support without adding a full-time role.</li>
             </ul>
         </section>
 
@@ -78,10 +78,10 @@ get_header();
         </section>
 
         <section class="crt-block wws-final-cta" aria-labelledby="work-with-suzy-contact">
-            <h2 id="work-with-suzy-contact" class="pixel-font">Let&apos;s make the broken thing behave.</h2>
-            <p>Email me at <a href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy%20%E2%80%94%20%5Bproject%5D">suzyeaston@icloud.com</a> and include a short summary of what you are trying to solve.</p>
-            <p class="wws-subjects"><strong>Suggested subject lines:</strong> Work With Suzy — [project] • Need Help With a Weird Bug • AI / Automation Help</p>
-            <a class="pixel-button wws-final-button" href="mailto:suzyeaston@icloud.com?subject=Need%20Help%20With%20a%20Weird%20Bug">Send the email</a>
+            <h2 id="work-with-suzy-contact" class="pixel-font">Need Help With a Weird Bug?</h2>
+            <p>Email me at <a href="mailto:suzyeaston@icloud.com?subject=Book%20a%20Side%20Quest%20%E2%80%94%20%5Bproject%5D">suzyeaston@icloud.com</a> with a short summary of the issue, timeline, and what "done" looks like.</p>
+            <p class="wws-subjects"><strong>Suggested subject lines:</strong> Book a Side Quest — [project] • Need Help With a Weird Bug • Build With Suzy</p>
+            <a class="pixel-button wws-final-button" href="mailto:suzyeaston@icloud.com?subject=Need%20Help%20With%20a%20Weird%20Bug">Book a Side Quest</a>
         </section>
 
         <section class="wws-boundaries" aria-label="Small print">
