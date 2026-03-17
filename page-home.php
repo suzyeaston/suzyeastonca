@@ -61,7 +61,7 @@ get_header();
             <p class="hero-subhead">I am a Vancouver-born generalist: bassist, songwriter, debugger, QA-minded fixer, and person you call when your workflow is chaos and you still need to ship.</p>
             <div class="hero-cta-group">
                 <a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>" class="pixel-button hero-primary-cta">Start with Gastown Simulator</a>
-                <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button hero-secondary-cta">Work With Suzy</a>
+                <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button hero-secondary-cta">Select Side Projects</a>
                 <a href="<?php echo esc_url(home_url('/bio/')); ?>" class="pixel-button hero-bio-button">Read full bio</a>
             </div>
         </section>
@@ -97,20 +97,20 @@ get_header();
     </section>
 
     <section class="work-with-suzy-home crt-block" aria-labelledby="work-with-suzy-title">
-        <p class="work-with-suzy-home__eyebrow pixel-font">Available for select freelance, contract, and advisory work</p>
-        <h2 id="work-with-suzy-title" class="pixel-font">Work With Suzy</h2>
-        <p>If you need a technical consultant in Vancouver who can bridge creative ideas and shipping code, I am open to the right kind of project.</p>
+        <p class="work-with-suzy-home__eyebrow pixel-font">Established builder • available for the right paid side quest</p>
+        <h2 id="work-with-suzy-title" class="pixel-font">Select Side Projects</h2>
+        <p>I already have a career. I also take on a limited number of freelance collaborations, one-off debugging sessions, QA/automation support, and creative-technical builds for people who need sharp execution.</p>
         <ul class="work-with-suzy-home__list">
-            <li>Debugging stubborn bugs and untangling messy systems</li>
-            <li>QA strategy, test automation, and release confidence checks</li>
-            <li>Workflow cleanup and automation for small teams</li>
-            <li>AI-assisted prototypes and experiments that are actually usable</li>
+            <li>One-off debugging and untangling weird production bugs</li>
+            <li>QA strategy, automation setup, and release confidence checks</li>
+            <li>Workflow cleanup and practical automation for lean teams</li>
+            <li>Advisory + build support for AI-assisted prototypes that need to ship</li>
             <li>WordPress and custom site improvements without killing your vibe</li>
-            <li>Technical translation between non-technical stakeholders and builders</li>
+            <li>Technical translation between operators, creatives, and developers</li>
         </ul>
         <div class="work-with-suzy-home__actions">
-            <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button">See project fit + process</a>
-            <a href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy%20%E2%80%94%20%5Bproject%5D" class="pixel-button">Email Suzy</a>
+            <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button">Collaborate With Suzy</a>
+            <a href="mailto:suzyeaston@icloud.com?subject=Book%20a%20Side%20Quest%20%E2%80%94%20%5Bproject%5D" class="pixel-button">Book a Side Quest</a>
         </div>
     </section>
 
@@ -135,7 +135,7 @@ get_header();
         <p class="utility-nav-home__counter"><?php echo esc_html(sprintf('👁️ %d drop-in(s) logged so far.', $total)); ?></p>
         <div class="utility-nav-home__links">
             <a href="<?php echo esc_url(home_url('/bio/')); ?>">Bio</a>
-            <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>">Work With Suzy</a>
+            <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>">Select Side Projects</a>
             <a href="<?php echo esc_url(home_url('/asmr-lab/')); ?>">ASMR Lab</a>
             <a href="<?php echo esc_url(home_url('/riff-generator/')); ?>">Riff Generator</a>
             <a href="<?php echo esc_url(home_url('/coffee-for-builders/')); ?>">Coffee for Builders</a>
