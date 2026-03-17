@@ -104,24 +104,30 @@ get_header();
 
     <section class="build-public-home crt-block" aria-labelledby="build-public-title">
         <h2 id="build-public-title" class="pixel-font">Build in public / repo receipts</h2>
+        <p class="home-section-legend-links" aria-label="Build in public quick links">
+            <a href="https://github.com/suzyeaston/suzyeastonca" target="_blank" rel="noopener noreferrer">GitHub repo</a>
+            <span aria-hidden="true">//</span>
+            <a href="<?php echo esc_url(home_url('/projects/')); ?>">Project build logs</a>
+            <span aria-hidden="true">//</span>
+            <a href="<?php echo esc_url(home_url('/blog/')); ?>">Latest lab notes</a>
+        </p>
         <p>Everything here ships in the open: code in public repos, experiments updated often, and build notes that show the real process.</p>
-        <div class="build-public-home__links">
-            <a href="https://github.com/suzyeaston/suzyeastonca" class="pixel-button" target="_blank" rel="noopener noreferrer">GitHub repo</a>
-            <a href="<?php echo esc_url(home_url('/projects/')); ?>" class="pixel-button">Project build logs</a>
-            <a href="<?php echo esc_url(home_url('/blog/')); ?>" class="pixel-button">Latest lab notes</a>
-        </div>
     </section>
 
     <section class="music-world crt-block" aria-labelledby="music-world-title">
         <h2 id="music-world-title" class="pixel-font">Music / media / world</h2>
+        <p class="home-section-legend-links" aria-label="Music and media quick links">
+            <a href="https://suzyeaston.bandcamp.com" target="_blank" rel="noopener noreferrer">Bandcamp</a>
+            <span aria-hidden="true">//</span>
+            <a href="<?php echo esc_url(home_url('/podcast/')); ?>">Easy Living podcast</a>
+            <span aria-hidden="true">//</span>
+            <a href="https://instagram.com/officialsuzyeaston" target="_blank" rel="noopener noreferrer">Instagram</a>
+            <span aria-hidden="true">//</span>
+            <a href="https://www.youtube.com/@suzyeaston" target="_blank" rel="noopener noreferrer">YouTube</a>
+            <span aria-hidden="true">//</span>
+            <a href="https://soundcloud.com/suzyeaston" target="_blank" rel="noopener noreferrer">SoundCloud</a>
+        </p>
         <p>The creative universe behind the builds: songs, podcast conversations, AI film experiments, and dispatches from the lab.</p>
-        <div class="music-world__links">
-            <a href="https://suzyeaston.bandcamp.com" class="pixel-button" target="_blank" rel="noopener noreferrer">Bandcamp</a>
-            <a href="<?php echo esc_url(home_url('/podcast/')); ?>" class="pixel-button">Easy Living podcast</a>
-            <a href="https://instagram.com/officialsuzyeaston" class="pixel-button" target="_blank" rel="noopener noreferrer">Instagram</a>
-            <a href="https://www.youtube.com/@suzyeaston" class="pixel-button" target="_blank" rel="noopener noreferrer">YouTube</a>
-            <a href="https://soundcloud.com/suzyeaston" class="pixel-button" target="_blank" rel="noopener noreferrer">SoundCloud</a>
-        </div>
     </section>
 
     <section class="collab-invite-home crt-block" aria-labelledby="collab-invite-title">
