@@ -3791,12 +3791,30 @@ body.page-template-page-bio-php .bio-content {
   box-shadow: 0 0 20px rgba(0, 255, 170, 0.18);
 }
 
-.build-public-home__links,
-.music-world__links {
+.home-section-legend-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 1rem;
+  align-items: center;
+  gap: 0.45rem 0.6rem;
+  margin: 0.25rem 0 1rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.home-section-legend-links a {
+  color: #9bffc6;
+  text-decoration: none;
+}
+
+.home-section-legend-links a:hover,
+.home-section-legend-links a:focus {
+  color: #d8ffe9;
+  text-decoration: underline;
+}
+
+.home-section-legend-links span {
+  color: rgba(155, 255, 198, 0.66);
 }
 
 .collab-invite-home {
