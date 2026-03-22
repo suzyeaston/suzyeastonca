@@ -1646,7 +1646,7 @@ console.log('[Gastown Sim] classic runtime build 2026-03-15 recovery 2');
 
   async function init() {
     try {
-      state.world = await window.GastownWorldLoader.load(config.worldDataUrl, config.starterWorldDataUrl);
+      state.world = await window.GastownWorldLoader.load(config.worldDataUrl);
       updateAttribution(state.world);
       try {
         addGround(state.world);

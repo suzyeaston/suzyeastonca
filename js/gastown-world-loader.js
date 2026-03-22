@@ -2,31 +2,26 @@
   'use strict';
 
   async function fetchWorld(url) {
-    const response = await fetch(url, { credentials: 'same-origin' });
+    let response;
+    try {
+      response = await fetch(url, { credentials: 'same-origin' });
+    } catch (error) {
+      throw new Error('Could not load Gastown world data from ' + url + '.');
+    }
     if (!response.ok) {
-      throw new Error('Could not load Gastown world data.');
+      throw new Error('Could not load Gastown world data from ' + url + ' (HTTP ' + response.status + ').');
     }
     const data = await response.json();
     validateWorldData(data);
     return normalizeWorldData(data);
   }
 
-  async function loadGastownWorldData(url, fallbackUrl) {
+  async function loadGastownWorldData(url) {
     if (!url) {
-      throw new Error('Missing world data URL.');
+      throw new Error('Missing Gastown world data URL.');
     }
 
-    try {
-      return await fetchWorld(url);
-    } catch (primaryError) {
-      if (!fallbackUrl || fallbackUrl === url) {
-        throw primaryError;
-      }
-      const fallback = await fetchWorld(fallbackUrl);
-      fallback.meta = fallback.meta || {};
-      fallback.meta.runtimeFallbackActive = true;
-      return fallback;
-    }
+    return fetchWorld(url);
   }
 
 

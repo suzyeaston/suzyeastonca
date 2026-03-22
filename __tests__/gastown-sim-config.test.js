@@ -3,13 +3,15 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 
-test('localized simulator defaults boot into morning clear mode', () => {
+test('localized simulator defaults boot into morning clear mode with one canonical world URL', () => {
   const functionsPath = path.join(__dirname, '..', 'functions.php');
   const php = fs.readFileSync(functionsPath, 'utf8');
 
   assert.match(php, /'defaultWeather'\s*=>\s*'clear'/);
   assert.match(php, /'defaultTimeOfDay'\s*=>\s*'morning'/);
   assert.match(php, /'defaultMood'\s*=>\s*'calm'/);
+  assert.match(php, /'worldDataUrl'\s*=>\s*esc_url_raw\( \$uri \. '\/assets\/world\/gastown-water-street\.json' \)/);
+  assert.doesNotMatch(php, /'starterWorldDataUrl'\s*=>/);
   assert.match(php, /'conversationEndpoint'\s*=>\s*esc_url_raw\( rest_url\( 'se\/v1\/gastown-npc-chat' \) \)/);
   assert.doesNotMatch(php, /'defaultMood'\s*=>\s*'eerie'/);
 });
@@ -63,4 +65,19 @@ test('simulator mood fallbacks no longer default back to eerie and eerie bed is 
   assert.match(src, /state\.world\.moodPresets\[state\.activeMood\] \|\| state\.world\.moodPresets\.calm \|\| state\.world\.moodPresets\.eerie/);
   assert.match(src, /state\.world\.moodPresets\[moodId\] \|\| state\.world\.moodPresets\.calm \|\| state\.world\.moodPresets\.eerie/);
   assert.match(src, /\['quiet_night', 'eerie_drones', 'nightlife_hum', 'commuter_mix'\]/);
+});
+
+
+test('simulator and classic simulator both request exactly one world URL', () => {
+  const root = path.join(__dirname, '..');
+  const simSrc = fs.readFileSync(path.join(root, 'js', 'gastown-sim.js'), 'utf8');
+  const classicSrc = fs.readFileSync(path.join(root, 'js', 'gastown-sim-classic.js'), 'utf8');
+  const loaderSrc = fs.readFileSync(path.join(root, 'js', 'gastown-world-loader.js'), 'utf8');
+
+  assert.match(simSrc, /GastownWorldLoader\.load\(config\.worldDataUrl\)/);
+  assert.match(classicSrc, /GastownWorldLoader\.load\(config\.worldDataUrl\)/);
+  assert.doesNotMatch(simSrc, /starterWorldDataUrl/);
+  assert.doesNotMatch(classicSrc, /starterWorldDataUrl/);
+  assert.doesNotMatch(loaderSrc, /fallbackUrl/);
+  assert.match(loaderSrc, /Missing Gastown world data URL\./);
 });
