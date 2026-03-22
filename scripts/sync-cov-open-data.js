@@ -11,6 +11,8 @@ const DEFAULT_ROUTE_PADDING_METERS = Number(process.env.COV_ROUTE_PADDING_METERS
 
 const DATASETS = [
   { id: 'public-streets', output: 'public-streets.geojson', required: true },
+  { id: 'street-intersections', output: 'street-intersections.geojson', required: false },
+  { id: 'right-of-way-widths', output: 'right-of-way-widths.geojson', required: false },
   { id: 'building-footprints-2015', output: 'building-footprints.geojson', required: true },
   { id: 'street-lighting-poles', output: 'street-lighting-poles.geojson', required: false },
   { id: 'public-trees', output: 'public-trees.geojson', required: false },

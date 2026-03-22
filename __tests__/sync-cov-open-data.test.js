@@ -62,6 +62,14 @@ test('sync-cov-open-data writes cropped feature collections and manifest', async
       lineFeature('street-near', nearbyLine, { hblock: '100 W CORDOVA ST' }),
       lineFeature('street-far', farLine, { hblock: '999 FAR AWAY ST' }),
     ]),
+    'street-intersections': makeFeatureCollection([
+      pointFeature('intersection-near', [-123.1091, 49.2846], { street_1: 'Water', street_2: 'Cambie' }),
+      pointFeature('intersection-far', [-123.15, 49.30], { street_1: 'Far', street_2: 'Away' }),
+    ]),
+    'right-of-way-widths': makeFeatureCollection([
+      pointFeature('row-near', [-123.1092, 49.2847], { street_name: 'Water Street', right_of_way_width: 18.4, carriageway_width: 10.2, sidewalk_width: 4.1 }),
+      pointFeature('row-far', [-123.15, 49.30], { street_name: 'Far Away', right_of_way_width: 99 }),
+    ]),
     'building-footprints-2015': makeFeatureCollection([
       polygonFeature('building-near', nearbyPolygon, { civic_address: '1 Water St' }),
       polygonFeature('building-far', farPolygon, { civic_address: '999 Far St' }),
@@ -104,6 +112,8 @@ test('sync-cov-open-data writes cropped feature collections and manifest', async
   const covDir = path.join(tmpRoot, 'data', 'cov');
   const expected = [
     'public-streets.geojson',
+    'street-intersections.geojson',
+    'right-of-way-widths.geojson',
     'building-footprints.geojson',
     'street-lighting-poles.geojson',
     'public-trees.geojson',
@@ -124,7 +134,7 @@ test('sync-cov-open-data writes cropped feature collections and manifest', async
 
   const manifest = JSON.parse(fs.readFileSync(path.join(covDir, '_manifest.json'), 'utf8'));
   assert.equal(Array.isArray(manifest.datasets), true);
-  assert.equal(manifest.datasets.length, 5);
+  assert.equal(manifest.datasets.length, 7);
   manifest.datasets.forEach((entry) => {
     assert.equal(typeof entry.dataset, 'string');
     assert.equal(typeof entry.keptFeatures, 'number');

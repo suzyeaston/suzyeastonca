@@ -12,6 +12,20 @@ function assertFinitePoints(points) {
   });
 }
 
+function pointInPolygon(point, polygon) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const zi = polygon[i].z;
+    const xj = polygon[j].x;
+    const zj = polygon[j].z;
+    const intersects = ((zi > point.z) !== (zj > point.z))
+      && (point.x < ((xj - xi) * (point.z - zi)) / ((zj - zi) || 1e-9) + xi);
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
 test('generator keeps world polygons valid with existing or generated output', () => {
   const root = path.resolve(__dirname, '..');
   const tmpPath = path.join(root, 'assets', 'world', 'gastown-water-street.test-output.json');
@@ -43,13 +57,13 @@ test('generator keeps world polygons valid with existing or generated output', (
 
     if (data.meta && data.meta.fallbackMode === 'working-gastown-corridor') {
       assert.ok(Array.isArray(data.streetscape.surfaceBands));
-      assert.equal(data.streetscape.surfaceBands.length, 42, 'working fallback should keep a tightly constrained surface-band count');
+      assert.equal(data.streetscape.surfaceBands.length, 40, 'working fallback should keep a tightly constrained surface-band count');
       const surfaceTones = new Set(data.streetscape.surfaceBands.map((band) => band.tone));
       ['curb_grime', 'intersection_pavers', 'wheel_track'].forEach((tone) => {
         assert.equal(surfaceTones.has(tone), true, 'working fallback surface bands should include ' + tone);
       });
       const crossBands = data.streetscape.surfaceBands.filter((band) => band.tone === 'intersection_pavers' || band.tone === 'cobble_break');
-      assert.equal(crossBands.length, 6, 'plaza cross bands should stay localized near the clock intersection');
+      assert.equal(crossBands.length, 4, 'plaza brick/cobble bands should stay localized near the clock intersection');
 
       const propKinds = new Set((data.props || []).map((prop) => prop.kind));
       ['trash_bag', 'newspaper_box', 'utility_box', 'bench', 'planter'].forEach((kind) => {
@@ -68,15 +82,24 @@ test('generator keeps world polygons valid with existing or generated output', (
       assert.equal(data.zones.street.length >= 3, true, 'working fallback should stage multiple street polygons around the Steam Clock');
       assert.equal(data.zones.sidewalk.length >= 4, true, 'working fallback should stage multiple sidewalk/plaza polygons');
       assert.equal(Array.isArray(data.navigator.focusCorridor), true, 'working fallback should expose minimap focus corridors');
-      assert.equal(data.navigator.focusCorridor.length, 3, 'working fallback should expose west leg, plaza loop, and east leg minimap corridors');
+      assert.equal(data.navigator.focusCorridor.length, 4, 'working fallback should expose west leg, plaza loop, east leg, and Cambie crossing minimap corridors');
       assert.equal(data.navigator.focusCorridor.some((segment) => segment.id === 'steam-clock-plaza-loop'), true, 'working fallback should expose a plaza loop in navigator data');
+      assert.equal(data.navigator.focusCorridor.some((segment) => segment.id === 'cambie-crossing'), true, 'working fallback should expose a Cambie crossing in navigator data');
 
       const steamClockNode = data.nodes.find((node) => node.id === 'steam-clock');
       const approachNode = data.route.centerline.find((node) => node.id === 'steam-clock-approach');
       const eastNode = data.nodes.find((node) => node.id === 'maple-tree-square-edge');
+      const cambieIntersectionNode = data.nodes.find((node) => node.id === 'water-cambie-intersection');
       assert.ok(steamClockNode && approachNode && eastNode, 'clock approach/east nodes should exist');
+      assert.ok(cambieIntersectionNode, 'water/cambie intersection node should exist');
       assert.equal(Math.hypot(steamClockNode.x - approachNode.x, steamClockNode.z - approachNode.z) > 1.5, true, 'clock node should no longer sit on the same ribbon centerline point as the approach');
       assert.equal(Math.abs(eastNode.x - steamClockNode.x) > 8 || Math.abs(eastNode.z - steamClockNode.z) > 8, true, 'clock should lead into a distinct east/plaza continuation');
+      assert.equal(Math.hypot(cambieIntersectionNode.x - steamClockNode.x, cambieIntersectionNode.z - steamClockNode.z) > 4, true, 'steam clock should sit off the roadway intersection on the plaza corner');
+
+      const plazaZone = data.zones.sidewalk.find((zone) => zone.id === 'steam-clock-plaza-sidewalk');
+      assert.ok(plazaZone, 'steam clock plaza sidewalk should exist');
+      assert.equal(pointInPolygon(steamClockNode, plazaZone.polygon), true, 'steam clock should sit inside the dedicated corner plaza sidewalk zone');
+      assert.equal(data.zones.street.some((zone) => pointInPolygon(steamClockNode, zone.polygon)), false, 'steam clock should not sit inside any travel lane polygon');
 
       assert.ok(Array.isArray(data.npcs));
       assert.equal(data.npcs.length >= 12, true, 'working fallback should expose a denser deterministic NPC set');
@@ -117,11 +140,14 @@ test('committed world json files include the expanded intersection-based fallbac
     assert.equal(data.meta.fallbackMode, 'working-gastown-corridor', relPath + ' should identify the working fallback mode');
     assert.ok(data.nodes.some((node) => node.id === 'water-cordova-seam'), relPath + ' should include the Water/Cordova seam node');
     assert.ok(data.nodes.some((node) => node.id === 'maple-tree-square-edge'), relPath + ' should include the Maple Tree Square edge node');
+    assert.ok(data.nodes.some((node) => node.id === 'water-cambie-intersection'), relPath + ' should include the Water/Cambie intersection node');
     assert.ok(data.npcs.some((npc) => npc.role === 'skateboarder'), relPath + ' should include a skateboarder');
     assert.ok(data.npcs.some((npc) => npc.role === 'cyclist'), relPath + ' should include a cyclist');
-    assert.ok(Array.isArray(data.streetscape.surfaceBands) && data.streetscape.surfaceBands.length === 42, relPath + ' should constrain surface band clutter');
+    assert.ok(Array.isArray(data.streetscape.surfaceBands) && data.streetscape.surfaceBands.length === 40, relPath + ' should constrain surface band clutter');
     assert.ok(Array.isArray(data.zones.street) && data.zones.street.length >= 3, relPath + ' should stage multiple road polygons');
-    assert.ok(Array.isArray(data.zones.sidewalk) && data.zones.sidewalk.length >= 4, relPath + ' should stage multiple sidewalks/plaza polygons');
+    assert.ok(Array.isArray(data.zones.sidewalk) && data.zones.sidewalk.length >= 5, relPath + ' should stage multiple sidewalks/plaza polygons');
+    assert.ok(data.zones.street.some((zone) => zone.id === 'cambie-street-crossing'), relPath + ' should include a Cambie crossing roadway polygon');
+    assert.ok(data.navigator.focusCorridor.some((segment) => segment.id === 'cambie-crossing'), relPath + ' should include the Cambie crossing on the minimap');
   });
 });
 
@@ -169,7 +195,7 @@ test('refresh helper documents expanded expected output files', () => {
   ].forEach((name) => {
     assert.match(src, new RegExp(name.replace('.', '\\.')));
   });
-  ['water-street-context-centerline', 'cordova-transition-context', 'steam-clock-frontage-cadence'].forEach((id) => {
+  ['water-street-context-centerline', 'cambie-street-centerline', 'water-cambie-intersection', 'frontage_massing', 'heritage_lamp', 'street-intersections', 'right-of-way-widths'].forEach((id) => {
     assert.match(src, new RegExp(id));
   });
 });

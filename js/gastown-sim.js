@@ -436,13 +436,13 @@
       const segmentLength = Math.max(8.5, Math.min(18, Math.hypot(anchor.x - point.x, anchor.z - point.z) * 0.96 || 10));
       const steamZone = point.id === 'steam-clock' || index >= Math.max(1, centerline.length - 4);
 
-      bands.push({ segment_id: point.id, width: streetWidth * 0.72, length: segmentLength, yaw: heading, offset_x: 0, offset_z: 0, tone: steamZone ? 'intersection_pavers' : 'wheel_track', opacity: steamZone ? 0.22 : 0.18, elevation: 0.018 });
-      bands.push({ segment_id: point.id, width: streetWidth * 0.34, length: Math.max(6.8, segmentLength * 0.78), yaw: heading, offset_x: 0, offset_z: 0, tone: index % 2 === 0 ? 'repair_patch_dark' : 'wet_streak', opacity: 0.12, elevation: 0.022 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.94, length: segmentLength * 1.02, yaw: heading, offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.18, elevation: 0.012 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.3, length: Math.max(6.8, segmentLength * 0.78), yaw: heading, offset_x: 0, offset_z: 0, tone: steamZone ? 'intersection_pavers' : 'wheel_track', opacity: steamZone ? 0.16 : 0.1, elevation: 0.016 });
       bands.push({ segment_id: point.id, width: streetWidth * 0.14, length: Math.max(5, segmentLength * 0.72), yaw: heading, offset_x: streetWidth * 0.33, offset_z: 0, tone: 'curb_grime', opacity: 0.12, elevation: 0.02 });
       bands.push({ segment_id: point.id, width: streetWidth * 0.14, length: Math.max(5, segmentLength * 0.72), yaw: heading, offset_x: -streetWidth * 0.33, offset_z: 0, tone: 'curb_grime', opacity: 0.12, elevation: 0.02 });
 
-      if (steamZone || index % 4 === 1) {
-        bands.push({ segment_id: point.id, width: streetWidth * (steamZone ? 0.82 : 0.46), length: Math.max(5.5, segmentLength * (steamZone ? 0.66 : 0.38)), yaw: heading + (steamZone ? 0 : 0.04), offset_x: 0, offset_z: 0, tone: steamZone ? 'brick' : 'paver_break', opacity: steamZone ? 0.16 : 0.1, elevation: 0.024 });
+      if (steamZone) {
+        bands.push({ segment_id: point.id, width: streetWidth * 0.66, length: Math.max(5.2, segmentLength * 0.34), yaw: heading, offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.12, elevation: 0.02 });
       }
     });
 
@@ -1783,19 +1783,30 @@
   }
 
   function addLandmarks(world) {
+    const heroLandmarkIds = new Set((world.hero_landmarks || []).map((hero) => String(hero.id || '').replace(/-hero$/, '')));
+    const suppressedKinds = new Set(['clock', 'street_pivot', 'plaza_edge', 'district_gate', 'view_axis']);
     world.landmarks.forEach((landmark) => {
-      const col = landmark.type === 'clock' ? 0xc8a460 : landmark.type === 'split' ? 0x7ea2c7 : 0x8793a1;
-      const markerMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.2 });
-      const markerHeight = landmark.type === 'clock' ? 7.2 : 4.5;
-      const markerRadius = landmark.type === 'clock' ? 0.38 : 0.7;
-      const marker = new THREE.Mesh(new THREE.CylinderGeometry(markerRadius, markerRadius * 1.05, markerHeight, 12), markerMaterial);
-      marker.position.set(landmark.x, markerHeight / 2, landmark.z);
-      worldGroup.add(marker);
+      const landmarkKind = landmark.kind || landmark.type;
+      const col = landmarkKind === 'clock' ? 0xc8a460 : landmarkKind === 'street_pivot' ? 0x7ea2c7 : 0x8793a1;
+      const suppressGenericMarker = heroLandmarkIds.has(landmark.id)
+        || suppressedKinds.has(landmark.kind)
+        || landmark.id === 'steam-clock'
+        || landmark.id === 'water-cambie-intersection';
 
-      const haloMaterial = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.1 });
-      const halo = new THREE.Mesh(new THREE.SphereGeometry((landmark.radius || 6) * 0.7, 16, 16), haloMaterial);
-      halo.position.set(landmark.x, 2.8, landmark.z);
-      worldGroup.add(halo);
+      if (state.debugEnabled || !suppressGenericMarker) {
+        const markerMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.2 });
+        const markerHeight = landmarkKind === 'clock' ? 7.2 : 4.5;
+        const markerRadius = landmarkKind === 'clock' ? 0.38 : 0.7;
+        const marker = new THREE.Mesh(new THREE.CylinderGeometry(markerRadius, markerRadius * 1.05, markerHeight, 12), markerMaterial);
+        marker.position.set(landmark.x, markerHeight / 2, landmark.z);
+        worldGroup.add(marker);
+
+        const haloMaterial = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.1 });
+        const halo = new THREE.Mesh(new THREE.SphereGeometry((landmark.radius || 6) * 0.7, 16, 16), haloMaterial);
+        halo.position.set(landmark.x, 2.8, landmark.z);
+        worldGroup.add(halo);
+        visualState.landmarkVisuals.push({ markerMaterial, haloMaterial });
+      }
 
       const reflectionMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: 0x1b2533, emissiveIntensity: 0.45, transparent: true, opacity: 0.22, roughness: 0.55, metalness: 0.3 });
       const reflection = new THREE.Mesh(new THREE.CircleGeometry(landmark.radius || 2.7, 24), reflectionMaterial);
@@ -1803,7 +1814,7 @@
       reflection.position.set(landmark.x, 0.11, landmark.z);
       worldGroup.add(reflection);
 
-      visualState.landmarkVisuals.push({ markerMaterial, haloMaterial, reflectionMaterial });
+      visualState.landmarkVisuals.push({ reflectionMaterial });
     });
   }
 
@@ -2437,11 +2448,11 @@
       ctx.setLineDash([]);
     }
 
-    const majorNodes = ['waterfront-station-threshold', 'water-street-mid-block', 'steam-clock', 'maple-tree-square-edge'];
+    const majorNodes = ['waterfront-station-threshold', 'water-street-mid-block', 'water-cambie-intersection', 'steam-clock', 'maple-tree-square-edge'];
     state.world.nodes.forEach((node) => {
       if (!majorNodes.includes(node.id)) return;
       const mini = toMinimapPoint(node, metrics, pad, view);
-      ctx.fillStyle = node.id === 'steam-clock' ? '#d8a968' : '#b7d4ea';
+      ctx.fillStyle = node.id === 'steam-clock' ? '#d8a968' : node.id === 'water-cambie-intersection' ? '#9cc7e4' : '#b7d4ea';
       ctx.beginPath();
       ctx.arc(mini.x, mini.y, node.id === 'steam-clock' ? 4.6 : 3.8, 0, Math.PI * 2);
       ctx.fill();
@@ -2455,6 +2466,9 @@
       }
       if (node.id === 'steam-clock') {
         ctx.fillText('Steam Clock', mini.x + 6, mini.y - 5);
+      }
+      if (node.id === 'water-cambie-intersection') {
+        ctx.fillText('Cambie', mini.x + 6, mini.y - 5);
       }
       if (node.id === 'water-street-mid-block') {
         ctx.fillText('Water St', mini.x + 6, mini.y + 7);

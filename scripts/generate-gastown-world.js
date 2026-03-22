@@ -25,10 +25,19 @@ function getFeatureCollectionById(collection, id) {
   return features.find((feature) => getProps(feature).id === id) || null;
 }
 
+function getFeatureCollectionByKind(collection, kind) {
+  const features = collection && Array.isArray(collection.features) ? collection.features : [];
+  return features.filter((feature) => getProps(feature).kind === kind);
+}
+
 function projectFeaturePoint(feature, origin, fallback) {
   const coords = feature && feature.geometry && Array.isArray(feature.geometry.coordinates) ? feature.geometry.coordinates : null;
   if (!coords || coords.length < 2) return fallback;
   return projectLonLat(coords[0], coords[1], origin);
+}
+
+function sanitizeNumber(value, fallback) {
+  return Number.isFinite(value) ? value : fallback;
 }
 
 function toRadians(value) {
@@ -54,6 +63,21 @@ function closePolygon(points) {
     return points.concat([{ x: first.x, z: first.z }]);
   }
   return points;
+}
+
+function polygonContainsPoint(point, polygon) {
+  if (!Array.isArray(polygon) || polygon.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const zi = polygon[i].z;
+    const xj = polygon[j].x;
+    const zj = polygon[j].z;
+    const intersects = ((zi > point.z) !== (zj > point.z))
+      && (point.x < ((xj - xi) * (point.z - zi)) / ((zj - zi) || 1e-9) + xi);
+    if (intersects) inside = !inside;
+  }
+  return inside;
 }
 
 function getProps(feature) {
@@ -782,59 +806,107 @@ function makeStarterWorld(outputPath, options = {}) {
 
   const streetContextFeatures = Array.isArray(reference.streetContext && reference.streetContext.features) ? reference.streetContext.features : [];
   const waterCenterlineFeature = streetContextFeatures.find((feature) => getProps(feature).id === 'water-street-context-centerline');
-  const crossCenterlineFeature = streetContextFeatures.find((feature) => getProps(feature).id === 'cordova-transition-context');
+  const waterEastFeature = streetContextFeatures.find((feature) => getProps(feature).id === 'water-street-east-context-centerline');
+  const cambieCenterlineFeature = streetContextFeatures.find((feature) => getProps(feature).id === 'cambie-street-centerline')
+    || streetContextFeatures.find((feature) => getProps(feature).id === 'cordova-transition-context');
   const plazaEdgeFeature = streetContextFeatures.find((feature) => getProps(feature).id === 'steam-clock-plaza-edge');
-  const mainCorridor = waterCenterlineFeature ? extractLineStrings(waterCenterlineFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin)) : routePoints;
-  const crossCorridor = crossCenterlineFeature ? extractLineStrings(crossCenterlineFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin)) : [routePoints[3], routePoints[4], routePoints[5]];
+  const intersectionFeature = streetContextFeatures.find((feature) => getProps(feature).id === 'water-cambie-intersection');
+  const rowWidthFeature = streetContextFeatures.find((feature) => getProps(feature).id === 'water-cambie-row-width');
 
-  const landmarkFeatures = Array.isArray(reference.landmarkReference && reference.landmarkReference.features) ? reference.landmarkReference.features : [];
+  const waterCenterline = waterCenterlineFeature
+    ? extractLineStrings(waterCenterlineFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin))
+    : routePoints;
+  const waterEastLeg = waterEastFeature
+    ? extractLineStrings(waterEastFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin))
+    : waterCenterline.slice(Math.max(0, waterCenterline.length - 3));
+  const cambieCorridor = cambieCenterlineFeature
+    ? extractLineStrings(cambieCenterlineFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin))
+    : [
+      { x: routePoints[routePoints.length - 2].x + 10, z: routePoints[routePoints.length - 2].z - 20 },
+      routePoints[routePoints.length - 2],
+      { x: routePoints[routePoints.length - 2].x - 12, z: routePoints[routePoints.length - 2].z + 20 },
+    ];
+
   const layout = {
     station: projectFeaturePoint(getFeatureCollectionById(reference.landmarkReference, 'waterfront-station-threshold'), anchorOrigin, routePoints[0]),
-    seam: projectFeaturePoint(getFeatureCollectionById(reference.landmarkReference, 'water-cordova-seam'), anchorOrigin, samplePointAtDistance(mainCorridor, polylineLength(mainCorridor) * 0.26)),
-    midBlock: projectFeaturePoint(getFeatureCollectionById(reference.landmarkReference, 'water-street-mid-block'), anchorOrigin, samplePointAtDistance(mainCorridor, polylineLength(mainCorridor) * 0.62)),
-    clock: projectFeaturePoint(getFeatureCollectionById(reference.landmarkReference, 'steam-clock'), anchorOrigin, routePoints[routePoints.length - 2]),
+    seam: projectFeaturePoint(getFeatureCollectionById(reference.landmarkReference, 'water-cordova-seam'), anchorOrigin, samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.26)),
+    midBlock: projectFeaturePoint(getFeatureCollectionById(reference.landmarkReference, 'water-street-mid-block'), anchorOrigin, samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.62)),
     mapleEdge: projectFeaturePoint(getFeatureCollectionById(reference.landmarkReference, 'maple-tree-square-edge'), anchorOrigin, routePoints[routePoints.length - 1]),
   };
-  layout.cambie = { x: Number((layout.mapleEdge.x + (crossCorridor[crossCorridor.length - 1].x - crossCorridor[0].x) * 0.2).toFixed(2)), z: Number((layout.mapleEdge.z + (crossCorridor[crossCorridor.length - 1].z - crossCorridor[0].z) * 0.2).toFixed(2)) };
-  const mainFrame = starterRouteFrame(mainCorridor, Math.max(0, polylineLength(mainCorridor) - 12));
-  layout.plaza = {
-    center: layout.clock,
-    tangent: mainFrame.tangent,
-    normal: mainFrame.normal,
-    edge: plazaEdgeFeature ? extractLineStrings(plazaEdgeFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin)) : [],
-  };
-  layout.mainCorridor = mainCorridor;
-  layout.crossCorridor = crossCorridor;
 
-  const routeLength = polylineLength(mainCorridor) + polylineLength(crossCorridor.slice(1));
-  const routeWalk = mainCorridor.concat(crossCorridor.slice(1));
-  const centerline = [
-    { id: 'waterfront-station-threshold', label: 'Waterfront Station threshold', x: Number(layout.station.x.toFixed(2)), z: Number(layout.station.z.toFixed(2)) },
-    { id: 'gastown-beat-1', label: 'Cordova heritage lead-in', x: Number(samplePointAtDistance(mainCorridor, polylineLength(mainCorridor) * 0.14).x.toFixed(2)), z: Number(samplePointAtDistance(mainCorridor, polylineLength(mainCorridor) * 0.14).z.toFixed(2)) },
-    { id: 'water-cordova-seam', label: 'Water/Cordova seam', x: Number(layout.seam.x.toFixed(2)), z: Number(layout.seam.z.toFixed(2)) },
-    { id: 'gastown-beat-3', label: 'West Water Street', x: Number(samplePointAtDistance(mainCorridor, polylineLength(mainCorridor) * 0.4).x.toFixed(2)), z: Number(samplePointAtDistance(mainCorridor, polylineLength(mainCorridor) * 0.4).z.toFixed(2)) },
-    { id: 'water-street-mid-block', label: 'Water Street mid block', x: Number(layout.midBlock.x.toFixed(2)), z: Number(layout.midBlock.z.toFixed(2)) },
-    { id: 'steam-clock-approach', label: 'Steam Clock approach', x: Number(samplePointAtDistance(mainCorridor, polylineLength(mainCorridor) * 0.88).x.toFixed(2)), z: Number(samplePointAtDistance(mainCorridor, polylineLength(mainCorridor) * 0.88).z.toFixed(2)) },
-    { id: 'steam-clock', label: 'Steam Clock plaza', x: Number(layout.clock.x.toFixed(2)), z: Number(layout.clock.z.toFixed(2)) },
-    { id: 'maple-tree-square-edge', label: 'Maple Tree Square edge', x: Number(layout.mapleEdge.x.toFixed(2)), z: Number(layout.mapleEdge.z.toFixed(2)) },
-    { id: 'cambie-rise-continuation', label: 'Cambie rise continuation', x: Number(layout.cambie.x.toFixed(2)), z: Number(layout.cambie.z.toFixed(2)) },
-  ];
-
-  const streetWidth = streetContextFeatures.length ? 11.8 : 11.2;
-  const sidewalkWidth = Array.isArray(reference.buildingCues && reference.buildingCues.features) ? 4 : 3.6;
+  const intersectionPoint = projectFeaturePoint(intersectionFeature, anchorOrigin, samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.9));
+  const intersectionFrame = starterRouteFrame(waterCenterline, Math.max(0, polylineLength(waterCenterline) * 0.9));
+  const rowProps = getProps(rowWidthFeature);
+  const rightOfWayWidth = sanitizeNumber(Number(rowProps.right_of_way_width || rowProps.row_width || rowProps.width_m), streetContextFeatures.length ? 18.4 : 18.8);
+  const streetWidth = sanitizeNumber(Number(rowProps.carriageway_width || rowProps.roadway_width || rowProps.street_width), streetContextFeatures.length ? 10.2 : 10.4);
+  const sidewalkWidth = sanitizeNumber(Number(rowProps.sidewalk_width || ((rightOfWayWidth - streetWidth) / 2)), Array.isArray(reference.buildingCues && reference.buildingCues.features) ? 4.2 : 3.8);
   const softBoundary = 3.2;
   const streetHalf = streetWidth / 2;
   const sidewalkOuter = streetHalf + sidewalkWidth;
   const walkOuter = sidewalkOuter + softBoundary;
 
-  const mainStreet = ribbonPolygon(mainCorridor, streetHalf);
-  const crossStreet = ribbonPolygon(crossCorridor, streetHalf * 0.9);
-  const plazaStreet = orientedRect(layout.clock, layout.plaza.tangent, 14.5, 12.4);
-  const southSidewalk = closePolygon(lineOffset(mainCorridor, sidewalkOuter).concat(lineOffset(mainCorridor, streetHalf).reverse()));
-  const northSidewalk = closePolygon(lineOffset(mainCorridor, -streetHalf).concat(lineOffset(mainCorridor, -sidewalkOuter).reverse()));
-  const eastSidewalk = closePolygon(lineOffset(crossCorridor, sidewalkOuter * 0.92).concat(lineOffset(crossCorridor, streetHalf * 0.9).reverse()));
-  const plazaPad = orientedRect({ x: layout.clock.x + (layout.plaza.normal.x * -2.2), z: layout.clock.z + (layout.plaza.normal.z * -2.2) }, layout.plaza.tangent, 12.6, 10.8);
-  const walkBounds = ribbonPolygon(routeWalk, walkOuter).concat([]);
+  layout.clock = projectFeaturePoint(
+    getFeatureCollectionById(reference.landmarkReference, 'steam-clock'),
+    anchorOrigin,
+    {
+      x: intersectionPoint.x + (intersectionFrame.normal.x * (streetHalf + (sidewalkWidth * 0.95))) - (intersectionFrame.tangent.x * 3.35),
+      z: intersectionPoint.z + (intersectionFrame.normal.z * (streetHalf + (sidewalkWidth * 0.95))) - (intersectionFrame.tangent.z * 3.35),
+    }
+  );
+  layout.cambie = {
+    x: Number((intersectionPoint.x + ((cambieCorridor[cambieCorridor.length - 1].x - cambieCorridor[0].x) * 0.28)).toFixed(2)),
+    z: Number((intersectionPoint.z + ((cambieCorridor[cambieCorridor.length - 1].z - cambieCorridor[0].z) * 0.28)).toFixed(2)),
+  };
+  layout.plaza = {
+    center: layout.clock,
+    tangent: intersectionFrame.tangent,
+    normal: intersectionFrame.normal,
+    edge: plazaEdgeFeature ? extractLineStrings(plazaEdgeFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin)) : [],
+    intersection: intersectionPoint,
+  };
+  layout.mainCorridor = waterCenterline;
+  layout.crossCorridor = cambieCorridor;
+
+  const waterWestLeg = waterCenterline.filter((point) => point.x <= intersectionPoint.x + 0.1);
+  const waterRoute = waterWestLeg.concat([layout.clock], waterEastLeg.slice(1));
+  const routeLength = polylineLength(waterRoute);
+  const centerline = [
+    { id: 'waterfront-station-threshold', label: 'Waterfront Station threshold', x: Number(layout.station.x.toFixed(2)), z: Number(layout.station.z.toFixed(2)) },
+    { id: 'gastown-beat-1', label: 'Cordova heritage lead-in', x: Number(samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.14).x.toFixed(2)), z: Number(samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.14).z.toFixed(2)) },
+    { id: 'water-cordova-seam', label: 'Water/Cordova seam', x: Number(layout.seam.x.toFixed(2)), z: Number(layout.seam.z.toFixed(2)) },
+    { id: 'gastown-beat-3', label: 'West Water Street', x: Number(samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.4).x.toFixed(2)), z: Number(samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.4).z.toFixed(2)) },
+    { id: 'water-street-mid-block', label: 'Water Street mid block', x: Number(layout.midBlock.x.toFixed(2)), z: Number(layout.midBlock.z.toFixed(2)) },
+    { id: 'steam-clock-approach', label: 'Steam Clock approach', x: Number((intersectionPoint.x - (intersectionFrame.tangent.x * 5.1)).toFixed(2)), z: Number((intersectionPoint.z - (intersectionFrame.tangent.z * 5.1)).toFixed(2)) },
+    { id: 'steam-clock', label: 'Steam Clock plaza', x: Number(layout.clock.x.toFixed(2)), z: Number(layout.clock.z.toFixed(2)) },
+    { id: 'maple-tree-square-edge', label: 'Maple Tree Square edge', x: Number(layout.mapleEdge.x.toFixed(2)), z: Number(layout.mapleEdge.z.toFixed(2)) },
+    { id: 'cambie-rise-continuation', label: 'Cambie rise continuation', x: Number(layout.cambie.x.toFixed(2)), z: Number(layout.cambie.z.toFixed(2)) },
+  ];
+
+  const mainStreet = ribbonPolygon(waterCenterline, streetHalf);
+  const cambieStreet = ribbonPolygon(cambieCorridor, streetHalf * 0.78);
+  const intersectionRoadway = orientedRect(intersectionPoint, intersectionFrame.tangent, 13.1, streetWidth + 1.8);
+  const southSidewalk = closePolygon(lineOffset(waterCenterline, sidewalkOuter).concat(lineOffset(waterCenterline, streetHalf).reverse()));
+  const northSidewalk = closePolygon(lineOffset(waterCenterline, -streetHalf).concat(lineOffset(waterCenterline, -sidewalkOuter).reverse()));
+  const cambieWestSidewalk = closePolygon(lineOffset(cambieCorridor, sidewalkOuter * 0.86).concat(lineOffset(cambieCorridor, streetHalf * 0.78).reverse()));
+  const curbReturn = orientedRect(
+    {
+      x: intersectionPoint.x + (layout.plaza.normal.x * (streetHalf + (sidewalkWidth * 0.28))),
+      z: intersectionPoint.z + (layout.plaza.normal.z * (streetHalf + (sidewalkWidth * 0.28))),
+    },
+    layout.plaza.tangent,
+    6.4,
+    5.8
+  );
+  const plazaPad = orientedRect(
+    {
+      x: layout.clock.x + (layout.plaza.normal.x * 0.24),
+      z: layout.clock.z + (layout.plaza.normal.z * 0.24),
+    },
+    layout.plaza.tangent,
+    8.6,
+    9.4
+  );
+  const walkBounds = ribbonPolygon(waterRoute, walkOuter).concat([]);
 
   const frontagePattern = [7.5, 9.5, 8, 12.5, 8.8, 10.4, 9.2, 14.5, 10.8, 8.4, 12.8, 9.6];
   const depthPattern = [15, 20, 14, 23, 17, 21, 18, 19, 22, 16, 24, 17];
@@ -850,28 +922,28 @@ function makeStarterWorld(outputPath, options = {}) {
   const buildings = [];
   let cursor = 6;
   let i = 0;
-  const primaryLength = polylineLength(mainCorridor);
+  const primaryLength = polylineLength(waterCenterline);
   while (cursor < primaryLength - 10 && i < 26) {
     const frontage = frontagePattern[i % frontagePattern.length];
     const depth = depthPattern[i % depthPattern.length];
     const height = heightPattern[i % heightPattern.length];
-    const frame = starterRouteFrame(mainCorridor, cursor);
+    const frame = starterRouteFrame(waterCenterline, cursor);
     [-1, 1].forEach((side) => {
       const sideIndex = side < 0 ? 0 : 1;
       const palette = palettePattern[(i + sideIndex) % palettePattern.length];
       const blockPhase = cursor / primaryLength;
-      const cornerMoment = Math.abs(cursor - (primaryLength * 0.84)) < 15 && side < 0;
+      const cornerMoment = Math.abs(cursor - (primaryLength * 0.9)) < 12 && side > 0;
       const waterfrontThreshold = blockPhase < 0.22;
-      const steamClockApproach = blockPhase > 0.58 && blockPhase < 0.92;
-      const postClock = blockPhase >= 0.92;
-      const localDepth = depth + (cornerMoment ? 5.5 : 0) + (waterfrontThreshold && side > 0 ? 2.2 : 0) + (steamClockApproach ? 1.6 : 0);
-      const inset = cornerMoment ? 1.4 : (steamClockApproach ? 1.3 : 1.05);
+      const steamClockApproach = blockPhase > 0.58 && blockPhase < 0.94;
+      const postClock = blockPhase >= 0.94;
+      const localDepth = depth + (cornerMoment ? 3.8 : 0) + (waterfrontThreshold && side > 0 ? 2.2 : 0) + (steamClockApproach ? 1.6 : 0);
+      const inset = cornerMoment ? 2.3 : (steamClockApproach ? 1.3 : 1.05);
       const centerOffset = sidewalkOuter + (localDepth / 2) + inset;
       const footprintCenter = {
         x: frame.center.x + (frame.normal.x * centerOffset * side),
         z: frame.center.z + (frame.normal.z * centerOffset * side),
       };
-      const localFrontage = frontage + (cornerMoment ? 4.2 : 0) + (postClock && side < 0 ? 2.4 : 0);
+      const localFrontage = frontage + (cornerMoment ? 2.8 : 0) + (postClock && side < 0 ? 2.4 : 0);
       const footprint = makeRectFootprint(footprintCenter, frame.tangent, localFrontage, localDepth);
       const metrics = deriveFootprintMetrics(footprint);
       const id = `gastown-frontage-${i}-${side < 0 ? 'south' : 'north'}`;
@@ -881,7 +953,7 @@ function makeStarterWorld(outputPath, options = {}) {
         id,
         reference_name: cornerMoment ? 'Steam Clock corner anchor' : side < 0 ? 'Water Street south frontage' : 'Water Street north frontage',
         segment_style: waterfrontThreshold ? 'waterfront-threshold' : steamClockApproach ? 'steam-clock-approach' : postClock ? 'post-clock-continuation' : 'mid-corridor-heritage-rhythm',
-        style_notes: cornerMoment ? 'Corner building massing is widened so the plaza/intersection reads like the Steam Clock urban moment.' : 'Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.',
+        style_notes: cornerMoment ? 'Corner building massing is widened to keep the Steam Clock on a corner sidewalk/plaza condition, outside the roadway.' : 'Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.',
         x: Number(metrics.x.toFixed(2)), z: Number(metrics.z.toFixed(2)), width: Number(metrics.width.toFixed(2)), depth: Number(metrics.depth.toFixed(2)), yaw: Number(metrics.yaw.toFixed(4)),
         height: Number((height + (cornerMoment ? 2 : 0) + (waterfrontThreshold && side < 0 ? 1 : 0)).toFixed(1)),
         footprint,
@@ -901,29 +973,63 @@ function makeStarterWorld(outputPath, options = {}) {
     i += 1;
   }
 
+  const cueBuildings = getFeatureCollectionByKind(reference.buildingCues, 'frontage_massing').flatMap((feature, index) => {
+    const polygons = extractPolygons(feature);
+    const ring = polygons[0] && polygons[0][0] ? polygons[0][0] : [];
+    if (ring.length < 4) return [];
+    const footprint = closePolygon(ring.slice(0, -1).map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin)).map((point) => ({
+      x: Number(point.x.toFixed(2)),
+      z: Number(point.z.toFixed(2)),
+    })));
+    const metrics = deriveFootprintMetrics(footprint);
+    const props = getProps(feature);
+    return [{
+      id: String(props.id || ('building-cue-' + index)),
+      reference_name: props.label || 'Gastown frontage massing cue',
+      segment_style: props.segment_style || 'reference-massing',
+      style_notes: 'Simplified frontage massing derived from City of Vancouver building footprints 2015.',
+      x: Number(metrics.x.toFixed(2)),
+      z: Number(metrics.z.toFixed(2)),
+      width: Number(metrics.width.toFixed(2)),
+      depth: Number(metrics.depth.toFixed(2)),
+      yaw: Number(metrics.yaw.toFixed(4)),
+      height: Number(sanitizeNumber(Number(props.height_hint), 15).toFixed(1)),
+      footprint,
+      footprint_local: metrics.localFootprint.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })),
+      facade_profile: 'gastown_heritage_row',
+      tone: String(props.tone || 'stoneMuted'),
+      roofline_type: 'flat_cornice',
+      window_bay_count: Math.max(3, Math.round(metrics.width / 2.8)),
+      recessed_entry_count: 1,
+      storefront_rhythm: { base_band: 0.18, upper_rows: 3 },
+      material_palette: { primary: '#786155', trim: '#d6c7b1', accent: '#4f5d69' },
+      cornice_emphasis: 0.24,
+      mass_inset: 0.96,
+    }];
+  });
+  if (cueBuildings.length) {
+    buildings.splice(0, buildings.length, ...cueBuildings);
+  }
+
   const spawnDir = normalize({ x: centerline[1].x - centerline[0].x, z: centerline[1].z - centerline[0].z });
   const spawn = { x: Number((centerline[0].x + (spawnDir.x * 9)).toFixed(2)), y: 1.7, z: Number((centerline[0].z + (spawnDir.z * 9)).toFixed(2)), yaw: Number(Math.atan2(-spawnDir.x, -spawnDir.z).toFixed(4)) };
 
   const props = [
-    { id: 'starter-prop-threshold-box', kind: 'newspaper_box', ...placeStarterProp(mainCorridor, 18, -(sidewalkOuter + 0.55), 'starter-prop-threshold-box', 'newspaper_box', { scale: 1.05 }) },
+    placeStarterProp(waterCenterline, 18, -(sidewalkOuter + 0.55), 'starter-prop-threshold-box', 'newspaper_box', { scale: 1.05 }),
+    placeStarterProp(waterCenterline, 24, sidewalkOuter + 0.72, 'starter-prop-threshold-utility', 'utility_box', { scale: 1.1 }),
+    placeStarterProp(waterCenterline, 62, -(sidewalkOuter + 0.88), 'starter-prop-planter-west', 'planter', { scale: 1.15 }),
+    placeStarterProp(waterCenterline, primaryLength * 0.72, sidewalkOuter + 0.95, 'starter-prop-planter-east', 'planter', { scale: 1.08 }),
+    { id: 'starter-prop-bench-clock', kind: 'bench', x: Number((layout.clock.x - (layout.plaza.tangent.x * 1.8) + (layout.plaza.normal.x * 2.2)).toFixed(2)), y: 0, z: Number((layout.clock.z - (layout.plaza.tangent.z * 1.8) + (layout.plaza.normal.z * 2.2)).toFixed(2)), yaw: Number((Math.atan2(layout.plaza.tangent.x, layout.plaza.tangent.z) + (Math.PI / 2)).toFixed(4)), scale: 1.04 },
+    { id: 'starter-prop-clock-box', kind: 'newspaper_box', x: Number((layout.clock.x + (layout.plaza.tangent.x * 1.6) + (layout.plaza.normal.x * 2.6)).toFixed(2)), y: 0, z: Number((layout.clock.z + (layout.plaza.tangent.z * 1.6) + (layout.plaza.normal.z * 2.6)).toFixed(2)), yaw: 0, scale: 0.98 },
+    placeStarterProp(cambieCorridor, 18, -(sidewalkOuter * 0.82), 'starter-prop-postclock-utility', 'utility_box', { scale: 1.06 }),
+    placeStarterProp(cambieCorridor, 30, sidewalkOuter * 0.75, 'starter-prop-postclock-bags', 'trash_bag', { scale: 0.96 }),
+    placeStarterProp(cambieCorridor, 36, sidewalkOuter * 0.88, 'starter-prop-postclock-bench', 'bench', { scale: 1, yawOffset: Math.PI / 2 }),
   ];
-  props.splice(0, props.length, ...[
-    placeStarterProp(mainCorridor, 18, -(sidewalkOuter + 0.55), 'starter-prop-threshold-box', 'newspaper_box', { scale: 1.05 }),
-    placeStarterProp(mainCorridor, 24, sidewalkOuter + 0.72, 'starter-prop-threshold-utility', 'utility_box', { scale: 1.1 }),
-    placeStarterProp(mainCorridor, 62, -(sidewalkOuter + 0.88), 'starter-prop-planter-west', 'planter', { scale: 1.15 }),
-    placeStarterProp(mainCorridor, primaryLength * 0.72, sidewalkOuter + 0.95, 'starter-prop-planter-east', 'planter', { scale: 1.08 }),
-    placeStarterProp(mainCorridor, primaryLength * 0.84, -(sidewalkOuter + 0.64), 'starter-prop-bench-clock', 'bench', { scale: 1.04, yawOffset: Math.PI / 2 }),
-    placeStarterProp(mainCorridor, primaryLength * 0.9, sidewalkOuter + 0.5, 'starter-prop-clock-box', 'newspaper_box', { scale: 0.98 }),
-    placeStarterProp(crossCorridor, 18, -(sidewalkOuter * 0.82), 'starter-prop-postclock-utility', 'utility_box', { scale: 1.06 }),
-    placeStarterProp(crossCorridor, 30, sidewalkOuter * 0.75, 'starter-prop-postclock-bags', 'trash_bag', { scale: 0.96 }),
-    placeStarterProp(crossCorridor, 36, sidewalkOuter * 0.88, 'starter-prop-postclock-bench', 'bench', { scale: 1, yawOffset: Math.PI / 2 }),
-  ]);
+
   const landmarkBundle = buildStarterLandmarks(layout);
   const landmarks = landmarkBundle.landmarks;
   const heroLandmarks = landmarkBundle.heroLandmarks;
   const npcs = buildStarterNpcs(layout, streetWidth, sidewalkOuter);
-  const steamClockNode = landmarks.find((landmark) => landmark.id === 'steam-clock');
-
   const referenceFeaturesUsed = [
     ...(reference.routeReference && Array.isArray(reference.routeReference.features) ? ['gastown-route-reference.geojson'] : []),
     ...(reference.streetContext && Array.isArray(reference.streetContext.features) ? ['gastown-street-context.geojson'] : []),
@@ -932,13 +1038,21 @@ function makeStarterWorld(outputPath, options = {}) {
     ...(reference.poiReference && Array.isArray(reference.poiReference.features) ? ['gastown-poi-reference.geojson'] : []),
   ];
 
+  const lampFeatures = getFeatureCollectionByKind(reference.poiReference, 'heritage_lamp');
+  const lamps = lampFeatures.length
+    ? lampFeatures.map((feature, index) => {
+      const point = projectFeaturePoint(feature, anchorOrigin, layout.clock);
+      return { id: getProps(feature).id || ('starter-lamp-' + index), x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), height: 5.4 };
+    })
+    : proceduralStreetscape(waterRoute, { idPrefix: 'starter-lamp', strideMeters: 24, laneOffset: sidewalkOuter - 0.5, maxCount: 18, mapper: (point, id) => ({ id, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), height: 5.4 }) });
+
   const world = {
     routeId: 'gastown_water_street_working_corridor',
     meta: {
       title: 'Gastown Working Corridor (deterministic fallback)', units: 'meters', source: 'deterministic fallback with optional open reference inputs', fallbackMode: 'working-gastown-corridor', isRealCivicBuild: false,
       buildNotes: [
         'Working fallback corridor is active because required offline civic source files are missing.',
-        'This fallback now stages a Water Street corridor with a Steam Clock intersection/plaza instead of a single bent ribbon corridor.',
+        'This fallback now stages Water Street, a real Water/Cambie corner condition, and a Steam Clock plaza pad outside the carriageway instead of a single bent ribbon corridor.',
         referenceFeaturesUsed.length ? `Optional refreshed reference inputs were present: ${referenceFeaturesUsed.join(', ')}.` : 'No refreshed reference inputs were present; deterministic default route staging was used.',
       ],
       referenceInputsUsed: referenceFeaturesUsed,
@@ -952,28 +1066,32 @@ function makeStarterWorld(outputPath, options = {}) {
       { ...centerline[6], label: 'Steam Clock plaza' },
       { ...centerline[7], label: 'Maple Tree Square edge' },
       { ...centerline[8], label: 'Cambie rise continuation' },
+      { id: 'water-cambie-intersection', label: 'Water/Cambie intersection', x: Number(intersectionPoint.x.toFixed(2)), z: Number(intersectionPoint.z.toFixed(2)) },
     ],
     navigator: {
       focusCorridor: [
-        { id: 'water-street-west-leg', label: 'Water Street west leg', points: mainCorridor.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })) },
+        { id: 'water-street-west-leg', label: 'Water Street west leg', points: waterWestLeg.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })) },
         { id: 'steam-clock-plaza-loop', label: 'Steam Clock plaza', points: [
-          { x: Number((layout.clock.x + (layout.plaza.normal.x * -4.6)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.normal.z * -4.6)).toFixed(2)) },
-          { x: Number((layout.clock.x + (layout.plaza.tangent.x * 3.2) + (layout.plaza.normal.x * -3.4)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.tangent.z * 3.2) + (layout.plaza.normal.z * -3.4)).toFixed(2)) },
-          { x: Number((layout.clock.x + (layout.plaza.tangent.x * 3.8) + (layout.plaza.normal.x * 1.8)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.tangent.z * 3.8) + (layout.plaza.normal.z * 1.8)).toFixed(2)) },
+          { x: Number((layout.clock.x + (layout.plaza.normal.x * -2.2)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.normal.z * -2.2)).toFixed(2)) },
+          { x: Number((layout.clock.x + (layout.plaza.tangent.x * 2.5) + (layout.plaza.normal.x * -1.3)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.tangent.z * 2.5) + (layout.plaza.normal.z * -1.3)).toFixed(2)) },
+          { x: Number((layout.clock.x + (layout.plaza.tangent.x * 2.2) + (layout.plaza.normal.x * 2.1)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.tangent.z * 2.2) + (layout.plaza.normal.z * 2.1)).toFixed(2)) },
+          { x: Number((layout.clock.x + (layout.plaza.normal.x * 2.3)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.normal.z * 2.3)).toFixed(2)) },
         ] },
-        { id: 'cambie-east-leg', label: 'Cambie east leg', points: crossCorridor.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })) },
+        { id: 'water-street-east-leg', label: 'Water Street east leg', points: waterEastLeg.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })) },
+        { id: 'cambie-crossing', label: 'Cambie crossing', points: cambieCorridor.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })) },
       ],
     },
     zones: {
       street: [
         { id: 'water-street-main-roadway', surface: 'road', polygon: mainStreet },
-        { id: 'steam-clock-cross-street', surface: 'road', polygon: crossStreet },
-        { id: 'steam-clock-intersection', surface: 'road', polygon: plazaStreet },
+        { id: 'cambie-street-crossing', surface: 'road', polygon: cambieStreet },
+        { id: 'water-cambie-intersection-roadway', surface: 'road', polygon: intersectionRoadway },
       ],
       sidewalk: [
         { id: 'water-street-south-sidewalk', side: 'south', polygon: southSidewalk },
         { id: 'water-street-north-sidewalk', side: 'north', polygon: northSidewalk },
-        { id: 'steam-clock-east-sidewalk', side: 'east', polygon: eastSidewalk },
+        { id: 'cambie-west-sidewalk', side: 'west', polygon: cambieWestSidewalk },
+        { id: 'water-cambie-curb-return', side: 'corner', polygon: curbReturn },
         { id: 'steam-clock-plaza-sidewalk', side: 'plaza', polygon: plazaPad },
       ],
     },
@@ -983,11 +1101,11 @@ function makeStarterWorld(outputPath, options = {}) {
     props,
     npcs,
     streetscape: {
-      lamps: proceduralStreetscape(routeWalk, { idPrefix: 'starter-lamp', strideMeters: 24, laneOffset: sidewalkOuter - 0.5, maxCount: 18, mapper: (point, id) => ({ id, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), height: 5.4 }) }),
-      trees: proceduralStreetscape(routeWalk, { idPrefix: 'starter-tree', strideMeters: 38, laneOffset: sidewalkOuter + 2.3, maxCount: 10, mapper: (point, id) => ({ id, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), radius: 1.4 }) }),
+      lamps,
+      trees: proceduralStreetscape(waterRoute, { idPrefix: 'starter-tree', strideMeters: 38, laneOffset: sidewalkOuter + 2.3, maxCount: 10, mapper: (point, id) => ({ id, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), radius: 1.4 }) }),
       bollards: [
-        { id: 'clock-bollard-a', x: Number((layout.clock.x + (layout.plaza.normal.x * -4.2)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.normal.z * -4.2)).toFixed(2)) },
-        { id: 'clock-bollard-b', x: Number((layout.clock.x + (layout.plaza.tangent.x * 3.2) + (layout.plaza.normal.x * -4.1)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.tangent.z * 3.2) + (layout.plaza.normal.z * -4.1)).toFixed(2)), chain_to: 'clock-bollard-a' },
+        { id: 'clock-bollard-a', x: Number((layout.clock.x + (layout.plaza.normal.x * -2.6)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.normal.z * -2.6)).toFixed(2)) },
+        { id: 'clock-bollard-b', x: Number((layout.clock.x + (layout.plaza.tangent.x * 2.2) + (layout.plaza.normal.x * -2.4)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.tangent.z * 2.2) + (layout.plaza.normal.z * -2.4)).toFixed(2)), chain_to: 'clock-bollard-a' },
       ],
       surfaceBands: buildStarterSurfaceBands(centerline, streetWidth, routeLength),
     },
@@ -995,10 +1113,17 @@ function makeStarterWorld(outputPath, options = {}) {
     bounds: { floorY: 0, edgeMessage: 'Stayed within the Gastown working corridor.', resetMessage: 'Returned to the Gastown working corridor.' },
   };
 
+  const plazaZone = world.zones.sidewalk.find((zone) => zone.id === 'steam-clock-plaza-sidewalk');
+  if (!polygonContainsPoint(layout.clock, plazaZone.polygon)) {
+    throw new Error('Steam Clock fallback anchor must remain inside the corner plaza sidewalk zone.');
+  }
+  if (world.zones.street.some((zone) => polygonContainsPoint(layout.clock, zone.polygon))) {
+    throw new Error('Steam Clock fallback anchor must remain outside street travel lanes.');
+  }
+
   fs.writeFileSync(outputPath, JSON.stringify(world, null, 2) + '\n', 'utf8');
   return { generated: true, outputPath, routeLength, usedStarterFallback: true };
 }
-
 
 function buildStarterSurfaceBands(centerline, streetWidth, routeLength) {
   const bands = [];
@@ -1009,13 +1134,13 @@ function buildStarterSurfaceBands(centerline, streetWidth, routeLength) {
     const length = Math.max(9.2, Math.min(18.5, distance(point, next) * 0.98 || 10));
     const progress = routeLength > 0 ? index / Math.max(1, centerline.length - 1) : 0;
     const edgeOffset = streetWidth * 0.39;
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.9).toFixed(2)), length: Number((length * 1.02).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.24, elevation: 0.018 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.32).toFixed(2)), length: Number((length * 0.88).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: progress < 0.2 ? 0.12 : 0.16, elevation: 0.022 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.94).toFixed(2)), length: Number((length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.18, elevation: 0.012 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.3).toFixed(2)), length: Number((length * 0.86).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: progress < 0.2 ? 0.08 : 0.11, elevation: 0.016 });
     bands.push({ segment_id: point.id, width: Number((streetWidth * 0.08).toFixed(2)), length: Number((length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(edgeOffset.toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.14, elevation: 0.024 });
     bands.push({ segment_id: point.id, width: Number((streetWidth * 0.08).toFixed(2)), length: Number((length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((-edgeOffset).toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.14, elevation: 0.024 });
-    if (point.id === 'steam-clock' || point.id === 'steam-clock-approach' || point.id === 'maple-tree-square-edge') {
-      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.72).toFixed(2)), length: Number(Math.max(4.8, length * 0.32).toFixed(2)), yaw: Number((heading + Math.PI / 2).toFixed(4)), offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.22, elevation: 0.026 });
-      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.46).toFixed(2)), length: Number(Math.max(4.2, length * 0.18).toFixed(2)), yaw: Number((heading + Math.PI / 2).toFixed(4)), offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.14, elevation: 0.027 });
+    if (point.id === 'steam-clock' || point.id === 'steam-clock-approach') {
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.68).toFixed(2)), length: Number(Math.max(5.2, length * 0.36).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.18, elevation: 0.02 });
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.34).toFixed(2)), length: Number(Math.max(4.1, length * 0.18).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.12, elevation: 0.022 });
     }
   });
   return bands;
