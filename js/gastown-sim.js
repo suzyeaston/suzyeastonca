@@ -1344,8 +1344,8 @@
   }
 
   function addGround(world) {
-    visualState.roadMaterial = createGroundMaterial('street', 0x11161c, 0.92, 0.1);
-    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x8f8376, 0.96, 0.02);
+    visualState.roadMaterial = createGroundMaterial('street', 0x0e1319, 0.96, 0.08);
+    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x7c7065, 0.98, 0.02);
     visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xa7afb7, transparent: true, opacity: 0.42 });
     visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x8fa0af, roughness: 0.92, metalness: 0.02, transparent: true, opacity: 0.02, depthWrite: false });
     visualState.routeGuideMaterials = [visualState.laneMaterial];
@@ -1372,17 +1372,17 @@
         (() => {
           const toneStyles = {
             brick: { color: 0x5c4033, roughness: 0.82, metalness: 0.06, opacity: 0.72 },
-            road_base_dark: { color: 0x2b3036, roughness: 0.92, metalness: 0.04, opacity: 0.3 },
-            wheel_track: { color: 0x161b20, roughness: 0.58, metalness: 0.2, opacity: 0.2 },
+            road_base_dark: { color: 0x23292f, roughness: 0.95, metalness: 0.03, opacity: 0.18 },
+            wheel_track: { color: 0x13181d, roughness: 0.62, metalness: 0.14, opacity: 0.14 },
             patch: { color: 0x2f353d, roughness: 0.76, metalness: 0.12, opacity: 0.2 },
             repair_patch_dark: { color: 0x252b32, roughness: 0.72, metalness: 0.14, opacity: 0.22 },
             puddle: { color: 0x1a212a, roughness: 0.34, metalness: 0.28, opacity: 0.14 },
             wet_streak: { color: 0x202731, roughness: 0.48, metalness: 0.2, opacity: 0.18 },
             edge_grime: { color: 0x1b1d20, roughness: 0.8, metalness: 0.08, opacity: 0.18 },
-            curb_grime: { color: 0x202326, roughness: 0.86, metalness: 0.05, opacity: 0.18 },
-            cobble_break: { color: 0x56473b, roughness: 0.84, metalness: 0.06, opacity: 0.18 },
+            curb_grime: { color: 0x1f2327, roughness: 0.88, metalness: 0.04, opacity: 0.13 },
+            cobble_break: { color: 0x5b4c40, roughness: 0.86, metalness: 0.04, opacity: 0.14 },
             paver_break: { color: 0x5d5144, roughness: 0.84, metalness: 0.05, opacity: 0.18 },
-            intersection_pavers: { color: 0x615547, roughness: 0.88, metalness: 0.05, opacity: 0.24 },
+            intersection_pavers: { color: 0x65584a, roughness: 0.9, metalness: 0.04, opacity: 0.2 },
             default: { color: 0x3a4048, roughness: 0.8, metalness: 0.08, opacity: 0.78 },
           };
           const style = toneStyles[band.tone] || toneStyles.default;
@@ -2003,7 +2003,7 @@
       return;
     }
 
-    const dropCount = Math.floor(520 + (intensity * 980));
+    const dropCount = Math.floor(420 + (intensity * 900));
     const geom = new THREE.BufferGeometry();
     const points = new Float32Array(dropCount * 3);
     const velocities = new Float32Array(dropCount);
@@ -2017,19 +2017,23 @@
 
     geom.setAttribute('position', new THREE.BufferAttribute(points, 3));
     geom.setAttribute('velocity', new THREE.BufferAttribute(velocities, 1));
-    const rain = new THREE.Points(geom, new THREE.PointsMaterial({ color: 0xa9c6d9, size: 0.1 + (intensity * 0.07), transparent: true, opacity: 0.32 + (intensity * 0.4) }));
+    const rain = new THREE.Points(geom, new THREE.PointsMaterial({ color: 0xa9c6d9, size: 0.08 + (intensity * 0.06), transparent: true, opacity: 0.22 + (intensity * 0.36) }));
     rain.userData.kind = 'rain-core';
     rainGroup.add(rain);
 
-    const streakCount = Math.floor(30 + (intensity * 80));
+    if (intensity < 0.72) {
+      return;
+    }
+
+    const streakCount = Math.floor(8 + ((intensity - 0.72) * 28));
     for (let i = 0; i < streakCount; i += 1) {
       const streak = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.05, 2.8 + (intensity * 2.4)),
-        new THREE.MeshBasicMaterial({ color: 0xc7d9e6, transparent: true, opacity: 0.06 + (intensity * 0.08), depthWrite: false })
+        new THREE.PlaneGeometry(0.025, 0.7 + (intensity * 0.85)),
+        new THREE.MeshBasicMaterial({ color: 0xc7d9e6, transparent: true, opacity: 0.025 + (intensity * 0.025), depthWrite: false })
       );
-      streak.rotation.x = -0.18;
-      streak.position.set((Math.random() - 0.5) * 70, 10 + (Math.random() * 16), -4 - (Math.random() * 30));
-      streak.userData.fallSpeed = 18 + (Math.random() * 10) + (intensity * 12);
+      streak.rotation.x = -0.22;
+      streak.position.set((Math.random() - 0.5) * 55, 9 + (Math.random() * 14), -8 - (Math.random() * 26));
+      streak.userData.fallSpeed = 19 + (Math.random() * 8) + (intensity * 12);
       rainGroup.add(streak);
     }
   }
@@ -2398,6 +2402,24 @@
       drawPolygon(getBuildingPolygon(building), metrics, pad, '#6f5047', 'rgba(219, 194, 173, 0.24)', 0.8, view);
     });
 
+    if (state.world.navigator && Array.isArray(state.world.navigator.focusCorridor) && state.world.navigator.focusCorridor.length) {
+      ctx.strokeStyle = 'rgba(197, 154, 95, 0.55)';
+      ctx.lineWidth = 1.3;
+      state.world.navigator.focusCorridor.forEach((corridor) => {
+        if (!Array.isArray(corridor.points) || corridor.points.length < 2) return;
+        ctx.beginPath();
+        corridor.points.forEach((point, index) => {
+          const mini = toMinimapPoint(point, metrics, pad, view);
+          if (index === 0) {
+            ctx.moveTo(mini.x, mini.y);
+          } else {
+            ctx.lineTo(mini.x, mini.y);
+          }
+        });
+        ctx.stroke();
+      });
+    }
+
     if (state.world.route && Array.isArray(state.world.route.centerline) && state.world.route.centerline.length > 1) {
       ctx.strokeStyle = 'rgba(158, 212, 240, 0.48)';
       ctx.setLineDash([5, 4]);
@@ -2415,7 +2437,7 @@
       ctx.setLineDash([]);
     }
 
-    const majorNodes = ['station-threshold', 'water-mid', 'steam-clock'];
+    const majorNodes = ['waterfront-station-threshold', 'water-street-mid-block', 'steam-clock', 'maple-tree-square-edge'];
     state.world.nodes.forEach((node) => {
       if (!majorNodes.includes(node.id)) return;
       const mini = toMinimapPoint(node, metrics, pad, view);
@@ -2428,11 +2450,14 @@
       ctx.font = '600 9px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      if (node.id === 'station-threshold') {
+      if (node.id === 'waterfront-station-threshold') {
         ctx.fillText('Station', mini.x + 6, mini.y - 5);
       }
       if (node.id === 'steam-clock') {
         ctx.fillText('Steam Clock', mini.x + 6, mini.y - 5);
+      }
+      if (node.id === 'water-street-mid-block') {
+        ctx.fillText('Water St', mini.x + 6, mini.y + 7);
       }
     });
 

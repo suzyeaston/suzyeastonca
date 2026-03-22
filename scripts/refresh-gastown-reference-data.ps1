@@ -43,12 +43,11 @@ if (-not (Test-Path $RouteAnchorsPath)) {
 }
 
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
-
 $anchors = Get-Content -Raw -Path $RouteAnchorsPath | ConvertFrom-Json
 
 function New-FeatureCollection {
     param([array]$Features)
-    return @{
+    @{
         type = 'FeatureCollection'
         features = $Features
     }
@@ -62,16 +61,10 @@ function New-PointFeature {
         [double]$Lat,
         [hashtable]$Props = @{}
     )
-    return @{
+    @{
         type = 'Feature'
-        properties = (@{
-            id = $Id
-            label = $Label
-        } + $Props)
-        geometry = @{
-            type = 'Point'
-            coordinates = @($Lon, $Lat)
-        }
+        properties = (@{ id = $Id; label = $Label } + $Props)
+        geometry = @{ type = 'Point'; coordinates = @($Lon, $Lat) }
     }
 }
 
@@ -82,16 +75,24 @@ function New-LineFeature {
         [array]$Coordinates,
         [hashtable]$Props = @{}
     )
-    return @{
+    @{
         type = 'Feature'
-        properties = (@{
-            id = $Id
-            label = $Label
-        } + $Props)
-        geometry = @{
-            type = 'LineString'
-            coordinates = $Coordinates
-        }
+        properties = (@{ id = $Id; label = $Label } + $Props)
+        geometry = @{ type = 'LineString'; coordinates = $Coordinates }
+    }
+}
+
+function New-PolygonFeature {
+    param(
+        [string]$Id,
+        [string]$Label,
+        [array]$Coordinates,
+        [hashtable]$Props = @{}
+    )
+    @{
+        type = 'Feature'
+        properties = (@{ id = $Id; label = $Label } + $Props)
+        geometry = @{ type = 'Polygon'; coordinates = @($Coordinates) }
     }
 }
 
@@ -99,137 +100,76 @@ $origin = @($anchors.origin.lon, $anchors.origin.lat)
 $dest = @($anchors.dest.lon, $anchors.dest.lat)
 
 $routeMid = @(
-    @(-123.11115, 49.28558),
-    @(-123.11032, 49.28512),
-    @(-123.10962, 49.28482)
+    @(-123.11145, 49.28586),
+    @(-123.11096, 49.28557),
+    @(-123.11018, 49.28518),
+    @(-123.10954, 49.28484),
+    @(-123.10916, 49.28460)
 )
 
 $routeReference = New-FeatureCollection @(
     (New-PointFeature -Id 'waterfront-station-threshold' -Label 'Waterfront Station threshold' -Lon $anchors.origin.lon -Lat $anchors.origin.lat -Props @{ kind = 'origin_anchor'; route_role = 'start' }),
     (New-PointFeature -Id 'steam-clock' -Label 'Gastown Steam Clock' -Lon $anchors.dest.lon -Lat $anchors.dest.lat -Props @{ kind = 'destination_anchor'; route_role = 'destination' }),
-    (New-LineFeature -Id 'gastown-working-route' -Label 'Waterfront to Steam Clock working corridor' -Coordinates @($origin) + $routeMid + @($dest) -Props @{ kind = 'route_skeleton'; source = 'deterministic_open_reference' })
+    (New-LineFeature -Id 'gastown-working-route' -Label 'Waterfront to Steam Clock working corridor' -Coordinates (@($origin) + $routeMid + @($dest)) -Props @{ kind = 'route_skeleton'; source = 'deterministic_open_reference' })
 )
 
 $streetContext = New-FeatureCollection @(
     (New-LineFeature -Id 'water-street-context-centerline' -Label 'Water Street context centerline' -Coordinates @(
-        @(-123.11158, 49.28574),
-        @(-123.11118, 49.28554),
-        @(-123.11066, 49.28527),
-        @(-123.11006, 49.28501),
-        @(-123.10954, 49.28477),
-        @(-123.10908, 49.28456)
-    ) -Props @{ corridor = 'water-street'; priority = 'primary' }),
-    (New-LineFeature -Id 'cordova-transition-context' -Label 'Cordova transition seam' -Coordinates @(
-        @(-123.11177, 49.28586),
-        @(-123.11132, 49.28563),
-        @(-123.11094, 49.28543)
-    ) -Props @{ corridor = 'water-cordova-seam'; priority = 'secondary' })
-)
-
+        @(-123.11164, 49.28589),
+        @(-123.11121, 49.28562),
+        @(-123.11064, 49.28531),
+        @(-123.11003, 49.28502),
+        @(-123.10947, 49.28473),
+        @(-123.10912, 49.28451)
+    ) -Props @{ corridor = 'water-street'; priority = 'primary'; use = 'main_corridor' }),
+    (New-LineFeature -Id 'cordova-transition-context' -Label 'Steam Clock cross-street context' -Coordinates @(
+        @(-123.10931, 49.28479),
+        @(-123.10912, 49.28461),
+        @(-123.10888, 49.28440)
+    ) -Props @{ corridor = 'steam-clock-cross'; priority = 'primary'; use = 'cross_corridor' }),
     (New-LineFeature -Id 'water-street-south-curb' -Label 'Water Street south curb cue' -Coordinates @(
-        @(-123.11135, 49.28550),
-        @(-123.11080, 49.28525),
-        @(-123.10992, 49.28486),
-        @(-123.10941, 49.28464)
+        @(-123.11142, 49.28556),
+        @(-123.11083, 49.28525),
+        @(-123.10993, 49.28481),
+        @(-123.10939, 49.28454)
     ) -Props @{ corridor = 'water-street'; kind = 'curb_edge'; priority = 'supporting' }),
     (New-LineFeature -Id 'water-street-north-curb' -Label 'Water Street north curb cue' -Coordinates @(
-        @(-123.11110, 49.28575),
-        @(-123.11057, 49.28551),
-        @(-123.10967, 49.28512),
-        @(-123.10919, 49.28491)
+        @(-123.11114, 49.28580),
+        @(-123.11056, 49.28549),
+        @(-123.10963, 49.28505),
+        @(-123.10920, 49.28481)
     ) -Props @{ corridor = 'water-street'; kind = 'curb_edge'; priority = 'supporting' }),
     (New-LineFeature -Id 'steam-clock-plaza-edge' -Label 'Steam Clock plaza edge cue' -Coordinates @(
-        @(-123.10933, 49.28470),
-        @(-123.10912, 49.28459),
-        @(-123.10894, 49.28447)
+        @(-123.10938, 49.28473),
+        @(-123.10917, 49.28462),
+        @(-123.10898, 49.28449)
     ) -Props @{ corridor = 'steam-clock'; kind = 'plaza_edge'; priority = 'primary' })
 )
 
 $landmarkReference = New-FeatureCollection @(
     (New-PointFeature -Id 'waterfront-station-threshold' -Label 'Waterfront Station threshold' -Lon $anchors.origin.lon -Lat $anchors.origin.lat -Props @{ kind = 'district_gate'; sequence = 1 }),
-    (New-PointFeature -Id 'water-cordova-seam' -Label 'Water/Cordova seam' -Lon -123.11110 -Lat 49.28548 -Props @{ kind = 'street_pivot'; sequence = 2 }),
-    (New-PointFeature -Id 'water-street-mid-block' -Label 'Water Street mid block' -Lon -123.10992 -Lat 49.28495 -Props @{ kind = 'heritage_frontage'; sequence = 3 }),
+    (New-PointFeature -Id 'water-cordova-seam' -Label 'Water/Cordova seam' -Lon -123.11103 -Lat 49.28551 -Props @{ kind = 'street_pivot'; sequence = 2 }),
+    (New-PointFeature -Id 'water-street-mid-block' -Label 'Water Street mid block' -Lon -123.10989 -Lat 49.28492 -Props @{ kind = 'heritage_frontage'; sequence = 3 }),
     (New-PointFeature -Id 'steam-clock' -Label 'Gastown Steam Clock' -Lon $anchors.dest.lon -Lat $anchors.dest.lat -Props @{ kind = 'clock'; sequence = 4 }),
-    (New-PointFeature -Id 'maple-tree-square-edge' -Label 'Maple Tree Square edge' -Lon -123.10866 -Lat 49.28426 -Props @{ kind = 'plaza_edge'; sequence = 5 })
+    (New-PointFeature -Id 'maple-tree-square-edge' -Label 'Maple Tree Square edge' -Lon -123.10876 -Lat 49.28429 -Props @{ kind = 'plaza_edge'; sequence = 5 })
 )
 
 $buildingCues = New-FeatureCollection @(
-    @{
-        type = 'Feature'
-        properties = @{
-            id = 'water-street-south-frontage'
-            label = 'Water Street south frontage massing cue'
-            kind = 'frontage_band'
-            side = 'south'
-            rhythm = 'tight_heritage'
-        }
-        geometry = @{
-            type = 'Polygon'
-            coordinates = @(@(
-                @(-123.11129, 49.28546),
-                @(-123.11075, 49.28520),
-                @(-123.10985, 49.28480),
-                @(-123.10938, 49.28461),
-                @(-123.10930, 49.28448),
-                @(-123.10990, 49.28473),
-                @(-123.11092, 49.28518),
-                @(-123.11142, 49.28542),
-                @(-123.11129, 49.28546)
-            ))
-        }
-    },
-    @{
-        type = 'Feature'
-        properties = @{
-            id = 'water-street-north-frontage'
-            label = 'Water Street north frontage massing cue'
-            kind = 'frontage_band'
-            side = 'north'
-            rhythm = 'split_corner_then_longer_row'
-        }
-        geometry = @{
-            type = 'Polygon'
-            coordinates = @(@(
-                @(-123.11104, 49.28578),
-                @(-123.11053, 49.28553),
-                @(-123.10960, 49.28511),
-                @(-123.10913, 49.28490),
-                @(-123.10901, 49.28499),
-                @(-123.10952, 49.28522),
-                @(-123.11045, 49.28563),
-                @(-123.11094, 49.28587),
-                @(-123.11104, 49.28578)
-            ))
-        }
-    },
-    @{
-        type = 'Feature'
-        properties = @{
-            id = 'steam-clock-frontage-cadence'
-            label = 'Steam Clock frontage cadence cue'
-            kind = 'frontage_band'
-            side = 'clock_plaza'
-            rhythm = 'plaza_pause_then_tight_row'
-        }
-        geometry = @{
-            type = 'Polygon'
-            coordinates = @(@(
-                @(-123.10942, 49.28473),
-                @(-123.10917, 49.28461),
-                @(-123.10896, 49.28447),
-                @(-123.10889, 49.28455),
-                @(-123.10910, 49.28468),
-                @(-123.10935, 49.28479),
-                @(-123.10942, 49.28473)
-            ))
-        }
-    }
+    (New-PolygonFeature -Id 'water-street-south-frontage' -Label 'Water Street south frontage massing cue' -Coordinates @(
+        @(-123.11131, 49.28550), @(-123.11074, 49.28522), @(-123.10985, 49.28479), @(-123.10933, 49.28453), @(-123.10925, 49.28441), @(-123.10988, 49.28471), @(-123.11090, 49.28520), @(-123.11143, 49.28546), @(-123.11131, 49.28550)
+    ) -Props @{ kind = 'frontage_band'; side = 'south'; rhythm = 'tight_heritage' }),
+    (New-PolygonFeature -Id 'water-street-north-frontage' -Label 'Water Street north frontage massing cue' -Coordinates @(
+        @(-123.11105, 49.28582), @(-123.11051, 49.28555), @(-123.10960, 49.28512), @(-123.10914, 49.28487), @(-123.10901, 49.28498), @(-123.10952, 49.28524), @(-123.11045, 49.28568), @(-123.11095, 49.28591), @(-123.11105, 49.28582)
+    ) -Props @{ kind = 'frontage_band'; side = 'north'; rhythm = 'split_corner_then_longer_row' }),
+    (New-PolygonFeature -Id 'steam-clock-frontage-cadence' -Label 'Steam Clock frontage cadence cue' -Coordinates @(
+        @(-123.10945, 49.28476), @(-123.10920, 49.28463), @(-123.10897, 49.28448), @(-123.10888, 49.28456), @(-123.10908, 49.28471), @(-123.10933, 49.28482), @(-123.10945, 49.28476)
+    ) -Props @{ kind = 'frontage_band'; side = 'clock_plaza'; rhythm = 'plaza_pause_then_tight_row' })
 )
 
 $poiReference = New-FeatureCollection @(
     (New-PointFeature -Id 'steam-clock-poi' -Label 'Gastown Steam Clock POI' -Lon $anchors.dest.lon -Lat $anchors.dest.lat -Props @{ category = 'landmark'; source = 'manual_open_reference_seed' }),
     (New-PointFeature -Id 'waterfront-station-poi' -Label 'Waterfront Station POI' -Lon $anchors.origin.lon -Lat $anchors.origin.lat -Props @{ category = 'transit'; source = 'manual_open_reference_seed' }),
-    (New-PointFeature -Id 'maple-tree-square-poi' -Label 'Maple Tree Square POI' -Lon -123.10866 -Lat 49.28426 -Props @{ category = 'plaza'; source = 'manual_open_reference_seed' })
+    (New-PointFeature -Id 'maple-tree-square-poi' -Label 'Maple Tree Square POI' -Lon -123.10876 -Lat 49.28429 -Props @{ category = 'plaza'; source = 'manual_open_reference_seed' })
 )
 
 $routeReferencePath = Join-Path $OutputDir 'gastown-route-reference.geojson'
@@ -238,11 +178,11 @@ $landmarkReferencePath = Join-Path $OutputDir 'gastown-landmark-reference.geojso
 $buildingCuePath = Join-Path $OutputDir 'gastown-building-cues.geojson'
 $poiReferencePath = Join-Path $OutputDir 'gastown-poi-reference.geojson'
 
-$routeReference | ConvertTo-Json -Depth 10 | Set-Content -Path $routeReferencePath
-$streetContext | ConvertTo-Json -Depth 10 | Set-Content -Path $streetContextPath
-$landmarkReference | ConvertTo-Json -Depth 10 | Set-Content -Path $landmarkReferencePath
-$buildingCues | ConvertTo-Json -Depth 10 | Set-Content -Path $buildingCuePath
-$poiReference | ConvertTo-Json -Depth 10 | Set-Content -Path $poiReferencePath
+$routeReference | ConvertTo-Json -Depth 12 | Set-Content -Path $routeReferencePath
+$streetContext | ConvertTo-Json -Depth 12 | Set-Content -Path $streetContextPath
+$landmarkReference | ConvertTo-Json -Depth 12 | Set-Content -Path $landmarkReferencePath
+$buildingCues | ConvertTo-Json -Depth 12 | Set-Content -Path $buildingCuePath
+$poiReference | ConvertTo-Json -Depth 12 | Set-Content -Path $poiReferencePath
 
 if (-not $SkipOverpass) {
     $minLon = [Math]::Min($anchors.origin.lon, $anchors.dest.lon) - 0.003
@@ -250,7 +190,7 @@ if (-not $SkipOverpass) {
     $maxLon = [Math]::Max($anchors.origin.lon, $anchors.dest.lon) + 0.003
     $maxLat = [Math]::Max($anchors.origin.lat, $anchors.dest.lat) + 0.003
     $bbox = "$minLat,$minLon,$maxLat,$maxLon"
-    $query = "[out:json][timeout:25];(way[""building""]($bbox);node(w);nwr[""tourism""]($bbox);nwr[""historic""]($bbox);nwr[""amenity""]($bbox););out body;"
+    $query = '[out:json][timeout:25];(way["building"](' + $bbox + ');node(w);nwr["tourism"](' + $bbox + ');nwr["historic"](' + $bbox + ');nwr["amenity"](' + $bbox + '););out body;'
     $encoded = [System.Uri]::EscapeDataString($query)
     $overpassUrl = "https://overpass-api.de/api/interpreter?data=$encoded"
     $overpassPath = Join-Path $OutputDir 'gastown-overpass-buildings.json'

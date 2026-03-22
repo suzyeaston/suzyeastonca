@@ -27,3 +27,12 @@ test('main road path no longer generates repeated divider plane markers', () => 
   assert.equal(src.includes('new THREE.PlaneGeometry(0.7, 2.2)'), false);
   assert.match(src, /laneMaterial = new THREE\.MeshStandardMaterial\([^)]*opacity: 0\.02/s);
 });
+
+test('default clear and afternoon play keeps rain as particles without divider blades', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const src = fs.readFileSync(simPath, 'utf8');
+
+  assert.match(src, /if \(intensity < 0\.72\) \{\s*return;/s);
+  assert.match(src, /new THREE\.PlaneGeometry\(0\.025, 0\.7 \+ \(intensity \* 0\.85\)\)/);
+  assert.doesNotMatch(src, /new THREE\.PlaneGeometry\(0\.05, 2\.8 \+ \(intensity \* 2\.4\)\)/);
+});

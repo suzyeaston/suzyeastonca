@@ -10,7 +10,7 @@ get_header();
     <header class="gastown-sim-header">
       <p class="gastown-sim-kicker">Prototype route: Waterfront Station → Water Street → Steam Clock</p>
       <h1>Gastown First-Person Simulator</h1>
-      <p class="gastown-sim-intro">A stylized, geographically grounded Gastown walk through one focused corridor slice. Click into the scene, look around, and walk the route.</p>
+      <p class="gastown-sim-intro">A stylized, geographically grounded Gastown walk through a focused Water Street slice with the Steam Clock staged at an intersection plaza. Click into the scene, look around, and walk the route.</p>
     </header>
 
     <div class="gastown-controls" role="group" aria-label="Simulator controls">
