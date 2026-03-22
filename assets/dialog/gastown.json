@@ -1,0 +1,23 @@
+{
+  "guide_intro": {
+    "title": "Gastown guide",
+    "lines": [
+      "Welcome to the starter Gastown corridor build. This guide marks where interaction, dialog, and future quest hooks plug into the walk.",
+      "World authors can assign a dialogId on any guide, pedestrian, or busker entry and the simulator will open the matching local dialog record."
+    ]
+  },
+  "busker_intro": {
+    "title": "Street busker",
+    "lines": [
+      "The busker system is intentionally minimal for now: idle in place, local looped audio, and room for future contextual reactions.",
+      "The busker loop is generated in the client, so the interaction stays local and does not add extra binary assets to the theme diff."
+    ]
+  },
+  "pedestrian_intro": {
+    "title": "Pedestrian",
+    "lines": [
+      "I am pacing a short sidewalk patrol route. Add more patrol points in world.npcs[] to make walkers cover longer blocks.",
+      "Keep counts modest and the update loop will stay light while still scaling to a fuller street scene later."
+    ]
+  }
+}

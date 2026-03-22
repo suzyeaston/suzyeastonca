@@ -54,6 +54,11 @@
   const minimapZoomInBtn = app.querySelector('[data-action="minimap-zoom-in"]');
   const minimapZoomOutBtn = app.querySelector('[data-action="minimap-zoom-out"]');
   const osmAttributionEl = app.querySelector('[data-gastown-osm-attribution]');
+  const interactPromptEl = app.querySelector('[data-sim-interact-prompt]');
+  const dialogModalEl = app.querySelector('[data-dialog-modal]');
+  const dialogTitleEl = app.querySelector('[data-dialog-title]');
+  const dialogBodyEl = app.querySelector('[data-dialog-body]');
+  const dialogCloseEls = app.querySelectorAll('[data-dialog-close]');
 
   const state = {
     world: null,
@@ -73,7 +78,12 @@
       zoneBeds: {},
       rainLoop: null,
       clockBurst: null,
+      npcAudio: {},
     },
+    dialogData: {},
+    activeDialogNpcId: '',
+    hoveredNpcId: '',
+    audioContext: null,
     barkTimer: null,
     clockTimer: null,
     boundaryNoticeTimer: null,
@@ -118,6 +128,9 @@
     buildingMaterials: [],
     landmarkVisuals: [],
     groundMeshes: [],
+    groundTextures: {},
+    instancedProps: [],
+    npcMeshes: [],
   };
 
   const LOOK_PITCH_LIMIT = Math.PI / 2.25;
@@ -200,6 +213,357 @@
     } else {
       osmAttributionEl.setAttribute('hidden', 'hidden');
     }
+  }
+
+  const textureLoader = new THREE.TextureLoader();
+  const sharedRaycaster = new THREE.Raycaster();
+  const lookTarget = new THREE.Vector3();
+  const tempCameraWorldPosition = new THREE.Vector3();
+  const tempMatrix = new THREE.Matrix4();
+  const tempQuaternion = new THREE.Quaternion();
+  const tempEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+  const tempScale = new THREE.Vector3();
+  const WORLD_TEXTURE_REPEAT = {
+    street: { x: 0.16, y: 0.16 },
+    sidewalk: { x: 0.22, y: 0.22 },
+  };
+  const SURFACE_TEXTURES = {
+    street: {
+      map: 'cobblestone/albedo.svg',
+      normalMap: 'cobblestone/normal.svg',
+      roughnessMap: 'cobblestone/roughness.svg',
+      aoMap: 'cobblestone/ao.svg',
+    },
+    sidewalk: {
+      map: 'concrete-slabs/albedo.svg',
+      normalMap: 'concrete-slabs/normal.svg',
+      roughnessMap: 'concrete-slabs/roughness.svg',
+      aoMap: 'concrete-slabs/ao.svg',
+    },
+  };
+  const PROP_DEFINITIONS = {
+    trash_bag: {
+      geometry: new THREE.SphereGeometry(0.42, 7, 6),
+      material: new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.96, metalness: 0.04 }),
+      y: 0.38,
+    },
+    cardboard_box: {
+      geometry: new THREE.BoxGeometry(0.85, 0.58, 0.72),
+      material: new THREE.MeshStandardMaterial({ color: 0x8f6a45, roughness: 0.94, metalness: 0.02 }),
+      y: 0.29,
+    },
+    newspaper_box: {
+      geometry: new THREE.BoxGeometry(0.72, 1.18, 0.72),
+      material: new THREE.MeshStandardMaterial({ color: 0xb3452f, roughness: 0.72, metalness: 0.18 }),
+      y: 0.59,
+    },
+  };
+  const NPC_ROLE_STYLE = {
+    pedestrian: { color: 0x9ab4c6, accent: 0x33414d, height: 1.72 },
+    guide: { color: 0xc6aa74, accent: 0x3a2c18, height: 1.78 },
+    busker: { color: 0x8c6bc0, accent: 0x2d1f42, height: 1.74 },
+  };
+
+  function getTextureBaseUrl() {
+    return (config.textureBaseUrl || '').replace(/\/$/, '');
+  }
+
+  function cloneUvToUv2(geometry) {
+    const uv = geometry.getAttribute('uv');
+    if (uv) {
+      geometry.setAttribute('uv2', uv.clone());
+    }
+  }
+
+  function applyWorldUvs(geometry, repeat) {
+    const position = geometry.getAttribute('position');
+    const uvs = new Float32Array(position.count * 2);
+    for (let index = 0; index < position.count; index += 1) {
+      const x = position.getX(index);
+      const y = position.getY(index);
+      uvs[(index * 2)] = x * repeat.x;
+      uvs[(index * 2) + 1] = y * repeat.y;
+    }
+    geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+    geometry.setAttribute('uv2', new THREE.BufferAttribute(uvs.slice(0), 2));
+  }
+
+  function loadSurfaceTextureSet(kind) {
+    if (visualState.groundTextures[kind]) {
+      return visualState.groundTextures[kind];
+    }
+    const base = getTextureBaseUrl();
+    const manifest = SURFACE_TEXTURES[kind] || {};
+    const set = {};
+    Object.keys(manifest).forEach((key) => {
+      if (!base || !manifest[key]) {
+        return;
+      }
+      const texture = textureLoader.load(base + '/' + manifest[key]);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = key === 'map' ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+      texture.anisotropy = 4;
+      set[key] = texture;
+    });
+    visualState.groundTextures[kind] = set;
+    return set;
+  }
+
+  function buildClosedBorderPoints(points, y) {
+    const borderPoints = points.map((point) => new THREE.Vector3(point.x, y, point.z));
+    const first = points[0];
+    borderPoints.push(new THREE.Vector3(first.x, y, first.z));
+    return borderPoints;
+  }
+
+  function createGroundMaterial(kind, baseColor, roughness, metalness) {
+    const maps = loadSurfaceTextureSet(kind);
+    return new THREE.MeshStandardMaterial(Object.assign({
+      color: baseColor,
+      roughness: roughness,
+      metalness: metalness,
+    }, maps));
+  }
+
+  function setSurfaceWetness(material, baseRoughness, baseMetalness, rainIntensity) {
+    if (!material) return;
+    material.metalness = Math.min(0.42, baseMetalness + (rainIntensity * 0.22));
+    material.roughness = Math.max(0.32, baseRoughness - (rainIntensity * 0.24));
+    if (material.roughnessMap) {
+      material.roughnessMap.needsUpdate = true;
+    }
+  }
+
+  async function loadDialogData() {
+    if (!config.dialogDataUrl) {
+      return {};
+    }
+    const response = await fetch(config.dialogDataUrl, { credentials: 'same-origin' });
+    if (!response.ok) {
+      throw new Error('Could not load Gastown dialog data.');
+    }
+    const data = await response.json();
+    return data && typeof data === 'object' ? data : {};
+  }
+
+  function setInteractPrompt(text) {
+    if (!interactPromptEl) return;
+    if (text) {
+      interactPromptEl.textContent = text;
+      interactPromptEl.removeAttribute('hidden');
+    } else {
+      interactPromptEl.setAttribute('hidden', 'hidden');
+      interactPromptEl.textContent = '';
+    }
+  }
+
+  function closeDialog() {
+    state.activeDialogNpcId = '';
+    if (dialogModalEl) {
+      dialogModalEl.setAttribute('hidden', 'hidden');
+      dialogModalEl.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function openDialogForNpc(npcState) {
+    if (!npcState || !dialogModalEl || !dialogTitleEl || !dialogBodyEl) return;
+    const dialog = state.dialogData[npcState.dialogId] || {};
+    dialogTitleEl.textContent = dialog.title || (npcState.role === 'guide' ? 'Gastown guide' : npcState.id);
+    const lines = Array.isArray(dialog.lines) ? dialog.lines : [dialog.body || 'No dialog loaded yet.'];
+    dialogBodyEl.innerHTML = lines.map((line) => '<p>' + line + '</p>').join('');
+    dialogModalEl.removeAttribute('hidden');
+    dialogModalEl.setAttribute('aria-hidden', 'false');
+    state.activeDialogNpcId = npcState.id;
+  }
+
+  function makeNpcVisual(role) {
+    const style = NPC_ROLE_STYLE[role] || NPC_ROLE_STYLE.pedestrian;
+    const root = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.22, Math.max(0.6, style.height - 1), 4, 8),
+      new THREE.MeshStandardMaterial({ color: style.color, roughness: 0.86, metalness: 0.08 })
+    );
+    body.position.y = style.height * 0.5;
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.17, 10, 10),
+      new THREE.MeshStandardMaterial({ color: 0xe0c7aa, roughness: 0.92, metalness: 0.02 })
+    );
+    head.position.y = style.height - 0.12;
+    const accent = new THREE.Mesh(
+      new THREE.BoxGeometry(0.36, 0.14, 0.18),
+      new THREE.MeshStandardMaterial({ color: style.accent, roughness: 0.8, metalness: 0.1 })
+    );
+    accent.position.set(0, style.height * 0.58, 0.2);
+    root.add(body);
+    root.add(head);
+    root.add(accent);
+    return root;
+  }
+
+  function addProps(world) {
+    const grouped = world.props.reduce((acc, prop) => {
+      const kind = PROP_DEFINITIONS[prop.kind] ? prop.kind : 'cardboard_box';
+      acc[kind] = acc[kind] || [];
+      acc[kind].push(prop);
+      return acc;
+    }, {});
+
+    Object.keys(grouped).forEach((kind) => {
+      const def = PROP_DEFINITIONS[kind];
+      const props = grouped[kind];
+      const mesh = new THREE.InstancedMesh(def.geometry, def.material, props.length);
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      props.forEach((prop, index) => {
+        tempEuler.set(0, prop.yaw || 0, 0);
+        tempQuaternion.setFromEuler(tempEuler);
+        tempScale.setScalar(Math.max(0.55, prop.scale || 1));
+        tempMatrix.compose(
+          new THREE.Vector3(prop.x, (prop.y || 0) + (def.y || 0), prop.z),
+          tempQuaternion,
+          tempScale
+        );
+        mesh.setMatrixAt(index, tempMatrix);
+      });
+      mesh.castShadow = false;
+      mesh.receiveShadow = true;
+      worldGroup.add(mesh);
+      visualState.instancedProps.push(mesh);
+    });
+  }
+
+  function ensureAudioContext() {
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextCtor) {
+      return null;
+    }
+    if (!state.audioContext) {
+      state.audioContext = new AudioContextCtor();
+    }
+    if (state.audioContext.state === 'suspended') {
+      state.audioContext.resume().catch(() => {});
+    }
+    return state.audioContext;
+  }
+
+  function ensureNpcLoop(npcState) {
+    if (npcState.role !== 'busker' || state.sounds.npcAudio[npcState.id]) {
+      return;
+    }
+    const audioContext = ensureAudioContext();
+    if (!audioContext) {
+      return;
+    }
+    const gain = audioContext.createGain();
+    gain.gain.value = 0;
+    gain.connect(audioContext.destination);
+
+    const oscillator = audioContext.createOscillator();
+    oscillator.type = 'triangle';
+    oscillator.frequency.value = 196;
+    oscillator.connect(gain);
+
+    const overtone = audioContext.createOscillator();
+    overtone.type = 'sine';
+    overtone.frequency.value = 293.66;
+    overtone.connect(gain);
+
+    oscillator.start();
+    overtone.start();
+
+    state.sounds.npcAudio[npcState.id] = { gain: gain, oscillator: oscillator, overtone: overtone };
+  }
+
+  function addNpcs(world) {
+    state.npcs = (world.npcs || []).map((npc) => {
+      const visual = makeNpcVisual(npc.role);
+      const start = npc.idleSpot || npc.patrol[0] || { x: 0, z: 0 };
+      visual.position.set(start.x, 0, start.z);
+      worldGroup.add(visual);
+      const npcState = Object.assign({
+        mesh: visual,
+        patrolIndex: 0,
+        direction: 1,
+        speed: npc.role === 'pedestrian' ? 0.7 + Math.random() * 0.45 : 0,
+      }, npc);
+      ensureNpcLoop(npcState);
+      visualState.npcMeshes.push(visual);
+      return npcState;
+    });
+  }
+
+  function updateNpcs(delta) {
+    if (!Array.isArray(state.npcs)) return;
+    state.npcs.forEach((npc) => {
+      if (!npc.mesh) return;
+      if (npc.role === 'pedestrian' && Array.isArray(npc.patrol) && npc.patrol.length > 1) {
+        const target = npc.patrol[npc.patrolIndex] || npc.patrol[0];
+        const dx = target.x - npc.mesh.position.x;
+        const dz = target.z - npc.mesh.position.z;
+        const distance = Math.hypot(dx, dz);
+        if (distance < 0.22) {
+          npc.patrolIndex = (npc.patrolIndex + npc.direction + npc.patrol.length) % npc.patrol.length;
+        } else {
+          const step = Math.min(distance, npc.speed * delta);
+          npc.mesh.position.x += (dx / distance) * step;
+          npc.mesh.position.z += (dz / distance) * step;
+          npc.mesh.rotation.y = Math.atan2(dx, dz);
+        }
+      } else if (npc.idleSpot) {
+        npc.mesh.position.x = npc.idleSpot.x;
+        npc.mesh.position.z = npc.idleSpot.z;
+      }
+
+      const loop = state.sounds.npcAudio[npc.id];
+      if (loop) {
+        const distance = Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z);
+        const volume = Math.max(0, 1 - (distance / 14)) * 0.018;
+        loop.gain.gain.setTargetAtTime(volume, ensureAudioContext().currentTime, 0.18);
+      }
+    });
+  }
+
+  function findLookedAtNpc() {
+    if (!Array.isArray(state.npcs) || state.npcs.length === 0) return null;
+    camera.getWorldDirection(lookTarget);
+    camera.getWorldPosition(tempCameraWorldPosition);
+    sharedRaycaster.set(tempCameraWorldPosition, lookTarget);
+    let best = null;
+    state.npcs.forEach((npc) => {
+      if (!npc.mesh) return;
+      const distance = tempCameraWorldPosition.distanceTo(npc.mesh.position);
+      if (distance > (npc.interactRadius || 2.4) + 1.2) {
+        return;
+      }
+      const hits = sharedRaycaster.intersectObject(npc.mesh, true);
+      if (!hits.length) {
+        return;
+      }
+      const hitDistance = hits[0].distance;
+      if (!best || hitDistance < best.hitDistance) {
+        best = { npc: npc, hitDistance: hitDistance, distance: distance };
+      }
+    });
+    return best && best.distance <= (best.npc.interactRadius || 2.4) ? best.npc : null;
+  }
+
+  function updateInteractionTarget() {
+    const npc = findLookedAtNpc();
+    state.hoveredNpcId = npc ? npc.id : '';
+    if (!npc) {
+      setInteractPrompt('');
+      return;
+    }
+    const roleLabel = npc.role === 'guide' ? 'guide' : npc.role === 'busker' ? 'busker' : 'pedestrian';
+    setInteractPrompt('Press E to interact with ' + roleLabel + '.');
+  }
+
+  function interactWithHoveredNpc() {
+    if (!state.hoveredNpcId) return false;
+    const npc = (state.npcs || []).find((candidate) => candidate.id === state.hoveredNpcId);
+    if (!npc) return false;
+    openDialogForNpc(npc);
+    return true;
   }
 
   function toneToColor(tone) {
@@ -314,29 +678,34 @@
     return shape;
   }
 
-  function createZoneMesh(points, material, y) {
-    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(toShape(points)), material);
+  function createZoneMesh(points, material, y, textureKind) {
+    const geometry = new THREE.ShapeGeometry(toShape(points));
+    if (textureKind && WORLD_TEXTURE_REPEAT[textureKind]) {
+      applyWorldUvs(geometry, WORLD_TEXTURE_REPEAT[textureKind]);
+    } else {
+      cloneUvToUv2(geometry);
+    }
+    const mesh = new THREE.Mesh(geometry, material);
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.y = y;
+    mesh.receiveShadow = true;
     worldGroup.add(mesh);
     visualState.groundMeshes.push(mesh);
     return mesh;
   }
 
   function addGround(world) {
-    visualState.roadMaterial = new THREE.MeshStandardMaterial({ color: 0x1b1f25, roughness: 0.94, metalness: 0.14 });
-    visualState.sidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0xa19486, roughness: 0.9, metalness: 0.02 });
+    visualState.roadMaterial = createGroundMaterial('street', 0x1b1f25, 0.94, 0.14);
+    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0xa19486, 0.9, 0.02);
     visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xb8c2cb, transparent: true, opacity: 0.7 });
     visualState.laneMaterial = new THREE.LineBasicMaterial({ color: 0xa5bdcf, transparent: true, opacity: 0.56 });
 
-    world.zones.street.forEach((zone) => createZoneMesh(zone.polygon, visualState.roadMaterial, 0));
-    world.zones.sidewalk.forEach((zone) => createZoneMesh(zone.polygon, visualState.sidewalkMaterial, 0.12));
+    world.zones.street.forEach((zone) => createZoneMesh(zone.polygon, visualState.roadMaterial, 0, 'street'));
+    world.zones.sidewalk.forEach((zone) => createZoneMesh(zone.polygon, visualState.sidewalkMaterial, 0.12, 'sidewalk'));
 
     world.zones.street.forEach((zone) => {
       if (!Array.isArray(zone.polygon) || zone.polygon.length < 3) return;
-      const borderPoints = zone.polygon.map((point) => new THREE.Vector3(point.x, 0.16, point.z));
-      const first = zone.polygon[0];
-      borderPoints.push(new THREE.Vector3(first.x, 0.16, first.z));
+      const borderPoints = buildClosedBorderPoints(zone.polygon, 0.16);
       const curbLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(borderPoints), visualState.curbMaterial);
       worldGroup.add(curbLine);
     });
@@ -1348,11 +1717,17 @@
 
     if (visualState.roadMaterial) {
       visualState.roadMaterial.color.set(timeOfDay.roadColor || '#2b3138');
-      visualState.roadMaterial.metalness = 0.1 + ((weather.rainIntensity || 0) * 0.22);
-      visualState.roadMaterial.roughness = 0.92 - ((weather.rainIntensity || 0) * 0.26);
+      setSurfaceWetness(visualState.roadMaterial, 0.94, 0.14, weather.rainIntensity || 0);
+      if (visualState.roadMaterial.normalScale) {
+        visualState.roadMaterial.normalScale.set(0.9 + ((weather.rainIntensity || 0) * 0.22), 0.9 + ((weather.rainIntensity || 0) * 0.22));
+      }
     }
     if (visualState.sidewalkMaterial) {
       visualState.sidewalkMaterial.color.set(timeOfDay.sidewalkColor || '#8f8780');
+      setSurfaceWetness(visualState.sidewalkMaterial, 0.9, 0.02, (weather.rainIntensity || 0) * 0.7);
+      if (visualState.sidewalkMaterial.normalScale) {
+        visualState.sidewalkMaterial.normalScale.set(0.75 + ((weather.rainIntensity || 0) * 0.18), 0.75 + ((weather.rainIntensity || 0) * 0.18));
+      }
     }
     if (visualState.curbMaterial) {
       visualState.curbMaterial.color.set(timeOfDay.sidewalkColor || '#8f99a3').multiplyScalar(0.74);
@@ -1461,6 +1836,7 @@
     enforceWorldBounds();
     updateNearestNode();
     updateAudioZones();
+    updateInteractionTarget();
   }
 
   function lockPointer() {
@@ -1558,12 +1934,21 @@
   function attachEvents() {
     window.addEventListener('resize', updateSize);
     renderer.domElement.addEventListener('click', () => {
+      ensureAudioContext();
       enterPlayMode();
     });
     document.addEventListener('mousemove', onMouseMove);
     renderer.domElement.addEventListener('wheel', onWheelLook, { passive: false });
 
     document.addEventListener('keydown', (event) => {
+      if (event.code === 'KeyE' && interactWithHoveredNpc()) {
+        event.preventDefault();
+        return;
+      }
+      if (event.code === 'Escape' && state.activeDialogNpcId) {
+        closeDialog();
+        return;
+      }
       const consumedPitch = handlePitchKeyControl(event);
       setMoveKey(event.code, true);
       if (consumedPitch || (event.code.startsWith('Arrow') && (state.isRunning || document.pointerLockElement === renderer.domElement))) {
@@ -1620,6 +2005,15 @@
       }
       setDebugState(open);
     });
+
+    dialogCloseEls.forEach((button) => button.addEventListener('click', closeDialog));
+    if (dialogModalEl) {
+      dialogModalEl.addEventListener('click', (event) => {
+        if (event.target === dialogModalEl) {
+          closeDialog();
+        }
+      });
+    }
   }
 
   function scheduleSteamClock() {
@@ -1640,11 +2034,16 @@
 
   async function init() {
     try {
-      state.world = await window.GastownWorldLoader.load(config.worldDataUrl, config.starterWorldDataUrl);
+      const loadedWorld = await window.GastownWorldLoader.load(config.worldDataUrl, config.starterWorldDataUrl);
+      const dialogData = await loadDialogData().catch(() => ({}));
+      state.world = loadedWorld;
+      state.dialogData = dialogData;
       updateAttribution(state.world);
       addGround(state.world);
+      addProps(state.world);
       addBuildings(state.world);
       addStreetscape(state.world);
+      addNpcs(state.world);
       addHeroLandmarks(state.world);
       addLandmarks(state.world);
       addDebugRoute(state.world);
@@ -1675,6 +2074,8 @@
           movePlayer(delta);
         }
 
+        updateNpcs(delta);
+        updateInteractionTarget();
         animateRain(delta);
         drawMinimap();
         refreshDebugRuntimeReadout();

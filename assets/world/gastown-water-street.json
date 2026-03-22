@@ -2329,5 +2329,157 @@
     "floorY": 0,
     "edgeMessage": "Stayed within the starter street corridor.",
     "resetMessage": "Returned to the starter street corridor."
-  }
+  },
+  "props": [
+    {
+      "id": "prop-bag-1",
+      "kind": "trash_bag",
+      "x": 8.8,
+      "z": -24.5,
+      "yaw": 0.2,
+      "scale": 1.0
+    },
+    {
+      "id": "prop-box-1",
+      "kind": "cardboard_box",
+      "x": 10.9,
+      "z": -63.0,
+      "yaw": 0.45,
+      "scale": 1.1
+    },
+    {
+      "id": "prop-paper-1",
+      "kind": "newspaper_box",
+      "x": 16.1,
+      "z": -96.2,
+      "yaw": -0.2,
+      "scale": 1.0
+    },
+    {
+      "id": "prop-bag-2",
+      "kind": "trash_bag",
+      "x": -6.6,
+      "z": -42.0,
+      "yaw": -0.4,
+      "scale": 0.85
+    },
+    {
+      "id": "prop-box-2",
+      "kind": "cardboard_box",
+      "x": -7.2,
+      "z": -118.5,
+      "yaw": 0.1,
+      "scale": 0.9
+    },
+    {
+      "id": "prop-paper-2",
+      "kind": "newspaper_box",
+      "x": 19.4,
+      "z": -152.0,
+      "yaw": 0.0,
+      "scale": 0.95
+    }
+  ],
+  "npcs": [
+    {
+      "id": "npc-guide-station",
+      "role": "guide",
+      "idleSpot": {
+        "x": 6.9,
+        "z": -8.0
+      },
+      "interactRadius": 3.2,
+      "dialogId": "guide_intro"
+    },
+    {
+      "id": "npc-busker-mid",
+      "role": "busker",
+      "idleSpot": {
+        "x": 17.1,
+        "z": -86.0
+      },
+      "interactRadius": 4.4,
+      "dialogId": "busker_intro"
+    },
+    {
+      "id": "npc-ped-1",
+      "role": "pedestrian",
+      "patrol": [
+        {
+          "x": 7.2,
+          "z": -18.0
+        },
+        {
+          "x": 9.2,
+          "z": -35.0
+        },
+        {
+          "x": 7.8,
+          "z": -52.0
+        }
+      ],
+      "interactRadius": 2.8,
+      "dialogId": "pedestrian_intro"
+    },
+    {
+      "id": "npc-ped-2",
+      "role": "pedestrian",
+      "patrol": [
+        {
+          "x": -6.8,
+          "z": -26.0
+        },
+        {
+          "x": -5.9,
+          "z": -46.0
+        },
+        {
+          "x": -6.3,
+          "z": -66.0
+        }
+      ],
+      "interactRadius": 2.8,
+      "dialogId": "pedestrian_intro"
+    },
+    {
+      "id": "npc-ped-3",
+      "role": "pedestrian",
+      "patrol": [
+        {
+          "x": 17.3,
+          "z": -112.0
+        },
+        {
+          "x": 18.1,
+          "z": -132.0
+        },
+        {
+          "x": 18.9,
+          "z": -149.0
+        }
+      ],
+      "interactRadius": 2.8,
+      "dialogId": "pedestrian_intro"
+    },
+    {
+      "id": "npc-ped-4",
+      "role": "pedestrian",
+      "patrol": [
+        {
+          "x": -7.2,
+          "z": -126.0
+        },
+        {
+          "x": -6.4,
+          "z": -144.0
+        },
+        {
+          "x": -5.8,
+          "z": -166.0
+        }
+      ],
+      "interactRadius": 2.8,
+      "dialogId": "pedestrian_intro"
+    }
+  ]
 }

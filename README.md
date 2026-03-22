@@ -59,3 +59,11 @@ Suzy Easton is a Vancouver-based musician and creative technologist working at t
 
 ## License
 MIT License. Build kindly.
+
+## Gastown props + NPC authoring notes
+- Add lightweight street clutter in `assets/world/gastown-water-street.json` under `world.props[]` using `{ id, kind, x, z, y?, yaw, scale }`.
+- Supported starter `kind` values are `trash_bag`, `cardboard_box`, and `newspaper_box`; the simulator batches each kind with `InstancedMesh` for fewer draw calls.
+- Add simple NPCs in `world.npcs[]` using `{ id, role, patrol?, idleSpot?, interactRadius, dialogId }`.
+- `role: "pedestrian"` expects 2–4 `patrol` points and will loop through them; `guide` and `busker` can use `idleSpot` for stationary placement.
+- Dialog text lives in `assets/dialog/gastown.json`; match an NPC's `dialogId` to a key in that file.
+- Ground textures load from `assets/textures/cobblestone/` and `assets/textures/concrete-slabs/` using local `albedo`, `normal`, `roughness`, and `ao` maps.

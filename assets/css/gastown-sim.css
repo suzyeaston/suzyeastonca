@@ -246,3 +246,64 @@
 .gastown-attribution p {
   margin: 0.1rem 0;
 }
+
+.gastown-interact-prompt {
+  display: inline-block;
+  margin: 0.45rem 0;
+  padding: 0.38rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(151, 200, 244, 0.4);
+  background: rgba(7, 13, 22, 0.72);
+  color: #eff7ff;
+  box-shadow: 0 0 0 1px rgba(51, 86, 126, 0.28) inset;
+}
+
+.gastown-dialog-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(3, 6, 12, 0.82);
+  backdrop-filter: blur(4px);
+}
+
+.gastown-dialog-panel {
+  width: min(100%, 640px);
+  max-height: min(78vh, 720px);
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(160, 194, 232, 0.32);
+  background: linear-gradient(180deg, rgba(18, 25, 39, 0.96), rgba(9, 12, 19, 0.98));
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.55);
+}
+
+.gastown-dialog-header,
+.gastown-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.gastown-dialog-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.gastown-dialog-body {
+  margin-top: 0.85rem;
+  color: #e7eef8;
+  line-height: 1.55;
+}
+
+.gastown-dialog-body p {
+  margin: 0 0 0.8rem;
+}
+
+.gastown-dialog-actions {
+  margin-top: 1rem;
+  justify-content: flex-end;
+}

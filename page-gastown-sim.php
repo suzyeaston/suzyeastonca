@@ -62,6 +62,7 @@ get_header();
     <p class="gastown-pointer-status" data-sim-pointer-status aria-live="polite">Pointer unlocked.</p>
     <p class="gastown-landmark" data-sim-landmark aria-live="polite">Nearest landmark: Station threshold</p>
     <p class="gastown-route-segment" data-sim-route-segment aria-live="polite">Route segment: Waterfront Station Threshold</p>
+    <p class="gastown-interact-prompt" data-sim-interact-prompt aria-live="polite" hidden></p>
 
     <div class="gastown-sim-canvas" data-sim-canvas>
       <aside class="gastown-minimap" aria-label="Route navigator minimap">
@@ -106,6 +107,19 @@ get_header();
       <p>Contains information licensed under the Open Government Licence – Vancouver.</p>
       <p data-gastown-osm-attribution hidden>Map data © OpenStreetMap contributors.</p>
     </footer>
+
+    <div class="gastown-dialog-modal" data-dialog-modal role="dialog" aria-modal="true" aria-hidden="true" hidden>
+      <div class="gastown-dialog-panel">
+        <div class="gastown-dialog-header">
+          <h2 data-dialog-title>Gastown guide</h2>
+          <button type="button" class="pixel-button tiny secondary" data-dialog-close>Close</button>
+        </div>
+        <div class="gastown-dialog-body" data-dialog-body></div>
+        <div class="gastown-dialog-actions">
+          <button type="button" class="pixel-button secondary" data-dialog-close>Back to walk</button>
+        </div>
+      </div>
+    </div>
   </section>
 </main>
 <?php get_footer(); ?>
