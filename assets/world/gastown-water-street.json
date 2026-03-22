@@ -8,146 +8,150 @@
     "isRealCivicBuild": false,
     "buildNotes": [
       "Working fallback corridor is active because required offline civic source files are missing.",
-      "This world is intentionally human-scaled and deterministic for readability, but now stages the playable route as the primary Gastown build rather than a throwaway starter.",
+      "This fallback now stages a Water Street corridor with a Steam Clock intersection/plaza instead of a single bent ribbon corridor.",
       "No refreshed reference inputs were present; deterministic default route staging was used."
     ],
     "referenceInputsUsed": [],
-    "lastBuild": "2026-03-22T11:41:59.340Z"
+    "lastBuild": "2026-03-22T20:44:32.104Z"
   },
   "route": {
     "name": "Waterfront Station → Water Street → Steam Clock working corridor",
     "centerline": [
       {
         "id": "waterfront-station-threshold",
-        "label": "Waterfront threshold",
+        "label": "Waterfront Station threshold",
         "x": 0,
         "z": 0
       },
       {
         "id": "gastown-beat-1",
-        "label": "Gastown beat 1",
-        "x": 2.83,
-        "z": -19.78
+        "label": "Cordova heritage lead-in",
+        "x": 29.28,
+        "z": -24.68
       },
       {
         "id": "water-cordova-seam",
-        "label": "Gastown beat 2",
-        "x": 6.83,
-        "z": -39.32
+        "label": "Water/Cordova seam",
+        "x": 54.73,
+        "z": -45.43
       },
       {
         "id": "gastown-beat-3",
-        "label": "Gastown beat 3",
-        "x": 11.67,
-        "z": -58.7
-      },
-      {
-        "id": "gastown-beat-4",
-        "label": "Gastown beat 4",
-        "x": 14.91,
-        "z": -78.41
+        "label": "West Water Street",
+        "x": 85.05,
+        "z": -68.82
       },
       {
         "id": "water-street-mid-block",
-        "label": "Gastown beat 5",
-        "x": 17.97,
-        "z": -98.14
+        "label": "Water Street mid block",
+        "x": 133.25,
+        "z": -104.87
+      },
+      {
+        "id": "steam-clock-approach",
+        "label": "Steam Clock approach",
+        "x": 189.94,
+        "z": -147.82
       },
       {
         "id": "steam-clock",
-        "label": "Steam Clock reveal",
-        "x": 5.62,
-        "z": -99.21
+        "label": "Steam Clock plaza",
+        "x": 191.48,
+        "z": -149
       },
       {
-        "id": "gastown-beat-7",
-        "label": "Gastown beat 7",
-        "x": 10.29,
-        "z": -137.35
-      },
-      {
-        "id": "gastown-beat-8",
-        "label": "Gastown beat 8",
-        "x": 6.15,
-        "z": -156.89
-      },
-      {
-        "id": "gastown-beat-9",
-        "label": "Gastown beat 9",
-        "x": 2.05,
-        "z": -176.44
+        "id": "maple-tree-square-edge",
+        "label": "Maple Tree Square edge",
+        "x": 210.34,
+        "z": -173.46
       },
       {
         "id": "cambie-rise-continuation",
         "label": "Cambie rise continuation",
-        "x": -2,
-        "z": -196
+        "x": 226.59,
+        "z": -185.7
       }
     ],
     "walkBounds": [
       {
-        "x": 11.186429278371183,
-        "z": 1.5980613254815974
+        "x": 7.993308272768821,
+        "z": 9.479821878942953
       },
       {
-        "x": 15.103990901533438,
-        "z": -25.824870036654175
+        "x": 36.927721055504456,
+        "z": -14.917438324614558
       },
       {
-        "x": 23.083794169778216,
-        "z": -57.744083109633294
+        "x": 70.75767528228896,
+        "z": -42.504615026790034
       },
       {
-        "x": 29.47209821964605,
-        "z": -98.20334209212957
+        "x": 117.67020820096289,
+        "z": -77.91162062099707
       },
       {
-        "x": 22.073947473526335,
-        "z": -136.25097450074526
+        "x": 159.77524694040926,
+        "z": -109.07379867964602
       },
       {
-        "x": 15.059913438658228,
-        "z": -169.31713495083775
+        "x": 200.31175205160022,
+        "z": -140.14657100952388
       },
       {
-        "x": 9.065642740430263,
-        "z": -198.28944332560627
+        "x": 218.67073767651263,
+        "z": -182.64815394440433
       },
       {
-        "x": -13.065642740430263,
-        "z": -193.71055667439373
+        "x": 142.86228021233714,
+        "z": -110.95277449235365
       },
       {
-        "x": -7.059913438658228,
-        "z": -164.68286504916225
+        "x": 199.02480522732665,
+        "z": -139.1600773401357
       },
       {
-        "x": -0.07394747352633502,
-        "z": -131.74902549925474
+        "x": 183.93729775512568,
+        "z": -158.84273768563472
       },
       {
-        "x": 6.527901780353952,
-        "z": -97.79665790787043
+        "x": 161.76666534238964,
+        "z": -127.00469720755041
       },
       {
-        "x": 0.9162058302217826,
-        "z": -62.255916890366706
+        "x": 202.00732999131262,
+        "z": -164.28049638235206
       },
       {
-        "x": -7.103990901533438,
-        "z": -30.175129963345825
+        "x": 182.6503509308521,
+        "z": -157.85624401624654
       },
       {
-        "x": -11.186429278371183,
-        "z": -1.5980613254815974
+        "x": 144.85369861431752,
+        "z": -128.88367302025804
       },
       {
-        "x": 11.186429278371183,
-        "z": 1.5980613254815974
+        "x": 102.82312381946065,
+        "z": -97.77660614947919
+      },
+      {
+        "x": 55.44574501916592,
+        "z": -62.01876039152478
+      },
+      {
+        "x": 21.096840002890268,
+        "z": -34.008396976371394
+      },
+      {
+        "x": -7.993308272768821,
+        "z": -9.479821878942953
+      },
+      {
+        "x": 7.993308272768821,
+        "z": 9.479821878942953
       }
     ],
-    "streetWidth": 9.8,
-    "sidewalkWidth": 3.2,
+    "streetWidth": 11.2,
+    "sidewalkWidth": 3.6,
     "softBoundary": 3.2,
     "hardResetDistance": 12
   },
@@ -161,227 +165,427 @@
     {
       "id": "water-cordova-seam",
       "label": "Water/Cordova seam",
-      "x": 6.83,
-      "z": -39.32
+      "x": 54.73,
+      "z": -45.43
     },
     {
       "id": "water-street-mid-block",
       "label": "Water Street mid block",
-      "x": 17.97,
-      "z": -98.14
+      "x": 133.25,
+      "z": -104.87
     },
     {
       "id": "steam-clock",
       "label": "Steam Clock plaza",
-      "x": 4.22,
-      "z": -107.81
+      "x": 191.48,
+      "z": -149
+    },
+    {
+      "id": "maple-tree-square-edge",
+      "label": "Maple Tree Square edge",
+      "x": 210.34,
+      "z": -173.46
     },
     {
       "id": "cambie-rise-continuation",
       "label": "Cambie rise continuation",
-      "x": -2,
-      "z": -196
+      "x": 226.59,
+      "z": -185.7
     }
   ],
+  "navigator": {
+    "focusCorridor": [
+      {
+        "id": "water-street-west-leg",
+        "label": "Water Street west leg",
+        "points": [
+          {
+            "x": 0,
+            "z": 0
+          },
+          {
+            "x": 29.01,
+            "z": -24.46
+          },
+          {
+            "x": 63.1,
+            "z": -52.26
+          },
+          {
+            "x": 110.25,
+            "z": -87.84
+          },
+          {
+            "x": 152.31,
+            "z": -118.98
+          },
+          {
+            "x": 191.48,
+            "z": -149
+          },
+          {
+            "x": 210.34,
+            "z": -173.46
+          }
+        ]
+      },
+      {
+        "id": "steam-clock-plaza-loop",
+        "label": "Steam Clock plaza",
+        "points": [
+          {
+            "x": 187.84,
+            "z": -151.81
+          },
+          {
+            "x": 190.74,
+            "z": -153.61
+          },
+          {
+            "x": 195.23,
+            "z": -150.91
+          }
+        ]
+      },
+      {
+        "id": "cambie-east-leg",
+        "label": "Cambie east leg",
+        "points": [
+          {
+            "x": 110.25,
+            "z": -87.84
+          },
+          {
+            "x": 152.31,
+            "z": -118.98
+          },
+          {
+            "x": 191.48,
+            "z": -149
+          }
+        ]
+      }
+    ]
+  },
   "zones": {
     "street": [
       {
-        "id": "starter-roadway",
+        "id": "water-street-main-roadway",
         "surface": "road",
         "polygon": [
           {
-            "x": 4.850752518939716,
-            "z": 0.6929646455628167
+            "x": 3.609881155443984,
+            "z": 4.281209880812947
           },
           {
-            "x": 8.815004904204764,
-            "z": -27.056802051292518
+            "x": 32.58699560559411,
+            "z": -20.15205601945111
           },
           {
-            "x": 16.806247029372855,
-            "z": -59.02177055196488
+            "x": 66.55924279078748,
+            "z": -47.85526778808827
           },
           {
-            "x": 22.974626661616426,
-            "z": -98.08817488950751
+            "x": 113.59923345119614,
+            "z": -83.3584714917099
           },
           {
-            "x": 15.801977223033544,
-            "z": -134.97608628793378
+            "x": 155.68385465744862,
+            "z": -114.50553841820093
           },
           {
-            "x": 8.795891668090736,
-            "z": -168.00477533266417
+            "x": 195.46910980881447,
+            "z": -145.00244909201234
           },
           {
-            "x": 2.7983760555848045,
-            "z": -196.99276745977616
+            "x": 214.77419012348744,
+            "z": -170.04535036279177
           },
           {
-            "x": -6.7983760555848045,
-            "z": -195.00723254022384
+            "x": 205.9038775443378,
+            "z": -176.88329996396462
           },
           {
-            "x": -0.7958916680907357,
-            "z": -165.99522466733583
+            "x": 187.49299317363787,
+            "z": -153.00036593375808
           },
           {
-            "x": 6.1980227769664555,
-            "z": -133.02391371206622
+            "x": 148.94509089727816,
+            "z": -123.45193328170313
           },
           {
-            "x": 13.025373338383572,
-            "z": -97.91182511049249
+            "x": 106.8940985692274,
+            "z": -92.32975527876636
           },
           {
-            "x": 7.193752970627145,
-            "z": -60.97822944803512
+            "x": 59.6441775106674,
+            "z": -56.668107630226544
           },
           {
-            "x": -0.8150049042047645,
-            "z": -28.943197948707482
+            "x": 25.43756545280061,
+            "z": -28.773779281534843
           },
           {
-            "x": -4.850752518939716,
-            "z": -0.6929646455628167
+            "x": -3.609881155443984,
+            "z": -4.281209880812947
           },
           {
-            "x": 4.850752518939716,
-            "z": 0.6929646455628167
+            "x": 3.609881155443984,
+            "z": 4.281209880812947
+          }
+        ]
+      },
+      {
+        "id": "steam-clock-cross-street",
+        "surface": "road",
+        "polygon": [
+          {
+            "x": 113.24495137270692,
+            "z": -83.79295492313778
+          },
+          {
+            "x": 155.3469164694401,
+            "z": -114.95285816137604
+          },
+          {
+            "x": 194.54722236460896,
+            "z": -145.001382991058
+          },
+          {
+            "x": 188.41488061784338,
+            "z": -153.00143203471242
+          },
+          {
+            "x": 149.2820290852867,
+            "z": -123.00461353852802
+          },
+          {
+            "x": 107.24838064771662,
+            "z": -91.89527184733848
+          },
+          {
+            "x": 113.24495137270692,
+            "z": -83.79295492313778
+          }
+        ]
+      },
+      {
+        "id": "steam-clock-intersection",
+        "surface": "road",
+        "polygon": [
+          {
+            "x": 181.95,
+            "z": -148.52
+          },
+          {
+            "x": 193.44,
+            "z": -139.66
+          },
+          {
+            "x": 201.01,
+            "z": -149.49
+          },
+          {
+            "x": 189.52,
+            "z": -158.34
+          },
+          {
+            "x": 181.95,
+            "z": -148.52
           }
         ]
       }
     ],
     "sidewalk": [
       {
-        "id": "starter-sidewalk-left",
-        "side": "left",
+        "id": "water-street-south-sidewalk",
+        "side": "south",
         "polygon": [
           {
-            "x": 8.01859089865545,
-            "z": 1.1455129855222073
+            "x": 5.930519041086545,
+            "z": 7.033416232764126
           },
           {
-            "x": 11.959497902869101,
-            "z": -26.44083604397335
+            "x": 34.88502672613488,
+            "z": -17.380787828067053
           },
           {
-            "x": 19.945020599575535,
-            "z": -58.382926830799086
+            "x": 68.7819423451118,
+            "z": -45.02256926740097
           },
           {
-            "x": 26.22336244063124,
-            "z": -98.14575849081855
+            "x": 115.75445537754325,
+            "z": -80.47484456015606
           },
           {
-            "x": 18.93796234827994,
-            "z": -135.61353039433953
+            "x": 157.84988586607486,
+            "z": -111.62991149778951
           },
           {
-            "x": 11.927902553374484,
-            "z": -168.66095514175095
+            "x": 198.03286158440693,
+            "z": -142.43169010716554
           },
           {
-            "x": 5.932009398007534,
-            "z": -197.6411053926912
+            "x": 217.62536202392837,
+            "z": -167.8474379909862
           },
           {
-            "x": 2.7983760555848045,
-            "z": -196.99276745977616
+            "x": 214.77419012348744,
+            "z": -170.04535036279177
           },
           {
-            "x": 8.795891668090736,
-            "z": -168.00477533266417
+            "x": 195.46910980881447,
+            "z": -145.00244909201234
           },
           {
-            "x": 15.801977223033544,
-            "z": -134.97608628793378
+            "x": 155.68385465744862,
+            "z": -114.50553841820093
           },
           {
-            "x": 22.974626661616426,
-            "z": -98.08817488950751
+            "x": 113.59923345119614,
+            "z": -83.3584714917099
           },
           {
-            "x": 16.806247029372855,
-            "z": -59.02177055196488
+            "x": 66.55924279078748,
+            "z": -47.85526778808827
           },
           {
-            "x": 8.815004904204764,
-            "z": -27.056802051292518
+            "x": 32.58699560559411,
+            "z": -20.15205601945111
           },
           {
-            "x": 4.850752518939716,
-            "z": 0.6929646455628167
+            "x": 3.609881155443984,
+            "z": 4.281209880812947
           },
           {
-            "x": 8.01859089865545,
-            "z": 1.1455129855222073
+            "x": 5.930519041086545,
+            "z": 7.033416232764126
           }
         ]
       },
       {
-        "id": "starter-sidewalk-right",
-        "side": "right",
+        "id": "water-street-north-sidewalk",
+        "side": "north",
         "polygon": [
           {
-            "x": -4.850752518939716,
-            "z": -0.6929646455628167
+            "x": -3.609881155443984,
+            "z": -4.281209880812947
           },
           {
-            "x": -0.8150049042047645,
-            "z": -28.943197948707482
+            "x": 25.43756545280061,
+            "z": -28.773779281534843
           },
           {
-            "x": 7.193752970627145,
-            "z": -60.97822944803512
+            "x": 59.6441775106674,
+            "z": -56.668107630226544
           },
           {
-            "x": 13.025373338383572,
-            "z": -97.91182511049249
+            "x": 106.8940985692274,
+            "z": -92.32975527876636
           },
           {
-            "x": 6.1980227769664555,
-            "z": -133.02391371206622
+            "x": 148.94509089727816,
+            "z": -123.45193328170313
           },
           {
-            "x": -0.7958916680907357,
-            "z": -165.99522466733583
+            "x": 187.49299317363787,
+            "z": -153.00036593375808
           },
           {
-            "x": -6.7983760555848045,
-            "z": -195.00723254022384
+            "x": 205.9038775443378,
+            "z": -176.88329996396462
           },
           {
-            "x": -9.932009398007533,
-            "z": -194.3588946073088
+            "x": 203.05270564389687,
+            "z": -179.08121233577018
           },
           {
-            "x": -3.9279025533744836,
-            "z": -165.33904485824905
+            "x": 184.9292413980454,
+            "z": -155.57112491860488
           },
           {
-            "x": 3.0620376517200603,
-            "z": -132.38646960566047
+            "x": 146.77905968865193,
+            "z": -126.32756020211455
           },
           {
-            "x": 9.77663755936876,
-            "z": -97.85424150918145
+            "x": 104.73887664288029,
+            "z": -95.2133822103202
           },
           {
-            "x": 4.054979400424464,
-            "z": -61.617073169200914
+            "x": 57.42147795634309,
+            "z": -59.500806150913846
           },
           {
-            "x": -3.959497902869101,
-            "z": -29.55916395602665
+            "x": 23.13953433225984,
+            "z": -31.5450474729189
           },
           {
-            "x": -8.01859089865545,
-            "z": -1.1455129855222073
+            "x": -5.930519041086545,
+            "z": -7.033416232764126
           },
           {
-            "x": -4.850752518939716,
-            "z": -0.6929646455628167
+            "x": -3.609881155443984,
+            "z": -4.281209880812947
+          }
+        ]
+      },
+      {
+        "id": "steam-clock-east-sidewalk",
+        "side": "east",
+        "polygon": [
+          {
+            "x": 115.2818817459576,
+            "z": -81.04073933301245
+          },
+          {
+            "x": 157.40705281897795,
+            "z": -112.21781744596251
+          },
+          {
+            "x": 196.63027178335153,
+            "z": -142.28390601432457
+          },
+          {
+            "x": 194.54722236460896,
+            "z": -145.001382991058
+          },
+          {
+            "x": 155.3469164694401,
+            "z": -114.95285816137604
+          },
+          {
+            "x": 113.24495137270692,
+            "z": -83.79295492313778
+          },
+          {
+            "x": 115.2818817459576,
+            "z": -81.04073933301245
+          }
+        ]
+      },
+      {
+        "id": "steam-clock-plaza-sidewalk",
+        "side": "plaza",
+        "polygon": [
+          {
+            "x": 181.45,
+            "z": -149.91
+          },
+          {
+            "x": 191.43,
+            "z": -142.22
+          },
+          {
+            "x": 198.03,
+            "z": -150.77
+          },
+          {
+            "x": 188.05,
+            "z": -158.47
+          },
+          {
+            "x": 181.45,
+            "z": -149.91
           }
         ]
       }
@@ -393,32 +597,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "waterfront-threshold",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -16.59,
-      "z": -6.92,
-      "width": 15,
-      "depth": 7.51,
-      "yaw": -1.429,
+      "x": -8.49,
+      "z": -17.05,
+      "width": 15.01,
+      "depth": 7.5,
+      "yaw": -0.7005,
       "height": 13,
       "footprint": [
         {
-          "x": -20.41,
-          "z": -1.4
+          "x": -15.01,
+          "z": -15.47
         },
         {
-          "x": -12.98,
-          "z": -0.34
+          "x": -10.17,
+          "z": -9.74
         },
         {
-          "x": -10.86,
-          "z": -15.19
+          "x": 1.3,
+          "z": -19.41
         },
         {
-          "x": -18.29,
-          "z": -16.25
+          "x": -3.54,
+          "z": -25.14
         },
         {
-          "x": -20.41,
-          "z": -1.4
+          "x": -15.01,
+          "z": -15.47
         }
       ],
       "footprint_local": [
@@ -431,7 +635,7 @@
           "z": 4.5
         },
         {
-          "x": 9,
+          "x": 9.01,
           "z": 4.5
         },
         {
@@ -466,54 +670,54 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "waterfront-threshold",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 17.43,
-      "z": -1.83,
-      "width": 17.19,
-      "depth": 7.51,
-      "yaw": -1.429,
+      "x": 14.94,
+      "z": 11.08,
+      "width": 17.2,
+      "depth": 7.5,
+      "yaw": 2.441,
       "height": 12,
       "footprint": [
         {
-          "x": 13.49,
-          "z": 4.55
+          "x": 7.75,
+          "z": 13.22
         },
         {
-          "x": 20.92,
-          "z": 5.61
+          "x": 12.58,
+          "z": 18.95
         },
         {
-          "x": 23.35,
-          "z": -11.41
+          "x": 25.73,
+          "z": 7.87
         },
         {
-          "x": 15.92,
-          "z": -12.47
+          "x": 20.9,
+          "z": 2.13
         },
         {
-          "x": 13.49,
-          "z": 4.55
+          "x": 7.75,
+          "z": 13.22
         }
       ],
       "footprint_local": [
         {
-          "x": -6.88,
-          "z": -3
+          "x": 6.88,
+          "z": 3
         },
         {
-          "x": -6.88,
-          "z": 4.5
+          "x": 6.88,
+          "z": -4.49
         },
         {
-          "x": 10.32,
-          "z": 4.5
+          "x": -10.31,
+          "z": -4.5
         },
         {
-          "x": 10.32,
-          "z": -3
+          "x": -10.32,
+          "z": 3
         },
         {
-          "x": -6.88,
-          "z": -3
+          "x": 6.88,
+          "z": 3
         }
       ],
       "facade_profile": "cordova_commercial_transition",
@@ -539,32 +743,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "waterfront-threshold",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -18.02,
-      "z": -16.01,
-      "width": 20.01,
+      "x": -3.35,
+      "z": -24.91,
+      "width": 20,
       "depth": 9.5,
-      "yaw": -1.4288,
+      "yaw": -0.7004,
       "height": 16,
       "footprint": [
         {
-          "x": -22.91,
-          "z": -8.63
+          "x": -11.91,
+          "z": -22.66
         },
         {
-          "x": -13.51,
-          "z": -7.28
+          "x": -5.79,
+          "z": -15.4
         },
         {
-          "x": -10.68,
-          "z": -27.08
+          "x": 9.5,
+          "z": -28.29
         },
         {
-          "x": -20.08,
-          "z": -28.43
+          "x": 3.38,
+          "z": -35.55
         },
         {
-          "x": -22.91,
-          "z": -8.63
+          "x": -11.91,
+          "z": -22.66
         }
       ],
       "footprint_local": [
@@ -612,54 +816,54 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "waterfront-threshold",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 20.96,
-      "z": -10.22,
-      "width": 22.2,
-      "depth": 9.5,
-      "yaw": -1.4289,
+      "x": 23.3,
+      "z": 7.03,
+      "width": 22.21,
+      "depth": 9.51,
+      "yaw": 2.4413,
       "height": 15,
       "footprint": [
         {
-          "x": 15.94,
-          "z": -1.97
+          "x": 14.06,
+          "z": 9.85
         },
         {
-          "x": 25.34,
-          "z": -0.62
+          "x": 20.19,
+          "z": 17.12
         },
         {
-          "x": 28.48,
-          "z": -22.6
+          "x": 37.16,
+          "z": 2.81
         },
         {
-          "x": 19.08,
-          "z": -23.94
+          "x": 31.04,
+          "z": -4.46
         },
         {
-          "x": 15.94,
-          "z": -1.97
+          "x": 14.06,
+          "z": 9.85
         }
       ],
       "footprint_local": [
         {
-          "x": -8.88,
-          "z": -3.8
+          "x": 8.88,
+          "z": 3.8
         },
         {
-          "x": -8.88,
-          "z": 5.7
+          "x": 8.88,
+          "z": -5.71
         },
         {
-          "x": 13.32,
-          "z": 5.7
+          "x": -13.32,
+          "z": -5.7
         },
         {
-          "x": 13.32,
-          "z": -3.8
+          "x": -13.32,
+          "z": 3.8
         },
         {
-          "x": -8.88,
-          "z": -3.8
+          "x": 8.88,
+          "z": 3.8
         }
       ],
       "facade_profile": "gastown_heritage_row",
@@ -682,62 +886,62 @@
     },
     {
       "id": "gastown-frontage-2-south",
-      "reference_name": "Gastown corner heritage anchor",
+      "reference_name": "Water Street south frontage",
       "segment_style": "waterfront-threshold",
-      "style_notes": "Corner building massing with stronger cornice to punctuate the route and read like a Water Street pivot.",
-      "x": -16.59,
-      "z": -29.16,
-      "width": 18.2,
-      "depth": 11.01,
-      "yaw": 1.7442,
-      "height": 16,
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 8.78,
+      "z": -31.01,
+      "width": 14.01,
+      "depth": 8,
+      "yaw": 2.4416,
+      "height": 14,
       "footprint": [
         {
-          "x": -22.18,
-          "z": -22.75
+          "x": 2.43,
+          "z": -29.85
         },
         {
-          "x": -11.34,
-          "z": -20.86
+          "x": 7.59,
+          "z": -23.73
         },
         {
-          "x": -8.2,
-          "z": -38.78
+          "x": 18.29,
+          "z": -32.76
         },
         {
-          "x": -19.04,
-          "z": -40.68
+          "x": 13.14,
+          "z": -38.87
         },
         {
-          "x": -22.18,
-          "z": -22.75
+          "x": 2.43,
+          "z": -29.85
         }
       ],
       "footprint_local": [
         {
-          "x": 7.28,
-          "z": 4.4
+          "x": 5.6,
+          "z": 3.2
         },
         {
-          "x": 7.27,
-          "z": -6.6
+          "x": 5.6,
+          "z": -4.81
         },
         {
-          "x": -10.92,
-          "z": -6.6
+          "x": -8.4,
+          "z": -4.79
         },
         {
-          "x": -10.92,
-          "z": 4.4
+          "x": -8.4,
+          "z": 3.2
         },
         {
-          "x": 7.28,
-          "z": 4.4
+          "x": 5.6,
+          "z": 3.2
         }
       ],
       "facade_profile": "gastown_heritage_row",
       "tone": "brickWarm",
-      "roofline_type": "wrapped_cornice",
+      "roofline_type": "flat_cornice",
       "window_bay_count": 3,
       "recessed_entry_count": 1,
       "storefront_rhythm": {
@@ -750,7 +954,7 @@
         "accent": "#445666",
         "tone": "brickWarm"
       },
-      "cornice_emphasis": 0.42,
+      "cornice_emphasis": 0.26,
       "mass_inset": 0.95
     },
     {
@@ -758,54 +962,54 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "waterfront-threshold",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 19.84,
-      "z": -22.99,
-      "width": 16.21,
+      "x": 31.56,
+      "z": -3.65,
+      "width": 16.2,
       "depth": 8,
-      "yaw": -1.3971,
+      "yaw": 2.4414,
       "height": 13,
       "footprint": [
         {
-          "x": 15.57,
-          "z": -17.16
+          "x": 24.54,
+          "z": -1.92
         },
         {
-          "x": 23.45,
-          "z": -15.78
+          "x": 29.7,
+          "z": 4.19
         },
         {
-          "x": 26.25,
-          "z": -31.74
+          "x": 42.08,
+          "z": -6.25
         },
         {
-          "x": 18.37,
-          "z": -33.11
+          "x": 36.93,
+          "z": -12.36
         },
         {
-          "x": 15.57,
-          "z": -17.16
+          "x": 24.54,
+          "z": -1.92
         }
       ],
       "footprint_local": [
         {
-          "x": -6.48,
-          "z": -3.2
+          "x": 6.48,
+          "z": 3.2
         },
         {
-          "x": -6.48,
-          "z": 4.8
+          "x": 6.47,
+          "z": -4.8
         },
         {
-          "x": 9.73,
-          "z": 4.8
+          "x": -9.72,
+          "z": -4.79
         },
         {
-          "x": 9.71,
-          "z": -3.2
+          "x": -9.72,
+          "z": 3.2
         },
         {
-          "x": -6.48,
-          "z": -3.2
+          "x": 6.48,
+          "z": 3.2
         }
       ],
       "facade_profile": "narrow_brick_shaft",
@@ -831,54 +1035,54 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "waterfront-threshold",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -15.3,
-      "z": -41.09,
-      "width": 23.01,
-      "depth": 12.5,
-      "yaw": -1.3258,
+      "x": 13.64,
+      "z": -41.6,
+      "width": 23,
+      "depth": 12.51,
+      "yaw": 2.4563,
       "height": 20,
       "footprint": [
         {
-          "x": -22.38,
-          "z": -33.38
+          "x": 3.35,
+          "z": -39.65
         },
         {
-          "x": -10.26,
-          "z": -30.34
+          "x": 11.27,
+          "z": -29.97
         },
         {
-          "x": -4.68,
-          "z": -52.66
+          "x": 29.07,
+          "z": -44.53
         },
         {
-          "x": -16.81,
-          "z": -55.69
+          "x": 21.16,
+          "z": -54.21
         },
         {
-          "x": -22.38,
-          "z": -33.38
+          "x": 3.35,
+          "z": -39.65
         }
       ],
       "footprint_local": [
         {
-          "x": -9.2,
-          "z": -5
+          "x": 9.2,
+          "z": 5
         },
         {
-          "x": -9.21,
-          "z": 7.5
+          "x": 9.2,
+          "z": -7.51
         },
         {
-          "x": 13.8,
-          "z": 7.5
+          "x": -13.8,
+          "z": -7.5
         },
         {
-          "x": 13.8,
-          "z": -5
+          "x": -13.8,
+          "z": 5
         },
         {
-          "x": -9.2,
-          "z": -5
+          "x": 9.2,
+          "z": 5
         }
       ],
       "facade_profile": "narrow_brick_shaft",
@@ -904,54 +1108,54 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "waterfront-threshold",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 25.78,
-      "z": -30.59,
-      "width": 25.21,
-      "depth": 12.5,
-      "yaw": 1.8161,
+      "x": 41.71,
+      "z": -6.94,
+      "width": 25.2,
+      "depth": 12.51,
+      "yaw": -0.6853,
       "height": 19,
       "footprint": [
         {
-          "x": 18.48,
-          "z": -22.02
+          "x": 30.74,
+          "z": -4.43
         },
         {
-          "x": 30.61,
-          "z": -18.99
+          "x": 38.65,
+          "z": 5.25
         },
         {
-          "x": 36.72,
-          "z": -43.44
+          "x": 58.16,
+          "z": -10.7
         },
         {
-          "x": 24.6,
-          "z": -46.47
+          "x": 50.24,
+          "z": -20.38
         },
         {
-          "x": 18.48,
-          "z": -22.02
+          "x": 30.74,
+          "z": -4.43
         }
       ],
       "footprint_local": [
         {
-          "x": 10.08,
-          "z": 5
+          "x": -10.08,
+          "z": -5
         },
         {
-          "x": 10.08,
-          "z": -7.5
+          "x": -10.08,
+          "z": 7.5
         },
         {
-          "x": -15.12,
-          "z": -7.49
+          "x": 15.12,
+          "z": 7.5
         },
         {
-          "x": -15.12,
-          "z": 5
+          "x": 15.11,
+          "z": -5.01
         },
         {
-          "x": 10.08,
-          "z": 5
+          "x": -10.08,
+          "z": -5
         }
       ],
       "facade_profile": "gastown_heritage_row",
@@ -975,40 +1179,40 @@
     {
       "id": "gastown-frontage-4-south",
       "reference_name": "Water Street south frontage",
-      "segment_style": "mid-corridor-heritage-rhythm",
+      "segment_style": "waterfront-threshold",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -8.42,
-      "z": -54.72,
-      "width": 17.01,
+      "x": 27.5,
+      "z": -48.56,
+      "width": 17,
       "depth": 8.8,
-      "yaw": -1.3254,
-      "height": 11,
+      "yaw": -0.6837,
+      "height": 12,
       "footprint": [
         {
-          "x": -13.48,
-          "z": -48.98
+          "x": 20,
+          "z": -46.99
         },
         {
-          "x": -4.95,
-          "z": -46.85
+          "x": 25.56,
+          "z": -40.17
         },
         {
-          "x": -0.82,
-          "z": -63.34
+          "x": 38.74,
+          "z": -50.91
         },
         {
-          "x": -9.36,
-          "z": -65.47
+          "x": 33.18,
+          "z": -57.73
         },
         {
-          "x": -13.48,
-          "z": -48.98
+          "x": 20,
+          "z": -46.99
         }
       ],
       "footprint_local": [
         {
           "x": -6.8,
-          "z": -3.51
+          "z": -3.52
         },
         {
           "x": -6.8,
@@ -1024,7 +1228,7 @@
         },
         {
           "x": -6.8,
-          "z": -3.51
+          "z": -3.52
         }
       ],
       "facade_profile": "gastown_heritage_row",
@@ -1033,7 +1237,7 @@
       "window_bay_count": 3,
       "recessed_entry_count": 1,
       "storefront_rhythm": {
-        "base_band": 0.19,
+        "base_band": 0.16,
         "upper_rows": 3
       },
       "material_palette": {
@@ -1043,70 +1247,70 @@
         "tone": "brickWarm"
       },
       "cornice_emphasis": 0.26,
-      "mass_inset": 0.96
+      "mass_inset": 0.95
     },
     {
       "id": "gastown-frontage-4-north",
-      "reference_name": "Gastown corner heritage anchor",
-      "segment_style": "mid-corridor-heritage-rhythm",
-      "style_notes": "Corner building massing with stronger cornice to punctuate the route and read like a Water Street pivot.",
-      "x": 28.59,
-      "z": -45.04,
-      "width": 21.2,
-      "depth": 11.8,
-      "yaw": 1.8157,
-      "height": 13,
+      "reference_name": "Water Street north frontage",
+      "segment_style": "waterfront-threshold",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 51.72,
+      "z": -18.5,
+      "width": 19.2,
+      "depth": 8.8,
+      "yaw": 2.4577,
+      "height": 11,
       "footprint": [
         {
-          "x": 21.95,
-          "z": -37.96
+          "x": 43.54,
+          "z": -16.38
         },
         {
-          "x": 33.4,
-          "z": -35.1
+          "x": 49.1,
+          "z": -9.56
         },
         {
-          "x": 38.54,
-          "z": -55.66
+          "x": 63.98,
+          "z": -21.69
         },
         {
-          "x": 27.09,
-          "z": -58.53
+          "x": 58.42,
+          "z": -28.51
         },
         {
-          "x": 21.95,
-          "z": -37.96
+          "x": 43.54,
+          "z": -16.38
         }
       ],
       "footprint_local": [
         {
-          "x": 8.48,
-          "z": 4.72
+          "x": 7.68,
+          "z": 3.52
         },
         {
-          "x": 8.48,
-          "z": -7.08
+          "x": 7.68,
+          "z": -5.28
         },
         {
-          "x": -12.71,
-          "z": -7.08
+          "x": -11.52,
+          "z": -5.28
         },
         {
-          "x": -12.72,
-          "z": 4.72
+          "x": -11.52,
+          "z": 3.52
         },
         {
-          "x": 8.48,
-          "z": 4.72
+          "x": 7.68,
+          "z": 3.52
         }
       ],
       "facade_profile": "cordova_commercial_transition",
       "tone": "stoneMuted",
-      "roofline_type": "wrapped_cornice",
+      "roofline_type": "flat_cornice",
       "window_bay_count": 3,
       "recessed_entry_count": 2,
       "storefront_rhythm": {
-        "base_band": 0.19,
+        "base_band": 0.16,
         "upper_rows": 3
       },
       "material_palette": {
@@ -1115,40 +1319,40 @@
         "accent": "#57656e",
         "tone": "stoneMuted"
       },
-      "cornice_emphasis": 0.42,
-      "mass_inset": 0.96
+      "cornice_emphasis": 0.26,
+      "mass_inset": 0.95
     },
     {
       "id": "gastown-frontage-5-south",
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -8.24,
-      "z": -64.44,
-      "width": 21.01,
+      "x": 35.04,
+      "z": -57.49,
+      "width": 21,
       "depth": 10.4,
-      "yaw": 1.7271,
+      "yaw": 2.4577,
       "height": 21,
       "footprint": [
         {
-          "x": -13.66,
-          "z": -56.79
+          "x": 25.9,
+          "z": -55.41
         },
         {
-          "x": -3.39,
-          "z": -55.17
+          "x": 32.48,
+          "z": -47.35
         },
         {
-          "x": -0.12,
-          "z": -75.92
+          "x": 48.75,
+          "z": -60.62
         },
         {
-          "x": -10.39,
-          "z": -77.54
+          "x": 42.18,
+          "z": -68.68
         },
         {
-          "x": -13.66,
-          "z": -56.79
+          "x": 25.9,
+          "z": -55.41
         }
       ],
       "footprint_local": [
@@ -1157,7 +1361,7 @@
           "z": 4.16
         },
         {
-          "x": 8.4,
+          "x": 8.39,
           "z": -6.24
         },
         {
@@ -1196,32 +1400,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 30.58,
-      "z": -58.31,
-      "width": 21.01,
+      "x": 61.27,
+      "z": -25.33,
+      "width": 21,
       "depth": 10.4,
-      "yaw": -1.4145,
+      "yaw": -0.6839,
       "height": 21,
       "footprint": [
         {
-          "x": 25.16,
-          "z": -50.66
+          "x": 52.13,
+          "z": -23.25
         },
         {
-          "x": 35.43,
-          "z": -49.04
+          "x": 58.7,
+          "z": -15.19
         },
         {
-          "x": 38.7,
-          "z": -69.79
+          "x": 74.98,
+          "z": -28.46
         },
         {
-          "x": 28.43,
-          "z": -71.41
+          "x": 68.41,
+          "z": -36.52
         },
         {
-          "x": 25.16,
-          "z": -50.66
+          "x": 52.13,
+          "z": -23.25
         }
       ],
       "footprint_local": [
@@ -1269,32 +1473,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -4.52,
-      "z": -77.63,
-      "width": 18,
+      "x": 46.76,
+      "z": -64.96,
+      "width": 18.01,
       "depth": 9.2,
-      "yaw": 1.7275,
+      "yaw": 2.4573,
       "height": 16,
       "footprint": [
         {
-          "x": -9.28,
-          "z": -71.09
+          "x": 38.86,
+          "z": -63.26
         },
         {
-          "x": -0.19,
-          "z": -69.65
+          "x": 44.67,
+          "z": -56.13
         },
         {
-          "x": 2.61,
-          "z": -87.43
+          "x": 58.62,
+          "z": -67.51
         },
         {
-          "x": -6.47,
-          "z": -88.87
+          "x": 52.81,
+          "z": -74.64
         },
         {
-          "x": -9.28,
-          "z": -71.09
+          "x": 38.86,
+          "z": -63.26
         }
       ],
       "footprint_local": [
@@ -1308,7 +1512,7 @@
         },
         {
           "x": -10.8,
-          "z": -5.51
+          "z": -5.52
         },
         {
           "x": -10.8,
@@ -1342,32 +1546,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 31.33,
-      "z": -71.96,
-      "width": 18.01,
+      "x": 71.09,
+      "z": -35.13,
+      "width": 18,
       "depth": 9.2,
-      "yaw": -1.4141,
+      "yaw": -0.6839,
       "height": 16,
       "footprint": [
         {
-          "x": 26.57,
-          "z": -65.42
+          "x": 63.19,
+          "z": -33.43
         },
         {
-          "x": 35.66,
-          "z": -63.99
+          "x": 69,
+          "z": -26.3
         },
         {
-          "x": 38.47,
-          "z": -81.77
+          "x": 82.95,
+          "z": -37.67
         },
         {
-          "x": 29.38,
-          "z": -83.2
+          "x": 77.14,
+          "z": -44.8
         },
         {
-          "x": 26.57,
-          "z": -65.42
+          "x": 63.19,
+          "z": -33.43
         }
       ],
       "footprint_local": [
@@ -1415,54 +1619,54 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -3.84,
-      "z": -88.55,
-      "width": 19,
-      "depth": 14.51,
-      "yaw": 1.7277,
+      "x": 55.49,
+      "z": -73.08,
+      "width": 19.01,
+      "depth": 14.5,
+      "yaw": -0.6466,
       "height": 18,
       "footprint": [
         {
-          "x": -10.76,
-          "z": -81.95
+          "x": 45.93,
+          "z": -73.13
         },
         {
-          "x": 3.57,
-          "z": -79.69
+          "x": 54.66,
+          "z": -61.55
         },
         {
-          "x": 6.53,
-          "z": -98.45
+          "x": 69.83,
+          "z": -73
         },
         {
-          "x": -7.79,
-          "z": -100.72
+          "x": 61.09,
+          "z": -84.57
         },
         {
-          "x": -10.76,
-          "z": -81.95
+          "x": 45.93,
+          "z": -73.13
         }
       ],
       "footprint_local": [
         {
-          "x": 7.6,
-          "z": 5.8
+          "x": -7.6,
+          "z": -5.8
         },
         {
-          "x": 7.59,
-          "z": -8.71
+          "x": -7.6,
+          "z": 8.7
         },
         {
-          "x": -11.4,
-          "z": -8.7
+          "x": 11.4,
+          "z": 8.7
         },
         {
-          "x": -11.4,
-          "z": 5.8
+          "x": 11.4,
+          "z": -5.8
         },
         {
-          "x": 7.6,
-          "z": 5.8
+          "x": -7.6,
+          "z": -5.8
         }
       ],
       "facade_profile": "narrow_brick_shaft",
@@ -1488,32 +1692,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 33,
-      "z": -82.73,
-      "width": 19,
-      "depth": 14.5,
-      "yaw": 1.7272,
+      "x": 79.28,
+      "z": -41.55,
+      "width": 19.01,
+      "depth": 14.51,
+      "yaw": 2.495,
       "height": 18,
       "footprint": [
         {
-          "x": 26.09,
-          "z": -76.13
+          "x": 69.72,
+          "z": -41.6
         },
         {
-          "x": 40.41,
-          "z": -73.87
+          "x": 78.46,
+          "z": -30.03
         },
         {
-          "x": 43.37,
-          "z": -92.64
+          "x": 93.63,
+          "z": -41.47
         },
         {
-          "x": 29.05,
-          "z": -94.9
+          "x": 84.89,
+          "z": -53.05
         },
         {
-          "x": 26.09,
-          "z": -76.13
+          "x": 69.72,
+          "z": -41.6
         }
       ],
       "footprint_local": [
@@ -1527,7 +1731,7 @@
         },
         {
           "x": -11.4,
-          "z": -8.7
+          "z": -8.71
         },
         {
           "x": -11.4,
@@ -1559,65 +1763,65 @@
     {
       "id": "gastown-frontage-8-south",
       "reference_name": "Water Street south frontage",
-      "segment_style": "steam-clock-approach",
+      "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -4.73,
-      "z": -97.9,
-      "width": 23.2,
-      "depth": 10.81,
-      "yaw": 1.3786,
+      "x": 68.62,
+      "z": -84.4,
+      "width": 22,
+      "depth": 10.8,
+      "yaw": -0.6464,
       "height": 14,
       "footprint": [
         {
-          "x": -7.2,
-          "z": -87.97
+          "x": 58.99,
+          "z": -82.55
         },
         {
-          "x": 3.4,
-          "z": -90.03
+          "x": 65.5,
+          "z": -73.93
         },
         {
-          "x": -1.02,
-          "z": -112.8
+          "x": 83.06,
+          "z": -87.18
         },
         {
-          "x": -11.63,
-          "z": -110.74
+          "x": 76.55,
+          "z": -95.8
         },
         {
-          "x": -7.2,
-          "z": -87.97
+          "x": 58.99,
+          "z": -82.55
         }
       ],
       "footprint_local": [
         {
-          "x": 9.28,
-          "z": 4.32
+          "x": -8.8,
+          "z": -4.32
         },
         {
-          "x": 9.28,
-          "z": -6.48
+          "x": -8.8,
+          "z": 6.48
         },
         {
-          "x": -13.92,
-          "z": -6.49
+          "x": 13.2,
+          "z": 6.48
         },
         {
-          "x": -13.92,
-          "z": 4.32
+          "x": 13.2,
+          "z": -4.32
         },
         {
-          "x": 9.28,
-          "z": 4.32
+          "x": -8.8,
+          "z": -4.32
         }
       ],
       "facade_profile": "gastown_heritage_row",
       "tone": "brickWarm",
-      "roofline_type": "ornate_cornice",
+      "roofline_type": "flat_cornice",
       "window_bay_count": 4,
       "recessed_entry_count": 3,
       "storefront_rhythm": {
-        "base_band": 0.22,
+        "base_band": 0.19,
         "upper_rows": 3
       },
       "material_palette": {
@@ -1626,71 +1830,71 @@
         "accent": "#4f5f6f",
         "tone": "brickWarm"
       },
-      "cornice_emphasis": 0.34,
+      "cornice_emphasis": 0.26,
       "mass_inset": 0.96
     },
     {
       "id": "gastown-frontage-8-north",
       "reference_name": "Water Street north frontage",
-      "segment_style": "steam-clock-approach",
+      "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 36.99,
-      "z": -106.01,
-      "width": 23.2,
-      "depth": 10.8,
-      "yaw": -1.763,
+      "x": 94.22,
+      "z": -50.48,
+      "width": 22,
+      "depth": 10.81,
+      "yaw": -0.6468,
       "height": 14,
       "footprint": [
         {
-          "x": 34.52,
-          "z": -96.08
+          "x": 84.59,
+          "z": -48.63
         },
         {
-          "x": 45.12,
-          "z": -98.14
+          "x": 91.1,
+          "z": -40
         },
         {
-          "x": 40.69,
-          "z": -120.91
+          "x": 108.66,
+          "z": -53.26
         },
         {
-          "x": 30.09,
-          "z": -118.85
+          "x": 102.15,
+          "z": -61.88
         },
         {
-          "x": 34.52,
-          "z": -96.08
+          "x": 84.59,
+          "z": -48.63
         }
       ],
       "footprint_local": [
         {
-          "x": -9.28,
-          "z": -4.32
+          "x": -8.8,
+          "z": -4.33
         },
         {
-          "x": -9.28,
+          "x": -8.8,
           "z": 6.48
         },
         {
-          "x": 13.92,
+          "x": 13.2,
           "z": 6.48
         },
         {
-          "x": 13.92,
+          "x": 13.2,
           "z": -4.32
         },
         {
-          "x": -9.28,
-          "z": -4.32
+          "x": -8.8,
+          "z": -4.33
         }
       ],
       "facade_profile": "cordova_commercial_transition",
       "tone": "stoneMuted",
-      "roofline_type": "ornate_cornice",
+      "roofline_type": "flat_cornice",
       "window_bay_count": 4,
       "recessed_entry_count": 1,
       "storefront_rhythm": {
-        "base_band": 0.22,
+        "base_band": 0.19,
         "upper_rows": 3
       },
       "material_palette": {
@@ -1699,71 +1903,71 @@
         "accent": "#57656e",
         "tone": "stoneMuted"
       },
-      "cornice_emphasis": 0.34,
+      "cornice_emphasis": 0.26,
       "mass_inset": 0.96
     },
     {
       "id": "gastown-frontage-9-south",
-      "reference_name": "Gastown corner heritage anchor",
-      "segment_style": "steam-clock-approach",
-      "style_notes": "Corner building massing with stronger cornice to punctuate the route and read like a Water Street pivot.",
-      "x": -7.19,
-      "z": -111.56,
-      "width": 21.4,
-      "depth": 11.4,
-      "yaw": -1.7631,
-      "height": 12,
+      "reference_name": "Water Street south frontage",
+      "segment_style": "mid-corridor-heritage-rhythm",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 82.14,
+      "z": -90.55,
+      "width": 16,
+      "depth": 8.4,
+      "yaw": -0.6466,
+      "height": 10,
       "footprint": [
         {
-          "x": -10.03,
-          "z": -102.29
+          "x": 75.01,
+          "z": -89.38
         },
         {
-          "x": 1.16,
-          "z": -104.46
+          "x": 80.07,
+          "z": -82.67
         },
         {
-          "x": -2.93,
-          "z": -125.47
+          "x": 92.84,
+          "z": -92.31
         },
         {
-          "x": -14.12,
-          "z": -123.29
+          "x": 87.78,
+          "z": -99.01
         },
         {
-          "x": -10.03,
-          "z": -102.29
+          "x": 75.01,
+          "z": -89.38
         }
       ],
       "footprint_local": [
         {
-          "x": -8.56,
-          "z": -4.56
+          "x": -6.4,
+          "z": -3.36
         },
         {
-          "x": -8.56,
-          "z": 6.84
+          "x": -6.4,
+          "z": 5.04
         },
         {
-          "x": 12.84,
-          "z": 6.84
+          "x": 9.6,
+          "z": 5.04
         },
         {
-          "x": 12.84,
-          "z": -4.56
+          "x": 9.6,
+          "z": -3.36
         },
         {
-          "x": -8.56,
-          "z": -4.56
+          "x": -6.4,
+          "z": -3.36
         }
       ],
       "facade_profile": "cordova_commercial_transition",
       "tone": "stoneMuted",
-      "roofline_type": "wrapped_cornice",
+      "roofline_type": "flat_cornice",
       "window_bay_count": 3,
       "recessed_entry_count": 1,
       "storefront_rhythm": {
-        "base_band": 0.22,
+        "base_band": 0.19,
         "upper_rows": 3
       },
       "material_palette": {
@@ -1772,71 +1976,71 @@
         "accent": "#57656e",
         "tone": "stoneMuted"
       },
-      "cornice_emphasis": 0.42,
+      "cornice_emphasis": 0.26,
       "mass_inset": 0.96
     },
     {
       "id": "gastown-frontage-9-north",
       "reference_name": "Water Street north frontage",
-      "segment_style": "steam-clock-approach",
+      "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 31.55,
-      "z": -119.52,
-      "width": 17.2,
+      "x": 104.13,
+      "z": -61.42,
+      "width": 16,
       "depth": 8.4,
-      "yaw": 1.3783,
+      "yaw": -0.6466,
       "height": 10,
       "footprint": [
         {
-          "x": 29.57,
-          "z": -112.13
+          "x": 97,
+          "z": -60.24
         },
         {
-          "x": 37.81,
-          "z": -113.73
+          "x": 102.06,
+          "z": -53.54
         },
         {
-          "x": 34.53,
-          "z": -130.61
+          "x": 114.83,
+          "z": -63.18
         },
         {
-          "x": 26.28,
-          "z": -129.01
+          "x": 109.77,
+          "z": -69.88
         },
         {
-          "x": 29.57,
-          "z": -112.13
+          "x": 97,
+          "z": -60.24
         }
       ],
       "footprint_local": [
         {
-          "x": 6.88,
-          "z": 3.36
+          "x": -6.4,
+          "z": -3.36
         },
         {
-          "x": 6.88,
-          "z": -5.03
+          "x": -6.4,
+          "z": 5.04
         },
         {
-          "x": -10.31,
-          "z": -5.04
+          "x": 9.6,
+          "z": 5.04
         },
         {
-          "x": -10.32,
-          "z": 3.36
+          "x": 9.6,
+          "z": -3.36
         },
         {
-          "x": 6.88,
-          "z": 3.36
+          "x": -6.4,
+          "z": -3.36
         }
       ],
       "facade_profile": "gastown_heritage_row",
       "tone": "brickWarm",
-      "roofline_type": "ornate_cornice",
+      "roofline_type": "flat_cornice",
       "window_bay_count": 3,
       "recessed_entry_count": 2,
       "storefront_rhythm": {
-        "base_band": 0.22,
+        "base_band": 0.19,
         "upper_rows": 3
       },
       "material_palette": {
@@ -1845,71 +2049,71 @@
         "accent": "#445666",
         "tone": "brickWarm"
       },
-      "cornice_emphasis": 0.34,
+      "cornice_emphasis": 0.26,
       "mass_inset": 0.96
     },
     {
       "id": "gastown-frontage-10-south",
       "reference_name": "Water Street south frontage",
-      "segment_style": "steam-clock-approach",
+      "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -10.43,
-      "z": -120.93,
-      "width": 25.2,
+      "x": 87.13,
+      "z": -99.88,
+      "width": 24.01,
       "depth": 12.8,
-      "yaw": 1.3788,
+      "yaw": 2.4951,
       "height": 20,
       "footprint": [
         {
-          "x": -13.53,
-          "z": -110.06
+          "x": 76.38,
+          "z": -98.18
         },
         {
-          "x": -0.97,
-          "z": -112.51
+          "x": 84.09,
+          "z": -87.96
         },
         {
-          "x": -5.78,
-          "z": -137.24
+          "x": 103.25,
+          "z": -102.42
         },
         {
-          "x": -18.34,
-          "z": -134.8
+          "x": 95.54,
+          "z": -112.64
         },
         {
-          "x": -13.53,
-          "z": -110.06
+          "x": 76.38,
+          "z": -98.18
         }
       ],
       "footprint_local": [
         {
-          "x": 10.08,
+          "x": 9.6,
           "z": 5.12
         },
         {
-          "x": 10.07,
+          "x": 9.6,
           "z": -7.68
         },
         {
-          "x": -15.12,
+          "x": -14.4,
           "z": -7.68
         },
         {
-          "x": -15.12,
+          "x": -14.4,
           "z": 5.12
         },
         {
-          "x": 10.08,
+          "x": 9.6,
           "z": 5.12
         }
       ],
       "facade_profile": "gastown_heritage_row",
       "tone": "brickWarm",
-      "roofline_type": "ornate_cornice",
+      "roofline_type": "flat_cornice",
       "window_bay_count": 5,
       "recessed_entry_count": 2,
       "storefront_rhythm": {
-        "base_band": 0.22,
+        "base_band": 0.19,
         "upper_rows": 4
       },
       "material_palette": {
@@ -1918,68 +2122,1236 @@
         "accent": "#445666",
         "tone": "brickWarm"
       },
-      "cornice_emphasis": 0.34,
+      "cornice_emphasis": 0.26,
       "mass_inset": 0.96
     },
     {
       "id": "gastown-frontage-10-north",
       "reference_name": "Water Street north frontage",
-      "segment_style": "steam-clock-approach",
+      "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 33.25,
-      "z": -129.43,
-      "width": 25.2,
+      "x": 113.94,
+      "z": -64.36,
+      "width": 24.01,
       "depth": 12.8,
-      "yaw": -1.7628,
+      "yaw": -0.6465,
       "height": 20,
       "footprint": [
         {
-          "x": 30.15,
-          "z": -118.56
+          "x": 103.19,
+          "z": -62.66
         },
         {
-          "x": 42.71,
-          "z": -121
+          "x": 110.9,
+          "z": -52.44
         },
         {
-          "x": 37.9,
-          "z": -145.74
+          "x": 130.06,
+          "z": -66.9
         },
         {
-          "x": 25.34,
-          "z": -143.29
+          "x": 122.35,
+          "z": -77.12
         },
         {
-          "x": 30.15,
-          "z": -118.56
+          "x": 103.19,
+          "z": -62.66
         }
       ],
       "footprint_local": [
         {
-          "x": -10.08,
+          "x": -9.6,
           "z": -5.12
         },
         {
-          "x": -10.08,
+          "x": -9.6,
           "z": 7.68
         },
         {
-          "x": 15.12,
+          "x": 14.4,
           "z": 7.68
         },
         {
-          "x": 15.11,
+          "x": 14.4,
           "z": -5.12
         },
         {
-          "x": -10.08,
+          "x": -9.6,
           "z": -5.12
+        }
+      ],
+      "facade_profile": "narrow_brick_shaft",
+      "tone": "stoneMuted",
+      "roofline_type": "flat_cornice",
+      "window_bay_count": 5,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "base_band": 0.19,
+        "upper_rows": 4
+      },
+      "material_palette": {
+        "primary": "#6f747c",
+        "trim": "#d0c3b3",
+        "accent": "#3f5363",
+        "tone": "stoneMuted"
+      },
+      "cornice_emphasis": 0.26,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-11-south",
+      "reference_name": "Water Street south frontage",
+      "segment_style": "mid-corridor-heritage-rhythm",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 102.86,
+      "z": -106.9,
+      "width": 17.01,
+      "depth": 9.6,
+      "yaw": -0.6373,
+      "height": 13,
+      "footprint": [
+        {
+          "x": 95.11,
+          "z": -105.94
+        },
+        {
+          "x": 100.82,
+          "z": -98.22
+        },
+        {
+          "x": 114.49,
+          "z": -108.34
+        },
+        {
+          "x": 108.77,
+          "z": -116.05
+        },
+        {
+          "x": 95.11,
+          "z": -105.94
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": -6.8,
+          "z": -3.84
+        },
+        {
+          "x": -6.8,
+          "z": 5.76
+        },
+        {
+          "x": 10.21,
+          "z": 5.76
+        },
+        {
+          "x": 10.2,
+          "z": -3.84
+        },
+        {
+          "x": -6.8,
+          "z": -3.84
+        }
+      ],
+      "facade_profile": "narrow_brick_shaft",
+      "tone": "stoneMuted",
+      "roofline_type": "flat_cornice",
+      "window_bay_count": 4,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "base_band": 0.19,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#6f747c",
+        "trim": "#d0c3b3",
+        "accent": "#3f5363",
+        "tone": "stoneMuted"
+      },
+      "cornice_emphasis": 0.26,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-11-north",
+      "reference_name": "Water Street north frontage",
+      "segment_style": "mid-corridor-heritage-rhythm",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 125.17,
+      "z": -76.76,
+      "width": 17,
+      "depth": 9.6,
+      "yaw": 2.5044,
+      "height": 13,
+      "footprint": [
+        {
+          "x": 117.42,
+          "z": -75.8
+        },
+        {
+          "x": 123.13,
+          "z": -68.08
+        },
+        {
+          "x": 136.79,
+          "z": -78.19
+        },
+        {
+          "x": 131.08,
+          "z": -85.91
+        },
+        {
+          "x": 117.42,
+          "z": -75.8
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 6.8,
+          "z": 3.84
+        },
+        {
+          "x": 6.8,
+          "z": -5.76
+        },
+        {
+          "x": -10.19,
+          "z": -5.76
+        },
+        {
+          "x": -10.2,
+          "z": 3.84
+        },
+        {
+          "x": 6.8,
+          "z": 3.84
+        }
+      ],
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "roofline_type": "flat_cornice",
+      "window_bay_count": 4,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "base_band": 0.19,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#74493c",
+        "trim": "#cfb8a2",
+        "accent": "#4f5f6f",
+        "tone": "brickWarm"
+      },
+      "cornice_emphasis": 0.26,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-12-south",
+      "reference_name": "Water Street south frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 113.2,
+      "z": -114.35,
+      "width": 16.61,
+      "depth": 7.51,
+      "yaw": 2.5045,
+      "height": 12,
+      "footprint": [
+        {
+          "x": 106.07,
+          "z": -112.81
+        },
+        {
+          "x": 110.54,
+          "z": -106.78
+        },
+        {
+          "x": 123.88,
+          "z": -116.66
+        },
+        {
+          "x": 119.42,
+          "z": -122.69
+        },
+        {
+          "x": 106.07,
+          "z": -112.81
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 6.64,
+          "z": 3
+        },
+        {
+          "x": 6.64,
+          "z": -4.5
+        },
+        {
+          "x": -9.96,
+          "z": -4.5
+        },
+        {
+          "x": -9.96,
+          "z": 3
+        },
+        {
+          "x": 6.64,
+          "z": 3
+        }
+      ],
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 3,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#74493c",
+        "trim": "#cfb8a2",
+        "accent": "#4f5f6f",
+        "tone": "brickWarm"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-12-north",
+      "reference_name": "Water Street north frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 135.56,
+      "z": -84.13,
+      "width": 16.6,
+      "depth": 7.5,
+      "yaw": -0.6366,
+      "height": 12,
+      "footprint": [
+        {
+          "x": 128.44,
+          "z": -82.59
+        },
+        {
+          "x": 132.9,
+          "z": -76.56
+        },
+        {
+          "x": 146.25,
+          "z": -86.43
+        },
+        {
+          "x": 141.79,
+          "z": -92.46
+        },
+        {
+          "x": 128.44,
+          "z": -82.59
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": -6.64,
+          "z": -3
+        },
+        {
+          "x": -6.64,
+          "z": 4.5
+        },
+        {
+          "x": 9.96,
+          "z": 4.5
+        },
+        {
+          "x": 9.96,
+          "z": -3
+        },
+        {
+          "x": -6.64,
+          "z": -3
+        }
+      ],
+      "facade_profile": "cordova_commercial_transition",
+      "tone": "stoneMuted",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 3,
+      "recessed_entry_count": 2,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#8a857d",
+        "trim": "#d8c9b6",
+        "accent": "#57656e",
+        "tone": "stoneMuted"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-13-south",
+      "reference_name": "Water Street south frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 118.82,
+      "z": -121.87,
+      "width": 21.6,
+      "depth": 9.5,
+      "yaw": -0.6372,
+      "height": 15,
+      "footprint": [
+        {
+          "x": 109.62,
+          "z": -119.79
+        },
+        {
+          "x": 115.27,
+          "z": -112.15
+        },
+        {
+          "x": 132.63,
+          "z": -125
+        },
+        {
+          "x": 126.98,
+          "z": -132.64
+        },
+        {
+          "x": 109.62,
+          "z": -119.79
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": -8.64,
+          "z": -3.8
+        },
+        {
+          "x": -8.64,
+          "z": 5.7
+        },
+        {
+          "x": 12.96,
+          "z": 5.7
+        },
+        {
+          "x": 12.96,
+          "z": -3.8
+        },
+        {
+          "x": -8.64,
+          "z": -3.8
+        }
+      ],
+      "facade_profile": "cordova_commercial_transition",
+      "tone": "stoneMuted",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 4,
+      "recessed_entry_count": 2,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#8a857d",
+        "trim": "#d8c9b6",
+        "accent": "#57656e",
+        "tone": "stoneMuted"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-13-north",
+      "reference_name": "Water Street north frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 144.16,
+      "z": -87.63,
+      "width": 21.6,
+      "depth": 9.5,
+      "yaw": -0.6372,
+      "height": 15,
+      "footprint": [
+        {
+          "x": 134.96,
+          "z": -85.55
+        },
+        {
+          "x": 140.61,
+          "z": -77.91
+        },
+        {
+          "x": 157.97,
+          "z": -90.76
+        },
+        {
+          "x": 152.32,
+          "z": -98.4
+        },
+        {
+          "x": 134.96,
+          "z": -85.55
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": -8.64,
+          "z": -3.8
+        },
+        {
+          "x": -8.64,
+          "z": 5.7
+        },
+        {
+          "x": 12.96,
+          "z": 5.7
+        },
+        {
+          "x": 12.96,
+          "z": -3.8
+        },
+        {
+          "x": -8.64,
+          "z": -3.8
+        }
+      ],
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 4,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#6e3f36",
+        "trim": "#caa98c",
+        "accent": "#445666",
+        "tone": "brickWarm"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-14-south",
+      "reference_name": "Water Street south frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 131.31,
+      "z": -127.19,
+      "width": 15.6,
+      "depth": 8,
+      "yaw": 2.5045,
+      "height": 13,
+      "footprint": [
+        {
+          "x": 124.39,
+          "z": -126.05
+        },
+        {
+          "x": 129.15,
+          "z": -119.62
+        },
+        {
+          "x": 141.69,
+          "z": -128.9
+        },
+        {
+          "x": 136.93,
+          "z": -135.33
+        },
+        {
+          "x": 124.39,
+          "z": -126.05
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 6.24,
+          "z": 3.2
+        },
+        {
+          "x": 6.24,
+          "z": -4.8
+        },
+        {
+          "x": -9.36,
+          "z": -4.8
+        },
+        {
+          "x": -9.36,
+          "z": 3.2
+        },
+        {
+          "x": 6.24,
+          "z": 3.2
+        }
+      ],
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 3,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#6e3f36",
+        "trim": "#caa98c",
+        "accent": "#445666",
+        "tone": "brickWarm"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-14-north",
+      "reference_name": "Water Street north frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 153.08,
+      "z": -97.77,
+      "width": 15.6,
+      "depth": 8,
+      "yaw": -0.6371,
+      "height": 13,
+      "footprint": [
+        {
+          "x": 146.16,
+          "z": -96.63
+        },
+        {
+          "x": 150.92,
+          "z": -90.2
+        },
+        {
+          "x": 163.46,
+          "z": -99.48
+        },
+        {
+          "x": 158.7,
+          "z": -105.91
+        },
+        {
+          "x": 146.16,
+          "z": -96.63
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": -6.24,
+          "z": -3.2
+        },
+        {
+          "x": -6.24,
+          "z": 4.8
+        },
+        {
+          "x": 9.36,
+          "z": 4.8
+        },
+        {
+          "x": 9.36,
+          "z": -3.2
+        },
+        {
+          "x": -6.24,
+          "z": -3.2
+        }
+      ],
+      "facade_profile": "narrow_brick_shaft",
+      "tone": "stoneMuted",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 3,
+      "recessed_entry_count": 3,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#6f747c",
+        "trim": "#d0c3b3",
+        "accent": "#3f5363",
+        "tone": "stoneMuted"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-15-south",
+      "reference_name": "Water Street south frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 136.34,
+      "z": -137.05,
+      "width": 24.6,
+      "depth": 12.5,
+      "yaw": 2.492,
+      "height": 19,
+      "footprint": [
+        {
+          "x": 125.48,
+          "z": -135.08
+        },
+        {
+          "x": 133.04,
+          "z": -125.13
+        },
+        {
+          "x": 152.63,
+          "z": -140
+        },
+        {
+          "x": 145.07,
+          "z": -149.96
+        },
+        {
+          "x": 125.48,
+          "z": -135.08
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 9.84,
+          "z": 5
+        },
+        {
+          "x": 9.84,
+          "z": -7.5
+        },
+        {
+          "x": -14.76,
+          "z": -7.5
+        },
+        {
+          "x": -14.76,
+          "z": 5
+        },
+        {
+          "x": 9.84,
+          "z": 5
         }
       ],
       "facade_profile": "narrow_brick_shaft",
       "tone": "stoneMuted",
       "roofline_type": "ornate_cornice",
       "window_bay_count": 5,
+      "recessed_entry_count": 3,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 4
+      },
+      "material_palette": {
+        "primary": "#6f747c",
+        "trim": "#d0c3b3",
+        "accent": "#3f5363",
+        "tone": "stoneMuted"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-15-north",
+      "reference_name": "Water Street north frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 163.91,
+      "z": -100.73,
+      "width": 24.6,
+      "depth": 12.5,
+      "yaw": 2.492,
+      "height": 19,
+      "footprint": [
+        {
+          "x": 153.05,
+          "z": -98.76
+        },
+        {
+          "x": 160.61,
+          "z": -88.81
+        },
+        {
+          "x": 180.2,
+          "z": -103.68
+        },
+        {
+          "x": 172.64,
+          "z": -113.64
+        },
+        {
+          "x": 153.05,
+          "z": -98.76
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 9.84,
+          "z": 5
+        },
+        {
+          "x": 9.84,
+          "z": -7.5
+        },
+        {
+          "x": -14.76,
+          "z": -7.5
+        },
+        {
+          "x": -14.76,
+          "z": 5
+        },
+        {
+          "x": 9.84,
+          "z": 5
+        }
+      ],
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 5,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 4
+      },
+      "material_palette": {
+        "primary": "#74493c",
+        "trim": "#cfb8a2",
+        "accent": "#4f5f6f",
+        "tone": "brickWarm"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-16-south",
+      "reference_name": "Water Street south frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 150.29,
+      "z": -143.48,
+      "width": 18.61,
+      "depth": 8.8,
+      "yaw": 2.4877,
+      "height": 11,
+      "footprint": [
+        {
+          "x": 142.24,
+          "z": -141.75
+        },
+        {
+          "x": 147.6,
+          "z": -134.77
+        },
+        {
+          "x": 162.36,
+          "z": -146.08
+        },
+        {
+          "x": 157.01,
+          "z": -153.07
+        },
+        {
+          "x": 142.24,
+          "z": -141.75
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 7.44,
+          "z": 3.52
+        },
+        {
+          "x": 7.44,
+          "z": -5.28
+        },
+        {
+          "x": -11.16,
+          "z": -5.28
+        },
+        {
+          "x": -11.16,
+          "z": 3.52
+        },
+        {
+          "x": 7.44,
+          "z": 3.52
+        }
+      ],
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 3,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#74493c",
+        "trim": "#cfb8a2",
+        "accent": "#4f5f6f",
+        "tone": "brickWarm"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-16-north",
+      "reference_name": "Water Street north frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 174.38,
+      "z": -112.05,
+      "width": 18.6,
+      "depth": 8.8,
+      "yaw": 2.4873,
+      "height": 11,
+      "footprint": [
+        {
+          "x": 166.34,
+          "z": -110.32
+        },
+        {
+          "x": 171.69,
+          "z": -103.34
+        },
+        {
+          "x": 186.45,
+          "z": -114.65
+        },
+        {
+          "x": 181.1,
+          "z": -121.64
+        },
+        {
+          "x": 166.34,
+          "z": -110.32
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 7.44,
+          "z": 3.52
+        },
+        {
+          "x": 7.44,
+          "z": -5.28
+        },
+        {
+          "x": -11.15,
+          "z": -5.28
+        },
+        {
+          "x": -11.16,
+          "z": 3.52
+        },
+        {
+          "x": 7.44,
+          "z": 3.52
+        }
+      ],
+      "facade_profile": "cordova_commercial_transition",
+      "tone": "stoneMuted",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 3,
+      "recessed_entry_count": 2,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#8a857d",
+        "trim": "#d8c9b6",
+        "accent": "#57656e",
+        "tone": "stoneMuted"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-17-south",
+      "reference_name": "Steam Clock corner anchor",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Corner building massing is widened so the plaza/intersection reads like the Steam Clock urban moment.",
+      "x": 155.68,
+      "z": -154.45,
+      "width": 28.11,
+      "depth": 14.61,
+      "yaw": 2.4876,
+      "height": 23,
+      "footprint": [
+        {
+          "x": 143.2,
+          "z": -152.25
+        },
+        {
+          "x": 152.09,
+          "z": -140.66
+        },
+        {
+          "x": 174.39,
+          "z": -157.76
+        },
+        {
+          "x": 165.51,
+          "z": -169.35
+        },
+        {
+          "x": 143.2,
+          "z": -152.25
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 11.24,
+          "z": 5.84
+        },
+        {
+          "x": 11.24,
+          "z": -8.77
+        },
+        {
+          "x": -16.86,
+          "z": -8.76
+        },
+        {
+          "x": -16.87,
+          "z": 5.84
+        },
+        {
+          "x": 11.24,
+          "z": 5.84
+        }
+      ],
+      "facade_profile": "steam_clock_corner",
+      "tone": "stoneMuted",
+      "roofline_type": "wrapped_cornice",
+      "window_bay_count": 4,
+      "recessed_entry_count": 2,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 4
+      },
+      "material_palette": {
+        "primary": "#8a857d",
+        "trim": "#d8c9b6",
+        "accent": "#57656e",
+        "tone": "stoneMuted"
+      },
+      "cornice_emphasis": 0.46,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-17-north",
+      "reference_name": "Water Street north frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 184.63,
+      "z": -117.59,
+      "width": 22.61,
+      "depth": 10.4,
+      "yaw": 2.4877,
+      "height": 21,
+      "footprint": [
+        {
+          "x": 174.92,
+          "z": -115.39
+        },
+        {
+          "x": 181.25,
+          "z": -107.14
+        },
+        {
+          "x": 199.19,
+          "z": -120.89
+        },
+        {
+          "x": 192.86,
+          "z": -129.14
+        },
+        {
+          "x": 174.92,
+          "z": -115.39
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 9.04,
+          "z": 4.16
+        },
+        {
+          "x": 9.04,
+          "z": -6.24
+        },
+        {
+          "x": -13.57,
+          "z": -6.24
+        },
+        {
+          "x": -13.56,
+          "z": 4.16
+        },
+        {
+          "x": 9.04,
+          "z": 4.16
+        }
+      ],
+      "facade_profile": "gastown_heritage_row",
+      "tone": "brickWarm",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 4,
+      "recessed_entry_count": 2,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 4
+      },
+      "material_palette": {
+        "primary": "#6e3f36",
+        "trim": "#caa98c",
+        "accent": "#445666",
+        "tone": "brickWarm"
+      },
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-18-south",
+      "reference_name": "Steam Clock corner anchor",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Corner building massing is widened so the plaza/intersection reads like the Steam Clock urban moment.",
+      "x": 167.62,
+      "z": -161.57,
+      "width": 25.1,
+      "depth": 13.39,
+      "yaw": -0.654,
+      "height": 18,
+      "footprint": [
+        {
+          "x": 156.39,
+          "z": -159.71
+        },
+        {
+          "x": 164.54,
+          "z": -149.08
+        },
+        {
+          "x": 184.46,
+          "z": -164.35
+        },
+        {
+          "x": 176.31,
+          "z": -174.98
+        },
+        {
+          "x": 156.39,
+          "z": -159.71
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": -10.04,
+          "z": -5.36
+        },
+        {
+          "x": -10.04,
+          "z": 8.04
+        },
+        {
+          "x": 15.06,
+          "z": 8.04
+        },
+        {
+          "x": 15.06,
+          "z": -5.36
+        },
+        {
+          "x": -10.04,
+          "z": -5.36
+        }
+      ],
+      "facade_profile": "steam_clock_corner",
+      "tone": "brickWarm",
+      "roofline_type": "wrapped_cornice",
+      "window_bay_count": 4,
+      "recessed_entry_count": 2,
+      "storefront_rhythm": {
+        "base_band": 0.22,
+        "upper_rows": 4
+      },
+      "material_palette": {
+        "primary": "#6e3f36",
+        "trim": "#caa98c",
+        "accent": "#445666",
+        "tone": "brickWarm"
+      },
+      "cornice_emphasis": 0.46,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-18-north",
+      "reference_name": "Water Street north frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 194.74,
+      "z": -127.08,
+      "width": 19.61,
+      "depth": 9.2,
+      "yaw": 2.4875,
+      "height": 16,
+      "footprint": [
+        {
+          "x": 186.28,
+          "z": -125.23
+        },
+        {
+          "x": 191.88,
+          "z": -117.93
+        },
+        {
+          "x": 207.43,
+          "z": -129.86
+        },
+        {
+          "x": 201.84,
+          "z": -137.16
+        },
+        {
+          "x": 186.28,
+          "z": -125.23
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 7.84,
+          "z": 3.68
+        },
+        {
+          "x": 7.84,
+          "z": -5.52
+        },
+        {
+          "x": -11.76,
+          "z": -5.52
+        },
+        {
+          "x": -11.76,
+          "z": 3.68
+        },
+        {
+          "x": 7.84,
+          "z": 3.68
+        }
+      ],
+      "facade_profile": "narrow_brick_shaft",
+      "tone": "stoneMuted",
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 4,
       "recessed_entry_count": 1,
       "storefront_rhythm": {
         "base_band": 0.22,
@@ -1995,68 +3367,68 @@
       "mass_inset": 0.96
     },
     {
-      "id": "gastown-frontage-11-south",
+      "id": "gastown-frontage-19-south",
       "reference_name": "Water Street south frontage",
-      "segment_style": "post-clock-continuation",
+      "segment_style": "steam-clock-approach",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -9.01,
-      "z": -137.72,
-      "width": 17,
-      "depth": 11.6,
-      "yaw": 1.3616,
-      "height": 13,
+      "x": 174.07,
+      "z": -162.86,
+      "width": 20.6,
+      "depth": 14.5,
+      "yaw": 2.2278,
+      "height": 18,
       "footprint": [
         {
-          "x": -12.14,
-          "z": -130.1
+          "x": 164.45,
+          "z": -159.88
         },
         {
-          "x": -0.8,
-          "z": -132.51
+          "x": 175.93,
+          "z": -151.03
         },
         {
-          "x": -4.32,
-          "z": -149.14
+          "x": 188.51,
+          "z": -167.34
         },
         {
-          "x": -15.67,
-          "z": -146.73
+          "x": 177.03,
+          "z": -176.19
         },
         {
-          "x": -12.14,
-          "z": -130.1
+          "x": 164.45,
+          "z": -159.88
         }
       ],
       "footprint_local": [
         {
-          "x": 6.8,
-          "z": 4.64
+          "x": 8.24,
+          "z": 5.8
         },
         {
-          "x": 6.8,
-          "z": -6.95
+          "x": 8.24,
+          "z": -8.7
         },
         {
-          "x": -10.2,
-          "z": -6.96
+          "x": -12.36,
+          "z": -8.7
         },
         {
-          "x": -10.2,
-          "z": 4.64
+          "x": -12.36,
+          "z": 5.8
         },
         {
-          "x": 6.8,
-          "z": 4.64
+          "x": 8.24,
+          "z": 5.8
         }
       ],
       "facade_profile": "narrow_brick_shaft",
       "tone": "stoneMuted",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 4,
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 6,
       "recessed_entry_count": 1,
       "storefront_rhythm": {
-        "base_band": 0.19,
-        "upper_rows": 3
+        "base_band": 0.22,
+        "upper_rows": 4
       },
       "material_palette": {
         "primary": "#6f747c",
@@ -2064,72 +3436,72 @@
         "accent": "#3f5363",
         "tone": "stoneMuted"
       },
-      "cornice_emphasis": 0.26,
-      "mass_inset": 0.93
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
     },
     {
-      "id": "gastown-frontage-11-north",
-      "reference_name": "Gastown corner heritage anchor",
-      "segment_style": "post-clock-continuation",
-      "style_notes": "Corner building massing with stronger cornice to punctuate the route and read like a Water Street pivot.",
-      "x": 28.68,
-      "z": -145.28,
-      "width": 21.21,
-      "depth": 12.6,
-      "yaw": 1.3617,
-      "height": 15,
+      "id": "gastown-frontage-19-north",
+      "reference_name": "Water Street north frontage",
+      "segment_style": "steam-clock-approach",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 207.02,
+      "z": -137.47,
+      "width": 20.61,
+      "depth": 14.51,
+      "yaw": 2.2271,
+      "height": 18,
       "footprint": [
         {
-          "x": 25.51,
-          "z": -135.94
+          "x": 197.4,
+          "z": -134.48
         },
         {
-          "x": 37.84,
-          "z": -138.55
+          "x": 208.88,
+          "z": -125.63
         },
         {
-          "x": 33.44,
-          "z": -159.29
+          "x": 221.46,
+          "z": -141.94
         },
         {
-          "x": 21.11,
-          "z": -156.68
+          "x": 209.97,
+          "z": -150.8
         },
         {
-          "x": 25.51,
-          "z": -135.94
+          "x": 197.4,
+          "z": -134.48
         }
       ],
       "footprint_local": [
         {
-          "x": 8.48,
-          "z": 5.04
+          "x": 8.24,
+          "z": 5.8
         },
         {
-          "x": 8.48,
-          "z": -7.56
+          "x": 8.24,
+          "z": -8.69
         },
         {
-          "x": -12.72,
-          "z": -7.56
+          "x": -12.35,
+          "z": -8.71
         },
         {
-          "x": -12.72,
-          "z": 5.04
+          "x": -12.36,
+          "z": 5.8
         },
         {
-          "x": 8.48,
-          "z": 5.04
+          "x": 8.24,
+          "z": 5.8
         }
       ],
       "facade_profile": "gastown_heritage_row",
       "tone": "brickWarm",
-      "roofline_type": "wrapped_cornice",
-      "window_bay_count": 4,
-      "recessed_entry_count": 1,
+      "roofline_type": "ornate_cornice",
+      "window_bay_count": 6,
+      "recessed_entry_count": 3,
       "storefront_rhythm": {
-        "base_band": 0.19,
-        "upper_rows": 3
+        "base_band": 0.22,
+        "upper_rows": 4
       },
       "material_palette": {
         "primary": "#74493c",
@@ -2137,457 +3509,165 @@
         "accent": "#4f5f6f",
         "tone": "brickWarm"
       },
-      "cornice_emphasis": 0.42,
-      "mass_inset": 0.93
+      "cornice_emphasis": 0.34,
+      "mass_inset": 0.96
     },
     {
-      "id": "gastown-frontage-12-south",
+      "id": "gastown-frontage-20-south",
       "reference_name": "Water Street south frontage",
       "segment_style": "post-clock-continuation",
       "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -10.47,
-      "z": -150.39,
-      "width": 15,
-      "depth": 9.5,
-      "yaw": -1.7797,
-      "height": 12,
+      "x": 184.48,
+      "z": -176.89,
+      "width": 22.01,
+      "depth": 13.2,
+      "yaw": 2.2273,
+      "height": 14,
       "footprint": [
         {
-          "x": -12.94,
-          "z": -143.73
+          "x": 174.93,
+          "z": -173.14
         },
         {
-          "x": -3.65,
-          "z": -145.7
+          "x": 185.38,
+          "z": -165.08
         },
         {
-          "x": -6.76,
-          "z": -160.37
+          "x": 198.81,
+          "z": -182.51
         },
         {
-          "x": -16.05,
-          "z": -158.4
+          "x": 188.36,
+          "z": -190.57
         },
         {
-          "x": -12.94,
-          "z": -143.73
+          "x": 174.93,
+          "z": -173.14
         }
       ],
       "footprint_local": [
         {
-          "x": -6,
-          "z": -3.8
+          "x": 8.8,
+          "z": 5.28
         },
         {
-          "x": -6,
-          "z": 5.7
+          "x": 8.81,
+          "z": -7.92
         },
         {
-          "x": 9,
-          "z": 5.7
+          "x": -13.2,
+          "z": -7.92
         },
         {
-          "x": 9,
-          "z": -3.8
+          "x": -13.2,
+          "z": 5.28
         },
         {
-          "x": -6,
-          "z": -3.8
+          "x": 8.8,
+          "z": 5.28
         }
       ],
       "facade_profile": "gastown_heritage_row",
       "tone": "brickWarm",
       "roofline_type": "flat_cornice",
-      "window_bay_count": 4,
-      "recessed_entry_count": 1,
-      "storefront_rhythm": {
-        "base_band": 0.19,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "#74493c",
-        "trim": "#cfb8a2",
-        "accent": "#4f5f6f",
-        "tone": "brickWarm"
-      },
-      "cornice_emphasis": 0.26,
-      "mass_inset": 0.93
-    },
-    {
-      "id": "gastown-frontage-12-north",
-      "reference_name": "Water Street north frontage",
-      "segment_style": "post-clock-continuation",
-      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 22.3,
-      "z": -157.34,
-      "width": 15.01,
-      "depth": 7.5,
-      "yaw": -1.7796,
-      "height": 12,
-      "footprint": [
-        {
-          "x": 20.61,
-          "z": -150.85
-        },
-        {
-          "x": 27.95,
-          "z": -152.4
-        },
-        {
-          "x": 24.84,
-          "z": -167.08
-        },
-        {
-          "x": 17.5,
-          "z": -165.52
-        },
-        {
-          "x": 20.61,
-          "z": -150.85
-        }
-      ],
-      "footprint_local": [
-        {
-          "x": -6,
-          "z": -3
-        },
-        {
-          "x": -6,
-          "z": 4.5
-        },
-        {
-          "x": 9,
-          "z": 4.5
-        },
-        {
-          "x": 9,
-          "z": -3
-        },
-        {
-          "x": -6,
-          "z": -3
-        }
-      ],
-      "facade_profile": "cordova_commercial_transition",
-      "tone": "stoneMuted",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 3,
-      "recessed_entry_count": 2,
-      "storefront_rhythm": {
-        "base_band": 0.19,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "#8a857d",
-        "trim": "#d8c9b6",
-        "accent": "#57656e",
-        "tone": "stoneMuted"
-      },
-      "cornice_emphasis": 0.26,
-      "mass_inset": 0.93
-    },
-    {
-      "id": "gastown-frontage-13-south",
-      "reference_name": "Water Street south frontage",
-      "segment_style": "post-clock-continuation",
-      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -14.94,
-      "z": -158.44,
-      "width": 20.01,
-      "depth": 11.5,
-      "yaw": -1.7798,
-      "height": 15,
-      "footprint": [
-        {
-          "x": -17.77,
-          "z": -149.66
-        },
-        {
-          "x": -6.53,
-          "z": -152.04
-        },
-        {
-          "x": -10.68,
-          "z": -171.61
-        },
-        {
-          "x": -21.93,
-          "z": -169.22
-        },
-        {
-          "x": -17.77,
-          "z": -149.66
-        }
-      ],
-      "footprint_local": [
-        {
-          "x": -8,
-          "z": -4.59
-        },
-        {
-          "x": -8,
-          "z": 6.9
-        },
-        {
-          "x": 12,
-          "z": 6.9
-        },
-        {
-          "x": 12,
-          "z": -4.61
-        },
-        {
-          "x": -8,
-          "z": -4.59
-        }
-      ],
-      "facade_profile": "cordova_commercial_transition",
-      "tone": "stoneMuted",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 4,
-      "recessed_entry_count": 2,
-      "storefront_rhythm": {
-        "base_band": 0.19,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "#8a857d",
-        "trim": "#d8c9b6",
-        "accent": "#57656e",
-        "tone": "stoneMuted"
-      },
-      "cornice_emphasis": 0.26,
-      "mass_inset": 0.93
-    },
-    {
-      "id": "gastown-frontage-13-north",
-      "reference_name": "Water Street north frontage",
-      "segment_style": "post-clock-continuation",
-      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 22.73,
-      "z": -166.43,
-      "width": 20.01,
-      "depth": 9.5,
-      "yaw": -1.7798,
-      "height": 15,
-      "footprint": [
-        {
-          "x": 20.67,
-          "z": -157.81
-        },
-        {
-          "x": 29.96,
-          "z": -159.78
-        },
-        {
-          "x": 25.81,
-          "z": -179.35
-        },
-        {
-          "x": 16.52,
-          "z": -177.38
-        },
-        {
-          "x": 20.67,
-          "z": -157.81
-        }
-      ],
-      "footprint_local": [
-        {
-          "x": -8,
-          "z": -3.8
-        },
-        {
-          "x": -8,
-          "z": 5.7
-        },
-        {
-          "x": 12,
-          "z": 5.7
-        },
-        {
-          "x": 12,
-          "z": -3.8
-        },
-        {
-          "x": -8,
-          "z": -3.8
-        }
-      ],
-      "facade_profile": "gastown_heritage_row",
-      "tone": "brickWarm",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 4,
-      "recessed_entry_count": 1,
-      "storefront_rhythm": {
-        "base_band": 0.19,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "#6e3f36",
-        "trim": "#caa98c",
-        "accent": "#445666",
-        "tone": "brickWarm"
-      },
-      "cornice_emphasis": 0.26,
-      "mass_inset": 0.93
-    },
-    {
-      "id": "gastown-frontage-14-south",
-      "reference_name": "Water Street south frontage",
-      "segment_style": "post-clock-continuation",
-      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": -14.53,
-      "z": -171.9,
-      "width": 14,
-      "depth": 10.01,
-      "yaw": -1.7744,
-      "height": 13,
-      "footprint": [
-        {
-          "x": -17.31,
-          "z": -165.61
-        },
-        {
-          "x": -7.52,
-          "z": -167.63
-        },
-        {
-          "x": -10.35,
-          "z": -181.34
-        },
-        {
-          "x": -20.15,
-          "z": -179.31
-        },
-        {
-          "x": -17.31,
-          "z": -165.61
-        }
-      ],
-      "footprint_local": [
-        {
-          "x": -5.6,
-          "z": -4
-        },
-        {
-          "x": -5.6,
-          "z": 6
-        },
-        {
-          "x": 8.4,
-          "z": 6
-        },
-        {
-          "x": 8.39,
-          "z": -4.01
-        },
-        {
-          "x": -5.6,
-          "z": -4
-        }
-      ],
-      "facade_profile": "gastown_heritage_row",
-      "tone": "brickWarm",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 4,
-      "recessed_entry_count": 1,
-      "storefront_rhythm": {
-        "base_band": 0.19,
-        "upper_rows": 3
-      },
-      "material_palette": {
-        "primary": "#6e3f36",
-        "trim": "#caa98c",
-        "accent": "#445666",
-        "tone": "brickWarm"
-      },
-      "cornice_emphasis": 0.26,
-      "mass_inset": 0.93
-    },
-    {
-      "id": "gastown-frontage-14-north",
-      "reference_name": "Water Street north frontage",
-      "segment_style": "post-clock-continuation",
-      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
-      "x": 17.3,
-      "z": -178.48,
-      "width": 14,
-      "depth": 8.01,
-      "yaw": 1.3665,
-      "height": 13,
-      "footprint": [
-        {
-          "x": 15.3,
-          "z": -172.35
-        },
-        {
-          "x": 23.13,
-          "z": -173.97
-        },
-        {
-          "x": 20.3,
-          "z": -187.68
-        },
-        {
-          "x": 12.46,
-          "z": -186.06
-        },
-        {
-          "x": 15.3,
-          "z": -172.35
-        }
-      ],
-      "footprint_local": [
-        {
-          "x": 5.6,
-          "z": 3.2
-        },
-        {
-          "x": 5.6,
-          "z": -4.8
-        },
-        {
-          "x": -8.4,
-          "z": -4.81
-        },
-        {
-          "x": -8.4,
-          "z": 3.2
-        },
-        {
-          "x": 5.6,
-          "z": 3.2
-        }
-      ],
-      "facade_profile": "narrow_brick_shaft",
-      "tone": "stoneMuted",
-      "roofline_type": "flat_cornice",
-      "window_bay_count": 3,
+      "window_bay_count": 5,
       "recessed_entry_count": 3,
       "storefront_rhythm": {
         "base_band": 0.19,
         "upper_rows": 3
       },
       "material_palette": {
-        "primary": "#6f747c",
-        "trim": "#d0c3b3",
-        "accent": "#3f5363",
+        "primary": "#74493c",
+        "trim": "#cfb8a2",
+        "accent": "#4f5f6f",
+        "tone": "brickWarm"
+      },
+      "cornice_emphasis": 0.26,
+      "mass_inset": 0.96
+    },
+    {
+      "id": "gastown-frontage-20-north",
+      "reference_name": "Water Street north frontage",
+      "segment_style": "post-clock-continuation",
+      "style_notes": "Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.",
+      "x": 218.33,
+      "z": -150.79,
+      "width": 22.01,
+      "depth": 10.8,
+      "yaw": 2.2273,
+      "height": 14,
+      "footprint": [
+        {
+          "x": 209.54,
+          "z": -146.46
+        },
+        {
+          "x": 218.09,
+          "z": -139.87
+        },
+        {
+          "x": 231.52,
+          "z": -157.29
+        },
+        {
+          "x": 222.97,
+          "z": -163.89
+        },
+        {
+          "x": 209.54,
+          "z": -146.46
+        }
+      ],
+      "footprint_local": [
+        {
+          "x": 8.8,
+          "z": 4.32
+        },
+        {
+          "x": 8.8,
+          "z": -6.48
+        },
+        {
+          "x": -13.19,
+          "z": -6.48
+        },
+        {
+          "x": -13.2,
+          "z": 4.32
+        },
+        {
+          "x": 8.8,
+          "z": 4.32
+        }
+      ],
+      "facade_profile": "cordova_commercial_transition",
+      "tone": "stoneMuted",
+      "roofline_type": "flat_cornice",
+      "window_bay_count": 4,
+      "recessed_entry_count": 1,
+      "storefront_rhythm": {
+        "base_band": 0.19,
+        "upper_rows": 3
+      },
+      "material_palette": {
+        "primary": "#8a857d",
+        "trim": "#d8c9b6",
+        "accent": "#57656e",
         "tone": "stoneMuted"
       },
       "cornice_emphasis": 0.26,
-      "mass_inset": 0.93
+      "mass_inset": 0.96
     }
   ],
   "hero_landmarks": [
     {
       "id": "steam-clock-hero",
       "label": "Gastown Steam Clock",
-      "x": 4.22,
+      "x": 191.48,
       "y": 0,
-      "z": -107.81,
-      "yaw": 2.5482,
-      "ground_emphasis_radius": 4.8,
+      "z": -149,
+      "yaw": 1.6995,
+      "ground_emphasis_radius": 5.2,
       "steamVentOffsets": [
         {
           "x": -0.42,
@@ -2601,9 +3681,9 @@
         }
       ],
       "plaza": {
-        "radius": 5.1,
-        "depth": 6.2,
-        "apronWidth": 2.2
+        "radius": 5.8,
+        "depth": 7.2,
+        "apronWidth": 3.2
       }
     }
   ],
@@ -2612,134 +3692,144 @@
       "id": "waterfront-station-threshold",
       "label": "Waterfront Station threshold",
       "kind": "district_gate",
-      "x": -8.41,
+      "x": 0,
       "y": 0,
-      "z": -15.34,
+      "z": 0,
       "scale": 1.35,
       "cue": "Station canopies give way to brick-front Gastown blocks and the Water Street bend begins."
     },
     {
-      "id": "water-street-gateway",
-      "label": "Water Street gateway",
+      "id": "water-cordova-seam",
+      "label": "Water/Cordova seam",
       "kind": "street_pivot",
-      "x": 19.45,
+      "x": 54.73,
       "y": 0,
-      "z": -50.64,
+      "z": -45.43,
       "scale": 1.16,
-      "cue": "The route tightens into the Water Street heritage frontage with a more legible Gastown bend."
+      "cue": "The corridor bends into Water Street and starts reading like a heritage streetscape instead of a starter ribbon."
+    },
+    {
+      "id": "water-street-mid-block",
+      "label": "Water Street mid block",
+      "kind": "heritage_frontage",
+      "x": 133.25,
+      "y": 0,
+      "z": -104.87,
+      "scale": 1.12,
+      "cue": "Longer brick storefront rhythm and darker carriageway paving make the street read more like Water Street."
     },
     {
       "id": "steam-clock",
       "label": "Gastown Steam Clock",
       "kind": "clock",
-      "x": 4.22,
+      "x": 191.48,
       "y": 0,
-      "z": -107.81,
-      "radius": 4.8,
+      "z": -149,
+      "radius": 5.2,
       "scale": 1.28,
-      "cue": "A small brick-paved plaza opens on the heritage sidewalk and reveals the Steam Clock on the proper approach side."
+      "cue": "A brick-and-stone plaza opens at the intersection and stages the Steam Clock at the corner landmark moment."
     },
     {
       "id": "maple-tree-square-edge",
       "label": "Maple Tree Square edge",
       "kind": "plaza_edge",
-      "x": -0.65,
+      "x": 210.34,
       "y": 0,
-      "z": -139.28,
+      "z": -173.46,
       "scale": 1.1,
-      "cue": "The street opens slightly after the clock with a plaza-like pause before the corridor continues."
+      "cue": "Beyond the Steam Clock the street broadens and loosens toward Maple Tree Square."
     },
     {
       "id": "cambie-rise-continuation",
       "label": "Cambie rise continuation",
-      "kind": "view-axis",
-      "x": 13.01,
+      "kind": "view_axis",
+      "x": 226.59,
       "y": 0,
-      "z": -172.8,
+      "z": -185.7,
       "scale": 1.18,
-      "cue": "The corridor loosens into longer facades and a quieter continuation east toward the Cambie rise."
+      "cue": "The eastern leg of the route continues beyond the clock intersection toward the Cambie rise."
     }
   ],
   "props": [
     {
-      "id": "starter-prop-threshold-utility",
-      "kind": "utility_box",
-      "x": 12.06,
+      "id": "starter-prop-threshold-box",
+      "kind": "newspaper_box",
+      "x": 7.48,
       "y": 0,
-      "z": -22.52,
-      "yaw": 1.4289,
-      "scale": 1.1
+      "z": -19.06,
+      "yaw": 0.7005,
+      "scale": 1.05
     },
     {
-      "id": "starter-prop-corner-bags",
-      "kind": "trash_bag",
-      "x": 16.45,
+      "id": "starter-prop-threshold-utility",
+      "kind": "utility_box",
+      "x": 24.74,
       "y": 0,
-      "z": -43.15,
-      "yaw": 1.3258,
+      "z": -7.89,
+      "yaw": 0.7005,
       "scale": 1.1
     },
     {
       "id": "starter-prop-planter-west",
       "kind": "planter",
-      "x": 3.31,
+      "x": 41.28,
       "y": 0,
-      "z": -62.32,
-      "yaw": 1.3915,
+      "z": -47.47,
+      "yaw": 0.6841,
       "scale": 1.15
     },
     {
       "id": "starter-prop-planter-east",
       "kind": "planter",
-      "x": 24.44,
+      "x": 161.38,
       "y": 0,
-      "z": -81.05,
-      "yaw": 1.4142,
+      "z": -113.14,
+      "yaw": 0.654,
       "scale": 1.08
     },
     {
       "id": "starter-prop-bench-clock",
       "kind": "bench",
-      "x": 8.98,
+      "x": 175.27,
       "y": 0,
-      "z": -97.78,
-      "yaw": 3.3062,
+      "z": -148.97,
+      "yaw": 2.2248,
       "scale": 1.04
     },
     {
       "id": "starter-prop-clock-box",
       "kind": "newspaper_box",
-      "x": 24.87,
+      "x": 201.32,
       "y": 0,
-      "z": -107.75,
-      "yaw": 1.7628,
+      "z": -145.88,
+      "yaw": 0.9141,
       "scale": 0.98
     },
     {
       "id": "starter-prop-postclock-utility",
       "kind": "utility_box",
-      "x": 3.2,
+      "x": 120.23,
       "y": 0,
-      "z": -127.99,
-      "yaw": 1.7628,
+      "z": -104.62,
+      "yaw": 0.6371,
       "scale": 1.06
     },
     {
       "id": "starter-prop-postclock-bags",
       "kind": "trash_bag",
-      "x": 17.21,
+      "x": 138.47,
       "y": 0,
-      "z": -145.12,
-      "yaw": 1.7798,
+      "z": -100.14,
+      "yaw": 0.6371,
       "scale": 0.96
     },
     {
       "id": "starter-prop-postclock-bench",
       "kind": "bench",
-      "x": 14.04,
+      "x": 144,
       "y": 0,
-      "z": -162.84,
-      "yaw": 3.3506,
+      "z": -102.75,
+      "yaw": 2.2079,
       "scale": 1
     }
   ],
@@ -2751,17 +3841,17 @@
       "dialogId": "guide_intro",
       "interactRadius": 2.8,
       "idleSpot": {
-        "x": -1.89,
-        "z": -16.43
+        "x": 3.47,
+        "z": -17.6
       },
       "patrol": [
         {
-          "x": -2.17,
-          "z": -14.45
+          "x": 1.21,
+          "z": -15.63
         },
         {
-          "x": -1.56,
-          "z": -19.42
+          "x": 6.46,
+          "z": -20.26
         }
       ]
     },
@@ -2775,8 +3865,8 @@
       "dialogId": "busker_clock_corner",
       "interactRadius": 3,
       "idleSpot": {
-        "x": 12.37,
-        "z": -99.21
+        "x": 187.66,
+        "z": -147.65
       }
     },
     {
@@ -2786,17 +3876,17 @@
       "dialogId": "pedestrian_route_tip",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 4.03,
-        "z": -44.19
+        "x": 30.06,
+        "z": -39.08
       },
       "patrol": [
         {
-          "x": 2.58,
-          "z": -38.37
+          "x": 22.22,
+          "z": -32.73
         },
         {
-          "x": 6.78,
-          "z": -55.87
+          "x": 40.04,
+          "z": -47.42
         }
       ]
     },
@@ -2807,17 +3897,17 @@
       "dialogId": "pedestrian_clock_hint",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 14.93,
-        "z": -134.37
+        "x": 126.59,
+        "z": -96.02
       },
       "patrol": [
         {
-          "x": 16.84,
-          "z": -124.53
+          "x": 119.33,
+          "z": -90.71
         },
         {
-          "x": 12.61,
-          "z": -146.19
+          "x": 136.26,
+          "z": -103.12
         }
       ]
     },
@@ -2830,17 +3920,17 @@
       "dialogId": "skateboarder_corridor",
       "interactRadius": 2.5,
       "idleSpot": {
-        "x": 10.25,
-        "z": -71.14
+        "x": 54.51,
+        "z": -56.57
       },
       "patrol": [
         {
-          "x": 7.89,
-          "z": -57.66
+          "x": 38.98,
+          "z": -43.97
         },
         {
-          "x": 12.69,
-          "z": -86.95
+          "x": 75.34,
+          "z": -72.67
         }
       ]
     },
@@ -2853,17 +3943,17 @@
       "dialogId": "cyclist_water_street",
       "interactRadius": 2.8,
       "idleSpot": {
-        "x": 14.68,
-        "z": -124.11
+        "x": 95.75,
+        "z": -65.54
       },
       "patrol": [
         {
-          "x": 18.48,
-          "z": -90.09
+          "x": 59.55,
+          "z": -37.73
         },
         {
-          "x": 9.52,
-          "z": -149.62
+          "x": 146.27,
+          "z": -113.14
         }
       ]
     },
@@ -2877,17 +3967,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 8.67,
-        "z": -96.7
+        "x": 190.12,
+        "z": -152.32
       },
       "patrol": [
         {
-          "x": 8.23,
-          "z": -93.73
+          "x": 189.63,
+          "z": -151.19
         },
         {
-          "x": 8.84,
-          "z": -97.76
+          "x": 190.38,
+          "z": -153.14
         }
       ]
     },
@@ -2901,17 +3991,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 6.5,
-        "z": -106.22
+        "x": 191.42,
+        "z": -151.7
       },
       "patrol": [
         {
-          "x": 7.3,
-          "z": -102.3
+          "x": 191.03,
+          "z": -150.87
         },
         {
-          "x": 5.62,
-          "z": -110.12
+          "x": 191.65,
+          "z": -152.41
         }
       ]
     },
@@ -2926,8 +4016,8 @@
       "dialogId": "tourist_clock_photo",
       "interactRadius": 2.4,
       "idleSpot": {
-        "x": 6.9,
-        "z": -100.18
+        "x": 192.42,
+        "z": -147.27
       }
     },
     {
@@ -2940,17 +4030,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 5.94,
-        "z": -112.22
+        "x": 194.25,
+        "z": -151.28
       },
       "patrol": [
         {
-          "x": 6.94,
-          "z": -107.32
+          "x": 193.59,
+          "z": -150.91
         },
         {
-          "x": 5.1,
-          "z": -116.13
+          "x": 195.04,
+          "z": -151.81
         }
       ]
     },
@@ -2964,8 +4054,8 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 7.87,
-        "z": -97.96
+        "x": 189.49,
+        "z": -147.89
       }
     },
     {
@@ -2979,17 +4069,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2,
       "idleSpot": {
-        "x": 5.65,
-        "z": -108.09
+        "x": 191.87,
+        "z": -149.84
       },
       "patrol": [
         {
-          "x": 6.28,
-          "z": -105.15
+          "x": 191.59,
+          "z": -149.3
         },
         {
-          "x": 5,
-          "z": -111.02
+          "x": 191.98,
+          "z": -150.38
         }
       ]
     }
@@ -2998,824 +4088,658 @@
     "lamps": [
       {
         "id": "starter-lamp-0",
-        "x": -7.52,
-        "z": -1.07,
+        "x": -5.61,
+        "z": -6.65,
         "height": 5.4
       },
       {
         "id": "starter-lamp-1",
-        "x": 7.52,
-        "z": 1.07,
+        "x": 5.61,
+        "z": 6.65,
         "height": 5.4
       },
       {
         "id": "starter-lamp-2",
-        "x": -3.99,
-        "z": -25.79,
+        "x": 13.62,
+        "z": -22.87,
         "height": 5.4
       },
       {
         "id": "starter-lamp-3",
-        "x": 11.05,
-        "z": -23.64,
+        "x": 24.84,
+        "z": -9.57,
         "height": 5.4
       },
       {
         "id": "starter-lamp-4",
-        "x": 1.88,
-        "z": -50.85,
+        "x": 33.1,
+        "z": -39.02,
         "height": 5.4
       },
       {
         "id": "starter-lamp-5",
-        "x": 16.63,
-        "z": -47.17,
+        "x": 44.09,
+        "z": -25.54,
         "height": 5.4
       },
       {
         "id": "starter-lamp-6",
-        "x": 6.62,
-        "z": -74.66,
+        "x": 52.59,
+        "z": -54.92,
         "height": 5.4
       },
       {
         "id": "starter-lamp-7",
-        "x": 21.63,
-        "z": -72.29,
+        "x": 63.59,
+        "z": -41.43,
         "height": 5.4
       },
       {
         "id": "starter-lamp-8",
-        "x": 10.38,
-        "z": -97.81,
+        "x": 72.78,
+        "z": -70.47,
         "height": 5.4
       },
       {
         "id": "starter-lamp-9",
-        "x": 25.57,
-        "z": -98.46,
+        "x": 83.26,
+        "z": -56.58,
         "height": 5.4
       },
       {
         "id": "starter-lamp-10",
-        "x": 5.75,
-        "z": -121.2,
+        "x": 92.86,
+        "z": -85.62,
         "height": 5.4
       },
       {
         "id": "starter-lamp-11",
-        "x": 20.67,
-        "z": -124.1,
+        "x": 103.34,
+        "z": -71.73,
         "height": 5.4
       },
       {
         "id": "starter-lamp-12",
-        "x": 0.78,
-        "z": -145.54,
+        "x": 113.06,
+        "z": -100.75,
         "height": 5.4
       },
       {
         "id": "starter-lamp-13",
-        "x": 15.65,
-        "z": -148.69,
+        "x": 123.41,
+        "z": -86.77,
         "height": 5.4
       },
       {
         "id": "starter-lamp-14",
-        "x": -4.38,
-        "z": -170.01,
+        "x": 133.29,
+        "z": -115.72,
         "height": 5.4
       },
       {
         "id": "starter-lamp-15",
-        "x": 10.5,
-        "z": -173.09,
+        "x": 143.64,
+        "z": -101.73,
         "height": 5.4
       },
       {
         "id": "starter-lamp-16",
-        "x": -9.44,
-        "z": -194.46,
+        "x": 153.31,
+        "z": -130.7,
         "height": 5.4
       },
       {
         "id": "starter-lamp-17",
-        "x": 5.44,
-        "z": -197.54,
+        "x": 163.89,
+        "z": -116.89,
         "height": 5.4
       }
     ],
     "trees": [
       {
         "id": "starter-tree-0",
-        "x": -10.2,
-        "z": -1.46,
+        "x": -7.41,
+        "z": -8.79,
         "radius": 1.4
       },
       {
         "id": "starter-tree-1",
-        "x": 10.2,
-        "z": 1.46,
+        "x": 7.41,
+        "z": 8.79,
         "radius": 1.4
       },
       {
         "id": "starter-tree-2",
-        "x": -4.78,
-        "z": -35.36,
+        "x": 23.53,
+        "z": -34.83,
         "radius": 1.4
       },
       {
         "id": "starter-tree-3",
-        "x": 15.21,
-        "z": -30.36,
+        "x": 38.06,
+        "z": -17.01,
         "radius": 1.4
       },
       {
         "id": "starter-tree-4",
-        "x": 2.66,
-        "z": -66.86,
+        "x": 54.72,
+        "z": -60.27,
         "radius": 1.4
       },
       {
         "id": "starter-tree-5",
-        "x": 23,
-        "z": -63.65,
+        "x": 69.26,
+        "z": -42.44,
         "radius": 1.4
       },
       {
         "id": "starter-tree-6",
-        "x": 7.68,
-        "z": -97.7,
+        "x": 87.16,
+        "z": -84.83,
         "radius": 1.4
       },
       {
         "id": "starter-tree-7",
-        "x": 28.26,
-        "z": -98.58,
+        "x": 101.01,
+        "z": -66.47,
         "radius": 1.4
       },
       {
         "id": "starter-tree-8",
-        "x": 1.51,
-        "z": -128.85,
+        "x": 119.49,
+        "z": -108.99,
         "radius": 1.4
       },
       {
         "id": "starter-tree-9",
-        "x": 21.73,
-        "z": -132.79,
-        "radius": 1.4
-      },
-      {
-        "id": "starter-tree-10",
-        "x": -5.31,
-        "z": -161.26,
-        "radius": 1.4
-      },
-      {
-        "id": "starter-tree-11",
-        "x": 14.84,
-        "z": -165.54,
-        "radius": 1.4
-      },
-      {
-        "id": "starter-tree-12",
-        "x": -12.09,
-        "z": -193.91,
-        "radius": 1.4
-      },
-      {
-        "id": "starter-tree-13",
-        "x": 8.09,
-        "z": -198.09,
+        "x": 133.17,
+        "z": -90.5,
         "radius": 1.4
       }
     ],
-    "bollards": [],
+    "bollards": [
+      {
+        "id": "clock-bollard-a",
+        "x": 188.15,
+        "z": -151.57
+      },
+      {
+        "id": "clock-bollard-b",
+        "x": 190.19,
+        "z": -154.04,
+        "chain_to": "clock-bollard-a"
+      }
+    ],
     "surfaceBands": [
       {
         "segment_id": "waterfront-station-threshold",
-        "width": 8.43,
-        "length": 16.46,
-        "yaw": 2.9995,
+        "width": 10.08,
+        "length": 18.87,
+        "yaw": 2.2712,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
+        "opacity": 0.24,
+        "elevation": 0.018
       },
       {
         "segment_id": "waterfront-station-threshold",
-        "width": 3.33,
-        "length": 15.79,
-        "yaw": 2.9995,
+        "width": 3.58,
+        "length": 16.28,
+        "yaw": 2.2712,
+        "offset_x": 0,
+        "offset_z": 0,
+        "tone": "wheel_track",
+        "opacity": 0.12,
+        "elevation": 0.022
+      },
+      {
+        "segment_id": "waterfront-station-threshold",
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.2712,
+        "offset_x": 4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
+        "elevation": 0.024
+      },
+      {
+        "segment_id": "waterfront-station-threshold",
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.2712,
+        "offset_x": -4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
+        "elevation": 0.024
+      },
+      {
+        "segment_id": "gastown-beat-1",
+        "width": 10.08,
+        "length": 18.87,
+        "yaw": 2.2548,
+        "offset_x": 0,
+        "offset_z": 0,
+        "tone": "road_base_dark",
+        "opacity": 0.24,
+        "elevation": 0.018
+      },
+      {
+        "segment_id": "gastown-beat-1",
+        "width": 3.58,
+        "length": 16.28,
+        "yaw": 2.2548,
+        "offset_x": 0,
+        "offset_z": 0,
+        "tone": "wheel_track",
+        "opacity": 0.12,
+        "elevation": 0.022
+      },
+      {
+        "segment_id": "gastown-beat-1",
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.2548,
+        "offset_x": 4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
+        "elevation": 0.024
+      },
+      {
+        "segment_id": "gastown-beat-1",
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.2548,
+        "offset_x": -4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
+        "elevation": 0.024
+      },
+      {
+        "segment_id": "water-cordova-seam",
+        "width": 10.08,
+        "length": 18.87,
+        "yaw": 2.2279,
+        "offset_x": 0,
+        "offset_z": 0,
+        "tone": "road_base_dark",
+        "opacity": 0.24,
+        "elevation": 0.018
+      },
+      {
+        "segment_id": "water-cordova-seam",
+        "width": 3.58,
+        "length": 16.28,
+        "yaw": 2.2279,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
         "opacity": 0.16,
+        "elevation": 0.022
+      },
+      {
+        "segment_id": "water-cordova-seam",
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.2279,
+        "offset_x": 4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
         "elevation": 0.024
       },
       {
-        "segment_id": "waterfront-station-threshold",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 2.9995,
-        "offset_x": 3.63,
+        "segment_id": "water-cordova-seam",
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.2279,
+        "offset_x": -4.37,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
+        "opacity": 0.14,
+        "elevation": 0.024
       },
       {
-        "segment_id": "waterfront-station-threshold",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 2.9995,
-        "offset_x": -3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "waterfront-station-threshold",
-        "width": 1.76,
-        "length": 7.39,
-        "yaw": 3.0295,
-        "offset_x": -0.28,
-        "offset_z": 0,
-        "tone": "patch",
-        "opacity": 0.18,
-        "elevation": 0.029
-      },
-      {
-        "segment_id": "gastown-beat-1",
-        "width": 8.43,
-        "length": 16.46,
-        "yaw": 2.9397,
+        "segment_id": "gastown-beat-3",
+        "width": 10.08,
+        "length": 18.87,
+        "yaw": 2.213,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
+        "opacity": 0.24,
+        "elevation": 0.018
       },
       {
-        "segment_id": "gastown-beat-1",
-        "width": 3.33,
-        "length": 15.79,
-        "yaw": 2.9397,
+        "segment_id": "gastown-beat-3",
+        "width": 3.58,
+        "length": 16.28,
+        "yaw": 2.213,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
         "opacity": 0.16,
-        "elevation": 0.024
-      },
-      {
-        "segment_id": "gastown-beat-1",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 2.9397,
-        "offset_x": 3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "gastown-beat-1",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 2.9397,
-        "offset_x": -3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "water-cordova-seam",
-        "width": 8.43,
-        "length": 16.46,
-        "yaw": 2.8969,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
-      },
-      {
-        "segment_id": "water-cordova-seam",
-        "width": 3.33,
-        "length": 15.79,
-        "yaw": 2.8969,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "wheel_track",
-        "opacity": 0.23,
-        "elevation": 0.024
-      },
-      {
-        "segment_id": "water-cordova-seam",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 2.8969,
-        "offset_x": 3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "water-cordova-seam",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 2.8969,
-        "offset_x": -3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "water-cordova-seam",
-        "width": 1.76,
-        "length": 7.39,
-        "yaw": 2.8669,
-        "offset_x": 0.28,
-        "offset_z": 0,
-        "tone": "patch",
-        "opacity": 0.18,
-        "elevation": 0.029
+        "elevation": 0.022
       },
       {
         "segment_id": "gastown-beat-3",
-        "width": 8.43,
-        "length": 16.46,
-        "yaw": 2.9787,
-        "offset_x": 0,
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.213,
+        "offset_x": 4.37,
         "offset_z": 0,
-        "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
-      },
-      {
-        "segment_id": "gastown-beat-3",
-        "width": 3.33,
-        "length": 15.79,
-        "yaw": 2.9787,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "wheel_track",
-        "opacity": 0.23,
+        "tone": "curb_grime",
+        "opacity": 0.14,
         "elevation": 0.024
       },
       {
         "segment_id": "gastown-beat-3",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 2.9787,
-        "offset_x": 3.63,
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.213,
+        "offset_x": -4.37,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "gastown-beat-3",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 2.9787,
-        "offset_x": -3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "gastown-beat-4",
-        "width": 8.43,
-        "length": 16.46,
-        "yaw": 2.9877,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
-      },
-      {
-        "segment_id": "gastown-beat-4",
-        "width": 3.33,
-        "length": 15.79,
-        "yaw": 2.9877,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "wheel_track",
-        "opacity": 0.23,
-        "elevation": 0.024
-      },
-      {
-        "segment_id": "gastown-beat-4",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 2.9877,
-        "offset_x": 3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "gastown-beat-4",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 2.9877,
-        "offset_x": -3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "gastown-beat-4",
-        "width": 1.76,
-        "length": 7.39,
-        "yaw": 3.0177,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "patch",
-        "opacity": 0.18,
-        "elevation": 0.029
-      },
-      {
-        "segment_id": "water-street-mid-block",
-        "width": 8.43,
-        "length": 11.66,
-        "yaw": -1.6572,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
-      },
-      {
-        "segment_id": "water-street-mid-block",
-        "width": 3.72,
-        "length": 11.19,
-        "yaw": -1.6572,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "wheel_track",
-        "opacity": 0.23,
+        "opacity": 0.14,
         "elevation": 0.024
       },
       {
         "segment_id": "water-street-mid-block",
-        "width": 0.88,
-        "length": 12.38,
-        "yaw": -1.6572,
-        "offset_x": 3.63,
+        "width": 10.08,
+        "length": 18.87,
+        "yaw": 2.2192,
+        "offset_x": 0,
         "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
+        "tone": "road_base_dark",
+        "opacity": 0.24,
+        "elevation": 0.018
       },
       {
         "segment_id": "water-street-mid-block",
-        "width": 0.88,
-        "length": 12.38,
-        "yaw": -1.6572,
-        "offset_x": -3.63,
+        "width": 3.58,
+        "length": 16.28,
+        "yaw": 2.2192,
+        "offset_x": 0,
         "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
+        "tone": "wheel_track",
+        "opacity": 0.16,
+        "elevation": 0.022
       },
       {
         "segment_id": "water-street-mid-block",
-        "width": 6.47,
-        "length": 2.8,
-        "yaw": -0.0864,
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.2192,
+        "offset_x": 4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
+        "elevation": 0.024
+      },
+      {
+        "segment_id": "water-street-mid-block",
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.2192,
+        "offset_x": -4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
+        "elevation": 0.024
+      },
+      {
+        "segment_id": "steam-clock-approach",
+        "width": 10.08,
+        "length": 9.38,
+        "yaw": 2.2246,
+        "offset_x": 0,
+        "offset_z": 0,
+        "tone": "road_base_dark",
+        "opacity": 0.24,
+        "elevation": 0.018
+      },
+      {
+        "segment_id": "steam-clock-approach",
+        "width": 3.58,
+        "length": 8.1,
+        "yaw": 2.2246,
+        "offset_x": 0,
+        "offset_z": 0,
+        "tone": "wheel_track",
+        "opacity": 0.16,
+        "elevation": 0.022
+      },
+      {
+        "segment_id": "steam-clock-approach",
+        "width": 0.9,
+        "length": 9.57,
+        "yaw": 2.2246,
+        "offset_x": 4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
+        "elevation": 0.024
+      },
+      {
+        "segment_id": "steam-clock-approach",
+        "width": 0.9,
+        "length": 9.57,
+        "yaw": 2.2246,
+        "offset_x": -4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
+        "elevation": 0.024
+      },
+      {
+        "segment_id": "steam-clock-approach",
+        "width": 8.06,
+        "length": 4.8,
+        "yaw": 3.7954,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "intersection_pavers",
-        "opacity": 0.25,
-        "elevation": 0.03
+        "opacity": 0.22,
+        "elevation": 0.026
       },
       {
-        "segment_id": "water-street-mid-block",
-        "width": 4.12,
-        "length": 2.4,
-        "yaw": -0.0864,
+        "segment_id": "steam-clock-approach",
+        "width": 5.15,
+        "length": 4.2,
+        "yaw": 3.7954,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "cobble_break",
-        "opacity": 0.16,
-        "elevation": 0.031
+        "opacity": 0.14,
+        "elevation": 0.027
       },
       {
         "segment_id": "steam-clock",
-        "width": 8.43,
-        "length": 16.46,
-        "yaw": 3.0198,
+        "width": 10.08,
+        "length": 18.87,
+        "yaw": 2.4848,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
+        "opacity": 0.24,
+        "elevation": 0.018
       },
       {
         "segment_id": "steam-clock",
-        "width": 3.72,
-        "length": 15.79,
-        "yaw": 3.0198,
+        "width": 3.58,
+        "length": 16.28,
+        "yaw": 2.4848,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.23,
+        "opacity": 0.16,
+        "elevation": 0.022
+      },
+      {
+        "segment_id": "steam-clock",
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.4848,
+        "offset_x": 4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
         "elevation": 0.024
       },
       {
         "segment_id": "steam-clock",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 3.0198,
-        "offset_x": 3.63,
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.4848,
+        "offset_x": -4.37,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
+        "opacity": 0.14,
+        "elevation": 0.024
       },
       {
         "segment_id": "steam-clock",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 3.0198,
-        "offset_x": -3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "steam-clock",
-        "width": 1.76,
-        "length": 7.39,
-        "yaw": 2.9898,
-        "offset_x": -0.28,
-        "offset_z": 0,
-        "tone": "patch",
-        "opacity": 0.18,
-        "elevation": 0.029
-      },
-      {
-        "segment_id": "steam-clock",
-        "width": 6.47,
-        "length": 3.7,
-        "yaw": 4.5906,
+        "width": 8.06,
+        "length": 5.92,
+        "yaw": 4.0555,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "intersection_pavers",
-        "opacity": 0.25,
-        "elevation": 0.03
+        "opacity": 0.22,
+        "elevation": 0.026
       },
       {
         "segment_id": "steam-clock",
-        "width": 4.12,
-        "length": 2.69,
-        "yaw": 4.5906,
+        "width": 5.15,
+        "length": 4.2,
+        "yaw": 4.0555,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "cobble_break",
-        "opacity": 0.16,
-        "elevation": 0.031
+        "opacity": 0.14,
+        "elevation": 0.027
       },
       {
-        "segment_id": "gastown-beat-7",
-        "width": 8.43,
-        "length": 16.46,
-        "yaw": -2.9328,
+        "segment_id": "maple-tree-square-edge",
+        "width": 10.08,
+        "length": 18.87,
+        "yaw": 2.2164,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
+        "opacity": 0.24,
+        "elevation": 0.018
       },
       {
-        "segment_id": "gastown-beat-7",
-        "width": 3.72,
-        "length": 15.79,
-        "yaw": -2.9328,
+        "segment_id": "maple-tree-square-edge",
+        "width": 3.58,
+        "length": 16.28,
+        "yaw": 2.2164,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.23,
+        "opacity": 0.16,
+        "elevation": 0.022
+      },
+      {
+        "segment_id": "maple-tree-square-edge",
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.2164,
+        "offset_x": 4.37,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.14,
         "elevation": 0.024
       },
       {
-        "segment_id": "gastown-beat-7",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": -2.9328,
-        "offset_x": 3.63,
+        "segment_id": "maple-tree-square-edge",
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": 2.2164,
+        "offset_x": -4.37,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
+        "opacity": 0.14,
+        "elevation": 0.024
       },
       {
-        "segment_id": "gastown-beat-7",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": -2.9328,
-        "offset_x": -3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "gastown-beat-7",
-        "width": 6.47,
-        "length": 3.7,
-        "yaw": -1.362,
+        "segment_id": "maple-tree-square-edge",
+        "width": 8.06,
+        "length": 5.92,
+        "yaw": 3.7872,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "intersection_pavers",
-        "opacity": 0.25,
-        "elevation": 0.03
+        "opacity": 0.22,
+        "elevation": 0.026
       },
       {
-        "segment_id": "gastown-beat-7",
-        "width": 4.12,
-        "length": 2.69,
-        "yaw": -1.362,
+        "segment_id": "maple-tree-square-edge",
+        "width": 5.15,
+        "length": 4.2,
+        "yaw": 3.7872,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "cobble_break",
+        "opacity": 0.14,
+        "elevation": 0.027
+      },
+      {
+        "segment_id": "cambie-rise-continuation",
+        "width": 10.08,
+        "length": 18.87,
+        "yaw": -0.9252,
+        "offset_x": 0,
+        "offset_z": 0,
+        "tone": "road_base_dark",
+        "opacity": 0.24,
+        "elevation": 0.018
+      },
+      {
+        "segment_id": "cambie-rise-continuation",
+        "width": 3.58,
+        "length": 16.28,
+        "yaw": -0.9252,
+        "offset_x": 0,
+        "offset_z": 0,
+        "tone": "wheel_track",
         "opacity": 0.16,
-        "elevation": 0.031
-      },
-      {
-        "segment_id": "gastown-beat-8",
-        "width": 8.43,
-        "length": 16.46,
-        "yaw": -2.9349,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
-      },
-      {
-        "segment_id": "gastown-beat-8",
-        "width": 3.72,
-        "length": 15.79,
-        "yaw": -2.9349,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "wheel_track",
-        "opacity": 0.23,
-        "elevation": 0.024
-      },
-      {
-        "segment_id": "gastown-beat-8",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": -2.9349,
-        "offset_x": 3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "gastown-beat-8",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": -2.9349,
-        "offset_x": -3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "gastown-beat-8",
-        "width": 1.76,
-        "length": 7.39,
-        "yaw": -2.9049,
-        "offset_x": 0.28,
-        "offset_z": 0,
-        "tone": "repair_patch_dark",
-        "opacity": 0.18,
-        "elevation": 0.029
-      },
-      {
-        "segment_id": "gastown-beat-9",
-        "width": 8.43,
-        "length": 16.46,
-        "yaw": -2.9374,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
-      },
-      {
-        "segment_id": "gastown-beat-9",
-        "width": 3.72,
-        "length": 15.79,
-        "yaw": -2.9374,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "wheel_track",
-        "opacity": 0.23,
-        "elevation": 0.024
-      },
-      {
-        "segment_id": "gastown-beat-9",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": -2.9374,
-        "offset_x": 3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "gastown-beat-9",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": -2.9374,
-        "offset_x": -3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
+        "elevation": 0.022
       },
       {
         "segment_id": "cambie-rise-continuation",
-        "width": 8.43,
-        "length": 16.46,
-        "yaw": 0.2042,
-        "offset_x": 0,
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": -0.9252,
+        "offset_x": 4.37,
         "offset_z": 0,
-        "tone": "road_base_dark",
-        "opacity": 0.3,
-        "elevation": 0.02
-      },
-      {
-        "segment_id": "cambie-rise-continuation",
-        "width": 3.72,
-        "length": 15.79,
-        "yaw": 0.2042,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "wheel_track",
-        "opacity": 0.23,
+        "tone": "curb_grime",
+        "opacity": 0.14,
         "elevation": 0.024
       },
       {
         "segment_id": "cambie-rise-continuation",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 0.2042,
-        "offset_x": 3.63,
+        "width": 0.9,
+        "length": 19.24,
+        "yaw": -0.9252,
+        "offset_x": -4.37,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "cambie-rise-continuation",
-        "width": 0.88,
-        "length": 17.47,
-        "yaw": 0.2042,
-        "offset_x": -3.63,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.19,
-        "elevation": 0.027
-      },
-      {
-        "segment_id": "cambie-rise-continuation",
-        "width": 1.76,
-        "length": 7.39,
-        "yaw": 0.1742,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "repair_patch_dark",
-        "opacity": 0.18,
-        "elevation": 0.029
+        "opacity": 0.14,
+        "elevation": 0.024
       }
     ]
   },
   "spawn": {
-    "x": 1.27,
+    "x": 6.88,
     "y": 1.7,
-    "z": -8.91,
-    "yaw": -0.1421
+    "z": -5.8,
+    "yaw": -0.8704
   },
   "bounds": {
     "floorY": 0,

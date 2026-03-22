@@ -43,11 +43,13 @@ test('generator keeps world polygons valid with existing or generated output', (
 
     if (data.meta && data.meta.fallbackMode === 'working-gastown-corridor') {
       assert.ok(Array.isArray(data.streetscape.surfaceBands));
-      assert.ok(data.streetscape.surfaceBands.length > 0, 'working fallback should include deterministic surface bands');
+      assert.equal(data.streetscape.surfaceBands.length, 42, 'working fallback should keep a tightly constrained surface-band count');
       const surfaceTones = new Set(data.streetscape.surfaceBands.map((band) => band.tone));
-      ['curb_grime', 'intersection_pavers'].forEach((tone) => {
+      ['curb_grime', 'intersection_pavers', 'wheel_track'].forEach((tone) => {
         assert.equal(surfaceTones.has(tone), true, 'working fallback surface bands should include ' + tone);
       });
+      const crossBands = data.streetscape.surfaceBands.filter((band) => band.tone === 'intersection_pavers' || band.tone === 'cobble_break');
+      assert.equal(crossBands.length, 6, 'plaza cross bands should stay localized near the clock intersection');
 
       const propKinds = new Set((data.props || []).map((prop) => prop.kind));
       ['trash_bag', 'newspaper_box', 'utility_box', 'bench', 'planter'].forEach((kind) => {
@@ -55,15 +57,27 @@ test('generator keeps world polygons valid with existing or generated output', (
       });
 
       assert.ok(Array.isArray(data.landmarks));
-      assert.equal(data.landmarks.length >= 5, true, 'working fallback should expose route beats as landmarks');
+      assert.equal(data.landmarks.length >= 6, true, 'working fallback should expose route beats as landmarks');
       assert.equal(Array.isArray(data.hero_landmarks), true, 'working fallback should expose hero landmarks');
       assert.equal(data.hero_landmarks.some((hero) => hero.id === 'steam-clock-hero'), true, 'working fallback should expose a Steam Clock hero anchor');
-      ['waterfront-station-threshold', 'water-street-gateway', 'steam-clock', 'maple-tree-square-edge', 'cambie-rise-continuation'].forEach((id) => {
+      ['waterfront-station-threshold', 'water-cordova-seam', 'water-street-mid-block', 'steam-clock', 'maple-tree-square-edge', 'cambie-rise-continuation'].forEach((id) => {
         assert.equal(data.landmarks.some((landmark) => landmark.id === id), true, 'working fallback should expose landmark ' + id);
-      });
-      ['waterfront-station-threshold', 'water-cordova-seam', 'water-street-mid-block', 'steam-clock', 'cambie-rise-continuation'].forEach((id) => {
         assert.equal(data.nodes.some((node) => node.id === id), true, 'working fallback should expose node ' + id);
       });
+
+      assert.equal(data.zones.street.length >= 3, true, 'working fallback should stage multiple street polygons around the Steam Clock');
+      assert.equal(data.zones.sidewalk.length >= 4, true, 'working fallback should stage multiple sidewalk/plaza polygons');
+      assert.equal(Array.isArray(data.navigator.focusCorridor), true, 'working fallback should expose minimap focus corridors');
+      assert.equal(data.navigator.focusCorridor.length, 3, 'working fallback should expose west leg, plaza loop, and east leg minimap corridors');
+      assert.equal(data.navigator.focusCorridor.some((segment) => segment.id === 'steam-clock-plaza-loop'), true, 'working fallback should expose a plaza loop in navigator data');
+
+      const steamClockNode = data.nodes.find((node) => node.id === 'steam-clock');
+      const approachNode = data.route.centerline.find((node) => node.id === 'steam-clock-approach');
+      const eastNode = data.nodes.find((node) => node.id === 'maple-tree-square-edge');
+      assert.ok(steamClockNode && approachNode && eastNode, 'clock approach/east nodes should exist');
+      assert.equal(Math.hypot(steamClockNode.x - approachNode.x, steamClockNode.z - approachNode.z) > 1.5, true, 'clock node should no longer sit on the same ribbon centerline point as the approach');
+      assert.equal(Math.abs(eastNode.x - steamClockNode.x) > 8 || Math.abs(eastNode.z - steamClockNode.z) > 8, true, 'clock should lead into a distinct east/plaza continuation');
+
       assert.ok(Array.isArray(data.npcs));
       assert.equal(data.npcs.length >= 12, true, 'working fallback should expose a denser deterministic NPC set');
       const touristCluster = data.npcs.filter((npc) => String(npc.id).includes('tourist-clock'));
@@ -89,7 +103,7 @@ test('generator keeps world polygons valid with existing or generated output', (
   }
 });
 
-test('committed world json files include expanded npc arrays', () => {
+test('committed world json files include the expanded intersection-based fallback layout', () => {
   const root = path.resolve(__dirname, '..');
   ['assets/world/gastown-water-street.json', 'assets/world/gastown-water-street-starter.json'].forEach((relPath) => {
     const data = JSON.parse(fs.readFileSync(path.join(root, relPath), 'utf8'));
@@ -101,11 +115,13 @@ test('committed world json files include expanded npc arrays', () => {
     assert.ok(data.landmarks.some((landmark) => landmark.id === 'steam-clock'), relPath + ' should include the Steam Clock landmark');
     assert.equal(data.routeId, 'gastown_water_street_working_corridor', relPath + ' should treat fallback as the working corridor');
     assert.equal(data.meta.fallbackMode, 'working-gastown-corridor', relPath + ' should identify the working fallback mode');
-    assert.ok(data.landmarks.some((landmark) => landmark.id === 'water-street-gateway'), relPath + ' should include the Water Street gateway landmark');
     assert.ok(data.nodes.some((node) => node.id === 'water-cordova-seam'), relPath + ' should include the Water/Cordova seam node');
+    assert.ok(data.nodes.some((node) => node.id === 'maple-tree-square-edge'), relPath + ' should include the Maple Tree Square edge node');
     assert.ok(data.npcs.some((npc) => npc.role === 'skateboarder'), relPath + ' should include a skateboarder');
     assert.ok(data.npcs.some((npc) => npc.role === 'cyclist'), relPath + ' should include a cyclist');
-    assert.ok(Array.isArray(data.streetscape.surfaceBands) && data.streetscape.surfaceBands.some((band) => band.tone === 'road_base_dark'), relPath + ' should include darker road surface bands');
+    assert.ok(Array.isArray(data.streetscape.surfaceBands) && data.streetscape.surfaceBands.length === 42, relPath + ' should constrain surface band clutter');
+    assert.ok(Array.isArray(data.zones.street) && data.zones.street.length >= 3, relPath + ' should stage multiple road polygons');
+    assert.ok(Array.isArray(data.zones.sidewalk) && data.zones.sidewalk.length >= 4, relPath + ' should stage multiple sidewalks/plaza polygons');
   });
 });
 
@@ -153,8 +169,10 @@ test('refresh helper documents expanded expected output files', () => {
   ].forEach((name) => {
     assert.match(src, new RegExp(name.replace('.', '\\.')));
   });
+  ['water-street-context-centerline', 'cordova-transition-context', 'steam-clock-frontage-cadence'].forEach((id) => {
+    assert.match(src, new RegExp(id));
+  });
 });
-
 
 test('fallback generator remains deterministic across repeated runs', () => {
   const root = path.resolve(__dirname, '..');
