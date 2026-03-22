@@ -83,6 +83,9 @@
     turn: { left: false, right: false },
     yaw: 0,
     pitch: 0,
+    cameraMode: 'street',
+    streetPointerLockRequested: false,
+    overviewAltitude: 35,
     velocity: new THREE.Vector3(),
     lastSafePosition: new THREE.Vector3(),
     debugEnabled: new URLSearchParams(window.location.search).get('gastownDebug') === '1',
@@ -208,6 +211,13 @@
   const LOOK_PITCH_LIMIT = Math.PI / 2.25;
   const WHEEL_PITCH_SENSITIVITY = 0.00085;
   const KEYBOARD_PITCH_STEP = 0.045;
+  const STREET_CAMERA_NEAR = 0.08;
+  const STREET_CAMERA_FAR = 700;
+  const OVERVIEW_CAMERA_FAR = 1600;
+  const OVERVIEW_CAMERA_PITCH = THREE.MathUtils.degToRad(-60);
+  const OVERVIEW_ALTITUDE_MIN = 18;
+  const OVERVIEW_ALTITUDE_MAX = 90;
+  const OVERVIEW_ZOOM_STEP = 2.4;
 
   function clampPitch(value) {
     return Math.max(-LOOK_PITCH_LIMIT, Math.min(LOOK_PITCH_LIMIT, value));
@@ -215,7 +225,7 @@
 
   function adjustPitch(delta) {
     state.pitch = clampPitch(state.pitch + delta);
-    camera.rotation.x = state.pitch;
+    applyStreetCameraPose();
   }
 
   function canUseLookFallbackControls() {
@@ -252,15 +262,94 @@
       clearTimeout(state.boundaryNoticeTimer);
     }
     state.boundaryNoticeTimer = setTimeout(() => {
-      if (!state.isRunning) return;
-      setStatus('Play mode active. Mouse look and movement are live.');
+      if (!state.isRunning || state.cameraMode !== 'street') return;
+      setStatus('Street mode active. Mouse look and movement are live. Press V for overview.');
     }, 1900);
+  }
+
+  function getCameraModeLabel() {
+    return state.cameraMode === 'overview' ? 'Overview' : 'Street';
   }
 
   function setPointerStatus(text) {
     if (pointerStatusEl) {
-      pointerStatusEl.textContent = text;
+      pointerStatusEl.textContent = '[' + getCameraModeLabel() + ' view] ' + text;
     }
+  }
+
+  function syncCameraProjection(mode) {
+    camera.near = STREET_CAMERA_NEAR;
+    camera.far = mode === 'overview' ? OVERVIEW_CAMERA_FAR : STREET_CAMERA_FAR;
+    camera.updateProjectionMatrix();
+  }
+
+  function applyStreetCameraPose() {
+    if (camera.parent !== player) {
+      player.add(camera);
+    }
+    camera.position.set(0, 1.7, 0);
+    camera.rotation.set(state.pitch, 0, 0);
+    player.rotation.y = state.yaw;
+    syncCameraProjection('street');
+  }
+
+  function applyOverviewCameraPose() {
+    if (camera.parent !== scene) {
+      scene.add(camera);
+    }
+    camera.position.set(player.position.x, player.position.y + state.overviewAltitude, player.position.z);
+    camera.rotation.set(OVERVIEW_CAMERA_PITCH, state.yaw, 0);
+    syncCameraProjection('overview');
+  }
+
+  function updateCameraModeUi() {
+    if (state.cameraMode === 'overview') {
+      setStatus('Overview mode active. Mouse wheel zooms altitude; press V to return to street view.');
+      setPointerStatus('Pointer unlocked. Overview camera detached above player.');
+    } else if (state.isRunning) {
+      setStatus('Street mode active. Mouse look and movement are live. Press V for overview.');
+      if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
+        setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
+      } else {
+        setPointerStatus('Pointer lock requested… press Esc any time to release.');
+      }
+    } else {
+      setStatus('Street mode ready. Click scene to enter look mode and begin moving, or press V for overview.');
+      setPointerStatus('Pointer unlocked. Click scene to enter look mode. Press V for overview.');
+    }
+  }
+
+  function setCameraMode(mode) {
+    if (mode === state.cameraMode) {
+      updateCameraModeUi();
+      return;
+    }
+
+    if (mode === 'overview') {
+      state.streetPointerLockRequested = state.isRunning || document.pointerLockElement === renderer.domElement;
+      state.isRunning = false;
+      clearMovementInput();
+      if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
+        document.exitPointerLock();
+      }
+      state.cameraMode = 'overview';
+      setInteractPrompt('');
+      applyOverviewCameraPose();
+      updateCameraModeUi();
+      return;
+    }
+
+    state.cameraMode = 'street';
+    applyStreetCameraPose();
+    updateCameraModeUi();
+    if (state.streetPointerLockRequested) {
+      startSim();
+    }
+    state.streetPointerLockRequested = false;
+  }
+
+  function toggleCameraMode() {
+    setCameraMode(state.cameraMode === 'street' ? 'overview' : 'street');
   }
 
   function setLandmark(text) {
@@ -1227,6 +1316,11 @@
   }
 
   function updateInteractionTarget() {
+    if (state.cameraMode !== 'street') {
+      state.hoveredNpcId = '';
+      setInteractPrompt('');
+      return;
+    }
     const npc = findLookedAtNpc();
     state.hoveredNpcId = npc ? npc.id : '';
     if (!npc) {
@@ -2697,6 +2791,13 @@
     });
   }
 
+  function updateOverviewCamera() {
+    if (state.cameraMode !== 'overview') {
+      return;
+    }
+    applyOverviewCameraPose();
+  }
+
   function movePlayer(delta) {
     const speed = 9;
     const turnSpeed = 1.85;
@@ -2728,11 +2829,14 @@
   }
 
   function lockPointer() {
+    if (state.cameraMode !== 'street') {
+      return;
+    }
     renderer.domElement.requestPointerLock();
   }
 
   function onMouseMove(event) {
-    if (document.pointerLockElement !== renderer.domElement || !state.isRunning) {
+    if (state.cameraMode !== 'street' || document.pointerLockElement !== renderer.domElement || !state.isRunning) {
       return;
     }
 
@@ -2744,6 +2848,17 @@
   }
 
   function onWheelLook(event) {
+    if (state.cameraMode === 'overview') {
+      event.preventDefault();
+      state.overviewAltitude = THREE.MathUtils.clamp(
+        state.overviewAltitude + (event.deltaY > 0 ? OVERVIEW_ZOOM_STEP : -OVERVIEW_ZOOM_STEP),
+        OVERVIEW_ALTITUDE_MIN,
+        OVERVIEW_ALTITUDE_MAX
+      );
+      applyOverviewCameraPose();
+      updateCameraModeUi();
+      return;
+    }
     if (!canUseLookFallbackControls()) return;
     event.preventDefault();
     adjustPitch(event.deltaY * WHEEL_PITCH_SENSITIVITY);
@@ -2759,7 +2874,7 @@
   }
 
   function handlePitchKeyControl(event) {
-    if (!event.ctrlKey || !canUseLookFallbackControls()) return false;
+    if (state.cameraMode !== 'street' || !event.ctrlKey || !canUseLookFallbackControls()) return false;
     if (event.code === 'ArrowUp') {
       adjustPitch(-KEYBOARD_PITCH_STEP);
       return true;
@@ -2777,8 +2892,11 @@
     state.lastSafePosition.copy(player.position);
     state.yaw = spawn.yaw || 0;
     state.pitch = Number.isFinite(spawn.pitch) ? clampPitch(spawn.pitch) : 0;
-    player.rotation.y = state.yaw;
-    camera.rotation.x = state.pitch;
+    if (state.cameraMode === 'overview') {
+      applyOverviewCameraPose();
+    } else {
+      applyStreetCameraPose();
+    }
     updateNearestNode();
   }
 
@@ -2793,12 +2911,15 @@
   function startSim() {
     unlockSteamClockAudio();
     state.isRunning = true;
-    setStatus('Play mode active. Mouse look and movement are live.');
+    setStatus('Street mode active. Mouse look and movement are live. Press V for overview.');
     setPointerStatus('Pointer lock requested… press Esc any time to release.');
     lockPointer();
   }
 
   function enterPlayMode() {
+    if (state.cameraMode !== 'street') {
+      return;
+    }
     if (state.isRunning && document.pointerLockElement === renderer.domElement) {
       return;
     }
@@ -2811,7 +2932,7 @@
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
-    setStatus('Paused. Click scene to resume look mode and movement.');
+    setStatus('Street mode paused. Click scene to resume look mode and movement, or press V for overview.');
     setPointerStatus('Pointer released. Click scene to re-enter look mode.');
   }
 
@@ -2819,6 +2940,9 @@
     window.addEventListener('resize', updateSize);
     renderer.domElement.addEventListener('click', () => {
       if (state.activeDialogNpcId) {
+        return;
+      }
+      if (state.cameraMode !== 'street') {
         return;
       }
       if (state.hoveredNpcId && interactWithHoveredNpc()) {
@@ -2832,6 +2956,11 @@
     renderer.domElement.addEventListener('wheel', onWheelLook, { passive: false });
 
     document.addEventListener('keydown', (event) => {
+      if (event.code === 'KeyV') {
+        event.preventDefault();
+        toggleCameraMode();
+        return;
+      }
       if (event.code === 'Escape' && state.activeDialogNpcId) {
         event.preventDefault();
         closeDialog();
@@ -2840,7 +2969,10 @@
       if (state.activeDialogNpcId) {
         return;
       }
-      if (event.code === 'KeyE' && interactWithHoveredNpc()) {
+      if (state.cameraMode !== 'street') {
+        return;
+      }
+      if (state.cameraMode === 'street' && event.code === 'KeyE' && interactWithHoveredNpc()) {
         event.preventDefault();
         return;
       }
@@ -2874,12 +3006,14 @@
     moodSelect.addEventListener('change', (event) => applyMood(event.target.value));
 
     document.addEventListener('pointerlockchange', () => {
-      if (document.pointerLockElement === renderer.domElement) {
+      if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
         setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
+      } else if (state.cameraMode === 'overview') {
+        setPointerStatus('Pointer unlocked. Overview camera detached above player.');
       } else if (state.isRunning) {
         clearMovementInput();
         state.isRunning = false;
-        setStatus('Paused. Pointer released. Click scene to resume look mode and movement.');
+        setStatus('Street mode paused. Click scene to resume look mode and movement, or press V for overview.');
         setPointerStatus('Pointer released. Click scene to re-enter look mode.');
       } else {
         setPointerStatus('Pointer unlocked.');
@@ -3040,9 +3174,9 @@
       scheduleSteamClock();
       setWorldModeStatus(state.world);
       if (!(state.world.meta && state.world.meta.fallbackMode === 'working-gastown-corridor')) {
-        setStatus('Prototype ready. Click scene to enter look mode and begin moving.');
+        setStatus('Street mode ready. Click scene to enter look mode and begin moving, or press V for overview.');
       }
-      setPointerStatus('Pointer unlocked. Click scene to enter look mode.');
+      updateCameraModeUi();
       renderer.setAnimationLoop((time) => {
         const delta = Math.min(0.03, (time - (init.prevTime || time)) / 1000);
         init.prevTime = time;
@@ -3052,6 +3186,7 @@
         }
 
         maybeTriggerLightning(state.world.weatherPresets[state.activeWeather] || null);
+        updateOverviewCamera();
         updateSteamClock(delta, time / 1000);
         updateNpcs(delta);
         updateInteractionTarget();
