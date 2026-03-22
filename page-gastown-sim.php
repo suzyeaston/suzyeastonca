@@ -68,7 +68,8 @@ get_header();
 
     <div class="gastown-sim-canvas" data-sim-canvas tabindex="-1">
       <aside class="gastown-minimap" aria-label="Route navigator minimap">
-        <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap zoom controls">
+        <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap controls">
+          <button type="button" class="gastown-minimap-mode" data-action="minimap-mode-toggle" aria-pressed="false" aria-label="Switch minimap to heading-up mode">North up</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>

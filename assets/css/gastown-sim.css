@@ -172,22 +172,36 @@
 .gastown-minimap-toolbar {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.35rem;
 }
 
+.gastown-minimap-mode,
 .gastown-minimap-zoom {
-  width: 1.7rem;
   height: 1.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
   border-radius: 6px;
   border: 1px solid rgba(174, 207, 239, 0.5);
   background: rgba(18, 28, 41, 0.95);
   color: #e8f3ff;
-  font-size: 1rem;
-  font-weight: 700;
   line-height: 1;
   cursor: pointer;
 }
 
+.gastown-minimap-mode {
+  min-width: 5.6rem;
+  padding: 0 0.55rem;
+}
+
+.gastown-minimap-zoom {
+  width: 1.7rem;
+  padding: 0;
+  font-size: 1rem;
+}
+
+.gastown-minimap-mode:hover,
+.gastown-minimap-mode:focus-visible,
 .gastown-minimap-zoom:hover,
 .gastown-minimap-zoom:focus-visible {
   background: rgba(36, 53, 74, 0.95);
