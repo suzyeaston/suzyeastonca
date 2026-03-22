@@ -25,10 +25,10 @@ Outputs:
 
 How the generator uses these files:
  - route-reference: origin/destination + deterministic route skeleton
- - street-context: centerline context and corridor framing hints
+ - street-context: centerline context, curb/road framing hints, and road-vs-sidewalk staging
  - landmark-reference: stable named route beats such as Waterfront Station,
    Water/Cordova seam, Steam Clock, and Maple Tree Square edge
- - building-cues: simplified frontage / massing cues for fallback staging
+ - building-cues: simplified frontage cadence / massing cues for fallback staging
  - poi-reference: optional open POI landmarks around Water Street / Cordova
 
 Typical use:
@@ -126,6 +126,25 @@ $streetContext = New-FeatureCollection @(
     ) -Props @{ corridor = 'water-cordova-seam'; priority = 'secondary' })
 )
 
+    (New-LineFeature -Id 'water-street-south-curb' -Label 'Water Street south curb cue' -Coordinates @(
+        @(-123.11135, 49.28550),
+        @(-123.11080, 49.28525),
+        @(-123.10992, 49.28486),
+        @(-123.10941, 49.28464)
+    ) -Props @{ corridor = 'water-street'; kind = 'curb_edge'; priority = 'supporting' }),
+    (New-LineFeature -Id 'water-street-north-curb' -Label 'Water Street north curb cue' -Coordinates @(
+        @(-123.11110, 49.28575),
+        @(-123.11057, 49.28551),
+        @(-123.10967, 49.28512),
+        @(-123.10919, 49.28491)
+    ) -Props @{ corridor = 'water-street'; kind = 'curb_edge'; priority = 'supporting' }),
+    (New-LineFeature -Id 'steam-clock-plaza-edge' -Label 'Steam Clock plaza edge cue' -Coordinates @(
+        @(-123.10933, 49.28470),
+        @(-123.10912, 49.28459),
+        @(-123.10894, 49.28447)
+    ) -Props @{ corridor = 'steam-clock'; kind = 'plaza_edge'; priority = 'primary' })
+)
+
 $landmarkReference = New-FeatureCollection @(
     (New-PointFeature -Id 'waterfront-station-threshold' -Label 'Waterfront Station threshold' -Lon $anchors.origin.lon -Lat $anchors.origin.lat -Props @{ kind = 'district_gate'; sequence = 1 }),
     (New-PointFeature -Id 'water-cordova-seam' -Label 'Water/Cordova seam' -Lon -123.11110 -Lat 49.28548 -Props @{ kind = 'street_pivot'; sequence = 2 }),
@@ -180,6 +199,28 @@ $buildingCues = New-FeatureCollection @(
                 @(-123.11045, 49.28563),
                 @(-123.11094, 49.28587),
                 @(-123.11104, 49.28578)
+            ))
+        }
+    },
+    @{
+        type = 'Feature'
+        properties = @{
+            id = 'steam-clock-frontage-cadence'
+            label = 'Steam Clock frontage cadence cue'
+            kind = 'frontage_band'
+            side = 'clock_plaza'
+            rhythm = 'plaza_pause_then_tight_row'
+        }
+        geometry = @{
+            type = 'Polygon'
+            coordinates = @(@(
+                @(-123.10942, 49.28473),
+                @(-123.10917, 49.28461),
+                @(-123.10896, 49.28447),
+                @(-123.10889, 49.28455),
+                @(-123.10910, 49.28468),
+                @(-123.10935, 49.28479),
+                @(-123.10942, 49.28473)
             ))
         }
     }

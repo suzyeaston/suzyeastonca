@@ -65,7 +65,7 @@ test('generator keeps world polygons valid with existing or generated output', (
         assert.equal(data.nodes.some((node) => node.id === id), true, 'working fallback should expose node ' + id);
       });
       assert.ok(Array.isArray(data.npcs));
-      assert.equal(data.npcs.length >= 10, true, 'working fallback should expose a denser deterministic NPC set');
+      assert.equal(data.npcs.length >= 12, true, 'working fallback should expose a denser deterministic NPC set');
       const touristCluster = data.npcs.filter((npc) => String(npc.id).includes('tourist-clock'));
       assert.equal(touristCluster.length >= 6, true, 'working fallback should expose a tourist cluster near the Steam Clock');
       assert.equal(touristCluster.some((npc) => npc.pose === 'taking_photo'), true, 'tourist cluster should include a photo pose');
@@ -73,11 +73,13 @@ test('generator keeps world polygons valid with existing or generated output', (
       assert.equal(touristCluster.some((npc) => npc.heldProp === 'camera'), true, 'tourist cluster should include a held camera prop');
       assert.equal(touristCluster.filter((npc) => Array.isArray(npc.patrol) && npc.patrol.length > 1).length >= 2, true, 'tourist cluster should include multiple walkers');
       assert.equal(data.npcs.some((npc) => npc.role === 'busker' && npc.heldProp === 'guitar'), true, 'busker should carry a guitar');
+      assert.equal(data.npcs.some((npc) => npc.role === 'skateboarder' && npc.heldProp === 'skateboard'), true, 'working fallback should include a skateboarder role');
+      assert.equal(data.npcs.some((npc) => npc.role === 'cyclist' && npc.heldProp === 'bike'), true, 'working fallback should include a cyclist role');
       const roleCounts = data.npcs.reduce((acc, npc) => {
         acc[npc.role] = (acc[npc.role] || 0) + 1;
         return acc;
       }, {});
-      assert.deepEqual(roleCounts, { guide: 1, busker: 1, pedestrian: 2, tourist: 5, photographer: 1 }, 'working fallback role mix should remain deterministic');
+      assert.deepEqual(roleCounts, { guide: 1, busker: 1, pedestrian: 2, skateboarder: 1, cyclist: 1, tourist: 5, photographer: 1 }, 'working fallback role mix should remain deterministic');
       assert.equal(data.routeId, 'gastown_water_street_working_corridor');
     }
   }
@@ -101,6 +103,9 @@ test('committed world json files include expanded npc arrays', () => {
     assert.equal(data.meta.fallbackMode, 'working-gastown-corridor', relPath + ' should identify the working fallback mode');
     assert.ok(data.landmarks.some((landmark) => landmark.id === 'water-street-gateway'), relPath + ' should include the Water Street gateway landmark');
     assert.ok(data.nodes.some((node) => node.id === 'water-cordova-seam'), relPath + ' should include the Water/Cordova seam node');
+    assert.ok(data.npcs.some((npc) => npc.role === 'skateboarder'), relPath + ' should include a skateboarder');
+    assert.ok(data.npcs.some((npc) => npc.role === 'cyclist'), relPath + ' should include a cyclist');
+    assert.ok(Array.isArray(data.streetscape.surfaceBands) && data.streetscape.surfaceBands.some((band) => band.tone === 'road_base_dark'), relPath + ' should include darker road surface bands');
   });
 });
 
@@ -148,4 +153,20 @@ test('refresh helper documents expanded expected output files', () => {
   ].forEach((name) => {
     assert.match(src, new RegExp(name.replace('.', '\\.')));
   });
+});
+
+
+test('fallback generator remains deterministic across repeated runs', () => {
+  const root = path.resolve(__dirname, '..');
+  const outputA = path.join(root, 'assets', 'world', 'gastown-water-street.det-a.json');
+  const outputB = path.join(root, 'assets', 'world', 'gastown-water-street.det-b.json');
+  const first = buildWorld({ root, outputPath: outputA });
+  const second = buildWorld({ root, outputPath: outputB });
+  const worldA = JSON.parse(fs.readFileSync(first.outputPath, 'utf8'));
+  const worldB = JSON.parse(fs.readFileSync(second.outputPath, 'utf8'));
+  worldA.meta.lastBuild = 'stable';
+  worldB.meta.lastBuild = 'stable';
+  assert.deepEqual(worldA, worldB);
+  fs.rmSync(outputA, { force: true });
+  fs.rmSync(outputB, { force: true });
 });

@@ -96,7 +96,7 @@ test('normalizeWorldData guarantees required mood/weather/time presets and field
     requiredWeatherKeys.forEach((key) => assert.notEqual(preset[key], undefined));
   });
 
-  ['morning', 'dusk', 'night'].forEach((id) => {
+  ['morning', 'afternoon', 'dusk', 'night'].forEach((id) => {
     const preset = normalized.timeOfDayPresets[id];
     assert.ok(preset, `missing time preset ${id}`);
     requiredTimeKeys.forEach((key) => assert.notEqual(preset[key], undefined));

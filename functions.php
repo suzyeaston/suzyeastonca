@@ -271,6 +271,8 @@ function se_enqueue_gastown_sim_assets() {
                 'audioBaseUrl'   => esc_url_raw( $uri . '/assets/audio/gastown' ),
                 'textureBaseUrl' => esc_url_raw( $uri . '/assets/textures' ),
                 'dialogDataUrl'  => esc_url_raw( $uri . '/assets/dialog/gastown.json' ),
+                'conversationEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-npc-chat' ) ),
+                'nonce' => wp_create_nonce( 'wp_rest' ),
                 'defaultWeather' => 'clear',
                 'defaultMood'    => 'calm',
                 'defaultTimeOfDay' => 'morning',
@@ -814,6 +816,12 @@ add_action('rest_api_init', function() {
         'callback'            => 'se_handle_asmr_generate',
         'permission_callback' => '__return_true',
     ]);
+
+    register_rest_route('se/v1', '/gastown-npc-chat', [
+        'methods'             => 'POST',
+        'callback'            => 'se_handle_gastown_npc_chat',
+        'permission_callback' => '__return_true',
+    ]);
 });
 
 // =========================================
@@ -835,6 +843,123 @@ function get_custom_canucks_betting( WP_REST_Request $request ) {
         $odds = get_transient('suzyeaston_canucks_betting');
     }
     return rest_ensure_response( $odds );
+}
+
+function se_handle_gastown_npc_chat( WP_REST_Request $request ) {
+    $role = sanitize_key( (string) $request->get_param( 'role' ) );
+    $name = sanitize_text_field( (string) $request->get_param( 'name' ) );
+    $prompt = sanitize_text_field( (string) $request->get_param( 'prompt' ) );
+
+    $fallbacks = array(
+        'guide' => array(
+            'title' => 'Gastown guide',
+            'lines' => array(
+                'Gastown grew around Water Street and Carrall in the city\'s early port era, so the brick storefront rhythm is part of the neighbourhood\'s identity.',
+                'The Steam Clock is a late-20th-century landmark, but it works here as a memorable route anchor for the walk.'
+            ),
+        ),
+        'tourist' => array(
+            'title' => 'Steam Clock visitor',
+            'lines' => array(
+                'We came for the Steam Clock and stayed for the brick facades, the photo stops, and the feeling that Water Street still reads as a distinct old corridor.',
+                'The best photos are a little off-angle so you catch both the clock and the storefront row behind it.'
+            ),
+        ),
+        'photographer' => array(
+            'title' => 'Street photographer',
+            'lines' => array(
+                'I like the Steam Clock from the side because you get the paving texture, lamp rhythm, and the crowd all in one frame.',
+                'A tiny pause in the plaza makes the heritage facades feel more cinematic.'
+            ),
+        ),
+        'busker' => array(
+            'title' => 'Clock-corner busker',
+            'lines' => array(
+                'I\'m keeping it light here now: short melodic phrases, no long drone, just enough to make the corner feel lived in.',
+                'Water Street works better when the music feels like a gesture instead of a wall of sound.'
+            ),
+        ),
+        'cyclist' => array(
+            'title' => 'Gastown cyclist',
+            'lines' => array(
+                'You have to read the corridor ahead here: tourists drift near the clock, so the clean line is to stay smooth and predictable.',
+                'The long east-west run gives the bike motion a very different feel from the walkers on the sidewalks.'
+            ),
+        ),
+        'skateboarder' => array(
+            'title' => 'Gastown skateboarder',
+            'lines' => array(
+                'The fun part is the glide: a couple of pushes, then you just roll with the block and watch the street open up near the plaza.',
+                'I keep clear of the clock crowd, then coast back toward the quieter stretch.'
+            ),
+        ),
+        'pedestrian' => array(
+            'title' => 'Water Street walker',
+            'lines' => array(
+                'This stretch feels most like Gastown when the road reads darker than the sidewalks and the storefronts come in a steady rhythm.',
+                'A small crowd near the Steam Clock helps the corridor feel alive without overwhelming the route.'
+            ),
+        ),
+    );
+
+    $fallback = $fallbacks[ $role ] ?? $fallbacks['pedestrian'];
+
+    if ( empty( $prompt ) ) {
+        $prompt = 'Share a short in-character observation about Gastown and Water Street.';
+    }
+
+    $messages = array(
+        array(
+            'role' => 'system',
+            'content' => 'You are writing one short, safe NPC reply for a stylized Gastown / Water Street walking simulator in Vancouver. Stay role-aware, family-friendly, grounded in place, and concise. Avoid making up sensitive facts. Return plain text only.',
+        ),
+        array(
+            'role' => 'user',
+            'content' => sprintf( 'NPC role: %s. NPC name: %s. Player prompt: %s. Mention Gastown, Water Street, the Steam Clock area, or neighbourhood street life naturally when relevant. Keep it to 2 short sentences max.', $role ?: 'pedestrian', $name ?: 'local NPC', $prompt ),
+        ),
+    );
+
+    $response = se_openai_chat( $messages, array(
+        'model' => 'gpt-4o',
+        'temperature' => 0.7,
+        'max_tokens' => 120,
+    ), array( 'timeout' => 12 ) );
+
+    if ( is_wp_error( $response ) ) {
+        return rest_ensure_response( array(
+            'ok' => false,
+            'fallback' => true,
+            'title' => $fallback['title'],
+            'lines' => $fallback['lines'],
+            'error' => $response->get_error_code(),
+        ) );
+    }
+
+    $text = trim( (string) ( $response['choices'][0]['message']['content'] ?? '' ) );
+    if ( '' === $text ) {
+        return rest_ensure_response( array(
+            'ok' => false,
+            'fallback' => true,
+            'title' => $fallback['title'],
+            'lines' => $fallback['lines'],
+            'error' => 'empty_response',
+        ) );
+    }
+
+    $lines = array_values( array_filter( array_map( 'trim', preg_split( '/(?:
+|
+|
+)+/', $text ) ) ) );
+    if ( empty( $lines ) ) {
+        $lines = array( $text );
+    }
+
+    return rest_ensure_response( array(
+        'ok' => true,
+        'fallback' => false,
+        'title' => $fallback['title'],
+        'lines' => array_slice( $lines, 0, 3 ),
+    ) );
 }
 
 function enqueue_starfield() {

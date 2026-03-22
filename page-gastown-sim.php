@@ -20,6 +20,7 @@ get_header();
         Time of day
         <select name="time-of-day">
           <option value="morning" selected>Morning</option>
+          <option value="afternoon">Afternoon</option>
           <option value="dusk">Dusk</option>
           <option value="night">Night</option>
         </select>

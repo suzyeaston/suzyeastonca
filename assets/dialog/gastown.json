@@ -2,25 +2,56 @@
   "guide_intro": {
     "title": "Gastown guide",
     "lines": [
-      "Welcome to the starter Gastown corridor build. This guide marks where interaction, dialog, and future quest hooks plug into the walk.",
-      "World authors can assign a dialogId on any guide, pedestrian, or busker entry and the simulator will open the matching local dialog record."
+      "You are standing in the playable Water Street fallback build, which now treats the corridor as the main Gastown walk rather than a placeholder.",
+      "Talk to nearby NPCs for short role-aware observations about Gastown, Water Street, and the Steam Clock area."
     ],
     "actions": [
       { "type": "close", "label": "Back to walk" }
     ]
   },
-  "busker_intro": {
-    "title": "Street busker",
+  "busker_clock_corner": {
+    "title": "Clock-corner busker",
     "lines": [
-      "The busker system is intentionally minimal for now: idle in place, local looped audio, and room for future contextual reactions.",
-      "The busker loop is generated in the client, so the interaction stays local and does not add extra binary assets to the theme diff."
+      "Listening…"
+    ],
+    "actions": [
+      { "type": "close", "label": "Back to walk" }
     ]
   },
-  "pedestrian_intro": {
-    "title": "Pedestrian",
+  "pedestrian_route_tip": {
+    "title": "Water Street walker",
     "lines": [
-      "I am pacing a short sidewalk patrol route. Add more patrol points in world.npcs[] to make walkers cover longer blocks.",
-      "Keep counts modest and the update loop will stay light while still scaling to a fuller street scene later."
+      "Listening…"
+    ]
+  },
+  "pedestrian_clock_hint": {
+    "title": "Gastown passerby",
+    "lines": [
+      "Listening…"
+    ]
+  },
+  "tourist_clock_stop": {
+    "title": "Steam Clock visitor",
+    "lines": [
+      "Listening…"
+    ]
+  },
+  "tourist_clock_photo": {
+    "title": "Street photographer",
+    "lines": [
+      "Listening…"
+    ]
+  },
+  "skateboarder_corridor": {
+    "title": "Gastown skateboarder",
+    "lines": [
+      "Listening…"
+    ]
+  },
+  "cyclist_water_street": {
+    "title": "Gastown cyclist",
+    "lines": [
+      "Listening…"
     ]
   }
 }
