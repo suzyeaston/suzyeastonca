@@ -137,3 +137,41 @@ test('normalizeWorldData safely defaults missing or partial props and npcs', () 
   assert.equal(normalized.npcs[0].voiceCue, 'photo-direction');
   assert.equal(normalized.npcs[0].silhouetteScale, 1);
 });
+
+
+test('load surfaces a clear error when the canonical world URL is missing', async () => {
+  const loaderPath = path.join(__dirname, '..', 'js', 'gastown-world-loader.js');
+  const src = fs.readFileSync(loaderPath, 'utf8');
+  const sandbox = {
+    window: {},
+    fetch: async () => { throw new Error('network down'); },
+  };
+
+  vm.runInNewContext(src, sandbox);
+
+  await assert.rejects(
+    sandbox.window.GastownWorldLoader.load(),
+    /Missing Gastown world data URL\./
+  );
+});
+
+test('load does not attempt fallback selection logic when fetch fails', async () => {
+  const loaderPath = path.join(__dirname, '..', 'js', 'gastown-world-loader.js');
+  const src = fs.readFileSync(loaderPath, 'utf8');
+  const requests = [];
+  const sandbox = {
+    window: {},
+    fetch: async (url) => {
+      requests.push(url);
+      return { ok: false, status: 404, json: async () => ({}) };
+    },
+  };
+
+  vm.runInNewContext(src, sandbox);
+
+  await assert.rejects(
+    sandbox.window.GastownWorldLoader.load('/assets/world/missing.json'),
+    /Could not load Gastown world data from \/assets\/world\/missing\.json \(HTTP 404\)\./
+  );
+  assert.deepEqual(requests, ['/assets/world/missing.json']);
+});

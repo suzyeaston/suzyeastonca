@@ -3240,7 +3240,7 @@
 
   async function init() {
     try {
-      const loadedWorld = await window.GastownWorldLoader.load(config.worldDataUrl, config.starterWorldDataUrl);
+      const loadedWorld = await window.GastownWorldLoader.load(config.worldDataUrl);
       const dialogData = await loadDialogData().catch(() => null);
       state.world = loadedWorld;
       state.dialogData = dialogData && typeof dialogData === 'object' ? dialogData : {};
