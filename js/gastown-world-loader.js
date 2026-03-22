@@ -80,6 +80,7 @@
       throw new Error('Gastown world data is malformed: npcs[' + index + '].role is required.');
     }
     assertFiniteNumberIfPresent(npc.interactRadius, 'npcs[' + index + '].interactRadius');
+    assertFiniteNumberIfPresent(npc.silhouetteScale, 'npcs[' + index + '].silhouetteScale');
     if (npc.idleSpot) {
       validatePointLike(npc.idleSpot, 'npcs[' + index + '].idleSpot');
     }
@@ -222,6 +223,10 @@
         role: typeof npc.role === 'string' && npc.role ? npc.role : 'pedestrian',
         behavior: typeof npc.behavior === 'string' ? npc.behavior : '',
         pose: typeof npc.pose === 'string' ? npc.pose : '',
+        heldProp: typeof npc.heldProp === 'string' ? npc.heldProp : '',
+        companionGroup: typeof npc.companionGroup === 'string' ? npc.companionGroup : '',
+        voiceCue: typeof npc.voiceCue === 'string' ? npc.voiceCue : '',
+        silhouetteScale: isFiniteNumber(npc.silhouetteScale) ? npc.silhouetteScale : 1,
         interactRadius: isFiniteNumber(npc.interactRadius) ? npc.interactRadius : 2.4,
         dialogId: typeof npc.dialogId === 'string' ? npc.dialogId : '',
         idleSpot: normalizePoint(npc.idleSpot || fallbackPoint, fallbackPoint.x, fallbackPoint.z),

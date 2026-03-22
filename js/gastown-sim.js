@@ -93,7 +93,6 @@
       beds: {},
       zoneBeds: {},
       rainLoop: null,
-      clockBurst: null,
       npcAudio: {},
       steamClockChime: null,
     },
@@ -102,7 +101,7 @@
       plume: null,
       toneReady: false,
       enabled: false,
-      lastBurstAt: -Infinity,
+      lastChimeAt: -Infinity,
       nextChimeAt: 0,
       proximityCooldownUntil: 0,
       lastPlayerNear: false,
@@ -113,7 +112,9 @@
     dialogLastFocusEl: null,
     hoveredNpcId: '',
     audioContext: null,
-    barkTimer: null,
+    npcVoiceTimer: null,
+    lastNpcVoiceAt: -Infinity,
+    npcVoiceIndex: 0,
     clockTimer: null,
     boundaryNoticeTimer: null,
     audioWarningIssued: false,
@@ -445,8 +446,14 @@
   }
 
   function getSteamClockAnchor(world) {
-    if (!world || !Array.isArray(world.hero_landmarks) || !Array.isArray(world.landmarks)) return null;
-    return world.hero_landmarks.find((hero) => hero.id === 'steam-clock-hero') || world.landmarks.find((landmark) => landmark.id === 'steam-clock') || null;
+    if (!world) return null;
+    const heroLandmarks = Array.isArray(world.hero_landmarks) ? world.hero_landmarks : [];
+    const landmarks = Array.isArray(world.landmarks) ? world.landmarks : [];
+    const nodes = Array.isArray(world.nodes) ? world.nodes : [];
+    return heroLandmarks.find((hero) => hero.id === 'steam-clock-hero')
+      || landmarks.find((landmark) => landmark.id === 'steam-clock')
+      || nodes.find((node) => node.id === 'steam-clock')
+      || null;
   }
 
   async function loadDialogData() {
@@ -538,6 +545,44 @@
       howl.fade(howl.volume(), toVolume, duration);
     } catch (error) {
       warnAudioUnavailable('Gastown audio fade failed; simulator continuing without some audio.', error);
+    }
+  }
+
+  function maybeTriggerNpcVoice(voiceFreq) {
+    if (!state.isRunning || !Array.isArray(state.npcs) || !window.speechSynthesis || voiceFreq <= 0.05) {
+      return false;
+    }
+    if (window.speechSynthesis.speaking || ((performance.now() / 1000) - state.lastNpcVoiceAt) < 10) {
+      return false;
+    }
+    const nearby = state.npcs.filter((npc) => npc.voiceCue && npc.mesh && Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z) < 15);
+    if (!nearby.length) {
+      return false;
+    }
+    const selected = nearby[state.npcVoiceIndex % nearby.length];
+    state.npcVoiceIndex += 1;
+    const snippetsByCue = {
+      'busker-hook': ['Clock corner tune, folks.', 'Gather round the clock.'],
+      'tourist-cluster': ['One more picture here.', 'Stand by the clock, please.'],
+      'photo-direction': ['Hold still by the clock.', 'Okay, one more shot.'],
+    };
+    const options = snippetsByCue[selected.voiceCue] || [];
+    if (!options.length) {
+      return false;
+    }
+    const utterance = new window.SpeechSynthesisUtterance(options[state.npcVoiceIndex % options.length]);
+    utterance.volume = 0.18;
+    utterance.rate = 0.96;
+    utterance.pitch = selected.role === 'busker' ? 0.84 : 1;
+    utterance.onstart = function onNpcVoiceStart() {
+      state.lastNpcVoiceAt = performance.now() / 1000;
+    };
+    try {
+      window.speechSynthesis.speak(utterance);
+      return true;
+    } catch (error) {
+      warnAudioUnavailable('NPC voice ambience unavailable; simulator continuing without speech snippets.', error);
+      return false;
     }
   }
 
@@ -698,27 +743,87 @@
     showDialog();
   }
 
-  function makeNpcVisual(role) {
-    const style = NPC_ROLE_STYLE[role] || NPC_ROLE_STYLE.pedestrian;
+  function createNpcProp(propId, accentMaterial) {
+    if (propId === 'guitar') {
+      const prop = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.5, 0.12), accentMaterial.clone());
+      const neck = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.46, 0.08), accentMaterial.clone());
+      body.position.set(0, -0.06, 0);
+      neck.position.set(0.16, 0.28, 0);
+      neck.rotation.z = -0.38;
+      prop.add(body);
+      prop.add(neck);
+      prop.rotation.z = 0.72;
+      prop.position.set(0.22, 1.08, 0.19);
+      return prop;
+    }
+    if (propId === 'camera') {
+      const prop = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.12), accentMaterial.clone());
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.08, 10), new THREE.MeshStandardMaterial({ color: 0x191d21, roughness: 0.64, metalness: 0.16 }));
+      lens.rotation.x = Math.PI / 2;
+      lens.position.z = 0.08;
+      prop.add(body);
+      prop.add(lens);
+      prop.position.set(0.16, 1.4, 0.28);
+      return prop;
+    }
+    return null;
+  }
+
+  function makeNpcVisual(npc) {
+    const style = NPC_ROLE_STYLE[npc.role] || NPC_ROLE_STYLE.pedestrian;
+    const scaleFactor = Math.max(0.72, Math.min(1.15, npc.silhouetteScale || 1));
     const root = new THREE.Group();
+    const bodyMaterial = new THREE.MeshStandardMaterial({ color: style.color, roughness: 0.86, metalness: 0.08 });
+    const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xe0c7aa, roughness: 0.92, metalness: 0.02 });
+    const accentMaterial = new THREE.MeshStandardMaterial({ color: style.accent, roughness: 0.8, metalness: 0.1 });
     const body = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, Math.max(0.6, style.height - 1), 4, 8),
-      new THREE.MeshStandardMaterial({ color: style.color, roughness: 0.86, metalness: 0.08 })
+      bodyMaterial
     );
     body.position.y = style.height * 0.5;
     const head = new THREE.Mesh(
       new THREE.SphereGeometry(0.17, 10, 10),
-      new THREE.MeshStandardMaterial({ color: 0xe0c7aa, roughness: 0.92, metalness: 0.02 })
+      skinMaterial
     );
     head.position.y = style.height - 0.12;
     const accent = new THREE.Mesh(
       new THREE.BoxGeometry(0.36, 0.14, 0.18),
-      new THREE.MeshStandardMaterial({ color: style.accent, roughness: 0.8, metalness: 0.1 })
+      accentMaterial
     );
     accent.position.set(0, style.height * 0.58, 0.2);
+    const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.54, 0.08), bodyMaterial);
+    leftArm.position.set(-0.22, style.height * 0.63, 0.02);
+    const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.54, 0.08), bodyMaterial);
+    rightArm.position.set(0.22, style.height * 0.63, 0.02);
+    const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.58, 0.09), accentMaterial);
+    leftLeg.position.set(-0.09, 0.34, 0);
+    const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.58, 0.09), accentMaterial);
+    rightLeg.position.set(0.09, 0.34, 0);
     root.add(body);
     root.add(head);
     root.add(accent);
+    root.add(leftArm);
+    root.add(rightArm);
+    root.add(leftLeg);
+    root.add(rightLeg);
+    const heldProp = createNpcProp(npc.heldProp, accentMaterial);
+    if (heldProp) {
+      root.add(heldProp);
+    }
+    root.userData = {
+      body,
+      head,
+      accent,
+      leftArm,
+      rightArm,
+      leftLeg,
+      rightLeg,
+      heldProp,
+      scaleFactor,
+    };
+    root.scale.setScalar(scaleFactor);
     return root;
   }
 
@@ -797,7 +902,7 @@
 
   function addNpcs(world) {
     state.npcs = (world.npcs || []).map((npc) => {
-      const visual = makeNpcVisual(npc.role);
+      const visual = makeNpcVisual(npc);
       const start = npc.idleSpot || npc.patrol[0] || { x: 0, z: 0 };
       visual.position.set(start.x, 0, start.z);
       worldGroup.add(visual);
@@ -807,7 +912,7 @@
         patrolIndex: 0,
         direction: 1,
         baseY: 0,
-        speed: npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : 0,
+        speed: npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : npc.role === 'guide' ? 0.18 : 0,
         pauseUntil: 0,
         animPhase: swaySeed * Math.PI * 2,
         swayAmount: 0.018 + (swaySeed * 0.028),
@@ -824,9 +929,11 @@
     state.npcs.forEach((npc) => {
       if (!npc.mesh) return;
       const isWalker = Array.isArray(npc.patrol) && npc.patrol.length > 1;
-      const touristPause = npc.behavior === 'tourist_pause' || npc.behavior === 'photo_idle';
+      const touristPause = npc.behavior === 'tourist_pause' || npc.behavior === 'photo_idle' || npc.behavior === 'tourist_wander';
+      const subtleWalker = npc.role === 'guide';
+      const canWalk = isWalker && (npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' || subtleWalker);
 
-      if (isWalker && (npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer')) {
+      if (canWalk) {
         const target = npc.patrol[npc.patrolIndex] || npc.patrol[0];
         const dx = target.x - npc.mesh.position.x;
         const dz = target.z - npc.mesh.position.z;
@@ -850,12 +957,39 @@
         }
       }
 
-      const motionStrength = isWalker && nowSeconds >= (npc.pauseUntil || 0) ? 1 : 0.35;
+      const motionStrength = canWalk && nowSeconds >= (npc.pauseUntil || 0) ? 1 : npc.role === 'busker' ? 0.8 : 0.45;
       npc.mesh.position.y = npc.baseY + (Math.sin((nowSeconds * 3.4) + npc.animPhase) * npc.swayAmount * motionStrength);
       npc.mesh.rotation.z = Math.sin((nowSeconds * 2.2) + npc.animPhase) * 0.02;
-      npc.mesh.children.forEach((child, index) => {
-        child.rotation.y = (index === 1 ? 1 : -1) * Math.sin((nowSeconds * 1.4) + npc.animPhase) * 0.04;
-      });
+      const rig = npc.mesh.userData || {};
+      const stride = Math.sin((nowSeconds * (canWalk ? 7.4 : 3.1)) + npc.animPhase);
+      if (rig.leftArm && rig.rightArm) {
+        rig.leftArm.rotation.x = stride * (canWalk ? 0.6 : 0.18);
+        rig.rightArm.rotation.x = -stride * (canWalk ? 0.6 : 0.18);
+      }
+      if (rig.leftLeg && rig.rightLeg) {
+        rig.leftLeg.rotation.x = -stride * (canWalk ? 0.52 : 0.1);
+        rig.rightLeg.rotation.x = stride * (canWalk ? 0.52 : 0.1);
+      }
+      if (rig.head) {
+        rig.head.rotation.y = Math.sin((nowSeconds * 0.9) + npc.animPhase) * 0.12;
+      }
+      if (rig.heldProp) {
+        if (npc.heldProp === 'guitar') {
+          rig.heldProp.rotation.y = Math.sin((nowSeconds * 2.6) + npc.animPhase) * 0.12;
+        } else if (npc.heldProp === 'camera') {
+          rig.heldProp.position.y = (npc.pose === 'taking_photo' ? 1.48 : 1.32) + (Math.sin((nowSeconds * 1.2) + npc.animPhase) * 0.03);
+          rig.heldProp.rotation.x = npc.pose === 'taking_photo' ? -0.42 : -0.18;
+        }
+      }
+      if (npc.role === 'busker') {
+        npc.mesh.rotation.y += Math.sin((nowSeconds * 1.3) + npc.animPhase) * 0.002;
+      }
+      if (npc.pose === 'being_photographed') {
+        npc.mesh.rotation.y = -0.24;
+      }
+      if (npc.pose === 'group_gather' || npc.pose === 'gathered') {
+        npc.mesh.rotation.y += Math.sin((nowSeconds * 0.8) + npc.animPhase) * 0.0015;
+      }
 
       const loop = state.sounds.npcAudio[npc.id];
       if (loop) {
@@ -1370,75 +1504,104 @@
   function addHeroLandmarks(world) {
     (world.hero_landmarks || []).forEach((hero) => {
       if (hero.id === 'steam-clock-hero') {
-        const ironMaterial = new THREE.MeshStandardMaterial({ color: 0x2e3138, roughness: 0.54, metalness: 0.58 });
-        const brassMaterial = new THREE.MeshStandardMaterial({ color: 0xae8f52, roughness: 0.42, metalness: 0.62 });
-        const glassMaterial = new THREE.MeshStandardMaterial({ color: 0xa9c0bb, roughness: 0.18, metalness: 0.08, transparent: true, opacity: 0.34, emissive: 0x1b2c2c, emissiveIntensity: 0.16 });
-        const accentMaterial = new THREE.MeshStandardMaterial({ color: 0x5a4633, roughness: 0.7, metalness: 0.2 });
+        const ironMaterial = new THREE.MeshStandardMaterial({ color: 0x24282d, roughness: 0.48, metalness: 0.68 });
+        const brassMaterial = new THREE.MeshStandardMaterial({ color: 0xb08b48, roughness: 0.34, metalness: 0.72 });
+        const glassMaterial = new THREE.MeshStandardMaterial({ color: 0xabc4c0, roughness: 0.12, metalness: 0.08, transparent: true, opacity: 0.32, emissive: 0x223333, emissiveIntensity: 0.22 });
+        const accentMaterial = new THREE.MeshStandardMaterial({ color: 0x6a4c31, roughness: 0.76, metalness: 0.14 });
         const clockRoot = new THREE.Group();
         clockRoot.position.set(hero.x, 0, hero.z);
+        clockRoot.rotation.y = hero.yaw || 0;
 
-        const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.32, 1.54, 0.72, 12), accentMaterial);
+        const plazaRadius = (hero.plaza && hero.plaza.radius) || (hero.ground_emphasis_radius || 4.2);
+        const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.74, 0.84, 16), accentMaterial);
         plinth.position.y = 0.36;
         clockRoot.add(plinth);
-        const pedestal = new THREE.Mesh(new THREE.BoxGeometry(1.36, 1.18, 1.36), ironMaterial);
-        pedestal.position.y = 1.22;
+        const pedestal = new THREE.Mesh(new THREE.BoxGeometry(1.54, 1.28, 1.54), ironMaterial);
+        pedestal.position.y = 1.26;
         clockRoot.add(pedestal);
-        const shaft = new THREE.Mesh(new THREE.BoxGeometry(1.02, 5.2, 1.02), ironMaterial);
-        shaft.position.y = 4.12;
+        const pedestalTrim = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.22, 1.76), brassMaterial);
+        pedestalTrim.position.y = 1.88;
+        clockRoot.add(pedestalTrim);
+        const shaft = new THREE.Mesh(new THREE.BoxGeometry(1.08, 5.56, 1.08), ironMaterial);
+        shaft.position.y = 4.32;
         clockRoot.add(shaft);
-        const glassCore = new THREE.Mesh(new THREE.BoxGeometry(0.76, 2.48, 0.76), glassMaterial);
-        glassCore.position.y = 3.96;
+        const glassCore = new THREE.Mesh(new THREE.BoxGeometry(0.82, 2.92, 0.82), glassMaterial);
+        glassCore.position.y = 4.16;
         clockRoot.add(glassCore);
-        const clockHousing = new THREE.Mesh(new THREE.BoxGeometry(1.78, 1.48, 1.78), ironMaterial);
-        clockHousing.position.y = 6.46;
+        const cagePosts = [
+          [-0.38, -0.38], [0.38, -0.38], [-0.38, 0.38], [0.38, 0.38],
+        ];
+        cagePosts.forEach((post) => {
+          const cage = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.8, 0.08), brassMaterial);
+          cage.position.set(post[0], 4.18, post[1]);
+          clockRoot.add(cage);
+        });
+        const clockHousing = new THREE.Mesh(new THREE.BoxGeometry(1.94, 1.62, 1.94), ironMaterial);
+        clockHousing.position.y = 6.74;
         clockRoot.add(clockHousing);
-        const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.12, 0.54, 12), brassMaterial);
-        crown.position.y = 7.44;
+        const clockCornice = new THREE.Mesh(new THREE.BoxGeometry(2.18, 0.24, 2.18), brassMaterial);
+        clockCornice.position.y = 7.44;
+        clockRoot.add(clockCornice);
+        const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 1.24, 0.58, 14), brassMaterial);
+        crown.position.y = 7.88;
         clockRoot.add(crown);
-        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.96, 1.18, 12), ironMaterial);
-        cap.position.y = 8.28;
+        const cap = new THREE.Mesh(new THREE.ConeGeometry(1.08, 1.26, 14), ironMaterial);
+        cap.position.y = 8.74;
         clockRoot.add(cap);
-        const steamStack = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 1.1, 8), brassMaterial);
-        steamStack.position.set(0, 8.92, 0);
+        const finial = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), brassMaterial);
+        finial.position.set(0, 9.5, 0);
+        clockRoot.add(finial);
+        const steamStack = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 1.18, 8), brassMaterial);
+        steamStack.position.set(0, 9.06, 0);
         clockRoot.add(steamStack);
 
         [0, Math.PI / 2, Math.PI, -Math.PI / 2].forEach((rotation) => {
-          const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.08, 24), brassMaterial);
+          const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.12, 24), brassMaterial);
           frame.rotation.x = Math.PI / 2;
           frame.rotation.z = rotation;
-          frame.position.set(Math.sin(rotation) * 0.92, 6.48, Math.cos(rotation) * 0.92);
+          frame.position.set(Math.sin(rotation) * 1.02, 6.76, Math.cos(rotation) * 1.02);
           clockRoot.add(frame);
 
-          const face = new THREE.Mesh(new THREE.CircleGeometry(0.46, 24), new THREE.MeshStandardMaterial({ color: 0xf0e2b4, emissive: 0x7d6639, emissiveIntensity: 0.26, roughness: 0.62, metalness: 0.04 }));
-          face.position.set(Math.sin(rotation) * 0.94, 6.48, Math.cos(rotation) * 0.94);
+          const face = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), new THREE.MeshStandardMaterial({ color: 0xf2e4b6, emissive: 0x7d6639, emissiveIntensity: 0.28, roughness: 0.62, metalness: 0.04 }));
+          face.position.set(Math.sin(rotation) * 1.04, 6.76, Math.cos(rotation) * 1.04);
           face.rotation.y = rotation;
           clockRoot.add(face);
 
-          const hand = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.34, 0.03), new THREE.MeshStandardMaterial({ color: 0x2b2420, roughness: 0.5, metalness: 0.22 }));
-          hand.position.set(Math.sin(rotation) * 0.98, 6.48, Math.cos(rotation) * 0.98);
+          const hand = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.4, 0.03), new THREE.MeshStandardMaterial({ color: 0x2b2420, roughness: 0.5, metalness: 0.22 }));
+          hand.position.set(Math.sin(rotation) * 1.08, 6.76, Math.cos(rotation) * 1.08);
           hand.rotation.set(0, rotation, Math.PI / 5);
           clockRoot.add(hand);
         });
 
-        [-1, 1].forEach((side) => {
+        const steamVents = Array.isArray(hero.steamVentOffsets) && hero.steamVentOffsets.length
+          ? hero.steamVentOffsets
+          : [{ x: -0.42, z: 0.64, y: 8.72 }, { x: 0.42, z: -0.64, y: 8.72 }];
+        steamVents.forEach((vent, index) => {
           const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.8, 8), brassMaterial);
-          pipe.position.set(side * 0.62, 5.48, 0.72);
+          pipe.position.set(vent.x, 5.62, index % 2 === 0 ? 0.82 : -0.82);
           pipe.rotation.x = Math.PI / 2.45;
           clockRoot.add(pipe);
           const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.04, 8, 16, Math.PI), brassMaterial);
-          elbow.position.set(side * 0.62, 4.9, 1.1);
-          elbow.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+          elbow.position.set(vent.x, 5.02, index % 2 === 0 ? 1.2 : -1.2);
+          elbow.rotation.y = index % 2 === 0 ? -Math.PI / 2 : Math.PI / 2;
           clockRoot.add(elbow);
+          const ventCap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.3, 8), brassMaterial);
+          ventCap.position.set(vent.x, vent.y, vent.z);
+          clockRoot.add(ventCap);
         });
 
-        const plaza = new THREE.Mesh(new THREE.CircleGeometry((hero.ground_emphasis_radius || 3.2), 28), new THREE.MeshStandardMaterial({ color: 0x382f27, roughness: 0.9, metalness: 0.03 }));
+        const plaza = new THREE.Mesh(new THREE.CircleGeometry(plazaRadius, 32), new THREE.MeshStandardMaterial({ color: 0x4c3d32, roughness: 0.92, metalness: 0.02 }));
         plaza.rotation.x = -Math.PI / 2;
         plaza.position.y = 0.03;
         clockRoot.add(plaza);
+        const plazaApron = new THREE.Mesh(new THREE.RingGeometry(plazaRadius * 0.66, plazaRadius + 0.65, 32), new THREE.MeshStandardMaterial({ color: 0x7a6a5b, roughness: 0.96, metalness: 0.01 }));
+        plazaApron.rotation.x = -Math.PI / 2;
+        plazaApron.position.y = 0.031;
+        clockRoot.add(plazaApron);
 
         const steamMaterial = new THREE.MeshBasicMaterial({ color: 0xd8dfdf, transparent: true, opacity: 0.18, depthWrite: false });
-        const steamPlume = new THREE.Mesh(new THREE.SphereGeometry(0.56, 10, 10), steamMaterial);
-        steamPlume.position.set(0, 9.52, 0.18);
+        const steamPlume = new THREE.Mesh(new THREE.SphereGeometry(0.62, 10, 10), steamMaterial);
+        steamPlume.position.set(0, 9.72, 0.08);
         clockRoot.add(steamPlume);
 
         worldGroup.add(clockRoot);
@@ -2164,7 +2327,6 @@
     });
 
     state.sounds.rainLoop = createSafeHowl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
-    state.sounds.clockBurst = createSafeHowl({ src: src('events/steam_clock_burst'), volume: 0.22 });
     state.sounds.thunder = createSafeHowl({ src: src('weather/thunder_roll'), volume: 0.22 });
 
     (world.audioZones || []).forEach((zone) => {
@@ -2248,22 +2410,12 @@
       fadeHowl(howl, id === preset.ambientBed ? 0.45 * preset.audioDensity : 0, 420);
     });
 
-    if (state.barkTimer) {
-      clearInterval(state.barkTimer);
+    if (state.npcVoiceTimer) {
+      clearInterval(state.npcVoiceTimer);
     }
-    const barkInterval = Math.max(4500, 15000 - (preset.voiceFreq * 12000));
-    state.barkTimer = setInterval(() => {
-      if (!state.isRunning || Math.random() > preset.voiceFreq) {
-        return;
-      }
-      const bark = createSafeHowl({
-        src: [
-          (config.audioBaseUrl || '').replace(/\/$/, '') + '/barks/hey_you.mp3',
-          (config.audioBaseUrl || '').replace(/\/$/, '') + '/barks/hey_you.ogg'
-        ],
-        volume: 0.38 + (Math.random() * 0.2)
-      });
-      playHowl(bark);
+    const barkInterval = Math.max(7000, 18000 - (preset.voiceFreq * 9000));
+    state.npcVoiceTimer = setInterval(() => {
+      maybeTriggerNpcVoice(preset.voiceFreq);
     }, barkInterval);
   }
 
@@ -2513,13 +2665,17 @@
         state.sounds.steamClockChime = {
           synth: new Tone.PolySynth(Tone.Synth, {
             oscillator: { type: 'triangle8' },
-            envelope: { attack: 0.01, decay: 0.22, sustain: 0.16, release: 1.4 },
-            volume: -13,
+            envelope: { attack: 0.01, decay: 0.34, sustain: 0.1, release: 1.8 },
+            volume: -12,
           }).toDestination(),
-          bell: new Tone.Synth({
-            oscillator: { type: 'sine' },
-            envelope: { attack: 0.01, decay: 0.35, sustain: 0, release: 1.8 },
-            volume: -16,
+          bell: new Tone.MetalSynth({
+            frequency: 220,
+            envelope: { attack: 0.001, decay: 1.2, release: 1.6 },
+            harmonicity: 7.1,
+            modulationIndex: 18,
+            resonance: 3000,
+            octaves: 1.4,
+            volume: -18,
           }).toDestination(),
         };
       }
@@ -2546,13 +2702,16 @@
       let cursor = now + 0.05;
       STEAM_CLOCK_CHIME_MOTIF.forEach((phrase, phraseIndex) => {
         phrase.forEach((note, noteIndex) => {
-          state.sounds.steamClockChime.synth.triggerAttackRelease(note, 0.55, cursor + (noteIndex * 0.36), phraseIndex === 0 ? 0.82 : 0.7);
+          state.sounds.steamClockChime.synth.triggerAttackRelease(note, 0.62, cursor + (noteIndex * 0.38), phraseIndex === 0 ? 0.9 : 0.74);
         });
-        cursor += 1.62;
+        if (phraseIndex < STEAM_CLOCK_CHIME_MOTIF.length - 1) {
+          state.sounds.steamClockChime.bell.triggerAttackRelease('16n', cursor + 1.46, 0.22);
+        }
+        cursor += 1.78;
       });
-      state.sounds.steamClockChime.bell.triggerAttackRelease('B2', 1.6, now, 0.42);
-      state.steamClockState.lastBurstAt = performance.now() / 1000;
-      state.steamClockState.nextChimeAt = (performance.now() / 1000) + (reason === 'proximity' ? 34 : 52);
+      state.sounds.steamClockChime.bell.triggerAttackRelease('2n', now, 0.32);
+      state.steamClockState.lastChimeAt = performance.now() / 1000;
+      state.steamClockState.nextChimeAt = (performance.now() / 1000) + (reason === 'proximity' ? 42 : 58);
       return true;
     } catch (error) {
       warnAudioUnavailable('Tone.js steam clock chime playback failed; simulator continuing without musical chimes.', error);
@@ -2565,7 +2724,7 @@
       const pulse = 0.65 + (Math.sin(nowSeconds * 1.8) * 0.12);
       state.steamClockState.plume.scale.setScalar(pulse);
       state.steamClockState.plume.position.y = 9.4 + (Math.sin(nowSeconds * 2.4) * 0.16);
-      state.steamClockState.plume.material.opacity = 0.1 + Math.max(0, 0.12 - ((nowSeconds - state.steamClockState.lastBurstAt) * 0.05));
+      state.steamClockState.plume.material.opacity = 0.08 + Math.max(0, 0.18 - ((nowSeconds - state.steamClockState.lastChimeAt) * 0.07));
     }
 
     const steamClock = state.steamClockState.anchor || getSteamClockAnchor(state.world);
@@ -2577,9 +2736,9 @@
 
     if (playerNear && !state.steamClockState.lastPlayerNear && nowSeconds >= state.steamClockState.proximityCooldownUntil) {
       if (triggerSteamClockChime('proximity')) {
-        state.steamClockState.proximityCooldownUntil = nowSeconds + 36;
+        state.steamClockState.proximityCooldownUntil = nowSeconds + 44;
       }
-    } else if (state.steamClockState.enabled && nowSeconds >= state.steamClockState.nextChimeAt && distance < 34) {
+    } else if (state.steamClockState.enabled && nowSeconds >= state.steamClockState.nextChimeAt && distance < 30) {
       triggerSteamClockChime('interval');
     }
     state.steamClockState.lastPlayerNear = playerNear;
@@ -2590,7 +2749,7 @@
       clearInterval(state.clockTimer);
     }
     state.steamClockState.anchor = getSteamClockAnchor(state.world);
-    state.steamClockState.nextChimeAt = 24;
+    state.steamClockState.nextChimeAt = 28;
     state.clockTimer = window.setInterval(() => {}, 60000);
   }
 

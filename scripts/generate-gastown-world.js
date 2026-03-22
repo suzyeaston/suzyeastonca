@@ -551,44 +551,66 @@ function buildStarterProps(routePoints, sidewalkOuter, spawnDistance) {
 }
 
 function buildStarterLandmarks(routePoints, sidewalkOuter) {
-  return [
+  const threshold = placeStarterProp(routePoints, 12, -1 * (sidewalkOuter + 2.6), 'starter-landmark-threshold-anchor', 'cardboard_box', { scale: 1 });
+  const steamClock = placeStarterProp(routePoints, 108, -1 * (sidewalkOuter + 3.35), 'steam-clock-anchor', 'cardboard_box', { scale: 1 });
+  const continuation = placeStarterProp(routePoints, 166, sidewalkOuter + 2.1, 'starter-landmark-postclock-anchor', 'cardboard_box', { scale: 1 });
+  const heroRadius = 4.8;
+
+  return {
+    landmarks: [
     {
       id: 'starter-waterfront-threshold',
       label: 'Waterfront threshold',
       kind: 'district_gate',
-      ...placeStarterProp(routePoints, 12, -1 * (sidewalkOuter + 2.6), 'starter-landmark-threshold-anchor', 'cardboard_box', { scale: 1 }),
+      x: threshold.x,
       y: 0,
+      z: threshold.z,
       scale: 1.35,
       cue: 'Station canopies give way to brick-front Gastown blocks.',
     },
     {
-      id: 'starter-steam-clock-approach',
-      label: 'Steam Clock approach',
-      kind: 'clock-approach',
-      ...placeStarterProp(routePoints, 104, sidewalkOuter + 2.4, 'starter-landmark-clock-anchor', 'cardboard_box', { scale: 1 }),
+      id: 'steam-clock',
+      label: 'Gastown Steam Clock',
+      kind: 'clock',
+      x: steamClock.x,
       y: 0,
-      scale: 1.25,
-      cue: 'Denser storefront rhythm, pavers, and curb clutter build toward the clock node.',
+      z: steamClock.z,
+      radius: heroRadius,
+      scale: 1.28,
+      cue: 'A small brick-paved plaza opens on the heritage sidewalk and reveals the Steam Clock on the proper approach side.',
     },
     {
       id: 'starter-post-clock-continuation',
       label: 'Post-clock continuation',
       kind: 'view-axis',
-      ...placeStarterProp(routePoints, 166, -1 * (sidewalkOuter + 2.2), 'starter-landmark-postclock-anchor', 'cardboard_box', { scale: 1 }),
+      x: continuation.x,
       y: 0,
+      z: continuation.z,
       scale: 1.18,
       cue: 'The corridor loosens into longer facades and a quieter continuation east.',
     },
-  ].map((landmark) => ({
-    id: landmark.id,
-    label: landmark.label,
-    kind: landmark.kind,
-    x: landmark.x,
-    y: landmark.y,
-    z: landmark.z,
-    scale: landmark.scale,
-    cue: landmark.cue,
-  }));
+    ],
+    heroLandmarks: [
+      {
+        id: 'steam-clock-hero',
+        label: 'Gastown Steam Clock',
+        x: steamClock.x,
+        y: 0,
+        z: steamClock.z,
+        yaw: Number((steamClock.yaw + Math.PI * 0.25).toFixed(4)),
+        ground_emphasis_radius: heroRadius,
+        steamVentOffsets: [
+          { x: -0.42, z: 0.64, y: 8.72 },
+          { x: 0.42, z: -0.64, y: 8.72 },
+        ],
+        plaza: {
+          radius: 5.1,
+          depth: 6.2,
+          apronWidth: 2.2,
+        },
+      },
+    ],
+  };
 }
 
 
@@ -598,7 +620,7 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
     const placement = placeStarterProp(routePoints, distanceMeters, (side * (laneOffset + extraOffset)), id, 'cardboard_box', { scale: 1 });
     return { x: placement.x, z: placement.z };
   };
-  const clockTouristOffset = sidewalkOuter + 0.9;
+  const clockTouristOffset = sidewalkOuter + 0.76;
   const placeClockTourist = (distanceMeters, side, extraOffset, id) => {
     const placement = placeStarterProp(routePoints, distanceMeters, side * (clockTouristOffset + extraOffset), id, 'cardboard_box', { scale: 1 });
     return { x: placement.x, z: placement.z };
@@ -608,16 +630,25 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
     {
       id: 'starter-guide-threshold',
       role: 'guide',
+      behavior: 'guide_pace',
       dialogId: 'guide_intro',
       interactRadius: 2.8,
       idleSpot: placeNpc(16, -1, 1.45, 'starter-npc-guide-anchor'),
+      patrol: [
+        placeNpc(14, -1, 1.45, 'starter-npc-guide-a'),
+        placeNpc(19, -1, 1.55, 'starter-npc-guide-b'),
+      ],
     },
     {
       id: 'starter-busker-clock',
       role: 'busker',
+      behavior: 'busker_perform',
+      pose: 'strum',
+      heldProp: 'guitar',
+      voiceCue: 'busker-hook',
       dialogId: 'busker_clock_corner',
       interactRadius: 3,
-      idleSpot: placeNpc(102, 1, 1.65, 'starter-npc-busker-anchor'),
+      idleSpot: placeNpc(102, -1, 2.15, 'starter-npc-busker-anchor'),
     },
     {
       id: 'starter-pedestrian-west',
@@ -647,6 +678,9 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
       id: 'starter-tourist-clock-west',
       role: 'tourist',
       behavior: 'tourist_pause',
+      pose: 'group_gather',
+      companionGroup: 'clock-family-a',
+      voiceCue: 'tourist-cluster',
       dialogId: 'pedestrian_clock_hint',
       interactRadius: 2.2,
       idleSpot: placeClockTourist(97, -1, 0.15, 'starter-tourist-clock-west-idle'),
@@ -659,12 +693,15 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
       id: 'starter-tourist-clock-east',
       role: 'tourist',
       behavior: 'tourist_pause',
+      pose: 'being_photographed',
+      companionGroup: 'clock-family-a',
+      voiceCue: 'tourist-cluster',
       dialogId: 'pedestrian_clock_hint',
       interactRadius: 2.2,
-      idleSpot: placeClockTourist(109, 1, 0.1, 'starter-tourist-clock-east-idle'),
+      idleSpot: placeClockTourist(110, -1, 0.86, 'starter-tourist-clock-east-idle'),
       patrol: [
-        placeClockTourist(105, 1, 0.06, 'starter-tourist-clock-east-a'),
-        placeClockTourist(114, 1, 0.16, 'starter-tourist-clock-east-b'),
+        placeClockTourist(106, -1, 0.82, 'starter-tourist-clock-east-a'),
+        placeClockTourist(114, -1, 0.98, 'starter-tourist-clock-east-b'),
       ],
     },
     {
@@ -672,14 +709,20 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
       role: 'photographer',
       behavior: 'photo_idle',
       pose: 'taking_photo',
+      heldProp: 'camera',
+      voiceCue: 'photo-direction',
+      companionGroup: 'clock-family-a',
       dialogId: 'pedestrian_clock_hint',
       interactRadius: 2.4,
-      idleSpot: placeClockTourist(106, -1, 0.82, 'starter-tourist-clock-photo-idle'),
+      idleSpot: placeClockTourist(104, -1, 1.62, 'starter-tourist-clock-photo-idle'),
     },
     {
       id: 'starter-tourist-clock-stroller',
       role: 'tourist',
-      behavior: 'tourist_pause',
+      behavior: 'tourist_wander',
+      pose: 'group_gather',
+      companionGroup: 'clock-family-b',
+      voiceCue: 'tourist-cluster',
       dialogId: 'pedestrian_clock_hint',
       interactRadius: 2.2,
       idleSpot: placeClockTourist(116, -1, 0.26, 'starter-tourist-clock-stroller-idle'),
@@ -693,9 +736,27 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
       role: 'tourist',
       behavior: 'photo_idle',
       pose: 'gathered',
+      companionGroup: 'clock-family-b',
+      voiceCue: 'tourist-cluster',
       dialogId: 'pedestrian_clock_hint',
       interactRadius: 2.2,
-      idleSpot: placeClockTourist(99, 1, 0.86, 'starter-tourist-clock-bench-idle'),
+      idleSpot: placeClockTourist(99, -1, 1.18, 'starter-tourist-clock-bench-idle'),
+    },
+    {
+      id: 'starter-tourist-clock-child',
+      role: 'tourist',
+      behavior: 'tourist_pause',
+      pose: 'group_gather',
+      silhouetteScale: 0.82,
+      companionGroup: 'clock-family-b',
+      voiceCue: 'tourist-cluster',
+      dialogId: 'pedestrian_clock_hint',
+      interactRadius: 2,
+      idleSpot: placeClockTourist(112, -1, 1.34, 'starter-tourist-clock-child-idle'),
+      patrol: [
+        placeClockTourist(109, -1, 1.28, 'starter-tourist-clock-child-a'),
+        placeClockTourist(115, -1, 1.42, 'starter-tourist-clock-child-b'),
+      ],
     },
   ];
 }
@@ -820,8 +881,18 @@ function makeStarterWorld(outputPath) {
   };
 
   const props = buildStarterProps(routePoints, sidewalkOuter, 9);
-  const landmarks = buildStarterLandmarks(routePoints, sidewalkOuter);
+  const landmarkBundle = buildStarterLandmarks(routePoints, sidewalkOuter);
+  const landmarks = landmarkBundle.landmarks;
+  const heroLandmarks = landmarkBundle.heroLandmarks;
   const npcs = buildStarterNpcs(routePoints, streetWidth, sidewalkOuter);
+  const steamClockNode = landmarks.find((landmark) => landmark.id === 'steam-clock');
+
+  centerline[Math.max(1, Math.min(centerline.length - 2, Math.round(beatCount * 0.6)))] = {
+    id: 'steam-clock',
+    label: 'Steam Clock reveal',
+    x: steamClockNode.x,
+    z: Number((steamClockNode.z + 1.6).toFixed(2)),
+  };
 
   const world = {
     routeId: 'gastown_water_street_starter_corridor',
@@ -849,6 +920,7 @@ function makeStarterWorld(outputPath) {
     nodes: [
       { ...centerline[0], label: 'Starter start' },
       { ...centerline[Math.floor(centerline.length / 2)], label: 'Starter mid block' },
+      { id: 'steam-clock', label: 'Steam Clock plaza', x: steamClockNode.x, z: steamClockNode.z },
       { ...centerline[centerline.length - 1], label: 'Starter end' },
     ],
     zones: {
@@ -859,6 +931,7 @@ function makeStarterWorld(outputPath) {
       ],
     },
     buildings,
+    hero_landmarks: heroLandmarks,
     landmarks,
     props,
     npcs,

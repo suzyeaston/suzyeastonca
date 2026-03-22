@@ -36,4 +36,7 @@ test('clock chime system initializes or fails softly without blocking startup', 
   assert.match(src, /return false;\n\s*}\n\s*try \{/s);
   assert.match(src, /warnAudioUnavailable\('Tone\.js steam clock chimes unavailable; simulator continuing without musical chimes\.'/);
   assert.match(src, /STEAM_CLOCK_CHIME_MOTIF/);
+  assert.doesNotMatch(src, /clockBurst/);
+  assert.match(src, /Tone\.MetalSynth/);
+  assert.match(src, /heroLandmarks\.find\(\(hero\) => hero\.id === 'steam-clock-hero'\)/);
 });

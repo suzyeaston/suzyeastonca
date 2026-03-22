@@ -10,7 +10,7 @@
       "Starter corridor fallback is active because required offline civic source files are missing.",
       "This world is intentionally human-scaled and deterministic for readability; it is not GIS-accurate Gastown reconstruction."
     ],
-    "lastBuild": "2026-03-22T10:42:16.870Z"
+    "lastBuild": "2026-03-22T11:05:07.406Z"
   },
   "route": {
     "name": "Gastown starter block corridor",
@@ -52,10 +52,10 @@
         "z": -93.97
       },
       {
-        "id": "starter-beat-6",
-        "label": "Starter Beat 6",
-        "x": 9.21,
-        "z": -112.79
+        "id": "steam-clock",
+        "label": "Steam Clock reveal",
+        "x": -2.57,
+        "z": -106.81
       },
       {
         "id": "starter-beat-7",
@@ -145,6 +145,12 @@
       "label": "Starter mid block",
       "x": 7.92,
       "z": -93.97
+    },
+    {
+      "id": "steam-clock",
+      "label": "Steam Clock plaza",
+      "x": -2.57,
+      "z": -108.41
     },
     {
       "id": "starter-corridor-end",
@@ -2209,11 +2215,39 @@
       "mass_inset": 0.93
     }
   ],
+  "hero_landmarks": [
+    {
+      "id": "steam-clock-hero",
+      "label": "Gastown Steam Clock",
+      "x": -2.57,
+      "y": 0,
+      "z": -108.41,
+      "yaw": 2.2885,
+      "ground_emphasis_radius": 4.8,
+      "steamVentOffsets": [
+        {
+          "x": -0.42,
+          "z": 0.64,
+          "y": 8.72
+        },
+        {
+          "x": 0.42,
+          "z": -0.64,
+          "y": 8.72
+        }
+      ],
+      "plaza": {
+        "radius": 5.1,
+        "depth": 6.2,
+        "apronWidth": 2.2
+      }
+    }
+  ],
   "landmarks": [
     {
-      "id": "starter-landmark-threshold-anchor",
+      "id": "starter-waterfront-threshold",
       "label": "Waterfront threshold",
-      "kind": "cardboard_box",
+      "kind": "district_gate",
       "x": -9.62,
       "y": 0,
       "z": -12.88,
@@ -2221,22 +2255,23 @@
       "cue": "Station canopies give way to brick-front Gastown blocks."
     },
     {
-      "id": "starter-landmark-clock-anchor",
-      "label": "Steam Clock approach",
-      "kind": "cardboard_box",
-      "x": 19.06,
+      "id": "steam-clock",
+      "label": "Gastown Steam Clock",
+      "kind": "clock",
+      "x": -2.57,
       "y": 0,
-      "z": -102.93,
-      "scale": 1.25,
-      "cue": "Denser storefront rhythm, pavers, and curb clutter build toward the clock node."
+      "z": -108.41,
+      "radius": 4.8,
+      "scale": 1.28,
+      "cue": "A small brick-paved plaza opens on the heritage sidewalk and reveals the Steam Clock on the proper approach side."
     },
     {
-      "id": "starter-landmark-postclock-anchor",
+      "id": "starter-post-clock-continuation",
       "label": "Post-clock continuation",
-      "kind": "cardboard_box",
-      "x": 2.75,
+      "kind": "view-axis",
+      "x": 23.17,
       "y": 0,
-      "z": -166.39,
+      "z": -164.59,
       "scale": 1.18,
       "cue": "The corridor loosens into longer facades and a quieter continuation east."
     }
@@ -2328,21 +2363,36 @@
     {
       "id": "starter-guide-threshold",
       "role": "guide",
+      "behavior": "guide_pace",
       "dialogId": "guide_intro",
       "interactRadius": 2.8,
       "idleSpot": {
         "x": -2.79,
         "z": -16.3
-      }
+      },
+      "patrol": [
+        {
+          "x": -2.97,
+          "z": -14.31
+        },
+        {
+          "x": -2.63,
+          "z": -19.3
+        }
+      ]
     },
     {
       "id": "starter-busker-clock",
       "role": "busker",
+      "behavior": "busker_perform",
+      "pose": "strum",
+      "heldProp": "guitar",
+      "voiceCue": "busker-hook",
       "dialogId": "busker_clock_corner",
       "interactRadius": 3,
       "idleSpot": {
-        "x": 12.83,
-        "z": -101.35
+        "x": 3.57,
+        "z": -101.98
       }
     },
     {
@@ -2391,20 +2441,23 @@
       "id": "starter-tourist-clock-west",
       "role": "tourist",
       "behavior": "tourist_pause",
+      "pose": "group_gather",
+      "companionGroup": "clock-family-a",
+      "voiceCue": "tourist-cluster",
       "dialogId": "pedestrian_clock_hint",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": -1.02,
-        "z": -97.28
+        "x": -0.88,
+        "z": -97.27
       },
       "patrol": [
         {
-          "x": -1.2,
-          "z": -94.4
+          "x": -1.06,
+          "z": -94.39
         },
         {
-          "x": -0.78,
-          "z": -101.27
+          "x": -0.64,
+          "z": -101.26
         }
       ]
     },
@@ -2412,20 +2465,23 @@
       "id": "starter-tourist-clock-east",
       "role": "tourist",
       "behavior": "tourist_pause",
+      "pose": "being_photographed",
+      "companionGroup": "clock-family-a",
+      "voiceCue": "tourist-cluster",
       "dialogId": "pedestrian_clock_hint",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 18,
-        "z": -108.02
+        "x": -0.71,
+        "z": -110.29
       },
       "patrol": [
         {
-          "x": 17.69,
-          "z": -104.03
+          "x": -0.94,
+          "z": -106.29
         },
         {
-          "x": 18.4,
-          "z": -113
+          "x": -0.56,
+          "z": -114.29
         }
       ]
     },
@@ -2434,31 +2490,37 @@
       "role": "photographer",
       "behavior": "photo_idle",
       "pose": "taking_photo",
+      "heldProp": "camera",
+      "voiceCue": "photo-direction",
+      "companionGroup": "clock-family-a",
       "dialogId": "pedestrian_clock_hint",
       "interactRadius": 2.4,
       "idleSpot": {
-        "x": -1.08,
-        "z": -106.3
+        "x": -1.87,
+        "z": -104.35
       }
     },
     {
       "id": "starter-tourist-clock-stroller",
       "role": "tourist",
-      "behavior": "tourist_pause",
+      "behavior": "tourist_wander",
+      "pose": "group_gather",
+      "companionGroup": "clock-family-b",
+      "voiceCue": "tourist-cluster",
       "dialogId": "pedestrian_clock_hint",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 0.16,
-        "z": -116.24
+        "x": 0.3,
+        "z": -116.23
       },
       "patrol": [
         {
-          "x": -0.14,
-          "z": -111.25
+          "x": 0,
+          "z": -111.24
         },
         {
-          "x": 0.35,
-          "z": -120.24
+          "x": 0.49,
+          "z": -120.23
         }
       ]
     },
@@ -2467,12 +2529,39 @@
       "role": "tourist",
       "behavior": "photo_idle",
       "pose": "gathered",
+      "companionGroup": "clock-family-b",
+      "voiceCue": "tourist-cluster",
       "dialogId": "pedestrian_clock_hint",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 18.09,
-        "z": -97.99
+        "x": -1.77,
+        "z": -99.33
       }
+    },
+    {
+      "id": "starter-tourist-clock-child",
+      "role": "tourist",
+      "behavior": "tourist_pause",
+      "pose": "group_gather",
+      "silhouetteScale": 0.82,
+      "companionGroup": "clock-family-b",
+      "voiceCue": "tourist-cluster",
+      "dialogId": "pedestrian_clock_hint",
+      "interactRadius": 2,
+      "idleSpot": {
+        "x": -1.05,
+        "z": -112.32
+      },
+      "patrol": [
+        {
+          "x": -1.19,
+          "z": -109.32
+        },
+        {
+          "x": -0.93,
+          "z": -115.31
+        }
+      ]
     }
   ],
   "streetscape": {
@@ -2842,7 +2931,7 @@
         "segment_id": "starter-mid-block",
         "width": 3.33,
         "length": 14.4,
-        "yaw": 3.0732,
+        "yaw": -2.4566,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
@@ -2853,7 +2942,7 @@
         "segment_id": "starter-mid-block",
         "width": 0.69,
         "length": 15.3,
-        "yaw": 3.0732,
+        "yaw": -2.4566,
         "offset_x": 3.63,
         "offset_z": 0,
         "tone": "curb_grime",
@@ -2864,7 +2953,7 @@
         "segment_id": "starter-mid-block",
         "width": 0.69,
         "length": 15.3,
-        "yaw": 3.0732,
+        "yaw": -2.4566,
         "offset_x": -3.63,
         "offset_z": 0,
         "tone": "curb_grime",
@@ -2875,7 +2964,7 @@
         "segment_id": "starter-mid-block",
         "width": 6.66,
         "length": 3.6,
-        "yaw": 4.644,
+        "yaw": -0.8858,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "intersection_pavers",
@@ -2883,10 +2972,10 @@
         "elevation": 0.03
       },
       {
-        "segment_id": "starter-beat-6",
+        "segment_id": "steam-clock",
         "width": 3.33,
         "length": 14.4,
-        "yaw": 3.0742,
+        "yaw": 2.657,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
@@ -2894,10 +2983,10 @@
         "elevation": 0.024
       },
       {
-        "segment_id": "starter-beat-6",
+        "segment_id": "steam-clock",
         "width": 0.69,
         "length": 15.3,
-        "yaw": 3.0742,
+        "yaw": 2.657,
         "offset_x": 3.63,
         "offset_z": 0,
         "tone": "curb_grime",
@@ -2905,10 +2994,10 @@
         "elevation": 0.026
       },
       {
-        "segment_id": "starter-beat-6",
+        "segment_id": "steam-clock",
         "width": 0.69,
         "length": 15.3,
-        "yaw": 3.0742,
+        "yaw": 2.657,
         "offset_x": -3.63,
         "offset_z": 0,
         "tone": "curb_grime",

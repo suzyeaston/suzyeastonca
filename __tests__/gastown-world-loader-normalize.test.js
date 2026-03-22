@@ -117,7 +117,7 @@ test('normalizeWorldData safely defaults missing or partial props and npcs', () 
   const normalizeWorldData = loadNormalizeWorldData();
   const normalized = normalizeWorldData(minimalValidWorld({
     props: [{ id: 'bag-1', kind: 'trash_bag', x: 1, z: 2 }],
-    npcs: [{ id: 'guide-1', role: 'guide', dialogId: 'guide_intro' }],
+    npcs: [{ id: 'guide-1', role: 'guide', dialogId: 'guide_intro', heldProp: 'camera', voiceCue: 'photo-direction' }],
   }));
 
   assert.equal(normalized.props.length, 1);
@@ -128,4 +128,7 @@ test('normalizeWorldData safely defaults missing or partial props and npcs', () 
   assert.equal(Array.isArray(normalized.npcs[0].patrol), true);
   assert.equal(typeof normalized.npcs[0].idleSpot.x, 'number');
   assert.equal(typeof normalized.npcs[0].idleSpot.z, 'number');
+  assert.equal(normalized.npcs[0].heldProp, 'camera');
+  assert.equal(normalized.npcs[0].voiceCue, 'photo-direction');
+  assert.equal(normalized.npcs[0].silhouetteScale, 1);
 });
