@@ -95,6 +95,17 @@
       rainLoop: null,
       clockBurst: null,
       npcAudio: {},
+      steamClockChime: null,
+    },
+    steamClockState: {
+      anchor: null,
+      plume: null,
+      toneReady: false,
+      enabled: false,
+      lastBurstAt: -Infinity,
+      nextChimeAt: 0,
+      proximityCooldownUntil: 0,
+      lastPlayerNear: false,
     },
     dialogData: {},
     activeDialogNpcId: '',
@@ -158,6 +169,7 @@
     routeGuideMaterials: [],
     weatherMaterials: [],
     lightningOverlay: null,
+    steamClockVisuals: [],
   };
 
   const LOOK_PITCH_LIMIT = Math.PI / 2.25;
@@ -304,7 +316,16 @@
     pedestrian: { color: 0x9ab4c6, accent: 0x33414d, height: 1.72 },
     guide: { color: 0xc6aa74, accent: 0x3a2c18, height: 1.78 },
     busker: { color: 0x8c6bc0, accent: 0x2d1f42, height: 1.74 },
+    tourist: { color: 0xd3b384, accent: 0x6a4d2b, height: 1.7 },
+    photographer: { color: 0xb4c7d8, accent: 0x202933, height: 1.71 },
   };
+  const STEAM_CLOCK_CHIME_MOTIF = [
+    ['G#4', 'F#4', 'E4', 'B3'],
+    ['E4', 'G#4', 'F#4', 'B3'],
+    ['E4', 'F#4', 'G#4', 'E4'],
+    ['G#4', 'E4', 'F#4', 'B3'],
+    ['B3', 'F#4', 'G#4', 'E4'],
+  ];
 
   function getTextureBaseUrl() {
     return (config.textureBaseUrl || '').replace(/\/$/, '');
@@ -404,24 +425,28 @@
       const next = centerline[index + 1];
       const prev = centerline[index - 1];
       const anchor = next || prev;
-      if (!anchor) return;
+      if (!anchor || index >= centerline.length - 1) return;
 
       const heading = segmentHeading(point, anchor);
-      const segmentLength = Math.max(6.5, Math.min(14, Math.hypot(anchor.x - point.x, anchor.z - point.z) * 0.92 || 9));
-      const jitter = ((index % 4) - 1.5) * 0.18;
+      const segmentLength = Math.max(8.5, Math.min(18, Math.hypot(anchor.x - point.x, anchor.z - point.z) * 0.96 || 10));
+      const steamZone = point.id === 'steam-clock' || index >= Math.max(1, centerline.length - 4);
 
-      if (index < centerline.length - 1) {
-        bands.push({ segment_id: point.id, width: streetWidth * 0.28, length: segmentLength, yaw: heading, offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: 0.24, elevation: 0.032 });
-        bands.push({ segment_id: point.id, width: streetWidth * 0.22, length: Math.max(5.8, segmentLength * 0.88), yaw: heading, offset_x: jitter, offset_z: 0, tone: index % 3 === 0 ? 'patch' : 'wet_streak', opacity: index % 3 === 0 ? 0.34 : 0.2, elevation: 0.038 });
-        bands.push({ segment_id: point.id, width: streetWidth * 0.12, length: Math.max(4.8, segmentLength * 0.72), yaw: heading, offset_x: ((index % 2 === 0) ? 1 : -1) * streetWidth * 0.31, offset_z: 0, tone: 'edge_grime', opacity: 0.26, elevation: 0.034 });
-      }
+      bands.push({ segment_id: point.id, width: streetWidth * 0.72, length: segmentLength, yaw: heading, offset_x: 0, offset_z: 0, tone: steamZone ? 'intersection_pavers' : 'wheel_track', opacity: steamZone ? 0.22 : 0.18, elevation: 0.018 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.34, length: Math.max(6.8, segmentLength * 0.78), yaw: heading, offset_x: 0, offset_z: 0, tone: index % 2 === 0 ? 'repair_patch_dark' : 'wet_streak', opacity: 0.12, elevation: 0.022 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.14, length: Math.max(5, segmentLength * 0.72), yaw: heading, offset_x: streetWidth * 0.33, offset_z: 0, tone: 'curb_grime', opacity: 0.12, elevation: 0.02 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.14, length: Math.max(5, segmentLength * 0.72), yaw: heading, offset_x: -streetWidth * 0.33, offset_z: 0, tone: 'curb_grime', opacity: 0.12, elevation: 0.02 });
 
-      if (index % 3 === 1) {
-        bands.push({ segment_id: point.id, width: streetWidth * 0.18, length: Math.max(4.2, segmentLength * 0.46), yaw: heading + (index % 2 === 0 ? 0.08 : -0.08), offset_x: ((index % 2 === 0) ? -1 : 1) * streetWidth * 0.14, offset_z: 0, tone: 'puddle', opacity: 0.16, elevation: 0.042 });
+      if (steamZone || index % 4 === 1) {
+        bands.push({ segment_id: point.id, width: streetWidth * (steamZone ? 0.82 : 0.46), length: Math.max(5.5, segmentLength * (steamZone ? 0.66 : 0.38)), yaw: heading + (steamZone ? 0 : 0.04), offset_x: 0, offset_z: 0, tone: steamZone ? 'brick' : 'paver_break', opacity: steamZone ? 0.16 : 0.1, elevation: 0.024 });
       }
     });
 
     return bands;
+  }
+
+  function getSteamClockAnchor(world) {
+    if (!world || !Array.isArray(world.hero_landmarks) || !Array.isArray(world.landmarks)) return null;
+    return world.hero_landmarks.find((hero) => hero.id === 'steam-clock-hero') || world.landmarks.find((landmark) => landmark.id === 'steam-clock') || null;
   }
 
   async function loadDialogData() {
@@ -776,11 +801,16 @@
       const start = npc.idleSpot || npc.patrol[0] || { x: 0, z: 0 };
       visual.position.set(start.x, 0, start.z);
       worldGroup.add(visual);
+      const swaySeed = deterministicUnit(npc.id + '-sway');
       const npcState = Object.assign({
         mesh: visual,
         patrolIndex: 0,
         direction: 1,
-        speed: npc.role === 'pedestrian' ? 0.72 + (deterministicUnit(npc.id) * 0.28) : 0,
+        baseY: 0,
+        speed: npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : 0,
+        pauseUntil: 0,
+        animPhase: swaySeed * Math.PI * 2,
+        swayAmount: 0.018 + (swaySeed * 0.028),
       }, npc);
       ensureNpcLoop(npcState);
       visualState.npcMeshes.push(visual);
@@ -790,16 +820,23 @@
 
   function updateNpcs(delta) {
     if (!Array.isArray(state.npcs)) return;
+    const nowSeconds = performance.now() / 1000;
     state.npcs.forEach((npc) => {
       if (!npc.mesh) return;
-      if (npc.role === 'pedestrian' && Array.isArray(npc.patrol) && npc.patrol.length > 1) {
+      const isWalker = Array.isArray(npc.patrol) && npc.patrol.length > 1;
+      const touristPause = npc.behavior === 'tourist_pause' || npc.behavior === 'photo_idle';
+
+      if (isWalker && (npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer')) {
         const target = npc.patrol[npc.patrolIndex] || npc.patrol[0];
         const dx = target.x - npc.mesh.position.x;
         const dz = target.z - npc.mesh.position.z;
         const distance = Math.hypot(dx, dz);
-        if (distance < 0.22) {
+        if (distance < 0.24) {
+          if (touristPause) {
+            npc.pauseUntil = nowSeconds + 1.4 + (deterministicUnit(npc.id + '-pause-' + npc.patrolIndex) * 1.1);
+          }
           npc.patrolIndex = (npc.patrolIndex + npc.direction + npc.patrol.length) % npc.patrol.length;
-        } else {
+        } else if (nowSeconds >= (npc.pauseUntil || 0)) {
           const step = Math.min(distance, npc.speed * delta);
           npc.mesh.position.x += (dx / distance) * step;
           npc.mesh.position.z += (dz / distance) * step;
@@ -808,13 +845,26 @@
       } else if (npc.idleSpot) {
         npc.mesh.position.x = npc.idleSpot.x;
         npc.mesh.position.z = npc.idleSpot.z;
+        if (npc.behavior === 'photo_idle') {
+          npc.mesh.rotation.y = -0.45;
+        }
       }
+
+      const motionStrength = isWalker && nowSeconds >= (npc.pauseUntil || 0) ? 1 : 0.35;
+      npc.mesh.position.y = npc.baseY + (Math.sin((nowSeconds * 3.4) + npc.animPhase) * npc.swayAmount * motionStrength);
+      npc.mesh.rotation.z = Math.sin((nowSeconds * 2.2) + npc.animPhase) * 0.02;
+      npc.mesh.children.forEach((child, index) => {
+        child.rotation.y = (index === 1 ? 1 : -1) * Math.sin((nowSeconds * 1.4) + npc.animPhase) * 0.04;
+      });
 
       const loop = state.sounds.npcAudio[npc.id];
       if (loop) {
         const distance = Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z);
         const volume = Math.max(0, 1 - (distance / 14)) * 0.018;
-        loop.gain.gain.setTargetAtTime(volume, ensureAudioContext().currentTime, 0.18);
+        const audioContext = ensureAudioContext();
+        if (audioContext) {
+          loop.gain.gain.setTargetAtTime(volume, audioContext.currentTime, 0.18);
+        }
       }
     });
   }
@@ -991,10 +1041,10 @@
   }
 
   function addGround(world) {
-    visualState.roadMaterial = createGroundMaterial('street', 0x171c22, 0.86, 0.16);
-    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x978c81, 0.92, 0.02);
-    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0x9ea5ad, transparent: true, opacity: 0.5 });
-    visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x94a7b6, roughness: 0.84, metalness: 0.08, transparent: true, opacity: 0.08 });
+    visualState.roadMaterial = createGroundMaterial('street', 0x11161c, 0.92, 0.1);
+    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x8f8376, 0.96, 0.02);
+    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xa7afb7, transparent: true, opacity: 0.42 });
+    visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x8fa0af, roughness: 0.92, metalness: 0.02, transparent: true, opacity: 0.02, depthWrite: false });
     visualState.routeGuideMaterials = [visualState.laneMaterial];
 
     world.zones.street.forEach((zone) => createZoneMesh(zone.polygon, visualState.roadMaterial, 0, 'street'));
@@ -1005,23 +1055,6 @@
       const borderPoints = buildClosedBorderPoints(zone.polygon, 0.16);
       const curbLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(borderPoints), visualState.curbMaterial);
       worldGroup.add(curbLine);
-    });
-
-    world.route.centerline.forEach((point, index) => {
-      if (index === world.route.centerline.length - 1 || index % 3 !== 1) {
-        return;
-      }
-      const next = world.route.centerline[index + 1];
-      if (!next) return;
-      const heading = Math.atan2(next.x - point.x, next.z - point.z);
-      const marker = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.7, 2.2),
-        visualState.laneMaterial
-      );
-      marker.rotation.x = -Math.PI / 2;
-      marker.rotation.y = heading;
-      marker.position.set(point.x, 0.105, point.z);
-      worldGroup.add(marker);
     });
 
     const surfaceBands = (world.streetscape && world.streetscape.surfaceBands && world.streetscape.surfaceBands.length)
@@ -1054,13 +1087,13 @@
             roughness: style.roughness,
             metalness: style.metalness,
             transparent: true,
-            opacity: band.opacity || style.opacity,
+            opacity: Math.min(style.opacity, band.opacity || style.opacity),
           });
         })()
       );
       paver.rotation.x = -Math.PI / 2;
       paver.rotation.y = band.yaw || 0;
-      paver.position.set(segment.x + (band.offset_x || 0), band.elevation || 0.16, segment.z + (band.offset_z || 0));
+      paver.position.set(segment.x + (band.offset_x || 0), band.elevation || 0.02, segment.z + (band.offset_z || 0));
       worldGroup.add(paver);
     });
   }
@@ -1337,57 +1370,81 @@
   function addHeroLandmarks(world) {
     (world.hero_landmarks || []).forEach((hero) => {
       if (hero.id === 'steam-clock-hero') {
-        const base = new THREE.Mesh(
-          new THREE.CylinderGeometry(1.1, 1.35, 3.2, 12),
-          new THREE.MeshStandardMaterial({ color: 0x4b3d34, roughness: 0.72, metalness: 0.08 })
-        );
-        base.position.set(hero.x, 1.6, hero.z);
-        worldGroup.add(base);
+        const ironMaterial = new THREE.MeshStandardMaterial({ color: 0x2e3138, roughness: 0.54, metalness: 0.58 });
+        const brassMaterial = new THREE.MeshStandardMaterial({ color: 0xae8f52, roughness: 0.42, metalness: 0.62 });
+        const glassMaterial = new THREE.MeshStandardMaterial({ color: 0xa9c0bb, roughness: 0.18, metalness: 0.08, transparent: true, opacity: 0.34, emissive: 0x1b2c2c, emissiveIntensity: 0.16 });
+        const accentMaterial = new THREE.MeshStandardMaterial({ color: 0x5a4633, roughness: 0.7, metalness: 0.2 });
+        const clockRoot = new THREE.Group();
+        clockRoot.position.set(hero.x, 0, hero.z);
 
-        const body = new THREE.Mesh(
-          new THREE.BoxGeometry(1.45, 5.4, 1.45),
-          new THREE.MeshStandardMaterial({ color: 0x5d4b40, roughness: 0.66, metalness: 0.18 })
-        );
-        body.position.set(hero.x, 5.2, hero.z);
-        worldGroup.add(body);
+        const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.32, 1.54, 0.72, 12), accentMaterial);
+        plinth.position.y = 0.36;
+        clockRoot.add(plinth);
+        const pedestal = new THREE.Mesh(new THREE.BoxGeometry(1.36, 1.18, 1.36), ironMaterial);
+        pedestal.position.y = 1.22;
+        clockRoot.add(pedestal);
+        const shaft = new THREE.Mesh(new THREE.BoxGeometry(1.02, 5.2, 1.02), ironMaterial);
+        shaft.position.y = 4.12;
+        clockRoot.add(shaft);
+        const glassCore = new THREE.Mesh(new THREE.BoxGeometry(0.76, 2.48, 0.76), glassMaterial);
+        glassCore.position.y = 3.96;
+        clockRoot.add(glassCore);
+        const clockHousing = new THREE.Mesh(new THREE.BoxGeometry(1.78, 1.48, 1.78), ironMaterial);
+        clockHousing.position.y = 6.46;
+        clockRoot.add(clockHousing);
+        const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.12, 0.54, 12), brassMaterial);
+        crown.position.y = 7.44;
+        clockRoot.add(crown);
+        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.96, 1.18, 12), ironMaterial);
+        cap.position.y = 8.28;
+        clockRoot.add(cap);
+        const steamStack = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 1.1, 8), brassMaterial);
+        steamStack.position.set(0, 8.92, 0);
+        clockRoot.add(steamStack);
 
-        const face = new THREE.Mesh(
-          new THREE.CircleGeometry(0.62, 24),
-          new THREE.MeshStandardMaterial({ color: 0xf0dfb2, emissive: 0x6b5b3d, emissiveIntensity: 0.36 })
-        );
-        face.position.set(hero.x + 0.74, 5.8, hero.z);
-        face.rotation.y = -Math.PI / 2;
-        worldGroup.add(face);
+        [0, Math.PI / 2, Math.PI, -Math.PI / 2].forEach((rotation) => {
+          const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.08, 24), brassMaterial);
+          frame.rotation.x = Math.PI / 2;
+          frame.rotation.z = rotation;
+          frame.position.set(Math.sin(rotation) * 0.92, 6.48, Math.cos(rotation) * 0.92);
+          clockRoot.add(frame);
 
-        const faceSouth = face.clone();
-        faceSouth.position.set(hero.x, 5.8, hero.z + 0.74);
-        faceSouth.rotation.y = 0;
-        worldGroup.add(faceSouth);
+          const face = new THREE.Mesh(new THREE.CircleGeometry(0.46, 24), new THREE.MeshStandardMaterial({ color: 0xf0e2b4, emissive: 0x7d6639, emissiveIntensity: 0.26, roughness: 0.62, metalness: 0.04 }));
+          face.position.set(Math.sin(rotation) * 0.94, 6.48, Math.cos(rotation) * 0.94);
+          face.rotation.y = rotation;
+          clockRoot.add(face);
 
-        const cap = new THREE.Mesh(
-          new THREE.ConeGeometry(1.1, 1.2, 10),
-          new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.58, metalness: 0.34 })
-        );
-        cap.position.set(hero.x, 8.35, hero.z);
-        worldGroup.add(cap);
-
-        [-0.45, 0.45].forEach((offset) => {
-          const pipe = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.08, 0.08, 1.5, 8),
-            new THREE.MeshStandardMaterial({ color: 0x78767d, roughness: 0.54, metalness: 0.58 })
-          );
-          pipe.position.set(hero.x + offset, 6.7, hero.z + 0.58);
-          pipe.rotation.x = Math.PI / 2.8;
-          worldGroup.add(pipe);
+          const hand = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.34, 0.03), new THREE.MeshStandardMaterial({ color: 0x2b2420, roughness: 0.5, metalness: 0.22 }));
+          hand.position.set(Math.sin(rotation) * 0.98, 6.48, Math.cos(rotation) * 0.98);
+          hand.rotation.set(0, rotation, Math.PI / 5);
+          clockRoot.add(hand);
         });
 
-        const plinth = new THREE.Mesh(
-          new THREE.CircleGeometry((hero.ground_emphasis_radius || 3.2), 28),
-          new THREE.MeshStandardMaterial({ color: 0x43392f, roughness: 0.84, metalness: 0.06 })
-        );
-        plinth.rotation.x = -Math.PI / 2;
-        plinth.position.set(hero.x, 0.15, hero.z);
-        worldGroup.add(plinth);
+        [-1, 1].forEach((side) => {
+          const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.8, 8), brassMaterial);
+          pipe.position.set(side * 0.62, 5.48, 0.72);
+          pipe.rotation.x = Math.PI / 2.45;
+          clockRoot.add(pipe);
+          const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.04, 8, 16, Math.PI), brassMaterial);
+          elbow.position.set(side * 0.62, 4.9, 1.1);
+          elbow.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+          clockRoot.add(elbow);
+        });
+
+        const plaza = new THREE.Mesh(new THREE.CircleGeometry((hero.ground_emphasis_radius || 3.2), 28), new THREE.MeshStandardMaterial({ color: 0x382f27, roughness: 0.9, metalness: 0.03 }));
+        plaza.rotation.x = -Math.PI / 2;
+        plaza.position.y = 0.03;
+        clockRoot.add(plaza);
+
+        const steamMaterial = new THREE.MeshBasicMaterial({ color: 0xd8dfdf, transparent: true, opacity: 0.18, depthWrite: false });
+        const steamPlume = new THREE.Mesh(new THREE.SphereGeometry(0.56, 10, 10), steamMaterial);
+        steamPlume.position.set(0, 9.52, 0.18);
+        clockRoot.add(steamPlume);
+
+        worldGroup.add(clockRoot);
+        state.steamClockState.anchor = { x: hero.x, z: hero.z };
+        state.steamClockState.plume = steamPlume;
+        visualState.steamClockVisuals.push({ steamMaterial, glassMaterial, brassMaterial });
       }
     });
   }
@@ -2107,7 +2164,7 @@
     });
 
     state.sounds.rainLoop = createSafeHowl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
-    state.sounds.clockBurst = createSafeHowl({ src: src('events/steam_clock_burst'), volume: 0.45 });
+    state.sounds.clockBurst = createSafeHowl({ src: src('events/steam_clock_burst'), volume: 0.22 });
     state.sounds.thunder = createSafeHowl({ src: src('weather/thunder_roll'), volume: 0.22 });
 
     (world.audioZones || []).forEach((zone) => {
@@ -2329,6 +2386,7 @@
   }
 
   function startSim() {
+    unlockSteamClockAudio();
     state.isRunning = true;
     setStatus('Play mode active. Mouse look and movement are live.');
     setPointerStatus('Pointer lock requested… press Esc any time to release.');
@@ -2359,6 +2417,7 @@
         return;
       }
       ensureAudioContext();
+      unlockSteamClockAudio();
       enterPlayMode();
     });
     document.addEventListener('mousemove', onMouseMove);
@@ -2439,20 +2498,100 @@
     }
   }
 
+
+  function getTone() {
+    return window.Tone || null;
+  }
+
+  async function unlockSteamClockAudio() {
+    const Tone = getTone();
+    if (!Tone) {
+      return false;
+    }
+    try {
+      if (!state.sounds.steamClockChime) {
+        state.sounds.steamClockChime = {
+          synth: new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'triangle8' },
+            envelope: { attack: 0.01, decay: 0.22, sustain: 0.16, release: 1.4 },
+            volume: -13,
+          }).toDestination(),
+          bell: new Tone.Synth({
+            oscillator: { type: 'sine' },
+            envelope: { attack: 0.01, decay: 0.35, sustain: 0, release: 1.8 },
+            volume: -16,
+          }).toDestination(),
+        };
+      }
+      if (typeof Tone.start === 'function') {
+        await Tone.start();
+      }
+      state.steamClockState.enabled = true;
+      state.steamClockState.toneReady = true;
+      return true;
+    } catch (error) {
+      state.steamClockState.enabled = false;
+      warnAudioUnavailable('Tone.js steam clock chimes unavailable; simulator continuing without musical chimes.', error);
+      return false;
+    }
+  }
+
+  function triggerSteamClockChime(reason) {
+    const Tone = getTone();
+    if (!Tone || !state.steamClockState.enabled || !state.sounds.steamClockChime) {
+      return false;
+    }
+    try {
+      const now = Tone.now();
+      let cursor = now + 0.05;
+      STEAM_CLOCK_CHIME_MOTIF.forEach((phrase, phraseIndex) => {
+        phrase.forEach((note, noteIndex) => {
+          state.sounds.steamClockChime.synth.triggerAttackRelease(note, 0.55, cursor + (noteIndex * 0.36), phraseIndex === 0 ? 0.82 : 0.7);
+        });
+        cursor += 1.62;
+      });
+      state.sounds.steamClockChime.bell.triggerAttackRelease('B2', 1.6, now, 0.42);
+      state.steamClockState.lastBurstAt = performance.now() / 1000;
+      state.steamClockState.nextChimeAt = (performance.now() / 1000) + (reason === 'proximity' ? 34 : 52);
+      return true;
+    } catch (error) {
+      warnAudioUnavailable('Tone.js steam clock chime playback failed; simulator continuing without musical chimes.', error);
+      return false;
+    }
+  }
+
+  function updateSteamClock(delta, nowSeconds) {
+    if (state.steamClockState.plume) {
+      const pulse = 0.65 + (Math.sin(nowSeconds * 1.8) * 0.12);
+      state.steamClockState.plume.scale.setScalar(pulse);
+      state.steamClockState.plume.position.y = 9.4 + (Math.sin(nowSeconds * 2.4) * 0.16);
+      state.steamClockState.plume.material.opacity = 0.1 + Math.max(0, 0.12 - ((nowSeconds - state.steamClockState.lastBurstAt) * 0.05));
+    }
+
+    const steamClock = state.steamClockState.anchor || getSteamClockAnchor(state.world);
+    if (!steamClock) {
+      return;
+    }
+    const distance = Math.hypot(player.position.x - steamClock.x, player.position.z - steamClock.z);
+    const playerNear = distance < 18;
+
+    if (playerNear && !state.steamClockState.lastPlayerNear && nowSeconds >= state.steamClockState.proximityCooldownUntil) {
+      if (triggerSteamClockChime('proximity')) {
+        state.steamClockState.proximityCooldownUntil = nowSeconds + 36;
+      }
+    } else if (state.steamClockState.enabled && nowSeconds >= state.steamClockState.nextChimeAt && distance < 34) {
+      triggerSteamClockChime('interval');
+    }
+    state.steamClockState.lastPlayerNear = playerNear;
+  }
+
   function scheduleSteamClock() {
     if (state.clockTimer) {
       clearInterval(state.clockTimer);
     }
-
-    state.clockTimer = setInterval(() => {
-      if (!state.isRunning) return;
-      const steamClock = state.world.landmarks.find((landmark) => landmark.id === 'steam-clock');
-      if (!steamClock) return;
-      const distance = Math.hypot(player.position.x - steamClock.x, player.position.z - steamClock.z);
-      if (distance < 20 && Math.random() > 0.48) {
-        playHowl(state.sounds.clockBurst);
-      }
-    }, 6000);
+    state.steamClockState.anchor = getSteamClockAnchor(state.world);
+    state.steamClockState.nextChimeAt = 24;
+    state.clockTimer = window.setInterval(() => {}, 60000);
   }
 
   async function init() {
@@ -2498,6 +2637,7 @@
         }
 
         maybeTriggerLightning(state.world.weatherPresets[state.activeWeather] || null);
+        updateSteamClock(delta, time / 1000);
         updateNpcs(delta);
         updateInteractionTarget();
         animateRain(delta);

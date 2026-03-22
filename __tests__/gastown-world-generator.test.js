@@ -57,13 +57,11 @@ test('generator keeps world polygons valid with existing or generated output', (
       assert.ok(Array.isArray(data.landmarks));
       assert.equal(data.landmarks.length >= 3, true, 'starter fallback should expose route beats as landmarks');
       assert.ok(Array.isArray(data.npcs));
-      assert.equal(data.npcs.length >= 4, true, 'starter fallback should expose deterministic NPCs');
-      assert.deepEqual(data.npcs.map((npc) => npc.id), [
-        'starter-guide-threshold',
-        'starter-busker-clock',
-        'starter-pedestrian-west',
-        'starter-pedestrian-east',
-      ]);
+      assert.equal(data.npcs.length >= 9, true, 'starter fallback should expose a denser deterministic NPC set');
+      const touristCluster = data.npcs.filter((npc) => String(npc.id).includes('tourist-clock'));
+      assert.equal(touristCluster.length >= 5, true, 'starter fallback should expose a tourist cluster near the Steam Clock');
+      assert.equal(touristCluster.some((npc) => npc.pose === 'taking_photo'), true, 'tourist cluster should include a photo pose');
+      assert.equal(touristCluster.filter((npc) => Array.isArray(npc.patrol) && npc.patrol.length > 1).length >= 2, true, 'tourist cluster should include multiple walkers');
     }
   }
 
@@ -72,11 +70,11 @@ test('generator keeps world polygons valid with existing or generated output', (
   }
 });
 
-test('committed world json files include non-empty npc arrays', () => {
+test('committed world json files include expanded npc arrays', () => {
   const root = path.resolve(__dirname, '..');
   ['assets/world/gastown-water-street.json', 'assets/world/gastown-water-street-starter.json'].forEach((relPath) => {
     const data = JSON.parse(fs.readFileSync(path.join(root, relPath), 'utf8'));
     assert.ok(Array.isArray(data.npcs), relPath + ' should include npcs');
-    assert.ok(data.npcs.length > 0, relPath + ' should have at least one npc');
+    assert.ok(data.npcs.length > 4, relPath + ' should have more than the original 4 npcs');
   });
 });

@@ -598,6 +598,11 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
     const placement = placeStarterProp(routePoints, distanceMeters, (side * (laneOffset + extraOffset)), id, 'cardboard_box', { scale: 1 });
     return { x: placement.x, z: placement.z };
   };
+  const clockTouristOffset = sidewalkOuter + 0.9;
+  const placeClockTourist = (distanceMeters, side, extraOffset, id) => {
+    const placement = placeStarterProp(routePoints, distanceMeters, side * (clockTouristOffset + extraOffset), id, 'cardboard_box', { scale: 1 });
+    return { x: placement.x, z: placement.z };
+  };
 
   return [
     {
@@ -617,6 +622,7 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
     {
       id: 'starter-pedestrian-west',
       role: 'pedestrian',
+      behavior: 'route_walk',
       dialogId: 'pedestrian_route_tip',
       interactRadius: 2.2,
       idleSpot: placeNpc(44, -1, 1.15, 'starter-npc-west-idle'),
@@ -628,6 +634,7 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
     {
       id: 'starter-pedestrian-east',
       role: 'pedestrian',
+      behavior: 'route_walk',
       dialogId: 'pedestrian_clock_hint',
       interactRadius: 2.2,
       idleSpot: placeNpc(136, 1, 1.18, 'starter-npc-east-idle'),
@@ -635,6 +642,60 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
         placeNpc(126, 1, 1.18, 'starter-npc-east-a'),
         placeNpc(148, 1, 1.36, 'starter-npc-east-b'),
       ],
+    },
+    {
+      id: 'starter-tourist-clock-west',
+      role: 'tourist',
+      behavior: 'tourist_pause',
+      dialogId: 'pedestrian_clock_hint',
+      interactRadius: 2.2,
+      idleSpot: placeClockTourist(97, -1, 0.15, 'starter-tourist-clock-west-idle'),
+      patrol: [
+        placeClockTourist(94, -1, 0.12, 'starter-tourist-clock-west-a'),
+        placeClockTourist(101, -1, 0.18, 'starter-tourist-clock-west-b'),
+      ],
+    },
+    {
+      id: 'starter-tourist-clock-east',
+      role: 'tourist',
+      behavior: 'tourist_pause',
+      dialogId: 'pedestrian_clock_hint',
+      interactRadius: 2.2,
+      idleSpot: placeClockTourist(109, 1, 0.1, 'starter-tourist-clock-east-idle'),
+      patrol: [
+        placeClockTourist(105, 1, 0.06, 'starter-tourist-clock-east-a'),
+        placeClockTourist(114, 1, 0.16, 'starter-tourist-clock-east-b'),
+      ],
+    },
+    {
+      id: 'starter-tourist-clock-photo',
+      role: 'photographer',
+      behavior: 'photo_idle',
+      pose: 'taking_photo',
+      dialogId: 'pedestrian_clock_hint',
+      interactRadius: 2.4,
+      idleSpot: placeClockTourist(106, -1, 0.82, 'starter-tourist-clock-photo-idle'),
+    },
+    {
+      id: 'starter-tourist-clock-stroller',
+      role: 'tourist',
+      behavior: 'tourist_pause',
+      dialogId: 'pedestrian_clock_hint',
+      interactRadius: 2.2,
+      idleSpot: placeClockTourist(116, -1, 0.26, 'starter-tourist-clock-stroller-idle'),
+      patrol: [
+        placeClockTourist(111, -1, 0.22, 'starter-tourist-clock-stroller-a'),
+        placeClockTourist(120, -1, 0.34, 'starter-tourist-clock-stroller-b'),
+      ],
+    },
+    {
+      id: 'starter-tourist-clock-bench',
+      role: 'tourist',
+      behavior: 'photo_idle',
+      pose: 'gathered',
+      dialogId: 'pedestrian_clock_hint',
+      interactRadius: 2.2,
+      idleSpot: placeClockTourist(99, 1, 0.86, 'starter-tourist-clock-bench-idle'),
     },
   ];
 }

@@ -10,7 +10,7 @@
       "Starter corridor fallback is active because required offline civic source files are missing.",
       "This world is intentionally human-scaled and deterministic for readability; it is not GIS-accurate Gastown reconstruction."
     ],
-    "lastBuild": "2026-03-22T10:25:26.599Z"
+    "lastBuild": "2026-03-22T10:42:16.870Z"
   },
   "route": {
     "name": "Gastown starter block corridor",
@@ -2348,6 +2348,7 @@
     {
       "id": "starter-pedestrian-west",
       "role": "pedestrian",
+      "behavior": "route_walk",
       "dialogId": "pedestrian_route_tip",
       "interactRadius": 2.2,
       "idleSpot": {
@@ -2368,6 +2369,7 @@
     {
       "id": "starter-pedestrian-east",
       "role": "pedestrian",
+      "behavior": "route_walk",
       "dialogId": "pedestrian_clock_hint",
       "interactRadius": 2.2,
       "idleSpot": {
@@ -2384,6 +2386,93 @@
           "z": -147.27
         }
       ]
+    },
+    {
+      "id": "starter-tourist-clock-west",
+      "role": "tourist",
+      "behavior": "tourist_pause",
+      "dialogId": "pedestrian_clock_hint",
+      "interactRadius": 2.2,
+      "idleSpot": {
+        "x": -1.02,
+        "z": -97.28
+      },
+      "patrol": [
+        {
+          "x": -1.2,
+          "z": -94.4
+        },
+        {
+          "x": -0.78,
+          "z": -101.27
+        }
+      ]
+    },
+    {
+      "id": "starter-tourist-clock-east",
+      "role": "tourist",
+      "behavior": "tourist_pause",
+      "dialogId": "pedestrian_clock_hint",
+      "interactRadius": 2.2,
+      "idleSpot": {
+        "x": 18,
+        "z": -108.02
+      },
+      "patrol": [
+        {
+          "x": 17.69,
+          "z": -104.03
+        },
+        {
+          "x": 18.4,
+          "z": -113
+        }
+      ]
+    },
+    {
+      "id": "starter-tourist-clock-photo",
+      "role": "photographer",
+      "behavior": "photo_idle",
+      "pose": "taking_photo",
+      "dialogId": "pedestrian_clock_hint",
+      "interactRadius": 2.4,
+      "idleSpot": {
+        "x": -1.08,
+        "z": -106.3
+      }
+    },
+    {
+      "id": "starter-tourist-clock-stroller",
+      "role": "tourist",
+      "behavior": "tourist_pause",
+      "dialogId": "pedestrian_clock_hint",
+      "interactRadius": 2.2,
+      "idleSpot": {
+        "x": 0.16,
+        "z": -116.24
+      },
+      "patrol": [
+        {
+          "x": -0.14,
+          "z": -111.25
+        },
+        {
+          "x": 0.35,
+          "z": -120.24
+        }
+      ]
+    },
+    {
+      "id": "starter-tourist-clock-bench",
+      "role": "tourist",
+      "behavior": "photo_idle",
+      "pose": "gathered",
+      "dialogId": "pedestrian_clock_hint",
+      "interactRadius": 2.2,
+      "idleSpot": {
+        "x": 18.09,
+        "z": -97.99
+      }
     }
   ],
   "streetscape": {

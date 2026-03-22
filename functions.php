@@ -210,6 +210,14 @@ function se_enqueue_gastown_sim_assets() {
         true
     );
 
+    wp_enqueue_script(
+        'tone-js',
+        'https://unpkg.com/tone@14.7.77/build/Tone.js',
+        array(),
+        '14.7.77',
+        true
+    );
+
     $loader_path = '/js/gastown-world-loader.js';
     if ( file_exists( $dir . $loader_path ) ) {
         wp_enqueue_script(
@@ -248,8 +256,8 @@ function se_enqueue_gastown_sim_assets() {
         wp_enqueue_script(
             'se-gastown-sim',
             $uri . $app_path,
-            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog' ),
-            filemtime( $dir . $app_path ) . '-pbr-props-npcs',
+            array( 'three-js', 'howler-js', 'tone-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog' ),
+            filemtime( $dir . $app_path ) . '-tone-clock-tourists',
             true
         );
         // TODO: move Three + Howler to bundled local assets once vendored copies are available in-theme; simulator data/assets already resolve same-origin.

@@ -220,6 +220,8 @@
       return {
         id: typeof npc.id === 'string' && npc.id ? npc.id : 'npc-' + index,
         role: typeof npc.role === 'string' && npc.role ? npc.role : 'pedestrian',
+        behavior: typeof npc.behavior === 'string' ? npc.behavior : '',
+        pose: typeof npc.pose === 'string' ? npc.pose : '',
         interactRadius: isFiniteNumber(npc.interactRadius) ? npc.interactRadius : 2.4,
         dialogId: typeof npc.dialogId === 'string' ? npc.dialogId : '',
         idleSpot: normalizePoint(npc.idleSpot || fallbackPoint, fallbackPoint.x, fallbackPoint.z),
