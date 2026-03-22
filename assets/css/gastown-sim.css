@@ -247,6 +247,10 @@
   margin: 0.1rem 0;
 }
 
+.gastown-interact-prompt[hidden] {
+  display: none !important;
+}
+
 .gastown-interact-prompt {
   display: inline-block;
   margin: 0.45rem 0;
@@ -256,6 +260,10 @@
   background: rgba(7, 13, 22, 0.72);
   color: #eff7ff;
   box-shadow: 0 0 0 1px rgba(51, 86, 126, 0.28) inset;
+}
+
+.gastown-dialog-modal[hidden] {
+  display: none !important;
 }
 
 .gastown-dialog-modal {

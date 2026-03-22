@@ -32,10 +32,7 @@
     failStartupDependency('Missing building normalizer. Simulator could not start.');
     return;
   }
-  if (!window.Howl || !window.Howler) {
-    failStartupDependency('Missing Howler audio globals. Simulator could not start.');
-    return;
-  }
+  const hasHowler = !!(window.Howl && window.Howler);
 
   const canvasWrap = app.querySelector('[data-sim-canvas]');
   const pointerStatusEl = app.querySelector('[data-sim-pointer-status]');
@@ -108,6 +105,7 @@
     barkTimer: null,
     clockTimer: null,
     boundaryNoticeTimer: null,
+    audioWarningIssued: false,
   };
 
   const scene = new THREE.Scene();
@@ -379,6 +377,75 @@
     }
   }
 
+  function warnAudioUnavailable(message, error) {
+    if (state.audioWarningIssued) {
+      return;
+    }
+    state.audioWarningIssued = true;
+    if (window.console && typeof window.console.warn === 'function') {
+      if (error) {
+        window.console.warn('[Gastown Sim] ' + message, error);
+      } else {
+        window.console.warn('[Gastown Sim] ' + message);
+      }
+    }
+  }
+
+  function createSafeHowl(options) {
+    if (!hasHowler) {
+      warnAudioUnavailable('Howler audio unavailable; simulator continuing without ambient audio.');
+      return null;
+    }
+
+    const srcList = Array.isArray(options && options.src) ? options.src.filter(Boolean) : [];
+
+    try {
+      const howl = new Howl(Object.assign({}, options, {
+        onloaderror(id, error) {
+          warnAudioUnavailable('Gastown audio assets missing or failed to load; simulator continuing without some audio.', error);
+          if (typeof options.onloaderror === 'function') {
+            options.onloaderror.call(this, id, error);
+          }
+        },
+        onplayerror(id, error) {
+          warnAudioUnavailable('Gastown audio playback failed; simulator continuing without some audio.', error);
+          if (typeof options.onplayerror === 'function') {
+            options.onplayerror.call(this, id, error);
+          }
+        }
+      }));
+      howl.__seSources = srcList;
+      return howl;
+    } catch (error) {
+      warnAudioUnavailable('Gastown audio setup failed; simulator continuing without ambient audio.', error);
+      return null;
+    }
+  }
+
+  function playHowl(howl) {
+    if (!howl || typeof howl.play !== 'function') {
+      return;
+    }
+    try {
+      if (!howl.playing()) {
+        howl.play();
+      }
+    } catch (error) {
+      warnAudioUnavailable('Gastown audio playback failed; simulator continuing without some audio.', error);
+    }
+  }
+
+  function fadeHowl(howl, toVolume, duration) {
+    if (!howl || typeof howl.fade !== 'function' || typeof howl.volume !== 'function') {
+      return;
+    }
+    try {
+      howl.fade(howl.volume(), toVolume, duration);
+    } catch (error) {
+      warnAudioUnavailable('Gastown audio fade failed; simulator continuing without some audio.', error);
+    }
+  }
+
   function clearMovementInput() {
     state.move.forward = false;
     state.move.backward = false;
@@ -482,9 +549,11 @@
       dialogModalEl.setAttribute('hidden', 'hidden');
       dialogModalEl.setAttribute('aria-hidden', 'true');
     }
+    clearMovementInput();
+    setInteractPrompt('');
     setStatus('Dialog closed. Click scene to resume.');
     setPointerStatus('Pointer unlocked. Click scene to enter look mode.');
-    const focusTarget = canvasWrap || renderer.domElement;
+    const focusTarget = renderer.domElement || canvasWrap;
     if (focusTarget && typeof focusTarget.focus === 'function') {
       window.setTimeout(() => focusTarget.focus(), 0);
     }
@@ -1833,14 +1902,14 @@
     const src = (name) => [base + '/' + name + '.mp3', base + '/' + name + '.ogg'];
 
     ['quiet_night', 'eerie_drones', 'nightlife_hum', 'commuter_mix'].forEach((id) => {
-      state.sounds.beds[id] = new Howl({ src: src('beds/' + id), loop: true, volume: 0, html5: false });
+      state.sounds.beds[id] = createSafeHowl({ src: src('beds/' + id), loop: true, volume: 0, html5: false });
     });
 
-    state.sounds.rainLoop = new Howl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
-    state.sounds.clockBurst = new Howl({ src: src('events/steam_clock_burst'), volume: 0.45 });
+    state.sounds.rainLoop = createSafeHowl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
+    state.sounds.clockBurst = createSafeHowl({ src: src('events/steam_clock_burst'), volume: 0.45 });
 
-    world.audioZones.forEach((zone) => {
-      state.sounds.zoneBeds[zone.id] = new Howl({ src: src('zones/' + zone.bed), loop: true, volume: 0 });
+    (world.audioZones || []).forEach((zone) => {
+      state.sounds.zoneBeds[zone.id] = createSafeHowl({ src: src('zones/' + zone.bed), loop: true, volume: 0 });
     });
   }
 
@@ -1902,10 +1971,8 @@
 
     rebuildRain((weather.rainIntensity || 0) * (timeOfDay.rainVisibility || 1));
 
-    if (!state.sounds.rainLoop.playing()) {
-      state.sounds.rainLoop.play();
-    }
-    state.sounds.rainLoop.fade(state.sounds.rainLoop.volume(), (weather.rainIntensity || 0) * 0.45, 380);
+    playHowl(state.sounds.rainLoop);
+    fadeHowl(state.sounds.rainLoop, (weather.rainIntensity || 0) * 0.45, 380);
   }
 
   function applyMood(moodId) {
@@ -1916,10 +1983,8 @@
 
     Object.keys(state.sounds.beds).forEach((id) => {
       const howl = state.sounds.beds[id];
-      if (!howl.playing()) {
-        howl.play();
-      }
-      howl.fade(howl.volume(), id === preset.ambientBed ? 0.45 * preset.audioDensity : 0, 420);
+      playHowl(howl);
+      fadeHowl(howl, id === preset.ambientBed ? 0.45 * preset.audioDensity : 0, 420);
     });
 
     if (state.barkTimer) {
@@ -1930,14 +1995,14 @@
       if (!state.isRunning || Math.random() > preset.voiceFreq) {
         return;
       }
-      const bark = new Howl({
+      const bark = createSafeHowl({
         src: [
           (config.audioBaseUrl || '').replace(/\/$/, '') + '/barks/hey_you.mp3',
           (config.audioBaseUrl || '').replace(/\/$/, '') + '/barks/hey_you.ogg'
         ],
         volume: 0.38 + (Math.random() * 0.2)
       });
-      bark.play();
+      playHowl(bark);
     }, barkInterval);
   }
 
@@ -1959,10 +2024,10 @@
       const normalized = Math.max(0, 1 - (dist / zone.radius));
       const howl = state.sounds.zoneBeds[zone.id];
       if (!howl) return;
-      if (!howl.playing()) {
-        howl.play();
+      playHowl(howl);
+      if (howl && typeof howl.volume === 'function') {
+        howl.volume(normalized * 0.4);
       }
-      howl.volume(normalized * 0.4);
     });
   }
 
@@ -2181,7 +2246,7 @@
       if (!steamClock) return;
       const distance = Math.hypot(player.position.x - steamClock.x, player.position.z - steamClock.z);
       if (distance < 20 && Math.random() > 0.48) {
-        state.sounds.clockBurst.play();
+        playHowl(state.sounds.clockBurst);
       }
     }, 6000);
   }
