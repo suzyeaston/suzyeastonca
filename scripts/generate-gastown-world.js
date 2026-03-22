@@ -20,6 +20,13 @@ function tryReadGeoJsonFeatures(filePath) {
   return json.features;
 }
 
+function firstExistingPath(paths) {
+  for (const filePath of paths) {
+    if (filePath && fs.existsSync(filePath)) return filePath;
+  }
+  return paths[0] || null;
+}
+
 function getFeatureCollectionById(collection, id) {
   const features = collection && Array.isArray(collection.features) ? collection.features : [];
   return features.find((feature) => getProps(feature).id === id) || null;
@@ -778,12 +785,19 @@ function buildStarterNpcs(layout, streetWidth, sidewalkOuter) {
 
 function buildStarterReferenceBundle(root) {
   const refreshDir = path.join(root, 'data', 'reference', 'refresh');
+  const covDir = path.join(root, 'data', 'cov');
   return {
     routeReference: tryReadJson(path.join(refreshDir, 'gastown-route-reference.geojson')),
     streetContext: tryReadJson(path.join(refreshDir, 'gastown-street-context.geojson')),
     landmarkReference: tryReadJson(path.join(refreshDir, 'gastown-landmark-reference.geojson')),
     buildingCues: tryReadJson(path.join(refreshDir, 'gastown-building-cues.geojson')),
     poiReference: tryReadJson(path.join(refreshDir, 'gastown-poi-reference.geojson')),
+    publicStreets: tryReadJson(path.join(covDir, 'public-streets.geojson')),
+    streetIntersections: tryReadJson(path.join(covDir, 'street-intersections.geojson')),
+    rightOfWayWidths: tryReadJson(path.join(covDir, 'right-of-way-widths.geojson')),
+    streetLightingPoles: tryReadJson(path.join(covDir, 'street-lighting-poles.geojson')),
+    buildingFootprints2015: tryReadJson(firstExistingPath([path.join(covDir, 'building-footprints-2015.geojson'), path.join(covDir, 'building-footprints.geojson')])),
+    orthophotoImagery2015: tryReadJson(path.join(covDir, 'orthophoto-imagery-2015.geojson')),
   };
 }
 
@@ -1036,6 +1050,12 @@ function makeStarterWorld(outputPath, options = {}) {
     ...(reference.landmarkReference && Array.isArray(reference.landmarkReference.features) ? ['gastown-landmark-reference.geojson'] : []),
     ...(reference.buildingCues && Array.isArray(reference.buildingCues.features) ? ['gastown-building-cues.geojson'] : []),
     ...(reference.poiReference && Array.isArray(reference.poiReference.features) ? ['gastown-poi-reference.geojson'] : []),
+    ...(reference.publicStreets && Array.isArray(reference.publicStreets.features) ? ['public-streets.geojson'] : []),
+    ...(reference.streetIntersections && Array.isArray(reference.streetIntersections.features) ? ['street-intersections.geojson'] : []),
+    ...(reference.rightOfWayWidths && Array.isArray(reference.rightOfWayWidths.features) ? ['right-of-way-widths.geojson'] : []),
+    ...(reference.streetLightingPoles && Array.isArray(reference.streetLightingPoles.features) ? ['street-lighting-poles.geojson'] : []),
+    ...(reference.buildingFootprints2015 && Array.isArray(reference.buildingFootprints2015.features) ? ['building-footprints-2015.geojson'] : []),
+    ...(reference.orthophotoImagery2015 && Array.isArray(reference.orthophotoImagery2015.features) ? ['orthophoto-imagery-2015.geojson'] : []),
   ];
 
   const lampFeatures = getFeatureCollectionByKind(reference.poiReference, 'heritage_lamp');
@@ -1056,6 +1076,14 @@ function makeStarterWorld(outputPath, options = {}) {
         referenceFeaturesUsed.length ? `Optional refreshed reference inputs were present: ${referenceFeaturesUsed.join(', ')}.` : 'No refreshed reference inputs were present; deterministic default route staging was used.',
       ],
       referenceInputsUsed: referenceFeaturesUsed,
+      openDataInputs: {
+        publicStreets: !!(reference.publicStreets && Array.isArray(reference.publicStreets.features) && reference.publicStreets.features.length),
+        streetIntersections: !!(reference.streetIntersections && Array.isArray(reference.streetIntersections.features) && reference.streetIntersections.features.length),
+        rightOfWayWidths: !!(reference.rightOfWayWidths && Array.isArray(reference.rightOfWayWidths.features) && reference.rightOfWayWidths.features.length),
+        streetLightingPoles: !!(reference.streetLightingPoles && Array.isArray(reference.streetLightingPoles.features) && reference.streetLightingPoles.features.length),
+        buildingFootprints2015: !!(reference.buildingFootprints2015 && Array.isArray(reference.buildingFootprints2015.features) && reference.buildingFootprints2015.features.length),
+        orthophotoImagery2015: !!(reference.orthophotoImagery2015 && Array.isArray(reference.orthophotoImagery2015.features) && reference.orthophotoImagery2015.features.length),
+      },
       lastBuild: new Date().toISOString(),
     },
     route: { name: 'Waterfront Station → Water Street → Steam Clock working corridor', centerline, walkBounds, streetWidth, sidewalkWidth, softBoundary, hardResetDistance: 12 },
@@ -1152,7 +1180,7 @@ function buildWorld(options = {}) {
   const outputPath = options.outputPath || path.join(root, 'assets', 'world', 'gastown-water-street.json');
   const routeAnchorsPath = path.join(root, 'data', 'reference', 'route-anchors.json');
   const streetsPath = path.join(root, 'data', 'cov', 'public-streets.geojson');
-  const buildingsPath = path.join(root, 'data', 'cov', 'building-footprints.geojson');
+  const buildingsPath = firstExistingPath([path.join(root, 'data', 'cov', 'building-footprints-2015.geojson'), path.join(root, 'data', 'cov', 'building-footprints.geojson')]);
   const polesPath = path.join(root, 'data', 'cov', 'street-lighting-poles.geojson');
   const treesPath = path.join(root, 'data', 'cov', 'public-trees.geojson');
   const heritagePath = path.join(root, 'data', 'cov', 'heritage-sites.geojson');
@@ -1398,7 +1426,7 @@ function buildWorld(options = {}) {
         inputs: {
           cityOfVancouver: {
             streetCenterlines: 'data/cov/public-streets.geojson',
-            buildingFootprints: 'data/cov/building-footprints.geojson',
+            buildingFootprints: 'data/cov/building-footprints-2015.geojson (or legacy data/cov/building-footprints.geojson)',
             lightingPolesOptional: 'data/cov/street-lighting-poles.geojson',
             publicTreesOptional: 'data/cov/public-trees.geojson',
             heritageSitesOptional: 'data/cov/heritage-sites.geojson',
@@ -1412,6 +1440,22 @@ function buildWorld(options = {}) {
         buildings: 'renderer-compatible derived geometry from footprint centroids/extents/headings (footprints preserved)',
         streetscapeTrees: treeSource,
         streetscapeLamps: lampSource,
+      },
+      referenceInputsUsed: [
+        'public-streets.geojson',
+        ...(fs.existsSync(path.join(root, 'data', 'cov', 'street-intersections.geojson')) ? ['street-intersections.geojson'] : []),
+        ...(fs.existsSync(path.join(root, 'data', 'cov', 'right-of-way-widths.geojson')) ? ['right-of-way-widths.geojson'] : []),
+        ...(poles ? ['street-lighting-poles.geojson'] : []),
+        ...((buildingsPath || '').includes('building-footprints-2015.geojson') ? ['building-footprints-2015.geojson'] : ['building-footprints.geojson']),
+        ...(fs.existsSync(path.join(root, 'data', 'cov', 'orthophoto-imagery-2015.geojson')) ? ['orthophoto-imagery-2015.geojson'] : []),
+      ],
+      openDataInputs: {
+        publicStreets: true,
+        streetIntersections: fs.existsSync(path.join(root, 'data', 'cov', 'street-intersections.geojson')),
+        rightOfWayWidths: fs.existsSync(path.join(root, 'data', 'cov', 'right-of-way-widths.geojson')),
+        streetLightingPoles: !!(poles && Array.isArray(poles.features) && poles.features.length),
+        buildingFootprints2015: (buildingsPath || '').includes('building-footprints-2015.geojson'),
+        orthophotoImagery2015: fs.existsSync(path.join(root, 'data', 'cov', 'orthophoto-imagery-2015.geojson')),
       },
     },
     route: {

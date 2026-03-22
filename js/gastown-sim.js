@@ -1836,13 +1836,15 @@
         visualState.landmarkVisuals.push({ markerMaterial, haloMaterial });
       }
 
-      const reflectionMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: 0x1b2533, emissiveIntensity: 0.45, transparent: true, opacity: 0.22, roughness: 0.55, metalness: 0.3 });
-      const reflection = new THREE.Mesh(new THREE.CircleGeometry(landmark.radius || 2.7, 24), reflectionMaterial);
-      reflection.rotation.x = -Math.PI / 2;
-      reflection.position.set(landmark.x, 0.11, landmark.z);
-      worldGroup.add(reflection);
+      if (state.debugEnabled || !suppressGenericMarker) {
+        const reflectionMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: 0x1b2533, emissiveIntensity: 0.45, transparent: true, opacity: 0.22, roughness: 0.55, metalness: 0.3 });
+        const reflection = new THREE.Mesh(new THREE.CircleGeometry(landmark.radius || 2.7, 24), reflectionMaterial);
+        reflection.rotation.x = -Math.PI / 2;
+        reflection.position.set(landmark.x, 0.11, landmark.z);
+        worldGroup.add(reflection);
 
-      visualState.landmarkVisuals.push({ reflectionMaterial });
+        visualState.landmarkVisuals.push({ reflectionMaterial });
+      }
     });
   }
 
