@@ -36,3 +36,14 @@ test('default clear and afternoon play keeps rain as particles without divider b
   assert.match(src, /new THREE\.PlaneGeometry\(0\.025, 0\.7 \+ \(intensity \* 0\.85\)\)/);
   assert.doesNotMatch(src, /new THREE\.PlaneGeometry\(0\.05, 2\.8 \+ \(intensity \* 2\.4\)\)/);
 });
+
+test('production landmark rendering suppresses generic cylinder and halo markers for hero and intersection landmarks', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const src = fs.readFileSync(simPath, 'utf8');
+
+  assert.match(src, /const heroLandmarkIds = new Set/);
+  assert.match(src, /const suppressedKinds = new Set\(\['clock', 'street_pivot', 'plaza_edge', 'district_gate', 'view_axis'\]\)/);
+  assert.match(src, /if \(state\.debugEnabled \|\| !suppressGenericMarker\) \{/);
+  assert.match(src, /landmark\.id === 'steam-clock'/);
+  assert.match(src, /landmark\.id === 'water-cambie-intersection'/);
+});
