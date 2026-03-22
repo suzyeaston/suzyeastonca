@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const http = require('http');
 
-const { run } = require('../scripts/sync-cov-open-data');
+const { run, buildWhereClause } = require('../scripts/sync-cov-open-data');
 
 function makeFeatureCollection(features) {
   return { type: 'FeatureCollection', features };
@@ -24,27 +24,46 @@ function pointFeature(id, coord, properties = {}) {
 }
 
 async function withServer(routes, callback) {
+  const requests = [];
   const server = http.createServer((req, res) => {
-    const target = routes[req.url];
+    requests.push(req.url);
+    const target = routes[req.url.split('?')[0]] || routes[req.url];
     if (!target) {
       res.statusCode = 404;
       res.end('missing');
       return;
     }
     res.setHeader('content-type', 'application/json');
-    res.end(JSON.stringify(target));
+    res.end(JSON.stringify(target(req)));
   });
 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address();
   try {
-    await callback(`http://127.0.0.1:${port}`);
+    await callback(`http://127.0.0.1:${port}`, requests);
   } finally {
     await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
   }
 }
 
-test('sync-cov-open-data writes cropped feature collections and manifest', async () => {
+test('buildWhereClause targets Opendatasoft spatial fields', () => {
+  const where = buildWhereClause({
+    midpoint: { lon: -123.1101, lat: 49.2851 },
+    radiusMeters: 400,
+    bboxPolygon: [[-123.12, 49.28], [-123.10, 49.28], [-123.10, 49.29], [-123.12, 49.29], [-123.12, 49.28]],
+  }, {
+    fields: [
+      { name: 'geo_shape', type: 'geo_shape' },
+      { name: 'geo_point_2d', type: 'geo_point_2d' },
+    ],
+  });
+
+  assert.match(where, /intersects\(geo_shape,/);
+  assert.match(where, /within_distance\(geo_point_2d,/);
+  assert.match(where, /POLYGON/);
+});
+
+test('sync-cov-open-data writes cropped feature collections and manifest via Explore API v2.1', async () => {
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cov-sync-'));
   fs.mkdirSync(path.join(tmpRoot, 'data', 'reference'), { recursive: true });
   fs.writeFileSync(path.join(tmpRoot, 'data', 'reference', 'route-anchors.json'), JSON.stringify({
@@ -62,14 +81,6 @@ test('sync-cov-open-data writes cropped feature collections and manifest', async
       lineFeature('street-near', nearbyLine, { hblock: '100 W CORDOVA ST' }),
       lineFeature('street-far', farLine, { hblock: '999 FAR AWAY ST' }),
     ]),
-    'street-intersections': makeFeatureCollection([
-      pointFeature('intersection-near', [-123.1091, 49.2846], { street_1: 'Water', street_2: 'Cambie' }),
-      pointFeature('intersection-far', [-123.15, 49.30], { street_1: 'Far', street_2: 'Away' }),
-    ]),
-    'right-of-way-widths': makeFeatureCollection([
-      pointFeature('row-near', [-123.1092, 49.2847], { street_name: 'Water Street', right_of_way_width: 18.4, carriageway_width: 10.2, sidewalk_width: 4.1 }),
-      pointFeature('row-far', [-123.15, 49.30], { street_name: 'Far Away', right_of_way_width: 99 }),
-    ]),
     'building-footprints-2015': makeFeatureCollection([
       polygonFeature('building-near', nearbyPolygon, { civic_address: '1 Water St' }),
       polygonFeature('building-far', farPolygon, { civic_address: '999 Far St' }),
@@ -86,60 +97,87 @@ test('sync-cov-open-data writes cropped feature collections and manifest', async
       polygonFeature('heritage-near', nearbyPolygon, { site_id: 'H1' }),
       polygonFeature('heritage-far', farPolygon, { site_id: 'HFAR' }),
     ]),
+    'business-licences': { results: [{ licence: 'nearby-business', geom: { lon: -123.1092, lat: 49.2847 } }] },
   };
 
   const routes = {};
   for (const datasetId of Object.keys(datasets)) {
-    routes[`/api/3/action/package_show?id=${encodeURIComponent(datasetId)}`] = {
-      success: true,
-      result: {
-        id: datasetId,
-        name: datasetId,
-        resources: [
-          { name: `${datasetId} GeoJSON`, format: 'GeoJSON', url: `/datasets/${datasetId}.geojson` },
-        ],
-      },
-    };
-    routes[`/datasets/${datasetId}.geojson`] = datasets[datasetId];
+    routes[`/api/explore/v2.1/catalog/datasets/${datasetId}`] = () => ({
+      id: datasetId,
+      fields: [
+        { name: 'geo_shape', type: 'geo_shape' },
+        { name: 'geo_point_2d', type: 'geo_point_2d' },
+      ],
+    });
+    routes[`/api/explore/v2.1/catalog/datasets/${datasetId}/exports/${datasetId === 'business-licences' ? 'json' : 'geojson'}`] = () => datasets[datasetId];
   }
 
-  await withServer(routes, async (baseUrl) => {
-    const packageShowBase = `${baseUrl}/api/3/action/package_show?id=`;
-    await run({ root: tmpRoot, packageShowBase, fetchTimeoutMs: 2000, radiusMeters: 400, routePaddingMeters: 120 });
-    await run({ root: tmpRoot, packageShowBase, fetchTimeoutMs: 2000, radiusMeters: 400, routePaddingMeters: 120 });
+  await withServer(routes, async (baseUrl, requests) => {
+    const exploreBase = `${baseUrl}/api/explore/v2.1/catalog/datasets`;
+    await run({ root: tmpRoot, exploreBase, fetchTimeoutMs: 2000, radiusMeters: 400, routePaddingMeters: 120, includeBusinessLicences: true });
+    assert.ok(requests.some((url) => url.includes('/api/explore/v2.1/catalog/datasets/public-streets')));
+    assert.ok(requests.some((url) => url.includes('/exports/geojson?')));
+    assert.ok(requests.some((url) => url.includes('/exports/json?')));
+    assert.ok(requests.some((url) => url.includes('where=')));
   });
 
   const covDir = path.join(tmpRoot, 'data', 'cov');
   const expected = [
     'public-streets.geojson',
-    'street-intersections.geojson',
-    'right-of-way-widths.geojson',
     'building-footprints.geojson',
     'street-lighting-poles.geojson',
     'public-trees.geojson',
     'heritage-sites.geojson',
+    'business-licences.json',
   ];
 
   expected.forEach((name) => {
     const filePath = path.join(covDir, name);
     assert.equal(fs.existsSync(filePath), true, `${name} should exist`);
-    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    assert.equal(data.type, 'FeatureCollection');
-    assert.equal(Array.isArray(data.features), true);
-    assert.equal(data.features.length >= 1, true);
   });
 
   const streets = JSON.parse(fs.readFileSync(path.join(covDir, 'public-streets.geojson'), 'utf8'));
   assert.deepEqual(streets.features.map((feature) => feature.id), ['street-near']);
 
+  const buildings = JSON.parse(fs.readFileSync(path.join(covDir, 'building-footprints.geojson'), 'utf8'));
+  assert.deepEqual(buildings.features.map((feature) => feature.id), ['building-near']);
+
+  const businesses = JSON.parse(fs.readFileSync(path.join(covDir, 'business-licences.json'), 'utf8'));
+  assert.equal(Array.isArray(businesses.results), true);
+  assert.equal(businesses.results.length, 1);
+
   const manifest = JSON.parse(fs.readFileSync(path.join(covDir, '_manifest.json'), 'utf8'));
+  assert.equal(manifest.api.version, 'explore-v2.1');
   assert.equal(Array.isArray(manifest.datasets), true);
-  assert.equal(manifest.datasets.length, 7);
+  assert.equal(manifest.datasets.length, 6);
   manifest.datasets.forEach((entry) => {
     assert.equal(typeof entry.dataset, 'string');
-    assert.equal(typeof entry.keptFeatures, 'number');
-    assert.equal(typeof entry.totalFeatures, 'number');
     assert.equal(typeof entry.output, 'string');
     assert.ok(entry.output.startsWith('data/cov/'));
   });
+});
+
+test('sync-cov-open-data falls back to next configured dataset alias', async () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cov-sync-fallback-'));
+  fs.mkdirSync(path.join(tmpRoot, 'data', 'reference'), { recursive: true });
+  fs.writeFileSync(path.join(tmpRoot, 'data', 'reference', 'route-anchors.json'), JSON.stringify({
+    origin: { lat: 49.2858333333, lon: -123.1116666667 },
+    dest: { lat: 49.2843841111, lon: -123.10889 },
+  }, null, 2));
+
+  const routes = {
+    '/api/explore/v2.1/catalog/datasets/public-streets': () => ({ id: 'public-streets', fields: [{ name: 'geo_shape', type: 'geo_shape' }] }),
+    '/api/explore/v2.1/catalog/datasets/public-streets/exports/geojson': () => makeFeatureCollection([lineFeature('street-near', [[-123.1117, 49.2858], [-123.1095, 49.2848]], { hblock: '100 W CORDOVA ST' })]),
+    '/api/explore/v2.1/catalog/datasets/building-footprints-2009': () => ({ id: 'building-footprints-2009', fields: [{ name: 'geo_shape', type: 'geo_shape' }] }),
+    '/api/explore/v2.1/catalog/datasets/building-footprints-2009/exports/geojson': () => makeFeatureCollection([polygonFeature('building-near', [[-123.1108, 49.2852], [-123.1105, 49.2852], [-123.1105, 49.2850], [-123.1108, 49.2850], [-123.1108, 49.2852]], { civic_address: '1 Water St' })]),
+  };
+
+  await withServer(routes, async (baseUrl) => {
+    const exploreBase = `${baseUrl}/api/explore/v2.1/catalog/datasets`;
+    await run({ root: tmpRoot, exploreBase, fetchTimeoutMs: 2000, radiusMeters: 400, routePaddingMeters: 120 });
+  });
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'data', 'cov', '_manifest.json'), 'utf8'));
+  const footprints = manifest.datasets.find((entry) => entry.dataset === 'building-footprints-2015');
+  assert.equal(footprints.datasetId, 'building-footprints-2009');
 });

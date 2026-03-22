@@ -45,7 +45,7 @@ It is intentionally practical but still fun: command-line vibes, alert hooks, an
 It still matters, it is still in the repo, and parts are still playable — but it is currently under major redevelopment.
 
 ## Gastown world build pipeline
-To refresh the cropped City of Vancouver civic exports and rebuild the simulator world JSON in one step, run `npm run build:gastown-world`. This build-time pipeline downloads small GeoJSON slices into `data/cov/`, writes `data/cov/_manifest.json`, and then regenerates `assets/world/gastown-water-street.json` without calling external APIs from the browser.
+To refresh the cropped City of Vancouver civic exports and rebuild the simulator world JSON in one step, run `npm run build:gastown-world`. This build-time pipeline queries the City of Vancouver Opendatasoft Explore API v2.1, caches corridor-sized exports under `data/cov/`, writes `data/cov/_manifest.json`, and then regenerates `assets/world/gastown-water-street.json` without calling external APIs from the browser. Set `COV_INCLUDE_BUSINESS_LICENCES=true` if you also want the optional `business-licences.json` cache refreshed during the build.
 
 ## Open source / build in public
 This repo is open source: <https://github.com/suzyeaston/suzyeastonca>
