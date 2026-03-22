@@ -4,6 +4,9 @@
     "lines": [
       "Welcome to the starter Gastown corridor build. This guide marks where interaction, dialog, and future quest hooks plug into the walk.",
       "World authors can assign a dialogId on any guide, pedestrian, or busker entry and the simulator will open the matching local dialog record."
+    ],
+    "actions": [
+      { "type": "close", "label": "Back to walk" }
     ]
   },
   "busker_intro": {

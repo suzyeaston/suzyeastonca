@@ -64,7 +64,7 @@ get_header();
     <p class="gastown-route-segment" data-sim-route-segment aria-live="polite">Route segment: Waterfront Station Threshold</p>
     <p class="gastown-interact-prompt" data-sim-interact-prompt aria-live="polite" hidden></p>
 
-    <div class="gastown-sim-canvas" data-sim-canvas>
+    <div class="gastown-sim-canvas" data-sim-canvas tabindex="-1">
       <aside class="gastown-minimap" aria-label="Route navigator minimap">
         <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap zoom controls">
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
@@ -116,7 +116,8 @@ get_header();
         </div>
         <div class="gastown-dialog-body" data-dialog-body></div>
         <div class="gastown-dialog-actions">
-          <button type="button" class="pixel-button secondary" data-dialog-close>Back to walk</button>
+          <div class="gastown-dialog-actions-dynamic" data-dialog-actions-dynamic aria-live="polite"></div>
+          <button type="button" class="pixel-button secondary" data-dialog-close data-dialog-close-fallback>Back to walk</button>
         </div>
       </div>
     </div>
