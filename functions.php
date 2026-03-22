@@ -263,9 +263,9 @@ function se_enqueue_gastown_sim_assets() {
                 'audioBaseUrl'   => esc_url_raw( $uri . '/assets/audio/gastown' ),
                 'textureBaseUrl' => esc_url_raw( $uri . '/assets/textures' ),
                 'dialogDataUrl'  => esc_url_raw( $uri . '/assets/dialog/gastown.json' ),
-                'defaultWeather' => 'drizzle',
+                'defaultWeather' => 'clear',
                 'defaultMood'    => 'eerie',
-                'defaultTimeOfDay' => 'dusk',
+                'defaultTimeOfDay' => 'morning',
             )
         );
     }

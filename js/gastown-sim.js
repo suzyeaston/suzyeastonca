@@ -86,8 +86,8 @@
     velocity: new THREE.Vector3(),
     lastSafePosition: new THREE.Vector3(),
     debugEnabled: new URLSearchParams(window.location.search).get('gastownDebug') === '1',
-    activeWeather: config.defaultWeather || 'drizzle',
-    activeTimeOfDay: config.defaultTimeOfDay || 'dusk',
+    activeWeather: config.defaultWeather || 'clear',
+    activeTimeOfDay: config.defaultTimeOfDay || 'morning',
     activeMood: config.defaultMood || 'eerie',
     sounds: {
       beds: {},
@@ -127,13 +127,18 @@
   const fillLight = new THREE.DirectionalLight(0x5f7695, 0.3);
   fillLight.position.set(-11, 10, -12);
   scene.add(fillLight);
+  const lightningLight = new THREE.DirectionalLight(0xe7efff, 0);
+  lightningLight.position.set(4, 30, 6);
+  scene.add(lightningLight);
 
   const rainGroup = new THREE.Group();
+  const cloudGroup = new THREE.Group();
   const worldGroup = new THREE.Group();
   const debugGroup = new THREE.Group();
   debugGroup.visible = state.debugEnabled;
   scene.add(worldGroup);
   scene.add(rainGroup);
+  scene.add(cloudGroup);
   scene.add(debugGroup);
 
   const visualState = {
@@ -150,6 +155,9 @@
     groundTextures: {},
     instancedProps: [],
     npcMeshes: [],
+    routeGuideMaterials: [],
+    weatherMaterials: [],
+    lightningOverlay: null,
   };
 
   const LOOK_PITCH_LIMIT = Math.PI / 2.25;
@@ -371,6 +379,16 @@
 
   function segmentHeading(a, b) {
     return Math.atan2(b.x - a.x, b.z - a.z);
+  }
+
+  function deterministicUnit(seed) {
+    const str = String(seed || 'seed');
+    let hash = 2166136261;
+    for (let i = 0; i < str.length; i += 1) {
+      hash ^= str.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return ((hash >>> 0) % 1000) / 1000;
   }
 
   function buildFallbackSurfaceBands(world) {
@@ -762,7 +780,7 @@
         mesh: visual,
         patrolIndex: 0,
         direction: 1,
-        speed: npc.role === 'pedestrian' ? 0.7 + Math.random() * 0.45 : 0,
+        speed: npc.role === 'pedestrian' ? 0.72 + (deterministicUnit(npc.id) * 0.28) : 0,
       }, npc);
       ensureNpcLoop(npcState);
       visualState.npcMeshes.push(visual);
@@ -976,7 +994,8 @@
     visualState.roadMaterial = createGroundMaterial('street', 0x171c22, 0.86, 0.16);
     visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x978c81, 0.92, 0.02);
     visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0x9ea5ad, transparent: true, opacity: 0.5 });
-    visualState.laneMaterial = new THREE.LineBasicMaterial({ color: 0x8da2b3, transparent: true, opacity: 0.22 });
+    visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x94a7b6, roughness: 0.84, metalness: 0.08, transparent: true, opacity: 0.08 });
+    visualState.routeGuideMaterials = [visualState.laneMaterial];
 
     world.zones.street.forEach((zone) => createZoneMesh(zone.polygon, visualState.roadMaterial, 0, 'street'));
     world.zones.sidewalk.forEach((zone) => createZoneMesh(zone.polygon, visualState.sidewalkMaterial, 0.12, 'sidewalk'));
@@ -988,25 +1007,21 @@
       worldGroup.add(curbLine);
     });
 
-    const routePoints = world.route.centerline.map((point) => new THREE.Vector3(point.x, 0.14, point.z));
-    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(routePoints), visualState.laneMaterial);
-    worldGroup.add(line);
-
     world.route.centerline.forEach((point, index) => {
-      if (index % 2 !== 0 || index === world.route.centerline.length - 1) {
+      if (index === world.route.centerline.length - 1 || index % 3 !== 1) {
         return;
       }
       const next = world.route.centerline[index + 1];
       if (!next) return;
       const heading = Math.atan2(next.x - point.x, next.z - point.z);
-      const stripe = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.18, 1.9),
-        new THREE.MeshStandardMaterial({ color: 0x7f95a6, roughness: 0.78, metalness: 0.16, transparent: true, opacity: 0.14 })
+      const marker = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.7, 2.2),
+        visualState.laneMaterial
       );
-      stripe.rotation.x = -Math.PI / 2;
-      stripe.rotation.y = heading;
-      stripe.position.set(point.x, 0.11, point.z);
-      worldGroup.add(stripe);
+      marker.rotation.x = -Math.PI / 2;
+      marker.rotation.y = heading;
+      marker.position.set(point.x, 0.105, point.z);
+      worldGroup.add(marker);
     });
 
     const surfaceBands = (world.streetscape && world.streetscape.surfaceBands && world.streetscape.surfaceBands.length)
@@ -1020,13 +1035,18 @@
         new THREE.PlaneGeometry(band.width || world.route.streetWidth, band.length || 14),
         (() => {
           const toneStyles = {
-            brick: { color: 0x5c4033, roughness: 0.82, metalness: 0.06, opacity: 0.9 },
-            wheel_track: { color: 0x161b20, roughness: 0.52, metalness: 0.22, opacity: 0.24 },
-            patch: { color: 0x2e343b, roughness: 0.74, metalness: 0.14, opacity: 0.34 },
-            puddle: { color: 0x1a212a, roughness: 0.34, metalness: 0.28, opacity: 0.18 },
-            wet_streak: { color: 0x202731, roughness: 0.48, metalness: 0.2, opacity: 0.22 },
-            edge_grime: { color: 0x1b1d20, roughness: 0.8, metalness: 0.08, opacity: 0.26 },
-            default: { color: 0x3a4048, roughness: 0.8, metalness: 0.08, opacity: 0.86 },
+            brick: { color: 0x5c4033, roughness: 0.82, metalness: 0.06, opacity: 0.72 },
+            wheel_track: { color: 0x161b20, roughness: 0.58, metalness: 0.2, opacity: 0.2 },
+            patch: { color: 0x2f353d, roughness: 0.76, metalness: 0.12, opacity: 0.2 },
+            repair_patch_dark: { color: 0x252b32, roughness: 0.72, metalness: 0.14, opacity: 0.22 },
+            puddle: { color: 0x1a212a, roughness: 0.34, metalness: 0.28, opacity: 0.14 },
+            wet_streak: { color: 0x202731, roughness: 0.48, metalness: 0.2, opacity: 0.18 },
+            edge_grime: { color: 0x1b1d20, roughness: 0.8, metalness: 0.08, opacity: 0.18 },
+            curb_grime: { color: 0x202326, roughness: 0.86, metalness: 0.05, opacity: 0.18 },
+            cobble_break: { color: 0x56473b, roughness: 0.84, metalness: 0.06, opacity: 0.18 },
+            paver_break: { color: 0x5d5144, roughness: 0.84, metalness: 0.05, opacity: 0.18 },
+            intersection_pavers: { color: 0x615547, roughness: 0.88, metalness: 0.05, opacity: 0.24 },
+            default: { color: 0x3a4048, roughness: 0.8, metalness: 0.08, opacity: 0.78 },
           };
           const style = toneStyles[band.tone] || toneStyles.default;
           return new THREE.MeshStandardMaterial({
@@ -1497,38 +1517,151 @@
     }
   }
 
+  function rebuildClouds(weather, timeOfDay) {
+    while (cloudGroup.children.length) {
+      cloudGroup.remove(cloudGroup.children[0]);
+    }
+
+    const coverage = weather.cloudCoverage || 0;
+    if (coverage <= 0.08) {
+      return;
+    }
+
+    const cloudColor = new THREE.Color(timeOfDay.sky || '#8ea4b5');
+    cloudColor.lerp(new THREE.Color('#f1f3f6'), 0.2 - Math.min(0.16, coverage * 0.08));
+    cloudColor.multiplyScalar(1 - Math.min(0.42, weather.cloudDarkness || 0));
+    const cloudMaterial = new THREE.MeshBasicMaterial({ color: cloudColor, transparent: true, opacity: Math.min(0.48, 0.14 + (coverage * 0.26)), depthWrite: false, fog: false });
+    visualState.weatherMaterials.push(cloudMaterial);
+
+    const count = Math.max(4, Math.round(coverage * 9));
+    for (let i = 0; i < count; i += 1) {
+      const shell = new THREE.Group();
+      const baseX = ((i % 3) - 1) * 36;
+      const baseZ = -30 - (Math.floor(i / 3) * 28);
+      const width = 26 + (deterministicUnit('cloud-width-' + i) * 20);
+      const height = 8 + (deterministicUnit('cloud-height-' + i) * 4);
+      for (let puff = 0; puff < 3; puff += 1) {
+        const plane = new THREE.Mesh(new THREE.PlaneGeometry(width * (0.7 + (puff * 0.16)), height * (0.8 + (puff * 0.08))), cloudMaterial);
+        plane.position.set(baseX + (puff * 5) - 4, (weather.cloudAltitude || 62) + (deterministicUnit('cloud-y-' + i + '-' + puff) * 6), baseZ - (puff * 6));
+        plane.rotation.x = -0.42;
+        shell.add(plane);
+      }
+      shell.position.x += (deterministicUnit('cloud-jitter-' + i) - 0.5) * 20;
+      cloudGroup.add(shell);
+    }
+  }
+
+  function ensureLightningOverlay() {
+    if (visualState.lightningOverlay) {
+      return visualState.lightningOverlay;
+    }
+    const overlay = new THREE.Mesh(
+      new THREE.SphereGeometry(280, 18, 16),
+      new THREE.MeshBasicMaterial({ color: 0xdfe8ff, transparent: true, opacity: 0, side: THREE.BackSide, depthWrite: false, fog: false })
+    );
+    overlay.position.set(0, 20, 0);
+    scene.add(overlay);
+    visualState.lightningOverlay = overlay;
+    return overlay;
+  }
+
+  function maybeTriggerLightning(weather) {
+    if (!weather || !weather.lightningFrequency || state.lightning && state.lightning.activeUntil > performance.now()) {
+      return;
+    }
+    if (Math.random() > weather.lightningFrequency * 0.012) {
+      return;
+    }
+    const now = performance.now();
+    state.lightning = {
+      activeUntil: now + 120 + (Math.random() * 140),
+      intensity: weather.lightningIntensity || 1,
+      thunderAt: now + 380 + (Math.random() * 820),
+      thunderPlayed: false,
+    };
+  }
+
+  function updateLightning(weather) {
+    const overlay = ensureLightningOverlay();
+    const now = performance.now();
+    const flash = state.lightning;
+    if (!flash || now >= flash.activeUntil) {
+      overlay.material.opacity = 0;
+      lightningLight.intensity = 0;
+      return;
+    }
+    const remaining = Math.max(0, flash.activeUntil - now);
+    const pulse = Math.min(1, remaining / 220);
+    const intensity = (0.08 + (pulse * 0.2)) * (flash.intensity || 1);
+    overlay.material.opacity = Math.min(0.2, intensity);
+    lightningLight.intensity = intensity * 1.8;
+
+    if (weather && weather.thunderEnabled && !flash.thunderPlayed && now >= flash.thunderAt) {
+      flash.thunderPlayed = true;
+      if (state.sounds.thunder && typeof state.sounds.thunder.play === 'function') {
+        playHowl(state.sounds.thunder);
+      }
+    }
+  }
+
   function rebuildRain(intensity) {
     while (rainGroup.children.length) {
       rainGroup.remove(rainGroup.children[0]);
     }
 
-    if (intensity <= 0.05) {
+    if (intensity <= 0.02) {
       return;
     }
 
-    const count = Math.floor(450 * intensity);
+    const dropCount = Math.floor(520 + (intensity * 980));
     const geom = new THREE.BufferGeometry();
-    const points = new Float32Array(count * 3);
+    const points = new Float32Array(dropCount * 3);
+    const velocities = new Float32Array(dropCount);
 
-    for (let i = 0; i < count; i += 1) {
-      points[i * 3] = (Math.random() - 0.5) * 140;
-      points[i * 3 + 1] = Math.random() * 40 + 4;
-      points[i * 3 + 2] = (Math.random() - 0.5) * 180 - 45;
+    for (let i = 0; i < dropCount; i += 1) {
+      points[i * 3] = (Math.random() - 0.5) * 150;
+      points[(i * 3) + 1] = Math.random() * 42 + 5;
+      points[(i * 3) + 2] = (Math.random() - 0.5) * 190 - 40;
+      velocities[i] = 16 + (Math.random() * 11) + (intensity * 10);
     }
 
     geom.setAttribute('position', new THREE.BufferAttribute(points, 3));
-    const rain = new THREE.Points(geom, new THREE.PointsMaterial({ color: 0x9dc3db, size: 0.09, transparent: true, opacity: 0.7 }));
+    geom.setAttribute('velocity', new THREE.BufferAttribute(velocities, 1));
+    const rain = new THREE.Points(geom, new THREE.PointsMaterial({ color: 0xa9c6d9, size: 0.1 + (intensity * 0.07), transparent: true, opacity: 0.32 + (intensity * 0.4) }));
+    rain.userData.kind = 'rain-core';
     rainGroup.add(rain);
+
+    const streakCount = Math.floor(30 + (intensity * 80));
+    for (let i = 0; i < streakCount; i += 1) {
+      const streak = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.05, 2.8 + (intensity * 2.4)),
+        new THREE.MeshBasicMaterial({ color: 0xc7d9e6, transparent: true, opacity: 0.06 + (intensity * 0.08), depthWrite: false })
+      );
+      streak.rotation.x = -0.18;
+      streak.position.set((Math.random() - 0.5) * 70, 10 + (Math.random() * 16), -4 - (Math.random() * 30));
+      streak.userData.fallSpeed = 18 + (Math.random() * 10) + (intensity * 12);
+      rainGroup.add(streak);
+    }
   }
 
   function animateRain(delta) {
-    rainGroup.children.forEach((points) => {
-      const pos = points.geometry.attributes.position;
-      for (let i = 0; i < pos.count; i += 1) {
-        const y = pos.getY(i) - (18 * delta);
-        pos.setY(i, y < 0.5 ? Math.random() * 40 + 5 : y);
+    rainGroup.children.forEach((node) => {
+      if (node.isPoints) {
+        const pos = node.geometry.attributes.position;
+        const velocities = node.geometry.attributes.velocity;
+        for (let i = 0; i < pos.count; i += 1) {
+          const speed = velocities ? velocities.getX(i) : 18;
+          const y = pos.getY(i) - (speed * delta);
+          pos.setY(i, y < 0.5 ? Math.random() * 42 + 5 : y);
+        }
+        pos.needsUpdate = true;
+        return;
       }
-      pos.needsUpdate = true;
+
+      node.position.y -= (node.userData.fallSpeed || 18) * delta;
+      if (node.position.y < 0.5) {
+        node.position.y = 14 + (Math.random() * 14);
+      }
     });
   }
 
@@ -1975,6 +2108,7 @@
 
     state.sounds.rainLoop = createSafeHowl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
     state.sounds.clockBurst = createSafeHowl({ src: src('events/steam_clock_burst'), volume: 0.45 });
+    state.sounds.thunder = createSafeHowl({ src: src('weather/thunder_roll'), volume: 0.22 });
 
     (world.audioZones || []).forEach((zone) => {
       state.sounds.zoneBeds[zone.id] = createSafeHowl({ src: src('zones/' + zone.bed), loop: true, volume: 0 });
@@ -1990,7 +2124,7 @@
     const weather = state.world.weatherPresets[state.activeWeather] || state.world.weatherPresets.drizzle || state.world.weatherPresets.rain;
     const timeOfDay = state.world.timeOfDayPresets[state.activeTimeOfDay] || state.world.timeOfDayPresets.night;
 
-    const weatherFogBoost = state.activeWeather === 'fog' ? 0.006 : state.activeWeather === 'rain' ? 0.002 : 0;
+    const weatherFogBoost = state.activeWeather === 'fog' ? 0.006 : state.activeWeather === 'rain' ? 0.002 : state.activeWeather === 'thunderstorm' ? 0.004 : 0;
     const fogDensity = Math.max(0.0035, (weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
     scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
     renderer.setClearColor(timeOfDay.sky, 1);
@@ -2028,7 +2162,7 @@
     }
     if (visualState.laneMaterial) {
       visualState.laneMaterial.color.set(timeOfDay.laneColor || '#aab1b8');
-      visualState.laneMaterial.opacity = 0.08 + ((timeOfDay.pathBrightness || 0.2) * 0.22);
+      visualState.laneMaterial.opacity = Math.min(0.14, 0.035 + ((timeOfDay.pathBrightness || 0.2) * 0.12));
     }
 
     visualState.landmarkVisuals.forEach((landmarkVisual) => {
@@ -2037,7 +2171,9 @@
       landmarkVisual.reflectionMaterial.opacity = 0.12 + ((timeOfDay.landmarkGlow || 0.3) * 0.18) + ((weather.rainIntensity || 0) * 0.12);
     });
 
+    rebuildClouds(weather, timeOfDay);
     rebuildRain((weather.rainIntensity || 0) * (timeOfDay.rainVisibility || 1));
+    updateLightning(weather);
 
     playHowl(state.sounds.rainLoop);
     fadeHowl(state.sounds.rainLoop, (weather.rainIntensity || 0) * 0.45, 380);
@@ -2361,6 +2497,7 @@
           movePlayer(delta);
         }
 
+        maybeTriggerLightning(state.world.weatherPresets[state.activeWeather] || null);
         updateNpcs(delta);
         updateInteractionTarget();
         animateRain(delta);

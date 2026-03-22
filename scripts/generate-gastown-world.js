@@ -591,6 +591,54 @@ function buildStarterLandmarks(routePoints, sidewalkOuter) {
   }));
 }
 
+
+function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
+  const laneOffset = Math.max((streetWidth * 0.28), 2.1);
+  const placeNpc = (distanceMeters, side, extraOffset, id) => {
+    const placement = placeStarterProp(routePoints, distanceMeters, (side * (laneOffset + extraOffset)), id, 'cardboard_box', { scale: 1 });
+    return { x: placement.x, z: placement.z };
+  };
+
+  return [
+    {
+      id: 'starter-guide-threshold',
+      role: 'guide',
+      dialogId: 'guide_intro',
+      interactRadius: 2.8,
+      idleSpot: placeNpc(16, -1, 1.45, 'starter-npc-guide-anchor'),
+    },
+    {
+      id: 'starter-busker-clock',
+      role: 'busker',
+      dialogId: 'busker_clock_corner',
+      interactRadius: 3,
+      idleSpot: placeNpc(102, 1, 1.65, 'starter-npc-busker-anchor'),
+    },
+    {
+      id: 'starter-pedestrian-west',
+      role: 'pedestrian',
+      dialogId: 'pedestrian_route_tip',
+      interactRadius: 2.2,
+      idleSpot: placeNpc(44, -1, 1.15, 'starter-npc-west-idle'),
+      patrol: [
+        placeNpc(38, -1, 1.15, 'starter-npc-west-a'),
+        placeNpc(56, -1, 1.32, 'starter-npc-west-b'),
+      ],
+    },
+    {
+      id: 'starter-pedestrian-east',
+      role: 'pedestrian',
+      dialogId: 'pedestrian_clock_hint',
+      interactRadius: 2.2,
+      idleSpot: placeNpc(136, 1, 1.18, 'starter-npc-east-idle'),
+      patrol: [
+        placeNpc(126, 1, 1.18, 'starter-npc-east-a'),
+        placeNpc(148, 1, 1.36, 'starter-npc-east-b'),
+      ],
+    },
+  ];
+}
+
 function makeStarterWorld(outputPath) {
   const routePoints = [
     { x: 0, z: 0 },
@@ -712,6 +760,7 @@ function makeStarterWorld(outputPath) {
 
   const props = buildStarterProps(routePoints, sidewalkOuter, 9);
   const landmarks = buildStarterLandmarks(routePoints, sidewalkOuter);
+  const npcs = buildStarterNpcs(routePoints, streetWidth, sidewalkOuter);
 
   const world = {
     routeId: 'gastown_water_street_starter_corridor',
@@ -751,6 +800,7 @@ function makeStarterWorld(outputPath) {
     buildings,
     landmarks,
     props,
+    npcs,
     streetscape: {
       lamps: proceduralStreetscape(routePoints, {
         idPrefix: 'starter-lamp', strideMeters: 24, laneOffset: sidewalkOuter - 0.5, maxCount: 24,
@@ -783,24 +833,25 @@ function buildStarterSurfaceBands(centerline, streetWidth, routeLength) {
     if (!next) return;
 
     const heading = Math.atan2(next.x - point.x, next.z - point.z);
-    const length = Math.max(7, Math.min(14, distance(point, next) * 0.92 || 9));
+    const length = Math.max(8, Math.min(15, distance(point, next) * 0.94 || 10));
     const progress = routeLength > 0 ? index / Math.max(1, centerline.length - 1) : 0;
-    const edgeOffset = streetWidth * 0.35;
-    const jointOffset = streetWidth * 0.22;
-    const jitter = ((index % 4) - 1.5) * 0.2;
-    const heritageBandWidth = progress > 0.42 && progress < 0.72 ? streetWidth * 0.72 : streetWidth * 0.56;
+    const edgeOffset = streetWidth * 0.37;
+    const patchOffset = ((index % 3) - 1) * 0.34;
 
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.3).toFixed(2)), length: Number(length.toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: 0.24, elevation: 0.032 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.18).toFixed(2)), length: Number(Math.max(5.4, length * (progress < 0.25 ? 0.64 : 0.84)).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(jitter.toFixed(2)), offset_z: 0, tone: progress > 0.65 ? 'repair_patch_dark' : 'patch', opacity: progress > 0.65 ? 0.38 : 0.33, elevation: 0.038 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.08).toFixed(2)), length: Number(Math.max(6.2, length * 1.06).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(edgeOffset.toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.28, elevation: 0.034 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.08).toFixed(2)), length: Number(Math.max(6.2, length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((-edgeOffset).toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.28, elevation: 0.034 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.34).toFixed(2)), length: Number((length * 0.96).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: progress < 0.2 ? 0.16 : 0.21, elevation: 0.024 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.07).toFixed(2)), length: Number(Math.max(6.8, length * 1.02).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(edgeOffset.toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.17, elevation: 0.026 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.07).toFixed(2)), length: Number(Math.max(6.8, length * 1.02).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((-edgeOffset).toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.17, elevation: 0.026 });
 
-    if (index % 2 === 0) {
-      bands.push({ segment_id: point.id, width: Number(heritageBandWidth.toFixed(2)), length: Number(Math.max(2.8, length * 0.22).toFixed(2)), yaw: Number((heading + Math.PI / 2).toFixed(4)), offset_x: Number((index % 4 === 0 ? -jointOffset : jointOffset).toFixed(2)), offset_z: 0, tone: progress > 0.42 && progress < 0.72 ? 'cobble_break' : 'paver_break', opacity: 0.34, elevation: 0.041 });
+    if (progress > 0.22 && (index % 3 === 1)) {
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.15).toFixed(2)), length: Number(Math.max(5.6, length * 0.58).toFixed(2)), yaw: Number((heading + ((index % 2 === 0) ? 0.03 : -0.03)).toFixed(4)), offset_x: Number(patchOffset.toFixed(2)), offset_z: 0, tone: progress > 0.68 ? 'repair_patch_dark' : 'patch', opacity: progress > 0.68 ? 0.2 : 0.18, elevation: 0.028 });
     }
 
-    if (index === 1 || index === Math.floor((centerline.length - 1) / 2) || index === centerline.length - 2) {
-      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.82).toFixed(2)), length: Number(Math.max(3.6, length * 0.3).toFixed(2)), yaw: Number((heading + Math.PI / 2).toFixed(4)), offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.42, elevation: 0.045 });
+    if (progress > 0.46 && progress < 0.78 && index % 4 === 0) {
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.62).toFixed(2)), length: Number(Math.max(2.2, length * 0.18).toFixed(2)), yaw: Number((heading + Math.PI / 2).toFixed(4)), offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.18, elevation: 0.029 });
+    }
+
+    if (index === Math.floor((centerline.length - 1) / 2) || index === centerline.length - 2) {
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.68).toFixed(2)), length: Number(Math.max(3.2, length * 0.24).toFixed(2)), yaw: Number((heading + Math.PI / 2).toFixed(4)), offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.24, elevation: 0.03 });
     }
   });
   return bands;

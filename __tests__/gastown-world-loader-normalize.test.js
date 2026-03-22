@@ -72,7 +72,7 @@ test('normalizeWorldData guarantees required mood/weather/time presets and field
   const normalized = normalizeWorldData(minimalValidWorld());
 
   const requiredMoodKeys = ['ambientBed', 'audioDensity', 'voiceFreq', 'lightIntensity'];
-  const requiredWeatherKeys = ['rainIntensity', 'fogDensity'];
+  const requiredWeatherKeys = ['rainIntensity', 'fogDensity', 'cloudCoverage', 'cloudDarkness', 'cloudAltitude', 'lightningFrequency', 'lightningIntensity', 'thunderEnabled'];
   const requiredTimeKeys = [
     'sky', 'ambientColor', 'ambientIntensity', 'keyColor', 'keyIntensity', 'fillColor',
     'fillIntensity', 'buildingContrast', 'buildingEdgeColor', 'roadColor', 'sidewalkColor',
@@ -85,7 +85,7 @@ test('normalizeWorldData guarantees required mood/weather/time presets and field
     requiredMoodKeys.forEach((key) => assert.notEqual(preset[key], undefined));
   });
 
-  ['clear', 'rain', 'fog'].forEach((id) => {
+  ['clear', 'rain', 'fog', 'thunderstorm'].forEach((id) => {
     const preset = normalized.weatherPresets[id];
     assert.ok(preset, `missing weather preset ${id}`);
     requiredWeatherKeys.forEach((key) => assert.notEqual(preset[key], undefined));

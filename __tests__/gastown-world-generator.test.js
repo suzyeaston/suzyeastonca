@@ -5,6 +5,13 @@ const path = require('path');
 
 const { buildWorld } = require('../scripts/generate-gastown-world');
 
+function assertFinitePoints(points) {
+  points.forEach((point) => {
+    assert.equal(Number.isFinite(point.x), true);
+    assert.equal(Number.isFinite(point.z), true);
+  });
+}
+
 test('generator keeps world polygons valid with existing or generated output', () => {
   const root = path.resolve(__dirname, '..');
   const tmpPath = path.join(root, 'assets', 'world', 'gastown-water-street.test-output.json');
@@ -19,13 +26,6 @@ test('generator keeps world polygons valid with existing or generated output', (
   assert.ok(data.zones.street[0].polygon.length >= 3);
   assert.ok(Array.isArray(data.zones.sidewalk[0].polygon));
   assert.ok(data.zones.sidewalk[0].polygon.length >= 3);
-
-  function assertFinitePoints(points) {
-    points.forEach((point) => {
-      assert.equal(Number.isFinite(point.x), true);
-      assert.equal(Number.isFinite(point.z), true);
-    });
-  }
 
   assertFinitePoints(data.route.walkBounds);
   data.zones.street.forEach((zone) => assertFinitePoints(zone.polygon));
@@ -56,10 +56,27 @@ test('generator keeps world polygons valid with existing or generated output', (
 
       assert.ok(Array.isArray(data.landmarks));
       assert.equal(data.landmarks.length >= 3, true, 'starter fallback should expose route beats as landmarks');
+      assert.ok(Array.isArray(data.npcs));
+      assert.equal(data.npcs.length >= 4, true, 'starter fallback should expose deterministic NPCs');
+      assert.deepEqual(data.npcs.map((npc) => npc.id), [
+        'starter-guide-threshold',
+        'starter-busker-clock',
+        'starter-pedestrian-west',
+        'starter-pedestrian-east',
+      ]);
     }
   }
 
   if (fs.existsSync(tmpPath)) {
     fs.unlinkSync(tmpPath);
   }
+});
+
+test('committed world json files include non-empty npc arrays', () => {
+  const root = path.resolve(__dirname, '..');
+  ['assets/world/gastown-water-street.json', 'assets/world/gastown-water-street-starter.json'].forEach((relPath) => {
+    const data = JSON.parse(fs.readFileSync(path.join(root, relPath), 'utf8'));
+    assert.ok(Array.isArray(data.npcs), relPath + ' should include npcs');
+    assert.ok(data.npcs.length > 0, relPath + ' should have at least one npc');
+  });
 });

@@ -10,7 +10,7 @@
       "Starter corridor fallback is active because required offline civic source files are missing.",
       "This world is intentionally human-scaled and deterministic for readability; it is not GIS-accurate Gastown reconstruction."
     ],
-    "lastBuild": "2026-03-22T09:40:47.254Z"
+    "lastBuild": "2026-03-22T10:25:26.599Z"
   },
   "route": {
     "name": "Gastown starter block corridor",
@@ -2324,6 +2324,68 @@
       "scale": 1
     }
   ],
+  "npcs": [
+    {
+      "id": "starter-guide-threshold",
+      "role": "guide",
+      "dialogId": "guide_intro",
+      "interactRadius": 2.8,
+      "idleSpot": {
+        "x": -2.79,
+        "z": -16.3
+      }
+    },
+    {
+      "id": "starter-busker-clock",
+      "role": "busker",
+      "dialogId": "busker_clock_corner",
+      "interactRadius": 3,
+      "idleSpot": {
+        "x": 12.83,
+        "z": -101.35
+      }
+    },
+    {
+      "id": "starter-pedestrian-west",
+      "role": "pedestrian",
+      "dialogId": "pedestrian_route_tip",
+      "interactRadius": 2.2,
+      "idleSpot": {
+        "x": -0.07,
+        "z": -44.17
+      },
+      "patrol": [
+        {
+          "x": -0.59,
+          "z": -38.19
+        },
+        {
+          "x": 0.75,
+          "z": -56.12
+        }
+      ]
+    },
+    {
+      "id": "starter-pedestrian-east",
+      "role": "pedestrian",
+      "dialogId": "pedestrian_clock_hint",
+      "interactRadius": 2.2,
+      "idleSpot": {
+        "x": 14.67,
+        "z": -135.3
+      },
+      "patrol": [
+        {
+          "x": 13.99,
+          "z": -125.33
+        },
+        {
+          "x": 15.66,
+          "z": -147.27
+        }
+      ]
+    }
+  ],
   "streetscape": {
     "lamps": [
       {
@@ -2513,586 +2575,421 @@
     "surfaceBands": [
       {
         "segment_id": "starter-corridor-start",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": 3.0551,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.16,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-corridor-start",
-        "width": 1.76,
-        "length": 8.96,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0551,
-        "offset_x": -0.3,
+        "offset_x": 3.63,
         "offset_z": 0,
-        "tone": "patch",
-        "opacity": 0.33,
-        "elevation": 0.038
+        "tone": "curb_grime",
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-corridor-start",
-        "width": 0.78,
-        "length": 14.84,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0551,
-        "offset_x": 3.43,
+        "offset_x": -3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-corridor-start",
-        "width": 0.78,
-        "length": 14.56,
-        "yaw": 3.0551,
-        "offset_x": -3.43,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-corridor-start",
-        "width": 5.49,
-        "length": 3.08,
-        "yaw": 4.6259,
-        "offset_x": -2.16,
-        "offset_z": 0,
-        "tone": "paver_break",
-        "opacity": 0.34,
-        "elevation": 0.041
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-1",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": 3.0545,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.16,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-beat-1",
-        "width": 1.76,
-        "length": 8.96,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0545,
-        "offset_x": -0.1,
+        "offset_x": 3.63,
         "offset_z": 0,
-        "tone": "patch",
-        "opacity": 0.33,
-        "elevation": 0.038
+        "tone": "curb_grime",
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-1",
-        "width": 0.78,
-        "length": 14.84,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0545,
-        "offset_x": 3.43,
+        "offset_x": -3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-beat-1",
-        "width": 0.78,
-        "length": 14.56,
-        "yaw": 3.0545,
-        "offset_x": -3.43,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-beat-1",
-        "width": 8.04,
-        "length": 4.2,
-        "yaw": 4.6253,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "intersection_pavers",
-        "opacity": 0.42,
-        "elevation": 0.045
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-2",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": 3.0577,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.21,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-beat-2",
-        "width": 1.76,
-        "length": 8.96,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0577,
-        "offset_x": 0.1,
-        "offset_z": 0,
-        "tone": "patch",
-        "opacity": 0.33,
-        "elevation": 0.038
-      },
-      {
-        "segment_id": "starter-beat-2",
-        "width": 0.78,
-        "length": 14.84,
-        "yaw": 3.0577,
-        "offset_x": 3.43,
+        "offset_x": 3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-2",
-        "width": 0.78,
-        "length": 14.56,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0577,
-        "offset_x": -3.43,
+        "offset_x": -3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-beat-2",
-        "width": 5.49,
-        "length": 3.08,
-        "yaw": 4.6285,
-        "offset_x": 2.16,
-        "offset_z": 0,
-        "tone": "paver_break",
-        "opacity": 0.34,
-        "elevation": 0.041
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-3",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": 3.0604,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.21,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-beat-3",
-        "width": 1.76,
-        "length": 11.76,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0604,
-        "offset_x": 0.3,
-        "offset_z": 0,
-        "tone": "patch",
-        "opacity": 0.33,
-        "elevation": 0.038
-      },
-      {
-        "segment_id": "starter-beat-3",
-        "width": 0.78,
-        "length": 14.84,
-        "yaw": 3.0604,
-        "offset_x": 3.43,
+        "offset_x": 3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-3",
-        "width": 0.78,
-        "length": 14.56,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0604,
-        "offset_x": -3.43,
+        "offset_x": -3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-4",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": 3.0599,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.21,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-beat-4",
-        "width": 1.76,
-        "length": 11.76,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0599,
-        "offset_x": -0.3,
+        "offset_x": 3.63,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.17,
+        "elevation": 0.026
+      },
+      {
+        "segment_id": "starter-beat-4",
+        "width": 0.69,
+        "length": 15.3,
+        "yaw": 3.0599,
+        "offset_x": -3.63,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.17,
+        "elevation": 0.026
+      },
+      {
+        "segment_id": "starter-beat-4",
+        "width": 1.47,
+        "length": 8.7,
+        "yaw": 3.0899,
+        "offset_x": 0,
         "offset_z": 0,
         "tone": "patch",
-        "opacity": 0.33,
-        "elevation": 0.038
-      },
-      {
-        "segment_id": "starter-beat-4",
-        "width": 0.78,
-        "length": 14.84,
-        "yaw": 3.0599,
-        "offset_x": 3.43,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-beat-4",
-        "width": 0.78,
-        "length": 14.56,
-        "yaw": 3.0599,
-        "offset_x": -3.43,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-beat-4",
-        "width": 5.49,
-        "length": 3.08,
-        "yaw": 4.6307,
-        "offset_x": -2.16,
-        "offset_z": 0,
-        "tone": "paver_break",
-        "opacity": 0.34,
-        "elevation": 0.041
+        "opacity": 0.18,
+        "elevation": 0.028
       },
       {
         "segment_id": "starter-mid-block",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": 3.0732,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.21,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-mid-block",
-        "width": 1.76,
-        "length": 11.76,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0732,
-        "offset_x": -0.1,
-        "offset_z": 0,
-        "tone": "patch",
-        "opacity": 0.33,
-        "elevation": 0.038
-      },
-      {
-        "segment_id": "starter-mid-block",
-        "width": 0.78,
-        "length": 14.84,
-        "yaw": 3.0732,
-        "offset_x": 3.43,
+        "offset_x": 3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-mid-block",
-        "width": 0.78,
-        "length": 14.56,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0732,
-        "offset_x": -3.43,
+        "offset_x": -3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-mid-block",
-        "width": 8.04,
-        "length": 4.2,
+        "width": 6.66,
+        "length": 3.6,
         "yaw": 4.644,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "intersection_pavers",
-        "opacity": 0.42,
-        "elevation": 0.045
+        "opacity": 0.24,
+        "elevation": 0.03
       },
       {
         "segment_id": "starter-beat-6",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": 3.0742,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.21,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-beat-6",
-        "width": 1.76,
-        "length": 11.76,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0742,
-        "offset_x": 0.1,
-        "offset_z": 0,
-        "tone": "patch",
-        "opacity": 0.33,
-        "elevation": 0.038
-      },
-      {
-        "segment_id": "starter-beat-6",
-        "width": 0.78,
-        "length": 14.84,
-        "yaw": 3.0742,
-        "offset_x": 3.43,
+        "offset_x": 3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-6",
-        "width": 0.78,
-        "length": 14.56,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0742,
-        "offset_x": -3.43,
+        "offset_x": -3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-beat-6",
-        "width": 7.06,
-        "length": 3.08,
-        "yaw": 4.645,
-        "offset_x": 2.16,
-        "offset_z": 0,
-        "tone": "cobble_break",
-        "opacity": 0.34,
-        "elevation": 0.041
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-7",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": 3.0737,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.21,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-beat-7",
-        "width": 1.76,
-        "length": 11.76,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0737,
-        "offset_x": 0.3,
+        "offset_x": 3.63,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.17,
+        "elevation": 0.026
+      },
+      {
+        "segment_id": "starter-beat-7",
+        "width": 0.69,
+        "length": 15.3,
+        "yaw": 3.0737,
+        "offset_x": -3.63,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.17,
+        "elevation": 0.026
+      },
+      {
+        "segment_id": "starter-beat-7",
+        "width": 1.47,
+        "length": 8.7,
+        "yaw": 3.0437,
+        "offset_x": 0,
         "offset_z": 0,
         "tone": "repair_patch_dark",
-        "opacity": 0.38,
-        "elevation": 0.038
-      },
-      {
-        "segment_id": "starter-beat-7",
-        "width": 0.78,
-        "length": 14.84,
-        "yaw": 3.0737,
-        "offset_x": 3.43,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-beat-7",
-        "width": 0.78,
-        "length": 14.56,
-        "yaw": 3.0737,
-        "offset_x": -3.43,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
+        "opacity": 0.2,
+        "elevation": 0.028
       },
       {
         "segment_id": "starter-beat-8",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": 3.0577,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.21,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-beat-8",
-        "width": 1.76,
-        "length": 11.76,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0577,
-        "offset_x": -0.3,
-        "offset_z": 0,
-        "tone": "repair_patch_dark",
-        "opacity": 0.38,
-        "elevation": 0.038
-      },
-      {
-        "segment_id": "starter-beat-8",
-        "width": 0.78,
-        "length": 14.84,
-        "yaw": 3.0577,
-        "offset_x": 3.43,
+        "offset_x": 3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-8",
-        "width": 0.78,
-        "length": 14.56,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0577,
-        "offset_x": -3.43,
+        "offset_x": -3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-beat-8",
-        "width": 5.49,
-        "length": 3.08,
-        "yaw": 4.6285,
-        "offset_x": -2.16,
-        "offset_z": 0,
-        "tone": "paver_break",
-        "opacity": 0.34,
-        "elevation": 0.041
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-9",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": 3.0535,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.21,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-beat-9",
-        "width": 1.76,
-        "length": 11.76,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0535,
-        "offset_x": -0.1,
-        "offset_z": 0,
-        "tone": "repair_patch_dark",
-        "opacity": 0.38,
-        "elevation": 0.038
-      },
-      {
-        "segment_id": "starter-beat-9",
-        "width": 0.78,
-        "length": 14.84,
-        "yaw": 3.0535,
-        "offset_x": 3.43,
+        "offset_x": 3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-9",
-        "width": 0.78,
-        "length": 14.56,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": 3.0535,
-        "offset_x": -3.43,
+        "offset_x": -3.63,
         "offset_z": 0,
         "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
+        "opacity": 0.17,
+        "elevation": 0.026
       },
       {
         "segment_id": "starter-beat-9",
-        "width": 8.04,
-        "length": 4.2,
+        "width": 6.66,
+        "length": 3.6,
         "yaw": 4.6243,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "intersection_pavers",
-        "opacity": 0.42,
-        "elevation": 0.045
+        "opacity": 0.24,
+        "elevation": 0.03
       },
       {
         "segment_id": "starter-corridor-end",
-        "width": 2.94,
-        "length": 14,
+        "width": 3.33,
+        "length": 14.4,
         "yaw": -0.0881,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
-        "opacity": 0.24,
-        "elevation": 0.032
+        "opacity": 0.21,
+        "elevation": 0.024
       },
       {
         "segment_id": "starter-corridor-end",
-        "width": 1.76,
-        "length": 11.76,
+        "width": 0.69,
+        "length": 15.3,
         "yaw": -0.0881,
-        "offset_x": 0.1,
+        "offset_x": 3.63,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.17,
+        "elevation": 0.026
+      },
+      {
+        "segment_id": "starter-corridor-end",
+        "width": 0.69,
+        "length": 15.3,
+        "yaw": -0.0881,
+        "offset_x": -3.63,
+        "offset_z": 0,
+        "tone": "curb_grime",
+        "opacity": 0.17,
+        "elevation": 0.026
+      },
+      {
+        "segment_id": "starter-corridor-end",
+        "width": 1.47,
+        "length": 8.7,
+        "yaw": -0.0581,
+        "offset_x": 0,
         "offset_z": 0,
         "tone": "repair_patch_dark",
-        "opacity": 0.38,
-        "elevation": 0.038
-      },
-      {
-        "segment_id": "starter-corridor-end",
-        "width": 0.78,
-        "length": 14.84,
-        "yaw": -0.0881,
-        "offset_x": 3.43,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-corridor-end",
-        "width": 0.78,
-        "length": 14.56,
-        "yaw": -0.0881,
-        "offset_x": -3.43,
-        "offset_z": 0,
-        "tone": "curb_grime",
-        "opacity": 0.28,
-        "elevation": 0.034
-      },
-      {
-        "segment_id": "starter-corridor-end",
-        "width": 5.49,
-        "length": 3.08,
-        "yaw": 1.4827,
-        "offset_x": 2.16,
-        "offset_z": 0,
-        "tone": "paver_break",
-        "opacity": 0.34,
-        "elevation": 0.041
+        "opacity": 0.2,
+        "elevation": 0.028
       }
     ]
   },
