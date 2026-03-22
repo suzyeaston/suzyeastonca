@@ -655,7 +655,7 @@ function makeStarterWorld(outputPath) {
         mapper: (point, id) => ({ id, x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), radius: 1.4 }),
       }),
       bollards: [],
-      surfaceBands: [],
+      surfaceBands: buildStarterSurfaceBands(centerline, streetWidth),
     },
     spawn,
     bounds: {
@@ -667,6 +667,29 @@ function makeStarterWorld(outputPath) {
 
   fs.writeFileSync(outputPath, JSON.stringify(world, null, 2) + '\n', 'utf8');
   return { generated: true, outputPath, routeLength, usedStarterFallback: true };
+}
+
+
+function buildStarterSurfaceBands(centerline, streetWidth) {
+  const bands = [];
+  centerline.forEach((point, index) => {
+    const next = centerline[index + 1] || centerline[index - 1];
+    if (!next) return;
+
+    const heading = Math.atan2(next.x - point.x, next.z - point.z);
+    const length = Math.max(7, Math.min(14, distance(point, next) * 0.9 || 9));
+    const edgeOffset = streetWidth * 0.31;
+    const jitter = ((index % 4) - 1.5) * 0.18;
+
+    bands.push({ segment_id: point.id, width: streetWidth * 0.28, length, yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: 0.24, elevation: 0.032 });
+    bands.push({ segment_id: point.id, width: streetWidth * 0.22, length: Number(Math.max(5.8, length * 0.88).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(jitter.toFixed(2)), offset_z: 0, tone: index % 3 === 0 ? 'patch' : 'wet_streak', opacity: index % 3 === 0 ? 0.34 : 0.2, elevation: 0.038 });
+    bands.push({ segment_id: point.id, width: streetWidth * 0.12, length: Number(Math.max(4.8, length * 0.72).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((((index % 2 === 0) ? 1 : -1) * edgeOffset).toFixed(2)), offset_z: 0, tone: 'edge_grime', opacity: 0.26, elevation: 0.034 });
+
+    if (index % 3 === 1) {
+      bands.push({ segment_id: point.id, width: streetWidth * 0.18, length: Number(Math.max(4.2, length * 0.46).toFixed(2)), yaw: Number((heading + (index % 2 === 0 ? 0.08 : -0.08)).toFixed(4)), offset_x: Number((((index % 2 === 0) ? -1 : 1) * streetWidth * 0.14).toFixed(2)), offset_z: 0, tone: 'puddle', opacity: 0.16, elevation: 0.042 });
+    }
+  });
+  return bands;
 }
 
 function buildWorld(options = {}) {

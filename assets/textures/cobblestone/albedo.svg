@@ -1,19 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect width="128" height="128" fill="#4f535b"/>
-  <g stroke="#2b2f35" stroke-width="2">
-    <path d="M0 16H128M0 40H128M0 64H128M0 88H128M0 112H128"/>
-    <path d="M16 0V128M40 0V128M64 0V128M88 0V128M112 0V128"/>
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#323840"/>
+      <stop offset="100%" stop-color="#1d2228"/>
+    </linearGradient>
+    <filter id="grain" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.18"/>
+      </feComponentTransfer>
+    </filter>
+  </defs>
+  <rect width="128" height="128" fill="url(#base)"/>
+  <g stroke="#12161b" stroke-width="3" stroke-linejoin="round">
+    <path fill="#414850" d="M2 4 26 2 30 16 12 20 1 15Z"/>
+    <path fill="#505760" d="M31 4 53 6 55 20 34 22 28 14Z"/>
+    <path fill="#3b424a" d="M57 2 79 4 82 18 62 22 55 12Z"/>
+    <path fill="#4a515b" d="M84 4 110 2 114 16 94 20 82 14Z"/>
+    <path fill="#373f47" d="M111 4 126 8 126 20 114 22 109 15Z"/>
+    <path fill="#5a6168" d="M4 25 24 23 28 39 8 42 1 34Z"/>
+    <path fill="#3d444d" d="M27 24 49 26 52 40 32 44 24 35Z"/>
+    <path fill="#515860" d="M54 23 75 25 79 41 58 44 50 34Z"/>
+    <path fill="#3a4047" d="M80 24 103 23 108 38 88 43 77 35Z"/>
+    <path fill="#4d545d" d="M106 25 126 25 126 40 110 43 102 36Z"/>
+    <path fill="#353b43" d="M1 47 20 45 24 59 4 63 1 57Z"/>
+    <path fill="#4b525a" d="M23 46 45 47 49 62 28 66 20 57Z"/>
+    <path fill="#606770" d="M50 45 72 46 76 61 55 66 48 58Z"/>
+    <path fill="#424850" d="M78 46 99 45 103 61 82 64 75 57Z"/>
+    <path fill="#30363f" d="M105 47 126 46 126 63 108 66 101 58Z"/>
+    <path fill="#4b5258" d="M2 68 23 67 28 83 8 87 1 79Z"/>
+    <path fill="#383e46" d="M29 69 51 67 55 82 35 86 26 79Z"/>
+    <path fill="#535a62" d="M56 67 79 69 82 84 61 87 52 78Z"/>
+    <path fill="#3d434a" d="M84 68 108 67 111 82 90 87 79 80Z"/>
+    <path fill="#4f565d" d="M112 69 126 70 126 86 114 88 108 79Z"/>
+    <path fill="#343941" d="M2 91 24 89 27 103 8 107 1 101Z"/>
+    <path fill="#575e67" d="M29 89 51 91 55 106 34 109 26 100Z"/>
+    <path fill="#41474f" d="M57 90 79 89 83 105 61 109 53 100Z"/>
+    <path fill="#5b626c" d="M85 90 108 89 112 105 91 109 83 100Z"/>
+    <path fill="#32373f" d="M113 91 126 93 126 108 114 110 108 101Z"/>
+    <path fill="#4c535b" d="M4 111 25 110 29 124 9 127 1 120Z"/>
+    <path fill="#383f46" d="M31 112 53 110 56 124 36 127 28 120Z"/>
+    <path fill="#4f565e" d="M58 110 80 112 84 126 62 127 55 120Z"/>
+    <path fill="#3a4148" d="M86 111 109 110 113 124 92 127 84 120Z"/>
+    <path fill="#555c64" d="M114 112 126 114 126 127 115 127 109 121Z"/>
   </g>
-  <g fill="#6c7078" opacity="0.9">
-    <rect x="3" y="3" width="22" height="10" rx="2"/>
-    <rect x="29" y="5" width="24" height="9" rx="2"/>
-    <rect x="58" y="2" width="21" height="12" rx="2"/>
-    <rect x="84" y="4" width="26" height="10" rx="2"/>
-  </g>
-  <g fill="#838892" opacity="0.85">
-    <rect x="6" y="22" width="18" height="12" rx="2"/>
-    <rect x="34" y="20" width="22" height="14" rx="2"/>
-    <rect x="61" y="22" width="20" height="12" rx="2"/>
-    <rect x="88" y="20" width="26" height="14" rx="2"/>
-  </g>
+  <path d="M0 18C18 12 26 25 45 21s28-13 45-8 23 2 38-2v17c-16 4-21 7-39 3s-26 2-44 7-27 2-45 6V18Zm0 54c14-4 19-9 36-7s23 8 43 4 28-8 49-4v16c-17-4-27 1-47 4s-31-2-45 2S18 93 0 98V72Zm0 28c17-6 28-1 43-3s27-9 43-6 21 9 42 6v18H0v-15Z" fill="#0f1216" opacity="0.26"/>
+  <rect width="128" height="128" fill="#ffffff" opacity="0.06" filter="url(#grain)"/>
 </svg>
