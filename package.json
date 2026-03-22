@@ -4,6 +4,7 @@
   "type": "commonjs",
   "scripts": {
     "test": "node --test \"./__tests__/**/*.test.js\"",
-    "build:gastown-world": "node scripts/build-gastown-world.js"
+    "build:gastown-world": "npm run sync:cov && node scripts/build-gastown-world.js",
+    "sync:cov": "node scripts/sync-cov-open-data.js"
   }
 }

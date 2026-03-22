@@ -96,6 +96,21 @@ class TestElement {
     return child;
   }
 
+  insertBefore(child, reference) {
+    child.parentNode = this;
+    if (!reference) {
+      this.children.push(child);
+      return child;
+    }
+    const index = this.children.indexOf(reference);
+    if (index === -1) {
+      this.children.push(child);
+      return child;
+    }
+    this.children.splice(index, 0, child);
+    return child;
+  }
+
   set className(value) {
     this._className = value || '';
     this.classList._syncFromString(this._className);
