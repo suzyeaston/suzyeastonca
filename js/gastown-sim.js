@@ -175,6 +175,34 @@
     steamClockVisuals: [],
   };
 
+  function applyLandmarkVisualState(landmarkVisuals, lightingState) {
+    if (!Array.isArray(landmarkVisuals) || !lightingState || typeof lightingState !== 'object') {
+      return;
+    }
+
+    const mood = lightingState.mood || {};
+    const weather = lightingState.weather || {};
+    const timeOfDay = lightingState.timeOfDay || {};
+    const markerGlow = (timeOfDay.landmarkGlow || 0.3) * (0.6 + ((mood.lightIntensity || 0) * 0.5));
+    const haloOpacity = 0.08 + ((timeOfDay.landmarkGlow || 0.3) * 0.18);
+    const reflectionOpacity = 0.12 + ((timeOfDay.landmarkGlow || 0.3) * 0.18) + ((weather.rainIntensity || 0) * 0.12);
+
+    landmarkVisuals.forEach((landmarkVisual) => {
+      if (!landmarkVisual || typeof landmarkVisual !== 'object') {
+        return;
+      }
+      if (landmarkVisual.markerMaterial) {
+        landmarkVisual.markerMaterial.emissiveIntensity = markerGlow;
+      }
+      if (landmarkVisual.haloMaterial) {
+        landmarkVisual.haloMaterial.opacity = haloOpacity;
+      }
+      if (landmarkVisual.reflectionMaterial) {
+        landmarkVisual.reflectionMaterial.opacity = reflectionOpacity;
+      }
+    });
+  }
+
   const LOOK_PITCH_LIMIT = Math.PI / 2.25;
   const WHEEL_PITCH_SENSITIVITY = 0.00085;
   const KEYBOARD_PITCH_STEP = 0.045;
@@ -2531,16 +2559,23 @@
     const base = (config.audioBaseUrl || '').replace(/\/$/, '');
     const src = (name) => [base + '/' + name + '.mp3', base + '/' + name + '.ogg'];
 
-    ['quiet_night', 'eerie_drones', 'nightlife_hum', 'commuter_mix'].forEach((id) => {
-      state.sounds.beds[id] = createSafeHowl({ src: src('beds/' + id), loop: true, volume: 0, html5: false });
-    });
+    try {
+      ['quiet_night', 'eerie_drones', 'nightlife_hum', 'commuter_mix'].forEach((id) => {
+        state.sounds.beds[id] = createSafeHowl({ src: src('beds/' + id), loop: true, volume: 0, html5: false });
+      });
 
-    state.sounds.rainLoop = createSafeHowl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
-    state.sounds.thunder = createSafeHowl({ src: src('weather/thunder_roll'), volume: 0.22 });
+      state.sounds.rainLoop = createSafeHowl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
+      state.sounds.thunder = createSafeHowl({ src: src('weather/thunder_roll'), volume: 0.22 });
 
-    (world.audioZones || []).forEach((zone) => {
-      state.sounds.zoneBeds[zone.id] = createSafeHowl({ src: src('zones/' + zone.bed), loop: true, volume: 0 });
-    });
+      (world.audioZones || []).forEach((zone) => {
+        if (!zone || !zone.id || !zone.bed) {
+          return;
+        }
+        state.sounds.zoneBeds[zone.id] = createSafeHowl({ src: src('zones/' + zone.bed), loop: true, volume: 0 });
+      });
+    } catch (error) {
+      warnAudioUnavailable('Gastown audio setup failed; simulator continuing without ambient audio.', error);
+    }
   }
 
   function applyVisualState() {
@@ -2593,11 +2628,7 @@
       visualState.laneMaterial.opacity = Math.min(0.14, 0.035 + ((timeOfDay.pathBrightness || 0.2) * 0.12));
     }
 
-    visualState.landmarkVisuals.forEach((landmarkVisual) => {
-      landmarkVisual.markerMaterial.emissiveIntensity = (timeOfDay.landmarkGlow || 0.3) * (0.6 + (mood.lightIntensity * 0.5));
-      landmarkVisual.haloMaterial.opacity = 0.08 + ((timeOfDay.landmarkGlow || 0.3) * 0.18);
-      landmarkVisual.reflectionMaterial.opacity = 0.12 + ((timeOfDay.landmarkGlow || 0.3) * 0.18) + ((weather.rainIntensity || 0) * 0.12);
-    });
+    applyLandmarkVisualState(visualState.landmarkVisuals, { mood, weather, timeOfDay });
 
     rebuildClouds(weather, timeOfDay);
     rebuildRain((weather.rainIntensity || 0) * (timeOfDay.rainVisibility || 1));
