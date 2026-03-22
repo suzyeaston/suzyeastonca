@@ -79,11 +79,16 @@ test('normalizeWorldData guarantees required mood/weather/time presets and field
     'laneColor', 'landmarkGlow', 'rainVisibility', 'pathBrightness', 'fogBoost'
   ];
 
-  ['eerie', 'calm', 'lively'].forEach((id) => {
+  ['calm', 'commuter', 'lively', 'eerie'].forEach((id) => {
     const preset = normalized.moodPresets[id];
     assert.ok(preset, `missing mood preset ${id}`);
     requiredMoodKeys.forEach((key) => assert.notEqual(preset[key], undefined));
   });
+
+  assert.equal(normalized.moodPresets.calm.ambientBed, 'quiet_night');
+  assert.equal(normalized.moodPresets.commuter.ambientBed, 'commuter_mix');
+  assert.equal(normalized.moodPresets.lively.ambientBed, 'nightlife_hum');
+  assert.equal(normalized.moodPresets.eerie.ambientBed, 'eerie_drones');
 
   ['clear', 'rain', 'fog', 'thunderstorm'].forEach((id) => {
     const preset = normalized.weatherPresets[id];

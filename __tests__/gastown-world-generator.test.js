@@ -41,29 +41,33 @@ test('generator keeps world polygons valid with existing or generated output', (
     assert.ok(sampleBuilding.footprint_local.length >= 3);
     assertFinitePoints(sampleBuilding.footprint_local);
 
-    if (data.meta && data.meta.fallbackMode === 'starter-corridor') {
+    if (data.meta && data.meta.fallbackMode === 'working-gastown-corridor') {
       assert.ok(Array.isArray(data.streetscape.surfaceBands));
-      assert.ok(data.streetscape.surfaceBands.length > 0, 'starter fallback should include deterministic surface bands');
+      assert.ok(data.streetscape.surfaceBands.length > 0, 'working fallback should include deterministic surface bands');
       const surfaceTones = new Set(data.streetscape.surfaceBands.map((band) => band.tone));
       ['curb_grime', 'intersection_pavers'].forEach((tone) => {
-        assert.equal(surfaceTones.has(tone), true, 'starter fallback surface bands should include ' + tone);
+        assert.equal(surfaceTones.has(tone), true, 'working fallback surface bands should include ' + tone);
       });
 
       const propKinds = new Set((data.props || []).map((prop) => prop.kind));
       ['trash_bag', 'newspaper_box', 'utility_box', 'bench', 'planter'].forEach((kind) => {
-        assert.equal(propKinds.has(kind), true, 'starter fallback props should include ' + kind);
+        assert.equal(propKinds.has(kind), true, 'working fallback props should include ' + kind);
       });
 
       assert.ok(Array.isArray(data.landmarks));
-      assert.equal(data.landmarks.length >= 3, true, 'starter fallback should expose route beats as landmarks');
-      assert.equal(Array.isArray(data.hero_landmarks), true, 'starter fallback should expose hero landmarks');
-      assert.equal(data.hero_landmarks.some((hero) => hero.id === 'steam-clock-hero'), true, 'starter fallback should expose a Steam Clock hero anchor');
-      assert.equal(data.landmarks.some((landmark) => landmark.id === 'steam-clock'), true, 'starter fallback should expose a Steam Clock landmark');
-      assert.equal(data.nodes.some((node) => node.id === 'steam-clock'), true, 'starter fallback should expose a Steam Clock node');
+      assert.equal(data.landmarks.length >= 5, true, 'working fallback should expose route beats as landmarks');
+      assert.equal(Array.isArray(data.hero_landmarks), true, 'working fallback should expose hero landmarks');
+      assert.equal(data.hero_landmarks.some((hero) => hero.id === 'steam-clock-hero'), true, 'working fallback should expose a Steam Clock hero anchor');
+      ['waterfront-station-threshold', 'water-street-gateway', 'steam-clock', 'maple-tree-square-edge', 'cambie-rise-continuation'].forEach((id) => {
+        assert.equal(data.landmarks.some((landmark) => landmark.id === id), true, 'working fallback should expose landmark ' + id);
+      });
+      ['waterfront-station-threshold', 'water-cordova-seam', 'water-street-mid-block', 'steam-clock', 'cambie-rise-continuation'].forEach((id) => {
+        assert.equal(data.nodes.some((node) => node.id === id), true, 'working fallback should expose node ' + id);
+      });
       assert.ok(Array.isArray(data.npcs));
-      assert.equal(data.npcs.length >= 10, true, 'starter fallback should expose a denser deterministic NPC set');
+      assert.equal(data.npcs.length >= 10, true, 'working fallback should expose a denser deterministic NPC set');
       const touristCluster = data.npcs.filter((npc) => String(npc.id).includes('tourist-clock'));
-      assert.equal(touristCluster.length >= 6, true, 'starter fallback should expose a tourist cluster near the Steam Clock');
+      assert.equal(touristCluster.length >= 6, true, 'working fallback should expose a tourist cluster near the Steam Clock');
       assert.equal(touristCluster.some((npc) => npc.pose === 'taking_photo'), true, 'tourist cluster should include a photo pose');
       assert.equal(touristCluster.some((npc) => npc.pose === 'being_photographed'), true, 'tourist cluster should include a photographed pose');
       assert.equal(touristCluster.some((npc) => npc.heldProp === 'camera'), true, 'tourist cluster should include a held camera prop');
@@ -73,7 +77,8 @@ test('generator keeps world polygons valid with existing or generated output', (
         acc[npc.role] = (acc[npc.role] || 0) + 1;
         return acc;
       }, {});
-      assert.deepEqual(roleCounts, { guide: 1, busker: 1, pedestrian: 2, tourist: 5, photographer: 1 }, 'starter fallback role mix should remain deterministic');
+      assert.deepEqual(roleCounts, { guide: 1, busker: 1, pedestrian: 2, tourist: 5, photographer: 1 }, 'working fallback role mix should remain deterministic');
+      assert.equal(data.routeId, 'gastown_water_street_working_corridor');
     }
   }
 
@@ -92,5 +97,55 @@ test('committed world json files include expanded npc arrays', () => {
     assert.ok(data.hero_landmarks.some((hero) => hero.id === 'steam-clock-hero'), relPath + ' should include the Steam Clock hero anchor');
     assert.ok(data.nodes.some((node) => node.id === 'steam-clock'), relPath + ' should include the Steam Clock node');
     assert.ok(data.landmarks.some((landmark) => landmark.id === 'steam-clock'), relPath + ' should include the Steam Clock landmark');
+    assert.equal(data.routeId, 'gastown_water_street_working_corridor', relPath + ' should treat fallback as the working corridor');
+    assert.equal(data.meta.fallbackMode, 'working-gastown-corridor', relPath + ' should identify the working fallback mode');
+    assert.ok(data.landmarks.some((landmark) => landmark.id === 'water-street-gateway'), relPath + ' should include the Water Street gateway landmark');
+    assert.ok(data.nodes.some((node) => node.id === 'water-cordova-seam'), relPath + ' should include the Water/Cordova seam node');
+  });
+});
+
+test('generator consumes refreshed reference inputs when present', () => {
+  const root = path.resolve(__dirname, '..');
+  const refreshDir = path.join(root, 'data', 'reference', 'refresh');
+  fs.mkdirSync(refreshDir, { recursive: true });
+
+  const featureCollection = {
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', properties: { id: 'seed' }, geometry: { type: 'Point', coordinates: [-123.11, 49.28] } }],
+  };
+  ['gastown-route-reference.geojson', 'gastown-street-context.geojson', 'gastown-landmark-reference.geojson', 'gastown-building-cues.geojson', 'gastown-poi-reference.geojson'].forEach((name) => {
+    fs.writeFileSync(path.join(refreshDir, name), JSON.stringify(featureCollection), 'utf8');
+  });
+
+  const tmpPath = path.join(root, 'assets', 'world', 'gastown-water-street.reference-test.json');
+  const result = buildWorld({ root, outputPath: tmpPath });
+  const data = JSON.parse(fs.readFileSync(tmpPath, 'utf8'));
+
+  assert.equal(result.generated, true);
+  assert.deepEqual(data.meta.referenceInputsUsed, [
+    'gastown-route-reference.geojson',
+    'gastown-street-context.geojson',
+    'gastown-landmark-reference.geojson',
+    'gastown-building-cues.geojson',
+    'gastown-poi-reference.geojson',
+  ]);
+
+  fs.rmSync(refreshDir, { recursive: true, force: true });
+  fs.rmSync(tmpPath, { force: true });
+});
+
+test('refresh helper documents expanded expected output files', () => {
+  const root = path.resolve(__dirname, '..');
+  const src = fs.readFileSync(path.join(root, 'scripts', 'refresh-gastown-reference-data.ps1'), 'utf8');
+
+  [
+    'gastown-route-reference.geojson',
+    'gastown-street-context.geojson',
+    'gastown-landmark-reference.geojson',
+    'gastown-building-cues.geojson',
+    'gastown-poi-reference.geojson',
+    'gastown-overpass-buildings.json',
+  ].forEach((name) => {
+    assert.match(src, new RegExp(name.replace('.', '\\.')));
   });
 });

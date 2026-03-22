@@ -235,10 +235,10 @@
     });
 
     const defaultMoodPreset = {
-      ambientBed: 'eerie_drones',
-      audioDensity: 0.65,
-      voiceFreq: 0.2,
-      lightIntensity: 0.78,
+      ambientBed: 'quiet_night',
+      audioDensity: 0.5,
+      voiceFreq: 0.12,
+      lightIntensity: 0.86,
     };
 
     const defaultWeatherPreset = {
@@ -274,9 +274,10 @@
     };
 
     normalized.moodPresets = normalized.moodPresets && typeof normalized.moodPresets === 'object' ? normalized.moodPresets : {};
-    normalized.moodPresets.eerie = mergePreset(defaultMoodPreset, normalized.moodPresets.eerie);
-    normalized.moodPresets.calm = mergePreset(defaultMoodPreset, Object.assign({ ambientBed: 'quiet_night', audioDensity: 0.45, voiceFreq: 0.1, lightIntensity: 0.86 }, normalized.moodPresets.calm));
-    normalized.moodPresets.lively = mergePreset(defaultMoodPreset, Object.assign({ ambientBed: 'nightlife_hum', audioDensity: 0.84, voiceFreq: 0.35, lightIntensity: 0.96 }, normalized.moodPresets.lively));
+    normalized.moodPresets.calm = mergePreset(defaultMoodPreset, Object.assign({ ambientBed: 'quiet_night', audioDensity: 0.42, voiceFreq: 0.08, lightIntensity: 0.9 }, normalized.moodPresets.calm));
+    normalized.moodPresets.commuter = mergePreset(defaultMoodPreset, Object.assign({ ambientBed: 'commuter_mix', audioDensity: 0.62, voiceFreq: 0.22, lightIntensity: 0.88 }, normalized.moodPresets.commuter));
+    normalized.moodPresets.lively = mergePreset(defaultMoodPreset, Object.assign({ ambientBed: 'nightlife_hum', audioDensity: 0.8, voiceFreq: 0.34, lightIntensity: 0.96 }, normalized.moodPresets.lively));
+    normalized.moodPresets.eerie = mergePreset(defaultMoodPreset, Object.assign({ ambientBed: 'eerie_drones', audioDensity: 0.6, voiceFreq: 0.16, lightIntensity: 0.74 }, normalized.moodPresets.eerie));
 
     normalized.weatherPresets = normalized.weatherPresets && typeof normalized.weatherPresets === 'object' ? normalized.weatherPresets : {};
     normalized.weatherPresets.clear = mergePreset(defaultWeatherPreset, Object.assign({ rainIntensity: 0, fogDensity: 0.0065, cloudCoverage: 0.38, cloudDarkness: 0.22, cloudAltitude: 68, rainOpacity: 0.16, rainSpeed: 0.65 }, normalized.weatherPresets.clear));
