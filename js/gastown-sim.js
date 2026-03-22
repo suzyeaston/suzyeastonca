@@ -88,7 +88,7 @@
     debugEnabled: new URLSearchParams(window.location.search).get('gastownDebug') === '1',
     activeWeather: config.defaultWeather || 'clear',
     activeTimeOfDay: config.defaultTimeOfDay || 'morning',
-    activeMood: config.defaultMood || 'eerie',
+    activeMood: config.defaultMood || 'calm',
     sounds: {
       beds: {},
       zoneBeds: {},
@@ -237,10 +237,10 @@
 
   function setWorldModeStatus(world) {
     if (!world || !world.meta) return;
-    const isStarter = world.meta.fallbackMode === 'starter-corridor' || world.meta.runtimeFallbackActive || world.meta.isRealCivicBuild === false;
-    if (!isStarter) return;
-    const buildNote = (world.meta.buildNotes && world.meta.buildNotes[0]) || 'Starter corridor fallback world active.';
-    setStatus('Starter fallback world active: ' + buildNote);
+    const isWorkingFallback = world.meta.fallbackMode === 'working-gastown-corridor' || world.meta.runtimeFallbackActive || world.meta.isRealCivicBuild === false;
+    if (!isWorkingFallback) return;
+    const buildNote = (world.meta.buildNotes && world.meta.buildNotes[0]) || 'Working fallback Gastown corridor active.';
+    setStatus('Working fallback Gastown corridor active: ' + buildNote);
   }
 
   function updateAttribution(world) {
@@ -1724,8 +1724,8 @@
   function refreshDebugRuntimeReadout() {
     if (!state.debugEnabled || !routeDebugOverlay || !state.world || !state.world.route) return;
     const lines = state.world.route.centerline.map((point, index) => (index + 1) + '. ' + (point.label || point.id || ('node-' + index)) + ' [' + point.x + ', ' + point.z + ']');
-    const modeLine = state.world.meta && state.world.meta.fallbackMode === 'starter-corridor'
-      ? 'Mode: starter fallback corridor (not GIS-accurate civic build)'
+    const modeLine = state.world.meta && state.world.meta.fallbackMode === 'working-gastown-corridor'
+      ? 'Mode: working fallback Gastown corridor (stylized primary playable build)'
       : 'Mode: civic-data-derived world';
     lines.unshift(modeLine);
     lines.push('Player: [' + player.position.x.toFixed(2) + ', ' + player.position.z.toFixed(2) + ']');
@@ -2339,7 +2339,7 @@
       return;
     }
 
-    const mood = state.world.moodPresets[state.activeMood] || state.world.moodPresets.eerie;
+    const mood = state.world.moodPresets[state.activeMood] || state.world.moodPresets.calm || state.world.moodPresets.eerie;
     const weather = state.world.weatherPresets[state.activeWeather] || state.world.weatherPresets.drizzle || state.world.weatherPresets.rain;
     const timeOfDay = state.world.timeOfDayPresets[state.activeTimeOfDay] || state.world.timeOfDayPresets.night;
 
@@ -2400,7 +2400,7 @@
 
   function applyMood(moodId) {
     state.activeMood = moodId;
-    const preset = state.world.moodPresets[moodId] || state.world.moodPresets.eerie;
+    const preset = state.world.moodPresets[moodId] || state.world.moodPresets.calm || state.world.moodPresets.eerie;
 
     applyVisualState();
 
@@ -2783,7 +2783,7 @@
       }
       scheduleSteamClock();
       setWorldModeStatus(state.world);
-      if (!(state.world.meta && state.world.meta.fallbackMode === 'starter-corridor')) {
+      if (!(state.world.meta && state.world.meta.fallbackMode === 'working-gastown-corridor')) {
         setStatus('Prototype ready. Click scene to enter look mode and begin moving.');
       }
       setPointerStatus('Pointer unlocked. Click scene to enter look mode.');

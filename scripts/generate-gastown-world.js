@@ -14,6 +14,12 @@ function tryReadJson(filePath) {
   return readJson(filePath);
 }
 
+function tryReadGeoJsonFeatures(filePath) {
+  const json = tryReadJson(filePath);
+  if (!json || !Array.isArray(json.features)) return [];
+  return json.features;
+}
+
 function toRadians(value) {
   return (value * Math.PI) / 180;
 }
@@ -551,22 +557,34 @@ function buildStarterProps(routePoints, sidewalkOuter, spawnDistance) {
 }
 
 function buildStarterLandmarks(routePoints, sidewalkOuter) {
-  const threshold = placeStarterProp(routePoints, 12, -1 * (sidewalkOuter + 2.6), 'starter-landmark-threshold-anchor', 'cardboard_box', { scale: 1 });
-  const steamClock = placeStarterProp(routePoints, 108, -1 * (sidewalkOuter + 3.35), 'steam-clock-anchor', 'cardboard_box', { scale: 1 });
-  const continuation = placeStarterProp(routePoints, 166, sidewalkOuter + 2.1, 'starter-landmark-postclock-anchor', 'cardboard_box', { scale: 1 });
+  const threshold = placeStarterProp(routePoints, 14, -1 * (sidewalkOuter + 2.4), 'waterfront-station-threshold-anchor', 'cardboard_box', { scale: 1 });
+  const cordovaGateway = placeStarterProp(routePoints, 54, 1 * (sidewalkOuter + 1.4), 'water-street-gateway-anchor', 'cardboard_box', { scale: 1 });
+  const steamClock = placeStarterProp(routePoints, 112, -1 * (sidewalkOuter + 3.55), 'steam-clock-anchor', 'cardboard_box', { scale: 1 });
+  const mapleTreeSquare = placeStarterProp(routePoints, 144, -1 * (sidewalkOuter + 2.2), 'maple-tree-square-anchor', 'cardboard_box', { scale: 1 });
+  const continuation = placeStarterProp(routePoints, 174, sidewalkOuter + 1.9, 'cambie-rise-anchor', 'cardboard_box', { scale: 1 });
   const heroRadius = 4.8;
 
   return {
     landmarks: [
     {
-      id: 'starter-waterfront-threshold',
-      label: 'Waterfront threshold',
+      id: 'waterfront-station-threshold',
+      label: 'Waterfront Station threshold',
       kind: 'district_gate',
       x: threshold.x,
       y: 0,
       z: threshold.z,
       scale: 1.35,
-      cue: 'Station canopies give way to brick-front Gastown blocks.',
+      cue: 'Station canopies give way to brick-front Gastown blocks and the Water Street bend begins.',
+    },
+    {
+      id: 'water-street-gateway',
+      label: 'Water Street gateway',
+      kind: 'street_pivot',
+      x: cordovaGateway.x,
+      y: 0,
+      z: cordovaGateway.z,
+      scale: 1.16,
+      cue: 'The route tightens into the Water Street heritage frontage with a more legible Gastown bend.',
     },
     {
       id: 'steam-clock',
@@ -580,14 +598,24 @@ function buildStarterLandmarks(routePoints, sidewalkOuter) {
       cue: 'A small brick-paved plaza opens on the heritage sidewalk and reveals the Steam Clock on the proper approach side.',
     },
     {
-      id: 'starter-post-clock-continuation',
-      label: 'Post-clock continuation',
+      id: 'maple-tree-square-edge',
+      label: 'Maple Tree Square edge',
+      kind: 'plaza_edge',
+      x: mapleTreeSquare.x,
+      y: 0,
+      z: mapleTreeSquare.z,
+      scale: 1.1,
+      cue: 'The street opens slightly after the clock with a plaza-like pause before the corridor continues.',
+    },
+    {
+      id: 'cambie-rise-continuation',
+      label: 'Cambie rise continuation',
       kind: 'view-axis',
       x: continuation.x,
       y: 0,
       z: continuation.z,
       scale: 1.18,
-      cue: 'The corridor loosens into longer facades and a quieter continuation east.',
+      cue: 'The corridor loosens into longer facades and a quieter continuation east toward the Cambie rise.',
     },
     ],
     heroLandmarks: [
@@ -761,13 +789,27 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
   ];
 }
 
-function makeStarterWorld(outputPath) {
+function buildStarterReferenceBundle(root) {
+  const refreshDir = path.join(root, 'data', 'reference', 'refresh');
+  return {
+    routeReference: tryReadJson(path.join(refreshDir, 'gastown-route-reference.geojson')),
+    streetContext: tryReadJson(path.join(refreshDir, 'gastown-street-context.geojson')),
+    landmarkReference: tryReadJson(path.join(refreshDir, 'gastown-landmark-reference.geojson')),
+    buildingCues: tryReadJson(path.join(refreshDir, 'gastown-building-cues.geojson')),
+    poiReference: tryReadJson(path.join(refreshDir, 'gastown-poi-reference.geojson')),
+  };
+}
+
+function makeStarterWorld(outputPath, options = {}) {
+  const reference = options.reference || {};
   const routePoints = [
     { x: 0, z: 0 },
-    { x: 4, z: -46 },
-    { x: 8, z: -95 },
-    { x: 12, z: -154 },
-    { x: 15, z: -188 },
+    { x: 4, z: -28 },
+    { x: 12, z: -60 },
+    { x: 18, z: -98 },
+    { x: 11, z: -134 },
+    { x: 4, z: -167 },
+    { x: -2, z: -196 },
   ];
   const routeLength = polylineLength(routePoints);
   const beatCount = 10;
@@ -776,16 +818,18 @@ function makeStarterWorld(outputPath) {
     const at = (routeLength * i) / beatCount;
     const point = samplePointAtDistance(routePoints, at);
     centerline.push({
-      id: 'starter-beat-' + i,
-      label: i === 0 ? 'Starter Corridor Start' : i === beatCount ? 'Starter Corridor End' : 'Starter Beat ' + i,
+      id: 'gastown-beat-' + i,
+      label: i === 0 ? 'Waterfront threshold' : i === beatCount ? 'Cambie rise continuation' : 'Gastown beat ' + i,
       x: Number(point.x.toFixed(2)),
       z: Number(point.z.toFixed(2)),
     });
   }
 
-  centerline[0].id = 'starter-corridor-start';
-  centerline[Math.floor(centerline.length / 2)].id = 'starter-mid-block';
-  centerline[centerline.length - 1].id = 'starter-corridor-end';
+  centerline[0].id = 'waterfront-station-threshold';
+  centerline[2].id = 'water-cordova-seam';
+  centerline[Math.floor(centerline.length / 2)].id = 'water-street-mid-block';
+  centerline[6].id = 'steam-clock-approach';
+  centerline[centerline.length - 1].id = 'cambie-rise-continuation';
 
   const streetWidth = 9.8;
   const sidewalkWidth = 3.2;
@@ -837,15 +881,15 @@ function makeStarterWorld(outputPath) {
       const localFrontage = frontage + (cornerMoment ? 3 : 0) + (postClock && side < 0 ? 2 : 0);
       const footprint = makeRectFootprint(footprintCenter, frame.tangent, localFrontage, localDepth);
       const metrics = deriveFootprintMetrics(footprint);
-      const id = `starter-bldg-${i}-${side < 0 ? 'left' : 'right'}`;
+      const id = `gastown-frontage-${i}-${side < 0 ? 'south' : 'north'}`;
       const recessedEntryCount = recessPattern[(i + sideIndex) % recessPattern.length];
       const corniceEmphasis = cornerMoment ? 0.42 : (steamClockApproach ? 0.34 : 0.26);
       const massInset = waterfrontThreshold ? 0.95 : (postClock ? 0.93 : 0.96);
       buildings.push({
         id,
-        reference_name: cornerMoment ? 'Starter corner heritage anchor' : side < 0 ? 'Starter west frontage' : 'Starter east frontage',
+        reference_name: cornerMoment ? 'Gastown corner heritage anchor' : side < 0 ? 'Water Street south frontage' : 'Water Street north frontage',
         segment_style: waterfrontThreshold ? 'waterfront-threshold' : steamClockApproach ? 'steam-clock-approach' : postClock ? 'post-clock-continuation' : 'mid-corridor-heritage-rhythm',
-        style_notes: cornerMoment ? 'Corner building massing with stronger cornice to punctuate the route.' : 'Stylized heritage storefront cadence tuned for fallback readability.',
+        style_notes: cornerMoment ? 'Corner building massing with stronger cornice to punctuate the route.' : 'Stylized Gastown heritage storefront cadence tuned for fallback readability and legible landmark staging.',
         x: Number(metrics.x.toFixed(2)),
         z: Number(metrics.z.toFixed(2)),
         width: Number(metrics.width.toFixed(2)),
@@ -890,26 +934,36 @@ function makeStarterWorld(outputPath) {
   centerline[Math.max(1, Math.min(centerline.length - 2, Math.round(beatCount * 0.6)))] = {
     id: 'steam-clock',
     label: 'Steam Clock reveal',
-    x: steamClockNode.x,
-    z: Number((steamClockNode.z + 1.6).toFixed(2)),
+    x: Number((steamClockNode.x + 1.4).toFixed(2)),
+    z: Number((steamClockNode.z + 8.6).toFixed(2)),
   };
 
+  const referenceFeaturesUsed = [
+    ...(reference.routeReference && Array.isArray(reference.routeReference.features) ? ['gastown-route-reference.geojson'] : []),
+    ...(reference.streetContext && Array.isArray(reference.streetContext.features) ? ['gastown-street-context.geojson'] : []),
+    ...(reference.landmarkReference && Array.isArray(reference.landmarkReference.features) ? ['gastown-landmark-reference.geojson'] : []),
+    ...(reference.buildingCues && Array.isArray(reference.buildingCues.features) ? ['gastown-building-cues.geojson'] : []),
+    ...(reference.poiReference && Array.isArray(reference.poiReference.features) ? ['gastown-poi-reference.geojson'] : []),
+  ];
+
   const world = {
-    routeId: 'gastown_water_street_starter_corridor',
+    routeId: 'gastown_water_street_working_corridor',
     meta: {
-      title: 'Gastown Starter Corridor (deterministic fallback)',
+      title: 'Gastown Working Corridor (deterministic fallback)',
       units: 'meters',
-      source: 'deterministic starter fallback',
-      fallbackMode: 'starter-corridor',
+      source: 'deterministic fallback with optional open reference inputs',
+      fallbackMode: 'working-gastown-corridor',
       isRealCivicBuild: false,
       buildNotes: [
-        'Starter corridor fallback is active because required offline civic source files are missing.',
-        'This world is intentionally human-scaled and deterministic for readability; it is not GIS-accurate Gastown reconstruction.',
+        'Working fallback corridor is active because required offline civic source files are missing.',
+        'This world is intentionally human-scaled and deterministic for readability, but now stages the playable route as the primary Gastown build rather than a throwaway starter.',
+        referenceFeaturesUsed.length ? `Optional refreshed reference inputs were present: ${referenceFeaturesUsed.join(', ')}.` : 'No refreshed reference inputs were present; deterministic default route staging was used.',
       ],
+      referenceInputsUsed: referenceFeaturesUsed,
       lastBuild: new Date().toISOString(),
     },
     route: {
-      name: 'Gastown starter block corridor',
+      name: 'Waterfront Station → Water Street → Steam Clock working corridor',
       centerline,
       walkBounds,
       streetWidth,
@@ -918,10 +972,11 @@ function makeStarterWorld(outputPath) {
       hardResetDistance: 12,
     },
     nodes: [
-      { ...centerline[0], label: 'Starter start' },
-      { ...centerline[Math.floor(centerline.length / 2)], label: 'Starter mid block' },
+      { ...centerline[0], label: 'Waterfront Station threshold' },
+      { ...centerline[2], label: 'Water/Cordova seam' },
+      { ...centerline[Math.floor(centerline.length / 2)], label: 'Water Street mid block' },
       { id: 'steam-clock', label: 'Steam Clock plaza', x: steamClockNode.x, z: steamClockNode.z },
-      { ...centerline[centerline.length - 1], label: 'Starter end' },
+      { ...centerline[centerline.length - 1], label: 'Cambie rise continuation' },
     ],
     zones: {
       street: [{ id: 'starter-roadway', surface: 'road', polygon: streetPolygon }],
@@ -950,8 +1005,8 @@ function makeStarterWorld(outputPath) {
     spawn,
     bounds: {
       floorY: 0,
-      edgeMessage: 'Stayed within the starter street corridor.',
-      resetMessage: 'Returned to the starter street corridor.',
+      edgeMessage: 'Stayed within the Gastown working corridor.',
+      resetMessage: 'Returned to the Gastown working corridor.',
     },
   };
 
@@ -1002,7 +1057,7 @@ function buildWorld(options = {}) {
   const heritagePath = path.join(root, 'data', 'cov', 'heritage-sites.geojson');
 
   if (!fs.existsSync(routeAnchorsPath) || !fs.existsSync(streetsPath) || !fs.existsSync(buildingsPath)) {
-    return makeStarterWorld(outputPath);
+    return makeStarterWorld(outputPath, { root, reference: buildStarterReferenceBundle(root) });
   }
 
   const anchors = readJson(routeAnchorsPath);

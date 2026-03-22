@@ -272,7 +272,7 @@ function se_enqueue_gastown_sim_assets() {
                 'textureBaseUrl' => esc_url_raw( $uri . '/assets/textures' ),
                 'dialogDataUrl'  => esc_url_raw( $uri . '/assets/dialog/gastown.json' ),
                 'defaultWeather' => 'clear',
-                'defaultMood'    => 'eerie',
+                'defaultMood'    => 'calm',
                 'defaultTimeOfDay' => 'morning',
             )
         );

@@ -37,10 +37,10 @@ get_header();
       <label>
         Mood
         <select name="mood">
-          <option value="quiet">Quiet</option>
-          <option value="eerie" selected>Eerie</option>
-          <option value="nightlife">Nightlife</option>
+          <option value="calm" selected>Calm</option>
           <option value="commuter">Commuter</option>
+          <option value="lively">Lively</option>
+          <option value="eerie">Eerie</option>
         </select>
       </label>
       <button type="button" class="pixel-button tiny secondary" data-action="debug-toggle">Toggle debug</button>
