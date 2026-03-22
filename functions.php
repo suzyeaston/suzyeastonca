@@ -232,12 +232,23 @@ function se_enqueue_gastown_sim_assets() {
         );
     }
 
+    $dialog_path = '/js/gastown-dialog.js';
+    if ( file_exists( $dir . $dialog_path ) ) {
+        wp_enqueue_script(
+            'se-gastown-dialog',
+            $uri . $dialog_path,
+            array(),
+            filemtime( $dir . $dialog_path ),
+            true
+        );
+    }
+
     $app_path = '/js/gastown-sim.js';
     if ( file_exists( $dir . $app_path ) ) {
         wp_enqueue_script(
             'se-gastown-sim',
             $uri . $app_path,
-            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer' ),
+            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog' ),
             filemtime( $dir . $app_path ) . '-pbr-props-npcs',
             true
         );

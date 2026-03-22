@@ -58,7 +58,26 @@
   const dialogModalEl = app.querySelector('[data-dialog-modal]');
   const dialogTitleEl = app.querySelector('[data-dialog-title]');
   const dialogBodyEl = app.querySelector('[data-dialog-body]');
+  const dialogActionsDynamicEl = app.querySelector('[data-dialog-actions-dynamic]');
   const dialogCloseEls = app.querySelectorAll('[data-dialog-close]');
+  const dialogFallbackCloseEl = app.querySelector('[data-dialog-close-fallback]');
+  const dialogUtils = window.GastownDialog || {};
+  const normalizeDialogEntry = typeof dialogUtils.normalizeDialogEntry === 'function'
+    ? dialogUtils.normalizeDialogEntry
+    : function fallbackNormalizeDialogEntry(entry, options) {
+      const fallbackTitle = (options && options.fallbackTitle) || 'Gastown guide';
+      const missingLine = (options && options.missingLine) || 'This guide does not have dialog copy yet.';
+      const unavailableLine = (options && options.unavailableLine) || 'Dialog data unavailable.';
+      const defaultCloseLabel = (options && options.defaultCloseLabel) || 'Back to walk';
+      const hasEntry = entry && typeof entry === 'object' && !Array.isArray(entry);
+      const lines = hasEntry && Array.isArray(entry.lines) && entry.lines.length ? entry.lines : [hasEntry ? missingLine : unavailableLine];
+      return {
+        title: (hasEntry && entry.title) || fallbackTitle,
+        lines,
+        actions: hasEntry && Array.isArray(entry.actions) ? entry.actions : [{ type: 'close', label: defaultCloseLabel }],
+        hasCustomActions: !!(hasEntry && Array.isArray(entry.actions) && entry.actions.length),
+      };
+    };
 
   const state = {
     world: null,
@@ -82,6 +101,8 @@
     },
     dialogData: {},
     activeDialogNpcId: '',
+    activeDialogEntry: null,
+    dialogLastFocusEl: null,
     hoveredNpcId: '',
     audioContext: null,
     barkTimer: null,
@@ -358,23 +379,159 @@
     }
   }
 
+  function clearMovementInput() {
+    state.move.forward = false;
+    state.move.backward = false;
+    state.move.left = false;
+    state.move.right = false;
+    state.turn.left = false;
+    state.turn.right = false;
+    state.velocity.set(0, 0, 0);
+  }
+
+  function getDialogFallbackTitle(npcState) {
+    if (npcState && npcState.role === 'guide') {
+      return 'Gastown guide';
+    }
+    return (npcState && npcState.id) || 'Gastown guide';
+  }
+
+  function createDialogLineElement(line) {
+    const paragraph = document.createElement('p');
+    paragraph.textContent = line;
+    return paragraph;
+  }
+
+  function renderDialogBody(lines) {
+    if (!dialogBodyEl) return;
+    dialogBodyEl.innerHTML = '';
+    (Array.isArray(lines) && lines.length ? lines : ['Dialog data unavailable.']).forEach((line) => {
+      dialogBodyEl.appendChild(createDialogLineElement(line));
+    });
+  }
+
+  function renderDialogActions(entry) {
+    if (!dialogActionsDynamicEl || !dialogFallbackCloseEl) {
+      return [];
+    }
+
+    dialogActionsDynamicEl.innerHTML = '';
+    const actions = entry && Array.isArray(entry.actions) ? entry.actions : [];
+    const controls = [];
+
+    actions.forEach((action) => {
+      if (!action || typeof action !== 'object' || !action.type) {
+        return;
+      }
+
+      if (action.type === 'close') {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'pixel-button secondary';
+        button.textContent = action.label || 'Back to walk';
+        button.addEventListener('click', closeDialog);
+        dialogActionsDynamicEl.appendChild(button);
+        controls.push(button);
+        return;
+      }
+
+      if (action.type === 'link' && action.href) {
+        const link = document.createElement('a');
+        link.className = 'pixel-button secondary';
+        link.href = action.href;
+        link.textContent = action.label || 'Open';
+        dialogActionsDynamicEl.appendChild(link);
+        controls.push(link);
+      }
+    });
+
+    if (controls.length > 0) {
+      dialogFallbackCloseEl.setAttribute('hidden', 'hidden');
+    } else {
+      dialogFallbackCloseEl.removeAttribute('hidden');
+      controls.push(dialogFallbackCloseEl);
+    }
+
+    return controls;
+  }
+
+  function focusFirstDialogControl() {
+    const controls = [];
+    if (dialogActionsDynamicEl) {
+      dialogActionsDynamicEl.querySelectorAll('button, a').forEach((el) => controls.push(el));
+    }
+    dialogCloseEls.forEach((el) => {
+      if (!el.hasAttribute('hidden')) controls.push(el);
+    });
+    const target = controls.find((el) => el && typeof el.focus === 'function');
+    if (target) {
+      window.setTimeout(() => target.focus(), 0);
+    }
+  }
+
   function closeDialog() {
     state.activeDialogNpcId = '';
+    state.activeDialogEntry = null;
+    if (dialogActionsDynamicEl) {
+      dialogActionsDynamicEl.innerHTML = '';
+    }
+    if (dialogFallbackCloseEl) {
+      dialogFallbackCloseEl.removeAttribute('hidden');
+    }
     if (dialogModalEl) {
       dialogModalEl.setAttribute('hidden', 'hidden');
       dialogModalEl.setAttribute('aria-hidden', 'true');
+    }
+    setStatus('Dialog closed. Click scene to resume.');
+    setPointerStatus('Pointer unlocked. Click scene to enter look mode.');
+    const focusTarget = canvasWrap || renderer.domElement;
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      window.setTimeout(() => focusTarget.focus(), 0);
     }
   }
 
   function openDialogForNpc(npcState) {
     if (!npcState || !dialogModalEl || !dialogTitleEl || !dialogBodyEl) return;
-    const dialog = state.dialogData[npcState.dialogId] || {};
-    dialogTitleEl.textContent = dialog.title || (npcState.role === 'guide' ? 'Gastown guide' : npcState.id);
-    const lines = Array.isArray(dialog.lines) ? dialog.lines : [dialog.body || 'No dialog loaded yet.'];
-    dialogBodyEl.innerHTML = lines.map((line) => '<p>' + line + '</p>').join('');
-    dialogModalEl.removeAttribute('hidden');
-    dialogModalEl.setAttribute('aria-hidden', 'false');
-    state.activeDialogNpcId = npcState.id;
+    clearMovementInput();
+    state.isRunning = false;
+    state.dialogLastFocusEl = document.activeElement;
+
+    const entry = Object.prototype.hasOwnProperty.call(state.dialogData, npcState.dialogId)
+      ? state.dialogData[npcState.dialogId]
+      : null;
+
+    if (!entry && window.console && typeof window.console.warn === 'function') {
+      window.console.warn('[Gastown Sim] Missing dialog entry for', npcState.dialogId);
+    }
+
+    const normalized = normalizeDialogEntry(entry, {
+      fallbackTitle: getDialogFallbackTitle(npcState),
+      unavailableLine: 'Dialog data unavailable.',
+      missingLine: 'This guide does not have dialog copy yet.',
+      defaultCloseLabel: 'Back to walk',
+    });
+
+    dialogTitleEl.textContent = normalized.title;
+    renderDialogBody(normalized.lines);
+    renderDialogActions(normalized);
+
+    const showDialog = () => {
+      dialogModalEl.removeAttribute('hidden');
+      dialogModalEl.setAttribute('aria-hidden', 'false');
+      state.activeDialogNpcId = npcState.id;
+      state.activeDialogEntry = normalized;
+      setStatus('Dialog open. Review the guide options below.');
+      setPointerStatus('Pointer unlocked. Dialog controls are active.');
+      focusFirstDialogControl();
+    };
+
+    if (document.pointerLockElement === renderer.domElement) {
+      document.exitPointerLock();
+      window.setTimeout(showDialog, 0);
+      return;
+    }
+
+    showDialog();
   }
 
   function makeNpcVisual(role) {
@@ -1918,12 +2075,7 @@
 
   function pauseSim() {
     state.isRunning = false;
-    state.move.forward = false;
-    state.move.backward = false;
-    state.move.left = false;
-    state.move.right = false;
-    state.turn.left = false;
-    state.turn.right = false;
+    clearMovementInput();
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
@@ -1934,6 +2086,9 @@
   function attachEvents() {
     window.addEventListener('resize', updateSize);
     renderer.domElement.addEventListener('click', () => {
+      if (state.activeDialogNpcId) {
+        return;
+      }
       ensureAudioContext();
       enterPlayMode();
     });
@@ -1941,12 +2096,16 @@
     renderer.domElement.addEventListener('wheel', onWheelLook, { passive: false });
 
     document.addEventListener('keydown', (event) => {
-      if (event.code === 'KeyE' && interactWithHoveredNpc()) {
+      if (event.code === 'Escape' && state.activeDialogNpcId) {
         event.preventDefault();
+        closeDialog();
         return;
       }
-      if (event.code === 'Escape' && state.activeDialogNpcId) {
-        closeDialog();
+      if (state.activeDialogNpcId) {
+        return;
+      }
+      if (event.code === 'KeyE' && interactWithHoveredNpc()) {
+        event.preventDefault();
         return;
       }
       const consumedPitch = handlePitchKeyControl(event);
@@ -1982,12 +2141,7 @@
       if (document.pointerLockElement === renderer.domElement) {
         setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
       } else if (state.isRunning) {
-        state.move.forward = false;
-        state.move.backward = false;
-        state.move.left = false;
-        state.move.right = false;
-        state.turn.left = false;
-        state.turn.right = false;
+        clearMovementInput();
         state.isRunning = false;
         setStatus('Paused. Pointer released. Click scene to resume look mode and movement.');
         setPointerStatus('Pointer released. Click scene to re-enter look mode.');
@@ -2035,9 +2189,9 @@
   async function init() {
     try {
       const loadedWorld = await window.GastownWorldLoader.load(config.worldDataUrl, config.starterWorldDataUrl);
-      const dialogData = await loadDialogData().catch(() => ({}));
+      const dialogData = await loadDialogData().catch(() => null);
       state.world = loadedWorld;
-      state.dialogData = dialogData;
+      state.dialogData = dialogData && typeof dialogData === 'object' ? dialogData : {};
       updateAttribution(state.world);
       addGround(state.world);
       addProps(state.world);

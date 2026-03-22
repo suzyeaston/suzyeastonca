@@ -307,3 +307,20 @@
   margin-top: 1rem;
   justify-content: flex-end;
 }
+
+
+.gastown-dialog-actions-dynamic {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.gastown-dialog-actions .pixel-button {
+  text-decoration: none;
+}
+
+.gastown-dialog-actions .pixel-button:focus-visible,
+.gastown-sim-canvas:focus-visible {
+  outline: 2px solid rgba(155, 212, 255, 0.92);
+  outline-offset: 2px;
+}
