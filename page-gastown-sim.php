@@ -19,9 +19,8 @@ get_header();
       <label>
         Time of day
         <select name="time-of-day">
-          <option value="morning" selected>Morning</option>
-          <option value="afternoon">Afternoon</option>
-          <option value="evening">Evening</option>
+          <option value="morning">Morning</option>
+          <option value="dusk" selected>Dusk</option>
           <option value="night">Night</option>
         </select>
       </label>
@@ -29,7 +28,8 @@ get_header();
         Weather
         <select name="weather">
           <option value="clear">Clear</option>
-          <option value="rain" selected>Rain</option>
+          <option value="drizzle" selected>Drizzle</option>
+          <option value="rain">Rain</option>
           <option value="fog">Fog</option>
         </select>
       </label>

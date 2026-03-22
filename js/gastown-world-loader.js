@@ -236,7 +236,7 @@
 
     const defaultWeatherPreset = {
       rainIntensity: 0,
-      fogDensity: 0.012,
+      fogDensity: 0.01,
     };
 
     const defaultTimeOfDayPreset = {
@@ -264,14 +264,15 @@
     normalized.moodPresets.lively = mergePreset(defaultMoodPreset, Object.assign({ ambientBed: 'nightlife_hum', audioDensity: 0.84, voiceFreq: 0.35, lightIntensity: 0.96 }, normalized.moodPresets.lively));
 
     normalized.weatherPresets = normalized.weatherPresets && typeof normalized.weatherPresets === 'object' ? normalized.weatherPresets : {};
-    normalized.weatherPresets.clear = mergePreset(defaultWeatherPreset, Object.assign({ rainIntensity: 0, fogDensity: 0.008 }, normalized.weatherPresets.clear));
-    normalized.weatherPresets.rain = mergePreset(defaultWeatherPreset, Object.assign({ rainIntensity: 0.85, fogDensity: 0.016 }, normalized.weatherPresets.rain));
-    normalized.weatherPresets.fog = mergePreset(defaultWeatherPreset, Object.assign({ rainIntensity: 0.08, fogDensity: 0.024 }, normalized.weatherPresets.fog));
+    normalized.weatherPresets.clear = mergePreset(defaultWeatherPreset, Object.assign({ rainIntensity: 0, fogDensity: 0.007 }, normalized.weatherPresets.clear));
+    normalized.weatherPresets.drizzle = mergePreset(defaultWeatherPreset, Object.assign({ rainIntensity: 0.28, fogDensity: 0.009 }, normalized.weatherPresets.drizzle));
+    normalized.weatherPresets.rain = mergePreset(defaultWeatherPreset, Object.assign({ rainIntensity: 0.7, fogDensity: 0.014 }, normalized.weatherPresets.rain));
+    normalized.weatherPresets.fog = mergePreset(defaultWeatherPreset, Object.assign({ rainIntensity: 0.06, fogDensity: 0.02 }, normalized.weatherPresets.fog));
 
     normalized.timeOfDayPresets = normalized.timeOfDayPresets && typeof normalized.timeOfDayPresets === 'object' ? normalized.timeOfDayPresets : {};
-    normalized.timeOfDayPresets.morning = mergePreset(defaultTimeOfDayPreset, Object.assign({ sky: '#8aa8bf', ambientColor: '#cfdeee', ambientIntensity: 1.02, keyColor: '#fff2d1', keyIntensity: 0.84, fillColor: '#8ba2ba', fillIntensity: 0.32, buildingContrast: 0.95, buildingEdgeColor: '#2d3948', roadColor: '#4f5862', sidewalkColor: '#9e968e', laneColor: '#d4d8dc', landmarkGlow: 0.22, rainVisibility: 0.74, pathBrightness: 0.34, fogBoost: -0.002 }, normalized.timeOfDayPresets.morning));
-    normalized.timeOfDayPresets.dusk = mergePreset(defaultTimeOfDayPreset, Object.assign({ sky: '#3f4b67', ambientColor: '#9eb0c6', ambientIntensity: 0.84, keyColor: '#f4c18f', keyIntensity: 0.65, fillColor: '#6e7a97', fillIntensity: 0.28, buildingContrast: 1.08, buildingEdgeColor: '#1f2c3c', roadColor: '#343a45', sidewalkColor: '#8f8780', laneColor: '#c4c7cc', landmarkGlow: 0.38, rainVisibility: 0.92, pathBrightness: 0.24, fogBoost: 0.003 }, normalized.timeOfDayPresets.dusk));
-    normalized.timeOfDayPresets.night = mergePreset(defaultTimeOfDayPreset, Object.assign({ sky: '#101822', ambientColor: '#7e93ab', ambientIntensity: 0.72, keyColor: '#9eb9d4', keyIntensity: 0.6, fillColor: '#526782', fillIntensity: 0.22, buildingContrast: 1.2, buildingEdgeColor: '#1a2230', roadColor: '#2b3138', sidewalkColor: '#827a74', laneColor: '#adb3ba', landmarkGlow: 0.44, rainVisibility: 1, pathBrightness: 0.2, fogBoost: 0.006 }, normalized.timeOfDayPresets.night));
+    normalized.timeOfDayPresets.morning = mergePreset(defaultTimeOfDayPreset, Object.assign({ sky: '#7d97af', ambientColor: '#b8c7d6', ambientIntensity: 0.82, keyColor: '#efd8b3', keyIntensity: 0.62, fillColor: '#6b8096', fillIntensity: 0.22, buildingContrast: 0.98, buildingEdgeColor: '#273240', roadColor: '#38414a', sidewalkColor: '#92887d', laneColor: '#bcc1c7', landmarkGlow: 0.2, rainVisibility: 0.72, pathBrightness: 0.22, fogBoost: -0.001 }, normalized.timeOfDayPresets.morning));
+    normalized.timeOfDayPresets.dusk = mergePreset(defaultTimeOfDayPreset, Object.assign({ sky: '#2d3447', ambientColor: '#76879c', ambientIntensity: 0.56, keyColor: '#d5a06e', keyIntensity: 0.56, fillColor: '#40546b', fillIntensity: 0.18, buildingContrast: 1.14, buildingEdgeColor: '#162230', roadColor: '#242a31', sidewalkColor: '#7f756b', laneColor: '#9da6ae', landmarkGlow: 0.4, rainVisibility: 0.88, pathBrightness: 0.12, fogBoost: 0.001 }, normalized.timeOfDayPresets.dusk));
+    normalized.timeOfDayPresets.night = mergePreset(defaultTimeOfDayPreset, Object.assign({ sky: '#0d131d', ambientColor: '#5e7389', ambientIntensity: 0.46, keyColor: '#8aa8c5', keyIntensity: 0.48, fillColor: '#31475c', fillIntensity: 0.16, buildingContrast: 1.22, buildingEdgeColor: '#131b27', roadColor: '#1d232a', sidewalkColor: '#746b63', laneColor: '#8d99a3', landmarkGlow: 0.46, rainVisibility: 1, pathBrightness: 0.1, fogBoost: 0.004 }, normalized.timeOfDayPresets.night));
 
     return normalized;
   }

@@ -86,8 +86,8 @@
     velocity: new THREE.Vector3(),
     lastSafePosition: new THREE.Vector3(),
     debugEnabled: new URLSearchParams(window.location.search).get('gastownDebug') === '1',
-    activeWeather: config.defaultWeather || 'rain',
-    activeTimeOfDay: config.defaultTimeOfDay || 'morning',
+    activeWeather: config.defaultWeather || 'drizzle',
+    activeTimeOfDay: config.defaultTimeOfDay || 'dusk',
     activeMood: config.defaultMood || 'eerie',
     sounds: {
       beds: {},
@@ -243,7 +243,7 @@
   const tempEuler = new THREE.Euler(0, 0, 0, 'YXZ');
   const tempScale = new THREE.Vector3();
   const WORLD_TEXTURE_REPEAT = {
-    street: { x: 0.16, y: 0.16 },
+    street: { x: 0.24, y: 0.24 },
     sidewalk: { x: 0.22, y: 0.22 },
   };
   const SURFACE_TEXTURES = {
@@ -347,11 +347,48 @@
 
   function setSurfaceWetness(material, baseRoughness, baseMetalness, rainIntensity) {
     if (!material) return;
-    material.metalness = Math.min(0.42, baseMetalness + (rainIntensity * 0.22));
-    material.roughness = Math.max(0.32, baseRoughness - (rainIntensity * 0.24));
+    material.metalness = Math.min(0.38, baseMetalness + (rainIntensity * 0.18));
+    material.roughness = Math.max(0.4, baseRoughness - (rainIntensity * 0.18));
     if (material.roughnessMap) {
       material.roughnessMap.needsUpdate = true;
     }
+  }
+
+  function segmentHeading(a, b) {
+    return Math.atan2(b.x - a.x, b.z - a.z);
+  }
+
+  function buildFallbackSurfaceBands(world) {
+    if (!world || !world.route || !Array.isArray(world.route.centerline)) {
+      return [];
+    }
+
+    const centerline = world.route.centerline;
+    const streetWidth = world.route.streetWidth || 10;
+    const bands = [];
+
+    centerline.forEach((point, index) => {
+      const next = centerline[index + 1];
+      const prev = centerline[index - 1];
+      const anchor = next || prev;
+      if (!anchor) return;
+
+      const heading = segmentHeading(point, anchor);
+      const segmentLength = Math.max(6.5, Math.min(14, Math.hypot(anchor.x - point.x, anchor.z - point.z) * 0.92 || 9));
+      const jitter = ((index % 4) - 1.5) * 0.18;
+
+      if (index < centerline.length - 1) {
+        bands.push({ segment_id: point.id, width: streetWidth * 0.28, length: segmentLength, yaw: heading, offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: 0.24, elevation: 0.032 });
+        bands.push({ segment_id: point.id, width: streetWidth * 0.22, length: Math.max(5.8, segmentLength * 0.88), yaw: heading, offset_x: jitter, offset_z: 0, tone: index % 3 === 0 ? 'patch' : 'wet_streak', opacity: index % 3 === 0 ? 0.34 : 0.2, elevation: 0.038 });
+        bands.push({ segment_id: point.id, width: streetWidth * 0.12, length: Math.max(4.8, segmentLength * 0.72), yaw: heading, offset_x: ((index % 2 === 0) ? 1 : -1) * streetWidth * 0.31, offset_z: 0, tone: 'edge_grime', opacity: 0.26, elevation: 0.034 });
+      }
+
+      if (index % 3 === 1) {
+        bands.push({ segment_id: point.id, width: streetWidth * 0.18, length: Math.max(4.2, segmentLength * 0.46), yaw: heading + (index % 2 === 0 ? 0.08 : -0.08), offset_x: ((index % 2 === 0) ? -1 : 1) * streetWidth * 0.14, offset_z: 0, tone: 'puddle', opacity: 0.16, elevation: 0.042 });
+      }
+    });
+
+    return bands;
   }
 
   async function loadDialogData() {
@@ -921,10 +958,10 @@
   }
 
   function addGround(world) {
-    visualState.roadMaterial = createGroundMaterial('street', 0x1b1f25, 0.94, 0.14);
-    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0xa19486, 0.9, 0.02);
-    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xb8c2cb, transparent: true, opacity: 0.7 });
-    visualState.laneMaterial = new THREE.LineBasicMaterial({ color: 0xa5bdcf, transparent: true, opacity: 0.56 });
+    visualState.roadMaterial = createGroundMaterial('street', 0x171c22, 0.86, 0.16);
+    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x978c81, 0.92, 0.02);
+    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0x9ea5ad, transparent: true, opacity: 0.5 });
+    visualState.laneMaterial = new THREE.LineBasicMaterial({ color: 0x8da2b3, transparent: true, opacity: 0.22 });
 
     world.zones.street.forEach((zone) => createZoneMesh(zone.polygon, visualState.roadMaterial, 0, 'street'));
     world.zones.sidewalk.forEach((zone) => createZoneMesh(zone.polygon, visualState.sidewalkMaterial, 0.12, 'sidewalk'));
@@ -949,7 +986,7 @@
       const heading = Math.atan2(next.x - point.x, next.z - point.z);
       const stripe = new THREE.Mesh(
         new THREE.PlaneGeometry(0.18, 1.9),
-        new THREE.MeshStandardMaterial({ color: 0xbfc8cf, roughness: 0.8, metalness: 0.1, transparent: true, opacity: 0.34 })
+        new THREE.MeshStandardMaterial({ color: 0x7f95a6, roughness: 0.78, metalness: 0.16, transparent: true, opacity: 0.14 })
       );
       stripe.rotation.x = -Math.PI / 2;
       stripe.rotation.y = heading;
@@ -957,22 +994,38 @@
       worldGroup.add(stripe);
     });
 
-    (world.streetscape && world.streetscape.surfaceBands || []).forEach((band) => {
+    const surfaceBands = (world.streetscape && world.streetscape.surfaceBands && world.streetscape.surfaceBands.length)
+      ? world.streetscape.surfaceBands
+      : buildFallbackSurfaceBands(world);
+
+    surfaceBands.forEach((band) => {
       const segment = world.route.centerline.find((point) => point.id === band.segment_id);
       if (!segment) return;
       const paver = new THREE.Mesh(
         new THREE.PlaneGeometry(band.width || world.route.streetWidth, band.length || 14),
-        new THREE.MeshStandardMaterial({
-          color: band.tone === 'brick' ? 0x634237 : 0x454b53,
-          roughness: 0.88,
-          metalness: 0.05,
-          transparent: true,
-          opacity: 0.92,
-        })
+        (() => {
+          const toneStyles = {
+            brick: { color: 0x5c4033, roughness: 0.82, metalness: 0.06, opacity: 0.9 },
+            wheel_track: { color: 0x161b20, roughness: 0.52, metalness: 0.22, opacity: 0.24 },
+            patch: { color: 0x2e343b, roughness: 0.74, metalness: 0.14, opacity: 0.34 },
+            puddle: { color: 0x1a212a, roughness: 0.34, metalness: 0.28, opacity: 0.18 },
+            wet_streak: { color: 0x202731, roughness: 0.48, metalness: 0.2, opacity: 0.22 },
+            edge_grime: { color: 0x1b1d20, roughness: 0.8, metalness: 0.08, opacity: 0.26 },
+            default: { color: 0x3a4048, roughness: 0.8, metalness: 0.08, opacity: 0.86 },
+          };
+          const style = toneStyles[band.tone] || toneStyles.default;
+          return new THREE.MeshStandardMaterial({
+            color: style.color,
+            roughness: style.roughness,
+            metalness: style.metalness,
+            transparent: true,
+            opacity: band.opacity || style.opacity,
+          });
+        })()
       );
       paver.rotation.x = -Math.PI / 2;
       paver.rotation.y = band.yaw || 0;
-      paver.position.set(segment.x + (band.offset_x || 0), 0.16, segment.z + (band.offset_z || 0));
+      paver.position.set(segment.x + (band.offset_x || 0), band.elevation || 0.16, segment.z + (band.offset_z || 0));
       worldGroup.add(paver);
     });
   }
@@ -1919,20 +1972,20 @@
     }
 
     const mood = state.world.moodPresets[state.activeMood] || state.world.moodPresets.eerie;
-    const weather = state.world.weatherPresets[state.activeWeather] || state.world.weatherPresets.rain;
+    const weather = state.world.weatherPresets[state.activeWeather] || state.world.weatherPresets.drizzle || state.world.weatherPresets.rain;
     const timeOfDay = state.world.timeOfDayPresets[state.activeTimeOfDay] || state.world.timeOfDayPresets.night;
 
-    const weatherFogBoost = state.activeWeather === 'fog' ? 0.008 : state.activeWeather === 'rain' ? 0.003 : -0.001;
-    const fogDensity = Math.max(0.004, (weather.fogDensity || 0.01) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
+    const weatherFogBoost = state.activeWeather === 'fog' ? 0.006 : state.activeWeather === 'rain' ? 0.002 : 0;
+    const fogDensity = Math.max(0.0035, (weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
     scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
     renderer.setClearColor(timeOfDay.sky, 1);
 
     ambient.color.set(timeOfDay.ambientColor);
-    ambient.intensity = Math.max(0.35, mood.lightIntensity * (timeOfDay.ambientIntensity || 1));
+    ambient.intensity = Math.max(0.24, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.84);
     keyLight.color.set(timeOfDay.keyColor);
-    keyLight.intensity = (timeOfDay.keyIntensity || 0.6) * (0.8 + (mood.lightIntensity * 0.4));
+    keyLight.intensity = (timeOfDay.keyIntensity || 0.6) * (0.72 + (mood.lightIntensity * 0.28));
     fillLight.color.set(timeOfDay.fillColor || '#526782');
-    fillLight.intensity = timeOfDay.fillIntensity || 0.22;
+    fillLight.intensity = (timeOfDay.fillIntensity || 0.22) * 0.92;
 
     const contrast = timeOfDay.buildingContrast || 1;
     visualState.buildingMaterials.forEach((mat) => {
@@ -1943,16 +1996,16 @@
 
     if (visualState.roadMaterial) {
       visualState.roadMaterial.color.set(timeOfDay.roadColor || '#2b3138');
-      setSurfaceWetness(visualState.roadMaterial, 0.94, 0.14, weather.rainIntensity || 0);
+      setSurfaceWetness(visualState.roadMaterial, 0.86, 0.16, weather.rainIntensity || 0);
       if (visualState.roadMaterial.normalScale) {
-        visualState.roadMaterial.normalScale.set(0.9 + ((weather.rainIntensity || 0) * 0.22), 0.9 + ((weather.rainIntensity || 0) * 0.22));
+        visualState.roadMaterial.normalScale.set(1.35 + ((weather.rainIntensity || 0) * 0.24), 1.1 + ((weather.rainIntensity || 0) * 0.2));
       }
     }
     if (visualState.sidewalkMaterial) {
       visualState.sidewalkMaterial.color.set(timeOfDay.sidewalkColor || '#8f8780');
-      setSurfaceWetness(visualState.sidewalkMaterial, 0.9, 0.02, (weather.rainIntensity || 0) * 0.7);
+      setSurfaceWetness(visualState.sidewalkMaterial, 0.92, 0.02, (weather.rainIntensity || 0) * 0.45);
       if (visualState.sidewalkMaterial.normalScale) {
-        visualState.sidewalkMaterial.normalScale.set(0.75 + ((weather.rainIntensity || 0) * 0.18), 0.75 + ((weather.rainIntensity || 0) * 0.18));
+        visualState.sidewalkMaterial.normalScale.set(0.7 + ((weather.rainIntensity || 0) * 0.12), 0.7 + ((weather.rainIntensity || 0) * 0.12));
       }
     }
     if (visualState.curbMaterial) {
@@ -1960,7 +2013,7 @@
     }
     if (visualState.laneMaterial) {
       visualState.laneMaterial.color.set(timeOfDay.laneColor || '#aab1b8');
-      visualState.laneMaterial.opacity = 0.24 + ((timeOfDay.pathBrightness || 0.2) * 0.4);
+      visualState.laneMaterial.opacity = 0.08 + ((timeOfDay.pathBrightness || 0.2) * 0.22);
     }
 
     visualState.landmarkVisuals.forEach((landmarkVisual) => {
