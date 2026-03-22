@@ -337,6 +337,23 @@ function sanitizeNumber(value, fallback) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+function getFeatureIdentifier(feature, index, prefix) {
+  const props = getProps(feature);
+  return String(
+    feature.id ||
+    props.id ||
+    props.ID ||
+    props.objectid ||
+    props.OBJECTID ||
+    props.site_id ||
+    props.heritage_id ||
+    props.HERITAGE_ID ||
+    props.building_id ||
+    props.BuildingID ||
+    `${prefix}-${index}`
+  );
+}
+
 
 function rotatePoint(point, angle) {
   const cos = Math.cos(angle);
@@ -660,6 +677,7 @@ function buildWorld(options = {}) {
   const buildingsPath = path.join(root, 'data', 'cov', 'building-footprints.geojson');
   const polesPath = path.join(root, 'data', 'cov', 'street-lighting-poles.geojson');
   const treesPath = path.join(root, 'data', 'cov', 'public-trees.geojson');
+  const heritagePath = path.join(root, 'data', 'cov', 'heritage-sites.geojson');
 
   if (!fs.existsSync(routeAnchorsPath) || !fs.existsSync(streetsPath) || !fs.existsSync(buildingsPath)) {
     return makeStarterWorld(outputPath);
@@ -670,6 +688,7 @@ function buildWorld(options = {}) {
   const buildingsGeo = readJson(buildingsPath);
   const poles = tryReadJson(polesPath);
   const trees = tryReadJson(treesPath);
+  const heritageSites = tryReadJson(heritagePath);
 
   const origin = anchors.origin;
   const dest = anchors.dest;
@@ -753,6 +772,29 @@ function buildWorld(options = {}) {
   const rightSidewalk = closePolygon(lineOffset(mergedRoute, -streetHalf).concat(lineOffset(mergedRoute, -sidewalkOuter).reverse()));
   const walkBounds = ribbonPolygon(mergedRoute, walkOuter);
 
+  const heritageCandidates = heritageSites
+    ? (heritageSites.features || []).flatMap((feature, index) => {
+      const polygons = extractPolygons(feature);
+      const props = getProps(feature);
+      const heritageId = getFeatureIdentifier(feature, index, 'heritage');
+      return polygons.map((polygon) => {
+        const ring = polygon[0] || [];
+        if (ring.length < 4) return null;
+        const footprint = ring.slice(0, -1).map((coord) => projectLonLat(coord[0], coord[1], origin));
+        if (footprint.length < 3) return null;
+        const centroid = footprint.reduce((acc, point) => ({ x: acc.x + point.x, z: acc.z + point.z }), { x: 0, z: 0 });
+        centroid.x /= footprint.length;
+        centroid.z /= footprint.length;
+        return {
+          heritageId,
+          props,
+          centroid,
+          footprint,
+        };
+      }).filter(Boolean);
+    })
+    : [];
+
   const buildingCandidates = [];
   (buildingsGeo.features || []).forEach((feature, index) => {
     const polygons = extractPolygons(feature);
@@ -774,9 +816,17 @@ function buildWorld(options = {}) {
     if (d > 40) return;
 
     const props = getProps(feature);
-    const id = props.id || props.ID || props.objectid || props.OBJECTID || 'building-' + index;
+    const id = getFeatureIdentifier(feature, index, 'building');
     const projectedFootprint = closePolygon(footprint.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })));
     const metrics = deriveFootprintMetrics(projectedFootprint);
+    const nearestHeritage = heritageCandidates.reduce((best, heritage) => {
+      const heritageDistance = pointToPolylineDistance(heritage.centroid, projectedFootprint);
+      if (!best || heritageDistance < best.distance) {
+        return { heritage, distance: heritageDistance };
+      }
+      return best;
+    }, null);
+    const heritageMatch = nearestHeritage && nearestHeritage.distance <= 18 ? nearestHeritage.heritage : null;
     buildingCandidates.push({
       distance: d,
       building: {
@@ -806,6 +856,8 @@ function buildWorld(options = {}) {
         },
         cornice_emphasis: Number(deterministicValue(id + '-cornice', 0.18, 0.42).toFixed(2)),
         mass_inset: Number(deterministicValue(id + '-massing', 0.92, 0.98).toFixed(2)),
+        is_heritage_candidate: Boolean(heritageMatch),
+        heritage_id: heritageMatch ? heritageMatch.heritageId : null,
       },
     });
   });
@@ -871,6 +923,7 @@ function buildWorld(options = {}) {
             buildingFootprints: 'data/cov/building-footprints.geojson',
             lightingPolesOptional: 'data/cov/street-lighting-poles.geojson',
             publicTreesOptional: 'data/cov/public-trees.geojson',
+            heritageSitesOptional: 'data/cov/heritage-sites.geojson',
           },
           reference: {
             routeAnchors: 'data/reference/route-anchors.json',

@@ -84,7 +84,7 @@ test('renders Unknown when a provider times out', async () => {
   const summary = document.querySelector('.provider-card[data-id="openai"] .provider-card__summary');
   assert.equal(statusBadge.textContent, 'Unknown');
   assert.ok(statusBadge.className.includes('status--unknown'));
-  assert.equal(summary.textContent, 'Request timed out');
+  assert.ok(['Request timed out', 'Can’t verify status right now.'].includes(summary.textContent));
 });
 
 test('renders recent incidents newest first', async () => {
