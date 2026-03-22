@@ -232,24 +232,26 @@ function se_enqueue_gastown_sim_assets() {
         );
     }
 
-    $app_path = '/js/gastown-sim-classic.js';
+    $app_path = '/js/gastown-sim.js';
     if ( file_exists( $dir . $app_path ) ) {
         wp_enqueue_script(
-            'se-gastown-sim-classic',
+            'se-gastown-sim',
             $uri . $app_path,
             array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer' ),
-            filemtime( $dir . $app_path ) . '-classic-recovery-2',
+            filemtime( $dir . $app_path ) . '-pbr-props-npcs',
             true
         );
-        // TODO: three.min.js global build works for now; perform a full ESM migration later with verified module-safe rendered tags and a dependency strategy for loader/normalizer/app scripts in real WordPress output.
+        // TODO: move Three + Howler to bundled local assets once vendored copies are available in-theme; simulator data/assets already resolve same-origin.
 
         wp_localize_script(
-            'se-gastown-sim-classic',
+            'se-gastown-sim',
             'seGastownSim',
             array(
                 'worldDataUrl'   => esc_url_raw( $uri . '/assets/world/gastown-water-street.json' ),
                 'starterWorldDataUrl' => esc_url_raw( $uri . '/assets/world/gastown-water-street-starter.json' ),
                 'audioBaseUrl'   => esc_url_raw( $uri . '/assets/audio/gastown' ),
+                'textureBaseUrl' => esc_url_raw( $uri . '/assets/textures' ),
+                'dialogDataUrl'  => esc_url_raw( $uri . '/assets/dialog/gastown.json' ),
                 'defaultWeather' => 'rain',
                 'defaultMood'    => 'eerie',
                 'defaultTimeOfDay' => 'morning',

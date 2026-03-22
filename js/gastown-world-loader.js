@@ -47,6 +47,48 @@
     }
   }
 
+  function validatePointLike(point, label) {
+    if (!point || !isFiniteNumber(point.x) || !isFiniteNumber(point.z)) {
+      throw new Error('Gastown world data is malformed: ' + label + ' must include finite x/z values.');
+    }
+  }
+
+  function validateProp(prop, index) {
+    if (!prop || typeof prop !== 'object') {
+      throw new Error('Gastown world data is malformed: props[' + index + '] must be an object.');
+    }
+    if (typeof prop.id !== 'string' || !prop.id) {
+      throw new Error('Gastown world data is malformed: props[' + index + '].id is required.');
+    }
+    if (typeof prop.kind !== 'string' || !prop.kind) {
+      throw new Error('Gastown world data is malformed: props[' + index + '].kind is required.');
+    }
+    ['x', 'z', 'yaw', 'scale'].forEach((field) => {
+      assertFiniteNumberIfPresent(prop[field], 'props[' + index + '].' + field);
+    });
+    assertFiniteNumberIfPresent(prop.y, 'props[' + index + '].y');
+  }
+
+  function validateNpc(npc, index) {
+    if (!npc || typeof npc !== 'object') {
+      throw new Error('Gastown world data is malformed: npcs[' + index + '] must be an object.');
+    }
+    if (typeof npc.id !== 'string' || !npc.id) {
+      throw new Error('Gastown world data is malformed: npcs[' + index + '].id is required.');
+    }
+    if (typeof npc.role !== 'string' || !npc.role) {
+      throw new Error('Gastown world data is malformed: npcs[' + index + '].role is required.');
+    }
+    assertFiniteNumberIfPresent(npc.interactRadius, 'npcs[' + index + '].interactRadius');
+    if (npc.idleSpot) {
+      validatePointLike(npc.idleSpot, 'npcs[' + index + '].idleSpot');
+    }
+    if (npc.patrol && !Array.isArray(npc.patrol)) {
+      throw new Error('Gastown world data is malformed: npcs[' + index + '].patrol must be an array when present.');
+    }
+    (npc.patrol || []).forEach((point, patrolIndex) => validatePointLike(point, 'npcs[' + index + '].patrol[' + patrolIndex + ']'));
+  }
+
   function validateWorldData(data) {
     const hasRoute = data && data.route && Array.isArray(data.route.centerline);
     const hasNodes = data && Array.isArray(data.nodes);
@@ -70,6 +112,13 @@
       throw new Error('Gastown world data is malformed: facade_profiles must be an object.');
     }
 
+    if (data.props && !Array.isArray(data.props)) {
+      throw new Error('Gastown world data is malformed: props must be an array.');
+    }
+    if (data.npcs && !Array.isArray(data.npcs)) {
+      throw new Error('Gastown world data is malformed: npcs must be an array.');
+    }
+
     if (data.navigator) {
       if (data.navigator.focusCorridor && !Array.isArray(data.navigator.focusCorridor)) {
         throw new Error('Gastown world data is malformed: navigator.focusCorridor must be an array.');
@@ -90,6 +139,9 @@
         throw new Error('Gastown world data is malformed: streetscape.bollards must be an array.');
       }
     }
+
+    (data.props || []).forEach(validateProp);
+    (data.npcs || []).forEach(validateNpc);
 
     data.buildings.forEach((building, index) => {
       const hasAbsoluteFootprint = Array.isArray(building.footprint);
@@ -126,6 +178,13 @@
     return Object.assign({}, base, override || {});
   }
 
+  function normalizePoint(point, fallbackX, fallbackZ) {
+    return {
+      x: isFiniteNumber(point && point.x) ? point.x : fallbackX,
+      z: isFiniteNumber(point && point.z) ? point.z : fallbackZ,
+    };
+  }
+
   function normalizeWorldData(data) {
     const normalized = data || {};
 
@@ -142,6 +201,31 @@
     normalized.streetscape.trees = Array.isArray(normalized.streetscape.trees) ? normalized.streetscape.trees : [];
     normalized.streetscape.bollards = Array.isArray(normalized.streetscape.bollards) ? normalized.streetscape.bollards : [];
     normalized.streetscape.surfaceBands = Array.isArray(normalized.streetscape.surfaceBands) ? normalized.streetscape.surfaceBands : [];
+
+    normalized.props = Array.isArray(normalized.props) ? normalized.props : [];
+    normalized.props = normalized.props.map((prop, index) => ({
+      id: typeof prop.id === 'string' && prop.id ? prop.id : 'prop-' + index,
+      kind: typeof prop.kind === 'string' && prop.kind ? prop.kind : 'cardboard_box',
+      x: isFiniteNumber(prop.x) ? prop.x : 0,
+      y: isFiniteNumber(prop.y) ? prop.y : 0,
+      z: isFiniteNumber(prop.z) ? prop.z : 0,
+      yaw: isFiniteNumber(prop.yaw) ? prop.yaw : 0,
+      scale: isFiniteNumber(prop.scale) ? prop.scale : 1,
+    }));
+
+    normalized.npcs = Array.isArray(normalized.npcs) ? normalized.npcs : [];
+    normalized.npcs = normalized.npcs.map((npc, index) => {
+      const fallbackPoint = normalizePoint((npc && npc.idleSpot) || (npc && npc.patrol && npc.patrol[0]) || normalized.route.centerline[0] || { x: 0, z: 0 }, 0, 0);
+      const patrol = Array.isArray(npc && npc.patrol) ? npc.patrol.map((point) => normalizePoint(point, fallbackPoint.x, fallbackPoint.z)) : [];
+      return {
+        id: typeof npc.id === 'string' && npc.id ? npc.id : 'npc-' + index,
+        role: typeof npc.role === 'string' && npc.role ? npc.role : 'pedestrian',
+        interactRadius: isFiniteNumber(npc.interactRadius) ? npc.interactRadius : 2.4,
+        dialogId: typeof npc.dialogId === 'string' ? npc.dialogId : '',
+        idleSpot: normalizePoint(npc.idleSpot || fallbackPoint, fallbackPoint.x, fallbackPoint.z),
+        patrol: patrol,
+      };
+    });
 
     const defaultMoodPreset = {
       ambientBed: 'eerie_drones',

@@ -49,6 +49,8 @@ test('normalizeWorldData adds safe defaults for missing optional sections', () =
   assert.equal(Array.isArray(normalized.streetscape.trees), true);
   assert.equal(Array.isArray(normalized.streetscape.bollards), true);
   assert.equal(Array.isArray(normalized.streetscape.surfaceBands), true);
+  assert.equal(Array.isArray(normalized.props), true);
+  assert.equal(Array.isArray(normalized.npcs), true);
 });
 
 test('starter-like world with no landmarks or audioZones normalizes without crashing', () => {
@@ -108,4 +110,22 @@ test('classic sim startup paths are guarded against missing optional arrays', ()
   assert.equal(src.includes('(world.audioZones || []).forEach('), true);
   assert.equal(src.includes('(state.world.landmarks || []).find('), true);
   assert.equal(src.includes('(state.world.audioZones || []).forEach('), true);
+});
+
+
+test('normalizeWorldData safely defaults missing or partial props and npcs', () => {
+  const normalizeWorldData = loadNormalizeWorldData();
+  const normalized = normalizeWorldData(minimalValidWorld({
+    props: [{ id: 'bag-1', kind: 'trash_bag', x: 1, z: 2 }],
+    npcs: [{ id: 'guide-1', role: 'guide', dialogId: 'guide_intro' }],
+  }));
+
+  assert.equal(normalized.props.length, 1);
+  assert.equal(normalized.props[0].scale, 1);
+  assert.equal(normalized.props[0].yaw, 0);
+  assert.equal(normalized.npcs.length, 1);
+  assert.equal(normalized.npcs[0].interactRadius, 2.4);
+  assert.equal(Array.isArray(normalized.npcs[0].patrol), true);
+  assert.equal(typeof normalized.npcs[0].idleSpot.x, 'number');
+  assert.equal(typeof normalized.npcs[0].idleSpot.z, 'number');
 });
