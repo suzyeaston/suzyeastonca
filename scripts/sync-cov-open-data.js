@@ -4,19 +4,20 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..');
-const DEFAULT_PACKAGE_SHOW_BASE = process.env.COV_PACKAGE_SHOW_BASE || 'https://opendata.vancouver.ca/api/3/action/package_show?id=';
+const DEFAULT_EXPLORE_BASE = process.env.COV_EXPLORE_API_BASE || 'https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets';
 const DEFAULT_FETCH_TIMEOUT_MS = Number(process.env.COV_FETCH_TIMEOUT_MS || 30000);
 const DEFAULT_FILTER_RADIUS_METERS = Number(process.env.COV_FILTER_RADIUS_METERS || 400);
 const DEFAULT_ROUTE_PADDING_METERS = Number(process.env.COV_ROUTE_PADDING_METERS || 120);
+const DEFAULT_EXPORT_LIMIT = Number(process.env.COV_EXPORT_LIMIT || 25000);
+const DEFAULT_INCLUDE_BUSINESS_LICENCES = String(process.env.COV_INCLUDE_BUSINESS_LICENCES || '').toLowerCase() === 'true';
 
 const DATASETS = [
-  { id: 'public-streets', output: 'public-streets.geojson', required: true },
-  { id: 'street-intersections', output: 'street-intersections.geojson', required: false },
-  { id: 'right-of-way-widths', output: 'right-of-way-widths.geojson', required: false },
-  { id: 'building-footprints-2015', output: 'building-footprints.geojson', required: true },
-  { id: 'street-lighting-poles', output: 'street-lighting-poles.geojson', required: false },
-  { id: 'public-trees', output: 'public-trees.geojson', required: false },
-  { id: 'heritage-sites', output: 'heritage-sites.geojson', required: false },
+  { ids: ['public-streets'], output: 'public-streets.geojson', required: true, format: 'geojson' },
+  { ids: ['building-footprints-2015', 'building-footprints-2009'], output: 'building-footprints.geojson', required: true, format: 'geojson' },
+  { ids: ['street-lighting-poles'], output: 'street-lighting-poles.geojson', required: false, format: 'geojson' },
+  { ids: ['public-trees'], output: 'public-trees.geojson', required: false, format: 'geojson' },
+  { ids: ['heritage-sites'], output: 'heritage-sites.geojson', required: false, format: 'geojson' },
+  { ids: ['business-licences'], output: 'business-licences.json', required: false, format: 'json', envFlag: 'includeBusinessLicences' },
 ];
 
 const EARTH_RADIUS_METERS = 6371008.8;
@@ -84,7 +85,7 @@ function stableString(value) {
 
 function featureId(feature, index) {
   const props = (feature && feature.properties) || {};
-  const candidate = feature.id || props.id || props.ID || props.objectid || props.OBJECTID || props.site_id || props.tree_id || props.block_id || props.hblock || props.civic_address || props.name;
+  const candidate = feature.id || props.id || props.ID || props.objectid || props.OBJECTID || props.site_id || props.tree_id || props.block_id || props.hblock || props.civic_address || props.name || props.businessName;
   return String(candidate == null ? `feature-${index}` : candidate);
 }
 
@@ -125,17 +126,38 @@ function buildFilterContext(routeAnchorsPath, options = {}) {
     projectLonLat(dest.lon, dest.lat, origin),
   ];
 
+  const radiusMeters = Number(options.radiusMeters || DEFAULT_FILTER_RADIUS_METERS);
+  const routePaddingMeters = Number(options.routePaddingMeters || DEFAULT_ROUTE_PADDING_METERS);
+  const lonPadding = ((radiusMeters + routePaddingMeters) / (EARTH_RADIUS_METERS * Math.cos(toRadians(midLat)))) * (180 / Math.PI);
+  const latPadding = ((radiusMeters + routePaddingMeters) / EARTH_RADIUS_METERS) * (180 / Math.PI);
+  const bbox = {
+    minLon: Math.min(origin.lon, dest.lon) - lonPadding,
+    minLat: Math.min(origin.lat, dest.lat) - latPadding,
+    maxLon: Math.max(origin.lon, dest.lon) + lonPadding,
+    maxLat: Math.max(origin.lat, dest.lat) + latPadding,
+  };
+  const polygon = [
+    [bbox.minLon, bbox.minLat],
+    [bbox.maxLon, bbox.minLat],
+    [bbox.maxLon, bbox.maxLat],
+    [bbox.minLon, bbox.maxLat],
+    [bbox.minLon, bbox.minLat],
+  ];
+
   return {
     anchors,
     origin,
     midpoint: { lon: midLon, lat: midLat },
-    radiusMeters: Number(options.radiusMeters || DEFAULT_FILTER_RADIUS_METERS),
-    routePaddingMeters: Number(options.routePaddingMeters || DEFAULT_ROUTE_PADDING_METERS),
+    radiusMeters,
+    routePaddingMeters,
     routeLine,
+    bbox,
+    bboxPolygon: polygon,
     query: {
       midpoint: { lon: Number(midLon.toFixed(7)), lat: Number(midLat.toFixed(7)) },
-      radiusMeters: Number(options.radiusMeters || DEFAULT_FILTER_RADIUS_METERS),
-      routePaddingMeters: Number(options.routePaddingMeters || DEFAULT_ROUTE_PADDING_METERS),
+      radiusMeters,
+      routePaddingMeters,
+      bbox: Object.fromEntries(Object.entries(bbox).map(([key, value]) => [key, Number(value.toFixed(7))])),
     },
   };
 }
@@ -188,65 +210,158 @@ function normalizeFeatureCollection(data, datasetId) {
   };
 }
 
-function pickGeoJsonResource(pkg) {
-  const resources = Array.isArray(pkg.resources) ? pkg.resources : [];
-  const scored = resources.map((resource) => {
-    const format = String(resource.format || '').toLowerCase();
-    const name = String(resource.name || '').toLowerCase();
-    const url = String(resource.url || '');
-    const looksGeoJson = format.includes('geojson') || name.includes('geojson') || /geojson/i.test(url);
-    const looksApi = /api/i.test(url);
-    return {
-      resource,
-      score: (looksGeoJson ? 20 : 0) + (looksApi ? 5 : 0) + (url.startsWith('https://') ? 1 : 0),
-    };
-  }).sort((a, b) => b.score - a.score);
-
-  if (!scored.length || scored[0].score < 20) {
-    throw new Error(`No GeoJSON resource found for dataset ${pkg.name || pkg.id || 'unknown'}.`);
+function normalizeJsonRows(data, datasetId) {
+  const rows = Array.isArray(data.results) ? data.results : Array.isArray(data.records) ? data.records : Array.isArray(data) ? data : null;
+  if (!rows) {
+    throw new Error(`Dataset ${datasetId} did not return a JSON array-like export.`);
   }
-
-  return scored[0].resource;
+  return rows;
 }
 
-async function fetchDataset(dataset, filterContext, options) {
-  const packageUrl = `${options.packageShowBase}${encodeURIComponent(dataset.id)}`;
-  const packageData = await fetchJson(packageUrl, options);
-  const pkg = packageData && packageData.result ? packageData.result : null;
-  if (!pkg) {
-    throw new Error(`Package lookup failed for dataset ${dataset.id}.`);
+function buildPolygonWkt(points) {
+  const serialized = points.map(([lon, lat]) => `${lon} ${lat}`).join(', ');
+  return `POLYGON((${serialized}))`;
+}
+
+function buildWithinDistanceClause(field, filterContext) {
+  return `within_distance(${field}, geom'POINT(${filterContext.midpoint.lon} ${filterContext.midpoint.lat})', ${Math.ceil(filterContext.radiusMeters)})`;
+}
+
+function buildIntersectsClause(field, filterContext) {
+  return `intersects(${field}, geom'${buildPolygonWkt(filterContext.bboxPolygon)}')`;
+}
+
+function buildWhereClause(filterContext, dataset) {
+  const spatialFields = [];
+  if (Array.isArray(dataset.fields)) {
+    dataset.fields.forEach((field) => {
+      const type = String(field.type || '').toLowerCase();
+      const name = String(field.name || '');
+      if (type.includes('geo') || type.includes('geometry')) spatialFields.push(name);
+      if (name === 'geo_shape' || name === 'geo_point_2d') spatialFields.push(name);
+    });
   }
 
-  const resource = pickGeoJsonResource(pkg);
-  const resourceUrl = new URL(String(resource.url), packageUrl).toString();
-  const rawGeoJson = normalizeFeatureCollection(await fetchJson(resourceUrl, options), dataset.id);
-  const filteredFeatures = sortFeatures(
-    rawGeoJson.features
-      .filter((feature) => shouldKeepFeature(feature, filterContext))
-      .map((feature, index) => ({
-        ...feature,
-        id: featureId(feature, index),
-      }))
-  );
+  const orderedFields = Array.from(new Set([
+    ...spatialFields.filter((name) => name === 'geo_shape'),
+    ...spatialFields.filter((name) => name !== 'geo_shape' && name !== 'geo_point_2d'),
+    ...spatialFields.filter((name) => name === 'geo_point_2d'),
+    'geo_shape',
+    'geo_point_2d',
+  ])).filter(Boolean);
 
-  const output = {
-    type: 'FeatureCollection',
-    name: rawGeoJson.name || dataset.id,
-    features: filteredFeatures,
-  };
+  if (!orderedFields.length) return null;
 
-  const outputPath = path.join(options.outputDir, dataset.output);
-  fs.writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
+  const clauses = orderedFields.flatMap((field) => {
+    if (field === 'geo_point_2d') {
+      return [buildWithinDistanceClause(field, filterContext), buildIntersectsClause(field, filterContext)];
+    }
+    return [buildIntersectsClause(field, filterContext)];
+  });
+
+  return Array.from(new Set(clauses)).join(' OR ');
+}
+
+function sortRows(rows) {
+  return rows.slice().sort((a, b) => stableString(a).localeCompare(stableString(b)));
+}
+
+async function fetchDatasetMetadata(datasetId, options) {
+  const metadataUrl = `${options.exploreBase.replace(/\/$/, '')}/${encodeURIComponent(datasetId)}`;
+  const metadata = await fetchJson(metadataUrl, options);
+  return { metadataUrl, metadata };
+}
+
+function makeExportUrl(metadataUrl, datasetId, format, whereClause, options) {
+  const exportUrl = new URL(`${metadataUrl}/exports/${format}`);
+  exportUrl.searchParams.set('limit', String(options.exportLimit || DEFAULT_EXPORT_LIMIT));
+  if (whereClause) exportUrl.searchParams.set('where', whereClause);
+  if (format === 'geojson') exportUrl.searchParams.set('timezone', 'UTC');
+  return exportUrl.toString();
+}
+
+async function fetchDataset(datasetConfig, filterContext, options) {
+  if (datasetConfig.envFlag && !options[datasetConfig.envFlag]) {
+    return {
+      dataset: datasetConfig.ids[0],
+      datasetId: datasetConfig.ids[0],
+      required: datasetConfig.required,
+      optional: true,
+      skipped: true,
+      reason: `Skipped because ${datasetConfig.envFlag} is disabled.`,
+      output: path.join('data', 'cov', datasetConfig.output),
+      query: filterContext.query,
+    };
+  }
+
+  let lastError = null;
+  for (const datasetId of datasetConfig.ids) {
+    try {
+      const { metadataUrl, metadata } = await fetchDatasetMetadata(datasetId, options);
+      const whereClause = buildWhereClause(filterContext, metadata);
+      const exportUrl = makeExportUrl(metadataUrl, datasetId, datasetConfig.format, whereClause, options);
+      const payload = await fetchJson(exportUrl, options);
+      const outputPath = path.join(options.outputDir, datasetConfig.output);
+
+      if (datasetConfig.format === 'geojson') {
+        const rawGeoJson = normalizeFeatureCollection(payload, datasetId);
+        const filteredFeatures = sortFeatures(
+          rawGeoJson.features
+            .filter((feature) => shouldKeepFeature(feature, filterContext))
+            .map((feature, index) => ({ ...feature, id: featureId(feature, index) }))
+        );
+
+        const output = {
+          type: 'FeatureCollection',
+          name: rawGeoJson.name || datasetId,
+          features: filteredFeatures,
+        };
+        fs.writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
+        return {
+          dataset: datasetConfig.ids[0],
+          datasetId,
+          required: datasetConfig.required,
+          output: path.relative(options.root, outputPath),
+          metadataUrl,
+          exportUrl,
+          query: filterContext.query,
+          totalFeatures: rawGeoJson.features.length,
+          keptFeatures: filteredFeatures.length,
+        };
+      }
+
+      const rawRows = normalizeJsonRows(payload, datasetId);
+      const output = { dataset: datasetId, results: sortRows(rawRows) };
+      fs.writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
+      return {
+        dataset: datasetConfig.ids[0],
+        datasetId,
+        required: datasetConfig.required,
+        output: path.relative(options.root, outputPath),
+        metadataUrl,
+        exportUrl,
+        query: filterContext.query,
+        totalFeatures: rawRows.length,
+        keptFeatures: rawRows.length,
+      };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (datasetConfig.required) {
+    throw lastError || new Error(`Failed to fetch required dataset ${datasetConfig.ids[0]}.`);
+  }
 
   return {
-    dataset: dataset.id,
-    required: dataset.required,
-    output: path.relative(options.root, outputPath),
-    packageUrl,
-    resourceUrl,
+    dataset: datasetConfig.ids[0],
+    datasetId: datasetConfig.ids[0],
+    required: datasetConfig.required,
+    optional: true,
+    skipped: true,
+    reason: lastError ? lastError.message : 'Dataset unavailable.',
+    output: path.join('data', 'cov', datasetConfig.output),
     query: filterContext.query,
-    totalFeatures: rawGeoJson.features.length,
-    keptFeatures: filteredFeatures.length,
   };
 }
 
@@ -256,10 +371,12 @@ async function run(options = {}) {
   const outputDir = path.join(root, 'data', 'cov');
   const manifestPath = path.join(outputDir, '_manifest.json');
   const runtimeOptions = {
-    packageShowBase: options.packageShowBase || DEFAULT_PACKAGE_SHOW_BASE,
+    exploreBase: options.exploreBase || DEFAULT_EXPLORE_BASE,
     fetchTimeoutMs: options.fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS,
     radiusMeters: options.radiusMeters || DEFAULT_FILTER_RADIUS_METERS,
     routePaddingMeters: options.routePaddingMeters || DEFAULT_ROUTE_PADDING_METERS,
+    exportLimit: options.exportLimit || DEFAULT_EXPORT_LIMIT,
+    includeBusinessLicences: options.includeBusinessLicences != null ? options.includeBusinessLicences : DEFAULT_INCLUDE_BUSINESS_LICENCES,
     outputDir,
     root,
   };
@@ -268,6 +385,7 @@ async function run(options = {}) {
   const filterContext = buildFilterContext(routeAnchorsPath, runtimeOptions);
   const manifest = {
     timestamp: new Date().toISOString(),
+    api: { base: runtimeOptions.exploreBase, version: 'explore-v2.1' },
     datasets: [],
     filter: filterContext.query,
   };
@@ -276,11 +394,15 @@ async function run(options = {}) {
   for (const dataset of DATASETS) {
     const result = await fetchDataset(dataset, filterContext, runtimeOptions);
     manifest.datasets.push(result);
-    summary.push(`${dataset.id}: ${result.keptFeatures}/${result.totalFeatures}`);
+    if (result.skipped) {
+      summary.push(`${result.dataset}: skipped`);
+    } else {
+      summary.push(`${result.datasetId}: ${result.keptFeatures}/${result.totalFeatures}`);
+    }
   }
 
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-  process.stdout.write(`Synced CoV open data (${summary.join(', ')})\n`);
+  process.stdout.write(`Synced CoV open data via Explore API v2.1 (${summary.join(', ')})\n`);
 }
 
 if (require.main === module) {
@@ -290,4 +412,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { run, buildFilterContext, shouldKeepFeature, sortFeatures, featureId, normalizeFeatureCollection, pickGeoJsonResource };
+module.exports = { run, buildFilterContext, shouldKeepFeature, sortFeatures, featureId, normalizeFeatureCollection, buildWhereClause, normalizeJsonRows };
