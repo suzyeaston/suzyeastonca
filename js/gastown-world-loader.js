@@ -69,6 +69,46 @@
     assertFiniteNumberIfPresent(prop.y, 'props[' + index + '].y');
   }
 
+
+  function validateStore(store, index) {
+    if (!store || typeof store !== 'object') {
+      throw new Error('Gastown world data is malformed: stores[' + index + '] must be an object.');
+    }
+    if (typeof store.id !== 'string' || !store.id) {
+      throw new Error('Gastown world data is malformed: stores[' + index + '].id is required.');
+    }
+    if (typeof store.building_id !== 'string' || !store.building_id) {
+      throw new Error('Gastown world data is malformed: stores[' + index + '].building_id is required.');
+    }
+    if (typeof store.name !== 'string' || !store.name) {
+      throw new Error('Gastown world data is malformed: stores[' + index + '].name is required.');
+    }
+    if (typeof store.category !== 'string' || !store.category) {
+      throw new Error('Gastown world data is malformed: stores[' + index + '].category is required.');
+    }
+    if (!store.entrance || typeof store.entrance !== 'object') {
+      throw new Error('Gastown world data is malformed: stores[' + index + '].entrance is required.');
+    }
+    validatePointLike(store.entrance, 'stores[' + index + '].entrance');
+    assertFiniteNumberIfPresent(store.entrance.yaw, 'stores[' + index + '].entrance.yaw');
+    assertFiniteNumberIfPresent(store.interactRadius, 'stores[' + index + '].interactRadius');
+    if (store.inventory && !Array.isArray(store.inventory)) {
+      throw new Error('Gastown world data is malformed: stores[' + index + '].inventory must be an array when present.');
+    }
+    (store.inventory || []).forEach((item, itemIndex) => {
+      if (!item || typeof item !== 'object') {
+        throw new Error('Gastown world data is malformed: stores[' + index + '].inventory[' + itemIndex + '] must be an object.');
+      }
+      if (typeof item.name !== 'string' || !item.name) {
+        throw new Error('Gastown world data is malformed: stores[' + index + '].inventory[' + itemIndex + '].name is required.');
+      }
+      assertFiniteNumberIfPresent(item.price, 'stores[' + index + '].inventory[' + itemIndex + '].price');
+      if (item.description !== undefined && typeof item.description !== 'string') {
+        throw new Error('Gastown world data is malformed: stores[' + index + '].inventory[' + itemIndex + '].description must be a string when present.');
+      }
+    });
+  }
+
   function validateNpc(npc, index) {
     if (!npc || typeof npc !== 'object') {
       throw new Error('Gastown world data is malformed: npcs[' + index + '] must be an object.');
@@ -119,6 +159,9 @@
     if (data.npcs && !Array.isArray(data.npcs)) {
       throw new Error('Gastown world data is malformed: npcs must be an array.');
     }
+    if (data.stores && !Array.isArray(data.stores)) {
+      throw new Error('Gastown world data is malformed: stores must be an array.');
+    }
 
     if (data.navigator) {
       if (data.navigator.focusCorridor && !Array.isArray(data.navigator.focusCorridor)) {
@@ -143,6 +186,7 @@
 
     (data.props || []).forEach(validateProp);
     (data.npcs || []).forEach(validateNpc);
+    (data.stores || []).forEach(validateStore);
 
     data.buildings.forEach((building, index) => {
       const hasAbsoluteFootprint = Array.isArray(building.footprint);
@@ -212,6 +256,25 @@
       z: isFiniteNumber(prop.z) ? prop.z : 0,
       yaw: isFiniteNumber(prop.yaw) ? prop.yaw : 0,
       scale: isFiniteNumber(prop.scale) ? prop.scale : 1,
+    }));
+
+    normalized.stores = Array.isArray(normalized.stores) ? normalized.stores : [];
+    normalized.stores = normalized.stores.map((store, index) => ({
+      id: typeof store.id === 'string' && store.id ? store.id : 'store-' + index,
+      building_id: typeof store.building_id === 'string' ? store.building_id : '',
+      name: typeof store.name === 'string' && store.name ? store.name : 'Gastown storefront',
+      category: typeof store.category === 'string' && store.category ? store.category : 'shop',
+      entrance: {
+        x: isFiniteNumber(store && store.entrance && store.entrance.x) ? store.entrance.x : 0,
+        z: isFiniteNumber(store && store.entrance && store.entrance.z) ? store.entrance.z : 0,
+        yaw: isFiniteNumber(store && store.entrance && store.entrance.yaw) ? store.entrance.yaw : 0,
+      },
+      interactRadius: isFiniteNumber(store && store.interactRadius) ? store.interactRadius : 2.4,
+      inventory: Array.isArray(store && store.inventory) ? store.inventory.map((item, itemIndex) => ({
+        name: typeof item.name === 'string' && item.name ? item.name : 'Item ' + (itemIndex + 1),
+        price: isFiniteNumber(item.price) ? item.price : 0,
+        description: typeof item.description === 'string' ? item.description : '',
+      })) : [],
     }));
 
     normalized.npcs = Array.isArray(normalized.npcs) ? normalized.npcs : [];

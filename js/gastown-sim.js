@@ -108,11 +108,15 @@
     },
     dialogData: {},
     activeDialogNpcId: '',
+    activeDialogStoreId: '',
     activeDialogEntry: null,
     dialogLastFocusEl: null,
     npcConversationCache: {},
     npcConversationPending: false,
     hoveredNpcId: '',
+    hoveredStoreId: '',
+    stores: [],
+    walletBalance: 60,
     audioContext: null,
     npcVoiceTimer: null,
     lastNpcVoiceAt: -Infinity,
@@ -748,6 +752,10 @@
     if (!dialogBodyEl) return;
     dialogBodyEl.innerHTML = '';
     (Array.isArray(lines) && lines.length ? lines : ['Dialog data unavailable.']).forEach((line) => {
+      if (line instanceof window.HTMLElement) {
+        dialogBodyEl.appendChild(line);
+        return;
+      }
       dialogBodyEl.appendChild(createDialogLineElement(line));
     });
   }
@@ -784,6 +792,17 @@
         link.textContent = action.label || 'Open';
         dialogActionsDynamicEl.appendChild(link);
         controls.push(link);
+        return;
+      }
+
+      if (action.type === 'store-buy') {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'pixel-button secondary';
+        button.textContent = action.label || 'Buy';
+        button.addEventListener('click', () => buyStoreItem(state.activeDialogStoreId, action.index));
+        dialogActionsDynamicEl.appendChild(button);
+        controls.push(button);
       }
     });
 
@@ -813,6 +832,7 @@
 
   function closeDialog() {
     state.activeDialogNpcId = '';
+    state.activeDialogStoreId = '';
     state.activeDialogEntry = null;
     if (dialogActionsDynamicEl) {
       dialogActionsDynamicEl.innerHTML = '';
@@ -1077,6 +1097,18 @@
     }
   }
 
+  function addStores(world) {
+    state.stores = (world.stores || []).map((store, index) => ({
+      id: store && store.id ? store.id : 'store-' + index,
+      building_id: store && store.building_id ? store.building_id : '',
+      name: store && store.name ? store.name : 'Gastown storefront',
+      category: store && store.category ? store.category : 'shop',
+      entrance: store && store.entrance ? store.entrance : { x: 0, z: 0, yaw: 0 },
+      interactRadius: Number.isFinite(store && store.interactRadius) ? store.interactRadius : 2.4,
+      inventory: Array.isArray(store && store.inventory) ? store.inventory : [],
+    }));
+  }
+
   function addNpcs(world) {
     state.npcs = (world.npcs || []).map((npc) => {
       const visual = makeNpcVisual(npc);
@@ -1225,6 +1257,13 @@
   }
 
   function updateInteractionTarget() {
+    const store = findNearbyStore();
+    state.hoveredStoreId = store ? store.id : '';
+    if (store) {
+      state.hoveredNpcId = '';
+      setInteractPrompt('Press E to enter ' + (store.name || 'store') + '.');
+      return;
+    }
     const npc = findLookedAtNpc();
     state.hoveredNpcId = npc ? npc.id : '';
     if (!npc) {
@@ -1242,6 +1281,117 @@
     openDialogForNpc(npc);
     return true;
   }
+  function buildStoreBody(store) {
+    const fragment = document.createDocumentFragment();
+    const intro = document.createElement('p');
+    intro.textContent = store.category ? (store.category + ' storefront') : 'Storefront';
+    fragment.appendChild(intro);
+
+    const wallet = document.createElement('p');
+    wallet.className = 'gastown-store-wallet';
+    wallet.textContent = 'Wallet: $' + state.walletBalance.toFixed(2);
+    fragment.appendChild(wallet);
+
+    const inventory = Array.isArray(store.inventory) ? store.inventory : [];
+    if (!inventory.length) {
+      const empty = document.createElement('p');
+      empty.textContent = 'No inventory loaded for this store yet.';
+      fragment.appendChild(empty);
+      return [fragment];
+    }
+
+    const list = document.createElement('div');
+    list.className = 'gastown-store-inventory';
+    inventory.forEach((item) => {
+      const card = document.createElement('article');
+      card.className = 'gastown-store-item';
+      const title = document.createElement('h3');
+      title.textContent = item.name || 'Unnamed item';
+      const price = document.createElement('p');
+      price.className = 'gastown-store-item__price';
+      price.textContent = '$' + Number(item.price || 0).toFixed(2);
+      const description = document.createElement('p');
+      description.textContent = item.description || 'A local Gastown pickup.';
+      card.appendChild(title);
+      card.appendChild(price);
+      card.appendChild(description);
+      list.appendChild(card);
+    });
+    fragment.appendChild(list);
+    return [fragment];
+  }
+
+  function rerenderActiveStoreDialog() {
+    if (!state.activeDialogStoreId) return;
+    const store = (state.stores || []).find((candidate) => candidate.id === state.activeDialogStoreId);
+    if (!store) return;
+    renderDialogBody(buildStoreBody(store));
+    renderDialogActions({
+      actions: (store.inventory || []).map((item, index) => ({ type: 'store-buy', index: index, label: 'Buy ' + (item.name || ('item ' + (index + 1))) + ' · $' + Number(item.price || 0).toFixed(2) })).concat([{ type: 'close', label: 'Leave store' }])
+    });
+    focusFirstDialogControl();
+  }
+
+  function buyStoreItem(storeId, itemIndex) {
+    const store = (state.stores || []).find((candidate) => candidate.id === storeId);
+    const item = store && Array.isArray(store.inventory) ? store.inventory[itemIndex] : null;
+    if (!store || !item) return;
+    const price = Number(item.price || 0);
+    if (price > state.walletBalance) {
+      setStatus('Not enough funds for ' + (item.name || 'that item') + '. Wallet: $' + state.walletBalance.toFixed(2));
+      rerenderActiveStoreDialog();
+      return;
+    }
+    state.walletBalance = Math.max(0, state.walletBalance - price);
+    setStatus('Purchased ' + (item.name || 'item') + ' from ' + store.name + '. Wallet: $' + state.walletBalance.toFixed(2));
+    rerenderActiveStoreDialog();
+  }
+
+  function openDialogForStore(store) {
+    if (!store || !dialogModalEl || !dialogTitleEl || !dialogBodyEl) return;
+    clearMovementInput();
+    state.isRunning = false;
+    state.dialogLastFocusEl = document.activeElement;
+    const showDialog = () => {
+      dialogModalEl.removeAttribute('hidden');
+      dialogModalEl.setAttribute('aria-hidden', 'false');
+      state.activeDialogNpcId = '';
+      state.activeDialogStoreId = store.id;
+      dialogTitleEl.textContent = store.name || 'Gastown storefront';
+      rerenderActiveStoreDialog();
+      setStatus('Store open. Choose an item to buy or leave when ready.');
+      setPointerStatus('Pointer unlocked. Store controls are active.');
+    };
+    if (document.pointerLockElement === renderer.domElement) {
+      document.exitPointerLock();
+      window.setTimeout(showDialog, 0);
+      return;
+    }
+    showDialog();
+  }
+
+  function findNearbyStore() {
+    if (!Array.isArray(state.stores) || !state.stores.length) return null;
+    let best = null;
+    state.stores.forEach((store) => {
+      if (!store || !store.entrance) return;
+      const distance = Math.hypot(player.position.x - store.entrance.x, player.position.z - store.entrance.z);
+      if (distance > (store.interactRadius || 2.4)) return;
+      if (!best || distance < best.distance) {
+        best = { store: store, distance: distance };
+      }
+    });
+    return best ? best.store : null;
+  }
+
+  function interactWithHoveredStore() {
+    if (!state.hoveredStoreId) return false;
+    const store = (state.stores || []).find((candidate) => candidate.id === state.hoveredStoreId);
+    if (!store) return false;
+    openDialogForStore(store);
+    return true;
+  }
+
 
   function toneToColor(tone) {
     switch (tone) {
@@ -1912,6 +2062,21 @@
       }
     });
 
+
+    (world.stores || []).forEach((store) => {
+      if (!store || !store.entrance || !Number.isFinite(store.entrance.x) || !Number.isFinite(store.entrance.z)) return;
+      const doorMarker = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 2.2, 0.12),
+        new THREE.MeshBasicMaterial({ color: 0xff77b7 })
+      );
+      doorMarker.position.set(store.entrance.x, 1.12, store.entrance.z);
+      doorMarker.rotation.y = store.entrance.yaw || 0;
+      debugGroup.add(doorMarker);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(Math.max(0.45, (store.interactRadius || 2.4) * 0.3), Math.max(0.6, (store.interactRadius || 2.4) * 0.36), 20), new THREE.MeshBasicMaterial({ color: 0xff77b7, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(store.entrance.x, 0.18, store.entrance.z);
+      debugGroup.add(ring);
+    });
     if (world.spawn) {
       const spawnMarker = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.2, 12), new THREE.MeshBasicMaterial({ color: 0xffdb6b }));
       spawnMarker.position.set(world.spawn.x, 0.95, world.spawn.z);
@@ -2807,7 +2972,10 @@
   function attachEvents() {
     window.addEventListener('resize', updateSize);
     renderer.domElement.addEventListener('click', () => {
-      if (state.activeDialogNpcId) {
+      if (state.activeDialogNpcId || state.activeDialogStoreId) {
+        return;
+      }
+      if (state.hoveredStoreId && interactWithHoveredStore()) {
         return;
       }
       if (state.hoveredNpcId && interactWithHoveredNpc()) {
@@ -2821,15 +2989,15 @@
     renderer.domElement.addEventListener('wheel', onWheelLook, { passive: false });
 
     document.addEventListener('keydown', (event) => {
-      if (event.code === 'Escape' && state.activeDialogNpcId) {
+      if (event.code === 'Escape' && (state.activeDialogNpcId || state.activeDialogStoreId)) {
         event.preventDefault();
         closeDialog();
         return;
       }
-      if (state.activeDialogNpcId) {
+      if (state.activeDialogNpcId || state.activeDialogStoreId) {
         return;
       }
-      if (event.code === 'KeyE' && interactWithHoveredNpc()) {
+      if (event.code === 'KeyE' && (interactWithHoveredStore() || interactWithHoveredNpc())) {
         event.preventDefault();
         return;
       }
@@ -3009,6 +3177,7 @@
       addProps(state.world);
       addBuildings(state.world);
       addStreetscape(state.world);
+      addStores(state.world);
       addNpcs(state.world);
       addHeroLandmarks(state.world);
       addLandmarks(state.world);

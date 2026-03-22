@@ -23,7 +23,7 @@
     "lastBuild": "2026-03-22T22:16:42.851Z"
   },
   "route": {
-    "name": "Waterfront Station → Water Street → Steam Clock working corridor",
+    "name": "Waterfront Station \u2192 Water Street \u2192 Steam Clock working corridor",
     "centerline": [
       {
         "id": "waterfront-station-threshold",
@@ -4781,5 +4781,74 @@
     "floorY": 0,
     "edgeMessage": "Stayed within the Gastown working corridor.",
     "resetMessage": "Returned to the Gastown working corridor."
-  }
+  },
+  "stores": [
+    {
+      "id": "store-waterfront-provisions",
+      "building_id": "gastown-frontage-0-south",
+      "name": "Waterfront Provisions",
+      "category": "general store",
+      "entrance": {
+        "x": -10.1,
+        "z": -14.4,
+        "yaw": -0.7005
+      },
+      "interactRadius": 2.4,
+      "inventory": [
+        {
+          "name": "Espresso",
+          "price": 4.5,
+          "description": "A quick local coffee before the next block."
+        },
+        {
+          "name": "Postcard",
+          "price": 2.0,
+          "description": "A Gastown street scene postcard."
+        }
+      ]
+    },
+    {
+      "id": "store-maple-curios",
+      "building_id": "gastown-frontage-1-north",
+      "name": "Maple Curios",
+      "category": "gift shop",
+      "entrance": {
+        "x": 25.1,
+        "z": 10.0,
+        "yaw": 2.4413
+      },
+      "interactRadius": 2.6,
+      "inventory": [
+        {
+          "name": "Steam Clock Magnet",
+          "price": 8.0,
+          "description": "Tiny souvenir, big clock energy."
+        },
+        {
+          "name": "Vinyl Tote",
+          "price": 18.0,
+          "description": "Canvas tote for a neighbourhood wander."
+        }
+      ]
+    },
+    {
+      "id": "store-brick-lantern-books",
+      "building_id": "gastown-frontage-2-south",
+      "name": "Brick & Lantern Books",
+      "category": "bookshop",
+      "entrance": {
+        "x": 10.4,
+        "z": -28.4,
+        "yaw": 2.4416
+      },
+      "interactRadius": 2.5,
+      "inventory": [
+        {
+          "name": "Neighbourhood Zine",
+          "price": 6.5,
+          "description": "A slim zine about Gastown street life."
+        }
+      ]
+    }
+  ]
 }

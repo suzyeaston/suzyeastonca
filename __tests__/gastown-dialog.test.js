@@ -126,3 +126,23 @@ test('NPC conversation request fails softly to role-aware fallback when API is u
   assert.match(src, /return \{ title: fallback\.title, lines: fallback\.lines, fallback: true \};/);
   assert.match(src, /setStatus\(conversation\.fallback \? 'NPC chat fallback active\. Click scene to resume when ready\.' : 'NPC conversation ready\. Click scene to resume when ready\.'\);/);
 });
+
+
+test('storefront interaction source includes entry prompt, buy action, and wallet updates', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const src = fs.readFileSync(simPath, 'utf8');
+
+  assert.match(src, /Press E to enter /);
+  assert.match(src, /action\.type === 'store-buy'/);
+  assert.match(src, /state\.walletBalance = Math\.max\(0, state\.walletBalance - price\);/);
+  assert.match(src, /Wallet: \$/);
+});
+
+test('debug route rendering adds storefront door markers in debug mode', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const src = fs.readFileSync(simPath, 'utf8');
+
+  assert.match(src, /\(world\.stores \|\| \[\]\)\.forEach\(\(store\) => \{/);
+  assert.match(src, /new THREE\.BoxGeometry\(0\.8, 2\.2, 0\.12\)/);
+  assert.match(src, /new THREE\.RingGeometry/);
+});

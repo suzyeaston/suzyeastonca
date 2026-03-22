@@ -50,6 +50,7 @@ test('normalizeWorldData adds safe defaults for missing optional sections', () =
   assert.equal(Array.isArray(normalized.streetscape.bollards), true);
   assert.equal(Array.isArray(normalized.streetscape.surfaceBands), true);
   assert.equal(Array.isArray(normalized.props), true);
+  assert.equal(Array.isArray(normalized.stores), true);
   assert.equal(Array.isArray(normalized.npcs), true);
 });
 
@@ -136,4 +137,18 @@ test('normalizeWorldData safely defaults missing or partial props and npcs', () 
   assert.equal(normalized.npcs[0].heldProp, 'camera');
   assert.equal(normalized.npcs[0].voiceCue, 'photo-direction');
   assert.equal(normalized.npcs[0].silhouetteScale, 1);
+});
+
+
+test('normalizeWorldData safely defaults stores and inventory items', () => {
+  const normalizeWorldData = loadNormalizeWorldData();
+  const normalized = normalizeWorldData(minimalValidWorld({
+    stores: [{ id: 'shop-1', building_id: 'b1', name: 'Corner Shop', category: 'snacks', entrance: { x: 1, z: 2 } }],
+  }));
+
+  assert.equal(normalized.stores.length, 1);
+  assert.equal(normalized.stores[0].entrance.yaw, 0);
+  assert.equal(normalized.stores[0].interactRadius, 2.4);
+  assert.equal(Array.isArray(normalized.stores[0].inventory), true);
+  assert.equal(normalized.stores[0].inventory.length, 0);
 });
