@@ -15,6 +15,7 @@ const DATASETS = [
   { id: 'right-of-way-widths', output: 'right-of-way-widths.geojson', required: false },
   { id: 'building-footprints-2015', output: 'building-footprints.geojson', required: true },
   { id: 'street-lighting-poles', output: 'street-lighting-poles.geojson', required: false },
+  { id: 'orthophoto-imagery-2015', output: 'orthophoto-imagery-2015.geojson', required: false },
   { id: 'public-trees', output: 'public-trees.geojson', required: false },
   { id: 'heritage-sites', output: 'heritage-sites.geojson', required: false },
 ];

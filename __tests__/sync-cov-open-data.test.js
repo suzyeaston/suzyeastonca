@@ -78,6 +78,10 @@ test('sync-cov-open-data writes cropped feature collections and manifest', async
       pointFeature('lamp-near', [-123.1109, 49.2851]),
       pointFeature('lamp-far', [-123.15, 49.30]),
     ]),
+    'orthophoto-imagery-2015': makeFeatureCollection([
+      polygonFeature('ortho-near', nearbyPolygon, { tile: '2015-near' }),
+      polygonFeature('ortho-far', farPolygon, { tile: '2015-far' }),
+    ]),
     'public-trees': makeFeatureCollection([
       pointFeature('tree-near', [-123.1107, 49.28505]),
       pointFeature('tree-far', [-123.15, 49.30]),
@@ -116,6 +120,7 @@ test('sync-cov-open-data writes cropped feature collections and manifest', async
     'right-of-way-widths.geojson',
     'building-footprints.geojson',
     'street-lighting-poles.geojson',
+    'orthophoto-imagery-2015.geojson',
     'public-trees.geojson',
     'heritage-sites.geojson',
   ];
@@ -134,7 +139,7 @@ test('sync-cov-open-data writes cropped feature collections and manifest', async
 
   const manifest = JSON.parse(fs.readFileSync(path.join(covDir, '_manifest.json'), 'utf8'));
   assert.equal(Array.isArray(manifest.datasets), true);
-  assert.equal(manifest.datasets.length, 7);
+  assert.equal(manifest.datasets.length, 8);
   manifest.datasets.forEach((entry) => {
     assert.equal(typeof entry.dataset, 'string');
     assert.equal(typeof entry.keptFeatures, 'number');

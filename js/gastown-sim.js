@@ -2383,16 +2383,11 @@
   }
 
   function getMinimapView(metrics) {
-    const worldCenterX = (metrics.minX + metrics.maxX) / 2;
-    const worldCenterZ = (metrics.minZ + metrics.maxZ) / 2;
-    const playerX = player.position.x || worldCenterX;
-    const playerZ = player.position.z || worldCenterZ;
-    const centerX = ((playerX - worldCenterX) * 0.8) + worldCenterX;
-    const centerZ = ((playerZ - worldCenterZ) * 0.8) + worldCenterZ;
-
     const zoom = minimapState.zoom || 1;
     const viewWidth = metrics.width / zoom;
     const viewHeight = metrics.height / zoom;
+    const centerX = metrics.minX + (metrics.width / 2);
+    const centerZ = metrics.minZ + (metrics.height / 2);
 
     return {
       centerX,
@@ -2404,6 +2399,11 @@
       width: Math.max(1, viewWidth),
       height: Math.max(1, viewHeight),
     };
+  }
+
+  function getPlayerArrowAngle() {
+    const heading = getHeadingVector();
+    return Math.atan2(-heading.z, heading.x);
   }
 
   function toMinimapPoint(point, metrics, padding, view) {
@@ -2514,7 +2514,7 @@
     ctx.fillStyle = 'rgba(133, 205, 245, 0.3)';
     ctx.beginPath();
     ctx.moveTo(playerPoint.x, playerPoint.y);
-    const headingAngle = Math.atan2(headingY, headingX);
+    const headingAngle = getPlayerArrowAngle();
     ctx.arc(playerPoint.x, playerPoint.y, dirLength, headingAngle - 0.5, headingAngle + 0.5);
     ctx.closePath();
     ctx.fill();

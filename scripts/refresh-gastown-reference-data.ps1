@@ -20,6 +20,7 @@ Primary City datasets consumed when present:
  - right-of-way-widths
  - street-lighting-poles
  - building-footprints-2015
+ - orthophoto-imagery-2015
 
 Inputs:
  - data/reference/route-anchors.json
@@ -28,6 +29,7 @@ Inputs:
  - data/cov/right-of-way-widths.geojson (optional)
  - data/cov/street-lighting-poles.geojson (optional)
  - data/cov/building-footprints.geojson (optional, exported from building-footprints-2015)
+ - data/cov/orthophoto-imagery-2015.geojson (optional)
 
 Outputs:
  - data/reference/refresh/gastown-route-reference.geojson

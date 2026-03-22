@@ -104,6 +104,94 @@ function getStreetName(feature) {
   );
 }
 
+function featureMatchesStreet(feature, matcher) {
+  const props = getProps(feature);
+  const candidates = [
+    getStreetName(feature),
+    props.hblock,
+    props.street,
+    props.street_1,
+    props.street_2,
+    props.from_street,
+    props.to_street,
+    props.intersection,
+  ].filter(Boolean).map(normalizeStreet);
+  return candidates.some((value) => matcher.test(value));
+}
+
+function getStreetCenterline(streetPattern, collection, origin) {
+  const features = collection && Array.isArray(collection.features) ? collection.features : [];
+  const segments = features
+    .filter((feature) => featureMatchesStreet(feature, streetPattern))
+    .flatMap((feature) => extractLineStrings(feature).map((line) => ({
+      coords: line.map((coord) => projectLonLat(coord[0], coord[1], origin)),
+      arterialBias: getArterialBias(feature),
+    })));
+  if (!segments.length) return [];
+  const ordered = sortSegmentsByAnchorProximity(segments, segments[0].coords);
+  return rdp(mergeCorridorSegments(ordered, ordered[0][0], ordered[0][ordered[0].length - 1]), 0.5);
+}
+
+function getIntersectionNode(streetPatternA, streetPatternB, collection, origin, fallback) {
+  const features = collection && Array.isArray(collection.features) ? collection.features : [];
+  const match = features.find((feature) => {
+    const props = getProps(feature);
+    const values = [props.street_1, props.street_2, props.street_a, props.street_b, props.street1, props.street2, props.name]
+      .filter(Boolean)
+      .map(normalizeStreet);
+    return values.some((value) => streetPatternA.test(value)) && values.some((value) => streetPatternB.test(value));
+  });
+  return projectFeaturePoint(match, origin, fallback);
+}
+
+function getROWWidth(streetPattern, collection, fallback = {}) {
+  const features = collection && Array.isArray(collection.features) ? collection.features : [];
+  const match = features.find((feature) => featureMatchesStreet(feature, streetPattern));
+  const props = getProps(match);
+  const rightOfWayWidth = sanitizeNumber(Number(props.right_of_way_width || props.row_width || props.width_m), fallback.rightOfWayWidth);
+  const carriagewayWidth = sanitizeNumber(Number(props.carriageway_width || props.roadway_width || props.street_width), fallback.carriagewayWidth);
+  const sidewalkWidth = sanitizeNumber(Number(props.sidewalk_width), fallback.sidewalkWidth);
+  return { rightOfWayWidth, carriagewayWidth, sidewalkWidth };
+}
+
+function splitLineAtPoint(points, point) {
+  if (!Array.isArray(points) || points.length < 2 || !point) {
+    return { before: points.slice(), after: points.slice() };
+  }
+  let bestIndex = 0;
+  let bestDistance = Infinity;
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const d = pointToSegmentDistance(point, points[i], points[i + 1]);
+    if (d < bestDistance) {
+      bestDistance = d;
+      bestIndex = i;
+    }
+  }
+  const before = points.slice(0, bestIndex + 1).concat([{ x: point.x, z: point.z }]);
+  const after = [{ x: point.x, z: point.z }].concat(points.slice(bestIndex + 1));
+  return { before, after };
+}
+
+function orthophotoPlazaHint(collection, origin, fallbackPoint) {
+  const features = collection && Array.isArray(collection.features) ? collection.features : [];
+  let best = null;
+  features.forEach((feature) => {
+    extractPolygons(feature).forEach((polygon) => {
+      const ring = polygon[0] || [];
+      if (ring.length < 4) return;
+      const projected = ring.slice(0, -1).map((coord) => projectLonLat(coord[0], coord[1], origin));
+      const centroid = projected.reduce((acc, point) => ({ x: acc.x + point.x, z: acc.z + point.z }), { x: 0, z: 0 });
+      centroid.x /= projected.length;
+      centroid.z /= projected.length;
+      const d = distance(centroid, fallbackPoint);
+      if (!best || d < best.distance) {
+        best = { distance: d, footprint: closePolygon(projected) };
+      }
+    });
+  });
+  return best && best.distance < 30 ? best.footprint : null;
+}
+
 function parseHblockStreet(feature) {
   const props = getProps(feature);
   const hblock = String(props.hblock || '').trim().toUpperCase();
@@ -804,6 +892,8 @@ function buildStarterReferenceBundle(root) {
 function makeStarterWorld(outputPath, options = {}) {
   const reference = options.reference || {};
   const anchorOrigin = { lon: -123.11182, lat: 49.28602 };
+  const waterPattern = /\bwater\b/;
+  const cambiePattern = /\bcambie\b/;
   const routeFeature = getFeatureCollectionById(reference.routeReference, 'gastown-working-route');
   const fallbackRouteCoords = [
     [-123.11182, 49.28602],
@@ -827,13 +917,21 @@ function makeStarterWorld(outputPath, options = {}) {
   const intersectionFeature = streetContextFeatures.find((feature) => getProps(feature).id === 'water-cambie-intersection');
   const rowWidthFeature = streetContextFeatures.find((feature) => getProps(feature).id === 'water-cambie-row-width');
 
-  const waterCenterline = waterCenterlineFeature
+  const civicWaterCenterline = getStreetCenterline(waterPattern, reference.publicStreets, anchorOrigin);
+  const civicCambieCenterline = getStreetCenterline(cambiePattern, reference.publicStreets, anchorOrigin);
+  const waterCenterline = civicWaterCenterline.length
+    ? civicWaterCenterline
+    : waterCenterlineFeature
     ? extractLineStrings(waterCenterlineFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin))
     : routePoints;
-  const waterEastLeg = waterEastFeature
+  const waterEastLeg = civicWaterCenterline.length > 2
+    ? splitLineAtPoint(civicWaterCenterline, projectFeaturePoint(intersectionFeature, anchorOrigin, samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.9))).after
+    : waterEastFeature
     ? extractLineStrings(waterEastFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin))
     : waterCenterline.slice(Math.max(0, waterCenterline.length - 3));
-  const cambieCorridor = cambieCenterlineFeature
+  const cambieCorridor = civicCambieCenterline.length
+    ? civicCambieCenterline
+    : cambieCenterlineFeature
     ? extractLineStrings(cambieCenterlineFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin))
     : [
       { x: routePoints[routePoints.length - 2].x + 10, z: routePoints[routePoints.length - 2].z - 20 },
@@ -848,12 +946,18 @@ function makeStarterWorld(outputPath, options = {}) {
     mapleEdge: projectFeaturePoint(getFeatureCollectionById(reference.landmarkReference, 'maple-tree-square-edge'), anchorOrigin, routePoints[routePoints.length - 1]),
   };
 
-  const intersectionPoint = projectFeaturePoint(intersectionFeature, anchorOrigin, samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.9));
+  const intersectionFallback = samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.9);
+  const intersectionPoint = getIntersectionNode(waterPattern, cambiePattern, reference.streetIntersections, anchorOrigin,
+    projectFeaturePoint(intersectionFeature, anchorOrigin, intersectionFallback));
   const intersectionFrame = starterRouteFrame(waterCenterline, Math.max(0, polylineLength(waterCenterline) * 0.9));
   const rowProps = getProps(rowWidthFeature);
-  const rightOfWayWidth = sanitizeNumber(Number(rowProps.right_of_way_width || rowProps.row_width || rowProps.width_m), streetContextFeatures.length ? 18.4 : 18.8);
-  const streetWidth = sanitizeNumber(Number(rowProps.carriageway_width || rowProps.roadway_width || rowProps.street_width), streetContextFeatures.length ? 10.2 : 10.4);
-  const sidewalkWidth = sanitizeNumber(Number(rowProps.sidewalk_width || ((rightOfWayWidth - streetWidth) / 2)), Array.isArray(reference.buildingCues && reference.buildingCues.features) ? 4.2 : 3.8);
+  const civicWaterRow = getROWWidth(waterPattern, reference.rightOfWayWidths, {});
+  const civicCambieRow = getROWWidth(cambiePattern, reference.rightOfWayWidths, {});
+  const rightOfWayWidth = sanitizeNumber(civicWaterRow.rightOfWayWidth, sanitizeNumber(Number(rowProps.right_of_way_width || rowProps.row_width || rowProps.width_m), streetContextFeatures.length ? 18.4 : 18.8));
+  const streetWidth = sanitizeNumber(civicWaterRow.carriagewayWidth, sanitizeNumber(Number(rowProps.carriageway_width || rowProps.roadway_width || rowProps.street_width), streetContextFeatures.length ? 10.2 : 10.4));
+  const sidewalkWidth = sanitizeNumber(civicWaterRow.sidewalkWidth, sanitizeNumber(Number(rowProps.sidewalk_width || ((rightOfWayWidth - streetWidth) / 2)), Array.isArray(reference.buildingCues && reference.buildingCues.features) ? 4.2 : 3.8));
+  const cambieStreetWidth = sanitizeNumber(civicCambieRow.carriagewayWidth, streetWidth * 0.76);
+  const cambieSidewalkWidth = sanitizeNumber(civicCambieRow.sidewalkWidth, sidewalkWidth * 0.9);
   const softBoundary = 3.2;
   const streetHalf = streetWidth / 2;
   const sidewalkOuter = streetHalf + sidewalkWidth;
@@ -881,8 +985,10 @@ function makeStarterWorld(outputPath, options = {}) {
   layout.mainCorridor = waterCenterline;
   layout.crossCorridor = cambieCorridor;
 
-  const waterWestLeg = waterCenterline.filter((point) => point.x <= intersectionPoint.x + 0.1);
-  const waterRoute = waterWestLeg.concat([layout.clock], waterEastLeg.slice(1));
+  const splitWater = splitLineAtPoint(waterCenterline, intersectionPoint);
+  const waterWestLeg = splitWater.before;
+  const waterEastLegResolved = splitWater.after.length > 1 ? splitWater.after : waterEastLeg;
+  const waterRoute = waterWestLeg.concat([layout.clock], waterEastLegResolved.slice(1));
   const routeLength = polylineLength(waterRoute);
   const centerline = [
     { id: 'waterfront-station-threshold', label: 'Waterfront Station threshold', x: Number(layout.station.x.toFixed(2)), z: Number(layout.station.z.toFixed(2)) },
@@ -896,12 +1002,13 @@ function makeStarterWorld(outputPath, options = {}) {
     { id: 'cambie-rise-continuation', label: 'Cambie rise continuation', x: Number(layout.cambie.x.toFixed(2)), z: Number(layout.cambie.z.toFixed(2)) },
   ];
 
-  const mainStreet = ribbonPolygon(waterCenterline, streetHalf);
-  const cambieStreet = ribbonPolygon(cambieCorridor, streetHalf * 0.78);
+  const waterWestStreet = ribbonPolygon(waterWestLeg, streetHalf);
+  const waterEastStreet = ribbonPolygon(waterEastLegResolved, streetHalf);
+  const cambieStreet = ribbonPolygon(cambieCorridor, cambieStreetWidth / 2);
   const intersectionRoadway = orientedRect(intersectionPoint, intersectionFrame.tangent, 13.1, streetWidth + 1.8);
   const southSidewalk = closePolygon(lineOffset(waterCenterline, sidewalkOuter).concat(lineOffset(waterCenterline, streetHalf).reverse()));
   const northSidewalk = closePolygon(lineOffset(waterCenterline, -streetHalf).concat(lineOffset(waterCenterline, -sidewalkOuter).reverse()));
-  const cambieWestSidewalk = closePolygon(lineOffset(cambieCorridor, sidewalkOuter * 0.86).concat(lineOffset(cambieCorridor, streetHalf * 0.78).reverse()));
+  const cambieWestSidewalk = closePolygon(lineOffset(cambieCorridor, cambieSidewalkWidth + (cambieStreetWidth / 2)).concat(lineOffset(cambieCorridor, cambieStreetWidth / 2).reverse()));
   const curbReturn = orientedRect(
     {
       x: intersectionPoint.x + (layout.plaza.normal.x * (streetHalf + (sidewalkWidth * 0.28))),
@@ -911,7 +1018,8 @@ function makeStarterWorld(outputPath, options = {}) {
     6.4,
     5.8
   );
-  const plazaPad = orientedRect(
+  const orthophotoHint = orthophotoPlazaHint(reference.orthophotoImagery2015, anchorOrigin, layout.clock);
+  const plazaPad = orthophotoHint || orientedRect(
     {
       x: layout.clock.x + (layout.plaza.normal.x * 0.24),
       z: layout.clock.z + (layout.plaza.normal.z * 0.24),
@@ -922,7 +1030,7 @@ function makeStarterWorld(outputPath, options = {}) {
   );
   const walkBounds = ribbonPolygon(waterRoute, walkOuter).concat([]);
 
-  const frontagePattern = [7.5, 9.5, 8, 12.5, 8.8, 10.4, 9.2, 14.5, 10.8, 8.4, 12.8, 9.6];
+  const frontagePattern = [6.8, 8.6, 7.4, 10.2, 8.1, 11.6, 7.9, 13.2, 9.1, 7.2, 10.8, 8.4];
   const depthPattern = [15, 20, 14, 23, 17, 21, 18, 19, 22, 16, 24, 17];
   const heightPattern = [12, 15, 13, 19, 11, 21, 16, 18, 14, 10, 20, 13];
   const recessPattern = [1, 2, 1, 3, 1, 2, 2, 1, 3, 1, 2, 1];
@@ -1021,8 +1129,46 @@ function makeStarterWorld(outputPath, options = {}) {
       mass_inset: 0.96,
     }];
   });
+  const civicBuildings = (reference.buildingFootprints2015 && Array.isArray(reference.buildingFootprints2015.features) ? reference.buildingFootprints2015.features : []).flatMap((feature, index) => {
+    const polygons = extractPolygons(feature);
+    const ring = polygons[0] && polygons[0][0] ? polygons[0][0] : [];
+    if (ring.length < 4) return [];
+    const footprint = closePolygon(ring.slice(0, -1).map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin)).map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })));
+    const centroid = footprint.reduce((acc, point) => ({ x: acc.x + point.x, z: acc.z + point.z }), { x: 0, z: 0 });
+    centroid.x /= footprint.length;
+    centroid.z /= footprint.length;
+    if (pointToPolylineDistance(centroid, waterCenterline) > 28 && pointToPolylineDistance(centroid, cambieCorridor) > 24) return [];
+    const metrics = deriveFootprintMetrics(footprint);
+    const props = getProps(feature);
+    const civicAddress = String(props.civic_address || props.address || props.name || '');
+    return [{
+      id: String(props.id || getFeatureIdentifier(feature, index, 'civic-building')),
+      reference_name: civicAddress || 'Gastown heritage frontage',
+      segment_style: pointToPolylineDistance(centroid, cambieCorridor) < 14 ? 'steam-clock-corner-frontage' : 'water-street-heritage-frontage',
+      style_notes: 'Approximate heritage massing derived from building-footprints-2015 with deterministic frontage articulation layered on top.',
+      x: Number(metrics.x.toFixed(2)),
+      z: Number(metrics.z.toFixed(2)),
+      width: Number(metrics.width.toFixed(2)),
+      depth: Number(metrics.depth.toFixed(2)),
+      yaw: Number(metrics.yaw.toFixed(4)),
+      height: Number((deterministicValue(civicAddress || index, 11.5, 20.5)).toFixed(1)),
+      footprint,
+      footprint_local: metrics.localFootprint.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })),
+      facade_profile: pointToPolylineDistance(centroid, intersectionPoint ? [intersectionPoint] : waterCenterline) < 18 ? 'steam_clock_corner' : facadePattern[index % facadePattern.length],
+      tone: index % 3 === 0 ? 'stoneMuted' : 'brickWarm',
+      roofline_type: index % 4 === 0 ? 'wrapped_cornice' : 'flat_cornice',
+      window_bay_count: Math.max(3, Math.round(metrics.width / deterministicValue(index, 2.2, 3.5))),
+      recessed_entry_count: Math.max(1, Math.round(deterministicValue(index + '-entry', 1, 3))),
+      storefront_rhythm: { base_band: Number(deterministicValue(index + '-band', 0.16, 0.24).toFixed(2)), upper_rows: metrics.depth > 18 ? 4 : 3 },
+      material_palette: palettePattern[index % palettePattern.length],
+      cornice_emphasis: Number(deterministicValue(index + '-cornice', 0.22, 0.44).toFixed(2)),
+      mass_inset: Number(deterministicValue(index + '-inset', 0.93, 0.98).toFixed(2)),
+    }];
+  });
   if (cueBuildings.length) {
     buildings.splice(0, buildings.length, ...cueBuildings);
+  } else if (civicBuildings.length) {
+    buildings.splice(0, buildings.length, ...civicBuildings.sort((a, b) => a.z - b.z || a.x - b.x).slice(0, 28));
   }
 
   const spawnDir = normalize({ x: centerline[1].x - centerline[0].x, z: centerline[1].z - centerline[0].z });
@@ -1059,7 +1205,13 @@ function makeStarterWorld(outputPath, options = {}) {
   ];
 
   const lampFeatures = getFeatureCollectionByKind(reference.poiReference, 'heritage_lamp');
-  const lamps = lampFeatures.length
+  const civicLampFeatures = reference.streetLightingPoles && Array.isArray(reference.streetLightingPoles.features) ? reference.streetLightingPoles.features : [];
+  const lamps = civicLampFeatures.length
+    ? civicLampFeatures.slice(0, 18).map((feature, index) => {
+      const point = projectFeaturePoint(feature, anchorOrigin, layout.clock);
+      return { id: getFeatureIdentifier(feature, index, 'starter-lamp'), x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), height: 5.4 };
+    })
+    : lampFeatures.length
     ? lampFeatures.map((feature, index) => {
       const point = projectFeaturePoint(feature, anchorOrigin, layout.clock);
       return { id: getProps(feature).id || ('starter-lamp-' + index), x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)), height: 5.4 };
@@ -1105,13 +1257,14 @@ function makeStarterWorld(outputPath, options = {}) {
           { x: Number((layout.clock.x + (layout.plaza.tangent.x * 2.2) + (layout.plaza.normal.x * 2.1)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.tangent.z * 2.2) + (layout.plaza.normal.z * 2.1)).toFixed(2)) },
           { x: Number((layout.clock.x + (layout.plaza.normal.x * 2.3)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.normal.z * 2.3)).toFixed(2)) },
         ] },
-        { id: 'water-street-east-leg', label: 'Water Street east leg', points: waterEastLeg.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })) },
+        { id: 'water-street-east-leg', label: 'Water Street east leg', points: waterEastLegResolved.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })) },
         { id: 'cambie-crossing', label: 'Cambie crossing', points: cambieCorridor.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })) },
       ],
     },
     zones: {
       street: [
-        { id: 'water-street-main-roadway', surface: 'road', polygon: mainStreet },
+        { id: 'water-street-west-roadway', surface: 'road', polygon: waterWestStreet },
+        { id: 'water-street-east-roadway', surface: 'road', polygon: waterEastStreet },
         { id: 'cambie-street-crossing', surface: 'road', polygon: cambieStreet },
         { id: 'water-cambie-intersection-roadway', surface: 'road', polygon: intersectionRoadway },
       ],
