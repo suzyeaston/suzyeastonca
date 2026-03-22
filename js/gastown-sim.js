@@ -50,6 +50,7 @@
   const routeSegmentEl = app.querySelector('[data-sim-route-segment]');
   const minimapZoomInBtn = app.querySelector('[data-action="minimap-zoom-in"]');
   const minimapZoomOutBtn = app.querySelector('[data-action="minimap-zoom-out"]');
+  const minimapModeBtn = app.querySelector('[data-action="minimap-mode-toggle"]');
   const osmAttributionEl = app.querySelector('[data-gastown-osm-attribution]');
   const interactPromptEl = app.querySelector('[data-sim-interact-prompt]');
   const dialogModalEl = app.querySelector('[data-dialog-modal]');
@@ -230,6 +231,7 @@
     minZoom: 0.8,
     maxZoom: 3.2,
     zoomStep: 0.2,
+    mode: 'north-up',
   };
 
   function updateSize() {
@@ -2261,6 +2263,41 @@
     }
   }
 
+  function isValidMinimapMode(value) {
+    return value === 'north-up' || value === 'heading-up';
+  }
+
+  function updateMinimapModeButton() {
+    if (!minimapModeBtn) {
+      return;
+    }
+    const isHeadingUp = minimapState.mode === 'heading-up';
+    minimapModeBtn.textContent = isHeadingUp ? 'Heading up' : 'North up';
+    minimapModeBtn.setAttribute('aria-pressed', isHeadingUp ? 'true' : 'false');
+    minimapModeBtn.setAttribute(
+      'aria-label',
+      isHeadingUp ? 'Switch minimap to north-up mode' : 'Switch minimap to heading-up mode'
+    );
+    minimapModeBtn.title = isHeadingUp ? 'Switch minimap to north-up mode' : 'Switch minimap to heading-up mode';
+  }
+
+  function setMinimapMode(nextMode) {
+    if (!isValidMinimapMode(nextMode)) {
+      return;
+    }
+    minimapState.mode = nextMode;
+    updateMinimapModeButton();
+    try {
+      window.sessionStorage.setItem('gastownMinimapMode', minimapState.mode);
+    } catch (error) {
+      // ignore session storage failures
+    }
+  }
+
+  function toggleMinimapMode() {
+    setMinimapMode(minimapState.mode === 'heading-up' ? 'north-up' : 'heading-up');
+  }
+
   function restoreMinimapZoom() {
     try {
       const stored = parseFloat(window.sessionStorage.getItem('gastownMinimapZoom') || '');
@@ -2270,6 +2307,18 @@
     } catch (error) {
       // ignore session storage failures
     }
+  }
+
+  function restoreMinimapMode() {
+    try {
+      const stored = window.sessionStorage.getItem('gastownMinimapMode') || '';
+      if (isValidMinimapMode(stored)) {
+        minimapState.mode = stored;
+      }
+    } catch (error) {
+      // ignore session storage failures
+    }
+    updateMinimapModeButton();
   }
 
   function getWorldMetrics() {
@@ -2387,8 +2436,9 @@
     const worldCenterZ = (metrics.minZ + metrics.maxZ) / 2;
     const playerX = player.position.x || worldCenterX;
     const playerZ = player.position.z || worldCenterZ;
-    const centerX = ((playerX - worldCenterX) * 0.8) + worldCenterX;
-    const centerZ = ((playerZ - worldCenterZ) * 0.8) + worldCenterZ;
+    const isHeadingUp = minimapState.mode === 'heading-up';
+    const centerX = isHeadingUp ? playerX : (((playerX - worldCenterX) * 0.8) + worldCenterX);
+    const centerZ = isHeadingUp ? playerZ : (((playerZ - worldCenterZ) * 0.8) + worldCenterZ);
 
     const zoom = minimapState.zoom || 1;
     const viewWidth = metrics.width / zoom;
@@ -2416,6 +2466,45 @@
     };
   }
 
+  function rotateMinimapVector(x, y, angle) {
+    const sin = Math.sin(angle);
+    const cos = Math.cos(angle);
+    return {
+      x: (x * cos) - (y * sin),
+      y: (x * sin) + (y * cos),
+    };
+  }
+
+  function drawMinimapCompass(playerPoint, rotation) {
+    const ctx = minimapState.ctx;
+    ctx.save();
+    ctx.fillStyle = 'rgba(221, 236, 255, 0.82)';
+    ctx.font = '700 11px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    if (minimapState.mode !== 'heading-up') {
+      ctx.fillText('N', minimapState.width / 2, 9);
+      ctx.fillText('S', minimapState.width / 2, minimapState.height - 9);
+      ctx.fillText('W', 10, minimapState.height / 2);
+      ctx.fillText('E', minimapState.width - 10, minimapState.height / 2);
+      ctx.restore();
+      return;
+    }
+
+    const radius = (Math.min(minimapState.width, minimapState.height) / 2) - 11;
+    [
+      { label: 'N', x: 0, y: -1 },
+      { label: 'E', x: 1, y: 0 },
+      { label: 'S', x: 0, y: 1 },
+      { label: 'W', x: -1, y: 0 },
+    ].forEach((entry) => {
+      const rotated = rotateMinimapVector(entry.x, entry.y, rotation);
+      ctx.fillText(entry.label, playerPoint.x + (rotated.x * radius), playerPoint.y + (rotated.y * radius));
+    });
+    ctx.restore();
+  }
+
   function drawMinimap() {
     if (!minimapState.ctx || !state.world || !minimapState.worldMetrics) {
       return;
@@ -2425,12 +2514,22 @@
     const metrics = minimapState.worldMetrics;
     const view = getMinimapView(metrics);
     const pad = 16;
+    const playerPoint = toMinimapPoint({ x: player.position.x, z: player.position.z }, metrics, pad, view);
+    const heading = getHeadingVector();
+    const headingRotation = minimapState.mode === 'heading-up' ? (-Math.atan2(-heading.z, heading.x) - (Math.PI / 2)) : 0;
     ctx.clearRect(0, 0, minimapState.width, minimapState.height);
 
     ctx.fillStyle = '#08101a';
     ctx.fillRect(0, 0, minimapState.width, minimapState.height);
     ctx.strokeStyle = 'rgba(181, 201, 224, 0.34)';
     ctx.strokeRect(0.5, 0.5, minimapState.width - 1, minimapState.height - 1);
+
+    ctx.save();
+    if (headingRotation) {
+      ctx.translate(playerPoint.x, playerPoint.y);
+      ctx.rotate(headingRotation);
+      ctx.translate(-playerPoint.x, -playerPoint.y);
+    }
 
     (state.world.zones.sidewalk || []).forEach((zone) => {
       drawPolygon(zone.polygon, metrics, pad, '#3f4d60', 'rgba(136, 161, 188, 0.4)', 1, view);
@@ -2505,11 +2604,11 @@
       }
     });
 
-    const playerPoint = toMinimapPoint({ x: player.position.x, z: player.position.z }, metrics, pad, view);
-    const heading = getHeadingVector();
+    ctx.restore();
+
     const dirLength = 16;
-    const headingX = heading.x;
-    const headingY = -heading.z;
+    const headingX = minimapState.mode === 'heading-up' ? 0 : heading.x;
+    const headingY = minimapState.mode === 'heading-up' ? -1 : -heading.z;
 
     ctx.fillStyle = 'rgba(133, 205, 245, 0.3)';
     ctx.beginPath();
@@ -2538,14 +2637,7 @@
     ctx.arc(playerPoint.x, playerPoint.y, 2.3, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(221, 236, 255, 0.82)';
-    ctx.font = '700 11px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('N', minimapState.width / 2, 9);
-    ctx.fillText('S', minimapState.width / 2, minimapState.height - 9);
-    ctx.fillText('W', 10, minimapState.height / 2);
-    ctx.fillText('E', minimapState.width - 10, minimapState.height / 2);
+    drawMinimapCompass(playerPoint, headingRotation);
 
     if (minimapState.nearestNode) {
       const nearestPoint = toMinimapPoint(minimapState.nearestNode, metrics, pad, view);
@@ -2852,6 +2944,9 @@
     if (minimapZoomOutBtn) {
       minimapZoomOutBtn.addEventListener('click', () => setMinimapZoom(minimapState.zoom - minimapState.zoomStep));
     }
+    if (minimapModeBtn) {
+      minimapModeBtn.addEventListener('click', toggleMinimapMode);
+    }
 
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
@@ -3016,6 +3111,7 @@
       setupAudio(state.world);
       minimapState.worldMetrics = getWorldMetrics();
       restoreMinimapZoom();
+      restoreMinimapMode();
       updateSize();
       applyTimeOfDay(state.activeTimeOfDay);
       applyMood(state.activeMood);
