@@ -276,6 +276,21 @@
       material: new THREE.MeshStandardMaterial({ color: 0xb3452f, roughness: 0.72, metalness: 0.18 }),
       y: 0.59,
     },
+    utility_box: {
+      geometry: new THREE.BoxGeometry(1.18, 1.42, 0.68),
+      material: new THREE.MeshStandardMaterial({ color: 0x6f767d, roughness: 0.82, metalness: 0.24 }),
+      y: 0.71,
+    },
+    bench: {
+      geometry: new THREE.BoxGeometry(1.5, 0.42, 0.46),
+      material: new THREE.MeshStandardMaterial({ color: 0x6b4c33, roughness: 0.88, metalness: 0.08 }),
+      y: 0.34,
+    },
+    planter: {
+      geometry: new THREE.CylinderGeometry(0.48, 0.56, 0.72, 10),
+      material: new THREE.MeshStandardMaterial({ color: 0x7d684d, roughness: 0.9, metalness: 0.06 }),
+      y: 0.36,
+    },
   };
   const NPC_ROLE_STYLE = {
     pedestrian: { color: 0x9ab4c6, accent: 0x33414d, height: 1.72 },

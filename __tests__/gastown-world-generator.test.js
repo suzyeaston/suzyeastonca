@@ -40,6 +40,23 @@ test('generator keeps world polygons valid with existing or generated output', (
     assert.ok(Array.isArray(sampleBuilding.footprint_local));
     assert.ok(sampleBuilding.footprint_local.length >= 3);
     assertFinitePoints(sampleBuilding.footprint_local);
+
+    if (data.meta && data.meta.fallbackMode === 'starter-corridor') {
+      assert.ok(Array.isArray(data.streetscape.surfaceBands));
+      assert.ok(data.streetscape.surfaceBands.length > 0, 'starter fallback should include deterministic surface bands');
+      const surfaceTones = new Set(data.streetscape.surfaceBands.map((band) => band.tone));
+      ['curb_grime', 'intersection_pavers'].forEach((tone) => {
+        assert.equal(surfaceTones.has(tone), true, 'starter fallback surface bands should include ' + tone);
+      });
+
+      const propKinds = new Set((data.props || []).map((prop) => prop.kind));
+      ['trash_bag', 'newspaper_box', 'utility_box', 'bench', 'planter'].forEach((kind) => {
+        assert.equal(propKinds.has(kind), true, 'starter fallback props should include ' + kind);
+      });
+
+      assert.ok(Array.isArray(data.landmarks));
+      assert.equal(data.landmarks.length >= 3, true, 'starter fallback should expose route beats as landmarks');
+    }
   }
 
   if (fs.existsSync(tmpPath)) {
