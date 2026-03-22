@@ -47,3 +47,11 @@ test('production landmark rendering suppresses generic cylinder and halo markers
   assert.match(src, /landmark\.id === 'steam-clock'/);
   assert.match(src, /landmark\.id === 'water-cambie-intersection'/);
 });
+
+test('production landmark rendering also suppresses reflection discs for suppressed hero/intersection markers', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const src = fs.readFileSync(simPath, 'utf8');
+
+  assert.match(src, /if \(state\.debugEnabled \|\| !suppressGenericMarker\) \{\s*const reflectionMaterial = new THREE\.MeshStandardMaterial/s);
+  assert.equal(src.includes('visualState.landmarkVisuals.push({ reflectionMaterial });\n      }'), true);
+});

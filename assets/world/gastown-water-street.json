@@ -12,7 +12,15 @@
       "No refreshed reference inputs were present; deterministic default route staging was used."
     ],
     "referenceInputsUsed": [],
-    "lastBuild": "2026-03-22T21:18:50.464Z"
+    "openDataInputs": {
+      "publicStreets": false,
+      "streetIntersections": false,
+      "rightOfWayWidths": false,
+      "streetLightingPoles": false,
+      "buildingFootprints2015": false,
+      "orthophotoImagery2015": false
+    },
+    "lastBuild": "2026-03-22T22:16:42.851Z"
   },
   "route": {
     "name": "Waterfront Station → Water Street → Steam Clock working corridor",

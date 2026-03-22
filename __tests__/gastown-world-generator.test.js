@@ -176,9 +176,60 @@ test('generator consumes refreshed reference inputs when present', () => {
     'gastown-building-cues.geojson',
     'gastown-poi-reference.geojson',
   ]);
+  assert.deepEqual(data.meta.openDataInputs, {
+    publicStreets: false,
+    streetIntersections: false,
+    rightOfWayWidths: false,
+    streetLightingPoles: false,
+    buildingFootprints2015: false,
+    orthophotoImagery2015: false,
+  });
 
   fs.rmSync(refreshDir, { recursive: true, force: true });
   fs.rmSync(tmpPath, { force: true });
+});
+
+
+test('generator records direct open-data inputs when present', () => {
+  const root = path.resolve(__dirname, '..');
+  const covDir = path.join(root, 'data', 'cov');
+  fs.mkdirSync(covDir, { recursive: true });
+
+  const files = {
+    'public-streets.geojson': { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { id: 'street', hblock: '100 W CORDOVA ST', streetuse: 'Arterial' }, geometry: { type: 'LineString', coordinates: [[-123.1117, 49.2858], [-123.1095, 49.2848]] } }] },
+    'street-intersections.geojson': { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { id: 'intersection' }, geometry: { type: 'Point', coordinates: [-123.1091, 49.2846] } }] },
+    'right-of-way-widths.geojson': { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { id: 'row', right_of_way_width: 18.4 }, geometry: { type: 'Point', coordinates: [-123.1091, 49.2846] } }] },
+    'street-lighting-poles.geojson': { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { id: 'lamp' }, geometry: { type: 'Point', coordinates: [-123.1094, 49.2847] } }] },
+    'building-footprints-2015.geojson': { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { id: 'building' }, geometry: { type: 'Polygon', coordinates: [[[-123.1108, 49.2852], [-123.1105, 49.2852], [-123.1105, 49.2850], [-123.1108, 49.2850], [-123.1108, 49.2852]]] } }] },
+    'orthophoto-imagery-2015.geojson': { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { id: 'ortho-tile' }, geometry: { type: 'Polygon', coordinates: [[[-123.1109, 49.2853], [-123.1103, 49.2853], [-123.1103, 49.2849], [-123.1109, 49.2849], [-123.1109, 49.2853]]] } }] },
+  };
+
+  try {
+    Object.entries(files).forEach(([name, data]) => {
+      fs.writeFileSync(path.join(covDir, name), JSON.stringify(data), 'utf8');
+    });
+
+    const tmpPath = path.join(root, 'assets', 'world', 'gastown-water-street.opendata-test.json');
+    const result = buildWorld({ root, outputPath: tmpPath });
+    const sourcePath = result.generated ? result.outputPath : path.join(root, 'assets', 'world', 'gastown-water-street.json');
+    const data = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
+
+    ['public-streets.geojson', 'street-intersections.geojson', 'right-of-way-widths.geojson', 'street-lighting-poles.geojson', 'building-footprints-2015.geojson', 'orthophoto-imagery-2015.geojson'].forEach((name) => {
+      assert.equal(data.meta.referenceInputsUsed.includes(name), true, name + ' should be tracked in referenceInputsUsed when present');
+    });
+    assert.deepEqual(data.meta.openDataInputs, {
+      publicStreets: true,
+      streetIntersections: true,
+      rightOfWayWidths: true,
+      streetLightingPoles: true,
+      buildingFootprints2015: true,
+      orthophotoImagery2015: true,
+    });
+
+    fs.rmSync(tmpPath, { force: true });
+  } finally {
+    Object.keys(files).forEach((name) => fs.rmSync(path.join(covDir, name), { force: true }));
+  }
 });
 
 test('refresh helper documents expanded expected output files', () => {
