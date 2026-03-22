@@ -10,6 +10,7 @@ test('localized simulator defaults boot into morning clear mode', () => {
   assert.match(php, /'defaultWeather'\s*=>\s*'clear'/);
   assert.match(php, /'defaultTimeOfDay'\s*=>\s*'morning'/);
   assert.match(php, /'defaultMood'\s*=>\s*'calm'/);
+  assert.match(php, /'conversationEndpoint'\s*=>\s*esc_url_raw\( rest_url\( 'se\/v1\/gastown-npc-chat' \) \)/);
   assert.doesNotMatch(php, /'defaultMood'\s*=>\s*'eerie'/);
 });
 
@@ -26,6 +27,7 @@ test('simulator page exposes aligned supported mood options and daytime defaults
   const php = fs.readFileSync(pagePath, 'utf8');
 
   assert.match(php, /<option value="morning" selected>Morning<\/option>/);
+  assert.match(php, /<option value="afternoon">Afternoon<\/option>/);
   assert.match(php, /<option value="clear" selected>Clear<\/option>/);
   assert.match(php, /<option value="thunderstorm">Thunderstorm<\/option>/);
   ['calm', 'commuter', 'lively', 'eerie'].forEach((mood) => {
@@ -41,6 +43,10 @@ test('clock chime system initializes or fails softly without blocking startup', 
   const src = fs.readFileSync(simPath, 'utf8');
 
   assert.match(src, /function unlockSteamClockAudio\(\)/);
+  assert.match(src, /function ensureNpcLoop\(npcState\)/);
+  assert.match(src, /Tone\.PluckSynth/);
+  assert.doesNotMatch(src, /oscillator\.type = 'triangle'/);
+  assert.doesNotMatch(src, /overtone\.type = 'sine'/);
   assert.match(src, /return false;\n\s*}\n\s*try \{/s);
   assert.match(src, /warnAudioUnavailable\('Tone\.js steam clock chimes unavailable; simulator continuing without musical chimes\.'/);
   assert.match(src, /STEAM_CLOCK_CHIME_MOTIF/);

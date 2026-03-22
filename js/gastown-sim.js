@@ -110,6 +110,8 @@
     activeDialogNpcId: '',
     activeDialogEntry: null,
     dialogLastFocusEl: null,
+    npcConversationCache: {},
+    npcConversationPending: false,
     hoveredNpcId: '',
     audioContext: null,
     npcVoiceTimer: null,
@@ -319,6 +321,8 @@
     busker: { color: 0x8c6bc0, accent: 0x2d1f42, height: 1.74 },
     tourist: { color: 0xd3b384, accent: 0x6a4d2b, height: 1.7 },
     photographer: { color: 0xb4c7d8, accent: 0x202933, height: 1.71 },
+    skateboarder: { color: 0xe0a96d, accent: 0x473222, height: 1.73 },
+    cyclist: { color: 0x8fc1a9, accent: 0x24453b, height: 1.76 },
   };
   const STEAM_CLOCK_CHIME_MOTIF = [
     ['G#4', 'F#4', 'E4', 'B3'],
@@ -603,6 +607,109 @@
     return (npcState && npcState.id) || 'Gastown guide';
   }
 
+  function getNpcRoleLabel(npcState) {
+    const labels = { guide: 'guide', busker: 'busker', tourist: 'tourist', photographer: 'photographer', cyclist: 'cyclist', skateboarder: 'skateboarder', pedestrian: 'pedestrian' };
+    return labels[npcState && npcState.role] || 'pedestrian';
+  }
+
+  function getNpcConversationFallback(npcState) {
+    const role = npcState && npcState.role ? npcState.role : 'pedestrian';
+    const fallbackByRole = {
+      guide: ['Gastown grew around this working waterfront edge, so Water Street still reads best when the route keeps the heritage storefront cadence intact.', 'The Steam Clock is the memorable landmark, but the facades, paving, and corner pauses are what make the walk feel like Gastown.'],
+      tourist: ['We came for the Steam Clock, but the block feels richer when the storefronts and sidewalks frame the plaza instead of flattening into one pale surface.', 'It is a great photo stop because the street life and brick facades stack behind the landmark.'],
+      photographer: ['A slight side angle gives you the Steam Clock, the paving texture, and the storefront rhythm all at once.', 'The plaza works best when people pause here and the route still flows around them.'],
+      busker: ['I am keeping the set light near the clock now: short melodic gestures, no constant drone.', 'A little rhythm helps the corner feel alive without stepping on the chime motif.'],
+      cyclist: ['This stretch rewards smooth lines and predictable motion because the tourist cluster opens and closes around the Steam Clock.', 'The ride reads differently from walking because the whole corridor starts to feel like one connected sweep.'],
+      skateboarder: ['A couple of pushes and a long glide make this block feel playful without turning it into chaos.', 'I stay clear of the clock crowd, then roll back toward the quieter mid-block stretch.'],
+      pedestrian: ['Water Street feels strongest when the road stays darker than the sidewalks and the storefronts repeat in a tight heritage cadence.', 'A small cluster of people near the Steam Clock makes the corridor feel active without overwhelming it.'],
+    };
+    return {
+      title: getDialogFallbackTitle(npcState),
+      lines: fallbackByRole[role] || fallbackByRole.pedestrian,
+    };
+  }
+
+  async function requestNpcConversation(npcState) {
+    const fallback = getNpcConversationFallback(npcState);
+    if (!config.conversationEndpoint || !window.fetch) {
+      return { title: fallback.title, lines: fallback.lines, fallback: true };
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (config.nonce) {
+      headers['X-WP-Nonce'] = config.nonce;
+    }
+
+    try {
+      const response = await fetch(config.conversationEndpoint, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers,
+        body: JSON.stringify({
+          role: npcState.role || 'pedestrian',
+          name: npcState.id || '',
+          prompt: 'Share a quick local thought about Gastown, Water Street, or the Steam Clock area.',
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('conversation unavailable');
+      }
+      const data = await response.json();
+      if (!data || !Array.isArray(data.lines) || !data.lines.length) {
+        throw new Error('empty conversation');
+      }
+      return {
+        title: data.title || fallback.title,
+        lines: data.lines.slice(0, 3),
+        fallback: !!data.fallback,
+      };
+    } catch (error) {
+      return { title: fallback.title, lines: fallback.lines, fallback: true };
+    }
+  }
+
+  function buildNpcConversationEntry(npcState, conversation) {
+    const result = conversation || getNpcConversationFallback(npcState);
+    return {
+      title: result.title || getDialogFallbackTitle(npcState),
+      lines: result.lines || getNpcConversationFallback(npcState).lines,
+      actions: [{ type: 'close', label: 'Back to walk' }],
+      hasCustomActions: true,
+    };
+  }
+
+  async function hydrateNpcConversation(npcState) {
+    if (!npcState || !state.activeDialogNpcId || state.activeDialogNpcId !== npcState.id) {
+      return;
+    }
+    if (state.npcConversationCache[npcState.id]) {
+      const cached = buildNpcConversationEntry(npcState, state.npcConversationCache[npcState.id]);
+      state.activeDialogEntry = cached;
+      dialogTitleEl.textContent = cached.title;
+      renderDialogBody(cached.lines);
+      renderDialogActions(cached);
+      focusFirstDialogControl();
+      return;
+    }
+
+    state.npcConversationPending = true;
+    const conversation = await requestNpcConversation(npcState);
+    state.npcConversationPending = false;
+    state.npcConversationCache[npcState.id] = conversation;
+
+    if (!state.activeDialogNpcId || state.activeDialogNpcId !== npcState.id || !dialogModalEl || dialogModalEl.hasAttribute('hidden')) {
+      return;
+    }
+
+    const entry = buildNpcConversationEntry(npcState, conversation);
+    state.activeDialogEntry = entry;
+    dialogTitleEl.textContent = entry.title;
+    renderDialogBody(entry.lines);
+    renderDialogActions(entry);
+    setStatus(conversation.fallback ? 'NPC chat fallback active. Click scene to resume when ready.' : 'NPC conversation ready. Click scene to resume when ready.');
+    focusFirstDialogControl();
+  }
+
   function createDialogLineElement(line) {
     const paragraph = document.createElement('p');
     paragraph.textContent = line;
@@ -713,7 +820,12 @@
       window.console.warn('[Gastown Sim] Missing dialog entry for', npcState.dialogId);
     }
 
-    const normalized = normalizeDialogEntry(entry, {
+    const baseFallback = getNpcConversationFallback(npcState);
+    const normalized = normalizeDialogEntry(entry || {
+      title: baseFallback.title,
+      lines: ['Listening…'],
+      actions: [{ type: 'close', label: 'Back to walk' }],
+    }, {
       fallbackTitle: getDialogFallbackTitle(npcState),
       unavailableLine: 'Dialog data unavailable.',
       missingLine: 'This guide does not have dialog copy yet.',
@@ -729,18 +841,22 @@
       dialogModalEl.setAttribute('aria-hidden', 'false');
       state.activeDialogNpcId = npcState.id;
       state.activeDialogEntry = normalized;
-      setStatus('Dialog open. Review the guide options below.');
+      setStatus('Dialog open. Loading nearby conversation.');
       setPointerStatus('Pointer unlocked. Dialog controls are active.');
       focusFirstDialogControl();
     };
 
     if (document.pointerLockElement === renderer.domElement) {
       document.exitPointerLock();
-      window.setTimeout(showDialog, 0);
+      window.setTimeout(() => {
+        showDialog();
+        hydrateNpcConversation(npcState);
+      }, 0);
       return;
     }
 
     showDialog();
+    hydrateNpcConversation(npcState);
   }
 
   function createNpcProp(propId, accentMaterial) {
@@ -755,6 +871,43 @@
       prop.add(neck);
       prop.rotation.z = 0.72;
       prop.position.set(0.22, 1.08, 0.19);
+      return prop;
+    }
+    if (propId === 'skateboard') {
+      const prop = new THREE.Group();
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.04, 0.16), accentMaterial.clone());
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1a1c20, roughness: 0.52, metalness: 0.12 });
+      [[-0.18, -0.08], [0.18, -0.08], [-0.18, 0.08], [0.18, 0.08]].forEach((coords) => {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.03, 10), wheelMat);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(coords[0], -0.04, coords[1]);
+        prop.add(wheel);
+      });
+      prop.add(deck);
+      prop.position.set(0, 0.08, 0.06);
+      return prop;
+    }
+    if (propId === 'bike') {
+      const prop = new THREE.Group();
+      const frameMat = accentMaterial.clone();
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x20242b, roughness: 0.55, metalness: 0.14 });
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.05, 0.05), frameMat);
+      frame.rotation.z = -0.18;
+      frame.position.y = 0.48;
+      prop.add(frame);
+      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.04), frameMat);
+      handle.position.set(0.22, 0.72, 0);
+      prop.add(handle);
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.05), frameMat);
+      seat.position.set(-0.08, 0.66, 0);
+      prop.add(seat);
+      [-0.22, 0.24].forEach((x) => {
+        const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.03, 8, 18), wheelMat);
+        wheel.rotation.y = Math.PI / 2;
+        wheel.position.set(x, 0.22, 0);
+        prop.add(wheel);
+      });
+      prop.position.set(0, 0, 0.18);
       return prop;
     }
     if (propId === 'camera') {
@@ -876,28 +1029,24 @@
     if (npcState.role !== 'busker' || state.sounds.npcAudio[npcState.id]) {
       return;
     }
-    const audioContext = ensureAudioContext();
-    if (!audioContext) {
+    const Tone = getTone();
+    if (!Tone) {
+      state.sounds.npcAudio[npcState.id] = { muted: true, mode: 'silent_busker' };
       return;
     }
-    const gain = audioContext.createGain();
-    gain.gain.value = 0;
-    gain.connect(audioContext.destination);
-
-    const oscillator = audioContext.createOscillator();
-    oscillator.type = 'triangle';
-    oscillator.frequency.value = 196;
-    oscillator.connect(gain);
-
-    const overtone = audioContext.createOscillator();
-    overtone.type = 'sine';
-    overtone.frequency.value = 293.66;
-    overtone.connect(gain);
-
-    oscillator.start();
-    overtone.start();
-
-    state.sounds.npcAudio[npcState.id] = { gain: gain, oscillator: oscillator, overtone: overtone };
+    try {
+      state.sounds.npcAudio[npcState.id] = {
+        mode: 'sparse_busker_motif',
+        radius: 10.5,
+        lastGestureAt: -Infinity,
+        nextGestureAt: 0,
+        synth: new Tone.PluckSynth({ attackNoise: 0.7, dampening: 2800, resonance: 0.8 }).toDestination(),
+        motif: ['G3', 'B3', 'D4', 'G4'],
+      };
+    } catch (error) {
+      state.sounds.npcAudio[npcState.id] = { muted: true, mode: 'silent_busker' };
+      warnAudioUnavailable('Busker motif setup failed; simulator continuing without busker audio.', error);
+    }
   }
 
   function addNpcs(world) {
@@ -912,7 +1061,7 @@
         patrolIndex: 0,
         direction: 1,
         baseY: 0,
-        speed: npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : npc.role === 'guide' ? 0.18 : 0,
+        speed: npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : npc.role === 'guide' ? 0.18 : npc.role === 'skateboarder' ? 2.35 : npc.role === 'cyclist' ? 3.1 : 0,
         pauseUntil: 0,
         animPhase: swaySeed * Math.PI * 2,
         swayAmount: 0.018 + (swaySeed * 0.028),
@@ -931,7 +1080,8 @@
       const isWalker = Array.isArray(npc.patrol) && npc.patrol.length > 1;
       const touristPause = npc.behavior === 'tourist_pause' || npc.behavior === 'photo_idle' || npc.behavior === 'tourist_wander';
       const subtleWalker = npc.role === 'guide';
-      const canWalk = isWalker && (npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' || subtleWalker);
+      const rollingMover = npc.role === 'skateboarder' || npc.role === 'cyclist';
+      const canWalk = isWalker && (npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' || subtleWalker || rollingMover);
 
       if (canWalk) {
         const target = npc.patrol[npc.patrolIndex] || npc.patrol[0];
@@ -957,18 +1107,20 @@
         }
       }
 
-      const motionStrength = canWalk && nowSeconds >= (npc.pauseUntil || 0) ? 1 : npc.role === 'busker' ? 0.8 : 0.45;
+      const motionStrength = canWalk && nowSeconds >= (npc.pauseUntil || 0) ? (rollingMover ? 0.4 : 1) : npc.role === 'busker' ? 0.8 : 0.45;
       npc.mesh.position.y = npc.baseY + (Math.sin((nowSeconds * 3.4) + npc.animPhase) * npc.swayAmount * motionStrength);
       npc.mesh.rotation.z = Math.sin((nowSeconds * 2.2) + npc.animPhase) * 0.02;
       const rig = npc.mesh.userData || {};
-      const stride = Math.sin((nowSeconds * (canWalk ? 7.4 : 3.1)) + npc.animPhase);
+      const stride = Math.sin((nowSeconds * (rollingMover ? 4.2 : canWalk ? 7.4 : 3.1)) + npc.animPhase);
       if (rig.leftArm && rig.rightArm) {
-        rig.leftArm.rotation.x = stride * (canWalk ? 0.6 : 0.18);
-        rig.rightArm.rotation.x = -stride * (canWalk ? 0.6 : 0.18);
+        const armSwing = rollingMover ? 0.16 : (canWalk ? 0.6 : 0.18);
+        rig.leftArm.rotation.x = stride * armSwing;
+        rig.rightArm.rotation.x = -stride * armSwing;
       }
       if (rig.leftLeg && rig.rightLeg) {
-        rig.leftLeg.rotation.x = -stride * (canWalk ? 0.52 : 0.1);
-        rig.rightLeg.rotation.x = stride * (canWalk ? 0.52 : 0.1);
+        const legSwing = rollingMover ? 0.08 : (canWalk ? 0.52 : 0.1);
+        rig.leftLeg.rotation.x = -stride * legSwing;
+        rig.rightLeg.rotation.x = stride * legSwing;
       }
       if (rig.head) {
         rig.head.rotation.y = Math.sin((nowSeconds * 0.9) + npc.animPhase) * 0.12;
@@ -984,6 +1136,16 @@
       if (npc.role === 'busker') {
         npc.mesh.rotation.y += Math.sin((nowSeconds * 1.3) + npc.animPhase) * 0.002;
       }
+      if (rollingMover) {
+        npc.mesh.rotation.z = Math.sin((nowSeconds * (npc.role === 'cyclist' ? 1.8 : 2.6)) + npc.animPhase) * (npc.role === 'cyclist' ? 0.012 : 0.028);
+        if (rig.heldProp && npc.heldProp === 'skateboard') {
+          rig.heldProp.rotation.z = 1.57;
+          rig.heldProp.rotation.x = Math.sin((nowSeconds * 4.6) + npc.animPhase) * 0.04;
+        }
+        if (rig.heldProp && npc.heldProp === 'bike') {
+          rig.heldProp.rotation.y = Math.sin((nowSeconds * 2.4) + npc.animPhase) * 0.06;
+        }
+      }
       if (npc.pose === 'being_photographed') {
         npc.mesh.rotation.y = -0.24;
       }
@@ -992,12 +1154,19 @@
       }
 
       const loop = state.sounds.npcAudio[npc.id];
-      if (loop) {
+      if (loop && loop.mode === 'sparse_busker_motif' && loop.synth && state.steamClockState.enabled) {
         const distance = Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z);
-        const volume = Math.max(0, 1 - (distance / 14)) * 0.018;
-        const audioContext = ensureAudioContext();
-        if (audioContext) {
-          loop.gain.gain.setTargetAtTime(volume, audioContext.currentTime, 0.18);
+        const nearFactor = Math.max(0, 1 - (distance / (loop.radius || 10.5)));
+        if (nearFactor > 0.2 && nowSeconds >= (loop.nextGestureAt || 0)) {
+          const noteIndex = Math.floor(deterministicUnit(npc.id + ':' + Math.floor(nowSeconds / 3)) * loop.motif.length) % loop.motif.length;
+          try {
+            loop.synth.triggerAttackRelease(loop.motif[noteIndex], '16n', getTone().now(), -18 + (nearFactor * 4));
+            loop.lastGestureAt = nowSeconds;
+            loop.nextGestureAt = nowSeconds + 4.2 + (deterministicUnit(npc.id + '-gesture-' + Math.floor(nowSeconds)) * 2.4);
+          } catch (error) {
+            warnAudioUnavailable('Busker motif playback failed; simulator continuing without busker audio.', error);
+            loop.mode = 'silent_busker';
+          }
         }
       }
     });
@@ -1034,8 +1203,8 @@
       setInteractPrompt('');
       return;
     }
-    const roleLabel = npc.role === 'guide' ? 'guide' : npc.role === 'busker' ? 'busker' : 'pedestrian';
-    setInteractPrompt('Press E to interact with ' + roleLabel + '.');
+    const roleLabel = getNpcRoleLabel(npc);
+    setInteractPrompt('Click or press E to talk to the ' + roleLabel + '.');
   }
 
   function interactWithHoveredNpc() {
@@ -1203,6 +1372,7 @@
         (() => {
           const toneStyles = {
             brick: { color: 0x5c4033, roughness: 0.82, metalness: 0.06, opacity: 0.72 },
+            road_base_dark: { color: 0x2b3036, roughness: 0.92, metalness: 0.04, opacity: 0.3 },
             wheel_track: { color: 0x161b20, roughness: 0.58, metalness: 0.2, opacity: 0.2 },
             patch: { color: 0x2f353d, roughness: 0.76, metalness: 0.12, opacity: 0.2 },
             repair_patch_dark: { color: 0x252b32, roughness: 0.72, metalness: 0.14, opacity: 0.22 },
@@ -2566,6 +2736,9 @@
     window.addEventListener('resize', updateSize);
     renderer.domElement.addEventListener('click', () => {
       if (state.activeDialogNpcId) {
+        return;
+      }
+      if (state.hoveredNpcId && interactWithHoveredNpc()) {
         return;
       }
       ensureAudioContext();

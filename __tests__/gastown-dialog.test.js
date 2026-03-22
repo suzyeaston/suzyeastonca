@@ -60,8 +60,9 @@ test('openDialogForNpc source exits pointer lock before scheduling the modal UI'
 
   assert.notEqual(branchStart, -1, 'expected pointer lock branch');
   assert.ok(branch.includes('document.exitPointerLock();'));
-  assert.ok(branch.includes('window.setTimeout(showDialog, 0);'));
-  assert.ok(branch.indexOf('document.exitPointerLock();') < branch.indexOf('window.setTimeout(showDialog, 0);'));
+  assert.ok(branch.includes('window.setTimeout(() => {'));
+  assert.ok(branch.includes('showDialog();'));
+  assert.ok(branch.indexOf('document.exitPointerLock();') < branch.indexOf('window.setTimeout(() => {'));
 });
 
 
@@ -114,4 +115,14 @@ test('Gastown audio setup fails softly when assets are unavailable', () => {
   assert.match(src, /function createSafeHowl\(options\)/);
   assert.match(src, /warnAudioUnavailable\('Gastown audio assets missing or failed to load; simulator continuing without some audio\.'/);
   assert.match(src, /warnAudioUnavailable\('Howler audio unavailable; simulator continuing without ambient audio\.'/);
+});
+
+
+test('NPC conversation request fails softly to role-aware fallback when API is unavailable', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const src = fs.readFileSync(simPath, 'utf8');
+
+  assert.match(src, /async function requestNpcConversation\(npcState\)/);
+  assert.match(src, /return \{ title: fallback\.title, lines: fallback\.lines, fallback: true \};/);
+  assert.match(src, /setStatus\(conversation\.fallback \? 'NPC chat fallback active\. Click scene to resume when ready\.' : 'NPC conversation ready\. Click scene to resume when ready\.'\);/);
 });

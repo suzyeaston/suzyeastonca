@@ -20,6 +20,17 @@ function tryReadGeoJsonFeatures(filePath) {
   return json.features;
 }
 
+function getFeatureCollectionById(collection, id) {
+  const features = collection && Array.isArray(collection.features) ? collection.features : [];
+  return features.find((feature) => getProps(feature).id === id) || null;
+}
+
+function projectFeaturePoint(feature, origin, fallback) {
+  const coords = feature && feature.geometry && Array.isArray(feature.geometry.coordinates) ? feature.geometry.coordinates : null;
+  if (!coords || coords.length < 2) return fallback;
+  return projectLonLat(coords[0], coords[1], origin);
+}
+
 function toRadians(value) {
   return (value * Math.PI) / 180;
 }
@@ -648,6 +659,10 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
     const placement = placeStarterProp(routePoints, distanceMeters, (side * (laneOffset + extraOffset)), id, 'cardboard_box', { scale: 1 });
     return { x: placement.x, z: placement.z };
   };
+  const placeLaneNpc = (distanceMeters, side, offsetBias, id) => {
+    const placement = placeStarterProp(routePoints, distanceMeters, side * ((streetWidth * 0.14) + offsetBias), id, 'cardboard_box', { scale: 1 });
+    return { x: placement.x, z: placement.z };
+  };
   const clockTouristOffset = sidewalkOuter + 0.76;
   const placeClockTourist = (distanceMeters, side, extraOffset, id) => {
     const placement = placeStarterProp(routePoints, distanceMeters, side * (clockTouristOffset + extraOffset), id, 'cardboard_box', { scale: 1 });
@@ -662,10 +677,7 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
       dialogId: 'guide_intro',
       interactRadius: 2.8,
       idleSpot: placeNpc(16, -1, 1.45, 'starter-npc-guide-anchor'),
-      patrol: [
-        placeNpc(14, -1, 1.45, 'starter-npc-guide-a'),
-        placeNpc(19, -1, 1.55, 'starter-npc-guide-b'),
-      ],
+      patrol: [placeNpc(14, -1, 1.45, 'starter-npc-guide-a'), placeNpc(19, -1, 1.55, 'starter-npc-guide-b')],
     },
     {
       id: 'starter-busker-clock',
@@ -676,7 +688,7 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
       voiceCue: 'busker-hook',
       dialogId: 'busker_clock_corner',
       interactRadius: 3,
-      idleSpot: placeNpc(102, -1, 2.15, 'starter-npc-busker-anchor'),
+      idleSpot: placeNpc(102, -1, 2.55, 'starter-npc-busker-anchor'),
     },
     {
       id: 'starter-pedestrian-west',
@@ -685,10 +697,7 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
       dialogId: 'pedestrian_route_tip',
       interactRadius: 2.2,
       idleSpot: placeNpc(44, -1, 1.15, 'starter-npc-west-idle'),
-      patrol: [
-        placeNpc(38, -1, 1.15, 'starter-npc-west-a'),
-        placeNpc(56, -1, 1.32, 'starter-npc-west-b'),
-      ],
+      patrol: [placeNpc(38, -1, 1.15, 'starter-npc-west-a'), placeNpc(56, -1, 1.32, 'starter-npc-west-b')],
     },
     {
       id: 'starter-pedestrian-east',
@@ -697,95 +706,36 @@ function buildStarterNpcs(routePoints, streetWidth, sidewalkOuter) {
       dialogId: 'pedestrian_clock_hint',
       interactRadius: 2.2,
       idleSpot: placeNpc(136, 1, 1.18, 'starter-npc-east-idle'),
-      patrol: [
-        placeNpc(126, 1, 1.18, 'starter-npc-east-a'),
-        placeNpc(148, 1, 1.36, 'starter-npc-east-b'),
-      ],
+      patrol: [placeNpc(126, 1, 1.18, 'starter-npc-east-a'), placeNpc(148, 1, 1.36, 'starter-npc-east-b')],
     },
     {
-      id: 'starter-tourist-clock-west',
-      role: 'tourist',
-      behavior: 'tourist_pause',
-      pose: 'group_gather',
-      companionGroup: 'clock-family-a',
-      voiceCue: 'tourist-cluster',
-      dialogId: 'pedestrian_clock_hint',
-      interactRadius: 2.2,
-      idleSpot: placeClockTourist(97, -1, 0.15, 'starter-tourist-clock-west-idle'),
-      patrol: [
-        placeClockTourist(94, -1, 0.12, 'starter-tourist-clock-west-a'),
-        placeClockTourist(101, -1, 0.18, 'starter-tourist-clock-west-b'),
-      ],
+      id: 'starter-skateboarder-mid',
+      role: 'skateboarder',
+      behavior: 'skate_glide',
+      pose: 'glide',
+      heldProp: 'skateboard',
+      dialogId: 'skateboarder_corridor',
+      interactRadius: 2.5,
+      idleSpot: placeNpc(72, -1, 0.72, 'starter-skateboarder-idle'),
+      patrol: [placeNpc(58, -1, 0.68, 'starter-skateboarder-a'), placeNpc(88, -1, 0.78, 'starter-skateboarder-b')],
     },
     {
-      id: 'starter-tourist-clock-east',
-      role: 'tourist',
-      behavior: 'tourist_pause',
-      pose: 'being_photographed',
-      companionGroup: 'clock-family-a',
-      voiceCue: 'tourist-cluster',
-      dialogId: 'pedestrian_clock_hint',
-      interactRadius: 2.2,
-      idleSpot: placeClockTourist(110, -1, 0.86, 'starter-tourist-clock-east-idle'),
-      patrol: [
-        placeClockTourist(106, -1, 0.82, 'starter-tourist-clock-east-a'),
-        placeClockTourist(114, -1, 0.98, 'starter-tourist-clock-east-b'),
-      ],
+      id: 'starter-cyclist-eastbound',
+      role: 'cyclist',
+      behavior: 'cycle_cruise',
+      pose: 'ride',
+      heldProp: 'bike',
+      dialogId: 'cyclist_water_street',
+      interactRadius: 2.8,
+      idleSpot: placeLaneNpc(126, 1, 0.35, 'starter-cyclist-idle'),
+      patrol: [placeLaneNpc(92, 1, 0.34, 'starter-cyclist-a'), placeLaneNpc(152, 1, 0.42, 'starter-cyclist-b')],
     },
-    {
-      id: 'starter-tourist-clock-photo',
-      role: 'photographer',
-      behavior: 'photo_idle',
-      pose: 'taking_photo',
-      heldProp: 'camera',
-      voiceCue: 'photo-direction',
-      companionGroup: 'clock-family-a',
-      dialogId: 'pedestrian_clock_hint',
-      interactRadius: 2.4,
-      idleSpot: placeClockTourist(104, -1, 1.62, 'starter-tourist-clock-photo-idle'),
-    },
-    {
-      id: 'starter-tourist-clock-stroller',
-      role: 'tourist',
-      behavior: 'tourist_wander',
-      pose: 'group_gather',
-      companionGroup: 'clock-family-b',
-      voiceCue: 'tourist-cluster',
-      dialogId: 'pedestrian_clock_hint',
-      interactRadius: 2.2,
-      idleSpot: placeClockTourist(116, -1, 0.26, 'starter-tourist-clock-stroller-idle'),
-      patrol: [
-        placeClockTourist(111, -1, 0.22, 'starter-tourist-clock-stroller-a'),
-        placeClockTourist(120, -1, 0.34, 'starter-tourist-clock-stroller-b'),
-      ],
-    },
-    {
-      id: 'starter-tourist-clock-bench',
-      role: 'tourist',
-      behavior: 'photo_idle',
-      pose: 'gathered',
-      companionGroup: 'clock-family-b',
-      voiceCue: 'tourist-cluster',
-      dialogId: 'pedestrian_clock_hint',
-      interactRadius: 2.2,
-      idleSpot: placeClockTourist(99, -1, 1.18, 'starter-tourist-clock-bench-idle'),
-    },
-    {
-      id: 'starter-tourist-clock-child',
-      role: 'tourist',
-      behavior: 'tourist_pause',
-      pose: 'group_gather',
-      silhouetteScale: 0.82,
-      companionGroup: 'clock-family-b',
-      voiceCue: 'tourist-cluster',
-      dialogId: 'pedestrian_clock_hint',
-      interactRadius: 2,
-      idleSpot: placeClockTourist(112, -1, 1.34, 'starter-tourist-clock-child-idle'),
-      patrol: [
-        placeClockTourist(109, -1, 1.28, 'starter-tourist-clock-child-a'),
-        placeClockTourist(115, -1, 1.42, 'starter-tourist-clock-child-b'),
-      ],
-    },
+    { id: 'starter-tourist-clock-west', role: 'tourist', behavior: 'tourist_pause', pose: 'group_gather', companionGroup: 'clock-family-a', voiceCue: 'tourist-cluster', dialogId: 'tourist_clock_stop', interactRadius: 2.2, idleSpot: placeClockTourist(97, -1, 0.15, 'starter-tourist-clock-west-idle'), patrol: [placeClockTourist(94, -1, 0.12, 'starter-tourist-clock-west-a'), placeClockTourist(101, -1, 0.18, 'starter-tourist-clock-west-b')] },
+    { id: 'starter-tourist-clock-east', role: 'tourist', behavior: 'tourist_pause', pose: 'being_photographed', companionGroup: 'clock-family-a', voiceCue: 'tourist-cluster', dialogId: 'tourist_clock_stop', interactRadius: 2.2, idleSpot: placeClockTourist(110, -1, 0.86, 'starter-tourist-clock-east-idle'), patrol: [placeClockTourist(106, -1, 0.82, 'starter-tourist-clock-east-a'), placeClockTourist(114, -1, 0.98, 'starter-tourist-clock-east-b')] },
+    { id: 'starter-tourist-clock-photo', role: 'photographer', behavior: 'photo_idle', pose: 'taking_photo', heldProp: 'camera', voiceCue: 'photo-direction', companionGroup: 'clock-family-a', dialogId: 'tourist_clock_photo', interactRadius: 2.4, idleSpot: placeClockTourist(104, -1, 1.62, 'starter-tourist-clock-photo-idle') },
+    { id: 'starter-tourist-clock-stroller', role: 'tourist', behavior: 'tourist_wander', pose: 'group_gather', companionGroup: 'clock-family-b', voiceCue: 'tourist-cluster', dialogId: 'tourist_clock_stop', interactRadius: 2.2, idleSpot: placeClockTourist(116, -1, 0.26, 'starter-tourist-clock-stroller-idle'), patrol: [placeClockTourist(111, -1, 0.22, 'starter-tourist-clock-stroller-a'), placeClockTourist(120, -1, 0.34, 'starter-tourist-clock-stroller-b')] },
+    { id: 'starter-tourist-clock-bench', role: 'tourist', behavior: 'photo_idle', pose: 'gathered', companionGroup: 'clock-family-b', voiceCue: 'tourist-cluster', dialogId: 'tourist_clock_stop', interactRadius: 2.2, idleSpot: placeClockTourist(99, -1, 1.18, 'starter-tourist-clock-bench-idle') },
+    { id: 'starter-tourist-clock-child', role: 'tourist', behavior: 'tourist_pause', pose: 'group_gather', silhouetteScale: 0.82, companionGroup: 'clock-family-b', voiceCue: 'tourist-cluster', dialogId: 'tourist_clock_stop', interactRadius: 2, idleSpot: placeClockTourist(112, -1, 1.34, 'starter-tourist-clock-child-idle'), patrol: [placeClockTourist(109, -1, 1.28, 'starter-tourist-clock-child-a'), placeClockTourist(115, -1, 1.42, 'starter-tourist-clock-child-b')] },
   ];
 }
 
@@ -802,15 +752,19 @@ function buildStarterReferenceBundle(root) {
 
 function makeStarterWorld(outputPath, options = {}) {
   const reference = options.reference || {};
-  const routePoints = [
-    { x: 0, z: 0 },
-    { x: 4, z: -28 },
-    { x: 12, z: -60 },
-    { x: 18, z: -98 },
-    { x: 11, z: -134 },
-    { x: 4, z: -167 },
-    { x: -2, z: -196 },
-  ];
+  const anchorOrigin = { lon: -123.11182, lat: 49.28602 };
+  const routeFeature = getFeatureCollectionById(reference.routeReference, 'gastown-working-route');
+  const routePoints = routeFeature && routeFeature.geometry && Array.isArray(routeFeature.geometry.coordinates)
+    ? routeFeature.geometry.coordinates.map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin))
+    : [
+      { x: 0, z: 0 },
+      { x: 4, z: -28 },
+      { x: 12, z: -60 },
+      { x: 18, z: -98 },
+      { x: 11, z: -134 },
+      { x: 4, z: -167 },
+      { x: -2, z: -196 },
+    ];
   const routeLength = polylineLength(routePoints);
   const beatCount = 10;
   const centerline = [];
@@ -831,8 +785,8 @@ function makeStarterWorld(outputPath, options = {}) {
   centerline[6].id = 'steam-clock-approach';
   centerline[centerline.length - 1].id = 'cambie-rise-continuation';
 
-  const streetWidth = 9.8;
-  const sidewalkWidth = 3.2;
+  const streetWidth = reference.streetContext && Array.isArray(reference.streetContext.features) ? 10.6 : 9.8;
+  const sidewalkWidth = reference.buildingCues && Array.isArray(reference.buildingCues.features) ? 3.55 : 3.2;
   const softBoundary = 3.2;
   const streetHalf = streetWidth / 2;
   const sidewalkOuter = streetHalf + sidewalkWidth;
@@ -843,9 +797,9 @@ function makeStarterWorld(outputPath, options = {}) {
   const rightSidewalk = closePolygon(lineOffset(routePoints, -streetHalf).concat(lineOffset(routePoints, -sidewalkOuter).reverse()));
   const walkBounds = ribbonPolygon(routePoints, walkOuter);
 
-  const frontagePattern = [8, 11, 7, 15, 9, 13, 10, 18, 12, 8, 16, 9];
-  const depthPattern = [16, 21, 14, 24, 18, 22, 19, 20, 23, 17, 25, 18];
-  const heightPattern = [11, 15, 12, 19, 10, 21, 16, 18, 14, 9, 20, 13];
+  const frontagePattern = [7.5, 9.5, 8, 12.5, 8.8, 10.4, 9.2, 14.5, 10.8, 8.4, 12.8, 9.6];
+  const depthPattern = [15, 20, 14, 23, 17, 21, 18, 19, 22, 16, 24, 17];
+  const heightPattern = [12, 15, 13, 19, 11, 21, 16, 18, 14, 10, 20, 13];
   const recessPattern = [1, 2, 1, 3, 1, 2, 2, 1, 3, 1, 2, 1];
   const palettePattern = [
     { primary: '#74493c', trim: '#cfb8a2', accent: '#4f5f6f', tone: 'brickWarm' },
@@ -869,10 +823,10 @@ function makeStarterWorld(outputPath, options = {}) {
       const blockPhase = cursor / routeLength;
       const cornerMoment = i % 7 === (side < 0 ? 2 : 4);
       const waterfrontThreshold = blockPhase < 0.22;
-      const steamClockApproach = blockPhase > 0.46 && blockPhase < 0.7;
-      const postClock = blockPhase >= 0.7;
-      const localDepth = depth + (cornerMoment ? 3.5 : 0) + (waterfrontThreshold && side > 0 ? 1.5 : 0);
-      const inset = cornerMoment ? 1.9 : (steamClockApproach ? 1.3 : 0.85);
+      const steamClockApproach = blockPhase > 0.46 && blockPhase < 0.72;
+      const postClock = blockPhase >= 0.72;
+      const localDepth = depth + (cornerMoment ? 4.2 : 0) + (waterfrontThreshold && side > 0 ? 2.2 : 0) + (steamClockApproach ? 1.2 : 0);
+      const inset = cornerMoment ? 2.2 : (steamClockApproach ? 1.55 : 1.05);
       const centerOffset = sidewalkOuter + (localDepth / 2) + inset;
       const footprintCenter = {
         x: frame.center.x + (frame.normal.x * centerOffset * side),
@@ -889,7 +843,7 @@ function makeStarterWorld(outputPath, options = {}) {
         id,
         reference_name: cornerMoment ? 'Gastown corner heritage anchor' : side < 0 ? 'Water Street south frontage' : 'Water Street north frontage',
         segment_style: waterfrontThreshold ? 'waterfront-threshold' : steamClockApproach ? 'steam-clock-approach' : postClock ? 'post-clock-continuation' : 'mid-corridor-heritage-rhythm',
-        style_notes: cornerMoment ? 'Corner building massing with stronger cornice to punctuate the route.' : 'Stylized Gastown heritage storefront cadence tuned for fallback readability and legible landmark staging.',
+        style_notes: cornerMoment ? 'Corner building massing with stronger cornice to punctuate the route and read like a Water Street pivot.' : 'Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.',
         x: Number(metrics.x.toFixed(2)),
         z: Number(metrics.z.toFixed(2)),
         width: Number(metrics.width.toFixed(2)),
@@ -924,7 +878,7 @@ function makeStarterWorld(outputPath, options = {}) {
     yaw: Number(Math.atan2(-dir.x, -dir.z).toFixed(4)),
   };
 
-  const props = buildStarterProps(routePoints, sidewalkOuter, 9);
+  const props = buildStarterProps(routePoints, sidewalkOuter, 12);
   const landmarkBundle = buildStarterLandmarks(routePoints, sidewalkOuter);
   const landmarks = landmarkBundle.landmarks;
   const heroLandmarks = landmarkBundle.heroLandmarks;
@@ -1022,25 +976,23 @@ function buildStarterSurfaceBands(centerline, streetWidth, routeLength) {
     if (!next) return;
 
     const heading = Math.atan2(next.x - point.x, next.z - point.z);
-    const length = Math.max(8, Math.min(15, distance(point, next) * 0.94 || 10));
+    const length = Math.max(8.4, Math.min(16.8, distance(point, next) * 0.96 || 10));
     const progress = routeLength > 0 ? index / Math.max(1, centerline.length - 1) : 0;
     const edgeOffset = streetWidth * 0.37;
-    const patchOffset = ((index % 3) - 1) * 0.34;
+    const wheelTrackWidth = streetWidth * (progress > 0.48 ? 0.38 : 0.34);
 
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.34).toFixed(2)), length: Number((length * 0.96).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: progress < 0.2 ? 0.16 : 0.21, elevation: 0.024 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.07).toFixed(2)), length: Number(Math.max(6.8, length * 1.02).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(edgeOffset.toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.17, elevation: 0.026 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.07).toFixed(2)), length: Number(Math.max(6.8, length * 1.02).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((-edgeOffset).toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.17, elevation: 0.026 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.86).toFixed(2)), length: Number((length * 0.98).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.3, elevation: 0.02 });
+    bands.push({ segment_id: point.id, width: Number((wheelTrackWidth).toFixed(2)), length: Number((length * 0.94).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: progress < 0.2 ? 0.16 : 0.23, elevation: 0.024 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.09).toFixed(2)), length: Number(Math.max(7, length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(edgeOffset.toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.19, elevation: 0.027 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.09).toFixed(2)), length: Number(Math.max(7, length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((-edgeOffset).toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.19, elevation: 0.027 });
 
-    if (progress > 0.22 && (index % 3 === 1)) {
-      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.15).toFixed(2)), length: Number(Math.max(5.6, length * 0.58).toFixed(2)), yaw: Number((heading + ((index % 2 === 0) ? 0.03 : -0.03)).toFixed(4)), offset_x: Number(patchOffset.toFixed(2)), offset_z: 0, tone: progress > 0.68 ? 'repair_patch_dark' : 'patch', opacity: progress > 0.68 ? 0.2 : 0.18, elevation: 0.028 });
+    if (index % 2 === 0) {
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.18).toFixed(2)), length: Number(Math.max(5.8, length * 0.44).toFixed(2)), yaw: Number((heading + ((index % 4 === 0) ? 0.03 : -0.03)).toFixed(4)), offset_x: Number((((index % 3) - 1) * 0.28).toFixed(2)), offset_z: 0, tone: progress > 0.6 ? 'repair_patch_dark' : 'patch', opacity: 0.18, elevation: 0.029 });
     }
 
-    if (progress > 0.46 && progress < 0.78 && index % 4 === 0) {
-      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.62).toFixed(2)), length: Number(Math.max(2.2, length * 0.18).toFixed(2)), yaw: Number((heading + Math.PI / 2).toFixed(4)), offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.18, elevation: 0.029 });
-    }
-
-    if (index === Math.floor((centerline.length - 1) / 2) || index === centerline.length - 2) {
-      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.68).toFixed(2)), length: Number(Math.max(3.2, length * 0.24).toFixed(2)), yaw: Number((heading + Math.PI / 2).toFixed(4)), offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.24, elevation: 0.03 });
+    if (progress > 0.42 && progress < 0.78) {
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.66).toFixed(2)), length: Number(Math.max(2.8, length * 0.22).toFixed(2)), yaw: Number((heading + Math.PI / 2).toFixed(4)), offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.25, elevation: 0.03 });
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.42).toFixed(2)), length: Number(Math.max(2.4, length * 0.16).toFixed(2)), yaw: Number((heading + Math.PI / 2).toFixed(4)), offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.16, elevation: 0.031 });
     }
   });
   return bands;
