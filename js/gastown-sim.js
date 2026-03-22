@@ -122,9 +122,11 @@
     audioWarningIssued: false,
   };
 
+  const DEFAULT_EYE_HEIGHT = 1.7;
+
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(68, 1, 0.08, 700);
-  camera.position.set(0, 1.7, 0);
+  camera.position.set(0, DEFAULT_EYE_HEIGHT, 0);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   canvasWrap.appendChild(renderer.domElement);
@@ -1914,7 +1916,7 @@
 
     if (world.spawn) {
       const spawnMarker = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.2, 12), new THREE.MeshBasicMaterial({ color: 0xffdb6b }));
-      spawnMarker.position.set(world.spawn.x, 0.95, world.spawn.z);
+      spawnMarker.position.set(world.spawn.x, (typeof world.spawn.y === 'number' ? world.spawn.y : 0) + 0.95, world.spawn.z);
       spawnMarker.rotation.x = Math.PI;
       debugGroup.add(spawnMarker);
     }
@@ -2151,6 +2153,14 @@
     return best;
   }
 
+  function getGroundY() {
+    return (state.world && state.world.bounds && typeof state.world.bounds.floorY === 'number') ? state.world.bounds.floorY : 0;
+  }
+
+  function getWorldSpawn() {
+    return state.world && state.world.spawn ? state.world.spawn : { x: -23, y: getGroundY(), z: 20, yaw: -0.25 };
+  }
+
   function enforceWorldBounds() {
     const walkBounds = state.world.route.walkBounds;
     const point = { x: player.position.x, z: player.position.z };
@@ -2164,7 +2174,8 @@
     player.position.z = clamped.z;
 
     if (clamped.distance > state.world.route.hardResetDistance) {
-      player.position.copy(state.lastSafePosition.lengthSq() ? state.lastSafePosition : new THREE.Vector3(state.world.spawn.x, state.world.spawn.y, state.world.spawn.z));
+      const fallbackSpawn = getWorldSpawn();
+      player.position.copy(state.lastSafePosition.lengthSq() ? state.lastSafePosition : new THREE.Vector3(fallbackSpawn.x, fallbackSpawn.y, fallbackSpawn.z));
       flashBoundaryStatus((state.world.bounds && state.world.bounds.resetMessage) || 'Returned to the route.');
       return;
     }
@@ -2222,7 +2233,7 @@
   }
 
   function resolveSafeSpawn() {
-    const worldSpawn = state.world.spawn || { x: -23, y: 1.7, z: 20, yaw: -0.25 };
+    const worldSpawn = getWorldSpawn();
     const fallbackCandidates = [
       { x: worldSpawn.x, z: worldSpawn.z },
       { x: worldSpawn.x + 1.2, z: worldSpawn.z + 1.2 },
@@ -2233,11 +2244,11 @@
 
     const safePoint = fallbackCandidates.find((candidate) => isSpawnSafe(candidate));
     if (safePoint) {
-      return { x: safePoint.x, y: worldSpawn.y || 1.7, z: safePoint.z, yaw: worldSpawn.yaw || -0.25 };
+      return { x: safePoint.x, y: Number.isFinite(worldSpawn.y) ? worldSpawn.y : getGroundY(), z: safePoint.z, yaw: worldSpawn.yaw || -0.25 };
     }
 
     const routeStart = state.world.route.centerline[0] || { x: -22, z: 18 };
-    return { x: routeStart.x, y: worldSpawn.y || 1.7, z: routeStart.z + 3.6, yaw: -0.3 };
+    return { x: routeStart.x, y: Number.isFinite(worldSpawn.y) ? worldSpawn.y : getGroundY(), z: routeStart.z + 3.6, yaw: -0.3 };
   }
 
 
@@ -2708,7 +2719,7 @@
 
     player.position.x += state.velocity.x * delta;
     player.position.z += state.velocity.z * delta;
-    player.position.y = Math.max((state.world.bounds && state.world.bounds.floorY) || 0, 1.7);
+    player.position.y = getGroundY();
 
     enforceWorldBounds();
     updateNearestNode();
