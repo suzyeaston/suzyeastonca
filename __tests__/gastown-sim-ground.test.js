@@ -72,22 +72,61 @@ test('minimap heading derives from gameplay forward yaw instead of mirrored play
 
 
 
-test('minimap uses the same world-to-map handedness for Steam Clock corridor landmarks in north-up and heading-up modes', () => {
+test('minimap locks Steam Clock corridor side to a canonical route-relative helper in north-up and heading-up modes', () => {
   const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
   const worldPath = path.join(__dirname, '..', 'assets', 'world', 'gastown-water-street.json');
   const src = fs.readFileSync(simPath, 'utf8');
   const world = JSON.parse(fs.readFileSync(worldPath, 'utf8'));
 
-  assert.match(src, /function projectWorldToMinimap\(point, metrics, padding, view, options = \{\}\) \{/);
-  assert.match(src, /drawPolygon\(zone\.polygon, metrics, pad, '#3f4d60', 'rgba\(136, 161, 188, 0\.4\)', 1, view, projectionOptions\);/);
-  assert.match(src, /const mini = projectWorldToMinimap\(node, metrics, pad, view, projectionOptions\);/);
+  assert.match(src, /function getCanonicalCorridorSegment\(world\) \{/);
+  assert.match(src, /const start = nodes\.find\(\(node\) => node\.id === 'water-street-mid-block'\);/);
+  assert.match(src, /const end = nodes\.find\(\(node\) => node\.id === 'water-cambie-intersection'\)/);
+  assert.match(src, /rightNormal: \{ x: tangent\.z, z: -tangent\.x \},/);
+  assert.match(src, /function classifyCorridorSide\(point, corridor, origin\) \{/);
+  assert.match(src, /side: sideValue < 0 \? 'right' : 'left',/);
+  assert.match(src, /function getMinimapDebugVectors\(world, metrics, padding, view, projectionOptions\) \{/);
+  assert.match(src, /Steam Clock side: /);
+  assert.match(src, /ctx\.lineTo\(debugVectors\.rightTip\.x, debugVectors\.rightTip\.y\);/);
   assert.doesNotMatch(src, /ctx\.translate\(playerPoint\.x, playerPoint\.y\);\s*ctx\.rotate\(headingRotation\);/s);
 
-  const midBlock = world.nodes.find((node) => node.id === 'water-street-mid-block');
-  const approach = world.route.centerline.find((point) => point.id === 'steam-clock-approach');
-  const steamClock = world.landmarks.find((landmark) => landmark.id === 'steam-clock');
+  const findById = (arr, id) => arr.find((entry) => entry.id === id);
+  const midBlock = findById(world.nodes, 'water-street-mid-block');
+  const cambie = findById(world.nodes, 'water-cambie-intersection');
+  const steamClock = findById(world.landmarks, 'steam-clock');
 
-  assert.ok(midBlock && approach && steamClock);
+  assert.ok(midBlock && cambie && steamClock);
+
+  function getCanonicalCorridorSegment() {
+    const tangent = { x: cambie.x - midBlock.x, z: cambie.z - midBlock.z };
+    const length = Math.hypot(tangent.x, tangent.z) || 1;
+    tangent.x /= length;
+    tangent.z /= length;
+    return {
+      start: midBlock,
+      end: cambie,
+      tangent,
+      rightNormal: { x: tangent.z, z: -tangent.x },
+    };
+  }
+
+  function getCorridorSideValue(point, corridor, origin = corridor.start) {
+    const relX = point.x - origin.x;
+    const relZ = point.z - origin.z;
+    return (corridor.tangent.x * relZ) - (corridor.tangent.z * relX);
+  }
+
+  function classifyCorridorSide(point, corridor, origin) {
+    const sideValue = getCorridorSideValue(point, corridor, origin);
+    return {
+      sideValue,
+      side: Math.abs(sideValue) < 1e-6 ? 'center' : sideValue < 0 ? 'right' : 'left',
+    };
+  }
+
+  const corridor = getCanonicalCorridorSegment();
+  const worldSide = classifyCorridorSide(steamClock, corridor, corridor.end);
+  assert.equal(worldSide.side, 'right', `expected fallback world geometry to place Steam Clock on the canonical right side, got ${worldSide.side} (${worldSide.sideValue})`);
+  assert.ok(corridor.rightNormal.x < 0 && corridor.rightNormal.z < 0, 'expected canonical route-right normal to point east/south toward the Steam Clock curb side');
 
   const metrics = {
     minX: -20,
@@ -135,33 +174,41 @@ test('minimap uses the same world-to-map handedness for Steam Clock corridor lan
     };
   }
 
-  const northMid = projectWorldToMinimap(midBlock);
-  const northApproach = projectWorldToMinimap(approach);
+  const northCambie = projectWorldToMinimap(cambie);
+  const northRightTip = projectWorldToMinimap({
+    x: cambie.x + (corridor.rightNormal.x * 10),
+    z: cambie.z + (corridor.rightNormal.z * 10),
+  });
   const northSteam = projectWorldToMinimap(steamClock);
-  const northCorridor = {
-    x: northApproach.x - northMid.x,
-    y: northApproach.y - northMid.y,
+  const northRightVector = {
+    x: northRightTip.x - northCambie.x,
+    y: northRightTip.y - northCambie.y,
   };
-  const northOffset = {
-    x: northSteam.x - northApproach.x,
-    y: northSteam.y - northApproach.y,
+  const northSteamOffset = {
+    x: northSteam.x - northCambie.x,
+    y: northSteam.y - northCambie.y,
   };
-  const northScreenCross = (northCorridor.x * northOffset.y) - (northCorridor.y * northOffset.x);
-  assert.ok(northScreenCross > 0, `expected Steam Clock to stay on the right side of the corridor in north-up, got ${northScreenCross}`);
+  const northAlignment = (northRightVector.x * northSteamOffset.x) + (northRightVector.y * northSteamOffset.y);
+  assert.ok(northAlignment > 0, `expected north-up minimap to keep Steam Clock on the canonical right/east curb side, got alignment ${northAlignment}`);
 
-  const heading = {
-    x: approach.x - midBlock.x,
-    z: approach.z - midBlock.z,
+  const headingRotation = -Math.atan2(-corridor.tangent.z, corridor.tangent.x) - (Math.PI / 2);
+  const headingSteam = projectWorldToMinimap(steamClock, { rotation: headingRotation, anchor: northCambie });
+  const headingRightTip = projectWorldToMinimap({
+    x: cambie.x + (corridor.rightNormal.x * 10),
+    z: cambie.z + (corridor.rightNormal.z * 10),
+  }, { rotation: headingRotation, anchor: northCambie });
+  const headingRightVector = {
+    x: headingRightTip.x - northCambie.x,
+    y: headingRightTip.y - northCambie.y,
   };
-  const planarLength = Math.hypot(heading.x, heading.z) || 1;
-  heading.x /= planarLength;
-  heading.z /= planarLength;
-  const headingRotation = -Math.atan2(-heading.z, heading.x) - (Math.PI / 2);
-  const headingApproach = projectWorldToMinimap(approach);
-  const headingSteam = projectWorldToMinimap(steamClock, { rotation: headingRotation, anchor: headingApproach });
-
-  assert.ok(headingSteam.x > headingApproach.x, `expected Steam Clock to stay on the right side of the corridor in heading-up, got ${headingSteam.x} <= ${headingApproach.x}`);
-  assert.ok(headingSteam.y > headingApproach.y - 20 && headingSteam.y < headingApproach.y + 20, 'expected heading-up projection to keep the Steam Clock laterally beside the corridor near Water/Cambie');
+  const headingSteamOffset = {
+    x: headingSteam.x - northCambie.x,
+    y: headingSteam.y - northCambie.y,
+  };
+  const headingAlignment = (headingRightVector.x * headingSteamOffset.x) + (headingRightVector.y * headingSteamOffset.y);
+  assert.ok(headingAlignment > 0, `expected heading-up minimap to preserve the canonical right side, got alignment ${headingAlignment}`);
+  assert.ok(headingSteam.x > northCambie.x, `expected heading-up minimap to keep the Steam Clock on screen-right, got ${headingSteam.x} <= ${northCambie.x}`);
+  assert.ok(Math.abs(headingSteam.y - northCambie.y) < 20, 'expected heading-up projection to keep the Steam Clock laterally beside the corridor near Water/Cambie');
 });
 
 test('minimap player marker renders as a tiny person with a forward cue instead of a wedge', () => {
