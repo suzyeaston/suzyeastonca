@@ -871,17 +871,17 @@ function get_custom_canucks_betting( WP_REST_Request $request ) {
 function se_get_gastown_start_sting_fallback_spec() {
     return array(
         'tempo' => 96,
-        'key' => 'G minor',
+        'key' => 'E minor',
         'duration_bars' => 2,
         'chord_hits' => array(
-            array( 'bar' => 1, 'beat' => 1, 'notes' => array( 'G3', 'Bb3', 'D4' ), 'length_beats' => 1.5, 'velocity' => 0.82 ),
-            array( 'bar' => 2, 'beat' => 1, 'notes' => array( 'Eb3', 'G3', 'Bb3' ), 'length_beats' => 1.25, 'velocity' => 0.76 ),
+            array( 'bar' => 1, 'beat' => 1, 'notes' => array( 'E3', 'G3', 'B3' ), 'length_beats' => 1.5, 'velocity' => 0.84 ),
+            array( 'bar' => 2, 'beat' => 1, 'notes' => array( 'D3', 'G3', 'B3' ), 'length_beats' => 1.25, 'velocity' => 0.8 ),
         ),
         'bass_notes' => array(
-            array( 'bar' => 1, 'beat' => 1, 'note' => 'G1', 'length_beats' => 1, 'velocity' => 0.92 ),
-            array( 'bar' => 1, 'beat' => 3, 'note' => 'D2', 'length_beats' => 0.75, 'velocity' => 0.78 ),
-            array( 'bar' => 2, 'beat' => 1, 'note' => 'Eb2', 'length_beats' => 1, 'velocity' => 0.88 ),
-            array( 'bar' => 2, 'beat' => 3, 'note' => 'F2', 'length_beats' => 0.75, 'velocity' => 0.74 ),
+            array( 'bar' => 1, 'beat' => 1, 'note' => 'E2', 'length_beats' => 1, 'velocity' => 0.94 ),
+            array( 'bar' => 1, 'beat' => 3, 'note' => 'E2', 'length_beats' => 0.75, 'velocity' => 0.82 ),
+            array( 'bar' => 2, 'beat' => 1, 'note' => 'G2', 'length_beats' => 1, 'velocity' => 0.88 ),
+            array( 'bar' => 2, 'beat' => 3, 'note' => 'D2', 'length_beats' => 0.75, 'velocity' => 0.76 ),
         ),
         'drum_pattern' => array(
             'kick' => array( array( 'bar' => 1, 'beat' => 1 ), array( 'bar' => 1, 'beat' => 3.5 ), array( 'bar' => 2, 'beat' => 1 ), array( 'bar' => 2, 'beat' => 3 ) ),
@@ -892,12 +892,12 @@ function se_get_gastown_start_sting_fallback_spec() {
             ),
         ),
         'lead_phrase' => array(
-            array( 'bar' => 1, 'beat' => 1.5, 'note' => 'D4', 'length_beats' => 0.5, 'velocity' => 0.82, 'articulation' => 'growl' ),
-            array( 'bar' => 1, 'beat' => 2, 'note' => 'F4', 'length_beats' => 0.5, 'velocity' => 0.78, 'articulation' => 'bend' ),
-            array( 'bar' => 1, 'beat' => 2.5, 'note' => 'G4', 'length_beats' => 1, 'velocity' => 0.9, 'articulation' => 'hold' ),
-            array( 'bar' => 2, 'beat' => 1.5, 'note' => 'Bb4', 'length_beats' => 0.5, 'velocity' => 0.8, 'articulation' => 'stab' ),
-            array( 'bar' => 2, 'beat' => 2, 'note' => 'G4', 'length_beats' => 0.75, 'velocity' => 0.84, 'articulation' => 'fall' ),
-            array( 'bar' => 2, 'beat' => 3, 'note' => 'D4', 'length_beats' => 1, 'velocity' => 0.74, 'articulation' => 'hold' ),
+            array( 'bar' => 1, 'beat' => 1.5, 'note' => 'B4', 'length_beats' => 0.5, 'velocity' => 0.82, 'articulation' => 'growl' ),
+            array( 'bar' => 1, 'beat' => 2, 'note' => 'D5', 'length_beats' => 0.5, 'velocity' => 0.78, 'articulation' => 'bend' ),
+            array( 'bar' => 1, 'beat' => 2.5, 'note' => 'E5', 'length_beats' => 1, 'velocity' => 0.92, 'articulation' => 'hold' ),
+            array( 'bar' => 2, 'beat' => 1.5, 'note' => 'G5', 'length_beats' => 0.5, 'velocity' => 0.84, 'articulation' => 'stab' ),
+            array( 'bar' => 2, 'beat' => 2, 'note' => 'E5', 'length_beats' => 0.75, 'velocity' => 0.86, 'articulation' => 'fall' ),
+            array( 'bar' => 2, 'beat' => 3, 'note' => 'B4', 'length_beats' => 1, 'velocity' => 0.76, 'articulation' => 'hold' ),
         ),
         'style_description' => 'gritty urban rock-adjacent welcome sting with a stylized sax lead; brisk, punchy, not lounge jazz',
     );
@@ -981,6 +981,7 @@ function se_handle_gastown_start_sting( WP_REST_Request $request ) {
         'ok' => true,
         'walkerName' => $walker_name,
         'welcomeText' => $welcome_line,
+        'welcome_text' => $welcome_line,
         'voiceGenerated' => false,
         'voiceFallback' => true,
         'voiceFormat' => 'wav',
@@ -988,6 +989,11 @@ function se_handle_gastown_start_sting( WP_REST_Request $request ) {
         'audioBase64' => '',
         'musicSpecFallback' => true,
         'musicSpec' => $fallback_spec,
+        'music_spec' => $fallback_spec,
+        'tts' => array(
+            'voice' => 'coral',
+            'format' => 'wav',
+        ),
         'helpNote' => 'Startup welcome voice is AI-generated when available.',
     );
 
@@ -1013,6 +1019,7 @@ function se_handle_gastown_start_sting( WP_REST_Request $request ) {
         $music_decoded = json_decode( $music_text, true );
         if ( is_array( $music_decoded ) ) {
             $result['musicSpec'] = se_sanitize_gastown_start_sting_spec( $music_decoded, $fallback_spec );
+            $result['music_spec'] = $result['musicSpec'];
             $result['musicSpecFallback'] = false;
         }
     }
@@ -1021,7 +1028,7 @@ function se_handle_gastown_start_sting( WP_REST_Request $request ) {
         $welcome_line,
         array(
             'model' => 'gpt-4o-mini-tts',
-            'voice' => 'alloy',
+            'voice' => 'coral',
             'response_format' => 'wav',
             'instructions' => 'Read as a brisk game startup welcome. Short, punchy, warm, urban, no ad-libbing.',
         ),

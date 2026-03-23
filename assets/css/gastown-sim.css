@@ -110,7 +110,7 @@
 
 .gastown-hud {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto;
+  grid-template-columns: minmax(220px, 1fr) auto;
   gap: 0.45rem 0.6rem;
   align-items: center;
 }
@@ -137,7 +137,7 @@
 
 .gastown-hud-name {
   margin: 0;
-  font-size: clamp(1.1rem, 2.2vw, 1.55rem);
+  font-size: clamp(0.95rem, 1.8vw, 1.2rem);
   line-height: 1;
   color: #f6fbff;
   text-transform: uppercase;
@@ -162,6 +162,9 @@
   border: 1px solid rgba(255, 214, 138, 0.34);
   background: rgba(22, 16, 8, 0.78);
   color: #ffe9b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .gastown-hud-route {
@@ -243,8 +246,8 @@
   right: 0.8rem;
   top: 0.8rem;
   display: grid;
-  gap: 0.35rem;
-  max-width: min(220px, 32vw);
+  gap: 0.3rem;
+  max-width: min(180px, 26vw);
 }
 
 .gastown-landmark,
@@ -254,6 +257,9 @@
   border-radius: 7px;
   background: rgba(10, 16, 25, 0.82);
   border: 1px solid rgba(164, 190, 218, 0.18);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .gastown-route-debug-overlay {
@@ -310,6 +316,8 @@
 .gastown-minimap-context strong, .gastown-minimap-mode-status strong { color: #f5fbff; }
 .gastown-minimap-mode-status { margin: 0; color: #ecf5ff; }
 .gastown-minimap-context { margin: 0.22rem 0 0.14rem; color: rgba(220, 236, 255, 0.92); }
+.gastown-minimap-tooltip { margin: 0.2rem 0 0; color: #ffdca7; font-size: 0.76rem; }
+.gastown-minimap-compass { margin-top: 0.22rem; font-size: 0.76rem; color: #cfe4fb; }
 .gastown-minimap-legend { list-style: none; margin: 0.08rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.18rem 0.5rem; font-size: 0.68rem; color: rgba(220, 236, 255, 0.9); }
 .gastown-minimap-legend li { display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
 .gastown-minimap-legend .dot { width: 0.48rem; height: 0.48rem; border-radius: 999px; display: inline-block; border: 1px solid rgba(235, 245, 255, 0.58); }
