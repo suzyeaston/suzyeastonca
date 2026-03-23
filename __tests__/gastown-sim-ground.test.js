@@ -64,11 +64,105 @@ test('minimap heading derives from gameplay forward yaw instead of mirrored play
   assert.match(src, /function getHeadingVector\(\) \{\s*const forward = new THREE\.Vector3\(0, 0, -1\);\s*forward\.applyAxisAngle\(new THREE\.Vector3\(0, 1, 0\), state\.yaw\);/s);
   assert.match(src, /const planarLength = Math\.hypot\(forward\.x, forward\.z\) \|\| 1;/);
   assert.doesNotMatch(src, /player\.getWorldDirection\(direction\)/);
-  assert.match(src, /const headingRotation = minimapState\.mode === 'heading-up' \? \(-Math\.atan2\(-heading\.z, heading\.x\) - \(Math\.PI \/ 2\)\) : 0;/);
+  assert.match(src, /function getMinimapHeadingRotation\(heading\) \{\s*return minimapState\.mode === 'heading-up' \? \(-Math\.atan2\(-heading\.z, heading\.x\) - \(Math\.PI \/ 2\)\) : 0;\s*\}/s);
+  assert.match(src, /const headingRotation = getMinimapHeadingRotation\(heading\);/);
   assert.match(src, /const headingX = minimapState\.mode === 'heading-up' \? 0 : heading\.x;/);
   assert.match(src, /const headingY = minimapState\.mode === 'heading-up' \? -1 : -heading\.z;/);
 });
 
+
+
+test('minimap uses the same world-to-map handedness for Steam Clock corridor landmarks in north-up and heading-up modes', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const worldPath = path.join(__dirname, '..', 'assets', 'world', 'gastown-water-street.json');
+  const src = fs.readFileSync(simPath, 'utf8');
+  const world = JSON.parse(fs.readFileSync(worldPath, 'utf8'));
+
+  assert.match(src, /function projectWorldToMinimap\(point, metrics, padding, view, options = \{\}\) \{/);
+  assert.match(src, /drawPolygon\(zone\.polygon, metrics, pad, '#3f4d60', 'rgba\(136, 161, 188, 0\.4\)', 1, view, projectionOptions\);/);
+  assert.match(src, /const mini = projectWorldToMinimap\(node, metrics, pad, view, projectionOptions\);/);
+  assert.doesNotMatch(src, /ctx\.translate\(playerPoint\.x, playerPoint\.y\);\s*ctx\.rotate\(headingRotation\);/s);
+
+  const midBlock = world.nodes.find((node) => node.id === 'water-street-mid-block');
+  const approach = world.route.centerline.find((point) => point.id === 'steam-clock-approach');
+  const steamClock = world.landmarks.find((landmark) => landmark.id === 'steam-clock');
+
+  assert.ok(midBlock && approach && steamClock);
+
+  const metrics = {
+    minX: -20,
+    maxX: 240,
+    minZ: -210,
+    maxZ: 20,
+    width: 260,
+    height: 230,
+  };
+  const view = metrics;
+  const minimap = { width: 240, height: 240 };
+  const padding = 16;
+
+  function toMinimapPoint(point) {
+    const usableW = minimap.width - (padding * 2);
+    const usableH = minimap.height - (padding * 2);
+    return {
+      x: padding + (((point.x - view.minX) / view.width) * usableW),
+      y: minimap.height - (padding + (((point.z - view.minZ) / view.height) * usableH)),
+    };
+  }
+
+  function rotateMinimapVector(x, y, angle) {
+    const sin = Math.sin(angle);
+    const cos = Math.cos(angle);
+    return {
+      x: (x * cos) - (y * sin),
+      y: (x * sin) + (y * cos),
+    };
+  }
+
+  function projectWorldToMinimap(point, options = {}) {
+    const basePoint = toMinimapPoint(point);
+    const rotation = options.rotation || 0;
+    const anchor = options.anchor;
+    if (!rotation || !anchor) {
+      return basePoint;
+    }
+    const offsetX = basePoint.x - anchor.x;
+    const offsetY = basePoint.y - anchor.y;
+    const rotated = rotateMinimapVector(offsetX, offsetY, rotation);
+    return {
+      x: anchor.x + rotated.x,
+      y: anchor.y + rotated.y,
+    };
+  }
+
+  const northMid = projectWorldToMinimap(midBlock);
+  const northApproach = projectWorldToMinimap(approach);
+  const northSteam = projectWorldToMinimap(steamClock);
+  const northCorridor = {
+    x: northApproach.x - northMid.x,
+    y: northApproach.y - northMid.y,
+  };
+  const northOffset = {
+    x: northSteam.x - northApproach.x,
+    y: northSteam.y - northApproach.y,
+  };
+  const northScreenCross = (northCorridor.x * northOffset.y) - (northCorridor.y * northOffset.x);
+  assert.ok(northScreenCross > 0, `expected Steam Clock to stay on the right side of the corridor in north-up, got ${northScreenCross}`);
+
+  const heading = {
+    x: approach.x - midBlock.x,
+    z: approach.z - midBlock.z,
+  };
+  const planarLength = Math.hypot(heading.x, heading.z) || 1;
+  heading.x /= planarLength;
+  heading.z /= planarLength;
+  const headingRotation = -Math.atan2(-heading.z, heading.x) - (Math.PI / 2);
+  const headingApproach = projectWorldToMinimap(approach);
+  const headingSteam = projectWorldToMinimap(steamClock, { rotation: headingRotation, anchor: headingApproach });
+
+  assert.ok(headingSteam.x > headingApproach.x, `expected Steam Clock to stay on the right side of the corridor in heading-up, got ${headingSteam.x} <= ${headingApproach.x}`);
+  assert.ok(headingSteam.y > headingApproach.y - 20 && headingSteam.y < headingApproach.y + 20, 'expected heading-up projection to keep the Steam Clock laterally beside the corridor near Water/Cambie');
+});
 
 test('minimap player marker renders as a tiny person with a forward cue instead of a wedge', () => {
   const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
