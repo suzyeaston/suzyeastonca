@@ -10,7 +10,7 @@ get_header();
     <header class="gastown-sim-header">
       <p class="gastown-sim-kicker">Prototype route: Waterfront Station → Water Street → Steam Clock</p>
       <h1>Gastown First-Person Simulator</h1>
-      <p class="gastown-sim-intro">A stylized, geographically grounded Gastown walk through a focused Water Street slice with the Steam Clock staged at an intersection plaza. Click into the scene, look around, and walk the route.</p>
+      <p class="gastown-sim-intro">A stylized, geographically grounded Gastown walk through a focused Water Street slice shaped as self-directed exploration. Wander between street details, route survey, soundwalk, and memory walk at your own pace.</p>
     </header>
 
     <div class="gastown-controls" role="group" aria-label="Simulator controls">
@@ -80,7 +80,7 @@ get_header();
         <div class="gastown-dialog-body" id="gastown-tutorial-copy">
           <p>Click the scene to lock the pointer, use the mouse to look around, and move with W A S D or the arrow keys.</p>
           <p>Press E or click on nearby characters to talk. Press M M quickly to toggle the minimap between north-up and heading-up orientation.</p>
-          <p>Screen reader note: status updates, landmark callouts, and quest progress are announced below the simulator.</p>
+          <p>Screen reader note: status updates, landmark callouts, thread changes, and journal updates are announced below the simulator.</p>
         </div>
         <div class="gastown-dialog-actions">
           <button type="button" class="pixel-button secondary" data-action="tutorial-start" aria-label="Start the simulator tutorial">Start tutorial</button>
@@ -89,22 +89,31 @@ get_header();
       </div>
     </section>
     <p class="gastown-status" data-sim-status aria-live="polite">Loading simulator...</p>
-    <p class="gastown-quest-status" data-sim-quest-status aria-live="polite">Scavenger hunt: inactive.</p>
+    <p class="gastown-quest-status" data-sim-quest-status aria-live="polite">Street details log: inactive.</p>
     <section class="gastown-expedition-panel" aria-label="Exploration journal and guidance">
       <div class="gastown-expedition-card">
+        <p class="gastown-expedition-label">Choose a thread</p>
+        <div class="gastown-thread-buttons" role="group" aria-label="Exploration threads">
+          <button type="button" class="pixel-button secondary" data-thread-mode="drift" aria-pressed="true">Drift</button>
+          <button type="button" class="pixel-button secondary" data-thread-mode="survey" aria-pressed="false">Survey</button>
+          <button type="button" class="pixel-button secondary" data-thread-mode="soundwalk" aria-pressed="false">Soundwalk</button>
+          <button type="button" class="pixel-button secondary" data-thread-mode="stories" aria-pressed="false">Memory walk</button>
+        </div>
+      </div>
+      <div class="gastown-expedition-card">
         <p class="gastown-expedition-label">Opening objective</p>
-        <p class="gastown-expedition-value" data-sim-objective aria-live="polite">Meet the guide just ahead of the station threshold.</p>
+        <p class="gastown-expedition-value" data-sim-objective aria-live="polite">Choose your own lead through Gastown.</p>
       </div>
       <div class="gastown-expedition-card">
         <p class="gastown-expedition-label">Next meaningful step</p>
-        <p class="gastown-expedition-value" data-sim-next-step aria-live="polite">Walk forward to the guide, then press E to talk.</p>
+        <p class="gastown-expedition-value" data-sim-next-step aria-live="polite">Look around and follow what catches your attention.</p>
       </div>
       <div class="gastown-expedition-card">
         <p class="gastown-expedition-label">Route completion</p>
         <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% of the corridor surveyed.</p>
       </div>
       <div class="gastown-expedition-card">
-        <p class="gastown-expedition-label">Collectibles log</p>
+        <p class="gastown-expedition-label">Street details log</p>
         <ul class="gastown-expedition-list" data-sim-collectibles-log aria-live="polite">
           <li>Newspaper box — not logged</li>
           <li>Historic plaque — not logged</li>
@@ -114,7 +123,7 @@ get_header();
       <div class="gastown-expedition-card">
         <p class="gastown-expedition-label">Journal</p>
         <ul class="gastown-expedition-list" data-sim-journal aria-live="polite">
-          <li>Arrive at the station threshold and get your bearings.</li>
+          <li>Arrive at the station threshold and choose where to begin.</li>
         </ul>
       </div>
     </section>
@@ -125,7 +134,7 @@ get_header();
     <p class="gastown-interact-prompt" data-sim-interact-prompt aria-live="polite" hidden></p>
 
     <div class="gastown-sim-canvas" data-sim-canvas tabindex="-1">
-      <aside class="gastown-minimap" aria-label="Route navigator minimap">
+      <aside class="gastown-minimap" aria-label="Exploration minimap">
         <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap controls">
           <button type="button" class="gastown-minimap-mode" data-action="minimap-mode-toggle" aria-pressed="false" aria-label="Switch minimap to heading-up mode">North up</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
@@ -142,8 +151,8 @@ get_header();
           <li>Sidewalk / plaza</li>
           <li>Road</li>
           <li>Landmark</li>
-          <li>Guidance callout</li>
-          <li>Collectibles</li>
+          <li>Thread hint</li>
+          <li>Observations</li>
         </ul>
         <p class="gastown-minimap-label" data-sim-minimap-landmark>Nearest landmark: Waterfront Station threshold — ahead</p>
       </aside>
@@ -179,7 +188,7 @@ get_header();
     <div class="gastown-dialog-modal" data-dialog-modal role="dialog" aria-modal="true" aria-hidden="true" hidden>
       <div class="gastown-dialog-panel">
         <div class="gastown-dialog-header">
-          <h2 data-dialog-title>Gastown guide</h2>
+          <h2 data-dialog-title>Gastown local</h2>
           <button type="button" class="pixel-button tiny secondary" data-dialog-close>Close</button>
         </div>
         <div class="gastown-dialog-body" data-dialog-body></div>
