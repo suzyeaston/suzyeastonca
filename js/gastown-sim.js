@@ -309,7 +309,9 @@
   }
 
   function setStatus(text) {
-    statusEl.textContent = text;
+    if (statusEl) {
+      statusEl.textContent = text;
+    }
   }
 
   function setQuestStatus(text) {
@@ -603,9 +605,9 @@
     } else if (state.isRunning) {
       setStatus(getStreetModeStatusText());
       if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
-        setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
+        setPointerStatus('Pointer locked. Your gaze is tied to the street. Press Esc to release it.');
       } else {
-        setPointerStatus('Pointer lock requested… press Esc any time to release.');
+        setPointerStatus('Pointer requested. Press Esc at any time to loosen your view from the street.');
       }
     } else {
       setStatus(getPublicGoalText() + ' Click scene to enter look mode and begin moving, or press V for overview.');
@@ -649,7 +651,17 @@
   }
 
   function setLandmark(text) {
-    landmarkEl.textContent = text;
+    if (!landmarkEl) {
+      return;
+    }
+    landmarkEl.textContent = String(text || '').replace(/^Nearest landmark:/, 'Nearest beacon:');
+  }
+
+  function setDebugToggleLabel() {
+    if (!debugToggle) {
+      return;
+    }
+    debugToggle.textContent = state.debugEnabled ? 'Hide route diagnostics' : 'Show route diagnostics';
   }
 
   function isApproximateWorld(world) {
@@ -678,13 +690,13 @@
       : 'Offline civic-data build loaded with ' + coverage + '.';
 
     if (worldStatusEl) {
-      worldStatusEl.textContent = 'World data status: ' + state.worldBuildStatus;
+      worldStatusEl.textContent = 'World ledger: ' + state.worldBuildStatus;
       worldStatusEl.classList.toggle('is-approximate', approximate);
       worldStatusEl.classList.toggle('is-civic', !approximate);
     }
 
     if (approximate) {
-      setStatus('Approximate fallback world loaded. This playable corridor is believable, but not survey-precise.');
+      setStatus('The street arrives in a believable prototype form—atmospheric and walkable, though not survey-precise.');
     }
   }
 
@@ -921,7 +933,7 @@
   function setInteractPrompt(text) {
     if (!interactPromptEl) return;
     if (text) {
-      interactPromptEl.textContent = text;
+      interactPromptEl.textContent = text.replace(/^Click or press E to /, 'Press E or click to ').replace(/^Press E to /, 'Press E to ');
       interactPromptEl.removeAttribute('hidden');
     } else {
       interactPromptEl.setAttribute('hidden', 'hidden');
@@ -1611,8 +1623,8 @@
     }
     clearMovementInput();
     setInteractPrompt('');
-    setStatus('Dialog closed. Click scene to resume.');
-    setPointerStatus('Pointer unlocked. Click scene to enter look mode.');
+    setStatus('Dialogue closed. Click back into the street to continue the walk.');
+    setPointerStatus('Pointer free. Click the scene when you are ready to move again.');
     const focusTarget = renderer.domElement || canvasWrap;
     if (focusTarget && typeof focusTarget.focus === 'function') {
       window.setTimeout(() => focusTarget.focus(), 0);
@@ -1658,8 +1670,8 @@
       dialogModalEl.setAttribute('aria-hidden', 'false');
       state.activeDialogNpcId = npcState.id;
       state.activeDialogEntry = normalized;
-      setStatus('Dialog open. Loading nearby conversation.');
-      setPointerStatus('Pointer unlocked. Dialog controls are active.');
+      setStatus('A nearby voice is coming into focus. Loading conversation.');
+      setPointerStatus('Pointer free while dialogue controls are active.');
       focusFirstDialogControl();
     };
 
@@ -1708,7 +1720,7 @@
       item.found = !!(prop && prop.collected);
     });
     const foundCount = state.quest.items.filter((item) => item.found).length;
-    setQuestStatus('Scavenger hunt: ' + foundCount + '/' + state.quest.items.length + ' found.');
+    setQuestStatus('Scavenger thread: ' + foundCount + ' of ' + state.quest.items.length + ' keepsakes recovered.');
     if (foundCount === state.quest.items.length && state.quest.items.length) {
       completeGuideQuest();
     }
@@ -3600,8 +3612,8 @@
     if (minimapModeStatusEl) {
       const isHeadingUp = minimapState.mode === 'heading-up';
       minimapModeStatusEl.innerHTML = isHeadingUp
-        ? '<strong>Map mode:</strong> Heading-up — the top of the map follows the way you are facing.<br><strong>Guidance:</strong> Landmark callouts stay player-relative (ahead/left/right) for first-person wayfinding.'
-        : '<strong>Map mode:</strong> North-up — the top of the map is geographic north.<br><strong>Guidance:</strong> Landmark callouts stay player-relative (ahead/left/right) so the legend still reads like the street.';
+        ? 'Traveler orientation. The chart turns with your body so the street ahead stays at the top.'
+        : 'Cartographer orientation. The chart holds geographic north while guidance still reads from your point of view.';
     }
   }
 
@@ -4686,6 +4698,7 @@
     if (routeDebugOverlay) {
       routeDebugOverlay.hidden = !enabled;
     }
+    setDebugToggleLabel();
   }
 
   function startSim() {
@@ -4712,8 +4725,8 @@
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
-    setStatus('Street mode paused. Click scene to resume look mode and movement, or press V for overview.');
-    setPointerStatus('Pointer released. Click scene to re-enter look mode.');
+    setStatus('The walk is paused. Click back into the scene to continue, or press V to lift into overview.');
+    setPointerStatus('Pointer released. Click the scene to settle back into the walk.');
   }
 
   function attachEvents() {
@@ -4740,7 +4753,7 @@
         const now = performance.now();
         if (now - state.tutorial.lastMKeyAt < 450) {
           toggleMinimapMode();
-          if (minimapTooltipEl) { minimapTooltipEl.textContent = 'Minimap switched to ' + minimapState.mode + '.'; }
+          if (minimapTooltipEl) { minimapTooltipEl.textContent = minimapState.mode === 'heading-up' ? 'Traveler orientation engaged. The map now turns with you.' : 'Cartographer orientation engaged. North is fixed at the top again.'; }
         }
         state.tutorial.lastMKeyAt = now;
       }
@@ -4798,18 +4811,20 @@
 
     document.addEventListener('pointerlockchange', () => {
       if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
-        setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
+        setPointerStatus('Pointer locked. Your gaze is tied to the street. Press Esc to release it.');
       } else if (state.cameraMode === 'overview') {
-        setPointerStatus('Pointer unlocked. Overview camera detached above player.');
+        setPointerStatus('Pointer free. The overview camera is drifting above the route.');
       } else if (state.isRunning) {
         clearMovementInput();
         state.isRunning = false;
-        setStatus('Street mode paused. Click scene to resume look mode and movement, or press V for overview.');
-        setPointerStatus('Pointer released. Click scene to re-enter look mode.');
+        setStatus('The walk is paused. Click back into the scene to continue, or press V to lift into overview.');
+        setPointerStatus('Pointer released. Click the scene to settle back into the walk.');
       } else {
-        setPointerStatus('Pointer unlocked.');
+        setPointerStatus('Pointer free.');
       }
     });
+
+    setDebugToggleLabel();
 
     debugToggle.addEventListener('click', () => {
       const open = debugPanel.hasAttribute('hidden');
@@ -4824,7 +4839,7 @@
     dialogCloseEls.forEach((button) => button.addEventListener('click', closeDialog));
     if (tutorialOpenBtn) tutorialOpenBtn.addEventListener('click', openTutorialOverlay);
     tutorialCloseEls.forEach((button) => button.addEventListener('click', closeTutorialOverlay));
-    if (tutorialStartBtn) tutorialStartBtn.addEventListener('click', () => { closeTutorialOverlay(); resetToStart(); setStatus('Tutorial started. Click into the scene, then follow the route toward the Steam Clock.'); });
+    if (tutorialStartBtn) tutorialStartBtn.addEventListener('click', () => { closeTutorialOverlay(); resetToStart(); setStatus('Tutorial begun. Step into the scene, then follow the route toward the Steam Clock glow.'); });
     if (lowGraphicsToggle) lowGraphicsToggle.addEventListener('change', (event) => setLowGraphicsMode(event.target.checked));
     if (reopenTutorialToggle) reopenTutorialToggle.addEventListener('change', (event) => { try { window.localStorage.setItem('gastownTutorialReopen', event.target.checked ? '1' : '0'); } catch (error) {} });
     if (dialogModalEl) {
@@ -5012,7 +5027,7 @@
         renderer.render(scene, camera);
       });
     } catch (error) {
-      setStatus('Unable to start simulator: ' + error.message);
+      setStatus('Gastown could not finish loading: ' + error.message);
     }
   }
 
