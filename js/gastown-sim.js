@@ -2351,9 +2351,10 @@
 
 
   function getHeadingVector() {
-    const baseForward = new THREE.Vector3(0, 0, -1);
-    const direction = baseForward.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), state.yaw);
-    return { x: direction.x, z: direction.z };
+    const direction = new THREE.Vector3();
+    player.getWorldDirection(direction);
+    const planarLength = Math.hypot(direction.x, direction.z) || 1;
+    return { x: direction.x / planarLength, z: direction.z / planarLength };
   }
 
   function clampMinimapZoom(nextZoom) {

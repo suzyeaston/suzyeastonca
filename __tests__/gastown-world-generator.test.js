@@ -151,6 +151,33 @@ test('committed world json files include the expanded intersection-based fallbac
   });
 });
 
+test('fallback Steam Clock plaza stays on the signed plaza side of the Water/Cambie approach frame', () => {
+  const root = path.resolve(__dirname, '..');
+  const data = JSON.parse(fs.readFileSync(path.join(root, 'assets', 'world', 'gastown-water-street.json'), 'utf8'));
+
+  const approachNode = data.route.centerline.find((node) => node.id === 'steam-clock-approach');
+  const intersectionNode = data.nodes.find((node) => node.id === 'water-cambie-intersection');
+  const clockNode = data.nodes.find((node) => node.id === 'steam-clock');
+  const plazaZone = data.zones.sidewalk.find((zone) => zone.id === 'steam-clock-plaza-sidewalk');
+  assert.ok(approachNode && intersectionNode && clockNode && plazaZone, 'approach/intersection/clock/plaza data should exist');
+
+  const tangentLength = Math.hypot(intersectionNode.x - approachNode.x, intersectionNode.z - approachNode.z);
+  assert.ok(tangentLength > 0.001, 'approach frame should have a usable tangent');
+  const tangent = {
+    x: (intersectionNode.x - approachNode.x) / tangentLength,
+    z: (intersectionNode.z - approachNode.z) / tangentLength,
+  };
+  const leftNormal = { x: -tangent.z, z: tangent.x };
+  const clockOffset = {
+    x: clockNode.x - intersectionNode.x,
+    z: clockNode.z - intersectionNode.z,
+  };
+
+  assert.ok(((clockOffset.x * leftNormal.x) + (clockOffset.z * leftNormal.z)) < 0, 'Steam Clock should stay on the plaza side of the Water/Cambie approach frame');
+  assert.equal(pointInPolygon(clockNode, plazaZone.polygon), true, 'Steam Clock should remain inside the dedicated plaza sidewalk polygon');
+  assert.equal(data.zones.street.some((zone) => pointInPolygon(clockNode, zone.polygon)), false, 'Steam Clock should remain outside every roadway polygon');
+});
+
 test('generator consumes refreshed reference inputs when present', () => {
   const root = path.resolve(__dirname, '..');
   const refreshDir = path.join(root, 'data', 'reference', 'refresh');
