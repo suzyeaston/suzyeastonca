@@ -859,12 +859,13 @@ function makeStarterWorld(outputPath, options = {}) {
   const sidewalkOuter = streetHalf + sidewalkWidth;
   const walkOuter = sidewalkOuter + softBoundary;
 
+  const plazaSideSign = -1;
   layout.clock = projectFeaturePoint(
     getFeatureCollectionById(reference.landmarkReference, 'steam-clock'),
     anchorOrigin,
     {
-      x: intersectionPoint.x + (intersectionFrame.normal.x * (streetHalf + (sidewalkWidth * 0.95))) - (intersectionFrame.tangent.x * 3.35),
-      z: intersectionPoint.z + (intersectionFrame.normal.z * (streetHalf + (sidewalkWidth * 0.95))) - (intersectionFrame.tangent.z * 3.35),
+      x: intersectionPoint.x + (intersectionFrame.normal.x * plazaSideSign * (streetHalf + (sidewalkWidth * 0.95))) - (intersectionFrame.tangent.x * 3.35),
+      z: intersectionPoint.z + (intersectionFrame.normal.z * plazaSideSign * (streetHalf + (sidewalkWidth * 0.95))) - (intersectionFrame.tangent.z * 3.35),
     }
   );
   layout.cambie = {
@@ -874,7 +875,10 @@ function makeStarterWorld(outputPath, options = {}) {
   layout.plaza = {
     center: layout.clock,
     tangent: intersectionFrame.tangent,
-    normal: intersectionFrame.normal,
+    normal: {
+      x: intersectionFrame.normal.x * plazaSideSign,
+      z: intersectionFrame.normal.z * plazaSideSign,
+    },
     edge: plazaEdgeFeature ? extractLineStrings(plazaEdgeFeature)[0].map((coord) => projectLonLat(coord[0], coord[1], anchorOrigin)) : [],
     intersection: intersectionPoint,
   };

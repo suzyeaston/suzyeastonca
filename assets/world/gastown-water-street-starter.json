@@ -20,7 +20,7 @@
       "buildingFootprints2015": false,
       "orthophotoImagery2015": false
     },
-    "lastBuild": "2026-03-22T22:16:42.851Z"
+    "lastBuild": "2026-03-23T02:20:57.171Z"
   },
   "route": {
     "name": "Waterfront Station → Water Street → Steam Clock working corridor",
@@ -64,8 +64,8 @@
       {
         "id": "steam-clock",
         "label": "Steam Clock plaza",
-        "x": 198.87,
-        "z": -143.53
+        "x": 184.31,
+        "z": -154.75
       },
       {
         "id": "maple-tree-square-edge",
@@ -102,16 +102,16 @@
         "z": -108.91404162851205
       },
       {
-        "x": 191.614222240369,
-        "z": -133.22758528167313
+        "x": 211.8946986128368,
+        "z": -148.77334146698345
       },
       {
-        "x": 198.86952422613294,
-        "z": -143.53340328067517
+        "x": 184.31270768999283,
+        "z": -154.75496700117142
       },
       {
-        "x": 209.30523091037242,
-        "z": -151.48549176407056
+        "x": 193.61507537516647,
+        "z": -131.13193665906078
       },
       {
         "x": 220.31813548545594,
@@ -122,16 +122,16 @@
         "z": -181.15701846469767
       },
       {
-        "x": 173.65687207207992,
-        "z": -146.51732326169986
+        "x": 189.34702760728587,
+        "z": -166.87087836670963
       },
       {
-        "x": 198.86952422613294,
-        "z": -143.53340328067517
+        "x": 184.31270768999283,
+        "z": -154.75496700117142
       },
       {
-        "x": 191.34788074208333,
-        "z": -164.7752297440973
+        "x": 171.06740436961553,
+        "z": -149.22947355878696
       },
       {
         "x": 144.73336354717162,
@@ -185,8 +185,8 @@
     {
       "id": "steam-clock",
       "label": "Steam Clock plaza",
-      "x": 198.87,
-      "z": -143.53
+      "x": 184.31,
+      "z": -154.75
     },
     {
       "id": "maple-tree-square-edge",
@@ -244,20 +244,20 @@
         "label": "Steam Clock plaza",
         "points": [
           {
-            "x": 197.13,
-            "z": -144.88
+            "x": 186.06,
+            "z": -153.41
           },
           {
-            "x": 199.37,
-            "z": -146.31
+            "x": 186.87,
+            "z": -155.94
           },
           {
-            "x": 201.88,
-            "z": -143.99
+            "x": 183.99,
+            "z": -157.78
           },
           {
-            "x": 200.69,
-            "z": -142.13
+            "x": 182.49,
+            "z": -156.16
           }
         ]
       },
@@ -600,24 +600,24 @@
         "side": "corner",
         "polygon": [
           {
-            "x": 194.38,
-            "z": -147.56
+            "x": 184.28,
+            "z": -155.35
           },
           {
-            "x": 199.45,
-            "z": -143.65
+            "x": 189.35,
+            "z": -151.44
           },
           {
-            "x": 202.99,
-            "z": -148.25
+            "x": 192.89,
+            "z": -156.03
           },
           {
-            "x": 197.92,
-            "z": -152.16
+            "x": 187.82,
+            "z": -159.94
           },
           {
-            "x": 194.38,
-            "z": -147.56
+            "x": 184.28,
+            "z": -155.35
           }
         ]
       },
@@ -626,24 +626,24 @@
         "side": "plaza",
         "polygon": [
           {
-            "x": 192.78,
-            "z": -142.29
+            "x": 177.85,
+            "z": -153.8
           },
           {
-            "x": 199.6,
-            "z": -137.04
+            "x": 184.66,
+            "z": -148.55
           },
           {
-            "x": 205.33,
-            "z": -144.48
+            "x": 190.4,
+            "z": -156
           },
           {
-            "x": 198.52,
-            "z": -149.73
+            "x": 183.59,
+            "z": -161.25
           },
           {
-            "x": 192.78,
-            "z": -142.29
+            "x": 177.85,
+            "z": -153.8
           }
         ]
       }
@@ -3721,10 +3721,10 @@
     {
       "id": "steam-clock-hero",
       "label": "Gastown Steam Clock",
-      "x": 198.87,
+      "x": 184.31,
       "y": 0,
-      "z": -143.53,
-      "yaw": 1.6995,
+      "z": -154.75,
+      "yaw": -1.4421,
       "ground_emphasis_radius": 5.2,
       "steamVentOffsets": [
         {
@@ -3780,9 +3780,9 @@
       "id": "steam-clock",
       "label": "Gastown Steam Clock",
       "kind": "clock",
-      "x": 198.87,
+      "x": 184.31,
       "y": 0,
-      "z": -143.53,
+      "z": -154.75,
       "radius": 5.2,
       "scale": 1.28,
       "cue": "A brick-and-stone plaza opens at the intersection and stages the Steam Clock at the corner landmark moment."
@@ -3848,18 +3848,18 @@
     {
       "id": "starter-prop-bench-clock",
       "kind": "bench",
-      "x": 199.51,
+      "x": 181.47,
       "y": 0,
-      "z": -140.76,
+      "z": -154.67,
       "yaw": 4.0557,
       "scale": 1.04
     },
     {
       "id": "starter-prop-clock-box",
       "kind": "newspaper_box",
-      "x": 201.91,
+      "x": 183.23,
       "y": 0,
-      "z": -143.21,
+      "z": -157.61,
       "yaw": 0,
       "scale": 0.98
     },
@@ -3923,8 +3923,8 @@
       "dialogId": "busker_clock_corner",
       "interactRadius": 3,
       "idleSpot": {
-        "x": 195.05,
-        "z": -142.18
+        "x": 183.98,
+        "z": -150.72
       }
     },
     {
@@ -4025,17 +4025,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 197.51,
-        "z": -146.85
+        "x": 187.87,
+        "z": -154.29
       },
       "patrol": [
         {
-          "x": 197.02,
-          "z": -145.72
+          "x": 186.9,
+          "z": -153.52
         },
         {
-          "x": 197.76,
-          "z": -147.67
+          "x": 188.59,
+          "z": -154.74
         }
       ]
     },
@@ -4049,17 +4049,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 198.81,
-        "z": -146.23
+        "x": 186.94,
+        "z": -155.38
       },
       "patrol": [
         {
-          "x": 198.41,
-          "z": -145.4
+          "x": 186.23,
+          "z": -154.79
         },
         {
-          "x": 199.03,
-          "z": -146.94
+          "x": 187.57,
+          "z": -155.78
         }
       ]
     },
@@ -4074,8 +4074,8 @@
       "dialogId": "tourist_clock_photo",
       "interactRadius": 2.4,
       "idleSpot": {
-        "x": 199.81,
-        "z": -141.8
+        "x": 182.4,
+        "z": -155.22
       }
     },
     {
@@ -4088,17 +4088,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 201.64,
-        "z": -145.82
+        "x": 185.82,
+        "z": -158.02
       },
       "patrol": [
         {
-          "x": 200.98,
-          "z": -145.45
+          "x": 185.63,
+          "z": -157.28
         },
         {
-          "x": 202.43,
-          "z": -146.35
+          "x": 186.13,
+          "z": -158.91
         }
       ]
     },
@@ -4112,8 +4112,8 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 196.87,
-        "z": -142.42
+        "x": 183.74,
+        "z": -152.54
       }
     },
     {
@@ -4127,17 +4127,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2,
       "idleSpot": {
-        "x": 199.26,
-        "z": -144.37
+        "x": 185.02,
+        "z": -155.35
       },
       "patrol": [
         {
-          "x": 198.97,
-          "z": -143.83
+          "x": 184.58,
+          "z": -154.93
         },
         {
-          "x": 199.37,
-          "z": -144.92
+          "x": 185.52,
+          "z": -155.59
         }
       ]
     }
@@ -4318,13 +4318,13 @@
     "bollards": [
       {
         "id": "clock-bollard-a",
-        "x": 196.81,
-        "z": -145.12
+        "x": 186.37,
+        "z": -153.17
       },
       {
         "id": "clock-bollard-b",
-        "x": 198.31,
-        "z": -146.74,
+        "x": 187.56,
+        "z": -155.03,
         "chain_to": "clock-bollard-a"
       }
     ],
@@ -4553,7 +4553,7 @@
         "segment_id": "steam-clock-approach",
         "width": 9.78,
         "length": 9.57,
-        "yaw": 1.1019,
+        "yaw": -2.4152,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "road_base_dark",
@@ -4564,7 +4564,7 @@
         "segment_id": "steam-clock-approach",
         "width": 3.12,
         "length": 7.91,
-        "yaw": 1.1019,
+        "yaw": -2.4152,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
@@ -4575,7 +4575,7 @@
         "segment_id": "steam-clock-approach",
         "width": 0.83,
         "length": 9.57,
-        "yaw": 1.1019,
+        "yaw": -2.4152,
         "offset_x": 4.06,
         "offset_z": 0,
         "tone": "curb_grime",
@@ -4586,7 +4586,7 @@
         "segment_id": "steam-clock-approach",
         "width": 0.83,
         "length": 9.57,
-        "yaw": 1.1019,
+        "yaw": -2.4152,
         "offset_x": -4.06,
         "offset_z": 0,
         "tone": "curb_grime",
@@ -4597,7 +4597,7 @@
         "segment_id": "steam-clock-approach",
         "width": 7.07,
         "length": 5.2,
-        "yaw": 1.1019,
+        "yaw": -2.4152,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "intersection_pavers",
@@ -4608,7 +4608,7 @@
         "segment_id": "steam-clock-approach",
         "width": 3.54,
         "length": 4.1,
-        "yaw": 1.1019,
+        "yaw": -2.4152,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "cobble_break",
@@ -4619,7 +4619,7 @@
         "segment_id": "steam-clock",
         "width": 9.78,
         "length": 19.24,
-        "yaw": 2.7756,
+        "yaw": 2.194,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "road_base_dark",
@@ -4630,7 +4630,7 @@
         "segment_id": "steam-clock",
         "width": 3.12,
         "length": 15.91,
-        "yaw": 2.7756,
+        "yaw": 2.194,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "wheel_track",
@@ -4641,7 +4641,7 @@
         "segment_id": "steam-clock",
         "width": 0.83,
         "length": 19.24,
-        "yaw": 2.7756,
+        "yaw": 2.194,
         "offset_x": 4.06,
         "offset_z": 0,
         "tone": "curb_grime",
@@ -4652,7 +4652,7 @@
         "segment_id": "steam-clock",
         "width": 0.83,
         "length": 19.24,
-        "yaw": 2.7756,
+        "yaw": 2.194,
         "offset_x": -4.06,
         "offset_z": 0,
         "tone": "curb_grime",
@@ -4663,7 +4663,7 @@
         "segment_id": "steam-clock",
         "width": 7.07,
         "length": 6.66,
-        "yaw": 2.7756,
+        "yaw": 2.194,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "intersection_pavers",
@@ -4674,7 +4674,7 @@
         "segment_id": "steam-clock",
         "width": 3.54,
         "length": 4.1,
-        "yaw": 2.7756,
+        "yaw": 2.194,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "cobble_break",
