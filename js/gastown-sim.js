@@ -100,6 +100,7 @@
     isRunning: false,
     move: { forward: false, backward: false, left: false, right: false },
     turn: { left: false, right: false },
+    gait: { precise: false, traverse: false },
     yaw: 0,
     pitch: 0,
     cameraMode: 'street',
@@ -555,6 +556,7 @@
     }
     state.boundaryNoticeTimer = setTimeout(() => {
       if (!state.isRunning || state.cameraMode !== 'street') return;
+      setStatus('Street mode active. Mouse look and movement are live. Hold Alt for precise exploration, Shift for a brisk walk, or press V for overview.');
       setStatus(getStreetModeStatusText());
     }, 1900);
   }
@@ -596,7 +598,7 @@
 
   function updateCameraModeUi() {
     if (state.cameraMode === 'overview') {
-      setStatus('Overview mode active. Mouse wheel zooms altitude; press V to return to street view.');
+      setStatus('Overview mode active. Mouse wheel zooms altitude; WASD glides fast across the route; press V to return to street view.');
       setPointerStatus('Pointer unlocked. Overview camera detached above player.');
     } else if (state.isRunning) {
       setStatus(getStreetModeStatusText());
@@ -927,6 +929,181 @@
     }
   }
 
+  function formatDistanceLabel(distance) {
+    if (!Number.isFinite(distance)) {
+      return '';
+    }
+    return distance >= 10 ? Math.round(distance) + ' m' : distance.toFixed(1) + ' m';
+  }
+
+  function getMovementProfile() {
+    if (state.cameraMode === 'overview') {
+      return {
+        label: 'overview traversal',
+        maxSpeed: 18.5,
+        acceleration: 7.6,
+        deceleration: 5.8,
+        turnSpeed: 1.65,
+        bobAmount: 0.02,
+        swayAmount: 0.008,
+        stepInterval: 0.34,
+      };
+    }
+    if (state.gait.precise) {
+      return {
+        label: 'precise exploration',
+        maxSpeed: 3.4,
+        acceleration: 10.8,
+        deceleration: 11.6,
+        turnSpeed: 2.05,
+        bobAmount: 0.012,
+        swayAmount: 0.005,
+        stepInterval: 0.52,
+      };
+    }
+    if (state.gait.traverse) {
+      return {
+        label: 'brisk walk',
+        maxSpeed: 11.75,
+        acceleration: 6.6,
+        deceleration: 6.2,
+        turnSpeed: 1.9,
+        bobAmount: 0.03,
+        swayAmount: 0.011,
+        stepInterval: 0.29,
+      };
+    }
+    return {
+      label: 'walking',
+      maxSpeed: 7.6,
+      acceleration: 8.6,
+      deceleration: 8.9,
+      turnSpeed: 1.85,
+      bobAmount: 0.022,
+      swayAmount: 0.008,
+      stepInterval: 0.41,
+    };
+  }
+
+  function detectPlayerSurface() {
+    if (!state.world || !state.world.zones) {
+      return 'sidewalk';
+    }
+    const point = { x: player.position.x, z: player.position.z };
+    if (Array.isArray(state.world.zones.sidewalk) && state.world.zones.sidewalk.some((zone) => isPointInPolygon(point, zone.polygon || []))) {
+      return 'sidewalk';
+    }
+    if (Array.isArray(state.world.zones.street) && state.world.zones.street.some((zone) => isPointInPolygon(point, zone.polygon || []))) {
+      return 'street';
+    }
+    return state.motion.surface || 'sidewalk';
+  }
+
+  function playFootstepCue(surface, intensity) {
+    const audioContext = ensureAudioContext();
+    if (!audioContext) {
+      return;
+    }
+    const now = audioContext.currentTime;
+    if ((now - state.motion.lastFootstepAt) < 0.08) {
+      return;
+    }
+    state.motion.lastFootstepAt = now;
+    const clampedIntensity = THREE.MathUtils.clamp(intensity || 0.35, 0.18, 1);
+    const noiseBuffer = audioContext.createBuffer(1, Math.max(1, Math.floor(audioContext.sampleRate * 0.03)), audioContext.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < data.length; i += 1) {
+      data[i] = (Math.random() * 2 - 1) * (1 - (i / data.length));
+    }
+    const noise = audioContext.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const noiseFilter = audioContext.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.value = surface === 'street' ? 520 : 980;
+    noiseFilter.Q.value = surface === 'street' ? 0.9 : 1.4;
+    const noiseGain = audioContext.createGain();
+    noiseGain.gain.setValueAtTime(0.0001, now);
+    noiseGain.gain.exponentialRampToValueAtTime((surface === 'street' ? 0.018 : 0.012) * clampedIntensity, now + 0.006);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + (surface === 'street' ? 0.085 : 0.05));
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(audioContext.destination);
+    noise.start(now);
+    noise.stop(now + 0.09);
+
+    const thump = audioContext.createOscillator();
+    thump.type = surface === 'street' ? 'triangle' : 'sine';
+    thump.frequency.setValueAtTime(surface === 'street' ? 86 : 124, now);
+    thump.frequency.exponentialRampToValueAtTime(surface === 'street' ? 62 : 94, now + 0.06);
+    const thumpGain = audioContext.createGain();
+    thumpGain.gain.setValueAtTime(0.0001, now);
+    thumpGain.gain.exponentialRampToValueAtTime((surface === 'street' ? 0.022 : 0.012) * clampedIntensity, now + 0.008);
+    thumpGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+    thump.connect(thumpGain);
+    thumpGain.connect(audioContext.destination);
+    thump.start(now);
+    thump.stop(now + 0.08);
+  }
+
+  function updateCameraMotionFeedback(delta, movementProfile) {
+    const speed = state.velocity.length();
+    const normalizedSpeed = THREE.MathUtils.clamp(speed / Math.max(0.01, movementProfile.maxSpeed), 0, 1.25);
+    state.motion.currentSpeed = speed;
+    state.motion.smoothedSpeed = THREE.MathUtils.lerp(state.motion.smoothedSpeed || 0, speed, 1 - Math.exp(-delta * 8));
+    state.motion.surface = detectPlayerSurface();
+    const moving = normalizedSpeed > 0.08;
+    const cadence = (state.motion.surface === 'street' ? 7.2 : 8.8) * (0.55 + normalizedSpeed);
+    state.motion.bobPhase += delta * cadence * Math.PI * 2;
+    const targetBob = moving ? Math.sin(state.motion.bobPhase) * movementProfile.bobAmount * normalizedSpeed * (state.motion.surface === 'street' ? 1.1 : 0.82) : 0;
+    const targetSway = moving ? Math.cos(state.motion.bobPhase * 0.5) * movementProfile.swayAmount * normalizedSpeed : 0;
+    state.motion.bobOffset = THREE.MathUtils.lerp(state.motion.bobOffset || 0, targetBob, 1 - Math.exp(-delta * 10));
+    state.motion.swayOffset = THREE.MathUtils.lerp(state.motion.swayOffset || 0, targetSway, 1 - Math.exp(-delta * 8));
+
+    if (state.cameraMode === 'street') {
+      camera.position.y = DEFAULT_EYE_HEIGHT + state.motion.bobOffset;
+      camera.position.x = state.motion.swayOffset;
+      camera.rotation.set(state.pitch + (state.motion.surface === 'street' ? state.motion.bobOffset * 0.16 : state.motion.bobOffset * 0.1), 0, state.motion.swayOffset * 1.8);
+    } else {
+      const overviewDrift = movementProfile.bobAmount * normalizedSpeed * 5.5;
+      camera.position.y = player.position.y + state.overviewAltitude + overviewDrift;
+      camera.rotation.set(OVERVIEW_CAMERA_PITCH + (normalizedSpeed * 0.01), state.yaw, -state.motion.swayOffset * 0.6);
+    }
+
+    if (moving) {
+      state.motion.footstepTimer -= delta * (0.9 + normalizedSpeed);
+      if (state.motion.footstepTimer <= 0) {
+        playFootstepCue(state.motion.surface, normalizedSpeed);
+        state.motion.footstepTimer = movementProfile.stepInterval * (state.motion.surface === 'street' ? 1.08 : 0.92) * (1.18 - Math.min(0.72, normalizedSpeed * 0.5));
+      }
+    } else {
+      state.motion.footstepTimer = Math.min(state.motion.footstepTimer || 0, 0.12);
+    }
+  }
+
+  function findNearbyCollectible() {
+    const forward = getHeadingVector();
+    let best = null;
+    (state.props || []).forEach((prop) => {
+      if (!prop.collectible || prop.collected || !prop._position) {
+        return;
+      }
+      const dx = prop._position.x - player.position.x;
+      const dz = prop._position.z - player.position.z;
+      const distance = Math.hypot(dx, dz);
+      if (distance > 4.8) {
+        return;
+      }
+      const dirX = dx / Math.max(distance, 0.001);
+      const dirZ = dz / Math.max(distance, 0.001);
+      const alignment = (dirX * forward.x) + (dirZ * forward.z);
+      const score = (alignment * 1.35) - (distance * 0.22);
+      if (!best || score > best.score) {
+        best = { prop, distance, alignment, score };
+      }
+    });
+    return best;
+  }
+
   function warnAudioUnavailable(message, error) {
     if (state.audioWarningIssued) {
       return;
@@ -1041,7 +1218,10 @@
     state.move.right = false;
     state.turn.left = false;
     state.turn.right = false;
+    state.gait.precise = false;
+    state.gait.traverse = false;
     state.velocity.set(0, 0, 0);
+    state.motion.footstepTimer = 0;
   }
 
   function getPlayerRouteContext() {
@@ -2137,9 +2317,25 @@
       return;
     }
     const npc = findLookedAtNpc();
+    const collectible = findNearbyCollectible();
     state.hoveredNpcId = npc ? npc.id : '';
-    if (!npc) {
-      setInteractPrompt('');
+    const interactionPulse = (Math.sin((performance.now() / 1000) * 5.4) + 1) * 0.5;
+    state.motion.interactionPulse = interactionPulse;
+    if (npc) {
+      const roleLabel = getNpcRoleLabel(npc);
+      const interactRadius = npc.interactRadius || 2.4;
+      const distance = Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z);
+      const closeness = 1 - THREE.MathUtils.clamp(distance / Math.max(0.01, interactRadius + 1.1), 0, 1);
+      const promptStrength = closeness > 0.62 ? 'Talk now' : 'Step closer';
+      setInteractPrompt(promptStrength + ': ' + roleLabel + ' · ' + formatDistanceLabel(distance) + (closeness > 0.82 ? ' · press E' : ''));
+      return;
+    }
+    if (collectible) {
+      const prop = collectible.prop;
+      const range = 2.2;
+      const closeEnough = collectible.distance <= range;
+      const headingCue = collectible.alignment > 0.78 ? 'ahead' : collectible.alignment > 0.3 ? 'off-center' : 'nearby';
+      setInteractPrompt((closeEnough ? 'Collect now' : 'Collectible ' + headingCue) + ': ' + (prop.collectibleLabel || prop.id) + ' · ' + formatDistanceLabel(collectible.distance) + (closeEnough ? ' · press E' : ''));
       return;
     }
     const roleLabel = getNpcRoleLabel(npc);
@@ -4369,14 +4565,13 @@
   }
 
   function movePlayer(delta) {
-    const speed = 9;
-    const turnSpeed = 1.85;
+    const movementProfile = getMovementProfile();
     const forward = Number(state.move.forward) - Number(state.move.backward);
     const strafe = Number(state.move.right) - Number(state.move.left);
     const turning = Number(state.turn.right) - Number(state.turn.left);
 
     if (turning !== 0) {
-      state.yaw -= turning * turnSpeed * delta;
+      state.yaw -= turning * movementProfile.turnSpeed * delta;
       player.rotation.y = state.yaw;
     }
 
@@ -4386,7 +4581,10 @@
     }
 
     input.applyAxisAngle(new THREE.Vector3(0, 1, 0), state.yaw);
-    state.velocity.lerp(input.multiplyScalar(speed), 0.18);
+    const targetVelocity = input.multiplyScalar(movementProfile.maxSpeed);
+    const hasInput = targetVelocity.lengthSq() > 0.0001;
+    const blend = 1 - Math.exp(-delta * (hasInput ? movementProfile.acceleration : movementProfile.deceleration));
+    state.velocity.lerp(targetVelocity, blend);
 
     player.position.x += state.velocity.x * delta;
     player.position.z += state.velocity.z * delta;
@@ -4395,6 +4593,7 @@
     enforceWorldBounds();
     updateNearestNode();
     updateAudioZones();
+    updateCameraMotionFeedback(delta, movementProfile);
     updateInteractionTarget();
   }
 
@@ -4441,6 +4640,8 @@
     if (code === 'KeyD') state.move.right = pressed;
     if (code === 'ArrowLeft') state.turn.left = pressed;
     if (code === 'ArrowRight') state.turn.right = pressed;
+    if (code === 'AltLeft' || code === 'AltRight') state.gait.precise = pressed;
+    if (code === 'ShiftLeft' || code === 'ShiftRight') state.gait.traverse = pressed;
   }
 
   function handlePitchKeyControl(event) {
@@ -4468,6 +4669,15 @@
       applyStreetCameraPose();
     }
     updateNearestNode();
+    state.motion.bobOffset = 0;
+    state.motion.swayOffset = 0;
+    state.motion.bobPhase = 0;
+    state.motion.footstepTimer = 0;
+    if (state.cameraMode === 'overview') {
+      applyOverviewCameraPose();
+    } else {
+      applyStreetCameraPose();
+    }
   }
 
   function setDebugState(enabled) {
@@ -4782,8 +4992,10 @@
         const delta = Math.min(0.03, (time - (init.prevTime || time)) / 1000);
         init.prevTime = time;
 
-        if (state.isRunning) {
+        if (state.isRunning || state.cameraMode === 'overview') {
           movePlayer(delta);
+        } else {
+          updateCameraMotionFeedback(delta, getMovementProfile());
         }
 
         maybeTriggerLightning(state.world.weatherPresets[state.activeWeather] || null);
