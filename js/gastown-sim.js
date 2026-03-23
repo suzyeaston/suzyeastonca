@@ -278,7 +278,9 @@
   }
 
   function setStatus(text) {
-    statusEl.textContent = text;
+    if (statusEl) {
+      statusEl.textContent = text;
+    }
   }
 
   function setQuestStatus(text) {
@@ -291,7 +293,7 @@
     if (!tutorialOverlayEl) return;
     tutorialOverlayEl.removeAttribute('hidden');
     tutorialOverlayEl.setAttribute('aria-hidden', 'false');
-    setStatus('Tutorial open. Review the controls, then start walking when ready.');
+    setStatus('The travel notes are open. Review them, then step into Gastown when ready.');
   }
 
   function closeTutorialOverlay() {
@@ -332,7 +334,7 @@
     }
     state.boundaryNoticeTimer = setTimeout(() => {
       if (!state.isRunning || state.cameraMode !== 'street') return;
-      setStatus('Street mode active. Mouse look and movement are live. Press V for overview.');
+      setStatus('You are in the street now. Look, wander, and press V if you want the city from above.');
     }, 1900);
   }
 
@@ -373,18 +375,18 @@
 
   function updateCameraModeUi() {
     if (state.cameraMode === 'overview') {
-      setStatus('Overview mode active. Mouse wheel zooms altitude; press V to return to street view.');
-      setPointerStatus('Pointer unlocked. Overview camera detached above player.');
+      setStatus('Overview mode lifts you above the block. Use the wheel to change altitude, then press V to descend.');
+      setPointerStatus('Pointer free. The overview camera is drifting above the route.');
     } else if (state.isRunning) {
-      setStatus('Street mode active. Mouse look and movement are live. Press V for overview.');
+      setStatus('You are in the street now. Look, wander, and press V if you want the city from above.');
       if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
-        setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
+        setPointerStatus('Pointer locked. Your gaze is tied to the street. Press Esc to release it.');
       } else {
-        setPointerStatus('Pointer lock requested… press Esc any time to release.');
+        setPointerStatus('Pointer requested. Press Esc at any time to loosen your view from the street.');
       }
     } else {
-      setStatus('Street mode ready. Click scene to enter look mode and begin moving, or press V for overview.');
-      setPointerStatus('Pointer unlocked. Click scene to enter look mode. Press V for overview.');
+      setStatus('The block is ready. Click into the scene to begin your walk, or press V for an overview.');
+      setPointerStatus('Pointer free. Click the scene to join the walk, or press V for overview.');
     }
   }
 
@@ -424,7 +426,17 @@
   }
 
   function setLandmark(text) {
-    landmarkEl.textContent = text;
+    if (!landmarkEl) {
+      return;
+    }
+    landmarkEl.textContent = String(text || '').replace(/^Nearest landmark:/, 'Nearest beacon:');
+  }
+
+  function setDebugToggleLabel() {
+    if (!debugToggle) {
+      return;
+    }
+    debugToggle.textContent = state.debugEnabled ? 'Hide route diagnostics' : 'Show route diagnostics';
   }
 
   function isApproximateWorld(world) {
@@ -453,13 +465,13 @@
       : 'Offline civic-data build loaded with ' + coverage + '.';
 
     if (worldStatusEl) {
-      worldStatusEl.textContent = 'World data status: ' + state.worldBuildStatus;
+      worldStatusEl.textContent = 'World ledger: ' + state.worldBuildStatus;
       worldStatusEl.classList.toggle('is-approximate', approximate);
       worldStatusEl.classList.toggle('is-civic', !approximate);
     }
 
     if (approximate) {
-      setStatus('Approximate fallback world loaded. This playable corridor is believable, but not survey-precise.');
+      setStatus('The street arrives in a believable prototype form—atmospheric and walkable, though not survey-precise.');
     }
   }
 
@@ -696,7 +708,7 @@
   function setInteractPrompt(text) {
     if (!interactPromptEl) return;
     if (text) {
-      interactPromptEl.textContent = text;
+      interactPromptEl.textContent = text.replace(/^Click or press E to /, 'Press E or click to ').replace(/^Press E to /, 'Press E to ');
       interactPromptEl.removeAttribute('hidden');
     } else {
       interactPromptEl.setAttribute('hidden', 'hidden');
@@ -1044,8 +1056,8 @@
     }
     clearMovementInput();
     setInteractPrompt('');
-    setStatus('Dialog closed. Click scene to resume.');
-    setPointerStatus('Pointer unlocked. Click scene to enter look mode.');
+    setStatus('Dialogue closed. Click back into the street to continue the walk.');
+    setPointerStatus('Pointer free. Click the scene when you are ready to move again.');
     const focusTarget = renderer.domElement || canvasWrap;
     if (focusTarget && typeof focusTarget.focus === 'function') {
       window.setTimeout(() => focusTarget.focus(), 0);
@@ -1095,8 +1107,8 @@
       dialogModalEl.setAttribute('aria-hidden', 'false');
       state.activeDialogNpcId = npcState.id;
       state.activeDialogEntry = normalized;
-      setStatus('Dialog open. Loading nearby conversation.');
-      setPointerStatus('Pointer unlocked. Dialog controls are active.');
+      setStatus('A nearby voice is coming into focus. Loading conversation.');
+      setPointerStatus('Pointer free while dialogue controls are active.');
       focusFirstDialogControl();
     };
 
@@ -1122,15 +1134,15 @@
     state.quest.active = true;
     state.quest.completed = items.length && items.every((item) => item.found);
     state.quest.items = items;
-    setQuestStatus('Scavenger hunt active: find ' + items.map((item) => item.label).join(', ') + '.');
-    renderDialogBody(['Scavenger hunt started.', 'Find the highlighted newspaper box, historic plaque, and mural. Watch the minimap for star markers.']);
+    setQuestStatus('Scavenger thread: seek ' + items.map((item) => item.label).join(', ') + '.');
+    renderDialogBody(['Scavenger thread opened.', 'Find the highlighted newspaper box, historic plaque, and mural. Watch the minimap for star markers and follow the street cues.']);
     updateMinimapLegend();
   }
 
   function completeGuideQuest() {
     state.quest.completed = true;
     state.quest.active = false;
-    setQuestStatus('Scavenger hunt complete: the busker has a bonus Gastown story waiting near the Steam Clock.');
+    setQuestStatus('Scavenger thread complete: the busker now carries a bonus Gastown story near the Steam Clock.');
     const busker = (state.npcs || []).find((npc) => npc.role === 'busker');
     if (busker) {
       state.npcConversationCache[busker.id] = {
@@ -1148,7 +1160,7 @@
       item.found = !!(prop && prop.collected);
     });
     const foundCount = state.quest.items.filter((item) => item.found).length;
-    setQuestStatus('Scavenger hunt: ' + foundCount + '/' + state.quest.items.length + ' found.');
+    setQuestStatus('Scavenger thread: ' + foundCount + ' of ' + state.quest.items.length + ' keepsakes recovered.');
     if (foundCount === state.quest.items.length && state.quest.items.length) {
       completeGuideQuest();
     }
@@ -1158,7 +1170,7 @@
     const match = (state.props || []).find((prop) => prop.collectible && !prop.collected && Math.hypot(player.position.x - prop._position.x, player.position.z - prop._position.z) < 2.2);
     if (!match) return false;
     match.collected = true;
-    setStatus('Collected: ' + (match.collectibleLabel || match.id) + '.');
+    setStatus('Keepsake recovered: ' + (match.collectibleLabel || match.id) + '.');
     updateQuestProgress();
     return true;
   }
@@ -1580,7 +1592,7 @@
       return;
     }
     const roleLabel = getNpcRoleLabel(npc);
-    setInteractPrompt('Click or press E to talk to the ' + roleLabel + '.');
+    setInteractPrompt('Press E or click to speak with the ' + roleLabel + '.');
   }
 
   function interactWithHoveredNpc() {
@@ -2693,13 +2705,13 @@
     const facing = getFacingLabel(heading);
     const nearest = minimapState.nearestGuidance;
     if (minimapContextEl) {
-      minimapContextEl.innerHTML = '<strong>Now facing:</strong> ' + facing + (nearest ? '<br><strong>Nearest landmark:</strong> ' + nearest.text : '');
+      minimapContextEl.innerHTML = '<strong>Facing</strong> ' + facing + (nearest ? '<br><strong>Nearest beacon</strong> ' + nearest.text.replace(/^.+?:\s*/, '') : '');
     }
     if (minimapModeStatusEl) {
       const isHeadingUp = minimapState.mode === 'heading-up';
       minimapModeStatusEl.innerHTML = isHeadingUp
-        ? '<strong>Map mode:</strong> Heading-up — the top of the map follows the way you are facing.<br><strong>Guidance:</strong> Landmark callouts stay player-relative (ahead/left/right) for first-person wayfinding.'
-        : '<strong>Map mode:</strong> North-up — the top of the map is geographic north.<br><strong>Guidance:</strong> Landmark callouts stay player-relative (ahead/left/right) so the legend still reads like the street.';
+        ? 'Traveler orientation. The chart turns with your body so the street ahead stays at the top.'
+        : 'Cartographer orientation. The chart holds geographic north while guidance still reads from your point of view.';
     }
   }
 
@@ -2736,10 +2748,10 @@
         const nearestIndex = Math.max(0, state.world.nodes.findIndex((node) => node.id === nearest.id));
         const total = Math.max(1, state.world.nodes.length - 1);
         const progress = Math.round((nearestIndex / total) * 100);
-        routeSegmentEl.textContent = 'Route segment: ' + nearest.label + ' (' + progress + '%)';
+        routeSegmentEl.textContent = 'Route pulse: ' + nearest.label + ' · ' + progress + '% along the promenade';
       }
       if (minimapLandmarkEl) {
-        minimapLandmarkEl.textContent = nearestGuidance ? 'Nearest landmark: ' + nearestGuidance.text : 'Nearest landmark: ' + nearest.label;
+        minimapLandmarkEl.textContent = nearestGuidance ? 'Nearest beacon: ' + nearestGuidance.text : 'Nearest beacon: ' + nearest.label;
       }
       updateMinimapContext();
     }
@@ -3689,13 +3701,14 @@
     if (routeDebugOverlay) {
       routeDebugOverlay.hidden = !enabled;
     }
+    setDebugToggleLabel();
   }
 
   function startSim() {
     unlockSteamClockAudio();
     state.isRunning = true;
-    setStatus('Street mode active. Mouse look and movement are live. Press V for overview.');
-    setPointerStatus('Pointer lock requested… press Esc any time to release.');
+    setStatus('You are in the street now. Look, wander, and press V if you want the city from above.');
+    setPointerStatus('Pointer requested. Press Esc at any time to loosen your view from the street.');
     lockPointer();
   }
 
@@ -3715,8 +3728,8 @@
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
-    setStatus('Street mode paused. Click scene to resume look mode and movement, or press V for overview.');
-    setPointerStatus('Pointer released. Click scene to re-enter look mode.');
+    setStatus('The walk is paused. Click back into the scene to continue, or press V to lift into overview.');
+    setPointerStatus('Pointer released. Click the scene to settle back into the walk.');
   }
 
   function attachEvents() {
@@ -3743,7 +3756,7 @@
         const now = performance.now();
         if (now - state.tutorial.lastMKeyAt < 450) {
           toggleMinimapMode();
-          if (minimapTooltipEl) { minimapTooltipEl.textContent = 'Minimap switched to ' + minimapState.mode + '.'; }
+          if (minimapTooltipEl) { minimapTooltipEl.textContent = minimapState.mode === 'heading-up' ? 'Traveler orientation engaged. The map now turns with you.' : 'Cartographer orientation engaged. North is fixed at the top again.'; }
         }
         state.tutorial.lastMKeyAt = now;
       }
@@ -3801,18 +3814,20 @@
 
     document.addEventListener('pointerlockchange', () => {
       if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
-        setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
+        setPointerStatus('Pointer locked. Your gaze is tied to the street. Press Esc to release it.');
       } else if (state.cameraMode === 'overview') {
-        setPointerStatus('Pointer unlocked. Overview camera detached above player.');
+        setPointerStatus('Pointer free. The overview camera is drifting above the route.');
       } else if (state.isRunning) {
         clearMovementInput();
         state.isRunning = false;
-        setStatus('Street mode paused. Click scene to resume look mode and movement, or press V for overview.');
-        setPointerStatus('Pointer released. Click scene to re-enter look mode.');
+        setStatus('The walk is paused. Click back into the scene to continue, or press V to lift into overview.');
+        setPointerStatus('Pointer released. Click the scene to settle back into the walk.');
       } else {
-        setPointerStatus('Pointer unlocked.');
+        setPointerStatus('Pointer free.');
       }
     });
+
+    setDebugToggleLabel();
 
     debugToggle.addEventListener('click', () => {
       const open = debugPanel.hasAttribute('hidden');
@@ -3827,7 +3842,7 @@
     dialogCloseEls.forEach((button) => button.addEventListener('click', closeDialog));
     if (tutorialOpenBtn) tutorialOpenBtn.addEventListener('click', openTutorialOverlay);
     tutorialCloseEls.forEach((button) => button.addEventListener('click', closeTutorialOverlay));
-    if (tutorialStartBtn) tutorialStartBtn.addEventListener('click', () => { closeTutorialOverlay(); resetToStart(); setStatus('Tutorial started. Click into the scene, then follow the route toward the Steam Clock.'); });
+    if (tutorialStartBtn) tutorialStartBtn.addEventListener('click', () => { closeTutorialOverlay(); resetToStart(); setStatus('Tutorial begun. Step into the scene, then follow the route toward the Steam Clock glow.'); });
     if (lowGraphicsToggle) lowGraphicsToggle.addEventListener('change', (event) => setLowGraphicsMode(event.target.checked));
     if (reopenTutorialToggle) reopenTutorialToggle.addEventListener('change', (event) => { try { window.localStorage.setItem('gastownTutorialReopen', event.target.checked ? '1' : '0'); } catch (error) {} });
     if (dialogModalEl) {
@@ -3968,7 +3983,7 @@
       setupAudio(state.world);
       minimapState.worldMetrics = getWorldMetrics();
       try { if (window.localStorage.getItem('gastownLowGraphics') === '1') { setLowGraphicsMode(true); } } catch (error) {}
-      setQuestStatus('Scavenger hunt: talk to the guide to begin.');
+      setQuestStatus('Scavenger thread: speak with the guide to begin.');
       restoreMinimapZoom();
       restoreMinimapMode();
       updateSize();
@@ -3984,7 +3999,7 @@
       scheduleSteamClock();
       setWorldModeStatus(state.world);
       if (!(state.world.meta && state.world.meta.fallbackMode === 'working-gastown-corridor')) {
-        setStatus('Street mode ready. Click scene to enter look mode and begin moving, or press V for overview.');
+        setStatus('The block is ready. Click into the scene to begin your walk, or press V for an overview.');
       }
       updateCameraModeUi();
       renderer.setAnimationLoop((time) => {
@@ -4007,7 +4022,7 @@
         renderer.render(scene, camera);
       });
     } catch (error) {
-      setStatus('Unable to start simulator: ' + error.message);
+      setStatus('Gastown could not finish loading: ' + error.message);
     }
   }
 
