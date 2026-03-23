@@ -25,7 +25,7 @@
     "provenanceSummary": "Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs."
   },
   "route": {
-    "name": "Waterfront Station → Water Street → Steam Clock working corridor",
+    "name": "Waterfront Station \u2192 Water Street \u2192 Steam Clock working corridor",
     "centerline": [
       {
         "id": "waterfront-station-threshold",
@@ -3852,7 +3852,12 @@
       "y": 0,
       "z": -19.21,
       "yaw": 0.7005,
-      "scale": 1.05
+      "scale": 1.05,
+      "randomOffset": true,
+      "collectible": true,
+      "collectibleKey": "newspaper_box",
+      "collectibleLabel": "Newspaper box",
+      "minimapIcon": "collectible"
     },
     {
       "id": "starter-prop-threshold-utility",
@@ -3897,7 +3902,8 @@
       "y": 0,
       "z": -157.61,
       "yaw": 0,
-      "scale": 0.98
+      "scale": 0.98,
+      "randomOffset": true
     },
     {
       "id": "starter-prop-postclock-utility",
@@ -3915,7 +3921,8 @@
       "y": 0,
       "z": -146.08,
       "yaw": -2.1112,
-      "scale": 0.96
+      "scale": 0.96,
+      "randomOffset": true
     },
     {
       "id": "starter-prop-postclock-bench",
@@ -3925,6 +3932,40 @@
       "z": -141.56,
       "yaw": -0.5404,
       "scale": 1
+    },
+    {
+      "id": "starter-prop-maple-mural",
+      "kind": "cardboard_box",
+      "x": 206.22,
+      "z": -170.84,
+      "yaw": 0.14,
+      "scale": 0.95,
+      "collectible": true,
+      "collectibleKey": "mural",
+      "collectibleLabel": "Maple Tree mural",
+      "minimapIcon": "mural",
+      "randomOffset": true
+    },
+    {
+      "id": "starter-prop-clock-plaque",
+      "kind": "utility_box",
+      "x": 188.62,
+      "z": -151.38,
+      "yaw": -0.22,
+      "scale": 0.65,
+      "collectible": true,
+      "collectibleKey": "historic_plaque",
+      "collectibleLabel": "Historic plaque",
+      "minimapIcon": "plaque"
+    },
+    {
+      "id": "starter-prop-vendor-crate",
+      "kind": "cardboard_box",
+      "x": 174.96,
+      "z": -143.72,
+      "yaw": 0.51,
+      "scale": 0.88,
+      "randomOffset": true
     }
   ],
   "npcs": [
