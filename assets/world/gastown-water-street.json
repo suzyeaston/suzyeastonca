@@ -9,8 +9,7 @@
     "buildClassification": "approximate-fallback",
     "buildNotes": [
       "Working fallback corridor is active because required offline civic source files are missing.",
-      "This fallback now stages narrower Water Street carriageways, corrected curb edges, and a larger corner plaza so the Water/Cambie geometry reads closer to Gastown.",
-      "The Water Street / Steam Clock block carries a higher fidelity budget with more varied frontage widths, paving wear, and sightline staging than the rest of the route.",
+      "This fallback now stages Water Street as a compact exploration district with plaza, storefront edge, alley threshold, transit edge, and landmark corner micro-areas instead of a single bent ribbon corridor.",
       "No refreshed reference inputs were present; deterministic default route staging was used."
     ],
     "referenceInputsUsed": [],
@@ -23,10 +22,18 @@
       "orthophotoImagery2015": false
     },
     "provenanceSummary": "Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs.",
-    "lastBuild": "2026-03-23T06:52:25.493Z"
+    "lastBuild": "2026-03-23T07:44:29.599Z",
+    "artDirection": {
+      "label": "stylized realism with cinematic Vancouver rain-lighting",
+      "pillars": [
+        "wet cobblestone reflections and low-angle dawn highlights",
+        "heritage masonry with richer brick-stone-glass contrast",
+        "dense civic clutter and postcard framing around the Steam Clock and Water Street bends"
+      ]
+    }
   },
   "route": {
-    "name": "Waterfront Station → Water Street → Steam Clock working corridor",
+    "name": "Explorable Gastown: Water Street loops",
     "centerline": [
       {
         "id": "waterfront-station-threshold",
@@ -85,80 +92,44 @@
     ],
     "walkBounds": [
       {
-        "x": -8.83,
-        "z": -10.47
+        "x": -12,
+        "z": -11
       },
       {
-        "x": 20.27,
-        "z": -35.01
+        "x": 28,
+        "z": -36
       },
       {
-        "x": 54.64,
-        "z": -63.04
+        "x": 139.25,
+        "z": -186.87
       },
       {
-        "x": 102.04,
-        "z": -98.82
+        "x": 189.31,
+        "z": -178.75
       },
       {
-        "x": 144.07,
-        "z": -129.92
+        "x": 232.34,
+        "z": -179.46
       },
       {
-        "x": 167.19,
-        "z": -147.64
+        "x": 228.34,
+        "z": -158.46
       },
       {
-        "x": 181.97,
-        "z": -154.73
+        "x": 173.48,
+        "z": -118.6
       },
       {
-        "x": 188.09,
-        "z": -167.04
+        "x": 81.25,
+        "z": -62.87
       },
       {
-        "x": 199.49,
-        "z": -181.83
+        "x": -18,
+        "z": 10
       },
       {
-        "x": 221.19,
-        "z": -165.1
-      },
-      {
-        "x": 194.87,
-        "z": -130.96
-      },
-      {
-        "x": 181.97,
-        "z": -154.73
-      },
-      {
-        "x": 215.77,
-        "z": -150.36
-      },
-      {
-        "x": 160.56,
-        "z": -108.04
-      },
-      {
-        "x": 118.45,
-        "z": -76.87
-      },
-      {
-        "x": 71.56,
-        "z": -41.48
-      },
-      {
-        "x": 37.76,
-        "z": -13.92
-      },
-      {
-        "x": 8.83,
-        "z": 10.47
-      },
-      {
-        "x": -8.83,
-        "z": -10.47
+        "x": -12,
+        "z": -11
       }
     ],
     "streetWidth": 9.8,
@@ -177,10 +148,22 @@
       "z": 0
     },
     {
+      "id": "station-plaza",
+      "label": "Station plaza",
+      "x": 1.55,
+      "z": -5.62
+    },
+    {
       "id": "water-cordova-seam",
       "label": "Water/Cordova seam",
       "x": 54.73,
       "z": -45.43
+    },
+    {
+      "id": "storefront-edge",
+      "label": "Storefront edge",
+      "x": 126.2,
+      "z": -110.3
     },
     {
       "id": "water-street-mid-block",
@@ -189,16 +172,34 @@
       "z": -104.87
     },
     {
+      "id": "alley-threshold",
+      "label": "Alley threshold",
+      "x": 195.11,
+      "z": -139.55
+    },
+    {
       "id": "steam-clock",
       "label": "Steam Clock plaza",
       "x": 181.97,
       "z": -154.73
     },
     {
+      "id": "landmark-corner",
+      "label": "Landmark corner",
+      "x": 183.98,
+      "z": -156.78
+    },
+    {
       "id": "maple-tree-square-edge",
       "label": "Maple Tree Square edge",
       "x": 210.34,
       "z": -173.46
+    },
+    {
+      "id": "transit-edge",
+      "label": "Transit edge",
+      "x": 188.12,
+      "z": -137.83
     },
     {
       "id": "cambie-rise-continuation",
@@ -246,6 +247,72 @@
         ]
       },
       {
+        "id": "station-plaza-loop",
+        "label": "Station plaza loop",
+        "points": [
+          {
+            "x": -3.93,
+            "z": -1.13
+          },
+          {
+            "x": 0.54,
+            "z": -7.41
+          },
+          {
+            "x": 5.02,
+            "z": -4.71
+          },
+          {
+            "x": -0.04,
+            "z": 1.36
+          }
+        ]
+      },
+      {
+        "id": "storefront-pocket-loop",
+        "label": "Storefront pocket loop",
+        "points": [
+          {
+            "x": 126.94,
+            "z": -102.91
+          },
+          {
+            "x": 133.09,
+            "z": -111.05
+          },
+          {
+            "x": 130.19,
+            "z": -113.03
+          },
+          {
+            "x": 124.51,
+            "z": -105.16
+          }
+        ]
+      },
+      {
+        "id": "alley-threshold-loop",
+        "label": "Alley threshold loop",
+        "points": [
+          {
+            "x": 188.66,
+            "z": -141.24
+          },
+          {
+            "x": 192.8,
+            "z": -142.85
+          },
+          {
+            "x": 194.45,
+            "z": -139.43
+          },
+          {
+            "x": 190.49,
+            "z": -138.06
+          }
+        ]
+      },
+      {
         "id": "steam-clock-plaza-loop",
         "label": "Steam Clock plaza",
         "points": [
@@ -286,6 +353,28 @@
         ]
       },
       {
+        "id": "maple-square-loop",
+        "label": "Maple Tree Square loop",
+        "points": [
+          {
+            "x": 210.59,
+            "z": -171
+          },
+          {
+            "x": 213.29,
+            "z": -175.99
+          },
+          {
+            "x": 210.49,
+            "z": -178.9
+          },
+          {
+            "x": 206.78,
+            "z": -175.07
+          }
+        ]
+      },
+      {
         "id": "cambie-crossing",
         "label": "Cambie crossing",
         "points": [
@@ -300,6 +389,28 @@
           {
             "x": 179.48,
             "z": -129
+          }
+        ]
+      },
+      {
+        "id": "transit-edge-loop",
+        "label": "Transit edge loop",
+        "points": [
+          {
+            "x": 187.69,
+            "z": -134
+          },
+          {
+            "x": 185.18,
+            "z": -136.31
+          },
+          {
+            "x": 188.43,
+            "z": -141.01
+          },
+          {
+            "x": 191.46,
+            "z": -139.05
           }
         ]
       }
@@ -602,6 +713,84 @@
         ]
       },
       {
+        "id": "waterfront-station-plaza",
+        "side": "plaza",
+        "polygon": [
+          {
+            "x": -1.33,
+            "z": -9.74
+          },
+          {
+            "x": 7.22,
+            "z": -3.14
+          },
+          {
+            "x": 1.36,
+            "z": 4.46
+          },
+          {
+            "x": -7.19,
+            "z": -2.14
+          },
+          {
+            "x": -1.33,
+            "z": -9.74
+          }
+        ]
+      },
+      {
+        "id": "water-street-storefront-pocket",
+        "side": "storefront",
+        "polygon": [
+          {
+            "x": 121.96,
+            "z": -118.37
+          },
+          {
+            "x": 134.95,
+            "z": -108.35
+          },
+          {
+            "x": 130.31,
+            "z": -102.33
+          },
+          {
+            "x": 117.32,
+            "z": -112.35
+          },
+          {
+            "x": 121.96,
+            "z": -118.37
+          }
+        ]
+      },
+      {
+        "id": "water-street-alley-threshold",
+        "side": "alley",
+        "polygon": [
+          {
+            "x": 194.64,
+            "z": -144.84
+          },
+          {
+            "x": 200.34,
+            "z": -140.44
+          },
+          {
+            "x": 195.58,
+            "z": -134.26
+          },
+          {
+            "x": 189.88,
+            "z": -138.66
+          },
+          {
+            "x": 194.64,
+            "z": -144.84
+          }
+        ]
+      },
+      {
         "id": "cambie-west-sidewalk",
         "side": "west",
         "polygon": [
@@ -632,6 +821,32 @@
           {
             "x": 198.33,
             "z": -170.58
+          }
+        ]
+      },
+      {
+        "id": "cambie-transit-edge",
+        "side": "transit",
+        "polygon": [
+          {
+            "x": 182.26,
+            "z": -135.79
+          },
+          {
+            "x": 188.61,
+            "z": -144.03
+          },
+          {
+            "x": 193.99,
+            "z": -139.87
+          },
+          {
+            "x": 187.64,
+            "z": -131.64
+          },
+          {
+            "x": 182.26,
+            "z": -135.79
           }
         ]
       },
@@ -684,6 +899,58 @@
           {
             "x": 180.01,
             "z": -164.51
+          }
+        ]
+      },
+      {
+        "id": "steam-clock-landmark-corner",
+        "side": "corner",
+        "polygon": [
+          {
+            "x": 182.52,
+            "z": -162.58
+          },
+          {
+            "x": 189.96,
+            "z": -156.84
+          },
+          {
+            "x": 185.44,
+            "z": -150.98
+          },
+          {
+            "x": 178,
+            "z": -156.72
+          },
+          {
+            "x": 182.52,
+            "z": -162.58
+          }
+        ]
+      },
+      {
+        "id": "maple-tree-square-pocket",
+        "side": "plaza",
+        "polygon": [
+          {
+            "x": 209.03,
+            "z": -181.92
+          },
+          {
+            "x": 216.63,
+            "z": -176.06
+          },
+          {
+            "x": 211.63,
+            "z": -169.57
+          },
+          {
+            "x": 204.02,
+            "z": -175.43
+          },
+          {
+            "x": 209.03,
+            "z": -181.92
           }
         ]
       }
@@ -4520,7 +4787,10 @@
       "y": 0,
       "z": 0,
       "scale": 1.35,
-      "cue": "Station canopies give way to brick-front Gastown blocks and the Water Street bend begins."
+      "cue": "Station canopies give way to brick-front Gastown blocks and the Water Street bend begins.",
+      "discoveryNote": "Orientation logged. The station threshold is where the route stops feeling like transit spillover and starts reading as Gastown.",
+      "storyUnlock": "orientation",
+      "discoveryRadius": 9.5
     },
     {
       "id": "water-cordova-seam",
@@ -4530,7 +4800,10 @@
       "y": 0,
       "z": -45.43,
       "scale": 1.16,
-      "cue": "The corridor bends into Water Street and starts reading like a heritage streetscape instead of a starter ribbon."
+      "cue": "The corridor bends into Water Street and starts reading like a heritage streetscape instead of a starter ribbon.",
+      "discoveryNote": "Discovery logged. The bend into Water Street is the first place the heritage corridor becomes legible.",
+      "storyUnlock": "water_street_shift",
+      "discoveryRadius": 9.5
     },
     {
       "id": "water-street-mid-block",
@@ -4540,7 +4813,10 @@
       "y": 0,
       "z": -104.87,
       "scale": 1.12,
-      "cue": "Longer brick storefront rhythm and darker carriageway paving make the street read more like Water Street."
+      "cue": "Longer brick storefront rhythm and darker carriageway paving make the street read more like Water Street.",
+      "discoveryNote": "Survey logged. This is the clearest storefront-rhythm moment on the route.",
+      "storyUnlock": "mid_block_story",
+      "discoveryRadius": 9.5
     },
     {
       "id": "steam-clock",
@@ -4551,7 +4827,10 @@
       "z": -154.73,
       "radius": 5.2,
       "scale": 1.28,
-      "cue": "A brick-and-stone plaza opens at the intersection and stages the Steam Clock at the corner landmark moment."
+      "cue": "A brick-and-stone plaza opens at the intersection and stages the Steam Clock at the corner landmark moment.",
+      "discoveryNote": "Story unlocked. The Steam Clock plaza turns the walk into a landmark encounter instead of a straight corridor.",
+      "storyUnlock": "clock_story",
+      "discoveryRadius": 5.2
     },
     {
       "id": "maple-tree-square-edge",
@@ -4561,7 +4840,10 @@
       "y": 0,
       "z": -173.46,
       "scale": 1.1,
-      "cue": "Beyond the Steam Clock the street broadens and loosens toward Maple Tree Square."
+      "cue": "Beyond the Steam Clock the street broadens and loosens toward Maple Tree Square.",
+      "discoveryNote": "Story unlocked. Maple Tree Square expands the route beyond the clock and reveals the older village geometry.",
+      "storyUnlock": "maple_story",
+      "discoveryRadius": 9.5
     },
     {
       "id": "cambie-rise-continuation",
@@ -4571,7 +4853,10 @@
       "y": 0,
       "z": -140.6,
       "scale": 1.18,
-      "cue": "The eastern leg of the route continues beyond the clock intersection toward the Cambie rise."
+      "cue": "The eastern leg of the route continues beyond the clock intersection toward the Cambie rise.",
+      "discoveryNote": "Survey logged. The eastern rise finishes the sense of progression through the corridor.",
+      "storyUnlock": "east_leg_story",
+      "discoveryRadius": 9.5
     }
   ],
   "props": [
@@ -4582,7 +4867,13 @@
       "y": 0,
       "z": -19.75,
       "yaw": 0.7005,
-      "scale": 1.05
+      "scale": 1.05,
+      "randomOffset": true,
+      "collectible": true,
+      "collectibleKey": "newspaper_box",
+      "collectibleLabel": "Newspaper box",
+      "minimapIcon": "collectible",
+      "journalNote": "A utilitarian newspaper box shows how everyday objects carry the working-street texture."
     },
     {
       "id": "starter-prop-threshold-utility",
@@ -4592,6 +4883,15 @@
       "z": -7.2,
       "yaw": 0.7005,
       "scale": 1.1
+    },
+    {
+      "id": "starter-prop-threshold-bench",
+      "kind": "bench",
+      "x": 8.12,
+      "y": 0,
+      "z": -21.39,
+      "yaw": 2.2713,
+      "scale": 0.92
     },
     {
       "id": "starter-prop-planter-west",
@@ -4630,6 +4930,64 @@
       "scale": 0.98
     },
     {
+      "id": "starter-prop-station-kiosk",
+      "kind": "newspaper_box",
+      "x": 0.67,
+      "y": 0,
+      "z": -5.29,
+      "yaw": 2.4849,
+      "scale": 1,
+      "collectible": true,
+      "collectibleKey": "newspaper_box",
+      "collectibleLabel": "Newspaper box",
+      "minimapIcon": "collectible"
+    },
+    {
+      "id": "starter-prop-maple-mural",
+      "kind": "cardboard_box",
+      "x": 209.8,
+      "y": 0,
+      "z": -176.53,
+      "yaw": 2.4849,
+      "scale": 0.95,
+      "collectible": true,
+      "collectibleKey": "mural",
+      "collectibleLabel": "Maple Tree mural",
+      "minimapIcon": "mural",
+      "randomOffset": true
+    },
+    {
+      "id": "starter-prop-clock-plaque",
+      "kind": "utility_box",
+      "x": 183.11,
+      "y": 0,
+      "z": -156.31,
+      "yaw": -2.2275,
+      "scale": 0.65
+    },
+    {
+      "id": "starter-prop-alley-plaque",
+      "kind": "utility_box",
+      "x": 193.31,
+      "y": 0,
+      "z": -140.56,
+      "yaw": 0.9141,
+      "scale": 1,
+      "collectible": true,
+      "collectibleKey": "historic_plaque",
+      "collectibleLabel": "Historic plaque",
+      "minimapIcon": "collectible"
+    },
+    {
+      "id": "starter-prop-east-newsbox",
+      "kind": "newspaper_box",
+      "x": 176.45,
+      "y": 0,
+      "z": -127.06,
+      "yaw": 0.654,
+      "scale": 1.02
+    },
+    {
       "id": "starter-prop-postclock-utility",
       "kind": "utility_box",
       "x": 200.84,
@@ -4655,6 +5013,42 @@
       "z": -141.88,
       "yaw": -0.5404,
       "scale": 1
+    },
+    {
+      "id": "starter-prop-maple-mural",
+      "kind": "cardboard_box",
+      "x": 206.22,
+      "z": -170.84,
+      "yaw": 0.14,
+      "scale": 0.95,
+      "collectible": true,
+      "collectibleKey": "mural",
+      "collectibleLabel": "Maple Tree mural",
+      "minimapIcon": "mural",
+      "randomOffset": true,
+      "journalNote": "The mural pushes the walk from preservation into interpretation."
+    },
+    {
+      "id": "starter-prop-clock-plaque",
+      "kind": "utility_box",
+      "x": 188.62,
+      "z": -151.38,
+      "yaw": -0.22,
+      "scale": 0.65,
+      "collectible": true,
+      "collectibleKey": "historic_plaque",
+      "collectibleLabel": "Historic plaque",
+      "minimapIcon": "plaque",
+      "journalNote": "The plaque turns sightseeing into explicit history-reading."
+    },
+    {
+      "id": "starter-prop-vendor-crate",
+      "kind": "cardboard_box",
+      "x": 174.96,
+      "z": -143.72,
+      "yaw": 0.51,
+      "scale": 0.88,
+      "randomOffset": true
     }
   ],
   "npcs": [
@@ -4677,7 +5071,10 @@
           "x": 5.88,
           "z": -20.95
         }
-      ]
+      ],
+      "pose": "host_gesture",
+      "silhouetteScale": 1.03,
+      "yaw": -0.62
     },
     {
       "id": "starter-busker-clock",
@@ -4689,9 +5086,11 @@
       "dialogId": "busker_clock_corner",
       "interactRadius": 3,
       "idleSpot": {
-        "x": 181.63,
-        "z": -150.7
-      }
+        "x": 183.98,
+        "z": -150.72
+      },
+      "silhouetteScale": 1.06,
+      "yaw": 1.22
     },
     {
       "id": "starter-pedestrian-west",
@@ -4712,7 +5111,8 @@
           "x": 39.47,
           "z": -48.11
         }
-      ]
+      ],
+      "silhouetteScale": 0.98
     },
     {
       "id": "starter-pedestrian-east",
@@ -4733,7 +5133,8 @@
           "x": 184.81,
           "z": -144.1
         }
-      ]
+      ],
+      "silhouetteScale": 1.01
     },
     {
       "id": "starter-skateboarder-mid",
@@ -4756,7 +5157,8 @@
           "x": 74.8,
           "z": -73.39
         }
-      ]
+      ],
+      "silhouetteScale": 0.97
     },
     {
       "id": "starter-cyclist-eastbound",
@@ -4779,7 +5181,8 @@
           "x": 179.4,
           "z": -131.01
         }
-      ]
+      ],
+      "silhouetteScale": 0.99
     },
     {
       "id": "starter-tourist-clock-west",
@@ -4840,9 +5243,10 @@
       "dialogId": "tourist_clock_photo",
       "interactRadius": 2.4,
       "idleSpot": {
-        "x": 180.05,
-        "z": -155.2
-      }
+        "x": 182.4,
+        "z": -155.22
+      },
+      "silhouetteScale": 1.02
     },
     {
       "id": "starter-tourist-clock-stroller",
@@ -4866,7 +5270,8 @@
           "x": 183.78,
           "z": -158.89
         }
-      ]
+      ],
+      "silhouetteScale": 1.04
     },
     {
       "id": "starter-tourist-clock-bench",
@@ -4878,9 +5283,10 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 181.4,
-        "z": -152.52
-      }
+        "x": 183.74,
+        "z": -152.54
+      },
+      "silhouetteScale": 0.94
     },
     {
       "id": "starter-tourist-clock-child",
@@ -4905,6 +5311,264 @@
           "x": 183.18,
           "z": -155.57
         }
+      ]
+    }
+  ],
+  "exploration": {
+    "publicGoal": "I’m exploring Gastown.",
+    "fallbackPrompt": "Wander the connected plazas, storefront edges, alley mouths, and landmark corners to build your own short loop."
+  },
+  "microAreas": [
+    {
+      "id": "station-plaza",
+      "label": "Station plaza",
+      "identity": "transit edge",
+      "nodeId": "station-plaza",
+      "polygon": [
+        {
+          "x": -1.33,
+          "z": -9.74
+        },
+        {
+          "x": 7.22,
+          "z": -3.14
+        },
+        {
+          "x": 1.36,
+          "z": 4.46
+        },
+        {
+          "x": -7.19,
+          "z": -2.14
+        },
+        {
+          "x": -1.33,
+          "z": -9.74
+        }
+      ],
+      "stopReasons": [
+        "Watch people spill out from Waterfront Station.",
+        "Reorient before committing to Water Street."
+      ],
+      "returnReasons": [
+        "It works as a reliable reset point.",
+        "The wider pad gives you a clear view back into Gastown."
+      ]
+    },
+    {
+      "id": "storefront-edge",
+      "label": "Storefront edge",
+      "identity": "storefront edge",
+      "nodeId": "storefront-edge",
+      "polygon": [
+        {
+          "x": 121.96,
+          "z": -118.37
+        },
+        {
+          "x": 134.95,
+          "z": -108.35
+        },
+        {
+          "x": 130.31,
+          "z": -102.33
+        },
+        {
+          "x": 117.32,
+          "z": -112.35
+        },
+        {
+          "x": 121.96,
+          "z": -118.37
+        }
+      ],
+      "stopReasons": [
+        "Window-shop the heritage frontage rhythm.",
+        "Use the pocket as a pause between the station and the clock."
+      ],
+      "returnReasons": [
+        "It makes a good midway meeting point.",
+        "The tighter edge reveals the street from a different angle on the way back."
+      ]
+    },
+    {
+      "id": "alley-threshold",
+      "label": "Alley threshold",
+      "identity": "alley threshold",
+      "nodeId": "alley-threshold",
+      "polygon": [
+        {
+          "x": 194.64,
+          "z": -144.84
+        },
+        {
+          "x": 200.34,
+          "z": -140.44
+        },
+        {
+          "x": 195.58,
+          "z": -134.26
+        },
+        {
+          "x": 189.88,
+          "z": -138.66
+        },
+        {
+          "x": 194.64,
+          "z": -144.84
+        }
+      ],
+      "stopReasons": [
+        "Peek into the service lane without leaving the public edge.",
+        "Listen for the quieter pocket off the main block."
+      ],
+      "returnReasons": [
+        "It turns the approach into a loop instead of a one-way run.",
+        "The threshold frames the Steam Clock corner from the side."
+      ]
+    },
+    {
+      "id": "steam-clock-plaza",
+      "label": "Steam Clock plaza",
+      "identity": "plaza",
+      "nodeId": "steam-clock",
+      "polygon": [
+        {
+          "x": 183.59,
+          "z": -161.25
+        },
+        {
+          "x": 190.4,
+          "z": -156
+        },
+        {
+          "x": 184.66,
+          "z": -148.55
+        },
+        {
+          "x": 177.85,
+          "z": -153.8
+        },
+        {
+          "x": 183.59,
+          "z": -161.25
+        }
+      ],
+      "stopReasons": [
+        "Pause for the clock, seating, and busker activity.",
+        "Use the open pad to decide where to head next."
+      ],
+      "returnReasons": [
+        "The plaza is the natural social hub.",
+        "It links back out to Water Street and Maple Tree Square."
+      ]
+    },
+    {
+      "id": "landmark-corner",
+      "label": "Landmark corner",
+      "identity": "landmark corner",
+      "nodeId": "landmark-corner",
+      "polygon": [
+        {
+          "x": 182.52,
+          "z": -162.58
+        },
+        {
+          "x": 189.96,
+          "z": -156.84
+        },
+        {
+          "x": 185.44,
+          "z": -150.98
+        },
+        {
+          "x": 178,
+          "z": -156.72
+        },
+        {
+          "x": 182.52,
+          "z": -162.58
+        }
+      ],
+      "stopReasons": [
+        "Take in the clock and corner facades together.",
+        "Catch the diagonal view into Maple Tree Square."
+      ],
+      "returnReasons": [
+        "It is the clearest landmark rendezvous point.",
+        "The corner keeps changing depending on approach direction."
+      ]
+    },
+    {
+      "id": "maple-tree-square-pocket",
+      "label": "Maple Tree Square pocket",
+      "identity": "plaza edge",
+      "nodeId": "maple-tree-square-edge",
+      "polygon": [
+        {
+          "x": 209.03,
+          "z": -181.92
+        },
+        {
+          "x": 216.63,
+          "z": -176.06
+        },
+        {
+          "x": 211.63,
+          "z": -169.57
+        },
+        {
+          "x": 204.02,
+          "z": -175.43
+        },
+        {
+          "x": 209.03,
+          "z": -181.92
+        }
+      ],
+      "stopReasons": [
+        "Step to the square edge for the crossroads feel.",
+        "Use the pocket as the eastern half of the loop."
+      ],
+      "returnReasons": [
+        "It rewards a second pass after circling the clock.",
+        "The square reads differently when you approach from Cambie."
+      ]
+    },
+    {
+      "id": "transit-edge",
+      "label": "Transit edge",
+      "identity": "transit edge",
+      "nodeId": "transit-edge",
+      "polygon": [
+        {
+          "x": 182.26,
+          "z": -135.79
+        },
+        {
+          "x": 188.61,
+          "z": -144.03
+        },
+        {
+          "x": 193.99,
+          "z": -139.87
+        },
+        {
+          "x": 187.64,
+          "z": -131.64
+        },
+        {
+          "x": 182.26,
+          "z": -135.79
+        }
+      ],
+      "stopReasons": [
+        "Look uphill toward the Cambie continuation.",
+        "Feel the district open toward the station/transit seam."
+      ],
+      "returnReasons": [
+        "It gives the loop a practical edge instead of a dead end.",
+        "The shift in grade changes your sense of the block."
       ]
     }
   ],
@@ -5613,29 +6277,124 @@
         "elevation": 0.024
       },
       {
-        "segment_id": "cambie-rise-continuation",
-        "width": 6.08,
-        "length": 6.66,
-        "yaw": 2.5338,
-        "offset_x": 0,
-        "offset_z": 0,
-        "tone": "setts_patch",
-        "opacity": 0.18,
-        "elevation": 0.02
-      }
-    ],
-    "heroViewCorridors": [
-      {
-        "id": "steam-clock-west-sightline",
-        "from": "water-street-mid-block",
-        "to": "steam-clock",
-        "emphasis": "hero"
+        "segment_id": "water-street-mid-block",
+        "width": 4.8,
+        "length": 12.2,
+        "yaw": 2.21,
+        "offset_x": -1.1,
+        "offset_z": 0.6,
+        "tone": "reflection_pool",
+        "opacity": 0.14,
+        "elevation": 0.018
       },
       {
-        "id": "steam-clock-east-sightline",
-        "from": "maple-tree-square-edge",
-        "to": "steam-clock",
-        "emphasis": "hero"
+        "segment_id": "steam-clock-approach",
+        "width": 6.4,
+        "length": 8.2,
+        "yaw": 2.19,
+        "offset_x": 0.4,
+        "offset_z": -0.8,
+        "tone": "reflection_pool",
+        "opacity": 0.18,
+        "elevation": 0.018
+      },
+      {
+        "segment_id": "steam-clock",
+        "width": 5.3,
+        "length": 5.4,
+        "yaw": 0.82,
+        "offset_x": 1.2,
+        "offset_z": 0.2,
+        "tone": "puddle",
+        "opacity": 0.2,
+        "elevation": 0.021
+      }
+    ],
+    "signs": [
+      {
+        "id": "wayfinding-station",
+        "x": 11.8,
+        "z": -24.6,
+        "height": 2.6,
+        "width": 0.76,
+        "panelHeight": 0.56,
+        "yaw": -0.72,
+        "faceColor": "#d7dfde",
+        "emissive": "#10202b"
+      },
+      {
+        "id": "parking-clock",
+        "x": 178.2,
+        "z": -151.1,
+        "height": 2.45,
+        "width": 0.48,
+        "panelHeight": 0.5,
+        "yaw": 0.8,
+        "faceColor": "#b84b38",
+        "glow": true,
+        "emissive": "#2a0e06"
+      },
+      {
+        "id": "maple-wayfinding",
+        "x": 202.1,
+        "z": -166.8,
+        "height": 2.6,
+        "width": 0.7,
+        "panelHeight": 0.48,
+        "yaw": -0.92,
+        "faceColor": "#e4d5af",
+        "emissive": "#291f09"
+      }
+    ],
+    "streetFurniture": [
+      {
+        "id": "furn-threshold-bench",
+        "kind": "bench",
+        "x": 14.2,
+        "z": -15.8,
+        "yaw": -0.72
+      },
+      {
+        "id": "furn-mid-bin",
+        "kind": "bin",
+        "x": 106.4,
+        "z": -92.8,
+        "yaw": -0.67
+      },
+      {
+        "id": "furn-mid-planter",
+        "kind": "planter",
+        "x": 109.3,
+        "z": -95.1,
+        "yaw": -0.67
+      },
+      {
+        "id": "furn-clock-bin",
+        "kind": "bin",
+        "x": 180.4,
+        "z": -149.8,
+        "yaw": 0.72
+      },
+      {
+        "id": "furn-clock-bench",
+        "kind": "bench",
+        "x": 189.6,
+        "z": -159.8,
+        "yaw": 0.68
+      },
+      {
+        "id": "furn-clock-planter",
+        "kind": "planter",
+        "x": 191.8,
+        "z": -160.8,
+        "yaw": 0.68
+      },
+      {
+        "id": "furn-postclock-utility",
+        "kind": "utility",
+        "x": 204.7,
+        "z": -168.5,
+        "yaw": -0.92
       }
     ]
   },
@@ -5647,7 +6406,7 @@
   },
   "bounds": {
     "floorY": 0,
-    "edgeMessage": "Stayed within the Gastown working corridor.",
-    "resetMessage": "Returned to the Gastown working corridor."
+    "edgeMessage": "Stayed inside the explorable Gastown district.",
+    "resetMessage": "Returned to the explorable Gastown district."
   }
 }
