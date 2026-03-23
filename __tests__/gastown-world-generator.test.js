@@ -118,6 +118,8 @@ test('generator keeps world polygons valid with existing or generated output', (
       }, {});
       assert.deepEqual(roleCounts, { guide: 1, busker: 1, pedestrian: 2, skateboarder: 1, cyclist: 1, tourist: 5, photographer: 1 }, 'working fallback role mix should remain deterministic');
       assert.equal(data.routeId, 'gastown_water_street_working_corridor');
+      assert.equal(data.meta.buildClassification, 'approximate-fallback');
+      assert.match(data.meta.provenanceSummary, /Approximate fallback corridor retained/);
     }
   }
 
@@ -138,6 +140,8 @@ test('committed world json files include the expanded intersection-based fallbac
     assert.ok(data.landmarks.some((landmark) => landmark.id === 'steam-clock'), relPath + ' should include the Steam Clock landmark');
     assert.equal(data.routeId, 'gastown_water_street_working_corridor', relPath + ' should treat fallback as the working corridor');
     assert.equal(data.meta.fallbackMode, 'working-gastown-corridor', relPath + ' should identify the working fallback mode');
+    assert.equal(data.meta.buildClassification, 'approximate-fallback', relPath + ' should keep fallback build classification explicit');
+    assert.match(data.meta.provenanceSummary, /Approximate fallback corridor retained/, relPath + ' should keep fallback provenance explicit');
     assert.ok(data.nodes.some((node) => node.id === 'water-cordova-seam'), relPath + ' should include the Water/Cordova seam node');
     assert.ok(data.nodes.some((node) => node.id === 'maple-tree-square-edge'), relPath + ' should include the Maple Tree Square edge node');
     assert.ok(data.nodes.some((node) => node.id === 'water-cambie-intersection'), relPath + ' should include the Water/Cambie intersection node');

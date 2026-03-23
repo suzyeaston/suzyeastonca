@@ -61,6 +61,7 @@ get_header();
     </section>
 
     <p class="gastown-status" data-sim-status aria-live="polite">Loading simulator...</p>
+    <p class="gastown-world-status" data-sim-world-status aria-live="polite">World data status: checking build provenance…</p>
     <p class="gastown-pointer-status" data-sim-pointer-status aria-live="polite">Pointer unlocked.</p>
     <p class="gastown-landmark" data-sim-landmark aria-live="polite">Nearest landmark: Station threshold</p>
     <p class="gastown-route-segment" data-sim-route-segment aria-live="polite">Route segment: Waterfront Station Threshold</p>
@@ -73,9 +74,13 @@ get_header();
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>
+        <p class="gastown-minimap-mode-status" data-sim-minimap-mode-status aria-live="polite">Map mode: North-up — the top of the map is geographic north.</p>
         <canvas data-sim-minimap width="220" height="220"></canvas>
         <ul class="gastown-minimap-legend" aria-label="Minimap legend">
           <li><span class="dot player"></span> Player</li>
+          <li><span class="dot route"></span> Route line</li>
+          <li><span class="dot sidewalk"></span> Sidewalk / plaza</li>
+          <li><span class="dot street"></span> Street</li>
           <li><span class="dot station"></span> Station</li>
           <li><span class="dot steam"></span> Steam Clock</li>
           <li><span class="dot nearest"></span> Nearest landmark</li>

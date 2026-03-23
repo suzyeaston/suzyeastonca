@@ -183,6 +183,18 @@
 
   function normalizeWorldData(data) {
     const normalized = data || {};
+    normalized.meta = normalized.meta && typeof normalized.meta === 'object' ? normalized.meta : {};
+    normalized.meta.buildClassification = typeof normalized.meta.buildClassification === 'string'
+      ? normalized.meta.buildClassification
+      : (normalized.meta.isRealCivicBuild === false ? 'approximate-fallback' : 'offline-civic-build');
+    normalized.meta.provenanceSummary = typeof normalized.meta.provenanceSummary === 'string'
+      ? normalized.meta.provenanceSummary
+      : (normalized.meta.isRealCivicBuild === false
+        ? 'Approximate fallback corridor retained because civic/open-data inputs were unavailable.'
+        : 'Offline civic-data build normalized for runtime use.');
+    normalized.meta.openDataInputs = normalized.meta.openDataInputs && typeof normalized.meta.openDataInputs === 'object'
+      ? normalized.meta.openDataInputs
+      : {};
 
     normalized.landmarks = Array.isArray(normalized.landmarks) ? normalized.landmarks : [];
     normalized.audioZones = Array.isArray(normalized.audioZones) ? normalized.audioZones : [];

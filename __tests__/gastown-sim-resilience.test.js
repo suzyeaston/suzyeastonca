@@ -36,6 +36,31 @@ test('audio setup wraps howl creation in a soft-fail guard so missing files do n
   assert.match(src, /warnAudioUnavailable\('Gastown audio setup failed; simulator continuing without ambient audio\.', error\);/);
 });
 
+test('fallback-world disclosure stays explicit instead of pretending the corridor is precise civic data', () => {
+  const worldPath = path.join(__dirname, '..', 'assets', 'world', 'gastown-water-street.json');
+  const world = JSON.parse(fs.readFileSync(worldPath, 'utf8'));
+
+  assert.equal(world.meta.fallbackMode, 'working-gastown-corridor');
+  assert.equal(world.meta.isRealCivicBuild, false);
+  assert.equal(world.meta.buildClassification, 'approximate-fallback');
+  assert.match(world.meta.provenanceSummary, /Approximate fallback corridor retained/);
+  assert.deepEqual(Object.values(world.meta.openDataInputs).every((value) => value === false), true);
+  assert.match(src, /function isApproximateWorld\(world\) \{/);
+  assert.match(src, /Approximate fallback world loaded\. This playable corridor is believable, but not survey-precise\./);
+  assert.match(src, /World data status: /);
+});
+
+test('runtime init keeps the active js\\/gastown-sim.js path responsible for world disclosure, minimap UI, and audio fallback setup', () => {
+  const functionsPath = path.join(__dirname, '..', 'functions.php');
+  const php = fs.readFileSync(functionsPath, 'utf8');
+
+  assert.match(php, /'se-gastown-sim',\s*\$uri \. \$app_path/s);
+  assert.doesNotMatch(php, /gastown-sim-classic\.js[\s\S]*page-gastown-sim\.php/s);
+  assert.match(src, /setWorldModeStatus\(state\.world\);/);
+  assert.match(src, /updateMinimapModeButton\(\);/);
+  assert.match(src, /ensureNpcLoop\(npcState\);/);
+});
+
 test('init still sequences NPC, minimap, landmark, and audio setup inside one startup try/catch', () => {
   const initStart = src.indexOf('async function init() {');
   const initEnd = src.indexOf('init();', initStart);
