@@ -4058,7 +4058,10 @@
       "y": 0,
       "z": 0,
       "scale": 1.35,
-      "cue": "Station canopies give way to brick-front Gastown blocks and the Water Street bend begins."
+      "cue": "Station canopies give way to brick-front Gastown blocks and the Water Street bend begins.",
+      "discoveryNote": "Orientation logged. The station threshold is where the route stops feeling like transit spillover and starts reading as Gastown.",
+      "storyUnlock": "orientation",
+      "discoveryRadius": 9.5
     },
     {
       "id": "water-cordova-seam",
@@ -4068,7 +4071,10 @@
       "y": 0,
       "z": -45.43,
       "scale": 1.16,
-      "cue": "The corridor bends into Water Street and starts reading like a heritage streetscape instead of a starter ribbon."
+      "cue": "The corridor bends into Water Street and starts reading like a heritage streetscape instead of a starter ribbon.",
+      "discoveryNote": "Discovery logged. The bend into Water Street is the first place the heritage corridor becomes legible.",
+      "storyUnlock": "water_street_shift",
+      "discoveryRadius": 9.5
     },
     {
       "id": "water-street-mid-block",
@@ -4078,7 +4084,10 @@
       "y": 0,
       "z": -104.87,
       "scale": 1.12,
-      "cue": "Longer brick storefront rhythm and darker carriageway paving make the street read more like Water Street."
+      "cue": "Longer brick storefront rhythm and darker carriageway paving make the street read more like Water Street.",
+      "discoveryNote": "Survey logged. This is the clearest storefront-rhythm moment on the route.",
+      "storyUnlock": "mid_block_story",
+      "discoveryRadius": 9.5
     },
     {
       "id": "steam-clock",
@@ -4089,7 +4098,10 @@
       "z": -154.75,
       "radius": 5.2,
       "scale": 1.28,
-      "cue": "A brick-and-stone plaza opens at the intersection and stages the Steam Clock at the corner landmark moment."
+      "cue": "A brick-and-stone plaza opens at the intersection and stages the Steam Clock at the corner landmark moment.",
+      "discoveryNote": "Story unlocked. The Steam Clock plaza turns the walk into a landmark encounter instead of a straight corridor.",
+      "storyUnlock": "clock_story",
+      "discoveryRadius": 5.2
     },
     {
       "id": "maple-tree-square-edge",
@@ -4099,7 +4111,10 @@
       "y": 0,
       "z": -173.46,
       "scale": 1.1,
-      "cue": "Beyond the Steam Clock the street broadens and loosens toward Maple Tree Square."
+      "cue": "Beyond the Steam Clock the street broadens and loosens toward Maple Tree Square.",
+      "discoveryNote": "Story unlocked. Maple Tree Square expands the route beyond the clock and reveals the older village geometry.",
+      "storyUnlock": "maple_story",
+      "discoveryRadius": 9.5
     },
     {
       "id": "cambie-rise-continuation",
@@ -4109,7 +4124,10 @@
       "y": 0,
       "z": -140.6,
       "scale": 1.18,
-      "cue": "The eastern leg of the route continues beyond the clock intersection toward the Cambie rise."
+      "cue": "The eastern leg of the route continues beyond the clock intersection toward the Cambie rise.",
+      "discoveryNote": "Survey logged. The eastern rise finishes the sense of progression through the corridor.",
+      "storyUnlock": "east_leg_story",
+      "discoveryRadius": 9.5
     }
   ],
   "props": [
@@ -4120,7 +4138,13 @@
       "y": 0,
       "z": -19.21,
       "yaw": 0.7005,
-      "scale": 1.05
+      "scale": 1.05,
+      "randomOffset": true,
+      "collectible": true,
+      "collectibleKey": "newspaper_box",
+      "collectibleLabel": "Newspaper box",
+      "minimapIcon": "collectible",
+      "journalNote": "A utilitarian newspaper box shows how everyday objects carry the working-street texture."
     },
     {
       "id": "starter-prop-threshold-utility",
@@ -4262,13 +4286,40 @@
       "scale": 1
     },
     {
-      "id": "starter-prop-postclock-planter",
-      "kind": "planter",
-      "x": 193.94,
-      "y": 0,
-      "z": -136.29,
-      "yaw": -2.1112,
-      "scale": 1.12
+      "id": "starter-prop-maple-mural",
+      "kind": "cardboard_box",
+      "x": 206.22,
+      "z": -170.84,
+      "yaw": 0.14,
+      "scale": 0.95,
+      "collectible": true,
+      "collectibleKey": "mural",
+      "collectibleLabel": "Maple Tree mural",
+      "minimapIcon": "mural",
+      "randomOffset": true,
+      "journalNote": "The mural pushes the walk from preservation into interpretation."
+    },
+    {
+      "id": "starter-prop-clock-plaque",
+      "kind": "utility_box",
+      "x": 188.62,
+      "z": -151.38,
+      "yaw": -0.22,
+      "scale": 0.65,
+      "collectible": true,
+      "collectibleKey": "historic_plaque",
+      "collectibleLabel": "Historic plaque",
+      "minimapIcon": "plaque",
+      "journalNote": "The plaque turns sightseeing into explicit history-reading."
+    },
+    {
+      "id": "starter-prop-vendor-crate",
+      "kind": "cardboard_box",
+      "x": 174.96,
+      "z": -143.72,
+      "yaw": 0.51,
+      "scale": 0.88,
+      "randomOffset": true
     }
   ],
   "npcs": [

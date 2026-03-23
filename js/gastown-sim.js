@@ -57,6 +57,11 @@
   const osmAttributionEl = app.querySelector('[data-gastown-osm-attribution]');
   const interactPromptEl = app.querySelector('[data-sim-interact-prompt]');
   const questStatusEl = app.querySelector('[data-sim-quest-status]');
+  const objectiveEl = app.querySelector('[data-sim-objective]');
+  const nextStepEl = app.querySelector('[data-sim-next-step]');
+  const routeScoreEl = app.querySelector('[data-sim-route-score]');
+  const collectiblesLogEl = app.querySelector('[data-sim-collectibles-log]');
+  const journalEl = app.querySelector('[data-sim-journal]');
   const tutorialOverlayEl = app.querySelector('[data-tutorial-overlay]');
   const tutorialOpenBtn = app.querySelector('[data-action="tutorial-open"]');
   const tutorialCloseEls = app.querySelectorAll('[data-action="tutorial-close"]');
@@ -144,7 +149,16 @@
     guideQuestTriggered: false,
     tutorial: { seen: false, lastMKeyAt: 0 },
     lowGraphics: false,
-    quest: { active: false, completed: false, rewardPending: false, items: [] },
+    quest: { active: false, completed: false, rewardPending: false, items: [], chains: {}, activeChainId: 'orientation' },
+    progression: {
+      discoveredLandmarks: {},
+      talkedNpcIds: {},
+      journalEntries: [],
+      unlockedStories: {},
+      routeCompletionScore: 0,
+      nextHint: null,
+      openingObjectiveStartedAt: 0,
+    },
   };
 
   const DEFAULT_EYE_HEIGHT = 1.7;
@@ -303,13 +317,198 @@
     }
   }
 
-  function getPublicGoalText() {
-    return (state.world && state.world.exploration && state.world.exploration.publicGoal) || 'I’m exploring Gastown.';
+  const QUEST_DEFINITIONS = {
+    orientation: { label: 'Orientation', status: 'Opening objective: meet the guide just ahead and get your bearings.' },
+    scavenger: { label: 'Street details log', status: 'Street details log active: recover the newspaper box, historic plaque, and Maple Tree mural.' },
+    survey: { label: 'Route survey', status: 'Route survey active: scout the mid-block storefront rhythm, then continue to the Cambie rise.' },
+    stories: { label: 'Historical stories', status: 'Historical stories active: unlock the Steam Clock and Maple Tree Square stories, then report back to the busker.' },
+  };
+
+  function setObjective(text) {
+    if (objectiveEl) objectiveEl.textContent = text;
   }
 
-  function getStreetModeStatusText() {
-    return getPublicGoalText() + ' Mouse look and movement are live. Press V for overview.';
+  function setNextStep(text) {
+    if (nextStepEl) nextStepEl.textContent = text;
+    if (minimapTooltipEl) minimapTooltipEl.textContent = text;
   }
+
+  function pushJournalEntry(text) {
+    if (!text) return;
+    const entries = state.progression.journalEntries;
+    if (entries.includes(text)) return;
+    entries.unshift(text);
+    state.progression.journalEntries = entries.slice(0, 5);
+    renderProgressionUi();
+  }
+
+  function renderProgressionUi() {
+    if (routeScoreEl) {
+      routeScoreEl.textContent = Math.round(state.progression.routeCompletionScore) + '% of the corridor surveyed.';
+    }
+    if (collectiblesLogEl) {
+      const items = getCollectibleProps();
+      collectiblesLogEl.innerHTML = items.map((prop) => '<li>' + (prop.collectibleLabel || prop.id) + ' — ' + (prop.collected ? 'logged' : 'not logged') + '</li>').join('');
+    }
+    if (journalEl) {
+      const entries = state.progression.journalEntries.length ? state.progression.journalEntries : ['Arrive at the station threshold and get your bearings.'];
+      journalEl.innerHTML = entries.map((entry) => '<li>' + entry + '</li>').join('');
+    }
+  }
+
+  function getQuestChain(id) {
+    if (!state.quest.chains[id]) {
+      state.quest.chains[id] = { active: id === 'orientation', completed: false };
+    }
+    return state.quest.chains[id];
+  }
+
+  function getLandmarkByIdLocal(id) {
+    return (state.world && state.world.landmarks || []).find((landmark) => landmark.id === id) || null;
+  }
+
+  function getNpcByRole(role) {
+    return (state.npcs || []).find((npc) => npc.role === role) || null;
+  }
+
+  function getHintTargetPosition(target) {
+    if (!target) return null;
+    if (target.type === 'npc' && target.id) {
+      const npc = (state.npcs || []).find((entry) => entry.id === target.id);
+      return npc ? npc.position : null;
+    }
+    if (target.type === 'landmark' && target.id) return getLandmarkByIdLocal(target.id);
+    if (target.type === 'collectible' && target.id) {
+      const prop = (state.props || []).find((entry) => entry.id === target.id);
+      return prop ? prop._position : null;
+    }
+    return null;
+  }
+
+  function startQuestById(id) {
+    const chain = getQuestChain(id);
+    chain.active = true;
+    state.quest.activeChainId = id;
+    if (id === 'scavenger') {
+      const items = getCollectibleProps().map((prop) => ({ key: prop.collectibleKey || prop.id, label: prop.collectibleLabel || prop.id, found: !!prop.collected, propId: prop.id }));
+      state.quest.active = true;
+      state.quest.completed = items.length && items.every((item) => item.found);
+      state.quest.items = items;
+      setQuestStatus('Street details log: ' + items.filter((item) => item.found).length + '/' + items.length + ' collected.');
+      renderDialogBody(['Street details log started.', 'Log the newspaper box, the historic plaque, and the Maple Tree mural. The minimap will nudge you, but you still have to read the street.']);
+    } else {
+      setQuestStatus((QUEST_DEFINITIONS[id] || {}).status || 'Quest updated.');
+      renderDialogBody([((QUEST_DEFINITIONS[id] || {}).label || 'Quest') + ' started.']);
+    }
+    pushJournalEntry(((QUEST_DEFINITIONS[id] || {}).label || 'Quest') + ' added to your journal.');
+    updateNextMeaningfulThing();
+  }
+
+  function completeQuestById(id, message) {
+    const chain = getQuestChain(id);
+    if (chain.completed) return;
+    chain.completed = true;
+    chain.active = false;
+    if (id === 'scavenger') { state.quest.completed = true; state.quest.active = false; }
+    if (message) setQuestStatus(message);
+    pushJournalEntry(message || (((QUEST_DEFINITIONS[id] || {}).label || 'Quest') + ' completed.'));
+    updateNextMeaningfulThing();
+  }
+
+  function discoverLandmark(landmark) {
+    if (!landmark || state.progression.discoveredLandmarks[landmark.id]) return;
+    state.progression.discoveredLandmarks[landmark.id] = true;
+    setStatus('Discovery: ' + landmark.label + '.');
+    pushJournalEntry('Discovered ' + landmark.label + ': ' + (landmark.discoveryNote || landmark.cue || 'New route context logged.'));
+    if (landmark.storyUnlock) {
+      state.progression.unlockedStories[landmark.storyUnlock] = true;
+    }
+    updateNextMeaningfulThing();
+  }
+
+  function updateRouteCompletionScore() {
+    if (!state.world || !Array.isArray(state.world.landmarks)) return;
+    const total = state.world.landmarks.length || 1;
+    const seen = Object.keys(state.progression.discoveredLandmarks).length;
+    state.progression.routeCompletionScore = Math.min(100, (seen / total) * 100);
+  }
+
+  function updateLandmarkDiscoveries() {
+    if (!state.world || !Array.isArray(state.world.landmarks)) return;
+    state.world.landmarks.forEach((landmark) => {
+      const radius = landmark.discoveryRadius || landmark.radius || 10;
+      if (Math.hypot(landmark.x - player.position.x, landmark.z - player.position.z) <= radius) {
+        discoverLandmark(landmark);
+      }
+    });
+  }
+
+  function updateQuestChainsFromProgress() {
+    if (state.progression.talkedNpcIds[(getNpcByRole('guide') || {}).id]) {
+      completeQuestById('orientation', 'Orientation complete: you met the guide and opened your first leads.');
+    }
+    const survey = getQuestChain('survey');
+    if (survey.active && !survey.completed && state.progression.discoveredLandmarks['water-street-mid-block'] && state.progression.discoveredLandmarks['cambie-rise-continuation']) {
+      completeQuestById('survey', 'Route survey complete: you traced Water Street from storefront rhythm to the Cambie rise.');
+    }
+    const stories = getQuestChain('stories');
+    const busker = getNpcByRole('busker');
+    if (stories.active && !stories.completed && state.progression.discoveredLandmarks['steam-clock'] && state.progression.discoveredLandmarks['maple-tree-square-edge'] && busker && state.progression.talkedNpcIds[busker.id]) {
+      completeQuestById('stories', 'Historical stories complete: the busker shared the full Steam Clock and Maple Tree Square thread.');
+    }
+    if (state.quest.items.length && state.quest.items.every((item) => item.found)) {
+      completeQuestById('scavenger', 'Street details log complete: the busker has a bonus story waiting near the Steam Clock.');
+    }
+  }
+
+  function updateNextMeaningfulThing() {
+    const guide = getNpcByRole('guide');
+    const busker = getNpcByRole('busker');
+    const chainOrientation = getQuestChain('orientation');
+    const chainScavenger = getQuestChain('scavenger');
+    const chainSurvey = getQuestChain('survey');
+    const chainStories = getQuestChain('stories');
+    let objective = 'Explore Water Street and build out your Gastown journal.';
+    let hint = { text: 'Follow the route and investigate anything that feels historically distinct.', target: { type: 'landmark', id: 'water-cordova-seam' } };
+
+    if (!chainOrientation.completed && guide) {
+      objective = 'Within your first few seconds, find the guide near the station threshold.';
+      hint = { text: 'Walk a few steps forward to the guide and press E to hear your first leads.', target: { type: 'npc', id: guide.id } };
+    } else if (chainScavenger.active && !chainScavenger.completed) {
+      const nextProp = getCollectibleProps().find((prop) => !prop.collected);
+      objective = 'Complete the street details log by reading small clues in the environment.';
+      hint = nextProp
+        ? { text: 'The next collectible to log is the ' + (nextProp.collectibleLabel || nextProp.id) + '.', target: { type: 'collectible', id: nextProp.id } }
+        : hint;
+    } else if (chainSurvey.active && !chainSurvey.completed) {
+      objective = 'Survey the route like a local and mark how Water Street changes as you move east.';
+      hint = !state.progression.discoveredLandmarks['water-street-mid-block']
+        ? { text: 'Push toward Water Street mid block to read the storefront rhythm.', target: { type: 'landmark', id: 'water-street-mid-block' } }
+        : { text: 'Continue beyond the clock toward the Cambie rise to finish the survey.', target: { type: 'landmark', id: 'cambie-rise-continuation' } };
+    } else if (chainStories.active && !chainStories.completed) {
+      objective = 'Unlock the Steam Clock and Maple Tree Square stories, then return to the busker.';
+      if (!state.progression.discoveredLandmarks['steam-clock']) {
+        hint = { text: 'Head for the Steam Clock plaza to unlock the next conversation beat.', target: { type: 'landmark', id: 'steam-clock' } };
+      } else if (!state.progression.discoveredLandmarks['maple-tree-square-edge']) {
+        hint = { text: 'Keep exploring past the clock until Maple Tree Square opens up.', target: { type: 'landmark', id: 'maple-tree-square-edge' } };
+      } else if (busker) {
+        hint = { text: 'Return to the busker near the clock for the unlocked historical story.', target: { type: 'npc', id: busker.id } };
+      }
+    } else if ((state.progression.routeCompletionScore || 0) < 100) {
+      objective = 'Round out the route by discovering the remaining named landmarks.';
+      const nextLandmark = (state.world && state.world.landmarks || []).find((landmark) => !state.progression.discoveredLandmarks[landmark.id]);
+      if (nextLandmark) hint = { text: 'Follow the corridor toward ' + nextLandmark.label + '.', target: { type: 'landmark', id: nextLandmark.id } };
+    } else {
+      objective = 'You have the full route logged — revisit NPCs to compare unlocked stories.';
+      hint = { text: 'Roam freely: NPC dialog now reflects what you have already discovered.', target: null };
+    }
+
+    state.progression.nextHint = hint;
+    setObjective(objective);
+    setNextStep(hint.text);
+    renderProgressionUi();
+  }
+
 
   function openTutorialOverlay() {
     if (!tutorialOverlayEl) return;
@@ -918,9 +1117,43 @@
     return {
       title: result.title || getDialogFallbackTitle(npcState),
       lines: result.lines || getNpcConversationFallback(npcState).lines,
-      actions: [{ type: 'close', label: 'Back to walk' }],
+      actions: getNpcDialogActions(npcState),
       hasCustomActions: true,
     };
+  }
+
+  function getNpcDialogActions(npcState) {
+    if (!npcState) {
+      return [{ type: 'close', label: 'Back to walk' }];
+    }
+    if (npcState.role === 'guide') {
+      return [
+        { type: 'quest', questId: 'scavenger', label: getQuestChain('scavenger').completed ? 'Review street details log' : 'Start street details log' },
+        { type: 'quest', questId: 'survey', label: getQuestChain('survey').completed ? 'Review route survey' : 'Start route survey' },
+        { type: 'response', label: 'Tell me more about Maple Tree Square', responseLines: ['Maple Tree Square marks the early centre of Gastown, where Carrall, Powell, Alexander, and Water come together in a triangular knot.', 'That irregular geometry is part of why the district feels older than the rest of downtown — the street plan still hints at the port-town era.'], followupStatus: 'Guide shared extra Gastown history.' },
+        { type: 'close', label: 'Back to walk' }
+      ];
+    }
+    if (npcState.role === 'busker') {
+      return [
+        { type: 'quest', questId: 'stories', label: getQuestChain('stories').completed ? 'Review unlocked stories' : 'Start story trail' },
+        { type: 'response', label: 'What changed after I got here?', responseLines: [state.progression.discoveredLandmarks['steam-clock'] ? 'Now that you have actually stood in the plaza, the clock stops feeling like a prop and starts acting like a route anchor.' : 'Come back after you have stood in the plaza itself — it changes how the whole corner reads.', state.progression.discoveredLandmarks['maple-tree-square-edge'] ? 'And once Maple Tree Square opens up behind it, the clock starts reading like an introduction instead of the whole story.' : 'Push beyond the clock and you will feel the square loosen the corridor.'], followupStatus: 'Busker reacted to your discoveries.' },
+        { type: 'close', label: 'Back to walk' }
+      ];
+    }
+    if (npcState.role === 'skateboarder') {
+      return [
+        { type: 'quest', questId: 'survey', label: getQuestChain('survey').completed ? 'Review route survey' : 'Take the route survey challenge' },
+        { type: 'close', label: 'Back to walk' }
+      ];
+    }
+    if (npcState.role === 'cyclist') {
+      return [
+        { type: 'quest', questId: 'survey', label: getQuestChain('survey').completed ? 'Review route survey' : 'Keep the survey going' },
+        { type: 'close', label: 'Back to walk' }
+      ];
+    }
+    return [{ type: 'close', label: 'Back to walk' }];
   }
 
   async function hydrateNpcConversation(npcState) {
@@ -1002,7 +1235,7 @@
         button.type = 'button';
         button.className = 'pixel-button secondary';
         button.textContent = action.label || 'Start scavenger hunt';
-        button.addEventListener('click', () => startGuideQuest());
+        button.addEventListener('click', () => startQuestById(action.questId || 'scavenger'));
         dialogActionsDynamicEl.appendChild(button);
         controls.push(button);
         return;
@@ -1102,13 +1335,7 @@
       defaultCloseLabel: 'Back to walk',
     });
 
-    if (npcState.role === 'guide') {
-      normalized.actions = [
-        { type: 'quest', label: state.quest.completed ? 'Review scavenger hunt' : 'Start scavenger hunt' },
-        { type: 'response', label: 'Tell me more about Maple Tree Square', responseLines: ['Maple Tree Square marks the early centre of Gastown, where Carrall, Powell, Alexander, and Water come together in a triangular knot.', 'That irregular geometry is part of why the district feels older than the rest of downtown — the street plan still hints at the port-town era.'], followupStatus: 'Guide shared extra Gastown history.' },
-        { type: 'close', label: 'Back to walk' }
-      ];
-    }
+    normalized.actions = getNpcDialogActions(npcState);
 
     dialogTitleEl.textContent = normalized.title;
     renderDialogBody(normalized.lines);
@@ -1123,6 +1350,10 @@
       setPointerStatus('Pointer unlocked. Dialog controls are active.');
       focusFirstDialogControl();
     };
+
+    state.progression.talkedNpcIds[npcState.id] = true;
+    updateQuestChainsFromProgress();
+    updateNextMeaningfulThing();
 
     if (document.pointerLockElement === renderer.domElement) {
       document.exitPointerLock();
@@ -1142,19 +1373,12 @@
   }
 
   function startGuideQuest() {
-    const items = getCollectibleProps().map((prop) => ({ key: prop.collectibleKey || prop.id, label: prop.collectibleLabel || prop.id, found: !!prop.collected, propId: prop.id }));
-    state.quest.active = true;
-    state.quest.completed = items.length && items.every((item) => item.found);
-    state.quest.items = items;
-    setQuestStatus('Scavenger hunt active: find ' + items.map((item) => item.label).join(', ') + '.');
-    renderDialogBody(['Scavenger hunt started.', 'Find the highlighted newspaper box, historic plaque, and mural. Watch the minimap for star markers.']);
+    startQuestById('scavenger');
     updateMinimapLegend();
   }
 
   function completeGuideQuest() {
-    state.quest.completed = true;
-    state.quest.active = false;
-    setQuestStatus('Scavenger hunt complete: the busker has a bonus Gastown story waiting near the Steam Clock.');
+    completeQuestById('scavenger', 'Street details log complete: the busker has a bonus Gastown story waiting near the Steam Clock.');
     const busker = (state.npcs || []).find((npc) => npc.role === 'busker');
     if (busker) {
       state.npcConversationCache[busker.id] = {
@@ -1183,7 +1407,10 @@
     if (!match) return false;
     match.collected = true;
     setStatus('Collected: ' + (match.collectibleLabel || match.id) + '.');
+    pushJournalEntry('Logged collectible: ' + (match.collectibleLabel || match.id) + '. ' + (match.journalNote || ''));
     updateQuestProgress();
+    renderProgressionUi();
+    updateNextMeaningfulThing();
     return true;
   }
 
@@ -3005,6 +3232,7 @@
     const microArea = getMicroAreaForPoint(player.position, state.world);
 
     if (nearest) {
+      updateRouteCompletionScore();
       minimapState.nearestNode = nearest;
       minimapState.nearestGuidance = nearestGuidance;
       setLandmark((microArea ? 'Exploring ' + describeMicroArea(microArea) + ' | ' : 'Nearest landmark: ') + (nearestGuidance ? nearestGuidance.text : nearest.label));
@@ -3554,6 +3782,16 @@
       ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
       ctx.fill();
     });
+
+    const hintTarget = getHintTargetPosition(state.progression.nextHint && state.progression.nextHint.target);
+    if (hintTarget) {
+      const pt = projectWorldToMinimap(hintTarget, metrics, pad, view, projectionOptions);
+      ctx.strokeStyle = 'rgba(255, 220, 120, 0.95)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
 
     if (state.world.navigator && Array.isArray(state.world.navigator.focusCorridor) && state.world.navigator.focusCorridor.length) {
       ctx.strokeStyle = 'rgba(255, 194, 112, 0.92)';
@@ -4288,7 +4526,8 @@
       setupAudio(state.world);
       minimapState.worldMetrics = getWorldMetrics();
       try { if (window.localStorage.getItem('gastownLowGraphics') === '1') { setLowGraphicsMode(true); } } catch (error) {}
-      setQuestStatus(getPublicGoalText() + ' Optional scavenger hunt: talk to the guide to begin.');
+      state.progression.openingObjectiveStartedAt = window.performance && typeof window.performance.now === 'function' ? window.performance.now() : Date.now();
+      setQuestStatus('Opening objective: talk to the guide, then choose which lead to follow first.');
       restoreMinimapZoom();
       restoreMinimapMode();
       updateSize();
@@ -4296,6 +4535,9 @@
       applyMood(state.activeMood);
       applyWeather(state.activeWeather);
       resetToStart();
+      pushJournalEntry('Arrived at the station threshold. The guide is the first anchor point.');
+      renderProgressionUi();
+      updateNextMeaningfulThing();
       attachEvents();
       setDebugState(state.debugEnabled);
       if (state.debugEnabled) {
@@ -4321,6 +4563,8 @@
         updateProgressiveVisibility();
         updateNpcs(delta);
         updateInteractionTarget();
+        updateLandmarkDiscoveries();
+        updateQuestChainsFromProgress();
         animateRain(delta);
         drawMinimap();
         refreshDebugRuntimeReadout();
