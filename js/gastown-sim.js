@@ -2413,10 +2413,10 @@
 
 
   function getHeadingVector() {
-    const direction = new THREE.Vector3();
-    player.getWorldDirection(direction);
-    const planarLength = Math.hypot(direction.x, direction.z) || 1;
-    return { x: direction.x / planarLength, z: direction.z / planarLength };
+    const forward = new THREE.Vector3(0, 0, -1);
+    forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), state.yaw);
+    const planarLength = Math.hypot(forward.x, forward.z) || 1;
+    return { x: forward.x / planarLength, z: forward.z / planarLength };
   }
 
   function clampMinimapZoom(nextZoom) {
