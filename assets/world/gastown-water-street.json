@@ -5049,6 +5049,33 @@
       "yaw": 0.51,
       "scale": 0.88,
       "randomOffset": true
+    },
+    {
+      "id": "starter-prop-busker-case",
+      "kind": "cardboard_box",
+      "x": 32.0,
+      "y": 0,
+      "z": -33.2,
+      "yaw": -0.82,
+      "scale": 0.86
+    },
+    {
+      "id": "starter-prop-brewery-crate",
+      "kind": "cardboard_box",
+      "x": 43.5,
+      "y": 0,
+      "z": -35.1,
+      "yaw": -0.72,
+      "scale": 0.94
+    },
+    {
+      "id": "starter-prop-sushi-box",
+      "kind": "newspaper_box",
+      "x": 29.0,
+      "y": 0,
+      "z": -24.4,
+      "yaw": -0.72,
+      "scale": 0.8
     }
   ],
   "npcs": [
@@ -5086,11 +5113,22 @@
       "dialogId": "busker_clock_corner",
       "interactRadius": 3,
       "idleSpot": {
-        "x": 183.98,
-        "z": -150.72
+        "x": 32.8,
+        "z": -34.4
       },
       "silhouetteScale": 1.06,
-      "yaw": 1.22
+      "yaw": -0.82,
+      "name": "sax busker",
+      "patrol": [
+        {
+          "x": 31.9,
+          "z": -33.8
+        },
+        {
+          "x": 33.6,
+          "z": -35.1
+        }
+      ]
     },
     {
       "id": "starter-pedestrian-west",
@@ -5145,13 +5183,13 @@
       "dialogId": "skateboarder_corridor",
       "interactRadius": 2.5,
       "idleSpot": {
-        "x": 53.94,
-        "z": -57.27
+        "x": 24.3,
+        "z": -22.1
       },
       "patrol": [
         {
-          "x": 38.41,
-          "z": -44.67
+          "x": 22.6,
+          "z": -20.7
         },
         {
           "x": 74.8,
@@ -5169,17 +5207,17 @@
       "dialogId": "cyclist_water_street",
       "interactRadius": 2.8,
       "idleSpot": {
-        "x": 96.3,
-        "z": -64.82
+        "x": 12.4,
+        "z": -13.1
       },
       "patrol": [
         {
-          "x": 60.12,
-          "z": -37.03
+          "x": 10.2,
+          "z": -11.4
         },
         {
-          "x": 179.4,
-          "z": -131.01
+          "x": 116.2,
+          "z": -96.6
         }
       ],
       "silhouetteScale": 0.99
@@ -5189,22 +5227,22 @@
       "role": "tourist",
       "behavior": "tourist_pause",
       "pose": "group_gather",
-      "companionGroup": "clock-family-a",
+      "companionGroup": "station-tourists-a",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 185.52,
-        "z": -154.27
+        "x": 17.8,
+        "z": -22.4
       },
       "patrol": [
         {
-          "x": 184.55,
-          "z": -153.5
+          "x": 17.1,
+          "z": -21.8
         },
         {
-          "x": 186.25,
-          "z": -154.72
+          "x": 18.4,
+          "z": -22.9
         }
       ]
     },
@@ -5213,22 +5251,22 @@
       "role": "tourist",
       "behavior": "tourist_pause",
       "pose": "being_photographed",
-      "companionGroup": "clock-family-a",
+      "companionGroup": "station-tourists-a",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 184.59,
-        "z": -155.36
+        "x": 19.5,
+        "z": -24.0
       },
       "patrol": [
         {
-          "x": 183.89,
-          "z": -154.77
+          "x": 18.9,
+          "z": -23.5
         },
         {
-          "x": 185.22,
-          "z": -155.76
+          "x": 20.1,
+          "z": -24.4
         }
       ]
     },
@@ -5239,36 +5277,37 @@
       "pose": "taking_photo",
       "heldProp": "camera",
       "voiceCue": "photo-direction",
-      "companionGroup": "clock-family-a",
+      "companionGroup": "station-tourists-b",
       "dialogId": "tourist_clock_photo",
       "interactRadius": 2.4,
       "idleSpot": {
-        "x": 182.4,
-        "z": -155.22
+        "x": 27.4,
+        "z": -28.6
       },
-      "silhouetteScale": 1.02
+      "silhouetteScale": 1.02,
+      "yaw": -0.78
     },
     {
       "id": "starter-tourist-clock-stroller",
       "role": "tourist",
       "behavior": "tourist_wander",
       "pose": "group_gather",
-      "companionGroup": "clock-family-b",
+      "companionGroup": "station-tourists-c",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 183.47,
-        "z": -157.99
+        "x": 35.2,
+        "z": -38.2
       },
       "patrol": [
         {
-          "x": 183.28,
-          "z": -157.26
+          "x": 34.4,
+          "z": -37.6
         },
         {
-          "x": 183.78,
-          "z": -158.89
+          "x": 36.3,
+          "z": -39.1
         }
       ],
       "silhouetteScale": 1.04
@@ -5278,15 +5317,16 @@
       "role": "tourist",
       "behavior": "photo_idle",
       "pose": "gathered",
-      "companionGroup": "clock-family-b",
+      "companionGroup": "station-tourists-b",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 183.74,
-        "z": -152.54
+        "x": 23.6,
+        "z": -26.5
       },
-      "silhouetteScale": 0.94
+      "silhouetteScale": 0.94,
+      "yaw": -0.74
     },
     {
       "id": "starter-tourist-clock-child",
@@ -5294,28 +5334,28 @@
       "behavior": "tourist_pause",
       "pose": "group_gather",
       "silhouetteScale": 0.82,
-      "companionGroup": "clock-family-b",
+      "companionGroup": "station-tourists-a",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2,
       "idleSpot": {
-        "x": 182.67,
-        "z": -155.32
+        "x": 18.6,
+        "z": -23.1
       },
       "patrol": [
         {
-          "x": 182.23,
-          "z": -154.91
+          "x": 18.1,
+          "z": -22.6
         },
         {
-          "x": 183.18,
-          "z": -155.57
+          "x": 19.2,
+          "z": -23.6
         }
       ]
     }
   ],
   "exploration": {
-    "publicGoal": "I’m exploring Gastown.",
+    "publicGoal": "I\u2019m exploring Gastown.",
     "fallbackPrompt": "Wander the connected plazas, storefront edges, alley mouths, and landmark corners to build your own short loop."
   },
   "microAreas": [
@@ -6344,6 +6384,30 @@
         "yaw": -0.92,
         "faceColor": "#e4d5af",
         "emissive": "#291f09"
+      },
+      {
+        "id": "water-sushi-sign",
+        "x": 31.6,
+        "z": -25.8,
+        "height": 2.5,
+        "width": 1.4,
+        "panelHeight": 0.46,
+        "yaw": -0.7,
+        "faceColor": "#d1b7a0",
+        "emissive": "#25140f",
+        "glow": true
+      },
+      {
+        "id": "water-pub-sign",
+        "x": 42.8,
+        "z": -36.5,
+        "height": 2.7,
+        "width": 1.6,
+        "panelHeight": 0.5,
+        "yaw": -0.7,
+        "faceColor": "#b8803f",
+        "emissive": "#2a1907",
+        "glow": true
       }
     ],
     "streetFurniture": [
@@ -6395,6 +6459,34 @@
         "x": 204.7,
         "z": -168.5,
         "yaw": -0.92
+      },
+      {
+        "id": "furn-start-bench-east",
+        "kind": "bench",
+        "x": 20.9,
+        "z": -20.8,
+        "yaw": -0.72
+      },
+      {
+        "id": "furn-start-planter-east",
+        "kind": "planter",
+        "x": 28.7,
+        "z": -27.3,
+        "yaw": -0.72
+      },
+      {
+        "id": "furn-start-bin",
+        "kind": "bin",
+        "x": 34.6,
+        "z": -31.8,
+        "yaw": -0.72
+      },
+      {
+        "id": "furn-start-planter-pub",
+        "kind": "planter",
+        "x": 41.7,
+        "z": -37.9,
+        "yaw": -0.72
       }
     ]
   },

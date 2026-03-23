@@ -154,6 +154,7 @@
     npcSpeechCache: {},
     npcSpeechController: null,
     npcSpeechAudio: null,
+    resumePointerAfterDialogClose: false,
     clockTimer: null,
     boundaryNoticeTimer: null,
     currentMicroAreaId: '',
@@ -192,6 +193,7 @@
   const DEFAULT_EYE_HEIGHT = 1.7;
   const WALKER_NAME_STORAGE_KEY = 'gastownWalkerName';
   const NPC_SPEECH_CACHE_LIMIT = 18;
+  const BUSKER_RIFF_CACHE_PREFIX = 'gastownBuskerRiff:';
   const ART_DIRECTION = {
     label: 'stylized realism with cinematic Vancouver rain-lighting',
     streetReflectionBoost: 0.22,
@@ -388,48 +390,48 @@
     setWalkerName(value);
     closeWalkerNameOverlay();
     pushJournalEntry('On the street as ' + state.walkerName + '.');
-    setStatus('Walker ready: ' + state.walkerName + '. Click into the street when you want to move.');
+    setStatus(state.walkerName.toUpperCase() + ' ready. Click in.');
   }
 
   const QUEST_DEFINITIONS = {
-    orientation: { label: 'Get bearings', status: 'Get your bearings and see what the street gives you.' },
-    scavenger: { label: 'Street details log', status: 'Street details log active: note the newspaper box, historic plaque, and painted brick panel as observations.' },
-    survey: { label: 'Route survey', status: 'Route survey active: trace how Water Street tightens, loosens, and rises as you move east.' },
-    soundwalk: { label: 'Soundwalk', status: 'Soundwalk active: follow the station rumble, busker corner, and clock chime without rushing.' },
-    stories: { label: 'Memory walk', status: 'Memory walk active: gather place-based notes about shoreline change, public space, and layered civic memory.' },
+    orientation: { label: 'Get moving', status: 'Get moving.' },
+    scavenger: { label: 'Street details', status: 'Street details ready.' },
+    survey: { label: 'Route survey', status: 'Route opens east.' },
+    soundwalk: { label: 'Sound cues', status: 'Listen for the sax and the clock.' },
+    stories: { label: 'Layered places', status: 'Keep walking past the obvious photo stop.' },
   };
 
   const THREAD_DEFINITIONS = {
     drift: {
       label: 'Drift',
-      objective: 'Get your bearings and see what the street gives you.',
-      hint: 'Look around, move a little, and follow what feels alive.',
-      status: 'Free exploration active: roam, linger, and let the street set the pace.',
+      objective: 'Steam Clock ahead.',
+      hint: 'Follow the first bit of street energy.',
+      status: 'Free roam.',
       autoTarget: { type: 'landmark', id: 'water-cordova-seam' },
     },
     scavenger: {
       label: 'Street details',
-      objective: 'Use the street details log to notice small clues in storefronts, paving, and public surfaces.',
-      hint: 'Follow the smallest detail that feels worth logging next.',
-      status: 'Street details log active: note the newspaper box, historic plaque, and painted brick panel as observations.',
+      objective: 'Notice the small things.',
+      hint: 'Log the next detail that catches your eye.',
+      status: 'Street details ready.',
     },
     survey: {
       label: 'Survey',
-      objective: 'Survey the route and note how Water Street changes from threshold to plaza to eastward rise.',
-      hint: 'Use the minimap as a soft cue while you compare each block face.',
-      status: 'Route survey active: trace how Water Street tightens, loosens, and rises as you move east.',
+      objective: 'Read the block as it opens up.',
+      hint: 'Compare the station edge, storefronts, and the Steam Clock pull.',
+      status: 'Route opens east.',
     },
     soundwalk: {
-      label: 'Soundwalk',
-      objective: 'Listen for station rumble, busker phrases, weather, and clock cues as the corridor shifts around you.',
-      hint: 'Pause near the station edge, the clock corner, or any busker to hear the route differently.',
-      status: 'Soundwalk active: follow the station rumble, busker corner, and clock chime without rushing.',
+      label: 'Sound cues',
+      objective: 'Follow the sax, crowd, and clock.',
+      hint: 'Pause where the street sounds thickest.',
+      status: 'Listen for the sax and the clock.',
     },
     stories: {
-      label: 'Memory walk',
-      objective: 'Treat Maple Tree Square and the Steam Clock corner as layered places shaped by route, shoreline, labour, and public memory.',
-      hint: 'Move between the clock and Maple Tree Square, then compare what each place emphasizes.',
-      status: 'Memory walk active: gather place-based notes about shoreline change, public space, and layered civic memory.',
+      label: 'Layered places',
+      objective: 'Push past the obvious landmark.',
+      hint: 'Look for the block behind the postcard shot.',
+      status: 'Keep walking past the obvious photo stop.',
     },
   };
 
@@ -452,7 +454,7 @@
   }
 
   function getStreetModeStatusText() {
-    return getPublicGoalText() + ' Mouse look and movement are live. Press V for overview.';
+    return getPublicGoalText();
   }
 
   function pushJournalEntry(text) {
@@ -466,7 +468,7 @@
 
   function renderProgressionUi() {
     if (routeScoreEl) {
-      routeScoreEl.textContent = Math.round(state.progression.routeCompletionScore) + '% of the corridor mapped by your feet.';
+      routeScoreEl.textContent = Math.round(state.progression.routeCompletionScore) + '% mapped';
     }
     if (collectiblesLogEl) {
       const deduped = [];
@@ -477,10 +479,11 @@
         seenKeys.add(key);
         deduped.push(prop);
       });
-      collectiblesLogEl.innerHTML = deduped.map((prop) => '<li>' + (prop.collectibleLabel || prop.id) + ' — ' + (prop.collected ? 'logged' : 'not logged') + '</li>').join('');
+      collectiblesLogEl.innerHTML = deduped.map((prop) => '<li>' + (prop.collectibleLabel || prop.id) + ' — ' + (prop.collected ? 'logged' : 'not yet') + '</li>').join('');
+      if (questStatusEl) questStatusEl.textContent = deduped.filter((prop) => prop.collected).length + ' details';
     }
     if (journalEl) {
-      const entries = state.progression.journalEntries.length ? state.progression.journalEntries : ['Arrive at the station threshold and get your bearings.'];
+      const entries = state.progression.journalEntries.length ? state.progression.journalEntries : ['Station threshold.'];
       journalEl.innerHTML = entries.slice(0, 4).map((entry) => '<li>' + entry + '</li>').join('');
     }
   }
@@ -521,7 +524,6 @@
     state.currentThread = nextId;
     if (!silent) {
       setQuestStatus(THREAD_DEFINITIONS[nextId].status);
-      pushJournalEntry(THREAD_DEFINITIONS[nextId].label + ' selected.');
     }
     updateThreadButtonsUi();
     updateNextMeaningfulThing();
@@ -568,13 +570,12 @@
       state.quest.active = true;
       state.quest.completed = items.length && items.every((item) => item.found);
       state.quest.items = items;
-      setQuestStatus('Street details log: ' + items.filter((item) => item.found).length + '/' + items.length + ' logged.');
-      renderDialogBody(['Street details log started.', 'Note the newspaper box, the historic plaque, and the painted brick panel as observations. The minimap will hint, but wandering still matters.']);
+      setQuestStatus(items.filter((item) => item.found).length + ' details');
+      renderDialogBody(['Street details ready.', 'Log the newspaper box, plaque, and painted brick.']);
     } else {
-      setQuestStatus((QUEST_DEFINITIONS[id] || {}).status || 'Thread updated.');
-      renderDialogBody([((QUEST_DEFINITIONS[id] || {}).label || 'Quest') + ' started.']);
+      setQuestStatus((QUEST_DEFINITIONS[id] || {}).status || 'Updated.');
+      renderDialogBody([((QUEST_DEFINITIONS[id] || {}).label || 'Note') + '.']);
     }
-    pushJournalEntry(((QUEST_DEFINITIONS[id] || {}).label || 'Quest') + ' added to your journal.');
     updateNextMeaningfulThing();
   }
 
@@ -592,7 +593,7 @@
   function discoverLandmark(landmark) {
     if (!landmark || state.progression.discoveredLandmarks[landmark.id]) return;
     state.progression.discoveredLandmarks[landmark.id] = true;
-    setStatus('Discovery: ' + landmark.label + '.');
+    setStatus('Logged: ' + landmark.label + '.');
     pushJournalEntry('Discovered ' + landmark.label + ': ' + (landmark.discoveryNote || landmark.cue || 'New route context logged.'));
     if (landmark.storyUnlock) {
       state.progression.unlockedStories[landmark.storyUnlock] = true;
@@ -624,15 +625,15 @@
     }
     const survey = getQuestChain('survey');
     if (survey.active && !survey.completed && state.progression.discoveredLandmarks['water-street-mid-block'] && state.progression.discoveredLandmarks['cambie-rise-continuation']) {
-      completeQuestById('survey', 'Route survey complete: you traced Water Street from storefront rhythm to the Cambie rise.');
+      completeQuestById('survey', 'Route read complete.');
     }
     const stories = getQuestChain('stories');
     const busker = getNpcByRole('busker');
     if (stories.active && !stories.completed && state.progression.discoveredLandmarks['steam-clock'] && state.progression.discoveredLandmarks['maple-tree-square-edge'] && busker && state.progression.talkedNpcIds[busker.id]) {
-      completeQuestById('stories', "Memory walk complete: you linked the Steam Clock corner with Maple Tree Square's layered public history.");
+      completeQuestById('stories', 'You read past the postcard version.');
     }
     if (state.quest.items.length && state.quest.items.every((item) => item.found)) {
-      completeQuestById('scavenger', 'Street details log complete: the busker has a bonus story waiting near the Steam Clock.');
+      completeQuestById('scavenger', 'All details logged.');
     }
   }
 
@@ -657,24 +658,24 @@
         : { text: 'Continue east and notice how the corridor opens toward the Cambie rise.', target: { type: 'landmark', id: 'cambie-rise-continuation' } };
     } else if (state.currentThread === 'soundwalk' && chainSoundwalk.active && !chainSoundwalk.completed) {
       if (!state.progression.discoveredLandmarks['steam-clock']) {
-        hint = { text: 'Follow the sound cues toward the Steam Clock corner.', target: { type: 'landmark', id: 'steam-clock' } };
+        hint = { text: 'Steam Clock ahead.', target: { type: 'landmark', id: 'steam-clock' } };
       } else if (busker) {
-        hint = { text: 'Pause near the busker or clock corner and listen for how the space changes.', target: { type: 'npc', id: busker.id } };
+        hint = { text: 'Busker nearby.', target: { type: 'npc', id: busker.id } };
       }
     } else if (state.currentThread === 'stories' && chainStories.active && !chainStories.completed) {
       if (!state.progression.discoveredLandmarks['maple-tree-square-edge']) {
-        hint = { text: 'Walk past the clock until Maple Tree Square opens up as a layered public space.', target: { type: 'landmark', id: 'maple-tree-square-edge' } };
+        hint = { text: 'Keep walking past the clock.', target: { type: 'landmark', id: 'maple-tree-square-edge' } };
       } else if (busker) {
-        hint = { text: 'Return to the busker or another local voice to compare memory-walk notes.', target: { type: 'npc', id: busker.id } };
+        hint = { text: 'Talk to the busker again.', target: { type: 'npc', id: busker.id } };
       }
     } else if ((state.progression.routeCompletionScore || 0) < 100) {
       const nextLandmark = (state.world && state.world.landmarks || []).find((landmark) => !state.progression.discoveredLandmarks[landmark.id]);
       if (nextLandmark) {
-        hint = { text: activeThread.hint + ' Next landmark: ' + nextLandmark.label + '.', target: { type: 'landmark', id: nextLandmark.id } };
+        hint = { text: nextLandmark.label + ' ahead.', target: { type: 'landmark', id: nextLandmark.id } };
       }
     } else {
-      objective = 'You have a full set of route notes — keep wandering and compare the neighbourhood on your own terms.';
-      hint = { text: 'Roam freely: the journal now updates from proximity, lingering, and what you decide to revisit.', target: null };
+      objective = 'Keep roaming.';
+      hint = { text: 'Keep roaming.', target: null };
     }
 
     state.progression.nextHint = hint;
@@ -688,7 +689,7 @@
     if (!tutorialOverlayEl) return;
     tutorialOverlayEl.removeAttribute('hidden');
     tutorialOverlayEl.setAttribute('aria-hidden', 'false');
-    setStatus('Tutorial open. Review the controls, then start exploring when ready.');
+    setStatus('Help open.');
   }
 
   function closeTutorialOverlay() {
@@ -729,8 +730,7 @@
     }
     state.boundaryNoticeTimer = setTimeout(() => {
       if (!state.isRunning || state.cameraMode !== 'street') return;
-      setStatus('Street mode active. Mouse look and movement are live. Hold Alt for precise exploration, Shift for a brisk walk, or press V for overview.');
-      setStatus(getStreetModeStatusText());
+      setStatus(getPublicGoalText());
     }, 1900);
   }
 
@@ -740,7 +740,7 @@
 
   function setPointerStatus(text) {
     if (pointerStatusEl) {
-      pointerStatusEl.textContent = '[' + getCameraModeLabel() + ' view] ' + text;
+      pointerStatusEl.textContent = text;
     }
   }
 
@@ -771,18 +771,18 @@
 
   function updateCameraModeUi() {
     if (state.cameraMode === 'overview') {
-      setStatus('Overview mode active. Mouse wheel zooms altitude; WASD glides fast across the route; press V to return to street view.');
+      setStatus('Overview active.');
       setPointerStatus('Pointer unlocked. Overview camera detached above player.');
     } else if (state.isRunning) {
-      setStatus(getStreetModeStatusText());
+      setStatus(getPublicGoalText());
       if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
-        setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
+        setPointerStatus('Pointer live. Esc releases.');
       } else {
-        setPointerStatus('Pointer lock requested… press Esc any time to release.');
+        setPointerStatus('Pointer live. Esc releases.');
       }
     } else {
-      setStatus(getPublicGoalText() + ' Click scene to enter look mode and begin moving, or press V for overview.');
-      setPointerStatus('Pointer unlocked. Click scene to enter look mode. Press V for overview.');
+      setStatus(getPublicGoalText());
+      setPointerStatus('Pointer free. Click in.');
     }
   }
 
@@ -857,7 +857,7 @@
     }
 
     if (approximate) {
-      setStatus('Approximate fallback world loaded. This playable corridor is believable, but not survey-precise.');
+      setStatus('Street loaded.');
     }
   }
 
@@ -1709,30 +1709,13 @@
     }
     if (npcState.role === 'guide') {
       return [
-        { type: 'quest', questId: 'scavenger', label: getQuestChain('scavenger').completed ? 'Review street details log' : 'Start street details log' },
-        { type: 'quest', questId: 'survey', label: getQuestChain('survey').completed ? 'Review route survey' : 'Start route survey' },
-        { type: 'quest', questId: 'soundwalk', label: getQuestChain('soundwalk').completed ? 'Review soundwalk' : 'Start soundwalk' },
-        { type: 'response', label: 'Tell me more about Maple Tree Square', responseLines: ['Maple Tree Square is best read as a layered public space where routes, shoreline change, and later heritage framing overlap.', 'The area is on the unceded territories of the Musqueam, Squamish, and Tsleil-Waututh Nations, so this walk keeps the history lightweight and place-based rather than centering a founder myth.'], followupStatus: 'Shared extra place history.' },
+        { type: 'response', label: 'What should I notice?', responseLines: ['The paving changes first.', 'Then the storefront rhythm takes over.'], followupStatus: 'Guide pointed out a route cue.' },
         { type: 'close', label: 'Back to walk' }
       ];
     }
     if (npcState.role === 'busker') {
       return [
-        { type: 'quest', questId: 'stories', label: getQuestChain('stories').completed ? 'Review memory walk' : 'Start memory walk' },
-        { type: 'quest', questId: 'soundwalk', label: getQuestChain('soundwalk').completed ? 'Review soundwalk' : 'Start soundwalk' },
-        { type: 'response', label: 'What changes after I stand here awhile?', responseLines: [state.progression.discoveredLandmarks['steam-clock'] ? 'Once you have actually stood in the plaza, the clock reads less like a prop and more like one cue inside a larger street rhythm.' : 'Come back after you have stood in the plaza itself — it changes how the whole corner reads.', state.progression.discoveredLandmarks['maple-tree-square-edge'] ? 'And once Maple Tree Square opens up behind it, the corner shifts from single landmark to layered meeting point.' : 'Push beyond the clock and you will feel the square loosen the corridor.'], followupStatus: 'Busker reacted to your discoveries.' },
-        { type: 'close', label: 'Back to walk' }
-      ];
-    }
-    if (npcState.role === 'skateboarder') {
-      return [
-        { type: 'quest', questId: 'survey', label: getQuestChain('survey').completed ? 'Review route survey' : 'Start route survey' },
-        { type: 'close', label: 'Back to walk' }
-      ];
-    }
-    if (npcState.role === 'cyclist') {
-      return [
-        { type: 'quest', questId: 'survey', label: getQuestChain('survey').completed ? 'Review route survey' : 'Continue route survey' },
+        { type: 'response', label: 'What changes if I stay?', responseLines: ['The crowd starts moving around the sound instead of through it.', 'That is when the block feels alive.'], followupStatus: 'Busker reacted to the street energy.' },
         { type: 'close', label: 'Back to walk' }
       ];
     }
@@ -1871,10 +1854,11 @@
     }
   }
 
-  function closeDialog() {
+  function closeDialog(options) {
+    stopNpcSpeech();
+    state.npcConversationPending = false;
     state.activeDialogNpcId = '';
     state.activeDialogEntry = null;
-    stopNpcSpeech();
     if (dialogActionsDynamicEl) {
       dialogActionsDynamicEl.innerHTML = '';
     }
@@ -1885,13 +1869,17 @@
       dialogModalEl.setAttribute('hidden', 'hidden');
       dialogModalEl.setAttribute('aria-hidden', 'true');
     }
-    clearMovementInput();
     setInteractPrompt('');
-    setStatus('Dialog closed. Click scene to resume.');
-    setPointerStatus('Pointer unlocked. Click scene to enter look mode.');
-    const focusTarget = renderer.domElement || canvasWrap;
-    if (focusTarget && typeof focusTarget.focus === 'function') {
-      window.setTimeout(() => focusTarget.focus(), 0);
+    state.hoveredNpcId = '';
+    state.isRunning = false;
+    setPointerStatus('Pointer free. Click in.');
+    const shouldResume = !!(options && options.resumePointer) || state.resumePointerAfterDialogClose;
+    state.resumePointerAfterDialogClose = false;
+    if (shouldResume && state.cameraMode === 'street') {
+      window.setTimeout(() => enterPlayMode(), 30);
+    }
+    if (state.dialogLastFocusEl && typeof state.dialogLastFocusEl.focus === 'function') {
+      state.dialogLastFocusEl.focus();
     }
   }
 
@@ -1900,6 +1888,7 @@
     clearMovementInput();
     state.isRunning = false;
     state.dialogLastFocusEl = document.activeElement;
+    state.resumePointerAfterDialogClose = document.pointerLockElement === renderer.domElement;
 
     const rawEntry = Object.prototype.hasOwnProperty.call(state.dialogData, npcState.dialogId)
       ? state.dialogData[npcState.dialogId]
@@ -2311,6 +2300,106 @@
     return state.audioUnlocked;
   }
 
+  function getBuskerRiffCacheKey() {
+    return BUSKER_RIFF_CACHE_PREFIX + [state.activeMood || 'calm', state.activeWeather || 'clear', state.activeTimeOfDay || 'morning'].join(':');
+  }
+
+  function getFallbackBuskerRiffSpec() {
+    return {
+      mood: state.activeMood || 'lively',
+      weather: state.activeWeather || 'clear',
+      timeOfDay: state.activeTimeOfDay || 'morning',
+      tempo: state.activeTimeOfDay === 'night' ? 90 : (state.activeMood === 'lively' ? 108 : 96),
+      key: 'G minor pentatonic',
+      loopBeats: 8,
+      phraseLengths: [2, 2, 4],
+      articulationHints: ['gritty', 'street-corner', 'rock-adjacent'],
+      sequence: [
+        { note: 'G4', beats: 0.5, velocity: 0.94, accent: true, articulation: 'growl' },
+        { note: 'Bb4', beats: 0.5, velocity: 0.82, accent: false, articulation: 'stab' },
+        { note: 'D5', beats: 1, velocity: 0.9, accent: true, articulation: 'rasp' },
+        { note: 'C5', beats: 0.5, velocity: 0.76, accent: false, articulation: 'fall' },
+        { note: 'G4', beats: 1, velocity: 0.88, accent: true, articulation: 'hold' },
+        { note: 'rest', beats: 0.5, velocity: 0.2, accent: false, articulation: 'rest' },
+        { note: 'F4', beats: 0.5, velocity: 0.78, accent: false, articulation: 'bend' },
+        { note: 'G4', beats: 1, velocity: 0.9, accent: true, articulation: 'growl' }
+      ]
+    };
+  }
+
+  function saveBuskerRiffSpec(spec) {
+    try { window.localStorage.setItem(getBuskerRiffCacheKey(), JSON.stringify(spec)); } catch (error) {}
+  }
+
+  function loadCachedBuskerRiffSpec() {
+    try {
+      const raw = window.localStorage.getItem(getBuskerRiffCacheKey());
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function fetchBuskerRiffSpec() {
+    const cached = loadCachedBuskerRiffSpec();
+    if (cached && Array.isArray(cached.sequence) && cached.sequence.length) return cached;
+    if (!config.buskerRiffEndpoint || !window.fetch) {
+      const fallback = getFallbackBuskerRiffSpec();
+      saveBuskerRiffSpec(fallback);
+      return fallback;
+    }
+    try {
+      const response = await fetch(config.buskerRiffEndpoint + '?mood=' + encodeURIComponent(state.activeMood || 'calm') + '&weather=' + encodeURIComponent(state.activeWeather || 'clear') + '&timeOfDay=' + encodeURIComponent(state.activeTimeOfDay || 'morning'), { credentials: 'same-origin' });
+      if (!response.ok) throw new Error('riff unavailable');
+      const data = await response.json();
+      const spec = data && data.spec ? data.spec : null;
+      if (!spec || !Array.isArray(spec.sequence) || !spec.sequence.length) throw new Error('invalid riff');
+      saveBuskerRiffSpec(spec);
+      return spec;
+    } catch (error) {
+      const fallback = getFallbackBuskerRiffSpec();
+      saveBuskerRiffSpec(fallback);
+      return fallback;
+    }
+  }
+
+  function createBuskerSaxSynth(Tone) {
+    const bus = new Tone.Gain(0.72).toDestination();
+    const grit = new Tone.Distortion(0.18).connect(bus);
+    const filter = new Tone.Filter(1050, 'bandpass').connect(grit);
+    const breath = new Tone.NoiseSynth({
+      noise: { type: 'pink' },
+      envelope: { attack: 0.005, decay: 0.12, sustain: 0.02, release: 0.08 },
+      volume: -26
+    }).connect(filter);
+    const synth = new Tone.MonoSynth({
+      oscillator: { type: 'sawtooth3' },
+      filter: { Q: 4.8, type: 'bandpass', rolloff: -24 },
+      envelope: { attack: 0.012, decay: 0.18, sustain: 0.28, release: 0.2 },
+      filterEnvelope: { attack: 0.01, decay: 0.16, sustain: 0.14, release: 0.16, baseFrequency: 360, octaves: 3.1 },
+      volume: -13
+    }).connect(filter);
+    const slap = new Tone.MembraneSynth({
+      pitchDecay: 0.02,
+      octaves: 1.4,
+      envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.05 },
+      volume: -30
+    }).connect(bus);
+    return { synth, breath, slap, bus, filter, grit };
+  }
+
+  function scheduleBuskerNote(loop, event, when, nearFactor) {
+    if (!loop || !event || event.note === 'rest') return;
+    const seconds = (60 / Math.max(76, loop.spec.tempo || 96)) * Math.max(0.25, event.beats || 0.5);
+    const accentBoost = event.accent ? 0.1 : 0;
+    const velocity = Math.min(1, Math.max(0.25, (event.velocity || 0.78) + accentBoost + (nearFactor * 0.08)));
+    loop.synth.synth.triggerAttackRelease(event.note, seconds, when, velocity);
+    loop.synth.breath.triggerAttackRelease(seconds * 0.82, when, 0.4 + nearFactor * 0.18);
+    if (event.accent) {
+      loop.synth.slap.triggerAttackRelease('C2', '32n', when, 0.08 + nearFactor * 0.08);
+    }
+  }
+
   function ensureNpcLoop(npcState) {
     if (npcState.role !== 'busker' || state.sounds.npcAudio[npcState.id]) {
       return;
@@ -2320,32 +2409,20 @@
       state.sounds.npcAudio[npcState.id] = { muted: true, mode: 'silent_busker' };
       return;
     }
+    const fallbackSpec = getFallbackBuskerRiffSpec();
     try {
       state.sounds.npcAudio[npcState.id] = {
-        mode: 'busker_soft_duet',
-        radius: 11.5,
-        lastGestureAt: -Infinity,
+        mode: 'busker_sax_loop',
+        radius: 15,
         nextGestureAt: 0,
-        intervalSeconds: 5.6,
-        chordIndex: 0,
-        synth: new Tone.PolySynth(Tone.Synth, {
-          oscillator: { type: 'triangle6' },
-          envelope: { attack: 0.02, decay: 0.3, sustain: 0.18, release: 1.6 },
-          volume: -24,
-        }).toDestination(),
-        accent: new Tone.MembraneSynth({
-          pitchDecay: 0.05,
-          octaves: 2,
-          envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.08 },
-          volume: -34,
-        }).toDestination(),
-        motif: [
-          ['G3', 'D4', 'B4'],
-          ['E3', 'B3', 'G4'],
-          ['C4', 'G4', 'E4'],
-          ['D3', 'A3', 'F#4'],
-        ],
+        stepIndex: 0,
+        spec: fallbackSpec,
+        synth: createBuskerSaxSynth(Tone)
       };
+      fetchBuskerRiffSpec().then((spec) => {
+        const loop = state.sounds.npcAudio[npcState.id];
+        if (loop && spec) loop.spec = spec;
+      }).catch(() => {});
     } catch (error) {
       state.sounds.npcAudio[npcState.id] = { muted: true, mode: 'silent_busker' };
       warnAudioUnavailable('Busker motif setup failed; simulator continuing without busker audio.', error);
@@ -2573,19 +2650,15 @@
       npc.mesh.rotation.y = npc.currentYaw;
 
       const loop = state.sounds.npcAudio[npc.id];
-      if (loop && loop.mode === 'busker_soft_duet' && loop.synth && state.steamClockState.enabled) {
+      if (loop && loop.mode === 'busker_sax_loop' && loop.synth && loop.spec && Array.isArray(loop.spec.sequence)) {
         const distance = Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z);
-        const nearFactor = Math.max(0, 1 - (distance / (loop.radius || 11.5)));
-        if (nearFactor > 0.24 && nowSeconds >= (loop.nextGestureAt || 0)) {
-          const chord = loop.motif[loop.chordIndex % loop.motif.length];
+        const nearFactor = Math.max(0, 1 - (distance / (loop.radius || 15)));
+        if (nearFactor > 0.14 && nowSeconds >= (loop.nextGestureAt || 0)) {
+          const event = loop.spec.sequence[loop.stepIndex % loop.spec.sequence.length];
           try {
-            loop.synth.triggerAttackRelease(chord, '2n', getTone().now(), 0.28 + (nearFactor * 0.16));
-            if (loop.accent) {
-              loop.accent.triggerAttackRelease('G2', '16n', getTone().now() + 0.02, 0.08 + (nearFactor * 0.08));
-            }
-            loop.lastGestureAt = nowSeconds;
-            loop.chordIndex = (loop.chordIndex + 1) % loop.motif.length;
-            loop.nextGestureAt = nowSeconds + loop.intervalSeconds + (deterministicUnit(npc.id + '-gesture-' + Math.floor(nowSeconds)) * 0.9);
+            scheduleBuskerNote(loop, event, getTone().now(), nearFactor);
+            loop.stepIndex = (loop.stepIndex + 1) % loop.spec.sequence.length;
+            loop.nextGestureAt = nowSeconds + ((60 / Math.max(76, loop.spec.tempo || 96)) * Math.max(0.25, event.beats || 0.5));
           } catch (error) {
             warnAudioUnavailable('Busker motif playback failed; simulator continuing without busker audio.', error);
             loop.mode = 'silent_busker';
@@ -2653,17 +2726,15 @@
     if (npcTarget) {
       const npc = npcTarget.npc;
       const roleLabel = getNpcRoleLabel(npc);
-      const talkCue = npcTarget.centered || npcTarget.distance <= (npc.interactRadius || 2.8) ? 'Press E or click to talk' : 'Face them and step in';
-      const centeredCue = npcTarget.centered ? 'centered' : npcTarget.facingDot > 0.75 ? 'in view' : 'nearby';
-      setInteractPrompt(talkCue + ': ' + (npc.name || roleLabel) + ' · ' + roleLabel + ' · ' + centeredCue + ' · ' + formatDistanceLabel(npcTarget.distance));
+      const verb = npc.role === 'busker' ? 'listen' : 'talk';
+      setInteractPrompt('E: ' + verb + ' to ' + (npc.name || roleLabel).toLowerCase());
       return;
     }
     if (collectible) {
       const prop = collectible.prop;
       const range = 2.2;
       const closeEnough = collectible.distance <= range;
-      const headingCue = collectible.alignment > 0.78 ? 'ahead' : collectible.alignment > 0.3 ? 'off-center' : 'nearby';
-      setInteractPrompt((closeEnough ? 'Press E to log' : 'Street detail ' + headingCue) + ': ' + (prop.collectibleLabel || prop.id) + ' · ' + formatDistanceLabel(collectible.distance));
+      setInteractPrompt(closeEnough ? 'E: log ' + (prop.collectibleLabel || prop.id).toLowerCase() : 'Street detail nearby');
       return;
     }
     setInteractPrompt('');
@@ -2878,10 +2949,10 @@
   }
 
   function addGround(world) {
-    visualState.roadMaterial = createGroundMaterial('street', 0x0a0f14, 0.94, 0.1);
-    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x85796d, 0.98, 0.02);
-    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xc2c8cf, transparent: true, opacity: 0.38 });
-    visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x8fa0af, roughness: 0.96, metalness: 0.01, transparent: true, opacity: 0.015, depthWrite: false, depthTest: true });
+    visualState.roadMaterial = createGroundMaterial('street', 0x161311, 0.98, 0.03);
+    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x6f6255, 0.99, 0.015);
+    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xb7a792, transparent: true, opacity: 0.28 });
+    visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x54473f, roughness: 1, metalness: 0, transparent: false, opacity: 1, depthWrite: true, depthTest: true });
     visualState.routeGuideMaterials = [visualState.laneMaterial];
     visualState.reflectiveMaterials.push(visualState.roadMaterial, visualState.sidewalkMaterial, visualState.laneMaterial);
 
@@ -2907,26 +2978,26 @@
         (() => {
           const toneStyles = {
             brick: { color: 0x5c4033, roughness: 0.82, metalness: 0.06, opacity: 0.72 },
-            road_base_dark: { color: 0x1c232a, roughness: 0.95, metalness: 0.03, opacity: 0.24 },
-            wheel_track: { color: 0x0d1217, roughness: 0.62, metalness: 0.14, opacity: 0.2 },
-            patch: { color: 0x2f353d, roughness: 0.76, metalness: 0.12, opacity: 0.2 },
-            repair_patch_dark: { color: 0x252b32, roughness: 0.72, metalness: 0.14, opacity: 0.22 },
-            puddle: { color: 0x1a212a, roughness: 0.74, metalness: 0.08, opacity: 0.1 },
-            wet_streak: { color: 0x202731, roughness: 0.82, metalness: 0.06, opacity: 0.08 },
-            reflection_pool: { color: 0x233242, roughness: 0.86, metalness: 0.04, opacity: 0.06 },
-            edge_grime: { color: 0x1b1d20, roughness: 0.8, metalness: 0.08, opacity: 0.18 },
-            curb_grime: { color: 0x181c20, roughness: 0.88, metalness: 0.04, opacity: 0.18 },
-            cobble_break: { color: 0x55483d, roughness: 0.86, metalness: 0.04, opacity: 0.18 },
-            paver_break: { color: 0x5d5144, roughness: 0.84, metalness: 0.05, opacity: 0.18 },
-            intersection_pavers: { color: 0x5c5044, roughness: 0.9, metalness: 0.04, opacity: 0.26 },
-            default: { color: 0x3a4048, roughness: 0.8, metalness: 0.08, opacity: 0.78 },
+            road_base_dark: { color: 0x2f2822, roughness: 0.98, metalness: 0.01, opacity: 0.96 },
+            wheel_track: { color: 0x221c18, roughness: 0.9, metalness: 0.02, opacity: 0.78 },
+            patch: { color: 0x453930, roughness: 0.9, metalness: 0.02, opacity: 0.7 },
+            repair_patch_dark: { color: 0x372f2a, roughness: 0.92, metalness: 0.02, opacity: 0.74 },
+            puddle: { color: 0x2a2724, roughness: 0.92, metalness: 0.02, opacity: 0.02 },
+            wet_streak: { color: 0x3a312b, roughness: 0.9, metalness: 0.02, opacity: 0.05 },
+            reflection_pool: { color: 0x352d29, roughness: 0.94, metalness: 0.01, opacity: 0.01 },
+            edge_grime: { color: 0x29231f, roughness: 0.94, metalness: 0.02, opacity: 0.62 },
+            curb_grime: { color: 0x2c2521, roughness: 0.95, metalness: 0.02, opacity: 0.58 },
+            cobble_break: { color: 0x6a5848, roughness: 0.92, metalness: 0.02, opacity: 0.88 },
+            paver_break: { color: 0x705d4b, roughness: 0.92, metalness: 0.02, opacity: 0.84 },
+            intersection_pavers: { color: 0x786553, roughness: 0.95, metalness: 0.02, opacity: 0.96 },
+            default: { color: 0x4a4038, roughness: 0.92, metalness: 0.02, opacity: 0.9 },
           };
           const style = toneStyles[band.tone] || toneStyles.default;
           const material = new THREE.MeshStandardMaterial({
             color: style.color,
             roughness: style.roughness,
             metalness: style.metalness,
-            transparent: style.opacity < 0.98,
+            transparent: style.opacity < 0.2,
             opacity: Math.min(style.opacity, band.opacity || style.opacity),
           });
           visualState.reflectiveMaterials.push(material);
@@ -2934,7 +3005,7 @@
         })()
       );
       paver.rotation.x = -Math.PI / 2;
-      paver.renderOrder = -1;
+      paver.renderOrder = 0;
       paver.rotation.y = band.yaw || 0;
       paver.position.set(segment.x + (band.offset_x || 0), band.elevation || 0.02, segment.z + (band.offset_z || 0));
       worldGroup.add(paver);
@@ -3476,7 +3547,7 @@
       }
 
       if (state.debugEnabled || !suppressGenericMarker) {
-        const reflectionMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: 0x1b2533, emissiveIntensity: 0.18, transparent: true, opacity: 0.08, roughness: 0.92, metalness: 0.04, depthWrite: false });
+        const reflectionMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: 0x1b2533, emissiveIntensity: 0.08, transparent: true, opacity: 0.015, roughness: 0.96, metalness: 0.02, depthWrite: false });
         const reflection = new THREE.Mesh(new THREE.CircleGeometry(landmark.radius || 2.7, 24), reflectionMaterial);
         reflection.renderOrder = -1;
         reflection.rotation.x = -Math.PI / 2;
@@ -3925,15 +3996,13 @@
     if (minimapContextEl) {
       minimapContextEl.innerHTML = '<strong>Now facing:</strong> ' + facing
         + (area ? '<br><strong>Exploring:</strong> ' + area.label + ' (' + area.identity + ')' : '')
-        + '<br><strong>Thread:</strong> ' + ((THREAD_DEFINITIONS[state.currentThread] || THREAD_DEFINITIONS.drift).label)
         + (nearest ? '<br><strong>Nearest landmark:</strong> ' + nearest.text : '');
     }
     if (minimapModeStatusEl) {
       const isHeadingUp = minimapState.mode === 'heading-up';
-      const threadLabel = (THREAD_DEFINITIONS[state.currentThread] || THREAD_DEFINITIONS.drift).label;
       minimapModeStatusEl.innerHTML = isHeadingUp
-        ? '<strong>Map mode:</strong> Heading-up — the top of the map follows the way you are facing.<br><strong>Ambient hint:</strong> ' + threadLabel + ' cues stay in the background.'
-        : '<strong>Map mode:</strong> North-up — the top of the map is geographic north.<br><strong>Ambient hint:</strong> ' + threadLabel + ' cues stay in the background.';
+        ? 'Heading-up map.'
+        : 'North-up map.';
     }
   }
 
@@ -4459,8 +4528,7 @@
     if (!minimapLegendEl) return;
     const npcCounts = getActiveNpcCounts();
     const collectibleCount = getCollectibleProps().filter((prop) => !prop.collected).length;
-    const threadLabel = (THREAD_DEFINITIONS[state.currentThread] || THREAD_DEFINITIONS.drift).label;
-    const items = ['You', 'Route line', 'Sidewalk / plaza', 'Road', 'Landmark', 'Ambient hint: ' + threadLabel, 'Observations left: ' + collectibleCount, 'Pedestrians: ' + (npcCounts.pedestrian || 0), 'Tourists: ' + ((npcCounts.tourist || 0) + (npcCounts.photographer || 0)), 'Cyclists: ' + (npcCounts.cyclist || 0)];
+    const items = ['You', 'Route', 'Sidewalk', 'Street', 'Landmark', 'Details left: ' + collectibleCount, 'Locals: ' + (npcCounts.pedestrian || 0), 'Visitors: ' + ((npcCounts.tourist || 0) + (npcCounts.photographer || 0)), 'Riders: ' + ((npcCounts.cyclist || 0) + (npcCounts.skateboarder || 0))];
     minimapLegendEl.innerHTML = items.map((item) => '<li>' + item + '</li>').join('');
   }
 
@@ -4809,14 +4877,14 @@
 
     if (visualState.roadMaterial) {
       visualState.roadMaterial.color.set(timeOfDay.roadColor || '#2b3138');
-      setSurfaceWetness(visualState.roadMaterial, 0.86, 0.16, weather.rainIntensity || 0);
+      setSurfaceWetness(visualState.roadMaterial, 0.95, 0.03, (weather.rainIntensity || 0) * 0.4);
       if (visualState.roadMaterial.normalScale) {
         visualState.roadMaterial.normalScale.set(1.35 + ((weather.rainIntensity || 0) * 0.24), 1.1 + ((weather.rainIntensity || 0) * 0.2));
       }
     }
     if (visualState.sidewalkMaterial) {
       visualState.sidewalkMaterial.color.set(timeOfDay.sidewalkColor || '#8f8780');
-      setSurfaceWetness(visualState.sidewalkMaterial, 0.92, 0.02, (weather.rainIntensity || 0) * 0.45);
+      setSurfaceWetness(visualState.sidewalkMaterial, 0.97, 0.015, (weather.rainIntensity || 0) * 0.2);
       if (visualState.sidewalkMaterial.normalScale) {
         visualState.sidewalkMaterial.normalScale.set(0.7 + ((weather.rainIntensity || 0) * 0.12), 0.7 + ((weather.rainIntensity || 0) * 0.12));
       }
@@ -4826,7 +4894,7 @@
     }
     if (visualState.laneMaterial) {
       visualState.laneMaterial.color.set(timeOfDay.laneColor || '#aab1b8');
-      visualState.laneMaterial.opacity = Math.min(0.06, 0.01 + ((timeOfDay.pathBrightness || 0.2) * 0.04));
+      visualState.laneMaterial.opacity = 1;
     }
 
     if (worldStatusEl) {
@@ -5025,8 +5093,8 @@
   function startSim() {
     unlockAudioFromGesture().finally(() => unlockSteamClockAudio());
     state.isRunning = true;
-    setStatus(getStreetModeStatusText());
-    setPointerStatus('Pointer lock requested… press Esc any time to release.');
+    setStatus(getPublicGoalText());
+    setPointerStatus('Pointer live. Esc releases.');
     lockPointer();
   }
 
@@ -5046,8 +5114,8 @@
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
-    setStatus('Street mode paused. Click scene to resume look mode and movement, or press V for overview.');
-    setPointerStatus('Pointer released. Click scene to re-enter look mode.');
+    setStatus('Paused. Click in to resume.');
+    setPointerStatus('Pointer free. Click in.');
   }
 
   function attachEvents() {
@@ -5057,6 +5125,7 @@
     });
     renderer.domElement.addEventListener('click', () => {
       if (state.activeDialogNpcId) {
+        closeDialog({ resumePointer: true });
         return;
       }
       if (state.cameraMode !== 'street') {
@@ -5134,16 +5203,16 @@
 
     document.addEventListener('pointerlockchange', () => {
       if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
-        setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
+        setPointerStatus('Pointer live. Esc releases.');
       } else if (state.cameraMode === 'overview') {
-        setPointerStatus('Pointer unlocked. Overview camera detached above player.');
+        setPointerStatus('Overview camera.');
       } else if (state.isRunning) {
         clearMovementInput();
         state.isRunning = false;
-        setStatus('Street mode paused. Click scene to resume look mode and movement, or press V for overview.');
-        setPointerStatus('Pointer released. Click scene to re-enter look mode.');
+        setStatus('Paused. Click in to resume.');
+        setPointerStatus('Pointer free. Click in.');
       } else {
-        setPointerStatus('Pointer unlocked.');
+        setPointerStatus('Pointer free.');
       }
     });
 
@@ -5160,7 +5229,7 @@
     dialogCloseEls.forEach((button) => button.addEventListener('click', closeDialog));
     if (tutorialOpenBtn) tutorialOpenBtn.addEventListener('click', openTutorialOverlay);
     tutorialCloseEls.forEach((button) => button.addEventListener('click', closeTutorialOverlay));
-    if (tutorialStartBtn) tutorialStartBtn.addEventListener('click', () => { closeTutorialOverlay(); resetToStart(); setStatus('Tutorial started. Click into the scene, then wander toward whatever catches your attention first.'); });
+    if (tutorialStartBtn) tutorialStartBtn.addEventListener('click', () => { closeTutorialOverlay(); resetToStart(); setStatus('Click in and move.'); });
     if (renameWalkerBtn) renameWalkerBtn.addEventListener('click', () => openWalkerNameOverlay(state.walkerName));
     if (walkerStartBtn) walkerStartBtn.addEventListener('click', () => confirmWalkerName(walkerNameInputEl ? walkerNameInputEl.value : state.walkerName));
     if (walkerSkipBtn) walkerSkipBtn.addEventListener('click', () => confirmWalkerName('Walker'));
@@ -5333,7 +5402,7 @@
       scheduleSteamClock();
       setWorldModeStatus(state.world);
       if (!(state.world.meta && state.world.meta.fallbackMode === 'working-gastown-corridor')) {
-        setStatus(getPublicGoalText() + ' Click scene to enter look mode and begin moving, or press V for overview.');
+        setStatus(getPublicGoalText());
       }
       updateCameraModeUi();
       renderer.setAnimationLoop((time) => {
