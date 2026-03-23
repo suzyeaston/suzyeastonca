@@ -147,6 +147,11 @@
   };
 
   const DEFAULT_EYE_HEIGHT = 1.7;
+  const ART_DIRECTION = {
+    label: 'stylized realism with cinematic Vancouver rain-lighting',
+    streetReflectionBoost: 0.22,
+    facadeGlowBoost: 0.2,
+  };
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(68, 1, 0.08, 700);
@@ -154,23 +159,29 @@
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.shadowMap.enabled = true;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.03;
   canvasWrap.appendChild(renderer.domElement);
 
   const player = new THREE.Object3D();
   player.add(camera);
   scene.add(player);
 
-  const ambient = new THREE.AmbientLight(0x7f90b2, 0.7);
+  const ambient = new THREE.AmbientLight(0x7f90b2, 0.72);
   scene.add(ambient);
-  const keyLight = new THREE.DirectionalLight(0xaab6cb, 0.62);
-  keyLight.position.set(7, 20, 14);
+  const keyLight = new THREE.DirectionalLight(0xaab6cb, 0.74);
+  keyLight.position.set(10, 22, 9);
   scene.add(keyLight);
-  const fillLight = new THREE.DirectionalLight(0x5f7695, 0.3);
-  fillLight.position.set(-11, 10, -12);
+  const fillLight = new THREE.DirectionalLight(0x5f7695, 0.34);
+  fillLight.position.set(-14, 12, -9);
   scene.add(fillLight);
   const lightningLight = new THREE.DirectionalLight(0xe7efff, 0);
   lightningLight.position.set(4, 30, 6);
   scene.add(lightningLight);
+  const rimLight = new THREE.DirectionalLight(0x6d8cc1, 0.18);
+  rimLight.position.set(-6, 8, 18);
+  scene.add(rimLight);
 
   const rainGroup = new THREE.Group();
   const cloudGroup = new THREE.Group();
@@ -201,6 +212,10 @@
     weatherMaterials: [],
     lightningOverlay: null,
     steamClockVisuals: [],
+    glassMaterials: [],
+    emissiveMaterials: [],
+    metalMaterials: [],
+    reflectiveMaterials: [],
   };
 
   function applyLandmarkVisualState(landmarkVisuals, lightingState) {
@@ -503,44 +518,44 @@
   };
   const PROP_DEFINITIONS = {
     trash_bag: {
-      geometry: new THREE.SphereGeometry(0.42, 7, 6),
-      material: new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.96, metalness: 0.04 }),
+      geometry: new THREE.SphereGeometry(0.42, 10, 8),
+      material: new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.92, metalness: 0.06 }),
       y: 0.38,
     },
     cardboard_box: {
       geometry: new THREE.BoxGeometry(0.85, 0.58, 0.72),
-      material: new THREE.MeshStandardMaterial({ color: 0x8f6a45, roughness: 0.94, metalness: 0.02 }),
+      material: new THREE.MeshStandardMaterial({ color: 0x8f6a45, roughness: 0.9, metalness: 0.02 }),
       y: 0.29,
     },
     newspaper_box: {
       geometry: new THREE.BoxGeometry(0.72, 1.18, 0.72),
-      material: new THREE.MeshStandardMaterial({ color: 0xb3452f, roughness: 0.72, metalness: 0.18 }),
+      material: new THREE.MeshStandardMaterial({ color: 0xa5392b, roughness: 0.62, metalness: 0.24, emissive: 0x2a0905, emissiveIntensity: 0.08 }),
       y: 0.59,
     },
     utility_box: {
       geometry: new THREE.BoxGeometry(1.18, 1.42, 0.68),
-      material: new THREE.MeshStandardMaterial({ color: 0x6f767d, roughness: 0.82, metalness: 0.24 }),
+      material: new THREE.MeshStandardMaterial({ color: 0x646d76, roughness: 0.74, metalness: 0.34 }),
       y: 0.71,
     },
     bench: {
       geometry: new THREE.BoxGeometry(1.5, 0.42, 0.46),
-      material: new THREE.MeshStandardMaterial({ color: 0x6b4c33, roughness: 0.88, metalness: 0.08 }),
+      material: new THREE.MeshStandardMaterial({ color: 0x6a4a31, roughness: 0.82, metalness: 0.14 }),
       y: 0.34,
     },
     planter: {
       geometry: new THREE.CylinderGeometry(0.48, 0.56, 0.72, 10),
-      material: new THREE.MeshStandardMaterial({ color: 0x7d684d, roughness: 0.9, metalness: 0.06 }),
+      material: new THREE.MeshStandardMaterial({ color: 0x78634a, roughness: 0.84, metalness: 0.1 }),
       y: 0.36,
     },
   };
   const NPC_ROLE_STYLE = {
-    pedestrian: { color: 0x9ab4c6, accent: 0x33414d, height: 1.72 },
-    guide: { color: 0xc6aa74, accent: 0x3a2c18, height: 1.78 },
-    busker: { color: 0x8c6bc0, accent: 0x2d1f42, height: 1.74 },
-    tourist: { color: 0xd3b384, accent: 0x6a4d2b, height: 1.7 },
-    photographer: { color: 0xb4c7d8, accent: 0x202933, height: 1.71 },
-    skateboarder: { color: 0xe0a96d, accent: 0x473222, height: 1.73 },
-    cyclist: { color: 0x8fc1a9, accent: 0x24453b, height: 1.76 },
+    pedestrian: { color: 0x8da4b9, accent: 0x2f3a45, height: 1.72, shoulderWidth: 0.43, coat: true },
+    guide: { color: 0xc7a56f, accent: 0x352615, height: 1.78, shoulderWidth: 0.45, coat: true, hat: true },
+    busker: { color: 0x7f5daa, accent: 0x261837, height: 1.74, shoulderWidth: 0.46, coat: true, scarf: true },
+    tourist: { color: 0xcda57d, accent: 0x5b4023, height: 1.7, shoulderWidth: 0.42, coat: true },
+    photographer: { color: 0xa6bac9, accent: 0x1f2730, height: 1.71, shoulderWidth: 0.41, coat: true, bag: true },
+    skateboarder: { color: 0xd19663, accent: 0x402c1f, height: 1.73, shoulderWidth: 0.42, hoodie: true },
+    cyclist: { color: 0x7cb29a, accent: 0x1e4135, height: 1.76, shoulderWidth: 0.4, jacket: true, cap: true },
   };
   const STEAM_CLOCK_CHIME_MOTIF = [
     ['G#4', 'F#4', 'E4', 'B3'],
@@ -1228,15 +1243,24 @@
     return null;
   }
 
+  function registerMaterial(material, bucket) {
+    if (!material) return material;
+    if (bucket && Array.isArray(visualState[bucket])) {
+      visualState[bucket].push(material);
+    }
+    return material;
+  }
+
   function makeNpcVisual(npc) {
     const style = NPC_ROLE_STYLE[npc.role] || NPC_ROLE_STYLE.pedestrian;
     const scaleFactor = Math.max(0.72, Math.min(1.15, npc.silhouetteScale || 1));
     const root = new THREE.Group();
-    const bodyMaterial = new THREE.MeshStandardMaterial({ color: style.color, roughness: 0.86, metalness: 0.08 });
+    const bodyMaterial = new THREE.MeshStandardMaterial({ color: style.color, roughness: 0.8, metalness: 0.1 });
     const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xe0c7aa, roughness: 0.92, metalness: 0.02 });
-    const accentMaterial = new THREE.MeshStandardMaterial({ color: style.accent, roughness: 0.8, metalness: 0.1 });
+    const accentMaterial = new THREE.MeshStandardMaterial({ color: style.accent, roughness: 0.72, metalness: 0.14 });
+    const trimMaterial = new THREE.MeshStandardMaterial({ color: 0x161b20, roughness: 0.58, metalness: 0.2 });
     const body = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.22, Math.max(0.6, style.height - 1), 4, 8),
+      new THREE.CapsuleGeometry((style.shoulderWidth || 0.42) * 0.5, Math.max(0.6, style.height - 1.08), 5, 10),
       bodyMaterial
     );
     body.position.y = style.height * 0.5;
@@ -1246,7 +1270,7 @@
     );
     head.position.y = style.height - 0.12;
     const accent = new THREE.Mesh(
-      new THREE.BoxGeometry(0.36, 0.14, 0.18),
+      new THREE.BoxGeometry(0.38, 0.16, 0.2),
       accentMaterial
     );
     accent.position.set(0, style.height * 0.58, 0.2);
@@ -1258,13 +1282,53 @@
     leftLeg.position.set(-0.09, 0.34, 0);
     const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.58, 0.09), accentMaterial);
     rightLeg.position.set(0.09, 0.34, 0);
+    const shoulders = new THREE.Mesh(new THREE.BoxGeometry(style.shoulderWidth || 0.42, 0.18, 0.24), bodyMaterial);
+    shoulders.position.set(0, style.height * 0.73, 0.02);
+    const coatHem = new THREE.Mesh(new THREE.CylinderGeometry((style.shoulderWidth || 0.42) * 0.42, (style.shoulderWidth || 0.42) * 0.58, 0.55, 8), accentMaterial);
+    coatHem.position.set(0, style.height * 0.46, 0.01);
+    const leftFoot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.2), trimMaterial);
+    leftFoot.position.set(-0.09, 0.05, 0.05);
+    const rightFoot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.2), trimMaterial);
+    rightFoot.position.set(0.09, 0.05, 0.05);
     root.add(body);
     root.add(head);
     root.add(accent);
+    root.add(shoulders);
+    root.add(coatHem);
     root.add(leftArm);
     root.add(rightArm);
     root.add(leftLeg);
     root.add(rightLeg);
+    root.add(leftFoot);
+    root.add(rightFoot);
+    let hat = null;
+    let brim = null;
+    if (style.hat || style.cap) {
+      hat = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.13, 0.14, style.cap ? 0.1 : 0.14, 12),
+        trimMaterial
+      );
+      hat.position.set(0, style.height + 0.04, 0);
+      root.add(hat);
+      if (style.hat) {
+        brim = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.02, 18), trimMaterial);
+        brim.position.set(0, style.height, 0);
+        root.add(brim);
+      }
+    }
+    let scarf = null;
+    if (style.scarf) {
+      scarf = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.04, 8, 18), accentMaterial);
+      scarf.rotation.x = Math.PI / 2;
+      scarf.position.set(0, style.height * 0.76, 0.1);
+      root.add(scarf);
+    }
+    let bag = null;
+    if (style.bag) {
+      bag = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.24, 0.12), trimMaterial);
+      bag.position.set(-0.25, style.height * 0.5, 0.12);
+      root.add(bag);
+    }
     const heldProp = createNpcProp(npc.heldProp, accentMaterial);
     if (heldProp) {
       root.add(heldProp);
@@ -1277,9 +1341,32 @@
       rightArm,
       leftLeg,
       rightLeg,
+      shoulders,
+      coatHem,
+      leftFoot,
+      rightFoot,
       heldProp,
       scaleFactor,
+      trimMaterial,
+      hat,
+      brim,
+      scarf,
+      bag,
+      umbrella: null,
+      umbrellaShaft: null,
     };
+    if ((state.activeWeather === 'rain' || state.activeWeather === 'thunderstorm') && npc.role !== 'cyclist' && npc.role !== 'skateboarder') {
+      const umbrellaMat = new THREE.MeshStandardMaterial({ color: 0x1a2028, roughness: 0.44, metalness: 0.26 });
+      const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.22, 14, 1, true), umbrellaMat);
+      canopy.rotation.x = Math.PI;
+      canopy.position.set(0.28, style.height + 0.18, 0);
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.9, 8), trimMaterial);
+      shaft.position.set(0.28, style.height * 0.88, 0);
+      root.add(canopy);
+      root.add(shaft);
+      root.userData.umbrella = canopy;
+      root.userData.umbrellaShaft = shaft;
+    }
     root.scale.setScalar(scaleFactor);
     return root;
   }
@@ -1317,6 +1404,11 @@
   function addProps(world) {
     state.props = [];
     visualState.propEntries = [];
+    Object.values(PROP_DEFINITIONS).forEach((def) => {
+      if (def && def.material && visualState.metalMaterials.indexOf(def.material) === -1 && def.material.metalness > 0.12) {
+        visualState.metalMaterials.push(def.material);
+      }
+    });
     const grouped = world.props.reduce((acc, prop) => {
       const kind = PROP_DEFINITIONS[prop.kind] ? prop.kind : 'cardboard_box';
       acc[kind] = acc[kind] || [];
@@ -1487,8 +1579,27 @@
         rig.leftLeg.rotation.x = -stride * legSwing;
         rig.rightLeg.rotation.x = stride * legSwing;
       }
+      if (rig.coatHem) {
+        rig.coatHem.rotation.x = (canWalk ? 0.08 : 0.03) + (Math.abs(stride) * 0.12);
+      }
+      if (rig.shoulders) {
+        rig.shoulders.rotation.z = Math.sin((nowSeconds * 1.6) + npc.animPhase) * (canWalk ? 0.02 : 0.008);
+      }
       if (rig.head) {
         rig.head.rotation.y = Math.sin((nowSeconds * 0.9) + npc.animPhase) * 0.12;
+        rig.head.rotation.x = npc.pose === 'taking_photo' ? -0.18 : Math.sin((nowSeconds * 0.55) + npc.animPhase) * 0.03;
+      }
+      if (rig.hat) {
+        rig.hat.rotation.z = npc.role === 'skateboarder' ? 0.08 : 0;
+      }
+      if (rig.bag) {
+        rig.bag.rotation.z = -0.08 + (stride * 0.12);
+      }
+      if (rig.umbrella) {
+        rig.umbrella.rotation.z = 0.06 + (Math.sin((nowSeconds * 1.1) + npc.animPhase) * 0.02);
+      }
+      if (rig.umbrellaShaft) {
+        rig.umbrellaShaft.rotation.z = 0.06;
       }
       if (rig.heldProp) {
         if (npc.heldProp === 'guitar') {
@@ -1787,6 +1898,7 @@
     visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xc2c8cf, transparent: true, opacity: 0.5 });
     visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x8fa0af, roughness: 0.92, metalness: 0.02, transparent: true, opacity: 0.02, depthWrite: false });
     visualState.routeGuideMaterials = [visualState.laneMaterial];
+    visualState.reflectiveMaterials.push(visualState.roadMaterial, visualState.sidewalkMaterial, visualState.laneMaterial);
 
     world.zones.street.forEach((zone) => createZoneMesh(zone.polygon, visualState.roadMaterial, 0, 'street'));
     world.zones.sidewalk.forEach((zone) => createZoneMesh(zone.polygon, visualState.sidewalkMaterial, 0.12, 'sidewalk'));
@@ -1814,8 +1926,9 @@
             wheel_track: { color: 0x0d1217, roughness: 0.62, metalness: 0.14, opacity: 0.2 },
             patch: { color: 0x2f353d, roughness: 0.76, metalness: 0.12, opacity: 0.2 },
             repair_patch_dark: { color: 0x252b32, roughness: 0.72, metalness: 0.14, opacity: 0.22 },
-            puddle: { color: 0x1a212a, roughness: 0.34, metalness: 0.28, opacity: 0.14 },
-            wet_streak: { color: 0x202731, roughness: 0.48, metalness: 0.2, opacity: 0.18 },
+            puddle: { color: 0x1a212a, roughness: 0.18, metalness: 0.42, opacity: 0.18 },
+            wet_streak: { color: 0x202731, roughness: 0.34, metalness: 0.26, opacity: 0.2 },
+            reflection_pool: { color: 0x233242, roughness: 0.12, metalness: 0.5, opacity: 0.16 },
             edge_grime: { color: 0x1b1d20, roughness: 0.8, metalness: 0.08, opacity: 0.18 },
             curb_grime: { color: 0x181c20, roughness: 0.88, metalness: 0.04, opacity: 0.18 },
             cobble_break: { color: 0x55483d, roughness: 0.86, metalness: 0.04, opacity: 0.18 },
@@ -1824,13 +1937,15 @@
             default: { color: 0x3a4048, roughness: 0.8, metalness: 0.08, opacity: 0.78 },
           };
           const style = toneStyles[band.tone] || toneStyles.default;
-          return new THREE.MeshStandardMaterial({
+          const material = new THREE.MeshStandardMaterial({
             color: style.color,
             roughness: style.roughness,
             metalness: style.metalness,
             transparent: true,
             opacity: Math.min(style.opacity, band.opacity || style.opacity),
           });
+          visualState.reflectiveMaterials.push(material);
+          return material;
         })()
       );
       paver.rotation.x = -Math.PI / 2;
@@ -1902,6 +2017,71 @@
       canopy.position.set(tree.x, 2.5, tree.z);
       worldGroup.add(canopy);
     });
+
+    (streetscape.signs || []).forEach((sign) => {
+      const poleMat = registerMaterial(new THREE.MeshStandardMaterial({ color: 0x505862, roughness: 0.52, metalness: 0.54 }), 'metalMaterials');
+      const faceMat = registerMaterial(new THREE.MeshStandardMaterial({
+        color: sign.faceColor || 0xd8ddd9,
+        roughness: 0.48,
+        metalness: 0.18,
+        emissive: sign.emissive || 0x09131d,
+        emissiveIntensity: sign.glow ? 0.12 : 0.02,
+      }), 'emissiveMaterials');
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, sign.height || 2.4, 8), poleMat);
+      pole.position.set(sign.x, (sign.height || 2.4) / 2, sign.z);
+      worldGroup.add(pole);
+      const face = new THREE.Mesh(new THREE.BoxGeometry(sign.width || 0.62, sign.panelHeight || 0.42, 0.05), faceMat);
+      face.position.set(sign.x, (sign.height || 2.4) - ((sign.panelOffset || 0.42)), sign.z);
+      face.rotation.y = sign.yaw || 0;
+      worldGroup.add(face);
+    });
+
+    (streetscape.streetFurniture || []).forEach((item) => {
+      const metalMat = registerMaterial(new THREE.MeshStandardMaterial({ color: 0x4e545d, roughness: 0.58, metalness: 0.42 }), 'metalMaterials');
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x6b4e35, roughness: 0.8, metalness: 0.08 });
+      const stoneMat = new THREE.MeshStandardMaterial({ color: 0x777066, roughness: 0.88, metalness: 0.06 });
+      let mesh = null;
+      if (item.kind === 'bench') {
+        mesh = new THREE.Group();
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.36), woodMat);
+        seat.position.y = 0.48;
+        mesh.add(seat);
+        [-0.7, 0, 0.7].forEach((x) => {
+          const slat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.06), woodMat);
+          slat.position.set(x, 0.78, -0.12);
+          mesh.add(slat);
+        });
+        [-0.68, 0.68].forEach((x) => {
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.52, 0.08), metalMat);
+          leg.position.set(x, 0.24, 0);
+          mesh.add(leg);
+        });
+      } else if (item.kind === 'bin') {
+        mesh = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.88, 12), metalMat);
+        body.position.y = 0.44;
+        mesh.add(body);
+        const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.26, 0.08, 12), stoneMat);
+        lid.position.y = 0.9;
+        mesh.add(lid);
+      } else if (item.kind === 'planter') {
+        mesh = new THREE.Group();
+        const base = new THREE.Mesh(new THREE.BoxGeometry(1, 0.6, 1), stoneMat);
+        base.position.y = 0.3;
+        mesh.add(base);
+        const shrub = new THREE.Mesh(new THREE.DodecahedronGeometry(0.48, 0), new THREE.MeshStandardMaterial({ color: 0x4e6b47, roughness: 0.9, metalness: 0.02 }));
+        shrub.position.y = 0.82;
+        mesh.add(shrub);
+      } else if (item.kind === 'utility') {
+        mesh = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.5, 0.46), metalMat);
+        mesh.position.y = 0.75;
+      }
+      if (mesh) {
+        mesh.position.set(item.x, mesh.position.y || 0, item.z);
+        mesh.rotation.y = item.yaw || 0;
+        worldGroup.add(mesh);
+      }
+    });
   }
 
   function localPointToWorld(building, localX, localZ) {
@@ -1951,14 +2131,18 @@
         bevelEnabled: false,
       });
       geom.rotateX(-Math.PI / 2);
-      const mat = new THREE.MeshStandardMaterial({
+      const mat = registerMaterial(new THREE.MeshStandardMaterial({
         color: colors.primary,
-        roughness: 0.8,
-        metalness: 0.16,
+        roughness: b.tone === 'brickWarm' ? 0.88 : 0.76,
+        metalness: 0.12,
         emissive: 0x11151f,
-        emissiveIntensity: 0.22,
-      });
-      visualState.buildingMaterials.push(mat);
+        emissiveIntensity: 0.18,
+      }), 'buildingMaterials');
+      mat.userData = {
+        baseRoughness: mat.roughness,
+        baseEmissiveIntensity: mat.emissiveIntensity,
+        tone: b.tone || 'brickDark',
+      };
       const mesh = new THREE.Mesh(geom, mat);
       mesh.scale.set(massingInset, 1, massingInset);
       mesh.position.set(b.x, 0, b.z);
@@ -1969,7 +2153,7 @@
       if (rooflineType !== 'flat') {
         const roofHeight = Math.max(0.5, (b.cornice_emphasis || 0.2) * 2 + profilePreset.rooflineLift * 0.2);
         const roofGeom = new THREE.CylinderGeometry((Math.max(b.width, b.depth) * 0.5) * 0.92, (Math.max(b.width, b.depth) * 0.5), roofHeight, 6);
-        const roofMat = new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.78, metalness: 0.12 });
+        const roofMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.7, metalness: 0.16 }), 'metalMaterials');
         const roof = new THREE.Mesh(roofGeom, roofMat);
         roof.position.set(b.x, b.height + roofHeight / 2, b.z);
         roof.rotation.y = (b.yaw || 0) + (rooflineType === 'angled_parapet' ? 0.45 : 0);
@@ -1983,9 +2167,10 @@
       }
 
       const storefrontBandHeight = Math.max(1.4, b.height * ((b.storefront_rhythm && b.storefront_rhythm.base_band) || profilePreset.storefrontBand));
+      const storefrontMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.accent, roughness: 0.62, metalness: 0.16, emissive: 0x120d0a, emissiveIntensity: 0.06 }), 'emissiveMaterials');
       const storefront = new THREE.Mesh(
         new THREE.BoxGeometry((b.width || 8) * 0.92, storefrontBandHeight, Math.max(2, (b.depth || 8) * 0.15)),
-        new THREE.MeshStandardMaterial({ color: colors.accent, roughness: 0.72, metalness: 0.1 })
+        storefrontMat
       );
       const storefrontPos = localPointToWorld(b, 0, (b.depth || 8) * 0.34);
       storefront.position.set(storefrontPos.x, storefrontBandHeight / 2 + 0.2, storefrontPos.z);
@@ -1994,7 +2179,16 @@
 
       const bayCount = Math.max(2, Math.min(8, b.window_bay_count || 4));
       const windowRows = Math.max(1, Math.min(5, (b.storefront_rhythm && b.storefront_rhythm.upper_rows) || profilePreset.windowRows));
-      const windowMat = new THREE.MeshStandardMaterial({ color: 0x1f2a38, emissive: 0x344d63, emissiveIntensity: 0.14, roughness: 0.42, metalness: 0.22 });
+      const windowMat = registerMaterial(new THREE.MeshStandardMaterial({
+        color: 0x223345,
+        emissive: 0x385a79,
+        emissiveIntensity: 0.12,
+        roughness: 0.16,
+        metalness: 0.34,
+        transparent: true,
+        opacity: 0.88,
+      }), 'glassMaterials');
+      windowMat.userData = { baseRoughness: 0.16, baseOpacity: 0.88 };
       for (let row = 0; row < windowRows; row += 1) {
         for (let bay = 0; bay < bayCount; bay += 1) {
           const win = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (bayCount + 1.2), (b.height || 12) / (windowRows * 4.3)), windowMat);
@@ -2005,19 +2199,63 @@
           win.position.set(winPos.x, yOffset, winPos.z);
           win.rotation.y = b.yaw || 0;
           worldGroup.add(win);
+
+          const sill = new THREE.Mesh(
+            new THREE.BoxGeometry((b.width || 8) / (bayCount + 1.6), 0.09, 0.14),
+            new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.72, metalness: 0.12 })
+          );
+          sill.position.set(winPos.x, yOffset - 0.36, winPos.z - 0.02);
+          sill.rotation.y = b.yaw || 0;
+          worldGroup.add(sill);
         }
       }
 
+      const storefrontWindowMat = registerMaterial(new THREE.MeshStandardMaterial({
+        color: 0x1d2f3f,
+        emissive: 0x4f6e8b,
+        emissiveIntensity: 0.1,
+        roughness: 0.12,
+        metalness: 0.38,
+        transparent: true,
+        opacity: 0.82,
+      }), 'glassMaterials');
+      const displayCount = Math.max(2, Math.min(5, bayCount - Math.min(1, b.recessed_entry_count || 0)));
+      for (let bay = 0; bay < displayCount; bay += 1) {
+        const xOffset = (((bay + 0.5) / displayCount) - 0.5) * ((b.width || 8) * 0.76);
+        const glass = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (displayCount + 0.8), storefrontBandHeight * 0.68), storefrontWindowMat);
+        const glassPos = localPointToWorld(b, xOffset, (b.depth || 8) * 0.49);
+        glass.position.set(glassPos.x, (storefrontBandHeight * 0.5) + 0.36, glassPos.z);
+        glass.rotation.y = b.yaw || 0;
+        worldGroup.add(glass);
+      }
+
       if (b.awning_presence || (profilePreset.awningDepth > 0.1)) {
+        const awningMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.56, metalness: 0.16 }), 'metalMaterials');
         const awning = new THREE.Mesh(
           new THREE.BoxGeometry((b.width || 8) * 0.86, 0.3, Math.max(0.8, profilePreset.awningDepth)),
-          new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.64, metalness: 0.08 })
+          awningMat
         );
         const awningPos = localPointToWorld(b, 0, (b.depth || 8) * 0.45);
         awning.position.set(awningPos.x, storefrontBandHeight + 0.6, awningPos.z);
         awning.rotation.y = b.yaw || 0;
         worldGroup.add(awning);
       }
+
+      const signBandMat = registerMaterial(new THREE.MeshStandardMaterial({
+        color: colors.trim,
+        roughness: 0.54,
+        metalness: 0.2,
+        emissive: colors.accent,
+        emissiveIntensity: 0.05,
+      }), 'emissiveMaterials');
+      const signBand = new THREE.Mesh(
+        new THREE.BoxGeometry((b.width || 8) * 0.78, 0.46, 0.08),
+        signBandMat
+      );
+      const signBandPos = localPointToWorld(b, 0, (b.depth || 8) * 0.495);
+      signBand.position.set(signBandPos.x, storefrontBandHeight + 0.16, signBandPos.z);
+      signBand.rotation.y = b.yaw || 0;
+      worldGroup.add(signBand);
 
       if (profilePreset.columnRhythm) {
         const columns = Math.max(6, Math.round((b.width || 20) / 3.2));
@@ -2051,7 +2289,7 @@
           const t = (((i + 1) / (entryCount + 1)) - 0.5) * ((b.width || 8) * 0.5);
           const entry = new THREE.Mesh(
             new THREE.BoxGeometry(0.9, 2.4, 0.5),
-            new THREE.MeshStandardMaterial({ color: 0x1d222b, roughness: 0.45, metalness: 0.22 })
+            registerMaterial(new THREE.MeshStandardMaterial({ color: 0x1d222b, roughness: 0.3, metalness: 0.28 }), 'reflectiveMaterials')
           );
           const entryPos = localPointToWorld(b, t, (b.depth || 8) * 0.48);
           entry.position.set(entryPos.x, 1.25, entryPos.z);
@@ -3479,19 +3717,42 @@
     const fogDensity = Math.max(0.0035, (weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
     scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
     renderer.setClearColor(timeOfDay.sky, 1);
+    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 1.1 : state.activeTimeOfDay === 'night' ? 0.84 : 0.96) - ((weather.rainIntensity || 0) * 0.04);
 
     ambient.color.set(timeOfDay.ambientColor);
-    ambient.intensity = Math.max(0.24, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.84);
+    ambient.intensity = Math.max(0.2, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.76);
     keyLight.color.set(timeOfDay.keyColor);
-    keyLight.intensity = (timeOfDay.keyIntensity || 0.6) * (0.72 + (mood.lightIntensity * 0.28));
+    keyLight.intensity = (timeOfDay.keyIntensity || 0.6) * (0.72 + (mood.lightIntensity * 0.34));
     fillLight.color.set(timeOfDay.fillColor || '#526782');
-    fillLight.intensity = (timeOfDay.fillIntensity || 0.22) * 0.92;
+    fillLight.intensity = (timeOfDay.fillIntensity || 0.22) * 0.82;
+    rimLight.color.set(timeOfDay.fillColor || '#6f88a6');
+    rimLight.intensity = (state.activeTimeOfDay === 'night' ? 0.24 : state.activeTimeOfDay === 'morning' ? 0.16 : 0.12) + ((weather.rainIntensity || 0) * 0.08);
 
     const contrast = timeOfDay.buildingContrast || 1;
     visualState.buildingMaterials.forEach((mat) => {
       mat.emissive.set(timeOfDay.buildingEdgeColor || '#1a2230');
-      mat.emissiveIntensity = 0.14 + ((contrast - 1) * 0.3);
-      mat.roughness = Math.max(0.56, 0.86 - ((contrast - 1) * 0.24));
+      const baseRoughness = (mat.userData && mat.userData.baseRoughness) || 0.82;
+      const baseEmissiveIntensity = (mat.userData && mat.userData.baseEmissiveIntensity) || 0.14;
+      mat.emissiveIntensity = baseEmissiveIntensity + ((contrast - 1) * 0.24) + ((weather.rainIntensity || 0) * ART_DIRECTION.facadeGlowBoost * 0.2);
+      mat.roughness = Math.max(0.5, baseRoughness - ((contrast - 1) * 0.16));
+    });
+    visualState.glassMaterials.forEach((mat) => {
+      const rain = weather.rainIntensity || 0;
+      mat.roughness = Math.max(0.05, ((mat.userData && mat.userData.baseRoughness) || 0.16) - (rain * 0.08));
+      mat.opacity = Math.min(0.95, ((mat.userData && mat.userData.baseOpacity) || 0.88) + (state.activeTimeOfDay === 'night' ? 0.04 : 0));
+      mat.emissiveIntensity = (state.activeTimeOfDay === 'night' ? 0.18 : state.activeTimeOfDay === 'morning' ? 0.11 : 0.08) + (rain * 0.08);
+    });
+    visualState.emissiveMaterials.forEach((mat) => {
+      mat.emissiveIntensity = (state.activeTimeOfDay === 'night' ? 0.14 : 0.06) + ((weather.rainIntensity || 0) * 0.06);
+    });
+    visualState.metalMaterials.forEach((mat) => {
+      mat.roughness = Math.max(0.22, 0.58 - ((weather.rainIntensity || 0) * 0.18));
+      mat.metalness = Math.min(0.72, Math.max(0.18, mat.metalness + ((weather.rainIntensity || 0) * 0.04)));
+    });
+    visualState.reflectiveMaterials.forEach((mat) => {
+      if (!mat) return;
+      const rain = weather.rainIntensity || 0;
+      mat.roughness = Math.max(0.08, (mat.roughness || 0.5) - (rain * ART_DIRECTION.streetReflectionBoost));
     });
 
     if (visualState.roadMaterial) {
@@ -3514,6 +3775,10 @@
     if (visualState.laneMaterial) {
       visualState.laneMaterial.color.set(timeOfDay.laneColor || '#aab1b8');
       visualState.laneMaterial.opacity = Math.min(0.14, 0.035 + ((timeOfDay.pathBrightness || 0.2) * 0.12));
+    }
+
+    if (worldStatusEl) {
+      worldStatusEl.dataset.artDirection = ART_DIRECTION.label;
     }
 
     applyLandmarkVisualState(visualState.landmarkVisuals, { mood, weather, timeOfDay });
