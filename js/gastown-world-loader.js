@@ -62,6 +62,9 @@
       assertFiniteNumberIfPresent(prop[field], 'props[' + index + '].' + field);
     });
     assertFiniteNumberIfPresent(prop.y, 'props[' + index + '].y');
+    if (prop.collectible !== undefined && typeof prop.collectible !== 'boolean') {
+      throw new Error('Gastown world data is malformed: props[' + index + '].collectible must be boolean when present.');
+    }
   }
 
   function validateNpc(npc, index) {
@@ -254,6 +257,11 @@
       z: isFiniteNumber(prop.z) ? prop.z : 0,
       yaw: isFiniteNumber(prop.yaw) ? prop.yaw : 0,
       scale: isFiniteNumber(prop.scale) ? prop.scale : 1,
+      collectible: !!prop.collectible,
+      collectibleKey: typeof prop.collectibleKey === 'string' ? prop.collectibleKey : '',
+      collectibleLabel: typeof prop.collectibleLabel === 'string' ? prop.collectibleLabel : '',
+      minimapIcon: typeof prop.minimapIcon === 'string' ? prop.minimapIcon : '',
+      randomOffset: !!prop.randomOffset,
     }));
 
     normalized.npcs = Array.isArray(normalized.npcs) ? normalized.npcs : [];

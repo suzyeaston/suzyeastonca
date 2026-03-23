@@ -4,6 +4,14 @@ const fs = require('fs');
 const path = require('path');
 
 const EARTH_RADIUS_METERS = 6371008.8;
+const DEFAULT_ART_DIRECTION = {
+  label: 'stylized realism with cinematic Vancouver rain-lighting',
+  pillars: [
+    'wet cobblestone reflections and low-angle dawn highlights',
+    'heritage masonry with richer brick-stone-glass contrast',
+    'dense civic clutter and postcard framing around the Steam Clock and Water Street bends',
+  ],
+};
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -1162,16 +1170,20 @@ function makeStarterWorld(outputPath, options = {}) {
   const props = [
     placeStarterProp(waterCenterline, 18, -(sidewalkOuter + 0.55), 'starter-prop-threshold-box', 'newspaper_box', { scale: 1.05 }),
     placeStarterProp(waterCenterline, 24, sidewalkOuter + 0.72, 'starter-prop-threshold-utility', 'utility_box', { scale: 1.1 }),
+    placeStarterProp(waterCenterline, 20, -(sidewalkOuter + 1.72), 'starter-prop-threshold-bench', 'bench', { scale: 0.92, yawOffset: Math.PI / 2 }),
     placeStarterProp(waterCenterline, 62, -(sidewalkOuter + 0.88), 'starter-prop-planter-west', 'planter', { scale: 1.15 }),
     placeStarterProp(waterCenterline, primaryLength * 0.72, sidewalkOuter + 0.95, 'starter-prop-planter-east', 'planter', { scale: 1.08 }),
     { id: 'starter-prop-bench-clock', kind: 'bench', x: Number((layout.clock.x - (layout.plaza.tangent.x * 1.8) + (layout.plaza.normal.x * 2.2)).toFixed(2)), y: 0, z: Number((layout.clock.z - (layout.plaza.tangent.z * 1.8) + (layout.plaza.normal.z * 2.2)).toFixed(2)), yaw: Number((Math.atan2(layout.plaza.tangent.x, layout.plaza.tangent.z) + (Math.PI / 2)).toFixed(4)), scale: 1.04 },
     { id: 'starter-prop-clock-box', kind: 'newspaper_box', x: Number((layout.clock.x + (layout.plaza.tangent.x * 1.6) + (layout.plaza.normal.x * 2.6)).toFixed(2)), y: 0, z: Number((layout.clock.z + (layout.plaza.tangent.z * 1.6) + (layout.plaza.normal.z * 2.6)).toFixed(2)), yaw: 0, scale: 0.98 },
     { id: 'starter-prop-station-kiosk', kind: 'newspaper_box', x: Number((layout.station.x + (intersectionFrame.tangent.x * 4.6) - (intersectionFrame.normal.x * 2.7)).toFixed(2)), y: 0, z: Number((layout.station.z + (intersectionFrame.tangent.z * 4.6) - (intersectionFrame.normal.z * 2.7)).toFixed(2)), yaw: Number(Math.atan2(intersectionFrame.tangent.x, intersectionFrame.tangent.z).toFixed(4)), scale: 1, collectible: true, collectibleKey: 'newspaper_box', collectibleLabel: 'Newspaper box', minimapIcon: 'collectible' },
-    { id: 'starter-prop-maple-mural', kind: 'planter', x: Number((layout.mapleEdge.x + (layout.plaza.tangent.x * 2.8) + (layout.plaza.normal.x * 3.1)).toFixed(2)), y: 0, z: Number((layout.mapleEdge.z + (layout.plaza.tangent.z * 2.8) + (layout.plaza.normal.z * 3.1)).toFixed(2)), yaw: Number((Math.atan2(layout.plaza.normal.x, layout.plaza.normal.z) + Math.PI).toFixed(4)), scale: 1.08, collectible: true, collectibleKey: 'mural', collectibleLabel: 'Maple Tree mural', minimapIcon: 'collectible' },
+    { id: 'starter-prop-maple-mural', kind: 'cardboard_box', x: Number((layout.mapleEdge.x + (layout.plaza.tangent.x * 2.1) + (layout.plaza.normal.x * 2.3)).toFixed(2)), y: 0, z: Number((layout.mapleEdge.z + (layout.plaza.tangent.z * 2.1) + (layout.plaza.normal.z * 2.3)).toFixed(2)), yaw: Number(Math.atan2(layout.plaza.tangent.x, layout.plaza.tangent.z).toFixed(4)), scale: 0.95, collectible: true, collectibleKey: 'mural', collectibleLabel: 'Maple Tree mural', minimapIcon: 'mural', randomOffset: true },
+    { id: 'starter-prop-clock-plaque', kind: 'utility_box', x: Number((layout.clock.x + (layout.plaza.normal.x * 1.9) + (layout.plaza.tangent.x * 0.5)).toFixed(2)), y: 0, z: Number((layout.clock.z + (layout.plaza.normal.z * 1.9) + (layout.plaza.tangent.z * 0.5)).toFixed(2)), yaw: Number(Math.atan2(layout.plaza.normal.x, layout.plaza.normal.z).toFixed(4)), scale: 0.65 },
     { id: 'starter-prop-alley-plaque', kind: 'utility_box', x: Number((intersectionPoint.x - (intersectionFrame.tangent.x * 9.1) + (intersectionFrame.normal.x * 6.6)).toFixed(2)), y: 0, z: Number((intersectionPoint.z - (intersectionFrame.tangent.z * 9.1) + (intersectionFrame.normal.z * 6.6)).toFixed(2)), yaw: Number(Math.atan2(intersectionFrame.normal.x, intersectionFrame.normal.z).toFixed(4)), scale: 1, collectible: true, collectibleKey: 'historic_plaque', collectibleLabel: 'Historic plaque', minimapIcon: 'collectible' },
+    placeStarterProp(waterEastLeg, Math.max(3, polylineLength(waterEastLeg) * 0.3), sidewalkOuter * 0.88, 'starter-prop-east-newsbox', 'newspaper_box', { scale: 1.02 }),
     placeStarterProp(cambieCorridor, 18, -(sidewalkOuter * 0.82), 'starter-prop-postclock-utility', 'utility_box', { scale: 1.06 }),
     placeStarterProp(cambieCorridor, 30, sidewalkOuter * 0.75, 'starter-prop-postclock-bags', 'trash_bag', { scale: 0.96 }),
     placeStarterProp(cambieCorridor, 36, sidewalkOuter * 0.88, 'starter-prop-postclock-bench', 'bench', { scale: 1, yawOffset: Math.PI / 2 }),
+    placeStarterProp(cambieCorridor, 32, -(sidewalkOuter * 0.92), 'starter-prop-postclock-planter', 'planter', { scale: 1.12 }),
   ];
 
   const landmarkBundle = buildStarterLandmarks(layout);
@@ -1224,6 +1236,7 @@ function makeStarterWorld(outputPath, options = {}) {
       },
       provenanceSummary: 'Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs.',
       lastBuild: existingMeta.lastBuild || new Date().toISOString(),
+      artDirection: existingMeta.artDirection || DEFAULT_ART_DIRECTION,
     },
     route: { name: 'Explorable Gastown: Water Street loops', centerline, walkBounds, streetWidth, sidewalkWidth, softBoundary, hardResetDistance: 12 },
     nodes: [
@@ -1653,6 +1666,7 @@ function buildWorld(options = {}) {
         orthophotoImagery2015: fs.existsSync(path.join(root, 'data', 'cov', 'orthophoto-imagery-2015.geojson')),
       },
       provenanceSummary: 'Offline civic-data build generated from local source exports and normalized for the runtime simulator.',
+      artDirection: existingMeta.artDirection || DEFAULT_ART_DIRECTION,
     },
     route: {
       ...(existingWorld.route || {}),

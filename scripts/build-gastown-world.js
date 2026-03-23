@@ -75,6 +75,14 @@ function runScaffold() {
   world.meta.provenanceSummary = world.meta.isRealCivicBuild === false
     ? 'Approximate fallback corridor retained because civic/open-data inputs were unavailable at build time.'
     : 'Offline civic/open-data build generated from local source exports.';
+  world.meta.artDirection = world.meta.artDirection || {
+    label: 'stylized realism with cinematic Vancouver rain-lighting',
+    pillars: [
+      'wet cobblestone reflections and low-angle dawn highlights',
+      'heritage masonry with richer brick-stone-glass contrast',
+      'dense civic clutter and postcard framing around the Steam Clock and Water Street bends',
+    ],
+  };
   world.meta.importManifest = world.meta.importManifest || importManifest;
 
   (world.buildings || []).forEach((building) => applyReferenceScaffold(building));

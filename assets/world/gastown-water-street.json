@@ -22,7 +22,15 @@
       "orthophotoImagery2015": false
     },
     "provenanceSummary": "Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs.",
-    "lastBuild": "2026-03-23T07:44:29.599Z"
+    "lastBuild": "2026-03-23T07:44:29.599Z",
+    "artDirection": {
+      "label": "stylized realism with cinematic Vancouver rain-lighting",
+      "pillars": [
+        "wet cobblestone reflections and low-angle dawn highlights",
+        "heritage masonry with richer brick-stone-glass contrast",
+        "dense civic clutter and postcard framing around the Steam Clock and Water Street bends"
+      ]
+    }
   },
   "route": {
     "name": "Explorable Gastown: Water Street loops",
@@ -4124,6 +4132,15 @@
       "scale": 1.1
     },
     {
+      "id": "starter-prop-threshold-bench",
+      "kind": "bench",
+      "x": 8.12,
+      "y": 0,
+      "z": -21.39,
+      "yaw": 2.2713,
+      "scale": 0.92
+    },
+    {
       "id": "starter-prop-planter-west",
       "kind": "planter",
       "x": 41.15,
@@ -4174,16 +4191,26 @@
     },
     {
       "id": "starter-prop-maple-mural",
-      "kind": "planter",
-      "x": 209.59,
+      "kind": "cardboard_box",
+      "x": 209.8,
       "y": 0,
-      "z": -177.57,
-      "yaw": 0.9141,
-      "scale": 1.08,
+      "z": -176.53,
+      "yaw": 2.4849,
+      "scale": 0.95,
       "collectible": true,
       "collectibleKey": "mural",
       "collectibleLabel": "Maple Tree mural",
-      "minimapIcon": "collectible"
+      "minimapIcon": "mural",
+      "randomOffset": true
+    },
+    {
+      "id": "starter-prop-clock-plaque",
+      "kind": "utility_box",
+      "x": 183.11,
+      "y": 0,
+      "z": -156.31,
+      "yaw": -2.2275,
+      "scale": 0.65
     },
     {
       "id": "starter-prop-alley-plaque",
@@ -4197,6 +4224,15 @@
       "collectibleKey": "historic_plaque",
       "collectibleLabel": "Historic plaque",
       "minimapIcon": "collectible"
+    },
+    {
+      "id": "starter-prop-east-newsbox",
+      "kind": "newspaper_box",
+      "x": 176.45,
+      "y": 0,
+      "z": -127.06,
+      "yaw": 0.654,
+      "scale": 1.02
     },
     {
       "id": "starter-prop-postclock-utility",
@@ -4224,6 +4260,15 @@
       "z": -141.56,
       "yaw": -0.5404,
       "scale": 1
+    },
+    {
+      "id": "starter-prop-postclock-planter",
+      "kind": "planter",
+      "x": 193.94,
+      "y": 0,
+      "z": -136.29,
+      "yaw": -2.1112,
+      "scale": 1.12
     }
   ],
   "npcs": [
