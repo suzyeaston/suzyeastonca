@@ -272,6 +272,7 @@ function se_enqueue_gastown_sim_assets() {
                 'dialogDataUrl'  => esc_url_raw( $uri . '/assets/dialog/gastown.json' ),
                 'conversationEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-npc-chat' ) ),
                 'voiceEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-npc-voice' ) ),
+                'buskerRiffEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-busker-riff' ) ),
                 'nonce' => wp_create_nonce( 'wp_rest' ),
                 'defaultWeather' => 'clear',
                 'defaultMood'    => 'calm',
@@ -828,6 +829,12 @@ add_action('rest_api_init', function() {
         'callback'            => 'se_handle_gastown_npc_voice',
         'permission_callback' => '__return_true',
     ]);
+
+    register_rest_route('se/v1', '/gastown-busker-riff', [
+        'methods'             => 'GET',
+        'callback'            => 'se_handle_gastown_busker_riff',
+        'permission_callback' => '__return_true',
+    ]);
 });
 
 // =========================================
@@ -851,6 +858,145 @@ function get_custom_canucks_betting( WP_REST_Request $request ) {
     return rest_ensure_response( $odds );
 }
 
+
+
+function se_get_gastown_busker_riff_fallback( $mood = 'lively', $weather = 'clear', $time_of_day = 'morning' ) {
+    $tempo = 'night' === $time_of_day ? 90 : ( 'lively' === $mood ? 108 : 96 );
+    $root = 'night' === $time_of_day ? 'D4' : ( 'eerie' === $mood ? 'E4' : 'G4' );
+    $motifs = array(
+        'lively' => array(
+            array( 'note' => $root, 'beats' => 0.5, 'velocity' => 0.96, 'accent' => true, 'articulation' => 'growl' ),
+            array( 'note' => 'Bb4', 'beats' => 0.5, 'velocity' => 0.84, 'accent' => false, 'articulation' => 'stab' ),
+            array( 'note' => 'D5', 'beats' => 1, 'velocity' => 0.92, 'accent' => true, 'articulation' => 'rasp' ),
+            array( 'note' => 'C5', 'beats' => 0.5, 'velocity' => 0.8, 'accent' => false, 'articulation' => 'fall' ),
+            array( 'note' => 'G4', 'beats' => 1, 'velocity' => 0.88, 'accent' => true, 'articulation' => 'hold' ),
+            array( 'note' => 'rest', 'beats' => 0.5 ),
+            array( 'note' => 'F4', 'beats' => 0.5, 'velocity' => 0.78, 'accent' => false, 'articulation' => 'bend' ),
+            array( 'note' => 'G4', 'beats' => 1, 'velocity' => 0.9, 'accent' => true, 'articulation' => 'growl' ),
+        ),
+        'calm' => array(
+            array( 'note' => 'G4', 'beats' => 1, 'velocity' => 0.76, 'accent' => false, 'articulation' => 'smear' ),
+            array( 'note' => 'A4', 'beats' => 0.5, 'velocity' => 0.68, 'accent' => false, 'articulation' => 'slide' ),
+            array( 'note' => 'Bb4', 'beats' => 1, 'velocity' => 0.74, 'accent' => true, 'articulation' => 'hold' ),
+            array( 'note' => 'D5', 'beats' => 0.5, 'velocity' => 0.82, 'accent' => true, 'articulation' => 'rasp' ),
+            array( 'note' => 'C5', 'beats' => 1, 'velocity' => 0.72, 'accent' => false, 'articulation' => 'fall' ),
+            array( 'note' => 'G4', 'beats' => 1, 'velocity' => 0.8, 'accent' => true, 'articulation' => 'hold' ),
+        ),
+        'commuter' => array(
+            array( 'note' => 'E4', 'beats' => 0.5, 'velocity' => 0.84, 'accent' => true, 'articulation' => 'stab' ),
+            array( 'note' => 'G4', 'beats' => 0.5, 'velocity' => 0.78, 'accent' => false, 'articulation' => 'growl' ),
+            array( 'note' => 'B4', 'beats' => 1, 'velocity' => 0.86, 'accent' => true, 'articulation' => 'rasp' ),
+            array( 'note' => 'A4', 'beats' => 0.5, 'velocity' => 0.76, 'accent' => false, 'articulation' => 'fall' ),
+            array( 'note' => 'G4', 'beats' => 1, 'velocity' => 0.8, 'accent' => true, 'articulation' => 'hold' ),
+            array( 'note' => 'rest', 'beats' => 0.5 ),
+            array( 'note' => 'E4', 'beats' => 0.5, 'velocity' => 0.88, 'accent' => true, 'articulation' => 'stab' ),
+            array( 'note' => 'G4', 'beats' => 1, 'velocity' => 0.8, 'accent' => false, 'articulation' => 'growl' ),
+        ),
+        'eerie' => array(
+            array( 'note' => 'D4', 'beats' => 1, 'velocity' => 0.72, 'accent' => false, 'articulation' => 'breathy' ),
+            array( 'note' => 'F4', 'beats' => 0.5, 'velocity' => 0.74, 'accent' => false, 'articulation' => 'slide' ),
+            array( 'note' => 'A4', 'beats' => 1, 'velocity' => 0.8, 'accent' => true, 'articulation' => 'rasp' ),
+            array( 'note' => 'C5', 'beats' => 0.5, 'velocity' => 0.76, 'accent' => false, 'articulation' => 'fall' ),
+            array( 'note' => 'A4', 'beats' => 1, 'velocity' => 0.78, 'accent' => true, 'articulation' => 'hold' ),
+            array( 'note' => 'F4', 'beats' => 1, 'velocity' => 0.7, 'accent' => false, 'articulation' => 'breathy' ),
+        ),
+    );
+
+    $sequence = $motifs[ $mood ] ?? $motifs['lively'];
+    if ( 'rain' === $weather || 'drizzle' === $weather ) {
+        $tempo -= 6;
+    }
+
+    return array(
+        'ok' => true,
+        'fallback' => true,
+        'spec' => array(
+            'mood' => $mood,
+            'weather' => $weather,
+            'timeOfDay' => $time_of_day,
+            'tempo' => max( 76, min( 118, $tempo ) ),
+            'key' => 'G minor pentatonic',
+            'loopBeats' => 8,
+            'phraseLengths' => array( 2, 2, 4 ),
+            'articulationHints' => array( 'gritty', 'street-corner', 'rock-adjacent', 'short breaths', 'raw edge' ),
+            'sequence' => $sequence,
+        ),
+    );
+}
+
+function se_handle_gastown_busker_riff( WP_REST_Request $request ) {
+    $mood = sanitize_key( (string) $request->get_param( 'mood' ) ) ?: 'lively';
+    $weather = sanitize_key( (string) $request->get_param( 'weather' ) ) ?: 'clear';
+    $time_of_day = sanitize_key( (string) $request->get_param( 'timeOfDay' ) ) ?: 'morning';
+
+    $fallback = se_get_gastown_busker_riff_fallback( $mood, $weather, $time_of_day );
+
+    $messages = array(
+        array(
+            'role' => 'system',
+            'content' => 'Return strict JSON only. You are designing a short loopable street-busker sax riff spec for a stylized Gastown simulator. Keep it 5-12 seconds, gritty, melodic, rock-adjacent, terse, and suitable for realtime synthesis. No prose outside JSON.',
+        ),
+        array(
+            'role' => 'user',
+            'content' => sprintf( 'Mood: %s. Weather: %s. Time of day: %s. Return JSON with keys mood, tempo, key, loopBeats, phraseLengths, articulationHints, and sequence. sequence must be 6-12 items of note events with note, beats, velocity, accent, articulation. Use note names like G4 or rest.', $mood, $weather, $time_of_day ),
+        ),
+    );
+
+    $response = se_openai_chat( $messages, array(
+        'model' => 'gpt-4o-mini',
+        'temperature' => 0.8,
+        'max_tokens' => 320,
+    ), array( 'timeout' => 8 ) );
+
+    if ( is_wp_error( $response ) ) {
+        return rest_ensure_response( $fallback );
+    }
+
+    $text = trim( (string) ( $response['choices'][0]['message']['content'] ?? '' ) );
+    if ( preg_match( '/```(?:json)?\s*(.*?)```/is', $text, $matches ) ) {
+        $text = trim( $matches[1] );
+    }
+    $decoded = json_decode( $text, true );
+    if ( ! is_array( $decoded ) || empty( $decoded['sequence'] ) || ! is_array( $decoded['sequence'] ) ) {
+        return rest_ensure_response( $fallback );
+    }
+
+    $spec = $fallback['spec'];
+    $spec['mood'] = sanitize_text_field( (string) ( $decoded['mood'] ?? $spec['mood'] ) );
+    $spec['tempo'] = max( 76, min( 118, intval( $decoded['tempo'] ?? $spec['tempo'] ) ) );
+    $spec['key'] = sanitize_text_field( (string) ( $decoded['key'] ?? $spec['key'] ) );
+    $spec['loopBeats'] = max( 6, min( 16, intval( $decoded['loopBeats'] ?? $spec['loopBeats'] ) ) );
+    $spec['phraseLengths'] = array_values( array_slice( array_map( 'intval', (array) ( $decoded['phraseLengths'] ?? $spec['phraseLengths'] ) ), 0, 4 ) );
+    $spec['articulationHints'] = array_values( array_slice( array_map( 'sanitize_text_field', (array) ( $decoded['articulationHints'] ?? $spec['articulationHints'] ) ), 0, 6 ) );
+    $spec['sequence'] = array();
+    foreach ( array_slice( $decoded['sequence'], 0, 12 ) as $event ) {
+        if ( ! is_array( $event ) ) {
+            continue;
+        }
+        $note = sanitize_text_field( (string) ( $event['note'] ?? 'rest' ) );
+        $beats = floatval( $event['beats'] ?? 0.5 );
+        if ( $beats <= 0 ) {
+            $beats = 0.5;
+        }
+        $spec['sequence'][] = array(
+            'note' => $note,
+            'beats' => min( 2.5, max( 0.25, $beats ) ),
+            'velocity' => min( 1, max( 0.3, floatval( $event['velocity'] ?? 0.8 ) ) ),
+            'accent' => ! empty( $event['accent'] ),
+            'articulation' => sanitize_text_field( (string) ( $event['articulation'] ?? 'growl' ) ),
+        );
+    }
+
+    if ( empty( $spec['sequence'] ) ) {
+        return rest_ensure_response( $fallback );
+    }
+
+    return rest_ensure_response( array(
+        'ok' => true,
+        'fallback' => false,
+        'spec' => $spec,
+    ) );
+}
 
 function se_handle_gastown_npc_voice( WP_REST_Request $request ) {
     $role       = sanitize_key( (string) $request->get_param( 'role' ) );

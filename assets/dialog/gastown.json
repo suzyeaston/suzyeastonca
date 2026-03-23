@@ -2,9 +2,9 @@
   "guide_intro": {
     "title": "Gastown local",
     "lines": [
-      "You can begin anywhere from the station threshold: drift toward a detail, survey the route, follow the soundscape, or treat the walk like a memory map.",
-      "This area is on the unceded territories of the Musqueam, Squamish, and Tsleil-Waututh Nations, so the simulator keeps its public-history framing place-based and lightweight.",
-      "Use the minimap and nearby people as optional cues, then let the street rhythm pull you where it will."
+      "Start walking. The street will tell you what matters first.",
+      "Look for the sax, the storefront glow, and the pull toward the clock.",
+      "This place sits on the unceded territories of the Musqueam, Squamish, and Tsleil-Waututh Nations."
     ],
     "actions": [
       {
@@ -19,7 +19,7 @@
           "location": "waterfront_station"
         },
         "lines": [
-          "In the morning this end of the route still feels half commuter corridor, half heritage reveal — you can watch office workers peel away while visitors are only just orienting themselves."
+          "In the morning this end of the route still feels half commuter corridor, half heritage reveal \u2014 you can watch office workers peel away while visitors are only just orienting themselves."
         ]
       },
       {
@@ -41,11 +41,11 @@
     ]
   },
   "busker_clock_corner": {
-    "title": "Clock-corner busker",
+    "title": "Sax busker",
     "lines": [
-      "The Steam Clock was built in 1977 by Raymond Saunders after the city covered an old steam vent here on Water Street.",
-      "This corner becomes more interesting once you have actually stood in the plaza and then pushed through toward Maple Tree Square — the landmark stops being a photo stop and starts feeling like a hinge in the route.",
-      "Come back after a few discoveries and I will help you compare the soundwalk with the memory walk."
+      "You hear me before you see the clock. That is the point.",
+      "This stretch wakes up once the tourists, food spots, and station spill start mixing.",
+      "Keep moving east when you are ready."
     ],
     "actions": [
       {
@@ -60,7 +60,7 @@
           "location": "steam_clock"
         },
         "lines": [
-          "Rain changes my set here — people bunch under the awnings, listen for a minute, then dart back out when the whistle blows."
+          "Rain changes my set here \u2014 people bunch under the awnings, listen for a minute, then dart back out when the whistle blows."
         ]
       },
       {
@@ -85,8 +85,8 @@
   "pedestrian_route_tip": {
     "title": "Water Street walker",
     "lines": [
-      "Water Street still feels like old Gastown because the narrow lots and warehouse façades keep the block tight and walkable.",
-      "Before tourists filled the sidewalks, this corridor served the port economy — teamsters, merchants, and dock traffic all funneled through here.",
+      "Water Street still feels like old Gastown because the narrow lots and warehouse fa\u00e7ades keep the block tight and walkable.",
+      "Before tourists filled the sidewalks, this corridor served the port economy \u2014 teamsters, merchants, and dock traffic all funneled through here.",
       "If you ask me for a second tip, I'll tell you where the neighbourhood really started."
     ],
     "actions": [
@@ -136,7 +136,7 @@
           "location": "steam_clock"
         },
         "lines": [
-          "Closer to the Steam Clock, the flow changes every few seconds — somebody stops for a photo, somebody slips around them, and the whole street recomposes itself."
+          "Closer to the Steam Clock, the flow changes every few seconds \u2014 somebody stops for a photo, somebody slips around them, and the whole street recomposes itself."
         ]
       },
       {
@@ -150,11 +150,10 @@
     ]
   },
   "tourist_clock_stop": {
-    "title": "Steam Clock visitor",
+    "title": "Tourist",
     "lines": [
-      "We came for the Steam Clock, but the surprise is how much story is packed into one intersection — steam pipes below, brick warehouses above, and Maple Tree Square only steps away.",
-      "People love that it looks Victorian even though it is a 1977 creation; it is basically a heritage stage prop that became a real city icon.",
-      "Ask a second question and I'll tell you the best moment to stand here for the chime."
+      "We stopped for the street first, not just the clock.",
+      "The fun bit is how fast the block turns from station edge to old brick postcard."
     ],
     "actions": [
       {
@@ -187,7 +186,7 @@
           "location": "maple_tree_square"
         },
         "lines": [
-          "Near Maple Tree Square people slow down and point more — it feels less like passing through and more like arriving at the part everyone wants to remember."
+          "Near Maple Tree Square people slow down and point more \u2014 it feels less like passing through and more like arriving at the part everyone wants to remember."
         ]
       }
     ]
@@ -195,9 +194,8 @@
   "tourist_clock_photo": {
     "title": "Street photographer",
     "lines": [
-      "From this angle you can frame the Steam Clock with the old warehouse cornices, which is why photographers keep drifting back to this exact patch of sidewalk.",
-      "Maple Tree Square condenses a lot of urban history into one frame, which is why the image reads as more than a single attraction.",
-      "Give me a second prompt and I'll share the trick for timing the whistle plume."
+      "This angle catches the paving, the people, and the old facades in one frame.",
+      "It works better once the street has a bit of motion in it."
     ],
     "actions": [
       {
@@ -229,7 +227,7 @@
           "foundProp": "foundHistoricPlaque"
         },
         "lines": [
-          "If you already read the plaque, the image lands differently — you are not just photographing an icon, you are catching a block that knows its own backstory."
+          "If you already read the plaque, the image lands differently \u2014 you are not just photographing an icon, you are catching a block that knows its own backstory."
         ]
       }
     ]
@@ -237,7 +235,7 @@
   "skateboarder_corridor": {
     "title": "Gastown skateboarder",
     "lines": [
-      "The fun part of this block is that the feel changes in stages — threshold, storefront rhythm, clock crowd, then the looser edge near Maple Tree Square.",
+      "The fun part of this block is that the feel changes in stages \u2014 threshold, storefront rhythm, clock crowd, then the looser edge near Maple Tree Square.",
       "If you want a challenge, use me as your cue to survey the route: notice where Water Street starts reading like a real corridor instead of a simple starter strip.",
       "Once you have read the mid-block and the eastern rise, the whole route makes more sense."
     ],
@@ -271,7 +269,7 @@
     "title": "Gastown cyclist",
     "lines": [
       "Riding this stretch teaches you the route structure fast: you can feel when the corridor tightens, when the plaza interrupts it, and when the east leg opens back up.",
-      "Treat the minimap like a soft cue, not a GPS arrow — it is best when it confirms something you already noticed in the street itself.",
+      "Treat the minimap like a soft cue, not a GPS arrow \u2014 it is best when it confirms something you already noticed in the street itself.",
       "If you keep the survey going past the clock, the Cambie rise gives you the last big contrast point."
     ],
     "actions": [
@@ -287,7 +285,7 @@
           "location": "water_street"
         },
         "lines": [
-          "Morning makes this stretch feel more utilitarian — delivery workers, commuters, and early walkers all negotiate the same narrow line."
+          "Morning makes this stretch feel more utilitarian \u2014 delivery workers, commuters, and early walkers all negotiate the same narrow line."
         ]
       },
       {
