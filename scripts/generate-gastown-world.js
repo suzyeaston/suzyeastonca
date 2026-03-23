@@ -1192,6 +1192,9 @@ function makeStarterWorld(outputPath, options = {}) {
     ...(reference.orthophotoImagery2015 && Array.isArray(reference.orthophotoImagery2015.features) ? ['orthophoto-imagery-2015.geojson'] : []),
   ];
 
+  const existingWorld = fs.existsSync(outputPath) ? readJson(outputPath) : {};
+  const existingMeta = existingWorld.meta || {};
+
   const lampFeatures = getFeatureCollectionByKind(reference.poiReference, 'heritage_lamp');
   const lamps = lampFeatures.length
     ? lampFeatures.map((feature, index) => {
@@ -1220,7 +1223,7 @@ function makeStarterWorld(outputPath, options = {}) {
         orthophotoImagery2015: !!(reference.orthophotoImagery2015 && Array.isArray(reference.orthophotoImagery2015.features) && reference.orthophotoImagery2015.features.length),
       },
       provenanceSummary: 'Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs.',
-      lastBuild: new Date().toISOString(),
+      lastBuild: existingMeta.lastBuild || new Date().toISOString(),
     },
     route: { name: 'Explorable Gastown: Water Street loops', centerline, walkBounds, streetWidth, sidewalkWidth, softBoundary, hardResetDistance: 12 },
     nodes: [
@@ -1613,7 +1616,7 @@ function buildWorld(options = {}) {
       units: 'meters',
       source: 'Offline City of Vancouver Open Data exports',
       buildClassification: 'offline-civic-build',
-      lastBuild: new Date().toISOString(),
+      lastBuild: existingMeta.lastBuild || new Date().toISOString(),
       importManifest: existingMeta.importManifest || {
         inputs: {
           cityOfVancouver: {

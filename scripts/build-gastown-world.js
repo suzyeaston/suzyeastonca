@@ -63,7 +63,7 @@ function runScaffold() {
 
   const world = JSON.parse(fs.readFileSync(worldPath, 'utf8'));
   world.meta = world.meta || {};
-  world.meta.lastBuild = new Date().toISOString();
+  world.meta.lastBuild = world.meta.lastBuild || new Date().toISOString();
   world.meta.buildNotes = [
     'Runtime geometry is compact and static; no live map APIs.',
     'Prepared for offline City of Vancouver footprints/streets/ROW widths + optional OSM route alignment.',
