@@ -1,35 +1,25 @@
 .gastown-sim-page {
   background:
-    radial-gradient(circle at top, rgba(150, 111, 67, 0.16), transparent 32%),
-    linear-gradient(180deg, #17131c 0%, #090b10 58%, #050609 100%);
-  color: #e8dfd2;
-  padding: clamp(1.25rem, 2vw, 2rem) 1rem 3rem;
+    radial-gradient(circle at 18% 8%, rgba(74, 103, 138, 0.35) 0, rgba(12, 17, 25, 0) 34%),
+    radial-gradient(circle at 76% 18%, rgba(203, 146, 89, 0.15) 0, rgba(8, 11, 17, 0) 28%),
+    linear-gradient(180deg, #111824 0%, #080a10 56%, #040507 100%);
+  color: #d5dde8;
+  padding: 2rem 1rem 3rem;
 }
 
 .gastown-sim-shell {
   max-width: 1180px;
   margin: 0 auto;
-  padding: clamp(1rem, 2vw, 1.6rem);
-  border: 1px solid rgba(210, 181, 145, 0.18);
-  border-radius: 22px;
   background:
-    linear-gradient(180deg, rgba(20, 16, 23, 0.94), rgba(8, 10, 15, 0.92)),
-    rgba(8, 11, 18, 0.9);
+    linear-gradient(180deg, rgba(10, 13, 20, 0.84), rgba(8, 10, 15, 0.9)),
+    rgba(8, 11, 18, 0.75);
+  border: 1px solid rgba(173, 190, 215, 0.16);
+  border-radius: 16px;
+  padding: 1.2rem;
   box-shadow:
-    0 30px 90px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 233, 206, 0.06);
-}
-
-.gastown-sim-header {
-  display: grid;
-  gap: 0.8rem;
-  margin-bottom: 1.15rem;
-  padding: clamp(1.1rem, 2.5vw, 1.8rem);
-  border: 1px solid rgba(196, 162, 123, 0.18);
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at top left, rgba(179, 128, 79, 0.22), transparent 34%),
-    linear-gradient(145deg, rgba(34, 25, 33, 0.96), rgba(13, 15, 21, 0.92));
+    0 22px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
 }
 
 .gastown-sim-header h1 {
@@ -184,19 +174,34 @@
   position: relative;
   width: 100%;
   overflow: hidden;
-  border-radius: 22px;
-  border: 1px solid rgba(192, 160, 123, 0.18);
-  background: #0b0d12;
-  box-shadow: inset 0 1px 0 rgba(255, 232, 205, 0.06);
+  border: 1px solid rgba(164, 182, 209, 0.22);
+  background:
+    radial-gradient(circle at 50% 0, rgba(120, 165, 215, 0.15), rgba(8, 10, 14, 0) 38%),
+    linear-gradient(180deg, #0b0d12 0%, #06080c 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 18px 42px rgba(0, 0, 0, 0.42);
 }
 
 .gastown-sim-canvas::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(7, 8, 11, 0.15), rgba(7, 8, 11, 0) 18%, rgba(7, 8, 11, 0) 72%, rgba(7, 8, 11, 0.24));
   pointer-events: none;
-  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(197, 156, 112, 0.08), rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0.18) 100%),
+    radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 38%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+.gastown-sim-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(4, 5, 8, 0.08), rgba(4, 5, 8, 0.24));
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.25);
 }
 
 .gastown-sim-canvas canvas {
@@ -221,9 +226,13 @@
   align-items: flex-start;
 }
 
-.gastown-hud--bottom {
-  bottom: 1.1rem;
-  justify-content: center;
+.gastown-help {
+  margin: 0.75rem 0 0.9rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(193, 213, 238, 0.26);
+  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(31, 39, 55, 0.8), rgba(10, 13, 19, 0.88));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .gastown-hud-card {
@@ -295,12 +304,10 @@
 }
 
 .gastown-route-segment {
-  color: rgba(223, 229, 237, 0.76);
-}
-
-.gastown-quest-status {
-  font-size: 0.95rem;
-  color: #f4ecdf;
+  padding: 0.2rem 0.55rem;
+  border-left: 2px solid rgba(192, 211, 237, 0.45);
+  background: linear-gradient(180deg, rgba(15, 20, 29, 0.5), rgba(10, 14, 22, 0.3));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .gastown-world-status {
@@ -319,19 +326,45 @@
   color: #c8dcff;
 }
 
-.gastown-interact-prompt {
-  margin: 0;
-  max-width: min(620px, calc(100% - 2rem));
-  padding: 0.85rem 1.2rem;
-  border: 1px solid rgba(243, 214, 177, 0.26);
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(22, 18, 20, 0.92), rgba(12, 12, 16, 0.8));
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34);
-  text-align: center;
-  color: #fff5ea;
-  font-size: 0.94rem;
-  letter-spacing: 0.04em;
+.gastown-expedition-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.7rem;
+  margin: 0.7rem 0 0.8rem;
 }
+
+.gastown-expedition-card {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(170, 197, 226, 0.22);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(16, 22, 33, 0.8), rgba(8, 11, 18, 0.92));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.gastown-expedition-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8fc8ff;
+}
+
+.gastown-expedition-value {
+  margin: 0;
+  color: #edf5ff;
+  line-height: 1.45;
+}
+
+.gastown-expedition-list {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.28rem;
+  color: #d9e8ff;
+  font-size: 0.9rem;
+}
+
 
 .gastown-route-debug-overlay {
   position: absolute;
@@ -347,18 +380,65 @@
   font-size: 0.72rem;
   line-height: 1.35;
   color: #d4ecff;
-  background: rgba(7, 11, 18, 0.82);
+  background: rgba(7, 11, 18, 0.78);
   border: 1px solid rgba(143, 182, 214, 0.4);
   border-radius: 10px;
   padding: 0.55rem 0.65rem;
   pointer-events: none;
+  backdrop-filter: blur(6px);
 }
 
 .gastown-minimap {
   position: absolute;
-  left: 1rem;
-  bottom: 1rem;
-  z-index: 2;
+  left: 0.85rem;
+  bottom: 0.85rem;
+  width: 220px;
+  padding: 0.45rem;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(10, 15, 23, 0.92), rgba(7, 11, 18, 0.86));
+  border: 1px solid rgba(136, 170, 204, 0.42);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.44);
+  backdrop-filter: blur(8px);
+}
+
+.gastown-minimap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(172, 201, 230, 0.24);
+}
+
+.gastown-minimap-label {
+  margin: 0.38rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: #dbe9ff;
+}
+
+.gastown-minimap-mode-status {
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  border-radius: 8px;
+  background: rgba(18, 28, 41, 0.96);
+  border: 1px solid rgba(126, 178, 226, 0.24);
+  color: #ecf5ff;
+  font-size: 0.71rem;
+  line-height: 1.35;
+}
+
+.gastown-minimap-mode-status strong {
+  color: #9ed6ff;
+}
+
+@media (max-width: 740px) {
+  .gastown-minimap {
+    width: 180px;
+  }
+}
+
+
+.gastown-minimap {
   display: grid;
   gap: 0.45rem;
   width: 244px;
