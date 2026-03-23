@@ -2759,13 +2759,71 @@
     };
   }
 
+  function getLandmarkById(world, id) {
+    if (!world || !id) {
+      return null;
+    }
+    return (Array.isArray(world.landmarks) ? world.landmarks : []).find((landmark) => landmark.id === id)
+      || (Array.isArray(world.nodes) ? world.nodes : []).find((node) => node.id === id)
+      || (Array.isArray(world.hero_landmarks) ? world.hero_landmarks : []).find((landmark) => landmark.id === id);
+  }
+
+  function getZoneById(world, id, zoneType) {
+    if (!world || !world.zones || !id) {
+      return null;
+    }
+    const zones = zoneType && Array.isArray(world.zones[zoneType])
+      ? world.zones[zoneType]
+      : Object.values(world.zones).flatMap((entry) => (Array.isArray(entry) ? entry : []));
+    return zones.find((zone) => zone.id === id) || null;
+  }
+
+  function getMinimapLandmarkAnchor(landmark, world) {
+    if (!landmark || !world) {
+      return landmark;
+    }
+    if (landmark.id !== 'steam-clock') {
+      return landmark;
+    }
+
+    const corridor = getCanonicalCorridorSegment(world);
+    if (!corridor) {
+      return landmark;
+    }
+
+    const plazaZone = getZoneById(world, 'steam-clock-plaza-sidewalk', 'sidewalk');
+    const hero = getLandmarkById(world, 'steam-clock-hero');
+    const plazaPoints = plazaZone && Array.isArray(plazaZone.polygon) ? plazaZone.polygon.filter(Boolean) : [];
+    const rawAlong = ((landmark.x - corridor.end.x) * corridor.tangent.x) + ((landmark.z - corridor.end.z) * corridor.tangent.z);
+    const rawSide = Math.abs(getCorridorSideValue(landmark, corridor, corridor.end));
+    const rightmostPlazaPoint = plazaPoints.reduce((best, point) => {
+      const sideValue = getCorridorSideValue(point, corridor, corridor.end);
+      if (!best || sideValue < best.sideValue) {
+        return { point, sideValue };
+      }
+      return best;
+    }, null);
+    const rightmostSide = rightmostPlazaPoint ? Math.abs(rightmostPlazaPoint.sideValue) : rawSide;
+    const curbTarget = ((world.route && world.route.streetWidth) || 0) / 2;
+    const sidewalkTarget = curbTarget + ((((world.route && world.route.sidewalkWidth) || 0) * 0.85));
+    const heroTarget = hero && hero.plaza
+      ? (hero.plaza.radius || 0) + ((hero.plaza.apronWidth || 0) * 0.35)
+      : 0;
+    const targetSide = Math.max(rawSide, sidewalkTarget, heroTarget, rawSide + Math.max(1.2, (rightmostSide - rawSide) * 0.45));
+
+    return {
+      x: corridor.end.x + (corridor.tangent.x * rawAlong) + (corridor.rightNormal.x * targetSide),
+      z: corridor.end.z + (corridor.tangent.z * rawAlong) + (corridor.rightNormal.z * targetSide),
+    };
+  }
+
   function getMinimapDebugVectors(world, metrics, padding, view, projectionOptions) {
     const corridor = getCanonicalCorridorSegment(world);
     if (!corridor) {
       return null;
     }
-    const steamClock = (Array.isArray(world.landmarks) ? world.landmarks : []).find((landmark) => landmark.id === 'steam-clock')
-      || (Array.isArray(world.nodes) ? world.nodes : []).find((node) => node.id === 'steam-clock');
+    const steamClock = getLandmarkById(world, 'steam-clock');
+    const steamClockAnchor = steamClock ? getMinimapLandmarkAnchor(steamClock, world) : null;
     const tangentAnchor = corridor.end;
     const tangentTip = {
       x: tangentAnchor.x + (corridor.tangent.x * 10),
@@ -2782,8 +2840,11 @@
       tangentTip: projectWorldToMinimap(tangentTip, metrics, padding, view, projectionOptions),
       rightTip: projectWorldToMinimap(rightTip, metrics, padding, view, projectionOptions),
       steamClock: steamClock ? projectWorldToMinimap(steamClock, metrics, padding, view, projectionOptions) : null,
+      steamClockAnchor: steamClockAnchor ? projectWorldToMinimap(steamClockAnchor, metrics, padding, view, projectionOptions) : null,
       steamClockWorld: steamClock,
+      steamClockAnchorWorld: steamClockAnchor,
       steamClockSide: steamClock ? classifyCorridorSide(steamClock, corridor, corridor.end) : null,
+      steamClockAnchorSide: steamClockAnchor ? classifyCorridorSide(steamClockAnchor, corridor, corridor.end) : null,
     };
   }
 
@@ -2926,7 +2987,8 @@
     const majorNodes = ['waterfront-station-threshold', 'water-street-mid-block', 'water-cambie-intersection', 'steam-clock', 'maple-tree-square-edge'];
     state.world.nodes.forEach((node) => {
       if (!majorNodes.includes(node.id)) return;
-      const mini = projectWorldToMinimap(node, metrics, pad, view, projectionOptions);
+      const markerPoint = node.id === 'steam-clock' ? getMinimapLandmarkAnchor(node, state.world) : node;
+      const mini = projectWorldToMinimap(markerPoint, metrics, pad, view, projectionOptions);
       ctx.fillStyle = node.id === 'steam-clock' ? '#d8a968' : node.id === 'water-cambie-intersection' ? '#9cc7e4' : '#b7d4ea';
       ctx.beginPath();
       ctx.arc(mini.x, mini.y, node.id === 'steam-clock' ? 5.2 : 4.1, 0, Math.PI * 2);
@@ -2940,7 +3002,12 @@
         ctx.fillText('Station', mini.x + 6, mini.y - 5);
       }
       if (node.id === 'steam-clock') {
-        ctx.fillText('Steam Clock', mini.x + 6, mini.y - 5);
+        const steamClockLabelAnchor = {
+          x: markerPoint.x + 1.9,
+          z: markerPoint.z + (minimapState.mode === 'heading-up' ? 0.4 : -2.1),
+        };
+        const labelMini = projectWorldToMinimap(steamClockLabelAnchor, metrics, pad, view, projectionOptions);
+        ctx.fillText('Steam Clock', labelMini.x + 5, labelMini.y - 4);
       }
       if (node.id === 'water-cambie-intersection') {
         ctx.fillText('Cambie', mini.x + 6, mini.y - 5);
