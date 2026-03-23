@@ -2100,6 +2100,16 @@
       ? 'Mode: working fallback Gastown corridor (stylized primary playable build)'
       : 'Mode: civic-data-derived world';
     lines.unshift(modeLine);
+    const corridor = getCanonicalCorridorSegment(state.world);
+    if (corridor) {
+      lines.push('Canonical corridor: ' + corridor.start.id + ' -> ' + corridor.end.id + ' tangent [' + corridor.tangent.x.toFixed(3) + ', ' + corridor.tangent.z.toFixed(3) + ']');
+      lines.push('Canonical route-right normal: [' + corridor.rightNormal.x.toFixed(3) + ', ' + corridor.rightNormal.z.toFixed(3) + ']');
+      const steamClock = (state.world.landmarks || []).find((landmark) => landmark.id === 'steam-clock') || (state.world.nodes || []).find((node) => node.id === 'steam-clock');
+      if (steamClock) {
+        const steamClockSide = classifyCorridorSide(steamClock, corridor, corridor.end);
+        lines.push('Steam Clock side: ' + steamClockSide.side + ' (signed=' + steamClockSide.sideValue.toFixed(3) + ')');
+      }
+    }
     lines.push('Player: [' + player.position.x.toFixed(2) + ', ' + player.position.z.toFixed(2) + ']');
     routeDebugOverlay.textContent = lines.join('\n');
 
@@ -2639,6 +2649,76 @@
     return minimapState.mode === 'heading-up' ? (-Math.atan2(-heading.z, heading.x) - (Math.PI / 2)) : 0;
   }
 
+  function getCanonicalCorridorSegment(world) {
+    if (!world) return null;
+    const nodes = Array.isArray(world.nodes) ? world.nodes : [];
+    const landmarks = Array.isArray(world.landmarks) ? world.landmarks : [];
+    const start = nodes.find((node) => node.id === 'water-street-mid-block');
+    const end = nodes.find((node) => node.id === 'water-cambie-intersection')
+      || landmarks.find((landmark) => landmark.id === 'water-cambie-intersection');
+    if (!start || !end) {
+      return null;
+    }
+    const tangent = { x: end.x - start.x, z: end.z - start.z };
+    const length = Math.hypot(tangent.x, tangent.z) || 1;
+    tangent.x /= length;
+    tangent.z /= length;
+    return {
+      start,
+      end,
+      tangent,
+      rightNormal: { x: tangent.z, z: -tangent.x },
+    };
+  }
+
+  function getCorridorSideValue(point, corridor, origin = corridor && corridor.start) {
+    if (!point || !corridor || !origin) {
+      return 0;
+    }
+    const relX = point.x - origin.x;
+    const relZ = point.z - origin.z;
+    return (corridor.tangent.x * relZ) - (corridor.tangent.z * relX);
+  }
+
+  function classifyCorridorSide(point, corridor, origin) {
+    const sideValue = getCorridorSideValue(point, corridor, origin);
+    if (Math.abs(sideValue) < 1e-6) {
+      return { sideValue, side: 'center' };
+    }
+    return {
+      sideValue,
+      side: sideValue < 0 ? 'right' : 'left',
+    };
+  }
+
+  function getMinimapDebugVectors(world, metrics, padding, view, projectionOptions) {
+    const corridor = getCanonicalCorridorSegment(world);
+    if (!corridor) {
+      return null;
+    }
+    const steamClock = (Array.isArray(world.landmarks) ? world.landmarks : []).find((landmark) => landmark.id === 'steam-clock')
+      || (Array.isArray(world.nodes) ? world.nodes : []).find((node) => node.id === 'steam-clock');
+    const tangentAnchor = corridor.end;
+    const tangentTip = {
+      x: tangentAnchor.x + (corridor.tangent.x * 10),
+      z: tangentAnchor.z + (corridor.tangent.z * 10),
+    };
+    const rightTip = {
+      x: tangentAnchor.x + (corridor.rightNormal.x * 10),
+      z: tangentAnchor.z + (corridor.rightNormal.z * 10),
+    };
+
+    return {
+      corridor,
+      tangentAnchor: projectWorldToMinimap(tangentAnchor, metrics, padding, view, projectionOptions),
+      tangentTip: projectWorldToMinimap(tangentTip, metrics, padding, view, projectionOptions),
+      rightTip: projectWorldToMinimap(rightTip, metrics, padding, view, projectionOptions),
+      steamClock: steamClock ? projectWorldToMinimap(steamClock, metrics, padding, view, projectionOptions) : null,
+      steamClockWorld: steamClock,
+      steamClockSide: steamClock ? classifyCorridorSide(steamClock, corridor, corridor.end) : null,
+    };
+  }
+
   function projectWorldToMinimap(point, metrics, padding, view, options = {}) {
     const basePoint = toMinimapPoint(point, metrics, padding, view);
     const rotation = options.rotation || 0;
@@ -2833,6 +2913,36 @@
     ctx.beginPath();
     ctx.arc(playerPoint.x, playerPoint.y - 4.2, 2.2, 0, Math.PI * 2);
     ctx.stroke();
+
+    if (state.debugEnabled) {
+      const debugVectors = getMinimapDebugVectors(state.world, metrics, pad, view, projectionOptions);
+      if (debugVectors) {
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.strokeStyle = 'rgba(255, 201, 105, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(debugVectors.tangentAnchor.x, debugVectors.tangentAnchor.y);
+        ctx.lineTo(debugVectors.tangentTip.x, debugVectors.tangentTip.y);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(120, 255, 214, 0.95)';
+        ctx.beginPath();
+        ctx.moveTo(debugVectors.tangentAnchor.x, debugVectors.tangentAnchor.y);
+        ctx.lineTo(debugVectors.rightTip.x, debugVectors.rightTip.y);
+        ctx.stroke();
+
+        if (debugVectors.steamClock) {
+          ctx.fillStyle = 'rgba(255, 120, 160, 0.95)';
+          ctx.beginPath();
+          ctx.arc(debugVectors.steamClock.x, debugVectors.steamClock.y, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
 
     drawMinimapCompass(playerPoint, headingRotation);
 
