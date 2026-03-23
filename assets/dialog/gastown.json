@@ -2,9 +2,9 @@
   "guide_intro": {
     "title": "Gastown guide",
     "lines": [
-      "Welcome to Water Street. This block sits in the old warehouse district that grew up around Vancouver's working waterfront, so the brick fronts and loading-bay rhythm are part of Gastown's real story.",
-      "If you want a quick challenge, I can send you on a scavenger hunt for three street details that locals use to read the neighbourhood: a newspaper box, a historic plaque, and a mural.",
-      "Maple Tree Square is just ahead too \u2014 it marks the birthplace of Gastown, where Gassy Jack's saloon helped spark the original settlement."
+      "You are starting at the station threshold, and your first meaningful move is simple: step forward to me in the first few seconds so I can point you toward the right kind of details.",
+      "From there you can follow three different leads: log small street clues in a scavenger-style details hunt, survey how Water Street changes as you move east, or unlock local stories around the Steam Clock and Maple Tree Square.",
+      "Nothing here is a checklist tunnel \u2014 use the minimap and nearby people as nudges, then let the street rhythm pull you along."
     ],
     "actions": [
       {
@@ -43,9 +43,9 @@
   "busker_clock_corner": {
     "title": "Clock-corner busker",
     "lines": [
-      "That Steam Clock was built in 1977 by Raymond Saunders after the city covered an old steam vent here on Water Street.",
-      "Every quarter-hour the whistles kick out a version of the Westminster chimes, so this corner keeps its own little performance schedule.",
-      "Ask again and I'll trade you one more local favourite about the square beyond the clock."
+      "The Steam Clock was built in 1977 by Raymond Saunders after the city covered an old steam vent here on Water Street.",
+      "This corner becomes more interesting once you have actually stood in the plaza and then pushed through toward Maple Tree Square \u2014 the landmark stops being a photo stop and starts feeling like a hinge in the route.",
+      "Come back after a few discoveries and I will turn those observations into a fuller historical story."
     ],
     "actions": [
       {
@@ -237,9 +237,9 @@
   "skateboarder_corridor": {
     "title": "Gastown skateboarder",
     "lines": [
-      "The bricks look rough, but the long sightlines on Water Street make it easy to roll as long as you respect the tourist knots around the Steam Clock.",
-      "Older locals still talk about Gastown as a place where rail, port traffic, and nightlife kept colliding \u2014 that mixed energy is kind of why this block still feels alive.",
-      "Hit me with one more question and I'll tell you which stretch is best for a clean glide."
+      "The fun part of this block is that the feel changes in stages \u2014 threshold, storefront rhythm, clock crowd, then the looser edge near Maple Tree Square.",
+      "If you want a challenge, use me as your cue to survey the route: notice where Water Street starts reading like a real corridor instead of a simple starter strip.",
+      "Once you have read the mid-block and the eastern rise, the whole route makes more sense."
     ],
     "actions": [
       {
@@ -270,9 +270,9 @@
   "cyclist_water_street": {
     "title": "Gastown cyclist",
     "lines": [
-      "Fog or rain changes this ride fast \u2014 the paving gets slick, the sightlines shorten, and everyone near the clock starts moving more cautiously.",
-      "On a clear afternoon, though, the block fills with visitors because the Steam Clock, Maple Tree Square, and the heritage storefronts are all within a minute of each other.",
-      "Ask again and I'll tell you the commuter shortcut locals use to slip past the photo crowd."
+      "Riding this stretch teaches you the route structure fast: you can feel when the corridor tightens, when the plaza interrupts it, and when the east leg opens back up.",
+      "Treat the minimap like a soft cue, not a GPS arrow \u2014 it is best when it confirms something you already noticed in the street itself.",
+      "If you keep the survey going past the clock, the Cambie rise gives you the last big contrast point."
     ],
     "actions": [
       {

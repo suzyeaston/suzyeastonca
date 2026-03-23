@@ -90,6 +90,34 @@ get_header();
     </section>
     <p class="gastown-status" data-sim-status aria-live="polite">Loading simulator...</p>
     <p class="gastown-quest-status" data-sim-quest-status aria-live="polite">Scavenger hunt: inactive.</p>
+    <section class="gastown-expedition-panel" aria-label="Exploration journal and guidance">
+      <div class="gastown-expedition-card">
+        <p class="gastown-expedition-label">Opening objective</p>
+        <p class="gastown-expedition-value" data-sim-objective aria-live="polite">Meet the guide just ahead of the station threshold.</p>
+      </div>
+      <div class="gastown-expedition-card">
+        <p class="gastown-expedition-label">Next meaningful step</p>
+        <p class="gastown-expedition-value" data-sim-next-step aria-live="polite">Walk forward to the guide, then press E to talk.</p>
+      </div>
+      <div class="gastown-expedition-card">
+        <p class="gastown-expedition-label">Route completion</p>
+        <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% of the corridor surveyed.</p>
+      </div>
+      <div class="gastown-expedition-card">
+        <p class="gastown-expedition-label">Collectibles log</p>
+        <ul class="gastown-expedition-list" data-sim-collectibles-log aria-live="polite">
+          <li>Newspaper box — not logged</li>
+          <li>Historic plaque — not logged</li>
+          <li>Maple Tree mural — not logged</li>
+        </ul>
+      </div>
+      <div class="gastown-expedition-card">
+        <p class="gastown-expedition-label">Journal</p>
+        <ul class="gastown-expedition-list" data-sim-journal aria-live="polite">
+          <li>Arrive at the station threshold and get your bearings.</li>
+        </ul>
+      </div>
+    </section>
     <p class="gastown-world-status" data-sim-world-status aria-live="polite">World data status: checking build provenance…</p>
     <p class="gastown-pointer-status" data-sim-pointer-status aria-live="polite">Pointer unlocked.</p>
     <p class="gastown-landmark" data-sim-landmark aria-live="polite">Nearest landmark: Station threshold</p>
