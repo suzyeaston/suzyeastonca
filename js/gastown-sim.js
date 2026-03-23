@@ -197,17 +197,17 @@
   const BUSKER_RIFF_CACHE_PREFIX = 'gastownBuskerRiff:';
   const STARTUP_STING_FALLBACK_SPEC = {
     tempo: 96,
-    key: 'G minor',
+    key: 'E minor',
     duration_bars: 2,
     chord_hits: [
-      { bar: 1, beat: 1, notes: ['G3', 'Bb3', 'D4'], length_beats: 1.5, velocity: 0.82 },
-      { bar: 2, beat: 1, notes: ['Eb3', 'G3', 'Bb3'], length_beats: 1.25, velocity: 0.76 }
+      { bar: 1, beat: 1, notes: ['E3', 'G3', 'B3'], length_beats: 1.5, velocity: 0.84 },
+      { bar: 2, beat: 1, notes: ['D3', 'G3', 'B3'], length_beats: 1.25, velocity: 0.8 }
     ],
     bass_notes: [
-      { bar: 1, beat: 1, note: 'G1', length_beats: 1, velocity: 0.92 },
-      { bar: 1, beat: 3, note: 'D2', length_beats: 0.75, velocity: 0.78 },
-      { bar: 2, beat: 1, note: 'Eb2', length_beats: 1, velocity: 0.88 },
-      { bar: 2, beat: 3, note: 'F2', length_beats: 0.75, velocity: 0.74 }
+      { bar: 1, beat: 1, note: 'E2', length_beats: 1, velocity: 0.94 },
+      { bar: 1, beat: 3, note: 'E2', length_beats: 0.75, velocity: 0.82 },
+      { bar: 2, beat: 1, note: 'G2', length_beats: 1, velocity: 0.88 },
+      { bar: 2, beat: 3, note: 'D2', length_beats: 0.75, velocity: 0.76 }
     ],
     drum_pattern: {
       kick: [{ bar: 1, beat: 1 }, { bar: 1, beat: 3.5 }, { bar: 2, beat: 1 }, { bar: 2, beat: 3 }],
@@ -215,14 +215,23 @@
       hat: [{ bar: 1, beat: 1.5 }, { bar: 1, beat: 2 }, { bar: 1, beat: 2.5 }, { bar: 1, beat: 4 }, { bar: 2, beat: 1.5 }, { bar: 2, beat: 2 }, { bar: 2, beat: 2.5 }, { bar: 2, beat: 4 }]
     },
     lead_phrase: [
-      { bar: 1, beat: 1.5, note: 'D4', length_beats: 0.5, velocity: 0.82, articulation: 'growl' },
-      { bar: 1, beat: 2, note: 'F4', length_beats: 0.5, velocity: 0.78, articulation: 'bend' },
-      { bar: 1, beat: 2.5, note: 'G4', length_beats: 1, velocity: 0.9, articulation: 'hold' },
-      { bar: 2, beat: 1.5, note: 'Bb4', length_beats: 0.5, velocity: 0.8, articulation: 'stab' },
-      { bar: 2, beat: 2, note: 'G4', length_beats: 0.75, velocity: 0.84, articulation: 'fall' },
-      { bar: 2, beat: 3, note: 'D4', length_beats: 1, velocity: 0.74, articulation: 'hold' }
+      { bar: 1, beat: 1.5, note: 'B4', length_beats: 0.5, velocity: 0.82, articulation: 'growl' },
+      { bar: 1, beat: 2, note: 'D5', length_beats: 0.5, velocity: 0.78, articulation: 'bend' },
+      { bar: 1, beat: 2.5, note: 'E5', length_beats: 1, velocity: 0.92, articulation: 'hold' },
+      { bar: 2, beat: 1.5, note: 'G5', length_beats: 0.5, velocity: 0.84, articulation: 'stab' },
+      { bar: 2, beat: 2, note: 'E5', length_beats: 0.75, velocity: 0.86, articulation: 'fall' },
+      { bar: 2, beat: 3, note: 'B4', length_beats: 1, velocity: 0.76, articulation: 'hold' }
     ],
     style_description: 'gritty urban rock-adjacent welcome sting with a stylized sax lead; brisk, punchy, not lounge jazz'
+  };
+  const FALLBACK_SURFACE_PRESETS = {
+    road: { color: 0x1b2632, roughness: 0.96, metalness: 0.05 },
+    sidewalk: { color: 0x655c51, roughness: 0.98, metalness: 0.02 },
+    plaza: { color: 0x726150, roughness: 0.96, metalness: 0.02 },
+    curb: { color: 0x9e8d78, roughness: 1, metalness: 0 },
+    lane: { color: 0x54493d, roughness: 0.98, metalness: 0.01 },
+    lampGlass: { color: 0xf5d9a2, emissive: 0xffbe62, roughness: 0.22, metalness: 0.04 },
+    lampHalo: { color: 0xffcb83, opacity: 0.16 },
   };
   const ART_DIRECTION = {
     label: 'stylized realism with cinematic Vancouver rain-lighting',
@@ -293,6 +302,8 @@
     emissiveMaterials: [],
     metalMaterials: [],
     reflectiveMaterials: [],
+    fallbackSurfaceMaterials: {},
+    lampVisuals: [],
   };
 
   function applyLandmarkVisualState(landmarkVisuals, lightingState) {
@@ -373,6 +384,14 @@
     statusEl.textContent = text;
   }
 
+  function getShortWalkerHudLine() {
+    return state.walkerName.toUpperCase() + ' · ' + Math.round(state.progression.routeCompletionScore || 0) + '% mapped';
+  }
+
+  function getStartupWelcomeText(payload) {
+    return (payload && (payload.welcomeText || payload.welcome_text)) || ('Welcome to the Gastown Simulator, ' + (state.walkerName || 'Walker') + '. Follow the street.');
+  }
+
   function setQuestStatus(text) {
     if (questStatusEl) {
       questStatusEl.textContent = text;
@@ -386,7 +405,7 @@
 
   function setWalkerName(value, options) {
     state.walkerName = normalizeWalkerName(value);
-    if (walkerNameDisplayEl) walkerNameDisplayEl.textContent = state.walkerName;
+    if (walkerNameDisplayEl) walkerNameDisplayEl.textContent = getShortWalkerHudLine();
     if (!(options && options.skipStore)) {
       try { window.localStorage.setItem(WALKER_NAME_STORAGE_KEY, state.walkerName); } catch (error) {}
     }
@@ -502,7 +521,10 @@
 
   function renderProgressionUi() {
     if (routeScoreEl) {
-      routeScoreEl.textContent = Math.round(state.progression.routeCompletionScore) + '% route';
+      routeScoreEl.textContent = Math.round(state.progression.routeCompletionScore) + '% mapped';
+    }
+    if (walkerNameDisplayEl) {
+      walkerNameDisplayEl.textContent = getShortWalkerHudLine();
     }
     if (collectiblesLogEl) {
       const deduped = [];
@@ -684,12 +706,12 @@
     if (state.currentThread === 'scavenger' && chainScavenger.active && !chainScavenger.completed) {
       const nextProp = getCollectibleProps().find((prop) => !prop.collected);
       if (nextProp) {
-        hint = { text: 'Next observation to log: ' + (nextProp.collectibleLabel || nextProp.id) + '.', target: { type: 'collectible', id: nextProp.id } };
+        hint = { text: 'Log: ' + (nextProp.collectibleLabel || nextProp.id) + '.', target: { type: 'collectible', id: nextProp.id } };
       }
     } else if (state.currentThread === 'survey' && chainSurvey.active && !chainSurvey.completed) {
       hint = !state.progression.discoveredLandmarks['water-street-mid-block']
-        ? { text: 'Compare the station threshold to the storefront rhythm mid-block.', target: { type: 'landmark', id: 'water-street-mid-block' } }
-        : { text: 'Continue east and notice how the corridor opens toward the Cambie rise.', target: { type: 'landmark', id: 'cambie-rise-continuation' } };
+        ? { text: 'Mid-block ahead.', target: { type: 'landmark', id: 'water-street-mid-block' } }
+        : { text: 'Cambie rise ahead.', target: { type: 'landmark', id: 'cambie-rise-continuation' } };
     } else if (state.currentThread === 'soundwalk' && chainSoundwalk.active && !chainSoundwalk.completed) {
       if (!state.progression.discoveredLandmarks['steam-clock']) {
         hint = { text: 'Steam Clock ahead.', target: { type: 'landmark', id: 'steam-clock' } };
@@ -698,7 +720,7 @@
       }
     } else if (state.currentThread === 'stories' && chainStories.active && !chainStories.completed) {
       if (!state.progression.discoveredLandmarks['maple-tree-square-edge']) {
-        hint = { text: 'Keep walking past the clock.', target: { type: 'landmark', id: 'maple-tree-square-edge' } };
+        hint = { text: 'Past the clock.', target: { type: 'landmark', id: 'maple-tree-square-edge' } };
       } else if (busker) {
         hint = { text: 'Talk to the busker again.', target: { type: 'npc', id: busker.id } };
       }
@@ -879,12 +901,12 @@
   async function playStartupStingNow(payload) {
     const Tone = await ensureToneReady();
     if (!Tone) return false;
-    const spec = sanitizeStartupStingSpec(payload && payload.musicSpec ? payload.musicSpec : getStartupStingFallbackSpec());
+    const spec = sanitizeStartupStingSpec(payload && (payload.musicSpec || payload.music_spec) ? (payload.musicSpec || payload.music_spec) : getStartupStingFallbackSpec());
     const master = new Tone.Gain(0.9).toDestination();
     const limiter = new Tone.Limiter(-4).connect(master);
-    const chords = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.18, sustain: 0.16, release: 0.55 }, volume: -14 }).connect(limiter);
-    const bass = new Tone.MonoSynth({ oscillator: { type: 'square' }, filter: { Q: 1, type: 'lowpass', rolloff: -24 }, envelope: { attack: 0.01, decay: 0.14, sustain: 0.35, release: 0.4 }, filterEnvelope: { attack: 0.01, decay: 0.16, sustain: 0.3, release: 0.3, baseFrequency: 90, octaves: 2.3 }, volume: -10 }).connect(limiter);
-    const lead = new Tone.Synth({ oscillator: { type: 'sawtooth3' }, envelope: { attack: 0.02, decay: 0.08, sustain: 0.25, release: 0.28 }, volume: -11 }).connect(new Tone.FeedbackDelay('16n', 0.18).connect(limiter));
+    const chords = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'fatsawtooth' }, envelope: { attack: 0.01, decay: 0.18, sustain: 0.16, release: 0.55 }, volume: -15 }).connect(new Tone.Filter(1800, 'lowpass').connect(limiter));
+    const bass = new Tone.MonoSynth({ oscillator: { type: 'square' }, filter: { Q: 1.4, type: 'lowpass', rolloff: -24 }, envelope: { attack: 0.01, decay: 0.14, sustain: 0.35, release: 0.4 }, filterEnvelope: { attack: 0.01, decay: 0.16, sustain: 0.3, release: 0.3, baseFrequency: 80, octaves: 2.1 }, volume: -9 }).connect(limiter);
+    const lead = new Tone.DuoSynth({ voice0: { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.02, decay: 0.1, sustain: 0.28, release: 0.32 } }, voice1: { oscillator: { type: 'triangle' }, envelope: { attack: 0.03, decay: 0.08, sustain: 0.18, release: 0.26 } }, harmonicity: 1.5, vibratoAmount: 0.18, volume: -9 }).connect(new Tone.FeedbackDelay('16n', 0.16).connect(new Tone.Filter(2200, 'bandpass').connect(limiter)));
     const kick = new Tone.MembraneSynth({ pitchDecay: 0.025, octaves: 5, envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.05 }, volume: -7 }).connect(limiter);
     const snare = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.16, sustain: 0 }, volume: -16 }).connect(limiter);
     const hat = new Tone.MetalSynth({ frequency: 260, envelope: { attack: 0.001, decay: 0.08, release: 0.01 }, harmonicity: 5.1, modulationIndex: 16, resonance: 1800, octaves: 1.6, volume: -26 }).connect(limiter);
@@ -909,7 +931,7 @@
     if (played) {
       state.startupSting.queued = false;
       state.startupSting.hasPlayed = true;
-      setStatus(payload && payload.welcomeText ? payload.welcomeText : ('Welcome, ' + state.walkerName + '. Follow the street.'));
+      setStatus(getStartupWelcomeText(payload));
     }
   }
 
@@ -927,8 +949,10 @@
       ok: false,
       walkerName: state.walkerName || 'Walker',
       welcomeText: 'Welcome to the Gastown Simulator, ' + (state.walkerName || 'Walker') + '. Follow the street.',
+      welcome_text: 'Welcome to the Gastown Simulator, ' + (state.walkerName || 'Walker') + '. Follow the street.',
       audioBase64: '',
       musicSpec: getStartupStingFallbackSpec(),
+      music_spec: getStartupStingFallbackSpec(),
       musicSpecFallback: true,
       voiceFallback: true
     });
@@ -1193,6 +1217,11 @@
 
   function createGroundMaterial(kind, baseColor, roughness, metalness) {
     const maps = loadSurfaceTextureSet(kind);
+    const fallbackPreset = kind === 'street'
+      ? FALLBACK_SURFACE_PRESETS.road
+      : kind === 'sidewalk'
+        ? FALLBACK_SURFACE_PRESETS.sidewalk
+        : FALLBACK_SURFACE_PRESETS.plaza;
     return new THREE.MeshStandardMaterial(Object.assign({
       color: baseColor,
       roughness: roughness,
@@ -1200,7 +1229,25 @@
       polygonOffset: true,
       polygonOffsetFactor: kind === 'street' ? 1 : 0.5,
       polygonOffsetUnits: kind === 'street' ? 1 : 0.5,
-    }, maps));
+    }, maps, {
+      color: Object.keys(maps).length ? baseColor : fallbackPreset.color,
+      roughness: Object.keys(maps).length ? roughness : fallbackPreset.roughness,
+      metalness: Object.keys(maps).length ? metalness : fallbackPreset.metalness,
+    }));
+  }
+
+  function registerFallbackSurfaceMaterial(key, material, baseColor, baseRoughness, baseMetalness) {
+    if (!material) return material;
+    material.userData = Object.assign({}, material.userData, {
+      fallbackSurfaceKey: key,
+      baseColor: baseColor,
+      baseRoughness: baseRoughness,
+      baseMetalness: baseMetalness,
+    });
+    visualState.fallbackSurfaceMaterials[key] = visualState.fallbackSurfaceMaterials[key] || [];
+    visualState.fallbackSurfaceMaterials[key].push(material);
+    visualState.reflectiveMaterials.push(material);
+    return material;
   }
 
   function setSurfaceWetness(material, baseRoughness, baseMetalness, rainIntensity) {
@@ -3139,12 +3186,11 @@
   }
 
   function addGround(world) {
-    visualState.roadMaterial = createGroundMaterial('street', 0x161311, 0.98, 0.03);
-    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x6f6255, 0.99, 0.015);
-    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xb7a792, transparent: true, opacity: 0.28 });
-    visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x54473f, roughness: 1, metalness: 0, transparent: false, opacity: 1, depthWrite: true, depthTest: true });
+    visualState.roadMaterial = registerFallbackSurfaceMaterial('road', createGroundMaterial('street', FALLBACK_SURFACE_PRESETS.road.color, FALLBACK_SURFACE_PRESETS.road.roughness, FALLBACK_SURFACE_PRESETS.road.metalness), FALLBACK_SURFACE_PRESETS.road.color, FALLBACK_SURFACE_PRESETS.road.roughness, FALLBACK_SURFACE_PRESETS.road.metalness);
+    visualState.sidewalkMaterial = registerFallbackSurfaceMaterial('sidewalk', createGroundMaterial('sidewalk', FALLBACK_SURFACE_PRESETS.sidewalk.color, FALLBACK_SURFACE_PRESETS.sidewalk.roughness, FALLBACK_SURFACE_PRESETS.sidewalk.metalness), FALLBACK_SURFACE_PRESETS.sidewalk.color, FALLBACK_SURFACE_PRESETS.sidewalk.roughness, FALLBACK_SURFACE_PRESETS.sidewalk.metalness);
+    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: FALLBACK_SURFACE_PRESETS.curb.color, transparent: true, opacity: 0.34 });
+    visualState.laneMaterial = registerFallbackSurfaceMaterial('lane', new THREE.MeshStandardMaterial({ color: FALLBACK_SURFACE_PRESETS.lane.color, roughness: FALLBACK_SURFACE_PRESETS.lane.roughness, metalness: FALLBACK_SURFACE_PRESETS.lane.metalness, transparent: false, opacity: 1, depthWrite: true, depthTest: true }), FALLBACK_SURFACE_PRESETS.lane.color, FALLBACK_SURFACE_PRESETS.lane.roughness, FALLBACK_SURFACE_PRESETS.lane.metalness);
     visualState.routeGuideMaterials = [visualState.laneMaterial];
-    visualState.reflectiveMaterials.push(visualState.roadMaterial, visualState.sidewalkMaterial, visualState.laneMaterial);
 
     world.zones.street.forEach((zone) => createZoneMesh(zone.polygon, visualState.roadMaterial, 0, 'street'));
     world.zones.sidewalk.forEach((zone) => createZoneMesh(zone.polygon, visualState.sidewalkMaterial, 0.12, 'sidewalk'));
@@ -3167,30 +3213,30 @@
         new THREE.PlaneGeometry(band.width || world.route.streetWidth, band.length || 14),
         (() => {
           const toneStyles = {
-            brick: { color: 0x5c4033, roughness: 0.82, metalness: 0.06, opacity: 0.72 },
-            road_base_dark: { color: 0x2f2822, roughness: 0.98, metalness: 0.01, opacity: 0.96 },
-            wheel_track: { color: 0x221c18, roughness: 0.9, metalness: 0.02, opacity: 0.78 },
+            brick: { role: 'plaza', color: 0x5c4033, roughness: 0.82, metalness: 0.06, opacity: 0.72 },
+            road_base_dark: { role: 'road', color: 0x202d39, roughness: 0.98, metalness: 0.01, opacity: 0.9 },
+            wheel_track: { role: 'road', color: 0x161f28, roughness: 0.9, metalness: 0.03, opacity: 0.76 },
             patch: { color: 0x453930, roughness: 0.9, metalness: 0.02, opacity: 0.7 },
             repair_patch_dark: { color: 0x372f2a, roughness: 0.92, metalness: 0.02, opacity: 0.74 },
-            puddle: { color: 0x2a2724, roughness: 0.92, metalness: 0.02, opacity: 0.02 },
-            wet_streak: { color: 0x3a312b, roughness: 0.9, metalness: 0.02, opacity: 0.05 },
-            reflection_pool: { color: 0x352d29, roughness: 0.94, metalness: 0.01, opacity: 0.01 },
-            edge_grime: { color: 0x29231f, roughness: 0.94, metalness: 0.02, opacity: 0.62 },
-            curb_grime: { color: 0x2c2521, roughness: 0.95, metalness: 0.02, opacity: 0.58 },
-            cobble_break: { color: 0x6a5848, roughness: 0.92, metalness: 0.02, opacity: 0.88 },
-            paver_break: { color: 0x705d4b, roughness: 0.92, metalness: 0.02, opacity: 0.84 },
-            intersection_pavers: { color: 0x786553, roughness: 0.95, metalness: 0.02, opacity: 0.96 },
-            default: { color: 0x4a4038, roughness: 0.92, metalness: 0.02, opacity: 0.9 },
+            puddle: { role: 'road', color: 0x253240, roughness: 0.56, metalness: 0.15, opacity: 0.05 },
+            wet_streak: { role: 'road', color: 0x31404e, roughness: 0.72, metalness: 0.08, opacity: 0.08 },
+            reflection_pool: { role: 'road', color: 0x2b3948, roughness: 0.62, metalness: 0.11, opacity: 0.04 },
+            edge_grime: { role: 'sidewalk', color: 0x3d352d, roughness: 0.94, metalness: 0.02, opacity: 0.44 },
+            curb_grime: { role: 'sidewalk', color: 0x312b25, roughness: 0.95, metalness: 0.02, opacity: 0.48 },
+            cobble_break: { role: 'plaza', color: 0x6a5848, roughness: 0.92, metalness: 0.02, opacity: 0.56 },
+            paver_break: { role: 'plaza', color: 0x705d4b, roughness: 0.92, metalness: 0.02, opacity: 0.58 },
+            intersection_pavers: { role: 'plaza', color: 0x7b6856, roughness: 0.95, metalness: 0.02, opacity: 0.72 },
+            default: { role: 'plaza', color: 0x4a4038, roughness: 0.92, metalness: 0.02, opacity: 0.54 },
           };
           const style = toneStyles[band.tone] || toneStyles.default;
-          const material = new THREE.MeshStandardMaterial({
+          const material = registerFallbackSurfaceMaterial(style.role || 'plaza', new THREE.MeshStandardMaterial({
             color: style.color,
             roughness: style.roughness,
             metalness: style.metalness,
-            transparent: style.opacity < 0.2,
+            transparent: true,
             opacity: Math.min(style.opacity, band.opacity || style.opacity),
-          });
-          visualState.reflectiveMaterials.push(material);
+            depthWrite: false,
+          }), style.color, style.roughness, style.metalness);
           return material;
         })()
       );
@@ -3208,17 +3254,36 @@
     (streetscape.lamps || []).forEach((lamp) => {
       const pole = new THREE.Mesh(
         new THREE.CylinderGeometry(0.08, 0.1, lamp.height || 4.6, 8),
-        new THREE.MeshStandardMaterial({ color: 0x2b2f35, roughness: 0.6, metalness: 0.35 })
+        registerMaterial(new THREE.MeshStandardMaterial({ color: 0x2b2f35, roughness: 0.6, metalness: 0.35 }), 'metalMaterials')
       );
       pole.position.set(lamp.x, (lamp.height || 4.6) / 2, lamp.z);
       worldGroup.add(pole);
 
+      const globeMaterial = registerMaterial(new THREE.MeshStandardMaterial({
+        color: FALLBACK_SURFACE_PRESETS.lampGlass.color,
+        emissive: FALLBACK_SURFACE_PRESETS.lampGlass.emissive,
+        emissiveIntensity: 0.16,
+        roughness: FALLBACK_SURFACE_PRESETS.lampGlass.roughness,
+        metalness: FALLBACK_SURFACE_PRESETS.lampGlass.metalness,
+      }), 'emissiveMaterials');
       const globe = new THREE.Mesh(
         new THREE.SphereGeometry(0.3, 12, 10),
-        new THREE.MeshStandardMaterial({ color: 0xe5ddbc, emissive: 0x897b58, emissiveIntensity: 0.52, roughness: 0.3, metalness: 0.06 })
+        globeMaterial
       );
       globe.position.set(lamp.x, (lamp.height || 4.6) + 0.25, lamp.z);
       worldGroup.add(globe);
+
+      const halo = new THREE.Mesh(
+        new THREE.SphereGeometry(0.6, 10, 10),
+        new THREE.MeshBasicMaterial({ color: FALLBACK_SURFACE_PRESETS.lampHalo.color, transparent: true, opacity: 0.04, depthWrite: false })
+      );
+      halo.position.copy(globe.position);
+      worldGroup.add(halo);
+
+      const lampLight = new THREE.PointLight(0xffc27a, 0, 7.5, 2);
+      lampLight.position.copy(globe.position);
+      worldGroup.add(lampLight);
+      visualState.lampVisuals.push({ globeMaterial, haloMaterial: halo.material, pointLight: lampLight });
     });
 
     (streetscape.bollards || []).forEach((bollard) => {
@@ -3870,9 +3935,9 @@
     }
 
     const cloudColor = new THREE.Color(timeOfDay.sky || '#8ea4b5');
-    cloudColor.lerp(new THREE.Color('#f1f3f6'), 0.2 - Math.min(0.16, coverage * 0.08));
+    cloudColor.lerp(new THREE.Color('#d4d9de'), 0.12 - Math.min(0.08, coverage * 0.04));
     cloudColor.multiplyScalar(1 - Math.min(0.42, weather.cloudDarkness || 0));
-    const cloudMaterial = new THREE.MeshBasicMaterial({ color: cloudColor, transparent: true, opacity: Math.min(0.48, 0.14 + (coverage * 0.26)), depthWrite: false, fog: false });
+    const cloudMaterial = new THREE.MeshBasicMaterial({ color: cloudColor, transparent: true, opacity: Math.min(0.42, 0.12 + (coverage * 0.22)), depthWrite: false, fog: false });
     visualState.weatherMaterials.push(cloudMaterial);
 
     const count = Math.max(4, Math.round(coverage * 9));
@@ -4184,9 +4249,7 @@
     const nearest = minimapState.nearestGuidance;
     const area = state.world ? getMicroAreaForPoint(player.position, state.world) : null;
     if (minimapContextEl) {
-      minimapContextEl.innerHTML = '<strong>Now facing:</strong> ' + facing
-        + (area ? '<br><strong>Exploring:</strong> ' + area.label + ' (' + area.identity + ')' : '')
-        + (nearest ? '<br><strong>Nearest landmark:</strong> ' + nearest.text : '');
+      minimapContextEl.textContent = 'Facing ' + facing + (nearest ? ' · ' + nearest.text : area ? ' · ' + area.label : '');
     }
     if (minimapModeStatusEl) {
       const isHeadingUp = minimapState.mode === 'heading-up';
@@ -4251,16 +4314,12 @@
       updateRouteCompletionScore();
       minimapState.nearestNode = nearest;
       minimapState.nearestGuidance = nearestGuidance;
-      setLandmark((microArea ? 'Exploring ' + describeMicroArea(microArea) + ' | ' : 'Nearest landmark: ') + (nearestGuidance ? nearestGuidance.text : nearest.label));
+      setLandmark(nearestGuidance ? nearestGuidance.shortText : (microArea ? microArea.label : nearest.label));
       if (routeSegmentEl) {
-        routeSegmentEl.textContent = microArea
-          ? 'Exploring: ' + microArea.label + ' — ' + microArea.identity
-          : 'Exploring: ' + nearest.label;
+        routeSegmentEl.textContent = microArea ? microArea.label : nearest.label;
       }
       if (minimapLandmarkEl) {
-        minimapLandmarkEl.textContent = microArea
-          ? 'Current area: ' + microArea.label + ' (' + microArea.identity + ')'
-          : (nearestGuidance ? 'Nearest landmark: ' + nearestGuidance.text : 'Nearest landmark: ' + nearest.label);
+        minimapLandmarkEl.textContent = nearestGuidance ? nearestGuidance.text : nearest.label;
       }
       if (microArea && state.currentMicroAreaId !== microArea.id && state.isRunning) {
         flashBoundaryStatus('Now exploring ' + microArea.label + ' — ' + microArea.identity + '.');
@@ -5027,7 +5086,7 @@
     const fogDensity = Math.max(0.0035, (weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
     scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
     renderer.setClearColor(timeOfDay.sky, 1);
-    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 1.1 : state.activeTimeOfDay === 'night' ? 0.84 : 0.96) - ((weather.rainIntensity || 0) * 0.04);
+    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 0.98 : state.activeTimeOfDay === 'night' ? 0.66 : state.activeTimeOfDay === 'dusk' ? 0.78 : 0.9) - ((weather.rainIntensity || 0) * 0.05);
 
     ambient.color.set(timeOfDay.ambientColor);
     ambient.intensity = Math.max(0.2, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.76);
@@ -5053,7 +5112,8 @@
       mat.emissiveIntensity = (state.activeTimeOfDay === 'night' ? 0.18 : state.activeTimeOfDay === 'morning' ? 0.11 : 0.08) + (rain * 0.08);
     });
     visualState.emissiveMaterials.forEach((mat) => {
-      mat.emissiveIntensity = (state.activeTimeOfDay === 'night' ? 0.14 : 0.06) + ((weather.rainIntensity || 0) * 0.06);
+      const base = (mat.userData && mat.userData.baseEmissiveIntensity) || 0.06;
+      mat.emissiveIntensity = base + (state.activeTimeOfDay === 'night' ? 0.18 : state.activeTimeOfDay === 'dusk' ? 0.09 : 0.02) + ((weather.rainIntensity || 0) * 0.08);
     });
     visualState.metalMaterials.forEach((mat) => {
       mat.roughness = Math.max(0.22, 0.58 - ((weather.rainIntensity || 0) * 0.18));
@@ -5066,26 +5126,54 @@
     });
 
     if (visualState.roadMaterial) {
-      visualState.roadMaterial.color.set(timeOfDay.roadColor || '#2b3138');
-      setSurfaceWetness(visualState.roadMaterial, 0.95, 0.03, (weather.rainIntensity || 0) * 0.4);
+      visualState.roadMaterial.color.set(state.activeTimeOfDay === 'morning' ? '#243544' : state.activeTimeOfDay === 'dusk' ? '#1d2934' : '#141d26');
+      setSurfaceWetness(visualState.roadMaterial, 0.96, 0.05, (weather.rainIntensity || 0) * 0.5);
       if (visualState.roadMaterial.normalScale) {
         visualState.roadMaterial.normalScale.set(1.35 + ((weather.rainIntensity || 0) * 0.24), 1.1 + ((weather.rainIntensity || 0) * 0.2));
       }
     }
     if (visualState.sidewalkMaterial) {
-      visualState.sidewalkMaterial.color.set(timeOfDay.sidewalkColor || '#8f8780');
-      setSurfaceWetness(visualState.sidewalkMaterial, 0.97, 0.015, (weather.rainIntensity || 0) * 0.2);
+      visualState.sidewalkMaterial.color.set(state.activeTimeOfDay === 'night' ? '#63584b' : state.activeTimeOfDay === 'dusk' ? '#6e6152' : '#7c6e5f');
+      setSurfaceWetness(visualState.sidewalkMaterial, 0.98, 0.02, (weather.rainIntensity || 0) * 0.22);
       if (visualState.sidewalkMaterial.normalScale) {
         visualState.sidewalkMaterial.normalScale.set(0.7 + ((weather.rainIntensity || 0) * 0.12), 0.7 + ((weather.rainIntensity || 0) * 0.12));
       }
     }
     if (visualState.curbMaterial) {
-      visualState.curbMaterial.color.set(timeOfDay.sidewalkColor || '#8f99a3').multiplyScalar(0.74);
+      visualState.curbMaterial.color.set('#9c876f');
     }
     if (visualState.laneMaterial) {
-      visualState.laneMaterial.color.set(timeOfDay.laneColor || '#aab1b8');
+      visualState.laneMaterial.color.set('#5d5041');
       visualState.laneMaterial.opacity = 1;
     }
+    Object.keys(visualState.fallbackSurfaceMaterials).forEach((role) => {
+      (visualState.fallbackSurfaceMaterials[role] || []).forEach((mat) => {
+        const rain = weather.rainIntensity || 0;
+        const baseColor = new THREE.Color((mat.userData && mat.userData.baseColor) || 0x444444);
+        if (role === 'road') {
+          const target = new THREE.Color(state.activeTimeOfDay === 'night' ? '#16212b' : state.activeTimeOfDay === 'dusk' ? '#20303d' : '#2c3f4e');
+          mat.color.copy(baseColor).lerp(target, 0.72);
+          mat.roughness = Math.max(0.48, (mat.userData.baseRoughness || 0.92) - (rain * 0.24));
+          mat.metalness = Math.min(0.16, (mat.userData.baseMetalness || 0.02) + (rain * 0.09));
+        } else if (role === 'sidewalk' || role === 'plaza') {
+          mat.roughness = Math.max(0.58, (mat.userData.baseRoughness || 0.92) - (rain * 0.12));
+          mat.metalness = Math.min(0.08, (mat.userData.baseMetalness || 0.02) + (rain * 0.04));
+        }
+      });
+    });
+    visualState.lampVisuals.forEach((lampVisual) => {
+      const rain = weather.rainIntensity || 0;
+      const fog = state.activeWeather === 'fog' ? 0.3 : 0;
+      const intensity = state.activeTimeOfDay === 'night'
+        ? 1.7 + (rain * 0.8) + fog
+        : state.activeTimeOfDay === 'dusk'
+          ? 1.08 + (rain * 0.45) + (fog * 0.35)
+          : 0.06 + (rain * 0.06);
+      lampVisual.globeMaterial.emissiveIntensity = intensity;
+      lampVisual.haloMaterial.opacity = Math.min(0.28, intensity * 0.12);
+      lampVisual.pointLight.intensity = Math.min(2.8, intensity * 1.35);
+      lampVisual.pointLight.distance = state.activeTimeOfDay === 'night' ? 9.5 : 7.2;
+    });
 
     if (worldStatusEl) {
       worldStatusEl.dataset.artDirection = ART_DIRECTION.label;

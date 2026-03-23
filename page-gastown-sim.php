@@ -112,11 +112,11 @@ get_header();
 
     <section class="gastown-hud" aria-label="Exploration HUD">
       <div class="gastown-hud-identity">
-        <p class="gastown-hud-kicker">ON THE STREET</p>
-        <p class="gastown-hud-name" data-walker-name-display>WALKER</p>
+        <p class="gastown-hud-kicker">HUD</p>
+        <p class="gastown-hud-name" data-walker-name-display>WALKER · 0% MAPPED</p>
       </div>
       <div class="gastown-hud-route">
-        <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% route</p>
+        <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% mapped</p>
       </div>
       <p class="gastown-hud-subline" data-sim-status aria-live="polite">Click in to start.</p>
       <p class="gastown-interact-prompt" data-sim-interact-prompt aria-live="polite" hidden></p>
@@ -131,16 +131,16 @@ get_header();
         </div>
         <p class="gastown-minimap-mode-status" data-sim-minimap-mode-status aria-live="polite">North-up map.</p>
         <p class="gastown-minimap-tooltip" data-sim-minimap-tooltip aria-live="polite">Steam Clock ahead.</p>
-        <p class="gastown-minimap-context" data-sim-minimap-context aria-live="polite"><strong>Facing:</strong> north<br><strong>Nearest:</strong> station threshold</p>
+        <p class="gastown-minimap-context" data-sim-minimap-context aria-live="polite">Facing north · Steam Clock ahead.</p>
         <canvas data-sim-minimap width="220" height="220"></canvas>
-        <div class="gastown-minimap-compass" data-sim-compass aria-live="polite">Heading: north</div>
+        <div class="gastown-minimap-compass" data-sim-compass aria-live="polite">N</div>
         <ul class="gastown-minimap-legend" data-sim-minimap-legend aria-label="Minimap legend">
           <li>You</li>
           <li>Route</li>
           <li>Street</li>
           <li>Landmark</li>
         </ul>
-        <p class="gastown-minimap-label" data-sim-minimap-landmark>Nearest landmark: Waterfront Station threshold — ahead</p>
+        <p class="gastown-minimap-label" data-sim-minimap-landmark>Waterfront Station threshold</p>
       </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
       <div class="gastown-live-strip">
