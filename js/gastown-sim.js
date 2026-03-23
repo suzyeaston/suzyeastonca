@@ -118,6 +118,12 @@
       npcAudio: {},
       steamClockChime: null,
     },
+    audioSystems: {
+      ambient: { enabled: false, degraded: false, zoneVariants: {}, landmarkCues: {}, activeZoneId: '', activeLandmarkId: '' },
+      npcSpeech: { enabled: !!window.speechSynthesis, degraded: false, voice: null, pendingTimer: null, activeNpcId: '' },
+      interaction: { enabled: false, degraded: false, lastUiFocusAt: -Infinity },
+    },
+    audioMessages: { ambient: '', speech: '', interaction: '' },
     steamClockState: {
       anchor: null,
       plume: null,
@@ -996,11 +1002,196 @@
     }
   }
 
-  function maybeTriggerNpcVoice(voiceFreq) {
-    if (!state.isRunning || !Array.isArray(state.npcs) || !window.speechSynthesis || voiceFreq <= 0.05) {
+  function setAudioMessage(channel, message) {
+    if (!Object.prototype.hasOwnProperty.call(state.audioMessages, channel)) {
+      return;
+    }
+    state.audioMessages[channel] = message || '';
+  }
+
+  function clearAudioMessage(channel) {
+    setAudioMessage(channel, '');
+  }
+
+  function getAudioFallbackSummary() {
+    return Object.keys(state.audioMessages)
+      .map((key) => state.audioMessages[key])
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  function publishAudioFallbackStatus(baseMessage) {
+    const summary = getAudioFallbackSummary();
+    if (summary) {
+      setStatus((baseMessage ? baseMessage + ' ' : '') + summary);
+      return;
+    }
+    if (baseMessage) {
+      setStatus(baseMessage);
+    }
+  }
+
+  function markAudioSubsystemDegraded(channel, message, error) {
+    if (channel === 'ambient') {
+      state.audioSystems.ambient.degraded = true;
+    } else if (channel === 'speech') {
+      state.audioSystems.npcSpeech.degraded = true;
+    } else if (channel === 'interaction') {
+      state.audioSystems.interaction.degraded = true;
+    }
+    setAudioMessage(channel, message);
+    warnAudioUnavailable(message, error);
+  }
+
+  function stopSpeechPlayback() {
+    if (!window.speechSynthesis) {
+      return;
+    }
+    try {
+      window.speechSynthesis.cancel();
+    } catch (error) {}
+    state.audioSystems.npcSpeech.activeNpcId = '';
+  }
+
+  function resolveSpeechVoice() {
+    if (!window.speechSynthesis) {
+      return null;
+    }
+    const voices = typeof window.speechSynthesis.getVoices === 'function'
+      ? window.speechSynthesis.getVoices()
+      : [];
+    if (!Array.isArray(voices) || !voices.length) {
+      return null;
+    }
+    const preferred = voices.find((voice) => /en(-|_)?ca/i.test((voice.lang || '')))
+      || voices.find((voice) => /en(-|_)?us/i.test((voice.lang || '')))
+      || voices.find((voice) => /^en/i.test((voice.lang || '')))
+      || voices[0];
+    state.audioSystems.npcSpeech.voice = preferred || null;
+    return state.audioSystems.npcSpeech.voice;
+  }
+
+  function speakNpcDialog(npcState, lines, options) {
+    const speech = state.audioSystems.npcSpeech;
+    const text = (Array.isArray(lines) ? lines : []).filter(Boolean).join(' ');
+    if (!text) {
       return false;
     }
-    if (window.speechSynthesis.speaking || ((performance.now() / 1000) - state.lastNpcVoiceAt) < 10) {
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
+      markAudioSubsystemDegraded('speech', 'Speech playback is unavailable in this browser, so dialog text will stay on screen.');
+      publishAudioFallbackStatus('Dialog open.');
+      return false;
+    }
+    const voice = speech.voice || resolveSpeechVoice();
+    const utterance = new window.SpeechSynthesisUtterance(text);
+    utterance.voice = voice || null;
+    utterance.lang = (voice && voice.lang) || 'en-CA';
+    utterance.volume = options && typeof options.volume === 'number' ? options.volume : 0.86;
+    utterance.rate = options && typeof options.rate === 'number' ? options.rate : 0.98;
+    utterance.pitch = options && typeof options.pitch === 'number' ? options.pitch : 1;
+    utterance.onstart = function onSpeechStart() {
+      speech.enabled = true;
+      clearAudioMessage('speech');
+      speech.activeNpcId = npcState && npcState.id ? npcState.id : '';
+      state.lastNpcVoiceAt = performance.now() / 1000;
+    };
+    utterance.onend = function onSpeechEnd() {
+      if (speech.activeNpcId === (npcState && npcState.id ? npcState.id : '')) {
+        speech.activeNpcId = '';
+      }
+    };
+    utterance.onerror = function onSpeechError(event) {
+      const reason = event && event.error ? event.error : 'blocked';
+      markAudioSubsystemDegraded('speech', 'Speech playback was blocked (' + reason + '), so dialog text will stay on screen.');
+      publishAudioFallbackStatus('Dialog open.');
+    };
+    try {
+      stopSpeechPlayback();
+      window.speechSynthesis.speak(utterance);
+      return true;
+    } catch (error) {
+      markAudioSubsystemDegraded('speech', 'Speech playback could not start, so dialog text will stay on screen.', error);
+      publishAudioFallbackStatus('Dialog open.');
+      return false;
+    }
+  }
+
+  function playUiTone(kind, options) {
+    const ctx = ensureAudioContext();
+    if (!ctx) {
+      markAudioSubsystemDegraded('interaction', 'Browser audio permissions are off, so interaction sounds are muted.');
+      return false;
+    }
+    const profiles = {
+      dialog_open: { type: 'triangle', frequency: 392, endFrequency: 523.25, attack: 0.008, duration: 0.22, gain: 0.03 },
+      quest_pickup: { type: 'sine', frequency: 330, endFrequency: 659.25, attack: 0.01, duration: 0.34, gain: 0.05 },
+      ui_focus: { type: 'square', frequency: 540, endFrequency: 610, attack: 0.002, duration: 0.08, gain: 0.016 },
+      discovery: { type: 'triangle', frequency: 261.63, endFrequency: 783.99, attack: 0.01, duration: 0.52, gain: 0.05 },
+    };
+    const profile = Object.assign({}, profiles[kind] || profiles.ui_focus, options || {});
+    try {
+      const now = ctx.currentTime + 0.01;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = profile.type;
+      osc.frequency.setValueAtTime(profile.frequency, now);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(40, profile.endFrequency || profile.frequency), now + profile.duration);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(profile.gain, now + profile.attack);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + profile.duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + profile.duration + 0.02);
+      state.audioSystems.interaction.enabled = true;
+      clearAudioMessage('interaction');
+      return true;
+    } catch (error) {
+      markAudioSubsystemDegraded('interaction', 'Browser audio permissions are off, so interaction sounds are muted.', error);
+      return false;
+    }
+  }
+
+  function getZoneAudioProfile(zone) {
+    const id = String(zone && (zone.id || zone.bed || '')).toLowerCase();
+    if (/transit|station|threshold/.test(id)) return { variant: 'transit_edge', landmarkCue: 'station_chime', baseVolume: 0.24 };
+    if (/plaza|square/.test(id)) return { variant: 'plaza', landmarkCue: 'square_glint', baseVolume: 0.28 };
+    if (/busker|clock/.test(id)) return { variant: 'busker_corner', landmarkCue: 'steam_core', baseVolume: 0.34 };
+    if (/rain|water|mid-block|street/.test(id)) return { variant: 'rain_soaked_street', landmarkCue: 'wet_reflection', baseVolume: 0.26 };
+    return { variant: 'landmark_core', landmarkCue: 'steam_core', baseVolume: 0.24 };
+  }
+
+  function syncHowlRate(howl, rate) {
+    if (!howl || typeof howl.rate !== 'function') {
+      return;
+    }
+    try {
+      howl.rate(rate);
+    } catch (error) {}
+  }
+
+  function applyEnvironmentalAudioState() {
+    if (!state.world) {
+      return;
+    }
+    const ambientSystem = state.audioSystems.ambient;
+    const weather = state.world.weatherPresets[state.activeWeather] || state.world.weatherPresets.drizzle || state.world.weatherPresets.rain;
+    const playbackRate = Math.max(0.82, Math.min(1.12,
+      (state.activeTimeOfDay === 'night' ? 0.82 : state.activeTimeOfDay === 'dusk' ? 0.9 : state.activeTimeOfDay === 'morning' ? 1.06 : 1)
+      - ((weather.rainIntensity || 0) * 0.06)
+    ));
+
+    Object.keys(state.sounds.beds).forEach((id) => syncHowlRate(state.sounds.beds[id], playbackRate));
+    Object.keys(ambientSystem.zoneVariants).forEach((id) => syncHowlRate(ambientSystem.zoneVariants[id], Math.max(0.8, playbackRate - 0.02)));
+    Object.keys(ambientSystem.landmarkCues).forEach((id) => syncHowlRate(ambientSystem.landmarkCues[id], Math.max(0.9, playbackRate)));
+    syncHowlRate(state.sounds.rainLoop, Math.max(0.88, 0.96 + ((weather.rainIntensity || 0) * 0.12)));
+  }
+
+  function maybeTriggerNpcVoice(voiceFreq) {
+    if (!state.isRunning || !Array.isArray(state.npcs) || voiceFreq <= 0.05) {
+      return false;
+    }
+    if ((window.speechSynthesis && window.speechSynthesis.speaking) || ((performance.now() / 1000) - state.lastNpcVoiceAt) < 10) {
       return false;
     }
     const nearby = state.npcs.filter((npc) => npc.voiceCue && npc.mesh && Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z) < 15);
@@ -1018,20 +1209,11 @@
     if (!options.length) {
       return false;
     }
-    const utterance = new window.SpeechSynthesisUtterance(options[state.npcVoiceIndex % options.length]);
-    utterance.volume = 0.18;
-    utterance.rate = 0.96;
-    utterance.pitch = selected.role === 'busker' ? 0.84 : 1;
-    utterance.onstart = function onNpcVoiceStart() {
-      state.lastNpcVoiceAt = performance.now() / 1000;
-    };
-    try {
-      window.speechSynthesis.speak(utterance);
-      return true;
-    } catch (error) {
-      warnAudioUnavailable('NPC voice ambience unavailable; simulator continuing without speech snippets.', error);
-      return false;
-    }
+    return speakNpcDialog(selected, [options[state.npcVoiceIndex % options.length]], {
+      volume: 0.28,
+      rate: 0.97,
+      pitch: selected.role === 'busker' ? 0.86 : 1,
+    });
   }
 
   function clearMovementInput() {
@@ -1314,6 +1496,8 @@
     dialogTitleEl.textContent = entry.title;
     renderDialogBody(entry.lines);
     renderDialogActions(entry);
+    playUiTone('dialog_open');
+    speakNpcDialog(npcState, entry.lines, { pitch: npcState.role === 'busker' ? 0.9 : 1 });
     setStatus(conversation.fallback ? 'NPC chat fallback active. Click scene to resume when ready.' : 'NPC conversation ready. Click scene to resume when ready.');
     focusFirstDialogControl();
   }
@@ -1417,6 +1601,7 @@
   }
 
   function closeDialog() {
+    stopSpeechPlayback();
     state.activeDialogNpcId = '';
     state.activeDialogEntry = null;
     if (dialogActionsDynamicEl) {
@@ -1472,6 +1657,8 @@
     dialogTitleEl.textContent = normalized.title;
     renderDialogBody(normalized.lines);
     renderDialogActions(normalized);
+    playUiTone('dialog_open');
+    speakNpcDialog(npcState, normalized.lines, { pitch: npcState.role === 'busker' ? 0.9 : 1 });
 
     const showDialog = () => {
       dialogModalEl.removeAttribute('hidden');
@@ -4206,10 +4393,18 @@
   function setupAudio(world) {
     const base = (config.audioBaseUrl || '').replace(/\/$/, '');
     const src = (name) => [base + '/' + name + '.mp3', base + '/' + name + '.ogg'];
+    const ambientSystem = state.audioSystems.ambient;
 
     try {
       ['quiet_night', 'eerie_drones', 'nightlife_hum', 'commuter_mix'].forEach((id) => {
         state.sounds.beds[id] = createSafeHowl({ src: src('beds/' + id), loop: true, volume: 0, html5: false });
+      });
+
+      ['transit_edge', 'plaza', 'busker_corner', 'rain_soaked_street', 'landmark_core'].forEach((id) => {
+        ambientSystem.zoneVariants[id] = createSafeHowl({ src: src('zones/' + id), loop: true, volume: 0, html5: false });
+      });
+      ['station_chime', 'square_glint', 'steam_core', 'wet_reflection'].forEach((id) => {
+        ambientSystem.landmarkCues[id] = createSafeHowl({ src: src('landmarks/' + id), loop: true, volume: 0, html5: false });
       });
 
       state.sounds.rainLoop = createSafeHowl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
@@ -4221,8 +4416,10 @@
         }
         state.sounds.zoneBeds[zone.id] = createSafeHowl({ src: src('zones/' + zone.bed), loop: true, volume: 0 });
       });
+      ambientSystem.enabled = hasHowler;
+      clearAudioMessage('ambient');
     } catch (error) {
-      warnAudioUnavailable('Gastown audio setup failed; simulator continuing without ambient audio.', error);
+      markAudioSubsystemDegraded('ambient', 'Ambient audio assets could not fully load, so the simulator will lean on UI and speech feedback.', error);
     }
   }
 
@@ -4311,6 +4508,7 @@
 
     playHowl(state.sounds.rainLoop);
     fadeHowl(state.sounds.rainLoop, (weather.rainIntensity || 0) * 0.45, 380);
+    applyEnvironmentalAudioState();
   }
 
   function applyMood(moodId) {
@@ -4324,6 +4522,7 @@
       playHowl(howl);
       fadeHowl(howl, id === preset.ambientBed ? 0.45 * preset.audioDensity : 0, 420);
     });
+    applyEnvironmentalAudioState();
 
     if (state.npcVoiceTimer) {
       clearInterval(state.npcVoiceTimer);
@@ -4349,16 +4548,65 @@
   function updateAudioZones() {
     if (!state.world || !state.world.audioZones) return;
 
+    const ambientSystem = state.audioSystems.ambient;
+    const weather = state.world.weatherPresets[state.activeWeather] || {};
+    const timeOfDay = state.world.timeOfDayPresets[state.activeTimeOfDay] || {};
+    let bestZone = null;
+    let bestStrength = 0;
+
     state.world.audioZones.forEach((zone) => {
       const dist = Math.hypot(zone.x - player.position.x, zone.z - player.position.z);
       const normalized = Math.max(0, 1 - (dist / zone.radius));
       const howl = state.sounds.zoneBeds[zone.id];
-      if (!howl) return;
-      playHowl(howl);
-      if (howl && typeof howl.volume === 'function') {
-        howl.volume(normalized * 0.4);
+      if (howl) {
+        playHowl(howl);
+        if (typeof howl.volume === 'function') {
+          howl.volume(normalized * 0.28);
+        }
+      }
+      if (normalized > bestStrength) {
+        bestStrength = normalized;
+        bestZone = zone;
       }
     });
+
+    Object.keys(ambientSystem.zoneVariants).forEach((id) => {
+      const howl = ambientSystem.zoneVariants[id];
+      if (!howl) return;
+      playHowl(howl);
+      if (typeof howl.volume === 'function') {
+        howl.volume(0);
+      }
+    });
+    Object.keys(ambientSystem.landmarkCues).forEach((id) => {
+      const howl = ambientSystem.landmarkCues[id];
+      if (!howl) return;
+      playHowl(howl);
+      if (typeof howl.volume === 'function') {
+        howl.volume(0);
+      }
+    });
+
+    if (!bestZone || bestStrength <= 0.04) {
+      ambientSystem.activeZoneId = '';
+      ambientSystem.activeLandmarkId = '';
+      return;
+    }
+
+    const profile = getZoneAudioProfile(bestZone);
+    const zoneHowl = ambientSystem.zoneVariants[profile.variant];
+    const landmarkHowl = ambientSystem.landmarkCues[profile.landmarkCue];
+    const weatherBoost = 1 + ((weather.rainIntensity || 0) * 0.24) + (state.activeWeather === 'fog' ? -0.12 : 0);
+    const timeBoost = state.activeTimeOfDay === 'night' ? 0.88 : state.activeTimeOfDay === 'morning' ? 1.08 : 1;
+
+    ambientSystem.activeZoneId = bestZone.id || '';
+    ambientSystem.activeLandmarkId = profile.landmarkCue;
+    if (zoneHowl && typeof zoneHowl.volume === 'function') {
+      zoneHowl.volume(Math.min(0.42, bestStrength * profile.baseVolume * weatherBoost * timeBoost));
+    }
+    if (landmarkHowl && typeof landmarkHowl.volume === 'function') {
+      landmarkHowl.volume(Math.min(0.3, bestStrength * 0.16 * (0.8 + (timeOfDay.landmarkGlow || 0.2))));
+    }
   }
 
   function updateOverviewCamera() {
@@ -4612,6 +4860,25 @@
     });
 
     dialogCloseEls.forEach((button) => button.addEventListener('click', closeDialog));
+
+    [pauseBtn, resetBtn, timeOfDaySelect, weatherSelect, moodSelect, debugToggle, minimapZoomInBtn, minimapZoomOutBtn, minimapModeBtn, tutorialOpenBtn, tutorialStartBtn, lowGraphicsToggle, reopenTutorialToggle, dialogFallbackCloseEl]
+      .filter(Boolean)
+      .forEach((control) => {
+        control.addEventListener('focus', () => {
+          const now = performance.now();
+          if ((now - state.audioSystems.interaction.lastUiFocusAt) < 90) {
+            return;
+          }
+          state.audioSystems.interaction.lastUiFocusAt = now;
+          playUiTone('ui_focus');
+        }, true);
+        control.addEventListener('mouseenter', () => playUiTone('ui_focus'));
+      });
+
+    if (window.speechSynthesis && typeof window.speechSynthesis.addEventListener === 'function') {
+      window.speechSynthesis.addEventListener('voiceschanged', resolveSpeechVoice);
+    }
+    resolveSpeechVoice();
     if (tutorialOpenBtn) tutorialOpenBtn.addEventListener('click', openTutorialOverlay);
     tutorialCloseEls.forEach((button) => button.addEventListener('click', closeTutorialOverlay));
     if (tutorialStartBtn) tutorialStartBtn.addEventListener('click', () => { closeTutorialOverlay(); resetToStart(); setStatus('Tutorial started. Click into the scene, then follow the route toward the Steam Clock.'); });
