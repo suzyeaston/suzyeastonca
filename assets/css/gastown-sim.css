@@ -111,7 +111,7 @@
 .gastown-hud {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) auto;
-  gap: 0.45rem 0.6rem;
+  gap: 0.32rem 0.5rem;
   align-items: center;
 }
 
@@ -119,7 +119,7 @@
 .gastown-hud-route,
 .gastown-hud-card,
 .gastown-meta-strip > * {
-  padding: 0.65rem 0.75rem;
+  padding: 0.5rem 0.65rem;
   border-radius: 10px;
   border: 1px solid rgba(170, 197, 226, 0.22);
   background: linear-gradient(180deg, rgba(16, 22, 33, 0.8), rgba(8, 11, 18, 0.92));
@@ -137,10 +137,11 @@
 
 .gastown-hud-name {
   margin: 0;
-  font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+  font-size: clamp(0.92rem, 1.7vw, 1.12rem);
   line-height: 1;
   color: #f6fbff;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .gastown-hud-subline,
@@ -157,7 +158,7 @@
 .gastown-hud-subline {
   grid-column: 1 / -1;
   margin: 0;
-  padding: 0.38rem 0.6rem;
+  padding: 0.28rem 0.56rem;
   border-radius: 999px;
   border: 1px solid rgba(255, 214, 138, 0.34);
   background: rgba(22, 16, 8, 0.78);
@@ -246,14 +247,14 @@
   right: 0.8rem;
   top: 0.8rem;
   display: grid;
-  gap: 0.3rem;
-  max-width: min(180px, 26vw);
+  gap: 0.22rem;
+  max-width: min(170px, 24vw);
 }
 
 .gastown-landmark,
 .gastown-route-segment,
 .gastown-world-status {
-  padding: 0.28rem 0.5rem;
+  padding: 0.24rem 0.46rem;
   border-radius: 7px;
   background: rgba(10, 16, 25, 0.82);
   border: 1px solid rgba(164, 190, 218, 0.18);
@@ -447,3 +448,7 @@
     max-width: min(180px, 46vw);
   }
 }
+
+.gastown-log-drawer[open] { opacity: 0.98; }
+.gastown-hud-kicker { display: none; }
+.gastown-meta-strip { display: grid; gap: 0.45rem; }

@@ -10,7 +10,8 @@
     "buildNotes": [
       "Working fallback corridor is active because required offline civic source files are missing.",
       "This fallback now stages Water Street as a compact exploration district with plaza, storefront edge, alley threshold, transit edge, and landmark corner micro-areas instead of a single bent ribbon corridor.",
-      "No refreshed reference inputs were present; deterministic default route staging was used."
+      "No refreshed reference inputs were present; deterministic default route staging was used.",
+      "Fallback street rendering now uses dark heritage paving, stronger sidewalk-road separation, and early-route band/tourist staging."
     ],
     "referenceInputsUsed": [],
     "openDataInputs": {
@@ -5076,6 +5077,33 @@
       "z": -24.4,
       "yaw": -0.72,
       "scale": 0.8
+    },
+    {
+      "id": "starter-prop-brewery-sign",
+      "kind": "utility_box",
+      "x": 15.6,
+      "y": 0,
+      "z": -16.9,
+      "yaw": 0.66,
+      "scale": 0.78
+    },
+    {
+      "id": "starter-prop-patio-bench",
+      "kind": "bench",
+      "x": 18.4,
+      "y": 0,
+      "z": -17.2,
+      "yaw": 0.72,
+      "scale": 0.88
+    },
+    {
+      "id": "starter-prop-band-planter",
+      "kind": "planter",
+      "x": 22.2,
+      "y": 0,
+      "z": -22.7,
+      "yaw": 0.58,
+      "scale": 1.08
     }
   ],
   "npcs": [
@@ -5107,28 +5135,29 @@
       "id": "starter-busker-clock",
       "role": "busker",
       "behavior": "busker_perform",
-      "pose": "strum",
-      "heldProp": "guitar",
+      "pose": "play_sax",
+      "heldProp": "sax",
       "voiceCue": "busker-hook",
       "dialogId": "busker_clock_corner",
       "interactRadius": 3,
       "idleSpot": {
-        "x": 32.8,
-        "z": -34.4
+        "x": 18.8,
+        "z": -24.2
       },
       "silhouetteScale": 1.06,
       "yaw": -0.82,
-      "name": "sax busker",
+      "name": "bandleader sax",
       "patrol": [
         {
-          "x": 31.9,
-          "z": -33.8
+          "x": 18.3,
+          "z": -23.9
         },
         {
-          "x": 33.6,
-          "z": -35.1
+          "x": 19.1,
+          "z": -24.5
         }
-      ]
+      ],
+      "companionGroup": "early-band"
     },
     {
       "id": "starter-pedestrian-west",
@@ -5352,6 +5381,162 @@
           "z": -23.6
         }
       ]
+    },
+    {
+      "id": "starter-band-mandolin",
+      "role": "tourist",
+      "behavior": "tourist_pause",
+      "dialogId": "busker_clock_corner",
+      "interactRadius": 2.5,
+      "idleSpot": {
+        "x": 17.1,
+        "z": -23.6
+      },
+      "patrol": [
+        {
+          "x": 16.9,
+          "z": -23.5
+        },
+        {
+          "x": 17.4,
+          "z": -23.9
+        }
+      ],
+      "silhouetteScale": 0.96,
+      "yaw": -0.72,
+      "name": "mandolin",
+      "pose": "strum",
+      "heldProp": "guitar",
+      "companionGroup": "early-band"
+    },
+    {
+      "id": "starter-band-bass",
+      "role": "pedestrian",
+      "behavior": "tourist_pause",
+      "dialogId": "busker_clock_corner",
+      "interactRadius": 2.5,
+      "idleSpot": {
+        "x": 19.7,
+        "z": -25.5
+      },
+      "patrol": [
+        {
+          "x": 19.5,
+          "z": -25.4
+        },
+        {
+          "x": 19.9,
+          "z": -25.7
+        }
+      ],
+      "silhouetteScale": 1.04,
+      "yaw": -0.92,
+      "name": "upright bass",
+      "pose": "rest",
+      "heldProp": "guitar",
+      "companionGroup": "early-band"
+    },
+    {
+      "id": "starter-band-guitar",
+      "role": "guide",
+      "behavior": "guide_pace",
+      "dialogId": "busker_clock_corner",
+      "interactRadius": 2.5,
+      "idleSpot": {
+        "x": 20.8,
+        "z": -23.8
+      },
+      "patrol": [
+        {
+          "x": 20.4,
+          "z": -23.7
+        },
+        {
+          "x": 21.0,
+          "z": -24.1
+        }
+      ],
+      "silhouetteScale": 0.98,
+      "yaw": -0.64,
+      "name": "guitar chop",
+      "pose": "strum",
+      "heldProp": "guitar",
+      "companionGroup": "early-band"
+    },
+    {
+      "id": "starter-band-camera",
+      "role": "photographer",
+      "behavior": "photo_idle",
+      "dialogId": "tourist_clock_photo",
+      "interactRadius": 2.5,
+      "idleSpot": {
+        "x": 12.8,
+        "z": -18.5
+      },
+      "patrol": [
+        {
+          "x": 12.6,
+          "z": -18.4
+        },
+        {
+          "x": 13.1,
+          "z": -18.8
+        }
+      ],
+      "silhouetteScale": 0.98,
+      "yaw": -0.52,
+      "name": "camera person",
+      "pose": "taking_photo",
+      "heldProp": "camera",
+      "companionGroup": "opening-crowd"
+    },
+    {
+      "id": "starter-tourist-band-west",
+      "role": "tourist",
+      "behavior": "tourist_wander",
+      "dialogId": "tourist_clock_stop",
+      "interactRadius": 2.4,
+      "idleSpot": {
+        "x": 14.3,
+        "z": -20.4
+      },
+      "patrol": [
+        {
+          "x": 13.5,
+          "z": -19.8
+        },
+        {
+          "x": 16.2,
+          "z": -21.8
+        }
+      ],
+      "silhouetteScale": 0.97,
+      "pose": "group_gather",
+      "companionGroup": "opening-crowd"
+    },
+    {
+      "id": "starter-tourist-band-east",
+      "role": "tourist",
+      "behavior": "tourist_wander",
+      "dialogId": "tourist_clock_stop",
+      "interactRadius": 2.4,
+      "idleSpot": {
+        "x": 22.8,
+        "z": -26.5
+      },
+      "patrol": [
+        {
+          "x": 22.0,
+          "z": -25.8
+        },
+        {
+          "x": 24.1,
+          "z": -27.1
+        }
+      ],
+      "silhouetteScale": 1.0,
+      "pose": "being_photographed",
+      "companionGroup": "opening-crowd"
     }
   ],
   "exploration": {
@@ -6500,5 +6685,14 @@
     "floorY": 0,
     "edgeMessage": "Stayed inside the explorable Gastown district.",
     "resetMessage": "Returned to the explorable Gastown district."
-  }
+  },
+  "audioZones": [
+    {
+      "id": "opening-band-cluster",
+      "x": 18.8,
+      "z": -24.1,
+      "radius": 18,
+      "bed": "commuter_mix"
+    }
+  ]
 }

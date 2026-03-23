@@ -189,12 +189,31 @@
       nextHint: null,
       openingObjectiveStartedAt: 0,
     },
+    band: {
+      contextKey: '',
+      arrangements: [],
+      arrangementIndex: 0,
+      scheduler: null,
+      currentCycleStartedAt: 0,
+      currentBeatCursor: 0,
+      activeArrangement: null,
+      watchdogs: [],
+      lastWatchdogSweepAt: 0,
+      lastFamily: '',
+      familyBias: '',
+      bus: null,
+      synths: null,
+      active: false,
+      pendingRequest: null,
+      disposalToken: 0,
+    },
   };
 
   const DEFAULT_EYE_HEIGHT = 1.7;
   const WALKER_NAME_STORAGE_KEY = 'gastownWalkerName';
   const NPC_SPEECH_CACHE_LIMIT = 18;
-  const BUSKER_RIFF_CACHE_PREFIX = 'gastownBuskerRiff:';
+  const BAND_ARRANGEMENT_CACHE_PREFIX = 'gastownBandArrangement:';
+  const BAND_MAX_NOTE_SECONDS = 2.8;
   const STARTUP_STING_FALLBACK_SPEC = {
     tempo: 96,
     key: 'E minor',
@@ -450,7 +469,7 @@
     orientation: { label: 'Get moving', status: 'Get moving.' },
     scavenger: { label: 'Street details', status: 'Street details ready.' },
     survey: { label: 'Route survey', status: 'Route opens east.' },
-    soundwalk: { label: 'Sound cues', status: 'Listen for the sax and the clock.' },
+    soundwalk: { label: 'Sound cues', status: 'Band ahead.' },
     stories: { label: 'Layered places', status: 'Keep walking past the obvious photo stop.' },
   };
 
@@ -478,7 +497,7 @@
       label: 'Sound cues',
       objective: 'Follow the sax, crowd, and clock.',
       hint: 'Pause where the street sounds thickest.',
-      status: 'Listen for the sax and the clock.',
+      status: 'Band ahead.',
     },
     stories: {
       label: 'Layered places',
@@ -716,13 +735,13 @@
       if (!state.progression.discoveredLandmarks['steam-clock']) {
         hint = { text: 'Steam Clock ahead.', target: { type: 'landmark', id: 'steam-clock' } };
       } else if (busker) {
-        hint = { text: 'Busker nearby.', target: { type: 'npc', id: busker.id } };
+        hint = { text: 'Band ahead.', target: { type: 'npc', id: busker.id } };
       }
     } else if (state.currentThread === 'stories' && chainStories.active && !chainStories.completed) {
       if (!state.progression.discoveredLandmarks['maple-tree-square-edge']) {
         hint = { text: 'Past the clock.', target: { type: 'landmark', id: 'maple-tree-square-edge' } };
       } else if (busker) {
-        hint = { text: 'Talk to the busker again.', target: { type: 'npc', id: busker.id } };
+        hint = { text: 'Check back with the band.', target: { type: 'npc', id: busker.id } };
       }
     } else if ((state.progression.routeCompletionScore || 0) < 100) {
       const nextLandmark = (state.world && state.world.landmarks || []).find((landmark) => !state.progression.discoveredLandmarks[landmark.id]);
@@ -1193,6 +1212,7 @@
     const base = getTextureBaseUrl();
     const manifest = SURFACE_TEXTURES[kind] || {};
     const set = {};
+    let loadedCount = 0;
     Object.keys(manifest).forEach((key) => {
       if (!base || !manifest[key]) {
         return;
@@ -1203,8 +1223,12 @@
       texture.colorSpace = key === 'map' ? THREE.SRGBColorSpace : THREE.NoColorSpace;
       texture.anisotropy = 4;
       set[key] = texture;
+      loadedCount += 1;
     });
     visualState.groundTextures[kind] = set;
+    if (state.debugEnabled && window.console && typeof window.console.info === 'function') {
+      window.console.info('[Gastown Sim] Surface textures', kind, loadedCount ? 'loaded' : 'fallback preset used');
+    }
     return set;
   }
 
@@ -1292,13 +1316,14 @@
       const segmentLength = Math.max(8.5, Math.min(18, Math.hypot(anchor.x - point.x, anchor.z - point.z) * 0.96 || 10));
       const steamZone = point.id === 'steam-clock' || index >= Math.max(1, centerline.length - 4);
 
-      bands.push({ segment_id: point.id, width: streetWidth * 0.96, length: segmentLength * 1.04, yaw: heading, offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.26, elevation: 0.012 });
-      bands.push({ segment_id: point.id, width: streetWidth * 0.34, length: Math.max(6.8, segmentLength * 0.82), yaw: heading, offset_x: 0, offset_z: 0, tone: steamZone ? 'intersection_pavers' : 'wheel_track', opacity: steamZone ? 0.24 : 0.2, elevation: 0.016 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.98, length: segmentLength * 1.04, yaw: heading, offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.44, elevation: 0.012 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.42, length: Math.max(6.8, segmentLength * 0.82), yaw: heading, offset_x: 0, offset_z: 0, tone: steamZone ? 'intersection_pavers' : 'wheel_track', opacity: steamZone ? 0.34 : 0.26, elevation: 0.016 });
       bands.push({ segment_id: point.id, width: streetWidth * 0.17, length: Math.max(5.8, segmentLength * 0.76), yaw: heading, offset_x: streetWidth * 0.34, offset_z: 0, tone: 'curb_grime', opacity: 0.2, elevation: 0.025 });
       bands.push({ segment_id: point.id, width: streetWidth * 0.17, length: Math.max(5.8, segmentLength * 0.76), yaw: heading, offset_x: -streetWidth * 0.34, offset_z: 0, tone: 'curb_grime', opacity: 0.2, elevation: 0.025 });
 
+      bands.push({ segment_id: point.id, width: streetWidth * 0.88, length: Math.max(4.8, segmentLength * 0.22), yaw: heading, offset_x: 0, offset_z: (segmentLength * 0.16), tone: 'cobble_break', opacity: steamZone ? 0.22 : 0.1, elevation: 0.02 });
       if (steamZone) {
-        bands.push({ segment_id: point.id, width: streetWidth * 0.66, length: Math.max(5.2, segmentLength * 0.34), yaw: heading, offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.12, elevation: 0.02 });
+        bands.push({ segment_id: point.id, width: streetWidth * 0.72, length: Math.max(5.2, segmentLength * 0.34), yaw: heading, offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.18, elevation: 0.02 });
       }
     });
 
@@ -2093,6 +2118,7 @@
 
   function closeDialog(options) {
     stopNpcSpeech();
+    stopBandAudio('dialog-close');
     state.npcConversationPending = false;
     state.activeDialogNpcId = '';
     state.activeDialogEntry = null;
@@ -2123,6 +2149,7 @@
   function openDialogForNpc(npcState) {
     if (!npcState || !dialogModalEl || !dialogTitleEl || !dialogBodyEl) return;
     clearMovementInput();
+    stopBandAudio('dialog-open');
     state.isRunning = false;
     state.dialogLastFocusEl = document.activeElement;
     state.resumePointerAfterDialogClose = document.pointerLockElement === renderer.domElement;
@@ -2541,129 +2568,336 @@
     return BUSKER_RIFF_CACHE_PREFIX + [state.activeMood || 'calm', state.activeWeather || 'clear', state.activeTimeOfDay || 'morning'].join(':');
   }
 
-  function getFallbackBuskerRiffSpec() {
+
+  function getBandArrangementCacheKey(contextKey) {
+    return BAND_ARRANGEMENT_CACHE_PREFIX + contextKey;
+  }
+
+  function makeBandContext(seed) {
+    const proximity = getBandProximity();
+    const area = (getPlayerRouteContext() || {}).key || 'waterfront_station';
+    const intensity = proximity > 0.72 ? 'high' : proximity > 0.38 ? 'medium' : 'low';
     return {
-      mood: state.activeMood || 'lively',
+      mood: state.activeMood || 'calm',
       weather: state.activeWeather || 'clear',
-      timeOfDay: state.activeTimeOfDay || 'morning',
-      tempo: state.activeTimeOfDay === 'night' ? 90 : (state.activeMood === 'lively' ? 108 : 96),
-      key: 'G minor pentatonic',
-      loopBeats: 8,
-      phraseLengths: [2, 2, 4],
-      articulationHints: ['gritty', 'street-corner', 'rock-adjacent'],
-      sequence: [
-        { note: 'G4', beats: 0.5, velocity: 0.94, accent: true, articulation: 'growl' },
-        { note: 'Bb4', beats: 0.5, velocity: 0.82, accent: false, articulation: 'stab' },
-        { note: 'D5', beats: 1, velocity: 0.9, accent: true, articulation: 'rasp' },
-        { note: 'C5', beats: 0.5, velocity: 0.76, accent: false, articulation: 'fall' },
-        { note: 'G4', beats: 1, velocity: 0.88, accent: true, articulation: 'hold' },
-        { note: 'rest', beats: 0.5, velocity: 0.2, accent: false, articulation: 'rest' },
-        { note: 'F4', beats: 0.5, velocity: 0.78, accent: false, articulation: 'bend' },
-        { note: 'G4', beats: 1, velocity: 0.9, accent: true, articulation: 'growl' }
-      ]
+      time_of_day: state.activeTimeOfDay || 'morning',
+      area,
+      intensity,
+      seed: seed || ('seed-' + Math.round(proximity * 100)),
     };
   }
 
-  function saveBuskerRiffSpec(spec) {
-    try { window.localStorage.setItem(getBuskerRiffCacheKey(), JSON.stringify(spec)); } catch (error) {}
+  function getBandContextKey(context) {
+    return [context.mood, context.weather, context.time_of_day, context.area, context.intensity].join(':');
   }
 
-  function loadCachedBuskerRiffSpec() {
+  function getFallbackBandArrangements(context) {
+    const families = ['upbeat_welcome_shuffle', 'moody_rain_groove', 'dusk_wander', 'clock_corner_flourish', 'sparse_early_morning'];
+    return families.map((family, index) => {
+      const variant = Object.assign({}, {
+        tempo: family === 'clock_corner_flourish' ? 118 : family === 'moody_rain_groove' ? 94 : family === 'sparse_early_morning' ? 86 : family === 'dusk_wander' ? 102 : 112,
+        key: family === 'moody_rain_groove' ? 'E minor' : family === 'clock_corner_flourish' ? 'C major' : family === 'dusk_wander' ? 'D major' : 'G major',
+        swing: family === 'sparse_early_morning' ? 0.03 : 0.08,
+        bars: 8,
+        style: 'street bluegrass jazz',
+        family,
+        energy: family === 'sparse_early_morning' ? 'low' : family === 'clock_corner_flourish' ? 'high' : 'medium',
+        variation_hint: 'answer the lead with small responses and keep the groove loose',
+        parts: {
+          sax: ['B4:8n','D5:8n','G5:4n','A5:8n','G5:8n','E5:4n','D5:8n','B4:8n'],
+          mandolin: ['G4:8n','D5:8n','B4:8n','A4:8n','G4:8n','A4:8n','B4:8n','D5:8n'],
+          bass: ['G2:4n','D3:4n','E3:4n','D3:4n','G2:4n','B2:4n','D3:4n','D3:4n'],
+          guitar: ['G6(9)','Em7','Am7','D7','G6(9)','Cmaj7','Am7','D7'],
+          percussion: { kick: ['1','3'], snare: ['2','4'], hat: ['1.5','2.5','3.5','4.5'] }
+        }
+      });
+      if (family === 'moody_rain_groove') {
+        variant.parts.sax = ['E4:4n','G4:8n','B4:8n','D5:4n','B4:8n','A4:8n','G4:4n','rest:4n'];
+        variant.parts.bass = ['E2:4n','B2:4n','D3:4n','A2:4n','E2:4n','G2:4n','B2:4n','A2:4n'];
+        variant.parts.guitar = ['Em9','G6','D7sus4','A7','Em9','Cmaj7','G6','B7'];
+      }
+      if (family === 'dusk_wander') {
+        variant.parts.sax = ['F#4:8n','A4:8n','D5:4n','E5:8n','F#5:8n','E5:4n','A4:8n','D5:8n'];
+        variant.parts.guitar = ['D6','Bm7','Gmaj7','A7','D6','Gmaj7','Em7','A7'];
+      }
+      if (family === 'clock_corner_flourish') {
+        variant.parts.sax = ['G4:8n','A4:8n','C5:4n','E5:8n','D5:8n','C5:4n','A4:8n','G4:8n'];
+        variant.parts.mandolin = ['C5:8n','G4:8n','E5:8n','D5:8n','C5:8n','D5:8n','E5:8n','G5:8n'];
+        variant.parts.bass = ['C2:4n','G2:4n','A2:4n','G2:4n','F2:4n','G2:4n','A2:4n','G2:4n'];
+        variant.parts.guitar = ['C6','Am7','Dm7','G13','Fmaj7','G13','Am7','G13'];
+      }
+      if (family === 'sparse_early_morning') {
+        variant.parts.sax = ['rest:4n','B4:8n','D5:4n','rest:8n','G4:4n','rest:4n','A4:8n','G4:8n'];
+        variant.parts.mandolin = ['G4:8n','rest:8n','D5:8n','rest:8n','B4:8n','rest:8n','A4:8n','rest:8n'];
+        variant.parts.bass = ['G2:2n','D3:2n','E3:2n','D3:2n'];
+        variant.parts.guitar = ['G6','G6','Cmaj7','D7'];
+        variant.parts.percussion = { kick: ['1','3'], snare: [], hat: ['2.5'] };
+      }
+      variant.seed = context.seed + '-' + index;
+      variant.mood = context.mood;
+      variant.weather = context.weather;
+      variant.time_of_day = context.time_of_day;
+      variant.area = context.area;
+      variant.intensity = context.intensity;
+      return variant;
+    });
+  }
+
+  function loadCachedBandArrangements(contextKey) {
     try {
-      const raw = window.localStorage.getItem(getBuskerRiffCacheKey());
-      return raw ? JSON.parse(raw) : null;
+      const raw = window.localStorage.getItem(getBandArrangementCacheKey(contextKey));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : null;
     } catch (error) {
       return null;
     }
   }
 
-  async function fetchBuskerRiffSpec() {
-    const cached = loadCachedBuskerRiffSpec();
-    if (cached && Array.isArray(cached.sequence) && cached.sequence.length) return cached;
-    if (!config.buskerRiffEndpoint || !window.fetch) {
-      const fallback = getFallbackBuskerRiffSpec();
-      saveBuskerRiffSpec(fallback);
+  function saveCachedBandArrangements(contextKey, arrangements) {
+    try { window.localStorage.setItem(getBandArrangementCacheKey(contextKey), JSON.stringify(arrangements)); } catch (error) {}
+  }
+
+  function getBandProximity() {
+    const busker = getNpcByRole('busker');
+    if (!busker || !busker.mesh) return 0;
+    const distance = Math.hypot(player.position.x - busker.mesh.position.x, player.position.z - busker.mesh.position.z);
+    return Math.max(0, 1 - (distance / 22));
+  }
+
+  function parseBandToken(token, fallbackDuration) {
+    const value = String(token || '').trim();
+    if (!value) return null;
+    const parts = value.split(':');
+    return { note: parts[0], duration: parts[1] || fallbackDuration || '8n' };
+  }
+
+  function parseChordNotes(symbol) {
+    const rootMap = { C: ['C','E','G'], D: ['D','F#','A'], E: ['E','G#','B'], F: ['F','A','C'], G: ['G','B','D'], A: ['A','C#','E'], B: ['B','D#','F#'] };
+    const match = String(symbol || '').match(/^([A-G])([#b]?)(.*)$/);
+    if (!match) return ['G3','B3','D4'];
+    let [_, letter, accidental, quality] = match;
+    let triad = rootMap[letter] ? rootMap[letter].slice() : ['G','B','D'];
+    const sharpen = accidental === '#';
+    const flatten = accidental === 'b';
+    const adjust = (note) => note + (sharpen ? '#' : flatten ? 'b' : '');
+    triad = triad.map((n, i) => i === 0 ? adjust(n) : n);
+    if (/m(?!aj)/i.test(quality)) triad[1] = triad[1].replace('#','');
+    const octave = /13|9|7/.test(quality) ? ['3','4','4'] : ['3','3','4'];
+    const notes = triad.map((n, i) => n + octave[i]);
+    if (/7|9|13/.test(quality)) notes.push((match[1] === 'B' ? 'A' : 'F') + '4');
+    if (/sus4/i.test(quality)) notes[1] = (letter === 'C' ? 'F4' : letter === 'D' ? 'G4' : letter === 'G' ? 'C4' : notes[1]);
+    return notes;
+  }
+
+  function clearBandWatchdogs() {
+    (state.band.watchdogs || []).forEach((id) => window.clearTimeout(id));
+    state.band.watchdogs = [];
+  }
+
+  function releaseBandVoice(voice) {
+    if (!voice) return;
+    try { if (typeof voice.releaseAll === 'function') voice.releaseAll(); } catch (error) {}
+    try { if (typeof voice.triggerRelease === 'function') voice.triggerRelease(); } catch (error) {}
+  }
+
+  function stopBandAudio(reason) {
+    if (state.band.scheduler) {
+      window.clearTimeout(state.band.scheduler);
+      state.band.scheduler = null;
+    }
+    clearBandWatchdogs();
+    if (state.band.synths) {
+      Object.values(state.band.synths).forEach((voice) => releaseBandVoice(voice));
+      window.setTimeout(() => {
+        if (!state.band.synths) return;
+        Object.values(state.band.synths).forEach((voice) => { try { if (voice && typeof voice.dispose === 'function') voice.dispose(); } catch (error) {} });
+      }, 20);
+    }
+    if (state.band.bus) {
+      try { state.band.bus.dispose(); } catch (error) {}
+    }
+    state.band.synths = null;
+    state.band.bus = null;
+    state.band.active = false;
+    state.band.activeArrangement = null;
+    state.band.currentBeatCursor = 0;
+    state.band.currentCycleStartedAt = 0;
+    if (state.debugEnabled && window.console && typeof window.console.info === 'function' && reason) {
+      window.console.info('[Gastown Sim] Band audio stopped:', reason);
+    }
+  }
+
+  function watchBandVoice(voice, maxMs) {
+    const timer = window.setTimeout(() => releaseBandVoice(voice), Math.max(120, maxMs || BAND_MAX_NOTE_SECONDS * 1000));
+    state.band.watchdogs.push(timer);
+  }
+
+  function createBandSynths(Tone) {
+    const bus = new Tone.Gain(0.64).toDestination();
+    const room = new Tone.Reverb({ decay: 1.8, wet: 0.12 }).connect(bus);
+    const comp = new Tone.Compressor(-20, 3).connect(room);
+    return {
+      bus,
+      synths: {
+        sax: new Tone.MonoSynth({ oscillator: { type: 'sawtooth2' }, envelope: { attack: 0.02, decay: 0.12, sustain: 0.22, release: 0.28 }, filter: { Q: 3.2, type: 'bandpass' }, filterEnvelope: { attack: 0.01, decay: 0.18, sustain: 0.1, release: 0.2, baseFrequency: 280, octaves: 3.6 }, volume: -13 }).connect(comp),
+        mandolin: new Tone.PluckSynth({ attackNoise: 1.1, dampening: 3200, resonance: 0.9 }).connect(new Tone.Filter(2400, 'lowpass').connect(comp)),
+        bass: new Tone.MonoSynth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.14, sustain: 0.45, release: 0.32 }, filter: { Q: 1.4, type: 'lowpass' }, filterEnvelope: { attack: 0.01, decay: 0.14, sustain: 0.3, release: 0.18, baseFrequency: 90, octaves: 2.2 }, volume: -10 }).connect(comp),
+        guitar: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.08, release: 0.16 }, volume: -18 }).connect(new Tone.Filter(1800, 'lowpass').connect(comp)),
+        kick: new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 4.2, envelope: { attack: 0.001, decay: 0.16, sustain: 0, release: 0.04 }, volume: -18 }).connect(comp),
+        snare: new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.03 }, volume: -22 }).connect(comp),
+        hat: new Tone.MetalSynth({ frequency: 220, envelope: { attack: 0.001, decay: 0.05, release: 0.02 }, harmonicity: 4.1, modulationIndex: 12, resonance: 1200, octaves: 1.5, volume: -28 }).connect(comp),
+      }
+    };
+  }
+
+  async function ensureBandAudioReady() {
+    const Tone = await ensureToneReady();
+    if (!Tone) return null;
+    if (!state.band.synths || !state.band.bus) {
+      stopBandAudio('rebuild');
+      const rig = createBandSynths(Tone);
+      state.band.bus = rig.bus;
+      state.band.synths = rig.synths;
+    }
+    return Tone;
+  }
+
+  async function fetchBandArrangements(force) {
+    const context = makeBandContext('seed-a');
+    const contextKey = getBandContextKey(context);
+    if (!force && state.band.contextKey === contextKey && state.band.arrangements.length) return state.band.arrangements;
+    const cached = loadCachedBandArrangements(contextKey);
+    if (!force && cached && cached.length) {
+      state.band.contextKey = contextKey;
+      state.band.arrangements = cached;
+      return cached;
+    }
+    const fallback = getFallbackBandArrangements(context);
+    if (!config.bandArrangementEndpoint || !window.fetch) {
+      saveCachedBandArrangements(contextKey, fallback);
+      state.band.contextKey = contextKey;
+      state.band.arrangements = fallback;
       return fallback;
     }
     try {
-      const response = await fetch(config.buskerRiffEndpoint + '?mood=' + encodeURIComponent(state.activeMood || 'calm') + '&weather=' + encodeURIComponent(state.activeWeather || 'clear') + '&timeOfDay=' + encodeURIComponent(state.activeTimeOfDay || 'morning'), { credentials: 'same-origin' });
-      if (!response.ok) throw new Error('riff unavailable');
+      const params = new URLSearchParams(context);
+      const response = await fetch(config.bandArrangementEndpoint + '?' + params.toString(), { credentials: 'same-origin' });
+      if (!response.ok) throw new Error('band arrangement unavailable');
       const data = await response.json();
-      const spec = data && data.spec ? data.spec : null;
-      if (!spec || !Array.isArray(spec.sequence) || !spec.sequence.length) throw new Error('invalid riff');
-      saveBuskerRiffSpec(spec);
-      return spec;
+      const arrangements = data && Array.isArray(data.arrangements) && data.arrangements.length ? data.arrangements : fallback;
+      saveCachedBandArrangements(contextKey, arrangements);
+      state.band.contextKey = contextKey;
+      state.band.arrangements = arrangements;
+      return arrangements;
     } catch (error) {
-      const fallback = getFallbackBuskerRiffSpec();
-      saveBuskerRiffSpec(fallback);
+      saveCachedBandArrangements(contextKey, fallback);
+      state.band.contextKey = contextKey;
+      state.band.arrangements = fallback;
       return fallback;
     }
   }
 
-  function createBuskerSaxSynth(Tone) {
-    const bus = new Tone.Gain(0.72).toDestination();
-    const grit = new Tone.Distortion(0.18).connect(bus);
-    const filter = new Tone.Filter(1050, 'bandpass').connect(grit);
-    const breath = new Tone.NoiseSynth({
-      noise: { type: 'pink' },
-      envelope: { attack: 0.005, decay: 0.12, sustain: 0.02, release: 0.08 },
-      volume: -26
-    }).connect(filter);
-    const synth = new Tone.MonoSynth({
-      oscillator: { type: 'sawtooth3' },
-      filter: { Q: 4.8, type: 'bandpass', rolloff: -24 },
-      envelope: { attack: 0.012, decay: 0.18, sustain: 0.28, release: 0.2 },
-      filterEnvelope: { attack: 0.01, decay: 0.16, sustain: 0.14, release: 0.16, baseFrequency: 360, octaves: 3.1 },
-      volume: -13
-    }).connect(filter);
-    const slap = new Tone.MembraneSynth({
-      pitchDecay: 0.02,
-      octaves: 1.4,
-      envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.05 },
-      volume: -30
-    }).connect(bus);
-    return { synth, breath, slap, bus, filter, grit };
+  function chooseNextBandArrangement() {
+    if (!state.band.arrangements.length) return null;
+    const context = makeBandContext('live');
+    const preferredFamily = context.weather === 'rain' || context.weather === 'drizzle' ? 'moody_rain_groove'
+      : context.time_of_day === 'dusk' ? 'dusk_wander'
+      : context.time_of_day === 'morning' && context.intensity === 'low' ? 'sparse_early_morning'
+      : context.area.indexOf('clock') !== -1 ? 'clock_corner_flourish'
+      : 'upbeat_welcome_shuffle';
+    const candidates = state.band.arrangements.filter((item) => item.family === preferredFamily);
+    const pool = candidates.length ? candidates : state.band.arrangements;
+    const arrangement = pool[state.band.arrangementIndex % pool.length];
+    state.band.arrangementIndex = (state.band.arrangementIndex + 1) % Math.max(pool.length, 1);
+    state.band.lastFamily = arrangement.family || preferredFamily;
+    return arrangement;
   }
 
-  function scheduleBuskerNote(loop, event, when, nearFactor) {
-    if (!loop || !event || event.note === 'rest') return;
-    const seconds = (60 / Math.max(76, loop.spec.tempo || 96)) * Math.max(0.25, event.beats || 0.5);
-    const accentBoost = event.accent ? 0.1 : 0;
-    const velocity = Math.min(1, Math.max(0.25, (event.velocity || 0.78) + accentBoost + (nearFactor * 0.08)));
-    loop.synth.synth.triggerAttackRelease(event.note, seconds, when, velocity);
-    loop.synth.breath.triggerAttackRelease(seconds * 0.82, when, 0.4 + nearFactor * 0.18);
-    if (event.accent) {
-      loop.synth.slap.triggerAttackRelease('C2', '32n', when, 0.08 + nearFactor * 0.08);
+  function triggerBandPart(partName, token, when, proximity, arrangement) {
+    if (!state.band.synths) return;
+    const parsed = parseBandToken(token, partName === 'bass' ? '4n' : '8n');
+    if (!parsed || parsed.note === 'rest') return;
+    const durationSeconds = Math.min(BAND_MAX_NOTE_SECONDS, ((60 / Math.max(78, arrangement.tempo || 100)) * (parsed.duration === '2n' ? 2 : parsed.duration === '4n' ? 1 : parsed.duration === '8n' ? 0.5 : 0.25)));
+    const velocity = Math.min(0.95, 0.42 + (proximity * 0.28));
+    if (partName === 'guitar') {
+      state.band.synths.guitar.triggerAttackRelease(parseChordNotes(parsed.note), Math.max(0.08, durationSeconds * 0.8), when, velocity);
+      watchBandVoice(state.band.synths.guitar, (durationSeconds * 1000) + 90);
+      return;
     }
+    const synth = state.band.synths[partName];
+    if (!synth || typeof synth.triggerAttackRelease !== 'function') return;
+    synth.triggerAttackRelease(parsed.note, Math.max(0.06, durationSeconds), when, velocity + (partName === 'sax' ? 0.06 : 0));
+    watchBandVoice(synth, (durationSeconds * 1000) + 120);
   }
 
-  function ensureNpcLoop(npcState) {
-    if (npcState.role !== 'busker' || state.sounds.npcAudio[npcState.id]) {
+  function triggerBandPercussion(beatNumber, when, arrangement, proximity) {
+    const percussion = (arrangement.parts && arrangement.parts.percussion) || {};
+    const beatLabel = String(beatNumber);
+    if ((percussion.kick || []).includes(beatLabel)) state.band.synths.kick.triggerAttackRelease('C1', '16n', when, 0.4 + (proximity * 0.2));
+    if ((percussion.snare || []).includes(beatLabel)) state.band.synths.snare.triggerAttackRelease('16n', when, 0.22 + (proximity * 0.1));
+    if ((percussion.hat || []).includes(beatLabel)) state.band.synths.hat.triggerAttackRelease('32n', when, 0.12 + (proximity * 0.06));
+    ['kick','snare','hat'].forEach((name) => watchBandVoice(state.band.synths[name], 160));
+  }
+
+  function bandShouldBeActive() {
+    return !state.activeDialogNpcId && state.cameraMode === 'street' && getBandProximity() > 0.08 && state.audioUnlocked;
+  }
+
+  function scheduleBandCycle() {
+    if (!state.band.activeArrangement || !state.band.active || !state.band.synths) return;
+    if (state.band.scheduler) window.clearTimeout(state.band.scheduler);
+    const arrangement = state.band.activeArrangement;
+    const proximity = getBandProximity();
+    const beatMs = (60 / Math.max(78, arrangement.tempo || 100)) * 1000;
+    const beatStep = 0.5;
+    const totalBeats = Math.max(8, (arrangement.bars || 8) * 4);
+    const stepIndex = state.band.currentBeatCursor;
+    const musicalBeat = (stepIndex * beatStep) + 1;
+    const when = getTone().now() + 0.04;
+    const partIndex = stepIndex % Math.max((arrangement.parts.sax || []).length, 1);
+    triggerBandPart('bass', (arrangement.parts.bass || [])[stepIndex % Math.max((arrangement.parts.bass || []).length, 1)], when, proximity, arrangement);
+    if (stepIndex % 2 === 0) triggerBandPart('guitar', (arrangement.parts.guitar || [])[Math.floor(stepIndex / 2) % Math.max((arrangement.parts.guitar || []).length, 1)], when, proximity, arrangement);
+    if (stepIndex % 2 === 0 || proximity > 0.7) triggerBandPart('mandolin', (arrangement.parts.mandolin || [])[partIndex], when + 0.01, proximity, arrangement);
+    if (stepIndex % 2 === 0) triggerBandPart('sax', (arrangement.parts.sax || [])[partIndex], when + (stepIndex % 4 === 0 ? 0.02 : 0.07), proximity, arrangement);
+    triggerBandPercussion((musicalBeat % 4) || 4, when, arrangement, proximity);
+    state.band.currentBeatCursor += 1;
+    if ((state.band.currentBeatCursor * beatStep) >= totalBeats) {
+      state.band.currentBeatCursor = 0;
+      state.band.activeArrangement = chooseNextBandArrangement();
+    }
+    state.band.scheduler = window.setTimeout(scheduleBandCycle, Math.max(120, beatMs * beatStep));
+  }
+
+  async function ensureBandPlayback() {
+    if (!bandShouldBeActive()) {
+      if (state.band.active) stopBandAudio('inactive');
       return;
     }
-    const Tone = getTone();
-    if (!Tone) {
-      state.sounds.npcAudio[npcState.id] = { muted: true, mode: 'silent_busker' };
+    await ensureBandAudioReady();
+    if (!state.band.arrangements.length) {
+      if (!state.band.pendingRequest) {
+        state.band.pendingRequest = fetchBandArrangements(false).finally(() => { state.band.pendingRequest = null; });
+      }
+      await state.band.pendingRequest;
+    }
+    if (!state.band.activeArrangement) state.band.activeArrangement = chooseNextBandArrangement();
+    if (!state.band.activeArrangement) return;
+    state.band.active = true;
+    if (!state.band.scheduler) scheduleBandCycle();
+  }
+
+  function tickBandSystem() {
+    if (state.band.lastWatchdogSweepAt && performance.now() - state.band.lastWatchdogSweepAt < 500) return;
+    state.band.lastWatchdogSweepAt = performance.now();
+    if (!bandShouldBeActive()) {
+      if (state.band.active) stopBandAudio('proximity-or-state');
       return;
     }
-    const fallbackSpec = getFallbackBuskerRiffSpec();
-    try {
-      state.sounds.npcAudio[npcState.id] = {
-        mode: 'busker_sax_loop',
-        radius: 15,
-        nextGestureAt: 0,
-        stepIndex: 0,
-        spec: fallbackSpec,
-        synth: createBuskerSaxSynth(Tone)
-      };
-      fetchBuskerRiffSpec().then((spec) => {
-        const loop = state.sounds.npcAudio[npcState.id];
-        if (loop && spec) loop.spec = spec;
-      }).catch(() => {});
-    } catch (error) {
-      state.sounds.npcAudio[npcState.id] = { muted: true, mode: 'silent_busker' };
-      warnAudioUnavailable('Busker motif setup failed; simulator continuing without busker audio.', error);
-    }
+    ensureBandPlayback().catch((error) => {
+      warnAudioUnavailable('Band arrangement playback failed; simulator continuing without street band audio.', error);
+      stopBandAudio('error');
+    });
   }
 
   function clearNpcVisuals() {
@@ -2689,7 +2923,6 @@
         microEvent: '', interactionTargetId: '', socialRadius: npc.role === 'tourist' || npc.role === 'photographer' ? 3.2 : 2.2,
       }, npc);
       visual.rotation.y = startYaw;
-      ensureNpcLoop(npcState);
       visualState.npcMeshes.push(visual);
       return npcState;
     });
@@ -2886,22 +3119,6 @@
       }
       npc.mesh.rotation.y = npc.currentYaw;
 
-      const loop = state.sounds.npcAudio[npc.id];
-      if (loop && loop.mode === 'busker_sax_loop' && loop.synth && loop.spec && Array.isArray(loop.spec.sequence)) {
-        const distance = Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z);
-        const nearFactor = Math.max(0, 1 - (distance / (loop.radius || 15)));
-        if (nearFactor > 0.14 && nowSeconds >= (loop.nextGestureAt || 0)) {
-          const event = loop.spec.sequence[loop.stepIndex % loop.spec.sequence.length];
-          try {
-            scheduleBuskerNote(loop, event, getTone().now(), nearFactor);
-            loop.stepIndex = (loop.stepIndex + 1) % loop.spec.sequence.length;
-            loop.nextGestureAt = nowSeconds + ((60 / Math.max(76, loop.spec.tempo || 96)) * Math.max(0.25, event.beats || 0.5));
-          } catch (error) {
-            warnAudioUnavailable('Busker motif playback failed; simulator continuing without busker audio.', error);
-            loop.mode = 'silent_busker';
-          }
-        }
-      }
     });
   }
 
@@ -5086,7 +5303,7 @@
     const fogDensity = Math.max(0.0035, (weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
     scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
     renderer.setClearColor(timeOfDay.sky, 1);
-    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 0.98 : state.activeTimeOfDay === 'night' ? 0.66 : state.activeTimeOfDay === 'dusk' ? 0.78 : 0.9) - ((weather.rainIntensity || 0) * 0.05);
+    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 0.9 : state.activeTimeOfDay === 'night' ? 0.62 : state.activeTimeOfDay === 'dusk' ? 0.72 : 0.82) - ((weather.rainIntensity || 0) * 0.04);
 
     ambient.color.set(timeOfDay.ambientColor);
     ambient.intensity = Math.max(0.2, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.76);
@@ -5126,14 +5343,14 @@
     });
 
     if (visualState.roadMaterial) {
-      visualState.roadMaterial.color.set(state.activeTimeOfDay === 'morning' ? '#243544' : state.activeTimeOfDay === 'dusk' ? '#1d2934' : '#141d26');
+      visualState.roadMaterial.color.set(state.activeTimeOfDay === 'morning' ? '#1f2b34' : state.activeTimeOfDay === 'dusk' ? '#182129' : '#10171e');
       setSurfaceWetness(visualState.roadMaterial, 0.96, 0.05, (weather.rainIntensity || 0) * 0.5);
       if (visualState.roadMaterial.normalScale) {
         visualState.roadMaterial.normalScale.set(1.35 + ((weather.rainIntensity || 0) * 0.24), 1.1 + ((weather.rainIntensity || 0) * 0.2));
       }
     }
     if (visualState.sidewalkMaterial) {
-      visualState.sidewalkMaterial.color.set(state.activeTimeOfDay === 'night' ? '#63584b' : state.activeTimeOfDay === 'dusk' ? '#6e6152' : '#7c6e5f');
+      visualState.sidewalkMaterial.color.set(state.activeTimeOfDay === 'night' ? '#5f5447' : state.activeTimeOfDay === 'dusk' ? '#6d5f50' : '#766859');
       setSurfaceWetness(visualState.sidewalkMaterial, 0.98, 0.02, (weather.rainIntensity || 0) * 0.22);
       if (visualState.sidewalkMaterial.normalScale) {
         visualState.sidewalkMaterial.normalScale.set(0.7 + ((weather.rainIntensity || 0) * 0.12), 0.7 + ((weather.rainIntensity || 0) * 0.12));
@@ -5151,7 +5368,7 @@
         const rain = weather.rainIntensity || 0;
         const baseColor = new THREE.Color((mat.userData && mat.userData.baseColor) || 0x444444);
         if (role === 'road') {
-          const target = new THREE.Color(state.activeTimeOfDay === 'night' ? '#16212b' : state.activeTimeOfDay === 'dusk' ? '#20303d' : '#2c3f4e');
+          const target = new THREE.Color(state.activeTimeOfDay === 'night' ? '#131c24' : state.activeTimeOfDay === 'dusk' ? '#1b2831' : '#26333d');
           mat.color.copy(baseColor).lerp(target, 0.72);
           mat.roughness = Math.max(0.48, (mat.userData.baseRoughness || 0.92) - (rain * 0.24));
           mat.metalness = Math.min(0.16, (mat.userData.baseMetalness || 0.02) + (rain * 0.09));
@@ -5174,6 +5391,9 @@
       lampVisual.pointLight.intensity = Math.min(2.8, intensity * 1.35);
       lampVisual.pointLight.distance = state.activeTimeOfDay === 'night' ? 9.5 : 7.2;
     });
+    if (state.debugEnabled && window.console && typeof window.console.info === 'function') {
+      window.console.info('[Gastown Sim] Lamp emissive updated for', state.activeTimeOfDay, state.activeWeather);
+    }
 
     if (worldStatusEl) {
       worldStatusEl.dataset.artDirection = ART_DIRECTION.label;
@@ -5338,6 +5558,7 @@
   }
 
   function resetToStart() {
+    stopBandAudio('reset');
     const spawn = resolveSafeSpawn();
     player.position.set(spawn.x, spawn.y, spawn.z);
     state.lastSafePosition.copy(player.position);
@@ -5387,6 +5608,7 @@
   }
 
   function pauseSim() {
+    stopBandAudio('pause');
     state.isRunning = false;
     clearMovementInput();
     if (document.pointerLockElement) {
@@ -5398,6 +5620,8 @@
 
   function attachEvents() {
     window.addEventListener('resize', updateSize);
+    window.addEventListener('blur', () => { pauseSim(); stopBandAudio('window-blur'); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { pauseSim(); stopBandAudio('visibility-hidden'); } });
     ['pointerdown', 'click', 'keydown'].forEach((eventName) => {
       document.addEventListener(eventName, () => { state.hasInteracted = true; unlockAudioFromGesture().finally(() => unlockSteamClockAudio()); }, { passive: true });
     });
@@ -5700,6 +5924,7 @@
         maybeTriggerLightning(state.world.weatherPresets[state.activeWeather] || null);
         updateOverviewCamera();
         updateSteamClock(delta, time / 1000);
+        tickBandSystem();
         updateProgressiveVisibility();
         updateNpcs(delta);
         updateInteractionTarget();
