@@ -57,7 +57,7 @@ test('generator keeps world polygons valid with existing or generated output', (
 
     if (data.meta && data.meta.fallbackMode === 'working-gastown-corridor') {
       assert.ok(Array.isArray(data.streetscape.surfaceBands));
-      assert.equal(data.streetscape.surfaceBands.length, 40, 'working fallback should keep a tightly constrained surface-band count');
+      assert.equal(data.streetscape.surfaceBands.length, 48, 'working fallback should keep a tightly constrained but hero-weighted surface-band count');
       const surfaceTones = new Set(data.streetscape.surfaceBands.map((band) => band.tone));
       ['curb_grime', 'intersection_pavers', 'wheel_track'].forEach((tone) => {
         assert.equal(surfaceTones.has(tone), true, 'working fallback surface bands should include ' + tone);
@@ -147,7 +147,7 @@ test('committed world json files include the expanded intersection-based fallbac
     assert.ok(data.nodes.some((node) => node.id === 'water-cambie-intersection'), relPath + ' should include the Water/Cambie intersection node');
     assert.ok(data.npcs.some((npc) => npc.role === 'skateboarder'), relPath + ' should include a skateboarder');
     assert.ok(data.npcs.some((npc) => npc.role === 'cyclist'), relPath + ' should include a cyclist');
-    assert.ok(Array.isArray(data.streetscape.surfaceBands) && data.streetscape.surfaceBands.length === 40, relPath + ' should constrain surface band clutter');
+    assert.ok(Array.isArray(data.streetscape.surfaceBands) && data.streetscape.surfaceBands.length === 48, relPath + ' should constrain surface band clutter while allowing the hero block extra wear detail');
     assert.ok(Array.isArray(data.zones.street) && data.zones.street.length >= 3, relPath + ' should stage multiple road polygons');
     assert.ok(Array.isArray(data.zones.sidewalk) && data.zones.sidewalk.length >= 5, relPath + ' should stage multiple sidewalks/plaza polygons');
     assert.ok(data.zones.street.some((zone) => zone.id === 'cambie-street-crossing'), relPath + ' should include a Cambie crossing roadway polygon');

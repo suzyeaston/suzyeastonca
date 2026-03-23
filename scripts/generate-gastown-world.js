@@ -904,10 +904,10 @@ function makeStarterWorld(outputPath, options = {}) {
   const intersectionPoint = projectFeaturePoint(intersectionFeature, anchorOrigin, samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.9));
   const intersectionFrame = starterRouteFrame(waterCenterline, Math.max(0, polylineLength(waterCenterline) * 0.9));
   const rowProps = getProps(rowWidthFeature);
-  const rightOfWayWidth = sanitizeNumber(Number(rowProps.right_of_way_width || rowProps.row_width || rowProps.width_m), streetContextFeatures.length ? 18.4 : 18.8);
-  const streetWidth = sanitizeNumber(Number(rowProps.carriageway_width || rowProps.roadway_width || rowProps.street_width), streetContextFeatures.length ? 10.2 : 10.4);
-  const sidewalkWidth = sanitizeNumber(Number(rowProps.sidewalk_width || ((rightOfWayWidth - streetWidth) / 2)), Array.isArray(reference.buildingCues && reference.buildingCues.features) ? 4.2 : 3.8);
-  const softBoundary = 3.2;
+  const rightOfWayWidth = sanitizeNumber(Number(rowProps.right_of_way_width || rowProps.row_width || rowProps.width_m), streetContextFeatures.length ? 19.6 : 20.2);
+  const streetWidth = sanitizeNumber(Number(rowProps.carriageway_width || rowProps.roadway_width || rowProps.street_width), streetContextFeatures.length ? 9.4 : 9.8);
+  const sidewalkWidth = sanitizeNumber(Number(rowProps.sidewalk_width || ((rightOfWayWidth - streetWidth) / 2)), Array.isArray(reference.buildingCues && reference.buildingCues.features) ? 5.1 : 4.9);
+  const softBoundary = 3.6;
   const streetHalf = streetWidth / 2;
   const sidewalkOuter = streetHalf + sidewalkWidth;
   const walkOuter = sidewalkOuter + softBoundary;
@@ -917,8 +917,8 @@ function makeStarterWorld(outputPath, options = {}) {
     getFeatureCollectionById(reference.landmarkReference, 'steam-clock'),
     anchorOrigin,
     {
-      x: intersectionPoint.x + (intersectionFrame.normal.x * plazaSideSign * (streetHalf + (sidewalkWidth * 0.95))) - (intersectionFrame.tangent.x * 3.35),
-      z: intersectionPoint.z + (intersectionFrame.normal.z * plazaSideSign * (streetHalf + (sidewalkWidth * 0.95))) - (intersectionFrame.tangent.z * 3.35),
+      x: intersectionPoint.x + (intersectionFrame.normal.x * plazaSideSign * (streetHalf + (sidewalkWidth * 1.18))) - (intersectionFrame.tangent.x * 4.8),
+      z: intersectionPoint.z + (intersectionFrame.normal.z * plazaSideSign * (streetHalf + (sidewalkWidth * 1.18))) - (intersectionFrame.tangent.z * 4.8),
     }
   );
   layout.cambie = {
@@ -954,52 +954,52 @@ function makeStarterWorld(outputPath, options = {}) {
   ];
 
   const westRoadwayCenterline = waterWestLeg.concat([{
-    x: Number((intersectionPoint.x - (intersectionFrame.tangent.x * 6.6)).toFixed(2)),
-    z: Number((intersectionPoint.z - (intersectionFrame.tangent.z * 6.6)).toFixed(2)),
+    x: Number((intersectionPoint.x - (intersectionFrame.tangent.x * 8.4)).toFixed(2)),
+    z: Number((intersectionPoint.z - (intersectionFrame.tangent.z * 8.4)).toFixed(2)),
   }]);
   const eastRoadwayCenterline = [{
-    x: Number((intersectionPoint.x + (intersectionFrame.tangent.x * 6.6)).toFixed(2)),
-    z: Number((intersectionPoint.z + (intersectionFrame.tangent.z * 6.6)).toFixed(2)),
+    x: Number((intersectionPoint.x + (intersectionFrame.tangent.x * 8.1)).toFixed(2)),
+    z: Number((intersectionPoint.z + (intersectionFrame.tangent.z * 8.1)).toFixed(2)),
   }].concat(waterEastLeg.slice(1));
 
   const mainStreetWest = sanitizeZonePolygon(ribbonPolygon(westRoadwayCenterline, streetHalf));
-  const mainStreetEast = sanitizeZonePolygon(ribbonPolygon(eastRoadwayCenterline, streetHalf));
-  const cambieStreet = sanitizeZonePolygon(ribbonPolygon(cambieCorridor, streetHalf * 0.78));
-  const intersectionRoadway = sanitizeZonePolygon(orientedRect(intersectionPoint, intersectionFrame.tangent, 13.1, streetWidth + 1.8));
-  const southSidewalk = sanitizeZonePolygon(closePolygon(lineOffset(waterCenterline, sidewalkOuter).concat(lineOffset(waterCenterline, streetHalf).reverse())));
-  const northSidewalk = sanitizeZonePolygon(closePolygon(lineOffset(waterCenterline, -streetHalf).concat(lineOffset(waterCenterline, -sidewalkOuter).reverse())));
-  const cambieWestSidewalk = sanitizeZonePolygon(closePolygon(lineOffset(cambieCorridor, sidewalkOuter * 0.86).concat(lineOffset(cambieCorridor, streetHalf * 0.78).reverse())));
+  const mainStreetEast = sanitizeZonePolygon(ribbonPolygon(eastRoadwayCenterline, streetHalf * 0.92));
+  const cambieStreet = sanitizeZonePolygon(ribbonPolygon(cambieCorridor, streetHalf * 0.72));
+  const intersectionRoadway = sanitizeZonePolygon(orientedRect(intersectionPoint, intersectionFrame.tangent, 17.8, streetWidth + 3.1));
+  const southSidewalk = sanitizeZonePolygon(closePolygon(lineOffset(waterCenterline, sidewalkOuter * 1.02).concat(lineOffset(waterCenterline, streetHalf + 0.18).reverse())));
+  const northSidewalk = sanitizeZonePolygon(closePolygon(lineOffset(waterCenterline, -(streetHalf + 0.1)).concat(lineOffset(waterCenterline, -(sidewalkOuter * 1.08)).reverse())));
+  const cambieWestSidewalk = sanitizeZonePolygon(closePolygon(lineOffset(cambieCorridor, sidewalkOuter * 0.96).concat(lineOffset(cambieCorridor, streetHalf * 0.72).reverse())));
   const curbReturn = sanitizeZonePolygon(orientedRect(
     {
       x: intersectionPoint.x + (layout.plaza.normal.x * (streetHalf + (sidewalkWidth * 0.28))),
       z: intersectionPoint.z + (layout.plaza.normal.z * (streetHalf + (sidewalkWidth * 0.28))),
     },
     layout.plaza.tangent,
-    6.4,
-    5.8
+    8.8,
+    7.6
   ));
   const plazaPad = sanitizeZonePolygon(orientedRect(
     {
-      x: layout.clock.x + (layout.plaza.normal.x * 0.24),
-      z: layout.clock.z + (layout.plaza.normal.z * 0.24),
+      x: layout.clock.x + (layout.plaza.normal.x * 0.72) - (layout.plaza.tangent.x * 0.55),
+      z: layout.clock.z + (layout.plaza.normal.z * 0.72) - (layout.plaza.tangent.z * 0.55),
     },
     layout.plaza.tangent,
-    8.6,
-    9.4
+    13.6,
+    14.2
   ));
   const walkBounds = sanitizePolygon(ribbonPolygon(waterRoute, walkOuter).concat([]));
 
-  const frontagePattern = [7.5, 9.5, 8, 12.5, 8.8, 10.4, 9.2, 14.5, 10.8, 8.4, 12.8, 9.6];
-  const depthPattern = [15, 20, 14, 23, 17, 21, 18, 19, 22, 16, 24, 17];
-  const heightPattern = [12, 15, 13, 19, 11, 21, 16, 18, 14, 10, 20, 13];
-  const recessPattern = [1, 2, 1, 3, 1, 2, 2, 1, 3, 1, 2, 1];
+  const frontagePattern = [6.2, 7.1, 8.4, 9.2, 6.6, 10.8, 7.4, 11.6, 8.2, 6.8, 9.8, 7.6, 12.4];
+  const depthPattern = [16, 18, 15, 22, 17, 24, 16, 21, 19, 15, 23, 17, 25];
+  const heightPattern = [12, 14, 13, 18, 11, 20, 15, 17, 14, 12, 19, 13, 21];
+  const recessPattern = [2, 1, 2, 3, 1, 2, 2, 1, 3, 2, 1, 2, 3];
   const palettePattern = [
     { primary: '#74493c', trim: '#cfb8a2', accent: '#4f5f6f', tone: 'brickWarm' },
     { primary: '#8a857d', trim: '#d8c9b6', accent: '#57656e', tone: 'stoneMuted' },
     { primary: '#6e3f36', trim: '#caa98c', accent: '#445666', tone: 'brickWarm' },
     { primary: '#6f747c', trim: '#d0c3b3', accent: '#3f5363', tone: 'stoneMuted' },
   ];
-  const facadePattern = ['gastown_heritage_row', 'cordova_commercial_transition', 'gastown_heritage_row', 'narrow_brick_shaft'];
+  const facadePattern = ['gastown_heritage_row', 'cordova_commercial_transition', 'gastown_heritage_masonry', 'narrow_brick_shaft', 'steam_clock_corner'];
   const buildings = [];
   let cursor = 6;
   let i = 0;
@@ -1013,41 +1013,44 @@ function makeStarterWorld(outputPath, options = {}) {
       const sideIndex = side < 0 ? 0 : 1;
       const palette = palettePattern[(i + sideIndex) % palettePattern.length];
       const blockPhase = cursor / primaryLength;
-      const cornerMoment = Math.abs(cursor - (primaryLength * 0.9)) < 12 && side > 0;
+      const cornerMoment = Math.abs(cursor - (primaryLength * 0.9)) < 13.5 && side > 0;
       const waterfrontThreshold = blockPhase < 0.22;
       const steamClockApproach = blockPhase > 0.58 && blockPhase < 0.94;
       const postClock = blockPhase >= 0.94;
-      const localDepth = depth + (cornerMoment ? 3.8 : 0) + (waterfrontThreshold && side > 0 ? 2.2 : 0) + (steamClockApproach ? 1.6 : 0);
-      const inset = cornerMoment ? 2.3 : (steamClockApproach ? 1.3 : 1.05);
+      const heroZone = blockPhase > 0.72 && blockPhase < 0.97;
+      const localDepth = depth + (cornerMoment ? 5.6 : 0) + (waterfrontThreshold && side > 0 ? 2.6 : 0) + (steamClockApproach ? 2.4 : 0) + (heroZone && side < 0 ? 1.4 : 0);
+      const inset = cornerMoment ? 3.6 : (steamClockApproach ? 1.55 : 1.05);
       const centerOffset = sidewalkOuter + (localDepth / 2) + inset;
       const footprintCenter = {
         x: frame.center.x + (frame.normal.x * centerOffset * side),
         z: frame.center.z + (frame.normal.z * centerOffset * side),
       };
-      const localFrontage = frontage + (cornerMoment ? 2.8 : 0) + (postClock && side < 0 ? 2.4 : 0);
+      const localFrontage = frontage + (cornerMoment ? 4.2 : 0) + (postClock && side < 0 ? 2.4 : 0) + (heroZone && side > 0 ? 0.9 : 0);
       const footprint = makeRectFootprint(footprintCenter, frame.tangent, localFrontage, localDepth);
       const metrics = deriveFootprintMetrics(footprint);
       const id = `gastown-frontage-${i}-${side < 0 ? 'south' : 'north'}`;
       const recessedEntryCount = recessPattern[(i + sideIndex) % recessPattern.length];
-      const corniceEmphasis = cornerMoment ? 0.46 : (steamClockApproach ? 0.34 : 0.26);
+      const corniceEmphasis = cornerMoment ? 0.5 : (steamClockApproach ? 0.36 : (heroZone ? 0.31 : 0.26));
       buildings.push({
         id,
         reference_name: cornerMoment ? 'Steam Clock corner anchor' : side < 0 ? 'Water Street south frontage' : 'Water Street north frontage',
         segment_style: waterfrontThreshold ? 'waterfront-threshold' : steamClockApproach ? 'steam-clock-approach' : postClock ? 'post-clock-continuation' : 'mid-corridor-heritage-rhythm',
-        style_notes: cornerMoment ? 'Corner building massing is widened to keep the Steam Clock on a corner sidewalk/plaza condition, outside the roadway.' : 'Stylized Gastown heritage storefront cadence tuned for darker road surfacing, clearer sidewalks, and stronger Water Street identity.',
+        style_notes: cornerMoment ? 'Corner building massing is widened and wrapped to frame the Steam Clock as a true corner-plaza landmark outside the carriageway.' : heroZone ? 'Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.' : 'Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.',
         x: Number(metrics.x.toFixed(2)), z: Number(metrics.z.toFixed(2)), width: Number(metrics.width.toFixed(2)), depth: Number(metrics.depth.toFixed(2)), yaw: Number(metrics.yaw.toFixed(4)),
         height: Number((height + (cornerMoment ? 2 : 0) + (waterfrontThreshold && side < 0 ? 1 : 0)).toFixed(1)),
         footprint,
         footprint_local: metrics.localFootprint.map((point) => ({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) })),
         facade_profile: cornerMoment ? 'steam_clock_corner' : facadePattern[(i + sideIndex) % facadePattern.length],
+        hero_fidelity: heroZone || cornerMoment ? 'hero' : steamClockApproach ? 'high' : 'standard',
         tone: palette.tone,
         roofline_type: cornerMoment ? 'wrapped_cornice' : steamClockApproach ? 'ornate_cornice' : 'flat_cornice',
         window_bay_count: Math.max(3, Math.round(localFrontage / (cornerMoment ? 3.5 : 2.6))),
         recessed_entry_count: recessedEntryCount,
-        storefront_rhythm: { base_band: Number((waterfrontThreshold ? 0.16 : steamClockApproach ? 0.22 : 0.19).toFixed(2)), upper_rows: height >= 16 ? 4 : 3 },
-        material_palette: palette,
+        storefront_rhythm: { base_band: Number((waterfrontThreshold ? 0.16 : steamClockApproach ? 0.22 : 0.19).toFixed(2)), upper_rows: height >= 16 ? 4 : 3, bay_spacing: Number((cornerMoment ? 3.15 : heroZone ? 2.45 : 2.85).toFixed(2)), entry_depth: Number((cornerMoment ? 1.15 : heroZone ? 0.95 : 0.72).toFixed(2)), transom_band: heroZone ? 0.22 : 0.18 },
+        material_palette: Object.assign({}, palette, { secondary: heroZone ? '#8d6f55' : '#70584a' }),
         cornice_emphasis: Number(corniceEmphasis.toFixed(2)),
-        mass_inset: Number((waterfrontThreshold ? 0.95 : 0.96).toFixed(2)),
+        mass_inset: Number((cornerMoment ? 0.92 : waterfrontThreshold ? 0.95 : heroZone ? 0.94 : 0.96).toFixed(2)),
+        facade_variation_seed: Number((blockPhase + (side > 0 ? 0.31 : 0.17)).toFixed(3)),
       });
     });
     cursor += frontage + (i % 3 === 0 ? 2 : 3.1);
@@ -1140,7 +1143,8 @@ function makeStarterWorld(outputPath, options = {}) {
       buildClassification: 'approximate-fallback',
       buildNotes: [
         'Working fallback corridor is active because required offline civic source files are missing.',
-        'This fallback now stages Water Street, a real Water/Cambie corner condition, and a Steam Clock plaza pad outside the carriageway instead of a single bent ribbon corridor.',
+        'This fallback now stages narrower Water Street carriageways, corrected curb edges, and a larger corner plaza so the Water/Cambie geometry reads closer to Gastown.',
+        'The Water Street / Steam Clock block carries a higher fidelity budget with more varied frontage widths, paving wear, and sightline staging than the rest of the route.',
         referenceFeaturesUsed.length ? `Optional refreshed reference inputs were present: ${referenceFeaturesUsed.join(', ')}.` : 'No refreshed reference inputs were present; deterministic default route staging was used.',
       ],
       referenceInputsUsed: referenceFeaturesUsed,
@@ -1155,7 +1159,7 @@ function makeStarterWorld(outputPath, options = {}) {
       provenanceSummary: 'Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs.',
       lastBuild: new Date().toISOString(),
     },
-    route: { name: 'Waterfront Station → Water Street → Steam Clock working corridor', centerline, walkBounds, streetWidth, sidewalkWidth, softBoundary, hardResetDistance: 12 },
+    route: { name: 'Waterfront Station → Water Street → Steam Clock working corridor', centerline, walkBounds, streetWidth, sidewalkWidth, softBoundary, hardResetDistance: 12, rightOfWayWidth, heroZoneStart: 'water-street-mid-block', heroZoneEnd: 'maple-tree-square-edge' },
     nodes: [
       { ...centerline[0], label: 'Waterfront Station threshold' },
       { ...centerline[2], label: 'Water/Cordova seam' },
@@ -1206,6 +1210,10 @@ function makeStarterWorld(outputPath, options = {}) {
         { id: 'clock-bollard-b', x: Number((layout.clock.x + (layout.plaza.tangent.x * 2.2) + (layout.plaza.normal.x * -2.4)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.tangent.z * 2.2) + (layout.plaza.normal.z * -2.4)).toFixed(2)), chain_to: 'clock-bollard-a' },
       ],
       surfaceBands: buildStarterSurfaceBands(centerline, streetWidth, routeLength),
+      heroViewCorridors: [
+        { id: 'steam-clock-west-sightline', from: 'water-street-mid-block', to: 'steam-clock', emphasis: 'hero' },
+        { id: 'steam-clock-east-sightline', from: 'maple-tree-square-edge', to: 'steam-clock', emphasis: 'hero' }
+      ],
     },
     spawn,
     bounds: { floorY: 0, edgeMessage: 'Stayed within the Gastown working corridor.', resetMessage: 'Returned to the Gastown working corridor.' },
@@ -1231,14 +1239,20 @@ function buildStarterSurfaceBands(centerline, streetWidth, routeLength) {
     const heading = Math.atan2(next.x - point.x, next.z - point.z);
     const length = Math.max(9.2, Math.min(18.5, distance(point, next) * 0.98 || 10));
     const progress = routeLength > 0 ? index / Math.max(1, centerline.length - 1) : 0;
-    const edgeOffset = streetWidth * 0.39;
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.96).toFixed(2)), length: Number((length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: progress > 0.55 ? 0.24 : 0.2, elevation: 0.012 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.34).toFixed(2)), length: Number((length * 0.82).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: progress < 0.2 ? 0.1 : 0.16, elevation: 0.016 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.1).toFixed(2)), length: Number((length * 1.02).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(edgeOffset.toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.18, elevation: 0.024 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.1).toFixed(2)), length: Number((length * 1.02).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((-edgeOffset).toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.18, elevation: 0.024 });
+    const edgeOffset = streetWidth * 0.41;
+    const heroZone = progress > 0.62;
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.98).toFixed(2)), length: Number((length * 1.06).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: heroZone ? 'asphalt_patchwork' : 'road_base_dark', opacity: heroZone ? 0.3 : (progress > 0.55 ? 0.24 : 0.2), elevation: 0.012 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.28).toFixed(2)), length: Number((length * 0.86).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: heroZone ? 'tram_polish' : 'wheel_track', opacity: progress < 0.2 ? 0.1 : 0.18, elevation: 0.016 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.11).toFixed(2)), length: Number((length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(edgeOffset.toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.2, elevation: 0.024 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.11).toFixed(2)), length: Number((length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((-edgeOffset).toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.2, elevation: 0.024 });
+    if (heroZone) {
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.62).toFixed(2)), length: Number((length * 0.36).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'setts_patch', opacity: 0.18, elevation: 0.02 });
+    }
     if (point.id === 'steam-clock' || point.id === 'steam-clock-approach') {
-      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.7).toFixed(2)), length: Number(Math.max(5.8, length * 0.42).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.24, elevation: 0.02 });
-      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.38).toFixed(2)), length: Number(Math.max(4.5, length * 0.22).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.18, elevation: 0.022 });
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.82).toFixed(2)), length: Number(Math.max(7.2, length * 0.54).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.28, elevation: 0.02 });
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.42).toFixed(2)), length: Number(Math.max(5.8, length * 0.28).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.2, elevation: 0.022 });
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.26).toFixed(2)), length: Number(Math.max(4.8, length * 0.18).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((streetWidth * 0.18).toFixed(2)), offset_z: 0, tone: 'service_wear', opacity: 0.16, elevation: 0.023 });
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.26).toFixed(2)), length: Number(Math.max(4.8, length * 0.18).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((-streetWidth * 0.18).toFixed(2)), offset_z: 0, tone: 'service_wear', opacity: 0.16, elevation: 0.023 });
     }
   });
   return bands;

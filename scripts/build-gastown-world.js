@@ -46,6 +46,8 @@ const referenceTemplate = {
   segment_style: null,
   storefront_notes: null,
   landmark_priority: 'supporting',
+  hero_fidelity: 'standard',
+  facade_variation_seed: 0.5,
 };
 
 function applyReferenceScaffold(entity) {
@@ -68,6 +70,7 @@ function runScaffold() {
     'Runtime geometry is compact and static; no live map APIs.',
     'Prepared for offline City of Vancouver footprints/streets/ROW widths + optional OSM route alignment.',
     'Supports hero_landmarks + facade_profiles to prioritize recognizability over photoreal detail.',
+    'Scaffold now budgets extra detail for the Water Street / Steam Clock hero block, including tighter storefront cadence and less generic paving treatment.',
     'Scaffold includes reference-driven world notes for segment style, silhouette, and storefront cadence.',
   ];
   world.meta.buildClassification = world.meta.isRealCivicBuild === false ? 'approximate-fallback' : 'offline-civic-build';

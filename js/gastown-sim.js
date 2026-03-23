@@ -1651,6 +1651,14 @@
       awningDepth: 1.2,
       silhouetteLift: 0.6,
     },
+    narrow_brick_shaft: {
+      baseInset: 0.94,
+      windowRows: 4,
+      rooflineLift: 1.35,
+      storefrontBand: 0.16,
+      awningDepth: 0.9,
+      silhouetteLift: 1.2,
+    },
     wedge_corner_block: {
       baseInset: 0.95,
       windowRows: 4,
@@ -1683,10 +1691,12 @@
     const primary = palette.primary || building.tone || 'brickDark';
     const accent = palette.accent || 'stoneMuted';
     const trim = palette.trim || 'stoneMuted';
+    const secondary = palette.secondary || primary;
     return {
       primary: toneToColor(primary),
       accent: toneToColor(accent),
       trim: toneToColor(trim),
+      secondary: toneToColor(secondary),
     };
   }
 
@@ -1814,6 +1824,10 @@
             wheel_track: { color: 0x0d1217, roughness: 0.62, metalness: 0.14, opacity: 0.2 },
             patch: { color: 0x2f353d, roughness: 0.76, metalness: 0.12, opacity: 0.2 },
             repair_patch_dark: { color: 0x252b32, roughness: 0.72, metalness: 0.14, opacity: 0.22 },
+            asphalt_patchwork: { color: 0x262d33, roughness: 0.88, metalness: 0.05, opacity: 0.28 },
+            tram_polish: { color: 0x1a2026, roughness: 0.56, metalness: 0.18, opacity: 0.18 },
+            service_wear: { color: 0x4d4338, roughness: 0.74, metalness: 0.08, opacity: 0.16 },
+            setts_patch: { color: 0x67584a, roughness: 0.9, metalness: 0.04, opacity: 0.18 },
             puddle: { color: 0x1a212a, roughness: 0.34, metalness: 0.28, opacity: 0.14 },
             wet_streak: { color: 0x202731, roughness: 0.48, metalness: 0.2, opacity: 0.18 },
             edge_grime: { color: 0x1b1d20, roughness: 0.8, metalness: 0.08, opacity: 0.18 },
@@ -1982,22 +1996,37 @@
         worldGroup.add(roof);
       }
 
-      const storefrontBandHeight = Math.max(1.4, b.height * ((b.storefront_rhythm && b.storefront_rhythm.base_band) || profilePreset.storefrontBand));
+      const storefrontRhythm = b.storefront_rhythm || {};
+      const storefrontBandHeight = Math.max(1.4, b.height * (storefrontRhythm.base_band || profilePreset.storefrontBand));
+      const baySpacing = storefrontRhythm.bay_spacing || 2.8;
+      const bayCount = Math.max(2, Math.min(10, b.window_bay_count || Math.round((b.width || 8) / baySpacing)));
+      const heroScale = b.hero_fidelity === 'hero' ? 1.08 : b.hero_fidelity === 'high' ? 1.04 : 1;
+      const storefrontDepth = Math.max(2.2, (b.depth || 8) * (b.hero_fidelity === 'hero' ? 0.19 : 0.15));
       const storefront = new THREE.Mesh(
-        new THREE.BoxGeometry((b.width || 8) * 0.92, storefrontBandHeight, Math.max(2, (b.depth || 8) * 0.15)),
+        new THREE.BoxGeometry((b.width || 8) * 0.92, storefrontBandHeight, storefrontDepth),
         new THREE.MeshStandardMaterial({ color: colors.accent, roughness: 0.72, metalness: 0.1 })
       );
       const storefrontPos = localPointToWorld(b, 0, (b.depth || 8) * 0.34);
       storefront.position.set(storefrontPos.x, storefrontBandHeight / 2 + 0.2, storefrontPos.z);
       storefront.rotation.y = b.yaw || 0;
+      storefront.scale.x = heroScale;
       worldGroup.add(storefront);
 
-      const bayCount = Math.max(2, Math.min(8, b.window_bay_count || 4));
-      const windowRows = Math.max(1, Math.min(5, (b.storefront_rhythm && b.storefront_rhythm.upper_rows) || profilePreset.windowRows));
+      const transomBandHeight = Math.max(0.26, storefrontBandHeight * (storefrontRhythm.transom_band || 0.18));
+      const transom = new THREE.Mesh(
+        new THREE.BoxGeometry((b.width || 8) * 0.88, transomBandHeight, Math.max(0.4, storefrontDepth * 0.18)),
+        new THREE.MeshStandardMaterial({ color: colors.secondary, roughness: 0.7, metalness: 0.08 })
+      );
+      const transomPos = localPointToWorld(b, 0, (b.depth || 8) * 0.44);
+      transom.position.set(transomPos.x, storefrontBandHeight - (transomBandHeight * 0.4), transomPos.z);
+      transom.rotation.y = b.yaw || 0;
+      worldGroup.add(transom);
+
+      const windowRows = Math.max(1, Math.min(5, storefrontRhythm.upper_rows || profilePreset.windowRows));
       const windowMat = new THREE.MeshStandardMaterial({ color: 0x1f2a38, emissive: 0x344d63, emissiveIntensity: 0.14, roughness: 0.42, metalness: 0.22 });
       for (let row = 0; row < windowRows; row += 1) {
         for (let bay = 0; bay < bayCount; bay += 1) {
-          const win = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (bayCount + 1.2), (b.height || 12) / (windowRows * 4.3)), windowMat);
+          const win = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (bayCount + 1.35), (b.height || 12) / (windowRows * (b.hero_fidelity === 'hero' ? 4.8 : 4.3))), windowMat);
           const xOffset = (((bay + 1) / (bayCount + 1)) - 0.5) * ((b.width || 8) * 0.78);
           const yOffset = storefrontBandHeight + 1.4 + row * ((b.height - storefrontBandHeight - 2) / windowRows);
           const depthOffset = (b.depth || 8) * 0.52;
@@ -2010,7 +2039,7 @@
 
       if (b.awning_presence || (profilePreset.awningDepth > 0.1)) {
         const awning = new THREE.Mesh(
-          new THREE.BoxGeometry((b.width || 8) * 0.86, 0.3, Math.max(0.8, profilePreset.awningDepth)),
+          new THREE.BoxGeometry((b.width || 8) * 0.86, 0.3, Math.max(0.8, profilePreset.awningDepth + ((b.hero_fidelity === 'hero') ? 0.16 : 0))),
           new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.64, metalness: 0.08 })
         );
         const awningPos = localPointToWorld(b, 0, (b.depth || 8) * 0.45);
@@ -2049,8 +2078,9 @@
         const entryCount = Math.min(3, Math.max(1, b.recessed_entry_count));
         for (let i = 0; i < entryCount; i += 1) {
           const t = (((i + 1) / (entryCount + 1)) - 0.5) * ((b.width || 8) * 0.5);
+          const entryDepth = Math.max(0.5, storefrontRhythm.entry_depth || 0.72);
           const entry = new THREE.Mesh(
-            new THREE.BoxGeometry(0.9, 2.4, 0.5),
+            new THREE.BoxGeometry(0.9, 2.4, entryDepth),
             new THREE.MeshStandardMaterial({ color: 0x1d222b, roughness: 0.45, metalness: 0.22 })
           );
           const entryPos = localPointToWorld(b, t, (b.depth || 8) * 0.48);
@@ -2101,7 +2131,7 @@
 
       const edge = new THREE.LineSegments(
         new THREE.EdgesGeometry(geom),
-        new THREE.LineBasicMaterial({ color: 0x6f8197, transparent: true, opacity: 0.28 })
+        new THREE.LineBasicMaterial({ color: b.hero_fidelity === 'hero' ? 0x8f9eb0 : 0x6f8197, transparent: true, opacity: b.hero_fidelity === 'hero' ? 0.34 : 0.28 })
       );
       edge.position.copy(mesh.position);
       edge.rotation.y = mesh.rotation.y;
@@ -2198,11 +2228,11 @@
           clockRoot.add(ventCap);
         });
 
-        const plaza = new THREE.Mesh(new THREE.CircleGeometry(plazaRadius, 32), new THREE.MeshStandardMaterial({ color: 0x4c3d32, roughness: 0.92, metalness: 0.02 }));
+        const plaza = new THREE.Mesh(new THREE.CircleGeometry(plazaRadius, 40), new THREE.MeshStandardMaterial({ color: 0x4c3d32, roughness: 0.92, metalness: 0.02 }));
         plaza.rotation.x = -Math.PI / 2;
         plaza.position.y = 0.03;
         clockRoot.add(plaza);
-        const plazaApron = new THREE.Mesh(new THREE.RingGeometry(plazaRadius * 0.66, plazaRadius + 0.65, 32), new THREE.MeshStandardMaterial({ color: 0x7a6a5b, roughness: 0.96, metalness: 0.01 }));
+        const plazaApron = new THREE.Mesh(new THREE.RingGeometry(plazaRadius * 0.62, plazaRadius + 1.1, 40), new THREE.MeshStandardMaterial({ color: 0x7a6a5b, roughness: 0.96, metalness: 0.01 }));
         plazaApron.rotation.x = -Math.PI / 2;
         plazaApron.position.y = 0.031;
         clockRoot.add(plazaApron);
