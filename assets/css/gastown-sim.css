@@ -4,21 +4,21 @@
     radial-gradient(circle at 76% 18%, rgba(203, 146, 89, 0.15) 0, rgba(8, 11, 17, 0) 28%),
     linear-gradient(180deg, #111824 0%, #080a10 56%, #040507 100%);
   color: #d5dde8;
-  padding: 2rem 1rem 3rem;
+  padding: 1.2rem 1rem 2.4rem;
 }
 
 .gastown-sim-shell {
-  max-width: 1120px;
+  max-width: 1280px;
   margin: 0 auto;
+  display: grid;
+  gap: 0.8rem;
   background:
-    linear-gradient(180deg, rgba(10, 13, 20, 0.84), rgba(8, 10, 15, 0.9)),
+    linear-gradient(180deg, rgba(10, 13, 20, 0.88), rgba(8, 10, 15, 0.92)),
     rgba(8, 11, 18, 0.75);
   border: 1px solid rgba(173, 190, 215, 0.16);
   border-radius: 16px;
-  padding: 1.2rem;
-  box-shadow:
-    0 22px 60px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
 }
 
@@ -30,8 +30,18 @@
 .gastown-sim-kicker,
 .gastown-sim-intro,
 .gastown-status,
-.gastown-landmark {
-  margin: 0.4rem 0;
+.gastown-landmark,
+.gastown-route-segment,
+.gastown-world-status,
+.gastown-pointer-status,
+.gastown-quest-status {
+  margin: 0;
+}
+
+.gastown-sim-intro {
+  margin-top: 0.35rem;
+  max-width: 72ch;
+  line-height: 1.5;
 }
 
 .gastown-controls {
@@ -39,7 +49,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.6rem;
-  margin: 1rem 0;
 }
 
 .gastown-controls label {
@@ -49,70 +58,21 @@
   font-size: 0.85rem;
 }
 
-.gastown-controls select {
+.gastown-controls select,
+.gastown-name-field input {
   min-width: 130px;
   border-radius: 6px;
   border: 1px solid rgba(200, 214, 236, 0.3);
   background: #0f131b;
   color: #dce5f3;
-  padding: 0.35rem;
+  padding: 0.45rem 0.55rem;
 }
-
-.gastown-sim-canvas {
-  position: relative;
-  width: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(164, 182, 209, 0.22);
-  background:
-    radial-gradient(circle at 50% 0, rgba(120, 165, 215, 0.15), rgba(8, 10, 14, 0) 38%),
-    linear-gradient(180deg, #0b0d12 0%, #06080c 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    0 18px 42px rgba(0, 0, 0, 0.42);
-}
-
-.gastown-sim-canvas::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(197, 156, 112, 0.08), rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0.18) 100%),
-    radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 38%);
-  mix-blend-mode: screen;
-  opacity: 0.85;
-}
-
-.gastown-sim-canvas::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(4, 5, 8, 0.08), rgba(4, 5, 8, 0.24));
-  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.25);
-}
-
-.gastown-sim-canvas canvas {
-  display: block;
-  width: 100% !important;
-  height: auto !important;
-}
-
-.gastown-debug {
-  margin-top: 1rem;
-  border-top: 1px dashed rgba(162, 180, 201, 0.28);
-  padding-top: 0.8rem;
-}
-
 
 .gastown-help {
-  margin: 0.75rem 0 0.9rem;
   padding: 0.7rem 0.9rem;
   border: 1px solid rgba(193, 213, 238, 0.26);
   border-radius: 10px;
   background: linear-gradient(160deg, rgba(31, 39, 55, 0.8), rgba(10, 13, 19, 0.88));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .gastown-help h2 {
@@ -127,67 +87,89 @@
   gap: 0.2rem;
 }
 
-.gastown-help li {
-  color: #e4ebf7;
+.gastown-hud {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.gastown-hud-top {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(340px, 1.8fr) minmax(210px, 0.9fr);
+  gap: 0.7rem;
+  align-items: start;
+}
+
+.gastown-hud-identity,
+.gastown-hud-statuses,
+.gastown-hud-route,
+.gastown-hud-card,
+.gastown-meta-strip > * {
+  padding: 0.7rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid rgba(170, 197, 226, 0.22);
+  background: linear-gradient(180deg, rgba(16, 22, 33, 0.8), rgba(8, 11, 18, 0.92));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.gastown-hud-kicker,
+.gastown-expedition-label {
+  margin: 0 0 0.28rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8fc8ff;
+}
+
+.gastown-hud-name {
+  margin: 0;
+  font-size: clamp(1.15rem, 2.1vw, 1.6rem);
+  color: #f6fbff;
+}
+
+.gastown-hud-subline,
+.gastown-hud-disclosure {
+  margin: 0.3rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: rgba(220, 236, 255, 0.85);
+}
+
+.gastown-hud-statuses {
+  display: grid;
+  gap: 0.45rem;
 }
 
 .gastown-status,
 .gastown-world-status,
 .gastown-pointer-status,
 .gastown-landmark,
-.gastown-route-segment {
-  padding: 0.2rem 0.55rem;
+.gastown-route-segment,
+.gastown-quest-status,
+.gastown-interact-prompt {
+  padding: 0.28rem 0.55rem;
   border-left: 2px solid rgba(192, 211, 237, 0.45);
-  background: linear-gradient(180deg, rgba(15, 20, 29, 0.5), rgba(10, 14, 22, 0.3));
+  background: linear-gradient(180deg, rgba(15, 20, 29, 0.7), rgba(10, 14, 22, 0.42));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .gastown-world-status {
-  margin-top: 0.35rem;
   border-left-color: rgba(255, 196, 120, 0.88);
   background: rgba(39, 24, 7, 0.42);
   color: #ffe2bf;
 }
 
-.gastown-world-status.is-approximate {
-  border-left-color: #ffbf7c;
-  box-shadow: inset 0 0 0 1px rgba(255, 191, 124, 0.14);
-}
+.gastown-pointer-status { color: #bdd8ff; }
+.gastown-quest-status { color: #d6f0c4; }
 
-.gastown-world-status.is-civic {
-  border-left-color: rgba(149, 234, 199, 0.88);
-  background: rgba(12, 35, 28, 0.38);
-  color: #dcfff2;
-}
-
-.gastown-pointer-status {
-  color: #bdd8ff;
-  font-size: 0.92rem;
-}
-
-.gastown-expedition-panel {
+.gastown-hud-support {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: minmax(260px, 1.1fr) minmax(220px, 0.9fr) minmax(220px, 0.9fr);
   gap: 0.7rem;
-  margin: 0.7rem 0 0.8rem;
 }
 
-.gastown-expedition-card {
-  padding: 0.7rem 0.8rem;
-  border: 1px solid rgba(170, 197, 226, 0.22);
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(16, 22, 33, 0.8), rgba(8, 11, 18, 0.92));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-}
-
-.gastown-expedition-label {
-  margin: 0 0 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #8fc8ff;
-}
+.gastown-hud-card--prompt { min-height: 0; }
+.gastown-hud-next-step { margin-top: 0.5rem; color: #fff1c7; }
 
 .gastown-expedition-value {
   margin: 0;
@@ -204,6 +186,47 @@
   font-size: 0.9rem;
 }
 
+.gastown-sim-canvas {
+  position: relative;
+  width: 100%;
+  min-height: 540px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(164, 182, 209, 0.22);
+  background: radial-gradient(circle at 50% 0, rgba(120, 165, 215, 0.15), rgba(8, 10, 14, 0) 38%), linear-gradient(180deg, #0b0d12 0%, #06080c 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+.gastown-sim-canvas::before,
+.gastown-sim-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gastown-sim-canvas::before {
+  background: linear-gradient(180deg, rgba(197, 156, 112, 0.08), rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0.18) 100%), radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 38%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+.gastown-sim-canvas::after {
+  background: linear-gradient(180deg, rgba(4, 5, 8, 0.08), rgba(4, 5, 8, 0.24));
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.25);
+}
+
+.gastown-sim-canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+}
+
+.gastown-meta-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
 
 .gastown-route-debug-overlay {
   position: absolute;
@@ -231,6 +254,8 @@
   left: 0.85rem;
   bottom: 0.85rem;
   width: 220px;
+  display: grid;
+  gap: 0.38rem;
   padding: 0.45rem;
   border-radius: 10px;
   background: linear-gradient(180deg, rgba(10, 15, 23, 0.92), rgba(7, 11, 18, 0.86));
@@ -247,186 +272,45 @@
   border: 1px solid rgba(172, 201, 230, 0.24);
 }
 
-.gastown-minimap-label {
-  margin: 0.38rem 0 0;
-  font-size: 0.75rem;
-  line-height: 1.2;
-  color: #dbe9ff;
-}
+.gastown-minimap-label { margin: 0.38rem 0 0; font-size: 0.75rem; line-height: 1.2; color: #dbe9ff; }
+.gastown-minimap-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 0.35rem; }
+.gastown-minimap-mode, .gastown-minimap-zoom { height: 1.7rem; font-size: 0.72rem; font-weight: 700; border-radius: 6px; border: 1px solid rgba(174, 207, 239, 0.5); background: rgba(18, 28, 41, 0.95); color: #e8f3ff; line-height: 1; cursor: pointer; }
+.gastown-minimap-mode { min-width: 5.6rem; padding: 0 0.55rem; }
+.gastown-minimap-mode[data-minimap-mode="north-up"] { border-color: rgba(137, 189, 245, 0.7); box-shadow: inset 0 0 0 1px rgba(137, 189, 245, 0.18); }
+.gastown-minimap-mode[data-minimap-mode="heading-up"] { border-color: rgba(255, 197, 126, 0.78); color: #fff3de; box-shadow: inset 0 0 0 1px rgba(255, 197, 126, 0.18); }
+.gastown-minimap-zoom { width: 1.7rem; padding: 0; font-size: 1rem; }
+.gastown-minimap-mode:hover, .gastown-minimap-mode:focus-visible, .gastown-minimap-zoom:hover, .gastown-minimap-zoom:focus-visible { background: rgba(36, 53, 74, 0.95); outline: none; }
+.gastown-minimap-context { margin: 0.28rem 0 0.18rem; font-size: 0.68rem; line-height: 1.45; color: rgba(220, 236, 255, 0.92); }
+.gastown-minimap-context strong, .gastown-minimap-mode-status strong { color: #f5fbff; }
+.gastown-minimap-mode-status { margin: 0; padding: 0.35rem 0.45rem; border-radius: 8px; background: rgba(18, 28, 41, 0.96); border: 1px solid rgba(126, 178, 226, 0.24); color: #ecf5ff; font-size: 0.71rem; line-height: 1.35; }
+.gastown-minimap-legend { list-style: none; margin: 0.12rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.18rem 0.5rem; font-size: 0.68rem; color: rgba(220, 236, 255, 0.9); }
+.gastown-minimap-legend li { display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
+.gastown-minimap-legend .dot { width: 0.48rem; height: 0.48rem; border-radius: 999px; display: inline-block; border: 1px solid rgba(235, 245, 255, 0.58); }
+.gastown-minimap-legend .dot.player { background: radial-gradient(circle at 35% 35%, #ffffff 0, #b7ecff 58%, #3f8fca 100%); }
+.gastown-minimap-legend .dot.route { background: #ffd28f; }
+.gastown-minimap-legend .dot.sidewalk { background: #6c7f95; }
+.gastown-minimap-legend .dot.street { background: #203344; }
+.gastown-minimap-legend .dot.station { background: #84b4d7; }
+.gastown-minimap-legend .dot.steam { background: #d8a968; }
+.gastown-minimap-legend .dot.nearest { background: #8af7cb; }
 
-.gastown-minimap-mode-status {
-  margin: 0;
-  padding: 0.35rem 0.45rem;
-  border-radius: 8px;
-  background: rgba(18, 28, 41, 0.96);
-  border: 1px solid rgba(126, 178, 226, 0.24);
-  color: #ecf5ff;
-  font-size: 0.71rem;
-  line-height: 1.35;
-}
+.gastown-attribution { margin-top: 0.2rem; font-size: 0.78rem; line-height: 1.35; color: rgba(209, 223, 242, 0.86); }
+.gastown-attribution p { margin: 0.1rem 0; }
 
-.gastown-minimap-mode-status strong {
-  color: #9ed6ff;
-}
-
-@media (max-width: 740px) {
-  .gastown-minimap {
-    width: 180px;
-  }
-}
-
-
-.gastown-minimap {
-  display: grid;
-  gap: 0.38rem;
-}
-
-.gastown-minimap-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.gastown-minimap-mode,
-.gastown-minimap-zoom {
-  height: 1.7rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  border-radius: 6px;
-  border: 1px solid rgba(174, 207, 239, 0.5);
-  background: rgba(18, 28, 41, 0.95);
-  color: #e8f3ff;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.gastown-minimap-mode {
-  min-width: 5.6rem;
-  padding: 0 0.55rem;
-}
-
-.gastown-minimap-mode[data-minimap-mode="north-up"] {
-  border-color: rgba(137, 189, 245, 0.7);
-  box-shadow: inset 0 0 0 1px rgba(137, 189, 245, 0.18);
-}
-
-.gastown-minimap-mode[data-minimap-mode="heading-up"] {
-  border-color: rgba(255, 197, 126, 0.78);
-  color: #fff3de;
-  box-shadow: inset 0 0 0 1px rgba(255, 197, 126, 0.18);
-}
-
-.gastown-minimap-zoom {
-  width: 1.7rem;
-  padding: 0;
-  font-size: 1rem;
-}
-
-.gastown-minimap-mode:hover,
-.gastown-minimap-mode:focus-visible,
-.gastown-minimap-zoom:hover,
-.gastown-minimap-zoom:focus-visible {
-  background: rgba(36, 53, 74, 0.95);
-  outline: none;
-}
-
-.gastown-minimap-context {
-  margin: 0.28rem 0 0.18rem;
-  font-size: 0.68rem;
-  line-height: 1.45;
-  color: rgba(220, 236, 255, 0.92);
-}
-
-.gastown-minimap-context strong {
-  color: #f5fbff;
-}
-
-.gastown-minimap-legend {
-  list-style: none;
-  margin: 0.12rem 0 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.18rem 0.5rem;
-  font-size: 0.68rem;
-  color: rgba(220, 236, 255, 0.9);
-}
-
-.gastown-minimap-legend li {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  white-space: nowrap;
-}
-
-.gastown-minimap-legend .dot {
-  width: 0.48rem;
-  height: 0.48rem;
-  border-radius: 999px;
-  display: inline-block;
-  border: 1px solid rgba(235, 245, 255, 0.58);
-}
-
-.gastown-minimap-legend .dot.player {
-  background: radial-gradient(circle at 35% 35%, #ffffff 0, #b7ecff 58%, #3f8fca 100%);
-}
-
-.gastown-minimap-legend .dot.route {
-  background: #ffd28f;
-}
-
-.gastown-minimap-legend .dot.sidewalk {
-  background: #6c7f95;
-}
-
-.gastown-minimap-legend .dot.street {
-  background: #203344;
-}
-
-.gastown-minimap-legend .dot.station {
-  background: #84b4d7;
-}
-
-.gastown-minimap-legend .dot.steam {
-  background: #d8a968;
-}
-
-.gastown-minimap-legend .dot.nearest {
-  background: #8af7cb;
-}
-
-.gastown-attribution {
-  margin-top: 0.8rem;
-  font-size: 0.78rem;
-  line-height: 1.35;
-  color: rgba(209, 223, 242, 0.86);
-}
-
-.gastown-attribution p {
-  margin: 0.1rem 0;
-}
-
-.gastown-interact-prompt[hidden] {
+.gastown-interact-prompt[hidden],
+.gastown-dialog-modal[hidden],
+.gastown-name-overlay[hidden] {
   display: none !important;
 }
 
 .gastown-interact-prompt {
   display: inline-block;
-  margin: 0.45rem 0;
-  padding: 0.38rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid rgba(151, 200, 244, 0.4);
-  background: rgba(7, 13, 22, 0.72);
-  color: #eff7ff;
-  box-shadow: 0 0 0 1px rgba(51, 86, 126, 0.28) inset;
+  border-left-color: rgba(255, 205, 116, 0.92);
+  color: #fff5dd;
 }
 
-.gastown-dialog-modal[hidden] {
-  display: none !important;
-}
-
-.gastown-dialog-modal {
+.gastown-dialog-modal,
+.gastown-name-overlay {
   position: fixed;
   inset: 0;
   z-index: 30;
@@ -448,47 +332,35 @@
   box-shadow: 0 20px 70px rgba(0, 0, 0, 0.55);
 }
 
-.gastown-dialog-header,
-.gastown-dialog-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+.gastown-name-panel { width: min(100%, 420px); }
+.gastown-name-field { display: grid; gap: 0.35rem; }
+.gastown-name-field span { font-size: 0.82rem; color: #b9d6f7; }
+.gastown-dialog-header, .gastown-dialog-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.gastown-dialog-header h2 { margin: 0; font-size: 1.2rem; }
+.gastown-dialog-body { margin-top: 0.85rem; color: #e7eef8; line-height: 1.55; }
+.gastown-dialog-body p { margin: 0 0 0.8rem; }
+.gastown-dialog-actions { margin-top: 1rem; justify-content: flex-end; flex-wrap: wrap; }
+.gastown-dialog-actions-dynamic { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+.gastown-dialog-audio-status { margin-right: auto; font-size: 0.78rem; color: #c3d9f4; }
+.gastown-dialog-actions .pixel-button { text-decoration: none; }
+.gastown-dialog-actions .pixel-button:focus-visible, .gastown-sim-canvas:focus-visible { outline: 2px solid rgba(155, 212, 255, 0.92); outline-offset: 2px; }
+
+.gastown-debug {
+  border-top: 1px dashed rgba(162, 180, 201, 0.28);
+  padding-top: 0.8rem;
 }
 
-.gastown-dialog-header h2 {
-  margin: 0;
-  font-size: 1.2rem;
+@media (max-width: 980px) {
+  .gastown-hud-top,
+  .gastown-hud-support,
+  .gastown-meta-strip {
+    grid-template-columns: 1fr;
+  }
 }
 
-.gastown-dialog-body {
-  margin-top: 0.85rem;
-  color: #e7eef8;
-  line-height: 1.55;
-}
-
-.gastown-dialog-body p {
-  margin: 0 0 0.8rem;
-}
-
-.gastown-dialog-actions {
-  margin-top: 1rem;
-  justify-content: flex-end;
-}
-
-
-.gastown-dialog-actions-dynamic {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-}
-
-.gastown-dialog-actions .pixel-button {
-  text-decoration: none;
-}
-
-.gastown-dialog-actions .pixel-button:focus-visible,
-.gastown-sim-canvas:focus-visible {
-  outline: 2px solid rgba(155, 212, 255, 0.92);
-  outline-offset: 2px;
+@media (max-width: 740px) {
+  .gastown-minimap { width: 180px; }
+  .gastown-sim-page { padding-inline: 0.45rem; }
+  .gastown-sim-shell { padding: 0.7rem; }
+  .gastown-sim-canvas { min-height: 460px; }
 }

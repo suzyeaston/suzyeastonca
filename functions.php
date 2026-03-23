@@ -271,6 +271,7 @@ function se_enqueue_gastown_sim_assets() {
                 'textureBaseUrl' => esc_url_raw( $uri . '/assets/textures' ),
                 'dialogDataUrl'  => esc_url_raw( $uri . '/assets/dialog/gastown.json' ),
                 'conversationEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-npc-chat' ) ),
+                'voiceEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-npc-voice' ) ),
                 'nonce' => wp_create_nonce( 'wp_rest' ),
                 'defaultWeather' => 'clear',
                 'defaultMood'    => 'calm',
@@ -821,6 +822,12 @@ add_action('rest_api_init', function() {
         'callback'            => 'se_handle_gastown_npc_chat',
         'permission_callback' => '__return_true',
     ]);
+
+    register_rest_route('se/v1', '/gastown-npc-voice', [
+        'methods'             => 'POST',
+        'callback'            => 'se_handle_gastown_npc_voice',
+        'permission_callback' => '__return_true',
+    ]);
 });
 
 // =========================================
@@ -842,6 +849,65 @@ function get_custom_canucks_betting( WP_REST_Request $request ) {
         $odds = get_transient('suzyeaston_canucks_betting');
     }
     return rest_ensure_response( $odds );
+}
+
+
+function se_handle_gastown_npc_voice( WP_REST_Request $request ) {
+    $role       = sanitize_key( (string) $request->get_param( 'role' ) );
+    $name       = sanitize_text_field( (string) $request->get_param( 'name' ) );
+    $text       = sanitize_textarea_field( (string) $request->get_param( 'text' ) );
+    $style_hint = sanitize_text_field( (string) $request->get_param( 'style_hint' ) );
+
+    if ( '' === trim( $text ) ) {
+        return rest_ensure_response(
+            array(
+                'ok'      => false,
+                'fallback'=> true,
+                'message' => 'No speech text provided.',
+            )
+        );
+    }
+
+    $instructions = 'Read this as a grounded Gastown local: dry, blunt, restrained, low-hype, and human. Do not impersonate any real person. Avoid celebrity mimicry. Keep the cadence terse, sharp, and unromantic.';
+    if ( '' !== $style_hint ) {
+        $instructions .= ' Style hint: ' . $style_hint;
+    }
+
+    $speech = se_openai_tts(
+        $text,
+        array(
+            'model'           => 'gpt-4o-mini-tts',
+            'voice'           => 'alloy',
+            'response_format' => 'mp3',
+            'instructions'    => $instructions,
+        ),
+        array( 'timeout' => 20 )
+    );
+
+    if ( is_wp_error( $speech ) ) {
+        return rest_ensure_response(
+            array(
+                'ok'       => false,
+                'fallback' => true,
+                'message'  => wp_strip_all_tags( $speech->get_error_message() ),
+                'role'     => $role,
+                'name'     => $name,
+            )
+        );
+    }
+
+    return rest_ensure_response(
+        array(
+            'ok'          => true,
+            'fallback'    => false,
+            'role'        => $role,
+            'name'        => $name,
+            'audioBase64' => base64_encode( $speech['audio'] ),
+            'mimeType'    => 'audio/mpeg',
+            'model'       => $speech['model'],
+            'voice'       => $speech['voice'],
+        )
+    );
 }
 
 function se_handle_gastown_npc_chat( WP_REST_Request $request ) {

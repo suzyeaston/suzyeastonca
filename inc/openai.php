@@ -106,3 +106,74 @@ if ( ! function_exists( 'se_openai_chat' ) ) {
         return $data;
     }
 }
+
+if ( ! function_exists( 'se_openai_tts' ) ) {
+    /**
+     * Send a text-to-speech request to OpenAI.
+     *
+     * @param string $text Speech text.
+     * @param array  $options Request options.
+     * @param array  $http_options Optional transport options.
+     *
+     * @return array|WP_Error
+     */
+    function se_openai_tts( $text, $options = array(), $http_options = array() ) {
+        if ( ! defined( 'OPENAI_API_KEY' ) || ! OPENAI_API_KEY ) {
+            return new WP_Error( 'no_key', __( 'OpenAI API key is not configured.', 'suzys-music-theme' ) );
+        }
+
+        $text = trim( wp_strip_all_tags( (string) $text ) );
+        if ( '' === $text ) {
+            return new WP_Error( 'invalid_text', __( 'Speech text is empty.', 'suzys-music-theme' ) );
+        }
+
+        $http_timeout = 30;
+        if ( isset( $http_options['timeout'] ) ) {
+            $http_timeout = (int) $http_options['timeout'];
+            unset( $http_options['timeout'] );
+        }
+
+        $body = array(
+            'model'           => isset( $options['model'] ) ? sanitize_text_field( $options['model'] ) : 'gpt-4o-mini-tts',
+            'voice'           => isset( $options['voice'] ) ? sanitize_text_field( $options['voice'] ) : 'alloy',
+            'input'           => $text,
+            'response_format' => isset( $options['response_format'] ) ? sanitize_text_field( $options['response_format'] ) : 'mp3',
+        );
+
+        if ( ! empty( $options['instructions'] ) ) {
+            $body['instructions'] = wp_strip_all_tags( (string) $options['instructions'] );
+        }
+
+        $response = wp_remote_post(
+            'https://api.openai.com/v1/audio/speech',
+            array_merge(
+                array(
+                    'headers' => array(
+                        'Authorization' => 'Bearer ' . OPENAI_API_KEY,
+                        'Content-Type'  => 'application/json',
+                    ),
+                    'body'    => wp_json_encode( $body ),
+                    'timeout' => $http_timeout,
+                ),
+                $http_options
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'openai_tts_http_error', wp_strip_all_tags( $response->get_error_message() ) );
+        }
+
+        $code = wp_remote_retrieve_response_code( $response );
+        $audio = wp_remote_retrieve_body( $response );
+        if ( $code < 200 || $code >= 300 || '' === $audio ) {
+            return new WP_Error( 'openai_tts_http_error', sprintf( 'OpenAI TTS HTTP %s', $code ) );
+        }
+
+        return array(
+            'audio'  => $audio,
+            'format' => $body['response_format'],
+            'model'  => $body['model'],
+            'voice'  => $body['voice'],
+        );
+    }
+}
