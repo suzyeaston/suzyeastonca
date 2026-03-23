@@ -1440,9 +1440,67 @@
     };
   }
 
+  function polygonSignedArea(points) {
+    if (!Array.isArray(points) || points.length < 3) {
+      return 0;
+    }
+    let area = 0;
+    for (let i = 0; i < points.length; i += 1) {
+      const current = points[i];
+      const next = points[(i + 1) % points.length];
+      area += (current.x * next.z) - (next.x * current.z);
+    }
+    return area / 2;
+  }
+
+  function sanitizePolygon(points) {
+    if (!Array.isArray(points)) {
+      return [];
+    }
+
+    const deduped = [];
+    points.forEach((point) => {
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.z)) {
+        return;
+      }
+      const last = deduped[deduped.length - 1];
+      if (last && Math.abs(last.x - point.x) < 0.001 && Math.abs(last.z - point.z) < 0.001) {
+        return;
+      }
+      deduped.push({ x: point.x, z: point.z });
+    });
+
+    if (deduped.length > 2) {
+      const first = deduped[0];
+      const last = deduped[deduped.length - 1];
+      if (Math.abs(first.x - last.x) < 0.001 && Math.abs(first.z - last.z) < 0.001) {
+        deduped.pop();
+      }
+    }
+
+    const cleaned = deduped.filter((point, index, arr) => {
+      if (arr.length < 3) {
+        return true;
+      }
+      const prev = arr[(index + arr.length - 1) % arr.length];
+      const next = arr[(index + 1) % arr.length];
+      const cross = ((point.x - prev.x) * (next.z - point.z)) - ((point.z - prev.z) * (next.x - point.x));
+      return Math.abs(cross) > 0.0005;
+    });
+
+    if (cleaned.length >= 3 && polygonSignedArea(cleaned) < 0) {
+      cleaned.reverse();
+    }
+    return cleaned;
+  }
+
   function toShape(points) {
+    const sanitizedPoints = sanitizePolygon(points);
+    if (sanitizedPoints.length < 3) {
+      return null;
+    }
     const shape = new THREE.Shape();
-    points.forEach((point, index) => {
+    sanitizedPoints.forEach((point, index) => {
       if (index === 0) {
         shape.moveTo(point.x, point.z);
       } else {
@@ -1454,7 +1512,11 @@
   }
 
   function createZoneMesh(points, material, y, textureKind) {
-    const geometry = new THREE.ShapeGeometry(toShape(points));
+    const shape = toShape(points);
+    if (!shape) {
+      return null;
+    }
+    const geometry = new THREE.ShapeGeometry(shape);
     if (textureKind && WORLD_TEXTURE_REPEAT[textureKind]) {
       applyWorldUvs(geometry, WORLD_TEXTURE_REPEAT[textureKind]);
     } else {
@@ -1470,9 +1532,9 @@
   }
 
   function addGround(world) {
-    visualState.roadMaterial = createGroundMaterial('street', 0x0e1319, 0.96, 0.08);
-    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x7c7065, 0.98, 0.02);
-    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xa7afb7, transparent: true, opacity: 0.42 });
+    visualState.roadMaterial = createGroundMaterial('street', 0x0a0f14, 0.94, 0.1);
+    visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x85796d, 0.98, 0.02);
+    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xc2c8cf, transparent: true, opacity: 0.5 });
     visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x8fa0af, roughness: 0.92, metalness: 0.02, transparent: true, opacity: 0.02, depthWrite: false });
     visualState.routeGuideMaterials = [visualState.laneMaterial];
 
@@ -1498,17 +1560,17 @@
         (() => {
           const toneStyles = {
             brick: { color: 0x5c4033, roughness: 0.82, metalness: 0.06, opacity: 0.72 },
-            road_base_dark: { color: 0x23292f, roughness: 0.95, metalness: 0.03, opacity: 0.18 },
-            wheel_track: { color: 0x13181d, roughness: 0.62, metalness: 0.14, opacity: 0.14 },
+            road_base_dark: { color: 0x1c232a, roughness: 0.95, metalness: 0.03, opacity: 0.24 },
+            wheel_track: { color: 0x0d1217, roughness: 0.62, metalness: 0.14, opacity: 0.2 },
             patch: { color: 0x2f353d, roughness: 0.76, metalness: 0.12, opacity: 0.2 },
             repair_patch_dark: { color: 0x252b32, roughness: 0.72, metalness: 0.14, opacity: 0.22 },
             puddle: { color: 0x1a212a, roughness: 0.34, metalness: 0.28, opacity: 0.14 },
             wet_streak: { color: 0x202731, roughness: 0.48, metalness: 0.2, opacity: 0.18 },
             edge_grime: { color: 0x1b1d20, roughness: 0.8, metalness: 0.08, opacity: 0.18 },
-            curb_grime: { color: 0x1f2327, roughness: 0.88, metalness: 0.04, opacity: 0.13 },
-            cobble_break: { color: 0x5b4c40, roughness: 0.86, metalness: 0.04, opacity: 0.14 },
+            curb_grime: { color: 0x181c20, roughness: 0.88, metalness: 0.04, opacity: 0.18 },
+            cobble_break: { color: 0x55483d, roughness: 0.86, metalness: 0.04, opacity: 0.18 },
             paver_break: { color: 0x5d5144, roughness: 0.84, metalness: 0.05, opacity: 0.18 },
-            intersection_pavers: { color: 0x65584a, roughness: 0.9, metalness: 0.04, opacity: 0.2 },
+            intersection_pavers: { color: 0x5c5044, roughness: 0.9, metalness: 0.04, opacity: 0.26 },
             default: { color: 0x3a4048, roughness: 0.8, metalness: 0.08, opacity: 0.78 },
           };
           const style = toneStyles[band.tone] || toneStyles.default;
@@ -2713,35 +2775,51 @@
 
     ctx.restore();
 
-    const dirLength = 16;
+    const dirLength = 11;
     const headingX = minimapState.mode === 'heading-up' ? 0 : heading.x;
     const headingY = minimapState.mode === 'heading-up' ? -1 : -heading.z;
-
-    ctx.fillStyle = 'rgba(133, 205, 245, 0.3)';
-    ctx.beginPath();
-    ctx.moveTo(playerPoint.x, playerPoint.y);
-    const headingAngle = Math.atan2(headingY, headingX);
-    ctx.arc(playerPoint.x, playerPoint.y, dirLength, headingAngle - 0.5, headingAngle + 0.5);
-    ctx.closePath();
-    ctx.fill();
-
-    const arrowTipX = playerPoint.x + (headingX * 10);
-    const arrowTipY = playerPoint.y + (headingY * 10);
     const sideX = -headingY;
     const sideY = headingX;
+    const headingAngle = Math.atan2(headingY, headingX);
 
-    ctx.fillStyle = '#f2f6ff';
+    ctx.strokeStyle = 'rgba(133, 205, 245, 0.34)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(arrowTipX, arrowTipY);
-    ctx.lineTo(playerPoint.x - (headingX * 6) + (sideX * 4.2), playerPoint.y - (headingY * 6) + (sideY * 4.2));
-    ctx.lineTo(playerPoint.x - (headingX * 6) - (sideX * 4.2), playerPoint.y - (headingY * 6) - (sideY * 4.2));
+    ctx.moveTo(playerPoint.x + (headingX * 2.4), playerPoint.y + (headingY * 2.4));
+    ctx.lineTo(playerPoint.x + (headingX * dirLength), playerPoint.y + (headingY * dirLength));
+    ctx.stroke();
+
+    ctx.fillStyle = '#f4f8ff';
+    ctx.beginPath();
+    ctx.arc(playerPoint.x, playerPoint.y - 4.2, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#f4f8ff';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(playerPoint.x, playerPoint.y - 1.4);
+    ctx.lineTo(playerPoint.x, playerPoint.y + 4.3);
+    ctx.moveTo(playerPoint.x - 2.5, playerPoint.y + 0.7);
+    ctx.lineTo(playerPoint.x + 2.5, playerPoint.y + 0.7);
+    ctx.moveTo(playerPoint.x, playerPoint.y + 4.3);
+    ctx.lineTo(playerPoint.x - 2.1, playerPoint.y + 7.4);
+    ctx.moveTo(playerPoint.x, playerPoint.y + 4.3);
+    ctx.lineTo(playerPoint.x + 2.1, playerPoint.y + 7.4);
+    ctx.stroke();
+
+    ctx.fillStyle = '#9ce3ff';
+    ctx.beginPath();
+    ctx.moveTo(playerPoint.x + (headingX * 9.4), playerPoint.y + (headingY * 9.4));
+    ctx.lineTo(playerPoint.x + (headingX * 5.3) + (sideX * 1.9), playerPoint.y + (headingY * 5.3) + (sideY * 1.9));
+    ctx.lineTo(playerPoint.x + (headingX * 5.3) - (sideX * 1.9), playerPoint.y + (headingY * 5.3) - (sideY * 1.9));
     ctx.closePath();
     ctx.fill();
 
-    ctx.strokeStyle = '#9ce3ff';
-    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = 'rgba(12, 23, 36, 0.68)';
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(playerPoint.x, playerPoint.y, 2.3, 0, Math.PI * 2);
+    ctx.arc(playerPoint.x, playerPoint.y - 4.2, 2.2, 0, Math.PI * 2);
     ctx.stroke();
 
     drawMinimapCompass(playerPoint, headingRotation);

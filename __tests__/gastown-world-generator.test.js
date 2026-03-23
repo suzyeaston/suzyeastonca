@@ -292,3 +292,23 @@ test('fallback generator remains deterministic across repeated runs', () => {
   fs.rmSync(outputA, { force: true });
   fs.rmSync(outputB, { force: true });
 });
+
+
+test('fallback world splits Water Street roadway around the Cambie intersection and sanitizes zone polygons', () => {
+  const root = path.resolve(__dirname, '..');
+  const data = JSON.parse(fs.readFileSync(path.join(root, 'assets', 'world', 'gastown-water-street.json'), 'utf8'));
+
+  const streetIds = new Set(data.zones.street.map((zone) => zone.id));
+  assert.equal(streetIds.has('water-street-west-roadway'), true);
+  assert.equal(streetIds.has('water-street-east-roadway'), true);
+  assert.equal(streetIds.has('water-cambie-intersection-roadway'), true);
+
+  data.zones.street.concat(data.zones.sidewalk).forEach((zone) => {
+    const polygon = zone.polygon;
+    assert.ok(Array.isArray(polygon) && polygon.length >= 4, zone.id + ' should keep a closed polygon');
+    const first = polygon[0];
+    const last = polygon[polygon.length - 1];
+    assert.equal(first.x, last.x, zone.id + ' should be explicitly closed on x');
+    assert.equal(first.z, last.z, zone.id + ' should be explicitly closed on z');
+  });
+});

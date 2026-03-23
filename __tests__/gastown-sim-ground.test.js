@@ -66,3 +66,23 @@ test('heading-up minimap derives heading from rendered world direction instead o
   assert.doesNotMatch(src, /baseForward\.clone\(\)\.applyAxisAngle/);
   assert.match(src, /const headingRotation = minimapState\.mode === 'heading-up' \? \(-Math\.atan2\(-heading\.z, heading\.x\) - \(Math\.PI \/ 2\)\) : 0;/);
 });
+
+
+test('minimap player marker renders as a tiny person with a forward cue instead of a wedge', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const src = fs.readFileSync(simPath, 'utf8');
+
+  assert.match(src, /ctx\.arc\(playerPoint\.x, playerPoint\.y - 4\.2, 2\.2, 0, Math\.PI \* 2\)/);
+  assert.match(src, /ctx\.moveTo\(playerPoint\.x, playerPoint\.y - 1\.4\);\s*ctx\.lineTo\(playerPoint\.x, playerPoint\.y \+ 4\.3\);/s);
+  assert.match(src, /ctx\.moveTo\(playerPoint\.x \+ \(headingX \* 9\.4\), playerPoint\.y \+ \(headingY \* 9\.4\)\);/);
+  assert.doesNotMatch(src, /ctx\.arc\(playerPoint\.x, playerPoint\.y, dirLength, headingAngle - 0\.5, headingAngle \+ 0\.5\)/);
+});
+
+test('ground meshes sanitize malformed polygon rings before building shape geometry', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const src = fs.readFileSync(simPath, 'utf8');
+
+  assert.match(src, /function sanitizePolygon\(points\) \{/);
+  assert.match(src, /const shape = toShape\(points\);\s*if \(!shape\) \{\s*return null;\s*\}/s);
+  assert.match(src, /if \(cleaned.length >= 3 && polygonSignedArea\(cleaned\) < 0\) \{\s*cleaned\.reverse\(\);\s*\}/s);
+});
