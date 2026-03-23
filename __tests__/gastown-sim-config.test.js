@@ -36,6 +36,10 @@ test('simulator page exposes aligned supported mood options and daytime defaults
     assert.match(php, new RegExp(`<option value="${mood}"`));
   });
   assert.match(php, /<option value="calm" selected>Calm<\/option>/);
+  assert.match(php, /data-sim-world-status/);
+  assert.match(php, /data-sim-minimap-mode-status/);
+  assert.match(php, /Route line/);
+  assert.match(php, /Sidewalk \/ plaza/);
   assert.doesNotMatch(php, /<option value="quiet"/);
   assert.doesNotMatch(php, /<option value="nightlife"/);
 });
@@ -46,7 +50,8 @@ test('clock chime system initializes or fails softly without blocking startup', 
 
   assert.match(src, /function unlockSteamClockAudio\(\)/);
   assert.match(src, /function ensureNpcLoop\(npcState\)/);
-  assert.match(src, /Tone\.PluckSynth/);
+  assert.match(src, /Tone\.PolySynth/);
+  assert.match(src, /Tone\.MembraneSynth/);
   assert.doesNotMatch(src, /oscillator\.type = 'triangle'/);
   assert.doesNotMatch(src, /overtone\.type = 'sine'/);
   assert.match(src, /return false;\n\s*}\n\s*try \{/s);

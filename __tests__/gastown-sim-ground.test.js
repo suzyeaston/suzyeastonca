@@ -215,10 +215,20 @@ test('minimap player marker renders as a tiny person with a forward cue instead 
   const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
   const src = fs.readFileSync(simPath, 'utf8');
 
-  assert.match(src, /ctx\.arc\(playerPoint\.x, playerPoint\.y - 4\.2, 2\.2, 0, Math\.PI \* 2\)/);
+  assert.match(src, /ctx\.arc\(playerPoint\.x, playerPoint\.y - 4\.2, 2\.8, 0, Math\.PI \* 2\)/);
   assert.match(src, /ctx\.moveTo\(playerPoint\.x, playerPoint\.y - 1\.4\);\s*ctx\.lineTo\(playerPoint\.x, playerPoint\.y \+ 4\.3\);/s);
   assert.match(src, /ctx\.moveTo\(playerPoint\.x \+ \(headingX \* 9\.4\), playerPoint\.y \+ \(headingY \* 9\.4\)\);/);
   assert.doesNotMatch(src, /ctx\.arc\(playerPoint\.x, playerPoint\.y, dirLength, headingAngle - 0\.5, headingAngle \+ 0\.5\)/);
+});
+
+test('minimap mode control includes a plain-language status label for north-up and heading-up', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const src = fs.readFileSync(simPath, 'utf8');
+
+  assert.match(src, /const minimapModeStatusEl = app\.querySelector\('\[data-sim-minimap-mode-status\]'\);/);
+  assert.match(src, /minimapModeBtn\.dataset\.minimapMode = minimapState\.mode;/);
+  assert.match(src, /Heading-up — the top of the map follows the way you are facing\./);
+  assert.match(src, /North-up — the top of the map is geographic north\./);
 });
 
 test('ground meshes sanitize malformed polygon rings before building shape geometry', () => {

@@ -1137,6 +1137,7 @@ function makeStarterWorld(outputPath, options = {}) {
     routeId: 'gastown_water_street_working_corridor',
     meta: {
       title: 'Gastown Working Corridor (deterministic fallback)', units: 'meters', source: 'deterministic fallback with optional open reference inputs', fallbackMode: 'working-gastown-corridor', isRealCivicBuild: false,
+      buildClassification: 'approximate-fallback',
       buildNotes: [
         'Working fallback corridor is active because required offline civic source files are missing.',
         'This fallback now stages Water Street, a real Water/Cambie corner condition, and a Steam Clock plaza pad outside the carriageway instead of a single bent ribbon corridor.',
@@ -1151,6 +1152,7 @@ function makeStarterWorld(outputPath, options = {}) {
         buildingFootprints2015: !!(reference.buildingFootprints2015 && Array.isArray(reference.buildingFootprints2015.features) && reference.buildingFootprints2015.features.length),
         orthophotoImagery2015: !!(reference.orthophotoImagery2015 && Array.isArray(reference.orthophotoImagery2015.features) && reference.orthophotoImagery2015.features.length),
       },
+      provenanceSummary: 'Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs.',
       lastBuild: new Date().toISOString(),
     },
     route: { name: 'Waterfront Station → Water Street → Steam Clock working corridor', centerline, walkBounds, streetWidth, sidewalkWidth, softBoundary, hardResetDistance: 12 },
@@ -1489,6 +1491,7 @@ function buildWorld(options = {}) {
       title: existingMeta.title || 'Waterfront Station to Steam Clock Corridor',
       units: 'meters',
       source: 'Offline City of Vancouver Open Data exports',
+      buildClassification: 'offline-civic-build',
       lastBuild: new Date().toISOString(),
       importManifest: existingMeta.importManifest || {
         inputs: {
@@ -1525,6 +1528,7 @@ function buildWorld(options = {}) {
         buildingFootprints2015: (buildingsPath || '').includes('building-footprints-2015.geojson'),
         orthophotoImagery2015: fs.existsSync(path.join(root, 'data', 'cov', 'orthophoto-imagery-2015.geojson')),
       },
+      provenanceSummary: 'Offline civic-data build generated from local source exports and normalized for the runtime simulator.',
     },
     route: {
       ...(existingWorld.route || {}),

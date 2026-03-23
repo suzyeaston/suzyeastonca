@@ -36,6 +36,7 @@
 
   const canvasWrap = app.querySelector('[data-sim-canvas]');
   const pointerStatusEl = app.querySelector('[data-sim-pointer-status]');
+  const worldStatusEl = app.querySelector('[data-sim-world-status]');
   const landmarkEl = app.querySelector('[data-sim-landmark]');
   const pauseBtn = app.querySelector('[data-action="pause"]');
   const resetBtn = app.querySelector('[data-action="reset"]');
@@ -47,6 +48,7 @@
   const routeDebugOverlay = app.querySelector('[data-route-debug-overlay]');
   const minimapCanvas = app.querySelector('[data-sim-minimap]');
   const minimapLandmarkEl = app.querySelector('[data-sim-minimap-landmark]');
+  const minimapModeStatusEl = app.querySelector('[data-sim-minimap-mode-status]');
   const routeSegmentEl = app.querySelector('[data-sim-route-segment]');
   const minimapZoomInBtn = app.querySelector('[data-action="minimap-zoom-in"]');
   const minimapZoomOutBtn = app.querySelector('[data-action="minimap-zoom-out"]');
@@ -124,6 +126,7 @@
     clockTimer: null,
     boundaryNoticeTimer: null,
     audioWarningIssued: false,
+    worldBuildStatus: null,
   };
 
   const DEFAULT_EYE_HEIGHT = 1.7;
@@ -358,12 +361,40 @@
     landmarkEl.textContent = text;
   }
 
+  function isApproximateWorld(world) {
+    return !!(world && world.meta && (
+      world.meta.fallbackMode === 'working-gastown-corridor'
+      || world.meta.runtimeFallbackActive
+      || world.meta.isRealCivicBuild === false
+    ));
+  }
+
+  function getOpenDataCoverageSummary(meta) {
+    const inputs = meta && meta.openDataInputs && typeof meta.openDataInputs === 'object' ? meta.openDataInputs : {};
+    const values = Object.keys(inputs).map((key) => !!inputs[key]);
+    if (!values.length) return '0/0 civic inputs';
+    const enabled = values.filter(Boolean).length;
+    return enabled + '/' + values.length + ' civic inputs';
+  }
+
   function setWorldModeStatus(world) {
     if (!world || !world.meta) return;
-    const isWorkingFallback = world.meta.fallbackMode === 'working-gastown-corridor' || world.meta.runtimeFallbackActive || world.meta.isRealCivicBuild === false;
-    if (!isWorkingFallback) return;
+    const approximate = isApproximateWorld(world);
     const buildNote = (world.meta.buildNotes && world.meta.buildNotes[0]) || 'Working fallback Gastown corridor active.';
-    setStatus('Working fallback Gastown corridor active: ' + buildNote);
+    const coverage = getOpenDataCoverageSummary(world.meta);
+    state.worldBuildStatus = approximate
+      ? 'Approximate fallback build: ' + buildNote + ' (' + coverage + ').'
+      : 'Offline civic-data build loaded with ' + coverage + '.';
+
+    if (worldStatusEl) {
+      worldStatusEl.textContent = 'World data status: ' + state.worldBuildStatus;
+      worldStatusEl.classList.toggle('is-approximate', approximate);
+      worldStatusEl.classList.toggle('is-civic', !approximate);
+    }
+
+    if (approximate) {
+      setStatus('Approximate fallback world loaded. This playable corridor is believable, but not survey-precise.');
+    }
   }
 
   function updateAttribution(world) {
@@ -512,6 +543,9 @@
       color: baseColor,
       roughness: roughness,
       metalness: metalness,
+      polygonOffset: true,
+      polygonOffsetFactor: kind === 'street' ? 1 : 0.5,
+      polygonOffsetUnits: kind === 'street' ? 1 : 0.5,
     }, maps));
   }
 
@@ -557,10 +591,10 @@
       const segmentLength = Math.max(8.5, Math.min(18, Math.hypot(anchor.x - point.x, anchor.z - point.z) * 0.96 || 10));
       const steamZone = point.id === 'steam-clock' || index >= Math.max(1, centerline.length - 4);
 
-      bands.push({ segment_id: point.id, width: streetWidth * 0.94, length: segmentLength * 1.02, yaw: heading, offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.18, elevation: 0.012 });
-      bands.push({ segment_id: point.id, width: streetWidth * 0.3, length: Math.max(6.8, segmentLength * 0.78), yaw: heading, offset_x: 0, offset_z: 0, tone: steamZone ? 'intersection_pavers' : 'wheel_track', opacity: steamZone ? 0.16 : 0.1, elevation: 0.016 });
-      bands.push({ segment_id: point.id, width: streetWidth * 0.14, length: Math.max(5, segmentLength * 0.72), yaw: heading, offset_x: streetWidth * 0.33, offset_z: 0, tone: 'curb_grime', opacity: 0.12, elevation: 0.02 });
-      bands.push({ segment_id: point.id, width: streetWidth * 0.14, length: Math.max(5, segmentLength * 0.72), yaw: heading, offset_x: -streetWidth * 0.33, offset_z: 0, tone: 'curb_grime', opacity: 0.12, elevation: 0.02 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.96, length: segmentLength * 1.04, yaw: heading, offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.26, elevation: 0.012 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.34, length: Math.max(6.8, segmentLength * 0.82), yaw: heading, offset_x: 0, offset_z: 0, tone: steamZone ? 'intersection_pavers' : 'wheel_track', opacity: steamZone ? 0.24 : 0.2, elevation: 0.016 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.17, length: Math.max(5.8, segmentLength * 0.76), yaw: heading, offset_x: streetWidth * 0.34, offset_z: 0, tone: 'curb_grime', opacity: 0.2, elevation: 0.025 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.17, length: Math.max(5.8, segmentLength * 0.76), yaw: heading, offset_x: -streetWidth * 0.34, offset_z: 0, tone: 'curb_grime', opacity: 0.2, elevation: 0.025 });
 
       if (steamZone) {
         bands.push({ segment_id: point.id, width: streetWidth * 0.66, length: Math.max(5.2, segmentLength * 0.34), yaw: heading, offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.12, elevation: 0.02 });
@@ -1157,12 +1191,29 @@
     }
     try {
       state.sounds.npcAudio[npcState.id] = {
-        mode: 'sparse_busker_motif',
-        radius: 10.5,
+        mode: 'busker_soft_duet',
+        radius: 11.5,
         lastGestureAt: -Infinity,
         nextGestureAt: 0,
-        synth: new Tone.PluckSynth({ attackNoise: 0.7, dampening: 2800, resonance: 0.8 }).toDestination(),
-        motif: ['G3', 'B3', 'D4', 'G4'],
+        intervalSeconds: 5.6,
+        chordIndex: 0,
+        synth: new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: 'triangle6' },
+          envelope: { attack: 0.02, decay: 0.3, sustain: 0.18, release: 1.6 },
+          volume: -24,
+        }).toDestination(),
+        accent: new Tone.MembraneSynth({
+          pitchDecay: 0.05,
+          octaves: 2,
+          envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.08 },
+          volume: -34,
+        }).toDestination(),
+        motif: [
+          ['G3', 'D4', 'B4'],
+          ['E3', 'B3', 'G4'],
+          ['C4', 'G4', 'E4'],
+          ['D3', 'A3', 'F#4'],
+        ],
       };
     } catch (error) {
       state.sounds.npcAudio[npcState.id] = { muted: true, mode: 'silent_busker' };
@@ -1177,16 +1228,20 @@
       visual.position.set(start.x, 0, start.z);
       worldGroup.add(visual);
       const swaySeed = deterministicUnit(npc.id + '-sway');
+      const startYaw = typeof npc.yaw === 'number' ? npc.yaw : deterministicUnit(npc.id + '-yaw') * Math.PI * 2;
       const npcState = Object.assign({
         mesh: visual,
         patrolIndex: 0,
         direction: 1,
         baseY: 0,
+        baseYaw: startYaw,
+        currentYaw: startYaw,
         speed: npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : npc.role === 'guide' ? 0.18 : npc.role === 'skateboarder' ? 2.35 : npc.role === 'cyclist' ? 3.1 : 0,
         pauseUntil: 0,
         animPhase: swaySeed * Math.PI * 2,
-        swayAmount: 0.018 + (swaySeed * 0.028),
+        swayAmount: 0.012 + (swaySeed * 0.014),
       }, npc);
+      visual.rotation.y = startYaw;
       ensureNpcLoop(npcState);
       visualState.npcMeshes.push(visual);
       return npcState;
@@ -1218,13 +1273,14 @@
           const step = Math.min(distance, npc.speed * delta);
           npc.mesh.position.x += (dx / distance) * step;
           npc.mesh.position.z += (dz / distance) * step;
-          npc.mesh.rotation.y = Math.atan2(dx, dz);
+          const desiredYaw = Math.atan2(dx, dz);
+          npc.currentYaw += THREE.MathUtils.clamp(desiredYaw - npc.currentYaw, -0.08, 0.08);
         }
       } else if (npc.idleSpot) {
         npc.mesh.position.x = npc.idleSpot.x;
         npc.mesh.position.z = npc.idleSpot.z;
         if (npc.behavior === 'photo_idle') {
-          npc.mesh.rotation.y = -0.45;
+          npc.currentYaw = -0.45;
         }
       }
 
@@ -1254,8 +1310,9 @@
           rig.heldProp.rotation.x = npc.pose === 'taking_photo' ? -0.42 : -0.18;
         }
       }
+      npc.currentYaw = Number.isFinite(npc.currentYaw) ? npc.currentYaw : (npc.baseYaw || 0);
       if (npc.role === 'busker') {
-        npc.mesh.rotation.y += Math.sin((nowSeconds * 1.3) + npc.animPhase) * 0.002;
+        npc.currentYaw = (npc.baseYaw || 0) + (Math.sin((nowSeconds * 1.3) + npc.animPhase) * 0.01);
       }
       if (rollingMover) {
         npc.mesh.rotation.z = Math.sin((nowSeconds * (npc.role === 'cyclist' ? 1.8 : 2.6)) + npc.animPhase) * (npc.role === 'cyclist' ? 0.012 : 0.028);
@@ -1268,22 +1325,27 @@
         }
       }
       if (npc.pose === 'being_photographed') {
-        npc.mesh.rotation.y = -0.24;
+        npc.currentYaw = -0.24;
       }
       if (npc.pose === 'group_gather' || npc.pose === 'gathered') {
-        npc.mesh.rotation.y += Math.sin((nowSeconds * 0.8) + npc.animPhase) * 0.0015;
+        npc.currentYaw += Math.sin((nowSeconds * 0.8) + npc.animPhase) * 0.0015;
       }
+      npc.mesh.rotation.y = npc.currentYaw;
 
       const loop = state.sounds.npcAudio[npc.id];
-      if (loop && loop.mode === 'sparse_busker_motif' && loop.synth && state.steamClockState.enabled) {
+      if (loop && loop.mode === 'busker_soft_duet' && loop.synth && state.steamClockState.enabled) {
         const distance = Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z);
-        const nearFactor = Math.max(0, 1 - (distance / (loop.radius || 10.5)));
-        if (nearFactor > 0.2 && nowSeconds >= (loop.nextGestureAt || 0)) {
-          const noteIndex = Math.floor(deterministicUnit(npc.id + ':' + Math.floor(nowSeconds / 3)) * loop.motif.length) % loop.motif.length;
+        const nearFactor = Math.max(0, 1 - (distance / (loop.radius || 11.5)));
+        if (nearFactor > 0.24 && nowSeconds >= (loop.nextGestureAt || 0)) {
+          const chord = loop.motif[loop.chordIndex % loop.motif.length];
           try {
-            loop.synth.triggerAttackRelease(loop.motif[noteIndex], '16n', getTone().now(), -18 + (nearFactor * 4));
+            loop.synth.triggerAttackRelease(chord, '2n', getTone().now(), 0.28 + (nearFactor * 0.16));
+            if (loop.accent) {
+              loop.accent.triggerAttackRelease('G2', '16n', getTone().now() + 0.02, 0.08 + (nearFactor * 0.08));
+            }
             loop.lastGestureAt = nowSeconds;
-            loop.nextGestureAt = nowSeconds + 4.2 + (deterministicUnit(npc.id + '-gesture-' + Math.floor(nowSeconds)) * 2.4);
+            loop.chordIndex = (loop.chordIndex + 1) % loop.motif.length;
+            loop.nextGestureAt = nowSeconds + loop.intervalSeconds + (deterministicUnit(npc.id + '-gesture-' + Math.floor(nowSeconds)) * 0.9);
           } catch (error) {
             warnAudioUnavailable('Busker motif playback failed; simulator continuing without busker audio.', error);
             loop.mode = 'silent_busker';
@@ -2452,12 +2514,18 @@
     }
     const isHeadingUp = minimapState.mode === 'heading-up';
     minimapModeBtn.textContent = isHeadingUp ? 'Heading up' : 'North up';
+    minimapModeBtn.dataset.minimapMode = minimapState.mode;
     minimapModeBtn.setAttribute('aria-pressed', isHeadingUp ? 'true' : 'false');
     minimapModeBtn.setAttribute(
       'aria-label',
       isHeadingUp ? 'Switch minimap to north-up mode' : 'Switch minimap to heading-up mode'
     );
     minimapModeBtn.title = isHeadingUp ? 'Switch minimap to north-up mode' : 'Switch minimap to heading-up mode';
+    if (minimapModeStatusEl) {
+      minimapModeStatusEl.innerHTML = isHeadingUp
+        ? '<strong>Map mode:</strong> Heading-up — the top of the map follows the way you are facing.'
+        : '<strong>Map mode:</strong> North-up — the top of the map is geographic north.';
+    }
   }
 
   function setMinimapMode(nextMode) {
@@ -2795,19 +2863,34 @@
     ctx.strokeRect(0.5, 0.5, minimapState.width - 1, minimapState.height - 1);
 
     (state.world.zones.sidewalk || []).forEach((zone) => {
-      drawPolygon(zone.polygon, metrics, pad, '#3f4d60', 'rgba(136, 161, 188, 0.4)', 1, view, projectionOptions);
+      drawPolygon(zone.polygon, metrics, pad, '#5d7083', 'rgba(211, 226, 242, 0.5)', 1.2, view, projectionOptions);
     });
     (state.world.zones.street || []).forEach((zone) => {
-      drawPolygon(zone.polygon, metrics, pad, '#1b2735', 'rgba(125, 148, 173, 0.45)', 1.1, view, projectionOptions);
+      drawPolygon(zone.polygon, metrics, pad, '#1a2f41', 'rgba(86, 117, 149, 0.68)', 1.15, view, projectionOptions);
     });
 
     (state.world.buildings || []).forEach((building) => {
-      drawPolygon(getBuildingPolygon(building), metrics, pad, '#6f5047', 'rgba(219, 194, 173, 0.24)', 0.8, view, projectionOptions);
+      drawPolygon(getBuildingPolygon(building), metrics, pad, '#7d5e53', 'rgba(245, 218, 197, 0.34)', 0.95, view, projectionOptions);
     });
 
     if (state.world.navigator && Array.isArray(state.world.navigator.focusCorridor) && state.world.navigator.focusCorridor.length) {
-      ctx.strokeStyle = 'rgba(197, 154, 95, 0.55)';
-      ctx.lineWidth = 1.3;
+      ctx.strokeStyle = 'rgba(255, 194, 112, 0.92)';
+      ctx.lineWidth = 2.8;
+      state.world.navigator.focusCorridor.forEach((corridor) => {
+        if (!Array.isArray(corridor.points) || corridor.points.length < 2) return;
+        ctx.beginPath();
+        corridor.points.forEach((point, index) => {
+          const mini = projectWorldToMinimap(point, metrics, pad, view, projectionOptions);
+          if (index === 0) {
+            ctx.moveTo(mini.x, mini.y);
+          } else {
+            ctx.lineTo(mini.x, mini.y);
+          }
+        });
+        ctx.stroke();
+      });
+      ctx.strokeStyle = 'rgba(74, 35, 6, 0.3)';
+      ctx.lineWidth = 1.05;
       state.world.navigator.focusCorridor.forEach((corridor) => {
         if (!Array.isArray(corridor.points) || corridor.points.length < 2) return;
         ctx.beginPath();
@@ -2824,9 +2907,9 @@
     }
 
     if (state.world.route && Array.isArray(state.world.route.centerline) && state.world.route.centerline.length > 1) {
-      ctx.strokeStyle = 'rgba(158, 212, 240, 0.48)';
-      ctx.setLineDash([5, 4]);
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = 'rgba(179, 234, 255, 0.68)';
+      ctx.setLineDash([6, 4]);
+      ctx.lineWidth = 1.6;
       ctx.beginPath();
       state.world.route.centerline.forEach((point, index) => {
         const mini = projectWorldToMinimap(point, metrics, pad, view, projectionOptions);
@@ -2846,7 +2929,7 @@
       const mini = projectWorldToMinimap(node, metrics, pad, view, projectionOptions);
       ctx.fillStyle = node.id === 'steam-clock' ? '#d8a968' : node.id === 'water-cambie-intersection' ? '#9cc7e4' : '#b7d4ea';
       ctx.beginPath();
-      ctx.arc(mini.x, mini.y, node.id === 'steam-clock' ? 4.6 : 3.8, 0, Math.PI * 2);
+      ctx.arc(mini.x, mini.y, node.id === 'steam-clock' ? 5.2 : 4.1, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = 'rgba(228, 240, 255, 0.92)';
@@ -2867,28 +2950,28 @@
       }
     });
 
-    const dirLength = 11;
+    const dirLength = 13;
     const headingX = minimapState.mode === 'heading-up' ? 0 : heading.x;
     const headingY = minimapState.mode === 'heading-up' ? -1 : -heading.z;
     const sideX = -headingY;
     const sideY = headingX;
     const headingAngle = Math.atan2(headingY, headingX);
 
-    ctx.strokeStyle = 'rgba(133, 205, 245, 0.34)';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(110, 212, 255, 0.6)';
+    ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(playerPoint.x + (headingX * 2.4), playerPoint.y + (headingY * 2.4));
     ctx.lineTo(playerPoint.x + (headingX * dirLength), playerPoint.y + (headingY * dirLength));
     ctx.stroke();
 
-    ctx.fillStyle = '#f4f8ff';
+    ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(playerPoint.x, playerPoint.y - 4.2, 2.2, 0, Math.PI * 2);
+    ctx.arc(playerPoint.x, playerPoint.y - 4.2, 2.8, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.strokeStyle = '#f4f8ff';
-    ctx.lineWidth = 1.8;
+    ctx.lineWidth = 2.2;
     ctx.beginPath();
     ctx.moveTo(playerPoint.x, playerPoint.y - 1.4);
     ctx.lineTo(playerPoint.x, playerPoint.y + 4.3);
@@ -2911,7 +2994,7 @@
     ctx.strokeStyle = 'rgba(12, 23, 36, 0.68)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(playerPoint.x, playerPoint.y - 4.2, 2.2, 0, Math.PI * 2);
+    ctx.arc(playerPoint.x, playerPoint.y - 4.2, 2.8, 0, Math.PI * 2);
     ctx.stroke();
 
     if (state.debugEnabled) {

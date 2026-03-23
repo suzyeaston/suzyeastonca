@@ -51,6 +51,8 @@ test('normalizeWorldData adds safe defaults for missing optional sections', () =
   assert.equal(Array.isArray(normalized.streetscape.surfaceBands), true);
   assert.equal(Array.isArray(normalized.props), true);
   assert.equal(Array.isArray(normalized.npcs), true);
+  assert.equal(normalized.meta.buildClassification, 'offline-civic-build');
+  assert.match(normalized.meta.provenanceSummary, /Offline civic-data build normalized for runtime use\./);
 });
 
 test('starter-like world with no landmarks or audioZones normalizes without crashing', () => {
@@ -65,6 +67,20 @@ test('starter-like world with no landmarks or audioZones normalizes without cras
   assert.equal(Array.isArray(normalized.audioZones), true);
   assert.equal(normalized.landmarks.length, 0);
   assert.equal(normalized.audioZones.length, 0);
+});
+
+test('normalizeWorldData preserves explicit fallback provenance metadata for runtime disclosure', () => {
+  const normalizeWorldData = loadNormalizeWorldData();
+  const normalized = normalizeWorldData(minimalValidWorld({
+    meta: {
+      isRealCivicBuild: false,
+      openDataInputs: { publicStreets: false },
+    },
+  }));
+
+  assert.equal(normalized.meta.buildClassification, 'approximate-fallback');
+  assert.match(normalized.meta.provenanceSummary, /Approximate fallback corridor retained/);
+  assert.deepEqual(normalized.meta.openDataInputs, { publicStreets: false });
 });
 
 test('normalizeWorldData guarantees required mood/weather/time presets and fields', () => {

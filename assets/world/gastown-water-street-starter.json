@@ -20,7 +20,9 @@
       "buildingFootprints2015": false,
       "orthophotoImagery2015": false
     },
-    "lastBuild": "2026-03-23T02:35:15.805Z"
+    "lastBuild": "2026-03-23T02:35:15.805Z",
+    "buildClassification": "approximate-fallback",
+    "provenanceSummary": "Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs."
   },
   "route": {
     "name": "Waterfront Station → Water Street → Steam Clock working corridor",

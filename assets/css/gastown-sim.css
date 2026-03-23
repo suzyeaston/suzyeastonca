@@ -97,12 +97,31 @@
 }
 
 .gastown-status,
+.gastown-world-status,
 .gastown-pointer-status,
 .gastown-landmark,
 .gastown-route-segment {
   padding: 0.2rem 0.55rem;
   border-left: 2px solid rgba(192, 211, 237, 0.45);
   background: rgba(10, 14, 22, 0.35);
+}
+
+.gastown-world-status {
+  margin-top: 0.35rem;
+  border-left-color: rgba(255, 196, 120, 0.88);
+  background: rgba(39, 24, 7, 0.42);
+  color: #ffe2bf;
+}
+
+.gastown-world-status.is-approximate {
+  border-left-color: #ffbf7c;
+  box-shadow: inset 0 0 0 1px rgba(255, 191, 124, 0.14);
+}
+
+.gastown-world-status.is-civic {
+  border-left-color: rgba(149, 234, 199, 0.88);
+  background: rgba(12, 35, 28, 0.38);
+  color: #dcfff2;
 }
 
 .gastown-pointer-status {
@@ -148,6 +167,7 @@
   width: 100%;
   height: auto;
   border-radius: 8px;
+  border: 1px solid rgba(172, 201, 230, 0.24);
 }
 
 .gastown-minimap-label {
@@ -155,6 +175,21 @@
   font-size: 0.75rem;
   line-height: 1.2;
   color: #dbe9ff;
+}
+
+.gastown-minimap-mode-status {
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  border-radius: 8px;
+  background: rgba(18, 28, 41, 0.96);
+  border: 1px solid rgba(126, 178, 226, 0.24);
+  color: #ecf5ff;
+  font-size: 0.71rem;
+  line-height: 1.35;
+}
+
+.gastown-minimap-mode-status strong {
+  color: #9ed6ff;
 }
 
 @media (max-width: 740px) {
@@ -192,6 +227,17 @@
 .gastown-minimap-mode {
   min-width: 5.6rem;
   padding: 0 0.55rem;
+}
+
+.gastown-minimap-mode[data-minimap-mode="north-up"] {
+  border-color: rgba(137, 189, 245, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(137, 189, 245, 0.18);
+}
+
+.gastown-minimap-mode[data-minimap-mode="heading-up"] {
+  border-color: rgba(255, 197, 126, 0.78);
+  color: #fff3de;
+  box-shadow: inset 0 0 0 1px rgba(255, 197, 126, 0.18);
 }
 
 .gastown-minimap-zoom {
@@ -235,7 +281,19 @@
 }
 
 .gastown-minimap-legend .dot.player {
-  background: #f2f6ff;
+  background: radial-gradient(circle at 35% 35%, #ffffff 0, #b7ecff 58%, #3f8fca 100%);
+}
+
+.gastown-minimap-legend .dot.route {
+  background: #ffd28f;
+}
+
+.gastown-minimap-legend .dot.sidewalk {
+  background: #6c7f95;
+}
+
+.gastown-minimap-legend .dot.street {
+  background: #203344;
 }
 
 .gastown-minimap-legend .dot.station {

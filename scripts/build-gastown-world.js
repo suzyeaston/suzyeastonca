@@ -34,6 +34,7 @@ const importManifest = {
     '5) fit nearby building footprints and optional streetscape points',
     '6) write compact runtime JSON (no external dependencies)',
   ],
+  fallbackDisclosure: 'If required local civic/open-data files are missing, the build intentionally keeps the deterministic working corridor fallback and should disclose that approximation in the runtime UI.',
 };
 
 const referenceTemplate = {
@@ -69,6 +70,10 @@ function runScaffold() {
     'Supports hero_landmarks + facade_profiles to prioritize recognizability over photoreal detail.',
     'Scaffold includes reference-driven world notes for segment style, silhouette, and storefront cadence.',
   ];
+  world.meta.buildClassification = world.meta.isRealCivicBuild === false ? 'approximate-fallback' : 'offline-civic-build';
+  world.meta.provenanceSummary = world.meta.isRealCivicBuild === false
+    ? 'Approximate fallback corridor retained because civic/open-data inputs were unavailable at build time.'
+    : 'Offline civic/open-data build generated from local source exports.';
   world.meta.importManifest = world.meta.importManifest || importManifest;
 
   (world.buildings || []).forEach((building) => applyReferenceScaffold(building));
@@ -91,6 +96,7 @@ function run() {
 
   process.stdout.write('Offline source data missing; keeping scaffold behavior.\n');
   process.stdout.write(generated.reason + '\n');
+  process.stdout.write('Expected local inputs are documented in meta.importManifest and any retained fallback build should stay visibly disclosed in the simulator UI.\n');
   runScaffold();
 }
 
