@@ -49,6 +49,7 @@
   const minimapCanvas = app.querySelector('[data-sim-minimap]');
   const minimapLandmarkEl = app.querySelector('[data-sim-minimap-landmark]');
   const minimapModeStatusEl = app.querySelector('[data-sim-minimap-mode-status]');
+  const minimapContextEl = app.querySelector('[data-sim-minimap-context]');
   const routeSegmentEl = app.querySelector('[data-sim-route-segment]');
   const minimapZoomInBtn = app.querySelector('[data-action="minimap-zoom-in"]');
   const minimapZoomOutBtn = app.querySelector('[data-action="minimap-zoom-out"]');
@@ -242,6 +243,7 @@
     height: minimapCanvas ? minimapCanvas.height : 0,
     worldMetrics: null,
     nearestNode: null,
+    nearestGuidance: null,
     zoom: 1.2,
     minZoom: 0.8,
     maxZoom: 3.2,
@@ -2414,7 +2416,108 @@
     flashBoundaryStatus((state.world.bounds && state.world.bounds.edgeMessage) || 'Stayed inside the route corridor.');
   }
 
+  function getFacingLabel(heading) {
+    const normalized = heading || getHeadingVector();
+    const angle = (Math.atan2(normalized.x, -normalized.z) * (180 / Math.PI) + 360) % 360;
+    const cardinals = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+    return cardinals[Math.round(angle / 45) % cardinals.length];
+  }
+
+  function classifyRelativeDirection(target, heading, origin = player.position) {
+    if (!target || !heading || !origin) {
+      return { bucket: 'ahead', angle: 0, distance: 0, rightDot: 0, forwardDot: 1 };
+    }
+    const offsetX = target.x - origin.x;
+    const offsetZ = target.z - origin.z;
+    const distance = Math.hypot(offsetX, offsetZ);
+    if (distance < 1e-6) {
+      return { bucket: 'ahead', angle: 0, distance, rightDot: 0, forwardDot: 1 };
+    }
+    const dirX = offsetX / distance;
+    const dirZ = offsetZ / distance;
+    const right = { x: -heading.z, z: heading.x };
+    const forwardDot = (heading.x * dirX) + (heading.z * dirZ);
+    const rightDot = (right.x * dirX) + (right.z * dirZ);
+    const angle = Math.atan2(rightDot, forwardDot);
+    const bucketIndex = Math.round(angle / (Math.PI / 4));
+    const directionBuckets = ['ahead', 'ahead-right', 'right', 'behind-right', 'behind', 'behind-left', 'left', 'ahead-left'];
+    return {
+      bucket: directionBuckets[(bucketIndex + directionBuckets.length) % directionBuckets.length],
+      angle,
+      distance,
+      rightDot,
+      forwardDot,
+    };
+  }
+
+  function getLandmarkContextNote(landmark, world) {
+    if (!landmark || !world) {
+      return '';
+    }
+    if (landmark.id === 'steam-clock') {
+      return 'on the plaza side';
+    }
+    if (landmark.id === 'water-cambie-intersection') {
+      return 'at the crossing';
+    }
+    if (landmark.id === 'waterfront-station-threshold') {
+      return 'by the station entrance';
+    }
+    const corridor = getCanonicalCorridorSegment(world);
+    if (!corridor) {
+      return '';
+    }
+    const side = classifyCorridorSide(landmark, corridor, corridor.end).side;
+    if (side === 'right') {
+      return 'on the curb side';
+    }
+    if (side === 'left') {
+      return 'across the corridor';
+    }
+    return '';
+  }
+
+  function describeLandmarkGuidance(landmark, heading, world, origin = player.position) {
+    if (!landmark) {
+      return null;
+    }
+    const relative = classifyRelativeDirection(landmark, heading, origin);
+    const context = getLandmarkContextNote(landmark, world);
+    return {
+      landmark,
+      relative,
+      facing: getFacingLabel(heading),
+      text: landmark.label + ' — ' + relative.bucket + (context ? ' ' + context : ''),
+      shortText: landmark.label + ' — ' + relative.bucket,
+      context,
+    };
+  }
+
+  function getGuidanceLandmarks(world) {
+    if (!world) {
+      return [];
+    }
+    const landmarkIds = ['steam-clock', 'waterfront-station-threshold', 'water-cambie-intersection', 'water-street-mid-block'];
+    return landmarkIds.map((id) => getLandmarkById(world, id)).filter(Boolean);
+  }
+
+  function updateMinimapContext() {
+    const heading = getHeadingVector();
+    const facing = getFacingLabel(heading);
+    const nearest = minimapState.nearestGuidance;
+    if (minimapContextEl) {
+      minimapContextEl.innerHTML = '<strong>Now facing:</strong> ' + facing + (nearest ? '<br><strong>Nearest landmark:</strong> ' + nearest.text : '');
+    }
+    if (minimapModeStatusEl) {
+      const isHeadingUp = minimapState.mode === 'heading-up';
+      minimapModeStatusEl.innerHTML = isHeadingUp
+        ? '<strong>Map mode:</strong> Heading-up — the top of the map follows the way you are facing.<br><strong>Guidance:</strong> Landmark callouts stay player-relative (ahead/left/right) for first-person wayfinding.'
+        : '<strong>Map mode:</strong> North-up — the top of the map is geographic north.<br><strong>Guidance:</strong> Landmark callouts stay player-relative (ahead/left/right) so the legend still reads like the street.';
+    }
+  }
+
   function updateNearestNode() {
+    const heading = getHeadingVector();
     let nearest = null;
     let nearestDist = Number.POSITIVE_INFINITY;
 
@@ -2426,9 +2529,22 @@
       }
     });
 
+    const guidanceCandidates = getGuidanceLandmarks(state.world);
+    const nearestGuidance = guidanceCandidates.reduce((best, landmark) => {
+      const next = describeLandmarkGuidance(landmark, heading, state.world);
+      if (!next) {
+        return best;
+      }
+      if (!best || next.relative.distance < best.relative.distance) {
+        return next;
+      }
+      return best;
+    }, null) || (nearest ? describeLandmarkGuidance(nearest, heading, state.world) : null);
+
     if (nearest) {
       minimapState.nearestNode = nearest;
-      setLandmark('Nearest landmark: ' + nearest.label);
+      minimapState.nearestGuidance = nearestGuidance;
+      setLandmark('Nearest landmark: ' + (nearestGuidance ? nearestGuidance.text : nearest.label));
       if (routeSegmentEl) {
         const nearestIndex = Math.max(0, state.world.nodes.findIndex((node) => node.id === nearest.id));
         const total = Math.max(1, state.world.nodes.length - 1);
@@ -2436,8 +2552,9 @@
         routeSegmentEl.textContent = 'Route segment: ' + nearest.label + ' (' + progress + '%)';
       }
       if (minimapLandmarkEl) {
-        minimapLandmarkEl.textContent = 'Nearest: ' + nearest.label;
+        minimapLandmarkEl.textContent = nearestGuidance ? 'Nearest landmark: ' + nearestGuidance.text : 'Nearest landmark: ' + nearest.label;
       }
+      updateMinimapContext();
     }
   }
 
@@ -2521,11 +2638,7 @@
       isHeadingUp ? 'Switch minimap to north-up mode' : 'Switch minimap to heading-up mode'
     );
     minimapModeBtn.title = isHeadingUp ? 'Switch minimap to north-up mode' : 'Switch minimap to heading-up mode';
-    if (minimapModeStatusEl) {
-      minimapModeStatusEl.innerHTML = isHeadingUp
-        ? '<strong>Map mode:</strong> Heading-up — the top of the map follows the way you are facing.'
-        : '<strong>Map mode:</strong> North-up — the top of the map is geographic north.';
-    }
+    updateMinimapContext();
   }
 
   function setMinimapMode(nextMode) {

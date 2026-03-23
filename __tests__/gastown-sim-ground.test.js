@@ -294,3 +294,53 @@ test('ground meshes sanitize malformed polygon rings before building shape geome
   assert.match(src, /const shape = toShape\(points\);\s*if \(!shape\) \{\s*return null;\s*\}/s);
   assert.match(src, /if \(cleaned.length >= 3 && polygonSignedArea\(cleaned\) < 0\) \{\s*cleaned\.reverse\(\);\s*\}/s);
 });
+
+
+test('minimap guidance classifies landmarks by player-relative direction buckets for first-person wayfinding', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const src = fs.readFileSync(simPath, 'utf8');
+
+  assert.match(src, /function classifyRelativeDirection\(target, heading, origin = player\.position\) \{/);
+  assert.match(src, /const directionBuckets = \['ahead', 'ahead-right', 'right', 'behind-right', 'behind', 'behind-left', 'left', 'ahead-left'\];/);
+  assert.match(src, /Landmark callouts stay player-relative \(ahead\/left\/right\)/);
+  assert.match(src, /function getLandmarkContextNote\(landmark, world\) \{/);
+  assert.match(src, /return 'on the plaza side';/);
+  assert.match(src, /minimapLandmarkEl\.textContent = nearestGuidance \? 'Nearest landmark: ' \+ nearestGuidance\.text : 'Nearest landmark: ' \+ nearest\.label;/);
+
+  function classifyRelativeDirection(target, heading, origin = { x: 0, z: 0 }) {
+    const offsetX = target.x - origin.x;
+    const offsetZ = target.z - origin.z;
+    const distance = Math.hypot(offsetX, offsetZ);
+    const dirX = offsetX / distance;
+    const dirZ = offsetZ / distance;
+    const right = { x: -heading.z, z: heading.x };
+    const forwardDot = (heading.x * dirX) + (heading.z * dirZ);
+    const rightDot = (right.x * dirX) + (right.z * dirZ);
+    const angle = Math.atan2(rightDot, forwardDot);
+    const bucketIndex = Math.round(angle / (Math.PI / 4));
+    const directionBuckets = ['ahead', 'ahead-right', 'right', 'behind-right', 'behind', 'behind-left', 'left', 'ahead-left'];
+    return directionBuckets[(bucketIndex + directionBuckets.length) % directionBuckets.length];
+  }
+
+  const headingNorth = { x: 0, z: -1 };
+  assert.equal(classifyRelativeDirection({ x: 0, z: -10 }, headingNorth), 'ahead');
+  assert.equal(classifyRelativeDirection({ x: 10, z: -10 }, headingNorth), 'ahead-right');
+  assert.equal(classifyRelativeDirection({ x: 10, z: 0 }, headingNorth), 'right');
+  assert.equal(classifyRelativeDirection({ x: 10, z: 10 }, headingNorth), 'behind-right');
+  assert.equal(classifyRelativeDirection({ x: 0, z: 10 }, headingNorth), 'behind');
+  assert.equal(classifyRelativeDirection({ x: -10, z: 10 }, headingNorth), 'behind-left');
+  assert.equal(classifyRelativeDirection({ x: -10, z: 0 }, headingNorth), 'left');
+  assert.equal(classifyRelativeDirection({ x: -10, z: -10 }, headingNorth), 'ahead-left');
+});
+
+test('minimap legend markup includes orientation and first-person guidance copy', () => {
+  const phpPath = path.join(__dirname, '..', 'page-gastown-sim.php');
+  const cssPath = path.join(__dirname, '..', 'assets', 'css', 'gastown-sim.css');
+  const php = fs.readFileSync(phpPath, 'utf8');
+  const css = fs.readFileSync(cssPath, 'utf8');
+
+  assert.match(php, /data-sim-minimap-context/);
+  assert.match(php, /<strong>Now facing:<\/strong>/);
+  assert.match(php, /Guidance callout/);
+  assert.match(css, /\.gastown-minimap-context \{/);
+});

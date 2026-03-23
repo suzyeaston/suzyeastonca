@@ -254,6 +254,17 @@
   outline: none;
 }
 
+.gastown-minimap-context {
+  margin: 0.28rem 0 0.18rem;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: rgba(220, 236, 255, 0.92);
+}
+
+.gastown-minimap-context strong {
+  color: #f5fbff;
+}
+
 .gastown-minimap-legend {
   list-style: none;
   margin: 0.12rem 0 0;
