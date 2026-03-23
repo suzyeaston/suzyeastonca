@@ -57,14 +57,16 @@ test('production landmark rendering also suppresses reflection discs for suppres
   assert.equal(src.includes('visualState.landmarkVisuals.push({ reflectionMaterial });\n      }'), true);
 });
 
-test('heading-up minimap derives heading from rendered world direction instead of mirrored yaw math', () => {
+test('minimap heading derives from gameplay forward yaw instead of mirrored player rig world direction', () => {
   const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
   const src = fs.readFileSync(simPath, 'utf8');
 
-  assert.match(src, /function getHeadingVector\(\) \{\s*const direction = new THREE\.Vector3\(\);\s*player\.getWorldDirection\(direction\);/s);
-  assert.match(src, /const planarLength = Math\.hypot\(direction\.x, direction\.z\) \|\| 1;/);
-  assert.doesNotMatch(src, /baseForward\.clone\(\)\.applyAxisAngle/);
+  assert.match(src, /function getHeadingVector\(\) \{\s*const forward = new THREE\.Vector3\(0, 0, -1\);\s*forward\.applyAxisAngle\(new THREE\.Vector3\(0, 1, 0\), state\.yaw\);/s);
+  assert.match(src, /const planarLength = Math\.hypot\(forward\.x, forward\.z\) \|\| 1;/);
+  assert.doesNotMatch(src, /player\.getWorldDirection\(direction\)/);
   assert.match(src, /const headingRotation = minimapState\.mode === 'heading-up' \? \(-Math\.atan2\(-heading\.z, heading\.x\) - \(Math\.PI \/ 2\)\) : 0;/);
+  assert.match(src, /const headingX = minimapState\.mode === 'heading-up' \? 0 : heading\.x;/);
+  assert.match(src, /const headingY = minimapState\.mode === 'heading-up' \? -1 : -heading\.z;/);
 });
 
 
