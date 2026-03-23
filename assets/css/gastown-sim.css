@@ -1,5 +1,8 @@
 .gastown-sim-page {
-  background: radial-gradient(circle at 20% 10%, #18202d 0, #090b10 54%, #050609 100%);
+  background:
+    radial-gradient(circle at 18% 8%, rgba(74, 103, 138, 0.35) 0, rgba(12, 17, 25, 0) 34%),
+    radial-gradient(circle at 76% 18%, rgba(203, 146, 89, 0.15) 0, rgba(8, 11, 17, 0) 28%),
+    linear-gradient(180deg, #111824 0%, #080a10 56%, #040507 100%);
   color: #d5dde8;
   padding: 2rem 1rem 3rem;
 }
@@ -7,11 +10,16 @@
 .gastown-sim-shell {
   max-width: 1120px;
   margin: 0 auto;
-  background: rgba(8, 11, 18, 0.75);
-  border: 1px solid rgba(173, 190, 215, 0.18);
-  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(10, 13, 20, 0.84), rgba(8, 10, 15, 0.9)),
+    rgba(8, 11, 18, 0.75);
+  border: 1px solid rgba(173, 190, 215, 0.16);
+  border-radius: 16px;
   padding: 1.2rem;
-  box-shadow: 0 14px 48px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
 }
 
 .gastown-sim-header h1 {
@@ -55,8 +63,34 @@
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(164, 182, 209, 0.25);
-  background: #0b0d12;
+  border: 1px solid rgba(164, 182, 209, 0.22);
+  background:
+    radial-gradient(circle at 50% 0, rgba(120, 165, 215, 0.15), rgba(8, 10, 14, 0) 38%),
+    linear-gradient(180deg, #0b0d12 0%, #06080c 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+.gastown-sim-canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(197, 156, 112, 0.08), rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0.18) 100%),
+    radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 38%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+.gastown-sim-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(4, 5, 8, 0.08), rgba(4, 5, 8, 0.24));
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.25);
 }
 
 .gastown-sim-canvas canvas {
@@ -77,7 +111,8 @@
   padding: 0.7rem 0.9rem;
   border: 1px solid rgba(193, 213, 238, 0.26);
   border-radius: 10px;
-  background: linear-gradient(160deg, rgba(26, 33, 46, 0.75), rgba(10, 13, 19, 0.85));
+  background: linear-gradient(160deg, rgba(31, 39, 55, 0.8), rgba(10, 13, 19, 0.88));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .gastown-help h2 {
@@ -103,7 +138,8 @@
 .gastown-route-segment {
   padding: 0.2rem 0.55rem;
   border-left: 2px solid rgba(192, 211, 237, 0.45);
-  background: rgba(10, 14, 22, 0.35);
+  background: linear-gradient(180deg, rgba(15, 20, 29, 0.5), rgba(10, 14, 22, 0.3));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .gastown-world-status {
@@ -143,11 +179,12 @@
   font-size: 0.72rem;
   line-height: 1.35;
   color: #d4ecff;
-  background: rgba(7, 11, 18, 0.7);
+  background: rgba(7, 11, 18, 0.78);
   border: 1px solid rgba(143, 182, 214, 0.4);
   border-radius: 8px;
   padding: 0.5rem 0.6rem;
   pointer-events: none;
+  backdrop-filter: blur(6px);
 }
 
 .gastown-minimap {
@@ -157,9 +194,10 @@
   width: 220px;
   padding: 0.45rem;
   border-radius: 10px;
-  background: rgba(7, 11, 18, 0.86);
+  background: linear-gradient(180deg, rgba(10, 15, 23, 0.92), rgba(7, 11, 18, 0.86));
   border: 1px solid rgba(136, 170, 204, 0.42);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.44);
+  backdrop-filter: blur(8px);
 }
 
 .gastown-minimap canvas {
