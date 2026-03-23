@@ -11,6 +11,33 @@
         "type": "close",
         "label": "Back to walk"
       }
+    ],
+    "variants": [
+      {
+        "when": {
+          "timeOfDay": "morning",
+          "location": "waterfront_station"
+        },
+        "lines": [
+          "In the morning this end of the route still feels half commuter corridor, half heritage reveal \u2014 you can watch office workers peel away while visitors are only just orienting themselves."
+        ]
+      },
+      {
+        "when": {
+          "location": "maple_tree_square"
+        },
+        "lines": [
+          "From Maple Tree Square the whole district reads differently: the streets stop behaving like a corridor and start behaving like a meeting point."
+        ]
+      },
+      {
+        "when": {
+          "scavengerComplete": true
+        },
+        "lines": [
+          "Now that you have found all three clues, you can read the neighbourhood the way guides do \u2014 by linking little details back to the larger story of the block."
+        ]
+      }
     ]
   },
   "busker_clock_corner": {
@@ -24,6 +51,34 @@
       {
         "type": "close",
         "label": "Back to walk"
+      }
+    ],
+    "variants": [
+      {
+        "when": {
+          "weather": "rain",
+          "location": "steam_clock"
+        },
+        "lines": [
+          "Rain changes my set here \u2014 people bunch under the awnings, listen for a minute, then dart back out when the whistle blows."
+        ]
+      },
+      {
+        "when": {
+          "timeOfDay": "night",
+          "location": "steam_clock"
+        },
+        "lines": [
+          "At night the corner gets quieter, so every chord and every clock chime hangs in the brick canyon a little longer."
+        ]
+      },
+      {
+        "when": {
+          "scavengerComplete": true
+        },
+        "lines": [
+          "Since you already chased down the clues, you probably noticed this pitch works because the clock, the corner, and the crowd all take turns being the main act."
+        ]
       }
     ]
   },
@@ -39,6 +94,27 @@
         "type": "close",
         "label": "Back to walk"
       }
+    ],
+    "variants": [
+      {
+        "when": {
+          "timeOfDay": "morning",
+          "role": "pedestrian",
+          "location": "water_street"
+        },
+        "lines": [
+          "Morning walkers move like they already know where every curb cut and shortcut is, which makes the block feel like a lived-in route rather than a set piece."
+        ]
+      },
+      {
+        "when": {
+          "weather": "fog",
+          "location": "water_street"
+        },
+        "lines": [
+          "When fog settles in, everyone shortens their stride and pays more attention to the storefront light and the next patch of sidewalk ahead."
+        ]
+      }
     ]
   },
   "pedestrian_clock_hint": {
@@ -52,6 +128,24 @@
       {
         "type": "close",
         "label": "Back to walk"
+      }
+    ],
+    "variants": [
+      {
+        "when": {
+          "location": "steam_clock"
+        },
+        "lines": [
+          "Closer to the Steam Clock, the flow changes every few seconds \u2014 somebody stops for a photo, somebody slips around them, and the whole street recomposes itself."
+        ]
+      },
+      {
+        "when": {
+          "discoveredLandmark": "maple_tree_square"
+        },
+        "lines": [
+          "Once you have stepped into Maple Tree Square, the clock feels less like a lone attraction and more like one actor in a bigger street scene."
+        ]
       }
     ]
   },
@@ -67,6 +161,35 @@
         "type": "close",
         "label": "Back to walk"
       }
+    ],
+    "variants": [
+      {
+        "when": {
+          "weather": "clear",
+          "timeOfDay": "afternoon",
+          "location": "steam_clock"
+        },
+        "lines": [
+          "Afternoon is when the corner feels busiest: one group waits for the chime, another frames photos, and someone always asks whether the steam is real."
+        ]
+      },
+      {
+        "when": {
+          "weather": "rain",
+          "location": "steam_clock"
+        },
+        "lines": [
+          "In the rain we all end up clustering under the nearest cornice, then stepping back out together when the clock starts to sing."
+        ]
+      },
+      {
+        "when": {
+          "location": "maple_tree_square"
+        },
+        "lines": [
+          "Near Maple Tree Square people slow down and point more \u2014 it feels less like passing through and more like arriving at the part everyone wants to remember."
+        ]
+      }
     ]
   },
   "tourist_clock_photo": {
@@ -80,6 +203,34 @@
       {
         "type": "close",
         "label": "Back to walk"
+      }
+    ],
+    "variants": [
+      {
+        "when": {
+          "weather": "clear",
+          "location": "steam_clock"
+        },
+        "lines": [
+          "On a clear day you can feel people queuing themselves without meaning to: one person takes the shot, the next steps in, and the corner keeps performing."
+        ]
+      },
+      {
+        "when": {
+          "weather": "fog",
+          "location": "steam_clock"
+        },
+        "lines": [
+          "Fog makes the Steam Clock photos moodier, so photographers wait longer between shots and end up talking to strangers about whether to stay for the next plume."
+        ]
+      },
+      {
+        "when": {
+          "foundProp": "foundHistoricPlaque"
+        },
+        "lines": [
+          "If you already read the plaque, the image lands differently \u2014 you are not just photographing an icon, you are catching a block that knows its own backstory."
+        ]
       }
     ]
   },
@@ -95,6 +246,25 @@
         "type": "close",
         "label": "Back to walk"
       }
+    ],
+    "variants": [
+      {
+        "when": {
+          "timeOfDay": "night",
+          "location": "water_street"
+        },
+        "lines": [
+          "At night the corridor opens up and the sound of wheels carries farther, so you feel every seam in the paving and every pocket of people ahead."
+        ]
+      },
+      {
+        "when": {
+          "weather": "rain"
+        },
+        "lines": [
+          "When the street goes wet, everybody rolling through has to read the bricks, the metal covers, and the tourist stops way earlier."
+        ]
+      }
     ]
   },
   "cyclist_water_street": {
@@ -108,6 +278,34 @@
       {
         "type": "close",
         "label": "Back to walk"
+      }
+    ],
+    "variants": [
+      {
+        "when": {
+          "timeOfDay": "morning",
+          "location": "water_street"
+        },
+        "lines": [
+          "Morning makes this stretch feel more utilitarian \u2014 delivery workers, commuters, and early walkers all negotiate the same narrow line."
+        ]
+      },
+      {
+        "when": {
+          "weather": "clear",
+          "location": "steam_clock"
+        },
+        "lines": [
+          "Near the clock I feather the pace because somebody is always drifting backward into the lane to get the whole landmark in frame."
+        ]
+      },
+      {
+        "when": {
+          "foundProp": "foundMural"
+        },
+        "lines": [
+          "If you already spotted the mural, you have probably noticed how the quieter walls pull people a block farther than the famous clock does."
+        ]
       }
     ]
   }
