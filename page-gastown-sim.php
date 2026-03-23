@@ -69,7 +69,7 @@ get_header();
           <li><strong>E / click</strong> talk or log</li>
           <li><strong>Esc</strong> close / release</li>
         </ul>
-        <p class="gastown-help-note">AI voice talkback is optional. If voice or riff generation fails, text and play continue.</p>
+        <p class="gastown-help-note">Startup welcome voice is AI-generated when available. If OpenAI voice or music-spec generation fails, the walk still starts and local fallback audio can play.</p>
       </section>
     </details>
 
@@ -97,7 +97,7 @@ get_header();
           <h2 id="gastown-name-title">Name your walker</h2>
         </div>
         <div class="gastown-dialog-body">
-          <p>Optional. Keep it short.</p>
+          <p>Optional. Keep it short. A quick AI-generated welcome may play after this.</p>
           <label class="gastown-name-field">
             <span>Walker name</span>
             <input type="text" maxlength="24" autocomplete="nickname" data-walker-name-input placeholder="SUZY">
@@ -114,12 +114,11 @@ get_header();
       <div class="gastown-hud-identity">
         <p class="gastown-hud-kicker">ON THE STREET</p>
         <p class="gastown-hud-name" data-walker-name-display>WALKER</p>
-        <p class="gastown-hud-subline" data-sim-status aria-live="polite">Click in to start.</p>
       </div>
       <div class="gastown-hud-route">
-        <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% mapped</p>
-        <p class="gastown-hud-detail-count" data-sim-quest-status aria-live="polite">0 details</p>
+        <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% route</p>
       </div>
+      <p class="gastown-hud-subline" data-sim-status aria-live="polite">Click in to start.</p>
       <p class="gastown-interact-prompt" data-sim-interact-prompt aria-live="polite" hidden></p>
     </section>
 
@@ -145,35 +144,19 @@ get_header();
       </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
       <div class="gastown-live-strip">
-        <p class="gastown-pointer-status" data-sim-pointer-status aria-live="polite">Pointer free</p>
         <p class="gastown-landmark" data-sim-landmark aria-live="polite">Station threshold</p>
         <p class="gastown-route-segment" data-sim-route-segment aria-live="polite">Start</p>
       </div>
     </div>
 
     <details class="gastown-log-drawer">
-      <summary>Notes</summary>
+      <summary>Route notes</summary>
       <div class="gastown-meta-strip">
         <p class="gastown-world-status" data-sim-world-status aria-live="polite">World data status: checking build provenance…</p>
         <p class="gastown-expedition-value" data-sim-objective aria-live="polite">Steam Clock ahead.</p>
         <p class="gastown-expedition-value gastown-hud-next-step" data-sim-next-step aria-live="polite">Follow the first bit of street energy.</p>
       </div>
-      <div class="gastown-hud-support">
-        <div class="gastown-hud-card gastown-hud-card--journal">
-          <p class="gastown-expedition-label">Journal</p>
-          <ul class="gastown-expedition-list" data-sim-journal aria-live="polite">
-            <li>On the platform edge.</li>
-          </ul>
-        </div>
-        <div class="gastown-hud-card gastown-hud-card--details">
-          <p class="gastown-expedition-label">Logged</p>
-          <ul class="gastown-expedition-list" data-sim-collectibles-log aria-live="polite">
-            <li>Newspaper box — not logged</li>
-            <li>Historic plaque — not logged</li>
-            <li>Painted brick panel — not logged</li>
-          </ul>
-        </div>
-      </div>
+
     </details>
 
     <section class="gastown-debug" data-debug-panel hidden>

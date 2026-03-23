@@ -37,7 +37,6 @@
 .gastown-landmark,
 .gastown-route-segment,
 .gastown-world-status,
-.gastown-pointer-status,
 .gastown-quest-status,
 .gastown-hud-detail-count {
   margin: 0;
@@ -111,9 +110,9 @@
 
 .gastown-hud {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto;
-  gap: 0.6rem 0.75rem;
-  align-items: end;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 0.45rem 0.6rem;
+  align-items: center;
 }
 
 .gastown-hud-identity,
@@ -156,7 +155,12 @@
 }
 
 .gastown-hud-subline {
-  margin: 0.25rem 0 0;
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.38rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 214, 138, 0.34);
+  background: rgba(22, 16, 8, 0.78);
   color: #ffe9b8;
 }
 
@@ -164,7 +168,7 @@
   display: grid;
   justify-items: end;
   gap: 0.16rem;
-  min-width: 140px;
+  min-width: 112px;
 }
 
 .gastown-hud-route .gastown-expedition-value {
@@ -176,6 +180,7 @@
 
 .gastown-hud-detail-count {
   color: #bdd8ff;
+  display: none;
 }
 
 .gastown-interact-prompt[hidden],
@@ -239,10 +244,9 @@
   top: 0.8rem;
   display: grid;
   gap: 0.35rem;
-  max-width: min(260px, 36vw);
+  max-width: min(220px, 32vw);
 }
 
-.gastown-pointer-status,
 .gastown-landmark,
 .gastown-route-segment,
 .gastown-world-status {
@@ -404,4 +408,34 @@
   .gastown-sim-shell { padding: 0.7rem; }
   .gastown-sim-canvas { min-height: 460px; }
   .gastown-live-strip { max-width: 46vw; }
+}
+
+
+.gastown-log-drawer .gastown-hud-support {
+  display: none;
+}
+
+.gastown-meta-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0 0.75rem 0.75rem;
+}
+
+@media (max-width: 860px) {
+  .gastown-hud {
+    grid-template-columns: 1fr;
+  }
+
+  .gastown-hud-route {
+    justify-items: start;
+  }
+
+  .gastown-meta-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .gastown-live-strip {
+    max-width: min(180px, 46vw);
+  }
 }
