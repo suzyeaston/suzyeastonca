@@ -144,6 +144,11 @@
     tutorial: { seen: false, lastMKeyAt: 0 },
     lowGraphics: false,
     quest: { active: false, completed: false, rewardPending: false, items: [] },
+    discoveries: {
+      landmarks: {},
+      props: {},
+      lastContextKey: '',
+    },
   };
 
   const DEFAULT_EYE_HEIGHT = 1.7;
@@ -821,6 +826,136 @@
     state.velocity.set(0, 0, 0);
   }
 
+  function getPlayerRouteContext() {
+    if (!state.world || !state.world.route || !Array.isArray(state.world.route.centerline) || !state.world.route.centerline.length) {
+      return { key: 'gastown', label: 'Gastown', landmark: '', nearestNodeId: '' };
+    }
+    let nearest = state.world.route.centerline[0];
+    let nearestDistance = Infinity;
+    state.world.route.centerline.forEach((point) => {
+      const distance = Math.hypot(player.position.x - point.x, player.position.z - point.z);
+      if (distance < nearestDistance) {
+        nearest = point;
+        nearestDistance = distance;
+      }
+    });
+    const pointId = nearest && nearest.id ? nearest.id : '';
+    if (pointId === 'steam-clock' || pointId === 'steam-clock-approach') {
+      return { key: 'steam_clock', label: 'Steam Clock corner', landmark: 'Steam Clock', nearestNodeId: pointId };
+    }
+    if (pointId === 'maple-tree-square-edge') {
+      return { key: 'maple_tree_square', label: 'Maple Tree Square', landmark: 'Maple Tree Square', nearestNodeId: pointId };
+    }
+    if (pointId === 'waterfront-station-threshold') {
+      return { key: 'waterfront_station', label: 'Waterfront Station edge', landmark: 'Waterfront Station', nearestNodeId: pointId };
+    }
+    if (pointId === 'water-cordova-seam' || pointId === 'gastown-beat-1' || pointId === 'gastown-beat-3' || pointId === 'water-street-mid-block') {
+      return { key: 'water_street', label: 'Water Street', landmark: 'Water Street', nearestNodeId: pointId };
+    }
+    if (pointId === 'cambie-rise-continuation') {
+      return { key: 'cambie_rise', label: 'Cambie rise', landmark: 'Cambie rise', nearestNodeId: pointId };
+    }
+    return { key: 'gastown', label: 'Gastown', landmark: nearest && nearest.label ? nearest.label : 'Gastown', nearestNodeId: pointId };
+  }
+
+  function getDiscoverySummary() {
+    const propsFound = Object.keys(state.discoveries.props || {}).filter((key) => state.discoveries.props[key]).length;
+    return {
+      foundNewspaperBox: !!state.discoveries.props.newspaper_box,
+      foundHistoricPlaque: !!state.discoveries.props.historic_plaque,
+      foundMural: !!state.discoveries.props.mural,
+      scavengerComplete: !!state.quest.completed,
+      propsFound: propsFound,
+      landmarks: Object.assign({}, state.discoveries.landmarks || {}),
+    };
+  }
+
+  function resolveDialogLines(entry, npcState) {
+    if (!entry || typeof entry !== 'object') return null;
+    const baseLines = Array.isArray(entry.lines) ? entry.lines.slice() : [];
+    const context = getPlayerRouteContext();
+    const discovery = getDiscoverySummary();
+    const variants = Array.isArray(entry.variants) ? entry.variants : [];
+    variants.forEach((variant) => {
+      if (!variant || typeof variant !== 'object' || !Array.isArray(variant.lines) || !variant.lines.length) return;
+      const when = variant.when || {};
+      const weatherMatch = !when.weather || when.weather === state.activeWeather;
+      const timeMatch = !when.timeOfDay || when.timeOfDay === state.activeTimeOfDay;
+      const roleMatch = !when.role || when.role === (npcState && npcState.role);
+      const locationMatch = !when.location || when.location === context.key;
+      const landmarkMatch = !when.discoveredLandmark || discovery.landmarks[when.discoveredLandmark];
+      const questMatch = typeof when.scavengerComplete !== 'boolean' || when.scavengerComplete === discovery.scavengerComplete;
+      const propMatch = !when.foundProp || !!discovery[when.foundProp];
+      if (weatherMatch && timeMatch && roleMatch && locationMatch && landmarkMatch && questMatch && propMatch) {
+        Array.prototype.push.apply(baseLines, variant.lines);
+      }
+    });
+    if (!baseLines.length) return null;
+    return baseLines;
+  }
+
+  function resolveDialogEntry(entry, npcState) {
+    if (!entry || typeof entry !== 'object') return entry;
+    const resolved = Object.assign({}, entry);
+    resolved.lines = resolveDialogLines(entry, npcState) || entry.lines;
+    return resolved;
+  }
+
+  function addNpcContextActions(npcState, normalized) {
+    const context = getPlayerRouteContext();
+    const discovery = getDiscoverySummary();
+    const actions = Array.isArray(normalized.actions) ? normalized.actions.slice() : [];
+    const contextLabel = context.landmark || context.label;
+    actions.unshift({
+      type: 'response',
+      label: 'What is special about this spot?',
+      responseLines: [
+        'You are standing near ' + contextLabel + ', where the route shifts from general foot traffic into a more theatrical heritage streetscape.',
+        discovery.scavengerComplete
+          ? 'Since you already finished the scavenger hunt, locals read this stretch by how the details connect back to Maple Tree Square and the Steam Clock.'
+          : 'If you keep noticing small details here, the scavenger hunt clues start to make more sense in context.'
+      ],
+      followupStatus: 'Shared place-specific context for ' + context.label + '.',
+    });
+    if (discovery.landmarks.steam_clock && npcState && npcState.role !== 'busker') {
+      actions.push({
+        type: 'response',
+        label: 'How does the Steam Clock change the street?',
+        responseLines: [
+          'Once you have seen the Steam Clock up close, you notice how everyone calibrates their pace around it: commuters cut through, visitors pause, and performers treat it like a stage marker.',
+          'That rhythm is a big part of why Gastown feels inhabited instead of frozen.'
+        ],
+        followupStatus: 'NPC reflected on the Steam Clock crowd rhythm.',
+      });
+    }
+    if (discovery.landmarks.maple_tree_square && npcState && npcState.role !== 'guide') {
+      actions.push({
+        type: 'response',
+        label: 'What changes near Maple Tree Square?',
+        responseLines: [
+          'Maple Tree Square loosens the block into a knot of streets, so people stop walking like commuters and start behaving like they have arrived somewhere.',
+          'That is why the square feels social even when it is only lightly crowded.'
+        ],
+        followupStatus: 'NPC added Maple Tree Square context.',
+      });
+    }
+    normalized.actions = actions;
+    return normalized;
+  }
+
+  function refreshDiscoveryState() {
+    const context = getPlayerRouteContext();
+    if (context.key) {
+      state.discoveries.landmarks[context.key] = true;
+      state.discoveries.lastContextKey = context.key;
+    }
+    (state.props || []).forEach((prop) => {
+      if (prop && prop.collected) {
+        state.discoveries.props[prop.collectibleKey || prop.id] = true;
+      }
+    });
+  }
+
   function getDialogFallbackTitle(npcState) {
     if (npcState && npcState.role === 'guide') {
       return 'Gastown guide';
@@ -1058,16 +1193,18 @@
     state.isRunning = false;
     state.dialogLastFocusEl = document.activeElement;
 
-    const entry = Object.prototype.hasOwnProperty.call(state.dialogData, npcState.dialogId)
+    const rawEntry = Object.prototype.hasOwnProperty.call(state.dialogData, npcState.dialogId)
       ? state.dialogData[npcState.dialogId]
       : null;
+    const entry = resolveDialogEntry(rawEntry, npcState);
 
     if (!entry && window.console && typeof window.console.warn === 'function') {
       window.console.warn('[Gastown Sim] Missing dialog entry for', npcState.dialogId);
     }
 
     const baseFallback = getNpcConversationFallback(npcState);
-    const normalized = normalizeDialogEntry(entry || {
+    refreshDiscoveryState();
+    const normalized = addNpcContextActions(npcState, normalizeDialogEntry(entry || {
       title: baseFallback.title,
       lines: ['Listening…'],
       actions: [{ type: 'close', label: 'Back to walk' }],
@@ -1076,14 +1213,13 @@
       unavailableLine: 'Dialog data unavailable.',
       missingLine: 'This guide does not have dialog copy yet.',
       defaultCloseLabel: 'Back to walk',
-    });
+    }));
 
     if (npcState.role === 'guide') {
       normalized.actions = [
         { type: 'quest', label: state.quest.completed ? 'Review scavenger hunt' : 'Start scavenger hunt' },
-        { type: 'response', label: 'Tell me more about Maple Tree Square', responseLines: ['Maple Tree Square marks the early centre of Gastown, where Carrall, Powell, Alexander, and Water come together in a triangular knot.', 'That irregular geometry is part of why the district feels older than the rest of downtown — the street plan still hints at the port-town era.'], followupStatus: 'Guide shared extra Gastown history.' },
-        { type: 'close', label: 'Back to walk' }
-      ];
+        { type: 'response', label: 'Tell me more about Maple Tree Square', responseLines: ['Maple Tree Square marks the early centre of Gastown, where Carrall, Powell, Alexander, and Water come together in a triangular knot.', 'That irregular geometry is part of why the district feels older than the rest of downtown — the street plan still hints at the port-town era.'], followupStatus: 'Guide shared extra Gastown history.' }
+      ].concat(normalized.actions || []);
     }
 
     dialogTitleEl.textContent = normalized.title;
@@ -1158,6 +1294,7 @@
     const match = (state.props || []).find((prop) => prop.collectible && !prop.collected && Math.hypot(player.position.x - prop._position.x, player.position.z - prop._position.z) < 2.2);
     if (!match) return false;
     match.collected = true;
+    state.discoveries.props[match.collectibleKey || match.id] = true;
     setStatus('Collected: ' + (match.collectibleLabel || match.id) + '.');
     updateQuestProgress();
     return true;
@@ -1422,6 +1559,7 @@
         mesh: visual, patrolIndex: 0, direction: 1, baseY: 0, baseYaw: startYaw, currentYaw: startYaw,
         speed: npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : npc.role === 'guide' ? 0.18 : npc.role === 'skateboarder' ? 2.35 : npc.role === 'cyclist' ? 3.1 : 0,
         pauseUntil: 0, animPhase: swaySeed * Math.PI * 2, swayAmount: 0.012 + (swaySeed * 0.014),
+        microEvent: '', interactionTargetId: '', socialRadius: npc.role === 'tourist' || npc.role === 'photographer' ? 3.2 : 2.2,
       }, npc);
       visual.rotation.y = startYaw;
       ensureNpcLoop(npcState);
@@ -1436,9 +1574,60 @@
     addNpcs(state.world);
   }
 
+  function getNpcTargetSpeed(npc) {
+    const weather = state.activeWeather || 'clear';
+    const timeOfDay = state.activeTimeOfDay || 'morning';
+    const nearPlayer = npc && npc.mesh ? Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z) < 5.5 : false;
+    let multiplier = 1;
+    if (weather === 'rain' || weather === 'thunderstorm') multiplier *= npc.role === 'cyclist' || npc.role === 'skateboarder' ? 0.62 : 0.82;
+    if (weather === 'fog') multiplier *= npc.role === 'tourist' || npc.role === 'photographer' ? 0.76 : 0.9;
+    if (timeOfDay === 'night') multiplier *= npc.role === 'guide' || npc.role === 'busker' ? 0.9 : 0.8;
+    if (timeOfDay === 'morning' && npc.role === 'pedestrian') multiplier *= 1.14;
+    if (nearPlayer && (npc.role === 'cyclist' || npc.role === 'skateboarder')) multiplier *= 0.74;
+    return Math.max(0, (npc.speed || 0) * multiplier);
+  }
+
+  function assignNpcMicroEvents(nowSeconds) {
+    const context = getPlayerRouteContext();
+    const byGroup = {};
+    (state.npcs || []).forEach((npc) => {
+      npc.microEvent = '';
+      npc.interactionTargetId = '';
+      if (npc.companionGroup) {
+        byGroup[npc.companionGroup] = byGroup[npc.companionGroup] || [];
+        byGroup[npc.companionGroup].push(npc);
+      }
+      if (npc.role === 'busker' && context.key === 'steam_clock') npc.microEvent = 'busking_moment';
+      if (npc.role === 'photographer' && context.key === 'steam_clock') npc.microEvent = 'photo_window';
+      if (npc.role === 'pedestrian' && state.activeMood === 'commuter') npc.microEvent = 'worker_crossing';
+      if (npc.role === 'tourist' && context.key === 'maple_tree_square') npc.microEvent = 'landmark_gather';
+      npc.reactingToPlayer = npc.mesh ? Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z) < 4.8 : false;
+      if (npc.reactingToPlayer && (npc.role === 'tourist' || npc.role === 'photographer')) npc.microEvent = 'player_notice';
+      if ((state.activeWeather === 'rain' || state.activeWeather === 'thunderstorm') && (npc.role === 'tourist' || npc.role === 'photographer')) npc.microEvent = 'weather_huddle';
+      if (state.activeTimeOfDay === 'night' && npc.role === 'guide') npc.microEvent = 'night_story_pause';
+      npc.nextAmbientShiftAt = npc.nextAmbientShiftAt || (nowSeconds + 2 + (deterministicUnit(npc.id + '-ambient') * 3));
+      if (nowSeconds >= npc.nextAmbientShiftAt) {
+        npc.ambientPhase = (npc.ambientPhase || 0) + 1;
+        npc.nextAmbientShiftAt = nowSeconds + 4 + (deterministicUnit(npc.id + '-ambient-' + npc.ambientPhase) * 5);
+      }
+    });
+    Object.keys(byGroup).forEach((groupId) => {
+      const members = byGroup[groupId];
+      members.forEach((npc, index) => {
+        const partner = members[(index + 1) % members.length];
+        if (partner && partner.id !== npc.id) {
+          npc.interactionTargetId = partner.id;
+          if (!npc.microEvent || npc.microEvent === 'landmark_gather') npc.microEvent = 'chatting_cluster';
+        }
+      });
+    });
+  }
+
   function updateNpcs(delta) {
     if (!Array.isArray(state.npcs)) return;
     const nowSeconds = performance.now() / 1000;
+    refreshDiscoveryState();
+    assignNpcMicroEvents(nowSeconds);
     state.npcs.forEach((npc) => {
       if (!npc.mesh) return;
       const isWalker = Array.isArray(npc.patrol) && npc.patrol.length > 1;
@@ -1458,7 +1647,7 @@
           }
           npc.patrolIndex = (npc.patrolIndex + npc.direction + npc.patrol.length) % npc.patrol.length;
         } else if (nowSeconds >= (npc.pauseUntil || 0)) {
-          const step = Math.min(distance, npc.speed * delta);
+          const step = Math.min(distance, getNpcTargetSpeed(npc) * delta);
           npc.mesh.position.x += (dx / distance) * step;
           npc.mesh.position.z += (dz / distance) * step;
           const desiredYaw = Math.atan2(dx, dz);
@@ -1472,7 +1661,23 @@
         }
       }
 
-      const motionStrength = canWalk && nowSeconds >= (npc.pauseUntil || 0) ? (rollingMover ? 0.4 : 1) : npc.role === 'busker' ? 0.8 : 0.45;
+      const interactionTarget = npc.interactionTargetId ? (state.npcs || []).find((candidate) => candidate.id === npc.interactionTargetId) : null;
+      if (interactionTarget && interactionTarget.mesh) {
+        const ix = interactionTarget.mesh.position.x - npc.mesh.position.x;
+        const iz = interactionTarget.mesh.position.z - npc.mesh.position.z;
+        if (Math.hypot(ix, iz) < npc.socialRadius) {
+          npc.currentYaw += THREE.MathUtils.clamp(Math.atan2(ix, iz) - npc.currentYaw, -0.035, 0.035);
+        }
+      }
+      if (npc.microEvent === 'weather_huddle') {
+        npc.pauseUntil = Math.max(npc.pauseUntil || 0, nowSeconds + 0.6);
+      } else if (npc.microEvent === 'player_notice') {
+        const px = player.position.x - npc.mesh.position.x;
+        const pz = player.position.z - npc.mesh.position.z;
+        npc.currentYaw += THREE.MathUtils.clamp(Math.atan2(px, pz) - npc.currentYaw, -0.03, 0.03);
+      }
+
+      const motionStrength = canWalk && nowSeconds >= (npc.pauseUntil || 0) ? (rollingMover ? 0.4 : 1) : npc.role === 'busker' ? 0.8 : npc.microEvent === 'chatting_cluster' ? 0.62 : 0.45;
       npc.mesh.position.y = npc.baseY + (Math.sin((nowSeconds * 3.4) + npc.animPhase) * npc.swayAmount * motionStrength);
       npc.mesh.rotation.z = Math.sin((nowSeconds * 2.2) + npc.animPhase) * 0.02;
       const rig = npc.mesh.userData || {};
@@ -1489,6 +1694,9 @@
       }
       if (rig.head) {
         rig.head.rotation.y = Math.sin((nowSeconds * 0.9) + npc.animPhase) * 0.12;
+        if (npc.reactingToPlayer) {
+          rig.head.rotation.y += 0.18;
+        }
       }
       if (rig.heldProp) {
         if (npc.heldProp === 'guitar') {
@@ -1497,6 +1705,21 @@
           rig.heldProp.position.y = (npc.pose === 'taking_photo' ? 1.48 : 1.32) + (Math.sin((nowSeconds * 1.2) + npc.animPhase) * 0.03);
           rig.heldProp.rotation.x = npc.pose === 'taking_photo' ? -0.42 : -0.18;
         }
+      }
+      if (npc.microEvent === 'busking_moment' && rig.leftArm && rig.rightArm) {
+        rig.rightArm.rotation.x = -1.05 + (Math.sin((nowSeconds * 5.2) + npc.animPhase) * 0.18);
+        rig.leftArm.rotation.x = -0.42 + (Math.cos((nowSeconds * 4.8) + npc.animPhase) * 0.16);
+      }
+      if ((npc.microEvent === 'photo_window' || npc.microEvent === 'player_notice') && rig.heldProp && npc.heldProp === 'camera') {
+        rig.heldProp.position.y = 1.48;
+        rig.heldProp.rotation.x = -0.48;
+      }
+      if (npc.microEvent === 'worker_crossing' && rig.leftArm && rig.rightArm) {
+        rig.leftArm.rotation.x *= 1.2;
+        rig.rightArm.rotation.x *= 1.2;
+      }
+      if (npc.microEvent === 'chatting_cluster' && rig.leftArm) {
+        rig.leftArm.rotation.z = 0.08 + (Math.sin((nowSeconds * 2) + npc.animPhase) * 0.08);
       }
       npc.currentYaw = Number.isFinite(npc.currentYaw) ? npc.currentYaw : (npc.baseYaw || 0);
       if (npc.role === 'busker') {
@@ -1580,7 +1803,8 @@
       return;
     }
     const roleLabel = getNpcRoleLabel(npc);
-    setInteractPrompt('Click or press E to talk to the ' + roleLabel + '.');
+    const context = getPlayerRouteContext();
+    setInteractPrompt('Click or press E to talk to the ' + roleLabel + ' near ' + context.label + '.');
   }
 
   function interactWithHoveredNpc() {
