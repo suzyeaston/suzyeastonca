@@ -117,7 +117,7 @@ get_header();
         <ul class="gastown-expedition-list" data-sim-collectibles-log aria-live="polite">
           <li>Newspaper box — not logged</li>
           <li>Historic plaque — not logged</li>
-          <li>Maple Tree mural — not logged</li>
+          <li>Painted brick panel — not logged</li>
         </ul>
       </div>
       <div class="gastown-expedition-card">

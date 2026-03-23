@@ -4952,7 +4952,7 @@
       "scale": 0.95,
       "collectible": true,
       "collectibleKey": "mural",
-      "collectibleLabel": "Maple Tree mural",
+      "collectibleLabel": "Painted brick panel",
       "minimapIcon": "mural",
       "randomOffset": true
     },
@@ -5023,10 +5023,10 @@
       "scale": 0.95,
       "collectible": true,
       "collectibleKey": "mural",
-      "collectibleLabel": "Maple Tree mural",
+      "collectibleLabel": "Painted brick panel",
       "minimapIcon": "mural",
       "randomOffset": true,
-      "journalNote": "The mural pushes the walk from preservation into interpretation."
+      "journalNote": "The painted wall shifts the block from preservation into interpretation."
     },
     {
       "id": "starter-prop-clock-plaque",

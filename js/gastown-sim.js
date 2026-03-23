@@ -335,7 +335,7 @@
 
   const QUEST_DEFINITIONS = {
     orientation: { label: 'Drift', status: 'Choose your own lead through Gastown.' },
-    scavenger: { label: 'Street details log', status: 'Street details log active: note the newspaper box, historic plaque, and Maple Tree mural as observations.' },
+    scavenger: { label: 'Street details log', status: 'Street details log active: note the newspaper box, historic plaque, and painted brick panel as observations.' },
     survey: { label: 'Route survey', status: 'Route survey active: trace how Water Street tightens, loosens, and rises as you move east.' },
     soundwalk: { label: 'Soundwalk', status: 'Soundwalk active: follow the station rumble, busker corner, and clock chime without rushing.' },
     stories: { label: 'Memory walk', status: 'Memory walk active: gather place-based notes about shoreline change, public space, and layered civic memory.' },
@@ -353,7 +353,7 @@
       label: 'Street details',
       objective: 'Use the street details log to notice small clues in storefronts, paving, and public surfaces.',
       hint: 'Follow the smallest detail that feels worth logging next.',
-      status: 'Street details log active: note the newspaper box, historic plaque, and Maple Tree mural as observations.',
+      status: 'Street details log active: note the newspaper box, historic plaque, and painted brick panel as observations.',
     },
     survey: {
       label: 'Survey',
@@ -382,6 +382,19 @@
   function setNextStep(text) {
     if (nextStepEl) nextStepEl.textContent = text;
     if (minimapTooltipEl) minimapTooltipEl.textContent = text;
+  }
+
+  function getActiveThreadDefinition() {
+    return THREAD_DEFINITIONS[state.currentThread] || THREAD_DEFINITIONS.drift;
+  }
+
+  function getPublicGoalText() {
+    const thread = getActiveThreadDefinition();
+    return thread.objective || 'Choose your own lead through Gastown.';
+  }
+
+  function getStreetModeStatusText() {
+    return getPublicGoalText() + ' Mouse look and movement are live. Press V for overview.';
   }
 
   function pushJournalEntry(text) {
@@ -491,7 +504,7 @@
       state.quest.completed = items.length && items.every((item) => item.found);
       state.quest.items = items;
       setQuestStatus('Street details log: ' + items.filter((item) => item.found).length + '/' + items.length + ' logged.');
-      renderDialogBody(['Street details log started.', 'Note the newspaper box, the historic plaque, and the Maple Tree mural as observations. The minimap will hint, but wandering still matters.']);
+      renderDialogBody(['Street details log started.', 'Note the newspaper box, the historic plaque, and the painted brick panel as observations. The minimap will hint, but wandering still matters.']);
     } else {
       setQuestStatus((QUEST_DEFINITIONS[id] || {}).status || 'Thread updated.');
       renderDialogBody([((QUEST_DEFINITIONS[id] || {}).label || 'Quest') + ' started.']);
