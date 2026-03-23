@@ -63,17 +63,26 @@ function runScaffold() {
 
   const world = JSON.parse(fs.readFileSync(worldPath, 'utf8'));
   world.meta = world.meta || {};
-  world.meta.lastBuild = new Date().toISOString();
+  world.meta.lastBuild = world.meta.lastBuild || new Date().toISOString();
   world.meta.buildNotes = [
     'Runtime geometry is compact and static; no live map APIs.',
     'Prepared for offline City of Vancouver footprints/streets/ROW widths + optional OSM route alignment.',
     'Supports hero_landmarks + facade_profiles to prioritize recognizability over photoreal detail.',
     'Scaffold includes reference-driven world notes for segment style, silhouette, and storefront cadence.',
+    'Exploration scaffolding should preserve multiple micro-areas, short loops, and reasons to stop rather than collapsing Gastown into a single through-route.',
   ];
   world.meta.buildClassification = world.meta.isRealCivicBuild === false ? 'approximate-fallback' : 'offline-civic-build';
   world.meta.provenanceSummary = world.meta.isRealCivicBuild === false
     ? 'Approximate fallback corridor retained because civic/open-data inputs were unavailable at build time.'
     : 'Offline civic/open-data build generated from local source exports.';
+  world.meta.artDirection = world.meta.artDirection || {
+    label: 'stylized realism with cinematic Vancouver rain-lighting',
+    pillars: [
+      'wet cobblestone reflections and low-angle dawn highlights',
+      'heritage masonry with richer brick-stone-glass contrast',
+      'dense civic clutter and postcard framing around the Steam Clock and Water Street bends',
+    ],
+  };
   world.meta.importManifest = world.meta.importManifest || importManifest;
 
   (world.buildings || []).forEach((building) => applyReferenceScaffold(building));

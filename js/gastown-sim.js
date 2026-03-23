@@ -136,6 +136,7 @@
     npcVoiceIndex: 0,
     clockTimer: null,
     boundaryNoticeTimer: null,
+    currentMicroAreaId: '',
     audioWarningIssued: false,
     worldBuildStatus: null,
     npcs: [],
@@ -302,11 +303,19 @@
     }
   }
 
+  function getPublicGoalText() {
+    return (state.world && state.world.exploration && state.world.exploration.publicGoal) || 'I’m exploring Gastown.';
+  }
+
+  function getStreetModeStatusText() {
+    return getPublicGoalText() + ' Mouse look and movement are live. Press V for overview.';
+  }
+
   function openTutorialOverlay() {
     if (!tutorialOverlayEl) return;
     tutorialOverlayEl.removeAttribute('hidden');
     tutorialOverlayEl.setAttribute('aria-hidden', 'false');
-    setStatus('Tutorial open. Review the controls, then start walking when ready.');
+    setStatus('Tutorial open. Review the controls, then start exploring when ready.');
   }
 
   function closeTutorialOverlay() {
@@ -347,7 +356,7 @@
     }
     state.boundaryNoticeTimer = setTimeout(() => {
       if (!state.isRunning || state.cameraMode !== 'street') return;
-      setStatus('Street mode active. Mouse look and movement are live. Press V for overview.');
+      setStatus(getStreetModeStatusText());
     }, 1900);
   }
 
@@ -391,14 +400,14 @@
       setStatus('Overview mode active. Mouse wheel zooms altitude; press V to return to street view.');
       setPointerStatus('Pointer unlocked. Overview camera detached above player.');
     } else if (state.isRunning) {
-      setStatus('Street mode active. Mouse look and movement are live. Press V for overview.');
+      setStatus(getStreetModeStatusText());
       if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
         setPointerStatus('Pointer locked. Mouse look active. Press Esc to release pointer.');
       } else {
         setPointerStatus('Pointer lock requested… press Esc any time to release.');
       }
     } else {
-      setStatus('Street mode ready. Click scene to enter look mode and begin moving, or press V for overview.');
+      setStatus(getPublicGoalText() + ' Click scene to enter look mode and begin moving, or press V for overview.');
       setPointerStatus('Pointer unlocked. Click scene to enter look mode. Press V for overview.');
     }
   }
@@ -2930,8 +2939,11 @@
     const heading = getHeadingVector();
     const facing = getFacingLabel(heading);
     const nearest = minimapState.nearestGuidance;
+    const area = state.world ? getMicroAreaForPoint(player.position, state.world) : null;
     if (minimapContextEl) {
-      minimapContextEl.innerHTML = '<strong>Now facing:</strong> ' + facing + (nearest ? '<br><strong>Nearest landmark:</strong> ' + nearest.text : '');
+      minimapContextEl.innerHTML = '<strong>Now facing:</strong> ' + facing
+        + (area ? '<br><strong>Exploring:</strong> ' + area.label + ' (' + area.identity + ')' : '')
+        + (nearest ? '<br><strong>Nearest landmark:</strong> ' + nearest.text : '');
     }
     if (minimapModeStatusEl) {
       const isHeadingUp = minimapState.mode === 'heading-up';
@@ -2939,6 +2951,31 @@
         ? '<strong>Map mode:</strong> Heading-up — the top of the map follows the way you are facing.<br><strong>Guidance:</strong> Landmark callouts stay player-relative (ahead/left/right) for first-person wayfinding.'
         : '<strong>Map mode:</strong> North-up — the top of the map is geographic north.<br><strong>Guidance:</strong> Landmark callouts stay player-relative (ahead/left/right) so the legend still reads like the street.';
     }
+  }
+
+  function getMicroAreaForPoint(point, world) {
+    if (!world || !Array.isArray(world.microAreas) || !world.microAreas.length) {
+      return null;
+    }
+    const containing = world.microAreas.find((area) => isPointInPolygon(point, area.polygon));
+    if (containing) {
+      return containing;
+    }
+    return world.microAreas.reduce((best, area) => {
+      const anchor = area.anchor || area.polygon[0];
+      if (!anchor) return best;
+      const nextDistance = Math.hypot(anchor.x - point.x, anchor.z - point.z);
+      if (!best || nextDistance < best.distance) {
+        return { area, distance: nextDistance };
+      }
+      return best;
+    }, null)?.area || null;
+  }
+
+  function describeMicroArea(area) {
+    if (!area) return '';
+    const stop = Array.isArray(area.stopReasons) && area.stopReasons.length ? area.stopReasons[0] : '';
+    return area.label + ' — ' + area.identity + (stop ? '. ' + stop : '');
   }
 
   function updateNearestNode() {
@@ -2965,20 +3002,26 @@
       }
       return best;
     }, null) || (nearest ? describeLandmarkGuidance(nearest, heading, state.world) : null);
+    const microArea = getMicroAreaForPoint(player.position, state.world);
 
     if (nearest) {
       minimapState.nearestNode = nearest;
       minimapState.nearestGuidance = nearestGuidance;
-      setLandmark('Nearest landmark: ' + (nearestGuidance ? nearestGuidance.text : nearest.label));
+      setLandmark((microArea ? 'Exploring ' + describeMicroArea(microArea) + ' | ' : 'Nearest landmark: ') + (nearestGuidance ? nearestGuidance.text : nearest.label));
       if (routeSegmentEl) {
-        const nearestIndex = Math.max(0, state.world.nodes.findIndex((node) => node.id === nearest.id));
-        const total = Math.max(1, state.world.nodes.length - 1);
-        const progress = Math.round((nearestIndex / total) * 100);
-        routeSegmentEl.textContent = 'Route segment: ' + nearest.label + ' (' + progress + '%)';
+        routeSegmentEl.textContent = microArea
+          ? 'Exploring: ' + microArea.label + ' — ' + microArea.identity
+          : 'Exploring: ' + nearest.label;
       }
       if (minimapLandmarkEl) {
-        minimapLandmarkEl.textContent = nearestGuidance ? 'Nearest landmark: ' + nearestGuidance.text : 'Nearest landmark: ' + nearest.label;
+        minimapLandmarkEl.textContent = microArea
+          ? 'Current area: ' + microArea.label + ' (' + microArea.identity + ')'
+          : (nearestGuidance ? 'Nearest landmark: ' + nearestGuidance.text : 'Nearest landmark: ' + nearest.label);
       }
+      if (microArea && state.currentMicroAreaId !== microArea.id && state.isRunning) {
+        flashBoundaryStatus('Now exploring ' + microArea.label + ' — ' + microArea.identity + '.');
+      }
+      state.currentMicroAreaId = microArea ? microArea.id : '';
       updateMinimapContext();
     }
   }
@@ -3490,6 +3533,9 @@
     (state.world.zones.street || []).forEach((zone) => {
       drawPolygon(zone.polygon, metrics, pad, '#1a2f41', 'rgba(86, 117, 149, 0.68)', 1.15, view, projectionOptions);
     });
+    (state.world.microAreas || []).forEach((area) => {
+      drawPolygon(area.polygon, metrics, pad, 'rgba(255, 210, 135, 0.72)', 'rgba(255, 210, 135, 0.08)', 0.85, view, projectionOptions);
+    });
 
     if (compassEl) {
       compassEl.textContent = 'Heading: ' + getFacingLabel(getHeadingVector());
@@ -3590,6 +3636,15 @@
       if (node.id === 'water-street-mid-block') {
         ctx.fillText('Water St', mini.x + 6, mini.y + 7);
       }
+    });
+
+    (state.world.microAreas || []).forEach((area) => {
+      if (!area.anchor) return;
+      const mini = projectWorldToMinimap(area.anchor, metrics, pad, view, projectionOptions);
+      ctx.fillStyle = area.id === state.currentMicroAreaId ? '#ffd98f' : 'rgba(255, 217, 143, 0.72)';
+      ctx.beginPath();
+      ctx.arc(mini.x, mini.y, area.id === state.currentMicroAreaId ? 3.4 : 2.4, 0, Math.PI * 2);
+      ctx.fill();
     });
 
     const dirLength = 13;
@@ -3959,7 +4014,7 @@
   function startSim() {
     unlockSteamClockAudio();
     state.isRunning = true;
-    setStatus('Street mode active. Mouse look and movement are live. Press V for overview.');
+    setStatus(getStreetModeStatusText());
     setPointerStatus('Pointer lock requested… press Esc any time to release.');
     lockPointer();
   }
@@ -4233,7 +4288,7 @@
       setupAudio(state.world);
       minimapState.worldMetrics = getWorldMetrics();
       try { if (window.localStorage.getItem('gastownLowGraphics') === '1') { setLowGraphicsMode(true); } } catch (error) {}
-      setQuestStatus('Scavenger hunt: talk to the guide to begin.');
+      setQuestStatus(getPublicGoalText() + ' Optional scavenger hunt: talk to the guide to begin.');
       restoreMinimapZoom();
       restoreMinimapMode();
       updateSize();
@@ -4249,7 +4304,7 @@
       scheduleSteamClock();
       setWorldModeStatus(state.world);
       if (!(state.world.meta && state.world.meta.fallbackMode === 'working-gastown-corridor')) {
-        setStatus('Street mode ready. Click scene to enter look mode and begin moving, or press V for overview.');
+        setStatus(getPublicGoalText() + ' Click scene to enter look mode and begin moving, or press V for overview.');
       }
       updateCameraModeUi();
       renderer.setAnimationLoop((time) => {
