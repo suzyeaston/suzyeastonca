@@ -72,6 +72,59 @@ function closePolygon(points) {
   return points;
 }
 
+function polygonSignedArea(points) {
+  if (!Array.isArray(points) || points.length < 3) return 0;
+  const ring = points[0] && points[points.length - 1]
+    && points[0].x === points[points.length - 1].x
+    && points[0].z === points[points.length - 1].z
+    ? points.slice(0, -1)
+    : points.slice();
+  let area = 0;
+  for (let i = 0; i < ring.length; i += 1) {
+    const current = ring[i];
+    const next = ring[(i + 1) % ring.length];
+    area += (current.x * next.z) - (next.x * current.z);
+  }
+  return area / 2;
+}
+
+function sanitizePolygon(points) {
+  if (!Array.isArray(points)) return [];
+  const deduped = [];
+  points.forEach((point) => {
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.z)) return;
+    const last = deduped[deduped.length - 1];
+    if (last && Math.abs(last.x - point.x) < 0.001 && Math.abs(last.z - point.z) < 0.001) return;
+    deduped.push({ x: Number(point.x.toFixed(2)), z: Number(point.z.toFixed(2)) });
+  });
+  if (deduped.length > 2) {
+    const first = deduped[0];
+    const last = deduped[deduped.length - 1];
+    if (Math.abs(first.x - last.x) < 0.001 && Math.abs(first.z - last.z) < 0.001) {
+      deduped.pop();
+    }
+  }
+  const cleaned = deduped.filter((point, index, arr) => {
+    if (arr.length < 3) return true;
+    const prev = arr[(index + arr.length - 1) % arr.length];
+    const next = arr[(index + 1) % arr.length];
+    const cross = ((point.x - prev.x) * (next.z - point.z)) - ((point.z - prev.z) * (next.x - point.x));
+    return Math.abs(cross) > 0.0005;
+  });
+  if (cleaned.length >= 3 && polygonSignedArea(cleaned) < 0) {
+    cleaned.reverse();
+  }
+  return closePolygon(cleaned);
+}
+
+function sanitizeZonePolygon(points) {
+  const polygon = sanitizePolygon(points);
+  if (polygon.length < 4) {
+    throw new Error('Zone polygon must contain at least three unique vertices.');
+  }
+  return polygon;
+}
+
 function polygonContainsPoint(point, polygon) {
   if (!Array.isArray(polygon) || polygon.length < 3) return false;
   let inside = false;
@@ -900,13 +953,23 @@ function makeStarterWorld(outputPath, options = {}) {
     { id: 'cambie-rise-continuation', label: 'Cambie rise continuation', x: Number(layout.cambie.x.toFixed(2)), z: Number(layout.cambie.z.toFixed(2)) },
   ];
 
-  const mainStreet = ribbonPolygon(waterCenterline, streetHalf);
-  const cambieStreet = ribbonPolygon(cambieCorridor, streetHalf * 0.78);
-  const intersectionRoadway = orientedRect(intersectionPoint, intersectionFrame.tangent, 13.1, streetWidth + 1.8);
-  const southSidewalk = closePolygon(lineOffset(waterCenterline, sidewalkOuter).concat(lineOffset(waterCenterline, streetHalf).reverse()));
-  const northSidewalk = closePolygon(lineOffset(waterCenterline, -streetHalf).concat(lineOffset(waterCenterline, -sidewalkOuter).reverse()));
-  const cambieWestSidewalk = closePolygon(lineOffset(cambieCorridor, sidewalkOuter * 0.86).concat(lineOffset(cambieCorridor, streetHalf * 0.78).reverse()));
-  const curbReturn = orientedRect(
+  const westRoadwayCenterline = waterWestLeg.concat([{
+    x: Number((intersectionPoint.x - (intersectionFrame.tangent.x * 6.6)).toFixed(2)),
+    z: Number((intersectionPoint.z - (intersectionFrame.tangent.z * 6.6)).toFixed(2)),
+  }]);
+  const eastRoadwayCenterline = [{
+    x: Number((intersectionPoint.x + (intersectionFrame.tangent.x * 6.6)).toFixed(2)),
+    z: Number((intersectionPoint.z + (intersectionFrame.tangent.z * 6.6)).toFixed(2)),
+  }].concat(waterEastLeg.slice(1));
+
+  const mainStreetWest = sanitizeZonePolygon(ribbonPolygon(westRoadwayCenterline, streetHalf));
+  const mainStreetEast = sanitizeZonePolygon(ribbonPolygon(eastRoadwayCenterline, streetHalf));
+  const cambieStreet = sanitizeZonePolygon(ribbonPolygon(cambieCorridor, streetHalf * 0.78));
+  const intersectionRoadway = sanitizeZonePolygon(orientedRect(intersectionPoint, intersectionFrame.tangent, 13.1, streetWidth + 1.8));
+  const southSidewalk = sanitizeZonePolygon(closePolygon(lineOffset(waterCenterline, sidewalkOuter).concat(lineOffset(waterCenterline, streetHalf).reverse())));
+  const northSidewalk = sanitizeZonePolygon(closePolygon(lineOffset(waterCenterline, -streetHalf).concat(lineOffset(waterCenterline, -sidewalkOuter).reverse())));
+  const cambieWestSidewalk = sanitizeZonePolygon(closePolygon(lineOffset(cambieCorridor, sidewalkOuter * 0.86).concat(lineOffset(cambieCorridor, streetHalf * 0.78).reverse())));
+  const curbReturn = sanitizeZonePolygon(orientedRect(
     {
       x: intersectionPoint.x + (layout.plaza.normal.x * (streetHalf + (sidewalkWidth * 0.28))),
       z: intersectionPoint.z + (layout.plaza.normal.z * (streetHalf + (sidewalkWidth * 0.28))),
@@ -914,8 +977,8 @@ function makeStarterWorld(outputPath, options = {}) {
     layout.plaza.tangent,
     6.4,
     5.8
-  );
-  const plazaPad = orientedRect(
+  ));
+  const plazaPad = sanitizeZonePolygon(orientedRect(
     {
       x: layout.clock.x + (layout.plaza.normal.x * 0.24),
       z: layout.clock.z + (layout.plaza.normal.z * 0.24),
@@ -923,8 +986,8 @@ function makeStarterWorld(outputPath, options = {}) {
     layout.plaza.tangent,
     8.6,
     9.4
-  );
-  const walkBounds = ribbonPolygon(waterRoute, walkOuter).concat([]);
+  ));
+  const walkBounds = sanitizePolygon(ribbonPolygon(waterRoute, walkOuter).concat([]));
 
   const frontagePattern = [7.5, 9.5, 8, 12.5, 8.8, 10.4, 9.2, 14.5, 10.8, 8.4, 12.8, 9.6];
   const depthPattern = [15, 20, 14, 23, 17, 21, 18, 19, 22, 16, 24, 17];
@@ -1115,9 +1178,10 @@ function makeStarterWorld(outputPath, options = {}) {
     },
     zones: {
       street: [
-        { id: 'water-street-main-roadway', surface: 'road', polygon: mainStreet },
-        { id: 'cambie-street-crossing', surface: 'road', polygon: cambieStreet },
+        { id: 'water-street-west-roadway', surface: 'road', polygon: mainStreetWest },
         { id: 'water-cambie-intersection-roadway', surface: 'road', polygon: intersectionRoadway },
+        { id: 'water-street-east-roadway', surface: 'road', polygon: mainStreetEast },
+        { id: 'cambie-street-crossing', surface: 'road', polygon: cambieStreet },
       ],
       sidewalk: [
         { id: 'water-street-south-sidewalk', side: 'south', polygon: southSidewalk },
@@ -1166,13 +1230,13 @@ function buildStarterSurfaceBands(centerline, streetWidth, routeLength) {
     const length = Math.max(9.2, Math.min(18.5, distance(point, next) * 0.98 || 10));
     const progress = routeLength > 0 ? index / Math.max(1, centerline.length - 1) : 0;
     const edgeOffset = streetWidth * 0.39;
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.94).toFixed(2)), length: Number((length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.18, elevation: 0.012 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.3).toFixed(2)), length: Number((length * 0.86).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: progress < 0.2 ? 0.08 : 0.11, elevation: 0.016 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.08).toFixed(2)), length: Number((length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(edgeOffset.toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.14, elevation: 0.024 });
-    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.08).toFixed(2)), length: Number((length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((-edgeOffset).toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.14, elevation: 0.024 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.96).toFixed(2)), length: Number((length * 1.04).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: progress > 0.55 ? 0.24 : 0.2, elevation: 0.012 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.34).toFixed(2)), length: Number((length * 0.82).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'wheel_track', opacity: progress < 0.2 ? 0.1 : 0.16, elevation: 0.016 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.1).toFixed(2)), length: Number((length * 1.02).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number(edgeOffset.toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.18, elevation: 0.024 });
+    bands.push({ segment_id: point.id, width: Number((streetWidth * 0.1).toFixed(2)), length: Number((length * 1.02).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: Number((-edgeOffset).toFixed(2)), offset_z: 0, tone: 'curb_grime', opacity: 0.18, elevation: 0.024 });
     if (point.id === 'steam-clock' || point.id === 'steam-clock-approach') {
-      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.68).toFixed(2)), length: Number(Math.max(5.2, length * 0.36).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.18, elevation: 0.02 });
-      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.34).toFixed(2)), length: Number(Math.max(4.1, length * 0.18).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.12, elevation: 0.022 });
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.7).toFixed(2)), length: Number(Math.max(5.8, length * 0.42).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'intersection_pavers', opacity: 0.24, elevation: 0.02 });
+      bands.push({ segment_id: point.id, width: Number((streetWidth * 0.38).toFixed(2)), length: Number(Math.max(4.5, length * 0.22).toFixed(2)), yaw: Number(heading.toFixed(4)), offset_x: 0, offset_z: 0, tone: 'cobble_break', opacity: 0.18, elevation: 0.022 });
     }
   });
   return bands;
