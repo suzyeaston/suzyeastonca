@@ -155,6 +155,7 @@
     npcSpeechController: null,
     npcSpeechAudio: null,
     resumePointerAfterDialogClose: false,
+    startupSting: { pending: null, queued: false, hasPlayed: false, remoteRequested: false, currentVoiceAudio: null },
     clockTimer: null,
     boundaryNoticeTimer: null,
     currentMicroAreaId: '',
@@ -194,6 +195,35 @@
   const WALKER_NAME_STORAGE_KEY = 'gastownWalkerName';
   const NPC_SPEECH_CACHE_LIMIT = 18;
   const BUSKER_RIFF_CACHE_PREFIX = 'gastownBuskerRiff:';
+  const STARTUP_STING_FALLBACK_SPEC = {
+    tempo: 96,
+    key: 'G minor',
+    duration_bars: 2,
+    chord_hits: [
+      { bar: 1, beat: 1, notes: ['G3', 'Bb3', 'D4'], length_beats: 1.5, velocity: 0.82 },
+      { bar: 2, beat: 1, notes: ['Eb3', 'G3', 'Bb3'], length_beats: 1.25, velocity: 0.76 }
+    ],
+    bass_notes: [
+      { bar: 1, beat: 1, note: 'G1', length_beats: 1, velocity: 0.92 },
+      { bar: 1, beat: 3, note: 'D2', length_beats: 0.75, velocity: 0.78 },
+      { bar: 2, beat: 1, note: 'Eb2', length_beats: 1, velocity: 0.88 },
+      { bar: 2, beat: 3, note: 'F2', length_beats: 0.75, velocity: 0.74 }
+    ],
+    drum_pattern: {
+      kick: [{ bar: 1, beat: 1 }, { bar: 1, beat: 3.5 }, { bar: 2, beat: 1 }, { bar: 2, beat: 3 }],
+      snare: [{ bar: 1, beat: 2.75 }, { bar: 2, beat: 2.75 }],
+      hat: [{ bar: 1, beat: 1.5 }, { bar: 1, beat: 2 }, { bar: 1, beat: 2.5 }, { bar: 1, beat: 4 }, { bar: 2, beat: 1.5 }, { bar: 2, beat: 2 }, { bar: 2, beat: 2.5 }, { bar: 2, beat: 4 }]
+    },
+    lead_phrase: [
+      { bar: 1, beat: 1.5, note: 'D4', length_beats: 0.5, velocity: 0.82, articulation: 'growl' },
+      { bar: 1, beat: 2, note: 'F4', length_beats: 0.5, velocity: 0.78, articulation: 'bend' },
+      { bar: 1, beat: 2.5, note: 'G4', length_beats: 1, velocity: 0.9, articulation: 'hold' },
+      { bar: 2, beat: 1.5, note: 'Bb4', length_beats: 0.5, velocity: 0.8, articulation: 'stab' },
+      { bar: 2, beat: 2, note: 'G4', length_beats: 0.75, velocity: 0.84, articulation: 'fall' },
+      { bar: 2, beat: 3, note: 'D4', length_beats: 1, velocity: 0.74, articulation: 'hold' }
+    ],
+    style_description: 'gritty urban rock-adjacent welcome sting with a stylized sax lead; brisk, punchy, not lounge jazz'
+  };
   const ART_DIRECTION = {
     label: 'stylized realism with cinematic Vancouver rain-lighting',
     streetReflectionBoost: 0.22,
@@ -389,8 +419,12 @@
   function confirmWalkerName(value) {
     setWalkerName(value);
     closeWalkerNameOverlay();
+    state.startupSting.hasPlayed = false;
+    state.startupSting.remoteRequested = false;
+    state.startupSting.queued = false;
     pushJournalEntry('On the street as ' + state.walkerName + '.');
     setStatus(state.walkerName.toUpperCase() + ' ready. Click in.');
+    triggerStartupSting();
   }
 
   const QUEST_DEFINITIONS = {
@@ -468,7 +502,7 @@
 
   function renderProgressionUi() {
     if (routeScoreEl) {
-      routeScoreEl.textContent = Math.round(state.progression.routeCompletionScore) + '% mapped';
+      routeScoreEl.textContent = Math.round(state.progression.routeCompletionScore) + '% route';
     }
     if (collectiblesLogEl) {
       const deduped = [];
@@ -742,6 +776,162 @@
     if (pointerStatusEl) {
       pointerStatusEl.textContent = text;
     }
+  }
+
+  function getStartupStingFallbackSpec() {
+    return JSON.parse(JSON.stringify(STARTUP_STING_FALLBACK_SPEC));
+  }
+
+  function sanitizeStartupStingSpec(spec) {
+    const fallback = getStartupStingFallbackSpec();
+    if (!spec || typeof spec !== 'object') return fallback;
+    const sanitizeEvent = (event, chordMode) => {
+      if (!event || typeof event !== 'object') return null;
+      const base = {
+        bar: Math.max(1, Math.min(3, Number(event.bar) || 1)),
+        beat: Math.max(1, Math.min(4, Number(event.beat) || 1)),
+        length_beats: Math.max(0.25, Math.min(2.5, Number(event.length_beats) || 0.5)),
+        velocity: Math.max(0.35, Math.min(1, Number(event.velocity) || 0.8))
+      };
+      if (chordMode) {
+        const notes = Array.isArray(event.notes) ? event.notes.map((note) => String(note || '').trim()).filter(Boolean).slice(0, 4) : [];
+        if (!notes.length) return null;
+        base.notes = notes;
+      } else {
+        const note = String(event.note || '').trim();
+        if (!note) return null;
+        base.note = note;
+      }
+      if (event.articulation) base.articulation = String(event.articulation);
+      return base;
+    };
+    const specOut = {
+      tempo: Math.max(80, Math.min(132, Number(spec.tempo) || fallback.tempo)),
+      key: String(spec.key || fallback.key),
+      duration_bars: Math.max(2, Math.min(3, Number(spec.duration_bars) || fallback.duration_bars)),
+      chord_hits: (Array.isArray(spec.chord_hits) ? spec.chord_hits : []).map((event) => sanitizeEvent(event, true)).filter(Boolean),
+      bass_notes: (Array.isArray(spec.bass_notes) ? spec.bass_notes : []).map((event) => sanitizeEvent(event, false)).filter(Boolean),
+      drum_pattern: { kick: [], snare: [], hat: [] },
+      lead_phrase: (Array.isArray(spec.lead_phrase) ? spec.lead_phrase : []).map((event) => sanitizeEvent(event, false)).filter(Boolean),
+      style_description: String(spec.style_description || fallback.style_description)
+    };
+    ['kick', 'snare', 'hat'].forEach((piece) => {
+      specOut.drum_pattern[piece] = (spec.drum_pattern && Array.isArray(spec.drum_pattern[piece]) ? spec.drum_pattern[piece] : []).map((event) => ({
+        bar: Math.max(1, Math.min(3, Number(event && event.bar) || 1)),
+        beat: Math.max(1, Math.min(4, Number(event && event.beat) || 1))
+      }));
+      if (!specOut.drum_pattern[piece].length) specOut.drum_pattern[piece] = fallback.drum_pattern[piece];
+    });
+    if (!specOut.chord_hits.length) specOut.chord_hits = fallback.chord_hits;
+    if (!specOut.bass_notes.length) specOut.bass_notes = fallback.bass_notes;
+    if (!specOut.lead_phrase.length) specOut.lead_phrase = fallback.lead_phrase;
+    return specOut;
+  }
+
+  function decodeBase64ToUint8Array(base64) {
+    const binary = window.atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  async function ensureToneReady() {
+    const Tone = getTone();
+    if (!Tone) return null;
+    try {
+      if (typeof Tone.start === 'function') await Tone.start();
+      state.audioUnlocked = true;
+      return Tone;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function fetchStartupStingPayload() {
+    if (!config.startupStingEndpoint) return null;
+    try {
+      const response = await window.fetch(config.startupStingEndpoint, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': config.nonce || '' },
+        body: JSON.stringify({ walkerName: state.walkerName || 'Walker' })
+      });
+      if (!response.ok) throw new Error('Startup sting request failed.');
+      return await response.json();
+    } catch (error) {
+      if (window.console && window.console.warn) window.console.warn('[Gastown Sim] Startup sting endpoint unavailable.', error);
+      return null;
+    }
+  }
+
+  function scheduleStartupVoice(payload, Tone, destination, startedAt) {
+    if (!payload || !payload.audioBase64 || !Tone) return;
+    try {
+      const player = new Tone.Player({ autostart: false, fadeOut: 0.12 }).connect(destination);
+      player.volume.value = -7;
+      player.load(URL.createObjectURL(new Blob([decodeBase64ToUint8Array(payload.audioBase64)], { type: payload.voiceMimeType || 'audio/wav' }))).then(() => {
+        player.start(startedAt + 0.08);
+        state.startupSting.currentVoiceAudio = player;
+      }).catch(() => {});
+    } catch (error) {}
+  }
+
+  async function playStartupStingNow(payload) {
+    const Tone = await ensureToneReady();
+    if (!Tone) return false;
+    const spec = sanitizeStartupStingSpec(payload && payload.musicSpec ? payload.musicSpec : getStartupStingFallbackSpec());
+    const master = new Tone.Gain(0.9).toDestination();
+    const limiter = new Tone.Limiter(-4).connect(master);
+    const chords = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.18, sustain: 0.16, release: 0.55 }, volume: -14 }).connect(limiter);
+    const bass = new Tone.MonoSynth({ oscillator: { type: 'square' }, filter: { Q: 1, type: 'lowpass', rolloff: -24 }, envelope: { attack: 0.01, decay: 0.14, sustain: 0.35, release: 0.4 }, filterEnvelope: { attack: 0.01, decay: 0.16, sustain: 0.3, release: 0.3, baseFrequency: 90, octaves: 2.3 }, volume: -10 }).connect(limiter);
+    const lead = new Tone.Synth({ oscillator: { type: 'sawtooth3' }, envelope: { attack: 0.02, decay: 0.08, sustain: 0.25, release: 0.28 }, volume: -11 }).connect(new Tone.FeedbackDelay('16n', 0.18).connect(limiter));
+    const kick = new Tone.MembraneSynth({ pitchDecay: 0.025, octaves: 5, envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.05 }, volume: -7 }).connect(limiter);
+    const snare = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.16, sustain: 0 }, volume: -16 }).connect(limiter);
+    const hat = new Tone.MetalSynth({ frequency: 260, envelope: { attack: 0.001, decay: 0.08, release: 0.01 }, harmonicity: 5.1, modulationIndex: 16, resonance: 1800, octaves: 1.6, volume: -26 }).connect(limiter);
+    const beatToSeconds = 60 / spec.tempo;
+    const eventTime = (bar, beat) => Tone.now() + ((Math.max(1, bar) - 1) * 4 + (Math.max(1, beat) - 1)) * beatToSeconds + 0.05;
+    spec.chord_hits.forEach((event) => chords.triggerAttackRelease(event.notes, event.length_beats * beatToSeconds, eventTime(event.bar, event.beat), event.velocity));
+    spec.bass_notes.forEach((event) => bass.triggerAttackRelease(event.note, event.length_beats * beatToSeconds, eventTime(event.bar, event.beat), event.velocity));
+    spec.lead_phrase.forEach((event) => lead.triggerAttackRelease(event.note, event.length_beats * beatToSeconds, eventTime(event.bar, event.beat), event.velocity));
+    (spec.drum_pattern.kick || []).forEach((event) => kick.triggerAttackRelease('C1', '8n', eventTime(event.bar, event.beat), 0.95));
+    (spec.drum_pattern.snare || []).forEach((event) => snare.triggerAttackRelease('16n', eventTime(event.bar, event.beat), 0.6));
+    (spec.drum_pattern.hat || []).forEach((event) => hat.triggerAttackRelease('16n', eventTime(event.bar, event.beat), 0.28));
+    scheduleStartupVoice(payload, Tone, limiter, Tone.now());
+    const cleanupAfter = ((((spec.duration_bars || 2) * 4) + 2) * beatToSeconds * 1000);
+    window.setTimeout(() => { [chords, bass, lead, kick, snare, hat, limiter, master].forEach((node) => { try { if (node && typeof node.dispose === 'function') node.dispose(); } catch (error) {} }); }, cleanupAfter);
+    return true;
+  }
+
+  async function consumeStartupStingQueue() {
+    if (!state.startupSting.queued || state.startupSting.hasPlayed) return;
+    const payload = state.startupSting.pending || { musicSpec: getStartupStingFallbackSpec(), audioBase64: '' };
+    const played = await playStartupStingNow(payload);
+    if (played) {
+      state.startupSting.queued = false;
+      state.startupSting.hasPlayed = true;
+      setStatus(payload && payload.welcomeText ? payload.welcomeText : ('Welcome, ' + state.walkerName + '. Follow the street.'));
+    }
+  }
+
+  function queueStartupSting(payload) {
+    state.startupSting.pending = payload || { musicSpec: getStartupStingFallbackSpec(), audioBase64: '' };
+    state.startupSting.queued = true;
+    consumeStartupStingQueue();
+  }
+
+  async function triggerStartupSting() {
+    if (state.startupSting.remoteRequested) return;
+    state.startupSting.remoteRequested = true;
+    const payload = await fetchStartupStingPayload();
+    queueStartupSting(payload || {
+      ok: false,
+      walkerName: state.walkerName || 'Walker',
+      welcomeText: 'Welcome to the Gastown Simulator, ' + (state.walkerName || 'Walker') + '. Follow the street.',
+      audioBase64: '',
+      musicSpec: getStartupStingFallbackSpec(),
+      musicSpecFallback: true,
+      voiceFallback: true
+    });
   }
 
   function syncCameraProjection(mode) {
@@ -5200,6 +5390,10 @@
     }
     weatherSelect.addEventListener('change', (event) => applyWeather(event.target.value));
     moodSelect.addEventListener('change', (event) => applyMood(event.target.value));
+
+    ['pointerdown', 'keydown', 'touchstart'].forEach((eventName) => {
+      document.addEventListener(eventName, () => { consumeStartupStingQueue(); }, { passive: true });
+    });
 
     document.addEventListener('pointerlockchange', () => {
       if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {

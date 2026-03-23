@@ -273,6 +273,7 @@ function se_enqueue_gastown_sim_assets() {
                 'conversationEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-npc-chat' ) ),
                 'voiceEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-npc-voice' ) ),
                 'buskerRiffEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-busker-riff' ) ),
+                'startupStingEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-start-sting' ) ),
                 'nonce' => wp_create_nonce( 'wp_rest' ),
                 'defaultWeather' => 'clear',
                 'defaultMood'    => 'calm',
@@ -835,6 +836,12 @@ add_action('rest_api_init', function() {
         'callback'            => 'se_handle_gastown_busker_riff',
         'permission_callback' => '__return_true',
     ]);
+
+    register_rest_route('se/v1', '/gastown-start-sting', [
+        'methods'             => 'POST',
+        'callback'            => 'se_handle_gastown_start_sting',
+        'permission_callback' => '__return_true',
+    ]);
 });
 
 // =========================================
@@ -859,6 +866,178 @@ function get_custom_canucks_betting( WP_REST_Request $request ) {
 }
 
 
+
+
+function se_get_gastown_start_sting_fallback_spec() {
+    return array(
+        'tempo' => 96,
+        'key' => 'G minor',
+        'duration_bars' => 2,
+        'chord_hits' => array(
+            array( 'bar' => 1, 'beat' => 1, 'notes' => array( 'G3', 'Bb3', 'D4' ), 'length_beats' => 1.5, 'velocity' => 0.82 ),
+            array( 'bar' => 2, 'beat' => 1, 'notes' => array( 'Eb3', 'G3', 'Bb3' ), 'length_beats' => 1.25, 'velocity' => 0.76 ),
+        ),
+        'bass_notes' => array(
+            array( 'bar' => 1, 'beat' => 1, 'note' => 'G1', 'length_beats' => 1, 'velocity' => 0.92 ),
+            array( 'bar' => 1, 'beat' => 3, 'note' => 'D2', 'length_beats' => 0.75, 'velocity' => 0.78 ),
+            array( 'bar' => 2, 'beat' => 1, 'note' => 'Eb2', 'length_beats' => 1, 'velocity' => 0.88 ),
+            array( 'bar' => 2, 'beat' => 3, 'note' => 'F2', 'length_beats' => 0.75, 'velocity' => 0.74 ),
+        ),
+        'drum_pattern' => array(
+            'kick' => array( array( 'bar' => 1, 'beat' => 1 ), array( 'bar' => 1, 'beat' => 3.5 ), array( 'bar' => 2, 'beat' => 1 ), array( 'bar' => 2, 'beat' => 3 ) ),
+            'snare' => array( array( 'bar' => 1, 'beat' => 2.75 ), array( 'bar' => 2, 'beat' => 2.75 ) ),
+            'hat' => array(
+                array( 'bar' => 1, 'beat' => 1.5 ), array( 'bar' => 1, 'beat' => 2 ), array( 'bar' => 1, 'beat' => 2.5 ), array( 'bar' => 1, 'beat' => 4 ),
+                array( 'bar' => 2, 'beat' => 1.5 ), array( 'bar' => 2, 'beat' => 2 ), array( 'bar' => 2, 'beat' => 2.5 ), array( 'bar' => 2, 'beat' => 4 )
+            ),
+        ),
+        'lead_phrase' => array(
+            array( 'bar' => 1, 'beat' => 1.5, 'note' => 'D4', 'length_beats' => 0.5, 'velocity' => 0.82, 'articulation' => 'growl' ),
+            array( 'bar' => 1, 'beat' => 2, 'note' => 'F4', 'length_beats' => 0.5, 'velocity' => 0.78, 'articulation' => 'bend' ),
+            array( 'bar' => 1, 'beat' => 2.5, 'note' => 'G4', 'length_beats' => 1, 'velocity' => 0.9, 'articulation' => 'hold' ),
+            array( 'bar' => 2, 'beat' => 1.5, 'note' => 'Bb4', 'length_beats' => 0.5, 'velocity' => 0.8, 'articulation' => 'stab' ),
+            array( 'bar' => 2, 'beat' => 2, 'note' => 'G4', 'length_beats' => 0.75, 'velocity' => 0.84, 'articulation' => 'fall' ),
+            array( 'bar' => 2, 'beat' => 3, 'note' => 'D4', 'length_beats' => 1, 'velocity' => 0.74, 'articulation' => 'hold' ),
+        ),
+        'style_description' => 'gritty urban rock-adjacent welcome sting with a stylized sax lead; brisk, punchy, not lounge jazz',
+    );
+}
+
+function se_sanitize_gastown_start_sting_spec( $decoded, $fallback_spec ) {
+    if ( ! is_array( $decoded ) ) {
+        return $fallback_spec;
+    }
+
+    $spec = $fallback_spec;
+    $spec['tempo'] = max( 80, min( 132, intval( $decoded['tempo'] ?? $fallback_spec['tempo'] ) ) );
+    $spec['key'] = sanitize_text_field( (string) ( $decoded['key'] ?? $fallback_spec['key'] ) );
+    $spec['duration_bars'] = max( 2, min( 3, intval( $decoded['duration_bars'] ?? $fallback_spec['duration_bars'] ) ) );
+    $spec['style_description'] = sanitize_text_field( (string) ( $decoded['style_description'] ?? $fallback_spec['style_description'] ) );
+
+    $sanitize_note_events = static function( $events, $fallback_events, $allow_chords = false ) {
+        $clean = array();
+        foreach ( array_slice( is_array( $events ) ? $events : array(), 0, 12 ) as $event ) {
+            if ( ! is_array( $event ) ) {
+                continue;
+            }
+            $row = array(
+                'bar' => max( 1, min( 3, intval( $event['bar'] ?? 1 ) ) ),
+                'beat' => max( 1, min( 4, floatval( $event['beat'] ?? 1 ) ) ),
+                'length_beats' => min( 2.5, max( 0.25, floatval( $event['length_beats'] ?? 0.5 ) ) ),
+                'velocity' => min( 1, max( 0.35, floatval( $event['velocity'] ?? 0.8 ) ) ),
+            );
+            if ( $allow_chords ) {
+                $notes = array_values( array_slice( array_filter( array_map( 'sanitize_text_field', (array) ( $event['notes'] ?? array() ) ) ), 0, 4 ) );
+                if ( empty( $notes ) ) {
+                    continue;
+                }
+                $row['notes'] = $notes;
+            } else {
+                $note = sanitize_text_field( (string) ( $event['note'] ?? '' ) );
+                if ( '' === $note ) {
+                    continue;
+                }
+                $row['note'] = $note;
+            }
+            if ( isset( $event['articulation'] ) ) {
+                $row['articulation'] = sanitize_text_field( (string) $event['articulation'] );
+            }
+            $clean[] = $row;
+        }
+        return ! empty( $clean ) ? $clean : $fallback_events;
+    };
+
+    $spec['chord_hits'] = $sanitize_note_events( $decoded['chord_hits'] ?? array(), $fallback_spec['chord_hits'], true );
+    $spec['bass_notes'] = $sanitize_note_events( $decoded['bass_notes'] ?? array(), $fallback_spec['bass_notes'], false );
+    $spec['lead_phrase'] = $sanitize_note_events( $decoded['lead_phrase'] ?? array(), $fallback_spec['lead_phrase'], false );
+
+    $drum_pattern = is_array( $decoded['drum_pattern'] ?? null ) ? $decoded['drum_pattern'] : array();
+    foreach ( array( 'kick', 'snare', 'hat' ) as $piece ) {
+        $spec['drum_pattern'][ $piece ] = array();
+        foreach ( array_slice( is_array( $drum_pattern[ $piece ] ?? null ) ? $drum_pattern[ $piece ] : array(), 0, 12 ) as $event ) {
+            if ( ! is_array( $event ) ) {
+                continue;
+            }
+            $spec['drum_pattern'][ $piece ][] = array(
+                'bar' => max( 1, min( 3, intval( $event['bar'] ?? 1 ) ) ),
+                'beat' => max( 1, min( 4, floatval( $event['beat'] ?? 1 ) ) ),
+            );
+        }
+        if ( empty( $spec['drum_pattern'][ $piece ] ) ) {
+            $spec['drum_pattern'][ $piece ] = $fallback_spec['drum_pattern'][ $piece ];
+        }
+    }
+
+    return $spec;
+}
+
+function se_handle_gastown_start_sting( WP_REST_Request $request ) {
+    $walker_name = sanitize_text_field( (string) $request->get_param( 'walkerName' ) );
+    $walker_name = '' !== trim( $walker_name ) ? mb_substr( preg_replace( '/\s+/', ' ', trim( $walker_name ) ), 0, 24 ) : 'Walker';
+
+    $welcome_line = sprintf( 'Welcome to the Gastown Simulator, %s. Follow the street.', $walker_name );
+    $fallback_spec = se_get_gastown_start_sting_fallback_spec();
+    $result = array(
+        'ok' => true,
+        'walkerName' => $walker_name,
+        'welcomeText' => $welcome_line,
+        'voiceGenerated' => false,
+        'voiceFallback' => true,
+        'voiceFormat' => 'wav',
+        'voiceMimeType' => 'audio/wav',
+        'audioBase64' => '',
+        'musicSpecFallback' => true,
+        'musicSpec' => $fallback_spec,
+        'helpNote' => 'Startup welcome voice is AI-generated when available.',
+    );
+
+    $music_messages = array(
+        array(
+            'role' => 'system',
+            'content' => 'Return strict JSON only. Create a compact browser-synth startup sting spec for a Gastown walking simulator. Keep it gritty, urban, rock-adjacent, short, welcoming, not lounge jazz. Duration 3-6 seconds.',
+        ),
+        array(
+            'role' => 'user',
+            'content' => 'Return JSON with exactly these keys: tempo, key, duration_bars, chord_hits, bass_notes, drum_pattern, lead_phrase, style_description. chord_hits is an array of objects with bar, beat, notes, length_beats, velocity. bass_notes and lead_phrase are arrays of objects with bar, beat, note, length_beats, velocity; lead_phrase can also include articulation. drum_pattern is an object with kick, snare, hat arrays of {bar, beat}. Use 2 or 3 bars in 4/4.',
+        ),
+    );
+    $music_response = se_openai_chat( $music_messages, array(
+        'model' => 'gpt-4o-mini',
+        'temperature' => 0.7,
+        'max_tokens' => 450,
+        'response_format' => array( 'type' => 'json_object' ),
+    ), array( 'timeout' => 8 ) );
+
+    if ( ! is_wp_error( $music_response ) ) {
+        $music_text = trim( (string) ( $music_response['choices'][0]['message']['content'] ?? '' ) );
+        $music_decoded = json_decode( $music_text, true );
+        if ( is_array( $music_decoded ) ) {
+            $result['musicSpec'] = se_sanitize_gastown_start_sting_spec( $music_decoded, $fallback_spec );
+            $result['musicSpecFallback'] = false;
+        }
+    }
+
+    $speech = se_openai_tts(
+        $welcome_line,
+        array(
+            'model' => 'gpt-4o-mini-tts',
+            'voice' => 'alloy',
+            'response_format' => 'wav',
+            'instructions' => 'Read as a brisk game startup welcome. Short, punchy, warm, urban, no ad-libbing.',
+        ),
+        array( 'timeout' => 12 )
+    );
+
+    if ( ! is_wp_error( $speech ) ) {
+        $result['audioBase64'] = base64_encode( $speech['audio'] );
+        $result['voiceGenerated'] = true;
+        $result['voiceFallback'] = false;
+        $result['voiceFormat'] = $speech['format'];
+        $result['voiceMimeType'] = 'audio/wav';
+    }
+
+    return rest_ensure_response( $result );
+}
 
 function se_get_gastown_busker_riff_fallback( $mood = 'lively', $weather = 'clear', $time_of_day = 'morning' ) {
     $tempo = 'night' === $time_of_day ? 90 : ( 'lively' === $mood ? 108 : 96 );
