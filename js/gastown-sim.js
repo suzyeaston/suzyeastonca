@@ -1917,7 +1917,8 @@
       const suppressGenericMarker = heroLandmarkIds.has(landmark.id)
         || suppressedKinds.has(landmark.kind)
         || landmark.id === 'steam-clock'
-        || landmark.id === 'water-cambie-intersection';
+        || landmark.id === 'water-cambie-intersection'
+        || landmark.id === 'water-street-mid-block';
 
       if (state.debugEnabled || !suppressGenericMarker) {
         const markerMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.2 });
