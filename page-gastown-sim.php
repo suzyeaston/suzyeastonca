@@ -15,7 +15,8 @@ get_header();
 
     <div class="gastown-controls" role="group" aria-label="Simulator controls">
       <button type="button" class="pixel-button secondary" data-action="pause">Pause</button>
-      <button type="button" class="pixel-button secondary" data-action="reset">Reset to route start</button>
+      <button type="button" class="pixel-button secondary" data-action="reset" aria-label="Reset to the start of the route">Reset to route start</button>
+      <button type="button" class="pixel-button secondary" data-action="tutorial-open" aria-label="Open the controls tutorial overlay">Tutorial</button>
       <label>
         Time of day
         <select name="time-of-day">
@@ -44,7 +45,15 @@ get_header();
           <option value="eerie">Eerie</option>
         </select>
       </label>
-      <button type="button" class="pixel-button tiny secondary" data-action="debug-toggle">Toggle debug</button>
+      <label>
+        <input type="checkbox" name="low-graphics" data-setting="low-graphics" aria-label="Enable low graphics mode">
+        Low graphics mode
+      </label>
+      <label>
+        <input type="checkbox" name="reopen-tutorial" data-setting="reopen-tutorial" aria-label="Show the tutorial overlay again">
+        Show tutorial on next load
+      </label>
+      <button type="button" class="pixel-button tiny secondary" data-action="debug-toggle" aria-label="Toggle the debug notes panel">Toggle debug</button>
     </div>
 
     <section class="gastown-help" aria-label="Simulator controls guide">
@@ -60,7 +69,27 @@ get_header();
       </ul>
     </section>
 
+
+
+    <section class="gastown-tutorial-overlay" data-tutorial-overlay role="dialog" aria-modal="true" aria-labelledby="gastown-tutorial-title" aria-describedby="gastown-tutorial-copy" hidden>
+      <div class="gastown-dialog-panel">
+        <div class="gastown-dialog-header">
+          <h2 id="gastown-tutorial-title">Welcome to the Gastown Simulator</h2>
+          <button type="button" class="pixel-button tiny secondary" data-action="tutorial-close" aria-label="Close tutorial overlay">Close</button>
+        </div>
+        <div class="gastown-dialog-body" id="gastown-tutorial-copy">
+          <p>Click the scene to lock the pointer, use the mouse to look around, and move with W A S D or the arrow keys.</p>
+          <p>Press E or click on nearby characters to talk. Press M M quickly to toggle the minimap between north-up and heading-up orientation.</p>
+          <p>Screen reader note: status updates, landmark callouts, and quest progress are announced below the simulator.</p>
+        </div>
+        <div class="gastown-dialog-actions">
+          <button type="button" class="pixel-button secondary" data-action="tutorial-start" aria-label="Start the simulator tutorial">Start tutorial</button>
+          <button type="button" class="pixel-button secondary" data-action="tutorial-close">Skip for now</button>
+        </div>
+      </div>
+    </section>
     <p class="gastown-status" data-sim-status aria-live="polite">Loading simulator...</p>
+    <p class="gastown-quest-status" data-sim-quest-status aria-live="polite">Scavenger hunt: inactive.</p>
     <p class="gastown-world-status" data-sim-world-status aria-live="polite">World data status: checking build provenance…</p>
     <p class="gastown-pointer-status" data-sim-pointer-status aria-live="polite">Pointer unlocked.</p>
     <p class="gastown-landmark" data-sim-landmark aria-live="polite">Nearest landmark: Station threshold</p>
@@ -75,16 +104,18 @@ get_header();
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>
         <p class="gastown-minimap-mode-status" data-sim-minimap-mode-status aria-live="polite">Map mode: North-up — the top of the map is geographic north. Guidance: landmark callouts stay player-relative.</p>
+        <p class="gastown-minimap-tooltip" data-sim-minimap-tooltip aria-live="polite">Tip: press M twice quickly to switch between north-up and heading-up map modes.</p>
         <p class="gastown-minimap-context" data-sim-minimap-context aria-live="polite"><strong>Now facing:</strong> north<br><strong>Nearest landmark:</strong> Waterfront Station threshold — ahead</p>
         <canvas data-sim-minimap width="220" height="220"></canvas>
-        <ul class="gastown-minimap-legend" aria-label="Minimap legend">
-          <li><span class="dot player"></span> You</li>
-          <li><span class="dot route"></span> Route line</li>
-          <li><span class="dot sidewalk"></span> Sidewalk / plaza</li>
-          <li><span class="dot street"></span> Road</li>
-          <li><span class="dot station"></span> Station</li>
-          <li><span class="dot steam"></span> Landmark</li>
-          <li><span class="dot nearest"></span> Guidance callout</li>
+        <div class="gastown-minimap-compass" data-sim-compass aria-live="polite">Heading: north</div>
+        <ul class="gastown-minimap-legend" data-sim-minimap-legend aria-label="Minimap legend">
+          <li>You</li>
+          <li>Route line</li>
+          <li>Sidewalk / plaza</li>
+          <li>Road</li>
+          <li>Landmark</li>
+          <li>Guidance callout</li>
+          <li>Collectibles</li>
         </ul>
         <p class="gastown-minimap-label" data-sim-minimap-landmark>Nearest landmark: Waterfront Station threshold — ahead</p>
       </aside>

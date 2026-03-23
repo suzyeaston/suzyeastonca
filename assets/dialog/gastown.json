@@ -2,56 +2,113 @@
   "guide_intro": {
     "title": "Gastown guide",
     "lines": [
-      "You are standing in the playable Water Street fallback build, which now treats the corridor as the main Gastown walk rather than a placeholder.",
-      "Talk to nearby NPCs for short role-aware observations about Gastown, Water Street, and the Steam Clock area."
+      "Welcome to Water Street. This block sits in the old warehouse district that grew up around Vancouver's working waterfront, so the brick fronts and loading-bay rhythm are part of Gastown's real story.",
+      "If you want a quick challenge, I can send you on a scavenger hunt for three street details that locals use to read the neighbourhood: a newspaper box, a historic plaque, and a mural.",
+      "Maple Tree Square is just ahead too \u2014 it marks the birthplace of Gastown, where Gassy Jack's saloon helped spark the original settlement."
     ],
     "actions": [
-      { "type": "close", "label": "Back to walk" }
+      {
+        "type": "close",
+        "label": "Back to walk"
+      }
     ]
   },
   "busker_clock_corner": {
     "title": "Clock-corner busker",
     "lines": [
-      "Listening…"
+      "That Steam Clock was built in 1977 by Raymond Saunders after the city covered an old steam vent here on Water Street.",
+      "Every quarter-hour the whistles kick out a version of the Westminster chimes, so this corner keeps its own little performance schedule.",
+      "Ask again and I'll trade you one more local favourite about the square beyond the clock."
     ],
     "actions": [
-      { "type": "close", "label": "Back to walk" }
+      {
+        "type": "close",
+        "label": "Back to walk"
+      }
     ]
   },
   "pedestrian_route_tip": {
     "title": "Water Street walker",
     "lines": [
-      "Listening…"
+      "Water Street still feels like old Gastown because the narrow lots and warehouse fa\u00e7ades keep the block tight and walkable.",
+      "Before tourists filled the sidewalks, this corridor served the port economy \u2014 teamsters, merchants, and dock traffic all funneled through here.",
+      "If you ask me for a second tip, I'll tell you where the neighbourhood really started."
+    ],
+    "actions": [
+      {
+        "type": "close",
+        "label": "Back to walk"
+      }
     ]
   },
   "pedestrian_clock_hint": {
     "title": "Gastown passerby",
     "lines": [
-      "Listening…"
+      "Maple Tree Square up ahead is usually described as Gastown's historic heart, because that triangle of streets grew around Gassy Jack's first saloon.",
+      "The cobbles and lamp standards are much newer than the boomtown days, but they were chosen to keep the area's heritage mood intact.",
+      "Catch me on a follow-up question and I'll give you the quick version of why tourists crowd the clock."
+    ],
+    "actions": [
+      {
+        "type": "close",
+        "label": "Back to walk"
+      }
     ]
   },
   "tourist_clock_stop": {
     "title": "Steam Clock visitor",
     "lines": [
-      "Listening…"
+      "We came for the Steam Clock, but the surprise is how much story is packed into one intersection \u2014 steam pipes below, brick warehouses above, and Maple Tree Square only steps away.",
+      "People love that it looks Victorian even though it is a 1977 creation; it is basically a heritage stage prop that became a real city icon.",
+      "Ask a second question and I'll tell you the best moment to stand here for the chime."
+    ],
+    "actions": [
+      {
+        "type": "close",
+        "label": "Back to walk"
+      }
     ]
   },
   "tourist_clock_photo": {
     "title": "Street photographer",
     "lines": [
-      "Listening…"
+      "From this angle you can frame the Steam Clock with the old warehouse cornices, which is why photographers keep drifting back to this exact patch of sidewalk.",
+      "Maple Tree Square was once a jumble of roads and industry, but today it works like a gateway shot that tells the whole Gastown story in one image.",
+      "Give me a second prompt and I'll share the trick for timing the whistle plume."
+    ],
+    "actions": [
+      {
+        "type": "close",
+        "label": "Back to walk"
+      }
     ]
   },
   "skateboarder_corridor": {
     "title": "Gastown skateboarder",
     "lines": [
-      "Listening…"
+      "The bricks look rough, but the long sightlines on Water Street make it easy to roll as long as you respect the tourist knots around the Steam Clock.",
+      "Older locals still talk about Gastown as a place where rail, port traffic, and nightlife kept colliding \u2014 that mixed energy is kind of why this block still feels alive.",
+      "Hit me with one more question and I'll tell you which stretch is best for a clean glide."
+    ],
+    "actions": [
+      {
+        "type": "close",
+        "label": "Back to walk"
+      }
     ]
   },
   "cyclist_water_street": {
     "title": "Gastown cyclist",
     "lines": [
-      "Listening…"
+      "Fog or rain changes this ride fast \u2014 the paving gets slick, the sightlines shorten, and everyone near the clock starts moving more cautiously.",
+      "On a clear afternoon, though, the block fills with visitors because the Steam Clock, Maple Tree Square, and the heritage storefronts are all within a minute of each other.",
+      "Ask again and I'll tell you the commuter shortcut locals use to slip past the photo crowd."
+    ],
+    "actions": [
+      {
+        "type": "close",
+        "label": "Back to walk"
+      }
     ]
   }
 }

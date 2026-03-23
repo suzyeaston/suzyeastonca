@@ -56,6 +56,16 @@
   const minimapModeBtn = app.querySelector('[data-action="minimap-mode-toggle"]');
   const osmAttributionEl = app.querySelector('[data-gastown-osm-attribution]');
   const interactPromptEl = app.querySelector('[data-sim-interact-prompt]');
+  const questStatusEl = app.querySelector('[data-sim-quest-status]');
+  const tutorialOverlayEl = app.querySelector('[data-tutorial-overlay]');
+  const tutorialOpenBtn = app.querySelector('[data-action="tutorial-open"]');
+  const tutorialCloseEls = app.querySelectorAll('[data-action="tutorial-close"]');
+  const tutorialStartBtn = app.querySelector('[data-action="tutorial-start"]');
+  const minimapLegendEl = app.querySelector('[data-sim-minimap-legend]');
+  const minimapTooltipEl = app.querySelector('[data-sim-minimap-tooltip]');
+  const compassEl = app.querySelector('[data-sim-compass]');
+  const lowGraphicsToggle = app.querySelector('[data-setting="low-graphics"]');
+  const reopenTutorialToggle = app.querySelector('[data-setting="reopen-tutorial"]');
   const dialogModalEl = app.querySelector('[data-dialog-modal]');
   const dialogTitleEl = app.querySelector('[data-dialog-title]');
   const dialogBodyEl = app.querySelector('[data-dialog-body]');
@@ -128,6 +138,12 @@
     boundaryNoticeTimer: null,
     audioWarningIssued: false,
     worldBuildStatus: null,
+    npcs: [],
+    props: [],
+    guideQuestTriggered: false,
+    tutorial: { seen: false, lastMKeyAt: 0 },
+    lowGraphics: false,
+    quest: { active: false, completed: false, rewardPending: false, items: [] },
   };
 
   const DEFAULT_EYE_HEIGHT = 1.7;
@@ -137,6 +153,7 @@
   camera.position.set(0, DEFAULT_EYE_HEIGHT, 0);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
   canvasWrap.appendChild(renderer.domElement);
 
   const player = new THREE.Object3D();
@@ -178,6 +195,7 @@
     groundMeshes: [],
     groundTextures: {},
     instancedProps: [],
+    propEntries: [],
     npcMeshes: [],
     routeGuideMaterials: [],
     weatherMaterials: [],
@@ -263,6 +281,50 @@
     statusEl.textContent = text;
   }
 
+  function setQuestStatus(text) {
+    if (questStatusEl) {
+      questStatusEl.textContent = text;
+    }
+  }
+
+  function openTutorialOverlay() {
+    if (!tutorialOverlayEl) return;
+    tutorialOverlayEl.removeAttribute('hidden');
+    tutorialOverlayEl.setAttribute('aria-hidden', 'false');
+    setStatus('Tutorial open. Review the controls, then start walking when ready.');
+  }
+
+  function closeTutorialOverlay() {
+    if (!tutorialOverlayEl) return;
+    tutorialOverlayEl.setAttribute('hidden', 'hidden');
+    tutorialOverlayEl.setAttribute('aria-hidden', 'true');
+    try { window.localStorage.setItem('gastownTutorialSeen', '1'); } catch (error) {}
+    state.tutorial.seen = true;
+  }
+
+  function shouldShowTutorialOnLoad() {
+    try {
+      const forced = window.localStorage.getItem('gastownTutorialReopen') === '1';
+      const seen = window.localStorage.getItem('gastownTutorialSeen') === '1';
+      return forced || !seen;
+    } catch (error) {
+      return true;
+    }
+  }
+
+  function setLowGraphicsMode(enabled) {
+    state.lowGraphics = !!enabled;
+    renderer.shadowMap.enabled = !state.lowGraphics;
+    keyLight.castShadow = !state.lowGraphics;
+    fillLight.castShadow = false;
+    if (lowGraphicsToggle) lowGraphicsToggle.checked = state.lowGraphics;
+    try { window.localStorage.setItem('gastownLowGraphics', state.lowGraphics ? '1' : '0'); } catch (error) {}
+    if (state.world) {
+      rebuildRain(((state.world.weatherPresets[state.activeWeather] || {}).rainIntensity || 0) * ((state.world.timeOfDayPresets[state.activeTimeOfDay] || {}).rainVisibility || 1));
+      refreshNpcPopulation();
+    }
+  }
+
   function flashBoundaryStatus(text) {
     setStatus(text);
     if (state.boundaryNoticeTimer) {
@@ -329,6 +391,8 @@
   function setCameraMode(mode) {
     if (mode === state.cameraMode) {
       updateCameraModeUi();
+      updateMinimapLegend();
+      if (shouldShowTutorialOnLoad()) { openTutorialOverlay(); if (reopenTutorialToggle) reopenTutorialToggle.checked = true; }
       return;
     }
 
@@ -895,6 +959,31 @@
         return;
       }
 
+      if (action.type === 'response' && Array.isArray(action.responseLines)) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'pixel-button secondary';
+        button.textContent = action.label || 'Tell me more';
+        button.addEventListener('click', () => {
+          renderDialogBody(action.responseLines);
+          if (action.followupStatus) { setStatus(action.followupStatus); }
+        });
+        dialogActionsDynamicEl.appendChild(button);
+        controls.push(button);
+        return;
+      }
+
+      if (action.type === 'quest') {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'pixel-button secondary';
+        button.textContent = action.label || 'Start scavenger hunt';
+        button.addEventListener('click', () => startGuideQuest());
+        dialogActionsDynamicEl.appendChild(button);
+        controls.push(button);
+        return;
+      }
+
       if (action.type === 'close') {
         const button = document.createElement('button');
         button.type = 'button';
@@ -989,6 +1078,14 @@
       defaultCloseLabel: 'Back to walk',
     });
 
+    if (npcState.role === 'guide') {
+      normalized.actions = [
+        { type: 'quest', label: state.quest.completed ? 'Review scavenger hunt' : 'Start scavenger hunt' },
+        { type: 'response', label: 'Tell me more about Maple Tree Square', responseLines: ['Maple Tree Square marks the early centre of Gastown, where Carrall, Powell, Alexander, and Water come together in a triangular knot.', 'That irregular geometry is part of why the district feels older than the rest of downtown — the street plan still hints at the port-town era.'], followupStatus: 'Guide shared extra Gastown history.' },
+        { type: 'close', label: 'Back to walk' }
+      ];
+    }
+
     dialogTitleEl.textContent = normalized.title;
     renderDialogBody(normalized.lines);
     renderDialogActions(normalized);
@@ -1014,6 +1111,56 @@
 
     showDialog();
     hydrateNpcConversation(npcState);
+  }
+
+  function getCollectibleProps() {
+    return (state.props || []).filter((prop) => prop.collectible);
+  }
+
+  function startGuideQuest() {
+    const items = getCollectibleProps().map((prop) => ({ key: prop.collectibleKey || prop.id, label: prop.collectibleLabel || prop.id, found: !!prop.collected, propId: prop.id }));
+    state.quest.active = true;
+    state.quest.completed = items.length && items.every((item) => item.found);
+    state.quest.items = items;
+    setQuestStatus('Scavenger hunt active: find ' + items.map((item) => item.label).join(', ') + '.');
+    renderDialogBody(['Scavenger hunt started.', 'Find the highlighted newspaper box, historic plaque, and mural. Watch the minimap for star markers.']);
+    updateMinimapLegend();
+  }
+
+  function completeGuideQuest() {
+    state.quest.completed = true;
+    state.quest.active = false;
+    setQuestStatus('Scavenger hunt complete: the busker has a bonus Gastown story waiting near the Steam Clock.');
+    const busker = (state.npcs || []).find((npc) => npc.role === 'busker');
+    if (busker) {
+      state.npcConversationCache[busker.id] = {
+        title: 'Clock-corner busker',
+        lines: ['You found all three clues, so here is your reward: Maple Tree Square is named for the giant maple that once anchored the old village crossroads.', 'Locals joke that the Steam Clock gets the spotlight, but the square carries the origin story.'],
+      };
+    }
+    updateMinimapLegend();
+  }
+
+  function updateQuestProgress() {
+    if (!state.quest.active) return;
+    state.quest.items.forEach((item) => {
+      const prop = (state.props || []).find((entry) => entry.id === item.propId);
+      item.found = !!(prop && prop.collected);
+    });
+    const foundCount = state.quest.items.filter((item) => item.found).length;
+    setQuestStatus('Scavenger hunt: ' + foundCount + '/' + state.quest.items.length + ' found.');
+    if (foundCount === state.quest.items.length && state.quest.items.length) {
+      completeGuideQuest();
+    }
+  }
+
+  function collectNearbyProp() {
+    const match = (state.props || []).find((prop) => prop.collectible && !prop.collected && Math.hypot(player.position.x - prop._position.x, player.position.z - prop._position.z) < 2.2);
+    if (!match) return false;
+    match.collected = true;
+    setStatus('Collected: ' + (match.collectibleLabel || match.id) + '.');
+    updateQuestProgress();
+    return true;
   }
 
   function createNpcProp(propId, accentMaterial) {
@@ -1137,7 +1284,39 @@
     return root;
   }
 
+  function getNpcSpawnProfile() {
+    const weather = state.activeWeather || 'clear';
+    const mood = state.activeMood || 'calm';
+    const lowGraphicsPenalty = state.lowGraphics ? 1 : 0;
+    return {
+      pedestrian: (weather === 'fog' ? 1 : 2) + (mood === 'commuter' ? 1 : 0) - lowGraphicsPenalty,
+      tourist: (weather === 'clear' && mood === 'lively' ? 5 : weather === 'clear' ? 4 : weather === 'drizzle' ? 3 : 2) - lowGraphicsPenalty,
+      cyclist: (weather === 'rain' || weather === 'thunderstorm' || weather === 'fog' ? 0 : 1),
+      skateboarder: (weather === 'rain' || weather === 'thunderstorm' ? 0 : 1),
+      photographer: (weather === 'fog' ? 0 : 1),
+      busker: 1,
+      guide: 1,
+    };
+  }
+
+  function filterSpawnNpcs(world) {
+    const profile = getNpcSpawnProfile();
+    const counts = {};
+    return (world.npcs || []).filter((npc) => {
+      const role = npc.role || 'pedestrian';
+      counts[role] = counts[role] || 0;
+      const limit = Number.isFinite(profile[role]) ? profile[role] : 99;
+      if (counts[role] >= Math.max(0, limit)) {
+        return false;
+      }
+      counts[role] += 1;
+      return true;
+    });
+  }
+
   function addProps(world) {
+    state.props = [];
+    visualState.propEntries = [];
     const grouped = world.props.reduce((acc, prop) => {
       const kind = PROP_DEFINITIONS[prop.kind] ? prop.kind : 'cardboard_box';
       acc[kind] = acc[kind] || [];
@@ -1151,15 +1330,15 @@
       const mesh = new THREE.InstancedMesh(def.geometry, def.material, props.length);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       props.forEach((prop, index) => {
+        const offsetX = prop.randomOffset ? (deterministicUnit(prop.id + '-offset-x') - 0.5) : 0;
+        const offsetZ = prop.randomOffset ? (deterministicUnit(prop.id + '-offset-z') - 0.5) : 0;
         tempEuler.set(0, prop.yaw || 0, 0);
         tempQuaternion.setFromEuler(tempEuler);
         tempScale.setScalar(Math.max(0.55, prop.scale || 1));
-        tempMatrix.compose(
-          new THREE.Vector3(prop.x, (prop.y || 0) + (def.y || 0), prop.z),
-          tempQuaternion,
-          tempScale
-        );
+        const finalPosition = new THREE.Vector3(prop.x + offsetX, (prop.y || 0) + (def.y || 0), prop.z + offsetZ);
+        tempMatrix.compose(finalPosition, tempQuaternion, tempScale);
         mesh.setMatrixAt(index, tempMatrix);
+        state.props.push(Object.assign({}, prop, { kind, _position: { x: finalPosition.x, y: finalPosition.y, z: finalPosition.z }, _instanceIndex: index, _mesh: mesh, collected: false }));
       });
       mesh.castShadow = false;
       mesh.receiveShadow = true;
@@ -1223,8 +1402,16 @@
     }
   }
 
+  function clearNpcVisuals() {
+    (state.npcs || []).forEach((npc) => { if (npc.mesh) { worldGroup.remove(npc.mesh); } });
+    state.npcs = [];
+    visualState.npcMeshes = [];
+  }
+
   function addNpcs(world) {
-    state.npcs = (world.npcs || []).map((npc) => {
+    clearNpcVisuals();
+    const sourceNpcs = filterSpawnNpcs(world);
+    state.npcs = sourceNpcs.map((npc) => {
       const visual = makeNpcVisual(npc);
       const start = npc.idleSpot || npc.patrol[0] || { x: 0, z: 0 };
       visual.position.set(start.x, 0, start.z);
@@ -1232,22 +1419,21 @@
       const swaySeed = deterministicUnit(npc.id + '-sway');
       const startYaw = typeof npc.yaw === 'number' ? npc.yaw : deterministicUnit(npc.id + '-yaw') * Math.PI * 2;
       const npcState = Object.assign({
-        mesh: visual,
-        patrolIndex: 0,
-        direction: 1,
-        baseY: 0,
-        baseYaw: startYaw,
-        currentYaw: startYaw,
+        mesh: visual, patrolIndex: 0, direction: 1, baseY: 0, baseYaw: startYaw, currentYaw: startYaw,
         speed: npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : npc.role === 'guide' ? 0.18 : npc.role === 'skateboarder' ? 2.35 : npc.role === 'cyclist' ? 3.1 : 0,
-        pauseUntil: 0,
-        animPhase: swaySeed * Math.PI * 2,
-        swayAmount: 0.012 + (swaySeed * 0.014),
+        pauseUntil: 0, animPhase: swaySeed * Math.PI * 2, swayAmount: 0.012 + (swaySeed * 0.014),
       }, npc);
       visual.rotation.y = startYaw;
       ensureNpcLoop(npcState);
       visualState.npcMeshes.push(visual);
       return npcState;
     });
+    updateMinimapLegend();
+  }
+
+  function refreshNpcPopulation() {
+    if (!state.world) return;
+    addNpcs(state.world);
   }
 
   function updateNpcs(delta) {
@@ -2279,7 +2465,8 @@
       return;
     }
 
-    const dropCount = Math.floor(420 + (intensity * 900));
+    const qualityFactor = state.lowGraphics ? 0.4 : 1;
+    const dropCount = Math.floor((420 + (intensity * 900)) * qualityFactor);
     const geom = new THREE.BufferGeometry();
     const points = new Float32Array(dropCount * 3);
     const velocities = new Float32Array(dropCount);
@@ -2301,7 +2488,7 @@
       return;
     }
 
-    const streakCount = Math.floor(8 + ((intensity - 0.72) * 28));
+    const streakCount = Math.floor((8 + ((intensity - 0.72) * 28)) * (state.lowGraphics ? 0.45 : 1));
     for (let i = 0; i < streakCount; i += 1) {
       const streak = new THREE.Mesh(
         new THREE.PlaneGeometry(0.025, 0.7 + (intensity * 0.85)),
@@ -2986,6 +3173,29 @@
     };
   }
 
+  function getFacingLabel(heading) {
+    const angle = Math.atan2(heading.x, heading.z);
+    if (angle > -Math.PI / 4 && angle <= Math.PI / 4) return 'north';
+    if (angle > Math.PI / 4 && angle <= (3 * Math.PI) / 4) return 'east';
+    if (angle <= -Math.PI / 4 && angle > (-3 * Math.PI) / 4) return 'west';
+    return 'south';
+  }
+
+  function getActiveNpcCounts() {
+    return (state.npcs || []).reduce((acc, npc) => {
+      acc[npc.role] = (acc[npc.role] || 0) + 1;
+      return acc;
+    }, {});
+  }
+
+  function updateMinimapLegend() {
+    if (!minimapLegendEl) return;
+    const npcCounts = getActiveNpcCounts();
+    const collectibleCount = getCollectibleProps().filter((prop) => !prop.collected).length;
+    const items = ['You', 'Route line', 'Sidewalk / plaza', 'Road', 'Landmark', 'Guidance callout', 'Collectibles: ' + collectibleCount, 'Pedestrians: ' + (npcCounts.pedestrian || 0), 'Tourists: ' + ((npcCounts.tourist || 0) + (npcCounts.photographer || 0)), 'Cyclists: ' + (npcCounts.cyclist || 0)];
+    minimapLegendEl.innerHTML = items.map((item) => '<li>' + item + '</li>').join('');
+  }
+
   function drawMinimapCompass(playerPoint, rotation) {
     const ctx = minimapState.ctx;
     ctx.save();
@@ -3043,8 +3253,22 @@
       drawPolygon(zone.polygon, metrics, pad, '#1a2f41', 'rgba(86, 117, 149, 0.68)', 1.15, view, projectionOptions);
     });
 
+    if (compassEl) {
+      compassEl.textContent = 'Heading: ' + getFacingLabel(getHeadingVector());
+    }
+    updateMinimapLegend();
+
     (state.world.buildings || []).forEach((building) => {
       drawPolygon(getBuildingPolygon(building), metrics, pad, '#7d5e53', 'rgba(245, 218, 197, 0.34)', 0.95, view, projectionOptions);
+    });
+
+    getCollectibleProps().forEach((prop) => {
+      if (!(state.quest.active || !prop.collected)) return;
+      const pt = projectWorldToMinimap(prop._position, metrics, pad, view, projectionOptions);
+      ctx.fillStyle = prop.collected ? '#6ed7a4' : '#ffd166';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+      ctx.fill();
     });
 
     if (state.world.navigator && Array.isArray(state.world.navigator.focusCorridor) && state.world.navigator.focusCorridor.length) {
@@ -3317,6 +3541,7 @@
     if (state.npcVoiceTimer) {
       clearInterval(state.npcVoiceTimer);
     }
+    refreshNpcPopulation();
     const barkInterval = Math.max(7000, 18000 - (preset.voiceFreq * 9000));
     state.npcVoiceTimer = setInterval(() => {
       maybeTriggerNpcVoice(preset.voiceFreq);
@@ -3326,6 +3551,7 @@
   function applyWeather(weatherId) {
     state.activeWeather = weatherId;
     applyVisualState();
+    refreshNpcPopulation();
   }
 
   function applyTimeOfDay(timeOfDayId) {
@@ -3513,6 +3739,14 @@
     renderer.domElement.addEventListener('wheel', onWheelLook, { passive: false });
 
     document.addEventListener('keydown', (event) => {
+      if (event.code === 'KeyM') {
+        const now = performance.now();
+        if (now - state.tutorial.lastMKeyAt < 450) {
+          toggleMinimapMode();
+          if (minimapTooltipEl) { minimapTooltipEl.textContent = 'Minimap switched to ' + minimapState.mode + '.'; }
+        }
+        state.tutorial.lastMKeyAt = now;
+      }
       if (event.code === 'KeyV') {
         event.preventDefault();
         toggleCameraMode();
@@ -3529,9 +3763,9 @@
       if (state.cameraMode !== 'street') {
         return;
       }
-      if (state.cameraMode === 'street' && event.code === 'KeyE' && interactWithHoveredNpc()) {
-        event.preventDefault();
-        return;
+      if (state.cameraMode === 'street' && event.code === 'KeyE') {
+        if (interactWithHoveredNpc()) { event.preventDefault(); return; }
+        if (collectNearbyProp()) { event.preventDefault(); return; }
       }
       const consumedPitch = handlePitchKeyControl(event);
       setMoveKey(event.code, true);
@@ -3591,6 +3825,11 @@
     });
 
     dialogCloseEls.forEach((button) => button.addEventListener('click', closeDialog));
+    if (tutorialOpenBtn) tutorialOpenBtn.addEventListener('click', openTutorialOverlay);
+    tutorialCloseEls.forEach((button) => button.addEventListener('click', closeTutorialOverlay));
+    if (tutorialStartBtn) tutorialStartBtn.addEventListener('click', () => { closeTutorialOverlay(); resetToStart(); setStatus('Tutorial started. Click into the scene, then follow the route toward the Steam Clock.'); });
+    if (lowGraphicsToggle) lowGraphicsToggle.addEventListener('change', (event) => setLowGraphicsMode(event.target.checked));
+    if (reopenTutorialToggle) reopenTutorialToggle.addEventListener('change', (event) => { try { window.localStorage.setItem('gastownTutorialReopen', event.target.checked ? '1' : '0'); } catch (error) {} });
     if (dialogModalEl) {
       dialogModalEl.addEventListener('click', (event) => {
         if (event.target === dialogModalEl) {
@@ -3703,6 +3942,14 @@
     state.clockTimer = window.setInterval(() => {}, 60000);
   }
 
+  function updateProgressiveVisibility() {
+    (state.npcs || []).forEach((npc) => {
+      if (!npc.mesh) return;
+      const distance = Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z);
+      npc.mesh.visible = distance < (state.lowGraphics ? 24 : 42);
+    });
+  }
+
   async function init() {
     try {
       const loadedWorld = await window.GastownWorldLoader.load(config.worldDataUrl);
@@ -3720,6 +3967,8 @@
       addDebugRoute(state.world);
       setupAudio(state.world);
       minimapState.worldMetrics = getWorldMetrics();
+      try { if (window.localStorage.getItem('gastownLowGraphics') === '1') { setLowGraphicsMode(true); } } catch (error) {}
+      setQuestStatus('Scavenger hunt: talk to the guide to begin.');
       restoreMinimapZoom();
       restoreMinimapMode();
       updateSize();
@@ -3749,6 +3998,7 @@
         maybeTriggerLightning(state.world.weatherPresets[state.activeWeather] || null);
         updateOverviewCamera();
         updateSteamClock(delta, time / 1000);
+        updateProgressiveVisibility();
         updateNpcs(delta);
         updateInteractionTarget();
         animateRain(delta);
