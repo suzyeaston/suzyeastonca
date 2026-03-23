@@ -2574,14 +2574,14 @@
     }));
   }
 
-  function drawPolygon(points, metrics, padding, fillColor, strokeColor, lineWidth, view) {
+  function drawPolygon(points, metrics, padding, fillColor, strokeColor, lineWidth, view, projectionOptions) {
     if (!points || points.length < 3) {
       return;
     }
     const ctx = minimapState.ctx;
     ctx.beginPath();
     points.forEach((point, index) => {
-      const mini = toMinimapPoint(point, metrics, padding, view);
+      const mini = projectWorldToMinimap(point, metrics, padding, view, projectionOptions);
       if (index === 0) {
         ctx.moveTo(mini.x, mini.y);
       } else {
@@ -2635,6 +2635,26 @@
     };
   }
 
+  function getMinimapHeadingRotation(heading) {
+    return minimapState.mode === 'heading-up' ? (-Math.atan2(-heading.z, heading.x) - (Math.PI / 2)) : 0;
+  }
+
+  function projectWorldToMinimap(point, metrics, padding, view, options = {}) {
+    const basePoint = toMinimapPoint(point, metrics, padding, view);
+    const rotation = options.rotation || 0;
+    const anchor = options.anchor;
+    if (!rotation || !anchor) {
+      return basePoint;
+    }
+    const offsetX = basePoint.x - anchor.x;
+    const offsetY = basePoint.y - anchor.y;
+    const rotated = rotateMinimapVector(offsetX, offsetY, rotation);
+    return {
+      x: anchor.x + rotated.x,
+      y: anchor.y + rotated.y,
+    };
+  }
+
   function rotateMinimapVector(x, y, angle) {
     const sin = Math.sin(angle);
     const cos = Math.cos(angle);
@@ -2683,9 +2703,10 @@
     const metrics = minimapState.worldMetrics;
     const view = getMinimapView(metrics);
     const pad = 16;
-    const playerPoint = toMinimapPoint({ x: player.position.x, z: player.position.z }, metrics, pad, view);
     const heading = getHeadingVector();
-    const headingRotation = minimapState.mode === 'heading-up' ? (-Math.atan2(-heading.z, heading.x) - (Math.PI / 2)) : 0;
+    const headingRotation = getMinimapHeadingRotation(heading);
+    const playerPoint = toMinimapPoint({ x: player.position.x, z: player.position.z }, metrics, pad, view);
+    const projectionOptions = { rotation: headingRotation, anchor: playerPoint };
     ctx.clearRect(0, 0, minimapState.width, minimapState.height);
 
     ctx.fillStyle = '#08101a';
@@ -2693,22 +2714,15 @@
     ctx.strokeStyle = 'rgba(181, 201, 224, 0.34)';
     ctx.strokeRect(0.5, 0.5, minimapState.width - 1, minimapState.height - 1);
 
-    ctx.save();
-    if (headingRotation) {
-      ctx.translate(playerPoint.x, playerPoint.y);
-      ctx.rotate(headingRotation);
-      ctx.translate(-playerPoint.x, -playerPoint.y);
-    }
-
     (state.world.zones.sidewalk || []).forEach((zone) => {
-      drawPolygon(zone.polygon, metrics, pad, '#3f4d60', 'rgba(136, 161, 188, 0.4)', 1, view);
+      drawPolygon(zone.polygon, metrics, pad, '#3f4d60', 'rgba(136, 161, 188, 0.4)', 1, view, projectionOptions);
     });
     (state.world.zones.street || []).forEach((zone) => {
-      drawPolygon(zone.polygon, metrics, pad, '#1b2735', 'rgba(125, 148, 173, 0.45)', 1.1, view);
+      drawPolygon(zone.polygon, metrics, pad, '#1b2735', 'rgba(125, 148, 173, 0.45)', 1.1, view, projectionOptions);
     });
 
     (state.world.buildings || []).forEach((building) => {
-      drawPolygon(getBuildingPolygon(building), metrics, pad, '#6f5047', 'rgba(219, 194, 173, 0.24)', 0.8, view);
+      drawPolygon(getBuildingPolygon(building), metrics, pad, '#6f5047', 'rgba(219, 194, 173, 0.24)', 0.8, view, projectionOptions);
     });
 
     if (state.world.navigator && Array.isArray(state.world.navigator.focusCorridor) && state.world.navigator.focusCorridor.length) {
@@ -2718,7 +2732,7 @@
         if (!Array.isArray(corridor.points) || corridor.points.length < 2) return;
         ctx.beginPath();
         corridor.points.forEach((point, index) => {
-          const mini = toMinimapPoint(point, metrics, pad, view);
+          const mini = projectWorldToMinimap(point, metrics, pad, view, projectionOptions);
           if (index === 0) {
             ctx.moveTo(mini.x, mini.y);
           } else {
@@ -2735,7 +2749,7 @@
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       state.world.route.centerline.forEach((point, index) => {
-        const mini = toMinimapPoint(point, metrics, pad, view);
+        const mini = projectWorldToMinimap(point, metrics, pad, view, projectionOptions);
         if (index === 0) {
           ctx.moveTo(mini.x, mini.y);
         } else {
@@ -2749,7 +2763,7 @@
     const majorNodes = ['waterfront-station-threshold', 'water-street-mid-block', 'water-cambie-intersection', 'steam-clock', 'maple-tree-square-edge'];
     state.world.nodes.forEach((node) => {
       if (!majorNodes.includes(node.id)) return;
-      const mini = toMinimapPoint(node, metrics, pad, view);
+      const mini = projectWorldToMinimap(node, metrics, pad, view, projectionOptions);
       ctx.fillStyle = node.id === 'steam-clock' ? '#d8a968' : node.id === 'water-cambie-intersection' ? '#9cc7e4' : '#b7d4ea';
       ctx.beginPath();
       ctx.arc(mini.x, mini.y, node.id === 'steam-clock' ? 4.6 : 3.8, 0, Math.PI * 2);
@@ -2772,8 +2786,6 @@
         ctx.fillText('Water St', mini.x + 6, mini.y + 7);
       }
     });
-
-    ctx.restore();
 
     const dirLength = 11;
     const headingX = minimapState.mode === 'heading-up' ? 0 : heading.x;
@@ -2825,7 +2837,7 @@
     drawMinimapCompass(playerPoint, headingRotation);
 
     if (minimapState.nearestNode) {
-      const nearestPoint = toMinimapPoint(minimapState.nearestNode, metrics, pad, view);
+      const nearestPoint = projectWorldToMinimap(minimapState.nearestNode, metrics, pad, view, projectionOptions);
       ctx.strokeStyle = '#8af7cb';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
