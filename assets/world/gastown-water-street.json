@@ -4291,7 +4291,10 @@
           "x": 6.33,
           "z": -20.41
         }
-      ]
+      ],
+      "pose": "host_gesture",
+      "silhouetteScale": 1.03,
+      "yaw": -0.62
     },
     {
       "id": "starter-busker-clock",
@@ -4305,7 +4308,9 @@
       "idleSpot": {
         "x": 183.98,
         "z": -150.72
-      }
+      },
+      "silhouetteScale": 1.06,
+      "yaw": 1.22
     },
     {
       "id": "starter-pedestrian-west",
@@ -4326,7 +4331,8 @@
           "x": 39.91,
           "z": -47.57
         }
-      ]
+      ],
+      "silhouetteScale": 0.98
     },
     {
       "id": "starter-pedestrian-east",
@@ -4347,7 +4353,8 @@
           "x": 184.81,
           "z": -144.1
         }
-      ]
+      ],
+      "silhouetteScale": 1.01
     },
     {
       "id": "starter-skateboarder-mid",
@@ -4370,7 +4377,8 @@
           "x": 75.22,
           "z": -72.83
         }
-      ]
+      ],
+      "silhouetteScale": 0.97
     },
     {
       "id": "starter-cyclist-eastbound",
@@ -4393,7 +4401,8 @@
           "x": 179.4,
           "z": -131.01
         }
-      ]
+      ],
+      "silhouetteScale": 0.99
     },
     {
       "id": "starter-tourist-clock-west",
@@ -4456,7 +4465,8 @@
       "idleSpot": {
         "x": 182.4,
         "z": -155.22
-      }
+      },
+      "silhouetteScale": 1.02
     },
     {
       "id": "starter-tourist-clock-stroller",
@@ -4480,7 +4490,8 @@
           "x": 186.13,
           "z": -158.91
         }
-      ]
+      ],
+      "silhouetteScale": 1.04
     },
     {
       "id": "starter-tourist-clock-bench",
@@ -4494,7 +4505,8 @@
       "idleSpot": {
         "x": 183.74,
         "z": -152.54
-      }
+      },
+      "silhouetteScale": 0.94
     },
     {
       "id": "starter-tourist-clock-child",
@@ -5406,6 +5418,126 @@
         "tone": "curb_grime",
         "opacity": 0.18,
         "elevation": 0.024
+      },
+      {
+        "segment_id": "water-street-mid-block",
+        "width": 4.8,
+        "length": 12.2,
+        "yaw": 2.21,
+        "offset_x": -1.1,
+        "offset_z": 0.6,
+        "tone": "reflection_pool",
+        "opacity": 0.14,
+        "elevation": 0.018
+      },
+      {
+        "segment_id": "steam-clock-approach",
+        "width": 6.4,
+        "length": 8.2,
+        "yaw": 2.19,
+        "offset_x": 0.4,
+        "offset_z": -0.8,
+        "tone": "reflection_pool",
+        "opacity": 0.18,
+        "elevation": 0.018
+      },
+      {
+        "segment_id": "steam-clock",
+        "width": 5.3,
+        "length": 5.4,
+        "yaw": 0.82,
+        "offset_x": 1.2,
+        "offset_z": 0.2,
+        "tone": "puddle",
+        "opacity": 0.2,
+        "elevation": 0.021
+      }
+    ],
+    "signs": [
+      {
+        "id": "wayfinding-station",
+        "x": 11.8,
+        "z": -24.6,
+        "height": 2.6,
+        "width": 0.76,
+        "panelHeight": 0.56,
+        "yaw": -0.72,
+        "faceColor": "#d7dfde",
+        "emissive": "#10202b"
+      },
+      {
+        "id": "parking-clock",
+        "x": 178.2,
+        "z": -151.1,
+        "height": 2.45,
+        "width": 0.48,
+        "panelHeight": 0.5,
+        "yaw": 0.8,
+        "faceColor": "#b84b38",
+        "glow": true,
+        "emissive": "#2a0e06"
+      },
+      {
+        "id": "maple-wayfinding",
+        "x": 202.1,
+        "z": -166.8,
+        "height": 2.6,
+        "width": 0.7,
+        "panelHeight": 0.48,
+        "yaw": -0.92,
+        "faceColor": "#e4d5af",
+        "emissive": "#291f09"
+      }
+    ],
+    "streetFurniture": [
+      {
+        "id": "furn-threshold-bench",
+        "kind": "bench",
+        "x": 14.2,
+        "z": -15.8,
+        "yaw": -0.72
+      },
+      {
+        "id": "furn-mid-bin",
+        "kind": "bin",
+        "x": 106.4,
+        "z": -92.8,
+        "yaw": -0.67
+      },
+      {
+        "id": "furn-mid-planter",
+        "kind": "planter",
+        "x": 109.3,
+        "z": -95.1,
+        "yaw": -0.67
+      },
+      {
+        "id": "furn-clock-bin",
+        "kind": "bin",
+        "x": 180.4,
+        "z": -149.8,
+        "yaw": 0.72
+      },
+      {
+        "id": "furn-clock-bench",
+        "kind": "bench",
+        "x": 189.6,
+        "z": -159.8,
+        "yaw": 0.68
+      },
+      {
+        "id": "furn-clock-planter",
+        "kind": "planter",
+        "x": 191.8,
+        "z": -160.8,
+        "yaw": 0.68
+      },
+      {
+        "id": "furn-postclock-utility",
+        "kind": "utility",
+        "x": 204.7,
+        "z": -168.5,
+        "yaw": -0.92
       }
     ]
   },
