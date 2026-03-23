@@ -1998,6 +1998,14 @@
       awningDepth: 1.2,
       silhouetteLift: 0.6,
     },
+    narrow_brick_shaft: {
+      baseInset: 0.94,
+      windowRows: 4,
+      rooflineLift: 1.35,
+      storefrontBand: 0.16,
+      awningDepth: 0.9,
+      silhouetteLift: 1.2,
+    },
     wedge_corner_block: {
       baseInset: 0.95,
       windowRows: 4,
@@ -2030,10 +2038,12 @@
     const primary = palette.primary || building.tone || 'brickDark';
     const accent = palette.accent || 'stoneMuted';
     const trim = palette.trim || 'stoneMuted';
+    const secondary = palette.secondary || primary;
     return {
       primary: toneToColor(primary),
       accent: toneToColor(accent),
       trim: toneToColor(trim),
+      secondary: toneToColor(secondary),
     };
   }
 
@@ -2411,6 +2421,7 @@
       const storefrontPos = localPointToWorld(b, 0, (b.depth || 8) * 0.34);
       storefront.position.set(storefrontPos.x, storefrontBandHeight / 2 + 0.2, storefrontPos.z);
       storefront.rotation.y = b.yaw || 0;
+      storefront.scale.x = heroScale;
       worldGroup.add(storefront);
 
       const bayCount = Math.max(2, Math.min(8, b.window_bay_count || 4));
@@ -2427,7 +2438,7 @@
       windowMat.userData = { baseRoughness: 0.16, baseOpacity: 0.88 };
       for (let row = 0; row < windowRows; row += 1) {
         for (let bay = 0; bay < bayCount; bay += 1) {
-          const win = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (bayCount + 1.2), (b.height || 12) / (windowRows * 4.3)), windowMat);
+          const win = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (bayCount + 1.35), (b.height || 12) / (windowRows * (b.hero_fidelity === 'hero' ? 4.8 : 4.3))), windowMat);
           const xOffset = (((bay + 1) / (bayCount + 1)) - 0.5) * ((b.width || 8) * 0.78);
           const yOffset = storefrontBandHeight + 1.4 + row * ((b.height - storefrontBandHeight - 2) / windowRows);
           const depthOffset = (b.depth || 8) * 0.52;
@@ -2523,6 +2534,7 @@
         const entryCount = Math.min(3, Math.max(1, b.recessed_entry_count));
         for (let i = 0; i < entryCount; i += 1) {
           const t = (((i + 1) / (entryCount + 1)) - 0.5) * ((b.width || 8) * 0.5);
+          const entryDepth = Math.max(0.5, storefrontRhythm.entry_depth || 0.72);
           const entry = new THREE.Mesh(
             new THREE.BoxGeometry(0.9, 2.4, 0.5),
             registerMaterial(new THREE.MeshStandardMaterial({ color: 0x1d222b, roughness: 0.3, metalness: 0.28 }), 'reflectiveMaterials')
@@ -2575,7 +2587,7 @@
 
       const edge = new THREE.LineSegments(
         new THREE.EdgesGeometry(geom),
-        new THREE.LineBasicMaterial({ color: 0x6f8197, transparent: true, opacity: 0.28 })
+        new THREE.LineBasicMaterial({ color: b.hero_fidelity === 'hero' ? 0x8f9eb0 : 0x6f8197, transparent: true, opacity: b.hero_fidelity === 'hero' ? 0.34 : 0.28 })
       );
       edge.position.copy(mesh.position);
       edge.rotation.y = mesh.rotation.y;
@@ -2672,11 +2684,11 @@
           clockRoot.add(ventCap);
         });
 
-        const plaza = new THREE.Mesh(new THREE.CircleGeometry(plazaRadius, 32), new THREE.MeshStandardMaterial({ color: 0x4c3d32, roughness: 0.92, metalness: 0.02 }));
+        const plaza = new THREE.Mesh(new THREE.CircleGeometry(plazaRadius, 40), new THREE.MeshStandardMaterial({ color: 0x4c3d32, roughness: 0.92, metalness: 0.02 }));
         plaza.rotation.x = -Math.PI / 2;
         plaza.position.y = 0.03;
         clockRoot.add(plaza);
-        const plazaApron = new THREE.Mesh(new THREE.RingGeometry(plazaRadius * 0.66, plazaRadius + 0.65, 32), new THREE.MeshStandardMaterial({ color: 0x7a6a5b, roughness: 0.96, metalness: 0.01 }));
+        const plazaApron = new THREE.Mesh(new THREE.RingGeometry(plazaRadius * 0.62, plazaRadius + 1.1, 40), new THREE.MeshStandardMaterial({ color: 0x7a6a5b, roughness: 0.96, metalness: 0.01 }));
         plazaApron.rotation.x = -Math.PI / 2;
         plazaApron.position.y = 0.031;
         clockRoot.add(plazaApron);
