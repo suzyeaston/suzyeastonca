@@ -10,13 +10,14 @@ get_header();
     <header class="gastown-sim-header">
       <p class="gastown-sim-kicker">Prototype route: Waterfront Station → Water Street → Steam Clock</p>
       <h1>Gastown First-Person Simulator</h1>
-      <p class="gastown-sim-intro">A stylized, geographically grounded Gastown walk through a focused Water Street slice shaped as self-directed exploration. Wander between street details, route survey, soundwalk, and memory walk at your own pace.</p>
+      <p class="gastown-sim-intro">A stylized, geographically grounded Gastown walk built for wandering, noticing, and letting the block answer back. Start loose, move with the street, and see what the corridor decides to reveal.</p>
     </header>
 
     <div class="gastown-controls" role="group" aria-label="Simulator controls">
       <button type="button" class="pixel-button secondary" data-action="pause">Pause</button>
       <button type="button" class="pixel-button secondary" data-action="reset" aria-label="Reset to the start of the route">Reset to route start</button>
       <button type="button" class="pixel-button secondary" data-action="tutorial-open" aria-label="Open the controls tutorial overlay">Tutorial</button>
+      <button type="button" class="pixel-button secondary" data-action="rename-walker" aria-label="Rename your walker">Rename walker</button>
       <label>
         Time of day
         <select name="time-of-day">
@@ -65,11 +66,10 @@ get_header();
         <li><strong>Arrow keys</strong> = move forward/back + turn left/right</li>
         <li><strong>Mouse wheel</strong> = look up/down (while focused/in play mode)</li>
         <li><strong>Ctrl + ↑ / Ctrl + ↓</strong> = precise look up/down steps</li>
+        <li><strong>E / click</strong> = talk or log something nearby</li>
         <li><strong>Esc</strong> = release pointer / pause</li>
       </ul>
     </section>
-
-
 
     <section class="gastown-tutorial-overlay" data-tutorial-overlay role="dialog" aria-modal="true" aria-labelledby="gastown-tutorial-title" aria-describedby="gastown-tutorial-copy" hidden>
       <div class="gastown-dialog-panel">
@@ -79,8 +79,9 @@ get_header();
         </div>
         <div class="gastown-dialog-body" id="gastown-tutorial-copy">
           <p>Click the scene to lock the pointer, use the mouse to look around, and move with W A S D or the arrow keys.</p>
-          <p>Press E or click on nearby characters to talk. Press M M quickly to toggle the minimap between north-up and heading-up orientation.</p>
-          <p>Screen reader note: status updates, landmark callouts, thread changes, and journal updates are announced below the simulator.</p>
+          <p>Press E or click when a nearby local or street detail is in reach. You do not need to pick a route style first; the walk learns from what you linger on.</p>
+          <p>NPC voices use AI-generated speech when available. If audio or speech fails, the conversation stays on screen and the sim keeps moving.</p>
+          <p>Screen reader note: status updates, landmark callouts, and journal updates are announced below the simulator.</p>
         </div>
         <div class="gastown-dialog-actions">
           <button type="button" class="pixel-button secondary" data-action="tutorial-start" aria-label="Start the simulator tutorial">Start tutorial</button>
@@ -88,50 +89,68 @@ get_header();
         </div>
       </div>
     </section>
-    <p class="gastown-status" data-sim-status aria-live="polite">Loading simulator...</p>
-    <p class="gastown-quest-status" data-sim-quest-status aria-live="polite">Street details log: inactive.</p>
-    <section class="gastown-expedition-panel" aria-label="Exploration journal and guidance">
-      <div class="gastown-expedition-card">
-        <p class="gastown-expedition-label">Choose a thread</p>
-        <div class="gastown-thread-buttons" role="group" aria-label="Exploration threads">
-          <button type="button" class="pixel-button secondary" data-thread-mode="drift" aria-pressed="true">Drift</button>
-          <button type="button" class="pixel-button secondary" data-thread-mode="survey" aria-pressed="false">Survey</button>
-          <button type="button" class="pixel-button secondary" data-thread-mode="soundwalk" aria-pressed="false">Soundwalk</button>
-          <button type="button" class="pixel-button secondary" data-thread-mode="stories" aria-pressed="false">Memory walk</button>
+
+    <section class="gastown-name-overlay" data-name-overlay role="dialog" aria-modal="true" aria-labelledby="gastown-name-title" hidden>
+      <div class="gastown-dialog-panel gastown-name-panel">
+        <div class="gastown-dialog-header">
+          <h2 id="gastown-name-title">Name your walker</h2>
+        </div>
+        <div class="gastown-dialog-body">
+          <p>Give your walker a street name, or skip and keep it simple.</p>
+          <label class="gastown-name-field">
+            <span>Walker name</span>
+            <input type="text" maxlength="24" autocomplete="nickname" data-walker-name-input placeholder="Walker">
+          </label>
+        </div>
+        <div class="gastown-dialog-actions">
+          <button type="button" class="pixel-button secondary" data-action="walker-start">Start</button>
+          <button type="button" class="pixel-button secondary" data-action="walker-skip">Skip</button>
         </div>
       </div>
-      <div class="gastown-expedition-card">
-        <p class="gastown-expedition-label">Opening objective</p>
-        <p class="gastown-expedition-value" data-sim-objective aria-live="polite">Choose your own lead through Gastown.</p>
+    </section>
+
+    <section class="gastown-hud" aria-label="Exploration HUD">
+      <div class="gastown-hud-top">
+        <div class="gastown-hud-identity">
+          <p class="gastown-hud-kicker">ON THE STREET</p>
+          <p class="gastown-hud-name" data-walker-name-display>Walker</p>
+          <p class="gastown-hud-subline">Get your bearings and see what the street gives you.</p>
+        </div>
+        <div class="gastown-hud-statuses">
+          <p class="gastown-status" data-sim-status aria-live="polite">Loading simulator...</p>
+          <p class="gastown-quest-status" data-sim-quest-status aria-live="polite">Street details log: inactive.</p>
+          <p class="gastown-pointer-status" data-sim-pointer-status aria-live="polite">Pointer unlocked.</p>
+          <p class="gastown-interact-prompt" data-sim-interact-prompt aria-live="polite" hidden></p>
+        </div>
+        <div class="gastown-hud-route">
+          <p class="gastown-expedition-label">Route completion</p>
+          <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% of the corridor surveyed.</p>
+          <p class="gastown-hud-disclosure">AI voice talkback is optional and may stay silent if your browser or the API says no.</p>
+        </div>
       </div>
-      <div class="gastown-expedition-card">
-        <p class="gastown-expedition-label">Next meaningful step</p>
-        <p class="gastown-expedition-value" data-sim-next-step aria-live="polite">Look around and follow what catches your attention.</p>
-      </div>
-      <div class="gastown-expedition-card">
-        <p class="gastown-expedition-label">Route completion</p>
-        <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% of the corridor surveyed.</p>
-      </div>
-      <div class="gastown-expedition-card">
-        <p class="gastown-expedition-label">Street details log</p>
-        <ul class="gastown-expedition-list" data-sim-collectibles-log aria-live="polite">
-          <li>Newspaper box — not logged</li>
-          <li>Historic plaque — not logged</li>
-          <li>Painted brick panel — not logged</li>
-        </ul>
-      </div>
-      <div class="gastown-expedition-card">
-        <p class="gastown-expedition-label">Journal</p>
-        <ul class="gastown-expedition-list" data-sim-journal aria-live="polite">
-          <li>Arrive at the station threshold and choose where to begin.</li>
-        </ul>
+
+      <div class="gastown-hud-support">
+        <div class="gastown-hud-card gastown-hud-card--prompt">
+          <p class="gastown-expedition-label">Current drift</p>
+          <p class="gastown-expedition-value" data-sim-objective aria-live="polite">Get your bearings and see what the street gives you.</p>
+          <p class="gastown-expedition-value gastown-hud-next-step" data-sim-next-step aria-live="polite">Look around, move a little, and follow what feels alive.</p>
+        </div>
+        <div class="gastown-hud-card gastown-hud-card--journal">
+          <p class="gastown-expedition-label">Journal</p>
+          <ul class="gastown-expedition-list" data-sim-journal aria-live="polite">
+            <li>Arrive at the station threshold and get your bearings.</li>
+          </ul>
+        </div>
+        <div class="gastown-hud-card gastown-hud-card--details">
+          <p class="gastown-expedition-label">Street details log</p>
+          <ul class="gastown-expedition-list" data-sim-collectibles-log aria-live="polite">
+            <li>Newspaper box — not logged</li>
+            <li>Historic plaque — not logged</li>
+            <li>Painted brick panel — not logged</li>
+          </ul>
+        </div>
       </div>
     </section>
-    <p class="gastown-world-status" data-sim-world-status aria-live="polite">World data status: checking build provenance…</p>
-    <p class="gastown-pointer-status" data-sim-pointer-status aria-live="polite">Pointer unlocked.</p>
-    <p class="gastown-landmark" data-sim-landmark aria-live="polite">Nearest landmark: Station threshold</p>
-    <p class="gastown-route-segment" data-sim-route-segment aria-live="polite">Route segment: Waterfront Station Threshold</p>
-    <p class="gastown-interact-prompt" data-sim-interact-prompt aria-live="polite" hidden></p>
 
     <div class="gastown-sim-canvas" data-sim-canvas tabindex="-1">
       <aside class="gastown-minimap" aria-label="Exploration minimap">
@@ -151,12 +170,18 @@ get_header();
           <li>Sidewalk / plaza</li>
           <li>Road</li>
           <li>Landmark</li>
-          <li>Thread hint</li>
+          <li>Ambient hint</li>
           <li>Observations</li>
         </ul>
         <p class="gastown-minimap-label" data-sim-minimap-landmark>Nearest landmark: Waterfront Station threshold — ahead</p>
       </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
+    </div>
+
+    <div class="gastown-meta-strip">
+      <p class="gastown-world-status" data-sim-world-status aria-live="polite">World data status: checking build provenance…</p>
+      <p class="gastown-landmark" data-sim-landmark aria-live="polite">Nearest landmark: Station threshold</p>
+      <p class="gastown-route-segment" data-sim-route-segment aria-live="polite">Route segment: Waterfront Station Threshold</p>
     </div>
 
     <section class="gastown-debug" data-debug-panel hidden>
@@ -172,10 +197,6 @@ get_header();
       </ul>
     </section>
 
-    <!-- Template-ready teaser for homepage placement later.
-      In progress: Gastown first-person simulator.
-      Frequent updates are expected; hard refresh / clear cache may be needed after releases.
-    -->
     <p class="gastown-teaser-snippet" hidden>
       In progress: our Gastown first-person simulator is evolving quickly. We ship frequent updates, so if a change looks odd, please hard refresh and clear cache.
     </p>
@@ -193,6 +214,7 @@ get_header();
         </div>
         <div class="gastown-dialog-body" data-dialog-body></div>
         <div class="gastown-dialog-actions">
+          <div class="gastown-dialog-audio-status" data-dialog-audio-status aria-live="polite"></div>
           <div class="gastown-dialog-actions-dynamic" data-dialog-actions-dynamic aria-live="polite"></div>
           <button type="button" class="pixel-button secondary" data-dialog-close data-dialog-close-fallback>Back to walk</button>
         </div>

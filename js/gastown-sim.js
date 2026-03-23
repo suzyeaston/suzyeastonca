@@ -56,6 +56,12 @@
   const minimapModeBtn = app.querySelector('[data-action="minimap-mode-toggle"]');
   const osmAttributionEl = app.querySelector('[data-gastown-osm-attribution]');
   const interactPromptEl = app.querySelector('[data-sim-interact-prompt]');
+  const renameWalkerBtn = app.querySelector('[data-action="rename-walker"]');
+  const walkerNameDisplayEl = app.querySelector('[data-walker-name-display]');
+  const walkerNameOverlayEl = app.querySelector('[data-name-overlay]');
+  const walkerNameInputEl = app.querySelector('[data-walker-name-input]');
+  const walkerStartBtn = app.querySelector('[data-action="walker-start"]');
+  const walkerSkipBtn = app.querySelector('[data-action="walker-skip"]');
   const questStatusEl = app.querySelector('[data-sim-quest-status]');
   const objectiveEl = app.querySelector('[data-sim-objective]');
   const nextStepEl = app.querySelector('[data-sim-next-step]');
@@ -76,6 +82,7 @@
   const dialogTitleEl = app.querySelector('[data-dialog-title]');
   const dialogBodyEl = app.querySelector('[data-dialog-body]');
   const dialogActionsDynamicEl = app.querySelector('[data-dialog-actions-dynamic]');
+  const dialogAudioStatusEl = app.querySelector('[data-dialog-audio-status]');
   const dialogCloseEls = app.querySelectorAll('[data-dialog-close]');
   const dialogFallbackCloseEl = app.querySelector('[data-dialog-close-fallback]');
   const dialogUtils = window.GastownDialog || {};
@@ -142,6 +149,11 @@
     npcVoiceTimer: null,
     lastNpcVoiceAt: -Infinity,
     npcVoiceIndex: 0,
+    walkerName: 'Walker',
+    hasInteracted: false,
+    npcSpeechCache: {},
+    npcSpeechController: null,
+    npcSpeechAudio: null,
     clockTimer: null,
     boundaryNoticeTimer: null,
     currentMicroAreaId: '',
@@ -178,6 +190,8 @@
   };
 
   const DEFAULT_EYE_HEIGHT = 1.7;
+  const WALKER_NAME_STORAGE_KEY = 'gastownWalkerName';
+  const NPC_SPEECH_CACHE_LIMIT = 18;
   const ART_DIRECTION = {
     label: 'stylized realism with cinematic Vancouver rain-lighting',
     streetReflectionBoost: 0.22,
@@ -333,8 +347,52 @@
     }
   }
 
+  function normalizeWalkerName(value) {
+    const normalized = String(value || '').replace(/\s+/g, ' ').trim();
+    return normalized ? normalized.slice(0, 24) : 'Walker';
+  }
+
+  function setWalkerName(value, options) {
+    state.walkerName = normalizeWalkerName(value);
+    if (walkerNameDisplayEl) walkerNameDisplayEl.textContent = state.walkerName;
+    if (!(options && options.skipStore)) {
+      try { window.localStorage.setItem(WALKER_NAME_STORAGE_KEY, state.walkerName); } catch (error) {}
+    }
+    if (walkerNameInputEl && !(options && options.skipInputSync)) walkerNameInputEl.value = state.walkerName === 'Walker' ? '' : state.walkerName;
+  }
+
+  function restoreWalkerName() {
+    try {
+      const saved = window.localStorage.getItem(WALKER_NAME_STORAGE_KEY);
+      if (saved) {
+        setWalkerName(saved, { skipStore: true });
+        return true;
+      }
+    } catch (error) {}
+    setWalkerName('Walker', { skipStore: true });
+    return false;
+  }
+
+  function openWalkerNameOverlay(prefill) {
+    if (!walkerNameOverlayEl) return;
+    if (typeof prefill === 'string' && walkerNameInputEl) walkerNameInputEl.value = prefill === 'Walker' ? '' : prefill;
+    walkerNameOverlayEl.removeAttribute('hidden');
+    window.setTimeout(() => { if (walkerNameInputEl && typeof walkerNameInputEl.focus === 'function') walkerNameInputEl.focus(); }, 0);
+  }
+
+  function closeWalkerNameOverlay() {
+    if (walkerNameOverlayEl) walkerNameOverlayEl.setAttribute('hidden', 'hidden');
+  }
+
+  function confirmWalkerName(value) {
+    setWalkerName(value);
+    closeWalkerNameOverlay();
+    pushJournalEntry('On the street as ' + state.walkerName + '.');
+    setStatus('Walker ready: ' + state.walkerName + '. Click into the street when you want to move.');
+  }
+
   const QUEST_DEFINITIONS = {
-    orientation: { label: 'Drift', status: 'Choose your own lead through Gastown.' },
+    orientation: { label: 'Get bearings', status: 'Get your bearings and see what the street gives you.' },
     scavenger: { label: 'Street details log', status: 'Street details log active: note the newspaper box, historic plaque, and painted brick panel as observations.' },
     survey: { label: 'Route survey', status: 'Route survey active: trace how Water Street tightens, loosens, and rises as you move east.' },
     soundwalk: { label: 'Soundwalk', status: 'Soundwalk active: follow the station rumble, busker corner, and clock chime without rushing.' },
@@ -344,9 +402,9 @@
   const THREAD_DEFINITIONS = {
     drift: {
       label: 'Drift',
-      objective: 'Choose your own lead through Gastown.',
-      hint: 'Look around and follow what catches your attention.',
-      status: 'Drift active: roam, linger, and let the street set the pace.',
+      objective: 'Get your bearings and see what the street gives you.',
+      hint: 'Look around, move a little, and follow what feels alive.',
+      status: 'Free exploration active: roam, linger, and let the street set the pace.',
       autoTarget: { type: 'landmark', id: 'water-cordova-seam' },
     },
     scavenger: {
@@ -390,7 +448,7 @@
 
   function getPublicGoalText() {
     const thread = getActiveThreadDefinition();
-    return thread.objective || 'Choose your own lead through Gastown.';
+    return thread.objective || 'Get your bearings and see what the street gives you.';
   }
 
   function getStreetModeStatusText() {
@@ -408,15 +466,22 @@
 
   function renderProgressionUi() {
     if (routeScoreEl) {
-      routeScoreEl.textContent = Math.round(state.progression.routeCompletionScore) + '% of the corridor surveyed.';
+      routeScoreEl.textContent = Math.round(state.progression.routeCompletionScore) + '% of the corridor mapped by your feet.';
     }
     if (collectiblesLogEl) {
-      const items = getCollectibleProps();
-      collectiblesLogEl.innerHTML = items.map((prop) => '<li>' + (prop.collectibleLabel || prop.id) + ' — ' + (prop.collected ? 'logged' : 'not logged') + '</li>').join('');
+      const deduped = [];
+      const seenKeys = new Set();
+      getCollectibleProps().forEach((prop) => {
+        const key = prop.collectibleKey || prop.collectibleLabel || prop.id;
+        if (seenKeys.has(key)) return;
+        seenKeys.add(key);
+        deduped.push(prop);
+      });
+      collectiblesLogEl.innerHTML = deduped.map((prop) => '<li>' + (prop.collectibleLabel || prop.id) + ' — ' + (prop.collected ? 'logged' : 'not logged') + '</li>').join('');
     }
     if (journalEl) {
       const entries = state.progression.journalEntries.length ? state.progression.journalEntries : ['Arrive at the station threshold and get your bearings.'];
-      journalEl.innerHTML = entries.map((entry) => '<li>' + entry + '</li>').join('');
+      journalEl.innerHTML = entries.slice(0, 4).map((entry) => '<li>' + entry + '</li>').join('');
     }
   }
 
@@ -608,7 +673,7 @@
         hint = { text: activeThread.hint + ' Next landmark: ' + nextLandmark.label + '.', target: { type: 'landmark', id: nextLandmark.id } };
       }
     } else {
-      objective = 'You have a full set of route notes — keep wandering and compare the neighbourhood across threads.';
+      objective = 'You have a full set of route notes — keep wandering and compare the neighbourhood on your own terms.';
       hint = { text: 'Roam freely: the journal now updates from proximity, lingering, and what you decide to revisit.', target: null };
     }
 
@@ -1540,6 +1605,104 @@
     };
   }
 
+  function updateDialogAudioStatus(message) {
+    if (dialogAudioStatusEl) dialogAudioStatusEl.textContent = message || '';
+  }
+
+  function hashNpcSpeechKey(payload) {
+    const source = [payload.role || '', payload.name || '', payload.text || '', payload.style_hint || ''].join('|');
+    let hash = 0;
+    for (let i = 0; i < source.length; i += 1) {
+      hash = ((hash << 5) - hash) + source.charCodeAt(i);
+      hash |= 0;
+    }
+    return 'speech-' + Math.abs(hash);
+  }
+
+  function stopNpcSpeech() {
+    if (state.npcSpeechController) {
+      try { state.npcSpeechController.abort(); } catch (error) {}
+      state.npcSpeechController = null;
+    }
+    if (state.npcSpeechAudio) {
+      try { state.npcSpeechAudio.pause(); } catch (error) {}
+      state.npcSpeechAudio.src = '';
+      state.npcSpeechAudio = null;
+    }
+    updateDialogAudioStatus('');
+  }
+
+  async function requestNpcSpeech(npcState, textBlock) {
+    if (!config.voiceEndpoint || !window.fetch || !textBlock) return null;
+    const payload = {
+      role: npcState.role || 'pedestrian',
+      name: npcState.name || npcState.id || '',
+      text: textBlock,
+      style_hint: 'Dry, blunt, grounded local commentary. Terse, sharp, low-hype, never an impersonation.',
+    };
+    const cacheKey = hashNpcSpeechKey(payload);
+    if (state.npcSpeechCache[cacheKey]) return state.npcSpeechCache[cacheKey];
+    const headers = { 'Content-Type': 'application/json' };
+    if (config.nonce) headers['X-WP-Nonce'] = config.nonce;
+    const controller = new AbortController();
+    state.npcSpeechController = controller;
+    try {
+      const response = await fetch(config.voiceEndpoint, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error('speech unavailable');
+      const data = await response.json();
+      if (!data || !data.ok || !data.audioBase64) throw new Error('speech empty');
+      const cached = { url: 'data:audio/mpeg;base64,' + data.audioBase64, fallback: !!data.fallback, cacheKey };
+      state.npcSpeechCache[cacheKey] = cached;
+      const keys = Object.keys(state.npcSpeechCache);
+      if (keys.length > NPC_SPEECH_CACHE_LIMIT) delete state.npcSpeechCache[keys[0]];
+      return cached;
+    } catch (error) {
+      return null;
+    } finally {
+      if (state.npcSpeechController === controller) state.npcSpeechController = null;
+    }
+  }
+
+  async function playNpcSpeech(npcState, lines) {
+    stopNpcSpeech();
+    if (!state.hasInteracted || !Array.isArray(lines) || !lines.length) {
+      updateDialogAudioStatus('');
+      return;
+    }
+    updateDialogAudioStatus('Voice loading…');
+    const speech = await requestNpcSpeech(npcState, lines.join(' '));
+    if (!speech || !state.activeDialogNpcId || state.activeDialogNpcId !== npcState.id) {
+      updateDialogAudioStatus('');
+      return;
+    }
+    try {
+      const audio = new window.Audio(speech.url);
+      audio.autoplay = true;
+      audio.preload = 'auto';
+      audio.addEventListener('ended', () => {
+        if (state.npcSpeechAudio === audio) state.npcSpeechAudio = null;
+        updateDialogAudioStatus('');
+      });
+      audio.addEventListener('error', () => {
+        if (state.npcSpeechAudio === audio) state.npcSpeechAudio = null;
+        updateDialogAudioStatus('Voice unavailable. Text stays live.');
+      });
+      state.npcSpeechAudio = audio;
+      await audio.play().catch(() => {
+        updateDialogAudioStatus('Voice blocked by browser. Text stays live.');
+      });
+      if (!audio.paused) updateDialogAudioStatus('AI voice playing.');
+    } catch (error) {
+      updateDialogAudioStatus('Voice unavailable. Text stays live.');
+    }
+  }
+
   function getNpcDialogActions(npcState) {
     if (!npcState) {
       return [{ type: 'close', label: 'Back to walk' }];
@@ -1587,6 +1750,7 @@
       renderDialogBody(cached.lines);
       renderDialogActions(cached);
       focusFirstDialogControl();
+      playNpcSpeech(npcState, cached.lines || []);
       return;
     }
 
@@ -1606,6 +1770,7 @@
     renderDialogActions(entry);
     setStatus(conversation.fallback ? 'NPC chat fallback active. Click scene to resume when ready.' : 'NPC conversation ready. Click scene to resume when ready.');
     focusFirstDialogControl();
+    playNpcSpeech(npcState, entry.lines || []);
   }
 
   function createDialogLineElement(line) {
@@ -1709,6 +1874,7 @@
   function closeDialog() {
     state.activeDialogNpcId = '';
     state.activeDialogEntry = null;
+    stopNpcSpeech();
     if (dialogActionsDynamicEl) {
       dialogActionsDynamicEl.innerHTML = '';
     }
@@ -1768,6 +1934,7 @@
       dialogModalEl.setAttribute('aria-hidden', 'false');
       state.activeDialogNpcId = npcState.id;
       state.activeDialogEntry = normalized;
+      updateDialogAudioStatus('');
       setStatus('Dialog open. Loading nearby conversation.');
       setPointerStatus('Pointer unlocked. Dialog controls are active.');
       focusFirstDialogControl();
@@ -2428,6 +2595,32 @@
     });
   }
 
+  function scoreNpcInteractionCandidate(npc, options) {
+    if (!npc || !npc.mesh) return null;
+    const radius = (npc.interactRadius || 2.8) + 1.6;
+    const dx = npc.mesh.position.x - player.position.x;
+    const dz = npc.mesh.position.z - player.position.z;
+    const distance = Math.hypot(dx, dz);
+    if (distance > radius) return null;
+    const heading = getHeadingVector();
+    const dirX = dx / Math.max(distance, 0.001);
+    const dirZ = dz / Math.max(distance, 0.001);
+    const facingDot = (heading.x * dirX) + (heading.z * dirZ);
+    if (facingDot < -0.25) return null;
+    const centerBonus = options && options.centered ? Math.max(0, facingDot - 0.75) * 1.6 : 0;
+    const rayBonus = options && options.rayHit ? 0.45 : 0;
+    const visibleScore = Math.max(0, facingDot + 0.25) * 1.8;
+    const distanceScore = Math.max(0, 1.5 - (distance / Math.max(1, radius)));
+    return {
+      npc,
+      distance,
+      facingDot,
+      score: visibleScore + distanceScore + centerBonus + rayBonus,
+      centered: !!(options && options.centered),
+      rayHit: !!(options && options.rayHit),
+    };
+  }
+
   function findLookedAtNpc() {
     if (!Array.isArray(state.npcs) || state.npcs.length === 0) return null;
     camera.getWorldDirection(lookTarget);
@@ -2436,20 +2629,15 @@
     let best = null;
     state.npcs.forEach((npc) => {
       if (!npc.mesh) return;
-      const distance = tempCameraWorldPosition.distanceTo(npc.mesh.position);
-      if (distance > (npc.interactRadius || 2.4) + 1.2) {
-        return;
-      }
       const hits = sharedRaycaster.intersectObject(npc.mesh, true);
-      if (!hits.length) {
-        return;
-      }
-      const hitDistance = hits[0].distance;
-      if (!best || hitDistance < best.hitDistance) {
-        best = { npc: npc, hitDistance: hitDistance, distance: distance };
-      }
+      const hitDistance = hits.length ? hits[0].distance : null;
+      const centered = hits.length || lookTarget.dot(new THREE.Vector3().subVectors(npc.mesh.position, tempCameraWorldPosition).normalize()) > 0.92;
+      const candidate = scoreNpcInteractionCandidate(npc, { rayHit: hits.length > 0, centered });
+      if (!candidate) return;
+      candidate.hitDistance = hitDistance;
+      if (!best || candidate.score > best.score || (candidate.score === best.score && candidate.distance < best.distance)) best = candidate;
     });
-    return best && best.distance <= (best.npc.interactRadius || 2.4) ? best.npc : null;
+    return best;
   }
 
   function updateInteractionTarget() {
@@ -2458,18 +2646,16 @@
       setInteractPrompt('');
       return;
     }
-    const npc = findLookedAtNpc();
+    const npcTarget = findLookedAtNpc();
     const collectible = findNearbyCollectible();
-    state.hoveredNpcId = npc ? npc.id : '';
-    const interactionPulse = (Math.sin((performance.now() / 1000) * 5.4) + 1) * 0.5;
-    state.motion.interactionPulse = interactionPulse;
-    if (npc) {
+    state.hoveredNpcId = npcTarget ? npcTarget.npc.id : '';
+    state.motion.interactionPulse = (Math.sin((performance.now() / 1000) * 5.4) + 1) * 0.5;
+    if (npcTarget) {
+      const npc = npcTarget.npc;
       const roleLabel = getNpcRoleLabel(npc);
-      const interactRadius = npc.interactRadius || 2.4;
-      const distance = Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z);
-      const closeness = 1 - THREE.MathUtils.clamp(distance / Math.max(0.01, interactRadius + 1.1), 0, 1);
-      const promptStrength = closeness > 0.62 ? 'Talk now' : 'Step closer';
-      setInteractPrompt(promptStrength + ': ' + roleLabel + ' · ' + formatDistanceLabel(distance) + (closeness > 0.82 ? ' · press E' : ''));
+      const talkCue = npcTarget.centered || npcTarget.distance <= (npc.interactRadius || 2.8) ? 'Press E or click to talk' : 'Face them and step in';
+      const centeredCue = npcTarget.centered ? 'centered' : npcTarget.facingDot > 0.75 ? 'in view' : 'nearby';
+      setInteractPrompt(talkCue + ': ' + (npc.name || roleLabel) + ' · ' + roleLabel + ' · ' + centeredCue + ' · ' + formatDistanceLabel(npcTarget.distance));
       return;
     }
     if (collectible) {
@@ -2477,19 +2663,17 @@
       const range = 2.2;
       const closeEnough = collectible.distance <= range;
       const headingCue = collectible.alignment > 0.78 ? 'ahead' : collectible.alignment > 0.3 ? 'off-center' : 'nearby';
-      setInteractPrompt((closeEnough ? 'Collect now' : 'Collectible ' + headingCue) + ': ' + (prop.collectibleLabel || prop.id) + ' · ' + formatDistanceLabel(collectible.distance) + (closeEnough ? ' · press E' : ''));
+      setInteractPrompt((closeEnough ? 'Press E to log' : 'Street detail ' + headingCue) + ': ' + (prop.collectibleLabel || prop.id) + ' · ' + formatDistanceLabel(collectible.distance));
       return;
     }
-    const roleLabel = getNpcRoleLabel(npc);
-    const context = getPlayerRouteContext();
-    setInteractPrompt('Click or press E to talk to the ' + roleLabel + ' near ' + context.label + '.');
+    setInteractPrompt('');
   }
 
   function interactWithHoveredNpc() {
-    if (!state.hoveredNpcId) return false;
-    const npc = (state.npcs || []).find((candidate) => candidate.id === state.hoveredNpcId);
-    if (!npc) return false;
-    openDialogForNpc(npc);
+    const target = findLookedAtNpc();
+    if (!target || !target.npc) return false;
+    state.hoveredNpcId = target.npc.id;
+    openDialogForNpc(target.npc);
     return true;
   }
 
@@ -2696,8 +2880,8 @@
   function addGround(world) {
     visualState.roadMaterial = createGroundMaterial('street', 0x0a0f14, 0.94, 0.1);
     visualState.sidewalkMaterial = createGroundMaterial('sidewalk', 0x85796d, 0.98, 0.02);
-    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xc2c8cf, transparent: true, opacity: 0.5 });
-    visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x8fa0af, roughness: 0.92, metalness: 0.02, transparent: true, opacity: 0.02, depthWrite: false });
+    visualState.curbMaterial = new THREE.LineBasicMaterial({ color: 0xc2c8cf, transparent: true, opacity: 0.38 });
+    visualState.laneMaterial = new THREE.MeshStandardMaterial({ color: 0x8fa0af, roughness: 0.96, metalness: 0.01, transparent: true, opacity: 0.015, depthWrite: false, depthTest: true });
     visualState.routeGuideMaterials = [visualState.laneMaterial];
     visualState.reflectiveMaterials.push(visualState.roadMaterial, visualState.sidewalkMaterial, visualState.laneMaterial);
 
@@ -2727,9 +2911,9 @@
             wheel_track: { color: 0x0d1217, roughness: 0.62, metalness: 0.14, opacity: 0.2 },
             patch: { color: 0x2f353d, roughness: 0.76, metalness: 0.12, opacity: 0.2 },
             repair_patch_dark: { color: 0x252b32, roughness: 0.72, metalness: 0.14, opacity: 0.22 },
-            puddle: { color: 0x1a212a, roughness: 0.18, metalness: 0.42, opacity: 0.18 },
-            wet_streak: { color: 0x202731, roughness: 0.34, metalness: 0.26, opacity: 0.2 },
-            reflection_pool: { color: 0x233242, roughness: 0.12, metalness: 0.5, opacity: 0.16 },
+            puddle: { color: 0x1a212a, roughness: 0.74, metalness: 0.08, opacity: 0.1 },
+            wet_streak: { color: 0x202731, roughness: 0.82, metalness: 0.06, opacity: 0.08 },
+            reflection_pool: { color: 0x233242, roughness: 0.86, metalness: 0.04, opacity: 0.06 },
             edge_grime: { color: 0x1b1d20, roughness: 0.8, metalness: 0.08, opacity: 0.18 },
             curb_grime: { color: 0x181c20, roughness: 0.88, metalness: 0.04, opacity: 0.18 },
             cobble_break: { color: 0x55483d, roughness: 0.86, metalness: 0.04, opacity: 0.18 },
@@ -2742,7 +2926,7 @@
             color: style.color,
             roughness: style.roughness,
             metalness: style.metalness,
-            transparent: true,
+            transparent: style.opacity < 0.98,
             opacity: Math.min(style.opacity, band.opacity || style.opacity),
           });
           visualState.reflectiveMaterials.push(material);
@@ -2750,6 +2934,7 @@
         })()
       );
       paver.rotation.x = -Math.PI / 2;
+      paver.renderOrder = -1;
       paver.rotation.y = band.yaw || 0;
       paver.position.set(segment.x + (band.offset_x || 0), band.elevation || 0.02, segment.z + (band.offset_z || 0));
       worldGroup.add(paver);
@@ -3250,7 +3435,7 @@
         plazaApron.position.y = 0.031;
         clockRoot.add(plazaApron);
 
-        const steamMaterial = new THREE.MeshBasicMaterial({ color: 0xd8dfdf, transparent: true, opacity: 0.18, depthWrite: false });
+        const steamMaterial = new THREE.MeshBasicMaterial({ color: 0xd8dfdf, transparent: true, opacity: 0.12, depthWrite: false, depthTest: true });
         const steamPlume = new THREE.Mesh(new THREE.SphereGeometry(0.62, 10, 10), steamMaterial);
         steamPlume.position.set(0, 9.72, 0.08);
         clockRoot.add(steamPlume);
@@ -3291,8 +3476,9 @@
       }
 
       if (state.debugEnabled || !suppressGenericMarker) {
-        const reflectionMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: 0x1b2533, emissiveIntensity: 0.45, transparent: true, opacity: 0.22, roughness: 0.55, metalness: 0.3 });
+        const reflectionMaterial = new THREE.MeshStandardMaterial({ color: col, emissive: 0x1b2533, emissiveIntensity: 0.18, transparent: true, opacity: 0.08, roughness: 0.92, metalness: 0.04, depthWrite: false });
         const reflection = new THREE.Mesh(new THREE.CircleGeometry(landmark.radius || 2.7, 24), reflectionMaterial);
+        reflection.renderOrder = -1;
         reflection.rotation.x = -Math.PI / 2;
         reflection.position.set(landmark.x, 0.11, landmark.z);
         worldGroup.add(reflection);
@@ -3535,7 +3721,7 @@
     for (let i = 0; i < streakCount; i += 1) {
       const streak = new THREE.Mesh(
         new THREE.PlaneGeometry(0.025, 0.7 + (intensity * 0.85)),
-        new THREE.MeshBasicMaterial({ color: 0xc7d9e6, transparent: true, opacity: 0.025 + (intensity * 0.025), depthWrite: false })
+        new THREE.MeshBasicMaterial({ color: 0xc7d9e6, transparent: true, opacity: 0.012 + (intensity * 0.012), depthWrite: false, depthTest: true })
       );
       streak.rotation.x = -0.22;
       streak.position.set((Math.random() - 0.5) * 55, 9 + (Math.random() * 14), -8 - (Math.random() * 26));
@@ -3746,8 +3932,8 @@
       const isHeadingUp = minimapState.mode === 'heading-up';
       const threadLabel = (THREAD_DEFINITIONS[state.currentThread] || THREAD_DEFINITIONS.drift).label;
       minimapModeStatusEl.innerHTML = isHeadingUp
-        ? '<strong>Map mode:</strong> Heading-up — the top of the map follows the way you are facing.<br><strong>Thread hint:</strong> ' + threadLabel + ' stays highlighted without forcing a route.'
-        : '<strong>Map mode:</strong> North-up — the top of the map is geographic north.<br><strong>Thread hint:</strong> ' + threadLabel + ' stays highlighted without forcing a route.';
+        ? '<strong>Map mode:</strong> Heading-up — the top of the map follows the way you are facing.<br><strong>Ambient hint:</strong> ' + threadLabel + ' cues stay in the background.'
+        : '<strong>Map mode:</strong> North-up — the top of the map is geographic north.<br><strong>Ambient hint:</strong> ' + threadLabel + ' cues stay in the background.';
     }
   }
 
@@ -4274,7 +4460,7 @@
     const npcCounts = getActiveNpcCounts();
     const collectibleCount = getCollectibleProps().filter((prop) => !prop.collected).length;
     const threadLabel = (THREAD_DEFINITIONS[state.currentThread] || THREAD_DEFINITIONS.drift).label;
-    const items = ['You', 'Route line', 'Sidewalk / plaza', 'Road', 'Landmark', 'Thread hint: ' + threadLabel, 'Observations left: ' + collectibleCount, 'Pedestrians: ' + (npcCounts.pedestrian || 0), 'Tourists: ' + ((npcCounts.tourist || 0) + (npcCounts.photographer || 0)), 'Cyclists: ' + (npcCounts.cyclist || 0)];
+    const items = ['You', 'Route line', 'Sidewalk / plaza', 'Road', 'Landmark', 'Ambient hint: ' + threadLabel, 'Observations left: ' + collectibleCount, 'Pedestrians: ' + (npcCounts.pedestrian || 0), 'Tourists: ' + ((npcCounts.tourist || 0) + (npcCounts.photographer || 0)), 'Cyclists: ' + (npcCounts.cyclist || 0)];
     minimapLegendEl.innerHTML = items.map((item) => '<li>' + item + '</li>').join('');
   }
 
@@ -4640,7 +4826,7 @@
     }
     if (visualState.laneMaterial) {
       visualState.laneMaterial.color.set(timeOfDay.laneColor || '#aab1b8');
-      visualState.laneMaterial.opacity = Math.min(0.14, 0.035 + ((timeOfDay.pathBrightness || 0.2) * 0.12));
+      visualState.laneMaterial.opacity = Math.min(0.06, 0.01 + ((timeOfDay.pathBrightness || 0.2) * 0.04));
     }
 
     if (worldStatusEl) {
@@ -4867,7 +5053,7 @@
   function attachEvents() {
     window.addEventListener('resize', updateSize);
     ['pointerdown', 'click', 'keydown'].forEach((eventName) => {
-      document.addEventListener(eventName, () => { unlockAudioFromGesture().finally(() => unlockSteamClockAudio()); }, { passive: true });
+      document.addEventListener(eventName, () => { state.hasInteracted = true; unlockAudioFromGesture().finally(() => unlockSteamClockAudio()); }, { passive: true });
     });
     renderer.domElement.addEventListener('click', () => {
       if (state.activeDialogNpcId) {
@@ -4937,19 +5123,6 @@
       minimapModeBtn.addEventListener('click', toggleMinimapMode);
     }
 
-    threadButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        const threadId = button.getAttribute('data-thread-mode') || 'drift';
-        if (threadId === 'drift') {
-          setActiveThread('drift');
-          unlockOrientationIfNeeded('Orientation complete: you set your own pace through the route.');
-          return;
-        }
-        startQuestById(threadId);
-        unlockOrientationIfNeeded('Orientation complete: you picked a thread to follow.');
-      });
-    });
-
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
 
@@ -4988,6 +5161,10 @@
     if (tutorialOpenBtn) tutorialOpenBtn.addEventListener('click', openTutorialOverlay);
     tutorialCloseEls.forEach((button) => button.addEventListener('click', closeTutorialOverlay));
     if (tutorialStartBtn) tutorialStartBtn.addEventListener('click', () => { closeTutorialOverlay(); resetToStart(); setStatus('Tutorial started. Click into the scene, then wander toward whatever catches your attention first.'); });
+    if (renameWalkerBtn) renameWalkerBtn.addEventListener('click', () => openWalkerNameOverlay(state.walkerName));
+    if (walkerStartBtn) walkerStartBtn.addEventListener('click', () => confirmWalkerName(walkerNameInputEl ? walkerNameInputEl.value : state.walkerName));
+    if (walkerSkipBtn) walkerSkipBtn.addEventListener('click', () => confirmWalkerName('Walker'));
+    if (walkerNameInputEl) walkerNameInputEl.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); confirmWalkerName(walkerNameInputEl.value); } });
     if (lowGraphicsToggle) lowGraphicsToggle.addEventListener('change', (event) => setLowGraphicsMode(event.target.checked));
     if (reopenTutorialToggle) reopenTutorialToggle.addEventListener('change', (event) => { try { window.localStorage.setItem('gastownTutorialReopen', event.target.checked ? '1' : '0'); } catch (error) {} });
     if (dialogModalEl) {
@@ -5133,8 +5310,9 @@
       });
       minimapState.worldMetrics = getWorldMetrics();
       try { if (window.localStorage.getItem('gastownLowGraphics') === '1') { setLowGraphicsMode(true); } } catch (error) {}
+      const hadWalkerName = restoreWalkerName();
       state.progression.openingObjectiveStartedAt = window.performance && typeof window.performance.now === 'function' ? window.performance.now() : Date.now();
-      setQuestStatus('Choose your own lead through Gastown.');
+      setQuestStatus('Get your bearings and see what the street gives you.');
       restoreMinimapZoom();
       restoreMinimapMode();
       updateSize();
@@ -5143,10 +5321,11 @@
       applyWeather(state.activeWeather);
       resetToStart();
       setActiveThread('drift', { silent: true });
-      pushJournalEntry('Arrived at the station threshold. Start anywhere: drift, survey, soundwalk, or memory walk.');
+      pushJournalEntry('Arrived at the station threshold. The walk is already underway; start where the block feels most alive.');
       renderProgressionUi();
       updateNextMeaningfulThing();
       attachEvents();
+      if (!hadWalkerName) { openWalkerNameOverlay(''); }
       setDebugState(state.debugEnabled);
       if (state.debugEnabled) {
         debugPanel.removeAttribute('hidden');
