@@ -41,11 +41,11 @@
     ]
   },
   "busker_clock_corner": {
-    "title": "Sax busker",
+    "title": "Street band",
     "lines": [
-      "You hear me before you see the clock. That is the point.",
-      "This stretch wakes up once the tourists, food spots, and station spill start mixing.",
-      "Keep moving east when you are ready."
+      "We set up early so the first block already has a pulse.",
+      "Sax carries the lead, mandolin answers, bass walks, guitar chops, and the rhythm stays light enough for the corner to breathe.",
+      "If the weather shifts, the arrangement shifts with it."
     ],
     "actions": [
       {
@@ -56,28 +56,26 @@
     "variants": [
       {
         "when": {
-          "weather": "rain",
-          "location": "steam_clock"
+          "weather": "rain"
         },
         "lines": [
-          "Rain changes my set here \u2014 people bunch under the awnings, listen for a minute, then dart back out when the whistle blows."
+          "Rain trims the set down and leaves more air between phrases, but we never stop sounding like a band."
         ]
       },
       {
         "when": {
-          "timeOfDay": "night",
-          "location": "steam_clock"
+          "timeOfDay": "dusk"
         },
         "lines": [
-          "At night the corner gets quieter, so every chord and every clock chime hangs in the brick canyon a little longer."
+          "At dusk we stretch the phrases and let the corner glow do part of the work for us."
         ]
       },
       {
         "when": {
-          "scavengerComplete": true
+          "location": "waterfront_station"
         },
         "lines": [
-          "Since you already chased down the clues, you probably noticed this pitch works because the clock, the corner, and the crowd all take turns being the main act."
+          "Right off the station edge, the trick is making the street feel inhabited before people even see the clock."
         ]
       }
     ]
@@ -152,8 +150,8 @@
   "tourist_clock_stop": {
     "title": "Tourist",
     "lines": [
-      "We stopped for the street first, not just the clock.",
-      "The fun bit is how fast the block turns from station edge to old brick postcard."
+      "We stopped because the band and the storefronts made the first stretch feel alive immediately.",
+      "Once that rhythm starts, you want to keep walking to see what the next corner is doing."
     ],
     "actions": [
       {
@@ -194,8 +192,8 @@
   "tourist_clock_photo": {
     "title": "Street photographer",
     "lines": [
-      "This angle catches the paving, the people, and the old facades in one frame.",
-      "It works better once the street has a bit of motion in it."
+      "This angle works because the band, the paving, and the facades all stack into one frame.",
+      "If the street feels active, the photo feels earned."
     ],
     "actions": [
       {

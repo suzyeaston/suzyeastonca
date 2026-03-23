@@ -10,7 +10,7 @@ get_header();
     <header class="gastown-sim-header">
       <p class="gastown-sim-kicker">Waterfront Station → Water Street → Steam Clock</p>
       <h1>Gastown Simulator</h1>
-      <p class="gastown-sim-intro">Name your walker, click in, and follow whatever feels alive first.</p>
+      <p class="gastown-sim-intro">Name your walker, click in, and follow the first bit of street energy.</p>
     </header>
 
     <details class="gastown-controls-drawer">
@@ -112,13 +112,12 @@ get_header();
 
     <section class="gastown-hud" aria-label="Exploration HUD">
       <div class="gastown-hud-identity">
-        <p class="gastown-hud-kicker">HUD</p>
         <p class="gastown-hud-name" data-walker-name-display>WALKER · 0% MAPPED</p>
       </div>
       <div class="gastown-hud-route">
         <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% mapped</p>
       </div>
-      <p class="gastown-hud-subline" data-sim-status aria-live="polite">Click in to start.</p>
+      <p class="gastown-hud-subline" data-sim-status aria-live="polite">Band ahead.</p>
       <p class="gastown-interact-prompt" data-sim-interact-prompt aria-live="polite" hidden></p>
     </section>
 
@@ -144,8 +143,8 @@ get_header();
       </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
       <div class="gastown-live-strip">
-        <p class="gastown-landmark" data-sim-landmark aria-live="polite">Station threshold</p>
-        <p class="gastown-route-segment" data-sim-route-segment aria-live="polite">Start</p>
+        <p class="gastown-landmark" data-sim-landmark aria-live="polite">Band ahead</p>
+        <p class="gastown-route-segment" data-sim-route-segment aria-live="polite">Station threshold</p>
       </div>
     </div>
 
