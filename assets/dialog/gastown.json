@@ -4,9 +4,31 @@
     "lines": [
       "Welcome to Water Street. This block sits in the old warehouse district that grew up around Vancouver's working waterfront, so the brick fronts and loading-bay rhythm are part of Gastown's real story.",
       "If you want a quick challenge, I can send you on a scavenger hunt for three street details that locals use to read the neighbourhood: a newspaper box, a historic plaque, and a mural.",
-      "Maple Tree Square is just ahead too \u2014 it marks the birthplace of Gastown, where Gassy Jack's saloon helped spark the original settlement."
+      "Maple Tree Square is just ahead too — it marks the birthplace of Gastown, where Gassy Jack's saloon helped spark the original settlement."
     ],
     "actions": [
+      {
+        "type": "quest",
+        "label": "Start scavenger hunt"
+      },
+      {
+        "type": "response",
+        "label": "What should I notice first?",
+        "responseLines": [
+          "First, let the station threshold fall away behind you — Gastown works best when the reveal feels like stepping out of transit and into a slower brick rhythm.",
+          "Then keep your eye on how the road darkens, the sidewalks widen, and the Steam Clock plaza opens suddenly instead of arriving all at once."
+        ],
+        "followupStatus": "The guide reframed the walk as a deliberate reveal."
+      },
+      {
+        "type": "response",
+        "label": "Tell me about Maple Tree Square",
+        "responseLines": [
+          "Maple Tree Square is where several early streets knot together, so it feels less planned than the rest of downtown.",
+          "That awkward little opening is part of the charm: it still carries the sense of a settlement growing around a crossroads instead of a tidy grid."
+        ],
+        "followupStatus": "The guide shared a new perspective on Maple Tree Square."
+      },
       {
         "type": "close",
         "label": "Back to walk"
@@ -22,6 +44,15 @@
     ],
     "actions": [
       {
+        "type": "response",
+        "label": "What changes in the rain?",
+        "responseLines": [
+          "Rain turns this corner into a softer stage — fewer camera clicks, more footsteps, more steam hanging in the air.",
+          "That is when the clock feels less like a tourist prop and more like a stubborn old machine keeping the block company."
+        ],
+        "followupStatus": "The busker gave the rainy version of the corner."
+      },
+      {
         "type": "close",
         "label": "Back to walk"
       }
@@ -30,8 +61,8 @@
   "pedestrian_route_tip": {
     "title": "Water Street walker",
     "lines": [
-      "Water Street still feels like old Gastown because the narrow lots and warehouse fa\u00e7ades keep the block tight and walkable.",
-      "Before tourists filled the sidewalks, this corridor served the port economy \u2014 teamsters, merchants, and dock traffic all funneled through here.",
+      "Water Street still feels like old Gastown because the narrow lots and warehouse façades keep the block tight and walkable.",
+      "Before tourists filled the sidewalks, this corridor served the port economy — teamsters, merchants, and dock traffic all funneled through here.",
       "If you ask me for a second tip, I'll tell you where the neighbourhood really started."
     ],
     "actions": [
@@ -50,6 +81,15 @@
     ],
     "actions": [
       {
+        "type": "response",
+        "label": "Why do locals still stop here?",
+        "responseLines": [
+          "Because the plaza lets you feel two versions of Gastown at once: the heritage image everyone recognizes and the working street geometry still underneath it.",
+          "Even a quick stop can make the neighbourhood read like a lived-in place instead of a postcard."
+        ],
+        "followupStatus": "A passerby shared a local reading of the plaza."
+      },
+      {
         "type": "close",
         "label": "Back to walk"
       }
@@ -58,7 +98,7 @@
   "tourist_clock_stop": {
     "title": "Steam Clock visitor",
     "lines": [
-      "We came for the Steam Clock, but the surprise is how much story is packed into one intersection \u2014 steam pipes below, brick warehouses above, and Maple Tree Square only steps away.",
+      "We came for the Steam Clock, but the surprise is how much story is packed into one intersection — steam pipes below, brick warehouses above, and Maple Tree Square only steps away.",
       "People love that it looks Victorian even though it is a 1977 creation; it is basically a heritage stage prop that became a real city icon.",
       "Ask a second question and I'll tell you the best moment to stand here for the chime."
     ],
@@ -78,6 +118,15 @@
     ],
     "actions": [
       {
+        "type": "response",
+        "label": "When is the best shot?",
+        "responseLines": [
+          "Blue hour is dramatic, but a damp afternoon can be better because the paving starts reflecting the brass and shop windows.",
+          "If the whistle has just gone off, wait a breath — the thinning steam plume gives the scene a little aftermath."
+        ],
+        "followupStatus": "The photographer shared a timing tip."
+      },
+      {
         "type": "close",
         "label": "Back to walk"
       }
@@ -87,7 +136,7 @@
     "title": "Gastown skateboarder",
     "lines": [
       "The bricks look rough, but the long sightlines on Water Street make it easy to roll as long as you respect the tourist knots around the Steam Clock.",
-      "Older locals still talk about Gastown as a place where rail, port traffic, and nightlife kept colliding \u2014 that mixed energy is kind of why this block still feels alive.",
+      "Older locals still talk about Gastown as a place where rail, port traffic, and nightlife kept colliding — that mixed energy is kind of why this block still feels alive.",
       "Hit me with one more question and I'll tell you which stretch is best for a clean glide."
     ],
     "actions": [
@@ -100,7 +149,7 @@
   "cyclist_water_street": {
     "title": "Gastown cyclist",
     "lines": [
-      "Fog or rain changes this ride fast \u2014 the paving gets slick, the sightlines shorten, and everyone near the clock starts moving more cautiously.",
+      "Fog or rain changes this ride fast — the paving gets slick, the sightlines shorten, and everyone near the clock starts moving more cautiously.",
       "On a clear afternoon, though, the block fills with visitors because the Steam Clock, Maple Tree Square, and the heritage storefronts are all within a minute of each other.",
       "Ask again and I'll tell you the commuter shortcut locals use to slip past the photo crowd."
     ],

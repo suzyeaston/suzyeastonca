@@ -25,7 +25,7 @@
     "provenanceSummary": "Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs."
   },
   "route": {
-    "name": "Waterfront Station \u2192 Water Street \u2192 Steam Clock working corridor",
+    "name": "Waterfront Station → Water Street → Steam Clock working corridor",
     "centerline": [
       {
         "id": "waterfront-station-threshold",
@@ -4858,5 +4858,188 @@
     "floorY": 0,
     "edgeMessage": "Stayed within the Gastown working corridor.",
     "resetMessage": "Returned to the Gastown working corridor."
-  }
+  },
+  "authoredMoments": [
+    {
+      "id": "arrival-threshold-reveal",
+      "repeatable": false,
+      "duration": 7.2,
+      "visualBoost": 0.24,
+      "line": "The station drops away behind you and Water Street begins to gather itself — brick, lamps, and the first hint of a slower rhythm.",
+      "trigger": {
+        "kind": "arrival",
+        "value": "waterfront-station-threshold"
+      }
+    },
+    {
+      "id": "arrival-steam-clock",
+      "repeatable": true,
+      "cooldown": 45,
+      "duration": 6.4,
+      "visualBoost": 0.34,
+      "line": "{landmark} lands all at once: brass trim, steam plume, and a little crowd energy spilling into the plaza.",
+      "reward": "steam_clock_chime",
+      "trigger": {
+        "kind": "arrival",
+        "value": "steam-clock"
+      }
+    },
+    {
+      "id": "arrival-maple-tree-square",
+      "repeatable": true,
+      "cooldown": 60,
+      "duration": 5.8,
+      "visualBoost": 0.18,
+      "line": "The street loosens at Maple Tree Square, and the neighbourhood suddenly feels older, wider, and less stage-managed.",
+      "trigger": {
+        "kind": "arrival",
+        "value": "maple-tree-square-edge"
+      }
+    },
+    {
+      "id": "weather-fog-hush",
+      "repeatable": true,
+      "cooldown": 24,
+      "duration": 5.2,
+      "visualBoost": 0.16,
+      "line": "Fog softens the storefront rhythm and turns the next few metres of Water Street into a quieter reveal.",
+      "trigger": {
+        "kind": "weather",
+        "value": "fog"
+      }
+    },
+    {
+      "id": "weather-rain-reflections",
+      "repeatable": true,
+      "cooldown": 24,
+      "duration": 5.2,
+      "visualBoost": 0.14,
+      "line": "Rain wakes up the paving — reflections gather underfoot and the plaza starts looking theatrical.",
+      "trigger": {
+        "kind": "weather",
+        "value": "rain"
+      }
+    },
+    {
+      "id": "weather-drizzle-linger",
+      "repeatable": true,
+      "cooldown": 24,
+      "duration": 4.8,
+      "visualBoost": 0.12,
+      "line": "A light drizzle makes the block feel inhabited rather than empty, like everyone is choosing to linger anyway.",
+      "trigger": {
+        "kind": "weather",
+        "value": "drizzle"
+      }
+    },
+    {
+      "id": "time-night-lamps",
+      "repeatable": true,
+      "cooldown": 24,
+      "duration": 5.6,
+      "visualBoost": 0.18,
+      "line": "Night pulls the lamps and window glow forward, turning the walk into a chain of smaller pools of attention.",
+      "trigger": {
+        "kind": "timeOfDay",
+        "value": "night"
+      }
+    },
+    {
+      "id": "time-dusk-arrival",
+      "repeatable": true,
+      "cooldown": 24,
+      "duration": 5.6,
+      "visualBoost": 0.16,
+      "line": "At dusk the block feels in-between — commuters thinning out, tourists settling in, the clock corner ready for its evening crowd.",
+      "trigger": {
+        "kind": "timeOfDay",
+        "value": "dusk"
+      }
+    },
+    {
+      "id": "guide-perspective-unlock",
+      "repeatable": true,
+      "cooldown": 30,
+      "duration": 5.2,
+      "visualBoost": 0.1,
+      "line": "The guide shifts the whole walk: not just a route to the clock, but a gradual handoff from station city to old port district.",
+      "trigger": {
+        "kind": "dialog",
+        "value": "guide_intro"
+      }
+    },
+    {
+      "id": "busker-perspective-unlock",
+      "repeatable": true,
+      "cooldown": 30,
+      "duration": 5,
+      "visualBoost": 0.12,
+      "line": "The busker makes the plaza read like a tiny performance space instead of just a landmark queue.",
+      "trigger": {
+        "kind": "dialog",
+        "value": "busker_clock_corner"
+      }
+    },
+    {
+      "id": "plaza-perspective-unlock",
+      "repeatable": true,
+      "cooldown": 30,
+      "duration": 5,
+      "visualBoost": 0.1,
+      "line": "A passerby gives the plaza a new angle: less postcard, more lived-in knot of routes and pauses.",
+      "trigger": {
+        "kind": "dialog",
+        "value": "pedestrian_clock_hint"
+      }
+    },
+    {
+      "id": "quest-clock-reward",
+      "repeatable": false,
+      "duration": 7.4,
+      "visualBoost": 0.36,
+      "line": "You completed the scavenger hunt. The Steam Clock answers with a little extra ceremony.",
+      "questText": "Scavenger hunt complete: follow the chime back toward the plaza for your reward story.",
+      "reward": "steam_clock_chime",
+      "trigger": {
+        "kind": "quest",
+        "value": "complete"
+      }
+    },
+    {
+      "id": "collect-box",
+      "repeatable": true,
+      "cooldown": 8,
+      "duration": 3.8,
+      "visualBoost": 0.08,
+      "line": "The newspaper box lands the first clue — everyday street furniture as neighbourhood memory.",
+      "trigger": {
+        "kind": "collect",
+        "value": "newspaper_box"
+      }
+    },
+    {
+      "id": "collect-plaque",
+      "repeatable": true,
+      "cooldown": 8,
+      "duration": 3.8,
+      "visualBoost": 0.08,
+      "line": "The plaque turns the walk into history you have to lean toward, not just scenery you pass through.",
+      "trigger": {
+        "kind": "collect",
+        "value": "historic_plaque"
+      }
+    },
+    {
+      "id": "collect-mural",
+      "repeatable": true,
+      "cooldown": 8,
+      "duration": 3.8,
+      "visualBoost": 0.08,
+      "line": "The mural opens the square outward, letting the area feel less like a corridor and more like a neighbourhood.",
+      "trigger": {
+        "kind": "collect",
+        "value": "mural"
+      }
+    }
+  ]
 }

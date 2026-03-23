@@ -144,6 +144,17 @@
     tutorial: { seen: false, lastMKeyAt: 0 },
     lowGraphics: false,
     quest: { active: false, completed: false, rewardPending: false, items: [] },
+    moments: {
+      byId: {},
+      queue: [],
+      active: null,
+      weatherCycle: {},
+      timeCycle: {},
+      pendingRewardMomentId: '',
+      activeWeatherMomentId: '',
+      activeTimeMomentId: '',
+      introShown: false,
+    },
   };
 
   const DEFAULT_EYE_HEIGHT = 1.7;
@@ -211,9 +222,10 @@
     const mood = lightingState.mood || {};
     const weather = lightingState.weather || {};
     const timeOfDay = lightingState.timeOfDay || {};
-    const markerGlow = (timeOfDay.landmarkGlow || 0.3) * (0.6 + ((mood.lightIntensity || 0) * 0.5));
-    const haloOpacity = 0.08 + ((timeOfDay.landmarkGlow || 0.3) * 0.18);
-    const reflectionOpacity = 0.12 + ((timeOfDay.landmarkGlow || 0.3) * 0.18) + ((weather.rainIntensity || 0) * 0.12);
+    const momentBoost = getMomentBoost();
+    const markerGlow = ((timeOfDay.landmarkGlow || 0.3) * (0.6 + ((mood.lightIntensity || 0) * 0.5))) + momentBoost;
+    const haloOpacity = 0.08 + ((timeOfDay.landmarkGlow || 0.3) * 0.18) + (momentBoost * 0.08);
+    const reflectionOpacity = 0.12 + ((timeOfDay.landmarkGlow || 0.3) * 0.18) + ((weather.rainIntensity || 0) * 0.12) + (momentBoost * 0.08);
 
     landmarkVisuals.forEach((landmarkVisual) => {
       if (!landmarkVisual || typeof landmarkVisual !== 'object') {
@@ -285,6 +297,122 @@
     if (questStatusEl) {
       questStatusEl.textContent = text;
     }
+  }
+
+  function getMomentDefinitions() {
+    return state.world && Array.isArray(state.world.authoredMoments) ? state.world.authoredMoments : [];
+  }
+
+  function getMomentById(momentId) {
+    return getMomentDefinitions().find((moment) => moment && moment.id === momentId) || null;
+  }
+
+  function enqueueMoment(momentId, context) {
+    const moment = getMomentById(momentId);
+    if (!moment) {
+      return false;
+    }
+    const instance = state.moments.byId[momentId] || { triggerCount: 0, lastTriggeredAt: -Infinity, seenKeys: {} };
+    const nowSeconds = performance.now() / 1000;
+    const cooldown = Number(moment.cooldown || 0);
+    const repeatable = moment.repeatable !== false;
+    const key = context && context.key ? String(context.key) : '';
+
+    if (!repeatable && instance.triggerCount > 0) {
+      return false;
+    }
+    if (cooldown > 0 && (nowSeconds - instance.lastTriggeredAt) < cooldown) {
+      return false;
+    }
+    if (key && instance.seenKeys[key]) {
+      return false;
+    }
+
+    instance.triggerCount += 1;
+    instance.lastTriggeredAt = nowSeconds;
+    if (key) {
+      instance.seenKeys[key] = true;
+    }
+    state.moments.byId[momentId] = instance;
+    state.moments.queue.push({ moment, context: context || {}, queuedAt: nowSeconds });
+    return true;
+  }
+
+  function activateMoment(moment, context) {
+    if (!moment) {
+      return;
+    }
+    state.moments.active = {
+      id: moment.id,
+      until: (performance.now() / 1000) + Number(moment.duration || 5.6),
+      boost: Number(moment.visualBoost || 0),
+    };
+
+    const contextData = context || {};
+    const line = contextData.line || moment.line || '';
+    if (line) {
+      setStatus(line);
+    }
+    if (moment.questText) {
+      setQuestStatus(moment.questText);
+    }
+    if (moment.reward === 'steam_clock_chime') {
+      unlockSteamClockAudio().finally(() => {
+        triggerSteamClockChime(moment.id === 'quest-clock-reward' ? 'reward' : 'moment');
+      });
+    }
+  }
+
+  function updateMomentQueue(nowSeconds) {
+    if (state.moments.active && nowSeconds >= state.moments.active.until) {
+      state.moments.active = null;
+      updateCameraModeUi();
+    }
+    if (state.moments.active || !state.moments.queue.length) {
+      return;
+    }
+    const next = state.moments.queue.shift();
+    activateMoment(next.moment, next.context);
+  }
+
+  function getMomentBoost() {
+    return state.moments.active ? Math.max(0, state.moments.active.boost || 0) : 0;
+  }
+
+  function triggerArrivalMoment(landmarkId) {
+    const arrivalIdByLandmark = {
+      'waterfront-station-threshold': 'arrival-threshold-reveal',
+      'steam-clock': 'arrival-steam-clock',
+      'maple-tree-square-edge': 'arrival-maple-tree-square',
+    };
+    const momentId = arrivalIdByLandmark[landmarkId];
+    if (!momentId) {
+      return;
+    }
+    const moment = getMomentById(momentId);
+    const landmark = getLandmarkById(state.world, landmarkId);
+    const line = landmark && moment && moment.line ? moment.line.replace('{landmark}', landmark.label || 'the landmark') : (moment && moment.line) || '';
+    enqueueMoment(momentId, { key: landmarkId, line });
+  }
+
+  function triggerReactiveMoment(kind, value) {
+    const groupKey = kind === 'weather' ? 'weatherCycle' : 'timeCycle';
+    const stateKey = kind === 'weather' ? 'activeWeatherMomentId' : 'activeTimeMomentId';
+    const moments = getMomentDefinitions().filter((moment) => moment && moment.trigger && moment.trigger.kind === kind && moment.trigger.value === value);
+    if (!moments.length) {
+      return;
+    }
+    const counts = state.moments[groupKey];
+    const nextIndex = counts[value] || 0;
+    const selected = moments[nextIndex % moments.length];
+    counts[value] = nextIndex + 1;
+    state.moments[stateKey] = selected.id;
+    enqueueMoment(selected.id, { key: selected.id + ':' + value + ':' + nextIndex });
+  }
+
+  function triggerNpcMoment(dialogId) {
+    const matches = getMomentDefinitions().filter((moment) => moment && moment.trigger && moment.trigger.kind === 'dialog' && moment.trigger.value === dialogId);
+    matches.forEach((moment) => enqueueMoment(moment.id, { key: dialogId + ':' + moment.id }));
   }
 
   function openTutorialOverlay() {
@@ -1078,12 +1206,14 @@
       defaultCloseLabel: 'Back to walk',
     });
 
+    triggerNpcMoment(npcState.dialogId);
+
     if (npcState.role === 'guide') {
-      normalized.actions = [
-        { type: 'quest', label: state.quest.completed ? 'Review scavenger hunt' : 'Start scavenger hunt' },
-        { type: 'response', label: 'Tell me more about Maple Tree Square', responseLines: ['Maple Tree Square marks the early centre of Gastown, where Carrall, Powell, Alexander, and Water come together in a triangular knot.', 'That irregular geometry is part of why the district feels older than the rest of downtown — the street plan still hints at the port-town era.'], followupStatus: 'Guide shared extra Gastown history.' },
-        { type: 'close', label: 'Back to walk' }
-      ];
+      const existingActions = Array.isArray(normalized.actions) ? normalized.actions.filter((action) => action && action.type !== 'quest') : [];
+      normalized.actions = [{ type: 'quest', label: state.quest.completed ? 'Review scavenger hunt' : 'Start scavenger hunt' }].concat(existingActions);
+      if (!normalized.actions.some((action) => action && action.type === 'close')) {
+        normalized.actions.push({ type: 'close', label: 'Back to walk' });
+      }
     }
 
     dialogTitleEl.textContent = normalized.title;
@@ -1131,6 +1261,7 @@
     state.quest.completed = true;
     state.quest.active = false;
     setQuestStatus('Scavenger hunt complete: the busker has a bonus Gastown story waiting near the Steam Clock.');
+    enqueueMoment('quest-clock-reward', { key: 'quest-complete' });
     const busker = (state.npcs || []).find((npc) => npc.role === 'busker');
     if (busker) {
       state.npcConversationCache[busker.id] = {
@@ -1159,6 +1290,8 @@
     if (!match) return false;
     match.collected = true;
     setStatus('Collected: ' + (match.collectibleLabel || match.id) + '.');
+    const collectibleMomentId = match.collectibleKey === 'historic_plaque' ? 'collect-plaque' : match.collectibleKey === 'mural' ? 'collect-mural' : match.collectibleKey === 'newspaper_box' ? 'collect-box' : '';
+    if (collectibleMomentId) { enqueueMoment(collectibleMomentId, { key: match.id }); }
     updateQuestProgress();
     return true;
   }
@@ -2729,6 +2862,9 @@
     }, null) || (nearest ? describeLandmarkGuidance(nearest, heading, state.world) : null);
 
     if (nearest) {
+      if (nearest.id && nearestDist < 8.5) {
+        triggerArrivalMoment(nearest.id);
+      }
       minimapState.nearestNode = nearest;
       minimapState.nearestGuidance = nearestGuidance;
       setLandmark('Nearest landmark: ' + (nearestGuidance ? nearestGuidance.text : nearest.label));
@@ -3480,10 +3616,11 @@
     scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
     renderer.setClearColor(timeOfDay.sky, 1);
 
+    const momentBoost = getMomentBoost();
     ambient.color.set(timeOfDay.ambientColor);
-    ambient.intensity = Math.max(0.24, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.84);
+    ambient.intensity = Math.max(0.24, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.84) + (momentBoost * 0.06);
     keyLight.color.set(timeOfDay.keyColor);
-    keyLight.intensity = (timeOfDay.keyIntensity || 0.6) * (0.72 + (mood.lightIntensity * 0.28));
+    keyLight.intensity = ((timeOfDay.keyIntensity || 0.6) * (0.72 + (mood.lightIntensity * 0.28))) + (momentBoost * 0.08);
     fillLight.color.set(timeOfDay.fillColor || '#526782');
     fillLight.intensity = (timeOfDay.fillIntensity || 0.22) * 0.92;
 
@@ -3552,11 +3689,13 @@
     state.activeWeather = weatherId;
     applyVisualState();
     refreshNpcPopulation();
+    triggerReactiveMoment('weather', weatherId);
   }
 
   function applyTimeOfDay(timeOfDayId) {
     state.activeTimeOfDay = timeOfDayId;
     applyVisualState();
+    triggerReactiveMoment('timeOfDay', timeOfDayId);
   }
 
   function updateAudioZones() {
@@ -3976,6 +4115,7 @@
       applyMood(state.activeMood);
       applyWeather(state.activeWeather);
       resetToStart();
+      enqueueMoment('arrival-threshold-reveal', { key: 'session-intro' });
       attachEvents();
       setDebugState(state.debugEnabled);
       if (state.debugEnabled) {
@@ -3999,6 +4139,7 @@
         updateOverviewCamera();
         updateSteamClock(delta, time / 1000);
         updateProgressiveVisibility();
+        updateMomentQueue(time / 1000);
         updateNpcs(delta);
         updateInteractionTarget();
         animateRain(delta);
