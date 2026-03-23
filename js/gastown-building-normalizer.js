@@ -159,10 +159,12 @@
       roofline_type: source.roofline_type || 'flat_cornice',
       window_bay_count: isFiniteNumber(source.window_bay_count) ? source.window_bay_count : 4,
       recessed_entry_count: isFiniteNumber(source.recessed_entry_count) ? source.recessed_entry_count : 1,
-      storefront_rhythm: source.storefront_rhythm || { base_band: 0.18, upper_rows: 3 },
-      material_palette: source.material_palette || { primary: 'brickDark', trim: 'stoneMuted', accent: 'stoneMuted' },
+      storefront_rhythm: Object.assign({ base_band: 0.18, upper_rows: 3, bay_spacing: 2.8, entry_depth: 0.72, transom_band: 0.18 }, source.storefront_rhythm || {}),
+      material_palette: Object.assign({ primary: 'brickDark', trim: 'stoneMuted', accent: 'stoneMuted', secondary: 'brickWarm' }, source.material_palette || {}),
       cornice_emphasis: isFiniteNumber(source.cornice_emphasis) ? source.cornice_emphasis : 0.24,
       mass_inset: isFiniteNumber(source.mass_inset) ? source.mass_inset : 0.96,
+      hero_fidelity: source.hero_fidelity || 'standard',
+      facade_variation_seed: isFiniteNumber(source.facade_variation_seed) ? source.facade_variation_seed : 0.5,
     };
   }
 
