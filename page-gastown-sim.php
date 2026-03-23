@@ -74,18 +74,19 @@ get_header();
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>
-        <p class="gastown-minimap-mode-status" data-sim-minimap-mode-status aria-live="polite">Map mode: North-up — the top of the map is geographic north.</p>
+        <p class="gastown-minimap-mode-status" data-sim-minimap-mode-status aria-live="polite">Map mode: North-up — the top of the map is geographic north. Guidance: landmark callouts stay player-relative.</p>
+        <p class="gastown-minimap-context" data-sim-minimap-context aria-live="polite"><strong>Now facing:</strong> north<br><strong>Nearest landmark:</strong> Waterfront Station threshold — ahead</p>
         <canvas data-sim-minimap width="220" height="220"></canvas>
         <ul class="gastown-minimap-legend" aria-label="Minimap legend">
-          <li><span class="dot player"></span> Player</li>
+          <li><span class="dot player"></span> You</li>
           <li><span class="dot route"></span> Route line</li>
           <li><span class="dot sidewalk"></span> Sidewalk / plaza</li>
-          <li><span class="dot street"></span> Street</li>
+          <li><span class="dot street"></span> Road</li>
           <li><span class="dot station"></span> Station</li>
-          <li><span class="dot steam"></span> Steam Clock</li>
-          <li><span class="dot nearest"></span> Nearest landmark</li>
+          <li><span class="dot steam"></span> Landmark</li>
+          <li><span class="dot nearest"></span> Guidance callout</li>
         </ul>
-        <p class="gastown-minimap-label" data-sim-minimap-landmark>Nearest: Waterfront Station Threshold</p>
+        <p class="gastown-minimap-label" data-sim-minimap-landmark>Nearest landmark: Waterfront Station threshold — ahead</p>
       </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
     </div>
