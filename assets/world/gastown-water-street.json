@@ -22,7 +22,7 @@
       "orthophotoImagery2015": false
     },
     "provenanceSummary": "Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs.",
-    "lastBuild": "2026-03-23T06:54:42.055Z"
+    "lastBuild": "2026-03-23T07:44:29.599Z"
   },
   "route": {
     "name": "Explorable Gastown: Water Street loops",
@@ -5364,32 +5364,6 @@
       }
     ]
   },
-  "audioZones": [
-    {
-      "id": "station-plaza-bed",
-      "label": "Station plaza ambience",
-      "bed": "station-plaza.mp3",
-      "x": 2.93,
-      "z": -3.8,
-      "radius": 16
-    },
-    {
-      "id": "steam-clock-bed",
-      "label": "Steam Clock plaza ambience",
-      "bed": "steam-clock-plaza.mp3",
-      "x": 184.31,
-      "z": -154.75,
-      "radius": 18
-    },
-    {
-      "id": "maple-square-bed",
-      "label": "Maple Tree Square ambience",
-      "bed": "maple-square.mp3",
-      "x": 210.34,
-      "z": -173.46,
-      "radius": 15
-    }
-  ],
   "spawn": {
     "x": 6.88,
     "y": 1.7,

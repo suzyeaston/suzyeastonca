@@ -1328,11 +1328,6 @@ function makeStarterWorld(outputPath, options = {}) {
       ],
       surfaceBands: buildStarterSurfaceBands(centerline, streetWidth, routeLength),
     },
-    audioZones: [
-      { id: 'station-plaza-bed', label: 'Station plaza ambience', bed: 'station-plaza.mp3', x: Number((layout.station.x + (intersectionFrame.tangent.x * 4.8)).toFixed(2)), z: Number((layout.station.z + (intersectionFrame.tangent.z * 4.8)).toFixed(2)), radius: 16 },
-      { id: 'steam-clock-bed', label: 'Steam Clock plaza ambience', bed: 'steam-clock-plaza.mp3', x: Number(layout.clock.x.toFixed(2)), z: Number(layout.clock.z.toFixed(2)), radius: 18 },
-      { id: 'maple-square-bed', label: 'Maple Tree Square ambience', bed: 'maple-square.mp3', x: Number(layout.mapleEdge.x.toFixed(2)), z: Number(layout.mapleEdge.z.toFixed(2)), radius: 15 },
-    ],
     spawn,
     bounds: { floorY: 0, edgeMessage: 'Stayed inside the explorable Gastown district.', resetMessage: 'Returned to the explorable Gastown district.' },
   };
