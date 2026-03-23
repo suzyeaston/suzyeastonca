@@ -211,6 +211,61 @@ test('minimap locks Steam Clock corridor side to a canonical route-relative help
   assert.ok(Math.abs(headingSteam.y - northCambie.y) < 20, 'expected heading-up projection to keep the Steam Clock laterally beside the corridor near Water/Cambie');
 });
 
+
+test('minimap Steam Clock uses a dedicated plaza anchor that moves farther onto the canonical right curb side than the raw node', () => {
+  const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
+  const worldPath = path.join(__dirname, '..', 'assets', 'world', 'gastown-water-street.json');
+  const src = fs.readFileSync(simPath, 'utf8');
+  const world = JSON.parse(fs.readFileSync(worldPath, 'utf8'));
+
+  assert.match(src, /function getMinimapLandmarkAnchor\(landmark, world\) \{/);
+  assert.match(src, /const plazaZone = getZoneById\(world, 'steam-clock-plaza-sidewalk', 'sidewalk'\);/);
+  assert.match(src, /const targetSide = Math\.max\(rawSide, sidewalkTarget, heroTarget, rawSide \+ Math\.max\(1\.2, \(rightmostSide - rawSide\) \* 0\.45\)\);/);
+  assert.match(src, /const markerPoint = node\.id === 'steam-clock' \? getMinimapLandmarkAnchor\(node, state\.world\) : node;/);
+
+  const midBlock = world.nodes.find((node) => node.id === 'water-street-mid-block');
+  const cambie = world.nodes.find((node) => node.id === 'water-cambie-intersection');
+  const steamClock = world.nodes.find((node) => node.id === 'steam-clock');
+  const steamHero = world.hero_landmarks.find((landmark) => landmark.id === 'steam-clock-hero');
+  const plazaZone = world.zones.sidewalk.find((zone) => zone.id === 'steam-clock-plaza-sidewalk');
+  assert.ok(midBlock && cambie && steamClock && steamHero && plazaZone);
+
+  const tangent = { x: cambie.x - midBlock.x, z: cambie.z - midBlock.z };
+  const tangentLength = Math.hypot(tangent.x, tangent.z) || 1;
+  tangent.x /= tangentLength;
+  tangent.z /= tangentLength;
+  const corridor = {
+    end: cambie,
+    tangent,
+    rightNormal: { x: tangent.z, z: -tangent.x },
+  };
+
+  const getCorridorSideValue = (point) => {
+    const relX = point.x - corridor.end.x;
+    const relZ = point.z - corridor.end.z;
+    return (corridor.tangent.x * relZ) - (corridor.tangent.z * relX);
+  };
+  const getAlongValue = (point) => ((point.x - corridor.end.x) * corridor.tangent.x) + ((point.z - corridor.end.z) * corridor.tangent.z);
+  const rawSide = Math.abs(getCorridorSideValue(steamClock));
+  const rightmostSide = Math.max(...plazaZone.polygon.map((point) => Math.abs(Math.min(getCorridorSideValue(point), 0))));
+  const curbTarget = world.route.streetWidth / 2;
+  const sidewalkTarget = curbTarget + (world.route.sidewalkWidth * 0.85);
+  const heroTarget = steamHero.plaza.radius + (steamHero.plaza.apronWidth * 0.35);
+  const targetSide = Math.max(rawSide, sidewalkTarget, heroTarget, rawSide + Math.max(1.2, (rightmostSide - rawSide) * 0.45));
+  const rawAlong = getAlongValue(steamClock);
+  const anchor = {
+    x: corridor.end.x + (corridor.tangent.x * rawAlong) + (corridor.rightNormal.x * targetSide),
+    z: corridor.end.z + (corridor.tangent.z * rawAlong) + (corridor.rightNormal.z * targetSide),
+  };
+
+  const anchorSide = Math.abs(getCorridorSideValue(anchor));
+  const anchorAlong = getAlongValue(anchor);
+  assert.ok(anchorSide > rawSide + 1, `expected dedicated anchor to push the Steam Clock farther off the centerline than the raw node (${anchorSide} <= ${rawSide})`);
+  assert.ok(anchorSide < rightmostSide + 0.01, `expected dedicated anchor to stay inside the outer plaza envelope (${anchorSide} > ${rightmostSide})`);
+  assert.ok(Math.abs(anchorAlong - rawAlong) < 1e-6, `expected dedicated anchor to preserve along-corridor placement (${anchorAlong} vs ${rawAlong})`);
+  assert.ok(anchor.x < steamClock.x && anchor.z < steamClock.z, 'expected dedicated anchor to move the Steam Clock farther onto the east/south plaza side in world space');
+});
+
 test('minimap player marker renders as a tiny person with a forward cue instead of a wedge', () => {
   const simPath = path.join(__dirname, '..', 'js', 'gastown-sim.js');
   const src = fs.readFileSync(simPath, 'utf8');
