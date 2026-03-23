@@ -85,6 +85,30 @@
     (npc.patrol || []).forEach((point, patrolIndex) => validatePointLike(point, 'npcs[' + index + '].patrol[' + patrolIndex + ']'));
   }
 
+  function validateMicroArea(area, index) {
+    if (!area || typeof area !== 'object') {
+      throw new Error('Gastown world data is malformed: microAreas[' + index + '] must be an object.');
+    }
+    if (typeof area.id !== 'string' || !area.id) {
+      throw new Error('Gastown world data is malformed: microAreas[' + index + '].id is required.');
+    }
+    if (typeof area.label !== 'string' || !area.label) {
+      throw new Error('Gastown world data is malformed: microAreas[' + index + '].label is required.');
+    }
+    if (typeof area.identity !== 'string' || !area.identity) {
+      throw new Error('Gastown world data is malformed: microAreas[' + index + '].identity is required.');
+    }
+    assertPolygon(area.polygon, 'microAreas[' + index + '].polygon');
+    if (area.anchor) {
+      validatePointLike(area.anchor, 'microAreas[' + index + '].anchor');
+    }
+    ['stopReasons', 'returnReasons'].forEach((field) => {
+      if (area[field] !== undefined && !Array.isArray(area[field])) {
+        throw new Error('Gastown world data is malformed: microAreas[' + index + '].' + field + ' must be an array when present.');
+      }
+    });
+  }
+
   function validateWorldData(data) {
     const hasRoute = data && data.route && Array.isArray(data.route.centerline);
     const hasNodes = data && Array.isArray(data.nodes);
@@ -114,6 +138,9 @@
     if (data.npcs && !Array.isArray(data.npcs)) {
       throw new Error('Gastown world data is malformed: npcs must be an array.');
     }
+    if (data.microAreas && !Array.isArray(data.microAreas)) {
+      throw new Error('Gastown world data is malformed: microAreas must be an array.');
+    }
 
     if (data.navigator) {
       if (data.navigator.focusCorridor && !Array.isArray(data.navigator.focusCorridor)) {
@@ -138,6 +165,7 @@
 
     (data.props || []).forEach(validateProp);
     (data.npcs || []).forEach(validateNpc);
+    (data.microAreas || []).forEach(validateMicroArea);
 
     data.buildings.forEach((building, index) => {
       const hasAbsoluteFootprint = Array.isArray(building.footprint);
@@ -199,6 +227,13 @@
     normalized.landmarks = Array.isArray(normalized.landmarks) ? normalized.landmarks : [];
     normalized.audioZones = Array.isArray(normalized.audioZones) ? normalized.audioZones : [];
     normalized.hero_landmarks = Array.isArray(normalized.hero_landmarks) ? normalized.hero_landmarks : [];
+    normalized.exploration = normalized.exploration && typeof normalized.exploration === 'object' ? normalized.exploration : {};
+    normalized.exploration.publicGoal = typeof normalized.exploration.publicGoal === 'string' && normalized.exploration.publicGoal
+      ? normalized.exploration.publicGoal
+      : 'I’m exploring Gastown.';
+    normalized.exploration.fallbackPrompt = typeof normalized.exploration.fallbackPrompt === 'string'
+      ? normalized.exploration.fallbackPrompt
+      : 'Find your own short loops through the district.';
     normalized.facade_profiles = normalized.facade_profiles && typeof normalized.facade_profiles === 'object' ? normalized.facade_profiles : {};
 
     normalized.navigator = normalized.navigator && typeof normalized.navigator === 'object' ? normalized.navigator : {};
@@ -238,6 +273,32 @@
         dialogId: typeof npc.dialogId === 'string' ? npc.dialogId : '',
         idleSpot: normalizePoint(npc.idleSpot || fallbackPoint, fallbackPoint.x, fallbackPoint.z),
         patrol: patrol,
+      };
+    });
+
+    normalized.microAreas = Array.isArray(normalized.microAreas) ? normalized.microAreas : [];
+    normalized.microAreas = normalized.microAreas.map((area, index) => {
+      const polygon = Array.isArray(area.polygon) ? area.polygon.map((point) => normalizePoint(point, 0, 0)) : [];
+      const anchor = area.anchor
+        ? normalizePoint(area.anchor, polygon[0] ? polygon[0].x : 0, polygon[0] ? polygon[0].z : 0)
+        : (polygon.length
+          ? polygon.reduce((acc, point) => ({ x: acc.x + point.x, z: acc.z + point.z }), { x: 0, z: 0 })
+          : { x: 0, z: 0 });
+      const derivedAnchor = area.anchor
+        ? anchor
+        : {
+          x: polygon.length ? anchor.x / polygon.length : 0,
+          z: polygon.length ? anchor.z / polygon.length : 0,
+        };
+      return {
+        id: typeof area.id === 'string' && area.id ? area.id : 'micro-area-' + index,
+        label: typeof area.label === 'string' && area.label ? area.label : 'Gastown pocket',
+        identity: typeof area.identity === 'string' && area.identity ? area.identity : 'micro-area',
+        nodeId: typeof area.nodeId === 'string' ? area.nodeId : '',
+        polygon,
+        anchor: derivedAnchor,
+        stopReasons: Array.isArray(area.stopReasons) ? area.stopReasons.filter((entry) => typeof entry === 'string' && entry) : [],
+        returnReasons: Array.isArray(area.returnReasons) ? area.returnReasons.filter((entry) => typeof entry === 'string' && entry) : [],
       };
     });
 

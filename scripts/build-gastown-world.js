@@ -69,6 +69,7 @@ function runScaffold() {
     'Prepared for offline City of Vancouver footprints/streets/ROW widths + optional OSM route alignment.',
     'Supports hero_landmarks + facade_profiles to prioritize recognizability over photoreal detail.',
     'Scaffold includes reference-driven world notes for segment style, silhouette, and storefront cadence.',
+    'Exploration scaffolding should preserve multiple micro-areas, short loops, and reasons to stop rather than collapsing Gastown into a single through-route.',
   ];
   world.meta.buildClassification = world.meta.isRealCivicBuild === false ? 'approximate-fallback' : 'offline-civic-build';
   world.meta.provenanceSummary = world.meta.isRealCivicBuild === false
