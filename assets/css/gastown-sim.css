@@ -202,6 +202,16 @@
   display: none !important;
 }
 
+.gastown-interact-prompt[hidden] {
+  display: none !important;
+}
+
+.gastown-dialog-modal[hidden],
+.gastown-name-overlay[hidden],
+.gastown-tutorial-overlay[hidden] {
+  display: none !important;
+}
+
 .gastown-interact-prompt {
   grid-column: 1 / -1;
   margin: 0;
@@ -257,6 +267,37 @@
   display: grid;
   gap: 0.22rem;
   max-width: min(170px, 24vw);
+}
+
+.gastown-fullscreen-toggle {
+  position: absolute;
+  top: 0.8rem;
+  right: calc(0.8rem + min(170px, 24vw) + 0.55rem);
+  z-index: 4;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(174, 207, 239, 0.58);
+  border-radius: 7px;
+  background: rgba(10, 18, 28, 0.92);
+  color: #f1f7ff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gastown-fullscreen-toggle:hover,
+.gastown-fullscreen-toggle:focus-visible {
+  background: rgba(33, 52, 74, 0.95);
+  outline: none;
+}
+
+.gastown-sim-canvas:fullscreen {
+  border-radius: 0;
+  border: 0;
+}
+
+.gastown-sim-canvas:fullscreen .gastown-fullscreen-toggle {
+  right: calc(0.8rem + min(200px, 30vw) + 0.55rem);
 }
 
 .gastown-landmark,
@@ -425,6 +466,7 @@
   .gastown-sim-shell { padding: 0.7rem; }
   .gastown-sim-canvas { min-height: 460px; }
   .gastown-live-strip { max-width: 46vw; }
+  .gastown-fullscreen-toggle { right: calc(0.8rem + 46vw + 0.55rem); }
 }
 
 
@@ -454,6 +496,10 @@
 
   .gastown-live-strip {
     max-width: min(180px, 46vw);
+  }
+
+  .gastown-fullscreen-toggle {
+    right: calc(0.8rem + min(180px, 46vw) + 0.55rem);
   }
 }
 

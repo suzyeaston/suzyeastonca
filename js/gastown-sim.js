@@ -85,6 +85,7 @@
   const dialogAudioStatusEl = app.querySelector('[data-dialog-audio-status]');
   const dialogCloseEls = app.querySelectorAll('[data-dialog-close]');
   const dialogFallbackCloseEl = app.querySelector('[data-dialog-close-fallback]');
+  const fullscreenBtn = app.querySelector('[data-action="sim-fullscreen"]');
   const dialogUtils = window.GastownDialog || {};
   const normalizeDialogEntry = typeof dialogUtils.normalizeDialogEntry === 'function'
     ? dialogUtils.normalizeDialogEntry
@@ -5608,6 +5609,51 @@
     }
   }
 
+  function getFullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+
+  function isCanvasFullscreen() {
+    return getFullscreenElement() === canvasWrap;
+  }
+
+  function updateFullscreenButton() {
+    if (!fullscreenBtn) {
+      return;
+    }
+    const active = isCanvasFullscreen();
+    fullscreenBtn.textContent = active ? '🗗' : '⛶';
+    fullscreenBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    fullscreenBtn.setAttribute('aria-label', active ? 'Exit fullscreen mode' : 'Enter fullscreen mode');
+    fullscreenBtn.title = active ? 'Exit fullscreen' : 'Enter fullscreen';
+  }
+
+  function toggleFullscreenMode() {
+    if (!canvasWrap) {
+      return;
+    }
+    if (isCanvasFullscreen()) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+      return;
+    }
+
+    if (canvasWrap.requestFullscreen) {
+      canvasWrap.requestFullscreen().catch(() => {
+        setStatus('Fullscreen was blocked by your browser.');
+      });
+      return;
+    }
+    if (canvasWrap.webkitRequestFullscreen) {
+      canvasWrap.webkitRequestFullscreen();
+      return;
+    }
+    setStatus('Fullscreen is not supported in this browser.');
+  }
+
   function startSim() {
     unlockAudioFromGesture().finally(() => unlockSteamClockAudio());
     state.isRunning = true;
@@ -5761,6 +5807,7 @@
     if (walkerNameInputEl) walkerNameInputEl.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); confirmWalkerName(walkerNameInputEl.value); } });
     if (lowGraphicsToggle) lowGraphicsToggle.addEventListener('change', (event) => setLowGraphicsMode(event.target.checked));
     if (reopenTutorialToggle) reopenTutorialToggle.addEventListener('change', (event) => { try { window.localStorage.setItem('gastownTutorialReopen', event.target.checked ? '1' : '0'); } catch (error) {} });
+    if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreenMode);
     if (dialogModalEl) {
       dialogModalEl.addEventListener('click', (event) => {
         if (event.target === dialogModalEl) {
@@ -5768,6 +5815,9 @@
         }
       });
     }
+    ['fullscreenchange', 'webkitfullscreenchange'].forEach((eventName) => {
+      document.addEventListener(eventName, updateFullscreenButton);
+    });
   }
 
 
@@ -5919,6 +5969,7 @@
       renderProgressionUi();
       updateNextMeaningfulThing();
       attachEvents();
+      updateFullscreenButton();
       if (!hadWalkerName) { openWalkerNameOverlay(''); }
       setDebugState(state.debugEnabled);
       if (state.debugEnabled) {
