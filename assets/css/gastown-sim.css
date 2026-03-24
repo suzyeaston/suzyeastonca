@@ -452,3 +452,15 @@
 .gastown-log-drawer[open] { opacity: 0.98; }
 .gastown-hud-kicker { display: none; }
 .gastown-meta-strip { display: grid; gap: 0.45rem; }
+
+
+.gastown-hud { max-width: 19rem; padding: 0.55rem 0.7rem; gap: 0.18rem; }
+.gastown-hud-name { font-size: 0.92rem; margin: 0; }
+.gastown-hud-route { display: none; }
+.gastown-hud-subline { font-size: 0.78rem; margin: 0; }
+.gastown-interact-prompt { font-size: 0.72rem; padding: 0.26rem 0.46rem; }
+.gastown-live-strip { max-width: 14rem; padding: 0.38rem 0.5rem; }
+.gastown-landmark { font-size: 0.76rem; margin: 0; }
+.gastown-route-segment, .gastown-minimap-mode-status, .gastown-minimap-context, .gastown-minimap-compass, .gastown-minimap-legend, .gastown-hud-next-step, [data-sim-objective] { display: none !important; }
+.gastown-minimap { width: 158px; padding: 0.35rem; }
+.gastown-minimap-label, .gastown-minimap-tooltip { font-size: 0.68rem; margin: 0.18rem 0 0; }

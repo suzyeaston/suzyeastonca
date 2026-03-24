@@ -1054,7 +1054,176 @@ function se_handle_gastown_start_sting( WP_REST_Request $request ) {
 }
 
 
+function se_get_gastown_public_domain_tune_seeds() {
+    return array(
+        'happy_feet' => array(
+            'title' => 'Happy Feet',
+            'era' => 1926,
+            'contour' => array( '3', '5', '6', '5', '3', '2', '1', '2' ),
+            'cadence' => 'turnaround_tag',
+            'swing_bias' => 0.14,
+            'families' => array( 'marching_swing_welcome', 'clock_corner_tag' ),
+        ),
+        'saints' => array(
+            'title' => 'When the Saints Go Marching In',
+            'era' => 1896,
+            'contour' => array( '5', '6', '1', '3', '5', '6', '5', '3' ),
+            'cadence' => 'parade_pickup',
+            'swing_bias' => 0.13,
+            'families' => array( 'parade_strut', 'rain_sidestep' ),
+        ),
+        'careless_love' => array(
+            'title' => 'Careless Love',
+            'era' => 1890,
+            'contour' => array( '3', '2', '1', '3', '5', '3', '2', '1' ),
+            'cadence' => 'blue_turn',
+            'swing_bias' => 0.09,
+            'families' => array( 'blue_drift', 'dusk_stroll' ),
+        ),
+        'maple_leaf_rag' => array(
+            'title' => 'Maple Leaf Rag',
+            'era' => 1899,
+            'contour' => array( '1', '3', '5', '6', '5', '3', '2', '1' ),
+            'cadence' => 'rag_turn',
+            'swing_bias' => 0.11,
+            'families' => array( 'parade_strut', 'clock_corner_tag' ),
+        ),
+    );
+}
+
+function se_build_gastown_band_family_library() {
+    return array(
+        'marching_swing_welcome' => array(
+            'tempo' => 112,
+            'key' => 'Bb major',
+            'swing' => 0.14,
+            'bars' => 8,
+            'style' => 'marching swing street band',
+            'energy' => 'medium-high',
+            'variation_hint' => 'lead horn opens with a broad pickup, second horn answers on bars 2 and 4, and the turnaround tags the curb.',
+            'parts' => array(
+                'lead_horn' => array( 'D4:8n', 'F4:8n', 'G4:4n', 'A4:8n', 'Bb4:8n', 'G4:4n', 'F4:8n', 'D4:8n' ),
+                'counter_horn' => array( 'rest:8n', 'Bb3:8n', 'D4:4n', 'F4:8n', 'G4:8n', 'F4:4n', 'D4:8n', 'rest:8n' ),
+                'banjo_guitar' => array( 'Bb6', 'Gm7', 'Cm7', 'F7', 'Bb6', 'Eb6', 'Cm7', 'F7' ),
+                'bass' => array( 'Bb2:4n', 'F2:4n', 'G2:4n', 'F2:4n', 'Bb2:4n', 'D3:4n', 'F3:4n', 'F2:4n' ),
+                'snare' => array( '2', '4' ),
+                'kick' => array( '1', '3' ),
+                'clarinet_texture' => array( 'F4:8n', 'G4:8n', 'Bb4:8n', 'A4:8n', 'G4:8n', 'F4:8n', 'D4:8n', 'F4:8n' ),
+            ),
+        ),
+        'parade_strut' => array(
+            'tempo' => 118,
+            'key' => 'C major',
+            'swing' => 0.13,
+            'bars' => 8,
+            'style' => 'marching swing street band',
+            'energy' => 'high',
+            'variation_hint' => 'snare pushes the second line feel while the trumpet keeps clipped replies.',
+            'parts' => array(
+                'lead_horn' => array( 'G4:8n', 'A4:8n', 'C5:4n', 'E5:8n', 'D5:8n', 'C5:4n', 'A4:8n', 'G4:8n' ),
+                'counter_horn' => array( 'E4:8n', 'G4:8n', 'A4:4n', 'C5:8n', 'A4:8n', 'G4:4n', 'E4:8n', 'rest:8n' ),
+                'banjo_guitar' => array( 'C6', 'Am7', 'Dm7', 'G13', 'F6', 'G13', 'Am7', 'G13' ),
+                'bass' => array( 'C2:4n', 'G2:4n', 'A2:4n', 'G2:4n', 'F2:4n', 'G2:4n', 'A2:4n', 'G2:4n' ),
+                'snare' => array( '2', '4', '4.5' ),
+                'kick' => array( '1', '3', '3.5' ),
+                'clarinet_texture' => array( 'G4:8n', 'E4:8n', 'D4:8n', 'E4:8n', 'G4:8n', 'A4:8n', 'C5:8n', 'A4:8n' ),
+            ),
+        ),
+        'blue_drift' => array(
+            'tempo' => 96,
+            'key' => 'E minor',
+            'swing' => 0.08,
+            'bars' => 8,
+            'style' => 'marching swing street band',
+            'energy' => 'medium',
+            'variation_hint' => 'leave wet-street air between the lead and the fiddle-like clarinet texture.',
+            'parts' => array(
+                'lead_horn' => array( 'E4:4n', 'G4:8n', 'B4:8n', 'D5:4n', 'B4:8n', 'A4:8n', 'G4:4n', 'rest:4n' ),
+                'counter_horn' => array( 'rest:4n', 'B3:8n', 'D4:8n', 'G4:4n', 'E4:8n', 'D4:8n', 'B3:4n', 'rest:4n' ),
+                'banjo_guitar' => array( 'Em9', 'G6', 'D7sus4', 'A7', 'Em9', 'Cmaj7', 'G6', 'B7' ),
+                'bass' => array( 'E2:4n', 'B2:4n', 'D3:4n', 'A2:4n', 'E2:4n', 'G2:4n', 'B2:4n', 'A2:4n' ),
+                'snare' => array( '2.5', '4' ),
+                'kick' => array( '1', '3.5' ),
+                'clarinet_texture' => array( 'E4:8n', 'rest:8n', 'G4:8n', 'B4:8n', 'A4:8n', 'G4:8n', 'E4:8n', 'rest:8n' ),
+            ),
+        ),
+        'dusk_stroll' => array(
+            'tempo' => 102,
+            'key' => 'D major',
+            'swing' => 0.1,
+            'bars' => 8,
+            'style' => 'marching swing street band',
+            'energy' => 'medium',
+            'variation_hint' => 'let the answering horn rise into the lamp glow on the last two bars.',
+            'parts' => array(
+                'lead_horn' => array( 'F#4:8n', 'A4:8n', 'D5:4n', 'E5:8n', 'F#5:8n', 'E5:4n', 'A4:8n', 'D5:8n' ),
+                'counter_horn' => array( 'D4:8n', 'F#4:8n', 'A4:4n', 'B4:8n', 'A4:8n', 'F#4:4n', 'E4:8n', 'A4:8n' ),
+                'banjo_guitar' => array( 'D6', 'Bm7', 'Gmaj7', 'A7', 'D6', 'Gmaj7', 'Em7', 'A7' ),
+                'bass' => array( 'D2:4n', 'A2:4n', 'B2:4n', 'A2:4n', 'D2:4n', 'F#2:4n', 'G2:4n', 'A2:4n' ),
+                'snare' => array( '2', '4' ),
+                'kick' => array( '1', '3' ),
+                'clarinet_texture' => array( 'A4:8n', 'F#4:8n', 'E4:8n', 'D4:8n', 'F#4:8n', 'A4:8n', 'B4:8n', 'A4:8n' ),
+            ),
+        ),
+        'clock_corner_tag' => array(
+            'tempo' => 116,
+            'key' => 'F major',
+            'swing' => 0.15,
+            'bars' => 8,
+            'style' => 'marching swing street band',
+            'energy' => 'high',
+            'variation_hint' => 'keep call-and-response tight and finish each cycle with a clipped turnaround tag.',
+            'parts' => array(
+                'lead_horn' => array( 'C5:8n', 'A4:8n', 'F4:4n', 'A4:8n', 'C5:8n', 'D5:4n', 'C5:8n', 'A4:8n' ),
+                'counter_horn' => array( 'F4:8n', 'rest:8n', 'A4:4n', 'C5:8n', 'A4:8n', 'F4:4n', 'G4:8n', 'rest:8n' ),
+                'banjo_guitar' => array( 'F6', 'Dm7', 'Gm7', 'C7', 'F6', 'Bb6', 'Gm7', 'C7' ),
+                'bass' => array( 'F2:4n', 'C3:4n', 'D3:4n', 'C3:4n', 'F2:4n', 'A2:4n', 'Bb2:4n', 'C3:4n' ),
+                'snare' => array( '2', '4', '4.5' ),
+                'kick' => array( '1', '3' ),
+                'clarinet_texture' => array( 'A4:8n', 'C5:8n', 'D5:8n', 'C5:8n', 'A4:8n', 'F4:8n', 'G4:8n', 'A4:8n' ),
+            ),
+        ),
+        'rain_sidestep' => array(
+            'tempo' => 92,
+            'key' => 'Bb minor',
+            'swing' => 0.06,
+            'bars' => 8,
+            'style' => 'marching swing street band',
+            'energy' => 'medium-low',
+            'variation_hint' => 'keep the snare softer and let the bass and banjo define the pulse.',
+            'parts' => array(
+                'lead_horn' => array( 'Bb4:4n', 'Db5:8n', 'F5:8n', 'Gb5:4n', 'F5:8n', 'Db5:8n', 'Bb4:4n', 'rest:4n' ),
+                'counter_horn' => array( 'rest:4n', 'F4:8n', 'Gb4:8n', 'Bb4:4n', 'Db5:8n', 'Bb4:8n', 'F4:4n', 'rest:4n' ),
+                'banjo_guitar' => array( 'Bbm6', 'Gb6', 'Ebm7', 'F7', 'Bbm6', 'Gb6', 'Ebm7', 'F7' ),
+                'bass' => array( 'Bb2:4n', 'F2:4n', 'Gb2:4n', 'F2:4n', 'Eb2:4n', 'F2:4n', 'Gb2:4n', 'F2:4n' ),
+                'snare' => array( '2.5', '4' ),
+                'kick' => array( '1', '3.5' ),
+                'clarinet_texture' => array( 'Db5:8n', 'Bb4:8n', 'Gb4:8n', 'F4:8n', 'Gb4:8n', 'Bb4:8n', 'Db5:8n', 'rest:8n' ),
+            ),
+        ),
+    );
+}
+
+function se_pick_gastown_band_family( $seed_data, $context ) {
+    $weather = $context['weather'] ?? 'clear';
+    $time_of_day = $context['time_of_day'] ?? 'morning';
+    $area = $context['area'] ?? 'waterfront_station';
+    $intensity = $context['intensity'] ?? 'medium';
+
+    if ( in_array( $weather, array( 'rain', 'drizzle' ), true ) ) {
+        return in_array( 'rain_sidestep', $seed_data['families'], true ) ? 'rain_sidestep' : 'blue_drift';
+    }
+    if ( 'dusk' === $time_of_day || 'night' === $time_of_day ) {
+        return in_array( 'dusk_stroll', $seed_data['families'], true ) ? 'dusk_stroll' : 'clock_corner_tag';
+    }
+    if ( false !== strpos( $area, 'clock' ) || 'high' === $intensity ) {
+        return in_array( 'clock_corner_tag', $seed_data['families'], true ) ? 'clock_corner_tag' : 'parade_strut';
+    }
+    return $seed_data['families'][0] ?? 'marching_swing_welcome';
+}
+
 function se_get_gastown_band_arrangement_fallback( $context = array() ) {
+    $seed_tune = sanitize_key( (string) ( $context['seed_tune'] ?? 'happy_feet' ) ) ?: 'happy_feet';
     $mood = sanitize_key( (string) ( $context['mood'] ?? 'lively' ) ) ?: 'lively';
     $weather = sanitize_key( (string) ( $context['weather'] ?? 'clear' ) ) ?: 'clear';
     $time_of_day = sanitize_key( (string) ( $context['time_of_day'] ?? 'morning' ) ) ?: 'morning';
@@ -1062,101 +1231,12 @@ function se_get_gastown_band_arrangement_fallback( $context = array() ) {
     $intensity = sanitize_key( (string) ( $context['intensity'] ?? 'medium' ) ) ?: 'medium';
     $seed = sanitize_key( (string) ( $context['seed'] ?? 'seed-a' ) ) ?: 'seed-a';
 
-    $family = 'upbeat_welcome_shuffle';
-    if ( in_array( $weather, array( 'rain', 'drizzle' ), true ) ) {
-        $family = 'moody_rain_groove';
-    } elseif ( 'dusk' === $time_of_day ) {
-        $family = 'dusk_wander';
-    } elseif ( false !== strpos( $area, 'clock' ) ) {
-        $family = 'clock_corner_flourish';
-    } elseif ( 'morning' === $time_of_day && 'low' === $intensity ) {
-        $family = 'sparse_early_morning';
-    }
-
-    $arrangements = array(
-        'upbeat_welcome_shuffle' => array(
-            'tempo' => 112,
-            'key' => 'G major',
-            'swing' => 0.09,
-            'bars' => 8,
-            'style' => 'street bluegrass jazz',
-            'energy' => 'medium-high',
-            'variation_hint' => 'trade short sax pickups with mandolin answers and keep guitar chopping on the backbeat',
-            'parts' => array(
-                'sax' => array( 'B4:8n', 'D5:8n', 'G5:4n', 'A5:8n', 'G5:8n', 'E5:4n', 'D5:8n', 'B4:8n' ),
-                'mandolin' => array( 'G4:8n', 'D5:8n', 'B4:8n', 'A4:8n', 'G4:8n', 'A4:8n', 'B4:8n', 'D5:8n' ),
-                'bass' => array( 'G2:4n', 'D3:4n', 'E3:4n', 'D3:4n', 'G2:4n', 'B2:4n', 'D3:4n', 'D3:4n' ),
-                'guitar' => array( 'G6(9)', 'Em7', 'Am7', 'D7', 'G6(9)', 'Cmaj7', 'Am7', 'D7' ),
-                'percussion' => array( 'kick' => array( '1', '3' ), 'snare' => array( '2', '4' ), 'hat' => array( '1.5', '2.5', '3.5', '4.5' ) ),
-            ),
-        ),
-        'moody_rain_groove' => array(
-            'tempo' => 94,
-            'key' => 'E minor',
-            'swing' => 0.05,
-            'bars' => 8,
-            'style' => 'street bluegrass jazz',
-            'energy' => 'medium',
-            'variation_hint' => 'leave air between phrases and let bass walk under the sax',
-            'parts' => array(
-                'sax' => array( 'E4:4n', 'G4:8n', 'B4:8n', 'D5:4n', 'B4:8n', 'A4:8n', 'G4:4n', 'rest:4n' ),
-                'mandolin' => array( 'E4:8n', 'B4:8n', 'G4:8n', 'A4:8n', 'E4:8n', 'G4:8n', 'B4:8n', 'A4:8n' ),
-                'bass' => array( 'E2:4n', 'B2:4n', 'D3:4n', 'A2:4n', 'E2:4n', 'G2:4n', 'B2:4n', 'A2:4n' ),
-                'guitar' => array( 'Em9', 'G6', 'D7sus4', 'A7', 'Em9', 'Cmaj7', 'G6', 'B7' ),
-                'percussion' => array( 'kick' => array( '1', '3.5' ), 'snare' => array( '2.5', '4' ), 'hat' => array( '2', '4' ) ),
-            ),
-        ),
-        'dusk_wander' => array(
-            'tempo' => 102,
-            'key' => 'D major',
-            'swing' => 0.07,
-            'bars' => 8,
-            'style' => 'street bluegrass jazz',
-            'energy' => 'medium',
-            'variation_hint' => 'use rising responses near bar endings to pull the walk east',
-            'parts' => array(
-                'sax' => array( 'F#4:8n', 'A4:8n', 'D5:4n', 'E5:8n', 'F#5:8n', 'E5:4n', 'A4:8n', 'D5:8n' ),
-                'mandolin' => array( 'D4:8n', 'A4:8n', 'F#4:8n', 'E4:8n', 'D4:8n', 'F#4:8n', 'A4:8n', 'B4:8n' ),
-                'bass' => array( 'D2:4n', 'A2:4n', 'B2:4n', 'A2:4n', 'D2:4n', 'F#2:4n', 'G2:4n', 'A2:4n' ),
-                'guitar' => array( 'D6', 'Bm7', 'Gmaj7', 'A7', 'D6', 'Gmaj7', 'Em7', 'A7' ),
-                'percussion' => array( 'kick' => array( '1', '3' ), 'snare' => array( '2', '4' ), 'hat' => array( '1.5', '2.5', '4.5' ) ),
-            ),
-        ),
-        'clock_corner_flourish' => array(
-            'tempo' => 118,
-            'key' => 'C major',
-            'swing' => 0.1,
-            'bars' => 8,
-            'style' => 'street bluegrass jazz',
-            'energy' => 'high',
-            'variation_hint' => 'push brighter sax pickups and let mandolin chatter around the clock corner',
-            'parts' => array(
-                'sax' => array( 'G4:8n', 'A4:8n', 'C5:4n', 'E5:8n', 'D5:8n', 'C5:4n', 'A4:8n', 'G4:8n' ),
-                'mandolin' => array( 'C5:8n', 'G4:8n', 'E5:8n', 'D5:8n', 'C5:8n', 'D5:8n', 'E5:8n', 'G5:8n' ),
-                'bass' => array( 'C2:4n', 'G2:4n', 'A2:4n', 'G2:4n', 'F2:4n', 'G2:4n', 'A2:4n', 'G2:4n' ),
-                'guitar' => array( 'C6', 'Am7', 'Dm7', 'G13', 'Fmaj7', 'G13', 'Am7', 'G13' ),
-                'percussion' => array( 'kick' => array( '1', '3', '4.5' ), 'snare' => array( '2', '4' ), 'hat' => array( '1.5', '2.5', '3.5', '4.5' ) ),
-            ),
-        ),
-        'sparse_early_morning' => array(
-            'tempo' => 86,
-            'key' => 'G major',
-            'swing' => 0.03,
-            'bars' => 8,
-            'style' => 'street bluegrass jazz',
-            'energy' => 'low',
-            'variation_hint' => 'keep bass and guitar steady, with just enough sax to suggest the band warming up',
-            'parts' => array(
-                'sax' => array( 'rest:4n', 'B4:8n', 'D5:4n', 'rest:8n', 'G4:4n', 'rest:4n', 'A4:8n', 'G4:8n' ),
-                'mandolin' => array( 'G4:8n', 'rest:8n', 'D5:8n', 'rest:8n', 'B4:8n', 'rest:8n', 'A4:8n', 'rest:8n' ),
-                'bass' => array( 'G2:2n', 'D3:2n', 'E3:2n', 'D3:2n' ),
-                'guitar' => array( 'G6', 'G6', 'Cmaj7', 'D7' ),
-                'percussion' => array( 'kick' => array( '1', '3' ), 'snare' => array(), 'hat' => array( '2.5' ) ),
-            ),
-        ),
-    );
-
-    $spec = $arrangements[ $family ];
+    $seed_library = se_get_gastown_public_domain_tune_seeds();
+    $family_library = se_build_gastown_band_family_library();
+    $seed_data = $seed_library[ $seed_tune ] ?? $seed_library['happy_feet'];
+    $family = se_pick_gastown_band_family( $seed_data, compact( 'weather', 'time_of_day', 'area', 'intensity' ) );
+    $spec = $family_library[ $family ] ?? reset( $family_library );
+    $spec['seed_tune'] = $seed_data['title'];
     $spec['family'] = $family;
     $spec['seed'] = $seed;
     $spec['mood'] = $mood;
@@ -1164,7 +1244,7 @@ function se_get_gastown_band_arrangement_fallback( $context = array() ) {
     $spec['time_of_day'] = $time_of_day;
     $spec['area'] = $area;
     $spec['intensity'] = $intensity;
-
+    $spec['public_domain_seed'] = true;
     return $spec;
 }
 
@@ -1174,6 +1254,7 @@ function se_sanitize_gastown_band_arrangement_spec( $decoded, $fallback ) {
     }
 
     $spec = $fallback;
+    $spec['seed_tune'] = sanitize_text_field( (string) ( $decoded['seed_tune'] ?? $fallback['seed_tune'] ) );
     $spec['tempo'] = max( 78, min( 132, intval( $decoded['tempo'] ?? $fallback['tempo'] ) ) );
     $spec['key'] = sanitize_text_field( (string) ( $decoded['key'] ?? $fallback['key'] ) );
     $spec['swing'] = max( 0, min( 0.22, floatval( $decoded['swing'] ?? $fallback['swing'] ) ) );
@@ -1184,26 +1265,20 @@ function se_sanitize_gastown_band_arrangement_spec( $decoded, $fallback ) {
     $spec['family'] = sanitize_key( (string) ( $decoded['family'] ?? $fallback['family'] ) ) ?: $fallback['family'];
 
     $parts = is_array( $decoded['parts'] ?? null ) ? $decoded['parts'] : array();
-    foreach ( array( 'sax', 'mandolin', 'bass', 'guitar' ) as $part ) {
-        $candidate = array_values( array_slice( array_filter( array_map( 'sanitize_text_field', (array) ( $parts[ $part ] ?? array() ) ) ), 0, 24 ) );
+    foreach ( array( 'lead_horn', 'counter_horn', 'banjo_guitar', 'bass', 'snare', 'kick', 'clarinet_texture' ) as $part ) {
+        $candidate = array_values( array_slice( array_filter( array_map( 'sanitize_text_field', (array) ( $parts[ $part ] ?? array() ) ) ), 0, 32 ) );
         if ( ! empty( $candidate ) ) {
             $spec['parts'][ $part ] = $candidate;
         }
     }
 
-    $perc = is_array( $parts['percussion'] ?? null ) ? $parts['percussion'] : array();
-    foreach ( array( 'kick', 'snare', 'hat' ) as $piece ) {
-        $candidate = array_values( array_slice( array_filter( array_map( 'sanitize_text_field', (array) ( $perc[ $piece ] ?? array() ) ) ), 0, 16 ) );
-        if ( ! empty( $candidate ) || 'snare' === $piece ) {
-            $spec['parts']['percussion'][ $piece ] = $candidate;
-        }
-    }
-
+    $spec['public_domain_seed'] = true;
     return $spec;
 }
 
 function se_handle_gastown_band_arrangement( WP_REST_Request $request ) {
     $context = array(
+        'seed_tune' => sanitize_key( (string) $request->get_param( 'seed_tune' ) ) ?: 'happy_feet',
         'mood' => sanitize_key( (string) $request->get_param( 'mood' ) ) ?: 'lively',
         'weather' => sanitize_key( (string) $request->get_param( 'weather' ) ) ?: 'clear',
         'time_of_day' => sanitize_key( (string) $request->get_param( 'time_of_day' ) ) ?: sanitize_key( (string) $request->get_param( 'timeOfDay' ) ) ?: 'morning',
@@ -1219,40 +1294,63 @@ function se_handle_gastown_band_arrangement( WP_REST_Request $request ) {
         return rest_ensure_response( $cached );
     }
 
-    $seed_pool = array_unique( array_filter( array( $seed, 'seed-b', 'seed-c', 'seed-d', 'seed-e' ) ) );
+    $seed_library = se_get_gastown_public_domain_tune_seeds();
+    $requested_seed = $context['seed_tune'];
+    $seed_keys = array_keys( $seed_library );
+    if ( ! in_array( $requested_seed, $seed_keys, true ) ) {
+        $requested_seed = 'happy_feet';
+    }
+    $rotation = array_values( array_unique( array_merge( array( $requested_seed ), $seed_keys ) ) );
+    $seed_pool = array_unique( array_filter( array( $seed, 'seed-b', 'seed-c', 'seed-d' ) ) );
+
     $arrangements = array();
-    foreach ( $seed_pool as $seed_value ) {
-        $fallback = se_get_gastown_band_arrangement_fallback( array_merge( $context, array( 'seed' => $seed_value ) ) );
-        $messages = array(
-            array(
-                'role' => 'system',
-                'content' => 'Return strict JSON only. Create one compact arrangement plan for a small street band in a stylized Gastown simulator. Style: bluegrass-jazz hybrid, playful, slightly scrappy, melodic but not cheesy, not lounge jazz, not polished studio perfection. Output keys exactly: tempo, key, swing, bars, style, parts, energy, variation_hint, family. parts must include sax, mandolin, bass, guitar arrays plus percussion with kick/snare/hat arrays.',
-            ),
-            array(
-                'role' => 'user',
-                'content' => sprintf( 'Context: mood=%s weather=%s time_of_day=%s area=%s intensity=%s seed=%s family=%s. Keep it 8 bars or less, suitable for local Tone.js performance, with short note/chord tokens like D4:8n or Gmaj7.', $context['mood'], $context['weather'], $context['time_of_day'], $context['area'], $context['intensity'], $seed_value, $fallback['family'] ),
-            ),
-        );
+    foreach ( $rotation as $rotation_index => $seed_tune ) {
+        $seed_data = $seed_library[ $seed_tune ];
+        foreach ( $seed_pool as $seed_index => $seed_value ) {
+            $runtime_context = array_merge( $context, array( 'seed_tune' => $seed_tune, 'seed' => $seed_value . '-' . $rotation_index . '-' . $seed_index ) );
+            $fallback = se_get_gastown_band_arrangement_fallback( $runtime_context );
+            $messages = array(
+                array(
+                    'role' => 'system',
+                    'content' => 'Return strict JSON only. You are creating a fresh small-band arrangement spec for a semi-stationary marching swing street band. Use only public-domain tune seeds as loose contour inspiration, never mimic a copyrighted recording or later arrangement. Output keys exactly: seed_tune, tempo, key, swing, bars, style, parts, energy, variation_hint, family. parts must include lead_horn, counter_horn, banjo_guitar, bass, snare, kick, clarinet_texture arrays. Keep it compact and loopable for local Tone.js / Web Audio playback.',
+                ),
+                array(
+                    'role' => 'user',
+                    'content' => sprintf( 'Seed tune: %s (%d). Contour seed: %s. Cadence: %s. Context: mood=%s weather=%s time_of_day=%s area=%s intensity=%s seed=%s family=%s. Preserve only a loose recognisable contour and add street-corner call-and-response.', $seed_data['title'], intval( $seed_data['era'] ), implode( '-', $seed_data['contour'] ), $seed_data['cadence'], $context['mood'], $context['weather'], $context['time_of_day'], $context['area'], $context['intensity'], $runtime_context['seed'], $fallback['family'] ),
+                ),
+            );
 
-        $response = se_openai_chat( $messages, array(
-            'model' => 'gpt-4o-mini',
-            'temperature' => 0.9,
-            'max_tokens' => 550,
-            'response_format' => array( 'type' => 'json_object' ),
-        ), array( 'timeout' => 9 ) );
+            $response = se_openai_chat( $messages, array(
+                'model' => 'gpt-4o-mini',
+                'temperature' => 0.95,
+                'max_tokens' => 650,
+                'response_format' => array( 'type' => 'json_object' ),
+            ), array( 'timeout' => 9 ) );
 
-        if ( ! is_wp_error( $response ) ) {
-            $text = trim( (string) ( $response['choices'][0]['message']['content'] ?? '' ) );
-            $decoded = json_decode( $text, true );
-            $arrangements[] = se_sanitize_gastown_band_arrangement_spec( $decoded, $fallback );
-        } else {
-            $arrangements[] = $fallback;
+            if ( ! is_wp_error( $response ) ) {
+                $text = trim( (string) ( $response['choices'][0]['message']['content'] ?? '' ) );
+                $decoded = json_decode( $text, true );
+                $arrangements[] = se_sanitize_gastown_band_arrangement_spec( $decoded, $fallback );
+            } else {
+                $arrangements[] = $fallback;
+            }
         }
     }
 
     $result = array(
         'ok' => true,
         'fallback' => false,
+        'public_domain_seed_source' => 'seed_melodies_only',
+        'seed_library' => array_map(
+            static function( $item ) {
+                return array(
+                    'title' => $item['title'],
+                    'era' => intval( $item['era'] ),
+                    'families' => array_values( $item['families'] ),
+                );
+            },
+            $seed_library
+        ),
         'context' => $context,
         'arrangements' => $arrangements,
     );

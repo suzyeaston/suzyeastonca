@@ -5104,6 +5104,33 @@
       "z": -22.7,
       "yaw": 0.58,
       "scale": 1.08
+    },
+    {
+      "id": "starter-prop-band-tip-case",
+      "kind": "cardboard_box",
+      "x": 20.2,
+      "y": 0,
+      "z": -22.8,
+      "yaw": -0.88,
+      "scale": 0.98
+    },
+    {
+      "id": "starter-prop-band-music-stand",
+      "kind": "utility_box",
+      "x": 21.1,
+      "y": 0,
+      "z": -24.4,
+      "yaw": -0.84,
+      "scale": 0.62
+    },
+    {
+      "id": "starter-prop-band-crate",
+      "kind": "cardboard_box",
+      "x": 23.4,
+      "y": 0,
+      "z": -25.6,
+      "yaw": -0.74,
+      "scale": 0.92
     }
   ],
   "npcs": [
@@ -5139,22 +5166,22 @@
       "heldProp": "sax",
       "voiceCue": "busker-hook",
       "dialogId": "busker_clock_corner",
-      "interactRadius": 3,
+      "interactRadius": 3.6,
       "idleSpot": {
-        "x": 18.8,
-        "z": -24.2
+        "x": 20.4,
+        "z": -24.0
       },
       "silhouetteScale": 1.06,
-      "yaw": -0.82,
+      "yaw": -0.92,
       "name": "bandleader sax",
       "patrol": [
         {
-          "x": 18.3,
-          "z": -23.9
+          "x": 20.1,
+          "z": -23.8
         },
         {
-          "x": 19.1,
-          "z": -24.5
+          "x": 20.7,
+          "z": -24.2
         }
       ],
       "companionGroup": "early-band"
@@ -5384,29 +5411,29 @@
     },
     {
       "id": "starter-band-mandolin",
-      "role": "tourist",
+      "role": "pedestrian",
       "behavior": "tourist_pause",
       "dialogId": "busker_clock_corner",
       "interactRadius": 2.5,
       "idleSpot": {
-        "x": 17.1,
-        "z": -23.6
+        "x": 17.8,
+        "z": -23.3
       },
       "patrol": [
         {
-          "x": 16.9,
-          "z": -23.5
+          "x": 17.6,
+          "z": -23.2
         },
         {
-          "x": 17.4,
-          "z": -23.9
+          "x": 18.0,
+          "z": -23.5
         }
       ],
       "silhouetteScale": 0.96,
-      "yaw": -0.72,
-      "name": "mandolin",
-      "pose": "strum",
-      "heldProp": "guitar",
+      "yaw": -0.98,
+      "name": "trumpet response",
+      "pose": "play_trumpet",
+      "heldProp": "trumpet",
       "companionGroup": "early-band"
     },
     {
@@ -5416,24 +5443,24 @@
       "dialogId": "busker_clock_corner",
       "interactRadius": 2.5,
       "idleSpot": {
-        "x": 19.7,
-        "z": -25.5
+        "x": 22.8,
+        "z": -25.2
       },
       "patrol": [
         {
-          "x": 19.5,
-          "z": -25.4
+          "x": 22.6,
+          "z": -25.0
         },
         {
-          "x": 19.9,
-          "z": -25.7
+          "x": 23.1,
+          "z": -25.5
         }
       ],
-      "silhouetteScale": 1.04,
-      "yaw": -0.92,
+      "silhouetteScale": 1.12,
+      "yaw": -0.86,
       "name": "upright bass",
-      "pose": "rest",
-      "heldProp": "guitar",
+      "pose": "hold_bass",
+      "heldProp": "upright_bass",
       "companionGroup": "early-band"
     },
     {
@@ -5443,24 +5470,51 @@
       "dialogId": "busker_clock_corner",
       "interactRadius": 2.5,
       "idleSpot": {
-        "x": 20.8,
-        "z": -23.8
+        "x": 19.0,
+        "z": -26.0
       },
       "patrol": [
         {
-          "x": 20.4,
-          "z": -23.7
+          "x": 18.8,
+          "z": -25.8
         },
         {
-          "x": 21.0,
-          "z": -24.1
+          "x": 19.3,
+          "z": -26.2
         }
       ],
       "silhouetteScale": 0.98,
-      "yaw": -0.64,
-      "name": "guitar chop",
-      "pose": "strum",
-      "heldProp": "guitar",
+      "yaw": -0.74,
+      "name": "banjo chop",
+      "pose": "play_banjo",
+      "heldProp": "banjo",
+      "companionGroup": "early-band"
+    },
+    {
+      "id": "starter-band-snare",
+      "role": "pedestrian",
+      "behavior": "tourist_pause",
+      "dialogId": "busker_clock_corner",
+      "interactRadius": 2.6,
+      "idleSpot": {
+        "x": 21.8,
+        "z": -22.9
+      },
+      "patrol": [
+        {
+          "x": 21.5,
+          "z": -22.8
+        },
+        {
+          "x": 22.0,
+          "z": -23.1
+        }
+      ],
+      "silhouetteScale": 0.98,
+      "yaw": -0.88,
+      "name": "snare cadence",
+      "pose": "march_snare",
+      "heldProp": "snare",
       "companionGroup": "early-band"
     },
     {

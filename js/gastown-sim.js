@@ -201,6 +201,11 @@
       lastWatchdogSweepAt: 0,
       lastFamily: '',
       familyBias: '',
+      arrangementHistory: [],
+      activeNotes: {},
+      voiceLoopId: null,
+      cycleCount: 0,
+      currentSeedTune: 'happy_feet',
       bus: null,
       synths: null,
       active: false,
@@ -214,6 +219,7 @@
   const NPC_SPEECH_CACHE_LIMIT = 18;
   const BAND_ARRANGEMENT_CACHE_PREFIX = 'gastownBandArrangement:';
   const BAND_MAX_NOTE_SECONDS = 2.8;
+  const BAND_SEED_TUNES = ['happy_feet', 'saints', 'careless_love', 'maple_leaf_rag'];
   const STARTUP_STING_FALLBACK_SPEC = {
     tempo: 96,
     key: 'E minor',
@@ -1316,8 +1322,8 @@
       const segmentLength = Math.max(8.5, Math.min(18, Math.hypot(anchor.x - point.x, anchor.z - point.z) * 0.96 || 10));
       const steamZone = point.id === 'steam-clock' || index >= Math.max(1, centerline.length - 4);
 
-      bands.push({ segment_id: point.id, width: streetWidth * 0.98, length: segmentLength * 1.04, yaw: heading, offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.44, elevation: 0.012 });
-      bands.push({ segment_id: point.id, width: streetWidth * 0.42, length: Math.max(6.8, segmentLength * 0.82), yaw: heading, offset_x: 0, offset_z: 0, tone: steamZone ? 'intersection_pavers' : 'wheel_track', opacity: steamZone ? 0.34 : 0.26, elevation: 0.016 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.98, length: segmentLength * 1.04, yaw: heading, offset_x: 0, offset_z: 0, tone: 'road_base_dark', opacity: 0.92, elevation: 0.012 });
+      bands.push({ segment_id: point.id, width: streetWidth * 0.42, length: Math.max(6.8, segmentLength * 0.82), yaw: heading, offset_x: 0, offset_z: 0, tone: steamZone ? 'intersection_pavers' : 'wheel_track', opacity: steamZone ? 0.68 : 0.54, elevation: 0.016 });
       bands.push({ segment_id: point.id, width: streetWidth * 0.17, length: Math.max(5.8, segmentLength * 0.76), yaw: heading, offset_x: streetWidth * 0.34, offset_z: 0, tone: 'curb_grime', opacity: 0.2, elevation: 0.025 });
       bands.push({ segment_id: point.id, width: streetWidth * 0.17, length: Math.max(5.8, segmentLength * 0.76), yaw: heading, offset_x: -streetWidth * 0.34, offset_z: 0, tone: 'curb_grime', opacity: 0.2, elevation: 0.025 });
 
@@ -2258,7 +2264,34 @@
   }
 
   function createNpcProp(propId, accentMaterial) {
-    if (propId === 'guitar') {
+    if (propId === 'trumpet') {
+      const prop = new THREE.Group();
+      const hornMat = new THREE.MeshStandardMaterial({ color: 0xc69d53, roughness: 0.36, metalness: 0.72 });
+      const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.035, 0.42, 10), hornMat);
+      tube.rotation.z = Math.PI / 2.6;
+      const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.04, 0.14, 12), hornMat);
+      bell.rotation.z = Math.PI / 2.6;
+      bell.position.set(0.22, 0.08, 0);
+      prop.add(tube); prop.add(bell); prop.position.set(0.24, 1.28, 0.22); return prop;
+    }
+    if (propId === 'upright_bass') {
+      const prop = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), accentMaterial.clone());
+      body.scale.set(0.82, 1.3, 0.32);
+      const neck = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.82, 0.05), accentMaterial.clone());
+      neck.position.set(0.1, 0.46, 0);
+      neck.rotation.z = -0.16;
+      prop.add(body); prop.add(neck); prop.position.set(0.24, 0.88, 0.14); prop.rotation.z = -0.12; return prop;
+    }
+    if (propId === 'snare') {
+      const prop = new THREE.Group();
+      const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.16, 14), new THREE.MeshStandardMaterial({ color: 0xbfc8d2, roughness: 0.62, metalness: 0.28 }));
+      drum.rotation.x = Math.PI / 2;
+      const strap = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.02, 8, 18), accentMaterial.clone());
+      strap.rotation.y = Math.PI / 2;
+      prop.add(drum); prop.add(strap); prop.position.set(0, 1.02, 0.26); return prop;
+    }
+    if (propId === 'banjo' || propId === 'guitar') {
       const prop = new THREE.Group();
       const body = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.5, 0.12), accentMaterial.clone());
       const neck = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.46, 0.08), accentMaterial.clone());
@@ -2577,13 +2610,16 @@
     const proximity = getBandProximity();
     const area = (getPlayerRouteContext() || {}).key || 'waterfront_station';
     const intensity = proximity > 0.72 ? 'high' : proximity > 0.38 ? 'medium' : 'low';
+    const cycle = state.band.cycleCount || 0;
+    const seedTune = BAND_SEED_TUNES[cycle % BAND_SEED_TUNES.length] || BAND_SEED_TUNES[0];
     return {
+      seed_tune: seedTune,
       mood: state.activeMood || 'calm',
       weather: state.activeWeather || 'clear',
       time_of_day: state.activeTimeOfDay || 'morning',
       area,
       intensity,
-      seed: seed || ('seed-' + Math.round(proximity * 100)),
+      seed: seed || ('seed-' + Math.round(proximity * 100) + '-' + cycle),
     };
   }
 
@@ -2592,55 +2628,14 @@
   }
 
   function getFallbackBandArrangements(context) {
-    const families = ['upbeat_welcome_shuffle', 'moody_rain_groove', 'dusk_wander', 'clock_corner_flourish', 'sparse_early_morning'];
-    return families.map((family, index) => {
-      const variant = Object.assign({}, {
-        tempo: family === 'clock_corner_flourish' ? 118 : family === 'moody_rain_groove' ? 94 : family === 'sparse_early_morning' ? 86 : family === 'dusk_wander' ? 102 : 112,
-        key: family === 'moody_rain_groove' ? 'E minor' : family === 'clock_corner_flourish' ? 'C major' : family === 'dusk_wander' ? 'D major' : 'G major',
-        swing: family === 'sparse_early_morning' ? 0.03 : 0.08,
-        bars: 8,
-        style: 'street bluegrass jazz',
-        family,
-        energy: family === 'sparse_early_morning' ? 'low' : family === 'clock_corner_flourish' ? 'high' : 'medium',
-        variation_hint: 'answer the lead with small responses and keep the groove loose',
-        parts: {
-          sax: ['B4:8n','D5:8n','G5:4n','A5:8n','G5:8n','E5:4n','D5:8n','B4:8n'],
-          mandolin: ['G4:8n','D5:8n','B4:8n','A4:8n','G4:8n','A4:8n','B4:8n','D5:8n'],
-          bass: ['G2:4n','D3:4n','E3:4n','D3:4n','G2:4n','B2:4n','D3:4n','D3:4n'],
-          guitar: ['G6(9)','Em7','Am7','D7','G6(9)','Cmaj7','Am7','D7'],
-          percussion: { kick: ['1','3'], snare: ['2','4'], hat: ['1.5','2.5','3.5','4.5'] }
-        }
-      });
-      if (family === 'moody_rain_groove') {
-        variant.parts.sax = ['E4:4n','G4:8n','B4:8n','D5:4n','B4:8n','A4:8n','G4:4n','rest:4n'];
-        variant.parts.bass = ['E2:4n','B2:4n','D3:4n','A2:4n','E2:4n','G2:4n','B2:4n','A2:4n'];
-        variant.parts.guitar = ['Em9','G6','D7sus4','A7','Em9','Cmaj7','G6','B7'];
-      }
-      if (family === 'dusk_wander') {
-        variant.parts.sax = ['F#4:8n','A4:8n','D5:4n','E5:8n','F#5:8n','E5:4n','A4:8n','D5:8n'];
-        variant.parts.guitar = ['D6','Bm7','Gmaj7','A7','D6','Gmaj7','Em7','A7'];
-      }
-      if (family === 'clock_corner_flourish') {
-        variant.parts.sax = ['G4:8n','A4:8n','C5:4n','E5:8n','D5:8n','C5:4n','A4:8n','G4:8n'];
-        variant.parts.mandolin = ['C5:8n','G4:8n','E5:8n','D5:8n','C5:8n','D5:8n','E5:8n','G5:8n'];
-        variant.parts.bass = ['C2:4n','G2:4n','A2:4n','G2:4n','F2:4n','G2:4n','A2:4n','G2:4n'];
-        variant.parts.guitar = ['C6','Am7','Dm7','G13','Fmaj7','G13','Am7','G13'];
-      }
-      if (family === 'sparse_early_morning') {
-        variant.parts.sax = ['rest:4n','B4:8n','D5:4n','rest:8n','G4:4n','rest:4n','A4:8n','G4:8n'];
-        variant.parts.mandolin = ['G4:8n','rest:8n','D5:8n','rest:8n','B4:8n','rest:8n','A4:8n','rest:8n'];
-        variant.parts.bass = ['G2:2n','D3:2n','E3:2n','D3:2n'];
-        variant.parts.guitar = ['G6','G6','Cmaj7','D7'];
-        variant.parts.percussion = { kick: ['1','3'], snare: [], hat: ['2.5'] };
-      }
-      variant.seed = context.seed + '-' + index;
-      variant.mood = context.mood;
-      variant.weather = context.weather;
-      variant.time_of_day = context.time_of_day;
-      variant.area = context.area;
-      variant.intensity = context.intensity;
-      return variant;
-    });
+    const library = {
+      marching_swing_welcome: { tempo: 112, key: 'Bb major', swing: 0.14, bars: 8, style: 'marching swing street band', energy: 'medium-high', variation_hint: 'broad lead pickup with short horn answers', parts: { lead_horn: ['D4:8n','F4:8n','G4:4n','A4:8n','Bb4:8n','G4:4n','F4:8n','D4:8n'], counter_horn: ['rest:8n','Bb3:8n','D4:4n','F4:8n','G4:8n','F4:4n','D4:8n','rest:8n'], banjo_guitar: ['Bb6','Gm7','Cm7','F7','Bb6','Eb6','Cm7','F7'], bass: ['Bb2:4n','F2:4n','G2:4n','F2:4n','Bb2:4n','D3:4n','F3:4n','F2:4n'], kick: ['1','3'], snare: ['2','4'], clarinet_texture: ['F4:8n','G4:8n','Bb4:8n','A4:8n','G4:8n','F4:8n','D4:8n','F4:8n'] } },
+      parade_strut: { tempo: 118, key: 'C major', swing: 0.13, bars: 8, style: 'marching swing street band', energy: 'high', variation_hint: 'snare pushes a playful parade step', parts: { lead_horn: ['G4:8n','A4:8n','C5:4n','E5:8n','D5:8n','C5:4n','A4:8n','G4:8n'], counter_horn: ['E4:8n','G4:8n','A4:4n','C5:8n','A4:8n','G4:4n','E4:8n','rest:8n'], banjo_guitar: ['C6','Am7','Dm7','G13','F6','G13','Am7','G13'], bass: ['C2:4n','G2:4n','A2:4n','G2:4n','F2:4n','G2:4n','A2:4n','G2:4n'], kick: ['1','3','3.5'], snare: ['2','4','4.5'], clarinet_texture: ['G4:8n','E4:8n','D4:8n','E4:8n','G4:8n','A4:8n','C5:8n','A4:8n'] } },
+      blue_drift: { tempo: 96, key: 'E minor', swing: 0.08, bars: 8, style: 'marching swing street band', energy: 'medium', variation_hint: 'leave air between lead phrases', parts: { lead_horn: ['E4:4n','G4:8n','B4:8n','D5:4n','B4:8n','A4:8n','G4:4n','rest:4n'], counter_horn: ['rest:4n','B3:8n','D4:8n','G4:4n','E4:8n','D4:8n','B3:4n','rest:4n'], banjo_guitar: ['Em9','G6','D7sus4','A7','Em9','Cmaj7','G6','B7'], bass: ['E2:4n','B2:4n','D3:4n','A2:4n','E2:4n','G2:4n','B2:4n','A2:4n'], kick: ['1','3.5'], snare: ['2.5','4'], clarinet_texture: ['E4:8n','rest:8n','G4:8n','B4:8n','A4:8n','G4:8n','E4:8n','rest:8n'] } },
+      dusk_stroll: { tempo: 102, key: 'D major', swing: 0.1, bars: 8, style: 'marching swing street band', energy: 'medium', variation_hint: 'lift into the lamp glow on the final bars', parts: { lead_horn: ['F#4:8n','A4:8n','D5:4n','E5:8n','F#5:8n','E5:4n','A4:8n','D5:8n'], counter_horn: ['D4:8n','F#4:8n','A4:4n','B4:8n','A4:8n','F#4:4n','E4:8n','A4:8n'], banjo_guitar: ['D6','Bm7','Gmaj7','A7','D6','Gmaj7','Em7','A7'], bass: ['D2:4n','A2:4n','B2:4n','A2:4n','D2:4n','F#2:4n','G2:4n','A2:4n'], kick: ['1','3'], snare: ['2','4'], clarinet_texture: ['A4:8n','F#4:8n','E4:8n','D4:8n','F#4:8n','A4:8n','B4:8n','A4:8n'] } },
+      clock_corner_tag: { tempo: 116, key: 'F major', swing: 0.15, bars: 8, style: 'marching swing street band', energy: 'high', variation_hint: 'tight call-and-response with a clipped turnaround tag', parts: { lead_horn: ['C5:8n','A4:8n','F4:4n','A4:8n','C5:8n','D5:4n','C5:8n','A4:8n'], counter_horn: ['F4:8n','rest:8n','A4:4n','C5:8n','A4:8n','F4:4n','G4:8n','rest:8n'], banjo_guitar: ['F6','Dm7','Gm7','C7','F6','Bb6','Gm7','C7'], bass: ['F2:4n','C3:4n','D3:4n','C3:4n','F2:4n','A2:4n','Bb2:4n','C3:4n'], kick: ['1','3'], snare: ['2','4','4.5'], clarinet_texture: ['A4:8n','C5:8n','D5:8n','C5:8n','A4:8n','F4:8n','G4:8n','A4:8n'] } }
+    };
+    return Object.keys(library).map((family, index) => Object.assign({ family, seed_tune: context.seed_tune, seed: context.seed + '-' + index, mood: context.mood, weather: context.weather, time_of_day: context.time_of_day, area: context.area, intensity: context.intensity, public_domain_seed: true }, library[family]));
   }
 
   function loadCachedBandArrangements(contextKey) {
@@ -2723,6 +2718,8 @@
     state.band.activeArrangement = null;
     state.band.currentBeatCursor = 0;
     state.band.currentCycleStartedAt = 0;
+    state.band.activeNotes = {};
+    state.band.voiceLoopId = null;
     if (state.debugEnabled && window.console && typeof window.console.info === 'function' && reason) {
       window.console.info('[Gastown Sim] Band audio stopped:', reason);
     }
@@ -2740,10 +2737,11 @@
     return {
       bus,
       synths: {
-        sax: new Tone.MonoSynth({ oscillator: { type: 'sawtooth2' }, envelope: { attack: 0.02, decay: 0.12, sustain: 0.22, release: 0.28 }, filter: { Q: 3.2, type: 'bandpass' }, filterEnvelope: { attack: 0.01, decay: 0.18, sustain: 0.1, release: 0.2, baseFrequency: 280, octaves: 3.6 }, volume: -13 }).connect(comp),
-        mandolin: new Tone.PluckSynth({ attackNoise: 1.1, dampening: 3200, resonance: 0.9 }).connect(new Tone.Filter(2400, 'lowpass').connect(comp)),
+        lead_horn: new Tone.MonoSynth({ oscillator: { type: 'sawtooth3' }, envelope: { attack: 0.015, decay: 0.1, sustain: 0.24, release: 0.2 }, filter: { Q: 3.6, type: 'bandpass' }, filterEnvelope: { attack: 0.008, decay: 0.16, sustain: 0.12, release: 0.18, baseFrequency: 320, octaves: 3.8 }, volume: -11 }).connect(comp),
+        counter_horn: new Tone.MonoSynth({ oscillator: { type: 'square3' }, envelope: { attack: 0.012, decay: 0.08, sustain: 0.22, release: 0.18 }, filter: { Q: 2.8, type: 'bandpass' }, filterEnvelope: { attack: 0.01, decay: 0.14, sustain: 0.1, release: 0.18, baseFrequency: 360, octaves: 3.1 }, volume: -13 }).connect(comp),
+        clarinet: new Tone.MonoSynth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.08, sustain: 0.18, release: 0.18 }, filter: { Q: 2.1, type: 'lowpass' }, filterEnvelope: { attack: 0.01, decay: 0.12, sustain: 0.1, release: 0.14, baseFrequency: 520, octaves: 2.2 }, volume: -16 }).connect(comp),
         bass: new Tone.MonoSynth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.14, sustain: 0.45, release: 0.32 }, filter: { Q: 1.4, type: 'lowpass' }, filterEnvelope: { attack: 0.01, decay: 0.14, sustain: 0.3, release: 0.18, baseFrequency: 90, octaves: 2.2 }, volume: -10 }).connect(comp),
-        guitar: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.08, release: 0.16 }, volume: -18 }).connect(new Tone.Filter(1800, 'lowpass').connect(comp)),
+        banjo: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.004, decay: 0.08, sustain: 0.06, release: 0.12 }, volume: -18 }).connect(new Tone.Filter(2200, 'lowpass').connect(comp)),
         kick: new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 4.2, envelope: { attack: 0.001, decay: 0.16, sustain: 0, release: 0.04 }, volume: -18 }).connect(comp),
         snare: new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.03 }, volume: -22 }).connect(comp),
         hat: new Tone.MetalSynth({ frequency: 220, envelope: { attack: 0.001, decay: 0.05, release: 0.02 }, harmonicity: 4.1, modulationIndex: 12, resonance: 1200, octaves: 1.5, volume: -28 }).connect(comp),
@@ -2801,16 +2799,20 @@
   function chooseNextBandArrangement() {
     if (!state.band.arrangements.length) return null;
     const context = makeBandContext('live');
-    const preferredFamily = context.weather === 'rain' || context.weather === 'drizzle' ? 'moody_rain_groove'
-      : context.time_of_day === 'dusk' ? 'dusk_wander'
-      : context.time_of_day === 'morning' && context.intensity === 'low' ? 'sparse_early_morning'
-      : context.area.indexOf('clock') !== -1 ? 'clock_corner_flourish'
-      : 'upbeat_welcome_shuffle';
-    const candidates = state.band.arrangements.filter((item) => item.family === preferredFamily);
-    const pool = candidates.length ? candidates : state.band.arrangements;
-    const arrangement = pool[state.band.arrangementIndex % pool.length];
-    state.band.arrangementIndex = (state.band.arrangementIndex + 1) % Math.max(pool.length, 1);
+    const preferredFamily = context.weather === 'rain' || context.weather === 'drizzle' ? 'blue_drift'
+      : context.time_of_day === 'dusk' || context.time_of_day === 'night' ? 'dusk_stroll'
+      : context.area.indexOf('clock') !== -1 || context.intensity === 'high' ? 'clock_corner_tag'
+      : context.seed_tune === 'saints' ? 'parade_strut'
+      : 'marching_swing_welcome';
+    const candidates = state.band.arrangements.filter((item) => item.family === preferredFamily && !state.band.arrangementHistory.includes((item.seed || '') + ':' + (item.family || '')));
+    const pool = candidates.length ? candidates : state.band.arrangements.filter((item) => !state.band.arrangementHistory.includes((item.seed || '') + ':' + (item.family || '')));
+    const activePool = pool.length ? pool : state.band.arrangements;
+    const arrangement = activePool[state.band.arrangementIndex % activePool.length];
+    state.band.arrangementIndex = (state.band.arrangementIndex + 1) % Math.max(activePool.length, 1);
     state.band.lastFamily = arrangement.family || preferredFamily;
+    state.band.currentSeedTune = arrangement.seed_tune || state.band.currentSeedTune;
+    const sig = (arrangement.seed || '') + ':' + (arrangement.family || '');
+    state.band.arrangementHistory = [...state.band.arrangementHistory.slice(-5), sig];
     return arrangement;
   }
 
@@ -2820,23 +2822,22 @@
     if (!parsed || parsed.note === 'rest') return;
     const durationSeconds = Math.min(BAND_MAX_NOTE_SECONDS, ((60 / Math.max(78, arrangement.tempo || 100)) * (parsed.duration === '2n' ? 2 : parsed.duration === '4n' ? 1 : parsed.duration === '8n' ? 0.5 : 0.25)));
     const velocity = Math.min(0.95, 0.42 + (proximity * 0.28));
-    if (partName === 'guitar') {
-      state.band.synths.guitar.triggerAttackRelease(parseChordNotes(parsed.note), Math.max(0.08, durationSeconds * 0.8), when, velocity);
-      watchBandVoice(state.band.synths.guitar, (durationSeconds * 1000) + 90);
+    if (partName === 'banjo') {
+      state.band.synths.banjo.triggerAttackRelease(parseChordNotes(parsed.note), Math.max(0.08, durationSeconds * 0.72), when, velocity);
+      watchBandVoice(state.band.synths.banjo, (durationSeconds * 1000) + 90);
       return;
     }
     const synth = state.band.synths[partName];
     if (!synth || typeof synth.triggerAttackRelease !== 'function') return;
-    synth.triggerAttackRelease(parsed.note, Math.max(0.06, durationSeconds), when, velocity + (partName === 'sax' ? 0.06 : 0));
+    synth.triggerAttackRelease(parsed.note, Math.max(0.06, durationSeconds), when, velocity + (partName === 'lead_horn' ? 0.08 : 0.02));
     watchBandVoice(synth, (durationSeconds * 1000) + 120);
   }
 
   function triggerBandPercussion(beatNumber, when, arrangement, proximity) {
-    const percussion = (arrangement.parts && arrangement.parts.percussion) || {};
     const beatLabel = String(beatNumber);
-    if ((percussion.kick || []).includes(beatLabel)) state.band.synths.kick.triggerAttackRelease('C1', '16n', when, 0.4 + (proximity * 0.2));
-    if ((percussion.snare || []).includes(beatLabel)) state.band.synths.snare.triggerAttackRelease('16n', when, 0.22 + (proximity * 0.1));
-    if ((percussion.hat || []).includes(beatLabel)) state.band.synths.hat.triggerAttackRelease('32n', when, 0.12 + (proximity * 0.06));
+    if (((arrangement.parts && arrangement.parts.kick) || []).includes(beatLabel)) state.band.synths.kick.triggerAttackRelease('C1', '16n', when, 0.4 + (proximity * 0.2));
+    if (((arrangement.parts && arrangement.parts.snare) || []).includes(beatLabel)) state.band.synths.snare.triggerAttackRelease('16n', when, 0.22 + (proximity * 0.1));
+    if ((['1.5','2.5','3.5','4.5']).includes(beatLabel)) state.band.synths.hat.triggerAttackRelease('32n', when, 0.12 + (proximity * 0.06));
     ['kick','snare','hat'].forEach((name) => watchBandVoice(state.band.synths[name], 160));
   }
 
@@ -2855,11 +2856,13 @@
     const stepIndex = state.band.currentBeatCursor;
     const musicalBeat = (stepIndex * beatStep) + 1;
     const when = getTone().now() + 0.04;
-    const partIndex = stepIndex % Math.max((arrangement.parts.sax || []).length, 1);
+    const hornIndex = stepIndex % Math.max((arrangement.parts.lead_horn || []).length, 1);
+    const counterIndex = stepIndex % Math.max((arrangement.parts.counter_horn || []).length, 1);
     triggerBandPart('bass', (arrangement.parts.bass || [])[stepIndex % Math.max((arrangement.parts.bass || []).length, 1)], when, proximity, arrangement);
-    if (stepIndex % 2 === 0) triggerBandPart('guitar', (arrangement.parts.guitar || [])[Math.floor(stepIndex / 2) % Math.max((arrangement.parts.guitar || []).length, 1)], when, proximity, arrangement);
-    if (stepIndex % 2 === 0 || proximity > 0.7) triggerBandPart('mandolin', (arrangement.parts.mandolin || [])[partIndex], when + 0.01, proximity, arrangement);
-    if (stepIndex % 2 === 0) triggerBandPart('sax', (arrangement.parts.sax || [])[partIndex], when + (stepIndex % 4 === 0 ? 0.02 : 0.07), proximity, arrangement);
+    if (stepIndex % 2 === 0) triggerBandPart('banjo', (arrangement.parts.banjo_guitar || [])[Math.floor(stepIndex / 2) % Math.max((arrangement.parts.banjo_guitar || []).length, 1)], when, proximity, arrangement);
+    if (stepIndex % 2 === 0 || proximity > 0.62) triggerBandPart('clarinet', (arrangement.parts.clarinet_texture || [])[hornIndex], when + 0.008, proximity, arrangement);
+    if (stepIndex % 2 === 0) triggerBandPart('lead_horn', (arrangement.parts.lead_horn || [])[hornIndex], when + (stepIndex % 4 === 0 ? 0.02 : 0.07), proximity, arrangement);
+    if (stepIndex % 4 === 1 || proximity > 0.74) triggerBandPart('counter_horn', (arrangement.parts.counter_horn || [])[counterIndex], when + 0.025, proximity, arrangement);
     triggerBandPercussion((musicalBeat % 4) || 4, when, arrangement, proximity);
     state.band.currentBeatCursor += 1;
     if ((state.band.currentBeatCursor * beatStep) >= totalBeats) {
@@ -2876,6 +2879,7 @@
     }
     await ensureBandAudioReady();
     if (!state.band.arrangements.length) {
+      state.band.cycleCount += 1;
       if (!state.band.pendingRequest) {
         state.band.pendingRequest = fetchBandArrangements(false).finally(() => { state.band.pendingRequest = null; });
       }
@@ -3100,6 +3104,21 @@
       npc.currentYaw = Number.isFinite(npc.currentYaw) ? npc.currentYaw : (npc.baseYaw || 0);
       if (npc.role === 'busker') {
         npc.currentYaw = (npc.baseYaw || 0) + (Math.sin((nowSeconds * 1.3) + npc.animPhase) * 0.01);
+      }
+      if (npc.companionGroup === 'early-band' && rig.leftArm && rig.rightArm) {
+        if (npc.pose === 'play_trumpet') {
+          rig.rightArm.rotation.x = -1.15 + (Math.sin((nowSeconds * 5.4) + npc.animPhase) * 0.08);
+          rig.leftArm.rotation.x = -0.88 + (Math.cos((nowSeconds * 5.1) + npc.animPhase) * 0.08);
+        } else if (npc.pose === 'play_banjo') {
+          rig.rightArm.rotation.x = -0.78 + (Math.sin((nowSeconds * 7.4) + npc.animPhase) * 0.18);
+          rig.leftArm.rotation.x = -0.46;
+        } else if (npc.pose === 'hold_bass') {
+          rig.leftArm.rotation.x = -0.34;
+          rig.rightArm.rotation.x = -0.16 + (Math.sin((nowSeconds * 4.2) + npc.animPhase) * 0.14);
+        } else if (npc.pose === 'march_snare') {
+          rig.rightArm.rotation.x = -0.92 + (Math.sin((nowSeconds * 10.2) + npc.animPhase) * 0.28);
+          rig.leftArm.rotation.x = -0.92 + (Math.cos((nowSeconds * 10.2) + npc.animPhase) * 0.28);
+        }
       }
       if (rollingMover) {
         npc.mesh.rotation.z = Math.sin((nowSeconds * (npc.role === 'cyclist' ? 1.8 : 2.6)) + npc.animPhase) * (npc.role === 'cyclist' ? 0.012 : 0.028);
@@ -3435,9 +3454,9 @@
             wheel_track: { role: 'road', color: 0x161f28, roughness: 0.9, metalness: 0.03, opacity: 0.76 },
             patch: { color: 0x453930, roughness: 0.9, metalness: 0.02, opacity: 0.7 },
             repair_patch_dark: { color: 0x372f2a, roughness: 0.92, metalness: 0.02, opacity: 0.74 },
-            puddle: { role: 'road', color: 0x253240, roughness: 0.56, metalness: 0.15, opacity: 0.05 },
-            wet_streak: { role: 'road', color: 0x31404e, roughness: 0.72, metalness: 0.08, opacity: 0.08 },
-            reflection_pool: { role: 'road', color: 0x2b3948, roughness: 0.62, metalness: 0.11, opacity: 0.04 },
+            puddle: { role: 'road', color: 0x22303d, roughness: 0.6, metalness: 0.12, opacity: 0.03 },
+            wet_streak: { role: 'road', color: 0x2b3742, roughness: 0.74, metalness: 0.08, opacity: 0.045 },
+            reflection_pool: { role: 'road', color: 0x27333e, roughness: 0.66, metalness: 0.1, opacity: 0.025 },
             edge_grime: { role: 'sidewalk', color: 0x3d352d, roughness: 0.94, metalness: 0.02, opacity: 0.44 },
             curb_grime: { role: 'sidewalk', color: 0x312b25, roughness: 0.95, metalness: 0.02, opacity: 0.48 },
             cobble_break: { role: 'plaza', color: 0x6a5848, roughness: 0.92, metalness: 0.02, opacity: 0.56 },
@@ -5303,7 +5322,7 @@
     const fogDensity = Math.max(0.0035, (weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
     scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
     renderer.setClearColor(timeOfDay.sky, 1);
-    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 0.9 : state.activeTimeOfDay === 'night' ? 0.62 : state.activeTimeOfDay === 'dusk' ? 0.72 : 0.82) - ((weather.rainIntensity || 0) * 0.04);
+    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 0.76 : state.activeTimeOfDay === 'night' ? 0.56 : state.activeTimeOfDay === 'dusk' ? 0.64 : 0.72) - ((weather.rainIntensity || 0) * 0.03);
 
     ambient.color.set(timeOfDay.ambientColor);
     ambient.intensity = Math.max(0.2, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.76);
@@ -5343,14 +5362,14 @@
     });
 
     if (visualState.roadMaterial) {
-      visualState.roadMaterial.color.set(state.activeTimeOfDay === 'morning' ? '#1f2b34' : state.activeTimeOfDay === 'dusk' ? '#182129' : '#10171e');
+      visualState.roadMaterial.color.set(state.activeTimeOfDay === 'morning' ? '#182128' : state.activeTimeOfDay === 'dusk' ? '#131a21' : '#0e1419');
       setSurfaceWetness(visualState.roadMaterial, 0.96, 0.05, (weather.rainIntensity || 0) * 0.5);
       if (visualState.roadMaterial.normalScale) {
         visualState.roadMaterial.normalScale.set(1.35 + ((weather.rainIntensity || 0) * 0.24), 1.1 + ((weather.rainIntensity || 0) * 0.2));
       }
     }
     if (visualState.sidewalkMaterial) {
-      visualState.sidewalkMaterial.color.set(state.activeTimeOfDay === 'night' ? '#5f5447' : state.activeTimeOfDay === 'dusk' ? '#6d5f50' : '#766859');
+      visualState.sidewalkMaterial.color.set(state.activeTimeOfDay === 'night' ? '#645747' : state.activeTimeOfDay === 'dusk' ? '#72604f' : '#7c6853');
       setSurfaceWetness(visualState.sidewalkMaterial, 0.98, 0.02, (weather.rainIntensity || 0) * 0.22);
       if (visualState.sidewalkMaterial.normalScale) {
         visualState.sidewalkMaterial.normalScale.set(0.7 + ((weather.rainIntensity || 0) * 0.12), 0.7 + ((weather.rainIntensity || 0) * 0.12));
@@ -5360,7 +5379,7 @@
       visualState.curbMaterial.color.set('#9c876f');
     }
     if (visualState.laneMaterial) {
-      visualState.laneMaterial.color.set('#5d5041');
+      visualState.laneMaterial.color.set('#6d5742');
       visualState.laneMaterial.opacity = 1;
     }
     Object.keys(visualState.fallbackSurfaceMaterials).forEach((role) => {
@@ -5368,7 +5387,7 @@
         const rain = weather.rainIntensity || 0;
         const baseColor = new THREE.Color((mat.userData && mat.userData.baseColor) || 0x444444);
         if (role === 'road') {
-          const target = new THREE.Color(state.activeTimeOfDay === 'night' ? '#131c24' : state.activeTimeOfDay === 'dusk' ? '#1b2831' : '#26333d');
+          const target = new THREE.Color(state.activeTimeOfDay === 'night' ? '#12181e' : state.activeTimeOfDay === 'dusk' ? '#182129' : '#202a31');
           mat.color.copy(baseColor).lerp(target, 0.72);
           mat.roughness = Math.max(0.48, (mat.userData.baseRoughness || 0.92) - (rain * 0.24));
           mat.metalness = Math.min(0.16, (mat.userData.baseMetalness || 0.02) + (rain * 0.09));
@@ -5382,10 +5401,10 @@
       const rain = weather.rainIntensity || 0;
       const fog = state.activeWeather === 'fog' ? 0.3 : 0;
       const intensity = state.activeTimeOfDay === 'night'
-        ? 1.7 + (rain * 0.8) + fog
+        ? 2.15 + (rain * 0.95) + (fog * 0.55)
         : state.activeTimeOfDay === 'dusk'
-          ? 1.08 + (rain * 0.45) + (fog * 0.35)
-          : 0.06 + (rain * 0.06);
+          ? 1.42 + (rain * 0.58) + (fog * 0.42)
+          : 0.03 + (rain * 0.03);
       lampVisual.globeMaterial.emissiveIntensity = intensity;
       lampVisual.haloMaterial.opacity = Math.min(0.28, intensity * 0.12);
       lampVisual.pointLight.intensity = Math.min(2.8, intensity * 1.35);

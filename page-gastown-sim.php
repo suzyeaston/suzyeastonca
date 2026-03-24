@@ -112,7 +112,7 @@ get_header();
 
     <section class="gastown-hud" aria-label="Exploration HUD">
       <div class="gastown-hud-identity">
-        <p class="gastown-hud-name" data-walker-name-display>WALKER · 0% MAPPED</p>
+        <p class="gastown-hud-name" data-walker-name-display>WALKER · 0% mapped</p>
       </div>
       <div class="gastown-hud-route">
         <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% mapped</p>
@@ -128,23 +128,15 @@ get_header();
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>
-        <p class="gastown-minimap-mode-status" data-sim-minimap-mode-status aria-live="polite">North-up map.</p>
         <p class="gastown-minimap-tooltip" data-sim-minimap-tooltip aria-live="polite">Steam Clock ahead.</p>
-        <p class="gastown-minimap-context" data-sim-minimap-context aria-live="polite">Facing north · Steam Clock ahead.</p>
         <canvas data-sim-minimap width="220" height="220"></canvas>
-        <div class="gastown-minimap-compass" data-sim-compass aria-live="polite">N</div>
-        <ul class="gastown-minimap-legend" data-sim-minimap-legend aria-label="Minimap legend">
-          <li>You</li>
-          <li>Route</li>
-          <li>Street</li>
-          <li>Landmark</li>
-        </ul>
+        
         <p class="gastown-minimap-label" data-sim-minimap-landmark>Waterfront Station threshold</p>
       </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
       <div class="gastown-live-strip">
         <p class="gastown-landmark" data-sim-landmark aria-live="polite">Band ahead</p>
-        <p class="gastown-route-segment" data-sim-route-segment aria-live="polite">Station threshold</p>
+        
       </div>
     </div>
 
@@ -152,8 +144,6 @@ get_header();
       <summary>Route notes</summary>
       <div class="gastown-meta-strip">
         <p class="gastown-world-status" data-sim-world-status aria-live="polite">World data status: checking build provenance…</p>
-        <p class="gastown-expedition-value" data-sim-objective aria-live="polite">Steam Clock ahead.</p>
-        <p class="gastown-expedition-value gastown-hud-next-step" data-sim-next-step aria-live="polite">Follow the first bit of street energy.</p>
       </div>
 
     </details>
