@@ -123,6 +123,14 @@ get_header();
     </section>
 
     <div class="gastown-sim-canvas" data-sim-canvas tabindex="-1">
+      <button
+        type="button"
+        class="gastown-fullscreen-toggle"
+        data-action="sim-fullscreen"
+        aria-label="Enter fullscreen mode"
+        aria-pressed="false"
+        title="Enter fullscreen"
+      >⛶</button>
       <aside class="gastown-minimap" aria-label="Exploration minimap">
         <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap controls">
           <button type="button" class="gastown-minimap-mode" data-action="minimap-mode-toggle" aria-pressed="false" aria-label="Switch minimap to heading-up mode">North up</button>
