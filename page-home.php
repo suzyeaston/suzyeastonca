@@ -61,6 +61,7 @@ get_header();
             <h2 id="home-positioning-title" class="retro-title glow-lite">Musician, creative technologist, and builder of weird useful internet things</h2>
             <p class="hero-headline pixel-font">This is Suzy&rsquo;s public lab: AI experiments, music tools, prototypes, and odd little upgrades made in Vancouver.</p>
             <p class="hero-subhead">I build in public, ship constantly, and share the process as I go. Code, sounds, experiments, and occasional chaos.</p>
+            <p class="hero-subhead">PSA: every time you visit, clear your cache and cookies first. lol</p>
             <div class="hero-cta-group">
                 <a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>" class="pixel-button hero-primary-cta">Start with Gastown Simulator</a>
                 <a href="<?php echo esc_url(home_url('/projects/')); ?>" class="pixel-button hero-secondary-cta">Explore the Lab</a>
