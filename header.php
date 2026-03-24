@@ -165,8 +165,7 @@
   <!-- Header wordmark (compact bar) -->
   <div class="se-header-branding">
     <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="se-header-wordmark">
-      <span class="se-header-name-main">SUZANNE</span>
-      <span class="se-header-name-nick">(SUZY)</span>
+      <span class="se-header-name-main">SUZY</span>
       <span class="se-header-name-last">EASTON</span>
     </a>
   </div>

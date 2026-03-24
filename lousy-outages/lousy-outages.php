@@ -111,7 +111,7 @@ function lousy_outages_activate() {
     lousy_outages_create_page();
     Subscriptions::create_table();
     Subscriptions::schedule_purge();
-    $default_email = 'suzanneeaston@gmail.com';
+    $default_email = 'suzyeaston@gmail.com';
     $stored_email  = get_option( 'lousy_outages_email' );
     if ( empty( $stored_email ) && is_email( $default_email ) ) {
         update_option( 'lousy_outages_email', sanitize_email( $default_email ) );

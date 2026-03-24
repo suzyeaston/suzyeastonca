@@ -8,9 +8,9 @@ get_header();
         <div class="hero-grid">
             <?php
             $hero_eyebrow = apply_filters('se_home_hero_eyebrow', 'Vancouver, BC • Built in public');
-            $hero_logo_label = apply_filters('se_home_hero_title', 'Suzanne (Suzy) Easton');
-            $hero_logo_top = apply_filters('se_home_hero_logo_top', 'Suzanne');
-            $hero_logo_mid = apply_filters('se_home_hero_logo_mid', '(Suzy)');
+            $hero_logo_label = apply_filters('se_home_hero_title', 'Suzy Easton');
+            $hero_logo_top = apply_filters('se_home_hero_logo_top', 'Suzy');
+            $hero_logo_mid = apply_filters('se_home_hero_logo_mid', '');
             $hero_logo_bottom = apply_filters('se_home_hero_logo_bottom', 'Easton');
             $hero_logo_top_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_top, 'UTF-8') : strtoupper($hero_logo_top);
             $hero_logo_mid_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_mid, 'UTF-8') : strtoupper($hero_logo_mid);
@@ -27,7 +27,9 @@ get_header();
                         <p class="hero-wordmark" aria-label="<?php echo esc_attr($hero_logo_label); ?>">
                             <span class="line1">
                                 <?php echo esc_html($hero_logo_top_text); ?>
-                                <small><?php echo esc_html($hero_logo_mid_text); ?></small>
+                                <?php if (!empty($hero_logo_mid_text)) : ?>
+                                    <small><?php echo esc_html($hero_logo_mid_text); ?></small>
+                                <?php endif; ?>
                             </span>
                             <span class="line2"><?php echo esc_html($hero_logo_bottom_text); ?></span>
                         </p>

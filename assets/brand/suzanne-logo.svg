@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="420" height="150" viewBox="0 0 420 150" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Suzanne (Suzy) Easton logo">
+<svg width="420" height="150" viewBox="0 0 420 150" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Suzy Easton logo">
   <defs>
     <linearGradient id="neon" x1="0" y1="0" x2="420" y2="0" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#B9FF66"/>
@@ -44,12 +44,7 @@
     <text x="210" y="56" text-anchor="middle"
           font-family="'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
           font-size="18" letter-spacing="0.5"
-          fill="url(#fillGrad)" stroke="url(#neon)" stroke-width="1.2">SUZANNE</text>
-
-    <text x="210" y="74" text-anchor="middle"
-          font-family="'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
-          font-size="10" letter-spacing="0.2"
-          fill="url(#fillGrad)" stroke="url(#neon)" stroke-width="1">(SUZY)</text>
+          fill="url(#fillGrad)" stroke="url(#neon)" stroke-width="1.2">SUZY</text>
 
     <text x="210" y="112" text-anchor="middle"
           font-family="'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
