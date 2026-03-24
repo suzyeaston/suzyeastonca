@@ -100,7 +100,7 @@ class Feed {
     <title><?php echo esc_html('Lousy Outages — Arcade Ops Feed'); ?></title>
     <atom:link href="<?php echo $self; ?>" rel="self" type="application/rss+xml" />
     <link><?php echo esc_url(home_url('/lousy-outages/')); ?></link>
-    <description><?php echo esc_html('Fast, loud, and slightly neon. Outage pings from Suzanne (Suzy) Easton’s console.'); ?></description>
+    <description><?php echo esc_html('Fast, loud, and slightly neon. Outage pings from Suzy Easton’s console.'); ?></description>
     <language>en-US</language>
     <lastBuildDate><?php echo esc_html($lastUpdated); ?></lastBuildDate>
     <?php foreach ($items as $item) : ?>
@@ -280,7 +280,7 @@ class Feed {
                 'link'        => home_url('/lousy-outages/'),
                 'guid'        => 'lousy-outages-incidents-empty-' . gmdate('YmdHis'),
                 'pubDate'     => self::format_rss_date(gmdate('c')),
-                'description' => 'Enjoy the silence. Suzanne will holler if something breaks.',
+                'description' => 'Enjoy the silence. Suzy will holler if something breaks.',
                 'timestamp'   => time(),
             ];
         }
