@@ -4,17 +4,19 @@
     radial-gradient(circle at 76% 18%, rgba(203, 146, 89, 0.15) 0, rgba(8, 11, 17, 0) 28%),
     linear-gradient(180deg, #111824 0%, #080a10 56%, #040507 100%);
   color: #d5dde8;
-  padding: 1rem 0.9rem 2.2rem;
+  padding: 0;
 }
 
 .gastown-sim-shell {
-  max-width: 1280px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
   display: grid;
   gap: 0.75rem;
   background: linear-gradient(180deg, rgba(10, 13, 20, 0.9), rgba(8, 10, 15, 0.94));
   border: 1px solid rgba(173, 190, 215, 0.16);
-  border-radius: 16px;
+  border-radius: 0;
   padding: 0.9rem;
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
@@ -45,6 +47,12 @@
 .gastown-sim-intro {
   color: rgba(224, 236, 249, 0.88);
   font-size: 0.95rem;
+}
+
+.gastown-sim-platform-note {
+  margin: 0;
+  color: #ffd4a8;
+  font-size: 0.84rem;
 }
 
 .gastown-controls-drawer,
@@ -209,7 +217,7 @@
 .gastown-sim-canvas {
   position: relative;
   width: 100%;
-  min-height: 560px;
+  min-height: clamp(560px, calc(100vh - 310px), 1200px);
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(164, 182, 209, 0.22);
