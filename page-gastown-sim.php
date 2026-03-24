@@ -11,6 +11,7 @@ get_header();
       <p class="gastown-sim-kicker">Waterfront Station → Water Street → Steam Clock</p>
       <h1>Gastown Simulator</h1>
       <p class="gastown-sim-intro">Name your walker, click in, and follow the first bit of street energy.</p>
+      <p class="gastown-sim-platform-note">Desktop only right now — mobile support is not available yet.</p>
     </header>
 
     <details class="gastown-controls-drawer">
