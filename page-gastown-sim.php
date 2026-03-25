@@ -10,7 +10,7 @@ get_header();
     <header class="gastown-sim-header">
       <p class="gastown-sim-kicker">Waterfront Station → Water Street → Steam Clock</p>
       <h1>Gastown Simulator</h1>
-      <p class="gastown-sim-intro">Name your walker, click in, and follow the first bit of street energy.</p>
+      <p class="gastown-sim-intro">Step into the Gastown working corridor: click in, move, and explore Water Street toward the Steam Clock.</p>
       <p class="gastown-sim-platform-note">Desktop only right now — mobile support is not available yet.</p>
     </header>
 
@@ -67,10 +67,10 @@ get_header();
           <li><strong>Mouse</strong> look</li>
           <li><strong>W A S D</strong> move</li>
           <li><strong>Arrow keys</strong> move / turn</li>
-          <li><strong>E / click</strong> talk or log</li>
+          <li><strong>E / click</strong> interact</li>
           <li><strong>Esc</strong> close / release</li>
         </ul>
-        <p class="gastown-help-note">Startup welcome voice is AI-generated when available. If OpenAI voice or music-spec generation fails, the walk still starts and local fallback audio can play.</p>
+        <p class="gastown-help-note">This simulator runs on a deterministic local world build. If optional audio or dialog extras fail, the walk continues.</p>
       </section>
     </details>
 
@@ -82,8 +82,8 @@ get_header();
         </div>
         <div class="gastown-dialog-body" id="gastown-tutorial-copy">
           <p>Name your walker if you want, then click in and move.</p>
-          <p>You will hear and see the route wake up quickly: locals, visitors, storefronts, and the pull toward the Steam Clock.</p>
-          <p>AI-generated voice is disclosed here in help, not in the live HUD. If it fails, dialog text stays on screen.</p>
+          <p>The corridor is tuned as a focused two-block walk: Waterfront threshold, Water Street rhythm, Steam Clock corner, and Maple Tree Square edge.</p>
+          <p>Startup is intentionally simple: click in, move, explore.</p>
         </div>
         <div class="gastown-dialog-actions">
           <button type="button" class="pixel-button secondary" data-action="tutorial-start" aria-label="Start the simulator tutorial">Start walk</button>
@@ -98,7 +98,7 @@ get_header();
           <h2 id="gastown-name-title">Name your walker</h2>
         </div>
         <div class="gastown-dialog-body">
-          <p>Optional. Keep it short. A quick AI-generated welcome may play after this.</p>
+          <p>Optional. Keep it short.</p>
           <label class="gastown-name-field">
             <span>Walker name</span>
             <input type="text" maxlength="24" autocomplete="nickname" data-walker-name-input placeholder="SUZY">
@@ -118,7 +118,7 @@ get_header();
       <div class="gastown-hud-route">
         <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% mapped</p>
       </div>
-      <p class="gastown-hud-subline" data-sim-status aria-live="polite">Band ahead.</p>
+      <p class="gastown-hud-subline" data-sim-status aria-live="polite">Gastown working corridor ready.</p>
       <p class="gastown-interact-prompt" data-sim-interact-prompt aria-live="polite" hidden></p>
     </section>
 
@@ -137,14 +137,14 @@ get_header();
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>
-        <p class="gastown-minimap-tooltip" data-sim-minimap-tooltip aria-live="polite">Steam Clock ahead.</p>
+        <p class="gastown-minimap-tooltip" data-sim-minimap-tooltip aria-live="polite">Steam Clock corridor ahead.</p>
         <canvas data-sim-minimap width="220" height="220"></canvas>
         
         <p class="gastown-minimap-label" data-sim-minimap-landmark>Waterfront Station threshold</p>
       </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
       <div class="gastown-live-strip">
-        <p class="gastown-landmark" data-sim-landmark aria-live="polite">Band ahead</p>
+        <p class="gastown-landmark" data-sim-landmark aria-live="polite">Water Street working corridor</p>
         
       </div>
     </div>
@@ -152,7 +152,7 @@ get_header();
     <details class="gastown-log-drawer">
       <summary>Route notes</summary>
       <div class="gastown-meta-strip">
-        <p class="gastown-world-status" data-sim-world-status aria-live="polite">World data status: checking build provenance…</p>
+        <p class="gastown-world-status" data-sim-world-status aria-live="polite">World data status: loading Gastown working corridor build…</p>
       </div>
 
     </details>

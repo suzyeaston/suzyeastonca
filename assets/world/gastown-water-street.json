@@ -10,8 +10,7 @@
     "buildNotes": [
       "Working fallback corridor is active because required offline civic source files are missing.",
       "This fallback now stages Water Street as a compact exploration district with plaza, storefront edge, alley threshold, transit edge, and landmark corner micro-areas instead of a single bent ribbon corridor.",
-      "No refreshed reference inputs were present; deterministic default route staging was used.",
-      "Fallback street rendering now uses dark heritage paving, stronger sidewalk-road separation, and early-route band/tourist staging."
+      "No refreshed reference inputs were present; deterministic default route staging was used."
     ],
     "referenceInputsUsed": [],
     "openDataInputs": {
@@ -105,8 +104,8 @@
         "z": -186.87
       },
       {
-        "x": 189.31,
-        "z": -178.75
+        "x": 186.97,
+        "z": -178.73
       },
       {
         "x": 232.34,
@@ -136,10 +135,7 @@
     "streetWidth": 9.8,
     "sidewalkWidth": 5.199999999999999,
     "softBoundary": 3.6,
-    "hardResetDistance": 12,
-    "rightOfWayWidth": 20.2,
-    "heroZoneStart": "water-street-mid-block",
-    "heroZoneEnd": "maple-tree-square-edge"
+    "hardResetDistance": 12
   },
   "nodes": [
     {
@@ -163,8 +159,8 @@
     {
       "id": "storefront-edge",
       "label": "Storefront edge",
-      "x": 126.2,
-      "z": -110.3
+      "x": 125.74,
+      "z": -110.65
     },
     {
       "id": "water-street-mid-block",
@@ -175,8 +171,8 @@
     {
       "id": "alley-threshold",
       "label": "Alley threshold",
-      "x": 195.11,
-      "z": -139.55
+      "x": 195.52,
+      "z": -139.23
     },
     {
       "id": "steam-clock",
@@ -187,8 +183,8 @@
     {
       "id": "landmark-corner",
       "label": "Landmark corner",
-      "x": 183.98,
-      "z": -156.78
+      "x": 181.63,
+      "z": -156.76
     },
     {
       "id": "maple-tree-square-edge",
@@ -744,24 +740,24 @@
         "side": "storefront",
         "polygon": [
           {
-            "x": 121.96,
-            "z": -118.37
+            "x": 121.49,
+            "z": -118.73
           },
           {
-            "x": 134.95,
-            "z": -108.35
+            "x": 134.47,
+            "z": -108.72
           },
           {
-            "x": 130.31,
-            "z": -102.33
+            "x": 129.83,
+            "z": -102.7
           },
           {
-            "x": 117.32,
-            "z": -112.35
+            "x": 116.85,
+            "z": -112.71
           },
           {
-            "x": 121.96,
-            "z": -118.37
+            "x": 121.49,
+            "z": -118.73
           }
         ]
       },
@@ -770,24 +766,24 @@
         "side": "alley",
         "polygon": [
           {
-            "x": 194.64,
-            "z": -144.84
+            "x": 195.05,
+            "z": -144.52
           },
           {
-            "x": 200.34,
-            "z": -140.44
+            "x": 200.75,
+            "z": -140.12
           },
           {
-            "x": 195.58,
-            "z": -134.26
+            "x": 195.99,
+            "z": -133.95
           },
           {
-            "x": 189.88,
-            "z": -138.66
+            "x": 190.29,
+            "z": -138.34
           },
           {
-            "x": 194.64,
-            "z": -144.84
+            "x": 195.05,
+            "z": -144.52
           }
         ]
       },
@@ -908,24 +904,24 @@
         "side": "corner",
         "polygon": [
           {
-            "x": 182.52,
-            "z": -162.58
+            "x": 180.17,
+            "z": -162.56
           },
           {
-            "x": 189.96,
-            "z": -156.84
+            "x": 187.61,
+            "z": -156.82
           },
           {
-            "x": 185.44,
-            "z": -150.98
+            "x": 183.1,
+            "z": -150.96
           },
           {
-            "x": 178,
-            "z": -156.72
+            "x": 175.65,
+            "z": -156.7
           },
           {
-            "x": 182.52,
-            "z": -162.58
+            "x": 180.17,
+            "z": -162.56
           }
         ]
       },
@@ -4788,10 +4784,7 @@
       "y": 0,
       "z": 0,
       "scale": 1.35,
-      "cue": "Station canopies give way to brick-front Gastown blocks and the Water Street bend begins.",
-      "discoveryNote": "Orientation logged. The station threshold is where the route stops feeling like transit spillover and starts reading as Gastown.",
-      "storyUnlock": "orientation",
-      "discoveryRadius": 9.5
+      "cue": "Station canopies give way to brick-front Gastown blocks and the Water Street bend begins."
     },
     {
       "id": "water-cordova-seam",
@@ -4801,10 +4794,7 @@
       "y": 0,
       "z": -45.43,
       "scale": 1.16,
-      "cue": "The corridor bends into Water Street and starts reading like a heritage streetscape instead of a starter ribbon.",
-      "discoveryNote": "Discovery logged. The bend into Water Street is the first place the heritage corridor becomes legible.",
-      "storyUnlock": "water_street_shift",
-      "discoveryRadius": 9.5
+      "cue": "The corridor bends into Water Street and starts reading like a heritage streetscape instead of a starter ribbon."
     },
     {
       "id": "water-street-mid-block",
@@ -4814,10 +4804,7 @@
       "y": 0,
       "z": -104.87,
       "scale": 1.12,
-      "cue": "Longer brick storefront rhythm and darker carriageway paving make the street read more like Water Street.",
-      "discoveryNote": "Survey logged. This is the clearest storefront-rhythm moment on the route.",
-      "storyUnlock": "mid_block_story",
-      "discoveryRadius": 9.5
+      "cue": "Longer brick storefront rhythm and darker carriageway paving make the street read more like Water Street."
     },
     {
       "id": "steam-clock",
@@ -4828,10 +4815,7 @@
       "z": -154.73,
       "radius": 5.2,
       "scale": 1.28,
-      "cue": "A brick-and-stone plaza opens at the intersection and stages the Steam Clock at the corner landmark moment.",
-      "discoveryNote": "Story unlocked. The Steam Clock plaza turns the walk into a landmark encounter instead of a straight corridor.",
-      "storyUnlock": "clock_story",
-      "discoveryRadius": 5.2
+      "cue": "A brick-and-stone plaza opens at the intersection and stages the Steam Clock at the corner landmark moment."
     },
     {
       "id": "maple-tree-square-edge",
@@ -4841,10 +4825,7 @@
       "y": 0,
       "z": -173.46,
       "scale": 1.1,
-      "cue": "Beyond the Steam Clock the street broadens and loosens toward Maple Tree Square.",
-      "discoveryNote": "Story unlocked. Maple Tree Square expands the route beyond the clock and reveals the older village geometry.",
-      "storyUnlock": "maple_story",
-      "discoveryRadius": 9.5
+      "cue": "Beyond the Steam Clock the street broadens and loosens toward Maple Tree Square."
     },
     {
       "id": "cambie-rise-continuation",
@@ -4854,10 +4835,7 @@
       "y": 0,
       "z": -140.6,
       "scale": 1.18,
-      "cue": "The eastern leg of the route continues beyond the clock intersection toward the Cambie rise.",
-      "discoveryNote": "Survey logged. The eastern rise finishes the sense of progression through the corridor.",
-      "storyUnlock": "east_leg_story",
-      "discoveryRadius": 9.5
+      "cue": "The eastern leg of the route continues beyond the clock intersection toward the Cambie rise."
     }
   ],
   "props": [
@@ -4868,13 +4846,7 @@
       "y": 0,
       "z": -19.75,
       "yaw": 0.7005,
-      "scale": 1.05,
-      "randomOffset": true,
-      "collectible": true,
-      "collectibleKey": "newspaper_box",
-      "collectibleLabel": "Newspaper box",
-      "minimapIcon": "collectible",
-      "journalNote": "A utilitarian newspaper box shows how everyday objects carry the working-street texture."
+      "scale": 1.05
     },
     {
       "id": "starter-prop-threshold-utility",
@@ -4888,9 +4860,9 @@
     {
       "id": "starter-prop-threshold-bench",
       "kind": "bench",
-      "x": 8.12,
+      "x": 7.67,
       "y": 0,
-      "z": -21.39,
+      "z": -21.93,
       "yaw": 2.2713,
       "scale": 0.92
     },
@@ -4960,9 +4932,9 @@
     {
       "id": "starter-prop-clock-plaque",
       "kind": "utility_box",
-      "x": 183.11,
+      "x": 180.77,
       "y": 0,
-      "z": -156.31,
+      "z": -156.29,
       "yaw": -2.2275,
       "scale": 0.65
     },
@@ -4982,9 +4954,9 @@
     {
       "id": "starter-prop-east-newsbox",
       "kind": "newspaper_box",
-      "x": 176.45,
+      "x": 176.83,
       "y": 0,
-      "z": -127.06,
+      "z": -126.57,
       "yaw": 0.654,
       "scale": 1.02
     },
@@ -5016,121 +4988,13 @@
       "scale": 1
     },
     {
-      "id": "starter-prop-maple-mural",
-      "kind": "cardboard_box",
-      "x": 206.22,
-      "z": -170.84,
-      "yaw": 0.14,
-      "scale": 0.95,
-      "collectible": true,
-      "collectibleKey": "mural",
-      "collectibleLabel": "Painted brick panel",
-      "minimapIcon": "mural",
-      "randomOffset": true,
-      "journalNote": "The painted wall shifts the block from preservation into interpretation."
-    },
-    {
-      "id": "starter-prop-clock-plaque",
-      "kind": "utility_box",
-      "x": 188.62,
-      "z": -151.38,
-      "yaw": -0.22,
-      "scale": 0.65,
-      "collectible": true,
-      "collectibleKey": "historic_plaque",
-      "collectibleLabel": "Historic plaque",
-      "minimapIcon": "plaque",
-      "journalNote": "The plaque turns sightseeing into explicit history-reading."
-    },
-    {
-      "id": "starter-prop-vendor-crate",
-      "kind": "cardboard_box",
-      "x": 174.96,
-      "z": -143.72,
-      "yaw": 0.51,
-      "scale": 0.88,
-      "randomOffset": true
-    },
-    {
-      "id": "starter-prop-busker-case",
-      "kind": "cardboard_box",
-      "x": 32.0,
-      "y": 0,
-      "z": -33.2,
-      "yaw": -0.82,
-      "scale": 0.86
-    },
-    {
-      "id": "starter-prop-brewery-crate",
-      "kind": "cardboard_box",
-      "x": 43.5,
-      "y": 0,
-      "z": -35.1,
-      "yaw": -0.72,
-      "scale": 0.94
-    },
-    {
-      "id": "starter-prop-sushi-box",
-      "kind": "newspaper_box",
-      "x": 29.0,
-      "y": 0,
-      "z": -24.4,
-      "yaw": -0.72,
-      "scale": 0.8
-    },
-    {
-      "id": "starter-prop-brewery-sign",
-      "kind": "utility_box",
-      "x": 15.6,
-      "y": 0,
-      "z": -16.9,
-      "yaw": 0.66,
-      "scale": 0.78
-    },
-    {
-      "id": "starter-prop-patio-bench",
-      "kind": "bench",
-      "x": 18.4,
-      "y": 0,
-      "z": -17.2,
-      "yaw": 0.72,
-      "scale": 0.88
-    },
-    {
-      "id": "starter-prop-band-planter",
+      "id": "starter-prop-postclock-planter",
       "kind": "planter",
-      "x": 22.2,
+      "x": 194.49,
       "y": 0,
-      "z": -22.7,
-      "yaw": 0.58,
-      "scale": 1.08
-    },
-    {
-      "id": "starter-prop-band-tip-case",
-      "kind": "cardboard_box",
-      "x": 20.2,
-      "y": 0,
-      "z": -22.8,
-      "yaw": -0.88,
-      "scale": 0.98
-    },
-    {
-      "id": "starter-prop-band-music-stand",
-      "kind": "utility_box",
-      "x": 21.1,
-      "y": 0,
-      "z": -24.4,
-      "yaw": -0.84,
-      "scale": 0.62
-    },
-    {
-      "id": "starter-prop-band-crate",
-      "kind": "cardboard_box",
-      "x": 23.4,
-      "y": 0,
-      "z": -25.6,
-      "yaw": -0.74,
-      "scale": 0.92
+      "z": -135.96,
+      "yaw": -2.1112,
+      "scale": 1.12
     }
   ],
   "npcs": [
@@ -5153,38 +5017,21 @@
           "x": 5.88,
           "z": -20.95
         }
-      ],
-      "pose": "host_gesture",
-      "silhouetteScale": 1.03,
-      "yaw": -0.62
+      ]
     },
     {
       "id": "starter-busker-clock",
       "role": "busker",
       "behavior": "busker_perform",
-      "pose": "play_sax",
-      "heldProp": "sax",
+      "pose": "strum",
+      "heldProp": "guitar",
       "voiceCue": "busker-hook",
       "dialogId": "busker_clock_corner",
-      "interactRadius": 3.6,
+      "interactRadius": 3,
       "idleSpot": {
-        "x": 20.4,
-        "z": -24.0
-      },
-      "silhouetteScale": 1.06,
-      "yaw": -0.92,
-      "name": "bandleader sax",
-      "patrol": [
-        {
-          "x": 20.1,
-          "z": -23.8
-        },
-        {
-          "x": 20.7,
-          "z": -24.2
-        }
-      ],
-      "companionGroup": "early-band"
+        "x": 181.63,
+        "z": -150.7
+      }
     },
     {
       "id": "starter-pedestrian-west",
@@ -5205,8 +5052,7 @@
           "x": 39.47,
           "z": -48.11
         }
-      ],
-      "silhouetteScale": 0.98
+      ]
     },
     {
       "id": "starter-pedestrian-east",
@@ -5227,78 +5073,29 @@
           "x": 184.81,
           "z": -144.1
         }
-      ],
-      "silhouetteScale": 1.01
-    },
-    {
-      "id": "starter-skateboarder-mid",
-      "role": "skateboarder",
-      "behavior": "skate_glide",
-      "pose": "glide",
-      "heldProp": "skateboard",
-      "dialogId": "skateboarder_corridor",
-      "interactRadius": 2.5,
-      "idleSpot": {
-        "x": 24.3,
-        "z": -22.1
-      },
-      "patrol": [
-        {
-          "x": 22.6,
-          "z": -20.7
-        },
-        {
-          "x": 74.8,
-          "z": -73.39
-        }
-      ],
-      "silhouetteScale": 0.97
-    },
-    {
-      "id": "starter-cyclist-eastbound",
-      "role": "cyclist",
-      "behavior": "cycle_cruise",
-      "pose": "ride",
-      "heldProp": "bike",
-      "dialogId": "cyclist_water_street",
-      "interactRadius": 2.8,
-      "idleSpot": {
-        "x": 12.4,
-        "z": -13.1
-      },
-      "patrol": [
-        {
-          "x": 10.2,
-          "z": -11.4
-        },
-        {
-          "x": 116.2,
-          "z": -96.6
-        }
-      ],
-      "silhouetteScale": 0.99
+      ]
     },
     {
       "id": "starter-tourist-clock-west",
       "role": "tourist",
       "behavior": "tourist_pause",
       "pose": "group_gather",
-      "companionGroup": "station-tourists-a",
+      "companionGroup": "clock-family-a",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 17.8,
-        "z": -22.4
+        "x": 185.52,
+        "z": -154.27
       },
       "patrol": [
         {
-          "x": 17.1,
-          "z": -21.8
+          "x": 184.55,
+          "z": -153.5
         },
         {
-          "x": 18.4,
-          "z": -22.9
+          "x": 186.25,
+          "z": -154.72
         }
       ]
     },
@@ -5307,22 +5104,22 @@
       "role": "tourist",
       "behavior": "tourist_pause",
       "pose": "being_photographed",
-      "companionGroup": "station-tourists-a",
+      "companionGroup": "clock-family-a",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 19.5,
-        "z": -24.0
+        "x": 184.59,
+        "z": -155.36
       },
       "patrol": [
         {
-          "x": 18.9,
-          "z": -23.5
+          "x": 183.89,
+          "z": -154.77
         },
         {
-          "x": 20.1,
-          "z": -24.4
+          "x": 185.22,
+          "z": -155.76
         }
       ]
     },
@@ -5333,268 +5130,41 @@
       "pose": "taking_photo",
       "heldProp": "camera",
       "voiceCue": "photo-direction",
-      "companionGroup": "station-tourists-b",
+      "companionGroup": "clock-family-a",
       "dialogId": "tourist_clock_photo",
       "interactRadius": 2.4,
       "idleSpot": {
-        "x": 27.4,
-        "z": -28.6
-      },
-      "silhouetteScale": 1.02,
-      "yaw": -0.78
+        "x": 180.05,
+        "z": -155.2
+      }
     },
     {
       "id": "starter-tourist-clock-stroller",
       "role": "tourist",
       "behavior": "tourist_wander",
       "pose": "group_gather",
-      "companionGroup": "station-tourists-c",
+      "companionGroup": "clock-family-b",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 35.2,
-        "z": -38.2
+        "x": 183.47,
+        "z": -157.99
       },
       "patrol": [
         {
-          "x": 34.4,
-          "z": -37.6
+          "x": 183.28,
+          "z": -157.26
         },
         {
-          "x": 36.3,
-          "z": -39.1
-        }
-      ],
-      "silhouetteScale": 1.04
-    },
-    {
-      "id": "starter-tourist-clock-bench",
-      "role": "tourist",
-      "behavior": "photo_idle",
-      "pose": "gathered",
-      "companionGroup": "station-tourists-b",
-      "voiceCue": "tourist-cluster",
-      "dialogId": "tourist_clock_stop",
-      "interactRadius": 2.2,
-      "idleSpot": {
-        "x": 23.6,
-        "z": -26.5
-      },
-      "silhouetteScale": 0.94,
-      "yaw": -0.74
-    },
-    {
-      "id": "starter-tourist-clock-child",
-      "role": "tourist",
-      "behavior": "tourist_pause",
-      "pose": "group_gather",
-      "silhouetteScale": 0.82,
-      "companionGroup": "station-tourists-a",
-      "voiceCue": "tourist-cluster",
-      "dialogId": "tourist_clock_stop",
-      "interactRadius": 2,
-      "idleSpot": {
-        "x": 18.6,
-        "z": -23.1
-      },
-      "patrol": [
-        {
-          "x": 18.1,
-          "z": -22.6
-        },
-        {
-          "x": 19.2,
-          "z": -23.6
+          "x": 183.78,
+          "z": -158.89
         }
       ]
-    },
-    {
-      "id": "starter-band-mandolin",
-      "role": "pedestrian",
-      "behavior": "tourist_pause",
-      "dialogId": "busker_clock_corner",
-      "interactRadius": 2.5,
-      "idleSpot": {
-        "x": 17.8,
-        "z": -23.3
-      },
-      "patrol": [
-        {
-          "x": 17.6,
-          "z": -23.2
-        },
-        {
-          "x": 18.0,
-          "z": -23.5
-        }
-      ],
-      "silhouetteScale": 0.96,
-      "yaw": -0.98,
-      "name": "trumpet response",
-      "pose": "play_trumpet",
-      "heldProp": "trumpet",
-      "companionGroup": "early-band"
-    },
-    {
-      "id": "starter-band-bass",
-      "role": "pedestrian",
-      "behavior": "tourist_pause",
-      "dialogId": "busker_clock_corner",
-      "interactRadius": 2.5,
-      "idleSpot": {
-        "x": 22.8,
-        "z": -25.2
-      },
-      "patrol": [
-        {
-          "x": 22.6,
-          "z": -25.0
-        },
-        {
-          "x": 23.1,
-          "z": -25.5
-        }
-      ],
-      "silhouetteScale": 1.12,
-      "yaw": -0.86,
-      "name": "upright bass",
-      "pose": "hold_bass",
-      "heldProp": "upright_bass",
-      "companionGroup": "early-band"
-    },
-    {
-      "id": "starter-band-guitar",
-      "role": "guide",
-      "behavior": "guide_pace",
-      "dialogId": "busker_clock_corner",
-      "interactRadius": 2.5,
-      "idleSpot": {
-        "x": 19.0,
-        "z": -26.0
-      },
-      "patrol": [
-        {
-          "x": 18.8,
-          "z": -25.8
-        },
-        {
-          "x": 19.3,
-          "z": -26.2
-        }
-      ],
-      "silhouetteScale": 0.98,
-      "yaw": -0.74,
-      "name": "banjo chop",
-      "pose": "play_banjo",
-      "heldProp": "banjo",
-      "companionGroup": "early-band"
-    },
-    {
-      "id": "starter-band-snare",
-      "role": "pedestrian",
-      "behavior": "tourist_pause",
-      "dialogId": "busker_clock_corner",
-      "interactRadius": 2.6,
-      "idleSpot": {
-        "x": 21.8,
-        "z": -22.9
-      },
-      "patrol": [
-        {
-          "x": 21.5,
-          "z": -22.8
-        },
-        {
-          "x": 22.0,
-          "z": -23.1
-        }
-      ],
-      "silhouetteScale": 0.98,
-      "yaw": -0.88,
-      "name": "snare cadence",
-      "pose": "march_snare",
-      "heldProp": "snare",
-      "companionGroup": "early-band"
-    },
-    {
-      "id": "starter-band-camera",
-      "role": "photographer",
-      "behavior": "photo_idle",
-      "dialogId": "tourist_clock_photo",
-      "interactRadius": 2.5,
-      "idleSpot": {
-        "x": 12.8,
-        "z": -18.5
-      },
-      "patrol": [
-        {
-          "x": 12.6,
-          "z": -18.4
-        },
-        {
-          "x": 13.1,
-          "z": -18.8
-        }
-      ],
-      "silhouetteScale": 0.98,
-      "yaw": -0.52,
-      "name": "camera person",
-      "pose": "taking_photo",
-      "heldProp": "camera",
-      "companionGroup": "opening-crowd"
-    },
-    {
-      "id": "starter-tourist-band-west",
-      "role": "tourist",
-      "behavior": "tourist_wander",
-      "dialogId": "tourist_clock_stop",
-      "interactRadius": 2.4,
-      "idleSpot": {
-        "x": 14.3,
-        "z": -20.4
-      },
-      "patrol": [
-        {
-          "x": 13.5,
-          "z": -19.8
-        },
-        {
-          "x": 16.2,
-          "z": -21.8
-        }
-      ],
-      "silhouetteScale": 0.97,
-      "pose": "group_gather",
-      "companionGroup": "opening-crowd"
-    },
-    {
-      "id": "starter-tourist-band-east",
-      "role": "tourist",
-      "behavior": "tourist_wander",
-      "dialogId": "tourist_clock_stop",
-      "interactRadius": 2.4,
-      "idleSpot": {
-        "x": 22.8,
-        "z": -26.5
-      },
-      "patrol": [
-        {
-          "x": 22.0,
-          "z": -25.8
-        },
-        {
-          "x": 24.1,
-          "z": -27.1
-        }
-      ],
-      "silhouetteScale": 1.0,
-      "pose": "being_photographed",
-      "companionGroup": "opening-crowd"
     }
   ],
   "exploration": {
-    "publicGoal": "I\u2019m exploring Gastown.",
+    "publicGoal": "I’m exploring Gastown.",
     "fallbackPrompt": "Wander the connected plazas, storefront edges, alley mouths, and landmark corners to build your own short loop."
   },
   "microAreas": [
@@ -5641,24 +5211,24 @@
       "nodeId": "storefront-edge",
       "polygon": [
         {
-          "x": 121.96,
-          "z": -118.37
+          "x": 121.49,
+          "z": -118.73
         },
         {
-          "x": 134.95,
-          "z": -108.35
+          "x": 134.47,
+          "z": -108.72
         },
         {
-          "x": 130.31,
-          "z": -102.33
+          "x": 129.83,
+          "z": -102.7
         },
         {
-          "x": 117.32,
-          "z": -112.35
+          "x": 116.85,
+          "z": -112.71
         },
         {
-          "x": 121.96,
-          "z": -118.37
+          "x": 121.49,
+          "z": -118.73
         }
       ],
       "stopReasons": [
@@ -5677,24 +5247,24 @@
       "nodeId": "alley-threshold",
       "polygon": [
         {
-          "x": 194.64,
-          "z": -144.84
+          "x": 195.05,
+          "z": -144.52
         },
         {
-          "x": 200.34,
-          "z": -140.44
+          "x": 200.75,
+          "z": -140.12
         },
         {
-          "x": 195.58,
-          "z": -134.26
+          "x": 195.99,
+          "z": -133.95
         },
         {
-          "x": 189.88,
-          "z": -138.66
+          "x": 190.29,
+          "z": -138.34
         },
         {
-          "x": 194.64,
-          "z": -144.84
+          "x": 195.05,
+          "z": -144.52
         }
       ],
       "stopReasons": [
@@ -5713,24 +5283,24 @@
       "nodeId": "steam-clock",
       "polygon": [
         {
-          "x": 183.59,
-          "z": -161.25
+          "x": 180.01,
+          "z": -164.51
         },
         {
-          "x": 190.4,
-          "z": -156
+          "x": 190.78,
+          "z": -156.21
         },
         {
-          "x": 184.66,
-          "z": -148.55
+          "x": 182.11,
+          "z": -144.96
         },
         {
-          "x": 177.85,
-          "z": -153.8
+          "x": 171.34,
+          "z": -153.27
         },
         {
-          "x": 183.59,
-          "z": -161.25
+          "x": 180.01,
+          "z": -164.51
         }
       ],
       "stopReasons": [
@@ -5749,24 +5319,24 @@
       "nodeId": "landmark-corner",
       "polygon": [
         {
-          "x": 182.52,
-          "z": -162.58
+          "x": 180.17,
+          "z": -162.56
         },
         {
-          "x": 189.96,
-          "z": -156.84
+          "x": 187.61,
+          "z": -156.82
         },
         {
-          "x": 185.44,
-          "z": -150.98
+          "x": 183.1,
+          "z": -150.96
         },
         {
-          "x": 178,
-          "z": -156.72
+          "x": 175.65,
+          "z": -156.7
         },
         {
-          "x": 182.52,
-          "z": -162.58
+          "x": 180.17,
+          "z": -162.56
         }
       ],
       "stopReasons": [
@@ -6556,176 +6126,29 @@
         "elevation": 0.024
       },
       {
-        "segment_id": "water-street-mid-block",
-        "width": 4.8,
-        "length": 12.2,
-        "yaw": 2.21,
-        "offset_x": -1.1,
-        "offset_z": 0.6,
-        "tone": "reflection_pool",
-        "opacity": 0.14,
-        "elevation": 0.018
-      },
-      {
-        "segment_id": "steam-clock-approach",
-        "width": 6.4,
-        "length": 8.2,
-        "yaw": 2.19,
-        "offset_x": 0.4,
-        "offset_z": -0.8,
-        "tone": "reflection_pool",
+        "segment_id": "cambie-rise-continuation",
+        "width": 6.08,
+        "length": 6.66,
+        "yaw": 2.5338,
+        "offset_x": 0,
+        "offset_z": 0,
+        "tone": "setts_patch",
         "opacity": 0.18,
-        "elevation": 0.018
-      },
-      {
-        "segment_id": "steam-clock",
-        "width": 5.3,
-        "length": 5.4,
-        "yaw": 0.82,
-        "offset_x": 1.2,
-        "offset_z": 0.2,
-        "tone": "puddle",
-        "opacity": 0.2,
-        "elevation": 0.021
+        "elevation": 0.02
       }
     ],
-    "signs": [
+    "heroViewCorridors": [
       {
-        "id": "wayfinding-station",
-        "x": 11.8,
-        "z": -24.6,
-        "height": 2.6,
-        "width": 0.76,
-        "panelHeight": 0.56,
-        "yaw": -0.72,
-        "faceColor": "#d7dfde",
-        "emissive": "#10202b"
+        "id": "steam-clock-west-sightline",
+        "from": "water-street-mid-block",
+        "to": "steam-clock",
+        "emphasis": "hero"
       },
       {
-        "id": "parking-clock",
-        "x": 178.2,
-        "z": -151.1,
-        "height": 2.45,
-        "width": 0.48,
-        "panelHeight": 0.5,
-        "yaw": 0.8,
-        "faceColor": "#b84b38",
-        "glow": true,
-        "emissive": "#2a0e06"
-      },
-      {
-        "id": "maple-wayfinding",
-        "x": 202.1,
-        "z": -166.8,
-        "height": 2.6,
-        "width": 0.7,
-        "panelHeight": 0.48,
-        "yaw": -0.92,
-        "faceColor": "#e4d5af",
-        "emissive": "#291f09"
-      },
-      {
-        "id": "water-sushi-sign",
-        "x": 31.6,
-        "z": -25.8,
-        "height": 2.5,
-        "width": 1.4,
-        "panelHeight": 0.46,
-        "yaw": -0.7,
-        "faceColor": "#d1b7a0",
-        "emissive": "#25140f",
-        "glow": true
-      },
-      {
-        "id": "water-pub-sign",
-        "x": 42.8,
-        "z": -36.5,
-        "height": 2.7,
-        "width": 1.6,
-        "panelHeight": 0.5,
-        "yaw": -0.7,
-        "faceColor": "#b8803f",
-        "emissive": "#2a1907",
-        "glow": true
-      }
-    ],
-    "streetFurniture": [
-      {
-        "id": "furn-threshold-bench",
-        "kind": "bench",
-        "x": 14.2,
-        "z": -15.8,
-        "yaw": -0.72
-      },
-      {
-        "id": "furn-mid-bin",
-        "kind": "bin",
-        "x": 106.4,
-        "z": -92.8,
-        "yaw": -0.67
-      },
-      {
-        "id": "furn-mid-planter",
-        "kind": "planter",
-        "x": 109.3,
-        "z": -95.1,
-        "yaw": -0.67
-      },
-      {
-        "id": "furn-clock-bin",
-        "kind": "bin",
-        "x": 180.4,
-        "z": -149.8,
-        "yaw": 0.72
-      },
-      {
-        "id": "furn-clock-bench",
-        "kind": "bench",
-        "x": 189.6,
-        "z": -159.8,
-        "yaw": 0.68
-      },
-      {
-        "id": "furn-clock-planter",
-        "kind": "planter",
-        "x": 191.8,
-        "z": -160.8,
-        "yaw": 0.68
-      },
-      {
-        "id": "furn-postclock-utility",
-        "kind": "utility",
-        "x": 204.7,
-        "z": -168.5,
-        "yaw": -0.92
-      },
-      {
-        "id": "furn-start-bench-east",
-        "kind": "bench",
-        "x": 20.9,
-        "z": -20.8,
-        "yaw": -0.72
-      },
-      {
-        "id": "furn-start-planter-east",
-        "kind": "planter",
-        "x": 28.7,
-        "z": -27.3,
-        "yaw": -0.72
-      },
-      {
-        "id": "furn-start-bin",
-        "kind": "bin",
-        "x": 34.6,
-        "z": -31.8,
-        "yaw": -0.72
-      },
-      {
-        "id": "furn-start-planter-pub",
-        "kind": "planter",
-        "x": 41.7,
-        "z": -37.9,
-        "yaw": -0.72
+        "id": "steam-clock-east-sightline",
+        "from": "maple-tree-square-edge",
+        "to": "steam-clock",
+        "emphasis": "hero"
       }
     ]
   },
@@ -6739,14 +6162,5 @@
     "floorY": 0,
     "edgeMessage": "Stayed inside the explorable Gastown district.",
     "resetMessage": "Returned to the explorable Gastown district."
-  },
-  "audioZones": [
-    {
-      "id": "opening-band-cluster",
-      "x": 18.8,
-      "z": -24.1,
-      "radius": 18,
-      "bed": "commuter_mix"
-    }
-  ]
+  }
 }

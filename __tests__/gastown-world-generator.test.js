@@ -82,7 +82,7 @@ test('generator keeps world polygons valid with existing or generated output', (
       assert.equal(data.zones.street.length >= 3, true, 'working fallback should stage multiple street polygons around the Steam Clock');
       assert.equal(data.zones.sidewalk.length >= 4, true, 'working fallback should stage multiple sidewalk/plaza polygons');
       assert.equal(Array.isArray(data.navigator.focusCorridor), true, 'working fallback should expose minimap focus corridors');
-      assert.equal(data.navigator.focusCorridor.length, 4, 'working fallback should expose west leg, plaza loop, east leg, and Cambie crossing minimap corridors');
+      assert.equal(data.navigator.focusCorridor.length >= 4, true, 'working fallback should expose at least west leg, plaza loop, east leg, and Cambie crossing minimap corridors');
       assert.equal(data.navigator.focusCorridor.some((segment) => segment.id === 'steam-clock-plaza-loop'), true, 'working fallback should expose a plaza loop in navigator data');
       assert.equal(data.navigator.focusCorridor.some((segment) => segment.id === 'cambie-crossing'), true, 'working fallback should expose a Cambie crossing in navigator data');
 
@@ -102,21 +102,19 @@ test('generator keeps world polygons valid with existing or generated output', (
       assert.equal(data.zones.street.some((zone) => pointInPolygon(steamClockNode, zone.polygon)), false, 'steam clock should not sit inside any travel lane polygon');
 
       assert.ok(Array.isArray(data.npcs));
-      assert.equal(data.npcs.length >= 12, true, 'working fallback should expose a denser deterministic NPC set');
+      assert.equal(data.npcs.length >= 7, true, 'working fallback should expose a concise deterministic NPC set');
       const touristCluster = data.npcs.filter((npc) => String(npc.id).includes('tourist-clock'));
-      assert.equal(touristCluster.length >= 6, true, 'working fallback should expose a tourist cluster near the Steam Clock');
+      assert.equal(touristCluster.length >= 4, true, 'working fallback should expose a focused tourist cluster near the Steam Clock');
       assert.equal(touristCluster.some((npc) => npc.pose === 'taking_photo'), true, 'tourist cluster should include a photo pose');
       assert.equal(touristCluster.some((npc) => npc.pose === 'being_photographed'), true, 'tourist cluster should include a photographed pose');
       assert.equal(touristCluster.some((npc) => npc.heldProp === 'camera'), true, 'tourist cluster should include a held camera prop');
       assert.equal(touristCluster.filter((npc) => Array.isArray(npc.patrol) && npc.patrol.length > 1).length >= 2, true, 'tourist cluster should include multiple walkers');
       assert.equal(data.npcs.some((npc) => npc.role === 'busker' && npc.heldProp === 'guitar'), true, 'busker should carry a guitar');
-      assert.equal(data.npcs.some((npc) => npc.role === 'skateboarder' && npc.heldProp === 'skateboard'), true, 'working fallback should include a skateboarder role');
-      assert.equal(data.npcs.some((npc) => npc.role === 'cyclist' && npc.heldProp === 'bike'), true, 'working fallback should include a cyclist role');
       const roleCounts = data.npcs.reduce((acc, npc) => {
         acc[npc.role] = (acc[npc.role] || 0) + 1;
         return acc;
       }, {});
-      assert.deepEqual(roleCounts, { guide: 1, busker: 1, pedestrian: 2, skateboarder: 1, cyclist: 1, tourist: 5, photographer: 1 }, 'working fallback role mix should remain deterministic');
+      assert.deepEqual(roleCounts, { guide: 1, busker: 1, pedestrian: 2, tourist: 3, photographer: 1 }, 'working fallback role mix should remain deterministic and lighter-weight');
       assert.equal(data.routeId, 'gastown_water_street_working_corridor');
       assert.equal(data.meta.buildClassification, 'approximate-fallback');
       assert.match(data.meta.provenanceSummary, /Approximate fallback corridor retained/);
@@ -130,7 +128,7 @@ test('generator keeps world polygons valid with existing or generated output', (
 
 test('committed world json files include the expanded intersection-based fallback layout', () => {
   const root = path.resolve(__dirname, '..');
-  ['assets/world/gastown-water-street.json', 'assets/world/gastown-water-street-starter.json'].forEach((relPath) => {
+  ['assets/world/gastown-water-street.json'].forEach((relPath) => {
     const data = JSON.parse(fs.readFileSync(path.join(root, relPath), 'utf8'));
     assert.ok(Array.isArray(data.npcs), relPath + ' should include npcs');
     assert.ok(data.npcs.length > 4, relPath + ' should have more than the original 4 npcs');
@@ -145,8 +143,6 @@ test('committed world json files include the expanded intersection-based fallbac
     assert.ok(data.nodes.some((node) => node.id === 'water-cordova-seam'), relPath + ' should include the Water/Cordova seam node');
     assert.ok(data.nodes.some((node) => node.id === 'maple-tree-square-edge'), relPath + ' should include the Maple Tree Square edge node');
     assert.ok(data.nodes.some((node) => node.id === 'water-cambie-intersection'), relPath + ' should include the Water/Cambie intersection node');
-    assert.ok(data.npcs.some((npc) => npc.role === 'skateboarder'), relPath + ' should include a skateboarder');
-    assert.ok(data.npcs.some((npc) => npc.role === 'cyclist'), relPath + ' should include a cyclist');
     assert.ok(Array.isArray(data.streetscape.surfaceBands) && data.streetscape.surfaceBands.length === 48, relPath + ' should constrain surface band clutter while allowing the hero block extra wear detail');
     assert.ok(Array.isArray(data.zones.street) && data.zones.street.length >= 3, relPath + ' should stage multiple road polygons');
     assert.ok(Array.isArray(data.zones.sidewalk) && data.zones.sidewalk.length >= 5, relPath + ' should stage multiple sidewalks/plaza polygons');

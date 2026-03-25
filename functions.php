@@ -145,14 +145,6 @@ function se_enqueue_asmr_lab_assets() {
         wp_enqueue_style( 'se-asmr-lab', $uri . $css_path, array(), filemtime( $dir . $css_path ) );
     }
 
-    wp_enqueue_script(
-        'tone-js',
-        'https://unpkg.com/tone@14.7.77/build/Tone.js',
-        array(),
-        '14.7.77',
-        true
-    );
-
     $engine_path = '/js/asmr-foley-engine.js';
     if ( file_exists( $dir . $engine_path ) ) {
         wp_enqueue_script( 'se-asmr-foley-engine', $uri . $engine_path, array( 'tone-js' ), filemtime( $dir . $engine_path ), true );
@@ -210,14 +202,6 @@ function se_enqueue_gastown_sim_assets() {
         true
     );
 
-    wp_enqueue_script(
-        'tone-js',
-        'https://unpkg.com/tone@14.7.77/build/Tone.js',
-        array(),
-        '14.7.77',
-        true
-    );
-
     $loader_path = '/js/gastown-world-loader.js';
     if ( file_exists( $dir . $loader_path ) ) {
         wp_enqueue_script(
@@ -256,7 +240,7 @@ function se_enqueue_gastown_sim_assets() {
         wp_enqueue_script(
             'se-gastown-sim',
             $uri . $app_path,
-            array( 'three-js', 'howler-js', 'tone-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog' ),
+            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog' ),
             filemtime( $dir . $app_path ) . '-tone-clock-tourists',
             true
         );
@@ -270,11 +254,6 @@ function se_enqueue_gastown_sim_assets() {
                 'audioBaseUrl'   => esc_url_raw( $uri . '/assets/audio/gastown' ),
                 'textureBaseUrl' => esc_url_raw( $uri . '/assets/textures' ),
                 'dialogDataUrl'  => esc_url_raw( $uri . '/assets/dialog/gastown.json' ),
-                'conversationEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-npc-chat' ) ),
-                'voiceEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-npc-voice' ) ),
-                'buskerRiffEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-busker-riff' ) ),
-                'bandArrangementEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-band-arrangement' ) ),
-                'startupStingEndpoint' => esc_url_raw( rest_url( 'se/v1/gastown-start-sting' ) ),
                 'nonce' => wp_create_nonce( 'wp_rest' ),
                 'defaultWeather' => 'clear',
                 'defaultMood'    => 'calm',

@@ -33,6 +33,14 @@
     return;
   }
   const hasHowler = !!(window.Howl && window.Howler);
+  const RUNTIME_PROFILE = {
+    fallbackOnly: true,
+    enableOverviewCamera: false,
+    enableBandSystem: false,
+    deferDialogFetch: true,
+    deferAudioSetup: true,
+    enableNpcVoiceSnippets: false,
+  };
 
   const canvasWrap = app.querySelector('[data-sim-canvas]');
   const pointerStatusEl = app.querySelector('[data-sim-pointer-status]');
@@ -476,7 +484,7 @@
     orientation: { label: 'Get moving', status: 'Get moving.' },
     scavenger: { label: 'Street details', status: 'Street details ready.' },
     survey: { label: 'Route survey', status: 'Route opens east.' },
-    soundwalk: { label: 'Sound cues', status: 'Band ahead.' },
+    soundwalk: { label: 'Sound cues', status: 'Gastown working corridor ready.' },
     stories: { label: 'Layered places', status: 'Keep walking past the obvious photo stop.' },
   };
 
@@ -504,7 +512,7 @@
       label: 'Sound cues',
       objective: 'Follow the sax, crowd, and clock.',
       hint: 'Pause where the street sounds thickest.',
-      status: 'Band ahead.',
+      status: 'Gastown working corridor ready.',
     },
     stories: {
       label: 'Layered places',
@@ -742,7 +750,7 @@
       if (!state.progression.discoveredLandmarks['steam-clock']) {
         hint = { text: 'Steam Clock ahead.', target: { type: 'landmark', id: 'steam-clock' } };
       } else if (busker) {
-        hint = { text: 'Band ahead.', target: { type: 'npc', id: busker.id } };
+        hint = { text: 'Gastown working corridor ready.', target: { type: 'npc', id: busker.id } };
       }
     } else if (state.currentThread === 'stories' && chainStories.active && !chainStories.completed) {
       if (!state.progression.discoveredLandmarks['maple-tree-square-edge']) {
@@ -1058,7 +1066,7 @@
   }
 
   function toggleCameraMode() {
-    setCameraMode(state.cameraMode === 'street' ? 'overview' : 'street');
+    setCameraMode('street');
   }
 
   function setLandmark(text) {
@@ -1616,7 +1624,7 @@
   }
 
   function maybeTriggerNpcVoice(voiceFreq) {
-    if (!state.isRunning || !Array.isArray(state.npcs) || !window.speechSynthesis || voiceFreq <= 0.05) {
+    if (!RUNTIME_PROFILE.enableNpcVoiceSnippets || !state.isRunning || !Array.isArray(state.npcs) || !window.speechSynthesis || voiceFreq <= 0.05) {
       return false;
     }
     if (window.speechSynthesis.speaking || ((performance.now() / 1000) - state.lastNpcVoiceAt) < 10) {
@@ -5287,17 +5295,30 @@
     }
   }
 
+
+  const AUDIO_MIX = {
+    masterBudget: 0.62,
+    ambientBedMax: 0.24,
+    zoneBedMax: 0.18,
+    rainMax: 0.2,
+    thunderMax: 0.16,
+    oneshotMax: 0.2,
+  };
+
+  function clampVolume(value, max) {
+    return Math.max(0, Math.min(max, Number.isFinite(value) ? value : 0));
+  }
   function setupAudio(world) {
     const base = (config.audioBaseUrl || '').replace(/\/$/, '');
     const src = (name) => [base + '/' + name + '.mp3', base + '/' + name + '.ogg'];
 
     try {
-      ['quiet_night', 'eerie_drones', 'nightlife_hum', 'commuter_mix'].forEach((id) => {
+      ['quiet_night', 'commuter_mix'].forEach((id) => {
         state.sounds.beds[id] = createSafeHowl({ src: src('beds/' + id), loop: true, volume: 0, html5: false });
       });
 
       state.sounds.rainLoop = createSafeHowl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
-      state.sounds.thunder = createSafeHowl({ src: src('weather/thunder_roll'), volume: 0.22 });
+      state.sounds.thunder = createSafeHowl({ src: src('weather/thunder_roll'), volume: AUDIO_MIX.thunderMax });
 
       (world.audioZones || []).forEach((zone) => {
         if (!zone || !zone.id || !zone.bed) {
@@ -5426,7 +5447,8 @@
     updateLightning(weather);
 
     playHowl(state.sounds.rainLoop);
-    fadeHowl(state.sounds.rainLoop, (weather.rainIntensity || 0) * 0.45, 380);
+    const rainLevel = clampVolume((weather.rainIntensity || 0) * AUDIO_MIX.rainMax, AUDIO_MIX.rainMax);
+    fadeHowl(state.sounds.rainLoop, rainLevel, 380);
   }
 
   function applyMood(moodId) {
@@ -5438,7 +5460,10 @@
     Object.keys(state.sounds.beds).forEach((id) => {
       const howl = state.sounds.beds[id];
       playHowl(howl);
-      fadeHowl(howl, id === preset.ambientBed ? 0.45 * preset.audioDensity : 0, 420);
+      const bedTarget = id === preset.ambientBed
+        ? clampVolume(AUDIO_MIX.ambientBedMax * preset.audioDensity, AUDIO_MIX.ambientBedMax)
+        : 0;
+      fadeHowl(howl, bedTarget, 420);
     });
 
     if (state.npcVoiceTimer) {
@@ -5472,7 +5497,8 @@
       if (!howl) return;
       playHowl(howl);
       if (howl && typeof howl.volume === 'function') {
-        howl.volume(normalized * 0.4);
+        const weatherDuck = (state.activeWeather === 'rain' || state.activeWeather === 'thunderstorm') ? 0.72 : 1;
+        howl.volume(clampVolume(normalized * AUDIO_MIX.zoneBedMax * weatherDuck, AUDIO_MIX.zoneBedMax));
       }
     });
   }
@@ -5932,24 +5958,18 @@
   async function init() {
     try {
       const loadedWorld = await window.GastownWorldLoader.load(config.worldDataUrl);
-      const dialogData = await loadDialogData().catch(() => null);
       state.world = loadedWorld;
-      state.dialogData = dialogData && typeof dialogData === 'object' ? dialogData : {};
+      state.dialogData = {};
       updateAttribution(state.world);
-      // Optional systems fail softly so the corridor still boots.
-      // addNpcs(state.world); addLandmarks(state.world); setupAudio(state.world);
-      const softSystems = [
+      const coreSystems = [
         ['ground', addGround],
-        ['props', addProps],
         ['buildings', addBuildings],
         ['streetscape', addStreetscape],
-        ['npcs', addNpcs],
         ['hero landmarks', addHeroLandmarks],
         ['landmarks', addLandmarks],
         ['debug route', addDebugRoute],
-        ['audio', setupAudio],
       ];
-      softSystems.forEach(([label, fn]) => {
+      coreSystems.forEach(([label, fn]) => {
         try { fn(state.world); } catch (error) { if (window.console && window.console.warn) { window.console.warn('[Gastown Sim] Optional system failed during init: ' + label, error); } }
       });
       minimapState.worldMetrics = getWorldMetrics();
@@ -5976,25 +5996,31 @@
         debugPanel.removeAttribute('hidden');
       }
       scheduleSteamClock();
-      setWorldModeStatus(state.world);
-      if (!(state.world.meta && state.world.meta.fallbackMode === 'working-gastown-corridor')) {
-        setStatus(getPublicGoalText());
+      if (RUNTIME_PROFILE.deferDialogFetch || RUNTIME_PROFILE.deferAudioSetup) {
+        window.setTimeout(() => {
+          loadDialogData().then((dialogData) => {
+            state.dialogData = dialogData && typeof dialogData === 'object' ? dialogData : {};
+          }).catch(() => {});
+          try { addProps(state.world); } catch (error) {}
+          try { addNpcs(state.world); } catch (error) {}
+          try { if (RUNTIME_PROFILE.deferAudioSetup) setupAudio(state.world); } catch (error) {}
+        }, 0);
       }
+      setWorldModeStatus(state.world);
+      setStatus('Gastown working corridor ready. Click in to explore.');
       updateCameraModeUi();
       renderer.setAnimationLoop((time) => {
         const delta = Math.min(0.03, (time - (init.prevTime || time)) / 1000);
         init.prevTime = time;
 
-        if (state.isRunning || state.cameraMode === 'overview') {
+        if (state.isRunning) {
           movePlayer(delta);
         } else {
           updateCameraMotionFeedback(delta, getMovementProfile());
         }
 
         maybeTriggerLightning(state.world.weatherPresets[state.activeWeather] || null);
-        updateOverviewCamera();
         updateSteamClock(delta, time / 1000);
-        tickBandSystem();
         updateProgressiveVisibility();
         updateNpcs(delta);
         updateInteractionTarget();
