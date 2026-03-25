@@ -177,6 +177,9 @@
       currentSpeed: 0,
       smoothedSpeed: 0,
       surface: 'sidewalk',
+      runActive: false,
+      runBlend: 0,
+      runHoldSeconds: 0,
       bobPhase: 0,
       bobOffset: 0,
       swayOffset: 0,
@@ -224,6 +227,10 @@
   };
 
   const DEFAULT_EYE_HEIGHT = 1.7;
+  const HOLD_TO_RUN_THRESHOLD_SECONDS = 0.34;
+  const HOLD_TO_RUN_RAMP_IN = 5.8;
+  const HOLD_TO_RUN_RAMP_OUT = 8.2;
+  const HOLD_TO_RUN_FORWARD_MULTIPLIER = 1.58;
   const WALKER_NAME_STORAGE_KEY = 'gastownWalkerName';
   const NPC_SPEECH_CACHE_LIMIT = 18;
   const BAND_ARRANGEMENT_CACHE_PREFIX = 'gastownBandArrangement:';
@@ -1435,6 +1442,46 @@
     };
   }
 
+
+  function updateHoldToRunState(delta, forwardInput) {
+    const sustainedForward = forwardInput > 0 && !state.move.backward;
+    if (sustainedForward) {
+      state.motion.runHoldSeconds += delta;
+    } else {
+      state.motion.runHoldSeconds = 0;
+    }
+    const holdRunActive = sustainedForward && state.motion.runHoldSeconds >= HOLD_TO_RUN_THRESHOLD_SECONDS;
+    const shiftRunActive = sustainedForward && state.gait.traverse && !state.gait.precise;
+    state.motion.runActive = !state.gait.precise && state.cameraMode === 'street' && (holdRunActive || shiftRunActive);
+
+    const rampSpeed = state.motion.runActive ? HOLD_TO_RUN_RAMP_IN : HOLD_TO_RUN_RAMP_OUT;
+    state.motion.runBlend = THREE.MathUtils.lerp(state.motion.runBlend || 0, state.motion.runActive ? 1 : 0, 1 - Math.exp(-delta * rampSpeed));
+    if (!sustainedForward && state.motion.runBlend < 0.015) {
+      state.motion.runBlend = 0;
+      state.motion.runActive = false;
+    }
+
+    return {
+      active: state.motion.runActive,
+      blend: state.motion.runBlend,
+    };
+  }
+
+  function getDynamicMovementProfile(baseProfile, runState) {
+    const blend = runState && Number.isFinite(runState.blend) ? runState.blend : 0;
+    return {
+      label: blend > 0.6 ? 'run' : baseProfile.label,
+      maxSpeed: baseProfile.maxSpeed * (1 + ((HOLD_TO_RUN_FORWARD_MULTIPLIER - 1) * blend)),
+      acceleration: baseProfile.acceleration * (1 + (blend * 0.12)),
+      deceleration: baseProfile.deceleration * (1 + (blend * 0.08)),
+      turnSpeed: baseProfile.turnSpeed * (1 - (blend * 0.06)),
+      bobAmount: baseProfile.bobAmount * (1 + (blend * 0.28)),
+      swayAmount: baseProfile.swayAmount * (1 + (blend * 0.18)),
+      stepInterval: baseProfile.stepInterval * (1 - (blend * 0.22)),
+      runBlend: blend,
+    };
+  }
+
   function detectPlayerSurface() {
     if (!state.world || !state.world.zones) {
       return 'sidewalk';
@@ -1671,6 +1718,9 @@
     state.gait.precise = false;
     state.gait.traverse = false;
     state.velocity.set(0, 0, 0);
+    state.motion.runBlend = 0;
+    state.motion.runHoldSeconds = 0;
+    state.motion.runActive = false;
     state.motion.footstepTimer = 0;
   }
 
@@ -5056,6 +5106,26 @@
     ctx.restore();
   }
 
+
+  function getMinimapSidewalkStyle(zone) {
+    const side = (zone && zone.side) || '';
+    if (side === 'plaza') {
+      return { fill: '#7f8fa0', stroke: 'rgba(238, 224, 198, 0.62)' };
+    }
+    if (side === 'corner' || side === 'storefront') {
+      return { fill: '#6f7f92', stroke: 'rgba(218, 227, 238, 0.56)' };
+    }
+    return { fill: '#5d7083', stroke: 'rgba(211, 226, 242, 0.5)' };
+  }
+
+  function getMinimapStreetStyle(zone) {
+    const id = (zone && zone.id) || '';
+    if (id === 'water-cambie-intersection-roadway') {
+      return { fill: '#253f53', stroke: 'rgba(129, 164, 196, 0.72)' };
+    }
+    return { fill: '#1a2f41', stroke: 'rgba(86, 117, 149, 0.68)' };
+  }
+
   function drawMinimap() {
     if (!minimapState.ctx || !state.world || !minimapState.worldMetrics) {
       return;
@@ -5077,10 +5147,12 @@
     ctx.strokeRect(0.5, 0.5, minimapState.width - 1, minimapState.height - 1);
 
     (state.world.zones.sidewalk || []).forEach((zone) => {
-      drawPolygon(zone.polygon, metrics, pad, '#5d7083', 'rgba(211, 226, 242, 0.5)', 1.2, view, projectionOptions);
+      const style = getMinimapSidewalkStyle(zone);
+      drawPolygon(zone.polygon, metrics, pad, style.fill, style.stroke, 1.2, view, projectionOptions);
     });
     (state.world.zones.street || []).forEach((zone) => {
-      drawPolygon(zone.polygon, metrics, pad, '#1a2f41', 'rgba(86, 117, 149, 0.68)', 1.15, view, projectionOptions);
+      const style = getMinimapStreetStyle(zone);
+      drawPolygon(zone.polygon, metrics, pad, style.fill, style.stroke, 1.15, view, projectionOptions);
     });
     (state.world.microAreas || []).forEach((area) => {
       drawPolygon(area.polygon, metrics, pad, 'rgba(255, 210, 135, 0.72)', 'rgba(255, 210, 135, 0.08)', 0.85, view, projectionOptions);
@@ -5164,7 +5236,7 @@
       ctx.setLineDash([]);
     }
 
-    const majorNodes = ['waterfront-station-threshold', 'water-street-mid-block', 'water-cambie-intersection', 'steam-clock', 'maple-tree-square-edge'];
+    const majorNodes = ['waterfront-station-threshold', 'water-cordova-seam', 'water-street-mid-block', 'water-cambie-intersection', 'steam-clock', 'maple-tree-square-edge'];
     state.world.nodes.forEach((node) => {
       if (!majorNodes.includes(node.id)) return;
       const markerPoint = node.id === 'steam-clock' ? getMinimapLandmarkAnchor(node, state.world) : node;
@@ -5179,7 +5251,7 @@
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       if (node.id === 'waterfront-station-threshold') {
-        ctx.fillText('Station', mini.x + 6, mini.y - 5);
+        ctx.fillText('Waterfront', mini.x + 6, mini.y - 5);
       }
       if (node.id === 'steam-clock') {
         const steamClockLabelAnchor = {
@@ -5189,11 +5261,17 @@
         const labelMini = projectWorldToMinimap(steamClockLabelAnchor, metrics, pad, view, projectionOptions);
         ctx.fillText('Steam Clock', labelMini.x + 5, labelMini.y - 4);
       }
+      if (node.id === 'water-cordova-seam') {
+        ctx.fillText('Water/Cordova', mini.x + 6, mini.y - 5);
+      }
       if (node.id === 'water-cambie-intersection') {
         ctx.fillText('Cambie', mini.x + 6, mini.y - 5);
       }
       if (node.id === 'water-street-mid-block') {
-        ctx.fillText('Water St', mini.x + 6, mini.y + 7);
+        ctx.fillText('Water St mid', mini.x + 6, mini.y + 7);
+      }
+      if (node.id === 'maple-tree-square-edge') {
+        ctx.fillText('Maple Tree Sq', mini.x + 6, mini.y + 7);
       }
     });
 
@@ -5511,9 +5589,11 @@
   }
 
   function movePlayer(delta) {
-    const movementProfile = getMovementProfile();
+    const baseMovementProfile = getMovementProfile();
     const forward = Number(state.move.forward) - Number(state.move.backward);
     const strafe = Number(state.move.right) - Number(state.move.left);
+    const runState = updateHoldToRunState(delta, forward);
+    const movementProfile = getDynamicMovementProfile(baseMovementProfile, runState);
     const turning = Number(state.turn.right) - Number(state.turn.left);
 
     if (turning !== 0) {
@@ -5521,7 +5601,9 @@
       player.rotation.y = state.yaw;
     }
 
-    const input = new THREE.Vector3(strafe, 0, -forward);
+    const runForwardFactor = forward > 0 ? (1 + ((HOLD_TO_RUN_FORWARD_MULTIPLIER - 1) * movementProfile.runBlend)) : 1;
+    const runStrafeFactor = 1 - (movementProfile.runBlend * 0.17);
+    const input = new THREE.Vector3(strafe * runStrafeFactor, 0, -forward * runForwardFactor);
     if (input.lengthSq() > 1) {
       input.normalize();
     }
@@ -5588,6 +5670,10 @@
     if (code === 'ArrowRight') state.turn.right = pressed;
     if (code === 'AltLeft' || code === 'AltRight') state.gait.precise = pressed;
     if (code === 'ShiftLeft' || code === 'ShiftRight') state.gait.traverse = pressed;
+    if ((code === 'KeyW' || code === 'ArrowUp') && !pressed) {
+      state.motion.runHoldSeconds = 0;
+      state.motion.runActive = false;
+    }
   }
 
   function handlePitchKeyControl(event) {
@@ -5619,6 +5705,9 @@
     state.motion.bobOffset = 0;
     state.motion.swayOffset = 0;
     state.motion.bobPhase = 0;
+    state.motion.runBlend = 0;
+    state.motion.runHoldSeconds = 0;
+    state.motion.runActive = false;
     state.motion.footstepTimer = 0;
     if (state.cameraMode === 'overview') {
       applyOverviewCameraPose();

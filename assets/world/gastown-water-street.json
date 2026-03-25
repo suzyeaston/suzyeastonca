@@ -73,9 +73,9 @@
       },
       {
         "id": "steam-clock",
-        "label": "Steam Clock plaza",
-        "x": 181.97,
-        "z": -154.73
+        "label": "Cambie / Steam Clock corner",
+        "x": 181.87,
+        "z": -154.81
       },
       {
         "id": "maple-tree-square-edge",
@@ -104,8 +104,8 @@
         "z": -186.87
       },
       {
-        "x": 186.97,
-        "z": -178.73
+        "x": 186.87,
+        "z": -178.81
       },
       {
         "x": 232.34,
@@ -132,8 +132,8 @@
         "z": -11
       }
     ],
-    "streetWidth": 9.8,
-    "sidewalkWidth": 5.199999999999999,
+    "streetWidth": 8.4,
+    "sidewalkWidth": 5.8999999999999995,
     "softBoundary": 3.6,
     "hardResetDistance": 12
   },
@@ -159,8 +159,8 @@
     {
       "id": "storefront-edge",
       "label": "Storefront edge",
-      "x": 125.74,
-      "z": -110.65
+      "x": 125.81,
+      "z": -110.6
     },
     {
       "id": "water-street-mid-block",
@@ -171,20 +171,20 @@
     {
       "id": "alley-threshold",
       "label": "Alley threshold",
-      "x": 195.52,
-      "z": -139.23
+      "x": 195.42,
+      "z": -139.31
     },
     {
       "id": "steam-clock",
-      "label": "Steam Clock plaza",
-      "x": 181.97,
-      "z": -154.73
+      "label": "Cambie / Steam Clock corner",
+      "x": 181.87,
+      "z": -154.81
     },
     {
       "id": "landmark-corner",
       "label": "Landmark corner",
-      "x": 181.63,
-      "z": -156.76
+      "x": 181.53,
+      "z": -156.84
     },
     {
       "id": "maple-tree-square-edge",
@@ -314,20 +314,20 @@
         "label": "Steam Clock plaza",
         "points": [
           {
-            "x": 183.71,
-            "z": -153.39
+            "x": 183.61,
+            "z": -153.47
           },
           {
-            "x": 184.52,
-            "z": -155.92
+            "x": 184.42,
+            "z": -156
           },
           {
-            "x": 181.65,
-            "z": -157.76
+            "x": 181.55,
+            "z": -157.84
           },
           {
-            "x": 180.14,
-            "z": -156.14
+            "x": 180.04,
+            "z": -156.21
           }
         ]
       },
@@ -420,64 +420,64 @@
         "surface": "road",
         "polygon": [
           {
-            "x": -3.16,
-            "z": -3.75
+            "x": -2.71,
+            "z": -3.21
           },
           {
-            "x": 25.88,
-            "z": -28.23
+            "x": 26.33,
+            "z": -27.7
           },
           {
-            "x": 60.08,
-            "z": -56.12
+            "x": 60.51,
+            "z": -55.57
           },
           {
-            "x": 107.31,
-            "z": -91.77
+            "x": 107.73,
+            "z": -91.21
           },
           {
-            "x": 149.37,
-            "z": -122.89
+            "x": 149.79,
+            "z": -122.33
           },
           {
-            "x": 194.95,
-            "z": -152.46
+            "x": 194.45,
+            "z": -151.97
           },
           {
-            "x": 192.39,
-            "z": -142.15
+            "x": 191.84,
+            "z": -142.58
           },
           {
-            "x": 184.63,
-            "z": -148.13
+            "x": 185.18,
+            "z": -147.7
           },
           {
-            "x": 188.01,
-            "z": -145.54
+            "x": 188.51,
+            "z": -146.03
           },
           {
-            "x": 155.26,
-            "z": -115.06
+            "x": 154.84,
+            "z": -115.62
           },
           {
-            "x": 113.18,
-            "z": -83.92
+            "x": 112.76,
+            "z": -84.48
           },
           {
-            "x": 66.13,
-            "z": -48.41
+            "x": 65.69,
+            "z": -48.96
           },
           {
-            "x": 32.14,
-            "z": -20.69
+            "x": 31.69,
+            "z": -21.23
           },
           {
-            "x": 3.16,
-            "z": 3.75
+            "x": 2.71,
+            "z": 3.21
           },
           {
-            "x": -3.16,
-            "z": -3.75
+            "x": -2.71,
+            "z": -3.21
           }
         ]
       },
@@ -486,24 +486,24 @@
         "surface": "road",
         "polygon": [
           {
-            "x": 190.53,
-            "z": -162.34
+            "x": 190.1,
+            "z": -161.79
           },
           {
-            "x": 204.62,
-            "z": -151.47
+            "x": 204.2,
+            "z": -150.92
           },
           {
-            "x": 196.75,
-            "z": -141.26
+            "x": 197.17,
+            "z": -141.81
           },
           {
-            "x": 182.65,
-            "z": -152.12
+            "x": 183.08,
+            "z": -152.68
           },
           {
-            "x": 190.53,
-            "z": -162.34
+            "x": 190.1,
+            "z": -161.79
           }
         ]
       },
@@ -512,32 +512,32 @@
         "surface": "road",
         "polygon": [
           {
-            "x": 202.15,
-            "z": -155.46
+            "x": 201.64,
+            "z": -155.85
           },
           {
-            "x": 188.73,
-            "z": -145.43
+            "x": 189.12,
+            "z": -145.94
           },
           {
-            "x": 206.77,
-            "z": -176.22
+            "x": 207.28,
+            "z": -175.82
           },
           {
-            "x": 213.91,
-            "z": -170.71
+            "x": 213.4,
+            "z": -171.11
           },
           {
-            "x": 194.23,
-            "z": -152.57
+            "x": 193.84,
+            "z": -152.06
           },
           {
-            "x": 195.01,
-            "z": -160.96
+            "x": 195.52,
+            "z": -160.57
           },
           {
-            "x": 202.15,
-            "z": -155.46
+            "x": 201.64,
+            "z": -155.85
           }
         ]
       },
@@ -546,32 +546,32 @@
         "surface": "road",
         "polygon": [
           {
-            "x": 204.64,
-            "z": -167.42
+            "x": 204.19,
+            "z": -167.65
           },
           {
-            "x": 194.58,
-            "z": -147.3
+            "x": 194.13,
+            "z": -147.55
           },
           {
-            "x": 182.51,
-            "z": -127.19
+            "x": 182.07,
+            "z": -127.45
           },
           {
-            "x": 176.46,
-            "z": -130.82
+            "x": 176.89,
+            "z": -130.56
           },
           {
-            "x": 188.39,
-            "z": -150.7
+            "x": 188.83,
+            "z": -150.46
           },
           {
-            "x": 198.33,
-            "z": -170.58
+            "x": 198.78,
+            "z": -170.35
           },
           {
-            "x": 204.64,
-            "z": -167.42
+            "x": 204.19,
+            "z": -167.65
           }
         ]
       }
@@ -582,32 +582,32 @@
         "side": "south",
         "polygon": [
           {
-            "x": 3.27,
-            "z": 3.88
+            "x": 2.82,
+            "z": 3.35
           },
           {
-            "x": 32.26,
-            "z": -20.55
+            "x": 31.81,
+            "z": -21.09
           },
           {
-            "x": 66.24,
-            "z": -48.26
+            "x": 65.81,
+            "z": -48.82
           },
           {
-            "x": 113.29,
-            "z": -83.77
+            "x": 112.87,
+            "z": -84.34
           },
           {
-            "x": 155.37,
-            "z": -114.92
+            "x": 154.95,
+            "z": -115.48
           },
           {
-            "x": 195.1,
-            "z": -145.37
+            "x": 194.6,
+            "z": -145.87
           },
           {
-            "x": 214.36,
-            "z": -170.36
+            "x": 213.81,
+            "z": -170.79
           },
           {
             "x": 218.5,
@@ -638,8 +638,8 @@
             "z": 7.88
           },
           {
-            "x": 3.27,
-            "z": 3.88
+            "x": 2.82,
+            "z": 3.35
           }
         ]
       },
@@ -676,32 +676,32 @@
             "z": -180.12
           },
           {
-            "x": 206.38,
-            "z": -176.52
+            "x": 206.93,
+            "z": -176.09
           },
           {
-            "x": 187.92,
-            "z": -152.57
+            "x": 188.42,
+            "z": -152.07
           },
           {
-            "x": 149.31,
-            "z": -122.97
+            "x": 149.73,
+            "z": -122.41
           },
           {
-            "x": 107.25,
-            "z": -91.85
+            "x": 107.67,
+            "z": -91.29
           },
           {
-            "x": 60.01,
-            "z": -56.2
+            "x": 60.45,
+            "z": -55.65
           },
           {
-            "x": 25.82,
-            "z": -28.31
+            "x": 26.27,
+            "z": -27.77
           },
           {
-            "x": -3.22,
-            "z": -3.82
+            "x": -2.77,
+            "z": -3.29
           },
           {
             "x": -7.03,
@@ -740,24 +740,24 @@
         "side": "storefront",
         "polygon": [
           {
-            "x": 121.49,
-            "z": -118.73
+            "x": 121.54,
+            "z": -118.69
           },
           {
-            "x": 134.47,
-            "z": -108.72
+            "x": 134.53,
+            "z": -108.68
           },
           {
-            "x": 129.83,
-            "z": -102.7
+            "x": 129.89,
+            "z": -102.66
           },
           {
-            "x": 116.85,
-            "z": -112.71
+            "x": 116.9,
+            "z": -112.67
           },
           {
-            "x": 121.49,
-            "z": -118.73
+            "x": 121.54,
+            "z": -118.69
           }
         ]
       },
@@ -766,24 +766,24 @@
         "side": "alley",
         "polygon": [
           {
-            "x": 195.05,
-            "z": -144.52
+            "x": 194.95,
+            "z": -144.6
           },
           {
-            "x": 200.75,
-            "z": -140.12
+            "x": 200.65,
+            "z": -140.2
           },
           {
-            "x": 195.99,
-            "z": -133.95
+            "x": 195.89,
+            "z": -134.02
           },
           {
-            "x": 190.29,
-            "z": -138.34
+            "x": 190.19,
+            "z": -138.42
           },
           {
-            "x": 195.05,
-            "z": -144.52
+            "x": 194.95,
+            "z": -144.6
           }
         ]
       },
@@ -792,16 +792,16 @@
         "side": "west",
         "polygon": [
           {
-            "x": 198.33,
-            "z": -170.58
+            "x": 198.78,
+            "z": -170.35
           },
           {
-            "x": 188.39,
-            "z": -150.7
+            "x": 188.83,
+            "z": -150.46
           },
           {
-            "x": 176.46,
-            "z": -130.82
+            "x": 176.89,
+            "z": -130.56
           },
           {
             "x": 171.17,
@@ -816,8 +816,8 @@
             "z": -173.34
           },
           {
-            "x": 198.33,
-            "z": -170.58
+            "x": 198.78,
+            "z": -170.35
           }
         ]
       },
@@ -852,24 +852,24 @@
         "side": "corner",
         "polygon": [
           {
-            "x": 187.44,
-            "z": -161.37
+            "x": 187.84,
+            "z": -161.07
           },
           {
-            "x": 194.41,
-            "z": -156
+            "x": 194.81,
+            "z": -155.69
           },
           {
-            "x": 189.77,
-            "z": -149.98
+            "x": 190.17,
+            "z": -149.67
           },
           {
-            "x": 182.8,
-            "z": -155.35
+            "x": 183.2,
+            "z": -155.05
           },
           {
-            "x": 187.44,
-            "z": -161.37
+            "x": 187.84,
+            "z": -161.07
           }
         ]
       },
@@ -878,24 +878,24 @@
         "side": "plaza",
         "polygon": [
           {
-            "x": 180.01,
-            "z": -164.51
+            "x": 179.91,
+            "z": -164.59
           },
           {
-            "x": 190.78,
-            "z": -156.21
+            "x": 190.68,
+            "z": -156.29
           },
           {
-            "x": 182.11,
-            "z": -144.96
+            "x": 182.01,
+            "z": -145.04
           },
           {
-            "x": 171.34,
-            "z": -153.27
+            "x": 171.24,
+            "z": -153.34
           },
           {
-            "x": 180.01,
-            "z": -164.51
+            "x": 179.91,
+            "z": -164.59
           }
         ]
       },
@@ -904,24 +904,24 @@
         "side": "corner",
         "polygon": [
           {
-            "x": 180.17,
-            "z": -162.56
+            "x": 180.07,
+            "z": -162.63
           },
           {
-            "x": 187.61,
-            "z": -156.82
+            "x": 187.51,
+            "z": -156.9
           },
           {
-            "x": 183.1,
-            "z": -150.96
+            "x": 183,
+            "z": -151.04
           },
           {
-            "x": 175.65,
-            "z": -156.7
+            "x": 175.55,
+            "z": -156.77
           },
           {
-            "x": 180.17,
-            "z": -162.56
+            "x": 180.07,
+            "z": -162.63
           }
         ]
       },
@@ -4751,9 +4751,9 @@
     {
       "id": "steam-clock-hero",
       "label": "Gastown Steam Clock",
-      "x": 181.97,
+      "x": 181.87,
       "y": 0,
-      "z": -154.73,
+      "z": -154.81,
       "yaw": -1.4421,
       "ground_emphasis_radius": 5.2,
       "steamVentOffsets": [
@@ -4810,9 +4810,9 @@
       "id": "steam-clock",
       "label": "Gastown Steam Clock",
       "kind": "clock",
-      "x": 181.97,
+      "x": 181.87,
       "y": 0,
-      "z": -154.73,
+      "z": -154.81,
       "radius": 5.2,
       "scale": 1.28,
       "cue": "A brick-and-stone plaza opens at the intersection and stages the Steam Clock at the corner landmark moment."
@@ -4887,18 +4887,18 @@
     {
       "id": "starter-prop-bench-clock",
       "kind": "bench",
-      "x": 179.12,
+      "x": 179.02,
       "y": 0,
-      "z": -154.65,
+      "z": -154.73,
       "yaw": 4.0557,
       "scale": 1.04
     },
     {
       "id": "starter-prop-clock-box",
       "kind": "newspaper_box",
-      "x": 180.88,
+      "x": 180.78,
       "y": 0,
-      "z": -157.59,
+      "z": -157.67,
       "yaw": 0,
       "scale": 0.98
     },
@@ -4932,9 +4932,9 @@
     {
       "id": "starter-prop-clock-plaque",
       "kind": "utility_box",
-      "x": 180.77,
+      "x": 180.67,
       "y": 0,
-      "z": -156.29,
+      "z": -156.37,
       "yaw": -2.2275,
       "scale": 0.65
     },
@@ -5029,8 +5029,8 @@
       "dialogId": "busker_clock_corner",
       "interactRadius": 3,
       "idleSpot": {
-        "x": 181.63,
-        "z": -150.7
+        "x": 181.53,
+        "z": -150.77
       }
     },
     {
@@ -5085,17 +5085,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 185.52,
-        "z": -154.27
+        "x": 185.42,
+        "z": -154.34
       },
       "patrol": [
         {
-          "x": 184.55,
-          "z": -153.5
+          "x": 184.45,
+          "z": -153.58
         },
         {
-          "x": 186.25,
-          "z": -154.72
+          "x": 186.15,
+          "z": -154.79
         }
       ]
     },
@@ -5109,17 +5109,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 184.59,
-        "z": -155.36
+        "x": 184.49,
+        "z": -155.44
       },
       "patrol": [
         {
-          "x": 183.89,
-          "z": -154.77
+          "x": 183.79,
+          "z": -154.85
         },
         {
-          "x": 185.22,
-          "z": -155.76
+          "x": 185.12,
+          "z": -155.84
         }
       ]
     },
@@ -5134,8 +5134,8 @@
       "dialogId": "tourist_clock_photo",
       "interactRadius": 2.4,
       "idleSpot": {
-        "x": 180.05,
-        "z": -155.2
+        "x": 179.95,
+        "z": -155.28
       }
     },
     {
@@ -5148,17 +5148,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 183.47,
-        "z": -157.99
+        "x": 183.37,
+        "z": -158.07
       },
       "patrol": [
         {
-          "x": 183.28,
-          "z": -157.26
+          "x": 183.18,
+          "z": -157.33
         },
         {
-          "x": 183.78,
-          "z": -158.89
+          "x": 183.68,
+          "z": -158.97
         }
       ]
     }
@@ -5211,24 +5211,24 @@
       "nodeId": "storefront-edge",
       "polygon": [
         {
-          "x": 121.49,
-          "z": -118.73
+          "x": 121.54,
+          "z": -118.69
         },
         {
-          "x": 134.47,
-          "z": -108.72
+          "x": 134.53,
+          "z": -108.68
         },
         {
-          "x": 129.83,
-          "z": -102.7
+          "x": 129.89,
+          "z": -102.66
         },
         {
-          "x": 116.85,
-          "z": -112.71
+          "x": 116.9,
+          "z": -112.67
         },
         {
-          "x": 121.49,
-          "z": -118.73
+          "x": 121.54,
+          "z": -118.69
         }
       ],
       "stopReasons": [
@@ -5247,24 +5247,24 @@
       "nodeId": "alley-threshold",
       "polygon": [
         {
-          "x": 195.05,
-          "z": -144.52
+          "x": 194.95,
+          "z": -144.6
         },
         {
-          "x": 200.75,
-          "z": -140.12
+          "x": 200.65,
+          "z": -140.2
         },
         {
-          "x": 195.99,
-          "z": -133.95
+          "x": 195.89,
+          "z": -134.02
         },
         {
-          "x": 190.29,
-          "z": -138.34
+          "x": 190.19,
+          "z": -138.42
         },
         {
-          "x": 195.05,
-          "z": -144.52
+          "x": 194.95,
+          "z": -144.6
         }
       ],
       "stopReasons": [
@@ -5278,29 +5278,29 @@
     },
     {
       "id": "steam-clock-plaza",
-      "label": "Steam Clock plaza",
+      "label": "Cambie / Steam Clock corner",
       "identity": "plaza",
       "nodeId": "steam-clock",
       "polygon": [
         {
-          "x": 180.01,
-          "z": -164.51
+          "x": 179.91,
+          "z": -164.59
         },
         {
-          "x": 190.78,
-          "z": -156.21
+          "x": 190.68,
+          "z": -156.29
         },
         {
-          "x": 182.11,
-          "z": -144.96
+          "x": 182.01,
+          "z": -145.04
         },
         {
-          "x": 171.34,
-          "z": -153.27
+          "x": 171.24,
+          "z": -153.34
         },
         {
-          "x": 180.01,
-          "z": -164.51
+          "x": 179.91,
+          "z": -164.59
         }
       ],
       "stopReasons": [
@@ -5319,24 +5319,24 @@
       "nodeId": "landmark-corner",
       "polygon": [
         {
-          "x": 180.17,
-          "z": -162.56
+          "x": 180.07,
+          "z": -162.63
         },
         {
-          "x": 187.61,
-          "z": -156.82
+          "x": 187.51,
+          "z": -156.9
         },
         {
-          "x": 183.1,
-          "z": -150.96
+          "x": 183,
+          "z": -151.04
         },
         {
-          "x": 175.65,
-          "z": -156.7
+          "x": 175.55,
+          "z": -156.77
         },
         {
-          "x": 180.17,
-          "z": -162.56
+          "x": 180.07,
+          "z": -162.63
         }
       ],
       "stopReasons": [
@@ -5437,98 +5437,98 @@
       },
       {
         "id": "starter-lamp-2",
-        "x": 12.66,
-        "z": -23.23,
+        "x": 12.67,
+        "z": -23.24,
         "height": 5.4
       },
       {
         "id": "starter-lamp-3",
-        "x": 25.03,
-        "z": -8.55,
+        "x": 25.05,
+        "z": -8.56,
         "height": 5.4
       },
       {
         "id": "starter-lamp-4",
-        "x": 31.74,
-        "z": -39.08,
+        "x": 31.77,
+        "z": -39.1,
         "height": 5.4
       },
       {
         "id": "starter-lamp-5",
-        "x": 43.88,
-        "z": -24.2,
+        "x": 43.91,
+        "z": -24.22,
         "height": 5.4
       },
       {
         "id": "starter-lamp-6",
-        "x": 50.84,
-        "z": -54.65,
+        "x": 50.89,
+        "z": -54.69,
         "height": 5.4
       },
       {
         "id": "starter-lamp-7",
-        "x": 62.98,
-        "z": -39.77,
+        "x": 63.03,
+        "z": -39.81,
         "height": 5.4
       },
       {
         "id": "starter-lamp-8",
-        "x": 70.62,
-        "z": -69.96,
+        "x": 70.68,
+        "z": -70.01,
         "height": 5.4
       },
       {
         "id": "starter-lamp-9",
-        "x": 82.18,
-        "z": -54.64,
+        "x": 82.25,
+        "z": -54.69,
         "height": 5.4
       },
       {
         "id": "starter-lamp-10",
-        "x": 90.29,
-        "z": -84.81,
+        "x": 90.38,
+        "z": -84.87,
         "height": 5.4
       },
       {
         "id": "starter-lamp-11",
-        "x": 101.86,
-        "z": -69.49,
+        "x": 101.94,
+        "z": -69.55,
         "height": 5.4
       },
       {
         "id": "starter-lamp-12",
-        "x": 110.08,
-        "z": -99.66,
+        "x": 110.18,
+        "z": -99.74,
         "height": 5.4
       },
       {
         "id": "starter-lamp-13",
-        "x": 121.5,
-        "z": -84.23,
+        "x": 121.6,
+        "z": -84.3,
         "height": 5.4
       },
       {
         "id": "starter-lamp-14",
-        "x": 129.89,
-        "z": -114.33,
+        "x": 130.01,
+        "z": -114.41,
         "height": 5.4
       },
       {
         "id": "starter-lamp-15",
-        "x": 141.31,
-        "z": -98.89,
+        "x": 141.43,
+        "z": -98.98,
         "height": 5.4
       },
       {
         "id": "starter-lamp-16",
-        "x": 149.54,
-        "z": -128.94,
+        "x": 149.67,
+        "z": -129.05,
         "height": 5.4
       },
       {
         "id": "starter-lamp-17",
-        "x": 161.22,
-        "z": -113.71,
+        "x": 161.35,
+        "z": -113.81,
         "height": 5.4
       }
     ],
@@ -5547,70 +5547,70 @@
       },
       {
         "id": "starter-tree-2",
-        "x": 24.51,
-        "z": -36.79,
+        "x": 24.54,
+        "z": -36.82,
         "radius": 1.4
       },
       {
         "id": "starter-tree-3",
-        "x": 40.19,
-        "z": -17.57,
+        "x": 40.21,
+        "z": -17.6,
         "radius": 1.4
       },
       {
         "id": "starter-tree-4",
-        "x": 57.69,
-        "z": -63.71,
+        "x": 57.74,
+        "z": -63.75,
         "radius": 1.4
       },
       {
         "id": "starter-tree-5",
-        "x": 72.63,
-        "z": -43.92,
+        "x": 72.68,
+        "z": -43.96,
         "radius": 1.4
       },
       {
         "id": "starter-tree-6",
-        "x": 91.42,
-        "z": -89.17,
+        "x": 91.5,
+        "z": -89.23,
         "radius": 1.4
       },
       {
         "id": "starter-tree-7",
-        "x": 106.36,
-        "z": -69.37,
+        "x": 106.44,
+        "z": -69.44,
         "radius": 1.4
       },
       {
         "id": "starter-tree-8",
-        "x": 125.39,
-        "z": -114.48,
+        "x": 125.51,
+        "z": -114.57,
         "radius": 1.4
       },
       {
         "id": "starter-tree-9",
-        "x": 140.15,
-        "z": -94.55,
+        "x": 140.26,
+        "z": -94.63,
         "radius": 1.4
       }
     ],
     "bollards": [
       {
         "id": "clock-bollard-a",
-        "x": 184.02,
-        "z": -153.15
+        "x": 183.92,
+        "z": -153.22
       },
       {
         "id": "clock-bollard-b",
-        "x": 185.21,
-        "z": -155.01,
+        "x": 185.11,
+        "z": -155.09,
         "chain_to": "clock-bollard-a"
       }
     ],
     "surfaceBands": [
       {
         "segment_id": "waterfront-station-threshold",
-        "width": 9.6,
+        "width": 8.23,
         "length": 19.61,
         "yaw": 2.2712,
         "offset_x": 0,
@@ -5621,7 +5621,7 @@
       },
       {
         "segment_id": "waterfront-station-threshold",
-        "width": 2.74,
+        "width": 2.35,
         "length": 15.91,
         "yaw": 2.2712,
         "offset_x": 0,
@@ -5632,10 +5632,10 @@
       },
       {
         "segment_id": "waterfront-station-threshold",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.2712,
-        "offset_x": 4.02,
+        "offset_x": 3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5643,10 +5643,10 @@
       },
       {
         "segment_id": "waterfront-station-threshold",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.2712,
-        "offset_x": -4.02,
+        "offset_x": -3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5654,7 +5654,7 @@
       },
       {
         "segment_id": "gastown-beat-1",
-        "width": 9.6,
+        "width": 8.23,
         "length": 19.61,
         "yaw": 2.2548,
         "offset_x": 0,
@@ -5665,7 +5665,7 @@
       },
       {
         "segment_id": "gastown-beat-1",
-        "width": 2.74,
+        "width": 2.35,
         "length": 15.91,
         "yaw": 2.2548,
         "offset_x": 0,
@@ -5676,10 +5676,10 @@
       },
       {
         "segment_id": "gastown-beat-1",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.2548,
-        "offset_x": 4.02,
+        "offset_x": 3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5687,10 +5687,10 @@
       },
       {
         "segment_id": "gastown-beat-1",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.2548,
-        "offset_x": -4.02,
+        "offset_x": -3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5698,7 +5698,7 @@
       },
       {
         "segment_id": "water-cordova-seam",
-        "width": 9.6,
+        "width": 8.23,
         "length": 19.61,
         "yaw": 2.2279,
         "offset_x": 0,
@@ -5709,7 +5709,7 @@
       },
       {
         "segment_id": "water-cordova-seam",
-        "width": 2.74,
+        "width": 2.35,
         "length": 15.91,
         "yaw": 2.2279,
         "offset_x": 0,
@@ -5720,10 +5720,10 @@
       },
       {
         "segment_id": "water-cordova-seam",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.2279,
-        "offset_x": 4.02,
+        "offset_x": 3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5731,10 +5731,10 @@
       },
       {
         "segment_id": "water-cordova-seam",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.2279,
-        "offset_x": -4.02,
+        "offset_x": -3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5742,7 +5742,7 @@
       },
       {
         "segment_id": "gastown-beat-3",
-        "width": 9.6,
+        "width": 8.23,
         "length": 19.61,
         "yaw": 2.213,
         "offset_x": 0,
@@ -5753,7 +5753,7 @@
       },
       {
         "segment_id": "gastown-beat-3",
-        "width": 2.74,
+        "width": 2.35,
         "length": 15.91,
         "yaw": 2.213,
         "offset_x": 0,
@@ -5764,10 +5764,10 @@
       },
       {
         "segment_id": "gastown-beat-3",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.213,
-        "offset_x": 4.02,
+        "offset_x": 3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5775,10 +5775,10 @@
       },
       {
         "segment_id": "gastown-beat-3",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.213,
-        "offset_x": -4.02,
+        "offset_x": -3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5786,7 +5786,7 @@
       },
       {
         "segment_id": "water-street-mid-block",
-        "width": 9.6,
+        "width": 8.23,
         "length": 19.61,
         "yaw": 2.2136,
         "offset_x": 0,
@@ -5797,7 +5797,7 @@
       },
       {
         "segment_id": "water-street-mid-block",
-        "width": 2.74,
+        "width": 2.35,
         "length": 15.91,
         "yaw": 2.2136,
         "offset_x": 0,
@@ -5808,10 +5808,10 @@
       },
       {
         "segment_id": "water-street-mid-block",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.2136,
-        "offset_x": 4.02,
+        "offset_x": 3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5819,10 +5819,10 @@
       },
       {
         "segment_id": "water-street-mid-block",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.2136,
-        "offset_x": -4.02,
+        "offset_x": -3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5830,9 +5830,9 @@
       },
       {
         "segment_id": "steam-clock-approach",
-        "width": 9.6,
-        "length": 11.46,
-        "yaw": -2.2547,
+        "width": 8.23,
+        "length": 11.59,
+        "yaw": -2.2546,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "asphalt_patchwork",
@@ -5841,9 +5841,9 @@
       },
       {
         "segment_id": "steam-clock-approach",
-        "width": 2.74,
-        "length": 9.3,
-        "yaw": -2.2547,
+        "width": 2.35,
+        "length": 9.4,
+        "yaw": -2.2546,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "tram_polish",
@@ -5852,10 +5852,10 @@
       },
       {
         "segment_id": "steam-clock-approach",
-        "width": 1.08,
-        "length": 11.24,
-        "yaw": -2.2547,
-        "offset_x": 4.02,
+        "width": 0.92,
+        "length": 11.37,
+        "yaw": -2.2546,
+        "offset_x": 3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5863,10 +5863,10 @@
       },
       {
         "segment_id": "steam-clock-approach",
-        "width": 1.08,
-        "length": 11.24,
-        "yaw": -2.2547,
-        "offset_x": -4.02,
+        "width": 0.92,
+        "length": 11.37,
+        "yaw": -2.2546,
+        "offset_x": -3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5874,9 +5874,9 @@
       },
       {
         "segment_id": "steam-clock-approach",
-        "width": 6.08,
-        "length": 3.89,
-        "yaw": -2.2547,
+        "width": 5.21,
+        "length": 3.94,
+        "yaw": -2.2546,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "setts_patch",
@@ -5885,9 +5885,9 @@
       },
       {
         "segment_id": "steam-clock-approach",
-        "width": 8.04,
+        "width": 6.89,
         "length": 7.2,
-        "yaw": -2.2547,
+        "yaw": -2.2546,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "intersection_pavers",
@@ -5896,9 +5896,9 @@
       },
       {
         "segment_id": "steam-clock-approach",
-        "width": 4.12,
+        "width": 3.53,
         "length": 5.8,
-        "yaw": -2.2547,
+        "yaw": -2.2546,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "cobble_break",
@@ -5907,10 +5907,10 @@
       },
       {
         "segment_id": "steam-clock-approach",
-        "width": 2.55,
+        "width": 2.18,
         "length": 4.8,
-        "yaw": -2.2547,
-        "offset_x": 1.76,
+        "yaw": -2.2546,
+        "offset_x": 1.51,
         "offset_z": 0,
         "tone": "service_wear",
         "opacity": 0.16,
@@ -5918,10 +5918,10 @@
       },
       {
         "segment_id": "steam-clock-approach",
-        "width": 2.55,
+        "width": 2.18,
         "length": 4.8,
-        "yaw": -2.2547,
-        "offset_x": -1.76,
+        "yaw": -2.2546,
+        "offset_x": -1.51,
         "offset_z": 0,
         "tone": "service_wear",
         "opacity": 0.16,
@@ -5929,9 +5929,9 @@
       },
       {
         "segment_id": "steam-clock",
-        "width": 9.6,
+        "width": 8.23,
         "length": 19.61,
-        "yaw": 2.1543,
+        "yaw": 2.1507,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "asphalt_patchwork",
@@ -5940,9 +5940,9 @@
       },
       {
         "segment_id": "steam-clock",
-        "width": 2.74,
+        "width": 2.35,
         "length": 15.91,
-        "yaw": 2.1543,
+        "yaw": 2.1507,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "tram_polish",
@@ -5951,10 +5951,10 @@
       },
       {
         "segment_id": "steam-clock",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
-        "yaw": 2.1543,
-        "offset_x": 4.02,
+        "yaw": 2.1507,
+        "offset_x": 3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5962,10 +5962,10 @@
       },
       {
         "segment_id": "steam-clock",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
-        "yaw": 2.1543,
-        "offset_x": -4.02,
+        "yaw": 2.1507,
+        "offset_x": -3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -5973,9 +5973,9 @@
       },
       {
         "segment_id": "steam-clock",
-        "width": 6.08,
+        "width": 5.21,
         "length": 6.66,
-        "yaw": 2.1543,
+        "yaw": 2.1507,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "setts_patch",
@@ -5984,9 +5984,9 @@
       },
       {
         "segment_id": "steam-clock",
-        "width": 8.04,
+        "width": 6.89,
         "length": 9.99,
-        "yaw": 2.1543,
+        "yaw": 2.1507,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "intersection_pavers",
@@ -5995,9 +5995,9 @@
       },
       {
         "segment_id": "steam-clock",
-        "width": 4.12,
+        "width": 3.53,
         "length": 5.8,
-        "yaw": 2.1543,
+        "yaw": 2.1507,
         "offset_x": 0,
         "offset_z": 0,
         "tone": "cobble_break",
@@ -6006,10 +6006,10 @@
       },
       {
         "segment_id": "steam-clock",
-        "width": 2.55,
+        "width": 2.18,
         "length": 4.8,
-        "yaw": 2.1543,
-        "offset_x": 1.76,
+        "yaw": 2.1507,
+        "offset_x": 1.51,
         "offset_z": 0,
         "tone": "service_wear",
         "opacity": 0.16,
@@ -6017,10 +6017,10 @@
       },
       {
         "segment_id": "steam-clock",
-        "width": 2.55,
+        "width": 2.18,
         "length": 4.8,
-        "yaw": 2.1543,
-        "offset_x": -1.76,
+        "yaw": 2.1507,
+        "offset_x": -1.51,
         "offset_z": 0,
         "tone": "service_wear",
         "opacity": 0.16,
@@ -6028,7 +6028,7 @@
       },
       {
         "segment_id": "maple-tree-square-edge",
-        "width": 9.6,
+        "width": 8.23,
         "length": 19.61,
         "yaw": -0.6078,
         "offset_x": 0,
@@ -6039,7 +6039,7 @@
       },
       {
         "segment_id": "maple-tree-square-edge",
-        "width": 2.74,
+        "width": 2.35,
         "length": 15.91,
         "yaw": -0.6078,
         "offset_x": 0,
@@ -6050,10 +6050,10 @@
       },
       {
         "segment_id": "maple-tree-square-edge",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": -0.6078,
-        "offset_x": 4.02,
+        "offset_x": 3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -6061,10 +6061,10 @@
       },
       {
         "segment_id": "maple-tree-square-edge",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": -0.6078,
-        "offset_x": -4.02,
+        "offset_x": -3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -6072,7 +6072,7 @@
       },
       {
         "segment_id": "maple-tree-square-edge",
-        "width": 6.08,
+        "width": 5.21,
         "length": 6.66,
         "yaw": -0.6078,
         "offset_x": 0,
@@ -6083,7 +6083,7 @@
       },
       {
         "segment_id": "cambie-rise-continuation",
-        "width": 9.6,
+        "width": 8.23,
         "length": 19.61,
         "yaw": 2.5338,
         "offset_x": 0,
@@ -6094,7 +6094,7 @@
       },
       {
         "segment_id": "cambie-rise-continuation",
-        "width": 2.74,
+        "width": 2.35,
         "length": 15.91,
         "yaw": 2.5338,
         "offset_x": 0,
@@ -6105,10 +6105,10 @@
       },
       {
         "segment_id": "cambie-rise-continuation",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.5338,
-        "offset_x": 4.02,
+        "offset_x": 3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -6116,10 +6116,10 @@
       },
       {
         "segment_id": "cambie-rise-continuation",
-        "width": 1.08,
+        "width": 0.92,
         "length": 19.24,
         "yaw": 2.5338,
-        "offset_x": -4.02,
+        "offset_x": -3.44,
         "offset_z": 0,
         "tone": "curb_grime",
         "opacity": 0.2,
@@ -6127,7 +6127,7 @@
       },
       {
         "segment_id": "cambie-rise-continuation",
-        "width": 6.08,
+        "width": 5.21,
         "length": 6.66,
         "yaw": 2.5338,
         "offset_x": 0,
@@ -6153,10 +6153,11 @@
     ]
   },
   "spawn": {
-    "x": 6.88,
+    "x": 33.26,
     "y": 1.7,
-    "z": -5.8,
-    "yaw": -0.8704
+    "z": -28.03,
+    "yaw": -0.8704,
+    "pitch": -0.035
   },
   "bounds": {
     "floorY": 0,

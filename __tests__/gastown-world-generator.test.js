@@ -85,6 +85,11 @@ test('generator keeps world polygons valid with existing or generated output', (
       assert.equal(data.navigator.focusCorridor.length >= 4, true, 'working fallback should expose at least west leg, plaza loop, east leg, and Cambie crossing minimap corridors');
       assert.equal(data.navigator.focusCorridor.some((segment) => segment.id === 'steam-clock-plaza-loop'), true, 'working fallback should expose a plaza loop in navigator data');
       assert.equal(data.navigator.focusCorridor.some((segment) => segment.id === 'cambie-crossing'), true, 'working fallback should expose a Cambie crossing in navigator data');
+      data.navigator.focusCorridor.forEach((segment) => {
+        assert.equal(Array.isArray(segment.points), true, segment.id + ' should expose minimap points');
+        assert.equal(segment.points.length >= 2, true, segment.id + ' should expose at least two minimap points');
+        assertFinitePoints(segment.points);
+      });
 
       const steamClockNode = data.nodes.find((node) => node.id === 'steam-clock');
       const approachNode = data.route.centerline.find((node) => node.id === 'steam-clock-approach');
@@ -141,6 +146,7 @@ test('committed world json files include the expanded intersection-based fallbac
     assert.equal(data.meta.buildClassification, 'approximate-fallback', relPath + ' should keep fallback build classification explicit');
     assert.match(data.meta.provenanceSummary, /Approximate fallback corridor retained/, relPath + ' should keep fallback provenance explicit');
     assert.ok(data.nodes.some((node) => node.id === 'water-cordova-seam'), relPath + ' should include the Water/Cordova seam node');
+    assert.equal(data.nodes.find((node) => node.id === 'steam-clock').label, 'Cambie / Steam Clock corner', relPath + ' should label the Steam Clock node as a corner');
     assert.ok(data.nodes.some((node) => node.id === 'maple-tree-square-edge'), relPath + ' should include the Maple Tree Square edge node');
     assert.ok(data.nodes.some((node) => node.id === 'water-cambie-intersection'), relPath + ' should include the Water/Cambie intersection node');
     assert.ok(Array.isArray(data.streetscape.surfaceBands) && data.streetscape.surfaceBands.length === 48, relPath + ' should constrain surface band clutter while allowing the hero block extra wear detail');

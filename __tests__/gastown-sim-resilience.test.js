@@ -44,3 +44,17 @@ test('runtime init renders core world first and defers optional systems', () => 
   assert.match(block, /try \{ if \(RUNTIME_PROFILE\.deferAudioSetup\) setupAudio\(state\.world\); \}/);
   assert.match(block, /setStatus\('Gastown working corridor ready\. Click in to explore\.'/);
 });
+
+test('movement model supports hold-to-run with smooth activation and reset', () => {
+  assert.match(src, /const HOLD_TO_RUN_THRESHOLD_SECONDS = 0\.34/);
+  assert.match(src, /const HOLD_TO_RUN_FORWARD_MULTIPLIER = 1\.58/);
+  assert.match(src, /function updateHoldToRunState\(delta, forwardInput\)/);
+  assert.match(src, /state\.motion\.runHoldSeconds \+= delta/);
+  assert.match(src, /state\.motion\.runActive = !state\.gait\.precise && state\.cameraMode === 'street' && \(holdRunActive \|\| shiftRunActive\)/);
+  assert.match(src, /function getDynamicMovementProfile\(baseProfile, runState\)/);
+  assert.match(src, /runForwardFactor = forward > 0 \? \(1 \+ \(\(HOLD_TO_RUN_FORWARD_MULTIPLIER - 1\) \* movementProfile\.runBlend\)\) : 1/);
+  assert.match(src, /runStrafeFactor = 1 - \(movementProfile\.runBlend \* 0\.17\)/);
+  assert.match(src, /state\.motion\.runBlend = 0;/);
+  assert.match(src, /state\.motion\.runHoldSeconds = 0;/);
+  assert.match(src, /state\.motion\.runActive = false;/);
+});

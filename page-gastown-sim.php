@@ -65,8 +65,8 @@ get_header();
         <ul>
           <li><strong>Click</strong> to step into the street</li>
           <li><strong>Mouse</strong> look</li>
-          <li><strong>W A S D</strong> move</li>
-          <li><strong>Arrow keys</strong> move / turn</li>
+          <li><strong>W / ↑</strong> hold to run (Shift still works)</li>
+          <li><strong>A S D + arrows</strong> move / turn</li>
           <li><strong>E / click</strong> interact</li>
           <li><strong>Esc</strong> close / release</li>
         </ul>
