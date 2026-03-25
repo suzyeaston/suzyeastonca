@@ -39,5 +39,6 @@ test('simulator page copy presents working corridor as intended product', () => 
 
   assert.match(php, /Gastown working corridor/);
   assert.match(php, /deterministic local world build/);
+  assert.match(php, /hold to run/);
   assert.doesNotMatch(php, /AI-generated welcome/);
 });

@@ -889,8 +889,8 @@ function makeStarterWorld(outputPath, options = {}) {
   const intersectionFrame = starterRouteFrame(waterCenterline, Math.max(0, polylineLength(waterCenterline) * 0.9));
   const rowProps = getProps(rowWidthFeature);
   const rightOfWayWidth = sanitizeNumber(Number(rowProps.right_of_way_width || rowProps.row_width || rowProps.width_m), streetContextFeatures.length ? 19.6 : 20.2);
-  const streetWidth = sanitizeNumber(Number(rowProps.carriageway_width || rowProps.roadway_width || rowProps.street_width), streetContextFeatures.length ? 9.4 : 9.8);
-  const sidewalkWidth = sanitizeNumber(Number(rowProps.sidewalk_width || ((rightOfWayWidth - streetWidth) / 2)), Array.isArray(reference.buildingCues && reference.buildingCues.features) ? 5.1 : 4.9);
+  const streetWidth = sanitizeNumber(Number(rowProps.carriageway_width || rowProps.roadway_width || rowProps.street_width), streetContextFeatures.length ? 8.8 : 8.4);
+  const sidewalkWidth = sanitizeNumber(Number(rowProps.sidewalk_width || ((rightOfWayWidth - streetWidth) / 2)), Array.isArray(reference.buildingCues && reference.buildingCues.features) ? 5.4 : 5.2);
   const softBoundary = 3.6;
   const streetHalf = streetWidth / 2;
   const sidewalkOuter = streetHalf + sidewalkWidth;
@@ -932,7 +932,7 @@ function makeStarterWorld(outputPath, options = {}) {
     { id: 'gastown-beat-3', label: 'West Water Street', x: Number(samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.4).x.toFixed(2)), z: Number(samplePointAtDistance(waterCenterline, polylineLength(waterCenterline) * 0.4).z.toFixed(2)) },
     { id: 'water-street-mid-block', label: 'Water Street mid block', x: Number(layout.midBlock.x.toFixed(2)), z: Number(layout.midBlock.z.toFixed(2)) },
     { id: 'steam-clock-approach', label: 'Steam Clock approach', x: Number((intersectionPoint.x - (intersectionFrame.tangent.x * 5.1)).toFixed(2)), z: Number((intersectionPoint.z - (intersectionFrame.tangent.z * 5.1)).toFixed(2)) },
-    { id: 'steam-clock', label: 'Steam Clock plaza', x: Number(layout.clock.x.toFixed(2)), z: Number(layout.clock.z.toFixed(2)) },
+    { id: 'steam-clock', label: 'Cambie / Steam Clock corner', x: Number(layout.clock.x.toFixed(2)), z: Number(layout.clock.z.toFixed(2)) },
     { id: 'maple-tree-square-edge', label: 'Maple Tree Square edge', x: Number(layout.mapleEdge.x.toFixed(2)), z: Number(layout.mapleEdge.z.toFixed(2)) },
     { id: 'cambie-rise-continuation', label: 'Cambie rise continuation', x: Number(layout.cambie.x.toFixed(2)), z: Number(layout.cambie.z.toFixed(2)) },
   ];
@@ -1144,7 +1144,7 @@ function makeStarterWorld(outputPath, options = {}) {
   }
 
   const spawnDir = normalize({ x: centerline[1].x - centerline[0].x, z: centerline[1].z - centerline[0].z });
-  const spawn = { x: Number((centerline[0].x + (spawnDir.x * 9)).toFixed(2)), y: 1.7, z: Number((centerline[0].z + (spawnDir.z * 9)).toFixed(2)), yaw: Number(Math.atan2(-spawnDir.x, -spawnDir.z).toFixed(4)) };
+  const spawn = { x: Number((centerline[1].x + (spawnDir.x * 5.2)).toFixed(2)), y: 1.7, z: Number((centerline[1].z + (spawnDir.z * 5.2)).toFixed(2)), yaw: Number(Math.atan2(-spawnDir.x, -spawnDir.z).toFixed(4)), pitch: -0.035 };
 
   const props = [
     placeStarterProp(waterCenterline, 18, -(sidewalkOuter + 0.55), 'starter-prop-threshold-box', 'newspaper_box', { scale: 1.05 }),
@@ -1225,7 +1225,7 @@ function makeStarterWorld(outputPath, options = {}) {
       { id: 'storefront-edge', label: 'Storefront edge', x: Number((layout.midBlock.x - (intersectionFrame.normal.x * (streetHalf + (sidewalkWidth * 0.88)))).toFixed(2)), z: Number((layout.midBlock.z - (intersectionFrame.normal.z * (streetHalf + (sidewalkWidth * 0.88)))).toFixed(2)) },
       { ...centerline[4], label: 'Water Street mid block' },
       { id: 'alley-threshold', label: 'Alley threshold', x: Number((intersectionPoint.x - (intersectionFrame.tangent.x * 8.8) + (intersectionFrame.normal.x * (streetHalf + (sidewalkWidth * 0.82)))).toFixed(2)), z: Number((intersectionPoint.z - (intersectionFrame.tangent.z * 8.8) + (intersectionFrame.normal.z * (streetHalf + (sidewalkWidth * 0.82)))).toFixed(2)) },
-      { ...centerline[6], label: 'Steam Clock plaza' },
+      { ...centerline[6], label: 'Cambie / Steam Clock corner' },
       { id: 'landmark-corner', label: 'Landmark corner', x: Number((layout.clock.x + (layout.plaza.tangent.x * 1.4) + (layout.plaza.normal.x * 1.5)).toFixed(2)), z: Number((layout.clock.z + (layout.plaza.tangent.z * 1.4) + (layout.plaza.normal.z * 1.5)).toFixed(2)) },
       { ...centerline[7], label: 'Maple Tree Square edge' },
       { id: 'transit-edge', label: 'Transit edge', x: Number((layout.cambie.x - (layout.plaza.normal.x * 2.2) - (layout.plaza.tangent.x * 1.8)).toFixed(2)), z: Number((layout.cambie.z - (layout.plaza.normal.z * 2.2) - (layout.plaza.tangent.z * 1.8)).toFixed(2)) },
@@ -1309,7 +1309,7 @@ function makeStarterWorld(outputPath, options = {}) {
       { id: 'station-plaza', label: 'Station plaza', identity: 'transit edge', nodeId: 'station-plaza', polygon: stationPlaza, stopReasons: ['Watch people spill out from Waterfront Station.', 'Reorient before committing to Water Street.'], returnReasons: ['It works as a reliable reset point.', 'The wider pad gives you a clear view back into Gastown.'] },
       { id: 'storefront-edge', label: 'Storefront edge', identity: 'storefront edge', nodeId: 'storefront-edge', polygon: storefrontEdge, stopReasons: ['Window-shop the heritage frontage rhythm.', 'Use the pocket as a pause between the station and the clock.'], returnReasons: ['It makes a good midway meeting point.', 'The tighter edge reveals the street from a different angle on the way back.'] },
       { id: 'alley-threshold', label: 'Alley threshold', identity: 'alley threshold', nodeId: 'alley-threshold', polygon: alleyThreshold, stopReasons: ['Peek into the service lane without leaving the public edge.', 'Listen for the quieter pocket off the main block.'], returnReasons: ['It turns the approach into a loop instead of a one-way run.', 'The threshold frames the Steam Clock corner from the side.'] },
-      { id: 'steam-clock-plaza', label: 'Steam Clock plaza', identity: 'plaza', nodeId: 'steam-clock', polygon: plazaPad, stopReasons: ['Pause for the clock, seating, and busker activity.', 'Use the open pad to decide where to head next.'], returnReasons: ['The plaza is the natural social hub.', 'It links back out to Water Street and Maple Tree Square.'] },
+      { id: 'steam-clock-plaza', label: 'Cambie / Steam Clock corner', identity: 'plaza', nodeId: 'steam-clock', polygon: plazaPad, stopReasons: ['Pause for the clock, seating, and busker activity.', 'Use the open pad to decide where to head next.'], returnReasons: ['The plaza is the natural social hub.', 'It links back out to Water Street and Maple Tree Square.'] },
       { id: 'landmark-corner', label: 'Landmark corner', identity: 'landmark corner', nodeId: 'landmark-corner', polygon: landmarkCorner, stopReasons: ['Take in the clock and corner facades together.', 'Catch the diagonal view into Maple Tree Square.'], returnReasons: ['It is the clearest landmark rendezvous point.', 'The corner keeps changing depending on approach direction.'] },
       { id: 'maple-tree-square-pocket', label: 'Maple Tree Square pocket', identity: 'plaza edge', nodeId: 'maple-tree-square-edge', polygon: mapleTriangle, stopReasons: ['Step to the square edge for the crossroads feel.', 'Use the pocket as the eastern half of the loop.'], returnReasons: ['It rewards a second pass after circling the clock.', 'The square reads differently when you approach from Cambie.'] },
       { id: 'transit-edge', label: 'Transit edge', identity: 'transit edge', nodeId: 'transit-edge', polygon: transitEdge, stopReasons: ['Look uphill toward the Cambie continuation.', 'Feel the district open toward the station/transit seam.'], returnReasons: ['It gives the loop a practical edge instead of a dead end.', 'The shift in grade changes your sense of the block.'] },
