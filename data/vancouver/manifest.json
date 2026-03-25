@@ -1,0 +1,44 @@
+﻿[
+    {
+        "key":  "bia",
+        "datasetId":  "business-improvement-areas-bia",
+        "format":  "geojson",
+        "localFile":  "C:\\scripts\\data\\vancouver\\raw\\bia.geojson",
+        "downloaded":  "2026-03-25T01:33:28.7977644-07:00"
+    },
+    {
+        "key":  "local_areas",
+        "datasetId":  "local-area-boundary",
+        "format":  "geojson",
+        "localFile":  "C:\\scripts\\data\\vancouver\\raw\\local_areas.geojson",
+        "downloaded":  "2026-03-25T01:33:29.1269578-07:00"
+    },
+    {
+        "key":  "heritage",
+        "datasetId":  "heritage-sites",
+        "format":  "geojson",
+        "localFile":  "C:\\scripts\\data\\vancouver\\raw\\heritage.geojson",
+        "downloaded":  "2026-03-25T01:33:31.4721712-07:00"
+    },
+    {
+        "key":  "public_art",
+        "datasetId":  "public-art",
+        "format":  "geojson",
+        "localFile":  "C:\\scripts\\data\\vancouver\\raw\\public_art.geojson",
+        "downloaded":  "2026-03-25T01:33:32.9740632-07:00"
+    },
+    {
+        "key":  "intersections",
+        "datasetId":  "street-intersections",
+        "format":  "geojson",
+        "localFile":  "C:\\scripts\\data\\vancouver\\raw\\intersections.geojson",
+        "downloaded":  "2026-03-25T01:33:35.3574082-07:00"
+    },
+    {
+        "key":  "street_projects",
+        "datasetId":  "city-project-package-street",
+        "format":  "geojson",
+        "localFile":  "C:\\scripts\\data\\vancouver\\raw\\street_projects.geojson",
+        "downloaded":  "2026-03-25T01:33:36.3117773-07:00"
+    }
+]
