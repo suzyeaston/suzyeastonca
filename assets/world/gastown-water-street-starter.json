@@ -9,8 +9,8 @@
     "buildClassification": "approximate-fallback",
     "buildNotes": [
       "Working fallback corridor is active because required offline civic source files are missing.",
-      "This fallback now stages narrower Water Street carriageways, corrected curb edges, and a larger corner plaza so the Water/Cambie geometry reads closer to Gastown.",
-      "The Water Street / Steam Clock block carries a higher fidelity budget with more varied frontage widths, paving wear, and sightline staging than the rest of the route.",
+      "Fallback geometry is now compressed to a two-block walk from the Water/Cordova seam to the Steam Clock so pacing matches the real corridor feel.",
+      "Street staging now favors clearer city rhythm: consistent sidewalks, moving pedestrians, and a compact band zone near the clock.",
       "No refreshed reference inputs were present; deterministic default route staging was used."
     ],
     "referenceInputsUsed": [],
@@ -22,11 +22,11 @@
       "buildingFootprints2015": false,
       "orthophotoImagery2015": false
     },
-    "provenanceSummary": "Approximate fallback corridor retained because the offline civic/open-data pipeline did not have all required local inputs.",
+    "provenanceSummary": "Approximate fallback corridor retained and compressed to a two-block Steam Clock approach while civic/open-data inputs remain unavailable.",
     "lastBuild": "2026-03-23T06:53:17.008Z"
   },
   "route": {
-    "name": "Waterfront Station → Water Street → Steam Clock working corridor",
+    "name": "Waterfront Station \u2192 Water Street \u2192 Steam Clock compact fallback corridor",
     "centerline": [
       {
         "id": "waterfront-station-threshold",
@@ -49,38 +49,38 @@
       {
         "id": "gastown-beat-3",
         "label": "West Water Street",
-        "x": 85.05,
-        "z": -68.82
+        "x": 68.68,
+        "z": -56.19
       },
       {
         "id": "water-street-mid-block",
         "label": "Water Street mid block",
-        "x": 133.25,
-        "z": -104.87
+        "x": 90.85,
+        "z": -72.77
       },
       {
         "id": "steam-clock-approach",
         "label": "Steam Clock approach",
-        "x": 190.52,
-        "z": -147.76
+        "x": 117.19,
+        "z": -92.5
       },
       {
         "id": "steam-clock",
         "label": "Steam Clock plaza",
-        "x": 181.97,
-        "z": -154.73
+        "x": 113.26,
+        "z": -95.71
       },
       {
         "id": "maple-tree-square-edge",
         "label": "Maple Tree Square edge",
-        "x": 210.34,
-        "z": -173.46
+        "x": 126.31,
+        "z": -104.32
       },
       {
         "id": "cambie-rise-continuation",
         "label": "Cambie rise continuation",
-        "x": 187.48,
-        "z": -140.6
+        "x": 115.8,
+        "z": -89.21
       }
     ],
     "walkBounds": [
@@ -93,56 +93,56 @@
         "z": -35.01
       },
       {
-        "x": 54.64,
-        "z": -63.04
+        "x": 54.69,
+        "z": -53.53
       },
       {
-        "x": 102.04,
-        "z": -98.82
+        "x": 76.49,
+        "z": -69.99
       },
       {
-        "x": 144.07,
-        "z": -129.92
+        "x": 95.83,
+        "z": -84.3
       },
       {
-        "x": 167.19,
-        "z": -147.64
+        "x": 106.46,
+        "z": -92.45
       },
       {
-        "x": 181.97,
-        "z": -154.73
+        "x": 113.26,
+        "z": -95.71
       },
       {
-        "x": 188.09,
-        "z": -167.04
+        "x": 116.08,
+        "z": -101.37
       },
       {
-        "x": 199.49,
-        "z": -181.83
+        "x": 121.32,
+        "z": -108.17
       },
       {
-        "x": 221.19,
-        "z": -165.1
+        "x": 131.3,
+        "z": -100.48
       },
       {
-        "x": 194.87,
-        "z": -130.96
+        "x": 119.19,
+        "z": -84.77
       },
       {
-        "x": 181.97,
-        "z": -154.73
+        "x": 113.26,
+        "z": -95.71
       },
       {
-        "x": 215.77,
-        "z": -150.36
+        "x": 128.81,
+        "z": -93.7
       },
       {
-        "x": 160.56,
-        "z": -108.04
+        "x": 103.41,
+        "z": -74.23
       },
       {
-        "x": 118.45,
-        "z": -76.87
+        "x": 84.04,
+        "z": -59.89
       },
       {
         "x": 71.56,
@@ -185,32 +185,32 @@
     {
       "id": "water-street-mid-block",
       "label": "Water Street mid block",
-      "x": 133.25,
-      "z": -104.87
+      "x": 90.85,
+      "z": -72.77
     },
     {
       "id": "steam-clock",
       "label": "Steam Clock plaza",
-      "x": 181.97,
-      "z": -154.73
+      "x": 113.26,
+      "z": -95.71
     },
     {
       "id": "maple-tree-square-edge",
       "label": "Maple Tree Square edge",
-      "x": 210.34,
-      "z": -173.46
+      "x": 126.31,
+      "z": -104.32
     },
     {
       "id": "cambie-rise-continuation",
       "label": "Cambie rise continuation",
-      "x": 187.48,
-      "z": -140.6
+      "x": 115.8,
+      "z": -89.21
     },
     {
       "id": "water-cambie-intersection",
       "label": "Water/Cambie intersection",
-      "x": 193.64,
-      "z": -151.8
+      "x": 118.63,
+      "z": -94.36
     }
   ],
   "navigator": {
@@ -228,20 +228,20 @@
             "z": -24.46
           },
           {
-            "x": 63.1,
-            "z": -52.26
+            "x": 58.58,
+            "z": -48.57
           },
           {
-            "x": 110.25,
-            "z": -87.84
+            "x": 80.27,
+            "z": -64.94
           },
           {
-            "x": 152.31,
-            "z": -118.98
+            "x": 99.62,
+            "z": -79.26
           },
           {
-            "x": 191.48,
-            "z": -149
+            "x": 117.63,
+            "z": -93.07
           }
         ]
       },
@@ -250,20 +250,20 @@
         "label": "Steam Clock plaza",
         "points": [
           {
-            "x": 183.71,
-            "z": -153.39
+            "x": 114.06,
+            "z": -95.09
           },
           {
-            "x": 184.52,
-            "z": -155.92
+            "x": 114.43,
+            "z": -96.26
           },
           {
-            "x": 181.65,
-            "z": -157.76
+            "x": 113.11,
+            "z": -97.1
           },
           {
-            "x": 180.14,
-            "z": -156.14
+            "x": 112.42,
+            "z": -96.36
           }
         ]
       },
@@ -272,16 +272,16 @@
         "label": "Water Street east leg",
         "points": [
           {
-            "x": 152.31,
-            "z": -118.98
+            "x": 99.62,
+            "z": -79.26
           },
           {
-            "x": 191.48,
-            "z": -149
+            "x": 117.63,
+            "z": -93.07
           },
           {
-            "x": 210.34,
-            "z": -173.46
+            "x": 126.31,
+            "z": -104.32
           }
         ]
       },
@@ -290,16 +290,16 @@
         "label": "Cambie crossing",
         "points": [
           {
-            "x": 201.48,
-            "z": -169
+            "x": 122.24,
+            "z": -102.27
           },
           {
-            "x": 191.48,
-            "z": -149
+            "x": 117.63,
+            "z": -93.07
           },
           {
-            "x": 179.48,
-            "z": -129
+            "x": 112.12,
+            "z": -83.87
           }
         ]
       }
@@ -320,44 +320,44 @@
             "z": -28.23
           },
           {
-            "x": 60.08,
-            "z": -56.12
+            "x": 57.19,
+            "z": -50.35
           },
           {
-            "x": 107.31,
-            "z": -91.77
+            "x": 78.92,
+            "z": -66.75
           },
           {
-            "x": 149.37,
-            "z": -122.89
+            "x": 98.26,
+            "z": -81.06
           },
           {
-            "x": 194.95,
-            "z": -152.46
+            "x": 119.23,
+            "z": -94.66
           },
           {
-            "x": 192.39,
-            "z": -142.15
+            "x": 118.05,
+            "z": -89.92
           },
           {
-            "x": 184.63,
-            "z": -148.13
+            "x": 114.48,
+            "z": -92.67
           },
           {
-            "x": 188.01,
-            "z": -145.54
+            "x": 116.04,
+            "z": -91.48
           },
           {
-            "x": 155.26,
-            "z": -115.06
+            "x": 100.97,
+            "z": -77.46
           },
           {
-            "x": 113.18,
-            "z": -83.92
+            "x": 81.62,
+            "z": -63.14
           },
           {
-            "x": 66.13,
-            "z": -48.41
+            "x": 59.97,
+            "z": -46.8
           },
           {
             "x": 32.14,
@@ -378,24 +378,24 @@
         "surface": "road",
         "polygon": [
           {
-            "x": 190.53,
-            "z": -162.34
+            "x": 117.2,
+            "z": -99.21
           },
           {
-            "x": 204.62,
-            "z": -151.47
+            "x": 123.68,
+            "z": -94.21
           },
           {
-            "x": 196.75,
-            "z": -141.26
+            "x": 120.06,
+            "z": -89.51
           },
           {
-            "x": 182.65,
-            "z": -152.12
+            "x": 113.57,
+            "z": -94.51
           },
           {
-            "x": 190.53,
-            "z": -162.34
+            "x": 117.2,
+            "z": -99.21
           }
         ]
       },
@@ -404,32 +404,32 @@
         "surface": "road",
         "polygon": [
           {
-            "x": 202.15,
-            "z": -155.46
+            "x": 122.54,
+            "z": -96.04
           },
           {
-            "x": 188.73,
-            "z": -145.43
+            "x": 116.37,
+            "z": -91.43
           },
           {
-            "x": 206.77,
-            "z": -176.22
+            "x": 124.67,
+            "z": -105.59
           },
           {
-            "x": 213.91,
-            "z": -170.71
+            "x": 127.95,
+            "z": -103.06
           },
           {
-            "x": 194.23,
-            "z": -152.57
+            "x": 118.9,
+            "z": -94.71
           },
           {
-            "x": 195.01,
-            "z": -160.96
+            "x": 119.26,
+            "z": -98.57
           },
           {
-            "x": 202.15,
-            "z": -155.46
+            "x": 122.54,
+            "z": -96.04
           }
         ]
       },
@@ -438,32 +438,32 @@
         "surface": "road",
         "polygon": [
           {
-            "x": 204.64,
-            "z": -167.42
+            "x": 123.69,
+            "z": -101.55
           },
           {
-            "x": 194.58,
-            "z": -147.3
+            "x": 119.06,
+            "z": -92.29
           },
           {
-            "x": 182.51,
-            "z": -127.19
+            "x": 113.51,
+            "z": -83.04
           },
           {
-            "x": 176.46,
-            "z": -130.82
+            "x": 110.73,
+            "z": -84.71
           },
           {
-            "x": 188.39,
-            "z": -150.7
+            "x": 116.21,
+            "z": -93.85
           },
           {
-            "x": 198.33,
-            "z": -170.58
+            "x": 120.79,
+            "z": -103.0
           },
           {
-            "x": 204.64,
-            "z": -167.42
+            "x": 123.69,
+            "z": -101.55
           }
         ]
       }
@@ -482,40 +482,40 @@
             "z": -20.55
           },
           {
-            "x": 66.24,
-            "z": -48.26
+            "x": 60.02,
+            "z": -46.73
           },
           {
-            "x": 113.29,
-            "z": -83.77
+            "x": 81.67,
+            "z": -63.07
           },
           {
-            "x": 155.37,
-            "z": -114.92
+            "x": 101.02,
+            "z": -77.4
           },
           {
-            "x": 195.1,
-            "z": -145.37
+            "x": 119.3,
+            "z": -91.4
           },
           {
-            "x": 214.36,
-            "z": -170.36
+            "x": 128.16,
+            "z": -102.9
           },
           {
-            "x": 218.5,
-            "z": -167.17
+            "x": 130.06,
+            "z": -101.43
           },
           {
-            "x": 198.82,
-            "z": -141.64
+            "x": 121.01,
+            "z": -89.69
           },
           {
-            "x": 158.51,
-            "z": -110.75
+            "x": 102.47,
+            "z": -75.48
           },
           {
-            "x": 116.41,
-            "z": -79.59
+            "x": 83.1,
+            "z": -61.14
           },
           {
             "x": 69.46,
@@ -548,44 +548,44 @@
             "z": -32.86
           },
           {
-            "x": 56.37,
-            "z": -60.84
+            "x": 55.48,
+            "z": -52.52
           },
           {
-            "x": 103.72,
-            "z": -96.58
+            "x": 77.27,
+            "z": -68.96
           },
           {
-            "x": 145.75,
-            "z": -127.69
+            "x": 96.6,
+            "z": -83.27
           },
           {
-            "x": 183.71,
-            "z": -156.79
+            "x": 114.06,
+            "z": -96.66
           },
           {
-            "x": 201.7,
-            "z": -180.12
+            "x": 122.34,
+            "z": -107.39
           },
           {
-            "x": 206.38,
-            "z": -176.52
+            "x": 124.49,
+            "z": -105.73
           },
           {
-            "x": 187.92,
-            "z": -152.57
+            "x": 116.0,
+            "z": -94.71
           },
           {
-            "x": 149.31,
-            "z": -122.97
+            "x": 98.24,
+            "z": -81.1
           },
           {
-            "x": 107.25,
-            "z": -91.85
+            "x": 78.89,
+            "z": -66.78
           },
           {
-            "x": 60.01,
-            "z": -56.2
+            "x": 57.16,
+            "z": -50.38
           },
           {
             "x": 25.82,
@@ -606,32 +606,32 @@
         "side": "west",
         "polygon": [
           {
-            "x": 198.33,
-            "z": -170.58
+            "x": 120.79,
+            "z": -103.0
           },
           {
-            "x": 188.39,
-            "z": -150.7
+            "x": 116.21,
+            "z": -93.85
           },
           {
-            "x": 176.46,
-            "z": -130.82
+            "x": 110.73,
+            "z": -84.71
           },
           {
-            "x": 171.17,
-            "z": -133.99
+            "x": 108.29,
+            "z": -86.17
           },
           {
-            "x": 182.98,
-            "z": -153.67
+            "x": 113.72,
+            "z": -95.22
           },
           {
-            "x": 192.81,
-            "z": -173.34
+            "x": 118.25,
+            "z": -104.27
           },
           {
-            "x": 198.33,
-            "z": -170.58
+            "x": 120.79,
+            "z": -103.0
           }
         ]
       },
@@ -640,24 +640,24 @@
         "side": "corner",
         "polygon": [
           {
-            "x": 187.44,
-            "z": -161.37
+            "x": 115.78,
+            "z": -98.76
           },
           {
-            "x": 194.41,
-            "z": -156
+            "x": 118.98,
+            "z": -96.29
           },
           {
-            "x": 189.77,
-            "z": -149.98
+            "x": 116.85,
+            "z": -93.52
           },
           {
-            "x": 182.8,
-            "z": -155.35
+            "x": 113.64,
+            "z": -95.99
           },
           {
-            "x": 187.44,
-            "z": -161.37
+            "x": 115.78,
+            "z": -98.76
           }
         ]
       },
@@ -666,24 +666,24 @@
         "side": "plaza",
         "polygon": [
           {
-            "x": 180.01,
-            "z": -164.51
+            "x": 112.36,
+            "z": -100.21
           },
           {
-            "x": 190.78,
-            "z": -156.21
+            "x": 117.31,
+            "z": -96.39
           },
           {
-            "x": 182.11,
-            "z": -144.96
+            "x": 113.32,
+            "z": -91.21
           },
           {
-            "x": 171.34,
-            "z": -153.27
+            "x": 108.37,
+            "z": -95.04
           },
           {
-            "x": 180.01,
-            "z": -164.51
+            "x": 112.36,
+            "z": -100.21
           }
         ]
       }
@@ -1189,8 +1189,8 @@
           "z": -43.65
         },
         {
-          "x": 18.61,
-          "z": -50.68
+          "x": 38.11,
+          "z": -47.84
         },
         {
           "x": 1.79,
@@ -1343,12 +1343,12 @@
           "z": -37.55
         },
         {
-          "x": 32.36,
-          "z": -48.29
+          "x": 44.44,
+          "z": -46.75
         },
         {
-          "x": 28.19,
-          "z": -53.4
+          "x": 42.52,
+          "z": -49.1
         },
         {
           "x": 15.01,
@@ -1485,32 +1485,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "waterfront-threshold",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 26.45,
-      "z": -53.64,
+      "x": 41.72,
+      "z": -49.21,
       "width": 24.01,
       "depth": 10.8,
       "yaw": -0.6842,
       "height": 21,
       "footprint": [
         {
-          "x": 16.28,
-          "z": -50.92
+          "x": 37.04,
+          "z": -47.96
         },
         {
           "x": 23.1,
           "z": -42.55
         },
         {
-          "x": 41.7,
-          "z": -57.72
+          "x": 48.74,
+          "z": -51.08
         },
         {
-          "x": 34.88,
-          "z": -66.09
+          "x": 45.6,
+          "z": -54.93
         },
         {
-          "x": 16.28,
-          "z": -50.92
+          "x": 37.04,
+          "z": -47.96
         }
       ],
       "footprint_local": [
@@ -1643,32 +1643,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 40.58,
-      "z": -59.56,
+      "x": 48.22,
+      "z": -51.93,
       "width": 16.01,
       "depth": 7.4,
       "yaw": -0.684,
       "height": 15,
       "footprint": [
         {
-          "x": 33.75,
-          "z": -57.81
+          "x": 45.08,
+          "z": -51.12
         },
         {
-          "x": 38.43,
-          "z": -52.08
+          "x": 47.23,
+          "z": -48.49
         },
         {
-          "x": 50.83,
-          "z": -62.19
+          "x": 52.94,
+          "z": -53.14
         },
         {
-          "x": 46.15,
-          "z": -67.92
+          "x": 50.78,
+          "z": -55.78
         },
         {
-          "x": 33.75,
-          "z": -57.81
+          "x": 45.08,
+          "z": -51.12
         }
       ],
       "footprint_local": [
@@ -1801,32 +1801,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 45.63,
-      "z": -67.45,
+      "x": 50.54,
+      "z": -55.56,
       "width": 21,
       "depth": 11.6,
       "yaw": 2.4577,
       "height": 17,
       "footprint": [
         {
-          "x": 36.19,
-          "z": -65.74
+          "x": 46.2,
+          "z": -54.77
         },
         {
-          "x": 43.52,
-          "z": -56.75
+          "x": 49.57,
+          "z": -50.64
         },
         {
-          "x": 59.8,
-          "z": -70.02
+          "x": 57.06,
+          "z": -56.74
         },
         {
-          "x": 52.47,
-          "z": -79.01
+          "x": 53.69,
+          "z": -60.88
         },
         {
-          "x": 36.19,
-          "z": -65.74
+          "x": 46.2,
+          "z": -54.77
         }
       ],
       "footprint_local": [
@@ -1900,8 +1900,8 @@
           "z": -36.46
         },
         {
-          "x": 79.83,
-          "z": -45.45
+          "x": 66.28,
+          "z": -45.44
         },
         {
           "x": 63.56,
@@ -1959,32 +1959,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 58.92,
-      "z": -76,
+      "x": 56.66,
+      "z": -59.49,
       "width": 19,
       "depth": 8.2,
       "yaw": 2.4947,
       "height": 14,
       "footprint": [
         {
-          "x": 50.88,
-          "z": -74.04
+          "x": 52.96,
+          "z": -58.59
         },
         {
-          "x": 55.82,
-          "z": -67.5
+          "x": 55.23,
+          "z": -55.58
         },
         {
-          "x": 70.98,
-          "z": -78.94
+          "x": 62.2,
+          "z": -60.84
         },
         {
-          "x": 66.04,
-          "z": -85.49
+          "x": 59.93,
+          "z": -63.86
         },
         {
-          "x": 50.88,
-          "z": -74.04
+          "x": 52.96,
+          "z": -58.59
         }
       ],
       "footprint_local": [
@@ -2054,12 +2054,12 @@
           "z": -34.53
         },
         {
-          "x": 95.86,
-          "z": -45.98
+          "x": 73.65,
+          "z": -45.68
         },
         {
-          "x": 90.92,
-          "z": -52.52
+          "x": 71.38,
+          "z": -48.69
         },
         {
           "x": 75.76,
@@ -2117,32 +2117,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 69.55,
-      "z": -81.34,
+      "x": 61.55,
+      "z": -61.95,
       "width": 15,
       "depth": 6.8,
       "yaw": -0.6468,
       "height": 12,
       "footprint": [
         {
-          "x": 63.12,
-          "z": -79.9
+          "x": 58.59,
+          "z": -61.29
         },
         {
-          "x": 67.22,
-          "z": -74.47
+          "x": 60.48,
+          "z": -58.79
         },
         {
-          "x": 79.19,
-          "z": -83.51
+          "x": 65.98,
+          "z": -62.95
         },
         {
-          "x": 75.09,
-          "z": -88.94
+          "x": 64.1,
+          "z": -65.44
         },
         {
-          "x": 63.12,
-          "z": -79.9
+          "x": 58.59,
+          "z": -61.29
         }
       ],
       "footprint_local": [
@@ -2196,32 +2196,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 92.02,
-      "z": -51.57,
+      "x": 71.88,
+      "z": -48.25,
       "width": 15,
       "depth": 6.8,
       "yaw": -0.6468,
       "height": 12,
       "footprint": [
         {
-          "x": 85.59,
-          "z": -50.13
+          "x": 68.93,
+          "z": -47.59
         },
         {
           "x": 89.69,
           "z": -44.7
         },
         {
-          "x": 101.66,
-          "z": -53.74
+          "x": 76.32,
+          "z": -49.25
         },
         {
-          "x": 97.56,
-          "z": -59.16
+          "x": 74.43,
+          "z": -51.75
         },
         {
-          "x": 85.59,
-          "z": -50.13
+          "x": 68.93,
+          "z": -47.59
         }
       ],
       "footprint_local": [
@@ -2275,32 +2275,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 73.34,
-      "z": -89.6,
+      "x": 63.29,
+      "z": -65.75,
       "width": 23,
       "depth": 9.8,
       "yaw": -0.6466,
       "height": 19,
       "footprint": [
         {
-          "x": 63.64,
-          "z": -87.18
+          "x": 58.83,
+          "z": -64.64
         },
         {
-          "x": 69.54,
-          "z": -79.36
+          "x": 61.54,
+          "z": -61.04
         },
         {
-          "x": 87.9,
-          "z": -93.22
+          "x": 69.99,
+          "z": -67.41
         },
         {
-          "x": 81.99,
-          "z": -101.04
+          "x": 67.27,
+          "z": -71.01
         },
         {
-          "x": 63.64,
-          "z": -87.18
+          "x": 58.83,
+          "z": -64.64
         }
       ],
       "footprint_local": [
@@ -2354,32 +2354,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 100.63,
-      "z": -53.44,
+      "x": 75.84,
+      "z": -49.11,
       "width": 23,
       "depth": 9.8,
       "yaw": -0.6466,
       "height": 19,
       "footprint": [
         {
-          "x": 90.93,
-          "z": -51.02
+          "x": 71.38,
+          "z": -48.0
         },
         {
           "x": 96.83,
           "z": -43.2
         },
         {
-          "x": 115.19,
-          "z": -57.06
+          "x": 82.54,
+          "z": -50.78
         },
         {
-          "x": 109.28,
-          "z": -64.88
+          "x": 79.82,
+          "z": -54.38
         },
         {
-          "x": 90.93,
-          "z": -51.02
+          "x": 71.38,
+          "z": -48.0
         }
       ],
       "footprint_local": [
@@ -2433,32 +2433,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 86.06,
-      "z": -95.16,
+      "x": 69.14,
+      "z": -68.31,
       "width": 17,
       "depth": 7.6,
       "yaw": 2.4952,
       "height": 13,
       "footprint": [
         {
-          "x": 78.8,
-          "z": -93.49
+          "x": 65.8,
+          "z": -67.54
         },
         {
-          "x": 83.38,
-          "z": -87.42
+          "x": 67.91,
+          "z": -64.75
         },
         {
-          "x": 96.95,
-          "z": -97.66
+          "x": 74.15,
+          "z": -69.46
         },
         {
-          "x": 92.37,
-          "z": -103.73
+          "x": 72.04,
+          "z": -72.25
         },
         {
-          "x": 78.8,
-          "z": -93.49
+          "x": 65.8,
+          "z": -67.54
         }
       ],
       "footprint_local": [
@@ -2512,32 +2512,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 109.73,
-      "z": -63.79,
+      "x": 80.03,
+      "z": -53.88,
       "width": 17,
       "depth": 7.6,
       "yaw": -0.6464,
       "height": 13,
       "footprint": [
         {
-          "x": 102.47,
-          "z": -62.12
+          "x": 76.69,
+          "z": -53.11
         },
         {
-          "x": 107.05,
-          "z": -56.05
+          "x": 78.8,
+          "z": -50.32
         },
         {
-          "x": 120.62,
-          "z": -66.29
+          "x": 85.04,
+          "z": -55.03
         },
         {
-          "x": 116.04,
-          "z": -72.36
+          "x": 82.93,
+          "z": -57.82
         },
         {
-          "x": 102.47,
-          "z": -62.12
+          "x": 76.69,
+          "z": -53.11
         }
       ],
       "footprint_local": [
@@ -2591,32 +2591,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 91.26,
-      "z": -104.7,
+      "x": 71.53,
+      "z": -72.69,
       "width": 25,
       "depth": 12.4,
       "yaw": -0.6469,
       "height": 21,
       "footprint": [
         {
-          "x": 80.29,
-          "z": -102.63
+          "x": 66.49,
+          "z": -71.74
         },
         {
-          "x": 87.76,
-          "z": -92.73
+          "x": 69.92,
+          "z": -67.19
         },
         {
-          "x": 107.71,
-          "z": -107.8
+          "x": 79.1,
+          "z": -74.12
         },
         {
-          "x": 100.24,
-          "z": -117.69
+          "x": 75.66,
+          "z": -78.67
         },
         {
-          "x": 80.29,
-          "z": -102.63
+          "x": 66.49,
+          "z": -71.74
         }
       ],
       "footprint_local": [
@@ -2670,32 +2670,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 119.75,
-      "z": -66.94,
+      "x": 84.64,
+      "z": -55.32,
       "width": 25,
       "depth": 12.4,
       "yaw": -0.6464,
       "height": 21,
       "footprint": [
         {
-          "x": 108.78,
-          "z": -64.88
+          "x": 79.59,
+          "z": -54.38
         },
         {
-          "x": 116.25,
-          "z": -54.98
+          "x": 83.03,
+          "z": -49.82
         },
         {
-          "x": 136.21,
-          "z": -70.04
+          "x": 92.21,
+          "z": -56.75
         },
         {
-          "x": 128.74,
-          "z": -79.94
+          "x": 88.77,
+          "z": -61.3
         },
         {
-          "x": 108.78,
-          "z": -64.88
+          "x": 79.59,
+          "z": -54.38
         }
       ],
       "footprint_local": [
@@ -2749,32 +2749,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 106.76,
-      "z": -109.86,
+      "x": 78.66,
+      "z": -75.07,
       "width": 16,
       "depth": 6.21,
       "yaw": -0.6373,
       "height": 12,
       "footprint": [
         {
-          "x": 100.14,
-          "z": -108.05
+          "x": 75.62,
+          "z": -74.24
         },
         {
-          "x": 103.83,
-          "z": -103.06
+          "x": 77.32,
+          "z": -71.94
         },
         {
-          "x": 116.69,
-          "z": -112.58
+          "x": 83.23,
+          "z": -76.32
         },
         {
-          "x": 113,
-          "z": -117.57
+          "x": 81.53,
+          "z": -78.61
         },
         {
-          "x": 100.14,
-          "z": -108.05
+          "x": 75.62,
+          "z": -74.24
         }
       ],
       "footprint_local": [
@@ -2828,32 +2828,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "mid-corridor-heritage-rhythm",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 129.55,
-      "z": -79.08,
+      "x": 89.15,
+      "z": -60.91,
       "width": 16,
       "depth": 6.2,
       "yaw": -0.6373,
       "height": 12,
       "footprint": [
         {
-          "x": 122.93,
-          "z": -77.26
+          "x": 86.1,
+          "z": -60.07
         },
         {
-          "x": 126.62,
-          "z": -72.28
+          "x": 87.8,
+          "z": -57.78
         },
         {
-          "x": 139.48,
-          "z": -81.8
+          "x": 93.72,
+          "z": -62.16
         },
         {
-          "x": 135.79,
-          "z": -86.78
+          "x": 92.02,
+          "z": -64.45
         },
         {
-          "x": 122.93,
-          "z": -77.26
+          "x": 86.1,
+          "z": -60.07
         }
       ],
       "footprint_local": [
@@ -2907,32 +2907,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 112.23,
-      "z": -117.37,
+      "x": 81.18,
+      "z": -78.52,
       "width": 20.4,
       "depth": 7.11,
       "yaw": -0.6368,
       "height": 14,
       "footprint": [
         {
-          "x": 103.98,
-          "z": -114.8
+          "x": 77.39,
+          "z": -77.34
         },
         {
-          "x": 108.2,
-          "z": -109.1
+          "x": 79.33,
+          "z": -74.72
         },
         {
-          "x": 124.6,
-          "z": -121.23
+          "x": 86.87,
+          "z": -80.3
         },
         {
-          "x": 120.37,
-          "z": -126.94
+          "x": 84.92,
+          "z": -82.92
         },
         {
-          "x": 103.98,
-          "z": -114.8
+          "x": 77.39,
+          "z": -77.34
         }
       ],
       "footprint_local": [
@@ -2986,32 +2986,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 138.22,
-      "z": -82.25,
+      "x": 93.14,
+      "z": -62.37,
       "width": 20.4,
       "depth": 7.11,
       "yaw": 2.5048,
       "height": 14,
       "footprint": [
         {
-          "x": 129.97,
-          "z": -79.68
+          "x": 89.34,
+          "z": -61.19
         },
         {
-          "x": 134.2,
-          "z": -73.97
+          "x": 91.29,
+          "z": -58.56
         },
         {
-          "x": 150.59,
-          "z": -86.11
+          "x": 98.83,
+          "z": -64.14
         },
         {
-          "x": 146.37,
-          "z": -91.81
+          "x": 96.88,
+          "z": -66.76
         },
         {
-          "x": 129.97,
-          "z": -79.68
+          "x": 89.34,
+          "z": -61.19
         }
       ],
       "footprint_local": [
@@ -3065,32 +3065,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 121.48,
-      "z": -122.52,
+      "x": 85.44,
+      "z": -80.89,
       "width": 17.4,
       "depth": 8.4,
       "yaw": -0.637,
       "height": 13,
       "footprint": [
         {
-          "x": 113.89,
-          "z": -121.08
+          "x": 81.94,
+          "z": -80.23
         },
         {
-          "x": 118.88,
-          "z": -114.33
+          "x": 84.24,
+          "z": -77.12
         },
         {
-          "x": 132.87,
-          "z": -124.68
+          "x": 90.67,
+          "z": -81.88
         },
         {
-          "x": 127.87,
-          "z": -131.43
+          "x": 88.37,
+          "z": -84.99
         },
         {
-          "x": 113.89,
-          "z": -121.08
+          "x": 81.94,
+          "z": -80.23
         }
       ],
       "footprint_local": [
@@ -3144,32 +3144,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 145.69,
-      "z": -89.81,
+      "x": 96.57,
+      "z": -65.84,
       "width": 17.4,
       "depth": 8.41,
       "yaw": 2.5046,
       "height": 13,
       "footprint": [
         {
-          "x": 138.1,
-          "z": -88.37
+          "x": 93.08,
+          "z": -65.18
         },
         {
-          "x": 143.1,
-          "z": -81.61
+          "x": 95.38,
+          "z": -62.07
         },
         {
-          "x": 157.08,
-          "z": -91.97
+          "x": 101.81,
+          "z": -66.84
         },
         {
-          "x": 152.09,
-          "z": -98.72
+          "x": 99.52,
+          "z": -69.94
         },
         {
-          "x": 138.1,
-          "z": -88.37
+          "x": 93.08,
+          "z": -65.18
         }
       ],
       "footprint_local": [
@@ -3223,32 +3223,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 127.15,
-      "z": -131.17,
+      "x": 88.04,
+      "z": -84.87,
       "width": 24.41,
       "depth": 9.2,
       "yaw": 2.5045,
       "height": 18,
       "footprint": [
         {
-          "x": 117.11,
-          "z": -128.32
+          "x": 83.42,
+          "z": -83.56
         },
         {
-          "x": 122.59,
-          "z": -120.93
+          "x": 85.95,
+          "z": -80.16
         },
         {
-          "x": 142.2,
-          "z": -135.44
+          "x": 94.97,
+          "z": -86.83
         },
         {
-          "x": 136.73,
-          "z": -142.84
+          "x": 92.45,
+          "z": -90.24
         },
         {
-          "x": 117.11,
-          "z": -128.32
+          "x": 83.42,
+          "z": -83.56
         }
       ],
       "footprint_local": [
@@ -3302,32 +3302,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 155.52,
-      "z": -92.83,
+      "x": 101.09,
+      "z": -67.23,
       "width": 24.41,
       "depth": 9.2,
       "yaw": -0.6371,
       "height": 18,
       "footprint": [
         {
-          "x": 145.49,
-          "z": -89.98
+          "x": 96.48,
+          "z": -65.92
         },
         {
-          "x": 150.96,
-          "z": -82.58
+          "x": 99.0,
+          "z": -62.52
         },
         {
-          "x": 170.58,
-          "z": -97.1
+          "x": 108.02,
+          "z": -69.2
         },
         {
-          "x": 165.1,
-          "z": -104.49
+          "x": 105.5,
+          "z": -72.6
         },
         {
-          "x": 145.49,
-          "z": -89.98
+          "x": 96.48,
+          "z": -65.92
         }
       ],
       "footprint_local": [
@@ -3381,32 +3381,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 138.78,
-      "z": -136.34,
+      "x": 93.39,
+      "z": -87.25,
       "width": 19.41,
       "depth": 6.6,
       "yaw": -0.6542,
       "height": 11,
       "footprint": [
         {
-          "x": 131.02,
-          "z": -133.71
+          "x": 89.82,
+          "z": -86.04
         },
         {
-          "x": 135.03,
-          "z": -128.47
+          "x": 91.67,
+          "z": -83.63
         },
         {
-          "x": 150.43,
-          "z": -140.28
+          "x": 98.75,
+          "z": -89.06
         },
         {
-          "x": 146.42,
-          "z": -145.52
+          "x": 96.91,
+          "z": -91.47
         },
         {
-          "x": 131.02,
-          "z": -133.71
+          "x": 89.82,
+          "z": -86.04
         }
       ],
       "footprint_local": [
@@ -3460,32 +3460,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Heritage frontage cadence is tuned around narrower Water Street carriageway proportions and more faithful storefront rhythms.",
-      "x": 164.76,
-      "z": -102.45,
+      "x": 105.34,
+      "z": -71.66,
       "width": 19.4,
       "depth": 6.6,
       "yaw": -0.6538,
       "height": 11,
       "footprint": [
         {
-          "x": 157,
-          "z": -99.82
+          "x": 101.77,
+          "z": -70.45
         },
         {
-          "x": 161.01,
-          "z": -94.59
+          "x": 103.62,
+          "z": -68.04
         },
         {
-          "x": 176.41,
-          "z": -106.39
+          "x": 110.7,
+          "z": -73.47
         },
         {
-          "x": 172.39,
-          "z": -111.63
+          "x": 108.85,
+          "z": -75.88
         },
         {
-          "x": 157,
-          "z": -99.82
+          "x": 101.77,
+          "z": -70.45
         }
       ],
       "footprint_local": [
@@ -3539,32 +3539,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.",
-      "x": 143,
-      "z": -145.4,
+      "x": 95.33,
+      "z": -91.42,
       "width": 27.8,
       "depth": 10.8,
       "yaw": -0.654,
       "height": 20,
       "footprint": [
         {
-          "x": 131.55,
-          "z": -142.06
+          "x": 90.07,
+          "z": -89.88
         },
         {
-          "x": 138.12,
-          "z": -133.49
+          "x": 93.09,
+          "z": -85.94
         },
         {
-          "x": 160.18,
-          "z": -150.4
+          "x": 103.24,
+          "z": -93.72
         },
         {
-          "x": 153.61,
-          "z": -158.97
+          "x": 100.21,
+          "z": -97.66
         },
         {
-          "x": 131.55,
-          "z": -142.06
+          "x": 90.07,
+          "z": -89.88
         }
       ],
       "footprint_local": [
@@ -3618,32 +3618,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.",
-      "x": 173.72,
-      "z": -105.55,
+      "x": 109.47,
+      "z": -73.09,
       "width": 26.41,
       "depth": 11.7,
       "yaw": 2.4878,
       "height": 20,
       "footprint": [
         {
-          "x": 162.49,
-          "z": -102.84
+          "x": 104.3,
+          "z": -71.84
         },
         {
-          "x": 169.61,
-          "z": -93.56
+          "x": 107.57,
+          "z": -67.57
         },
         {
-          "x": 190.56,
-          "z": -109.62
+          "x": 117.21,
+          "z": -74.96
         },
         {
-          "x": 183.45,
-          "z": -118.9
+          "x": 113.94,
+          "z": -79.23
         },
         {
-          "x": 162.49,
-          "z": -102.84
+          "x": 104.3,
+          "z": -71.84
         }
       ],
       "footprint_local": [
@@ -3697,32 +3697,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.",
-      "x": 156.44,
-      "z": -150.23,
+      "x": 101.52,
+      "z": -93.64,
       "width": 19.81,
       "depth": 7.4,
       "yaw": -0.654,
       "height": 15,
       "footprint": [
         {
-          "x": 148.35,
-          "z": -147.76
+          "x": 97.8,
+          "z": -92.5
         },
         {
-          "x": 152.85,
-          "z": -141.88
+          "x": 99.87,
+          "z": -89.8
         },
         {
-          "x": 168.57,
-          "z": -153.93
+          "x": 107.1,
+          "z": -95.34
         },
         {
-          "x": 164.07,
-          "z": -159.8
+          "x": 105.03,
+          "z": -98.04
         },
         {
-          "x": 148.35,
-          "z": -147.76
+          "x": 97.8,
+          "z": -92.5
         }
       ],
       "footprint_local": [
@@ -3776,32 +3776,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.",
-      "x": 182.29,
-      "z": -116.73,
+      "x": 113.41,
+      "z": -78.23,
       "width": 18.4,
       "depth": 8.3,
       "yaw": -0.6539,
       "height": 15,
       "footprint": [
         {
-          "x": 174.43,
-          "z": -114.89
+          "x": 109.79,
+          "z": -77.38
         },
         {
-          "x": 179.48,
-          "z": -108.3
+          "x": 112.12,
+          "z": -74.35
         },
         {
-          "x": 194.08,
-          "z": -119.49
+          "x": 118.83,
+          "z": -79.5
         },
         {
-          "x": 189.03,
-          "z": -126.08
+          "x": 116.51,
+          "z": -82.53
         },
         {
-          "x": 174.43,
-          "z": -114.89
+          "x": 109.79,
+          "z": -77.38
         }
       ],
       "footprint_local": [
@@ -3855,32 +3855,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.",
-      "x": 162.6,
-      "z": -158.62,
+      "x": 104.35,
+      "z": -97.5,
       "width": 24.81,
       "depth": 11.6,
       "yaw": 2.4877,
       "height": 17,
       "footprint": [
         {
-          "x": 151.9,
-          "z": -156.27
+          "x": 99.43,
+          "z": -96.42
         },
         {
-          "x": 158.96,
-          "z": -147.07
+          "x": 102.68,
+          "z": -92.18
         },
         {
-          "x": 178.64,
-          "z": -162.15
+          "x": 111.73,
+          "z": -99.12
         },
         {
-          "x": 171.59,
-          "z": -171.36
+          "x": 108.49,
+          "z": -103.36
         },
         {
-          "x": 151.9,
-          "z": -156.27
+          "x": 99.43,
+          "z": -96.42
         }
       ],
       "footprint_local": [
@@ -3934,32 +3934,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.",
-      "x": 191.49,
-      "z": -121.16,
+      "x": 117.64,
+      "z": -80.27,
       "width": 23.4,
       "depth": 12.5,
       "yaw": -0.6538,
       "height": 17,
       "footprint": [
         {
-          "x": 181.02,
-          "z": -119.44
+          "x": 112.82,
+          "z": -79.47
         },
         {
-          "x": 188.63,
-          "z": -109.52
+          "x": 116.32,
+          "z": -74.91
         },
         {
-          "x": 207.2,
-          "z": -123.75
+          "x": 124.87,
+          "z": -81.46
         },
         {
-          "x": 199.59,
-          "z": -133.67
+          "x": 121.37,
+          "z": -86.02
         },
         {
-          "x": 181.02,
-          "z": -119.44
+          "x": 112.82,
+          "z": -79.47
         }
       ],
       "footprint_local": [
@@ -4013,32 +4013,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.",
-      "x": 172.93,
-      "z": -164.2,
+      "x": 109.1,
+      "z": -100.06,
       "width": 22.8,
       "depth": 8.2,
       "yaw": -0.7938,
       "height": 14,
       "footprint": [
         {
-          "x": 164.2,
-          "z": -160
+          "x": 105.09,
+          "z": -98.13
         },
         {
-          "x": 170.04,
-          "z": -154.25
+          "x": 107.77,
+          "z": -95.49
         },
         {
-          "x": 186.03,
-          "z": -170.51
+          "x": 115.13,
+          "z": -102.97
         },
         {
-          "x": 180.18,
-          "z": -176.25
+          "x": 112.44,
+          "z": -105.61
         },
         {
-          "x": 164.2,
-          "z": -160
+          "x": 105.09,
+          "z": -98.13
         }
       ],
       "footprint_local": [
@@ -4092,32 +4092,32 @@
       "reference_name": "Steam Clock corner anchor",
       "segment_style": "steam-clock-approach",
       "style_notes": "Corner building massing is widened and wrapped to frame the Steam Clock as a true corner-plaza landmark outside the carriageway.",
-      "x": 208.1,
-      "z": -129.03,
+      "x": 125.28,
+      "z": -83.89,
       "width": 27,
       "depth": 13.3,
       "yaw": -0.7938,
       "height": 16,
       "footprint": [
         {
-          "x": 196.74,
-          "z": -125.06
+          "x": 120.05,
+          "z": -82.06
         },
         {
-          "x": 206.22,
-          "z": -115.73
+          "x": 124.42,
+          "z": -77.77
         },
         {
-          "x": 225.15,
-          "z": -134.98
+          "x": 133.12,
+          "z": -86.62
         },
         {
-          "x": 215.67,
-          "z": -144.31
+          "x": 128.76,
+          "z": -90.91
         },
         {
-          "x": 196.74,
-          "z": -125.06
+          "x": 120.05,
+          "z": -82.06
         }
       ],
       "footprint_local": [
@@ -4171,32 +4171,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "steam-clock-approach",
       "style_notes": "Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.",
-      "x": 179.42,
-      "z": -168.95,
+      "x": 112.09,
+      "z": -102.25,
       "width": 18.81,
       "depth": 6.8,
       "yaw": 2.2276,
       "height": 12,
       "footprint": [
         {
-          "x": 172.67,
-          "z": -164.65
+          "x": 108.98,
+          "z": -100.27
         },
         {
-          "x": 178.06,
-          "z": -160.5
+          "x": 111.46,
+          "z": -98.36
         },
         {
-          "x": 189.54,
-          "z": -175.39
+          "x": 116.74,
+          "z": -105.21
         },
         {
-          "x": 184.15,
-          "z": -179.54
+          "x": 114.26,
+          "z": -107.12
         },
         {
-          "x": 172.67,
-          "z": -164.65
+          "x": 108.98,
+          "z": -100.27
         }
       ],
       "footprint_local": [
@@ -4250,32 +4250,32 @@
       "reference_name": "Steam Clock corner anchor",
       "segment_style": "steam-clock-approach",
       "style_notes": "Corner building massing is widened and wrapped to frame the Steam Clock as a true corner-plaza landmark outside the carriageway.",
-      "x": 215.39,
-      "z": -140.69,
+      "x": 128.63,
+      "z": -89.25,
       "width": 23,
       "depth": 11.91,
       "yaw": -0.9143,
       "height": 14,
       "footprint": [
         {
-          "x": 206,
-          "z": -136.31
+          "x": 124.31,
+          "z": -87.23
         },
         {
-          "x": 215.43,
-          "z": -129.04
+          "x": 128.65,
+          "z": -83.89
         },
         {
-          "x": 229.47,
-          "z": -147.26
+          "x": 135.11,
+          "z": -92.27
         },
         {
-          "x": 220.04,
-          "z": -154.52
+          "x": 130.77,
+          "z": -95.61
         },
         {
-          "x": 206,
-          "z": -136.31
+          "x": 124.31,
+          "z": -87.23
         }
       ],
       "footprint_local": [
@@ -4329,32 +4329,32 @@
       "reference_name": "Water Street south frontage",
       "segment_style": "post-clock-continuation",
       "style_notes": "Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.",
-      "x": 182.87,
-      "z": -178.08,
+      "x": 113.67,
+      "z": -106.45,
       "width": 24.4,
       "depth": 12.2,
       "yaw": -0.9139,
       "height": 19,
       "footprint": [
         {
-          "x": 173.05,
-          "z": -173.33
+          "x": 109.16,
+          "z": -104.26
         },
         {
-          "x": 182.71,
-          "z": -165.88
+          "x": 113.6,
+          "z": -100.84
         },
         {
-          "x": 197.61,
-          "z": -185.2
+          "x": 120.45,
+          "z": -109.72
         },
         {
-          "x": 187.95,
-          "z": -192.65
+          "x": 116.01,
+          "z": -113.15
         },
         {
-          "x": 173.05,
-          "z": -173.33
+          "x": 109.16,
+          "z": -104.26
         }
       ],
       "footprint_local": [
@@ -4408,32 +4408,32 @@
       "reference_name": "Water Street north frontage",
       "segment_style": "post-clock-continuation",
       "style_notes": "Hero-zone frontage uses narrower bay spacing, deeper entries, and varied masonry tones to read closer to Water Street heritage blocks.",
-      "x": 219.51,
-      "z": -150.01,
+      "x": 130.53,
+      "z": -93.54,
       "width": 23,
       "depth": 10.71,
       "yaw": 2.2273,
       "height": 19,
       "footprint": [
         {
-          "x": 210.5,
-          "z": -145.34
+          "x": 126.38,
+          "z": -91.39
         },
         {
-          "x": 218.98,
-          "z": -138.81
+          "x": 130.28,
+          "z": -88.38
         },
         {
-          "x": 233.02,
-          "z": -157.02
+          "x": 136.74,
+          "z": -96.76
         },
         {
-          "x": 224.54,
-          "z": -163.56
+          "x": 132.84,
+          "z": -99.77
         },
         {
-          "x": 210.5,
-          "z": -145.34
+          "x": 126.38,
+          "z": -91.39
         }
       ],
       "footprint_local": [
@@ -4487,9 +4487,9 @@
     {
       "id": "steam-clock-hero",
       "label": "Gastown Steam Clock",
-      "x": 181.97,
+      "x": 113.26,
       "y": 0,
-      "z": -154.73,
+      "z": -95.71,
       "yaw": -1.4421,
       "ground_emphasis_radius": 5.2,
       "steamVentOffsets": [
@@ -4536,9 +4536,9 @@
       "id": "water-street-mid-block",
       "label": "Water Street mid block",
       "kind": "heritage_frontage",
-      "x": 133.25,
+      "x": 90.85,
       "y": 0,
-      "z": -104.87,
+      "z": -72.77,
       "scale": 1.12,
       "cue": "Longer brick storefront rhythm and darker carriageway paving make the street read more like Water Street."
     },
@@ -4546,9 +4546,9 @@
       "id": "steam-clock",
       "label": "Gastown Steam Clock",
       "kind": "clock",
-      "x": 181.97,
+      "x": 113.26,
       "y": 0,
-      "z": -154.73,
+      "z": -95.71,
       "radius": 5.2,
       "scale": 1.28,
       "cue": "A brick-and-stone plaza opens at the intersection and stages the Steam Clock at the corner landmark moment."
@@ -4557,9 +4557,9 @@
       "id": "maple-tree-square-edge",
       "label": "Maple Tree Square edge",
       "kind": "plaza_edge",
-      "x": 210.34,
+      "x": 126.31,
       "y": 0,
-      "z": -173.46,
+      "z": -104.32,
       "scale": 1.1,
       "cue": "Beyond the Steam Clock the street broadens and loosens toward Maple Tree Square."
     },
@@ -4567,9 +4567,9 @@
       "id": "cambie-rise-continuation",
       "label": "Cambie rise continuation",
       "kind": "view_axis",
-      "x": 187.48,
+      "x": 115.8,
       "y": 0,
-      "z": -140.6,
+      "z": -89.21,
       "scale": 1.18,
       "cue": "The eastern leg of the route continues beyond the clock intersection toward the Cambie rise."
     }
@@ -4596,63 +4596,63 @@
     {
       "id": "starter-prop-planter-west",
       "kind": "planter",
-      "x": 40.71,
+      "x": 48.28,
       "y": 0,
-      "z": -48.17,
+      "z": -46.69,
       "yaw": 0.6841,
       "scale": 1.15
     },
     {
       "id": "starter-prop-planter-east",
       "kind": "planter",
-      "x": 161.92,
+      "x": 104.04,
       "y": 0,
-      "z": -112.42,
+      "z": -76.25,
       "yaw": 0.654,
       "scale": 1.08
     },
     {
       "id": "starter-prop-bench-clock",
       "kind": "bench",
-      "x": 179.12,
+      "x": 111.95,
       "y": 0,
-      "z": -154.65,
+      "z": -95.67,
       "yaw": 4.0557,
       "scale": 1.04
     },
     {
       "id": "starter-prop-clock-box",
       "kind": "newspaper_box",
-      "x": 180.88,
+      "x": 112.76,
       "y": 0,
-      "z": -157.59,
+      "z": -97.02,
       "yaw": 0,
       "scale": 0.98
     },
     {
       "id": "starter-prop-postclock-utility",
       "kind": "utility_box",
-      "x": 200.84,
+      "x": 121.94,
       "y": 0,
-      "z": -149.2,
+      "z": -93.16,
       "yaw": -2.0344,
       "scale": 1.06
     },
     {
       "id": "starter-prop-postclock-bags",
       "kind": "trash_bag",
-      "x": 181.06,
+      "x": 112.84,
       "y": 0,
-      "z": -146.35,
+      "z": -91.85,
       "yaw": -2.1112,
       "scale": 0.96
     },
     {
       "id": "starter-prop-postclock-bench",
       "kind": "bench",
-      "x": 176.84,
+      "x": 110.9,
       "y": 0,
-      "z": -141.88,
+      "z": -89.8,
       "yaw": -0.5404,
       "scale": 1
     }
@@ -4689,8 +4689,8 @@
       "dialogId": "busker_clock_corner",
       "interactRadius": 3,
       "idleSpot": {
-        "x": 181.63,
-        "z": -150.7
+        "x": 113.1,
+        "z": -93.85
       }
     },
     {
@@ -4709,8 +4709,8 @@
           "z": -33.43
         },
         {
-          "x": 39.47,
-          "z": -48.11
+          "x": 47.71,
+          "z": -46.66
         }
       ]
     },
@@ -4721,31 +4721,31 @@
       "dialogId": "pedestrian_clock_hint",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 190.61,
-        "z": -154.31
+        "x": 117.23,
+        "z": -95.51
       },
       "patrol": [
         {
-          "x": 194.68,
-          "z": -162.34
+          "x": 119.11,
+          "z": -99.21
         },
         {
-          "x": 184.81,
-          "z": -144.1
+          "x": 114.57,
+          "z": -90.82
         }
       ]
     },
     {
       "id": "starter-skateboarder-mid",
-      "role": "skateboarder",
-      "behavior": "skate_glide",
+      "role": "pedestrian",
+      "behavior": "route_walk",
       "pose": "glide",
       "heldProp": "skateboard",
       "dialogId": "skateboarder_corridor",
       "interactRadius": 2.5,
       "idleSpot": {
-        "x": 53.94,
-        "z": -57.27
+        "x": 54.37,
+        "z": -50.88
       },
       "patrol": [
         {
@@ -4753,22 +4753,22 @@
           "z": -44.67
         },
         {
-          "x": 74.8,
-          "z": -73.39
+          "x": 63.96,
+          "z": -58.29
         }
       ]
     },
     {
       "id": "starter-cyclist-eastbound",
-      "role": "cyclist",
-      "behavior": "cycle_cruise",
+      "role": "pedestrian",
+      "behavior": "route_walk",
       "pose": "ride",
       "heldProp": "bike",
       "dialogId": "cyclist_water_street",
       "interactRadius": 2.8,
       "idleSpot": {
-        "x": 96.3,
-        "z": -64.82
+        "x": 73.85,
+        "z": -54.35
       },
       "patrol": [
         {
@@ -4776,63 +4776,63 @@
           "z": -37.03
         },
         {
-          "x": 179.4,
-          "z": -131.01
+          "x": 112.08,
+          "z": -84.8
         }
       ]
     },
     {
       "id": "starter-tourist-clock-west",
       "role": "tourist",
-      "behavior": "tourist_pause",
+      "behavior": "route_walk",
       "pose": "group_gather",
       "companionGroup": "clock-family-a",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 185.52,
-        "z": -154.27
+        "x": 114.89,
+        "z": -95.5
       },
       "patrol": [
         {
-          "x": 184.55,
-          "z": -153.5
+          "x": 114.45,
+          "z": -95.14
         },
         {
-          "x": 186.25,
-          "z": -154.72
+          "x": 115.23,
+          "z": -95.7
         }
       ]
     },
     {
       "id": "starter-tourist-clock-east",
       "role": "tourist",
-      "behavior": "tourist_pause",
+      "behavior": "route_walk",
       "pose": "being_photographed",
       "companionGroup": "clock-family-a",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 184.59,
-        "z": -155.36
+        "x": 114.47,
+        "z": -96.0
       },
       "patrol": [
         {
-          "x": 183.89,
-          "z": -154.77
+          "x": 114.14,
+          "z": -95.73
         },
         {
-          "x": 185.22,
-          "z": -155.76
+          "x": 114.76,
+          "z": -96.18
         }
       ]
     },
     {
       "id": "starter-tourist-clock-photo",
-      "role": "photographer",
-      "behavior": "photo_idle",
+      "role": "pedestrian",
+      "behavior": "route_walk",
       "pose": "taking_photo",
       "heldProp": "camera",
       "voiceCue": "photo-direction",
@@ -4840,52 +4840,52 @@
       "dialogId": "tourist_clock_photo",
       "interactRadius": 2.4,
       "idleSpot": {
-        "x": 180.05,
-        "z": -155.2
+        "x": 112.38,
+        "z": -95.92
       }
     },
     {
       "id": "starter-tourist-clock-stroller",
       "role": "tourist",
-      "behavior": "tourist_wander",
+      "behavior": "route_walk",
       "pose": "group_gather",
       "companionGroup": "clock-family-b",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 183.47,
-        "z": -157.99
+        "x": 113.95,
+        "z": -97.21
       },
       "patrol": [
         {
-          "x": 183.28,
-          "z": -157.26
+          "x": 113.86,
+          "z": -96.87
         },
         {
-          "x": 183.78,
-          "z": -158.89
+          "x": 114.09,
+          "z": -97.62
         }
       ]
     },
     {
       "id": "starter-tourist-clock-bench",
-      "role": "tourist",
-      "behavior": "photo_idle",
+      "role": "pedestrian",
+      "behavior": "route_walk",
       "pose": "gathered",
       "companionGroup": "clock-family-b",
       "voiceCue": "tourist-cluster",
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2.2,
       "idleSpot": {
-        "x": 181.4,
-        "z": -152.52
+        "x": 113.0,
+        "z": -94.69
       }
     },
     {
       "id": "starter-tourist-clock-child",
-      "role": "tourist",
-      "behavior": "tourist_pause",
+      "role": "pedestrian",
+      "behavior": "route_walk",
       "pose": "group_gather",
       "silhouetteScale": 0.82,
       "companionGroup": "clock-family-b",
@@ -4893,17 +4893,17 @@
       "dialogId": "tourist_clock_stop",
       "interactRadius": 2,
       "idleSpot": {
-        "x": 182.67,
-        "z": -155.32
+        "x": 113.58,
+        "z": -95.98
       },
       "patrol": [
         {
-          "x": 182.23,
-          "z": -154.91
+          "x": 113.38,
+          "z": -95.79
         },
         {
-          "x": 183.18,
-          "z": -155.57
+          "x": 113.82,
+          "z": -96.09
         }
       ]
     }
@@ -4948,8 +4948,8 @@
       },
       {
         "id": "starter-lamp-6",
-        "x": 50.84,
-        "z": -54.65,
+        "x": 52.94,
+        "z": -49.67,
         "height": 5.4
       },
       {
@@ -4960,62 +4960,62 @@
       },
       {
         "id": "starter-lamp-8",
-        "x": 70.62,
-        "z": -69.96,
+        "x": 62.04,
+        "z": -56.71,
         "height": 5.4
       },
       {
         "id": "starter-lamp-9",
-        "x": 82.18,
-        "z": -54.64,
+        "x": 67.36,
+        "z": -49.67,
         "height": 5.4
       },
       {
         "id": "starter-lamp-10",
-        "x": 90.29,
-        "z": -84.81,
+        "x": 71.09,
+        "z": -63.54,
         "height": 5.4
       },
       {
         "id": "starter-lamp-11",
-        "x": 101.86,
-        "z": -69.49,
+        "x": 76.41,
+        "z": -56.5,
         "height": 5.4
       },
       {
         "id": "starter-lamp-12",
-        "x": 110.08,
-        "z": -99.66,
+        "x": 80.19,
+        "z": -70.38,
         "height": 5.4
       },
       {
         "id": "starter-lamp-13",
-        "x": 121.5,
-        "z": -84.23,
+        "x": 85.44,
+        "z": -63.28,
         "height": 5.4
       },
       {
         "id": "starter-lamp-14",
-        "x": 129.89,
-        "z": -114.33,
+        "x": 89.3,
+        "z": -77.12,
         "height": 5.4
       },
       {
         "id": "starter-lamp-15",
-        "x": 141.31,
-        "z": -98.89,
+        "x": 94.56,
+        "z": -70.02,
         "height": 5.4
       },
       {
         "id": "starter-lamp-16",
-        "x": 149.54,
-        "z": -128.94,
+        "x": 98.34,
+        "z": -83.84,
         "height": 5.4
       },
       {
         "id": "starter-lamp-17",
-        "x": 161.22,
-        "z": -113.71,
+        "x": 103.72,
+        "z": -76.84,
         "height": 5.4
       }
     ],
@@ -5046,8 +5046,8 @@
       },
       {
         "id": "starter-tree-4",
-        "x": 57.69,
-        "z": -63.71,
+        "x": 56.09,
+        "z": -53.84,
         "radius": 1.4
       },
       {
@@ -5058,39 +5058,39 @@
       },
       {
         "id": "starter-tree-6",
-        "x": 91.42,
-        "z": -89.17,
+        "x": 71.61,
+        "z": -65.55,
         "radius": 1.4
       },
       {
         "id": "starter-tree-7",
-        "x": 106.36,
-        "z": -69.37,
+        "x": 78.48,
+        "z": -56.44,
         "radius": 1.4
       },
       {
         "id": "starter-tree-8",
-        "x": 125.39,
-        "z": -114.48,
+        "x": 87.23,
+        "z": -77.19,
         "radius": 1.4
       },
       {
         "id": "starter-tree-9",
-        "x": 140.15,
-        "z": -94.55,
+        "x": 94.02,
+        "z": -68.03,
         "radius": 1.4
       }
     ],
     "bollards": [
       {
         "id": "clock-bollard-a",
-        "x": 184.02,
-        "z": -153.15
+        "x": 114.2,
+        "z": -94.98
       },
       {
         "id": "clock-bollard-b",
-        "x": 185.21,
-        "z": -155.01,
+        "x": 114.75,
+        "z": -95.84,
         "chain_to": "clock-bollard-a"
       }
     ],
@@ -5649,5 +5649,8 @@
     "floorY": 0,
     "edgeMessage": "Stayed within the Gastown working corridor.",
     "resetMessage": "Returned to the Gastown working corridor."
+  },
+  "exploration": {
+    "fallbackPrompt": "Two blocks to the Steam Clock. Follow the moving crowd and the band."
   }
 }
