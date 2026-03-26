@@ -1,0 +1,4346 @@
+{
+  "type": "FeatureCollection",
+  "name": "heritage-sites",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10600386928343,
+          49.2840966815466
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1",
+        "streetnumber": "134",
+        "streetname": "ABBOTT ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "95 Water",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10600386928343,
+          "lat": 49.2840966815466
+        }
+      },
+      "id": "1"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1120480910033,
+          49.28249672782961
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1004",
+        "streetnumber": "510-514",
+        "streetname": "HOMER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "File address is 334-350 W Pender",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1120480910033,
+          "lat": 49.28249672782961
+        }
+      },
+      "id": "1004"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10641863586133,
+          49.28315388755609
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "11",
+        "streetnumber": "234-238",
+        "streetname": "ABBOTT ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Rees & Higgins Block",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10641863586133,
+          "lat": 49.28315388755609
+        }
+      },
+      "id": "11"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10560696601937,
+          49.28619096455364
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1229",
+        "streetnumber": "3333",
+        "streetname": "NEW BRIGHTON RD",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Alberta Wheat Pool",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10560696601937,
+          "lat": 49.28619096455364
+        }
+      },
+      "id": "1229"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11201901735221,
+          49.2837261455738
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1404",
+        "streetnumber": "422",
+        "streetname": "RICHARDS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Rush Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11201901735221,
+          "lat": 49.2837261455738
+        }
+      },
+      "id": "1404"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11231993112385,
+          49.28352575220713
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1405",
+        "streetnumber": "432",
+        "streetname": "RICHARDS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Canada Permanent Building",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11231993112385,
+          "lat": 49.28352575220713
+        }
+      },
+      "id": "1405"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11347653709271,
+          49.28327847459802
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1406",
+        "streetnumber": "509",
+        "streetname": "RICHARDS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Lumbermen’s Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11347653709271,
+          "lat": 49.28327847459802
+        }
+      },
+      "id": "1406"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11322872577966,
+          49.2828009011436
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1407",
+        "streetnumber": "518",
+        "streetname": "RICHARDS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Marble Arch Hotel",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11322872577966,
+          "lat": 49.2828009011436
+        }
+      },
+      "id": "1407"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1143715223999,
+          49.28276847876156
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1412",
+        "streetnumber": "577-579",
+        "streetname": "RICHARDS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Hotel St. Clair",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1143715223999,
+          "lat": 49.28276847876156
+        }
+      },
+      "id": "1412"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1147161195113,
+          49.283810555686664
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1440",
+        "streetnumber": "525",
+        "streetname": "SEYMOUR ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Seymour Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1147161195113,
+          "lat": 49.283810555686664
+        }
+      },
+      "id": "1440"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1149059567979,
+          49.28367924440469
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1445",
+        "streetnumber": "535-547",
+        "streetname": "SEYMOUR ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1149059567979,
+          "lat": 49.28367924440469
+        }
+      },
+      "id": "1445"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11471489512618,
+          49.283087132520414
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "1446",
+        "streetnumber": "568-570",
+        "streetname": "SEYMOUR ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Exchange Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11471489512618,
+          "lat": 49.283087132520414
+        }
+      },
+      "id": "1446"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10862834916526,
+          49.28399513802474
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "182",
+        "streetnumber": "220",
+        "streetname": "CAMBIE ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Leckie Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10862834916526,
+          "lat": 49.28399513802474
+        }
+      },
+      "id": "182"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1090700961079,
+          49.282764970820374
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "184",
+        "streetnumber": "340",
+        "streetname": "CAMBIE ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Commercial Hotel",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1090700961079,
+          "lat": 49.282764970820374
+        }
+      },
+      "id": "184"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1095144056619,
+          49.281729596104604
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "186",
+        "streetnumber": "440",
+        "streetname": "CAMBIE ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Edgett Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1095144056619,
+          "lat": 49.281729596104604
+        }
+      },
+      "id": "186"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10847487499069,
+          49.28453344275666
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "194",
+        "streetnumber": "108-110",
+        "streetname": "CAMBIE ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Great Western Hotel",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10847487499069,
+          "lat": 49.28453344275666
+        }
+      },
+      "id": "194"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10901440279441,
+          49.283062883333905
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "196",
+        "streetnumber": "300-320",
+        "streetname": "CAMBIE ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Cambie Hotel",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10901440279441,
+          "lat": 49.283062883333905
+        }
+      },
+      "id": "196"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10949454347363,
+          49.283256325769436
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "197",
+        "streetnumber": "313-325",
+        "streetname": "CAMBIE ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10949454347363,
+          "lat": 49.283256325769436
+        }
+      },
+      "id": "197"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10911159880982,
+          49.282921955928565
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "198",
+        "streetnumber": "322-324",
+        "streetname": "CAMBIE ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10911159880982,
+          "lat": 49.282921955928565
+        }
+      },
+      "id": "198"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10600386928343,
+          49.2840966815466
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2",
+        "streetnumber": "134",
+        "streetname": "ABBOTT ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Leeson, Dickie, Gross & Co. Warehouse (97 Water)",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10600386928343,
+          "lat": 49.2840966815466
+        }
+      },
+      "id": "2"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10775499907841,
+          49.28338782526117
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2263",
+        "streetnumber": "151",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10775499907841,
+          "lat": 49.28338782526117
+        }
+      },
+      "id": "2263"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10883086477241,
+          49.28302294595305
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2264",
+        "streetnumber": "160",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10883086477241,
+          "lat": 49.28302294595305
+        }
+      },
+      "id": "2264"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1086549350764,
+          49.28355569695404
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2265",
+        "streetnumber": "175",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1086549350764,
+          "lat": 49.28355569695404
+        }
+      },
+      "id": "2265"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10990635553834,
+          49.28366953836173
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2266",
+        "streetnumber": "326",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10990635553834,
+          "lat": 49.28366953836173
+        }
+      },
+      "id": "2266"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11003247371387,
+          49.284348685321646
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2267",
+        "streetnumber": "407",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Jones Block",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11003247371387,
+          "lat": 49.284348685321646
+        }
+      },
+      "id": "2267"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11071230811574,
+          49.28419092266497
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2268",
+        "streetnumber": "450",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Parking Garage",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11071230811574,
+          "lat": 49.28419092266497
+        }
+      },
+      "id": "2268"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11153914234703,
+          49.28551745523735
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2269",
+        "streetnumber": "601",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "CPR Station",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11153914234703,
+          "lat": 49.28551745523735
+        }
+      },
+      "id": "2269"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10947289246988,
+          49.283975543792224
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2278",
+        "streetnumber": "301-321",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Springer & Van Bramer Block, 301-311 W Cordova",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10947289246988,
+          "lat": 49.283975543792224
+        }
+      },
+      "id": "2278"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10947289246988,
+          49.283975543792224
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2279",
+        "streetnumber": "301-321",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "J.W. Horne Block, 315-321 W Cordova",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10947289246988,
+          "lat": 49.283975543792224
+        }
+      },
+      "id": "2279"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10937865342726,
+          49.28340293814581
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2280",
+        "streetnumber": "302-320",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Panama Block (305 Cambie)",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10937865342726,
+          "lat": 49.28340293814581
+        }
+      },
+      "id": "2280"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10937865342726,
+          49.28340293814581
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2281",
+        "streetnumber": "302-320",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Arlington Bldg(302 W Cordova)",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10937865342726,
+          "lat": 49.28340293814581
+        }
+      },
+      "id": "2281"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10937865342726,
+          49.28340293814581
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2282",
+        "streetnumber": "302-320",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "310 W Cordova",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10937865342726,
+          "lat": 49.28340293814581
+        }
+      },
+      "id": "2282"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10937865342726,
+          49.28340293814581
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2283",
+        "streetnumber": "302-320",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "314‑316 W Cordova",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10937865342726,
+          "lat": 49.28340293814581
+        }
+      },
+      "id": "2283"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10937865342726,
+          49.28340293814581
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2284",
+        "streetnumber": "302-320",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "320 W Cordova",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10937865342726,
+          "lat": 49.28340293814581
+        }
+      },
+      "id": "2284"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10601108560782,
+          49.28307305192866
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2289",
+        "streetnumber": "65-69",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10601108560782,
+          "lat": 49.28307305192866
+        }
+      },
+      "id": "2289"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10638606211354,
+          49.28303250696806
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2291",
+        "streetnumber": "81-85",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Atlantic Furnished Rooms",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10638606211354,
+          "lat": 49.28303250696806
+        }
+      },
+      "id": "2291"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10651922298388,
+          49.283056846673986
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2292",
+        "streetnumber": "93-95",
+        "streetname": "W CORDOVA ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Union Bank Building",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10651922298388,
+          "lat": 49.283056846673986
+        }
+      },
+      "id": "2292"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10735924708868,
+          49.28231987346494
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2306",
+        "streetnumber": "111",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Woodwards",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10735924708868,
+          "lat": 49.28231987346494
+        }
+      },
+      "id": "2306"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10819458419813,
+          49.28188795369797
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2308",
+        "streetnumber": "128",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Henderson Block (122-124 W Hastings)",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10819458419813,
+          "lat": 49.28188795369797
+        }
+      },
+      "id": "2308"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10819458419813,
+          49.28188795369797
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2309",
+        "streetnumber": "128",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Ralph Block (126-128 W Hastings)",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10819458419813,
+          "lat": 49.28188795369797
+        }
+      },
+      "id": "2309"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1089000781307,
+          49.28201634568035
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2310",
+        "streetnumber": "150",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1089000781307,
+          "lat": 49.28201634568035
+        }
+      },
+      "id": "2310"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10945823679168,
+          49.282117802926415
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2311",
+        "streetnumber": "198",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Province Building",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10945823679168,
+          "lat": 49.282117802926415
+        }
+      },
+      "id": "2311"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11005821261753,
+          49.283228360390254
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2312",
+        "streetnumber": "319",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Skinner Block",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11005821261753,
+          "lat": 49.283228360390254
+        }
+      },
+      "id": "2312"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11155914760593,
+          49.2834283725281
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2313",
+        "streetnumber": "412",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Second Rogers Block",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11155914760593,
+          "lat": 49.2834283725281
+        }
+      },
+      "id": "2313"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11167553323746,
+          49.28350344357945
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2314",
+        "streetnumber": "426",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Bank of Nova Scotia",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11167553323746,
+          "lat": 49.28350344357945
+        }
+      },
+      "id": "2314"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11188886536975,
+          49.284682984886445
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2315",
+        "streetnumber": "555",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Harbour Centre",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11188886536975,
+          "lat": 49.284682984886445
+        }
+      },
+      "id": "2315"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11291663682829,
+          49.28431029017575
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2316",
+        "streetnumber": "580",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Bank of Toronto",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11291663682829,
+          "lat": 49.28431029017575
+        }
+      },
+      "id": "2316"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11387114637586,
+          49.28595585419356
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2317",
+        "streetnumber": "757",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Sinclair Centre ‑Federal Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11387114637586,
+          "lat": 49.28595585419356
+        }
+      },
+      "id": "2317"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11387114637586,
+          49.28595585419356
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2318",
+        "streetnumber": "757",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Sinclair Centre ‑Customs Building (326 Howe)",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "Yes",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11387114637586,
+          "lat": 49.28595585419356
+        }
+      },
+      "id": "2318"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11387114637586,
+          49.28595585419356
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2319",
+        "streetnumber": "757",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Sinclair Centre ‑former Post Office - 715",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "Yes",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11387114637586,
+          "lat": 49.28595585419356
+        }
+      },
+      "id": "2319"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11387114637586,
+          49.28595585419356
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2320",
+        "streetnumber": "757",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Sinclair Centre ‑Winch Building - 739",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "Yes",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11387114637586,
+          "lat": 49.28595585419356
+        }
+      },
+      "id": "2320"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10879958870356,
+          49.28199971200993
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2332",
+        "streetnumber": "144-146",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Regal Place",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10879958870356,
+          "lat": 49.28199971200993
+        }
+      },
+      "id": "2332"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1088126714049,
+          49.282587055955354
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2333",
+        "streetnumber": "151-155",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1088126714049,
+          "lat": 49.282587055955354
+        }
+      },
+      "id": "2333"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10905138463337,
+          49.28204390183451
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2334",
+        "streetnumber": "152-156",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10905138463337,
+          "lat": 49.28204390183451
+        }
+      },
+      "id": "2334"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10913411119198,
+          49.282590889698625
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2336",
+        "streetnumber": "163-175",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Flack Block",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10913411119198,
+          "lat": 49.282590889698625
+        }
+      },
+      "id": "2336"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10967691788535,
+          49.282975560003386
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2337",
+        "streetnumber": "207-217",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Dominion Building",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10967691788535,
+          "lat": 49.282975560003386
+        }
+      },
+      "id": "2337"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10982141374781,
+          49.28304853915153
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2338",
+        "streetnumber": "301-307",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "First Rogers Block",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10982141374781,
+          "lat": 49.28304853915153
+        }
+      },
+      "id": "2338"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11046606780977,
+          49.28349264524613
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2339",
+        "streetnumber": "379-399",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "William Dick Building",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11046606780977,
+          "lat": 49.28349264524613
+        }
+      },
+      "id": "2339"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11140404332572,
+          49.28332824575249
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2340",
+        "streetnumber": "400-404",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Royal Bank of Canada",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "Yes",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11140404332572,
+          "lat": 49.28332824575249
+        }
+      },
+      "id": "2340"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11182587063664,
+          49.28360078699639
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2341",
+        "streetnumber": "432-440",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11182587063664,
+          "lat": 49.28360078699639
+        }
+      },
+      "id": "2341"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11241337396244,
+          49.28398162404981
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2343",
+        "streetnumber": "510-512",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Standard Building",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2022-07-26T17:18:44+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11241337396244,
+          "lat": 49.28398162404981
+        }
+      },
+      "id": "2343"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11333627027928,
+          49.285349778935085
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2345",
+        "streetnumber": "675-685",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "685 W Hastings",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "Yes",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2021-02-24T18:18:44+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11333627027928,
+          "lat": 49.285349778935085
+        }
+      },
+      "id": "2345"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11381006111453,
+          49.284885256806426
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2346",
+        "streetnumber": "686-698",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Bank of Commerce",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11381006111453,
+          "lat": 49.284885256806426
+        }
+      },
+      "id": "2346"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11493835005811,
+          49.28561574889956
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2347",
+        "streetnumber": "738-744",
+        "streetname": "W HASTINGS ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Pemberton Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11493835005811,
+          "lat": 49.28561574889956
+        }
+      },
+      "id": "2347"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11084532271973,
+          49.282427559972845
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2356",
+        "streetnumber": "303",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11084532271973,
+          "lat": 49.282427559972845
+        }
+      },
+      "id": "2356"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11157027673158,
+          49.28218008499289
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2357",
+        "streetnumber": "326",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "McBeth & Campbell Bldg.",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11157027673158,
+          "lat": 49.28218008499289
+        }
+      },
+      "id": "2357"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11172515204146,
+          49.28228012093464
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2358",
+        "streetnumber": "330",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "B.C. Permanent Building",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11172515204146,
+          "lat": 49.28228012093464
+        }
+      },
+      "id": "2358"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11236395985755,
+          49.282693375895875
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2359",
+        "streetnumber": "402",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "BC Securities Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11236395985755,
+          "lat": 49.282693375895875
+        }
+      },
+      "id": "2359"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11228087524263,
+          49.28335257906959
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2360",
+        "streetnumber": "435",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Niagara Hotel",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11228087524263,
+          "lat": 49.28335257906959
+        }
+      },
+      "id": "2360"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11461542965485,
+          49.28415006512488
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2361",
+        "streetnumber": "626",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "London Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "Yes",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11461542965485,
+          "lat": 49.28415006512488
+        }
+      },
+      "id": "2361"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11488194995597,
+          49.284326609602644
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2362",
+        "streetnumber": "640",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Bank of Montreal",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "Yes",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11488194995597,
+          "lat": 49.284326609602644
+        }
+      },
+      "id": "2362"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11527287995061,
+          49.28529273455466
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2363",
+        "streetnumber": "789",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Montreal Trust",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11527287995061,
+          "lat": 49.28529273455466
+        }
+      },
+      "id": "2363"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11096181786351,
+          49.2825027225015
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2368",
+        "streetnumber": "307-311",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11096181786351,
+          "lat": 49.2825027225015
+        }
+      },
+      "id": "2368"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11107786078884,
+          49.28257779539472
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2369",
+        "streetnumber": "317-321",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Riggs-Selman Bldg.",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11107786078884,
+          "lat": 49.28257779539472
+        }
+      },
+      "id": "2369"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11175864780334,
+          49.28245285081001
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2370",
+        "streetnumber": "334-350",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11175864780334,
+          "lat": 49.28245285081001
+        }
+      },
+      "id": "2370"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11154087464747,
+          49.28276674911823
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2371",
+        "streetnumber": "343-353",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Hartney Chambers",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Y",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2022-11-18T18:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11154087464747,
+          "lat": 49.28276674911823
+        }
+      },
+      "id": "2371"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11251929116209,
+          49.282793590225246
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2372",
+        "streetnumber": "414-420",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Western Canada Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11251929116209,
+          "lat": 49.282793590225246
+        }
+      },
+      "id": "2372"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11216540736162,
+          49.283282273378944
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2373",
+        "streetnumber": "429-433",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "The Montgomery",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "Yes",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11216540736162,
+          "lat": 49.283282273378944
+        }
+      },
+      "id": "2373"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1128138903645,
+          49.28305860670623
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2374",
+        "streetnumber": "436-440",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Tiedemann Block",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1128138903645,
+          "lat": 49.28305860670623
+        }
+      },
+      "id": "2374"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11449926512773,
+          49.284075085874704
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2375",
+        "streetnumber": "620-622",
+        "streetname": "W PENDER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Piccadilly Hotel",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11449926512773,
+          "lat": 49.284075085874704
+        }
+      },
+      "id": "2375"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10549958501781,
+          49.28342587906401
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2387",
+        "streetnumber": "46",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Robinson Block",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10549958501781,
+          "lat": 49.28342587906401
+        }
+      },
+      "id": "2387"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10569932711645,
+          49.283462299693184
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2388",
+        "streetnumber": "50",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Kane Building",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10569932711645,
+          "lat": 49.283462299693184
+        }
+      },
+      "id": "2388"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10550237762301,
+          49.28393759850137
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2390",
+        "streetnumber": "65",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10550237762301,
+          "lat": 49.28393759850137
+        }
+      },
+      "id": "2390"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10580401027093,
+          49.284060261554266
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2391",
+        "streetnumber": "73",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Prince Rupert Meat Co. Bldg.",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10580401027093,
+          "lat": 49.284060261554266
+        }
+      },
+      "id": "2391"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10696459458353,
+          49.283691904803014
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2393",
+        "streetnumber": "110",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Thompson Rooming House",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10696459458353,
+          "lat": 49.283691904803014
+        }
+      },
+      "id": "2393"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10653538813538,
+          49.28419260120544
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2394",
+        "streetnumber": "111",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Canadian Fairbanks Bldg.",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10653538813538,
+          "lat": 49.28419260120544
+        }
+      },
+      "id": "2394"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10673502114307,
+          49.28422892928968
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2395",
+        "streetnumber": "115",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Rainsford & Co. Warehouse",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10673502114307,
+          "lat": 49.28422892928968
+        }
+      },
+      "id": "2395"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10709741788222,
+          49.283716243253295
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2396",
+        "streetnumber": "122",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Des Brisay Block",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10709741788222,
+          "lat": 49.283716243253295
+        }
+      },
+      "id": "2396"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10806644376187,
+          49.2844715014874
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2397",
+        "streetnumber": "157",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "B.C. Plate Glass Co. Bldg.",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10806644376187,
+          "lat": 49.2844715014874
+        }
+      },
+      "id": "2397"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11053451388436,
+          49.28489671115655
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2400",
+        "streetnumber": "375",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Kelly‑Douglas Warehouse",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11053451388436,
+          "lat": 49.28489671115655
+        }
+      },
+      "id": "2400"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10687565785594,
+          49.28424777551863
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2406",
+        "streetnumber": "117-131",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Lovell Block, 117 Water",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10687565785594,
+          "lat": 49.28424777551863
+        }
+      },
+      "id": "2406"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10687565785594,
+          49.28424777551863
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2407",
+        "streetnumber": "117-131",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "F.R. Stewart & Co., 131 Water - part of Gaslight Square",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10687565785594,
+          "lat": 49.28424777551863
+        }
+      },
+      "id": "2407"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10775792509497,
+          49.28384657284636
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2408",
+        "streetnumber": "130-160",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Parking Garage",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10775792509497,
+          "lat": 49.28384657284636
+        }
+      },
+      "id": "2408"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10759672620763,
+          49.28438155721183
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2409",
+        "streetnumber": "137-141",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Twigge Block",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10759672620763,
+          "lat": 49.28438155721183
+        }
+      },
+      "id": "2409"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10786703548533,
+          49.284435085542896
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2410",
+        "streetnumber": "151-155",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "J.M. Harper Warehouse",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10786703548533,
+          "lat": 49.284435085542896
+        }
+      },
+      "id": "2410"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10819983621177,
+          49.28449583813557
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2412",
+        "streetnumber": "165-167",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Pither & Leiser Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10819983621177,
+          "lat": 49.28449583813557
+        }
+      },
+      "id": "2412"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10833254952468,
+          49.284520176165906
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2413",
+        "streetnumber": "171-175",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Brown & Co. Warehouse",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10833254952468,
+          "lat": 49.284520176165906
+        }
+      },
+      "id": "2413"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10904130880728,
+          49.28415851701379
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2415",
+        "streetnumber": "300-302",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Edward Hotel",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10904130880728,
+          "lat": 49.28415851701379
+        }
+      },
+      "id": "2415"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10889305053881,
+          49.28459213603679
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2416",
+        "streetnumber": "305-307",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "McClarey Manufacturing Co. Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10889305053881,
+          "lat": 49.28459213603679
+        }
+      },
+      "id": "2416"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1091907884226,
+          49.28417708222531
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2417",
+        "streetnumber": "306-312",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Taylor Building",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1091907884226,
+          "lat": 49.28417708222531
+        }
+      },
+      "id": "2417"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10904301094045,
+          49.28462176234982
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2418",
+        "streetnumber": "311-317",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Martin & Robertson Warehouse",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10904301094045,
+          "lat": 49.28462176234982
+        }
+      },
+      "id": "2418"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10940378605737,
+          49.28420601882642
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2419",
+        "streetnumber": "318-322",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "McPherson Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10940378605737,
+          "lat": 49.28420601882642
+        }
+      },
+      "id": "2419"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10927341440325,
+          49.28467622455727
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2420",
+        "streetnumber": "321-325",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Hudson’s Bay Co. Warehouse",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10927341440325,
+          "lat": 49.28467622455727
+        }
+      },
+      "id": "2420"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10968970773962,
+          49.28419225770527
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2421",
+        "streetnumber": "324-332",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Homer St. Arcade",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10968970773962,
+          "lat": 49.28419225770527
+        }
+      },
+      "id": "2421"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10960668619403,
+          49.28474326837256
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2422",
+        "streetnumber": "339-341",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Greenshields Building (East Half)",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10960668619403,
+          "lat": 49.28474326837256
+        }
+      },
+      "id": "2422"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10989764452951,
+          49.28429062744926
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2423",
+        "streetnumber": "342-346",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Burns Block",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10989764452951,
+          "lat": 49.28429062744926
+        }
+      },
+      "id": "2423"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10981424647132,
+          49.284773289692566
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2424",
+        "streetnumber": "345-347",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Greenshields Building (West Half)",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "Yes",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10981424647132,
+          "lat": 49.284773289692566
+        }
+      },
+      "id": "2424"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11024020789571,
+          49.284406764357776
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2425",
+        "streetnumber": "350-364",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "McConnell Block",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11024020789571,
+          "lat": 49.284406764357776
+        }
+      },
+      "id": "2425"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11024020789571,
+          49.284406764357776
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2426",
+        "streetnumber": "350-364",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Holland Block",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11024020789571,
+          "lat": 49.284406764357776
+        }
+      },
+      "id": "2426"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11001615267898,
+          49.284810059704085
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2427",
+        "streetnumber": "353-359",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "McLuckie Warehouse",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11001615267898,
+          "lat": 49.284810059704085
+        }
+      },
+      "id": "2427"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10525203445775,
+          49.283887103910615
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2428",
+        "streetnumber": "53-57",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Malkin Building",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "Yes",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10525203445775,
+          "lat": 49.283887103910615
+        }
+      },
+      "id": "2428"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10596655543767,
+          49.28350971947567
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "2429",
+        "streetnumber": "66-68",
+        "streetname": "WATER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Lipsett Building",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10596655543767,
+          "lat": 49.28350971947567
+        }
+      },
+      "id": "2429"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10623288335366,
+          49.28355956816486
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "3",
+        "streetnumber": "210",
+        "streetname": "ABBOTT ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Dominion Hotel",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10623288335366,
+          "lat": 49.28355956816486
+        }
+      },
+      "id": "3"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10637633353487,
+          49.28325411207103
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "4",
+        "streetnumber": "228",
+        "streetname": "ABBOTT ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Hickey Block",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "Yes",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10637633353487,
+          "lat": 49.28325411207103
+        }
+      },
+      "id": "4"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10692263720492,
+          49.28332177779575
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "5",
+        "streetnumber": "233",
+        "streetname": "ABBOTT ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Central City Mission",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10692263720492,
+          "lat": 49.28332177779575
+        }
+      },
+      "id": "5"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10699504985779,
+          49.28314723944889
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "6",
+        "streetnumber": "289",
+        "streetname": "ABBOTT ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Runkle Block, 101 W Cordova",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10699504985779,
+          "lat": 49.28314723944889
+        }
+      },
+      "id": "6"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10699504985779,
+          49.28314723944889
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "7",
+        "streetnumber": "289",
+        "streetname": "ABBOTT ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Cook Block,105-109 W Cordova  B(M)",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10699504985779,
+          "lat": 49.28314723944889
+        }
+      },
+      "id": "7"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10660124007141,
+          49.282708997752266
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "8",
+        "streetnumber": "306",
+        "streetname": "ABBOTT ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Dougall House",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10660124007141,
+          "lat": 49.282708997752266
+        }
+      },
+      "id": "8"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11513286132727,
+          49.284080301385615
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "869",
+        "streetnumber": "526",
+        "streetname": "GRANVILLE ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11513286132727,
+          "lat": 49.284080301385615
+        }
+      },
+      "id": "869"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.1154209895227,
+          49.28389592050432
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "870",
+        "streetnumber": "550",
+        "streetname": "GRANVILLE ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "N/A",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.1154209895227,
+          "lat": 49.28389592050432
+        }
+      },
+      "id": "870"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.10667535888756,
+          49.28253616889575
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "9",
+        "streetnumber": "320",
+        "streetname": "ABBOTT ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Hotel Metropole",
+        "evaluationgroup": "C",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.10667535888756,
+          "lat": 49.28253616889575
+        }
+      },
+      "id": "9"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11429019751544,
+          49.284668403126894
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "900",
+        "streetnumber": "450-480",
+        "streetname": "GRANVILLE ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Rogers Building",
+        "evaluationgroup": "A",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11429019751544,
+          "lat": 49.284668403126894
+        }
+      },
+      "id": "900"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11139303514705,
+          49.282065321013086
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "931",
+        "streetnumber": "505",
+        "streetname": "HAMILTON ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Independent Order of Odd Fellows Hall",
+        "evaluationgroup": "B",
+        "municipaldesignationm": "No",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11139303514705,
+          "lat": 49.282065321013086
+        }
+      },
+      "id": "931"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          -123.11005430502726,
+          49.283765357171475
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "id": "993",
+        "streetnumber": "318",
+        "streetname": "HOMER ST",
+        "additionallocationinformation": "None",
+        "category": "HERITAGE BUILDINGS",
+        "buildingnamespecifics": "Mercantile Building",
+        "evaluationgroup": "N/A",
+        "municipaldesignationm": "Yes",
+        "provincialdesignationp": "No",
+        "heritagerevitalizationagreementh": "No",
+        "interiordesignationi": "No",
+        "landscapedesignationl": "No",
+        "heritageconservationareaca": "No",
+        "heritageconservationcovenanthc": "No",
+        "federaldesignationf": "No",
+        "status": "Active",
+        "dateoflastupdate": "2020-09-18T17:18:45+00:00",
+        "localarea": "Downtown",
+        "geo_point_2d": {
+          "lon": -123.11005430502726,
+          "lat": 49.283765357171475
+        }
+      },
+      "id": "993"
+    }
+  ]
+}
