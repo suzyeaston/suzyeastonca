@@ -1614,10 +1614,13 @@ function buildWorld(options = {}) {
     routeId: existingWorld.routeId || 'gastown_water_street_slice_offline_generated',
     meta: {
       ...existingMeta,
-      title: existingMeta.title || 'Waterfront Station to Steam Clock Corridor',
-      units: 'meters',
-      source: 'Offline City of Vancouver Open Data exports',
-      buildClassification: 'offline-civic-build',
+  title: existingMeta.title || 'Waterfront Station to Steam Clock Corridor',
+  units: 'meters',
+  source: 'Offline City of Vancouver Open Data exports',
+  fallbackMode: null,
+  runtimeFallbackActive: false,
+  isRealCivicBuild: true,
+  buildClassification: 'offline-civic-build',
       lastBuild: existingMeta.lastBuild || new Date().toISOString(),
       importManifest: existingMeta.importManifest || {
         inputs: {

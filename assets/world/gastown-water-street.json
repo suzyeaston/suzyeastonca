@@ -4,8 +4,8 @@
     "title": "Gastown Working Corridor (deterministic fallback)",
     "units": "meters",
     "source": "Offline City of Vancouver Open Data exports",
-    "fallbackMode": "working-gastown-corridor",
-    "isRealCivicBuild": false,
+    "fallbackMode": null,
+    "isRealCivicBuild": true,
     "buildClassification": "offline-civic-build",
     "buildNotes": [
       "Working fallback corridor is active because required offline civic source files are missing.",
@@ -53,7 +53,8 @@
       "buildings": "renderer-compatible derived geometry from footprint centroids/extents/headings (footprints preserved)",
       "streetscapeTrees": "civic-data",
       "streetscapeLamps": "civic-data"
-    }
+    },
+    "runtimeFallbackActive": false
   },
   "route": {
     "name": "Waterfront Station → Water/Cordova → Steam Clock",
