@@ -231,6 +231,8 @@
   const HOLD_TO_RUN_RAMP_IN = 5.8;
   const HOLD_TO_RUN_RAMP_OUT = 8.2;
   const HOLD_TO_RUN_FORWARD_MULTIPLIER = 1.58;
+  const STARTUP_CORE_BUILDING_RADIUS = 64;
+  const STARTUP_HERO_BUILDING_RADIUS = 96;
   const WALKER_NAME_STORAGE_KEY = 'gastownWalkerName';
   const NPC_SPEECH_CACHE_LIMIT = 18;
   const BAND_ARRANGEMENT_CACHE_PREFIX = 'gastownBandArrangement:';
@@ -266,13 +268,13 @@
     style_description: 'gritty urban rock-adjacent welcome sting with a stylized sax lead; brisk, punchy, not lounge jazz'
   };
   const FALLBACK_SURFACE_PRESETS = {
-    road: { color: 0x1b2632, roughness: 0.96, metalness: 0.05 },
-    sidewalk: { color: 0x655c51, roughness: 0.98, metalness: 0.02 },
+    road: { color: 0x16222c, roughness: 0.96, metalness: 0.05 },
+    sidewalk: { color: 0x766757, roughness: 0.98, metalness: 0.02 },
     plaza: { color: 0x726150, roughness: 0.96, metalness: 0.02 },
     curb: { color: 0x9e8d78, roughness: 1, metalness: 0 },
     lane: { color: 0x54493d, roughness: 0.98, metalness: 0.01 },
-    lampGlass: { color: 0xf5d9a2, emissive: 0xffbe62, roughness: 0.22, metalness: 0.04 },
-    lampHalo: { color: 0xffcb83, opacity: 0.16 },
+    lampGlass: { color: 0xf6ddac, emissive: 0xffba67, roughness: 0.22, metalness: 0.04 },
+    lampHalo: { color: 0xffbb70, opacity: 0.18 },
   };
   const ART_DIRECTION = {
     label: 'stylized realism with cinematic Vancouver rain-lighting',
@@ -295,7 +297,7 @@
   player.add(camera);
   scene.add(player);
 
-  const ambient = new THREE.AmbientLight(0x7f90b2, 0.72);
+  const ambient = new THREE.AmbientLight(0x8798b8, 0.78);
   scene.add(ambient);
   const keyLight = new THREE.DirectionalLight(0xaab6cb, 0.74);
   keyLight.position.set(10, 22, 9);
@@ -338,6 +340,7 @@
     routeGuideMaterials: [],
     weatherMaterials: [],
     lightningOverlay: null,
+    buildingMeshes: [],
     steamClockVisuals: [],
     glassMaterials: [],
     emissiveMaterials: [],
@@ -376,8 +379,8 @@
   }
 
   const LOOK_PITCH_LIMIT = Math.PI / 2.25;
-  const WHEEL_PITCH_SENSITIVITY = 0.00085;
-  const KEYBOARD_PITCH_STEP = 0.045;
+  const WHEEL_PITCH_SENSITIVITY = 0.0011;
+  const KEYBOARD_PITCH_STEP = 0.055;
   const STREET_CAMERA_NEAR = 0.08;
   const STREET_CAMERA_FAR = 700;
   const OVERVIEW_CAMERA_FAR = 1600;
@@ -1393,14 +1396,34 @@
     return distance >= 10 ? Math.round(distance) + ' m' : distance.toFixed(1) + ' m';
   }
 
+  function scheduleDeferredWork(callback, delayMs) {
+    const delay = Number.isFinite(delayMs) ? Math.max(0, delayMs) : 0;
+    const runner = () => {
+      try {
+        callback();
+      } catch (error) {
+        if (window.console && typeof window.console.warn === 'function') {
+          window.console.warn('[Gastown Sim] Deferred startup task failed.', error);
+        }
+      }
+    };
+    if (typeof window.requestIdleCallback === 'function') {
+      window.setTimeout(() => {
+        window.requestIdleCallback(runner, { timeout: 900 });
+      }, delay);
+      return;
+    }
+    window.setTimeout(runner, delay);
+  }
+
   function getMovementProfile() {
     if (state.cameraMode === 'overview') {
       return {
         label: 'overview traversal',
-        maxSpeed: 18.5,
-        acceleration: 7.6,
-        deceleration: 5.8,
-        turnSpeed: 1.65,
+        maxSpeed: 20.5,
+        acceleration: 8.2,
+        deceleration: 6.4,
+        turnSpeed: 1.72,
         bobAmount: 0.02,
         swayAmount: 0.008,
         stepInterval: 0.34,
@@ -1409,10 +1432,10 @@
     if (state.gait.precise) {
       return {
         label: 'precise exploration',
-        maxSpeed: 3.4,
-        acceleration: 10.8,
-        deceleration: 11.6,
-        turnSpeed: 2.05,
+        maxSpeed: 4.2,
+        acceleration: 11.2,
+        deceleration: 12,
+        turnSpeed: 2.15,
         bobAmount: 0.012,
         swayAmount: 0.005,
         stepInterval: 0.52,
@@ -1421,10 +1444,10 @@
     if (state.gait.traverse) {
       return {
         label: 'brisk walk',
-        maxSpeed: 11.75,
-        acceleration: 6.6,
-        deceleration: 6.2,
-        turnSpeed: 1.9,
+        maxSpeed: 14.4,
+        acceleration: 7.4,
+        deceleration: 6.8,
+        turnSpeed: 2.02,
         bobAmount: 0.03,
         swayAmount: 0.011,
         stepInterval: 0.29,
@@ -1432,10 +1455,10 @@
     }
     return {
       label: 'walking',
-      maxSpeed: 7.6,
-      acceleration: 8.6,
-      deceleration: 8.9,
-      turnSpeed: 1.85,
+      maxSpeed: 9.25,
+      acceleration: 9.6,
+      deceleration: 9.4,
+      turnSpeed: 1.98,
       bobAmount: 0.022,
       swayAmount: 0.008,
       stepInterval: 0.41,
@@ -3543,10 +3566,12 @@
     });
   }
 
-  function addStreetscape(world) {
+  function addStreetscape(world, options) {
+    const renderOptions = Object.assign({ includeCore: true, includeSecondary: true }, options || {});
     const streetscape = world.streetscape || {};
 
-    (streetscape.lamps || []).forEach((lamp) => {
+    if (renderOptions.includeCore) {
+      (streetscape.lamps || []).forEach((lamp) => {
       const pole = new THREE.Mesh(
         new THREE.CylinderGeometry(0.08, 0.1, lamp.height || 4.6, 8),
         registerMaterial(new THREE.MeshStandardMaterial({ color: 0x2b2f35, roughness: 0.6, metalness: 0.35 }), 'metalMaterials')
@@ -3579,9 +3604,9 @@
       lampLight.position.copy(globe.position);
       worldGroup.add(lampLight);
       visualState.lampVisuals.push({ globeMaterial, haloMaterial: halo.material, pointLight: lampLight });
-    });
+      });
 
-    (streetscape.bollards || []).forEach((bollard) => {
+      (streetscape.bollards || []).forEach((bollard) => {
       const post = new THREE.Mesh(
         new THREE.CylinderGeometry(0.09, 0.11, 0.95, 10),
         new THREE.MeshStandardMaterial({ color: 0x2f363f, roughness: 0.58, metalness: 0.34 })
@@ -3607,7 +3632,12 @@
           }
         }
       }
-    });
+      });
+    }
+
+    if (!renderOptions.includeSecondary) {
+      return;
+    }
 
     (streetscape.trees || []).forEach((tree) => {
       const trunk = new THREE.Mesh(
@@ -3722,11 +3752,51 @@
     return points.length >= 3 ? points : [];
   }
 
-  function addBuildings(world) {
+  function getStartupAnchor(world) {
+    if (world && world.spawn && Number.isFinite(world.spawn.x) && Number.isFinite(world.spawn.z)) {
+      return { x: world.spawn.x, z: world.spawn.z };
+    }
+    const routePoint = world && world.route && Array.isArray(world.route.centerline) ? world.route.centerline[0] : null;
+    if (routePoint && Number.isFinite(routePoint.x) && Number.isFinite(routePoint.z)) {
+      return { x: routePoint.x, z: routePoint.z };
+    }
+    return { x: -23, z: 20 };
+  }
+
+  function isPriorityBuilding(building, anchor, nearRadius, heroRadius) {
+    if (!building) return false;
+    if (building.hero_fidelity === 'hero' || String(building.id || '').indexOf('waterfront-station') !== -1 || String(building.id || '').indexOf('steam-clock') !== -1) {
+      return true;
+    }
+    const distance = Math.hypot((building.x || 0) - anchor.x, (building.z || 0) - anchor.z);
+    if (building.hero_fidelity === 'major') {
+      return distance <= heroRadius;
+    }
+    return distance <= nearRadius;
+  }
+
+  function addBuildings(world, options) {
+    const renderOptions = Object.assign({
+      coreOnly: false,
+      nearRadius: STARTUP_CORE_BUILDING_RADIUS,
+      heroRadius: STARTUP_HERO_BUILDING_RADIUS,
+      replaceExisting: true,
+    }, options || {});
+    const startupAnchor = getStartupAnchor(world);
+    if (renderOptions.replaceExisting) {
+      (visualState.buildingMeshes || []).forEach((entry) => {
+        if (entry && entry.parent) {
+          entry.parent.remove(entry);
+        }
+      });
+      visualState.buildingMeshes = [];
+    }
     world.buildings = (world.buildings || []).map((building) => window.GastownBuildingNormalizer.normalizeBuildingForRender(building));
 
     world.buildings.forEach((b) => {
       if (!Number.isFinite(b.x) || !Number.isFinite(b.z)) return;
+      const isPriority = isPriorityBuilding(b, startupAnchor, renderOptions.nearRadius, renderOptions.heroRadius);
+      if (renderOptions.coreOnly && !isPriority) return;
       const shapePoints = toRenderableShapePoints(b);
       if (shapePoints.length < 3) return;
 
@@ -3735,17 +3805,24 @@
       const storefrontRhythm = b.storefront_rhythm || {};
       const heroScale = b.hero_fidelity === 'hero' ? 1.03 : 1;
       const massingInset = b.mass_inset || profilePreset.baseInset;
+      const hasHeroTreatment = isPriority || b.hero_fidelity === 'hero';
+      const renderedHeight = THREE.MathUtils.clamp(
+        b.height || 10,
+        hasHeroTreatment ? 8.4 : 7.6,
+        hasHeroTreatment ? 17.8 : 15.2
+      );
       const geom = new THREE.ExtrudeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, point.z))), {
-        depth: b.height,
+        depth: renderedHeight,
         bevelEnabled: false,
       });
       geom.rotateX(-Math.PI / 2);
+      const facadeBaseColor = new THREE.Color(colors.primary).lerp(new THREE.Color(hasHeroTreatment ? 0x846a54 : 0x6f5b49), hasHeroTreatment ? 0.18 : 0.14);
       const mat = registerMaterial(new THREE.MeshStandardMaterial({
-        color: colors.primary,
-        roughness: b.tone === 'brickWarm' ? 0.88 : 0.76,
-        metalness: 0.12,
-        emissive: 0x11151f,
-        emissiveIntensity: 0.18,
+        color: facadeBaseColor,
+        roughness: b.tone === 'brickWarm' ? 0.84 : 0.7,
+        metalness: 0.08,
+        emissive: 0x191913,
+        emissiveIntensity: hasHeroTreatment ? 0.1 : 0.08,
       }), 'buildingMaterials');
       mat.userData = {
         baseRoughness: mat.roughness,
@@ -3757,25 +3834,26 @@
       mesh.position.set(b.x, 0, b.z);
       mesh.rotation.y = b.yaw || 0;
       worldGroup.add(mesh);
+      visualState.buildingMeshes.push(mesh);
 
       const rooflineType = b.roofline_type || 'flat_cornice';
       if (rooflineType !== 'flat') {
-        const roofHeight = Math.max(0.5, (b.cornice_emphasis || 0.2) * 2 + profilePreset.rooflineLift * 0.2);
-        const roofGeom = new THREE.CylinderGeometry((Math.max(b.width, b.depth) * 0.5) * 0.92, (Math.max(b.width, b.depth) * 0.5), roofHeight, 6);
-        const roofMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.7, metalness: 0.16 }), 'metalMaterials');
+        const roofHeight = Math.max(0.2, Math.min(0.55, ((b.cornice_emphasis || 0.2) * 0.8) + (profilePreset.rooflineLift * 0.08)));
+        const roofGeom = new THREE.BoxGeometry((b.width || 10) * 0.94, roofHeight, (b.depth || 10) * 0.94);
+        const roofMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.74, metalness: 0.1 }), 'metalMaterials');
         const roof = new THREE.Mesh(roofGeom, roofMat);
-        roof.position.set(b.x, b.height + roofHeight / 2, b.z);
+        roof.position.set(b.x, renderedHeight + roofHeight / 2, b.z);
         roof.rotation.y = (b.yaw || 0) + (rooflineType === 'angled_parapet' ? 0.45 : 0);
         if (rooflineType === 'stepped') {
-          roof.scale.set(0.7, 1, 1);
+          roof.scale.set(0.86, 1, 0.86);
         } else if (rooflineType === 'gable_shallow') {
-          roof.rotation.z = Math.PI / 2;
-          roof.scale.set(0.5, 1, 1.2);
+          roof.scale.set(0.9, 1, 0.78);
         }
         worldGroup.add(roof);
+        visualState.buildingMeshes.push(roof);
       }
 
-      const storefrontBandHeight = Math.max(1.4, b.height * ((b.storefront_rhythm && b.storefront_rhythm.base_band) || profilePreset.storefrontBand));
+      const storefrontBandHeight = Math.max(1.6, renderedHeight * ((b.storefront_rhythm && b.storefront_rhythm.base_band) || profilePreset.storefrontBand));
       const storefrontMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.accent, roughness: 0.62, metalness: 0.16, emissive: 0x120d0a, emissiveIntensity: 0.06 }), 'emissiveMaterials');
       const storefront = new THREE.Mesh(
         new THREE.BoxGeometry((b.width || 8) * 0.92, storefrontBandHeight, Math.max(2, (b.depth || 8) * 0.15)),
@@ -3786,6 +3864,16 @@
       storefront.rotation.y = b.yaw || 0;
       storefront.scale.x = heroScale;
       worldGroup.add(storefront);
+      visualState.buildingMeshes.push(storefront);
+      const edge = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geom),
+        new THREE.LineBasicMaterial({ color: b.hero_fidelity === 'hero' ? 0x8f9eb0 : 0x6f8197, transparent: true, opacity: b.hero_fidelity === 'hero' ? 0.34 : 0.28 })
+      );
+      edge.position.copy(mesh.position);
+      edge.rotation.y = mesh.rotation.y;
+      worldGroup.add(edge);
+      visualState.buildingMeshes.push(edge);
+      if (!hasHeroTreatment) return;
 
       const bayCount = Math.max(2, Math.min(8, b.window_bay_count || 4));
       const windowRows = Math.max(1, Math.min(5, (b.storefront_rhythm && b.storefront_rhythm.upper_rows) || profilePreset.windowRows));
@@ -3801,14 +3889,15 @@
       windowMat.userData = { baseRoughness: 0.16, baseOpacity: 0.88 };
       for (let row = 0; row < windowRows; row += 1) {
         for (let bay = 0; bay < bayCount; bay += 1) {
-          const win = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (bayCount + 1.35), (b.height || 12) / (windowRows * (b.hero_fidelity === 'hero' ? 4.8 : 4.3))), windowMat);
+          const win = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (bayCount + 1.35), renderedHeight / (windowRows * (b.hero_fidelity === 'hero' ? 4.8 : 4.3))), windowMat);
           const xOffset = (((bay + 1) / (bayCount + 1)) - 0.5) * ((b.width || 8) * 0.78);
-          const yOffset = storefrontBandHeight + 1.4 + row * ((b.height - storefrontBandHeight - 2) / windowRows);
+          const yOffset = storefrontBandHeight + 1.4 + row * ((renderedHeight - storefrontBandHeight - 2) / windowRows);
           const depthOffset = (b.depth || 8) * 0.52;
           const winPos = localPointToWorld(b, xOffset, depthOffset);
           win.position.set(winPos.x, yOffset, winPos.z);
           win.rotation.y = b.yaw || 0;
           worldGroup.add(win);
+          visualState.buildingMeshes.push(win);
 
           const sill = new THREE.Mesh(
             new THREE.BoxGeometry((b.width || 8) / (bayCount + 1.6), 0.09, 0.14),
@@ -3817,6 +3906,7 @@
           sill.position.set(winPos.x, yOffset - 0.36, winPos.z - 0.02);
           sill.rotation.y = b.yaw || 0;
           worldGroup.add(sill);
+          visualState.buildingMeshes.push(sill);
         }
       }
 
@@ -3837,6 +3927,7 @@
         glass.position.set(glassPos.x, (storefrontBandHeight * 0.5) + 0.36, glassPos.z);
         glass.rotation.y = b.yaw || 0;
         worldGroup.add(glass);
+        visualState.buildingMeshes.push(glass);
       }
 
       if (b.awning_presence || (profilePreset.awningDepth > 0.1)) {
@@ -3849,6 +3940,7 @@
         awning.position.set(awningPos.x, storefrontBandHeight + 0.6, awningPos.z);
         awning.rotation.y = b.yaw || 0;
         worldGroup.add(awning);
+        visualState.buildingMeshes.push(awning);
       }
 
       const signBandMat = registerMaterial(new THREE.MeshStandardMaterial({
@@ -3866,6 +3958,7 @@
       signBand.position.set(signBandPos.x, storefrontBandHeight + 0.16, signBandPos.z);
       signBand.rotation.y = b.yaw || 0;
       worldGroup.add(signBand);
+      visualState.buildingMeshes.push(signBand);
 
       if (profilePreset.columnRhythm) {
         const columns = Math.max(6, Math.round((b.width || 20) / 3.2));
@@ -3880,6 +3973,7 @@
           const colPos = localPointToWorld(b, localX, (b.depth || 10) * 0.5);
           col.position.set(colPos.x, colHeight / 2, colPos.z);
           worldGroup.add(col);
+          visualState.buildingMeshes.push(col);
 
           if (b.id === 'waterfront-station-civic') {
             const base = new THREE.Mesh(
@@ -3889,6 +3983,7 @@
             base.position.copy(col.position);
             base.position.y = 0.21;
             worldGroup.add(base);
+            visualState.buildingMeshes.push(base);
           }
         }
       }
@@ -3905,6 +4000,7 @@
           const entryPos = localPointToWorld(b, t, (b.depth || 8) * 0.48 - (entryDepth * 0.08));
           entry.position.set(entryPos.x, 1.25, entryPos.z);
           worldGroup.add(entry);
+          visualState.buildingMeshes.push(entry);
 
           if (b.id === 'waterfront-station-civic') {
             const door = new THREE.Mesh(
@@ -3915,6 +4011,7 @@
             door.position.set(doorPos.x, 1.6, doorPos.z);
             door.rotation.y = b.yaw || 0;
             worldGroup.add(door);
+            visualState.buildingMeshes.push(door);
 
             const transom = new THREE.Mesh(
               new THREE.PlaneGeometry(1.35, 0.55),
@@ -3924,6 +4021,7 @@
             transom.position.set(transomPos.x, 3.2, transomPos.z);
             transom.rotation.y = b.yaw || 0;
             worldGroup.add(transom);
+            visualState.buildingMeshes.push(transom);
           }
         }
       }
@@ -3937,6 +4035,7 @@
         canopy.position.set(canopyPos.x, storefrontBandHeight + 1.8, canopyPos.z);
         canopy.rotation.y = b.yaw || 0;
         worldGroup.add(canopy);
+        visualState.buildingMeshes.push(canopy);
 
         const recess = new THREE.Mesh(
           new THREE.BoxGeometry((b.width || 40) * 0.7, Math.max(3.2, storefrontBandHeight * 0.82), 1.1),
@@ -3946,15 +4045,9 @@
         recess.position.set(recessPos.x, Math.max(1.9, storefrontBandHeight * 0.4) + 0.3, recessPos.z);
         recess.rotation.y = b.yaw || 0;
         worldGroup.add(recess);
+        visualState.buildingMeshes.push(recess);
       }
 
-      const edge = new THREE.LineSegments(
-        new THREE.EdgesGeometry(geom),
-        new THREE.LineBasicMaterial({ color: b.hero_fidelity === 'hero' ? 0x8f9eb0 : 0x6f8197, transparent: true, opacity: b.hero_fidelity === 'hero' ? 0.34 : 0.28 })
-      );
-      edge.position.copy(mesh.position);
-      edge.rotation.y = mesh.rotation.y;
-      worldGroup.add(edge);
     });
   }
 
@@ -5422,14 +5515,14 @@
     const fogDensity = Math.max(0.0035, (weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
     scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
     renderer.setClearColor(timeOfDay.sky, 1);
-    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 0.76 : state.activeTimeOfDay === 'night' ? 0.56 : state.activeTimeOfDay === 'dusk' ? 0.64 : 0.72) - ((weather.rainIntensity || 0) * 0.03);
+    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 0.79 : state.activeTimeOfDay === 'night' ? 0.61 : state.activeTimeOfDay === 'dusk' ? 0.68 : 0.74) - ((weather.rainIntensity || 0) * 0.03);
 
     ambient.color.set(timeOfDay.ambientColor);
-    ambient.intensity = Math.max(0.2, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.76);
+    ambient.intensity = Math.max(0.24, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.82);
     keyLight.color.set(timeOfDay.keyColor);
     keyLight.intensity = (timeOfDay.keyIntensity || 0.6) * (0.72 + (mood.lightIntensity * 0.34));
     fillLight.color.set(timeOfDay.fillColor || '#526782');
-    fillLight.intensity = (timeOfDay.fillIntensity || 0.22) * 0.82;
+    fillLight.intensity = (timeOfDay.fillIntensity || 0.22) * 0.9;
     rimLight.color.set(timeOfDay.fillColor || '#6f88a6');
     rimLight.intensity = (state.activeTimeOfDay === 'night' ? 0.24 : state.activeTimeOfDay === 'morning' ? 0.16 : 0.12) + ((weather.rainIntensity || 0) * 0.08);
 
@@ -5462,14 +5555,14 @@
     });
 
     if (visualState.roadMaterial) {
-      visualState.roadMaterial.color.set(state.activeTimeOfDay === 'morning' ? '#182128' : state.activeTimeOfDay === 'dusk' ? '#131a21' : '#0e1419');
+      visualState.roadMaterial.color.set(state.activeTimeOfDay === 'morning' ? '#1a232a' : state.activeTimeOfDay === 'dusk' ? '#161e26' : '#121920');
       setSurfaceWetness(visualState.roadMaterial, 0.96, 0.05, (weather.rainIntensity || 0) * 0.5);
       if (visualState.roadMaterial.normalScale) {
         visualState.roadMaterial.normalScale.set(1.35 + ((weather.rainIntensity || 0) * 0.24), 1.1 + ((weather.rainIntensity || 0) * 0.2));
       }
     }
     if (visualState.sidewalkMaterial) {
-      visualState.sidewalkMaterial.color.set(state.activeTimeOfDay === 'night' ? '#645747' : state.activeTimeOfDay === 'dusk' ? '#72604f' : '#7c6853');
+      visualState.sidewalkMaterial.color.set(state.activeTimeOfDay === 'night' ? '#746557' : state.activeTimeOfDay === 'dusk' ? '#816f5e' : '#897663');
       setSurfaceWetness(visualState.sidewalkMaterial, 0.98, 0.02, (weather.rainIntensity || 0) * 0.22);
       if (visualState.sidewalkMaterial.normalScale) {
         visualState.sidewalkMaterial.normalScale.set(0.7 + ((weather.rainIntensity || 0) * 0.12), 0.7 + ((weather.rainIntensity || 0) * 0.12));
@@ -5501,14 +5594,17 @@
       const rain = weather.rainIntensity || 0;
       const fog = state.activeWeather === 'fog' ? 0.3 : 0;
       const intensity = state.activeTimeOfDay === 'night'
-        ? 2.15 + (rain * 0.95) + (fog * 0.55)
+        ? 2.28 + (rain * 1.02) + (fog * 0.62)
         : state.activeTimeOfDay === 'dusk'
-          ? 1.42 + (rain * 0.58) + (fog * 0.42)
-          : 0.03 + (rain * 0.03);
+          ? 1.6 + (rain * 0.64) + (fog * 0.45)
+          : 0.04 + (rain * 0.04);
       lampVisual.globeMaterial.emissiveIntensity = intensity;
-      lampVisual.haloMaterial.opacity = Math.min(0.28, intensity * 0.12);
-      lampVisual.pointLight.intensity = Math.min(2.8, intensity * 1.35);
-      lampVisual.pointLight.distance = state.activeTimeOfDay === 'night' ? 9.5 : 7.2;
+      lampVisual.globeMaterial.emissive.set(0xffc181);
+      lampVisual.haloMaterial.color.set(0xffbe72);
+      lampVisual.haloMaterial.opacity = Math.min(0.34, intensity * 0.14);
+      lampVisual.pointLight.color.set(0xffb96a);
+      lampVisual.pointLight.intensity = Math.min(3.25, intensity * 1.44);
+      lampVisual.pointLight.distance = state.activeTimeOfDay === 'night' ? 11.2 : 8.4;
     });
     if (state.debugEnabled && window.console && typeof window.console.info === 'function') {
       window.console.info('[Gastown Sim] Lamp emissive updated for', state.activeTimeOfDay, state.activeWeather);
@@ -5637,7 +5733,7 @@
       return;
     }
 
-    const sensitivity = 0.0018;
+    const sensitivity = 0.00225;
     state.yaw -= event.movementX * sensitivity;
     adjustPitch(-(event.movementY * sensitivity));
 
@@ -6052,11 +6148,9 @@
       updateAttribution(state.world);
       const coreSystems = [
         ['ground', addGround],
-        ['buildings', addBuildings],
-        ['streetscape', addStreetscape],
+        ['buildings', (world) => addBuildings(world, { coreOnly: true })],
+        ['streetscape', (world) => addStreetscape(world, { includeSecondary: false })],
         ['hero landmarks', addHeroLandmarks],
-        ['landmarks', addLandmarks],
-        ['debug route', addDebugRoute],
       ];
       coreSystems.forEach(([label, fn]) => {
         try { fn(state.world); } catch (error) { if (window.console && window.console.warn) { window.console.warn('[Gastown Sim] Optional system failed during init: ' + label, error); } }
@@ -6085,18 +6179,24 @@
         debugPanel.removeAttribute('hidden');
       }
       scheduleSteamClock();
+      scheduleDeferredWork(() => { addBuildings(state.world, { coreOnly: false }); }, 90);
+      scheduleDeferredWork(() => { addStreetscape(state.world, { includeCore: false, includeSecondary: true }); }, 190);
+      scheduleDeferredWork(() => { addLandmarks(state.world); }, 260);
+      scheduleDeferredWork(() => { if (state.debugEnabled) addDebugRoute(state.world); }, 320);
       if (RUNTIME_PROFILE.deferDialogFetch || RUNTIME_PROFILE.deferAudioSetup) {
-        window.setTimeout(() => {
+        scheduleDeferredWork(() => {
           loadDialogData().then((dialogData) => {
             state.dialogData = dialogData && typeof dialogData === 'object' ? dialogData : {};
           }).catch(() => {});
-          try { addProps(state.world); } catch (error) {}
-          try { addNpcs(state.world); } catch (error) {}
-          try { if (RUNTIME_PROFILE.deferAudioSetup) setupAudio(state.world); } catch (error) {}
-        }, 0);
+        }, 120);
+        scheduleDeferredWork(() => { addProps(state.world); }, 230);
+        scheduleDeferredWork(() => { addNpcs(state.world); }, 320);
+        if (RUNTIME_PROFILE.deferAudioSetup) {
+          scheduleDeferredWork(() => { setupAudio(state.world); }, 420);
+        }
       }
       setWorldModeStatus(state.world);
-      setStatus('Gastown working corridor ready. Click in to explore.');
+      setStatus('Gastown corridor ready. Streaming in details… click in to explore.');
       updateCameraModeUi();
       renderer.setAnimationLoop((time) => {
         const delta = Math.min(0.03, (time - (init.prevTime || time)) / 1000);
