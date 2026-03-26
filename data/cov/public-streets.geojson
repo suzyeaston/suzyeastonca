@@ -1,0 +1,2578 @@
+{
+  "type": "FeatureCollection",
+  "name": "public-streets",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10545304575756,
+            49.283184450594675
+          ],
+          [
+            -123.10645713584441,
+            49.283372257675
+          ],
+          [
+            -123.10659026549541,
+            49.2833918793573
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "0 TROUNCE ALLEY",
+        "streetuse": "Residential",
+        "geo_point_2d": {
+          "lon": -123.10602127759394,
+          "lat": 49.28329042659903
+        }
+      },
+      "id": "0 TROUNCE ALLEY"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10430442445525,
+            49.282475701778885
+          ],
+          [
+            -123.10678798525703,
+            49.28293019033449
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "0 W CORDOVA ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10554620485613,
+          "lat": 49.28270294605669
+        }
+      },
+      "id": "0 W CORDOVA ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10426176613504,
+            49.283496674714804
+          ],
+          [
+            -123.1063833144336,
+            49.28388496966123
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "0 WATER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10532254028432,
+          "lat": 49.28369082218802
+        }
+      },
+      "id": "0 WATER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10618759807528,
+            49.284335448085926
+          ],
+          [
+            -123.1063833144336,
+            49.28388496966123
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "100 ABBOTT ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10628545625444,
+          "lat": 49.28411020887358
+        }
+      },
+      "id": "100 ABBOTT ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10859280586145,
+            49.28475083170794
+          ],
+          [
+            -123.10877737817347,
+            49.28431923160268
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "100 CAMBIE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10868509201745,
+          "lat": 49.28453503165531
+        }
+      },
+      "id": "100 CAMBIE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10659026549541,
+            49.2833918793573
+          ],
+          [
+            -123.10898677358948,
+            49.2838284644878
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "100 TROUNCE ALLEY",
+        "streetuse": "Residential",
+        "geo_point_2d": {
+          "lon": -123.10778851954245,
+          "lat": 49.28361017192255
+        }
+      },
+      "id": "100 TROUNCE ALLEY"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10678798525703,
+            49.28293019033449
+          ],
+          [
+            -123.10858101656734,
+            49.28325806664704
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "100 W CORDOVA ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10768450091219,
+          "lat": 49.28309412849077
+        }
+      },
+      "id": "100 W CORDOVA ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10858101656734,
+            49.28325806664704
+          ],
+          [
+            -123.10918325232811,
+            49.283368301746876
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "100 W CORDOVA ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10888213444771,
+          "lat": 49.283313184196956
+        }
+      },
+      "id": "100 W CORDOVA ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1071952041572,
+            49.28199096872123
+          ],
+          [
+            -123.10934710464767,
+            49.282382248538404
+          ],
+          [
+            -123.10954633718235,
+            49.28251141047328
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "100 W HASTINGS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10838627471061,
+          "lat": 49.282212091413754
+        }
+      },
+      "id": "100 W HASTINGS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1063833144336,
+            49.28388496966123
+          ],
+          [
+            -123.10877737817347,
+            49.28431923160268
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "100 WATER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10758034630354,
+          "lat": 49.284102100631955
+        }
+      },
+      "id": "100 WATER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1063833144336,
+            49.28388496966123
+          ],
+          [
+            -123.10659026549541,
+            49.2833918793573
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "200 ABBOTT ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10648678996452,
+          "lat": 49.28363842450926
+        }
+      },
+      "id": "200 ABBOTT ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10659026549541,
+            49.2833918793573
+          ],
+          [
+            -123.10678798525703,
+            49.28293019033449
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "200 ABBOTT ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10668912537622,
+          "lat": 49.2831610348459
+        }
+      },
+      "id": "200 ABBOTT ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10877737817347,
+            49.28431923160268
+          ],
+          [
+            -123.1089359941425,
+            49.28394714972523
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "200 CAMBIE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10885668615799,
+          "lat": 49.28413319066395
+        }
+      },
+      "id": "200 CAMBIE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1089359941425,
+            49.28394714972523
+          ],
+          [
+            -123.10898665061072,
+            49.28382881541558
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "200 CAMBIE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10896132237663,
+          "lat": 49.283887982570405
+        }
+      },
+      "id": "200 CAMBIE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10898665061072,
+            49.28382881541558
+          ],
+          [
+            -123.10911899996232,
+            49.283518725786074
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "200 CAMBIE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10905282528651,
+          "lat": 49.28367377060082
+        }
+      },
+      "id": "200 CAMBIE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11307133850771,
+            49.287322582299105
+          ],
+          [
+            -123.11307085102479,
+            49.28731987523018
+          ],
+          [
+            -123.113070264589,
+            49.287315989890914
+          ],
+          [
+            -123.11306977437042,
+            49.28731208646715
+          ],
+          [
+            -123.11306938043073,
+            49.287308191944355
+          ],
+          [
+            -123.11306911021057,
+            49.287304279310156
+          ],
+          [
+            -123.11306892251807,
+            49.28730037559037
+          ],
+          [
+            -123.11306885856564,
+            49.28729646275434
+          ],
+          [
+            -123.11306889089198,
+            49.28729255881926
+          ],
+          [
+            -123.11306901945599,
+            49.28728864579485
+          ],
+          [
+            -123.1130692580499,
+            49.28728474165793
+          ],
+          [
+            -123.11306960665314,
+            49.287280837413384
+          ],
+          [
+            -123.11307005151453,
+            49.28727693307463
+          ],
+          [
+            -123.11307060642633,
+            49.28727304661854
+          ],
+          [
+            -123.1130712713474,
+            49.28726916005479
+          ],
+          [
+            -123.11307203254711,
+            49.287265282392
+          ],
+          [
+            -123.11307289002542,
+            49.287261413630155
+          ],
+          [
+            -123.11307385753348,
+            49.2872575537558
+          ],
+          [
+            -123.11307492132009,
+            49.2872537027824
+          ],
+          [
+            -123.11307609515701,
+            49.28724986969163
+          ],
+          [
+            -123.11307737904416,
+            49.287246054483504
+          ],
+          [
+            -123.11307874545865,
+            49.28724224818978
+          ],
+          [
+            -123.11308022192333,
+            49.28723845977866
+          ],
+          [
+            -123.11308180843822,
+            49.28723468925017
+          ],
+          [
+            -123.11308347750092,
+            49.28723093663122
+          ],
+          [
+            -123.1130852566138,
+            49.28722720189488
+          ],
+          [
+            -123.11308714579735,
+            49.28722349403628
+          ],
+          [
+            -123.1130891175287,
+            49.28721980408723
+          ],
+          [
+            -123.11309118555896,
+            49.28721613203422
+          ],
+          [
+            -123.11309336368043,
+            49.28721249585411
+          ],
+          [
+            -123.11309562434965,
+            49.287208877583495
+          ],
+          [
+            -123.11309799508946,
+            49.28720528619062
+          ],
+          [
+            -123.11310046214868,
+            49.28720172168892
+          ],
+          [
+            -123.11310301177618,
+            49.28719818409187
+          ],
+          [
+            -123.11310565774363,
+            49.287194682381134
+          ],
+          [
+            -123.11310840003047,
+            49.28719120756158
+          ],
+          [
+            -123.11311123865725,
+            49.287187768628314
+          ],
+          [
+            -123.11311415985223,
+            49.28718435659966
+          ],
+          [
+            -123.11311717738712,
+            49.287180980457315
+          ],
+          [
+            -123.11312027751077,
+            49.28717764021471
+          ],
+          [
+            -123.11312347397431,
+            49.28717433585837
+          ],
+          [
+            -123.11312676677771,
+            49.287171067388314
+          ],
+          [
+            -123.11313012841872,
+            49.28716783483145
+          ],
+          [
+            -123.11313358642016,
+            49.287164647156
+          ],
+          [
+            -123.1131371270103,
+            49.287161495380246
+          ],
+          [
+            -123.11313987182471,
+            49.28715912696328
+          ],
+          [
+            -123.11386659612705,
+            49.28661684994536
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "200 HOWE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11343301768085,
+          "lat": 49.28694704912199
+        }
+      },
+      "id": "200 HOWE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10954633718235,
+            49.28251141047328
+          ],
+          [
+            -123.10996328364564,
+            49.28278135547655
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "200 W HASTINGS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10975481041399,
+          "lat": 49.28264638297492
+        }
+      },
+      "id": "200 W HASTINGS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.109971593822,
+            49.28150993325015
+          ],
+          [
+            -123.1109586709977,
+            49.282132175535416
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "200 W PENDER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11046513240984,
+          "lat": 49.28182105439278
+        }
+      },
+      "id": "200 W PENDER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10877737817347,
+            49.28431923160268
+          ],
+          [
+            -123.10957636505753,
+            49.2844653049257
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "200-300 WATER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.1091768716155,
+          "lat": 49.284392268264185
+        }
+      },
+      "id": "200-300 WATER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10957636505753,
+            49.2844653049257
+          ],
+          [
+            -123.11054175598821,
+            49.28463822616031
+          ],
+          [
+            -123.11095341031988,
+            49.28467794110522
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "200-300 WATER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11026328127583,
+          "lat": 49.28458330025133
+        }
+      },
+      "id": "200-300 WATER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10678798525703,
+            49.28293019033449
+          ],
+          [
+            -123.10698966918683,
+            49.28247214930671
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 ABBOTT ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10688882722192,
+          "lat": 49.2827011698206
+        }
+      },
+      "id": "300 ABBOTT ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10698966918683,
+            49.28247214930671
+          ],
+          [
+            -123.1071952041572,
+            49.28199096872123
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 ABBOTT ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10709243667203,
+          "lat": 49.28223155901397
+        }
+      },
+      "id": "300 ABBOTT ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10911899996232,
+            49.283518725786074
+          ],
+          [
+            -123.10918300472727,
+            49.283368257004945
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 CAMBIE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.1091510023448,
+          "lat": 49.2834434913955
+        }
+      },
+      "id": "300 CAMBIE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10918300472727,
+            49.283368257004945
+          ],
+          [
+            -123.10932875466999,
+            49.28302560990135
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 CAMBIE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10925587969864,
+          "lat": 49.28319693345315
+        }
+      },
+      "id": "300 CAMBIE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10932875466999,
+            49.28302560990135
+          ],
+          [
+            -123.10937943371368,
+            49.28290589911681
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 CAMBIE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10935409419184,
+          "lat": 49.28296575450908
+        }
+      },
+      "id": "300 CAMBIE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10937943371368,
+            49.28290589911681
+          ],
+          [
+            -123.10954633718235,
+            49.28251141047328
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 CAMBIE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10946288544801,
+          "lat": 49.282708654795044
+        }
+      },
+      "id": "300 CAMBIE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11288449004172,
+            49.28595660550889
+          ],
+          [
+            -123.11336956688969,
+            49.28563379764372
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 GRANVILLE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.1131270284657,
+          "lat": 49.285795201576306
+        }
+      },
+      "id": "300 GRANVILLE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11336956688969,
+            49.28563379764372
+          ],
+          [
+            -123.11386626189763,
+            49.28530727026367
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 GRANVILLE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11361791439366,
+          "lat": 49.2854705339537
+        }
+      },
+      "id": "300 GRANVILLE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1099523723039,
+            49.28405806905863
+          ],
+          [
+            -123.110432813818,
+            49.28374050402212
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 HOMER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11019259306094,
+          "lat": 49.283899286540375
+        }
+      },
+      "id": "300 HOMER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.110432813818,
+            49.28374050402212
+          ],
+          [
+            -123.11093306004544,
+            49.28340931725289
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 HOMER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11068293693171,
+          "lat": 49.283574910637505
+        }
+      },
+      "id": "300 HOMER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11386659612705,
+            49.28661684994536
+          ],
+          [
+            -123.11400728821938,
+            49.28651185452177
+          ],
+          [
+            -123.11435582323826,
+            49.28628103586555
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 HOWE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11410921208905,
+          "lat": 49.28644610313832
+        }
+      },
+      "id": "300 HOWE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11435582323826,
+            49.28628103586555
+          ],
+          [
+            -123.1148572378609,
+            49.28594992104967
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 HOWE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11460653054958,
+          "lat": 49.28611547845761
+        }
+      },
+      "id": "300 HOWE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11095341031988,
+            49.28467794110522
+          ],
+          [
+            -123.11140382533927,
+            49.28436859549614
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 RICHARDS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11117861782958,
+          "lat": 49.28452326830068
+        }
+      },
+      "id": "300 RICHARDS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11140382533927,
+            49.28436859549614
+          ],
+          [
+            -123.11190416820473,
+            49.2840376473355
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 RICHARDS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11165399677199,
+          "lat": 49.28420312141582
+        }
+      },
+      "id": "300 RICHARDS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11189381672449,
+            49.28531489100729
+          ],
+          [
+            -123.11237806166781,
+            49.285001083246655
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 SEYMOUR ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11213593919614,
+          "lat": 49.28515798712697
+        }
+      },
+      "id": "300 SEYMOUR ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11237806166781,
+            49.285001083246655
+          ],
+          [
+            -123.11287506728422,
+            49.28466596939866
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 SEYMOUR ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11262656447602,
+          "lat": 49.28483352632266
+        }
+      },
+      "id": "300 SEYMOUR ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10911899996232,
+            49.283518725786074
+          ],
+          [
+            -123.1099523723039,
+            49.28405806905863
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 W CORDOVA ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10953568613311,
+          "lat": 49.283788397422356
+        }
+      },
+      "id": "300 W CORDOVA ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10996328364564,
+            49.28278135547655
+          ],
+          [
+            -123.11093306004544,
+            49.28340931725289
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 W HASTINGS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11044817184555,
+          "lat": 49.283095336364724
+        }
+      },
+      "id": "300 W HASTINGS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1109586709977,
+            49.282132175535416
+          ],
+          [
+            -123.11191388815494,
+            49.28276104264813
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "300 W PENDER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11143627957632,
+          "lat": 49.28244660909178
+        }
+      },
+      "id": "300 W PENDER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10954633718235,
+            49.28251141047328
+          ],
+          [
+            -123.10977382232376,
+            49.28197573868819
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 CAMBIE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10966007975306,
+          "lat": 49.28224357458073
+        }
+      },
+      "id": "400 CAMBIE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10977382232376,
+            49.28197573868819
+          ],
+          [
+            -123.109971593822,
+            49.28150993325015
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 CAMBIE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.10987270807288,
+          "lat": 49.28174283596917
+        }
+      },
+      "id": "400 CAMBIE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11386626189763,
+            49.28530727026367
+          ],
+          [
+            -123.11436711998051,
+            49.28497618505071
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 GRANVILLE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11411669093906,
+          "lat": 49.28514172765719
+        }
+      },
+      "id": "400 GRANVILLE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11436711998051,
+            49.28497618505071
+          ],
+          [
+            -123.11484752827134,
+            49.28465860173765
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 GRANVILLE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11460732412593,
+          "lat": 49.28481739339418
+        }
+      },
+      "id": "400 GRANVILLE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.10996328364564,
+            49.28278135547655
+          ],
+          [
+            -123.11046307022787,
+            49.28245045896819
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 HAMILTON ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11021317693677,
+          "lat": 49.28261590722237
+        }
+      },
+      "id": "400 HAMILTON ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11046307022787,
+            49.28245045896819
+          ],
+          [
+            -123.1109586709977,
+            49.282132175535416
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 HAMILTON ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11071087061279,
+          "lat": 49.282291317251804
+        }
+      },
+      "id": "400 HAMILTON ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11093306004544,
+            49.28340931725289
+          ],
+          [
+            -123.11143449624856,
+            49.2830783160484
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 HOMER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11118377814698,
+          "lat": 49.283243816650646
+        }
+      },
+      "id": "400 HOMER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11143449624856,
+            49.2830783160484
+          ],
+          [
+            -123.11191388815494,
+            49.28276104264813
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 HOMER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11167419220173,
+          "lat": 49.28291967934827
+        }
+      },
+      "id": "400 HOMER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1148572378609,
+            49.28594992104967
+          ],
+          [
+            -123.11535813611094,
+            49.28561842675554
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 HOWE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11510768698592,
+          "lat": 49.285784173902606
+        }
+      },
+      "id": "400 HOWE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11535813611094,
+            49.28561842675554
+          ],
+          [
+            -123.11583799343674,
+            49.28530049809359
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 HOWE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11559806477385,
+          "lat": 49.28545946242457
+        }
+      },
+      "id": "400 HOWE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11190416820473,
+            49.2840376473355
+          ],
+          [
+            -123.11240538377129,
+            49.28370642628352
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 RICHARDS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.112154775988,
+          "lat": 49.28387203680951
+        }
+      },
+      "id": "400 RICHARDS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11240538377129,
+            49.28370642628352
+          ],
+          [
+            -123.1128853114284,
+            49.28338899544858
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 RICHARDS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11264534759985,
+          "lat": 49.28354771086605
+        }
+      },
+      "id": "400 RICHARDS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11287506728422,
+            49.28466596939866
+          ],
+          [
+            -123.1133757333271,
+            49.28433502356109
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 SEYMOUR ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11312540030566,
+          "lat": 49.28450049647988
+        }
+      },
+      "id": "400 SEYMOUR ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1133757333271,
+            49.28433502356109
+          ],
+          [
+            -123.113856072791,
+            49.2840173454552
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 SEYMOUR ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11361590305904,
+          "lat": 49.28417618450814
+        }
+      },
+      "id": "400 SEYMOUR ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1099523723039,
+            49.28405806905863
+          ],
+          [
+            -123.11011616735395,
+            49.2841636783436
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 W CORDOVA ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11003426982893,
+          "lat": 49.28411087370112
+        }
+      },
+      "id": "400 W CORDOVA ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11011616735395,
+            49.2841636783436
+          ],
+          [
+            -123.11095341031988,
+            49.28467794110522
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 W CORDOVA ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11053478883692,
+          "lat": 49.28442080972441
+        }
+      },
+      "id": "400 W CORDOVA ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11093306004544,
+            49.28340931725289
+          ],
+          [
+            -123.11190416820473,
+            49.2840376473355
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 W HASTINGS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11141861412509,
+          "lat": 49.28372348229419
+        }
+      },
+      "id": "400 W HASTINGS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11191388815494,
+            49.28276104264813
+          ],
+          [
+            -123.1128853114284,
+            49.28338899544858
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "400 W PENDER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11239959979166,
+          "lat": 49.283075019048354
+        }
+      },
+      "id": "400 W PENDER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11484752827134,
+            49.28465860173765
+          ],
+          [
+            -123.11532753213488,
+            49.28434123269601
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 GRANVILLE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11508753020311,
+          "lat": 49.28449991721683
+        }
+      },
+      "id": "500 GRANVILLE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11532753213488,
+            49.28434123269601
+          ],
+          [
+            -123.11641171154616,
+            49.28362398573292
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 GRANVILLE ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11586962184052,
+          "lat": 49.28398260921446
+        }
+      },
+      "id": "500 GRANVILLE ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1109586709977,
+            49.282132175535416
+          ],
+          [
+            -123.11142285021056,
+            49.28181515260019
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 HAMILTON ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11119076060413,
+          "lat": 49.281973664067806
+        }
+      },
+      "id": "500 HAMILTON ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11142285021056,
+            49.28181515260019
+          ],
+          [
+            -123.11193887338905,
+            49.2814739165212
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 HAMILTON ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11168086179981,
+          "lat": 49.2816445345607
+        }
+      },
+      "id": "500 HAMILTON ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11191388815494,
+            49.28276104264813
+          ],
+          [
+            -123.11239442715798,
+            49.28244300153421
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 HOMER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11215415765648,
+          "lat": 49.28260202209117
+        }
+      },
+      "id": "500 HOMER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11239442715798,
+            49.28244300153421
+          ],
+          [
+            -123.11347818196899,
+            49.28172605212696
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 HOMER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11293630456346,
+          "lat": 49.28208452683058
+        }
+      },
+      "id": "500 HOMER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1128853114284,
+            49.28338899544858
+          ],
+          [
+            -123.11336531548622,
+            49.28307158951187
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 RICHARDS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11312531345732,
+          "lat": 49.283230292480226
+        }
+      },
+      "id": "500 RICHARDS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11336531548622,
+            49.28307158951187
+          ],
+          [
+            -123.11444927637942,
+            49.28235470283435
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 RICHARDS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11390729593282,
+          "lat": 49.28271314617311
+        }
+      },
+      "id": "500 RICHARDS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.113856072791,
+            49.2840173454552
+          ],
+          [
+            -123.11433577363789,
+            49.2836996929509
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 SEYMOUR ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11409592321445,
+          "lat": 49.28385851920305
+        }
+      },
+      "id": "500 SEYMOUR ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11433577363789,
+            49.2836996929509
+          ],
+          [
+            -123.1154201732534,
+            49.2829823920269
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 SEYMOUR ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11487797344566,
+          "lat": 49.28334104248889
+        }
+      },
+      "id": "500 SEYMOUR ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11095341031988,
+            49.28467794110522
+          ],
+          [
+            -123.11189381672449,
+            49.28531489100729
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 W CORDOVA ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11142361352218,
+          "lat": 49.28499641605626
+        }
+      },
+      "id": "500 W CORDOVA ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11190416820473,
+            49.2840376473355
+          ],
+          [
+            -123.11287506728422,
+            49.28466596939866
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 W HASTINGS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11238961774447,
+          "lat": 49.28435180836708
+        }
+      },
+      "id": "500 W HASTINGS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1128853114284,
+            49.28338899544858
+          ],
+          [
+            -123.113856072791,
+            49.2840173454552
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "500 W PENDER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.1133706921097,
+          "lat": 49.283703170451886
+        }
+      },
+      "id": "500 W PENDER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11189381672449,
+            49.28531489100729
+          ],
+          [
+            -123.11288449004172,
+            49.28595660550889
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "600 W CORDOVA ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.1123891533831,
+          "lat": 49.28563574825809
+        }
+      },
+      "id": "600 W CORDOVA ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11287506728422,
+            49.28466596939866
+          ],
+          [
+            -123.11386626189763,
+            49.28530727026367
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "600 W HASTINGS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11337066459092,
+          "lat": 49.284986619831166
+        }
+      },
+      "id": "600 W HASTINGS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.113856072791,
+            49.2840173454552
+          ],
+          [
+            -123.11484752827134,
+            49.28465860173765
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "600 W PENDER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11435180053115,
+          "lat": 49.28433797359642
+        }
+      },
+      "id": "600 W PENDER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11288449004172,
+            49.28595660550889
+          ],
+          [
+            -123.11386659612705,
+            49.28661684994536
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "700 W CORDOVA ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11337554308439,
+          "lat": 49.28628672772713
+        }
+      },
+      "id": "700 W CORDOVA ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11386626189763,
+            49.28530727026367
+          ],
+          [
+            -123.1148572378609,
+            49.28594992104967
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "700 W HASTINGS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11436174987927,
+          "lat": 49.285628595656675
+        }
+      },
+      "id": "700 W HASTINGS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11484752827134,
+            49.28465860173765
+          ],
+          [
+            -123.11583799343674,
+            49.28530049809359
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "700 W PENDER ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11534276085405,
+          "lat": 49.28497954991562
+        }
+      },
+      "id": "700 W PENDER ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.1148572378609,
+            49.28594992104967
+          ],
+          [
+            -123.11582734325418,
+            49.28657717546662
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "800 W HASTINGS ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11534229055755,
+          "lat": 49.28626354825815
+        }
+      },
+      "id": "800 W HASTINGS ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11307133850771,
+            49.287322582299105
+          ],
+          [
+            -123.11307154747013,
+            49.287323760461796
+          ],
+          [
+            -123.11307235390447,
+            49.28732763659061
+          ],
+          [
+            -123.11307325657668,
+            49.28733150363008
+          ],
+          [
+            -123.11307425546622,
+            49.28733535258504
+          ],
+          [
+            -123.1130753643448,
+            49.287339192437194
+          ],
+          [
+            -123.11307658321252,
+            49.28734302318654
+          ],
+          [
+            -123.11307788454641,
+            49.28734683586483
+          ],
+          [
+            -123.11307930962064,
+            49.287350639426855
+          ],
+          [
+            -123.11308081714051,
+            49.287354415922664
+          ],
+          [
+            -123.11308243464961,
+            49.287358183315646
+          ],
+          [
+            -123.11308414837616,
+            49.28736193262411
+          ],
+          [
+            -123.1130859720508,
+            49.287365654839434
+          ],
+          [
+            -123.11308789194294,
+            49.28736935897023
+          ],
+          [
+            -123.11308989428083,
+            49.2873730360348
+          ],
+          [
+            -123.11309200658748,
+            49.28737669500137
+          ],
+          [
+            -123.11309421509108,
+            49.28738032688824
+          ],
+          [
+            -123.11309653354289,
+            49.28738393168194
+          ],
+          [
+            -123.11309893446108,
+            49.287387518404564
+          ],
+          [
+            -123.11310143155572,
+            49.28739106905231
+          ],
+          [
+            -123.11310401109623,
+            49.287394592633795
+          ],
+          [
+            -123.11310670058499,
+            49.28739808912211
+          ],
+          [
+            -123.11310948625028,
+            49.28740154953553
+          ],
+          [
+            -123.11311235434088,
+            49.28740497388751
+          ],
+          [
+            -123.11311530487737,
+            49.28740837117322
+          ],
+          [
+            -123.1131183653416,
+            49.28741173237057
+          ],
+          [
+            -123.11312149448,
+            49.28741505751992
+          ],
+          [
+            -123.11312473356674,
+            49.287418355576065
+          ],
+          [
+            -123.11312804130706,
+            49.28742160858904
+          ],
+          [
+            -123.1131314452034,
+            49.28742481653195
+          ],
+          [
+            -123.11313493154569,
+            49.28742799740852
+          ],
+          [
+            -123.11313850029279,
+            49.28743113322846
+          ],
+          [
+            -123.11314216519595,
+            49.2874342239783
+          ],
+          [
+            -123.1131458987733,
+            49.28743727868009
+          ],
+          [
+            -123.11314971475548,
+            49.287440288325236
+          ],
+          [
+            -123.11315361314247,
+            49.28744325291372
+          ],
+          [
+            -123.11315758018311,
+            49.28744617245899
+          ],
+          [
+            -123.11316164337981,
+            49.287449046934114
+          ],
+          [
+            -123.11316576145835,
+            49.287451867384334
+          ],
+          [
+            -123.1131699757135,
+            49.28745465175953
+          ],
+          [
+            -123.11317424485051,
+            49.287457382109814
+          ],
+          [
+            -123.11317859637175,
+            49.28746005840824
+          ],
+          [
+            -123.11318301654664,
+            49.2874626896634
+          ],
+          [
+            -123.11318750537517,
+            49.28746527587533
+          ],
+          [
+            -123.11319206283669,
+            49.2874678080488
+          ],
+          [
+            -123.11319668891068,
+            49.287470277188724
+          ],
+          [
+            -123.11320138363827,
+            49.28747270128535
+          ],
+          [
+            -123.11320613324764,
+            49.28747507135701
+          ],
+          [
+            -123.11321095149003,
+            49.28747738739021
+          ],
+          [
+            -123.11321582461422,
+            49.28747964939843
+          ],
+          [
+            -123.11322076635076,
+            49.287481848373034
+          ],
+          [
+            -123.1132257629897,
+            49.2874840023178
+          ],
+          [
+            -123.1132308144898,
+            49.287486093242386
+          ],
+          [
+            -123.11323592085101,
+            49.28748812114682
+          ],
+          [
+            -123.11324550019408,
+            49.28749181776896
+          ],
+          [
+            -123.11324953288921,
+            49.28749337897621
+          ],
+          [
+            -123.11335085741389,
+            49.28753165301978
+          ],
+          [
+            -123.11345318327416,
+            49.28756876561439
+          ],
+          [
+            -123.11355648292121,
+            49.28760469879415
+          ],
+          [
+            -123.11366072884725,
+            49.287639452583505
+          ],
+          [
+            -123.11376587975158,
+            49.287673009030264
+          ],
+          [
+            -123.11387190810504,
+            49.28770535916393
+          ],
+          [
+            -123.11397878635758,
+            49.287736485018925
+          ],
+          [
+            -123.11408648702096,
+            49.28776639561524
+          ],
+          [
+            -123.11547908486001,
+            49.28814319619284
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "800-900 CANADA PLACE",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11423791254721,
+          "lat": 49.28779316376846
+        }
+      },
+      "id": "800-900 CANADA PLACE"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11386659612705,
+            49.28661684994536
+          ],
+          [
+            -123.11428284907508,
+            49.28691256002464
+          ],
+          [
+            -123.11431334957325,
+            49.28693064612805
+          ],
+          [
+            -123.11434631338805,
+            49.28694953035595
+          ],
+          [
+            -123.1143797438701,
+            49.286968027320164
+          ],
+          [
+            -123.11441366854221,
+            49.28698614598823
+          ],
+          [
+            -123.11444807361133,
+            49.28700386838302
+          ],
+          [
+            -123.11448294532607,
+            49.287021194517735
+          ],
+          [
+            -123.114518269935,
+            49.287038124405576
+          ],
+          [
+            -123.11455404741687,
+            49.287054649050994
+          ],
+          [
+            -123.11459025024821,
+            49.28707075948571
+          ],
+          [
+            -123.11462689215877,
+            49.28708644670049
+          ],
+          [
+            -123.11559855177161,
+            49.28747614796266
+          ],
+          [
+            -123.11594345004278,
+            49.287600583405236
+          ],
+          [
+            -123.11595477391016,
+            49.28760337853549
+          ],
+          [
+            -123.11597172485024,
+            49.2876073643749
+          ],
+          [
+            -123.11598877160877,
+            49.28761116121709
+          ],
+          [
+            -123.11600592793684,
+            49.28761476904823
+          ],
+          [
+            -123.11602318004077,
+            49.287618169891765
+          ],
+          [
+            -123.11604051421133,
+            49.28762138175178
+          ],
+          [
+            -123.11605793040614,
+            49.287624386637916
+          ],
+          [
+            -123.1160754286672,
+            49.28762720254045
+          ],
+          [
+            -123.11609299520082,
+            49.28762981148286
+          ],
+          [
+            -123.11611063002792,
+            49.28763222246025
+          ],
+          [
+            -123.11612833312716,
+            49.287634426477474
+          ],
+          [
+            -123.11614607701694,
+            49.28763643255726
+          ],
+          [
+            -123.11616388917842,
+            49.287638231676816
+          ],
+          [
+            -123.11618174213004,
+            49.28763983285889
+          ],
+          [
+            -123.11619962209915,
+            49.28764122712216
+          ],
+          [
+            -123.11621755658804,
+            49.28764241443895
+          ],
+          [
+            -123.11623550436386,
+            49.28764340384587
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "800-900 W CORDOVA ST",
+        "streetuse": "Arterial",
+        "geo_point_2d": {
+          "lon": -123.11501497851323,
+          "lat": 49.28721431817564
+        }
+      },
+      "id": "800-900 W CORDOVA ST"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [
+          [
+            -123.11268314850501,
+            49.28730140906689
+          ],
+          [
+            -123.1134388084634,
+            49.28757270162038
+          ],
+          [
+            -123.11408200655305,
+            49.28777342526528
+          ],
+          [
+            -123.11546862241894,
+            49.2881501149369
+          ]
+        ],
+        "type": "LineString"
+      },
+      "properties": {
+        "hblock": "800-900 W WATERFRONT ROAD",
+        "streetuse": "Residential",
+        "geo_point_2d": {
+          "lon": -123.11406818742361,
+          "lat": 49.287750408153514
+        }
+      },
+      "id": "800-900 W WATERFRONT ROAD"
+    }
+  ]
+}

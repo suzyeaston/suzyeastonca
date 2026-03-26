@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 const fs = require('fs');
 const path = require('path');
@@ -224,39 +223,35 @@ function buildPolygonWkt(points) {
 }
 
 function buildWithinDistanceClause(field, filterContext) {
-  return `within_distance(${field}, geom'POINT(${filterContext.midpoint.lon} ${filterContext.midpoint.lat})', ${Math.ceil(filterContext.radiusMeters)})`;
+  const lon = Number(filterContext.midpoint.lon.toFixed(7));
+  const lat = Number(filterContext.midpoint.lat.toFixed(7));
+  const radius = Number(filterContext.radiusMeters);
+  return `within_distance(${field}, geom'POINT(${lon} ${lat})', ${radius} m)`;
 }
 
-function buildIntersectsClause(field, filterContext) {
-  return `intersects(${field}, geom'${buildPolygonWkt(filterContext.bboxPolygon)}')`;
+function buildBboxClause(field, filterContext) {
+  const { minLat, minLon, maxLat, maxLon } = filterContext.query.bbox;
+  return `in_bbox(${field}, ${minLat}, ${minLon}, ${maxLat}, ${maxLon})`;
 }
 
 function buildWhereClause(filterContext, dataset) {
-  const spatialFields = [];
-  if (Array.isArray(dataset.fields)) {
-    dataset.fields.forEach((field) => {
-      const type = String(field.type || '').toLowerCase();
-      const name = String(field.name || '');
-      if (type.includes('geo') || type.includes('geometry')) spatialFields.push(name);
-      if (name === 'geo_shape' || name === 'geo_point_2d') spatialFields.push(name);
-    });
-  }
+  const availableFields = new Set(
+    (Array.isArray(dataset.fields) ? dataset.fields : [])
+      .map((field) => String(field.name || ''))
+      .filter((name) => name === 'geo_shape' || name === 'geo_point_2d')
+  );
 
-  const orderedFields = Array.from(new Set([
-    ...spatialFields.filter((name) => name === 'geo_shape'),
-    ...spatialFields.filter((name) => name !== 'geo_shape' && name !== 'geo_point_2d'),
-    ...spatialFields.filter((name) => name === 'geo_point_2d'),
-    'geo_shape',
-    'geo_point_2d',
-  ])).filter(Boolean);
-
+  const orderedFields = ['geo_shape', 'geo_point_2d'].filter((name) => availableFields.has(name));
   if (!orderedFields.length) return null;
 
   const clauses = orderedFields.flatMap((field) => {
     if (field === 'geo_point_2d') {
-      return [buildWithinDistanceClause(field, filterContext), buildIntersectsClause(field, filterContext)];
+      return [
+        buildWithinDistanceClause(field, filterContext),
+        buildBboxClause(field, filterContext),
+      ];
     }
-    return [buildIntersectsClause(field, filterContext)];
+    return [buildBboxClause(field, filterContext)];
   });
 
   return Array.from(new Set(clauses)).join(' OR ');

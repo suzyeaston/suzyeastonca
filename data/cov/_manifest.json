@@ -1,0 +1,166 @@
+{
+  "timestamp": "2026-03-26T07:57:04.222Z",
+  "api": {
+    "base": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets",
+    "version": "explore-v2.1"
+  },
+  "datasets": [
+    {
+      "dataset": "public-streets",
+      "datasetId": "public-streets",
+      "required": true,
+      "output": "data\\cov\\public-streets.geojson",
+      "metadataUrl": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/public-streets",
+      "exportUrl": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/public-streets/exports/geojson?limit=25000&where=within_distance%28geo_point_2d%2C+geom%27POINT%28-123.1102783+49.2851087%29%27%2C+400+m%29+OR+in_bbox%28geo_point_2d%2C+49.2797076%2C+-123.1188359%2C+49.2905098%2C+-123.1017208%29&timezone=UTC",
+      "query": {
+        "midpoint": {
+          "lon": -123.1102783,
+          "lat": 49.2851087
+        },
+        "radiusMeters": 400,
+        "routePaddingMeters": 120,
+        "bbox": {
+          "minLon": -123.1188359,
+          "minLat": 49.2797076,
+          "maxLon": -123.1017208,
+          "maxLat": 49.2905098
+        }
+      },
+      "totalFeatures": 192,
+      "keptFeatures": 80
+    },
+    {
+      "dataset": "building-footprints-2015",
+      "datasetId": "building-footprints-2015",
+      "required": true,
+      "output": "data\\cov\\building-footprints.geojson",
+      "metadataUrl": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/building-footprints-2015",
+      "exportUrl": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/building-footprints-2015/exports/geojson?limit=25000&where=within_distance%28geo_point_2d%2C+geom%27POINT%28-123.1102783+49.2851087%29%27%2C+400+m%29+OR+in_bbox%28geo_point_2d%2C+49.2797076%2C+-123.1188359%2C+49.2905098%2C+-123.1017208%29&timezone=UTC",
+      "query": {
+        "midpoint": {
+          "lon": -123.1102783,
+          "lat": 49.2851087
+        },
+        "radiusMeters": 400,
+        "routePaddingMeters": 120,
+        "bbox": {
+          "minLon": -123.1188359,
+          "minLat": 49.2797076,
+          "maxLon": -123.1017208,
+          "maxLat": 49.2905098
+        }
+      },
+      "totalFeatures": 432,
+      "keptFeatures": 194
+    },
+    {
+      "dataset": "street-lighting-poles",
+      "datasetId": "street-lighting-poles",
+      "required": false,
+      "output": "data\\cov\\street-lighting-poles.geojson",
+      "metadataUrl": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/street-lighting-poles",
+      "exportUrl": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/street-lighting-poles/exports/geojson?limit=25000&where=within_distance%28geo_point_2d%2C+geom%27POINT%28-123.1102783+49.2851087%29%27%2C+400+m%29+OR+in_bbox%28geo_point_2d%2C+49.2797076%2C+-123.1188359%2C+49.2905098%2C+-123.1017208%29&timezone=UTC",
+      "query": {
+        "midpoint": {
+          "lon": -123.1102783,
+          "lat": 49.2851087
+        },
+        "radiusMeters": 400,
+        "routePaddingMeters": 120,
+        "bbox": {
+          "minLon": -123.1188359,
+          "minLat": 49.2797076,
+          "maxLon": -123.1017208,
+          "maxLat": 49.2905098
+        }
+      },
+      "totalFeatures": 1496,
+      "keptFeatures": 563
+    },
+    {
+      "dataset": "public-trees",
+      "datasetId": "public-trees",
+      "required": false,
+      "output": "data\\cov\\public-trees.geojson",
+      "metadataUrl": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/public-trees",
+      "exportUrl": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/public-trees/exports/geojson?limit=25000&where=within_distance%28geo_point_2d%2C+geom%27POINT%28-123.1102783+49.2851087%29%27%2C+400+m%29+OR+in_bbox%28geo_point_2d%2C+49.2797076%2C+-123.1188359%2C+49.2905098%2C+-123.1017208%29&timezone=UTC",
+      "query": {
+        "midpoint": {
+          "lon": -123.1102783,
+          "lat": 49.2851087
+        },
+        "radiusMeters": 400,
+        "routePaddingMeters": 120,
+        "bbox": {
+          "minLon": -123.1188359,
+          "minLat": 49.2797076,
+          "maxLon": -123.1017208,
+          "maxLat": 49.2905098
+        }
+      },
+      "totalFeatures": 1385,
+      "keptFeatures": 383
+    },
+    {
+      "dataset": "heritage-sites",
+      "datasetId": "heritage-sites",
+      "required": false,
+      "output": "data\\cov\\heritage-sites.geojson",
+      "metadataUrl": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/heritage-sites",
+      "exportUrl": "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/heritage-sites/exports/geojson?limit=25000&where=within_distance%28geo_point_2d%2C+geom%27POINT%28-123.1102783+49.2851087%29%27%2C+400+m%29+OR+in_bbox%28geo_point_2d%2C+49.2797076%2C+-123.1188359%2C+49.2905098%2C+-123.1017208%29&timezone=UTC",
+      "query": {
+        "midpoint": {
+          "lon": -123.1102783,
+          "lat": 49.2851087
+        },
+        "radiusMeters": 400,
+        "routePaddingMeters": 120,
+        "bbox": {
+          "minLon": -123.1188359,
+          "minLat": 49.2797076,
+          "maxLon": -123.1017208,
+          "maxLat": 49.2905098
+        }
+      },
+      "totalFeatures": 279,
+      "keptFeatures": 124
+    },
+    {
+      "dataset": "business-licences",
+      "datasetId": "business-licences",
+      "required": false,
+      "optional": true,
+      "skipped": true,
+      "reason": "Skipped because includeBusinessLicences is disabled.",
+      "output": "data\\cov\\business-licences.json",
+      "query": {
+        "midpoint": {
+          "lon": -123.1102783,
+          "lat": 49.2851087
+        },
+        "radiusMeters": 400,
+        "routePaddingMeters": 120,
+        "bbox": {
+          "minLon": -123.1188359,
+          "minLat": 49.2797076,
+          "maxLon": -123.1017208,
+          "maxLat": 49.2905098
+        }
+      }
+    }
+  ],
+  "filter": {
+    "midpoint": {
+      "lon": -123.1102783,
+      "lat": 49.2851087
+    },
+    "radiusMeters": 400,
+    "routePaddingMeters": 120,
+    "bbox": {
+      "minLon": -123.1188359,
+      "minLat": 49.2797076,
+      "maxLon": -123.1017208,
+      "maxLat": 49.2905098
+    }
+  }
+}
