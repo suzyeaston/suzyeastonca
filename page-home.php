@@ -58,10 +58,10 @@ get_header();
         </div>
 
         <section class="pixel-intro hero-intro" aria-labelledby="home-positioning-title">
-            <h2 id="home-positioning-title" class="retro-title glow-lite">Musician, creative technologist, and builder of weird useful internet things</h2>
-            <p class="hero-headline pixel-font">This is Suzy&rsquo;s public lab: AI experiments, music tools, prototypes, and odd little upgrades made in Vancouver.</p>
-            <p class="hero-subhead">I build in public, ship constantly, and share the process as I go. Code, sounds, experiments, and occasional chaos.</p>
-            <p class="hero-subhead">PSA: every time you visit, clear your cache and cookies first. lol</p>
+            <h2 id="home-positioning-title" class="retro-title glow-lite">Musician, creative technologist, and big fan of cheese</h2>
+            <p class="hero-headline pixel-font">Yo, welcome to Suzy's public online experiments</p>
+            <p class="hero-subhead">this site is totally built live in public, available in github, learning as I go.</p>
+            <p class="hero-subhead">PSA: may want to clear the ol' cache and cookies often, features and fixes are relased daily</p>
             <div class="hero-cta-group">
                 <a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>" class="pixel-button hero-primary-cta">Start with Gastown Simulator</a>
                 <a href="<?php echo esc_url(home_url('/projects/')); ?>" class="pixel-button hero-secondary-cta">Explore the Lab</a>
