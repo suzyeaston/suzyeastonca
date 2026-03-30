@@ -15,7 +15,6 @@ get_header();
             $hero_logo_top_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_top, 'UTF-8') : strtoupper($hero_logo_top);
             $hero_logo_mid_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_mid, 'UTF-8') : strtoupper($hero_logo_mid);
             $hero_logo_bottom_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_bottom, 'UTF-8') : strtoupper($hero_logo_bottom);
-            $hero_copy = apply_filters('se_home_hero_copy', 'Musician, creative technologist, and builder of strange useful things.');
             ?>
             <div class="hero-main">
                 <?php if (!empty($hero_eyebrow)) : ?>
@@ -35,7 +34,6 @@ get_header();
                         </p>
                     </div>
                 </div>
-                <p class="hero-copy"><?php echo esc_html($hero_copy); ?></p>
             </div>
             <button class="hero-deco hero-ship hero-ship--autopilot" type="button" aria-label="Drag the spaceship" title="Drag me" tabindex="0"></button>
             <div class="hero-side hero-photo-card">
