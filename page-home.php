@@ -103,6 +103,50 @@ get_header();
         </div>
     </section>
 
+    <?php
+    $vancouver_events_payload = suzy_get_vancouver_tech_events();
+    $vancouver_events = [];
+    if ( isset( $vancouver_events_payload['events'] ) && is_array( $vancouver_events_payload['events'] ) ) {
+        $vancouver_events = $vancouver_events_payload['events'];
+    }
+    $vancouver_events_top = array_slice( $vancouver_events, 0, 3 );
+    ?>
+    <section class="vancouver-tech-home crt-block" aria-labelledby="vancouver-tech-home-title">
+        <h2 id="vancouver-tech-home-title" class="pixel-font">Vancouver tech events</h2>
+        <p class="vancouver-tech-home__intro">Local founder nights, meetups, and dev hangs pulled into one stream.</p>
+
+        <?php if ( empty( $vancouver_events_top ) ) : ?>
+            <p>No upcoming Vancouver events are cached right now. Hit the full page to refresh the feed.</p>
+        <?php else : ?>
+            <ul class="vancouver-tech-home__list">
+                <?php foreach ( $vancouver_events_top as $event ) : ?>
+                    <?php
+                    $event_start = isset( $event['start'] ) ? (int) $event['start'] : 0;
+                    $event_url   = isset( $event['url'] ) ? (string) $event['url'] : '';
+                    ?>
+                    <li class="vancouver-tech-home__item">
+                        <p class="vancouver-tech-home__time">
+                            <?php echo esc_html( $event_start > 0 ? wp_date( 'D, M j • g:i A T', $event_start ) : 'Date/time TBD' ); ?>
+                        </p>
+                        <a href="<?php echo esc_url( $event_url ); ?>" target="_blank" rel="noopener noreferrer" class="vancouver-tech-home__title">
+                            <?php echo esc_html( $event['title'] ?? 'Upcoming event' ); ?>
+                        </a>
+                        <p class="vancouver-tech-home__meta">
+                            <?php if ( ! empty( $event['location'] ) ) : ?>
+                                <span><?php echo esc_html( (string) $event['location'] ); ?></span>
+                            <?php endif; ?>
+                            <?php if ( ! empty( $event['source'] ) ) : ?>
+                                <span class="vancouver-tech-home__source"><?php echo esc_html( (string) $event['source'] ); ?></span>
+                            <?php endif; ?>
+                        </p>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <a class="pixel-button vancouver-tech-home__cta" href="<?php echo esc_url( home_url( '/vancouver-tech-events/' ) ); ?>">Browse all Vancouver tech events</a>
+    </section>
+
     <section class="build-public-home crt-block" aria-labelledby="build-public-title">
         <h2 id="build-public-title" class="pixel-font">Build in public / repo receipts</h2>
         <p class="home-section-legend-links" aria-label="Build in public quick links">
