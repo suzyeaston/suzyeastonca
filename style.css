@@ -3726,6 +3726,7 @@ body.page-template-page-bio-php .bio-content {
 
 /* Homepage repositioning blocks */
 .selected-work,
+.vancouver-tech-home,
 .build-public-home,
 .music-world,
 .collab-invite-home,
@@ -3737,6 +3738,7 @@ body.page-template-page-bio-php .bio-content {
 }
 
 .selected-work h2,
+.vancouver-tech-home h2,
 .build-public-home h2,
 .music-world h2,
 .collab-invite-home h2,
@@ -3746,6 +3748,7 @@ body.page-template-page-bio-php .bio-content {
 }
 
 .selected-work__intro,
+.vancouver-tech-home__intro,
 .build-public-home p,
 .music-world p,
 .collab-invite-home p,
@@ -3784,6 +3787,63 @@ body.page-template-page-bio-php .bio-content {
   color: #def9eb;
   line-height: 1.55;
   flex: 1;
+}
+
+.vancouver-tech-home {
+  border: 2px solid rgba(91, 184, 255, 0.45);
+  box-shadow: 0 0 18px rgba(91, 184, 255, 0.2);
+}
+
+.vancouver-tech-home__list {
+  list-style: none;
+  margin: 1rem 0 1.25rem;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.vancouver-tech-home__item {
+  border: 1px solid rgba(123, 198, 255, 0.38);
+  border-radius: 10px;
+  background: rgba(5, 17, 32, 0.45);
+  padding: 12px;
+}
+
+.vancouver-tech-home__time {
+  color: #9dd5ff;
+  font-size: 0.83rem;
+  margin: 0 0 0.35rem;
+  letter-spacing: 0.02em;
+}
+
+.vancouver-tech-home__title {
+  color: #e5f5ff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.vancouver-tech-home__title:hover,
+.vancouver-tech-home__title:focus {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.vancouver-tech-home__meta {
+  margin: 0.4rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.7rem;
+  font-size: 0.82rem;
+  color: #c8ebff;
+}
+
+.vancouver-tech-home__source {
+  opacity: 0.82;
+}
+
+.vancouver-tech-home__cta {
+  display: inline-flex;
+  align-items: center;
 }
 
 .build-public-home {
@@ -3853,6 +3913,7 @@ body.page-template-page-bio-php .bio-content {
 
 @media (max-width: 760px) {
   .selected-work,
+  .vancouver-tech-home,
   .build-public-home,
   .music-world,
   .collab-invite-home,
