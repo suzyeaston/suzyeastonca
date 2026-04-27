@@ -75,6 +75,38 @@ get_header();
         <p class="arcade-subtext">Retro-futurist lab mode: online</p>
     </div>
 
+    <?php
+    $ai_film_club_watch_url = 'https://www.youtube.com/watch?v=f2MdY3qcxt8';
+    $ai_film_club_embed_url = 'https://www.youtube-nocookie.com/embed/f2MdY3qcxt8';
+    $ai_film_club_repo_url = 'https://github.com/suzyeaston/suzyeastonca';
+    ?>
+    <section class="ai-film-feature crt-block" aria-labelledby="ai-film-feature-title">
+        <div class="ai-film-feature__media">
+            <p class="ai-film-feature__badge pixel-font"><?php echo esc_html('NEW TRANSMISSION'); ?></p>
+            <div class="ai-film-feature__embed-wrap">
+                <iframe
+                    src="<?php echo esc_url($ai_film_club_embed_url); ?>"
+                    title="<?php echo esc_attr('AI Film Club fireside chat with Mayumi Rollings'); ?>"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+        <div class="ai-film-feature__copy">
+            <p class="ai-film-feature__kicker pixel-font"><?php echo esc_html('LATEST SIGNAL // AI FILM CLUB'); ?></p>
+            <h2 id="ai-film-feature-title" class="pixel-font"><?php echo esc_html('Fireside chat: building weird, useful AI film tools'); ?></h2>
+            <p><?php echo esc_html('I joined Mayumi Rollings for an AI Film Club fireside chat about the messy, exciting middle ground between prompting and building: ASMR Lab, Vancouver/Gastown scene experiments, procedural audio, creator control, and why I started making my own tools instead of just using whatever platform was handed to me.'); ?></p>
+            <p class="ai-film-feature__note"><?php echo esc_html('This is the story behind the lab: part film experiment, part product prototype, part “fine, I’ll build the thing myself.”'); ?></p>
+            <div class="ai-film-feature__actions" aria-label="AI Film Club and lab links">
+                <a class="pixel-button" href="<?php echo esc_url($ai_film_club_watch_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html('Watch the fireside chat'); ?></a>
+                <a class="pixel-button" href="<?php echo esc_url(home_url('/asmr-lab/')); ?>"><?php echo esc_html('Explore ASMR Lab'); ?></a>
+                <a class="pixel-button" href="<?php echo esc_url($ai_film_club_repo_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html('View GitHub repo'); ?></a>
+            </div>
+        </div>
+    </section>
+
     <section class="selected-work crt-block" aria-labelledby="selected-work-title">
         <h2 id="selected-work-title" class="pixel-font">Featured builds</h2>
         <p class="selected-work__intro">Projects with a practical point of view: experiments that ship, teach, and stay useful.</p>

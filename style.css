@@ -1985,14 +1985,37 @@ body {
 
 
 .ai-film-feature {
-  margin: 40px auto;
-  max-width: 860px;
-  padding: 24px 28px;
-  border-radius: 12px;
+  margin: 34px auto 40px;
+  max-width: 1040px;
+  padding: 24px 26px;
+  border-radius: 14px;
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: stretch;
+  border-color: #4cffd9;
+  box-shadow: 0 0 20px rgba(0, 255, 200, 0.24), inset 0 0 14px rgba(0, 255, 170, 0.1);
+}
+
+.ai-film-feature__media {
+  position: relative;
+  display: grid;
+  gap: 10px;
+}
+
+.ai-film-feature__badge {
+  display: inline-flex;
   align-items: center;
+  width: fit-content;
+  padding: 4px 10px;
+  border: 1px solid rgba(134, 255, 221, 0.7);
+  border-radius: 999px;
+  background: rgba(18, 18, 18, 0.75);
+  color: #baffea;
+  letter-spacing: 0.12em;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  box-shadow: 0 0 10px rgba(0, 255, 183, 0.2);
 }
 
 .ai-film-feature__embed-wrap {
@@ -2044,6 +2067,11 @@ body {
   margin-bottom: 0.9rem;
   line-height: 1.65;
   color: #e8ffee;
+}
+
+.ai-film-feature__note {
+  font-weight: 600;
+  color: #c9ffe8;
 }
 
 .ai-film-feature__credit {
