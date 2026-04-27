@@ -6,26 +6,26 @@
 }
 
 .vanops-radar {
-  max-width: 1100px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 24px 16px 40px;
+  padding: 28px 16px 44px;
   display: grid;
   gap: 18px;
 }
 
 .vanops-card {
-  border: 1px solid rgba(128, 227, 214, 0.42);
+  border: 1px solid rgba(128, 227, 214, 0.38);
   border-radius: 14px;
-  padding: 18px;
+  padding: 20px;
   background: linear-gradient(160deg, rgba(17, 28, 56, 0.94), rgba(9, 15, 32, 0.95));
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
 }
 
 .vanops-eyebrow {
   margin: 0 0 8px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 0.78rem;
+  font-size: 0.77rem;
   color: #8ef8e6;
 }
 
@@ -36,10 +36,46 @@
 }
 
 .vanops-lede,
+.vanops-support,
 .vanops-section p {
   margin: 0;
-  color: rgba(233, 242, 255, 0.88);
-  max-width: 75ch;
+  color: rgba(233, 242, 255, 0.9);
+  max-width: 78ch;
+  line-height: 1.55;
+}
+
+.vanops-support {
+  margin-top: 10px;
+}
+
+.vanops-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vanops-button {
+  display: inline-block;
+  text-decoration: none;
+  color: #06141f;
+  background: linear-gradient(135deg, #88f7e2, #6ed4ff);
+  border: 1px solid rgba(173, 245, 255, 0.8);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.vanops-button--secondary {
+  color: #daf7ff;
+  background: rgba(110, 212, 255, 0.1);
+  border-color: rgba(142, 248, 230, 0.5);
+}
+
+.vanops-section header {
+  display: grid;
+  gap: 8px;
 }
 
 .vanops-grid {
@@ -49,43 +85,70 @@
   gap: 12px;
 }
 
-.vanops-tile {
+.vanops-tile,
+.vanops-signal-card {
   border: 1px solid rgba(142, 248, 230, 0.28);
   border-radius: 12px;
   padding: 14px;
-  background: rgba(7, 12, 24, 0.6);
+  background: rgba(7, 12, 24, 0.62);
 }
 
-.vanops-tile h3 {
+.vanops-tile h3,
+.vanops-signal-card h3 {
   margin: 0 0 8px;
   font-size: 1rem;
 }
 
-.vanops-tile p {
+.vanops-tile p,
+.vanops-signal-card p {
   margin: 0;
   font-size: 0.92rem;
+  line-height: 1.45;
 }
 
-.vanops-tile span {
-  margin-top: 10px;
-  display: inline-block;
+.vanops-signal-card p + p {
+  margin-top: 8px;
+}
+
+.vanops-status-pill {
+  display: inline-flex;
+  align-items: center;
   padding: 3px 8px;
   border-radius: 999px;
   background: rgba(255, 194, 102, 0.16);
   border: 1px solid rgba(255, 194, 102, 0.45);
   color: #ffd697;
   font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
 
-.vanops-tile--live span {
-  background: rgba(132, 255, 193, 0.16);
-  border-color: rgba(132, 255, 193, 0.48);
-  color: #a6ffd0;
+.vanops-status-pill--demo {
+  background: rgba(126, 190, 255, 0.2);
+  border-color: rgba(126, 190, 255, 0.52);
+  color: #b8ddff;
 }
 
-.vanops-live-preview .lousy-outages {
+.vanops-status-pill--roadmap {
+  background: rgba(184, 145, 255, 0.18);
+  border-color: rgba(184, 145, 255, 0.46);
+  color: #dcc8ff;
+}
+
+.vanops-signal-meta {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vanops-use-case-grid .vanops-tile {
+  min-height: 148px;
+}
+
+.vanops-data-roadmap .vanops-skill-list {
   margin-top: 12px;
 }
 
@@ -94,18 +157,6 @@
   padding-left: 18px;
   display: grid;
   gap: 8px;
-}
-
-.vanops-button {
-  margin-top: 14px;
-  display: inline-block;
-  text-decoration: none;
-  color: #06141f;
-  background: linear-gradient(135deg, #88f7e2, #6ed4ff);
-  border: 1px solid rgba(173, 245, 255, 0.8);
-  border-radius: 999px;
-  padding: 10px 16px;
-  font-weight: 600;
 }
 
 .vanops-cta p {
@@ -119,7 +170,7 @@
   text-align: center;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 960px) {
   .vanops-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -127,7 +178,7 @@
 
 @media (max-width: 640px) {
   .vanops-radar {
-    padding: 18px 12px 30px;
+    padding: 18px 12px 32px;
   }
 
   .vanops-card {
@@ -136,5 +187,15 @@
 
   .vanops-grid {
     grid-template-columns: 1fr;
+  }
+
+  .vanops-actions {
+    flex-direction: column;
+  }
+
+  .vanops-button,
+  .vanops-button--secondary {
+    text-align: center;
+    width: 100%;
   }
 }
