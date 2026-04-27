@@ -1,0 +1,140 @@
+.vanops-radar-page {
+  background: radial-gradient(circle at 10% 15%, rgba(90, 255, 206, 0.08), transparent 35%),
+    radial-gradient(circle at 85% 0%, rgba(126, 190, 255, 0.14), transparent 35%),
+    #0a1020;
+  color: #e9f2ff;
+}
+
+.vanops-radar {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  display: grid;
+  gap: 18px;
+}
+
+.vanops-card {
+  border: 1px solid rgba(128, 227, 214, 0.42);
+  border-radius: 14px;
+  padding: 18px;
+  background: linear-gradient(160deg, rgba(17, 28, 56, 0.94), rgba(9, 15, 32, 0.95));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.vanops-eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  color: #8ef8e6;
+}
+
+.vanops-hero h1,
+.vanops-section h2 {
+  margin: 0 0 10px;
+  line-height: 1.2;
+}
+
+.vanops-lede,
+.vanops-section p {
+  margin: 0;
+  color: rgba(233, 242, 255, 0.88);
+  max-width: 75ch;
+}
+
+.vanops-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.vanops-tile {
+  border: 1px solid rgba(142, 248, 230, 0.28);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(7, 12, 24, 0.6);
+}
+
+.vanops-tile h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.vanops-tile p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.vanops-tile span {
+  margin-top: 10px;
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 194, 102, 0.16);
+  border: 1px solid rgba(255, 194, 102, 0.45);
+  color: #ffd697;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.vanops-tile--live span {
+  background: rgba(132, 255, 193, 0.16);
+  border-color: rgba(132, 255, 193, 0.48);
+  color: #a6ffd0;
+}
+
+.vanops-live-preview .lousy-outages {
+  margin-top: 12px;
+}
+
+.vanops-skill-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.vanops-button {
+  margin-top: 14px;
+  display: inline-block;
+  text-decoration: none;
+  color: #06141f;
+  background: linear-gradient(135deg, #88f7e2, #6ed4ff);
+  border: 1px solid rgba(173, 245, 255, 0.8);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 600;
+}
+
+.vanops-cta p {
+  margin-top: 8px;
+}
+
+.vanops-disclaimer {
+  margin: 0;
+  color: rgba(233, 242, 255, 0.72);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .vanops-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .vanops-radar {
+    padding: 18px 12px 30px;
+  }
+
+  .vanops-card {
+    padding: 14px;
+  }
+
+  .vanops-grid {
+    grid-template-columns: 1fr;
+  }
+}
