@@ -2949,45 +2949,43 @@ body {
   padding: 5px 7px;
 }
 
-.page-template-page-home-php .hero-galaga-gameover,
-.home .hero-galaga-gameover,
-.front-page .hero-galaga-gameover {
-  margin-top: 0;
-  max-width: 100%;
-  background: transparent;
-  border: 0;
-  color: #ffb7ef;
-  padding: 0;
-}
-
-.page-template-page-home-php .hero-galaga-gameover strong,
-.home .hero-galaga-gameover strong,
-.front-page .hero-galaga-gameover strong {
-  color: #ff9deb;
-}
-
-.page-template-page-home-php .hero-galaga-hint,
-.home .hero-galaga-hint,
-.front-page .hero-galaga-hint {
+.page-template-page-home-php .hero-galaga-overlay,
+.home .hero-galaga-overlay,
+.front-page .hero-galaga-overlay {
   position: absolute;
   inset: 50% auto auto 50%;
   transform: translate(-50%, -50%);
   z-index: 6;
-  padding: 10px 12px;
+  pointer-events: auto;
+  min-width: min(92%, 460px);
+  max-width: min(92%, 460px);
+}
+
+.page-template-page-home-php .hero-galaga-panel,
+.home .hero-galaga-panel,
+.front-page .hero-galaga-panel {
+  padding: 12px 14px;
   font-size: 0.54rem;
   letter-spacing: 0.04em;
   color: #cbffe7;
-  border: 1px solid rgba(128, 225, 255, 0.44);
+  border: 1px solid rgba(128, 225, 255, 0.5);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.78);
+  background: rgba(5, 7, 16, 0.82);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
   text-align: center;
-  min-width: min(92%, 460px);
-  max-width: min(92%, 460px);
-  pointer-events: auto;
+  box-shadow: 0 0 0 1px rgba(255, 72, 206, 0.22), 0 0 18px rgba(87, 243, 255, 0.2);
+}
+
+.page-template-page-home-php .hero-galaga-overlay--gameover .hero-galaga-panel,
+.home .hero-galaga-overlay--gameover .hero-galaga-panel,
+.front-page .hero-galaga-overlay--gameover .hero-galaga-panel {
+  border-color: rgba(255, 72, 206, 0.72);
+  background:
+    linear-gradient(180deg, rgba(255, 72, 206, 0.12), rgba(10, 7, 20, 0.9) 45%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0.04) 1px, transparent 2px, transparent 3px);
 }
 
 .page-template-page-home-php .hero-galaga-hint-text,
@@ -2996,9 +2994,28 @@ body {
   line-height: 1.45;
 }
 
-.page-template-page-home-php .hero-galaga-start,
-.home .hero-galaga-start,
-.front-page .hero-galaga-start {
+.page-template-page-home-php .hero-galaga-gameover__title,
+.home .hero-galaga-gameover__title,
+.front-page .hero-galaga-gameover__title {
+  margin: 0;
+  color: #ff9deb;
+}
+
+.page-template-page-home-php .hero-galaga-gameover__line,
+.page-template-page-home-php .hero-galaga-gameover__stats,
+.page-template-page-home-php .hero-galaga-gameover__exit,
+.home .hero-galaga-gameover__line,
+.home .hero-galaga-gameover__stats,
+.home .hero-galaga-gameover__exit,
+.front-page .hero-galaga-gameover__line,
+.front-page .hero-galaga-gameover__stats,
+.front-page .hero-galaga-gameover__exit {
+  margin: 0;
+}
+
+.page-template-page-home-php .hero-galaga-reboot,
+.home .hero-galaga-reboot,
+.front-page .hero-galaga-reboot {
   appearance: none;
   border: 1px solid var(--primary-color);
   background: rgba(0, 0, 0, 0.75);
@@ -3012,12 +3029,12 @@ body {
   cursor: pointer;
 }
 
-.page-template-page-home-php .hero-galaga-start:hover,
-.page-template-page-home-php .hero-galaga-start:focus-visible,
-.home .hero-galaga-start:hover,
-.home .hero-galaga-start:focus-visible,
-.front-page .hero-galaga-start:hover,
-.front-page .hero-galaga-start:focus-visible {
+.page-template-page-home-php .hero-galaga-reboot:hover,
+.page-template-page-home-php .hero-galaga-reboot:focus-visible,
+.home .hero-galaga-reboot:hover,
+.home .hero-galaga-reboot:focus-visible,
+.front-page .hero-galaga-reboot:hover,
+.front-page .hero-galaga-reboot:focus-visible {
   border-color: var(--accent-color);
   color: var(--accent-color);
 }
@@ -3028,9 +3045,9 @@ body {
   display: block;
 }
 
-.page-template-page-home-php .hero-game-stage.has-galaga .hero-galaga-hint,
-.home .hero-game-stage.has-galaga .hero-galaga-hint,
-.front-page .hero-game-stage.has-galaga .hero-galaga-hint {
+.page-template-page-home-php .hero-game-stage.has-galaga .hero-galaga-overlay,
+.home .hero-game-stage.has-galaga .hero-galaga-overlay,
+.front-page .hero-game-stage.has-galaga .hero-galaga-overlay {
   display: flex;
 }
 
@@ -3052,12 +3069,9 @@ body {
   display: flex;
 }
 
-.page-template-page-home-php .hero-game-stage.is-galaga .hero-galaga-hint,
-.home .hero-game-stage.is-galaga .hero-galaga-hint,
-.front-page .hero-game-stage.is-galaga .hero-galaga-hint,
-.page-template-page-home-php .hero-game-stage[data-galaga-state="playing"] .hero-galaga-hint,
-.home .hero-game-stage[data-galaga-state="playing"] .hero-galaga-hint,
-.front-page .hero-game-stage[data-galaga-state="playing"] .hero-galaga-hint {
+.page-template-page-home-php .hero-game-stage[data-galaga-state="playing"] .hero-galaga-overlay,
+.home .hero-game-stage[data-galaga-state="playing"] .hero-galaga-overlay,
+.front-page .hero-game-stage[data-galaga-state="playing"] .hero-galaga-overlay {
   display: none;
   pointer-events: none;
 }
@@ -3077,21 +3091,9 @@ body {
   display: none;
 }
 
-.page-template-page-home-php .hero-game-stage.is-galaga .hero-galaga-start,
-.home .hero-game-stage.is-galaga .hero-galaga-start,
-.front-page .hero-game-stage.is-galaga .hero-galaga-start {
-  display: none;
-}
-
-.page-template-page-home-php .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-start,
-.home .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-start,
-.front-page .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-start {
-  display: inline-flex;
-}
-
-.page-template-page-home-php .hero-galaga-hint[hidden],
-.home .hero-galaga-hint[hidden],
-.front-page .hero-galaga-hint[hidden] {
+.page-template-page-home-php .hero-galaga-overlay[hidden],
+.home .hero-galaga-overlay[hidden],
+.front-page .hero-galaga-overlay[hidden] {
   display: none !important;
   pointer-events: none;
 }
@@ -4275,9 +4277,9 @@ body.page-template-page-bio-php .bio-content {
   max-width: min(360px, calc(100vw - 32px));
 }
 
-.page-template-page-home-php .hero-galaga-hint,
-.home .hero-galaga-hint,
-.front-page .hero-galaga-hint {
+.page-template-page-home-php .hero-galaga-overlay,
+.home .hero-galaga-overlay,
+.front-page .hero-galaga-overlay {
   inset: 50% auto auto 50%;
 }
 

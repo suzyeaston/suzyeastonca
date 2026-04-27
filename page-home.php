@@ -72,10 +72,10 @@ get_header();
             </aside>
         </div>
 
-        <div class="hero-game-stage" aria-label="Rain City Defense arcade stage">
-            <p class="hero-game-stage__header pixel-font"><?php echo esc_html('RAIN CITY DEFENSE'); ?></p>
-            <div class="hero-game-stage__screen" role="region" aria-label="Rain City Defense game screen">
-                <p class="hero-game-stage__idle pixel-font"><?php echo esc_html('RAIN CITY DEFENSE'); ?><br><?php echo esc_html('Defend the weird little Rain City signal.'); ?><br><?php echo esc_html('Press G to play'); ?><br><?php echo esc_html('WASD move // Space fire // Esc quit'); ?></p>
+        <div class="hero-game-stage" aria-label="Pacific Static arcade stage">
+            <p class="hero-game-stage__header pixel-font"><?php echo esc_html('PACIFIC STATIC'); ?></p>
+            <div class="hero-game-stage__screen" role="region" aria-label="Pacific Static game screen">
+                <p class="hero-game-stage__idle pixel-font"><?php echo esc_html('PACIFIC STATIC'); ?><br><?php echo esc_html('Defend the Vancouver signal.'); ?><br><?php echo esc_html('Press G to play.'); ?><br><?php echo esc_html('WASD move // Space fire // Esc quit'); ?></p>
             </div>
             <p class="hero-game-stage__mobile-note"><?php echo esc_html('Mini arcade available on keyboard screens.'); ?></p>
         </div>
