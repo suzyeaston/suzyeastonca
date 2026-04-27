@@ -72,7 +72,7 @@ get_header();
             </aside>
         </div>
 
-        <div class="hero-game-stage" aria-label="Pacific Static arcade stage">
+        <div class="hero-game-stage" tabindex="0" aria-label="Pacific Static mini arcade game">
             <p class="hero-game-stage__header pixel-font"><?php echo esc_html('PACIFIC STATIC'); ?></p>
             <div class="hero-game-stage__screen" role="region" aria-label="Pacific Static game screen">
                 <p class="hero-game-stage__idle pixel-font"><?php echo esc_html('PACIFIC STATIC'); ?><br><?php echo esc_html('Defend the Vancouver signal.'); ?><br><?php echo esc_html('Press G to play.'); ?><br><?php echo esc_html('WASD move // Space fire // Esc quit'); ?></p>
