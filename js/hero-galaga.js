@@ -5,7 +5,8 @@
     const gameScreen = document.querySelector('.hero-game-stage__screen');
     const desktopQuery = window.matchMedia('(min-width: 860px)');
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const debugEnabled = Boolean(window.__SE_GALAGA_DEBUG);
+    const DEBUG_GALAGA = false;
+    const debugEnabled = DEBUG_GALAGA || Boolean(window.__SE_GALAGA_DEBUG);
 
     window.__SE_GALAGA_ACTIVE = false;
 
@@ -22,6 +23,17 @@
       if (debugEnabled && window.console && typeof window.console.warn === 'function') {
         window.console.warn('[Rain City Defense]', message);
       }
+    }
+
+    function debugLog(message, detail) {
+      if (!debugEnabled || !window.console || typeof window.console.log !== 'function') {
+        return;
+      }
+      if (typeof detail === 'undefined') {
+        window.console.log('[Rain City Defense]', message);
+        return;
+      }
+      window.console.log('[Rain City Defense]', message, detail);
     }
 
     const rootStyles = window.getComputedStyle(document.documentElement);
@@ -95,11 +107,12 @@
         fire: false,
       },
       lastShotAt: 0,
-      lastFrame: 0,
+      lastTime: 0,
       idleTick: 0,
       shakeUntil: 0,
       shakePower: 0,
       waveCallUntil: 0,
+      nextWaveAt: 0,
       playfield: {
         x: 0,
         y: 0,
@@ -153,31 +166,64 @@
       ui.style.maxWidth = Math.max(240, state.playfield.w - 24) + 'px';
     }
 
-    function sizeCanvas() {
-      state.dpr = Math.max(1, window.devicePixelRatio || 1);
-      const width = Math.max(1, gameScreen.clientWidth);
-      const height = Math.max(1, gameScreen.clientHeight);
+
+    function refreshPlayfield() {
+      const rect = gameScreen.getBoundingClientRect();
+      const width = Math.round(rect.width || gameScreen.clientWidth || 0);
+      const height = Math.round(rect.height || gameScreen.clientHeight || 0);
+
       state.width = width;
       state.height = height;
       state.playfield = {
         x: 0,
         y: 0,
-        w: state.width,
-        h: state.height,
+        w: width,
+        h: height,
       };
-      if (state.width < 220 || state.height < 170) {
+
+      return width >= 220 && height >= 170;
+    }
+
+    function clampEntitiesToPlayfield() {
+      clampPlayerToPlayfield();
+      const maxX = state.playfield.x + state.playfield.w;
+      const maxY = state.playfield.y + state.playfield.h;
+
+      state.enemies.forEach(function (enemy) {
+        enemy.x = Math.max(state.playfield.x, Math.min(maxX - enemy.w, enemy.x));
+        enemy.y = Math.max(state.playfield.y, Math.min(maxY - enemy.h, enemy.y));
+      });
+
+      state.playerBullets = state.playerBullets.filter(function (bullet) {
+        return bullet && Number.isFinite(bullet.x) && Number.isFinite(bullet.y);
+      });
+      state.enemyBullets = state.enemyBullets.filter(function (bullet) {
+        return bullet && Number.isFinite(bullet.x) && Number.isFinite(bullet.y);
+      });
+    }
+
+    function sizeCanvas() {
+      state.dpr = Math.max(1, window.devicePixelRatio || 1);
+      const hasUsablePlayfield = refreshPlayfield();
+
+      if (!hasUsablePlayfield) {
         debugWarn('Game screen is too small for reliable gameplay.');
       }
 
-      canvas.width = Math.round(width * state.dpr);
-      canvas.height = Math.round(height * state.dpr);
-      canvas.style.width = width + 'px';
-      canvas.style.height = height + 'px';
+      canvas.width = Math.max(1, Math.round(state.width * state.dpr));
+      canvas.height = Math.max(1, Math.round(state.height * state.dpr));
+      canvas.style.width = Math.max(1, state.width) + 'px';
+      canvas.style.height = Math.max(1, state.height) + 'px';
       ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
       ctx.imageSmoothingEnabled = false;
 
-      clampPlayerToPlayfield();
+      clampEntitiesToPlayfield();
       positionOverlayUI();
+
+      if (!hasUsablePlayfield && isPlaying()) {
+        showMessage('Signal weak. Resize window and press G to reboot.');
+        endGame({ toIdle: true });
+      }
 
       if (!isPlaying()) {
         render();
@@ -214,6 +260,16 @@
         hintTextEl.innerHTML = 'RAIN CITY DEFENSE<br>Defend the weird little Rain City signal.<br>Press G to play<br>WASD move // Space fire // Esc quit';
       }
       startButton.textContent = state.mode === 'gameover' ? 'Reboot' : 'Play';
+    }
+
+    function showMessage(message) {
+      if (hintTextEl) {
+        hintTextEl.innerHTML = message;
+      }
+      hint.hidden = false;
+      if (startButton) {
+        startButton.hidden = false;
+      }
     }
 
     function showWaveCallout() {
@@ -292,6 +348,7 @@
       state.enemyFireTimer = 0;
       state.enemyDiveTimer = 0;
       state.wavePending = false;
+      state.nextWaveAt = 0;
       showWaveCallout();
     }
 
@@ -327,12 +384,18 @@
       updateUI();
     }
 
-    function ensureLoopRunning() {
-      if (state.rafId || (!isPlaying() && !shouldAnimateIdle())) {
+    function startLoop() {
+      if (state.rafId) {
         return;
       }
-      state.lastFrame = nowMs();
+
+      if (!isPlaying() && !shouldAnimateIdle()) {
+        return;
+      }
+
+      state.lastTime = nowMs();
       state.rafId = window.requestAnimationFrame(loop);
+      debugLog('loop start', { mode: state.mode });
     }
 
     function stopLoop() {
@@ -340,6 +403,7 @@
         window.cancelAnimationFrame(state.rafId);
         state.rafId = 0;
       }
+      debugLog('loop stop', { mode: state.mode });
     }
 
     function initIdleScene() {
@@ -373,7 +437,7 @@
       updateHint();
       render();
       if (shouldAnimateIdle()) {
-        ensureLoopRunning();
+        startLoop();
       } else {
         stopLoop();
       }
@@ -385,7 +449,8 @@
       }
 
       stopLoop();
-      if (state.playfield.w < 220 || state.playfield.h < 170) {
+      const hasUsablePlayfield = refreshPlayfield();
+      if (!hasUsablePlayfield) {
         debugWarn('Game start blocked due to invalid game dimensions.');
         enterIdleMode();
         return;
@@ -408,16 +473,19 @@
       }
       updateHint();
       canvas.focus({ preventScroll: true });
-      ensureLoopRunning();
+      debugLog('game start');
+      startLoop();
     }
 
     function endGame(options) {
       if (!options || options.toIdle) {
+        debugLog('game exit to idle');
         enterIdleMode();
         return;
       }
 
       state.mode = 'gameover';
+      debugLog('game over', options && options.reason ? options.reason : 'unknown');
       state.keys.left = false;
       state.keys.right = false;
       state.keys.fire = false;
@@ -505,7 +573,7 @@
       if (state.lives <= 0) {
         state.lives = 0;
         updateUI();
-        endGame({ toIdle: false });
+        endGame({ toIdle: false, reason: 'no_lives' });
         return;
       }
 
@@ -519,29 +587,43 @@
       spawnExplosion(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, enemy.diving ? 14 : 10);
     }
 
-    function updateWaveProgression() {
+    function updateWaveProgression(now) {
       const aliveCount = state.enemies.filter(function (enemy) {
         return enemy.alive;
       }).length;
 
-      if (aliveCount > 0 || state.wavePending || state.mode !== 'playing') {
+      if (state.mode !== 'playing') {
         return;
       }
 
-      state.wavePending = true;
-      state.score += 150;
-      updateUI();
+      if (aliveCount > 0) {
+        state.wavePending = false;
+        state.nextWaveAt = 0;
+        return;
+      }
 
-      window.setTimeout(function () {
-        if (state.mode !== 'playing') {
-          return;
+      if (!state.wavePending) {
+        state.wavePending = true;
+        state.nextWaveAt = now + 850;
+        state.score += 150;
+        if (waveCallEl) {
+          waveCallEl.hidden = false;
+          waveCallEl.textContent = 'WAVE CLEAR // HOLD THE SIGNAL';
         }
+        state.waveCallUntil = state.nextWaveAt;
+        updateUI();
+        debugLog('wave clear', { wave: state.wave, nextWaveAt: state.nextWaveAt });
+        return;
+      }
+
+      if (state.nextWaveAt && now >= state.nextWaveAt) {
         state.wave += 1;
         state.playerBullets = [];
         state.enemyBullets = [];
         spawnWave();
         updateUI();
-      }, 850);
+        debugLog('wave spawn', { wave: state.wave });
+      }
     }
 
     function handleKeys(dt, now) {
@@ -783,11 +865,11 @@
       if (invaded && state.mode === 'playing') {
         state.lives = 0;
         updateUI();
-        endGame({ toIdle: false });
+        endGame({ toIdle: false, reason: 'invaded' });
         return;
       }
 
-      updateWaveProgression();
+      updateWaveProgression(nowMs());
       updateUI();
     }
 
@@ -918,25 +1000,35 @@
     }
 
     function loop(now) {
-      const dt = Math.min(0.033, (now - state.lastFrame) / 1000 || 0.016);
-      state.lastFrame = now;
+      state.rafId = 0;
 
-      if (isPlaying()) {
-        handleKeys(dt, now);
-        updateEnemies(dt);
-        updateBullets(dt);
-        updateParticles(dt);
-        resolveCollisions();
-      } else if (state.mode === 'idle') {
-        state.idleTick += dt;
+      try {
+        const dt = Math.min(0.033, Math.max(0, (now - state.lastTime) / 1000 || 0.016));
+        state.lastTime = now;
+
+        if (isPlaying()) {
+          handleKeys(dt, now);
+          updateEnemies(dt);
+          updateBullets(dt);
+          updateParticles(dt);
+          resolveCollisions();
+        } else if (state.mode === 'idle') {
+          state.idleTick += dt;
+        }
+
+        render(now);
+      } catch (error) {
+        console.error('[Rain City Defense] Game loop crashed:', error);
+        debugLog('loop crash', error);
+        state.mode = 'idle';
+        setGalagaState('idle');
+        stopLoop();
+        showMessage('Signal interrupted. Press G to reboot.');
+        return;
       }
-
-      render(now);
 
       if (isPlaying() || shouldAnimateIdle()) {
         state.rafId = window.requestAnimationFrame(loop);
-      } else {
-        state.rafId = 0;
       }
     }
 
@@ -1059,7 +1151,7 @@
         return;
       }
       if (shouldAnimateIdle()) {
-        ensureLoopRunning();
+        startLoop();
       } else {
         stopLoop();
         render();
