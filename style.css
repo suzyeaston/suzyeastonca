@@ -4122,31 +4122,6 @@ body.page-template-page-bio-php .bio-content {
   flex: 1;
 }
 
-.selected-work__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  align-items: center;
-  margin: 0;
-}
-
-.selected-work__tags span {
-  display: inline-flex;
-  align-items: center;
-  width: auto;
-  min-width: 0;
-  min-height: 0;
-  max-width: 100%;
-  border: 1px solid rgba(115, 239, 188, 0.42);
-  border-radius: 0.25rem;
-  padding: 0.32rem 0.58rem;
-  font-size: 0.68rem;
-  letter-spacing: 0.05em;
-  line-height: 1.1;
-  color: #bfffd9;
-  white-space: normal;
-  background: rgba(0, 12, 8, 0.72);
-}
 
 .vancouver-tech-home {
   border: 2px solid rgba(91, 184, 255, 0.45);
@@ -4205,32 +4180,6 @@ body.page-template-page-bio-php .bio-content {
   align-items: center;
 }
 
-.skills-home {
-  margin: 34px auto;
-  max-width: 960px;
-  padding: 24px 28px;
-  border-radius: 12px;
-  border: 2px solid rgba(255, 188, 92, 0.38);
-  box-shadow: 0 0 18px rgba(255, 188, 92, 0.16);
-}
-
-.skills-home h2 {
-  margin: 0 0 0.9rem;
-  color: #ffe8ba;
-}
-
-.skills-home__list {
-  margin: 0;
-  padding-left: 1.1rem;
-  display: grid;
-  gap: 0.6rem;
-}
-
-.skills-home__list li {
-  color: #fff5dc;
-  line-height: 1.6;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
 
 .home-section-legend-links {
   display: flex;
@@ -4378,7 +4327,6 @@ body.page-template-page-bio-php .bio-content {
 @media (max-width: 760px) {
   .selected-work,
   .vancouver-tech-home,
-  .skills-home,
   .music-world,
   .collab-invite-home,
   .utility-nav-home {
