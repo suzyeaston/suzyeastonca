@@ -131,52 +131,34 @@ get_header();
             <article class="selected-work__card">
                 <h3 class="pixel-font">Gastown Simulator</h3>
                 <p>First-person Vancouver prototype using browser rendering, civic/open-data world files, route anchors, weather/time-of-day controls, and iterative product design.</p>
-                <p class="selected-work__tags" aria-label="Gastown Simulator technology tags"><span>Three.js</span><span>Civic data</span><span>Worldbuilding</span></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>">Enter Gastown</a>
             </article>
             <article class="selected-work__card">
                 <h3 class="pixel-font">VanOps Radar</h3>
                 <p>Vancouver operations intelligence for storefronts, venues, offices, and local teams — a practical disruption board for road access, transit, weather, utility issues, event-day risks, and business continuity signals.</p>
-                <p class="selected-work__tags" aria-label="VanOps Radar technology tags"><span>Vancouver Ops</span><span>Civic Data</span><span>Dashboards</span></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/vanops-radar/')); ?>">Open VanOps Radar</a>
             </article>
             <article class="selected-work__card">
                 <h3 class="pixel-font">Track Analyzer</h3>
                 <p>AI feedback tool for musicians: upload a track, get practical mix notes, and move faster from “something&rsquo;s off” to “that&rsquo;s the problem.”</p>
-                <p class="selected-work__tags" aria-label="Track Analyzer technology tags"><span>AI</span><span>Audio</span><span>Musician tools</span></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/suzys-track-analyzer/')); ?>">Analyze a Track</a>
             </article>
             <article class="selected-work__card">
                 <h3 class="pixel-font">Lousy Outages</h3>
                 <p>Retro internet/provider outage tracker and status-page experiment — the weird monitoring lab behind some of the signal ideas.</p>
-                <p class="selected-work__tags" aria-label="Lousy Outages technology tags"><span>Status Pages</span><span>Monitoring</span><span>Retro Lab</span></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/lousy-outages/')); ?>">View Lousy Outages</a>
             </article>
             <article class="selected-work__card">
                 <h3 class="pixel-font">ASMR Lab / Rain City Experiments</h3>
                 <p>Procedural audio-visual experiments where storyboards, synths, browser visuals, and AI prompts meet in the weird part of the lab.</p>
-                <p class="selected-work__tags" aria-label="ASMR Lab technology tags"><span>AI film</span><span>Procedural audio</span><span>Creative tools</span></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/asmr-lab/')); ?>">Explore the Lab</a>
             </article>
             <article class="selected-work__card">
                 <h3 class="pixel-font">Albini Q&amp;A</h3>
                 <p>An experimental voice-and-attitude-driven creative app inspired by Steve Albini: part tribute, part interactive web experiment, part chaos-tested music-tech artifact.</p>
-                <p class="selected-work__tags" aria-label="Albini Q and A technology tags"><span>AI</span><span>Music</span><span>Web experiment</span></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/albini-qa/')); ?>">Open Albini Q&amp;A</a>
             </article>
         </div>
-    </section>
-
-    <section class="skills-home crt-block" aria-labelledby="skills-home-title">
-        <h2 id="skills-home-title" class="pixel-font">Where I'm useful</h2>
-        <ul class="skills-home__list">
-            <li>QA automation and release confidence</li>
-            <li>IT operations, identity, endpoint, and SaaS troubleshooting</li>
-            <li>Python, PowerShell, and JavaScript automation</li>
-            <li>Practical AI tools and internal workflows</li>
-            <li>Production debugging with logs, calm, and receipts</li>
-            <li>Music, audio, and creative web experiments</li>
-        </ul>
     </section>
 
     <section class="music-world crt-block" aria-labelledby="music-world-title">
