@@ -13,6 +13,11 @@
     if (gameStage) {
       gameStage.dataset.galagaReady = 'true';
       gameStage.dataset.galagaActive = 'false';
+      gameStage.dataset.galagaState = 'idle';
+      gameStage.tabIndex = 0;
+      if (!gameStage.getAttribute('aria-label')) {
+        gameStage.setAttribute('aria-label', 'Pacific Static mini arcade game');
+      }
     }
 
     if (!heroGrid || !gameStage || !gameScreen || !desktopQuery.matches) {
@@ -61,11 +66,11 @@
     const overlay = document.createElement('div');
     overlay.className = 'hero-galaga-overlay hero-galaga-overlay--idle';
     overlay.innerHTML = '' +
-      '<div class="hero-galaga-panel hero-galaga-panel--idle" data-galaga-idle-panel>' +
+      '<div class="hero-galaga-panel hero-galaga-panel--idle hero-galaga-overlay--idle" data-galaga-idle-panel>' +
         '<p class="hero-galaga-hint-text" data-galaga-hint-text></p>' +
-        '<button type="button" class="hero-galaga-reboot" data-galaga-reboot>Reboot Signal</button>' +
+        '<button type="button" class="hero-galaga-reboot" data-galaga-start>Start Signal</button>' +
       '</div>' +
-      '<div class="hero-galaga-panel hero-galaga-panel--gameover hero-galaga-gameover" data-galaga-gameover-panel hidden>' +
+      '<div class="hero-galaga-panel hero-galaga-panel--gameover hero-galaga-overlay--gameover hero-galaga-gameover" data-galaga-gameover-panel hidden>' +
         '<p class="hero-galaga-gameover__title">SIGNAL LOST</p>' +
         '<p class="hero-galaga-gameover__line">The Pacific Static swallowed the feed.</p>' +
         '<p class="hero-galaga-gameover__stats">Score: <span data-galaga-final-score>000000</span></p>' +
@@ -92,6 +97,7 @@
     const waveCallEl = ui.querySelector('[data-galaga-wavecall]');
     const idlePanelEl = overlay.querySelector('[data-galaga-idle-panel]');
     const gameOverPanelEl = overlay.querySelector('[data-galaga-gameover-panel]');
+    const startButton = overlay.querySelector('[data-galaga-start]');
     const rebootButtons = overlay.querySelectorAll('[data-galaga-reboot]');
     const hintTextEl = overlay.querySelector('[data-galaga-hint-text]');
     const finalScoreEl = overlay.querySelector('[data-galaga-final-score]');
@@ -144,13 +150,18 @@
       'WAVE 5 // PACIFIC STATIC',
     ];
 
-    function setGalagaState(mode) {
+    function setGameMode(mode) {
+      const previousMode = state.mode;
+      state.mode = mode;
       gameStage.dataset.galagaState = mode;
-      if (mode === 'playing' || mode === 'gameover') {
-        gameStage.classList.add('is-galaga');
-      } else {
-        gameStage.classList.remove('is-galaga');
+      gameStage.classList.toggle('is-idle', mode === 'idle');
+      gameStage.classList.toggle('is-playing', mode === 'playing');
+      gameStage.classList.toggle('is-gameover', mode === 'gameover');
+      gameStage.classList.toggle('is-galaga', mode === 'playing' || mode === 'gameover');
+      if (debugEnabled && previousMode !== mode) {
+        window.console.debug('[Pacific Static] mode:', previousMode + ' -> ' + mode);
       }
+      updateOverlays();
     }
 
     function isPlaying() {
@@ -255,39 +266,31 @@
       waveEl.textContent = String(state.wave);
     }
 
-    function updateOverlay() {
+    function updateOverlays() {
       if (!overlay || !idlePanelEl || !gameOverPanelEl || !hintTextEl) {
         return;
       }
 
-      if (isPlaying()) {
-        overlay.hidden = true;
-        overlay.classList.remove('hero-galaga-overlay--idle', 'hero-galaga-overlay--gameover');
-        return;
-      }
+      const isIdle = state.mode === 'idle';
+      const isPlayingMode = state.mode === 'playing';
+      const isGameOver = state.mode === 'gameover';
 
-      overlay.hidden = false;
+      overlay.hidden = isPlayingMode;
+      idlePanelEl.hidden = !isIdle;
+      gameOverPanelEl.hidden = !isGameOver;
 
-      if (state.mode === 'gameover') {
-        overlay.classList.remove('hero-galaga-overlay--idle');
-        overlay.classList.add('hero-galaga-overlay--gameover');
-        idlePanelEl.hidden = true;
-        gameOverPanelEl.hidden = false;
-      } else {
-        overlay.classList.remove('hero-galaga-overlay--gameover');
-        overlay.classList.add('hero-galaga-overlay--idle');
-        idlePanelEl.hidden = false;
-        gameOverPanelEl.hidden = true;
-        hintTextEl.innerHTML = 'PACIFIC STATIC<br>Defend the Vancouver signal.<br>Press G to play.<br>WASD move // Space fire // Esc quit';
+      hintTextEl.innerHTML = 'PACIFIC STATIC<br>Defend the Vancouver signal.<br>Press G to play.<br>WASD move // Space fire // Esc quit';
+      if (startButton) {
+        startButton.hidden = !isIdle;
       }
+      updateGameOverOverlay();
     }
 
     function showMessage(message) {
       if (hintTextEl) {
         hintTextEl.innerHTML = message;
       }
-      state.mode = 'idle';
-      updateOverlay();
+      setGameMode('idle');
     }
 
     function updateGameOverOverlay() {
@@ -441,7 +444,7 @@
     }
 
     function enterIdleMode() {
-      state.mode = 'idle';
+      setGameMode('idle');
       state.wavePending = false;
       state.keys.left = false;
       state.keys.right = false;
@@ -451,14 +454,12 @@
 
       window.__SE_GALAGA_ACTIVE = false;
       gameStage.dataset.galagaActive = 'false';
-      setGalagaState('idle');
       canvas.style.pointerEvents = 'none';
       if (waveCallEl) {
         waveCallEl.hidden = true;
       }
       initIdleScene();
 
-      updateOverlay();
       render();
       if (shouldAnimateIdle()) {
         startLoop();
@@ -480,10 +481,9 @@
         return;
       }
       canvas.tabIndex = 0;
-      state.mode = 'playing';
       window.__SE_GALAGA_ACTIVE = true;
       gameStage.dataset.galagaActive = 'true';
-      setGalagaState('playing');
+      setGameMode('playing');
       canvas.style.pointerEvents = 'auto';
 
       resetGame();
@@ -491,14 +491,12 @@
         waveCallEl.hidden = true;
         waveCallEl.textContent = '';
       }
-      updateOverlay();
-      canvas.focus({ preventScroll: true });
+      gameStage.focus({ preventScroll: true });
       debugLog('game start');
       startLoop();
     }
 
     function triggerGameOver(reason) {
-      state.mode = 'gameover';
       debugLog('game over', reason || 'unknown');
       state.keys.left = false;
       state.keys.right = false;
@@ -507,11 +505,9 @@
       state.enemyBullets = [];
       window.__SE_GALAGA_ACTIVE = false;
       gameStage.dataset.galagaActive = 'false';
-      setGalagaState('gameover');
+      setGameMode('gameover');
       canvas.style.pointerEvents = 'none';
 
-      updateGameOverOverlay();
-      updateOverlay();
       render();
       stopLoop();
     }
@@ -1038,8 +1034,7 @@
       } catch (error) {
         console.error('[Pacific Static] Game loop crashed:', error);
         debugLog('loop crash', error);
-        state.mode = 'idle';
-        setGalagaState('idle');
+        setGameMode('idle');
         stopLoop();
         showMessage('Signal interrupted. Press G to reboot.');
         return;
@@ -1058,13 +1053,49 @@
       return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
     }
 
-    function shouldBlockGameplayEvent(event) {
-      if (!isPlaying()) {
+    function isGameKey(event) {
+      const key = typeof event.key === 'string' ? event.key.toLowerCase() : '';
+      return key === 'g' ||
+        key === 'w' ||
+        key === 'a' ||
+        key === 's' ||
+        key === 'd' ||
+        key === 'arrowup' ||
+        key === 'arrowdown' ||
+        key === 'arrowleft' ||
+        key === 'arrowright' ||
+        key === ' ' ||
+        key === 'spacebar' ||
+        key === 'escape' ||
+        event.code === 'Space';
+    }
+
+    function shouldPreventGameKey(event) {
+      if (!isGameKey(event)) {
         return false;
       }
 
-      const code = event.code;
-      return code === 'ArrowLeft' || code === 'ArrowRight' || code === 'KeyA' || code === 'KeyD' || code === 'Space';
+      if (state.mode === 'playing') {
+        return true;
+      }
+
+      if (document.activeElement && gameStage.contains(document.activeElement)) {
+        return true;
+      }
+
+      if (gameStage.matches(':hover') && (event.key === 'g' || event.key === 'G')) {
+        return true;
+      }
+
+      return false;
+    }
+
+    if (startButton) {
+      startButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        restartGame();
+      });
     }
 
     rebootButtons.forEach(function (button) {
@@ -1079,9 +1110,12 @@
       const code = event.code;
       const typing = isTypingTarget(event.target);
 
+      if (!typing && shouldPreventGameKey(event)) {
+        event.preventDefault();
+      }
+
       if (!typing && code === 'KeyG' && !isPlaying()) {
         restartGame();
-        event.preventDefault();
         event.stopPropagation();
         return;
       }
@@ -1114,19 +1148,19 @@
       if (code === 'Space') {
         state.keys.fire = true;
       }
-
-      if (shouldBlockGameplayEvent(event)) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      event.stopPropagation();
     }, { capture: true });
 
     window.addEventListener('keyup', function (event) {
-      if (!isPlaying()) {
+      if (isTypingTarget(event.target)) {
         return;
       }
 
-      if (isTypingTarget(event.target)) {
+      if (shouldPreventGameKey(event)) {
+        event.preventDefault();
+      }
+
+      if (!isPlaying()) {
         return;
       }
 
@@ -1140,18 +1174,14 @@
       if (code === 'Space') {
         state.keys.fire = false;
       }
-
-      if (shouldBlockGameplayEvent(event)) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      event.stopPropagation();
     }, { capture: true });
 
     desktopQuery.addEventListener('change', function (event) {
       if (!event.matches) {
         stopLoop();
         window.__SE_GALAGA_ACTIVE = false;
-        setGalagaState('idle');
+        setGameMode('idle');
         gameStage.classList.remove('has-galaga');
         gameStage.dataset.galagaActive = 'false';
         return;
@@ -1164,7 +1194,7 @@
     });
 
     reducedMotionQuery.addEventListener('change', function () {
-      updateOverlay();
+      updateOverlays();
       if (isPlaying()) {
         return;
       }

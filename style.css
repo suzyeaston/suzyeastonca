@@ -2956,7 +2956,8 @@ body {
   inset: 50% auto auto 50%;
   transform: translate(-50%, -50%);
   z-index: 6;
-  pointer-events: auto;
+  display: none;
+  pointer-events: none;
   min-width: min(92%, 460px);
   max-width: min(92%, 460px);
 }
@@ -2979,9 +2980,15 @@ body {
   box-shadow: 0 0 0 1px rgba(255, 72, 206, 0.22), 0 0 18px rgba(87, 243, 255, 0.2);
 }
 
-.page-template-page-home-php .hero-galaga-overlay--gameover .hero-galaga-panel,
-.home .hero-galaga-overlay--gameover .hero-galaga-panel,
-.front-page .hero-galaga-overlay--gameover .hero-galaga-panel {
+.page-template-page-home-php .hero-galaga-panel[hidden],
+.home .hero-galaga-panel[hidden],
+.front-page .hero-galaga-panel[hidden] {
+  display: none !important;
+}
+
+.page-template-page-home-php .hero-galaga-panel--gameover,
+.home .hero-galaga-panel--gameover,
+.front-page .hero-galaga-panel--gameover {
   border-color: rgba(255, 72, 206, 0.72);
   background:
     linear-gradient(180deg, rgba(255, 72, 206, 0.12), rgba(10, 7, 20, 0.9) 45%),
@@ -3048,7 +3055,7 @@ body {
 .page-template-page-home-php .hero-game-stage.has-galaga .hero-galaga-overlay,
 .home .hero-game-stage.has-galaga .hero-galaga-overlay,
 .front-page .hero-game-stage.has-galaga .hero-galaga-overlay {
-  display: flex;
+  display: none;
 }
 
 .page-template-page-home-php .hero-game-stage.has-galaga .hero-game-stage__idle,
@@ -3074,6 +3081,20 @@ body {
 .front-page .hero-game-stage[data-galaga-state="playing"] .hero-galaga-overlay {
   display: none;
   pointer-events: none;
+}
+
+.page-template-page-home-php .hero-game-stage[data-galaga-state="idle"] .hero-galaga-overlay,
+.home .hero-game-stage[data-galaga-state="idle"] .hero-galaga-overlay,
+.front-page .hero-game-stage[data-galaga-state="idle"] .hero-galaga-overlay {
+  display: flex;
+  pointer-events: auto;
+}
+
+.page-template-page-home-php .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-overlay,
+.home .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-overlay,
+.front-page .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-overlay {
+  display: flex;
+  pointer-events: auto;
 }
 
 .page-template-page-home-php .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-scoreline,
