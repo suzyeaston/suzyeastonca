@@ -3055,6 +3055,45 @@ body {
   line-height: 1.75;
   color: rgba(243, 235, 223, 0.92);
   margin: clamp(18px, 2.4vw, 28px) auto 1.4rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  text-wrap: pretty;
+}
+
+.hero-core-headline {
+  margin: 0;
+  font-size: clamp(2rem, 5.2vw, 3.4rem);
+  line-height: 1.12;
+  color: #fff0d7;
+  text-shadow: 0 0 18px rgba(255, 197, 127, 0.24);
+}
+
+.hero-availability {
+  margin: 0 0 1.1rem;
+  line-height: 1.72;
+  color: #d7f8e9;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.hero-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+}
+
+.hero-status-chip {
+  border: 1px solid rgba(135, 228, 255, 0.34);
+  background: rgba(8, 22, 33, 0.6);
+  color: #daf4ff;
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+}
+
+.hero-status-chip strong {
+  color: #8fdfff;
 }
 
 .hero-cta-row {
@@ -3789,6 +3828,22 @@ body.page-template-page-bio-php .bio-content {
   flex: 1;
 }
 
+.selected-work__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+.selected-work__tags span {
+  border: 1px solid rgba(115, 239, 188, 0.36);
+  border-radius: 999px;
+  padding: 0.24rem 0.55rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: #bfffd9;
+}
+
 .vancouver-tech-home {
   border: 2px solid rgba(91, 184, 255, 0.45);
   box-shadow: 0 0 18px rgba(91, 184, 255, 0.2);
@@ -3851,6 +3906,33 @@ body.page-template-page-bio-php .bio-content {
   box-shadow: 0 0 20px rgba(0, 255, 170, 0.18);
 }
 
+.skills-home {
+  margin: 34px auto;
+  max-width: 960px;
+  padding: 24px 28px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 188, 92, 0.38);
+  box-shadow: 0 0 18px rgba(255, 188, 92, 0.16);
+}
+
+.skills-home h2 {
+  margin: 0 0 0.9rem;
+  color: #ffe8ba;
+}
+
+.skills-home__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.skills-home__list li {
+  color: #fff5dc;
+  line-height: 1.6;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
 .home-section-legend-links {
   display: flex;
   flex-wrap: wrap;
@@ -3891,29 +3973,30 @@ body.page-template-page-bio-php .bio-content {
 
 .utility-nav-home__counter {
   color: #9bffc6;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.4rem;
 }
 
-.utility-nav-home__links {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 8px 12px;
+.utility-nav-home__mini-links {
+  margin: 0;
+  color: #d8ffe9;
+  line-height: 1.6;
 }
 
-.utility-nav-home__links a {
+.utility-nav-home__mini-links a {
   color: var(--secondary-color);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
 }
 
-.utility-nav-home__links a:hover,
-.utility-nav-home__links a:focus {
+.utility-nav-home__mini-links a:hover,
+.utility-nav-home__mini-links a:focus {
   text-decoration: underline;
 }
 
 @media (max-width: 760px) {
   .selected-work,
   .vancouver-tech-home,
+  .skills-home,
   .build-public-home,
   .music-world,
   .collab-invite-home,

@@ -187,7 +187,7 @@
     <div class="se-contact-modal__top">
       <button type="button" class="se-contact-modal__close" data-contact-close aria-label="Close contact form">✕</button>
       <h2 id="se-contact-title" class="pixel-font">Contact Suzy</h2>
-      <p id="se-contact-copy" class="se-contact-modal__copy">Yo, what’s up? Drop a note and Suzy will get back to you.</p>
+      <p id="se-contact-copy" class="se-contact-modal__copy">Send a note about work, projects, music, prototypes, or strange useful systems.</p>
       <p class="se-contact-modal__audio-status" data-contact-audio-status aria-live="polite">Narrator loading…</p>
     </div>
 
@@ -205,7 +205,7 @@
         <label for="se-contact-message">Message</label>
         <textarea id="se-contact-message" name="message" rows="5" required></textarea>
 
-        <label for="se-contact-chaos">Type “yowhatsup” so I know you’re not a chaos bot.</label>
+        <label for="se-contact-chaos">Type “suzylab” so I know you’re not a chaos bot.</label>
         <input id="se-contact-chaos" name="chaos_check" type="text" autocapitalize="off" autocomplete="off" spellcheck="false" required>
 
         <p class="se-contact-form__status" data-contact-status aria-live="polite"></p>
