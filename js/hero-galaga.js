@@ -5,6 +5,7 @@
     const gameScreen = document.querySelector('.hero-game-stage__screen');
     const desktopQuery = window.matchMedia('(min-width: 860px)');
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const debugEnabled = Boolean(window.__SE_GALAGA_DEBUG);
 
     window.__SE_GALAGA_ACTIVE = false;
 
@@ -15,6 +16,12 @@
 
     if (!heroGrid || !gameStage || !gameScreen || !desktopQuery.matches) {
       return;
+    }
+
+    function debugWarn(message) {
+      if (debugEnabled && window.console && typeof window.console.warn === 'function') {
+        window.console.warn('[Rain City Defense]', message);
+      }
     }
 
     const rootStyles = window.getComputedStyle(document.documentElement);
@@ -35,7 +42,7 @@
     ui.className = 'hero-galaga-ui';
     ui.innerHTML = '' +
       '<p class="hero-galaga-status" data-galaga-status>RAIN CITY DEFENSE</p>' +
-      '<p class="hero-galaga-scoreline">Score: <span data-galaga-score>000000</span> · Lives: <span data-galaga-lives>3</span> · Wave: <span data-galaga-wave>1</span></p>' +
+      '<p class="hero-galaga-scoreline">Score: <span data-galaga-score>000000</span> // Lives: <span data-galaga-lives>3</span> // Wave: <span data-galaga-wave>1</span></p>' +
       '<p class="hero-galaga-help">WASD move // Space fire // Esc quit</p>' +
       '<p class="hero-galaga-wavecall" data-galaga-wavecall hidden></p>' +
       '<div class="hero-galaga-gameover" data-galaga-gameover hidden></div>';
@@ -102,12 +109,21 @@
     };
 
     const waveCalls = [
-      'WAVE 1 · RAIN CITY SIGNAL',
-      'WAVE 2 · GASTOWN STATIC',
-      'WAVE 3 · STEAM CLOCK SWARM',
-      'WAVE 4 · ALIEN FOG ROLLING IN',
+      'WAVE 1 // RAIN CITY SIGNAL',
+      'WAVE 2 // GASTOWN STATIC',
+      'WAVE 3 // STEAM CLOCK SWARM',
+      'WAVE 4 // ALIEN FOG ROLLING IN',
       'WAVE 5 · FALSE CREEK DISTRESS',
     ];
+
+    function setGalagaState(mode) {
+      gameStage.dataset.galagaState = mode;
+      if (mode === 'playing' || mode === 'gameover') {
+        gameStage.classList.add('is-galaga');
+      } else {
+        gameStage.classList.remove('is-galaga');
+      }
+    }
 
     function isPlaying() {
       return state.mode === 'playing';
@@ -132,12 +148,9 @@
     }
 
     function positionOverlayUI() {
-      const hintBottom = Math.max(12, state.height - (state.playfield.y + state.playfield.h) + 12);
       ui.style.left = state.playfield.x + 12 + 'px';
       ui.style.top = state.playfield.y + 12 + 'px';
       ui.style.maxWidth = Math.max(240, state.playfield.w - 24) + 'px';
-      hint.style.left = state.playfield.x + 12 + 'px';
-      hint.style.bottom = hintBottom + 'px';
     }
 
     function sizeCanvas() {
@@ -152,6 +165,9 @@
         w: state.width,
         h: state.height,
       };
+      if (state.width < 220 || state.height < 170) {
+        debugWarn('Game screen is too small for reliable gameplay.');
+      }
 
       canvas.width = Math.round(width * state.dpr);
       canvas.height = Math.round(height * state.dpr);
@@ -184,19 +200,19 @@
       }
 
       if (isPlaying()) {
-        hintTextEl.textContent = 'Esc to quit';
-        startButton.hidden = true;
+        hint.hidden = true;
         return;
       }
 
+      hint.hidden = false;
+
       if (state.mode === 'gameover') {
-        hintTextEl.textContent = 'Press G to reboot, or Esc to return';
+        hintTextEl.innerHTML = '<strong>SIGNAL LOST</strong><br>Gastown overrun.<br>Press G to reboot.';
       } else {
-        hintTextEl.textContent = reducedMotionQuery.matches
-          ? 'Press G to play (reduced motion)'
-          : 'Press G to play';
+        hintTextEl.innerHTML = 'RAIN CITY DEFENSE<br>Defend the weird little Rain City signal.<br>Press G to play<br>WASD move // Space fire // Esc quit';
       }
       startButton.hidden = false;
+      startButton.textContent = state.mode === 'gameover' ? 'Reboot' : 'Play';
     }
 
     function showWaveCallout() {
@@ -242,13 +258,25 @@
 
     function spawnWave() {
       const cols = 7;
-      const rows = 4;
+      const rows = state.playfield.h < 260 ? 3 : 4;
+      const enemyH = 16;
+      const minStartY = 34;
+      const maxStartY = 56;
+      const startYBase = Math.round(state.playfield.h * 0.18);
+      const startY = Math.max(minStartY, Math.min(maxStartY, startYBase));
+      const baseGapY = state.playfield.h < 260 ? 10 : 13;
+      const maxFormationBottom = state.playfield.h * 0.58;
+      const totalEnemyHeight = rows * enemyH;
+      const totalGapHeight = Math.max(0, rows - 1) * baseGapY;
+      const tentativeBottom = startY + totalEnemyHeight + totalGapHeight;
+      const overflow = Math.max(0, tentativeBottom - maxFormationBottom);
+      const adjustedStartY = Math.max(24, startY - overflow);
       const cfg = {
         cols: cols,
         rows: rows,
         gapX: 18,
-        gapY: 13,
-        startY: 66,
+        gapY: baseGapY,
+        startY: adjustedStartY,
       };
 
       state.enemies = [];
@@ -317,13 +345,8 @@
       state.playerBullets = [];
       state.enemyBullets = [];
       state.particles = [];
-      initPlayer();
+      state.player = null;
       state.enemies = [];
-      for (let row = 0; row < 2; row += 1) {
-        for (let col = 0; col < 5; col += 1) {
-          state.enemies.push(makeEnemy(row, col, { cols: 5, gapX: 16, gapY: 12, startY: 82 }));
-        }
-      }
     }
 
     function enterIdleMode() {
@@ -337,7 +360,7 @@
 
       window.__SE_GALAGA_ACTIVE = false;
       gameStage.dataset.galagaActive = 'false';
-      gameStage.classList.remove('is-galaga');
+      setGalagaState('idle');
       canvas.style.pointerEvents = 'none';
       gameOverEl.hidden = true;
       gameOverEl.innerHTML = '';
@@ -361,11 +384,16 @@
       }
 
       stopLoop();
+      if (state.playfield.w < 220 || state.playfield.h < 170) {
+        debugWarn('Game start blocked due to invalid game dimensions.');
+        enterIdleMode();
+        return;
+      }
       canvas.tabIndex = 0;
       state.mode = 'playing';
       window.__SE_GALAGA_ACTIVE = true;
       gameStage.dataset.galagaActive = 'true';
-      gameStage.classList.add('is-galaga');
+      setGalagaState('playing');
       canvas.style.pointerEvents = 'auto';
 
       resetGame();
@@ -388,11 +416,11 @@
       state.enemyBullets = [];
       window.__SE_GALAGA_ACTIVE = false;
       gameStage.dataset.galagaActive = 'false';
-      gameStage.classList.remove('is-galaga');
+      setGalagaState('gameover');
       canvas.style.pointerEvents = 'none';
 
       gameOverEl.hidden = false;
-      gameOverEl.innerHTML = '<strong>SIGNAL LOST</strong><br>Gastown overrun. Press G to reboot.';
+      gameOverEl.innerHTML = '<strong>SIGNAL LOST</strong><br>Gastown overrun.<br>Press G to reboot.';
       updateHint();
       render();
       stopLoop();
@@ -734,7 +762,13 @@
       }
 
       const invaded = state.enemies.some(function (enemy) {
-        return enemy.alive && enemy.y + enemy.h >= state.playfield.y + state.playfield.h - 52;
+        if (!enemy.alive) {
+          return false;
+        }
+        const playerZoneY = state.player
+          ? state.player.y + Math.max(4, state.player.h * 0.25)
+          : state.playfield.y + state.playfield.h - 28;
+        return enemy.y + enemy.h >= playerZoneY;
       });
 
       if (invaded && state.mode === 'playing') {
@@ -871,11 +905,6 @@
       drawBullets();
       drawParticles();
 
-      if (!isPlaying()) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
-        ctx.fillRect(state.playfield.x, state.playfield.y + state.playfield.h - 74, state.playfield.w, 74);
-      }
-
       ctx.restore();
     }
 
@@ -1003,7 +1032,7 @@
       if (!event.matches) {
         stopLoop();
         window.__SE_GALAGA_ACTIVE = false;
-        gameStage.classList.remove('is-galaga');
+        setGalagaState('idle');
         gameStage.classList.remove('has-galaga');
         gameStage.dataset.galagaActive = 'false';
         return;
