@@ -3034,6 +3034,12 @@ body {
   display: flex;
 }
 
+.page-template-page-home-php .hero-game-stage.has-galaga .hero-game-stage__idle,
+.home .hero-game-stage.has-galaga .hero-game-stage__idle,
+.front-page .hero-game-stage.has-galaga .hero-game-stage__idle {
+  display: none;
+}
+
 .page-template-page-home-php .hero-game-stage.is-galaga .hero-galaga-canvas,
 .home .hero-game-stage.is-galaga .hero-galaga-canvas,
 .front-page .hero-game-stage.is-galaga .hero-galaga-canvas {
@@ -3044,6 +3050,16 @@ body {
 .home .hero-game-stage.is-galaga .hero-galaga-ui,
 .front-page .hero-game-stage.is-galaga .hero-galaga-ui {
   display: flex;
+}
+
+.page-template-page-home-php .hero-game-stage.is-galaga .hero-galaga-hint,
+.home .hero-game-stage.is-galaga .hero-galaga-hint,
+.front-page .hero-game-stage.is-galaga .hero-galaga-hint,
+.page-template-page-home-php .hero-game-stage[data-galaga-state="playing"] .hero-galaga-hint,
+.home .hero-game-stage[data-galaga-state="playing"] .hero-galaga-hint,
+.front-page .hero-game-stage[data-galaga-state="playing"] .hero-galaga-hint {
+  display: none;
+  pointer-events: none;
 }
 
 .page-template-page-home-php .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-scoreline,
@@ -3058,7 +3074,7 @@ body {
 .page-template-page-home-php .hero-game-stage.is-galaga .hero-game-stage__idle,
 .home .hero-game-stage.is-galaga .hero-game-stage__idle,
 .front-page .hero-game-stage.is-galaga .hero-game-stage__idle {
-  opacity: 0;
+  display: none;
 }
 
 .page-template-page-home-php .hero-game-stage.is-galaga .hero-galaga-start,
@@ -3071,6 +3087,13 @@ body {
 .home .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-start,
 .front-page .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-start {
   display: inline-flex;
+}
+
+.page-template-page-home-php .hero-galaga-hint[hidden],
+.home .hero-galaga-hint[hidden],
+.front-page .hero-galaga-hint[hidden] {
+  display: none !important;
+  pointer-events: none;
 }
 
 @keyframes galagaHitFlash {
