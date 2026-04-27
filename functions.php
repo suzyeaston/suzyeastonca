@@ -356,8 +356,8 @@ if ( ! function_exists( 'se_handle_contact_suzy_submission' ) ) {
             wp_send_json_error( array( 'message' => 'Please enter a valid email address.' ), 422 );
         }
 
-        if ( 'yowhatsup' !== strtolower( $chaos_check ) ) {
-            wp_send_json_error( array( 'message' => 'Chaos bot check failed. Type yowhatsup and try again.' ), 422 );
+        if ( 'suzylab' !== strtolower( $chaos_check ) ) {
+            wp_send_json_error( array( 'message' => 'Chaos bot check failed. Type suzylab and try again.' ), 422 );
         }
 
         $to = 'suzyeaston@icloud.com';

@@ -12,7 +12,7 @@
   var firstInput = modal.querySelector('#se-contact-name');
   var formBody = modal.querySelector('.se-contact-modal__body');
   var lastFocused = null;
-  var introLine = 'Yo, what\'s up? Write a message and Suzy will get back to you.';
+  var introLine = 'Send a note about work, projects, music, prototypes, or strange useful systems.';
 
   function setStatus(message, isError) {
     if (!statusEl) return;

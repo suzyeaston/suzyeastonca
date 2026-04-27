@@ -4,23 +4,52 @@ get_header();
 ?>
 
 <main id="homepage-content">
+    <?php
+    $hero_eyebrow = apply_filters('se_home_hero_eyebrow', 'Vancouver, BC • Creative technology • QA automation • Music tools');
+    $hero_headline = apply_filters('se_home_hero_headline', 'I build strange, useful systems.');
+    $hero_logo_label = apply_filters('se_home_hero_title', 'Suzy Easton');
+    $hero_logo_top = apply_filters('se_home_hero_logo_top', 'Suzy');
+    $hero_logo_mid = apply_filters('se_home_hero_logo_mid', '');
+    $hero_logo_bottom = apply_filters('se_home_hero_logo_bottom', 'Easton');
+    $hero_logo_top_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_top, 'UTF-8') : strtoupper($hero_logo_top);
+    $hero_logo_mid_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_mid, 'UTF-8') : strtoupper($hero_logo_mid);
+    $hero_logo_bottom_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_bottom, 'UTF-8') : strtoupper($hero_logo_bottom);
+    ?>
+
     <div class="hero hero-section">
         <div class="hero-grid">
-            <?php
-            $hero_eyebrow = apply_filters('se_home_hero_eyebrow', 'Vancouver, BC • Built in public');
-            $hero_logo_label = apply_filters('se_home_hero_title', 'Suzy Easton');
-            $hero_logo_top = apply_filters('se_home_hero_logo_top', 'Suzy');
-            $hero_logo_mid = apply_filters('se_home_hero_logo_mid', '');
-            $hero_logo_bottom = apply_filters('se_home_hero_logo_bottom', 'Easton');
-            $hero_logo_top_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_top, 'UTF-8') : strtoupper($hero_logo_top);
-            $hero_logo_mid_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_mid, 'UTF-8') : strtoupper($hero_logo_mid);
-            $hero_logo_bottom_text = function_exists('mb_strtoupper') ? mb_strtoupper($hero_logo_bottom, 'UTF-8') : strtoupper($hero_logo_bottom);
-            ?>
             <div class="hero-main">
                 <?php if (!empty($hero_eyebrow)) : ?>
                     <p class="hero-eyebrow pixel-font"><?php echo esc_html($hero_eyebrow); ?></p>
                 <?php endif; ?>
-                <h1 class="screen-reader-text"><?php echo esc_html($hero_logo_label); ?></h1>
+
+                <h1 class="hero-core-headline"><?php echo esc_html($hero_headline); ?></h1>
+
+                <p class="hero-copy">
+                    <?php echo esc_html('I’m Suzy Easton — a senior technical generalist, musician, and creative technologist turning messy systems into working tools: QA automation, IT operations, practical AI prototypes, civic/open-data experiments, and music tech.'); ?>
+                </p>
+
+                <p class="hero-availability">
+                    <?php echo esc_html('Recently available after a company-wide layoff. Open to senior technical roles, contract debugging, QA automation, and sharp creative-tech builds.'); ?>
+                </p>
+
+                <div class="hero-status-chips" aria-label="Current status">
+                    <span class="hero-status-chip"><strong><?php echo esc_html('BUILD STATUS:'); ?></strong> <?php echo esc_html('SHIPPING'); ?></span>
+                    <span class="hero-status-chip"><strong><?php echo esc_html('LOCATION:'); ?></strong> <?php echo esc_html('VANCOUVER'); ?></span>
+                    <span class="hero-status-chip"><strong><?php echo esc_html('MODE:'); ?></strong> <?php echo esc_html('OPEN TO WORK'); ?></span>
+                </div>
+
+                <div class="hero-cta-group">
+                    <a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>" class="pixel-button hero-primary-cta">View flagship build</a>
+                    <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button hero-secondary-cta">Work with Suzy</a>
+                    <a href="<?php echo esc_url('https://github.com/suzyeaston/suzyeastonca'); ?>" class="pixel-button hero-secondary-cta" target="_blank" rel="noopener noreferrer">GitHub repo</a>
+                </div>
+                <p class="hero-collab-link"><a href="<?php echo esc_url(home_url('/bio/')); ?>"><?php echo esc_html('Read bio →'); ?></a></p>
+            </div>
+
+            <button class="hero-deco hero-ship hero-ship--autopilot" type="button" aria-label="Drag the spaceship" title="Drag me" tabindex="0"></button>
+
+            <aside class="hero-side hero-photo-card" aria-label="Hero wordmark and portrait">
                 <div class="hero-wordmark-wrap">
                     <div class="hero-badge">
                         <p class="hero-wordmark" aria-label="<?php echo esc_attr($hero_logo_label); ?>">
@@ -34,121 +63,63 @@ get_header();
                         </p>
                     </div>
                 </div>
-            </div>
-            <button class="hero-deco hero-ship hero-ship--autopilot" type="button" aria-label="Drag the spaceship" title="Drag me" tabindex="0"></button>
-            <div class="hero-side hero-photo-card">
-                <p class="hero-side-header">
-                    <a class="hero-photo-link" href="<?php echo esc_url(home_url('/bio/')); ?>">
-                        <?php echo esc_html('About Suzy'); ?>
-                    </a>
-                </p>
                 <div class="hero-photo-frame">
                     <a class="hero-photo-link hero-photo-link-block" href="<?php echo esc_url(home_url('/bio/')); ?>">
                         <img class="hero-photo" src="<?php echo esc_url(home_url('/wp-content/uploads/2026/01/IMG_9003.jpg')); ?>" alt="<?php echo esc_attr('Suzy Easton smiling with a guitar'); ?>" loading="lazy" decoding="async">
                     </a>
                 </div>
-                <p class="hero-photo-caption pixel-font">
-                    <a class="hero-photo-link" href="<?php echo esc_url(home_url('/bio/')); ?>">
-                        <?php echo esc_html('Vancouver, BC / Read bio →'); ?>
-                    </a>
-                </p>
-            </div>
+                <p class="hero-photo-caption pixel-font"><a class="hero-photo-link" href="<?php echo esc_url(home_url('/bio/')); ?>"><?php echo esc_html('Vancouver, BC / Read bio →'); ?></a></p>
+            </aside>
         </div>
 
-        <section class="pixel-intro hero-intro" aria-labelledby="home-positioning-title">
-            <h2 id="home-positioning-title" class="retro-title glow-lite">Musician, creative technologist, and big fan of cheese</h2>
-            <p class="hero-headline pixel-font">Yo, welcome to Suzy's public online experiments</p>
-            <p class="hero-subhead">this site is totally built live in public, available in github, learning as I go.</p>
-            <p class="hero-subhead">PSA: may want to clear the ol' cache and cookies often, features and fixes are relased daily</p>
-            <div class="hero-cta-group">
-                <a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>" class="pixel-button hero-primary-cta">Start with Gastown Simulator</a>
-                <a href="<?php echo esc_url(home_url('/projects/')); ?>" class="pixel-button hero-secondary-cta">Explore the Lab</a>
-                <a href="<?php echo esc_url(home_url('/bio/')); ?>" class="pixel-button hero-bio-button">Read full bio</a>
-            </div>
-            <p class="hero-collab-link"><a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>">Want to build something cool together? Side-quest door is here.</a></p>
-        </section>
-
-        <p class="arcade-subtext">Insert coin to explore</p>
+        <p class="arcade-subtext">Retro-futurist lab mode: online</p>
     </div>
 
     <section class="selected-work crt-block" aria-labelledby="selected-work-title">
-        <h2 id="selected-work-title" class="pixel-font">Featured builds / lab highlights</h2>
-        <p class="selected-work__intro">Flagship public builds: playful, practical, and always evolving in the open.</p>
+        <h2 id="selected-work-title" class="pixel-font">Featured builds</h2>
+        <p class="selected-work__intro">Projects with a practical point of view: experiments that ship, teach, and stay useful.</p>
         <div class="selected-work__grid">
             <article class="selected-work__card">
                 <h3 class="pixel-font">Gastown Simulator</h3>
-                <p>Flagship first-person Vancouver prototype with live worldbuilding, rapid iteration, and CRT-night atmosphere.</p>
+                <p>First-person Vancouver prototype using browser rendering, civic/open-data world files, route anchors, weather/time-of-day controls, and iterative product design.</p>
+                <p class="selected-work__tags" aria-label="Gastown Simulator technology tags"><span>Three.js</span><span>Civic data</span><span>Worldbuilding</span></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>">Enter Gastown</a>
             </article>
             <article class="selected-work__card">
                 <h3 class="pixel-font">Track Analyzer</h3>
-                <p>AI feedback tool for musicians: upload a track, get useful signal fast, and iterate your mix with confidence.</p>
+                <p>AI feedback tool for musicians: upload a track, get practical mix notes, and move faster from “something&rsquo;s off” to “that&rsquo;s the problem.”</p>
+                <p class="selected-work__tags" aria-label="Track Analyzer technology tags"><span>AI</span><span>Audio</span><span>Musician tools</span></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/suzys-track-analyzer/')); ?>">Analyze a Track</a>
             </article>
             <article class="selected-work__card">
                 <h3 class="pixel-font">Lousy Outages</h3>
-                <p>Retro terminal outage tracker built for modern service chaos: alerting, status clarity, and practical public utility.</p>
+                <p>Retro terminal outage tracker for modern service chaos: status clarity, provider feeds, alert hooks, and public utility.</p>
+                <p class="selected-work__tags" aria-label="Lousy Outages technology tags"><span>APIs</span><span>Monitoring</span><span>WordPress</span></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/lousy-outages/')); ?>">View Outages</a>
             </article>
             <article class="selected-work__card">
-                <h3 class="pixel-font">Rain City Roll Reserve</h3>
-                <p>AI Film Club short set in the Rain City universe: weird cinema experiments where storyboards meet machine dreams.</p>
-                <a class="pixel-button" href="https://www.youtube.com/watch?v=FrjuKGj91Pw" target="_blank" rel="noopener noreferrer">Watch the short film</a>
-            </article>
-            <article class="selected-work__card">
-                <h3 class="pixel-font">ASMR Lab (legacy prototype)</h3>
-                <p>Earlier audio-visual experiment currently in rebuild mode, still archived as part of the lab&rsquo;s public timeline.</p>
-                <a class="pixel-button" href="<?php echo esc_url(home_url('/asmr-lab/')); ?>">View prototype log</a>
+                <h3 class="pixel-font">ASMR Lab / Rain City Experiments</h3>
+                <p>Procedural audio-visual experiments where storyboards, synths, browser visuals, and AI prompts meet in the weird part of the lab.</p>
+                <p class="selected-work__tags" aria-label="ASMR Lab technology tags"><span>AI film</span><span>Procedural audio</span><span>Creative tools</span></p>
+                <a class="pixel-button" href="<?php echo esc_url(home_url('/asmr-lab/')); ?>">Explore the Lab</a>
             </article>
         </div>
     </section>
 
-    <?php
-    $vancouver_events_payload = suzy_get_vancouver_tech_events();
-    $vancouver_events = [];
-    if ( isset( $vancouver_events_payload['events'] ) && is_array( $vancouver_events_payload['events'] ) ) {
-        $vancouver_events = $vancouver_events_payload['events'];
-    }
-    $vancouver_events_top = array_slice( $vancouver_events, 0, 3 );
-    ?>
-    <section class="vancouver-tech-home crt-block" aria-labelledby="vancouver-tech-home-title">
-        <h2 id="vancouver-tech-home-title" class="pixel-font">Vancouver tech events</h2>
-        <p class="vancouver-tech-home__intro">Local founder nights, meetups, and dev hangs pulled into one stream.</p>
-
-        <?php if ( empty( $vancouver_events_top ) ) : ?>
-            <p>No upcoming Vancouver events are cached right now. Hit the full page to refresh the feed.</p>
-        <?php else : ?>
-            <ul class="vancouver-tech-home__list">
-                <?php foreach ( $vancouver_events_top as $event ) : ?>
-                    <?php
-                    $event_start = isset( $event['start'] ) ? (int) $event['start'] : 0;
-                    $event_url   = isset( $event['url'] ) ? (string) $event['url'] : '';
-                    ?>
-                    <li class="vancouver-tech-home__item">
-                        <p class="vancouver-tech-home__time">
-                            <?php echo esc_html( $event_start > 0 ? wp_date( 'D, M j • g:i A T', $event_start ) : 'Date/time TBD' ); ?>
-                        </p>
-                        <a href="<?php echo esc_url( $event_url ); ?>" target="_blank" rel="noopener noreferrer" class="vancouver-tech-home__title">
-                            <?php echo esc_html( $event['title'] ?? 'Upcoming event' ); ?>
-                        </a>
-                        <p class="vancouver-tech-home__meta">
-                            <?php if ( ! empty( $event['location'] ) ) : ?>
-                                <span><?php echo esc_html( (string) $event['location'] ); ?></span>
-                            <?php endif; ?>
-                            <?php if ( ! empty( $event['source'] ) ) : ?>
-                                <span class="vancouver-tech-home__source"><?php echo esc_html( (string) $event['source'] ); ?></span>
-                            <?php endif; ?>
-                        </p>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-
-        <a class="pixel-button vancouver-tech-home__cta" href="<?php echo esc_url( home_url( '/vancouver-tech-events/' ) ); ?>">Browse all Vancouver tech events</a>
+    <section class="skills-home crt-block" aria-labelledby="skills-home-title">
+        <h2 id="skills-home-title" class="pixel-font">Systems I like untangling</h2>
+        <ul class="skills-home__list">
+            <li>QA automation and release confidence</li>
+            <li>IT operations, identity, endpoint, and SaaS troubleshooting</li>
+            <li>Python/PowerShell/JavaScript automation</li>
+            <li>Practical AI prototypes and internal tools</li>
+            <li>Debugging weird production issues with calm, logs, and receipts</li>
+            <li>Music/audio/creative web experiments</li>
+        </ul>
     </section>
 
     <section class="build-public-home crt-block" aria-labelledby="build-public-title">
-        <h2 id="build-public-title" class="pixel-font">Build in public / repo receipts</h2>
+        <h2 id="build-public-title" class="pixel-font">Built in public, not hand-waved</h2>
         <p class="home-section-legend-links" aria-label="Build in public quick links">
             <a href="https://github.com/suzyeaston/suzyeastonca" target="_blank" rel="noopener noreferrer">GitHub repo</a>
             <span aria-hidden="true">//</span>
@@ -156,31 +127,32 @@ get_header();
             <span aria-hidden="true">//</span>
             <a href="<?php echo esc_url(home_url('/blog/')); ?>">Latest lab notes</a>
         </p>
-        <p>Everything here ships in the open: code in public repos, experiments updated often, and build notes that show the real process.</p>
+        <p>This site is a working portfolio, not a static brochure. The experiments ship in public, the repo shows the process, and the rough edges are part of the proof: I build, test, revise, document, and keep moving.</p>
     </section>
 
     <section class="music-world crt-block" aria-labelledby="music-world-title">
-        <h2 id="music-world-title" class="pixel-font">Music / media / world</h2>
-        <p class="home-section-legend-links" aria-label="Music and media quick links">
+        <h2 id="music-world-title" class="pixel-font">The other signal chain</h2>
+        <p>The same brain behind the systems also writes songs, makes noisy little films, talks shop, and occasionally turns Vancouver rain into a production aesthetic.</p>
+        <p class="home-section-legend-links" aria-label="Music and media links">
             <a href="https://suzyeaston.bandcamp.com" target="_blank" rel="noopener noreferrer">Bandcamp</a>
             <span aria-hidden="true">//</span>
-            <a href="<?php echo esc_url(home_url('/podcast/')); ?>">Easy Living podcast</a>
-            <span aria-hidden="true">//</span>
-            <a href="https://instagram.com/officialsuzyeaston" target="_blank" rel="noopener noreferrer">Instagram</a>
+            <a href="https://soundcloud.com/suzyeaston" target="_blank" rel="noopener noreferrer">SoundCloud</a>
             <span aria-hidden="true">//</span>
             <a href="https://www.youtube.com/@suzyeaston" target="_blank" rel="noopener noreferrer">YouTube</a>
             <span aria-hidden="true">//</span>
-            <a href="https://soundcloud.com/suzyeaston" target="_blank" rel="noopener noreferrer">SoundCloud</a>
+            <a href="https://instagram.com/officialsuzyeaston" target="_blank" rel="noopener noreferrer">Instagram</a>
+            <span aria-hidden="true">//</span>
+            <a href="<?php echo esc_url(home_url('/podcast/')); ?>">Podcast</a>
         </p>
-        <p>The creative universe behind the builds: songs, podcast conversations, AI film experiments, and dispatches from the lab.</p>
     </section>
 
     <section class="collab-invite-home crt-block" aria-labelledby="collab-invite-title">
-        <h2 id="collab-invite-title" class="pixel-font">Occasional collaborations</h2>
-        <p>Most of this site is me building in public. Sometimes I also take on the right paid side quest: debugging snarled systems, tightening QA, or prototyping something sharp and strange.</p>
+        <h2 id="collab-invite-title" class="pixel-font">Need a technical generalist with builder instincts?</h2>
+        <p>I’m open to senior technical roles, contract QA/automation work, practical AI prototypes, and debugging projects where the system is messy, the stakes are real, and someone needs to make the thing make sense.</p>
         <div class="collab-invite-home__actions">
-            <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button">Collaborate With Suzy</a>
-            <a href="mailto:suzyeaston@icloud.com?subject=Side%20Quest%20Collaboration" class="pixel-button">Email Suzy</a>
+            <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button">Work with Suzy</a>
+            <a href="mailto:suzyeaston@icloud.com?subject=Work%20Inquiry" class="pixel-button">Email Suzy</a>
+            <a href="https://github.com/suzyeaston/suzyeastonca" target="_blank" rel="noopener noreferrer" class="pixel-button">View GitHub</a>
         </div>
     </section>
 
@@ -190,17 +162,9 @@ get_header();
     $total = max(0, $total);
     ?>
     <section class="utility-nav-home crt-block" aria-labelledby="utility-nav-title">
-        <h2 id="utility-nav-title" class="pixel-font">Quick links</h2>
-        <p class="utility-nav-home__counter"><?php echo esc_html(sprintf('👁️ %d drop-in(s) logged so far.', $total)); ?></p>
-        <div class="utility-nav-home__links">
-            <a href="<?php echo esc_url(home_url('/bio/')); ?>">Bio</a>
-            <a href="<?php echo esc_url(home_url('/projects/')); ?>">Projects</a>
-            <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>">Collaborations</a>
-            <a href="<?php echo esc_url(home_url('/podcast/')); ?>">Podcast</a>
-            <a href="<?php echo esc_url(home_url('/coffee-for-builders/')); ?>">Coffee for Builders</a>
-            <a href="https://github.com/suzyeaston/suzyeastonca" target="_blank" rel="noopener noreferrer">Public repo</a>
-            <a href="https://buymeacoffee.com/wi0amge" target="_blank" rel="noopener noreferrer">Buy me a coffee</a>
-        </div>
+        <h2 id="utility-nav-title" class="pixel-font">Lab activity</h2>
+        <p class="utility-nav-home__counter"><?php echo esc_html(sprintf('👁️ %d lab visits logged.', $total)); ?></p>
+        <p class="utility-nav-home__mini-links"><a href="<?php echo esc_url(home_url('/projects/')); ?>">Projects</a> // <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>">Work with Suzy</a> // <a href="<?php echo esc_url(home_url('/bio/')); ?>">Bio</a></p>
     </section>
 </main>
 
