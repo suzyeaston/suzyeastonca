@@ -40,9 +40,9 @@ get_header();
                 </div>
 
                 <div class="hero-cta-group">
-                    <a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>" class="pixel-button hero-primary-cta">View flagship build</a>
+                    <a href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>" class="pixel-button hero-primary-cta">Enter Gastown Simulator</a>
                     <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button hero-secondary-cta">Work with Suzy</a>
-                    <a href="<?php echo esc_url('https://github.com/suzyeaston/suzyeastonca'); ?>" class="pixel-button hero-secondary-cta" target="_blank" rel="noopener noreferrer">GitHub repo</a>
+                    <a href="<?php echo esc_url('https://www.linkedin.com/in/suzyeaston/'); ?>" class="pixel-button hero-tertiary-cta" target="_blank" rel="noopener noreferrer">LinkedIn</a>
                 </div>
                 <p class="hero-collab-link"><a href="<?php echo esc_url(home_url('/bio/')); ?>"><?php echo esc_html('Read bio →'); ?></a></p>
             </div>
@@ -82,7 +82,7 @@ get_header();
     ?>
     <section class="ai-film-feature crt-block" aria-labelledby="ai-film-feature-title">
         <div class="ai-film-feature__media">
-            <p class="ai-film-feature__badge pixel-font"><?php echo esc_html('NEW TRANSMISSION'); ?></p>
+            <p class="ai-film-feature__badge pixel-font"><?php echo esc_html('FEATURED CONVERSATION // ON AIR'); ?></p>
             <div class="ai-film-feature__embed-wrap">
                 <iframe
                     src="<?php echo esc_url($ai_film_club_embed_url); ?>"
@@ -93,16 +93,22 @@ get_header();
                     allowfullscreen>
                 </iframe>
             </div>
+            <div class="ai-film-feature__meta" aria-label="AI Film Club metadata">
+                <span><?php echo esc_html('AI FILM CLUB'); ?></span>
+                <span><?php echo esc_html('WITH MAYUMI ROLLINGS'); ?></span>
+                <span><?php echo esc_html('CREATIVE TECH'); ?></span>
+                <span><?php echo esc_html('VANCOUVER / ASMR LAB'); ?></span>
+            </div>
         </div>
         <div class="ai-film-feature__copy">
             <p class="ai-film-feature__kicker pixel-font"><?php echo esc_html('LATEST SIGNAL // AI FILM CLUB'); ?></p>
-            <h2 id="ai-film-feature-title" class="pixel-font"><?php echo esc_html('Fireside chat: building weird, useful AI film tools'); ?></h2>
-            <p><?php echo esc_html('I joined Mayumi Rollings for an AI Film Club fireside chat about the messy, exciting middle ground between prompting and building: ASMR Lab, Vancouver/Gastown scene experiments, procedural audio, creator control, and why I started making my own tools instead of just using whatever platform was handed to me.'); ?></p>
-            <p class="ai-film-feature__note"><?php echo esc_html('This is the story behind the lab: part film experiment, part product prototype, part “fine, I’ll build the thing myself.”'); ?></p>
+            <h2 id="ai-film-feature-title" class="pixel-font"><?php echo esc_html('AI Film Club fireside chat: building tools, not just prompts'); ?></h2>
+            <p><?php echo esc_html('I joined Mayumi Rollings for an AI Film Club fireside chat about the middle ground between prompting and building: ASMR Lab, Gastown/Vancouver scene experiments, procedural audio, creator control, and why I started making my own tools instead of waiting for a platform to fit.'); ?></p>
+            <p class="ai-film-feature__note"><?php echo esc_html('Part film experiment, part product prototype, part “fine, I’ll build it myself.”'); ?></p>
             <div class="ai-film-feature__actions" aria-label="AI Film Club and lab links">
                 <a class="pixel-button" href="<?php echo esc_url($ai_film_club_watch_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html('Watch the fireside chat'); ?></a>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/asmr-lab/')); ?>"><?php echo esc_html('Explore ASMR Lab'); ?></a>
-                <a class="pixel-button" href="<?php echo esc_url($ai_film_club_repo_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html('View GitHub repo'); ?></a>
+                <a class="pixel-button" href="<?php echo esc_url($ai_film_club_repo_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html('View source on GitHub'); ?></a>
             </div>
         </div>
     </section>
@@ -135,31 +141,25 @@ get_header();
                 <p class="selected-work__tags" aria-label="ASMR Lab technology tags"><span>AI film</span><span>Procedural audio</span><span>Creative tools</span></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/asmr-lab/')); ?>">Explore the Lab</a>
             </article>
+            <article class="selected-work__card">
+                <h3 class="pixel-font">Albini Q&amp;A</h3>
+                <p>An experimental voice-and-attitude-driven creative app inspired by Steve Albini: part tribute, part interactive web experiment, part chaos-tested music-tech artifact.</p>
+                <p class="selected-work__tags" aria-label="Albini Q and A technology tags"><span>AI</span><span>Music</span><span>Web experiment</span></p>
+                <a class="pixel-button" href="<?php echo esc_url(home_url('/albini-qa/')); ?>">Open Albini Q&amp;A</a>
+            </article>
         </div>
     </section>
 
     <section class="skills-home crt-block" aria-labelledby="skills-home-title">
-        <h2 id="skills-home-title" class="pixel-font">Systems I like untangling</h2>
+        <h2 id="skills-home-title" class="pixel-font">What I do best</h2>
         <ul class="skills-home__list">
             <li>QA automation and release confidence</li>
             <li>IT operations, identity, endpoint, and SaaS troubleshooting</li>
-            <li>Python/PowerShell/JavaScript automation</li>
-            <li>Practical AI prototypes and internal tools</li>
-            <li>Debugging weird production issues with calm, logs, and receipts</li>
-            <li>Music/audio/creative web experiments</li>
+            <li>Python, PowerShell, and JavaScript automation</li>
+            <li>Practical AI tools and internal tooling</li>
+            <li>Debugging messy production issues with calm, logs, and receipts</li>
+            <li>Music, audio, and creative web experiments</li>
         </ul>
-    </section>
-
-    <section class="build-public-home crt-block" aria-labelledby="build-public-title">
-        <h2 id="build-public-title" class="pixel-font">Built in public, not hand-waved</h2>
-        <p class="home-section-legend-links" aria-label="Build in public quick links">
-            <a href="https://github.com/suzyeaston/suzyeastonca" target="_blank" rel="noopener noreferrer">GitHub repo</a>
-            <span aria-hidden="true">//</span>
-            <a href="<?php echo esc_url(home_url('/projects/')); ?>">Project build logs</a>
-            <span aria-hidden="true">//</span>
-            <a href="<?php echo esc_url(home_url('/blog/')); ?>">Latest lab notes</a>
-        </p>
-        <p>This site is a working portfolio, not a static brochure. The experiments ship in public, the repo shows the process, and the rough edges are part of the proof: I build, test, revise, document, and keep moving.</p>
     </section>
 
     <section class="music-world crt-block" aria-labelledby="music-world-title">
@@ -179,12 +179,12 @@ get_header();
     </section>
 
     <section class="collab-invite-home crt-block" aria-labelledby="collab-invite-title">
-        <h2 id="collab-invite-title" class="pixel-font">Need a technical generalist with builder instincts?</h2>
-        <p>I’m open to senior technical roles, contract QA/automation work, practical AI prototypes, and debugging projects where the system is messy, the stakes are real, and someone needs to make the thing make sense.</p>
+        <h2 id="collab-invite-title" class="pixel-font">Available for senior roles, contract work, and strange useful builds</h2>
+        <p>I’m open to senior technical roles, contract QA/automation work, practical AI prototypes, and debugging projects where the system is messy and someone needs to make the thing make sense.</p>
         <div class="collab-invite-home__actions">
             <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button">Work with Suzy</a>
+            <a href="<?php echo esc_url('https://www.linkedin.com/in/suzyeaston/'); ?>" target="_blank" rel="noopener noreferrer" class="pixel-button">LinkedIn</a>
             <a href="mailto:suzyeaston@icloud.com?subject=Work%20Inquiry" class="pixel-button">Email Suzy</a>
-            <a href="https://github.com/suzyeaston/suzyeastonca" target="_blank" rel="noopener noreferrer" class="pixel-button">View GitHub</a>
         </div>
     </section>
 
