@@ -135,6 +135,12 @@ get_header();
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>">Enter Gastown</a>
             </article>
             <article class="selected-work__card">
+                <h3 class="pixel-font">VanOps Radar</h3>
+                <p>Vancouver operations intelligence for storefronts, venues, offices, and local teams — a practical disruption board for road access, transit, weather, utility issues, event-day risks, and business continuity signals.</p>
+                <p class="selected-work__tags" aria-label="VanOps Radar technology tags"><span>Vancouver Ops</span><span>Civic Data</span><span>Dashboards</span></p>
+                <a class="pixel-button" href="<?php echo esc_url(home_url('/vanops-radar/')); ?>">Open VanOps Radar</a>
+            </article>
+            <article class="selected-work__card">
                 <h3 class="pixel-font">Track Analyzer</h3>
                 <p>AI feedback tool for musicians: upload a track, get practical mix notes, and move faster from “something&rsquo;s off” to “that&rsquo;s the problem.”</p>
                 <p class="selected-work__tags" aria-label="Track Analyzer technology tags"><span>AI</span><span>Audio</span><span>Musician tools</span></p>
@@ -142,9 +148,9 @@ get_header();
             </article>
             <article class="selected-work__card">
                 <h3 class="pixel-font">Lousy Outages</h3>
-                <p>Retro terminal outage tracker for modern service chaos: status clarity, provider feeds, alert hooks, and public utility.</p>
-                <p class="selected-work__tags" aria-label="Lousy Outages technology tags"><span>APIs</span><span>Monitoring</span><span>WordPress</span></p>
-                <a class="pixel-button" href="<?php echo esc_url(home_url('/lousy-outages/')); ?>">View Outages</a>
+                <p>Retro internet/provider outage tracker and status-page experiment — the weird monitoring lab behind some of the signal ideas.</p>
+                <p class="selected-work__tags" aria-label="Lousy Outages technology tags"><span>Status Pages</span><span>Monitoring</span><span>Retro Lab</span></p>
+                <a class="pixel-button" href="<?php echo esc_url(home_url('/lousy-outages/')); ?>">View Lousy Outages</a>
             </article>
             <article class="selected-work__card">
                 <h3 class="pixel-font">ASMR Lab / Rain City Experiments</h3>
