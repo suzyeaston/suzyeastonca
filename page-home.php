@@ -94,10 +94,13 @@ get_header();
                 </iframe>
             </div>
             <div class="ai-film-feature__meta" aria-label="AI Film Club metadata">
-                <span><?php echo esc_html('AI FILM CLUB'); ?></span>
-                <span><?php echo esc_html('WITH MAYUMI ROLLINGS'); ?></span>
-                <span><?php echo esc_html('CREATIVE TECH'); ?></span>
-                <span><?php echo esc_html('VANCOUVER / ASMR LAB'); ?></span>
+                <p class="ai-film-feature__meta-label pixel-font"><?php echo esc_html('SESSION INFO'); ?></p>
+                <ul class="ai-film-feature__meta-list">
+                    <li><?php echo esc_html('AI Film Club'); ?></li>
+                    <li><?php echo esc_html('With Mayumi Rollings'); ?></li>
+                    <li><?php echo esc_html('Creative Tech'); ?></li>
+                    <li><?php echo esc_html('Vancouver / ASMR Lab'); ?></li>
+                </ul>
             </div>
         </div>
         <div class="ai-film-feature__copy">
