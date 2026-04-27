@@ -2900,12 +2900,15 @@ body {
 }
 
 .page-template-page-home-php .hero-galaga-status,
+.page-template-page-home-php .hero-galaga-vessel,
 .page-template-page-home-php .hero-galaga-scoreline,
 .page-template-page-home-php .hero-galaga-help,
 .home .hero-galaga-status,
+.home .hero-galaga-vessel,
 .home .hero-galaga-scoreline,
 .home .hero-galaga-help,
 .front-page .hero-galaga-status,
+.front-page .hero-galaga-vessel,
 .front-page .hero-galaga-scoreline,
 .front-page .hero-galaga-help {
   margin: 0;
@@ -2931,6 +2934,12 @@ body {
 .front-page .hero-galaga-help {
   margin-top: 0;
   color: var(--accent-color);
+}
+
+.page-template-page-home-php .hero-galaga-vessel,
+.home .hero-galaga-vessel,
+.front-page .hero-galaga-vessel {
+  color: #cbffe7;
 }
 
 .page-template-page-home-php .hero-galaga-wavecall,
@@ -3095,6 +3104,17 @@ body {
 .front-page .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-overlay {
   display: flex;
   pointer-events: auto;
+}
+
+.page-template-page-home-php .hero-game-stage[data-galaga-state="gameover"] .hero-game-stage__screen::before,
+.home .hero-game-stage[data-galaga-state="gameover"] .hero-game-stage__screen::before,
+.front-page .hero-game-stage[data-galaga-state="gameover"] .hero-game-stage__screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 5;
+  pointer-events: none;
 }
 
 .page-template-page-home-php .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-scoreline,

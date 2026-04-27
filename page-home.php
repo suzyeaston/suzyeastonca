@@ -75,7 +75,7 @@ get_header();
         <div class="hero-game-stage" tabindex="0" aria-label="Pacific Static mini arcade game">
             <p class="hero-game-stage__header pixel-font"><?php echo esc_html('PACIFIC STATIC'); ?></p>
             <div class="hero-game-stage__screen" role="region" aria-label="Pacific Static game screen">
-                <p class="hero-game-stage__idle pixel-font"><?php echo esc_html('PACIFIC STATIC'); ?><br><?php echo esc_html('Defend the Vancouver signal.'); ?><br><?php echo esc_html('Press G to play.'); ?><br><?php echo esc_html('WASD move // Space fire // Esc quit'); ?></p>
+                <p class="hero-game-stage__idle pixel-font"><?php echo esc_html('PACIFIC STATIC'); ?><br><?php echo esc_html('Vessel: LIONS GATE'); ?><br><?php echo esc_html('Defend the Vancouver signal.'); ?><br><?php echo esc_html('Press G to play.'); ?><br><?php echo esc_html('WASD move // Space fire // Esc quit'); ?></p>
             </div>
             <p class="hero-game-stage__mobile-note"><?php echo esc_html('Mini arcade available on keyboard screens.'); ?></p>
         </div>

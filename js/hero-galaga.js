@@ -31,14 +31,14 @@
     }
 
     function debugLog(message, detail) {
-      if (!debugEnabled || !window.console || typeof window.console.log !== 'function') {
+      if (!debugEnabled || !window.console || typeof window.console.debug !== 'function') {
         return;
       }
       if (typeof detail === 'undefined') {
-        window.console.log('[Pacific Static]', message);
+        window.console.debug('[Pacific Static]', message);
         return;
       }
-      window.console.log('[Pacific Static]', message, detail);
+      window.console.debug('[Pacific Static]', message, detail);
     }
 
     const rootStyles = window.getComputedStyle(document.documentElement);
@@ -59,6 +59,7 @@
     ui.className = 'hero-galaga-ui';
     ui.innerHTML = '' +
       '<p class="hero-galaga-status" data-galaga-status>PACIFIC STATIC</p>' +
+      '<p class="hero-galaga-vessel">Vessel: LIONS GATE</p>' +
       '<p class="hero-galaga-scoreline">Score: <span data-galaga-score>000000</span> // Lives: <span data-galaga-lives>3</span> // Wave: <span data-galaga-wave>1</span></p>' +
       '<p class="hero-galaga-help">WASD move // Space fire // Esc quit</p>' +
       '<p class="hero-galaga-wavecall" data-galaga-wavecall hidden></p>';
@@ -72,7 +73,7 @@
       '</div>' +
       '<div class="hero-galaga-panel hero-galaga-panel--gameover hero-galaga-overlay--gameover hero-galaga-gameover" data-galaga-gameover-panel hidden>' +
         '<p class="hero-galaga-gameover__title">SIGNAL LOST</p>' +
-        '<p class="hero-galaga-gameover__line">The Pacific Static swallowed the feed.</p>' +
+        '<p class="hero-galaga-gameover__line">LIONS GATE destroyed.</p>' +
         '<p class="hero-galaga-gameover__stats">Score: <span data-galaga-final-score>000000</span></p>' +
         '<p class="hero-galaga-gameover__stats">Wave: <span data-galaga-final-wave>1</span></p>' +
         '<p class="hero-galaga-gameover__line">Press G to reboot.</p>' +
@@ -134,6 +135,7 @@
       shakePower: 0,
       waveCallUntil: 0,
       nextWaveAt: 0,
+      gameOverReason: '',
       playfield: {
         x: 0,
         y: 0,
@@ -279,7 +281,7 @@
       idlePanelEl.hidden = !isIdle;
       gameOverPanelEl.hidden = !isGameOver;
 
-      hintTextEl.innerHTML = 'PACIFIC STATIC<br>Defend the Vancouver signal.<br>Press G to play.<br>WASD move // Space fire // Esc quit';
+      hintTextEl.innerHTML = 'PACIFIC STATIC<br>Vessel: LIONS GATE<br>Defend the Vancouver signal.<br>Press G to play.<br>WASD move // Space fire // Esc quit';
       if (startButton) {
         startButton.hidden = !isIdle;
       }
@@ -390,7 +392,6 @@
         y: state.playfield.y + state.playfield.h - 14 - 18,
         speed: 320,
         invulnerableUntil: 0,
-        hitFlashUntil: 0,
       };
       clampPlayerToPlayfield();
     }
@@ -400,6 +401,7 @@
       state.lives = 3;
       state.wave = 1;
       state.wavePending = false;
+      state.gameOverReason = '';
       state.playerBullets = [];
       state.enemyBullets = [];
       state.lastShotAt = 0;
@@ -497,7 +499,11 @@
     }
 
     function triggerGameOver(reason) {
-      debugLog('game over', reason || 'unknown');
+      if (state.mode === 'gameover') {
+        return;
+      }
+      state.gameOverReason = reason || 'unknown';
+      debugLog('triggerGameOver', state.gameOverReason);
       state.keys.left = false;
       state.keys.right = false;
       state.keys.fire = false;
@@ -573,21 +579,31 @@
       return Boolean(state.player && state.player.invulnerableUntil > nowMs());
     }
 
-    function damagePlayer() {
-      if (!state.player || isPlayerInvulnerable() || state.mode !== 'playing') {
+    function spawnPlayerHitEffect() {
+      if (!state.player) {
+        return;
+      }
+      spawnExplosion(state.player.x + state.player.w / 2, state.player.y + state.player.h / 2, 20, [colors.magentaRain, '#ffffff', colors.secondary]);
+      triggerShake(4, 220);
+    }
+
+    function damagePlayer(reason) {
+      const damageReason = reason || 'hit';
+      if (!state.player || state.mode !== 'playing') {
+        return;
+      }
+      if (isPlayerInvulnerable()) {
         return;
       }
 
-      state.lives -= 1;
+      state.lives = Math.max(0, state.lives - 1);
       state.player.invulnerableUntil = nowMs() + 1500;
-      state.player.hitFlashUntil = state.player.invulnerableUntil;
-      spawnExplosion(state.player.x + state.player.w / 2, state.player.y + state.player.h / 2, 20, [colors.magentaRain, '#ffffff', colors.secondary]);
-      triggerShake(4, 220);
+      spawnPlayerHitEffect();
+      debugLog('damagePlayer', { reason: damageReason, lives: state.lives });
 
       if (state.lives <= 0) {
-        state.lives = 0;
         updateUI();
-        triggerGameOver('no_lives');
+        triggerGameOver(damageReason);
         return;
       }
 
@@ -838,7 +854,7 @@
           );
 
           if (hit) {
-            damagePlayer();
+            damagePlayer('projectile');
             return false;
           }
           return true;
@@ -861,7 +877,7 @@
           };
           if (intersects(playerBox, enemyHitbox)) {
             destroyEnemy(enemy);
-            damagePlayer();
+            damagePlayer('collision');
           }
         });
       }
@@ -877,10 +893,7 @@
       });
 
       if (invaded && state.mode === 'playing') {
-        state.lives = 0;
-        updateUI();
-        triggerGameOver('invaded');
-        return;
+        damagePlayer('invaded');
       }
 
       updateWaveProgression(nowMs());
@@ -991,7 +1004,9 @@
       ctx.beginPath();
       ctx.rect(state.playfield.x, state.playfield.y, state.playfield.w, state.playfield.h);
       ctx.clip();
-      ctx.fillStyle = isPlaying() ? 'rgba(0, 0, 0, 0.46)' : 'rgba(0, 0, 0, 0.18)';
+      ctx.fillStyle = isPlaying()
+        ? 'rgba(0, 0, 0, 0.46)'
+        : (state.mode === 'gameover' ? 'rgba(0, 0, 0, 0.62)' : 'rgba(0, 0, 0, 0.18)');
       ctx.fillRect(state.playfield.x, state.playfield.y, state.playfield.w, state.playfield.h);
 
       drawPlayer(renderNow);
