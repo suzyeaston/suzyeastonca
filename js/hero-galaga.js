@@ -201,17 +201,18 @@
 
       if (isPlaying()) {
         hint.hidden = true;
+        startButton.hidden = true;
         return;
       }
 
       hint.hidden = false;
+      startButton.hidden = false;
 
       if (state.mode === 'gameover') {
         hintTextEl.innerHTML = '<strong>SIGNAL LOST</strong><br>Gastown overrun.<br>Press G to reboot.';
       } else {
         hintTextEl.innerHTML = 'RAIN CITY DEFENSE<br>Defend the weird little Rain City signal.<br>Press G to play<br>WASD move // Space fire // Esc quit';
       }
-      startButton.hidden = false;
       startButton.textContent = state.mode === 'gameover' ? 'Reboot' : 'Play';
     }
 
@@ -397,6 +398,14 @@
       canvas.style.pointerEvents = 'auto';
 
       resetGame();
+      hint.hidden = true;
+      startButton.hidden = true;
+      gameOverEl.hidden = true;
+      gameOverEl.innerHTML = '';
+      if (waveCallEl) {
+        waveCallEl.hidden = true;
+        waveCallEl.textContent = '';
+      }
       updateHint();
       canvas.focus({ preventScroll: true });
       ensureLoopRunning();
@@ -419,8 +428,8 @@
       setGalagaState('gameover');
       canvas.style.pointerEvents = 'none';
 
-      gameOverEl.hidden = false;
-      gameOverEl.innerHTML = '<strong>SIGNAL LOST</strong><br>Gastown overrun.<br>Press G to reboot.';
+      gameOverEl.hidden = true;
+      gameOverEl.innerHTML = '';
       updateHint();
       render();
       stopLoop();
