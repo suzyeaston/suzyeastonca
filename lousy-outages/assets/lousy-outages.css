@@ -153,6 +153,7 @@
 
 .lo-incidents {
   display: block;
+  margin-bottom: 18px;
 }
 
 .lo-section {
@@ -693,9 +694,9 @@
 
 .lo-history__body {
   margin-top: 12px;
-  max-height: 80vh;
-  overflow-y: auto;
-  padding-right: 6px;
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
 }
 
 .lo-history__list {

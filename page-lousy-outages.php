@@ -49,13 +49,33 @@ if ($unsub_success) {
   <div class="lousy-outages-root">
     <div class="lo-atmosphere">
       <h1 class="retro-title glow-lite">Lousy Outages</h1>
-      <p class="lo-atmosphere__lede">Retro radar for when the internet goes sideways.</p>
+      <p class="lo-atmosphere__lede">Live-ish radar for provider weirdness, broken SaaS, and internet gremlins.</p>
     </div>
     <?php if ($banner) : ?>
       <div class="lo-banner lo-banner--<?php echo esc_attr($tone); ?>">
         <p><?php echo esc_html($banner); ?></p>
       </div>
     <?php endif; ?>
+    <section class="lo-status-board">
+      <div class="lo-status-board__frame">
+        <header class="lo-status-board__header">
+          <div class="lo-status-board__lights" aria-hidden="true">
+            <span class="lo-led lo-led--green"></span>
+            <span class="lo-led lo-led--amber"></span>
+            <span class="lo-led lo-led--red"></span>
+          </div>
+          <div class="lo-status-board__titles">
+            <p class="lo-status-board__eyebrow">System Status Console</p>
+            <h2 class="lo-status-board__title">Current Outages</h2>
+          </div>
+          <div class="lo-status-board__badge" aria-hidden="true">v4.0 arcade build</div>
+        </header>
+        <div class="lo-status-board__body">
+          <div class="lo-scanline" aria-hidden="true"></div>
+          <?php echo do_shortcode('[lousy_outages]'); ?>
+        </div>
+      </div>
+    </section>
     <section class="lo-panel lo-panel--report" data-lo-report>
       <header class="lo-panel__header">
         <h2 class="lo-panel__title">Report a problem</h2>
@@ -139,26 +159,6 @@ if ($unsub_success) {
           <p class="lo-report__status" data-lo-report-status aria-live="polite"></p>
         </div>
       </form>
-    </section>
-    <section class="lo-status-board">
-      <div class="lo-status-board__frame">
-        <header class="lo-status-board__header">
-          <div class="lo-status-board__lights" aria-hidden="true">
-            <span class="lo-led lo-led--green"></span>
-            <span class="lo-led lo-led--amber"></span>
-            <span class="lo-led lo-led--red"></span>
-          </div>
-          <div class="lo-status-board__titles">
-            <p class="lo-status-board__eyebrow">System Status Console</p>
-            <h2 class="lo-status-board__title">Current Outages</h2>
-          </div>
-          <div class="lo-status-board__badge" aria-hidden="true">v4.0 arcade build</div>
-        </header>
-        <div class="lo-status-board__body">
-          <div class="lo-scanline" aria-hidden="true"></div>
-          <?php echo do_shortcode('[lousy_outages]'); ?>
-        </div>
-      </div>
     </section>
     <footer class="lo-support">
       <p class="lo-support__lead">If this dashboard makes your on-call a little less lousy, you can help keep it running:</p>

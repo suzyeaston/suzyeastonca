@@ -536,6 +536,44 @@ function render_shortcode(): string {
             <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Incidents (0)</button>
             <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">All providers</button>
         </div>
+        <div class="lo-incidents" data-lo-incidents>
+            <section class="lo-section lo-section--incidents" data-lo-section="incidents">
+                <div class="lo-section__head">
+                    <h3 class="lo-block-title">Active incidents</h3>
+                </div>
+                <div class="lo-grid lo-grid--section" data-lo-section-grid="incidents"></div>
+            </section>
+            <section class="lo-section lo-section--collapsible" data-lo-section="signals">
+                <div class="lo-section__head">
+                    <button type="button" class="lo-section__toggle" data-lo-section-toggle="signals" aria-expanded="false">Signals (0)</button>
+                </div>
+                <div class="lo-grid lo-grid--section" data-lo-section-grid="signals" hidden></div>
+            </section>
+            <section class="lo-section lo-section--collapsible" data-lo-section="unverified">
+                <div class="lo-section__head">
+                    <button type="button" class="lo-section__toggle" data-lo-section-toggle="unverified" aria-expanded="false">Can’t verify (0)</button>
+                </div>
+                <div class="lo-grid lo-grid--section" data-lo-section-grid="unverified" hidden></div>
+            </section>
+        </div>
+        <?php if (LO_SHOW_WIDESPREAD) : ?>
+        <div class="lo-trending" data-lo-trending<?php echo $trending_active ? '' : ' hidden'; ?> data-lo-trending-generated="<?php echo esc_attr($trending_generated); ?>" aria-live="assertive">
+            <span class="lo-trending__icon" aria-hidden="true">⚡</span>
+            <div class="lo-trending__body">
+                <strong data-lo-trending-text>Potential widespread issues detected — check affected providers</strong>
+                <span class="lo-trending__reasons" data-lo-trending-reasons<?php echo $trending_signals ? '' : ' hidden'; ?>><?php echo esc_html($trending_signals ? 'Signals: ' . implode(', ', array_slice($trending_signals, 0, 6)) : ''); ?></span>
+            </div>
+        </div>
+        <?php endif; ?>
+        <div class="lo-hero" data-lo-hero hidden>
+            <article class="lo-card lo-card--hero">
+                <div class="lo-head">
+                    <h3 class="lo-title">No active incidents</h3>
+                </div>
+                <p class="lo-summary">Signals and verification issues are hidden by default.</p>
+                <p class="lo-card-meta">Last checked: <span data-lo-hero-time>—</span></p>
+            </article>
+        </div>
         <section class="lo-history" data-lo-history>
             <div class="lo-history__heading">
                 <div>
@@ -566,25 +604,7 @@ function render_shortcode(): string {
                 <p class="lo-history__error" data-lo-history-error hidden>Unable to load incident history right now.</p>
             </div>
         </section>
-        <?php if (LO_SHOW_WIDESPREAD) : ?>
-        <div class="lo-trending" data-lo-trending<?php echo $trending_active ? '' : ' hidden'; ?> data-lo-trending-generated="<?php echo esc_attr($trending_generated); ?>" aria-live="assertive">
-            <span class="lo-trending__icon" aria-hidden="true">⚡</span>
-            <div class="lo-trending__body">
-                <strong data-lo-trending-text>Potential widespread issues detected — check affected providers</strong>
-                <span class="lo-trending__reasons" data-lo-trending-reasons<?php echo $trending_signals ? '' : ' hidden'; ?>><?php echo esc_html($trending_signals ? 'Signals: ' . implode(', ', array_slice($trending_signals, 0, 6)) : ''); ?></span>
-            </div>
-        </div>
-        <?php endif; ?>
         <?php echo render_subscribe_shortcode(); ?>
-        <div class="lo-hero" data-lo-hero hidden>
-            <article class="lo-card lo-card--hero">
-                <div class="lo-head">
-                    <h3 class="lo-title">No active incidents</h3>
-                </div>
-                <p class="lo-summary">Signals and verification issues are hidden by default.</p>
-                <p class="lo-card-meta">Last checked: <span data-lo-hero-time>—</span></p>
-            </article>
-        </div>
         <div class="lo-external" data-lo-external>
             <article class="lo-card lo-card--external" data-provider-id="external-signals">
                 <div class="lo-head">
@@ -601,26 +621,6 @@ function render_shortcode(): string {
                     <?php endforeach; ?>
                 </ul>
             </article>
-        </div>
-        <div class="lo-incidents" data-lo-incidents>
-            <section class="lo-section lo-section--incidents" data-lo-section="incidents">
-                <div class="lo-section__head">
-                    <h3 class="lo-block-title">Active incidents</h3>
-                </div>
-                <div class="lo-grid lo-grid--section" data-lo-section-grid="incidents"></div>
-            </section>
-            <section class="lo-section lo-section--collapsible" data-lo-section="signals">
-                <div class="lo-section__head">
-                    <button type="button" class="lo-section__toggle" data-lo-section-toggle="signals" aria-expanded="false">Signals (0)</button>
-                </div>
-                <div class="lo-grid lo-grid--section" data-lo-section-grid="signals" hidden></div>
-            </section>
-            <section class="lo-section lo-section--collapsible" data-lo-section="unverified">
-                <div class="lo-section__head">
-                    <button type="button" class="lo-section__toggle" data-lo-section-toggle="unverified" aria-expanded="false">Can’t verify (0)</button>
-                </div>
-                <div class="lo-grid lo-grid--section" data-lo-section-grid="unverified" hidden></div>
-            </section>
         </div>
         <div class="lo-settings" data-lo-settings>
             <h3 class="lo-block-title">Customize view</h3>

@@ -22,3 +22,22 @@
 .page-slug-lousy-outages .entry-header {
     scroll-margin-top: 80px;
 }
+
+.lousy-outages-page .lousy-outages-root {
+    display: grid;
+    gap: 20px;
+}
+
+.lousy-outages-page .lo-status-board {
+    margin-top: 8px;
+}
+
+.lousy-outages-page .lo-panel--report {
+    margin-top: 0;
+}
+
+@media (max-width: 768px) {
+    .lousy-outages-page .lousy-outages-root {
+        gap: 16px;
+    }
+}

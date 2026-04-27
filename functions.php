@@ -132,6 +132,17 @@ function se_enqueue_lousy_outages_page_styles() {
 }
 add_action( 'wp_enqueue_scripts', 'se_enqueue_lousy_outages_page_styles' );
 
+function se_enqueue_vanops_radar_styles() {
+    if ( is_page_template( 'page-vanops-radar.php' ) || is_page( 'vanops-radar' ) ) {
+        $dir = get_stylesheet_directory();
+        $uri = get_stylesheet_directory_uri();
+        $path = '/assets/css/vanops-radar.css';
+        $version = file_exists( $dir . $path ) ? filemtime( $dir . $path ) : null;
+        wp_enqueue_style( 'se-vanops-radar', $uri . $path, array(), $version );
+    }
+}
+add_action( 'wp_enqueue_scripts', 'se_enqueue_vanops_radar_styles' );
+
 function se_enqueue_asmr_lab_assets() {
     if ( ! is_page_template( 'page-asmr-lab.php' ) ) {
         return;
