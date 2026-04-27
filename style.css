@@ -2048,6 +2048,22 @@ body {
   border: 0;
 }
 
+.ai-film-feature__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ai-film-feature__meta span {
+  border: 1px solid rgba(134, 255, 221, 0.42);
+  border-radius: 999px;
+  padding: 0.28rem 0.62rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  color: #c9ffea;
+  background: rgba(9, 23, 20, 0.72);
+}
+
 .ai-film-feature__copy h2 {
   margin-top: 0;
   margin-bottom: 0.8rem;
@@ -3794,7 +3810,6 @@ body.page-template-page-bio-php .bio-content {
 /* Homepage repositioning blocks */
 .selected-work,
 .vancouver-tech-home,
-.build-public-home,
 .music-world,
 .collab-invite-home,
 .utility-nav-home {
@@ -3806,7 +3821,6 @@ body.page-template-page-bio-php .bio-content {
 
 .selected-work h2,
 .vancouver-tech-home h2,
-.build-public-home h2,
 .music-world h2,
 .collab-invite-home h2,
 .utility-nav-home h2 {
@@ -3816,7 +3830,6 @@ body.page-template-page-bio-php .bio-content {
 
 .selected-work__intro,
 .vancouver-tech-home__intro,
-.build-public-home p,
 .music-world p,
 .collab-invite-home p,
 .utility-nav-home p {
@@ -3929,11 +3942,6 @@ body.page-template-page-bio-php .bio-content {
   align-items: center;
 }
 
-.build-public-home {
-  border: 2px solid rgba(0, 255, 170, 0.4);
-  box-shadow: 0 0 20px rgba(0, 255, 170, 0.18);
-}
-
 .skills-home {
   margin: 34px auto;
   max-width: 960px;
@@ -3999,6 +4007,18 @@ body.page-template-page-bio-php .bio-content {
   margin-top: 0.8rem;
 }
 
+.hero-tertiary-cta {
+  border-color: rgba(145, 219, 255, 0.4);
+  color: #d7f4ff;
+  background: rgba(14, 33, 39, 0.72);
+}
+
+.hero-tertiary-cta:hover,
+.hero-tertiary-cta:focus {
+  border-color: rgba(173, 240, 255, 0.62);
+  color: #effcff;
+}
+
 .utility-nav-home__counter {
   color: #9bffc6;
   margin-bottom: 0.4rem;
@@ -4025,7 +4045,6 @@ body.page-template-page-bio-php .bio-content {
   .selected-work,
   .vancouver-tech-home,
   .skills-home,
-  .build-public-home,
   .music-world,
   .collab-invite-home,
   .utility-nav-home {
@@ -4039,5 +4058,9 @@ body.page-template-page-bio-php .bio-content {
 
   .hero-section .hero-cta-group {
     gap: 0.6rem;
+  }
+
+  .ai-film-feature__meta span {
+    font-size: 0.63rem;
   }
 }
