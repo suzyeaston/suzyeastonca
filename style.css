@@ -15,6 +15,8 @@ Version: 4.0
   --background-dark: #000;
   --background-medium: #111;
   --background-light: #222;
+  --se-header-height: 72px;
+  --se-header-height-mobile: 90px;
 }
 
 body,
@@ -1204,7 +1206,7 @@ footer,
   max-width: 1000px;
   margin: 0 auto;
   text-align: center;
-  padding: clamp(32px, 6vw, 72px) 1rem clamp(24px, 5vw, 40px);
+  padding: clamp(40px, 6vw, 80px) 1rem clamp(24px, 5vw, 40px);
   position: relative;
   z-index: 2;
 }
@@ -1663,7 +1665,7 @@ footer,
 
 
 body {
-  padding-top: 60px;
+  padding-top: var(--se-header-height);
 }
 
 .main-header {
@@ -2643,7 +2645,8 @@ body {
   display: grid;
   gap: 2.25rem;
   margin: 0 auto 2.5rem;
-  max-width: 1040px;
+  max-width: min(1120px, 100%);
+  padding-inline: clamp(0.25rem, 1vw, 0.75rem);
   z-index: 1;
 }
 
@@ -3038,13 +3041,13 @@ body {
 
 @media (min-width: 860px) {
   .hero-grid {
-    grid-template-columns: minmax(0, 1fr) clamp(260px, 28vw, 340px);
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
     align-items: stretch;
   }
 
   /* Shift the main hero block toward the photo card on desktop while keeping its content centered. */
   .hero-main {
-    justify-self: end;
+    justify-self: stretch;
   }
 
   .hero-photo-card {
@@ -3060,6 +3063,25 @@ body {
   .hero-photo {
     height: 100%;
     object-fit: cover;
+  }
+}
+
+@media (max-width: 1099px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 1.6rem;
+    max-width: min(760px, 100%);
+  }
+
+  .hero-main,
+  .hero-side {
+    width: 100%;
+    justify-self: center;
+  }
+
+  .hero-side {
+    max-width: 540px;
+    margin-inline: auto;
   }
 }
 
@@ -3084,6 +3106,7 @@ body {
   width: min(100%, 62ch);
   text-align: center;
   justify-self: center;
+  min-width: 0;
 }
 
 .hero-eyebrow {
@@ -3123,7 +3146,7 @@ body {
   flex-wrap: wrap;
   gap: 0.55rem;
   justify-content: center;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.65rem;
 }
 
 .hero-status-chip {
@@ -3234,6 +3257,7 @@ body {
   gap: 1.4rem;
   overflow: hidden;
   align-self: start;
+  min-width: 0;
 }
 
 .hero-side::before {
@@ -4017,6 +4041,77 @@ body.page-template-page-bio-php .bio-content {
 .hero-tertiary-cta:focus {
   border-color: rgba(173, 240, 255, 0.62);
   color: #effcff;
+}
+
+#homepage-content {
+  padding-top: clamp(12px, 2.5vw, 26px);
+}
+
+.hero-section .hero-cta-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+
+.hero-section .hero-cta-group .pixel-button {
+  flex: 0 1 auto;
+}
+
+.hero-primary-cta {
+  font-size: 1.02rem;
+  padding-inline: 1.35rem;
+}
+
+.hero-secondary-cta,
+.hero-tertiary-cta {
+  font-size: 0.92rem;
+  padding: 0.72rem 1rem;
+}
+
+.page-template-page-home-php .hero-galaga-ui,
+.home .hero-galaga-ui,
+.front-page .hero-galaga-ui {
+  top: clamp(14px, 1.8vw, 26px);
+  left: clamp(12px, 1.8vw, 20px);
+  max-width: min(360px, calc(100vw - 32px));
+}
+
+.page-template-page-home-php .hero-galaga-hint,
+.home .hero-galaga-hint,
+.front-page .hero-galaga-hint {
+  bottom: clamp(18px, 2.2vw, 28px);
+}
+
+@media (min-width: 860px) and (max-width: 1240px) {
+  .page-template-page-home-php .hero-ship,
+  .home .hero-ship,
+  .front-page .hero-ship {
+    left: clamp(60%, 68%, 76%);
+    top: clamp(300px, 76%, 560px);
+    width: clamp(66px, 8vw, 112px);
+  }
+
+  .hero-status-chip {
+    font-size: 0.7rem;
+    padding: 0.34rem 0.62rem;
+  }
+}
+
+@media (max-width: 860px) {
+  :root {
+    --se-header-height: var(--se-header-height-mobile);
+  }
+
+  .main-header {
+    padding: 0.7rem 1rem;
+  }
+
+  #homepage-content {
+    padding-top: 0.9rem;
+  }
 }
 
 .utility-nav-home__counter {
