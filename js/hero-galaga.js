@@ -1,21 +1,21 @@
 (function () {
   function initHeroGalaga() {
     const heroGrid = document.querySelector('.hero-grid');
+    const gameStage = document.querySelector('.hero-game-stage');
+    const gameScreen = document.querySelector('.hero-game-stage__screen');
     const desktopQuery = window.matchMedia('(min-width: 860px)');
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     window.__SE_GALAGA_ACTIVE = false;
 
-    if (heroGrid) {
-      heroGrid.dataset.galagaReady = 'true';
-      heroGrid.dataset.galagaActive = 'false';
+    if (gameStage) {
+      gameStage.dataset.galagaReady = 'true';
+      gameStage.dataset.galagaActive = 'false';
     }
 
-    if (!heroGrid || !desktopQuery.matches) {
+    if (!heroGrid || !gameStage || !gameScreen || !desktopQuery.matches) {
       return;
     }
-
-    const heroMain = heroGrid.querySelector('.hero-main');
 
     const rootStyles = window.getComputedStyle(document.documentElement);
     const colors = {
@@ -34,9 +34,9 @@
     const ui = document.createElement('div');
     ui.className = 'hero-galaga-ui';
     ui.innerHTML = '' +
-      '<p class="hero-galaga-status" data-galaga-status>Rain City Defense</p>' +
+      '<p class="hero-galaga-status" data-galaga-status>RAIN CITY DEFENSE</p>' +
       '<p class="hero-galaga-scoreline">Score: <span data-galaga-score>000000</span> · Lives: <span data-galaga-lives>3</span> · Wave: <span data-galaga-wave>1</span></p>' +
-      '<p class="hero-galaga-help">A/D or ←/→ · Space fire · Esc exit</p>' +
+      '<p class="hero-galaga-help">WASD move // Space fire // Esc quit</p>' +
       '<p class="hero-galaga-wavecall" data-galaga-wavecall hidden></p>' +
       '<div class="hero-galaga-gameover" data-galaga-gameover hidden></div>';
 
@@ -44,9 +44,9 @@
     hint.className = 'hero-galaga-hint';
     hint.innerHTML = '<span class="hero-galaga-hint-text" data-galaga-hint-text></span><button type="button" class="hero-galaga-start">Play</button>';
 
-    heroGrid.appendChild(canvas);
-    heroGrid.appendChild(ui);
-    heroGrid.appendChild(hint);
+    gameScreen.appendChild(canvas);
+    gameScreen.appendChild(ui);
+    gameScreen.appendChild(hint);
 
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) {
@@ -142,18 +142,15 @@
 
     function sizeCanvas() {
       state.dpr = Math.max(1, window.devicePixelRatio || 1);
-      const width = Math.max(1, heroGrid.clientWidth);
-      const height = Math.max(1, heroGrid.clientHeight);
-      const heroGridRect = heroGrid.getBoundingClientRect();
-      const mainRect = heroMain ? heroMain.getBoundingClientRect() : heroGridRect;
-      const visibleH = Math.min(mainRect.height, window.innerHeight - mainRect.top - 16);
+      const width = Math.max(1, gameScreen.clientWidth);
+      const height = Math.max(1, gameScreen.clientHeight);
       state.width = width;
       state.height = height;
       state.playfield = {
-        x: Math.max(0, Math.round(mainRect.left - heroGridRect.left)),
-        y: Math.max(0, Math.round(mainRect.top - heroGridRect.top)),
-        w: Math.min(state.width, Math.max(1, Math.round(mainRect.width))),
-        h: Math.min(state.height, Math.max(260, Math.round(visibleH))),
+        x: 0,
+        y: 0,
+        w: state.width,
+        h: state.height,
       };
 
       canvas.width = Math.round(width * state.dpr);
@@ -216,7 +213,7 @@
       state.particles = [];
       state.shakeUntil = 0;
       state.shakePower = 0;
-      heroGrid.classList.remove('galaga-hit');
+      gameScreen.classList.remove('galaga-hit');
     }
 
     function makeEnemy(row, col, cfg) {
@@ -339,8 +336,8 @@
       clearTransientFx();
 
       window.__SE_GALAGA_ACTIVE = false;
-      heroGrid.dataset.galagaActive = 'false';
-      heroGrid.classList.remove('is-galaga');
+      gameStage.dataset.galagaActive = 'false';
+      gameStage.classList.remove('is-galaga');
       canvas.style.pointerEvents = 'none';
       gameOverEl.hidden = true;
       gameOverEl.innerHTML = '';
@@ -367,8 +364,8 @@
       canvas.tabIndex = 0;
       state.mode = 'playing';
       window.__SE_GALAGA_ACTIVE = true;
-      heroGrid.dataset.galagaActive = 'true';
-      heroGrid.classList.add('is-galaga');
+      gameStage.dataset.galagaActive = 'true';
+      gameStage.classList.add('is-galaga');
       canvas.style.pointerEvents = 'auto';
 
       resetGame();
@@ -390,12 +387,12 @@
       state.playerBullets = [];
       state.enemyBullets = [];
       window.__SE_GALAGA_ACTIVE = false;
-      heroGrid.dataset.galagaActive = 'false';
-      heroGrid.classList.remove('is-galaga');
+      gameStage.dataset.galagaActive = 'false';
+      gameStage.classList.remove('is-galaga');
       canvas.style.pointerEvents = 'none';
 
       gameOverEl.hidden = false;
-      gameOverEl.innerHTML = '<strong>SIGNAL LOST</strong><br>Final score: ' + formatScore(state.score) + '<br>Press G to reboot or Esc to quit';
+      gameOverEl.innerHTML = '<strong>SIGNAL LOST</strong><br>Gastown overrun. Press G to reboot.';
       updateHint();
       render();
       stopLoop();
@@ -436,9 +433,9 @@
       }
       state.shakePower = Math.max(state.shakePower, power);
       state.shakeUntil = Math.max(state.shakeUntil, nowMs() + durationMs);
-      heroGrid.classList.remove('galaga-hit');
-      void heroGrid.offsetWidth;
-      heroGrid.classList.add('galaga-hit');
+      gameScreen.classList.remove('galaga-hit');
+      void gameScreen.offsetWidth;
+      gameScreen.classList.add('galaga-hit');
     }
 
     function playerHitbox() {
@@ -842,7 +839,7 @@
 
       if (renderNow >= state.shakeUntil) {
         state.shakePower = 0;
-        heroGrid.classList.remove('galaga-hit');
+        gameScreen.classList.remove('galaga-hit');
       }
 
       if (waveCallEl && renderNow >= state.waveCallUntil) {
@@ -1006,13 +1003,13 @@
       if (!event.matches) {
         stopLoop();
         window.__SE_GALAGA_ACTIVE = false;
-        heroGrid.classList.remove('is-galaga');
-        heroGrid.classList.remove('has-galaga');
-        heroGrid.dataset.galagaActive = 'false';
+        gameStage.classList.remove('is-galaga');
+        gameStage.classList.remove('has-galaga');
+        gameStage.dataset.galagaActive = 'false';
         return;
       }
 
-      heroGrid.classList.add('has-galaga');
+      gameStage.classList.add('has-galaga');
       if (!isPlaying()) {
         enterIdleMode();
       }
@@ -1038,12 +1035,12 @@
       : null;
 
     if (resizeObserver) {
-      resizeObserver.observe(heroGrid);
+      resizeObserver.observe(gameScreen);
     } else {
       window.addEventListener('resize', sizeCanvas, { passive: true });
     }
 
-    heroGrid.classList.add('has-galaga');
+    gameStage.classList.add('has-galaga');
     sizeCanvas();
     updateUI();
     enterIdleMode();

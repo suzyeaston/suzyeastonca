@@ -72,6 +72,13 @@ get_header();
             </aside>
         </div>
 
+        <div class="hero-game-stage" aria-label="Rain City Defense arcade stage">
+            <p class="hero-game-stage__header pixel-font"><?php echo esc_html('RAIN CITY DEFENSE'); ?></p>
+            <div class="hero-game-stage__screen" role="region" aria-label="Rain City Defense game screen">
+                <p class="hero-game-stage__idle pixel-font"><?php echo esc_html('RAIN CITY DEFENSE'); ?><br><?php echo esc_html('Press G to play'); ?><br><?php echo esc_html('WASD move // Space fire // Esc quit'); ?></p>
+            </div>
+        </div>
+
         <p class="arcade-subtext">Retro-futurist lab mode: online</p>
     </div>
 
@@ -154,13 +161,13 @@ get_header();
     </section>
 
     <section class="skills-home crt-block" aria-labelledby="skills-home-title">
-        <h2 id="skills-home-title" class="pixel-font">What I do best</h2>
+        <h2 id="skills-home-title" class="pixel-font">Where I'm useful</h2>
         <ul class="skills-home__list">
             <li>QA automation and release confidence</li>
             <li>IT operations, identity, endpoint, and SaaS troubleshooting</li>
             <li>Python, PowerShell, and JavaScript automation</li>
-            <li>Practical AI tools and internal tooling</li>
-            <li>Debugging messy production issues with calm, logs, and receipts</li>
+            <li>Practical AI tools and internal workflows</li>
+            <li>Production debugging with logs, calm, and receipts</li>
             <li>Music, audio, and creative web experiments</li>
         </ul>
     </section>
