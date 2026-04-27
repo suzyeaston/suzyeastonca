@@ -2722,15 +2722,29 @@ body {
 .hero-game-stage__idle {
   margin: 0;
   position: absolute;
-  inset: 0;
-  display: grid;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: inline-grid;
   place-content: center;
   text-align: center;
   line-height: 1.5;
   font-size: 0.6rem;
   letter-spacing: 0.08em;
-  color: rgba(123, 255, 210, 0.72);
+  color: rgba(180, 255, 235, 0.9);
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(128, 225, 255, 0.42);
+  border-radius: 8px;
+  padding: 10px 12px;
+  max-width: min(92%, 460px);
   pointer-events: none;
+  z-index: 3;
+}
+
+.hero-game-stage__mobile-note {
+  margin: 0.55rem 0 0;
+  font-size: 0.6rem;
+  color: rgba(154, 236, 255, 0.88);
 }
 
 
@@ -2938,12 +2952,12 @@ body {
 .page-template-page-home-php .hero-galaga-gameover,
 .home .hero-galaga-gameover,
 .front-page .hero-galaga-gameover {
-  margin-top: 10px;
-  max-width: min(90%, 560px);
-  background: rgba(10, 10, 10, 0.84);
-  border: 2px solid var(--secondary-color);
-  color: var(--accent-color);
-  padding: 10px;
+  margin-top: 0;
+  max-width: 100%;
+  background: transparent;
+  border: 0;
+  color: #ffb7ef;
+  padding: 0;
 }
 
 .page-template-page-home-php .hero-galaga-gameover strong,
@@ -2956,27 +2970,30 @@ body {
 .home .hero-galaga-hint,
 .front-page .hero-galaga-hint {
   position: absolute;
-  bottom: 12px;
-  left: 12px;
-  top: auto;
-  right: auto;
-  z-index: 4;
-  padding: 6px 10px;
-  font-size: 0.52rem;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  padding: 10px 12px;
+  font-size: 0.54rem;
   letter-spacing: 0.04em;
-  color: var(--accent-color);
-  border: 1px solid rgba(128, 225, 255, 0.35);
-  background: rgba(0, 0, 0, 0.62);
-  display: inline-flex;
+  color: #cbffe7;
+  border: 1px solid rgba(128, 225, 255, 0.44);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  text-align: center;
+  min-width: min(92%, 460px);
+  max-width: min(92%, 460px);
   pointer-events: auto;
 }
 
 .page-template-page-home-php .hero-galaga-hint-text,
 .home .hero-galaga-hint-text,
 .front-page .hero-galaga-hint-text {
-  line-height: 1.2;
+  line-height: 1.45;
 }
 
 .page-template-page-home-php .hero-galaga-start,
@@ -3006,12 +3023,15 @@ body {
 }
 
 .page-template-page-home-php .hero-game-stage.has-galaga .hero-galaga-canvas,
-.page-template-page-home-php .hero-game-stage.has-galaga .hero-galaga-hint,
 .home .hero-game-stage.has-galaga .hero-galaga-canvas,
-.home .hero-game-stage.has-galaga .hero-galaga-hint,
-.front-page .hero-game-stage.has-galaga .hero-galaga-canvas,
-.front-page .hero-game-stage.has-galaga .hero-galaga-hint {
+.front-page .hero-game-stage.has-galaga .hero-galaga-canvas {
   display: block;
+}
+
+.page-template-page-home-php .hero-game-stage.has-galaga .hero-galaga-hint,
+.home .hero-game-stage.has-galaga .hero-galaga-hint,
+.front-page .hero-game-stage.has-galaga .hero-galaga-hint {
+  display: flex;
 }
 
 .page-template-page-home-php .hero-game-stage.is-galaga .hero-galaga-canvas,
@@ -3026,6 +3046,15 @@ body {
   display: flex;
 }
 
+.page-template-page-home-php .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-scoreline,
+.page-template-page-home-php .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-help,
+.home .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-scoreline,
+.home .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-help,
+.front-page .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-scoreline,
+.front-page .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-help {
+  display: none;
+}
+
 .page-template-page-home-php .hero-game-stage.is-galaga .hero-game-stage__idle,
 .home .hero-game-stage.is-galaga .hero-game-stage__idle,
 .front-page .hero-game-stage.is-galaga .hero-game-stage__idle {
@@ -3036,6 +3065,12 @@ body {
 .home .hero-game-stage.is-galaga .hero-galaga-start,
 .front-page .hero-game-stage.is-galaga .hero-galaga-start {
   display: none;
+}
+
+.page-template-page-home-php .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-start,
+.home .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-start,
+.front-page .hero-game-stage[data-galaga-state="gameover"] .hero-galaga-start {
+  display: inline-flex;
 }
 
 @keyframes galagaHitFlash {
@@ -4220,7 +4255,7 @@ body.page-template-page-bio-php .bio-content {
 .page-template-page-home-php .hero-galaga-hint,
 .home .hero-galaga-hint,
 .front-page .hero-galaga-hint {
-  bottom: clamp(18px, 2.2vw, 28px);
+  inset: 50% auto auto 50%;
 }
 
 @media (min-width: 860px) and (max-width: 1240px) {
@@ -4301,6 +4336,10 @@ body.page-template-page-bio-php .bio-content {
     min-height: 190px;
   }
 
+  .hero-game-stage__mobile-note {
+    display: block;
+  }
+
   .ai-film-feature__meta-list {
     gap: 0.45rem;
   }
@@ -4309,5 +4348,11 @@ body.page-template-page-bio-php .bio-content {
     font-size: 0.58rem;
     letter-spacing: 0.05em;
     padding: 0.3rem 0.52rem;
+  }
+}
+
+@media (min-width: 761px) {
+  .hero-game-stage__mobile-note {
+    display: none;
   }
 }

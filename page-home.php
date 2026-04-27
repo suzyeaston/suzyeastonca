@@ -5,8 +5,8 @@ get_header();
 
 <main id="homepage-content">
     <?php
-    $hero_eyebrow = apply_filters('se_home_hero_eyebrow', 'Vancouver, BC • Creative technology • QA automation • Music tools');
-    $hero_headline = apply_filters('se_home_hero_headline', 'I build strange, useful systems.');
+    $hero_eyebrow = apply_filters('se_home_hero_eyebrow', 'Vancouver, BC • QA automation • IT operations • Creative AI');
+    $hero_headline = apply_filters('se_home_hero_headline', 'I build strange, useful things.');
     $hero_logo_label = apply_filters('se_home_hero_title', 'Suzy Easton');
     $hero_logo_top = apply_filters('se_home_hero_logo_top', 'Suzy');
     $hero_logo_mid = apply_filters('se_home_hero_logo_mid', '');
@@ -26,17 +26,17 @@ get_header();
                 <h1 class="hero-core-headline"><?php echo esc_html($hero_headline); ?></h1>
 
                 <p class="hero-copy">
-                    <?php echo esc_html('I’m Suzy Easton — a senior technical generalist, musician, and creative technologist turning messy systems into working tools: QA automation, IT operations, practical AI prototypes, civic/open-data experiments, and music tech.'); ?>
+                    <?php echo esc_html('I’m Suzy Easton — a senior technical generalist, musician, and creative technologist who turns messy workflows, flaky systems, and half-formed ideas into practical outcomes. My work spans QA automation, IT operations, AI prototypes, civic/open-data experiments, music tech, and public projects like Lousy Outages.'); ?>
                 </p>
 
                 <p class="hero-availability">
-                    <?php echo esc_html('Recently available after a company-wide layoff. Open to senior technical roles, contract debugging, QA automation, and sharp creative-tech builds.'); ?>
+                    <?php echo esc_html('Available for senior technical roles, contract QA/automation work, practical AI prototypes, and useful weird builds.'); ?>
                 </p>
 
                 <div class="hero-status-chips" aria-label="Current status">
-                    <span class="hero-status-chip"><strong><?php echo esc_html('BUILD STATUS:'); ?></strong> <?php echo esc_html('SHIPPING'); ?></span>
+                    <span class="hero-status-chip"><strong><?php echo esc_html('BUILD MODE:'); ?></strong> <?php echo esc_html('SHIPPING'); ?></span>
                     <span class="hero-status-chip"><strong><?php echo esc_html('LOCATION:'); ?></strong> <?php echo esc_html('VANCOUVER'); ?></span>
-                    <span class="hero-status-chip"><strong><?php echo esc_html('MODE:'); ?></strong> <?php echo esc_html('OPEN TO WORK'); ?></span>
+                    <span class="hero-status-chip"><strong><?php echo esc_html('STATUS:'); ?></strong> <?php echo esc_html('OPEN TO WORK'); ?></span>
                 </div>
 
                 <div class="hero-cta-group">
@@ -75,8 +75,9 @@ get_header();
         <div class="hero-game-stage" aria-label="Rain City Defense arcade stage">
             <p class="hero-game-stage__header pixel-font"><?php echo esc_html('RAIN CITY DEFENSE'); ?></p>
             <div class="hero-game-stage__screen" role="region" aria-label="Rain City Defense game screen">
-                <p class="hero-game-stage__idle pixel-font"><?php echo esc_html('RAIN CITY DEFENSE'); ?><br><?php echo esc_html('Press G to play'); ?><br><?php echo esc_html('WASD move // Space fire // Esc quit'); ?></p>
+                <p class="hero-game-stage__idle pixel-font"><?php echo esc_html('RAIN CITY DEFENSE'); ?><br><?php echo esc_html('Defend the weird little Rain City signal.'); ?><br><?php echo esc_html('Press G to play'); ?><br><?php echo esc_html('WASD move // Space fire // Esc quit'); ?></p>
             </div>
+            <p class="hero-game-stage__mobile-note"><?php echo esc_html('Mini arcade available on keyboard screens.'); ?></p>
         </div>
 
         <p class="arcade-subtext">Retro-futurist lab mode: online</p>
