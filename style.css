@@ -3927,7 +3927,8 @@ body.page-template-page-bio-php .bio-content {
 .page-template-page-work-with-suzy .work-with-suzy-content {
     max-width: 980px;
     display: grid;
-    gap: 24px;
+    gap: 28px;
+    margin-top: 18px;
 }
 
 .page-template-page-work-with-suzy .wws-kicker {
@@ -3949,6 +3950,11 @@ body.page-template-page-bio-php .bio-content {
     padding: clamp(20px, 3.8vw, 34px);
 }
 
+.page-template-page-work-with-suzy .wws-section h2,
+.page-template-page-work-with-suzy .wws-final-cta h2 {
+    margin-bottom: 0.85rem;
+}
+
 .page-template-page-work-with-suzy .wws-hero .retro-title {
     margin-bottom: 14px;
     font-size: clamp(2rem, 6vw, 3.25rem);
@@ -3964,24 +3970,42 @@ body.page-template-page-bio-php .bio-content {
     color: var(--primary-color);
 }
 
+.page-template-page-work-with-suzy .wws-section p,
+.page-template-page-work-with-suzy .wws-final-cta p {
+    margin: 0 0 12px;
+}
+
+.page-template-page-work-with-suzy .wws-actions {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
 .page-template-page-work-with-suzy .wws-hero-cta,
+.page-template-page-work-with-suzy .wws-secondary-button,
 .page-template-page-work-with-suzy .wws-final-button {
-    margin-top: 18px;
     display: inline-block;
+}
+
+.page-template-page-work-with-suzy .wws-secondary-button {
+    border-color: rgba(0, 255, 255, 0.45);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.22);
 }
 
 .page-template-page-work-with-suzy .wws-grid {
     margin-top: 14px;
     display: grid;
-    gap: 14px;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
 .page-template-page-work-with-suzy .wws-card {
     border: 1px solid rgba(57, 255, 20, 0.4);
     border-radius: 12px;
     background: rgba(5, 14, 9, 0.72);
-    padding: 16px;
+    padding: 18px;
 }
 
 .page-template-page-work-with-suzy .wws-card h3 {
@@ -3992,6 +4016,13 @@ body.page-template-page-bio-php .bio-content {
 
 .page-template-page-work-with-suzy .wws-card p {
     margin: 0;
+}
+
+.page-template-page-work-with-suzy .wws-focus-grid {
+    margin: 14px 0 18px;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
 .page-template-page-work-with-suzy .wws-proof-list,
@@ -4010,7 +4041,7 @@ body.page-template-page-bio-php .bio-content {
 
 .page-template-page-work-with-suzy .wws-mode {
     border-left: 3px solid rgba(57, 255, 20, 0.62);
-    padding: 10px 12px;
+    padding: 11px 13px;
     background: rgba(8, 16, 9, 0.6);
 }
 
@@ -4031,9 +4062,22 @@ body.page-template-page-bio-php .bio-content {
     box-shadow: inset 0 0 30px rgba(255, 80, 214, 0.1), 0 0 24px rgba(255, 80, 214, 0.2);
 }
 
-.page-template-page-work-with-suzy .wws-subjects {
-    margin-top: 10px;
+.page-template-page-work-with-suzy .wws-subject-list {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(255, 170, 241, 0.45);
+}
+
+.page-template-page-work-with-suzy .wws-subject-list p {
+    margin-bottom: 8px;
     color: #ffd7f6;
+}
+
+.page-template-page-work-with-suzy .wws-subject-list ul {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 6px;
 }
 
 .page-template-page-work-with-suzy .wws-boundaries {
@@ -4049,11 +4093,18 @@ body.page-template-page-bio-php .bio-content {
     }
 
     .page-template-page-work-with-suzy .wws-proof-list,
-    .page-template-page-work-with-suzy .wws-fit-list {
+    .page-template-page-work-with-suzy .wws-fit-list,
+    .page-template-page-work-with-suzy .wws-subject-list ul {
         padding-left: 18px;
     }
 
+    .page-template-page-work-with-suzy .wws-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
     .page-template-page-work-with-suzy .wws-hero-cta,
+    .page-template-page-work-with-suzy .wws-secondary-button,
     .page-template-page-work-with-suzy .wws-final-button {
         width: 100%;
         text-align: center;
