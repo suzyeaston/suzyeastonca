@@ -4341,6 +4341,50 @@ body.page-template-page-bio-php .bio-content {
   padding-top: clamp(12px, 2.5vw, 26px);
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.page-template-page-home-php #homepage-content,
+.home #homepage-content,
+.front-page #homepage-content,
+.page-template-page-home-php .hero-section,
+.home .hero-section,
+.front-page .hero-section,
+.page-template-page-home-php .ai-film-feature,
+.home .ai-film-feature,
+.front-page .ai-film-feature,
+.page-template-page-home-php .selected-work,
+.home .selected-work,
+.front-page .selected-work,
+.page-template-page-home-php .music-world,
+.home .music-world,
+.front-page .music-world,
+.page-template-page-home-php .collab-invite-home,
+.home .collab-invite-home,
+.front-page .collab-invite-home,
+.page-template-page-home-php .utility-nav-home,
+.home .utility-nav-home,
+.front-page .utility-nav-home {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.page-template-page-home-php #homepage-content :is(img, video, iframe, canvas),
+.home #homepage-content :is(img, video, iframe, canvas),
+.front-page #homepage-content :is(img, video, iframe, canvas) {
+  max-width: 100%;
+}
+
+.page-template-page-home-php #homepage-content :is(h1, h2, h3, p, a, span),
+.home #homepage-content :is(h1, h2, h3, p, a, span),
+.front-page #homepage-content :is(h1, h2, h3, p, a, span) {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
 .hero-section .hero-cta-group {
   display: flex;
   flex-wrap: wrap;
@@ -4458,6 +4502,281 @@ body.page-template-page-bio-php .bio-content {
 
   .hero-game-stage__mobile-note {
     display: block;
+  }
+}
+
+@media (max-width: 700px) {
+  .page-template-page-home-php .hero-section,
+  .home .hero-section,
+  .front-page .hero-section {
+    padding: clamp(20px, 7vw, 34px) 0.85rem 1.1rem;
+  }
+
+  .page-template-page-home-php .hero-grid,
+  .home .hero-grid,
+  .front-page .hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.1rem;
+    margin-bottom: 1.35rem;
+    padding-inline: 0;
+  }
+
+  .page-template-page-home-php .hero-main,
+  .home .hero-main,
+  .front-page .hero-main {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.25rem 0;
+  }
+
+  .page-template-page-home-php .hero-eyebrow,
+  .home .hero-eyebrow,
+  .front-page .hero-eyebrow {
+    font-size: clamp(0.85rem, 3.8vw, 1rem);
+    line-height: 1.35;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.65rem;
+  }
+
+  .page-template-page-home-php .hero-core-headline,
+  .home .hero-core-headline,
+  .front-page .hero-core-headline {
+    font-size: clamp(2.4rem, 14vw, 4rem);
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+  }
+
+  .page-template-page-home-php .hero-copy,
+  .page-template-page-home-php .hero-availability,
+  .home .hero-copy,
+  .home .hero-availability,
+  .front-page .hero-copy,
+  .front-page .hero-availability {
+    font-size: clamp(1rem, 4.5vw, 1.25rem);
+    line-height: 1.35;
+    margin-inline: 0;
+  }
+
+  .page-template-page-home-php .hero-status-chips,
+  .home .hero-status-chips,
+  .front-page .hero-status-chips {
+    gap: 0.45rem;
+    margin-bottom: 1rem;
+  }
+
+  .page-template-page-home-php .hero-status-chip,
+  .home .hero-status-chip,
+  .front-page .hero-status-chip {
+    font-size: 0.62rem;
+    letter-spacing: 0.03em;
+    padding: 0.38rem 0.56rem;
+  }
+
+  .page-template-page-home-php .hero-section .hero-cta-group,
+  .home .hero-section .hero-cta-group,
+  .front-page .hero-section .hero-cta-group,
+  .page-template-page-home-php .ai-film-feature__actions,
+  .home .ai-film-feature__actions,
+  .front-page .ai-film-feature__actions,
+  .page-template-page-home-php .collab-invite-home__actions,
+  .home .collab-invite-home__actions,
+  .front-page .collab-invite-home__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 0.6rem;
+  }
+
+  .page-template-page-home-php .hero-section .hero-cta-group .pixel-button,
+  .page-template-page-home-php .ai-film-feature__actions .pixel-button,
+  .page-template-page-home-php .collab-invite-home__actions .pixel-button,
+  .home .hero-section .hero-cta-group .pixel-button,
+  .home .ai-film-feature__actions .pixel-button,
+  .home .collab-invite-home__actions .pixel-button,
+  .front-page .hero-section .hero-cta-group .pixel-button,
+  .front-page .ai-film-feature__actions .pixel-button,
+  .front-page .collab-invite-home__actions .pixel-button {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .page-template-page-home-php .ai-film-feature,
+  .home .ai-film-feature,
+  .front-page .ai-film-feature {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .page-template-page-home-php .ai-film-feature__media,
+  .page-template-page-home-php .ai-film-feature__copy,
+  .page-template-page-home-php .ai-film-feature__embed-wrap,
+  .home .ai-film-feature__media,
+  .home .ai-film-feature__copy,
+  .home .ai-film-feature__embed-wrap,
+  .front-page .ai-film-feature__media,
+  .front-page .ai-film-feature__copy,
+  .front-page .ai-film-feature__embed-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .page-template-page-home-php .ai-film-feature__embed-wrap::before,
+  .home .ai-film-feature__embed-wrap::before,
+  .front-page .ai-film-feature__embed-wrap::before {
+    display: none;
+  }
+
+  .page-template-page-home-php .ai-film-feature__embed-wrap::after,
+  .home .ai-film-feature__embed-wrap::after,
+  .front-page .ai-film-feature__embed-wrap::after {
+    display: none;
+  }
+
+  .page-template-page-home-php .ai-film-feature__copy h2,
+  .home .ai-film-feature__copy h2,
+  .front-page .ai-film-feature__copy h2 {
+    font-size: clamp(1rem, 5.8vw, 1.35rem);
+    line-height: 1.25;
+    letter-spacing: 0.02em;
+  }
+
+  .page-template-page-home-php .ai-film-feature__copy p,
+  .page-template-page-home-php .ai-film-feature__kicker,
+  .home .ai-film-feature__copy p,
+  .home .ai-film-feature__kicker,
+  .front-page .ai-film-feature__copy p,
+  .front-page .ai-film-feature__kicker {
+    font-size: clamp(1rem, 4.5vw, 1.3rem);
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+  }
+
+  .page-template-page-home-php .selected-work__grid,
+  .home .selected-work__grid,
+  .front-page .selected-work__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page-template-page-home-php .selected-work__card,
+  .home .selected-work__card,
+  .front-page .selected-work__card {
+    min-width: 0;
+  }
+
+  .page-template-page-home-php .hero-game-stage,
+  .home .hero-game-stage,
+  .front-page .hero-game-stage,
+  .page-template-page-home-php .hero-game-stage__screen,
+  .home .hero-game-stage__screen,
+  .front-page .hero-game-stage__screen,
+  .page-template-page-home-php .hero-galaga-canvas,
+  .home .hero-galaga-canvas,
+  .front-page .hero-galaga-canvas {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .page-template-page-home-php .hero-game-stage__screen,
+  .home .hero-game-stage__screen,
+  .front-page .hero-game-stage__screen {
+    min-height: 170px;
+  }
+
+  .page-template-page-home-php .hero-game-stage__idle,
+  .home .hero-game-stage__idle,
+  .front-page .hero-game-stage__idle {
+    width: min(94%, 360px);
+  }
+
+  .page-template-page-home-php .selected-work,
+  .page-template-page-home-php .music-world,
+  .page-template-page-home-php .collab-invite-home,
+  .page-template-page-home-php .utility-nav-home,
+  .home .selected-work,
+  .home .music-world,
+  .home .collab-invite-home,
+  .home .utility-nav-home,
+  .front-page .selected-work,
+  .front-page .music-world,
+  .front-page .collab-invite-home,
+  .front-page .utility-nav-home {
+    padding: 16px;
+    margin: 18px auto;
+  }
+
+  .page-template-page-home-php .selected-work h2,
+  .page-template-page-home-php .music-world h2,
+  .page-template-page-home-php .collab-invite-home h2,
+  .page-template-page-home-php .utility-nav-home h2,
+  .home .selected-work h2,
+  .home .music-world h2,
+  .home .collab-invite-home h2,
+  .home .utility-nav-home h2,
+  .front-page .selected-work h2,
+  .front-page .music-world h2,
+  .front-page .collab-invite-home h2,
+  .front-page .utility-nav-home h2 {
+    font-size: clamp(0.96rem, 4.8vw, 1.25rem);
+    line-height: 1.3;
+  }
+
+  .main-header {
+    padding: 0.62rem 0.72rem;
+  }
+
+  .se-header-wordmark {
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+  }
+}
+
+@media (max-width: 430px) {
+  .page-template-page-home-php .hero-core-headline,
+  .home .hero-core-headline,
+  .front-page .hero-core-headline {
+    font-size: clamp(2.2rem, 13vw, 3.2rem);
+  }
+
+  .page-template-page-home-php .hero-copy,
+  .page-template-page-home-php .hero-availability,
+  .home .hero-copy,
+  .home .hero-availability,
+  .front-page .hero-copy,
+  .front-page .hero-availability {
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  .page-template-page-home-php .hero-game-stage {
+    padding: 0.56rem;
+  }
+
+  .page-template-page-home-php .hero-game-stage__screen,
+  .home .hero-game-stage__screen,
+  .front-page .hero-game-stage__screen {
+    min-height: 156px;
+  }
+
+  .page-template-page-home-php .hero-game-stage__header,
+  .page-template-page-home-php .hero-game-stage__mobile-note,
+  .home .hero-game-stage__header,
+  .home .hero-game-stage__mobile-note,
+  .front-page .hero-game-stage__header,
+  .front-page .hero-game-stage__mobile-note {
+    font-size: 0.56rem;
+  }
+
+  .page-template-page-home-php .main-header .header-actions .pixel-button,
+  .home .main-header .header-actions .pixel-button,
+  .front-page .main-header .header-actions .pixel-button {
+    padding-inline: 0.62rem;
+    font-size: 0.6rem;
   }
 }
 
