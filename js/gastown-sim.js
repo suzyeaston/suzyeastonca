@@ -6,6 +6,11 @@
   const app = document.getElementById('gastown-sim-app');
   const statusEl = app ? app.querySelector('[data-sim-status]') : null;
 
+  function getTurnstileToken() {
+    const input = document.querySelector('input[name="cf-turnstile-response"]');
+    return input ? (input.value || '') : '';
+  }
+
   function failStartupDependency(message) {
     if (statusEl) {
       statusEl.textContent = message;
@@ -915,12 +920,16 @@
 
   async function fetchStartupStingPayload() {
     if (!config.startupStingEndpoint) return null;
+    const turnstileToken = getTurnstileToken();
     try {
       const response = await window.fetch(config.startupStingEndpoint, {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': config.nonce || '' },
-        body: JSON.stringify({ walkerName: state.walkerName || 'Walker' })
+        body: JSON.stringify({
+          walkerName: state.walkerName || 'Walker',
+          cf_turnstile_response: turnstileToken
+        })
       });
       if (!response.ok) throw new Error('Startup sting request failed.');
       return await response.json();
@@ -1912,6 +1921,7 @@
       return { title: fallback.title, lines: fallback.lines, fallback: true };
     }
 
+    const turnstileToken = getTurnstileToken();
     const headers = { 'Content-Type': 'application/json' };
     if (config.nonce) {
       headers['X-WP-Nonce'] = config.nonce;
@@ -1926,6 +1936,7 @@
           role: npcState.role || 'pedestrian',
           name: npcState.id || '',
           prompt: 'Share a quick place-based thought about Gastown, Water Street, Maple Tree Square, or the Steam Clock area without centering founder mythology.',
+          cf_turnstile_response: turnstileToken
         }),
       });
       if (!response.ok) {
@@ -1984,11 +1995,14 @@
 
   async function requestNpcSpeech(npcState, textBlock) {
     if (!config.voiceEndpoint || !window.fetch || !textBlock) return null;
+    const turnstileToken = getTurnstileToken();
+    if (config.turnstileEnabled && !turnstileToken) return null;
     const payload = {
       role: npcState.role || 'pedestrian',
       name: npcState.name || npcState.id || '',
       text: textBlock,
       style_hint: 'Dry, blunt, grounded local commentary. Terse, sharp, low-hype, never an impersonation.',
+      cf_turnstile_response: turnstileToken
     };
     const cacheKey = hashNpcSpeechKey(payload);
     if (state.npcSpeechCache[cacheKey]) return state.npcSpeechCache[cacheKey];
@@ -2862,6 +2876,7 @@
     }
     try {
       const params = new URLSearchParams(context);
+      params.set('cf_turnstile_response', getTurnstileToken());
       const response = await fetch(config.bandArrangementEndpoint + '?' + params.toString(), { credentials: 'same-origin' });
       if (!response.ok) throw new Error('band arrangement unavailable');
       const data = await response.json();

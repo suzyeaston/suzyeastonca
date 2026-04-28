@@ -24,7 +24,7 @@ if ( ! function_exists( 'se_ai_log_event' ) ) {
             'timestamp' => gmdate( 'c' ),
         );
 
-        $allow_meta = array( 'model', 'rate_limit_hit', 'http_code', 'error_code', 'fingerprint' );
+        $allow_meta = array( 'model', 'rate_limit_hit', 'http_code', 'error_code', 'fingerprint', 'feature', 'turnstile_enabled', 'has_token', 'error_codes' );
         foreach ( $allow_meta as $key ) {
             if ( isset( $meta[ $key ] ) ) {
                 $safe[ $key ] = is_scalar( $meta[ $key ] ) ? sanitize_text_field( (string) $meta[ $key ] ) : '';
@@ -32,6 +32,25 @@ if ( ! function_exists( 'se_ai_log_event' ) ) {
         }
 
         error_log( 'SE_AI ' . wp_json_encode( $safe ) );
+    }
+}
+
+if ( ! function_exists( 'se_ai_get_daily_limit' ) ) {
+    function se_ai_get_daily_limit( $feature, $default_limit ) {
+        $feature = sanitize_key( (string) $feature );
+        $default_limit = max( 1, (int) $default_limit );
+        $map = array(
+            'track_analyzer' => 'SE_AI_TRACK_ANALYZER_DAILY_LIMIT',
+            'albini' => 'SE_AI_ALBINI_DAILY_LIMIT',
+            'asmr' => 'SE_AI_ASMR_DAILY_LIMIT',
+            'gastown_tts' => 'SE_AI_GASTOWN_TTS_DAILY_LIMIT',
+        );
+
+        if ( isset( $map[ $feature ] ) && defined( $map[ $feature ] ) ) {
+            return max( 1, (int) constant( $map[ $feature ] ) );
+        }
+
+        return $default_limit;
     }
 }
 
@@ -148,5 +167,157 @@ if ( ! function_exists( 'se_verify_rest_nonce_if_present' ) ) {
         }
 
         return true;
+    }
+}
+
+if ( ! function_exists( 'se_ai_turnstile_site_key' ) ) {
+    function se_ai_turnstile_site_key() {
+        if ( defined( 'CLOUDFLARE_TURNSTILE_SITE_KEY' ) ) {
+            return trim( (string) CLOUDFLARE_TURNSTILE_SITE_KEY );
+        }
+
+        $env = getenv( 'CLOUDFLARE_TURNSTILE_SITE_KEY' );
+        return $env ? trim( (string) $env ) : '';
+    }
+}
+
+if ( ! function_exists( 'se_ai_turnstile_secret_key' ) ) {
+    function se_ai_turnstile_secret_key() {
+        if ( defined( 'CLOUDFLARE_TURNSTILE_SECRET_KEY' ) ) {
+            return trim( (string) CLOUDFLARE_TURNSTILE_SECRET_KEY );
+        }
+
+        $env = getenv( 'CLOUDFLARE_TURNSTILE_SECRET_KEY' );
+        return $env ? trim( (string) $env ) : '';
+    }
+}
+
+if ( ! function_exists( 'se_ai_turnstile_enabled' ) ) {
+    function se_ai_turnstile_enabled() {
+        if ( defined( 'SE_AI_DISABLE_TURNSTILE' ) && SE_AI_DISABLE_TURNSTILE ) {
+            return false;
+        }
+
+        return '' !== se_ai_turnstile_site_key() && '' !== se_ai_turnstile_secret_key();
+    }
+}
+
+if ( ! function_exists( 'se_ai_verify_turnstile_token' ) ) {
+    function se_ai_verify_turnstile_token( $token, $feature = 'general' ) {
+        $feature = sanitize_key( (string) $feature );
+        $token = trim( (string) $token );
+
+        if ( ! se_ai_turnstile_enabled() ) {
+            se_ai_log_event(
+                'turnstile',
+                'not_configured',
+                array(
+                    'feature' => $feature,
+                    'turnstile_enabled' => 'no',
+                )
+            );
+            return true;
+        }
+
+        if ( '' === $token ) {
+            se_ai_log_event(
+                'turnstile',
+                'missing_token',
+                array(
+                    'feature' => $feature,
+                    'turnstile_enabled' => 'yes',
+                    'has_token' => 'no',
+                )
+            );
+            return se_ai_public_error_response( 'Please complete the human check and try again.', 403 );
+        }
+
+        $body = array(
+            'secret' => se_ai_turnstile_secret_key(),
+            'response' => $token,
+        );
+
+        if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
+            $body['remoteip'] = sanitize_text_field( (string) $_SERVER['REMOTE_ADDR'] );
+        }
+
+        $response = wp_remote_post(
+            'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+            array(
+                'timeout' => 8,
+                'body' => $body,
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            se_ai_log_event(
+                'turnstile',
+                'verification_error',
+                array(
+                    'feature' => $feature,
+                    'turnstile_enabled' => 'yes',
+                    'has_token' => 'yes',
+                    'error_code' => $response->get_error_code(),
+                )
+            );
+            return se_ai_public_error_response( 'Please complete the human check and try again.', 403 );
+        }
+
+        $http_code = wp_remote_retrieve_response_code( $response );
+        $decoded = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+        $success = is_array( $decoded ) && ! empty( $decoded['success'] );
+
+        if ( $success ) {
+            return true;
+        }
+
+        $error_codes = array();
+        if ( is_array( $decoded ) && ! empty( $decoded['error-codes'] ) ) {
+            $error_codes = array_slice( array_map( 'sanitize_key', (array) $decoded['error-codes'] ), 0, 5 );
+        }
+        se_ai_log_event(
+            'turnstile',
+            'verification_failed',
+            array(
+                'feature' => $feature,
+                'turnstile_enabled' => 'yes',
+                'has_token' => 'yes',
+                'http_code' => (string) $http_code,
+                'error_codes' => implode( ',', $error_codes ),
+            )
+        );
+
+        return se_ai_public_error_response( 'Please complete the human check and try again.', 403 );
+    }
+}
+
+if ( ! function_exists( 'se_ai_get_turnstile_widget_html' ) ) {
+    function se_ai_get_turnstile_widget_html( $action = 'ai_tool' ) {
+        if ( ! se_ai_turnstile_enabled() ) {
+            return '';
+        }
+
+        return sprintf(
+            '<div class="cf-turnstile" data-sitekey="%1$s" data-action="%2$s"></div>',
+            esc_attr( se_ai_turnstile_site_key() ),
+            esc_attr( sanitize_key( (string) $action ) ?: 'ai_tool' )
+        );
+    }
+}
+
+if ( ! function_exists( 'se_ai_enqueue_turnstile_script' ) ) {
+    function se_ai_enqueue_turnstile_script() {
+        if ( ! se_ai_turnstile_enabled() ) {
+            return;
+        }
+
+        wp_enqueue_script(
+            'se-cloudflare-turnstile',
+            'https://challenges.cloudflare.com/turnstile/v0/api.js',
+            array(),
+            null,
+            true
+        );
+        wp_script_add_data( 'se-cloudflare-turnstile', 'defer', true );
     }
 }

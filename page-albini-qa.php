@@ -2,6 +2,7 @@
 /* Template Name: Albini Q&A */
 get_header();
 $albini_rest_nonce = wp_create_nonce( 'wp_rest' );
+se_ai_enqueue_turnstile_script();
 ?>
 
 <main id="albini-main" class="albini-qa-page">
@@ -20,6 +21,11 @@ $albini_rest_nonce = wp_create_nonce( 'wp_rest' );
       <textarea id="albini-question"
                 placeholder="Type your question here…"
                 rows="4"></textarea>
+      <div style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+        <label for="website">Website</label>
+        <input type="text" id="website" name="website" autocomplete="off" tabindex="-1" />
+      </div>
+      <?php echo se_ai_get_turnstile_widget_html( 'albini_ask' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
       <button id="albini-submit">Ask Albini</button>
       <button id="albini-random" title="Try a sample question">🎲</button>
     </div>
@@ -43,6 +49,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('albini-submit');
   const randomBtn = document.getElementById('albini-random');
   const resp = document.getElementById('albini-response');
+  const honeypotEl = document.getElementById('website');
+
+  function getTurnstileToken() {
+    const input = document.querySelector('input[name="cf-turnstile-response"]');
+    return input ? (input.value || '') : '';
+  }
+
+  function resetTurnstileIfPresent() {
+    if (!window.turnstile || typeof window.turnstile.reset !== 'function') return;
+    const widget = document.querySelector('.cf-turnstile');
+    if (widget && widget.id) {
+      try { window.turnstile.reset(widget.id); return; } catch (e) {}
+    }
+    try { window.turnstile.reset(); } catch (e) {}
+  }
 
   const sampleQuestions = [
     'How should my band think about signing with a label?',
@@ -137,7 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const result = await fetch('/wp-json/albini/v1/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': albiniNonce },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({
+          question,
+          website: honeypotEl ? honeypotEl.value : '',
+          'cf-turnstile-response': getTurnstileToken()
+        })
       });
 
       if (!result.ok) {
@@ -149,8 +174,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await result.json();
       renderResponse(data);
+      resetTurnstileIfPresent();
     } catch (err) {
       resp.innerHTML = `<p class="albini-error">${err.message}</p>`;
+      resetTurnstileIfPresent();
     } finally {
       btn.disabled = false;
       randomBtn.disabled = false;
