@@ -4385,6 +4385,14 @@ body {
   word-break: normal;
 }
 
+.page-template-page-home-php .hero-core-headline,
+.home .hero-core-headline,
+.front-page .hero-core-headline {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
 .hero-section .hero-cta-group {
   display: flex;
   flex-wrap: wrap;
@@ -4532,18 +4540,23 @@ body {
   .page-template-page-home-php .hero-eyebrow,
   .home .hero-eyebrow,
   .front-page .hero-eyebrow {
-    font-size: clamp(0.85rem, 3.8vw, 1rem);
-    line-height: 1.35;
+    font-size: clamp(0.8rem, 3.6vw, 1rem);
+    line-height: 1.25;
     letter-spacing: 0.08em;
-    margin-bottom: 0.65rem;
+    margin: 0 auto 0.55rem;
+    max-width: 100%;
   }
 
   .page-template-page-home-php .hero-core-headline,
   .home .hero-core-headline,
   .front-page .hero-core-headline {
-    font-size: clamp(2.4rem, 14vw, 4rem);
-    line-height: 1.15;
+    font-size: clamp(2.4rem, 13vw, 4.25rem);
+    line-height: 0.95;
     letter-spacing: 0.02em;
+    max-width: 100%;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
   }
 
   .page-template-page-home-php .hero-copy,
@@ -4554,7 +4567,7 @@ body {
   .front-page .hero-availability {
     font-size: clamp(1rem, 4.5vw, 1.25rem);
     line-height: 1.35;
-    margin-inline: 0;
+    margin: 0.9rem 0 0.85rem;
   }
 
   .page-template-page-home-php .hero-status-chips,
@@ -4737,10 +4750,33 @@ body {
 }
 
 @media (max-width: 430px) {
+  .page-template-page-home-php .hero-section,
+  .home .hero-section,
+  .front-page .hero-section {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
   .page-template-page-home-php .hero-core-headline,
   .home .hero-core-headline,
   .front-page .hero-core-headline {
-    font-size: clamp(2.2rem, 13vw, 3.2rem);
+    font-size: clamp(2.1rem, 12.8vw, 3.35rem);
+    line-height: 0.92;
+  }
+
+  .page-template-page-home-php .hero-main,
+  .home .hero-main,
+  .front-page .hero-main {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .page-template-page-home-php .hero-eyebrow,
+  .home .hero-eyebrow,
+  .front-page .hero-eyebrow {
+    font-size: clamp(0.8rem, 3.6vw, 0.95rem);
+    line-height: 1.25;
+    margin-bottom: 0.5rem;
   }
 
   .page-template-page-home-php .hero-copy,
