@@ -66,14 +66,49 @@ get_header();
 
         <section class="crt-block wws-section" aria-labelledby="proof-of-life">
             <h2 id="proof-of-life" class="pixel-font">Proof of life</h2>
-            <ul class="wws-proof-list">
-                <li>11+ years across IT support, operations, QA, infrastructure, SaaS troubleshooting, and automation.</li>
-                <li>Senior IT Operations Analyst experience supporting SaaS teams, identity/access workflows, endpoint operations, escalations, and production troubleshooting.</li>
-                <li>Software QA experience at WineDirect using Cypress, JavaScript, CI/CD, API validation, and ecommerce/POS workflows.</li>
-                <li>Deep troubleshooting across SQL, logs, DNS, SSL, SSO/SAML, OAuth, SCIM, endpoint management, cloud systems, and production escalations.</li>
-                <li>Custom WordPress theme work on suzyeaston.ca, including VanOps Radar, Lousy Outages, Track Analyzer, ASMR Lab, and Gastown Simulator.</li>
-                <li>Former touring bassist and creative technologist, so I bring both systems thinking and real-world creative judgment.</li>
-            </ul>
+            <p class="wws-proof-intro">A quick receipts board: the stuff I&rsquo;ve actually done across ops, QA, support engineering, web, cloud, identity, and creative tech.</p>
+            <div class="wws-proof-grid">
+                <article class="wws-proof-card">
+                    <h3>12+ years across messy technical systems</h3>
+                    <p>Support, operations, QA, infrastructure, SaaS troubleshooting, cloud, API/integration debugging, data validation, automation, and practical AI enablement.</p>
+                </article>
+                <article class="wws-proof-card">
+                    <h3>Automation and scripting</h3>
+                    <p>Python, JavaScript, TypeScript, PowerShell, Bash, PHP, SQL, KQL, API scripting, Slack alerting, operational tooling, and OpenAI-assisted prototyping.</p>
+                </article>
+                <article class="wws-proof-card">
+                    <h3>QA automation and release confidence</h3>
+                    <p>Cypress, JavaScript test suites, CircleCI, GitHub Actions, API validation, integration testing, regression/smoke testing, BrowserStack, Xcode/iOS testing, reproducible bug reports, and post-release verification.</p>
+                </article>
+                <article class="wws-proof-card">
+                    <h3>Cloud, data, and observability</h3>
+                    <p>AWS EC2, IAM, S3, CloudWatch, Systems Manager, Lambda, SNS/SQS-linked workflows, RDS, Redshift, SQL validation, New Relic, Rollbar, browser devtools, logs, Linux, and Windows troubleshooting.</p>
+                </article>
+                <article class="wws-proof-card">
+                    <h3>Identity, endpoint, and security-aware SaaS</h3>
+                    <p>Entra ID, Active Directory, SSO/SAML, OAuth, SCIM, Microsoft 365, Google Workspace, Intune, Group Policy, Microsoft Defender, Advanced Hunting/KQL, SPF/DKIM/DMARC, SSL/TLS, DNS, DHCP, VPN, onboarding/offboarding, and SaaS administration.</p>
+                </article>
+                <article class="wws-proof-card">
+                    <h3>Ecommerce, POS, and customer-impact debugging</h3>
+                    <p>WineDirect ecommerce/POS workflows, payment gateways, cart/checkout logic, taxation, fulfillment, iPad/POS issues, client/server workflows, dropped or mismatched transaction records, and production issue investigation.</p>
+                </article>
+                <article class="wws-proof-card">
+                    <h3>Mission-critical operations</h3>
+                    <p>Level 3 help desk and acting sysadmin experience in a 24/7 crisis-support environment, including Azure AD, VMware, Active Directory, DNS, firewalls, SSL certificates, VPN/MFA, Avaya telephony, and remote-work transitions.</p>
+                </article>
+                <article class="wws-proof-card">
+                    <h3>Web development and creative technical builds</h3>
+                    <p>Custom WordPress/PHP portfolio work, REST/API workflows, custom templates, interactive web projects, retro UI systems, AI/audio/video workflows, Three.js/Tone.js/Howler.js exposure, civic/open-data pipelines, and build-in-public product thinking.</p>
+                </article>
+                <article class="wws-proof-card">
+                    <h3>Current public builds</h3>
+                    <p>VanOps Radar, Lousy Outages, Track Analyzer, ASMR Lab, Gastown Simulator, and custom suzyeaston.ca theme work &mdash; practical projects that show dashboard thinking, automation, creative AI, and hands-on web development.</p>
+                </article>
+                <article class="wws-proof-card">
+                    <h3>Creative background with technical taste</h3>
+                    <p>Former touring bassist and creative technologist with music technology and recording arts training, bringing production composure, collaboration, taste, and builder instincts into technical work.</p>
+                </article>
+            </div>
         </section>
 
         <section class="crt-block wws-section" aria-labelledby="good-fit">
