@@ -2050,55 +2050,6 @@ body {
   border: 0;
 }
 
-.ai-film-feature__meta {
-  display: grid;
-  gap: 0.5rem;
-  margin-top: 0.1rem;
-}
-
-.ai-film-feature__meta-label {
-  margin: 0;
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(145, 255, 224, 0.84);
-}
-
-.ai-film-feature__meta-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  align-items: center;
-}
-
-.ai-film-feature__meta-list li {
-  display: inline-flex;
-  align-items: center;
-  width: auto;
-  min-width: 0;
-  min-height: 0;
-  max-width: 100%;
-  padding: 0.32rem 0.58rem;
-  border: 1px solid rgba(115, 239, 188, 0.42);
-  border-radius: 0.25rem;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  line-height: 1.1;
-  text-transform: uppercase;
-  color: #d9fff2;
-  white-space: normal;
-  background: rgba(0, 12, 8, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(0, 255, 181, 0.08);
-}
-
-.ai-film-feature__meta-list li::before {
-  content: none;
-}
-
 .ai-film-feature__copy h2 {
   margin-top: 0;
   margin-bottom: 0.8rem;
@@ -4092,7 +4043,42 @@ body.page-template-page-bio-php .bio-content {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
-.page-template-page-work-with-suzy .wws-proof-list,
+.page-template-page-work-with-suzy .wws-proof-intro {
+    margin: 14px 0 0;
+    color: #d8e9ff;
+    line-height: 1.6;
+    max-width: 76ch;
+}
+
+.page-template-page-work-with-suzy .wws-proof-grid {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 14px;
+}
+
+.page-template-page-work-with-suzy .wws-proof-card {
+    border: 1px solid rgba(57, 245, 255, 0.28);
+    border-radius: 12px;
+    background: linear-gradient(170deg, rgba(10, 18, 40, 0.95), rgba(9, 14, 32, 0.88));
+    padding: 14px;
+    box-shadow: inset 0 0 0 1px rgba(95, 221, 255, 0.08);
+}
+
+.page-template-page-work-with-suzy .wws-proof-card h3 {
+    margin: 0 0 8px;
+    color: #9df5ff;
+    font-size: 0.97rem;
+    line-height: 1.35;
+}
+
+.page-template-page-work-with-suzy .wws-proof-card p {
+    margin: 0;
+    color: #edf5ff;
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
 .page-template-page-work-with-suzy .wws-fit-list {
     margin: 14px 0 0;
     padding-left: 20px;
@@ -4162,7 +4148,6 @@ body.page-template-page-bio-php .bio-content {
         gap: 18px;
     }
 
-    .page-template-page-work-with-suzy .wws-proof-list,
     .page-template-page-work-with-suzy .wws-fit-list,
     .page-template-page-work-with-suzy .wws-subject-list ul {
         padding-left: 18px;
@@ -4473,16 +4458,6 @@ body.page-template-page-bio-php .bio-content {
 
   .hero-game-stage__mobile-note {
     display: block;
-  }
-
-  .ai-film-feature__meta-list {
-    gap: 0.45rem;
-  }
-
-  .ai-film-feature__meta-list li {
-    font-size: 0.58rem;
-    letter-spacing: 0.05em;
-    padding: 0.3rem 0.52rem;
   }
 }
 
