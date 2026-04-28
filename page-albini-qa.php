@@ -1,6 +1,7 @@
 <?php
 /* Template Name: Albini Q&A */
 get_header();
+$albini_rest_nonce = wp_create_nonce( 'wp_rest' );
 ?>
 
 <main id="albini-main" class="albini-qa-page">
@@ -37,6 +38,7 @@ get_header();
 <script>
 // Albini Q&A client-side behavior (pulls curated quotes + neutral commentary)
 document.addEventListener('DOMContentLoaded', () => {
+  const albiniNonce = '<?php echo esc_js( $albini_rest_nonce ); ?>';
   const qEl = document.getElementById('albini-question');
   const btn = document.getElementById('albini-submit');
   const randomBtn = document.getElementById('albini-random');
@@ -134,12 +136,15 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const result = await fetch('/wp-json/albini/v1/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': albiniNonce },
         body: JSON.stringify({ question })
       });
 
       if (!result.ok) {
-        throw new Error('Request failed. Please try again.');
+        if (result.status === 429) {
+          throw new Error('This tool is cooling down for a bit. Try again later.');
+        }
+        throw new Error('The AI layer is offline, but the fallback version still works.');
       }
 
       const data = await result.json();

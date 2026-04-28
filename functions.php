@@ -7,7 +7,20 @@ if ( ! defined( 'OPENAI_API_KEY' ) ) {
     }
 }
 
+/**
+ * Optional AI / API configuration constants (define in wp-config.php or env):
+ * define( 'OPENAI_API_KEY', '...' );
+ * define( 'SE_AI_DISABLE_ALL', false );
+ * define( 'SE_AI_DISABLE_TRACK_ANALYZER', false );
+ * define( 'SE_AI_DISABLE_ALBINI', false );
+ * define( 'SE_AI_DISABLE_RIFF', false );
+ * define( 'SE_AI_DISABLE_ASMR', false );
+ * define( 'SE_AI_DISABLE_GASTOWN', false );
+ * define( 'SE_AI_DISABLE_MODERATION', false );
+ * define( 'THE_ODDS_API_KEY', '...' );
+ */
 require_once get_template_directory() . '/inc/albini-quotes.php';
+require_once get_template_directory() . '/inc/ai-guardrails.php';
 require_once get_template_directory() . '/inc/openai.php';
 require_once get_template_directory() . '/inc/vancouver-tech-events.php';
 /**
@@ -760,7 +773,21 @@ function update_canucks_data() {
     }
 
     // --- Betting via The Odds API ---
-    $betting_api      = 'https://api.the-odds-api.com/v4/sports/icehockey_nhl/odds?regions=us&markets=h2h,spreads,totals&oddsFormat=american&apiKey=c7b1ad088542ae4e9262844141ecb250';
+        // Define THE_ODDS_API_KEY in wp-config.php or environment to enable betting fetch.
+    $odds_api_key = defined( 'THE_ODDS_API_KEY' ) && THE_ODDS_API_KEY ? THE_ODDS_API_KEY : getenv( 'THE_ODDS_API_KEY' );
+    if ( ! $odds_api_key ) {
+        return;
+    }
+
+    $betting_api      = add_query_arg(
+        array(
+            'regions' => 'us',
+            'markets' => 'h2h,spreads,totals',
+            'oddsFormat' => 'american',
+            'apiKey' => $odds_api_key,
+        ),
+        'https://api.the-odds-api.com/v4/sports/icehockey_nhl/odds'
+    );
     $betting_response = wp_remote_get($betting_api);
 
     if ( ! is_wp_error($betting_response) ) {
@@ -781,6 +808,14 @@ function update_canucks_data() {
 // =========================================
 // 4. REGISTER CUSTOM REST API ENDPOINTS
 // =========================================
+function se_rest_public_ai_permission( WP_REST_Request $request ) {
+    $verified = se_verify_rest_nonce_if_present( $request );
+    if ( is_wp_error( $verified ) ) {
+        return $verified;
+    }
+    return true;
+}
+
 add_action('rest_api_init', function() {
     register_rest_route('canucks/v1', '/news', [
         'methods'  => 'GET',
@@ -795,49 +830,49 @@ add_action('rest_api_init', function() {
     register_rest_route('albini/v1', '/ask', [
         'methods'             => 'POST',
         'callback'            => 'albini_handle_query',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'se_rest_public_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/riff-tip', [
         'methods'             => 'POST',
         'callback'            => 'se_handle_riff_tip',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'se_rest_public_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/asmr-generate', [
         'methods'             => 'POST',
         'callback'            => 'se_handle_asmr_generate',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'se_rest_public_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/gastown-npc-chat', [
         'methods'             => 'POST',
         'callback'            => 'se_handle_gastown_npc_chat',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'se_rest_public_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/gastown-npc-voice', [
         'methods'             => 'POST',
         'callback'            => 'se_handle_gastown_npc_voice',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'se_rest_public_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/gastown-busker-riff', [
         'methods'             => 'GET',
         'callback'            => 'se_handle_gastown_busker_riff',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'se_rest_public_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/gastown-band-arrangement', [
         'methods'             => 'GET',
         'callback'            => 'se_handle_gastown_band_arrangement',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'se_rest_public_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/gastown-start-sting', [
         'methods'             => 'POST',
         'callback'            => 'se_handle_gastown_start_sting',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'se_rest_public_ai_permission',
     ]);
 });
 
@@ -969,6 +1004,15 @@ function se_sanitize_gastown_start_sting_spec( $decoded, $fallback_spec ) {
 }
 
 function se_handle_gastown_start_sting( WP_REST_Request $request ) {
+    $rl = se_ai_rate_limit( 'gastown_start_sting', 10, HOUR_IN_SECONDS );
+    if ( is_wp_error( $rl ) ) {
+        return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
+    }
+    $daily = se_ai_daily_limit( 'gastown_start_sting', 80 );
+    if ( is_wp_error( $daily ) ) {
+        return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
+    }
+
     $walker_name = sanitize_text_field( (string) $request->get_param( 'walkerName' ) );
     $walker_name = '' !== trim( $walker_name ) ? mb_substr( preg_replace( '/\s+/', ' ', trim( $walker_name ) ), 0, 24 ) : 'Walker';
 
@@ -1005,6 +1049,7 @@ function se_handle_gastown_start_sting( WP_REST_Request $request ) {
         ),
     );
     $music_response = se_openai_chat( $music_messages, array(
+        'feature' => 'gastown',
         'model' => 'gpt-4o-mini',
         'temperature' => 0.7,
         'max_tokens' => 450,
@@ -1267,6 +1312,15 @@ function se_sanitize_gastown_band_arrangement_spec( $decoded, $fallback ) {
 }
 
 function se_handle_gastown_band_arrangement( WP_REST_Request $request ) {
+    $rl = se_ai_rate_limit( 'gastown_band_arrangement', 20, HOUR_IN_SECONDS );
+    if ( is_wp_error( $rl ) ) {
+        return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
+    }
+    $daily = se_ai_daily_limit( 'gastown_band_arrangement', 120 );
+    if ( is_wp_error( $daily ) ) {
+        return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
+    }
+
     $context = array(
         'seed_tune' => sanitize_key( (string) $request->get_param( 'seed_tune' ) ) ?: 'happy_feet',
         'mood' => sanitize_key( (string) $request->get_param( 'mood' ) ) ?: 'lively',
@@ -1311,6 +1365,7 @@ function se_handle_gastown_band_arrangement( WP_REST_Request $request ) {
             );
 
             $response = se_openai_chat( $messages, array(
+                'feature' => 'gastown',
                 'model' => 'gpt-4o-mini',
                 'temperature' => 0.95,
                 'max_tokens' => 650,
@@ -1413,11 +1468,25 @@ function se_get_gastown_busker_riff_fallback( $mood = 'lively', $weather = 'clea
 }
 
 function se_handle_gastown_busker_riff( WP_REST_Request $request ) {
+    $rl = se_ai_rate_limit( 'gastown_busker_riff', 30, HOUR_IN_SECONDS );
+    if ( is_wp_error( $rl ) ) {
+        return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
+    }
+    $daily = se_ai_daily_limit( 'gastown_busker_riff', 200 );
+    if ( is_wp_error( $daily ) ) {
+        return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
+    }
+
     $mood = sanitize_key( (string) $request->get_param( 'mood' ) ) ?: 'lively';
     $weather = sanitize_key( (string) $request->get_param( 'weather' ) ) ?: 'clear';
     $time_of_day = sanitize_key( (string) $request->get_param( 'timeOfDay' ) ) ?: 'morning';
 
     $fallback = se_get_gastown_busker_riff_fallback( $mood, $weather, $time_of_day );
+    $cache_key = 'se_gastown_busker_' . md5( wp_json_encode( array( $mood, $weather, $time_of_day ) ) );
+    $cached = get_transient( $cache_key );
+    if ( is_array( $cached ) ) {
+        return rest_ensure_response( $cached );
+    }
 
     $messages = array(
         array(
@@ -1431,6 +1500,7 @@ function se_handle_gastown_busker_riff( WP_REST_Request $request ) {
     );
 
     $response = se_openai_chat( $messages, array(
+        'feature' => 'gastown',
         'model' => 'gpt-4o-mini',
         'temperature' => 0.8,
         'max_tokens' => 320,
@@ -1479,17 +1549,27 @@ function se_handle_gastown_busker_riff( WP_REST_Request $request ) {
         return rest_ensure_response( $fallback );
     }
 
-    return rest_ensure_response( array(
+    $result = array(
         'ok' => true,
         'fallback' => false,
         'spec' => $spec,
-    ) );
+    );
+    set_transient( $cache_key, $result, 10 * MINUTE_IN_SECONDS );
+    return rest_ensure_response( $result );
 }
 
 function se_handle_gastown_npc_voice( WP_REST_Request $request ) {
+    $rl = se_ai_rate_limit( 'gastown_voice', 5, HOUR_IN_SECONDS );
+    if ( is_wp_error( $rl ) ) {
+        return rest_ensure_response( array( 'ok' => false, 'fallback' => true, 'message' => 'This tool is cooling down for a bit. Try again later.' ) );
+    }
+    $daily = se_ai_daily_limit( 'gastown_voice', 30 );
+    if ( is_wp_error( $daily ) ) {
+        return rest_ensure_response( array( 'ok' => false, 'fallback' => true, 'message' => 'This tool is cooling down for a bit. Try again later.' ) );
+    }
     $role       = sanitize_key( (string) $request->get_param( 'role' ) );
     $name       = sanitize_text_field( (string) $request->get_param( 'name' ) );
-    $text       = sanitize_textarea_field( (string) $request->get_param( 'text' ) );
+    $text       = se_ai_trim_text( sanitize_textarea_field( (string) $request->get_param( 'text' ) ), 300 );
     $style_hint = sanitize_text_field( (string) $request->get_param( 'style_hint' ) );
 
     if ( '' === trim( $text ) ) {
@@ -1545,9 +1625,20 @@ function se_handle_gastown_npc_voice( WP_REST_Request $request ) {
 }
 
 function se_handle_gastown_npc_chat( WP_REST_Request $request ) {
+    $rl = se_ai_rate_limit( 'gastown_npc_chat', 20, HOUR_IN_SECONDS );
+    if ( is_wp_error( $rl ) ) {
+        return rest_ensure_response( array( 'ok' => false, 'fallback' => true, 'title' => 'Gastown local', 'lines' => array( 'This tool is cooling down for a bit. Try again later.' ) ) );
+    }
+    $daily = se_ai_daily_limit( 'gastown_npc_chat', 200 );
+    if ( is_wp_error( $daily ) ) {
+        return rest_ensure_response( array( 'ok' => false, 'fallback' => true, 'title' => 'Gastown local', 'lines' => array( 'This tool is cooling down for a bit. Try again later.' ) ) );
+    }
+    if ( ! se_ai_should_use_openai( 'gastown' ) ) {
+        return rest_ensure_response( array( 'ok' => false, 'fallback' => true, 'title' => 'Gastown local', 'lines' => array( 'The AI layer is offline, but the fallback version still works.' ) ) );
+    }
     $role = sanitize_key( (string) $request->get_param( 'role' ) );
     $name = sanitize_text_field( (string) $request->get_param( 'name' ) );
-    $prompt = sanitize_text_field( (string) $request->get_param( 'prompt' ) );
+    $prompt = se_ai_trim_text( sanitize_text_field( (string) $request->get_param( 'prompt' ) ), se_ai_get_text_limit( 'gastown_npc_prompt' ) );
 
     $fallbacks = array(
         'guide' => array(
@@ -1619,7 +1710,8 @@ function se_handle_gastown_npc_chat( WP_REST_Request $request ) {
     );
 
     $response = se_openai_chat( $messages, array(
-        'model' => 'gpt-4o',
+        'feature' => 'gastown',
+        'model' => 'gpt-4o-mini',
         'temperature' => 0.7,
         'max_tokens' => 120,
     ), array( 'timeout' => 12 ) );
@@ -1740,10 +1832,27 @@ add_shortcode('albini_qa', 'albini_qa_shortcode');
 // 8. ALBINI HANDLER (OpenAI Proxy)
 // =========================================
 function albini_handle_query( WP_REST_Request $req ) {
-    $question = sanitize_textarea_field( $req->get_param('question') );
+    if ( ! se_ai_should_use_openai( 'albini' ) ) {
+        return rest_ensure_response( array( 'quotes' => suzy_albini_match_quotes( '' ), 'commentary' => '', 'topics' => array() ) );
+    }
 
-    if ( empty( $question ) ) {
+    $question = se_ai_trim_text( sanitize_textarea_field( $req->get_param('question') ), se_ai_get_text_limit( 'albini_question' ) );
+    if ( '' === $question ) {
         return new WP_Error( 'albini_invalid_question', 'Please ask a question.', [ 'status' => 400 ] );
+    }
+
+    $rl = se_ai_rate_limit( 'albini_ask', 10, HOUR_IN_SECONDS );
+    if ( is_wp_error( $rl ) ) {
+        return $rl;
+    }
+    $daily = se_ai_daily_limit( 'albini_ask', 100 );
+    if ( is_wp_error( $daily ) ) {
+        return $daily;
+    }
+
+    $moderation = se_openai_moderate_text( $question, 'albini' );
+    if ( is_array( $moderation ) && ! empty( $moderation['flagged'] ) ) {
+        return se_ai_public_error_response( 'That question is outside the safe range for this little archive tool.', 400 );
     }
 
     $matched_quotes = suzy_albini_match_quotes( $question );
@@ -1757,55 +1866,27 @@ function albini_handle_query( WP_REST_Request $req ) {
         . "The ENTIRE response must be a single JSON object with no surrounding text, no Markdown, and NO ``` code fences. "
         . "Never write in the first person as Steve Albini or claim to be him.";
 
-    $user_payload = [
-        'question' => $question,
-        'quotes'   => $matched_quotes,
-    ];
-
     $response = se_openai_chat(
         array(
-            array(
-                'role'    => 'system',
-                'content' => $system_prompt,
-            ),
-            array(
-                'role'    => 'user',
-                'content' => wp_json_encode( $user_payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ),
-            ),
+            array( 'role' => 'system', 'content' => $system_prompt ),
+            array( 'role' => 'user', 'content' => wp_json_encode( array( 'question' => $question, 'quotes' => $matched_quotes ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ),
         ),
-        array(
-            'model'       => 'gpt-4o',
-            'max_tokens'  => 350,
-            'temperature' => 0.4,
-        ),
-        array(
-            'timeout' => 15,
-        )
+        array( 'feature' => 'albini', 'model' => 'gpt-4o-mini', 'max_tokens' => 320, 'temperature' => 0.4 ),
+        array( 'timeout' => 15 )
     );
 
     if ( is_wp_error( $response ) ) {
-        return new WP_Error( 'openai_error', $response->get_error_message(), array( 'status' => 500 ) );
+        return rest_ensure_response([ 'quotes' => $matched_quotes, 'commentary' => '', 'topics' => [] ]);
     }
 
-    $data = $response;
-
-    $content = isset( $data['choices'][0]['message']['content'] )
-        ? trim( $data['choices'][0]['message']['content'] )
-        : '';
-
-    // If the model wrapped the JSON in a markdown code block, strip the fences.
-    if ( preg_match( '/```(?:json)?\\s*(.+?)```/is', $content, $matches ) ) {
+    $content = isset( $response['choices'][0]['message']['content'] ) ? trim( $response['choices'][0]['message']['content'] ) : '';
+    if ( preg_match( '/```(?:json)?\s*(.+?)```/is', $content, $matches ) ) {
         $content = trim( $matches[1] );
     }
-
     $decoded = json_decode( $content, true );
 
     if ( json_last_error() !== JSON_ERROR_NONE || empty( $decoded ) ) {
-        return rest_ensure_response([
-            'quotes'     => $matched_quotes,
-            'commentary' => $content,
-            'topics'     => [],
-        ]);
+        return rest_ensure_response([ 'quotes' => $matched_quotes, 'commentary' => '', 'topics' => [] ]);
     }
 
     return rest_ensure_response([
@@ -1819,7 +1900,7 @@ function se_handle_riff_tip( WP_REST_Request $req ) {
     $mode       = sanitize_text_field( $req->get_param( 'mode' ) );
     $tempo      = absint( $req->get_param( 'tempo' ) );
     $instrument = sanitize_text_field( $req->get_param( 'instrument' ) );
-    $summary    = sanitize_textarea_field( $req->get_param( 'summary' ) );
+    $summary    = se_ai_trim_text( sanitize_textarea_field( $req->get_param( 'summary' ) ), se_ai_get_text_limit( 'riff_summary' ) );
 
     $fallbacks = array(
         "Leave space for the groove.",
@@ -1828,6 +1909,19 @@ function se_handle_riff_tip( WP_REST_Request $req ) {
         "Focus on emotion over perfection.",
         "Layer subtle textures for depth.",
     );
+
+    $rl = se_ai_rate_limit( 'riff_tip', 20, HOUR_IN_SECONDS );
+    if ( is_wp_error( $rl ) ) {
+        return rest_ensure_response( array( 'tip' => $fallbacks[ array_rand( $fallbacks ) ], 'message' => 'This tool is cooling down for a bit. Try again later.' ) );
+    }
+    $daily = se_ai_daily_limit( 'riff_tip', 150 );
+    if ( is_wp_error( $daily ) ) {
+        return rest_ensure_response( array( 'tip' => $fallbacks[ array_rand( $fallbacks ) ], 'message' => 'This tool is cooling down for a bit. Try again later.' ) );
+    }
+
+    if ( ! se_ai_should_use_openai( 'riff' ) ) {
+        return rest_ensure_response( array( 'tip' => $fallbacks[ array_rand( $fallbacks ) ], 'message' => 'The AI layer is offline, but the fallback version still works.' ) );
+    }
 
     $user_prompt = sprintf(
         'Mode: %s. Tempo: %s BPM. Instrument: %s. Riff: %s',
@@ -1839,32 +1933,18 @@ function se_handle_riff_tip( WP_REST_Request $req ) {
 
     $response = se_openai_chat(
         array(
-            array(
-                'role'    => 'system',
-                'content' => 'You are a concise music producer giving practical arrangement tips. Keep replies to 1-2 sentences.',
-            ),
-            array(
-                'role'    => 'user',
-                'content' => $user_prompt,
-            ),
+            array( 'role' => 'system', 'content' => 'You are a concise music producer giving practical arrangement tips. Keep replies to 1-2 sentences.' ),
+            array( 'role' => 'user', 'content' => $user_prompt ),
         ),
-        array(
-            'temperature' => 0.8,
-            'max_tokens'  => 80,
-        ),
-        array(
-            'timeout' => 15,
-        )
+        array( 'feature' => 'riff', 'model' => 'gpt-4o-mini', 'temperature' => 0.8, 'max_tokens'  => 100 ),
+        array( 'timeout' => 15 )
     );
 
     if ( is_wp_error( $response ) ) {
-        return rest_ensure_response( array( 'tip' => $fallbacks[ array_rand( $fallbacks ) ] ) );
+        return rest_ensure_response( array( 'tip' => $fallbacks[ array_rand( $fallbacks ) ], 'message' => 'The AI layer is offline, but the fallback version still works.' ) );
     }
 
-    $tip = isset( $response['choices'][0]['message']['content'] )
-        ? trim( $response['choices'][0]['message']['content'] )
-        : '';
-
+    $tip = isset( $response['choices'][0]['message']['content'] ) ? trim( $response['choices'][0]['message']['content'] ) : '';
     if ( ! $tip ) {
         $tip = $fallbacks[ array_rand( $fallbacks ) ];
     }
@@ -3058,6 +3138,17 @@ function se_validate_asmr_response( $decoded ) {
 }
 
 function se_handle_asmr_generate( WP_REST_Request $req ) {
+    $rl = se_ai_rate_limit( 'asmr_generate', 5, HOUR_IN_SECONDS );
+    if ( is_wp_error( $rl ) ) {
+        return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
+    }
+    $daily = se_ai_daily_limit( 'asmr_generate', 50 );
+    if ( is_wp_error( $daily ) ) {
+        return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
+    }
+    if ( ! se_ai_should_use_openai( 'asmr' ) ) {
+        return se_ai_public_error_response( 'The AI layer is offline, but the fallback version still works.', 503 );
+    }
     $params = $req->get_json_params();
     if ( ! is_array( $params ) ) {
         $params = $req->get_params();
@@ -3231,12 +3322,12 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     }
 
     $payload = array(
-        'concept' => sanitize_text_field( $params['concept'] ?? '' ),
-        'object' => sanitize_text_field( $params['object'] ?? '' ),
-        'setting' => sanitize_text_field( $params['setting'] ?? '' ),
-        'mood' => sanitize_text_field( $params['mood'] ?? '' ),
+        'concept' => se_ai_trim_text( sanitize_text_field( $params['concept'] ?? '' ), se_ai_get_text_limit( 'asmr_prompt' ) ),
+        'object' => se_ai_trim_text( sanitize_text_field( $params['object'] ?? '' ), se_ai_get_text_limit( 'asmr_prompt' ) ),
+        'setting' => se_ai_trim_text( sanitize_text_field( $params['setting'] ?? '' ), se_ai_get_text_limit( 'asmr_prompt' ) ),
+        'mood' => se_ai_trim_text( sanitize_text_field( $params['mood'] ?? '' ), 120 ),
         'duration' => max( 10, min( 30, absint( $params['duration'] ?? 20 ) ) ),
-        'creative_goal' => sanitize_textarea_field( $params['creative_goal'] ?? '' ),
+        'creative_goal' => se_ai_trim_text( sanitize_textarea_field( $params['creative_goal'] ?? '' ), se_ai_get_text_limit( 'asmr_prompt' ) ),
         'location' => sanitize_key( $params['location'] ?? '' ),
         'weather' => sanitize_key( $params['weather'] ?? '' ),
         'link_av' => $link_av,
@@ -3292,7 +3383,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
             array( 'role' => 'system', 'content' => $system_prompt ),
             array( 'role' => 'user', 'content' => wp_json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ),
         ),
-        array( 'model' => 'gpt-4o', 'temperature' => 0.7, 'max_tokens' => 1600 ),
+        array( 'feature' => 'asmr', 'model' => 'gpt-4o-mini', 'temperature' => 0.7, 'max_tokens' => 1400 ),
         array( 'timeout' => 40 )
     );
 
