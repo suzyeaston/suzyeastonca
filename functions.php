@@ -17,6 +17,14 @@ if ( ! defined( 'OPENAI_API_KEY' ) ) {
  * define( 'SE_AI_DISABLE_ASMR', false );
  * define( 'SE_AI_DISABLE_GASTOWN', false );
  * define( 'SE_AI_DISABLE_MODERATION', false );
+ * define( 'CLOUDFLARE_TURNSTILE_SITE_KEY', '...' );
+ * define( 'CLOUDFLARE_TURNSTILE_SECRET_KEY', '...' );
+ * define( 'SE_AI_DISABLE_TURNSTILE', false );
+ * define( 'SE_AI_TRACK_ANALYZER_DAILY_LIMIT', 20 );
+ * define( 'SE_AI_ALBINI_DAILY_LIMIT', 100 );
+ * define( 'SE_AI_ASMR_DAILY_LIMIT', 50 );
+ * define( 'SE_AI_GASTOWN_TTS_DAILY_LIMIT', 30 );
+ * OpenAI platform budget alerts are still recommended; app-level limits are not a substitute for provider-level monitoring.
  * define( 'THE_ODDS_API_KEY', '...' );
  */
 require_once get_template_directory() . '/inc/albini-quotes.php';
@@ -181,6 +189,7 @@ function se_enqueue_asmr_lab_assets() {
 
     $app_path = '/js/asmr-lab.js';
     if ( file_exists( $dir . $app_path ) ) {
+        se_ai_enqueue_turnstile_script();
         wp_enqueue_script( 'se-asmr-lab', $uri . $app_path, array( 'se-asmr-foley-engine', 'se-asmr-visual-engine' ), filemtime( $dir . $app_path ), true );
         wp_localize_script(
             'se-asmr-lab',
@@ -188,6 +197,7 @@ function se_enqueue_asmr_lab_assets() {
             array(
                 'endpoint' => esc_url_raw( rest_url( 'se/v1/asmr-generate' ) ),
                 'nonce'    => wp_create_nonce( 'wp_rest' ),
+                'turnstileEnabled' => se_ai_turnstile_enabled(),
                 'visualRegistry' => se_get_asmr_visual_registry(),
                 'sceneDataUrl'  => esc_url_raw( $uri . '/assets/data/vancouver-scene-seeds.json' ),
             )
@@ -279,6 +289,7 @@ function se_enqueue_gastown_sim_assets() {
                 'textureBaseUrl' => esc_url_raw( $uri . '/assets/textures' ),
                 'dialogDataUrl'  => esc_url_raw( $uri . '/assets/dialog/gastown.json' ),
                 'nonce' => wp_create_nonce( 'wp_rest' ),
+                'turnstileEnabled' => se_ai_turnstile_enabled(),
                 'defaultWeather' => 'clear',
                 'defaultMood'    => 'calm',
                 'defaultTimeOfDay' => 'morning',
@@ -816,6 +827,30 @@ function se_rest_public_ai_permission( WP_REST_Request $request ) {
     return true;
 }
 
+/**
+ * Nonces are a CSRF/session check, not a bot check. Expensive endpoints accept
+ * either a valid REST nonce or a Turnstile token that the handler validates.
+ */
+function se_rest_expensive_ai_permission( WP_REST_Request $request ) {
+    $nonce = $request->get_header( 'x_wp_nonce' );
+    if ( $nonce ) {
+        if ( ! wp_verify_nonce( sanitize_text_field( $nonce ), 'wp_rest' ) ) {
+            return se_ai_public_error_response( 'Security check failed. Please refresh and try again.', 403 );
+        }
+        return true;
+    }
+
+    $token = (string) $request->get_param( 'cf-turnstile-response' );
+    if ( '' === trim( $token ) ) {
+        $token = (string) $request->get_param( 'cf_turnstile_response' );
+    }
+    if ( '' === trim( $token ) ) {
+        return se_ai_public_error_response( 'Security check failed. Please refresh and try again.', 403 );
+    }
+
+    return true;
+}
+
 add_action('rest_api_init', function() {
     register_rest_route('canucks/v1', '/news', [
         'methods'  => 'GET',
@@ -830,7 +865,7 @@ add_action('rest_api_init', function() {
     register_rest_route('albini/v1', '/ask', [
         'methods'             => 'POST',
         'callback'            => 'albini_handle_query',
-        'permission_callback' => 'se_rest_public_ai_permission',
+        'permission_callback' => 'se_rest_expensive_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/riff-tip', [
@@ -842,19 +877,19 @@ add_action('rest_api_init', function() {
     register_rest_route('se/v1', '/asmr-generate', [
         'methods'             => 'POST',
         'callback'            => 'se_handle_asmr_generate',
-        'permission_callback' => 'se_rest_public_ai_permission',
+        'permission_callback' => 'se_rest_expensive_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/gastown-npc-chat', [
         'methods'             => 'POST',
         'callback'            => 'se_handle_gastown_npc_chat',
-        'permission_callback' => 'se_rest_public_ai_permission',
+        'permission_callback' => 'se_rest_expensive_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/gastown-npc-voice', [
         'methods'             => 'POST',
         'callback'            => 'se_handle_gastown_npc_voice',
-        'permission_callback' => 'se_rest_public_ai_permission',
+        'permission_callback' => 'se_rest_expensive_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/gastown-busker-riff', [
@@ -866,13 +901,13 @@ add_action('rest_api_init', function() {
     register_rest_route('se/v1', '/gastown-band-arrangement', [
         'methods'             => 'GET',
         'callback'            => 'se_handle_gastown_band_arrangement',
-        'permission_callback' => 'se_rest_public_ai_permission',
+        'permission_callback' => 'se_rest_expensive_ai_permission',
     ]);
 
     register_rest_route('se/v1', '/gastown-start-sting', [
         'methods'             => 'POST',
         'callback'            => 'se_handle_gastown_start_sting',
-        'permission_callback' => 'se_rest_public_ai_permission',
+        'permission_callback' => 'se_rest_expensive_ai_permission',
     ]);
 });
 
@@ -1017,6 +1052,11 @@ function se_handle_gastown_start_sting( WP_REST_Request $request ) {
     $walker_name = '' !== trim( $walker_name ) ? mb_substr( preg_replace( '/\s+/', ' ', trim( $walker_name ) ), 0, 24 ) : 'Walker';
 
     $welcome_line = sprintf( 'Welcome to the Gastown Simulator, %s. Follow the street.', $walker_name );
+    $turnstile_token = (string) $request->get_param( 'cf-turnstile-response' );
+    if ( '' === trim( $turnstile_token ) ) {
+        $turnstile_token = (string) $request->get_param( 'cf_turnstile_response' );
+    }
+    $turnstile = se_ai_verify_turnstile_token( $turnstile_token, 'gastown_start_sting' );
     $fallback_spec = se_get_gastown_start_sting_fallback_spec();
     $result = array(
         'ok' => true,
@@ -1037,6 +1077,9 @@ function se_handle_gastown_start_sting( WP_REST_Request $request ) {
         ),
         'helpNote' => 'Startup welcome voice is AI-generated when available.',
     );
+    if ( is_wp_error( $turnstile ) ) {
+        return rest_ensure_response( $result );
+    }
 
     $music_messages = array(
         array(
@@ -1321,6 +1364,11 @@ function se_handle_gastown_band_arrangement( WP_REST_Request $request ) {
         return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
     }
 
+    $turnstile_token = (string) $request->get_param( 'cf-turnstile-response' );
+    if ( '' === trim( $turnstile_token ) ) {
+        $turnstile_token = (string) $request->get_param( 'cf_turnstile_response' );
+    }
+    $turnstile = se_ai_verify_turnstile_token( $turnstile_token, 'gastown_band_arrangement' );
     $context = array(
         'seed_tune' => sanitize_key( (string) $request->get_param( 'seed_tune' ) ) ?: 'happy_feet',
         'mood' => sanitize_key( (string) $request->get_param( 'mood' ) ) ?: 'lively',
@@ -1336,6 +1384,16 @@ function se_handle_gastown_band_arrangement( WP_REST_Request $request ) {
     $cached = get_transient( $cache_key );
     if ( is_array( $cached ) ) {
         return rest_ensure_response( $cached );
+    }
+    if ( is_wp_error( $turnstile ) ) {
+        return rest_ensure_response(
+            array(
+                'ok' => true,
+                'fallback' => true,
+                'context' => $context,
+                'arrangements' => array( se_get_gastown_band_arrangement_fallback( $context ) ),
+            )
+        );
     }
 
     $seed_library = se_get_gastown_public_domain_tune_seeds();
@@ -1563,7 +1621,7 @@ function se_handle_gastown_npc_voice( WP_REST_Request $request ) {
     if ( is_wp_error( $rl ) ) {
         return rest_ensure_response( array( 'ok' => false, 'fallback' => true, 'message' => 'This tool is cooling down for a bit. Try again later.' ) );
     }
-    $daily = se_ai_daily_limit( 'gastown_voice', 30 );
+    $daily = se_ai_daily_limit( 'gastown_voice', se_ai_get_daily_limit( 'gastown_tts', 30 ) );
     if ( is_wp_error( $daily ) ) {
         return rest_ensure_response( array( 'ok' => false, 'fallback' => true, 'message' => 'This tool is cooling down for a bit. Try again later.' ) );
     }
@@ -1571,6 +1629,11 @@ function se_handle_gastown_npc_voice( WP_REST_Request $request ) {
     $name       = sanitize_text_field( (string) $request->get_param( 'name' ) );
     $text       = se_ai_trim_text( sanitize_textarea_field( (string) $request->get_param( 'text' ) ), 300 );
     $style_hint = sanitize_text_field( (string) $request->get_param( 'style_hint' ) );
+    $turnstile_token = (string) $request->get_param( 'cf-turnstile-response' );
+    if ( '' === trim( $turnstile_token ) ) {
+        $turnstile_token = (string) $request->get_param( 'cf_turnstile_response' );
+    }
+    $turnstile = se_ai_verify_turnstile_token( $turnstile_token, 'gastown_npc_voice' );
 
     if ( '' === trim( $text ) ) {
         return rest_ensure_response(
@@ -1578,6 +1641,17 @@ function se_handle_gastown_npc_voice( WP_REST_Request $request ) {
                 'ok'      => false,
                 'fallback'=> true,
                 'message' => 'No speech text provided.',
+            )
+        );
+    }
+    if ( is_wp_error( $turnstile ) ) {
+        return rest_ensure_response(
+            array(
+                'ok'      => false,
+                'fallback'=> true,
+                'message' => 'Audio is unavailable right now, but text mode still works.',
+                'role'    => $role,
+                'name'    => $name,
             )
         );
     }
@@ -1836,6 +1910,16 @@ function albini_handle_query( WP_REST_Request $req ) {
         return rest_ensure_response( array( 'quotes' => suzy_albini_match_quotes( '' ), 'commentary' => '', 'topics' => array() ) );
     }
 
+    $website = sanitize_text_field( (string) $req->get_param( 'website' ) );
+    if ( '' !== trim( $website ) ) {
+        return rest_ensure_response( array( 'quotes' => suzy_albini_match_quotes( '' ), 'commentary' => '', 'topics' => array() ) );
+    }
+
+    $turnstile = se_ai_verify_turnstile_token( (string) $req->get_param( 'cf-turnstile-response' ), 'albini' );
+    if ( is_wp_error( $turnstile ) ) {
+        return $turnstile;
+    }
+
     $question = se_ai_trim_text( sanitize_textarea_field( $req->get_param('question') ), se_ai_get_text_limit( 'albini_question' ) );
     if ( '' === $question ) {
         return new WP_Error( 'albini_invalid_question', 'Please ask a question.', [ 'status' => 400 ] );
@@ -1845,7 +1929,7 @@ function albini_handle_query( WP_REST_Request $req ) {
     if ( is_wp_error( $rl ) ) {
         return $rl;
     }
-    $daily = se_ai_daily_limit( 'albini_ask', 100 );
+    $daily = se_ai_daily_limit( 'albini_ask', se_ai_get_daily_limit( 'albini', 100 ) );
     if ( is_wp_error( $daily ) ) {
         return $daily;
     }
@@ -3142,7 +3226,7 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     if ( is_wp_error( $rl ) ) {
         return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
     }
-    $daily = se_ai_daily_limit( 'asmr_generate', 50 );
+    $daily = se_ai_daily_limit( 'asmr_generate', se_ai_get_daily_limit( 'asmr', 50 ) );
     if ( is_wp_error( $daily ) ) {
         return se_ai_public_error_response( 'This tool is cooling down for a bit. Try again later.', 429 );
     }
@@ -3152,6 +3236,10 @@ function se_handle_asmr_generate( WP_REST_Request $req ) {
     $params = $req->get_json_params();
     if ( ! is_array( $params ) ) {
         $params = $req->get_params();
+    }
+    $turnstile = se_ai_verify_turnstile_token( (string) ( $params['cf-turnstile-response'] ?? '' ), 'asmr_generate' );
+    if ( is_wp_error( $turnstile ) ) {
+        return $turnstile;
     }
 
     $allowed_locations = array( 'gastown', 'granville', 'north_shore' );
@@ -3533,3 +3621,11 @@ add_filter(
     10,
     2
 );
+    $turnstile_token = (string) $request->get_param( 'cf-turnstile-response' );
+    if ( '' === trim( $turnstile_token ) ) {
+        $turnstile_token = (string) $request->get_param( 'cf_turnstile_response' );
+    }
+    $turnstile = se_ai_verify_turnstile_token( $turnstile_token, 'gastown_npc_chat' );
+    if ( is_wp_error( $turnstile ) ) {
+        return rest_ensure_response( array( 'ok' => false, 'fallback' => true, 'title' => 'Gastown local', 'lines' => array( 'The local guide fallback is active right now.' ) ) );
+    }

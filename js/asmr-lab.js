@@ -1028,10 +1028,14 @@ ${data.concept_summary}`;
   async function requestGeneration(payload) {
     setError('');
     setStatus('Generating synchronized sensory film package...');
+    const turnstileInput = document.querySelector('input[name="cf-turnstile-response"]');
+    const requestPayload = Object.assign({}, payload, {
+      'cf-turnstile-response': turnstileInput ? (turnstileInput.value || '') : ''
+    });
     const response = await fetch(window.seAsmrLab.endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': window.seAsmrLab.nonce },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(requestPayload)
     });
 
     let data;
@@ -1039,6 +1043,9 @@ ${data.concept_summary}`;
     if (!response.ok) throw new Error((data && data.message) ? data.message : 'Unable to generate ASMR package.');
     if (!data || typeof data !== 'object' || !Array.isArray(data.audio_events)) throw new Error('Generated package was incomplete. Please try again.');
 
+    if (window.turnstile && typeof window.turnstile.reset === 'function') {
+      try { window.turnstile.reset(); } catch (error) {}
+    }
     setStatus('Package generated. Ready for synchronized preview.');
     return data;
   }
@@ -1233,7 +1240,12 @@ ${data.concept_summary}`;
       lastPayload = collectFormPayload();
       setDebugStatus(lastPayload);
       try { renderData(await requestGeneration(lastPayload)); }
-      catch (err) { setError(err.message || 'Generation failed.'); setStatus(''); }
+      catch (err) {
+        if (window.turnstile && typeof window.turnstile.reset === 'function') {
+          try { window.turnstile.reset(); } catch (error) {}
+        }
+        setError(err.message || 'Generation failed.'); setStatus('');
+      }
     });
   }
 
@@ -1268,7 +1280,12 @@ ${data.concept_summary}`;
     soundOnlyBtn.addEventListener('click', async () => {
       if (!lastPayload) return setError('Generate a full package first, then regenerate sound.');
       try { renderData(await requestGeneration(Object.assign({}, lastPayload, { sound_only: true }))); }
-      catch (err) { setError(err.message || 'Sound regeneration failed.'); }
+      catch (err) {
+        if (window.turnstile && typeof window.turnstile.reset === 'function') {
+          try { window.turnstile.reset(); } catch (error) {}
+        }
+        setError(err.message || 'Sound regeneration failed.');
+      }
     });
   }
 

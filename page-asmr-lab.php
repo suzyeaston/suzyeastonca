@@ -178,6 +178,7 @@ $gastown_page_url = $gastown_page ? get_permalink( $gastown_page ) : home_url( '
       <label class="asmr-link-toggle"><input type="checkbox" name="link_av" /> Link sound + visual for selected motifs</label>
       </details>
       <div class="asmr-actions">
+        <?php echo se_ai_get_turnstile_widget_html( 'asmr_generate' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
         <button type="submit" class="pixel-button">Generate Route Package</button>
         <button type="button" id="asmr-qa-preset" class="pixel-button secondary">Load Route Preset</button>
         <button type="button" id="asmr-sound-only" class="pixel-button secondary" disabled>Regenerate Route Audio</button>

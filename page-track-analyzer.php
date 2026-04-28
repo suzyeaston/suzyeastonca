@@ -4,6 +4,7 @@ Template Name: Track Analyzer
 */
 
 get_header();
+se_ai_enqueue_turnstile_script();
 
 function se_track_analyzer_upload_track_file( array $file ) {
     if ( ! function_exists( 'wp_handle_upload' ) ) {
@@ -106,11 +107,18 @@ $error    = '';
 if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
     if ( ! isset( $_POST['se_track_analyzer_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['se_track_analyzer_nonce'] ) ), 'se_track_analyzer_upload' ) ) {
         $error = __( 'Security check failed. Please refresh and try again.', 'suzys-music-theme' );
+    } elseif ( ! empty( $_POST['website'] ) ) {
+        $analysis = __( 'Thanks! Your track is in the queue. Try again shortly for a fresh analysis.', 'suzys-music-theme' );
     } elseif ( ! se_ai_should_use_openai( 'track_analyzer' ) || ! defined( 'OPENAI_API_KEY' ) || ! OPENAI_API_KEY ) {
         $error = __( 'The AI layer is offline, but the fallback version still works.', 'suzys-music-theme' );
     } else {
+        $turnstile_token = isset( $_POST['cf-turnstile-response'] ) ? sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) ) : '';
+        $turnstile = se_ai_verify_turnstile_token( $turnstile_token, 'track_analyzer' );
+        if ( is_wp_error( $turnstile ) ) {
+            $error = __( 'Please complete the human check and try again.', 'suzys-music-theme' );
+        } else {
         $rl = se_ai_rate_limit( 'track_analyzer', 3, HOUR_IN_SECONDS );
-        $daily = se_ai_daily_limit( 'track_analyzer', 20 );
+        $daily = se_ai_daily_limit( 'track_analyzer', se_ai_get_daily_limit( 'track_analyzer', 20 ) );
         if ( is_wp_error( $rl ) || is_wp_error( $daily ) ) {
             $error = __( 'Track Analyzer is cooling down. Try again later, or email Suzy if you want help with a specific track.', 'suzys-music-theme' );
         } else {
@@ -139,6 +147,7 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
                     $analysis = $analysis_result;
                 }
             }
+        }
         }
     }
 }
@@ -181,8 +190,13 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
 
     <form method="post" enctype="multipart/form-data" class="analyzer-form">
       <?php wp_nonce_field( 'se_track_analyzer_upload', 'se_track_analyzer_nonce' ); ?>
+      <div style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+        <label for="website">Website</label>
+        <input type="text" name="website" id="website" autocomplete="off" tabindex="-1">
+      </div>
       <label for="track_file">Upload MP3 File</label>
       <input type="file" name="track_file" id="track_file" accept=".mp3,audio/mpeg" required>
+      <?php echo se_ai_get_turnstile_widget_html( 'track_analyzer' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
       <button type="submit" class="pixel-button">Analyze Track</button>
       <p id="loading-message" style="display:none;" class="pixel-font">Decrypting audio stream<span class="loading-dots"></span></p>
     </form>
