@@ -1,0 +1,8 @@
+.env
+.env.*
+wp-config.php
+local-config.php
+secrets.php
+*.pem
+*.key
+.DS_Store
