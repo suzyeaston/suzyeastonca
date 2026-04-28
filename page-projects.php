@@ -22,10 +22,10 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
 <main id="main-content" class="projects-page">
     <div class="projects-shell">
         <section class="projects-hero projects-section" aria-labelledby="projects-title">
-            <p class="projects-eyebrow pixel-font">Build log // useful weird systems</p>
-            <h1 id="projects-title" class="retro-title glow-lite">Projects</h1>
-            <p class="projects-lead">A field guide to the tools, prototypes, dashboards, music-tech experiments, civic builds, and strange useful systems I&rsquo;m building in public.</p>
-            <p>Some are polished enough to use. Some are live prototypes. Some are weird little labs that teach me what to build next. The common thread: practical systems, creative taste, and enough technical grit to make the thing actually work.</p>
+            <p class="projects-eyebrow projects-hero__eyebrow pixel-font">Build log // useful weird systems</p>
+            <h1 id="projects-title" class="projects-hero__title">Projects</h1>
+            <p class="projects-lead projects-hero__lead">A field guide to the tools, prototypes, dashboards, music-tech experiments, civic builds, and strange useful systems I&rsquo;m building in public.</p>
+            <p class="projects-hero__support">Some are polished enough to use. Some are live prototypes. Some are weird little labs that teach me what to build next. The common thread: practical systems, creative taste, and enough technical grit to make the thing actually work.</p>
             <div class="projects-actions" role="group" aria-label="Projects page jumps and primary links">
                 <a class="pixel-button" href="#featured-projects">Featured builds</a>
                 <a class="pixel-button" href="#creative-labs">Creative labs</a>
@@ -200,7 +200,7 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
         </section>
 
         <section class="projects-final-cta projects-section" aria-labelledby="projects-cta-title">
-            <h2 id="projects-cta-title" class="pixel-font">Want to build something useful and slightly dangerous?</h2>
+            <h2 id="projects-cta-title" class="pixel-font">Want to build something useful and memorable?</h2>
             <p>I&rsquo;m open to senior technical roles, contract web development, QA/automation work, custom WordPress builds, dashboards, practical AI prototypes, and weird bug triage.</p>
             <div class="projects-actions" role="group" aria-label="Work with Suzy and contact links">
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>">Work with Suzy</a>
