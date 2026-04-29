@@ -3568,7 +3568,7 @@ body {
   }
 }
 
-/* Bio page: Vancouver signal chain */
+/* Bio page: Vancouver transmission */
 body.page-template-page-bio .bio-content,
 body.page-template-page-bio-php .bio-content {
   overflow: visible;
@@ -3609,6 +3609,8 @@ body.page-template-page-bio-php .bio-content {
 .bio-useful{margin-top:1.2rem}.bio-useful__item{padding:.8rem 1rem;margin:0}.bio-cta-panel{margin-top:1.2rem}
 .bio-button:focus-visible,.bio-proof-card__link:focus-visible,.bio-build__link:focus-visible{outline:2px solid var(--bio-neon-green);outline-offset:2px}
 .bio-button:hover,.bio-proof-card__link:hover,.bio-build__link:hover{background:rgba(56,255,138,.18)}
+
+.bio-bandcamp-embed{margin-top:1rem;max-width:350px;width:100%}.bio-bandcamp-embed iframe{display:block;width:100%;max-width:350px;height:470px;border:0;border-radius:18px;overflow:hidden}
 @media (min-width:760px){.bio-grid,.bio-proof-panel__grid,.bio-builds__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (prefers-reduced-motion: reduce){.bio-shell:before{background:none}.bio-button,.bio-proof-card__link,.bio-build__link{transition:none}}
 .creative-tool-links {
