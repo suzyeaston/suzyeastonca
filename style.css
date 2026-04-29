@@ -3568,239 +3568,49 @@ body {
   }
 }
 
-/* Bio crawl: CSS animated opening crawl */
+/* Bio page: Vancouver signal chain */
 body.page-template-page-bio .bio-content,
 body.page-template-page-bio-php .bio-content {
   overflow: visible;
   white-space: normal;
 }
 
-.bio-crawl-wrap {
-  --crawl-duration: 52s;
-  --crawl-start: 62%;
-  --crawl-travel: 1900px;
-  position: relative;
-  overflow: hidden;
-  height: min(84vh, 900px);
-  border-radius: 16px;
-  padding: 0;
-  isolation: isolate;
-  background: radial-gradient(circle at 50% -32%, rgba(26, 26, 26, 0.42), rgba(0, 0, 0, 0.985) 64%);
+.bio-page {
+  --bio-ink: #020711;
+  --bio-dark-blue: #041c2c;
+  --bio-blue: #00205b;
+  --bio-green: #00843d;
+  --bio-neon-green: #38ff8a;
+  --bio-ice: #f4fbff;
+  --bio-gray: #97999b;
+  --bio-panel: rgba(4, 28, 44, 0.86);
+  --bio-border: rgba(244, 251, 255, 0.22);
+  background: radial-gradient(circle at 12% 10%, rgba(0, 132, 61, 0.22), transparent 42%), radial-gradient(circle at 84% 0%, rgba(0, 32, 91, 0.36), transparent 48%), var(--bio-ink);
+  color: var(--bio-ice);
+  padding: clamp(1rem, 2.5vw, 2.5rem) 0 4rem;
+  overflow-x: clip;
 }
-
-.bio-crawl-camera {
-  position: absolute;
-  inset: 0;
-  perspective: 900px;
-  perspective-origin: 50% 24%;
-  overflow: hidden;
-}
-
-.bio-crawl-track {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: min(880px, 90vw);
-  margin: 0;
-  transform-origin: 50% 0%;
-  transform: translate3d(-50%, var(--crawl-start), 0);
-  animation: seBioCrawlTrack var(--crawl-duration) linear 1 both;
-  animation-play-state: paused;
-  will-change: transform;
-}
-
-.bio-crawl-wrap.is-crawl-ready .bio-crawl-track {
-  animation-play-state: running;
-}
-
-@keyframes seBioCrawlTrack {
-  from {
-    transform: translate3d(-50%, var(--crawl-start), 0);
-  }
-
-  to {
-    transform: translate3d(-50%, calc(-1 * var(--crawl-travel)), 0);
-  }
-}
-
-.bio-crawl {
-  margin: 0;
-  text-align: left;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  line-height: 1.58;
-  font-size: clamp(19px, 2.05vw, 31px);
-  color: #f5d24a;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.58);
-  background: transparent;
-  transform-origin: 50% 0%;
-  transform: rotateX(19deg);
-}
-
-.bio-crawl,
-.bio-crawl * {
-  color: #f5d24a !important;
-  white-space: normal;
-  word-spacing: normal;
-  background: transparent !important;
-}
-
-.bio-crawl-title {
-  text-align: center;
-  letter-spacing: 0.12em;
-  margin: 0 0 10px 0;
-  font-size: clamp(40px, 5.2vw, 78px);
-  line-height: 1.1;
-}
-
-.bio-crawl-subtitle {
-  text-align: center;
-  margin: 0 0 34px 0;
-  font-size: clamp(15px, 2vw, 26px);
-  line-height: 1.35;
-}
-
-
-.bio-crawl-content {
-  display: block;
-}
-.bio-crawl p {
-  margin: 0 0 16px 0;
-  text-align: left;
-}
-
-.bio-crawl a {
-  text-decoration: underline;
-  text-underline-offset: 0.14em;
-  transition: color 180ms ease;
-}
-
-.bio-crawl a:hover,
-.bio-crawl a:focus-visible {
-  color: #ffe37a !important;
-}
-
-.bio-crawl-bandcamp {
-  text-align: center;
-  margin-top: 24px;
-}
-
-.bio-crawl-sound-toggle {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 5;
-  border: 1px solid rgba(245, 210, 74, 0.75);
-  border-radius: 999px;
-  padding: 7px 12px;
-  background: rgba(0, 0, 0, 0.72);
-  color: #f5d24a;
-  font-size: 0.62rem;
-  letter-spacing: 0.03em;
-  text-transform: none;
-  cursor: pointer;
-}
-
-.bio-crawl-sound-toggle:focus-visible,
-.bio-crawl-sound-toggle:hover {
-  border-color: #ffe37a;
-  color: #ffe37a;
-}
-
-.bio-crawl-wrap::before,
-.bio-crawl-wrap::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  pointer-events: none;
-  z-index: 4;
-}
-
-.bio-crawl-wrap::before {
-  top: 0;
-  height: 34%;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.96) 0%,
-    rgba(0, 0, 0, 0.78) 10%,
-    rgba(0, 0, 0, 0.46) 28%,
-    rgba(0, 0, 0, 0.2) 52%,
-    rgba(0, 0, 0, 0.06) 76%,
-    rgba(0, 0, 0, 0) 100%
-  );
-}
-
-.bio-crawl-wrap::after {
-  bottom: 0;
-  height: 72px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.24), rgba(0, 0, 0, 0));
-}
-
-@media (max-width: 700px) {
-  .bio-crawl-wrap {
-    --crawl-duration: 58s;
-    --crawl-start: 64%;
-    height: min(80vh, 760px);
-  }
-
-  .bio-crawl-track {
-    width: min(700px, 94vw);
-  }
-
-  .bio-crawl {
-    font-size: clamp(16px, 4.05vw, 21px);
-    line-height: 1.54;
-    transform: rotateX(16deg);
-  }
-
-  .bio-crawl-title {
-    font-size: clamp(32px, 9.2vw, 46px);
-  }
-
-  .bio-crawl-subtitle {
-    font-size: clamp(13px, 4.2vw, 18px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bio-crawl-wrap {
-    height: auto;
-    overflow: visible;
-    background: transparent;
-    border-radius: 0;
-  }
-
-  .bio-crawl-camera {
-    position: static;
-    perspective: none;
-    transform: none;
-    overflow: visible;
-    width: auto;
-    height: auto;
-  }
-
-  .bio-crawl-track {
-    position: static;
-    width: min(720px, 92%);
-    margin: 0 auto;
-    animation: none;
-    transform: none;
-  }
-
-  .bio-crawl {
-    transform: none;
-    text-align: left;
-    text-shadow: none;
-  }
-
-  .bio-crawl-wrap::before,
-  .bio-crawl-wrap::after {
-    display: none;
-  }
-}
-
-
+.bio-shell{max-width:1100px;margin:0 auto;padding:0 1rem;position:relative}
+.bio-shell:before,.bio-shell:after{content:"";position:absolute;inset:0;pointer-events:none}
+.bio-shell:before{background:repeating-linear-gradient(to bottom, rgba(244,251,255,.04) 0 1px, transparent 1px 4px);opacity:.25}
+.bio-shell:after{background:linear-gradient(90deg,var(--bio-blue) 0 33%,var(--bio-ice) 33% 37%,var(--bio-green) 37% 100%);height:4px;inset:auto 0 -8px;border-radius:999px;box-shadow:0 0 14px rgba(56,255,138,.25)}
+.bio-hero,.bio-card,.bio-proof-panel,.bio-build,.bio-cta-panel,.bio-useful__item{background:var(--bio-panel);border:1px solid var(--bio-border);border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.bio-hero{padding:1.25rem}.bio-kicker,.bio-card__label,.bio-proof-card__label{font-family:"Press Start 2P",monospace;font-size:.68rem;letter-spacing:.12em;color:var(--bio-neon-green)}
+.bio-title{font-size:clamp(1.9rem,8vw,3.2rem);line-height:1.06;margin:.55rem 0;color:var(--bio-ice)}
+.bio-subtitle{font-size:1.1rem;color:#d8eaff}.bio-intro,.bio-card__body,.bio-proof-card__body,.bio-build__body{font-family:Inter,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:1.03rem;line-height:1.72;color:#ebf5ff}
+.bio-status-strip,.bio-terminal-strip{margin-top:1rem;padding:.8rem 1rem;border-radius:10px;background:rgba(2,7,17,.58);border:1px solid rgba(56,255,138,.28)}
+.bio-terminal-strip{display:flex;gap:.8rem;flex-wrap:wrap;font-family:"Press Start 2P",monospace;font-size:.58rem;color:#9cf4cd}
+.bio-actions,.bio-cta-panel__actions{display:flex;gap:.65rem;flex-wrap:wrap;margin-top:1rem}
+.bio-button,.bio-proof-card__link,.bio-build__link{display:inline-block;padding:.56rem .88rem;border-radius:999px;border:1px solid rgba(244,251,255,.35);color:var(--bio-ice);text-decoration:none;background:rgba(0,32,91,.32)}
+.bio-grid,.bio-proof-panel__grid,.bio-builds__grid,.bio-useful__grid{display:grid;grid-template-columns:1fr;gap:1rem;margin-top:1rem}
+.bio-card,.bio-build,.bio-proof-card,.bio-cta-panel{padding:1rem}.bio-card__title,.bio-build__title,.bio-proof-card__title{margin:.5rem 0 .6rem;font-size:1.35rem}
+.bio-proof-panel{margin-top:1.25rem;padding:1rem}.bio-proof-panel__header p,.bio-builds__header p{color:#d2deea}
+.bio-build__meta{font-family:"Press Start 2P",monospace;font-size:.58rem;color:#9cd7ff}.bio-build p{margin:.45rem 0}
+.bio-useful{margin-top:1.2rem}.bio-useful__item{padding:.8rem 1rem;margin:0}.bio-cta-panel{margin-top:1.2rem}
+.bio-button:focus-visible,.bio-proof-card__link:focus-visible,.bio-build__link:focus-visible{outline:2px solid var(--bio-neon-green);outline-offset:2px}
+.bio-button:hover,.bio-proof-card__link:hover,.bio-build__link:hover{background:rgba(56,255,138,.18)}
+@media (min-width:760px){.bio-grid,.bio-proof-panel__grid,.bio-builds__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion: reduce){.bio-shell:before{background:none}.bio-button,.bio-proof-card__link,.bio-build__link{transition:none}}
 .creative-tool-links {
   margin: 28px auto 40px;
   max-width: 860px;
