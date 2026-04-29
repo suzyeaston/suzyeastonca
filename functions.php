@@ -3621,11 +3621,3 @@ add_filter(
     10,
     2
 );
-    $turnstile_token = (string) $request->get_param( 'cf-turnstile-response' );
-    if ( '' === trim( $turnstile_token ) ) {
-        $turnstile_token = (string) $request->get_param( 'cf_turnstile_response' );
-    }
-    $turnstile = se_ai_verify_turnstile_token( $turnstile_token, 'gastown_npc_chat' );
-    if ( is_wp_error( $turnstile ) ) {
-        return rest_ensure_response( array( 'ok' => false, 'fallback' => true, 'title' => 'Gastown local', 'lines' => array( 'The local guide fallback is active right now.' ) ) );
-    }
