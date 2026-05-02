@@ -45,6 +45,11 @@ class IncidentAlerts {
     private const OPTION_LAST_CHECK        = 'lo_last_status_check';
     private const OPTION_ALERTED_INCIDENTS = 'lousy_outages_alerted_incidents';
     private const OPTION_ALERTED_SUBJECTS  = 'lousy_outages_alerted_subjects';
+    private const OPTION_LAST_ALERT_DELIVERY_RESULT = 'lousy_outages_last_alert_delivery_result';
+    private const OPTION_LAST_ALERT_SUCCESS = 'lousy_outages_last_alert_success';
+    private const OPTION_LAST_ALERT_FAILURE = 'lousy_outages_last_alert_failure';
+    private const OPTION_LAST_SYNTHETIC_ALERT = 'lousy_outages_last_synthetic_alert';
+    private const OPTION_ALERT_DELIVERY_FAILURE = 'lousy_outages_alert_delivery_failure';
 
     private const ALERT_RETENTION_HOURS        = 48;
     private const SUBJECT_ALERT_WINDOW_HOURS   = 12;
@@ -149,16 +154,26 @@ class IncidentAlerts {
         $store->persistIncidents($incidents);
         update_option(self::OPTION_LAST_CHECK, gmdate('c'), false);
 
+        self::process_incidents($incidents, ['mode' => 'real']);
+    }
+
+    public static function process_incidents(array $incidents, array $options = []): array
+    {
+        $store           = $options['store'] ?? new IncidentStore();
+        $dryRun          = !empty($options['dry_run']);
+        $synthetic       = !empty($options['synthetic']);
+        $inboxOnly       = !empty($options['notification_only']);
         $alertedIncidents = self::get_alerted_incidents();
         $alertedSubjects  = self::get_alerted_subjects();
         $activeKeys       = [];
         $nowUtc           = current_time('timestamp', true);
         $subjectWindow    = self::SUBJECT_ALERT_WINDOW_HOURS * HOUR_IN_SECONDS;
-
+        $result = ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>0,'failed'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>[],'synthetic'=>(bool)$synthetic,'dry_run'=>(bool)$dryRun,'mode'=>(string)($options['mode'] ?? 'real')];
         foreach ($incidents as $incident) {
             if (! $incident instanceof Incident) {
                 continue;
             }
+            $result['considered']++;
 
             $incidentKey      = self::make_incident_key($incident);
             $subjectKey       = self::make_subject_key($incident);
@@ -174,10 +189,14 @@ class IncidentAlerts {
             }
 
             if (! $store->canSend($incident)) {
+                $result['skipped']++;
+                $result['skipped_reasons'][] = 'store_can_send_false';
                 continue;
             }
 
             if (! $isAlertableState) {
+                $result['skipped']++;
+                $result['skipped_reasons'][] = 'not_alertable';
                 continue;
             }
 
@@ -189,6 +208,8 @@ class IncidentAlerts {
                     'reason'        => 'stale_incident',
                     'effective_ts'  => $effectiveTs,
                 ]);
+                $result['skipped']++;
+                $result['skipped_reasons'][] = 'stale_incident';
                 continue;
             }
 
@@ -201,6 +222,8 @@ class IncidentAlerts {
                     'status'       => strtolower((string) $incident->status),
                     'impact'       => strtolower((string) ($incident->impact ?? '')),
                 ]);
+                $result['skipped']++;
+                $result['skipped_reasons'][] = 'missing_incident_key';
                 continue;
             }
 
@@ -212,6 +235,8 @@ class IncidentAlerts {
                     'reason'        => 'duplicate',
                     'effective_ts'  => $effectiveTs,
                 ]);
+                $result['skipped']++;
+                $result['skipped_reasons'][] = 'duplicate';
                 continue;
             }
 
@@ -236,12 +261,19 @@ class IncidentAlerts {
                         'last_notified' => $last,
                         'effective_ts'  => $effectiveTs,
                     ]);
+                    $result['skipped']++;
+                    $result['skipped_reasons'][] = 'subject_throttle';
                     continue;
                 }
             }
 
-            if (self::send_incident_alert_email($incident)) {
-                $store->markSent($incident);
+            $sendResult = self::send_incident_alert_email($incident, ['dry_run' => $dryRun, 'notification_only' => $inboxOnly]);
+            $result['recipients'] = array_values(array_unique(array_merge($result['recipients'], $sendResult['recipients'])));
+            if (!empty($sendResult['ok'])) {
+                if (!$dryRun) {
+                    $store->markSent($incident);
+                }
+                $markSentCalled = !$dryRun;
                 $alertedIncidents[$incidentKey] = [
                     'first_notified_at' => $nowUtc,
                     'status'            => strtolower((string) $incident->status),
@@ -265,6 +297,13 @@ class IncidentAlerts {
                     'status'        => strtolower((string) $incident->status),
                     'effective_ts'  => $effectiveTs,
                 ]);
+                $result['sent']++;
+                self::record_alert_delivery(true, $incident, $sendResult['recipients'], '', $markSentCalled, $options);
+            } else {
+                $result['failed']++;
+                $failureReason = (string) ($sendResult['error'] ?? 'send_failed');
+                $result['failures'][] = $failureReason;
+                self::record_alert_delivery(false, $incident, $sendResult['recipients'], $failureReason, false, $options);
             }
         }
 
@@ -272,6 +311,7 @@ class IncidentAlerts {
         $alertedSubjects  = self::prune_alerted_subjects($alertedSubjects, $nowUtc);
         self::set_alerted_incidents($alertedIncidents);
         self::set_alerted_subjects($alertedSubjects);
+        return $result;
     }
 
     public static function send_daily_digest(): void {
@@ -1339,15 +1379,39 @@ class IncidentAlerts {
         return (string) $tokens[$normalized];
     }
 
-    private static function send_incident_alert_email(Incident $incident): bool {
+    public static function make_synthetic_incident(array $overrides = []): Incident
+    {
+        $now = time();
+        $id = isset($overrides['id']) ? (string) $overrides['id'] : ('synthetic-' . wp_generate_uuid4());
+        return new Incident(
+            (string) ($overrides['provider'] ?? 'Lousy Outages QA'),
+            $id,
+            (string) ($overrides['title'] ?? 'Synthetic outage alert test'),
+            (string) ($overrides['status'] ?? 'major_outage'),
+            (string) ($overrides['url'] ?? home_url('/lousy-outages/')),
+            $overrides['component'] ?? null,
+            (string) ($overrides['impact'] ?? 'critical'),
+            (int) ($overrides['detected_at'] ?? $now),
+            $overrides['resolved_at'] ?? null
+        );
+    }
+
+    private static function send_incident_alert_email(Incident $incident, array $options = []): array {
         $subscribers = self::get_subscribers();
         $notificationEmail = sanitize_email((string) get_option('lousy_outages_email', get_option('admin_email')));
+        $notificationOnly = !empty($options['notification_only']);
+        if ($notificationOnly) {
+            $subscribers = [];
+        }
         if ($notificationEmail && is_email($notificationEmail)) {
             $subscribers[] = $notificationEmail;
         }
         $subscribers = array_values(array_unique(array_filter(array_map('sanitize_email', $subscribers))));
         if (empty($subscribers)) {
-            return false;
+            return ['ok'=>false,'recipients'=>[],'error'=>'no_recipients'];
+        }
+        if (!empty($options['dry_run'])) {
+            return ['ok'=>true,'recipients'=>$subscribers,'error'=>''];
         }
 
         $provider      = $incident->provider;
@@ -1387,18 +1451,37 @@ class IncidentAlerts {
 
             if (! $sent) {
                 self::log_error($provider, 'mail send failed for ' . $email);
-                return false;
+                return ['ok'=>false,'recipients'=>$subscribers,'error'=>'mail send failed for ' . $email];
             }
         }
 
-        return true;
+        return ['ok'=>true,'recipients'=>$subscribers,'error'=>''];
     }
 
     /**
      * Backwards compatible alias for sending realtime incident alerts.
      */
     private static function email_incident(Incident $incident): bool {
-        return self::send_incident_alert_email($incident);
+        $result = self::send_incident_alert_email($incident);
+        return !empty($result['ok']);
+    }
+
+    private static function record_alert_delivery(bool $ok, Incident $incident, array $recipients, string $reason, bool $markSentCalled, array $options = []): void
+    {
+        $payload = ['timestamp'=>gmdate('c'),'recipient_count'=>count($recipients),'recipients'=>$recipients,'provider'=>$incident->provider,'incident_id'=>$incident->id,'title'=>$incident->title,'status'=>$incident->status,'mark_sent_called'=>$markSentCalled,'synthetic'=>!empty($options['synthetic']),'mode'=>(string)($options['mode'] ?? 'real'),'reason'=>$reason];
+        update_option(self::OPTION_LAST_ALERT_DELIVERY_RESULT, $payload, false);
+        if ($ok) {
+            update_option(self::OPTION_LAST_ALERT_SUCCESS, $payload, false);
+            if (!empty($options['synthetic'])) {
+                update_option(self::OPTION_LAST_SYNTHETIC_ALERT, $payload, false);
+            }
+        } else {
+            update_option(self::OPTION_LAST_ALERT_FAILURE, $payload, false);
+            update_option(self::OPTION_ALERT_DELIVERY_FAILURE, $payload, false);
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[lousy_outages] alert_delivery_failure ' . wp_json_encode($payload));
+            }
+        }
     }
 
     /**
