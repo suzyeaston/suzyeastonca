@@ -956,7 +956,15 @@ function lousy_outages_settings_page() {
         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 1rem;">
             <?php wp_nonce_field( 'lousy_outages_test_email' ); ?>
             <input type="hidden" name="action" value="lousy_outages_test_email">
-            <?php submit_button( 'Send Test Email', 'secondary' ); ?>
+            <?php submit_button( 'Send Legacy Test Email', 'secondary' ); ?>
+        </form>
+        <p class="description">Legacy test checks the older basic mail path only.</p>
+
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5rem;">
+            <?php wp_nonce_field( 'lousy_outages_synthetic_alert' ); ?>
+            <input type="hidden" name="action" value="lousy_outages_synthetic_alert">
+            <label><input type="checkbox" name="notification_only" value="1" checked> Test configured notification inbox only</label>
+            <?php submit_button( 'Send Synthetic Incident Alert', 'secondary', 'submit', false ); ?>
         </form>
 
         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5rem;">
@@ -969,6 +977,11 @@ function lousy_outages_settings_page() {
 
         <h2>Debug panel</h2>
         <p><strong>Last poll:</strong> <?php echo esc_html( $last_poll_text ); ?></p>
+        <p><strong>Legacy test email:</strong> <?php echo esc_html( $last_email_text ); ?></p>
+        <p><strong>Modern alert delivery:</strong> <?php echo esc_html( wp_json_encode( get_option( 'lousy_outages_last_alert_delivery_result', [] ) ) ); ?></p>
+        <p><strong>Modern synthetic alert:</strong> <?php echo esc_html( wp_json_encode( get_option( 'lousy_outages_last_synthetic_alert', [] ) ) ); ?></p>
+        <p><strong>Modern real alert success:</strong> <?php echo esc_html( wp_json_encode( get_option( 'lousy_outages_last_alert_success', [] ) ) ); ?></p>
+        <p><strong>Modern real alert failure:</strong> <?php echo esc_html( wp_json_encode( get_option( 'lousy_outages_last_alert_failure', [] ) ) ); ?></p>
         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-bottom: 1rem;">
             <?php wp_nonce_field( 'lousy_outages_poll_now' ); ?>
             <input type="hidden" name="action" value="lousy_outages_poll_now">
@@ -1067,6 +1080,34 @@ add_action( 'admin_post_lousy_outages_test_sms', function () {
 
     $redirect = add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) );
     wp_safe_redirect( $redirect );
+    exit;
+} );
+
+add_action( 'admin_post_lousy_outages_synthetic_alert', function () {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lousy-outages' ) );
+    }
+    check_admin_referer( 'lousy_outages_synthetic_alert' );
+    $notification_only = ! empty( $_POST['notification_only'] );
+    $incident = IncidentAlerts::make_synthetic_incident();
+    $result = IncidentAlerts::process_incidents(
+        [ $incident ],
+        [
+            'synthetic'         => true,
+            'mode'              => 'admin_synthetic',
+            'notification_only' => $notification_only,
+        ]
+    );
+    $ok = (int) ( $result['sent'] ?? 0 ) > 0 && (int) ( $result['failed'] ?? 0 ) === 0;
+    $message = $ok
+        ? sprintf( 'Synthetic incident alert sent to %s at %s.', implode( ', ', (array) ( $result['recipients'] ?? [] ) ), gmdate( 'c' ) )
+        : sprintf( 'Synthetic incident alert failed. Reason: %s. Check Debug panel and logs.', implode( '; ', (array) ( $result['failures'] ?? [] ) ) );
+    set_transient(
+        'lousy_outages_notice',
+        [ 'message' => $message, 'type' => $ok ? 'success' : 'error' ],
+        30
+    );
+    wp_safe_redirect( add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) ) );
     exit;
 } );
 

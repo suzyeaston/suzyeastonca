@@ -33,9 +33,30 @@ To add or remove a provider, edit `includes/Providers.php` or use the checkboxes
 1. (Optional) Sign up for Twilio and obtain your **Account SID**, **Auth Token**, and a verified **From** number to enable SMS alerts.
 2. In wp-admin go to **Settings → Lousy Outages** and enter the SID, token, from number, your destination phone number, and a notification email address.
 3. Choose which providers to monitor and set the polling interval (default 5 minutes).
-4. Click **Send Test Email** to verify delivery; the panel shows the status and the latest subject/recipient recorded.
+4. Click **Send Legacy Test Email** to verify the older basic email path.
+5. Click **Send Synthetic Incident Alert** to verify the modern realtime IncidentAlerts path end-to-end.
+6. Keep **Test configured notification inbox only** enabled by default to avoid notifying public subscribers during QA.
 
 Use the **Poll Now** button in the debug panel to run an immediate poll. The panel also shows the last poll timestamp, each provider’s most recent status, and any fetch errors captured during the run.
+
+## QA and alert health
+
+- Legacy mail test (old path): use **Send Legacy Test Email**.
+- Modern realtime test: use **Send Synthetic Incident Alert**.
+- WP-CLI synthetic test:
+  - `wp lousy:alert-test`
+  - `wp lousy:alert-test --recipient=me@example.com`
+  - `wp lousy:alert-test --dry-run=true`
+  - `wp lousy:alert-test --fixed-id=demo-incident-001`
+- WP-CLI health snapshot:
+  - `wp lousy:alert-health`
+- If delivery fails, inspect:
+  - `lousy_outages_last_alert_delivery_result`
+  - `lousy_outages_last_alert_failure`
+  - `lousy_outages_alert_delivery_failure`
+  - wp-admin Debug panel
+  - `WP_DEBUG` / `error_log`
+  - `lo-mail.log` (if enabled in your environment)
 
 ## Shortcode
 

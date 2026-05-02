@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages\CLI;
 
 use SuzyEaston\LousyOutages\Fetcher;
+use SuzyEaston\LousyOutages\IncidentAlerts;
 use SuzyEaston\LousyOutages\Providers;
 use WP_CLI;
 use function WP_CLI\Utils\format_items;
@@ -107,3 +108,44 @@ class RefreshCommand {
 }
 
 WP_CLI::add_command( 'lousy:refresh', RefreshCommand::class );
+
+class AlertTestCommand {
+    public function __invoke( array $args, array $assoc_args ): void {
+        $recipient = isset( $assoc_args['recipient'] ) ? sanitize_email( (string) $assoc_args['recipient'] ) : '';
+        $dry_run   = isset( $assoc_args['dry-run'] ) && in_array( strtolower( (string) $assoc_args['dry-run'] ), [ '1', 'true', 'yes' ], true );
+        $fixed_id  = isset( $assoc_args['fixed-id'] ) ? (string) $assoc_args['fixed-id'] : '';
+        $overrides = [];
+        if ( '' !== $fixed_id ) {
+            $overrides['id'] = $fixed_id;
+        }
+        if ( '' !== $recipient ) {
+            update_option( 'lousy_outages_email', $recipient, false );
+        }
+        $incident = IncidentAlerts::make_synthetic_incident( $overrides );
+        $result = IncidentAlerts::process_incidents( [ $incident ], [ 'synthetic' => true, 'mode' => 'cli_alert_test', 'notification_only' => true, 'dry_run' => $dry_run ] );
+        WP_CLI::line( wp_json_encode( $result ) ?: '{}' );
+        if ( (int) ( $result['failed'] ?? 0 ) > 0 ) {
+            WP_CLI::warning( 'Synthetic alert test had failures.' );
+        } else {
+            WP_CLI::success( 'Synthetic alert test completed.' );
+        }
+    }
+}
+WP_CLI::add_command( 'lousy:alert-test', AlertTestCommand::class );
+
+class AlertHealthCommand {
+    public function __invoke( array $args, array $assoc_args ): void {
+        $subscribers = get_option( 'lo_subscribers', [] );
+        $rows = [
+            [ 'key' => 'configured_notification_email', 'value' => (string) get_option( 'lousy_outages_email', get_option( 'admin_email' ) ) ],
+            [ 'key' => 'subscriber_count', 'value' => is_array( $subscribers ) ? (string) count( $subscribers ) : '0' ],
+            [ 'key' => 'last_modern_success', 'value' => wp_json_encode( get_option( 'lousy_outages_last_alert_success', [] ) ) ?: '{}' ],
+            [ 'key' => 'last_modern_failure', 'value' => wp_json_encode( get_option( 'lousy_outages_last_alert_failure', [] ) ) ?: '{}' ],
+            [ 'key' => 'last_synthetic_test', 'value' => wp_json_encode( get_option( 'lousy_outages_last_synthetic_alert', [] ) ) ?: '{}' ],
+            [ 'key' => 'cron_lo_check_statuses_scheduled', 'value' => wp_next_scheduled( 'lo_check_statuses' ) ? 'yes' : 'no' ],
+            [ 'key' => 'recent_failure_exists', 'value' => get_option( 'lousy_outages_alert_delivery_failure' ) ? 'yes' : 'no' ],
+        ];
+        format_items( 'table', $rows, [ 'key', 'value' ] );
+    }
+}
+WP_CLI::add_command( 'lousy:alert-health', AlertHealthCommand::class );
