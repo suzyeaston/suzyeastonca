@@ -21,6 +21,20 @@ class IncidentStore
      */
     public function shouldSend(Incident $incident): bool
     {
+        if (! $this->canSend($incident)) {
+            return false;
+        }
+
+        $this->markSent($incident);
+
+        return true;
+    }
+
+    /**
+     * Determine whether an alert email should fire for the incident without mutating send markers.
+     */
+    public function canSend(Incident $incident): bool
+    {
         $providerKey = $this->providerKey($incident);
         $guid        = $this->incidentGuid($incident);
         $status      = $this->normalizeStatus($incident->status);
@@ -56,11 +70,22 @@ class IncidentStore
             return false;
         }
 
+        return true;
+    }
+
+    /**
+     * Persist last-send markers for an incident after successful delivery.
+     */
+    public function markSent(Incident $incident): void
+    {
+        $providerKey = $this->providerKey($incident);
+        $guid        = $this->incidentGuid($incident);
+        $status      = $this->normalizeStatus($incident->status);
+        $now         = time();
+
         update_option($this->lastGuidOption($providerKey), $guid, false);
         update_option($this->lastAlertOption($providerKey), $now, false);
         update_option($this->lastStatusOption($providerKey), $status, false);
-
-        return true;
     }
 
     /**

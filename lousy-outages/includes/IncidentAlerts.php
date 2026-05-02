@@ -173,7 +173,7 @@ class IncidentAlerts {
                 continue;
             }
 
-            if (! $store->shouldSend($incident)) {
+            if (! $store->canSend($incident)) {
                 continue;
             }
 
@@ -241,6 +241,7 @@ class IncidentAlerts {
             }
 
             if (self::send_incident_alert_email($incident)) {
+                $store->markSent($incident);
                 $alertedIncidents[$incidentKey] = [
                     'first_notified_at' => $nowUtc,
                     'status'            => strtolower((string) $incident->status),
@@ -1340,6 +1341,11 @@ class IncidentAlerts {
 
     private static function send_incident_alert_email(Incident $incident): bool {
         $subscribers = self::get_subscribers();
+        $notificationEmail = sanitize_email((string) get_option('lousy_outages_email', get_option('admin_email')));
+        if ($notificationEmail && is_email($notificationEmail)) {
+            $subscribers[] = $notificationEmail;
+        }
+        $subscribers = array_values(array_unique(array_filter(array_map('sanitize_email', $subscribers))));
         if (empty($subscribers)) {
             return false;
         }
@@ -1689,4 +1695,3 @@ class IncidentAlerts {
 }
 
 add_action('lo_check_statuses', [IncidentAlerts::class, 'run']);
-
