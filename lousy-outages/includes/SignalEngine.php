@@ -61,4 +61,32 @@ class SignalEngine {
         usort($signals, static fn($a,$b)=>($b['report_count']<=>$a['report_count']));
         return $signals;
     }
+
+    public static function summarize_fused_signals(int $windowMinutes = 60): array {
+        $community = self::summarize_recent_signals($windowMinutes);
+        $external = class_exists('\SuzyEaston\LousyOutages\ExternalSignals') ? ExternalSignals::get_recent_signals(['windowMinutes'=>$windowMinutes,'limit'=>200]) : [];
+        $buckets = [];
+        foreach ($community as $row) {
+            $key = ($row['provider_id'] ?? '') . '|' . ($row['category'] ?? '') . '|' . ($row['region'] ?? '');
+            $buckets[$key] = ['provider_id'=>(string)$row['provider_id'],'provider_name'=>(string)$row['provider_name'],'category'=>(string)($row['category']??'community'),'region'=>(string)($row['region']??''),'report_count'=>(int)$row['report_count'],'external_signal_count'=>0,'synthetic_failure_count'=>0,'sources'=>['community_reports'],'official_status_known'=>false,'confirmed'=>false,'last_observed_at'=>(string)($row['last_reported_at']??''),'base_confidence'=> self::class_confidence((string)$row['classification']) ];
+        }
+        foreach ($external as $row) {
+            $key = ($row['provider_id'] ?? '') . '|' . ($row['category'] ?? '') . '|' . ($row['region'] ?? '');
+            if (!isset($buckets[$key])) { $buckets[$key]=['provider_id'=>(string)($row['provider_id']??''),'provider_name'=>(string)($row['provider_name']??'Unknown'),'category'=>(string)($row['category']??''),'region'=>(string)($row['region']??''),'report_count'=>0,'external_signal_count'=>0,'synthetic_failure_count'=>0,'sources'=>[],'official_status_known'=>false,'confirmed'=>false,'last_observed_at'=>(string)($row['observed_at']??''),'base_confidence'=>0]; }
+            $buckets[$key]['external_signal_count']++;
+            $src=(string)($row['source']??'external'); if(!in_array($src,$buckets[$key]['sources'],true)) $buckets[$key]['sources'][]=$src;
+            if (($row['source']??'')==='synthetic_canary') $buckets[$key]['synthetic_failure_count']++;
+            $buckets[$key]['base_confidence'] = max((int)$buckets[$key]['base_confidence'], (int)($row['confidence'] ?? 0));
+            if ((string)($row['observed_at']??'') > (string)$buckets[$key]['last_observed_at']) $buckets[$key]['last_observed_at']=(string)$row['observed_at'];
+        }
+        $signals=[];
+        foreach($buckets as $b){ $conf=(int)$b['base_confidence']; if(count($b['sources'])>=2) $conf += 15; if(!$b['confirmed']) $conf=min($conf,95); $class=$conf>=70?'hot':($conf>=45?'trending':($conf>=25?'watch':'quiet')); $msg='Community reports are trending for this provider. Official incident not confirmed.'; if($b['report_count']>0 && $b['external_signal_count']>0){$msg='External internet-health signals and community reports both suggest a possible issue.';} elseif($b['external_signal_count']>0 && $b['synthetic_failure_count']===0 && $b['report_count']===0){$msg='External internet-health telemetry suggests a possible issue. Official incident not confirmed.';} elseif($b['synthetic_failure_count']>0 && $b['report_count']===0){$msg='A lightweight public canary check failed. This is an unconfirmed signal.';}
+            $signals[]=$b + ['confidence'=>$conf,'classification'=>$class,'message'=>$msg,'id'=>md5($b['provider_id'].'|'.$b['category'].'|'.$b['region'])];
+        }
+        usort($signals, static fn($a,$b)=>($b['confidence']<=>$a['confidence']));
+        return $signals;
+    }
+
+    private static function class_confidence(string $class): int { if($class==='watch') return 20; if($class==='trending') return 45; if($class==='hot') return 65; return 0; }
+
 }

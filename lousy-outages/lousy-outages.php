@@ -52,6 +52,11 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Email/Composer.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Sources/Sources.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Sources/index.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Cron/Refresh.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Sources/SyntheticCanarySource.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/Sources/CloudflareRadarSource.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/SignalCollector.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/ExternalSignals.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/SignalSourceInterface.php';
 require_once LOUSY_OUTAGES_PATH . 'public/shortcode.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -72,6 +77,8 @@ use SuzyEaston\LousyOutages\Api;
 use SuzyEaston\LousyOutages\Feeds;
 use SuzyEaston\LousyOutages\MailTransport;
 use SuzyEaston\LousyOutages\IncidentAlerts;
+use SuzyEaston\LousyOutages\ExternalSignals;
+use SuzyEaston\LousyOutages\SignalCollector;
 use SuzyEaston\LousyOutages\Cron\Refresh as RefreshCron;
 
 Api::bootstrap();
@@ -109,12 +116,18 @@ function lousy_outages_activate() {
     if ( ! wp_next_scheduled( 'lo_check_statuses' ) ) {
         wp_schedule_event( time() + 60, 'lo_five_minutes', 'lo_check_statuses' );
     }
+    if ( ! wp_next_scheduled( 'lousy_outages_collect_external_signals' ) ) {
+        $schedule = wp_get_schedules();
+        $key = isset($schedule['lousy_outages_15min']) ? 'lousy_outages_15min' : 'hourly';
+        wp_schedule_event( time() + 120, $key, 'lousy_outages_collect_external_signals' );
+    }
     if ( function_exists( 'lo_cron_activate' ) ) {
         lo_cron_activate();
     }
     lousy_outages_create_page();
     Subscriptions::create_table();
     UserReports::install();
+    ExternalSignals::install();
     Subscriptions::schedule_purge();
     $default_email = 'suzyeaston@gmail.com';
     $stored_email  = get_option( 'lousy_outages_email' );
@@ -134,6 +147,7 @@ function lousy_outages_deactivate() {
     wp_clear_scheduled_hook( 'lousy_outages_poll' );
     wp_clear_scheduled_hook( 'lousy_outages_cron_refresh' );
     wp_clear_scheduled_hook( 'lo_check_statuses' );
+    wp_clear_scheduled_hook( 'lousy_outages_collect_external_signals' );
     Subscriptions::clear_schedule();
     if ( function_exists( 'lo_cron_deactivate' ) ) {
         lo_cron_deactivate();
@@ -1032,6 +1046,14 @@ function lousy_outages_settings_page() {
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;">
             <?php wp_nonce_field('lousy_outages_clear_demo_reports'); ?><input type="hidden" name="action" value="lousy_outages_clear_demo_reports"><?php submit_button('Clear Demo Community Reports', 'delete', 'submit', false); ?>
         </form>
+        <?php $external = ExternalSignals::get_recent_signals(['windowMinutes'=>60,'limit'=>8]); $fused = SignalEngine::summarize_fused_signals(60); $collector = SignalCollector::get_last_collection_result(); ?>
+        <h2>External Signal Diagnostics</h2>
+        <p><strong>Last external collection:</strong> <?php echo esc_html((string)($collector['finished_at'] ?? 'Never')); ?></p>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-right:8px;"><?php wp_nonce_field('lousy_outages_collect_signals_now'); ?><input type="hidden" name="action" value="lousy_outages_collect_signals_now"><?php submit_button('Collect External Signals Now','secondary','submit',false); ?></form>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-right:8px;"><?php wp_nonce_field('lousy_outages_seed_demo_external_signals'); ?><input type="hidden" name="action" value="lousy_outages_seed_demo_external_signals"><?php submit_button('Seed Demo External Signals','secondary','submit',false); ?></form>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;"><?php wp_nonce_field('lousy_outages_clear_demo_external_signals'); ?><input type="hidden" name="action" value="lousy_outages_clear_demo_external_signals"><?php submit_button('Clear Demo External Signals','delete','submit',false); ?></form>
+        <h3>Fused signals (community + external signals)</h3><ul><?php foreach (array_slice((array)$fused,0,8) as $row) : ?><li><?php echo esc_html((string)($row['provider_name'] ?? $row['provider_id'])); ?> — <?php echo esc_html((string)($row['classification'] ?? 'quiet')); ?> (<?php echo esc_html((string)($row['confidence'] ?? 0)); ?>) — <?php echo esc_html((string)($row['message'] ?? '')); ?></li><?php endforeach; ?></ul>
+        <h3>Recent external signals</h3><ul><?php foreach((array)$external as $row) : ?><li><?php echo esc_html((string)($row['observed_at'] ?? '')); ?> · <?php echo esc_html((string)($row['source'] ?? '')); ?> · <?php echo esc_html((string)($row['provider_name'] ?? $row['provider_id'] ?? '')); ?> · <?php echo esc_html((string)($row['signal_type'] ?? '')); ?> · <?php echo esc_html((string)($row['title'] ?? '')); ?></li><?php endforeach; ?></ul>
         <h3>Top providers by report count</h3>
         <ul><?php foreach ((array)($diag['provider_counts'] ?? []) as $row) : ?><li><?php echo esc_html((string)($row['provider_id'] ?? 'unknown')); ?>: <?php echo esc_html((string)($row['report_count'] ?? 0)); ?></li><?php endforeach; ?></ul>
     </div>
@@ -1387,3 +1409,9 @@ add_action( 'rest_api_init', function () {
         },
     ] );
 } );
+
+add_action( 'lousy_outages_collect_external_signals', static function () { SignalCollector::collect(); } );
+
+add_action( 'admin_post_lousy_outages_collect_signals_now', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_collect_signals_now'); $r=SignalCollector::collect(); set_transient('lousy_outages_notice',['message'=>sprintf('External signal collection finished. Stored %d signals.',(int)($r['total_stored']??0)),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages',admin_url('options-general.php'))); exit; } );
+add_action( 'admin_post_lousy_outages_seed_demo_external_signals', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_seed_demo_external_signals'); $r=ExternalSignals::seed_demo_signals(); set_transient('lousy_outages_notice',['message'=>sprintf('Seeded %d demo external signals.',(int)($r['inserted']??0)),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages',admin_url('options-general.php'))); exit; } );
+add_action( 'admin_post_lousy_outages_clear_demo_external_signals', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_clear_demo_external_signals'); $c=ExternalSignals::clear_demo_signals(); set_transient('lousy_outages_notice',['message'=>sprintf('Cleared %d demo external signals.',(int)$c),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages',admin_url('options-general.php'))); exit; } );
