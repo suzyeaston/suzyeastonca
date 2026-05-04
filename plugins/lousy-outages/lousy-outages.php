@@ -1,12 +1,11 @@
 <?php
 declare( strict_types=1 );
 /**
- * Legacy theme-bundled loader shim for Lousy Outages. Remove after standalone plugin is fully verified.
- *
  * Plugin Name: Lousy Outages
- * Description: Aggregates service status and sends SMS/email alerts on incidents.
- * Version: 0.1.0
+ * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
+ * Version: 0.2.0
  * Author: Suzy Easton
+ * Text Domain: lousy-outages
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
