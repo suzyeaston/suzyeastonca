@@ -89,9 +89,9 @@ get_header();
     </section>
 
     <section class="collab-invite-home crt-block" aria-labelledby="work-pain-title">
-        <h2 id="work-pain-title" class="pixel-font"><?php echo esc_html('What I’m good at'); ?></h2>
-        <p><?php echo esc_html('I’m useful when a problem crosses support, QA, operations, and development. I can investigate what is going wrong, write tests, automate repetitive work, clean up handoffs, and turn a rough idea into a working demo.'); ?></p>
-        <p><?php echo esc_html('I’m open to QA automation, IT/cloud operations, WordPress/plugin work, AI-assisted prototyping, and practical automation projects.'); ?></p>
+        <h2 id="work-pain-title" class="pixel-font"><?php echo esc_html('The stuff I’m useful for'); ?></h2>
+        <p><?php echo esc_html('I’m good at taking a confusing technical problem and making it smaller. That might mean tracing an alert, testing a workflow, writing automation, cleaning up a handoff, or turning a rough idea into a demo people can actually try.'); ?></p>
+        <p><?php echo esc_html('I’m open to QA automation, IT and cloud operations, WordPress plugin work, AI-assisted prototyping, and practical automation projects.'); ?></p>
         <div class="home-cta-row collab-invite-home__actions">
             <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button"><?php echo esc_html('Work with me'); ?></a>
             <a href="<?php echo esc_url(home_url('/contact/')); ?>" class="pixel-button"><?php echo esc_html('Contact'); ?></a>
