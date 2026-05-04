@@ -48,6 +48,7 @@ function locate_assets_base(): array
 
 add_shortcode('lousy_outages', __NAMESPACE__ . '\render_shortcode');
 add_shortcode('lousy_outages_subscribe', __NAMESPACE__ . '\render_subscribe_shortcode');
+add_shortcode('lousy_outages_report', __NAMESPACE__ . '\render_report_shortcode');
 
 function render_shortcode(): string {
     [$base_path, $base_url] = locate_assets_base();
@@ -871,9 +872,6 @@ function render_subscribe_shortcode(): string {
     if (empty($providers)) {
         $providers = Providers::list();
     }
-    $report_endpoint = esc_url_raw(rest_url('lousy-outages/v1/report'));
-    $signals_endpoint = esc_url_raw(rest_url('lousy-outages/v1/signals'));
-    $signals = class_exists('\\SuzyEaston\\LousyOutages\\SignalEngine') ? SignalEngine::summarize_recent_signals(60) : [];
 
     ob_start();
     ?>
@@ -944,41 +942,76 @@ function render_subscribe_shortcode(): string {
         </form>
         <p class="lo-subscribe__help">Watch for the confirmation email (check spam if it’s missing). Every briefing ships with a one-click unsubscribe link, and we rotate a Steve Jobs quote to stop spam bots.</p>
     </div>
+    <?php
+    return (string) ob_get_clean();
+}
+
+
+function render_report_shortcode(): string {
+    [$base_path, $base_url] = locate_assets_base();
+
+    wp_enqueue_style(
+        'lousy-outages',
+        $base_url . 'lousy-outages.css',
+        [],
+        file_exists($base_path . 'lousy-outages.css') ? filemtime($base_path . 'lousy-outages.css') : null
+    );
+
+    wp_enqueue_script(
+        'lousy-outages',
+        $base_url . 'lousy-outages.js',
+        [],
+        file_exists($base_path . 'lousy-outages.js') ? filemtime($base_path . 'lousy-outages.js') : null,
+        true
+    );
+
+    $providers = Providers::enabled();
+    if (empty($providers)) {
+        $providers = Providers::list();
+    }
+
+    $report_endpoint = rest_url('lousy-outages/v1/report');
+    $signals_endpoint = rest_url('lousy-outages/v1/signals');
+    $signals = class_exists('\\SuzyEaston\\LousyOutages\\SignalEngine') ? SignalEngine::summarize_recent_signals(60) : [];
+
+    ob_start();
+    ?>
     <section class="lo-report" data-lo-report>
         <h3>Seeing an issue?</h3>
         <p>Report what you’re seeing. We’ll treat it as an unconfirmed community signal unless the provider confirms it.</p>
         <form class="lo-report__form" method="post" action="<?php echo esc_url($report_endpoint); ?>" data-lo-report-form>
             <label class="lo-report__field">Provider
                 <select name="provider_id" data-lo-report-provider required>
+                    <option value="">Select a provider…</option>
                     <?php foreach ($providers as $provider) : $provider_id = sanitize_key((string) ($provider['id'] ?? '')); if (!$provider_id) continue; ?>
-                    <option value="<?php echo esc_attr($provider_id); ?>"><?php echo esc_html((string)($provider['name'] ?? $provider_id)); ?></option>
+                    <option value="<?php echo esc_attr($provider_id); ?>"><?php echo esc_html((string) ($provider['name'] ?? $provider_id)); ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>
             <label class="lo-report__field">Symptom
-                <select name="symptom" data-lo-report-summary><option value="login">Login</option><option value="checkout">Checkout</option><option value="payments">Payments</option><option value="api">API</option><option value="dashboard">Dashboard</option><option value="dns">DNS</option><option value="email">Email</option><option value="slow">Slow</option><option value="full_outage">Full outage</option><option value="other">Other</option></select>
+                <select name="symptom" data-lo-report-summary required><option value="login">Login</option><option value="checkout">Checkout</option><option value="payments">Payments</option><option value="api">API</option><option value="dashboard">Dashboard</option><option value="dns">DNS</option><option value="email">Email</option><option value="slow">Slow</option><option value="full_outage">Full outage</option><option value="other">Other</option></select>
             </label>
             <label class="lo-report__field">Severity
                 <select name="severity"><option value="unknown">Unknown</option><option value="minor">Minor</option><option value="degraded">Degraded</option><option value="major">Major</option></select>
             </label>
             <label class="lo-report__field">Region <input type="text" name="region" maxlength="80" placeholder="Canada / BC / Vancouver"></label>
             <label class="lo-report__field">Details (optional)<textarea name="details" maxlength="500"></textarea></label>
-            <label class="lo-report__field">Email optional. Used only to help reduce duplicate reports for this demo.<input type="email" name="email" data-lo-report-contact></label>
+            <label class="lo-report__field">Email (optional)<input type="email" name="email" data-lo-report-contact></label>
             <button type="submit" class="lo-subscribe__button" data-lo-report-submit>Report issue</button>
             <p class="lo-report__status" data-lo-report-status aria-live="polite"></p>
         </form>
         <div class="lo-signals" data-lo-signals data-lo-signals-endpoint="<?php echo esc_url($signals_endpoint); ?>">
             <h4>Community signals</h4>
             <div data-lo-signals-list>
-            <?php foreach (array_slice($signals, 0, 5) as $signal) : $class = (string)($signal['classification'] ?? 'quiet'); if ($class === 'quiet') { continue; } ?>
+            <?php foreach (array_slice($signals, 0, 5) as $signal) : $class = strtolower((string) ($signal['classification'] ?? 'quiet')); if (!in_array($class, ['watch','trending','hot'], true)) { continue; } ?>
                 <div class="lo-signal lo-signal--<?php echo esc_attr($class); ?>">
                     <span class="lo-signal__badge"><?php echo esc_html(ucfirst($class)); ?></span>
-                    <strong><?php echo esc_html((string)($signal['provider_name'] ?? $signal['provider_id'] ?? 'Provider')); ?></strong>
-                    <span><?php echo esc_html((string)($signal['message'] ?? 'Unconfirmed community signal.')); ?></span>
+                    <strong><?php echo esc_html((string) ($signal['provider_name'] ?? $signal['provider_id'] ?? 'Provider')); ?></strong>
+                    <span><?php echo esc_html((string) ($signal['message'] ?? 'Unconfirmed community signal.')); ?></span>
                 </div>
             <?php endforeach; ?>
             </div>
-            <p data-lo-signals-empty<?php echo !empty($signals) ? " hidden" : ""; ?>>No unusual community reports.</p>
+            <p data-lo-signals-empty<?php echo !empty($signals) ? ' hidden' : ''; ?>>No unusual community reports.</p>
         </div>
     </section>
     <?php

@@ -3162,270 +3162,110 @@
     });
   }
 
-  function setReportStatus(message, tone) {
-    if (!state.reportStatus) {
+  function setReportStatus(reportState, message, tone) {
+    if (!reportState || !reportState.status) {
       return;
     }
-    state.reportStatus.textContent = message || '';
-    state.reportStatus.classList.remove('lo-report__status--success', 'lo-report__status--error');
+    reportState.status.textContent = message || '';
+    reportState.status.classList.remove('lo-report__status--success', 'lo-report__status--error');
     if ('success' === tone) {
-      state.reportStatus.classList.add('lo-report__status--success');
+      reportState.status.classList.add('lo-report__status--success');
     } else if ('error' === tone) {
-      state.reportStatus.classList.add('lo-report__status--error');
+      reportState.status.classList.add('lo-report__status--error');
     }
-  }
-
-  function setReportProviderOtherVisibility(providerId) {
-    if (!state.reportProviderNameWrap || !state.reportProviderName) {
-      return;
-    }
-    var isOther = providerId === 'other';
-    if (isOther) {
-      state.reportProviderNameWrap.removeAttribute('hidden');
-      state.reportProviderName.setAttribute('required', 'required');
-    } else {
-      state.reportProviderNameWrap.setAttribute('hidden', 'hidden');
-      state.reportProviderName.removeAttribute('required');
-      state.reportProviderName.value = '';
-    }
-  }
-
-  function normalizeReportCaptcha(value) {
-    var text = String(value || '').toLowerCase();
-    text = text.replace(/[^a-z0-9\s]+/gi, '');
-    text = text.replace(/\s+/g, ' ').trim();
-    return text;
-  }
-
-  function requestReportPhrase() {
-    if (!state.fetchImpl || !state.reportPhraseEndpoint || !state.reportCaptchaPhrase || !state.reportCaptchaToken) {
-      return;
-    }
-    state.reportCaptchaPhrase.textContent = 'Loading phrase…';
-    state.reportCaptchaTokenValue = '';
-
-    var url = state.reportPhraseEndpoint;
-    var separator = url.indexOf('?') === -1 ? '?' : '&';
-    url += separator + 'action=lo_get_report_phrase';
-
-    state.fetchImpl(url, { method: 'GET', credentials: 'same-origin' })
-      .then(function (res) {
-        if (!res) {
-          throw new Error('No response');
-        }
-        if (!res.ok) {
-          throw new Error('HTTP ' + res.status);
-        }
-        return res.json();
-      })
-      .then(function (data) {
-        if (!data || !data.phrase || !data.token) {
-          throw new Error('Invalid phrase payload');
-        }
-        state.reportCaptchaPhrase.textContent = data.phrase;
-        state.reportCaptchaTokenValue = data.token;
-        state.reportCaptchaToken.value = data.token;
-      })
-      .catch(function () {
-        state.reportCaptchaPhrase.textContent = 'Unable to load phrase.';
-        state.reportCaptchaToken.value = '';
-      });
-  }
-
-  function populateReportProviders(providers) {
-    var select = state.reportProvider;
-    if (!select || !state.doc) {
-      return;
-    }
-
-    var current = select.value;
-    select.innerHTML = '';
-
-    if (!Array.isArray(providers) || !providers.length) {
-      var unavailable = state.doc.createElement('option');
-      unavailable.value = '';
-      unavailable.textContent = 'Provider list unavailable';
-      unavailable.disabled = true;
-      unavailable.selected = true;
-      select.appendChild(unavailable);
-      state.reportProvidersInitialized = true;
-      return;
-    }
-
-    var placeholder = state.doc.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Select a provider…';
-    select.appendChild(placeholder);
-
-    var otherOption = state.doc.createElement('option');
-    otherOption.value = 'other';
-    otherOption.textContent = 'Other (not listed)';
-    select.appendChild(otherOption);
-
-    providers.forEach(function (provider) {
-      if (!provider) {
-        return;
-      }
-      var slug = String(provider.provider || provider.id || '').trim().toLowerCase();
-      var label = provider.name || provider.label || (slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : 'Provider');
-      if (!slug) {
-        return;
-      }
-      var option = state.doc.createElement('option');
-      option.value = slug;
-      option.textContent = label;
-      select.appendChild(option);
-    });
-
-    if (current && select.querySelector('option[value="' + escapeSelector(current) + '"]')) {
-      select.value = current;
-    }
-
-    setReportProviderOtherVisibility(select.value);
-    state.reportProvidersInitialized = true;
   }
 
   function handleReportSubmit(event) {
-    if (event && typeof event.preventDefault === 'function') {
-      event.preventDefault();
-    }
-
-    if (!state.fetchImpl || !state.reportProvider || !state.reportSummary || !state.reportSubmit) {
-      return;
-    }
-
-    var providerId = String(state.reportProvider.value || '').trim();
-    var summary = String(state.reportSummary.value || '').trim();
-    var contact = state.reportContact ? String(state.reportContact.value || '').trim() : '';
-    var form = state.reportForm;
-    var severityInput = form ? form.querySelector('select[name=\"severity\"]') : null;
-    var regionInput = form ? form.querySelector('input[name=\"region\"]') : null;
-    var detailsInput = form ? form.querySelector('textarea[name=\"details\"]') : null;
-
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    var form = event && event.currentTarget ? event.currentTarget : null;
+    if (!form || !state.fetchImpl) return;
+    var provider = form.querySelector('[data-lo-report-provider]');
+    var symptom = form.querySelector('[data-lo-report-summary]');
+    var severity = form.querySelector('select[name="severity"]');
+    var region = form.querySelector('input[name="region"]');
+    var details = form.querySelector('textarea[name="details"]');
+    var email = form.querySelector('[data-lo-report-contact]');
+    var status = form.querySelector('[data-lo-report-status]');
+    var submit = form.querySelector('[data-lo-report-submit]');
+    if (!provider || !symptom || !submit) return;
+    var reportState = { status: status, submit: submit };
+    var providerId = String(provider.value || '').trim();
     if (!providerId) {
-      setReportStatus('Select a provider to report.', 'error');
+      setReportStatus(reportState, 'Select a provider to report.', 'error');
       return;
     }
-
-    if (!summary) { summary = 'other'; }
-
-    var originalLabel = state.reportSubmit.textContent;
-    state.reportSubmit.disabled = true;
-    state.reportSubmit.textContent = 'Sending…';
-    setReportStatus('Sending report…');
-
     var payload = {
       provider_id: providerId,
-      symptom: summary,
-      email: contact,
-      severity: severityInput ? String(severityInput.value || 'unknown') : 'unknown',
-      region: regionInput ? String(regionInput.value || '') : '',
-      details: detailsInput ? String(detailsInput.value || '') : ''
+      symptom: String(symptom.value || 'other').trim() || 'other',
+      severity: severity ? String(severity.value || 'unknown') : 'unknown',
+      region: region ? String(region.value || '') : '',
+      details: details ? String(details.value || '') : '',
+      email: email ? String(email.value || '').trim() : ''
     };
-
-    state.fetchImpl((form && form.getAttribute('action')) || '/wp-json/lousy-outages/v1/report', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-      .then(function (res) {
-        if (!res) {
-          throw new Error('No response');
-        }
-        var ok = !!res.ok;
-        return res.json().catch(function () { return {}; }).then(function (data) { return { ok: ok, data: data }; });
-      })
-      .then(function (result) {
-        var ok = result && result.ok && result.data && result.data.success !== false;
-        var message = null;
-        if (result && result.data) {
-          message = result.data.message || result.data.error || null;
-        }
-        if (ok) {
-          if (state.reportSummary) {
-            state.reportSummary.value = '';
-          }
-          if (state.reportContact) {
-            state.reportContact.value = '';
-          }
-          setReportStatus(message || 'Thanks — we logged your unconfirmed community report and we’re watching this.', 'success');
-          fetchHistoryData().catch(function () {});
-          fetchCommunitySignals();
-        } else {
-          setReportStatus(message || 'Could not submit report right now, please try again later.', 'error');
-        }
-      })
-      .catch(function () {
-        setReportStatus('Could not submit report right now, please try again later.', 'error');
-      })
-      .finally(function () {
-        state.reportSubmit.disabled = false;
-        state.reportSubmit.textContent = originalLabel;
-      });
+    var originalLabel = submit.textContent;
+    submit.disabled = true;
+    submit.textContent = 'Sending…';
+    setReportStatus(reportState, 'Sending report…');
+    state.fetchImpl(form.getAttribute('action') || '/wp-json/lousy-outages/v1/report', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    }).then(function(res){
+      var ok = !!(res && res.ok);
+      return (res ? res.json().catch(function(){ return {}; }) : Promise.resolve({})).then(function(data){ return {ok: ok, data: data}; });
+    }).then(function(result){
+      var ok = result && result.ok && result.data && result.data.success !== false;
+      var message = result && result.data ? (result.data.message || result.data.error || '') : '';
+      if (ok) {
+        form.reset();
+        setReportStatus(reportState, message || 'Thanks — we logged your unconfirmed community report and we’re watching this.', 'success');
+        fetchCommunitySignals();
+        fetchHistoryData().catch(function () {});
+      } else {
+        setReportStatus(reportState, message || 'Could not submit report right now, please try again later.', 'error');
+      }
+    }).catch(function(){
+      setReportStatus(reportState, 'Could not submit report right now, please try again later.', 'error');
+    }).finally(function(){ submit.disabled = false; submit.textContent = originalLabel; });
   }
 
   function initReportForm() {
-    if (!state.doc) {
-      return;
-    }
-    state.reportForm = state.doc.querySelector('[data-lo-report-form]');
-    state.reportProvider = state.reportForm ? state.reportForm.querySelector('[data-lo-report-provider]') : null;
-    state.reportProviderNameWrap = state.reportForm ? state.reportForm.querySelector('[data-lo-report-other]') : null;
-    state.reportProviderName = state.reportForm ? state.reportForm.querySelector('[data-lo-report-provider-name]') : null;
-    state.reportSummary = state.reportForm ? state.reportForm.querySelector('[data-lo-report-summary]') : null;
-    state.reportContact = state.reportForm ? state.reportForm.querySelector('[data-lo-report-contact]') : null;
-    state.reportStatus = state.reportForm ? state.reportForm.querySelector('[data-lo-report-status]') : null;
-    state.reportSubmit = state.reportForm ? state.reportForm.querySelector('[data-lo-report-submit]') : null;
-    state.reportCaptchaPhrase = state.reportForm ? state.reportForm.querySelector('[data-lo-report-captcha-phrase]') : null;
-    state.reportCaptchaInput = state.reportForm ? state.reportForm.querySelector('[data-lo-report-captcha-input]') : null;
-    state.reportCaptchaToken = state.reportForm ? state.reportForm.querySelector('[data-lo-report-captcha-token]') : null;
-    state.reportCaptchaRefresh = state.reportForm ? state.reportForm.querySelector('[data-lo-report-captcha-refresh]') : null;
-    state.reportPhraseEndpoint = state.reportForm ? String(state.reportForm.dataset.loReportPhraseEndpoint || '') : '';
+    if (!state.doc) return;
+    var forms = state.doc.querySelectorAll('[data-lo-report-form]');
     state.signalsContainer = state.doc.querySelector('[data-lo-signals]');
     state.signalsEndpoint = state.signalsContainer ? String(state.signalsContainer.getAttribute('data-lo-signals-endpoint') || '') : '';
-
-    if (state.reportForm && !state.reportForm.dataset.loReportEnhanced) {
-      state.reportForm.dataset.loReportEnhanced = '1';
-      state.reportForm.addEventListener('submit', handleReportSubmit);
-    }
-
-    if (state.reportProvider) {
-      state.reportProvider.addEventListener('change', function (event) {
-        var value = event && event.currentTarget ? String(event.currentTarget.value || '').trim() : '';
-        setReportProviderOtherVisibility(value);
-      });
-    }
-
-    if (state.reportCaptchaRefresh) {
-      state.reportCaptchaRefresh.addEventListener('click', function () {
-        requestReportPhrase();
-    fetchCommunitySignals();
-      });
-    }
-
-    requestReportPhrase();
+    forms.forEach(function(form){
+      if (!form || form.dataset.loReportEnhanced) return;
+      form.dataset.loReportEnhanced = '1';
+      form.addEventListener('submit', handleReportSubmit);
+    });
     fetchCommunitySignals();
   }
 
-
   function renderCommunitySignals(signals) {
-    if (!state.signalsContainer) return;
+    if (!state.signalsContainer || !state.doc) return;
     var list = state.signalsContainer.querySelector('[data-lo-signals-list]');
     var empty = state.signalsContainer.querySelector('[data-lo-signals-empty]');
     if (!list || !empty) return;
+    var allowed = { watch: true, trending: true, hot: true };
     var rows = Array.isArray(signals) ? signals.filter(function (s) {
       var c = String((s && s.classification) || '').toLowerCase();
-      return c === 'watch' || c === 'trending' || c === 'hot';
+      return !!allowed[c];
     }) : [];
-    list.innerHTML = '';
+    while (list.firstChild) list.removeChild(list.firstChild);
     if (!rows.length) { empty.hidden = false; return; }
     empty.hidden = true;
     rows.slice(0,5).forEach(function (signal) {
+      var cls = String(signal.classification || '').toLowerCase();
+      cls = allowed[cls] ? cls : 'watch';
       var row = state.doc.createElement('div');
-      row.className = 'lo-signal lo-signal--' + String(signal.classification || 'watch');
-      row.innerHTML = '<span class="lo-signal__badge">' + String(signal.classification || '').charAt(0).toUpperCase() + String(signal.classification || '').slice(1) + '</span>' +
-        '<strong>' + String(signal.provider_name || signal.provider_id || 'Provider') + '</strong>' +
-        '<span>' + String(signal.message || 'Unconfirmed community signal. We are watching this.') + '</span>';
+      row.className = 'lo-signal lo-signal--' + cls;
+      var badge = state.doc.createElement('span');
+      badge.className = 'lo-signal__badge';
+      badge.textContent = cls.charAt(0).toUpperCase() + cls.slice(1);
+      var provider = state.doc.createElement('strong');
+      provider.textContent = String(signal.provider_name || signal.provider_id || 'Provider');
+      var message = state.doc.createElement('span');
+      message.textContent = String(signal.message || 'Unconfirmed community signal. We are watching this.');
+      row.appendChild(badge); row.appendChild(provider); row.appendChild(message);
       list.appendChild(row);
     });
   }
@@ -3614,13 +3454,9 @@
         if (Array.isArray(body.providers)) {
           evaluateProviderHealth(body.providers);
           renderProviders(body.providers);
-          populateReportProviders(body.providers);
           updateIncidentsUI(body.providers, body.meta || null);
         } else {
           resetAutoRefresh();
-          if (!state.reportProvidersInitialized) {
-            populateReportProviders(null);
-          }
         }
         var fetched = body.fetched_at || (body.meta && (body.meta.fetched_at || body.meta.fetchedAt));
         if (fetched) {
@@ -3661,9 +3497,6 @@
       })
       .catch(function () {
         degradeAutoRefresh();
-        if (!state.reportProvidersInitialized) {
-          populateReportProviders(null);
-        }
         var retryDelay = state.delay || state.baseDelay || POLL_MS;
         if (typeof state.lastFetchStartedAt === 'number' && state.lastFetchStartedAt > 0) {
           var elapsedSinceStart = Date.now() - state.lastFetchStartedAt;
@@ -3890,7 +3723,6 @@
       renderProviders(initialProviders);
     }
     if (initialProviders.length) {
-      populateReportProviders(initialProviders);
     }
     if (state.loadingEl) {
       toggleSpinner(!initialProviders.length);
