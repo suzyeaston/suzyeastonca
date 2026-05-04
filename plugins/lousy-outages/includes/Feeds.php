@@ -66,7 +66,7 @@ class Feeds {
         if (!empty($itemsByGuid)) { $build['sources_included'][]='current_provider_states'; }
 
         $store = new IncidentStore();
-        foreach ((array)$store->getStoredIncidents() as $event) {
+        foreach ((array)$store->getStoredIncidents(self::INCIDENT_LIMIT * 3) as $event) {
             if (!is_array($event)) continue; $event=$store->normalizeEvent($event); $ts=(int)($event['last_seen'] ?? $event['first_seen'] ?? 0); if ($ts && $ts<$cutoff){$build['excluded']['expired_signals']++;continue;}
             $severity=strtolower((string)($event['severity'] ?? 'info')); $providerId=sanitize_key((string)($event['provider'] ?? '')); $title=trim((string)($event['title'] ?? $event['description'] ?? 'Incident'));
             $guid=sha1('incident|'.$providerId.'|'.$title.'|'.$ts); if(isset($itemsByGuid[$guid])){$build['excluded']['duplicate_items']++;continue;}

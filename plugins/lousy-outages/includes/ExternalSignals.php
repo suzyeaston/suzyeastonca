@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 class ExternalSignals {
+    private const SCHEMA_VERSION = '2026-05-04.1';
     public static function table_name(): string { global $wpdb; return $wpdb->prefix . 'lo_external_signals'; }
     private static function table_exists(): bool {
         global $wpdb;
@@ -18,7 +19,21 @@ class ExternalSignals {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         $table = self::table_name();
         $charset = $wpdb->get_charset_collate();
-        $sql = "CREATE TABLE {$table} (
+        $sql = self::schema_sql($table, $charset);
+        $schemaDiagnostics = ['version' => self::SCHEMA_VERSION, 'updated_at' => gmdate('c'), 'table' => $table, 'dbdelta_attempted' => false];
+        try {
+            $schemaDiagnostics['dbdelta_attempted'] = true;
+            dbDelta($sql);
+            $schemaDiagnostics['status'] = 'ok';
+        } catch (\Throwable $e) {
+            $schemaDiagnostics['status'] = 'error';
+            $schemaDiagnostics['error'] = $e->getMessage();
+        }
+        update_option('lousy_outages_schema_diagnostics', $schemaDiagnostics, false);
+    }
+
+    public static function schema_sql(string $table, string $charset): string {
+        return "CREATE TABLE {$table} (
             id BIGINT unsigned NOT NULL AUTO_INCREMENT,
             source VARCHAR(80) NOT NULL,
             provider_id VARCHAR(80) NOT NULL DEFAULT '',
@@ -36,9 +51,13 @@ class ExternalSignals {
             raw_hash VARCHAR(128) NULL,
             created_at DATETIME NOT NULL,
             PRIMARY KEY (id),
-            KEY source (source), KEY provider_id (provider_id), KEY category (category), KEY region (region), KEY observed_at (observed_at), KEY expires_at (expires_at)
+            KEY source_idx (source),
+            KEY provider_idx (provider_id),
+            KEY signal_type_idx (signal_type),
+            KEY observed_at_idx (observed_at),
+            KEY expires_at_idx (expires_at),
+            UNIQUE KEY raw_hash_idx (raw_hash)
         ) {$charset};";
-        dbDelta($sql);
     }
 
     public static function normalize_signal(array $signal): array {

@@ -193,10 +193,19 @@ class IncidentStore
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function getStoredIncidents(): array
+    public function getStoredIncidents(int $limit = 0): array
     {
         $stored = $this->loadEvents();
-        return array_values($stored);
+        $events = array_values($stored);
+        if ($limit > 0) {
+            usort($events, static function (array $a, array $b): int {
+                $aTs = (int) ($a['last_seen'] ?? $a['first_seen'] ?? 0);
+                $bTs = (int) ($b['last_seen'] ?? $b['first_seen'] ?? 0);
+                return $bTs <=> $aTs;
+            });
+            return array_slice($events, 0, $limit);
+        }
+        return $events;
     }
 
     /**
