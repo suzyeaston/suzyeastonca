@@ -4656,8 +4656,9 @@ body {
 }
 
 .page-template-page-projects .projects-shell {
-    max-width: 1080px;
+    max-width: 1200px;
     margin: 12px auto 28px;
+    padding-inline: clamp(1rem, 4vw, 2rem);
     display: grid;
     gap: 14px;
 }
@@ -4765,17 +4766,30 @@ body {
     margin-bottom: 8px;
 }
 
+.page-template-page-projects .projects-selected-title {
+    font-size: clamp(1.6rem, 3vw, 2.35rem);
+    line-height: 1.1;
+    margin: 0 0 1rem;
+    color: var(--projects-cyan);
+}
+
+.page-template-page-projects .projects-section--selected .projects-section-header h2 {
+    font-size: clamp(0.95rem, 1.35vw, 1.1rem);
+    letter-spacing: 0.04em;
+    text-transform: none;
+}
+
 .page-template-page-projects .projects-section h2 {
-    font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+    font-size: clamp(1.05rem, 1.6vw, 1.2rem);
     line-height: 1.15;
-    margin-bottom: 6px;
+    margin-bottom: 0.5rem;
 }
 
 .page-template-page-projects .projects-grid,
 .page-template-page-projects .projects-method-grid {
     display: grid;
-    gap: 12px;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
 }
 
 .page-template-page-projects .projects-grid--featured {
@@ -4786,8 +4800,7 @@ body {
     border: 1px solid rgba(57, 245, 255, 0.24);
     border-radius: 12px;
     background: rgba(9, 16, 36, 0.84);
-    padding: 14px;
-    min-height: 150px;
+    padding: clamp(1rem, 2vw, 1.35rem);
 }
 
 .page-template-page-projects .projects-card--featured {
@@ -4798,13 +4811,13 @@ body {
 .page-template-page-projects .projects-card h3 {
     margin: 0 0 7px;
     color: #a6fbff;
-    line-height: 1.35;
-    font-size: 1.02rem;
+    line-height: 1.1;
+    font-size: clamp(1.1rem, 1.6vw, 1.45rem);
 }
 
 .page-template-page-projects .projects-card p {
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: clamp(0.95rem, 1.2vw, 1.05rem);
+    line-height: 1.45;
     color: rgba(243, 247, 255, 0.9);
 }
 
@@ -4836,6 +4849,7 @@ body {
 
 .page-template-page-projects .projects-card__actions .pixel-button {
     min-height: 40px;
+    font-size: clamp(0.9rem, 1.3vw, 1rem);
 }
 
 .page-template-page-projects .projects-badges {
@@ -4854,7 +4868,7 @@ body {
     padding: 3px 9px;
     background: rgba(4, 12, 29, 0.86);
     color: #dff9ff;
-    font-size: 0.74rem;
+    font-size: clamp(0.75rem, 0.9vw, 0.85rem);
     letter-spacing: 0.01em;
 }
 
