@@ -1,0 +1,3860 @@
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory(root);
+  } else {
+    var api = factory(root);
+    root.LousyOutagesApp = api;
+    if (root && root.document && root.LousyOutagesConfig) {
+      api.init(root.LousyOutagesConfig);
+    }
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof self !== 'undefined' ? self : this), function (rootRef) {
+  'use strict';
+
+  var globalRoot = rootRef && typeof rootRef.setTimeout === 'function' ? rootRef : (typeof globalThis !== 'undefined' ? globalThis : rootRef);
+
+  var POLL_MS = 10000;
+  var MAX_DELAY = 60000;
+  var STALE_REFRESH_THRESHOLD_MS = 6 * 60 * 1000;
+  var STALE_REFRESH_COOLDOWN_MS = 3 * 60 * 1000;
+  var DEGRADE_THRESHOLD = 0.5;
+  var RECOVER_THRESHOLD = 0.7;
+  var MANUAL_REFRESH_RETRY_DELAY = 1500;
+  var MANUAL_REFRESH_MAX_ATTEMPTS = 4;
+  var VISIBILITY_STORAGE_KEY = 'lo-visible-providers';
+  var LAST_OK_STORAGE_PREFIX = 'lo_last_ok_';
+  var HISTORY_CHART_MODE_KEY = 'lo_history_chart_mode';
+  var HISTORY_LIMIT = 80;
+  var HISTORY_RENDER_LIMIT = 12;
+  var HISTORY_DEFAULT_DAYS = 30;
+  var UNKNOWN_MESSAGE = 'Can\u2019t verify status right now.';
+  var UNKNOWN_HINT = 'Provider page may still be operational \u2014 click \u2018View status\u2019.';
+
+  var STATUS_MAP = {
+    operational: { code: 'operational', label: 'Operational', className: 'status--operational' },
+    degraded: { code: 'degraded', label: 'Degraded', className: 'status--degraded' },
+    major: { code: 'major', label: 'Major Outage', className: 'status--outage' },
+    outage: { code: 'outage', label: 'Outage', className: 'status--outage' },
+    maintenance: { code: 'maintenance', label: 'Maintenance', className: 'status--maintenance' },
+    unknown: { code: 'unknown', label: 'Unknown', className: 'status--unknown' }
+  };
+
+  var SNARKS = {
+    aws: [
+      'us-east-1 is a lifestyle choice.',
+      'Somewhere a Lambda forgot to set its alarm.'
+    ],
+    github: ['Push it real good, but maybe later.'],
+    default: ['Hold tight—someone’s jiggling the ethernet cable.']
+  };
+
+  var state = {
+    root: globalRoot,
+    doc: null,
+    fetchImpl: null,
+    endpoint: '',
+    refreshEndpoint: '',
+    refreshNonce: '',
+    subscribeEndpoint: '',
+    baseDelay: POLL_MS,
+    delay: POLL_MS,
+    maxDelay: MAX_DELAY,
+    timer: null,
+    countdownTimer: null,
+    nextRefreshAt: null,
+    etag: null,
+    visibilityPaused: false,
+    container: null,
+    grid: null,
+    fetchedEl: null,
+    fetchedLabelEl: null,
+    fetchedLabel: 'Fetched',
+    countdownEl: null,
+    refreshButton: null,
+    degradedBadge: null,
+    trendingBanner: null,
+    trendingText: null,
+    trendingReasons: null,
+    exportCSVButton: null,
+    exportPDFButton: null,
+    modeToggle: null,
+    modeButtons: {},
+    viewMode: 'incidents',
+    incidentsWrap: null,
+    allProvidersWrap: null,
+    heroWrap: null,
+    heroTime: null,
+    sectionGrids: {},
+    sectionBodies: {},
+    sectionToggles: {},
+    providerToggles: [],
+    mediaQuery: null,
+    loadingEl: null,
+    fetchedAt: null,
+    isRefreshing: false,
+    pendingManual: false,
+    lastFetchStartedAt: null,
+    manualQueued: false,
+    staleRefreshQueued: false,
+    staleRefreshInFlight: false,
+    lastStaleRefreshAttempt: null,
+    degradedDueToStale: false,
+    historyEndpoint: '',
+    historyList: null,
+    historyEmpty: null,
+    historyError: null,
+    historyCharts: null,
+    historyImportantOnly: true,
+    historyWindowDays: HISTORY_DEFAULT_DAYS,
+    historyProviders: [],
+    historyMeta: {},
+    historyIncidents: [],
+    historyExpanded: false,
+    historyToggleButton: null,
+    visibleProviders: {},
+    reportForm: null,
+    reportProvider: null,
+    reportProviderNameWrap: null,
+    reportProviderName: null,
+    reportSummary: null,
+    reportContact: null,
+    reportStatus: null,
+    reportSubmit: null,
+    reportCaptchaPhrase: null,
+    reportCaptchaInput: null,
+    reportCaptchaToken: null,
+    reportCaptchaRefresh: null,
+    reportPhraseEndpoint: '',
+    signalsEndpoint: '',
+    signalsContainer: null,
+    reportCaptchaTokenValue: '',
+    reportProvidersInitialized: false,
+    debug: false,
+    latestProviders: [],
+    incidentsMeta: {},
+    postPaintStarted: false
+  };
+
+  function delay(ms) {
+    return new Promise(function (resolve) {
+      var timerRoot = state.root && typeof state.root.setTimeout === 'function'
+        ? state.root
+        : (globalRoot && typeof globalRoot.setTimeout === 'function' ? globalRoot : null);
+      if (timerRoot) {
+        timerRoot.setTimeout(resolve, ms);
+      } else {
+        setTimeout(resolve, ms);
+      }
+    });
+  }
+
+  function normalizeStatus(code) {
+    var key = String(code || '').toLowerCase();
+
+    switch (key) {
+      case 'none':
+        key = 'operational';
+        break;
+      case 'minor_outage':
+      case 'partial_outage':
+      case 'degraded_performance':
+        key = 'degraded';
+        break;
+      case 'major_outage':
+      case 'critical':
+        key = 'major';
+        break;
+    }
+
+    return STATUS_MAP[key] || STATUS_MAP.unknown;
+  }
+
+  function snarkOutage(provider, status, summary) {
+    var normalized = normalizeStatus(status);
+    if ('operational' === normalized.code || 'maintenance' === normalized.code) {
+      return summary || normalized.label;
+    }
+    var providerKey = String(provider || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+    var lines = SNARKS[providerKey] || SNARKS.default;
+    if (!lines.length) {
+      return summary || 'Something feels off.';
+    }
+    var index = Math.floor(Math.random() * lines.length);
+    return lines[index] || summary || 'Something feels off.';
+  }
+
+  function escapeSelector(id) {
+    if (typeof id !== 'string') {
+      return '';
+    }
+    if (typeof CSS !== 'undefined' && CSS.escape) {
+      return CSS.escape(id);
+    }
+    return id.replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+  }
+
+  function appendQuery(url, key, value) {
+    var separator = url.indexOf('?') === -1 ? '?' : '&';
+    return url + separator + key + '=' + encodeURIComponent(value);
+  }
+
+  function hasUnavailableCopy(text) {
+    return /temporarily unavailable|can[’']t verify/i.test(String(text || ''));
+  }
+
+  function getProviderId(provider) {
+    if (!provider) {
+      return '';
+    }
+    var id = provider.id || provider.provider || provider.slug || provider.name || '';
+    return String(id || '').toLowerCase();
+  }
+
+  function writeLastKnown(provider, normalized) {
+    if (!state.root || !state.root.localStorage || !provider) {
+      return;
+    }
+    var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
+    if (statusInfo.code === 'unknown') {
+      return;
+    }
+    var providerId = getProviderId(provider);
+    if (!providerId) {
+      return;
+    }
+    var payload = {
+      status: statusInfo.code,
+      status_label: provider.status_label || statusInfo.label,
+      message: provider.message || '',
+      summary: provider.summary || '',
+      fetched_at: provider.fetched_at || provider.fetchedAt || provider.updated_at || provider.updatedAt || ''
+    };
+    try {
+      state.root.localStorage.setItem(LAST_OK_STORAGE_PREFIX + providerId, JSON.stringify(payload));
+    } catch (err) {
+      // Ignore storage errors.
+    }
+  }
+
+  function readLastKnown(providerId) {
+    if (!state.root || !state.root.localStorage || !providerId) {
+      return null;
+    }
+    try {
+      var raw = state.root.localStorage.getItem(LAST_OK_STORAGE_PREFIX + providerId);
+      if (!raw) {
+        return null;
+      }
+      var parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+
+  function loadVisibleProviders() {
+    if (!state.root || !state.root.localStorage) {
+      return {};
+    }
+    try {
+      var raw = state.root.localStorage.getItem(VISIBILITY_STORAGE_KEY);
+      if (!raw) {
+        return {};
+      }
+      var parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function persistVisibleProviders(prefs) {
+    if (!state.root || !state.root.localStorage) {
+      return;
+    }
+    try {
+      state.root.localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(prefs || {}));
+    } catch (err) {
+      // Ignore storage errors.
+    }
+  }
+
+  function applyProviderVisibility() {
+    if (!state.container) {
+      return;
+    }
+    var cards = state.container.querySelectorAll('.lo-card');
+    if (!cards || !cards.length) {
+      return;
+    }
+    var prefs = state.visibleProviders || {};
+    var hasPrefs = Object.keys(prefs).length > 0;
+    cards.forEach(function (card) {
+      var slug = card.getAttribute('data-provider-id');
+      var show = true;
+      if (slug) {
+        if (hasPrefs) {
+          show = prefs[slug] !== false;
+        }
+      }
+      if (show) {
+        card.classList.remove('lo-card--hidden');
+        card.removeAttribute('data-lo-hidden');
+        card.setAttribute('aria-hidden', 'false');
+      } else {
+        card.classList.add('lo-card--hidden');
+        card.setAttribute('data-lo-hidden', 'true');
+        card.setAttribute('aria-hidden', 'true');
+      }
+    });
+  }
+
+  function syncProviderToggleUI() {
+    if (!state.providerToggles || !state.providerToggles.length) {
+      return;
+    }
+    var prefs = state.visibleProviders || {};
+    var hasPrefs = Object.keys(prefs).length > 0;
+    state.providerToggles.forEach(function (input) {
+      var slug = input.value;
+      if (!slug) {
+        return;
+      }
+      var checked = hasPrefs ? prefs[slug] !== false : true;
+      input.checked = checked;
+    });
+  }
+
+  function handleProviderToggle(event) {
+    var target = event.target;
+    if (!target || !target.value) {
+      return;
+    }
+    var prefs = state.visibleProviders || {};
+    prefs[target.value] = !!target.checked;
+    state.visibleProviders = prefs;
+    persistVisibleProviders(prefs);
+    applyProviderVisibility();
+  }
+
+  function setAllProvidersVisibility(visible) {
+    if (!state.providerToggles || !state.providerToggles.length) {
+      return;
+    }
+    var prefs = {};
+    state.providerToggles.forEach(function (input) {
+      if (!input || !input.value) {
+        return;
+      }
+      input.checked = visible;
+      if (!visible) {
+        prefs[input.value] = false;
+      }
+    });
+    state.visibleProviders = prefs;
+    persistVisibleProviders(prefs);
+    applyProviderVisibility();
+  }
+
+  function initProviderVisibility() {
+    state.visibleProviders = loadVisibleProviders();
+    var toggles = state.container ? state.container.querySelectorAll('[data-lo-provider-toggle]') : [];
+    state.providerToggles = toggles ? Array.prototype.slice.call(toggles) : [];
+    if (state.providerToggles.length) {
+      state.providerToggles.forEach(function (input) {
+        input.addEventListener('change', handleProviderToggle);
+      });
+      syncProviderToggleUI();
+    }
+
+    var selectAll = state.container ? state.container.querySelector('[data-lo-provider-select="all"]') : null;
+    if (selectAll) {
+      selectAll.addEventListener('click', function (event) {
+        event.preventDefault();
+        setAllProvidersVisibility(true);
+        syncProviderToggleUI();
+      });
+    }
+
+    var selectNone = state.container ? state.container.querySelector('[data-lo-provider-select="none"]') : null;
+    if (selectNone) {
+      selectNone.addEventListener('click', function (event) {
+        event.preventDefault();
+        setAllProvidersVisibility(false);
+        syncProviderToggleUI();
+      });
+    }
+    applyProviderVisibility();
+  }
+
+
+  function getText(target, selector) {
+    if (!target) {
+      return '';
+    }
+    var node = selector ? target.querySelector(selector) : target;
+    if (!node || typeof node.textContent !== 'string') {
+      return '';
+    }
+    return node.textContent.trim();
+  }
+
+  function getHistoryChartData() {
+    var meta = state.historyMeta || {};
+    var providers = state.historyProviders || [];
+
+    var providerCounts = meta && meta.provider_counts && typeof meta.provider_counts === 'object'
+      ? meta.provider_counts
+      : null;
+    var dailyCounts = meta && meta.daily_counts && typeof meta.daily_counts === 'object'
+      ? meta.daily_counts
+      : null;
+    var yoy = meta && meta.year_over_year && typeof meta.year_over_year === 'object'
+      ? meta.year_over_year
+      : null;
+
+    if (!providerCounts) {
+      providerCounts = {};
+      (Array.isArray(providers) ? providers : []).forEach(function (provider) {
+        if (!provider || !Array.isArray(provider.incidents)) {
+          return;
+        }
+        var label = provider.label || provider.name || provider.provider || 'Provider';
+        providerCounts[label] = (providerCounts[label] || 0) + provider.incidents.length;
+      });
+    }
+
+    if (!dailyCounts) {
+      dailyCounts = {};
+      (Array.isArray(providers) ? providers : []).forEach(function (provider) {
+        if (!provider || !Array.isArray(provider.incidents)) {
+          return;
+        }
+        provider.incidents.forEach(function (incident) {
+          var dateStr = incident.first_seen || incident.firstSeen || incident.last_seen || incident.lastSeen || '';
+          if (!dateStr) {
+            return;
+          }
+          var parsed = Date.parse(dateStr);
+          if (!Number.isNaN(parsed)) {
+            var formatted = new Date(parsed).toISOString().slice(0, 10);
+            dailyCounts[formatted] = (dailyCounts[formatted] || 0) + 1;
+          }
+        });
+      });
+    }
+
+    var windowDays = meta && meta.window_days ? parseInt(meta.window_days, 10) : state.historyWindowDays;
+
+    return {
+      providerCounts: providerCounts,
+      dailyCounts: dailyCounts,
+      windowDays: Number.isFinite(windowDays) && windowDays > 0 ? windowDays : HISTORY_DEFAULT_DAYS,
+      yearOverYear: yoy
+    };
+  }
+
+  function downloadCSV() {
+    var incidents = Array.isArray(state.historyIncidents) ? state.historyIncidents : [];
+    if (!incidents.length) {
+      if (state.root && state.root.alert) {
+        state.root.alert('No incidents to export yet. Try refreshing history.');
+      }
+      return;
+    }
+
+    var rows = [
+      ['first_seen', 'last_seen', 'provider', 'severity', 'status', 'summary', 'url']
+    ];
+
+    incidents.forEach(function (entry) {
+      rows.push([
+        entry.first_seen || '',
+        entry.last_seen || '',
+        entry.provider || '',
+        String(entry.severity || '').toUpperCase(),
+        entry.status || '',
+        entry.summary || '',
+        entry.url || ''
+      ]);
+    });
+
+    var csvContent = rows.map(function (row) {
+      return row.map(function (field) {
+        var safe = (field || '').toString().replace(/"/g, '""');
+        return '"' + safe + '"';
+      }).join(',');
+    }).join('\n');
+
+    var blob = new Blob([csvContent], { type: 'text/csv' });
+    var urlCreator = (state.root && state.root.URL) ? state.root.URL : (typeof URL !== 'undefined' ? URL : null);
+    if (!urlCreator || !urlCreator.createObjectURL) {
+      return;
+    }
+    var url = urlCreator.createObjectURL(blob);
+    var link = state.doc.createElement('a');
+    link.href = url;
+    link.download = 'lousy-outages-history.csv';
+    state.doc.body.appendChild(link);
+    link.click();
+    state.doc.body.removeChild(link);
+    if (urlCreator.revokeObjectURL) {
+      urlCreator.revokeObjectURL(url);
+    }
+  }
+
+  function exportPDF() {
+    if (!state.root || !state.historyCharts) {
+      return;
+    }
+
+    var hasCharts = state.historyCharts.querySelector && state.historyCharts.querySelector('svg');
+    if (!hasCharts) {
+      return;
+    }
+
+    var clone = state.historyCharts.cloneNode(true);
+    clone.removeAttribute('hidden');
+
+    var originalCanvases = state.historyCharts.querySelectorAll ? state.historyCharts.querySelectorAll('canvas') : [];
+    var clonedCanvases = clone.querySelectorAll ? clone.querySelectorAll('canvas') : [];
+    if (originalCanvases.length && clonedCanvases.length) {
+      clonedCanvases.forEach(function (canvas, idx) {
+        var original = originalCanvases[idx];
+        if (!original || !original.toDataURL) {
+          return;
+        }
+        try {
+          var dataUrl = original.toDataURL('image/png');
+          var img = state.doc.createElement('img');
+          img.src = dataUrl;
+          img.alt = original.getAttribute('aria-label') || 'Chart image';
+          img.style.width = '100%';
+          img.style.height = 'auto';
+          canvas.parentNode.replaceChild(img, canvas);
+        } catch (err) {
+          // Ignore canvas export errors.
+        }
+      });
+    }
+
+    var printWindow = state.root.open('', '_blank');
+    if (!printWindow || !printWindow.document || typeof printWindow.document.write !== 'function') {
+      return;
+    }
+
+    var styles = [
+      "@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');",
+      'body { margin: 0; padding: 24px; font-family: \"Press Start 2P\", \"VT323\", \"IBM Plex Mono\", monospace; background: #050510; color: #9af3ff; text-shadow: 0 0 6px rgba(0, 255, 255, 0.35); }',
+      '.lo-history__chart { margin-bottom: 24px; padding: 16px; border: 2px solid #1bf0ff; box-shadow: 0 0 0 2px #ff2fb3 inset, 0 0 18px rgba(27, 240, 255, 0.25); background: linear-gradient(135deg, rgba(0, 255, 170, 0.05) 0%, rgba(255, 47, 179, 0.05) 100%), #0b0b1e; }',
+      '.lo-history__report { margin-bottom: 24px; padding: 16px; border: 2px solid #1bf0ff; box-shadow: 0 0 0 2px #ff2fb3 inset, 0 0 18px rgba(27, 240, 255, 0.25); background: linear-gradient(135deg, rgba(0, 255, 170, 0.05) 0%, rgba(255, 47, 179, 0.05) 100%), #0b0b1e; }',
+      '.lo-history__chart-title { font-size: 12px; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; color: #f5f5f5; }',
+      '.lo-history__subtitle { color: #72f3ff; font-size: 10px; letter-spacing: 0.5px; margin-bottom: 8px; }',
+      '.lo-history__chart svg, .lo-history__chart canvas, .lo-history__chart img { width: 100%; height: auto; border: 1px solid #2affd5; background: repeating-linear-gradient(90deg, rgba(42, 255, 213, 0.08) 0, rgba(42, 255, 213, 0.08) 6px, transparent 6px, transparent 12px), #050510; image-rendering: pixelated; }',
+      '.lo-history__chart-bar { fill: #26ffd6; stroke: #000; stroke-width: 1; }',
+      '.lo-history__chart-bar--thin { fill: #ff2fb3; }',
+      '.lo-history__chart-bar--active { filter: drop-shadow(0 0 4px rgba(255, 47, 179, 0.8)); }',
+      '.lo-history__chart-text { font-size: 9px; fill: #e4f7ff; text-shadow: 0 0 4px rgba(0, 255, 255, 0.25); }',
+      '.lo-history__chart text { font-family: \"Press Start 2P\", \"VT323\", \"IBM Plex Mono\", monospace; }',
+      '.lo-history__chart-tooltip { margin-top: 6px; font-size: 10px; color: #f6ff8f; }',
+      '.lo-retro-legend { display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: 9px; color: #fefefe; }',
+      '.lo-retro-legend__swatch { width: 14px; height: 14px; border: 2px solid #0b0b1e; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); display: inline-block; margin-right: 6px; }',
+      '.lo-history__report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }',
+      '.lo-history__report-stat { padding: 10px; border: 1px solid rgba(42, 255, 213, 0.5); background: rgba(5, 5, 16, 0.6); }',
+      '.lo-history__report-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #9af3ff; margin-bottom: 4px; }',
+      '.lo-history__report-value { font-size: 12px; color: #fefefe; }',
+      '.lo-history__report-sub { font-size: 9px; color: #f6ff8f; margin-top: 4px; }',
+      '.lo-history__report-table { width: 100%; border-collapse: collapse; font-size: 9px; }',
+      '.lo-history__report-table th, .lo-history__report-table td { padding: 6px 8px; border: 1px solid rgba(42, 255, 213, 0.4); text-align: left; }',
+      '.lo-history__view-toggle { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 10px; }',
+      '.lo-history__view-button { border: 1px solid #1bf0ff; background: rgba(11, 11, 30, 0.75); color: #9af3ff; padding: 6px 10px; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }',
+      '.lo-history__view-button.is-active { background: #9af3ff; color: #050510; }',
+      '.lo-heatmap__cell--level-0 { fill: rgba(255, 255, 255, 0.08); }',
+      '.lo-heatmap__cell--level-1 { fill: rgba(42, 255, 213, 0.35); }',
+      '.lo-heatmap__cell--level-2 { fill: rgba(42, 255, 213, 0.55); }',
+      '.lo-heatmap__cell--level-3 { fill: rgba(255, 47, 179, 0.55); }',
+      '.lo-heatmap__cell--level-4 { fill: rgba(255, 47, 179, 0.85); }',
+      '.lo-heatmap__legend { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 9px; color: #9af3ff; }',
+      '.lo-heatmap__swatch { width: 12px; height: 12px; border: 1px solid #0b0b1e; display: inline-block; }',
+      '.lo-trend__line { fill: none; stroke: #ff2fb3; stroke-width: 2; }',
+      '.lo-trend__point { fill: #26ffd6; }',
+      '.lo-trend__point--active { fill: #f6ff8f; }',
+      '.lo-history__chart, .lo-history__report { page-break-inside: avoid; break-inside: avoid; }'
+    ].join('\n');
+
+    var title = 'Lousy Outages – Incident charts';
+    var html = [
+      '<!doctype html>',
+      '<html>',
+      '<head>',
+      '<meta charset="utf-8">',
+      '<title>' + title + '</title>',
+      '<style>' + styles + '</style>',
+      '</head>',
+      '<body>',
+      '<h1 style="font-size:18px; margin:0 0 16px;">' + title + '</h1>',
+      clone.innerHTML,
+      '</body>',
+      '</html>'
+    ].join('');
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+
+    var triggerPrint = function () {
+      if (printWindow.focus) {
+        printWindow.focus();
+      }
+      if (typeof printWindow.print === 'function') {
+        printWindow.print();
+      }
+    };
+
+    if (printWindow.document.readyState === 'complete') {
+      triggerPrint();
+    } else {
+      printWindow.addEventListener('load', triggerPrint);
+    }
+  }
+
+  function clearChildren(el) {
+    if (!el) {
+      return;
+    }
+    if (typeof el.innerHTML === 'string') {
+      el.innerHTML = '';
+    }
+    if (Array.isArray(el.children)) {
+      el.children.length = 0;
+    }
+  }
+
+  function scheduleNext(delay) {
+    if (state.timer && state.root) {
+      state.root.clearTimeout(state.timer);
+      state.timer = null;
+    }
+    if (!isDocumentVisible()) {
+      state.visibilityPaused = true;
+      state.nextRefreshAt = null;
+      stopCountdown();
+      if (state.countdownEl) {
+        state.countdownEl.textContent = 'Auto-refresh paused';
+      }
+      return;
+    }
+    var base = state.baseDelay || POLL_MS;
+    var hasExplicitDelay = typeof delay === 'number' && !Number.isNaN(delay);
+    var desired = hasExplicitDelay ? delay : (state.delay || base);
+    if (desired < 0) {
+      desired = 0;
+    }
+    var minimum = hasExplicitDelay ? 0 : (base < POLL_MS ? Math.max(100, base) : 1000);
+    var nextDelay = desired;
+    if (!hasExplicitDelay && nextDelay < minimum) {
+      nextDelay = minimum;
+    }
+    state.delay = nextDelay;
+    state.visibilityPaused = false;
+    state.nextRefreshAt = Date.now() + nextDelay;
+    startCountdown();
+    if (state.root) {
+      state.timer = state.root.setTimeout(function () {
+        state.timer = null;
+        refreshSummary(false, false);
+      }, nextDelay);
+    }
+  }
+
+  function startCountdown() {
+    if (!state.root || !state.countdownEl) {
+      return;
+    }
+    if (state.countdownTimer) {
+      state.root.clearInterval(state.countdownTimer);
+    }
+    updateCountdown();
+    state.countdownTimer = state.root.setInterval(updateCountdown, 1000);
+  }
+
+  function stopCountdown() {
+    if (state.countdownTimer && state.root) {
+      state.root.clearInterval(state.countdownTimer);
+      state.countdownTimer = null;
+    }
+  }
+
+  function updateCountdown() {
+    if (!state.countdownEl) {
+      return;
+    }
+    if (!state.nextRefreshAt) {
+      state.countdownEl.textContent = 'Auto-refresh paused';
+      return;
+    }
+    var diff = state.nextRefreshAt - Date.now();
+    if (diff <= 0) {
+      state.countdownEl.textContent = 'Refreshing…';
+      return;
+    }
+    state.countdownEl.textContent = '';
+  }
+
+  function updateFetched() {
+    if (!state.fetchedEl || !state.fetchedAt) {
+      return;
+    }
+    if (state.fetchedLabelEl) {
+      state.fetchedLabelEl.textContent = state.fetchedLabel || 'Fetched';
+    }
+    var date = new Date(state.fetchedAt);
+    if (Number.isNaN(date.getTime())) {
+      state.fetchedEl.textContent = state.fetchedAt;
+      return;
+    }
+    try {
+      var formatted = new Intl.DateTimeFormat(undefined, {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).format(date);
+      state.fetchedEl.textContent = formatted;
+    } catch (err) {
+      state.fetchedEl.textContent = date.toISOString();
+    }
+  }
+
+  function setLoading(isLoading) {
+    if (!state.refreshButton) {
+      return;
+    }
+    state.refreshButton.disabled = !!isLoading;
+    state.refreshButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+    state.refreshButton.textContent = isLoading ? 'Refreshing…' : 'Refresh now';
+  }
+
+  function toggleSpinner(visible) {
+    if (!state.loadingEl) {
+      return;
+    }
+    if (visible) {
+      state.loadingEl.removeAttribute('hidden');
+    } else {
+      state.loadingEl.setAttribute('hidden', 'hidden');
+    }
+  }
+
+  function showDegraded(active, message) {
+    if (!state.degradedBadge) {
+      return;
+    }
+    if (active) {
+      state.degradedBadge.textContent = message || 'AUTO-REFRESH DEGRADED';
+      state.degradedBadge.removeAttribute('hidden');
+    } else {
+      state.degradedBadge.textContent = '';
+      state.degradedBadge.setAttribute('hidden', 'hidden');
+    }
+  }
+
+  function triggerStaleRefresh() {
+    if (!state.refreshEndpoint || !state.fetchImpl) {
+      return Promise.resolve();
+    }
+    if (state.staleRefreshInFlight) {
+      return Promise.resolve();
+    }
+
+    state.staleRefreshQueued = false;
+    state.staleRefreshInFlight = true;
+
+    return callRefreshEndpoint()
+      .catch(function () {
+        return null;
+      })
+      .then(function () {
+        return refreshSummary(false, true);
+      })
+      .finally(function () {
+        state.staleRefreshInFlight = false;
+      });
+  }
+
+  function maybeQueueStaleRefresh(fetchedIso) {
+    if (!state.refreshEndpoint || !state.fetchImpl) {
+      return;
+    }
+
+    var iso = typeof fetchedIso === 'string' ? fetchedIso : '';
+    if (!iso) {
+      if (state.degradedDueToStale) {
+        state.degradedDueToStale = false;
+        showDegraded(false);
+      }
+      return;
+    }
+
+    var parsed = Date.parse(iso);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+
+    var age = Date.now() - parsed;
+    if (age < STALE_REFRESH_THRESHOLD_MS) {
+      if (state.degradedDueToStale) {
+        state.degradedDueToStale = false;
+        showDegraded(false);
+      }
+      return;
+    }
+
+    if (state.staleRefreshInFlight) {
+      return;
+    }
+
+    var now = Date.now();
+    if (state.lastStaleRefreshAttempt && (now - state.lastStaleRefreshAttempt) < STALE_REFRESH_COOLDOWN_MS) {
+      return;
+    }
+
+    state.lastStaleRefreshAttempt = now;
+    state.degradedDueToStale = true;
+    showDegraded(true, 'AUTO-REFRESH STALE — refreshing feed');
+
+    if (state.isRefreshing) {
+      state.staleRefreshQueued = true;
+      return;
+    }
+
+    triggerStaleRefresh();
+  }
+
+  function renderProviders(list) {
+    if (!Array.isArray(list)) {
+      return;
+    }
+    state.latestProviders = list.slice();
+    var orderedList = sortProviders(list);
+    var orderedCards = [];
+    var incidentsCards = [];
+    var signalCards = [];
+    var unverifiedCards = [];
+    orderedList.forEach(function (provider) {
+      if (!provider) {
+        return;
+      }
+      var id = provider.id || provider.provider;
+      if (!id) {
+        return;
+      }
+      var card = null;
+      if (state.container) {
+        card = state.container.querySelector('[data-provider-id="' + escapeSelector(String(id)) + '"]');
+      }
+      if (!card && state.doc) {
+        card = state.doc.querySelector('[data-provider-id="' + escapeSelector(String(id)) + '"]') || state.doc.querySelector('.provider-card[data-id="' + String(id) + '"]');
+      }
+      if (!card) {
+        return;
+      }
+      orderedCards.push(card);
+      var normalized = normalizeStatus(provider.status || provider.overall || provider.overall_status || provider.stateCode);
+      if (card.classList && card.classList.contains('provider-card')) {
+        updateLegacyCard(card, provider, normalized);
+      } else {
+        updateModernCard(card, provider, normalized);
+      }
+      if (state.viewMode === 'incidents') {
+        var kind = resolveTileKind(provider, normalized);
+        if (kind === 'outage') {
+          incidentsCards.push(card);
+        } else if (kind === 'signal') {
+          signalCards.push(card);
+        } else if (kind === 'unknown' || kind === 'manual') {
+          unverifiedCards.push(card);
+        } else if (state.grid) {
+          state.grid.appendChild(card);
+        }
+      } else if (state.grid) {
+        state.grid.appendChild(card);
+      }
+    });
+    if (state.loadingEl) {
+      if (Array.isArray(list) && list.length) {
+        toggleSpinner(false);
+      } else {
+        var hasAnyCard = false;
+        if (state.container) {
+          hasAnyCard = !!state.container.querySelector('[data-provider-id]');
+        }
+        toggleSpinner(!hasAnyCard);
+      }
+    }
+    if (state.viewMode === 'incidents') {
+      appendCardsToSection(state.sectionGrids.incidents, incidentsCards);
+      appendCardsToSection(state.sectionGrids.signals, signalCards);
+      appendCardsToSection(state.sectionGrids.unverified, unverifiedCards);
+    } else if (state.grid && orderedCards.length) {
+      orderedCards.forEach(function (card) {
+        if (card.parentNode === state.grid) {
+          state.grid.appendChild(card);
+        }
+      });
+    }
+    applyProviderVisibility();
+  }
+
+  function appendCardsToSection(section, cards) {
+    if (!section || !cards || !cards.length) {
+      return;
+    }
+    cards.forEach(function (card) {
+      section.appendChild(card);
+    });
+  }
+
+  function resolveTileKind(provider, normalizedStatus) {
+    var tileKind = String((provider && (provider.tile_kind || provider.tileKind)) || '').toLowerCase();
+    if (tileKind) {
+      return tileKind;
+    }
+    var statusInfo = normalizedStatus || normalizeStatus(provider && (provider.status || provider.overall || provider.overall_status || provider.stateCode));
+    if (statusInfo.code === 'operational') {
+      return 'operational';
+    }
+    if (statusInfo.code === 'unknown') {
+      return 'unknown';
+    }
+    var incidents = Array.isArray(provider && provider.incidents) ? provider.incidents : [];
+    if (incidents.length) {
+      return 'outage';
+    }
+    return 'signal';
+  }
+
+  function sortProviders(list) {
+    if (!Array.isArray(list)) {
+      return [];
+    }
+    var hasSortKey = list.some(function (provider) {
+      if (!provider) {
+        return false;
+      }
+      var value = provider.sort_key;
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return true;
+      }
+      if (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value))) {
+        return true;
+      }
+      return false;
+    });
+
+    if (!hasSortKey) {
+      return list.slice().sort(compareProvidersLegacy);
+    }
+
+    return list.slice().sort(compareProvidersBySortKey);
+  }
+
+  function compareProvidersBySortKey(a, b) {
+    var keyA = resolveSortKey(a);
+    var keyB = resolveSortKey(b);
+    if (keyA.sortKey !== keyB.sortKey) {
+      return keyA.sortKey - keyB.sortKey;
+    }
+    if (keyA.tileRank !== keyB.tileRank) {
+      return keyA.tileRank - keyB.tileRank;
+    }
+    if (keyA.name !== keyB.name) {
+      return keyA.name < keyB.name ? -1 : 1;
+    }
+    return 0;
+  }
+
+  function resolveSortKey(provider) {
+    var tilePriority = {
+      outage: 0,
+      signal: 1,
+      unknown: 2,
+      manual: 3,
+      operational: 4
+    };
+    var name = provider && (provider.name || provider.id || provider.provider || '');
+    var tileKind = String((provider && (provider.tile_kind || provider.tileKind)) || '').toLowerCase();
+    var sortKey = null;
+    if (provider && typeof provider.sort_key === 'number' && Number.isFinite(provider.sort_key)) {
+      sortKey = provider.sort_key;
+    } else if (provider && typeof provider.sort_key === 'string' && provider.sort_key.trim() !== '' && !Number.isNaN(Number(provider.sort_key))) {
+      sortKey = Number(provider.sort_key);
+    }
+    if (sortKey === null) {
+      sortKey = resolveLegacySortKey(provider);
+    }
+    return {
+      sortKey: sortKey,
+      tileRank: tilePriority[tileKind] !== undefined ? tilePriority[tileKind] : tilePriority.unknown,
+      name: String(name || '').toLowerCase()
+    };
+  }
+
+  function compareProvidersLegacy(a, b) {
+    var keyA = resolveLegacySortTuple(a);
+    var keyB = resolveLegacySortTuple(b);
+    for (var i = 0; i < keyA.length; i += 1) {
+      if (keyA[i] === keyB[i]) {
+        continue;
+      }
+      return keyA[i] < keyB[i] ? -1 : 1;
+    }
+    return 0;
+  }
+
+  function buildIncidentsMeta(providers, meta) {
+    var counts = {
+      active_outage_count: 0,
+      signal_count: 0,
+      unverified_count: 0,
+      generated_at: ''
+    };
+    if (meta && typeof meta === 'object') {
+      if (typeof meta.active_outage_count === 'number' && Number.isFinite(meta.active_outage_count)) {
+        counts.active_outage_count = meta.active_outage_count;
+      }
+      if (typeof meta.signal_count === 'number' && Number.isFinite(meta.signal_count)) {
+        counts.signal_count = meta.signal_count;
+      }
+      if (typeof meta.unverified_count === 'number' && Number.isFinite(meta.unverified_count)) {
+        counts.unverified_count = meta.unverified_count;
+      }
+      if (meta.generated_at) {
+        counts.generated_at = String(meta.generated_at);
+      }
+    }
+
+    var needsFallback = counts.active_outage_count === 0 && counts.signal_count === 0 && counts.unverified_count === 0;
+    if (needsFallback && Array.isArray(providers)) {
+      providers.forEach(function (provider) {
+        if (!provider) {
+          return;
+        }
+        var kind = resolveTileKind(provider);
+        if (kind === 'outage') {
+          counts.active_outage_count += 1;
+        } else if (kind === 'signal') {
+          counts.signal_count += 1;
+        } else if (kind === 'unknown' || kind === 'manual') {
+          counts.unverified_count += 1;
+        }
+      });
+    }
+
+    if (!counts.generated_at && state.fetchedAt) {
+      counts.generated_at = String(state.fetchedAt);
+    }
+
+    return counts;
+  }
+
+  function updateHero(metaCounts) {
+    if (!state.heroWrap) {
+      return;
+    }
+    var showHero = state.viewMode === 'incidents' && metaCounts && metaCounts.active_outage_count === 0;
+    if (showHero) {
+      state.heroWrap.removeAttribute('hidden');
+      if (state.heroTime) {
+        var time = metaCounts.generated_at || state.fetchedAt || '';
+        state.heroTime.textContent = formatTimestamp(time) || '—';
+      }
+    } else {
+      state.heroWrap.setAttribute('hidden', 'hidden');
+    }
+  }
+
+  function updateSectionLabels(metaCounts) {
+    if (state.sectionToggles.signals) {
+      state.sectionToggles.signals.textContent = 'Signals (' + (metaCounts.signal_count || 0) + ')';
+    }
+    if (state.sectionToggles.unverified) {
+      state.sectionToggles.unverified.textContent = 'Can\u2019t verify (' + (metaCounts.unverified_count || 0) + ')';
+    }
+    if (state.modeButtons.incidents) {
+      state.modeButtons.incidents.textContent = 'Incidents (' + (metaCounts.active_outage_count || 0) + ')';
+    }
+  }
+
+  function updateIncidentsUI(providers, meta) {
+    var metaCounts = buildIncidentsMeta(providers, meta);
+    state.incidentsMeta = metaCounts;
+    updateSectionLabels(metaCounts);
+    updateHero(metaCounts);
+  }
+
+  function setViewMode(mode) {
+    var nextMode = mode === 'all' ? 'all' : 'incidents';
+    state.viewMode = nextMode;
+    if (state.modeButtons.incidents) {
+      state.modeButtons.incidents.classList.toggle('is-active', nextMode === 'incidents');
+      state.modeButtons.incidents.setAttribute('aria-pressed', nextMode === 'incidents' ? 'true' : 'false');
+    }
+    if (state.modeButtons.all) {
+      state.modeButtons.all.classList.toggle('is-active', nextMode === 'all');
+      state.modeButtons.all.setAttribute('aria-pressed', nextMode === 'all' ? 'true' : 'false');
+    }
+    if (state.incidentsWrap) {
+      if (nextMode === 'incidents') {
+        state.incidentsWrap.removeAttribute('hidden');
+      } else {
+        state.incidentsWrap.setAttribute('hidden', 'hidden');
+      }
+    }
+    if (state.allProvidersWrap) {
+      if (nextMode === 'all') {
+        state.allProvidersWrap.removeAttribute('hidden');
+      } else {
+        state.allProvidersWrap.setAttribute('hidden', 'hidden');
+      }
+    }
+    updateHero(state.incidentsMeta || {});
+    if (state.latestProviders && state.latestProviders.length) {
+      renderProviders(state.latestProviders);
+    }
+  }
+
+  function toggleSection(key) {
+    var body = state.sectionBodies[key];
+    var toggle = state.sectionToggles[key];
+    if (!body || !toggle) {
+      return;
+    }
+    var isOpen = !body.hasAttribute('hidden');
+    if (isOpen) {
+      body.setAttribute('hidden', 'hidden');
+      toggle.setAttribute('aria-expanded', 'false');
+    } else {
+      body.removeAttribute('hidden');
+      toggle.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  function resolveLegacySortKey(provider) {
+    return resolveLegacySortTuple(provider)[0];
+  }
+
+  function resolveLegacySortTuple(provider) {
+    var statePriority = {
+      outage: 0,
+      degraded: 1,
+      maintenance: 2,
+      unknown: 3,
+      operational: 4
+    };
+    var normalized = normalizeStatus(provider && (provider.status || provider.overall || provider.overall_status || provider.stateCode));
+    var stateRank = statePriority[normalized.code] !== undefined ? statePriority[normalized.code] : statePriority.unknown;
+    var incidents = Array.isArray(provider && provider.incidents) ? provider.incidents : [];
+    var hasIncidents = incidents.length ? 0 : 1;
+    var hasError = provider && provider.error ? 0 : 1;
+    var risk = provider && typeof provider.risk === 'number' ? provider.risk : 0;
+    var name = String((provider && (provider.name || provider.id || provider.provider || '')) || '').toLowerCase();
+    return [
+      hasIncidents,
+      stateRank,
+      hasError,
+      -1 * risk,
+      name
+    ];
+  }
+
+
+  function getSummaryText(provider) {
+    if (!provider) {
+      return '';
+    }
+    return provider.summary || provider.message || '';
+  }
+
+  function isGenericDegradedCopy(text) {
+    var needle = String(text || '').trim().toLowerCase();
+    if (!needle) {
+      return true;
+    }
+    var phrases = [
+      'service degradation reported.',
+      'major outage reported.',
+      'maintenance in progress.',
+      'status temporarily unavailable.',
+      'can\u2019t verify status right now.'
+    ];
+    return phrases.indexOf(needle) !== -1;
+  }
+
+  function getSignalOnlyCopy(provider, normalized, providerSlug) {
+    if (!provider) {
+      return null;
+    }
+    if (String(providerSlug || '').toLowerCase() !== 'cloudflare') {
+      return null;
+    }
+    var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+    if (incidents.length) {
+      return null;
+    }
+    var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
+    if (statusInfo.code === 'operational' || statusInfo.code === 'unknown') {
+      return null;
+    }
+    var message = String(provider.message || '').trim();
+    var summaryText = String(provider.summary || '').trim();
+    if (!isGenericDegradedCopy(summaryText) || !isGenericDegradedCopy(message)) {
+      return null;
+    }
+    return {
+      message: 'Degraded signal detected',
+      summary: 'No active incident listed yet — may be transient. Click \'View status\' or hit Refresh.'
+    };
+  }
+
+  function getMessageText(provider, normalized, providerSlug) {
+    if (!provider) {
+      return '';
+    }
+    var message = String(provider.message || '').trim();
+    var summaryText = String(provider.summary || '').trim();
+    var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+    var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
+    var hasUnavailableSummary = summaryText && hasUnavailableCopy(summaryText);
+    var hasError = !!provider.error || hasUnavailableSummary;
+    var signalOnlyCopy = getSignalOnlyCopy(provider, normalized, providerSlug);
+
+    if (hasError) {
+      return hasUnavailableSummary ? summaryText : UNKNOWN_MESSAGE;
+    }
+    if (signalOnlyCopy) {
+      return signalOnlyCopy.message;
+    }
+
+    if (!message) {
+      if (incidents.length) {
+        var lead = incidents[0];
+        var incidentTitle = lead && (lead.name || lead.title || lead.summary) ? (lead.name || lead.title || lead.summary) : 'Incident';
+        var condensed = condenseIncidentTitle(providerSlug, incidentTitle);
+        return condensed.text || incidentTitle;
+      }
+      if (statusInfo.code === 'operational') {
+        return 'All systems operational.';
+      }
+      if (statusInfo.code === 'unknown') {
+        return UNKNOWN_MESSAGE;
+      }
+      return summaryText || statusInfo.label || UNKNOWN_MESSAGE;
+    }
+
+    return message;
+  }
+
+  function getStatusLine(provider, normalized, providerSlug) {
+    var summaryText = getSummaryText(provider);
+    var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+    var hasIncidents = incidents.length > 0;
+    var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
+    var hasUnavailableSummary = summaryText && hasUnavailableCopy(summaryText);
+    var hasError = !!provider.error || hasUnavailableSummary;
+    var signalOnlyCopy = getSignalOnlyCopy(provider, normalized, providerSlug);
+
+    if (hasError) {
+      return hasUnavailableSummary ? summaryText : UNKNOWN_MESSAGE;
+    }
+    if (signalOnlyCopy) {
+      return signalOnlyCopy.summary;
+    }
+    if (hasIncidents) {
+      var lead = incidents[0];
+      var incidentTitle = lead && (lead.name || lead.title || lead.summary) ? (lead.name || lead.title || lead.summary) : 'Incident';
+      var condensed = condenseIncidentTitle(providerSlug, incidentTitle);
+      return 'Incident: ' + (condensed.text || 'Incident');
+    }
+    if (statusInfo.code === 'operational') {
+      return 'All systems operational.';
+    }
+    if (statusInfo.code === 'unknown') {
+      return UNKNOWN_MESSAGE;
+    }
+    return summaryText || statusInfo.label || UNKNOWN_MESSAGE;
+  }
+
+  function condenseIncidentTitle(providerSlug, text) {
+    var raw = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!raw) {
+      return { text: '', title: '' };
+    }
+
+    var display = raw;
+    var slug = String(providerSlug || '').toLowerCase();
+    if (slug === 'zscaler') {
+      var parts = display.split(' - ');
+      if (parts.length > 1) {
+        var rightSide = parts.slice(1).join(' - ').trim();
+        if (rightSide && /(\.com|\.net)/i.test(rightSide) && /,/.test(rightSide)) {
+          display = parts[0].trim();
+        }
+      }
+    }
+
+    if (display.length > 140) {
+      display = display.slice(0, 137).replace(/\s+$/, '') + '…';
+    }
+
+    return { text: display, title: raw };
+  }
+
+  function getProviderSlug(provider) {
+    if (!provider) {
+      return '';
+    }
+    return String(provider.id || provider.slug || provider.provider || provider.name || '').toLowerCase();
+  }
+
+  function updateLegacyCard(card, provider, normalized) {
+    var providerSlug = getProviderSlug(provider);
+    var badge = card.querySelector('.status-badge');
+    if (badge) {
+      badge.textContent = provider.status_label || normalized.label;
+      badge.className = 'status-badge ' + (provider.status_class || normalized.className);
+      if (badge.dataset) {
+        badge.dataset.status = provider.status || provider.overall || provider.overall_status || normalized.code;
+      }
+    }
+    var summary = card.querySelector('.provider-card__summary');
+    if (summary) {
+      summary.textContent = getStatusLine(provider, normalized, providerSlug);
+    }
+    var snark = card.querySelector('.provider-card__snark');
+    if (snark) {
+      snark.textContent = snarkOutage(provider.name || provider.provider || provider.id, normalized.label, getSummaryText(provider));
+    }
+    var incidentsWrap = card.querySelector('.incidents');
+    if (incidentsWrap) {
+      clearChildren(incidentsWrap);
+      incidentsWrap.textContent = '';
+      var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+      var hasError = !!provider.error || (hasUnavailableCopy(getSummaryText(provider)) && !(provider.incidents || []).length);
+      if (!incidents.length || hasError) {
+        incidentsWrap.setAttribute('hidden', 'hidden');
+      } else if (state.doc && typeof state.doc.createElement === 'function') {
+        incidentsWrap.removeAttribute('hidden');
+        incidents.forEach(function (incident) {
+          var item = state.doc.createElement('p');
+          var impact = incident.impact ? String(incident.impact).replace(/^[a-z]/, function (c) { return c.toUpperCase(); }) : 'Unknown';
+          var updated = formatTimestamp(incident.updated_at || incident.updatedAt);
+          var summaryText = '';
+          if (incident.summary) {
+            var condensedSummary = condenseIncidentTitle(providerSlug, incident.summary);
+            summaryText = ' — ' + condensedSummary.text;
+            if (condensedSummary.title && condensedSummary.title !== condensedSummary.text) {
+              item.setAttribute('title', condensedSummary.title);
+            }
+          }
+          item.textContent = impact + (updated ? ' • ' + updated : '') + summaryText;
+          incidentsWrap.appendChild(item);
+        });
+      }
+    }
+    var link = card.querySelector('.provider-link');
+    if (link && provider.url) {
+      link.setAttribute('href', provider.url);
+    }
+    updateCardMeta(card, provider, normalized);
+  }
+
+  function updateModernCard(card, provider, normalized) {
+    var providerSlug = getProviderSlug(provider);
+    var badge = card.querySelector('[data-lo-badge]');
+    if (badge) {
+      badge.textContent = provider.status_label || normalized.label;
+      badge.className = 'lo-pill ' + (provider.status_class || normalized.className);
+    }
+    var messageText = getMessageText(provider, normalized, providerSlug);
+    var messageEl = card.querySelector('[data-lo-message]');
+    if (messageEl) {
+      messageEl.textContent = messageText;
+    }
+    var signalOnlyCopy = getSignalOnlyCopy(provider, normalized, providerSlug);
+    var summaryText = signalOnlyCopy ? signalOnlyCopy.summary : String(provider.summary || '').trim();
+    if (summaryText && messageText && summaryText.toLowerCase() === messageText.toLowerCase()) {
+      summaryText = '';
+    }
+    var summary = card.querySelector('[data-lo-summary]');
+    if (summaryText) {
+      if (!summary && state.doc) {
+        summary = state.doc.createElement('p');
+        summary.className = 'lo-summary';
+        summary.setAttribute('data-lo-summary', '');
+        if (messageEl && messageEl.parentNode) {
+          messageEl.parentNode.insertBefore(summary, messageEl.nextSibling);
+        } else {
+          card.appendChild(summary);
+        }
+      }
+      if (summary) {
+        summary.textContent = summaryText;
+        summary.removeAttribute('hidden');
+      }
+    } else if (summary) {
+      summary.textContent = '';
+      summary.setAttribute('hidden', 'hidden');
+    }
+    var componentsWrap = card.querySelector('[data-lo-components]');
+    if (componentsWrap) {
+      componentsWrap.innerHTML = '';
+      var components = Array.isArray(provider.components) ? provider.components.filter(function (component) {
+        if (!component) {
+          return false;
+        }
+        var status = String(component.status || '').toLowerCase();
+        return status && status !== 'operational';
+      }) : [];
+      if (components.length) {
+        var title = state.doc.createElement('h4');
+        title.className = 'lo-components__title';
+        title.textContent = 'Impacted components';
+        componentsWrap.appendChild(title);
+        var listEl = state.doc.createElement('ul');
+        listEl.className = 'lo-components__list';
+        components.forEach(function (component) {
+          var item = state.doc.createElement('li');
+          var name = state.doc.createElement('span');
+          name.className = 'lo-component-name';
+          name.textContent = component.name || 'Component';
+          item.appendChild(name);
+          var statusEl = state.doc.createElement('span');
+          statusEl.className = 'lo-component-status';
+          statusEl.textContent = component.status_label || normalizeStatus(component.status).label;
+          item.appendChild(statusEl);
+          listEl.appendChild(item);
+        });
+        componentsWrap.appendChild(listEl);
+      }
+    }
+    var incidentsWrap = card.querySelector('[data-lo-incidents]');
+    if (incidentsWrap) {
+      incidentsWrap.innerHTML = '';
+      var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+      var hasError = !!provider.error || hasUnavailableCopy(getSummaryText(provider));
+      if (!incidents.length || hasError) {
+        incidentsWrap.setAttribute('hidden', 'hidden');
+      } else {
+        incidentsWrap.removeAttribute('hidden');
+        var ul = state.doc.createElement('ul');
+        ul.className = 'lo-inc-list';
+        incidents.forEach(function (incident) {
+          var li = state.doc.createElement('li');
+          li.className = 'lo-inc-item';
+          var title = state.doc.createElement('p');
+          title.className = 'lo-inc-title';
+          var condensedName = condenseIncidentTitle(providerSlug, incident.name || 'Incident');
+          title.textContent = condensedName.text || 'Incident';
+          if (condensedName.title && condensedName.title !== condensedName.text) {
+            title.setAttribute('title', condensedName.title);
+          }
+          li.appendChild(title);
+          var meta = state.doc.createElement('p');
+          meta.className = 'lo-inc-meta';
+          var impact = incident.impact ? String(incident.impact).replace(/^[a-z]/, function (c) { return c.toUpperCase(); }) : 'Unknown';
+          var updated = formatTimestamp(incident.updated_at || incident.updatedAt || incident.started_at || incident.startedAt);
+          meta.textContent = impact + (updated ? ' • ' + updated : '');
+          li.appendChild(meta);
+          if (incident.summary) {
+            var details = state.doc.createElement('p');
+            details.className = 'lo-inc-summary';
+            var condensedSummary = condenseIncidentTitle(providerSlug, incident.summary);
+            details.textContent = condensedSummary.text;
+            if (condensedSummary.title && condensedSummary.title !== condensedSummary.text) {
+              details.setAttribute('title', condensedSummary.title);
+            }
+            li.appendChild(details);
+          }
+          if (incident.url) {
+            var link = state.doc.createElement('a');
+            link.className = 'lo-status-link';
+            link.href = incident.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = 'View incident';
+            li.appendChild(link);
+          }
+          ul.appendChild(li);
+        });
+        incidentsWrap.appendChild(ul);
+      }
+    }
+    var statusLink = card.querySelector('[data-lo-status-url]');
+    if (statusLink) {
+      var destination = provider.url || provider.link;
+      if (destination) {
+        statusLink.href = destination;
+        statusLink.removeAttribute('hidden');
+      } else {
+        statusLink.setAttribute('hidden', 'hidden');
+      }
+    }
+    updateCardMeta(card, provider, normalized);
+  }
+
+  function ensureMetaWrap(card) {
+    if (!card || !state.doc) {
+      return null;
+    }
+    var wrap = card.querySelector('[data-lo-meta]');
+    if (wrap) {
+      return wrap;
+    }
+    wrap = state.doc.createElement('div');
+    wrap.className = 'lo-card-meta-wrap';
+    wrap.setAttribute('data-lo-meta', '');
+    var anchor = card.querySelector('[data-lo-summary]')
+      || card.querySelector('.provider-card__summary')
+      || card.querySelector('[data-lo-message]')
+      || card.querySelector('.provider-card__snark');
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(wrap, anchor.nextSibling);
+    } else {
+      card.appendChild(wrap);
+    }
+    return wrap;
+  }
+
+  function ensureMetaLine(wrap, attr, className) {
+    if (!wrap || !state.doc) {
+      return null;
+    }
+    var selector = '[' + attr + ']';
+    var line = wrap.querySelector(selector);
+    if (!line) {
+      line = state.doc.createElement('p');
+      line.className = className;
+      line.setAttribute(attr, '');
+      wrap.appendChild(line);
+    }
+    return line;
+  }
+
+  function buildDebugLine(provider) {
+    var httpCode = typeof provider.http_code === 'number' ? provider.http_code : null;
+    var errorText = provider && provider.error ? String(provider.error) : '';
+    if (httpCode !== null && httpCode !== 0) {
+      return 'debug: HTTP ' + httpCode + (errorText ? ' (' + errorText + ')' : '');
+    }
+    if (errorText) {
+      return 'debug: ' + errorText;
+    }
+    return '';
+  }
+
+  function updateCardMeta(card, provider, normalized) {
+    if (!card || !provider) {
+      return;
+    }
+    var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
+    writeLastKnown(provider, statusInfo);
+    var wrap = ensureMetaWrap(card);
+    if (!wrap) {
+      return;
+    }
+    var fetchedAt = provider.fetched_at || provider.fetchedAt || provider.updated_at || provider.updatedAt || '';
+    var lastChecked = formatTimestamp(fetchedAt) || '—';
+    var lastCheckedEl = ensureMetaLine(wrap, 'data-lo-last-checked', 'lo-card-meta');
+    if (lastCheckedEl) {
+      lastCheckedEl.textContent = 'Last checked: ' + lastChecked;
+    }
+    var lastKnownEl = ensureMetaLine(wrap, 'data-lo-last-known', 'lo-card-meta lo-card-meta--hint');
+    var hintEl = ensureMetaLine(wrap, 'data-lo-unknown-hint', 'lo-card-meta lo-card-meta--hint');
+    var lastKnown = statusInfo.code === 'unknown' ? readLastKnown(getProviderId(provider)) : null;
+    if (statusInfo.code === 'unknown') {
+      if (lastKnown && lastKnown.status) {
+        var lastKnownLabel = lastKnown.status_label || normalizeStatus(lastKnown.status).label;
+        var lastKnownTime = formatTimestamp(lastKnown.fetched_at) || '—';
+        if (lastKnownEl) {
+          lastKnownEl.textContent = 'Last known: ' + lastKnownLabel + (lastKnownTime ? ' (' + lastKnownTime + ')' : '');
+          lastKnownEl.removeAttribute('hidden');
+        }
+        if (hintEl) {
+          hintEl.textContent = UNKNOWN_HINT;
+          hintEl.setAttribute('hidden', 'hidden');
+        }
+      } else {
+        if (lastKnownEl) {
+          lastKnownEl.textContent = '';
+          lastKnownEl.setAttribute('hidden', 'hidden');
+        }
+        if (hintEl) {
+          hintEl.textContent = UNKNOWN_HINT;
+          hintEl.removeAttribute('hidden');
+        }
+      }
+    } else {
+      if (lastKnownEl) {
+        lastKnownEl.textContent = '';
+        lastKnownEl.setAttribute('hidden', 'hidden');
+      }
+      if (hintEl) {
+        hintEl.textContent = '';
+        hintEl.setAttribute('hidden', 'hidden');
+      }
+    }
+    var debugEl = ensureMetaLine(wrap, 'data-lo-debug', 'lo-card-debug');
+    if (debugEl) {
+      var debugLine = state.debug ? buildDebugLine(provider) : '';
+      if (debugLine) {
+        debugEl.textContent = debugLine;
+        debugEl.removeAttribute('hidden');
+      } else {
+        debugEl.textContent = '';
+        debugEl.setAttribute('hidden', 'hidden');
+      }
+    }
+  }
+  function formatTimestamp(iso) {
+    if (!iso) {
+      return '';
+    }
+    var date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    } catch (err) {
+      return date.toISOString();
+    }
+  }
+
+  function mapHistoryStatus(code) {
+    var key = String(code || '').toLowerCase();
+    if (
+      key === 'major_outage' ||
+      key === 'critical' ||
+      key === 'outage' ||
+      key === 'major'
+    ) {
+      return { label: 'Outage', className: 'outage' };
+    }
+    if (
+      key === 'minor_outage' ||
+      key === 'partial_outage' ||
+      key === 'degraded_performance' ||
+      key === 'partial' ||
+      key === 'degraded' ||
+      key === 'incident'
+    ) {
+      return { label: 'Degraded', className: 'degraded' };
+    }
+    if (key === 'maintenance' || key === 'maintenance_window') {
+      return { label: 'Maintenance', className: 'maintenance' };
+    }
+    if (key === 'operational' || key === 'none' || key === 'ok') {
+      return { label: 'Operational', className: 'operational' };
+    }
+    return { label: 'Unknown', className: 'unknown' };
+  }
+
+  function parseIncidentTimestamp(value) {
+    if (typeof value === 'number') {
+      return value;
+    }
+    if (value instanceof Date) {
+      return value.getTime();
+    }
+    var parsed = Date.parse(String(value || ''));
+    if (Number.isNaN(parsed)) {
+      return 0;
+    }
+    return parsed;
+  }
+
+  function getIncidentStartTs(incident) {
+    if (!incident || typeof incident !== 'object') {
+      return 0;
+    }
+    return parseIncidentTimestamp(
+      incident.started_at ||
+      incident.first_seen ||
+      incident.detected_at ||
+      incident.updated_at ||
+      incident.last_seen
+    );
+  }
+
+  function getIncidentUpdatedTs(incident) {
+    if (!incident || typeof incident !== 'object') {
+      return 0;
+    }
+    return parseIncidentTimestamp(incident.updated_at || incident.last_seen);
+  }
+
+  function severityRank(sev) {
+    var code = String(sev || '').toLowerCase();
+    if (code === 'outage' || code === 'major_outage' || code === 'major' || code === 'critical') {
+      return 4;
+    }
+    if (
+      code === 'degraded' ||
+      code === 'partial' ||
+      code === 'partial_outage' ||
+      code === 'degraded_performance' ||
+      code === 'incident'
+    ) {
+      return 3;
+    }
+    if (code === 'maintenance') {
+      return 2;
+    }
+    if (code === 'info') {
+      return 1;
+    }
+    return 0;
+  }
+
+  function normalizeIncidentTitle(value) {
+    var text = String(value || '').toLowerCase();
+    text = text.replace(/\bdetails\b/g, '');
+    text = text.replace(/([!?.:,;])\1+/g, '$1');
+    text = text.replace(/\s+/g, ' ').trim();
+    return text;
+  }
+
+  function dedupeIncidents(list) {
+    if (!Array.isArray(list)) {
+      return [];
+    }
+    var seen = {};
+    list.forEach(function (entry) {
+      if (!entry || typeof entry !== 'object') {
+        return;
+      }
+      var providerSlug = String(entry.provider_id || entry.provider || '').toLowerCase();
+      var titleKey = normalizeIncidentTitle(entry.summary || entry.title || '');
+      var startTs = getIncidentStartTs(entry);
+      var key = providerSlug + '|' + titleKey + '|' + Math.floor(startTs / 60000);
+      var updatedTs = getIncidentUpdatedTs(entry);
+      if (!seen[key] || getIncidentUpdatedTs(seen[key]) < updatedTs) {
+        seen[key] = entry;
+      }
+    });
+    return Object.keys(seen).map(function (key) {
+      return seen[key];
+    });
+  }
+
+  function formatHistoryDate(value) {
+    if (!value) {
+      return '';
+    }
+    var parsed = Date.parse(value + 'T00:00:00Z');
+    if (Number.isNaN(parsed)) {
+      return value;
+    }
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric'
+      }).format(new Date(parsed));
+    } catch (err) {
+      return new Date(parsed).toISOString().slice(0, 10);
+    }
+  }
+
+  function formatIncidentCount(count) {
+    var safe = Number.isFinite(count) ? count : 0;
+    if (safe === 1) {
+      return '1 incident';
+    }
+    return safe + ' incidents';
+  }
+
+  function formatDateRange(meta) {
+    if (!meta) {
+      return '';
+    }
+    var startRaw = meta.window_start || meta.windowStart;
+    var endRaw = meta.window_end || meta.windowEnd;
+    if (!startRaw || !endRaw) {
+      return '';
+    }
+
+    var startDate = Date.parse(startRaw + 'T00:00:00Z');
+    var endDate = Date.parse(endRaw + 'T00:00:00Z');
+    if (Number.isNaN(startDate) || Number.isNaN(endDate)) {
+      return '';
+    }
+
+    var startObj = new Date(startDate);
+    var endObj = new Date(endDate);
+    var startYear = startObj.getUTCFullYear();
+    var endYear = endObj.getUTCFullYear();
+
+    var formatter = function (date, includeYear) {
+      try {
+        return new Intl.DateTimeFormat(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: includeYear ? 'numeric' : undefined
+        }).format(date);
+      } catch (err) {
+        var iso = date.toISOString().slice(0, 10);
+        return includeYear ? iso : iso.slice(5);
+      }
+    };
+
+    var startLabel = formatter(startObj, startYear !== endYear);
+    var endLabel = formatter(endObj, true);
+
+    return startLabel + ' – ' + endLabel;
+  }
+
+  function formatShortDate(dateStr, includeYear) {
+    if (!dateStr) {
+      return '';
+    }
+    var parsed = Date.parse(dateStr + 'T00:00:00Z');
+    if (Number.isNaN(parsed)) {
+      return dateStr;
+    }
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: includeYear ? 'numeric' : undefined
+      }).format(new Date(parsed));
+    } catch (err) {
+      var iso = new Date(parsed).toISOString().slice(0, 10);
+      return includeYear ? iso : iso.slice(5);
+    }
+  }
+
+  function buildDailySeries(counts, days) {
+    var today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    var labels = [];
+    for (var i = days - 1; i >= 0; i -= 1) {
+      var dt = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+      labels.push(dt.toISOString().slice(0, 10));
+    }
+
+    var values = labels.map(function (label) { return counts[label] || 0; });
+    var totalIncidents = 0;
+    var activeDays = 0;
+    var maxCount = 0;
+    var peakDate = '';
+
+    values.forEach(function (value, idx) {
+      totalIncidents += value;
+      if (value > 0) {
+        activeDays += 1;
+      }
+      if (value > maxCount) {
+        maxCount = value;
+        peakDate = labels[idx];
+      }
+    });
+
+    return {
+      labels: labels,
+      values: values,
+      totalIncidents: totalIncidents,
+      activeDays: activeDays,
+      maxCount: maxCount,
+      peakDate: peakDate
+    };
+  }
+
+  function buildTimelineMeta(series) {
+    var meta = state.doc.createElement('div');
+    meta.className = 'lo-history__meta';
+    if (!series || series.totalIncidents <= 0) {
+      meta.textContent = 'No incidents recorded during this window.';
+      return meta;
+    }
+    var dayLabel = series.labels.length === 1 ? 'day' : 'days';
+    var summary = formatIncidentCount(series.totalIncidents) + ' across ' + series.activeDays + ' of ' + series.labels.length + ' ' + dayLabel;
+    if (series.maxCount > 0 && series.peakDate) {
+      summary += ' (busiest: ' + formatShortDate(series.peakDate) + ' with ' + formatIncidentCount(series.maxCount) + ').';
+    } else {
+      summary += '.';
+    }
+    meta.textContent = summary;
+    return meta;
+  }
+
+  function resolveHistoryChartMode(windowDays) {
+    var stored = '';
+    if (state.root && state.root.localStorage) {
+      try {
+        stored = state.root.localStorage.getItem(HISTORY_CHART_MODE_KEY) || '';
+      } catch (err) {
+        stored = '';
+      }
+    }
+    if (stored === 'heatmap' || stored === 'bars' || stored === 'trend') {
+      return stored;
+    }
+    if (windowDays > 45) {
+      return 'heatmap';
+    }
+    if (windowDays <= 30) {
+      return 'bars';
+    }
+    return 'trend';
+  }
+
+  function persistHistoryChartMode(mode) {
+    if (!state.root || !state.root.localStorage) {
+      return;
+    }
+    try {
+      state.root.localStorage.setItem(HISTORY_CHART_MODE_KEY, mode);
+    } catch (err) {
+      // Ignore storage errors.
+    }
+  }
+
+  function renderHistoryCharts(providers, meta) {
+    if (!state.historyCharts || !state.doc) {
+      return;
+    }
+
+    state.historyCharts.innerHTML = '';
+    var chartData = getHistoryChartData();
+    var providerCounts = chartData ? chartData.providerCounts : null;
+    var dailyCounts = chartData ? chartData.dailyCounts : null;
+    var yoy = chartData ? chartData.yearOverYear : null;
+    var hasProviders = providerCounts && Object.keys(providerCounts).length > 0;
+    var hasDaily = dailyCounts && Object.keys(dailyCounts).length > 0;
+
+    if (!hasProviders && !hasDaily) {
+      state.historyCharts.setAttribute('hidden', 'hidden');
+      return;
+    }
+
+    state.historyCharts.removeAttribute('hidden');
+    var frag = state.doc.createDocumentFragment();
+
+    var subtitle = formatDateRange(meta || {});
+
+    if (hasDaily) {
+      var reportCard = buildHistoryReportCard(chartData, subtitle);
+      if (reportCard) {
+        frag.appendChild(reportCard);
+      }
+    }
+
+    if (hasProviders) {
+      var providerChart = buildBarChart(providerCounts, 'Incidents by provider', subtitle);
+      frag.appendChild(providerChart);
+    }
+
+    if (hasDaily) {
+      var timelineChart = buildTimelineSection(
+        dailyCounts,
+        (chartData && chartData.windowDays) || HISTORY_DEFAULT_DAYS,
+        subtitle
+      );
+      frag.appendChild(timelineChart);
+    }
+
+    if (yoy && yoy.current && yoy.previous) {
+      var yoyChart = buildYearOverYearChart(
+        yoy,
+        subtitle,
+        (chartData && chartData.windowDays) || HISTORY_DEFAULT_DAYS
+      );
+      if (yoyChart) {
+        frag.appendChild(yoyChart);
+      }
+    }
+
+    state.historyCharts.appendChild(frag);
+  }
+
+  function buildHistoryReportCard(chartData, subtitle) {
+    if (!chartData || !state.doc) {
+      return null;
+    }
+    var counts = chartData.dailyCounts || {};
+    var series = buildDailySeries(counts, chartData.windowDays || HISTORY_DEFAULT_DAYS);
+    var providerCounts = chartData.providerCounts || {};
+    var providers = Object.keys(providerCounts).map(function (key) {
+      return { label: key, value: providerCounts[key] || 0 };
+    }).sort(function (a, b) { return b.value - a.value; }).slice(0, 5);
+
+    var wrap = state.doc.createElement('div');
+    wrap.className = 'lo-history__report';
+
+    var heading = state.doc.createElement('div');
+    heading.className = 'lo-history__chart-title';
+    heading.textContent = 'Report Card';
+    wrap.appendChild(heading);
+
+    if (subtitle) {
+      var sub = state.doc.createElement('div');
+      sub.className = 'lo-history__subtitle';
+      sub.textContent = subtitle;
+      wrap.appendChild(sub);
+    }
+
+    var grid = state.doc.createElement('div');
+    grid.className = 'lo-history__report-grid';
+
+    var makeStat = function (label, value, subtext) {
+      var stat = state.doc.createElement('div');
+      stat.className = 'lo-history__report-stat';
+      var statLabel = state.doc.createElement('div');
+      statLabel.className = 'lo-history__report-label';
+      statLabel.textContent = label;
+      var statValue = state.doc.createElement('div');
+      statValue.className = 'lo-history__report-value';
+      statValue.textContent = value;
+      stat.appendChild(statLabel);
+      stat.appendChild(statValue);
+      if (subtext) {
+        var statSub = state.doc.createElement('div');
+        statSub.className = 'lo-history__report-sub';
+        statSub.textContent = subtext;
+        stat.appendChild(statSub);
+      }
+      return stat;
+    };
+
+    grid.appendChild(makeStat('Total incidents', formatIncidentCount(series.totalIncidents)));
+    grid.appendChild(makeStat('Active days', series.activeDays + ' / ' + series.labels.length));
+    if (series.maxCount > 0 && series.peakDate) {
+      grid.appendChild(makeStat('Peak day', formatShortDate(series.peakDate, true), formatIncidentCount(series.maxCount) + ' incidents'));
+    } else {
+      grid.appendChild(makeStat('Peak day', '—', 'No incidents yet'));
+    }
+
+    wrap.appendChild(grid);
+
+    var tableWrap = state.doc.createElement('div');
+    tableWrap.className = 'lo-history__report-table-wrap';
+    var tableTitle = state.doc.createElement('div');
+    tableTitle.className = 'lo-history__report-label';
+    tableTitle.textContent = 'Top 5 providers';
+    tableWrap.appendChild(tableTitle);
+
+    var table = state.doc.createElement('table');
+    table.className = 'lo-history__report-table';
+    var thead = state.doc.createElement('thead');
+    thead.innerHTML = '<tr><th scope="col">Provider</th><th scope="col">Incidents</th></tr>';
+    table.appendChild(thead);
+    var tbody = state.doc.createElement('tbody');
+
+    if (providers.length) {
+      providers.forEach(function (entry) {
+        var row = state.doc.createElement('tr');
+        var labelCell = state.doc.createElement('td');
+        labelCell.textContent = entry.label;
+        var valueCell = state.doc.createElement('td');
+        valueCell.textContent = String(entry.value);
+        row.appendChild(labelCell);
+        row.appendChild(valueCell);
+        tbody.appendChild(row);
+      });
+    } else {
+      var emptyRow = state.doc.createElement('tr');
+      var emptyCell = state.doc.createElement('td');
+      emptyCell.setAttribute('colspan', '2');
+      emptyCell.textContent = 'No incidents logged.';
+      emptyRow.appendChild(emptyCell);
+      tbody.appendChild(emptyRow);
+    }
+
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    wrap.appendChild(tableWrap);
+
+    return wrap;
+  }
+
+  function buildTimelineSection(counts, days, subtitle) {
+    var chartWrap = state.doc.createElement('div');
+    chartWrap.className = 'lo-history__chart lo-history__chart--timeline';
+    var heading = state.doc.createElement('div');
+    heading.className = 'lo-history__chart-title';
+    heading.textContent = 'Incidents over time';
+    chartWrap.appendChild(heading);
+    if (subtitle) {
+      var sub = state.doc.createElement('div');
+      sub.className = 'lo-history__subtitle';
+      sub.textContent = subtitle;
+      chartWrap.appendChild(sub);
+    }
+
+    var toggle = state.doc.createElement('div');
+    toggle.className = 'lo-history__view-toggle';
+
+    var buttons = {};
+    var modes = [
+      { mode: 'heatmap', label: 'Heatmap' },
+      { mode: 'bars', label: 'Bars' },
+      { mode: 'trend', label: 'Trend' }
+    ];
+
+    modes.forEach(function (entry) {
+      var button = state.doc.createElement('button');
+      button.type = 'button';
+      button.className = 'lo-history__view-button';
+      button.textContent = entry.label;
+      button.setAttribute('data-history-view', entry.mode);
+      button.setAttribute('aria-pressed', 'false');
+      toggle.appendChild(button);
+      buttons[entry.mode] = button;
+    });
+
+    chartWrap.appendChild(toggle);
+
+    var content = state.doc.createElement('div');
+    content.className = 'lo-history__chart-content';
+    chartWrap.appendChild(content);
+
+    var setActiveMode = function (mode) {
+      if (mode !== 'heatmap' && mode !== 'bars' && mode !== 'trend') {
+        mode = 'bars';
+      }
+      persistHistoryChartMode(mode);
+      Object.keys(buttons).forEach(function (key) {
+        var isActive = key === mode;
+        buttons[key].classList.toggle('is-active', isActive);
+        buttons[key].setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      clearChildren(content);
+      var chartBody = null;
+      if (mode === 'heatmap') {
+        chartBody = buildCalendarHeatmap(counts, days);
+      } else if (mode === 'trend') {
+        chartBody = buildTrendChart(counts, days);
+      } else {
+        chartBody = buildTimelineChart(counts, days);
+      }
+      if (chartBody) {
+        content.appendChild(chartBody);
+      }
+    };
+
+    var initialMode = resolveHistoryChartMode(days);
+    setActiveMode(initialMode);
+
+    Object.keys(buttons).forEach(function (mode) {
+      buttons[mode].addEventListener('click', function () {
+        setActiveMode(mode);
+      });
+    });
+
+    return chartWrap;
+  }
+
+  function buildBarChart(counts, title, subtitle) {
+    var chartWrap = state.doc.createElement('div');
+    chartWrap.className = 'lo-history__chart';
+    if (title) {
+      var heading = state.doc.createElement('div');
+      heading.className = 'lo-history__chart-title';
+      heading.textContent = title;
+      chartWrap.appendChild(heading);
+      if (subtitle) {
+        var sub = state.doc.createElement('div');
+        sub.className = 'lo-history__subtitle';
+        sub.textContent = subtitle;
+        chartWrap.appendChild(sub);
+      }
+    }
+
+    var entries = Object.keys(counts).map(function (key) {
+      return { label: key, value: counts[key] };
+    }).sort(function (a, b) { return b.value - a.value; }).slice(0, 8);
+    var max = entries.reduce(function (acc, item) { return Math.max(acc, item.value || 0); }, 0) || 1;
+    var width = Math.max(220, entries.length * 70);
+    var height = 160;
+    var topPadding = 30;
+    var bottomPadding = 30;
+    var barWidth = Math.floor((width - 20) / Math.max(entries.length, 1)) - 10;
+    var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Incidents by provider');
+
+    var yLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+    yLabel.setAttribute('x', '6');
+    yLabel.setAttribute('y', '18');
+    yLabel.setAttribute('class', 'lo-history__chart-text');
+    yLabel.textContent = 'Incidents';
+    svg.appendChild(yLabel);
+
+    entries.forEach(function (entry, index) {
+      var x = 10 + index * (barWidth + 10);
+      var scaled = Math.max(4, Math.round(((entry.value || 0) / max) * (height - topPadding - bottomPadding)));
+      var y = height - bottomPadding - scaled;
+
+      var rect = state.doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(y));
+      rect.setAttribute('width', String(barWidth));
+      rect.setAttribute('height', String(scaled));
+      rect.setAttribute('class', 'lo-history__chart-bar');
+      rect.setAttribute('data-count', String(entry.value));
+      rect.setAttribute('data-label', entry.label);
+      var rectTitle = state.doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+      rectTitle.textContent = entry.label + ' – ' + entry.value + ' incidents';
+      rect.appendChild(rectTitle);
+      svg.appendChild(rect);
+
+      if (scaled >= 20) {
+        var valueLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+        valueLabel.setAttribute('x', String(x + (barWidth / 2)));
+        valueLabel.setAttribute('y', String(Math.max(topPadding, y - 6)));
+        valueLabel.setAttribute('text-anchor', 'middle');
+        valueLabel.setAttribute('class', 'lo-history__chart-text');
+        valueLabel.textContent = String(entry.value);
+        svg.appendChild(valueLabel);
+      }
+
+      var label = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', String(x + (barWidth / 2)));
+      label.setAttribute('y', String(height - 12));
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('class', 'lo-history__chart-text');
+      label.textContent = entry.label.length > 8 ? entry.label.slice(0, 8) + '…' : entry.label;
+      svg.appendChild(label);
+    });
+
+    chartWrap.appendChild(svg);
+    return chartWrap;
+  }
+
+  function buildTimelineChart(counts, days) {
+    var chartBody = state.doc.createElement('div');
+    chartBody.className = 'lo-history__chart-body';
+
+    var series = buildDailySeries(counts, days);
+    var labels = series.labels;
+    var values = series.values;
+
+    chartBody.appendChild(buildTimelineMeta(series));
+
+    var tooltip = null;
+    try {
+      tooltip = state.doc.createElement('div');
+      tooltip.className = 'lo-history__chart-tooltip';
+      tooltip.setAttribute('role', 'status');
+      tooltip.setAttribute('aria-live', 'polite');
+      tooltip.textContent = 'Hover or focus a bar to see details.';
+      chartBody.appendChild(tooltip);
+    } catch (err) {
+      tooltip = null;
+    }
+
+    var max = values.reduce(function (acc, val) { return Math.max(acc, val); }, 0) || 1;
+    var width = Math.max(240, labels.length * 10);
+    var height = 170;
+    var topPadding = 28;
+    var bottomPadding = 36;
+    var gap = 2;
+    var barWidth = Math.max(2, Math.floor((width - 16 - ((labels.length - 1) * gap)) / Math.max(labels.length, 1)));
+    var stepX = barWidth + gap;
+
+    var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Incidents over time');
+
+    var yAxisLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+    yAxisLabel.setAttribute('x', '6');
+    yAxisLabel.setAttribute('y', '18');
+    yAxisLabel.setAttribute('class', 'lo-history__chart-text');
+    yAxisLabel.textContent = 'Incidents per day';
+    svg.appendChild(yAxisLabel);
+
+    var tickIndices = [];
+    labels.forEach(function (label, idx) {
+      if (idx === 0 || idx === labels.length - 1) {
+        tickIndices.push(idx);
+        return;
+      }
+      var parsed = Date.parse(label + 'T00:00:00Z');
+      if (Number.isNaN(parsed)) {
+        return;
+      }
+      var date = new Date(parsed);
+      if (days > 45) {
+        if (date.getUTCDate() === 1) {
+          tickIndices.push(idx);
+        }
+      } else if (date.getUTCDay() === 0) {
+        tickIndices.push(idx);
+      }
+    });
+
+    if (tickIndices.length < 4) {
+      var fallbackStep = Math.max(1, Math.ceil(labels.length / 6));
+      for (var i = 0; i < labels.length; i += fallbackStep) {
+        tickIndices.push(i);
+      }
+    }
+
+    tickIndices = tickIndices.filter(function (value, idx, arr) {
+      return arr.indexOf(value) === idx;
+    }).sort(function (a, b) { return a - b; });
+
+    if (tickIndices.length > 8) {
+      var dropStep = Math.ceil(tickIndices.length / 8);
+      tickIndices = tickIndices.filter(function (_, idx) { return idx % dropStep === 0; });
+      if (tickIndices[tickIndices.length - 1] !== labels.length - 1) {
+        tickIndices.push(labels.length - 1);
+      }
+    }
+
+    labels.forEach(function (label, idx) {
+      var x = 8 + idx * stepX;
+      var scaled = Math.max(2, Math.round((values[idx] / max) * (height - topPadding - bottomPadding)));
+      var y = height - bottomPadding - scaled;
+      var rect = state.doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(y));
+      rect.setAttribute('width', String(barWidth));
+      rect.setAttribute('height', String(scaled));
+      rect.setAttribute('class', 'lo-history__chart-bar lo-history__chart-bar--thin');
+      rect.setAttribute('tabindex', '0');
+      var friendlyLabel = formatShortDate(label);
+      rect.setAttribute('aria-label', friendlyLabel + ': ' + formatIncidentCount(values[idx]));
+      var barTitle = state.doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+      barTitle.textContent = label + ' – ' + values[idx] + ' incidents';
+      rect.appendChild(barTitle);
+
+      var activateBar = function () {
+        if (tooltip) {
+          tooltip.textContent = friendlyLabel + ': ' + formatIncidentCount(values[idx]);
+        }
+        rect.classList.add('lo-history__chart-bar--active');
+      };
+
+      var deactivateBar = function () {
+        if (tooltip) {
+          tooltip.textContent = 'Hover or focus a bar to see details.';
+        }
+        rect.classList.remove('lo-history__chart-bar--active');
+      };
+
+      rect.addEventListener('mouseenter', activateBar);
+      rect.addEventListener('focus', activateBar);
+      rect.addEventListener('mouseleave', deactivateBar);
+      rect.addEventListener('blur', deactivateBar);
+
+      svg.appendChild(rect);
+
+      if (days <= 21 && scaled > 12 && values[idx] > 0) {
+        var countLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+        countLabel.setAttribute('x', String(x + (barWidth / 2)));
+        countLabel.setAttribute('y', String(Math.max(topPadding, y - 3)));
+        countLabel.setAttribute('text-anchor', 'middle');
+        countLabel.setAttribute('class', 'lo-history__chart-text');
+        countLabel.textContent = String(values[idx]);
+        svg.appendChild(countLabel);
+      }
+
+      if (tickIndices.indexOf(idx) !== -1) {
+        var tick = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+        tick.setAttribute('x', String(x + (barWidth / 2)));
+        tick.setAttribute('y', String(height - 12));
+        tick.setAttribute('text-anchor', 'middle');
+        tick.setAttribute('class', 'lo-history__chart-text');
+        tick.textContent = formatShortDate(label);
+        svg.appendChild(tick);
+      }
+    });
+
+    chartBody.appendChild(svg);
+    return chartBody;
+  }
+
+  function buildCalendarHeatmap(counts, days) {
+    var chartBody = state.doc.createElement('div');
+    chartBody.className = 'lo-history__chart-body';
+
+    var series = buildDailySeries(counts, days);
+    chartBody.appendChild(buildTimelineMeta(series));
+
+    var tooltip = null;
+    try {
+      tooltip = state.doc.createElement('div');
+      tooltip.className = 'lo-history__chart-tooltip';
+      tooltip.setAttribute('role', 'status');
+      tooltip.setAttribute('aria-live', 'polite');
+      tooltip.textContent = 'Hover or focus a day to see details.';
+      chartBody.appendChild(tooltip);
+    } catch (err) {
+      tooltip = null;
+    }
+
+    var cellSize = 12;
+    var gap = 3;
+    var padding = 12;
+    var startDate = new Date();
+    startDate.setUTCHours(0, 0, 0, 0);
+    startDate = new Date(startDate.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+    var leading = startDate.getUTCDay();
+    var totalCells = leading + series.labels.length;
+    var weeks = Math.ceil(totalCells / 7);
+    var width = padding * 2 + weeks * (cellSize + gap) - gap;
+    var height = padding * 2 + 7 * (cellSize + gap) - gap;
+
+    var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Incident heatmap');
+
+    series.labels.forEach(function (label, idx) {
+      var cellIndex = leading + idx;
+      var col = Math.floor(cellIndex / 7);
+      var row = cellIndex % 7;
+      var x = padding + col * (cellSize + gap);
+      var y = padding + row * (cellSize + gap);
+      var value = series.values[idx] || 0;
+      var intensity = 0;
+      if (series.maxCount > 0 && value > 0) {
+        var ratio = value / series.maxCount;
+        if (ratio <= 0.25) {
+          intensity = 1;
+        } else if (ratio <= 0.5) {
+          intensity = 2;
+        } else if (ratio <= 0.75) {
+          intensity = 3;
+        } else {
+          intensity = 4;
+        }
+      }
+
+      var rect = state.doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(y));
+      rect.setAttribute('width', String(cellSize));
+      rect.setAttribute('height', String(cellSize));
+      rect.setAttribute('rx', '2');
+      rect.setAttribute('class', 'lo-heatmap__cell lo-heatmap__cell--level-' + intensity);
+      rect.setAttribute('tabindex', '0');
+      rect.setAttribute('aria-label', formatShortDate(label) + ': ' + formatIncidentCount(value));
+      var cellTitle = state.doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+      cellTitle.textContent = label + ' – ' + value + ' incidents';
+      rect.appendChild(cellTitle);
+
+      var activateCell = function () {
+        if (tooltip) {
+          tooltip.textContent = formatShortDate(label) + ': ' + formatIncidentCount(value);
+        }
+        rect.classList.add('lo-heatmap__cell--active');
+      };
+
+      var deactivateCell = function () {
+        if (tooltip) {
+          tooltip.textContent = 'Hover or focus a day to see details.';
+        }
+        rect.classList.remove('lo-heatmap__cell--active');
+      };
+
+      rect.addEventListener('mouseenter', activateCell);
+      rect.addEventListener('focus', activateCell);
+      rect.addEventListener('mouseleave', deactivateCell);
+      rect.addEventListener('blur', deactivateCell);
+
+      svg.appendChild(rect);
+    });
+
+    chartBody.appendChild(svg);
+
+    var legend = state.doc.createElement('div');
+    legend.className = 'lo-heatmap__legend';
+    legend.innerHTML = [
+      '<span class="lo-heatmap__legend-label">0</span>',
+      '<span class="lo-heatmap__swatch lo-heatmap__cell--level-0" aria-hidden="true"></span>',
+      '<span class="lo-heatmap__swatch lo-heatmap__cell--level-1" aria-hidden="true"></span>',
+      '<span class="lo-heatmap__swatch lo-heatmap__cell--level-2" aria-hidden="true"></span>',
+      '<span class="lo-heatmap__swatch lo-heatmap__cell--level-3" aria-hidden="true"></span>',
+      '<span class="lo-heatmap__swatch lo-heatmap__cell--level-4" aria-hidden="true"></span>',
+      '<span class="lo-heatmap__legend-label">Peak</span>'
+    ].join('');
+    chartBody.appendChild(legend);
+
+    var peak = state.doc.createElement('div');
+    peak.className = 'lo-history__meta lo-heatmap__peak';
+    if (series.maxCount > 0 && series.peakDate) {
+      peak.textContent = 'Peak day: ' + formatShortDate(series.peakDate, true) + ' (' + formatIncidentCount(series.maxCount) + ').';
+    } else {
+      peak.textContent = 'Peak day: none yet.';
+    }
+    chartBody.appendChild(peak);
+
+    return chartBody;
+  }
+
+  function buildTrendChart(counts, days) {
+    var chartBody = state.doc.createElement('div');
+    chartBody.className = 'lo-history__chart-body';
+
+    var series = buildDailySeries(counts, days);
+    chartBody.appendChild(buildTimelineMeta(series));
+
+    var tooltip = null;
+    try {
+      tooltip = state.doc.createElement('div');
+      tooltip.className = 'lo-history__chart-tooltip';
+      tooltip.setAttribute('role', 'status');
+      tooltip.setAttribute('aria-live', 'polite');
+      tooltip.textContent = 'Hover or focus a point to see details.';
+      chartBody.appendChild(tooltip);
+    } catch (err) {
+      tooltip = null;
+    }
+
+    var rolling = series.values.map(function (_, idx) {
+      var start = Math.max(0, idx - 6);
+      var sum = 0;
+      for (var i = start; i <= idx; i++) {
+        sum += series.values[i] || 0;
+      }
+      var count = idx - start + 1;
+      return sum / count;
+    });
+
+    var max = rolling.reduce(function (acc, val) { return Math.max(acc, val); }, 0) || 1;
+    var width = Math.max(240, series.labels.length * 10);
+    var height = 170;
+    var topPadding = 28;
+    var bottomPadding = 30;
+    var plotHeight = height - topPadding - bottomPadding;
+    var plotWidth = width - 16;
+    var stepX = plotWidth / Math.max(series.labels.length - 1, 1);
+
+    var svg = state.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', '7-day rolling average trend');
+
+    var axisLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+    axisLabel.setAttribute('x', '6');
+    axisLabel.setAttribute('y', '18');
+    axisLabel.setAttribute('class', 'lo-history__chart-text');
+    axisLabel.textContent = '7-day rolling avg';
+    svg.appendChild(axisLabel);
+
+    var line = state.doc.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    var points = rolling.map(function (value, idx) {
+      var x = 8 + idx * stepX;
+      var y = height - bottomPadding - ((value / max) * plotHeight);
+      return x + ',' + y;
+    }).join(' ');
+    line.setAttribute('points', points);
+    line.setAttribute('class', 'lo-trend__line');
+    svg.appendChild(line);
+
+    var tickIndices = [0, series.labels.length - 1];
+    series.labels.forEach(function (label, idx) {
+      if (idx === 0 || idx === series.labels.length - 1) {
+        return;
+      }
+      var parsed = Date.parse(label + 'T00:00:00Z');
+      if (Number.isNaN(parsed)) {
+        return;
+      }
+      var date = new Date(parsed);
+      if (date.getUTCDate() === 1) {
+        tickIndices.push(idx);
+      }
+    });
+
+    tickIndices = tickIndices.filter(function (value, idx, arr) {
+      return arr.indexOf(value) === idx;
+    }).sort(function (a, b) { return a - b; });
+
+    if (tickIndices.length > 6) {
+      var reduceStep = Math.ceil(tickIndices.length / 6);
+      tickIndices = tickIndices.filter(function (_, idx) { return idx % reduceStep === 0; });
+    }
+
+    tickIndices.forEach(function (idx) {
+      var tickLabel = state.doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+      tickLabel.setAttribute('x', String(8 + idx * stepX));
+      tickLabel.setAttribute('y', String(height - 10));
+      tickLabel.setAttribute('text-anchor', idx === 0 ? 'start' : (idx === series.labels.length - 1 ? 'end' : 'middle'));
+      tickLabel.setAttribute('class', 'lo-history__chart-text');
+      tickLabel.textContent = formatShortDate(series.labels[idx]);
+      svg.appendChild(tickLabel);
+    });
+
+    rolling.forEach(function (value, idx) {
+      var x = 8 + idx * stepX;
+      var y = height - bottomPadding - ((value / max) * plotHeight);
+      var point = state.doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      point.setAttribute('cx', String(x));
+      point.setAttribute('cy', String(y));
+      point.setAttribute('r', '3');
+      point.setAttribute('class', 'lo-trend__point');
+      point.setAttribute('tabindex', '0');
+      var avgText = value ? value.toFixed(1) : '0.0';
+      point.setAttribute('aria-label', formatShortDate(series.labels[idx]) + ': ' + formatIncidentCount(series.values[idx]) + ' (avg ' + avgText + ')');
+      var pointTitle = state.doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+      pointTitle.textContent = series.labels[idx] + ' – ' + series.values[idx] + ' incidents (avg ' + avgText + ')';
+      point.appendChild(pointTitle);
+
+      var activatePoint = function () {
+        if (tooltip) {
+          tooltip.textContent = formatShortDate(series.labels[idx]) + ': ' + formatIncidentCount(series.values[idx]) + ' (avg ' + avgText + ')';
+        }
+        point.classList.add('lo-trend__point--active');
+      };
+
+      var deactivatePoint = function () {
+        if (tooltip) {
+          tooltip.textContent = 'Hover or focus a point to see details.';
+        }
+        point.classList.remove('lo-trend__point--active');
+      };
+
+      point.addEventListener('mouseenter', activatePoint);
+      point.addEventListener('focus', activatePoint);
+      point.addEventListener('mouseleave', deactivatePoint);
+      point.addEventListener('blur', deactivatePoint);
+
+      svg.appendChild(point);
+    });
+
+    chartBody.appendChild(svg);
+    return chartBody;
+  }
+
+  function buildYearOverYearChart(comparison, subtitle, days) {
+    if (!comparison || !comparison.current || !comparison.previous || !state.doc) {
+      return null;
+    }
+
+    var windowDays = Number.isFinite(days) && days > 0 ? days : HISTORY_DEFAULT_DAYS;
+    var chartWrap = state.doc.createElement('div');
+    chartWrap.className = 'lo-history__chart';
+
+    var heading = state.doc.createElement('div');
+    heading.className = 'lo-history__chart-title';
+    heading.textContent = 'Year-over-year incident pulse';
+    chartWrap.appendChild(heading);
+
+    if (subtitle) {
+      var sub = state.doc.createElement('div');
+      sub.className = 'lo-history__subtitle';
+      sub.textContent = subtitle;
+      chartWrap.appendChild(sub);
+    }
+
+    var canvas = state.doc.createElement('canvas');
+    var width = 560;
+    var height = 240;
+    canvas.width = width;
+    canvas.height = height;
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', 'Year-over-year incident comparison');
+
+    var ctx = canvas.getContext && canvas.getContext('2d');
+    if (!ctx) {
+      chartWrap.appendChild(canvas);
+      return chartWrap;
+    }
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0, 0, width, height);
+
+    var plotPadding = 36;
+    var plotWidth = width - (plotPadding * 2);
+    var plotHeight = height - (plotPadding * 2);
+    var baseX = plotPadding;
+    var baseY = height - plotPadding;
+
+    ctx.strokeStyle = 'rgba(42, 255, 213, 0.15)';
+    for (var gx = 0; gx <= plotWidth; gx += 20) {
+      ctx.beginPath();
+      ctx.moveTo(baseX + gx, baseY - plotHeight);
+      ctx.lineTo(baseX + gx, baseY);
+      ctx.stroke();
+    }
+    for (var gy = 0; gy <= plotHeight; gy += 20) {
+      ctx.beginPath();
+      ctx.moveTo(baseX, baseY - gy);
+      ctx.lineTo(baseX + plotWidth, baseY - gy);
+      ctx.stroke();
+    }
+
+    var seriesCurrent = buildSeries(windowDays, comparison.current);
+    var seriesPrevious = buildSeries(windowDays, comparison.previous);
+    var maxCurrent = seriesCurrent.reduce(function (acc, val) { return Math.max(acc, val); }, 0);
+    var maxPrevious = seriesPrevious.reduce(function (acc, val) { return Math.max(acc, val); }, 0);
+    var maxValue = Math.max(1, maxCurrent, maxPrevious);
+    var stepX = plotWidth / Math.max(windowDays - 1, 1);
+
+    var drawSeries = function (series, color, glowColor) {
+      ctx.strokeStyle = glowColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      series.forEach(function (value, idx) {
+        var x = baseX + (idx * stepX);
+        var y = baseY - ((value / maxValue) * plotHeight);
+        if (idx === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      ctx.stroke();
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      series.forEach(function (value, idx) {
+        var x = baseX + (idx * stepX);
+        var y = baseY - ((value / maxValue) * plotHeight);
+        if (idx === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+        ctx.fillStyle = color;
+        ctx.fillRect(x - 3, y - 3, 6, 6);
+      });
+      ctx.stroke();
+    };
+
+    drawSeries(seriesPrevious, '#00c2ff', 'rgba(0, 194, 255, 0.35)');
+    drawSeries(seriesCurrent, '#ff2fb3', 'rgba(255, 47, 179, 0.35)');
+
+    var legend = state.doc.createElement('div');
+    legend.className = 'lo-retro-legend';
+    legend.innerHTML = [
+      '<span class="lo-retro-legend__swatch" style="background:#ff2fb3;"></span>Current window',
+      '<span class="lo-retro-legend__swatch" style="background:#00c2ff;"></span>Previous year'
+    ].join(' ');
+
+    var delta = (comparison.current.total || 0) - (comparison.previous.total || 0);
+    var deltaText = state.doc.createElement('div');
+    deltaText.className = 'lo-history__subtitle';
+    var deltaLabel = delta === 0 ? 'matches last year' : (delta > 0 ? '+' + delta + ' vs last year' : delta + ' vs last year');
+    deltaText.textContent = 'Total incidents: ' + (comparison.current.total || 0) + ' (' + deltaLabel + ').';
+
+    chartWrap.appendChild(canvas);
+    chartWrap.appendChild(legend);
+    chartWrap.appendChild(deltaText);
+
+    return chartWrap;
+  }
+
+  function buildSeries(days, windowData) {
+    var series = [];
+    var counts = windowData && windowData.daily_counts && typeof windowData.daily_counts === 'object'
+      ? windowData.daily_counts
+      : {};
+    var start = windowData && windowData.start ? Date.parse(windowData.start + 'T00:00:00Z') : NaN;
+
+    for (var i = 0; i < days; i++) {
+      var dateKey;
+      if (!Number.isNaN(start)) {
+        var dateObj = new Date(start + (i * 24 * 60 * 60 * 1000));
+        dateKey = dateObj.toISOString().slice(0, 10);
+      }
+      series.push(counts[dateKey] || 0);
+    }
+
+    return series;
+  }
+
+  function setHistoryLoading() {
+    if (!state.historyList || !state.doc) {
+      return;
+    }
+    state.historyList.innerHTML = '';
+    var placeholder = state.doc.createElement('li');
+    placeholder.className = 'lo-history__item lo-history__item--placeholder';
+    placeholder.textContent = 'Loading incidents…';
+    state.historyList.appendChild(placeholder);
+    if (state.historyEmpty) {
+      state.historyEmpty.setAttribute('hidden', 'hidden');
+    }
+    if (state.historyError) {
+      state.historyError.setAttribute('hidden', 'hidden');
+    }
+    if (state.historyCharts) {
+      state.historyCharts.innerHTML = '';
+      state.historyCharts.setAttribute('hidden', 'hidden');
+    }
+  }
+
+  function renderHistoryList(providers, meta) {
+    if (!state.historyList || !state.doc) {
+      return;
+    }
+    state.historyList.innerHTML = '';
+    state.historyIncidents = [];
+    if (state.historyToggleButton && state.historyToggleButton.parentNode) {
+      state.historyToggleButton.parentNode.removeChild(state.historyToggleButton);
+    }
+    state.historyToggleButton = null;
+    if (state.historyError) {
+      state.historyError.setAttribute('hidden', 'hidden');
+    }
+
+    renderHistoryCharts(providers, meta || {});
+
+    var providerList = Array.isArray(providers) ? providers : [];
+    var prefs = state.visibleProviders || {};
+    var hasPrefs = Object.keys(prefs).length > 0;
+
+    var incidentEntries = [];
+
+    providerList.forEach(function (provider) {
+      if (!provider || typeof provider !== 'object') {
+        return;
+      }
+      var slug = String(provider.id || '').toLowerCase();
+      if (slug && hasPrefs && prefs[slug] === false) {
+        return;
+      }
+      var label = provider.label || provider.name || provider.provider || 'Provider';
+      if (Array.isArray(provider.incidents)) {
+        provider.incidents.forEach(function (entry) {
+          if (!entry || typeof entry !== 'object') {
+            return;
+          }
+          var status = entry && entry.status ? String(entry.status).toLowerCase() : '';
+          if (status === 'operational' || status === 'ok' || status === 'none') {
+            return;
+          }
+          incidentEntries.push({
+            provider: entry.provider || label,
+            provider_id: slug,
+            summary: entry.summary || entry.title || '',
+            status: status || 'unknown',
+            severity: (entry.severity || '').toString(),
+            started_at: entry.started_at || entry.startedAt || null,
+            first_seen: entry.first_seen || entry.firstSeen || null,
+            detected_at: entry.detected_at || entry.detectedAt || null,
+            last_seen: entry.last_seen || entry.lastSeen || null,
+            updated_at: entry.updated_at || entry.updatedAt || null,
+            url: entry.url || ''
+          });
+        });
+      }
+    });
+
+    incidentEntries = dedupeIncidents(incidentEntries);
+
+    incidentEntries.sort(function (a, b) {
+      var aStart = getIncidentStartTs(a);
+      var bStart = getIncidentStartTs(b);
+      if (aStart !== bStart) {
+        return bStart - aStart;
+      }
+      var aUpdated = getIncidentUpdatedTs(a);
+      var bUpdated = getIncidentUpdatedTs(b);
+      if (aUpdated !== bUpdated) {
+        return bUpdated - aUpdated;
+      }
+      return severityRank(b.severity || b.status) - severityRank(a.severity || a.status);
+    });
+
+    state.historyIncidents = incidentEntries.slice();
+
+    if (incidentEntries.length) {
+      if (state.historyEmpty) {
+        state.historyEmpty.setAttribute('hidden', 'hidden');
+      }
+
+      var displayLimit = state.historyExpanded ? HISTORY_LIMIT : HISTORY_RENDER_LIMIT;
+      var displayEntries = incidentEntries.slice(0, displayLimit);
+
+      displayEntries.forEach(function (entry) {
+        var li = state.doc.createElement('li');
+        li.className = 'lo-history__item';
+
+        var timeWrap = state.doc.createElement('div');
+        timeWrap.className = 'lo-history__time';
+        var started = entry.started_at || entry.first_seen || entry.detected_at || entry.updated_at || entry.last_seen;
+        var timeEl = state.doc.createElement('time');
+        timeEl.setAttribute('datetime', started || '');
+        timeEl.textContent = formatTimestamp(started) || formatHistoryDate(started);
+        timeWrap.appendChild(timeEl);
+
+        if (entry.last_seen && entry.last_seen !== entry.first_seen) {
+          var range = state.doc.createElement('span');
+          range.className = 'lo-history__time-range';
+          range.textContent = 'Updated ' + formatTimestamp(entry.last_seen);
+          timeWrap.appendChild(range);
+        }
+
+        var details = state.doc.createElement('div');
+        details.className = 'lo-history__details';
+        var providerName = entry.provider || 'Provider';
+        var providerLabelEl = state.doc.createElement('strong');
+        providerLabelEl.textContent = providerName;
+        details.appendChild(providerLabelEl);
+        var summaryText = entry.summary || 'Incident reported';
+        var condensedSummary = condenseIncidentTitle(entry.provider_id, summaryText);
+        details.appendChild(state.doc.createTextNode(' — '));
+        var summaryEl = state.doc.createElement('span');
+        summaryEl.className = 'lo-history__summary';
+        summaryEl.textContent = condensedSummary.text || summaryText;
+        if (condensedSummary.title && condensedSummary.title !== condensedSummary.text) {
+          summaryEl.setAttribute('title', condensedSummary.title);
+        }
+        details.appendChild(summaryEl);
+        if (entry.url) {
+          var link = state.doc.createElement('a');
+          link.href = entry.url;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.className = 'lo-link';
+          link.textContent = 'Details';
+          details.appendChild(state.doc.createTextNode(' '));
+          details.appendChild(link);
+        }
+
+        var badge = state.doc.createElement('span');
+        var mapped = mapHistoryStatus(entry.status);
+        badge.className = 'lo-pill ' + mapped.className + ' lo-history__badge';
+        badge.textContent = mapped.label;
+
+        li.appendChild(timeWrap);
+        li.appendChild(details);
+        li.appendChild(badge);
+
+        state.historyList.appendChild(li);
+      });
+
+      if (incidentEntries.length > HISTORY_RENDER_LIMIT && state.historyList.parentNode) {
+        var toggle = state.doc.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'lo-button lo-history__toggle';
+        toggle.textContent = state.historyExpanded ? 'Show fewer' : 'Show more';
+        toggle.addEventListener('click', function () {
+          state.historyExpanded = !state.historyExpanded;
+          renderHistoryList(state.historyProviders, state.historyMeta);
+        });
+        state.historyToggleButton = toggle;
+        state.historyList.parentNode.appendChild(toggle);
+      }
+
+      return;
+    }
+
+    if (state.historyEmpty) {
+      state.historyEmpty.textContent = state.historyImportantOnly
+        ? 'No significant incidents in the selected window.'
+        : 'No incidents in the selected window.';
+      state.historyEmpty.removeAttribute('hidden');
+    }
+  }
+
+  function renderHistoryError(message) {
+    if (state.historyList) {
+      state.historyList.innerHTML = '';
+    }
+    if (state.historyEmpty) {
+      state.historyEmpty.setAttribute('hidden', 'hidden');
+    }
+    if (state.historyError) {
+      state.historyError.textContent = message || 'Unable to load incidents right now.';
+      state.historyError.removeAttribute('hidden');
+    }
+  }
+
+  function fetchHistoryData() {
+    if (!state.historyEndpoint || !state.fetchImpl) {
+      return Promise.resolve();
+    }
+    setHistoryLoading();
+
+    var providerIds = [];
+    var cards = state.container ? state.container.querySelectorAll('[data-provider-id], .provider-card') : [];
+    if (cards && cards.length) {
+      cards.forEach(function (card) {
+        var slug = card.getAttribute ? card.getAttribute('data-provider-id') || card.getAttribute('data-id') : null;
+        if (slug) {
+          providerIds.push(String(slug));
+        }
+      });
+    }
+    var prefs = state.visibleProviders || {};
+    var hasPrefs = Object.keys(prefs).length > 0;
+    if (hasPrefs && providerIds.length) {
+      providerIds = providerIds.filter(function (id) {
+        return prefs[String(id).toLowerCase()] !== false;
+      });
+    }
+    if (hasPrefs) {
+      var hasOther = providerIds.some(function (id) {
+        return String(id).toLowerCase() === 'other';
+      });
+      if (!hasOther) {
+        providerIds.push('other');
+      }
+    }
+
+    var windowDays = Number.isFinite(state.historyWindowDays) && state.historyWindowDays > 0
+      ? state.historyWindowDays
+      : HISTORY_DEFAULT_DAYS;
+    var url = appendQuery(state.historyEndpoint, 'days', String(windowDays));
+    url = appendQuery(url, 'limit', String(HISTORY_LIMIT));
+    url = appendQuery(url, 'severity', state.historyImportantOnly ? 'important' : 'all');
+    if (hasPrefs && providerIds.length) {
+      url = appendQuery(url, 'provider', providerIds.join(','));
+    }
+
+    return state.fetchImpl(url, { headers: { Accept: 'application/json' } })
+      .then(function (res) {
+        if (!res || !res.ok) {
+          throw new Error('history unavailable');
+        }
+        return res.json();
+      })
+      .then(function (body) {
+        if (!body || !Array.isArray(body.providers)) {
+          throw new Error('invalid history response');
+        }
+
+        state.historyProviders = body.providers;
+        state.historyMeta = body.meta || {};
+        state.historyExpanded = false;
+        renderHistoryList(body.providers, body.meta || {});
+      })
+      .catch(function (err) {
+        if (state.debug && state.root && state.root.console && typeof state.root.console.error === 'function') {
+          state.root.console.error(err);
+        }
+        state.historyIncidents = [];
+        renderHistoryError('Unable to load incident history right now.');
+      });
+  }
+
+  function handleSubscribeSubmit(event) {
+    event.preventDefault();
+    var form = event.currentTarget;
+    if (!form) {
+      return;
+    }
+    var statusEl = form.querySelector('[data-lo-subscribe-status]');
+    var emailInput = form.querySelector('input[name="email"]');
+    var honeypot = form.querySelector('input[name="website"]');
+    var nonceInput = form.querySelector('input[name="_wpnonce"]');
+    var challengeInput = form.querySelector('input[name="challenge_response"]');
+    var providerInputs = form.querySelectorAll('input[name="providers[]"]:checked');
+    var realtimeInput = form.querySelector('input[name="realtime_alerts"]');
+    var digestInput = form.querySelector('input[name="daily_digest"]');
+    var newsletterInput = form.querySelector('input[name="newsletter"]');
+    var endpoint = form.getAttribute('action') || state.subscribeEndpoint;
+    if (!endpoint || !state.fetchImpl) {
+      return;
+    }
+    var email = emailInput ? emailInput.value.trim() : '';
+    if (!email) {
+      setSubscribeStatus(statusEl, 'Please enter your email.', true);
+      return;
+    }
+    if (honeypot && honeypot.value) {
+      setSubscribeStatus(statusEl, 'Submission blocked.', true);
+      return;
+    }
+    if (!challengeInput || !challengeInput.value.trim()) {
+      setSubscribeStatus(statusEl, 'Please answer the human check.', true);
+      return;
+    }
+    setSubscribeStatus(statusEl, 'Sending…');
+    form.querySelectorAll('button, input[type="submit"]').forEach(function (btn) {
+      btn.disabled = true;
+    });
+    var payload = {
+      email: email,
+      website: honeypot ? honeypot.value : '',
+      _wpnonce: nonceInput ? nonceInput.value : '',
+      challenge_response: challengeInput ? challengeInput.value.trim() : '',
+      providers: Array.prototype.map.call(providerInputs || [], function (input) { return input.value; }),
+      realtime_alerts: !!(realtimeInput && realtimeInput.checked),
+      daily_digest: !!(digestInput && digestInput.checked),
+      newsletter: !!(newsletterInput && newsletterInput.checked)
+    };
+
+    state.fetchImpl(endpoint, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) {
+        if (!res) {
+          throw new Error('No response');
+        }
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          var payload = body;
+          if (body && typeof body === 'object' && body.data) {
+            payload = body.data;
+          }
+          var message = payload && payload.message ? String(payload.message) : null;
+          var success = res.ok && (!body || body.success !== false);
+          if (!success) {
+            throw new Error(message || 'Subscription failed.');
+          }
+          return { message: message || 'Check your email to confirm your subscription (peek at spam if it’s missing).' };
+        });
+      })
+      .then(function (result) {
+        setSubscribeStatus(statusEl, result && result.message ? result.message : 'Check your email to confirm your subscription (peek at spam if it’s missing).');
+        form.reset();
+      })
+      .catch(function (error) {
+        setSubscribeStatus(statusEl, error && error.message ? error.message : 'Subscription failed.', true);
+      })
+      .finally(function () {
+        form.querySelectorAll('button, input[type="submit"]').forEach(function (btn) {
+          btn.disabled = false;
+        });
+      });
+  }
+
+  function setSubscribeStatus(el, message, isError) {
+    if (!el) {
+      return;
+    }
+    el.textContent = message || '';
+    if (isError) {
+      el.classList.add('lo-subscribe__status--error');
+    } else {
+      el.classList.remove('lo-subscribe__status--error');
+    }
+  }
+
+  function enhanceSubscribeForms() {
+    if (!state.doc) {
+      return;
+    }
+    var forms = state.doc.querySelectorAll('[data-lo-subscribe-form]');
+    forms.forEach(function (form) {
+      if (!form || form.dataset.loEnhanced) {
+        return;
+      }
+      form.dataset.loEnhanced = '1';
+      form.addEventListener('submit', handleSubscribeSubmit);
+    });
+  }
+
+  function setReportStatus(reportState, message, tone) {
+    if (!reportState || !reportState.status) {
+      return;
+    }
+    reportState.status.textContent = message || '';
+    reportState.status.classList.remove('lo-report__status--success', 'lo-report__status--error');
+    if ('success' === tone) {
+      reportState.status.classList.add('lo-report__status--success');
+    } else if ('error' === tone) {
+      reportState.status.classList.add('lo-report__status--error');
+    }
+  }
+
+  function handleReportSubmit(event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    var form = event && event.currentTarget ? event.currentTarget : null;
+    if (!form || !state.fetchImpl) return;
+    var provider = form.querySelector('[data-lo-report-provider]');
+    var symptom = form.querySelector('[data-lo-report-summary]');
+    var severity = form.querySelector('select[name="severity"]');
+    var region = form.querySelector('input[name="region"]');
+    var details = form.querySelector('textarea[name="details"]');
+    var email = form.querySelector('[data-lo-report-contact]');
+    var status = form.querySelector('[data-lo-report-status]');
+    var submit = form.querySelector('[data-lo-report-submit]');
+    if (!provider || !symptom || !submit) return;
+    var reportState = { status: status, submit: submit };
+    var providerId = String(provider.value || '').trim();
+    if (!providerId) {
+      setReportStatus(reportState, 'Select a provider to report.', 'error');
+      return;
+    }
+    var payload = {
+      provider_id: providerId,
+      symptom: String(symptom.value || 'other').trim() || 'other',
+      severity: severity ? String(severity.value || 'unknown') : 'unknown',
+      region: region ? String(region.value || '') : '',
+      details: details ? String(details.value || '') : '',
+      email: email ? String(email.value || '').trim() : ''
+    };
+    var originalLabel = submit.textContent;
+    submit.disabled = true;
+    submit.textContent = 'Sending…';
+    setReportStatus(reportState, 'Sending report…');
+    state.fetchImpl(form.getAttribute('action') || '/wp-json/lousy-outages/v1/report', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    }).then(function(res){
+      var ok = !!(res && res.ok);
+      return (res ? res.json().catch(function(){ return {}; }) : Promise.resolve({})).then(function(data){ return {ok: ok, data: data}; });
+    }).then(function(result){
+      var ok = result && result.ok && result.data && result.data.success !== false;
+      var message = result && result.data ? (result.data.message || result.data.error || '') : '';
+      if (ok) {
+        form.reset();
+        setReportStatus(reportState, message || 'Thanks — we logged your unconfirmed community report and we’re watching this.', 'success');
+        fetchCommunitySignals();
+        fetchHistoryData().catch(function () {});
+      } else {
+        setReportStatus(reportState, message || 'Could not submit report right now, please try again later.', 'error');
+      }
+    }).catch(function(){
+      setReportStatus(reportState, 'Could not submit report right now, please try again later.', 'error');
+    }).finally(function(){ submit.disabled = false; submit.textContent = originalLabel; });
+  }
+
+  function initReportForm() {
+    if (!state.doc) return;
+    var forms = state.doc.querySelectorAll('[data-lo-report-form]');
+    state.signalsContainer = state.doc.querySelector('[data-lo-signals]');
+    state.signalsEndpoint = state.signalsContainer ? String(state.signalsContainer.getAttribute('data-lo-signals-endpoint') || '') : '';
+    forms.forEach(function(form){
+      if (!form || form.dataset.loReportEnhanced) return;
+      form.dataset.loReportEnhanced = '1';
+      form.addEventListener('submit', handleReportSubmit);
+    });
+    fetchCommunitySignals();
+  }
+
+  function renderCommunitySignals(signals) {
+    if (!state.signalsContainer || !state.doc) return;
+    var list = state.signalsContainer.querySelector('[data-lo-signals-list]');
+    var empty = state.signalsContainer.querySelector('[data-lo-signals-empty]');
+    if (!list || !empty) return;
+    var allowed = { watch: true, trending: true, hot: true };
+    var rows = Array.isArray(signals) ? signals.filter(function (s) {
+      var c = String((s && s.classification) || '').toLowerCase();
+      return !!allowed[c];
+    }) : [];
+    while (list.firstChild) list.removeChild(list.firstChild);
+    if (!rows.length) { empty.hidden = false; return; }
+    empty.hidden = true;
+    rows.slice(0,5).forEach(function (signal) {
+      var cls = String(signal.classification || '').toLowerCase();
+      cls = allowed[cls] ? cls : 'watch';
+      var row = state.doc.createElement('div');
+      row.className = 'lo-signal lo-signal--' + cls;
+      var badge = state.doc.createElement('span');
+      badge.className = 'lo-signal__badge';
+      badge.textContent = cls.charAt(0).toUpperCase() + cls.slice(1);
+      var provider = state.doc.createElement('strong');
+      provider.textContent = String(signal.provider_name || signal.provider_id || 'Provider');
+      var message = state.doc.createElement('span');
+      message.textContent = String(signal.message || 'Unconfirmed community signal. We are watching this.');
+      row.appendChild(badge); row.appendChild(provider); row.appendChild(message);
+      list.appendChild(row);
+    });
+  }
+
+  function fetchCommunitySignals() {
+    if (!state.fetchImpl || !state.signalsEndpoint) return Promise.resolve();
+    return state.fetchImpl(state.signalsEndpoint, { method: 'GET' }).then(function (res) { return res.json(); }).then(function (data) {
+      if (data && data.success && Array.isArray(data.signals)) renderCommunitySignals(data.signals);
+    }).catch(function () {});
+  }
+  function isDocumentVisible() {
+    if (!state.doc || typeof state.doc.visibilityState !== 'string') {
+      return true;
+    }
+    return state.doc.visibilityState === 'visible';
+  }
+
+  function updateTrendingBanner(data) {
+    if (!state.trendingBanner) {
+      return;
+    }
+
+    var info = data || {};
+    var active = !!info.trending;
+    var signals = Array.isArray(info.signals) ? info.signals.filter(Boolean) : [];
+
+    if (active) {
+      state.trendingBanner.removeAttribute('hidden');
+    } else {
+      state.trendingBanner.setAttribute('hidden', 'hidden');
+    }
+
+    if (state.trendingText) {
+      state.trendingText.textContent = 'Potential widespread issues detected — check affected providers';
+    }
+
+    if (state.trendingReasons) {
+      if (signals.length) {
+        state.trendingReasons.textContent = 'Signals: ' + signals.slice(0, 6).join(', ');
+        state.trendingReasons.removeAttribute('hidden');
+      } else {
+        state.trendingReasons.textContent = '';
+        state.trendingReasons.setAttribute('hidden', 'hidden');
+      }
+    }
+
+    if (info.generated_at && state.trendingBanner) {
+      state.trendingBanner.setAttribute('data-lo-trending-generated', info.generated_at);
+    }
+  }
+
+  function handleVisibilityChange() {
+    if (isDocumentVisible()) {
+      state.visibilityPaused = false;
+      if (!state.isRefreshing) {
+        refreshSummary(false, true);
+      }
+    } else {
+      state.visibilityPaused = true;
+      if (state.timer && state.root) {
+        state.root.clearTimeout(state.timer);
+        state.timer = null;
+      }
+      state.nextRefreshAt = null;
+      stopCountdown();
+      if (state.countdownEl) {
+        state.countdownEl.textContent = 'Auto-refresh paused';
+      }
+    }
+  }
+
+  function resetAutoRefresh() {
+    if (!state.baseDelay || state.baseDelay <= 0) {
+      state.baseDelay = POLL_MS;
+    }
+    state.delay = state.baseDelay;
+    state.degradedDueToStale = false;
+    showDegraded(false);
+  }
+
+  function degradeAutoRefresh() {
+    if (!state.baseDelay || state.baseDelay <= 0) {
+      state.baseDelay = POLL_MS;
+    }
+    state.delay = state.baseDelay;
+    state.degradedDueToStale = false;
+    showDegraded(true);
+  }
+
+  function evaluateProviderHealth(list) {
+    if (!Array.isArray(list) || !list.length) {
+      degradeAutoRefresh();
+      return;
+    }
+
+    var total = 0;
+    var okCount = 0;
+    list.forEach(function (provider) {
+      if (!provider) {
+        return;
+      }
+      total += 1;
+      if (!provider.error) {
+        okCount += 1;
+      }
+    });
+
+    if (!total) {
+      degradeAutoRefresh();
+      return;
+    }
+
+    var ratio = okCount / total;
+    if (ratio >= RECOVER_THRESHOLD) {
+      resetAutoRefresh();
+    } else if (ratio < DEGRADE_THRESHOLD) {
+      degradeAutoRefresh();
+    }
+  }
+
+  function refreshSummary(manual, force) {
+    if (!state.fetchImpl || !state.endpoint) {
+      return Promise.resolve();
+    }
+    if (state.isRefreshing) {
+      if (manual) {
+        state.pendingManual = true;
+      }
+      return Promise.resolve();
+    }
+    if (!manual && !force && !isDocumentVisible()) {
+      scheduleNext(state.delay);
+      return Promise.resolve();
+    }
+
+    state.isRefreshing = true;
+
+    if (state.loadingEl && state.container) {
+      var hasCards = !!state.container.querySelector('[data-provider-id]');
+      if (!hasCards) {
+        toggleSpinner(true);
+      }
+    }
+
+    state.lastFetchStartedAt = Date.now();
+
+    var headers = { Accept: 'application/json' };
+    if (state.etag) {
+      headers['If-None-Match'] = state.etag;
+    }
+
+    var requestUrl = state.endpoint;
+    if (manual && requestUrl) {
+      requestUrl = appendQuery(requestUrl, 'refresh', '1');
+    }
+
+    return state.fetchImpl(requestUrl, {
+      credentials: 'same-origin',
+      headers: headers
+    })
+      .then(function (res) {
+        if (!res) {
+          throw new Error('No response');
+        }
+        var etag = res.headers ? res.headers.get('ETag') : null;
+        if (etag) {
+          state.etag = etag;
+        }
+        if (res.status === 304) {
+          resetAutoRefresh();
+          scheduleNext(state.baseDelay);
+          if (state.fetchedAt) {
+            maybeQueueStaleRefresh(state.fetchedAt);
+          }
+          return null;
+        }
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+        return res.json();
+      })
+      .then(function (body) {
+        if (!body) {
+          return;
+        }
+        if (Array.isArray(body.providers)) {
+          evaluateProviderHealth(body.providers);
+          renderProviders(body.providers);
+          updateIncidentsUI(body.providers, body.meta || null);
+        } else {
+          resetAutoRefresh();
+        }
+        var fetched = body.fetched_at || (body.meta && (body.meta.fetched_at || body.meta.fetchedAt));
+        if (fetched) {
+          state.fetchedAt = fetched;
+          updateFetched();
+        }
+        var responseSource = body.source || (body.meta && body.meta.source) || state.container && state.container.getAttribute && state.container.getAttribute('data-lo-source');
+        if (responseSource) {
+          var normalizedSource = String(responseSource).toLowerCase();
+          state.fetchedLabel = normalizedSource === 'snapshot' ? 'Last fetched' : 'Fetched';
+          if (state.container && state.container.setAttribute) {
+            state.container.setAttribute('data-lo-source', String(responseSource));
+          }
+        } else {
+          state.fetchedLabel = 'Fetched';
+        }
+        if (state.fetchedLabelEl) {
+          state.fetchedLabelEl.textContent = state.fetchedLabel;
+        }
+        if (state.fetchedAt) {
+          maybeQueueStaleRefresh(state.fetchedAt);
+        }
+        if (body.trending) {
+          updateTrendingBanner(body.trending);
+        } else {
+          updateTrendingBanner({ trending: false, signals: [] });
+        }
+        var elapsed = 0;
+        if (typeof state.lastFetchStartedAt === 'number' && state.lastFetchStartedAt > 0) {
+          elapsed = Date.now() - state.lastFetchStartedAt;
+        }
+        var targetDelay = state.delay || state.baseDelay || POLL_MS;
+        var remainder = targetDelay - elapsed;
+        if (remainder < 0) {
+          remainder = 0;
+        }
+        scheduleNext(remainder);
+      })
+      .catch(function () {
+        degradeAutoRefresh();
+        var retryDelay = state.delay || state.baseDelay || POLL_MS;
+        if (typeof state.lastFetchStartedAt === 'number' && state.lastFetchStartedAt > 0) {
+          var elapsedSinceStart = Date.now() - state.lastFetchStartedAt;
+          if (elapsedSinceStart > 0 && elapsedSinceStart < retryDelay) {
+            retryDelay = retryDelay - elapsedSinceStart;
+          }
+        }
+        scheduleNext(Math.max(0, retryDelay));
+      })
+      .finally(function () {
+        state.isRefreshing = false;
+        var shouldTriggerStale = state.staleRefreshQueued && !state.staleRefreshInFlight;
+        if (shouldTriggerStale) {
+          state.staleRefreshQueued = false;
+        }
+        var replayManual = state.manualQueued;
+        state.manualQueued = false;
+        if (replayManual) {
+          manualRefresh();
+          return;
+        }
+        if (state.pendingManual) {
+          state.pendingManual = false;
+          refreshSummary(true, true);
+          return;
+        }
+        if (shouldTriggerStale) {
+          triggerStaleRefresh();
+        }
+      });
+  }
+
+
+  function callRefreshEndpoint() {
+    if (!state.refreshEndpoint || !state.fetchImpl) {
+      return Promise.resolve();
+    }
+    var headers = {};
+    if (state.refreshNonce) {
+      headers['X-WP-Nonce'] = state.refreshNonce;
+    }
+    return state.fetchImpl(state.refreshEndpoint, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: headers
+    }).then(function (res) {
+      if (!res) {
+        throw new Error('No response');
+      }
+      var statusOk = !!res.ok;
+      return res.json().catch(function () { return null; }).then(function (data) {
+        if (!statusOk && !(data && data.skipped)) {
+          throw new Error('HTTP ' + res.status);
+        }
+        return data;
+      });
+    });
+  }
+
+  function manualRefresh() {
+    if (state.isRefreshing) {
+      state.manualQueued = true;
+      return;
+    }
+    state.manualQueued = false;
+    state.pendingManual = false;
+    var previousFetched = state.fetchedAt;
+    setLoading(true);
+    var refreshFailed = false;
+    callRefreshEndpoint()
+      .catch(function () {
+        refreshFailed = true;
+        return null;
+      })
+      .then(function () {
+        if (refreshFailed) {
+          return refreshSummary(true, true);
+        }
+        function ensureUpdated(attempt) {
+          return refreshSummary(true, true).then(function () {
+            if (!previousFetched || !state.fetchedAt || state.fetchedAt !== previousFetched) {
+              return null;
+            }
+            if (attempt >= MANUAL_REFRESH_MAX_ATTEMPTS) {
+              return null;
+            }
+            return delay(MANUAL_REFRESH_RETRY_DELAY).then(function () {
+              return ensureUpdated(attempt + 1);
+            });
+          });
+        }
+        return ensureUpdated(0);
+      })
+      .finally(function () {
+        setLoading(false);
+      });
+  }
+
+  function init(config) {
+    config = config || {};
+    state.doc = config.document || (state.root ? state.root.document : null);
+    if (!state.doc) {
+      return;
+    }
+    if (typeof config.window === 'object' && config.window) {
+      state.root = config.window;
+    }
+    var debugQuery = false;
+    if (state.root && state.root.location && typeof state.root.location.search === 'string') {
+      try {
+        var params = new URLSearchParams(state.root.location.search);
+        debugQuery = params.get('lo_debug') === '1';
+      } catch (err) {
+        debugQuery = /(?:\?|&)lo_debug=1(?:&|$)/.test(state.root.location.search);
+      }
+    }
+    state.debug = !!config.debug || debugQuery;
+    var fetchImpl = null;
+    if (typeof config.fetch === 'function') {
+      fetchImpl = config.fetch;
+    } else if (state.root && typeof state.root.fetch === 'function') {
+      fetchImpl = state.root.fetch.bind(state.root);
+    } else if (typeof fetch === 'function') {
+      fetchImpl = fetch.bind(globalRoot || null);
+    }
+    state.fetchImpl = fetchImpl;
+    if (!state.fetchImpl) {
+      return;
+    }
+    state.container = config.container
+      || state.doc.querySelector('.lousy-outages-root')
+      || state.doc.querySelector('.lousy-outages')
+      || state.doc.getElementById('lousy-outages')
+      || state.doc.querySelector('.lousy-outages-board');
+    if (!state.container) {
+      return;
+    }
+    state.grid = state.container.querySelector('[data-lo-grid]') || state.container.querySelector('.providers-grid') || state.container;
+    state.allProvidersWrap = state.container.querySelector('[data-lo-all]');
+    state.incidentsWrap = state.container.querySelector('[data-lo-incidents]');
+    state.heroWrap = state.container.querySelector('[data-lo-hero]');
+    state.heroTime = state.container.querySelector('[data-lo-hero-time]');
+    state.modeToggle = state.container.querySelector('[data-lo-mode-toggle]');
+    state.modeButtons = {
+      incidents: state.container.querySelector('[data-lo-mode="incidents"]'),
+      all: state.container.querySelector('[data-lo-mode="all"]')
+    };
+    state.sectionGrids = {
+      incidents: state.container.querySelector('[data-lo-section-grid="incidents"]'),
+      signals: state.container.querySelector('[data-lo-section-grid="signals"]'),
+      unverified: state.container.querySelector('[data-lo-section-grid="unverified"]')
+    };
+    state.sectionBodies = {
+      signals: state.sectionGrids.signals,
+      unverified: state.sectionGrids.unverified
+    };
+    state.sectionToggles = {
+      signals: state.container.querySelector('[data-lo-section-toggle="signals"]'),
+      unverified: state.container.querySelector('[data-lo-section-toggle="unverified"]')
+    };
+    state.fetchedEl = state.container.querySelector('[data-lo-fetched]') || state.container.querySelector('.last-updated span');
+    state.fetchedLabelEl = state.container.querySelector('[data-lo-fetched-label]');
+    state.countdownEl = state.container.querySelector('[data-lo-countdown]') || state.container.querySelector('.board-subtitle');
+    state.refreshButton = state.container.querySelector('[data-lo-refresh]') || state.container.querySelector('.coin-btn');
+    state.degradedBadge = state.container.querySelector('[data-lo-degraded]');
+    state.trendingBanner = state.container.querySelector('[data-lo-trending]');
+    state.trendingText = state.container.querySelector('[data-lo-trending-text]');
+    state.trendingReasons = state.container.querySelector('[data-lo-trending-reasons]');
+    state.exportCSVButton = state.container.querySelector('[data-lo-export-csv]');
+    state.exportPDFButton = state.container.querySelector('[data-lo-export-pdf]');
+    state.loadingEl = state.container.querySelector('[data-lo-loading]');
+    state.historyList = state.container.querySelector('[data-lo-history-list]');
+    state.historyEmpty = state.container.querySelector('[data-lo-history-empty]');
+    state.historyError = state.container.querySelector('[data-lo-history-error]');
+    state.historyCharts = state.container.querySelector('[data-lo-history-charts]');
+    initReportForm();
+    var historyToggle = state.container.querySelector('[data-lo-history-important]');
+    if (historyToggle) {
+      state.historyImportantOnly = historyToggle.checked !== false;
+      historyToggle.addEventListener('change', function (event) {
+        state.historyImportantOnly = event.currentTarget.checked !== false;
+        fetchHistoryData();
+      });
+    }
+    var historyWindow = state.container.querySelector('[data-lo-history-window]');
+    if (historyWindow) {
+      state.historyWindowDays = parseInt(historyWindow.value, 10) || HISTORY_DEFAULT_DAYS;
+      historyWindow.addEventListener('change', function (event) {
+        var next = parseInt(event.currentTarget.value, 10);
+        state.historyWindowDays = Number.isFinite(next) && next > 0 ? next : HISTORY_DEFAULT_DAYS;
+        fetchHistoryData();
+      });
+    }
+    state.historyEndpoint = config.historyEndpoint || '';
+    state.endpoint = config.endpoint || '';
+    state.refreshEndpoint = config.refreshEndpoint || '';
+    state.refreshNonce = config.refreshNonce || '';
+    state.subscribeEndpoint = config.subscribeEndpoint || '';
+    var configuredDelay = parseInt(config.pollInterval || config.refreshInterval || config.pollMs || config.poll_delay, 10);
+    if (!Number.isFinite(configuredDelay) || configuredDelay <= 0) {
+      configuredDelay = POLL_MS;
+    }
+    state.baseDelay = configuredDelay;
+    state.delay = state.baseDelay;
+    state.maxDelay = Math.max(state.maxDelay || 0, MAX_DELAY);
+    state.visibilityPaused = !isDocumentVisible();
+
+    var initial = config.initial || {};
+    var initialProviders = [];
+    if (Array.isArray(initial.providers)) {
+      initialProviders = initial.providers;
+    } else if (Array.isArray(config.providers)) {
+      initialProviders = config.providers;
+    }
+    var containerSource = state.container.getAttribute ? state.container.getAttribute('data-lo-source') : '';
+    var initialSource = initial.source || (config.meta && config.meta.source) || containerSource || '';
+    if (initialSource) {
+      state.fetchedLabel = String(initialSource).toLowerCase() === 'snapshot' ? 'Last fetched' : 'Fetched';
+    }
+    if (state.fetchedLabelEl) {
+      state.fetchedLabelEl.textContent = state.fetchedLabel;
+    }
+    if (initialProviders.length) {
+      renderProviders(initialProviders);
+    }
+    if (initialProviders.length) {
+    }
+    if (state.loadingEl) {
+      toggleSpinner(!initialProviders.length);
+    }
+    var initialFetched = initial.fetched_at || initial.fetchedAt;
+    if (!initialFetched && config.meta && (config.meta.fetched_at || config.meta.fetchedAt)) {
+      initialFetched = config.meta.fetched_at || config.meta.fetchedAt;
+    }
+    state.fetchedAt = initialFetched || null;
+    updateFetched();
+
+    var initialMeta = null;
+    if (initial && typeof initial.meta === 'object') {
+      initialMeta = initial.meta;
+    } else if (config.meta && typeof config.meta === 'object') {
+      initialMeta = config.meta;
+    }
+    updateIncidentsUI(initialProviders, initialMeta);
+    setViewMode('incidents');
+
+    var initialTrending = null;
+    if (initial && typeof initial.trending === 'object') {
+      initialTrending = initial.trending;
+    } else if (config.meta && typeof config.meta.trending === 'object') {
+      initialTrending = config.meta.trending;
+    }
+    updateTrendingBanner(initialTrending || { trending: false, signals: [] });
+
+    initProviderVisibility();
+
+    if (state.refreshButton) {
+      state.refreshButton.addEventListener('click', manualRefresh);
+    }
+
+
+    if (state.exportCSVButton) {
+      state.exportCSVButton.addEventListener('click', downloadCSV);
+    }
+
+    if (state.exportPDFButton) {
+      state.exportPDFButton.addEventListener('click', exportPDF);
+    }
+
+    if (state.modeButtons.incidents) {
+      state.modeButtons.incidents.addEventListener('click', function () {
+        setViewMode('incidents');
+      });
+    }
+
+    if (state.modeButtons.all) {
+      state.modeButtons.all.addEventListener('click', function () {
+        setViewMode('all');
+      });
+    }
+
+    if (state.sectionToggles.signals) {
+      state.sectionToggles.signals.addEventListener('click', function () {
+        toggleSection('signals');
+      });
+    }
+
+    if (state.sectionToggles.unverified) {
+      state.sectionToggles.unverified.addEventListener('click', function () {
+        toggleSection('unverified');
+      });
+    }
+
+    enhanceSubscribeForms();
+
+    if (state.doc && typeof state.doc.addEventListener === 'function') {
+      state.doc.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    queuePostPaintWork();
+  }
+
+  function queuePostPaintWork() {
+    if (state.postPaintStarted) {
+      return;
+    }
+    state.postPaintStarted = true;
+    var kickOff = function () {
+      scheduleNext(state.baseDelay);
+
+      if (state.root && typeof state.root.setTimeout === 'function') {
+        state.root.setTimeout(fetchHistoryData, 350);
+        state.root.setTimeout(function () {
+          refreshSummary(false, true).catch(function () {
+            // Ignore initial failure; countdown/backoff already handled inside refreshSummary.
+          });
+        }, 0);
+      } else {
+        fetchHistoryData().catch(function () {
+          // Chart is optional; ignore failures.
+        });
+        refreshSummary(false, true).catch(function () {
+          // Ignore initial failure; countdown/backoff already handled inside refreshSummary.
+        });
+      }
+    };
+
+    if (state.root && typeof state.root.requestAnimationFrame === 'function') {
+      state.root.requestAnimationFrame(function () {
+        // Wait a tick to let the initial HTML paint before network calls kick in (helps LCP).
+        if (state.root && typeof state.root.setTimeout === 'function') {
+          state.root.setTimeout(kickOff, 0);
+        } else {
+          kickOff();
+        }
+      });
+    } else {
+      kickOff();
+    }
+  }
+
+  function stopAutoRefresh() {
+    if (state.timer && state.root) {
+      state.root.clearTimeout(state.timer);
+      state.timer = null;
+    }
+    stopCountdown();
+    state.nextRefreshAt = null;
+    updateCountdown();
+    showDegraded(false);
+    state.visibilityPaused = true;
+    state.delay = state.baseDelay;
+  }
+
+  return {
+    init: init,
+    stopAutoRefresh: stopAutoRefresh,
+    normalizeStatus: normalizeStatus,
+    snarkOutage: snarkOutage
+  };
+});
