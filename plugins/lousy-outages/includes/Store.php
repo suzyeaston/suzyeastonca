@@ -5,7 +5,7 @@ class Store {
     private string $option = 'lousy_outages_states';
     private string $log_option = 'lousy_outages_log';
     private string $history_option = 'lousy_outages_history';
-    private int $history_retention = 3 * YEAR_IN_SECONDS; // retain 3 years of daily signals.
+    private int $history_retention = 30 * DAY_IN_SECONDS;
 
     public function get_all(): array {
         $stored = get_option( $this->option, [] );
@@ -43,6 +43,10 @@ class Store {
     private function log( string $id, string $status ): void {
         $log   = get_option( $this->log_option, [] );
         $log[] = [ 'id' => $id, 'status' => $status, 'time' => time() ];
+        $max_log = (int) apply_filters('lo_log_max_entries', 500);
+        if (count($log) > $max_log) {
+            $log = array_slice($log, -$max_log);
+        }
         update_option( $this->log_option, $log, false );
         $this->append_history( $id, $status, time() );
     }
@@ -111,6 +115,10 @@ class Store {
             return (int) $entry['time'] >= $cutoff;
         } ) );
 
+        $max_history = (int) apply_filters('lo_history_max_entries', 5000);
+        if (count($history) > $max_history) {
+            $history = array_slice($history, -$max_history);
+        }
         update_option( $this->history_option, $history, false );
     }
 }
