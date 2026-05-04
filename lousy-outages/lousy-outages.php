@@ -13,10 +13,34 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+if ( ! function_exists( 'lousy_outages_theme_loader_plugin_active' ) ) {
+    function lousy_outages_theme_loader_plugin_active(): bool {
+        if ( function_exists( 'is_plugin_active' ) ) {
+            return is_plugin_active( 'lousy-outages/lousy-outages.php' );
+        }
+        $plugin_api = ABSPATH . 'wp-admin/includes/plugin.php';
+        if ( file_exists( $plugin_api ) ) {
+            include_once $plugin_api;
+        }
+        return function_exists( 'is_plugin_active' ) && is_plugin_active( 'lousy-outages/lousy-outages.php' );
+    }
+}
+
+if ( lousy_outages_theme_loader_plugin_active() ) {
+    return;
+}
+
 if ( defined( 'LOUSY_OUTAGES_LOADED' ) ) {
     return;
 }
 define( 'LOUSY_OUTAGES_LOADED', true );
+
+add_action( 'admin_notices', static function () {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    echo '<div class="notice notice-warning"><p>Lousy Outages is currently running from the theme bundle. For commercial/plugin testing, install and activate the standalone plugin from plugins/lousy-outages.</p></div>';
+} );
 
 // LO: allow hard shutdown via constant for emergency maintenance.
 if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
@@ -814,7 +838,6 @@ add_action( 'admin_menu', function () {
     add_submenu_page( 'lousy-outages', 'Community Signals', 'Community Signals', 'manage_options', 'lousy-outages-community-signals', 'lousy_outages_admin_community_signals_page' );
     add_submenu_page( 'lousy-outages', 'External Signals', 'External Signals', 'manage_options', 'lousy-outages-external-signals', 'lousy_outages_admin_external_signals_page' );
     add_submenu_page( 'lousy-outages', 'Settings', 'Settings', 'manage_options', 'lousy-outages-settings', 'lousy_outages_settings_page' );
-    add_options_page( 'Lousy Outages', 'Lousy Outages', 'manage_options', 'lousy-outages', 'lousy_outages_settings_page' );
 } );
 
 add_action( 'admin_init', function () {
