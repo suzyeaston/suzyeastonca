@@ -114,6 +114,7 @@ lousy_outages_require( 'includes/SignalSourceInterface.php' );
 lousy_outages_require( 'includes/ExternalSignals.php' );
 lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php' );
 lousy_outages_require( 'includes/Sources/CloudflareRadarSource.php' );
+lousy_outages_require( 'includes/Sources/PublicChatterSource.php' );
 lousy_outages_require( 'includes/SignalCollector.php' );
 
 lousy_outages_require( 'public/shortcode.php' );
@@ -888,6 +889,12 @@ add_action( 'admin_init', function () {
             'default'           => '1',
         ]
     );
+
+    register_setting( 'lousy_outages', 'lousy_outages_public_chatter_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'0'] );
+    register_setting( 'lousy_outages', 'lousy_outages_public_chatter_bluesky_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'1'] );
+    register_setting( 'lousy_outages', 'lousy_outages_public_chatter_mastodon_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'0'] );
+    register_setting( 'lousy_outages', 'lousy_outages_public_chatter_gdelt_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'1'] );
+
     register_setting(
         'lousy_outages',
         'lousy_outages_probes',
@@ -1033,7 +1040,16 @@ function lousy_outages_settings_page() {
                         <p class="description">Control whether early-warning emails and SMS messages are sent.</p>
                     </td>
                 </tr>
-                <tr>
+                
+                <tr><th scope="row">Rumour Radar</th><td>
+                    <input type="hidden" name="lousy_outages_public_chatter_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_enabled', '0' ) ) ); ?>> Enable Public Chatter Radar</label><br>
+                    <input type="hidden" name="lousy_outages_public_chatter_bluesky_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_bluesky_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_bluesky_enabled', '1' ) ) ); ?>> Enable Bluesky source</label><br>
+                    <input type="hidden" name="lousy_outages_public_chatter_mastodon_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_mastodon_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_mastodon_enabled', '0' ) ) ); ?>> Enable Mastodon source</label><br>
+                    <input type="hidden" name="lousy_outages_public_chatter_gdelt_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_gdelt_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_gdelt_enabled', '1' ) ) ); ?>> Enable GDELT source</label>
+                    <p class="description">Public chatter signals are unconfirmed and should be treated as early warning only.</p>
+                </td></tr>
+
+<tr>
                     <th scope="row"><label for="lo_probes">Probe URLs</label></th>
                     <td>
                         <textarea id="lo_probes" name="lousy_outages_probes" rows="5" cols="60"><?php echo esc_textarea( $probes_text ); ?></textarea>
