@@ -35,6 +35,8 @@ require_once LOUSY_OUTAGES_PATH . 'includes/email-templates.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Email.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Precursor.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Subscriptions.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/UserReports.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/SignalEngine.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Subscribe.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Api.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Feeds.php';
@@ -64,6 +66,7 @@ use SuzyEaston\LousyOutages\SMS;
 use SuzyEaston\LousyOutages\Email;
 use SuzyEaston\LousyOutages\Precursor;
 use SuzyEaston\LousyOutages\Subscriptions;
+use SuzyEaston\LousyOutages\UserReports;
 use SuzyEaston\LousyOutages\Api;
 use SuzyEaston\LousyOutages\Feeds;
 use SuzyEaston\LousyOutages\MailTransport;
@@ -110,6 +113,7 @@ function lousy_outages_activate() {
     }
     lousy_outages_create_page();
     Subscriptions::create_table();
+    UserReports::install();
     Subscriptions::schedule_purge();
     $default_email = 'suzyeaston@gmail.com';
     $stored_email  = get_option( 'lousy_outages_email' );
