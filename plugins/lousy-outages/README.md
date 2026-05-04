@@ -83,3 +83,24 @@ Polling runs via WP-Cron (`lousy_outages_poll`). A separate background refresh (
 
 - RSS reader: add `https://suzyeaston.ca/lousy-outages/feed/status/` (or `https://suzyeaston.ca/feed/lousy-outages-status/`) to NetNewsWire, Feedly, or your preferred client to receive incident alerts.
 - Slack or email: point an automation tool such as IFTTT or Zapier at the same feed (trigger: “New RSS item”) and forward the payload to a Slack webhook, email address, or other notification channel.
+
+## Rumour Radar SSH diagnostics
+
+Enable logging with `add_filter("lousy_outages_rumour_radar_debug_logging", "__return_true");` then run:
+
+- `grep -n "\[lousy_outages\]\[rumour_radar\]" wp-content/debug.log | tail -n 120`
+- `grep -n "signal_created\|signal_skipped\|collection_complete\|collection_error" wp-content/debug.log | tail -n 120`
+- `tail -f wp-content/debug.log | grep --line-buffered "\[lousy_outages\]\[rumour_radar\]"`
+
+PHP diagnostics snippet (no WP-CLI):
+
+```php
+<?php
+$last = get_option("lousy_outages_last_external_collection", []);
+$dry = get_option("lousy_outages_public_chatter_dry_run", []);
+global $wpdb;
+$table = $wpdb->prefix . "lo_external_signals";
+$rows = $wpdb->get_results("SELECT provider_name,source,observed_at,confidence,metadata_json FROM {$table} ORDER BY observed_at DESC LIMIT 10", ARRAY_A);
+$fused = \SuzyEaston\LousyOutages\SignalEngine::summarize_fused_signals(120);
+var_dump($last, $dry, $rows, array_slice($fused,0,5));
+```
