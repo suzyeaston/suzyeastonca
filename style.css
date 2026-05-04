@@ -4673,17 +4673,17 @@ body {
 .page-template-page-projects .projects-hero {
     border-color: rgba(57, 245, 255, 0.52);
     background: linear-gradient(160deg, rgba(8, 18, 45, 0.95), rgba(9, 20, 54, 0.9));
-    padding: clamp(24px, 4.2vw, 42px);
+    padding: clamp(18px, 3vw, 30px);
 }
 
 .page-template-page-projects .projects-eyebrow,
 .page-template-page-projects .projects-hero__eyebrow {
-    margin: 0 0 12px;
-    letter-spacing: 0.04em;
+    margin: 0 0 8px;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     color: var(--projects-teal);
-    font-size: clamp(0.72rem, 1.4vw, 0.86rem);
-    line-height: 1.55;
+    font-size: clamp(0.66rem, 1vw, 0.78rem);
+    line-height: 1.4;
     background: transparent;
     display: inline-flex;
     padding: 0;
@@ -4702,8 +4702,8 @@ body {
 .page-template-page-projects .projects-hero__title {
     font-family: "Press Start 2P", cursive;
     font-size: clamp(3rem, 8vw, 6rem);
-    line-height: 1.03;
-    letter-spacing: 0.02em;
+    line-height: 0.95;
+    letter-spacing: 0.01em;
     color: #71f7ff;
     text-shadow: 0 0 20px rgba(57, 245, 255, 0.25);
     padding: 0;
@@ -4716,10 +4716,10 @@ body {
 
 .page-template-page-projects .projects-lead,
 .page-template-page-projects .projects-hero__lead {
-    margin: 0 0 10px;
-    max-width: 78ch;
-    font-size: clamp(1.2rem, 2.4vw, 1.75rem);
-    line-height: 1.5;
+    margin: 0 0 8px;
+    max-width: 850px;
+    font-size: clamp(1rem, 2vw, 1.35rem);
+    line-height: 1.55;
     color: var(--projects-text);
     background: transparent;
 }
@@ -4740,7 +4740,7 @@ body {
 }
 
 .page-template-page-projects .projects-actions {
-    margin-top: 16px;
+    margin-top: 12px;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
@@ -4830,6 +4830,26 @@ body {
 
 .page-template-page-projects .projects-card__actions .pixel-button {
     min-height: 40px;
+}
+
+.page-template-page-projects .projects-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+}
+
+.page-template-page-projects .projects-badges li {
+    margin: 0;
+    border: 1px solid rgba(57, 245, 255, 0.36);
+    border-radius: 999px;
+    padding: 3px 9px;
+    background: rgba(4, 12, 29, 0.86);
+    color: #dff9ff;
+    font-size: 0.74rem;
+    letter-spacing: 0.01em;
 }
 
 .page-template-page-projects .projects-mini-grid {
