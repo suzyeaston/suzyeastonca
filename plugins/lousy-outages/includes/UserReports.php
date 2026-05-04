@@ -99,6 +99,14 @@ class UserReports {
         $params[] = $limit;
         return (array)$wpdb->get_results($wpdb->prepare($sql, ...$params), ARRAY_A);
     }
+    public static function recent(int $windowMinutes = 60, int $limit = 100): array {
+        if (!method_exists(__CLASS__, 'get_recent_reports') || !method_exists(__CLASS__, 'table_exists') || !self::table_exists()) {
+            return [];
+        }
+        $windowMinutes = max(5, min(1440, $windowMinutes));
+        $limit = max(1, min(500, $limit));
+        return self::get_recent_reports(['windowMinutes' => $windowMinutes, 'window_minutes' => $windowMinutes, 'limit' => $limit]);
+    }
 
     public static function get_recent_report_count(int $windowMinutes = 60): int {
         global $wpdb;

@@ -52,6 +52,29 @@ class Subscriptions {
         global $wpdb;
         return $wpdb->prefix . self::TABLE;
     }
+    public static function stats(): array {
+        $zero = ['total' => 0, 'confirmed' => 0, 'pending' => 0, 'realtime' => 0, 'digest' => 0, 'newsletter' => 0];
+        global $wpdb;
+        if (!isset($wpdb) || !is_object($wpdb) || !method_exists($wpdb, 'get_var') || !method_exists($wpdb, 'prepare')) {
+            return $zero;
+        }
+
+        $table = self::table_name();
+        $like = method_exists($wpdb, 'esc_like') ? $wpdb->esc_like($table) : $table;
+        $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $like));
+        if ((string) $exists !== $table) {
+            return $zero;
+        }
+
+        $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table}");
+        $confirmed = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE status IN (%s,%s)", self::STATUS_SUBSCRIBED, 'confirmed'));
+        $pending = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE status = %s", self::STATUS_PENDING));
+        $realtime = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE COALESCE(realtime_alerts, 0) <> 0");
+        $digest = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE COALESCE(daily_digest, 0) <> 0");
+        $newsletter = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE COALESCE(newsletter, 0) <> 0");
+
+        return ['total' => $total, 'confirmed' => $confirmed, 'pending' => $pending, 'realtime' => $realtime, 'digest' => $digest, 'newsletter' => $newsletter];
+    }
 
     public static function create_table(): void {
         global $wpdb;

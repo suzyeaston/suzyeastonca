@@ -5,6 +5,13 @@ namespace SuzyEaston\LousyOutages;
 
 class ExternalSignals {
     public static function table_name(): string { global $wpdb; return $wpdb->prefix . 'lo_external_signals'; }
+    private static function table_exists(): bool {
+        global $wpdb;
+        $table = self::table_name();
+        $like = $wpdb->esc_like($table);
+        $existing = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $like));
+        return (string) $existing === $table;
+    }
 
     public static function install(): void {
         global $wpdb;
@@ -65,7 +72,15 @@ class ExternalSignals {
         return ['inserted'=>true,'id'=>(int)$wpdb->insert_id,'signal'=>$s];
     }
     public static function record_many(array $signals): array { $out=['inserted'=>0,'skipped'=>0,'rows'=>[]]; foreach($signals as $sig){$r=self::record_signal((array)$sig);$out['rows'][]=$r; $out[$r['inserted']?'inserted':'skipped']++;} return $out; }
-    public static function get_recent_signals(array $args=[]): array { global $wpdb; $limit=max(1,min(200,(int)($args['limit']??50))); return $wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table_name().' WHERE observed_at >= %s ORDER BY observed_at DESC LIMIT %d', gmdate('Y-m-d H:i:s', time()-((int)($args['windowMinutes']??60))*60), $limit), ARRAY_A) ?: []; }
+    public static function get_recent_signals(array $args=[]): array { global $wpdb; if (!self::table_exists()) { return []; } $limit=max(1,min(200,(int)($args['limit']??50))); return $wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table_name().' WHERE observed_at >= %s ORDER BY observed_at DESC LIMIT %d', gmdate('Y-m-d H:i:s', time()-((int)($args['windowMinutes']??60))*60), $limit), ARRAY_A) ?: []; }
+    public static function recent(int $windowMinutes = 60, int $limit = 100): array {
+        if (!method_exists(__CLASS__, 'get_recent_signals') || !method_exists(__CLASS__, 'table_exists') || !self::table_exists()) {
+            return [];
+        }
+        $windowMinutes = max(5, min(1440, $windowMinutes));
+        $limit = max(1, min(500, $limit));
+        return self::get_recent_signals(['windowMinutes' => $windowMinutes, 'window_minutes' => $windowMinutes, 'limit' => $limit]);
+    }
     public static function get_recent_counts(int $windowMinutes=60): array { global $wpdb; $rows=$wpdb->get_results($wpdb->prepare('SELECT source, COUNT(*) as signal_count FROM '.self::table_name().' WHERE observed_at >= %s GROUP BY source', gmdate('Y-m-d H:i:s', time()-$windowMinutes*60)), ARRAY_A) ?: []; return $rows; }
     public static function clear_expired(): int { global $wpdb; $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE expires_at IS NOT NULL AND expires_at < %s', gmdate('Y-m-d H:i:s'))); return (int)$wpdb->rows_affected; }
     public static function clear_demo_signals(): int { global $wpdb; $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE source = %s', 'demo_external')); return (int)$wpdb->rows_affected; }
