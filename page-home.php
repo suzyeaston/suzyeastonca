@@ -12,7 +12,7 @@ get_header();
                 <p class="hero-copy"><?php echo esc_html('I’m Suzy Easton. I work in IT operations and QA automation, and I build WordPress plugins, outage tools, and AI-assisted music projects on the side. I like projects where the logs are messy, the problem is real, and the fix needs to be clear.'); ?></p>
                 <div class="home-cta-row hero-cta-group">
                     <a href="<?php echo esc_url(home_url('/lousy-outages/')); ?>" class="pixel-button hero-primary-cta"><?php echo esc_html('See Lousy Outages'); ?></a>
-                    <a href="<?php echo esc_url(home_url('/resume/')); ?>" class="pixel-button hero-secondary-cta"><?php echo esc_html('Resume'); ?></a>
+                    <a href="<?php echo esc_url('https://www.linkedin.com/in/suzyeaston/'); ?>" class="pixel-button hero-secondary-cta" target="_blank" rel="noopener noreferrer"><?php echo esc_html('Resume'); ?></a>
                     <a href="<?php echo esc_url(home_url('/projects/')); ?>" class="pixel-button hero-secondary-cta"><?php echo esc_html('Projects'); ?></a>
                 </div>
             </div>
