@@ -68,6 +68,7 @@ lousy_outages_require( 'includes/Precursor.php' );
 lousy_outages_require( 'includes/Subscriptions.php' );
 lousy_outages_require( 'includes/UserReports.php' );
 lousy_outages_require( 'includes/SignalEngine.php' );
+lousy_outages_require( 'includes/RumourRadarLogger.php' );
 lousy_outages_require( 'includes/Subscribe.php' );
 lousy_outages_require( 'includes/Api.php' );
 lousy_outages_require( 'includes/Feeds.php' );

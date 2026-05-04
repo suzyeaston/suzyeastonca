@@ -106,8 +106,23 @@ class Lousy_Outages_Subscribe {
                 'synthetic_failure_count' => (int)($signal['synthetic_failure_count'] ?? 0),
                 'sources' => array_values(array_map('strval', (array)($signal['sources'] ?? []))),
                 'confirmed' => !empty($signal['confirmed']),
-                'last_observed_at' => (string)($signal['last_observed_at'] ?? ''),
+                'last_observed_at' => (string)($signal['last_observed_at'] ?? $signal['observed_at'] ?? ''),
+                'observed_at' => (string)($signal['observed_at'] ?? $signal['last_observed_at'] ?? ''),
                 'official_status_known' => !empty($signal['official_status_known']),
+                'confidence_reason' => (string)($signal['confidence_reason'] ?? ''),
+                'evidence' => [
+                    'summary' => mb_substr((string)(($signal['evidence']['summary'] ?? '')),0,300),
+                    'themes' => array_slice(array_values(array_map('strval', (array)(($signal['evidence']['themes'] ?? [])))),0,5),
+                    'snippets' => array_slice(array_values(array_map(static fn($v)=>mb_substr((string)$v,0,140), (array)(($signal['evidence']['snippets'] ?? [])))),0,5),
+                    'domains' => array_slice(array_values(array_map('strval', (array)(($signal['evidence']['domains'] ?? [])))),0,5),
+                    'source_urls' => array_slice(array_values(array_map('esc_url_raw', (array)(($signal['evidence']['source_urls'] ?? [])))),0,3),
+                    'queries' => array_slice(array_values(array_map('strval', (array)(($signal['evidence']['queries'] ?? [])))),0,3),
+                    'query' => (string)(($signal['evidence']['query'] ?? '')),
+                    'mention_count' => (int)(($signal['evidence']['mention_count'] ?? 0)),
+                    'raw_source_count' => (int)(($signal['evidence']['raw_source_count'] ?? 0)),
+                    'window_minutes' => (int)(($signal['evidence']['window_minutes'] ?? 0)),
+                    'source_labels' => array_slice(array_values(array_map('strval', (array)(($signal['evidence']['source_labels'] ?? [])))),0,5),
+                ],
             ];
         }
 
