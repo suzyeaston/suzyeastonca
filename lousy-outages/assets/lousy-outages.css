@@ -1664,3 +1664,14 @@
 .lo-subscribe__provider-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
 .lo-subscribe__checkbox{display:flex;align-items:center;gap:8px;font-size:.85rem}
 .lo-subscribe__prefs{display:grid;gap:8px}
+
+.lo-report{margin-top:20px;padding:14px;border:1px solid rgba(255,184,28,.45);background:rgba(8,8,20,.7)}
+.lo-report__form{display:grid;gap:10px}
+.lo-report__field{display:grid;gap:4px;font-size:12px;color:#ffe9c4}
+.lo-report__status{min-height:1.2em;color:#9af3ff}
+.lo-signals{margin-top:12px;display:grid;gap:8px}
+.lo-signal{padding:8px;border:1px solid rgba(255,255,255,.2)}
+.lo-signal--watch{border-color:#9af3ff}
+.lo-signal--trending{border-color:#ffb81c}
+.lo-signal--hot{border-color:#ff5a5a}
+.lo-signal__badge{font-weight:700;margin-right:6px}

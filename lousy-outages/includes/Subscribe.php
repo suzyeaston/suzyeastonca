@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 use SuzyEaston\LousyOutages\IncidentAlerts;
 use SuzyEaston\LousyOutages\Mailer;
+use SuzyEaston\LousyOutages\Providers;
+use SuzyEaston\LousyOutages\SignalEngine;
 use SuzyEaston\LousyOutages\Subscriptions;
+use SuzyEaston\LousyOutages\UserReports;
 
 class Lousy_Outages_Subscribe {
     public static function bootstrap(): void {
@@ -35,7 +38,45 @@ class Lousy_Outages_Subscribe {
             'callback'            => [self::class, 'unsubscribe'],
             'permission_callback' => '__return_true',
         ]);
+        register_rest_route('lousy-outages/v1', '/report', [
+            'methods' => 'POST',
+            'callback' => [self::class, 'report_issue'],
+            'permission_callback' => '__return_true',
+        ]);
 
+    }
+
+    public static function report_issue(\WP_REST_Request $request) {
+        $provider_id = sanitize_key((string) $request->get_param('provider_id'));
+        $providers = Providers::list();
+        if (!isset($providers[$provider_id])) {
+            return new \WP_REST_Response(['success'=>false,'message'=>'Please select a valid provider.'], 400);
+        }
+
+        $result = UserReports::record_report([
+            'provider_id' => $provider_id,
+            'symptom' => (string) $request->get_param('symptom'),
+            'severity' => (string) $request->get_param('severity'),
+            'region' => (string) $request->get_param('region'),
+            'details' => (string) $request->get_param('details'),
+            'email' => (string) $request->get_param('email'),
+        ]);
+        if (!empty($result['rate_limited'])) {
+            return new \WP_REST_Response(['success'=>false,'rate_limited'=>true,'message'=>$result['message']], 429);
+        }
+        if (empty($result['success'])) {
+            return new \WP_REST_Response(['success'=>false,'message'=>'Unable to record that report right now.'], 400);
+        }
+        $count = UserReports::count_recent_reports($provider_id, 60);
+        $classification = SignalEngine::classify_score($count);
+        return new \WP_REST_Response([
+            'success'=>true,
+            'message'=>'Thanks — we logged your unconfirmed community report and we’re watching this.',
+            'provider_name'=>(string)$providers[$provider_id]['name'],
+            'signal_classification'=>$classification,
+            'report_count_window'=>$count,
+            'signals'=>SignalEngine::summarize_recent_signals(60),
+        ], 200);
     }
 
     public static function confirm(\WP_REST_Request $request) {

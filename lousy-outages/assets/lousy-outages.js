@@ -3294,36 +3294,18 @@
 
     var providerId = String(state.reportProvider.value || '').trim();
     var summary = String(state.reportSummary.value || '').trim();
-    var providerName = state.reportProviderName ? String(state.reportProviderName.value || '').trim() : '';
     var contact = state.reportContact ? String(state.reportContact.value || '').trim() : '';
-    var captchaAnswer = state.reportCaptchaInput ? String(state.reportCaptchaInput.value || '').trim() : '';
-    var captchaToken = state.reportCaptchaToken ? String(state.reportCaptchaToken.value || '').trim() : '';
+    var form = state.reportForm;
+    var severityInput = form ? form.querySelector('select[name=\"severity\"]') : null;
+    var regionInput = form ? form.querySelector('input[name=\"region\"]') : null;
+    var detailsInput = form ? form.querySelector('textarea[name=\"details\"]') : null;
 
     if (!providerId) {
       setReportStatus('Select a provider to report.', 'error');
       return;
     }
 
-    if (providerId === 'other') {
-      if (providerName.length < 2) {
-        setReportStatus('Please enter the provider name (2+ characters).', 'error');
-        return;
-      }
-      if (providerName.length > 80) {
-        setReportStatus('Provider name must be 80 characters or fewer.', 'error');
-        return;
-      }
-    }
-
-    if (summary.length < 10) {
-      setReportStatus('Please add a short description (10+ characters).', 'error');
-      return;
-    }
-
-    if (!normalizeReportCaptcha(captchaAnswer) || !captchaToken) {
-      setReportStatus('Please complete the phrase check.', 'error');
-      return;
-    }
+    if (!summary) { summary = 'other'; }
 
     var originalLabel = state.reportSubmit.textContent;
     state.reportSubmit.disabled = true;
@@ -3332,14 +3314,14 @@
 
     var payload = {
       provider_id: providerId,
-      provider_name: providerId === 'other' ? providerName : '',
-      summary: summary,
-      contact: contact,
-      captcha_answer: captchaAnswer,
-      captcha_token: captchaToken
+      symptom: summary,
+      email: contact,
+      severity: severityInput ? String(severityInput.value || 'unknown') : 'unknown',
+      region: regionInput ? String(regionInput.value || '') : '',
+      details: detailsInput ? String(detailsInput.value || '') : ''
     };
 
-    state.fetchImpl('/wp-json/lousy/v1/report', {
+    state.fetchImpl((form && form.getAttribute('action')) || '/wp-json/lousy-outages/v1/report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -3352,7 +3334,7 @@
         return res.json().catch(function () { return {}; }).then(function (data) { return { ok: ok, data: data }; });
       })
       .then(function (result) {
-        var ok = result && result.ok && result.data && result.data.ok !== false;
+        var ok = result && result.ok && result.data && result.data.success !== false;
         var message = null;
         if (result && result.data) {
           message = result.data.message || result.data.error || null;
@@ -3364,14 +3346,7 @@
           if (state.reportContact) {
             state.reportContact.value = '';
           }
-          if (state.reportProviderName) {
-            state.reportProviderName.value = '';
-          }
-          if (state.reportCaptchaInput) {
-            state.reportCaptchaInput.value = '';
-          }
-          requestReportPhrase();
-          setReportStatus(message || 'Thanks for the report. We will review it shortly.', 'success');
+          setReportStatus(message || 'Thanks — we logged your unconfirmed community report and we’re watching this.', 'success');
           fetchHistoryData().catch(function () {
             // Ignore history refresh errors after submit.
           });
