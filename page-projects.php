@@ -52,14 +52,15 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
             </div>
         </section>
 
-        <section id="interactive-projects" class="projects-section" aria-labelledby="interactive-projects-title">
+        <section id="interactive-projects" class="projects-section projects-section--selected" aria-labelledby="interactive-projects-title">
+            <h2 class="projects-selected-title pixel-font">Selected Projects</h2>
             <div class="projects-section-header">
                 <h2 id="interactive-projects-title" class="pixel-font">Interactive</h2>
             </div>
             <div class="projects-grid">
                 <article class="projects-card">
                     <h3 class="pixel-font">Gastown Simulator</h3>
-                    <p>A browser-based Vancouver prototype with maps, routes, civic data, and game-style navigation.</p>
+                    <p>Vancouver maps, routes, civic data, and game-style navigation.</p>
                     <div class="projects-card__actions">
                         <a class="pixel-button" href="<?php echo esc_url($project_url('page-gastown-sim', '/page-gastown-sim/')); ?>">Open project</a>
                     </div>
@@ -67,7 +68,7 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
 
                 <article class="projects-card">
                     <h3 class="pixel-font">Track Analyzer</h3>
-                    <p>An AI-assisted music feedback tool for rough mixes and songwriting notes.</p>
+                    <p>AI-assisted feedback for rough mixes and songwriting notes.</p>
                     <div class="projects-card__actions">
                         <a class="pixel-button" href="<?php echo esc_url($project_url('suzys-track-analyzer', '/suzys-track-analyzer/')); ?>">Open project</a>
                     </div>
@@ -98,7 +99,7 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
 
                 <article class="projects-card">
                     <h3 class="pixel-font">AI/Audio Experiments</h3>
-                    <p>Small experiments with generated sound, web visuals, and AI-assisted storytelling.</p>
+                    <p>Generated sound, web visuals, and AI-assisted storytelling.</p>
                     <div class="projects-card__actions">
                         <a class="pixel-button" href="<?php echo esc_url($project_url('albini-qa')); ?>">Open project</a>
                     </div>
