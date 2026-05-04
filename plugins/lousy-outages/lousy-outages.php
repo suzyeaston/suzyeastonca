@@ -174,7 +174,7 @@ function lousy_outages_activate() {
 register_activation_hook( __FILE__, 'lousy_outages_activate' );
 
 function lousy_outages_maybe_install_schema( bool $force = false ): void {
-    $schema_version = '2026-05-04';
+    $schema_version = '2026-05-04.1';
     $option_key = 'lousy_outages_schema_version';
     $current = (string) get_option( $option_key, '' );
     if ( ! $force && version_compare( $current, $schema_version, '>=' ) ) {
@@ -187,7 +187,6 @@ function lousy_outages_maybe_install_schema( bool $force = false ): void {
     update_option( $option_key, $schema_version, false );
 }
 add_action( 'admin_init', 'lousy_outages_maybe_install_schema' );
-add_action( 'init', 'lousy_outages_maybe_install_schema' );
 
 /**
  * Clear cron on deactivation.
@@ -323,7 +322,10 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
     $providers = Providers::enabled();
     $results   = [];
     $precursor = new Precursor();
-    $failures  = [];
+    $fetch_error_count = 0;
+    $operational_count = 0;
+    $non_operational_count = 0;
+    $unknown_count = 0;
 
     foreach ( $providers as $id => $provider ) {
         if ( ! isset( $provider['id'] ) ) {
@@ -357,8 +359,17 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
             } elseif ( isset( $state['message'] ) && '' !== trim( (string) $state['message'] ) ) {
                 $error_message = (string) $state['message'];
             }
-            if ( '' !== $error_message ) {
-                $failures[ $id ] = $error_message;
+            $normalized_status = strtolower( (string) ( $state['status'] ?? 'unknown' ) );
+            if ( in_array( $normalized_status, [ 'operational', 'ok' ], true ) ) {
+                $operational_count++;
+            } elseif ( in_array( $normalized_status, [ 'unknown', '' ], true ) ) {
+                $unknown_count++;
+            } else {
+                $non_operational_count++;
+            }
+            if ( '' !== $error_message && ! in_array( $normalized_status, [ 'operational', 'ok', 'degraded', 'outage', 'partial', 'maintenance' ], true ) ) {
+                $fetch_error_count++;
+                error_log( sprintf( '[lousy_outages] fetch_failure provider=%s message=%s', $id, $error_message ) );
             }
         }
     }
@@ -368,10 +379,7 @@ function lousy_outages_collect_statuses( bool $bypass_cache = false ): array {
     set_transient( $cache_key, $payload, max( 30, $ttl ) );
 
     $duration_ms = ( microtime( true ) - $start_time ) * 1000;
-    error_log( sprintf( '[lousy_outages] fetch_complete count=%d duration_ms=%.2f failures=%d', count( $payload ), $duration_ms, count( $failures ) ) );
-    foreach ( $failures as $provider_id => $message ) {
-        error_log( sprintf( '[lousy_outages] fetch_failure provider=%s message=%s', $provider_id, $message ) );
-    }
+    error_log( sprintf( '[lousy_outages] fetch_complete count=%d duration_ms=%.2f operational=%d non_operational=%d unknown=%d fetch_errors=%d', count( $payload ), $duration_ms, $operational_count, $non_operational_count, $unknown_count, $fetch_error_count ) );
 
     return $payload;
 }
@@ -1266,6 +1274,7 @@ add_action( 'admin_post_lousy_outages_poll_now', function () {
     check_admin_referer( 'lousy_outages_poll_now' );
 
     $started = microtime( true );
+    $memoryBefore = function_exists( 'memory_get_usage' ) ? memory_get_usage( true ) : 0;
     $result  = [
         'timestamp'      => gmdate( 'c' ),
         'success'        => false,
@@ -1274,6 +1283,9 @@ add_action( 'admin_post_lousy_outages_poll_now', function () {
         'errors'         => [],
         'duration_ms'    => 0,
         'triggered_by'   => 'admin_poll_now',
+        'memory_before'  => $memoryBefore,
+        'memory_after'   => 0,
+        'memory_peak'    => 0,
     ];
     $notice = [ 'message' => 'Poll failed safely. Check diagnostics/logs for details.', 'type' => 'error' ];
     try {
@@ -1289,6 +1301,8 @@ add_action( 'admin_post_lousy_outages_poll_now', function () {
         error_log( '[LO] poll_now_failed ' . wp_json_encode( [ 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString() ] ) );
     }
     $result['duration_ms'] = (int) round( ( microtime( true ) - $started ) * 1000 );
+    $result['memory_after'] = function_exists( 'memory_get_usage' ) ? memory_get_usage( true ) : 0;
+    $result['memory_peak'] = function_exists( 'memory_get_peak_usage' ) ? memory_get_peak_usage( true ) : 0;
     update_option( 'lousy_outages_last_poll_now_result', $result, false );
     set_transient( 'lousy_outages_notice', $notice, 30 );
 
