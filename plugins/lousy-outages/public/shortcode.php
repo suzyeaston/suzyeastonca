@@ -523,7 +523,7 @@ function render_shortcode(): string {
             <div class="lo-actions">
                 <span class="lo-meta" aria-live="polite">
                     <span data-lo-fetched-label><?php echo esc_html($fetched_label); ?></span>
-                    <strong data-lo-fetched><?php echo esc_html($format_datetime($fetched_at)); ?></strong>
+                    <strong data-lo-fetched data-lo-last-fetched><?php echo esc_html($format_datetime($fetched_at)); ?></strong>
                     <span data-lo-countdown>Auto-refresh ready</span>
                 </span>
                 <span class="lo-pill lo-pill--degraded" data-lo-degraded hidden>Auto-refresh degraded</span>
