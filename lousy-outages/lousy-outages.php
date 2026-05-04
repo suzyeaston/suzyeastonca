@@ -52,11 +52,14 @@ require_once LOUSY_OUTAGES_PATH . 'includes/Email/Composer.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Sources/Sources.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Sources/index.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Cron/Refresh.php';
+
+// External signal infrastructure must load before concrete source classes.
+require_once LOUSY_OUTAGES_PATH . 'includes/SignalSourceInterface.php';
+require_once LOUSY_OUTAGES_PATH . 'includes/ExternalSignals.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Sources/SyntheticCanarySource.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/Sources/CloudflareRadarSource.php';
 require_once LOUSY_OUTAGES_PATH . 'includes/SignalCollector.php';
-require_once LOUSY_OUTAGES_PATH . 'includes/ExternalSignals.php';
-require_once LOUSY_OUTAGES_PATH . 'includes/SignalSourceInterface.php';
+
 require_once LOUSY_OUTAGES_PATH . 'public/shortcode.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
