@@ -4913,3 +4913,20 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* Homepage clarity refresh */
+.home-layout section { margin-block: 1.5rem; }
+.home-featured-build { border: 2px solid rgba(95, 247, 205, 0.45); box-shadow: 0 0 0 1px rgba(95, 247, 205, 0.2), 0 12px 30px rgba(0,0,0,0.35); }
+.home-featured-subtitle { font-weight: 700; color: #9bf7dc; margin-top: 0.35rem; }
+.home-feature-list { margin: 1rem 0; padding-left: 1.25rem; }
+.home-feature-list li { margin-bottom: 0.45rem; }
+.home-badge-list { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 1rem 0; }
+.home-badge-list span { border: 1px solid rgba(155,247,220,0.5); padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.78rem; letter-spacing: 0.03em; text-transform: uppercase; }
+.home-cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+.home-project-grid .selected-work__grid { gap: 1rem; }
+.home-project-card { min-height: 100%; }
+.home-section-kicker { color: #8fd5ff; letter-spacing: 0.08em; margin-bottom: 0.35rem; }
+@media (max-width: 782px) {
+  .home-layout section { margin-block: 1.1rem; }
+  .home-hero .hero-grid { gap: 1rem; }
+}
