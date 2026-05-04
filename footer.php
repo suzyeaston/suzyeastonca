@@ -37,7 +37,7 @@
             <p>&copy; <?php echo date('Y'); ?> Suzy Easton. All rights reserved.</p>
         </div>
         <div class="footer-marquee">
-            <span>Made in Vancouver &middot; Built with coffee, riffs, and command line confidence.</span>
+            <span>Made in Vancouver &middot; Built with coffee, riffs, and practical tooling.</span>
         </div>
     </div>
 </footer>
