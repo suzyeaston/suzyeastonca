@@ -41,11 +41,11 @@
 
   var SNARKS = {
     aws: [
-      'us-east-1 is a lifestyle choice.',
-      'Somewhere a Lambda forgot to set its alarm.'
+      'Regional instability indicators detected.',
+      'Provider is investigating elevated errors.'
     ],
-    github: ['Push it real good, but maybe later.'],
-    default: ['Hold tight—someone’s jiggling the ethernet cable.']
+    github: ['Provider performance is currently degraded.'],
+    default: ['Early warning signal detected; verification in progress.']
   };
 
   var state = {
@@ -3420,6 +3420,7 @@
     var requestUrl = state.endpoint;
     if (manual && requestUrl) {
       requestUrl = appendQuery(requestUrl, 'refresh', '1');
+      requestUrl = appendQuery(requestUrl, 'lo_nocache', String(Date.now()));
     }
 
     return state.fetchImpl(requestUrl, {
@@ -3538,7 +3539,8 @@
     if (state.refreshNonce) {
       headers['X-WP-Nonce'] = state.refreshNonce;
     }
-    return state.fetchImpl(state.refreshEndpoint, {
+    var refreshUrl = appendQuery(state.refreshEndpoint, 'lo_nocache', String(Date.now()));
+    return state.fetchImpl(refreshUrl, {
       method: 'POST',
       credentials: 'same-origin',
       headers: headers

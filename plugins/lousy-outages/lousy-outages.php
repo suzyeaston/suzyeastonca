@@ -422,6 +422,32 @@ function lousy_outages_get_last_fetched_iso(): ?string {
  * `lousy_outages_last_fetched` option. The snapshot endpoint and HUD both
  * render their date/time displays from this value via wp_date().
  */
+
+function lousy_outages_get_last_poll_timestamp(): ?int {
+    $candidates = [];
+    $lastFetched = lousy_outages_get_last_fetched_timestamp();
+    if ( null !== $lastFetched && $lastFetched > 0 ) { $candidates[] = (int) $lastFetched; }
+    foreach ( ['lousy_outages_last_poll', 'lo_last_status_check'] as $key ) {
+        $v = get_option( $key );
+        if ( is_string( $v ) && '' !== trim( $v ) ) { $ts = strtotime( $v ); if ( false !== $ts ) { $candidates[] = (int) $ts; } }
+    }
+    if ( empty( $candidates ) ) { return null; }
+    rsort( $candidates, SORT_NUMERIC );
+    return (int) $candidates[0];
+}
+
+function lousy_outages_format_external_collection_summary( $raw ): string {
+    if ( empty( $raw ) ) { return 'Not collected yet.'; }
+    if ( ! is_array( $raw ) ) { return (string) $raw; }
+    $ts = (string) ( $raw['timestamp'] ?? $raw['ran_at'] ?? '' );
+    $tsLabel = 'unknown';
+    if ( '' !== $ts ) { $parsed = strtotime( $ts ); if ( false !== $parsed ) { $tsLabel = wp_date( 'M j, Y g:i a', $parsed ); } }
+    $success = (int) ( $raw['success_count'] ?? $raw['stored'] ?? 0 );
+    $errors = (int) ( $raw['error_count'] ?? ( is_array( $raw['errors'] ?? null ) ? count( $raw['errors'] ) : 0 ) );
+    $attempted = (int) ( $raw['sources_attempted'] ?? ( is_array( $raw['sources'] ?? null ) ? count( $raw['sources'] ) : 0 ) );
+    return sprintf( 'Last %s · Success %d · Errors %d · Sources %d', $tsLabel, $success, $errors, $attempted );
+}
+
 function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
     $lock_key = 'lousy_outages_refresh_lock';
     if ( get_transient( $lock_key ) ) {
@@ -1239,16 +1265,32 @@ add_action( 'admin_post_lousy_outages_poll_now', function () {
 
     check_admin_referer( 'lousy_outages_poll_now' );
 
-    $count = lousy_outages_run_poll();
-
-    set_transient(
-        'lousy_outages_notice',
-        [
-            'message' => sprintf( 'Poll completed (%d providers).', $count ),
-            'type'    => 'success',
-        ],
-        30
-    );
+    $started = microtime( true );
+    $result  = [
+        'timestamp'      => gmdate( 'c' ),
+        'success'        => false,
+        'provider_count' => 0,
+        'changed_count'  => 0,
+        'errors'         => [],
+        'duration_ms'    => 0,
+        'triggered_by'   => 'admin_poll_now',
+    ];
+    $notice = [ 'message' => 'Poll failed safely. Check diagnostics/logs for details.', 'type' => 'error' ];
+    try {
+        $count = lousy_outages_run_poll();
+        $result['provider_count'] = is_numeric( $count ) ? (int) $count : 0;
+        $result['success']        = true;
+        if ( class_exists( 'SuzyEaston\LousyOutages\Feeds' ) ) {
+            SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache();
+        }
+        $notice = [ 'message' => sprintf( 'Poll completed (%d providers).', (int) $result['provider_count'] ), 'type' => 'success' ];
+    } catch ( \Throwable $e ) {
+        $result['errors'][] = $e->getMessage();
+        error_log( '[LO] poll_now_failed ' . wp_json_encode( [ 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString() ] ) );
+    }
+    $result['duration_ms'] = (int) round( ( microtime( true ) - $started ) * 1000 );
+    update_option( 'lousy_outages_last_poll_now_result', $result, false );
+    set_transient( 'lousy_outages_notice', $notice, 30 );
 
     $redirect = add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) );
     wp_safe_redirect( $redirect );
@@ -1496,9 +1538,9 @@ add_action( 'admin_post_lousy_outages_collect_signals_now', function () { if(!cu
 add_action( 'admin_post_lousy_outages_seed_demo_external_signals', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_seed_demo_external_signals'); $r=ExternalSignals::seed_demo_signals(); if (class_exists('SuzyEaston\LousyOutages\Feeds')) { SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache(); } set_transient('lousy_outages_notice',['message'=>sprintf('Seeded %d demo external signals.',(int)($r['inserted']??0)),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );
 add_action( 'admin_post_lousy_outages_clear_demo_external_signals', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_clear_demo_external_signals'); $c=ExternalSignals::clear_demo_signals(); if (class_exists('SuzyEaston\LousyOutages\Feeds')) { SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache(); } set_transient('lousy_outages_notice',['message'=>sprintf('Cleared %d demo external signals.',(int)$c),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );
 
-function lousy_outages_admin_dashboard_page() { $zero=['total'=>0,'confirmed'=>0,'pending'=>0,'realtime'=>0,'digest'=>0,'newsletter'=>0]; $stats=(class_exists('SuzyEaston\LousyOutages\Subscriptions')&&method_exists('SuzyEaston\LousyOutages\Subscriptions','stats'))?SuzyEaston\LousyOutages\Subscriptions::stats():$zero; if(!is_array($stats)){$stats=$zero;} $stats=array_merge($zero,$stats); $providers = Providers::enabled(); $community = (class_exists('SuzyEaston\LousyOutages\UserReports')&&method_exists('SuzyEaston\LousyOutages\UserReports','recent')) ? SuzyEaston\LousyOutages\UserReports::recent(60,100) : []; if(!is_array($community)){$community=[];} $external = (class_exists('SuzyEaston\LousyOutages\ExternalSignals')&&method_exists('SuzyEaston\LousyOutages\ExternalSignals','recent')) ? SuzyEaston\LousyOutages\ExternalSignals::recent(60,100) : []; if(!is_array($external)){$external=[];} $fused = get_option('lousy_outages_signal_engine_last_fused', []); if ( ! is_array($fused) ) { $fused = []; } echo '<div class="wrap"><h1>Lousy Outages Dashboard</h1><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;max-width:1120px;">'; $cards=['Monitored Providers'=>count($providers),'Active Subscribers'=>(int)($stats['confirmed']??0),'Community Reports Last Hour'=>count($community),'External Signals Last Hour'=>count($external),'Fused Signals'=>count($fused),'Last Poll'=>(string)get_option('lousy_outages_last_poll','—'),'Last External Collection'=>(string)get_option('lousy_outages_last_external_collection','—')]; foreach($cards as $label=>$value){ echo '<div style="border:1px solid #ccd0d4;background:#fff;padding:12px;"><strong>'.esc_html($label).'</strong><div style="font-size:18px;margin-top:8px;">'.esc_html((string)$value).'</div></div>'; } echo '</div><p style="margin-top:16px;"><a class="button" href="'.esc_url(home_url('/lousy-outages/')).'">View Public Page</a> <a class="button" href="'.esc_url(wp_nonce_url(admin_url('admin-post.php?action=lousy_outages_poll_now'),'lousy_outages_poll_now')).'">Poll Now</a> <a class="button" href="'.esc_url(wp_nonce_url(admin_url('admin-post.php?action=lousy_outages_collect_signals_now'),'lousy_outages_collect_signals_now')).'">Collect External Signals Now</a> <a class="button button-primary" href="'.esc_url(admin_url('admin.php?page=lousy-outages-settings')).'">Settings</a></p></div>'; }
+function lousy_outages_admin_dashboard_page() { $zero=['total'=>0,'confirmed'=>0,'pending'=>0,'realtime'=>0,'digest'=>0,'newsletter'=>0]; $stats=(class_exists('SuzyEaston\LousyOutages\Subscriptions')&&method_exists('SuzyEaston\LousyOutages\Subscriptions','stats'))?SuzyEaston\LousyOutages\Subscriptions::stats():$zero; if(!is_array($stats)){$stats=$zero;} $stats=array_merge($zero,$stats); $providers = Providers::enabled(); $community = (class_exists('SuzyEaston\LousyOutages\UserReports')&&method_exists('SuzyEaston\LousyOutages\UserReports','recent')) ? SuzyEaston\LousyOutages\UserReports::recent(60,100) : []; if(!is_array($community)){$community=[];} $external = (class_exists('SuzyEaston\LousyOutages\ExternalSignals')&&method_exists('SuzyEaston\LousyOutages\ExternalSignals','recent')) ? SuzyEaston\LousyOutages\ExternalSignals::recent(60,100) : []; if(!is_array($external)){$external=[];} $fused = get_option('lousy_outages_signal_engine_last_fused', []); if ( ! is_array($fused) ) { $fused = []; } echo '<div class="wrap"><h1>Lousy Outages Dashboard</h1><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;max-width:1120px;">'; $cards=['Monitored Providers'=>count($providers),'Active Subscribers'=>(int)($stats['confirmed']??0),'Community Reports Last Hour'=>count($community),'External Signals Last Hour'=>count($external),'Fused Signals'=>count($fused),'Last Poll'=>((($ts=lousy_outages_get_last_poll_timestamp())?wp_date('M j, Y g:i a',$ts):'—')),'Last External Collection'=>lousy_outages_format_external_collection_summary(get_option('lousy_outages_last_external_collection',null))]; foreach($cards as $label=>$value){ echo '<div style="border:1px solid #ccd0d4;background:#fff;padding:12px;"><strong>'.esc_html($label).'</strong><div style="font-size:18px;margin-top:8px;">'.esc_html((string)$value).'</div></div>'; } echo '</div><p style="margin-top:16px;"><a class="button" href="'.esc_url(home_url('/lousy-outages/')).'">View Public Page</a> <a class="button" href="'.esc_url(wp_nonce_url(admin_url('admin-post.php?action=lousy_outages_poll_now'),'lousy_outages_poll_now')).'">Poll Now</a> <a class="button" href="'.esc_url(wp_nonce_url(admin_url('admin-post.php?action=lousy_outages_collect_signals_now'),'lousy_outages_collect_signals_now')).'">Collect External Signals Now</a> <a class="button button-primary" href="'.esc_url(admin_url('admin.php?page=lousy-outages-settings')).'">Settings</a></p></div>'; }
 function lousy_outages_admin_providers_page() { echo '<div class="wrap"><h1>Providers</h1><p>Provider table and diagnostics are available in Settings.</p><p><a class="button button-primary" href="' . esc_url( admin_url( 'admin.php?page=lousy-outages-settings' ) ) . '">Open Settings</a></p></div>'; }
-function lousy_outages_admin_subscribers_page() { $stats = class_exists('SuzyEaston\LousyOutages\Subscriptions') ? SuzyEaston\LousyOutages\Subscriptions::stats() : []; echo '<div class="wrap"><h1>Subscribers</h1><ul><li>Confirmed: '.esc_html((string)($stats['confirmed']??0)).'</li><li>Pending: '.esc_html((string)($stats['pending']??0)).'</li><li>Realtime: '.esc_html((string)($stats['realtime']??0)).'</li><li>Digest: '.esc_html((string)($stats['digest']??0)).'</li><li>Newsletter: '.esc_html((string)($stats['newsletter']??0)).'</li></ul></div>'; }
+function lousy_outages_admin_subscribers_page() { $stats = class_exists('SuzyEaston\LousyOutages\Subscriptions') ? SuzyEaston\LousyOutages\Subscriptions::stats() : []; $diag=get_option('lousy_outages_last_alert_recipient_diagnostics',[]); $excluded=is_array($diag['excluded']??null)?$diag['excluded']:[]; echo '<div class="wrap"><h1>Subscribers</h1><p>Subscriber details are admin-only. Public visitors never see this.</p><ul><li>Total confirmed: '.esc_html((string)($stats['confirmed']??0)).'</li><li>Pending confirmations: '.esc_html((string)($stats['pending']??0)).'</li><li>Realtime alert subscribers: '.esc_html((string)($stats['realtime']??0)).'</li><li>Digest subscribers: '.esc_html((string)($stats['digest']??0)).'</li><li>Newsletter subscribers: '.esc_html((string)($stats['newsletter']??0)).'</li><li>All providers: '.esc_html((string)($stats['provider_all']??0)).'</li><li>Provider-specific: '.esc_html((string)($stats['provider_specific']??0)).'</li></ul>'; if(is_array($diag)&&!empty($diag)){ echo '<h2>Last alert recipients</h2><p><strong>Notification inbox:</strong> '.esc_html((string)($diag['notification_recipients'][0]??'—')).'</p><p><strong>Subscriber count:</strong> '.esc_html((string)($diag['subscriber_recipients_count']??0)).'</p><ul><li>Pending: '.esc_html((string)($excluded['pending']??0)).'</li><li>No realtime opt-in: '.esc_html((string)($excluded['no_realtime_opt_in']??0)).'</li><li>Provider preference mismatch: '.esc_html((string)($excluded['provider_preference_mismatch']??0)).'</li><li>Invalid email: '.esc_html((string)($excluded['invalid_email']??0)).'</li><li>Already sent/deduped: '.esc_html((string)($excluded['already_sent_deduped']??0)).'</li></ul>'; } echo '</div>'; }
 function lousy_outages_admin_community_signals_page() { echo '<div class="wrap"><h1>Community Signals</h1><p>Community reports, top providers, and demo seed/clear actions are managed in Settings diagnostics.</p><p><a class="button button-primary" href="' . esc_url( admin_url( 'admin.php?page=lousy-outages-settings' ) ) . '">Open Settings Diagnostics</a></p></div>'; }
 function lousy_outages_admin_external_signals_page() { echo '<div class="wrap"><h1>External Signals</h1><p>Source statuses, fused signals, and collect/seed/clear actions are managed in Settings diagnostics.</p><p><a class="button button-primary" href="' . esc_url( admin_url( 'admin.php?page=lousy-outages-settings' ) ) . '">Open Settings Diagnostics</a></p></div>'; }
 

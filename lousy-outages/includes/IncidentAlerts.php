@@ -50,6 +50,7 @@ class IncidentAlerts {
     private const OPTION_LAST_ALERT_FAILURE = 'lousy_outages_last_alert_failure';
     private const OPTION_LAST_SYNTHETIC_ALERT = 'lousy_outages_last_synthetic_alert';
     private const OPTION_ALERT_DELIVERY_FAILURE = 'lousy_outages_alert_delivery_failure';
+    private const OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS = 'lousy_outages_last_alert_recipient_diagnostics';
 
     private const ALERT_RETENTION_HOURS        = 48;
     private const SUBJECT_ALERT_WINDOW_HOURS   = 12;
@@ -1456,10 +1457,16 @@ class IncidentAlerts {
 
     private static function send_incident_alert_email(Incident $incident, array $options = []): array {
         $providerId = sanitize_key((string) $incident->provider);
-        $subscribers = array_values(array_filter(self::get_subscribers(), static function (string $email) use ($providerId): bool {
-            return Subscriptions::subscriber_wants_realtime($email)
-                && Subscriptions::subscriber_wants_provider($email, $providerId);
-        }));
+        $excluded = ['pending'=>0,'no_realtime_opt_in'=>0,'provider_preference_mismatch'=>0,'invalid_email'=>0,'already_sent_deduped'=>0];
+        $subscribers = [];
+        foreach (self::get_subscribers() as $email) {
+            $clean = sanitize_email((string) $email);
+            if (!$clean || !is_email($clean)) { $excluded['invalid_email']++; continue; }
+            if (!Subscriptions::is_confirmed($clean)) { $excluded['pending']++; continue; }
+            if (!Subscriptions::subscriber_wants_realtime($clean)) { $excluded['no_realtime_opt_in']++; continue; }
+            if (!Subscriptions::subscriber_wants_provider($clean, $providerId)) { $excluded['provider_preference_mismatch']++; continue; }
+            $subscribers[] = $clean;
+        }
         $notificationEmail = sanitize_email((string) get_option('lousy_outages_email', get_option('admin_email')));
         $notificationOnly = !empty($options['notification_only']);
         if ($notificationOnly) {
@@ -1468,7 +1475,20 @@ class IncidentAlerts {
         if ($notificationEmail && is_email($notificationEmail)) {
             $subscribers[] = $notificationEmail;
         }
+        $beforeDedup = count($subscribers);
         $subscribers = array_values(array_unique(array_filter(array_map('sanitize_email', $subscribers))));
+        $excluded['already_sent_deduped'] += max(0, $beforeDedup - count($subscribers));
+        update_option(self::OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS, [
+            'incident_id' => (string) $incident->id,
+            'provider_id' => $providerId,
+            'provider_name' => (string) $incident->provider,
+            'mode' => (string) ($options['mode'] ?? 'real'),
+            'notification_recipients' => ($notificationEmail && is_email($notificationEmail)) ? [$notificationEmail] : [],
+            'subscriber_recipients_count' => (int) count(array_diff($subscribers, [$notificationEmail])),
+            'total_recipients_count' => (int) count($subscribers),
+            'excluded' => $excluded,
+            'timestamp' => gmdate('c'),
+        ], false);
         if (empty($subscribers)) {
             return ['ok'=>false,'recipients'=>[],'error'=>'no_recipients'];
         }

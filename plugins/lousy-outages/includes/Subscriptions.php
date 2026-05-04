@@ -73,7 +73,9 @@ class Subscriptions {
         $digest = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE COALESCE(daily_digest, 0) <> 0");
         $newsletter = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE COALESCE(newsletter, 0) <> 0");
 
-        return ['total' => $total, 'confirmed' => $confirmed, 'pending' => $pending, 'realtime' => $realtime, 'digest' => $digest, 'newsletter' => $newsletter];
+        $provider_all = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE status IN ('subscribed','confirmed') AND (providers = '' OR providers IS NULL)");
+        $provider_specific = max(0, $confirmed - $provider_all);
+        return ['total' => $total, 'confirmed' => $confirmed, 'pending' => $pending, 'realtime' => $realtime, 'digest' => $digest, 'newsletter' => $newsletter, 'provider_all' => $provider_all, 'provider_specific' => $provider_specific];
     }
 
     public static function create_table(): void {
@@ -247,6 +249,13 @@ class Subscriptions {
     public static function subscriber_wants_realtime(string $email): bool { return (bool) self::get_preferences_for_email($email)['realtime_alerts']; }
     public static function subscriber_wants_digest(string $email): bool { return (bool) self::get_preferences_for_email($email)['daily_digest']; }
     public static function subscriber_wants_newsletter(string $email): bool { return (bool) self::get_preferences_for_email($email)['newsletter']; }
+    public static function is_confirmed(string $email): bool {
+        global $wpdb;
+        self::ensure_schema();
+        $table = self::table_name();
+        $row = $wpdb->get_var($wpdb->prepare("SELECT status FROM {$table} WHERE email = %s", strtolower(trim($email))));
+        return in_array((string) $row, [self::STATUS_SUBSCRIBED, 'confirmed'], true);
+    }
     public static function find_by_token(string $token): ?array {
         global $wpdb;
 
