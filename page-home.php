@@ -7,9 +7,9 @@ get_header();
     <section class="home-hero hero hero-section crt-block" aria-labelledby="home-hero-title">
         <div class="hero-grid">
             <div class="hero-main">
-                <p class="hero-eyebrow pixel-font"><?php echo esc_html('Vancouver, BC · QA automation · IT ops · plugins · music tech'); ?></p>
-                <h1 id="home-hero-title" class="hero-core-headline"><?php echo esc_html('Useful tools for noisy systems, strange ideas, and the occasional guitar amp.'); ?></h1>
-                <p class="hero-copy"><?php echo esc_html('I’m Suzy Easton. I build things that make broken systems easier to see: outage dashboards, QA automation, WordPress plugins, AI-assisted music tools, and Vancouver-flavoured web experiments.'); ?></p>
+                <p class="hero-eyebrow pixel-font"><?php echo esc_html('Vancouver, BC · IT operations · QA automation · music tech'); ?></p>
+                <h1 id="home-hero-title" class="hero-core-headline"><?php echo esc_html('I build practical tools, test things carefully, and still care how they feel.'); ?></h1>
+                <p class="hero-copy"><?php echo esc_html('I’m Suzy Easton. I work across IT operations, QA automation, WordPress, and AI-assisted builds. I also come from music, so I tend to care about timing, feedback, and whether something actually works when people use it.'); ?></p>
                 <div class="home-cta-row hero-cta-group">
                     <a href="<?php echo esc_url(home_url('/lousy-outages/')); ?>" class="pixel-button hero-primary-cta"><?php echo esc_html('See Lousy Outages'); ?></a>
                     <a href="<?php echo esc_url(home_url('/resume/')); ?>" class="pixel-button hero-secondary-cta"><?php echo esc_html('Resume'); ?></a>
@@ -28,19 +28,19 @@ get_header();
     </section>
 
     <section class="home-featured-build home-lousy-outages crt-block" aria-labelledby="home-featured-title">
-        <p class="pixel-font home-section-kicker"><?php echo esc_html('Featured build'); ?></p>
+        <p class="pixel-font home-section-kicker"><?php echo esc_html('Featured project'); ?></p>
         <h2 id="home-featured-title" class="pixel-font"><?php echo esc_html('Lousy Outages'); ?></h2>
-        <p class="home-featured-subtitle"><?php echo esc_html('Because waiting for a vendor status page to admit reality is not much of a strategy.'); ?></p>
-        <p><?php echo esc_html('Lousy Outages started as a loud little status board and is turning into a standalone WordPress plugin for outage monitoring. It watches provider status feeds, community reports, external signals, and lightweight canary checks, then shows cautious early warnings without pretending every rumour is a confirmed outage.'); ?></p>
+        <p class="home-featured-subtitle"><?php echo esc_html('A WordPress plugin I’m building to track service issues before they turn into a bigger headache.'); ?></p>
+        <p><?php echo esc_html('I started Lousy Outages because status pages are useful, but they do not always tell the whole story early enough. The plugin watches official provider updates, community reports, external signals, and lightweight checks. The goal is to show possible issues clearly, without pretending an unconfirmed report is a confirmed outage.'); ?></p>
         <ul class="home-feature-list">
-            <li><?php echo esc_html('Provider status monitoring without the corporate fog machine'); ?></li>
-            <li><?php echo esc_html('Subscriber alerts by provider, not inbox confetti'); ?></li>
-            <li><?php echo esc_html('Community reports labelled as unconfirmed, because lawsuits are boring'); ?></li>
-            <li><?php echo esc_html('External + synthetic signals for early warning smoke'); ?></li>
-            <li><?php echo esc_html('A real plugin package with admin screens, REST routes, and a ZIP build'); ?></li>
+            <li><?php echo esc_html('Tracks provider status feeds and recent incidents'); ?></li>
+            <li><?php echo esc_html('Lets subscribers choose which providers they care about'); ?></li>
+            <li><?php echo esc_html('Accepts community reports and labels them carefully'); ?></li>
+            <li><?php echo esc_html('Combines official, community, external, and synthetic signals'); ?></li>
+            <li><?php echo esc_html('Runs as a standalone WordPress plugin with admin pages and REST endpoints'); ?></li>
         </ul>
         <div class="home-badge-list" aria-label="Lousy Outages badges">
-            <span>WordPress Plugin</span><span>Ops Radar</span><span>Early Warning</span><span>Built in Vancouver</span><span>Demo-ready</span>
+            <span>WordPress plugin</span><span>Outage monitoring</span><span>Early warning</span><span>REST API</span><span>Built in Vancouver</span>
         </div>
         <div class="home-cta-row">
             <a class="pixel-button" href="<?php echo esc_url(home_url('/lousy-outages/')); ?>"><?php echo esc_html('Open Lousy Outages'); ?></a>
@@ -53,22 +53,22 @@ get_header();
         <div class="selected-work__grid">
             <article class="home-project-card selected-work__card">
                 <h3 class="pixel-font"><?php echo esc_html('Lousy Outages'); ?></h3>
-                <p><?php echo esc_html('Outage monitoring, community signals, and vendor-accountability energy in plugin form.'); ?></p>
+                <p><?php echo esc_html('Outage monitoring, alert preferences, and early-warning signals in a WordPress plugin I’m actively productizing.'); ?></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/lousy-outages/')); ?>"><?php echo esc_html('Open'); ?></a>
             </article>
             <article class="home-project-card selected-work__card">
                 <h3 class="pixel-font"><?php echo esc_html('Gastown Simulator'); ?></h3>
-                <p><?php echo esc_html('A browser-based Vancouver prototype with maps, routes, civic data, and just enough chaos.'); ?></p>
+                <p><?php echo esc_html('A browser-based Vancouver prototype using maps, routes, civic data, and a game-like interface.'); ?></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/page-gastown-sim/')); ?>"><?php echo esc_html('Explore'); ?></a>
             </article>
             <article class="home-project-card selected-work__card">
                 <h3 class="pixel-font"><?php echo esc_html('Track Analyzer'); ?></h3>
-                <p><?php echo esc_html('Upload a track, get AI-assisted feedback that is more useful than “sounds cool, bro.”'); ?></p>
+                <p><?php echo esc_html('An AI-assisted music feedback tool for turning rough mix notes into something more useful.'); ?></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/suzys-track-analyzer/')); ?>"><?php echo esc_html('Try it'); ?></a>
             </article>
             <article class="home-project-card selected-work__card">
                 <h3 class="pixel-font"><?php echo esc_html('AI/Audio Experiments'); ?></h3>
-                <p><?php echo esc_html('Procedural sound, little film-club robots, ASMR weirdness, and other lab-table sparks.'); ?></p>
+                <p><?php echo esc_html('Small experiments with generated sound, web visuals, and AI-assisted storytelling.'); ?></p>
                 <a class="pixel-button" href="<?php echo esc_url(home_url('/asmr-lab/')); ?>"><?php echo esc_html('Read more'); ?></a>
             </article>
         </div>
@@ -76,7 +76,7 @@ get_header();
 
     <section class="music-world crt-block" aria-labelledby="music-world-title">
         <h2 id="music-world-title" class="pixel-font"><?php echo esc_html('Music + Creative Tech'); ?></h2>
-        <p><?php echo esc_html('Before I was debugging SaaS workflows, I was hauling bass gear into vans and recording loud songs. The music brain is still in the code: timing, feel, feedback loops, knowing when the whole thing is about to fall apart.'); ?></p>
+        <p><?php echo esc_html('Music is still part of how I think. I spent years playing bass, recording, touring, and learning how to listen closely. That shows up in my technical work too: debugging, testing, timing, collaboration, and knowing when something feels off before it fully breaks.'); ?></p>
         <p class="home-section-legend-links" aria-label="Music and media links">
             <a href="https://suzyeaston.bandcamp.com" target="_blank" rel="noopener noreferrer">Bandcamp</a>
             <span aria-hidden="true">//</span>
@@ -89,9 +89,9 @@ get_header();
     </section>
 
     <section class="collab-invite-home crt-block" aria-labelledby="work-pain-title">
-        <h2 id="work-pain-title" class="pixel-font"><?php echo esc_html('I like messy systems.'); ?></h2>
-        <p><?php echo esc_html('QA, IT ops, cloud tools, support escalations, WordPress plugins, AI experiments — I’m good where the docs are incomplete, the logs are noisy, and somebody needs to make the thing understandable.'); ?></p>
-        <p><?php echo esc_html('Available for QA automation, IT/cloud ops, WordPress/plugin work, AI-assisted prototyping, and practical automation projects.'); ?></p>
+        <h2 id="work-pain-title" class="pixel-font"><?php echo esc_html('Where I can help'); ?></h2>
+        <p><?php echo esc_html('I’m strongest in the space between support, QA, operations, and development. I can investigate issues, write tests, automate repetitive work, improve handoffs, and help turn rough ideas into working demos.'); ?></p>
+        <p><?php echo esc_html('I’m open to QA automation, IT/cloud operations, WordPress/plugin work, AI-assisted prototyping, and practical automation projects.'); ?></p>
         <div class="home-cta-row collab-invite-home__actions">
             <a href="<?php echo esc_url(home_url('/work-with-suzy/')); ?>" class="pixel-button"><?php echo esc_html('Work with me'); ?></a>
             <a href="<?php echo esc_url(home_url('/contact/')); ?>" class="pixel-button"><?php echo esc_html('Contact'); ?></a>
