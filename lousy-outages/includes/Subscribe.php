@@ -89,7 +89,7 @@ class Lousy_Outages_Subscribe {
     public static function get_signals(\WP_REST_Request $request) {
         $window = max(1, (int)$request->get_param('window_minutes'));
         if ($window <= 1) { $window = 60; }
-        $signals = SignalEngine::summarize_recent_signals($window);
+        $signals = SignalEngine::summarize_fused_signals($window);
         $safeSignals = [];
         foreach ($signals as $signal) {
             $safeSignals[] = [
@@ -97,12 +97,16 @@ class Lousy_Outages_Subscribe {
                 'provider_name' => (string)($signal['provider_name'] ?? ''),
                 'classification' => (string)($signal['classification'] ?? 'quiet'),
                 'report_count' => (int)($signal['report_count'] ?? 0),
-                'unique_reporter_count' => (int)($signal['unique_reporter_count'] ?? 0),
-                'top_symptom' => (string)($signal['top_symptom'] ?? 'other'),
-                'severity' => (string)($signal['severity'] ?? 'unknown'),
-                'region' => (string)($signal['region'] ?? ''),
+                                'region' => (string)($signal['region'] ?? ''),
                 'message' => (string)($signal['message'] ?? ''),
-                'last_reported_at' => (string)($signal['last_reported_at'] ?? ''),
+                'category' => (string)($signal['category'] ?? ''),
+                'region' => (string)($signal['region'] ?? ''),
+                'confidence' => (int)($signal['confidence'] ?? 0),
+                'external_signal_count' => (int)($signal['external_signal_count'] ?? 0),
+                'synthetic_failure_count' => (int)($signal['synthetic_failure_count'] ?? 0),
+                'sources' => array_values(array_map('strval', (array)($signal['sources'] ?? []))),
+                'confirmed' => !empty($signal['confirmed']),
+                'last_observed_at' => (string)($signal['last_observed_at'] ?? ''),
                 'official_status_known' => !empty($signal['official_status_known']),
             ];
         }
