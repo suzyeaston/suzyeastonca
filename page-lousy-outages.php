@@ -49,7 +49,7 @@ if ($unsub_success) {
   <div class="lousy-outages-root">
     <div class="lo-atmosphere">
       <h1 class="retro-title glow-lite">Lousy Outages</h1>
-      <p class="lo-atmosphere__lede">Live-ish radar for provider weirdness, broken SaaS, and internet gremlins.</p>
+      <p class="lo-atmosphere__lede">Live-ish radar for provider issues, SaaS trouble, and early warning signals.</p>
     </div>
     <?php if ($banner) : ?>
       <div class="lo-banner lo-banner--<?php echo esc_attr($tone); ?>">
@@ -68,7 +68,7 @@ if ($unsub_success) {
             <p class="lo-status-board__eyebrow">System Status Console</p>
             <h2 class="lo-status-board__title">Current Outages</h2>
           </div>
-          <div class="lo-status-board__badge" aria-hidden="true">v4.0 arcade build</div>
+          <div class="lo-status-board__badge" aria-hidden="true">Standalone plugin beta</div>
         </header>
         <div class="lo-status-board__body">
           <div class="lo-scanline" aria-hidden="true"></div>

@@ -10,6 +10,7 @@ class Feeds {
     private const INCIDENT_WINDOW_DAYS = 30;
     private const INCIDENT_LIMIT = 25;
     private const OPTION_STATUS_FEED_LAST_BUILD = 'lousy_outages_status_feed_last_build';
+    private const OPTION_STATUS_FEED_DIAGNOSTICS = 'lousy_outages_status_feed_diagnostics';
 
     public static function bootstrap(): void {
         add_action('init', [self::class, 'register']);
@@ -52,7 +53,9 @@ class Feeds {
         $charset = (string) get_option('blog_charset', 'UTF-8');
         header('Content-Type: application/rss+xml; charset=' . $charset, true);
 
-        [$items, $last_updated] = self::collect_incident_items();
+        [$items, $last_updated, $diagnostics] = self::collect_incident_items();
+        $diagnostics['last_rendered'] = gmdate('c');
+        update_option(self::OPTION_STATUS_FEED_DIAGNOSTICS, $diagnostics, false);
 
         // Use the current request URL so query-string vs pretty permalink access matches validator expectations.
         $feed_link = function_exists('get_self_link')
@@ -92,6 +95,16 @@ class Feeds {
 </rss>
         <?php
         exit;
+    }
+
+    public static function clear_status_feed_cache(): void {
+        delete_option(self::OPTION_STATUS_FEED_LAST_BUILD);
+        delete_option(self::OPTION_STATUS_FEED_DIAGNOSTICS);
+    }
+
+    public static function get_status_feed_diagnostics(): array {
+        $raw = get_option(self::OPTION_STATUS_FEED_DIAGNOSTICS, []);
+        return is_array($raw) ? $raw : [];
     }
 
     private static function collect_incident_items(): array {
@@ -210,6 +223,51 @@ class Feeds {
             }
         }
 
+
+        $fused = SignalEngine::summarize_fused_signals(120);
+        if (is_array($fused)) {
+            foreach ($fused as $row) {
+                if (!is_array($row)) { continue; }
+                $classification = strtolower((string)($row['classification'] ?? 'quiet'));
+                if (!in_array($classification, ['watch','trending','hot'], true)) { continue; }
+                $provider = (string)($row['provider_name'] ?? $row['provider_id'] ?? 'Provider');
+                $provider_id = sanitize_key((string)($row['provider_id'] ?? $provider));
+                $ts = isset($row['last_seen_at']) ? self::parse_time((string)$row['last_seen_at']) : time();
+                $prefix = 'hot' === $classification ? '[TRENDING]' : '[WATCH]';
+                $key = 'fused:' . $provider_id . ':' . gmdate('YmdHi',$ts);
+                $itemsByKey[$key] = [
+                    'title' => sprintf('%s %s signal', $prefix, $provider),
+                    'link' => home_url('/lousy-outages/'),
+                    'guid' => sha1($key),
+                    'pubDate' => self::format_rss_date(gmdate('c',$ts)),
+                    'description' => 'This is an unconfirmed signal based on public/community/external indicators. Official incident not confirmed. ' . self::truncate_text((string)($row['message'] ?? ''), 180),
+                    'timestamp' => $ts,
+                    'categories' => ['unconfirmed','signal-engine','community-signal'],
+                ];
+            }
+        }
+
+        $external = ExternalSignals::get_recent_signals(['windowMinutes'=>120,'limit'=>20]);
+        if (is_array($external)) {
+            foreach ($external as $row) {
+                if (!is_array($row)) { continue; }
+                $provider = (string)($row['provider_name'] ?? $row['provider_id'] ?? 'Provider');
+                $provider_id = sanitize_key((string)($row['provider_id'] ?? $provider));
+                $ts = isset($row['observed_at']) ? self::parse_time((string)$row['observed_at']) : time();
+                $key = 'external:' . $provider_id . ':' . gmdate('YmdHi',$ts);
+                if (isset($itemsByKey[$key])) { continue; }
+                $itemsByKey[$key] = [
+                    'title' => sprintf('[UNCONFIRMED] %s external signal', $provider),
+                    'link' => home_url('/lousy-outages/'),
+                    'guid' => sha1($key),
+                    'pubDate' => self::format_rss_date(gmdate('c',$ts)),
+                    'description' => 'This is an unconfirmed signal based on public/community/external indicators. Official incident not confirmed.',
+                    'timestamp' => $ts,
+                    'categories' => ['unconfirmed','external-telemetry'],
+                ];
+            }
+        }
+
         $items = array_values($itemsByKey);
         $timestamps = array_values(
             array_filter(
@@ -238,11 +296,18 @@ class Feeds {
             update_option(self::OPTION_STATUS_FEED_LAST_BUILD, $last_updated, false);
         } else {
             $stored_last_build = get_option(self::OPTION_STATUS_FEED_LAST_BUILD);
-            $last_updated = is_string($stored_last_build) && '' !== trim($stored_last_build)
-                ? $stored_last_build
-                : $default_last_build;
+            $last_updated = gmdate('c', current_time('timestamp', true));
             update_option(self::OPTION_STATUS_FEED_LAST_BUILD, $last_updated, false);
         }
+
+        $diagnostics = [
+            'item_count' => count($items),
+            'newest_item_timestamp' => $timestamps ? max($timestamps) : 0,
+            'sources' => ['official_incidents','fused_signals','external_signals'],
+            'fused_included' => !empty($fused),
+            'has_items' => !empty($items),
+            'last_build' => $last_updated,
+        ];
 
         return [
             array_map(
@@ -253,6 +318,7 @@ class Feeds {
                 $items
             ),
             $last_updated,
+            $diagnostics,
         ];
     }
 
