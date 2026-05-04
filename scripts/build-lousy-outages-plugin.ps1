@@ -1,85 +1,116 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = "Stop"
 
-$root = Split-Path -Parent $PSScriptRoot
-$dist = Join-Path $root 'dist'
-$out = Join-Path $dist 'lousy-outages.zip'
-$src = Join-Path $root 'plugins/lousy-outages'
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Resolve-Path (Join-Path $scriptRoot "..")
+$src = Join-Path $repoRoot "plugins\lousy-outages"
+$dist = Join-Path $repoRoot "dist"
+$zipPath = Join-Path $dist "lousy-outages.zip"
 
 if (-not (Test-Path $src)) {
-    throw "Source plugin directory not found: $src"
+    throw "Plugin source not found: $src"
 }
 
-New-Item -ItemType Directory -Force -Path $dist | Out-Null
-if (Test-Path $out) { Remove-Item $out -Force }
+if (-not (Test-Path $dist)) {
+    New-Item -ItemType Directory -Path $dist | Out-Null
+}
+
+if (Test-Path $zipPath) {
+    Remove-Item $zipPath -Force
+}
 
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-$excludeDirNames = @('.git', 'tests', 'node_modules', 'secrets')
-$requiredEntries = @(
-    'lousy-outages/lousy-outages.php',
-    'lousy-outages/includes/ExternalSignals.php',
-    'lousy-outages/public/shortcode.php'
-)
+$srcRoot = (Resolve-Path $src).Path
+$excludedDirs = @(".git", "tests", "node_modules")
+$excludedFileNames = @(".DS_Store", "wp-config.php")
+$excludedExtensions = @(".bak", ".backup", ".tmp")
 
-$files = Get-ChildItem -Path $src -File -Recurse -Force | Where-Object {
-    $rel = $_.FullName.Substring($src.Length).TrimStart('\\','/')
-    if ([string]::IsNullOrWhiteSpace($rel)) { return $false }
+$zip = [System.IO.Compression.ZipFile]::Open($zipPath, [System.IO.Compression.ZipArchiveMode]::Create)
 
-    $segments = $rel -split '[\\/]'
-    foreach ($segment in $segments) {
-        if ($excludeDirNames -contains $segment) { return $false }
-    }
-
-    $name = $_.Name
-    if ($name -eq 'wp-config.php') { return $false }
-    if ($name -eq '.env') { return $false }
-    if ($name -like '.env.*') { return $false }
-    if ($name -like '*.bak') { return $false }
-    if ($name -like '*.backup') { return $false }
-    if ($name -like '*.tmp') { return $false }
-    if ($name -eq '.DS_Store') { return $false }
-
-    return $true
-}
-
-$zip = [System.IO.Compression.ZipFile]::Open($out, [System.IO.Compression.ZipArchiveMode]::Create)
 try {
-    foreach ($file in $files) {
-        $rel = $file.FullName.Substring($src.Length).TrimStart('\\','/')
-        $normalized = $rel -replace '\\','/'
-        $entryName = "lousy-outages/$normalized"
-        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $file.FullName, $entryName, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+    Get-ChildItem -Path $srcRoot -File -Recurse -Force | ForEach-Object {
+        $fullPath = $_.FullName
+        $relative = $fullPath.Substring($srcRoot.Length)
+
+        while ($relative.StartsWith("\") -or $relative.StartsWith("/")) {
+            $relative = $relative.Substring(1)
+        }
+
+        $segments = $relative -split "[\\/]+"
+
+        foreach ($segment in $segments) {
+            if ($excludedDirs -contains $segment) {
+                return
+            }
+        }
+
+        if ($excludedFileNames -contains $_.Name) {
+            return
+        }
+
+        if ($_.Name -like ".env" -or $_.Name -like ".env.*") {
+            return
+        }
+
+        if ($excludedExtensions -contains $_.Extension.ToLowerInvariant()) {
+            return
+        }
+
+        if ($_.FullName -match "\\secrets\\|/secrets/") {
+            return
+        }
+
+        $entryName = "lousy-outages/" + ($relative -replace "\\", "/")
+
+        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+            $zip,
+            $fullPath,
+            $entryName,
+            [System.IO.Compression.CompressionLevel]::Optimal
+        ) | Out-Null
     }
 }
 finally {
     $zip.Dispose()
 }
 
-$zipCheck = [System.IO.Compression.ZipFile]::OpenRead($out)
+$zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+
 try {
-    $entries = @($zipCheck.Entries | ForEach-Object { $_.FullName })
+    $entries = $zip.Entries | ForEach-Object { $_.FullName }
 
-    if ($entries.Count -eq 0) {
-        throw 'ZIP is empty.'
+    $badBackslashes = $entries | Where-Object { $_.Contains("\") }
+    if ($badBackslashes) {
+        Write-Host "BAD ZIP: entries contain backslashes:" -ForegroundColor Red
+        $badBackslashes
+        throw "ZIP validation failed: backslash paths found."
     }
 
-    if ($entries | Where-Object { $_ -like '*\\*' }) {
-        throw 'ZIP contains backslash path separators.'
+    $badRoot = $entries | Where-Object { -not $_.StartsWith("lousy-outages/") }
+    if ($badRoot) {
+        Write-Host "BAD ZIP: entries outside lousy-outages/ root:" -ForegroundColor Red
+        $badRoot
+        throw "ZIP validation failed: bad root folder."
     }
 
-    if ($entries | Where-Object { $_ -notlike 'lousy-outages/*' }) {
-        throw 'ZIP contains entries outside lousy-outages/ root.'
-    }
+    $required = @(
+        "lousy-outages/lousy-outages.php",
+        "lousy-outages/includes/ExternalSignals.php",
+        "lousy-outages/includes/UserReports.php",
+        "lousy-outages/public/shortcode.php"
+    )
 
-    foreach ($required in $requiredEntries) {
-        if (-not ($entries -contains $required)) {
-            throw "ZIP missing required entry: $required"
-        }
+    $missing = $required | Where-Object { $entries -notcontains $_ }
+    if ($missing) {
+        Write-Host "BAD ZIP: missing required files:" -ForegroundColor Red
+        $missing
+        throw "ZIP validation failed: required files missing."
     }
 }
 finally {
-    $zipCheck.Dispose()
+    $zip.Dispose()
 }
 
-Write-Output "Built and validated: $out"
+Write-Host "Built: $zipPath" -ForegroundColor Green
+Write-Host "ZIP validation passed: forward-slash paths, correct root, required files present." -ForegroundColor Green
