@@ -422,8 +422,38 @@ function suzyeaston_is_lousy_outages_plugin_active(): bool {
         && is_plugin_active( 'lousy-outages/lousy-outages.php' );
 }
 
+function suzyeaston_is_activating_lousy_outages_plugin(): bool {
+    if ( ! is_admin() ) {
+        return false;
+    }
+
+    $action = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( (string) $_REQUEST['action'] ) ) : '';
+    if ( 'activate' !== $action && 'activate-selected' !== $action ) {
+        return false;
+    }
+
+    $target_plugin = '';
+    if ( isset( $_REQUEST['plugin'] ) ) {
+        $target_plugin = sanitize_text_field( wp_unslash( (string) $_REQUEST['plugin'] ) );
+    } elseif ( isset( $_REQUEST['checked'] ) && is_array( $_REQUEST['checked'] ) ) {
+        $checked = array_map(
+            static function ( $plugin ): string {
+                return sanitize_text_field( wp_unslash( (string) $plugin ) );
+            },
+            $_REQUEST['checked']
+        );
+        $target_plugin = implode( ',', $checked );
+    }
+
+    return false !== strpos( $target_plugin, 'lousy-outages/lousy-outages.php' );
+}
+
 $lousy_outages = get_template_directory() . '/lousy-outages/lousy-outages.php';
-if ( file_exists( $lousy_outages ) && ! suzyeaston_is_lousy_outages_plugin_active() ) {
+if (
+    file_exists( $lousy_outages )
+    && ! suzyeaston_is_lousy_outages_plugin_active()
+    && ! suzyeaston_is_activating_lousy_outages_plugin()
+) {
     require_once $lousy_outages;
 }
 
