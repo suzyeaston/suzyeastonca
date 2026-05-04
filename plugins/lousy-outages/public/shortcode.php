@@ -537,6 +537,23 @@ function render_shortcode(): string {
             <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Incidents (0)</button>
             <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">All providers</button>
         </div>
+        <?php $fused_public = SignalEngine::summarize_fused_signals(120); $fused_public = is_array($fused_public) ? array_values(array_filter($fused_public, static function($r){ $c = strtolower((string)($r['classification'] ?? 'quiet')); return in_array($c,['watch','trending','hot'], true); })) : []; ?>
+        <section class="lo-signals-panel" data-lo-signals-panel<?php echo $fused_public ? '' : ' hidden'; ?>>
+            <div class="lo-section__head">
+                <h3 class="lo-block-title">Trending signals</h3>
+                <p class="lo-history__meta">Unconfirmed unless marked official.</p>
+            </div>
+            <div class="lo-grid">
+            <?php foreach (array_slice($fused_public, 0, 6) as $sig) : $class = strtolower((string)($sig['classification'] ?? 'watch')); $official = !empty($sig['official_incident']); ?>
+                <article class="lo-card">
+                    <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill"><?php echo esc_html(strtoupper($class)); ?></span></div>
+                    <p class="lo-summary"><?php echo esc_html($official ? 'Official incident' : 'Unconfirmed signal'); ?></p>
+                    <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Early warning signal detected.')); ?></p>
+                    <p class="lo-card-meta">Confidence: <?php echo esc_html((string)($sig['confidence'] ?? 'n/a')); ?> · Last observed: <?php echo esc_html($format_datetime($sig['last_seen_at'] ?? null)); ?></p>
+                </article>
+            <?php endforeach; ?>
+            </div>
+        </section>
         <div class="lo-incidents" data-lo-incidents>
             <section class="lo-section lo-section--incidents" data-lo-section="incidents">
                 <div class="lo-section__head">
@@ -579,7 +596,7 @@ function render_shortcode(): string {
             <div class="lo-history__heading">
                 <div>
                     <h3 class="lo-block-title">Recent incidents (Status feeds + community)</h3>
-                    <p class="lo-history__meta">Last 30 days of non-operational blips.</p>
+                    <p class="lo-history__meta">Last 30 days of service incidents and early warning signals.</p>
                 </div>
                 <div class="lo-history__controls">
                     <label>
@@ -597,11 +614,12 @@ function render_shortcode(): string {
                 </div>
             </div>
             <div class="lo-history__body">
+                <p class="lo-history__meta">Signal charts combine recent reports, public chatter, and external checks. They are early warnings, not confirmed outage counts.</p>
                 <div class="lo-history__charts" data-lo-history-charts hidden></div>
                 <ol class="lo-history__list" data-lo-history-list>
                     <li class="lo-history__item lo-history__item--placeholder">Loading incidents…</li>
                 </ol>
-                <p class="lo-history__empty" data-lo-history-empty hidden>No incidents in the past 30 days.</p>
+                <p class="lo-history__empty" data-lo-history-empty hidden>No service incidents in the past 30 days.</p>
                 <p class="lo-history__error" data-lo-history-error hidden>Unable to load incident history right now.</p>
             </div>
         </section>
@@ -893,7 +911,7 @@ function render_subscribe_shortcode(): string {
             </label>
             <fieldset class="lo-subscribe__fieldset">
                 <legend class="lo-subscribe__legend">Choose your outage alerts</legend>
-                <p class="lo-subscribe__note">Pick the services you care about. Leave everything checked if you want the full chaos feed.</p>
+                <p class="lo-subscribe__note">Pick the services you care about. Leave everything checked if you want the full service incident feed.</p>
                 <div class="lo-subscribe__provider-grid">
                     <?php foreach ($providers as $provider) : $provider_id = sanitize_key((string) ($provider['id'] ?? '')); if ('' === $provider_id) { continue; } ?>
                         <label class="lo-subscribe__checkbox">
