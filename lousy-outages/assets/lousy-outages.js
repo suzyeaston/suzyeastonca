@@ -125,6 +125,8 @@
     reportCaptchaToken: null,
     reportCaptchaRefresh: null,
     reportPhraseEndpoint: '',
+    signalsEndpoint: '',
+    signalsContainer: null,
     reportCaptchaTokenValue: '',
     reportProvidersInitialized: false,
     debug: false,
@@ -3347,9 +3349,8 @@
             state.reportContact.value = '';
           }
           setReportStatus(message || 'Thanks — we logged your unconfirmed community report and we’re watching this.', 'success');
-          fetchHistoryData().catch(function () {
-            // Ignore history refresh errors after submit.
-          });
+          fetchHistoryData().catch(function () {});
+          fetchCommunitySignals();
         } else {
           setReportStatus(message || 'Could not submit report right now, please try again later.', 'error');
         }
@@ -3380,6 +3381,8 @@
     state.reportCaptchaToken = state.reportForm ? state.reportForm.querySelector('[data-lo-report-captcha-token]') : null;
     state.reportCaptchaRefresh = state.reportForm ? state.reportForm.querySelector('[data-lo-report-captcha-refresh]') : null;
     state.reportPhraseEndpoint = state.reportForm ? String(state.reportForm.dataset.loReportPhraseEndpoint || '') : '';
+    state.signalsContainer = state.doc.querySelector('[data-lo-signals]');
+    state.signalsEndpoint = state.signalsContainer ? String(state.signalsContainer.getAttribute('data-lo-signals-endpoint') || '') : '';
 
     if (state.reportForm && !state.reportForm.dataset.loReportEnhanced) {
       state.reportForm.dataset.loReportEnhanced = '1';
@@ -3396,12 +3399,43 @@
     if (state.reportCaptchaRefresh) {
       state.reportCaptchaRefresh.addEventListener('click', function () {
         requestReportPhrase();
+    fetchCommunitySignals();
       });
     }
 
     requestReportPhrase();
+    fetchCommunitySignals();
   }
 
+
+  function renderCommunitySignals(signals) {
+    if (!state.signalsContainer) return;
+    var list = state.signalsContainer.querySelector('[data-lo-signals-list]');
+    var empty = state.signalsContainer.querySelector('[data-lo-signals-empty]');
+    if (!list || !empty) return;
+    var rows = Array.isArray(signals) ? signals.filter(function (s) {
+      var c = String((s && s.classification) || '').toLowerCase();
+      return c === 'watch' || c === 'trending' || c === 'hot';
+    }) : [];
+    list.innerHTML = '';
+    if (!rows.length) { empty.hidden = false; return; }
+    empty.hidden = true;
+    rows.slice(0,5).forEach(function (signal) {
+      var row = state.doc.createElement('div');
+      row.className = 'lo-signal lo-signal--' + String(signal.classification || 'watch');
+      row.innerHTML = '<span class="lo-signal__badge">' + String(signal.classification || '').charAt(0).toUpperCase() + String(signal.classification || '').slice(1) + '</span>' +
+        '<strong>' + String(signal.provider_name || signal.provider_id || 'Provider') + '</strong>' +
+        '<span>' + String(signal.message || 'Unconfirmed community signal. We are watching this.') + '</span>';
+      list.appendChild(row);
+    });
+  }
+
+  function fetchCommunitySignals() {
+    if (!state.fetchImpl || !state.signalsEndpoint) return Promise.resolve();
+    return state.fetchImpl(state.signalsEndpoint, { method: 'GET' }).then(function (res) { return res.json(); }).then(function (data) {
+      if (data && data.success && Array.isArray(data.signals)) renderCommunitySignals(data.signals);
+    }).catch(function () {});
+  }
   function isDocumentVisible() {
     if (!state.doc || typeof state.doc.visibilityState !== 'string') {
       return true;

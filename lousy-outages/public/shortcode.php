@@ -872,6 +872,7 @@ function render_subscribe_shortcode(): string {
         $providers = Providers::list();
     }
     $report_endpoint = esc_url_raw(rest_url('lousy-outages/v1/report'));
+    $signals_endpoint = esc_url_raw(rest_url('lousy-outages/v1/signals'));
     $signals = class_exists('\\SuzyEaston\\LousyOutages\\SignalEngine') ? SignalEngine::summarize_recent_signals(60) : [];
 
     ob_start();
@@ -966,8 +967,9 @@ function render_subscribe_shortcode(): string {
             <button type="submit" class="lo-subscribe__button" data-lo-report-submit>Report issue</button>
             <p class="lo-report__status" data-lo-report-status aria-live="polite"></p>
         </form>
-        <div class="lo-signals" data-lo-signals>
+        <div class="lo-signals" data-lo-signals data-lo-signals-endpoint="<?php echo esc_url($signals_endpoint); ?>">
             <h4>Community signals</h4>
+            <div data-lo-signals-list>
             <?php foreach (array_slice($signals, 0, 5) as $signal) : $class = (string)($signal['classification'] ?? 'quiet'); if ($class === 'quiet') { continue; } ?>
                 <div class="lo-signal lo-signal--<?php echo esc_attr($class); ?>">
                     <span class="lo-signal__badge"><?php echo esc_html(ucfirst($class)); ?></span>
@@ -975,6 +977,8 @@ function render_subscribe_shortcode(): string {
                     <span><?php echo esc_html((string)($signal['message'] ?? 'Unconfirmed community signal.')); ?></span>
                 </div>
             <?php endforeach; ?>
+            </div>
+            <p data-lo-signals-empty<?php echo !empty($signals) ? " hidden" : ""; ?>>No unusual community reports.</p>
         </div>
     </section>
     <?php

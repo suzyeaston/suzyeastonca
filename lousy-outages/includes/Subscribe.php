@@ -43,6 +43,11 @@ class Lousy_Outages_Subscribe {
             'callback' => [self::class, 'report_issue'],
             'permission_callback' => '__return_true',
         ]);
+        register_rest_route('lousy-outages/v1', '/signals', [
+            'methods' => 'GET',
+            'callback' => [self::class, 'get_signals'],
+            'permission_callback' => '__return_true',
+        ]);
 
     }
 
@@ -79,6 +84,36 @@ class Lousy_Outages_Subscribe {
         ], 200);
     }
 
+
+
+    public static function get_signals(\WP_REST_Request $request) {
+        $window = max(1, (int)$request->get_param('window_minutes'));
+        if ($window <= 1) { $window = 60; }
+        $signals = SignalEngine::summarize_recent_signals($window);
+        $safeSignals = [];
+        foreach ($signals as $signal) {
+            $safeSignals[] = [
+                'provider_id' => (string)($signal['provider_id'] ?? ''),
+                'provider_name' => (string)($signal['provider_name'] ?? ''),
+                'classification' => (string)($signal['classification'] ?? 'quiet'),
+                'report_count' => (int)($signal['report_count'] ?? 0),
+                'unique_reporter_count' => (int)($signal['unique_reporter_count'] ?? 0),
+                'top_symptom' => (string)($signal['top_symptom'] ?? 'other'),
+                'severity' => (string)($signal['severity'] ?? 'unknown'),
+                'region' => (string)($signal['region'] ?? ''),
+                'message' => (string)($signal['message'] ?? ''),
+                'last_reported_at' => (string)($signal['last_reported_at'] ?? ''),
+                'official_status_known' => !empty($signal['official_status_known']),
+            ];
+        }
+
+        return new \WP_REST_Response([
+            'success' => true,
+            'window_minutes' => $window,
+            'signals' => $safeSignals,
+            'generated_at' => gmdate('c'),
+        ], 200);
+    }
     public static function confirm(\WP_REST_Request $request) {
         $token = sanitize_text_field((string) $request->get_param('token'));
         if ('' === $token) {
