@@ -46,6 +46,7 @@ class ExternalSignals {
             title VARCHAR(255) NOT NULL DEFAULT '',
             message TEXT NULL,
             url TEXT NULL,
+            metadata_json TEXT NULL,
             observed_at DATETIME NOT NULL,
             expires_at DATETIME NULL,
             raw_hash VARCHAR(128) NULL,
@@ -75,10 +76,45 @@ class ExternalSignals {
             'title' => substr(sanitize_text_field((string)($signal['title'] ?? 'External signal observed')), 0, 255),
             'message' => substr(sanitize_textarea_field((string)($signal['message'] ?? '')), 0, 1000),
             'url' => substr(esc_url_raw((string)($signal['url'] ?? '')), 0, 1000),
+            'metadata_json' => self::normalize_metadata($signal['metadata'] ?? []),
             'observed_at' => $observed,
             'expires_at' => $expires ?: null,
             'raw_hash' => isset($signal['raw_hash']) ? substr(sanitize_text_field((string)$signal['raw_hash']),0,128) : hash('sha256', wp_json_encode($signal)),
         ];
+    }
+    private static function normalize_metadata($metadata): string {
+        if (!is_array($metadata)) {
+            return '';
+        }
+        $allowed = [
+            'summary','themes','snippets','domains','query','queries','mention_count','window_minutes',
+            'raw_source_count','classification','source_urls','unconfirmed_note',
+        ];
+        $clean = [];
+        foreach ($allowed as $key) {
+            if (!array_key_exists($key, $metadata)) {
+                continue;
+            }
+            $value = $metadata[$key];
+            if (is_array($value)) {
+                $items = [];
+                foreach (array_slice($value, 0, 8) as $item) {
+                    $txt = is_scalar($item) ? sanitize_text_field((string)$item) : '';
+                    if ($txt !== '') {
+                        $items[] = mb_substr($txt, 0, 120);
+                    }
+                }
+                $clean[$key] = $items;
+                continue;
+            }
+            if (is_numeric($value)) {
+                $clean[$key] = (int)$value;
+                continue;
+            }
+            $clean[$key] = mb_substr(sanitize_text_field((string)$value), 0, 300);
+        }
+        $json = wp_json_encode($clean);
+        return is_string($json) ? mb_substr($json, 0, 4000) : '';
     }
 
     public static function record_signal(array $signal): array {
@@ -101,7 +137,7 @@ class ExternalSignals {
         return self::get_recent_signals(['windowMinutes' => $windowMinutes, 'window_minutes' => $windowMinutes, 'limit' => $limit]);
     }
     public static function get_recent_counts(int $windowMinutes=60): array { global $wpdb; $rows=$wpdb->get_results($wpdb->prepare('SELECT source, COUNT(*) as signal_count FROM '.self::table_name().' WHERE observed_at >= %s GROUP BY source', gmdate('Y-m-d H:i:s', time()-$windowMinutes*60)), ARRAY_A) ?: []; return $rows; }
-    public static function clear_expired(): int { global $wpdb; $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE expires_at IS NOT NULL AND expires_at < %s', gmdate('Y-m-d H:i:s'))); return (int)$wpdb->rows_affected; }
+    public static function clear_expired(): int { global $wpdb; $now=gmdate('Y-m-d H:i:s'); $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE expires_at IS NOT NULL AND expires_at < %s', $now)); $expired=(int)$wpdb->rows_affected; $retention=(int)apply_filters('lo_external_signals_retention_days', 14); $cutoff=gmdate('Y-m-d H:i:s', time()-max(1,$retention)*DAY_IN_SECONDS); $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE observed_at < %s', $cutoff)); return $expired + (int)$wpdb->rows_affected; }
     public static function clear_demo_signals(): int { global $wpdb; $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE source = %s', 'demo_external')); return (int)$wpdb->rows_affected; }
     public static function seed_demo_signals(array $options=[]): array {
         $now=gmdate('Y-m-d H:i:s');
