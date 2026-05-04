@@ -67,6 +67,7 @@ use SuzyEaston\LousyOutages\Email;
 use SuzyEaston\LousyOutages\Precursor;
 use SuzyEaston\LousyOutages\Subscriptions;
 use SuzyEaston\LousyOutages\UserReports;
+use SuzyEaston\LousyOutages\SignalEngine;
 use SuzyEaston\LousyOutages\Api;
 use SuzyEaston\LousyOutages\Feeds;
 use SuzyEaston\LousyOutages\MailTransport;
@@ -1019,6 +1020,20 @@ function lousy_outages_settings_page() {
                 <?php endforeach; ?>
             </tbody>
         </table>
+
+        <?php $diag = UserReports::get_admin_diagnostics(60); $topSignal = !empty($diag['signals'][0]['classification']) ? (string)$diag['signals'][0]['classification'] : 'quiet'; ?>
+        <h2>Community Signal Diagnostics</h2>
+        <p><strong>Total community reports in last hour:</strong> <?php echo esc_html((string)($diag['total_reports'] ?? 0)); ?></p>
+        <p><strong>Providers with reports:</strong> <?php echo esc_html((string)count((array)($diag['provider_counts'] ?? []))); ?></p>
+        <p><strong>Top signal classification:</strong> <?php echo esc_html(ucfirst($topSignal)); ?> (unconfirmed community signal)</p>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-right:8px;">
+            <?php wp_nonce_field('lousy_outages_seed_demo_reports'); ?><input type="hidden" name="action" value="lousy_outages_seed_demo_reports"><?php submit_button('Seed Demo Community Reports', 'secondary', 'submit', false); ?>
+        </form>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;">
+            <?php wp_nonce_field('lousy_outages_clear_demo_reports'); ?><input type="hidden" name="action" value="lousy_outages_clear_demo_reports"><?php submit_button('Clear Demo Community Reports', 'delete', 'submit', false); ?>
+        </form>
+        <h3>Top providers by report count</h3>
+        <ul><?php foreach ((array)($diag['provider_counts'] ?? []) as $row) : ?><li><?php echo esc_html((string)($row['provider_id'] ?? 'unknown')); ?>: <?php echo esc_html((string)($row['report_count'] ?? 0)); ?></li><?php endforeach; ?></ul>
     </div>
     <?php
 }
@@ -1136,6 +1151,23 @@ add_action( 'admin_post_lousy_outages_poll_now', function () {
     $redirect = add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) );
     wp_safe_redirect( $redirect );
     exit;
+} );
+
+
+add_action( 'admin_post_lousy_outages_seed_demo_reports', function () {
+    if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lousy-outages' ) ); }
+    check_admin_referer( 'lousy_outages_seed_demo_reports' );
+    $result = UserReports::seed_demo_reports();
+    set_transient('lousy_outages_notice',['message'=>sprintf('Seeded %d demo community reports.', (int)($result['inserted'] ?? 0)),'type'=>'success'],30);
+    wp_safe_redirect( add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) ) ); exit;
+} );
+
+add_action( 'admin_post_lousy_outages_clear_demo_reports', function () {
+    if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lousy-outages' ) ); }
+    check_admin_referer( 'lousy_outages_clear_demo_reports' );
+    $count = UserReports::clear_demo_reports();
+    set_transient('lousy_outages_notice',['message'=>sprintf('Cleared %d demo community reports.', (int)$count),'type'=>'success'],30);
+    wp_safe_redirect( add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) ) ); exit;
 } );
 
 function lousy_outages_build_provider_payload( string $id, array $state, string $fetched_at ): array {
