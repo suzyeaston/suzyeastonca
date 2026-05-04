@@ -47,6 +47,26 @@ final class IncidentAlertDeliveryTest extends TestCase {
         $this->assertFalse($store->canSend($i));
     }
 
+
+    public function testFilterDigestItemsForSubscriberByProviderPreferences(): void {
+        global $wpdb;
+        if (!isset($wpdb)) { $wpdb = new class { public string $prefix='wp_'; public function esc_like($t){return (string)$t;} public function prepare($q,...$a){return ['type'=>'none'];} public function get_var($q){return 'wp_lousy_outages_subs';} public function get_col($q){return ['email','providers','realtime_alerts','daily_digest','newsletter','status','token','created_at','updated_at','ip_hash','consent_source','consent_version','confirmed_at'];} public function get_row($p,$o=null){return null;} }; }
+        $items=[['provider_id'=>'github','provider'=>'GitHub','title'=>'a','status'=>'Open','url'=>'u'],['provider_id'=>'cloudflare','provider'=>'Cloudflare','title'=>'b','status'=>'Open','url'=>'u']];
+        $filtered = IncidentAlerts::filter_digest_items_for_subscriber($items, 'nobody@example.com');
+        $this->assertCount(2,$filtered);
+    }
+
+    public function testGroupDigestItemsCreatesSummaryForNoisyProvider(): void {
+        $items=[];
+        for($i=0;$i<5;$i++){$items[]=['provider_id'=>'cloudflare','provider'=>'Cloudflare','title'=>'t'.$i,'status'=>'Open','url'=>'https://www.cloudflarestatus.com','updated'=>100+$i];}
+        $grouped = IncidentAlerts::group_digest_items($items,3);
+        $real = array_values(array_filter($grouped, fn($it)=>empty($it['grouped'])));
+        $summary = array_values(array_filter($grouped, fn($it)=>!empty($it['grouped'])));
+        $this->assertLessThanOrEqual(3,count($real));
+        $this->assertCount(1,$summary);
+        $this->assertSame('Grouped updates',$summary[0]['status']);
+    }
+
     public function testProcessIncidentsFailureWritesDiagnostics(): void {
         update_option('lousy_outages_email','qa@example.com',false);
         \LousyOutages\Tests\Mail::$ok=false;

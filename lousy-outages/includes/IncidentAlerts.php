@@ -367,6 +367,7 @@ class IncidentAlerts {
             }
 
             $items[] = [
+                'provider_id'=> $slug,
                 'provider'  => $providerLabel,
                 'title'     => Composer::shortTitle($title),
                 'status'    => self::status_label($status),
@@ -406,19 +407,6 @@ class IncidentAlerts {
             }
         }
 
-        $composition = function_exists('LO_compose_daily_digest') ? LO_compose_daily_digest($items) : null;
-        if (! is_array($composition)) {
-            return;
-        }
-
-        $subject = isset($composition['subject']) ? (string) $composition['subject'] : '';
-        $html    = isset($composition['html']) ? (string) $composition['html'] : '';
-        $text    = isset($composition['text']) ? (string) $composition['text'] : '';
-
-        if ('' === trim($subject) || '' === trim($html)) {
-            return;
-        }
-
         $subscribers = array_values(array_filter(self::get_subscribers(), static function (string $email): bool {
             return Subscriptions::subscriber_wants_digest($email);
         }));
@@ -428,10 +416,29 @@ class IncidentAlerts {
 
         $footer_text = apply_filters('lo_daily_digest_unsubscribe_text', 'Unsubscribe');
         $footer_html = apply_filters('lo_daily_digest_unsubscribe_label', 'Unsubscribe');
-
         $sentAny = false;
 
         foreach ($subscribers as $email) {
+            $filtered = self::filter_digest_items_for_subscriber($items, $email);
+            if (empty($filtered)) {
+                continue;
+            }
+            $maxPerProvider = (int) apply_filters('lo_daily_digest_max_items_per_provider', 3, $email, $filtered);
+            $grouped = self::group_digest_items($filtered, $maxPerProvider);
+
+            $composition = function_exists('LO_compose_daily_digest') ? LO_compose_daily_digest($grouped) : null;
+            if (! is_array($composition)) {
+                continue;
+            }
+
+            $subject = isset($composition['subject']) ? (string) $composition['subject'] : '';
+            $html    = isset($composition['html']) ? (string) $composition['html'] : '';
+            $text    = isset($composition['text']) ? (string) $composition['text'] : '';
+
+            if ('' === trim($subject) || '' === trim($html)) {
+                continue;
+            }
+
             $token = self::build_unsubscribe_token($email);
             $unsubscribe = add_query_arg(
                 [
@@ -444,7 +451,9 @@ class IncidentAlerts {
 
             $text_body = $text;
             if ('' !== trim($text_body)) {
-                $text_body .= "\n\n" . $footer_text . ': ' . $unsubscribe;
+                $text_body .= "
+
+" . $footer_text . ': ' . $unsubscribe;
             }
 
             $html_body = $html;
@@ -471,6 +480,53 @@ class IncidentAlerts {
         }
     }
 
+
+    public static function filter_digest_items_for_subscriber(array $items, string $email): array {
+        $prefs = Subscriptions::get_preferences_for_email($email);
+        $providers = isset($prefs['providers']) && is_array($prefs['providers']) ? $prefs['providers'] : [];
+        if (empty($providers)) {
+            return $items;
+        }
+
+        return array_values(array_filter($items, static function (array $item) use ($providers): bool {
+            $providerId = sanitize_key((string) ($item['provider_id'] ?? ''));
+            return '' !== $providerId && in_array($providerId, $providers, true);
+        }));
+    }
+
+    public static function group_digest_items(array $items, int $maxPerProvider = 3): array {
+        $maxPerProvider = max(1, $maxPerProvider);
+        $grouped = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) { continue; }
+            $providerId = sanitize_key((string) ($item['provider_id'] ?? ''));
+            if ($providerId === '') { $providerId = sanitize_key((string) ($item['provider'] ?? 'unknown')); }
+            $grouped[$providerId][] = $item;
+        }
+
+        $result = [];
+        foreach ($grouped as $providerId => $providerItems) {
+            usort($providerItems, static fn(array $a, array $b): int => (int)(($b['updated'] ?? 0) <=> ($a['updated'] ?? 0)));
+            $kept = array_slice($providerItems, 0, $maxPerProvider);
+            foreach ($kept as $k) { $result[] = $k; }
+            $extra = count($providerItems) - count($kept);
+            if ($extra > 0) {
+                $first = $providerItems[0];
+                $providerLabel = (string) ($first['provider'] ?? ucwords(str_replace(['-','_'],' ', $providerId)));
+                $result[] = [
+                    'provider_id' => $providerId,
+                    'provider' => $providerLabel,
+                    'title' => sprintf('+%d more %s updates grouped to reduce noise', $extra, $providerLabel),
+                    'status' => 'Grouped updates',
+                    'statusRaw' => 'grouped',
+                    'url' => (string) ($first['url'] ?? self::provider_url($providerId)),
+                    'updated' => (int) ($first['updated'] ?? time()),
+                    'grouped' => true,
+                ];
+            }
+        }
+        return $result;
+    }
     /**
      * @return Incident[]
      */
