@@ -61,15 +61,17 @@ if ( ! defined( 'LOUSY_OUTAGES_URL' ) ) {
     define( 'LOUSY_OUTAGES_URL', plugin_dir_url( __FILE__ ) );
 }
 
-function lousy_outages_require( string $relative, bool $required = true ): void {
-    $path = LOUSY_OUTAGES_PATH . ltrim( $relative, '/' );
-    if ( file_exists( $path ) ) {
-        require_once $path;
-        return;
-    }
-    error_log( '[LO] missing include: ' . $relative );
-    if ( $required ) {
-        return;
+if ( ! function_exists( 'lousy_outages_require' ) ) {
+    function lousy_outages_require( string $relative, bool $required = true ): void {
+        $path = LOUSY_OUTAGES_PATH . ltrim( $relative, '/' );
+        if ( file_exists( $path ) ) {
+            require_once $path;
+            return;
+        }
+        error_log( '[LO] missing include: ' . $relative );
+        if ( $required ) {
+            return;
+        }
     }
 }
 
@@ -182,9 +184,7 @@ function lousy_outages_activate() {
         lo_cron_activate();
     }
     lousy_outages_create_page();
-    Subscriptions::create_table();
-    UserReports::install();
-    ExternalSignals::install();
+    lousy_outages_maybe_install_schema( true );
     Subscriptions::schedule_purge();
     $default_email = 'suzyeaston@gmail.com';
     $stored_email  = get_option( 'lousy_outages_email' );
@@ -196,6 +196,22 @@ function lousy_outages_activate() {
     }
 }
 register_activation_hook( __FILE__, 'lousy_outages_activate' );
+
+function lousy_outages_maybe_install_schema( bool $force = false ): void {
+    $schema_version = '2026-05-04';
+    $option_key = 'lousy_outages_schema_version';
+    $current = (string) get_option( $option_key, '' );
+    if ( ! $force && version_compare( $current, $schema_version, '>=' ) ) {
+        return;
+    }
+
+    Subscriptions::create_table();
+    UserReports::install();
+    ExternalSignals::install();
+    update_option( $option_key, $schema_version, false );
+}
+add_action( 'admin_init', 'lousy_outages_maybe_install_schema' );
+add_action( 'init', 'lousy_outages_maybe_install_schema' );
 
 /**
  * Clear cron on deactivation.

@@ -9,6 +9,13 @@ class UserReports {
     public const ALLOWED_SEVERITY = ['minor','degraded','major','unknown'];
 
     public static function table_name(): string { global $wpdb; return $wpdb->prefix . self::TABLE; }
+    private static function table_exists(): bool {
+        global $wpdb;
+        $table = self::table_name();
+        $like = $wpdb->esc_like($table);
+        $existing = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $like));
+        return (string) $existing === $table;
+    }
 
     public static function install(): void {
         global $wpdb;
@@ -76,6 +83,7 @@ class UserReports {
 
     public static function get_recent_reports(array $args = []): array {
         global $wpdb;
+        if (!self::table_exists()) { return []; }
         $window = max(1, (int)($args['windowMinutes'] ?? 60));
         $limit = max(1, (int)($args['limit'] ?? 50));
         $provider = sanitize_key((string)($args['provider_id'] ?? ''));
@@ -94,18 +102,21 @@ class UserReports {
 
     public static function get_recent_report_count(int $windowMinutes = 60): int {
         global $wpdb;
+        if (!self::table_exists()) { return 0; }
         $cutoff = gmdate('Y-m-d H:i:s', time() - max(1, $windowMinutes) * MINUTE_IN_SECONDS);
         return (int)$wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM ' . self::table_name() . ' WHERE created_at >= %s', $cutoff));
     }
 
     public static function count_recent_reports(string $provider_id, int $windowMinutes = 60): int {
         global $wpdb;
+        if (!self::table_exists()) { return 0; }
         $cutoff = gmdate('Y-m-d H:i:s', time() - max(1,$windowMinutes) * MINUTE_IN_SECONDS);
         return (int)$wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM ' . self::table_name() . ' WHERE provider_id = %s AND created_at >= %s', sanitize_key($provider_id), $cutoff));
     }
 
     public static function get_recent_provider_counts(int $windowMinutes = 60): array {
         global $wpdb;
+        if (!self::table_exists()) { return []; }
         $cutoff = gmdate('Y-m-d H:i:s', time() - max(1,$windowMinutes) * MINUTE_IN_SECONDS);
         return (array)$wpdb->get_results($wpdb->prepare('SELECT provider_id, COUNT(*) AS report_count FROM ' . self::table_name() . ' WHERE created_at >= %s GROUP BY provider_id ORDER BY report_count DESC', $cutoff), ARRAY_A);
     }
