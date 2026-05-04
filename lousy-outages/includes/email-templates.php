@@ -30,7 +30,7 @@ if (!function_exists('lo_unsubscribe_url_for')) {
 }
 
 if (!function_exists('lo_send_confirmation')) {
-    function lo_send_confirmation(string $email, ?string $confirm_url = null): bool {
+    function lo_send_confirmation(string $email, ?string $confirm_url = null, array $preferences = []): bool {
         $unsubscribe_url = lo_unsubscribe_url_for($email);
 
         do_action('lousy_outages_log', 'confirm_email_unsub_url', [
@@ -38,7 +38,7 @@ if (!function_exists('lo_send_confirmation')) {
             'unsub' => $unsubscribe_url,
         ]);
 
-        return send_lo_confirmation_email($email, $unsubscribe_url, $confirm_url);
+        return send_lo_confirmation_email($email, $unsubscribe_url, $confirm_url, $preferences);
     }
 }
 
@@ -46,7 +46,7 @@ if (!function_exists('send_lo_confirmation_email')) {
     /**
      * Sends the Lousy Outages confirmation email.
      */
-    function send_lo_confirmation_email(string $email, string $unsubscribe_url, ?string $confirm_url = null): bool {
+    function send_lo_confirmation_email(string $email, string $unsubscribe_url, ?string $confirm_url = null, array $preferences = []): bool {
         $email = sanitize_email($email);
         if (!$email || !is_email($email)) {
             error_log('[lousy_outages] confirmation_email invalid recipient');
@@ -72,6 +72,24 @@ if (!function_exists('send_lo_confirmation_email')) {
         $confirm_raw  = esc_url_raw($confirm_url);
         $confirm_html = esc_url($confirm_url);
 
+
+        $prefs = class_exists('SuzyEaston\LousyOutages\Subscriptions')
+            ? \SuzyEaston\LousyOutages\Subscriptions::normalize_preferences($preferences)
+            : ['providers'=>[], 'realtime_alerts'=>true, 'daily_digest'=>false, 'newsletter'=>false];
+        $providerNames = [];
+        if (class_exists('SuzyEaston\LousyOutages\Providers')) {
+            $providerMap = \SuzyEaston\LousyOutages\Providers::list();
+            foreach ((array) ($prefs['providers'] ?? []) as $providerId) {
+                $providerId = sanitize_key((string) $providerId);
+                if (isset($providerMap[$providerId]['name'])) {
+                    $providerNames[] = (string) $providerMap[$providerId]['name'];
+                }
+            }
+        }
+        $providerSummary = empty($providerNames) ? 'All monitored providers' : implode(', ', $providerNames);
+        $realtimeSummary = !empty($prefs['realtime_alerts']) ? 'on' : 'off';
+        $digestSummary = !empty($prefs['daily_digest']) ? 'on' : 'off';
+
         $subject = '🔔 Please confirm your subscription to Lousy Outages';
 
         $text_body_lines = [
@@ -81,6 +99,10 @@ if (!function_exists('send_lo_confirmation_email')) {
             $confirm_raw,
             '',
             'Dashboard anytime: ' . home_url('/lousy-outages/'),
+            '',
+            'You’re set for real-time alerts: ' . $realtimeSummary,
+            'Daily digest: ' . $digestSummary,
+            'Providers: ' . $providerSummary,
             '',
             'Unsubscribe instantly if this wasn’t you:',
             $unsubscribe_raw,

@@ -1658,3 +1658,9 @@
     display: none !important;
   }
 }
+
+.lo-subscribe__fieldset{border:1px solid var(--lo-border);padding:12px;border-radius:12px;margin:12px 0;background:rgba(10,16,32,.45)}
+.lo-subscribe__legend{padding:0 6px;color:var(--lo-accent);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em}
+.lo-subscribe__provider-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.lo-subscribe__checkbox{display:flex;align-items:center;gap:8px;font-size:.85rem}
+.lo-subscribe__prefs{display:grid;gap:8px}

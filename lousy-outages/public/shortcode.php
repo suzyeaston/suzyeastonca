@@ -867,6 +867,10 @@ function render_subscribe_shortcode(): string {
     $email_id  = $form_uid . '-email';
     $challenge_id = $form_uid . '-challenge';
     $challenge_hint_id = $challenge_id . '-hint';
+    $providers = Providers::enabled();
+    if (empty($providers)) {
+        $providers = Providers::list();
+    }
 
     ob_start();
     ?>
@@ -886,6 +890,25 @@ function render_subscribe_shortcode(): string {
                     autocomplete="email"
                 />
             </label>
+            <fieldset class="lo-subscribe__fieldset">
+                <legend class="lo-subscribe__legend">Choose your outage alerts</legend>
+                <p class="lo-subscribe__note">Pick the services you care about. Leave everything checked if you want the full chaos feed.</p>
+                <div class="lo-subscribe__provider-grid">
+                    <?php foreach ($providers as $provider) : $provider_id = sanitize_key((string) ($provider['id'] ?? '')); if ('' === $provider_id) { continue; } ?>
+                        <label class="lo-subscribe__checkbox">
+                            <input type="checkbox" name="providers[]" value="<?php echo esc_attr($provider_id); ?>" checked />
+                            <span><?php echo esc_html((string) ($provider['name'] ?? $provider_id)); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </fieldset>
+            <fieldset class="lo-subscribe__fieldset lo-subscribe__prefs">
+                <legend class="lo-subscribe__legend">Delivery preferences</legend>
+                <label class="lo-subscribe__checkbox"><input type="checkbox" name="realtime_alerts" value="1" checked /> <span>Real-time incident alerts</span></label>
+                <label class="lo-subscribe__checkbox"><input type="checkbox" name="daily_digest" value="1" /> <span>Daily digest</span></label>
+                <label class="lo-subscribe__checkbox"><input type="checkbox" name="newsletter" value="1" /> <span>Product updates / newsletter</span></label>
+                <p class="lo-subscribe__note">We’ll only use this to send the outage updates you request. You can unsubscribe anytime.</p>
+            </fieldset>
             <div class="lo-subscribe__label lo-subscribe__challenge">
                 <p class="lo-subscribe__prompt">Type the Steve Jobs line shown below to prove you&rsquo;re not a bot.</p>
                 <?php if ($challenge_phrase) : ?>

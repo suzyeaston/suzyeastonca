@@ -419,7 +419,9 @@ class IncidentAlerts {
             return;
         }
 
-        $subscribers = self::get_subscribers();
+        $subscribers = array_values(array_filter(self::get_subscribers(), static function (string $email): bool {
+            return Subscriptions::subscriber_wants_digest($email);
+        }));
         if (empty($subscribers)) {
             return;
         }
@@ -1397,7 +1399,11 @@ class IncidentAlerts {
     }
 
     private static function send_incident_alert_email(Incident $incident, array $options = []): array {
-        $subscribers = self::get_subscribers();
+        $providerId = sanitize_key((string) $incident->provider);
+        $subscribers = array_values(array_filter(self::get_subscribers(), static function (string $email) use ($providerId): bool {
+            return Subscriptions::subscriber_wants_realtime($email)
+                && Subscriptions::subscriber_wants_provider($email, $providerId);
+        }));
         $notificationEmail = sanitize_email((string) get_option('lousy_outages_email', get_option('admin_email')));
         $notificationOnly = !empty($options['notification_only']);
         if ($notificationOnly) {
