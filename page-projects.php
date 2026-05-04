@@ -24,7 +24,7 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
         <section class="projects-hero projects-section" aria-labelledby="projects-title">
             <p class="projects-eyebrow projects-hero__eyebrow pixel-font">Build log</p>
             <h1 id="projects-title" class="projects-hero__title">Projects</h1>
-            <p class="projects-lead projects-hero__lead">Things I&rsquo;m building, testing, breaking, fixing, and slowly turning into something useful. Some are polished enough to show. Some are still experiments. That is kind of the point.</p>
+            <p class="projects-lead projects-hero__lead">Tools, prototypes, music experiments, and civic-ish web builds. Some are polished. Some are still being figured out.</p>
             <div class="projects-actions" role="group" aria-label="Projects page jumps and primary links">
                 <a class="pixel-button" href="#featured-projects">Featured</a>
                 <a class="pixel-button" href="#interactive-projects">Interactive</a>

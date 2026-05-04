@@ -4657,9 +4657,9 @@ body {
 
 .page-template-page-projects .projects-shell {
     max-width: 1080px;
-    margin: 18px auto 36px;
+    margin: 12px auto 28px;
     display: grid;
-    gap: 22px;
+    gap: 14px;
 }
 
 .page-template-page-projects .projects-section {
@@ -4667,22 +4667,22 @@ body {
     border-radius: 16px;
     background: linear-gradient(160deg, var(--projects-panel), var(--projects-panel-alt));
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 16px 36px rgba(0, 0, 0, 0.42);
-    padding: clamp(20px, 3.2vw, 32px);
+    padding: clamp(1.25rem, 2.4vw, 2.25rem);
 }
 
 .page-template-page-projects .projects-hero {
     border-color: rgba(57, 245, 255, 0.52);
     background: linear-gradient(160deg, rgba(8, 18, 45, 0.95), rgba(9, 20, 54, 0.9));
-    padding: clamp(18px, 3vw, 30px);
+    padding: clamp(1.25rem, 2.2vw, 2.5rem);
 }
 
 .page-template-page-projects .projects-eyebrow,
 .page-template-page-projects .projects-hero__eyebrow {
-    margin: 0 0 8px;
-    letter-spacing: 0.03em;
+    margin: 0 0 6px;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--projects-teal);
-    font-size: clamp(0.66rem, 1vw, 0.78rem);
+    font-size: clamp(0.85rem, 1vw, 1rem);
     line-height: 1.4;
     background: transparent;
     display: inline-flex;
@@ -4692,7 +4692,7 @@ body {
 .page-template-page-projects .projects-hero .retro-title,
 .page-template-page-projects .projects-hero__title,
 .page-template-page-projects .projects-section h2 {
-    margin: 0 0 12px;
+    margin: 0 0 10px;
     color: var(--projects-cyan);
     text-shadow: 0 0 14px rgba(57, 245, 255, 0.24);
     background: transparent;
@@ -4701,7 +4701,7 @@ body {
 .page-template-page-projects .projects-hero .retro-title,
 .page-template-page-projects .projects-hero__title {
     font-family: "Press Start 2P", cursive;
-    font-size: clamp(3rem, 8vw, 6rem);
+    font-size: clamp(2.75rem, 5vw, 4.75rem);
     line-height: 0.95;
     letter-spacing: 0.01em;
     color: #71f7ff;
@@ -4716,10 +4716,10 @@ body {
 
 .page-template-page-projects .projects-lead,
 .page-template-page-projects .projects-hero__lead {
-    margin: 0 0 8px;
-    max-width: 850px;
-    font-size: clamp(1rem, 2vw, 1.35rem);
-    line-height: 1.55;
+    margin: 0 0 6px;
+    max-width: 760px;
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    line-height: 1.45;
     color: var(--projects-text);
     background: transparent;
 }
@@ -4740,10 +4740,10 @@ body {
 }
 
 .page-template-page-projects .projects-actions {
-    margin-top: 12px;
+    margin-top: 8px;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 .page-template-page-projects .projects-actions .pixel-button {
@@ -4762,13 +4762,19 @@ body {
 }
 
 .page-template-page-projects .projects-section-header {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+}
+
+.page-template-page-projects .projects-section h2 {
+    font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+    line-height: 1.15;
+    margin-bottom: 6px;
 }
 
 .page-template-page-projects .projects-grid,
 .page-template-page-projects .projects-method-grid {
     display: grid;
-    gap: 14px;
+    gap: 12px;
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
 }
 
@@ -4780,8 +4786,8 @@ body {
     border: 1px solid rgba(57, 245, 255, 0.24);
     border-radius: 12px;
     background: rgba(9, 16, 36, 0.84);
-    padding: 16px;
-    min-height: 170px;
+    padding: 14px;
+    min-height: 150px;
 }
 
 .page-template-page-projects .projects-card--featured {
@@ -4790,15 +4796,15 @@ body {
 }
 
 .page-template-page-projects .projects-card h3 {
-    margin: 0 0 9px;
+    margin: 0 0 7px;
     color: #a6fbff;
     line-height: 1.35;
     font-size: 1.02rem;
 }
 
 .page-template-page-projects .projects-card p {
-    font-size: 0.98rem;
-    line-height: 1.68;
+    font-size: 0.95rem;
+    line-height: 1.5;
     color: rgba(243, 247, 255, 0.9);
 }
 
@@ -4822,10 +4828,10 @@ body {
 }
 
 .page-template-page-projects .projects-card__actions {
-    margin-top: 14px;
+    margin-top: 10px;
     display: flex;
     flex-wrap: wrap;
-    gap: 9px;
+    gap: 8px;
 }
 
 .page-template-page-projects .projects-card__actions .pixel-button {
@@ -4837,7 +4843,7 @@ body {
     flex-wrap: wrap;
     gap: 8px;
     list-style: none;
-    margin: 10px 0 0;
+    margin: 8px 0 0;
     padding: 0;
 }
 
@@ -4907,19 +4913,13 @@ body {
     }
 
     .page-template-page-projects .projects-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .page-template-page-projects .projects-actions .pixel-button {
-        width: 100%;
-        text-align: center;
+        gap: 6px;
     }
 
     .page-template-page-projects .projects-hero .retro-title,
     .page-template-page-projects .projects-hero__title {
-        font-size: clamp(2.35rem, 16vw, 3.2rem);
-        line-height: 1.08;
+        font-size: clamp(2.15rem, 12vw, 3rem);
+        line-height: 1;
         overflow-wrap: anywhere;
     }
 
