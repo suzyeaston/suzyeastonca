@@ -407,9 +407,23 @@ if ( ! function_exists( 'se_handle_contact_suzy_submission' ) ) {
 add_action( 'wp_ajax_se_contact_suzy', 'se_handle_contact_suzy_submission' );
 add_action( 'wp_ajax_nopriv_se_contact_suzy', 'se_handle_contact_suzy_submission' );
 
-// Load bundled Lousy Outages plugin so shortcode and REST endpoint work
+// Load bundled Lousy Outages as fallback when standalone plugin is not active.
+function suzyeaston_is_lousy_outages_plugin_active(): bool {
+    if ( function_exists( 'is_plugin_active' ) ) {
+        return is_plugin_active( 'lousy-outages/lousy-outages.php' );
+    }
+
+    $plugin_api = ABSPATH . 'wp-admin/includes/plugin.php';
+    if ( file_exists( $plugin_api ) ) {
+        include_once $plugin_api;
+    }
+
+    return function_exists( 'is_plugin_active' )
+        && is_plugin_active( 'lousy-outages/lousy-outages.php' );
+}
+
 $lousy_outages = get_template_directory() . '/lousy-outages/lousy-outages.php';
-if ( file_exists( $lousy_outages ) ) {
+if ( file_exists( $lousy_outages ) && ! suzyeaston_is_lousy_outages_plugin_active() ) {
     require_once $lousy_outages;
 }
 
