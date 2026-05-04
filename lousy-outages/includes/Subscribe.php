@@ -325,11 +325,22 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
     }
 
     $email = strtolower($email);
+    $providers = $request->get_param('providers');
+    if (!is_array($providers)) {
+        $providers = [];
+    }
+    $preferences = Subscriptions::normalize_preferences([
+        'providers' => $providers,
+        'realtime_alerts' => $request->get_param('realtime_alerts'),
+        'daily_digest' => $request->get_param('daily_digest'),
+        'newsletter' => $request->get_param('newsletter'),
+    ]);
+
     $subscribers = get_option('suzy_newsletter', []);
     if (!is_array($subscribers)) {
         $subscribers = [];
     }
-    if (!in_array($email, $subscribers, true)) {
+    if (!empty($preferences['newsletter']) && !in_array($email, $subscribers, true)) {
         $subscribers[] = $email;
         update_option('suzy_newsletter', array_values(array_unique($subscribers)), false);
     }
@@ -337,7 +348,7 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
     $token   = lo_generate_subscribe_token($email);
     $ip      = lo_detect_subscribe_ip($request);
     $ip_hash = lo_hash_subscriber_ip($ip);
-    Subscriptions::save_pending($email, $token, $ip_hash, 'form');
+    Subscriptions::save_pending_with_preferences($email, $token, $ip_hash, 'form', $preferences);
 
     $domain = wp_parse_url(home_url(), PHP_URL_HOST);
     if (!is_string($domain) || '' === $domain) {
@@ -376,7 +387,7 @@ function lo_handle_subscribe(\WP_REST_Request $request) {
         $confirm_url_filter = $default_confirm_url;
     }
 
-    $sent = lo_send_confirmation($email, $confirm_url_filter);
+    $sent = lo_send_confirmation($email, $confirm_url_filter, $preferences);
 
     $admin_email = apply_filters('lo_admin_notification_email', 'admin@suzyeaston.ca', $email, $request);
     $ok_admin    = false;

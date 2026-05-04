@@ -33,7 +33,7 @@ class Subscriptions {
             }
 
             $columns = array_map('strtolower', $columns);
-            foreach (['email', 'status', 'token', 'created_at', 'updated_at', 'ip_hash', 'consent_source'] as $required) {
+            foreach (['email', 'status', 'token', 'created_at', 'updated_at', 'ip_hash', 'consent_source', 'providers', 'realtime_alerts', 'daily_digest', 'newsletter', 'consent_version', 'confirmed_at'] as $required) {
                 if (!in_array($required, $columns, true)) {
                     $needs_upgrade = true;
                     break;
@@ -69,6 +69,12 @@ class Subscriptions {
             updated_at DATETIME NOT NULL,
             ip_hash CHAR(64) NOT NULL,
             consent_source VARCHAR(50) NOT NULL DEFAULT '',
+            providers LONGTEXT NULL,
+            realtime_alerts TINYINT(1) NOT NULL DEFAULT 1,
+            daily_digest TINYINT(1) NOT NULL DEFAULT 0,
+            newsletter TINYINT(1) NOT NULL DEFAULT 0,
+            consent_version VARCHAR(30) NOT NULL DEFAULT '2026-05',
+            confirmed_at DATETIME NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY email (email),
             UNIQUE KEY token (token)
@@ -95,47 +101,129 @@ class Subscriptions {
     }
 
     public static function save_pending(string $email, string $token, string $ip_hash, string $source = 'form'): void {
-        global $wpdb;
-
-        self::ensure_schema();
-
-        $table  = self::table_name();
-        $now    = gmdate('Y-m-d H:i:s');
-
-        $existing = $wpdb->get_row($wpdb->prepare("SELECT id, status FROM {$table} WHERE email = %s", $email));
-
-        if ($existing) {
-            $wpdb->update(
-                $table,
-                [
-                    'status'         => self::STATUS_PENDING,
-                    'token'          => $token,
-                    'created_at'     => $now,
-                    'updated_at'     => $now,
-                    'ip_hash'        => $ip_hash,
-                    'consent_source' => $source,
-                ],
-                ['id' => (int) $existing->id],
-                ['%s', '%s', '%s', '%s', '%s', '%s'],
-                ['%d']
-            );
-        } else {
-            $wpdb->insert(
-                $table,
-                [
-                    'email'          => $email,
-                    'status'         => self::STATUS_PENDING,
-                    'token'          => $token,
-                    'created_at'     => $now,
-                    'updated_at'     => $now,
-                    'ip_hash'        => $ip_hash,
-                    'consent_source' => $source,
-                ],
-                ['%s', '%s', '%s', '%s', '%s', '%s', '%s']
-            );
-        }
+        self::save_pending_with_preferences($email, $token, $ip_hash, $source, []);
     }
 
+
+    public static function normalize_provider_ids(array $ids): array {
+        $providers = Providers::list();
+        $allowed = array_fill_keys(array_keys($providers), true);
+        $normalized = [];
+
+        foreach ($ids as $id) {
+            $key = sanitize_key((string) $id);
+            if ('' === $key || !isset($allowed[$key])) {
+                continue;
+            }
+            $normalized[$key] = $key;
+        }
+
+        return array_values($normalized);
+    }
+
+    public static function normalize_preferences(array $input): array {
+        $providers = [];
+        if (isset($input['providers']) && is_array($input['providers'])) {
+            $providers = self::normalize_provider_ids($input['providers']);
+        }
+
+        $toBool = static function ($value, bool $default = false): bool {
+            if (is_bool($value)) {
+                return $value;
+            }
+            if (null === $value) {
+                return $default;
+            }
+            if (is_string($value)) {
+                $v = strtolower(trim($value));
+                if (in_array($v, ['1', 'true', 'yes', 'on'], true)) {
+                    return true;
+                }
+                if (in_array($v, ['0', 'false', 'no', 'off', ''], true)) {
+                    return false;
+                }
+            }
+
+            return !empty($value);
+        };
+
+        return [
+            'providers' => $providers,
+            'realtime_alerts' => $toBool($input['realtime_alerts'] ?? true, true),
+            'daily_digest' => $toBool($input['daily_digest'] ?? false, false),
+            'newsletter' => $toBool($input['newsletter'] ?? false, false),
+        ];
+    }
+
+    public static function save_pending_with_preferences(string $email, string $token, string $ip_hash, string $source, array $preferences): void {
+        global $wpdb;
+        self::ensure_schema();
+        $table = self::table_name();
+        $now = gmdate('Y-m-d H:i:s');
+        $prefs = self::normalize_preferences($preferences);
+
+        $data = [
+            'status' => self::STATUS_PENDING,
+            'token' => $token,
+            'created_at' => $now,
+            'updated_at' => $now,
+            'ip_hash' => $ip_hash,
+            'consent_source' => $source,
+            'providers' => wp_json_encode($prefs['providers']),
+            'realtime_alerts' => $prefs['realtime_alerts'] ? 1 : 0,
+            'daily_digest' => $prefs['daily_digest'] ? 1 : 0,
+            'newsletter' => $prefs['newsletter'] ? 1 : 0,
+            'consent_version' => '2026-05',
+        ];
+
+        $existing = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$table} WHERE email = %s", $email));
+        if ($existing) {
+            $wpdb->update($table, $data, ['id' => (int) $existing->id]);
+            return;
+        }
+
+        $data['email'] = $email;
+        $wpdb->insert($table, $data);
+    }
+
+    public static function get_preferences_for_email(string $email): array {
+        global $wpdb;
+        self::ensure_schema();
+
+        $defaults = ['providers'=>[], 'realtime_alerts'=>true, 'daily_digest'=>false, 'newsletter'=>false];
+        $table = self::table_name();
+        $row = $wpdb->get_row($wpdb->prepare("SELECT providers,realtime_alerts,daily_digest,newsletter FROM {$table} WHERE email = %s", $email), ARRAY_A);
+        if (!is_array($row)) {
+            return $defaults;
+        }
+
+        $providers = [];
+        if (isset($row['providers']) && is_string($row['providers']) && '' !== trim($row['providers'])) {
+            $decoded = json_decode($row['providers'], true);
+            if (is_array($decoded)) {
+                $providers = self::normalize_provider_ids($decoded);
+            }
+        }
+
+        return [
+            'providers' => $providers,
+            'realtime_alerts' => !isset($row['realtime_alerts']) ? true : (int)$row['realtime_alerts'] === 1,
+            'daily_digest' => isset($row['daily_digest']) && (int)$row['daily_digest'] === 1,
+            'newsletter' => isset($row['newsletter']) && (int)$row['newsletter'] === 1,
+        ];
+    }
+
+    public static function subscriber_wants_provider(string $email, string $provider_id): bool {
+        $prefs = self::get_preferences_for_email($email);
+        if (empty($prefs['providers'])) {
+            return true;
+        }
+        return in_array(sanitize_key($provider_id), $prefs['providers'], true);
+    }
+
+    public static function subscriber_wants_realtime(string $email): bool { return (bool) self::get_preferences_for_email($email)['realtime_alerts']; }
+    public static function subscriber_wants_digest(string $email): bool { return (bool) self::get_preferences_for_email($email)['daily_digest']; }
+    public static function subscriber_wants_newsletter(string $email): bool { return (bool) self::get_preferences_for_email($email)['newsletter']; }
     public static function find_by_token(string $token): ?array {
         global $wpdb;
 
@@ -152,15 +240,18 @@ class Subscriptions {
         self::ensure_schema();
 
         $table = self::table_name();
+        $data = [
+            'status'     => $status,
+            'updated_at' => gmdate('Y-m-d H:i:s'),
+        ];
+        if (self::STATUS_SUBSCRIBED === $status) {
+            $data['confirmed_at'] = gmdate('Y-m-d H:i:s');
+        }
+
         $updated = $wpdb->update(
             $table,
-            [
-                'status'     => $status,
-                'updated_at' => gmdate('Y-m-d H:i:s'),
-            ],
-            ['token' => $token],
-            ['%s', '%s'],
-            ['%s']
+            $data,
+            ['token' => $token]
         );
 
         return false !== $updated && $updated > 0;

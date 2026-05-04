@@ -77,10 +77,7 @@ namespace {
             if ('email' === $prepared['type']) {
                 foreach ($this->rows as $row) {
                     if ($row['email'] === $prepared['value']) {
-                        $result = [
-                            'id'     => $row['id'],
-                            'status' => $row['status'],
-                        ];
+                        $result = $row;
                         return $output === ARRAY_A ? $result : (object) $result;
                     }
                 }
@@ -196,6 +193,7 @@ namespace LousyOutages\Tests {
             throw new \RuntimeException('Expected find_by_token to return updated timestamps.');
         }
     };
+
 
     $failed = false;
     foreach ($tests as $name => $callback) {

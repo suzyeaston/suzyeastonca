@@ -3058,6 +3058,10 @@
     var honeypot = form.querySelector('input[name="website"]');
     var nonceInput = form.querySelector('input[name="_wpnonce"]');
     var challengeInput = form.querySelector('input[name="challenge_response"]');
+    var providerInputs = form.querySelectorAll('input[name="providers[]"]:checked');
+    var realtimeInput = form.querySelector('input[name="realtime_alerts"]');
+    var digestInput = form.querySelector('input[name="daily_digest"]');
+    var newsletterInput = form.querySelector('input[name="newsletter"]');
     var endpoint = form.getAttribute('action') || state.subscribeEndpoint;
     if (!endpoint || !state.fetchImpl) {
       return;
@@ -3083,7 +3087,11 @@
       email: email,
       website: honeypot ? honeypot.value : '',
       _wpnonce: nonceInput ? nonceInput.value : '',
-      challenge_response: challengeInput ? challengeInput.value.trim() : ''
+      challenge_response: challengeInput ? challengeInput.value.trim() : '',
+      providers: Array.prototype.map.call(providerInputs || [], function (input) { return input.value; }),
+      realtime_alerts: !!(realtimeInput && realtimeInput.checked),
+      daily_digest: !!(digestInput && digestInput.checked),
+      newsletter: !!(newsletterInput && newsletterInput.checked)
     };
 
     state.fetchImpl(endpoint, {
