@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 use SuzyEaston\LousyOutages\Storage\IncidentStore;
+use SuzyEaston\LousyOutages\Sources\ChatterRejectionReasons;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -412,6 +413,20 @@ class Api {
             if (!empty($errors)) {
                 $payload['errors'] = $errors;
             }
+            $diag = (array) get_option('lo_diag_hacker_news_chatter', []);
+            $reasonCounts = (array) ($diag['chatter_rejected_by_reason'] ?? []);
+            if ($reasonCounts === [] && !empty($diag['chatter_candidates_preview_sample']) && is_array($diag['chatter_candidates_preview_sample'])) {
+                foreach ((array) $diag['chatter_candidates_preview_sample'] as $item) {
+                    $reason = (string) ($item['reject_reason'] ?? '');
+                    if ($reason === '' || $reason === 'accepted') { continue; }
+                    $reasonCounts[$reason] = (int) ($reasonCounts[$reason] ?? 0) + 1;
+                }
+            }
+            $payload['public_chatter_diagnostics'] = [
+                'rejected_by_reason' => ChatterRejectionReasons::summarize_counts($reasonCounts),
+                'reason_definitions' => array_values(ChatterRejectionReasons::definitions()),
+                'raw_rejected_codes' => $reasonCounts,
+            ];
         }
 
         $json = wp_json_encode($payload);

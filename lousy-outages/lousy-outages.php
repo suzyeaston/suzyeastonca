@@ -88,6 +88,7 @@ lousy_outages_require( 'includes/SignalSourceInterface.php' );
 lousy_outages_require( 'includes/ExternalSignals.php' );
 lousy_outages_require( 'includes/Sources/SourcePack.php' );
 lousy_outages_require( 'includes/Sources/SourceBudgetManager.php' );
+lousy_outages_require( 'includes/Sources/ChatterRejectionReasons.php' );
 lousy_outages_require( 'includes/Sources/StatuspageIntelSource.php' );
 lousy_outages_require( 'includes/Sources/ProviderFeedSource.php' );
 lousy_outages_require( 'includes/Sources/HackerNewsChatterSource.php' );
