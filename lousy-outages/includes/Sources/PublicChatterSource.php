@@ -12,7 +12,7 @@ class PublicChatterSource implements SignalSourceInterface {
     public function is_configured(): bool { return (bool) get_option('lousy_outages_public_chatter_enabled', false); }
 
     public function collect(array $options = []): array {
-        if (!$this->is_configured()) return [];
+        if (!$this->is_configured()) { update_option('lo_diag_'.$this->id(), ['configured'=>false,'attempted'=>false,'skipped_reasons'=>['not_configured']], false); return []; }
         $window = max(10, min(180, (int) apply_filters('lo_public_chatter_window_minutes', 30)));
         $thresholds = [
             'watch' => (int) apply_filters('lo_public_chatter_watch_threshold', 3),
@@ -23,9 +23,9 @@ class PublicChatterSource implements SignalSourceInterface {
         $queries = (array) apply_filters('lo_public_chatter_queries', $this->default_queries($providers), $providers);
         $signals = [];
         $sources = [
-            'public_chatter_bluesky' => !empty(get_option('lousy_outages_public_chatter_bluesky_enabled', true)),
+            'public_chatter_bluesky' => !empty(get_option('lousy_outages_public_chatter_bluesky_enabled', false)),
             'public_chatter_mastodon' => !empty(get_option('lousy_outages_public_chatter_mastodon_enabled', false)),
-            'public_chatter_gdelt' => !empty(get_option('lousy_outages_public_chatter_gdelt_enabled', true)),
+            'public_chatter_gdelt' => !empty(get_option('lousy_outages_public_chatter_gdelt_enabled', false)),
         ];
         foreach ($queries as $providerId => $providerQueries) {
             $provider = (array)($providers[$providerId] ?? ['name' => ucfirst((string)$providerId), 'category'=>'general']);
@@ -38,6 +38,7 @@ class PublicChatterSource implements SignalSourceInterface {
                 $signals[] = $this->build_signal($sourceId, (string)$providerId, (string)($provider['name'] ?? $providerId), (string)($provider['category'] ?? 'general'), $severity, $count, $window, $mentions);
             }
         }
+        update_option('lo_diag_'.$this->id(), ['configured'=>true,'attempted'=>true,'queries_attempted'=>count($queries),'usable_results'=>count($signals),'rows_stored'=>count($signals)], false);
         return $signals;
     }
 

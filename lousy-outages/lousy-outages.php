@@ -180,16 +180,21 @@ function lousy_outages_activate() {
 register_activation_hook( __FILE__, 'lousy_outages_activate' );
 
 function lousy_outages_maybe_install_schema( bool $force = false ): void {
-    $schema_version = '2026-05-04.1';
+    $schema_version = ExternalSignals::SCHEMA_VERSION;
     $option_key = 'lousy_outages_schema_version';
     $current = (string) get_option( $option_key, '' );
-    if ( ! $force && version_compare( $current, $schema_version, '>=' ) ) {
+    $diag = ExternalSignals::schema_diagnostics();
+    $needs_external = ! empty( $diag['missing_columns'] ) || empty( $diag['table_exists'] );
+    if ( ! $force && version_compare( $current, $schema_version, '>=' ) && ! $needs_external ) {
         return;
     }
 
     Subscriptions::create_table();
     UserReports::install();
-    ExternalSignals::install();
+    if ( $needs_external || $force || version_compare( $current, $schema_version, '<' ) ) {
+        ExternalSignals::install();
+    }
+    update_option( 'lousy_outages_external_schema_diagnostic', ExternalSignals::schema_diagnostics(), false );
     update_option( $option_key, $schema_version, false );
 }
 add_action( 'admin_init', 'lousy_outages_maybe_install_schema' );

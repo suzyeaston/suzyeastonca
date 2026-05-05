@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 class ExternalSignals {
-    private const SCHEMA_VERSION = '2026-05-05.1';
+    public const SCHEMA_VERSION = '2026-05-05.1';
     public static function table_name(): string { global $wpdb; return $wpdb->prefix . 'lo_external_signals'; }
     private static function table_exists(): bool {
         global $wpdb;
@@ -12,6 +12,23 @@ class ExternalSignals {
         $like = $wpdb->esc_like($table);
         $existing = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $like));
         return (string) $existing === $table;
+    }
+
+
+    public static function expected_columns(): array {
+        return ['source_type','adapter_id','source_id','snippets','domains','source_urls','confidence_reason','evidence_quality','official_confirmed','unconfirmed_note','metadata_json'];
+    }
+
+    public static function schema_diagnostics(): array {
+        global $wpdb;
+        $table=self::table_name();
+        $existing=[];
+        if (self::table_exists()) {
+            $rows=$wpdb->get_results("SHOW COLUMNS FROM {$table}", ARRAY_A) ?: [];
+            foreach($rows as $r){ $existing[]=(string)($r['Field']??''); }
+        }
+        $missing=array_values(array_diff(self::expected_columns(), $existing));
+        return ['schema_version'=>self::SCHEMA_VERSION,'table'=>$table,'expected_columns'=>self::expected_columns(),'existing_columns'=>$existing,'missing_columns'=>$missing,'table_exists'=>self::table_exists()];
     }
 
     public static function install(): void {
@@ -29,6 +46,7 @@ class ExternalSignals {
             $schemaDiagnostics['status'] = 'error';
             $schemaDiagnostics['error'] = $e->getMessage();
         }
+        $schemaDiagnostics['external_signals']=self::schema_diagnostics();
         update_option('lousy_outages_schema_diagnostics', $schemaDiagnostics, false);
     }
 
