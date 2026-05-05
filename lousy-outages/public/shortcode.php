@@ -561,7 +561,17 @@ function render_shortcode(): string {
                 <p class="lo-history__meta">Unconfirmed posts from public dev/social channels. Useful smoke, not fire.</p>
             </div>
             <div class="lo-grid">
-            <?php if (!$public_chatter) : ?><p class="lo-history__meta">No fresh field reports intercepted. Official radar only.</p><?php endif; ?>
+            <?php if (!$public_chatter) : ?>
+                <p class="lo-history__meta">No fresh field reports intercepted. Official radar only.</p>
+                <?php $hnDiag = (array) get_option('lo_diag_hacker_news_chatter', []); $rejectSummary = \SuzyEaston\LousyOutages\Sources\ChatterRejectionReasons::summarize_counts((array)($hnDiag['chatter_rejected_by_reason'] ?? [])); ?>
+                <?php if (!empty($rejectSummary)) : ?><div class="lo-history__meta"><strong>Filtered chatter:</strong>
+                    <ul>
+                    <?php foreach (array_slice($rejectSummary, 0, 5) as $reasonRow) : ?>
+                        <li><?php echo esc_html((string)($reasonRow['count'] ?? 0) . ' ' . (string)($reasonRow['label'] ?? '')); ?> — <?php echo esc_html((string)($reasonRow['description'] ?? '')); ?></li>
+                    <?php endforeach; ?>
+                    </ul>
+                </div><?php endif; ?>
+            <?php endif; ?>
             <?php foreach (array_slice($public_chatter, 0, 6) as $sig) : $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? '')); ?>
                 <article class="lo-card">
                     <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">RUMOUR RADAR</span></div>

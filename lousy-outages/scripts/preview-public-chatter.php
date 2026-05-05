@@ -57,7 +57,10 @@ foreach ($accepted as $p) {
 }
 echo "\nRejected candidates: " . count($rejected) . "\n";
 foreach ($rejected as $p) {
-    echo "[REJECT] reason=" . ($p['reject_reason'] ?? '') .
+    $reason = (string) ($p['reject_reason'] ?? '');
+    $reasonMeta = \SuzyEaston\LousyOutages\Sources\ChatterRejectionReasons::get($reason);
+    echo "[REJECT] reason=" . $reason .
+        " label=\"" . ($reasonMeta['short_label'] ?? '') . "\"" .
         " provider=" . ($p['provider'] ?? '') .
         " category=" . ($p['category'] ?? '') .
         " quote=\"" . substr((string)($p['quote'] ?? ''), 0, 160) . "\"" .

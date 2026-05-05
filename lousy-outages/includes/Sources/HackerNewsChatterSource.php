@@ -191,7 +191,8 @@ class HackerNewsChatterSource implements SignalSourceInterface {
                         $diag['chatter_rows_skipped_quote_missing_failure']++;
                     }
                     $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_weak_issue_language']=($diag['chatter_rows_skipped_weak_issue_language']??0)+1;
-                    $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'quote_missing_provider_or_failure','provider'=>(string)($provider['provider_name'] ?? ''),'category'=>(string)($provider['category'] ?? ''),'source_url'=>(string)('https://news.ycombinator.com/item?id='.(int)($hit['objectID']??0))];
+                    $rejectReason = $diag['chatter_rows_skipped_quote_missing_provider'] > $diag['chatter_rows_skipped_quote_missing_failure'] ? 'quote_missing_provider' : 'quote_missing_failure';
+                    $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'quote_missing_provider_or_failure','sub_reason'=>$rejectReason,'provider'=>(string)($provider['provider_name'] ?? ''),'category'=>(string)($provider['category'] ?? ''),'source_url'=>(string)('https://news.ycombinator.com/item?id='.(int)($hit['objectID']??0))];
                     continue;
                 }
                 $parsed = $this->parse_observed_at($hit);
@@ -212,6 +213,13 @@ class HackerNewsChatterSource implements SignalSourceInterface {
             }
         }
         $diag['chatter_candidates_preview_sample'] = array_slice($diag['chatter_candidates_preview_sample'], 0, 30);
+        $reasonCounts = [];
+        foreach ((array) $diag['chatter_candidates_preview_sample'] as $sample) {
+            $reason = (string) ($sample['reject_reason'] ?? '');
+            if ($reason === '' || $reason === 'accepted') { continue; }
+            $reasonCounts[$reason] = (int) ($reasonCounts[$reason] ?? 0) + 1;
+        }
+        $diag['chatter_rejected_by_reason'] = $reasonCounts;
         $out = $this->limit_output($out);
         update_option('lo_diag_'.$this->id(),$diag,false);
         return $out;
