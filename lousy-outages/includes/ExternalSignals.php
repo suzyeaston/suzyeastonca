@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 class ExternalSignals {
-    private const SCHEMA_VERSION = '2026-05-04.1';
+    private const SCHEMA_VERSION = '2026-05-05.1';
     public static function table_name(): string { global $wpdb; return $wpdb->prefix . 'lo_external_signals'; }
     private static function table_exists(): bool {
         global $wpdb;
@@ -46,6 +46,17 @@ class ExternalSignals {
             title VARCHAR(255) NOT NULL DEFAULT '',
             message TEXT NULL,
             url TEXT NULL,
+            source_type VARCHAR(60) NOT NULL DEFAULT 'open_web',
+            adapter_id VARCHAR(80) NOT NULL DEFAULT '',
+            source_id VARCHAR(120) NOT NULL DEFAULT '',
+            snippets TEXT NULL,
+            domains TEXT NULL,
+            source_urls TEXT NULL,
+            confidence_reason VARCHAR(255) NOT NULL DEFAULT '',
+            evidence_quality VARCHAR(30) NOT NULL DEFAULT 'none',
+            official_confirmed TINYINT(1) NOT NULL DEFAULT 0,
+            unconfirmed_note VARCHAR(255) NOT NULL DEFAULT '',
+            metadata_json LONGTEXT NULL,
             observed_at DATETIME NOT NULL,
             expires_at DATETIME NULL,
             raw_hash VARCHAR(128) NULL,
@@ -75,6 +86,17 @@ class ExternalSignals {
             'title' => substr(sanitize_text_field((string)($signal['title'] ?? 'External signal observed')), 0, 255),
             'message' => substr(sanitize_textarea_field((string)($signal['message'] ?? '')), 0, 1000),
             'url' => substr(esc_url_raw((string)($signal['url'] ?? '')), 0, 1000),
+            'source_type' => substr(sanitize_key((string)($signal['source_type'] ?? 'open_web')), 0, 60),
+            'adapter_id' => substr(sanitize_key((string)($signal['adapter_id'] ?? ($signal['source'] ?? ''))), 0, 80),
+            'source_id' => substr(sanitize_text_field((string)($signal['source_id'] ?? '')), 0, 120),
+            'snippets' => wp_json_encode(array_slice((array)($signal['snippets'] ?? []), 0, 6)),
+            'domains' => wp_json_encode(array_slice((array)($signal['domains'] ?? []), 0, 10)),
+            'source_urls' => wp_json_encode(array_slice((array)($signal['source_urls'] ?? []), 0, 10)),
+            'confidence_reason' => substr(sanitize_text_field((string)($signal['confidence_reason'] ?? '')), 0, 255),
+            'evidence_quality' => substr(sanitize_key((string)($signal['evidence_quality'] ?? 'none')), 0, 30),
+            'official_confirmed' => !empty($signal['official_confirmed']) ? 1 : 0,
+            'unconfirmed_note' => substr(sanitize_text_field((string)($signal['unconfirmed_note'] ?? '')), 0, 255),
+            'metadata_json' => wp_json_encode((array)($signal['metadata_json'] ?? [])),
             'observed_at' => $observed,
             'expires_at' => $expires ?: null,
             'raw_hash' => isset($signal['raw_hash']) ? substr(sanitize_text_field((string)$signal['raw_hash']),0,128) : hash('sha256', wp_json_encode($signal)),
