@@ -21,9 +21,19 @@ if(count(SourcePack::statuspage_base_urls()) < 5) $errors[]='SourcePack statuspa
 if(count(SourcePack::provider_feed_urls()) < 5) $errors[]='SourcePack feed list <5';
 if(count(SourcePack::early_warning_queries()) < 20) $errors[]='SourcePack queries <20';
 $schemaDiag=ExternalSignals::schema_diagnostics();
-if(!empty($schemaDiag['missing_columns']) && !is_callable([ExternalSignals::class,'install'])) $errors[]='ExternalSignals expected columns missing and install not callable';
+if (empty($schemaDiag['table_exists'])) {
+    $errors[]='ExternalSignals table missing: '.(string)($schemaDiag['table'] ?? '');
+}
+if(!empty($schemaDiag['missing_columns'])) {
+    $errors[]='ExternalSignals missing columns: '.implode(',', (array)$schemaDiag['missing_columns']);
+}
 
-$result = SignalCollector::collect(['dry_run'=>true,'suppress_notifications'=>true,'no_email'=>true]);
+$budgetBefore = get_option('lo_source_budget_state', []);
+$result = SignalCollector::collect(['dry_run'=>true,'preflight'=>true,'suppress_notifications'=>true,'no_email'=>true]);
+$budgetAfter = get_option('lo_source_budget_state', []);
+if ($budgetBefore !== $budgetAfter) {
+    $errors[]='Dry-run/preflight mutated lo_source_budget_state';
+}
 if (!is_array($result) || !isset($result['sources']) || !isset($result['diagnostics'])) $errors[]='dry-run collect did not return expected diagnostics';
 $statusDiag=(array)get_option('lo_diag_statuspage_intel',[]);
 if(!empty($statusDiag)){

@@ -198,6 +198,12 @@ function lousy_outages_maybe_install_schema( bool $force = false ): void {
     update_option( $option_key, $schema_version, false );
 }
 add_action( 'admin_init', 'lousy_outages_maybe_install_schema' );
+add_action( 'init', static function (): void {
+    if ( is_admin() ) {
+        return;
+    }
+    lousy_outages_maybe_install_schema();
+}, 5 );
 
 /**
  * Clear cron on deactivation.
