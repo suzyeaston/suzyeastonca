@@ -537,20 +537,36 @@ function render_shortcode(): string {
             <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Incidents (0)</button>
             <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">All providers</button>
         </div>
-        <?php $fused_public = SignalEngine::summarize_fused_signals(120); $fused_public = is_array($fused_public) ? array_values(array_filter($fused_public, static function($r){ $c = strtolower((string)($r['classification'] ?? 'quiet')); return in_array($c,['watch','trending','hot'], true); })) : []; ?>
+        <?php $fused_public = SignalEngine::summarize_fused_signals(120); $fused_public = is_array($fused_public) ? array_values(array_filter($fused_public, static function($r){ $c = strtolower((string)($r['classification'] ?? 'quiet')); return in_array($c,['watch','trending','hot'], true); })) : []; $official_signals=array_values(array_filter($fused_public, static fn($s)=>!empty($s['official_confirmed']) || (($s['signal_lane'] ?? '') === 'official'))); $public_chatter=array_values(array_filter($fused_public, static fn($s)=>(($s['signal_lane'] ?? '') === 'chatter' || empty($s['official_confirmed'])))); ?>
         <section class="lo-signals-panel" data-lo-signals-panel<?php echo $fused_public ? '' : ' hidden'; ?>>
             <div class="lo-section__head">
-                <h3 class="lo-block-title">Trending signals</h3>
-                <p class="lo-history__meta">Unconfirmed unless marked official.</p>
+                <h3 class="lo-block-title">OFFICIAL STATUS SIGNALS</h3>
+                <p class="lo-history__meta">Provider-confirmed status, active maintenance, or degraded components.</p>
             </div>
             <div class="lo-grid">
-            <?php foreach (array_slice($fused_public, 0, 6) as $sig) : $class = strtolower((string)($sig['classification'] ?? 'watch')); $official = !empty($sig['official_confirmed']) || strtolower((string)($sig['evidence_quality'] ?? '')) === 'official'; $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? ''));  ?>
+            <?php foreach (array_slice($official_signals, 0, 6) as $sig) : $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? ''));  ?>
                 <article class="lo-card">
-                    <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill"><?php echo esc_html($official ? 'OFFICIAL' : ($class==='hot'?'RUMOUR RADAR':strtoupper($class))); ?></span></div>
-                    <p class="lo-summary"><?php echo esc_html($official ? 'Official status evidence' : 'Unconfirmed signal'); ?></p>
+                    <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">OFFICIAL</span></div>
+                    <p class="lo-summary">Official status evidence</p>
                     <?php if ($quote !== '') : ?><blockquote class="lo-evidence-quote">“<?php echo esc_html($quote); ?>”</blockquote><?php endif; ?>
                     <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Early warning signal detected.')); ?></p>
                     <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Signal feed'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? $sig['last_seen_at'] ?? null)); ?></p>
+                </article>
+            <?php endforeach; ?>
+            </div>
+            <div class="lo-section__head">
+                <h3 class="lo-block-title">PUBLIC CHATTER / FIELD REPORTS</h3>
+                <p class="lo-history__meta">Unconfirmed posts from public dev/social channels. Useful smoke, not fire.</p>
+            </div>
+            <div class="lo-grid">
+            <?php if (!$public_chatter) : ?><p class="lo-history__meta">No fresh field reports found. Official radar only.</p><?php endif; ?>
+            <?php foreach (array_slice($public_chatter, 0, 6) as $sig) : $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? '')); ?>
+                <article class="lo-card">
+                    <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">RUMOUR RADAR</span></div>
+                    <p class="lo-summary">Public chatter reports possible user impact.</p>
+                    <?php if ($quote !== '') : ?><blockquote class="lo-evidence-quote">“<?php echo esc_html($quote); ?>”</blockquote><?php endif; ?>
+                    <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Needs corroboration from official/synthetic signals.')); ?></p>
+                    <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Public chatter'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? null)); ?></p>
                 </article>
             <?php endforeach; ?>
             </div>

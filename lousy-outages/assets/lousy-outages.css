@@ -1691,3 +1691,12 @@
   .lo-card .lo-message { font-size: 0.82rem; }
   .lo-title { font-size: 0.95rem; }
 }
+
+/* Field report readability pass */
+.lo-signals-panel .lo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.lo-signals-panel .lo-card{padding:12px;overflow:hidden}
+.lo-signals-panel .lo-head{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.lo-signals-panel .lo-title{font-size:15px;line-height:1.25;white-space:normal;word-break:break-word;max-width:70%}
+.lo-signals-panel .lo-pill{flex-shrink:0;white-space:nowrap;font-size:10px;padding:3px 7px}
+.lo-signals-panel .lo-message,.lo-signals-panel .lo-summary,.lo-signals-panel .lo-card-meta{font-size:12px;line-height:1.4}
+.lo-evidence-quote{font-size:12px;line-height:1.45;border-left:2px solid currentColor;padding-left:8px;margin:8px 0}
