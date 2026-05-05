@@ -9,9 +9,36 @@ foreach (array_slice($argv,2) as $arg) {
     if (str_starts_with($arg,'--limit=')) { $limit=max(1,(int)substr($arg,8)); }
 }
 $_SERVER['REQUEST_METHOD'] = 'GET';
+
+register_shutdown_function(static function (): void {
+    $error = error_get_last();
+    if (!is_array($error)) {
+        return;
+    }
+
+    $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
+    if (!in_array((int) ($error['type'] ?? 0), $fatalTypes, true)) {
+        return;
+    }
+
+    fwrite(
+        STDERR,
+        sprintf(
+            "Fatal error: %s in %s:%d\n",
+            (string) ($error['message'] ?? 'unknown error'),
+            (string) ($error['file'] ?? 'unknown file'),
+            (int) ($error['line'] ?? 0)
+        )
+    );
+});
+
 define('LOUSY_OUTAGES_NO_EMAIL', true);
 require_once $wpLoad;
-\SuzyEaston\LousyOutages\MailTransport::set_enabled(false);
+
+if (class_exists(\SuzyEaston\LousyOutages\MailTransport::class)
+    && method_exists(\SuzyEaston\LousyOutages\MailTransport::class, 'set_enabled')) {
+    \SuzyEaston\LousyOutages\MailTransport::set_enabled(false);
+}
 $src = new \SuzyEaston\LousyOutages\Sources\HackerNewsChatterSource();
 $rows = $src->collect(['dry_run'=>true,'diagnostic_mode'=>true,'window_minutes'=>$window,'suppress_notifications'=>true,'no_email'=>true]);
 $diag = get_option('lo_diag_hacker_news_chatter', []);
