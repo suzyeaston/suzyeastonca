@@ -9,7 +9,7 @@ class HackerNewsChatterSource implements SignalSourceInterface {
     public function label(): string { return 'Hacker News Chatter'; }
     public function is_configured(): bool { return SourcePack::enabled() && (bool) apply_filters('lo_hn_chatter_enabled', get_option('lo_hn_chatter_enabled', '1') === '1'); }
     private function issue(string $t): bool {
-        return (bool) preg_match('/\b(outage|is down|down\b|incident|degrad(?:ed|ing)?|latency(?: spike)?|errors?|failing|failed|not working|unavailable|disruption|returning 5\d\d|stuck)\b/i', $t);
+        return (bool) preg_match('/\b(is down|down for me|outage|degrad(?:ed|ing)?|unavailable|not working|failing|failures|returning 500|returning 502|5xx|errors?|timeouts?|latency spike|stuck|cannot connect|connection refused|api error|deploys failing|actions failing|npm install failing)\b/i', $t);
     }
     private function provider_aliases(): array {
         return [
@@ -47,8 +47,31 @@ class HackerNewsChatterSource implements SignalSourceInterface {
         }
         return false;
     }
+    private function contains_pattern(string $text, array $patterns): bool {
+        foreach ($patterns as $pattern) {
+            if ((bool) preg_match($pattern, $text)) { return true; }
+        }
+        return false;
+    }
+    private function sentence_chunks(string $text): array {
+        $chunks = preg_split('/(?<=[.!?])\s+/u', $text) ?: [];
+        return array_values(array_filter(array_map('trim', $chunks), static fn($c) => $c !== ''));
+    }
+    private function has_provider_failure_match_in_quote(string $quote, array $providerAliases): bool {
+        if ($quote === '' || $providerAliases === []) { return false; }
+        if ($this->contains_pattern($quote, ['/\\b(no outage|not down|not seeing an outage|have not seen any outage|haven\\\'t seen any outage|not broken|works for me|no issues|not failing)\\b/i'])) { return false; }
+        $issuePattern = '(?:is down|down for me|outage|degraded|unavailable|not working|failing|failures|returning\s+500|returning\s+502|5xx|errors?|timeouts?|latency spike|stuck|cannot connect|connection refused|api error|deploys failing|actions failing|npm install failing)';
+        foreach ($this->sentence_chunks($quote) as $sentence) {
+            foreach ($providerAliases as $alias) {
+                $aliasPattern = preg_quote((string)$alias, '/');
+                if ((bool) preg_match('/\b' . $aliasPattern . '\b(?:.{0,80})\b' . $issuePattern . '\b/iu', $sentence)) { return true; }
+                if ((bool) preg_match('/\b' . $issuePattern . '\b(?:.{0,80})\b' . $aliasPattern . '\b/iu', $sentence)) { return true; }
+            }
+        }
+        return false;
+    }
     private function is_generic_noise(string $evidenceText): bool {
-        return (bool) preg_match('/\b(down\s+\d+%|traffic is down|killing your vibe|port(ed|ing).+rust|job postings|rebuilt my blog|cache|welcome to gas city|pricing)\b/i', $evidenceText);
+        return (bool) preg_match('/\b(natural language processing|voice ai at scale|interesting project|\bmimic\b|pricing|job postings?|blog cache|traffic is down|down\s+60%|\bvibe\b|\brust\b|\bzig\b|\bbun\b|general llm|ai discussion)\b/i', $evidenceText);
     }
     private function clean_quote(string $text): string {
         $decoded = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -72,13 +95,20 @@ class HackerNewsChatterSource implements SignalSourceInterface {
     }
     public function collect(array $options = []): array {
         if(!$this->is_configured()) return [];
-        $queries=SourcePack::early_warning_queries(); $cursor=(int)get_option('lo_hn_query_cursor',0); $take=array_slice(array_merge($queries,$queries),$cursor,2); update_option('lo_hn_query_cursor',($cursor+2)%max(1,count($queries)),false);
+        $queries=SourcePack::early_warning_queries();
+        $queriesPerRun = max(1, min(12, (int) apply_filters('lo_hn_chatter_queries_per_run', (int) get_option('lo_hn_chatter_queries_per_run', 6))));
+        $hitsPerQuery = max(5, min(50, (int) apply_filters('lo_hn_hits_per_query', (int) get_option('lo_hn_hits_per_query', 20))));
+        $cursor=(int)get_option('lo_hn_query_cursor',0);
+        $rotating = array_merge($queries,$queries);
+        $take=array_slice($rotating,$cursor,$queriesPerRun);
+        if (count($take) < $queriesPerRun && !empty($queries)) { $take = array_slice(array_merge($take, $queries), 0, $queriesPerRun); }
         $windowMinutes = max(5, min(1440, (int)($options['window_minutes'] ?? $options['windowMinutes'] ?? 60)));
         $lookbackHours = max(1, min(72, (int)($options['chatter_lookback_hours'] ?? get_option('lo_chatter_lookback_hours', 24))));
         $minTs = time() - ($windowMinutes * 60);
         $lookbackMinTs = time() - ($lookbackHours * HOUR_IN_SECONDS);
         $skipBudgetMutation = $this->should_skip_budget_mutation($options);
-        $diag=['configured'=>true,'attempted'=>false,'queries_available'=>count($queries),'queries_attempted'=>0,'queries_skipped_budget'=>0,'raw_results_seen'=>0,'usable_results'=>0,'rows_stored'=>0,'rows_attempted'=>0,'results_old_skipped'=>0,'results_missing_date'=>0,'rows_inserted'=>null,'skipped_reasons'=>[],'cooldown_active'=>false,'chatter_queries_attempted'=>0,'chatter_raw_results_seen'=>0,'chatter_recent_results'=>0,'chatter_old_skipped'=>0,'chatter_rows_attempted'=>0,'chatter_rows_output'=>0,'chatter_rows_skipped'=>0,'chatter_rows_skipped_no_issue_language'=>0,'chatter_rows_skipped_empty_quote'=>0,'chatter_rows_skipped_old'=>0,'chatter_rows_skipped_no_provider_match'=>0,'chatter_rows_skipped_weak_issue_language'=>0,'chatter_rows_skipped_generic_noise'=>0,'chatter_sources_enabled'=>['hacker_news'],'chatter_sources_disabled'=>[],'first_chatter_error'=>''];
+        if (!$skipBudgetMutation) { update_option('lo_hn_query_cursor',($cursor+$queriesPerRun)%max(1,count($queries)),false); }
+        $diag=['configured'=>true,'attempted'=>false,'queries_available'=>count($queries),'queries_attempted'=>0,'queries_skipped_budget'=>0,'raw_results_seen'=>0,'usable_results'=>0,'rows_stored'=>0,'rows_attempted'=>0,'results_old_skipped'=>0,'results_missing_date'=>0,'rows_inserted'=>null,'skipped_reasons'=>[],'cooldown_active'=>false,'chatter_queries_attempted'=>0,'chatter_raw_results_seen'=>0,'chatter_recent_results'=>0,'chatter_old_skipped'=>0,'chatter_rows_attempted'=>0,'chatter_rows_output'=>0,'chatter_rows_skipped'=>0,'chatter_rows_skipped_no_issue_language'=>0,'chatter_rows_skipped_empty_quote'=>0,'chatter_rows_skipped_old'=>0,'chatter_rows_skipped_no_provider_match'=>0,'chatter_rows_skipped_weak_issue_language'=>0,'chatter_rows_skipped_generic_noise'=>0,'chatter_rows_skipped_negated_issue'=>0,'chatter_rows_skipped_resolved_or_historical'=>0,'chatter_rows_skipped_quote_missing_provider'=>0,'chatter_rows_skipped_quote_missing_failure'=>0,'chatter_rows_accepted_provider_failure_match'=>0,'chatter_candidates_preview_sample'=>[],'chatter_sources_enabled'=>['hacker_news'],'chatter_sources_disabled'=>[],'first_chatter_error'=>''];
         $out=[];
         foreach($take as $q){
             $budget=['ok'=>true];
@@ -86,7 +116,7 @@ class HackerNewsChatterSource implements SignalSourceInterface {
             if(empty($budget['ok'])){ $diag['queries_skipped_budget']++; $diag['cooldown_active']=true; continue; }
             $diag['queries_attempted']++; $diag['attempted']=true;
             $diag['chatter_queries_attempted']++;
-            $url=add_query_arg(['query'=>$q,'tags'=>'(story,comment)','hitsPerPage'=>10],'https://hn.algolia.com/api/v1/search_by_date');
+            $url=add_query_arg(['query'=>$q,'tags'=>'(story,comment)','hitsPerPage'=>$hitsPerQuery],'https://hn.algolia.com/api/v1/search_by_date');
             $cache='lo_hn_'.md5($url); $hits=get_transient($cache);
             if(!is_array($hits)){
                 $r=wp_remote_get($url,['timeout'=>7]); if(!$skipBudgetMutation){ SourceBudgetManager::mark_attempt($this->id(),'hn.algolia.com',10); }
@@ -98,18 +128,37 @@ class HackerNewsChatterSource implements SignalSourceInterface {
             }
             $diag['raw_results_seen']+=count($hits);
             $diag['chatter_raw_results_seen']+=count($hits);
-            foreach(array_slice($hits,0,10) as $hit){
+            foreach(array_slice($hits,0,$hitsPerQuery) as $hit){
                 $diag['chatter_rows_attempted']=($diag['chatter_rows_attempted']??0)+1;
                 $title=$this->clean_quote((string)($hit['title']??$hit['story_title']??''));
                 $txt=$this->clean_quote((string)($hit['comment_text']??''));
                 $quote = $this->clean_quote(trim($txt !== '' ? $txt : $title));
                 if($quote==='') { $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_empty_quote']=($diag['chatter_rows_skipped_empty_quote']??0)+1; continue; }
                 $evidenceText = trim($title . ' ' . $txt);
+                if ($this->contains_pattern($evidenceText, ['/\\b(no outage|not down|not seeing an outage|have not seen any outage|haven\\\'t seen any outage|not broken|works for me|no issues|not failing)\\b/i'])) {
+                    $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_negated_issue']++;
+                    $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'negated_issue'];
+                    continue;
+                }
+                if ($this->contains_pattern(strtolower($title.' '.$evidenceText), ['/\\b(resolved|postmortem|incident report|rca|from\\s+[a-z]+|last week|yesterday\\\'s incident|was down|previous outage)\\b/i'])) {
+                    $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_resolved_or_historical']++;
+                    $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'resolved_or_historical'];
+                    continue;
+                }
                 if($this->is_generic_noise($evidenceText)) { $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_generic_noise']=($diag['chatter_rows_skipped_generic_noise']??0)+1; $this->maybe_log_rejection($options, $quote, 'generic_noise'); continue; }
                 if(!$this->issue($evidenceText)) { $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_no_issue_language']=($diag['chatter_rows_skipped_no_issue_language']??0)+1; continue; }
                 $provider=$this->detect_provider_from_evidence($evidenceText);
                 if(empty($provider['provider_id'])) { $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_no_provider_match']=($diag['chatter_rows_skipped_no_provider_match']??0)+1; $this->maybe_log_rejection($options, $quote, 'no_provider_match'); continue; }
-                if(!$this->has_outage_phrase_near_provider($evidenceText, (array)($provider['aliases'] ?? []))) { $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_weak_issue_language']=($diag['chatter_rows_skipped_weak_issue_language']??0)+1; $this->maybe_log_rejection($options, $quote, 'weak_issue_language'); continue; }
+                if(!$this->has_provider_failure_match_in_quote($quote, (array)($provider['aliases'] ?? []))) {
+                    if (!(bool) preg_match('/\b(?:' . implode('|', array_map(static fn($a) => preg_quote((string)$a, '/'), (array)($provider['aliases'] ?? []))) . ')\b/i', $quote)) {
+                        $diag['chatter_rows_skipped_quote_missing_provider']++;
+                    } else {
+                        $diag['chatter_rows_skipped_quote_missing_failure']++;
+                    }
+                    $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_weak_issue_language']=($diag['chatter_rows_skipped_weak_issue_language']??0)+1;
+                    $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'quote_missing_provider_or_failure'];
+                    continue;
+                }
                 $parsed = $this->parse_observed_at($hit);
                 if (empty($parsed['ok'])) { $diag['results_missing_date']++; continue; }
                 if ((int)$parsed['ts'] < $lookbackMinTs) { $diag['results_old_skipped']++; $diag['chatter_old_skipped']++; $diag['chatter_rows_skipped_old']=($diag['chatter_rows_skipped_old']??0)+1; continue; }
@@ -123,10 +172,35 @@ class HackerNewsChatterSource implements SignalSourceInterface {
                 $diag['rows_stored']++;
                 $diag['rows_attempted']++;
                 $diag['chatter_rows_output']=($diag['chatter_rows_output']??0)+1;
+                $diag['chatter_rows_accepted_provider_failure_match']++;
+                $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'accepted'];
             }
         }
+        $diag['chatter_candidates_preview_sample'] = array_slice($diag['chatter_candidates_preview_sample'], 0, 30);
+        $out = $this->limit_output($out);
         update_option('lo_diag_'.$this->id(),$diag,false);
         return $out;
+    }
+    private function limit_output(array $rows): array {
+        $deduped = [];
+        $seen = [];
+        foreach ($rows as $row) {
+            $key = strtolower((string)($row['source_id'] ?? '') . '|' . (string)($row['url'] ?? '') . '|' . md5((string) wp_json_encode($row)));
+            if (isset($seen[$key])) { continue; }
+            $seen[$key] = true;
+            $deduped[] = $row;
+        }
+        $providerCounts = [];
+        $limited = [];
+        foreach ($deduped as $row) {
+            $providerId = (string)($row['provider_id'] ?? '');
+            $providerCounts[$providerId] = (int)($providerCounts[$providerId] ?? 0);
+            if ($providerId !== '' && $providerCounts[$providerId] >= 2) { continue; }
+            $providerCounts[$providerId]++;
+            $limited[] = $row;
+            if (count($limited) >= 5) { break; }
+        }
+        return $limited;
     }
     private function maybe_log_rejection(array $options, string $quote, string $reason): void {
         if (empty($options['dry_run']) || empty($options['diagnostic_mode'])) { return; }
