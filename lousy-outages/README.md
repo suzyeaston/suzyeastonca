@@ -110,8 +110,10 @@ Use these shell snippets on hosts where WP-CLI is unavailable:
 
 Before replacing the production plugin, run:
 
-- `php -l wp-content/plugins/lousy-outages/includes/Sources/IntelConduitSources.php`
+- `php -l wp-content/plugins/lousy-outages/lousy-outages.php`
 - `php wp-content/plugins/lousy-outages/scripts/smoke-signal-sources.php /var/www/html/wp-load.php`
+- `php wp-content/plugins/lousy-outages/scripts/smoke-intel-source-pack.php`
+- `php wp-content/plugins/lousy-outages/scripts/smoke-production-preflight.php /var/www/html/wp-load.php`
 
 The smoke script bootstraps WordPress (`require wp-load.php`), calls `\SuzyEaston\LousyOutages\SignalCollector::sources()`, and validates for each source:
 
@@ -121,3 +123,11 @@ The smoke script bootstraps WordPress (`require wp-load.php`), calls `\SuzyEasto
 - boolean return from `is_configured()`
 
 If this check fails, do not deploy.
+
+
+## Canonical deployment path
+
+- **Deploy only from `lousy-outages/` (top-level).**
+- `plugins/lousy-outages/` is deprecated/non-deployable and exists only for merge history until cleanup.
+- Before deploy, run `./scripts/check-lousy-outages-tree-drift.sh` from repo root; if it fails, reconcile top-level first.
+- Swap plugin folder with rollback copy ready; do not deploy if smoke scripts fail.
