@@ -8,25 +8,107 @@ class SignalEngine {
         $watch = (int) apply_filters('lo_signal_watch_threshold', 2);
         $trending = (int) apply_filters('lo_signal_trending_threshold', 3);
         $hot = (int) apply_filters('lo_signal_hot_threshold', 5);
-        if ($count >= $hot) return 'hot'; if ($count >= $trending) return 'trending'; if ($count >= $watch) return 'watch'; return 'quiet';
+        if ($count >= $hot) return 'hot';
+        if ($count >= $trending) return 'trending';
+        if ($count >= $watch) return 'watch';
+        return 'quiet';
     }
-    public static function score_provider(array $reports, array $options = []): array { $count=count($reports); $symptoms=[]; $unique=[]; $last=''; foreach($reports as $r){$sym=(string)($r['symptom']??'other'); $symptoms[$sym]=($symptoms[$sym]??0)+1; $ip=(string)($r['ip_hash']??''); if($ip)$unique[$ip]=true; $created=(string)($r['created_at']??''); if($created>$last)$last=$created;} arsort($symptoms); $top=(string)array_key_first($symptoms); $class=self::classify_score($count,count($unique)); return ['report_count'=>$count,'unique_reporter_count'=>count($unique),'top_symptom'=>$top?:'other','classification'=>$class,'message'=>self::message_for_class($class),'last_reported_at'=>$last]; }
-    public static function message_for_class(string $class): string { if($class==='watch') return 'A few community reports are coming in. Possible issue reported by users. Unconfirmed signal — we’re watching this.'; if($class==='trending') return 'Community reports are trending for this provider. Unconfirmed signal; no official incident yet.'; if($class==='hot') return 'High volume of community reports. No official confirmation yet unless listed below. Unconfirmed signal.'; return 'No unusual community reports.'; }
-    public static function summarize_recent_signals(int $windowMinutes = 60): array { $reports=UserReports::get_recent_reports(['windowMinutes'=>(int)apply_filters('lo_signal_window_minutes',$windowMinutes),'limit'=>500]); $providers=Providers::list(); $grouped=[]; foreach($reports as $r){$grouped[(string)$r['provider_id']][]=$r;} $signals=[]; foreach($grouped as $provider_id=>$rows){$score=self::score_provider($rows); $signals[]=array_merge($score,['provider_id'=>$provider_id,'provider_name'=>(string)($providers[$provider_id]['name']??ucfirst($provider_id)),'severity'=>(string)($rows[0]['severity']??'unknown'),'region'=>(string)($rows[0]['region']??''),'official_status_known'=>false]);} usort($signals,static fn($a,$b)=>($b['report_count']<=>$a['report_count'])); return $signals; }
-    public static function summarize_fused_signals(int $windowMinutes = 60): array {
-        $community=self::summarize_recent_signals($windowMinutes); $external=class_exists('\SuzyEaston\LousyOutages\ExternalSignals')?ExternalSignals::get_recent_signals(['windowMinutes'=>$windowMinutes,'limit'=>200]):[]; $buckets=[];
-        foreach($community as $row){$k=($row['provider_id']??'').'|'.($row['category']??'').'|'.($row['region']??''); $buckets[$k]=['provider_id'=>(string)$row['provider_id'],'provider_name'=>(string)$row['provider_name'],'category'=>(string)($row['category']??'community'),'region'=>(string)($row['region']??''),'report_count'=>(int)$row['report_count'],'external_signal_count'=>0,'synthetic_failure_count'=>0,'sources'=>['community_reports'],'official_status_known'=>false,'confirmed'=>false,'last_observed_at'=>(string)($row['last_reported_at']??''),'base_confidence'=>self::class_confidence((string)$row['classification'])];}
-        foreach($external as $row){$k=($row['provider_id']??'').'|'.($row['category']??'').'|'.($row['region']??''); if(!isset($buckets[$k])){$buckets[$k]=['provider_id'=>(string)($row['provider_id']??''),'provider_name'=>(string)($row['provider_name']??'Unknown'),'category'=>(string)($row['category']??''),'region'=>(string)($row['region']??''),'report_count'=>0,'external_signal_count'=>0,'synthetic_failure_count'=>0,'sources'=>[],'official_status_known'=>false,'confirmed'=>false,'last_observed_at'=>(string)($row['observed_at']??''),'base_confidence'=>0];}
-            $buckets[$k]['external_signal_count']++; $src=(string)($row['source']??'external'); if(!in_array($src,$buckets[$k]['sources'],true))$buckets[$k]['sources'][]=$src; if(($row['source']??'')==='synthetic_canary')$buckets[$k]['synthetic_failure_count']++; $buckets[$k]['base_confidence']=max((int)$buckets[$k]['base_confidence'],(int)($row['confidence']??0)); if((string)($row['observed_at']??'')>(string)$buckets[$k]['last_observed_at'])$buckets[$k]['last_observed_at']=(string)$row['observed_at']; if(($row['signal_type']??'')==='public_chatter'){ $buckets[$k]['public_chatter_confidence']=max((int)($buckets[$k]['public_chatter_confidence']??0),(int)($row['confidence']??0)); $meta=json_decode((string)($row['metadata_json']??''),true); if(is_array($meta)){$buckets[$k]['evidence'][]=self::normalize_evidence($meta,$row);} }
+
+    public static function score_provider(array $reports, array $options = []): array {
+        $count = count($reports);
+        $symptoms = [];
+        $unique = [];
+        $last = '';
+        foreach ($reports as $r) {
+            $sym = (string)($r['symptom'] ?? 'other');
+            $symptoms[$sym] = ($symptoms[$sym] ?? 0) + 1;
+            $ip = (string)($r['ip_hash'] ?? '');
+            if ($ip) $unique[$ip] = true;
+            $created = (string)($r['created_at'] ?? '');
+            if ($created > $last) $last = $created;
         }
-        $signals=[]; foreach($buckets as $b){$conf=(int)$b['base_confidence']; $ch=(int)($b['public_chatter_confidence']??0); if($ch>0)$conf=max($conf,$ch); if($ch>0&&$b['report_count']>0)$conf+=10; if($ch>0&&$b['external_signal_count']>0)$conf+=15; if(count($b['sources'])>=2)$conf+=15; if(!$b['confirmed'])$conf=min($conf,($ch>0?85:95)); $ev=self::merge_evidence((array)($b['evidence']??[])); $class=$conf>=70?'hot':($conf>=45?'trending':($conf>=25?'watch':'quiet')); if(self::is_empty_public_chatter_evidence($ev) && $ch>0){$class='quiet';$conf=min($conf,20);} if($class==='hot' && ($ev['mention_count']<3 || empty($ev['themes']) || empty($ev['snippets']))){$class='trending';$conf=min($conf,69);} $msg=self::build_message((string)$b['provider_name'],$ev); $signals[]=$b+['confidence'=>$conf,'classification'=>$class,'message'=>$msg,'confidence_reason'=>self::confidence_reason($conf,$b,$ev),'evidence'=>$ev,'observed_at'=>(string)($b['last_observed_at']??''),'id'=>md5($b['provider_id'].'|'.$b['category'].'|'.$b['region'])]; }
-        usort($signals,static fn($a,$b)=>($b['confidence']<=>$a['confidence'])); return $signals;
+        arsort($symptoms);
+        $top = (string)array_key_first($symptoms);
+        $class = self::classify_score($count, count($unique));
+        $message = self::message_for_class($class);
+        return ['report_count'=>$count,'unique_reporter_count'=>count($unique),'top_symptom'=>$top ?: 'other','classification'=>$class,'message'=>$message,'last_reported_at'=>$last];
     }
-    private static function class_confidence(string $class): int { if($class==='watch')return 20; if($class==='trending')return 45; if($class==='hot')return 65; return 0; }
-    private static function normalize_evidence(array $m,array $row): array { return ['summary'=>mb_substr(sanitize_text_field((string)($m['summary']??'')),0,300),'themes'=>array_slice(array_values(array_map('sanitize_text_field',(array)($m['themes']??[]))),0,5),'snippets'=>array_slice(array_values(array_map(static fn($s)=>mb_substr(sanitize_text_field((string)$s),0,140),(array)($m['snippets']??[]))),0,5),'domains'=>array_slice(array_values(array_map('sanitize_text_field',(array)($m['domains']??[]))),0,5),'source_urls'=>array_slice(array_values(array_map('esc_url_raw',(array)($m['source_urls']??[]))),0,3),'query'=>sanitize_text_field((string)($m['query']??'')),'queries'=>array_slice(array_values(array_map('sanitize_text_field',(array)($m['queries']??[]))),0,3),'mention_count'=>(int)($m['mention_count']??0),'raw_source_count'=>(int)($m['raw_source_count']??0),'window_minutes'=>(int)($m['window_minutes']??0),'source_label'=>self::source_label((string)($row['source']??''))]; }
-    private static function merge_evidence(array $items): array { $o=['summary'=>'','themes'=>[],'snippets'=>[],'domains'=>[],'source_urls'=>[],'query'=>'','queries'=>[],'mention_count'=>0,'raw_source_count'=>0,'window_minutes'=>0,'source_labels'=>[]]; foreach(array_slice($items,0,5) as $e){ if(!$o['summary']&&!empty($e['summary']))$o['summary']=$e['summary']; $o['themes']=array_slice(array_values(array_unique(array_merge($o['themes'],(array)($e['themes']??[])))),0,5); $o['snippets']=array_slice(array_values(array_unique(array_merge($o['snippets'],(array)($e['snippets']??[])))),0,5); $o['domains']=array_slice(array_values(array_unique(array_merge($o['domains'],(array)($e['domains']??[])))),0,5); $o['source_urls']=array_slice(array_values(array_unique(array_merge($o['source_urls'],(array)($e['source_urls']??[])))),0,3); $o['queries']=array_slice(array_values(array_unique(array_merge($o['queries'],(array)($e['queries']??[])))),0,3); if(!$o['query']&&!empty($e['query']))$o['query']=$e['query']; $o['mention_count']=max($o['mention_count'],(int)($e['mention_count']??0)); $o['raw_source_count']=max($o['raw_source_count'],(int)($e['raw_source_count']??0)); $o['window_minutes']=max($o['window_minutes'],(int)($e['window_minutes']??0)); if(!empty($e['source_label']))$o['source_labels'][]=$e['source_label']; } $o['source_labels']=array_slice(array_values(array_unique($o['source_labels'])),0,5); return $o; }
-    private static function build_message(string $provider,array $e): string { if(!empty($e['themes'])) return sprintf('Unconfirmed chatter is rising for %s. Recent observations mention %s. Official status has not confirmed this signal.', $provider, implode(', ', array_slice((array)$e['themes'],0,3))); return sprintf('Unconfirmed signal for %s from community/external sources. Official status has not confirmed this signal.', $provider); }
-    private static function confidence_reason(int $c,array $b,array $e): string { $s=count((array)($b['sources']??[])); $m=(int)($e['mention_count']??0); $w=max(1,(int)($e['window_minutes']??30)); if($m>0)return sprintf('Confidence %d from %d open-web/public mentions in %d minutes across %d source(s).',$c,$m,$w,max(1,$s)); if($s>=2)return sprintf('Confidence %d because multiple sources reported similar chatter.',$c); return sprintf('Confidence %d from limited chatter; watching only.',$c); }
-    private static function source_label(string $source): string { if(strpos($source,'gdelt')!==false)return 'Unconfirmed open-web chatter'; if(strpos($source,'bluesky')!==false||strpos($source,'mastodon')!==false)return 'Unconfirmed public post'; if(strpos($source,'synthetic')!==false)return 'Synthetic check'; if(strpos($source,'community')!==false)return 'Community report'; if(strpos($source,'status')!==false)return 'Official'; return 'External signal'; }
-    private static function is_empty_public_chatter_evidence(array $ev): bool { return (int)($ev['mention_count']??0)===0 && (int)($ev['raw_source_count']??0)===0 && empty($ev['snippets']) && empty($ev['themes']) && empty($ev['domains']); }
+
+    public static function message_for_class(string $class): string {
+        if ($class === 'watch') return 'A few community reports are coming in. Possible issue reported by users. Unconfirmed signal — we’re watching this.';
+        if ($class === 'trending') return 'Community reports are trending for this provider. Unconfirmed signal; no official incident yet.';
+        if ($class === 'hot') return 'High volume of community reports. No official confirmation yet unless listed below. Unconfirmed signal.';
+        return 'No unusual community reports.';
+    }
+
+    public static function summarize_recent_signals(int $windowMinutes = 60): array {
+        $windowMinutes = (int) apply_filters('lo_signal_window_minutes', $windowMinutes);
+        $reports = UserReports::get_recent_reports(['windowMinutes'=>$windowMinutes,'limit'=>500]);
+        $providers = Providers::list();
+        $grouped = [];
+        foreach ($reports as $r) { $grouped[(string)$r['provider_id']][] = $r; }
+        $signals = [];
+        foreach ($grouped as $provider_id => $rows) {
+            $score = self::score_provider($rows);
+            $signals[] = array_merge($score, [
+                'provider_id'=>$provider_id,
+                'provider_name'=>(string)($providers[$provider_id]['name'] ?? ucfirst($provider_id)),
+                'severity'=>(string)($rows[0]['severity'] ?? 'unknown'),
+                'region'=>(string)($rows[0]['region'] ?? ''),
+                'official_status_known'=>false,
+            ]);
+        }
+        usort($signals, static fn($a,$b)=>($b['report_count']<=>$a['report_count']));
+        return $signals;
+    }
+
+    public static function summarize_fused_signals(int $windowMinutes = 60): array {
+        $community = self::summarize_recent_signals($windowMinutes);
+        $external = class_exists('\SuzyEaston\LousyOutages\ExternalSignals') ? ExternalSignals::get_recent_signals(['windowMinutes'=>$windowMinutes,'limit'=>200]) : [];
+        $buckets = [];
+        foreach ($community as $row) {
+            $key = ($row['provider_id'] ?? '') . '|' . ($row['category'] ?? '') . '|' . ($row['region'] ?? '');
+            $buckets[$key] = ['provider_id'=>(string)$row['provider_id'],'provider_name'=>(string)$row['provider_name'],'category'=>(string)($row['category']??'community'),'region'=>(string)($row['region']??''),'report_count'=>(int)$row['report_count'],'external_signal_count'=>0,'synthetic_failure_count'=>0,'sources'=>['community_reports'],'official_status_known'=>false,'confirmed'=>false,'last_observed_at'=>(string)($row['last_reported_at']??''),'base_confidence'=> self::class_confidence((string)$row['classification']),'sample_observations'=>[],'domains'=>[],'source_urls'=>[],'adapter_ids'=>[],'official_confirmed'=>false ];
+        }
+        foreach ($external as $row) {
+            $key = ($row['provider_id'] ?? '') . '|' . ($row['category'] ?? '') . '|' . ($row['region'] ?? '');
+            if (!isset($buckets[$key])) { $buckets[$key]=['provider_id'=>(string)($row['provider_id']??''),'provider_name'=>(string)($row['provider_name']??'Unknown'),'category'=>(string)($row['category']??''),'region'=>(string)($row['region']??''),'report_count'=>0,'external_signal_count'=>0,'synthetic_failure_count'=>0,'sources'=>[],'official_status_known'=>false,'confirmed'=>false,'last_observed_at'=>(string)($row['observed_at']??''),'base_confidence'=>0,'sample_observations'=>[],'domains'=>[],'source_urls'=>[],'adapter_ids'=>[],'official_confirmed'=>false]; }
+            $buckets[$key]['external_signal_count']++;
+            if (($row['signal_type'] ?? '') === 'public_chatter') { $buckets[$key]['public_chatter_confidence'] = max((int)($buckets[$key]['public_chatter_confidence'] ?? 0),(int)($row['confidence'] ?? 0)); }
+            $src=(string)($row['source']??'external'); if(!in_array($src,$buckets[$key]['sources'],true)) $buckets[$key]['sources'][]=$src;
+            $adapter = (string)($row['adapter_id'] ?? $src); if($adapter!=='' && !in_array($adapter,$buckets[$key]['adapter_ids'],true)) $buckets[$key]['adapter_ids'][]=$adapter;
+            $buckets[$key]['official_confirmed'] = $buckets[$key]['official_confirmed'] || !empty($row['official_confirmed']);
+            foreach (self::decode_json_list($row['snippets'] ?? '') as $snip) { if(is_string($snip) && $snip!=='') $buckets[$key]['sample_observations'][] = substr($snip,0,180); }
+            foreach (self::decode_json_list($row['domains'] ?? '') as $d) { if(is_string($d)&&$d!=='') $buckets[$key]['domains'][$d]=true; }
+            foreach (self::decode_json_list($row['source_urls'] ?? '') as $u) { if(is_string($u)&&$u!=='') $buckets[$key]['source_urls'][$u]=true; }
+            if (($row['source']??'')==='synthetic_canary') $buckets[$key]['synthetic_failure_count']++;
+            $buckets[$key]['base_confidence'] = max((int)$buckets[$key]['base_confidence'], (int)($row['confidence'] ?? 0));
+            if ((string)($row['observed_at']??'') > (string)$buckets[$key]['last_observed_at']) $buckets[$key]['last_observed_at']=(string)$row['observed_at'];
+        }
+        $signals=[];
+        foreach($buckets as $b){ $conf=(int)$b['base_confidence']; $evidenceQuality=self::evidence_quality_for_bucket($b); if($evidenceQuality==='none') continue; $chatter=(int)($b['public_chatter_confidence'] ?? 0); if($chatter>0){ $conf=max($conf,$chatter); } if($chatter>0 && $b['report_count']>0){ $conf += 10; } if($chatter>0 && $b['external_signal_count']>0){ $conf += 15; } if(count($b['sources'])>=2) $conf += 15; if(!$b['confirmed']) $conf=min($conf,($chatter>0?85:95)); $class=$conf>=70?'hot':($conf>=45?'trending':($conf>=25?'watch':'quiet')); if($class==='hot' && !$b['official_confirmed'] && $evidenceQuality!=='strong'){ $class='trending'; } $msg='Community reports are trending for this provider. Official incident not confirmed.'; if($chatter>0 && $b['report_count']===0){$msg='Public chatter has increased for this provider. This is unconfirmed.';} if($chatter>0 && $b['report_count']>0){$msg='Public chatter and community reports both suggest a possible issue.';} if($chatter>0 && $b['external_signal_count']>0){$msg='Public chatter and external telemetry both suggest a possible issue.';} if($b['report_count']>0 && $b['external_signal_count']>0 && $chatter===0){$msg='External internet-health signals and community reports both suggest a possible issue.';} elseif($b['external_signal_count']>0 && $b['synthetic_failure_count']===0 && $b['report_count']===0){$msg='External internet-health telemetry suggests a possible issue. Official incident not confirmed.';} elseif($b['synthetic_failure_count']>0 && $b['report_count']===0){$msg='A lightweight public canary check failed. This is an unconfirmed signal.';}
+            $signals[]=$b + ['confidence'=>$conf,'classification'=>$class,'message'=>$msg,'evidence_quality'=>$evidenceQuality,'confidence_reason'=>$b['official_confirmed']?'Official source confirms incident':(count($b['sources'])>=2?'Multiple sources corroborate':'Single-source unconfirmed observation'),'snippets'=>array_slice(array_values(array_unique($b['sample_observations'])),0,4),'domains'=>array_slice(array_keys($b['domains']),0,6),'source_urls'=>array_slice(array_keys($b['source_urls']),0,6),'official_confirmed'=>!empty($b['official_confirmed']),'detected_provider'=>$b['provider_name'],'detected_category'=>$b['category'],'id'=>md5($b['provider_id'].'|'.$b['category'].'|'.$b['region'])];
+        }
+        usort($signals, static fn($a,$b)=>($b['confidence']<=>$a['confidence']));
+        return $signals;
+    }
+
+
+    private static function decode_json_list($value): array {
+        if (is_array($value)) return $value;
+        if (!is_string($value) || $value=='') return [];
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private static function evidence_quality_for_bucket(array $b): string {
+        if (!empty($b['official_confirmed'])) return 'official';
+        if (empty($b['sample_observations']) && empty($b['domains']) && empty($b['source_urls'])) return 'none';
+        if (count($b['sources']) >= 2 || $b['external_signal_count'] >= 3) return 'strong';
+        if ($b['external_signal_count'] >= 2 || $b['report_count'] >= 2) return 'moderate';
+        return 'weak';
+    }
+
+    private static function class_confidence(string $class): int { if($class==='watch') return 20; if($class==='trending') return 45; if($class==='hot') return 65; return 0; }
+
 }

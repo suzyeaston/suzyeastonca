@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 class ExternalSignals {
-    private const SCHEMA_VERSION = '2026-05-05.2';
+    private const SCHEMA_VERSION = '2026-05-05.1';
     public static function table_name(): string { global $wpdb; return $wpdb->prefix . 'lo_external_signals'; }
     private static function table_exists(): bool {
         global $wpdb;
@@ -46,7 +46,17 @@ class ExternalSignals {
             title VARCHAR(255) NOT NULL DEFAULT '',
             message TEXT NULL,
             url TEXT NULL,
-            metadata_json TEXT NULL,
+            source_type VARCHAR(60) NOT NULL DEFAULT 'open_web',
+            adapter_id VARCHAR(80) NOT NULL DEFAULT '',
+            source_id VARCHAR(120) NOT NULL DEFAULT '',
+            snippets TEXT NULL,
+            domains TEXT NULL,
+            source_urls TEXT NULL,
+            confidence_reason VARCHAR(255) NOT NULL DEFAULT '',
+            evidence_quality VARCHAR(30) NOT NULL DEFAULT 'none',
+            official_confirmed TINYINT(1) NOT NULL DEFAULT 0,
+            unconfirmed_note VARCHAR(255) NOT NULL DEFAULT '',
+            metadata_json LONGTEXT NULL,
             observed_at DATETIME NOT NULL,
             expires_at DATETIME NULL,
             raw_hash VARCHAR(128) NULL,
@@ -61,29 +71,6 @@ class ExternalSignals {
         ) {$charset};";
     }
 
-    
-    public static function ensure_metadata_column(): bool {
-        global $wpdb;
-        if (!self::table_exists()) { return false; }
-        $exists = (int)$wpdb->get_var($wpdb->prepare('SHOW COLUMNS FROM '.self::table_name().' LIKE %s', 'metadata_json')) > 0;
-        if ($exists) { return true; }
-        $ok = false;
-        try {
-            $sql = 'ALTER TABLE '.self::table_name().' ADD COLUMN metadata_json TEXT NULL';
-            $res = $wpdb->query($sql);
-            $ok = ($res !== false);
-        } catch (\Throwable $e) {
-            $ok = false;
-            RumourRadarLogger::log('schema_migration',['table'=>self::table_name(),'status'=>'error','reason'=>mb_substr($e->getMessage(),0,160)]);
-        }
-        RumourRadarLogger::log('schema_migration',['table'=>self::table_name(),'metadata_json_exists'=>$ok?1:0]);
-        return $ok;
-    }
-    public static function metadata_column_exists(): bool {
-        global $wpdb;
-        if (!self::table_exists()) return false;
-        return (int)$wpdb->get_var($wpdb->prepare('SHOW COLUMNS FROM '.self::table_name().' LIKE %s', 'metadata_json')) > 0;
-    }
     public static function normalize_signal(array $signal): array {
         $observed = sanitize_text_field((string)($signal['observed_at'] ?? gmdate('Y-m-d H:i:s')));
         $expires = isset($signal['expires_at']) ? sanitize_text_field((string)$signal['expires_at']) : null;
@@ -99,45 +86,21 @@ class ExternalSignals {
             'title' => substr(sanitize_text_field((string)($signal['title'] ?? 'External signal observed')), 0, 255),
             'message' => substr(sanitize_textarea_field((string)($signal['message'] ?? '')), 0, 1000),
             'url' => substr(esc_url_raw((string)($signal['url'] ?? '')), 0, 1000),
-            'metadata_json' => self::normalize_metadata($signal['metadata'] ?? []),
+            'source_type' => substr(sanitize_key((string)($signal['source_type'] ?? 'open_web')), 0, 60),
+            'adapter_id' => substr(sanitize_key((string)($signal['adapter_id'] ?? ($signal['source'] ?? ''))), 0, 80),
+            'source_id' => substr(sanitize_text_field((string)($signal['source_id'] ?? '')), 0, 120),
+            'snippets' => wp_json_encode(array_slice((array)($signal['snippets'] ?? []), 0, 6)),
+            'domains' => wp_json_encode(array_slice((array)($signal['domains'] ?? []), 0, 10)),
+            'source_urls' => wp_json_encode(array_slice((array)($signal['source_urls'] ?? []), 0, 10)),
+            'confidence_reason' => substr(sanitize_text_field((string)($signal['confidence_reason'] ?? '')), 0, 255),
+            'evidence_quality' => substr(sanitize_key((string)($signal['evidence_quality'] ?? 'none')), 0, 30),
+            'official_confirmed' => !empty($signal['official_confirmed']) ? 1 : 0,
+            'unconfirmed_note' => substr(sanitize_text_field((string)($signal['unconfirmed_note'] ?? '')), 0, 255),
+            'metadata_json' => wp_json_encode((array)($signal['metadata_json'] ?? [])),
             'observed_at' => $observed,
             'expires_at' => $expires ?: null,
             'raw_hash' => isset($signal['raw_hash']) ? substr(sanitize_text_field((string)$signal['raw_hash']),0,128) : hash('sha256', wp_json_encode($signal)),
         ];
-    }
-    private static function normalize_metadata($metadata): string {
-        if (!is_array($metadata)) {
-            return '';
-        }
-        $allowed = [
-            'summary','themes','snippets','domains','query','queries','mention_count','window_minutes',
-            'raw_source_count','classification','source_urls','unconfirmed_note','source_labels','detected_provider','detected_category','confidence_reason',
-        ];
-        $clean = [];
-        foreach ($allowed as $key) {
-            if (!array_key_exists($key, $metadata)) {
-                continue;
-            }
-            $value = $metadata[$key];
-            if (is_array($value)) {
-                $items = [];
-                foreach (array_slice($value, 0, 8) as $item) {
-                    $txt = is_scalar($item) ? sanitize_text_field((string)$item) : '';
-                    if ($txt !== '') {
-                        $items[] = mb_substr($txt, 0, 120);
-                    }
-                }
-                $clean[$key] = $items;
-                continue;
-            }
-            if (is_numeric($value)) {
-                $clean[$key] = (int)$value;
-                continue;
-            }
-            $clean[$key] = mb_substr(sanitize_text_field((string)$value), 0, 300);
-        }
-        $json = wp_json_encode($clean);
-        return is_string($json) ? mb_substr($json, 0, 4000) : '';
     }
 
     public static function record_signal(array $signal): array {
@@ -149,7 +112,7 @@ class ExternalSignals {
         $wpdb->insert(self::table_name(), array_merge($s,['created_at'=>gmdate('Y-m-d H:i:s')]));
         return ['inserted'=>true,'id'=>(int)$wpdb->insert_id,'signal'=>$s];
     }
-    public static function record_many(array $signals): array { self::ensure_metadata_column(); $out=['inserted'=>0,'skipped'=>0,'rows'=>[]]; foreach($signals as $sig){$r=self::record_signal((array)$sig);$out['rows'][]=$r; $out[$r['inserted']?'inserted':'skipped']++;} return $out; }
+    public static function record_many(array $signals): array { $out=['inserted'=>0,'skipped'=>0,'rows'=>[]]; foreach($signals as $sig){$r=self::record_signal((array)$sig);$out['rows'][]=$r; $out[$r['inserted']?'inserted':'skipped']++;} return $out; }
     public static function get_recent_signals(array $args=[]): array { global $wpdb; if (!self::table_exists()) { return []; } $limit=max(1,min(200,(int)($args['limit']??50))); return $wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table_name().' WHERE observed_at >= %s ORDER BY observed_at DESC LIMIT %d', gmdate('Y-m-d H:i:s', time()-((int)($args['windowMinutes']??60))*60), $limit), ARRAY_A) ?: []; }
     public static function recent(int $windowMinutes = 60, int $limit = 100): array {
         if (!method_exists(__CLASS__, 'get_recent_signals') || !method_exists(__CLASS__, 'table_exists') || !self::table_exists()) {
@@ -160,7 +123,7 @@ class ExternalSignals {
         return self::get_recent_signals(['windowMinutes' => $windowMinutes, 'window_minutes' => $windowMinutes, 'limit' => $limit]);
     }
     public static function get_recent_counts(int $windowMinutes=60): array { global $wpdb; $rows=$wpdb->get_results($wpdb->prepare('SELECT source, COUNT(*) as signal_count FROM '.self::table_name().' WHERE observed_at >= %s GROUP BY source', gmdate('Y-m-d H:i:s', time()-$windowMinutes*60)), ARRAY_A) ?: []; return $rows; }
-    public static function clear_expired(): int { global $wpdb; $now=gmdate('Y-m-d H:i:s'); $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE expires_at IS NOT NULL AND expires_at < %s', $now)); $expired=(int)$wpdb->rows_affected; $retention=(int)apply_filters('lo_external_signals_retention_days', 14); $cutoff=gmdate('Y-m-d H:i:s', time()-max(1,$retention)*DAY_IN_SECONDS); $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE observed_at < %s', $cutoff)); return $expired + (int)$wpdb->rows_affected; }
+    public static function clear_expired(): int { global $wpdb; $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE expires_at IS NOT NULL AND expires_at < %s', gmdate('Y-m-d H:i:s'))); return (int)$wpdb->rows_affected; }
     public static function clear_demo_signals(): int { global $wpdb; $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE source = %s', 'demo_external')); return (int)$wpdb->rows_affected; }
     public static function seed_demo_signals(array $options=[]): array {
         $now=gmdate('Y-m-d H:i:s');
