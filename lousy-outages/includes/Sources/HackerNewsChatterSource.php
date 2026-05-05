@@ -9,7 +9,7 @@ class HackerNewsChatterSource implements SignalSourceInterface {
     public function label(): string { return 'Hacker News Chatter'; }
     public function is_configured(): bool { return SourcePack::enabled() && (bool) apply_filters('lo_hn_chatter_enabled', get_option('lo_hn_chatter_enabled', '1') === '1'); }
     private function issue(string $t): bool {
-        return (bool) preg_match('/\b(is down|down for me|outage|degrad(?:ed|ing)?|unavailable|not working|failing|failures|returning 500|returning 502|5xx|errors?|timeouts?|latency spike|stuck|cannot connect|connection refused|api error|deploys failing|actions failing|npm install failing)\b/i', $t);
+        return (bool) preg_match('/\b(is down|down for me|outage|degrad(?:ed|ing)?|unavailable|not working|unable to login|login not working|mobile banking down|online banking down|e-transfer failing|debit unavailable|atm down|card payments failing|mobile data unavailable|no cell service|landline down|911 unavailable|compass card down|service outage|failing|failures|returning 500|returning 502|5xx|errors?|timeouts?|latency spike|stuck|cannot connect|connection refused|api error|deploys failing|actions failing|npm install failing)\b/i', $t);
     }
     private function provider_aliases(): array {
         return [
@@ -24,7 +24,37 @@ class HackerNewsChatterSource implements SignalSourceInterface {
             'azure' => ['name'=>'Azure','category'=>'cloud_identity','aliases'=>['azure','entra']],
             'google_cloud' => ['name'=>'Google Cloud','category'=>'cloud_api','aliases'=>['google cloud','gcp']],
             'interac' => ['name'=>'Interac','category'=>'canadian_payments','aliases'=>['interac','e-transfer','etransfer']],
-            'canadian_telecom' => ['name'=>'Canadian Telecom','category'=>'canadian_telecom','aliases'=>['rogers','shaw','telus','bell','freedom']],
+            'rogers' => ['name'=>'Rogers','category'=>'canadian_telecom','aliases'=>['rogers','rogers wireless','rogers internet']],
+            'shaw' => ['name'=>'Shaw','category'=>'canadian_telecom','aliases'=>['shaw','shaw internet']],
+            'bell' => ['name'=>'Bell','category'=>'canadian_telecom','aliases'=>['bell','bell canada','bell mobility']],
+            'telus' => ['name'=>'TELUS','category'=>'canadian_telecom','aliases'=>['telus']],
+            'freedom_mobile' => ['name'=>'Freedom Mobile','category'=>'canadian_telecom','aliases'=>['freedom mobile','freedom']],
+            'videotron' => ['name'=>'Videotron','category'=>'canadian_telecom','aliases'=>['videotron']],
+            'fizz' => ['name'=>'Fizz','category'=>'canadian_telecom','aliases'=>['fizz']],
+            'koodo' => ['name'=>'Koodo','category'=>'canadian_telecom','aliases'=>['koodo']],
+            'virgin_plus' => ['name'=>'Virgin Plus','category'=>'canadian_telecom','aliases'=>['virgin plus','virgin mobile']],
+            'public_mobile' => ['name'=>'Public Mobile','category'=>'canadian_telecom','aliases'=>['public mobile']],
+            'moneris' => ['name'=>'Moneris','category'=>'canadian_payments','aliases'=>['moneris']],
+            'global_payments' => ['name'=>'Global Payments','category'=>'canadian_payments','aliases'=>['global payments']],
+            'stripe_canada' => ['name'=>'Stripe Canada','category'=>'canadian_payments','aliases'=>['stripe canada']],
+            'square' => ['name'=>'Square','category'=>'canadian_payments','aliases'=>['square']],
+            'rbc' => ['name'=>'RBC','category'=>'canadian_bank','aliases'=>['rbc','royal bank']],
+            'td' => ['name'=>'TD','category'=>'canadian_bank','aliases'=>['td','td canada trust','td easyweb']],
+            'scotiabank' => ['name'=>'Scotiabank','category'=>'canadian_bank','aliases'=>['scotiabank']],
+            'bmo' => ['name'=>'BMO','category'=>'canadian_bank','aliases'=>['bmo','bank of montreal']],
+            'cibc' => ['name'=>'CIBC','category'=>'canadian_bank','aliases'=>['cibc']],
+            'national_bank' => ['name'=>'National Bank','category'=>'canadian_bank','aliases'=>['national bank']],
+            'tangerine' => ['name'=>'Tangerine','category'=>'canadian_bank','aliases'=>['tangerine']],
+            'simplii' => ['name'=>'Simplii','category'=>'canadian_bank','aliases'=>['simplii']],
+            'eq_bank' => ['name'=>'EQ Bank','category'=>'canadian_bank','aliases'=>['eq bank']],
+            'vancity' => ['name'=>'Vancity','category'=>'canadian_bank','aliases'=>['vancity']],
+            'coast_capital' => ['name'=>'Coast Capital','category'=>'canadian_bank','aliases'=>['coast capital']],
+            'desjardins' => ['name'=>'Desjardins','category'=>'canadian_bank','aliases'=>['desjardins']],
+            'bc_services_card' => ['name'=>'BC Services Card','category'=>'canadian_government','aliases'=>['bc services card']],
+            'cra_my_account' => ['name'=>'CRA My Account','category'=>'canadian_government','aliases'=>['cra my account']],
+            'service_canada' => ['name'=>'Service Canada','category'=>'canadian_government','aliases'=>['service canada']],
+            'translink_compass' => ['name'=>'TransLink Compass','category'=>'canadian_transit','aliases'=>['translink compass','compass card']],
+            'ecomm_911' => ['name'=>'E-Comm 911','category'=>'emergency_services','aliases'=>['911','e-comm 911','ecomm 911']],
         ];
     }
     private function detect_provider_from_evidence(string $evidenceText): array {
@@ -71,7 +101,7 @@ class HackerNewsChatterSource implements SignalSourceInterface {
         return false;
     }
     private function is_generic_noise(string $evidenceText): bool {
-        return (bool) preg_match('/\b(natural language processing|voice ai at scale|interesting project|\bmimic\b|pricing|job postings?|blog cache|traffic is down|down\s+60%|\bvibe\b|\brust\b|\bzig\b|\bbun\b|general llm|ai discussion)\b/i', $evidenceText);
+        return (bool) preg_match('/\b(natural language processing|voice ai at scale|interesting project|\bmimic\b|pricing|job postings?|blog cache|traffic is down|down\s+60%|\bvibe\b|\brust\b|\bzig\b|\bbun\b|general llm|ai discussion|stock is down|shares are down|earnings down|prices down|rates down|branch closed|planned maintenance|historical outage)\b/i', $evidenceText);
     }
     private function clean_quote(string $text): string {
         $decoded = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -140,9 +170,14 @@ class HackerNewsChatterSource implements SignalSourceInterface {
                     $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'negated_issue'];
                     continue;
                 }
-                if ($this->contains_pattern(strtolower($title.' '.$evidenceText), ['/\\b(resolved|postmortem|incident report|rca|from\\s+[a-z]+|last week|yesterday\\\'s incident|was down|previous outage)\\b/i'])) {
+                if ($this->contains_pattern(strtolower($title.' '.$evidenceText), ['/\\b(resolved|postmortem|incident report|rca|from\\s+[a-z]+|from\\s+20(22|25)|last year|last week|yesterday\\\'s incident|was down|previous outage|historical outage)\\b/i'])) {
                     $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_resolved_or_historical']++;
                     $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'resolved_or_historical'];
+                    continue;
+                }
+                if ($this->contains_pattern($evidenceText, ['/\\b(lawsuit|regulation|business news)\\b/i']) && !$this->issue($evidenceText)) {
+                    $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_generic_noise']=($diag['chatter_rows_skipped_generic_noise']??0)+1;
+                    $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'business_or_regulatory_chatter'];
                     continue;
                 }
                 if($this->is_generic_noise($evidenceText)) { $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_generic_noise']=($diag['chatter_rows_skipped_generic_noise']??0)+1; $this->maybe_log_rejection($options, $quote, 'generic_noise'); continue; }
@@ -156,7 +191,7 @@ class HackerNewsChatterSource implements SignalSourceInterface {
                         $diag['chatter_rows_skipped_quote_missing_failure']++;
                     }
                     $diag['chatter_rows_skipped']++; $diag['chatter_rows_skipped_weak_issue_language']=($diag['chatter_rows_skipped_weak_issue_language']??0)+1;
-                    $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'quote_missing_provider_or_failure'];
+                    $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'quote_missing_provider_or_failure','provider'=>(string)($provider['provider_name'] ?? ''),'category'=>(string)($provider['category'] ?? ''),'source_url'=>(string)('https://news.ycombinator.com/item?id='.(int)($hit['objectID']??0))];
                     continue;
                 }
                 $parsed = $this->parse_observed_at($hit);
@@ -173,7 +208,7 @@ class HackerNewsChatterSource implements SignalSourceInterface {
                 $diag['rows_attempted']++;
                 $diag['chatter_rows_output']=($diag['chatter_rows_output']??0)+1;
                 $diag['chatter_rows_accepted_provider_failure_match']++;
-                $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'accepted'];
+                $diag['chatter_candidates_preview_sample'][] = ['title'=>$title,'quote'=>$quote,'source'=>'hacker_news','reject_reason'=>'accepted','provider'=>(string)$provider['provider_name'],'category'=>(string)$provider['category'],'source_url'=>$hnUrl,'observed_at'=>(string)$parsed['value']];
             }
         }
         $diag['chatter_candidates_preview_sample'] = array_slice($diag['chatter_candidates_preview_sample'], 0, 30);
