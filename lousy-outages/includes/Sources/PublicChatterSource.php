@@ -13,6 +13,7 @@ class PublicChatterSource implements SignalSourceInterface {
 
     public function collect(array $options = []): array {
         if (!$this->is_configured()) { update_option('lo_diag_'.$this->id(), ['configured'=>false,'attempted'=>false,'skipped_reasons'=>['not_configured']], false); return []; }
+        $directEnabled = $this->direct_sources_enabled();
         $window = max(10, min(180, (int) apply_filters('lo_public_chatter_window_minutes', 30)));
         $thresholds = [
             'watch' => (int) apply_filters('lo_public_chatter_watch_threshold', 3),
@@ -27,6 +28,9 @@ class PublicChatterSource implements SignalSourceInterface {
             'public_chatter_mastodon' => !empty(get_option('lousy_outages_public_chatter_mastodon_enabled', false)),
             'public_chatter_gdelt' => !empty(get_option('lousy_outages_public_chatter_gdelt_enabled', false)),
         ];
+        if (!$directEnabled) {
+            $sources = ['public_chatter_bluesky'=>false,'public_chatter_mastodon'=>false,'public_chatter_gdelt'=>false];
+        }
         foreach ($queries as $providerId => $providerQueries) {
             $provider = (array)($providers[$providerId] ?? ['name' => ucfirst((string)$providerId), 'category'=>'general']);
             foreach ($sources as $sourceId => $enabled) {
@@ -38,8 +42,13 @@ class PublicChatterSource implements SignalSourceInterface {
                 $signals[] = $this->build_signal($sourceId, (string)$providerId, (string)($provider['name'] ?? $providerId), (string)($provider['category'] ?? 'general'), $severity, $count, $window, $mentions);
             }
         }
-        update_option('lo_diag_'.$this->id(), ['configured'=>true,'attempted'=>true,'queries_attempted'=>count($queries),'usable_results'=>count($signals),'rows_stored'=>count($signals)], false);
+        update_option('lo_diag_'.$this->id(), ['configured'=>true,'attempted'=>true,'queries_attempted'=>count($queries),'usable_results'=>count($signals),'rows_stored'=>count($signals),'direct_sources_enabled'=>$directEnabled,'direct_sources_disabled_by_safe_default'=>!$directEnabled], false);
         return $signals;
+    }
+
+    private function direct_sources_enabled(): bool {
+        $flag = defined('LOUSY_OUTAGES_ENABLE_DIRECT_PUBLIC_CHATTER') ? (bool) LOUSY_OUTAGES_ENABLE_DIRECT_PUBLIC_CHATTER : false;
+        return (bool) apply_filters('lo_public_chatter_direct_sources_enabled', $flag);
     }
 
     private function default_queries(array $providers): array {

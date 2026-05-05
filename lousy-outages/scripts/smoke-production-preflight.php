@@ -25,4 +25,14 @@ if(!empty($schemaDiag['missing_columns']) && !is_callable([ExternalSignals::clas
 
 $result = SignalCollector::collect(['dry_run'=>true,'suppress_notifications'=>true,'no_email'=>true]);
 if (!is_array($result) || !isset($result['sources']) || !isset($result['diagnostics'])) $errors[]='dry-run collect did not return expected diagnostics';
+$statusDiag=(array)get_option('lo_diag_statuspage_intel',[]);
+if(!empty($statusDiag)){
+    $attempted=(int)($statusDiag['endpoints_attempted']??0);
+    $cooldown=!empty($statusDiag['cooldown_active']);
+    if($attempted<=0 && !$cooldown){ $errors[]='Statuspage diagnostics: endpoints_attempted=0 without cooldown'; }
+}
+$chatterDiag=(array)get_option('lo_diag_public_chatter',[]);
+if(!empty($chatterDiag) && !empty($chatterDiag['direct_sources_enabled'])){ $errors[]='Public chatter direct sources enabled (expected safe-default disabled)'; }
+$hnDiag=(array)get_option('lo_diag_hacker_news_chatter',[]);
+if(!empty($hnDiag) && !array_key_exists('queries_attempted',$hnDiag)){ $errors[]='HN diagnostics missing queries_attempted'; }
 if($errors){ fwrite(STDERR, "Preflight FAILED:\n- ".implode("\n- ",$errors)."\n"); exit(1);} echo "Preflight passed with ".count($sources)." sources.\n";
