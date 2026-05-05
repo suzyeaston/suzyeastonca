@@ -1675,3 +1675,19 @@
 .lo-signal--trending{border-color:#ffb81c}
 .lo-signal--hot{border-color:#ff5a5a}
 .lo-signal__badge{font-weight:700;margin-right:6px}
+
+.lo-title { overflow-wrap:anywhere; word-break:break-word; line-height:1.2; }
+.lo-card .lo-message { font-size:0.88rem; line-height:1.35; }
+.lo-evidence-quote {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--lo-accent);
+  background: rgba(138,247,228,0.08);
+  color: var(--lo-accent);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+@media (max-width: 640px) {
+  .lo-card .lo-message { font-size: 0.82rem; }
+  .lo-title { font-size: 0.95rem; }
+}

@@ -544,12 +544,13 @@ function render_shortcode(): string {
                 <p class="lo-history__meta">Unconfirmed unless marked official.</p>
             </div>
             <div class="lo-grid">
-            <?php foreach (array_slice($fused_public, 0, 6) as $sig) : $class = strtolower((string)($sig['classification'] ?? 'watch')); $official = !empty($sig['official_incident']); ?>
+            <?php foreach (array_slice($fused_public, 0, 6) as $sig) : $class = strtolower((string)($sig['classification'] ?? 'watch')); $official = !empty($sig['official_confirmed']) || strtolower((string)($sig['evidence_quality'] ?? '')) === 'official'; $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? ''));  ?>
                 <article class="lo-card">
-                    <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill"><?php echo esc_html(strtoupper($class)); ?></span></div>
-                    <p class="lo-summary"><?php echo esc_html($official ? 'Official incident' : 'Unconfirmed signal'); ?></p>
+                    <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill"><?php echo esc_html($official ? 'OFFICIAL' : ($class==='hot'?'RUMOUR RADAR':strtoupper($class))); ?></span></div>
+                    <p class="lo-summary"><?php echo esc_html($official ? 'Official status evidence' : 'Unconfirmed signal'); ?></p>
+                    <?php if ($quote !== '') : ?><blockquote class="lo-evidence-quote">“<?php echo esc_html($quote); ?>”</blockquote><?php endif; ?>
                     <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Early warning signal detected.')); ?></p>
-                    <p class="lo-card-meta">Confidence: <?php echo esc_html((string)($sig['confidence'] ?? 'n/a')); ?> · Last observed: <?php echo esc_html($format_datetime($sig['last_seen_at'] ?? null)); ?></p>
+                    <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Signal feed'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? $sig['last_seen_at'] ?? null)); ?></p>
                 </article>
             <?php endforeach; ?>
             </div>
