@@ -83,3 +83,23 @@ Polling runs via WP-Cron (`lousy_outages_poll`). A separate background refresh (
 
 - RSS reader: add `https://suzyeaston.ca/lousy-outages/feed/status/` (or `https://suzyeaston.ca/feed/lousy-outages-status/`) to NetNewsWire, Feedly, or your preferred client to receive incident alerts.
 - Slack or email: point an automation tool such as IFTTT or Zapier at the same feed (trigger: “New RSS item”) and forward the payload to a Slack webhook, email address, or other notification channel.
+
+## Intel Conduit SSH Diagnostics (no WP-CLI)
+
+Use these shell snippets on hosts where WP-CLI is unavailable:
+
+- Enable debug logging with MU plugin:
+  - `cat > wp-content/mu-plugins/lo-debug.php <<'PHP'`
+  - `<?php add_filter('lo_hn_chatter_enabled', '__return_true'); define('WP_DEBUG', true); define('WP_DEBUG_LOG', true);`
+  - `PHP`
+- Grep Intel Conduit logs:
+  - `grep -E "lousy_outages|Intel Conduit|statuspage|provider_feed|hn_chatter" wp-content/debug.log | tail -n 200`
+- Inspect latest external signals rows:
+  - `mysql -e "SELECT observed_at,source,provider_id,source_type,evidence_quality,official_confirmed,title FROM wp_lo_external_signals ORDER BY id DESC LIMIT 30;"`
+- Inspect REST output:
+  - `curl -s https://YOUR_HOST/wp-json/lousy-outages/v1/status | jq '.'`
+- Check schema columns:
+  - `mysql -e "SHOW COLUMNS FROM wp_lo_external_signals;"`
+- Check adapter options and diagnostics payloads:
+  - `mysql -e "SELECT option_name,LENGTH(option_value) FROM wp_options WHERE option_name LIKE 'lousy_outages_%external%' OR option_name LIKE 'lousy_outages_%signal%';"`
+
