@@ -69,7 +69,6 @@ lousy_outages_require( 'includes/Subscriptions.php' );
 lousy_outages_require( 'includes/UserReports.php' );
 lousy_outages_require( 'includes/SignalEngine.php' );
 lousy_outages_require( 'includes/Subscribe.php' );
-lousy_outages_require( 'includes/Api.php' );
 lousy_outages_require( 'includes/Feeds.php' );
 lousy_outages_require( 'includes/Summary.php' );
 lousy_outages_require( 'includes/IncidentAlerts.php' );
@@ -87,11 +86,17 @@ lousy_outages_require( 'includes/Cron/Refresh.php' );
 // External signal infrastructure must load before concrete source classes.
 lousy_outages_require( 'includes/SignalSourceInterface.php' );
 lousy_outages_require( 'includes/ExternalSignals.php' );
+lousy_outages_require( 'includes/Sources/SourcePack.php' );
+lousy_outages_require( 'includes/Sources/SourceBudgetManager.php' );
+lousy_outages_require( 'includes/Sources/StatuspageIntelSource.php' );
+lousy_outages_require( 'includes/Sources/ProviderFeedSource.php' );
+lousy_outages_require( 'includes/Sources/HackerNewsChatterSource.php' );
+lousy_outages_require( 'includes/Sources/CommunityReportIntelSource.php' );
 lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php' );
-lousy_outages_require( 'includes/Sources/CloudflareRadarSource.php' );
 lousy_outages_require( 'includes/Sources/PublicChatterSource.php' );
-lousy_outages_require( 'includes/Sources/IntelConduitSources.php' );
+lousy_outages_require( 'includes/Sources/CloudflareRadarSource.php' );
 lousy_outages_require( 'includes/SignalCollector.php' );
+lousy_outages_require( 'includes/Api.php' );
 
 lousy_outages_require( 'public/shortcode.php' );
 
