@@ -48,6 +48,7 @@ class ExternalSignals {
         }
         $schemaDiagnostics['external_signals']=self::schema_diagnostics();
         update_option('lousy_outages_schema_diagnostics', $schemaDiagnostics, false);
+        update_option('lousy_outages_external_schema_diagnostic', self::schema_diagnostics(), false);
     }
 
     public static function schema_sql(string $table, string $charset): string {
@@ -125,12 +126,48 @@ class ExternalSignals {
         global $wpdb; $s=self::normalize_signal($signal);
         if (!empty($s['raw_hash'])) {
             $exists = $wpdb->get_var($wpdb->prepare('SELECT id FROM '.self::table_name().' WHERE raw_hash=%s LIMIT 1', $s['raw_hash']));
-            if ($exists) return ['inserted'=>false,'id'=>(int)$exists,'signal'=>$s];
+            if ($exists) {
+                return ['inserted'=>false,'skipped'=>true,'failed'=>false,'id'=>(int)$exists,'signal'=>$s];
+            }
         }
-        $wpdb->insert(self::table_name(), array_merge($s,['created_at'=>gmdate('Y-m-d H:i:s')]));
-        return ['inserted'=>true,'id'=>(int)$wpdb->insert_id,'signal'=>$s];
+        $insertResult = $wpdb->insert(self::table_name(), array_merge($s,['created_at'=>gmdate('Y-m-d H:i:s')]));
+        if ($insertResult !== false && (int)$wpdb->insert_id > 0) {
+            return ['inserted'=>true,'skipped'=>false,'failed'=>false,'id'=>(int)$wpdb->insert_id,'signal'=>$s];
+        }
+        return [
+            'inserted'=>false,
+            'skipped'=>false,
+            'failed'=>true,
+            'id'=>0,
+            'error'=>sanitize_text_field((string)$wpdb->last_error),
+            'diagnostics'=>[
+                'source'=>$s['source'] ?? '',
+                'source_id'=>$s['source_id'] ?? '',
+                'raw_hash_present'=>!empty($s['raw_hash']),
+            ],
+            'signal'=>$s
+        ];
     }
-    public static function record_many(array $signals): array { $out=['inserted'=>0,'skipped'=>0,'rows'=>[]]; foreach($signals as $sig){$r=self::record_signal((array)$sig);$out['rows'][]=$r; $out[$r['inserted']?'inserted':'skipped']++;} return $out; }
+    public static function record_many(array $signals): array {
+        $out=['inserted'=>0,'skipped'=>0,'failed'=>0,'first_error'=>'','rows'=>[]];
+        foreach($signals as $sig){
+            $r=self::record_signal((array)$sig);
+            $out['rows'][]=$r;
+            if (!empty($r['inserted'])) {
+                $out['inserted']++;
+                continue;
+            }
+            if (!empty($r['failed'])) {
+                $out['failed']++;
+                if ($out['first_error'] === '' && !empty($r['error'])) {
+                    $out['first_error'] = (string)$r['error'];
+                }
+                continue;
+            }
+            $out['skipped']++;
+        }
+        return $out;
+    }
     public static function get_recent_signals(array $args=[]): array { global $wpdb; if (!self::table_exists()) { return []; } $limit=max(1,min(200,(int)($args['limit']??50))); return $wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table_name().' WHERE observed_at >= %s ORDER BY observed_at DESC LIMIT %d', gmdate('Y-m-d H:i:s', time()-((int)($args['windowMinutes']??60))*60), $limit), ARRAY_A) ?: []; }
     public static function recent(int $windowMinutes = 60, int $limit = 100): array {
         if (!method_exists(__CLASS__, 'get_recent_signals') || !method_exists(__CLASS__, 'table_exists') || !self::table_exists()) {

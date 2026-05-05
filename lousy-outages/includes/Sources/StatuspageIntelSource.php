@@ -11,16 +11,19 @@ class StatuspageIntelSource implements SignalSourceInterface {
     public function is_configured(): bool { return SourcePack::enabled() && count(SourcePack::statuspage_base_urls()) > 0; }
     private function host(string $url): string { return (string) wp_parse_url($url, PHP_URL_HOST); }
     private function issue(string $text): bool { return (bool) preg_match('/\b(down|outage|incident|degraded|error|failure|unavailable|latency|disruption|maintenance)\b/i', $text); }
+    private function should_skip_budget_mutation(array $options): bool {
+        return !empty($options['dry_run']) || !empty($options['preflight']) || !empty($options['suppress_notifications']) || !empty($options['no_email']);
+    }
 
     public function collect(array $options = []): array {
         $endpoints=['/api/v2/status.json','/api/v2/summary.json','/api/v2/components.json','/api/v2/incidents/unresolved.json','/api/v2/incidents.json','/api/v2/scheduled-maintenances/active.json'];
         $diag=['configured'=>$this->is_configured(),'attempted'=>false,'providers_checked'=>0,'endpoints_attempted'=>0,'endpoints_skipped_budget'=>0,'incidents_found'=>0,'components_degraded'=>0,'rows_stored'=>0,'rows_suppressed'=>0,'skipped_reasons'=>[],'cooldown_active'=>false];
-        $out=[];
+        $out=[]; $skipBudgetMutation=$this->should_skip_budget_mutation($options);
         foreach (array_slice(SourcePack::statuspage_base_urls(),0,20) as $base) {
             $base=rtrim((string)$base,'/'); if(!$base) continue;
             $diag['providers_checked']++;
             $host=$this->host($base);
-            $can=SourceBudgetManager::can_attempt($this->id(),$host,30);
+            $can=$skipBudgetMutation ? ['ok'=>true] : SourceBudgetManager::can_attempt($this->id(),$host,30);
             if(empty($can['ok'])){ $diag['cooldown_active']=true; $diag['skipped_reasons'][]='budget:'.$host; $diag['endpoints_skipped_budget']+=count($endpoints); continue; }
             $bucket=[];
             foreach(array_slice($endpoints,0,6) as $ep){
@@ -30,10 +33,10 @@ class StatuspageIntelSource implements SignalSourceInterface {
                 $json=get_transient($cache);
                 if(!is_array($json)){
                     $r=wp_remote_get($url,['timeout'=>6]);
-                    SourceBudgetManager::mark_attempt($this->id(),$host,8);
-                    if(is_wp_error($r)){ SourceBudgetManager::mark_result($this->id(),false,0); $diag['skipped_reasons'][]='http_error:'.$host; continue; }
+                    if(!$skipBudgetMutation){ SourceBudgetManager::mark_attempt($this->id(),$host,8); }
+                    if(is_wp_error($r)){ if(!$skipBudgetMutation){ SourceBudgetManager::mark_result($this->id(),false,0); } $diag['skipped_reasons'][]='http_error:'.$host; continue; }
                     $code=(int)wp_remote_retrieve_response_code($r);
-                    SourceBudgetManager::mark_result($this->id(), $code>=200&&$code<300, $code);
+                    if(!$skipBudgetMutation){ SourceBudgetManager::mark_result($this->id(), $code>=200&&$code<300, $code); }
                     if($code<200||$code>=300){ if($code===429){$diag['cooldown_active']=true;} continue; }
                     $json=json_decode((string)wp_remote_retrieve_body($r),true);
                     if(!is_array($json)) $json=[];
@@ -41,7 +44,7 @@ class StatuspageIntelSource implements SignalSourceInterface {
                 }
                 $bucket[$ep]=$json;
             }
-            SourceBudgetManager::mark_attempt($this->id(),$host,8);
+            if(!$skipBudgetMutation){ SourceBudgetManager::mark_attempt($this->id(),$host,8); }
             $incidents=array_merge((array)($bucket['/api/v2/incidents/unresolved.json']['incidents']??[]),(array)($bucket['/api/v2/incidents.json']['incidents']??[]),(array)($bucket['/api/v2/summary.json']['incidents']??[]));
             $hasIssue=false; $snips=[]; $urls=[];
             $indicator=(string)($bucket['/api/v2/status.json']['status']['indicator']??'');
