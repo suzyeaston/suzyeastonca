@@ -92,6 +92,8 @@ class Lousy_Outages_Subscribe {
         $signals = SignalEngine::summarize_fused_signals($window);
         $safeSignals = [];
         foreach ($signals as $signal) {
+            $lane = sanitize_key((string)($signal['signal_lane'] ?? ''));
+            if ($lane === '') { $lane = !empty($signal['official_confirmed']) ? 'official' : 'chatter'; }
             $safeSignals[] = [
                 'provider_id' => (string)($signal['provider_id'] ?? ''),
                 'provider_name' => (string)($signal['provider_name'] ?? ''),
@@ -108,13 +110,27 @@ class Lousy_Outages_Subscribe {
                 'confirmed' => !empty($signal['confirmed']),
                 'last_observed_at' => (string)($signal['last_observed_at'] ?? ''),
                 'official_status_known' => !empty($signal['official_status_known']),
+                'evidence_quote' => sanitize_text_field((string)($signal['evidence_quote'] ?? '')),
+                'evidence_source_label' => sanitize_text_field((string)($signal['evidence_source_label'] ?? '')),
+                'evidence_url' => esc_url_raw((string)($signal['evidence_url'] ?? '')),
+                'evidence_urls' => array_values(array_filter(array_map('esc_url_raw', (array)($signal['evidence_urls'] ?? [])))),
+                'evidence_quality' => sanitize_key((string)($signal['evidence_quality'] ?? '')),
+                'official_confirmed' => !empty($signal['official_confirmed']),
+                'observed_at' => sanitize_text_field((string)($signal['observed_at'] ?? '')),
+                'source_type' => sanitize_key((string)($signal['source_type'] ?? '')),
+                'adapter_id' => sanitize_key((string)($signal['adapter_id'] ?? '')),
+                'signal_lane' => $lane,
             ];
         }
+        $officialSignals = array_values(array_filter($safeSignals, static fn($s) => (($s['signal_lane'] ?? '') === 'official')));
+        $publicChatter = array_values(array_filter($safeSignals, static fn($s) => (($s['signal_lane'] ?? '') === 'chatter')));
 
         return new \WP_REST_Response([
             'success' => true,
             'window_minutes' => $window,
             'signals' => $safeSignals,
+            'official_signals' => $officialSignals,
+            'public_chatter' => $publicChatter,
             'generated_at' => gmdate('c'),
         ], 200);
     }
