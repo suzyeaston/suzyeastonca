@@ -79,6 +79,16 @@ class Api {
 
         register_rest_route(
             'lousy-outages/v1',
+            '/intel-health',
+            [
+                'methods'             => 'GET',
+                'permission_callback' => static function (): bool { return current_user_can('manage_options'); },
+                'callback'            => [self::class, 'handle_intel_health'],
+            ]
+        );
+
+        register_rest_route(
+            'lousy-outages/v1',
             '/summary',
             [
                 'methods'             => 'GET',
@@ -189,6 +199,20 @@ class Api {
             ]
         );
 
+    }
+
+    public static function handle_intel_health(): WP_REST_Response {
+        $last = SignalCollector::get_last_collection_result();
+        $sources = [];
+        foreach (SignalCollector::sources() as $source) {
+            $state = \SuzyEaston\LousyOutages\Sources\SourceBudgetManager::source_state($source->id());
+            $sources[] = [
+                'source_id' => $source->id(), 'label' => $source->label(), 'configured' => $source->is_configured(), 'enabled' => $source->is_configured(),
+                'cooldown_until' => !empty($state['next_allowed_at']) ? gmdate('c', (int)$state['next_allowed_at']) : null,
+                'last_status' => $source->is_configured() ? 'ready' : 'disabled', 'last_error' => '', 'last_counts' => [], 'last_skipped_reasons' => [],
+            ];
+        }
+        return new WP_REST_Response(['sources'=>$sources,'last_collection'=>$last], 200);
     }
 
     public static function verify_nonce(): bool {

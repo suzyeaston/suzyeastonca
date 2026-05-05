@@ -91,6 +91,10 @@ lousy_outages_require( 'includes/ExternalSignals.php' );
 lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php' );
 lousy_outages_require( 'includes/Sources/CloudflareRadarSource.php' );
 lousy_outages_require( 'includes/Sources/PublicChatterSource.php' );
+lousy_outages_require( 'includes/Sources/SourcePack.php' );
+lousy_outages_require( 'includes/Sources/SourceBudgetManager.php' );
+lousy_outages_require( 'includes/Sources/ProviderFeedSource.php' );
+lousy_outages_require( 'includes/Sources/HackerNewsChatterSource.php' );
 lousy_outages_require( 'includes/SignalCollector.php' );
 
 lousy_outages_require( 'public/shortcode.php' );
