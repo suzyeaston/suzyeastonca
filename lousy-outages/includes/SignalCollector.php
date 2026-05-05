@@ -14,16 +14,16 @@ use SuzyEaston\LousyOutages\Sources\SyntheticCanarySource;
 class SignalCollector {
     public static function sources(): array { return [new StatuspageIntelSource(), new ProviderFeedSource(), new HackerNewsChatterSource(), new CommunityReportIntelSource(), new SyntheticCanarySource(), new PublicChatterSource(), new CloudflareRadarSource()]; }
     public static function collect(array $options=[]): array {
-        $started=microtime(true); $sources=self::sources();
-        $result=['started_at'=>gmdate('c'),'finished_at'=>'','sources'=>[],'total_collected'=>0,'total_stored'=>0,'providers_checked'=>0,'queries_attempted'=>0,'diagnostics'=>[],'errors'=>[]];
-        foreach($sources as $source){ $r=self::collect_source($source->id(),$options); $result['sources'][]=$r; $result['total_collected']+=(int)$r['collected_count']; $result['total_stored']+=(int)$r['stored_count']; $result['providers_checked']+=(int)($r['providers_checked']??0); $result['queries_attempted']+=(int)($r['queries_attempted']??0); $result['diagnostics'][]=['source'=>$source->id(),'status'=>$r['attempted']?'attempted':'skipped','reason'=>(string)($r['reason']??'')]; }
+        $sources=self::sources();
+        $result=['started_at'=>gmdate('c'),'finished_at'=>'','sources'=>[],'total_collected'=>0,'total_stored'=>0,'diagnostics'=>[],'errors'=>[]];
+        foreach($sources as $source){ $r=self::collect_source($source->id(),$options); $result['sources'][]=$r; $result['total_collected']+=(int)$r['collected_count']; $result['total_stored']+=(int)$r['stored_count']; $result['diagnostics'][]=['source'=>$source->id(),'status'=>$r['attempted']?'attempted':'skipped','reason'=>(string)($r['reason']??''),'detail'=>$r['diagnostics']??[]]; }
         $result['finished_at']=gmdate('c'); self::mark_last_collection_result($result); return $result;
     }
     public static function collect_source(string $sourceId, array $options=[]): array {
-        foreach(self::sources() as $source){ if($source->id()!==$sourceId) continue; $configured=$source->is_configured(); if(!$configured) return ['source'=>$source->id(),'configured'=>false,'attempted'=>false,'reason'=>'not_configured','collected_count'=>0,'stored_count'=>0,'errors'=>[]];
-            $signals=$source->collect($options); $stored=ExternalSignals::record_many($signals);
-            return ['source'=>$source->id(),'configured'=>true,'attempted'=>true,'collected_count'=>count($signals),'stored_count'=>(int)($stored['inserted']??0),'providers_checked'=>$source->id()==='provider_feed'?count((array)\SuzyEaston\LousyOutages\Sources\SourcePack::provider_feed_urls()):0,'queries_attempted'=>$source->id()==='hacker_news_chatter'?(int)get_option('lo_last_hn_attempted',0):0,'errors'=>[]]; }
-        return ['source'=>$sourceId,'configured'=>false,'attempted'=>false,'collected_count'=>0,'stored_count'=>0,'errors'=>['unknown source']];
+        foreach(self::sources() as $source){ if($source->id()!==$sourceId) continue; $configured=$source->is_configured(); if(!$configured) return ['source'=>$source->id(),'configured'=>false,'attempted'=>false,'reason'=>'not_configured','collected_count'=>0,'stored_count'=>0,'diagnostics'=>['configured'=>false,'attempted'=>false,'skipped_reasons'=>['not_configured']],'errors'=>[]];
+            $signals=$source->collect($options); $stored=ExternalSignals::record_many($signals); $diag=get_option('lo_diag_'.$source->id(),[]); if(!is_array($diag)) $diag=[];
+            return ['source'=>$source->id(),'configured'=>true,'attempted'=>true,'collected_count'=>count($signals),'stored_count'=>(int)($stored['inserted']??0),'diagnostics'=>$diag,'errors'=>[]]; }
+        return ['source'=>$sourceId,'configured'=>false,'attempted'=>false,'collected_count'=>0,'stored_count'=>0,'diagnostics'=>['configured'=>false,'attempted'=>false],'errors'=>['unknown source']];
     }
     public static function get_last_collection_result(): array { $r=get_option('lousy_outages_last_external_collection',[]); return is_array($r)?$r:[]; }
     public static function mark_last_collection_result(array $result): void { update_option('lousy_outages_last_external_collection',$result,false); }
