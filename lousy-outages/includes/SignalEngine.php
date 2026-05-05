@@ -72,8 +72,10 @@ class SignalEngine {
         }
         foreach ($external as $row) {
             $key = ($row['provider_id'] ?? '') . '|' . ($row['category'] ?? '') . '|' . ($row['region'] ?? '');
-            if (!isset($buckets[$key])) { $buckets[$key]=['provider_id'=>(string)($row['provider_id']??''),'provider_name'=>(string)($row['provider_name']??'Unknown'),'category'=>(string)($row['category']??''),'region'=>(string)($row['region']??''),'report_count'=>0,'external_signal_count'=>0,'synthetic_failure_count'=>0,'sources'=>[],'official_status_known'=>false,'confirmed'=>false,'last_observed_at'=>(string)($row['observed_at']??''),'base_confidence'=>0,'sample_observations'=>[],'domains'=>[],'source_urls'=>[],'adapter_ids'=>[],'official_confirmed'=>false]; }
+            if (!isset($buckets[$key])) { $buckets[$key]=['provider_id'=>(string)($row['provider_id']??''),'provider_name'=>(string)($row['provider_name']??'Unknown'),'category'=>(string)($row['category']??''),'region'=>(string)($row['region']??''),'report_count'=>0,'external_signal_count'=>0,'synthetic_failure_count'=>0,'sources'=>[],'official_status_known'=>false,'confirmed'=>false,'last_observed_at'=>(string)($row['observed_at']??''),'base_confidence'=>0,'sample_observations'=>[],'domains'=>[],'source_urls'=>[],'adapter_ids'=>[],'official_confirmed'=>false,'source_type'=>'','signal_lane'=>'']; }
             $buckets[$key]['external_signal_count']++;
+            if (($buckets[$key]['source_type'] ?? '') === '' && !empty($row['source_type'])) { $buckets[$key]['source_type'] = (string)$row['source_type']; }
+            if (($buckets[$key]['signal_lane'] ?? '') === '' && !empty($row['signal_lane'])) { $buckets[$key]['signal_lane'] = sanitize_key((string)$row['signal_lane']); }
             if (($row['signal_type'] ?? '') === 'public_chatter') { $buckets[$key]['public_chatter_confidence'] = max((int)($buckets[$key]['public_chatter_confidence'] ?? 0),(int)($row['confidence'] ?? 0)); }
             $src=(string)($row['source']??'external'); if(!in_array($src,$buckets[$key]['sources'],true)) $buckets[$key]['sources'][]=$src;
             $adapter = (string)($row['adapter_id'] ?? $src); if($adapter!=='' && !in_array($adapter,$buckets[$key]['adapter_ids'],true)) $buckets[$key]['adapter_ids'][]=$adapter;
@@ -89,8 +91,33 @@ class SignalEngine {
         foreach($buckets as $b){ $conf=(int)$b['base_confidence']; $evidenceQuality=self::evidence_quality_for_bucket($b); if($evidenceQuality==='none') continue; $chatter=(int)($b['public_chatter_confidence'] ?? 0); if($chatter>0){ $conf=max($conf,$chatter); } if($chatter>0 && $b['report_count']>0){ $conf += 10; } if($chatter>0 && $b['external_signal_count']>0){ $conf += 15; } if(count($b['sources'])>=2) $conf += 15; if(!$b['confirmed']) $conf=min($conf,($chatter>0?85:95)); $class=$conf>=70?'hot':($conf>=45?'trending':($conf>=25?'watch':'quiet')); if($class==='hot' && !$b['official_confirmed'] && $evidenceQuality!=='strong'){ $class='trending'; } $msg='Community reports are trending for this provider. Official incident not confirmed.'; if(!empty($b['official_confirmed']) || $evidenceQuality==='official'){ $hasMaintenance=in_array('maintenance',$b['adapter_ids'],true) || in_array('statuspage',$b['sources'],true) && (str_contains(strtolower(implode(' ', (array)$b['sample_observations'])),'maintenance:')); $hasIndicator=in_array('statuspage',$b['sources'],true) && (str_contains(strtolower(implode(' ', (array)$b['sample_observations'])),'status indicator:')); if($hasMaintenance){ $msg='Official status page reports active maintenance.'; } elseif($hasIndicator){ $msg='Official status indicator reports degraded service.'; } else { $msg='Official status evidence indicates current provider impact.'; } } elseif($chatter>0 && $b['report_count']===0){$msg='Public chatter has increased for this provider. This is unconfirmed.';} if(empty($b['official_confirmed']) && $evidenceQuality!=='official' && $chatter>0 && $b['report_count']>0){$msg='Public chatter and community reports both suggest a possible issue.';} if(empty($b['official_confirmed']) && $evidenceQuality!=='official' && $chatter>0 && $b['external_signal_count']>0){$msg='Public chatter and external telemetry both suggest a possible issue.';} if(empty($b['official_confirmed']) && $evidenceQuality!=='official' && $b['report_count']>0 && $b['external_signal_count']>0 && $chatter===0){$msg='External internet-health signals and community reports both suggest a possible issue.';} elseif(empty($b['official_confirmed']) && $evidenceQuality!=='official' && $b['external_signal_count']>0 && $b['synthetic_failure_count']===0 && $b['report_count']===0){$msg='External internet-health telemetry suggests a possible issue. Official incident not confirmed.';} elseif(empty($b['official_confirmed']) && $evidenceQuality!=='official' && $b['synthetic_failure_count']>0 && $b['report_count']===0){$msg='A lightweight public canary check failed. This is an unconfirmed signal.';}
             $snippets=array_slice(array_values(array_unique($b['sample_observations'])),0,4);
             $urls=array_slice(array_keys($b['source_urls']),0,6);
-            $sourceType=(in_array('statuspage',$b['sources'],true)||!empty($b['official_confirmed']))?'official_status':'public_chatter';
-            $lane = !empty($b['official_confirmed']) || $sourceType === 'official_status' ? 'official' : ($sourceType === 'public_chatter' ? 'chatter' : 'feed');
+            $sourceType=(string)($b['source_type'] ?? '');
+            $source=(string)($b['sources'][0] ?? 'external');
+            $rowLane = sanitize_key((string)($b['signal_lane'] ?? ''));
+            if ($rowLane !== '') {
+                $lane = $rowLane;
+            } elseif ($sourceType === 'public_chatter' || $source === 'hacker_news_chatter') {
+                $lane = 'chatter';
+            } elseif (!empty($b['official_confirmed']) || $source === 'statuspage' || $sourceType === 'official_status') {
+                $lane = 'official';
+            } elseif ($sourceType === 'provider_rss' || $source === 'provider_feed') {
+                $lane = 'feed';
+            } elseif ($source === 'synthetic_canary') {
+                $lane = 'synthetic';
+            } else {
+                $lane = 'feed';
+            }
+            if ($sourceType === '') {
+                if ($lane === 'official') {
+                    $sourceType = 'official_status';
+                } elseif ($lane === 'chatter') {
+                    $sourceType = 'public_chatter';
+                } elseif ($lane === 'synthetic') {
+                    $sourceType = 'synthetic';
+                } else {
+                    $sourceType = 'provider_rss';
+                }
+            }
             $sourceLabel=!empty($b['official_confirmed'])?'Official Statuspage':(in_array('hacker_news_chatter',$b['sources'],true)?'Hacker News':'Provider RSS/Public');
             $signals[]=$b + ['confidence'=>$conf,'classification'=>$class,'message'=>$msg,'evidence_quality'=>$evidenceQuality,'confidence_reason'=>$b['official_confirmed']?'Official source confirms incident':(count($b['sources'])>=2?'Multiple sources corroborate':'Single-source unconfirmed observation'),'snippets'=>$snippets,'domains'=>array_slice(array_keys($b['domains']),0,6),'source_urls'=>$urls,'official_confirmed'=>!empty($b['official_confirmed']),'evidence_quote'=>isset($snippets[0])?(string)substr((string)$snippets[0],0,180):'','evidence_source_label'=>$sourceLabel,'evidence_url'=>isset($urls[0])?(string)$urls[0]:'','evidence_urls'=>$urls,'evidence_platform'=>(in_array('hacker_news_chatter',$b['sources'],true)?'Hacker News':($lane==='official'?'Statuspage':'Public Web')),'evidence_observed_at'=>(string)($b['last_observed_at']??''),'observed_at'=>(string)($b['last_observed_at']??''),'source_type'=>$sourceType,'adapter_id'=>isset($b['adapter_ids'][0])?(string)$b['adapter_ids'][0]:'','signal_lane'=>$lane,'detected_provider'=>$b['provider_name'],'detected_category'=>$b['category'],'id'=>md5($b['provider_id'].'|'.$b['category'].'|'.$b['region'])];
         }

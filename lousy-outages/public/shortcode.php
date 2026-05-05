@@ -537,7 +537,9 @@ function render_shortcode(): string {
             <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Incidents (0)</button>
             <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">All providers</button>
         </div>
-        <?php $fused_public = SignalEngine::summarize_fused_signals(120); $fused_public = is_array($fused_public) ? array_values(array_filter($fused_public, static function($r){ $c = strtolower((string)($r['classification'] ?? 'quiet')); return in_array($c,['watch','trending','hot'], true); })) : []; $official_signals=array_values(array_filter($fused_public, static fn($s)=>!empty($s['official_confirmed']) || (($s['signal_lane'] ?? '') === 'official'))); $public_chatter=array_values(array_filter($fused_public, static fn($s)=>(($s['signal_lane'] ?? '') === 'chatter' || empty($s['official_confirmed'])))); ?>
+        <?php $fused_public = SignalEngine::summarize_fused_signals(120); $fused_public = is_array($fused_public) ? array_values(array_filter($fused_public, static function($r){ $c = strtolower((string)($r['classification'] ?? 'quiet')); return in_array($c,['watch','trending','hot'], true); })) : []; $official_signals=array_values(array_filter($fused_public, static fn($s)=>!empty($s['official_confirmed']) || (($s['signal_lane'] ?? '') === 'official'))); // Public chatter must stay quote-backed human/public reports only.
+        // Feed/synthetic/watch telemetry lanes should render in dedicated sections later.
+        $public_chatter=array_values(array_filter($fused_public, static fn($s)=>(($s['signal_lane'] ?? '') === 'chatter'))); ?>
         <section class="lo-signals-panel" data-lo-signals-panel<?php echo $fused_public ? '' : ' hidden'; ?>>
             <div class="lo-section__head">
                 <h3 class="lo-block-title">OFFICIAL STATUS SIGNALS</h3>
@@ -559,7 +561,7 @@ function render_shortcode(): string {
                 <p class="lo-history__meta">Unconfirmed posts from public dev/social channels. Useful smoke, not fire.</p>
             </div>
             <div class="lo-grid">
-            <?php if (!$public_chatter) : ?><p class="lo-history__meta">No fresh field reports found. Official radar only.</p><?php endif; ?>
+            <?php if (!$public_chatter) : ?><p class="lo-history__meta">No fresh field reports intercepted. Official radar only.</p><?php endif; ?>
             <?php foreach (array_slice($public_chatter, 0, 6) as $sig) : $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? '')); ?>
                 <article class="lo-card">
                     <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">RUMOUR RADAR</span></div>

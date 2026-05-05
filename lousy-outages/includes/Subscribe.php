@@ -95,14 +95,13 @@ class Lousy_Outages_Subscribe {
             $lane = sanitize_key((string)($signal['signal_lane'] ?? ''));
             if ($lane === '') { $lane = !empty($signal['official_confirmed']) ? 'official' : 'chatter'; }
             $safeSignals[] = [
-                'provider_id' => (string)($signal['provider_id'] ?? ''),
-                'provider_name' => (string)($signal['provider_name'] ?? ''),
-                'classification' => (string)($signal['classification'] ?? 'quiet'),
+                'provider_id' => sanitize_key((string)($signal['provider_id'] ?? '')),
+                'provider_name' => sanitize_text_field((string)($signal['provider_name'] ?? '')),
+                'classification' => sanitize_key((string)($signal['classification'] ?? 'quiet')),
                 'report_count' => (int)($signal['report_count'] ?? 0),
-                                'region' => (string)($signal['region'] ?? ''),
-                'message' => (string)($signal['message'] ?? ''),
-                'category' => (string)($signal['category'] ?? ''),
-                'region' => (string)($signal['region'] ?? ''),
+                                'region' => sanitize_text_field((string)($signal['region'] ?? '')),
+                'message' => sanitize_text_field((string)($signal['message'] ?? '')),
+                'category' => sanitize_key((string)($signal['category'] ?? '')),
                 'confidence' => (int)($signal['confidence'] ?? 0),
                 'external_signal_count' => (int)($signal['external_signal_count'] ?? 0),
                 'synthetic_failure_count' => (int)($signal['synthetic_failure_count'] ?? 0),
@@ -119,6 +118,8 @@ class Lousy_Outages_Subscribe {
                 'observed_at' => sanitize_text_field((string)($signal['observed_at'] ?? '')),
                 'source_type' => sanitize_key((string)($signal['source_type'] ?? '')),
                 'adapter_id' => sanitize_key((string)($signal['adapter_id'] ?? '')),
+                'evidence_platform' => sanitize_text_field((string)($signal['evidence_platform'] ?? '')),
+                'evidence_observed_at' => sanitize_text_field((string)($signal['evidence_observed_at'] ?? '')),
                 'signal_lane' => $lane,
             ];
         }
