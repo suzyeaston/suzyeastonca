@@ -93,17 +93,22 @@ class SignalEngine {
             $urls=array_slice(array_keys($b['source_urls']),0,6);
             $sourceType=(string)($b['source_type'] ?? '');
             $source=(string)($b['sources'][0] ?? 'external');
+            $adapterIds = (array)($b['adapter_ids'] ?? []);
             $rowLane = sanitize_key((string)($b['signal_lane'] ?? ''));
+            $hasOfficialSource = !empty($b['official_confirmed']) || in_array('statuspage', $adapterIds, true) || in_array('official_status', $adapterIds, true) || in_array('statuspage', (array)$b['sources'], true) || $sourceType === 'official_status';
+            $hasChatterSource = $sourceType === 'public_chatter' || $source === 'hacker_news_chatter' || in_array('hacker_news_chatter', (array)$b['sources'], true) || in_array('hacker_news_chatter', $adapterIds, true);
             if ($rowLane !== '') {
                 $lane = $rowLane;
-            } elseif ($sourceType === 'public_chatter' || $source === 'hacker_news_chatter') {
-                $lane = 'chatter';
-            } elseif (!empty($b['official_confirmed']) || $source === 'statuspage' || $sourceType === 'official_status') {
+            } elseif ($hasOfficialSource) {
                 $lane = 'official';
+            } elseif ($hasChatterSource) {
+                $lane = 'chatter';
             } elseif ($sourceType === 'provider_rss' || $source === 'provider_feed') {
                 $lane = 'feed';
-            } elseif ($source === 'synthetic_canary') {
+            } elseif ($source === 'synthetic_canary' || in_array('synthetic_canary', (array)$b['sources'], true)) {
                 $lane = 'synthetic';
+            } elseif ($sourceType === 'public_chatter' || $source === 'hacker_news_chatter') {
+                $lane = 'chatter';
             } else {
                 $lane = 'feed';
             }
