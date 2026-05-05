@@ -90,6 +90,7 @@ lousy_outages_require( 'includes/ExternalSignals.php' );
 lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php' );
 lousy_outages_require( 'includes/Sources/CloudflareRadarSource.php' );
 lousy_outages_require( 'includes/Sources/PublicChatterSource.php' );
+lousy_outages_require( 'includes/Sources/IntelConduitSources.php' );
 lousy_outages_require( 'includes/SignalCollector.php' );
 
 lousy_outages_require( 'public/shortcode.php' );

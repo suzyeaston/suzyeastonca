@@ -6,9 +6,13 @@ namespace SuzyEaston\LousyOutages;
 use SuzyEaston\LousyOutages\Sources\CloudflareRadarSource;
 use SuzyEaston\LousyOutages\Sources\SyntheticCanarySource;
 use SuzyEaston\LousyOutages\Sources\PublicChatterSource;
+use SuzyEaston\LousyOutages\Sources\StatuspageIntelSource;
+use SuzyEaston\LousyOutages\Sources\ProviderFeedSource;
+use SuzyEaston\LousyOutages\Sources\HackerNewsChatterSource;
+use SuzyEaston\LousyOutages\Sources\CommunityReportIntelSource;
 
 class SignalCollector {
-    public static function sources(): array { return [new CloudflareRadarSource(), new SyntheticCanarySource(), new PublicChatterSource()]; }
+    public static function sources(): array { return [new StatuspageIntelSource(), new ProviderFeedSource(), new HackerNewsChatterSource(), new CommunityReportIntelSource(), new SyntheticCanarySource(), new PublicChatterSource(), new CloudflareRadarSource()]; }
     public static function collect(array $options=[]): array {
         $result=['started_at'=>gmdate('c'),'finished_at'=>'','sources'=>[],'total_collected'=>0,'total_stored'=>0,'providers_checked'=>0,'queries_attempted'=>0,'errors'=>[]];
         foreach(self::sources() as $source){ $r=self::collect_source($source->id(),$options); $result['sources'][]=$r; $result['total_collected']+=(int)$r['collected_count']; $result['total_stored']+=(int)$r['stored_count']; $result['providers_checked']+=(int)($r['providers_checked']??0); $result['queries_attempted']+=(int)($r['queries_attempted']??0); $result['errors']=array_merge($result['errors'], (array)($r['errors']??[])); }
