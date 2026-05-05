@@ -103,3 +103,21 @@ Use these shell snippets on hosts where WP-CLI is unavailable:
 - Check adapter options and diagnostics payloads:
   - `mysql -e "SELECT option_name,LENGTH(option_value) FROM wp_options WHERE option_name LIKE 'lousy_outages_%external%' OR option_name LIKE 'lousy_outages_%signal%';"`
 
+
+## Deployment preflight (required)
+
+`php -l` only validates syntax. It does **not** verify runtime interface compatibility or class instantiation during WordPress bootstrap.
+
+Before replacing the production plugin, run:
+
+- `php -l wp-content/plugins/lousy-outages/includes/Sources/IntelConduitSources.php`
+- `php wp-content/plugins/lousy-outages/scripts/smoke-signal-sources.php /var/www/html/wp-load.php`
+
+The smoke script bootstraps WordPress (`require wp-load.php`), calls `\SuzyEaston\LousyOutages\SignalCollector::sources()`, and validates for each source:
+
+- instance of `SignalSourceInterface`
+- non-empty `id()` string
+- non-empty `label()` string
+- boolean return from `is_configured()`
+
+If this check fails, do not deploy.
