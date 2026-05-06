@@ -1907,3 +1907,89 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* UI stabilization: compact incident cards and keep chatter scanner visible/intentional. */
+.lo-grid,
+.lo-grid--section {
+  align-items: start;
+}
+
+.lo-grid--section {
+  min-height: 0;
+}
+
+.lo-section--incidents .lo-grid--section {
+  margin-bottom: 18px;
+}
+
+.lo-card {
+  overflow: hidden;
+}
+
+.lo-card .lo-message,
+.lo-card .lo-summary,
+.lo-inc-title,
+.lo-inc-summary {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.lo-card .lo-message,
+.lo-inc-title {
+  -webkit-line-clamp: 2;
+}
+
+.lo-card .lo-summary,
+.lo-inc-summary {
+  -webkit-line-clamp: 3;
+}
+
+.lo-inc {
+  margin-top: 6px;
+}
+
+.lo-inc-list {
+  margin-top: 4px;
+}
+
+.lo-inc-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 250px;
+  overflow: hidden;
+}
+
+.lo-inc-provider {
+  margin: 0;
+  color: #ffecc7;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lo-inc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lo-inc-item .lo-status-link {
+  margin-top: 2px;
+}
+
+.lo-chatter-scanner {
+  clear: both;
+  margin-top: 22px;
+  margin-bottom: 22px;
+}
+
+.lo-chatter-scanner__empty--fallback {
+  border-style: dashed;
+  background: linear-gradient(135deg, rgba(138, 247, 228, 0.08), rgba(244, 154, 229, 0.08));
+}
+
+.lo-chatter-scanner__empty p + p {
+  margin-top: 4px;
+}
