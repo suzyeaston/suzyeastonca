@@ -484,6 +484,84 @@ function render_shortcode(): string {
         return in_array($needle, $phrases, true);
     };
 
+
+    $normalize_card_text = static function (string $text, int $limit = 180): string {
+        $text = html_entity_decode(wp_strip_all_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/\*\*\s*(Summary|Description|Symptoms?|Workaround|Impact|Status|Update|Updates?)\s*\*\*\s*:?/i', '', $text) ?? $text;
+        $text = preg_replace('/\b(Summary|Description|Symptoms?|Workaround|Impact|Status|Update|Updates?)\s*:\s*/i', '', $text) ?? $text;
+        $text = preg_replace('/\s*[-–—]\s*(Summary|Description|Symptoms?|Workaround|Impact|Status|Update|Updates?)\s*:\s*/i', ' — ', $text) ?? $text;
+        $text = preg_replace('/\s+/', ' ', $text) ?? $text;
+        $text = trim($text, " \t\n\r\0\x0B-*:_");
+        if ('' === $text || strlen($text) <= $limit) {
+            return $text;
+        }
+        $slice = substr($text, 0, max(0, $limit - 1));
+        $space = strrpos($slice, ' ');
+        if (false !== $space && $space > ($limit * 0.65)) {
+            $slice = substr($slice, 0, $space);
+        }
+        return rtrim($slice, " \t\n\r\0\x0B.,;:-") . '…';
+    };
+
+    $incident_timestamp = static function (array $incident): int {
+        foreach (['updated_at', 'updatedAt', 'started_at', 'startedAt', 'last_seen', 'first_seen'] as $field) {
+            if (empty($incident[$field])) {
+                continue;
+            }
+            $timestamp = strtotime((string) $incident[$field]);
+            if ($timestamp) {
+                return $timestamp;
+            }
+        }
+        return 0;
+    };
+
+    $pick_lead_incident = static function (array $incidents) use ($incident_timestamp): ?array {
+        if (!$incidents) {
+            return null;
+        }
+        usort($incidents, static function ($left, $right) use ($incident_timestamp): int {
+            $left_time  = is_array($left) ? $incident_timestamp($left) : 0;
+            $right_time = is_array($right) ? $incident_timestamp($right) : 0;
+            return $right_time <=> $left_time;
+        });
+        foreach ($incidents as $incident) {
+            if (is_array($incident)) {
+                return $incident;
+            }
+        }
+        return null;
+    };
+
+    $build_incident_display = static function (array $incident, string $provider_name, string $fallback_status) use ($normalize_card_text, $format_datetime): array {
+        $title = (string) ($incident['name'] ?? $incident['title'] ?? '');
+        $summary = (string) ($incident['summary'] ?? $incident['body'] ?? $incident['message'] ?? $incident['description'] ?? '');
+        if ('' === trim($title) && '' !== trim($summary)) {
+            $title = $summary;
+            $summary = '';
+        }
+        $title = $normalize_card_text($title, 118);
+        $summary = $normalize_card_text($summary, 210);
+        if ('' !== $summary && 0 === strcasecmp($summary, $title)) {
+            $summary = '';
+        }
+        if ('' === $summary) {
+            $summary = 'Latest official update is available from the provider status page.';
+        }
+
+        $status = (string) ($incident['impact'] ?? $incident['status'] ?? $fallback_status ?: 'Incident');
+        $status = ucwords(str_replace(['_', '-'], ' ', $status));
+
+        return [
+            'provider' => $provider_name,
+            'status'   => $status ?: 'Incident',
+            'title'    => $title ?: 'Active incident',
+            'summary'  => $summary,
+            'updated'  => $format_datetime((string) ($incident['updated_at'] ?? $incident['updatedAt'] ?? $incident['started_at'] ?? $incident['startedAt'] ?? '')),
+            'url'      => (string) ($incident['url'] ?? ''),
+        ];
+    };
+
     $fetched_label = ('snapshot' === strtolower((string) $source))
         ? 'Outage info last refreshed:'
         : 'Outage info fetched:';
@@ -565,59 +643,7 @@ function render_shortcode(): string {
         if ($checkedTotal <= 0) {
             $checkedTotal = $promotedTotal + $rejectedTotal;
         }
-        $showChatterScanner = ($promotedTotal > 0) || !empty($rejectSummary);
         ?>
-        <?php if ($showChatterScanner) : ?>
-        <section class="lo-chatter-scanner" data-lo-chatter-scanner>
-            <div class="lo-chatter-scanner__head">
-                <div>
-                    <h3 class="lo-block-title">PUBLIC CHATTER / FIELD REPORTS</h3>
-                    <p class="lo-history__meta">Unconfirmed public/dev chatter. Useful smoke, not fire.</p>
-                </div>
-                <span class="lo-chatter-scanner__status"><?php echo $public_chatter ? esc_html('Needs corroboration') : esc_html('Official radar only'); ?></span>
-            </div>
-            <div class="lo-chatter-scanner__stats" aria-label="Public chatter scan summary">
-                <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) $checkedTotal); ?></strong> Checked</span>
-                <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) $promotedTotal); ?></strong> Promoted</span>
-                <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) $rejectedTotal); ?></strong> Rejected</span>
-                <?php foreach (array_slice($rejectSummary, 0, 2) as $reasonRow) : ?>
-                    <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) ($reasonRow['count'] ?? 0)); ?></strong> <?php echo esc_html((string) ($reasonRow['label'] ?? 'Filtered')); ?></span>
-                <?php endforeach; ?>
-            </div>
-            <?php if (!$public_chatter) : ?>
-                <?php
-                // Public chatter can be empty because weak, noisy, historical, or non-provider posts were rejected; that is expected and diagnostics make the quiet result visible.
-                ?>
-                <div class="lo-chatter-scanner__empty">
-                    <h4>Public chatter scan complete</h4>
-                    <p>No credible field reports promoted. Official radar only.</p>
-                </div>
-                <?php if (!empty($rejectSummary)) : ?>
-                    <div class="lo-chatter-scanner__reasons" aria-label="Rejected public chatter categories">
-                        <?php foreach (array_slice($rejectSummary, 0, 5) as $reasonRow) : ?>
-                            <div class="lo-chatter-scanner__reason">
-                                <span><?php echo esc_html((string) ($reasonRow['label'] ?? 'Filtered chatter')); ?></span>
-                                <strong><?php echo esc_html((string) ($reasonRow['count'] ?? 0)); ?></strong>
-                                <small><?php echo esc_html((string) ($reasonRow['description'] ?? 'Filtered chatter that did not meet current-signal quality checks.')); ?></small>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            <?php else : ?>
-                <div class="lo-chatter-scanner__cards">
-                    <?php foreach (array_slice($public_chatter, 0, 6) as $sig) : $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? '')); ?>
-                        <article class="lo-card">
-                            <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">RUMOUR RADAR</span></div>
-                            <p class="lo-summary">Unconfirmed public report. Needs corroboration.</p>
-                            <?php if ($quote !== '') : ?><blockquote class="lo-evidence-quote">“<?php echo esc_html($quote); ?>”</blockquote><?php endif; ?>
-                            <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Needs corroboration from official/synthetic signals.')); ?></p>
-                            <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Public chatter'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? null)); ?></p>
-                        </article>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </section>
-        <?php endif; ?>
         <div class="lo-incidents" data-lo-incidents>
             <section class="lo-section lo-section--incidents" data-lo-section="incidents">
                 <div class="lo-section__head">
@@ -638,6 +664,61 @@ function render_shortcode(): string {
                 <div class="lo-grid lo-grid--section" data-lo-section-grid="unverified" hidden></div>
             </section>
         </div>
+        <section class="lo-chatter-scanner" data-lo-chatter-scanner>
+            <div class="lo-chatter-scanner__head">
+                <div>
+                    <h3 class="lo-block-title">PUBLIC CHATTER / FIELD REPORTS</h3>
+                    <p class="lo-history__meta">Unconfirmed public/dev chatter. Useful smoke, not fire.</p>
+                </div>
+                <span class="lo-chatter-scanner__status"><?php echo $public_chatter ? esc_html('Needs corroboration') : esc_html('Official radar only'); ?></span>
+            </div>
+            <div class="lo-chatter-scanner__stats" aria-label="Public chatter scan summary">
+                <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) $checkedTotal); ?></strong> Checked</span>
+                <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) $promotedTotal); ?></strong> Promoted</span>
+                <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) $rejectedTotal); ?></strong> Rejected</span>
+                <?php foreach (array_slice($rejectSummary, 0, 2) as $reasonRow) : ?>
+                    <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) ($reasonRow['count'] ?? 0)); ?></strong> <?php echo esc_html((string) ($reasonRow['label'] ?? 'Filtered')); ?></span>
+                <?php endforeach; ?>
+            </div>
+            <?php if ($public_chatter) : ?>
+                <div class="lo-chatter-scanner__cards">
+                    <?php foreach (array_slice($public_chatter, 0, 6) as $sig) : $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? '')); ?>
+                        <article class="lo-card">
+                            <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">RUMOUR RADAR</span></div>
+                            <p class="lo-summary">Unconfirmed public report. Needs corroboration.</p>
+                            <?php if ($quote !== '') : ?><blockquote class="lo-evidence-quote">“<?php echo esc_html($quote); ?>”</blockquote><?php endif; ?>
+                            <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Needs corroboration from official/synthetic signals.')); ?></p>
+                            <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Public chatter'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? null)); ?></p>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php elseif ($checkedTotal > 0 || !empty($rejectSummary) || !empty($previewSample)) : ?>
+                <?php
+                // Public chatter can be empty because weak, noisy, historical, or non-provider posts were rejected; that is expected and diagnostics make the quiet result visible.
+                ?>
+                <div class="lo-chatter-scanner__empty">
+                    <h4>Public chatter scan complete</h4>
+                    <p>No credible field reports promoted. Official radar only.</p>
+                </div>
+                <?php if (!empty($rejectSummary)) : ?>
+                    <div class="lo-chatter-scanner__reasons" aria-label="Rejected public chatter categories">
+                        <?php foreach (array_slice($rejectSummary, 0, 5) as $reasonRow) : ?>
+                            <div class="lo-chatter-scanner__reason">
+                                <span><?php echo esc_html((string) ($reasonRow['label'] ?? 'Filtered chatter')); ?></span>
+                                <strong><?php echo esc_html((string) ($reasonRow['count'] ?? 0)); ?></strong>
+                                <small><?php echo esc_html((string) ($reasonRow['description'] ?? 'Filtered chatter that did not meet current-signal quality checks.')); ?></small>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            <?php else : ?>
+                <div class="lo-chatter-scanner__empty lo-chatter-scanner__empty--fallback">
+                    <h4>Public chatter scanner online</h4>
+                    <p>No rumour radar hits or diagnostics available yet.</p>
+                    <p>Official radar only for now.</p>
+                </div>
+            <?php endif; ?>
+        </section>
         <?php if (LO_SHOW_WIDESPREAD) : ?>
         <div class="lo-trending" data-lo-trending<?php echo $trending_active ? '' : ' hidden'; ?> data-lo-trending-generated="<?php echo esc_attr($trending_generated); ?>" aria-live="assertive">
             <span class="lo-trending__icon" aria-hidden="true">⚡</span>
@@ -763,6 +844,11 @@ function render_shortcode(): string {
                         ?? $tile['updatedAt']
                         ?? null
                     );
+                    $provider_name = (string) ($tile['name'] ?? ucfirst($slug));
+                    $lead_active_incident = $pick_lead_incident($active_incidents);
+                    $lead_incident_display = $lead_active_incident
+                        ? $build_incident_display($lead_active_incident, $provider_name, (string) $label)
+                        : null;
                     $debug_mode = isset($_GET['lo_debug']) && '1' === $_GET['lo_debug'];
                     $debug_line = '';
                     if ($debug_mode) {
@@ -794,8 +880,7 @@ function render_shortcode(): string {
                         }
                         if ('' === $message_text) {
                             if (!empty($active_incidents)) {
-                                $lead_incident = $active_incidents[0]['name'] ?? ($active_incidents[0]['title'] ?? ($active_incidents[0]['summary'] ?? 'Incident'));
-                                $message_text = $lead_incident;
+                                $message_text = (string) ($lead_incident_display['title'] ?? 'Active incident');
                             } elseif ($status === 'operational') {
                                 $message_text = 'All systems operational.';
                             } elseif ($status === 'unknown') {
@@ -814,6 +899,14 @@ function render_shortcode(): string {
                         ) {
                             $message_text = 'Degraded signal detected';
                             $summary_text = 'No active incident listed yet — may be transient. Click \'View status\' or hit Refresh.';
+                        }
+
+                        if ($lead_incident_display) {
+                            $message_text = (string) $lead_incident_display['title'];
+                            $summary_text = (string) $lead_incident_display['summary'];
+                        } else {
+                            $message_text = $normalize_card_text($message_text, 140);
+                            $summary_text = $normalize_card_text($summary_text, 190);
                         }
 
                         $summary_display = '';
@@ -855,29 +948,21 @@ function render_shortcode(): string {
                                 </ul>
                             <?php endif; ?>
                         </div>
-                        <?php if (!empty($active_incidents)) : ?>
-                            <div class="lo-inc" data-lo-incidents>
+                        <div class="lo-inc" data-lo-incidents<?php echo $lead_incident_display ? '' : ' hidden'; ?>>
+                            <?php if ($lead_incident_display) : ?>
                                 <ul class="lo-inc-list">
-                                    <?php foreach ($active_incidents as $incident) :
-                                        $impact  = isset($incident['status']) ? ucfirst((string) $incident['status']) : 'Unknown';
-                                        $updated = $format_datetime($incident['updated_at'] ?? null);
-                                        $summary = isset($incident['summary']) ? (string) $incident['summary'] : '';
-                                        $url     = isset($incident['url']) ? (string) $incident['url'] : '';
-                                        ?>
-                                        <li class="lo-inc-item">
-                                            <p class="lo-inc-title"><?php echo esc_html($incident['name'] ?? 'Incident'); ?></p>
-                                            <p class="lo-inc-meta"><?php echo esc_html(trim($impact . ($updated ? ' • ' . $updated : ''))); ?></p>
-                                            <?php if ($summary) : ?>
-                                                <p class="lo-inc-summary"><?php echo esc_html($summary); ?></p>
-                                            <?php endif; ?>
-                                            <?php if ($url) : ?>
-                                                <a class="lo-status-link" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener">View incident</a>
-                                            <?php endif; ?>
-                                        </li>
-                                    <?php endforeach; ?>
+                                    <li class="lo-inc-item">
+                                        <p class="lo-inc-provider"><?php echo esc_html((string) $lead_incident_display['provider']); ?></p>
+                                        <p class="lo-inc-title"><?php echo esc_html((string) $lead_incident_display['title']); ?></p>
+                                        <p class="lo-inc-meta"><?php echo esc_html(trim((string) $lead_incident_display['status'] . ' • Last checked: ' . $last_checked)); ?></p>
+                                        <p class="lo-inc-summary"><?php echo esc_html((string) $lead_incident_display['summary']); ?></p>
+                                        <?php if (!empty($lead_incident_display['url'])) : ?>
+                                            <a class="lo-status-link" href="<?php echo esc_url((string) $lead_incident_display['url']); ?>" target="_blank" rel="noopener">View incident</a>
+                                        <?php endif; ?>
+                                    </li>
                                 </ul>
-                            </div>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                         <?php if (!empty($tile['url'])) : ?>
                             <a class="lo-status-link" data-lo-status-url href="<?php echo esc_url($tile['url']); ?>" target="_blank" rel="noopener">View status →</a>
                         <?php endif; ?>
