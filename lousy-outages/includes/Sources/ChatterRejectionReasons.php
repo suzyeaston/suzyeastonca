@@ -46,8 +46,20 @@ class ChatterRejectionReasons {
     }
 
     public static function get(string $code): array {
+        $aliases = [
+            'business_or_regulatory_chatter' => 'generic_noise',
+            'no_provider_match' => 'quote_missing_provider',
+            'no_issue_language' => 'quote_missing_failure',
+            'weak_issue_language' => 'quote_missing_provider_or_failure',
+        ];
+        $lookupCode = $aliases[$code] ?? $code;
         $all = self::definitions();
-        return $all[$code] ?? [
+        if (isset($all[$lookupCode])) {
+            $definition = $all[$lookupCode];
+            $definition['code'] = $code;
+            return $definition;
+        }
+        return [
             'code' => $code,
             'short_label' => ucwords(str_replace('_', ' ', $code)),
             'public_description' => 'Filtered chatter that did not meet current-signal quality checks.',

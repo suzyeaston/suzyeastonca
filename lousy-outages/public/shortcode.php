@@ -537,52 +537,87 @@ function render_shortcode(): string {
             <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Incidents (0)</button>
             <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">All providers</button>
         </div>
-        <?php $fused_public = SignalEngine::summarize_fused_signals(120); $fused_public = is_array($fused_public) ? array_values(array_filter($fused_public, static function($r){ $c = strtolower((string)($r['classification'] ?? 'quiet')); return in_array($c,['watch','trending','hot'], true); })) : []; $official_signals=array_values(array_filter($fused_public, static fn($s)=>!empty($s['official_confirmed']) || (($s['signal_lane'] ?? '') === 'official'))); // Public chatter must stay quote-backed human/public reports only.
-        // Feed/synthetic/watch telemetry lanes should render in dedicated sections later.
-        $public_chatter=array_values(array_filter($fused_public, static fn($s)=>(($s['signal_lane'] ?? '') === 'chatter'))); ?>
-        <section class="lo-signals-panel" data-lo-signals-panel<?php echo $fused_public ? '' : ' hidden'; ?>>
-            <div class="lo-section__head">
-                <h3 class="lo-block-title">OFFICIAL STATUS SIGNALS</h3>
-                <p class="lo-history__meta">Provider-confirmed status, active maintenance, or degraded components.</p>
+        <?php
+        $fused_public = SignalEngine::summarize_fused_signals(120);
+        $fused_public = is_array($fused_public) ? array_values(array_filter($fused_public, static function($r){ $c = strtolower((string)($r['classification'] ?? 'quiet')); return in_array($c,['watch','trending','hot'], true); })) : [];
+        // Official fused signals are intentionally not rendered here; Active incidents is the public, non-duplicative official incident surface.
+        // Public chatter must stay quote-backed human/public reports only. Feed/synthetic/watch telemetry lanes render in dedicated sections later.
+        $public_chatter = array_values(array_filter($fused_public, static fn($s) => (($s['signal_lane'] ?? '') === 'chatter')));
+        $hnDiag = (array) get_option('lo_diag_hacker_news_chatter', []);
+        $previewSample = isset($hnDiag['chatter_candidates_preview_sample']) && is_array($hnDiag['chatter_candidates_preview_sample']) ? $hnDiag['chatter_candidates_preview_sample'] : [];
+        $rejectedCounts = (array) ($hnDiag['chatter_rejected_by_reason'] ?? []);
+        if ($rejectedCounts === [] && $previewSample) {
+            foreach ($previewSample as $sample) {
+                $reasonCode = (string) ($sample['reject_reason'] ?? '');
+                if ($reasonCode === '' || $reasonCode === 'accepted') {
+                    continue;
+                }
+                $rejectedCounts[$reasonCode] = (int) ($rejectedCounts[$reasonCode] ?? 0) + 1;
+            }
+        }
+        $rejectSummary = \SuzyEaston\LousyOutages\Sources\ChatterRejectionReasons::summarize_counts($rejectedCounts);
+        $rejectedTotal = array_sum(array_map(static fn($row): int => (int) ($row['count'] ?? 0), $rejectSummary));
+        $promotedTotal = count($public_chatter);
+        $checkedTotal = (int) ($hnDiag['chatter_rows_attempted'] ?? 0);
+        if ($checkedTotal <= 0 && $previewSample) {
+            $checkedTotal = count($previewSample);
+        }
+        if ($checkedTotal <= 0) {
+            $checkedTotal = $promotedTotal + $rejectedTotal;
+        }
+        $showChatterScanner = ($promotedTotal > 0) || !empty($rejectSummary);
+        ?>
+        <?php if ($showChatterScanner) : ?>
+        <section class="lo-chatter-scanner" data-lo-chatter-scanner>
+            <div class="lo-chatter-scanner__head">
+                <div>
+                    <h3 class="lo-block-title">PUBLIC CHATTER / FIELD REPORTS</h3>
+                    <p class="lo-history__meta">Unconfirmed public/dev chatter. Useful smoke, not fire.</p>
+                </div>
+                <span class="lo-chatter-scanner__status"><?php echo $public_chatter ? esc_html('Needs corroboration') : esc_html('Official radar only'); ?></span>
             </div>
-            <div class="lo-grid">
-            <?php foreach (array_slice($official_signals, 0, 6) as $sig) : $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? ''));  ?>
-                <article class="lo-card">
-                    <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">OFFICIAL</span></div>
-                    <p class="lo-summary">Official status evidence</p>
-                    <?php if ($quote !== '') : ?><blockquote class="lo-evidence-quote">“<?php echo esc_html($quote); ?>”</blockquote><?php endif; ?>
-                    <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Early warning signal detected.')); ?></p>
-                    <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Signal feed'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? $sig['last_seen_at'] ?? null)); ?></p>
-                </article>
-            <?php endforeach; ?>
+            <div class="lo-chatter-scanner__stats" aria-label="Public chatter scan summary">
+                <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) $checkedTotal); ?></strong> Checked</span>
+                <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) $promotedTotal); ?></strong> Promoted</span>
+                <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) $rejectedTotal); ?></strong> Rejected</span>
+                <?php foreach (array_slice($rejectSummary, 0, 2) as $reasonRow) : ?>
+                    <span class="lo-chatter-scanner__stat"><strong><?php echo esc_html((string) ($reasonRow['count'] ?? 0)); ?></strong> <?php echo esc_html((string) ($reasonRow['label'] ?? 'Filtered')); ?></span>
+                <?php endforeach; ?>
             </div>
-            <div class="lo-section__head">
-                <h3 class="lo-block-title">PUBLIC CHATTER / FIELD REPORTS</h3>
-                <p class="lo-history__meta">Unconfirmed posts from public dev/social channels. Useful smoke, not fire.</p>
-            </div>
-            <div class="lo-grid">
             <?php if (!$public_chatter) : ?>
-                <p class="lo-history__meta">No fresh field reports intercepted. Official radar only.</p>
-                <?php $hnDiag = (array) get_option('lo_diag_hacker_news_chatter', []); $rejectSummary = \SuzyEaston\LousyOutages\Sources\ChatterRejectionReasons::summarize_counts((array)($hnDiag['chatter_rejected_by_reason'] ?? [])); ?>
-                <?php if (!empty($rejectSummary)) : ?><div class="lo-history__meta"><strong>Filtered chatter:</strong>
-                    <ul>
-                    <?php foreach (array_slice($rejectSummary, 0, 5) as $reasonRow) : ?>
-                        <li><?php echo esc_html((string)($reasonRow['count'] ?? 0) . ' ' . (string)($reasonRow['label'] ?? '')); ?> — <?php echo esc_html((string)($reasonRow['description'] ?? '')); ?></li>
+                <?php
+                // Public chatter can be empty because weak, noisy, historical, or non-provider posts were rejected; that is expected and diagnostics make the quiet result visible.
+                ?>
+                <div class="lo-chatter-scanner__empty">
+                    <h4>Public chatter scan complete</h4>
+                    <p>No credible field reports promoted. Official radar only.</p>
+                </div>
+                <?php if (!empty($rejectSummary)) : ?>
+                    <div class="lo-chatter-scanner__reasons" aria-label="Rejected public chatter categories">
+                        <?php foreach (array_slice($rejectSummary, 0, 5) as $reasonRow) : ?>
+                            <div class="lo-chatter-scanner__reason">
+                                <span><?php echo esc_html((string) ($reasonRow['label'] ?? 'Filtered chatter')); ?></span>
+                                <strong><?php echo esc_html((string) ($reasonRow['count'] ?? 0)); ?></strong>
+                                <small><?php echo esc_html((string) ($reasonRow['description'] ?? 'Filtered chatter that did not meet current-signal quality checks.')); ?></small>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            <?php else : ?>
+                <div class="lo-chatter-scanner__cards">
+                    <?php foreach (array_slice($public_chatter, 0, 6) as $sig) : $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? '')); ?>
+                        <article class="lo-card">
+                            <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">RUMOUR RADAR</span></div>
+                            <p class="lo-summary">Unconfirmed public report. Needs corroboration.</p>
+                            <?php if ($quote !== '') : ?><blockquote class="lo-evidence-quote">“<?php echo esc_html($quote); ?>”</blockquote><?php endif; ?>
+                            <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Needs corroboration from official/synthetic signals.')); ?></p>
+                            <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Public chatter'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? null)); ?></p>
+                        </article>
                     <?php endforeach; ?>
-                    </ul>
-                </div><?php endif; ?>
+                </div>
             <?php endif; ?>
-            <?php foreach (array_slice($public_chatter, 0, 6) as $sig) : $quote = trim((string)($sig['evidence_quote'] ?? '')); $sourceLabel = trim((string)($sig['evidence_source_label'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? '')); ?>
-                <article class="lo-card">
-                    <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">RUMOUR RADAR</span></div>
-                    <p class="lo-summary">Public chatter reports possible user impact.</p>
-                    <?php if ($quote !== '') : ?><blockquote class="lo-evidence-quote">“<?php echo esc_html($quote); ?>”</blockquote><?php endif; ?>
-                    <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Needs corroboration from official/synthetic signals.')); ?></p>
-                    <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Public chatter'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? null)); ?></p>
-                </article>
-            <?php endforeach; ?>
-            </div>
         </section>
+        <?php endif; ?>
         <div class="lo-incidents" data-lo-incidents>
             <section class="lo-section lo-section--incidents" data-lo-section="incidents">
                 <div class="lo-section__head">
