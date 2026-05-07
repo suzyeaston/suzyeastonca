@@ -11,7 +11,7 @@ class PublicChatterSource implements SignalSourceInterface {
 
     public function id(): string { return 'public_chatter'; }
     public function label(): string { return 'Public Chatter Radar'; }
-    public function is_configured(): bool { return (bool) get_option('lousy_outages_public_chatter_enabled', false); }
+    public function is_configured(): bool { return !empty(get_option('lousy_outages_public_chatter_enabled', '1')); }
 
     public function collect(array $options = []): array {
         $directEnabled = $this->direct_sources_enabled();
@@ -23,6 +23,7 @@ class PublicChatterSource implements SignalSourceInterface {
             'hot' => (int) apply_filters('lo_public_chatter_hot_threshold', 12),
             'queries_per_provider_source' => (int) apply_filters('lo_public_chatter_queries_per_provider_source', 4),
             'active_incident_queries_per_provider' => (int) apply_filters('lo_public_chatter_active_incident_queries_per_provider', 5),
+            'source_budgets' => $this->source_budgets(),
         ];
         $providers = Providers::list();
         $activeIncidents = $this->active_incident_seed_providers($providers);
@@ -60,18 +61,38 @@ class PublicChatterSource implements SignalSourceInterface {
 
         $signals = [];
         $perProviderSourceCounts = [];
+        $sourceBudgetUsed = array_fill_keys(array_keys($enabledRuntimeSources), 0);
         foreach ($queries as $providerId => $row) {
             $provider = (array)($row['provider'] ?? ['name' => ucfirst((string)$providerId), 'category'=>'general']);
             $providerName = (string)($provider['name'] ?? $providerId);
             $providerCategory = (string)($provider['category'] ?? 'general');
             $providerQueries = array_values(array_filter(array_map('strval', (array)($row['queries'] ?? []))));
             foreach ($enabledRuntimeSources as $sourceId => $_enabled) {
-                $mentions = $this->collect_mentions($sourceId, $providerQueries, $window, (int)$thresholds['queries_per_provider_source']);
+                $sourceBudget = (int)($thresholds['source_budgets'][$sourceId] ?? $thresholds['queries_per_provider_source']);
+                $sourceBudgetRemaining = max(0, $sourceBudget - (int)($sourceBudgetUsed[$sourceId] ?? 0));
+                if ($sourceBudgetRemaining <= 0) {
+                    $diag['skipped_sources'][$sourceId][] = 'skipped_due_to_budget';
+                    $diag['source_request_details'][$sourceId]['queries_skipped_due_to_budget'] = (int)($diag['source_request_details'][$sourceId]['queries_skipped_due_to_budget'] ?? 0) + count($providerQueries);
+                    if ($sourceId === 'public_chatter_gdelt') {
+                        $diag['gdelt_queries_skipped_due_to_budget'] = (int)$diag['gdelt_queries_skipped_due_to_budget'] + count($providerQueries);
+                    }
+                    continue;
+                }
+                $mentions = $this->collect_mentions($sourceId, $providerQueries, $window, min((int)$thresholds['queries_per_provider_source'], $sourceBudgetRemaining));
                 $requestDiag = $this->requestDiagnostics[$sourceId] ?? [];
-                $diag['queries_attempted'] += (int)($requestDiag['queries_attempted'] ?? min(count($providerQueries), (int)$thresholds['queries_per_provider_source']));
-                $diag['source_request_details'][$sourceId]['queries_attempted'] = (int)($diag['source_request_details'][$sourceId]['queries_attempted'] ?? 0) + (int)($requestDiag['queries_attempted'] ?? 0);
+                $queriesAttemptedThisSource = (int)($requestDiag['queries_attempted'] ?? 0);
+                $sourceBudgetUsed[$sourceId] = (int)($sourceBudgetUsed[$sourceId] ?? 0) + $queriesAttemptedThisSource;
+                $diag['queries_attempted'] += $queriesAttemptedThisSource;
+                $diag['source_request_details'][$sourceId]['queries_attempted'] = (int)($diag['source_request_details'][$sourceId]['queries_attempted'] ?? 0) + $queriesAttemptedThisSource;
                 if ($sourceId === 'public_chatter_mastodon') {
                     $diag['source_request_details'][$sourceId]['instances_queried'] = array_values(array_unique(array_merge((array)($diag['source_request_details'][$sourceId]['instances_queried'] ?? []), (array)($requestDiag['instances_queried'] ?? []))));
+                }
+                if ($sourceId === 'public_chatter_gdelt') {
+                    foreach (['gdelt_attempted','gdelt_rate_limited','gdelt_last_response_code','gdelt_cooldown_until','gdelt_rows_seen','gdelt_watch_candidates'] as $gdeltKey) {
+                        if (array_key_exists($gdeltKey, $requestDiag)) {
+                            $diag[$gdeltKey] = in_array($gdeltKey, ['gdelt_rows_seen','gdelt_watch_candidates'], true) ? (int)$diag[$gdeltKey] + (int)$requestDiag[$gdeltKey] : $requestDiag[$gdeltKey];
+                        }
+                    }
                 }
                 foreach ((array)($requestDiag['errors'] ?? []) as $errorReason) {
                     $diag['skipped_sources'][$sourceId][] = (string)$errorReason;
@@ -116,14 +137,14 @@ class PublicChatterSource implements SignalSourceInterface {
     }
 
     public function direct_sources_enabled(): bool {
-        $flag = defined('LOUSY_OUTAGES_ENABLE_DIRECT_PUBLIC_CHATTER') ? (bool) LOUSY_OUTAGES_ENABLE_DIRECT_PUBLIC_CHATTER : false;
+        $flag = defined('LOUSY_OUTAGES_ENABLE_DIRECT_PUBLIC_CHATTER') ? (bool) LOUSY_OUTAGES_ENABLE_DIRECT_PUBLIC_CHATTER : true;
         return (bool) apply_filters('lo_public_chatter_direct_sources_enabled', $flag);
     }
 
     public function source_checkboxes(): array {
         return [
             'public_chatter_bluesky' => !empty(get_option('lousy_outages_public_chatter_bluesky_enabled', '1')),
-            'public_chatter_mastodon' => !empty(get_option('lousy_outages_public_chatter_mastodon_enabled', '0')),
+            'public_chatter_mastodon' => !empty(get_option('lousy_outages_public_chatter_mastodon_enabled', '1')),
             'public_chatter_gdelt' => !empty(get_option('lousy_outages_public_chatter_gdelt_enabled', '1')),
         ];
     }
@@ -164,11 +185,20 @@ class PublicChatterSource implements SignalSourceInterface {
             'watch_candidates' => [],
             'watch_candidate_count' => 0,
             'official_incident_corroboration' => [],
+            'source_budgets' => $thresholds['source_budgets'],
             'source_request_details' => [
-                'public_chatter_bluesky' => ['queries_attempted'=>0],
-                'public_chatter_mastodon' => ['queries_attempted'=>0,'instances_queried'=>[]],
-                'public_chatter_gdelt' => ['queries_attempted'=>0],
+                'public_chatter_bluesky' => ['queries_attempted'=>0,'queries_skipped_due_to_budget'=>0],
+                'public_chatter_mastodon' => ['queries_attempted'=>0,'queries_skipped_due_to_budget'=>0,'instances_queried'=>[]],
+                'public_chatter_gdelt' => ['queries_attempted'=>0,'queries_skipped_due_to_budget'=>0],
             ],
+            'gdelt_enabled' => !empty($sourceCheckboxes['public_chatter_gdelt']),
+            'gdelt_attempted' => false,
+            'gdelt_rate_limited' => false,
+            'gdelt_cooldown_until' => $this->gdelt_cooldown_until(),
+            'gdelt_last_response_code' => (int)get_option('lo_public_chatter_gdelt_last_response_code', 0),
+            'gdelt_queries_skipped_due_to_budget' => 0,
+            'gdelt_rows_seen' => 0,
+            'gdelt_watch_candidates' => 0,
             'usable_results' => 0,
             'rows_stored' => 0,
         ];
@@ -178,6 +208,7 @@ class PublicChatterSource implements SignalSourceInterface {
         foreach ($diag['skipped_sources'] as $sourceId => $reasons) {
             $diag['skipped_sources'][$sourceId] = array_values(array_unique(array_filter(array_map('strval', (array)$reasons))));
         }
+        $diag['gdelt_watch_candidates'] = count(array_filter((array)($diag['watch_candidates'] ?? []), static fn($c): bool => (($c['source'] ?? '') === 'public_chatter_gdelt')));
         update_option('lo_diag_'.$this->id(), $diag, false);
     }
 
@@ -312,15 +343,30 @@ class PublicChatterSource implements SignalSourceInterface {
 
     private function collect_mentions(string $sourceId, array $queries, int $window, int $limit): array {
         $out=[]; $diag=['queries_attempted'=>0,'errors'=>[],'instances_queried'=>[]];
+        if ($sourceId === 'public_chatter_gdelt') {
+            $diag += ['gdelt_attempted'=>false,'gdelt_rate_limited'=>false,'gdelt_cooldown_until'=>$this->gdelt_cooldown_until(),'gdelt_last_response_code'=>(int)get_option('lo_public_chatter_gdelt_last_response_code', 0),'gdelt_rows_seen'=>0,'gdelt_watch_candidates'=>0];
+            if ($diag['gdelt_cooldown_until'] !== '') {
+                $diag['errors'][] = 'cooldown';
+                $this->requestDiagnostics[$sourceId] = $diag;
+                return [];
+            }
+        }
         foreach(array_slice($queries,0,max(1,$limit)) as $q){
             $diag['queries_attempted']++;
             if ($sourceId==='public_chatter_bluesky') { $result=$this->search_bluesky($q,$window); }
             elseif ($sourceId==='public_chatter_mastodon') { $result=$this->search_mastodon($q,$window); }
-            elseif ($sourceId==='public_chatter_gdelt') { $result=$this->search_gdelt($q); }
+            elseif ($sourceId==='public_chatter_gdelt') { $diag['gdelt_attempted']=true; $result=$this->search_gdelt($q); }
             else { $result=['mentions'=>[],'errors'=>['request_error']]; }
             $out=array_merge($out,(array)($result['mentions'] ?? []));
             $diag['errors']=array_merge($diag['errors'], (array)($result['errors'] ?? []));
             $diag['instances_queried']=array_merge($diag['instances_queried'], (array)($result['instances_queried'] ?? []));
+            if ($sourceId === 'public_chatter_gdelt') {
+                $diag['gdelt_rows_seen'] += (int)($result['rows_seen'] ?? 0);
+                if (isset($result['response_code'])) { $diag['gdelt_last_response_code'] = (int)$result['response_code']; }
+                if (!empty($result['rate_limited'])) { $diag['gdelt_rate_limited'] = true; }
+                $cooldownUntil = $this->gdelt_cooldown_until();
+                if ($cooldownUntil !== '') { $diag['gdelt_cooldown_until'] = $cooldownUntil; break; }
+            }
         }
         $this->requestDiagnostics[$sourceId] = $diag;
         return array_values(array_unique($out));
@@ -343,16 +389,56 @@ class PublicChatterSource implements SignalSourceInterface {
     }
 
     private function search_gdelt(string $q): array {
+        $cacheKey = 'lo_public_chatter_gdelt_cache_' . md5($q);
+        $cached = get_transient($cacheKey);
+        if (is_array($cached)) {
+            return ['mentions'=>(array)($cached['mentions'] ?? []),'errors'=>[],'rows_seen'=>(int)($cached['rows_seen'] ?? 0),'response_code'=>(int)get_option('lo_public_chatter_gdelt_last_response_code', 0),'cached'=>true];
+        }
         $url=add_query_arg(['query'=>$q,'mode'=>'ArtList','format'=>'json','timespan'=>'60m','sort'=>'datedesc'],'https://api.gdeltproject.org/api/v2/doc/doc');
-        $res=wp_remote_get($url,['timeout'=>8]); if(is_wp_error($res)) return ['mentions'=>[],'errors'=>['request_error']]; if((int)wp_remote_retrieve_response_code($res)>=400) return ['mentions'=>[],'errors'=>['api_http_error']];
-        $body=json_decode((string)wp_remote_retrieve_body($res),true); $arts=(array)($body['articles']??[]); $hashes=[]; foreach(array_slice($arts,0,20) as $a){ $hashes[] = hash('sha256',(string)($a['url']??'').'|'.(string)($a['title']??'')); } return ['mentions'=>$hashes,'errors'=>[]];
+        $res=wp_remote_get($url,['timeout'=>8]);
+        if(is_wp_error($res)) { $this->gdelt_register_failure(0, 'timeout'); return ['mentions'=>[],'errors'=>['request_error','cooldown'],'response_code'=>0,'rate_limited'=>true]; }
+        $code=(int)wp_remote_retrieve_response_code($res); update_option('lo_public_chatter_gdelt_last_response_code', $code, false);
+        if($code===429 || $code===403 || $code>=500) { $this->gdelt_register_failure($code, 'rate_limit'); return ['mentions'=>[],'errors'=>[$code===429?'rate_limited':'api_http_error','cooldown'],'response_code'=>$code,'rate_limited'=>true]; }
+        if($code>=400) return ['mentions'=>[],'errors'=>['api_http_error'],'response_code'=>$code];
+        delete_option('lo_public_chatter_gdelt_failure_count');
+        $body=json_decode((string)wp_remote_retrieve_body($res),true); $arts=(array)($body['articles']??[]); $hashes=[]; foreach(array_slice($arts,0,12) as $a){ $hashes[] = hash('sha256',(string)($a['url']??'').'|'.(string)($a['title']??'')); }
+        $summary = ['mentions'=>array_values(array_unique($hashes)), 'rows_seen'=>count($arts)];
+        set_transient($cacheKey, $summary, (int)apply_filters('lo_public_chatter_gdelt_cache_ttl', 20 * MINUTE_IN_SECONDS));
+        return ['mentions'=>$summary['mentions'],'errors'=>[],'rows_seen'=>$summary['rows_seen'],'response_code'=>$code];
+    }
+
+    private function source_budgets(): array {
+        return (array) apply_filters('lo_public_chatter_source_budgets', [
+            'public_chatter_bluesky' => 10,
+            'public_chatter_mastodon' => 6,
+            'public_chatter_gdelt' => 3,
+        ]);
+    }
+
+    private function gdelt_cooldown_until(): string {
+        $until = (int)get_transient('lo_public_chatter_gdelt_cooldown_until');
+        return $until > time() ? gmdate('c', $until) : '';
+    }
+
+    private function gdelt_register_failure(int $code, string $reason): void {
+        $count = max(1, (int)get_option('lo_public_chatter_gdelt_failure_count', 0) + 1);
+        update_option('lo_public_chatter_gdelt_failure_count', $count, false);
+        $seconds = min(6 * HOUR_IN_SECONDS, (15 * MINUTE_IN_SECONDS) * (2 ** min(4, $count - 1)));
+        if ($code === 429 || $code === 403) { $seconds = max($seconds, HOUR_IN_SECONDS); }
+        $until = time() + $seconds;
+        set_transient('lo_public_chatter_gdelt_cooldown_until', $until, $seconds);
+        update_option('lo_public_chatter_gdelt_last_response_code', $code, false);
     }
 
     private function source_statuses(array $checkboxes, bool $directEnabled, array $diag): array {
         $out = ['hacker_news_chatter'=>['label'=>'HN chatter','status'=>!empty(get_option('lo_hn_chatter_enabled', '1')) ? 'enabled' : 'disabled']];
         foreach ($checkboxes as $sourceId => $checked) {
+            $reasons = (array)($diag['skipped_sources'][$sourceId] ?? []);
             $status = !$checked ? 'disabled' : ($directEnabled ? 'enabled' : 'blocked_by_safe_default');
-            $out[$sourceId] = ['label'=>$this->source_label($sourceId),'status'=>$status,'reasons'=>(array)($diag['skipped_sources'][$sourceId] ?? [])];
+            if ($checked && $directEnabled && in_array('cooldown', $reasons, true)) { $status = 'cooldown'; }
+            if ($checked && $directEnabled && (!empty($diag['gdelt_rate_limited'])) && $sourceId === 'public_chatter_gdelt') { $status = 'rate_limited'; }
+            if ($checked && $directEnabled && in_array('skipped_due_to_budget', $reasons, true)) { $status = 'budget_skipped'; }
+            $out[$sourceId] = ['label'=>$this->source_label($sourceId),'status'=>$status,'reasons'=>$reasons,'last_response_code'=>$sourceId==='public_chatter_gdelt' ? (int)($diag['gdelt_last_response_code'] ?? 0) : 0,'cooldown_until'=>$sourceId==='public_chatter_gdelt' ? (string)($diag['gdelt_cooldown_until'] ?? '') : ''];
         }
         $cfDiag = (array)get_option('lo_diag_cloudflare_radar', []);
         $out['cloudflare_radar'] = ['label'=>'Cloudflare Radar (external telemetry)','status'=>!empty($cfDiag['configured']) ? 'configured' : 'not_configured'];

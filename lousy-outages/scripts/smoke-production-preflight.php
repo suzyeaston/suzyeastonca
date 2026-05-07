@@ -42,12 +42,11 @@ if(!empty($statusDiag)){
     if($attempted<=0 && !$cooldown){ $errors[]='Statuspage diagnostics: endpoints_attempted=0 without cooldown'; }
 }
 $chatterDiag=(array)get_option('lo_diag_public_chatter',[]);
-if(!empty($chatterDiag) && !empty($chatterDiag['direct_sources_enabled'])){ $errors[]='Public chatter direct sources enabled (expected safe-default disabled)'; }
 if(!empty($chatterDiag)){
-    foreach(['configured','attempted','direct_sources_enabled','direct_sources_disabled_by_safe_default','enabled_sources','skipped_sources','providers_scanned','queries_attempted','mentions_seen_by_source','mentions_seen_by_provider','signals_built_by_provider','thresholds','scan_window_minutes','ran_at','watch_candidates','official_incident_corroboration','canadian_infrastructure_watchlist'] as $key){
+    foreach(['configured','attempted','direct_sources_enabled','direct_sources_disabled_by_safe_default','enabled_sources','skipped_sources','providers_scanned','queries_attempted','mentions_seen_by_source','mentions_seen_by_provider','signals_built_by_provider','thresholds','scan_window_minutes','ran_at','watch_candidates','official_incident_corroboration','canadian_infrastructure_watchlist','source_budgets','gdelt_enabled','gdelt_attempted','gdelt_rate_limited','gdelt_cooldown_until','gdelt_last_response_code','gdelt_queries_skipped_due_to_budget','gdelt_rows_seen','gdelt_watch_candidates'] as $key){
         if(!array_key_exists($key,$chatterDiag)){ $errors[]='Public chatter diagnostics missing '.$key; }
     }
-    if(empty($chatterDiag['direct_sources_enabled']) && empty($chatterDiag['direct_sources_disabled_by_safe_default'])){ $errors[]='Public chatter safe-default gate not visible in diagnostics'; }
+    if(!array_key_exists('direct_sources_enabled',$chatterDiag) || !array_key_exists('direct_sources_disabled_by_safe_default',$chatterDiag)){ $errors[]='Public chatter direct source gate not visible in diagnostics'; }
     if(!array_key_exists('public_chatter_bluesky',(array)($chatterDiag['enabled_sources']??[])) || !array_key_exists('public_chatter_mastodon',(array)($chatterDiag['enabled_sources']??[])) || !array_key_exists('public_chatter_gdelt',(array)($chatterDiag['enabled_sources']??[]))){ $errors[]='Public chatter source checkbox diagnostics incomplete'; }
     foreach((array)($chatterDiag['watch_candidates']??[]) as $candidate){
         $pid=(string)($candidate['provider_id']??'');
