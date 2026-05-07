@@ -9,7 +9,7 @@ class CloudflareRadarSource implements SignalSourceInterface {
     private function token(): string { if (defined('LOUSY_OUTAGES_CLOUDFLARE_RADAR_TOKEN')) return (string) LOUSY_OUTAGES_CLOUDFLARE_RADAR_TOKEN; $env=getenv('LOUSY_OUTAGES_CLOUDFLARE_RADAR_TOKEN'); if($env) return (string)$env; return (string)get_option('lousy_outages_cloudflare_radar_token',''); }
     public function id(): string { return 'cloudflare_radar'; }
     public function label(): string { return 'Cloudflare Radar'; }
-    public function is_configured(): bool { return '' !== trim($this->token()); }
+    public function is_configured(): bool { return !empty(get_option('lousy_outages_cloudflare_radar_enabled','0')) && '' !== trim($this->token()); }
     public function collect(array $options = []): array {
         $configured = $this->is_configured();
         $diag = [
@@ -20,7 +20,8 @@ class CloudflareRadarSource implements SignalSourceInterface {
             'rows_seen' => 0,
             'rows_stored' => 0,
             'errors' => [],
-            'lane' => 'external_telemetry',
+            'lane' => 'internet_health',
+            'trust_level' => 'telemetry',
             'ran_at' => gmdate('c'),
         ];
         if (!$configured) { update_option('lo_diag_'.$this->id(), $diag, false); return []; }
@@ -47,8 +48,8 @@ class CloudflareRadarSource implements SignalSourceInterface {
             $signalType = str_contains($kind, 'ANOMAL') ? 'traffic_anomaly' : 'internet_outage';
             $out[]=[
                 'source'=>'cloudflare_radar',
-                'source_type'=>'external_telemetry',
-                'signal_lane'=>'external_telemetry',
+                'source_type'=>'internet_health',
+                'signal_lane'=>'internet_health',
                 'provider_id'=>sanitize_key($asn !== '' ? 'asn_'.$asn : $name),
                 'provider_name'=>sanitize_text_field($name),
                 'category'=>'internet_health',

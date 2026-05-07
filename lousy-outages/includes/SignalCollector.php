@@ -8,16 +8,17 @@ use SuzyEaston\LousyOutages\Sources\CommunityReportIntelSource;
 use SuzyEaston\LousyOutages\Sources\HackerNewsChatterSource;
 use SuzyEaston\LousyOutages\Sources\ProviderFeedSource;
 use SuzyEaston\LousyOutages\Sources\PublicChatterSource;
+use SuzyEaston\LousyOutages\Sources\RedditFieldReportsSource;
 use SuzyEaston\LousyOutages\Sources\StatuspageIntelSource;
 use SuzyEaston\LousyOutages\Sources\SyntheticCanarySource;
 
 class SignalCollector {
-    public static function sources(): array { return [new StatuspageIntelSource(), new ProviderFeedSource(), new HackerNewsChatterSource(), new CommunityReportIntelSource(), new SyntheticCanarySource(), new PublicChatterSource(), new CloudflareRadarSource()]; }
+    public static function sources(): array { return [new StatuspageIntelSource(), new ProviderFeedSource(), new HackerNewsChatterSource(), new CommunityReportIntelSource(), new SyntheticCanarySource(), new PublicChatterSource(), new RedditFieldReportsSource(), new CloudflareRadarSource()]; }
     public static function collect(array $options=[]): array {
         $sources=self::sources();
-        $result=['started_at'=>gmdate('c'),'finished_at'=>'','sources'=>[],'total_collected'=>0,'total_stored'=>0,'failed_count'=>0,'skipped_count'=>0,'first_insert_error'=>'','diagnostics'=>[],'errors'=>[]];
+        $trigger=(string)($options['collection_trigger'] ?? (!empty($options['dry_run']) ? 'preview' : 'cron')); $result=['started_at'=>gmdate('c'),'finished_at'=>'','collection_trigger'=>$trigger,'sources'=>[],'total_collected'=>0,'total_stored'=>0,'failed_count'=>0,'skipped_count'=>0,'first_insert_error'=>'','diagnostics'=>[],'errors'=>[]];
         foreach($sources as $source){ $r=self::collect_source($source->id(),$options); $result['sources'][]=$r; $result['total_collected']+=(int)$r['collected_count']; $result['total_stored']+=(int)$r['stored_count']; $result['failed_count']+=(int)($r['failed_count']??0); $result['skipped_count']+=(int)($r['skipped_count']??0); if($result['first_insert_error']==='' && !empty($r['first_insert_error'])){$result['first_insert_error']=(string)$r['first_insert_error'];} $result['diagnostics'][]=['source'=>$source->id(),'status'=>$r['attempted']?'attempted':'skipped','reason'=>(string)($r['reason']??''),'detail'=>$r['diagnostics']??[]]; }
-        $result['finished_at']=gmdate('c'); self::mark_last_collection_result($result); return $result;
+        $result['finished_at']=gmdate('c'); $result['last_collection_at']=$result['finished_at']; $result['next_collection_allowed_at']=gmdate('c', time()+15*MINUTE_IN_SECONDS); self::mark_last_collection_result($result); return $result;
     }
     public static function collect_source(string $sourceId, array $options=[]): array {
         foreach(self::sources() as $source){ if($source->id()!==$sourceId) continue; $configured=$source->is_configured(); if(!$configured) return ['source'=>$source->id(),'configured'=>false,'attempted'=>false,'reason'=>'not_configured','collected_count'=>0,'stored_count'=>0,'failed_count'=>0,'skipped_count'=>0,'first_insert_error'=>'','diagnostics'=>['configured'=>false,'attempted'=>false,'skipped_reasons'=>['not_configured']],'errors'=>[]];

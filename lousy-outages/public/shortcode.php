@@ -648,12 +648,12 @@ function render_shortcode(): string {
         $watchCandidates = isset($publicDiag['watch_candidates']) && is_array($publicDiag['watch_candidates']) ? $publicDiag['watch_candidates'] : [];
         $watchCandidateCount = (int) ($publicDiag['watch_candidate_count'] ?? count($watchCandidates));
         $sourceStatuses = isset($publicDiag['source_statuses']) && is_array($publicDiag['source_statuses']) ? $publicDiag['source_statuses'] : [];
-        $sourceStatusRows = [
-            'hacker_news_chatter' => $sourceStatuses['hacker_news_chatter'] ?? ['label' => 'HN chatter', 'status' => !empty(get_option('lo_hn_chatter_enabled', '1')) ? 'enabled' : 'disabled'],
-            'public_chatter_bluesky' => $sourceStatuses['public_chatter_bluesky'] ?? ['label' => 'Bluesky', 'status' => !empty(get_option('lousy_outages_public_chatter_bluesky_enabled', '1')) ? (!empty($publicDiag['direct_sources_enabled']) ? 'enabled' : 'blocked_by_safe_default') : 'disabled'],
-            'public_chatter_mastodon' => $sourceStatuses['public_chatter_mastodon'] ?? ['label' => 'Mastodon', 'status' => !empty(get_option('lousy_outages_public_chatter_mastodon_enabled', '1')) ? (!empty($publicDiag['direct_sources_enabled']) ? 'enabled' : 'blocked_by_safe_default') : 'disabled'],
-            'public_chatter_gdelt' => $sourceStatuses['public_chatter_gdelt'] ?? ['label' => 'GDELT', 'status' => !empty(get_option('lousy_outages_public_chatter_gdelt_enabled', '1')) ? (!empty($publicDiag['direct_sources_enabled']) ? 'enabled' : 'blocked_by_safe_default') : 'disabled'],
-            'cloudflare_radar' => $sourceStatuses['cloudflare_radar'] ?? ['label' => 'Cloudflare Radar (external telemetry)', 'status' => !empty($cfDiag['configured']) ? 'configured' : 'not_configured'],
+        $sourceStatusRows = $sourceStatuses ?: [
+            'hacker_news_chatter' => ['label' => 'HN chatter', 'status' => !empty(get_option('lo_hn_chatter_enabled', '1')) ? 'enabled' : 'disabled', 'lane'=>'public_chatter'],
+            'public_chatter_bluesky' => ['label' => 'Bluesky', 'status' => !empty(get_option('lousy_outages_public_chatter_bluesky_enabled', '1')) ? (!empty($publicDiag['direct_sources_enabled']) ? 'enabled' : 'blocked_by_safe_default') : 'disabled', 'lane'=>'public_chatter'],
+            'public_chatter_mastodon' => ['label' => 'Mastodon', 'status' => !empty(get_option('lousy_outages_public_chatter_mastodon_enabled', '1')) ? (!empty($publicDiag['direct_sources_enabled']) ? 'enabled' : 'blocked_by_safe_default') : 'disabled', 'lane'=>'public_chatter'],
+            'public_chatter_gdelt' => ['label' => 'GDELT open web', 'status' => !empty(get_option('lousy_outages_public_chatter_gdelt_enabled', '1')) ? (!empty($publicDiag['direct_sources_enabled']) ? 'enabled' : 'blocked_by_safe_default') : 'disabled', 'lane'=>'open_web'],
+            'cloudflare_radar' => ['label' => 'Cloudflare Radar', 'status' => !empty($cfDiag['configured']) ? 'configured' : 'not_configured', 'lane'=>'internet_health'],
         ];
         $sourcesEnabledCount = 0;
         $sourcesBlockedCount = 0;
@@ -676,8 +676,8 @@ function render_shortcode(): string {
             $status = (string) ($row['status'] ?? 'disabled');
             $reasons = array_values(array_unique(array_filter(array_map('strval', (array) ($row['reasons'] ?? [])))));
             if ($status === 'enabled' || $status === 'configured') { return 'Budgeted · available'; }
-            if ($status === 'cooldown') { return 'Temporarily paused'; }
-            if ($status === 'rate_limited') { return 'Provider asked slow-down'; }
+            if ($status === 'cooldown') { return (($row['lane'] ?? '') === 'open_web') ? 'Open web cooling down' : 'Temporarily paused'; }
+            if ($status === 'rate_limited') { return (($row['lane'] ?? '') === 'open_web') ? 'Open web cooling down' : 'Provider asked slow-down'; }
             if ($status === 'budget_skipped') { return 'Per-run budget spent'; }
             if ($status === 'blocked_by_safe_default') { return 'Direct source gate disabled'; }
             if ($status === 'not_configured') { return 'External telemetry'; }
@@ -729,8 +729,8 @@ function render_shortcode(): string {
         <section class="lo-corroboration-radar lo-chatter-scanner" data-lo-chatter-scanner>
             <div class="lo-corroboration-radar__head">
                 <div>
-                    <h3 class="lo-block-title">PUBLIC CHATTER / FIELD REPORTS</h3>
-                    <p class="lo-corroboration-radar__muted">Unconfirmed public/dev chatter. Useful smoke, not fire.</p>
+                    <h3 class="lo-block-title">CORROBORATION RADAR</h3>
+                    <p class="lo-corroboration-radar__muted">Official feeds confirm provider-declared incidents. Public/social and open-web sources are unconfirmed corroboration only. Telemetry can indicate network-level disruption but does not prove application outages.</p>
                 </div>
                 <span class="lo-corroboration-radar__badge"><?php echo esc_html($statusBadge); ?></span>
             </div>
@@ -743,11 +743,11 @@ function render_shortcode(): string {
                 <?php endforeach; ?>
             </div>
 
-            <div class="lo-corroboration-radar__sources" aria-label="Public chatter source status">
+            <div class="lo-corroboration-radar__sources" aria-label="Source lane status">
                 <?php foreach ($sourceStatusRows as $sourceStatusRow) : $sourceStatus = (string) ($sourceStatusRow['status'] ?? 'disabled'); $lastCode = (int) ($sourceStatusRow['last_response_code'] ?? 0); $cooldownUntil = (string) ($sourceStatusRow['cooldown_until'] ?? ''); ?>
                     <article class="lo-corroboration-radar__source lo-corroboration-radar__source--<?php echo esc_attr(sanitize_html_class($sourceStatus)); ?>">
                         <div class="lo-corroboration-radar__source-head"><strong><?php echo esc_html((string) ($sourceStatusRow['label'] ?? 'Source')); ?></strong><span class="lo-corroboration-radar__status-badge"><?php echo esc_html($statusLabel($sourceStatus)); ?></span></div>
-                        <p><?php echo esc_html($sourceReason((array) $sourceStatusRow)); ?></p>
+                        <p><strong><?php echo esc_html(ucwords(str_replace('_', ' ', (string) ($sourceStatusRow['lane'] ?? 'source')))); ?>:</strong> <?php echo esc_html($sourceReason((array) $sourceStatusRow)); ?></p>
                         <?php if ($lastCode > 0 || $cooldownUntil !== '') : ?>
                             <small><?php echo $lastCode > 0 ? esc_html('HTTP ' . $lastCode) : ''; ?><?php echo ($lastCode > 0 && $cooldownUntil !== '') ? esc_html(' · ') : ''; ?><?php echo $cooldownUntil !== '' ? esc_html('Cooldown until ' . $format_datetime($cooldownUntil)) : ''; ?></small>
                         <?php endif; ?>
@@ -756,7 +756,7 @@ function render_shortcode(): string {
             </div>
 
             <div class="lo-corroboration-radar__incidents" aria-label="Official incident public corroboration">
-                <div class="lo-corroboration-radar__section-title"><h4>Official Incident Corroboration</h4><span>Official incidents seeded into public-source queries</span></div>
+                <div class="lo-corroboration-radar__section-title"><h4>Official Incident Corroboration</h4><span>Active official incidents checked against available public/open-web/telemetry lanes</span></div>
                 <?php if (!empty($officialCorroborationRows)) : ?>
                     <div class="lo-corroboration-radar__incident-grid">
                         <?php foreach (array_slice($officialCorroborationRows, 0, 8) as $row) : $sourcesChecked = array_values(array_filter(array_map('strval', (array) ($row['sources_checked'] ?? [])))); ?>
@@ -764,7 +764,7 @@ function render_shortcode(): string {
                                 <h5><?php echo esc_html((string) ($row['provider_name'] ?? $row['provider_id'] ?? 'Provider')); ?></h5>
                                 <div class="lo-corroboration-radar__incident-badges">
                                     <span class="lo-corroboration-radar__status-badge lo-corroboration-radar__status-badge--official">Official: <?php echo esc_html((string) ($row['official_status'] ?? 'active')); ?></span>
-                                    <span class="lo-corroboration-radar__status-badge lo-corroboration-radar__status-badge--public">Public: <?php echo esc_html((string) ($row['result_label'] ?? 'Official only')); ?></span>
+                                    <span class="lo-corroboration-radar__status-badge lo-corroboration-radar__status-badge--public">Result: <?php echo esc_html((string) ($row['result_label'] ?? 'official only')); ?></span>
                                 </div>
                                 <p><span>Watch</span><strong><?php echo esc_html((string) ($row['watch_candidates'] ?? 0)); ?></strong></p>
                                 <div class="lo-corroboration-radar__chips" aria-label="Sources checked">

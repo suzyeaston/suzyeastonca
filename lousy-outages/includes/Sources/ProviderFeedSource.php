@@ -23,19 +23,27 @@ class ProviderFeedSource implements SignalSourceInterface {
     public function collect(array $options = []): array {
         $windowMinutes = max(5, min(1440, (int)($options['window_minutes'] ?? $options['windowMinutes'] ?? 60)));
         $minTs = time() - ($windowMinutes * 60);
-        $feeds=SourcePack::provider_feed_urls(); $out=[]; $diag=['configured'=>$this->is_configured(),'attempted'=>false,'feeds_checked'=>0,'items_seen'=>0,'items_matched'=>0,'items_stored'=>0,'skipped_reasons'=>[]];
+        $feeds=SourcePack::provider_feed_sources(); $out=[]; $diag=['configured'=>$this->is_configured(),'attempted'=>false,'feeds_checked'=>0,'items_seen'=>0,'items_matched'=>0,'items_stored'=>0,'skipped_reasons'=>[]];
         $diag['items_old_skipped']=0; $diag['items_missing_date']=0; $diag['items_without_parseable_date']=0; $diag['items_duplicate_skipped']=0; $diag['rows_attempted']=0;
         $seenIds = [];
-        foreach(array_slice($feeds,0,12,true) as $key=>$feed){
+        foreach(array_slice($feeds,0,24,true) as $key=>$feedConfig){
+            $cfg=is_array($feedConfig) ? $feedConfig : ['url'=>(string)$feedConfig];
+            if (isset($cfg['default_enabled']) && empty($cfg['default_enabled'])) { $diag['skipped_reasons'][]='disabled_by_default:'.(string)($cfg['provider_id'] ?? $key); continue; }
+            $feed=(string)($cfg['url'] ?? ''); if($feed==='') continue;
+            $providerId=sanitize_key((string)($cfg['provider_id'] ?? (is_string($key)?$key:'')));
+            $providerName=sanitize_text_field((string)($cfg['provider_name'] ?? $providerId));
+            $format=(string)($cfg['format'] ?? 'rss');
             $diag['feeds_checked']++; $diag['attempted']=true;
             $cache='lo_feed_'.md5((string)$feed); $items=get_transient($cache);
             if(!is_array($items)){
                 $r=wp_remote_get((string)$feed,['timeout'=>8]);
                 if(is_wp_error($r)){ $diag['skipped_reasons'][]='http_error:'.$feed; continue; }
                 $body=(string)wp_remote_retrieve_body($r);
-                $xml=@simplexml_load_string($body); $items=[];
+                $items=[];
+                if($format==='json_incidents'){ $json=json_decode($body,true); foreach((array)$json as $j){ if(!is_array($j)) continue; $state=strtolower((string)($j['status_impact'] ?? $j['most_recent_update']['status'] ?? $j['status'] ?? '')); if(in_array($state,['resolved','completed','postmortem'],true)) continue; $items[]=['title'=>(string)($j['external_desc'] ?? $j['name'] ?? $j['title'] ?? 'Provider incident'),'url'=>(string)($j['uri'] ?? $j['url'] ?? $feed),'description'=>(string)($j['most_recent_update']['text'] ?? $j['description'] ?? ''),'published_at'=>(string)($j['begin'] ?? $j['created'] ?? $j['updated'] ?? '')]; } }
+                else { $xml=@simplexml_load_string($body);
                 if($xml && isset($xml->entry)){ foreach($xml->entry as $e){ $items[]=['title'=>(string)$e->title,'url'=>(string)$e->link['href'],'description'=>(string)($e->summary??$e->content??''),'published_at'=>(string)($e->updated ?? $e->published ?? '')]; } }
-                if($xml && isset($xml->channel->item)){ foreach($xml->channel->item as $i){ $items[]=['title'=>(string)$i->title,'url'=>(string)$i->link,'description'=>(string)$i->description,'published_at'=>(string)($i->pubDate ?? '')]; } }
+                if($xml && isset($xml->channel->item)){ foreach($xml->channel->item as $i){ $items[]=['title'=>(string)$i->title,'url'=>(string)$i->link,'description'=>(string)$i->description,'published_at'=>(string)($i->pubDate ?? '')]; } } }
                 set_transient($cache,$items,10*MINUTE_IN_SECONDS);
             }
             foreach(array_slice($items,0,8) as $it){
@@ -55,7 +63,7 @@ class ProviderFeedSource implements SignalSourceInterface {
                 $sourceId = md5($url.$title.(string)$parsed['value']);
                 if (isset($seenIds[$sourceId])) { $diag['items_duplicate_skipped']++; continue; }
                 $seenIds[$sourceId] = true;
-                $out[]=['source'=>'provider_feed','source_type'=>'provider_rss','adapter_id'=>'provider_feed','source_id'=>$sourceId,'provider_id'=>sanitize_key(is_string($key)?$key:$providerHost),'provider_name'=>sanitize_text_field(is_string($key)?$key:$providerHost),'category'=>'service','region'=>'global','signal_type'=>'official_feed','severity'=>'trending','confidence'=>$official?70:55,'title'=>$title,'message'=>mb_substr($desc ?: 'Provider feed indicates service issue.',0,280),'url'=>$url,'observed_at'=>(string)$parsed['value'],'snippets'=>array_values(array_filter([$title,mb_substr($desc,0,120)])),'domains'=>array_values(array_unique(array_filter([$this->host($url),$providerHost]))),'source_urls'=>array_values(array_unique([$url,(string)$feed])),'confidence_reason'=>$official?'Official provider status feed issue language detected.':'Provider/public feed issue language detected.','evidence_quality'=>$official?'moderate':'weak','official_confirmed'=>$official];
+                $out[]=['source'=>'provider_feed','source_type'=>'provider_feed','signal_lane'=>'provider_feed','adapter_id'=>'provider_feed','source_id'=>$sourceId,'provider_id'=>($providerId !== '' ? $providerId : sanitize_key($providerHost)),'provider_name'=>($providerName !== '' ? $providerName : sanitize_text_field($providerHost)),'category'=>'service','region'=>'global','signal_type'=>'official_feed','severity'=>'trending','confidence'=>$official?70:55,'title'=>$title,'message'=>mb_substr($desc ?: 'Provider feed indicates service issue.',0,280),'url'=>$url,'observed_at'=>(string)$parsed['value'],'snippets'=>array_values(array_filter([$title,mb_substr($desc,0,120)])),'domains'=>array_values(array_unique(array_filter([$this->host($url),$providerHost]))),'source_urls'=>array_values(array_unique([$url,(string)$feed])),'confidence_reason'=>$official?'Official provider status feed issue language detected.':'Provider/public feed issue language detected.','evidence_quality'=>$official?'moderate':'weak','official_confirmed'=>$official];
                 $diag['items_stored']++;
                 $diag['rows_attempted']++;
             }
