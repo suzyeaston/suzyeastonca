@@ -7,90 +7,410 @@ use SuzyEaston\LousyOutages\Providers;
 use SuzyEaston\LousyOutages\SignalSourceInterface;
 
 class PublicChatterSource implements SignalSourceInterface {
+    private array $requestDiagnostics = [];
+
     public function id(): string { return 'public_chatter'; }
     public function label(): string { return 'Public Chatter Radar'; }
     public function is_configured(): bool { return (bool) get_option('lousy_outages_public_chatter_enabled', false); }
 
     public function collect(array $options = []): array {
-        if (!$this->is_configured()) { update_option('lo_diag_'.$this->id(), ['configured'=>false,'attempted'=>false,'skipped_reasons'=>['not_configured']], false); return []; }
         $directEnabled = $this->direct_sources_enabled();
-        $window = max(10, min(180, (int) apply_filters('lo_public_chatter_window_minutes', 30)));
+        $sourceCheckboxes = $this->source_checkboxes();
+        $window = max(10, min(180, (int) apply_filters('lo_public_chatter_window_minutes', (int)($options['window_minutes'] ?? 30))));
         $thresholds = [
             'watch' => (int) apply_filters('lo_public_chatter_watch_threshold', 3),
             'trending' => (int) apply_filters('lo_public_chatter_trending_threshold', 6),
             'hot' => (int) apply_filters('lo_public_chatter_hot_threshold', 12),
+            'queries_per_provider_source' => (int) apply_filters('lo_public_chatter_queries_per_provider_source', 4),
+            'active_incident_queries_per_provider' => (int) apply_filters('lo_public_chatter_active_incident_queries_per_provider', 5),
         ];
         $providers = Providers::list();
-        $queries = (array) apply_filters('lo_public_chatter_queries', $this->default_queries($providers), $providers);
-        $signals = [];
-        $sources = [
-            'public_chatter_bluesky' => !empty(get_option('lousy_outages_public_chatter_bluesky_enabled', false)),
-            'public_chatter_mastodon' => !empty(get_option('lousy_outages_public_chatter_mastodon_enabled', false)),
-            'public_chatter_gdelt' => !empty(get_option('lousy_outages_public_chatter_gdelt_enabled', false)),
-        ];
-        if (!$directEnabled) {
-            $sources = ['public_chatter_bluesky'=>false,'public_chatter_mastodon'=>false,'public_chatter_gdelt'=>false];
+        $activeIncidents = $this->active_incident_seed_providers($providers);
+        $queryBuild = $this->build_query_sets($providers, $activeIncidents, $thresholds);
+        $queries = (array) apply_filters('lo_public_chatter_queries', $queryBuild['queries'], $providers, $activeIncidents);
+        $queries = $this->normalize_query_sets($queries, $queryBuild['providers']);
+
+        $diag = $this->base_diagnostics($sourceCheckboxes, $directEnabled, $window, $thresholds, $queryBuild, $activeIncidents);
+        $configured = $this->is_configured();
+        $diag['configured'] = $configured;
+        $diag['attempted'] = $configured;
+
+        if (!$configured) {
+            foreach (array_keys($sourceCheckboxes) as $sourceId) {
+                $diag['skipped_sources'][$sourceId][] = 'master_disabled';
+            }
+            $diag['source_statuses'] = $this->source_statuses($sourceCheckboxes, $directEnabled, $diag);
+            $diag['official_incident_corroboration'] = $this->official_incident_corroboration($activeIncidents, $diag, [], []);
+            $this->store_diagnostics($diag);
+            return [];
         }
-        foreach ($queries as $providerId => $providerQueries) {
-            $provider = (array)($providers[$providerId] ?? ['name' => ucfirst((string)$providerId), 'category'=>'general']);
-            foreach ($sources as $sourceId => $enabled) {
-                if (!$enabled) continue;
-                $mentions = $this->collect_mentions($sourceId, (array)$providerQueries, $window);
+
+        $enabledRuntimeSources = [];
+        foreach ($sourceCheckboxes as $sourceId => $checked) {
+            if (!$checked) {
+                $diag['skipped_sources'][$sourceId][] = 'source_checkbox_disabled';
+                continue;
+            }
+            if (!$directEnabled) {
+                $diag['skipped_sources'][$sourceId][] = 'direct_sources_gate_disabled';
+                continue;
+            }
+            $enabledRuntimeSources[$sourceId] = true;
+        }
+
+        $signals = [];
+        $perProviderSourceCounts = [];
+        foreach ($queries as $providerId => $row) {
+            $provider = (array)($row['provider'] ?? ['name' => ucfirst((string)$providerId), 'category'=>'general']);
+            $providerName = (string)($provider['name'] ?? $providerId);
+            $providerCategory = (string)($provider['category'] ?? 'general');
+            $providerQueries = array_values(array_filter(array_map('strval', (array)($row['queries'] ?? []))));
+            foreach ($enabledRuntimeSources as $sourceId => $_enabled) {
+                $mentions = $this->collect_mentions($sourceId, $providerQueries, $window, (int)$thresholds['queries_per_provider_source']);
+                $requestDiag = $this->requestDiagnostics[$sourceId] ?? [];
+                $diag['queries_attempted'] += (int)($requestDiag['queries_attempted'] ?? min(count($providerQueries), (int)$thresholds['queries_per_provider_source']));
+                $diag['source_request_details'][$sourceId]['queries_attempted'] = (int)($diag['source_request_details'][$sourceId]['queries_attempted'] ?? 0) + (int)($requestDiag['queries_attempted'] ?? 0);
+                if ($sourceId === 'public_chatter_mastodon') {
+                    $diag['source_request_details'][$sourceId]['instances_queried'] = array_values(array_unique(array_merge((array)($diag['source_request_details'][$sourceId]['instances_queried'] ?? []), (array)($requestDiag['instances_queried'] ?? []))));
+                }
+                foreach ((array)($requestDiag['errors'] ?? []) as $errorReason) {
+                    $diag['skipped_sources'][$sourceId][] = (string)$errorReason;
+                }
+
                 $count = count($mentions);
+                $diag['mentions_seen_by_source'][$sourceId] = (int)($diag['mentions_seen_by_source'][$sourceId] ?? 0) + $count;
+                $diag['mentions_seen_by_provider'][$providerId] = (int)($diag['mentions_seen_by_provider'][$providerId] ?? 0) + $count;
+                $perProviderSourceCounts[$providerId][$sourceId] = (int)($perProviderSourceCounts[$providerId][$sourceId] ?? 0) + $count;
+
+                if ($count <= 0) {
+                    $diag['skipped_sources'][$sourceId][] = 'no_results';
+                    continue;
+                }
+
                 $severity = $this->severity_for_count($count, $thresholds);
-                if ($severity === '') continue;
-                $signals[] = $this->build_signal($sourceId, (string)$providerId, (string)($provider['name'] ?? $providerId), (string)($provider['category'] ?? 'general'), $severity, $count, $window, $mentions);
+                if ($severity === '') {
+                    $diag['skipped_sources'][$sourceId][] = 'below_threshold';
+                    $diag['watch_candidates'][] = [
+                        'provider_id' => (string)$providerId,
+                        'provider_name' => $providerName,
+                        'source' => $sourceId,
+                        'source_label' => $this->source_label($sourceId),
+                        'count' => $count,
+                        'reason' => 'below_threshold',
+                    ];
+                    continue;
+                }
+
+                $signals[] = $this->build_signal($sourceId, (string)$providerId, $providerName, $providerCategory, $severity, $count, $window, $mentions);
+                $diag['signals_built_by_provider'][$providerId] = (int)($diag['signals_built_by_provider'][$providerId] ?? 0) + 1;
             }
         }
-        update_option('lo_diag_'.$this->id(), ['configured'=>true,'attempted'=>true,'queries_attempted'=>count($queries),'usable_results'=>count($signals),'rows_stored'=>count($signals),'direct_sources_enabled'=>$directEnabled,'direct_sources_disabled_by_safe_default'=>!$directEnabled], false);
+
+        $diag['usable_results'] = count($signals);
+        $diag['rows_stored'] = count($signals);
+        $diag['watch_candidate_count'] = count($diag['watch_candidates']);
+        $diag['source_statuses'] = $this->source_statuses($sourceCheckboxes, $directEnabled, $diag);
+        $diag['official_incident_corroboration'] = $this->official_incident_corroboration($activeIncidents, $diag, $perProviderSourceCounts, array_keys($enabledRuntimeSources));
+        $this->store_diagnostics($diag);
         return $signals;
     }
 
-    private function direct_sources_enabled(): bool {
+    public function direct_sources_enabled(): bool {
         $flag = defined('LOUSY_OUTAGES_ENABLE_DIRECT_PUBLIC_CHATTER') ? (bool) LOUSY_OUTAGES_ENABLE_DIRECT_PUBLIC_CHATTER : false;
         return (bool) apply_filters('lo_public_chatter_direct_sources_enabled', $flag);
+    }
+
+    public function source_checkboxes(): array {
+        return [
+            'public_chatter_bluesky' => !empty(get_option('lousy_outages_public_chatter_bluesky_enabled', '1')),
+            'public_chatter_mastodon' => !empty(get_option('lousy_outages_public_chatter_mastodon_enabled', '0')),
+            'public_chatter_gdelt' => !empty(get_option('lousy_outages_public_chatter_gdelt_enabled', '1')),
+        ];
+    }
+
+    public function canadian_infrastructure_watchlist(): array {
+        return [
+            'telecom' => ['rogers'=>'Rogers','shaw'=>'Shaw','bell'=>'Bell','telus'=>'TELUS','freedom_mobile'=>'Freedom Mobile','videotron'=>'Videotron','fizz'=>'Fizz','koodo'=>'Koodo','virgin_plus'=>'Virgin Plus','public_mobile'=>'Public Mobile'],
+            'payments' => ['interac'=>'Interac','etransfer'=>'e-Transfer','interac_debit'=>'Interac Debit','moneris'=>'Moneris','global_payments'=>'Global Payments','stripe_canada'=>'Stripe Canada'],
+            'banking' => ['rbc'=>'RBC / Royal Bank','td_canada_trust'=>'TD / TD Canada Trust','scotiabank'=>'Scotiabank','bmo'=>'BMO / Bank of Montreal','cibc'=>'CIBC','national_bank'=>'National Bank','tangerine'=>'Tangerine','simplii'=>'Simplii','eq_bank'=>'EQ Bank','vancity'=>'Vancity','coast_capital'=>'Coast Capital','desjardins'=>'Desjardins'],
+            'government_login' => ['bc_services_card'=>'BC Services Card','cra_my_account'=>'CRA My Account','service_canada'=>'Service Canada'],
+            'transit' => ['translink_compass'=>'TransLink Compass'],
+            'emergency_services' => ['911'=>'911','ecomm_911'=>'E-Comm 911'],
+        ];
+    }
+
+    private function base_diagnostics(array $sourceCheckboxes, bool $directEnabled, int $window, array $thresholds, array $queryBuild, array $activeIncidents): array {
+        return [
+            'configured' => false,
+            'attempted' => false,
+            'direct_sources_enabled' => $directEnabled,
+            'direct_sources_disabled_by_safe_default' => !$directEnabled,
+            'enabled_sources' => $sourceCheckboxes,
+            'skipped_sources' => ['public_chatter_bluesky'=>[],'public_chatter_mastodon'=>[],'public_chatter_gdelt'=>[]],
+            'source_statuses' => [],
+            'providers_scanned' => array_values(array_map(static fn($p) => ['provider_id'=>(string)$p['id'], 'provider_name'=>(string)$p['name'], 'category'=>(string)($p['category'] ?? 'general'), 'seed_types'=>(array)($p['seed_types'] ?? [])], (array)$queryBuild['providers'])),
+            'providers_scanned_count' => count((array)$queryBuild['providers']),
+            'active_incident_seed_providers' => array_values($activeIncidents),
+            'canadian_infrastructure_watchlist' => $this->watchlist_summary(),
+            'canadian_infrastructure_providers_scanned' => $this->flat_watchlist_providers(),
+            'queries_attempted' => 0,
+            'queries_planned' => (int)$queryBuild['query_count'],
+            'mentions_seen_by_source' => ['public_chatter_bluesky'=>0,'public_chatter_mastodon'=>0,'public_chatter_gdelt'=>0],
+            'mentions_seen_by_provider' => [],
+            'signals_built_by_provider' => [],
+            'thresholds' => $thresholds,
+            'scan_window_minutes' => $window,
+            'ran_at' => gmdate('c'),
+            'watch_candidates' => [],
+            'watch_candidate_count' => 0,
+            'official_incident_corroboration' => [],
+            'source_request_details' => [
+                'public_chatter_bluesky' => ['queries_attempted'=>0],
+                'public_chatter_mastodon' => ['queries_attempted'=>0,'instances_queried'=>[]],
+                'public_chatter_gdelt' => ['queries_attempted'=>0],
+            ],
+            'usable_results' => 0,
+            'rows_stored' => 0,
+        ];
+    }
+
+    private function store_diagnostics(array $diag): void {
+        foreach ($diag['skipped_sources'] as $sourceId => $reasons) {
+            $diag['skipped_sources'][$sourceId] = array_values(array_unique(array_filter(array_map('strval', (array)$reasons))));
+        }
+        update_option('lo_diag_'.$this->id(), $diag, false);
+    }
+
+    private function build_query_sets(array $providers, array $activeIncidents, array $thresholds): array {
+        $entries = [];
+        foreach ($this->default_queries($providers) as $providerId => $queries) {
+            $provider = (array)($providers[$providerId] ?? ['name'=>ucfirst((string)$providerId), 'category'=>'general']);
+            $entries[$providerId] = ['provider'=>['id'=>(string)$providerId,'name'=>(string)($provider['name'] ?? $providerId),'category'=>(string)($provider['category'] ?? 'general'),'seed_types'=>['default']], 'queries'=>$queries];
+        }
+        foreach ($activeIncidents as $incident) {
+            $providerId = (string)($incident['provider_id'] ?? '');
+            if ($providerId === '') { continue; }
+            $providerName = (string)($incident['provider_name'] ?? $providerId);
+            if (!isset($entries[$providerId])) {
+                $entries[$providerId] = ['provider'=>['id'=>$providerId,'name'=>$providerName,'category'=>(string)($incident['category'] ?? 'official_incident'),'seed_types'=>[]], 'queries'=>[]];
+            }
+            $entries[$providerId]['provider']['seed_types'][] = 'active_incident';
+            $entries[$providerId]['queries'] = array_merge((array)$entries[$providerId]['queries'], $this->active_incident_queries($providerName, (string)($incident['title'] ?? ''), (int)$thresholds['active_incident_queries_per_provider']));
+        }
+        foreach ($this->canadian_infrastructure_watchlist() as $category => $items) {
+            foreach ($items as $providerId => $name) {
+                if (!isset($entries[$providerId])) {
+                    $entries[$providerId] = ['provider'=>['id'=>(string)$providerId,'name'=>(string)$name,'category'=>(string)$category,'seed_types'=>[]], 'queries'=>[]];
+                }
+                $entries[$providerId]['provider']['seed_types'][] = 'canadian_infrastructure';
+                $entries[$providerId]['queries'] = array_merge((array)$entries[$providerId]['queries'], $this->provider_queries((string)$name));
+            }
+        }
+        return $this->normalize_query_sets($entries, []);
+    }
+
+    private function normalize_query_sets(array $queries, array $providers): array {
+        $normalized = [];
+        foreach ($queries as $providerId => $row) {
+            if (is_array($row) && array_key_exists('queries', $row)) {
+                $provider = (array)($row['provider'] ?? ($providers[$providerId] ?? []));
+                $providerQueries = (array)$row['queries'];
+            } else {
+                $provider = (array)($providers[$providerId] ?? []);
+                $providerQueries = (array)$row;
+            }
+            $id = sanitize_key((string)($provider['id'] ?? $providerId));
+            if ($id === '') { continue; }
+            $provider['id'] = $id;
+            $provider['name'] = (string)($provider['name'] ?? ucfirst($id));
+            $provider['seed_types'] = array_values(array_unique((array)($provider['seed_types'] ?? ['custom'])));
+            $normalized[$id] = ['provider'=>$provider, 'queries'=>array_values(array_unique(array_filter(array_map(static fn($q) => trim((string)$q), $providerQueries))))];
+            $normalized[$id]['queries'] = array_slice($normalized[$id]['queries'], 0, 8);
+        }
+        if ($providers === []) {
+            return ['queries'=>$normalized, 'providers'=>array_values(array_column($normalized, 'provider')), 'query_count'=>array_sum(array_map(static fn($r) => count((array)$r['queries']), $normalized))];
+        }
+        return $normalized;
     }
 
     private function default_queries(array $providers): array {
         $map = [
             'cloudflare' => ['cloudflare down','cloudflare outage','cloudflare warp down'],
-            'aws' => ['aws down','aws outage','aws us-east-1'],
+            'aws' => ['aws down','aws outage','aws us-east-1 errors'],
             'azure' => ['azure down','azure outage','microsoft 365 down'],
-            'google_cloud' => ['google cloud outage','gcp outage'],
-            'openai' => ['chatgpt down','openai outage'],
+            'google_cloud' => ['google cloud outage','gcp outage','google cloud errors'],
+            'google_workspace' => ['google workspace outage','gmail down','google drive down'],
+            'openai' => ['chatgpt down','openai outage','openai api errors'],
             'slack' => ['slack down','slack outage'],
+            'github' => ['github down','github actions failing','github outage'],
         ];
         return array_intersect_key($map, $providers);
     }
-    private function collect_mentions(string $sourceId, array $queries, int $window): array {
-        $out=[]; foreach(array_slice($queries,0,4) as $q){
-            if ($sourceId==='public_chatter_bluesky') $out=array_merge($out,$this->search_bluesky($q,$window));
-            elseif ($sourceId==='public_chatter_mastodon') $out=array_merge($out,$this->search_mastodon($q,$window));
-            elseif ($sourceId==='public_chatter_gdelt') $out=array_merge($out,$this->search_gdelt($q));
+
+    private function provider_queries(string $name): array {
+        $base = trim($name);
+        $plain = trim((string)preg_replace('/\s*\/.*$/', '', $base));
+        $queries = [$base.' outage', $base.' down', $base.' errors'];
+        if ($plain !== '' && strcasecmp($plain, $base) !== 0) {
+            $queries[] = $plain.' outage';
+            $queries[] = $plain.' down';
         }
+        return array_values(array_unique($queries));
+    }
+
+    private function active_incident_queries(string $providerName, string $title, int $limit): array {
+        $queries = [$providerName.' outage', $providerName.' down', $providerName.' errors'];
+        $short = $this->short_phrase($title);
+        if ($short !== '') { $queries[] = $short; }
+        $keyword = $this->incident_keyword($title);
+        if ($keyword !== '') { $queries[] = $providerName.' '.$keyword; }
+        return array_slice(array_values(array_unique(array_filter($queries))), 0, max(1, $limit));
+    }
+
+    private function short_phrase(string $text): string {
+        $text = trim((string)preg_replace('/[^\pL\pN\s\-]/u', ' ', $text));
+        $parts = preg_split('/\s+/', $text) ?: [];
+        return trim(implode(' ', array_slice($parts, 0, 6)));
+    }
+
+    private function incident_keyword(string $title): string {
+        $words = ['login','api','errors','latency','degraded','outage','payments','email','network','dns','dashboard','e-transfer','debit'];
+        $lower = strtolower($title);
+        foreach ($words as $word) { if (str_contains($lower, $word)) { return $word; } }
+        return '';
+    }
+
+    private function active_incident_seed_providers(array $providers): array {
+        $snapshot = function_exists('lousy_outages_get_snapshot') ? \lousy_outages_get_snapshot(false) : get_option('lousy_outages_snapshot', []);
+        if (!is_array($snapshot) || empty($snapshot['providers']) || !is_array($snapshot['providers'])) {
+            $snapshot = get_option('lousy_outages_snapshot', []);
+        }
+        $out = [];
+        foreach ((array)($snapshot['providers'] ?? []) as $tile) {
+            if (!is_array($tile)) { continue; }
+            $providerId = sanitize_key((string)($tile['provider'] ?? $tile['id'] ?? ''));
+            if ($providerId === '') { continue; }
+            $status = strtolower((string)($tile['status'] ?? $tile['stateCode'] ?? ''));
+            $incidents = (array)($tile['incidents'] ?? []);
+            $active = !in_array($status, ['', 'operational', 'ok', 'unknown'], true) || !empty($incidents);
+            if (!$active) { continue; }
+            $title = (string)($tile['summary'] ?? $tile['status_label'] ?? $tile['state'] ?? 'Active incident');
+            if (!empty($incidents[0]) && is_array($incidents[0])) {
+                $title = (string)($incidents[0]['name'] ?? $incidents[0]['title'] ?? $title);
+                $status = strtolower((string)($incidents[0]['status'] ?? $status));
+            }
+            $out[$providerId] = [
+                'provider_id' => $providerId,
+                'provider_name' => (string)($tile['name'] ?? $tile['provider_name'] ?? ($providers[$providerId]['name'] ?? $providerId)),
+                'official_status' => $status ?: 'active',
+                'title' => $title,
+                'category' => (string)($providers[$providerId]['category'] ?? 'official_incident'),
+            ];
+        }
+        return array_values($out);
+    }
+
+    private function collect_mentions(string $sourceId, array $queries, int $window, int $limit): array {
+        $out=[]; $diag=['queries_attempted'=>0,'errors'=>[],'instances_queried'=>[]];
+        foreach(array_slice($queries,0,max(1,$limit)) as $q){
+            $diag['queries_attempted']++;
+            if ($sourceId==='public_chatter_bluesky') { $result=$this->search_bluesky($q,$window); }
+            elseif ($sourceId==='public_chatter_mastodon') { $result=$this->search_mastodon($q,$window); }
+            elseif ($sourceId==='public_chatter_gdelt') { $result=$this->search_gdelt($q); }
+            else { $result=['mentions'=>[],'errors'=>['request_error']]; }
+            $out=array_merge($out,(array)($result['mentions'] ?? []));
+            $diag['errors']=array_merge($diag['errors'], (array)($result['errors'] ?? []));
+            $diag['instances_queried']=array_merge($diag['instances_queried'], (array)($result['instances_queried'] ?? []));
+        }
+        $this->requestDiagnostics[$sourceId] = $diag;
         return array_values(array_unique($out));
     }
+
     private function search_bluesky(string $q,int $window): array {
         $url = add_query_arg(['q'=>$q,'limit'=>25,'sort'=>'latest'],'https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts');
-        $res = wp_remote_get($url,['timeout'=>8]); if(is_wp_error($res) || (int)wp_remote_retrieve_response_code($res)>=400) return [];
+        $res = wp_remote_get($url,['timeout'=>8]);
+        if(is_wp_error($res)) { return ['mentions'=>[],'errors'=>['request_error']]; }
+        if((int)wp_remote_retrieve_response_code($res)>=400) { return ['mentions'=>[],'errors'=>['api_http_error']]; }
         $body = json_decode((string)wp_remote_retrieve_body($res), true); $posts=(array)($body['posts']??[]); $min=time()-$window*60; $hashes=[];
         foreach($posts as $p){ $created = strtotime((string)($p['record']['createdAt'] ?? $p['indexedAt'] ?? '')); if($created && $created < $min) continue; $hashes[] = hash('sha256', (string)($p['uri'] ?? '').'|'.substr((string)($p['record']['text'] ?? ''),0,60)); }
-        return $hashes;
+        return ['mentions'=>$hashes,'errors'=>[]];
     }
+
     private function search_mastodon(string $q,int $window): array {
-        $instances=(array)apply_filters('lo_public_chatter_mastodon_instances',['https://mastodon.social']); $hashes=[]; $min=time()-$window*60;
-        foreach(array_slice($instances,0,2) as $instance){ $url = trailingslashit((string)$instance).'api/v2/search?q='.rawurlencode($q).'&type=statuses&limit=20'; $res=wp_remote_get($url,['timeout'=>8]); if(is_wp_error($res)||(int)wp_remote_retrieve_response_code($res)>=400) continue; $body=json_decode((string)wp_remote_retrieve_body($res),true); foreach((array)($body['statuses']??[]) as $s){ $created=strtotime((string)($s['created_at']??'')); if($created && $created<$min) continue; $hashes[] = hash('sha256',(string)($s['url']??'').'|'.substr(wp_strip_all_tags((string)($s['content']??'')),0,60)); }}
-        return $hashes;
+        $instances=(array)apply_filters('lo_public_chatter_mastodon_instances',['https://mastodon.social']); $hashes=[]; $min=time()-$window*60; $errors=[]; $queried=[];
+        foreach(array_slice($instances,0,2) as $instance){ $instance=rtrim((string)$instance,'/'); $queried[]=$instance; $url = $instance.'/api/v2/search?q='.rawurlencode($q).'&type=statuses&limit=20'; $res=wp_remote_get($url,['timeout'=>8]); if(is_wp_error($res)){ $errors[]='request_error'; continue; } if((int)wp_remote_retrieve_response_code($res)>=400){ $errors[]='api_http_error'; continue; } $body=json_decode((string)wp_remote_retrieve_body($res),true); foreach((array)($body['statuses']??[]) as $s){ $created=strtotime((string)($s['created_at']??'')); if($created && $created<$min) continue; $hashes[] = hash('sha256',(string)($s['url']??'').'|'.substr(wp_strip_all_tags((string)($s['content']??'')),0,60)); }}
+        return ['mentions'=>$hashes,'errors'=>array_values(array_unique($errors)),'instances_queried'=>array_values(array_unique($queried))];
     }
+
     private function search_gdelt(string $q): array {
         $url=add_query_arg(['query'=>$q,'mode'=>'ArtList','format'=>'json','timespan'=>'60m','sort'=>'datedesc'],'https://api.gdeltproject.org/api/v2/doc/doc');
-        $res=wp_remote_get($url,['timeout'=>8]); if(is_wp_error($res)||(int)wp_remote_retrieve_response_code($res)>=400) return [];
-        $body=json_decode((string)wp_remote_retrieve_body($res),true); $arts=(array)($body['articles']??[]); $hashes=[]; foreach(array_slice($arts,0,20) as $a){ $hashes[] = hash('sha256',(string)($a['url']??'').'|'.(string)($a['title']??'')); } return $hashes;
+        $res=wp_remote_get($url,['timeout'=>8]); if(is_wp_error($res)) return ['mentions'=>[],'errors'=>['request_error']]; if((int)wp_remote_retrieve_response_code($res)>=400) return ['mentions'=>[],'errors'=>['api_http_error']];
+        $body=json_decode((string)wp_remote_retrieve_body($res),true); $arts=(array)($body['articles']??[]); $hashes=[]; foreach(array_slice($arts,0,20) as $a){ $hashes[] = hash('sha256',(string)($a['url']??'').'|'.(string)($a['title']??'')); } return ['mentions'=>$hashes,'errors'=>[]];
     }
+
+    private function source_statuses(array $checkboxes, bool $directEnabled, array $diag): array {
+        $out = ['hacker_news_chatter'=>['label'=>'HN chatter','status'=>!empty(get_option('lo_hn_chatter_enabled', '1')) ? 'enabled' : 'disabled']];
+        foreach ($checkboxes as $sourceId => $checked) {
+            $status = !$checked ? 'disabled' : ($directEnabled ? 'enabled' : 'blocked_by_safe_default');
+            $out[$sourceId] = ['label'=>$this->source_label($sourceId),'status'=>$status,'reasons'=>(array)($diag['skipped_sources'][$sourceId] ?? [])];
+        }
+        $cfDiag = (array)get_option('lo_diag_cloudflare_radar', []);
+        $out['cloudflare_radar'] = ['label'=>'Cloudflare Radar (external telemetry)','status'=>!empty($cfDiag['configured']) ? 'configured' : 'not_configured'];
+        return $out;
+    }
+
+    private function official_incident_corroboration(array $activeIncidents, array $diag, array $perProviderSourceCounts, array $enabledRuntimeSourceIds): array {
+        $rows = [];
+        foreach ($activeIncidents as $incident) {
+            $providerId = (string)($incident['provider_id'] ?? '');
+            $promoted = (int)($diag['signals_built_by_provider'][$providerId] ?? 0) > 0;
+            $watch = 0;
+            foreach ((array)$diag['watch_candidates'] as $candidate) {
+                if (($candidate['provider_id'] ?? '') === $providerId) { $watch += (int)($candidate['count'] ?? 0); }
+            }
+            if (!$enabledRuntimeSourceIds) { $label = 'No chatter sources enabled'; }
+            elseif ($promoted) { $label = 'Public corroboration'; }
+            elseif ($watch > 0 || !empty($perProviderSourceCounts[$providerId])) { $label = 'Public watch'; }
+            else { $label = 'Official only'; }
+            $rows[] = [
+                'provider_id'=>$providerId,
+                'provider_name'=>(string)($incident['provider_name'] ?? $providerId),
+                'official_status'=>(string)($incident['official_status'] ?? 'active'),
+                'public_chatter_promoted'=>$promoted,
+                'watch_candidates'=>$watch,
+                'sources_checked'=>array_map(fn($s) => $this->source_label((string)$s), $enabledRuntimeSourceIds),
+                'result_label'=>$label,
+            ];
+        }
+        return $rows;
+    }
+
+    private function watchlist_summary(): array {
+        $summary = [];
+        foreach ($this->canadian_infrastructure_watchlist() as $category => $items) {
+            $summary[] = ['category'=>$category, 'label'=>$this->watchlist_category_label($category), 'count'=>count($items), 'providers'=>array_values($items)];
+        }
+        return $summary;
+    }
+
+    private function flat_watchlist_providers(): array {
+        $out=[]; foreach($this->canadian_infrastructure_watchlist() as $category=>$items){ foreach($items as $id=>$name){ $out[]=['provider_id'=>(string)$id,'provider_name'=>(string)$name,'category'=>(string)$category]; }} return $out;
+    }
+
+    private function watchlist_category_label(string $category): string {
+        $labels=['telecom'=>'Telecom','payments'=>'Payments','banking'=>'Banking','government_login'=>'Government login','transit'=>'Transit','emergency_services'=>'Emergency services'];
+        return $labels[$category] ?? ucwords(str_replace('_',' ',$category));
+    }
+
+    private function source_label(string $sourceId): string {
+        $labels=['public_chatter_bluesky'=>'Bluesky','public_chatter_mastodon'=>'Mastodon','public_chatter_gdelt'=>'GDELT open web','hacker_news_chatter'=>'HN chatter'];
+        return $labels[$sourceId] ?? $sourceId;
+    }
+
     private function severity_for_count(int $count, array $t): string { if($count >= $t['hot']) return 'hot'; if($count >= $t['trending']) return 'trending'; if($count >= $t['watch']) return 'watch'; return ''; }
     private function build_signal(string $source,string $providerId,string $providerName,string $category,string $severity,int $count,int $window,array $mentions): array {
         $confMap=['watch'=>25,'trending'=>45,'hot'=>65]; if($source==='public_chatter_gdelt') $confMap=['watch'=>35,'trending'=>55,'hot'=>70];
-        $msg = $source==='public_chatter_gdelt' ? "Recent public web/news mentions suggest a possible {$providerName} issue. Official status may still be unconfirmed." : "Public posts mentioning possible {$providerName} issues increased recently. This is unconfirmed.";
+        $msg = $source==='public_chatter_gdelt' ? "Recent open-web/news mentions suggest a possible {$providerName} issue. Official status may still be unconfirmed." : "Public posts mentioning possible {$providerName} issues increased recently. This is unconfirmed.";
         return ['source'=>$source,'provider_id'=>$providerId,'provider_name'=>$providerName,'category'=>$source==='public_chatter_gdelt'?'open_web':$category,'region'=>'global','signal_type'=>'public_chatter','severity'=>$severity,'confidence'=>min(85,max(0,(int)$confMap[$severity])),'title'=>$source==='public_chatter_gdelt'?"Open web mentions increasing for {$providerName}":"Public chatter mentions increasing for {$providerName}",'message'=>$msg,'url'=>$this->safe_url_for_source($source,$providerName),'observed_at'=>gmdate('Y-m-d H:i:s'),'expires_at'=>gmdate('Y-m-d H:i:s',time()+$window*60),'raw_hash'=>hash('sha256',$source.'|'.$providerId.'|'.$severity.'|'.count($mentions).'|'.implode('|',$mentions))];
     }
     private function safe_url_for_source(string $source, string $provider): string { if($source==='public_chatter_bluesky') return 'https://bsky.app/search?q='.rawurlencode($provider.' outage'); if($source==='public_chatter_mastodon') return 'https://mastodon.social'; if($source==='public_chatter_gdelt') return 'https://api.gdeltproject.org/api/v2/doc/doc'; return ''; }

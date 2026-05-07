@@ -1069,12 +1069,26 @@ function lousy_outages_settings_page() {
                     </td>
                 </tr>
                 
+                <?php
+                $lo_public_chatter_source = new \SuzyEaston\LousyOutages\Sources\PublicChatterSource();
+                $lo_public_chatter_master_enabled = ! empty( get_option( 'lousy_outages_public_chatter_enabled', '0' ) );
+                $lo_public_chatter_direct_enabled = $lo_public_chatter_source->direct_sources_enabled();
+                $lo_public_chatter_source_statuses = [
+                    'Bluesky' => ! empty( get_option( 'lousy_outages_public_chatter_bluesky_enabled', '1' ) ),
+                    'Mastodon' => ! empty( get_option( 'lousy_outages_public_chatter_mastodon_enabled', '0' ) ),
+                    'GDELT' => ! empty( get_option( 'lousy_outages_public_chatter_gdelt_enabled', '1' ) ),
+                ];
+                ?>
                 <tr><th scope="row">Rumour Radar</th><td>
-                    <input type="hidden" name="lousy_outages_public_chatter_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_enabled', '0' ) ) ); ?>> Enable Public Chatter Radar</label><br>
-                    <input type="hidden" name="lousy_outages_public_chatter_bluesky_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_bluesky_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_bluesky_enabled', '1' ) ) ); ?>> Enable Bluesky source</label><br>
-                    <input type="hidden" name="lousy_outages_public_chatter_mastodon_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_mastodon_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_mastodon_enabled', '0' ) ) ); ?>> Enable Mastodon source</label><br>
-                    <input type="hidden" name="lousy_outages_public_chatter_gdelt_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_gdelt_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_gdelt_enabled', '1' ) ) ); ?>> Enable GDELT source</label>
-                    <p class="description">Public chatter signals are unconfirmed and should be treated as early warning only.</p>
+                    <p><strong>Master Public Chatter Radar:</strong> <?php echo esc_html( $lo_public_chatter_master_enabled ? 'Enabled' : 'Disabled' ); ?> | <strong>Direct public source gate:</strong> <?php echo esc_html( $lo_public_chatter_direct_enabled ? 'Enabled' : 'Disabled by safe default' ); ?></p>
+                    <?php if ( ! $lo_public_chatter_direct_enabled ) : ?>
+                        <div class="notice notice-warning inline"><p><?php echo esc_html__( 'Direct public chatter sources are disabled by safe default. Source checkboxes are saved, but they will not collect until the direct source gate is enabled.', 'lousy-outages' ); ?></p></div>
+                    <?php endif; ?>
+                    <input type="hidden" name="lousy_outages_public_chatter_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_enabled" value="1" <?php checked( $lo_public_chatter_master_enabled ); ?>> Enable Public Chatter Radar</label><br>
+                    <input type="hidden" name="lousy_outages_public_chatter_bluesky_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_bluesky_enabled" value="1" <?php checked( $lo_public_chatter_source_statuses['Bluesky'] ); ?>> Enable Bluesky source</label> <em><?php echo esc_html( $lo_public_chatter_source_statuses['Bluesky'] ? ( $lo_public_chatter_direct_enabled ? 'enabled' : 'saved, blocked by safe default' ) : 'disabled' ); ?></em><br>
+                    <input type="hidden" name="lousy_outages_public_chatter_mastodon_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_mastodon_enabled" value="1" <?php checked( $lo_public_chatter_source_statuses['Mastodon'] ); ?>> Enable Mastodon source</label> <em><?php echo esc_html( $lo_public_chatter_source_statuses['Mastodon'] ? ( $lo_public_chatter_direct_enabled ? 'enabled' : 'saved, blocked by safe default' ) : 'disabled' ); ?></em><br>
+                    <input type="hidden" name="lousy_outages_public_chatter_gdelt_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_gdelt_enabled" value="1" <?php checked( $lo_public_chatter_source_statuses['GDELT'] ); ?>> Enable GDELT source</label> <em><?php echo esc_html( $lo_public_chatter_source_statuses['GDELT'] ? ( $lo_public_chatter_direct_enabled ? 'enabled' : 'saved, blocked by safe default' ) : 'disabled' ); ?></em>
+                    <p class="description">Public chatter signals are unconfirmed and thresholded. GDELT is open-web/news corroboration; Cloudflare Radar remains external telemetry, not rumour radar.</p>
                 </td></tr>
 
 <tr>

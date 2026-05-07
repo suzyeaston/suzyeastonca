@@ -40,6 +40,24 @@ foreach ($sources as $index => $source) {
     if (!is_bool($configured)) {
         $errors[] = sprintf('%s::is_configured() did not return bool.', get_class($source));
     }
+
+    if ($source instanceof \SuzyEaston\LousyOutages\Sources\PublicChatterSource) {
+        $checkboxes = $source->source_checkboxes();
+        foreach (['public_chatter_bluesky', 'public_chatter_mastodon', 'public_chatter_gdelt'] as $expected) {
+            if (!array_key_exists($expected, $checkboxes)) {
+                $errors[] = 'PublicChatterSource missing source checkbox diagnostic key: ' . $expected;
+            }
+        }
+        $watchlist = $source->canadian_infrastructure_watchlist();
+        foreach (['telecom', 'payments', 'banking', 'government_login', 'transit', 'emergency_services'] as $category) {
+            if (empty($watchlist[$category])) {
+                $errors[] = 'PublicChatterSource missing Canadian watchlist category: ' . $category;
+            }
+        }
+        if (!is_bool($source->direct_sources_enabled())) {
+            $errors[] = 'PublicChatterSource direct source gate did not return bool.';
+        }
+    }
 }
 
 if ($errors !== []) {

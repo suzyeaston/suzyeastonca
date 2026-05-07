@@ -43,6 +43,21 @@ if(!empty($statusDiag)){
 }
 $chatterDiag=(array)get_option('lo_diag_public_chatter',[]);
 if(!empty($chatterDiag) && !empty($chatterDiag['direct_sources_enabled'])){ $errors[]='Public chatter direct sources enabled (expected safe-default disabled)'; }
+if(!empty($chatterDiag)){
+    foreach(['configured','attempted','direct_sources_enabled','direct_sources_disabled_by_safe_default','enabled_sources','skipped_sources','providers_scanned','queries_attempted','mentions_seen_by_source','mentions_seen_by_provider','signals_built_by_provider','thresholds','scan_window_minutes','ran_at','watch_candidates','official_incident_corroboration','canadian_infrastructure_watchlist'] as $key){
+        if(!array_key_exists($key,$chatterDiag)){ $errors[]='Public chatter diagnostics missing '.$key; }
+    }
+    if(empty($chatterDiag['direct_sources_enabled']) && empty($chatterDiag['direct_sources_disabled_by_safe_default'])){ $errors[]='Public chatter safe-default gate not visible in diagnostics'; }
+    if(!array_key_exists('public_chatter_bluesky',(array)($chatterDiag['enabled_sources']??[])) || !array_key_exists('public_chatter_mastodon',(array)($chatterDiag['enabled_sources']??[])) || !array_key_exists('public_chatter_gdelt',(array)($chatterDiag['enabled_sources']??[]))){ $errors[]='Public chatter source checkbox diagnostics incomplete'; }
+    foreach((array)($chatterDiag['watch_candidates']??[]) as $candidate){
+        $pid=(string)($candidate['provider_id']??'');
+        if($pid!=='' && !empty($chatterDiag['signals_built_by_provider'][$pid])){ $errors[]='Watch candidate also promoted for provider '.$pid; break; }
+    }
+    $seeded=false; foreach((array)($chatterDiag['providers_scanned']??[]) as $provider){ if(in_array('active_incident',(array)($provider['seed_types']??[]),true)){ $seeded=true; break; } }
+    if(!empty($chatterDiag['active_incident_seed_providers']) && !$seeded){ $errors[]='Active incident seed providers missing from generated query providers'; }
+    $hasCanada=false; foreach((array)($chatterDiag['providers_scanned']??[]) as $provider){ if(in_array('canadian_infrastructure',(array)($provider['seed_types']??[]),true)){ $hasCanada=true; break; } }
+    if(!$hasCanada){ $errors[]='Canadian infrastructure watchlist queries not generated'; }
+}
 $hnDiag=(array)get_option('lo_diag_hacker_news_chatter',[]);
 if(!empty($hnDiag) && !array_key_exists('queries_attempted',$hnDiag)){ $errors[]='HN diagnostics missing queries_attempted'; }
 if($errors){ fwrite(STDERR, "Preflight FAILED:\n- ".implode("\n- ",$errors)."\n"); exit(1);} echo "Preflight passed with ".count($sources)." sources.\n";
