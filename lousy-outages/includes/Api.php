@@ -356,6 +356,19 @@ class Api {
             'source'        => 'live',
         ];
 
+        $publicDiag = (array) get_option('lo_diag_public_chatter', []);
+        $response['public_chatter_diagnostics'] = [
+            'source_statuses' => (array) ($publicDiag['source_statuses'] ?? []),
+            'enabled_sources' => (array) ($publicDiag['enabled_sources'] ?? []),
+            'skipped_sources' => (array) ($publicDiag['skipped_sources'] ?? []),
+            'direct_sources_enabled' => !empty($publicDiag['direct_sources_enabled']),
+            'direct_sources_disabled_by_safe_default' => !empty($publicDiag['direct_sources_disabled_by_safe_default']),
+            'watch_candidate_count' => (int) ($publicDiag['watch_candidate_count'] ?? 0),
+            'official_incident_corroboration' => array_slice((array) ($publicDiag['official_incident_corroboration'] ?? []), 0, 20),
+            'canadian_infrastructure_watchlist' => (array) ($publicDiag['canadian_infrastructure_watchlist'] ?? []),
+            'ran_at' => (string) ($publicDiag['ran_at'] ?? ''),
+        ];
+
         if (!empty($result['message']) && is_string($result['message'])) {
             $response['message'] = $result['message'];
         }
@@ -422,10 +435,26 @@ class Api {
                     $reasonCounts[$reason] = (int) ($reasonCounts[$reason] ?? 0) + 1;
                 }
             }
+            $publicDiag = (array) get_option('lo_diag_public_chatter', []);
             $payload['public_chatter_diagnostics'] = [
                 'rejected_by_reason' => ChatterRejectionReasons::summarize_counts($reasonCounts),
                 'reason_definitions' => array_values(ChatterRejectionReasons::definitions()),
                 'raw_rejected_codes' => $reasonCounts,
+                'source_statuses' => (array) ($publicDiag['source_statuses'] ?? []),
+                'enabled_sources' => (array) ($publicDiag['enabled_sources'] ?? []),
+                'skipped_sources' => (array) ($publicDiag['skipped_sources'] ?? []),
+                'direct_sources_enabled' => !empty($publicDiag['direct_sources_enabled']),
+                'direct_sources_disabled_by_safe_default' => !empty($publicDiag['direct_sources_disabled_by_safe_default']),
+                'providers_scanned_count' => (int) ($publicDiag['providers_scanned_count'] ?? 0),
+                'watch_candidate_count' => (int) ($publicDiag['watch_candidate_count'] ?? 0),
+                'watch_candidates' => array_slice((array) ($publicDiag['watch_candidates'] ?? []), 0, 20),
+                'official_incident_corroboration' => array_slice((array) ($publicDiag['official_incident_corroboration'] ?? []), 0, 20),
+                'canadian_infrastructure_watchlist' => (array) ($publicDiag['canadian_infrastructure_watchlist'] ?? []),
+                'mentions_seen_by_source' => (array) ($publicDiag['mentions_seen_by_source'] ?? []),
+                'mentions_seen_by_provider' => (array) ($publicDiag['mentions_seen_by_provider'] ?? []),
+                'thresholds' => (array) ($publicDiag['thresholds'] ?? []),
+                'scan_window_minutes' => (int) ($publicDiag['scan_window_minutes'] ?? 0),
+                'ran_at' => (string) ($publicDiag['ran_at'] ?? ''),
             ];
         }
 

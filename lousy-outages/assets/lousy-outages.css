@@ -1993,3 +1993,101 @@
 .lo-chatter-scanner__empty p + p {
   margin-top: 4px;
 }
+
+.lo-chatter-scanner__strip,
+.lo-chatter-scanner__watch,
+.lo-chatter-scanner__corroboration,
+.lo-chatter-scanner__watchlist,
+.lo-chatter-scanner__table {
+  position: relative;
+  z-index: 1;
+}
+
+.lo-chatter-scanner__strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.lo-chatter-scanner__source,
+.lo-chatter-scanner__watchlist span {
+  border: 1px solid rgba(154, 243, 255, 0.35);
+  border-radius: 999px;
+  color: #dffcff;
+  background: rgba(8, 20, 32, 0.82);
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
+
+.lo-chatter-scanner__source--blocked_by_safe_default,
+.lo-chatter-scanner__source--disabled,
+.lo-chatter-scanner__source--not_configured {
+  border-color: rgba(255, 199, 87, 0.42);
+  color: #ffe7aa;
+}
+
+.lo-chatter-scanner__watch,
+.lo-chatter-scanner__corroboration,
+.lo-chatter-scanner__watchlist {
+  border: 1px solid rgba(42, 255, 213, 0.18);
+  border-radius: 14px;
+  background: rgba(5, 5, 16, 0.72);
+  margin: 12px 0;
+  padding: 12px;
+}
+
+.lo-chatter-scanner__watch h4,
+.lo-chatter-scanner__corroboration h4,
+.lo-chatter-scanner__watchlist h4 {
+  margin: 0 0 8px;
+  color: #9af3ff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lo-chatter-scanner__watch p,
+.lo-chatter-scanner__corroboration p {
+  color: #d7f9ff;
+  margin: 0 0 8px;
+}
+
+.lo-chatter-scanner__watch ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #f4feff;
+}
+
+.lo-chatter-scanner__table {
+  display: grid;
+  gap: 6px;
+}
+
+.lo-chatter-scanner__table [role="row"] {
+  display: grid;
+  grid-template-columns: 1.1fr 0.8fr 1fr 1fr 0.7fr;
+  gap: 8px;
+  align-items: center;
+  border-bottom: 1px solid rgba(154, 243, 255, 0.14);
+  color: #f4feff;
+  padding: 7px 0;
+}
+
+.lo-chatter-scanner__table-head {
+  color: #9af3ff !important;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lo-chatter-scanner__watchlist div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .lo-chatter-scanner__table [role="row"] {
+    grid-template-columns: 1fr;
+  }
+}
