@@ -2091,3 +2091,230 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Corroboration Radar: polished public chatter/NOC module. */
+.lo-corroboration-radar {
+  margin: 2rem 0 2.5rem;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border: 1px solid rgba(77, 255, 196, 0.36);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(5, 16, 28, 0.96), rgba(10, 31, 44, 0.92));
+  box-shadow: 0 0 0 1px rgba(77, 255, 196, 0.08), 0 18px 38px rgba(0, 0, 0, 0.28);
+  color: #e9fff8;
+}
+
+.lo-corroboration-radar__head,
+.lo-corroboration-radar__section-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lo-corroboration-radar__muted,
+.lo-corroboration-radar__section-title span,
+.lo-corroboration-radar small {
+  color: rgba(233, 255, 248, 0.78);
+}
+
+.lo-corroboration-radar__badge {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(255, 214, 102, 0.55);
+  border-radius: 999px;
+  background: rgba(255, 214, 102, 0.12);
+  color: #ffe08a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lo-corroboration-radar__summary,
+.lo-corroboration-radar__sources,
+.lo-corroboration-radar__incident-grid,
+.lo-corroboration-radar__watch-grid,
+.lo-corroboration-radar__diagnostic-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.lo-corroboration-radar__summary {
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  margin-bottom: 1rem;
+}
+
+.lo-corroboration-radar__metric,
+.lo-corroboration-radar__source,
+.lo-corroboration-radar__incident,
+.lo-corroboration-radar__watch-grid article,
+.lo-corroboration-radar__reason,
+.lo-corroboration-radar__empty,
+.lo-corroboration-radar__watch-candidates {
+  border: 1px solid rgba(77, 255, 196, 0.18);
+  border-radius: 14px;
+  background: rgba(0, 10, 18, 0.42);
+  padding: 0.85rem;
+}
+
+.lo-corroboration-radar__metric strong {
+  display: block;
+  color: #78ffd6;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  line-height: 1;
+}
+
+.lo-corroboration-radar__metric span,
+.lo-corroboration-radar__source span,
+.lo-corroboration-radar__incident span,
+.lo-corroboration-radar__watch-grid span {
+  display: block;
+  margin-top: 0.25rem;
+  color: rgba(233, 255, 248, 0.82);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lo-corroboration-radar__sources {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  margin-bottom: 1.1rem;
+}
+
+.lo-corroboration-radar__source div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.lo-corroboration-radar__source div span {
+  margin: 0;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(233, 255, 248, 0.1);
+  white-space: nowrap;
+}
+
+.lo-corroboration-radar__source p,
+.lo-corroboration-radar__incident p,
+.lo-corroboration-radar__watch-candidates p {
+  margin: 0.45rem 0 0;
+}
+
+.lo-corroboration-radar__source--enabled div span,
+.lo-corroboration-radar__source--configured div span { color: #78ffd6; }
+.lo-corroboration-radar__source--cooldown div span,
+.lo-corroboration-radar__source--rate_limited div span,
+.lo-corroboration-radar__source--budget_skipped div span { color: #ffe08a; }
+.lo-corroboration-radar__source--disabled div span,
+.lo-corroboration-radar__source--blocked_by_safe_default div span,
+.lo-corroboration-radar__source--not_configured div span { color: #ffb4b4; }
+
+.lo-corroboration-radar__incidents,
+.lo-corroboration-radar__canada-watch,
+.lo-corroboration-radar__diagnostics {
+  margin-top: 1rem;
+}
+
+.lo-corroboration-radar__incident-grid {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.lo-corroboration-radar__incident h5,
+.lo-corroboration-radar__section-title h4,
+.lo-corroboration-radar__watch-candidates h4,
+.lo-corroboration-radar__diagnostics h4 {
+  margin: 0;
+  color: #ffffff;
+}
+
+.lo-corroboration-radar__incident p {
+  display: grid;
+  grid-template-columns: minmax(95px, auto) 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.lo-corroboration-radar__incident p strong {
+  color: #e9fff8;
+  overflow-wrap: anywhere;
+}
+
+.lo-corroboration-radar__watch-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.lo-corroboration-radar__watch-grid article strong,
+.lo-corroboration-radar__watch-grid article small {
+  display: block;
+}
+
+.lo-corroboration-radar__watch-candidates div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.lo-corroboration-radar__watch-candidates div span {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgba(255, 214, 102, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 214, 102, 0.08);
+  color: #ffe08a;
+}
+
+.lo-corroboration-radar__diagnostics {
+  opacity: 0.92;
+}
+
+.lo-corroboration-radar__diagnostic-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-top: 0.65rem;
+}
+
+.lo-corroboration-radar__reason span,
+.lo-corroboration-radar__reason strong,
+.lo-corroboration-radar__reason small {
+  display: block;
+}
+
+.lo-corroboration-radar__reason strong {
+  color: #ffe08a;
+  font-size: 1.35rem;
+}
+
+.lo-corroboration-radar details {
+  margin-top: 0.75rem;
+}
+
+.lo-corroboration-radar summary {
+  cursor: pointer;
+  color: #78ffd6;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .lo-corroboration-radar__head,
+  .lo-corroboration-radar__section-title {
+    flex-direction: column;
+  }
+
+  .lo-corroboration-radar__badge {
+    align-self: flex-start;
+    white-space: normal;
+  }
+
+  .lo-corroboration-radar__source div,
+  .lo-corroboration-radar__incident p {
+    display: block;
+  }
+
+  .lo-corroboration-radar__source div span {
+    display: inline-block;
+    margin-top: 0.35rem;
+  }
+}

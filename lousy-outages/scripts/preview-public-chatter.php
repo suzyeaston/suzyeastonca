@@ -2,11 +2,12 @@
 declare(strict_types=1);
 if (PHP_SAPI !== 'cli') { fwrite(STDERR, "CLI only\n"); exit(1); }
 $wpLoad = $argv[1] ?? '';
-if ($wpLoad === '' || !is_file($wpLoad)) { fwrite(STDERR, "Usage: php preview-public-chatter.php /path/to/wp-load.php [--window-minutes=1440] [--limit=30]\n"); exit(1); }
-$window=1440; $limit=30;
+if ($wpLoad === '' || !is_file($wpLoad)) { fwrite(STDERR, "Usage: php preview-public-chatter.php /path/to/wp-load.php [--window-minutes=1440] [--limit=30] [--json]\n"); exit(1); }
+$window=1440; $limit=30; $json=false;
 foreach (array_slice($argv,2) as $arg) {
     if (str_starts_with($arg,'--window-minutes=')) { $window=max(5,(int)substr($arg,17)); }
     if (str_starts_with($arg,'--limit=')) { $limit=max(1,(int)substr($arg,8)); }
+    if ($arg === '--json') { $json=true; }
 }
 $_SERVER['REQUEST_METHOD'] = 'GET';
 
@@ -35,50 +36,70 @@ $hnRows = $hnSource->collect(['dry_run'=>true,'diagnostic_mode'=>true,'window_mi
 $hnDiag = (array) get_option('lo_diag_hacker_news_chatter', []);
 $reasonCounts = (array)($hnDiag['chatter_rejected_by_reason'] ?? []);
 
+$sourceStatuses = (array)($publicDiag['source_statuses'] ?? []);
+$enabledSources = [];
+$cooldownSources = [];
+$budgetSkipped = [];
+foreach ((array)($publicDiag['enabled_sources'] ?? []) as $source => $enabled) {
+    if ($enabled) { $enabledSources[] = (string)$source; }
+}
+foreach ($sourceStatuses as $source => $row) {
+    $status = (string)(((array)$row)['status'] ?? 'disabled');
+    if (in_array($status, ['cooldown','rate_limited'], true)) { $cooldownSources[] = (string)$source . ' (' . $status . ')'; }
+}
+foreach ((array)($publicDiag['source_request_details'] ?? []) as $source => $details) {
+    if ((int)(((array)$details)['queries_skipped_due_to_budget'] ?? 0) > 0) {
+        $budgetSkipped[] = (string)$source . ' (' . (int)(((array)$details)['queries_skipped_due_to_budget'] ?? 0) . ')';
+    }
+}
+
+$summary = [
+    'master_enabled' => !empty($publicDiag['configured']),
+    'direct_gate_enabled' => !empty($publicDiag['direct_sources_enabled']),
+    'enabled_sources' => $enabledSources,
+    'rate_limited_or_cooldown_sources' => $cooldownSources,
+    'sources_skipped_by_budget' => $budgetSkipped,
+    'active_official_providers_scanned' => array_values(array_map(static fn($p) => (string)($p['provider_name'] ?? $p['provider_id'] ?? ''), (array)($publicDiag['active_incident_seed_providers'] ?? []))),
+    'canadian_infrastructure_categories_armed' => array_values(array_map(static fn($p) => (string)($p['label'] ?? $p['category'] ?? ''), (array)($publicDiag['canadian_infrastructure_watchlist'] ?? []))),
+    'watch_candidates' => (int)($publicDiag['watch_candidate_count'] ?? 0),
+    'promoted_signals' => ['direct_public' => count($signals), 'hn' => count($hnRows)],
+    'rejected_reason_summary' => $reasonCounts,
+    'gdelt' => [
+        'enabled' => !empty($publicDiag['gdelt_enabled']),
+        'attempted' => !empty($publicDiag['gdelt_attempted']),
+        'rate_limited' => !empty($publicDiag['gdelt_rate_limited']),
+        'cooldown_until' => (string)($publicDiag['gdelt_cooldown_until'] ?? ''),
+        'last_response_code' => (int)($publicDiag['gdelt_last_response_code'] ?? 0),
+        'queries_skipped_due_to_budget' => (int)($publicDiag['gdelt_queries_skipped_due_to_budget'] ?? 0),
+        'rows_seen' => (int)($publicDiag['gdelt_rows_seen'] ?? 0),
+        'watch_candidates' => (int)($publicDiag['gdelt_watch_candidates'] ?? 0),
+    ],
+];
+
+if ($json) {
+    echo wp_json_encode(['summary'=>$summary, 'diagnostics'=>$publicDiag], JSON_PRETTY_PRINT) . "\n";
+    exit(0);
+}
+
 $printList = static function (string $label, array $values, int $limit = 30): void {
-    echo $label . ': ';
     $values = array_slice(array_values(array_filter(array_map('strval', $values))), 0, $limit);
-    echo $values ? implode(', ', $values) : 'none';
-    echo "\n";
+    echo $label . ': ' . ($values ? implode(', ', $values) : 'none') . "\n";
 };
 
-echo "Public Chatter Corroboration Preview (diagnostics-only; no email, no inserts requested)\n";
-echo "Master enabled: " . (!empty($publicDiag['configured']) ? 'yes' : 'no') . "\n";
-echo "Direct source gate: " . (!empty($publicDiag['direct_sources_enabled']) ? 'enabled' : 'disabled') . "\n";
-
-echo "Enabled source checkboxes:\n";
-foreach ((array)($publicDiag['enabled_sources'] ?? []) as $source => $enabled) {
-    echo "- {$source}: " . ($enabled ? 'checked' : 'unchecked') . "\n";
-}
-
-echo "Disabled/blocked sources:\n";
-foreach ((array)($publicDiag['skipped_sources'] ?? []) as $source => $reasons) {
-    $reasons = array_values(array_unique(array_filter(array_map('strval', (array)$reasons))));
-    if (!$reasons) { continue; }
-    echo "- {$source}: " . implode(', ', $reasons) . "\n";
-}
-
-$printList('Providers scanned', array_map(static fn($p) => (string)($p['provider_name'] ?? $p['provider_id'] ?? ''), (array)($publicDiag['providers_scanned'] ?? [])), $limit);
-$printList('Active incident seed providers', array_map(static fn($p) => (string)($p['provider_name'] ?? $p['provider_id'] ?? ''), (array)($publicDiag['active_incident_seed_providers'] ?? [])), $limit);
-$printList('Canadian infra providers scanned', array_map(static fn($p) => (string)($p['provider_name'] ?? $p['provider_id'] ?? ''), (array)($publicDiag['canadian_infrastructure_providers_scanned'] ?? [])), $limit);
-
-echo "Mentions seen by source:\n";
-foreach ((array)($publicDiag['mentions_seen_by_source'] ?? []) as $source => $count) { echo "- {$source}: " . (int)$count . "\n"; }
-echo "Mentions seen by provider:\n";
-foreach (array_slice((array)($publicDiag['mentions_seen_by_provider'] ?? []), 0, $limit, true) as $provider => $count) { echo "- {$provider}: " . (int)$count . "\n"; }
-
-echo "Watch candidates: " . (int)($publicDiag['watch_candidate_count'] ?? 0) . "\n";
-foreach (array_slice((array)($publicDiag['watch_candidates'] ?? []), 0, $limit) as $candidate) {
-    echo "[WATCH] provider=" . ($candidate['provider_name'] ?? $candidate['provider_id'] ?? '') . " source=" . ($candidate['source_label'] ?? $candidate['source'] ?? '') . " count=" . (int)($candidate['count'] ?? 0) . " reason=" . ($candidate['reason'] ?? '') . "\n";
-}
-
-echo "Promoted signals: " . count($signals) . " direct public, " . count($hnRows) . " HN\n";
-foreach (array_slice($signals, 0, $limit) as $signal) {
-    echo "[PROMOTED] provider=" . ($signal['provider_name'] ?? $signal['provider_id'] ?? '') . " source=" . ($signal['source'] ?? '') . " severity=" . ($signal['severity'] ?? '') . "\n";
-}
-
-echo "Rejected reasons:\n";
+echo "Public Chatter Corroboration Preview (diagnostics-only; no email)\n";
+echo "Master enabled: " . ($summary['master_enabled'] ? 'yes' : 'no') . "\n";
+echo "Direct gate enabled: " . ($summary['direct_gate_enabled'] ? 'yes' : 'no') . "\n";
+$printList('Enabled sources', $summary['enabled_sources'], $limit);
+$printList('Rate-limited/cooldown sources', $summary['rate_limited_or_cooldown_sources'], $limit);
+$printList('Sources skipped by budget', $summary['sources_skipped_by_budget'], $limit);
+$printList('Active official providers scanned', $summary['active_official_providers_scanned'], $limit);
+$printList('Canadian infrastructure categories armed', $summary['canadian_infrastructure_categories_armed'], $limit);
+echo "Watch candidates: " . $summary['watch_candidates'] . "\n";
+echo "Promoted signals: " . $summary['promoted_signals']['direct_public'] . " direct public, " . $summary['promoted_signals']['hn'] . " HN\n";
+echo "GDELT: " . ($summary['gdelt']['enabled'] ? 'enabled' : 'disabled') . ', ' . ($summary['gdelt']['attempted'] ? 'attempted' : 'not attempted') . ', HTTP ' . $summary['gdelt']['last_response_code'] . ($summary['gdelt']['cooldown_until'] !== '' ? ', cooldown until ' . $summary['gdelt']['cooldown_until'] : '') . "\n";
+echo "Rejected reason summary:\n";
+if (!$reasonCounts) { echo "- none\n"; }
 foreach ($reasonCounts as $reason => $count) {
     $reasonMeta = \SuzyEaston\LousyOutages\Sources\ChatterRejectionReasons::get((string)$reason);
-    echo "- {$reason}: " . (int)$count . " (" . (string)($reasonMeta['short_label'] ?? '') . ")\n";
+    echo "- " . (string)($reasonMeta['short_label'] ?? $reason) . ': ' . (int)$count . "\n";
 }
