@@ -598,7 +598,7 @@ function render_shortcode(): string {
         data-lo-refresh-interval="<?php echo esc_attr((string) $refresh_interval); ?>"
     >
         <div class="lo-header">
-            <div class="lo-actions">
+            <div class="lo-actions lo-print-hide">
                 <span class="lo-meta" aria-live="polite">
                     <span data-lo-fetched-label><?php echo esc_html($fetched_label); ?></span>
                     <strong data-lo-fetched data-lo-last-fetched><?php echo esc_html($format_datetime($fetched_at)); ?></strong>
@@ -611,7 +611,7 @@ function render_shortcode(): string {
                 <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
             </div>
         </div>
-        <div class="lo-mode-toggle" data-lo-mode-toggle>
+        <div class="lo-mode-toggle lo-print-hide" data-lo-mode-toggle>
             <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Incidents (0)</button>
             <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">All providers</button>
         </div>
@@ -675,20 +675,36 @@ function render_shortcode(): string {
         $sourceReason = static function(array $row): string {
             $status = (string) ($row['status'] ?? 'disabled');
             $reasons = array_values(array_unique(array_filter(array_map('strval', (array) ($row['reasons'] ?? [])))));
-            if ($status === 'enabled' || $status === 'configured') { return 'Budgeted and available.'; }
-            if ($status === 'cooldown') { return 'Temporarily paused.'; }
-            if ($status === 'rate_limited') { return 'Provider asked us to slow down.'; }
-            if ($status === 'budget_skipped') { return 'Per-run budget spent.'; }
-            if ($status === 'blocked_by_safe_default') { return 'Direct source gate disabled.'; }
-            if ($status === 'not_configured') { return 'API/config missing.'; }
-            if ($status === 'disabled') { return 'Disabled by admin.'; }
-            if ($reasons) { return ucfirst(str_replace('_', ' ', (string) $reasons[0])) . '.'; }
-            return 'No extra diagnostics.';
+            if ($status === 'enabled' || $status === 'configured') { return 'Budgeted · available'; }
+            if ($status === 'cooldown') { return 'Temporarily paused'; }
+            if ($status === 'rate_limited') { return 'Provider asked slow-down'; }
+            if ($status === 'budget_skipped') { return 'Per-run budget spent'; }
+            if ($status === 'blocked_by_safe_default') { return 'Direct source gate disabled'; }
+            if ($status === 'not_configured') { return 'External telemetry'; }
+            if ($status === 'disabled') { return 'Disabled by admin'; }
+            if ($reasons) { return ucfirst(str_replace('_', ' ', (string) $reasons[0])); }
+            return 'No extra diagnostics';
         };
         $statusBadge = 'Official radar only';
-        if ($promotedTotal > 0) { $statusBadge = 'Public corroboration'; }
-        elseif ($watchCandidateCount > 0) { $statusBadge = 'Public watch'; }
-        elseif ($sourcesBlockedCount > 0) { $statusBadge = 'Sources limited'; }
+        $radarBrief = 'Official radar only. Public sources were checked, but no credible field reports were promoted.';
+        if ($promotedTotal > 0) {
+            $statusBadge = 'Public corroboration';
+            $radarBrief = 'Public corroboration active. Promoted field reports are still conservative and unverified.';
+        } elseif ($watchCandidateCount > 0) {
+            $statusBadge = 'Public watch';
+            $radarBrief = 'Public watch active. Mentions exist, but they remain below promotion threshold.';
+        } elseif ($sourcesBlockedCount > 0 && $sourcesEnabledCount === 0) {
+            $statusBadge = 'Sources limited';
+            $radarBrief = 'Official radar primary. Public source checks are currently limited by configuration or budgets.';
+        }
+        $summaryMetrics = [
+            ['Checked', $checkedTotal, $checkedTotal > 0 ? 'items scanned' : 'pending'],
+            ['Promoted', $promotedTotal, $promotedTotal > 0 ? 'field reports' : 'none'],
+            ['Watch', $watchCandidateCount, $watchCandidateCount > 0 ? 'below threshold' : 'clear'],
+            ['Rejected', $rejectedTotal, $rejectedTotal > 0 ? 'filtered' : 'none'],
+            ['Sources active', $sourcesEnabledCount, 'ready'],
+            ['Limited', $sourcesBlockedCount, $sourcesBlockedCount > 0 ? 'needs attention' : 'none'],
+        ];
         ?>
         <div class="lo-incidents" data-lo-incidents>
             <section class="lo-section lo-section--incidents" data-lo-section="incidents">
@@ -719,16 +735,18 @@ function render_shortcode(): string {
                 <span class="lo-corroboration-radar__badge"><?php echo esc_html($statusBadge); ?></span>
             </div>
 
+            <p class="lo-corroboration-radar__brief"><?php echo esc_html($radarBrief); ?></p>
+
             <div class="lo-corroboration-radar__summary" aria-label="Public chatter scan summary">
-                <?php foreach ([['Checked',$checkedTotal],['Promoted',$promotedTotal],['Rejected',$rejectedTotal],['Watch candidates',$watchCandidateCount],['Sources active',$sourcesEnabledCount],['Sources blocked/limited',$sourcesBlockedCount]] as $metric) : ?>
-                    <div class="lo-corroboration-radar__metric"><strong><?php echo esc_html((string) $metric[1]); ?></strong><span><?php echo esc_html((string) $metric[0]); ?></span></div>
+                <?php foreach ($summaryMetrics as $metric) : ?>
+                    <div class="lo-corroboration-radar__metric"><span><?php echo esc_html((string) $metric[0]); ?></span><strong><?php echo esc_html((string) $metric[1]); ?></strong><small><?php echo esc_html((string) $metric[2]); ?></small></div>
                 <?php endforeach; ?>
             </div>
 
             <div class="lo-corroboration-radar__sources" aria-label="Public chatter source status">
                 <?php foreach ($sourceStatusRows as $sourceStatusRow) : $sourceStatus = (string) ($sourceStatusRow['status'] ?? 'disabled'); $lastCode = (int) ($sourceStatusRow['last_response_code'] ?? 0); $cooldownUntil = (string) ($sourceStatusRow['cooldown_until'] ?? ''); ?>
                     <article class="lo-corroboration-radar__source lo-corroboration-radar__source--<?php echo esc_attr(sanitize_html_class($sourceStatus)); ?>">
-                        <div><strong><?php echo esc_html((string) ($sourceStatusRow['label'] ?? 'Source')); ?></strong><span><?php echo esc_html($statusLabel($sourceStatus)); ?></span></div>
+                        <div class="lo-corroboration-radar__source-head"><strong><?php echo esc_html((string) ($sourceStatusRow['label'] ?? 'Source')); ?></strong><span class="lo-corroboration-radar__status-badge"><?php echo esc_html($statusLabel($sourceStatus)); ?></span></div>
                         <p><?php echo esc_html($sourceReason((array) $sourceStatusRow)); ?></p>
                         <?php if ($lastCode > 0 || $cooldownUntil !== '') : ?>
                             <small><?php echo $lastCode > 0 ? esc_html('HTTP ' . $lastCode) : ''; ?><?php echo ($lastCode > 0 && $cooldownUntil !== '') ? esc_html(' · ') : ''; ?><?php echo $cooldownUntil !== '' ? esc_html('Cooldown until ' . $format_datetime($cooldownUntil)) : ''; ?></small>
@@ -741,13 +759,17 @@ function render_shortcode(): string {
                 <div class="lo-corroboration-radar__section-title"><h4>Official Incident Corroboration</h4><span>Official incidents seeded into public-source queries</span></div>
                 <?php if (!empty($officialCorroborationRows)) : ?>
                     <div class="lo-corroboration-radar__incident-grid">
-                        <?php foreach (array_slice($officialCorroborationRows, 0, 8) as $row) : $sourcesChecked = implode(', ', array_map('strval', (array) ($row['sources_checked'] ?? []))) ?: 'None'; ?>
+                        <?php foreach (array_slice($officialCorroborationRows, 0, 8) as $row) : $sourcesChecked = array_values(array_filter(array_map('strval', (array) ($row['sources_checked'] ?? [])))); ?>
                             <article class="lo-corroboration-radar__incident">
                                 <h5><?php echo esc_html((string) ($row['provider_name'] ?? $row['provider_id'] ?? 'Provider')); ?></h5>
-                                <p><span>Official</span><strong><?php echo esc_html((string) ($row['official_status'] ?? 'active')); ?></strong></p>
-                                <p><span>Public result</span><strong><?php echo esc_html((string) ($row['result_label'] ?? 'Official only')); ?></strong></p>
-                                <p><span>Watch candidates</span><strong><?php echo esc_html((string) ($row['watch_candidates'] ?? 0)); ?></strong></p>
-                                <small>Sources checked: <?php echo esc_html($sourcesChecked); ?></small>
+                                <div class="lo-corroboration-radar__incident-badges">
+                                    <span class="lo-corroboration-radar__status-badge lo-corroboration-radar__status-badge--official">Official: <?php echo esc_html((string) ($row['official_status'] ?? 'active')); ?></span>
+                                    <span class="lo-corroboration-radar__status-badge lo-corroboration-radar__status-badge--public">Public: <?php echo esc_html((string) ($row['result_label'] ?? 'Official only')); ?></span>
+                                </div>
+                                <p><span>Watch</span><strong><?php echo esc_html((string) ($row['watch_candidates'] ?? 0)); ?></strong></p>
+                                <div class="lo-corroboration-radar__chips" aria-label="Sources checked">
+                                    <?php foreach ($sourcesChecked ?: ['None'] as $sourceChecked) : ?><span><?php echo esc_html($sourceChecked); ?></span><?php endforeach; ?>
+                                </div>
                             </article>
                         <?php endforeach; ?>
                     </div>
@@ -804,13 +826,14 @@ function render_shortcode(): string {
             <?php if (!empty($rejectSummary)) : ?>
                 <div class="lo-corroboration-radar__diagnostics" aria-label="Rejected public chatter categories">
                     <h4>Filtered chatter</h4>
+                    <p class="lo-corroboration-radar__diagnostic-summary">Filtered chatter: mostly historical/resolved and not actionable.</p>
                     <div class="lo-corroboration-radar__diagnostic-grid">
                         <?php foreach (array_slice($rejectSummary, 0, 2) as $reasonRow) : ?>
                             <div class="lo-corroboration-radar__reason"><span><?php echo esc_html((string) ($reasonRow['label'] ?? 'Filtered chatter')); ?></span><strong><?php echo esc_html((string) ($reasonRow['count'] ?? 0)); ?></strong><small><?php echo esc_html((string) ($reasonRow['description'] ?? 'Filtered chatter that did not meet current-signal quality checks.')); ?></small></div>
                         <?php endforeach; ?>
                     </div>
                     <?php if (count($rejectSummary) > 2) : ?>
-                        <details><summary>Show diagnostics</summary>
+                        <details><summary>Show filter diagnostics</summary>
                             <div class="lo-corroboration-radar__diagnostic-grid">
                                 <?php foreach (array_slice($rejectSummary, 2) as $reasonRow) : ?>
                                     <div class="lo-corroboration-radar__reason"><span><?php echo esc_html((string) ($reasonRow['label'] ?? 'Filtered chatter')); ?></span><strong><?php echo esc_html((string) ($reasonRow['count'] ?? 0)); ?></strong><small><?php echo esc_html((string) ($reasonRow['description'] ?? 'Filtered chatter that did not meet current-signal quality checks.')); ?></small></div>
@@ -820,6 +843,7 @@ function render_shortcode(): string {
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
+            <footer class="lo-corroboration-radar__footer">Scanner idle. Official radar remains primary.</footer>
         </section>
         <?php if (LO_SHOW_WIDESPREAD) : ?>
         <div class="lo-trending" data-lo-trending<?php echo $trending_active ? '' : ' hidden'; ?> data-lo-trending-generated="<?php echo esc_attr($trending_generated); ?>" aria-live="assertive">
@@ -845,7 +869,7 @@ function render_shortcode(): string {
                     <h3 class="lo-block-title">Recent incidents (Status feeds + community)</h3>
                     <p class="lo-history__meta">Last 30 days of service incidents and early warning signals.</p>
                 </div>
-                <div class="lo-history__controls">
+                <div class="lo-history__controls lo-print-hide">
                     <label>
                         <input type="checkbox" data-lo-history-important checked>
                         <span>Show only major incidents</span>
@@ -871,7 +895,7 @@ function render_shortcode(): string {
             </div>
         </section>
         <?php echo render_subscribe_shortcode(); ?>
-        <div class="lo-external" data-lo-external>
+        <div class="lo-external lo-print-hide" data-lo-external>
             <article class="lo-card lo-card--external" data-provider-id="external-signals">
                 <div class="lo-head">
                     <h3 class="lo-title">External signals (unconfirmed)</h3>
@@ -888,7 +912,7 @@ function render_shortcode(): string {
                 </ul>
             </article>
         </div>
-        <div class="lo-settings" data-lo-settings>
+        <div class="lo-settings lo-print-hide" data-lo-settings>
             <h3 class="lo-block-title">Customize view</h3>
             <p class="lo-settings__hint">Pick which providers appear below. Preferences stay on this browser only.</p>
             <div class="lo-settings__actions">
@@ -910,7 +934,7 @@ function render_shortcode(): string {
                 <?php endforeach; ?>
             </div>
         </div>
-        <div class="lo-loading" data-lo-loading<?php echo $ordered_tiles ? ' hidden' : ''; ?> role="status">
+        <div class="lo-loading lo-print-hide" data-lo-loading<?php echo $ordered_tiles ? ' hidden' : ''; ?> role="status">
             <span class="lo-loading__spinner" aria-hidden="true"></span>
             <span class="lo-loading__text">Dialing interstellar relays…</span>
         </div>

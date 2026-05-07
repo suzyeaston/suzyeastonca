@@ -2318,3 +2318,365 @@
     margin-top: 0.35rem;
   }
 }
+
+/* Report helpers: screen/print visibility utilities for concise outage exports. */
+.lo-print-only {
+  display: none !important;
+}
+
+.lo-corroboration-radar,
+.lo-corroboration-radar * {
+  text-align: left;
+  letter-spacing: normal;
+  line-height: 1.42;
+}
+
+.lo-corroboration-radar .lo-block-title,
+.lo-corroboration-radar__head .lo-block-title {
+  text-align: left;
+  letter-spacing: 0.08em;
+}
+
+.lo-corroboration-radar__brief {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(120, 255, 214, 0.32);
+  border-radius: 14px;
+  background: rgba(120, 255, 214, 0.1);
+  color: #f4fffb;
+  font-size: clamp(1rem, 2vw, 1.12rem);
+  font-weight: 800;
+}
+
+.lo-corroboration-radar__summary {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.6rem;
+}
+
+.lo-corroboration-radar__metric {
+  padding: 0.65rem 0.7rem;
+  min-width: 0;
+}
+
+.lo-corroboration-radar__metric span {
+  margin: 0 0 0.2rem;
+  color: rgba(233, 255, 248, 0.86);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.lo-corroboration-radar__metric strong {
+  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+}
+
+.lo-corroboration-radar__metric small {
+  display: block;
+  margin-top: 0.18rem;
+  color: rgba(233, 255, 248, 0.78);
+  font-size: 0.72rem;
+}
+
+.lo-corroboration-radar__sources {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.lo-corroboration-radar__source {
+  padding: 0.72rem;
+}
+
+.lo-corroboration-radar__source-head,
+.lo-corroboration-radar__incident-badges,
+.lo-corroboration-radar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.lo-corroboration-radar__source-head {
+  justify-content: space-between;
+}
+
+.lo-corroboration-radar__source-head strong,
+.lo-corroboration-radar__incident h5 {
+  color: #ffffff;
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__chips span {
+  display: inline-flex;
+  width: auto;
+  margin: 0;
+  padding: 0.18rem 0.48rem;
+  border: 1px solid rgba(233, 255, 248, 0.22);
+  border-radius: 999px;
+  background: rgba(233, 255, 248, 0.1);
+  color: #e9fff8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.lo-corroboration-radar__source p,
+.lo-corroboration-radar__source small,
+.lo-corroboration-radar__incident p,
+.lo-corroboration-radar__watch-grid article small,
+.lo-corroboration-radar__watch-candidates p,
+.lo-corroboration-radar__diagnostic-summary,
+.lo-corroboration-radar__reason small {
+  color: rgba(233, 255, 248, 0.84);
+  font-size: 0.82rem;
+}
+
+.lo-corroboration-radar__source p {
+  margin: 0.45rem 0 0;
+}
+
+.lo-corroboration-radar__source--enabled .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__source--configured .lo-corroboration-radar__status-badge {
+  border-color: rgba(120, 255, 214, 0.36);
+  color: #78ffd6;
+}
+
+.lo-corroboration-radar__source--cooldown .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__source--rate_limited .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__source--budget_skipped .lo-corroboration-radar__status-badge {
+  border-color: rgba(255, 224, 138, 0.42);
+  color: #ffe08a;
+}
+
+.lo-corroboration-radar__source--disabled .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__source--blocked_by_safe_default .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__source--not_configured .lo-corroboration-radar__status-badge {
+  border-color: rgba(255, 180, 180, 0.42);
+  color: #ffb4b4;
+}
+
+.lo-corroboration-radar__incident-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.lo-corroboration-radar__incident {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+}
+
+.lo-corroboration-radar__incident h5 {
+  margin: 0;
+}
+
+.lo-corroboration-radar__incident p {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.lo-corroboration-radar__incident p span {
+  margin: 0;
+  color: rgba(233, 255, 248, 0.78);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+}
+
+.lo-corroboration-radar__incident p strong {
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.lo-corroboration-radar__status-badge--official {
+  border-color: rgba(255, 224, 138, 0.4);
+  color: #ffe08a;
+}
+
+.lo-corroboration-radar__status-badge--public {
+  border-color: rgba(120, 255, 214, 0.32);
+  color: #78ffd6;
+}
+
+.lo-corroboration-radar__chips span {
+  color: rgba(233, 255, 248, 0.86);
+  font-size: 0.66rem;
+}
+
+.lo-corroboration-radar__watch-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+
+.lo-corroboration-radar__watch-grid article {
+  padding: 0.7rem;
+}
+
+.lo-corroboration-radar__watch-grid article strong {
+  color: #ffffff;
+}
+
+.lo-corroboration-radar__watch-grid span {
+  color: #78ffd6;
+  font-size: 0.76rem;
+  letter-spacing: 0.03em;
+}
+
+.lo-corroboration-radar__diagnostics {
+  margin-top: 1.1rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed rgba(233, 255, 248, 0.22);
+  opacity: 0.82;
+}
+
+.lo-corroboration-radar__diagnostic-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.lo-corroboration-radar__reason {
+  padding: 0.65rem;
+}
+
+.lo-corroboration-radar__reason strong {
+  font-size: 1.05rem;
+}
+
+.lo-corroboration-radar__diagnostic-summary {
+  margin: 0.35rem 0 0.65rem;
+}
+
+.lo-corroboration-radar summary {
+  display: inline-flex;
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgba(120, 255, 214, 0.26);
+  border-radius: 999px;
+  background: rgba(120, 255, 214, 0.08);
+}
+
+.lo-corroboration-radar__footer {
+  margin-top: 1.2rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(120, 255, 214, 0.22);
+  color: rgba(233, 255, 248, 0.88);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.lo-corroboration-radar + .lo-trending,
+.lo-corroboration-radar + .lo-hero,
+.lo-corroboration-radar ~ .lo-history {
+  margin-top: 2rem;
+}
+
+@media (max-width: 640px) {
+  .lo-corroboration-radar__source-head,
+  .lo-corroboration-radar__incident p {
+    display: flex;
+  }
+}
+
+@media print {
+  html,
+  body,
+  .lousy-outages-root,
+  .lousy-outages {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .lo-screen-only,
+  .lo-print-hide,
+  .lo-link,
+  .lo-mode-toggle,
+  .lo-history__controls,
+  .lo-subscribe,
+  .lo-subscribe__form,
+  .lo-subscribe__challenge,
+  .lo-subscribe__help,
+  .lo-panel--report,
+  .lo-report,
+  .lo-support,
+  [data-lo-subscribe-form],
+  [data-lo-report],
+  [data-lo-report-form],
+  [data-lo-refresh],
+  [data-lo-export-csv],
+  [data-lo-export-pdf],
+  button {
+    display: none !important;
+  }
+
+  .lo-print-only {
+    display: block !important;
+  }
+
+  .lousy-outages,
+  .lo-section,
+  .lo-card,
+  .lo-corroboration-radar,
+  .lo-corroboration-radar__metric,
+  .lo-corroboration-radar__source,
+  .lo-corroboration-radar__incident,
+  .lo-corroboration-radar__watch-grid article,
+  .lo-corroboration-radar__watch-candidates,
+  .lo-history__report,
+  .lo-history__report-stat,
+  .lo-history__report-table-wrap,
+  .lo-history__list article {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .lousy-outages {
+    padding: 0;
+  }
+
+  .lo-header,
+  .lo-section,
+  .lo-corroboration-radar,
+  .lo-history {
+    margin-top: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .lo-corroboration-radar {
+    border-color: rgba(16, 89, 69, 0.55);
+    background: #071a24 !important;
+    color: #e9fff8 !important;
+    box-shadow: none;
+  }
+
+  .lo-corroboration-radar__summary,
+  .lo-corroboration-radar__sources,
+  .lo-corroboration-radar__incident-grid,
+  .lo-corroboration-radar__watch-grid,
+  .lo-corroboration-radar__diagnostic-grid {
+    gap: 0.45rem;
+  }
+
+  .lo-corroboration-radar__diagnostics details:not([open]) .lo-corroboration-radar__diagnostic-grid {
+    display: none !important;
+  }
+}
+
+.lo-corroboration-radar__source .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__incident .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__incident .lo-corroboration-radar__chips span {
+  display: inline-flex;
+  width: auto;
+  margin: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+@media print {
+  .lo-external,
+  .lo-settings,
+  .lo-loading {
+    display: none !important;
+  }
+}
