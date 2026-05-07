@@ -31,7 +31,7 @@ class PublicChatterSource implements SignalSourceInterface {
         $queries = (array) apply_filters('lo_public_chatter_queries', $queryBuild['queries'], $providers, $activeIncidents);
         $queries = $this->normalize_query_sets($queries, $queryBuild['providers']);
 
-        $diag = $this->base_diagnostics($sourceCheckboxes, $directEnabled, $window, $thresholds, $queryBuild, $activeIncidents);
+        $diag = $this->base_diagnostics($sourceCheckboxes, $directEnabled, $window, $thresholds, $queryBuild, $activeIncidents, $options);
         $configured = $this->is_configured();
         $diag['configured'] = $configured;
         $diag['attempted'] = $configured;
@@ -160,7 +160,7 @@ class PublicChatterSource implements SignalSourceInterface {
         ];
     }
 
-    private function base_diagnostics(array $sourceCheckboxes, bool $directEnabled, int $window, array $thresholds, array $queryBuild, array $activeIncidents): array {
+    private function base_diagnostics(array $sourceCheckboxes, bool $directEnabled, int $window, array $thresholds, array $queryBuild, array $activeIncidents, array $options = []): array {
         return [
             'configured' => false,
             'attempted' => false,
@@ -182,6 +182,9 @@ class PublicChatterSource implements SignalSourceInterface {
             'thresholds' => $thresholds,
             'scan_window_minutes' => $window,
             'ran_at' => gmdate('c'),
+            'last_collection_at' => gmdate('c'),
+            'next_collection_allowed_at' => gmdate('c', time() + 15 * MINUTE_IN_SECONDS),
+            'collection_trigger' => (string)($options['collection_trigger'] ?? (!empty($options['dry_run']) ? 'preview' : 'cron')),
             'watch_candidates' => [],
             'watch_candidate_count' => 0,
             'official_incident_corroboration' => [],
@@ -209,6 +212,20 @@ class PublicChatterSource implements SignalSourceInterface {
             $diag['skipped_sources'][$sourceId] = array_values(array_unique(array_filter(array_map('strval', (array)$reasons))));
         }
         $diag['gdelt_watch_candidates'] = count(array_filter((array)($diag['watch_candidates'] ?? []), static fn($c): bool => (($c['source'] ?? '') === 'public_chatter_gdelt')));
+        $diag['source_registry'] = SourceRegistry::definitions();
+        $diag['source_aggregation'] = SourceRegistry::aggregate_diagnostics($diag);
+        $diag['sources_configured'] = $diag['source_aggregation']['sources_configured'];
+        $diag['sources_enabled'] = $diag['source_aggregation']['sources_enabled'];
+        $diag['sources_attempted'] = $diag['source_aggregation']['sources_attempted'];
+        $diag['sources_not_configured'] = $diag['source_aggregation']['sources_not_configured'];
+        $diag['sources_disabled_by_admin'] = $diag['source_aggregation']['sources_disabled_by_admin'];
+        $diag['sources_skipped_by_budget'] = $diag['source_aggregation']['sources_skipped_by_budget'];
+        $diag['sources_in_cooldown'] = $diag['source_aggregation']['sources_in_cooldown'];
+        $diag['sources_failed'] = $diag['source_aggregation']['sources_failed'];
+        $diag['sources_by_lane'] = $diag['source_aggregation']['sources_by_lane'];
+        $diag['sources_by_trust_level'] = $diag['source_aggregation']['sources_by_trust_level'];
+        $diag['provider_coverage'] = $this->provider_coverage((array)($diag['providers_scanned'] ?? []), (array)($diag['source_statuses'] ?? []));
+        $diag['active_incident_coverage'] = $diag['official_incident_corroboration'];
         update_option('lo_diag_'.$this->id(), $diag, false);
     }
 
@@ -431,17 +448,19 @@ class PublicChatterSource implements SignalSourceInterface {
     }
 
     private function source_statuses(array $checkboxes, bool $directEnabled, array $diag): array {
-        $out = ['hacker_news_chatter'=>['label'=>'HN chatter','status'=>!empty(get_option('lo_hn_chatter_enabled', '1')) ? 'enabled' : 'disabled']];
+        $out = SourceRegistry::runtime_statuses($diag);
+        $out['hacker_news_chatter']['status'] = !empty(get_option('lo_hn_chatter_enabled', '1')) ? 'enabled' : 'disabled';
         foreach ($checkboxes as $sourceId => $checked) {
             $reasons = (array)($diag['skipped_sources'][$sourceId] ?? []);
             $status = !$checked ? 'disabled' : ($directEnabled ? 'enabled' : 'blocked_by_safe_default');
             if ($checked && $directEnabled && in_array('cooldown', $reasons, true)) { $status = 'cooldown'; }
             if ($checked && $directEnabled && (!empty($diag['gdelt_rate_limited'])) && $sourceId === 'public_chatter_gdelt') { $status = 'rate_limited'; }
             if ($checked && $directEnabled && in_array('skipped_due_to_budget', $reasons, true)) { $status = 'budget_skipped'; }
-            $out[$sourceId] = ['label'=>$this->source_label($sourceId),'status'=>$status,'reasons'=>$reasons,'last_response_code'=>$sourceId==='public_chatter_gdelt' ? (int)($diag['gdelt_last_response_code'] ?? 0) : 0,'cooldown_until'=>$sourceId==='public_chatter_gdelt' ? (string)($diag['gdelt_cooldown_until'] ?? '') : ''];
+            $out[$sourceId] = array_merge((array)($out[$sourceId] ?? []), ['label'=>$this->source_label($sourceId),'status'=>$status,'reasons'=>$reasons,'last_response_code'=>$sourceId==='public_chatter_gdelt' ? (int)($diag['gdelt_last_response_code'] ?? 0) : 0,'cooldown_until'=>$sourceId==='public_chatter_gdelt' ? (string)($diag['gdelt_cooldown_until'] ?? '') : '']);
         }
         $cfDiag = (array)get_option('lo_diag_cloudflare_radar', []);
-        $out['cloudflare_radar'] = ['label'=>'Cloudflare Radar (external telemetry)','status'=>!empty($cfDiag['configured']) ? 'configured' : 'not_configured'];
+        $out['cloudflare_radar']['status'] = !empty($cfDiag['configured']) ? 'configured' : 'not_configured';
+        if (!SourceRegistry::reddit_credentials_configured()) { $out['public_chatter_reddit']['status'] = 'not_configured'; }
         return $out;
     }
 
@@ -454,14 +473,23 @@ class PublicChatterSource implements SignalSourceInterface {
             foreach ((array)$diag['watch_candidates'] as $candidate) {
                 if (($candidate['provider_id'] ?? '') === $providerId) { $watch += (int)($candidate['count'] ?? 0); }
             }
-            if (!$enabledRuntimeSourceIds) { $label = 'No chatter sources enabled'; }
-            elseif ($promoted) { $label = 'Public corroboration'; }
-            elseif ($watch > 0 || !empty($perProviderSourceCounts[$providerId])) { $label = 'Public watch'; }
-            else { $label = 'Official only'; }
+            $openWebAttempted = in_array('public_chatter_gdelt', $enabledRuntimeSourceIds, true);
+            $telemetryAttempted = !empty(get_option('lo_diag_cloudflare_radar', [])['attempted']);
+            if (!$enabledRuntimeSourceIds) { $label = 'sources unavailable'; }
+            elseif (!$openWebAttempted) { $label = 'not fully checked'; }
+            elseif ($promoted) { $label = 'public corroboration'; }
+            elseif ($watch > 0 || !empty($perProviderSourceCounts[$providerId])) { $label = 'public watch'; }
+            elseif ($telemetryAttempted) { $label = 'telemetry watch'; }
+            else { $label = 'official only'; }
             $rows[] = [
                 'provider_id'=>$providerId,
                 'provider_name'=>(string)($incident['provider_name'] ?? $providerId),
                 'official_status'=>(string)($incident['official_status'] ?? 'active'),
+                'incident_title'=>(string)($incident['title'] ?? 'Active incident'),
+                'official_source_present'=>true,
+                'social_sources_attempted'=>count(array_filter($enabledRuntimeSourceIds, static fn($s): bool => in_array($s, ['public_chatter_bluesky','public_chatter_mastodon'], true))),
+                'open_web_sources_attempted'=>$openWebAttempted ? 1 : 0,
+                'telemetry_sources_attempted'=>$telemetryAttempted ? 1 : 0,
                 'public_chatter_promoted'=>$promoted,
                 'watch_candidates'=>$watch,
                 'sources_checked'=>array_map(fn($s) => $this->source_label((string)$s), $enabledRuntimeSourceIds),
@@ -469,6 +497,16 @@ class PublicChatterSource implements SignalSourceInterface {
             ];
         }
         return $rows;
+    }
+
+    private function provider_coverage(array $providers, array $statuses): array {
+        $official = array_filter($statuses, static fn($r): bool => in_array((string)($r['lane'] ?? ''), ['official_status','provider_feed'], true) && in_array((string)($r['status'] ?? ''), ['enabled','configured'], true));
+        $public = array_filter($statuses, static fn($r): bool => (string)($r['lane'] ?? '') === 'public_chatter' && in_array((string)($r['status'] ?? ''), ['enabled','configured'], true));
+        $open = array_filter($statuses, static fn($r): bool => (string)($r['lane'] ?? '') === 'open_web' && in_array((string)($r['status'] ?? ''), ['enabled','configured'], true));
+        $telemetry = array_filter($statuses, static fn($r): bool => (string)($r['lane'] ?? '') === 'internet_health' && in_array((string)($r['status'] ?? ''), ['enabled','configured'], true));
+        $limited = array_filter($statuses, static fn($r): bool => in_array((string)($r['status'] ?? ''), ['not_configured','disabled','budget_skipped','cooldown','rate_limited'], true));
+        $names = array_map(static fn($r): string => (string)($r['label'] ?? 'Source'), $statuses);
+        $out=[]; foreach($providers as $provider){ $out[]=['provider'=>(string)($provider['provider_name'] ?? $provider['provider_id'] ?? ''),'official_sources_checked'=>count($official),'public_sources_checked'=>count($public),'open_web_sources_checked'=>count($open),'telemetry_sources_checked'=>count($telemetry),'sources_limited'=>count($limited),'source_names'=>array_values($names)]; } return $out;
     }
 
     private function watchlist_summary(): array {

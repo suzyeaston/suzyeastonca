@@ -16,11 +16,14 @@ class StatuspageIntelSource implements SignalSourceInterface {
     }
 
     public function collect(array $options = []): array {
-        $endpoints=['/api/v2/status.json','/api/v2/summary.json','/api/v2/components.json','/api/v2/incidents/unresolved.json','/api/v2/incidents.json','/api/v2/scheduled-maintenances/active.json'];
+        $endpoints=['/api/v2/summary.json','/api/v2/incidents/unresolved.json','/api/v2/status.json','/api/v2/components.json','/api/v2/scheduled-maintenances/active.json','/api/v2/incidents.json'];
         $diag=['configured'=>$this->is_configured(),'attempted'=>false,'providers_checked'=>0,'endpoints_attempted'=>0,'endpoints_skipped_budget'=>0,'incidents_found'=>0,'unresolved_incidents_found'=>0,'resolved_incidents_suppressed'=>0,'postmortem_incidents_suppressed'=>0,'historical_incidents_suppressed'=>0,'components_degraded'=>0,'active_maintenance_found'=>0,'upcoming_maintenance_found'=>0,'status_indicator_rows'=>0,'rows_attempted'=>0,'rows_output'=>0,'rows_stored'=>0,'rows_inserted'=>0,'rows_suppressed'=>0,'skipped_reasons'=>[],'cooldown_active'=>false];
         $out=[]; $skipBudgetMutation=$this->should_skip_budget_mutation($options);
-        foreach (array_slice(SourcePack::statuspage_base_urls(),0,20) as $base) {
-            $base=rtrim((string)$base,'/'); if(!$base) continue;
+        foreach (array_slice(SourcePack::statuspage_sources(),0,24,true) as $key=>$sourceConfig) {
+            $cfg=is_array($sourceConfig) ? $sourceConfig : ['base_url'=>(string)$sourceConfig];
+            $base=rtrim((string)($cfg['base_url'] ?? ''),'/'); if(!$base) continue;
+            $providerId=sanitize_key((string)($cfg['provider_id'] ?? (is_string($key)?$key:'')));
+            $providerName=sanitize_text_field((string)($cfg['provider_name'] ?? $providerId));
             $diag['providers_checked']++;
             $host=$this->host($base);
             $can=$skipBudgetMutation ? ['ok'=>true] : SourceBudgetManager::can_attempt($this->id(),$host,30);
@@ -84,7 +87,7 @@ class StatuspageIntelSource implements SignalSourceInterface {
             $diag['rows_attempted']++;
             $diag['rows_output']++;
             $diag['rows_stored']=$diag['rows_output']; // Back-compat alias: mirrors source output count, not DB inserts.
-            $out[]=['source'=>'statuspage','source_type'=>'official_status','adapter_id'=>'statuspage_public','source_id'=>md5($base.implode('|',$snips)),'provider_id'=>sanitize_key($host),'provider_name'=>sanitize_text_field($host),'category'=>$signalType==='maintenance'?'maintenance':'service','region'=>'global','signal_type'=>$signalType,'severity'=>$severity,'confidence'=>95,'title'=>'Statuspage issue detected: '.$host,'message'=>implode(' | ',array_slice($snips,0,3)),'url'=>$base,'source_urls'=>array_values(array_unique(array_merge([$base],$urls))),'domains'=>[$host],'snippets'=>array_slice($snips,0,6),'confidence_reason'=>'Official provider statuspage indicates active service impact or active maintenance.','evidence_quality'=>'official','official_confirmed'=>true,'observed_at'=>gmdate('Y-m-d H:i:s'),'raw_hash'=>hash('sha256',$host.'|'.$signalType.'|'.$severity.'|'.implode('|',array_slice($snips,0,3)).'|'.implode('|',array_slice(array_values(array_unique($urls)),0,3)))];
+            $out[]=['source'=>'statuspage_intel','source_type'=>'official_status','signal_lane'=>'official_status','adapter_id'=>'statuspage_public','source_id'=>md5($base.implode('|',$snips)),'provider_id'=>($providerId !== '' ? $providerId : sanitize_key($host)),'provider_name'=>($providerName !== '' ? $providerName : sanitize_text_field($host)),'category'=>$signalType==='maintenance'?'maintenance':'service','region'=>'global','signal_type'=>$signalType,'severity'=>$severity,'confidence'=>95,'title'=>'Statuspage issue detected: '.$host,'message'=>implode(' | ',array_slice($snips,0,3)),'url'=>$base,'source_urls'=>array_values(array_unique(array_merge([$base],$urls))),'domains'=>[$host],'snippets'=>array_slice($snips,0,6),'confidence_reason'=>'Official provider statuspage indicates active service impact or active maintenance.','evidence_quality'=>'official','official_confirmed'=>true,'observed_at'=>gmdate('Y-m-d H:i:s'),'raw_hash'=>hash('sha256',$host.'|'.$signalType.'|'.$severity.'|'.implode('|',array_slice($snips,0,3)).'|'.implode('|',array_slice(array_values(array_unique($urls)),0,3)))];
         }
         update_option('lo_diag_'.$this->id(),$diag,false);
         return $out;
