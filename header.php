@@ -21,9 +21,9 @@
     $meta_keywords = 'Suzy Easton, musician, creative technologist';
 
     if ( is_front_page() ) {
-      $meta_title = 'Suzy Easton | Vancouver Musician + Creative Technologist Building in Public';
-      $meta_desc  = 'Suzy Easton is a Vancouver musician and creative technologist sharing public prototypes, AI experiments, music tools, and creative-tech lab notes in the open.';
-      $meta_keywords = 'Suzy Easton, Vancouver creative technologist, musician and technologist, public prototypes, AI experiments, music tools, build in public, open source projects';
+      $meta_title = 'Suzy Easton | AI Strategist, Creative Technologist & Musician — Vancouver';
+      $meta_desc  = 'Suzy Easton is a Vancouver musician and AI strategist. AI strategy and solutions engineering at Quercus IT. Retro-inspired creative tools, music experiments, and weird things that work.';
+      $meta_keywords = 'Suzy Easton, AI Strategist, Vancouver creative technologist, musician, Quercus IT, creative tools, music tech, retro tools';
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-asmr-lab.php' ) ) {
       $meta_title = 'ASMR Lab – experimental predecessor now under major redevelopment';
@@ -71,7 +71,7 @@
         'mainEntity' => [
           '@type' => 'Person',
           'name' => 'Suzy Easton',
-          'jobTitle' => 'Musician and Creative Technologist',
+          'jobTitle' => 'AI Strategist & Creative Technologist',
           'address' => [
             '@type' => 'PostalAddress',
             'addressLocality' => 'Vancouver',
@@ -106,7 +106,7 @@
           '@type' => 'Person',
           'name' => 'Suzy Easton',
           'url'  => 'https://www.suzyeaston.ca',
-          'jobTitle' => 'Musician and Creative Technologist',
+          'jobTitle' => 'AI Strategist & Creative Technologist',
           'address' => [
             '@type' => 'PostalAddress',
             'addressLocality' => 'Vancouver',

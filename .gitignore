@@ -6,3 +6,4 @@ secrets.php
 *.pem
 *.key
 .DS_Store
+screenshots/
