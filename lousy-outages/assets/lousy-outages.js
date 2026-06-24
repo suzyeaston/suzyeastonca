@@ -1024,7 +1024,9 @@
       generated_at: ''
     };
     if (meta && typeof meta === 'object') {
-      if (typeof meta.active_outage_count === 'number' && Number.isFinite(meta.active_outage_count)) {
+      if (typeof meta.official_incident_count === 'number' && Number.isFinite(meta.official_incident_count)) {
+        counts.active_outage_count = meta.official_incident_count;
+      } else if (typeof meta.active_outage_count === 'number' && Number.isFinite(meta.active_outage_count)) {
         counts.active_outage_count = meta.active_outage_count;
       }
       if (typeof meta.signal_count === 'number' && Number.isFinite(meta.signal_count)) {
@@ -1038,16 +1040,28 @@
       }
     }
 
-    var needsFallback = counts.active_outage_count === 0 && counts.signal_count === 0 && counts.unverified_count === 0;
+    var officialIncidentProviders = 0;
+    if (Array.isArray(providers)) {
+      providers.forEach(function (provider) {
+        if (!provider) {
+          return;
+        }
+        var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+        if (incidents.length) {
+          officialIncidentProviders += 1;
+        }
+      });
+    }
+    counts.active_outage_count = Math.max(counts.active_outage_count, officialIncidentProviders);
+
+    var needsFallback = counts.signal_count === 0 && counts.unverified_count === 0;
     if (needsFallback && Array.isArray(providers)) {
       providers.forEach(function (provider) {
         if (!provider) {
           return;
         }
         var kind = resolveTileKind(provider);
-        if (kind === 'outage') {
-          counts.active_outage_count += 1;
-        } else if (kind === 'signal') {
+        if (kind === 'signal') {
           counts.signal_count += 1;
         } else if (kind === 'unknown' || kind === 'manual') {
           counts.unverified_count += 1;
@@ -2822,6 +2836,7 @@
       state.historyEmpty.setAttribute('hidden', 'hidden');
     }
     if (state.historyError) {
+      state.historyError.textContent = '';
       state.historyError.setAttribute('hidden', 'hidden');
     }
     if (state.historyCharts) {
@@ -2841,7 +2856,12 @@
     }
     state.historyToggleButton = null;
     if (state.historyError) {
+      state.historyError.textContent = '';
       state.historyError.setAttribute('hidden', 'hidden');
+    }
+    if (state.historyEmpty) {
+      state.historyEmpty.textContent = '';
+      state.historyEmpty.setAttribute('hidden', 'hidden');
     }
 
     renderHistoryCharts(providers, meta || {});
@@ -3000,7 +3020,12 @@
       state.historyList.innerHTML = '';
     }
     if (state.historyEmpty) {
+      state.historyEmpty.textContent = '';
       state.historyEmpty.setAttribute('hidden', 'hidden');
+    }
+    if (state.historyCharts) {
+      state.historyCharts.innerHTML = '';
+      state.historyCharts.setAttribute('hidden', 'hidden');
     }
     if (state.historyError) {
       state.historyError.textContent = message || 'Unable to load incidents right now.';
