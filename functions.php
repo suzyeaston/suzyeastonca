@@ -69,6 +69,21 @@ function retro_game_music_theme_scripts() {
     }
 
     if ( is_front_page() || is_page_template( 'page-home.php' ) ) {
+        wp_enqueue_script(
+            'hero-ship-drag',
+            get_template_directory_uri() . '/js/hero-ship-drag.js',
+            array(),
+            filemtime( get_template_directory() . '/js/hero-ship-drag.js' ),
+            true
+        );
+        wp_enqueue_script(
+            'hero-galaga',
+            get_template_directory_uri() . '/js/hero-galaga.js',
+            array( 'hero-ship-drag' ),
+            filemtime( get_template_directory() . '/js/hero-galaga.js' ),
+            true
+        );
+
         $teaser_css = get_template_directory() . '/assets/css/lousy-outages-teaser.css';
         if ( file_exists( $teaser_css ) ) {
             wp_enqueue_style(
