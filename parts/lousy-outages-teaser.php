@@ -1,19 +1,5 @@
 <?php
-use LousyOutages\I18n;
-
-$teaser_strings = [
-    'teaserCaption' => 'Check if your favourite services are up. Insert coin to refresh.',
-    'viewDashboard' => 'View full dashboard',
-    'subscribeRss'  => 'Subscribe (RSS)',
-];
-
 $feed_url = home_url( '/?feed=lousy_outages_status' ); // Pretty /feed/lousy_outages_status/ works after a permalink flush, but the query form is more reliable.
-
-if ( class_exists( '\\LousyOutages\\I18n' ) ) {
-    $locale         = I18n::determine_locale();
-    $localized      = I18n::strings( $locale );
-    $teaser_strings = array_merge( $teaser_strings, array_intersect_key( $localized, $teaser_strings ) );
-}
 
 $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
     ? get_lousy_outages_home_teaser_data()
@@ -23,39 +9,39 @@ $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
         'status'   => 'clear',
         'footnote' => '',
         'feed_url' => $feed_url,
+        'rows'     => [],
     ];
-$teaser_href  = $teaser_data['href'] ?? home_url( '/lousy-outages/' );
-$feed_url     = $teaser_data['feed_url'] ?? $feed_url;
-$status       = $teaser_data['status'] ?? 'clear';
-$status_class = 'clear' === $status ? ' lo-home-pacman-alert--clear' : ' lo-home-pacman-alert--outage';
-$footnote     = $teaser_data['footnote'] ?? '';
+$teaser_href = $teaser_data['href'] ?? home_url( '/lousy-outages/' );
+$rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? $teaser_data['rows'] : [];
 ?>
-<section id="lousy-outages-teaser" class="lo-home-teaser" aria-live="polite">
-    <h2 class="lo-home-heading">Lousy Outages</h2>
-
-    <p class="lo-home-pacman-alert<?php echo esc_attr( $status_class ); ?>">
-        <span class="lo-pacman" aria-hidden="true"></span>
-        <span class="lo-pacman-dots" aria-hidden="true"></span>
-        <span class="lo-alert-text">
-            <?php echo esc_html( $teaser_data['headline'] ?? '' ); ?>
+<section id="lousy-outages-teaser" class="lo-home-teaser">
+    <div class="lo-home-teaser__titlebar">
+        <h2 class="lo-home-heading">lousy outages</h2>
+        <span class="lo-home-status-light<?php echo esc_attr( empty( $rows ) ? ' lo-home-status-light--clear' : ' lo-home-status-light--alert' ); ?>">
+            <span class="screen-reader-text"><?php echo esc_html( empty( $rows ) ? 'No active alerts' : 'Active alerts' ); ?></span>
         </span>
-    </p>
-
-    <?php if ( ! empty( $footnote ) ) : ?>
-        <p class="lo-home-footnote"><?php echo wp_kses_post( $footnote ); ?></p>
-    <?php endif; ?>
-
-    <p class="caption"><?php echo esc_html( $teaser_strings['teaserCaption'] ); ?></p>
-
-    <div class="lo-actions lo-actions--rss">
-        <a class="lo-link" href="<?php echo esc_url( $teaser_href ); ?>">
-            <?php echo esc_html( $teaser_strings['viewDashboard'] ); ?>
-        </a>
-        <a class="lo-link" href="<?php echo esc_url( $feed_url ); ?>" target="_blank" rel="noopener">
-            <svg class="lo-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path fill="currentColor" d="M6 17a2 2 0 11.001 3.999A2 2 0 016 17zm-2-7v3a8 8 0 018 8h3c0-6.075-4.925-11-11-11zm0-5v3c9.389 0 17 7.611 17 17h3C24 13.85 10.15 0 4 0z"/>
-            </svg>
-            <?php echo esc_html( $teaser_strings['subscribeRss'] ); ?>
-        </a>
     </div>
+
+    <div class="lo-home-teaser__screen">
+        <?php if ( empty( $rows ) ) : ?>
+            <p class="lo-home-empty">all quiet. suspicious, but fine.</p>
+        <?php else : ?>
+            <ul class="lo-home-alert-list">
+                <?php foreach ( $rows as $row ) : ?>
+                    <li class="lo-home-alert lo-home-alert--<?php echo esc_attr( $row['tone'] ?? 'unknown' ); ?>">
+                        <span class="lo-home-alert__label"><?php echo esc_html( $row['label'] ?? 'Status' ); ?></span>
+                        <a class="lo-home-alert__body" href="<?php echo esc_url( $row['href'] ?? $teaser_href ); ?>">
+                            <strong><?php echo esc_html( $row['provider'] ?? 'Unknown provider' ); ?></strong>
+                            <span><?php echo esc_html( $row['message'] ?? '' ); ?></span>
+                        </a>
+                        <?php if ( ! empty( $row['time'] ) ) : ?>
+                            <time class="lo-home-alert__time"><?php echo esc_html( $row['time'] ); ?></time>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </div>
+
+    <a class="lo-home-dashboard-link" href="<?php echo esc_url( $teaser_href ); ?>">open dashboard <span aria-hidden="true">→</span></a>
 </section>

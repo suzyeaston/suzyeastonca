@@ -1663,6 +1663,149 @@ footer,
   to   { transform: translateX(-1.5rem); }
 }
 
+/* Homepage Lousy Outages command window. */
+.hero-side .lo-home-teaser {
+  width: 100%;
+  max-width: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(112, 255, 168, 0.62);
+  border-radius: 4px;
+  background: #050a08;
+  box-shadow: inset 0 0 0 1px rgba(255, 184, 28, 0.12), 0 0 18px rgba(57, 255, 20, 0.12);
+}
+
+.lo-home-teaser__titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid rgba(112, 255, 168, 0.35);
+  background: linear-gradient(90deg, rgba(57, 255, 20, 0.12), rgba(255, 184, 28, 0.08));
+}
+
+.hero-side .lo-home-heading {
+  margin: 0;
+  color: #a7ffbe;
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+}
+
+.lo-home-status-light {
+  width: 0.58rem;
+  height: 0.58rem;
+  flex: 0 0 auto;
+  border: 1px solid #ffdb7b;
+  border-radius: 50%;
+  background: #ffb81c;
+  box-shadow: 0 0 7px #ffb81c;
+}
+
+.lo-home-status-light--clear {
+  border-color: #8effb0;
+  background: #39ff14;
+  box-shadow: 0 0 7px #39ff14;
+}
+
+.lo-home-status-light--alert {
+  border-color: #ff9b83;
+  background: #ff4d4d;
+  box-shadow: 0 0 7px #ff4d4d;
+}
+
+.lo-home-teaser__screen {
+  padding: 0.45rem 0.6rem;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px);
+}
+
+.lo-home-alert-list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lo-home-alert {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.15rem 0.45rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px dashed rgba(155, 255, 198, 0.2);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.lo-home-alert:last-child { border-bottom: 0; }
+
+.lo-home-alert__label {
+  align-self: start;
+  padding: 0.1rem 0.25rem;
+  border: 1px solid currentColor;
+  color: #ffe48a;
+  font-family: var(--arcade-heading-font, monospace);
+  font-size: 0.52rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.lo-home-alert--outage .lo-home-alert__label { color: #ff8a8a; }
+.lo-home-alert--signal .lo-home-alert__label { color: #ffe48a; }
+.lo-home-alert--unknown .lo-home-alert__label { color: #a8d9ff; }
+
+.lo-home-alert__body {
+  min-width: 0;
+  color: #d9ffe5;
+  text-decoration: none;
+}
+
+.lo-home-alert__body strong,
+.lo-home-alert__body span {
+  display: block;
+}
+
+.lo-home-alert__body span { color: rgba(217, 255, 229, 0.72); }
+
+.lo-home-alert__time {
+  grid-column: 2;
+  color: rgba(255, 228, 138, 0.72);
+  font-size: 0.64rem;
+}
+
+.lo-home-empty {
+  margin: 0;
+  padding: 0.25rem 0;
+  color: #a7ffbe;
+  font-size: 0.78rem;
+}
+
+.lo-home-dashboard-link {
+  display: block;
+  padding: 0.5rem 0.65rem;
+  border-top: 1px solid rgba(112, 255, 168, 0.35);
+  color: #a7ffbe;
+  font-family: var(--arcade-heading-font, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.lo-home-alert__body:focus-visible,
+.lo-home-dashboard-link:focus-visible {
+  outline: 2px solid #ffe48a;
+  outline-offset: 2px;
+  text-decoration: underline;
+}
+
+@media (max-width: 720px) {
+  .hero-side .lo-home-teaser { margin-top: 0.75rem; }
+  .lo-home-alert { font-size: 0.7rem; }
+}
+
 
 body {
   padding-top: var(--se-header-height);

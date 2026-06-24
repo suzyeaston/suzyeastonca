@@ -24,6 +24,7 @@ get_header();
                     </a>
                 </div>
                 <p class="hero-photo-caption pixel-font"><a class="hero-photo-link" href="<?php echo esc_url( home_url( '/bio/' ) ); ?>"><?php echo esc_html( 'Vancouver, BC / Read bio →' ); ?></a></p>
+                <?php get_template_part( 'parts/lousy-outages-teaser' ); ?>
             </aside>
         </div>
     </section>

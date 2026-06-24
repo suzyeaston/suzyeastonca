@@ -513,6 +513,7 @@ function get_lousy_outages_home_teaser_data(): array {
         'status'   => 'clear',
         'footnote' => '',
         'feed_url' => $feed_url,
+        'rows'     => [],
     ];
 
     $summary = get_lousy_outages_home_teaser_from_summary( $default );
@@ -559,6 +560,7 @@ function get_lousy_outages_home_teaser_from_summary( array $default ): ?array {
     $unverified_count = (int) ( $meta['unverified_count'] ?? 0 );
     $generated_at_raw = $meta['generated_at'] ?? $payload['generated_at'] ?? $payload['fetched_at'] ?? '';
     $generated_at = lousy_outages_home_format_generated_at( $generated_at_raw );
+    $rows = lousy_outages_home_build_alert_rows( $payload['providers'] ?? [], $default['href'] );
 
     $dashboard_url = $default['href'];
     $footnote_link = sprintf( '<a href="%s">%s</a>', esc_url( $dashboard_url ), esc_html__( 'View the dashboard', 'suzyeastonca' ) );
@@ -592,6 +594,7 @@ function get_lousy_outages_home_teaser_from_summary( array $default ): ?array {
             'status'   => 'outage',
             'footnote' => $footnote_text,
             'feed_url' => $default['feed_url'],
+            'rows'     => $rows,
         ];
     }
 
@@ -625,7 +628,69 @@ function get_lousy_outages_home_teaser_from_summary( array $default ): ?array {
         'status'   => 'clear',
         'footnote' => $footnote_text,
         'feed_url' => $default['feed_url'],
+        'rows'     => $rows,
     ];
+}
+
+/**
+ * Reduce the public summary payload to a small, safe homepage alert window.
+ */
+function lousy_outages_home_build_alert_rows( array $providers, string $dashboard_url ): array {
+    $rows = [];
+
+    foreach ( $providers as $provider ) {
+        if ( ! is_array( $provider ) ) {
+            continue;
+        }
+
+        $status = strtolower( trim( (string) ( $provider['stateCode'] ?? $provider['status'] ?? '' ) ) );
+        $kind = strtolower( trim( (string) ( $provider['tile_kind'] ?? $provider['tileKind'] ?? '' ) ) );
+        $incidents = isset( $provider['incidents'] ) && is_array( $provider['incidents'] ) ? $provider['incidents'] : [];
+        $is_outage = 'outage' === $kind || ! empty( $incidents ) || in_array( $status, [ 'outage', 'major', 'critical', 'major_outage' ], true );
+        $is_signal = 'signal' === $kind || in_array( $status, [ 'degraded', 'minor', 'partial_outage' ], true );
+        $is_unverified = in_array( $kind, [ 'unknown', 'manual' ], true ) || 'unknown' === $status;
+
+        if ( ! $is_outage && ! $is_signal && ! $is_unverified ) {
+            continue;
+        }
+
+        $name = trim( (string) ( $provider['name'] ?? $provider['provider'] ?? $provider['id'] ?? '' ) );
+        if ( '' === $name ) {
+            $name = 'Unknown provider';
+        }
+
+        $incident = ! empty( $incidents[0] ) && is_array( $incidents[0] ) ? $incidents[0] : [];
+        $message = trim( (string) ( $incident['title'] ?? $incident['summary'] ?? $provider['summary'] ?? $provider['state'] ?? '' ) );
+        if ( '' === $message ) {
+            $message = $is_outage ? 'Incident posted' : ( $is_signal ? 'Signals detected' : 'Status unverified' );
+        }
+
+        $label = trim( (string) ( $provider['state'] ?? '' ) );
+        if ( '' === $label ) {
+            $label = $is_outage ? 'Outage' : ( $is_signal ? 'Degraded' : 'Unverified' );
+        }
+
+        $updated = $incident['updatedAt'] ?? $incident['updated_at'] ?? $provider['updatedAt'] ?? $provider['updated_at'] ?? '';
+        $rows[] = [
+            'provider' => $name,
+            'message'  => $message,
+            'label'    => $label,
+            'time'     => lousy_outages_home_format_generated_at( $updated ),
+            'href'     => $dashboard_url,
+            'tone'     => $is_outage ? 'outage' : ( $is_signal ? 'signal' : 'unknown' ),
+            'priority' => $is_outage ? 0 : ( $is_signal ? 1 : 2 ),
+            'sort_key' => is_numeric( $provider['sort_key'] ?? null ) ? (int) $provider['sort_key'] : 999,
+        ];
+    }
+
+    usort(
+        $rows,
+        static function ( array $a, array $b ): int {
+            return [ $a['priority'], $a['sort_key'] ] <=> [ $b['priority'], $b['sort_key'] ];
+        }
+    );
+
+    return array_slice( $rows, 0, 3 );
 }
 
 function lousy_outages_home_find_top_provider( array $providers ): array {
@@ -773,6 +838,16 @@ function get_lousy_outages_home_teaser_from_feed( array $default ): array {
             'status'   => 'outage',
             'footnote' => '',
             'feed_url' => $feed_url,
+            'rows'     => [
+                [
+                    'provider' => $recent_outage['provider'],
+                    'message'  => $recent_outage['incident'],
+                    'label'    => 'Outage',
+                    'time'     => lousy_outages_home_format_generated_at( $recent_outage['timestamp'] ),
+                    'href'     => $default['href'],
+                    'tone'     => 'outage',
+                ],
+            ],
         ];
     }
 
