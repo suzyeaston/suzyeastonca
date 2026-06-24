@@ -5254,3 +5254,182 @@ body {
 @media (max-width: 980px) { .home-arcade-hero__grid { grid-template-columns:1fr; } .home-mission-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) { .home-arcade-hero__marquee { flex-direction:column; align-items:center; text-align:center; } .home-mission-grid { grid-template-columns:1fr; } .home-arcade-game .hero-game-stage__screen { min-height:230px; } }
 @media (prefers-reduced-motion: reduce) { .home-arcade-start { animation:none; } }
+
+/* Focused homepage polish: portfolio first, arcade second. */
+.page-template-page-home-php .pixel-button--secondary,
+.home .pixel-button--secondary,
+.front-page .pixel-button--secondary {
+  border-color: rgba(87, 243, 255, 0.72);
+  color: #baf7ff;
+  box-shadow: none;
+}
+
+.home-arcade-hero {
+  padding-top: clamp(1rem, 2.4vw, 2.25rem);
+}
+
+.home-arcade-hero__cabinet {
+  max-width: 1140px;
+  padding: clamp(0.9rem, 2vw, 1.25rem);
+}
+
+.home-arcade-hero__marquee {
+  margin-bottom: clamp(0.75rem, 1.5vw, 1.1rem);
+}
+
+.home-arcade-hero__grid {
+  grid-template-columns: minmax(0, 1.24fr) minmax(280px, 0.76fr);
+  gap: clamp(1rem, 3vw, 2rem);
+}
+
+.home-arcade-hero__intro {
+  text-align: left;
+}
+
+.home-arcade-title {
+  font-size: clamp(2.7rem, 8vw, 5.8rem);
+  line-height: 0.95;
+  margin-top: 0.35rem;
+}
+
+.home-arcade-subtitle,
+.home-arcade-copy {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.home-arcade-subtitle {
+  max-width: 760px;
+  color: #ffff66;
+}
+
+.home-arcade-copy {
+  max-width: 700px;
+  font-size: clamp(0.86rem, 1.5vw, 1.08rem);
+  line-height: 1.75;
+}
+
+.home-arcade-start-row {
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.home-arcade-game {
+  max-width: 420px;
+}
+
+.home-arcade-game .hero-game-stage__screen {
+  min-height: clamp(210px, 24vw, 300px);
+}
+
+.home-arcade-game .hero-game-stage__header,
+.home-arcade-game .hero-game-stage__mobile-note {
+  font-size: 0.55rem;
+  line-height: 1.45;
+}
+
+#lousy-outages-teaser.lo-home-teaser {
+  max-width: 1120px;
+  margin: clamp(1rem, 2vw, 1.5rem) auto;
+  overflow: hidden;
+  border: 1px solid rgba(112, 255, 168, 0.62);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(0, 18, 10, 0.94), rgba(0, 0, 0, 0.96));
+  box-shadow: inset 0 0 0 1px rgba(255, 184, 28, 0.12), 0 0 24px rgba(57, 255, 20, 0.1);
+}
+
+#lousy-outages-teaser .lo-home-heading {
+  color: #a7ffbe;
+  font-size: clamp(0.75rem, 1.4vw, 1rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#lousy-outages-teaser .lo-home-teaser__screen {
+  padding: clamp(0.75rem, 2vw, 1rem);
+}
+
+#lousy-outages-teaser .lo-home-alert {
+  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  font-size: clamp(0.68rem, 1.2vw, 0.82rem);
+}
+
+#lousy-outages-teaser .lo-home-alert__time {
+  grid-column: auto;
+  white-space: nowrap;
+}
+
+#lousy-outages-teaser .lo-home-empty {
+  font-size: clamp(0.78rem, 1.5vw, 0.95rem);
+}
+
+.home-operator-strip,
+.home-mission-select,
+.home-unlocks {
+  margin-top: clamp(1rem, 2vw, 1.5rem);
+}
+
+.home-mission-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: stretch;
+}
+
+.home-mission-card.selected-work__card {
+  min-height: 0;
+  padding: 1rem;
+  gap: 0.55rem;
+  justify-content: space-between;
+}
+
+.home-mission-card h3 {
+  font-size: clamp(0.82rem, 1.25vw, 1rem);
+  line-height: 1.35;
+}
+
+.home-mission-card p:not(.home-mission-card__label) {
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.home-mission-card .pixel-button {
+  align-self: flex-start;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.62rem;
+}
+
+@media (max-width: 980px) {
+  .home-arcade-hero__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-arcade-game {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 680px) {
+  .home-arcade-hero__intro {
+    text-align: center;
+  }
+
+  .home-arcade-subtitle,
+  .home-arcade-copy {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .home-arcade-start-row {
+    justify-content: center;
+  }
+
+  #lousy-outages-teaser .lo-home-alert {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  #lousy-outages-teaser .lo-home-alert__time {
+    grid-column: auto;
+  }
+}
