@@ -99,6 +99,7 @@
     const idlePanelEl = overlay.querySelector('[data-galaga-idle-panel]');
     const gameOverPanelEl = overlay.querySelector('[data-galaga-gameover-panel]');
     const startButton = overlay.querySelector('[data-galaga-start]');
+    const externalStartButtons = document.querySelectorAll('[data-arcade-start]');
     const rebootButtons = overlay.querySelectorAll('[data-galaga-reboot]');
     const hintTextEl = overlay.querySelector('[data-galaga-hint-text]');
     const finalScoreEl = overlay.querySelector('[data-galaga-final-score]');
@@ -1112,6 +1113,14 @@
         restartGame();
       });
     }
+
+    externalStartButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (desktopQuery.matches && !reducedMotionQuery.matches) {
+          restartGame();
+        }
+      });
+    });
 
     rebootButtons.forEach(function (button) {
       button.addEventListener('click', function (event) {

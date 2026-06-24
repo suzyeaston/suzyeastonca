@@ -5222,3 +5222,35 @@ body {
     white-space: normal;
   }
 }
+
+/* Homepage arcade redesign */
+.home-arcade-layout { padding-bottom: clamp(2rem, 6vw, 5rem); }
+.home-arcade-hero { padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 3vw, 2rem); }
+.home-arcade-hero__cabinet { max-width: 1180px; margin: 0 auto; border: 2px solid rgba(0,255,0,.58); border-radius: 18px; background: radial-gradient(circle at 50% 0, rgba(0,255,128,.16), transparent 42%), linear-gradient(180deg, rgba(0,20,12,.96), rgba(0,0,0,.94)); box-shadow: 0 0 0 4px rgba(0,0,0,.85), 0 0 36px rgba(0,255,80,.22), inset 0 0 36px rgba(0,255,80,.08); padding: clamp(.85rem, 2vw, 1.4rem); }
+.home-arcade-hero__marquee { display:flex; justify-content:space-between; gap:1rem; margin-bottom: clamp(1rem,2vw,1.6rem); color:#ffff66; font-size:clamp(.52rem,1.1vw,.72rem); letter-spacing:.08em; }
+.home-arcade-hero__grid { grid-template-columns: minmax(0,.9fr) minmax(320px,1.1fr); align-items:center; margin-bottom:0; }
+.home-arcade-title { font-size: clamp(2.4rem, 7vw, 6.8rem); letter-spacing:.04em; text-shadow: 0 0 10px rgba(0,255,0,.65), 4px 4px 0 rgba(230,0,115,.45); }
+.home-arcade-subtitle { max-width: 720px; margin: 1rem auto 0; color:#cbffe7; font-size:clamp(.7rem,1.4vw,.95rem); line-height:1.7; }
+.home-arcade-copy { max-width: 660px; margin: 1rem auto 0; color:rgba(218,255,232,.86); }
+.home-arcade-start-row { margin-top:1.5rem; }
+.home-arcade-start { animation: homeStartPulse 1.6s steps(2,end) infinite; }
+.home-arcade-game { margin-bottom:0; min-height: 100%; }
+.home-arcade-game .hero-game-stage__screen { min-height: clamp(300px, 36vw, 440px); background: radial-gradient(circle at 20% 18%, rgba(87,243,255,.14) 0 2px, transparent 3px), radial-gradient(circle at 78% 28%, rgba(255,255,102,.22) 0 1px, transparent 2px), radial-gradient(circle at 50% 110%, rgba(0,255,0,.16), transparent 44%), repeating-linear-gradient(180deg, rgba(255,255,255,.035) 0 2px, transparent 2px 5px), #010806; }
+.home-static-sprites { position:absolute; inset:0; pointer-events:none; }
+.home-static-sprites__ship { position:absolute; left:50%; bottom:14%; width:46px; height:30px; transform:translateX(-50%); background: linear-gradient(to bottom, transparent 0 20%, #39ff14 20% 42%, transparent 42%), linear-gradient(to right, transparent 0 16%, #39ff14 16% 36%, #cbffe7 36% 64%, #39ff14 64% 84%, transparent 84%); filter: drop-shadow(0 0 10px rgba(57,255,20,.7)); }
+.home-static-sprites__enemy { position:absolute; width:28px; height:22px; border:2px solid #ff4dce; box-shadow:0 0 12px rgba(255,77,206,.7); }
+.home-static-sprites__enemy--one { left:28%; top:30%; clip-path: polygon(50% 0,100% 45%,70% 100%,50% 70%,30% 100%,0 45%); }
+.home-static-sprites__enemy--two { right:25%; top:22%; border-color:#57f3ff; clip-path: polygon(50% 0,100% 100%,65% 72%,50% 100%,35% 72%,0 100%); }
+.home-static-sprites__reticle { position:absolute; left:50%; top:42%; width:74px; height:74px; border:1px solid rgba(255,255,102,.72); border-radius:50%; transform:translate(-50%,-50%); box-shadow: inset 0 0 16px rgba(255,255,102,.12), 0 0 14px rgba(255,255,102,.22); }
+.home-operator-strip, .home-mission-select, .home-unlocks { max-width: 1120px; margin-inline:auto; }
+.home-mission-select { scroll-margin-top: calc(var(--se-header-height) + 1rem); }
+.home-mission-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.home-mission-card { position:relative; overflow:hidden; border-color:rgba(87,243,255,.45); }
+.home-mission-card::before { content:""; position:absolute; inset:0; background:linear-gradient(135deg, rgba(87,243,255,.08), transparent 40%); pointer-events:none; }
+.home-mission-card--boss { border-color:rgba(255,72,206,.72); box-shadow:0 0 24px rgba(255,72,206,.18); }
+.home-mission-card__label { margin:0 0 .6rem; color:#ffff66; font-size:.58rem; }
+.home-unlocks { display:grid; gap:1rem; }
+@keyframes homeStartPulse { 50% { color:#ffff66; border-color:#ffff66; box-shadow:0 0 18px rgba(255,255,102,.45); } }
+@media (max-width: 980px) { .home-arcade-hero__grid { grid-template-columns:1fr; } .home-mission-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .home-arcade-hero__marquee { flex-direction:column; align-items:center; text-align:center; } .home-mission-grid { grid-template-columns:1fr; } .home-arcade-game .hero-game-stage__screen { min-height:230px; } }
+@media (prefers-reduced-motion: reduce) { .home-arcade-start { animation:none; } }
