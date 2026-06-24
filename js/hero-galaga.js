@@ -58,8 +58,8 @@
     const ui = document.createElement('div');
     ui.className = 'hero-galaga-ui';
     ui.innerHTML = '' +
-      '<p class="hero-galaga-status" data-galaga-status>PACIFIC STATIC</p>' +
-      '<p class="hero-galaga-vessel">Vessel: LIONS GATE</p>' +
+      '<p class="hero-galaga-status" data-galaga-status>OUTAGE BLIPS</p>' +
+      '<p class="hero-galaga-vessel">Signal: provider alerts</p>' +
       '<p class="hero-galaga-scoreline">Score: <span data-galaga-score>000000</span> // Lives: <span data-galaga-lives>3</span> // Wave: <span data-galaga-wave>1</span></p>' +
       '<p class="hero-galaga-help">WASD move // Space fire // Esc quit</p>' +
       '<p class="hero-galaga-wavecall" data-galaga-wavecall hidden></p>';
@@ -69,7 +69,7 @@
     overlay.innerHTML = '' +
       '<div class="hero-galaga-panel hero-galaga-panel--idle hero-galaga-overlay--idle" data-galaga-idle-panel>' +
         '<p class="hero-galaga-hint-text" data-galaga-hint-text></p>' +
-        '<button type="button" class="hero-galaga-reboot" data-galaga-start>Start Signal</button>' +
+        '<button type="button" class="hero-galaga-reboot" data-galaga-start>Start Blip Sweep</button>' +
       '</div>' +
       '<div class="hero-galaga-panel hero-galaga-panel--gameover hero-galaga-overlay--gameover hero-galaga-gameover" data-galaga-gameover-panel hidden>' +
         '<p class="hero-galaga-gameover__title">SIGNAL LOST</p>' +
@@ -146,11 +146,11 @@
     };
 
     const waveCalls = [
-      'WAVE 1 // VANCOUVER SIGNAL',
-      'WAVE 2 // GASTOWN GHOSTS',
-      'WAVE 3 // STEAM CLOCK SWARM',
-      'WAVE 4 // SEABUS DRONES',
-      'WAVE 5 // PACIFIC STATIC',
+      'WAVE 1 // PROVIDER ALERTS',
+      'WAVE 2 // STATUSPAGE BLIPS',
+      'WAVE 3 // CLOUD FLAREUPS',
+      'WAVE 4 // INCIDENT NOISE',
+      'WAVE 5 // OUTAGE STATIC',
     ];
 
     function setGameMode(mode) {
@@ -282,7 +282,7 @@
       idlePanelEl.hidden = !isIdle;
       gameOverPanelEl.hidden = !isGameOver;
 
-      hintTextEl.innerHTML = 'PACIFIC STATIC<br>Vessel: LIONS GATE<br>Defend the Vancouver signal.<br>Press G to play.<br>WASD move // Space fire // Esc quit';
+      hintTextEl.innerHTML = 'OUTAGE BLIPS<br>Provider alerts as arcade static.<br>Click to play, or ignore it.<br>WASD move // Space fire // Esc quit';
       if (startButton) {
         startButton.hidden = !isIdle;
       }
@@ -494,7 +494,6 @@
         waveCallEl.hidden = true;
         waveCallEl.textContent = '';
       }
-      gameStage.focus({ preventScroll: true });
       debugLog('game start');
       startLoop();
     }
