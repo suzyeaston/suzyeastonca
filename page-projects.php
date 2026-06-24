@@ -22,9 +22,9 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
 <main id="main-content" class="projects-page">
     <div class="projects-shell">
         <section class="projects-hero projects-section" aria-labelledby="projects-title">
-            <p class="projects-eyebrow projects-hero__eyebrow pixel-font">Build log</p>
+            <p class="projects-eyebrow projects-hero__eyebrow pixel-font">build log</p>
             <h1 id="projects-title" class="projects-hero__title">Projects</h1>
-            <p class="projects-lead projects-hero__lead">Tools, prototypes, music experiments, and civic-ish web builds. Some are polished. Some are still being figured out.</p>
+            <p class="projects-lead projects-hero__lead">Tools, prototypes, music experiments, outage dashboards, and Vancouver web builds. Some are polished. Some are still mutating in public.</p>
             <div class="projects-actions" role="group" aria-label="Projects page jumps and primary links">
                 <a class="pixel-button" href="#featured-projects">Featured</a>
                 <a class="pixel-button" href="#interactive-projects">Interactive</a>
@@ -40,7 +40,7 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
             <div class="projects-grid projects-grid--featured">
                 <article class="projects-card projects-card--featured">
                     <h3 class="pixel-font">Lousy Outages</h3>
-                    <p>A WordPress plugin I&rsquo;m building for outage monitoring, alert preferences, community reports, and early-warning signals.</p>
+                    <p>A WordPress plugin for outage monitoring, alert preferences, community reports, and early warning signals. Built for the gap between ‘all systems operational’ and everyone yelling in Slack.</p>
                     <ul class="projects-badges" aria-label="Lousy Outages details">
                         <li>WordPress plugin</li><li>IT ops</li><li>REST API</li><li>Early warning</li><li>Subscriber alerts</li>
                     </ul>
@@ -60,7 +60,7 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
             <div class="projects-grid">
                 <article class="projects-card">
                     <h3 class="pixel-font">Gastown Simulator</h3>
-                    <p>Vancouver maps, routes, civic data, and game-style navigation.</p>
+                    <p>A playable Vancouver corridor using route logic, civic data, street mood, and a bit of browser-world obsession.</p>
                     <div class="projects-card__actions">
                         <a class="pixel-button" href="<?php echo esc_url($project_url('page-gastown-sim', '/page-gastown-sim/')); ?>">Open project</a>
                     </div>
@@ -68,7 +68,7 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
 
                 <article class="projects-card">
                     <h3 class="pixel-font">Track Analyzer</h3>
-                    <p>AI-assisted feedback for rough mixes and songwriting notes.</p>
+                    <p>MP3 feedback for rough mixes, lyrics, structure, feel, and the part of the song that is almost working.</p>
                     <div class="projects-card__actions">
                         <a class="pixel-button" href="<?php echo esc_url($project_url('suzys-track-analyzer', '/suzys-track-analyzer/')); ?>">Open project</a>
                     </div>
@@ -83,7 +83,7 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
             <div class="projects-grid">
                 <article class="projects-card">
                     <h3 class="pixel-font">Riff Generator</h3>
-                    <p>A small music idea generator for quick prompts, riffs, and creative nudges.</p>
+                    <p>A tiny prompt machine for riffs, song starts, and getting unstuck before the song gets precious.</p>
                     <div class="projects-card__actions">
                         <a class="pixel-button" href="<?php echo esc_url($project_url('riff-generator')); ?>">Open project</a>
                     </div>
@@ -91,7 +91,7 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
 
                 <article class="projects-card">
                     <h3 class="pixel-font">ASMR Lab</h3>
-                    <p>A playful audio experiment for generated sound textures and web-based ambience.</p>
+                    <p>Procedural sound textures, web ambience, and the soft-machine experiments feeding the larger lab.</p>
                     <div class="projects-card__actions">
                         <a class="pixel-button" href="<?php echo esc_url($project_url('asmr-lab')); ?>">Open project</a>
                     </div>

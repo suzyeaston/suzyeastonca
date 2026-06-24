@@ -7,15 +7,15 @@ get_header();
 
 <main id="main-content">
     <section class="page-content">
-        <h1>Coffee for Builders (Vancouver)</h1>
-        <p class="page-subtitle">(plus sports takes, riffs, and a little civic chaos)</p>
+        <h1>Coffee for Builders in Vancouver</h1>
+        <p class="page-subtitle">for tech people, music people, civic weirdos, and builders who still have a pulse</p>
 
         <p>I’m Suzy, Vancouver-born engineer + musician. I came up through classical music and recording arts, toured for years as a bassist, and recorded in Chicago with Steve Albini. These days I build and run things in the identity/cloud/automation/QA/WordPress/DevOps-ish reliability universe — the unglamorous but sacred art of making systems behave.</p>
         <p>Outside work, I run a small lab on this site: tools like Lousy Outages (a retro outage dashboard to keep third-party providers honest) and an audio analysis tool for musicians using OpenAI/Whisper (hah thats a work in progress). I also still write, record, and release music.</p>
         <p>This page is my “meet humans on purpose” experiment, because Vancouver can be a small town socially, and I’m not here to only meet people who already look like my existing circles.</p>
 
         <h2>What this is</h2>
-        <p>A low-key coffee chat with someone who’s building something, ie - tech, music, art, startups, community work, whatever. No networking theatre. No “let’s circle back.” Just a real conversation.</p>
+        <p>A low-key coffee chat with someone who’s building something, ie - tech, music, art, startups, community work, whatever. No networking theatre. No circle-back cosplay. Just a real conversation.</p>
 
         <h2>What we can talk about</h2>
         <p>Pick your own adventure:</p>

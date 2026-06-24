@@ -76,7 +76,7 @@ function se_track_analyzer_whisper_transcribe( $filepath ) {
 }
 
 function se_track_analyzer_gpt_analyze( $transcript ) {
-    $prompt = 'You are legendary producer Rick Rubin offering thoughtful insight. Analyze this song with a focus on emotional resonance, creativity, production quality and artist development advice. Transcript: ' . $transcript;
+    $prompt = 'You are a blunt, thoughtful music producer offering useful feedback. Analyze this song with a focus on emotional resonance, lyrics, structure, production choices, and artist development advice. Keep it practical and respectful. Transcript: ' . $transcript;
 
     $response = se_openai_chat(
         array( array( 'role' => 'user', 'content' => $prompt ) ),
@@ -155,24 +155,24 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
 
 <main id="main-content">
   <header class="analyzer-header pixel-font">
-    <span class="page-title">Suzy's Track Analyzer</span>
+    <span class="page-title">Suzy’s Track Analyzer – Song Feedback Console</span>
     <div class="header-actions">
       <button id="reset-button" class="pixel-button">Reset</button>
     </div>
   </header>
-  <div id="loading-overlay" class="loading-overlay pixel-font" style="display:none;">Analyzing track<span class="loading-dots"></span></div>
+  <div id="loading-overlay" class="loading-overlay pixel-font" style="display:none;">Reading the song-shaped object...<span class="loading-dots"></span></div>
   <section class="page-content track-analyzer">
-    <h1 class="pixel-font title-flicker">Suzy's Track Analyzer &ndash; Sonic Intel Console</h1>
+    <h1 class="pixel-font title-flicker">Suzy’s Track Analyzer – Song Feedback Console</h1>
     <div class="intro-text pixel-font">
-      <p>Curious how your song stacks up?</p>
-      <p>Drop your track, and let’s tap into the vibe—discover what resonates, what elevates, and what could transform your sound.</p>
+      <p>Got a rough mix that needs honest ears?</p>
+      <p>Upload an MP3 and get practical notes on feel, lyrics, structure, production choices, and what might help the song land harder.</p>
       <p>For now, uploads are limited to MP3 files under 8 MB.</p>
     </div>
 <?php
   $quotes = array(
-    "\"The future's a mix tape.\" - Grimes",
-    "\"Keep your frequencies weird.\" - DJ-3000",
-    "\"Albini would hate this — perfect.\" - Club Oracle"
+    "The future is a mixtape with bad file names.",
+    "Keep your frequencies weird, but label your tracks.",
+    "Less polish, more intent."
   );
   $oracle_quote = $quotes[array_rand($quotes)];
 ?>
@@ -197,8 +197,8 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_FILES['track_file'] ) ) {
       <label for="track_file">Upload MP3 File</label>
       <input type="file" name="track_file" id="track_file" accept=".mp3,audio/mpeg" required>
       <?php echo se_ai_get_turnstile_widget_html( 'track_analyzer' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-      <button type="submit" class="pixel-button">Analyze Track</button>
-      <p id="loading-message" style="display:none;" class="pixel-font">Decrypting audio stream<span class="loading-dots"></span></p>
+      <button type="submit" class="pixel-button">Analyze track</button>
+      <p id="loading-message" style="display:none;" class="pixel-font">Reading the song-shaped object...<span class="loading-dots"></span></p>
     </form>
     <canvas id="analyzer-bg"></canvas>
   </section>

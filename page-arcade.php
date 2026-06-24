@@ -8,7 +8,7 @@ get_header();
 <div id="primary" class="content-area">
     <main id="main" class="site-main">
         <div class="arcade-container">
-            <h1 class="pixel-font">Suzy's Retro Arcade</h1>
+            <h1 class="pixel-font">Suzy’s Tiny Arcade</h1>
             
             <div class="game-selection">
                 <div class="game-card">
@@ -41,7 +41,7 @@ get_header();
 
                     <div id="game-overlay" class="game-overlay">
                         <div class="overlay-content">
-                            <p class="pixel-font">CONTROLS:<br>Arrow Keys – Move Player<br>Spacebar – Shoot Puck<br><br>Score as many goals as you can before time runs out!</p>
+                            <p class="pixel-font">CONTROLS:<br>Arrow Keys – Move Player<br>Spacebar – Shoot Puck<br><br>Score as many goals as you can before the clock gets rude.</p>
                             <button id="start-button" class="pixel-button">Start Game</button>
                         </div>
                     </div>

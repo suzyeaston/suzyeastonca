@@ -11,9 +11,9 @@ $gastown_page_url = $gastown_page ? get_permalink( $gastown_page ) : home_url( '
 <main id="primary" class="content-area asmr-lab-page">
   <section class="asmr-lab-shell" id="asmr-lab-app">
     <header class="asmr-lab-header">
-      <p class="asmr-kicker">Retro-futurist rebuild chamber // archive specimen</p>
+      <p class="asmr-kicker">soft machine rebuild // archive specimen</p>
       <h1 class="asmr-title">ASMR Lab: Rebuild in Progress</h1>
-      <p class="asmr-intro">Experimental predecessor to the Gastown simulator. Currently in major reconstruction with unstable modules and dramatic lighting.</p>
+      <p class="asmr-intro">An audio/visual prototype that mutated into part of the larger lab. Currently being rebuilt with unstable modules, soft-machine logic, and dramatic lighting.</p>
     </header>
 
     <section class="asmr-rebuild-chamber" aria-labelledby="asmr-rebuild-title">
@@ -23,7 +23,7 @@ $gastown_page_url = $gastown_page ? get_permalink( $gastown_page ) : home_url( '
       <p>The code survived. The interface is in the shop. Rebuild in progress.</p>
       <div class="asmr-status-grid" role="list" aria-label="Rebuild status">
         <p role="listitem"><strong>Status:</strong> major rebuild</p>
-        <p role="listitem"><strong>Stability:</strong> intentionally chaotic</p>
+        <p role="listitem"><strong>Stability:</strong> artistically suspicious</p>
         <p role="listitem"><strong>Mutation level:</strong> acceptable</p>
       </div>
       <div class="asmr-lab-voice-panel">
@@ -39,7 +39,7 @@ $gastown_page_url = $gastown_page ? get_permalink( $gastown_page ) : home_url( '
     <details class="asmr-legacy-console">
       <summary>Open legacy ASMR Lab console (experimental predecessor)</summary>
     <section class="asmr-lab-primer" aria-labelledby="asmr-lab-primer-title">
-      <h2 id="asmr-lab-primer-title">What this prototype now performs</h2>
+      <h2 id="asmr-lab-primer-title">What this prototype is trying to become</h2>
       <ul>
         <li><strong>Compose mode</strong> for a single hardcoded route preset: <code>gastown_water_street_walk</code>.</li>
         <li><strong>Explore mode</strong> with connected scene nodes and left/center/right look bias per node.</li>

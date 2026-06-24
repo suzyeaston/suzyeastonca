@@ -8,11 +8,11 @@ get_header();
 <main id="main-content" class="work-with-suzy-page">
     <article class="page-content work-with-suzy-content">
         <section class="crt-block wws-hero" aria-labelledby="work-with-suzy-title">
-            <p class="wws-kicker pixel-font wws-eyebrow">Available for senior roles • contract work • web development • QA automation • practical AI builds</p>
+            <p class="wws-kicker pixel-font wws-eyebrow">Senior technical work • custom WordPress • QA automation • practical AI • weird bug triage</p>
             <h1 id="work-with-suzy-title" class="retro-title glow-lite">Work With Suzy</h1>
-            <p class="wws-lead">I&rsquo;m currently available for senior technical roles, contract projects, and focused builds that need someone who can untangle messy systems and ship practical tools.</p>
-            <p class="wws-hero-subcopy">I work across web development, custom WordPress, JavaScript/PHP, QA automation, IT operations, API/integration debugging, dashboards, workflow automation, and AI-assisted prototypes with reviewable outputs.</p>
-            <p class="wws-hero-subcopy">My sweet spot is the messy middle where support, QA, operations, software, and real users collide &mdash; the place where &ldquo;it should work&rdquo; turns into &ldquo;here&rsquo;s what&rsquo;s actually broken.&rdquo;</p>
+            <p class="wws-lead">I help teams make messy systems understandable, testable, and shippable.</p>
+            <p class="wws-hero-subcopy">I work across custom WordPress, JavaScript/PHP, QA automation, IT operations, API/integration debugging, dashboards, workflow automation, and AI-assisted prototypes with reviewable outputs.</p>
+            <p class="wws-hero-subcopy">My strongest work happens where product, support, QA, ops, and real users collide. I can find the failure path, explain it clearly, and help build the fix.</p>
             <div class="wws-actions" role="group" aria-label="Work With Suzy contact links">
                 <a class="pixel-button wws-hero-cta" href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy">Email Suzy</a>
                 <a class="pixel-button wws-secondary-button" href="https://www.linkedin.com/in/suzyeaston/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
@@ -21,7 +21,7 @@ get_header();
         </section>
 
         <section class="crt-block wws-section" aria-labelledby="what-i-help-with">
-            <h2 id="what-i-help-with" class="pixel-font">What I can help with</h2>
+            <h2 id="what-i-help-with" class="pixel-font">How I can help</h2>
             <div class="wws-grid">
                 <article class="wws-card wws-card--featured">
                     <h3>Web development and custom builds</h3>
@@ -52,7 +52,7 @@ get_header();
 
         <section class="crt-block wws-section" aria-labelledby="current-focus">
             <h2 id="current-focus" class="pixel-font">Current focus</h2>
-            <p>Right now I&rsquo;m looking for work that combines technical problem-solving with useful, visible outcomes.</p>
+            <p>Right now I&rsquo;m looking for work where the output is visible, useful, and not buried in twelve meetings.</p>
             <div class="wws-focus-grid">
                 <div class="wws-mode"><strong>Senior technical generalist roles</strong></div>
                 <div class="wws-mode"><strong>Contract web development and WordPress builds</strong></div>
@@ -137,7 +137,7 @@ get_header();
 
         <section class="crt-block wws-final-cta" aria-labelledby="work-with-suzy-contact">
             <h2 id="work-with-suzy-contact" class="pixel-font">Let&rsquo;s make the messy thing make sense</h2>
-            <p>Email me with the role, project, bug, workflow, or idea. Include what is broken, what &ldquo;done&rdquo; looks like, and any timeline or budget constraints. I&rsquo;ll tell you honestly whether I&rsquo;m a fit.</p>
+            <p>Email me with the role, project, bug, workflow, or idea. Tell me what is broken, what &ldquo;done&rdquo; looks like, and any timeline or budget constraints. I&rsquo;ll tell you honestly whether I&rsquo;m a fit.</p>
             <p>Email: <a href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy%20%E2%80%94%20%5Brole%2Fproject%5D">suzyeaston@icloud.com</a></p>
             <a class="pixel-button wws-final-button" href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy%20%E2%80%94%20%5Brole%2Fproject%5D">Email Suzy</a>
             <div class="wws-subject-list">

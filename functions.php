@@ -518,7 +518,7 @@ if ( ! defined( 'LOUSY_OUTAGES_HOME_COMMUNITY_WINDOW_HOURS' ) ) {
 function get_lousy_outages_home_teaser_data(): array {
     $feed_url = home_url( '/?feed=lousy_outages_status' );
     $default = [
-        'headline' => 'all quiet for now',
+        'headline' => 'all quiet. suspicious, but fine.',
         'href'     => home_url( '/lousy-outages/' ),
         'status'   => 'clear',
         'footnote' => '',
@@ -636,7 +636,7 @@ function get_lousy_outages_home_teaser_from_summary( array $default ): ?array {
     }
 
     return [
-        'headline' => 'all quiet for now',
+        'headline' => 'all quiet. suspicious, but fine.',
         'href'     => $dashboard_url,
         'status'   => 'clear',
         'footnote' => $footnote_text,
