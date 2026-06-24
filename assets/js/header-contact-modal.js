@@ -1,7 +1,7 @@
 (function () {
-  var trigger = document.querySelector('[data-contact-trigger]');
+  var triggers = document.querySelectorAll('[data-contact-trigger]');
   var modal = document.querySelector('[data-contact-modal]');
-  if (!trigger || !modal) return;
+  if (!triggers.length || !modal) return;
 
   var dialog = modal.querySelector('.se-contact-modal__dialog');
   var closeEls = modal.querySelectorAll('[data-contact-close]');
@@ -52,8 +52,13 @@
     window.speechSynthesis.speak(utterance);
   }
 
-  function openModal() {
-    lastFocused = document.activeElement;
+  function openModal(event) {
+    if (event) {
+      event.preventDefault();
+      lastFocused = event.currentTarget;
+    } else {
+      lastFocused = document.activeElement;
+    }
     modal.hidden = false;
     document.body.classList.add('se-modal-open');
 
@@ -76,8 +81,6 @@
     document.removeEventListener('keydown', onKeydown);
     if (lastFocused && typeof lastFocused.focus === 'function') {
       lastFocused.focus();
-    } else {
-      trigger.focus();
     }
   }
 
@@ -133,7 +136,9 @@
     }
   }
 
-  trigger.addEventListener('click', openModal);
+  triggers.forEach(function (trigger) {
+    trigger.addEventListener('click', openModal);
+  });
   closeEls.forEach(function (el) {
     el.addEventListener('click', closeModal);
   });
