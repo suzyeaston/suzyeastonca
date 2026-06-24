@@ -12,10 +12,11 @@ $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
         'rows'     => [],
     ];
 $teaser_href = $teaser_data['href'] ?? home_url( '/lousy-outages/' );
-$rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? $teaser_data['rows'] : [];
+$rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? array_slice( $teaser_data['rows'], 0, 3 ) : [];
 ?>
 <section id="lousy-outages-teaser" class="lo-home-teaser">
     <div class="lo-home-teaser__titlebar">
+        <p class="lo-home-kicker">live boss radar</p>
         <h2 class="lo-home-heading">lousy outages</h2>
         <span class="lo-home-status-light<?php echo esc_attr( empty( $rows ) ? ' lo-home-status-light--clear' : ' lo-home-status-light--alert' ); ?>">
             <span class="screen-reader-text"><?php echo esc_html( empty( $rows ) ? 'No active alerts' : 'Active alerts' ); ?></span>
@@ -43,5 +44,5 @@ $rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? $tea
         <?php endif; ?>
     </div>
 
-    <a class="lo-home-dashboard-link" href="<?php echo esc_url( $teaser_href ); ?>">open dashboard <span aria-hidden="true">→</span></a>
+    <a class="lo-home-dashboard-link" href="<?php echo esc_url( $teaser_href ); ?>">open outage dashboard <span aria-hidden="true">→</span></a>
 </section>
