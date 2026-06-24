@@ -10,7 +10,7 @@ se_ai_enqueue_turnstile_script();
   <!-- Header Section -->
   <section class="albini-header">
     <h1 class="albini-title">What Would Steve Albini Do?</h1>
-    <p class="albini-subtitle">Ask your question and we’ll surface real Steve Albini quotes plus a bit of context.</p>
+    <p class="albini-subtitle">Ask a recording question and pull real Steve Albini quotes from the archive, with enough context to make them useful.</p>
   </section>
 
   <!-- Q&A Widget Section -->
@@ -137,9 +137,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     resp.innerHTML = `
       <section class="albini-response">
-        <h3 class="albini-response-heading">From the archives: Steve Albini on this</h3>
+        <h3 class="albini-response-heading">From the archive: Steve Albini on this</h3>
         ${renderQuotes(quotes)}
-        ${commentary ? `<div class="albini-commentary"><h4>Why these quotes</h4><p>${escapeHTML(commentary)}</p></div>` : ''}
+        ${commentary ? `<div class="albini-commentary"><h4>Why this came up</h4><p>${escapeHTML(commentary)}</p></div>` : ''}
       </section>
     `;
     if (commentary) {
@@ -200,6 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
-<p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support my music on Bandcamp</a></p>
-<p style="text-align:center;">New demo drops this weekend. Stay noisy.</p>
+<p style="text-align:center;">🎶 <a href="https://suzyeaston.bandcamp.com" target="_blank">Support the music on Bandcamp</a></p>
+<p style="text-align:center;">Recording advice, archive energy, no glossy nonsense.</p>
 <?php get_footer(); ?>

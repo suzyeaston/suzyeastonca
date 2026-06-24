@@ -21,16 +21,16 @@ if (isset($_GET['lo_unsub_success'])) {
 }
 
 if ($unsub_success) {
-    $banner = 'You’ve been unsubscribed. All the best!';
+    $banner = 'You’re unsubscribed from Lousy Outages alerts.';
     $tone   = 'success';
 } else {
     switch ($sub_status) {
         case 'confirmed':
-            $banner = "You're in! You'll get outage alerts soon.";
+            $banner = "You’re in. Outage alerts will start landing soon.";
             $tone   = 'success';
             break;
         case 'check-email':
-            $banner = 'Check your inbox for a confirmation link to finish subscribing.';
+            $banner = 'Check your inbox for the confirmation link. The machine needs one more click.';
             $tone   = 'info';
             break;
         case 'invalid':
@@ -38,7 +38,7 @@ if ($unsub_success) {
             $tone   = 'error';
             break;
         case 'unsubscribed':
-            $banner = "You have been unsubscribed from Lousy Outages alerts.";
+            $banner = "You’re unsubscribed from Lousy Outages alerts.";
             $tone   = 'warning';
             break;
     }
@@ -49,7 +49,7 @@ if ($unsub_success) {
   <div class="lousy-outages-root">
     <div class="lo-atmosphere">
       <h1 class="retro-title glow-lite">Lousy Outages</h1>
-      <p class="lo-atmosphere__lede">Live-ish radar for provider issues, SaaS trouble, and early warning signals.</p>
+      <p class="lo-atmosphere__lede">A live-ish status board for provider incidents, SaaS weirdness, and the moments official status pages get too polite.</p>
     </div>
     <?php if ($banner) : ?>
       <div class="lo-banner lo-banner--<?php echo esc_attr($tone); ?>">
@@ -65,8 +65,8 @@ if ($unsub_success) {
             <span class="lo-led lo-led--red"></span>
           </div>
           <div class="lo-status-board__titles">
-            <p class="lo-status-board__eyebrow">System Status Console</p>
-            <h2 class="lo-status-board__title">Current Outages</h2>
+            <p class="lo-status-board__eyebrow">Status receipts console</p>
+            <h2 class="lo-status-board__title">Current outage weirdness</h2>
           </div>
           <div class="lo-status-board__badge" aria-hidden="true">Standalone plugin beta</div>
         </header>
@@ -78,9 +78,9 @@ if ($unsub_success) {
     </section>
         <?php echo do_shortcode('[lousy_outages_report]'); ?>
     <footer class="lo-support">
-      <p class="lo-support__lead">If this dashboard makes your on-call a little less lousy, you can help keep it running:</p>
+      <p class="lo-support__lead">If this dashboard makes your on-call, commute, or doom-refreshing a little less lousy, you can help keep it running:</p>
       <p><a class="lo-link" href="https://buymeacoffee.com/wi0amge" target="_blank" rel="noopener noreferrer">Support this project</a></p>
-      <p class="lo-support__note">Thanks for fueling the retro outage radar.</p>
+      <p class="lo-support__note">Thanks for fueling the weird little status machine.</p>
     </footer>
   </div>
 </main>

@@ -4,7 +4,7 @@ $feed_url = home_url( '/?feed=lousy_outages_status' );
 $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
     ? get_lousy_outages_home_teaser_data()
     : [
-        'headline' => 'all quiet for now',
+        'headline' => 'all quiet. suspicious, but fine.',
         'href'     => home_url( '/lousy-outages/' ),
         'status'   => 'clear',
         'footnote' => '',
@@ -18,8 +18,8 @@ $last_checked = $teaser_data['last_checked'] ?? '';
 ?>
 <section id="lousy-outages-teaser" class="lo-home-teaser" aria-labelledby="lo-home-heading">
     <div class="lo-home-teaser__titlebar">
-        <p class="lo-home-kicker">outage static</p>
-        <h2 id="lo-home-heading" class="lo-home-heading">lousy outages live</h2>
+        <p class="lo-home-kicker">lousy outages</p>
+        <h2 id="lo-home-heading" class="lo-home-heading">status board for modern chaos</h2>
         <span class="lo-home-status-light<?php echo esc_attr( empty( $rows ) ? ' lo-home-status-light--clear' : ' lo-home-status-light--alert' ); ?>">
             <span class="screen-reader-text"><?php echo esc_html( empty( $rows ) ? 'No active provider incidents' : 'Active provider incidents or degraded signals' ); ?></span>
         </span>
@@ -28,7 +28,7 @@ $last_checked = $teaser_data['last_checked'] ?? '';
     <div class="lo-home-teaser__screen">
         <?php if ( empty( $rows ) ) : ?>
             <div class="lo-home-empty">
-                <p><?php echo esc_html( 'all quiet for now' ); ?></p>
+                <p><?php echo esc_html( 'all quiet. suspicious, but fine.' ); ?></p>
                 <p><?php echo esc_html( $last_checked ? 'last checked: ' . $last_checked : 'last checked: recently' ); ?></p>
             </div>
         <?php else : ?>
@@ -51,5 +51,5 @@ $last_checked = $teaser_data['last_checked'] ?? '';
         <?php endif; ?>
     </div>
 
-    <a class="lo-home-dashboard-link" href="<?php echo esc_url( $teaser_href ); ?>">open lousy outages <span aria-hidden="true">→</span></a>
+    <a class="lo-home-dashboard-link" href="<?php echo esc_url( $teaser_href ); ?>">check status <span aria-hidden="true">→</span></a>
 </section>

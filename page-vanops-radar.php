@@ -11,9 +11,9 @@ $cta_url = ($work_with_suzy_page instanceof WP_Post)
 <main class="vanops-radar-page">
   <div class="vanops-radar">
     <section class="vanops-hero vanops-card">
-      <p class="vanops-eyebrow">Vancouver SMB operations dashboard</p>
+      <p class="vanops-eyebrow">Vancouver local ops dashboard</p>
       <h1>VanOps Radar</h1>
-      <p class="vanops-lede">A lightweight local disruption board for Vancouver businesses that need to know what might affect customers, staff, deliveries, bookings, and events.</p>
+      <p class="vanops-lede">A lightweight disruption board for Vancouver businesses that need to know what might affect customers, staff, deliveries, bookings, and events before the day gets weird.</p>
       <p class="vanops-support">Built for cafés, venues, offices, agencies, retailers, coworking spaces, and local operators who do not have time to babysit twelve tabs before opening.</p>
       <div class="vanops-actions">
         <a class="vanops-button" href="<?php echo esc_url($cta_url); ?>">Ask about a custom dashboard</a>
@@ -113,8 +113,8 @@ $cta_url = ($work_with_suzy_page instanceof WP_Post)
     </section>
 
     <section class="vanops-section vanops-card vanops-cta">
-      <h2>Need a status board for your business?</h2>
-      <p>I can build lightweight dashboards that pull together local disruption signals and plain-language operational notes for Vancouver teams.</p>
+      <h2>Need a local status board for your business?</h2>
+      <p>I can build lightweight dashboards that pull together local disruption signals and plain-language operating notes for Vancouver teams.</p>
       <a class="vanops-button" href="<?php echo esc_url($cta_url); ?>">Work with Suzy</a>
     </section>
 

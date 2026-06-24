@@ -14,7 +14,7 @@ get_header();
   <section class="game-container">
     <canvas id="snake-game" width="400" height="400"></canvas>
     <p class="game-instructions">
-      Use your arrow keys to guide the snake. Eat the red apples to grow. Don’t hit the walls!
+      Use your arrow keys to guide the snake. Eat the red apples. Avoid the walls. Classic tiny doom.
     </p>
   </section>
 </main>

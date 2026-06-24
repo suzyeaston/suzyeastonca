@@ -21,8 +21,8 @@
     $meta_keywords = 'Suzy Easton, musician, creative technologist';
 
     if ( is_front_page() ) {
-      $meta_title = 'Suzy Easton | AI Strategist, Creative Technologist & Musician — Vancouver';
-      $meta_desc  = 'Suzy Easton is a Vancouver musician and AI strategist. AI strategy and solutions engineering at Quercus IT. Retro-inspired creative tools, music experiments, and weird things that work.';
+      $meta_title = 'Suzy Easton | AI Strategist, Musician & Creative Technologist — Vancouver';
+      $meta_desc  = 'Suzy Easton is a Vancouver musician, AI strategist, and creative technologist building practical AI tools, outage dashboards, music experiments, and strange useful web projects.';
       $meta_keywords = 'Suzy Easton, AI Strategist, Vancouver creative technologist, musician, Quercus IT, creative tools, music tech, retro tools';
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-asmr-lab.php' ) ) {
@@ -31,13 +31,13 @@
       $meta_keywords = 'ASMR Lab, Gastown simulator predecessor, creative tech prototype, Suzy Easton';
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-lousy-outages.php' ) ) {
-      $meta_title = 'Lousy Outages – Retro outage dashboard for modern chaos';
-      $meta_desc  = 'A retro terminal-style dashboard that tracks popular services, highlights incidents, and can send alerts when things go sideways.';
+      $meta_title = 'Lousy Outages | Status dashboard for modern chaos';
+      $meta_desc  = 'A retro status dashboard for provider incidents, SaaS weirdness, community reports, and alerts when things go sideways.';
       $meta_keywords = 'lousy outages status dashboard, outage tracker, retro status board';
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-track-analyzer.php' ) ) {
-      $meta_title = "Suzy's Track Analyzer – AI Vibe Checker for Musicians";
-      $meta_desc  = 'Upload an MP3 and get a quick vibe check powered by AI—perfect for indie producers and music tech fans.';
+      $meta_title = "Suzy’s Track Analyzer | AI-assisted song feedback";
+      $meta_desc  = 'Upload an MP3 and get direct AI-assisted notes on lyrics, structure, feel, and production direction.';
       $meta_keywords = 'track analyzer, music AI tool, Suzy Easton, mix feedback';
       $meta_img   = $default_img;
     } elseif ( is_page_template( 'page-arcade.php' ) ) {
@@ -187,7 +187,7 @@
     <div class="se-contact-modal__top">
       <button type="button" class="se-contact-modal__close" data-contact-close aria-label="Close contact form">✕</button>
       <h2 id="se-contact-title" class="pixel-font">Contact Suzy</h2>
-      <p id="se-contact-copy" class="se-contact-modal__copy">Send a note about work, projects, music, prototypes, or strange useful systems.</p>
+      <p id="se-contact-copy" class="se-contact-modal__copy">Send a note about work, projects, music, prototypes, or the weird issue nobody can reproduce.</p>
       <p class="se-contact-modal__audio-status" data-contact-audio-status aria-live="polite">Narrator loading…</p>
     </div>
 
@@ -216,7 +216,7 @@
       </form>
 
       <div class="se-contact-success" data-contact-success hidden>
-        <p class="se-contact-success__headline">Message received. Suzy will get back to you soon.</p>
+        <p class="se-contact-success__headline">Message received. I’ll get back to you soon.</p>
         <p>Want to fuel the weird little upgrades? <a href="https://buymeacoffee.com/wi0amge" target="_blank" rel="noopener noreferrer">Buy Suzy a coffee</a> or <a href="<?php echo esc_url( home_url( '/' ) ); ?>">share the site</a>.</p>
       </div>
     </div>

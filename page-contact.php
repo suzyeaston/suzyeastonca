@@ -7,10 +7,12 @@ get_header(); ?>
 
 <main id="main-content">
   <header id="retro-game-header">
-    <div id="stacked-nerd-title">Ways to Contact Suzy</div>
+    <div id="stacked-nerd-title">Contact Suzy</div>
   </header>
 
   <section class="page-content">
+
+    <p>Send work notes, music notes, weird useful ideas, or the bug nobody can reproduce.</p>
 
     <p><strong>Email:</strong>
       <a href="mailto:suzyeaston@icloud.com">suzyeaston@icloud.com</a>
