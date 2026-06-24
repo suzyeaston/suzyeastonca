@@ -9,27 +9,32 @@ get_header();
         <div class="home-arcade-hero__cabinet" aria-label="Suzy Easton arcade start screen">
             <div class="home-arcade-hero__marquee pixel-font" aria-hidden="true">
                 <span><?php echo esc_html( '1UP: SUZY' ); ?></span>
-                <span><?php echo esc_html( 'HIGH SCORE 1984' ); ?></span>
+                <span><?php echo esc_html( 'LIVE SYSTEM' ); ?></span>
                 <span><?php echo esc_html( 'VANCOUVER' ); ?></span>
             </div>
 
             <div class="hero-grid home-arcade-hero__grid">
                 <div class="hero-main home-arcade-hero__intro">
-                    <p class="hero-eyebrow pixel-font"><?php echo esc_html( 'Vancouver · AI strategist · musician · creative technologist' ); ?></p>
+                    <p class="hero-eyebrow pixel-font"><?php echo esc_html( 'AI strategist · musician · creative technologist' ); ?></p>
                     <h1 id="home-hero-title" class="hero-core-headline home-arcade-title"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
-                    <p class="home-arcade-subtitle pixel-font"><?php echo esc_html( 'AI STRATEGY / MUSIC / CREATIVE TECHNOLOGY' ); ?></p>
-                    <p class="hero-copy home-arcade-copy"><?php echo esc_html( 'Vancouver-based. Practical AI systems, music, weird tools, and useful little machines.' ); ?></p>
+                    <p class="home-arcade-subtitle pixel-font"><?php echo esc_html( 'AI STRATEGIST. MUSICIAN. CREATIVE TECHNOLOGIST.' ); ?></p>
+                    <p class="hero-copy home-arcade-copy"><?php echo esc_html( 'Practical AI systems, weird browser tools, outage radar, and music things from Vancouver.' ); ?></p>
                     <div class="home-cta-row hero-cta-group home-arcade-start-row">
                         <a href="#mission-select" class="pixel-button hero-primary-cta home-arcade-start" data-arcade-start><?php echo esc_html( 'Start Mission' ); ?></a>
-                        <a href="#lousy-outages-teaser" class="pixel-button pixel-button--secondary"><?php echo esc_html( 'View Alerts' ); ?></a>
+                        <a href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>" class="pixel-button pixel-button--secondary"><?php echo esc_html( 'View Lousy Outages' ); ?></a>
                     </div>
                 </div>
 
-                <aside class="hero-side home-arcade-hero__screen" aria-label="Pacific Static arcade panel">
+                <aside class="hero-side home-arcade-hero__screen" aria-label="Live alert monitor">
+                    <div class="home-hud-readout" aria-label="Homepage status readout">
+                        <p><span>SYSTEM</span><strong>personal command screen</strong></p>
+                        <p><span>CURRENT BUILD</span><strong>Lousy Outages</strong></p>
+                        <p><span>MODE</span><strong>strategy · tools · music</strong></p>
+                    </div>
                     <div class="hero-game-stage home-arcade-game" aria-label="Pacific Static mini arcade game. Press Start Mission, then use A and D or arrow keys to move and Space to fire." data-arcade-stage>
-                        <p class="hero-game-stage__header pixel-font"><?php echo esc_html( 'OUTAGE BLIPS // MINI ARCADE' ); ?></p>
+                        <p class="hero-game-stage__header pixel-font"><?php echo esc_html( 'OUTAGE BLIP SWEEP' ); ?></p>
                         <div class="hero-game-stage__screen" role="img" aria-label="A green CRT arcade screen with stars, a small player ship, and outage alert blips.">
-                            <p class="hero-game-stage__idle pixel-font"><?php echo wp_kses_post( 'ALERT BLIPS INCOMING<br>Desktop: A/D or arrows move // Space fires.<br>No keyboard focus stolen.' ); ?></p>
+                            <p class="hero-game-stage__idle pixel-font"><?php echo wp_kses_post( 'SIGNAL SWEEP ACTIVE<br>live alert radar below<br>no keyboard focus stolen' ); ?></p>
                             <div class="home-static-sprites" aria-hidden="true">
                                 <span class="home-static-sprites__ship"></span>
                                 <span class="home-static-sprites__enemy home-static-sprites__enemy--one"></span>
@@ -37,7 +42,7 @@ get_header();
                                 <span class="home-static-sprites__reticle"></span>
                             </div>
                         </div>
-                        <p class="hero-game-stage__mobile-note pixel-font"><?php echo esc_html( 'Mobile: static alert screen. Links stay tappable below.' ); ?></p>
+                        <p class="hero-game-stage__mobile-note pixel-font"><?php echo esc_html( 'Static monitor. Dashboard link stays tappable.' ); ?></p>
                     </div>
                 </aside>
             </div>
@@ -49,8 +54,8 @@ get_header();
     <section class="home-terminal-strip home-operator-strip crt-block" aria-label="Identity readout">
         <div class="home-terminal-readout" role="presentation">
             <p><span class="home-terminal-key"><?php echo esc_html( 'OPERATOR' ); ?></span><span class="home-terminal-dots" aria-hidden="true"></span><span class="home-terminal-val"><?php echo esc_html( 'Suzy Easton' ); ?></span></p>
-            <p><span class="home-terminal-key"><?php echo esc_html( 'DAY MODE' ); ?></span><span class="home-terminal-dots" aria-hidden="true"></span><span class="home-terminal-val"><?php echo esc_html( 'AI infrastructure · strategy · solutions engineering at Quercus IT' ); ?></span></p>
-            <p><span class="home-terminal-key"><?php echo esc_html( 'NIGHT MODE' ); ?></span><span class="home-terminal-dots" aria-hidden="true"></span><span class="home-terminal-val"><?php echo esc_html( 'Music · records · audio experiments · bands · touring' ); ?></span></p>
+            <p><span class="home-terminal-key"><?php echo esc_html( 'AI SYSTEMS' ); ?></span><span class="home-terminal-dots" aria-hidden="true"></span><span class="home-terminal-val"><?php echo esc_html( 'practical workflows · prototypes · adoption strategy' ); ?></span></p>
+            <p><span class="home-terminal-key"><?php echo esc_html( 'CREATIVE OUTPUT' ); ?></span><span class="home-terminal-dots" aria-hidden="true"></span><span class="home-terminal-val"><?php echo esc_html( 'music · records · browser experiments · weird utilities' ); ?></span></p>
         </div>
     </section>
 
@@ -61,13 +66,13 @@ get_header();
             <article class="home-project-card selected-work__card home-mission-card home-mission-card--boss">
                 <p class="home-mission-card__label pixel-font"><?php echo esc_html( 'BOSS ALERT' ); ?></p>
                 <h3 class="pixel-font"><?php echo esc_html( 'Lousy Outages' ); ?></h3>
-                <p><?php echo esc_html( 'Provider status alerts and outage signals, readable at a glance.' ); ?></p>
+                <p><?php echo esc_html( 'Live provider weirdness, outage signals, and status-page lies.' ); ?></p>
                 <a class="pixel-button" href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>"><?php echo esc_html( 'Scan' ); ?></a>
             </article>
-            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'LEVEL 02' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Gastown Simulator' ); ?></h3><p><?php echo esc_html( 'A civic-data browser toy for walking weird Vancouver routes.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/page-gastown-sim/' ) ); ?>"><?php echo esc_html( 'Explore' ); ?></a></article>
-            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'LEVEL 03' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Track Analyzer' ); ?></h3><p><?php echo esc_html( 'Upload a track. Get practical audio notes back.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/suzys-track-analyzer/' ) ); ?>"><?php echo esc_html( 'Try it' ); ?></a></article>
-            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'LEVEL 04' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'What Would Steve Do' ); ?></h3><p><?php echo esc_html( 'Blunt studio prompts for records that need fewer lies.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/albini-qa/' ) ); ?>"><?php echo esc_html( 'Ask' ); ?></a></article>
-            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'LEVEL 05' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'ASMR Lab' ); ?></h3><p><?php echo esc_html( 'Soft audio visuals, texture, and tiny browser rituals.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/asmr-lab/' ) ); ?>"><?php echo esc_html( 'Enter' ); ?></a></article>
+            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'LEVEL 02' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Gastown Simulator' ); ?></h3><p><?php echo esc_html( 'A Vancouver browser toy built from civic data, routes, buildings, and ghosts in the grid.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/page-gastown-sim/' ) ); ?>"><?php echo esc_html( 'Explore' ); ?></a></article>
+            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'LEVEL 03' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Track Analyzer' ); ?></h3><p><?php echo esc_html( 'Upload a rough mix and get practical audio notes back.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/suzys-track-analyzer/' ) ); ?>"><?php echo esc_html( 'Try it' ); ?></a></article>
+            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'LEVEL 04' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'What Would Steve Do' ); ?></h3><p><?php echo esc_html( 'Blunt recording prompts when the mix needs fewer lies.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/albini-qa/' ) ); ?>"><?php echo esc_html( 'Ask' ); ?></a></article>
+            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'LEVEL 05' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'ASMR Lab' ); ?></h3><p><?php echo esc_html( 'Tiny browser rituals for texture, sound, and soft chaos.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/asmr-lab/' ) ); ?>"><?php echo esc_html( 'Enter' ); ?></a></article>
         </div>
     </section>
 
