@@ -5712,167 +5712,71 @@ body {
   }
 }
 
-/* Homepage 2026: creative public systems, not a terminal dashboard. */
-.home-creative-system {
-  --home-bg: #100f1d;
-  --home-card: rgba(255, 247, 223, 0.08);
-  --home-cream: #fff7df;
-  --home-mint: #7ef6d1;
-  --home-pink: #ff6aa8;
-  --home-gold: #ffcf66;
-  color: var(--home-cream);
+/* Surgical homepage arcade restoration after the creative-system experiment. */
+.home-arcade-layout {
   background:
-    radial-gradient(circle at 12% 8%, rgba(255, 106, 168, 0.2), transparent 28rem),
-    radial-gradient(circle at 82% 14%, rgba(126, 246, 209, 0.16), transparent 24rem),
-    linear-gradient(180deg, #100f1d 0%, #171426 62%, #0d101a 100%);
+    radial-gradient(circle at 14% 4%, rgba(0, 255, 128, 0.16), transparent 26rem),
+    radial-gradient(circle at 86% 12%, rgba(230, 0, 115, 0.14), transparent 24rem),
+    linear-gradient(180deg, #020805 0%, #05000c 58%, #010301 100%);
 }
 
-.home-creative-system .home-title-screen,
-.home-creative-system .home-status-strip,
-.home-creative-system .home-public-systems,
-.home-creative-system .home-unlocks,
-.home-creative-system .home-territory {
+.home-arcade-layout .home-mission-select,
+.home-arcade-layout .home-unlocks,
+.home-arcade-layout .home-territory {
   width: min(1180px, calc(100% - 2rem));
-  margin: 0 auto clamp(1.5rem, 4vw, 3rem);
+  margin: 0 auto clamp(1.25rem, 4vw, 3rem);
 }
 
-.home-title-screen {
-  padding-top: clamp(1rem, 3vw, 2rem);
-}
-
-.home-title-screen__marquee {
-  display: flex;
-  gap: 1rem;
-  overflow: hidden;
-  margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
-  padding: 0.7rem 0;
-  border-block: 1px solid rgba(255, 247, 223, 0.2);
-  color: var(--home-gold);
-  font-size: clamp(0.58rem, 1.1vw, 0.75rem);
-  white-space: nowrap;
-}
-
-.home-title-screen__marquee span { flex: 0 0 auto; }
-
-.home-title-screen__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  gap: clamp(1rem, 3vw, 2rem);
-  align-items: stretch;
-}
-
-.home-title-screen__intro {
-  display: grid;
-  align-content: center;
-  min-height: clamp(28rem, 58vh, 39rem);
-  padding: clamp(1.35rem, 4vw, 3rem);
-  border-radius: 30px;
-  background:
-    linear-gradient(135deg, rgba(255, 247, 223, 0.1), rgba(255, 247, 223, 0.025)),
-    linear-gradient(180deg, rgba(16, 15, 29, 0.86), rgba(16, 15, 29, 0.96));
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-}
-
-.home-title-screen__title {
-  margin: 0.35rem 0 0.8rem;
-  color: var(--home-cream);
-  text-shadow: 0.08em 0.08em 0 rgba(255, 106, 168, 0.45);
-}
-
-.home-title-screen__identity {
-  max-width: 48rem;
-  margin: 0 0 1rem;
-  color: var(--home-mint);
-  font-size: clamp(1.05rem, 2vw, 1.45rem);
-  font-weight: 800;
-}
-
-.home-title-screen__copy {
-  max-width: 45rem;
-  margin: 0 0 1.5rem;
-  color: rgba(255, 247, 223, 0.88);
-  font-size: clamp(1.05rem, 2vw, 1.35rem);
-  line-height: 1.55;
-}
-
-.home-status-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  align-items: center;
-  justify-content: center;
-  padding: 0.8rem;
-  border-radius: 18px;
-  background: rgba(0, 0, 0, 0.26);
-}
-
-.home-status-strip p {
-  margin: 0;
-  color: rgba(255, 247, 223, 0.86);
-  font-size: 0.9rem;
-}
-
-.home-status-strip span {
-  color: var(--home-gold);
-  font-weight: 900;
-}
-
-.home-public-systems,
-.home-unlocks,
-.home-territory {
+.home-arcade-layout .home-mission-select,
+.home-arcade-layout .home-unlocks {
   padding: clamp(1rem, 3vw, 2rem);
-  border-radius: 26px;
-  background: rgba(255, 247, 223, 0.055);
 }
 
-.home-public-systems .home-mission-grid {
+.home-arcade-layout .home-section-kicker {
+  color: #ffff66;
+}
+
+.home-arcade-layout .home-mission-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
-.home-public-systems .home-mission-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  min-height: 17rem;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 247, 223, 0.16);
-  background: linear-gradient(180deg, rgba(255, 247, 223, 0.09), rgba(255, 247, 223, 0.035));
+.home-arcade-layout .home-mission-card {
+  min-width: 0;
 }
 
-.home-public-systems .home-mission-card__label {
-  color: var(--home-mint);
-  font-size: 0.62rem;
+.home-arcade-layout .home-mission-card__label {
+  color: #7ef6d1;
 }
 
-.home-public-systems .home-mission-card .pixel-button { margin-top: auto; }
-
-.home-territory {
-  background: rgba(0, 0, 0, 0.22);
+.home-arcade-layout .home-territory {
+  padding: 0 0 clamp(1.5rem, 4vw, 3rem);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.home-territory p {
-  max-width: 78rem;
-  margin: 0;
-  color: rgba(255, 247, 223, 0.9);
-  font-size: 0.95rem;
+.home-arcade-layout .home-territory p {
+  max-width: 76rem;
+  margin: 0 auto;
+  color: rgba(218, 255, 232, 0.78);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.78rem, 1.2vw, 0.95rem);
   line-height: 1.65;
+  text-align: center;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
-@media (max-width: 900px) {
-  .home-title-screen__grid,
-  .home-public-systems .home-mission-grid {
+@media (max-width: 980px) {
+  .home-arcade-layout .home-mission-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .home-arcade-layout .home-mission-grid {
     grid-template-columns: 1fr;
-  }
-
-  .home-title-screen__intro {
-    min-height: auto;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-title-screen__marquee {
-    scroll-behavior: auto;
   }
 }
