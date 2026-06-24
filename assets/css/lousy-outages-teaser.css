@@ -1,87 +1,134 @@
-#lousy-outages-teaser {
-  margin: 2rem auto;
-}
-
-.lo-teaser {
-  max-width: 820px;
-  margin: 0 auto;
-  text-align: center;
-  padding: 8px 16px;
-  font-family: 'Press Start 2P', monospace;
+#lousy-outages-teaser.lo-home-teaser {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+  min-height: 100%;
+  padding: clamp(1rem, 2vw, 1.35rem);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(15, 18, 28, 0.92), rgba(37, 15, 55, 0.82)),
+    radial-gradient(circle at 20% 0%, rgba(255, 204, 102, 0.18), transparent 35%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+  color: #fff7df;
+}
+
+#lousy-outages-teaser .lo-home-teaser__titlebar,
+#lousy-outages-teaser .lo-home-alert__meta {
+  display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
-.lo-teaser h2 {
-  margin: 0 0 12px;
+#lousy-outages-teaser .lo-home-kicker,
+#lousy-outages-teaser .lo-home-heading,
+#lousy-outages-teaser .lo-home-alert__meta span {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  text-transform: lowercase;
 }
 
-.lo-teaser p {
-  margin: 6px 0 12px;
-  color: #a7ff9a;
+#lousy-outages-teaser .lo-home-kicker {
+  color: #7ef6d1;
+  font-size: clamp(0.62rem, 1vw, 0.72rem);
+  letter-spacing: 0.06em;
 }
 
-.lo-status-line {
-  font-size: 0.95rem;
-  margin-bottom: 4px;
-  font-weight: 700;
+#lousy-outages-teaser .lo-home-heading {
+  color: #fff7df;
+  font-size: clamp(0.82rem, 1.45vw, 1.05rem);
 }
 
-.lo-status-line--alert {
-  color: #ff8299;
+#lousy-outages-teaser .lo-home-status-light {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #ffcf66;
+  box-shadow: 0 0 18px rgba(255, 207, 102, 0.7);
 }
 
-.lo-status-line--ok {
-  color: #a7ff9a;
+#lousy-outages-teaser .lo-home-status-light--clear {
+  background: #7ef6d1;
+  box-shadow: 0 0 18px rgba(126, 246, 209, 0.65);
 }
 
-.lo-status-line .lo-status-link {
-  color: inherit;
+#lousy-outages-teaser .lo-home-status-light--alert {
+  background: #ff6aa8;
+  box-shadow: 0 0 18px rgba(255, 106, 168, 0.7);
+}
+
+#lousy-outages-teaser .lo-home-teaser__screen {
+  flex: 1;
+  min-height: 12rem;
+  padding: 0.85rem;
+  border-radius: 18px;
+  background: rgba(3, 8, 15, 0.72);
+}
+
+#lousy-outages-teaser .lo-home-empty {
+  display: grid;
+  min-height: 9rem;
+  align-content: center;
+  gap: 0.5rem;
+  color: #cdeee4;
+}
+
+#lousy-outages-teaser .lo-home-empty p,
+#lousy-outages-teaser .lo-home-alert-list {
+  margin: 0;
+}
+
+#lousy-outages-teaser .lo-home-alert-list {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+#lousy-outages-teaser .lo-home-alert {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  border-left: 4px solid #ffcf66;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+#lousy-outages-teaser .lo-home-alert--outage { border-left-color: #ff6aa8; }
+#lousy-outages-teaser .lo-home-alert--signal { border-left-color: #ffcf66; }
+#lousy-outages-teaser .lo-home-alert--unknown { border-left-color: #9ea7ff; }
+
+#lousy-outages-teaser .lo-home-alert__meta strong {
+  font-size: 0.96rem;
+}
+
+#lousy-outages-teaser .lo-home-alert__meta span {
+  color: #ffcf66;
+  font-size: 0.58rem;
+}
+
+#lousy-outages-teaser .lo-home-alert__body {
+  color: #fff7df;
+  line-height: 1.45;
   text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 
-.lo-status-line .lo-status-link:hover {
+#lousy-outages-teaser .lo-home-alert__body:hover,
+#lousy-outages-teaser .lo-home-alert__body:focus-visible,
+#lousy-outages-teaser .lo-home-dashboard-link:hover,
+#lousy-outages-teaser .lo-home-dashboard-link:focus-visible {
   text-decoration: underline;
 }
 
-.lo-teaser .lo-teaser-meta,
-.lo-teaser .providers,
-.lo-teaser .card,
-.lo-teaser .dot,
-.lo-teaser .status-up,
-.lo-teaser .status-warn,
-.lo-teaser .status-down {
-  display: none;
+#lousy-outages-teaser .lo-home-alert__time {
+  color: #b7c8d8;
+  font-size: 0.82rem;
 }
 
-.lo-teaser .caption {
-  font-size: 0.75rem;
+#lousy-outages-teaser .lo-home-dashboard-link {
+  align-self: flex-start;
+  color: #7ef6d1;
+  font-weight: 800;
 }
-
-.lo-teaser .lo-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-}
-
-.lo-teaser .lo-link {
-  font-weight: 700;
-}
-
-.lo-teaser .view-all {
-  display: inline-flex;
-  justify-content: center;
-  margin-top: 0;
-}
-
-.lo-teaser { max-width: 820px; margin: 0 auto; text-align: center; padding: 8px 16px; }
-.lo-actions { display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin:10px 0 16px; }
-.lo-link { display:inline-flex; align-items:center; gap:8px; border:2px solid #2af200; color:#2af200; background:transparent; padding:6px 12px; border-radius:10px; text-decoration:none; font-weight:700; }
-.lo-link:hover { text-decoration:underline; }
-.lo-icon { width:16px; height:16px; display:inline-block; }

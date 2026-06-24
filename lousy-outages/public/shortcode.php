@@ -857,9 +857,9 @@ function render_shortcode(): string {
         <div class="lo-hero" data-lo-hero hidden>
             <article class="lo-card lo-card--hero">
                 <div class="lo-head">
-                    <h3 class="lo-title">No active incidents</h3>
+                    <h3 class="lo-title">No official active incidents</h3>
                 </div>
-                <p class="lo-summary">Signals and verification issues are hidden by default.</p>
+                <p class="lo-summary">Public signals are being watched.</p>
                 <p class="lo-card-meta">Last checked: <span data-lo-hero-time>—</span></p>
             </article>
         </div>

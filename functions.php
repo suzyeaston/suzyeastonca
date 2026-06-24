@@ -69,20 +69,15 @@ function retro_game_music_theme_scripts() {
     }
 
     if ( is_front_page() || is_page_template( 'page-home.php' ) ) {
-        wp_enqueue_script(
-            'hero-ship-drag',
-            get_template_directory_uri() . '/js/hero-ship-drag.js',
-            array(),
-            filemtime( get_template_directory() . '/js/hero-ship-drag.js' ),
-            true
-        );
-        wp_enqueue_script(
-            'hero-galaga',
-            get_template_directory_uri() . '/js/hero-galaga.js',
-            array( 'hero-ship-drag' ),
-            filemtime( get_template_directory() . '/js/hero-galaga.js' ),
-            true
-        );
+        $teaser_css = get_template_directory() . '/assets/css/lousy-outages-teaser.css';
+        if ( file_exists( $teaser_css ) ) {
+            wp_enqueue_style(
+                'lousy-outages-teaser',
+                get_template_directory_uri() . '/assets/css/lousy-outages-teaser.css',
+                array( 'main-styles' ),
+                filemtime( $teaser_css )
+            );
+        }
     }
 
 }
@@ -508,12 +503,13 @@ if ( ! defined( 'LOUSY_OUTAGES_HOME_COMMUNITY_WINDOW_HOURS' ) ) {
 function get_lousy_outages_home_teaser_data(): array {
     $feed_url = home_url( '/?feed=lousy_outages_status' );
     $default = [
-        'headline' => 'All clear — no active outages right now.',
+        'headline' => 'all quiet for now',
         'href'     => home_url( '/lousy-outages/' ),
         'status'   => 'clear',
         'footnote' => '',
         'feed_url' => $feed_url,
         'rows'     => [],
+        'last_checked' => '',
     ];
 
     $summary = get_lousy_outages_home_teaser_from_summary( $default );
@@ -555,12 +551,13 @@ function get_lousy_outages_home_teaser_from_summary( array $default ): ?array {
         $meta = [];
     }
 
-    $outage_count = (int) ( $meta['outage_count'] ?? $meta['active_outage_count'] ?? 0 );
+    $outage_count = (int) ( $meta['official_incident_count'] ?? $meta['outage_count'] ?? $meta['active_outage_count'] ?? 0 );
     $signal_count = (int) ( $meta['signal_count'] ?? 0 );
     $unverified_count = (int) ( $meta['unverified_count'] ?? 0 );
     $generated_at_raw = $meta['generated_at'] ?? $payload['generated_at'] ?? $payload['fetched_at'] ?? '';
     $generated_at = lousy_outages_home_format_generated_at( $generated_at_raw );
     $rows = lousy_outages_home_build_alert_rows( $payload['providers'] ?? [], $default['href'] );
+    $outage_count = max( $outage_count, lousy_outages_home_count_official_incident_providers( $payload['providers'] ?? [] ) );
 
     $dashboard_url = $default['href'];
     $footnote_link = sprintf( '<a href="%s">%s</a>', esc_url( $dashboard_url ), esc_html__( 'View the dashboard', 'suzyeastonca' ) );
@@ -595,6 +592,7 @@ function get_lousy_outages_home_teaser_from_summary( array $default ): ?array {
             'footnote' => $footnote_text,
             'feed_url' => $default['feed_url'],
             'rows'     => $rows,
+            'last_checked' => $generated_at,
         ];
     }
 
@@ -623,13 +621,32 @@ function get_lousy_outages_home_teaser_from_summary( array $default ): ?array {
     }
 
     return [
-        'headline' => 'All clear — no active outages right now.',
+        'headline' => 'all quiet for now',
         'href'     => $dashboard_url,
         'status'   => 'clear',
         'footnote' => $footnote_text,
         'feed_url' => $default['feed_url'],
         'rows'     => $rows,
+        'last_checked' => $generated_at,
     ];
+}
+
+
+function lousy_outages_home_count_official_incident_providers( array $providers ): int {
+    $count = 0;
+
+    foreach ( $providers as $provider ) {
+        if ( ! is_array( $provider ) ) {
+            continue;
+        }
+
+        $incidents = isset( $provider['incidents'] ) && is_array( $provider['incidents'] ) ? $provider['incidents'] : [];
+        if ( ! empty( $incidents ) ) {
+            $count++;
+        }
+    }
+
+    return $count;
 }
 
 /**
