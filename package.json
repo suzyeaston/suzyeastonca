@@ -5,6 +5,15 @@
   "scripts": {
     "test": "node --test \"./__tests__/**/*.test.js\"",
     "build:gastown-world": "npm run sync:cov && node scripts/build-gastown-world.js",
-    "sync:cov": "node scripts/sync-cov-open-data.js"
+    "sync:cov": "node scripts/sync-cov-open-data.js",
+    "local:start": "docker compose up -d",
+    "local:setup": "./scripts/setup-local-wp.sh",
+    "local:stop": "docker compose down",
+    "local:reset": "docker compose down -v",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0"
   }
 }

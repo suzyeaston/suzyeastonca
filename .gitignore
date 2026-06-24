@@ -7,3 +7,5 @@ secrets.php
 *.key
 .DS_Store
 screenshots/
+playwright-report/
+test-results/
