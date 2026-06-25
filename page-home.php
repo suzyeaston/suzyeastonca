@@ -19,13 +19,21 @@ get_header();
                     <h1 id="home-hero-title" class="hero-core-headline home-arcade-title"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
                     <p class="home-arcade-subtitle"><?php echo esc_html( 'Musician, creative technologist, and technical systems operator.' ); ?></p>
                     <p class="hero-copy home-arcade-copy"><?php echo esc_html( 'I build practical AI workflows, outage and ops dashboards, music tools, and Vancouver-flavoured web experiments: playable, readable, and useful after the glow wears off.' ); ?></p>
-                    <div class="home-ascii-panel" aria-label="Arcade identity readout">
-                        <pre aria-hidden="true">╔═ SIGNAL BOARD ═╗
-║ MUSIC  ▸ BASS  ║
-║ OPS    ▸ PROOF ║
-║ AI     ▸ TOOLS ║
-╚═ PRESS START ═╝</pre>
-                        <p>Terminal texture, Galaga motion, real-world troubleshooting underneath.</p>
+                    <div class="home-ascii-panel" aria-label="Decorative Vancouver coast terminal art">
+                        <pre class="home-ascii-panel__scene home-ascii-panel__scene--wide" aria-hidden="true">      ·        ✦        .          ·
+  .        /\        /\_      ✧        .
+     /\__/  \__/\__/   \__        ·
+  __/  \  NORTH SHORE  /  \___
+ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+     .  |  | .  |▵|  . |  |  .
+  . . . |__| .  | |  . |__| . .
+       signal ⇢ noise ⇢ song</pre>
+                        <pre class="home-ascii-panel__scene home-ascii-panel__scene--compact" aria-hidden="true">    ·  ✦   /\_/\
+ /\_/  \_/ coast
+ ~ ~ ~ ~ ~ ~ ~
+  . |▵| . | | .
+ signal ⇢ song</pre>
+                        <p>Vancouver night coast rendered as terminal glow: mountains, water, city lights, and a signal path back to the work.</p>
                     </div>
                     <div class="home-cta-row hero-cta-group home-arcade-start-row">
                         <a href="#mission-select" class="pixel-button hero-primary-cta home-arcade-start" data-arcade-start><?php echo esc_html( 'Enter the lab' ); ?></a>
