@@ -5,8 +5,8 @@ Template Name: ASMR Lab
 
 get_header();
 
-$gastown_page     = get_page_by_path( 'page-gastown-sim' );
-$gastown_page_url = $gastown_page ? get_permalink( $gastown_page ) : home_url( '/page-gastown-sim/' );
+$gastown_page     = get_page_by_path( 'gastown-sim' );
+$gastown_page_url = $gastown_page ? get_permalink( $gastown_page ) : home_url( '/gastown-sim/' );
 ?>
 <main id="primary" class="content-area asmr-lab-page">
   <section class="asmr-lab-shell" id="asmr-lab-app">
