@@ -24,7 +24,7 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
         <section class="projects-hero projects-section" aria-labelledby="projects-title">
             <p class="projects-eyebrow projects-hero__eyebrow pixel-font">build log</p>
             <h1 id="projects-title" class="projects-hero__title">Projects</h1>
-            <p class="projects-lead projects-hero__lead">Tools, prototypes, music experiments, outage dashboards, and Vancouver web builds. Some are polished. Some are still mutating in public.</p>
+            <p class="projects-lead projects-hero__lead">Music tools, practical AI prototypes, outage dashboards, Vancouver web builds, and weird useful experiments. Some are polished. Some are still mutating in public.</p>
             <div class="projects-actions" role="group" aria-label="Projects page jumps and primary links">
                 <a class="pixel-button" href="#featured-projects">Featured</a>
                 <a class="pixel-button" href="#interactive-projects">Interactive</a>
@@ -60,9 +60,9 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
             <div class="projects-grid">
                 <article class="projects-card">
                     <h3 class="pixel-font">Gastown Simulator</h3>
-                    <p>A playable Vancouver corridor using route logic, civic data, street mood, and a bit of browser-world obsession.</p>
+                    <p>A playable Vancouver corridor using route logic, civic data, street mood, and arcade-map browser-world obsession.</p>
                     <div class="projects-card__actions">
-                        <a class="pixel-button" href="<?php echo esc_url($project_url('page-gastown-sim', '/page-gastown-sim/')); ?>">Open project</a>
+                        <a class="pixel-button" href="<?php echo esc_url($project_url('gastown-sim', '/gastown-sim/')); ?>">Open project</a>
                     </div>
                 </article>
 
@@ -98,8 +98,8 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
                 </article>
 
                 <article class="projects-card">
-                    <h3 class="pixel-font">AI/Audio Experiments</h3>
-                    <p>Generated sound, web visuals, and AI-assisted storytelling.</p>
+                    <h3 class="pixel-font">Albini QA / Recording Oracle</h3>
+                    <p>A quote-backed recording prompt machine for direct, unsentimental mix and arrangement questions.</p>
                     <div class="projects-card__actions">
                         <a class="pixel-button" href="<?php echo esc_url($project_url('albini-qa')); ?>">Open project</a>
                     </div>
