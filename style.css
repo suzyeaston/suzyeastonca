@@ -6038,3 +6038,194 @@ body {
     opacity: 0.28;
   }
 }
+
+/* Vancouver orca title-screen homepage hero. */
+html,
+body,
+.home-arcade-layout {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.home-orca-hero {
+  width: 100%;
+  padding: clamp(0.65rem, 1.6vw, 1.35rem) clamp(0.75rem, 3vw, 2rem) clamp(1rem, 2.5vw, 2rem);
+  overflow: hidden;
+  scroll-margin-top: calc(var(--se-header-height, 72px) + 1rem);
+}
+
+.home-orca-stage {
+  position: relative;
+  display: grid;
+  min-height: clamp(560px, calc(100svh - var(--se-header-height, 72px) - 2rem), 760px);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem);
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(87, 243, 255, 0.48);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 58%, rgba(87, 243, 255, 0.13), transparent 30%),
+    radial-gradient(circle at 18% 12%, rgba(57, 255, 20, 0.14), transparent 24%),
+    radial-gradient(circle at 86% 26%, rgba(255, 72, 206, 0.09), transparent 20%),
+    linear-gradient(180deg, #020a08 0%, #000403 56%, #010009 100%);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.62), inset 0 0 44px rgba(57, 255, 20, 0.08), 0 0 32px rgba(87, 243, 255, 0.14);
+}
+
+.home-orca-stage::before,
+.home-orca-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.home-orca-stage::before {
+  background: repeating-linear-gradient(180deg, rgba(223, 255, 234, 0.055) 0 1px, transparent 1px 4px);
+  mix-blend-mode: screen;
+  opacity: 0.62;
+  animation: homeAsciiScan 8s linear infinite;
+}
+
+.home-orca-stage::after {
+  background: radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.58) 100%);
+}
+
+.home-orca-ascii {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  justify-self: center;
+  max-width: 100%;
+  margin: 0;
+  color: #a9ffd5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: clamp(0.55rem, 1.08vw, 0.92rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.018em;
+  text-align: left;
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.52), 0 0 22px rgba(87, 243, 255, 0.22);
+  white-space: pre;
+  filter: drop-shadow(0 0 18px rgba(87, 243, 255, 0.14));
+}
+
+.home-orca-copy {
+  position: absolute;
+  inset: auto clamp(1rem, 4vw, 3rem) clamp(1.25rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem);
+  z-index: 3;
+  max-width: 52rem;
+  padding-top: clamp(5rem, 19vw, 11rem);
+  background: linear-gradient(180deg, transparent, rgba(0, 4, 3, 0.78) 30%, rgba(0, 4, 3, 0.94));
+}
+
+.home-orca-copy .hero-eyebrow {
+  color: #57f3ff;
+}
+
+.home-orca-copy .home-arcade-title {
+  margin: 0.25rem 0 0;
+  font-size: clamp(3rem, 9vw, 7rem);
+}
+
+.home-orca-copy .home-arcade-copy {
+  max-width: 47rem;
+  margin: 0.85rem 0 0;
+}
+
+.home-orca-actions {
+  justify-content: flex-start;
+  margin-top: 1.35rem;
+}
+
+.home-play-mode {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(280px, 1.1fr);
+  gap: clamp(1rem, 3vw, 2rem);
+  align-items: center;
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto clamp(1rem, 3vw, 2rem);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  overflow: hidden;
+  border-color: rgba(255, 255, 102, 0.34);
+}
+
+.home-play-mode__copy p:not(.home-section-kicker) {
+  color: rgba(223, 255, 234, 0.86);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  line-height: 1.65;
+}
+
+.home-play-mode .home-arcade-game {
+  max-width: none;
+  width: 100%;
+}
+
+.home-play-mode .hero-game-stage__screen {
+  min-height: clamp(180px, 22vw, 270px);
+}
+
+@media (max-width: 900px) {
+  .home-orca-stage {
+    min-height: clamp(520px, 78svh, 680px);
+  }
+
+  .home-orca-ascii {
+    font-size: clamp(0.42rem, 1.6vw, 0.7rem);
+  }
+
+  .home-play-mode {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-orca-hero {
+    padding-inline: 0.5rem;
+  }
+
+  .home-orca-stage {
+    min-height: 620px;
+    padding: 0.75rem;
+    border-radius: 14px;
+  }
+
+  .home-orca-ascii {
+    justify-self: start;
+    max-width: none;
+    font-size: clamp(0.34rem, 1.85vw, 0.48rem);
+    line-height: 1.08;
+    transform: translateX(-0.35rem);
+  }
+
+  .home-orca-copy {
+    inset-inline: 0.85rem;
+    bottom: 1rem;
+    padding-top: 6.5rem;
+  }
+
+  .home-orca-actions,
+  .home-play-mode .home-cta-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .home-orca-actions .pixel-button,
+  .home-play-mode .pixel-button {
+    width: 100%;
+  }
+
+  .home-play-mode {
+    width: min(100% - 1rem, 1180px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-orca-stage::before,
+  .home-orca-ascii,
+  .home-arcade-start {
+    animation: none !important;
+  }
+}
