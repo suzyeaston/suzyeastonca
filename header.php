@@ -159,7 +159,17 @@
   if ( function_exists( 'wp_body_open' ) ) {
     wp_body_open();
   }
+
+  if ( is_front_page() ) :
 ?>
+<script>
+  document.body.childNodes.forEach(function (node) {
+    if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '\\n\\n') {
+      node.remove();
+    }
+  });
+</script>
+<?php endif; ?>
 
 <header class="main-header">
   <!-- Header wordmark (compact bar) -->
