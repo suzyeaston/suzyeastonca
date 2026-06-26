@@ -6748,15 +6748,17 @@ body,
 
 .home-orca-body,
 .home-orca-tail,
-.home-orca-fin {
+.home-orca-fin,
+.home-orca-dorsal,
+.home-orca-pectoral {
   fill: #030507;
   stroke: #e8fff3;
   stroke-width: 6;
   stroke-linejoin: miter;
 }
 
-.home-orca-tail--bottom {
-  fill: #050607;
+.home-orca-tail {
+  stroke-width: 5;
 }
 
 .home-orca-belly,
@@ -6766,6 +6768,10 @@ body,
   stroke: #06110d;
   stroke-width: 4;
   stroke-linejoin: miter;
+}
+
+.home-orca-eye-dot {
+  fill: #06110d;
 }
 
 .home-orca-pixel-glint {
