@@ -40,14 +40,15 @@ get_header();
                             </linearGradient>
                         </defs>
                         <g class="home-orca-sprite" filter="url(#home-orca-crt-glow)">
-                            <path class="home-orca-tail home-orca-tail--top" d="M444 162c43-50 86-76 132-78-21 41-50 70-86 86 39 6 72 24 99 55-52 7-102-7-150-42Z" />
-                            <path class="home-orca-tail home-orca-tail--bottom" d="M439 184c45 28 89 40 133 34-26 34-59 52-98 55 20 21 30 47 30 78-40-20-68-56-83-108Z" />
-                            <path class="home-orca-body" d="M70 246c61-86 145-139 252-158 72-13 135 0 185 39-37 68-96 111-178 129-96 21-180 17-259-10Z" />
-                            <path class="home-orca-belly" d="M114 249c65 10 132 5 202-14 56-15 101-43 134-84-16 64-62 111-137 140-72 28-139 28-199-42Z" />
-                            <path class="home-orca-saddle" d="M328 103c43 3 81 17 114 42-38-5-68 3-91 25-23 21-56 12-66-18 7-24 21-40 43-49Z" />
-                            <path class="home-orca-fin" d="M260 124c1-70 27-119 78-147 11 69-15 118-78 147Z" />
-                            <path class="home-orca-eye" d="M127 214c20-19 45-25 75-19-16 23-39 32-70 27Z" />
-                            <path class="home-orca-pixel-glint" d="M152 205h18v10h-18zM210 258h24v10h-24zM315 82h16v10h-16z" />
+                            <path class="home-orca-tail" d="M455 190c34-26 72-42 114-48-11 34-32 57-63 70 34 10 60 30 79 60-43 2-82-10-117-36l-54-16 2-22Z" />
+                            <path class="home-orca-body" d="M67 218c11-56 61-98 140-121 76-22 161-10 250 48 29 19 50 36 63 51-21 18-48 31-80 39-61 16-129 28-203 37-78 9-134-9-170-54Z" />
+                            <path class="home-orca-belly" d="M91 224c27 23 66 34 117 32 65-2 126-13 184-33-33 39-84 64-153 76-66 12-116-13-148-75Z" />
+                            <path class="home-orca-saddle" d="M318 106c42 8 78 23 108 45-34-5-60 1-78 18-21 19-50 13-63-15 5-22 16-38 33-48Z" />
+                            <path class="home-orca-dorsal" d="M260 98c9-60 37-101 85-124 5 65-24 107-85 124Z" />
+                            <path class="home-orca-pectoral" d="M248 252c-7 47-32 82-75 105-6-53 18-88 75-105Z" />
+                            <path class="home-orca-eye" d="M112 180c25-21 57-26 95-16-21 25-52 34-91 28Z" />
+                            <path class="home-orca-eye-dot" d="M142 181h9v8h-9z" />
+                            <path class="home-orca-pixel-glint" d="M184 250h24v10h-24zM332 88h16v10h-16z" />
                         </g>
                         <g class="home-orca-waterlines">
                             <path d="M34 314c42-12 70 12 112 0s70-12 112 0 70 12 112 0 70-12 112 0" />
