@@ -6700,3 +6700,142 @@ body,
     font-size: clamp(2.4rem, 15vw, 3.65rem);
   }
 }
+
+/* Single-orca arcade title-screen refinement. */
+.home-orca-stage {
+  grid-template-columns: minmax(0, 0.95fr) minmax(300px, 0.9fr);
+  background:
+    radial-gradient(circle at 74% 44%, rgba(87, 243, 255, 0.16), transparent 24%),
+    radial-gradient(circle at 20% 22%, rgba(57, 255, 20, 0.1), transparent 22%),
+    linear-gradient(180deg, #020a12 0%, #00110f 56%, #02030a 100%);
+}
+
+.home-orca-art {
+  align-self: center;
+}
+
+.home-orca-art::before {
+  inset: 13% 7% 16%;
+  border-radius: 34% 54% 42% 58%;
+  background:
+    radial-gradient(circle at 58% 45%, rgba(87, 243, 255, 0.2), transparent 48%),
+    linear-gradient(180deg, rgba(57, 255, 20, 0.08), transparent 62%);
+}
+
+.home-orca-mark {
+  width: min(100%, clamp(300px, 34vw, 460px));
+  aspect-ratio: 620 / 430;
+  filter: drop-shadow(0 0 18px rgba(87, 243, 255, 0.44)) drop-shadow(0 0 26px rgba(57, 255, 20, 0.16));
+}
+
+.home-orca-mark::before {
+  inset: 14% 4% 13%;
+  border-radius: 38% 58% 45% 55%;
+  background:
+    repeating-linear-gradient(0deg, rgba(223, 255, 234, 0.045) 0 2px, transparent 2px 8px),
+    radial-gradient(circle at 50% 48%, rgba(87, 243, 255, 0.16), transparent 60%);
+  animation: homeOrcaSpriteGlow 4.8s steps(4, end) infinite;
+}
+
+.home-orca-sigil {
+  overflow: visible;
+}
+
+.home-orca-sprite {
+  transform-origin: 315px 210px;
+  animation: homeOrcaBob 5.6s steps(6, end) infinite;
+}
+
+.home-orca-body,
+.home-orca-tail,
+.home-orca-fin {
+  fill: #030507;
+  stroke: #e8fff3;
+  stroke-width: 6;
+  stroke-linejoin: miter;
+}
+
+.home-orca-tail--bottom {
+  fill: #050607;
+}
+
+.home-orca-belly,
+.home-orca-saddle,
+.home-orca-eye {
+  fill: #f3fff8;
+  stroke: #06110d;
+  stroke-width: 4;
+  stroke-linejoin: miter;
+}
+
+.home-orca-pixel-glint {
+  fill: rgba(87, 243, 255, 0.78);
+  animation: homeOrcaFlicker 3.2s steps(2, end) infinite;
+}
+
+.home-orca-waterlines path {
+  stroke-dasharray: 34 18;
+  animation: homeOrcaWaterSignal 4.8s steps(5, end) infinite;
+}
+
+.home-orca-north-shore {
+  bottom: clamp(0.8rem, 3.4vw, 2.8rem);
+  opacity: 0.46;
+}
+
+.home-orca-sky {
+  animation: homeOrcaStarTwinkle 7s steps(4, end) infinite;
+}
+
+@keyframes homeOrcaBob {
+  0%, 100% { transform: translate(0, 0) rotate(-1deg); }
+  50% { transform: translate(0, -10px) rotate(1deg); }
+}
+
+@keyframes homeOrcaSpriteGlow {
+  0%, 100% { opacity: 0.5; transform: scale(0.98); }
+  50% { opacity: 0.78; transform: scale(1.02); }
+}
+
+@keyframes homeOrcaFlicker {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+@keyframes homeOrcaStarTwinkle {
+  0%, 100% { opacity: 0.62; }
+  50% { opacity: 0.86; }
+}
+
+@media (max-width: 900px) {
+  .home-orca-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .home-orca-mark {
+    width: min(100%, clamp(300px, 72vw, 440px));
+  }
+}
+
+@media (max-width: 640px) {
+  .home-orca-stage {
+    gap: 1rem;
+  }
+
+  .home-orca-mark {
+    width: min(100%, 330px);
+  }
+
+  .home-orca-art {
+    padding-top: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-orca-sprite,
+  .home-orca-mark::before,
+  .home-orca-pixel-glint,
+  .home-orca-sky {
+    animation: none !important;
+  }
+}
