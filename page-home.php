@@ -8,6 +8,13 @@ get_header();
     <section class="home-orca-hero hero hero-section crt-block" aria-labelledby="home-hero-title">
         <div class="home-orca-stage">
             <span class="screen-reader-text"><?php echo esc_html( 'Two orcas circling in a CRT-style Burrard Inlet title mark.' ); ?></span>
+            <div class="home-orca-sky" aria-hidden="true">
+                <span class="home-orca-starname">SUZY EASTON</span>
+            </div>
+            <svg class="home-orca-north-shore" viewBox="0 0 1200 260" aria-hidden="true" focusable="false">
+                <path class="home-orca-north-shore__back" d="M0 176 74 154 142 102 208 137 283 58 353 134 428 84 508 145 579 92 642 132 714 64 796 142 878 96 940 138 1014 72 1094 146 1200 110" />
+                <path class="home-orca-north-shore__front" d="M0 205 96 174 176 146 253 166 334 112 420 174 498 139 585 178 668 132 753 176 846 126 930 172 1028 132 1114 180 1200 152" />
+            </svg>
             <div class="home-orca-mark" role="img" aria-label="<?php echo esc_attr( 'Two orcas circling in a CRT-style Burrard Inlet title mark.' ); ?>">
                 <svg class="home-orca-sigil" viewBox="0 0 520 520" aria-hidden="true" focusable="false">
                     <defs>
