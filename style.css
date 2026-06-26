@@ -6093,23 +6093,104 @@ body,
   background: radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.58) 100%);
 }
 
-.home-orca-ascii {
+.home-orca-mark {
   position: relative;
   z-index: 1;
   align-self: center;
   justify-self: center;
-  max-width: 100%;
-  margin: 0;
-  color: #a9ffd5;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  font-size: clamp(0.55rem, 1.08vw, 0.92rem);
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: 0.018em;
-  text-align: left;
-  text-shadow: 0 0 8px rgba(57, 255, 20, 0.52), 0 0 22px rgba(87, 243, 255, 0.22);
-  white-space: pre;
-  filter: drop-shadow(0 0 18px rgba(87, 243, 255, 0.14));
+  width: min(100%, clamp(300px, 58vw, 680px));
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  color: #dfffea;
+  filter: drop-shadow(0 0 18px rgba(87, 243, 255, 0.28));
+}
+
+.home-orca-mark::before {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(87, 243, 255, 0.16), transparent 58%),
+    conic-gradient(from 20deg, rgba(57, 255, 20, 0), rgba(57, 255, 20, 0.22), rgba(87, 243, 255, 0.28), rgba(57, 255, 20, 0));
+  opacity: 0.78;
+  animation: homeOrcaPulse 5s ease-in-out infinite;
+}
+
+.home-orca-sigil {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.home-orca-rings circle {
+  stroke: rgba(87, 243, 255, 0.52);
+  stroke-width: 2;
+  stroke-dasharray: 10 16;
+  filter: drop-shadow(0 0 8px rgba(57, 255, 20, 0.42));
+}
+
+.home-orca-rings circle + circle {
+  stroke: rgba(57, 255, 20, 0.36);
+  stroke-dasharray: 3 13;
+}
+
+.home-orca-mountain {
+  fill: none;
+  stroke: rgba(169, 255, 213, 0.42);
+  stroke-width: 5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.home-orca-body,
+.home-orca-tail,
+.home-orca-fin {
+  fill: #020202;
+  stroke: #dfffea;
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.home-orca-belly,
+.home-orca-saddle,
+.home-orca-eye {
+  fill: #f5fff8;
+}
+
+.home-orca-belly,
+.home-orca-saddle {
+  stroke: #06110d;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.home-orca-fin {
+  fill: #050505;
+}
+
+.home-orca-pair {
+  transform-origin: 260px 260px;
+  animation: homeOrcaDrift 9s ease-in-out infinite;
+}
+
+.home-orca-waterlines path {
+  fill: none;
+  stroke: url(#home-orca-water);
+  stroke-width: 4;
+  stroke-linecap: square;
+  filter: drop-shadow(0 0 8px rgba(87, 243, 255, 0.6));
+}
+
+.home-orca-location {
+  fill: rgba(255, 255, 102, 0.72);
+  font-family: "Press Start 2P", monospace;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-shadow: 0 0 8px rgba(255, 255, 102, 0.38);
 }
 
 .home-orca-copy {
@@ -6167,13 +6248,23 @@ body,
   min-height: clamp(180px, 22vw, 270px);
 }
 
+@keyframes homeOrcaDrift {
+  0%, 100% { transform: rotate(-2deg) scale(1); }
+  50% { transform: rotate(2deg) scale(1.015); }
+}
+
+@keyframes homeOrcaPulse {
+  0%, 100% { opacity: 0.58; transform: scale(0.98); }
+  50% { opacity: 0.86; transform: scale(1.02); }
+}
+
 @media (max-width: 900px) {
   .home-orca-stage {
     min-height: clamp(520px, 78svh, 680px);
   }
 
-  .home-orca-ascii {
-    font-size: clamp(0.42rem, 1.6vw, 0.7rem);
+  .home-orca-mark {
+    width: min(100%, clamp(280px, 72vw, 520px));
   }
 
   .home-play-mode {
@@ -6192,12 +6283,15 @@ body,
     border-radius: 14px;
   }
 
-  .home-orca-ascii {
-    justify-self: start;
-    max-width: none;
-    font-size: clamp(0.34rem, 1.85vw, 0.48rem);
-    line-height: 1.08;
-    transform: translateX(-0.35rem);
+  .home-orca-mark {
+    align-self: start;
+    width: min(100%, 360px);
+    margin-top: 0.25rem;
+  }
+
+  .home-orca-location {
+    font-size: 12px;
+    letter-spacing: 0.1em;
   }
 
   .home-orca-copy {
@@ -6224,7 +6318,8 @@ body,
 
 @media (prefers-reduced-motion: reduce) {
   .home-orca-stage::before,
-  .home-orca-ascii,
+  .home-orca-mark::before,
+  .home-orca-pair,
   .home-arcade-start {
     animation: none !important;
   }
