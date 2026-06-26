@@ -7,7 +7,7 @@ get_header();
 
     <section class="home-orca-hero hero hero-section crt-block" aria-labelledby="home-hero-title">
         <div class="home-orca-stage">
-            <span class="screen-reader-text"><?php echo esc_html( 'Two orcas circling in a CRT-style Burrard Inlet title mark.' ); ?></span>
+            <span class="screen-reader-text"><?php echo esc_html( 'Two distinct orcas circling with North Shore mountains and CRT stars.' ); ?></span>
             <div class="home-orca-sky" aria-hidden="true">
                 <span class="home-orca-starname">SUZY EASTON</span>
             </div>
@@ -15,53 +15,6 @@ get_header();
                 <path class="home-orca-north-shore__back" d="M0 176 74 154 142 102 208 137 283 58 353 134 428 84 508 145 579 92 642 132 714 64 796 142 878 96 940 138 1014 72 1094 146 1200 110" />
                 <path class="home-orca-north-shore__front" d="M0 205 96 174 176 146 253 166 334 112 420 174 498 139 585 178 668 132 753 176 846 126 930 172 1028 132 1114 180 1200 152" />
             </svg>
-            <div class="home-orca-mark" role="img" aria-label="<?php echo esc_attr( 'Two orcas circling in a CRT-style Burrard Inlet title mark.' ); ?>">
-                <svg class="home-orca-sigil" viewBox="0 0 520 520" aria-hidden="true" focusable="false">
-                    <defs>
-                        <filter id="home-orca-crt-glow" x="-35%" y="-35%" width="170%" height="170%">
-                            <feGaussianBlur stdDeviation="4" result="blur" />
-                            <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.2  0 0 0 0 1  0 0 0 0 0.82  0 0 0 .7 0" result="cyanGlow" />
-                            <feMerge>
-                                <feMergeNode in="cyanGlow" />
-                                <feMergeNode in="SourceGraphic" />
-                            </feMerge>
-                        </filter>
-                        <linearGradient id="home-orca-water" x1="0" x2="1" y1="0" y2="0">
-                            <stop offset="0" stop-color="#39ff14" stop-opacity="0" />
-                            <stop offset=".5" stop-color="#57f3ff" stop-opacity=".85" />
-                            <stop offset="1" stop-color="#39ff14" stop-opacity="0" />
-                        </linearGradient>
-                    </defs>
-                    <g class="home-orca-rings" fill="none">
-                        <circle cx="260" cy="260" r="196" />
-                        <circle cx="260" cy="260" r="150" />
-                    </g>
-                    <path class="home-orca-mountain" d="M72 160 132 96l38 42 34-58 56 78 44-46 46 54 42-34 56 54" />
-                    <g class="home-orca-pair" filter="url(#home-orca-crt-glow)">
-                        <g class="home-orca home-orca--upper">
-                            <path class="home-orca-body" d="M384 126c-89-31-188 5-239 86-18 29-25 59-18 82 59-58 126-76 206-54 28 8 56 5 75-9 21-15 27-39 16-62-7-16-20-31-40-43Z" />
-                            <path class="home-orca-tail" d="M424 169c29-8 54-25 72-52-34 4-59 13-76 28 10-23 12-47 3-72-21 21-33 48-39 80Z" />
-                            <path class="home-orca-belly" d="M173 243c48-30 106-37 171-20 27 7 50 3 66-12-8 29-42 48-84 42-58-9-107 4-153 47-10-16-10-35 0-57Z" />
-                            <path class="home-orca-saddle" d="M298 143c38 0 72 13 99 35-34-9-65-8-93 3-19 8-36-3-40-19 8-9 19-15 34-19Z" />
-                            <ellipse class="home-orca-eye" cx="366" cy="166" rx="12" ry="7" transform="rotate(22 366 166)" />
-                            <path class="home-orca-fin" d="M239 209c-11-48 0-86 34-114 10 47 2 85-34 114Z" />
-                        </g>
-                        <g class="home-orca home-orca--lower">
-                            <path class="home-orca-body" d="M136 394c89 31 188-5 239-86 18-29 25-59 18-82-59 58-126 76-206 54-28-8-56-5-75 9-21 15-27 39-16 62 7 16 20 31 40 43Z" />
-                            <path class="home-orca-tail" d="M96 351c-29 8-54 25-72 52 34-4 59-13 76-28-10 23-12 47-3 72 21-21 33-48 39-80Z" />
-                            <path class="home-orca-belly" d="M347 277c-48 30-106 37-171 20-27-7-50-3-66 12 8-29 42-48 84-42 58 9 107-4 153-47 10 16 10 35 0 57Z" />
-                            <path class="home-orca-saddle" d="M222 377c-38 0-72-13-99-35 34 9 65 8 93-3 19-8 36 3 40 19-8 9-19 15-34 19Z" />
-                            <ellipse class="home-orca-eye" cx="154" cy="354" rx="12" ry="7" transform="rotate(22 154 354)" />
-                            <path class="home-orca-fin" d="M281 311c11 48 0 86-34 114-10-47-2-85 34-114Z" />
-                        </g>
-                    </g>
-                    <g class="home-orca-waterlines">
-                        <path d="M74 404c46-12 78 12 124 0s78-12 124 0 78 12 124 0" />
-                        <path d="M102 430c34-8 58 8 92 0s58-8 92 0 58 8 92 0" />
-                    </g>
-                    <text class="home-orca-location" x="260" y="474" text-anchor="middle">BURRARD INLET</text>
-                </svg>
-            </div>
             <div class="home-orca-copy">
                 <p class="hero-eyebrow pixel-font"><?php echo esc_html( 'music // practical ai // weird useful tools' ); ?></p>
                 <h1 id="home-hero-title" class="hero-core-headline home-arcade-title"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
@@ -69,6 +22,49 @@ get_header();
                 <div class="home-orca-actions home-cta-row hero-cta-group">
                     <a href="#mission-select" class="pixel-button hero-primary-cta"><?php echo esc_html( 'Enter the lab' ); ?></a>
                     <a href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>" class="pixel-button pixel-button--secondary"><?php echo esc_html( 'Check Lousy Outages' ); ?></a>
+                </div>
+            </div>
+            <div class="home-orca-art" aria-hidden="true">
+                <div class="home-orca-mark" role="img" aria-label="<?php echo esc_attr( 'Two distinct orcas circling in a CRT-style Burrard Inlet sigil.' ); ?>">
+                    <svg class="home-orca-sigil" viewBox="0 0 560 560" aria-hidden="true" focusable="false">
+                        <defs>
+                            <filter id="home-orca-crt-glow" x="-18%" y="-18%" width="136%" height="136%">
+                                <feGaussianBlur stdDeviation="2.2" result="blur" />
+                                <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.2  0 0 0 0 1  0 0 0 0 0.82  0 0 0 .42 0" result="cyanGlow" />
+                                <feMerge><feMergeNode in="cyanGlow" /><feMergeNode in="SourceGraphic" /></feMerge>
+                            </filter>
+                            <linearGradient id="home-orca-water" x1="0" x2="1" y1="0" y2="0">
+                                <stop offset="0" stop-color="#39ff14" stop-opacity="0" />
+                                <stop offset=".5" stop-color="#57f3ff" stop-opacity=".72" />
+                                <stop offset="1" stop-color="#39ff14" stop-opacity="0" />
+                            </linearGradient>
+                        </defs>
+                        <g class="home-orca-rings" fill="none">
+                            <circle cx="280" cy="280" r="214" />
+                            <circle cx="280" cy="280" r="158" />
+                        </g>
+                        <path class="home-orca-mountain" d="M88 164 144 104l38 44 38-64 58 82 48-54 42 54 42-34 64 62" />
+                        <g class="home-orca-pair" filter="url(#home-orca-crt-glow)">
+                            <g class="home-orca home-orca--upper">
+                                <path class="home-orca-body" d="M404 154c-79-45-178-28-242 39-28 30-44 66-43 96 45-50 101-77 169-82 52-4 93-23 116-53Z" />
+                                <path class="home-orca-tail" d="M417 142c33-29 68-43 105-44-18 28-39 47-65 59 28 4 51 17 70 40-39 4-76-6-111-31Z" />
+                                <path class="home-orca-belly" d="M154 250c42-31 86-47 133-48 35-1 66-10 91-27-14 32-49 55-96 62-52 8-94 31-127 70-9-17-9-36-1-57Z" />
+                                <path class="home-orca-saddle" d="M284 145c34-2 67 7 99 28-33-6-60-1-82 13-18 11-38 4-45-12 5-13 14-22 28-29Z" />
+                                <path class="home-orca-fin" d="M226 202c-6-50 10-87 48-112 4 50-12 88-48 112Z" />
+                                <ellipse class="home-orca-eye" cx="378" cy="160" rx="10" ry="6" transform="rotate(22 378 160)" />
+                            </g>
+                            <g class="home-orca home-orca--lower">
+                                <path class="home-orca-body" d="M154 402c69 40 157 28 214-31 25-26 39-58 38-85-40 44-90 68-150 73-46 4-82 20-102 43Z" />
+                                <path class="home-orca-tail" d="M141 414c-29 25-61 38-94 39 16-25 35-42 58-52-25-4-45-15-62-35 35-4 68 5 99 27Z" />
+                                <path class="home-orca-belly" d="M374 320c-37 27-76 41-118 43-31 1-58 9-80 24 13-29 44-49 85-55 46-7 84-27 113-62 8 15 8 32 0 50Z" />
+                                <path class="home-orca-saddle" d="M262 410c-31 2-60-7-88-25 29 5 53 1 73-11 16-10 34-4 40 10-4 11-12 20-25 26Z" />
+                                <path class="home-orca-fin" d="M316 360c5 44-9 77-43 99-3-44 11-78 43-99Z" />
+                                <ellipse class="home-orca-eye" cx="176" cy="398" rx="9" ry="5.5" transform="rotate(202 176 398)" />
+                            </g>
+                        </g>
+                        <g class="home-orca-waterlines"><path d="M88 444c44-12 74 12 118 0s74-12 118 0 74 12 118 0" /><path d="M116 470c32-8 54 8 86 0s54-8 86 0 54 8 86 0" /></g>
+                        <text class="home-orca-location" x="280" y="514" text-anchor="middle">BURRARD INLET</text>
+                    </svg>
                 </div>
             </div>
         </div>

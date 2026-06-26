@@ -6522,3 +6522,181 @@ body,
     background: linear-gradient(180deg, rgba(0, 4, 3, 0.12), rgba(0, 4, 3, 0.56));
   }
 }
+
+/* Homepage hero split-layout redraw: copy and orca art occupy distinct cinematic zones. */
+.home-orca-hero {
+  padding-top: clamp(0.1rem, 0.45vw, 0.45rem);
+}
+
+.home-orca-stage {
+  grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1.08fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: center;
+  min-height: clamp(500px, calc(100svh - var(--se-header-height, 72px) - 4.5rem), 680px);
+  padding: clamp(1.1rem, 3.2vw, 3.2rem);
+  background:
+    radial-gradient(circle at 72% 48%, rgba(87, 243, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 17% 22%, rgba(57, 255, 20, 0.13), transparent 24%),
+    radial-gradient(circle at 88% 18%, rgba(255, 72, 206, 0.08), transparent 18%),
+    linear-gradient(180deg, #020a08 0%, #000403 58%, #010009 100%);
+}
+
+.home-orca-sky {
+  height: 58%;
+  opacity: 0.78;
+}
+
+.home-orca-starname {
+  left: 73%;
+  top: clamp(1.2rem, 3.6vw, 2.8rem);
+  letter-spacing: clamp(0.42em, 1.05vw, 0.8em);
+  opacity: 0.32;
+}
+
+.home-orca-north-shore {
+  top: auto;
+  bottom: clamp(1.7rem, 5vw, 3.9rem);
+  width: min(116%, 1320px);
+  opacity: 0.5;
+}
+
+.home-orca-copy {
+  position: relative;
+  inset: auto;
+  z-index: 3;
+  grid-column: 1;
+  align-self: center;
+  max-width: 36rem;
+  padding: clamp(1rem, 2.4vw, 1.65rem);
+  border-color: rgba(87, 243, 255, 0.28);
+  background:
+    linear-gradient(135deg, rgba(0, 12, 11, 0.82), rgba(0, 4, 3, 0.42)),
+    radial-gradient(circle at 0 100%, rgba(87, 243, 255, 0.15), transparent 62%);
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.32), inset 0 0 26px rgba(57, 255, 20, 0.055);
+}
+
+.home-orca-copy .home-arcade-title {
+  font-size: clamp(2.7rem, 6vw, 5.8rem);
+  line-height: 0.95;
+}
+
+.home-orca-copy .home-arcade-copy {
+  max-width: 34rem;
+  font-size: clamp(1rem, 1.5vw, 1.18rem);
+}
+
+.home-orca-art {
+  position: relative;
+  z-index: 1;
+  grid-column: 2;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+}
+
+.home-orca-art::before {
+  content: "";
+  position: absolute;
+  inset: 5% 2% 7%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(87, 243, 255, 0.13), transparent 64%);
+  filter: blur(0.3px);
+  opacity: 0.84;
+}
+
+.home-orca-mark {
+  align-self: center;
+  justify-self: center;
+  width: min(100%, clamp(320px, 41vw, 560px));
+  margin-top: 0;
+  transform: none;
+  filter: drop-shadow(0 0 18px rgba(87, 243, 255, 0.34)) drop-shadow(0 0 34px rgba(57, 255, 20, 0.12));
+}
+
+.home-orca-mark::before {
+  inset: 10%;
+  opacity: 0.62;
+  filter: none;
+}
+
+.home-orca-rings circle {
+  stroke-width: 2;
+  filter: drop-shadow(0 0 8px rgba(87, 243, 255, 0.32));
+}
+
+.home-orca-body,
+.home-orca-tail,
+.home-orca-fin {
+  stroke-width: 4.25;
+}
+
+.home-orca-belly,
+.home-orca-saddle {
+  stroke-width: 2.4;
+}
+
+.home-orca-pair {
+  filter: drop-shadow(0 0 9px rgba(87, 243, 255, 0.2));
+}
+
+@media (max-width: 900px) {
+  .home-orca-stage {
+    grid-template-columns: 1fr;
+    gap: clamp(1rem, 4vw, 1.8rem);
+    min-height: auto;
+  }
+
+  .home-orca-copy,
+  .home-orca-art {
+    grid-column: 1;
+  }
+
+  .home-orca-art {
+    order: 1;
+  }
+
+  .home-orca-copy {
+    order: 2;
+    justify-self: center;
+    max-width: 42rem;
+  }
+
+  .home-orca-mark {
+    width: min(100%, clamp(300px, 72vw, 500px));
+  }
+
+  .home-orca-starname {
+    left: 50%;
+    opacity: 0.25;
+  }
+
+  .home-orca-north-shore {
+    bottom: auto;
+    top: clamp(4.3rem, 16vw, 7.2rem);
+    width: 132%;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-orca-stage {
+    padding: 0.8rem;
+  }
+
+  .home-orca-sky {
+    height: 42%;
+  }
+
+  .home-orca-mark {
+    width: min(100%, 340px);
+  }
+
+  .home-orca-copy {
+    inset: auto;
+    padding: 0.95rem;
+    background: linear-gradient(180deg, rgba(0, 12, 11, 0.84), rgba(0, 4, 3, 0.64));
+  }
+
+  .home-orca-copy .home-arcade-title {
+    font-size: clamp(2.4rem, 15vw, 3.65rem);
+  }
+}
