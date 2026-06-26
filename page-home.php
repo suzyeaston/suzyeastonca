@@ -5,66 +5,65 @@ get_header();
 
 <main id="homepage-content" class="home-layout home-arcade-layout">
 
-    <section class="home-hero home-arcade-hero hero hero-section crt-block" aria-labelledby="home-hero-title">
-        <div class="home-arcade-hero__cabinet" aria-label="Suzy Easton Pacific Static arcade screen">
-            <div class="home-arcade-hero__marquee pixel-font" aria-hidden="true">
-                <span><?php echo esc_html( 'PACIFIC STATIC' ); ?></span>
-                <span><?php echo esc_html( '1UP: SUZY' ); ?></span>
-                <span><?php echo esc_html( 'VANCOUVER' ); ?></span>
-            </div>
+    <section class="home-orca-hero hero hero-section crt-block" aria-labelledby="home-hero-title">
+        <div class="home-orca-stage">
+            <span class="screen-reader-text"><?php echo esc_html( 'ASCII art scene of a killer whale surfacing in Burrard Inlet with Vancouver mountains and city lights.' ); ?></span>
+            <pre class="home-orca-ascii" aria-hidden="true">        .        *        .              .        *
+   .        .        NORTH SHORE STATIC        .
+         /\       /\        /\__/\        /\
+    ____/  \_____/  \______/      \______/  \___
+       _|_      _|_       _|_  LIONS GATE  _|_
+      |:::| .  |:::|  .  |:::|____====____|:::|  .
+  .   |___|    |___|     |___|    ||    . |___|
 
-            <div class="home-hero-ascii-scene" aria-hidden="true">
-                <pre class="home-hero-ascii-scene__stars">  ·          *        .          +          ·        .
-       .          ·        /\        .          *
-   *        .        /__\      ·        .          +
-        ·       .     /  \          *        .
- .          +        ^    ^       .          ·</pre>
-                <pre class="home-hero-ascii-scene__coast">        .        ·             *                 .
-   ^        .          ·              .        ^
-      /\          /\__/\       /\           .
-  ___/  \__/\___/      \_____/  \___
-        `-.      .  *  .  ·  .  *  .      .-'
- ~~~  ~^~   ~~~    ~^~    ~~~   ~^~    ~~~
-      __..---.        ___
- ___.'  _   _ `-.__.-'   `-.__      ~^~
-(    _/ `._/ `._   _.-.       )
- `--'     /\     `-`   `.__.-'        .
-       __/  \__        .        +
-  .   /__    __\     .      .        ·
-         `--'      ~~~    ~^~    ~~~</pre>
-                <pre class="home-hero-ascii-scene__pixels">+   .       ·       .   *       ·       .
-   .   +       .       ·       *       .
-·       .   *       .       +       .</pre>
-            </div>
-
-            <div class="hero-grid home-arcade-hero__grid">
-                <div class="hero-main home-arcade-hero__intro">
-                    <p class="hero-eyebrow pixel-font"><?php echo esc_html( 'music // practical ai // weird useful tools' ); ?></p>
-                    <h1 id="home-hero-title" class="hero-core-headline home-arcade-title"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
-                    <p class="home-arcade-subtitle"><?php echo esc_html( 'Musician, creative technologist, and technical systems operator.' ); ?></p>
-                    <p class="hero-copy home-arcade-copy"><?php echo esc_html( 'I build practical AI workflows, outage and ops dashboards, music tools, and Vancouver-flavoured web experiments: playable, readable, and useful after the glow wears off.' ); ?></p>
-                    <div class="home-cta-row hero-cta-group home-arcade-start-row">
-                        <a href="#mission-select" class="pixel-button hero-primary-cta home-arcade-start" data-arcade-start><?php echo esc_html( 'Enter the lab' ); ?></a>
-                        <a href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>" class="pixel-button pixel-button--secondary"><?php echo esc_html( 'Check Lousy Outages' ); ?></a>
-                    </div>
+ ~ ~ ~ ~ ~ ~ ~ ~ ~ BURRARD INLET ~ ~ ~ ~ ~ ~ ~ ~
+      .      .        .       .      .      .
+ .        _..---""""---.._          .       +
+      .-'       _.._      '-.        PORT  :::
+    .'       .-'    '-.       '.       .   :::
+   /       .'  .-""-.  '.       \        __| |__
+  ;       /   /  o  o\   \       ;  .   |_____|_|
+  |      |   |    __  |   |      |      .  .  .
+  ;       \   \ .____./  /       ;
+   \       '.  '-.__.-' .'       /      *
+    '.       '-._____.-'       .'
+      '-._                 _.-'
+           """---...---"""        .
+        .       /|  |\\       .       CYAN WAKE
+              _/ |  | \\_
+ ~ ~ ~ ~ ~ ~ /__/    \__\ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+       *          .       .       *        .</pre>
+            <div class="home-orca-copy">
+                <p class="hero-eyebrow pixel-font"><?php echo esc_html( 'music // practical ai // weird useful tools' ); ?></p>
+                <h1 id="home-hero-title" class="hero-core-headline home-arcade-title"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
+                <p class="hero-copy home-arcade-copy"><?php echo esc_html( 'I build practical AI workflows, music tools, outage dashboards, and strange Vancouver web experiments.' ); ?></p>
+                <div class="home-orca-actions home-cta-row hero-cta-group">
+                    <a href="#mission-select" class="pixel-button hero-primary-cta"><?php echo esc_html( 'Enter the lab' ); ?></a>
+                    <a href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>" class="pixel-button pixel-button--secondary"><?php echo esc_html( 'Check Lousy Outages' ); ?></a>
                 </div>
-
-                <aside class="hero-side home-arcade-hero__screen" aria-label="Pacific Static arcade monitor">
-                    <div class="hero-game-stage home-arcade-game" aria-label="Pacific Static mini arcade game. Press Enter the lab, then use WASD or arrow keys to move, Space to fire, and Escape to quit." data-arcade-stage>
-                        <p class="hero-game-stage__header pixel-font"><?php echo esc_html( 'PACIFIC STATIC' ); ?></p>
-                        <div class="hero-game-stage__screen" role="img" aria-label="A green CRT arcade screen with stars, a small player ship, and outage alert blips.">
-                            <p class="hero-game-stage__idle pixel-font"><?php echo wp_kses_post( 'OUTAGE BLIP SWEEP<br>WASD move // Space fire // Esc quit<br>No sleep till deploy' ); ?></p>
-                            <div class="home-static-sprites" aria-hidden="true">
-                                <span class="home-static-sprites__ship"></span>
-                                <span class="home-static-sprites__enemy home-static-sprites__enemy--one"></span>
-                                <span class="home-static-sprites__enemy home-static-sprites__enemy--two"></span>
-                                <span class="home-static-sprites__reticle"></span>
-                            </div>
-                        </div>
-                        <p class="hero-game-stage__mobile-note pixel-font"><?php echo esc_html( 'Tap Enter the lab on a keyboard screen to play.' ); ?></p>
-                    </div>
-                </aside>
             </div>
+        </div>
+    </section>
+
+    <section class="home-play-mode crt-block" aria-labelledby="home-play-mode-title">
+        <div class="home-play-mode__copy">
+            <p class="home-section-kicker pixel-font"><?php echo esc_html( 'PLAY MODE' ); ?></p>
+            <h2 id="home-play-mode-title" class="pixel-font"><?php echo esc_html( 'Pacific Static' ); ?></h2>
+            <p><?php echo esc_html( 'A compact outage-blip arcade sketch: move with WASD or arrow keys, fire with Space, quit with Escape.' ); ?></p>
+            <button type="button" class="pixel-button home-arcade-start" data-arcade-start><?php echo esc_html( 'Play Pacific Static' ); ?></button>
+        </div>
+        <div class="hero-game-stage home-arcade-game" aria-label="Pacific Static mini arcade game. Use WASD or arrow keys to move, Space to fire, and Escape to quit." data-arcade-stage>
+            <p class="hero-game-stage__header pixel-font"><?php echo esc_html( 'PACIFIC STATIC' ); ?></p>
+            <div class="hero-game-stage__screen" role="img" aria-label="A green CRT arcade screen with stars, a small player ship, and outage alert blips.">
+                <p class="hero-game-stage__idle pixel-font"><?php echo wp_kses_post( 'OUTAGE BLIP SWEEP<br>WASD move // Space fire // Esc quit<br>No sleep till deploy' ); ?></p>
+                <div class="home-static-sprites" aria-hidden="true">
+                    <span class="home-static-sprites__ship"></span>
+                    <span class="home-static-sprites__enemy home-static-sprites__enemy--one"></span>
+                    <span class="home-static-sprites__enemy home-static-sprites__enemy--two"></span>
+                    <span class="home-static-sprites__reticle"></span>
+                </div>
+            </div>
+            <p class="hero-game-stage__mobile-note pixel-font"><?php echo esc_html( 'Best on a keyboard screen.' ); ?></p>
         </div>
     </section>
 
