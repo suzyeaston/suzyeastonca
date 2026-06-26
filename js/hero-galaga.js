@@ -1,9 +1,8 @@
 (function () {
   function initHeroGalaga() {
-    const heroGrid = document.querySelector('.hero-grid');
     const gameStage = document.querySelector('.hero-game-stage');
     const gameScreen = document.querySelector('.hero-game-stage__screen');
-    const desktopQuery = window.matchMedia('(min-width: 860px)');
+    const desktopQuery = window.matchMedia('(min-width: 700px)');
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const DEBUG_GALAGA = false;
     const debugEnabled = DEBUG_GALAGA || Boolean(window.__SE_GALAGA_DEBUG);
@@ -20,7 +19,7 @@
       }
     }
 
-    if (!heroGrid || !gameStage || !gameScreen || !desktopQuery.matches) {
+    if (!gameStage || !gameScreen) {
       return;
     }
 
@@ -137,6 +136,7 @@
       waveCallUntil: 0,
       nextWaveAt: 0,
       gameOverReason: '',
+      idleMessage: '',
       playfield: {
         x: 0,
         y: 0,
@@ -282,7 +282,7 @@
       idlePanelEl.hidden = !isIdle;
       gameOverPanelEl.hidden = !isGameOver;
 
-      hintTextEl.innerHTML = 'OUTAGE BLIPS<br>Provider alerts as arcade static.<br>Click to play, or ignore it.<br>WASD move // Space fire // Esc quit';
+      hintTextEl.innerHTML = state.idleMessage || 'OUTAGE BLIPS<br>Provider alerts as arcade static.<br>Click to play, or ignore it.<br>WASD move // Space fire // Esc quit';
       if (startButton) {
         startButton.hidden = !isIdle;
       }
@@ -290,9 +290,7 @@
     }
 
     function showMessage(message) {
-      if (hintTextEl) {
-        hintTextEl.innerHTML = message;
-      }
+      state.idleMessage = message;
       setGameMode('idle');
     }
 
@@ -453,6 +451,9 @@
       state.keys.right = false;
       state.keys.fire = false;
       state.idleTick = 0;
+      if (desktopQuery.matches) {
+        state.idleMessage = '';
+      }
       clearTransientFx();
 
       window.__SE_GALAGA_ACTIVE = false;
@@ -472,7 +473,12 @@
     }
 
     function restartGame() {
-      if (!desktopQuery.matches || isPlaying()) {
+      if (isPlaying()) {
+        return;
+      }
+
+      if (!desktopQuery.matches) {
+        showMessage('Pacific Static needs a wider keyboard screen. Try a screen at least 700px wide.');
         return;
       }
 
@@ -480,7 +486,7 @@
       const hasUsablePlayfield = refreshPlayfield();
       if (!hasUsablePlayfield) {
         debugWarn('Game start blocked due to invalid game dimensions.');
-        enterIdleMode();
+        showMessage('Pacific Static needs a wider keyboard screen.');
         return;
       }
       canvas.tabIndex = 0;
@@ -1115,9 +1121,7 @@
 
     externalStartButtons.forEach(function (button) {
       button.addEventListener('click', function () {
-        if (desktopQuery.matches && !reducedMotionQuery.matches) {
-          restartGame();
-        }
+        restartGame();
       });
     });
 

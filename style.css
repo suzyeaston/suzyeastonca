@@ -6324,3 +6324,37 @@ body,
     animation: none !important;
   }
 }
+
+/* Surgical homepage energy polish: strengthen the existing orca sigil without changing the hero. */
+.home-orca-mark {
+  filter: drop-shadow(0 0 24px rgba(87, 243, 255, 0.42)) drop-shadow(0 0 46px rgba(57, 255, 20, 0.18));
+}
+
+.home-orca-mark::before {
+  opacity: 0.92;
+  filter: blur(0.2px) saturate(1.18);
+}
+
+.home-orca-rings circle {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 12px rgba(57, 255, 20, 0.55)) drop-shadow(0 0 20px rgba(87, 243, 255, 0.22));
+}
+
+.home-orca-pair {
+  filter: drop-shadow(0 0 14px rgba(87, 243, 255, 0.22));
+}
+
+.home-orca-waterlines path {
+  animation: homeOrcaWaterSignal 4.8s ease-in-out infinite;
+}
+
+@keyframes homeOrcaWaterSignal {
+  0%, 100% { opacity: 0.72; stroke-dashoffset: 0; }
+  50% { opacity: 1; stroke-dashoffset: -18; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-orca-waterlines path {
+    animation: none !important;
+  }
+}

@@ -15,8 +15,20 @@ $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
 $teaser_href = $teaser_data['href'] ?? home_url( '/lousy-outages/' );
 $rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? array_slice( $teaser_data['rows'], 0, 4 ) : [];
 $last_checked = $teaser_data['last_checked'] ?? '';
+$active_count = count( $rows );
+$provider_names = [];
+foreach ( $rows as $row ) {
+    $provider = trim( (string) ( $row['provider'] ?? '' ) );
+    if ( '' !== $provider && ! in_array( $provider, $provider_names, true ) ) {
+        $provider_names[] = $provider;
+    }
+}
+$provider_summary = implode( ' + ', array_slice( $provider_names, 0, 3 ) );
+if ( count( $provider_names ) > 3 ) {
+    $provider_summary .= ' +' . ( count( $provider_names ) - 3 ) . ' more';
+}
 ?>
-<section id="lousy-outages-teaser" class="lo-home-teaser" aria-labelledby="lo-home-heading">
+<section id="lousy-outages-teaser" class="lo-home-teaser<?php echo esc_attr( empty( $rows ) ? ' lo-home-teaser--clear' : ' lo-home-teaser--active' ); ?>" aria-labelledby="lo-home-heading">
     <div class="lo-home-teaser__titlebar">
         <p class="lo-home-kicker">lousy outages</p>
         <h2 id="lo-home-heading" class="lo-home-heading">status board for modern chaos</h2>
@@ -32,6 +44,16 @@ $last_checked = $teaser_data['last_checked'] ?? '';
                 <p><?php echo esc_html( $last_checked ? 'last checked: ' . $last_checked : 'last checked: recently' ); ?></p>
             </div>
         <?php else : ?>
+            <div class="lo-home-live-band" role="status" aria-live="polite">
+                <span class="lo-home-live-band__dot" aria-hidden="true"></span>
+                <div>
+                    <p class="lo-home-live-band__label">LIVE OUTAGE SIGNAL</p>
+                    <p class="lo-home-live-band__count"><?php echo esc_html( $active_count . ' active provider ' . ( 1 === $active_count ? 'signal' : 'signals' ) ); ?></p>
+                    <?php if ( $provider_summary ) : ?>
+                        <p class="lo-home-live-band__providers"><?php echo esc_html( $provider_summary ); ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
             <ul class="lo-home-alert-list">
                 <?php foreach ( $rows as $row ) : ?>
                     <li class="lo-home-alert lo-home-alert--<?php echo esc_attr( $row['tone'] ?? 'unknown' ); ?>">

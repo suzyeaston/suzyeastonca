@@ -67,6 +67,8 @@ get_header();
         </div>
     </section>
 
+    <?php get_template_part( 'parts/lousy-outages-teaser' ); ?>
+
     <section class="home-play-mode crt-block" aria-labelledby="home-play-mode-title">
         <div class="home-play-mode__copy">
             <p class="home-section-kicker pixel-font"><?php echo esc_html( 'PLAY MODE' ); ?></p>
@@ -88,8 +90,6 @@ get_header();
             <p class="hero-game-stage__mobile-note pixel-font"><?php echo esc_html( 'Best on a keyboard screen.' ); ?></p>
         </div>
     </section>
-
-    <?php get_template_part( 'parts/lousy-outages-teaser' ); ?>
 
     <section id="mission-select" class="home-project-grid home-mission-select crt-block" aria-labelledby="selected-projects-title">
         <p class="home-section-kicker pixel-font"><?php echo esc_html( 'SELECT SYSTEM' ); ?></p>
