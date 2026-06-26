@@ -6358,3 +6358,164 @@ body,
     animation: none !important;
   }
 }
+
+/* Homepage orca hero composition pass: clearer circling whales, North Shore atmosphere, and star-map wordmark. */
+.home-orca-sky,
+.home-orca-north-shore {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.home-orca-sky {
+  inset: 0 0 auto;
+  height: 46%;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 11% 18%, rgba(255, 255, 102, 0.68) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 19% 34%, rgba(87, 243, 255, 0.52) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 31% 16%, rgba(223, 255, 234, 0.54) 0 1px, transparent 2px),
+    radial-gradient(circle at 43% 29%, rgba(255, 72, 206, 0.42) 0 1px, transparent 1.9px),
+    radial-gradient(circle at 58% 12%, rgba(255, 255, 102, 0.56) 0 1px, transparent 2px),
+    radial-gradient(circle at 74% 24%, rgba(87, 243, 255, 0.5) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 88% 17%, rgba(223, 255, 234, 0.46) 0 1px, transparent 2px),
+    radial-gradient(circle at 92% 39%, rgba(255, 255, 102, 0.42) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 8% 47%, rgba(87, 243, 255, 0.32) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 66% 43%, rgba(223, 255, 234, 0.38) 0 1px, transparent 1.8px);
+  opacity: 0.9;
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.82) 62%, transparent 100%);
+}
+
+.home-orca-starname {
+  position: absolute;
+  left: 50%;
+  top: clamp(1.5rem, 6vw, 4.4rem);
+  transform: translateX(-50%);
+  color: rgba(255, 255, 102, 0.32);
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(0.46rem, 1.12vw, 0.78rem);
+  letter-spacing: clamp(0.42em, 1.4vw, 0.9em);
+  text-shadow:
+    0 0 7px rgba(255, 255, 102, 0.44),
+    0.5rem 0.35rem 0 rgba(87, 243, 255, 0.18),
+    -0.45rem 0.85rem 0 rgba(223, 255, 234, 0.14);
+  opacity: 0.66;
+}
+
+.home-orca-starname::before,
+.home-orca-starname::after {
+  content: "";
+  position: absolute;
+  left: 4%;
+  right: 8%;
+  border-top: 1px dotted rgba(87, 243, 255, 0.22);
+  transform: translateY(-0.55rem) rotate(-1.5deg);
+}
+
+.home-orca-starname::after {
+  left: 16%;
+  right: 18%;
+  transform: translateY(1.05rem) rotate(1.2deg);
+  border-color: rgba(255, 255, 102, 0.16);
+}
+
+.home-orca-north-shore {
+  left: 50%;
+  top: clamp(5.2rem, 13vw, 9.5rem);
+  width: min(108%, 1260px);
+  transform: translateX(-50%);
+  opacity: 0.62;
+  filter: drop-shadow(0 0 18px rgba(87, 243, 255, 0.13));
+}
+
+.home-orca-north-shore path {
+  fill: none;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.home-orca-north-shore__back {
+  stroke: rgba(87, 243, 255, 0.18);
+  stroke-width: 3;
+}
+
+.home-orca-north-shore__front {
+  stroke: rgba(203, 255, 231, 0.26);
+  stroke-width: 4;
+}
+
+.home-orca-mark {
+  align-self: start;
+  width: min(92%, clamp(290px, 48vw, 590px));
+  margin-top: clamp(4.8rem, 11vw, 7.8rem);
+}
+
+.home-orca-copy {
+  left: clamp(1rem, 4vw, 3rem);
+  right: auto;
+  max-width: min(42rem, calc(100% - clamp(2rem, 8vw, 6rem)));
+  padding: clamp(1rem, 2vw, 1.35rem);
+  border: 1px solid rgba(87, 243, 255, 0.18);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(0, 4, 3, 0.14), rgba(0, 4, 3, 0.52)),
+    radial-gradient(circle at 0 100%, rgba(87, 243, 255, 0.12), transparent 68%);
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(1px);
+}
+
+@media (min-width: 1020px) {
+  .home-orca-copy {
+    max-width: 38rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .home-orca-north-shore {
+    top: clamp(4.5rem, 16vw, 7.2rem);
+    width: 132%;
+  }
+
+  .home-orca-mark {
+    width: min(90%, clamp(270px, 66vw, 470px));
+    margin-top: clamp(4.2rem, 15vw, 6.5rem);
+  }
+
+  .home-orca-copy {
+    max-width: min(38rem, calc(100% - 2rem));
+  }
+}
+
+@media (max-width: 640px) {
+  .home-orca-sky {
+    height: 38%;
+    opacity: 0.7;
+  }
+
+  .home-orca-starname {
+    max-width: 88%;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0.42rem;
+    letter-spacing: 0.36em;
+    opacity: 0.44;
+  }
+
+  .home-orca-north-shore {
+    top: 4.6rem;
+    width: 160%;
+    opacity: 0.45;
+  }
+
+  .home-orca-mark {
+    width: min(88%, 330px);
+    margin-top: 4.9rem;
+  }
+
+  .home-orca-copy {
+    inset-inline: 0.75rem;
+    max-width: none;
+    padding: 0.85rem;
+    background: linear-gradient(180deg, rgba(0, 4, 3, 0.2), rgba(0, 4, 3, 0.68));
+  }
+}
