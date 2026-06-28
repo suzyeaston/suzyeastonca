@@ -6876,3 +6876,90 @@ body,
 @keyframes homeHarbourShimmer { 0%,100%{opacity:.45;transform:translateX(0)} 50%{opacity:.9;transform:translateX(8px)} }
 @media (max-width: 900px) { .home-orca-stage { grid-template-columns: 1fr; } .home-orca-art { justify-self: center; } .home-orca-mark { width: min(100%, 540px); } }
 @media (prefers-reduced-motion: reduce) { .home-harbour-stars circle, .home-harbour-gulls, .home-harbour-reflection { animation: none !important; } }
+
+/* Focused Vancouver harbour hero refinement: balanced title and recognizable waterfront cues. */
+.home-orca-copy .home-arcade-title {
+  max-width: 12ch;
+  font-size: clamp(2.05rem, 4.45vw, 4.35rem);
+  line-height: 1.03;
+  letter-spacing: clamp(0.015em, 0.35vw, 0.055em);
+  text-wrap: balance;
+}
+
+.home-orca-stage {
+  grid-template-columns: minmax(0, 0.82fr) minmax(360px, 1.18fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  background:
+    radial-gradient(circle at 74% 18%, rgba(126, 82, 255, 0.24), transparent 22%),
+    radial-gradient(circle at 89% 46%, rgba(255, 79, 216, 0.14), transparent 18%),
+    radial-gradient(circle at 70% 60%, rgba(87, 243, 255, 0.2), transparent 30%),
+    linear-gradient(180deg, #010512 0%, #07102b 42%, #021a22 68%, #02030a 100%);
+}
+
+.home-orca-copy {
+  max-width: 31rem;
+}
+
+.home-orca-mark {
+  width: min(100%, clamp(380px, 48vw, 660px));
+  aspect-ratio: 760 / 520;
+}
+
+.home-harbour-mountains {
+  fill: url(#home-harbour-mountain-glow);
+  opacity: .86;
+}
+
+.home-harbour-lookout {
+  fill: rgba(3, 7, 14, .94);
+  stroke: rgba(87, 243, 255, .56);
+  stroke-width: 3;
+  stroke-linejoin: miter;
+  filter: drop-shadow(0 0 7px rgba(87, 243, 255, .32));
+}
+
+.home-harbour-sails path {
+  fill: rgba(234, 255, 246, .86);
+  stroke: rgba(87, 243, 255, .92);
+  stroke-width: 3;
+  stroke-linejoin: miter;
+}
+
+.home-harbour-ferry {
+  fill: rgba(5, 12, 18, .88);
+  stroke: rgba(255, 242, 168, .5);
+  stroke-width: 2;
+  opacity: .78;
+}
+
+.home-orca-sprite {
+  transform-origin: 380px 330px;
+}
+
+@media (max-width: 900px) {
+  .home-orca-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .home-orca-copy .home-arcade-title {
+    font-size: clamp(2.15rem, 8vw, 4rem);
+  }
+
+  .home-orca-mark {
+    width: min(100%, 600px);
+  }
+}
+
+@media (max-width: 640px) {
+  .home-orca-copy .home-arcade-title {
+    max-width: 6ch;
+    font-size: clamp(2.25rem, 13vw, 3.35rem);
+    line-height: 1.08;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  .home-orca-mark {
+    width: min(100%, 360px);
+  }
+}

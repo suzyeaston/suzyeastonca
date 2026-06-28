@@ -26,7 +26,7 @@ get_header();
             </div>
             <div class="home-orca-art" aria-hidden="true">
                 <div class="home-orca-mark" role="img" aria-label="<?php echo esc_attr( 'One retro arcade killer whale gliding through Burrard Inlet with CRT glow.' ); ?>">
-                    <svg class="home-orca-sigil" viewBox="0 0 720 500" aria-hidden="true" focusable="false">
+                    <svg class="home-orca-sigil" viewBox="0 0 760 520" aria-hidden="true" focusable="false">
                         <defs>
                             <filter id="home-orca-crt-glow" x="-18%" y="-28%" width="136%" height="156%">
                                 <feGaussianBlur stdDeviation="2.2" result="blur" />
@@ -34,9 +34,13 @@ get_header();
                                 <feMerge><feMergeNode in="cyanGlow" /><feMergeNode in="SourceGraphic" /></feMerge>
                             </filter>
                             <linearGradient id="home-harbour-skyline" x1="0" x2="1" y1="0" y2="0">
-                                <stop offset="0" stop-color="#06111d" />
-                                <stop offset=".5" stop-color="#09252f" />
-                                <stop offset="1" stop-color="#050811" />
+                                <stop offset="0" stop-color="#030914" />
+                                <stop offset=".5" stop-color="#07303a" />
+                                <stop offset="1" stop-color="#02040c" />
+                            </linearGradient>
+                            <linearGradient id="home-harbour-mountain-glow" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0" stop-color="#17285a" stop-opacity=".9" />
+                                <stop offset="1" stop-color="#050d1f" stop-opacity=".96" />
                             </linearGradient>
                             <linearGradient id="home-orca-water" x1="0" x2="1" y1="0" y2="0">
                                 <stop offset="0" stop-color="#39ff14" stop-opacity="0" />
@@ -47,37 +51,50 @@ get_header();
                         </defs>
                         <g class="home-harbour-stars">
                             <circle cx="74" cy="55" r="2" /><circle cx="178" cy="88" r="1.6" /><circle cx="304" cy="44" r="1.8" /><circle cx="510" cy="70" r="1.5" /><circle cx="642" cy="38" r="2" />
-                            <circle cx="590" cy="126" r="1.4" /><circle cx="420" cy="108" r="1.2" /><circle cx="236" cy="34" r="1.1" />
+                            <circle cx="704" cy="92" r="1.4" /><circle cx="590" cy="126" r="1.4" /><circle cx="420" cy="108" r="1.2" /><circle cx="236" cy="34" r="1.1" /><circle cx="118" cy="154" r="1.2" />
                         </g>
                         <g class="home-harbour-gulls">
-                            <path d="M118 126q18-14 36 0q18-14 36 0" />
-                            <path d="M548 114q14-10 28 0q14-10 28 0" />
-                            <path d="M448 166q10-8 20 0q10-8 20 0" />
+                            <path d="M108 132q14-11 28 0q14-11 28 0" />
+                            <path d="M548 112q12-9 24 0q12-9 24 0" />
+                            <path d="M642 158q10-7 20 0q10-7 20 0" />
+                            <path d="M430 174q8-6 16 0q8-6 16 0" />
                         </g>
-                        <path class="home-harbour-mountains" d="M0 236 62 198 118 220 184 150 252 226 316 174 382 232 454 132 536 230 606 176 720 220 720 300 0 300Z" />
+                        <path class="home-harbour-mountains" d="M0 240 68 204 122 218 188 168 244 214 314 145 382 226 448 156 520 232 600 150 674 216 760 184 760 315 0 315Z" />
                         <g class="home-harbour-skyline">
-                            <path class="home-harbour-city" d="M0 302h42v-46h34v-30h32v76h28v-100h44v100h24v-70h38v70h24v-118h46v118h22v-84h40v84h16v-52h28l18-38 18 38h16l18-44 20 44h18l18-34 20 34h24v-80h40v80h30v52h72v58H0Z" />
-                            <path class="home-harbour-sails" d="M428 260 454 204 482 260M468 260 498 194 526 260M508 260 540 208 564 260" />
-                            <path class="home-harbour-lights" d="M58 288h10M146 282h10M282 272h10M620 286h10M654 286h10" />
+                            <path class="home-harbour-city" d="M0 306h34v-38h38v-28h30v66h28v-92h42v92h22v-58h36v58h24v-104h38v104h22v-72h34v72h18v-42h28v42h24v-86h20v-20h24v20h20v86h18v-46h24v46h22v-34h18l18-40 18 40h12l20-52 20 52h14l20-44 22 44h18l18-34 22 34h28v-70h42v70h28v52h84v62H0Z" />
+                            <g class="home-harbour-lookout">
+                                <path d="M444 306V210" />
+                                <path d="M412 210h64l-12-18h-40Z" />
+                                <path d="M426 190h36v-12h-36Z" />
+                            </g>
+                            <g class="home-harbour-sails">
+                                <path d="M536 285 558 226 582 285Z" />
+                                <path d="M572 285 598 216 622 285Z" />
+                                <path d="M610 285 640 224 664 285Z" />
+                                <path d="M650 285 680 236 700 285Z" />
+                            </g>
+                            <path class="home-harbour-lights" d="M58 292h10M146 286h10M282 276h10M392 288h10M712 290h10" />
+                            <path class="home-harbour-ferry" d="M86 322h62l18-14h34l10 14h34l-14 18H100Z" />
                         </g>
                         <g class="home-harbour-reflection">
-                            <path d="M36 330h132M206 344h190M430 336h210" />
-                            <path d="M92 364h84M232 378h148M472 368h112" />
-                            <path d="M410 312l-18 38M454 306l-28 74M500 310l-36 86M542 315l-18 46" />
+                            <path d="M34 346h138M204 356h196M438 348h254" />
+                            <path d="M72 376h110M232 390h164M480 382h144" />
+                            <path d="M532 314l-20 44M572 314l-28 82M614 316l-34 92M658 322l-22 58" />
+                            <path d="M414 318h70M424 335h46" />
                         </g>
                         <g class="home-orca-sprite" filter="url(#home-orca-crt-glow)">
-                            <path class="home-orca-tail" d="M470 280c34-29 70-47 110-54-8 32-26 56-54 72 28 14 48 36 62 66-40-3-76-18-108-46l-44-14 2-20Z" />
-                            <path class="home-orca-body" d="M104 288c14-48 64-83 138-101 76-18 155-1 235 52 28 18 46 34 56 48-20 18-48 31-84 39-70 15-142 23-216 24-62 0-105-20-129-62Z" />
-                            <path class="home-orca-belly" d="M126 298c28 23 68 34 120 32 68-2 132-14 190-36-34 38-86 61-156 69-68 8-119-14-154-65Z" />
-                            <path class="home-orca-saddle" d="M328 200c42 6 78 20 108 42-34-4-59 3-78 20-22 19-50 12-62-16 5-20 16-36 32-46Z" />
-                            <path class="home-orca-dorsal" d="M288 190c10-54 38-89 82-108 2 58-27 94-82 108Z" />
-                            <path class="home-orca-pectoral" d="M278 337c-8 42-34 72-78 91-2-48 24-78 78-91Z" />
-                            <path class="home-orca-eye" d="M150 260c24-20 56-25 92-14-20 24-51 32-88 25Z" />
-                            <path class="home-orca-eye-dot" d="M178 260h8v8h-8z" />
+                            <path class="home-orca-tail" d="M490 306c28-24 58-39 92-45-7 27-22 47-45 60 24 12 41 31 52 56-34-3-64-16-90-39l-37-12 2-17Z" />
+                            <path class="home-orca-body" d="M182 314c12-40 54-70 116-85 64-15 130-1 198 44 24 15 39 29 47 40-17 15-41 26-71 33-59 13-120 19-182 20-52 0-88-17-108-52Z" />
+                            <path class="home-orca-belly" d="M200 322c24 19 57 29 101 27 57-2 111-12 160-30-29 32-72 51-131 58-57 7-100-12-130-55Z" />
+                            <path class="home-orca-saddle" d="M370 240c35 5 65 17 91 35-29-3-50 3-66 17-18 16-42 10-52-13 4-17 13-30 27-39Z" />
+                            <path class="home-orca-dorsal" d="M336 232c8-45 32-75 69-91 2 49-23 79-69 91Z" />
+                            <path class="home-orca-pectoral" d="M328 356c-7 35-29 60-66 77-2-41 20-66 66-77Z" />
+                            <path class="home-orca-eye" d="M220 290c20-17 47-21 77-12-17 20-43 27-74 21Z" />
+                            <path class="home-orca-eye-dot" d="M244 290h7v7h-7z" />
                         </g>
                         <g class="home-orca-waterlines">
-                            <path d="M70 398c42-12 70 12 112 0s70-12 112 0 70 12 112 0 70-12 112 0" />
-                            <path d="M118 430c32-8 54 8 86 0s54-8 86 0 54 8 86 0 54-8 86 0" />
+                            <path d="M98 404c42-12 70 12 112 0s70-12 112 0 70 12 112 0 70-12 112 0" />
+                            <path d="M156 434c32-8 54 8 86 0s54-8 86 0 54 8 86 0 54-8 86 0" />
                         </g>
                     </svg>
                 </div>
