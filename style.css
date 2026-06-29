@@ -6963,3 +6963,64 @@ body,
     width: min(100%, 360px);
   }
 }
+
+/* Pacific Power Play homepage arcade rink. */
+.page-template-page-home-php .hero-game-stage.is-power-play,
+.home .hero-game-stage.is-power-play,
+.front-page .hero-game-stage.is-power-play {
+  border-color: rgba(57, 255, 20, 0.38);
+  background:
+    linear-gradient(135deg, rgba(57, 255, 20, 0.08), transparent 34%, rgba(87, 243, 255, 0.1)),
+    linear-gradient(180deg, rgba(1, 9, 24, 0.94), rgba(0, 3, 12, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(87, 243, 255, 0.18), 0 0 28px rgba(57, 255, 20, 0.16);
+}
+
+.page-template-page-home-php .hero-game-stage.is-power-play .hero-game-stage__header,
+.home .hero-game-stage.is-power-play .hero-game-stage__header,
+.front-page .hero-game-stage.is-power-play .hero-game-stage__header {
+  color: #d8ffef;
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.55), 0 0 18px rgba(87, 243, 255, 0.4);
+}
+
+.page-template-page-home-php .hero-game-stage.is-power-play .hero-game-stage__screen,
+.home .hero-game-stage.is-power-play .hero-game-stage__screen,
+.front-page .hero-game-stage.is-power-play .hero-game-stage__screen {
+  min-height: clamp(260px, 36vw, 420px);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(87, 243, 255, 0.16), transparent 24%),
+    radial-gradient(circle at 88% 52%, rgba(57, 255, 20, 0.12), transparent 30%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 4px),
+    #020713;
+}
+
+.page-template-page-home-php .hero-game-stage.is-power-play .hero-game-stage__screen::before,
+.home .hero-game-stage.is-power-play .hero-game-stage__screen::before,
+.front-page .hero-game-stage.is-power-play .hero-game-stage__screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0 14%, rgba(57, 255, 20, 0.09) 15% 17%, transparent 18% 45%, rgba(87, 243, 255, 0.08) 46% 48%, transparent 49%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.page-template-page-home-php .pacific-power-play-canvas,
+.home .pacific-power-play-canvas,
+.front-page .pacific-power-play-canvas {
+  touch-action: none;
+}
+
+.page-template-page-home-php .pacific-power-play-ui .hero-galaga-status,
+.home .pacific-power-play-ui .hero-galaga-status,
+.front-page .pacific-power-play-ui .hero-galaga-status {
+  color: #d8ffef;
+  border-color: rgba(57, 255, 20, 0.58);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-template-page-home-php .hero-game-stage.is-power-play .hero-game-stage__screen::before,
+  .home .hero-game-stage.is-power-play .hero-game-stage__screen::before,
+  .front-page .hero-game-stage.is-power-play .hero-game-stage__screen::before {
+    opacity: 0.45;
+  }
+}
