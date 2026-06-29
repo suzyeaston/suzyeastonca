@@ -3,6 +3,9 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
     "test": "node --test \"./__tests__/**/*.test.js\"",
     "build:gastown-world": "npm run sync:cov && node scripts/build-gastown-world.js",
     "sync:cov": "node scripts/sync-cov-open-data.js",
@@ -12,6 +15,12 @@
     "local:reset": "docker compose down -v",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed"
+  },
+  "dependencies": {
+    "@astrojs/preact": "^4.1.0",
+    "astro": "^5.16.3",
+    "pixi.js": "^8.14.0",
+    "preact": "^10.28.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0"
