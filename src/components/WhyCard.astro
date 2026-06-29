@@ -1,0 +1,9 @@
+---
+const { title, sentence, proof, tone = 'cyan' } = Astro.props;
+---
+<article class:list={["save-card", `save-card--${tone}`]} tabindex="0">
+  <span class="save-card__slot">SAVE SLOT</span>
+  <h3>{title}</h3>
+  <p>{sentence}</p>
+  <strong>{proof}</strong>
+</article>

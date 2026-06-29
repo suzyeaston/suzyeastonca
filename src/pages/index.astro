@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroHarbor from '../islands/HeroHarbor';
+import SectionHeader from '../components/SectionHeader.astro';
+import WhyCard from '../components/WhyCard.astro';
+import MissionCard from '../components/MissionCard.astro';
+import FooterSignal from '../components/FooterSignal.astro';
+---
+<BaseLayout>
+  <main id="main" class="home-shell">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__grid">
+        <div class="hero__copy">
+          <p class="kicker">80S HARBOR BOOT · CREATIVE TECH LAB</p>
+          <h1 id="hero-title">SUZY EASTON</h1>
+          <p class="hero__subhead">Vancouver musician, AI strategist, creative technologist, and builder of practical systems with useful weirdness baked in.</p>
+          <div class="hero__actions" aria-label="Primary actions">
+            <a class="btn btn--primary" href="#missions">PRESS START</a>
+            <a class="btn" href="/work-with-suzy/">Hire Suzy</a>
+            <a class="btn" href="#missions">Explore Projects</a>
+            <a class="btn" href="/music-releases/">Listen to Music</a>
+          </div>
+        </div>
+        <div class="hero__scene" aria-label="Stylized Vancouver night harbor with skyline, mountains, radar sweep, and an orca signal.">
+          <HeroHarbor client:visible />
+          <div class="hero__labels" aria-hidden="true"><span>BURRARD INLET</span><span>ORCA VECTOR</span><span>LAB POWER: 99%</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="why-title">
+      <SectionHeader id="why-title" eyebrow="WHY SUZY" title="Three save slots, no filler." copy="A human bridge between songs, systems, strategy, and the part where ideas need to actually ship." />
+      <div class="save-grid">
+        <WhyCard title="Practical AI Systems" sentence="AI workflows that reduce drag instead of adding ceremony." proof="Proof: track analysis, guardrails, outage intel, useful automations." tone="green" />
+        <WhyCard title="Creative Technology" sentence="Playable interfaces, civic-data worlds, and tools that feel authored." proof="Proof: Gastown Simulator, arcade islands, signal dashboards." tone="magenta" />
+        <WhyCard title="Music + Production Instinct" sentence="A maker’s ear for rhythm, signal, mood, and what needs to be cut." proof="Proof: records, touring scars, mix notes that do not flatter nonsense." tone="amber" />
+      </div>
+    </section>
+
+    <section id="missions" class="panel panel--missions" aria-labelledby="missions-title">
+      <SectionHeader id="missions-title" eyebrow="FEATURED MISSIONS" title="Cartridges for modern chaos." copy="Three doors into the work: status systems, civic play, and music-informed analysis." />
+      <div class="mission-grid">
+        <MissionCard title="Lousy Outages" label="MISSION 01 · STATUS WEATHER" copy="A sharper signal board for SaaS incidents, public chatter, and the moment official pages become too polite." stat="LIVE INTEL" href="/lousy-outages/" cta="Check status" tone="green" />
+        <MissionCard title="Gastown Simulator" label="MISSION 02 · CIVIC ARCADE" copy="A playable Vancouver corridor built from open data, street mood, route logic, and a suspicious love of map screens." stat="WORLD DATA" href="/gastown-sim/" cta="Walk Gastown" tone="cyan" />
+        <MissionCard title="Track Analyzer" label="MISSION 03 · AUDIO NOTES" copy="Upload a track and get direct notes on lyrics, feel, structure, and the move that might actually help." stat="NO FLUFF" href="/suzys-track-analyzer/" cta="Analyze track" tone="magenta" />
+      </div>
+    </section>
+
+    <section class="arcade-slot" aria-labelledby="arcade-title">
+      <div class="cabinet" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div>
+        <p class="kicker">PLAYABLE ARCADE SLOT</p>
+        <h2 id="arcade-title">Featured experiment: Pacific Power Play</h2>
+        <p>A compact demo bay for rotating browser experiments: playable prototypes, lab notes, strange instruments, and tiny civic machines. Today’s cartridge is rain-city hockey energy; tomorrow’s can be swapped without rebuilding the whole cabinet.</p>
+        <a class="btn btn--primary" href="/arcade/">Choose your line</a>
+      </div>
+    </section>
+
+    <section class="manifesto" aria-labelledby="manifesto-title">
+      <p class="kicker">ABOUT / MANIFESTO</p>
+      <h2 id="manifesto-title">Direct, experimental, useful.</h2>
+      <p>Suzy builds in public, listens like a producer, and treats technology like a working instrument: tune it, test it, remove the ornamental nonsense. The sweet spot is a system with personality that still earns its keep.</p>
+    </section>
+  </main>
+  <FooterSignal />
+</BaseLayout>
