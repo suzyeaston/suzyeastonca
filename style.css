@@ -7070,3 +7070,92 @@ body,
 @media (max-width: 900px) { .home-play-mode { grid-template-columns: 1fr; } .power-play-select { grid-template-columns: 1fr; overflow: auto; } .power-play-select__grid { grid-template-columns: repeat(2, minmax(170px, 1fr)); } .power-play-card--big .power-play-card__portrait { min-height: 96px; } }
 @media (max-width: 560px) { .home-play-mode .hero-game-stage__screen { min-height: 520px; } .power-play-select { padding: .55rem; } .power-play-select__grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; } .power-play-card { min-width: 78vw; scroll-snap-align: center; } .power-play-select__hero, .power-play-select__opponent { display: none; } .power-play-select > .power-play-ready { position: sticky; bottom: 0; } }
 @media (prefers-reduced-motion: reduce) { .power-play-attract strong, .power-play-card.is-selected::before, .power-play-p1, .power-play-ready span, .power-play-vs { animation: none; } }
+
+/* Pacific Power Play state visibility fixes. Keep these after legacy Galaga rules. */
+.page-template-page-home-php .hero-game-stage.is-power-play .pacific-power-play-overlay,
+.home .hero-game-stage.is-power-play .pacific-power-play-overlay,
+.front-page .hero-game-stage.is-power-play .pacific-power-play-overlay {
+  inset: 0;
+  transform: none;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  z-index: 7;
+}
+
+.page-template-page-home-php .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-overlay,
+.page-template-page-home-php .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-overlay,
+.page-template-page-home-php .hero-game-stage.is-power-play[data-power-play-state="versus"] .pacific-power-play-overlay,
+.page-template-page-home-php .hero-game-stage.is-power-play[data-power-play-state="paused"] .pacific-power-play-overlay,
+.home .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-overlay,
+.home .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-overlay,
+.home .hero-game-stage.is-power-play[data-power-play-state="versus"] .pacific-power-play-overlay,
+.home .hero-game-stage.is-power-play[data-power-play-state="paused"] .pacific-power-play-overlay,
+.front-page .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-overlay,
+.front-page .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-overlay,
+.front-page .hero-game-stage.is-power-play[data-power-play-state="versus"] .pacific-power-play-overlay,
+.front-page .hero-game-stage.is-power-play[data-power-play-state="paused"] .pacific-power-play-overlay {
+  display: block;
+  pointer-events: auto;
+}
+
+.page-template-page-home-php .hero-game-stage.is-power-play[data-power-play-state="playing"] .pacific-power-play-overlay,
+.page-template-page-home-php .hero-game-stage.is-power-play[data-power-play-state="goal"] .pacific-power-play-overlay,
+.home .hero-game-stage.is-power-play[data-power-play-state="playing"] .pacific-power-play-overlay,
+.home .hero-game-stage.is-power-play[data-power-play-state="goal"] .pacific-power-play-overlay,
+.front-page .hero-game-stage.is-power-play[data-power-play-state="playing"] .pacific-power-play-overlay,
+.front-page .hero-game-stage.is-power-play[data-power-play-state="goal"] .pacific-power-play-overlay {
+  display: none;
+  pointer-events: none;
+}
+
+.page-template-page-home-php .pacific-power-play-overlay [hidden],
+.home .pacific-power-play-overlay [hidden],
+.front-page .pacific-power-play-overlay [hidden] {
+  display: none !important;
+}
+
+.page-template-page-home-php .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-ui,
+.home .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-ui,
+.front-page .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-ui,
+.page-template-page-home-php .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-ui,
+.home .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-ui,
+.front-page .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-ui {
+  opacity: 0;
+}
+
+.page-template-page-home-php .home-play-mode,
+.home .home-play-mode,
+.front-page .home-play-mode {
+  grid-template-columns: minmax(220px, 0.28fr) minmax(680px, 0.72fr);
+  gap: clamp(1rem, 2.5vw, 2rem);
+}
+
+.page-template-page-home-php .home-play-mode .home-arcade-game,
+.home .home-play-mode .home-arcade-game,
+.front-page .home-play-mode .home-arcade-game {
+  max-width: none;
+  width: 100%;
+}
+
+.page-template-page-home-php .home-play-mode .hero-game-stage__screen,
+.home .home-play-mode .hero-game-stage__screen,
+.front-page .home-play-mode .hero-game-stage__screen {
+  min-height: clamp(500px, 48vw, 620px);
+}
+
+.page-template-page-home-php .power-play-select,
+.home .power-play-select,
+.front-page .power-play-select {
+  font-size: clamp(0.42rem, 0.68vw, 0.56rem);
+  overflow: auto;
+}
+
+@media (max-width: 1080px) {
+  .page-template-page-home-php .home-play-mode,
+  .home .home-play-mode,
+  .front-page .home-play-mode {
+    grid-template-columns: 1fr;
+  }
+}
