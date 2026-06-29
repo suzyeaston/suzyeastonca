@@ -7024,3 +7024,49 @@ body,
     opacity: 0.45;
   }
 }
+
+/* Pacific Power Play 1994 character-select upgrade. */
+.home-play-mode { grid-template-columns: minmax(220px, 0.32fr) minmax(0, 0.68fr); align-items: stretch; }
+.home-play-mode .home-arcade-game { min-width: 0; }
+.home-play-mode .hero-game-stage__screen { min-height: clamp(420px, 46vw, 560px); overflow: hidden; }
+.power-play-attract, .power-play-select, .power-play-vs, .power-play-ready { position: absolute; inset: 0; z-index: 6; color: #d8ffef; font-family: 'Press Start 2P', monospace; }
+.power-play-attract { display: grid; place-items: center; gap: 1rem; padding: 2rem; text-align: center; background: radial-gradient(circle at 50% 20%, rgba(57,255,20,.2), transparent 28%), repeating-linear-gradient(180deg, rgba(255,255,255,.05) 0 1px, transparent 1px 5px), #020713; }
+.power-play-attract h3 { margin: 0; font-size: clamp(1.4rem, 4vw, 3.2rem); color: #fff066; text-shadow: 4px 4px 0 #ff4fd8, 0 0 18px rgba(57,255,20,.7); }
+.power-play-attract strong { color: #39ff14; animation: powerPlayBlink .85s steps(2,end) infinite; }
+.power-play-attract small { line-height: 1.9; color: #8ef6ff; }
+.power-play-select { display: grid; grid-template-columns: minmax(170px, .85fr) minmax(280px, 1.5fr) minmax(150px, .75fr); grid-template-rows: 1fr auto; gap: .75rem; padding: .85rem; background: linear-gradient(135deg, rgba(255,255,102,.08), transparent 18%), repeating-linear-gradient(135deg, rgba(87,243,255,.08) 0 2px, transparent 2px 14px), #020713; }
+.power-play-select__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; align-content: center; }
+.power-play-card { position: relative; display: grid; gap: .3rem; width: 100%; padding: .45rem; border: 3px solid #57f3ff; background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.16) 0 1px, transparent 2px), linear-gradient(160deg, rgba(9,31,58,.95), rgba(1,7,19,.98)); color: #fff; text-align: left; font: inherit; box-shadow: 5px 5px 0 rgba(0,0,0,.8), inset 0 0 0 2px rgba(255,255,255,.08); cursor: pointer; image-rendering: pixelated; }
+.power-play-card.is-selected { border-color: #fff066; transform: translate(-2px,-2px); box-shadow: 0 0 0 3px #39ff14, 7px 7px 0 #ff4fd8, 0 0 22px rgba(57,255,20,.48); }
+.power-play-card.is-selected::before { content: 'P1'; position: absolute; top: -.8rem; left: .4rem; padding: .2rem .35rem; background: #fff066; color: #020713; animation: powerPlayBlink .7s steps(2,end) infinite; }
+.power-play-card__set { color: #fff066; font-size: .45rem; letter-spacing: .06em; }
+.power-play-card__portrait { position: relative; min-height: 72px; border: 2px solid #d8ffef; background: radial-gradient(circle at 50% 28%, var(--c3) 0 10px, transparent 11px), linear-gradient(145deg, var(--c1), #020713 60%), repeating-radial-gradient(circle, rgba(255,255,255,.16) 0 1px, transparent 1px 5px); overflow: hidden; }
+.power-play-card__portrait::before { content: ''; position: absolute; left: 50%; bottom: 10px; width: 48px; height: 34px; transform: translateX(-50%); background: var(--c2); box-shadow: -18px 10px 0 var(--c1), 18px 10px 0 var(--c1); }
+.power-play-card__portrait i { position: absolute; left: 50%; top: 18px; width: 28px; height: 22px; transform: translateX(-50%); background: #f6efe1; box-shadow: inset 0 5px 0 var(--c1), 0 0 0 3px rgba(2,7,19,.55); }
+.power-play-card__name { color: #d8ffef; font-size: clamp(.48rem, .8vw, .62rem); line-height: 1.35; min-height: 2.5em; }
+.power-play-card__pos { position: absolute; right: .35rem; top: .35rem; color: #020713; background: #39ff14; padding: .2rem; font-size: .55rem; }
+.power-play-card__stats { display: grid; gap: .18rem; }
+.power-play-card__stats em { display: grid; grid-template-columns: 5.8em 1fr; gap: .25rem; align-items: center; font-style: normal; font-size: .43rem; color: #8ef6ff; }
+.power-play-card__stats b { height: 5px; background: linear-gradient(90deg, #39ff14, #fff066); box-shadow: 0 0 8px rgba(57,255,20,.7); }
+.power-play-card__ability { border-top: 1px solid rgba(87,243,255,.45); padding-top: .25rem; color: #fff066; font-size: .44rem; }
+.power-play-card--big { min-height: 100%; align-content: start; }
+.power-play-card--big .power-play-card__portrait { min-height: 160px; }
+.power-play-p1 { position: absolute; top: .4rem; left: .4rem; padding: .25rem .4rem; background: #fff066; color: #020713; animation: powerPlayBlink .7s steps(2,end) infinite; }
+.power-play-select__opponent { display: grid; align-content: center; justify-items: center; gap: .75rem; padding: .75rem; border: 3px solid #ff4fd8; background: linear-gradient(180deg, rgba(255,79,216,.16), rgba(1,7,19,.96)); text-align: center; }
+.power-play-select__opponent b, .power-play-vs b { color: #fff066; font-size: clamp(2rem, 6vw, 5rem); text-shadow: 4px 4px 0 #ff4fd8; }
+.power-play-select__opponent span { color: #ff4fd8; line-height: 1.5; }
+.power-play-select__opponent i { color: #8ef6ff; font-style: normal; font-size: .55rem; }
+.power-play-select > .power-play-ready { position: static; grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 1rem; padding: .4rem; background: rgba(2,7,19,.82); border: 2px solid rgba(57,255,20,.5); }
+.power-play-ready span { color: #39ff14; animation: powerPlayBlink .8s steps(2,end) infinite; }
+.power-play-vs { display: grid; place-items: center; align-content: center; gap: 1rem; text-align: center; background: repeating-linear-gradient(180deg, rgba(255,255,255,.07) 0 2px, transparent 2px 7px), #020713; animation: powerPlayGlitch .32s steps(2,end) infinite; }
+.power-play-vs h3, .power-play-vs p { margin: 0; color: #d8ffef; line-height: 1.5; }
+.pacific-power-play-ui { pointer-events: none; }
+.pacific-power-play-ui .hero-galaga-wavecall { color: #fff066; background: rgba(2,7,19,.86); border: 2px solid #ff4fd8; }
+.power-play-mini-card { position: absolute; left: .75rem; bottom: .75rem; z-index: 4; display: grid; gap: .2rem; max-width: 180px; padding: .55rem; border: 2px solid #57f3ff; background: rgba(2,7,19,.9); color: #d8ffef; font-family: 'Press Start 2P', monospace; font-size: .48rem; box-shadow: 4px 4px 0 rgba(0,0,0,.75); }
+.power-play-mini-card b { color: #39ff14; } .power-play-mini-card i { color: #fff066; font-style: normal; }
+.power-play-goal-flash { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; color: #020713; background: rgba(255,240,80,.58); font-family: 'Press Start 2P', monospace; font-size: clamp(1.6rem, 5vw, 4rem); text-shadow: 3px 3px 0 #ff4fd8; pointer-events: none; }
+@keyframes powerPlayBlink { 50% { opacity: .25; } }
+@keyframes powerPlayGlitch { 50% { filter: hue-rotate(40deg); transform: translateX(2px); } }
+@media (max-width: 900px) { .home-play-mode { grid-template-columns: 1fr; } .power-play-select { grid-template-columns: 1fr; overflow: auto; } .power-play-select__grid { grid-template-columns: repeat(2, minmax(170px, 1fr)); } .power-play-card--big .power-play-card__portrait { min-height: 96px; } }
+@media (max-width: 560px) { .home-play-mode .hero-game-stage__screen { min-height: 520px; } .power-play-select { padding: .55rem; } .power-play-select__grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; } .power-play-card { min-width: 78vw; scroll-snap-align: center; } .power-play-select__hero, .power-play-select__opponent { display: none; } .power-play-select > .power-play-ready { position: sticky; bottom: 0; } }
+@media (prefers-reduced-motion: reduce) { .power-play-attract strong, .power-play-card.is-selected::before, .power-play-p1, .power-play-ready span, .power-play-vs { animation: none; } }
