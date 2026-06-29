@@ -77,10 +77,10 @@ function retro_game_music_theme_scripts() {
             true
         );
         wp_enqueue_script(
-            'hero-galaga',
-            get_template_directory_uri() . '/js/hero-galaga.js',
+            'pacific-power-play',
+            get_template_directory_uri() . '/js/pacific-power-play.js',
             array( 'hero-ship-drag' ),
-            filemtime( get_template_directory() . '/js/hero-galaga.js' ),
+            filemtime( get_template_directory() . '/js/pacific-power-play.js' ),
             true
         );
 
