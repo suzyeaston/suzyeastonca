@@ -7159,3 +7159,166 @@ body,
     grid-template-columns: 1fr;
   }
 }
+
+/* Focused arcade title-screen art direction pass. */
+.home-orca-hero .home-orca-stage {
+  border-width: 2px;
+  border-color: rgba(57, 255, 20, 0.58);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.78), 0 24px 80px rgba(0, 0, 0, 0.72), inset 0 0 52px rgba(57, 255, 20, 0.1), 0 0 42px rgba(87, 243, 255, 0.18);
+}
+
+.home-orca-stage::after {
+  background:
+    linear-gradient(90deg, rgba(57, 255, 20, 0.08), transparent 9%, transparent 91%, rgba(87, 243, 255, 0.08)),
+    radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.64) 100%);
+}
+
+.home-title-screen-stack {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  color: #ffff66;
+  font-size: clamp(0.62rem, 1.1vw, 0.82rem);
+  letter-spacing: 0.08em;
+  line-height: 1.55;
+  text-transform: uppercase;
+}
+
+.home-title-screen-prompt {
+  width: fit-content;
+  margin-top: 1rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(255, 255, 102, 0.48);
+  color: #ffff66;
+  background: rgba(0, 0, 0, 0.46);
+  box-shadow: 0 0 18px rgba(255, 255, 102, 0.16);
+  animation: homeInsertCoinBlink 1.25s steps(2, end) infinite;
+}
+
+.home-title-screen-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  margin-top: 0.85rem;
+  color: rgba(126, 246, 209, 0.82);
+  font-size: clamp(0.5rem, 0.85vw, 0.62rem);
+  letter-spacing: 0.08em;
+}
+
+.home-title-screen-meta span {
+  padding: 0.25rem 0.45rem;
+  border: 1px solid rgba(87, 243, 255, 0.24);
+  background: rgba(0, 20, 18, 0.5);
+}
+
+.home-press-start {
+  color: #020805;
+  background: #39ff14;
+  border-color: #ffff66;
+  box-shadow: 0 0 18px rgba(57, 255, 20, 0.45), inset 0 0 0 2px rgba(255, 255, 102, 0.32);
+  animation: homeStartPulse 1.2s steps(2, end) infinite;
+}
+
+.home-orca-hero.is-starting .home-orca-stage {
+  animation: homeCoinAccepted 900ms steps(4, end) 1;
+}
+
+.home-orca-hero.is-signal-locking .home-orca-stage::before {
+  opacity: 0.95;
+  animation: homeSignalLock 280ms steps(3, end) infinite;
+}
+
+.home-level-intro {
+  display: grid;
+  gap: 0.35rem;
+  width: min(1180px, calc(100% - 2rem));
+  margin: clamp(0.25rem, 1vw, 0.75rem) auto 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 255, 102, 0.42);
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(255, 72, 206, 0.12), rgba(0, 20, 12, 0.84));
+  color: #dfffea;
+}
+
+.home-level-intro span,
+.home-play-mode .home-section-kicker,
+.home-mission-select .home-section-kicker,
+.home-unlocks .home-section-kicker {
+  color: #ff4dce;
+}
+
+.home-level-intro strong {
+  color: #ffff66;
+}
+
+.home-level-intro em {
+  color: #57f3ff;
+  font-style: normal;
+}
+
+#lousy-outages-teaser {
+  scroll-margin-top: calc(var(--se-header-height, 72px) + 1rem);
+}
+
+.home-play-mode {
+  margin-top: clamp(1.25rem, 3vw, 2.25rem);
+}
+
+.home-play-mode__copy h2::before,
+.home-mission-select h2::before,
+.home-unlocks h2::before {
+  content: "// ";
+  color: #39ff14;
+}
+
+.site-footer::before {
+  content: "CREDITS // MADE IN VANCOUVER";
+  display: block;
+  margin: 0 auto 1rem;
+  color: #ffff66;
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(0.58rem, 1vw, 0.75rem);
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+@keyframes homeInsertCoinBlink {
+  0%, 48% { opacity: 1; }
+  49%, 100% { opacity: 0.42; }
+}
+
+@keyframes homeCoinAccepted {
+  0%, 100% { filter: none; }
+  20% { filter: brightness(1.45) saturate(1.4); transform: translateY(-1px); }
+  38% { filter: hue-rotate(24deg) contrast(1.25); transform: translateX(2px); }
+  56% { filter: brightness(1.25); transform: translateX(-2px); }
+}
+
+@keyframes homeSignalLock {
+  from { transform: translateY(-18px); }
+  to { transform: translateY(18px); }
+}
+
+@media (max-width: 640px) {
+  .home-title-screen-prompt {
+    width: 100%;
+    text-align: center;
+  }
+
+  .home-title-screen-meta {
+    display: grid;
+  }
+
+  .home-level-intro {
+    width: min(100% - 1rem, 1180px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-title-screen-prompt,
+  .home-press-start,
+  .home-orca-hero.is-starting .home-orca-stage,
+  .home-orca-hero.is-signal-locking .home-orca-stage::before {
+    animation: none !important;
+  }
+}

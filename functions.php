@@ -83,6 +83,13 @@ function retro_game_music_theme_scripts() {
             filemtime( get_template_directory() . '/js/pacific-power-play.js' ),
             true
         );
+        wp_enqueue_script(
+            'home-arcade-start',
+            get_template_directory_uri() . '/js/home-arcade-start.js',
+            array(),
+            filemtime( get_template_directory() . '/js/home-arcade-start.js' ),
+            true
+        );
 
         $teaser_css = get_template_directory() . '/assets/css/lousy-outages-teaser.css';
         if ( file_exists( $teaser_css ) ) {

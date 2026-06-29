@@ -5,7 +5,7 @@ get_header();
 
 <main id="homepage-content" class="home-layout home-arcade-layout">
 
-    <section class="home-orca-hero hero hero-section crt-block" aria-labelledby="home-hero-title">
+    <section class="home-orca-hero hero hero-section crt-block" aria-labelledby="home-hero-title" data-arcade-hero>
         <div class="home-orca-stage">
             <span class="screen-reader-text"><?php echo esc_html( 'One retro arcade killer whale gliding beside North Shore mountains, CRT stars, and Burrard Inlet water.' ); ?></span>
             <div class="home-orca-sky" aria-hidden="true">
@@ -18,10 +18,15 @@ get_header();
             <div class="home-orca-copy">
                 <p class="hero-eyebrow pixel-font"><?php echo esc_html( 'music // ai strategy // creative technology' ); ?></p>
                 <h1 id="home-hero-title" class="hero-core-headline home-arcade-title"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
+                <div class="home-title-screen-stack pixel-font" aria-label="music // ai strategy, creative technology, vancouver systems"><span><?php echo esc_html( 'music // ai strategy' ); ?></span><span><?php echo esc_html( 'creative technology' ); ?></span><span><?php echo esc_html( 'vancouver systems' ); ?></span></div>
                 <p class="hero-copy home-arcade-copy"><?php echo esc_html( 'I build practical AI workflows, music tools, outage dashboards, and digital systems for creative and technical teams.' ); ?></p>
+                <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
+                <div class="home-title-screen-meta pixel-font" aria-hidden="true"><span>1 PLAYER</span><span>VANCOUVER SYSTEMS ONLINE</span><span>AI / MUSIC / SYSTEMS</span></div>
                 <div class="home-orca-actions home-cta-row hero-cta-group">
-                    <a href="#mission-select" class="pixel-button hero-primary-cta"><?php echo esc_html( 'Enter the lab' ); ?></a>
-                    <a href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>" class="pixel-button pixel-button--secondary"><?php echo esc_html( 'Check Lousy Outages' ); ?></a>
+                    <button type="button" class="pixel-button hero-primary-cta home-press-start" data-home-start data-start-label="PRESS START"><?php echo esc_html( 'PRESS START' ); ?></button>
+                    <a href="#lousy-outages-teaser" class="pixel-button pixel-button--secondary"><?php echo esc_html( 'CHECK LOUSY OUTAGES' ); ?></a>
+                    <a href="#mission-select" class="pixel-button pixel-button--secondary"><?php echo esc_html( 'SELECT SYSTEM' ); ?></a>
+                    <button class="pixel-button pixel-button--secondary" type="button" data-contact-trigger aria-haspopup="dialog" aria-controls="contact-suzy-modal"><?php echo esc_html( 'CONTACT SUZY' ); ?></button>
                 </div>
             </div>
             <div class="home-orca-art" aria-hidden="true">
@@ -102,11 +107,13 @@ get_header();
         </div>
     </section>
 
+    <div class="home-level-intro home-level-intro--outages pixel-font" aria-hidden="true"><span>LEVEL 01</span><strong>STATUS BOARD FOR MODERN CHAOS</strong><em>LIVE OUTAGE SIGNAL</em></div>
+
     <?php get_template_part( 'parts/lousy-outages-teaser' ); ?>
 
     <section class="home-play-mode crt-block" aria-labelledby="home-play-mode-title">
         <div class="home-play-mode__copy">
-            <p class="home-section-kicker pixel-font"><?php echo esc_html( 'PLAY MODE' ); ?></p>
+            <p class="home-section-kicker pixel-font"><?php echo esc_html( 'BONUS LEVEL' ); ?></p>
             <h2 id="home-play-mode-title" class="pixel-font"><?php echo esc_html( 'Pacific Power Play' ); ?></h2>
             <p><?php echo esc_html( 'Choose your line, drop the puck, and survive the rain city static.' ); ?></p>
             <button type="button" class="pixel-button home-arcade-start" data-arcade-start><?php echo esc_html( 'Choose Your Line' ); ?></button>
@@ -127,8 +134,8 @@ get_header();
     </section>
 
     <section id="mission-select" class="home-project-grid home-mission-select crt-block" aria-labelledby="selected-projects-title">
-        <p class="home-section-kicker pixel-font"><?php echo esc_html( 'SELECT SYSTEM' ); ?></p>
-        <h2 id="selected-projects-title" class="pixel-font"><?php echo esc_html( 'SELECT SYSTEM' ); ?></h2>
+        <p class="home-section-kicker pixel-font"><?php echo esc_html( 'LEVEL SELECT' ); ?></p>
+        <h2 id="selected-projects-title" class="pixel-font"><?php echo esc_html( 'CHOOSE YOUR SYSTEM' ); ?></h2>
         <div class="selected-work__grid home-mission-grid">
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'status weather' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Lousy Outages' ); ?></h3><p><?php echo esc_html( 'A status board for SaaS weirdness, provider incidents, and the moments official pages get too polite.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>"><?php echo esc_html( 'Check status' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'civic arcade world' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Gastown Simulator' ); ?></h3><p><?php echo esc_html( 'A playable Vancouver corridor built from civic data, route logic, street mood, and arcade-map obsession.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/gastown-sim/' ) ); ?>"><?php echo esc_html( 'Walk Gastown' ); ?></a></article>
@@ -140,8 +147,8 @@ get_header();
     </section>
 
     <section id="music" class="music-world home-unlocks crt-block" aria-labelledby="music-world-title">
-        <p class="home-section-kicker pixel-font"><?php echo esc_html( 'music / tools / contact' ); ?></p>
-        <h2 id="music-world-title" class="pixel-font"><?php echo esc_html( 'Music, tools, contact' ); ?></h2>
+        <p class="home-section-kicker pixel-font"><?php echo esc_html( 'UNLOCKS' ); ?></p>
+        <h2 id="music-world-title" class="pixel-font"><?php echo esc_html( 'Music / tools / contact' ); ?></h2>
         <p><?php echo esc_html( 'The records, the builds, and the places where those two things start interfering with each other.' ); ?></p>
         <div class="home-cta-row">
             <a class="pixel-button" href="https://suzyeaston.bandcamp.com" target="_blank" rel="noopener noreferrer"><?php echo esc_html( 'Bandcamp' ); ?></a>
