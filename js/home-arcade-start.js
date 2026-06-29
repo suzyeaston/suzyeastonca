@@ -23,22 +23,22 @@
       started = true;
       document.body.classList.add('is-game-started');
       hero.classList.add('is-starting');
-      button.textContent = 'STARTING';
+      button.textContent = 'PLAYER 1 READY';
       button.setAttribute('aria-disabled', 'true');
       if (status) status.textContent = 'COIN ACCEPTED';
 
       if (reduceMotion) {
-        if (status) status.textContent = 'LOADING SYSTEMS';
+        if (status) status.textContent = 'LEVEL 01';
         scrollToLevel();
         return;
       }
 
       window.setTimeout(function () {
         hero.classList.add('is-signal-locking');
-        if (status) status.textContent = 'LOADING SYSTEMS';
+        if (status) status.textContent = 'LEVEL 01';
       }, 420);
       window.setTimeout(function () {
-        if (status) status.textContent = 'LEVEL 01 READY';
+        if (status) status.textContent = 'LEVEL 01 // LOUSY OUTAGES';
         scrollToLevel();
       }, 980);
       window.setTimeout(function () {
