@@ -208,6 +208,28 @@ function se_enqueue_asmr_lab_assets() {
 add_action( 'wp_enqueue_scripts', 'se_enqueue_asmr_lab_assets' );
 
 
+function se_enqueue_loop_lab_assets() {
+    if ( ! is_page_template( 'page-loop-lab.php' ) ) {
+        return;
+    }
+
+    $dir = get_stylesheet_directory();
+    $uri = get_stylesheet_directory_uri();
+
+    $css_path = '/assets/css/loop-lab.css';
+    if ( file_exists( $dir . $css_path ) ) {
+        wp_enqueue_style( 'se-loop-lab', $uri . $css_path, array(), filemtime( $dir . $css_path ) );
+    }
+
+    $app_path = '/js/loop-lab.js';
+    if ( file_exists( $dir . $app_path ) ) {
+        wp_enqueue_script( 'se-loop-lab', $uri . $app_path, array(), filemtime( $dir . $app_path ), true );
+    }
+}
+add_action( 'wp_enqueue_scripts', 'se_enqueue_loop_lab_assets' );
+
+
+
 function se_enqueue_gastown_sim_assets() {
     if ( ! is_page_template( 'page-gastown-sim.php' ) ) {
         return;
