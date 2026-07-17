@@ -6,19 +6,19 @@ import WhyCard from '../components/WhyCard.astro';
 import MissionCard from '../components/MissionCard.astro';
 import FooterSignal from '../components/FooterSignal.astro';
 ---
-<BaseLayout>
+<BaseLayout title="Suzy Easton — Music, AI Strategy & Creative Technology" description="Suzy Easton is a Vancouver-based musician, AI strategist and creative technologist working across practical systems, sound and experimental technology.">
   <main id="main" class="home-shell">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero__grid">
         <div class="hero__copy">
           <p class="kicker">80S HARBOR BOOT · CREATIVE TECH LAB</p>
           <h1 id="hero-title">SUZY EASTON</h1>
-          <p class="hero__subhead">Vancouver musician, AI strategist, creative technologist, and builder of practical systems with useful weirdness baked in.</p>
+          <p class="hero__subhead">Suzy Easton is a Vancouver-based musician, AI strategist and creative technologist. She works as an AI Strategist and Solutions Engineer at Quercus IT, an Edmonton-based MSP, while continuing to perform, record and build experimental music and technology projects.</p>
           <div class="hero__actions" aria-label="Primary actions">
-            <a class="btn btn--primary" href="#missions">PRESS START</a>
-            <a class="btn" href="/work-with-suzy/">Hire Suzy</a>
-            <a class="btn" href="#missions">Explore Projects</a>
-            <a class="btn" href="/music-releases/">Listen to Music</a>
+            <a class="btn btn--primary" href="#current-signal">PRESS START</a>
+            <a class="btn" href="/work-with-suzy/">SYSTEMS MODE</a>
+            <a class="btn" href="/music-releases/">MUSIC MODE</a>
+            <a class="btn" href="/contact/">OPEN A CHANNEL</a>
           </div>
         </div>
         <div class="hero__scene" aria-label="Stylized Vancouver night harbor with skyline, mountains, radar sweep, and an orca signal.">
@@ -28,17 +28,38 @@ import FooterSignal from '../components/FooterSignal.astro';
       </div>
     </section>
 
+    <section id="current-signal" class="current-signal" aria-labelledby="current-signal-title">
+      <h2 id="current-signal-title">CURRENT SIGNAL</h2>
+      <div class="current-signal__grid">
+        <div>
+          <p class="current-signal__label">ROLE</p>
+          <p>AI Strategist + Solutions Engineer</p>
+          <span>Quercus IT · Edmonton-based MSP</span>
+        </div>
+        <div>
+          <p class="current-signal__label">LOCATION</p>
+          <p>Vancouver, British Columbia</p>
+          <span>working across BC, Alberta and Canadian technology communities</span>
+        </div>
+        <div>
+          <p class="current-signal__label">OPEN CHANNELS</p>
+          <p>music · practical AI · creative technology</p>
+          <span>virtual coffee · collaboration</span>
+        </div>
+      </div>
+    </section>
+
     <section class="panel" aria-labelledby="why-title">
-      <SectionHeader id="why-title" eyebrow="WHY SUZY" title="Three save slots, no filler." copy="A human bridge between songs, systems, strategy, and the part where ideas need to actually ship." />
+      <SectionHeader id="why-title" eyebrow="WHY SUZY" title="Three save slots, no filler." copy="Her work moves between systems, sound, creative technology, and the part where ideas need to actually ship." />
       <div class="save-grid">
-        <WhyCard title="Practical AI Systems" sentence="AI workflows that reduce drag instead of adding ceremony." proof="Proof: track analysis, guardrails, outage intel, useful automations." tone="green" />
-        <WhyCard title="Creative Technology" sentence="Playable interfaces, civic-data worlds, and tools that feel authored." proof="Proof: Gastown Simulator, arcade islands, signal dashboards." tone="magenta" />
-        <WhyCard title="Music + Production Instinct" sentence="A maker’s ear for rhythm, signal, mood, and what needs to be cut." proof="Proof: records, touring scars, mix notes that do not flatter nonsense." tone="amber" />
+        <WhyCard title="SYSTEMS MODE" sentence="AI strategy, solutions engineering, QA automation, IT operations, cloud, identity, security and practical systems." proof="Proof: useful weirdness that reduces drag instead of adding ceremony." tone="green" />
+        <WhyCard title="MUSIC MODE" sentence="Bass, composition, performance, recording, live looping, collaboration and production." proof="Proof: records, live rooms, loops, arrangements and collaborative sound." tone="magenta" />
+        <WhyCard title="CREATIVE TECHNOLOGY + COMMUNITY" sentence="Experimental interfaces, music tools, open-source learning, civic technology and interdisciplinary community work." proof="Proof: playable prototypes, public learning, Vancouver systems and community signal." tone="amber" />
       </div>
     </section>
 
     <section id="missions" class="panel panel--missions" aria-labelledby="missions-title">
-      <SectionHeader id="missions-title" eyebrow="FEATURED MISSIONS" title="Cartridges for modern chaos." copy="Three doors into the work: status systems, civic play, and music-informed analysis." />
+      <SectionHeader id="missions-title" eyebrow="FEATURED MISSIONS" title="Cartridges for modern chaos." copy="Suzy’s work crosses systems, sound and experimental technology. The projects below are proof of work from both sides of that practice." />
       <div class="mission-grid">
         <MissionCard title="Lousy Outages" label="MISSION 01 · STATUS WEATHER" copy="A sharper signal board for SaaS incidents, public chatter, and the moment official pages become too polite." stat="LIVE INTEL" href="/lousy-outages/" cta="Check status" tone="green" />
         <MissionCard title="Gastown Simulator" label="MISSION 02 · CIVIC ARCADE" copy="A playable Vancouver corridor built from open data, street mood, route logic, and a suspicious love of map screens." stat="WORLD DATA" href="/gastown-sim/" cta="Walk Gastown" tone="cyan" />
