@@ -1,13 +1,16 @@
 ---
 import '../styles/home.css';
-const { title = 'Suzy Easton — Music, AI Strategy, Creative Technology' } = Astro.props;
+const {
+  title = 'Suzy Easton — Music, AI Strategy & Creative Technology',
+  description = 'Suzy Easton is a Vancouver-based musician, AI strategist and creative technologist working across practical systems, sound and experimental technology.'
+} = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Suzy Easton is a Vancouver-based musician, AI strategist, creative technologist, and builder of useful weird systems." />
+    <meta name="description" content={description} />
     <title>{title}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
