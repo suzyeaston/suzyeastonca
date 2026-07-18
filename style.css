@@ -6392,3 +6392,81 @@ body,
     grid-template-columns: 1fr;
   }
 }
+
+/* Homepage cleanup: tighter title screen now that the metadata strip is gone. */
+.home-arcade-title-screen {
+  min-height: min(760px, calc(100svh - var(--se-header-height, 72px)));
+  margin-bottom: clamp(0.75rem, 1.6vw, 1.25rem);
+}
+.home-arcade-screen__panel {
+  gap: clamp(0.55rem, 1.45vw, 0.95rem);
+}
+
+/* Pacific Power Play standalone page uses the former homepage cabinet layout. */
+.power-play-page {
+  padding-inline: clamp(0.75rem, 3vw, 2rem);
+}
+.power-play-page__hero {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.28fr) minmax(0, 0.72fr);
+  gap: clamp(1rem, 2.5vw, 2rem);
+  align-items: stretch;
+  width: min(1220px, 100%);
+  margin: clamp(1rem, 3vw, 2rem) auto;
+}
+.power-play-page__copy h1::before {
+  content: "// ";
+  color: #39ff14;
+}
+.power-play-page .home-arcade-game {
+  max-width: none;
+  width: 100%;
+  min-width: 0;
+}
+.power-play-page .hero-game-stage__screen {
+  min-height: clamp(500px, 48vw, 620px);
+  overflow: hidden;
+}
+@media (max-width: 1080px) {
+  .power-play-page__hero {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .home-arcade-title-screen {
+    min-height: 540px;
+  }
+  .power-play-page .hero-game-stage__screen {
+    min-height: 520px;
+  }
+}
+
+.power-play-page .hero-game-stage.is-power-play {
+  border-color: rgba(57, 255, 20, 0.38);
+  background:
+    linear-gradient(135deg, rgba(57, 255, 20, 0.08), transparent 34%, rgba(87, 243, 255, 0.1)),
+    linear-gradient(180deg, rgba(1, 9, 24, 0.94), rgba(0, 3, 12, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(87, 243, 255, 0.18), 0 0 28px rgba(57, 255, 20, 0.16);
+}
+.power-play-page .hero-game-stage.is-power-play .hero-game-stage__header { color: #d8ffef; text-shadow: 0 0 10px rgba(57,255,20,.55), 0 0 18px rgba(87,243,255,.4); }
+.power-play-page .hero-game-stage.is-power-play .hero-game-stage__screen {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(87,243,255,.16), transparent 24%),
+    radial-gradient(circle at 88% 52%, rgba(57,255,20,.12), transparent 30%),
+    repeating-linear-gradient(180deg, rgba(255,255,255,.045) 0 1px, transparent 1px 4px),
+    #020713;
+}
+.power-play-page .hero-game-stage.is-power-play .hero-game-stage__screen::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 0 14%, rgba(57,255,20,.09) 15% 17%, transparent 18% 45%, rgba(87,243,255,.08) 46% 48%, transparent 49%); pointer-events: none; z-index: 2; }
+.power-play-page .pacific-power-play-canvas { touch-action: none; }
+.power-play-page .pacific-power-play-ui .hero-galaga-status { color: #d8ffef; border-color: rgba(57,255,20,.58); }
+.power-play-page .hero-game-stage.is-power-play .pacific-power-play-overlay { inset: 0; transform: none; min-width: 0; max-width: none; width: 100%; height: 100%; z-index: 7; }
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-overlay,
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-overlay,
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="versus"] .pacific-power-play-overlay,
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="paused"] .pacific-power-play-overlay { display: block; pointer-events: auto; }
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="playing"] .pacific-power-play-overlay,
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="goal"] .pacific-power-play-overlay { display: none; pointer-events: none; }
+.power-play-page .pacific-power-play-overlay [hidden] { display: none !important; }
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-ui,
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-ui { opacity: 0; }
+.power-play-page .power-play-select { font-size: clamp(.42rem, .68vw, .56rem); overflow: auto; }
