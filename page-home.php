@@ -26,40 +26,16 @@ get_header();
             <p class="home-arcade-subtitle pixel-font"><?php echo esc_html( 'music // AI strategy // creative technology' ); ?></p>
             <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
             <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START"><?php echo esc_html( 'PRESS START' ); ?></button>
-            <div class="home-title-screen-meta pixel-font" aria-hidden="true"><span>1 PLAYER</span><span>RAIN CITY</span><span>MUSIC / AI / TOOLS</span></div>
         </div>
     </section>
-
-    <div class="home-level-intro home-level-intro--outages pixel-font" aria-hidden="true"><span>LEVEL 01</span><strong>STATUS BOARD FOR MODERN CHAOS</strong><em>LIVE OUTAGE SIGNAL</em></div>
 
     <?php get_template_part( 'parts/lousy-outages-teaser' ); ?>
-
-    <section class="home-play-mode crt-block" aria-labelledby="home-play-mode-title">
-        <div class="home-play-mode__copy">
-            <p class="home-section-kicker pixel-font"><?php echo esc_html( 'BONUS LEVEL' ); ?></p>
-            <h2 id="home-play-mode-title" class="pixel-font"><?php echo esc_html( 'Pacific Power Play' ); ?></h2>
-            <p><?php echo esc_html( 'Choose your line, drop the puck, and survive the rain city static.' ); ?></p>
-            <button type="button" class="pixel-button home-arcade-start" data-arcade-start><?php echo esc_html( 'Choose Your Line' ); ?></button>
-        </div>
-        <div class="hero-game-stage home-arcade-game" aria-label="Pacific Power Play Vancouver hockey arcade character select and rink game. Use WASD or arrow keys to choose or skate, Enter to confirm, Space to shoot, E for ability, and Escape to pause or go back." data-arcade-stage>
-            <p class="hero-game-stage__header pixel-font"><?php echo esc_html( 'PACIFIC POWER PLAY' ); ?></p>
-            <div class="hero-game-stage__screen" role="img" aria-label="Pacific Power Play arcade cabinet screen with attract mode, character-select cards, versus splash, and a neon rain city hockey rink.">
-                <p class="hero-game-stage__idle pixel-font"><?php echo wp_kses_post( 'INSERT COIN<br>CHOOSE YOUR LINE<br>VANCOUVER HOCKEY ARCADE' ); ?></p>
-                <div class="home-static-sprites" aria-hidden="true">
-                    <span class="home-static-sprites__ship"></span>
-                    <span class="home-static-sprites__enemy home-static-sprites__enemy--one"></span>
-                    <span class="home-static-sprites__enemy home-static-sprites__enemy--two"></span>
-                    <span class="home-static-sprites__reticle"></span>
-                </div>
-            </div>
-            <p class="hero-game-stage__mobile-note pixel-font"><?php echo esc_html( 'Best with keyboard. Tap cards to choose your line.' ); ?></p>
-        </div>
-    </section>
 
     <section id="mission-select" class="home-project-grid home-mission-select crt-block" aria-labelledby="selected-projects-title">
         <p class="home-section-kicker pixel-font"><?php echo esc_html( 'LEVEL SELECT' ); ?></p>
         <h2 id="selected-projects-title" class="pixel-font"><?php echo esc_html( 'CHOOSE YOUR SYSTEM' ); ?></h2>
         <div class="selected-work__grid home-mission-grid">
+            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'hockey arcade' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Pacific Power Play' ); ?></h3><p><?php echo esc_html( 'Choose your line, drop the puck, and survive the rain city static in a Vancouver hockey cabinet.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/pacific-power-play/' ) ); ?>"><?php echo esc_html( 'Play game' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'status weather' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Lousy Outages' ); ?></h3><p><?php echo esc_html( 'A status board for SaaS weirdness, provider incidents, and the moments official pages get too polite.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>"><?php echo esc_html( 'Check status' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'civic arcade world' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Gastown Simulator' ); ?></h3><p><?php echo esc_html( 'A playable Vancouver corridor built from civic data, route logic, street mood, and arcade-map obsession.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/gastown-sim/' ) ); ?>"><?php echo esc_html( 'Walk Gastown' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'audio notes' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Track Analyzer' ); ?></h3><p><?php echo esc_html( 'Upload an MP3 and get clear notes on feel, lyrics, structure, and what might actually help the track.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/suzys-track-analyzer/' ) ); ?>"><?php echo esc_html( 'Analyze track' ); ?></a></article>

@@ -70,20 +70,6 @@ function retro_game_music_theme_scripts() {
 
     if ( is_front_page() || is_page_template( 'page-home.php' ) ) {
         wp_enqueue_script(
-            'hero-ship-drag',
-            get_template_directory_uri() . '/js/hero-ship-drag.js',
-            array(),
-            filemtime( get_template_directory() . '/js/hero-ship-drag.js' ),
-            true
-        );
-        wp_enqueue_script(
-            'pacific-power-play',
-            get_template_directory_uri() . '/js/pacific-power-play.js',
-            array( 'hero-ship-drag' ),
-            filemtime( get_template_directory() . '/js/pacific-power-play.js' ),
-            true
-        );
-        wp_enqueue_script(
             'home-arcade-start',
             get_template_directory_uri() . '/js/home-arcade-start.js',
             array(),
@@ -100,6 +86,16 @@ function retro_game_music_theme_scripts() {
                 filemtime( $teaser_css )
             );
         }
+    }
+
+    if ( is_page_template( 'page-pacific-power-play.php' ) || is_page( 'pacific-power-play' ) ) {
+        wp_enqueue_script(
+            'pacific-power-play',
+            get_template_directory_uri() . '/js/pacific-power-play.js',
+            array(),
+            filemtime( get_template_directory() . '/js/pacific-power-play.js' ),
+            true
+        );
     }
 
 }

@@ -30,8 +30,10 @@ if ( count( $provider_names ) > 3 ) {
 ?>
 <section id="lousy-outages-teaser" class="lo-home-teaser<?php echo esc_attr( empty( $rows ) ? ' lo-home-teaser--clear' : ' lo-home-teaser--active' ); ?>" aria-labelledby="lo-home-heading">
     <div class="lo-home-teaser__titlebar">
-        <p class="lo-home-kicker">lousy outages</p>
-        <h2 id="lo-home-heading" class="lo-home-heading">status board for modern chaos</h2>
+        <div class="lo-home-title-copy">
+            <p class="lo-home-kicker"><?php echo esc_html( 'arcade system monitor' ); ?></p>
+            <h2 id="lo-home-heading" class="lo-home-heading"><?php echo esc_html( 'Live outage signal' ); ?></h2>
+        </div>
         <span class="lo-home-status-light<?php echo esc_attr( empty( $rows ) ? ' lo-home-status-light--clear' : ' lo-home-status-light--alert' ); ?>">
             <span class="screen-reader-text"><?php echo esc_html( empty( $rows ) ? 'No active provider incidents' : 'Active provider incidents or degraded signals' ); ?></span>
         </span>
@@ -58,8 +60,8 @@ if ( count( $provider_names ) > 3 ) {
                 <?php foreach ( $rows as $row ) : ?>
                     <li class="lo-home-alert lo-home-alert--<?php echo esc_attr( $row['tone'] ?? 'unknown' ); ?>">
                         <div class="lo-home-alert__meta">
-                            <strong><?php echo esc_html( $row['provider'] ?? 'Unknown provider' ); ?></strong>
-                            <span><?php echo esc_html( $row['label'] ?? 'Status' ); ?></span>
+                            <strong class="lo-home-alert__provider"><?php echo esc_html( $row['provider'] ?? 'Unknown provider' ); ?></strong>
+                            <span class="lo-home-alert__status"><?php echo esc_html( $row['label'] ?? 'Status' ); ?></span>
                         </div>
                         <a class="lo-home-alert__body" href="<?php echo esc_url( $row['href'] ?? $teaser_href ); ?>">
                             <?php echo esc_html( $row['message'] ?? 'Status update' ); ?>
