@@ -14,6 +14,13 @@
     };
   }
 
+  function formatDate(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString(undefined, { month: 'short', day: 'numeric' });
+  }
+
   function formatTime(value) {
     if (!value) return '';
     const date = new Date(value);
@@ -49,8 +56,12 @@
         const started = incident.startedAt || incident.started_at || incident.created_at || '';
         const updated = incident.updatedAt || incident.updated_at || started || provider.updatedAt || provider.updated_at || '';
         items.push({
-          type: 'outage', tone: 'outage', providerId, provider: providerName, label: stateLabel,
+          type: 'outage', tone: 'outage', providerId, provider: providerName, label: incident.scope === 'regional' ? 'Ongoing regional disruption' : 'Active incident',
           summary: String(incident.title || incident.summary || provider.summary || 'Incident reported'),
+          details: String(incident.summary || ''),
+          region: [incident.region_name, incident.region_code].filter(Boolean).join(' · '),
+          lastOfficialUpdate: incident.last_official_update || incident.lastOfficialUpdate || updated,
+          checkedAt: incident.checked_at || incident.checkedAt || provider.checked_at || provider.checkedAt || payload.fetched_at || '',
           href: String(incident.url || provider.url || ''), started, updated,
           sort: Date.parse(updated) || Date.parse(started) || 0
         });
@@ -97,7 +108,7 @@
     const dot = document.createElement('span'); dot.className = 'lo-home-live-band__dot'; dot.setAttribute('aria-hidden', 'true');
     const copy = document.createElement('div');
     const label = document.createElement('p'); label.className = 'lo-home-live-band__label'; label.textContent = items.some((i) => i.type === 'outage') ? 'LIVE OUTAGE SIGNAL' : 'VERIFIED DEGRADED SIGNAL';
-    const count = document.createElement('p'); count.className = 'lo-home-live-band__count'; count.textContent = items.length + ' current ' + (items.length === 1 ? 'signal' : 'signals');
+    const count = document.createElement('p'); count.className = 'lo-home-live-band__count'; count.textContent = items.length + ' current ' + (items.length === 1 ? 'issue' : 'issues');
     const providers = document.createElement('p'); providers.className = 'lo-home-live-band__providers'; providers.textContent = Array.from(new Set(items.map((i) => i.provider))).slice(0, 3).join(' + ');
     copy.append(label, count, providers); band.append(dot, copy); screen.append(band);
     const list = document.createElement('ul'); list.className = 'lo-home-alert-list';
@@ -107,12 +118,16 @@
       const strong = document.createElement('strong'); strong.className = 'lo-home-alert__provider'; strong.textContent = item.provider;
       const status = document.createElement('span'); status.className = 'lo-home-alert__status'; status.textContent = item.type === 'signal' ? 'Degraded signal' : item.label;
       metaEl.append(strong, status);
+      if (item.region) { const region = document.createElement('span'); region.className = 'lo-home-alert__region'; region.textContent = item.provider + ' ' + item.region; metaEl.append(region); }
       const body = document.createElement('p'); body.className = 'lo-home-alert__body'; body.textContent = item.summary;
+      const detail = item.details && item.details !== item.summary ? document.createElement('p') : null;
+      if (detail) { detail.className = 'lo-home-alert__detail'; detail.textContent = item.details; }
       const times = document.createElement('div'); times.className = 'lo-home-alert__times';
       if (item.started) { const t = document.createElement('time'); t.className = 'lo-home-alert__time'; t.dateTime = item.started; t.textContent = 'Started ' + formatTime(item.started); times.append(t); }
-      if (item.updated) { const t = document.createElement('time'); t.className = 'lo-home-alert__time'; t.dateTime = item.updated; t.textContent = 'Updated ' + formatTime(item.updated); times.append(t); }
+      if (item.lastOfficialUpdate) { const t = document.createElement('time'); t.className = 'lo-home-alert__time'; t.dateTime = item.lastOfficialUpdate; t.textContent = 'Last official update ' + formatDate(item.lastOfficialUpdate); times.append(t); } else if (item.updated) { const t = document.createElement('time'); t.className = 'lo-home-alert__time'; t.dateTime = item.updated; t.textContent = 'Updated ' + formatTime(item.updated); times.append(t); }
+      if (item.checkedAt) { const t = document.createElement('time'); t.className = 'lo-home-alert__time'; t.dateTime = item.checkedAt; t.textContent = 'Status checked ' + formatDate(item.checkedAt); times.append(t); }
       const a = document.createElement('a'); a.className = 'lo-home-alert__details'; a.href = item.href || config.dashboardUrl + (item.providerId ? '#provider-' + encodeURIComponent(item.providerId) : ''); a.textContent = 'Details';
-      li.append(metaEl, body, times, a); list.append(li);
+      if (detail) { li.append(metaEl, body, detail, times, a); } else { li.append(metaEl, body, times, a); } list.append(li);
     });
     screen.append(list);
   }

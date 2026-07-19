@@ -59,6 +59,7 @@ class Fetcher {
             'summary'      => 'Waiting for status…',
             'message'      => 'Waiting for status…',
             'updated_at'   => gmdate('c'),
+            'checked_at'   => gmdate('c'),
             'url'          => is_string($statusUrl) ? $statusUrl : '',
             'incidents'    => [],
             'error'        => null,
@@ -431,6 +432,10 @@ class Fetcher {
             $updated = $incidents[0]['updated_at'] ?? ($incidents[0]['started_at'] ?? null);
         }
         $result['updated_at'] = $updated ?: $defaults['updated_at'];
+        $result['checked_at'] = $defaults['checked_at'] ?? gmdate('c');
+        if (! empty($incidents) && ! empty($incidents[0]['last_official_update'])) {
+            $result['last_official_update'] = $incidents[0]['last_official_update'];
+        }
 
         return $result;
     }
@@ -674,7 +679,7 @@ class Fetcher {
             $updatedTs = $updated ? strtotime($updated) : null;
             $startedTs = $started ? strtotime($started) : null;
             $effective = $updatedTs ?? $startedTs ?? 0;
-            if ($effective && $effective < $historyCutoff) {
+            if ($isResolved && $effective && $effective < $historyCutoff) {
                 continue;
             }
 
@@ -700,17 +705,21 @@ class Fetcher {
                 $url = $provider['status_url'];
             }
 
+            $metadata = $this->incident_metadata($incident, $title . ' ' . $summary, $updated, $started);
             $entry = [
                 'id'         => (string) ($incident['id'] ?? md5(wp_json_encode($incident))),
                 'title'      => $title ?: 'Incident',
                 'summary'    => $summary,
                 'started_at' => $started,
                 'updated_at' => $updated,
+                'last_official_update' => $updated,
+                'checked_at' => gmdate('c'),
                 'status'     => $impact,
                 'impact'     => $impact,
                 'eta'        => $this->sanitize($incident['eta'] ?? ''),
                 'url'        => $url,
             ];
+            $entry = array_merge($entry, $metadata);
 
             if ($isResolved) {
                 $recent[] = $entry;
@@ -724,6 +733,37 @@ class Fetcher {
             'active' => array_slice($active, 0, 10),
             'recent' => array_slice($recent, 0, 10),
         ];
+    }
+
+
+    private function incident_metadata(array $incident, string $text, ?string $updated, ?string $started): array {
+        $metadata = [];
+        $lower = strtolower($text);
+        if (preg_match('/\b(me-central-1)\b/i', $text, $match)) {
+            $metadata['scope'] = 'regional';
+            $metadata['region_code'] = strtoupper($match[1]);
+            if (preg_match('/\b(uae|united arab emirates)\b/i', $text)) {
+                $metadata['region_name'] = 'UAE';
+            }
+        } elseif (preg_match('/\b(region|regional)\b/i', $text)) {
+            $metadata['scope'] = 'regional';
+        }
+        if (! empty($incident['scope']) && is_string($incident['scope'])) {
+            $metadata['scope'] = $this->sanitize($incident['scope']);
+        }
+        if (! empty($incident['region_name']) && is_string($incident['region_name'])) {
+            $metadata['region_name'] = $this->sanitize($incident['region_name']);
+        }
+        if (! empty($incident['region_code']) && is_string($incident['region_code'])) {
+            $metadata['region_code'] = $this->sanitize($incident['region_code']);
+        }
+        $reference = $started ?: $updated;
+        $referenceTs = $reference ? strtotime($reference) : 0;
+        $metadata['is_long_running'] = (bool) ($referenceTs && (time() - $referenceTs) >= (35 * DAY_IN_SECONDS));
+        if (preg_match('/\b(months?|long-running|extended|ongoing)\b/i', $lower)) {
+            $metadata['is_long_running'] = true;
+        }
+        return $metadata;
     }
 
     private function maybe_retry_ipv4(array $response, string $endpoint, array $headers): array {

@@ -1507,9 +1507,11 @@
           li.appendChild(title);
           var meta = state.doc.createElement('p');
           meta.className = 'lo-inc-meta';
-          var impact = incident.impact ? String(incident.impact).replace(/^[a-z]/, function (c) { return c.toUpperCase(); }) : 'Unknown';
-          var updated = formatTimestamp(incident.updated_at || incident.updatedAt || incident.started_at || incident.startedAt);
-          meta.textContent = impact + (updated ? ' • ' + updated : '');
+          var impact = incident.scope === 'regional' ? 'Ongoing regional disruption' : (incident.impact ? String(incident.impact).replace(/^[a-z]/, function (c) { return c.toUpperCase(); }) : 'Unknown');
+          var region = [incident.region_name || incident.regionName, incident.region_code || incident.regionCode].filter(Boolean).join(' · ');
+          var officialUpdate = formatDateOnly(incident.last_official_update || incident.lastOfficialUpdate || incident.updated_at || incident.updatedAt);
+          var checkedAt = formatDateOnly(incident.checked_at || incident.checkedAt || provider.checked_at || provider.checkedAt || provider.fetched_at || provider.fetchedAt);
+          meta.textContent = impact + (region ? ' • ' + region : '') + (incident.is_long_running || incident.isLongRunning ? ' • Long-running' : '') + (officialUpdate ? ' • Last official update ' + officialUpdate : '') + (checkedAt ? ' • Status checked ' + checkedAt : '');
           li.appendChild(meta);
           if (incident.summary) {
             var details = state.doc.createElement('p');

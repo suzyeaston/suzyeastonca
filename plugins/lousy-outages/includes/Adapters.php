@@ -112,6 +112,13 @@ function from_slack_current(string $json): array {
 }
 
 function from_rss_atom(string $xml): array {
+    $clean_summary = static function (string $value): string {
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $value = preg_replace('/<\s*br\s*\/?\s*>/i', ' ', $value) ?? $value;
+        $value = strip_tags($value);
+        $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+        return trim($value);
+    };
     $previous = libxml_use_internal_errors(true);
     $feed     = simplexml_load_string($xml);
     if (! $feed) {
@@ -123,13 +130,13 @@ function from_rss_atom(string $xml): array {
     $items = [];
     $resolve_status = static function (string $title, string $summary): string {
         $text = strtolower($title . ' ' . $summary);
-        if (preg_match('/\bresolved\b|this issue is now resolved|issue is now resolved|issue has been resolved|ended at/i', $text)) {
+        if (preg_match('/\bresolved\b|this issue is now resolved|issue is now resolved|issue has been resolved|ended at|fully recovered|closed/i', $text)) {
             return 'resolved';
         }
         if (preg_match('/\b(scheduled|planned).{0,40}maintenance\b/i', $text)) {
             return 'maintenance';
         }
-        if (preg_match('/\b(outage|major|critical)\b/i', $text)) {
+        if (preg_match('/\b(outage|major|critical|disruption|unavailable|impaired|impairment)\b/i', $text)) {
             return 'major';
         }
         if (preg_match('/\b(degraded|partial|service disruption)\b/i', $text)) {
@@ -143,11 +150,12 @@ function from_rss_atom(string $xml): array {
     if (isset($feed->channel)) {
         foreach ($feed->channel->item as $item) {
             $title = (string) ($item->title ?? 'Incident');
-            $summary = (string) ($item->description ?? '');
+            $summary = $clean_summary((string) ($item->description ?? ''));
             $items[] = [
                 'name'       => $title ?: 'Incident',
+                'summary'    => $summary,
                 'status'     => $resolve_status($title, $summary),
-                'started_at' => (string) ($item->pubDate ?? ''),
+                'started_at' => '',
                 'updated_at' => (string) ($item->pubDate ?? ''),
                 'shortlink'  => (string) ($item->link ?? ''),
             ];
@@ -155,11 +163,12 @@ function from_rss_atom(string $xml): array {
     } else {
         foreach ($feed->entry as $item) {
             $title = (string) ($item->title ?? 'Incident');
-            $summary = (string) ($item->summary ?? $item->content ?? '');
+            $summary = $clean_summary((string) ($item->summary ?? $item->content ?? ''));
             $items[] = [
                 'name'       => $title ?: 'Incident',
+                'summary'    => $summary,
                 'status'     => $resolve_status($title, $summary),
-                'started_at' => (string) ($item->updated ?? ($item->published ?? '')),
+                'started_at' => '',
                 'updated_at' => (string) ($item->updated ?? ($item->published ?? '')),
                 'shortlink'  => (string) ($item->link['href'] ?? ($item->link ?? '')),
             ];
