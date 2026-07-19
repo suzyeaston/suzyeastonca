@@ -16,3 +16,32 @@ test('failed request preserves fallback and delayed notice; later success remove
 test('canonical tile kinds and lifecycle filtering are honored', () => { const {teaser}=load(); const items=teaser.currentItems(payload([{id:'ok',name:'OK',tile_kind:'operational',incidents:[]},{id:'o',name:'Out',tile_kind:'outage',incidents:[]},{id:'s',name:'Sig',tile_kind:'signal',incidents:[]},{id:'u',name:'Unk',tile_kind:'unknown',stateCode:'degraded',incidents:[]},{id:'m',name:'Man',tile_kind:'manual',stateCode:'degraded',incidents:[]},{id:'eta',name:'Eta',tile_kind:'outage',incidents:[{title:'Eta resolved',status:'investigating',eta:'resolved',impact:'minor'}]},{id:'done',name:'Done',tile_kind:'outage',incidents:[{title:'Done',status:'completed',impact:'minor'},{title:'Post',status:'postmortem',impact:'minor'}]}])); assert.equal(JSON.stringify(items.map(i=>[i.provider,i.type])), JSON.stringify([['Out','outage'],['Sig','signal']])); });
 test('duplicates are deduplicated before five-item limit', () => { const {teaser}=load(); const providers=[{id:'dup',name:'Dup',tile_kind:'outage',incidents:[{title:'Same outage',status:'investigating',startedAt:'2026-07-19T09:00:00Z',updatedAt:'2026-07-19T09:10:00Z'},{title:'Same outage',status:'identified',startedAt:'2026-07-19T09:00:00Z',updatedAt:'2026-07-19T09:20:00Z'}]},...Array.from({length:4},(_,i)=>({id:`p${i}`,name:`P${i}`,tile_kind:'outage',incidents:[{title:`I${i}`,status:'investigating',updatedAt:`2026-07-19T0${i}:00:00Z`}]}))]; const items=teaser.currentItems(payload(providers)); assert.equal(items.length,5); assert.equal(items.filter(i=>i.provider==='Dup').length,1); });
 test('polling has no duplicate timers/overlap and visibility refreshes at most once', async () => { let fetches=0,timers=0; let release; const pending=new Promise(r=>{release=r}); const {teaser,container,listeners}=load({fetchImpl:()=>{fetches++; return pending.then(()=>({ok:true,json:()=>Promise.resolve(payload([]))}));}, interval:()=>{timers++; return 1;}}); teaser.init(container); teaser.init(container); assert.equal(timers,1); listeners.visibilitychange(); assert.equal(fetches,1); release(); await new Promise(setImmediate); listeners.visibilitychange(); assert.equal(fetches,2); });
+
+test('long-running AWS regional incident appears as current issue with official context', () => {
+  const {teaser,container}=load();
+  const providers=[
+    {id:'teamviewer',name:'TeamViewer',tile_kind:'outage',incidents:[{title:'Connectivity issues',status:'investigating',updated_at:'2026-07-19T07:00:00Z'}]},
+    {id:'cloudflare',name:'Cloudflare',tile_kind:'outage',incidents:[{title:'Dashboard errors',status:'identified',updated_at:'2026-07-19T06:00:00Z'}]},
+    {id:'aws',name:'AWS',tile_kind:'outage',checked_at:'2026-07-19T10:00:00Z',incidents:[{title:'Service disruption in UAE (ME-CENTRAL-1)',summary:'Official source says recovery is expected to take months due to physical infrastructure damage.',status:'outage',impact:'outage',scope:'regional',region_name:'UAE',region_code:'ME-CENTRAL-1',is_long_running:true,last_official_update:'2026-04-30T12:00:00Z',updated_at:'2026-04-30T12:00:00Z'}]},
+    {id:'openai',name:'OpenAI',tile_kind:'operational',incidents:[],recent_incidents:[{title:'Resolved',status:'operational'}]}
+  ];
+  const items=teaser.currentItems(payload(providers));
+  assert.equal(items.length,3);
+  const aws=items.find((item)=>item.provider==='AWS');
+  assert.ok(aws);
+  assert.equal(aws.type,'outage');
+  assert.equal(aws.label,'Ongoing regional disruption');
+  assert.equal(aws.region,'UAE · ME-CENTRAL-1');
+  assert.equal(aws.summary,'Service disruption in UAE (ME-CENTRAL-1)');
+  assert.match(aws.details,/recovery is expected to take months/);
+  assert.equal(aws.lastOfficialUpdate,'2026-04-30T12:00:00Z');
+  assert.equal(aws.checkedAt,'2026-07-19T10:00:00Z');
+  assert.notEqual(aws.summary,'Major outage reported');
+  teaser.render(container, payload(providers), {dashboardUrl:'/lousy-outages/'});
+  const text=(el)=>[el.textContent].concat(...el.children.map(text)).join(' ');
+  assert.match(text(container), /3 current issues/);
+  assert.match(text(container), /Ongoing regional disruption/);
+  assert.match(text(container), /UAE · ME-CENTRAL-1/);
+  assert.match(text(container), /Last official update Apr 30/);
+  assert.match(text(container), /Status checked Jul 19/);
+});
