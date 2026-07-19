@@ -86,6 +86,26 @@ function retro_game_music_theme_scripts() {
                 filemtime( $teaser_css )
             );
         }
+
+        $teaser_js = get_template_directory() . '/assets/js/lousy-outages-teaser.js';
+        if ( file_exists( $teaser_js ) ) {
+            wp_enqueue_script(
+                'lousy-outages-home-teaser',
+                get_template_directory_uri() . '/assets/js/lousy-outages-teaser.js',
+                array(),
+                filemtime( $teaser_js ),
+                true
+            );
+            wp_localize_script(
+                'lousy-outages-home-teaser',
+                'lousyOutagesTeaser',
+                array(
+                    'endpoint'        => esc_url_raw( rest_url( 'lousy-outages/v1/status' ) ),
+                    'dashboardUrl'    => esc_url_raw( home_url( '/lousy-outages/' ) ),
+                    'refreshInterval' => 5 * MINUTE_IN_SECONDS * 1000,
+                )
+            );
+        }
     }
 
     if ( is_page_template( 'page-pacific-power-play.php' ) || is_page( 'pacific-power-play' ) ) {
@@ -554,7 +574,7 @@ function get_lousy_outages_home_teaser_data(): array {
         'stale'    => false,
     ];
 
-    if ( ! class_exists( '\\SuzyEaston\\LousyOutages\\Summary' ) || ! method_exists( '\\SuzyEaston\\LousyOutages\\Summary', 'ordered_recent_incidents' ) ) {
+    if ( ! class_exists( '\\SuzyEaston\\LousyOutages\\Summary' ) || ! method_exists( '\\SuzyEaston\\LousyOutages\\Summary', 'ordered_current_incidents' ) ) {
         error_log( 'Lousy Outages homepage teaser unavailable: shared Summary incident loader missing.' );
         return $default;
     }
@@ -562,10 +582,6 @@ function get_lousy_outages_home_teaser_data(): array {
     $incidents = method_exists( '\SuzyEaston\LousyOutages\Summary', 'ordered_current_incidents' )
         ? \SuzyEaston\LousyOutages\Summary::ordered_current_incidents( 5 )
         : [];
-
-    if ( empty( $incidents ) ) {
-        $incidents = \SuzyEaston\LousyOutages\Summary::ordered_recent_incidents( 30, true, 5 );
-    }
 
     if ( ! is_array( $incidents ) ) {
         error_log( 'Lousy Outages homepage teaser unavailable: shared Summary incident loader returned invalid data.' );

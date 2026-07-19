@@ -13,6 +13,8 @@ $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
         'last_checked' => '',
     ];
 $teaser_href = $teaser_data['href'] ?? home_url( '/lousy-outages/' );
+$teaser_endpoint = rest_url( 'lousy-outages/v1/status' );
+$teaser_interval = 5 * MINUTE_IN_SECONDS * 1000;
 $rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? array_slice( $teaser_data['rows'], 0, 5 ) : [];
 $last_checked = $teaser_data['last_checked'] ?? '';
 $active_count = count( $rows );
@@ -28,7 +30,7 @@ if ( count( $provider_names ) > 3 ) {
     $provider_summary .= ' +' . ( count( $provider_names ) - 3 ) . ' more';
 }
 ?>
-<section id="lousy-outages-teaser" class="lo-home-teaser<?php echo esc_attr( empty( $rows ) ? ' lo-home-teaser--clear' : ' lo-home-teaser--active' ); ?>" aria-labelledby="lo-home-heading">
+<section id="lousy-outages-teaser" class="lo-home-teaser<?php echo esc_attr( empty( $rows ) ? ' lo-home-teaser--clear' : ' lo-home-teaser--active' ); ?>" aria-labelledby="lo-home-heading" data-lo-endpoint="<?php echo esc_url( $teaser_endpoint ); ?>" data-lo-dashboard-url="<?php echo esc_url( $teaser_href ); ?>" data-lo-refresh-interval="<?php echo esc_attr( (string) $teaser_interval ); ?>">
     <div class="lo-home-teaser__titlebar">
         <div class="lo-home-title-copy">
             <p class="lo-home-kicker"><?php echo esc_html( 'arcade system monitor' ); ?></p>
