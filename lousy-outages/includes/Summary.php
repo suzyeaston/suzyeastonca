@@ -97,16 +97,39 @@ class Summary {
             $incidents = isset($provider['incidents']) && is_array($provider['incidents'])
                 ? array_values(array_filter($provider['incidents'], 'is_array'))
                 : [];
-            if (!$incidents) {
-                continue;
-            }
-
             $providerId = sanitize_key((string) ($provider['id'] ?? $provider['provider'] ?? $provider['name'] ?? ''));
             $providerName = trim((string) ($provider['name'] ?? $provider['provider'] ?? $providerId));
             if ('' === $providerName) {
                 $providerName = 'Unknown provider';
             }
             $providerStatus = strtolower((string) ($provider['stateCode'] ?? $provider['status'] ?? 'incident'));
+            $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
+
+            if (!$incidents) {
+                $hasCurrentSignal = in_array($tileKind, ['outage', 'signal'], true)
+                    || !in_array($providerStatus, ['', 'operational', 'ok', 'none', 'unknown'], true);
+                if (!$hasCurrentSignal) {
+                    continue;
+                }
+
+                $updated = (string) ($provider['updatedAt'] ?? $provider['updated_at'] ?? '');
+                $records[] = [
+                    'id' => sha1($providerId . '|provider-current|' . $providerStatus . '|' . $updated),
+                    'provider_id' => $providerId,
+                    'provider' => $providerName,
+                    'status' => $providerStatus ?: 'incident',
+                    'status_label' => Fetcher::status_label($providerStatus ?: 'incident'),
+                    'severity' => in_array($providerStatus, ['outage', 'major', 'critical'], true) ? 'outage' : 'degraded',
+                    'important' => true,
+                    'summary' => (string) ($provider['summary'] ?? $provider['message'] ?? Fetcher::status_label($providerStatus ?: 'incident')),
+                    'started_at' => self::format_incident_time($updated),
+                    'updated_at' => self::format_incident_time($updated),
+                    'first_seen' => self::parse_time($updated) ?? 0,
+                    'last_seen' => self::parse_time($updated) ?? 0,
+                    'url' => (string) ($provider['url'] ?? ''),
+                ];
+                continue;
+            }
 
             usort($incidents, static function (array $left, array $right): int {
                 return self::incident_timestamp($right) <=> self::incident_timestamp($left);
