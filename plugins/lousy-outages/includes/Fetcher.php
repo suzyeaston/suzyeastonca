@@ -433,6 +433,12 @@ class Fetcher {
         }
         $result['updated_at'] = $updated ?: $defaults['updated_at'];
         $result['checked_at'] = $defaults['checked_at'] ?? gmdate('c');
+        foreach ($result['incidents'] as &$incident) {
+            if (is_array($incident)) {
+                $incident['checked_at'] = $result['checked_at'];
+            }
+        }
+        unset($incident);
         if (! empty($incidents) && ! empty($incidents[0]['last_official_update'])) {
             $result['last_official_update'] = $incidents[0]['last_official_update'];
         }
@@ -709,6 +715,7 @@ class Fetcher {
             $entry = [
                 'id'         => (string) ($incident['id'] ?? md5(wp_json_encode($incident))),
                 'title'      => $title ?: 'Incident',
+                'source_title' => $title ?: 'Incident',
                 'summary'    => $summary,
                 'started_at' => $started,
                 'updated_at' => $updated,
@@ -720,6 +727,7 @@ class Fetcher {
                 'url'        => $url,
             ];
             $entry = array_merge($entry, $metadata);
+            $entry['display_title'] = $this->display_title($provider, $entry);
 
             if ($isResolved) {
                 $recent[] = $entry;
@@ -763,7 +771,35 @@ class Fetcher {
         if (preg_match('/\b(months?|long-running|extended|ongoing)\b/i', $lower)) {
             $metadata['is_long_running'] = true;
         }
+        if (preg_match('/multiple services/i', $text)) {
+            $metadata['service_name'] = 'Multiple services';
+        }
         return $metadata;
+    }
+
+    private function display_title(array $provider, array $incident): string {
+        $providerId = strtolower((string) ($provider['id'] ?? ''));
+        $providerName = (string) ($provider['name'] ?? $providerId);
+        $source = trim((string) ($incident['source_title'] ?? $incident['title'] ?? ''));
+        $service = trim((string) ($incident['service_name'] ?? ''));
+        $regionName = trim((string) ($incident['region_name'] ?? ''));
+        $regionCode = trim((string) ($incident['region_code'] ?? ''));
+        $status = strtolower((string) ($incident['status'] ?? $incident['impact'] ?? ''));
+        $generic = preg_match('/^(increased error rates|operational issue\s*-\s*multiple services(?:\s*\([^)]*\))?|multiple services|service disruption|major outage reported\.?|service degradation reported\.?)$/i', $source) === 1;
+        if ($generic && ($regionName || $regionCode || $service || 'aws' === $providerId)) {
+            $serviceLabel = $service ?: (false !== stripos($source, 'multiple services') ? 'Multiple services' : $providerName . ' services');
+            if ('aws' === $providerId && false === stripos($serviceLabel, 'aws')) {
+                $serviceLabel = str_ireplace('Multiple services', 'Multiple AWS services', $serviceLabel);
+                if (false === stripos($serviceLabel, 'AWS')) {
+                    $serviceLabel = $providerName . ' ' . lcfirst($serviceLabel);
+                }
+            }
+            $verb = in_array($status, ['outage', 'major', 'critical', 'disrupted'], true) ? 'disrupted' : 'degraded';
+            $where = $regionName ? ' in ' . $regionName : '';
+            if ($regionCode) { $where .= ' (' . $regionCode . ')'; }
+            return trim($serviceLabel . ' ' . $verb . $where);
+        }
+        return $source ?: (string) ($incident['summary'] ?? 'Incident');
     }
 
     private function maybe_retry_ipv4(array $response, string $endpoint, array $headers): array {

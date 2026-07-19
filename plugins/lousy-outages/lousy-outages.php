@@ -26,6 +26,9 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_VERSION', '0.2.0' );
 }
+if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
+    define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 2 );
+}
 if ( ! defined( 'LOUSY_OUTAGES_FILE' ) ) {
     define( 'LOUSY_OUTAGES_FILE', __FILE__ );
 }
@@ -640,6 +643,7 @@ function lousy_outages_build_snapshot( array $states, string $timestamp, string 
     $trending  = ( new \SuzyEaston\LousyOutages\Trending() )->evaluate( $providers );
 
     return lousy_outages_filter_snapshot( [
+        'schema_version' => LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION,
         'providers'  => $providers,
         'fetched_at' => $timestamp,
         'trending'   => $trending,
@@ -648,11 +652,35 @@ function lousy_outages_build_snapshot( array $states, string $timestamp, string 
     ] );
 }
 
+
+function lousy_outages_update_aws_snapshot_diagnostic( array $snapshot ): void {
+    $providers = isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] ) ? $snapshot['providers'] : [];
+    foreach ( $providers as $provider ) {
+        if ( ! is_array( $provider ) || 'aws' !== strtolower( (string) ( $provider['id'] ?? '' ) ) ) { continue; }
+        $incidents = isset( $provider['incidents'] ) && is_array( $provider['incidents'] ) ? $provider['incidents'] : [];
+        $recent = isset( $provider['recentIncidents'] ) && is_array( $provider['recentIncidents'] ) ? $provider['recentIncidents'] : [];
+        $first = $incidents[0] ?? ( $recent[0] ?? [] );
+        update_option( 'lousy_outages_aws_snapshot_diagnostic', [
+            'parsed_rss_item_count' => (int) ( $provider['parsed_rss_item_count'] ?? $provider['rss_item_count'] ?? count( $incidents ) + count( $recent ) ),
+            'active_incident_count' => count( $incidents ),
+            'recent_incident_count' => count( $recent ),
+            'tile_kind' => (string) ( $provider['tile_kind'] ?? '' ),
+            'source_title' => is_array( $first ) ? (string) ( $first['source_title'] ?? $first['title'] ?? '' ) : '',
+            'display_title' => is_array( $first ) ? (string) ( $first['display_title'] ?? $first['displayTitle'] ?? '' ) : '',
+            'official_update_timestamp' => is_array( $first ) ? (string) ( $first['last_official_update'] ?? $first['lastOfficialUpdate'] ?? '' ) : '',
+            'checked_timestamp' => (string) ( $provider['checked_at'] ?? $provider['checkedAt'] ?? $snapshot['fetched_at'] ?? '' ),
+            'snapshot_schema_version' => (int) ( $snapshot['schema_version'] ?? 0 ),
+        ], false );
+        return;
+    }
+}
+
 function lousy_outages_store_snapshot( array $snapshot ): void {
     $cache_key = lousy_outages_snapshot_cache_key();
     $ttl       = (int) apply_filters( 'lousy_outages_snapshot_ttl', 5 * MINUTE_IN_SECONDS );
     set_transient( $cache_key, $snapshot, max( 60, $ttl ) );
     update_option( 'lousy_outages_snapshot', $snapshot, false );
+    lousy_outages_update_aws_snapshot_diagnostic( $snapshot );
 }
 
 function lousy_outages_refresh_snapshot( array $states, string $timestamp, string $source = 'snapshot' ): array {
@@ -681,17 +709,93 @@ function lousy_outages_refresh_snapshot( array $states, string $timestamp, strin
     return $snapshot;
 }
 
+
+function lousy_outages_snapshot_schema_is_current( array $snapshot ): bool {
+    if ( (int) ( $snapshot['schema_version'] ?? 0 ) !== (int) LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION ) {
+        return false;
+    }
+    $providers = isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] ) ? $snapshot['providers'] : [];
+    foreach ( $providers as $provider ) {
+        if ( ! is_array( $provider ) ) { return false; }
+        $incidents = isset( $provider['incidents'] ) && is_array( $provider['incidents'] ) ? $provider['incidents'] : [];
+        foreach ( $incidents as $incident ) {
+            if ( ! is_array( $incident ) ) { return false; }
+            $needs = ! empty( $incident['region_name'] ) || ! empty( $incident['region_code'] ) || ! empty( $incident['is_long_running'] ) || ( isset( $incident['scope'] ) && 'regional' === strtolower( (string) $incident['scope'] ) );
+            if ( $needs ) {
+                foreach ( [ 'status', 'scope', 'last_official_update', 'checked_at', 'display_title', 'source_title' ] as $field ) {
+                    if ( ! array_key_exists( $field, $incident ) ) { return false; }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+function lousy_outages_incident_value( array $incident, string $snake, string $camel = '' ) {
+    if ( array_key_exists( $snake, $incident ) ) { return $incident[ $snake ]; }
+    if ( $camel && array_key_exists( $camel, $incident ) ) { return $incident[ $camel ]; }
+    return null;
+}
+
+function lousy_outages_display_title_for_incident( string $id, array $state, array $incident ): string {
+    $provider = (string) ( $state['name'] ?? $state['provider'] ?? $id );
+    $source = trim( (string) ( lousy_outages_incident_value( $incident, 'source_title' ) ?? lousy_outages_incident_value( $incident, 'title' ) ?? '' ) );
+    $service = trim( (string) ( lousy_outages_incident_value( $incident, 'service_name' ) ?? lousy_outages_incident_value( $incident, 'service' ) ?? '' ) );
+    $region_name = trim( (string) ( lousy_outages_incident_value( $incident, 'region_name', 'regionName' ) ?? '' ) );
+    $region_code = trim( (string) ( lousy_outages_incident_value( $incident, 'region_code', 'regionCode' ) ?? '' ) );
+    $status = strtolower( (string) ( lousy_outages_incident_value( $incident, 'status' ) ?? lousy_outages_incident_value( $incident, 'impact' ) ?? $state['status'] ?? '' ) );
+    $generic = preg_match( '/^(increased error rates|operational issue\s*-\s*multiple services(?:\s*\([^)]*\))?|multiple services|service disruption|major outage reported\.?|service degradation reported\.?)$/i', $source ) === 1;
+    if ( $generic && ( $region_name || $region_code || $service || 'aws' === strtolower( $id ) ) ) {
+        $service_label = $service ?: ( false !== stripos( $source, 'multiple services' ) ? 'Multiple services' : $provider . ' services' );
+        if ( 'aws' === strtolower( $id ) && false === stripos( $service_label, 'aws' ) ) {
+            $service_label = str_ireplace( 'Multiple services', 'Multiple AWS services', $service_label );
+            if ( false === stripos( $service_label, 'AWS' ) ) { $service_label = $provider . ' ' . lcfirst( $service_label ); }
+        }
+        $verb = in_array( $status, [ 'outage', 'major', 'critical', 'disrupted' ], true ) ? 'disrupted' : 'degraded';
+        $where = $region_name ? ' in ' . $region_name : '';
+        if ( $region_code ) { $where .= ' (' . $region_code . ')'; }
+        return trim( $service_label . ' ' . $verb . $where );
+    }
+    return $source ?: (string) ( $incident['summary'] ?? $state['summary'] ?? 'Incident' );
+}
+
+function lousy_outages_map_incident_payload( string $id, array $state, array $incident, string $fetched_at ): array {
+    $source_title = (string) ( lousy_outages_incident_value( $incident, 'source_title', 'sourceTitle' ) ?? lousy_outages_incident_value( $incident, 'title' ) ?? 'Incident' );
+    $display_title = (string) ( lousy_outages_incident_value( $incident, 'display_title', 'displayTitle' ) ?? lousy_outages_display_title_for_incident( $id, $state, array_merge( $incident, [ 'source_title' => $source_title ] ) ) );
+    return [
+        'id'        => (string) ( $incident['id'] ?? md5( $id . wp_json_encode( $incident ) ) ),
+        'title'     => $source_title,
+        'display_title' => $display_title,
+        'displayTitle' => $display_title,
+        'source_title' => $source_title,
+        'sourceTitle' => $source_title,
+        'summary'   => $incident['summary'] ?? '',
+        'startedAt' => lousy_outages_incident_value( $incident, 'started_at', 'startedAt' ) ?? '',
+        'updatedAt' => lousy_outages_incident_value( $incident, 'updated_at', 'updatedAt' ) ?? '',
+        'impact'    => lousy_outages_incident_value( $incident, 'impact' ) ?? 'minor',
+        'status'    => lousy_outages_incident_value( $incident, 'status' ) ?? lousy_outages_incident_value( $incident, 'impact' ) ?? 'minor',
+        'scope'     => lousy_outages_incident_value( $incident, 'scope' ) ?? '',
+        'region_name' => lousy_outages_incident_value( $incident, 'region_name', 'regionName' ) ?? '',
+        'region_code' => lousy_outages_incident_value( $incident, 'region_code', 'regionCode' ) ?? '',
+        'is_long_running' => (bool) ( lousy_outages_incident_value( $incident, 'is_long_running', 'isLongRunning' ) ?? false ),
+        'last_official_update' => lousy_outages_incident_value( $incident, 'last_official_update', 'lastOfficialUpdate' ) ?? lousy_outages_incident_value( $incident, 'updated_at', 'updatedAt' ) ?? '',
+        'checked_at' => lousy_outages_incident_value( $incident, 'checked_at', 'checkedAt' ) ?? ( $state['checked_at'] ?? $fetched_at ),
+        'eta'       => $incident['eta'] ?? 'investigating',
+        'url'       => $incident['url'] ?? ( $state['url'] ?? '' ),
+    ];
+}
+
 function lousy_outages_get_snapshot( bool $force_refresh = false ): array {
     $cache_key = lousy_outages_snapshot_cache_key();
     if ( ! $force_refresh ) {
         $cached = get_transient( $cache_key );
-        if ( is_array( $cached ) && ! empty( $cached['providers'] ) ) {
+        if ( is_array( $cached ) && ! empty( $cached['providers'] ) && lousy_outages_snapshot_schema_is_current( $cached ) ) {
             return lousy_outages_filter_snapshot( $cached );
         }
     }
 
     $stored = get_option( 'lousy_outages_snapshot', [] );
-    if ( ! $force_refresh && is_array( $stored ) && ! empty( $stored['providers'] ) ) {
+    if ( ! $force_refresh && is_array( $stored ) && ! empty( $stored['providers'] ) && lousy_outages_snapshot_schema_is_current( $stored ) ) {
         $filtered = lousy_outages_filter_snapshot( $stored );
         lousy_outages_store_snapshot( $filtered );
         return $filtered;
@@ -1487,16 +1591,7 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
             if ( ! is_array( $incident ) ) {
                 continue;
             }
-            $incidents[] = [
-                'id'        => (string) ( $incident['id'] ?? md5( $id . wp_json_encode( $incident ) ) ),
-                'title'     => $incident['title'] ?? 'Incident',
-                'summary'   => $incident['summary'] ?? '',
-                'startedAt' => $incident['started_at'] ?? '',
-                'updatedAt' => $incident['updated_at'] ?? '',
-                'impact'    => $incident['impact'] ?? 'minor',
-                'eta'       => $incident['eta'] ?? 'investigating',
-                'url'       => $incident['url'] ?? ( $state['url'] ?? '' ),
-            ];
+            $incidents[] = lousy_outages_map_incident_payload( $id, $state, $incident, $fetched_at );
         }
     }
     if ( ! empty( $state['recent_incidents'] ) && is_array( $state['recent_incidents'] ) ) {
@@ -1504,16 +1599,7 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
             if ( ! is_array( $incident ) ) {
                 continue;
             }
-            $recent_incidents[] = [
-                'id'        => (string) ( $incident['id'] ?? md5( $id . wp_json_encode( $incident ) ) ),
-                'title'     => $incident['title'] ?? 'Incident',
-                'summary'   => $incident['summary'] ?? '',
-                'startedAt' => $incident['started_at'] ?? '',
-                'updatedAt' => $incident['updated_at'] ?? '',
-                'impact'    => $incident['impact'] ?? 'minor',
-                'eta'       => $incident['eta'] ?? 'investigating',
-                'url'       => $incident['url'] ?? ( $state['url'] ?? '' ),
-            ];
+            $recent_incidents[] = lousy_outages_map_incident_payload( $id, $state, $incident, $fetched_at );
         }
     }
 
@@ -1532,6 +1618,10 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
         'sort_key'   => $state['sort_key'] ?? null,
         'confidence'=> $state['confidence'] ?? null,
         'summary'    => $state['summary'] ?? $label,
+        'checked_at' => $state['checked_at'] ?? $fetched_at,
+        'checkedAt'  => $state['checked_at'] ?? $fetched_at,
+        'last_official_update' => $state['last_official_update'] ?? '',
+        'lastOfficialUpdate' => $state['last_official_update'] ?? '',
         'updatedAt'  => $updated_at,
         'url'        => $url,
         'snark'      => $state['snark'] ?? '',
