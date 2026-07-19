@@ -1499,7 +1499,7 @@
           li.className = 'lo-inc-item';
           var title = state.doc.createElement('p');
           title.className = 'lo-inc-title';
-          var condensedName = condenseIncidentTitle(providerSlug, incident.name || incident.title || incident.summary || 'Incident', 118);
+          var condensedName = condenseIncidentTitle(providerSlug, incident.display_title || incident.displayTitle || incident.name || incident.title || incident.summary || provider.summary || 'Incident', 118);
           title.textContent = condensedName.text || 'Incident';
           if (condensedName.title && condensedName.title !== condensedName.text) {
             title.setAttribute('title', condensedName.title);

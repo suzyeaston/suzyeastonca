@@ -22,7 +22,7 @@ test('long-running AWS regional incident appears as current issue with official 
   const providers=[
     {id:'teamviewer',name:'TeamViewer',tile_kind:'outage',incidents:[{title:'Connectivity issues',status:'investigating',updated_at:'2026-07-19T07:00:00Z'}]},
     {id:'cloudflare',name:'Cloudflare',tile_kind:'outage',incidents:[{title:'Dashboard errors',status:'identified',updated_at:'2026-07-19T06:00:00Z'}]},
-    {id:'aws',name:'AWS',tile_kind:'outage',checked_at:'2026-07-19T10:00:00Z',incidents:[{title:'Service disruption in UAE (ME-CENTRAL-1)',summary:'Official source says recovery is expected to take months due to physical infrastructure damage.',status:'outage',impact:'outage',scope:'regional',region_name:'UAE',region_code:'ME-CENTRAL-1',is_long_running:true,last_official_update:'2026-04-30T12:00:00Z',updated_at:'2026-04-30T12:00:00Z'}]},
+    {id:'aws',name:'AWS',tile_kind:'outage',checked_at:'2026-07-19T10:00:00Z',incidents:[{display_title:'Multiple AWS services disrupted in UAE (ME-CENTRAL-1)',source_title:'Operational issue - Multiple services (UAE)',title:'Operational issue - Multiple services (UAE)',summary:'Official source says recovery is expected to take months due to physical infrastructure damage.',status:'outage',impact:'outage',scope:'regional',region_name:'UAE',region_code:'ME-CENTRAL-1',is_long_running:true,last_official_update:'2026-04-30T12:00:00Z',updated_at:'2026-04-30T12:00:00Z'}]},
     {id:'openai',name:'OpenAI',tile_kind:'operational',incidents:[],recent_incidents:[{title:'Resolved',status:'operational'}]}
   ];
   const items=teaser.currentItems(payload(providers));
@@ -32,7 +32,7 @@ test('long-running AWS regional incident appears as current issue with official 
   assert.equal(aws.type,'outage');
   assert.equal(aws.label,'Ongoing regional disruption');
   assert.equal(aws.region,'UAE · ME-CENTRAL-1');
-  assert.equal(aws.summary,'Service disruption in UAE (ME-CENTRAL-1)');
+  assert.equal(aws.summary,'Multiple AWS services disrupted in UAE (ME-CENTRAL-1)');
   assert.match(aws.details,/recovery is expected to take months/);
   assert.equal(aws.lastOfficialUpdate,'2026-04-30T12:00:00Z');
   assert.equal(aws.checkedAt,'2026-07-19T10:00:00Z');

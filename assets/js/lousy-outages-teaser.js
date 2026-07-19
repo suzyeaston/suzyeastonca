@@ -57,7 +57,7 @@
         const updated = incident.updatedAt || incident.updated_at || started || provider.updatedAt || provider.updated_at || '';
         items.push({
           type: 'outage', tone: 'outage', providerId, provider: providerName, label: incident.scope === 'regional' ? 'Ongoing regional disruption' : 'Active incident',
-          summary: String(incident.title || incident.summary || provider.summary || 'Incident reported'),
+          summary: String(incident.display_title || incident.displayTitle || incident.title || incident.summary || provider.summary || 'Incident reported'),
           details: String(incident.summary || ''),
           region: [incident.region_name, incident.region_code].filter(Boolean).join(' · '),
           lastOfficialUpdate: incident.last_official_update || incident.lastOfficialUpdate || updated,
