@@ -68,9 +68,7 @@ lousy_outages_require( 'includes/Precursor.php' );
 lousy_outages_require( 'includes/Subscriptions.php' );
 lousy_outages_require( 'includes/UserReports.php' );
 lousy_outages_require( 'includes/SignalEngine.php' );
-lousy_outages_require( 'includes/RumourRadarLogger.php' );
 lousy_outages_require( 'includes/Subscribe.php' );
-lousy_outages_require( 'includes/Api.php' );
 lousy_outages_require( 'includes/Feeds.php' );
 lousy_outages_require( 'includes/Summary.php' );
 lousy_outages_require( 'includes/IncidentAlerts.php' );
@@ -82,20 +80,26 @@ lousy_outages_require( 'includes/Model/Incident.php' );
 lousy_outages_require( 'includes/Storage/IncidentStore.php' );
 lousy_outages_require( 'includes/Email/Composer.php' );
 lousy_outages_require( 'includes/Sources/Sources.php' );
+lousy_outages_require( 'includes/Sources/SourceRegistry.php' );
 lousy_outages_require( 'includes/Sources/index.php' );
 lousy_outages_require( 'includes/Cron/Refresh.php' );
 
 // External signal infrastructure must load before concrete source classes.
 lousy_outages_require( 'includes/SignalSourceInterface.php' );
 lousy_outages_require( 'includes/ExternalSignals.php' );
-lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php' );
-lousy_outages_require( 'includes/Sources/CloudflareRadarSource.php' );
-lousy_outages_require( 'includes/Sources/PublicChatterSource.php' );
 lousy_outages_require( 'includes/Sources/SourcePack.php' );
 lousy_outages_require( 'includes/Sources/SourceBudgetManager.php' );
+lousy_outages_require( 'includes/Sources/ChatterRejectionReasons.php' );
+lousy_outages_require( 'includes/Sources/StatuspageIntelSource.php' );
 lousy_outages_require( 'includes/Sources/ProviderFeedSource.php' );
 lousy_outages_require( 'includes/Sources/HackerNewsChatterSource.php' );
+lousy_outages_require( 'includes/Sources/CommunityReportIntelSource.php' );
+lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php' );
+lousy_outages_require( 'includes/Sources/PublicChatterSource.php' );
+lousy_outages_require( 'includes/Sources/RedditFieldReportsSource.php' );
+lousy_outages_require( 'includes/Sources/CloudflareRadarSource.php' );
 lousy_outages_require( 'includes/SignalCollector.php' );
+lousy_outages_require( 'includes/Api.php' );
 
 lousy_outages_require( 'public/shortcode.php' );
 
@@ -179,19 +183,30 @@ function lousy_outages_activate() {
 register_activation_hook( __FILE__, 'lousy_outages_activate' );
 
 function lousy_outages_maybe_install_schema( bool $force = false ): void {
-    $schema_version = '2026-05-04.1';
+    $schema_version = ExternalSignals::SCHEMA_VERSION;
     $option_key = 'lousy_outages_schema_version';
     $current = (string) get_option( $option_key, '' );
-    if ( ! $force && version_compare( $current, $schema_version, '>=' ) ) {
+    $diag = ExternalSignals::schema_diagnostics();
+    $needs_external = ! empty( $diag['missing_columns'] ) || empty( $diag['table_exists'] );
+    if ( ! $force && version_compare( $current, $schema_version, '>=' ) && ! $needs_external ) {
         return;
     }
 
     Subscriptions::create_table();
     UserReports::install();
-    ExternalSignals::install();
+    if ( $needs_external || $force || version_compare( $current, $schema_version, '<' ) ) {
+        ExternalSignals::install();
+    }
+    update_option( 'lousy_outages_external_schema_diagnostic', ExternalSignals::schema_diagnostics(), false );
     update_option( $option_key, $schema_version, false );
 }
 add_action( 'admin_init', 'lousy_outages_maybe_install_schema' );
+add_action( 'init', static function (): void {
+    if ( is_admin() ) {
+        return;
+    }
+    lousy_outages_maybe_install_schema();
+}, 5 );
 
 /**
  * Clear cron on deactivation.
@@ -905,10 +920,18 @@ add_action( 'admin_init', function () {
         ]
     );
 
-    register_setting( 'lousy_outages', 'lousy_outages_public_chatter_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'0'] );
+    register_setting( 'lousy_outages', 'lousy_outages_public_chatter_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'1'] );
     register_setting( 'lousy_outages', 'lousy_outages_public_chatter_bluesky_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'1'] );
-    register_setting( 'lousy_outages', 'lousy_outages_public_chatter_mastodon_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'0'] );
+    register_setting( 'lousy_outages', 'lousy_outages_public_chatter_mastodon_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'1'] );
     register_setting( 'lousy_outages', 'lousy_outages_public_chatter_gdelt_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'1'] );
+    register_setting( 'lousy_outages', 'lousy_outages_public_chatter_reddit_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'0'] );
+    register_setting( 'lousy_outages', 'lousy_outages_reddit_client_id', ['sanitize_callback'=>'sanitize_text_field','default'=>''] );
+    register_setting( 'lousy_outages', 'lousy_outages_reddit_client_secret', ['sanitize_callback'=>'sanitize_text_field','default'=>''] );
+    register_setting( 'lousy_outages', 'lousy_outages_reddit_user_agent', ['sanitize_callback'=>'sanitize_text_field','default'=>''] );
+    register_setting( 'lousy_outages', 'lousy_outages_reddit_subreddits', ['sanitize_callback'=>'sanitize_textarea_field','default'=>implode("\n", array_map(static fn($s)=>'r/'.$s, \SuzyEaston\LousyOutages\Sources\RedditFieldReportsSource::default_subreddits()))] );
+    register_setting( 'lousy_outages', 'lousy_outages_cloudflare_radar_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'0'] );
+    register_setting( 'lousy_outages', 'lousy_outages_cloudflare_radar_token', ['sanitize_callback'=>'sanitize_text_field','default'=>''] );
+    register_setting( 'lousy_outages', 'lousy_outages_caida_ioda_enabled', ['sanitize_callback'=>'lousy_outages_sanitize_checkbox','default'=>'0'] );
 
     register_setting(
         'lousy_outages',
@@ -919,6 +942,26 @@ add_action( 'admin_init', function () {
         ]
     );
 } );
+
+
+function lousy_outages_initialize_public_chatter_defaults(): void {
+    $defaults = [
+        'lousy_outages_public_chatter_enabled' => '1',
+        'lousy_outages_public_chatter_bluesky_enabled' => '1',
+        'lousy_outages_public_chatter_mastodon_enabled' => '1',
+        'lousy_outages_public_chatter_gdelt_enabled' => '1',
+        'lousy_outages_public_chatter_reddit_enabled' => '0',
+        'lousy_outages_cloudflare_radar_enabled' => '0',
+        'lousy_outages_caida_ioda_enabled' => '0',
+    ];
+    foreach ( $defaults as $option => $value ) {
+        if ( null === get_option( $option, null ) ) {
+            update_option( $option, $value, false );
+        }
+    }
+}
+add_action( 'init', 'lousy_outages_initialize_public_chatter_defaults', 1 );
+add_action( 'admin_init', 'lousy_outages_initialize_public_chatter_defaults', 1 );
 
 function lousy_outages_settings_page() {
     $providers       = Providers::list();
@@ -1056,12 +1099,51 @@ function lousy_outages_settings_page() {
                     </td>
                 </tr>
                 
-                <tr><th scope="row">Rumour Radar</th><td>
-                    <input type="hidden" name="lousy_outages_public_chatter_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_enabled', '0' ) ) ); ?>> Enable Public Chatter Radar</label><br>
-                    <input type="hidden" name="lousy_outages_public_chatter_bluesky_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_bluesky_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_bluesky_enabled', '1' ) ) ); ?>> Enable Bluesky source</label><br>
-                    <input type="hidden" name="lousy_outages_public_chatter_mastodon_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_mastodon_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_mastodon_enabled', '0' ) ) ); ?>> Enable Mastodon source</label><br>
-                    <input type="hidden" name="lousy_outages_public_chatter_gdelt_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_gdelt_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_public_chatter_gdelt_enabled', '1' ) ) ); ?>> Enable GDELT source</label>
-                    <p class="description">Public chatter signals are unconfirmed and should be treated as early warning only.</p>
+                <?php
+                $lo_public_chatter_source = new \SuzyEaston\LousyOutages\Sources\PublicChatterSource();
+                $lo_public_chatter_master_enabled = ! empty( get_option( 'lousy_outages_public_chatter_enabled', '1' ) );
+                $lo_public_chatter_direct_enabled = $lo_public_chatter_source->direct_sources_enabled();
+                $lo_public_chatter_source_statuses = [
+                    'Bluesky' => ! empty( get_option( 'lousy_outages_public_chatter_bluesky_enabled', '1' ) ),
+                    'Mastodon' => ! empty( get_option( 'lousy_outages_public_chatter_mastodon_enabled', '1' ) ),
+                    'GDELT' => ! empty( get_option( 'lousy_outages_public_chatter_gdelt_enabled', '1' ) ),
+                    'Reddit' => ! empty( get_option( 'lousy_outages_public_chatter_reddit_enabled', '0' ) ),
+                ];
+                $lo_source_registry = \SuzyEaston\LousyOutages\Sources\SourceRegistry::definitions();
+                $lo_source_runtime = \SuzyEaston\LousyOutages\Sources\SourceRegistry::runtime_statuses( (array) get_option( 'lo_diag_public_chatter', [] ) );
+                ?>
+                <?php
+                $lo_public_chatter_diag = (array) get_option( 'lo_diag_public_chatter', [] );
+                $lo_gdelt_cooldown = (string) ( $lo_public_chatter_diag['gdelt_cooldown_until'] ?? '' );
+                $lo_gdelt_limited = ! empty( $lo_public_chatter_diag['gdelt_rate_limited'] ) || $lo_gdelt_cooldown !== '';
+                ?>
+                <tr><th scope="row">Sources / Corroboration</th><td>
+                    <p><strong>Official/status feeds:</strong> enabled by default, trusted, and do not change email behavior.</p>
+                    <p><strong>Public/social:</strong> Bluesky is real-time public search; Mastodon is instance-limited federated search; HN is developer/forum chatter; Reddit is disabled until official API/OAuth credentials are configured.</p>
+                    <p><strong>Open web:</strong> GDELT is open-web/news corroboration with budget/cooldown protection. <strong>Internet health:</strong> Cloudflare Radar and CAIDA IODA are telemetry and do not prove SaaS application outages. <strong>Community:</strong> first-party reports remain unconfirmed.</p>
+                    <p class="description">Enabled sources affect dashboard diagnostics/watch candidates only. Email alerts remain thresholded; public chatter remains unconfirmed and raw social post text is not shown publicly.</p>
+                    <p><strong>Master Public Chatter Radar:</strong> <?php echo esc_html( $lo_public_chatter_master_enabled ? 'Enabled' : 'Disabled' ); ?> | <strong>Direct public source gate:</strong> <?php echo esc_html( $lo_public_chatter_direct_enabled ? 'Enabled' : 'Disabled' ); ?></p>
+                    <?php if ( ! $lo_public_chatter_direct_enabled ) : ?>
+                        <div class="notice notice-warning inline"><p><?php echo esc_html__( 'Direct public chatter source gate is disabled. Saved source checkboxes will be visible but collection is blocked until the gate is enabled.', 'lousy-outages' ); ?></p></div>
+                    <?php endif; ?>
+                    <?php if ( $lo_gdelt_limited ) : ?>
+                        <div class="notice notice-warning inline"><p><?php echo esc_html( $lo_gdelt_cooldown !== '' ? 'GDELT is temporarily in cooldown after a rate-limit/error response. It will resume automatically; do not disable it permanently.' : 'GDELT recently reported rate limiting. It remains enabled and budgeted.' ); ?></p></div>
+                    <?php endif; ?>
+                    <input type="hidden" name="lousy_outages_public_chatter_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_enabled" value="1" <?php checked( $lo_public_chatter_master_enabled ); ?>> Enable Public Chatter Radar</label><br>
+                    <input type="hidden" name="lousy_outages_public_chatter_bluesky_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_bluesky_enabled" value="1" <?php checked( $lo_public_chatter_source_statuses['Bluesky'] ); ?>> Enable Bluesky source</label> <em>Bluesky: <?php echo esc_html( $lo_public_chatter_source_statuses['Bluesky'] ? ( $lo_public_chatter_direct_enabled ? 'enabled' : 'enabled, gate disabled' ) : 'disabled' ); ?></em><br>
+                    <input type="hidden" name="lousy_outages_public_chatter_mastodon_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_mastodon_enabled" value="1" <?php checked( $lo_public_chatter_source_statuses['Mastodon'] ); ?>> Enable Mastodon source</label> <em>Mastodon: <?php echo esc_html( $lo_public_chatter_source_statuses['Mastodon'] ? ( $lo_public_chatter_direct_enabled ? 'enabled' : 'enabled, gate disabled' ) : 'disabled' ); ?></em><br>
+                    <input type="hidden" name="lousy_outages_public_chatter_gdelt_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_gdelt_enabled" value="1" <?php checked( $lo_public_chatter_source_statuses['GDELT'] ); ?>> Enable GDELT source</label> <em>GDELT: <?php echo esc_html( $lo_public_chatter_source_statuses['GDELT'] ? ( $lo_gdelt_limited ? 'enabled, rate-limited/cooldown' : ( $lo_public_chatter_direct_enabled ? 'enabled' : 'enabled, gate disabled' ) ) : 'disabled' ); ?></em><br>
+                    <input type="hidden" name="lousy_outages_public_chatter_reddit_enabled" value="0"><label><input type="checkbox" name="lousy_outages_public_chatter_reddit_enabled" value="1" <?php checked( $lo_public_chatter_source_statuses['Reddit'] ); ?>> Enable Reddit source</label> <em>Reddit: <?php echo esc_html( \SuzyEaston\LousyOutages\Sources\SourceRegistry::reddit_credentials_configured() ? ( $lo_public_chatter_source_statuses['Reddit'] ? 'configured' : 'configured, disabled' ) : 'not configured' ); ?></em><br>
+                    <label for="lo_reddit_client_id">Reddit client ID</label><br><input id="lo_reddit_client_id" type="text" name="lousy_outages_reddit_client_id" value="<?php echo esc_attr( get_option( 'lousy_outages_reddit_client_id', '' ) ); ?>" class="regular-text"><br>
+                    <label for="lo_reddit_client_secret">Reddit client secret</label><br><input id="lo_reddit_client_secret" type="password" name="lousy_outages_reddit_client_secret" value="<?php echo esc_attr( get_option( 'lousy_outages_reddit_client_secret', '' ) ); ?>" class="regular-text"><br>
+                    <label for="lo_reddit_user_agent">Reddit user agent</label><br><input id="lo_reddit_user_agent" type="text" name="lousy_outages_reddit_user_agent" value="<?php echo esc_attr( get_option( 'lousy_outages_reddit_user_agent', '' ) ); ?>" class="regular-text"><br>
+                    <label for="lo_reddit_subreddits">Subreddits</label><br><textarea id="lo_reddit_subreddits" name="lousy_outages_reddit_subreddits" rows="4" cols="60"><?php echo esc_textarea( get_option( 'lousy_outages_reddit_subreddits', implode( "\n", array_map( static fn($s) => 'r/' . $s, \SuzyEaston\LousyOutages\Sources\RedditFieldReportsSource::default_subreddits() ) ) ) ); ?></textarea>
+                    <p class="description">Reddit uses official API/OAuth only; no scraping or unauthenticated HTML endpoints. Raw Reddit post text is not shown publicly.</p>
+                    <input type="hidden" name="lousy_outages_cloudflare_radar_enabled" value="0"><label><input type="checkbox" name="lousy_outages_cloudflare_radar_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_cloudflare_radar_enabled', '0' ) ) ); ?>> Enable Cloudflare Radar telemetry</label><br>
+                    <label for="lo_cloudflare_radar_token">Cloudflare Radar token</label><br><input id="lo_cloudflare_radar_token" type="password" name="lousy_outages_cloudflare_radar_token" value="<?php echo esc_attr( get_option( 'lousy_outages_cloudflare_radar_token', '' ) ); ?>" class="regular-text"><br>
+                    <input type="hidden" name="lousy_outages_caida_ioda_enabled" value="0"><label><input type="checkbox" name="lousy_outages_caida_ioda_enabled" value="1" <?php checked( ! empty( get_option( 'lousy_outages_caida_ioda_enabled', '0' ) ) ); ?>> Enable CAIDA IODA telemetry placeholder</label> <em>Optional telemetry stub; future collection should only corroborate country/ASN-level disruption.</em>
+                    <p class="description">GDELT is open-web/news corroboration with a very small per-run budget, success cache, and automatic cooldown/backoff. Cloudflare Radar remains internet-health telemetry, not rumour radar.</p>
+                    <details><summary>Source lane registry</summary><table class="widefat striped"><thead><tr><th>Source</th><th>Lane</th><th>Trust</th><th>Capability</th><th>Status</th></tr></thead><tbody><?php foreach ( $lo_source_registry as $lo_source_key => $lo_source_def ) : $lo_runtime = (array) ( $lo_source_runtime[ $lo_source_key ] ?? [] ); ?><tr><td><?php echo esc_html( (string) ( $lo_source_def['display_name'] ?? $lo_source_key ) ); ?></td><td><?php echo esc_html( (string) ( $lo_source_def['lane'] ?? '' ) ); ?></td><td><?php echo esc_html( (string) ( $lo_source_def['trust_level'] ?? '' ) ); ?></td><td><?php echo esc_html( (string) ( $lo_source_def['source_capability'] ?? '' ) ); ?></td><td><?php echo esc_html( (string) ( $lo_runtime['status'] ?? 'unknown' ) ); ?></td></tr><?php endforeach; ?></tbody></table></details>
                 </td></tr>
 
 <tr>
@@ -1172,8 +1254,8 @@ function lousy_outages_settings_page() {
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-right:8px;"><?php wp_nonce_field('lousy_outages_clear_rss_feed_cache'); ?><input type="hidden" name="action" value="lousy_outages_clear_rss_feed_cache"><?php submit_button('Clear RSS Feed Cache','secondary','submit',false); ?></form>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;"><?php wp_nonce_field('lousy_outages_public_chatter_dry_run'); ?><input type="hidden" name="action" value="lousy_outages_public_chatter_dry_run"><?php submit_button('Run Public Chatter Dry Run','secondary','submit',false); ?></form>
 
-        <h3>Fused signals (community + external signals)</h3><ul><?php foreach (array_slice((array)$fused,0,8) as $row) : ?><li><strong><?php echo esc_html((string)($row['provider_name'] ?? $row['provider_id'])); ?></strong> · <?php echo esc_html((string)($row['classification'] ?? 'quiet')); ?> · confidence <?php echo esc_html((string)($row['confidence'] ?? 0)); ?> — <?php echo esc_html((string)($row['message'] ?? '')); ?> <em>(Unconfirmed public chatter. Official status not confirmed.)</em></li><?php endforeach; ?></ul>
-        <h3>Recent external signals</h3><ul><?php foreach((array)$external as $row) : $meta = json_decode((string)($row['metadata_json'] ?? ''), true); $themes = is_array($meta['themes'] ?? null) ? implode(', ', array_slice($meta['themes'],0,4)) : ''; $snips = is_array($meta['snippets'] ?? null) ? implode(' | ', array_slice($meta['snippets'],0,2)) : ''; ?><li><?php echo esc_html((string)($row['observed_at'] ?? '')); ?> · <?php echo esc_html((string)($row['provider_name'] ?? $row['provider_id'] ?? '')); ?> · <?php echo esc_html((string)($row['source'] ?? '')); ?> · <?php echo esc_html((string)($row['severity'] ?? 'watch')); ?> (<?php echo esc_html((string)($row['confidence'] ?? 0)); ?>) — <?php echo esc_html((string)($meta['summary'] ?? $row['title'] ?? '')); ?><?php if($themes): ?> · themes: <?php echo esc_html($themes); ?><?php endif; ?><?php if($snips): ?> · snippets: <?php echo esc_html($snips); ?><?php endif; ?></li><?php endforeach; ?></ul>
+        <h3>Fused signals (community + external signals)</h3><ul><?php foreach (array_slice((array)$fused,0,8) as $row) : ?><li><?php echo esc_html((string)($row['provider_name'] ?? $row['provider_id'])); ?> — <?php echo esc_html((string)($row['classification'] ?? 'quiet')); ?> (<?php echo esc_html((string)($row['confidence'] ?? 0)); ?>) — <?php echo esc_html((string)($row['message'] ?? '')); ?></li><?php endforeach; ?></ul>
+        <h3>Recent external signals</h3><ul><?php foreach((array)$external as $row) : ?><li><?php echo esc_html((string)($row['observed_at'] ?? '')); ?> · <?php echo esc_html((string)($row['source'] ?? '')); ?> · <?php echo esc_html((string)($row['provider_name'] ?? $row['provider_id'] ?? '')); ?> · <?php echo esc_html((string)($row['signal_type'] ?? '')); ?> · <?php echo esc_html((string)($row['title'] ?? '')); ?></li><?php endforeach; ?></ul>
         <h3>Top providers by report count</h3>
         <ul><?php foreach ((array)($diag['provider_counts'] ?? []) as $row) : ?><li><?php echo esc_html((string)($row['provider_id'] ?? 'unknown')); ?>: <?php echo esc_html((string)($row['report_count'] ?? 0)); ?></li><?php endforeach; ?></ul>
     </div>
@@ -1275,6 +1357,12 @@ add_action( 'admin_post_lousy_outages_synthetic_alert', function () {
 add_action( 'admin_post_lousy_outages_queue_poll', function () {
     if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lousy-outages' ) ); }
     check_admin_referer( 'lousy_outages_poll_now' );
+
+    if ( ! (bool) get_option( 'lousy_outages_allow_sync_poll_now', false ) ) {
+        set_transient( 'lousy_outages_notice', [ 'message' => 'Synchronous Poll Now is disabled for stability. Use Queue Poll instead.', 'type' => 'warning' ], 30 );
+        wp_safe_redirect( add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) ) );
+        exit;
+    }
     $hook = 'lousy_outages_poll';
     $nextRun = time() + 30;
     $scheduled = wp_schedule_single_event( $nextRun, $hook ) !== false;
@@ -1302,12 +1390,6 @@ add_action( 'admin_post_lousy_outages_poll_now', function () {
     }
 
     check_admin_referer( 'lousy_outages_poll_now' );
-
-    if ( ! (bool) get_option( 'lousy_outages_allow_sync_poll_now', false ) ) {
-        set_transient( 'lousy_outages_notice', [ 'message' => 'Synchronous Poll Now is disabled for stability. Use Queue Poll instead.', 'type' => 'warning' ], 30 );
-        wp_safe_redirect( add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) ) );
-        exit;
-    }
 
     $started = microtime( true );
     $memoryBefore = function_exists( 'memory_get_usage' ) ? memory_get_usage( true ) : 0;
@@ -1582,9 +1664,9 @@ add_action( 'rest_api_init', function () {
     ] );
 } );
 
-add_action( 'lousy_outages_collect_external_signals', static function () { SignalCollector::collect(); } );
+add_action( 'lousy_outages_collect_external_signals', static function () { SignalCollector::collect(['collection_trigger'=>'cron']); } );
 
-add_action( 'admin_post_lousy_outages_collect_signals_now', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_collect_signals_now'); $r=SignalCollector::collect(); if (class_exists('SuzyEaston\LousyOutages\Feeds')) { SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache(); } set_transient('lousy_outages_notice',['message'=>sprintf('External signal collection finished. Stored %d signals.',(int)($r['total_stored']??0)),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );
+add_action( 'admin_post_lousy_outages_collect_signals_now', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_collect_signals_now'); $r=SignalCollector::collect(['collection_trigger'=>'admin']); if (class_exists('SuzyEaston\LousyOutages\Feeds')) { SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache(); } set_transient('lousy_outages_notice',['message'=>sprintf('External signal collection finished. Stored %d signals.',(int)($r['total_stored']??0)),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );
 add_action( 'admin_post_lousy_outages_seed_demo_external_signals', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_seed_demo_external_signals'); $r=ExternalSignals::seed_demo_signals(); if (class_exists('SuzyEaston\LousyOutages\Feeds')) { SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache(); } set_transient('lousy_outages_notice',['message'=>sprintf('Seeded %d demo external signals.',(int)($r['inserted']??0)),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );
 add_action( 'admin_post_lousy_outages_clear_demo_external_signals', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_clear_demo_external_signals'); $c=ExternalSignals::clear_demo_signals(); if (class_exists('SuzyEaston\LousyOutages\Feeds')) { SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache(); } set_transient('lousy_outages_notice',['message'=>sprintf('Cleared %d demo external signals.',(int)$c),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );
 

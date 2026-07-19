@@ -100,7 +100,7 @@ function retro_game_music_theme_scripts() {
                 'lousy-outages-home-teaser',
                 'lousyOutagesTeaser',
                 array(
-                    'endpoint'        => esc_url_raw( rest_url( 'lousy-outages/v1/status' ) ),
+                    'endpoint'        => esc_url_raw( rest_url( 'lousy-outages/v1/summary' ) ),
                     'dashboardUrl'    => esc_url_raw( home_url( '/lousy-outages/' ) ),
                     'refreshInterval' => 5 * MINUTE_IN_SECONDS * 1000,
                 )

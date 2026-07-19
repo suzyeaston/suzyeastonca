@@ -484,6 +484,84 @@ function render_shortcode(): string {
         return in_array($needle, $phrases, true);
     };
 
+
+    $normalize_card_text = static function (string $text, int $limit = 180): string {
+        $text = html_entity_decode(wp_strip_all_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/\*\*\s*(Summary|Description|Symptoms?|Workaround|Impact|Status|Update|Updates?)\s*\*\*\s*:?/i', '', $text) ?? $text;
+        $text = preg_replace('/\b(Summary|Description|Symptoms?|Workaround|Impact|Status|Update|Updates?)\s*:\s*/i', '', $text) ?? $text;
+        $text = preg_replace('/\s*[-–—]\s*(Summary|Description|Symptoms?|Workaround|Impact|Status|Update|Updates?)\s*:\s*/i', ' — ', $text) ?? $text;
+        $text = preg_replace('/\s+/', ' ', $text) ?? $text;
+        $text = trim($text, " \t\n\r\0\x0B-*:_");
+        if ('' === $text || strlen($text) <= $limit) {
+            return $text;
+        }
+        $slice = substr($text, 0, max(0, $limit - 1));
+        $space = strrpos($slice, ' ');
+        if (false !== $space && $space > ($limit * 0.65)) {
+            $slice = substr($slice, 0, $space);
+        }
+        return rtrim($slice, " \t\n\r\0\x0B.,;:-") . '…';
+    };
+
+    $incident_timestamp = static function (array $incident): int {
+        foreach (['updated_at', 'updatedAt', 'started_at', 'startedAt', 'last_seen', 'first_seen'] as $field) {
+            if (empty($incident[$field])) {
+                continue;
+            }
+            $timestamp = strtotime((string) $incident[$field]);
+            if ($timestamp) {
+                return $timestamp;
+            }
+        }
+        return 0;
+    };
+
+    $pick_lead_incident = static function (array $incidents) use ($incident_timestamp): ?array {
+        if (!$incidents) {
+            return null;
+        }
+        usort($incidents, static function ($left, $right) use ($incident_timestamp): int {
+            $left_time  = is_array($left) ? $incident_timestamp($left) : 0;
+            $right_time = is_array($right) ? $incident_timestamp($right) : 0;
+            return $right_time <=> $left_time;
+        });
+        foreach ($incidents as $incident) {
+            if (is_array($incident)) {
+                return $incident;
+            }
+        }
+        return null;
+    };
+
+    $build_incident_display = static function (array $incident, string $provider_name, string $fallback_status) use ($normalize_card_text, $format_datetime): array {
+        $title = (string) ($incident['name'] ?? $incident['title'] ?? '');
+        $summary = (string) ($incident['summary'] ?? $incident['body'] ?? $incident['message'] ?? $incident['description'] ?? '');
+        if ('' === trim($title) && '' !== trim($summary)) {
+            $title = $summary;
+            $summary = '';
+        }
+        $title = $normalize_card_text($title, 118);
+        $summary = $normalize_card_text($summary, 210);
+        if ('' !== $summary && 0 === strcasecmp($summary, $title)) {
+            $summary = '';
+        }
+        if ('' === $summary) {
+            $summary = 'Latest official update is available from the provider status page.';
+        }
+
+        $status = (string) ($incident['impact'] ?? $incident['status'] ?? $fallback_status ?: 'Incident');
+        $status = ucwords(str_replace(['_', '-'], ' ', $status));
+
+        return [
+            'provider' => $provider_name,
+            'status'   => $status ?: 'Incident',
+            'title'    => $title ?: 'Active incident',
+            'summary'  => $summary,
+            'updated'  => $format_datetime((string) ($incident['updated_at'] ?? $incident['updatedAt'] ?? $incident['started_at'] ?? $incident['startedAt'] ?? '')),
+            'url'      => (string) ($incident['url'] ?? ''),
+        ];
+    };
+
     $fetched_label = ('snapshot' === strtolower((string) $source))
         ? 'Outage info last refreshed:'
         : 'Outage info fetched:';
@@ -520,7 +598,7 @@ function render_shortcode(): string {
         data-lo-refresh-interval="<?php echo esc_attr((string) $refresh_interval); ?>"
     >
         <div class="lo-header">
-            <div class="lo-actions">
+            <div class="lo-actions lo-print-hide">
                 <span class="lo-meta" aria-live="polite">
                     <span data-lo-fetched-label><?php echo esc_html($fetched_label); ?></span>
                     <strong data-lo-fetched data-lo-last-fetched><?php echo esc_html($format_datetime($fetched_at)); ?></strong>
@@ -533,27 +611,101 @@ function render_shortcode(): string {
                 <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
             </div>
         </div>
-        <div class="lo-mode-toggle" data-lo-mode-toggle>
+        <div class="lo-mode-toggle lo-print-hide" data-lo-mode-toggle>
             <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Incidents (0)</button>
             <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">All providers</button>
         </div>
-        <?php $fused_public = SignalEngine::summarize_fused_signals(120); $fused_public = is_array($fused_public) ? array_values(array_filter($fused_public, static function($r){ $c = strtolower((string)($r['classification'] ?? 'quiet')); return in_array($c,['watch','trending','hot'], true); })) : []; ?>
-        <section class="lo-signals-panel" data-lo-signals-panel<?php echo $fused_public ? '' : ' hidden'; ?>>
-            <div class="lo-section__head">
-                <h3 class="lo-block-title">Trending signals</h3>
-                <p class="lo-history__meta">Unconfirmed unless marked official.</p>
-            </div>
-            <div class="lo-grid">
-            <?php foreach (array_slice($fused_public, 0, 6) as $sig) : $class = strtolower((string)($sig['classification'] ?? 'watch')); $official = !empty($sig['official_incident']); ?>
-                <article class="lo-card">
-                    <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill"><?php echo esc_html(strtoupper($class)); ?></span></div>
-                    <p class="lo-summary"><?php echo esc_html($official ? 'Official incident' : 'Unconfirmed signal'); ?></p>
-                    <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Early warning signal detected.')); ?></p><?php $ev = is_array($sig['evidence'] ?? null) ? $sig['evidence'] : []; ?><?php if (!empty($ev)) : ?><ul class="lo-card-meta"><li><strong>Evidence:</strong> <?php echo esc_html((string)($ev['summary'] ?? '')); ?></li><?php if(!empty($ev['themes'])): ?><li>Themes: <?php echo esc_html(implode(', ', array_slice((array)$ev['themes'],0,5))); ?></li><?php endif; ?><?php if(!empty($ev['mention_count'])): ?><li>Mentions: <?php echo esc_html((string)$ev['mention_count']); ?> in <?php echo esc_html((string)($ev['window_minutes'] ?? 30)); ?> minutes</li><?php endif; ?><?php if(!empty($ev['source_labels'])): ?><li>Sources: <?php echo esc_html(implode(', ', array_slice((array)$ev['source_labels'],0,4))); ?></li><?php endif; ?><?php if(!empty($ev['snippets'])): ?><li>Observations: <?php echo esc_html(implode(' | ', array_slice((array)$ev['snippets'],0,3))); ?></li><?php endif; ?><?php if(!empty($ev['domains'])): ?><li>Domains: <?php echo esc_html(implode(', ', array_slice((array)$ev['domains'],0,5))); ?></li><?php endif; ?></ul><?php endif; ?>
-                    <p class="lo-card-meta">Confidence: <?php echo esc_html((string)($sig['confidence'] ?? 'n/a')); ?><?php if(!empty($sig['confidence_reason'])): ?> (<?php echo esc_html((string)$sig['confidence_reason']); ?>)<?php endif; ?> · Last observed: <?php echo esc_html($format_datetime($sig['last_observed_at'] ?? ($sig['observed_at'] ?? null))); ?></p>
-                </article>
-            <?php endforeach; ?>
-            </div>
-        </section>
+        <?php
+        $fused_public = SignalEngine::summarize_fused_signals(120);
+        $fused_public = is_array($fused_public) ? array_values(array_filter($fused_public, static function($r){ $c = strtolower((string)($r['classification'] ?? 'quiet')); return in_array($c,['watch','trending','hot'], true); })) : [];
+        // Official fused signals are intentionally not rendered here; Active incidents is the public, non-duplicative official incident surface.
+        // Public chatter must stay quote-backed human/public reports only. Feed/synthetic/watch telemetry lanes render in dedicated sections later.
+        $public_chatter = array_values(array_filter($fused_public, static fn($s) => (($s['signal_lane'] ?? '') === 'chatter')));
+        $hnDiag = (array) get_option('lo_diag_hacker_news_chatter', []);
+        $previewSample = isset($hnDiag['chatter_candidates_preview_sample']) && is_array($hnDiag['chatter_candidates_preview_sample']) ? $hnDiag['chatter_candidates_preview_sample'] : [];
+        $rejectedCounts = (array) ($hnDiag['chatter_rejected_by_reason'] ?? []);
+        if ($rejectedCounts === [] && $previewSample) {
+            foreach ($previewSample as $sample) {
+                $reasonCode = (string) ($sample['reject_reason'] ?? '');
+                if ($reasonCode === '' || $reasonCode === 'accepted') {
+                    continue;
+                }
+                $rejectedCounts[$reasonCode] = (int) ($rejectedCounts[$reasonCode] ?? 0) + 1;
+            }
+        }
+        $rejectSummary = \SuzyEaston\LousyOutages\Sources\ChatterRejectionReasons::summarize_counts($rejectedCounts);
+        $rejectedTotal = array_sum(array_map(static fn($row): int => (int) ($row['count'] ?? 0), $rejectSummary));
+        $promotedTotal = count($public_chatter);
+        $checkedTotal = (int) ($hnDiag['chatter_rows_attempted'] ?? 0);
+        if ($checkedTotal <= 0 && $previewSample) {
+            $checkedTotal = count($previewSample);
+        }
+        if ($checkedTotal <= 0) {
+            $checkedTotal = $promotedTotal + $rejectedTotal;
+        }
+        $publicDiag = (array) get_option('lo_diag_public_chatter', []);
+        $cfDiag = (array) get_option('lo_diag_cloudflare_radar', []);
+        $watchCandidates = isset($publicDiag['watch_candidates']) && is_array($publicDiag['watch_candidates']) ? $publicDiag['watch_candidates'] : [];
+        $watchCandidateCount = (int) ($publicDiag['watch_candidate_count'] ?? count($watchCandidates));
+        $sourceStatuses = isset($publicDiag['source_statuses']) && is_array($publicDiag['source_statuses']) ? $publicDiag['source_statuses'] : [];
+        $sourceStatusRows = $sourceStatuses ?: [
+            'hacker_news_chatter' => ['label' => 'HN chatter', 'status' => !empty(get_option('lo_hn_chatter_enabled', '1')) ? 'enabled' : 'disabled', 'lane'=>'public_chatter'],
+            'public_chatter_bluesky' => ['label' => 'Bluesky', 'status' => !empty(get_option('lousy_outages_public_chatter_bluesky_enabled', '1')) ? (!empty($publicDiag['direct_sources_enabled']) ? 'enabled' : 'blocked_by_safe_default') : 'disabled', 'lane'=>'public_chatter'],
+            'public_chatter_mastodon' => ['label' => 'Mastodon', 'status' => !empty(get_option('lousy_outages_public_chatter_mastodon_enabled', '1')) ? (!empty($publicDiag['direct_sources_enabled']) ? 'enabled' : 'blocked_by_safe_default') : 'disabled', 'lane'=>'public_chatter'],
+            'public_chatter_gdelt' => ['label' => 'GDELT open web', 'status' => !empty(get_option('lousy_outages_public_chatter_gdelt_enabled', '1')) ? (!empty($publicDiag['direct_sources_enabled']) ? 'enabled' : 'blocked_by_safe_default') : 'disabled', 'lane'=>'open_web'],
+            'cloudflare_radar' => ['label' => 'Cloudflare Radar', 'status' => !empty($cfDiag['configured']) ? 'configured' : 'not_configured', 'lane'=>'internet_health'],
+        ];
+        $sourcesEnabledCount = 0;
+        $sourcesBlockedCount = 0;
+        foreach ($sourceStatusRows as $sourceStatusRow) {
+            $statusValue = (string) ($sourceStatusRow['status'] ?? 'disabled');
+            if (in_array($statusValue, ['enabled', 'configured'], true)) { $sourcesEnabledCount++; }
+            if (in_array($statusValue, ['disabled', 'blocked_by_safe_default', 'not_configured', 'cooldown', 'rate_limited', 'budget_skipped'], true)) { $sourcesBlockedCount++; }
+        }
+        $officialCorroborationRows = isset($publicDiag['official_incident_corroboration']) && is_array($publicDiag['official_incident_corroboration']) ? $publicDiag['official_incident_corroboration'] : [];
+        $canadianWatchRows = isset($publicDiag['canadian_infrastructure_watchlist']) && is_array($publicDiag['canadian_infrastructure_watchlist']) ? $publicDiag['canadian_infrastructure_watchlist'] : [];
+        $statusLabel = static function($status): string {
+            $status = (string) $status;
+            if ($status === 'blocked_by_safe_default') { return 'blocked'; }
+            if ($status === 'budget_skipped') { return 'budget skipped'; }
+            if ($status === 'not_configured') { return 'not configured'; }
+            if ($status === 'rate_limited') { return 'rate limited'; }
+            return str_replace('_', ' ', $status);
+        };
+        $sourceReason = static function(array $row): string {
+            $status = (string) ($row['status'] ?? 'disabled');
+            $reasons = array_values(array_unique(array_filter(array_map('strval', (array) ($row['reasons'] ?? [])))));
+            if ($status === 'enabled' || $status === 'configured') { return 'Budgeted · available'; }
+            if ($status === 'cooldown') { return (($row['lane'] ?? '') === 'open_web') ? 'Open web cooling down' : 'Temporarily paused'; }
+            if ($status === 'rate_limited') { return (($row['lane'] ?? '') === 'open_web') ? 'Open web cooling down' : 'Provider asked slow-down'; }
+            if ($status === 'budget_skipped') { return 'Per-run budget spent'; }
+            if ($status === 'blocked_by_safe_default') { return 'Direct source gate disabled'; }
+            if ($status === 'not_configured') { return 'External telemetry'; }
+            if ($status === 'disabled') { return 'Disabled by admin'; }
+            if ($reasons) { return ucfirst(str_replace('_', ' ', (string) $reasons[0])); }
+            return 'No extra diagnostics';
+        };
+        $statusBadge = 'Official radar only';
+        $radarBrief = 'Official radar only. Public sources were checked, but no credible field reports were promoted.';
+        if ($promotedTotal > 0) {
+            $statusBadge = 'Public corroboration';
+            $radarBrief = 'Public corroboration active. Promoted field reports are still conservative and unverified.';
+        } elseif ($watchCandidateCount > 0) {
+            $statusBadge = 'Public watch';
+            $radarBrief = 'Public watch active. Mentions exist, but they remain below promotion threshold.';
+        } elseif ($sourcesBlockedCount > 0 && $sourcesEnabledCount === 0) {
+            $statusBadge = 'Sources limited';
+            $radarBrief = 'Official radar primary. Public source checks are currently limited by configuration or budgets.';
+        }
+        $summaryMetrics = [
+            ['Checked', $checkedTotal, $checkedTotal > 0 ? 'items scanned' : 'pending'],
+            ['Promoted', $promotedTotal, $promotedTotal > 0 ? 'field reports' : 'none'],
+            ['Watch', $watchCandidateCount, $watchCandidateCount > 0 ? 'below threshold' : 'clear'],
+            ['Rejected', $rejectedTotal, $rejectedTotal > 0 ? 'filtered' : 'none'],
+            ['Sources active', $sourcesEnabledCount, 'ready'],
+            ['Limited', $sourcesBlockedCount, $sourcesBlockedCount > 0 ? 'needs attention' : 'none'],
+        ];
+        ?>
         <div class="lo-incidents" data-lo-incidents>
             <section class="lo-section lo-section--incidents" data-lo-section="incidents">
                 <div class="lo-section__head">
@@ -574,6 +726,125 @@ function render_shortcode(): string {
                 <div class="lo-grid lo-grid--section" data-lo-section-grid="unverified" hidden></div>
             </section>
         </div>
+        <section class="lo-corroboration-radar lo-chatter-scanner" data-lo-chatter-scanner>
+            <div class="lo-corroboration-radar__head">
+                <div>
+                    <h3 class="lo-block-title">CORROBORATION RADAR</h3>
+                    <p class="lo-corroboration-radar__muted">Official feeds confirm provider-declared incidents. Public/social and open-web sources are unconfirmed corroboration only. Telemetry can indicate network-level disruption but does not prove application outages.</p>
+                </div>
+                <span class="lo-corroboration-radar__badge"><?php echo esc_html($statusBadge); ?></span>
+            </div>
+
+            <p class="lo-corroboration-radar__brief"><?php echo esc_html($radarBrief); ?></p>
+
+            <div class="lo-corroboration-radar__summary" aria-label="Public chatter scan summary">
+                <?php foreach ($summaryMetrics as $metric) : ?>
+                    <div class="lo-corroboration-radar__metric"><span><?php echo esc_html((string) $metric[0]); ?></span><strong><?php echo esc_html((string) $metric[1]); ?></strong><small><?php echo esc_html((string) $metric[2]); ?></small></div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="lo-corroboration-radar__sources" aria-label="Source lane status">
+                <?php foreach ($sourceStatusRows as $sourceStatusRow) : $sourceStatus = (string) ($sourceStatusRow['status'] ?? 'disabled'); $lastCode = (int) ($sourceStatusRow['last_response_code'] ?? 0); $cooldownUntil = (string) ($sourceStatusRow['cooldown_until'] ?? ''); ?>
+                    <article class="lo-corroboration-radar__source lo-corroboration-radar__source--<?php echo esc_attr(sanitize_html_class($sourceStatus)); ?>">
+                        <div class="lo-corroboration-radar__source-head"><strong><?php echo esc_html((string) ($sourceStatusRow['label'] ?? 'Source')); ?></strong><span class="lo-corroboration-radar__status-badge"><?php echo esc_html($statusLabel($sourceStatus)); ?></span></div>
+                        <p><strong><?php echo esc_html(ucwords(str_replace('_', ' ', (string) ($sourceStatusRow['lane'] ?? 'source')))); ?>:</strong> <?php echo esc_html($sourceReason((array) $sourceStatusRow)); ?></p>
+                        <?php if ($lastCode > 0 || $cooldownUntil !== '') : ?>
+                            <small><?php echo $lastCode > 0 ? esc_html('HTTP ' . $lastCode) : ''; ?><?php echo ($lastCode > 0 && $cooldownUntil !== '') ? esc_html(' · ') : ''; ?><?php echo $cooldownUntil !== '' ? esc_html('Cooldown until ' . $format_datetime($cooldownUntil)) : ''; ?></small>
+                        <?php endif; ?>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="lo-corroboration-radar__incidents" aria-label="Official incident public corroboration">
+                <div class="lo-corroboration-radar__section-title"><h4>Official Incident Corroboration</h4><span>Active official incidents checked against available public/open-web/telemetry lanes</span></div>
+                <?php if (!empty($officialCorroborationRows)) : ?>
+                    <div class="lo-corroboration-radar__incident-grid">
+                        <?php foreach (array_slice($officialCorroborationRows, 0, 8) as $row) : $sourcesChecked = array_values(array_filter(array_map('strval', (array) ($row['sources_checked'] ?? [])))); ?>
+                            <article class="lo-corroboration-radar__incident">
+                                <h5><?php echo esc_html((string) ($row['provider_name'] ?? $row['provider_id'] ?? 'Provider')); ?></h5>
+                                <div class="lo-corroboration-radar__incident-badges">
+                                    <span class="lo-corroboration-radar__status-badge lo-corroboration-radar__status-badge--official">Official: <?php echo esc_html((string) ($row['official_status'] ?? 'active')); ?></span>
+                                    <span class="lo-corroboration-radar__status-badge lo-corroboration-radar__status-badge--public">Result: <?php echo esc_html((string) ($row['result_label'] ?? 'official only')); ?></span>
+                                </div>
+                                <p><span>Watch</span><strong><?php echo esc_html((string) ($row['watch_candidates'] ?? 0)); ?></strong></p>
+                                <div class="lo-corroboration-radar__chips" aria-label="Sources checked">
+                                    <?php foreach ($sourcesChecked ?: ['None'] as $sourceChecked) : ?><span><?php echo esc_html($sourceChecked); ?></span><?php endforeach; ?>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else : ?>
+                    <p class="lo-corroboration-radar__muted">No active official incidents were available to seed public corroboration in the last scan.</p>
+                <?php endif; ?>
+            </div>
+
+            <?php if (!empty($canadianWatchRows)) : ?>
+                <div class="lo-corroboration-radar__canada-watch">
+                    <div class="lo-corroboration-radar__section-title"><h4>Canadian Infrastructure Watch</h4><span>Watchlist armed</span></div>
+                    <div class="lo-corroboration-radar__watch-grid">
+                        <?php foreach ($canadianWatchRows as $watchRow) : $providersShown = array_values(array_map('strval', (array) ($watchRow['providers'] ?? []))); $more = max(0, (int) ($watchRow['count'] ?? count($providersShown)) - 3); ?>
+                            <article>
+                                <strong><?php echo esc_html((string) ($watchRow['label'] ?? $watchRow['category'] ?? 'Watchlist')); ?></strong>
+                                <span><?php echo esc_html((string) ($watchRow['count'] ?? 0)); ?> watched</span>
+                                <small><?php echo esc_html(implode(', ', array_slice($providersShown, 0, 3)) . ($more > 0 ? ' +' . $more . ' more' : '')); ?></small>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($watchCandidates)) : ?>
+                <div class="lo-corroboration-radar__watch-candidates">
+                    <h4>Watch candidates</h4>
+                    <p class="lo-corroboration-radar__muted">Unconfirmed volume/context hints below promotion thresholds.</p>
+                    <div>
+                        <?php foreach (array_slice($watchCandidates, 0, 6) as $candidate) : ?>
+                            <span><?php echo esc_html((string) ($candidate['provider_name'] ?? $candidate['provider_id'] ?? 'Provider')); ?> · <?php echo esc_html((string) ($candidate['count'] ?? 0)); ?> <?php echo esc_html((string) ($candidate['source_label'] ?? $candidate['source'] ?? 'source')); ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($public_chatter) : ?>
+                <div class="lo-chatter-scanner__cards">
+                    <?php foreach (array_slice($public_chatter, 0, 6) as $sig) : $sourceLabel = trim((string)($sig['evidence_source_label'] ?? $sig['source'] ?? '')); $sourceUrl = trim((string)($sig['evidence_url'] ?? $sig['url'] ?? '')); ?>
+                        <article class="lo-card">
+                            <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">RUMOUR RADAR</span></div>
+                            <p class="lo-summary">Unconfirmed public report. Needs corroboration.</p>
+                            <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Needs corroboration from official/synthetic signals.')); ?></p>
+                            <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Public chatter'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? null)); ?></p>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php else : ?>
+                <div class="lo-corroboration-radar__empty">
+                    <h4><?php echo ($checkedTotal > 0 || !empty($rejectSummary) || !empty($previewSample)) ? esc_html('Public chatter scan complete') : esc_html('Public chatter scanner online'); ?></h4>
+                    <p><?php echo ($checkedTotal > 0 || !empty($rejectSummary) || !empty($previewSample)) ? esc_html('No credible field reports promoted. Official radar only.') : esc_html('No rumour radar hits or diagnostics available yet.'); ?></p>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($rejectSummary)) : ?>
+                <div class="lo-corroboration-radar__diagnostics" aria-label="Rejected public chatter categories">
+                    <h4>Filtered chatter</h4>
+                    <p class="lo-corroboration-radar__diagnostic-summary">Filtered chatter: mostly historical/resolved and not actionable.</p>
+                    <div class="lo-corroboration-radar__diagnostic-grid">
+                        <?php foreach (array_slice($rejectSummary, 0, 2) as $reasonRow) : ?>
+                            <div class="lo-corroboration-radar__reason"><span><?php echo esc_html((string) ($reasonRow['label'] ?? 'Filtered chatter')); ?></span><strong><?php echo esc_html((string) ($reasonRow['count'] ?? 0)); ?></strong><small><?php echo esc_html((string) ($reasonRow['description'] ?? 'Filtered chatter that did not meet current-signal quality checks.')); ?></small></div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php if (count($rejectSummary) > 2) : ?>
+                        <details><summary>Show filter diagnostics</summary>
+                            <div class="lo-corroboration-radar__diagnostic-grid">
+                                <?php foreach (array_slice($rejectSummary, 2) as $reasonRow) : ?>
+                                    <div class="lo-corroboration-radar__reason"><span><?php echo esc_html((string) ($reasonRow['label'] ?? 'Filtered chatter')); ?></span><strong><?php echo esc_html((string) ($reasonRow['count'] ?? 0)); ?></strong><small><?php echo esc_html((string) ($reasonRow['description'] ?? 'Filtered chatter that did not meet current-signal quality checks.')); ?></small></div>
+                                <?php endforeach; ?>
+                            </div>
+                        </details>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+            <footer class="lo-corroboration-radar__footer">Scanner idle. Official radar remains primary.</footer>
+        </section>
         <?php if (LO_SHOW_WIDESPREAD) : ?>
         <div class="lo-trending" data-lo-trending<?php echo $trending_active ? '' : ' hidden'; ?> data-lo-trending-generated="<?php echo esc_attr($trending_generated); ?>" aria-live="assertive">
             <span class="lo-trending__icon" aria-hidden="true">⚡</span>
@@ -586,9 +857,9 @@ function render_shortcode(): string {
         <div class="lo-hero" data-lo-hero hidden>
             <article class="lo-card lo-card--hero">
                 <div class="lo-head">
-                    <h3 class="lo-title">No active incidents</h3>
+                    <h3 class="lo-title">No official active incidents</h3>
                 </div>
-                <p class="lo-summary">Signals and verification issues are hidden by default.</p>
+                <p class="lo-summary">Public signals are being watched.</p>
                 <p class="lo-card-meta">Last checked: <span data-lo-hero-time>—</span></p>
             </article>
         </div>
@@ -598,7 +869,7 @@ function render_shortcode(): string {
                     <h3 class="lo-block-title">Recent incidents (Status feeds + community)</h3>
                     <p class="lo-history__meta">Last 30 days of service incidents and early warning signals.</p>
                 </div>
-                <div class="lo-history__controls">
+                <div class="lo-history__controls lo-print-hide">
                     <label>
                         <input type="checkbox" data-lo-history-important checked>
                         <span>Show only major incidents</span>
@@ -624,7 +895,7 @@ function render_shortcode(): string {
             </div>
         </section>
         <?php echo render_subscribe_shortcode(); ?>
-        <div class="lo-external" data-lo-external>
+        <div class="lo-external lo-print-hide" data-lo-external>
             <article class="lo-card lo-card--external" data-provider-id="external-signals">
                 <div class="lo-head">
                     <h3 class="lo-title">External signals (unconfirmed)</h3>
@@ -641,7 +912,7 @@ function render_shortcode(): string {
                 </ul>
             </article>
         </div>
-        <div class="lo-settings" data-lo-settings>
+        <div class="lo-settings lo-print-hide" data-lo-settings>
             <h3 class="lo-block-title">Customize view</h3>
             <p class="lo-settings__hint">Pick which providers appear below. Preferences stay on this browser only.</p>
             <div class="lo-settings__actions">
@@ -663,7 +934,7 @@ function render_shortcode(): string {
                 <?php endforeach; ?>
             </div>
         </div>
-        <div class="lo-loading" data-lo-loading<?php echo $ordered_tiles ? ' hidden' : ''; ?> role="status">
+        <div class="lo-loading lo-print-hide" data-lo-loading<?php echo $ordered_tiles ? ' hidden' : ''; ?> role="status">
             <span class="lo-loading__spinner" aria-hidden="true"></span>
             <span class="lo-loading__text">Dialing interstellar relays…</span>
         </div>
@@ -699,6 +970,11 @@ function render_shortcode(): string {
                         ?? $tile['updatedAt']
                         ?? null
                     );
+                    $provider_name = (string) ($tile['name'] ?? ucfirst($slug));
+                    $lead_active_incident = $pick_lead_incident($active_incidents);
+                    $lead_incident_display = $lead_active_incident
+                        ? $build_incident_display($lead_active_incident, $provider_name, (string) $label)
+                        : null;
                     $debug_mode = isset($_GET['lo_debug']) && '1' === $_GET['lo_debug'];
                     $debug_line = '';
                     if ($debug_mode) {
@@ -730,8 +1006,7 @@ function render_shortcode(): string {
                         }
                         if ('' === $message_text) {
                             if (!empty($active_incidents)) {
-                                $lead_incident = $active_incidents[0]['name'] ?? ($active_incidents[0]['title'] ?? ($active_incidents[0]['summary'] ?? 'Incident'));
-                                $message_text = $lead_incident;
+                                $message_text = (string) ($lead_incident_display['title'] ?? 'Active incident');
                             } elseif ($status === 'operational') {
                                 $message_text = 'All systems operational.';
                             } elseif ($status === 'unknown') {
@@ -750,6 +1025,14 @@ function render_shortcode(): string {
                         ) {
                             $message_text = 'Degraded signal detected';
                             $summary_text = 'No active incident listed yet — may be transient. Click \'View status\' or hit Refresh.';
+                        }
+
+                        if ($lead_incident_display) {
+                            $message_text = (string) $lead_incident_display['title'];
+                            $summary_text = (string) $lead_incident_display['summary'];
+                        } else {
+                            $message_text = $normalize_card_text($message_text, 140);
+                            $summary_text = $normalize_card_text($summary_text, 190);
                         }
 
                         $summary_display = '';
@@ -791,29 +1074,21 @@ function render_shortcode(): string {
                                 </ul>
                             <?php endif; ?>
                         </div>
-                        <?php if (!empty($active_incidents)) : ?>
-                            <div class="lo-inc" data-lo-incidents>
+                        <div class="lo-inc" data-lo-incidents<?php echo $lead_incident_display ? '' : ' hidden'; ?>>
+                            <?php if ($lead_incident_display) : ?>
                                 <ul class="lo-inc-list">
-                                    <?php foreach ($active_incidents as $incident) :
-                                        $impact  = isset($incident['status']) ? ucfirst((string) $incident['status']) : 'Unknown';
-                                        $updated = $format_datetime($incident['updated_at'] ?? null);
-                                        $summary = isset($incident['summary']) ? (string) $incident['summary'] : '';
-                                        $url     = isset($incident['url']) ? (string) $incident['url'] : '';
-                                        ?>
-                                        <li class="lo-inc-item">
-                                            <p class="lo-inc-title"><?php echo esc_html($incident['name'] ?? 'Incident'); ?></p>
-                                            <p class="lo-inc-meta"><?php echo esc_html(trim($impact . ($updated ? ' • ' . $updated : ''))); ?></p>
-                                            <?php if ($summary) : ?>
-                                                <p class="lo-inc-summary"><?php echo esc_html($summary); ?></p>
-                                            <?php endif; ?>
-                                            <?php if ($url) : ?>
-                                                <a class="lo-status-link" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener">View incident</a>
-                                            <?php endif; ?>
-                                        </li>
-                                    <?php endforeach; ?>
+                                    <li class="lo-inc-item">
+                                        <p class="lo-inc-provider"><?php echo esc_html((string) $lead_incident_display['provider']); ?></p>
+                                        <p class="lo-inc-title"><?php echo esc_html((string) $lead_incident_display['title']); ?></p>
+                                        <p class="lo-inc-meta"><?php echo esc_html(trim((string) $lead_incident_display['status'] . ' • Last checked: ' . $last_checked)); ?></p>
+                                        <p class="lo-inc-summary"><?php echo esc_html((string) $lead_incident_display['summary']); ?></p>
+                                        <?php if (!empty($lead_incident_display['url'])) : ?>
+                                            <a class="lo-status-link" href="<?php echo esc_url((string) $lead_incident_display['url']); ?>" target="_blank" rel="noopener">View incident</a>
+                                        <?php endif; ?>
+                                    </li>
                                 </ul>
-                            </div>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                         <?php if (!empty($tile['url'])) : ?>
                             <a class="lo-status-link" data-lo-status-url href="<?php echo esc_url($tile['url']); ?>" target="_blank" rel="noopener">View status →</a>
                         <?php endif; ?>

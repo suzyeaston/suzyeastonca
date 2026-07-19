@@ -22,8 +22,11 @@
   }
 
   function isUnresolvedIncident(incident) {
-    const status = String(incident.status || incident.eta || '').toLowerCase();
-    return !['resolved', 'completed', 'postmortem', 'operational', 'ok', 'none'].includes(status);
+    const lifecycle = [incident.status, incident.eta, incident.resolved_at, incident.resolvedAt]
+      .map((value) => String(value || '').trim().toLowerCase())
+      .filter(Boolean);
+    if (incident.resolved_at || incident.resolvedAt) return false;
+    return !lifecycle.some((status) => ['resolved', 'completed', 'postmortem', 'operational', 'ok', 'none'].includes(status));
   }
 
   function keyFor(item) {
@@ -40,7 +43,8 @@
       const tileKind = String(provider.tile_kind || provider.tileKind || '').toLowerCase();
       const stateCode = String(provider.stateCode || provider.status || 'unknown').toLowerCase();
       const stateLabel = String(provider.state || provider.status_label || stateCode || 'Status');
-      const incidents = Array.isArray(provider.incidents) ? provider.incidents.filter((incident) => incident && typeof incident === 'object' && isUnresolvedIncident(incident)) : [];
+      const rawIncidents = Array.isArray(provider.incidents) ? provider.incidents.filter((incident) => incident && typeof incident === 'object') : [];
+      const incidents = rawIncidents.filter((incident) => isUnresolvedIncident(incident));
       incidents.forEach((incident) => {
         const started = incident.startedAt || incident.started_at || incident.created_at || '';
         const updated = incident.updatedAt || incident.updated_at || started || provider.updatedAt || provider.updated_at || '';
@@ -51,10 +55,10 @@
           sort: Date.parse(updated) || Date.parse(started) || 0
         });
       });
-      if (incidents.length === 0 && tileKind === 'outage') {
+      if (rawIncidents.length === 0 && incidents.length === 0 && tileKind === 'outage') {
         const updated = provider.updatedAt || provider.updated_at || '';
         items.push({ type: 'outage', tone: 'outage', providerId, provider: providerName, label: stateLabel, summary: String(provider.summary || stateLabel || 'Active outage'), href: String(provider.url || ''), started: updated, updated, sort: Date.parse(updated) || 0 });
-      } else if (incidents.length === 0 && tileKind === 'signal') {
+      } else if (rawIncidents.length === 0 && incidents.length === 0 && tileKind === 'signal') {
         const updated = provider.updatedAt || provider.updated_at || '';
         items.push({ type: 'signal', tone: 'signal', providerId, provider: providerName, label: stateLabel, summary: String(provider.summary || stateLabel || 'Verified degraded signal'), href: String(provider.url || ''), started: '', updated, sort: Date.parse(updated) || 0 });
       }
@@ -70,7 +74,7 @@
   function render(container, payload, config) {
     const items = currentItems(payload);
     const meta = payload && payload.meta ? payload.meta : {};
-    const refreshed = meta.fetchedAt || payload.fetched_at || meta.generatedAt || '';
+    const refreshed = payload && payload.fetched_at ? payload.fetched_at : '';
     container.classList.toggle('lo-home-teaser--active', items.length > 0);
     container.classList.toggle('lo-home-teaser--clear', items.length === 0);
     container.classList.remove('lo-home-teaser--delayed');
@@ -127,7 +131,7 @@
       if (inFlight || document.hidden) return;
       inFlight = true;
       const url = new URL(config.endpoint, window.location.href); url.searchParams.set('_lo_cache_bust', Date.now().toString());
-      fetch(url.toString(), { cache: 'no-store', credentials: 'same-origin' }).then((r) => { if (!r.ok) throw new Error('status fetch failed'); return r.json(); }).then((payload) => render(container, payload, config)).catch(() => markDelayed(container)).finally(() => { inFlight = false; });
+      fetch(url.toString(), { cache: 'no-store', credentials: 'same-origin' }).then((r) => { if (!r.ok) throw new Error('summary fetch failed'); return r.json(); }).then((payload) => render(container, payload, config)).catch(() => markDelayed(container)).finally(() => { inFlight = false; });
     };
     refresh();
     timer = window.setInterval(refresh, config.interval);

@@ -92,44 +92,46 @@ class Lousy_Outages_Subscribe {
         $signals = SignalEngine::summarize_fused_signals($window);
         $safeSignals = [];
         foreach ($signals as $signal) {
+            $lane = sanitize_key((string)($signal['signal_lane'] ?? ''));
+            if ($lane === '') { $lane = !empty($signal['official_confirmed']) ? 'official' : 'chatter'; }
             $safeSignals[] = [
-                'provider_id' => (string)($signal['provider_id'] ?? ''),
-                'provider_name' => (string)($signal['provider_name'] ?? ''),
-                'classification' => (string)($signal['classification'] ?? 'quiet'),
+                'provider_id' => sanitize_key((string)($signal['provider_id'] ?? '')),
+                'provider_name' => sanitize_text_field((string)($signal['provider_name'] ?? '')),
+                'classification' => sanitize_key((string)($signal['classification'] ?? 'quiet')),
                 'report_count' => (int)($signal['report_count'] ?? 0),
-                                'region' => (string)($signal['region'] ?? ''),
-                'message' => (string)($signal['message'] ?? ''),
-                'category' => (string)($signal['category'] ?? ''),
-                'region' => (string)($signal['region'] ?? ''),
+                                'region' => sanitize_text_field((string)($signal['region'] ?? '')),
+                'message' => sanitize_text_field((string)($signal['message'] ?? '')),
+                'category' => sanitize_key((string)($signal['category'] ?? '')),
                 'confidence' => (int)($signal['confidence'] ?? 0),
                 'external_signal_count' => (int)($signal['external_signal_count'] ?? 0),
                 'synthetic_failure_count' => (int)($signal['synthetic_failure_count'] ?? 0),
                 'sources' => array_values(array_map('strval', (array)($signal['sources'] ?? []))),
                 'confirmed' => !empty($signal['confirmed']),
-                'last_observed_at' => (string)($signal['last_observed_at'] ?? $signal['observed_at'] ?? ''),
-                'observed_at' => (string)($signal['observed_at'] ?? $signal['last_observed_at'] ?? ''),
+                'last_observed_at' => (string)($signal['last_observed_at'] ?? ''),
                 'official_status_known' => !empty($signal['official_status_known']),
-                'confidence_reason' => (string)($signal['confidence_reason'] ?? ''),
-                'evidence' => [
-                    'summary' => mb_substr((string)(($signal['evidence']['summary'] ?? '')),0,300),
-                    'themes' => array_slice(array_values(array_map('strval', (array)(($signal['evidence']['themes'] ?? [])))),0,5),
-                    'snippets' => array_slice(array_values(array_map(static fn($v)=>mb_substr((string)$v,0,140), (array)(($signal['evidence']['snippets'] ?? [])))),0,5),
-                    'domains' => array_slice(array_values(array_map('strval', (array)(($signal['evidence']['domains'] ?? [])))),0,5),
-                    'source_urls' => array_slice(array_values(array_map('esc_url_raw', (array)(($signal['evidence']['source_urls'] ?? [])))),0,3),
-                    'queries' => array_slice(array_values(array_map('strval', (array)(($signal['evidence']['queries'] ?? [])))),0,3),
-                    'query' => (string)(($signal['evidence']['query'] ?? '')),
-                    'mention_count' => (int)(($signal['evidence']['mention_count'] ?? 0)),
-                    'raw_source_count' => (int)(($signal['evidence']['raw_source_count'] ?? 0)),
-                    'window_minutes' => (int)(($signal['evidence']['window_minutes'] ?? 0)),
-                    'source_labels' => array_slice(array_values(array_map('strval', (array)(($signal['evidence']['source_labels'] ?? [])))),0,5),
-                ],
+                'evidence_quote' => sanitize_text_field((string)($signal['evidence_quote'] ?? '')),
+                'evidence_source_label' => sanitize_text_field((string)($signal['evidence_source_label'] ?? '')),
+                'evidence_url' => esc_url_raw((string)($signal['evidence_url'] ?? '')),
+                'evidence_urls' => array_values(array_filter(array_map('esc_url_raw', (array)($signal['evidence_urls'] ?? [])))),
+                'evidence_quality' => sanitize_key((string)($signal['evidence_quality'] ?? '')),
+                'official_confirmed' => !empty($signal['official_confirmed']),
+                'observed_at' => sanitize_text_field((string)($signal['observed_at'] ?? '')),
+                'source_type' => sanitize_key((string)($signal['source_type'] ?? '')),
+                'adapter_id' => sanitize_key((string)($signal['adapter_id'] ?? '')),
+                'evidence_platform' => sanitize_text_field((string)($signal['evidence_platform'] ?? '')),
+                'evidence_observed_at' => sanitize_text_field((string)($signal['evidence_observed_at'] ?? '')),
+                'signal_lane' => $lane,
             ];
         }
+        $officialSignals = array_values(array_filter($safeSignals, static fn($s) => (($s['signal_lane'] ?? '') === 'official')));
+        $publicChatter = array_values(array_filter($safeSignals, static fn($s) => (($s['signal_lane'] ?? '') === 'chatter')));
 
         return new \WP_REST_Response([
             'success' => true,
             'window_minutes' => $window,
             'signals' => $safeSignals,
+            'official_signals' => $officialSignals,
+            'public_chatter' => $publicChatter,
             'generated_at' => gmdate('c'),
         ], 200);
     }

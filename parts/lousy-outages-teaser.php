@@ -13,7 +13,7 @@ $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
         'last_checked' => '',
     ];
 $teaser_href = $teaser_data['href'] ?? home_url( '/lousy-outages/' );
-$teaser_endpoint = rest_url( 'lousy-outages/v1/status' );
+$teaser_endpoint = rest_url( 'lousy-outages/v1/summary' );
 $teaser_interval = 5 * MINUTE_IN_SECONDS * 1000;
 $rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? array_slice( $teaser_data['rows'], 0, 5 ) : [];
 $last_checked = $teaser_data['last_checked'] ?? '';

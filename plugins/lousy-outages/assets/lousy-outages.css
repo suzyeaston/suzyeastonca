@@ -1675,3 +1675,1008 @@
 .lo-signal--trending{border-color:#ffb81c}
 .lo-signal--hot{border-color:#ff5a5a}
 .lo-signal__badge{font-weight:700;margin-right:6px}
+
+.lo-title { overflow-wrap:anywhere; word-break:break-word; line-height:1.2; }
+.lo-card .lo-message { font-size:0.88rem; line-height:1.35; }
+.lo-evidence-quote {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--lo-accent);
+  background: rgba(138,247,228,0.08);
+  color: var(--lo-accent);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+@media (max-width: 640px) {
+  .lo-card .lo-message { font-size: 0.82rem; }
+  .lo-title { font-size: 0.95rem; }
+}
+
+/* Field report readability pass */
+.lo-signals-panel .lo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.lo-signals-panel .lo-card{padding:12px;overflow:hidden}
+.lo-signals-panel .lo-head{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.lo-signals-panel .lo-title{font-size:15px;line-height:1.25;white-space:normal;word-break:break-word;max-width:70%}
+.lo-signals-panel .lo-pill{flex-shrink:0;white-space:nowrap;font-size:10px;padding:3px 7px}
+.lo-signals-panel .lo-message,.lo-signals-panel .lo-summary,.lo-signals-panel .lo-card-meta{font-size:12px;line-height:1.4}
+.lo-evidence-quote{font-size:12px;line-height:1.45;border-left:2px solid currentColor;padding-left:8px;margin:8px 0}
+
+/* Public chatter scanner: intentional quiet-state diagnostics for conservative field-report filtering. */
+.lo-chatter-scanner {
+  margin: 16px 0 18px;
+  padding: 14px;
+  border: 1px solid rgba(138, 247, 228, 0.55);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(10, 16, 32, 0.92), rgba(5, 9, 19, 0.88)),
+    repeating-linear-gradient(0deg, rgba(138, 247, 228, 0.04) 0, rgba(138, 247, 228, 0.04) 1px, transparent 1px, transparent 8px);
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 0 24px rgba(138, 247, 228, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.lo-chatter-scanner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(138, 247, 228, 0.12), transparent);
+  transform: translateX(-100%);
+  animation: lo-chatter-sweep 7s linear infinite;
+}
+
+@keyframes lo-chatter-sweep {
+  0% { transform: translateX(-100%); opacity: 0; }
+  20% { opacity: 0.35; }
+  55% { opacity: 0.12; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+.lo-chatter-scanner__head,
+.lo-chatter-scanner__stats,
+.lo-chatter-scanner__empty,
+.lo-chatter-scanner__reasons,
+.lo-chatter-scanner__cards {
+  position: relative;
+  z-index: 1;
+}
+
+.lo-chatter-scanner__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.lo-chatter-scanner__status {
+  flex-shrink: 0;
+  border: 1px dashed rgba(255, 184, 28, 0.75);
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #ffecc7;
+  background: rgba(255, 184, 28, 0.08);
+  font-size: 0.68rem;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lo-chatter-scanner__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.lo-chatter-scanner__stat {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid rgba(138, 247, 228, 0.28);
+  border-radius: 10px;
+  background: rgba(18, 28, 51, 0.72);
+  color: var(--lo-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lo-chatter-scanner__stat strong {
+  color: var(--lo-accent);
+  font-size: 1rem;
+  text-shadow: 0 0 8px rgba(138, 247, 228, 0.35);
+}
+
+.lo-chatter-scanner__empty {
+  padding: 12px;
+  border: 1px solid rgba(244, 154, 229, 0.32);
+  border-radius: 12px;
+  background: rgba(244, 154, 229, 0.08);
+}
+
+.lo-chatter-scanner__empty h4 {
+  margin: 0 0 6px;
+  color: var(--lo-accent);
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lo-chatter-scanner__empty p {
+  margin: 0;
+  color: var(--lo-muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.lo-chatter-scanner__reasons {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.lo-chatter-scanner__reason {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.lo-chatter-scanner__reason span {
+  color: var(--lo-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.lo-chatter-scanner__reason strong {
+  color: #ffecc7;
+  font-size: 0.86rem;
+}
+
+.lo-chatter-scanner__reason small {
+  grid-column: 1 / -1;
+  color: var(--lo-muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.lo-chatter-scanner__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.lo-chatter-scanner__cards .lo-card {
+  padding: 12px;
+  overflow: hidden;
+}
+
+.lo-chatter-scanner__cards .lo-head {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.lo-chatter-scanner__cards .lo-title {
+  max-width: 70%;
+  font-size: 15px;
+  line-height: 1.25;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.lo-chatter-scanner__cards .lo-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 10px;
+  padding: 3px 7px;
+}
+
+.lo-chatter-scanner__cards .lo-message,
+.lo-chatter-scanner__cards .lo-summary,
+.lo-chatter-scanner__cards .lo-card-meta {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .lo-chatter-scanner {
+    padding: 12px;
+  }
+
+  .lo-chatter-scanner__head {
+    display: grid;
+  }
+
+  .lo-chatter-scanner__status {
+    justify-self: start;
+  }
+
+  .lo-chatter-scanner__stats,
+  .lo-chatter-scanner__cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* UI stabilization: compact incident cards and keep chatter scanner visible/intentional. */
+.lo-grid,
+.lo-grid--section {
+  align-items: start;
+}
+
+.lo-grid--section {
+  min-height: 0;
+}
+
+.lo-section--incidents .lo-grid--section {
+  margin-bottom: 18px;
+}
+
+.lo-card {
+  overflow: hidden;
+}
+
+.lo-card .lo-message,
+.lo-card .lo-summary,
+.lo-inc-title,
+.lo-inc-summary {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.lo-card .lo-message,
+.lo-inc-title {
+  -webkit-line-clamp: 2;
+}
+
+.lo-card .lo-summary,
+.lo-inc-summary {
+  -webkit-line-clamp: 3;
+}
+
+.lo-inc {
+  margin-top: 6px;
+}
+
+.lo-inc-list {
+  margin-top: 4px;
+}
+
+.lo-inc-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 250px;
+  overflow: hidden;
+}
+
+.lo-inc-provider {
+  margin: 0;
+  color: #ffecc7;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lo-inc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lo-inc-item .lo-status-link {
+  margin-top: 2px;
+}
+
+.lo-chatter-scanner {
+  clear: both;
+  margin-top: 22px;
+  margin-bottom: 22px;
+}
+
+.lo-chatter-scanner__empty--fallback {
+  border-style: dashed;
+  background: linear-gradient(135deg, rgba(138, 247, 228, 0.08), rgba(244, 154, 229, 0.08));
+}
+
+.lo-chatter-scanner__empty p + p {
+  margin-top: 4px;
+}
+
+.lo-chatter-scanner__strip,
+.lo-chatter-scanner__watch,
+.lo-chatter-scanner__corroboration,
+.lo-chatter-scanner__watchlist,
+.lo-chatter-scanner__table {
+  position: relative;
+  z-index: 1;
+}
+
+.lo-chatter-scanner__strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.lo-chatter-scanner__source,
+.lo-chatter-scanner__watchlist span {
+  border: 1px solid rgba(154, 243, 255, 0.35);
+  border-radius: 999px;
+  color: #dffcff;
+  background: rgba(8, 20, 32, 0.82);
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
+
+.lo-chatter-scanner__source--blocked_by_safe_default,
+.lo-chatter-scanner__source--disabled,
+.lo-chatter-scanner__source--not_configured {
+  border-color: rgba(255, 199, 87, 0.42);
+  color: #ffe7aa;
+}
+
+.lo-chatter-scanner__watch,
+.lo-chatter-scanner__corroboration,
+.lo-chatter-scanner__watchlist {
+  border: 1px solid rgba(42, 255, 213, 0.18);
+  border-radius: 14px;
+  background: rgba(5, 5, 16, 0.72);
+  margin: 12px 0;
+  padding: 12px;
+}
+
+.lo-chatter-scanner__watch h4,
+.lo-chatter-scanner__corroboration h4,
+.lo-chatter-scanner__watchlist h4 {
+  margin: 0 0 8px;
+  color: #9af3ff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lo-chatter-scanner__watch p,
+.lo-chatter-scanner__corroboration p {
+  color: #d7f9ff;
+  margin: 0 0 8px;
+}
+
+.lo-chatter-scanner__watch ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #f4feff;
+}
+
+.lo-chatter-scanner__table {
+  display: grid;
+  gap: 6px;
+}
+
+.lo-chatter-scanner__table [role="row"] {
+  display: grid;
+  grid-template-columns: 1.1fr 0.8fr 1fr 1fr 0.7fr;
+  gap: 8px;
+  align-items: center;
+  border-bottom: 1px solid rgba(154, 243, 255, 0.14);
+  color: #f4feff;
+  padding: 7px 0;
+}
+
+.lo-chatter-scanner__table-head {
+  color: #9af3ff !important;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lo-chatter-scanner__watchlist div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .lo-chatter-scanner__table [role="row"] {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Corroboration Radar: polished public chatter/NOC module. */
+.lo-corroboration-radar {
+  margin: 2rem 0 2.5rem;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border: 1px solid rgba(77, 255, 196, 0.36);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(5, 16, 28, 0.96), rgba(10, 31, 44, 0.92));
+  box-shadow: 0 0 0 1px rgba(77, 255, 196, 0.08), 0 18px 38px rgba(0, 0, 0, 0.28);
+  color: #e9fff8;
+}
+
+.lo-corroboration-radar__head,
+.lo-corroboration-radar__section-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lo-corroboration-radar__muted,
+.lo-corroboration-radar__section-title span,
+.lo-corroboration-radar small {
+  color: rgba(233, 255, 248, 0.78);
+}
+
+.lo-corroboration-radar__badge {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(255, 214, 102, 0.55);
+  border-radius: 999px;
+  background: rgba(255, 214, 102, 0.12);
+  color: #ffe08a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lo-corroboration-radar__summary,
+.lo-corroboration-radar__sources,
+.lo-corroboration-radar__incident-grid,
+.lo-corroboration-radar__watch-grid,
+.lo-corroboration-radar__diagnostic-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.lo-corroboration-radar__summary {
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  margin-bottom: 1rem;
+}
+
+.lo-corroboration-radar__metric,
+.lo-corroboration-radar__source,
+.lo-corroboration-radar__incident,
+.lo-corroboration-radar__watch-grid article,
+.lo-corroboration-radar__reason,
+.lo-corroboration-radar__empty,
+.lo-corroboration-radar__watch-candidates {
+  border: 1px solid rgba(77, 255, 196, 0.18);
+  border-radius: 14px;
+  background: rgba(0, 10, 18, 0.42);
+  padding: 0.85rem;
+}
+
+.lo-corroboration-radar__metric strong {
+  display: block;
+  color: #78ffd6;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  line-height: 1;
+}
+
+.lo-corroboration-radar__metric span,
+.lo-corroboration-radar__source span,
+.lo-corroboration-radar__incident span,
+.lo-corroboration-radar__watch-grid span {
+  display: block;
+  margin-top: 0.25rem;
+  color: rgba(233, 255, 248, 0.82);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lo-corroboration-radar__sources {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  margin-bottom: 1.1rem;
+}
+
+.lo-corroboration-radar__source div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.lo-corroboration-radar__source div span {
+  margin: 0;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(233, 255, 248, 0.1);
+  white-space: nowrap;
+}
+
+.lo-corroboration-radar__source p,
+.lo-corroboration-radar__incident p,
+.lo-corroboration-radar__watch-candidates p {
+  margin: 0.45rem 0 0;
+}
+
+.lo-corroboration-radar__source--enabled div span,
+.lo-corroboration-radar__source--configured div span { color: #78ffd6; }
+.lo-corroboration-radar__source--cooldown div span,
+.lo-corroboration-radar__source--rate_limited div span,
+.lo-corroboration-radar__source--budget_skipped div span { color: #ffe08a; }
+.lo-corroboration-radar__source--disabled div span,
+.lo-corroboration-radar__source--blocked_by_safe_default div span,
+.lo-corroboration-radar__source--not_configured div span { color: #ffb4b4; }
+
+.lo-corroboration-radar__incidents,
+.lo-corroboration-radar__canada-watch,
+.lo-corroboration-radar__diagnostics {
+  margin-top: 1rem;
+}
+
+.lo-corroboration-radar__incident-grid {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.lo-corroboration-radar__incident h5,
+.lo-corroboration-radar__section-title h4,
+.lo-corroboration-radar__watch-candidates h4,
+.lo-corroboration-radar__diagnostics h4 {
+  margin: 0;
+  color: #ffffff;
+}
+
+.lo-corroboration-radar__incident p {
+  display: grid;
+  grid-template-columns: minmax(95px, auto) 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.lo-corroboration-radar__incident p strong {
+  color: #e9fff8;
+  overflow-wrap: anywhere;
+}
+
+.lo-corroboration-radar__watch-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.lo-corroboration-radar__watch-grid article strong,
+.lo-corroboration-radar__watch-grid article small {
+  display: block;
+}
+
+.lo-corroboration-radar__watch-candidates div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.lo-corroboration-radar__watch-candidates div span {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgba(255, 214, 102, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 214, 102, 0.08);
+  color: #ffe08a;
+}
+
+.lo-corroboration-radar__diagnostics {
+  opacity: 0.92;
+}
+
+.lo-corroboration-radar__diagnostic-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-top: 0.65rem;
+}
+
+.lo-corroboration-radar__reason span,
+.lo-corroboration-radar__reason strong,
+.lo-corroboration-radar__reason small {
+  display: block;
+}
+
+.lo-corroboration-radar__reason strong {
+  color: #ffe08a;
+  font-size: 1.35rem;
+}
+
+.lo-corroboration-radar details {
+  margin-top: 0.75rem;
+}
+
+.lo-corroboration-radar summary {
+  cursor: pointer;
+  color: #78ffd6;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .lo-corroboration-radar__head,
+  .lo-corroboration-radar__section-title {
+    flex-direction: column;
+  }
+
+  .lo-corroboration-radar__badge {
+    align-self: flex-start;
+    white-space: normal;
+  }
+
+  .lo-corroboration-radar__source div,
+  .lo-corroboration-radar__incident p {
+    display: block;
+  }
+
+  .lo-corroboration-radar__source div span {
+    display: inline-block;
+    margin-top: 0.35rem;
+  }
+}
+
+/* Report helpers: screen/print visibility utilities for concise outage exports. */
+.lo-print-only {
+  display: none !important;
+}
+
+.lo-corroboration-radar,
+.lo-corroboration-radar * {
+  text-align: left;
+  letter-spacing: normal;
+  line-height: 1.42;
+}
+
+.lo-corroboration-radar .lo-block-title,
+.lo-corroboration-radar__head .lo-block-title {
+  text-align: left;
+  letter-spacing: 0.08em;
+}
+
+.lo-corroboration-radar__brief {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(120, 255, 214, 0.32);
+  border-radius: 14px;
+  background: rgba(120, 255, 214, 0.1);
+  color: #f4fffb;
+  font-size: clamp(1rem, 2vw, 1.12rem);
+  font-weight: 800;
+}
+
+.lo-corroboration-radar__summary {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.6rem;
+}
+
+.lo-corroboration-radar__metric {
+  padding: 0.65rem 0.7rem;
+  min-width: 0;
+}
+
+.lo-corroboration-radar__metric span {
+  margin: 0 0 0.2rem;
+  color: rgba(233, 255, 248, 0.86);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.lo-corroboration-radar__metric strong {
+  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+}
+
+.lo-corroboration-radar__metric small {
+  display: block;
+  margin-top: 0.18rem;
+  color: rgba(233, 255, 248, 0.78);
+  font-size: 0.72rem;
+}
+
+.lo-corroboration-radar__sources {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.lo-corroboration-radar__source {
+  padding: 0.72rem;
+}
+
+.lo-corroboration-radar__source-head,
+.lo-corroboration-radar__incident-badges,
+.lo-corroboration-radar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.lo-corroboration-radar__source-head {
+  justify-content: space-between;
+}
+
+.lo-corroboration-radar__source-head strong,
+.lo-corroboration-radar__incident h5 {
+  color: #ffffff;
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__chips span {
+  display: inline-flex;
+  width: auto;
+  margin: 0;
+  padding: 0.18rem 0.48rem;
+  border: 1px solid rgba(233, 255, 248, 0.22);
+  border-radius: 999px;
+  background: rgba(233, 255, 248, 0.1);
+  color: #e9fff8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.lo-corroboration-radar__source p,
+.lo-corroboration-radar__source small,
+.lo-corroboration-radar__incident p,
+.lo-corroboration-radar__watch-grid article small,
+.lo-corroboration-radar__watch-candidates p,
+.lo-corroboration-radar__diagnostic-summary,
+.lo-corroboration-radar__reason small {
+  color: rgba(233, 255, 248, 0.84);
+  font-size: 0.82rem;
+}
+
+.lo-corroboration-radar__source p {
+  margin: 0.45rem 0 0;
+}
+
+.lo-corroboration-radar__source--enabled .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__source--configured .lo-corroboration-radar__status-badge {
+  border-color: rgba(120, 255, 214, 0.36);
+  color: #78ffd6;
+}
+
+.lo-corroboration-radar__source--cooldown .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__source--rate_limited .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__source--budget_skipped .lo-corroboration-radar__status-badge {
+  border-color: rgba(255, 224, 138, 0.42);
+  color: #ffe08a;
+}
+
+.lo-corroboration-radar__source--disabled .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__source--blocked_by_safe_default .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__source--not_configured .lo-corroboration-radar__status-badge {
+  border-color: rgba(255, 180, 180, 0.42);
+  color: #ffb4b4;
+}
+
+.lo-corroboration-radar__incident-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.lo-corroboration-radar__incident {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+}
+
+.lo-corroboration-radar__incident h5 {
+  margin: 0;
+}
+
+.lo-corroboration-radar__incident p {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.lo-corroboration-radar__incident p span {
+  margin: 0;
+  color: rgba(233, 255, 248, 0.78);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+}
+
+.lo-corroboration-radar__incident p strong {
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.lo-corroboration-radar__status-badge--official {
+  border-color: rgba(255, 224, 138, 0.4);
+  color: #ffe08a;
+}
+
+.lo-corroboration-radar__status-badge--public {
+  border-color: rgba(120, 255, 214, 0.32);
+  color: #78ffd6;
+}
+
+.lo-corroboration-radar__chips span {
+  color: rgba(233, 255, 248, 0.86);
+  font-size: 0.66rem;
+}
+
+.lo-corroboration-radar__watch-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+
+.lo-corroboration-radar__watch-grid article {
+  padding: 0.7rem;
+}
+
+.lo-corroboration-radar__watch-grid article strong {
+  color: #ffffff;
+}
+
+.lo-corroboration-radar__watch-grid span {
+  color: #78ffd6;
+  font-size: 0.76rem;
+  letter-spacing: 0.03em;
+}
+
+.lo-corroboration-radar__diagnostics {
+  margin-top: 1.1rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed rgba(233, 255, 248, 0.22);
+  opacity: 0.82;
+}
+
+.lo-corroboration-radar__diagnostic-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.lo-corroboration-radar__reason {
+  padding: 0.65rem;
+}
+
+.lo-corroboration-radar__reason strong {
+  font-size: 1.05rem;
+}
+
+.lo-corroboration-radar__diagnostic-summary {
+  margin: 0.35rem 0 0.65rem;
+}
+
+.lo-corroboration-radar summary {
+  display: inline-flex;
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgba(120, 255, 214, 0.26);
+  border-radius: 999px;
+  background: rgba(120, 255, 214, 0.08);
+}
+
+.lo-corroboration-radar__footer {
+  margin-top: 1.2rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(120, 255, 214, 0.22);
+  color: rgba(233, 255, 248, 0.88);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.lo-corroboration-radar + .lo-trending,
+.lo-corroboration-radar + .lo-hero,
+.lo-corroboration-radar ~ .lo-history {
+  margin-top: 2rem;
+}
+
+@media (max-width: 640px) {
+  .lo-corroboration-radar__source-head,
+  .lo-corroboration-radar__incident p {
+    display: flex;
+  }
+}
+
+@media print {
+  html,
+  body,
+  .lousy-outages-root,
+  .lousy-outages {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .lo-screen-only,
+  .lo-print-hide,
+  .lo-link,
+  .lo-mode-toggle,
+  .lo-history__controls,
+  .lo-subscribe,
+  .lo-subscribe__form,
+  .lo-subscribe__challenge,
+  .lo-subscribe__help,
+  .lo-panel--report,
+  .lo-report,
+  .lo-support,
+  [data-lo-subscribe-form],
+  [data-lo-report],
+  [data-lo-report-form],
+  [data-lo-refresh],
+  [data-lo-export-csv],
+  [data-lo-export-pdf],
+  button {
+    display: none !important;
+  }
+
+  .lo-print-only {
+    display: block !important;
+  }
+
+  .lousy-outages,
+  .lo-section,
+  .lo-card,
+  .lo-corroboration-radar,
+  .lo-corroboration-radar__metric,
+  .lo-corroboration-radar__source,
+  .lo-corroboration-radar__incident,
+  .lo-corroboration-radar__watch-grid article,
+  .lo-corroboration-radar__watch-candidates,
+  .lo-history__report,
+  .lo-history__report-stat,
+  .lo-history__report-table-wrap,
+  .lo-history__list article {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .lousy-outages {
+    padding: 0;
+  }
+
+  .lo-header,
+  .lo-section,
+  .lo-corroboration-radar,
+  .lo-history {
+    margin-top: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .lo-corroboration-radar {
+    border-color: rgba(16, 89, 69, 0.55);
+    background: #071a24 !important;
+    color: #e9fff8 !important;
+    box-shadow: none;
+  }
+
+  .lo-corroboration-radar__summary,
+  .lo-corroboration-radar__sources,
+  .lo-corroboration-radar__incident-grid,
+  .lo-corroboration-radar__watch-grid,
+  .lo-corroboration-radar__diagnostic-grid {
+    gap: 0.45rem;
+  }
+
+  .lo-corroboration-radar__diagnostics details:not([open]) .lo-corroboration-radar__diagnostic-grid {
+    display: none !important;
+  }
+}
+
+.lo-corroboration-radar__source .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__incident .lo-corroboration-radar__status-badge,
+.lo-corroboration-radar__incident .lo-corroboration-radar__chips span {
+  display: inline-flex;
+  width: auto;
+  margin: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+@media print {
+  .lo-external,
+  .lo-settings,
+  .lo-loading {
+    display: none !important;
+  }
+}
