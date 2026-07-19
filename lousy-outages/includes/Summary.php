@@ -74,6 +74,74 @@ class Summary {
 
 
     /**
+     * Return the ordered active incident collection used by the public status page.
+     *
+     * The /lousy-outages/ renderer receives provider tiles from the current snapshot and
+     * treats non-empty provider `incidents` arrays as active official incidents. The
+     * homepage teaser must read that same live snapshot before falling back to stored
+     * history, otherwise unresolved active incidents can be missed until/unless they are
+     * also present in the persisted event log.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function ordered_current_incidents(int $limit = 0): array
+    {
+        $providers = self::sort_status_page_providers(self::providers());
+        $records = [];
+
+        foreach ($providers as $provider) {
+            if (!is_array($provider)) {
+                continue;
+            }
+
+            $incidents = isset($provider['incidents']) && is_array($provider['incidents'])
+                ? array_values(array_filter($provider['incidents'], 'is_array'))
+                : [];
+            if (!$incidents) {
+                continue;
+            }
+
+            $providerId = sanitize_key((string) ($provider['id'] ?? $provider['provider'] ?? $provider['name'] ?? ''));
+            $providerName = trim((string) ($provider['name'] ?? $provider['provider'] ?? $providerId));
+            if ('' === $providerName) {
+                $providerName = 'Unknown provider';
+            }
+            $providerStatus = strtolower((string) ($provider['stateCode'] ?? $provider['status'] ?? 'incident'));
+
+            usort($incidents, static function (array $left, array $right): int {
+                return self::incident_timestamp($right) <=> self::incident_timestamp($left);
+            });
+
+            foreach ($incidents as $incident) {
+                if (!is_array($incident)) {
+                    continue;
+                }
+
+                $started = (string) ($incident['startedAt'] ?? $incident['started_at'] ?? $incident['created_at'] ?? '');
+                $updated = (string) ($incident['updatedAt'] ?? $incident['updated_at'] ?? $started);
+                $impact = strtolower((string) ($incident['impact'] ?? $incident['status'] ?? $providerStatus ?: 'incident'));
+                $records[] = [
+                    'id' => (string) ($incident['id'] ?? sha1($providerId . '|' . ($incident['title'] ?? '') . '|' . $started . '|' . $updated)),
+                    'provider_id' => $providerId,
+                    'provider' => $providerName,
+                    'status' => $providerStatus ?: 'incident',
+                    'status_label' => Fetcher::status_label($providerStatus ?: 'incident'),
+                    'severity' => $impact ?: 'degraded',
+                    'important' => true,
+                    'summary' => (string) ($incident['title'] ?? $incident['summary'] ?? 'Incident reported'),
+                    'started_at' => self::format_incident_time($started),
+                    'updated_at' => self::format_incident_time($updated),
+                    'first_seen' => self::parse_time($started) ?? 0,
+                    'last_seen' => self::parse_time($updated) ?? (self::parse_time($started) ?? 0),
+                    'url' => (string) ($incident['url'] ?? $provider['url'] ?? ''),
+                ];
+            }
+        }
+
+        return $limit > 0 ? array_slice($records, 0, $limit) : $records;
+    }
+
+    /**
      * Return the same normalized incident records and ordering used by the public history panel.
      *
      * @return array<int, array<string, mixed>>
@@ -210,6 +278,43 @@ class Summary {
         $rank = ['critical' => 4, 'major' => 4, 'major_outage' => 4, 'outage' => 4, 'partial' => 3, 'partial_outage' => 3, 'degraded_performance' => 3, 'incident' => 3, 'degraded' => 3, 'minor' => 3, 'maintenance' => 2, 'info' => 1];
         $key = strtolower($value);
         return $rank[$key] ?? 1;
+    }
+
+    private static function sort_status_page_providers(array $providers): array
+    {
+        $tilePriority = ['outage' => 0, 'signal' => 1, 'unknown' => 2, 'manual' => 3, 'operational' => 4];
+        usort($providers, static function (array $a, array $b) use ($tilePriority): int {
+            $aSort = is_numeric($a['sort_key'] ?? null) ? (int) $a['sort_key'] : self::legacy_provider_sort_key($a);
+            $bSort = is_numeric($b['sort_key'] ?? null) ? (int) $b['sort_key'] : self::legacy_provider_sort_key($b);
+            if ($aSort !== $bSort) {
+                return $aSort <=> $bSort;
+            }
+            $aKind = strtolower((string) ($a['tile_kind'] ?? $a['tileKind'] ?? 'unknown'));
+            $bKind = strtolower((string) ($b['tile_kind'] ?? $b['tileKind'] ?? 'unknown'));
+            $aRank = $tilePriority[$aKind] ?? $tilePriority['unknown'];
+            $bRank = $tilePriority[$bKind] ?? $tilePriority['unknown'];
+            if ($aRank !== $bRank) {
+                return $aRank <=> $bRank;
+            }
+            return strtolower((string) ($a['name'] ?? $a['id'] ?? $a['provider'] ?? '')) <=> strtolower((string) ($b['name'] ?? $b['id'] ?? $b['provider'] ?? ''));
+        });
+        return $providers;
+    }
+
+    private static function legacy_provider_sort_key(array $provider): int
+    {
+        $statePriority = ['outage' => 0, 'major' => 0, 'critical' => 0, 'degraded' => 1, 'partial' => 1, 'maintenance' => 2, 'unknown' => 3, 'operational' => 4, 'ok' => 4];
+        if (!empty($provider['incidents']) && is_array($provider['incidents'])) {
+            return 0;
+        }
+        $status = strtolower((string) ($provider['stateCode'] ?? $provider['status'] ?? 'unknown'));
+        return $statePriority[$status] ?? $statePriority['unknown'];
+    }
+
+    private static function format_incident_time($value): ?string
+    {
+        $timestamp = self::parse_time($value);
+        return $timestamp ? gmdate('c', $timestamp) : null;
     }
 
     private static function providers(): array
