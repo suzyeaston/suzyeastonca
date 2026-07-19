@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace SuzyEaston\LousyOutages;
 
+use SuzyEaston\LousyOutages\Storage\IncidentStore;
+
 class Summary {
     public static function current(): array {
         $providers = self::providers();
@@ -68,6 +70,112 @@ class Summary {
             'outageCount' => $outageCount,
             'signalCount' => $signalCount,
         ];
+    }
+
+
+    /**
+     * Return the same normalized incident records and ordering used by the public history panel.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function ordered_recent_incidents(int $days = 30, bool $importantOnly = true, int $limit = 0): array
+    {
+        $days = max(1, min(90, $days));
+        $cutoff = time() - ($days * DAY_IN_SECONDS);
+        $allowedProviders = Providers::enabled();
+        $incidentStore = new IncidentStore();
+        $events = $incidentStore->getStoredIncidents(0);
+        $prepared = [];
+
+        foreach ($events as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+
+            $event = $incidentStore->normalizeEvent($event);
+            $slug = sanitize_key((string) ($event['provider'] ?? ''));
+            $source = strtolower((string) ($event['source'] ?? ''));
+            $severity = strtolower((string) ($event['severity'] ?? ''));
+            $isUserReport = ('user_report' === $source || 'user_report' === $severity);
+            $allowOther = ('other' === $slug && $isUserReport);
+
+            if ('' === $slug || (!isset($allowedProviders[$slug]) && !$allowOther)) {
+                continue;
+            }
+
+            $firstSeen = isset($event['first_seen']) ? (int) $event['first_seen'] : 0;
+            $lastSeen = isset($event['last_seen']) ? (int) $event['last_seen'] : $firstSeen;
+            $incidentStart = $firstSeen ?: $lastSeen;
+            if ($incidentStart && $incidentStart < $cutoff) {
+                continue;
+            }
+
+            $status = strtolower((string) ($event['status_normal'] ?? $event['status'] ?? 'unknown'));
+            if (in_array($status, ['operational', 'ok', 'none'], true)) {
+                continue;
+            }
+
+            $important = isset($event['important']) ? (bool) $event['important'] : true;
+            if ($importantOnly && (!$important || in_array($severity, ['maintenance', 'info'], true))) {
+                continue;
+            }
+
+            $prepared[] = [
+                'id' => (string) ($event['guid'] ?? sha1($slug . '|' . ($event['title'] ?? '') . '|' . ($firstSeen ?: $lastSeen))),
+                'provider_id' => $slug,
+                'provider' => (string) ($event['provider_label'] ?? ($allowedProviders[$slug]['name'] ?? ucfirst($slug))),
+                'status' => $status ?: 'unknown',
+                'status_label' => Fetcher::status_label($status ?: 'unknown'),
+                'severity' => $severity ?: 'degraded',
+                'summary' => (string) ($event['title'] ?? $event['description'] ?? ''),
+                'started_at' => $firstSeen ? gmdate('c', $firstSeen) : null,
+                'updated_at' => $lastSeen ? gmdate('c', $lastSeen) : null,
+                'url' => isset($event['url']) ? (string) $event['url'] : '',
+            ];
+        }
+
+        $deduped = self::dedupe_ordered_incidents($prepared);
+        usort($deduped, static function (array $a, array $b): int {
+            $aStart = self::parse_time($a['started_at'] ?? null) ?? 0;
+            $bStart = self::parse_time($b['started_at'] ?? null) ?? 0;
+            if ($aStart !== $bStart) {
+                return $bStart <=> $aStart;
+            }
+            $aUpdated = self::parse_time($a['updated_at'] ?? null) ?? 0;
+            $bUpdated = self::parse_time($b['updated_at'] ?? null) ?? 0;
+            if ($aUpdated !== $bUpdated) {
+                return $bUpdated <=> $aUpdated;
+            }
+            return self::severity_rank((string) ($b['severity'] ?? $b['status'] ?? '')) <=> self::severity_rank((string) ($a['severity'] ?? $a['status'] ?? ''));
+        });
+
+        return $limit > 0 ? array_slice($deduped, 0, $limit) : $deduped;
+    }
+
+    private static function dedupe_ordered_incidents(array $incidents): array
+    {
+        $seen = [];
+        $deduped = [];
+        foreach ($incidents as $incident) {
+            $title = strtolower((string) ($incident['summary'] ?? ''));
+            $title = preg_replace('/\bdetails\b/', '', $title) ?: '';
+            $title = preg_replace('/([!?.:,;])\1+/', '$1', $title) ?: '';
+            $title = trim(preg_replace('/\s+/', ' ', $title) ?: '');
+            $started = self::parse_time($incident['started_at'] ?? null) ?? 0;
+            $key = strtolower((string) ($incident['provider_id'] ?? $incident['provider'] ?? '')) . '|' . $title . '|' . (string) floor($started / 60);
+            $updated = self::parse_time($incident['updated_at'] ?? null) ?? 0;
+            if (!isset($seen[$key]) || ((self::parse_time($seen[$key]['updated_at'] ?? null) ?? 0) < $updated)) {
+                $seen[$key] = $incident;
+            }
+        }
+        return array_values($seen);
+    }
+
+    private static function severity_rank(string $value): int
+    {
+        $rank = ['critical' => 4, 'major' => 4, 'major_outage' => 4, 'outage' => 4, 'partial' => 3, 'partial_outage' => 3, 'degraded_performance' => 3, 'incident' => 3, 'degraded' => 3, 'minor' => 3, 'maintenance' => 2, 'info' => 1];
+        $key = strtolower($value);
+        return $rank[$key] ?? 1;
     }
 
     private static function providers(): array

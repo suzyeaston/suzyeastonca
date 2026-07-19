@@ -13,7 +13,7 @@ $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
         'last_checked' => '',
     ];
 $teaser_href = $teaser_data['href'] ?? home_url( '/lousy-outages/' );
-$rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? array_slice( $teaser_data['rows'], 0, 4 ) : [];
+$rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? array_slice( $teaser_data['rows'], 0, 5 ) : [];
 $last_checked = $teaser_data['last_checked'] ?? '';
 $active_count = count( $rows );
 $provider_names = [];
@@ -50,7 +50,7 @@ if ( count( $provider_names ) > 3 ) {
                 <span class="lo-home-live-band__dot" aria-hidden="true"></span>
                 <div>
                     <p class="lo-home-live-band__label">LIVE OUTAGE SIGNAL</p>
-                    <p class="lo-home-live-band__count"><?php echo esc_html( $active_count . ' active provider ' . ( 1 === $active_count ? 'signal' : 'signals' ) ); ?></p>
+                    <p class="lo-home-live-band__count"><?php echo esc_html( $active_count . ' latest incident ' . ( 1 === $active_count ? 'signal' : 'signals' ) ); ?></p>
                     <?php if ( $provider_summary ) : ?>
                         <p class="lo-home-live-band__providers"><?php echo esc_html( $provider_summary ); ?></p>
                     <?php endif; ?>
@@ -63,12 +63,18 @@ if ( count( $provider_names ) > 3 ) {
                             <strong class="lo-home-alert__provider"><?php echo esc_html( $row['provider'] ?? 'Unknown provider' ); ?></strong>
                             <span class="lo-home-alert__status"><?php echo esc_html( $row['label'] ?? 'Status' ); ?></span>
                         </div>
-                        <a class="lo-home-alert__body" href="<?php echo esc_url( $row['href'] ?? $teaser_href ); ?>">
+                        <p class="lo-home-alert__body">
                             <?php echo esc_html( $row['message'] ?? 'Status update' ); ?>
-                        </a>
-                        <?php if ( ! empty( $row['time'] ) ) : ?>
-                            <time class="lo-home-alert__time"><?php echo esc_html( $row['time'] ); ?></time>
-                        <?php endif; ?>
+                        </p>
+                        <div class="lo-home-alert__times">
+                            <?php if ( ! empty( $row['started'] ) ) : ?>
+                                <time class="lo-home-alert__time" datetime="<?php echo esc_attr( $row['started'] ); ?>"><?php echo esc_html( 'Started ' . $row['started'] ); ?></time>
+                            <?php endif; ?>
+                            <?php if ( ! empty( $row['updated'] ) ) : ?>
+                                <time class="lo-home-alert__time" datetime="<?php echo esc_attr( $row['updated'] ); ?>"><?php echo esc_html( 'Updated ' . $row['updated'] ); ?></time>
+                            <?php endif; ?>
+                        </div>
+                        <a class="lo-home-alert__details" href="<?php echo esc_url( $row['href'] ?? $teaser_href ); ?>">Details</a>
                     </li>
                 <?php endforeach; ?>
             </ul>
