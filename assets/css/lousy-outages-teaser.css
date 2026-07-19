@@ -35,3 +35,15 @@
 @media (max-width:700px){#lousy-outages-teaser .lo-home-alert{grid-template-columns:1fr;align-items:start}#lousy-outages-teaser .lo-home-alert__times{grid-column:auto;grid-row:auto}#lousy-outages-teaser .lo-home-alert__details{justify-self:start}}
 @media (max-width:560px){#lousy-outages-teaser.lo-home-teaser{width:min(100% - 1rem,1180px);padding:.85rem}#lousy-outages-teaser .lo-home-teaser__titlebar,#lousy-outages-teaser .lo-home-live-band{grid-template-columns:1fr;display:grid}}
 @media (prefers-reduced-motion:reduce){#lousy-outages-teaser *,#lousy-outages-teaser *::before,#lousy-outages-teaser *::after{animation:none!important;transition:none!important}}
+
+.lo-home-teaser--delayed .lo-home-status-light {
+  box-shadow: 0 0 0 2px rgba(255, 210, 102, 0.4), 0 0 18px rgba(255, 210, 102, 0.35);
+}
+
+.lo-home-delayed {
+  margin: 0.75rem 0 0;
+  color: #ffd266;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

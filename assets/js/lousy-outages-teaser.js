@@ -1,45 +1,139 @@
-(function(){
-  const container = document.getElementById('lousy-outages-teaser');
-  if (!container) return;
+(function () {
+  'use strict';
 
-  const summaryEl = container.querySelector('[data-lo-summary]');
-  if (!summaryEl) return;
+  const DEFAULT_INTERVAL = 300000;
+  let timer = null;
+  let inFlight = false;
 
-  const iso = summaryEl.getAttribute('data-incident-start');
-  if (!iso) return;
+  function parseConfig(container) {
+    const globalConfig = window.lousyOutagesTeaser || {};
+    return {
+      endpoint: container.dataset.loEndpoint || globalConfig.endpoint || '',
+      interval: Math.max(60000, parseInt(container.dataset.loRefreshInterval || globalConfig.refreshInterval || DEFAULT_INTERVAL, 10) || DEFAULT_INTERVAL),
+      dashboardUrl: container.dataset.loDashboardUrl || globalConfig.dashboardUrl || '/lousy-outages/'
+    };
+  }
 
-  function formatRelative(date) {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    if (!isFinite(diff) || diff < 0) {
-      return 'just now';
-    }
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) {
-      return 'just now';
-    }
-    if (minutes < 60) {
-      return minutes + ' minute' + (minutes === 1 ? '' : 's') + ' ago';
-    }
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) {
-      const rem = minutes % 60;
-      if (rem === 0) {
-        return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
+  function formatTime(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+
+  function isUnresolvedIncident(incident) {
+    const status = String(incident.status || incident.eta || '').toLowerCase();
+    return !['resolved', 'completed', 'postmortem', 'operational', 'ok', 'none'].includes(status);
+  }
+
+  function keyFor(item) {
+    return [item.providerId, item.summary.toLowerCase(), item.started || ''].join('|');
+  }
+
+  function currentItems(payload) {
+    const providers = Array.isArray(payload && payload.providers) ? payload.providers : [];
+    const items = [];
+    providers.forEach((provider) => {
+      if (!provider || typeof provider !== 'object') return;
+      const providerId = String(provider.id || provider.provider || provider.name || '');
+      const providerName = String(provider.name || provider.provider || providerId || 'Unknown provider');
+      const tileKind = String(provider.tile_kind || provider.tileKind || '').toLowerCase();
+      const stateCode = String(provider.stateCode || provider.status || 'unknown').toLowerCase();
+      const stateLabel = String(provider.state || provider.status_label || stateCode || 'Status');
+      const incidents = Array.isArray(provider.incidents) ? provider.incidents.filter((incident) => incident && typeof incident === 'object' && isUnresolvedIncident(incident)) : [];
+      incidents.forEach((incident) => {
+        const started = incident.startedAt || incident.started_at || incident.created_at || '';
+        const updated = incident.updatedAt || incident.updated_at || started || provider.updatedAt || provider.updated_at || '';
+        items.push({
+          type: 'outage', tone: 'outage', providerId, provider: providerName, label: stateLabel,
+          summary: String(incident.title || incident.summary || provider.summary || 'Incident reported'),
+          href: String(incident.url || provider.url || ''), started, updated,
+          sort: Date.parse(updated) || Date.parse(started) || 0
+        });
+      });
+      if (incidents.length === 0 && tileKind === 'outage') {
+        const updated = provider.updatedAt || provider.updated_at || '';
+        items.push({ type: 'outage', tone: 'outage', providerId, provider: providerName, label: stateLabel, summary: String(provider.summary || stateLabel || 'Active outage'), href: String(provider.url || ''), started: updated, updated, sort: Date.parse(updated) || 0 });
+      } else if (incidents.length === 0 && tileKind === 'signal') {
+        const updated = provider.updatedAt || provider.updated_at || '';
+        items.push({ type: 'signal', tone: 'signal', providerId, provider: providerName, label: stateLabel, summary: String(provider.summary || stateLabel || 'Verified degraded signal'), href: String(provider.url || ''), started: '', updated, sort: Date.parse(updated) || 0 });
       }
-      return hours + 'h ' + rem + 'm ago';
+    });
+    const seen = new Map();
+    items.sort((a, b) => b.sort - a.sort || a.provider.localeCompare(b.provider));
+    items.forEach((item) => { if (!seen.has(keyFor(item))) seen.set(keyFor(item), item); });
+    return Array.from(seen.values()).slice(0, 5);
+  }
+
+  function setText(root, selector, text) { const el = root.querySelector(selector); if (el) el.textContent = text; }
+
+  function render(container, payload, config) {
+    const items = currentItems(payload);
+    const meta = payload && payload.meta ? payload.meta : {};
+    const refreshed = meta.fetchedAt || payload.fetched_at || meta.generatedAt || '';
+    container.classList.toggle('lo-home-teaser--active', items.length > 0);
+    container.classList.toggle('lo-home-teaser--clear', items.length === 0);
+    container.classList.remove('lo-home-teaser--delayed');
+    const light = container.querySelector('.lo-home-status-light');
+    if (light) {
+      light.classList.toggle('lo-home-status-light--alert', items.length > 0);
+      light.classList.toggle('lo-home-status-light--clear', items.length === 0);
+      setText(light, '.screen-reader-text', items.length > 0 ? 'Active provider incidents or degraded signals' : 'No active provider incidents');
     }
-    const days = Math.floor(hours / 24);
-    return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+    const screen = container.querySelector('.lo-home-teaser__screen');
+    if (!screen) return;
+    while (screen.firstChild) screen.removeChild(screen.firstChild);
+    if (items.length === 0) {
+      const empty = document.createElement('div'); empty.className = 'lo-home-empty';
+      const p1 = document.createElement('p'); p1.textContent = 'all quiet. suspicious, but fine.';
+      const p2 = document.createElement('p'); p2.textContent = 'last checked: ' + (formatTime(refreshed) || 'recently');
+      empty.append(p1, p2); screen.append(empty); return;
+    }
+    const band = document.createElement('div'); band.className = 'lo-home-live-band'; band.setAttribute('role', 'status'); band.setAttribute('aria-live', 'polite');
+    const dot = document.createElement('span'); dot.className = 'lo-home-live-band__dot'; dot.setAttribute('aria-hidden', 'true');
+    const copy = document.createElement('div');
+    const label = document.createElement('p'); label.className = 'lo-home-live-band__label'; label.textContent = items.some((i) => i.type === 'outage') ? 'LIVE OUTAGE SIGNAL' : 'VERIFIED DEGRADED SIGNAL';
+    const count = document.createElement('p'); count.className = 'lo-home-live-band__count'; count.textContent = items.length + ' current ' + (items.length === 1 ? 'signal' : 'signals');
+    const providers = document.createElement('p'); providers.className = 'lo-home-live-band__providers'; providers.textContent = Array.from(new Set(items.map((i) => i.provider))).slice(0, 3).join(' + ');
+    copy.append(label, count, providers); band.append(dot, copy); screen.append(band);
+    const list = document.createElement('ul'); list.className = 'lo-home-alert-list';
+    items.forEach((item) => {
+      const li = document.createElement('li'); li.className = 'lo-home-alert lo-home-alert--' + item.tone;
+      const metaEl = document.createElement('div'); metaEl.className = 'lo-home-alert__meta';
+      const strong = document.createElement('strong'); strong.className = 'lo-home-alert__provider'; strong.textContent = item.provider;
+      const status = document.createElement('span'); status.className = 'lo-home-alert__status'; status.textContent = item.type === 'signal' ? 'Degraded signal' : item.label;
+      metaEl.append(strong, status);
+      const body = document.createElement('p'); body.className = 'lo-home-alert__body'; body.textContent = item.summary;
+      const times = document.createElement('div'); times.className = 'lo-home-alert__times';
+      if (item.started) { const t = document.createElement('time'); t.className = 'lo-home-alert__time'; t.dateTime = item.started; t.textContent = 'Started ' + formatTime(item.started); times.append(t); }
+      if (item.updated) { const t = document.createElement('time'); t.className = 'lo-home-alert__time'; t.dateTime = item.updated; t.textContent = 'Updated ' + formatTime(item.updated); times.append(t); }
+      const a = document.createElement('a'); a.className = 'lo-home-alert__details'; a.href = item.href || config.dashboardUrl + (item.providerId ? '#provider-' + encodeURIComponent(item.providerId) : ''); a.textContent = 'Details';
+      li.append(metaEl, body, times, a); list.append(li);
+    });
+    screen.append(list);
   }
 
-  const startDate = new Date(iso);
-  if (isNaN(startDate.getTime())) return;
-
-  function update() {
-    summaryEl.setAttribute('data-relative', formatRelative(startDate));
+  function markDelayed(container) {
+    container.classList.add('lo-home-teaser--delayed');
+    const screen = container.querySelector('.lo-home-teaser__screen');
+    if (screen && !screen.querySelector('.lo-home-delayed')) { const p = document.createElement('p'); p.className = 'lo-home-delayed'; p.setAttribute('role', 'status'); p.textContent = 'Live verification delayed; showing the last saved homepage snapshot.'; screen.append(p); }
   }
 
-  update();
-  setInterval(update, 60000);
-})();
+  function init(container) {
+    const config = parseConfig(container);
+    if (!config.endpoint || container.dataset.loTeaserReady === '1') return;
+    container.dataset.loTeaserReady = '1';
+    const refresh = () => {
+      if (inFlight || document.hidden) return;
+      inFlight = true;
+      const url = new URL(config.endpoint, window.location.href); url.searchParams.set('_lo_cache_bust', Date.now().toString());
+      fetch(url.toString(), { cache: 'no-store', credentials: 'same-origin' }).then((r) => { if (!r.ok) throw new Error('status fetch failed'); return r.json(); }).then((payload) => render(container, payload, config)).catch(() => markDelayed(container)).finally(() => { inFlight = false; });
+    };
+    refresh();
+    timer = window.setInterval(refresh, config.interval);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  }
+
+  window.LousyOutagesTeaser = { currentItems, render, markDelayed, init };
+  document.addEventListener('DOMContentLoaded', () => { const c = document.getElementById('lousy-outages-teaser'); if (c) init(c); });
+}());

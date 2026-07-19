@@ -106,8 +106,7 @@ class Summary {
             $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
 
             if (!$incidents) {
-                $hasCurrentSignal = in_array($tileKind, ['outage', 'signal'], true)
-                    || !in_array($providerStatus, ['', 'operational', 'ok', 'none', 'unknown'], true);
+                $hasCurrentSignal = in_array($tileKind, ['outage', 'signal'], true);
                 if (!$hasCurrentSignal) {
                     continue;
                 }
@@ -119,7 +118,7 @@ class Summary {
                     'provider' => $providerName,
                     'status' => $providerStatus ?: 'incident',
                     'status_label' => Fetcher::status_label($providerStatus ?: 'incident'),
-                    'severity' => in_array($providerStatus, ['outage', 'major', 'critical'], true) ? 'outage' : 'degraded',
+                    'severity' => 'outage' === $tileKind ? 'outage' : 'degraded',
                     'important' => true,
                     'summary' => (string) ($provider['summary'] ?? $provider['message'] ?? Fetcher::status_label($providerStatus ?: 'incident')),
                     'started_at' => self::format_incident_time($updated),
@@ -136,7 +135,7 @@ class Summary {
             });
 
             foreach ($incidents as $incident) {
-                if (!is_array($incident)) {
+                if (!is_array($incident) || !self::is_unresolved_incident($incident)) {
                     continue;
                 }
 
@@ -161,7 +160,8 @@ class Summary {
             }
         }
 
-        return $limit > 0 ? array_slice($records, 0, $limit) : $records;
+        $deduped = self::dedupe_ordered_incidents($records);
+        return $limit > 0 ? array_slice($deduped, 0, $limit) : $deduped;
     }
 
     /**

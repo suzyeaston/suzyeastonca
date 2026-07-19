@@ -3,10 +3,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DIST="$ROOT/dist"
 OUT="$DIST/lousy-outages.zip"
-SRC="$ROOT/plugins/lousy-outages"
+SRC="$ROOT/lousy-outages"
 mkdir -p "$DIST"
 rm -f "$OUT"
-cd "$ROOT/plugins"
+cd "$ROOT"
 zip -r "$OUT" lousy-outages \
   -x '*/.git/*' '*/tests/*' '*/node_modules/*' '*/.env' '*/.env.*' '*/secrets/*' '*/wp-config.php' '*.bak' '*.backup' '*.tmp' '*/.DS_Store'
 
