@@ -104,9 +104,12 @@ class Summary {
             }
             $providerStatus = strtolower((string) ($provider['stateCode'] ?? $provider['status'] ?? 'incident'));
             $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
+            $currentIncidents = array_values(array_filter($incidents, static function (array $incident): bool {
+                return self::is_unresolved_incident($incident);
+            }));
 
-            if (!$incidents) {
-                $hasCurrentSignal = in_array($tileKind, ['outage', 'signal'], true);
+            if (!$currentIncidents) {
+                $hasCurrentSignal = !$incidents && in_array($tileKind, ['outage', 'signal'], true);
                 if (!$hasCurrentSignal) {
                     continue;
                 }
@@ -130,12 +133,13 @@ class Summary {
                 continue;
             }
 
+            $incidents = $currentIncidents;
             usort($incidents, static function (array $left, array $right): int {
                 return self::incident_timestamp($right) <=> self::incident_timestamp($left);
             });
 
             foreach ($incidents as $incident) {
-                if (!is_array($incident) || !self::is_unresolved_incident($incident)) {
+                if (!is_array($incident)) {
                     continue;
                 }
 
@@ -578,13 +582,16 @@ class Summary {
 
     private static function is_unresolved_incident(array $incident): bool
     {
-        $statusCode = strtolower((string) ($incident['impact'] ?? $incident['status'] ?? ''));
-        if (in_array($statusCode, ['operational', 'resolved', 'maintenance'], true)) {
+        if (!empty($incident['resolved_at']) || !empty($incident['resolvedAt'])) {
             return false;
         }
 
-        if (!empty($incident['resolved_at']) || !empty($incident['resolvedAt'])) {
-            return false;
+        $resolvedValues = ['resolved', 'completed', 'postmortem', 'operational', 'ok', 'none'];
+        foreach (['status', 'eta'] as $field) {
+            $value = strtolower(trim((string) ($incident[$field] ?? '')));
+            if ('' !== $value && in_array($value, $resolvedValues, true)) {
+                return false;
+            }
         }
 
         return true;

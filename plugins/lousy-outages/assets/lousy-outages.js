@@ -1024,7 +1024,9 @@
       generated_at: ''
     };
     if (meta && typeof meta === 'object') {
-      if (typeof meta.active_outage_count === 'number' && Number.isFinite(meta.active_outage_count)) {
+      if (typeof meta.official_incident_count === 'number' && Number.isFinite(meta.official_incident_count)) {
+        counts.active_outage_count = meta.official_incident_count;
+      } else if (typeof meta.active_outage_count === 'number' && Number.isFinite(meta.active_outage_count)) {
         counts.active_outage_count = meta.active_outage_count;
       }
       if (typeof meta.signal_count === 'number' && Number.isFinite(meta.signal_count)) {
@@ -1038,16 +1040,28 @@
       }
     }
 
-    var needsFallback = counts.active_outage_count === 0 && counts.signal_count === 0 && counts.unverified_count === 0;
+    var officialIncidentProviders = 0;
+    if (Array.isArray(providers)) {
+      providers.forEach(function (provider) {
+        if (!provider) {
+          return;
+        }
+        var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
+        if (incidents.length) {
+          officialIncidentProviders += 1;
+        }
+      });
+    }
+    counts.active_outage_count = Math.max(counts.active_outage_count, officialIncidentProviders);
+
+    var needsFallback = counts.signal_count === 0 && counts.unverified_count === 0;
     if (needsFallback && Array.isArray(providers)) {
       providers.forEach(function (provider) {
         if (!provider) {
           return;
         }
         var kind = resolveTileKind(provider);
-        if (kind === 'outage') {
-          counts.active_outage_count += 1;
-        } else if (kind === 'signal') {
+        if (kind === 'signal') {
           counts.signal_count += 1;
         } else if (kind === 'unknown' || kind === 'manual') {
           counts.unverified_count += 1;
@@ -1242,9 +1256,9 @@
 
     if (!message) {
       if (incidents.length) {
-        var lead = incidents[0];
+        var lead = getLatestIncident(incidents) || incidents[0];
         var incidentTitle = lead && (lead.name || lead.title || lead.summary) ? (lead.name || lead.title || lead.summary) : 'Incident';
-        var condensed = condenseIncidentTitle(providerSlug, incidentTitle);
+        var condensed = condenseIncidentTitle(providerSlug, incidentTitle, 118);
         return condensed.text || incidentTitle;
       }
       if (statusInfo.code === 'operational') {
@@ -1253,14 +1267,14 @@
       if (statusInfo.code === 'unknown') {
         return UNKNOWN_MESSAGE;
       }
-      return summaryText || statusInfo.label || UNKNOWN_MESSAGE;
+      return normalizeCardDisplayText(summaryText, 140) || statusInfo.label || UNKNOWN_MESSAGE;
     }
 
-    return message;
+    return normalizeCardDisplayText(message, 140);
   }
 
   function getStatusLine(provider, normalized, providerSlug) {
-    var summaryText = getSummaryText(provider);
+    var summaryText = normalizeCardDisplayText(getSummaryText(provider), 140);
     var incidents = Array.isArray(provider.incidents) ? provider.incidents : [];
     var hasIncidents = incidents.length > 0;
     var statusInfo = normalizeStatus(provider.status || provider.stateCode || provider.overall || provider.overall_status || normalized.code);
@@ -1275,9 +1289,9 @@
       return signalOnlyCopy.summary;
     }
     if (hasIncidents) {
-      var lead = incidents[0];
+      var lead = getLatestIncident(incidents) || incidents[0];
       var incidentTitle = lead && (lead.name || lead.title || lead.summary) ? (lead.name || lead.title || lead.summary) : 'Incident';
-      var condensed = condenseIncidentTitle(providerSlug, incidentTitle);
+      var condensed = condenseIncidentTitle(providerSlug, incidentTitle, 118);
       return 'Incident: ' + (condensed.text || 'Incident');
     }
     if (statusInfo.code === 'operational') {
@@ -1289,8 +1303,28 @@
     return summaryText || statusInfo.label || UNKNOWN_MESSAGE;
   }
 
-  function condenseIncidentTitle(providerSlug, text) {
-    var raw = String(text || '').replace(/\s+/g, ' ').trim();
+  function normalizeCardDisplayText(text, limit) {
+    var max = Number.isFinite(limit) && limit > 0 ? limit : 160;
+    var raw = String(text || '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\*\*\s*(Summary|Description|Symptoms?|Workaround|Impact|Status|Update|Updates?)\s*\*\*\s*:?/gi, '')
+      .replace(/\b(Summary|Description|Symptoms?|Workaround|Impact|Status|Update|Updates?)\s*:\s*/gi, '')
+      .replace(/\s+/g, ' ')
+      .replace(/^[\s*_:\-–—]+|[\s*_:\-–—]+$/g, '')
+      .trim();
+    if (!raw || raw.length <= max) {
+      return raw;
+    }
+    var slice = raw.slice(0, Math.max(0, max - 1));
+    var lastSpace = slice.lastIndexOf(' ');
+    if (lastSpace > max * 0.65) {
+      slice = slice.slice(0, lastSpace);
+    }
+    return slice.replace(/[\s.,;:\-–—]+$/g, '') + '…';
+  }
+
+  function condenseIncidentTitle(providerSlug, text, limit) {
+    var raw = normalizeCardDisplayText(text, 1000);
     if (!raw) {
       return { text: '', title: '' };
     }
@@ -1307,11 +1341,18 @@
       }
     }
 
-    if (display.length > 140) {
-      display = display.slice(0, 137).replace(/\s+$/, '') + '…';
-    }
+    display = normalizeCardDisplayText(display, Number.isFinite(limit) ? limit : 140);
 
     return { text: display, title: raw };
+  }
+
+  function getLatestIncident(incidents) {
+    if (!Array.isArray(incidents) || !incidents.length) {
+      return null;
+    }
+    return incidents.slice().sort(function (left, right) {
+      return getIncidentUpdatedTs(right) - getIncidentUpdatedTs(left);
+    })[0] || null;
   }
 
   function getProviderSlug(provider) {
@@ -1386,7 +1427,7 @@
       messageEl.textContent = messageText;
     }
     var signalOnlyCopy = getSignalOnlyCopy(provider, normalized, providerSlug);
-    var summaryText = signalOnlyCopy ? signalOnlyCopy.summary : String(provider.summary || '').trim();
+    var summaryText = signalOnlyCopy ? signalOnlyCopy.summary : normalizeCardDisplayText(provider.summary || '', 190);
     if (summaryText && messageText && summaryText.toLowerCase() === messageText.toLowerCase()) {
       summaryText = '';
     }
@@ -1453,12 +1494,12 @@
         incidentsWrap.removeAttribute('hidden');
         var ul = state.doc.createElement('ul');
         ul.className = 'lo-inc-list';
-        incidents.forEach(function (incident) {
+        (getLatestIncident(incidents) ? [getLatestIncident(incidents)] : []).forEach(function (incident) {
           var li = state.doc.createElement('li');
           li.className = 'lo-inc-item';
           var title = state.doc.createElement('p');
           title.className = 'lo-inc-title';
-          var condensedName = condenseIncidentTitle(providerSlug, incident.name || 'Incident');
+          var condensedName = condenseIncidentTitle(providerSlug, incident.name || incident.title || incident.summary || 'Incident', 118);
           title.textContent = condensedName.text || 'Incident';
           if (condensedName.title && condensedName.title !== condensedName.text) {
             title.setAttribute('title', condensedName.title);
@@ -1473,8 +1514,8 @@
           if (incident.summary) {
             var details = state.doc.createElement('p');
             details.className = 'lo-inc-summary';
-            var condensedSummary = condenseIncidentTitle(providerSlug, incident.summary);
-            details.textContent = condensedSummary.text;
+            var condensedSummary = condenseIncidentTitle(providerSlug, incident.summary, 210);
+            details.textContent = condensedSummary.text || 'Latest official update is available from the provider status page.';
             if (condensedSummary.title && condensedSummary.title !== condensedSummary.text) {
               details.setAttribute('title', condensedSummary.title);
             }
@@ -2795,6 +2836,7 @@
       state.historyEmpty.setAttribute('hidden', 'hidden');
     }
     if (state.historyError) {
+      state.historyError.textContent = '';
       state.historyError.setAttribute('hidden', 'hidden');
     }
     if (state.historyCharts) {
@@ -2814,7 +2856,12 @@
     }
     state.historyToggleButton = null;
     if (state.historyError) {
+      state.historyError.textContent = '';
       state.historyError.setAttribute('hidden', 'hidden');
+    }
+    if (state.historyEmpty) {
+      state.historyEmpty.textContent = '';
+      state.historyEmpty.setAttribute('hidden', 'hidden');
     }
 
     renderHistoryCharts(providers, meta || {});
@@ -2973,7 +3020,12 @@
       state.historyList.innerHTML = '';
     }
     if (state.historyEmpty) {
+      state.historyEmpty.textContent = '';
       state.historyEmpty.setAttribute('hidden', 'hidden');
+    }
+    if (state.historyCharts) {
+      state.historyCharts.innerHTML = '';
+      state.historyCharts.setAttribute('hidden', 'hidden');
     }
     if (state.historyError) {
       state.historyError.textContent = message || 'Unable to load incidents right now.';

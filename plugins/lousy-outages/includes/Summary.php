@@ -104,10 +104,12 @@ class Summary {
             }
             $providerStatus = strtolower((string) ($provider['stateCode'] ?? $provider['status'] ?? 'incident'));
             $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
+            $currentIncidents = array_values(array_filter($incidents, static function (array $incident): bool {
+                return self::is_unresolved_incident($incident);
+            }));
 
-            if (!$incidents) {
-                $hasCurrentSignal = in_array($tileKind, ['outage', 'signal'], true)
-                    || !in_array($providerStatus, ['', 'operational', 'ok', 'none', 'unknown'], true);
+            if (!$currentIncidents) {
+                $hasCurrentSignal = !$incidents && in_array($tileKind, ['outage', 'signal'], true);
                 if (!$hasCurrentSignal) {
                     continue;
                 }
@@ -119,7 +121,7 @@ class Summary {
                     'provider' => $providerName,
                     'status' => $providerStatus ?: 'incident',
                     'status_label' => Fetcher::status_label($providerStatus ?: 'incident'),
-                    'severity' => in_array($providerStatus, ['outage', 'major', 'critical'], true) ? 'outage' : 'degraded',
+                    'severity' => 'outage' === $tileKind ? 'outage' : 'degraded',
                     'important' => true,
                     'summary' => (string) ($provider['summary'] ?? $provider['message'] ?? Fetcher::status_label($providerStatus ?: 'incident')),
                     'started_at' => self::format_incident_time($updated),
@@ -131,6 +133,7 @@ class Summary {
                 continue;
             }
 
+            $incidents = $currentIncidents;
             usort($incidents, static function (array $left, array $right): int {
                 return self::incident_timestamp($right) <=> self::incident_timestamp($left);
             });
@@ -161,7 +164,8 @@ class Summary {
             }
         }
 
-        return $limit > 0 ? array_slice($records, 0, $limit) : $records;
+        $deduped = self::dedupe_ordered_incidents($records);
+        return $limit > 0 ? array_slice($deduped, 0, $limit) : $deduped;
     }
 
     /**
@@ -578,13 +582,16 @@ class Summary {
 
     private static function is_unresolved_incident(array $incident): bool
     {
-        $statusCode = strtolower((string) ($incident['impact'] ?? $incident['status'] ?? ''));
-        if (in_array($statusCode, ['operational', 'resolved', 'maintenance'], true)) {
+        if (!empty($incident['resolved_at']) || !empty($incident['resolvedAt'])) {
             return false;
         }
 
-        if (!empty($incident['resolved_at']) || !empty($incident['resolvedAt'])) {
-            return false;
+        $resolvedValues = ['resolved', 'completed', 'postmortem', 'operational', 'ok', 'none'];
+        foreach (['status', 'eta'] as $field) {
+            $value = strtolower(trim((string) ($incident[$field] ?? '')));
+            if ('' !== $value && in_array($value, $resolvedValues, true)) {
+                return false;
+            }
         }
 
         return true;

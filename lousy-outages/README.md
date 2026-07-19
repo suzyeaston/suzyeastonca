@@ -127,7 +127,7 @@ If this check fails, do not deploy.
 
 ## Canonical deployment path
 
-- **Deploy only from `lousy-outages/` (top-level).**
-- `plugins/lousy-outages/` is deprecated/non-deployable and exists only for merge history until cleanup.
-- Before deploy, run `./scripts/check-lousy-outages-tree-drift.sh` from repo root; if it fails, reconcile top-level first.
+- **Deploy from `plugins/lousy-outages/`, the same tree mounted by local Docker into `wp-content/plugins/lousy-outages`.**
+- The top-level `lousy-outages/` mirror must not drift from `plugins/lousy-outages/`; the drift checker fails on deploy-critical differences.
+- Before deploy, run `./scripts/check-lousy-outages-tree-drift.sh` from repo root; if it fails, reconcile the mirror from `plugins/lousy-outages/` first.
 - Swap plugin folder with rollback copy ready; do not deploy if smoke scripts fail.

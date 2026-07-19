@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 use SuzyEaston\LousyOutages\Storage\IncidentStore;
+use SuzyEaston\LousyOutages\Sources\ChatterRejectionReasons;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -355,6 +356,37 @@ class Api {
             'source'        => 'live',
         ];
 
+        $publicDiag = (array) get_option('lo_diag_public_chatter', []);
+        $response['public_chatter_diagnostics'] = [
+            'source_statuses' => (array) ($publicDiag['source_statuses'] ?? []),
+            'enabled_sources' => (array) ($publicDiag['enabled_sources'] ?? []),
+            'skipped_sources' => (array) ($publicDiag['skipped_sources'] ?? []),
+            'direct_sources_enabled' => !empty($publicDiag['direct_sources_enabled']),
+            'direct_sources_disabled_by_safe_default' => !empty($publicDiag['direct_sources_disabled_by_safe_default']),
+            'watch_candidate_count' => (int) ($publicDiag['watch_candidate_count'] ?? 0),
+            'official_incident_corroboration' => array_slice((array) ($publicDiag['official_incident_corroboration'] ?? []), 0, 20),
+            'canadian_infrastructure_watchlist' => (array) ($publicDiag['canadian_infrastructure_watchlist'] ?? []),
+            'ran_at' => (string) ($publicDiag['ran_at'] ?? ''),
+            'sources_configured' => (array) ($publicDiag['sources_configured'] ?? []),
+            'sources_enabled' => (array) ($publicDiag['sources_enabled'] ?? []),
+            'sources_not_configured' => (array) ($publicDiag['sources_not_configured'] ?? []),
+            'sources_by_lane' => (array) ($publicDiag['sources_by_lane'] ?? []),
+            'provider_coverage' => array_slice((array) ($publicDiag['provider_coverage'] ?? []), 0, 20),
+            'active_incident_coverage' => array_slice((array) ($publicDiag['active_incident_coverage'] ?? []), 0, 20),
+            'last_collection_at' => (string) ($publicDiag['last_collection_at'] ?? ''),
+            'next_collection_allowed_at' => (string) ($publicDiag['next_collection_allowed_at'] ?? ''),
+            'collection_trigger' => (string) ($publicDiag['collection_trigger'] ?? 'cached'),
+            'sources_configured' => (array) ($publicDiag['sources_configured'] ?? []),
+            'sources_enabled' => (array) ($publicDiag['sources_enabled'] ?? []),
+            'sources_not_configured' => (array) ($publicDiag['sources_not_configured'] ?? []),
+            'sources_by_lane' => (array) ($publicDiag['sources_by_lane'] ?? []),
+            'provider_coverage' => array_slice((array) ($publicDiag['provider_coverage'] ?? []), 0, 20),
+            'active_incident_coverage' => array_slice((array) ($publicDiag['active_incident_coverage'] ?? []), 0, 20),
+            'last_collection_at' => (string) ($publicDiag['last_collection_at'] ?? ''),
+            'next_collection_allowed_at' => (string) ($publicDiag['next_collection_allowed_at'] ?? ''),
+            'collection_trigger' => (string) ($publicDiag['collection_trigger'] ?? 'cached'),
+        ];
+
         if (!empty($result['message']) && is_string($result['message'])) {
             $response['message'] = $result['message'];
         }
@@ -412,6 +444,36 @@ class Api {
             if (!empty($errors)) {
                 $payload['errors'] = $errors;
             }
+            $diag = (array) get_option('lo_diag_hacker_news_chatter', []);
+            $reasonCounts = (array) ($diag['chatter_rejected_by_reason'] ?? []);
+            if ($reasonCounts === [] && !empty($diag['chatter_candidates_preview_sample']) && is_array($diag['chatter_candidates_preview_sample'])) {
+                foreach ((array) $diag['chatter_candidates_preview_sample'] as $item) {
+                    $reason = (string) ($item['reject_reason'] ?? '');
+                    if ($reason === '' || $reason === 'accepted') { continue; }
+                    $reasonCounts[$reason] = (int) ($reasonCounts[$reason] ?? 0) + 1;
+                }
+            }
+            $publicDiag = (array) get_option('lo_diag_public_chatter', []);
+            $payload['public_chatter_diagnostics'] = [
+                'rejected_by_reason' => ChatterRejectionReasons::summarize_counts($reasonCounts),
+                'reason_definitions' => array_values(ChatterRejectionReasons::definitions()),
+                'raw_rejected_codes' => $reasonCounts,
+                'source_statuses' => (array) ($publicDiag['source_statuses'] ?? []),
+                'enabled_sources' => (array) ($publicDiag['enabled_sources'] ?? []),
+                'skipped_sources' => (array) ($publicDiag['skipped_sources'] ?? []),
+                'direct_sources_enabled' => !empty($publicDiag['direct_sources_enabled']),
+                'direct_sources_disabled_by_safe_default' => !empty($publicDiag['direct_sources_disabled_by_safe_default']),
+                'providers_scanned_count' => (int) ($publicDiag['providers_scanned_count'] ?? 0),
+                'watch_candidate_count' => (int) ($publicDiag['watch_candidate_count'] ?? 0),
+                'watch_candidates' => array_slice((array) ($publicDiag['watch_candidates'] ?? []), 0, 20),
+                'official_incident_corroboration' => array_slice((array) ($publicDiag['official_incident_corroboration'] ?? []), 0, 20),
+                'canadian_infrastructure_watchlist' => (array) ($publicDiag['canadian_infrastructure_watchlist'] ?? []),
+                'mentions_seen_by_source' => (array) ($publicDiag['mentions_seen_by_source'] ?? []),
+                'mentions_seen_by_provider' => (array) ($publicDiag['mentions_seen_by_provider'] ?? []),
+                'thresholds' => (array) ($publicDiag['thresholds'] ?? []),
+                'scan_window_minutes' => (int) ($publicDiag['scan_window_minutes'] ?? 0),
+                'ran_at' => (string) ($publicDiag['ran_at'] ?? ''),
+            ];
         }
 
         $json = wp_json_encode($payload);

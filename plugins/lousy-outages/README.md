@@ -84,23 +84,50 @@ Polling runs via WP-Cron (`lousy_outages_poll`). A separate background refresh (
 - RSS reader: add `https://suzyeaston.ca/lousy-outages/feed/status/` (or `https://suzyeaston.ca/feed/lousy-outages-status/`) to NetNewsWire, Feedly, or your preferred client to receive incident alerts.
 - Slack or email: point an automation tool such as IFTTT or Zapier at the same feed (trigger: “New RSS item”) and forward the payload to a Slack webhook, email address, or other notification channel.
 
-## Rumour Radar SSH diagnostics
+## Intel Conduit SSH Diagnostics (no WP-CLI)
 
-Enable logging with `add_filter("lousy_outages_rumour_radar_debug_logging", "__return_true");` then run:
+Use these shell snippets on hosts where WP-CLI is unavailable:
 
-- `grep -n "\[lousy_outages\]\[rumour_radar\]" wp-content/debug.log | tail -n 120`
-- `grep -n "signal_created\|signal_skipped\|collection_complete\|collection_error" wp-content/debug.log | tail -n 120`
-- `tail -f wp-content/debug.log | grep --line-buffered "\[lousy_outages\]\[rumour_radar\]"`
+- Enable debug logging with MU plugin:
+  - `cat > wp-content/mu-plugins/lo-debug.php <<'PHP'`
+  - `<?php add_filter('lo_hn_chatter_enabled', '__return_true'); define('WP_DEBUG', true); define('WP_DEBUG_LOG', true);`
+  - `PHP`
+- Grep Intel Conduit logs:
+  - `grep -E "lousy_outages|Intel Conduit|statuspage|provider_feed|hn_chatter" wp-content/debug.log | tail -n 200`
+- Inspect latest external signals rows:
+  - `mysql -e "SELECT observed_at,source,provider_id,source_type,evidence_quality,official_confirmed,title FROM wp_lo_external_signals ORDER BY id DESC LIMIT 30;"`
+- Inspect REST output:
+  - `curl -s https://YOUR_HOST/wp-json/lousy-outages/v1/status | jq '.'`
+- Check schema columns:
+  - `mysql -e "SHOW COLUMNS FROM wp_lo_external_signals;"`
+- Check adapter options and diagnostics payloads:
+  - `mysql -e "SELECT option_name,LENGTH(option_value) FROM wp_options WHERE option_name LIKE 'lousy_outages_%external%' OR option_name LIKE 'lousy_outages_%signal%';"`
 
-PHP diagnostics snippet (no WP-CLI):
 
-```php
-<?php
-$last = get_option("lousy_outages_last_external_collection", []);
-$dry = get_option("lousy_outages_public_chatter_dry_run", []);
-global $wpdb;
-$table = $wpdb->prefix . "lo_external_signals";
-$rows = $wpdb->get_results("SELECT provider_name,source,observed_at,confidence,metadata_json FROM {$table} ORDER BY observed_at DESC LIMIT 10", ARRAY_A);
-$fused = \SuzyEaston\LousyOutages\SignalEngine::summarize_fused_signals(120);
-var_dump($last, $dry, $rows, array_slice($fused,0,5));
-```
+## Deployment preflight (required)
+
+`php -l` only validates syntax. It does **not** verify runtime interface compatibility or class instantiation during WordPress bootstrap.
+
+Before replacing the production plugin, run:
+
+- `php -l wp-content/plugins/lousy-outages/lousy-outages.php`
+- `php wp-content/plugins/lousy-outages/scripts/smoke-signal-sources.php /var/www/html/wp-load.php`
+- `php wp-content/plugins/lousy-outages/scripts/smoke-intel-source-pack.php`
+- `php wp-content/plugins/lousy-outages/scripts/smoke-production-preflight.php /var/www/html/wp-load.php`
+
+The smoke script bootstraps WordPress (`require wp-load.php`), calls `\SuzyEaston\LousyOutages\SignalCollector::sources()`, and validates for each source:
+
+- instance of `SignalSourceInterface`
+- non-empty `id()` string
+- non-empty `label()` string
+- boolean return from `is_configured()`
+
+If this check fails, do not deploy.
+
+
+## Canonical deployment path
+
+- **Deploy from `plugins/lousy-outages/`, the same tree mounted by local Docker into `wp-content/plugins/lousy-outages`.**
+- The top-level `lousy-outages/` mirror must not drift from `plugins/lousy-outages/`; the drift checker fails on deploy-critical differences.
+- Before deploy, run `./scripts/check-lousy-outages-tree-drift.sh` from repo root; if it fails, reconcile the mirror from `plugins/lousy-outages/` first.
+- Swap plugin folder with rollback copy ready; do not deploy if smoke scripts fail.

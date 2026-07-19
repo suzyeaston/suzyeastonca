@@ -4,25 +4,27 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 use SuzyEaston\LousyOutages\Sources\CloudflareRadarSource;
+use SuzyEaston\LousyOutages\Sources\CommunityReportIntelSource;
 use SuzyEaston\LousyOutages\Sources\HackerNewsChatterSource;
 use SuzyEaston\LousyOutages\Sources\ProviderFeedSource;
 use SuzyEaston\LousyOutages\Sources\PublicChatterSource;
+use SuzyEaston\LousyOutages\Sources\RedditFieldReportsSource;
+use SuzyEaston\LousyOutages\Sources\StatuspageIntelSource;
 use SuzyEaston\LousyOutages\Sources\SyntheticCanarySource;
 
 class SignalCollector {
-    public static function sources(): array { return [new CloudflareRadarSource(), new ProviderFeedSource(), new HackerNewsChatterSource(), new SyntheticCanarySource(), new PublicChatterSource()]; }
+    public static function sources(): array { return [new StatuspageIntelSource(), new ProviderFeedSource(), new HackerNewsChatterSource(), new CommunityReportIntelSource(), new SyntheticCanarySource(), new PublicChatterSource(), new RedditFieldReportsSource(), new CloudflareRadarSource()]; }
     public static function collect(array $options=[]): array {
-        $started=microtime(true); $sources=self::sources();
-        $result=['started_at'=>gmdate('c'),'finished_at'=>'','sources'=>[],'total_collected'=>0,'total_stored'=>0,'providers_checked'=>0,'queries_attempted'=>0,'diagnostics'=>[],'errors'=>[]];
-        RumourRadarLogger::log('collection_start',['sources'=>array_map(static fn($s)=>$s->id(),$sources),'window_minutes'=>(int)($options['window_minutes']??30)]);
-        foreach($sources as $source){ $r=self::collect_source($source->id(),$options); $result['sources'][]=$r; $result['total_collected']+=(int)$r['collected_count']; $result['total_stored']+=(int)$r['stored_count']; $result['providers_checked']+=(int)($r['providers_checked']??0); $result['queries_attempted']+=(int)($r['queries_attempted']??0); $result['diagnostics'][]=['source'=>$source->id(),'status'=>$r['attempted']?'attempted':'skipped','reason'=>(string)($r['reason']??'')]; }
-        $result['finished_at']=gmdate('c'); RumourRadarLogger::log('collection_complete',['duration_ms'=>(int)((microtime(true)-$started)*1000),'signals_collected'=>(int)$result['total_collected'],'signals_stored'=>(int)$result['total_stored'],'errors'=>count((array)$result['errors'])]); self::mark_last_collection_result($result); return $result;
+        $sources=self::sources();
+        $trigger=(string)($options['collection_trigger'] ?? (!empty($options['dry_run']) ? 'preview' : 'cron')); $result=['started_at'=>gmdate('c'),'finished_at'=>'','collection_trigger'=>$trigger,'sources'=>[],'total_collected'=>0,'total_stored'=>0,'failed_count'=>0,'skipped_count'=>0,'first_insert_error'=>'','diagnostics'=>[],'errors'=>[]];
+        foreach($sources as $source){ $r=self::collect_source($source->id(),$options); $result['sources'][]=$r; $result['total_collected']+=(int)$r['collected_count']; $result['total_stored']+=(int)$r['stored_count']; $result['failed_count']+=(int)($r['failed_count']??0); $result['skipped_count']+=(int)($r['skipped_count']??0); if($result['first_insert_error']==='' && !empty($r['first_insert_error'])){$result['first_insert_error']=(string)$r['first_insert_error'];} $result['diagnostics'][]=['source'=>$source->id(),'status'=>$r['attempted']?'attempted':'skipped','reason'=>(string)($r['reason']??''),'detail'=>$r['diagnostics']??[]]; }
+        $result['finished_at']=gmdate('c'); $result['last_collection_at']=$result['finished_at']; $result['next_collection_allowed_at']=gmdate('c', time()+15*MINUTE_IN_SECONDS); self::mark_last_collection_result($result); return $result;
     }
     public static function collect_source(string $sourceId, array $options=[]): array {
-        foreach(self::sources() as $source){ if($source->id()!==$sourceId) continue; $configured=$source->is_configured(); RumourRadarLogger::log('source_config',['source'=>$source->id(),'enabled'=>$configured,'configured'=>$configured]); if(!$configured){ RumourRadarLogger::log('signal_skipped',['provider'=>'*','source'=>$source->id(),'reason'=>'not_configured']); return ['source'=>$source->id(),'configured'=>false,'attempted'=>false,'collected_count'=>0,'stored_count'=>0,'errors'=>[]]; }
-            $signals=$source->collect($options); $stored=ExternalSignals::record_many($signals); RumourRadarLogger::log('query_result',['source'=>$source->id(),'raw_count'=>count($signals),'stored'=>(int)($stored['inserted']??0)]);
-            return ['source'=>$source->id(),'configured'=>true,'attempted'=>true,'collected_count'=>count($signals),'stored_count'=>(int)($stored['inserted']??0),'providers_checked'=>$source->id()==='provider_feed'?count((array)get_option('lo_provider_feed_urls',[])):0,'queries_attempted'=>$source->id()==='hacker_news_chatter'?(int)get_option('lo_last_hn_attempted',0):0,'errors'=>[]]; }
-        return ['source'=>$sourceId,'configured'=>false,'attempted'=>false,'collected_count'=>0,'stored_count'=>0,'errors'=>['unknown source']];
+        foreach(self::sources() as $source){ if($source->id()!==$sourceId) continue; $configured=$source->is_configured(); if(!$configured) return ['source'=>$source->id(),'configured'=>false,'attempted'=>false,'reason'=>'not_configured','collected_count'=>0,'stored_count'=>0,'failed_count'=>0,'skipped_count'=>0,'first_insert_error'=>'','diagnostics'=>['configured'=>false,'attempted'=>false,'skipped_reasons'=>['not_configured']],'errors'=>[]];
+            $signals=$source->collect($options); $stored=ExternalSignals::record_many($signals); $diag=get_option('lo_diag_'.$source->id(),[]); if(!is_array($diag)) $diag=[];
+            return ['source'=>$source->id(),'configured'=>true,'attempted'=>true,'collected_count'=>count($signals),'stored_count'=>(int)($stored['inserted']??0),'failed_count'=>(int)($stored['failed']??0),'skipped_count'=>(int)($stored['skipped']??0),'first_insert_error'=>(string)($stored['first_error']??''),'diagnostics'=>$diag,'errors'=>[]]; }
+        return ['source'=>$sourceId,'configured'=>false,'attempted'=>false,'collected_count'=>0,'stored_count'=>0,'failed_count'=>0,'skipped_count'=>0,'first_insert_error'=>'','diagnostics'=>['configured'=>false,'attempted'=>false],'errors'=>['unknown source']];
     }
     public static function get_last_collection_result(): array { $r=get_option('lousy_outages_last_external_collection',[]); return is_array($r)?$r:[]; }
     public static function mark_last_collection_result(array $result): void { update_option('lousy_outages_last_external_collection',$result,false); }
