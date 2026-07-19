@@ -559,7 +559,14 @@ function get_lousy_outages_home_teaser_data(): array {
         return $default;
     }
 
-    $incidents = \SuzyEaston\LousyOutages\Summary::ordered_recent_incidents( 30, true, 5 );
+    $incidents = method_exists( '\SuzyEaston\LousyOutages\Summary', 'ordered_current_incidents' )
+        ? \SuzyEaston\LousyOutages\Summary::ordered_current_incidents( 5 )
+        : [];
+
+    if ( empty( $incidents ) ) {
+        $incidents = \SuzyEaston\LousyOutages\Summary::ordered_recent_incidents( 30, true, 5 );
+    }
+
     if ( ! is_array( $incidents ) ) {
         error_log( 'Lousy Outages homepage teaser unavailable: shared Summary incident loader returned invalid data.' );
         return $default;
