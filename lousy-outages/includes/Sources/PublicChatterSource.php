@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace SuzyEaston\LousyOutages\Sources;
 
+use SuzyEaston\LousyOutages\Summary;
+
 use SuzyEaston\LousyOutages\Providers;
 use SuzyEaston\LousyOutages\SignalSourceInterface;
 
@@ -334,19 +336,15 @@ class PublicChatterSource implements SignalSourceInterface {
             $snapshot = get_option('lousy_outages_snapshot', []);
         }
         $out = [];
-        foreach ((array)($snapshot['providers'] ?? []) as $tile) {
-            if (!is_array($tile)) { continue; }
+        foreach (Summary::current_provider_tiles((array)($snapshot['providers'] ?? [])) as $tile) {
+            if (!is_array($tile) || empty($tile['incidents'])) { continue; }
             $providerId = sanitize_key((string)($tile['provider'] ?? $tile['id'] ?? ''));
             if ($providerId === '') { continue; }
-            $status = strtolower((string)($tile['status'] ?? $tile['stateCode'] ?? ''));
-            $incidents = (array)($tile['incidents'] ?? []);
-            $active = !in_array($status, ['', 'operational', 'ok', 'unknown'], true) || !empty($incidents);
-            if (!$active) { continue; }
-            $title = (string)($tile['summary'] ?? $tile['status_label'] ?? $tile['state'] ?? 'Active incident');
-            if (!empty($incidents[0]) && is_array($incidents[0])) {
-                $title = (string)($incidents[0]['name'] ?? $incidents[0]['title'] ?? $title);
-                $status = strtolower((string)($incidents[0]['status'] ?? $status));
-            }
+            $incidents = array_values(array_filter((array)($tile['incidents'] ?? []), 'is_array'));
+            if (empty($incidents)) { continue; }
+            $incident = $incidents[0];
+            $status = strtolower((string)($incident['status'] ?? $incident['impact'] ?? $tile['status'] ?? $tile['stateCode'] ?? 'active'));
+            $title = (string)($incident['display_title'] ?? $incident['displayTitle'] ?? $incident['name'] ?? $incident['title'] ?? $incident['summary'] ?? $tile['summary'] ?? 'Active incident');
             $out[$providerId] = [
                 'provider_id' => $providerId,
                 'provider_name' => (string)($tile['name'] ?? $tile['provider_name'] ?? ($providers[$providerId]['name'] ?? $providerId)),

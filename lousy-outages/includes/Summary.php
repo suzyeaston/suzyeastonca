@@ -73,6 +73,49 @@ class Summary {
     }
 
 
+
+    public static function current_provider_tiles(array $providers = null): array
+    {
+        $providers = null === $providers ? self::providers() : $providers;
+        $out = [];
+        foreach (self::sort_status_page_providers($providers) as $provider) {
+            if (!is_array($provider)) { continue; }
+            $current = self::current_incidents_for_provider($provider);
+            if (empty($current)) {
+                $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
+                if (!in_array($tileKind, ['outage', 'signal'], true) || !empty($provider['incidents'])) { continue; }
+            }
+            $copy = $provider;
+            $copy['incidents'] = $current;
+            $out[] = $copy;
+        }
+        return $out;
+    }
+
+    public static function current_incidents_for_provider(array $provider): array
+    {
+        $incidents = isset($provider['incidents']) && is_array($provider['incidents']) ? array_values(array_filter($provider['incidents'], 'is_array')) : [];
+        $current = array_values(array_filter($incidents, static function (array $incident): bool {
+            return self::is_current_official_incident($incident);
+        }));
+        usort($current, static function (array $left, array $right): int { return self::incident_timestamp($right) <=> self::incident_timestamp($left); });
+        return $current;
+    }
+
+    public static function is_current_official_incident(array $incident, ?int $now = null): bool
+    {
+        $now = $now ?? time();
+        if (!self::is_unresolved_incident($incident)) { return false; }
+        $status = strtolower((string) ($incident['status'] ?? $incident['impact'] ?? ''));
+        $text = strtolower((string)($incident['title'] ?? '') . ' ' . (string)($incident['name'] ?? '') . ' ' . (string)($incident['summary'] ?? '') . ' ' . (string)($incident['eta'] ?? ''));
+        $ongoing = in_array($status, ['investigating','identified','monitoring','ongoing'], true)
+            || preg_match('/\b(investigating|identified|monitoring|ongoing|continues?|continuing|currently|still experiencing|working to resolve|recovery is expected|unresolved)\b/i', $text);
+        $updated = self::incident_timestamp($incident);
+        $ageWindow = 7 * DAY_IN_SECONDS;
+        if ($updated && ($now - $updated) <= $ageWindow) { return true; }
+        return (bool) $ongoing;
+    }
+
     /**
      * Return the ordered active incident collection used by the public status page.
      *
@@ -104,9 +147,7 @@ class Summary {
             }
             $providerStatus = strtolower((string) ($provider['stateCode'] ?? $provider['status'] ?? 'incident'));
             $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
-            $currentIncidents = array_values(array_filter($incidents, static function (array $incident): bool {
-                return self::is_unresolved_incident($incident);
-            }));
+            $currentIncidents = self::current_incidents_for_provider($provider);
 
             if (!$currentIncidents) {
                 $hasCurrentSignal = !$incidents && in_array($tileKind, ['outage', 'signal'], true);
@@ -154,7 +195,7 @@ class Summary {
                     'status_label' => Fetcher::status_label($providerStatus ?: 'incident'),
                     'severity' => $impact ?: 'degraded',
                     'important' => true,
-                    'summary' => (string) ($incident['title'] ?? $incident['summary'] ?? 'Incident reported'),
+                    'summary' => (string) ($incident['display_title'] ?? $incident['displayTitle'] ?? $incident['title'] ?? $incident['name'] ?? $incident['summary'] ?? 'Incident reported'),
                     'started_at' => self::format_incident_time($started),
                     'updated_at' => self::format_incident_time($updated),
                     'first_seen' => self::parse_time($started) ?? 0,
@@ -417,7 +458,7 @@ class Summary {
                     continue;
                 }
 
-                if (!self::is_unresolved_incident($incident)) {
+                if (!self::is_current_official_incident($incident)) {
                     continue;
                 }
 
@@ -515,7 +556,7 @@ class Summary {
                     continue;
                 }
 
-                if (!self::is_unresolved_incident($incident)) {
+                if (!self::is_current_official_incident($incident)) {
                     continue;
                 }
 

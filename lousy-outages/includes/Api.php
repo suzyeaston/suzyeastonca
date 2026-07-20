@@ -21,32 +21,19 @@ class Api {
             'generated_at'        => gmdate('c'),
         ];
 
-        foreach ($providers as $provider) {
-            if (!is_array($provider)) {
-                continue;
-            }
+        $currentProviderIds = [];
+        foreach (Summary::current_provider_tiles($providers) as $provider) {
+            if (!is_array($provider)) { continue; }
+            $providerId = sanitize_key((string) ($provider['id'] ?? $provider['provider'] ?? $provider['name'] ?? ''));
             $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
-            if ('' === $tileKind) {
-                $status = strtolower((string) ($provider['status'] ?? $provider['stateCode'] ?? 'unknown'));
-                if ('operational' === $status) {
-                    $tileKind = 'operational';
-                } elseif ('unknown' === $status) {
-                    $tileKind = 'unknown';
-                } elseif (!empty($provider['incidents'])) {
-                    $tileKind = 'outage';
-                } else {
-                    $tileKind = 'signal';
-                }
-            }
-
-            if ('outage' === $tileKind) {
+            if ('outage' === $tileKind && !empty($provider['incidents'])) {
                 $counts['active_outage_count'] += 1;
+                if ($providerId !== '') { $currentProviderIds[] = $providerId; }
             } elseif ('signal' === $tileKind) {
                 $counts['signal_count'] += 1;
-            } elseif ('unknown' === $tileKind || 'manual' === $tileKind) {
-                $counts['unverified_count'] += 1;
             }
         }
+        $counts['current_official_provider_ids'] = array_values(array_unique($currentProviderIds));
 
         return $counts;
     }
@@ -340,6 +327,20 @@ class Api {
         }
 
         $providers = isset($result['providers']) && is_array($result['providers']) ? $result['providers'] : [];
+        $providers = array_map(static function ($provider) {
+            if (!is_array($provider)) { return $provider; }
+            $provider['incidents'] = Summary::current_incidents_for_provider($provider);
+            return $provider;
+        }, $providers);
+        $refreshMeta = self::build_summary_meta($providers);
+        $refreshCurrentOfficialIds = array_fill_keys((array) ($refreshMeta['current_official_provider_ids'] ?? []), true);
+        $filterOfficialCorroboration = static function (array $items) use ($refreshCurrentOfficialIds): array {
+            return array_values(array_filter($items, static function ($item) use ($refreshCurrentOfficialIds): bool {
+                if (!is_array($item)) { return false; }
+                $providerId = sanitize_key((string) ($item['provider_id'] ?? $item['provider'] ?? $item['id'] ?? ''));
+                return $providerId !== '' && isset($refreshCurrentOfficialIds[$providerId]);
+            }));
+        };
         $errors    = isset($result['errors']) && is_array($result['errors']) ? $result['errors'] : [];
         $trending  = isset($result['trending']) && is_array($result['trending']) ? $result['trending'] : ['trending' => false, 'signals' => []];
         $refreshed_at = isset($result['refreshedAt']) ? (string) $result['refreshedAt'] : gmdate('c');
@@ -364,7 +365,7 @@ class Api {
             'direct_sources_enabled' => !empty($publicDiag['direct_sources_enabled']),
             'direct_sources_disabled_by_safe_default' => !empty($publicDiag['direct_sources_disabled_by_safe_default']),
             'watch_candidate_count' => (int) ($publicDiag['watch_candidate_count'] ?? 0),
-            'official_incident_corroboration' => array_slice((array) ($publicDiag['official_incident_corroboration'] ?? []), 0, 20),
+            'official_incident_corroboration' => array_slice($filterOfficialCorroboration((array) ($publicDiag['official_incident_corroboration'] ?? [])), 0, 20),
             'canadian_infrastructure_watchlist' => (array) ($publicDiag['canadian_infrastructure_watchlist'] ?? []),
             'ran_at' => (string) ($publicDiag['ran_at'] ?? ''),
             'sources_configured' => (array) ($publicDiag['sources_configured'] ?? []),
@@ -404,6 +405,11 @@ class Api {
         }
 
         $providers = isset($snapshot['providers']) && is_array($snapshot['providers']) ? array_values($snapshot['providers']) : [];
+        $providers = array_map(static function ($provider) {
+            if (!is_array($provider)) { return $provider; }
+            $provider['incidents'] = Summary::current_incidents_for_provider($provider);
+            return $provider;
+        }, $providers);
         if (!empty($filters)) {
             $providers = array_values(array_filter($providers, static function ($provider) use ($filters) {
                 if (!is_array($provider)) {
@@ -434,6 +440,14 @@ class Api {
             ];
         } else {
             $meta = self::build_summary_meta($providers);
+            $currentOfficialIds = array_fill_keys((array) ($meta['current_official_provider_ids'] ?? []), true);
+            $filterOfficialCorroboration = static function (array $items) use ($currentOfficialIds): array {
+                return array_values(array_filter($items, static function ($item) use ($currentOfficialIds): bool {
+                    if (!is_array($item)) { return false; }
+                    $providerId = sanitize_key((string) ($item['provider_id'] ?? $item['provider'] ?? $item['id'] ?? ''));
+                    return $providerId !== '' && isset($currentOfficialIds[$providerId]);
+                }));
+            };
             $payload = [
                 'providers'  => $providers,
                 'fetched_at' => $fetched_at,
@@ -466,7 +480,7 @@ class Api {
                 'providers_scanned_count' => (int) ($publicDiag['providers_scanned_count'] ?? 0),
                 'watch_candidate_count' => (int) ($publicDiag['watch_candidate_count'] ?? 0),
                 'watch_candidates' => array_slice((array) ($publicDiag['watch_candidates'] ?? []), 0, 20),
-                'official_incident_corroboration' => array_slice((array) ($publicDiag['official_incident_corroboration'] ?? []), 0, 20),
+                'official_incident_corroboration' => array_slice($filterOfficialCorroboration((array) ($publicDiag['official_incident_corroboration'] ?? [])), 0, 20),
                 'canadian_infrastructure_watchlist' => (array) ($publicDiag['canadian_infrastructure_watchlist'] ?? []),
                 'mentions_seen_by_source' => (array) ($publicDiag['mentions_seen_by_source'] ?? []),
                 'mentions_seen_by_provider' => (array) ($publicDiag['mentions_seen_by_provider'] ?? []),

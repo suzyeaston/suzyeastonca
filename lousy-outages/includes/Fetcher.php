@@ -660,13 +660,24 @@ class Fetcher {
         $active         = [];
         $recent         = [];
         $historyCutoff  = time() - (35 * DAY_IN_SECONDS);
+        $grouped = [];
         foreach ($incidents as $incident) {
+            if (!is_array($incident)) { continue; }
+            $titleKey = strtolower(trim(preg_replace('/[^a-z0-9]+/', ' ', (string)($incident['title'] ?? $incident['name'] ?? $incident['summary'] ?? '')) ?? ''));
+            $regionKey = '';
+            $blob = (string)($incident['title'] ?? '') . ' ' . (string)($incident['summary'] ?? '');
+            if (preg_match('/\b([a-z]{2}-[a-z]+-\d+)\b/i', $blob, $m)) { $regionKey = strtolower($m[1]); }
+            $key = strtolower((string)($incident['guid'] ?? '')) ?: (strtolower((string)($incident['shortlink'] ?? $incident['url'] ?? '')) ?: $regionKey . '|' . $titleKey);
+            $ts = strtotime((string)($incident['updated_at'] ?? $incident['updatedAt'] ?? $incident['started_at'] ?? $incident['startedAt'] ?? '')) ?: 0;
+            if (!isset($grouped[$key]) || $ts >= (int)($grouped[$key]['_ts'] ?? 0)) { $incident['_ts'] = $ts; $grouped[$key] = $incident; }
+        }
+        foreach (array_values($grouped) as $incident) {
             if (! is_array($incident)) {
                 continue;
             }
 
             $rawStatus = strtolower((string) ($incident['status'] ?? ''));
-            $isResolved = in_array($rawStatus, ['resolved', 'completed', 'postmortem'], true);
+            $isResolved = in_array($rawStatus, ['resolved', 'completed', 'postmortem', 'operational', 'ok', 'closed'], true);
             if (! $isResolved && in_array($rawStatus, ['unknown', ''], true) && empty($incident['impact'])) {
                 continue;
             }
@@ -729,7 +740,14 @@ class Fetcher {
             $entry = array_merge($entry, $metadata);
             $entry['display_title'] = $this->display_title($provider, $entry);
 
+            $ongoingText = strtolower($title . ' ' . $summary . ' ' . $rawStatus);
+            $explicitOngoing = preg_match('/\b(investigating|identified|monitoring|ongoing|continues?|continuing|currently|still experiencing|working to resolve|recovery is expected|unresolved|months?|long-running|extended)\b/i', $ongoingText) === 1;
+            $recentEnough = $effective && $effective >= (time() - (7 * DAY_IN_SECONDS));
             if ($isResolved) {
+                $recent[] = $entry;
+                continue;
+            }
+            if (!$recentEnough && !$explicitOngoing) {
                 $recent[] = $entry;
                 continue;
             }
@@ -767,8 +785,8 @@ class Fetcher {
         }
         $reference = $started ?: $updated;
         $referenceTs = $reference ? strtotime($reference) : 0;
-        $metadata['is_long_running'] = (bool) ($referenceTs && (time() - $referenceTs) >= (35 * DAY_IN_SECONDS));
-        if (preg_match('/\b(months?|long-running|extended|ongoing)\b/i', $lower)) {
+        $metadata['is_long_running'] = false;
+        if (preg_match('/\b(months?|long-running|extended|ongoing|continues?|continuing|still experiencing|recovery is expected)\b/i', $lower)) {
             $metadata['is_long_running'] = true;
         }
         if (preg_match('/multiple services/i', $text)) {

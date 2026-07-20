@@ -32,6 +32,14 @@ set_snapshot([['id'=>'slow','name'=>'Slow','stateCode'=>'degraded','tile_kind'=>
 $rows = \SuzyEaston\LousyOutages\Summary::ordered_current_incidents(5); assert_true(count($rows)===1 && $rows[0]['severity']==='degraded', 'signal tile becomes degraded row');
 set_snapshot([['id'=>'unk','name'=>'Unknown','stateCode'=>'degraded','tile_kind'=>'unknown','updatedAt'=>$base,'incidents'=>[]],['id'=>'man','name'=>'Manual','stateCode'=>'degraded','tile_kind'=>'manual','updatedAt'=>$base,'incidents'=>[]]]);
 assert_true(\SuzyEaston\LousyOutages\Summary::ordered_current_incidents(5)===[], 'unknown/manual tiles not active');
+
+set_snapshot([['id'=>'aws','name'=>'AWS','stateCode'=>'degraded','tile_kind'=>'outage','updatedAt'=>$base,'incidents'=>[['display_title'=>'Multiple AWS services disrupted in UAE (ME-CENTRAL-1)','title'=>'Operational issue - Multiple services (UAE)','summary'=>'Recovery is expected to take months in ME-CENTRAL-1.','status'=>'major','impact'=>'major','updatedAt'=>'2026-04-30T12:00:00Z']]]]);
+$rows = \SuzyEaston\LousyOutages\Summary::ordered_current_incidents(5);
+assert_true(count($rows)===1 && $rows[0]['provider_id']==='aws' && $rows[0]['summary']==='Multiple AWS services disrupted in UAE (ME-CENTRAL-1)', 'explicit long-running AWS remains current with display title');
+set_snapshot([['id'=>'aws','name'=>'AWS','stateCode'=>'degraded','tile_kind'=>'outage','updatedAt'=>$base,'incidents'=>[['title'=>'Major outage reported.','summary'=>'Service disruption reported.','status'=>'major','impact'=>'major','updatedAt'=>'2026-04-30T12:00:00Z']]]]);
+assert_true(\SuzyEaston\LousyOutages\Summary::ordered_current_incidents(5)===[], 'old ambiguous AWS entry is not current');
+set_snapshot([['id'=>'aws','name'=>'AWS','stateCode'=>'operational','tile_kind'=>'outage','updatedAt'=>$base,'incidents'=>[['title'=>'Operational issue - Multiple services (UAE)','summary'=>'This issue is now resolved.','status'=>'resolved','impact'=>'operational','updatedAt'=>$base],['title'=>'Operational issue - Multiple services (UAE)','summary'=>'Service disruption in ME-CENTRAL-1.','status'=>'major','impact'=>'major','updatedAt'=>'2026-04-30T12:00:00Z']]]]);
+assert_true(\SuzyEaston\LousyOutages\Summary::ordered_current_incidents(5)===[], 'new resolution suppresses older outage in current selector');
 $summary = file_get_contents(__DIR__ . '/../plugins/lousy-outages/includes/Summary.php');
 assert_true(str_contains($summary, "'eta'") && strpos($summary, "incident['impact'] ?? incident['status']") === false, 'WordPress-loaded plugin tree contains repaired Summary implementation');
 $functions = file_get_contents(__DIR__ . '/../functions.php'); $part = file_get_contents(__DIR__ . '/../parts/lousy-outages-teaser.php'); $js = file_get_contents(__DIR__ . '/../assets/js/lousy-outages-teaser.js');

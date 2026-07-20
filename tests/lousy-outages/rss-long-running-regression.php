@@ -50,4 +50,14 @@ $recentResolved['updated_at'] = gmdate('r', time() - 2 * DAY_IN_SECONDS);
 $recentBuckets = call_private($fetcher, 'normalize_incident_buckets', [[$recentResolved], $provider, 'operational']);
 assert_true(count($recentBuckets['active']) === 0 && count($recentBuckets['recent']) === 1, 'Recent resolved entries remain history only');
 
+
+$resolvedXml = '<rss><channel><item><title>Operational issue - Multiple services (UAE)</title><link>https://status.aws.amazon.com/</link><pubDate>Fri, 01 May 2026 12:00:00 GMT</pubDate><description>This issue is now resolved for the UAE region (ME-CENTRAL-1).</description></item><item><title>Operational issue - Multiple services (UAE)</title><link>https://status.aws.amazon.com/</link><pubDate>Thu, 30 Apr 2026 12:00:00 GMT</pubDate><description>We are experiencing a service disruption affecting multiple services in the UAE region (ME-CENTRAL-1).</description></item></channel></rss>';
+$resolvedNormalized = from_rss_atom($resolvedXml);
+assert_true($resolvedNormalized['state'] === 'operational', 'newer AWS resolved lifecycle update wins');
+assert_true(count($resolvedNormalized['incidents']) === 1 && $resolvedNormalized['incidents'][0]['status'] === 'resolved', 'lifecycle grouping keeps only latest update');
+$ambiguous = $raw;
+$ambiguous['summary'] = 'Service disruption reported.';
+$ambiguous['status'] = 'major';
+$ambiguousBuckets = call_private($fetcher, 'normalize_incident_buckets', [[$ambiguous], $provider, 'outage']);
+assert_true(count($ambiguousBuckets['active']) === 0 && count($ambiguousBuckets['recent']) === 1, 'old ambiguous RSS item moves to history');
 echo "ok\n";
