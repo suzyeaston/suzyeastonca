@@ -98,9 +98,10 @@
     const screen = container.querySelector('.lo-home-teaser__screen');
     if (!screen) return;
     while (screen.firstChild) screen.removeChild(screen.firstChild);
+    const hasVerificationDelay = (payload && Array.isArray(payload.providers) && payload.providers.some((p) => p && (p.is_stale || p.verification_status === 'failed' || p.verification_status === 'stale' || p.stateCode === 'unknown'))) || (meta && Number(meta.unknown || 0) > 0);
     if (items.length === 0) {
       const empty = document.createElement('div'); empty.className = 'lo-home-empty';
-      const p1 = document.createElement('p'); p1.textContent = 'all quiet. suspicious, but fine.';
+      const p1 = document.createElement('p'); p1.textContent = hasVerificationDelay ? 'verification delayed; latest provider checks are unavailable.' : 'all quiet. suspicious, but fine.';
       const p2 = document.createElement('p'); p2.textContent = 'last checked: ' + (formatTime(refreshed) || 'recently');
       empty.append(p1, p2); screen.append(empty); return;
     }

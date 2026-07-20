@@ -56,6 +56,23 @@ class Summary {
             ];
         }
 
+        if (self::has_verification_delay($providers)) {
+            return [
+                'kind'        => 'delayed',
+                'hasIncident' => false,
+                'hasSignal'   => false,
+                'providerId'  => '',
+                'provider'    => '',
+                'title'       => 'Verification delayed; latest provider checks are unavailable.',
+                'status'      => 'Verification delayed',
+                'relative'    => '',
+                'started_at'  => '',
+                'href'        => home_url('/lousy-outages/'),
+                'outageCount' => $outageCount,
+                'signalCount' => $signalCount,
+            ];
+        }
+
         return [
             'kind'        => 'clear',
             'hasIncident' => false,
@@ -437,6 +454,19 @@ class Summary {
         }
 
         return $providers;
+    }
+
+    private static function has_verification_delay(array $providers): bool
+    {
+        foreach ($providers as $provider) {
+            if (!is_array($provider)) { continue; }
+            $verification = strtolower((string) ($provider['verification_status'] ?? ''));
+            $status = strtolower((string) ($provider['stateCode'] ?? $provider['status'] ?? ''));
+            if (!empty($provider['is_stale']) || in_array($verification, ['failed', 'stale', 'unknown'], true) || 'unknown' === $status) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static function latest_incident(array $providers): ?array

@@ -1,0 +1,33 @@
+const { test, expect } = require('@playwright/test');
+const base = process.env.LOUSY_PROD_BASE_URL || 'https://www.suzyeaston.ca';
+const runProd = process.env.LOUSY_PROD_SMOKE === '1';
+test.describe('production Lousy Outages contract', () => {
+  test.skip(!runProd, 'Set LOUSY_PROD_SMOKE=1 to run read-only production smoke checks.');
+  test('homepage and dashboard agree on canonical status surfaces', async ({ browser }) => {
+    const context = await browser.newContext({ serviceWorkers: 'block' });
+    await context.route('**/*', r => r.continue());
+    const errors = [];
+    const failed = [];
+    const page = await context.newPage();
+    page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
+    page.on('requestfailed', req => failed.push(req.url()));
+    const summary = await (await page.request.get(`${base}/wp-json/lousy-outages/v1/summary`)).json();
+    const history = await (await page.request.get(`${base}/wp-json/lousy-outages/v1/history`)).json();
+    expect(Array.isArray(summary.providers)).toBeTruthy();
+    expect(history).toBeTruthy();
+    await page.goto(`${base}/?qa_timestamp=${Date.now()}`, { waitUntil: 'networkidle' });
+    const homeText = await page.locator('#lousy-outages-teaser').innerText();
+    await page.goto(`${base}/lousy-outages/?qa_timestamp=${Date.now()}`, { waitUntil: 'networkidle' });
+    const dashText = await page.locator('body').innerText();
+    const activeCards = await page.locator('[data-lo-section-grid="incidents"] article').count();
+    const saysNone = /No active incidents/i.test(dashText);
+    const officialRows = await page.locator('.lo-corroboration-radar__incident').count();
+    if (saysNone) expect(officialRows).toBe(0);
+    const allUnknown = summary.providers.length > 0 && summary.providers.every(p => p.stateCode === 'unknown' || p.verification_status === 'failed');
+    if (allUnknown) expect(homeText).not.toMatch(/all quiet/i);
+    expect(activeCards).toBeGreaterThanOrEqual(0);
+    expect(errors).toEqual([]);
+    expect(failed.filter(u => /wp-json\/lousy/.test(u))).toEqual([]);
+    await context.close();
+  });
+});
