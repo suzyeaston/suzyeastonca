@@ -18,6 +18,7 @@ $teaser_interval = 5 * MINUTE_IN_SECONDS * 1000;
 $rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? array_slice( $teaser_data['rows'], 0, 5 ) : [];
 $last_checked = $teaser_data['last_checked'] ?? '';
 $active_count = count( $rows );
+$is_delayed = empty( $rows ) && 'delayed' === (string) ( $teaser_data['status'] ?? '' );
 $provider_names = [];
 foreach ( $rows as $row ) {
     $provider = trim( (string) ( $row['provider'] ?? '' ) );
@@ -44,7 +45,7 @@ if ( count( $provider_names ) > 3 ) {
     <div class="lo-home-teaser__screen">
         <?php if ( empty( $rows ) ) : ?>
             <div class="lo-home-empty">
-                <p><?php echo esc_html( 'all quiet. suspicious, but fine.' ); ?></p>
+                <p><?php echo esc_html( $is_delayed ? 'verification delayed; latest provider checks are unavailable.' : 'all quiet. suspicious, but fine.' ); ?></p>
                 <p><?php echo esc_html( $last_checked ? 'last checked: ' . $last_checked : 'last checked: recently' ); ?></p>
             </div>
         <?php else : ?>

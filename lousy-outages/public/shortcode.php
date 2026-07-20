@@ -93,7 +93,8 @@ function render_shortcode(): string {
         );
     }
 
-    $cache_key = is_user_logged_in() ? null : 'lousy_outages_fragment_public';
+    // Dynamic provider data is hydrated from the canonical summary; ignore legacy unversioned fragments.
+    $cache_key = null;
     $cached    = ($cache_key) ? get_transient($cache_key) : null;
     $snapshot_endpoint = esc_url_raw(rest_url('lousy/v1/snapshot'));
 
@@ -643,6 +644,20 @@ function render_shortcode(): string {
             if (in_array($statusValue, ['disabled', 'blocked_by_safe_default', 'not_configured', 'cooldown', 'rate_limited', 'budget_skipped'], true)) { $sourcesBlockedCount++; }
         }
         $officialCorroborationRows = isset($publicDiag['official_incident_corroboration']) && is_array($publicDiag['official_incident_corroboration']) ? $publicDiag['official_incident_corroboration'] : [];
+        $canonicalIncidentProviders = [];
+        foreach ((array) $tiles as $tile) {
+            if (!is_array($tile)) { continue; }
+            $pid = sanitize_key((string) ($tile['id'] ?? $tile['provider'] ?? ''));
+            $active = class_exists('\SuzyEaston\LousyOutages\Summary') && method_exists('\SuzyEaston\LousyOutages\Summary', 'current_incidents_for_provider')
+                ? \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($tile)
+                : ((isset($tile['incidents']) && is_array($tile['incidents'])) ? $tile['incidents'] : []);
+            if ($pid !== '' && !empty($active)) { $canonicalIncidentProviders[$pid] = true; }
+        }
+        $officialCorroborationRows = array_values(array_filter($officialCorroborationRows, static function ($row) use ($canonicalIncidentProviders): bool {
+            if (!is_array($row)) { return false; }
+            $pid = sanitize_key((string) ($row['provider_id'] ?? $row['provider'] ?? ''));
+            return $pid !== '' && isset($canonicalIncidentProviders[$pid]);
+        }));
         $canadianWatchRows = isset($publicDiag['canadian_infrastructure_watchlist']) && is_array($publicDiag['canadian_infrastructure_watchlist']) ? $publicDiag['canadian_infrastructure_watchlist'] : [];
         $statusLabel = static function($status): string {
             $status = (string) $status;

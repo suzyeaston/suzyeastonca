@@ -45,5 +45,11 @@ assert_true(str_contains($summary, "'eta'") && strpos($summary, "incident['impac
 $functions = file_get_contents(__DIR__ . '/../functions.php'); $part = file_get_contents(__DIR__ . '/../parts/lousy-outages-teaser.php'); $js = file_get_contents(__DIR__ . '/../assets/js/lousy-outages-teaser.js');
 assert_true(str_contains($functions, 'lousy-outages/v1/summary') && str_contains($part, 'lousy-outages/v1/summary'), 'homepage endpoint configuration is summary');
 assert_true(!str_contains($functions.$part.$js, 'lousy-outages/v1/status'), 'no homepage code references status endpoint');
+set_snapshot([['id'=>'tv','name'=>'TeamViewer','stateCode'=>'degraded','tile_kind'=>'outage','updatedAt'=>$base,'verification_status'=>'stale','is_stale'=>true,'incidents'=>[['id'=>'tv1','title'=>'DEX PLATFORM. Inventory Software pages not loading','status'=>'monitoring','impact'=>'degraded','startedAt'=>'2026-07-20T10:00:00Z','updatedAt'=>'2026-07-20T10:30:00Z']]]]);
+$rows = \SuzyEaston\LousyOutages\Summary::ordered_current_incidents(5);
+assert_true(count($rows)===1 && $rows[0]['provider_id']==='tv', 'stale failed provider remains visible during grace via canonical snapshot');
+set_snapshot([['id'=>'tv','name'=>'TeamViewer','stateCode'=>'unknown','tile_kind'=>'unknown','updatedAt'=>$base,'verification_status'=>'failed','is_stale'=>false,'incidents'=>[]]]);
+$current = \SuzyEaston\LousyOutages\Summary::current();
+assert_true($current['kind']==='delayed' && stripos($current['title'], 'verification delayed') !== false, 'fetch failure is verification delayed, not all quiet');
 echo "OK\n";
 }

@@ -611,8 +611,10 @@ function get_lousy_outages_home_teaser_data(): array {
     }
 
     if ( empty( $rows ) ) {
-        $default['headline'] = 'all quiet. suspicious, but fine.';
-        $default['status'] = 'clear';
+        $current = method_exists( '\SuzyEaston\LousyOutages\Summary', 'current' ) ? \SuzyEaston\LousyOutages\Summary::current() : [];
+        $delayed = is_array( $current ) && 'delayed' === (string) ( $current['kind'] ?? '' );
+        $default['headline'] = $delayed ? 'verification delayed; latest provider checks are unavailable.' : 'all quiet. suspicious, but fine.';
+        $default['status'] = $delayed ? 'delayed' : 'clear';
         $default['last_checked'] = $last_checked;
         $default['footnote'] = $last_checked
             ? sprintf( 'Last checked: %s. <a href="%s">%s</a>', esc_html( $last_checked ), esc_url( $dashboard_url ), esc_html__( 'View the dashboard', 'suzyeastonca' ) )

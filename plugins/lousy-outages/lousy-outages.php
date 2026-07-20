@@ -27,7 +27,7 @@ if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_VERSION', '0.2.0' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 2 );
+    define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 3 );
 }
 if ( ! defined( 'LOUSY_OUTAGES_FILE' ) ) {
     define( 'LOUSY_OUTAGES_FILE', __FILE__ );
@@ -203,7 +203,17 @@ function lousy_outages_maybe_install_schema( bool $force = false ): void {
     update_option( 'lousy_outages_external_schema_diagnostic', ExternalSignals::schema_diagnostics(), false );
     update_option( $option_key, $schema_version, false );
 }
+
+function lousy_outages_maybe_repair_snapshot_caches(): void {
+    $option_key = 'lousy_outages_snapshot_schema_version';
+    $current = (int) get_option( $option_key, 0 );
+    if ( $current >= (int) LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION ) { return; }
+    foreach ( [ 'lousy_outages_cached_statuses', 'lousy_status_snapshot', 'lo_snapshot_payload_v1', 'lousy_outages_fragment_public' ] as $key ) { delete_transient( $key ); }
+    delete_option( 'lo_diag_public_chatter' );
+    update_option( $option_key, (int) LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION, false );
+}
 add_action( 'admin_init', 'lousy_outages_maybe_install_schema' );
+add_action( 'init', 'lousy_outages_maybe_repair_snapshot_caches', 4 );
 add_action( 'init', static function (): void {
     if ( is_admin() ) {
         return;
@@ -508,7 +518,10 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         $timestamp_iso   = wp_date( 'c', $timestamp_epoch );
         $timestamp_gmt   = gmdate( 'c', $timestamp_epoch );
         $store        = new Store();
-        $states       = lousy_outages_collect_statuses( $bypass_cache );
+        $previous_states = $store->get_all();
+        $raw_states   = lousy_outages_collect_statuses( $bypass_cache );
+        $quality      = lousy_outages_snapshot_quality( $raw_states, $previous_states );
+        $states       = lousy_outages_merge_verified_states( $raw_states, $previous_states, $timestamp_gmt );
         $errors       = [];
 
         foreach ( $states as $id => $state ) {
@@ -531,19 +544,24 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         }
 
         update_option( 'lousy_outages_last_poll', $timestamp_iso, false );
-        update_option( 'lousy_outages_last_fetched', $timestamp_epoch, false );
-        update_option( 'lousy_outages_last_fetched_iso', $timestamp_gmt, false );
+        update_option( 'lousy_outages_last_attempted', $timestamp_epoch, false );
+        update_option( 'lousy_outages_last_attempted_iso', $timestamp_gmt, false );
+        if ( ! empty( $quality['ok'] ) ) {
+            update_option( 'lousy_outages_last_fetched', $timestamp_epoch, false );
+            update_option( 'lousy_outages_last_fetched_iso', $timestamp_gmt, false );
+        }
         do_action( 'lousy_outages_log', 'refresh_complete', [
             'count' => count( $states ),
             'ts'    => $timestamp_iso,
         ] );
 
         $response = [
-            'ok'           => true,
+            'ok'           => ! empty( $quality['ok'] ),
             'providers'    => $providers,
             'errors'       => $errors,
             'trending'     => $trending,
-            'source'       => 'live',
+            'quality'      => $quality,
+            'source'       => ! empty( $quality['ok'] ) ? 'live' : 'last_good_with_errors',
             'refreshedAt'  => $timestamp_iso,
             'refreshed_at' => $timestamp_epoch,
         ];
@@ -555,6 +573,55 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
     }
 
     return $response;
+}
+
+
+function lousy_outages_provider_fetch_failed( array $state ): bool {
+    $status = strtolower( (string) ( $state['status'] ?? '' ) );
+    return ( '' === $status || 'unknown' === $status || ! empty( $state['error'] ) ) && empty( $state['incidents'] );
+}
+
+function lousy_outages_stale_grace_seconds(): int {
+    return (int) apply_filters( 'lousy_outages_stale_grace_seconds', 6 * HOUR_IN_SECONDS );
+}
+
+function lousy_outages_merge_verified_states( array $new_states, array $previous_states, string $attempted_at ): array {
+    $merged = [];
+    foreach ( $new_states as $id => $state ) {
+        if ( ! is_array( $state ) ) { continue; }
+        $failed = lousy_outages_provider_fetch_failed( $state );
+        $prior  = isset( $previous_states[ $id ] ) && is_array( $previous_states[ $id ] ) ? $previous_states[ $id ] : [];
+        if ( $failed && $prior ) {
+            $last_success = (string) ( $prior['last_successful_at'] ?? $prior['checked_at'] ?? $prior['updated_at'] ?? '' );
+            $last_ts = $last_success ? ( strtotime( $last_success ) ?: 0 ) : 0;
+            if ( $last_ts && ( time() - $last_ts ) <= lousy_outages_stale_grace_seconds() ) {
+                $kept = $prior;
+                $kept['verification_status'] = 'stale';
+                $kept['is_stale'] = true;
+                $kept['fetch_error'] = (string) ( $state['error'] ?? $state['message'] ?? 'Fetch failed' );
+                $kept['error'] = $kept['fetch_error'];
+                $kept['last_attempted_at'] = $attempted_at;
+                $kept['last_successful_at'] = $last_success;
+                $merged[ $id ] = $kept;
+                continue;
+            }
+        }
+        $state['verification_status'] = $failed ? 'failed' : 'verified';
+        $state['is_stale'] = false;
+        $state['fetch_error'] = $failed ? (string) ( $state['error'] ?? $state['message'] ?? 'Fetch failed' ) : '';
+        $state['last_attempted_at'] = $attempted_at;
+        if ( ! $failed ) { $state['last_successful_at'] = $attempted_at; }
+        elseif ( ! empty( $prior['last_successful_at'] ) ) { $state['last_successful_at'] = $prior['last_successful_at']; }
+        $merged[ $id ] = $state;
+    }
+    return $merged;
+}
+
+function lousy_outages_snapshot_quality( array $states, array $previous_states = [] ): array {
+    $total = count( $states ); $failed = 0; $verified = 0;
+    foreach ( $states as $state ) { if ( is_array( $state ) && lousy_outages_provider_fetch_failed( $state ) ) { $failed++; } else { $verified++; } }
+    $ok = $total > 0 && $verified > 0 && ( $verified / max( 1, $total ) ) >= (float) apply_filters( 'lousy_outages_quality_min_success_ratio', 0.25 );
+    return [ 'ok' => $ok, 'total' => $total, 'verified' => $verified, 'failed' => $failed, 'success_ratio' => $total ? $verified / $total : 0 ];
 }
 
 function lousy_outages_filter_states_to_enabled( array $states ): array {
@@ -1618,6 +1685,12 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
         'sort_key'   => $state['sort_key'] ?? null,
         'confidence'=> $state['confidence'] ?? null,
         'summary'    => $state['summary'] ?? $label,
+        'verification_status' => $state['verification_status'] ?? ( ! empty( $state['error'] ) ? 'failed' : 'verified' ),
+        'last_attempted_at' => $state['last_attempted_at'] ?? $state['checked_at'] ?? $fetched_at,
+        'last_successful_at' => $state['last_successful_at'] ?? ( empty( $state['error'] ) ? ( $state['checked_at'] ?? $fetched_at ) : '' ),
+        'data_observed_at' => $updated_at,
+        'is_stale' => ! empty( $state['is_stale'] ),
+        'fetch_error' => $state['fetch_error'] ?? $state['error'] ?? '',
         'checked_at' => $state['checked_at'] ?? $fetched_at,
         'checkedAt'  => $state['checked_at'] ?? $fetched_at,
         'last_official_update' => $state['last_official_update'] ?? '',
