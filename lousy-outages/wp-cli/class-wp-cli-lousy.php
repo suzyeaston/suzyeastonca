@@ -149,3 +149,35 @@ class AlertHealthCommand {
     }
 }
 WP_CLI::add_command( 'lousy:alert-health', AlertHealthCommand::class );
+
+class HistoryExportCommand {
+    /**
+     * Export lossless historical Lousy Outages options as JSON.
+     *
+     * ## OPTIONS
+     *
+     * [--file=<path>]
+     * : Optional file path. Defaults to stdout.
+     */
+    public function __invoke( array $args, array $assoc_args ): void {
+        $store = new \SuzyEaston\LousyOutages\Storage\HistoryStore();
+        $payload = [
+            'generated_at' => gmdate( 'c' ),
+            'options'      => $store->exportSourceOptions(),
+        ];
+        $json = wp_json_encode( $payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+        if ( ! is_string( $json ) ) {
+            WP_CLI::error( 'Unable to encode history export.' );
+        }
+        $file = isset( $assoc_args['file'] ) ? (string) $assoc_args['file'] : '';
+        if ( '' !== $file ) {
+            if ( false === file_put_contents( $file, $json ) ) {
+                WP_CLI::error( 'Unable to write history export file.' );
+            }
+            WP_CLI::success( 'History export written to ' . $file );
+            return;
+        }
+        WP_CLI::line( $json );
+    }
+}
+WP_CLI::add_command( 'lousy:history-export', HistoryExportCommand::class );

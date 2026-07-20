@@ -875,6 +875,9 @@ function render_shortcode(): string {
                             <option value="1">24h</option>
                             <option value="7">7d</option>
                             <option value="30" selected>30d</option>
+                            <option value="90">90d</option>
+                            <option value="365">1y</option>
+                            <option value="0">All retained</option>
                         </select>
                     </label>
                 </div>
