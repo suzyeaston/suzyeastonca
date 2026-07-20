@@ -462,7 +462,7 @@ if ( ! function_exists( 'se_handle_contact_suzy_submission' ) ) {
 add_action( 'wp_ajax_se_contact_suzy', 'se_handle_contact_suzy_submission' );
 add_action( 'wp_ajax_nopriv_se_contact_suzy', 'se_handle_contact_suzy_submission' );
 
-// Load bundled Lousy Outages as fallback when standalone plugin is not active.
+// Lousy Outages must run as the standalone plugin; the theme no longer loads a duplicate runtime.
 function suzyeaston_is_lousy_outages_plugin_active(): bool {
     if ( function_exists( 'is_plugin_active' ) ) {
         return is_plugin_active( 'lousy-outages/lousy-outages.php' );
@@ -503,14 +503,12 @@ function suzyeaston_is_activating_lousy_outages_plugin(): bool {
     return false !== strpos( $target_plugin, 'lousy-outages/lousy-outages.php' );
 }
 
-$lousy_outages = get_template_directory() . '/lousy-outages/lousy-outages.php';
-if (
-    file_exists( $lousy_outages )
-    && ! suzyeaston_is_lousy_outages_plugin_active()
-    && ! suzyeaston_is_activating_lousy_outages_plugin()
-) {
-    require_once $lousy_outages;
-}
+add_action( 'admin_notices', static function (): void {
+    if ( suzyeaston_is_lousy_outages_plugin_active() ) {
+        return;
+    }
+    echo '<div class="notice notice-warning"><p><strong>Lousy Outages:</strong> install and activate the standalone Lousy Outages plugin. The theme does not register fallback REST routes, cron jobs, stores, or refresh handlers.</p></div>';
+} );
 
 add_filter( 'lousy_outages_voice_enabled', '__return_true' );
 

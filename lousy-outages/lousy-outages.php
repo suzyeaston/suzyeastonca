@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.2.0
+ * Version: 0.3.0
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.2.0' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.3.0' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 3 );
@@ -80,6 +80,7 @@ lousy_outages_require( 'includes/Cron.php' );
 lousy_outages_require( 'includes/compat.php' );
 lousy_outages_require( 'includes/Sources/StatuspageSource.php' );
 lousy_outages_require( 'includes/Model/Incident.php' );
+lousy_outages_require( 'includes/Storage/HistoryStore.php' );
 lousy_outages_require( 'includes/Storage/IncidentStore.php' );
 lousy_outages_require( 'includes/Email/Composer.php' );
 lousy_outages_require( 'includes/Sources/Sources.php' );
@@ -173,6 +174,7 @@ function lousy_outages_activate() {
     }
     lousy_outages_create_page();
     lousy_outages_maybe_install_schema( true );
+    ( new \SuzyEaston\LousyOutages\Storage\HistoryStore() )->migrate();
     Subscriptions::schedule_purge();
     $default_email = 'suzyeaston@gmail.com';
     $stored_email  = get_option( 'lousy_outages_email' );
@@ -1667,6 +1669,18 @@ function lousy_outages_build_provider_payload( string $id, array $state, string 
                 continue;
             }
             $recent_incidents[] = lousy_outages_map_incident_payload( $id, $state, $incident, $fetched_at );
+        }
+    }
+
+    if ( 'aws' === strtolower( $id ) && empty( $incidents ) ) {
+        $observed_ts = $updated_at ? ( strtotime( $updated_at ) ?: 0 ) : 0;
+        $freshness_window = (int) apply_filters( 'lousy_outages_provider_signal_freshness_seconds', 6 * HOUR_IN_SECONDS, $id );
+        $has_ongoing_state = ! in_array( strtolower( (string) $status ), [ 'ok', 'none', 'operational', 'resolved', 'unknown' ], true );
+        if ( $observed_ts > 0 && ( time() - $observed_ts ) > $freshness_window && ! $has_ongoing_state ) {
+            $status = 'operational';
+            $label = Fetcher::status_label( $status );
+            $state['tile_kind'] = 'operational';
+            $state['summary'] = 'No current AWS incident in the freshness window.';
         }
     }
 
