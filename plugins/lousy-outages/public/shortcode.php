@@ -380,45 +380,25 @@ function render_shortcode(): string {
         }
     }
 
-    $config['initial']['providers'] = array_values($ordered_tiles);
+    $config['initial']['providers'] = array_map(static function ($provider) {
+        if (!is_array($provider)) { return $provider; }
+        $provider['incidents'] = \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($provider);
+        return $provider;
+    }, array_values($ordered_tiles));
     $config['initial']['source']    = $source;
     $config['initial']['errors']    = $snapshot_errors;
 
     $build_meta_counts = static function (array $providers): array {
-        $counts = [
-            'active_outage_count' => 0,
-            'signal_count'        => 0,
-            'unverified_count'    => 0,
-            'generated_at'        => gmdate('c'),
-        ];
-
-        foreach ($providers as $provider) {
-            if (!is_array($provider)) {
-                continue;
-            }
+        $current = \SuzyEaston\LousyOutages\Summary::current_provider_tiles($providers);
+        $counts = ['active_outage_count'=>0,'signal_count'=>0,'unverified_count'=>0,'generated_at'=>gmdate('c'),'current_official_provider_ids'=>[]];
+        foreach ($current as $provider) {
+            if (!is_array($provider)) { continue; }
             $tile_kind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
-            if ('' === $tile_kind) {
-                $status = strtolower((string) ($provider['status'] ?? $provider['stateCode'] ?? 'unknown'));
-                if ('operational' === $status) {
-                    $tile_kind = 'operational';
-                } elseif ('unknown' === $status) {
-                    $tile_kind = 'unknown';
-                } elseif (!empty($provider['incidents'])) {
-                    $tile_kind = 'outage';
-                } else {
-                    $tile_kind = 'signal';
-                }
-            }
-
-            if ('outage' === $tile_kind) {
-                $counts['active_outage_count'] += 1;
-            } elseif ('signal' === $tile_kind) {
-                $counts['signal_count'] += 1;
-            } elseif ('unknown' === $tile_kind || 'manual' === $tile_kind) {
-                $counts['unverified_count'] += 1;
-            }
+            $provider_id = sanitize_key((string) ($provider['id'] ?? $provider['provider'] ?? $provider['name'] ?? ''));
+            if ('outage' === $tile_kind && !empty($provider['incidents'])) { $counts['active_outage_count'] += 1; if ($provider_id !== '') { $counts['current_official_provider_ids'][] = $provider_id; } }
+            elseif ('signal' === $tile_kind) { $counts['signal_count'] += 1; }
         }
-
+        $counts['current_official_provider_ids'] = array_values(array_unique($counts['current_official_provider_ids']));
         return $counts;
     };
 

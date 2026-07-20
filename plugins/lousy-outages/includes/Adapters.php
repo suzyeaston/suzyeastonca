@@ -130,7 +130,7 @@ function from_rss_atom(string $xml): array {
     $items = [];
     $resolve_status = static function (string $title, string $summary): string {
         $text = strtolower($title . ' ' . $summary);
-        if (preg_match('/\bresolved\b|this issue is now resolved|issue is now resolved|issue has been resolved|ended at|fully recovered|closed/i', $text)) {
+        if (preg_match('/\b(resolved|completed|closed|postmortem)\b|\ball systems operational\b|service is operational|this issue is now resolved|issue is now resolved|issue has been resolved|ended at|fully recovered/i', $text)) {
             return 'resolved';
         }
         if (preg_match('/\b(scheduled|planned).{0,40}maintenance\b/i', $text)) {
@@ -158,6 +158,7 @@ function from_rss_atom(string $xml): array {
                 'started_at' => '',
                 'updated_at' => (string) ($item->pubDate ?? ''),
                 'shortlink'  => (string) ($item->link ?? ''),
+                'guid'       => (string) ($item->guid ?? ''),
             ];
         }
     } else {
@@ -171,6 +172,7 @@ function from_rss_atom(string $xml): array {
                 'started_at' => '',
                 'updated_at' => (string) ($item->updated ?? ($item->published ?? '')),
                 'shortlink'  => (string) ($item->link['href'] ?? ($item->link ?? '')),
+                'guid'       => (string) ($item->id ?? ''),
             ];
         }
     }
@@ -191,6 +193,33 @@ function from_rss_atom(string $xml): array {
         },
         $items
     );
+
+
+    $identity = static function (array $item): string {
+        $url = strtolower(trim((string) ($item['shortlink'] ?? '')));
+        $guid = strtolower(trim((string) ($item['guid'] ?? '')));
+        $title = strtolower(trim((string) ($item['name'] ?? '')));
+        $summary = strtolower(trim((string) ($item['summary'] ?? '')));
+        $text = preg_replace('/\b(resolved|completed|closed|postmortem|operational|investigating|identified|monitoring|update|issue|operational issue|service disruption|outage|major|degraded)\b/i', ' ', $title . ' ' . $summary) ?? ($title . ' ' . $summary);
+        $parts = [];
+        if (preg_match('/\b([a-z]{2}-[a-z]+-\d+)\b/i', $text, $m)) { $parts[] = strtolower($m[1]); }
+        if (preg_match('/\b(uae|united arab emirates)\b/i', $text)) { $parts[] = 'uae'; }
+        if (preg_match('/\b(multiple services|[a-z0-9][a-z0-9 +._-]{2,40}(?:service|api|database|compute|storage))\b/i', $text, $m)) { $parts[] = strtolower(trim($m[1])); }
+        $normalized = trim(preg_replace('/[^a-z0-9]+/', ' ', $text) ?? '');
+        $normalized = trim(preg_replace('/\s+/', ' ', $normalized) ?? '');
+        $semantic = implode('|', array_unique(array_filter($parts))) ?: implode(' ', array_slice(explode(' ', $normalized), 0, 8));
+        if ($semantic !== '') { return 'semantic|' . $semantic; }
+        return $url !== '' ? 'url|' . $url : ($guid !== '' ? 'guid|' . $guid : 'title|' . $title);
+    };
+    $grouped = [];
+    foreach ($items as $item) {
+        $key = $identity($item);
+        if (!isset($grouped[$key]) || (int)($item['timestamp'] ?? 0) > (int)($grouped[$key]['timestamp'] ?? 0)) {
+            $item['lifecycle_key'] = $key;
+            $grouped[$key] = $item;
+        }
+    }
+    $items = array_values($grouped);
 
     usort(
         $items,
