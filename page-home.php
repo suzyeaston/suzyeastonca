@@ -13,6 +13,8 @@ get_header();
             <span class="home-pixel-rain home-pixel-rain--one"></span>
             <span class="home-pixel-rain home-pixel-rain--two"></span>
             <span class="home-arcade-moon"></span>
+            <span class="home-palm home-palm--left"></span>
+            <span class="home-palm home-palm--right"></span>
             <svg class="home-arcade-vancouver" viewBox="0 0 1200 280" focusable="false">
                 <path class="home-arcade-vancouver__mountains" d="M0 154 78 126 146 82 215 122 286 48 360 132 428 84 508 140 584 76 646 126 718 52 794 136 878 82 948 130 1016 58 1094 136 1200 94 1200 280 0 280Z" />
                 <path class="home-arcade-vancouver__city" d="M0 214h46v-34h34v-24h28v58h34v-82h38v82h24v-48h36v48h24v-92h40v92h24v-58h34v58h22v-40h28v40h30v-74h22v-20h30v20h22v74h18v-42h28v42h30l18-38 18 38h20l22-52 24 52h18l18-34 24 34h26v-62h44v62h30v48h112v66H0Z" />
@@ -24,8 +26,9 @@ get_header();
             <p class="home-arcade-kicker pixel-font"><?php echo esc_html( 'VANCOUVER CABINET // SYSTEM BOOT' ); ?></p>
             <h1 id="home-hero-title" class="home-arcade-title pixel-font"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
             <p class="home-arcade-subtitle pixel-font"><?php echo esc_html( 'music // AI strategy // creative technology' ); ?></p>
+            <p class="home-arcade-positioning"><?php echo esc_html( 'AI strategist and systems builder working across infrastructure, creative technology and music.' ); ?></p>
             <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
-            <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START"><?php echo esc_html( 'PRESS START' ); ?></button>
+            <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START // VIEW WORK"><?php echo esc_html( 'PRESS START // VIEW WORK' ); ?></button>
         </div>
     </section>
 
@@ -36,7 +39,7 @@ get_header();
         <h2 id="selected-projects-title" class="pixel-font"><?php echo esc_html( 'CHOOSE YOUR SYSTEM' ); ?></h2>
         <div class="selected-work__grid home-mission-grid">
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'hockey arcade' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Pacific Power Play' ); ?></h3><p><?php echo esc_html( 'Choose your line, drop the puck, and survive the rain city static in a Vancouver hockey cabinet.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/pacific-power-play/' ) ); ?>"><?php echo esc_html( 'Play game' ); ?></a></article>
-            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'status weather' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Lousy Outages' ); ?></h3><p><?php echo esc_html( 'A status board for SaaS weirdness, provider incidents, and the moments official pages get too polite.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>"><?php echo esc_html( 'Check status' ); ?></a></article>
+            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'status weather' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Lousy Outages' ); ?></h3><p><?php echo esc_html( 'Independent outage intelligence for AI, cloud and creative tools, translated from status-page language into something humans can use.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>"><?php echo esc_html( 'Check status' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'civic arcade world' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Gastown Simulator' ); ?></h3><p><?php echo esc_html( 'A playable Vancouver corridor built from civic data, route logic, street mood, and arcade-map obsession.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/gastown-sim/' ) ); ?>"><?php echo esc_html( 'Walk Gastown' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'audio notes' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Track Analyzer' ); ?></h3><p><?php echo esc_html( 'Upload an MP3 and get clear notes on feel, lyrics, structure, and what might actually help the track.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/suzys-track-analyzer/' ) ); ?>"><?php echo esc_html( 'Analyze track' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'early music tool' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Loop Lab' ); ?></h3><p><?php echo esc_html( 'A browser tape deck for playing first, looping fast, and stacking little mistakes on purpose.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/loop-lab/' ) ); ?>"><?php echo esc_html( 'Make noise' ); ?></a></article>

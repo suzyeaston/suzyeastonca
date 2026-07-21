@@ -3,7 +3,7 @@
     var hero = document.querySelector('[data-arcade-hero]');
     var button = document.querySelector('[data-home-start]');
     var status = document.querySelector('[data-arcade-status]');
-    var target = document.getElementById('lousy-outages-teaser');
+    var target = document.getElementById('mission-select') || document.getElementById('selected-projects-title');
     if (!hero || !button || !target) return;
 
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -38,7 +38,7 @@
         if (status) status.textContent = 'LEVEL 01';
       }, 420);
       window.setTimeout(function () {
-        if (status) status.textContent = 'LEVEL 01 // LOUSY OUTAGES';
+        if (status) status.textContent = 'LEVEL SELECT';
         scrollToLevel();
       }, 980);
       window.setTimeout(function () {

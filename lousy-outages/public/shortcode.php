@@ -580,6 +580,8 @@ function render_shortcode(): string {
             'summary'  => $summary,
             'updated'  => $format_datetime((string) ($incident['updated_at'] ?? $incident['updatedAt'] ?? $incident['started_at'] ?? $incident['startedAt'] ?? '')),
             'url'      => (string) ($incident['url'] ?? ''),
+            'region'   => implode(', ', array_filter(array_map('strval', (array) ($incident['affected_services'] ?? [$incident['region_name'] ?? $incident['region'] ?? ''])))),
+            'why'      => $normalize_card_text((string) ($incident['impact_description'] ?? $incident['impact'] ?? ''), 140),
         ];
     };
 
@@ -753,10 +755,16 @@ function render_shortcode(): string {
                                 <span class="lo-pill status--degraded" data-lo-badge><?php echo esc_html((string) ($tile['status_label'] ?? 'Incident')); ?></span>
                             </div>
                             <p class="lo-card-kicker"><?php echo esc_html(count($incidents) . ' active ' . (count($incidents) === 1 ? 'incident' : 'incidents')); ?></p>
-                            <p class="lo-summary" data-lo-message><?php echo esc_html('Latest: ' . (string) ($lead_incident_display['title'] ?? 'Active incident')); ?></p>
+                            <h4 class="lo-incident-title" data-lo-message><?php echo esc_html((string) ($lead_incident_display['title'] ?? 'Active incident')); ?></h4>
                             <p class="lo-message" data-lo-summary><?php echo esc_html((string) ($lead_incident_display['summary'] ?? 'Latest official update is available from the provider status page.')); ?></p>
-                            <p class="lo-card-meta">Last official update: <?php echo esc_html($last_official); ?></p>
-                            <p class="lo-card-meta" data-lo-last-checked>Status checked: <?php echo esc_html($last_checked); ?></p>
+                            <dl class="lo-incident-facts">
+                                <div><dt>Affected service / region</dt><dd><?php echo esc_html((string) ($lead_incident_display['region'] ?: 'Provider status page did not specify.')); ?></dd></div>
+                                <div><dt>Lifecycle</dt><dd><?php echo esc_html((string) ($lead_incident_display['status'] ?? ($tile['status_label'] ?? 'Incident'))); ?></dd></div>
+                                <div><dt>Latest official update</dt><dd><?php echo esc_html($last_official); ?></dd></div>
+                                <div><dt>Checked</dt><dd><?php echo esc_html($last_checked); ?></dd></div>
+                                <div><dt>Source</dt><dd><?php echo esc_html(ucfirst($source_type)); ?></dd></div>
+                            </dl>
+                            <?php if (!empty($lead_incident_display['why']) && !\SuzyEaston\LousyOutages\PublicCopy::should_suppress('minor', ['severity'=>$lead_incident_display['status'], 'message'=>$lead_incident_display['why']])) : ?><p class="lo-why"><strong>Why this matters:</strong> <?php echo esc_html((string) $lead_incident_display['why']); ?></p><?php endif; ?>
                             <?php if (count($incidents) > 1) : ?>
                                 <details class="lo-inc-details"><summary><?php echo esc_html('View ' . count($incidents) . ' incidents'); ?></summary>
                                     <ul class="lo-inc-list">
@@ -961,8 +969,42 @@ function render_shortcode(): string {
                 <p class="lo-history__error" data-lo-history-error hidden>Incident history could not be loaded. Current status is still available. <button type="button" class="lo-history__retry" data-lo-history-retry>Retry</button></p>
             </div>
         </section>
+        <?php
+        $lo_priority_service_tiles = [];
+        $lo_operational_service_tiles = [];
+        foreach ($ordered_tiles as $lo_service_tile) {
+            if (!is_array($lo_service_tile)) { continue; }
+            $lo_service_incidents = \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($lo_service_tile);
+            $lo_raw_status = strtolower((string) ($lo_service_tile['status'] ?? $lo_service_tile['stateCode'] ?? 'unknown'));
+            $lo_tile_kind = strtolower((string) ($lo_service_tile['tile_kind'] ?? $lo_service_tile['tileKind'] ?? ''));
+            $lo_has_error = !empty($lo_service_tile['error']) || in_array((string) ($lo_service_tile['verification_status'] ?? ''), ['failed','delayed','unknown'], true);
+            $lo_is_operational = empty($lo_service_incidents) && !$lo_has_error && !in_array($lo_raw_status, ['degraded','major','outage','maintenance'], true) && 'signal' !== $lo_tile_kind && 'unknown' !== $lo_raw_status && 'manual' !== $lo_tile_kind;
+            if ($lo_is_operational) { $lo_operational_service_tiles[] = $lo_service_tile; } else { $lo_priority_service_tiles[] = $lo_service_tile; }
+        }
+        $lo_render_service_row = static function (array $tile) use ($format_datetime, $providers_config): void {
+            $slug = provider_identity($tile);
+            if ('' === $slug) { return; }
+            $incidents = \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($tile);
+            $raw_status = strtolower((string) ($tile['status'] ?? $tile['stateCode'] ?? 'unknown'));
+            $tile_kind = strtolower((string) ($tile['tile_kind'] ?? $tile['tileKind'] ?? ''));
+            $has_error = !empty($tile['error']) || in_array((string) ($tile['verification_status'] ?? ''), ['failed','delayed','unknown'], true);
+            if (!empty($incidents)) { $state_label = 'Incident'; }
+            elseif ('signal' === $tile_kind || in_array($raw_status, ['degraded','major','outage','maintenance'], true)) { $state_label = 'Degraded'; }
+            elseif ($has_error) { $state_label = 'Verification delayed'; }
+            elseif ('manual' === $tile_kind || 'unknown' === $raw_status) { $state_label = 'Status unavailable'; }
+            else { $state_label = 'Operational'; }
+            $state_class = sanitize_html_class(strtolower(str_replace(' ', '-', $state_label)));
+            $last_checked = $format_datetime($tile['checked_at'] ?? $tile['fetched_at'] ?? $tile['updated_at'] ?? null);
+            $status_url = (string) ($tile['url'] ?? $tile['link'] ?? '');
+            $category = (string) ($tile['category'] ?? ($providers_config[$slug]['category'] ?? 'other'));
+            $source_type = (string) ($tile['source_type'] ?? ($providers_config[$slug]['source_type'] ?? 'unknown'));
+            ?>
+            <div class="lo-services__row lo-services__row--<?php echo esc_attr($state_class); ?>" data-lo-provider-row="<?php echo esc_attr($slug); ?>" data-lo-provider-name="<?php echo esc_attr(strtolower((string) ($tile['name'] ?? $slug))); ?>" data-lo-provider-category="<?php echo esc_attr($category); ?>" data-lo-provider-state="<?php echo esc_attr($state_class); ?>" role="row"><span role="cell"><strong><?php echo esc_html((string) ($tile['name'] ?? ucfirst($slug))); ?></strong></span><span role="cell"><span class="lo-pill status--<?php echo esc_attr($state_class); ?>"><?php echo esc_html($state_label); ?></span></span><span role="cell"><?php echo esc_html(ucfirst($category) . ' / ' . $source_type); ?></span><span role="cell"><?php echo esc_html($last_checked); ?></span><span role="cell"><?php if ('' !== $status_url) : ?><a class="lo-status-link" href="<?php echo esc_url($status_url); ?>" target="_blank" rel="noopener">Open</a><?php else : ?>—<?php endif; ?></span></div>
+            <?php
+        };
+        ?>
         <section class="lo-services" data-lo-services>
-            <div class="lo-section__head"><h3 class="lo-block-title">Monitored services</h3><p class="lo-history__meta">Compact current-state view from the saved provider snapshot.</p></div>
+            <div class="lo-section__head"><h3 class="lo-block-title">Monitored services</h3><p class="lo-history__meta">Incident, degraded and verification-delayed providers appear first. Operational services are tucked away until you need them.</p></div>
             <div class="lo-history__controls lo-print-hide" aria-label="Provider filters">
                 <label><span class="sr-only">Search providers</span><input type="search" data-lo-provider-search placeholder="Search services"></label>
                 <label><span class="sr-only">Category</span><select data-lo-provider-category><option value="">All categories</option><option value="ai">AI</option><option value="cloud">Cloud</option><option value="development">Development</option><option value="communications">Communications</option><option value="creative">Creative</option></select></label>
@@ -996,42 +1038,17 @@ function render_shortcode(): string {
             <span class="lo-loading__text">Dialing interstellar relays…</span>
         </div>
         <div class="lo-all" data-lo-all>
-            <div class="lo-services__table" data-lo-grid role="table" aria-label="Monitored provider states">
+            <div class="lo-services__table" data-lo-grid role="table" aria-label="Monitored provider states needing attention">
                 <div class="lo-services__row lo-services__row--head" role="row"><span>Provider</span><span>State</span><span>Category / source</span><span>Last checked</span><span>Status page</span></div>
-                <?php foreach ($ordered_tiles as $tile) :
-                    if (!is_array($tile)) { continue; }
-                    $slug = provider_identity($tile);
-                    if ('' === $slug) { continue; }
-                    $incidents = \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($tile);
-                    $raw_status = strtolower((string) ($tile['status'] ?? $tile['stateCode'] ?? 'unknown'));
-                    $tile_kind = strtolower((string) ($tile['tile_kind'] ?? $tile['tileKind'] ?? ''));
-                    $has_error = !empty($tile['error']) || in_array((string) ($tile['verification_status'] ?? ''), ['failed','delayed','unknown'], true);
-                    if (!empty($incidents)) {
-                        $state_label = 'Incident';
-                    } elseif ('signal' === $tile_kind || in_array($raw_status, ['degraded','major','outage','maintenance'], true)) {
-                        $state_label = 'Degraded';
-                    } elseif ($has_error) {
-                        $state_label = 'Verification delayed';
-                    } elseif ('manual' === $tile_kind || 'unknown' === $raw_status) {
-                        $state_label = 'Status unavailable';
-                    } else {
-                        $state_label = 'Operational';
-                    }
-                    $state_class = sanitize_html_class(strtolower(str_replace(' ', '-', $state_label)));
-                    $last_checked = $format_datetime($tile['checked_at'] ?? $tile['fetched_at'] ?? $tile['updated_at'] ?? null);
-                    $status_url = (string) ($tile['url'] ?? $tile['link'] ?? '');
-                    $category = (string) ($tile['category'] ?? ($providers_config[$slug]['category'] ?? 'other'));
-                    $source_type = (string) ($tile['source_type'] ?? ($providers_config[$slug]['source_type'] ?? 'unknown'));
-                ?>
-                    <div class="lo-services__row lo-services__row--<?php echo esc_attr($state_class); ?>" data-lo-provider-row="<?php echo esc_attr($slug); ?>" data-lo-provider-name="<?php echo esc_attr(strtolower((string) ($tile['name'] ?? $slug))); ?>" data-lo-provider-category="<?php echo esc_attr($category); ?>" data-lo-provider-state="<?php echo esc_attr($state_class); ?>" role="row">
-                        <span role="cell"><strong><?php echo esc_html((string) ($tile['name'] ?? ucfirst($slug))); ?></strong></span>
-                        <span role="cell"><span class="lo-pill status--<?php echo esc_attr($state_class); ?>"><?php echo esc_html($state_label); ?></span></span>
-                        <span role="cell"><?php echo esc_html(ucfirst($category) . ' / ' . $source_type); ?></span>
-                        <span role="cell"><?php echo esc_html($last_checked); ?></span>
-                        <span role="cell"><?php if ('' !== $status_url) : ?><a class="lo-status-link" href="<?php echo esc_url($status_url); ?>" target="_blank" rel="noopener">Open</a><?php else : ?>—<?php endif; ?></span>
-                    </div>
-                <?php endforeach; ?>
+                <?php foreach ($lo_priority_service_tiles as $tile) { $lo_render_service_row($tile); } ?>
             </div>
+            <details class="lo-operational-disclosure" data-lo-operational-services>
+                <summary><?php echo esc_html('Show ' . count($lo_operational_service_tiles) . ' operational services'); ?></summary>
+                <div class="lo-services__table lo-services__table--operational" role="table" aria-label="Operational monitored provider states">
+                    <div class="lo-services__row lo-services__row--head" role="row"><span>Provider</span><span>State</span><span>Category / source</span><span>Last checked</span><span>Status page</span></div>
+                    <?php foreach ($lo_operational_service_tiles as $tile) { $lo_render_service_row($tile); } ?>
+                </div>
+            </details>
         </div>
         <?php echo render_subscribe_shortcode(); ?>
     </div>
@@ -1108,7 +1125,7 @@ function render_subscribe_shortcode(): string {
     ?>
     <div class="lo-subscribe" data-lo-subscribe>
         <h2 class="lo-subscribe__title">Get outage alerts</h2>
-        <p class="lo-subscribe__intro">Free: public current status, recent history and basic <a href="<?php echo $rss_url; ?>" target="_blank" rel="noopener">RSS access</a>. Email alerts are an early preference-based option designed to support selected-provider alerts, digests and future supporter pricing without locking the dashboard away.</p>
+        <p class="lo-subscribe__intro">Choose the providers you rely on and get the alert before your group chat becomes an incident-response channel. Free public current status, recent history and basic <a href="<?php echo $rss_url; ?>" target="_blank" rel="noopener">RSS access</a> remain available.</p>
         <details class="lo-subscribe__details"><summary class="lo-subscribe__summary">Choose alert preferences</summary><form class="lo-subscribe__form" method="post" action="<?php echo esc_url($endpoint); ?>" data-lo-subscribe-form>
             <label class="lo-subscribe__label" for="<?php echo esc_attr($email_id); ?>">
                 <span>Email</span>

@@ -6470,3 +6470,42 @@ body,
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-ui,
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-ui { opacity: 0; }
 .power-play-page .power-play-select { font-size: clamp(.42rem, .68vw, .56rem); overflow: auto; }
+
+/* 2026 compact Miami-noir homepage pass. */
+.home-arcade-title-screen {
+  min-height: clamp(520px, 64svh, 620px);
+  max-height: 620px;
+  background:
+    radial-gradient(circle at 72% 22%, #ffe9c4 0 56px, #ff4fd8 57px 72px, transparent 73px),
+    linear-gradient(135deg, #000 0 18%, #fff2cf 18% 34%, #071027 34% 62%, #57f3ff 62% 69%, #ff4fd8 69% 76%, #000 76% 100%);
+  border-color: #fff2cf;
+}
+.home-arcade-title-screen::before {
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,.08) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(110deg, transparent 0 22px, rgba(87,243,255,.22) 22px 24px, transparent 24px 44px);
+}
+.home-arcade-screen__panel { align-content: center; gap: clamp(.55rem, 1.4vw, .9rem); max-width: 760px; }
+.home-arcade-title { font-size: clamp(2.45rem, 8vw, 6.6rem); max-width: 9ch; }
+.home-arcade-subtitle { font-size: clamp(.58rem, 1.2vw, .8rem); }
+.home-arcade-positioning { max-width: 620px; margin: 0; color: #fff2cf; font-family: 'IBM Plex Mono', 'Courier New', monospace; font-size: clamp(1rem, 1.8vw, 1.22rem); line-height: 1.45; background: transparent; }
+.home-title-screen-prompt { position: absolute; top: clamp(.75rem, 2vw, 1.25rem); left: clamp(.75rem, 2vw, 1.25rem); margin: 0; font-size: clamp(.48rem, .8vw, .62rem); color: #020308; background: #fff2cf; border-color: #000; box-shadow: 5px 5px 0 #ff4fd8; }
+.home-press-start { background: #57f3ff; border-color: #020308; color: #020308; box-shadow: 6px 6px 0 #ff4fd8, 0 0 24px rgba(87,243,255,.32); }
+.home-arcade-vancouver { height: min(24vh, 210px); opacity: .72; }
+.home-arcade-vancouver__mountains { fill: rgba(0,0,0,.9); stroke: rgba(255,242,207,.5); }
+.home-arcade-vancouver__city { fill: #050505; stroke: rgba(87,243,255,.42); }
+.home-palm { position: absolute; bottom: 0; width: 150px; height: 310px; background: #030303; z-index: 2; clip-path: polygon(47% 100%,56% 100%,53% 38%,73% 29%,54% 31%,82% 19%,55% 25%,64% 4%,47% 24%,29% 6%,39% 28%,9% 19%,34% 33%,11% 34%,46% 40%); opacity: .94; }
+.home-palm--left { left: 1%; transform: rotate(-7deg); }
+.home-palm--right { right: 2%; transform: scaleX(-1) rotate(-5deg); opacity: .75; }
+#lousy-outages-teaser.lo-home-teaser { display: block; width: min(100% - 2rem, 980px); max-height: 260px; overflow: hidden; margin: 1.35rem auto; padding: 1rem; border-radius: 18px; border-color: rgba(87,243,255,.75); background: linear-gradient(135deg, rgba(0,0,0,.92), rgba(7,16,39,.86)); }
+#lousy-outages-teaser .lo-home-teaser__titlebar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.75rem; }
+#lousy-outages-teaser .lo-home-kicker { margin:0 0 .25rem; color:#ff4fd8; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; }
+#lousy-outages-teaser .lo-home-heading { font-size:clamp(1rem,2.5vw,1.45rem); }
+#lousy-outages-teaser .lo-home-ticker { display:grid; grid-template-columns: repeat(2, minmax(90px, .45fr)) minmax(220px, 1.6fr); gap:.75rem; align-items:stretch; }
+#lousy-outages-teaser .lo-home-stat, #lousy-outages-teaser .lo-home-lead { padding:.72rem; border:1px solid rgba(255,242,207,.22); background:rgba(255,242,207,.06); border-radius:12px; }
+#lousy-outages-teaser .lo-home-stat strong { display:block; color:#57f3ff; font-size:1.45rem; }
+#lousy-outages-teaser .lo-home-stat span, #lousy-outages-teaser .lo-home-lead span, #lousy-outages-teaser .lo-home-other, #lousy-outages-teaser .lo-home-quip { color:#fff2cf; font-family:'IBM Plex Mono','Courier New',monospace; font-size:.9rem; line-height:1.35; }
+#lousy-outages-teaser .lo-home-lead strong { display:block; color:#ffff66; margin-bottom:.25rem; }
+#lousy-outages-teaser .lo-home-other, #lousy-outages-teaser .lo-home-quip { margin:.65rem 0 0; }
+@media (max-width: 700px) { .home-arcade-title-screen { min-height: 420px; max-height: 500px; } .home-arcade-screen__panel { padding: 2.1rem .35rem 3.25rem; } .home-arcade-title { font-size: clamp(2.2rem, 13vw, 4rem); } .home-palm { height: 210px; width: 100px; } #lousy-outages-teaser .lo-home-ticker { grid-template-columns: 1fr 1fr; } #lousy-outages-teaser .lo-home-lead { grid-column: 1 / -1; } }
+@media (prefers-reduced-motion: reduce) { .home-arcade-title-screen::before, .home-pixel-rain, .home-pixel-star, .home-press-start { animation: none !important; } }

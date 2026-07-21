@@ -2848,3 +2848,29 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* 0.4.2 public hierarchy polish. */
+.lousy-outages { max-width: 1120px; padding: clamp(18px, 3vw, 32px); font-size: 17px; line-height: 1.65; }
+.lo-atmosphere__lede, .lo-history__meta, .lo-message, .lo-summary, .lo-card-meta, .lo-subscribe__intro, .lo-report p { font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+.lo-block-title, .lo-status-board__eyebrow, .lo-status-board__title, .lo-pill, .lo-section__toggle, .lo-subscribe__title, .lo-report h3 { font-family: 'Press Start 2P', 'IBM Plex Mono', monospace; }
+.lo-card { padding: clamp(16px, 2vw, 22px); gap: 12px; min-height: 0; background: linear-gradient(135deg, rgba(8,12,24,.98), rgba(18,28,51,.94)); }
+.lo-card--incident { border-color: rgba(244,154,229,.9); box-shadow: 0 18px 34px rgba(0,0,0,.36), inset 0 0 0 1px rgba(255,255,255,.05); }
+.lo-card-kicker { margin: 0; color: #fff2cf; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+.lo-incident-title { margin: 0; color: var(--lo-accent); font-size: clamp(1.08rem, 2vw, 1.35rem); line-height: 1.35; }
+.lo-message { font-size: 1.02rem; font-weight: 500; }
+.lo-incident-facts { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 4px 0; }
+.lo-incident-facts div { padding: 10px; border: 1px solid rgba(138,247,228,.24); border-radius: 10px; background: rgba(4,7,15,.45); }
+.lo-incident-facts dt { color: var(--lo-pop); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; }
+.lo-incident-facts dd { margin: 4px 0 0; color: var(--lo-text); font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+.lo-why { margin: 0; padding: 10px 12px; border-left: 4px solid #57f3ff; background: rgba(87,243,255,.08); color: #fff2cf; font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+.lo-history__controls { align-items: stretch; padding: 10px; border: 1px solid rgba(138,247,228,.2); border-radius: 12px; background: rgba(4,7,15,.35); }
+.lo-history__controls label { font-size: .92rem; }
+.lo-history__controls input[type="search"], .lo-history__controls select { min-height: 42px; min-width: 190px; padding: 8px 10px; border: 1px solid rgba(138,247,228,.42); border-radius: 8px; background: #050912; color: var(--lo-text); font: inherit; }
+.lo-services__table { overflow-x: auto; border-radius: 12px; }
+.lo-services__row--operational { opacity: .72; }
+.lo-operational-disclosure { margin-top: 14px; border: 1px solid rgba(138,247,228,.24); border-radius: 14px; background: rgba(8,12,24,.55); }
+.lo-operational-disclosure summary { cursor: pointer; padding: 14px 16px; color: var(--lo-accent); font-family: 'Press Start 2P', monospace; font-size: .75rem; }
+.lo-operational-disclosure[open] summary { border-bottom: 1px solid rgba(138,247,228,.18); }
+.lo-status-link:focus-visible, .lo-link:focus-visible, .lo-section__toggle:focus-visible, .lo-operational-disclosure summary:focus-visible, .lo-subscribe__button:focus-visible { outline: 3px solid var(--lo-pop); outline-offset: 3px; }
+@media (max-width: 720px) { .lousy-outages { font-size: 16px; padding: 14px; } .lo-incident-facts { grid-template-columns: 1fr; } .lo-history__controls { display:grid; } .lo-history__controls input[type="search"], .lo-history__controls select { width: 100%; min-width: 0; } }
+@media (prefers-reduced-motion: reduce) { .lousy-outages::before, .lousy-outages::after, .lo-pill.outage::before { animation: none !important; } }
