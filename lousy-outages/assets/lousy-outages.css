@@ -2778,3 +2778,73 @@
 @media (prefers-reduced-motion: reduce) {
   .lousy-outages *, .lo-home-teaser * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Lousy Outages 0.3.9: compact status-product layout. */
+.lo-card--incident {
+  border-color: rgba(255, 231, 90, 0.75);
+  background: linear-gradient(135deg, rgba(255, 231, 90, 0.08), rgba(255, 47, 179, 0.06)), rgba(5, 7, 18, 0.94);
+}
+.lo-card-kicker {
+  margin: 0 0 0.55rem;
+  color: #f6ff8f;
+  font-family: "Press Start 2P", "VT323", monospace;
+  font-size: clamp(0.62rem, 1.5vw, 0.78rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.lo-services {
+  margin-top: clamp(1.25rem, 3vw, 2rem);
+}
+.lo-services__table {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+.lo-services__row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1.2fr) minmax(8rem, 0.9fr) minmax(9rem, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(42, 255, 213, 0.32);
+  background: rgba(6, 10, 24, 0.78);
+}
+.lo-services__row--head {
+  color: #9af3ff;
+  font-family: "Press Start 2P", "VT323", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(27, 240, 255, 0.08);
+}
+.lo-services__row .lo-pill {
+  white-space: nowrap;
+}
+.lo-link--secondary {
+  opacity: 0.78;
+}
+.lo-settings[open] {
+  padding-bottom: 1rem;
+}
+.lo-settings > summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+@media (max-width: 720px) {
+  .lo-services__row,
+  .lo-services__row--head {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+  .lo-services__row--head {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lousy-outages *,
+  .lousy-outages *::before,
+  .lousy-outages *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

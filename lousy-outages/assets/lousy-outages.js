@@ -860,7 +860,7 @@
       }
       if (state.viewMode === 'incidents') {
         var kind = resolveTileKind(provider, normalized);
-        if (kind === 'outage') {
+        if (kind === 'outage' || kind === 'incident') {
           incidentsCards.push(card);
         } else if (kind === 'signal') {
           signalCards.push(card);
@@ -921,7 +921,7 @@
     }
     var incidents = Array.isArray(provider && provider.incidents) ? provider.incidents : [];
     if (incidents.length) {
-      return 'outage';
+      return 'incident';
     }
     return 'signal';
   }
@@ -968,6 +968,7 @@
 
   function resolveSortKey(provider) {
     var tilePriority = {
+      incident: 0,
       outage: 0,
       signal: 1,
       unknown: 2,
@@ -1118,11 +1119,7 @@
       }
     }
     if (state.allProvidersWrap) {
-      if (nextMode === 'all') {
-        state.allProvidersWrap.removeAttribute('hidden');
-      } else {
-        state.allProvidersWrap.setAttribute('hidden', 'hidden');
-      }
+      state.allProvidersWrap.removeAttribute('hidden');
     }
     updateHero(state.incidentsMeta || {});
     if (state.latestProviders && state.latestProviders.length) {
@@ -1152,6 +1149,7 @@
 
   function resolveLegacySortTuple(provider) {
     var statePriority = {
+      incident: 0,
       outage: 0,
       degraded: 1,
       maintenance: 2,

@@ -421,7 +421,15 @@ function render_shortcode(): string {
     if (!$current_state && function_exists('lousy_outages_current_state_from_snapshot')) {
         $current_state = \lousy_outages_current_state_from_snapshot(['providers' => $config['initial']['providers']]);
     }
-    $meta_counts = isset($current_state['meta']) && is_array($current_state['meta']) ? $current_state['meta'] : ['active_outage_count'=>0,'signal_count'=>0,'unverified_count'=>0,'generated_at'=>gmdate('c')];
+    $meta_counts = isset($current_state['meta']) && is_array($current_state['meta']) ? $current_state['meta'] : ['active_outage_count'=>0,'affected_provider_count'=>0,'signal_count'=>0,'unverified_count'=>0,'generated_at'=>gmdate('c')];
+    $active_incident_records = array_values(array_filter((array) ($current_state['outages'] ?? []), 'is_array'));
+    $affected_provider_ids = array_values(array_unique(array_filter(array_map(static function ($incident): string {
+        return is_array($incident) ? sanitize_key((string) ($incident['provider_id'] ?? $incident['provider'] ?? '')) : '';
+    }, $active_incident_records))));
+    $meta_counts['active_outage_count'] = count($active_incident_records);
+    $meta_counts['official_incident_count'] = count($active_incident_records);
+    $meta_counts['affected_provider_count'] = count($affected_provider_ids);
+    $meta_counts['current_official_provider_ids'] = $affected_provider_ids;
     $config['initial']['current_state'] = $current_state;
     $config['meta'] = $meta_counts;
     $config['initial']['meta'] = $meta_counts;
@@ -563,8 +571,8 @@ function render_shortcode(): string {
     };
 
     $fetched_label = ('snapshot' === strtolower((string) $source))
-        ? 'Outage info last refreshed:'
-        : 'Outage info fetched:';
+        ? 'Provider status last refreshed:'
+        : 'Provider status fetched:';
     ob_start();
     ?>
     <?php
@@ -589,15 +597,15 @@ function render_shortcode(): string {
                     <span data-lo-countdown>Auto-refresh ready</span>
                 </span>
                 <span class="lo-pill lo-pill--degraded" data-lo-degraded hidden>Auto-refresh degraded</span>
-                <button type="button" class="lo-link" data-lo-refresh>Reload saved status</button>
-                <button type="button" class="lo-link" data-lo-export-csv>Export CSV</button>
-                <button type="button" class="lo-link" data-lo-export-pdf>Save PDF</button>
+                <button type="button" class="lo-link" data-lo-refresh>Refresh status</button>
+                <button type="button" class="lo-link lo-link--secondary" data-lo-export-csv>Export CSV</button>
+                <button type="button" class="lo-link lo-link--secondary" data-lo-export-pdf>Save PDF</button>
                 <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
             </div>
         </div>
         <div class="lo-mode-toggle lo-print-hide" data-lo-mode-toggle>
-            <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Incidents (0)</button>
-            <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">All providers</button>
+            <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Incidents (<?php echo esc_html((string) ($meta_counts['active_outage_count'] ?? 0)); ?>)</button>
+            <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">Monitored services</button>
         </div>
         <?php
         $fused_public = SignalEngine::summarize_fused_signals(120);
@@ -710,37 +718,58 @@ function render_shortcode(): string {
                     <h3 class="lo-block-title">Active incidents</h3>
                 </div>
                 <div class="lo-grid lo-grid--section" data-lo-section-grid="incidents">
-                    <noscript>
-                        <?php foreach ($ordered_tiles as $tile) :
-                            if (!is_array($tile)) { continue; }
-                            $slug = provider_identity($tile);
-                            $incidents = is_array($tile['incidents'] ?? null) ? \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($tile) : [];
-                            if ('' === $slug || empty($incidents)) { continue; }
-                            $provider_name = (string) ($tile['name'] ?? $tile['provider'] ?? ucfirst($slug));
-                            $lead_active_incident = $pick_lead_incident($incidents);
-                            $lead_incident_display = $lead_active_incident ? $build_incident_display($lead_active_incident, $provider_name, (string) ($tile['status_label'] ?? 'Incident')) : null;
-                        ?>
-                            <article class="lo-card lo-card--noscript">
-                                <div class="lo-head">
-                                    <h3 class="lo-title"><?php echo esc_html($provider_name); ?></h3>
-                                    <span class="lo-pill status--degraded"><?php echo esc_html((string) ($tile['status_label'] ?? 'INCIDENT')); ?></span>
-                                </div>
-                                <p class="lo-summary"><?php echo esc_html((string) ($lead_incident_display['title'] ?? 'Active incident')); ?></p>
-                                <p class="lo-message"><?php echo esc_html((string) ($lead_incident_display['summary'] ?? 'Latest official update is available from the provider status page.')); ?></p>
-                            </article>
-                        <?php endforeach; ?>
-                    </noscript>
+                    <?php $rendered_incident_providers = 0; ?>
+                    <?php foreach ($ordered_tiles as $tile) :
+                        if (!is_array($tile)) { continue; }
+                        $slug = provider_identity($tile);
+                        $incidents = is_array($tile['incidents'] ?? null) ? \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($tile) : [];
+                        if ('' === $slug || empty($incidents)) { continue; }
+                        $rendered_incident_providers++;
+                        $provider_name = (string) ($tile['name'] ?? $tile['provider'] ?? ucfirst($slug));
+                        $lead_active_incident = $pick_lead_incident($incidents);
+                        $lead_incident_display = $lead_active_incident ? $build_incident_display($lead_active_incident, $provider_name, (string) ($tile['status_label'] ?? 'Incident')) : null;
+                        $last_checked = $format_datetime($tile['checked_at'] ?? $tile['fetched_at'] ?? $tile['updated_at'] ?? null);
+                        $last_official = $format_datetime($tile['last_official_update'] ?? ($lead_active_incident['last_official_update'] ?? $lead_active_incident['updated_at'] ?? $lead_active_incident['updatedAt'] ?? null));
+                        $status_url = (string) ($tile['url'] ?? $tile['link'] ?? '');
+                    ?>
+                        <article class="lo-card lo-card--incident" data-provider-id="<?php echo esc_attr($slug); ?>">
+                            <div class="lo-head">
+                                <h3 class="lo-title"><?php echo esc_html($provider_name); ?></h3>
+                                <span class="lo-pill status--degraded" data-lo-badge><?php echo esc_html((string) ($tile['status_label'] ?? 'Incident')); ?></span>
+                            </div>
+                            <p class="lo-card-kicker"><?php echo esc_html(count($incidents) . ' active ' . (count($incidents) === 1 ? 'incident' : 'incidents')); ?></p>
+                            <p class="lo-summary" data-lo-message><?php echo esc_html('Latest: ' . (string) ($lead_incident_display['title'] ?? 'Active incident')); ?></p>
+                            <p class="lo-message" data-lo-summary><?php echo esc_html((string) ($lead_incident_display['summary'] ?? 'Latest official update is available from the provider status page.')); ?></p>
+                            <p class="lo-card-meta">Last official update: <?php echo esc_html($last_official); ?></p>
+                            <p class="lo-card-meta" data-lo-last-checked>Status checked: <?php echo esc_html($last_checked); ?></p>
+                            <?php if (count($incidents) > 1) : ?>
+                                <details class="lo-inc-details"><summary><?php echo esc_html('View ' . count($incidents) . ' incidents'); ?></summary>
+                                    <ul class="lo-inc-list">
+                                        <?php foreach ($incidents as $incident) : $incident_display = $build_incident_display((array) $incident, $provider_name, (string) ($tile['status_label'] ?? 'Incident')); ?>
+                                            <li class="lo-inc-item"><p class="lo-inc-title"><?php echo esc_html((string) $incident_display['title']); ?></p><p class="lo-inc-meta"><?php echo esc_html('Last official update: ' . (string) $incident_display['updated']); ?></p><?php if (!empty($incident_display['url'])) : ?><a class="lo-status-link" href="<?php echo esc_url((string) $incident_display['url']); ?>" target="_blank" rel="noopener">View incident</a><?php endif; ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </details>
+                            <?php endif; ?>
+                            <?php if ('' !== $status_url) : ?><a class="lo-status-link" data-lo-status-url href="<?php echo esc_url($status_url); ?>" target="_blank" rel="noopener">Official status page</a><?php endif; ?>
+                        </article>
+                    <?php endforeach; ?>
+                    <?php if (($meta_counts['active_outage_count'] ?? 0) > 0 && 0 === $rendered_incident_providers) : ?>
+                        <p class="lo-history__error">Active incidents are present in the saved snapshot, but no affected provider cards could be rendered.</p>
+                    <?php elseif (0 === (int) ($meta_counts['active_outage_count'] ?? 0)) : ?>
+                        <p class="lo-history__empty">No active provider incidents in the saved snapshot.</p>
+                    <?php endif; ?>
                 </div>
             </section>
             <section class="lo-section lo-section--collapsible" data-lo-section="signals">
                 <div class="lo-section__head">
-                    <button type="button" class="lo-section__toggle" data-lo-section-toggle="signals" aria-expanded="false">Signals (0)</button>
+                    <button type="button" class="lo-section__toggle" data-lo-section-toggle="signals" aria-expanded="false">Signals (<?php echo esc_html((string) ($meta_counts['signal_count'] ?? 0)); ?>)</button>
                 </div>
                 <div class="lo-grid lo-grid--section" data-lo-section-grid="signals" hidden></div>
             </section>
             <section class="lo-section lo-section--collapsible" data-lo-section="unverified">
                 <div class="lo-section__head">
-                    <button type="button" class="lo-section__toggle" data-lo-section-toggle="unverified" aria-expanded="false">Can’t verify (0)</button>
+                    <button type="button" class="lo-section__toggle" data-lo-section-toggle="unverified" aria-expanded="false">Can’t verify (<?php echo esc_html((string) ($meta_counts['unverified_count'] ?? 0)); ?>)</button>
                 </div>
                 <div class="lo-grid lo-grid--section" data-lo-section-grid="unverified" hidden></div>
             </section>
@@ -917,9 +946,10 @@ function render_shortcode(): string {
                 <p class="lo-history__error" data-lo-history-error hidden>Incident history could not be loaded. Current status is still available. <button type="button" class="lo-history__retry" data-lo-history-retry>Retry</button></p>
             </div>
         </section>
-        <?php echo render_subscribe_shortcode(); ?>
-        <div class="lo-settings lo-print-hide" data-lo-settings>
-            <h3 class="lo-block-title">Customize view</h3>
+        <section class="lo-services" data-lo-services>
+            <div class="lo-section__head"><h3 class="lo-block-title">Monitored services</h3><p class="lo-history__meta">Compact current-state view from the saved provider snapshot.</p></div>
+            <details class="lo-settings lo-print-hide" data-lo-settings>
+            <summary class="lo-block-title">Choose monitored providers</summary>
             <p class="lo-settings__hint">Pick which providers appear below. Preferences stay on this browser only.</p>
             <div class="lo-settings__actions">
                 <button type="button" class="lo-settings__button" data-lo-provider-select="all">Select all</button>
@@ -939,178 +969,48 @@ function render_shortcode(): string {
                     </label>
                 <?php endforeach; ?>
             </div>
-        </div>
+            </details>
+        </section>
         <div class="lo-loading lo-print-hide" data-lo-loading<?php echo $ordered_tiles ? ' hidden' : ''; ?> role="status">
             <span class="lo-loading__spinner" aria-hidden="true"></span>
             <span class="lo-loading__text">Dialing interstellar relays…</span>
         </div>
         <div class="lo-all" data-lo-all>
-            <div class="lo-grid" data-lo-grid>
+            <div class="lo-services__table" data-lo-grid role="table" aria-label="Monitored provider states">
+                <div class="lo-services__row lo-services__row--head" role="row"><span>Provider</span><span>State</span><span>Last checked</span><span>Status page</span></div>
                 <?php foreach ($ordered_tiles as $tile) :
+                    if (!is_array($tile)) { continue; }
                     $slug = provider_identity($tile);
-                    $status = strtolower((string) ($tile['status'] ?? 'unknown'));
-                    $status_class = $tile['status_class'] ?? ('status--' . (preg_replace('/[^a-z0-9_-]+/i', '-', $status) ?: 'unknown'));
-                    $label = $tile['status_label'] ?? ucfirst($status);
-                    $components = array_filter(
-                        is_array($tile['components'] ?? null) ? $tile['components'] : [],
-                        static fn($component) => is_array($component) && strtolower((string) ($component['status'] ?? '')) !== 'operational'
-                    );
-                    $incidents = is_array($tile['incidents'] ?? null) ? $tile['incidents'] : [];
-                    $resolved_states = ['resolved', 'completed', 'postmortem'];
-                    $active_incidents = array_values(
-                        array_filter(
-                            $incidents,
-                            static function ($incident) use ($resolved_states): bool {
-                                if (!is_array($incident)) {
-                                    return false;
-                                }
-                                $status = strtolower((string) ($incident['status'] ?? ''));
-                                return !in_array($status, $resolved_states, true);
-                            }
-                        )
-                    );
-                    $last_checked = $format_datetime(
-                        $tile['fetched_at']
-                        ?? $tile['fetchedAt']
-                        ?? $tile['updated_at']
-                        ?? $tile['updatedAt']
-                        ?? null
-                    );
-                    $provider_name = (string) ($tile['name'] ?? ucfirst($slug));
-                    $lead_active_incident = $pick_lead_incident($active_incidents);
-                    $lead_incident_display = $lead_active_incident
-                        ? $build_incident_display($lead_active_incident, $provider_name, (string) $label)
-                        : null;
-                    $debug_mode = isset($_GET['lo_debug']) && '1' === $_GET['lo_debug'];
-                    $debug_line = '';
-                    if ($debug_mode) {
-                        $http_code = isset($tile['http_code']) ? (int) $tile['http_code'] : 0;
-                        $error_text = isset($tile['error']) ? trim((string) $tile['error']) : '';
-                        if ($http_code > 0) {
-                            $debug_line = 'debug: HTTP ' . $http_code;
-                            if ('' !== $error_text) {
-                                $debug_line .= ' (' . $error_text . ')';
-                            }
-                        } elseif ('' !== $error_text) {
-                            $debug_line = 'debug: ' . $error_text;
-                        }
+                    if ('' === $slug) { continue; }
+                    $incidents = \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($tile);
+                    $raw_status = strtolower((string) ($tile['status'] ?? $tile['stateCode'] ?? 'unknown'));
+                    $tile_kind = strtolower((string) ($tile['tile_kind'] ?? $tile['tileKind'] ?? ''));
+                    $has_error = !empty($tile['error']) || in_array((string) ($tile['verification_status'] ?? ''), ['failed','delayed','unknown'], true);
+                    if (!empty($incidents)) {
+                        $state_label = 'Incident';
+                    } elseif ('signal' === $tile_kind || in_array($raw_status, ['degraded','major','outage','maintenance'], true)) {
+                        $state_label = 'Degraded';
+                    } elseif ($has_error) {
+                        $state_label = 'Verification delayed';
+                    } elseif ('manual' === $tile_kind || 'unknown' === $raw_status) {
+                        $state_label = 'Status unavailable';
+                    } else {
+                        $state_label = 'Operational';
                     }
-                    ?>
-                    <article class="lo-card" data-provider-id="<?php echo esc_attr($slug ?: 'provider'); ?>">
-                        <div class="lo-head">
-                            <h3 class="lo-title"><?php echo esc_html($tile['name'] ?? ucfirst($slug)); ?></h3>
-                            <span class="lo-pill <?php echo esc_attr($status_class); ?>" data-lo-badge><?php echo esc_html($label); ?></span>
-                        </div>
-                        <?php
-                        $message_text = trim((string) ($tile['message'] ?? ''));
-                        $summary_text = trim((string) ($tile['summary'] ?? ''));
-                        if (!empty($tile['error'])) {
-                            if ('' === $message_text) {
-                                $message_text = 'Can’t verify status right now.';
-                            }
-                            $summary_text = '';
-                        }
-                        if ('' === $message_text) {
-                            if (!empty($active_incidents)) {
-                                $message_text = (string) ($lead_incident_display['title'] ?? 'Active incident');
-                            } elseif ($status === 'operational') {
-                                $message_text = 'All systems operational.';
-                            } elseif ($status === 'unknown') {
-                                $message_text = 'Can’t verify status right now.';
-                            } else {
-                                $message_text = $summary_text ?: ($label ?: 'Status update');
-                            }
-                        }
-                        if (
-                            empty($tile['error'])
-                            && 'cloudflare' === $slug
-                            && !in_array($status, ['operational', 'unknown'], true)
-                            && empty($active_incidents)
-                            && $is_generic_degraded_message($summary_text)
-                            && $is_generic_degraded_message($message_text)
-                        ) {
-                            $message_text = 'Degraded signal detected';
-                            $summary_text = 'No active incident listed yet — may be transient. Click \'View status\' or hit Refresh.';
-                        }
-
-                        if ($lead_incident_display) {
-                            $message_text = (string) $lead_incident_display['title'];
-                            $summary_text = (string) $lead_incident_display['summary'];
-                        } else {
-                            $message_text = $normalize_card_text($message_text, 140);
-                            $summary_text = $normalize_card_text($summary_text, 190);
-                        }
-
-                        $summary_display = '';
-                        if ('' !== $summary_text && strcasecmp($summary_text, $message_text) !== 0) {
-                            $summary_display = $summary_text;
-                        }
-                        if ($summary_display && $status === 'operational' && $is_no_incidents_message($summary_display)) {
-                            $summary_display = '';
-                        }
-                        if ($summary_display && $status === 'unknown' && $is_no_incidents_message($summary_display)) {
-                            $summary_display = '';
-                        }
-                        ?>
-                        <p class="lo-message" data-lo-message><?php echo esc_html($message_text); ?></p>
-                        <?php if ('' !== $summary_display) : ?>
-                            <p class="lo-summary" data-lo-summary><?php echo esc_html($summary_display); ?></p>
-                        <?php endif; ?>
-                        <div class="lo-card-meta-wrap" data-lo-meta>
-                            <p class="lo-card-meta" data-lo-last-checked>Last checked: <?php echo esc_html($last_checked); ?></p>
-                            <p class="lo-card-meta lo-card-meta--hint" data-lo-last-known hidden></p>
-                            <p class="lo-card-meta lo-card-meta--hint" data-lo-unknown-hint<?php echo $status === 'unknown' ? '' : ' hidden'; ?>>
-                                Provider page may still be operational — click ‘View status’.
-                            </p>
-                            <p class="lo-card-debug" data-lo-debug<?php echo '' !== $debug_line ? '' : ' hidden'; ?>><?php echo esc_html($debug_line); ?></p>
-                        </div>
-                        <div class="lo-components" data-lo-components>
-                            <?php if (!empty($components)) : ?>
-                                <h4 class="lo-components__title">Impacted components</h4>
-                                <ul class="lo-components__list">
-                                    <?php foreach ($components as $component) :
-                                        $component_status = strtolower((string) ($component['status'] ?? 'unknown'));
-                                        $component_label  = $component['status_label'] ?? ucfirst($component_status);
-                                        ?>
-                                        <li>
-                                            <span class="lo-component-name"><?php echo esc_html($component['name'] ?? 'Component'); ?></span>
-                                            <span class="lo-component-status"><?php echo esc_html($component_label); ?></span>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php endif; ?>
-                        </div>
-                        <div class="lo-inc" data-lo-incidents<?php echo $lead_incident_display ? '' : ' hidden'; ?>>
-                            <?php if ($lead_incident_display) : ?>
-                                <ul class="lo-inc-list">
-                                    <li class="lo-inc-item">
-                                        <p class="lo-inc-provider"><?php echo esc_html((string) $lead_incident_display['provider']); ?></p>
-                                        <p class="lo-inc-title"><?php echo esc_html((string) $lead_incident_display['title']); ?></p>
-                                        <p class="lo-inc-meta"><?php echo esc_html(trim((string) $lead_incident_display['status'] . ' • Last checked: ' . $last_checked)); ?></p>
-                                        <p class="lo-inc-summary"><?php echo esc_html((string) $lead_incident_display['summary']); ?></p>
-                                        <?php if (!empty($lead_incident_display['url'])) : ?>
-                                            <a class="lo-status-link" href="<?php echo esc_url((string) $lead_incident_display['url']); ?>" target="_blank" rel="noopener">View incident</a>
-                                        <?php endif; ?>
-                                    </li>
-                                </ul>
-                                <?php if (count($active_incidents) > 1) : ?>
-                                    <details class="lo-inc-details"><summary><?php echo esc_html('Show ' . (count($active_incidents) - 1) . ' more ' . (count($active_incidents) === 2 ? 'incident' : 'incidents')); ?></summary>
-                                        <ul class="lo-inc-list">
-                                            <?php foreach (array_slice($active_incidents, 1) as $extra_incident) : $extra_display = $build_incident_display((array) $extra_incident, $provider_name, (string) $label); ?>
-                                                <li class="lo-inc-item"><p class="lo-inc-title"><?php echo esc_html((string) $extra_display['title']); ?></p><p class="lo-inc-meta"><?php echo esc_html((string) $extra_display['status']); ?></p><?php if (!empty($extra_display['url'])) : ?><a class="lo-status-link" href="<?php echo esc_url((string) $extra_display['url']); ?>" target="_blank" rel="noopener">View incident</a><?php endif; ?></li>
-                                            <?php endforeach; ?>
-                                        </ul>
-                                    </details>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                        </div>
-                        <?php if (!empty($tile['url'])) : ?>
-                            <a class="lo-status-link" data-lo-status-url href="<?php echo esc_url($tile['url']); ?>" target="_blank" rel="noopener">View status →</a>
-                        <?php endif; ?>
-                    </article>
+                    $state_class = sanitize_html_class(strtolower(str_replace(' ', '-', $state_label)));
+                    $last_checked = $format_datetime($tile['checked_at'] ?? $tile['fetched_at'] ?? $tile['updated_at'] ?? null);
+                    $status_url = (string) ($tile['url'] ?? $tile['link'] ?? '');
+                ?>
+                    <div class="lo-services__row lo-services__row--<?php echo esc_attr($state_class); ?>" data-lo-provider-row="<?php echo esc_attr($slug); ?>" role="row">
+                        <span role="cell"><strong><?php echo esc_html((string) ($tile['name'] ?? ucfirst($slug))); ?></strong></span>
+                        <span role="cell"><span class="lo-pill status--<?php echo esc_attr($state_class); ?>"><?php echo esc_html($state_label); ?></span></span>
+                        <span role="cell"><?php echo esc_html($last_checked); ?></span>
+                        <span role="cell"><?php if ('' !== $status_url) : ?><a class="lo-status-link" href="<?php echo esc_url($status_url); ?>" target="_blank" rel="noopener">Open</a><?php else : ?>—<?php endif; ?></span>
+                    </div>
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php echo render_subscribe_shortcode(); ?>
     </div>
     <?php
     $output = (string) ob_get_clean();

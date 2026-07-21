@@ -1,8 +1,8 @@
 {
-  "git_commit_sha": "3a7af0490c8cf3fda1cb4afb580d185f899df489",
-  "plugin_version": "0.3.8",
-  "zip_sha256": "79d2f2fa57bd9732b8fdb52b1048a8018caad071c95569ed7711744d4b4cf5d6",
-  "build_timestamp": "2026-07-21T18:03:51Z",
+  "git_commit_sha": "2b6184956422c8ff8d42477419611021eefdcc3a",
+  "plugin_version": "0.3.9",
+  "zip_sha256": "52104487fbe807e76dbcfa0da96f4237838c3790c30133f243f56664ff5384c7",
+  "build_timestamp": "2026-07-21T18:33:10Z",
   "canonical_source_path": "lousy-outages/",
   "files": [
     "lousy-outages/README.md",
