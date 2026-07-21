@@ -578,7 +578,7 @@ function get_lousy_outages_home_teaser_data(): array {
     }
 
     $incidents = method_exists( '\SuzyEaston\LousyOutages\Summary', 'ordered_current_incidents' )
-        ? \SuzyEaston\LousyOutages\Summary::ordered_current_incidents( 5 )
+        ? \SuzyEaston\LousyOutages\Summary::ordered_current_incidents( 0 )
         : [];
 
     if ( ! is_array( $incidents ) ) {
@@ -588,25 +588,56 @@ function get_lousy_outages_home_teaser_data(): array {
 
     $last_checked_raw = function_exists( 'lousy_outages_get_last_fetched_iso' ) ? lousy_outages_get_last_fetched_iso() : '';
     $last_checked = lousy_outages_home_format_incident_time( $last_checked_raw );
-    $rows = [];
+    $groups = [];
 
-    foreach ( array_slice( $incidents, 0, 5 ) as $incident ) {
+    foreach ( $incidents as $incident ) {
         if ( ! is_array( $incident ) ) {
             continue;
         }
         $provider_id = sanitize_title( (string) ( $incident['provider_id'] ?? $incident['provider'] ?? '' ) );
-        $fallback_href = $provider_id ? home_url( '/lousy-outages/#provider-' . $provider_id ) : $dashboard_url;
-        $href = trim( (string) ( $incident['url'] ?? '' ) );
+        $provider = trim( (string) ( $incident['provider'] ?? 'Unknown provider' ) );
+        if ( '' === $provider_id ) {
+            $provider_id = sanitize_title( $provider );
+        }
+        if ( ! isset( $groups[ $provider_id ] ) ) {
+            $groups[ $provider_id ] = [
+                'provider' => $provider,
+                'count'    => 0,
+                'regions'  => [],
+                'latest'   => '',
+                'href'     => $provider_id ? home_url( '/lousy-outages/#provider-' . $provider_id ) : $dashboard_url,
+                'tone'     => lousy_outages_home_incident_tone( (string) ( $incident['severity'] ?? $incident['status'] ?? '' ) ),
+            ];
+        }
+        $groups[ $provider_id ]['count']++;
+        foreach ( [ $incident['region_name'] ?? '', $incident['region_code'] ?? '' ] as $region ) {
+            $region = trim( (string) $region );
+            if ( '' !== $region && ! in_array( $region, $groups[ $provider_id ]['regions'], true ) ) {
+                $groups[ $provider_id ]['regions'][] = $region;
+            }
+        }
+        $latest = (string) ( $incident['last_official_update'] ?? $incident['updated_at'] ?? $incident['updatedAt'] ?? '' );
+        if ( strtotime( $latest ) > strtotime( (string) $groups[ $provider_id ]['latest'] ) ) {
+            $groups[ $provider_id ]['latest'] = $latest;
+        }
+        $url = trim( (string) ( $incident['url'] ?? '' ) );
+        if ( '' !== $url ) { $groups[ $provider_id ]['href'] = $url; }
+    }
+
+    $rows = [];
+    foreach ( array_slice( $groups, 0, 3, true ) as $provider_id => $group ) {
         $rows[] = [
-            'provider' => trim( (string) ( $incident['provider'] ?? 'Unknown provider' ) ),
-            'message'  => trim( (string) ( $incident['summary'] ?? 'Incident reported' ) ),
-            'label'    => trim( (string) ( $incident['status_label'] ?? $incident['status'] ?? 'Status' ) ),
-            'started'  => lousy_outages_home_format_incident_time( $incident['started_at'] ?? '' ),
-            'updated'  => lousy_outages_home_format_incident_time( $incident['updated_at'] ?? '' ),
-            'href'     => $href !== '' ? $href : $fallback_href,
-            'tone'     => lousy_outages_home_incident_tone( (string) ( $incident['severity'] ?? $incident['status'] ?? '' ) ),
+            'provider' => $group['provider'],
+            'message'  => sprintf( '%d ongoing regional %s', (int) $group['count'], 1 === (int) $group['count'] ? 'disruption' : 'disruptions' ),
+            'label'    => 'Active incidents',
+            'started'  => '',
+            'updated'  => lousy_outages_home_format_incident_time( $group['latest'] ),
+            'href'     => $group['href'],
+            'tone'     => $group['tone'],
+            'region'   => implode( ' and ', array_slice( $group['regions'], 0, 3 ) ),
         ];
     }
+    $more_providers = max( 0, count( $groups ) - count( $rows ) );
 
     if ( empty( $rows ) ) {
         $current = method_exists( '\SuzyEaston\LousyOutages\Summary', 'current' ) ? \SuzyEaston\LousyOutages\Summary::current() : [];
@@ -629,6 +660,7 @@ function get_lousy_outages_home_teaser_data(): array {
         'rows'     => $rows,
         'last_checked' => $last_checked,
         'stale'    => false,
+        'more_providers' => $more_providers ?? 0,
     ];
 }
 

@@ -8,6 +8,21 @@ if (! defined('ABSPATH')) { exit; }
  * This accessor is intentionally read-only: no provider collection, history rebuild,
  * migration, synthetic fallback snapshot, or cache write is performed here.
  */
+function lousy_outages_current_state_incident_ids(array $incidents): array {
+    $ids = [];
+    foreach ($incidents as $incident) {
+        if (!is_array($incident)) { continue; }
+        $provider = sanitize_key((string)($incident['provider_id'] ?? $incident['provider'] ?? ''));
+        $id = trim((string)($incident['id'] ?? $incident['guid'] ?? ''));
+        if ('' === $id) {
+            $id = sha1($provider . '|' . (string)($incident['title'] ?? $incident['display_title'] ?? $incident['summary'] ?? '') . '|' . (string)($incident['started_at'] ?? $incident['startedAt'] ?? '') . '|' . (string)($incident['updated_at'] ?? $incident['updatedAt'] ?? $incident['last_official_update'] ?? ''));
+        }
+        $ids[] = $provider . ':' . $id;
+    }
+    sort($ids);
+    return $ids;
+}
+
 function lousy_outages_get_current_state(): array {
     $snapshot = get_option('lousy_outages_snapshot', []);
     $schema = defined('LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION') ? (int) LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION : 0;
@@ -27,7 +42,16 @@ function lousy_outages_get_current_state(): array {
         $base['errors'][] = ['code'=>'missing_or_invalid_snapshot','message'=>'No valid saved Lousy Outages snapshot is available.'];
         return $base;
     }
-    $state = isset($snapshot['current_state']) && is_array($snapshot['current_state']) ? $snapshot['current_state'] : (function_exists('lousy_outages_current_state_from_snapshot') ? lousy_outages_current_state_from_snapshot($snapshot) : []);
+    $derived_state = function_exists('lousy_outages_current_state_from_snapshot') ? lousy_outages_current_state_from_snapshot($snapshot) : [];
+    $stored_state = isset($snapshot['current_state']) && is_array($snapshot['current_state']) ? $snapshot['current_state'] : [];
+    $derived_outage_ids = lousy_outages_current_state_incident_ids((array)($derived_state['outages'] ?? []));
+    $stored_outage_ids = lousy_outages_current_state_incident_ids((array)($stored_state['outages'] ?? []));
+    $stored_count = (int)($stored_state['meta']['active_outage_count'] ?? count((array)($stored_state['outages'] ?? [])));
+    $derived_count = count((array)($derived_state['outages'] ?? []));
+    $state = $stored_state;
+    if (!$state || $stored_count !== $derived_count || $stored_outage_ids !== $derived_outage_ids) {
+        $state = $derived_state;
+    }
     foreach (['outages','signals','unverified','operational'] as $lane) { $base[$lane] = array_values(array_filter((array)($state[$lane] ?? []), 'is_array')); }
     $base['providers'] = array_values(array_filter((array)($snapshot['providers'] ?? []), 'is_array'));
     $base['fetched_at'] = (string)($snapshot['fetched_at'] ?? '');

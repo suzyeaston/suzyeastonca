@@ -2753,3 +2753,28 @@
   .lo-hero { margin-top: 0; }
   .lo-card { padding: .9rem; }
 }
+
+/* Product polish for compact Lousy Outages layout. */
+.lo-status-board__title,
+.lo-block-title,
+.lo-subscribe__title { line-height: 1.15; }
+.lo-inc-details { margin-top: .75rem; }
+.lo-inc-details summary,
+.lo-subscribe__summary { min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; color: #2affd5; font-weight: 700; }
+.lo-inc-details summary:focus-visible,
+.lo-subscribe__summary:focus-visible,
+.lo-history__retry:focus-visible,
+.lo-link:focus-visible,
+.lo-status-link:focus-visible { outline: 3px solid #ffe66d; outline-offset: 3px; }
+.lo-subscribe__details { border: 1px solid rgba(42,255,213,.45); padding: .75rem; background: rgba(5,5,16,.72); }
+.lo-subscribe__form { margin-top: .75rem; }
+.lo-history__error { color: #ffe66d; }
+.lo-home-alert__region { display: block; margin-top: .35rem; color: #2affd5; }
+@media (max-width: 420px) {
+  .lousy-outages { font-size: 16px; }
+  .lo-actions, .lo-history__controls { gap: .65rem; }
+  .lo-link, .lo-status-link, .lo-subscribe__button, .lo-settings__button { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lousy-outages *, .lo-home-teaser * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

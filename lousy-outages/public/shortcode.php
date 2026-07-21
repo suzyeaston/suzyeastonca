@@ -806,7 +806,7 @@ function render_shortcode(): string {
         <div class="lo-hero" data-lo-hero hidden>
             <article class="lo-card lo-card--hero">
                 <div class="lo-head">
-                    <h3 class="lo-title">No confirmed incidents in the saved provider snapshot</h3>
+                    <h3 class="lo-title">No confirmed current incidents</h3>
                 </div>
                 <p class="lo-summary">Official provider feeds are checked by the scheduled refresh; emerging signals and verification delays appear above when present.</p>
                 <p class="lo-card-meta">Last checked: <span data-lo-hero-time>—</span></p>
@@ -843,7 +843,7 @@ function render_shortcode(): string {
                     <li class="lo-history__item lo-history__item--placeholder">Loading incidents…</li>
                 </ol>
                 <p class="lo-history__empty" data-lo-history-empty hidden>No service incidents in the past 30 days.</p>
-                <p class="lo-history__error" data-lo-history-error hidden>Unable to load incident history right now. <button type="button" class="lo-history__retry" data-lo-history-retry>Retry</button></p>
+                <p class="lo-history__error" data-lo-history-error hidden>Incident history could not be loaded. Current status is still available. <button type="button" class="lo-history__retry" data-lo-history-retry>Retry</button></p>
             </div>
         </section>
         <?php echo render_subscribe_shortcode(); ?>
@@ -1022,6 +1022,15 @@ function render_shortcode(): string {
                                         <?php endif; ?>
                                     </li>
                                 </ul>
+                                <?php if (count($active_incidents) > 1) : ?>
+                                    <details class="lo-inc-details"><summary><?php echo esc_html('Show ' . (count($active_incidents) - 1) . ' more ' . (count($active_incidents) === 2 ? 'incident' : 'incidents')); ?></summary>
+                                        <ul class="lo-inc-list">
+                                            <?php foreach (array_slice($active_incidents, 1) as $extra_incident) : $extra_display = $build_incident_display((array) $extra_incident, $provider_name, (string) $label); ?>
+                                                <li class="lo-inc-item"><p class="lo-inc-title"><?php echo esc_html((string) $extra_display['title']); ?></p><p class="lo-inc-meta"><?php echo esc_html((string) $extra_display['status']); ?></p><?php if (!empty($extra_display['url'])) : ?><a class="lo-status-link" href="<?php echo esc_url((string) $extra_display['url']); ?>" target="_blank" rel="noopener">View incident</a><?php endif; ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </details>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                         <?php if (!empty($tile['url'])) : ?>
@@ -1104,9 +1113,9 @@ function render_subscribe_shortcode(): string {
     ob_start();
     ?>
     <div class="lo-subscribe" data-lo-subscribe>
-        <h2 class="lo-subscribe__title">Subscribe by email or RSS</h2>
-        <p class="lo-subscribe__intro">Get outage alerts in your inbox or follow the <a href="<?php echo $rss_url; ?>" target="_blank" rel="noopener">RSS feed</a>.</p>
-        <form class="lo-subscribe__form" method="post" action="<?php echo esc_url($endpoint); ?>" data-lo-subscribe-form>
+        <h2 class="lo-subscribe__title">Get outage alerts</h2>
+        <p class="lo-subscribe__intro">Free: public current status, recent history and basic <a href="<?php echo $rss_url; ?>" target="_blank" rel="noopener">RSS access</a>. Email alerts are an early preference-based option designed to support selected-provider alerts, digests and future supporter pricing without locking the dashboard away.</p>
+        <details class="lo-subscribe__details"><summary class="lo-subscribe__summary">Choose alert preferences</summary><form class="lo-subscribe__form" method="post" action="<?php echo esc_url($endpoint); ?>" data-lo-subscribe-form>
             <label class="lo-subscribe__label" for="<?php echo esc_attr($email_id); ?>">
                 <span>Email</span>
                 <input
@@ -1120,8 +1129,8 @@ function render_subscribe_shortcode(): string {
                 />
             </label>
             <fieldset class="lo-subscribe__fieldset">
-                <legend class="lo-subscribe__legend">Choose your outage alerts</legend>
-                <p class="lo-subscribe__note">Pick the services you care about. Leave everything checked if you want the full service incident feed.</p>
+                <legend class="lo-subscribe__legend">Alert preferences</legend>
+                <p class="lo-subscribe__note">Pick selected providers now; billing or supporter status can be added later without changing these consent preferences.</p>
                 <div class="lo-subscribe__provider-grid">
                     <?php foreach ($providers as $provider) : $provider_id = sanitize_key((string) ($provider['id'] ?? '')); if ('' === $provider_id) { continue; } ?>
                         <label class="lo-subscribe__checkbox">
@@ -1132,10 +1141,10 @@ function render_subscribe_shortcode(): string {
                 </div>
             </fieldset>
             <fieldset class="lo-subscribe__fieldset lo-subscribe__prefs">
-                <legend class="lo-subscribe__legend">Delivery preferences</legend>
-                <label class="lo-subscribe__checkbox"><input type="checkbox" name="realtime_alerts" value="1" checked /> <span>Real-time incident alerts</span></label>
-                <label class="lo-subscribe__checkbox"><input type="checkbox" name="daily_digest" value="1" /> <span>Daily digest</span></label>
-                <label class="lo-subscribe__checkbox"><input type="checkbox" name="newsletter" value="1" /> <span>Product updates / newsletter</span></label>
+                <legend class="lo-subscribe__legend">Delivery and quietness</legend>
+                <label class="lo-subscribe__checkbox"><input type="checkbox" name="realtime_alerts" value="1" checked /> <span>Urgent incident alerts</span></label>
+                <label class="lo-subscribe__checkbox"><input type="checkbox" name="daily_digest" value="1" /> <span>Optional daily digest</span></label>
+                <label class="lo-subscribe__checkbox"><input type="checkbox" name="newsletter" value="1" /> <span>Product updates / supporter news</span></label>
                 <p class="lo-subscribe__note">We’ll only use this to send the outage updates you request. You can unsubscribe anytime.</p>
             </fieldset>
             <div class="lo-subscribe__label lo-subscribe__challenge">
@@ -1167,7 +1176,7 @@ function render_subscribe_shortcode(): string {
             <input type="hidden" name="_wpnonce" value="<?php echo esc_attr($nonce); ?>" />
             <button type="submit" class="lo-subscribe__button">Subscribe</button>
             <p class="lo-subscribe__status" data-lo-subscribe-status aria-live="polite"></p>
-        </form>
+        </form></details>
         <p class="lo-subscribe__help">Watch for the confirmation email (check spam if it’s missing). Every briefing ships with a one-click unsubscribe link, and we rotate a Steve Jobs quote to stop spam bots.</p>
     </div>
     <?php
