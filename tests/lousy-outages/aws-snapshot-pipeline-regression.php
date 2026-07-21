@@ -7,7 +7,7 @@ if (!defined('MINUTE_IN_SECONDS')) define('MINUTE_IN_SECONDS', 60);
 if (!defined('HOUR_IN_SECONDS')) define('HOUR_IN_SECONDS', 3600);
 if (!defined('YEAR_IN_SECONDS')) define('YEAR_IN_SECONDS', 31536000);
 if (!function_exists('plugin_dir_path')) { function plugin_dir_path($f){ return dirname($f) . '/'; } }
-if (!function_exists('plugin_dir_url')) { function plugin_dir_url($f){ return 'https://example.com/wp-content/plugins/lousy-outages/'; } }
+if (!function_exists('plugin_dir_url')) { function plugin_dir_url($f){ return 'https://example.com/wp-content/lousy-outages/'; } }
 if (!function_exists('add_action')) { function add_action(...$args){} }
 if (!function_exists('add_filter')) { function add_filter(...$args){} }
 if (!function_exists('apply_filters')) { function apply_filters($tag,$value){ return $value; } }
@@ -31,7 +31,7 @@ if (!function_exists('update_option')) { function update_option($k,$v,$autoload=
 if (!function_exists('get_transient')) { function get_transient($k){ return $GLOBALS['lo_transients'][$k] ?? false; } }
 if (!function_exists('set_transient')) { function set_transient($k,$v,$ttl=0){ $GLOBALS['lo_transients'][$k]=$v; return true; } }
 
-require __DIR__ . '/../../plugins/lousy-outages/lousy-outages.php';
+require __DIR__ . '/../../lousy-outages/lousy-outages.php';
 
 use SuzyEaston\LousyOutages\Fetcher;
 use function SuzyEaston\LousyOutages\Adapters\from_rss_atom;

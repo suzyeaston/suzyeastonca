@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
-require_once __DIR__ . '/../plugins/lousy-outages/includes/ExternalSignals.php';
+require_once __DIR__ . '/../lousy-outages/includes/ExternalSignals.php';
 
 $sql = SuzyEaston\LousyOutages\ExternalSignals::schema_sql('wp_lo_external_signals', '');
 if (strpos($sql, '`KEY`') !== false || strpos($sql, '(source,KEY') !== false) { echo "FAIL bad-key-artifact\n"; exit(1); }

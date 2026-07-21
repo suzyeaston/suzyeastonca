@@ -1,6 +1,0 @@
-Plugin: Lousy Outages
-Version: 0.3.0
-Expected ZIP: build/lousy-outages-0.3.0.zip
-Build command: ./scripts/build-lousy-outages-zip.sh
-Expected SHA-256: 783184550c0655cb3ae4ff186ee0bd27d8a9a428cc7fe9e84986fa58a496fcdc
-ZIP root check: lousy-outages/lousy-outages.php

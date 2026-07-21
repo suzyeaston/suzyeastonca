@@ -16,7 +16,7 @@ class Fetcher { public static function status_label($s){ return ucwords(str_repl
 class Store { public function get_all(){ return []; } }
 }
 namespace {
-require_once __DIR__ . '/../plugins/lousy-outages/includes/Summary.php';
+require_once __DIR__ . '/../lousy-outages/includes/Summary.php';
 function assert_true($cond, $msg){ if(!$cond){ fwrite(STDERR, "FAIL: $msg\n"); exit(1);} }
 function set_snapshot(array $providers): void { $GLOBALS['lo_test_snapshot'] = ['providers'=>$providers, 'fetched_at'=>'2026-07-19T10:00:00Z']; }
 $base = '2026-07-19T10:00:00Z';
@@ -40,7 +40,7 @@ set_snapshot([['id'=>'aws','name'=>'AWS','stateCode'=>'degraded','tile_kind'=>'o
 assert_true(\SuzyEaston\LousyOutages\Summary::ordered_current_incidents(5)===[], 'old ambiguous AWS entry is not current');
 set_snapshot([['id'=>'aws','name'=>'AWS','stateCode'=>'operational','tile_kind'=>'outage','updatedAt'=>$base,'incidents'=>[['title'=>'Operational issue - Multiple services (UAE)','summary'=>'This issue is now resolved.','status'=>'resolved','impact'=>'operational','updatedAt'=>$base],['title'=>'Operational issue - Multiple services (UAE)','summary'=>'Service disruption in ME-CENTRAL-1.','status'=>'major','impact'=>'major','updatedAt'=>'2026-04-30T12:00:00Z']]]]);
 assert_true(\SuzyEaston\LousyOutages\Summary::ordered_current_incidents(5)===[], 'new resolution suppresses older outage in current selector');
-$summary = file_get_contents(__DIR__ . '/../plugins/lousy-outages/includes/Summary.php');
+$summary = file_get_contents(__DIR__ . '/../lousy-outages/includes/Summary.php');
 assert_true(str_contains($summary, "'eta'") && strpos($summary, "incident['impact'] ?? incident['status']") === false, 'WordPress-loaded plugin tree contains repaired Summary implementation');
 $functions = file_get_contents(__DIR__ . '/../functions.php'); $part = file_get_contents(__DIR__ . '/../parts/lousy-outages-teaser.php'); $js = file_get_contents(__DIR__ . '/../assets/js/lousy-outages-teaser.js');
 assert_true(str_contains($functions, 'lousy-outages/v1/summary') && str_contains($part, 'lousy-outages/v1/summary'), 'homepage endpoint configuration is summary');

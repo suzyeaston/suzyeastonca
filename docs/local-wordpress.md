@@ -86,4 +86,4 @@ The Playwright smoke suite checks critical pages, browser console/page errors, t
 
 - External AI/API-dependent features still need keys in your real environment; the local setup is intended to validate front-end behavior, WordPress routing/templates, REST surfaces, and graceful UI states.
 - The WordPress container mounts this repository at `wp-content/themes/suzyeastonca`.
-- The Lousy Outages plugin is mounted from `plugins/lousy-outages` at `wp-content/plugins/lousy-outages`.
+- The Lousy Outages plugin is mounted from `lousy-outages` at `wp-content/lousy-outages`.

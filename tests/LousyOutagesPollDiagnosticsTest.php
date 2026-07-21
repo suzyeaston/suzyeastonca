@@ -15,7 +15,7 @@ if (!function_exists('home_url')) { function home_url($p=''){ return 'https://ex
 if (!function_exists('register_activation_hook')) { function register_activation_hook(...$args){ return true; } }
 if (!function_exists('register_deactivation_hook')) { function register_deactivation_hook(...$args){ return true; } }
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-require_once __DIR__ . '/../plugins/lousy-outages/lousy-outages.php';
+require_once __DIR__ . '/../lousy-outages/lousy-outages.php';
 
 $unknown = lousy_outages_format_external_collection_summary(['sources_attempted'=>3,'stored'=>0,'errors'=>[]]);
 if (strpos($unknown, 'Last unknown') !== false || strpos($unknown, 'No successful external collection yet') === false) { echo "FAIL\n"; exit(1); }
