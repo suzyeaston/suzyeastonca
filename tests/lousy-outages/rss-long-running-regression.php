@@ -5,8 +5,8 @@ if (!defined('DAY_IN_SECONDS')) define('DAY_IN_SECONDS', 86400);
 if (!function_exists('wp_json_encode')) { function wp_json_encode($v) { return json_encode($v); } }
 if (!function_exists('wp_strip_all_tags')) { function wp_strip_all_tags($v) { return strip_tags((string) $v); } }
 
-require __DIR__ . '/../../plugins/lousy-outages/includes/Adapters.php';
-require __DIR__ . '/../../plugins/lousy-outages/includes/Fetcher.php';
+require __DIR__ . '/../../lousy-outages/includes/Adapters.php';
+require __DIR__ . '/../../lousy-outages/includes/Fetcher.php';
 
 use SuzyEaston\LousyOutages\Fetcher;
 use function SuzyEaston\LousyOutages\Adapters\from_rss_atom;

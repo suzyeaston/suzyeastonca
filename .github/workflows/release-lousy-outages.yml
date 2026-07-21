@@ -1,0 +1,51 @@
+name: Release Lousy Outages
+
+on:
+  push:
+    tags:
+      - 'lousy-outages-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - name: PHP lint plugin
+        run: find lousy-outages -path 'lousy-outages/tests' -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Run focused tests
+        run: |
+          php tests/lousy-outages/repository-architecture-test.php
+          php lousy-outages/tests/history-store-test.php
+      - name: Build release ZIP
+        run: scripts/build-lousy-outages-release.sh
+      - name: Validate release ZIP
+        run: |
+          test -f dist/lousy-outages.zip
+          test -f dist/lousy-outages.zip.sha256
+          test -f dist/release-manifest.json
+          sha256sum -c dist/lousy-outages.zip.sha256
+          php tests/lousy-outages/wp-install-upgrade-architecture-test.php
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lousy-outages-release
+          path: |
+            dist/lousy-outages.zip
+            dist/lousy-outages.zip.sha256
+            dist/release-manifest.json
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/lousy-outages.zip
+            dist/lousy-outages.zip.sha256
+            dist/release-manifest.json

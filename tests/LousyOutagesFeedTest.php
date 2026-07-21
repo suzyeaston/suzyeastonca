@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 
-$feedFile = __DIR__ . '/../plugins/lousy-outages/includes/Feeds.php';
+$feedFile = __DIR__ . '/../lousy-outages/includes/Feeds.php';
 $src = file_get_contents($feedFile);
 if (!is_string($src) || $src === '') { echo "FAIL: unreadable feed file\n"; exit(1); }
 

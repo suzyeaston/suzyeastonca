@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.3.0
+ * Version: 0.3.1
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.3.0' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.3.1' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 3 );
@@ -91,19 +91,13 @@ lousy_outages_require( 'includes/Cron/Refresh.php' );
 // External signal infrastructure must load before concrete source classes.
 lousy_outages_require( 'includes/SignalSourceInterface.php' );
 lousy_outages_require( 'includes/ExternalSignals.php' );
-lousy_outages_require( 'includes/Sources/SourcePack.php' );
+lousy_outages_require( 'includes/Sources/ProviderFeedSource.php' );
 lousy_outages_require( 'includes/Sources/SourceBudgetManager.php' );
 lousy_outages_require( 'includes/Sources/ChatterRejectionReasons.php' );
 lousy_outages_require( 'includes/Sources/StatuspageIntelSource.php' );
-lousy_outages_require( 'includes/Sources/ProviderFeedSource.php' );
-lousy_outages_require( 'includes/Sources/HackerNewsChatterSource.php' );
-lousy_outages_require( 'includes/Sources/CommunityReportIntelSource.php' );
-lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php' );
-lousy_outages_require( 'includes/Sources/PublicChatterSource.php' );
-lousy_outages_require( 'includes/Sources/RedditFieldReportsSource.php' );
-lousy_outages_require( 'includes/Sources/CloudflareRadarSource.php' );
 lousy_outages_require( 'includes/SignalCollector.php' );
 lousy_outages_require( 'includes/Api.php' );
+lousy_outages_require( 'includes/AdminCleanup.php' );
 
 lousy_outages_require( 'public/shortcode.php' );
 
@@ -135,6 +129,7 @@ Feeds::bootstrap();
 MailTransport::bootstrap();
 IncidentAlerts::bootstrap();
 RefreshCron::bootstrap();
+\SuzyEaston\LousyOutages\AdminCleanup::bootstrap();
 
 lo_snapshot_bootstrap();
 lo_cron_bootstrap();
@@ -163,11 +158,6 @@ function lousy_outages_activate() {
     }
     if ( ! wp_next_scheduled( 'lo_check_statuses' ) ) {
         wp_schedule_event( time() + 60, 'lo_five_minutes', 'lo_check_statuses' );
-    }
-    if ( ! wp_next_scheduled( 'lousy_outages_collect_external_signals' ) ) {
-        $schedule = wp_get_schedules();
-        $key = isset($schedule['lousy_outages_15min']) ? 'lousy_outages_15min' : 'hourly';
-        wp_schedule_event( time() + 120, $key, 'lousy_outages_collect_external_signals' );
     }
     if ( function_exists( 'lo_cron_activate' ) ) {
         lo_cron_activate();
@@ -230,7 +220,6 @@ function lousy_outages_deactivate() {
     wp_clear_scheduled_hook( 'lousy_outages_poll' );
     wp_clear_scheduled_hook( 'lousy_outages_cron_refresh' );
     wp_clear_scheduled_hook( 'lo_check_statuses' );
-    wp_clear_scheduled_hook( 'lousy_outages_collect_external_signals' );
     Subscriptions::clear_schedule();
     if ( function_exists( 'lo_cron_deactivate' ) ) {
         lo_cron_deactivate();
@@ -1841,8 +1830,6 @@ add_action( 'rest_api_init', function () {
     ] );
 } );
 
-add_action( 'lousy_outages_collect_external_signals', static function () { SignalCollector::collect(['collection_trigger'=>'cron']); } );
-
 add_action( 'admin_post_lousy_outages_collect_signals_now', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_collect_signals_now'); $r=SignalCollector::collect(['collection_trigger'=>'admin']); if (class_exists('SuzyEaston\LousyOutages\Feeds')) { SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache(); } set_transient('lousy_outages_notice',['message'=>sprintf('External signal collection finished. Stored %d signals.',(int)($r['total_stored']??0)),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );
 add_action( 'admin_post_lousy_outages_seed_demo_external_signals', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_seed_demo_external_signals'); $r=ExternalSignals::seed_demo_signals(); if (class_exists('SuzyEaston\LousyOutages\Feeds')) { SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache(); } set_transient('lousy_outages_notice',['message'=>sprintf('Seeded %d demo external signals.',(int)($r['inserted']??0)),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );
 add_action( 'admin_post_lousy_outages_clear_demo_external_signals', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_clear_demo_external_signals'); $c=ExternalSignals::clear_demo_signals(); if (class_exists('SuzyEaston\LousyOutages\Feeds')) { SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache(); } set_transient('lousy_outages_notice',['message'=>sprintf('Cleared %d demo external signals.',(int)$c),'type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );
@@ -1855,4 +1842,3 @@ function lousy_outages_admin_external_signals_page() { echo '<div class="wrap"><
 
 
 add_action( 'admin_post_lousy_outages_clear_rss_feed_cache', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_clear_rss_feed_cache'); if (class_exists('SuzyEaston\LousyOutages\Feeds')) { SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache(); } set_transient('lousy_outages_notice',['message'=>'RSS feed cache cleared.','type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );
-add_action( 'admin_post_lousy_outages_public_chatter_dry_run', function () { if(!current_user_can('manage_options')){wp_die(esc_html__('Sorry, you are not allowed to access this page.','lousy-outages'));} check_admin_referer('lousy_outages_public_chatter_dry_run'); $source = new SuzyEaston\LousyOutages\Sources\PublicChatterSource(); $signals = $source->collect(['dry_run'=>true]); update_option('lousy_outages_public_chatter_dry_run',['ran_at'=>gmdate('c'),'signals_found'=>count($signals),'providers'=>array_values(array_unique(array_map(static function($s){return (string)($s['provider_id']??'');},$signals))),'queries_attempted'=>0,'mentions_found'=>count($signals),'thresholds'=>['watch'=>(int)apply_filters('lo_public_chatter_watch_threshold',3),'trending'=>(int)apply_filters('lo_public_chatter_trending_threshold',6),'hot'=>(int)apply_filters('lo_public_chatter_hot_threshold',12)],'would_create_signal'=>!empty($signals),'errors'=>[]],false); set_transient('lousy_outages_notice',['message'=>'Public Chatter dry run completed.','type'=>'success'],30); wp_safe_redirect(add_query_arg('page','lousy-outages-settings',admin_url('admin.php'))); exit; } );

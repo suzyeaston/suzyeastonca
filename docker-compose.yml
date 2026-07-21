@@ -36,7 +36,7 @@ services:
     volumes:
       - wp_core:/var/www/html
       - ./:/var/www/html/wp-content/themes/suzyeastonca
-      - ./plugins/lousy-outages:/var/www/html/wp-content/plugins/lousy-outages
+      - ./lousy-outages:/var/www/html/wp-content/plugins/lousy-outages
 
   wpcli:
     image: wordpress:cli-php8.2
@@ -53,7 +53,7 @@ services:
     volumes:
       - wp_core:/var/www/html
       - ./:/var/www/html/wp-content/themes/suzyeastonca
-      - ./plugins/lousy-outages:/var/www/html/wp-content/plugins/lousy-outages
+      - ./lousy-outages:/var/www/html/wp-content/plugins/lousy-outages
     working_dir: /var/www/html
     entrypoint: ["wp"]
 

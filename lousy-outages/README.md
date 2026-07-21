@@ -111,9 +111,7 @@ Use these shell snippets on hosts where WP-CLI is unavailable:
 Before replacing the production plugin, run:
 
 - `php -l wp-content/plugins/lousy-outages/lousy-outages.php`
-- `php wp-content/plugins/lousy-outages/scripts/smoke-signal-sources.php /var/www/html/wp-load.php`
-- `php wp-content/plugins/lousy-outages/scripts/smoke-intel-source-pack.php`
-- `php wp-content/plugins/lousy-outages/scripts/smoke-production-preflight.php /var/www/html/wp-load.php`
+- `php wp-content/plugins/lousy-outages/lousy-outages.php`
 
 The smoke script bootstraps WordPress (`require wp-load.php`), calls `\SuzyEaston\LousyOutages\SignalCollector::sources()`, and validates for each source:
 
@@ -127,7 +125,6 @@ If this check fails, do not deploy.
 
 ## Canonical deployment path
 
-- **Deploy from `plugins/lousy-outages/`, the same tree mounted by local Docker into `wp-content/plugins/lousy-outages`.**
-- The top-level `lousy-outages/` mirror must not drift from `plugins/lousy-outages/`; the drift checker fails on deploy-critical differences.
-- Before deploy, run `./scripts/check-lousy-outages-tree-drift.sh` from repo root; if it fails, reconcile the mirror from `plugins/lousy-outages/` first.
+- **Deploy from the canonical repository source `lousy-outages/` only.**
+- Build releases with `./scripts/build-lousy-outages-release.sh`; do not use mirrored source trees or manual ZIP layouts.
 - Swap plugin folder with rollback copy ready; do not deploy if smoke scripts fail.
