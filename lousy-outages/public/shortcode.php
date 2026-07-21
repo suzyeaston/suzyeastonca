@@ -210,8 +210,8 @@ function render_shortcode(): string {
         $config = [
             'endpoint'          => esc_url_raw(rest_url('lousy-outages/v1/summary')),
             'pollInterval'      => $refresh_interval,
-            'refreshEndpoint'   => esc_url_raw(rest_url('lousy-outages/v1/refresh')),
-            'refreshNonce'      => wp_create_nonce('wp_rest'),
+            'refreshEndpoint'   => current_user_can('manage_options') ? esc_url_raw(rest_url('lousy-outages/v1/refresh')) : '',
+            'refreshNonce'      => current_user_can('manage_options') ? wp_create_nonce('wp_rest') : '',
             'subscribeEndpoint' => esc_url_raw(rest_url('lousy-outages/v1/subscribe')),
             'snapshotEndpoint'  => $snapshot_endpoint,
             'historyEndpoint'   => esc_url_raw(rest_url('lousy-outages/v1/history')),
@@ -534,22 +534,6 @@ function render_shortcode(): string {
     $fetched_label = ('snapshot' === strtolower((string) $source))
         ? 'Outage info last refreshed:'
         : 'Outage info fetched:';
-    $external_query = rawurlencode('service outage');
-    $external_links = [
-        [
-            'label' => 'Twitter/X search',
-            'url'   => 'https://x.com/search?q=' . $external_query,
-        ],
-        [
-            'label' => 'Reddit search',
-            'url'   => 'https://www.reddit.com/search/?q=' . $external_query,
-        ],
-        [
-            'label' => 'Web search',
-            'url'   => 'https://duckduckgo.com/?q=' . $external_query,
-        ],
-    ];
-
     ob_start();
     ?>
     <?php
@@ -574,7 +558,7 @@ function render_shortcode(): string {
                     <span data-lo-countdown>Auto-refresh ready</span>
                 </span>
                 <span class="lo-pill lo-pill--degraded" data-lo-degraded hidden>Auto-refresh degraded</span>
-                <button type="button" class="lo-link" data-lo-refresh>Refresh now</button>
+                <button type="button" class="lo-link" data-lo-refresh>Reload saved status</button>
                 <button type="button" class="lo-link" data-lo-export-csv>Export CSV</button>
                 <button type="button" class="lo-link" data-lo-export-pdf>Save PDF</button>
                 <a class="lo-link" href="<?php echo esc_url($rss_url); ?>" target="_blank" rel="noopener">Subscribe (RSS)</a>
@@ -588,7 +572,7 @@ function render_shortcode(): string {
         $fused_public = SignalEngine::summarize_fused_signals(120);
         $fused_public = is_array($fused_public) ? array_values(array_filter($fused_public, static function($r){ $c = strtolower((string)($r['classification'] ?? 'quiet')); return in_array($c,['watch','trending','hot'], true); })) : [];
         // Official fused signals are intentionally not rendered here; Active incidents is the public, non-duplicative official incident surface.
-        // Public chatter must stay quote-backed human/public reports only. Feed/synthetic/watch telemetry lanes render in dedicated sections later.
+        // Community reports must stay quote-backed human/public reports only. Feed/synthetic/watch telemetry lanes render in dedicated sections later.
         $public_chatter = array_values(array_filter($fused_public, static fn($s) => (($s['signal_lane'] ?? '') === 'chatter')));
         $hnDiag = (array) get_option('lo_diag_hacker_news_chatter', []);
         $previewSample = isset($hnDiag['chatter_candidates_preview_sample']) && is_array($hnDiag['chatter_candidates_preview_sample']) ? $hnDiag['chatter_candidates_preview_sample'] : [];
@@ -720,7 +704,7 @@ function render_shortcode(): string {
 
             <p class="lo-corroboration-radar__brief"><?php echo esc_html($radarBrief); ?></p>
 
-            <div class="lo-corroboration-radar__summary" aria-label="Public chatter scan summary">
+            <div class="lo-corroboration-radar__summary" aria-label="Community reports scan summary">
                 <?php foreach ($summaryMetrics as $metric) : ?>
                     <div class="lo-corroboration-radar__metric"><span><?php echo esc_html((string) $metric[0]); ?></span><strong><?php echo esc_html((string) $metric[1]); ?></strong><small><?php echo esc_html((string) $metric[2]); ?></small></div>
                 <?php endforeach; ?>
@@ -795,19 +779,19 @@ function render_shortcode(): string {
                             <div class="lo-head"><h4 class="lo-title"><?php echo esc_html((string)($sig['provider_name'] ?? $sig['provider_id'] ?? 'Provider')); ?></h4><span class="lo-pill">RUMOUR RADAR</span></div>
                             <p class="lo-summary">Unconfirmed public report. Needs corroboration.</p>
                             <p class="lo-message"><?php echo esc_html((string)($sig['message'] ?? 'Needs corroboration from official/synthetic signals.')); ?></p>
-                            <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Public chatter'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? null)); ?></p>
+                            <p class="lo-card-meta">Source: <?php echo esc_html($sourceLabel ?: 'Community reports'); ?><?php if ($sourceUrl !== '') : ?> · <a class="lo-link" href="<?php echo esc_url($sourceUrl); ?>" target="_blank" rel="noopener">View source</a><?php endif; ?> · Observed: <?php echo esc_html($format_datetime($sig['observed_at'] ?? null)); ?></p>
                         </article>
                     <?php endforeach; ?>
                 </div>
             <?php else : ?>
                 <div class="lo-corroboration-radar__empty">
-                    <h4><?php echo ($checkedTotal > 0 || !empty($rejectSummary) || !empty($previewSample)) ? esc_html('Public chatter scan complete') : esc_html('Public chatter scanner online'); ?></h4>
+                    <h4><?php echo ($checkedTotal > 0 || !empty($rejectSummary) || !empty($previewSample)) ? esc_html('Community reports scan complete') : esc_html('Community reports scanner online'); ?></h4>
                     <p><?php echo ($checkedTotal > 0 || !empty($rejectSummary) || !empty($previewSample)) ? esc_html('No credible field reports promoted. Official radar only.') : esc_html('No rumour radar hits or diagnostics available yet.'); ?></p>
                 </div>
             <?php endif; ?>
 
             <?php if (!empty($rejectSummary)) : ?>
-                <div class="lo-corroboration-radar__diagnostics" aria-label="Rejected public chatter categories">
+                <div class="lo-corroboration-radar__diagnostics" aria-label="Rejected community reports categories">
                     <h4>Filtered chatter</h4>
                     <p class="lo-corroboration-radar__diagnostic-summary">Filtered chatter: mostly historical/resolved and not actionable.</p>
                     <div class="lo-corroboration-radar__diagnostic-grid">
@@ -850,8 +834,8 @@ function render_shortcode(): string {
         <section class="lo-history" data-lo-history>
             <div class="lo-history__heading">
                 <div>
-                    <h3 class="lo-block-title">Recent incidents (Status feeds + community)</h3>
-                    <p class="lo-history__meta">Last 30 days of service incidents and early warning signals.</p>
+                    <h3 class="lo-block-title">Recent incident history</h3>
+                    <p class="lo-history__meta">Official provider incidents plus separately labelled community reports when available.</p>
                 </div>
                 <div class="lo-history__controls lo-print-hide">
                     <label>
@@ -872,33 +856,16 @@ function render_shortcode(): string {
                 </div>
             </div>
             <div class="lo-history__body">
-                <p class="lo-history__meta">Signal charts combine recent reports, public chatter, and external checks. They are early warnings, not confirmed outage counts.</p>
+                <p class="lo-history__meta">History is loaded in small pages from retained official incidents; community reports remain labelled unconfirmed when present.</p>
                 <div class="lo-history__charts" data-lo-history-charts hidden></div>
                 <ol class="lo-history__list" data-lo-history-list>
                     <li class="lo-history__item lo-history__item--placeholder">Loading incidents…</li>
                 </ol>
                 <p class="lo-history__empty" data-lo-history-empty hidden>No service incidents in the past 30 days.</p>
-                <p class="lo-history__error" data-lo-history-error hidden>Unable to load incident history right now.</p>
+                <p class="lo-history__error" data-lo-history-error hidden>Unable to load incident history right now. <button type="button" class="lo-history__retry" data-lo-history-retry>Retry</button></p>
             </div>
         </section>
         <?php echo render_subscribe_shortcode(); ?>
-        <div class="lo-external lo-print-hide" data-lo-external>
-            <article class="lo-card lo-card--external" data-provider-id="external-signals">
-                <div class="lo-head">
-                    <h3 class="lo-title">External signals (unconfirmed)</h3>
-                </div>
-                <p class="lo-summary">Quick links to community chatter and third-party status hints.</p>
-                <ul class="lo-links">
-                    <?php foreach ($external_links as $external_link) : ?>
-                        <li>
-                            <a class="lo-link" href="<?php echo esc_url($external_link['url']); ?>" target="_blank" rel="noopener">
-                                <?php echo esc_html($external_link['label']); ?>
-                            </a>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            </article>
-        </div>
         <div class="lo-settings lo-print-hide" data-lo-settings>
             <h3 class="lo-block-title">Customize view</h3>
             <p class="lo-settings__hint">Pick which providers appear below. Preferences stay on this browser only.</p>

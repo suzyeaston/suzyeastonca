@@ -2680,3 +2680,9 @@
     display: none !important;
   }
 }
+
+/* 0.3.5 layout hierarchy repair */
+.lo-history__retry { margin-left: .5rem; }
+.lo-subscribe, .lo-report, .lo-settings, .lo-history { min-width: 0; overflow-wrap: anywhere; }
+.lo-subscribe input, .lo-subscribe select, .lo-subscribe textarea, .lo-report input, .lo-report select, .lo-report textarea { max-width: 100%; min-height: 44px; }
+@media (max-width: 720px) { .lo-history__heading, .lo-history__controls { display: grid; grid-template-columns: 1fr; gap: .75rem; } .lo-subscribe form, .lo-report form { display: grid; grid-template-columns: 1fr; } }

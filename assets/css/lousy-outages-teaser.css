@@ -47,3 +47,17 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+/* 0.3.5 compact live signal repair */
+.lo-home-teaser__screen { overflow: hidden; }
+.lo-home-live-band, .lo-home-alert { min-width: 0; }
+.lo-home-alert-list { display: grid; gap: .65rem; margin: .75rem 0 0; padding: 0; list-style: none; }
+.lo-home-alert { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .45rem .75rem; align-items: center; padding: .7rem .8rem; overflow-wrap: anywhere; word-break: break-word; }
+.lo-home-alert__meta { display: flex; flex-wrap: wrap; gap: .35rem .5rem; align-items: center; min-width: 0; }
+.lo-home-alert__provider, .lo-home-alert__status { max-width: 100%; overflow-wrap: anywhere; }
+.lo-home-alert__body, .lo-home-alert__detail { grid-column: 1 / -1; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; max-height: 2.8em; }
+.lo-home-alert__detail { opacity: .82; }
+.lo-home-alert__times { display: flex; flex-wrap: wrap; gap: .35rem .7rem; min-width: 0; }
+.lo-home-alert__details { justify-self: end; white-space: nowrap; }
+.lo-home-empty, .lo-home-delayed { padding: .75rem; margin: 0; }
+@media (max-width: 640px) { .lo-home-alert { grid-template-columns: 1fr; } .lo-home-alert__details { justify-self: start; } .lo-home-live-band__providers { overflow-wrap: anywhere; } }
