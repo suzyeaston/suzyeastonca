@@ -736,6 +736,13 @@ class Fetcher {
                 'impact'     => $impact,
                 'eta'        => $this->sanitize($incident['eta'] ?? ''),
                 'url'        => $url,
+                'resolved_at' => $this->iso($incident['resolved_at'] ?? ($incident['resolvedAt'] ?? null)),
+                'source_type' => (string)($incident['source_type'] ?? ($provider['source_type'] ?? $provider['type'] ?? 'official')),
+                'is_maintenance' => !empty($incident['maintenance']) || 'maintenance' === $impact,
+                'components' => isset($incident['components']) && is_array($incident['components']) ? $incident['components'] : [],
+                'regions' => isset($incident['regions']) && is_array($incident['regions']) ? $incident['regions'] : [],
+                'timeline' => isset($incident['timeline']) && is_array($incident['timeline']) ? $incident['timeline'] : [],
+                'lifecycle_state' => $this->normalize_lifecycle_state($rawStatus ?: $impact),
             ];
             $entry = array_merge($entry, $metadata);
             $entry['display_title'] = $this->display_title($provider, $entry);
@@ -761,6 +768,31 @@ class Fetcher {
         ];
     }
 
+
+
+    private function normalize_lifecycle_state(string $state): string {
+        $state = strtolower(trim(str_replace('-', '_', $state)));
+        $map = [
+            'investigating' => 'investigating',
+            'identified' => 'identified',
+            'monitoring' => 'monitoring',
+            'degraded' => 'degraded',
+            'degraded_performance' => 'degraded',
+            'partial' => 'partial outage',
+            'partial_outage' => 'partial outage',
+            'minor' => 'degraded',
+            'major' => 'major outage',
+            'major_outage' => 'major outage',
+            'critical' => 'major outage',
+            'outage' => 'major outage',
+            'resolved' => 'resolved',
+            'completed' => 'resolved',
+            'closed' => 'resolved',
+            'maintenance' => 'scheduled maintenance',
+            'scheduled' => 'scheduled maintenance',
+        ];
+        return $map[$state] ?? ($state ?: 'investigating');
+    }
 
     private function incident_metadata(array $incident, string $text, ?string $updated, ?string $started): array {
         $metadata = [];

@@ -26,13 +26,41 @@ function from_statuspage_summary(string $json): array {
         }
         $status = strtolower((string) ($incident['status'] ?? ''));
 
+        $updates = [];
+        foreach (($incident['incident_updates'] ?? []) as $update) {
+            if (!is_array($update)) { continue; }
+            $updates[] = [
+                'id' => (string)($update['id'] ?? ''),
+                'status' => strtolower((string)($update['status'] ?? '')),
+                'body' => (string)($update['body'] ?? ''),
+                'created_at' => $update['created_at'] ?? null,
+                'updated_at' => $update['updated_at'] ?? null,
+            ];
+        }
+        $components = [];
+        foreach (($incident['components'] ?? []) as $component) {
+            if (!is_array($component)) { continue; }
+            $components[] = [
+                'id' => (string)($component['id'] ?? ''),
+                'name' => (string)($component['name'] ?? ''),
+                'status' => strtolower((string)($component['status'] ?? '')),
+            ];
+        }
+
         $incidents[] = [
             'id'         => (string) ($incident['id'] ?? ''),
             'name'       => (string) ($incident['name'] ?? 'Incident'),
+            'summary'    => isset($updates[0]['body']) ? (string)$updates[0]['body'] : '',
             'status'     => $status ?: 'investigating',
+            'impact'     => strtolower((string)($incident['impact'] ?? '')),
             'started_at' => $incident['started_at'] ?? ($incident['created_at'] ?? null),
             'updated_at' => $incident['updated_at'] ?? null,
+            'resolved_at'=> $incident['resolved_at'] ?? null,
             'shortlink'  => $incident['shortlink'] ?? null,
+            'components' => $components,
+            'timeline'   => $updates,
+            'source_type'=> 'statuspage',
+            'maintenance'=> false,
         ];
     }
 

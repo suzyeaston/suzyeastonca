@@ -33,7 +33,7 @@ class Subscriptions {
             }
 
             $columns = array_map('strtolower', $columns);
-            foreach (['email', 'status', 'token', 'created_at', 'updated_at', 'ip_hash', 'consent_source', 'providers', 'realtime_alerts', 'daily_digest', 'newsletter', 'consent_version', 'confirmed_at'] as $required) {
+            foreach (['email', 'status', 'token', 'created_at', 'updated_at', 'ip_hash', 'consent_source', 'providers', 'components', 'severity_threshold', 'delivery_mode', 'quiet_hours', 'include_maintenance', 'entitlement_status', 'billing_status', 'realtime_alerts', 'daily_digest', 'newsletter', 'consent_version', 'confirmed_at'] as $required) {
                 if (!in_array($required, $columns, true)) {
                     $needs_upgrade = true;
                     break;
@@ -95,6 +95,13 @@ class Subscriptions {
             ip_hash CHAR(64) NOT NULL,
             consent_source VARCHAR(50) NOT NULL DEFAULT '',
             providers LONGTEXT NULL,
+            components LONGTEXT NULL,
+            severity_threshold VARCHAR(30) NOT NULL DEFAULT '',
+            delivery_mode VARCHAR(30) NOT NULL DEFAULT 'immediate',
+            quiet_hours LONGTEXT NULL,
+            include_maintenance TINYINT(1) NOT NULL DEFAULT 0,
+            entitlement_status VARCHAR(30) NOT NULL DEFAULT 'free',
+            billing_status VARCHAR(30) NOT NULL DEFAULT 'none',
             realtime_alerts TINYINT(1) NOT NULL DEFAULT 1,
             daily_digest TINYINT(1) NOT NULL DEFAULT 0,
             newsletter TINYINT(1) NOT NULL DEFAULT 0,
@@ -177,6 +184,13 @@ class Subscriptions {
             'realtime_alerts' => $toBool($input['realtime_alerts'] ?? true, true),
             'daily_digest' => $toBool($input['daily_digest'] ?? false, false),
             'newsletter' => $toBool($input['newsletter'] ?? false, false),
+            'components' => isset($input['components']) && is_array($input['components']) ? array_values(array_filter(array_map('sanitize_key', $input['components']))) : [],
+            'severity_threshold' => sanitize_key((string)($input['severity_threshold'] ?? '')),
+            'delivery_mode' => in_array((string)($input['delivery_mode'] ?? 'immediate'), ['immediate','daily_digest'], true) ? (string)($input['delivery_mode'] ?? 'immediate') : 'immediate',
+            'quiet_hours' => isset($input['quiet_hours']) && is_array($input['quiet_hours']) ? $input['quiet_hours'] : [],
+            'include_maintenance' => $toBool($input['include_maintenance'] ?? false, false),
+            'entitlement_status' => sanitize_key((string)($input['entitlement_status'] ?? 'free')) ?: 'free',
+            'billing_status' => sanitize_key((string)($input['billing_status'] ?? 'none')) ?: 'none',
         ];
     }
 
@@ -195,6 +209,13 @@ class Subscriptions {
             'ip_hash' => $ip_hash,
             'consent_source' => $source,
             'providers' => wp_json_encode($prefs['providers']),
+            'components' => wp_json_encode($prefs['components']),
+            'severity_threshold' => $prefs['severity_threshold'],
+            'delivery_mode' => $prefs['delivery_mode'],
+            'quiet_hours' => wp_json_encode($prefs['quiet_hours']),
+            'include_maintenance' => $prefs['include_maintenance'] ? 1 : 0,
+            'entitlement_status' => $prefs['entitlement_status'],
+            'billing_status' => $prefs['billing_status'],
             'realtime_alerts' => $prefs['realtime_alerts'] ? 1 : 0,
             'daily_digest' => $prefs['daily_digest'] ? 1 : 0,
             'newsletter' => $prefs['newsletter'] ? 1 : 0,
