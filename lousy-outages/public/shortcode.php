@@ -389,21 +389,9 @@ function render_shortcode(): string {
     $config['initial']['source']    = $source;
     $config['initial']['errors']    = $snapshot_errors;
 
-    $build_meta_counts = static function (array $providers): array {
-        $current = \SuzyEaston\LousyOutages\Summary::current_provider_tiles($providers);
-        $counts = ['active_outage_count'=>0,'signal_count'=>0,'unverified_count'=>0,'generated_at'=>gmdate('c'),'current_official_provider_ids'=>[]];
-        foreach ($current as $provider) {
-            if (!is_array($provider)) { continue; }
-            $tile_kind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
-            $provider_id = sanitize_key((string) ($provider['id'] ?? $provider['provider'] ?? $provider['name'] ?? ''));
-            if ('outage' === $tile_kind && !empty($provider['incidents'])) { $counts['active_outage_count'] += 1; if ($provider_id !== '') { $counts['current_official_provider_ids'][] = $provider_id; } }
-            elseif ('signal' === $tile_kind) { $counts['signal_count'] += 1; }
-        }
-        $counts['current_official_provider_ids'] = array_values(array_unique($counts['current_official_provider_ids']));
-        return $counts;
-    };
-
-    $meta_counts = $build_meta_counts($config['initial']['providers']);
+    $current_state = function_exists('lousy_outages_current_state_from_snapshot') ? \lousy_outages_current_state_from_snapshot(['providers' => $config['initial']['providers']]) : [];
+    $meta_counts = isset($current_state['meta']) && is_array($current_state['meta']) ? $current_state['meta'] : ['active_outage_count'=>0,'signal_count'=>0,'unverified_count'=>0,'generated_at'=>gmdate('c')];
+    $config['initial']['current_state'] = $current_state;
     $config['meta'] = $meta_counts;
     $config['initial']['meta'] = $meta_counts;
 
@@ -721,7 +709,7 @@ function render_shortcode(): string {
                 <div class="lo-grid lo-grid--section" data-lo-section-grid="unverified" hidden></div>
             </section>
         </div>
-        <section class="lo-corroboration-radar lo-chatter-scanner" data-lo-chatter-scanner>
+        <?php if (false) : ?><section class="lo-corroboration-radar lo-chatter-scanner" data-lo-chatter-scanner>
             <div class="lo-corroboration-radar__head">
                 <div>
                     <h3 class="lo-block-title">CORROBORATION RADAR</h3>
@@ -840,6 +828,7 @@ function render_shortcode(): string {
             <?php endif; ?>
             <footer class="lo-corroboration-radar__footer">Scanner idle. Official radar remains primary.</footer>
         </section>
+        <?php endif; ?>
         <?php if (LO_SHOW_WIDESPREAD) : ?>
         <div class="lo-trending" data-lo-trending<?php echo $trending_active ? '' : ' hidden'; ?> data-lo-trending-generated="<?php echo esc_attr($trending_generated); ?>" aria-live="assertive">
             <span class="lo-trending__icon" aria-hidden="true">⚡</span>
@@ -852,9 +841,9 @@ function render_shortcode(): string {
         <div class="lo-hero" data-lo-hero hidden>
             <article class="lo-card lo-card--hero">
                 <div class="lo-head">
-                    <h3 class="lo-title">No official active incidents</h3>
+                    <h3 class="lo-title">No confirmed incidents in the saved provider snapshot</h3>
                 </div>
-                <p class="lo-summary">Public signals are being watched.</p>
+                <p class="lo-summary">Official provider feeds are checked by the scheduled refresh; emerging signals and verification delays appear above when present.</p>
                 <p class="lo-card-meta">Last checked: <span data-lo-hero-time>—</span></p>
             </article>
         </div>

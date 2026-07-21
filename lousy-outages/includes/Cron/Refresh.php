@@ -11,8 +11,7 @@ class Refresh
     {
         add_filter('cron_schedules', [self::class, 'registerSchedule']);
         add_action('init', [self::class, 'ensureScheduled']);
-        add_action('lousy_outages_cron_refresh', '\\lousy_outages_refresh_data');
-        add_action('lousy_outages_refresh', [IncidentAlerts::class, 'run']);
+        add_action('lousy_outages_refresh_official_providers', '\\lousy_outages_refresh_official_providers');
         add_action('lo_send_daily_digest', [IncidentAlerts::class, 'send_daily_digest']);
     }
 
@@ -45,12 +44,11 @@ class Refresh
 
     public static function ensureScheduled(): void
     {
-        if (! wp_next_scheduled('lousy_outages_cron_refresh')) {
-            wp_schedule_event(time() + MINUTE_IN_SECONDS, 'lousy_outages_15min', 'lousy_outages_cron_refresh');
+        foreach (['lousy_outages_poll','lousy_outages_cron_refresh','lousy_outages_refresh','lo_check_statuses','lo_refresh_snapshot'] as $hook) {
+            wp_clear_scheduled_hook($hook);
         }
-
-        if (! wp_next_scheduled('lousy_outages_refresh')) {
-            wp_schedule_event(time() + MINUTE_IN_SECONDS, 'five_minutes', 'lousy_outages_refresh');
+        if (! wp_next_scheduled('lousy_outages_refresh_official_providers')) {
+            wp_schedule_event(time() + MINUTE_IN_SECONDS, 'lousy_outages_15min', 'lousy_outages_refresh_official_providers');
         }
 
         $target = self::nextDigestTimestamp();

@@ -13,15 +13,14 @@ if (! function_exists('lo_cron_bootstrap')) {
     function lo_cron_bootstrap(): void
     {
         add_filter('cron_schedules', 'lo_register_snapshot_schedule');
-        add_action('init', 'lo_ensure_snapshot_schedule');
-        add_action('lo_refresh_snapshot', 'lo_run_snapshot_refresh');
+        // 0.3.2: legacy snapshot cron is intentionally not scheduled; canonical provider refresh writes both snapshots.
     }
 }
 
 if (! function_exists('lo_cron_activate')) {
     function lo_cron_activate(): void
     {
-        lo_ensure_snapshot_schedule();
+        wp_clear_scheduled_hook('lo_refresh_snapshot');
     }
 }
 
@@ -64,9 +63,7 @@ if (! function_exists('lo_snapshot_interval_seconds')) {
 if (! function_exists('lo_ensure_snapshot_schedule')) {
     function lo_ensure_snapshot_schedule(): void
     {
-        if (! wp_next_scheduled('lo_refresh_snapshot')) {
-            wp_schedule_event(time() + 30, 'lo_snapshot_interval', 'lo_refresh_snapshot');
-        }
+        wp_clear_scheduled_hook('lo_refresh_snapshot');
     }
 }
 

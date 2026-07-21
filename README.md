@@ -32,7 +32,7 @@ The current flagship prototype. A first-person Vancouver corridor build focused 
 - `/api/outages` provides live provider pulls with `Cache-Control: no-store`
 - `/wp-json/lousy-outages/v1/status` remains available for legacy consumers
 - Polling cadence can be tuned with `OUTAGES_POLL_MS` or the `lousy_outages_interval` option
-- Background refresh can be warmed manually with `wp cron event run lousy_outages_poll`
+- Background refresh can be warmed manually with `wp cron event run lousy_outages_refresh_official_providers`
 
 It is intentionally practical but still fun: command-line vibes, alert hooks, and very online reliability energy.
 

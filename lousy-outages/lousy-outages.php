@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.3.1
+ * Version: 0.3.2
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,10 +24,10 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.3.1' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.3.2' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 3 );
+    define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 4 );
 }
 if ( ! defined( 'LOUSY_OUTAGES_FILE' ) ) {
     define( 'LOUSY_OUTAGES_FILE', __FILE__ );
@@ -149,19 +149,8 @@ add_action(
  * Schedule polling event on activation and create page.
  */
 function lousy_outages_activate() {
-    if ( ! wp_next_scheduled( 'lousy_outages_poll' ) ) {
-        $interval = (int) get_option( 'lousy_outages_interval', 300 );
-        wp_schedule_event( time() + 60, 'lousy_outages_interval', 'lousy_outages_poll' );
-    }
-    if ( ! wp_next_scheduled( 'lousy_outages_cron_refresh' ) ) {
-        wp_schedule_event( time() + MINUTE_IN_SECONDS, 'lousy_outages_15min', 'lousy_outages_cron_refresh' );
-    }
-    if ( ! wp_next_scheduled( 'lo_check_statuses' ) ) {
-        wp_schedule_event( time() + 60, 'lo_five_minutes', 'lo_check_statuses' );
-    }
-    if ( function_exists( 'lo_cron_activate' ) ) {
-        lo_cron_activate();
-    }
+    lousy_outages_upgrade_032_runtime();
+    lousy_outages_schedule_canonical_refresh();
     lousy_outages_create_page();
     lousy_outages_maybe_install_schema( true );
     ( new \SuzyEaston\LousyOutages\Storage\HistoryStore() )->migrate();
@@ -176,6 +165,34 @@ function lousy_outages_activate() {
     }
 }
 register_activation_hook( __FILE__, 'lousy_outages_activate' );
+
+function lousy_outages_schedule_canonical_refresh(): void {
+    if ( ! wp_next_scheduled( 'lousy_outages_refresh_official_providers' ) ) {
+        wp_schedule_event( time() + MINUTE_IN_SECONDS, 'lousy_outages_15min', 'lousy_outages_refresh_official_providers' );
+    }
+}
+
+function lousy_outages_upgrade_032_runtime(): void {
+    foreach ( [ 'lousy_outages_poll', 'lousy_outages_cron_refresh', 'lousy_outages_refresh', 'lo_check_statuses', 'lo_refresh_snapshot' ] as $hook ) {
+        wp_clear_scheduled_hook( $hook );
+    }
+    foreach ( [ 'lo_diag_public_chatter', 'lo_diag_hacker_news_chatter', 'lousy_outages_last_external_collection', 'lousy_outages_signal_engine_last_fused', 'lo_diag_cloudflare_radar', 'lo_diag_synthetic_canary', 'lo_diag_canadian_infrastructure_watch' ] as $key ) {
+        delete_option( $key );
+        delete_transient( $key );
+    }
+    update_option( 'lousy_outages_runtime_version', LOUSY_OUTAGES_VERSION, false );
+    lousy_outages_schedule_canonical_refresh();
+}
+add_action( 'init', static function (): void {
+    if ( version_compare( (string) get_option( 'lousy_outages_runtime_version', '0.0.0' ), '0.3.2', '<' ) ) {
+        lousy_outages_upgrade_032_runtime();
+    }
+}, 3 );
+add_action( 'lousy_outages_refresh_official_providers', 'lousy_outages_refresh_official_providers' );
+function lousy_outages_refresh_official_providers( bool $bypass_cache = true ): array {
+    return lousy_outages_refresh_data( $bypass_cache );
+}
+
 
 function lousy_outages_maybe_install_schema( bool $force = false ): void {
     $schema_version = ExternalSignals::SCHEMA_VERSION;
@@ -217,13 +234,13 @@ add_action( 'init', static function (): void {
  * Clear cron on deactivation.
  */
 function lousy_outages_deactivate() {
+    wp_clear_scheduled_hook( 'lousy_outages_refresh_official_providers' );
     wp_clear_scheduled_hook( 'lousy_outages_poll' );
     wp_clear_scheduled_hook( 'lousy_outages_cron_refresh' );
+    wp_clear_scheduled_hook( 'lousy_outages_refresh' );
     wp_clear_scheduled_hook( 'lo_check_statuses' );
     Subscriptions::clear_schedule();
-    if ( function_exists( 'lo_cron_deactivate' ) ) {
-        lo_cron_deactivate();
-    }
+    wp_clear_scheduled_hook( 'lo_refresh_snapshot' );
     if ( function_exists( 'flush_rewrite_rules' ) ) {
         flush_rewrite_rules( false );
     }
@@ -527,6 +544,10 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         }
 
         $snapshot  = lousy_outages_refresh_snapshot( $states, $timestamp_iso, 'live' );
+        if ( class_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts' ) && method_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts', 'collect_from_snapshot' ) ) {
+            $incidents_for_history = \SuzyEaston\LousyOutages\IncidentAlerts::collect_from_snapshot();
+            ( new \SuzyEaston\LousyOutages\Storage\IncidentStore() )->persistIncidents( $incidents_for_history );
+        }
         $providers = isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] ) ? $snapshot['providers'] : [];
         $trending  = isset( $snapshot['trending'] ) && is_array( $snapshot['trending'] ) ? $snapshot['trending'] : [ 'trending' => false, 'signals' => [] ];
 
@@ -552,6 +573,7 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
             'errors'       => $errors,
             'trending'     => $trending,
             'quality'      => $quality,
+            'current_state'=> isset( $snapshot['current_state'] ) && is_array( $snapshot['current_state'] ) ? $snapshot['current_state'] : lousy_outages_current_state_from_snapshot( $snapshot ),
             'source'       => ! empty( $quality['ok'] ) ? 'live' : 'last_good_with_errors',
             'refreshedAt'  => $timestamp_iso,
             'refreshed_at' => $timestamp_epoch,
@@ -650,6 +672,7 @@ function lousy_outages_filter_snapshot( array $snapshot ): array {
 
     $allowed = array_fill_keys( array_keys( $enabled ), true );
 
+    $original_provider_count = count( $providers );
     $snapshot['providers'] = array_values(
         array_filter(
             $providers,
@@ -669,7 +692,9 @@ function lousy_outages_filter_snapshot( array $snapshot ): array {
         )
     );
 
-    $snapshot['trending'] = ( new \SuzyEaston\LousyOutages\Trending() )->evaluate( $snapshot['providers'] );
+    if ( count( $snapshot['providers'] ) !== $original_provider_count || ! isset( $snapshot['trending'] ) ) {
+        $snapshot['trending'] = ( new \SuzyEaston\LousyOutages\Trending() )->evaluate( $snapshot['providers'] );
+    }
 
     return $snapshot;
 }
@@ -733,17 +758,104 @@ function lousy_outages_update_aws_snapshot_diagnostic( array $snapshot ): void {
     }
 }
 
+
+function lousy_outages_signal_freshness_seconds(): int {
+    return (int) apply_filters( 'lousy_outages_signal_freshness_seconds', 45 * MINUTE_IN_SECONDS );
+}
+
+function lousy_outages_provider_timestamp( array $provider ): int {
+    foreach ( [ 'checked_at', 'checkedAt', 'fetched_at', 'updated_at', 'updatedAt', 'last_successful_at' ] as $field ) {
+        if ( ! empty( $provider[ $field ] ) ) {
+            $ts = strtotime( (string) $provider[ $field ] );
+            if ( $ts ) { return (int) $ts; }
+        }
+    }
+    return 0;
+}
+
+function lousy_outages_current_state_from_snapshot( array $snapshot ): array {
+    $providers = isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] ) ? array_values( $snapshot['providers'] ) : [];
+    $now = time();
+    $fresh_window = lousy_outages_signal_freshness_seconds();
+    $outages = [];
+    $signals = [];
+    $unverified = [];
+    $operational = [];
+    $current_provider_ids = [];
+    foreach ( $providers as $provider ) {
+        if ( ! is_array( $provider ) ) { continue; }
+        $provider_id = sanitize_key( (string) ( $provider['id'] ?? $provider['provider'] ?? $provider['name'] ?? '' ) );
+        $provider['provider_id'] = $provider_id;
+        $verification = strtolower( (string) ( $provider['verification_status'] ?? '' ) );
+        $is_stale = ! empty( $provider['is_stale'] );
+        $status = strtolower( (string) ( $provider['stateCode'] ?? $provider['status'] ?? 'unknown' ) );
+        if ( in_array( $verification, [ 'failed', 'unknown' ], true ) || ( 'unknown' === $status && ! $is_stale ) ) {
+            $provider['lane'] = 'unverified';
+            $provider['stale_label'] = $is_stale ? 'Delayed provider data' : 'Could not verify provider status';
+            $unverified[] = $provider;
+            continue;
+        }
+        if ( $is_stale ) {
+            $provider['lane'] = 'unverified';
+            $provider['stale_label'] = 'Delayed provider data; showing bounded last-known-good context.';
+            $unverified[] = $provider;
+            continue;
+        }
+        $current_incidents = class_exists( '\\SuzyEaston\\LousyOutages\\Summary' ) ? \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider( $provider ) : (array) ( $provider['incidents'] ?? [] );
+        foreach ( $current_incidents as $incident ) {
+            if ( ! is_array( $incident ) ) { continue; }
+            $record = $incident;
+            $record['provider_id'] = $provider_id;
+            $record['provider'] = (string) ( $provider['name'] ?? $provider['provider'] ?? $provider_id );
+            $record['provider_url'] = (string) ( $provider['url'] ?? $provider['link'] ?? '' );
+            $outages[] = $record;
+            if ( '' !== $provider_id ) { $current_provider_ids[] = $provider_id; }
+        }
+        if ( $current_incidents ) { continue; }
+        $tile_kind = strtolower( (string) ( $provider['tile_kind'] ?? $provider['tileKind'] ?? '' ) );
+        $ts = lousy_outages_provider_timestamp( $provider );
+        $fresh = $ts > 0 && ( $now - $ts ) <= $fresh_window;
+        if ( 'signal' === $tile_kind && $fresh ) {
+            $provider['lane'] = 'signals';
+            $provider['fresh_until'] = gmdate( 'c', $ts + $fresh_window );
+            $signals[] = $provider;
+        } else {
+            $provider['lane'] = 'operational';
+            $operational[] = $provider;
+        }
+    }
+    return [
+        'outages' => array_values( $outages ),
+        'signals' => array_values( $signals ),
+        'unverified' => array_values( $unverified ),
+        'operational' => array_values( $operational ),
+        'meta' => [
+            'active_outage_count' => count( $outages ),
+            'signal_count' => count( $signals ),
+            'unverified_count' => count( $unverified ),
+            'operational_count' => count( $operational ),
+            'generated_at' => gmdate( 'c' ),
+            'freshness_window_seconds' => $fresh_window,
+            'current_official_provider_ids' => array_values( array_unique( $current_provider_ids ) ),
+        ],
+    ];
+}
+
 function lousy_outages_store_snapshot( array $snapshot ): void {
     $cache_key = lousy_outages_snapshot_cache_key();
     $ttl       = (int) apply_filters( 'lousy_outages_snapshot_ttl', 5 * MINUTE_IN_SECONDS );
+    $snapshot['current_state'] = lousy_outages_current_state_from_snapshot( $snapshot );
     set_transient( $cache_key, $snapshot, max( 60, $ttl ) );
     update_option( 'lousy_outages_snapshot', $snapshot, false );
+    update_option( 'lousy_outages_current_state', $snapshot['current_state'], false );
     lousy_outages_update_aws_snapshot_diagnostic( $snapshot );
 }
 
 function lousy_outages_refresh_snapshot( array $states, string $timestamp, string $source = 'snapshot' ): array {
     $snapshot = lousy_outages_build_snapshot( $states, $timestamp, $source );
     lousy_outages_store_snapshot( $snapshot );
+    $stored_snapshot = get_option( 'lousy_outages_snapshot', $snapshot );
+    if ( is_array( $stored_snapshot ) ) { $snapshot = $stored_snapshot; }
 
     if ( function_exists( 'lo_snapshot_store' ) && function_exists( 'lo_snapshot_normalize_service' ) ) {
         $services = [];
@@ -861,8 +973,8 @@ function lousy_outages_get_snapshot( bool $force_refresh = false ): array {
 
     $store  = new Store();
     $states = $store->get_all();
-    if ( empty( $states ) ) {
-        $states = lousy_outages_collect_statuses( $force_refresh );
+    if ( ! $force_refresh && empty( $states ) ) {
+        return is_array( $stored ) ? lousy_outages_filter_snapshot( $stored ) : [];
     }
 
     $timestamp = get_option( 'lousy_outages_last_poll' );

@@ -64,10 +64,7 @@ class IncidentAlerts {
     }
 
     public static function ensure_schedule(): void {
-        if (!wp_next_scheduled('lo_check_statuses')) {
-            wp_schedule_event(time() + 60, 'lo_five_minutes', 'lo_check_statuses');
-            do_action('lousy_outages_log', 'cron_scheduled', ['hook' => 'lo_check_statuses']);
-        }
+        wp_clear_scheduled_hook('lo_check_statuses');
     }
 
     public static function maybe_trigger_fallback(): void {
@@ -91,8 +88,7 @@ class IncidentAlerts {
             return;
         }
 
-        wp_schedule_single_event(time() + 60, 'lo_check_statuses');
-        do_action('lousy_outages_log', 'cron_fallback_scheduled', ['hook' => 'lo_check_statuses']);
+        // Alerts consume the canonical snapshot and are no longer scheduled as a provider-fetch fallback.
     }
 
     public static function register_routes(): void {
@@ -534,21 +530,7 @@ class IncidentAlerts {
     public static function collect_incidents(): array {
         $combined = [];
 
-        foreach (self::collect_from_registered_sources() as $incident) {
-            $normalized = self::normalize_incident($incident);
-            if ($normalized instanceof Incident) {
-                $combined[$normalized->provider . '|' . $normalized->id] = $normalized;
-            }
-        }
-
         foreach (self::collect_from_snapshot() as $incident) {
-            $normalized = self::normalize_incident($incident);
-            if ($normalized instanceof Incident) {
-                $combined[$normalized->provider . '|' . $normalized->id] = $normalized;
-            }
-        }
-
-        foreach (self::collect_from_legacy_feeds() as $incident) {
             $normalized = self::normalize_incident($incident);
             if ($normalized instanceof Incident) {
                 $combined[$normalized->provider . '|' . $normalized->id] = $normalized;
