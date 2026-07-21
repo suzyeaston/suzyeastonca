@@ -27,6 +27,21 @@ function asset_version(string $base_path, string $asset): string
     return $version . '-' . (file_exists($path) ? (string) filemtime($path) : '0');
 }
 
+
+function provider_identity(array $tile): string
+{
+    foreach (['provider_id', 'id', 'provider'] as $field) {
+        if (!isset($tile[$field])) {
+            continue;
+        }
+        $identity = sanitize_key((string) $tile[$field]);
+        if ('' !== $identity) {
+            return $identity;
+        }
+    }
+    return '';
+}
+
 add_shortcode('lousy_outages', __NAMESPACE__ . '\render_shortcode');
 add_shortcode('lousy_outages_subscribe', __NAMESPACE__ . '\render_subscribe_shortcode');
 add_shortcode('lousy_outages_report', __NAMESPACE__ . '\render_report_shortcode');
@@ -117,7 +132,7 @@ function render_shortcode(): string {
                 if (!is_array($tile)) {
                     continue;
                 }
-                $slug = (string) ($tile['provider'] ?? '');
+                $slug = provider_identity($tile);
                 if ('' === $slug) {
                     continue;
                 }
@@ -242,12 +257,39 @@ function render_shortcode(): string {
         $fetched_at = $last_fetched_iso ?: gmdate('c');
     }
 
+    $current_state = function_exists('lousy_outages_get_current_state') ? \lousy_outages_get_current_state() : [];
+    if (isset($current_state['providers']) && is_array($current_state['providers']) && $current_state['providers']) {
+        $canonical_tiles = [];
+        foreach ($current_state['providers'] as $provider_tile) {
+            if (!is_array($provider_tile)) {
+                continue;
+            }
+            $provider_id = provider_identity($provider_tile);
+            if ('' === $provider_id) {
+                continue;
+            }
+            $provider_tile['provider_id'] = $provider_id;
+            $provider_tile['id'] = $provider_id;
+            if (!isset($provider_tile['name']) || '' === trim((string) $provider_tile['name'])) {
+                $provider_tile['name'] = (string) ($provider_tile['provider'] ?? $provider_id);
+            }
+            $canonical_tiles[] = $provider_tile;
+        }
+        if ($canonical_tiles) {
+            $tiles = $canonical_tiles;
+            $source = (string) ($current_state['source'] ?? $source);
+            if (!empty($current_state['fetched_at'])) {
+                $fetched_at = (string) $current_state['fetched_at'];
+            }
+        }
+    }
+
     $tiles_by_slug = [];
     foreach ($tiles as $tile) {
         if (!is_array($tile)) {
             continue;
         }
-        $slug = (string) ($tile['provider'] ?? '');
+        $slug = provider_identity($tile);
         if ('' === $slug) {
             continue;
         }
@@ -259,7 +301,7 @@ function render_shortcode(): string {
         if (!is_array($tile)) {
             continue;
         }
-        $slug = (string) ($tile['provider'] ?? '');
+        $slug = provider_identity($tile);
         if ('' === $slug) {
             continue;
         }
@@ -364,13 +406,21 @@ function render_shortcode(): string {
 
     $config['initial']['providers'] = array_map(static function ($provider) {
         if (!is_array($provider)) { return $provider; }
+        $provider_id = provider_identity($provider);
+        if ('' !== $provider_id) {
+            $provider['provider_id'] = $provider_id;
+            $provider['id'] = $provider_id;
+        }
         $provider['incidents'] = \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($provider);
         return $provider;
     }, array_values($ordered_tiles));
+    $config['initial']['fetched_at'] = $fetched_at;
     $config['initial']['source']    = $source;
     $config['initial']['errors']    = $snapshot_errors;
 
-    $current_state = function_exists('lousy_outages_get_current_state') ? \lousy_outages_get_current_state() : (function_exists('lousy_outages_current_state_from_snapshot') ? \lousy_outages_current_state_from_snapshot(['providers' => $config['initial']['providers']]) : []);
+    if (!$current_state && function_exists('lousy_outages_current_state_from_snapshot')) {
+        $current_state = \lousy_outages_current_state_from_snapshot(['providers' => $config['initial']['providers']]);
+    }
     $meta_counts = isset($current_state['meta']) && is_array($current_state['meta']) ? $current_state['meta'] : ['active_outage_count'=>0,'signal_count'=>0,'unverified_count'=>0,'generated_at'=>gmdate('c')];
     $config['initial']['current_state'] = $current_state;
     $config['meta'] = $meta_counts;
@@ -600,7 +650,7 @@ function render_shortcode(): string {
         $canonicalIncidentProviders = [];
         foreach ((array) $tiles as $tile) {
             if (!is_array($tile)) { continue; }
-            $pid = sanitize_key((string) ($tile['id'] ?? $tile['provider'] ?? ''));
+            $pid = provider_identity($tile);
             $active = class_exists('\SuzyEaston\LousyOutages\Summary') && method_exists('\SuzyEaston\LousyOutages\Summary', 'current_incidents_for_provider')
                 ? \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($tile)
                 : ((isset($tile['incidents']) && is_array($tile['incidents'])) ? $tile['incidents'] : []);
@@ -659,7 +709,28 @@ function render_shortcode(): string {
                 <div class="lo-section__head">
                     <h3 class="lo-block-title">Active incidents</h3>
                 </div>
-                <div class="lo-grid lo-grid--section" data-lo-section-grid="incidents"></div>
+                <div class="lo-grid lo-grid--section" data-lo-section-grid="incidents">
+                    <noscript>
+                        <?php foreach ($ordered_tiles as $tile) :
+                            if (!is_array($tile)) { continue; }
+                            $slug = provider_identity($tile);
+                            $incidents = is_array($tile['incidents'] ?? null) ? \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($tile) : [];
+                            if ('' === $slug || empty($incidents)) { continue; }
+                            $provider_name = (string) ($tile['name'] ?? $tile['provider'] ?? ucfirst($slug));
+                            $lead_active_incident = $pick_lead_incident($incidents);
+                            $lead_incident_display = $lead_active_incident ? $build_incident_display($lead_active_incident, $provider_name, (string) ($tile['status_label'] ?? 'Incident')) : null;
+                        ?>
+                            <article class="lo-card lo-card--noscript">
+                                <div class="lo-head">
+                                    <h3 class="lo-title"><?php echo esc_html($provider_name); ?></h3>
+                                    <span class="lo-pill status--degraded"><?php echo esc_html((string) ($tile['status_label'] ?? 'INCIDENT')); ?></span>
+                                </div>
+                                <p class="lo-summary"><?php echo esc_html((string) ($lead_incident_display['title'] ?? 'Active incident')); ?></p>
+                                <p class="lo-message"><?php echo esc_html((string) ($lead_incident_display['summary'] ?? 'Latest official update is available from the provider status page.')); ?></p>
+                            </article>
+                        <?php endforeach; ?>
+                    </noscript>
+                </div>
             </section>
             <section class="lo-section lo-section--collapsible" data-lo-section="signals">
                 <div class="lo-section__head">
@@ -856,7 +927,7 @@ function render_shortcode(): string {
             </div>
             <div class="lo-settings__options">
                 <?php foreach ($ordered_tiles as $tile) :
-                    $slug = (string) ($tile['provider'] ?? '');
+                    $slug = provider_identity($tile);
                     if ('' === $slug) {
                         continue;
                     }
@@ -876,7 +947,7 @@ function render_shortcode(): string {
         <div class="lo-all" data-lo-all>
             <div class="lo-grid" data-lo-grid>
                 <?php foreach ($ordered_tiles as $tile) :
-                    $slug = (string) ($tile['provider'] ?? '');
+                    $slug = provider_identity($tile);
                     $status = strtolower((string) ($tile['status'] ?? 'unknown'));
                     $status_class = $tile['status_class'] ?? ('status--' . (preg_replace('/[^a-z0-9_-]+/i', '-', $status) ?: 'unknown'));
                     $label = $tile['status_label'] ?? ucfirst($status);

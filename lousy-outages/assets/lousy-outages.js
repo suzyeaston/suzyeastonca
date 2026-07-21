@@ -206,8 +206,8 @@
     if (!provider) {
       return '';
     }
-    var id = provider.id || provider.provider || provider.slug || provider.name || '';
-    return String(id || '').toLowerCase();
+    var id = provider.provider_id || provider.id || provider.provider || '';
+    return String(id || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
   }
 
   function writeLastKnown(provider, normalized) {
@@ -837,7 +837,7 @@
       if (!provider) {
         return;
       }
-      var id = provider.id || provider.provider;
+      var id = getProviderId(provider);
       if (!id) {
         return;
       }
