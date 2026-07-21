@@ -736,7 +736,7 @@
     }
     state.refreshButton.disabled = !!isLoading;
     state.refreshButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
-    state.refreshButton.textContent = isLoading ? 'Refreshing…' : 'Refresh now';
+    state.refreshButton.textContent = isLoading ? 'Reloading…' : 'Reload saved status';
   }
 
   function toggleSpinner(visible) {
@@ -764,26 +764,14 @@
   }
 
   function triggerStaleRefresh() {
-    if (!state.refreshEndpoint || !state.fetchImpl) {
+    if (!state.fetchImpl || state.staleRefreshInFlight) {
       return Promise.resolve();
     }
-    if (state.staleRefreshInFlight) {
-      return Promise.resolve();
-    }
-
     state.staleRefreshQueued = false;
     state.staleRefreshInFlight = true;
-
-    return callRefreshEndpoint()
-      .catch(function () {
-        return null;
-      })
-      .then(function () {
-        return refreshSummary(false, true);
-      })
-      .finally(function () {
-        state.staleRefreshInFlight = false;
-      });
+    return refreshSummary(false, true).finally(function () {
+      state.staleRefreshInFlight = false;
+    });
   }
 
   function maybeQueueStaleRefresh(fetchedIso) {
@@ -3071,7 +3059,8 @@
       ? state.historyWindowDays
       : HISTORY_DEFAULT_DAYS;
     var url = appendQuery(state.historyEndpoint, 'days', String(windowDays));
-    url = appendQuery(url, 'limit', String(HISTORY_LIMIT));
+    url = appendQuery(url, 'page', '1');
+    url = appendQuery(url, 'per_page', String(Math.min(20, HISTORY_LIMIT)));
     url = appendQuery(url, 'severity', state.historyImportantOnly ? 'important' : 'all');
     if (hasPrefs && providerIds.length) {
       url = appendQuery(url, 'provider', providerIds.join(','));
@@ -3099,7 +3088,7 @@
           state.root.console.error(err);
         }
         state.historyIncidents = [];
-        renderHistoryError('Unable to load incident history right now.');
+        renderHistoryError('Unable to load incident history right now. Check your connection and use Retry.');
       });
   }
 
@@ -3619,32 +3608,13 @@
     }
     state.manualQueued = false;
     state.pendingManual = false;
-    var previousFetched = state.fetchedAt;
     setLoading(true);
-    var refreshFailed = false;
-    callRefreshEndpoint()
-      .catch(function () {
-        refreshFailed = true;
-        return null;
-      })
-      .then(function () {
-        if (refreshFailed) {
-          return refreshSummary(true, true);
+    refreshSummary(true, true)
+      .catch(function (err) {
+        if (state.debug && state.root && state.root.console && typeof state.root.console.error === 'function') {
+          state.root.console.error(err);
         }
-        function ensureUpdated(attempt) {
-          return refreshSummary(true, true).then(function () {
-            if (!previousFetched || !state.fetchedAt || state.fetchedAt !== previousFetched) {
-              return null;
-            }
-            if (attempt >= MANUAL_REFRESH_MAX_ATTEMPTS) {
-              return null;
-            }
-            return delay(MANUAL_REFRESH_RETRY_DELAY).then(function () {
-              return ensureUpdated(attempt + 1);
-            });
-          });
-        }
-        return ensureUpdated(0);
+        showDegraded(true, 'Reload failed — showing saved snapshot');
       })
       .finally(function () {
         setLoading(false);
@@ -3727,6 +3697,10 @@
     state.historyList = state.container.querySelector('[data-lo-history-list]');
     state.historyEmpty = state.container.querySelector('[data-lo-history-empty]');
     state.historyError = state.container.querySelector('[data-lo-history-error]');
+    var historyRetry = state.container.querySelector('[data-lo-history-retry]');
+    if (historyRetry) {
+      historyRetry.addEventListener('click', fetchHistoryData);
+    }
     state.historyCharts = state.container.querySelector('[data-lo-history-charts]');
     initReportForm();
     var historyToggle = state.container.querySelector('[data-lo-history-important]');

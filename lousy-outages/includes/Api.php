@@ -126,6 +126,16 @@ class Api {
                         'type'              => 'integer',
                         'sanitize_callback' => 'absint',
                     ],
+                    'page' => [
+                        'description'       => 'History page to return',
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'per_page' => [
+                        'description'       => 'Incidents per page (max 50)',
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                    ],
                 ],
             ]
         );
@@ -572,61 +582,40 @@ class Api {
     public static function handle_history(WP_REST_Request $request): WP_REST_Response {
         $providerParam = $request->get_param('provider');
         $filters       = self::sanitize_provider_list(is_string($providerParam) ? $providerParam : null);
-
         $daysParam = $request->get_param('days');
         $allHistory = is_string($daysParam) && in_array(strtolower($daysParam), ['all', 'retained', '0'], true);
         $days = (int) (is_numeric($daysParam) ? $daysParam : 30);
-        if ($allHistory || $days <= 0) {
-            $days = 0;
-        } elseif ($days > 1460) {
-            $days = 1460;
-        }
-
-        $now    = time();
-        $cutoff = $days > 0 ? $now - ($days * DAY_IN_SECONDS) : 0;
-        $historyStore = new HistoryStore();
-        $migration    = $historyStore->migrate();
-        $events       = $historyStore->loadCanonical();
-
-        $normalizeStatus = static function (string $status): string {
-            $status = strtolower(trim($status));
-            switch ($status) {
-                case 'ok': case 'none': case 'operational': case 'resolved': return 'operational';
-                case 'maintenance': case 'maintenance_window': return 'maintenance';
-                case 'major_outage': case 'outage': case 'major': case 'critical': return 'major';
-                default: return $status ?: 'incident';
-            }
-        };
+        $days = ($allHistory || $days <= 0) ? 0 : min($days, 1460);
+        $cutoff = $days > 0 ? time() - ($days * DAY_IN_SECONDS) : 0;
+        $page = max(1, (int) ($request->get_param('page') ?: 1));
+        $limitParam = $request->get_param('limit');
+        $perPageParam = $request->get_param('per_page');
+        $perPage = (int) (is_numeric($perPageParam) ? $perPageParam : (is_numeric($limitParam) ? $limitParam : 20));
+        $perPage = max(1, min(50, $perPage));
+        $offset = ($page - 1) * $perPage;
 
         $severityParam = $request->get_param('severity');
         $importantOnly = null === $severityParam || !in_array(strtolower((string)$severityParam), ['all', 'any', 'everything'], true);
         $minSeverityParam = $request->get_param('min_severity');
         $minSeverity = in_array(strtolower((string)$minSeverityParam), ['outage','degraded','maintenance','info'], true) ? strtolower((string)$minSeverityParam) : '';
-        $limitParam = $request->get_param('limit');
-        $limit = max(1, min(500, (int)(is_numeric($limitParam) ? $limitParam : 80)));
-
-        $providerLabels = [];
-        foreach (Providers::list() as $id => $provider) {
-            $providerLabels[sanitize_key((string)$id)] = isset($provider['name']) ? (string)$provider['name'] : HistoryStore::normalizeRichEvent(['provider'=>(string)$id])['provider_label'];
-        }
-        foreach ($events as $event) {
-            if (is_array($event) && !empty($event['provider'])) {
-                $slug = sanitize_key((string)$event['provider']);
-                if ($slug && !empty($event['provider_label'])) { $providerLabels[$slug] = (string)$event['provider_label']; }
-            }
-        }
-
         $severityOrder = ['info'=>0,'maintenance'=>1,'degraded'=>2,'outage'=>3];
-        $prepared = [];
+        $normalizeStatus = static function (string $status): string {
+            $status = strtolower(trim($status));
+            switch ($status) { case 'ok': case 'none': case 'operational': case 'resolved': return 'operational'; case 'maintenance': case 'maintenance_window': return 'maintenance'; case 'major_outage': case 'outage': case 'major': case 'critical': return 'major'; default: return $status ?: 'incident'; }
+        };
+        $providerLabels = [];
+        foreach (Providers::list() as $id => $provider) { $providerLabels[sanitize_key((string)$id)] = isset($provider['name']) ? (string)$provider['name'] : ucwords(str_replace(['_','-'],' ',(string)$id)); }
+
+        $historyStore = new HistoryStore();
+        $events = $historyStore->loadCanonical();
+        $matched = 0; $returned = []; $providerCounts = []; $dailyCounts = []; $oldest = null; $newest = null;
         foreach ($events as $event) {
             if (!is_array($event)) { continue; }
             $event = HistoryStore::normalizeRichEvent($event);
             $slug = sanitize_key((string)$event['provider']);
-            if ($slug === '') { continue; }
-            if (!empty($filters) && !in_array($slug, $filters, true)) { continue; }
-            $firstSeen = (int)($event['first_seen'] ?? 0);
-            $lastSeen = (int)($event['last_seen'] ?? $firstSeen);
-            $incidentStart = $firstSeen ?: $lastSeen;
+            if ($slug === '' || (!empty($filters) && !in_array($slug, $filters, true))) { continue; }
+            if (!empty($event['provider_label'])) { $providerLabels[$slug] = (string)$event['provider_label']; }
+            $firstSeen = (int)($event['first_seen'] ?? 0); $lastSeen = (int)($event['last_seen'] ?? $firstSeen); $incidentStart = $firstSeen ?: $lastSeen;
             if ($cutoff > 0 && $incidentStart && $incidentStart < $cutoff) { continue; }
             $status = $normalizeStatus((string)($event['status'] ?? 'unknown'));
             if (in_array($status, ['operational','ok','none'], true)) { continue; }
@@ -634,27 +623,19 @@ class Api {
             $important = isset($event['important']) ? (bool)$event['important'] : !in_array($severity, ['maintenance','info'], true);
             if ($importantOnly && (!$important || in_array($severity, ['maintenance','info'], true))) { continue; }
             if ($minSeverity && isset($severityOrder[$severity], $severityOrder[$minSeverity]) && $severityOrder[$severity] < $severityOrder[$minSeverity]) { continue; }
-            $prepared[] = ['id'=>(string)($event['guid'] ?? sha1($slug.'|'.$firstSeen)),'provider'=>$slug,'provider_label'=>$providerLabels[$slug] ?? (string)($event['provider_label'] ?? ucwords(str_replace(['_','-'],' ',$slug))),'status'=>$status,'severity'=>$severity,'important'=>$important,'summary'=>(string)($event['title'] ?? $event['description'] ?? ''),'first_seen'=>$firstSeen,'last_seen'=>$lastSeen,'url'=>(string)($event['url'] ?? '')];
+            $matched++;
+            $label = $providerLabels[$slug] ?? ucwords(str_replace(['_','-'],' ',$slug));
+            $providerCounts[$label] = ($providerCounts[$label] ?? 0) + 1;
+            $date = gmdate('Y-m-d', $incidentStart ?: time()); $dailyCounts[$date] = ($dailyCounts[$date] ?? 0) + 1;
+            $oldest = null === $oldest ? $incidentStart : min($oldest, $incidentStart); $newest = null === $newest ? $lastSeen : max($newest, $lastSeen);
+            if ($matched <= $offset || count($returned) >= $perPage) { continue; }
+            $returned[] = ['id'=>(string)($event['guid'] ?? sha1($slug.'|'.$firstSeen)),'provider'=>$slug,'provider_label'=>$label,'status'=>$status,'severity'=>$severity,'important'=>$important,'summary'=>(string)($event['title'] ?? $event['description'] ?? ''),'first_seen'=>$firstSeen,'last_seen'=>$lastSeen,'url'=>(string)($event['url'] ?? '')];
         }
-
-        $deduped = HistoryStore::dedupeEvents($prepared);
-        $chartEvents = $deduped;
-        usort($deduped, static fn($a,$b): int => ((int)($b['last_seen'] ?? $b['first_seen'] ?? 0)) <=> ((int)($a['last_seen'] ?? $a['first_seen'] ?? 0)));
-        if (count($deduped) > $limit) { $deduped = array_slice($deduped, 0, $limit); }
-
-        $providers=[]; $providerCounts=[]; $dailyCounts=[];
-        foreach ($chartEvents as $event) { $providerCounts[$event['provider_label']] = ($providerCounts[$event['provider_label']] ?? 0)+1; $dailyCounts[gmdate('Y-m-d', (int)($event['first_seen'] ?: $event['last_seen'] ?: $now))] = ($dailyCounts[gmdate('Y-m-d', (int)($event['first_seen'] ?: $event['last_seen'] ?: $now))] ?? 0)+1; }
-        foreach ($deduped as $event) {
-            $slug=$event['provider']; $date=gmdate('Y-m-d', (int)($event['first_seen'] ?: $event['last_seen'] ?: $now));
-            if (!isset($providers[$slug])) { $providers[$slug]=['id'=>$slug,'label'=>$event['provider_label'],'history'=>[],'incidents'=>[]]; }
-            if (!isset($providers[$slug]['history'][$date])) { $providers[$slug]['history'][$date]=['date'=>$date,'incidents'=>0,'last_status'=>$event['status']]; }
-            $providers[$slug]['history'][$date]['incidents']++; $providers[$slug]['history'][$date]['last_status']=$event['status'];
-            $providers[$slug]['incidents'][]=['id'=>$event['id'],'provider'=>$event['provider_label'],'status'=>$event['status'],'severity'=>$event['severity'],'important'=>$event['important'],'summary'=>$event['summary'],'first_seen'=>$event['first_seen'] ? gmdate('c',(int)$event['first_seen']) : null,'last_seen'=>$event['last_seen'] ? gmdate('c',(int)$event['last_seen']) : null,'url'=>$event['url']];
-        }
-        $oldest = HistoryStore::oldestTimestamp($chartEvents); $newest = HistoryStore::newestTimestamp($chartEvents);
-        $response=['generated_at'=>gmdate('c'),'meta'=>['fetchedAt'=>gmdate('c'),'provider_counts'=>$providerCounts,'daily_counts'=>$dailyCounts,'important_only'=>$importantOnly,'window_days'=>$days ?: 'all','window_start'=>$oldest ? gmdate('Y-m-d',$oldest) : gmdate('Y-m-d',$cutoff ?: $now),'window_end'=>$newest ? gmdate('Y-m-d',$newest) : gmdate('Y-m-d',$now),'deduped_incidents'=>count($chartEvents),'migration'=>array_diff_key($migration, ['events'=>true])],'providers'=>[]];
-        foreach ($providers as $provider) { $h=$provider['history']; ksort($h); $provider['history']=array_values($h); $response['providers'][]=$provider; }
-        return rest_ensure_response($response);
+        usort($returned, static fn($a,$b): int => ((int)($b['last_seen'] ?? $b['first_seen'] ?? 0)) <=> ((int)($a['last_seen'] ?? $a['first_seen'] ?? 0)));
+        $providers=[];
+        foreach ($returned as $event) { $slug=$event['provider']; $date=gmdate('Y-m-d', (int)($event['first_seen'] ?: $event['last_seen'] ?: time())); if (!isset($providers[$slug])) { $providers[$slug]=['id'=>$slug,'label'=>$event['provider_label'],'history'=>[],'incidents'=>[]]; } if (!isset($providers[$slug]['history'][$date])) { $providers[$slug]['history'][$date]=['date'=>$date,'incidents'=>0,'last_status'=>$event['status']]; } $providers[$slug]['history'][$date]['incidents']++; $providers[$slug]['history'][$date]['last_status']=$event['status']; $providers[$slug]['incidents'][]=['id'=>$event['id'],'provider'=>$event['provider_label'],'status'=>$event['status'],'severity'=>$event['severity'],'important'=>$event['important'],'summary'=>$event['summary'],'first_seen'=>$event['first_seen'] ? gmdate('c',(int)$event['first_seen']) : null,'last_seen'=>$event['last_seen'] ? gmdate('c',(int)$event['last_seen']) : null,'url'=>$event['url']]; }
+        $outProviders=[]; foreach ($providers as $provider) { $h=$provider['history']; ksort($h); $provider['history']=array_values($h); $outProviders[]=$provider; }
+        return rest_ensure_response(['generated_at'=>gmdate('c'),'meta'=>['fetchedAt'=>gmdate('c'),'provider_counts'=>$providerCounts,'daily_counts'=>$dailyCounts,'important_only'=>$importantOnly,'window_days'=>$days ?: 'all','window_start'=>$oldest ? gmdate('Y-m-d',$oldest) : null,'window_end'=>$newest ? gmdate('Y-m-d',$newest) : null,'deduped_incidents'=>$matched,'migration'=>$historyStore->migrationStatus(),'page'=>$page,'per_page'=>$perPage,'returned_count'=>count($returned),'total_matching'=>$matched,'has_more'=>($offset + count($returned)) < $matched],'providers'=>$outProviders]);
     }
 
     public static function handle_report(WP_REST_Request $request): WP_REST_Response {

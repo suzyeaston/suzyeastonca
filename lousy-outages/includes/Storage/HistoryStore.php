@@ -19,22 +19,45 @@ class HistoryStore
     public function loadCanonical(): array
     {
         $stored = get_option(self::OPTION_CANONICAL, []);
-        if (! is_array($stored) || empty($stored)) {
-            $report = $this->migrate(false);
-            $stored = get_option(self::OPTION_CANONICAL, []);
-            if (! is_array($stored) || empty($stored)) {
-                $stored = $report['events'] ?? [];
-            }
-        }
-        return is_array($stored) ? array_values($stored) : [];
+        return is_array($stored) ? $stored : [];
+    }
+
+    public function addEvent(array $event): array
+    {
+        $events = $this->loadCanonical();
+        $normalized = self::normalizeRichEvent($event);
+        $events[] = $normalized;
+        $events = self::dedupeEvents($events);
+        update_option(self::OPTION_CANONICAL, $events, false);
+        $this->markValidated($events);
+        return $normalized;
+    }
+
+    public function migrationStatus(): array
+    {
+        $marker = get_option(self::OPTION_MARKER, []);
+        return is_array($marker) ? array_diff_key($marker, ['events' => true]) : [];
+    }
+
+    public function markValidated(array $events): void
+    {
+        update_option(self::OPTION_MARKER, [
+            'validated' => true,
+            'completed_at' => gmdate('c'),
+            'backup_option' => self::OPTION_BACKUP,
+            'canonical_option' => self::OPTION_CANONICAL,
+            'after_dedupe' => count($events),
+            'provider_counts' => self::providerCounts($events),
+            'oldest_timestamp' => self::oldestTimestamp($events),
+            'newest_timestamp' => self::newestTimestamp($events),
+        ], false);
     }
 
     public function migrate(bool $force = false): array
     {
         $marker = get_option(self::OPTION_MARKER, []);
         if (!$force && is_array($marker) && !empty($marker['validated'])) {
-            $events = get_option(self::OPTION_CANONICAL, []);
-            return is_array($marker) ? array_merge($marker, ['events' => is_array($events) ? array_values($events) : []]) : [];
+            return array_diff_key($marker, ['events' => true]);
         }
 
         $original = $this->readSourceOptions();
@@ -67,9 +90,8 @@ class HistoryStore
             'provider_counts' => self::providerCounts($merged),
             'oldest_timestamp' => self::oldestTimestamp($merged),
             'newest_timestamp' => self::newestTimestamp($merged),
-            'events' => $merged,
         ];
-        update_option(self::OPTION_MARKER, array_diff_key($report, ['events' => true]), false);
+        update_option(self::OPTION_MARKER, $report, false);
         return $report;
     }
 
