@@ -57,6 +57,12 @@ foreach (['cloudflare','openai','aws'] as $id) {
 ok(strpos($html, 'data-provider-id="Cloudflare"') === false, 'no human-readable provider id in SSR');
 ok(substr_count($html, 'Assuming operational') === 0, 'no placeholders created for live outage providers');
 ok(strpos($html, 'data-lo-section-grid="incidents"') !== false, 'active incidents grid exists');
+$incidentGridStart = strpos($html, 'data-lo-section-grid="incidents"');
+$incidentGridEnd = strpos($html, 'data-lo-section="signals"', $incidentGridStart);
+$incidentGridHtml = substr($html, $incidentGridStart, $incidentGridEnd - $incidentGridStart);
+foreach (['cloudflare','openai','aws'] as $id) { ok(strpos($incidentGridHtml, 'data-provider-id="'.$id.'"') !== false, 'SSR incident grid contains affected provider '.$id); }
+ok(strpos($html, 'Incidents (6)') !== false, 'server-rendered incident button uses canonical incident-record count');
+ok(strpos($html, 'Monitored services') !== false && strpos($html, 'lo-services__row') !== false, 'monitored services render compact rows');
 $config = null; foreach (($GLOBALS['lo_calls'] ?? []) as $call) { if ($call[0] === 'wp_localize_script' && ($call[1][1] ?? '') === 'LousyOutagesConfig') { $config = $call[1][2]; } }
 ok(is_array($config), 'initial localized JavaScript payload emitted');
 $localizedIds = [];

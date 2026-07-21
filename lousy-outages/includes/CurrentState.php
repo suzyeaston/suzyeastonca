@@ -29,7 +29,7 @@ function lousy_outages_get_current_state(): array {
     $version = defined('LOUSY_OUTAGES_VERSION') ? (string) LOUSY_OUTAGES_VERSION : '';
     $base = [
         'outages' => [], 'signals' => [], 'unverified' => [], 'operational' => [], 'providers' => [],
-        'meta' => ['active_outage_count'=>0,'signal_count'=>0,'unverified_count'=>0,'operational_count'=>0,'generated_at'=>gmdate('c'),'freshness_window_seconds'=>function_exists('lousy_outages_signal_freshness_seconds') ? lousy_outages_signal_freshness_seconds() : 2700,'current_official_provider_ids'=>[]],
+        'meta' => ['active_outage_count'=>0,'affected_provider_count'=>0,'signal_count'=>0,'unverified_count'=>0,'operational_count'=>0,'generated_at'=>gmdate('c'),'freshness_window_seconds'=>function_exists('lousy_outages_signal_freshness_seconds') ? lousy_outages_signal_freshness_seconds() : 2700,'current_official_provider_ids'=>[]],
         'fetched_at' => '', 'source' => 'missing_snapshot', 'errors' => [], 'plugin_version' => $version, 'snapshot_schema_version' => $schema,
     ];
     if (!is_array($snapshot) || empty($snapshot['providers']) || (function_exists('lousy_outages_snapshot_schema_is_current') && !lousy_outages_snapshot_schema_is_current($snapshot))) {
@@ -58,7 +58,13 @@ function lousy_outages_get_current_state(): array {
     $base['source'] = (string)($snapshot['source'] ?? 'snapshot');
     $base['errors'] = array_values((array)($snapshot['errors'] ?? []));
     $base['meta'] = array_merge($base['meta'], is_array($state['meta'] ?? null) ? $state['meta'] : []);
+    $affected_provider_ids = array_values(array_unique(array_filter(array_map(static function ($incident): string {
+        return is_array($incident) ? sanitize_key((string)($incident['provider_id'] ?? $incident['provider'] ?? '')) : '';
+    }, $base['outages']))));
     $base['meta']['active_outage_count'] = count($base['outages']);
+    $base['meta']['official_incident_count'] = count($base['outages']);
+    $base['meta']['affected_provider_count'] = count($affected_provider_ids);
+    $base['meta']['current_official_provider_ids'] = $affected_provider_ids;
     $base['meta']['signal_count'] = count($base['signals']);
     $base['meta']['unverified_count'] = count($base['unverified']);
     $base['meta']['operational_count'] = count($base['operational']);
