@@ -60,8 +60,8 @@ class Api {
             'lousy-outages/v1',
             '/refresh',
             [
-                'methods'             => ['POST', 'GET'],
-                'permission_callback' => '__return_true',
+                'methods'             => 'POST',
+                'permission_callback' => [self::class, 'verify_nonce'],
                 'callback'            => [self::class, 'handle_refresh'],
             ]
         );
@@ -317,7 +317,12 @@ class Api {
      * Trigger a manual refresh of provider statuses.
      */
     public static function handle_refresh(WP_REST_Request $request): WP_REST_Response {
-        $result = \lousy_outages_refresh_data(true);
+        $rateKey = 'lo_manual_refresh_' . get_current_user_id();
+        if (get_transient($rateKey)) {
+            return new WP_REST_Response(['ok'=>false,'message'=>'Manual refresh rate limit exceeded.'], 429);
+        }
+        set_transient($rateKey, 1, 2 * MINUTE_IN_SECONDS);
+        $result = \lousy_outages_refresh_official_providers(true);
         $skipped = !empty($result['skipped']);
         $ok      = !empty($result['ok']);
 
@@ -401,9 +406,6 @@ class Api {
         $filters       = self::sanitize_provider_list(is_string($providerParam) ? $providerParam : null);
 
         $snapshot = \lousy_outages_get_snapshot(false);
-        if (empty($snapshot['providers'])) {
-            $snapshot = \lousy_outages_get_snapshot(true);
-        }
 
         $providers = isset($snapshot['providers']) && is_array($snapshot['providers']) ? array_values($snapshot['providers']) : [];
         $providers = array_map(static function ($provider) {
@@ -440,7 +442,8 @@ class Api {
                 'trending' => !empty($trending['trending']),
             ];
         } else {
-            $meta = self::build_summary_meta($providers);
+            $current_state = isset($snapshot['current_state']) && is_array($snapshot['current_state']) ? $snapshot['current_state'] : (function_exists('lousy_outages_current_state_from_snapshot') ? \lousy_outages_current_state_from_snapshot($snapshot) : []);
+            $meta = isset($current_state['meta']) && is_array($current_state['meta']) ? $current_state['meta'] : self::build_summary_meta($providers);
             $currentOfficialIds = array_fill_keys((array) ($meta['current_official_provider_ids'] ?? []), true);
             $filterOfficialCorroboration = static function (array $items) use ($currentOfficialIds): array {
                 return array_values(array_filter($items, static function ($item) use ($currentOfficialIds): bool {
@@ -455,6 +458,7 @@ class Api {
                 'trending'   => $trending,
                 'source'     => $source,
                 'meta'       => $meta,
+                'current_state' => $current_state,
             ];
             if (!empty($errors)) {
                 $payload['errors'] = $errors;
@@ -534,8 +538,8 @@ class Api {
 
         $last_refresh_local = $last_refresh_epoch > 0 ? wp_date('c', $last_refresh_epoch) : null;
 
-        $next_refresh      = wp_next_scheduled('lousy_outages_cron_refresh');
-        $next_alert_run    = wp_next_scheduled('lousy_outages_refresh');
+        $next_refresh      = wp_next_scheduled('lousy_outages_refresh_official_providers');
+        $next_alert_run    = null;
         $next_daily_digest = wp_next_scheduled('lo_send_daily_digest');
 
         $payload = [
