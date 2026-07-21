@@ -412,129 +412,31 @@ class Api {
     }
 
     public static function handle_summary(WP_REST_Request $request) {
+        $state = function_exists('lousy_outages_get_current_state') ? \lousy_outages_get_current_state() : ['providers'=>[], 'meta'=>[], 'outages'=>[], 'signals'=>[], 'unverified'=>[], 'operational'=>[], 'fetched_at'=>gmdate('c'), 'source'=>'snapshot', 'errors'=>[]];
         $providerParam = $request->get_param('provider');
-        $filters       = self::sanitize_provider_list(is_string($providerParam) ? $providerParam : null);
-
-        $snapshot = \lousy_outages_get_snapshot(false);
-
-        $providers = isset($snapshot['providers']) && is_array($snapshot['providers']) ? array_values($snapshot['providers']) : [];
-        $providers = array_map(static function ($provider) {
-            if (!is_array($provider)) { return $provider; }
-            $provider['incidents'] = Summary::current_incidents_for_provider($provider);
-            return $provider;
-        }, $providers);
+        $filters = self::sanitize_provider_list(is_string($providerParam) ? $providerParam : null);
         if (!empty($filters)) {
-            $providers = array_values(array_filter($providers, static function ($provider) use ($filters) {
-                if (!is_array($provider)) {
-                    return false;
-                }
-                $slug = strtolower((string) ($provider['provider'] ?? $provider['id'] ?? ''));
-                return $slug && in_array($slug, $filters, true);
-            }));
-        }
-
-        $trending = isset($snapshot['trending']) && is_array($snapshot['trending'])
-            ? $snapshot['trending']
-            : ['trending' => false, 'signals' => [], 'generated_at' => gmdate('c')];
-        $source = isset($snapshot['source']) ? (string) $snapshot['source'] : 'snapshot';
-        $fetched_at = isset($snapshot['fetched_at']) ? (string) $snapshot['fetched_at'] : gmdate('c');
-        $errors = isset($snapshot['errors']) && is_array($snapshot['errors']) ? $snapshot['errors'] : [];
-
-        $isLite = false;
-        $liteParam = $request->get_param('lite');
-        if (null !== $liteParam) {
-            $value = strtolower((string) $liteParam);
-            $isLite = in_array($value, ['1', 'true', 'yes', 'on'], true);
-        }
-
-        if ($isLite) {
-            $payload = [
-                'trending' => !empty($trending['trending']),
-            ];
-        } else {
-            $current_state = isset($snapshot['current_state']) && is_array($snapshot['current_state']) ? $snapshot['current_state'] : (function_exists('lousy_outages_current_state_from_snapshot') ? \lousy_outages_current_state_from_snapshot($snapshot) : []);
-            $meta = isset($current_state['meta']) && is_array($current_state['meta']) ? $current_state['meta'] : self::build_summary_meta($providers);
-            $currentOfficialIds = array_fill_keys((array) ($meta['current_official_provider_ids'] ?? []), true);
-            $filterOfficialCorroboration = static function (array $items) use ($currentOfficialIds): array {
-                return array_values(array_filter($items, static function ($item) use ($currentOfficialIds): bool {
+            foreach (['providers','outages','signals','unverified','operational'] as $lane) {
+                $state[$lane] = array_values(array_filter((array)($state[$lane] ?? []), static function ($item) use ($filters): bool {
                     if (!is_array($item)) { return false; }
-                    $providerId = sanitize_key((string) ($item['provider_id'] ?? $item['provider'] ?? $item['id'] ?? ''));
-                    return $providerId !== '' && isset($currentOfficialIds[$providerId]);
+                    $slug = sanitize_key((string)($item['provider_id'] ?? $item['provider'] ?? $item['id'] ?? ''));
+                    return $slug !== '' && in_array($slug, $filters, true);
                 }));
-            };
-            $payload = [
-                'providers'  => $providers,
-                'fetched_at' => $fetched_at,
-                'trending'   => $trending,
-                'source'     => $source,
-                'meta'       => $meta,
-                'current_state' => $current_state,
-            ];
-            if (!empty($errors)) {
-                $payload['errors'] = $errors;
             }
-            $diag = (array) get_option('lo_diag_hacker_news_chatter', []);
-            $reasonCounts = (array) ($diag['chatter_rejected_by_reason'] ?? []);
-            if ($reasonCounts === [] && !empty($diag['chatter_candidates_preview_sample']) && is_array($diag['chatter_candidates_preview_sample'])) {
-                foreach ((array) $diag['chatter_candidates_preview_sample'] as $item) {
-                    $reason = (string) ($item['reject_reason'] ?? '');
-                    if ($reason === '' || $reason === 'accepted') { continue; }
-                    $reasonCounts[$reason] = (int) ($reasonCounts[$reason] ?? 0) + 1;
-                }
-            }
-            $publicDiag = (array) get_option('lo_diag_public_chatter', []);
-            $payload['public_chatter_diagnostics'] = [
-                'rejected_by_reason' => ChatterRejectionReasons::summarize_counts($reasonCounts),
-                'reason_definitions' => array_values(ChatterRejectionReasons::definitions()),
-                'raw_rejected_codes' => $reasonCounts,
-                'source_statuses' => (array) ($publicDiag['source_statuses'] ?? []),
-                'enabled_sources' => (array) ($publicDiag['enabled_sources'] ?? []),
-                'skipped_sources' => (array) ($publicDiag['skipped_sources'] ?? []),
-                'direct_sources_enabled' => !empty($publicDiag['direct_sources_enabled']),
-                'direct_sources_disabled_by_safe_default' => !empty($publicDiag['direct_sources_disabled_by_safe_default']),
-                'providers_scanned_count' => (int) ($publicDiag['providers_scanned_count'] ?? 0),
-                'watch_candidate_count' => (int) ($publicDiag['watch_candidate_count'] ?? 0),
-                'watch_candidates' => array_slice((array) ($publicDiag['watch_candidates'] ?? []), 0, 20),
-                'official_incident_corroboration' => array_slice($filterOfficialCorroboration((array) ($publicDiag['official_incident_corroboration'] ?? [])), 0, 20),
-                'canadian_infrastructure_watchlist' => (array) ($publicDiag['canadian_infrastructure_watchlist'] ?? []),
-                'mentions_seen_by_source' => (array) ($publicDiag['mentions_seen_by_source'] ?? []),
-                'mentions_seen_by_provider' => (array) ($publicDiag['mentions_seen_by_provider'] ?? []),
-                'thresholds' => (array) ($publicDiag['thresholds'] ?? []),
-                'scan_window_minutes' => (int) ($publicDiag['scan_window_minutes'] ?? 0),
-                'ran_at' => (string) ($publicDiag['ran_at'] ?? ''),
-            ];
+            $state['meta']['active_outage_count'] = count($state['outages']);
+            $state['meta']['signal_count'] = count($state['signals']);
+            $state['meta']['unverified_count'] = count($state['unverified']);
+            $state['meta']['operational_count'] = count($state['operational']);
         }
-
-        $json = wp_json_encode($payload);
-        if (!is_string($json)) {
-            $json = '{}';
-        }
-        $etag = '"' . sha1($json) . '"';
-        $incoming = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim((string) $_SERVER['HTTP_IF_NONE_MATCH']) : '';
-        $matched = false;
-        if ('' !== $incoming) {
-            $candidates = array_map('trim', explode(',', $incoming));
-            foreach ($candidates as $candidate) {
-                if ($candidate === $etag || $candidate === 'W/' . $etag) {
-                    $matched = true;
-                    break;
-                }
-            }
-        }
-
-        if ($matched) {
-            status_header(304);
-            header('ETag: ' . $etag);
-            header('Cache-Control: no-cache, must-revalidate');
-            exit;
-        }
-
-        status_header(200);
-        header('ETag: ' . $etag);
-        header('Cache-Control: no-cache, must-revalidate');
-        header('Content-Type: application/json; charset=utf-8');
-        echo $json;
-        exit;
+        $payload = ['providers'=>$state['providers'],'fetched_at'=>$state['fetched_at'],'source'=>$state['source'],'meta'=>$state['meta'],'current_state'=>$state,'plugin_version'=>$state['plugin_version'] ?? (defined('LOUSY_OUTAGES_VERSION') ? LOUSY_OUTAGES_VERSION : ''),'snapshot_schema_version'=>$state['snapshot_schema_version'] ?? (defined('LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION') ? LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION : 0)];
+        if (!empty($state['errors'])) { $payload['errors'] = $state['errors']; }
+        $response = new WP_REST_Response($payload, 200);
+        $response->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $response->header('Pragma', 'no-cache');
+        $response->header('X-Lousy-Outages-Version', (string)$payload['plugin_version']);
+        $response->header('X-Lousy-Outages-Snapshot-Schema', (string)$payload['snapshot_schema_version']);
+        if (!headers_sent()) { header('X-LiteSpeed-Cache-Control: no-cache'); }
+        return $response;
     }
 
     public static function handle_cron_status(WP_REST_Request $request): WP_REST_Response {
@@ -570,15 +472,7 @@ class Api {
         return new WP_REST_Response($payload, 200);
     }
 
-    /**
-     * Return a compact history document for each provider.
-     *
-     * Schema (per provider):
-     * {
-     *   id: "github",
-     *   history: [ { date: "2024-06-01", incidents: 2, last_status: "degraded" }, ... ]
-     * }
-     */
+
     public static function handle_history(WP_REST_Request $request): WP_REST_Response {
         $providerParam = $request->get_param('provider');
         $filters       = self::sanitize_provider_list(is_string($providerParam) ? $providerParam : null);
@@ -607,7 +501,9 @@ class Api {
         foreach (Providers::list() as $id => $provider) { $providerLabels[sanitize_key((string)$id)] = isset($provider['name']) ? (string)$provider['name'] : ucwords(str_replace(['_','-'],' ',(string)$id)); }
 
         $historyStore = new HistoryStore();
-        $events = $historyStore->loadCanonical();
+        $paged = $historyStore->queryPage(['cutoff'=>$cutoff,'providers'=>$filters,'important_only'=>$importantOnly,'per_page'=>$perPage,'offset'=>$offset]);
+        $events = isset($paged['events']) && is_array($paged['events']) ? $paged['events'] : [];
+        $pagedTotal = (int)($paged['total'] ?? count($events));
         $matched = 0; $returned = []; $providerCounts = []; $dailyCounts = []; $oldest = null; $newest = null;
         foreach ($events as $event) {
             if (!is_array($event)) { continue; }
@@ -623,19 +519,18 @@ class Api {
             $important = isset($event['important']) ? (bool)$event['important'] : !in_array($severity, ['maintenance','info'], true);
             if ($importantOnly && (!$important || in_array($severity, ['maintenance','info'], true))) { continue; }
             if ($minSeverity && isset($severityOrder[$severity], $severityOrder[$minSeverity]) && $severityOrder[$severity] < $severityOrder[$minSeverity]) { continue; }
-            $matched++;
             $label = $providerLabels[$slug] ?? ucwords(str_replace(['_','-'],' ',$slug));
             $providerCounts[$label] = ($providerCounts[$label] ?? 0) + 1;
             $date = gmdate('Y-m-d', $incidentStart ?: time()); $dailyCounts[$date] = ($dailyCounts[$date] ?? 0) + 1;
             $oldest = null === $oldest ? $incidentStart : min($oldest, $incidentStart); $newest = null === $newest ? $lastSeen : max($newest, $lastSeen);
-            if ($matched <= $offset || count($returned) >= $perPage) { continue; }
+            if (count($returned) >= $perPage) { continue; }
             $returned[] = ['id'=>(string)($event['guid'] ?? sha1($slug.'|'.$firstSeen)),'provider'=>$slug,'provider_label'=>$label,'status'=>$status,'severity'=>$severity,'important'=>$important,'summary'=>(string)($event['title'] ?? $event['description'] ?? ''),'first_seen'=>$firstSeen,'last_seen'=>$lastSeen,'url'=>(string)($event['url'] ?? '')];
         }
         usort($returned, static fn($a,$b): int => ((int)($b['last_seen'] ?? $b['first_seen'] ?? 0)) <=> ((int)($a['last_seen'] ?? $a['first_seen'] ?? 0)));
         $providers=[];
         foreach ($returned as $event) { $slug=$event['provider']; $date=gmdate('Y-m-d', (int)($event['first_seen'] ?: $event['last_seen'] ?: time())); if (!isset($providers[$slug])) { $providers[$slug]=['id'=>$slug,'label'=>$event['provider_label'],'history'=>[],'incidents'=>[]]; } if (!isset($providers[$slug]['history'][$date])) { $providers[$slug]['history'][$date]=['date'=>$date,'incidents'=>0,'last_status'=>$event['status']]; } $providers[$slug]['history'][$date]['incidents']++; $providers[$slug]['history'][$date]['last_status']=$event['status']; $providers[$slug]['incidents'][]=['id'=>$event['id'],'provider'=>$event['provider_label'],'status'=>$event['status'],'severity'=>$event['severity'],'important'=>$event['important'],'summary'=>$event['summary'],'first_seen'=>$event['first_seen'] ? gmdate('c',(int)$event['first_seen']) : null,'last_seen'=>$event['last_seen'] ? gmdate('c',(int)$event['last_seen']) : null,'url'=>$event['url']]; }
         $outProviders=[]; foreach ($providers as $provider) { $h=$provider['history']; ksort($h); $provider['history']=array_values($h); $outProviders[]=$provider; }
-        return rest_ensure_response(['generated_at'=>gmdate('c'),'meta'=>['fetchedAt'=>gmdate('c'),'provider_counts'=>$providerCounts,'daily_counts'=>$dailyCounts,'important_only'=>$importantOnly,'window_days'=>$days ?: 'all','window_start'=>$oldest ? gmdate('Y-m-d',$oldest) : null,'window_end'=>$newest ? gmdate('Y-m-d',$newest) : null,'deduped_incidents'=>$matched,'migration'=>$historyStore->migrationStatus(),'page'=>$page,'per_page'=>$perPage,'returned_count'=>count($returned),'total_matching'=>$matched,'has_more'=>($offset + count($returned)) < $matched],'providers'=>$outProviders]);
+        return rest_ensure_response(['generated_at'=>gmdate('c'),'meta'=>['fetchedAt'=>gmdate('c'),'provider_counts'=>$providerCounts,'daily_counts'=>$dailyCounts,'important_only'=>$importantOnly,'window_days'=>$days ?: 'all','window_start'=>$oldest ? gmdate('Y-m-d',$oldest) : null,'window_end'=>$newest ? gmdate('Y-m-d',$newest) : null,'deduped_incidents'=>$matched,'migration'=>$historyStore->migrationStatus(),'page'=>$page,'per_page'=>$perPage,'returned_count'=>count($returned),'total_matching'=>$pagedTotal,'has_more'=>($offset + count($returned)) < $pagedTotal],'providers'=>$outProviders]);
     }
 
     public static function handle_report(WP_REST_Request $request): WP_REST_Response {

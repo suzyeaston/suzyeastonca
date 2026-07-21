@@ -16,6 +16,49 @@ class HistoryStore
         'lousy_outages_states',
     ];
 
+    public function tableName(): string
+    {
+        global $wpdb;
+        return $wpdb->prefix . 'lousy_outages_history_events';
+    }
+
+    public function installTable(): void
+    {
+        global $wpdb;
+        $table = $this->tableName();
+        $charset = $wpdb->get_charset_collate();
+        $sql = "CREATE TABLE {$table} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            guid varchar(191) NOT NULL,
+            provider varchar(80) NOT NULL,
+            provider_label varchar(160) NOT NULL DEFAULT '',
+            title text NOT NULL,
+            description longtext NULL,
+            status varchar(80) NOT NULL DEFAULT 'incident',
+            severity varchar(40) NOT NULL DEFAULT 'degraded',
+            source varchar(80) NOT NULL DEFAULT 'provider',
+            first_seen bigint(20) unsigned NOT NULL DEFAULT 0,
+            last_seen bigint(20) unsigned NOT NULL DEFAULT 0,
+            important tinyint(1) NOT NULL DEFAULT 0,
+            url text NULL,
+            components_json longtext NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY guid (guid),
+            KEY provider_last_seen (provider,last_seen),
+            KEY important_last_seen (important,last_seen),
+            KEY severity_last_seen (severity,last_seen)
+        ) {$charset};";
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        dbDelta($sql);
+    }
+
+    public function tableExists(): bool
+    {
+        global $wpdb;
+        $table = $this->tableName();
+        return $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table;
+    }
+
     public function loadCanonical(): array
     {
         $stored = get_option(self::OPTION_CANONICAL, []);
@@ -24,12 +67,16 @@ class HistoryStore
 
     public function addEvent(array $event): array
     {
-        $events = $this->loadCanonical();
         $normalized = self::normalizeRichEvent($event);
-        $events[] = $normalized;
-        $events = self::dedupeEvents($events);
-        update_option(self::OPTION_CANONICAL, $events, false);
-        $this->markValidated($events);
+        if ($this->tableExists()) {
+            global $wpdb;
+            $wpdb->replace($this->tableName(), [
+                'guid'=>$normalized['guid'], 'provider'=>$normalized['provider'], 'provider_label'=>$normalized['provider_label'],
+                'title'=>$normalized['title'], 'description'=>$normalized['description'], 'status'=>$normalized['status'], 'severity'=>$normalized['severity'],
+                'source'=>$normalized['source'], 'first_seen'=>(int)$normalized['first_seen'], 'last_seen'=>(int)$normalized['last_seen'],
+                'important'=>!empty($normalized['important']) ? 1 : 0, 'url'=>$normalized['url'], 'components_json'=>wp_json_encode($normalized['components']),
+            ], ['%s','%s','%s','%s','%s','%s','%s','%s','%d','%d','%d','%s','%s']);
+        }
         return $normalized;
     }
 
@@ -93,6 +140,25 @@ class HistoryStore
         ];
         update_option(self::OPTION_MARKER, $report, false);
         return $report;
+    }
+
+    public function queryPage(array $args): array
+    {
+        if (!$this->tableExists()) {
+            return ['events'=>array_slice($this->loadCanonical(), (int)($args['offset'] ?? 0), (int)($args['per_page'] ?? 20)), 'total'=>count($this->loadCanonical())];
+        }
+        global $wpdb;
+        $where = ['1=1']; $values = [];
+        if (!empty($args['cutoff'])) { $where[] = 'first_seen >= %d'; $values[] = (int)$args['cutoff']; }
+        if (!empty($args['providers'])) { $in = implode(',', array_fill(0, count($args['providers']), '%s')); $where[] = "provider IN ($in)"; foreach ($args['providers'] as $p) { $values[] = $p; } }
+        if (!empty($args['important_only'])) { $where[] = 'important = 1'; }
+        $sqlWhere = implode(' AND ', $where);
+        $total = (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->tableName()} WHERE {$sqlWhere}", $values));
+        $limit = max(1, min(50, (int)($args['per_page'] ?? 20))); $offset = max(0, (int)($args['offset'] ?? 0));
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$this->tableName()} WHERE {$sqlWhere} ORDER BY last_seen DESC, id DESC LIMIT %d OFFSET %d", array_merge($values, [$limit, $offset])), ARRAY_A);
+        $events = [];
+        foreach ((array)$rows as $row) { $row['components'] = json_decode((string)($row['components_json'] ?? '[]'), true) ?: []; $events[] = self::normalizeRichEvent($row); }
+        return ['events'=>$events, 'total'=>$total];
     }
 
     public function exportSourceOptions(): array { return $this->readSourceOptions(); }
