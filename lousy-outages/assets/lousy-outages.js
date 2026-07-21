@@ -3088,7 +3088,7 @@
           state.root.console.error(err);
         }
         state.historyIncidents = [];
-        renderHistoryError('Unable to load incident history right now. Check your connection and use Retry.');
+        renderHistoryError('Incident history could not be loaded. Current status is still available.');
       });
   }
 

@@ -42,4 +42,13 @@ assert_true(count($state['signals'])===1, 'fresh provider signal counted once');
 assert_true(count($state['unverified'])===1, 'failed provider is unverified');
 assert_true($state['meta']['active_outage_count']===2 && $state['meta']['signal_count']===1 && $state['meta']['unverified_count']===1, 'meta counts match lanes');
 assert_true(count($state['outages']) + count($state['signals']) === $state['meta']['active_outage_count'] + $state['meta']['signal_count'], 'homepage count parity');
+$GLOBALS['lo_options']['lousy_outages_snapshot'] = $snapshot + [
+    'schema_version' => LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION,
+    'fetched_at' => $now,
+    'source' => 'test',
+    'current_state' => ['outages'=>[], 'signals'=>[], 'unverified'=>[], 'operational'=>[], 'meta'=>['active_outage_count'=>0]],
+];
+$recomputed = lousy_outages_get_current_state();
+assert_true(count($recomputed['outages'])===2, 'get_current_state recomputes inconsistent stored current_state');
+assert_true($recomputed['meta']['active_outage_count']===2, 'recomputed current_state keeps incident count separate from providers');
 echo "OK\n";

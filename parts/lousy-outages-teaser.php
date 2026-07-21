@@ -17,7 +17,8 @@ $teaser_endpoint = rest_url( 'lousy-outages/v1/summary' );
 $teaser_interval = 5 * MINUTE_IN_SECONDS * 1000;
 $rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? array_slice( $teaser_data['rows'], 0, 5 ) : [];
 $last_checked = $teaser_data['last_checked'] ?? '';
-$active_count = count( $rows );
+$active_count = array_sum( array_map( static fn( $row ) => (int) preg_replace( '/\D+/', '', (string) ( $row['message'] ?? '1' ) ) ?: 1, $rows ) );
+$more_providers = max( 0, (int) ( $teaser_data['more_providers'] ?? 0 ) );
 $is_delayed = empty( $rows ) && 'delayed' === (string) ( $teaser_data['status'] ?? '' );
 $provider_names = [];
 foreach ( $rows as $row ) {
@@ -53,7 +54,7 @@ if ( count( $provider_names ) > 3 ) {
                 <span class="lo-home-live-band__dot" aria-hidden="true"></span>
                 <div>
                     <p class="lo-home-live-band__label">LIVE OUTAGE SIGNAL</p>
-                    <p class="lo-home-live-band__count"><?php echo esc_html( $active_count . ' latest incident ' . ( 1 === $active_count ? 'signal' : 'signals' ) ); ?></p>
+                    <p class="lo-home-live-band__count"><?php echo esc_html( $active_count . ' active ' . ( 1 === $active_count ? 'incident' : 'incidents' ) ); ?></p>
                     <?php if ( $provider_summary ) : ?>
                         <p class="lo-home-live-band__providers"><?php echo esc_html( $provider_summary ); ?></p>
                     <?php endif; ?>
@@ -68,6 +69,9 @@ if ( count( $provider_names ) > 3 ) {
                         </div>
                         <p class="lo-home-alert__body">
                             <?php echo esc_html( $row['message'] ?? 'Status update' ); ?>
+                            <?php if ( ! empty( $row['region'] ) ) : ?>
+                                <span class="lo-home-alert__region"><?php echo esc_html( $row['region'] ); ?></span>
+                            <?php endif; ?>
                         </p>
                         <div class="lo-home-alert__times">
                             <?php if ( ! empty( $row['started'] ) ) : ?>
@@ -77,12 +81,13 @@ if ( count( $provider_names ) > 3 ) {
                                 <time class="lo-home-alert__time" datetime="<?php echo esc_attr( $row['updated'] ); ?>"><?php echo esc_html( 'Updated ' . $row['updated'] ); ?></time>
                             <?php endif; ?>
                         </div>
-                        <a class="lo-home-alert__details" href="<?php echo esc_url( $row['href'] ?? $teaser_href ); ?>">Details</a>
+                        <a class="lo-home-alert__details" href="<?php echo esc_url( $row['href'] ?? $teaser_href ); ?>">View incidents</a>
                     </li>
                 <?php endforeach; ?>
+            <?php if ( $more_providers > 0 ) : ?><p class="lo-home-more"><?php echo esc_html( '+ ' . $more_providers . ' more providers' ); ?></p><?php endif; ?>
             </ul>
         <?php endif; ?>
     </div>
 
-    <a class="lo-home-dashboard-link" href="<?php echo esc_url( $teaser_href ); ?>">check status <span aria-hidden="true">→</span></a>
+    <a class="lo-home-dashboard-link" href="<?php echo esc_url( $teaser_href ); ?>">View full status page <span aria-hidden="true">→</span></a>
 </section>

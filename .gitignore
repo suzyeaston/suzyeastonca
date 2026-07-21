@@ -10,3 +10,6 @@ screenshots/
 playwright-report/
 test-results/
 /build/*.zip
+
+# Generated release binaries are shared as artifacts, not committed.
+/dist/*.zip
