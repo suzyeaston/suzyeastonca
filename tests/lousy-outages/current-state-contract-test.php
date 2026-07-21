@@ -4,7 +4,8 @@ if (!defined('ABSPATH')) define('ABSPATH', __DIR__ . '/../../');
 if (!defined('MINUTE_IN_SECONDS')) define('MINUTE_IN_SECONDS', 60);
 if (!defined('HOUR_IN_SECONDS')) define('HOUR_IN_SECONDS', 3600);
 if (!defined('DAY_IN_SECONDS')) define('DAY_IN_SECONDS', 86400);
-foreach (['add_action','add_filter','register_activation_hook','register_deactivation_hook','add_shortcode'] as $fn) { if (!function_exists($fn)) { eval('function '.$fn.'(...$a){}'); } }
+foreach (['add_action','add_filter','register_activation_hook','register_deactivation_hook','add_shortcode','has_action','add_management_page'] as $fn) { if (!function_exists($fn)) { eval('function '.$fn.'(...$a){}'); } }
+if (!function_exists('has_action')) { function has_action(){ return false; } }
 if (!function_exists('apply_filters')) { function apply_filters($tag,$value){ return $value; } }
 if (!function_exists('plugin_dir_path')) { function plugin_dir_path($f){ return dirname($f).'/'; } }
 if (!function_exists('plugin_dir_url')) { function plugin_dir_url($f){ return 'https://example.test/'; } }

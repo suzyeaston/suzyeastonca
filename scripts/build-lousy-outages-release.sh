@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="$ROOT/lousy-outages"
 DIST="$ROOT/dist"
 ZIP="$DIST/lousy-outages.zip"
-VERSION="0.3.5"
+VERSION="0.3.6"
 PLUGIN_HEADER="Plugin Name: Lousy"$' '"Outages"
 rm -rf "$DIST/.lousy-outages-build" "$ZIP" "$ZIP.sha256" "$DIST/release-manifest.json"
 mkdir -p "$DIST/.lousy-outages-build/lousy-outages" "$DIST"
@@ -17,13 +17,13 @@ rsync -a --delete \
 mapfile -t entries < <(zipinfo -1 "$ZIP")
 printf '%s\n' "${entries[@]}" | grep -qx 'lousy-outages/lousy-outages.php'
 ! printf '%s\n' "${entries[@]}" | grep -qx 'lousy-outages/lousy-outages/lousy-outages.php'
-! printf '%s\n' "${entries[@]}" | grep -q '^lousy-outages-0\.3\.5/'
+! printf '%s\n' "${entries[@]}" | grep -q '^lousy-outages-0\.3\.6/'
 count=0; tmp="$DIST/.lousy-outages-build/check"; rm -rf "$tmp"; mkdir -p "$tmp"; unzip -q "$ZIP" -d "$tmp"
 while IFS= read -r -d '' f; do grep -q "$PLUGIN_HEADER" "$f" && count=$((count+1)) || true; done < <(find "$tmp" -type f -print0)
 [ "$count" -eq 1 ]
 for bad in '.ea-php-cli.cache' 'tests/' 'recovery' 'diagnostic' '\\'; do ! printf '%s\n' "${entries[@]}" | grep -qiF "$bad"; done
-grep -Eq '^ \* Version: 0\.3\.5$' "$tmp/lousy-outages/lousy-outages.php"
-grep -Eq "define\( 'LOUSY_OUTAGES_VERSION', '0\.3\.5' \);" "$tmp/lousy-outages/lousy-outages.php"
+grep -Eq '^ \* Version: 0\.3\.6$' "$tmp/lousy-outages/lousy-outages.php"
+grep -Eq "define\( 'LOUSY_OUTAGES_VERSION', '0\.3\.6' \);" "$tmp/lousy-outages/lousy-outages.php"
 sha256sum "$ZIP" | awk '{print $1"  lousy-outages.zip"}' > "$ZIP.sha256"
 sha=$(awk '{print $1}' "$ZIP.sha256")
 commit=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)

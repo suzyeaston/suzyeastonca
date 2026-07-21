@@ -146,84 +146,20 @@ class Summary {
      */
     public static function ordered_current_incidents(int $limit = 0): array
     {
-        $providers = self::sort_status_page_providers(self::providers());
+        $state = function_exists('lousy_outages_get_current_state') ? \lousy_outages_get_current_state() : ['outages'=>[]];
         $records = [];
-
-        foreach ($providers as $provider) {
-            if (!is_array($provider)) {
-                continue;
-            }
-
-            $incidents = isset($provider['incidents']) && is_array($provider['incidents'])
-                ? array_values(array_filter($provider['incidents'], 'is_array'))
-                : [];
-            $providerId = sanitize_key((string) ($provider['id'] ?? $provider['provider'] ?? $provider['name'] ?? ''));
-            $providerName = trim((string) ($provider['name'] ?? $provider['provider'] ?? $providerId));
-            if ('' === $providerName) {
-                $providerName = 'Unknown provider';
-            }
-            $providerStatus = strtolower((string) ($provider['stateCode'] ?? $provider['status'] ?? 'incident'));
-            $tileKind = strtolower((string) ($provider['tile_kind'] ?? $provider['tileKind'] ?? ''));
-            $currentIncidents = self::current_incidents_for_provider($provider);
-
-            if (!$currentIncidents) {
-                $hasCurrentSignal = !$incidents && in_array($tileKind, ['outage', 'signal'], true);
-                if (!$hasCurrentSignal) {
-                    continue;
-                }
-
-                $updated = (string) ($provider['updatedAt'] ?? $provider['updated_at'] ?? '');
-                $records[] = [
-                    'id' => sha1($providerId . '|provider-current|' . $providerStatus . '|' . $updated),
-                    'provider_id' => $providerId,
-                    'provider' => $providerName,
-                    'status' => $providerStatus ?: 'incident',
-                    'status_label' => Fetcher::status_label($providerStatus ?: 'incident'),
-                    'severity' => 'outage' === $tileKind ? 'outage' : 'degraded',
-                    'important' => true,
-                    'summary' => (string) ($provider['summary'] ?? $provider['message'] ?? Fetcher::status_label($providerStatus ?: 'incident')),
-                    'started_at' => self::format_incident_time($updated),
-                    'updated_at' => self::format_incident_time($updated),
-                    'first_seen' => self::parse_time($updated) ?? 0,
-                    'last_seen' => self::parse_time($updated) ?? 0,
-                    'url' => (string) ($provider['url'] ?? ''),
-                ];
-                continue;
-            }
-
-            $incidents = $currentIncidents;
-            usort($incidents, static function (array $left, array $right): int {
-                return self::incident_timestamp($right) <=> self::incident_timestamp($left);
-            });
-
-            foreach ($incidents as $incident) {
-                if (!is_array($incident)) {
-                    continue;
-                }
-
-                $started = (string) ($incident['startedAt'] ?? $incident['started_at'] ?? $incident['created_at'] ?? '');
-                $updated = (string) ($incident['updatedAt'] ?? $incident['updated_at'] ?? $started);
-                $impact = strtolower((string) ($incident['impact'] ?? $incident['status'] ?? $providerStatus ?: 'incident'));
-                $records[] = [
-                    'id' => (string) ($incident['id'] ?? sha1($providerId . '|' . ($incident['title'] ?? '') . '|' . $started . '|' . $updated)),
-                    'provider_id' => $providerId,
-                    'provider' => $providerName,
-                    'status' => $providerStatus ?: 'incident',
-                    'status_label' => Fetcher::status_label($providerStatus ?: 'incident'),
-                    'severity' => $impact ?: 'degraded',
-                    'important' => true,
-                    'summary' => (string) ($incident['display_title'] ?? $incident['displayTitle'] ?? $incident['title'] ?? $incident['name'] ?? $incident['summary'] ?? 'Incident reported'),
-                    'started_at' => self::format_incident_time($started),
-                    'updated_at' => self::format_incident_time($updated),
-                    'first_seen' => self::parse_time($started) ?? 0,
-                    'last_seen' => self::parse_time($updated) ?? (self::parse_time($started) ?? 0),
-                    'url' => (string) ($incident['url'] ?? $provider['url'] ?? ''),
-                ];
-            }
+        foreach ((array)($state['outages'] ?? []) as $incident) {
+            if (!is_array($incident)) { continue; }
+            $providerId = sanitize_key((string)($incident['provider_id'] ?? $incident['provider'] ?? ''));
+            $providerName = trim((string)($incident['provider'] ?? $incident['provider_name'] ?? $providerId));
+            $started = (string)($incident['startedAt'] ?? $incident['started_at'] ?? $incident['created_at'] ?? '');
+            $updated = (string)($incident['updatedAt'] ?? $incident['updated_at'] ?? $incident['last_official_update'] ?? $started);
+            $status = strtolower((string)($incident['status'] ?? $incident['impact'] ?? 'incident'));
+            $records[] = ['id'=>(string)($incident['id'] ?? sha1($providerId.'|'.($incident['title'] ?? '').'|'.$started.'|'.$updated)),'provider_id'=>$providerId,'provider'=>$providerName ?: 'Unknown provider','status'=>$status ?: 'incident','status_label'=>Fetcher::status_label($status ?: 'incident'),'severity'=>strtolower((string)($incident['impact'] ?? $status ?: 'degraded')),'important'=>true,'summary'=>(string)($incident['display_title'] ?? $incident['displayTitle'] ?? $incident['title'] ?? $incident['name'] ?? $incident['summary'] ?? 'Incident reported'),'started_at'=>self::format_incident_time($started),'updated_at'=>self::format_incident_time($updated),'first_seen'=>self::parse_time($started) ?? 0,'last_seen'=>self::parse_time($updated) ?? (self::parse_time($started) ?? 0),'url'=>(string)($incident['url'] ?? $incident['provider_url'] ?? '')];
         }
-
-        $deduped = self::dedupe_ordered_incidents($records);
-        return $limit > 0 ? array_slice($deduped, 0, $limit) : $deduped;
+        usort($records, static fn(array $a, array $b): int => ((int)($b['last_seen'] ?? 0)) <=> ((int)($a['last_seen'] ?? 0)));
+        $records = self::dedupe_ordered_incidents($records);
+        return $limit > 0 ? array_slice($records, 0, $limit) : $records;
     }
 
     /**
@@ -402,58 +338,16 @@ class Summary {
         return $timestamp ? gmdate('c', $timestamp) : null;
     }
 
-    private static function providers(): array
+    public static function providers(): array
     {
-        $providers = [];
-
-        if (function_exists('lousy_outages_get_snapshot')) {
-            $snapshot = \lousy_outages_get_snapshot(false);
-            if (empty($snapshot['providers'])) {
-                $snapshot = \lousy_outages_get_snapshot(true);
-            }
-
-            if (!empty($snapshot['providers']) && is_array($snapshot['providers'])) {
-                $providers = array_values($snapshot['providers']);
+        if (function_exists('lousy_outages_get_current_state')) {
+            $state = \lousy_outages_get_current_state();
+            if (!empty($state['providers']) && is_array($state['providers'])) {
+                return array_values($state['providers']);
             }
         }
-
-        if ($providers) {
-            return $providers;
-        }
-
-        $store  = new Store();
-        $states = $store->get_all();
-        if (!$states) {
-            return [];
-        }
-
-        $timestamp = get_option('lousy_outages_last_poll');
-        if (!$timestamp) {
-            $timestamp = gmdate('c');
-        }
-
-        foreach ($states as $id => $state) {
-            if (!is_array($state)) {
-                continue;
-            }
-
-            if (function_exists('lousy_outages_build_provider_payload')) {
-                $providers[] = \lousy_outages_build_provider_payload((string) $id, $state, (string) $timestamp);
-                continue;
-            }
-
-            $providers[] = [
-                'id'        => (string) $id,
-                'provider'  => (string) ($state['provider'] ?? $state['name'] ?? $id),
-                'name'      => (string) ($state['name'] ?? $state['provider'] ?? $id),
-                'stateCode' => (string) ($state['status'] ?? 'unknown'),
-                'updatedAt' => (string) ($state['updated_at'] ?? $state['updatedAt'] ?? $timestamp),
-                'incidents' => isset($state['incidents']) && is_array($state['incidents']) ? $state['incidents'] : [],
-                'summary'   => (string) ($state['summary'] ?? ''),
-            ];
-        }
-
-        return $providers;
+        $snapshot = get_option('lousy_outages_snapshot', []);
+        return isset($snapshot['providers']) && is_array($snapshot['providers']) ? array_values($snapshot['providers']) : [];
     }
 
     private static function has_verification_delay(array $providers): bool

@@ -6,44 +6,25 @@ namespace SuzyEaston\LousyOutages;
 const LO_SHOW_WIDESPREAD = false;
 
 /**
- * Determine the filesystem path and URL for the plugin assets.
+ * Determine the filesystem path and URL for standalone plugin assets.
  *
- * When the plugin is bundled with the theme (as it is on suzyeaston.ca),
- * plugin_dir_url() incorrectly points to wp-content/plugins/, which results in
- * 404s for front-end assets. This helper checks for copies that live alongside
- * the active theme before falling back to the plugin directory.
+ * Public assets always come from LOUSY_OUTAGES_URL . 'assets/' so obsolete
+ * theme copies cannot create version skew between SSR markup and JS/CSS.
  *
- * @return array{string, string} An array containing the absolute path and the
- *                               public URL for the assets directory.
+ * @return array{string, string}
  */
 function locate_assets_base(): array
 {
-    $candidates = [];
-
-    if (function_exists('get_stylesheet_directory') && function_exists('get_stylesheet_directory_uri')) {
-        $stylesheet_path = rtrim(get_stylesheet_directory(), '/\\') . '/lousy-outages/assets/';
-        $stylesheet_url  = rtrim(get_stylesheet_directory_uri(), '/\\') . '/lousy-outages/assets/';
-        $candidates[] = [$stylesheet_path, $stylesheet_url];
-    }
-
-    if (function_exists('get_template_directory') && function_exists('get_template_directory_uri')) {
-        $template_path = rtrim(get_template_directory(), '/\\') . '/lousy-outages/assets/';
-        $template_url  = rtrim(get_template_directory_uri(), '/\\') . '/lousy-outages/assets/';
-        $candidates[] = [$template_path, $template_url];
-    }
-
-    $plugin_path = rtrim(plugin_dir_path(__DIR__), '/\\') . '/assets/';
-    $plugin_url  = rtrim(plugin_dir_url(__DIR__), '/\\') . '/assets/';
-    $candidates[] = [$plugin_path, $plugin_url];
-
-    foreach ($candidates as $candidate) {
-        [$path, $url] = $candidate;
-        if ($path && file_exists($path)) {
-            return [$path, $url];
-        }
-    }
-
+    $plugin_path = defined('LOUSY_OUTAGES_PATH') ? rtrim(LOUSY_OUTAGES_PATH, '/\\') . '/assets/' : rtrim(plugin_dir_path(__DIR__), '/\\') . '/assets/';
+    $plugin_url = defined('LOUSY_OUTAGES_URL') ? rtrim(LOUSY_OUTAGES_URL, '/\\') . '/assets/' : rtrim(plugin_dir_url(__DIR__), '/\\') . '/assets/';
     return [$plugin_path, $plugin_url];
+}
+
+function asset_version(string $base_path, string $asset): string
+{
+    $version = defined('LOUSY_OUTAGES_VERSION') ? (string) LOUSY_OUTAGES_VERSION : '0.0.0';
+    $path = rtrim($base_path, '/\\') . '/' . ltrim($asset, '/\\');
+    return $version . '-' . (file_exists($path) ? (string) filemtime($path) : '0');
 }
 
 add_shortcode('lousy_outages', __NAMESPACE__ . '\render_shortcode');
@@ -57,21 +38,21 @@ function render_shortcode(): string {
         'lousy-outages',
         $base_url . 'lousy-outages.css',
         [],
-        file_exists($base_path . 'lousy-outages.css') ? filemtime($base_path . 'lousy-outages.css') : null
+        asset_version($base_path, 'lousy-outages.css')
     );
 
     wp_enqueue_style(
         'lousy-outages-hud',
         $base_url . 'hud.css',
         ['lousy-outages'],
-        file_exists($base_path . 'hud.css') ? filemtime($base_path . 'hud.css') : null
+        asset_version($base_path, 'hud.css')
     );
 
     wp_enqueue_script(
         'lousy-outages',
         $base_url . 'lousy-outages.js',
         [],
-        file_exists($base_path . 'lousy-outages.js') ? filemtime($base_path . 'lousy-outages.js') : null,
+        asset_version($base_path, 'lousy-outages.js'),
         true
     );
 
@@ -79,7 +60,7 @@ function render_shortcode(): string {
         'lousy-outages-hud',
         $base_url . 'hud.js',
         ['lousy-outages'],
-        file_exists($base_path . 'hud.js') ? filemtime($base_path . 'hud.js') : null,
+        asset_version($base_path, 'hud.js'),
         true
     );
 
@@ -88,7 +69,7 @@ function render_shortcode(): string {
             'lousy-outages-auto-refresh',
             $base_url . 'js/outages.js',
             [],
-            filemtime($base_path . 'js/outages.js'),
+            asset_version($base_path, 'js/outages.js'),
             true
         );
     }
@@ -389,7 +370,7 @@ function render_shortcode(): string {
     $config['initial']['source']    = $source;
     $config['initial']['errors']    = $snapshot_errors;
 
-    $current_state = function_exists('lousy_outages_current_state_from_snapshot') ? \lousy_outages_current_state_from_snapshot(['providers' => $config['initial']['providers']]) : [];
+    $current_state = function_exists('lousy_outages_get_current_state') ? \lousy_outages_get_current_state() : (function_exists('lousy_outages_current_state_from_snapshot') ? \lousy_outages_current_state_from_snapshot(['providers' => $config['initial']['providers']]) : []);
     $meta_counts = isset($current_state['meta']) && is_array($current_state['meta']) ? $current_state['meta'] : ['active_outage_count'=>0,'signal_count'=>0,'unverified_count'=>0,'generated_at'=>gmdate('c')];
     $config['initial']['current_state'] = $current_state;
     $config['meta'] = $meta_counts;
@@ -1201,14 +1182,14 @@ function render_report_shortcode(): string {
         'lousy-outages',
         $base_url . 'lousy-outages.css',
         [],
-        file_exists($base_path . 'lousy-outages.css') ? filemtime($base_path . 'lousy-outages.css') : null
+        asset_version($base_path, 'lousy-outages.css')
     );
 
     wp_enqueue_script(
         'lousy-outages',
         $base_url . 'lousy-outages.js',
         [],
-        file_exists($base_path . 'lousy-outages.js') ? filemtime($base_path . 'lousy-outages.js') : null,
+        asset_version($base_path, 'lousy-outages.js'),
         true
     );
 

@@ -2681,8 +2681,75 @@
   }
 }
 
-/* 0.3.5 layout hierarchy repair */
+/* 0.3.6 layout hierarchy repair */
 .lo-history__retry { margin-left: .5rem; }
 .lo-subscribe, .lo-report, .lo-settings, .lo-history { min-width: 0; overflow-wrap: anywhere; }
 .lo-subscribe input, .lo-subscribe select, .lo-subscribe textarea, .lo-report input, .lo-report select, .lo-report textarea { max-width: 100%; min-height: 44px; }
 @media (max-width: 720px) { .lo-history__heading, .lo-history__controls { display: grid; grid-template-columns: 1fr; gap: .75rem; } .lo-subscribe form, .lo-report form { display: grid; grid-template-columns: 1fr; } }
+
+/* 0.3.6 operations-console hierarchy */
+.lousy-outages {
+  max-width: 1180px;
+  margin-inline: auto;
+}
+.lo-hero,
+.lo-current,
+.lo-history,
+.lo-providers {
+  border: 1px solid rgba(44, 255, 199, 0.32);
+  background: linear-gradient(135deg, rgba(4, 15, 28, 0.96), rgba(7, 24, 33, 0.92));
+  box-shadow: 0 0 0 1px rgba(127, 255, 0, 0.08), 0 18px 45px rgba(0, 0, 0, 0.35);
+}
+.lo-hero {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 3vw, 1.7rem);
+}
+.lo-hero__metrics,
+.lo-current__lanes,
+.lo-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(.75rem, 2vw, 1rem);
+}
+.lo-current [data-lo-lane="outages"] { border-color: rgba(255, 77, 166, .46); }
+.lo-current [data-lo-lane="signals"] { border-color: rgba(255, 224, 138, .46); }
+.lo-current [data-lo-lane="unverified"] { border-color: rgba(84, 209, 255, .42); }
+.lo-card,
+.lo-history__list article {
+  border-radius: 16px;
+  padding: 1rem;
+}
+.lo-summary,
+.lo-message,
+.lo-inc-summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lo-status-chip,
+.lo-chip,
+.lo-corroboration-radar__status-badge {
+  min-height: 28px;
+  align-items: center;
+}
+.lo-subscribe,
+.lo-report,
+.lo-settings {
+  margin-top: 1rem;
+}
+.lousy-outages button,
+.lousy-outages .button,
+.lousy-outages input[type="submit"] {
+  min-height: 44px;
+}
+@media (max-width: 760px) {
+  .lo-hero__metrics,
+  .lo-current__lanes,
+  .lo-provider-grid {
+    grid-template-columns: 1fr;
+  }
+  .lo-hero { margin-top: 0; }
+  .lo-card { padding: .9rem; }
+}

@@ -144,7 +144,6 @@ class IncidentStore
 
         $events = $this->pruneEvents($events, $now);
         update_option(self::OPTION_EVENTS, $events, false);
-        (new HistoryStore())->migrate(true);
     }
 
     /**
@@ -187,7 +186,6 @@ class IncidentStore
 
         $events = $this->pruneEvents($events, $now);
         update_option(self::OPTION_EVENTS, $events, false);
-        (new HistoryStore())->migrate(true);
 
         return $event;
     }

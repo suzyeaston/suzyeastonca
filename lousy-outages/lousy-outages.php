@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.3.5
+ * Version: 0.3.6
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,10 +24,10 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.3.5' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.3.6' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 4 );
+    define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
 }
 if ( ! defined( 'LOUSY_OUTAGES_FILE' ) ) {
     define( 'LOUSY_OUTAGES_FILE', __FILE__ );
@@ -74,6 +74,7 @@ lousy_outages_require( 'includes/SignalEngine.php' );
 lousy_outages_require( 'includes/Subscribe.php' );
 lousy_outages_require( 'includes/Feeds.php' );
 lousy_outages_require( 'includes/Summary.php' );
+lousy_outages_require( 'includes/CurrentState.php' );
 lousy_outages_require( 'includes/IncidentAlerts.php' );
 lousy_outages_require( 'includes/Snapshot.php' );
 lousy_outages_require( 'includes/Cron.php' );
@@ -98,6 +99,7 @@ lousy_outages_require( 'includes/Sources/StatuspageIntelSource.php' );
 lousy_outages_require( 'includes/SignalCollector.php' );
 lousy_outages_require( 'includes/Api.php' );
 lousy_outages_require( 'includes/AdminCleanup.php' );
+lousy_outages_require( 'includes/AdminDiagnostics.php' );
 
 lousy_outages_require( 'public/shortcode.php' );
 
@@ -130,6 +132,7 @@ MailTransport::bootstrap();
 IncidentAlerts::bootstrap();
 RefreshCron::bootstrap();
 \SuzyEaston\LousyOutages\AdminCleanup::bootstrap();
+\SuzyEaston\LousyOutages\AdminDiagnostics::bootstrap();
 
 lo_snapshot_bootstrap();
 lo_cron_bootstrap();
@@ -153,6 +156,7 @@ function lousy_outages_activate() {
     lousy_outages_schedule_canonical_refresh();
     lousy_outages_create_page();
     lousy_outages_maybe_install_schema( true );
+    if ( class_exists( '\\SuzyEaston\\LousyOutages\\Storage\\HistoryStore' ) ) { ( new \SuzyEaston\LousyOutages\Storage\HistoryStore() )->installTable(); }
     Subscriptions::schedule_purge();
     $default_email = 'suzyeaston@gmail.com';
     $stored_email  = get_option( 'lousy_outages_email' );
@@ -220,6 +224,7 @@ function lousy_outages_maybe_repair_snapshot_caches(): void {
     $current = (int) get_option( $option_key, 0 );
     if ( $current >= (int) LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION ) { return; }
     foreach ( [ 'lousy_outages_cached_statuses', 'lousy_status_snapshot', 'lo_snapshot_payload_v1', 'lousy_outages_fragment_public' ] as $key ) { delete_transient( $key ); }
+    delete_option( 'lousy_outages_current_state' );
     delete_option( 'lo_diag_public_chatter' );
     update_option( $option_key, (int) LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION, false );
 }
@@ -553,6 +558,10 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         if ( class_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts' ) && method_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts', 'collect_from_snapshot' ) ) {
             $incidents_for_history = \SuzyEaston\LousyOutages\IncidentAlerts::collect_from_snapshot();
             ( new \SuzyEaston\LousyOutages\Storage\IncidentStore() )->persistIncidents( $incidents_for_history );
+            if ( class_exists( '\\SuzyEaston\\LousyOutages\\Storage\\HistoryStore' ) ) {
+                $history_store = new \SuzyEaston\LousyOutages\Storage\HistoryStore();
+                foreach ( $incidents_for_history as $history_incident ) { if ( is_array( $history_incident ) ) { $history_store->addEvent( $history_incident ); } }
+            }
         }
         $providers = isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] ) ? $snapshot['providers'] : [];
         $trending  = isset( $snapshot['trending'] ) && is_array( $snapshot['trending'] ) ? $snapshot['trending'] : [ 'trending' => false, 'signals' => [] ];
