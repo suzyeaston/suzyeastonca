@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.4.0
+ * Version: 0.4.1
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.4.0' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.4.1' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -583,6 +583,13 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
                 'last_attempt' => $timestamp_gmt,
                 'last_success' => $failed_state ? (string) ( $prior_health['last_success'] ?? ( $state['last_successful_at'] ?? '' ) ) : $timestamp_gmt,
                 'last_error' => $failed_state ? (string) ( $state['fetch_error'] ?? $state['error'] ?? 'Fetch failed' ) : '',
+                'endpoint' => is_array( $state ) ? (string) ( $state['endpoint'] ?? '' ) : '',
+                'final_url' => is_array( $state ) ? (string) ( $state['final_url'] ?? $state['endpoint'] ?? '' ) : '',
+                'http_status' => is_array( $state ) ? ( $state['http_status'] ?? null ) : null,
+                'content_type' => is_array( $state ) ? (string) ( $state['content_type'] ?? '' ) : '',
+                'adapter' => is_array( $state ) ? (string) ( $state['adapter'] ?? '' ) : '',
+                'schema_result' => is_array( $state ) ? (string) ( $state['schema_result'] ?? '' ) : '',
+                'current_error' => $failed_state ? (string) ( $state['fetch_error'] ?? $state['error'] ?? 'Fetch failed' ) : '',
                 'consecutive_failures' => $consecutive,
                 'snapshot_age_seconds' => ! empty( $state['updated_at'] ) ? max( 0, time() - ( strtotime( (string) $state['updated_at'] ) ?: time() ) ) : null,
             ];

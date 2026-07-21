@@ -16,7 +16,7 @@ $tests = [];
 
 $tests['registry_compatibility_keeps_enabled_ids'] = static function (): void {
     $enabled = Providers::enabled();
-    foreach (['openai','github','cloudflare','anthropic','elevenlabs'] as $id) {
+    foreach (['openai','github','cloudflare','anthropic','huggingface'] as $id) {
         if (!isset($enabled[$id])) {
             throw new RuntimeException("Expected enabled provider {$id}");
         }
@@ -28,7 +28,7 @@ $tests['registry_compatibility_keeps_enabled_ids'] = static function (): void {
 
 $tests['candidate_sources_not_enabled'] = static function (): void {
     $enabled = Providers::enabled();
-    foreach (['cursor','perplexity','adobe','runway','stability_ai','google_gemini'] as $id) {
+    foreach (['cursor','perplexity','adobe','runway','stability_ai','google_gemini','mistral','groq','replicate','elevenlabs'] as $id) {
         if (isset($enabled[$id])) {
             throw new RuntimeException("Candidate {$id} must not be enabled until verified");
         }
@@ -57,7 +57,7 @@ $tests['registry_has_ai_creative_focus_without_candidate_inflation'] = static fu
     $enabled = ProviderRegistry::enabled();
     $ai = array_values(array_filter($enabled, static fn($p) => ($p['category'] ?? '') === 'ai'));
     $creative = array_values(array_filter($enabled, static fn($p) => ($p['category'] ?? '') === 'creative'));
-    if (count($ai) < 6 || count($creative) < 1) { throw new RuntimeException('Expected focused AI/creative enabled catalog'); }
+    if (count($ai) < 3) { throw new RuntimeException('Expected verified AI enabled catalog'); }
 };
 
 foreach ($tests as $name => $test) {

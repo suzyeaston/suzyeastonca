@@ -432,7 +432,15 @@ function render_shortcode(): string {
         return is_array($incident) ? sanitize_key((string) ($incident['provider_id'] ?? $incident['provider'] ?? '')) : '';
     }, $active_incident_records))));
     $meta_counts['active_outage_count'] = count($active_incident_records);
-    $meta_counts['official_incident_count'] = count($active_incident_records);
+    $official_notice_count = 0;
+    $affected_services = [];
+    foreach ($active_incident_records as $incident) {
+        if (!is_array($incident)) { continue; }
+        $official_notice_count += max(1, (int)($incident['official_notice_count'] ?? count((array)($incident['official_notices'] ?? []))));
+        foreach ((array)($incident['affected_services'] ?? []) as $service) { if (is_string($service) && '' !== trim($service)) { $affected_services[] = trim($service); } }
+    }
+    $meta_counts['official_incident_count'] = $official_notice_count;
+    $meta_counts['affected_service_count'] = count(array_unique($affected_services));
     $meta_counts['affected_provider_count'] = count($affected_provider_ids);
     $meta_counts['current_official_provider_ids'] = $affected_provider_ids;
     $config['initial']['current_state'] = $current_state;

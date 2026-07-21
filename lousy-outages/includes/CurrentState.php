@@ -62,7 +62,15 @@ function lousy_outages_get_current_state(): array {
         return is_array($incident) ? sanitize_key((string)($incident['provider_id'] ?? $incident['provider'] ?? '')) : '';
     }, $base['outages']))));
     $base['meta']['active_outage_count'] = count($base['outages']);
-    $base['meta']['official_incident_count'] = count($base['outages']);
+    $official_notice_count = 0;
+    $affected_services = [];
+    foreach ($base['outages'] as $incident) {
+        if (!is_array($incident)) { continue; }
+        $official_notice_count += max(1, (int)($incident['official_notice_count'] ?? count((array)($incident['official_notices'] ?? []))));
+        foreach ((array)($incident['affected_services'] ?? []) as $service) { if (is_string($service) && '' !== trim($service)) { $affected_services[] = trim($service); } }
+    }
+    $base['meta']['official_incident_count'] = $official_notice_count;
+    $base['meta']['affected_service_count'] = count(array_unique($affected_services));
     $base['meta']['affected_provider_count'] = count($affected_provider_ids);
     $base['meta']['current_official_provider_ids'] = $affected_provider_ids;
     $base['meta']['signal_count'] = count($base['signals']);
