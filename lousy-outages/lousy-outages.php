@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.3.9
+ * Version: 0.4.0
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.3.9' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.4.0' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -53,6 +53,7 @@ if ( ! function_exists( 'lousy_outages_require' ) ) {
     }
 }
 
+lousy_outages_require( 'includes/ProviderRegistry.php' );
 lousy_outages_require( 'includes/Providers.php' );
 lousy_outages_require( 'includes/Fetch.php' );
 lousy_outages_require( 'includes/Adapters.php' );
@@ -100,6 +101,7 @@ lousy_outages_require( 'includes/SignalCollector.php' );
 lousy_outages_require( 'includes/Api.php' );
 lousy_outages_require( 'includes/AdminCleanup.php' );
 lousy_outages_require( 'includes/AdminDiagnostics.php' );
+lousy_outages_require( 'includes/ProviderPages.php' );
 
 lousy_outages_require( 'public/shortcode.php' );
 
@@ -133,6 +135,7 @@ IncidentAlerts::bootstrap();
 RefreshCron::bootstrap();
 \SuzyEaston\LousyOutages\AdminCleanup::bootstrap();
 \SuzyEaston\LousyOutages\AdminDiagnostics::bootstrap();
+\SuzyEaston\LousyOutages\ProviderPages::bootstrap();
 
 lo_snapshot_bootstrap();
 lo_cron_bootstrap();
@@ -568,6 +571,25 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
 
         if ( empty( $errors ) && isset( $snapshot['errors'] ) && is_array( $snapshot['errors'] ) ) {
             $errors = $snapshot['errors'];
+        }
+
+        update_option( 'lousy_outages_last_refresh_attempt', [ 'timestamp' => $timestamp_gmt, 'providers_attempted' => count( $states ), 'quality' => $quality ], false );
+        $health = (array) get_option( 'lousy_outages_provider_health', [] );
+        foreach ( $states as $id => $state ) {
+            $prior_health = isset( $health[ $id ] ) && is_array( $health[ $id ] ) ? $health[ $id ] : [];
+            $failed_state = is_array( $state ) && lousy_outages_provider_fetch_failed( $state );
+            $consecutive = $failed_state ? ( (int) ( $prior_health['consecutive_failures'] ?? 0 ) + 1 ) : 0;
+            $health[ $id ] = [
+                'last_attempt' => $timestamp_gmt,
+                'last_success' => $failed_state ? (string) ( $prior_health['last_success'] ?? ( $state['last_successful_at'] ?? '' ) ) : $timestamp_gmt,
+                'last_error' => $failed_state ? (string) ( $state['fetch_error'] ?? $state['error'] ?? 'Fetch failed' ) : '',
+                'consecutive_failures' => $consecutive,
+                'snapshot_age_seconds' => ! empty( $state['updated_at'] ) ? max( 0, time() - ( strtotime( (string) $state['updated_at'] ) ?: time() ) ) : null,
+            ];
+        }
+        update_option( 'lousy_outages_provider_health', $health, false );
+        if ( ! empty( $quality['ok'] ) && 0 === (int) ( $quality['failed'] ?? 0 ) ) {
+            update_option( 'lousy_outages_last_refresh_complete', [ 'timestamp' => $timestamp_gmt, 'providers_successful' => (int) ( $quality['verified'] ?? 0 ) ], false );
         }
 
         update_option( 'lousy_outages_last_poll', $timestamp_iso, false );

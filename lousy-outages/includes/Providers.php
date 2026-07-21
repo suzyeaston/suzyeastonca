@@ -8,121 +8,17 @@ class Providers {
     private const BLOCKED_PROVIDER_IDS = ['linear'];
 
     private static function defaultProviders(): array {
-        return [
-            // Statuspage JSON
-            [
-                'id'         => 'github',
-                'name'       => 'GitHub',
-                'type'       => 'statuspage',
-                'url'        => 'https://www.githubstatus.com/api/v2/summary.json',
-                'status_url' => 'https://www.githubstatus.com/',
-            ],
-            [
-                'id'         => 'cloudflare',
-                'name'       => 'Cloudflare',
-                'type'       => 'statuspage',
-                'url'        => 'https://www.cloudflarestatus.com/api/v2/summary.json',
-                'status_url' => 'https://www.cloudflarestatus.com/',
-            ],
-            [
-                'id'         => 'openai',
-                'name'       => 'OpenAI',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.openai.com/api/v2/summary.json',
-                'status_url' => 'https://status.openai.com/',
-            ],
-            [
-                'id'         => 'atlassian',
-                'name'       => 'Atlassian',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.atlassian.com/api/v2/summary.json',
-                'status_url' => 'https://status.atlassian.com/',
-            ],
-            [
-                'id'         => 'digitalocean',
-                'name'       => 'DigitalOcean',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.digitalocean.com/api/v2/summary.json',
-                'status_url' => 'https://status.digitalocean.com/',
-            ],
-            [
-                'id'         => 'netlify',
-                'name'       => 'Netlify',
-                'type'       => 'statuspage',
-                'url'        => 'https://www.netlifystatus.com/api/v2/summary.json',
-                'status_url' => 'https://www.netlifystatus.com/',
-            ],
-            [
-                'id'         => 'vercel',
-                'name'       => 'Vercel',
-                'type'       => 'statuspage',
-                'url'        => 'https://www.vercel-status.com/api/v2/summary.json',
-                'status_url' => 'https://www.vercel-status.com/',
-            ],
-            [
-                'id'         => 'zoom',
-                'name'       => 'Zoom',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.zoom.us/api/v2/summary.json',
-                'status_url' => 'https://status.zoom.us/',
-            ],
-            [
-                'id'         => 'zscaler',
-                'name'       => 'Zscaler',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.zscaler.com/api/v2/summary.json',
-                'status_url' => 'https://trust.zscaler.com/zscaler.net/',
-            ],
-
-            // High-value adds (Statuspage JSON)
-            [
-                'id'         => 'teamviewer',
-                'name'       => 'TeamViewer',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.teamviewer.com/api/v2/summary.json',
-                'status_url' => 'https://status.teamviewer.com/',
-            ],
-            [
-                'id'         => 'sentry',
-                'name'       => 'Sentry',
-                'type'       => 'statuspage',
-                'url'        => 'https://status.sentry.io/api/v2/summary.json',
-                'status_url' => 'https://status.sentry.io/',
-            ],
-
-            // RSS/Atom feeds
-            ['id' => 'aws', 'name' => 'AWS', 'type' => 'rss', 'url' => 'https://status.aws.amazon.com/rss/all.rss'],
-            [
-                'id'         => 'slack',
-                'name'       => 'Slack',
-                // LO: Use the current-status endpoint for live state; RSS is only for history.
-                'type'       => 'slack_current',
-                'url'        => 'https://status.slack.com/api/v2.0.0/current',
-                'status_url' => 'https://status.slack.com/',
-            ],
-            [
-                'id'         => 'crowdstrike',
-                'name'       => 'CrowdStrike',
-                'type'       => 'manual', // LO: manual provider with no feed.
-                'url'        => '',
-                'status_url' => 'https://trust.crowdstrike.com/',
-            ],
-            ['id' => 'azure', 'name' => 'Azure', 'type' => 'rss', 'url' => 'https://rssfeed.azure.status.microsoft/en-us/status/feed/'],
-            [
-                'id'         => 'google_workspace',
-                'name'       => 'Google Workspace',
-                'type'       => 'rss',
-                'url'        => 'https://www.google.com/appsstatus/rss/en-CA',
-                'status_url' => 'https://www.google.com/appsstatus/dashboard/',
-            ],
-            [
-                'id'         => 'google_cloud',
-                'name'       => 'Google Cloud',
-                'type'       => 'gcp_json',
-                'url'        => 'https://status.cloud.google.com/incidents.json',
-                'status_url' => 'https://status.cloud.google.com/',
-            ],
-        ];
+        $providers = [];
+        foreach ( ProviderRegistry::all() as $provider ) {
+            if ( ! is_array( $provider ) ) {
+                continue;
+            }
+            if ( empty( $provider['enabled'] ) ) {
+                continue;
+            }
+            $providers[] = $provider;
+        }
+        return $providers;
     }
 
     /**

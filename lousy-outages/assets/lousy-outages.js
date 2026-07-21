@@ -3886,3 +3886,29 @@
     snarkOutage: snarkOutage
   };
 });
+
+(function(){
+  function initProviderFilters(root){
+    if(!root) return;
+    const search = root.querySelector('[data-lo-provider-search]');
+    const category = root.querySelector('[data-lo-provider-category]');
+    const state = root.querySelector('[data-lo-provider-state]');
+    const rows = Array.from(root.querySelectorAll('[data-lo-provider-row]'));
+    if(!rows.length || (!search && !category && !state)) return;
+    const apply = () => {
+      const q = (search && search.value || '').trim().toLowerCase();
+      const c = (category && category.value || '').trim().toLowerCase();
+      const s = (state && state.value || '').trim().toLowerCase();
+      rows.forEach((row) => {
+        const name = (row.dataset.loProviderName || '').toLowerCase();
+        const rowCategory = (row.dataset.loProviderCategory || '').toLowerCase();
+        const rowState = (row.dataset.loProviderState || '').toLowerCase();
+        const visible = (!q || name.indexOf(q) !== -1) && (!c || rowCategory === c) && (!s || rowState === s);
+        row.hidden = !visible;
+      });
+    };
+    [search, category, state].forEach((control) => { if(control) control.addEventListener('input', apply); });
+    apply();
+  }
+  document.addEventListener('DOMContentLoaded', function(){ initProviderFilters(document.querySelector('.lousy-outages')); });
+})();

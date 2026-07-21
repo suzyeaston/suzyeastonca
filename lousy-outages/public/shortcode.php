@@ -411,6 +411,11 @@ function render_shortcode(): string {
             $provider['provider_id'] = $provider_id;
             $provider['id'] = $provider_id;
         }
+        if (isset($providers_config[$provider_id]) && is_array($providers_config[$provider_id])) {
+            $provider['category'] = (string)($providers_config[$provider_id]['category'] ?? 'other');
+            $provider['source_type'] = (string)($providers_config[$provider_id]['source_type'] ?? $providers_config[$provider_id]['type'] ?? '');
+            $provider['freshness_threshold'] = (int)($providers_config[$provider_id]['freshness_threshold'] ?? 2700);
+        }
         $provider['incidents'] = \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($provider);
         return $provider;
     }, array_values($ordered_tiles));
@@ -731,6 +736,8 @@ function render_shortcode(): string {
                         $last_checked = $format_datetime($tile['checked_at'] ?? $tile['fetched_at'] ?? $tile['updated_at'] ?? null);
                         $last_official = $format_datetime($tile['last_official_update'] ?? ($lead_active_incident['last_official_update'] ?? $lead_active_incident['updated_at'] ?? $lead_active_incident['updatedAt'] ?? null));
                         $status_url = (string) ($tile['url'] ?? $tile['link'] ?? '');
+                    $category = (string) ($tile['category'] ?? ($providers_config[$slug]['category'] ?? 'other'));
+                    $source_type = (string) ($tile['source_type'] ?? ($providers_config[$slug]['source_type'] ?? 'unknown'));
                     ?>
                         <article class="lo-card lo-card--incident" data-provider-id="<?php echo esc_attr($slug); ?>">
                             <div class="lo-head">
@@ -948,6 +955,11 @@ function render_shortcode(): string {
         </section>
         <section class="lo-services" data-lo-services>
             <div class="lo-section__head"><h3 class="lo-block-title">Monitored services</h3><p class="lo-history__meta">Compact current-state view from the saved provider snapshot.</p></div>
+            <div class="lo-history__controls lo-print-hide" aria-label="Provider filters">
+                <label><span class="sr-only">Search providers</span><input type="search" data-lo-provider-search placeholder="Search services"></label>
+                <label><span class="sr-only">Category</span><select data-lo-provider-category><option value="">All categories</option><option value="ai">AI</option><option value="cloud">Cloud</option><option value="development">Development</option><option value="communications">Communications</option><option value="creative">Creative</option></select></label>
+                <label><span class="sr-only">State</span><select data-lo-provider-state><option value="">All states</option><option value="operational">Operational</option><option value="incident">Incident</option><option value="degraded">Degraded</option><option value="verification-delayed">Verification delayed</option></select></label>
+            </div>
             <details class="lo-settings lo-print-hide" data-lo-settings>
             <summary class="lo-block-title">Choose monitored providers</summary>
             <p class="lo-settings__hint">Pick which providers appear below. Preferences stay on this browser only.</p>
@@ -977,7 +989,7 @@ function render_shortcode(): string {
         </div>
         <div class="lo-all" data-lo-all>
             <div class="lo-services__table" data-lo-grid role="table" aria-label="Monitored provider states">
-                <div class="lo-services__row lo-services__row--head" role="row"><span>Provider</span><span>State</span><span>Last checked</span><span>Status page</span></div>
+                <div class="lo-services__row lo-services__row--head" role="row"><span>Provider</span><span>State</span><span>Category / source</span><span>Last checked</span><span>Status page</span></div>
                 <?php foreach ($ordered_tiles as $tile) :
                     if (!is_array($tile)) { continue; }
                     $slug = provider_identity($tile);
@@ -1000,10 +1012,13 @@ function render_shortcode(): string {
                     $state_class = sanitize_html_class(strtolower(str_replace(' ', '-', $state_label)));
                     $last_checked = $format_datetime($tile['checked_at'] ?? $tile['fetched_at'] ?? $tile['updated_at'] ?? null);
                     $status_url = (string) ($tile['url'] ?? $tile['link'] ?? '');
+                    $category = (string) ($tile['category'] ?? ($providers_config[$slug]['category'] ?? 'other'));
+                    $source_type = (string) ($tile['source_type'] ?? ($providers_config[$slug]['source_type'] ?? 'unknown'));
                 ?>
-                    <div class="lo-services__row lo-services__row--<?php echo esc_attr($state_class); ?>" data-lo-provider-row="<?php echo esc_attr($slug); ?>" role="row">
+                    <div class="lo-services__row lo-services__row--<?php echo esc_attr($state_class); ?>" data-lo-provider-row="<?php echo esc_attr($slug); ?>" data-lo-provider-name="<?php echo esc_attr(strtolower((string) ($tile['name'] ?? $slug))); ?>" data-lo-provider-category="<?php echo esc_attr($category); ?>" data-lo-provider-state="<?php echo esc_attr($state_class); ?>" role="row">
                         <span role="cell"><strong><?php echo esc_html((string) ($tile['name'] ?? ucfirst($slug))); ?></strong></span>
                         <span role="cell"><span class="lo-pill status--<?php echo esc_attr($state_class); ?>"><?php echo esc_html($state_label); ?></span></span>
+                        <span role="cell"><?php echo esc_html(ucfirst($category) . ' / ' . $source_type); ?></span>
                         <span role="cell"><?php echo esc_html($last_checked); ?></span>
                         <span role="cell"><?php if ('' !== $status_url) : ?><a class="lo-status-link" href="<?php echo esc_url($status_url); ?>" target="_blank" rel="noopener">Open</a><?php else : ?>—<?php endif; ?></span>
                     </div>
