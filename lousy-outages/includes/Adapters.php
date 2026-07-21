@@ -298,6 +298,55 @@ function from_rss_atom(string $xml): array {
     ];
 }
 
+
+function from_better_stack_index(string $json): array {
+    $data = json_decode($json, true);
+    if (!is_array($data) || !isset($data['data']) || !is_array($data['data'])) {
+        return ['state' => 'unknown', 'incidents' => [], 'raw' => $data, 'schema_valid' => false];
+    }
+
+    $resources = [];
+    $reports = [];
+    foreach ($data['data'] as $row) {
+        if (!is_array($row)) { continue; }
+        $type = (string)($row['type'] ?? '');
+        if ('status_page_resource' === $type) { $resources[(string)($row['id'] ?? '')] = $row; }
+        if ('status_report' === $type) { $reports[] = $row; }
+    }
+
+    $incidents = [];
+    $hasMajor = false;
+    $hasDegraded = false;
+    foreach ($reports as $report) {
+        $attrs = is_array($report['attributes'] ?? null) ? $report['attributes'] : [];
+        $state = strtolower((string)($attrs['aggregate_state'] ?? ''));
+        if (in_array($state, ['resolved', 'operational'], true)) { continue; }
+        $affected = [];
+        foreach (($attrs['affected_resources'] ?? []) as $resource) {
+            if (!is_array($resource)) { continue; }
+            $rid = (string)($resource['status_page_resource_id'] ?? '');
+            $name = (string)($resources[$rid]['attributes']['public_name'] ?? $resources[$rid]['attributes']['name'] ?? $rid);
+            $affected[] = ['id'=>$rid,'name'=>$name,'status'=>strtolower((string)($resource['status'] ?? $state))];
+        }
+        $status = in_array($state, ['downtime', 'major', 'major_outage'], true) ? 'major' : (in_array($state, ['maintenance'], true) ? 'maintenance' : 'degraded');
+        if ('major' === $status) { $hasMajor = true; } else { $hasDegraded = true; }
+        $incidents[] = [
+            'id'=>(string)($report['id'] ?? ''),
+            'name'=>(string)($attrs['title'] ?? 'Incident'),
+            'summary'=>(string)($attrs['title'] ?? 'Incident'),
+            'status'=>$status,
+            'impact'=>$status,
+            'started_at'=>$attrs['starts_at'] ?? null,
+            'updated_at'=>$attrs['updated_at'] ?? ($attrs['starts_at'] ?? null),
+            'resolved_at'=>$attrs['ends_at'] ?? null,
+            'components'=>$affected,
+            'source_type'=>'better_stack',
+        ];
+    }
+    $state = $hasMajor ? 'major' : ($hasDegraded ? 'degraded' : 'operational');
+    return ['state'=>$state,'incidents'=>$incidents,'updated_at'=>$data['meta']['updated_at'] ?? null,'raw'=>$data,'schema_valid'=>true];
+}
+
 function from_gcp_incidents_json(string $json): array {
     $data = json_decode($json, true);
     if (!is_array($data)) {

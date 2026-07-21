@@ -18,6 +18,7 @@ use function SuzyEaston\LousyOutages\Adapters\from_slack_current;
 use function SuzyEaston\LousyOutages\Adapters\from_statuspage_status;
 use function SuzyEaston\LousyOutages\Adapters\from_statuspage_summary;
 use function SuzyEaston\LousyOutages\Adapters\from_gcp_incidents_json;
+use function SuzyEaston\LousyOutages\Adapters\from_better_stack_index;
 use function SuzyEaston\LousyOutages\Adapters\Statuspage\detect_state_from_error;
 
 class Fetcher {
@@ -64,6 +65,12 @@ class Fetcher {
             'incidents'    => [],
             'error'        => null,
             'source_type'  => $type,
+            'endpoint'     => $endpoint ?: '',
+            'final_url'    => $endpoint ?: '',
+            'http_status'  => null,
+            'content_type' => (string)($provider['content_type'] ?? ''),
+            'adapter'      => (string)($provider['adapter'] ?? $type),
+            'schema_result'=> 'not_attempted',
         ];
 
         if (! $endpoint) {
@@ -139,7 +146,14 @@ class Fetcher {
         }
 
         $normalized = $this->adapt_response($adapterType, $body);
+        if (array_key_exists('schema_valid', $normalized) && !$normalized['schema_valid']) {
+            $failed = $this->failed_defaults($defaults, 'data_error:unexpected_schema', 'Status unavailable: unexpected source schema', 'unknown', (int)($response['status'] ?? 0), null, 'Unexpected schema');
+            $failed['schema_result'] = 'invalid';
+            return $this->apply_tile_metadata($failed, $provider, true);
+        }
         $result     = $this->assemble_result($defaults, $normalized, $provider);
+        $result['http_status'] = (int)($response['status'] ?? 0);
+        $result['schema_result'] = 'valid';
 
         if (! $historyFallback && $this->should_verify_cloudflare_status($provider, $type, $result)) {
             $verification = $this->attempt_statuspage_status($provider, $endpoint);
@@ -362,6 +376,8 @@ class Fetcher {
                 return from_statuspage_status($body);
             case 'gcp_json':
                 return from_gcp_incidents_json($body);
+            case 'better_stack':
+                return from_better_stack_index($body);
             default:
                 return from_statuspage_summary($body);
         }
@@ -660,6 +676,9 @@ class Fetcher {
         $active         = [];
         $recent         = [];
         $historyCutoff  = time() - (35 * DAY_IN_SECONDS);
+        if (strtolower((string)($provider['id'] ?? '')) === 'aws') {
+            $incidents = $this->group_aws_outage_notices($incidents, $provider);
+        }
         $grouped = [];
         foreach ($incidents as $incident) {
             if (!is_array($incident)) { continue; }
@@ -742,12 +761,20 @@ class Fetcher {
                 'components' => isset($incident['components']) && is_array($incident['components']) ? $incident['components'] : [],
                 'regions' => isset($incident['regions']) && is_array($incident['regions']) ? $incident['regions'] : [],
                 'timeline' => isset($incident['timeline']) && is_array($incident['timeline']) ? $incident['timeline'] : [],
+                'official_notices' => isset($incident['official_notices']) && is_array($incident['official_notices']) ? $incident['official_notices'] : [],
+                'official_notice_count' => (int)($incident['official_notice_count'] ?? 0),
+                'affected_services' => isset($incident['affected_services']) && is_array($incident['affected_services']) ? $incident['affected_services'] : [],
+                'affected_service_count' => (int)($incident['affected_service_count'] ?? 0),
+                'official_context' => $this->sanitize($incident['official_context'] ?? ''),
+                'source_attribution' => $this->sanitize($incident['source_attribution'] ?? ''),
+                'source_url' => (string)($incident['source_url'] ?? ''),
+                'outage_event' => !empty($incident['outage_event']),
                 'lifecycle_state' => $this->normalize_lifecycle_state($rawStatus ?: $impact),
             ];
             $entry = array_merge($entry, $metadata);
             $entry['display_title'] = $this->display_title($provider, $entry);
 
-            $ongoingText = strtolower($title . ' ' . $summary . ' ' . $rawStatus);
+            $ongoingText = strtolower($title . ' ' . $summary . ' ' . (string)($entry['official_context'] ?? '') . ' ' . $rawStatus);
             $explicitOngoing = preg_match('/\b(investigating|identified|monitoring|ongoing|continues?|continuing|currently|still experiencing|working to resolve|recovery is expected|unresolved|months?|long-running|extended)\b/i', $ongoingText) === 1;
             $recentEnough = $effective && $effective >= (time() - (7 * DAY_IN_SECONDS));
             if ($isResolved) {
@@ -769,6 +796,67 @@ class Fetcher {
     }
 
 
+
+
+    private function group_aws_outage_notices(array $incidents, array $provider): array {
+        $events = [];
+        $pass = [];
+        foreach ($incidents as $incident) {
+            if (!is_array($incident)) { continue; }
+            $text = (string)($incident['title'] ?? $incident['name'] ?? '') . ' ' . (string)($incident['summary'] ?? '');
+            $region = '';
+            if (preg_match('/\b(me-central-1)\b/i', $text, $m)) { $region = strtolower($m[1]); }
+            $hasUae = preg_match('/\b(uae|united arab emirates)\b/i', $text) === 1;
+            $hasBahrain = preg_match('/\b(bahrain|me-south-1)\b/i', $text) === 1;
+            $hasOfficialContext = preg_match('/\b(drone strikes?|physical infrastructure damage|middle east conflict|facilities?)\b/i', $text) === 1;
+            if (($region === 'me-central-1' || $hasUae || $hasBahrain) && preg_match('/\b(operational issue|multiple services|service disruption|damage|drone|conflict|facility|facilities)\b/i', $text)) {
+                $eventKey = $hasBahrain ? 'aws-middle-east-infrastructure-damage-bahrain' : 'aws-middle-east-infrastructure-damage-uae';
+                if (!isset($events[$eventKey])) {
+                    $events[$eventKey] = $incident;
+                    $events[$eventKey]['id'] = $eventKey;
+                    $events[$eventKey]['name'] = $hasBahrain ? 'Conflict-related infrastructure damage affecting AWS Bahrain' : 'Conflict-related infrastructure damage affecting AWS UAE';
+                    $events[$eventKey]['title'] = $events[$eventKey]['name'];
+                    $events[$eventKey]['summary'] = '';
+                    $events[$eventKey]['status'] = $incident['status'] ?? 'major';
+                    $events[$eventKey]['impact'] = $incident['impact'] ?? 'major';
+                    $events[$eventKey]['official_notices'] = [];
+                    $events[$eventKey]['affected_services'] = [];
+                    $events[$eventKey]['regions'] = [];
+                    $events[$eventKey]['source_type'] = 'aws_health';
+                    $events[$eventKey]['outage_event'] = true;
+                    $events[$eventKey]['source_attribution'] = 'AWS Health Dashboard';
+                    $events[$eventKey]['source_url'] = (string)($provider['status_url'] ?? 'https://health.aws.amazon.com/health/status');
+                }
+                $notice = [
+                    'id'=>(string)($incident['id'] ?? $incident['guid'] ?? md5(wp_json_encode($incident))),
+                    'service'=>(string)($incident['service_name'] ?? $incident['service'] ?? $incident['name'] ?? ''),
+                    'title'=>(string)($incident['title'] ?? $incident['name'] ?? ''),
+                    'summary'=>(string)($incident['summary'] ?? ''),
+                    'updated_at'=>(string)($incident['updated_at'] ?? ''),
+                    'url'=>(string)($incident['shortlink'] ?? $incident['url'] ?? ($provider['status_url'] ?? '')),
+                ];
+                $events[$eventKey]['official_notices'][] = $notice;
+                if ($notice['service'] !== '') { $events[$eventKey]['affected_services'][] = $notice['service']; }
+                if ($region !== '') { $events[$eventKey]['regions'][] = strtoupper($region); }
+                if ($hasUae) { $events[$eventKey]['region_name'] = 'UAE'; }
+                if ($hasBahrain) { $events[$eventKey]['region_name'] = 'Bahrain'; }
+                if ($hasOfficialContext) { $events[$eventKey]['official_context'] = $this->sanitize($text); }
+                continue;
+            }
+            $pass[] = $incident;
+        }
+        foreach ($events as &$event) {
+            $event['official_notice_count'] = count($event['official_notices']);
+            $event['affected_service_count'] = count(array_unique($event['affected_services']));
+            $event['affected_services'] = array_values(array_unique($event['affected_services']));
+            $event['regions'] = array_values(array_unique($event['regions']));
+            if (empty($event['summary'])) {
+                $event['summary'] = sprintf('%d affected service notices grouped from the AWS Health Dashboard.', (int)$event['official_notice_count']);
+            }
+        }
+        unset($event);
+        return array_merge(array_values($events), $pass);
+    }
 
     private function normalize_lifecycle_state(string $state): string {
         $state = strtolower(trim(str_replace('-', '_', $state)));
@@ -972,6 +1060,8 @@ class Fetcher {
         $defaults['summary'] = $displaySummary;
         $defaults['message'] = $displaySummary;
         $defaults['error']   = $suppress ? null : $code;
+        $defaults['schema_result'] = 0 === strpos($code, 'data_error:') ? 'invalid' : 'not_checked';
+        $defaults['http_status'] = $httpStatus;
 
         return $defaults;
     }
