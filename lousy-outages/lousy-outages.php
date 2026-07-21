@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.4.1
+ * Version: 0.4.2
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.4.1' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.4.2' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -78,6 +78,7 @@ lousy_outages_require( 'includes/Summary.php' );
 lousy_outages_require( 'includes/CurrentState.php' );
 lousy_outages_require( 'includes/IncidentAlerts.php' );
 lousy_outages_require( 'includes/Snapshot.php' );
+lousy_outages_require( 'includes/PublicCopy.php' );
 lousy_outages_require( 'includes/Cron.php' );
 lousy_outages_require( 'includes/compat.php' );
 lousy_outages_require( 'includes/Sources/StatuspageSource.php' );

@@ -49,7 +49,8 @@ if ($unsub_success) {
   <div class="lousy-outages-root">
     <div class="lo-atmosphere">
       <h1 class="retro-title glow-lite">Lousy Outages</h1>
-      <p class="lo-atmosphere__lede">A compact status board for major provider incidents, verification delays and the updates official status pages make difficult to scan. The weird bits official status pages tend to bury.</p>
+      <p class="lo-atmosphere__kicker">Checking status pages from Waterfront to the cloud.</p>
+      <p class="lo-atmosphere__lede">Plain-language outage intelligence for AI, cloud and creative tools, with official updates, recent history, monitored services, alerts and community reports in one Vancouver-built view.</p>
     </div>
     <?php if ($banner) : ?>
       <div class="lo-banner lo-banner--<?php echo esc_attr($tone); ?>">
@@ -78,7 +79,7 @@ if ($unsub_success) {
     </section>
         <?php echo do_shortcode('[lousy_outages_report]'); ?>
     <footer class="lo-support">
-      <p class="lo-support__lead">If this dashboard makes your on-call, commute, or doom-refreshing a little less lousy, you can help keep it running:</p>
+      <p class="lo-support__lead">Support the independent status monitor and the infrastructure behind it:</p>
       <p><a class="lo-link" href="https://buymeacoffee.com/wi0amge" target="_blank" rel="noopener noreferrer">Support this project</a></p>
       <p class="lo-support__note">Thanks for fueling the weird little status machine.</p>
     </footer>

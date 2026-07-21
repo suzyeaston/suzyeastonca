@@ -4,7 +4,7 @@ $feed_url = home_url( '/?feed=lousy_outages_status' );
 $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
     ? get_lousy_outages_home_teaser_data()
     : [
-        'headline' => 'all quiet. suspicious, but fine.',
+        'headline' => 'All quiet. Suspicious, but fine.',
         'href'     => home_url( '/lousy-outages/' ),
         'status'   => 'clear',
         'footnote' => '',
@@ -15,11 +15,10 @@ $teaser_data  = function_exists( 'get_lousy_outages_home_teaser_data' )
 $teaser_href = $teaser_data['href'] ?? home_url( '/lousy-outages/' );
 $teaser_endpoint = rest_url( 'lousy-outages/v1/summary' );
 $teaser_interval = 5 * MINUTE_IN_SECONDS * 1000;
-$rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? array_slice( $teaser_data['rows'], 0, 5 ) : [];
+$rows = isset( $teaser_data['rows'] ) && is_array( $teaser_data['rows'] ) ? array_slice( $teaser_data['rows'], 0, 3 ) : [];
+$lead = $rows[0] ?? null;
 $last_checked = $teaser_data['last_checked'] ?? '';
-$active_count = array_sum( array_map( static fn( $row ) => (int) preg_replace( '/\D+/', '', (string) ( $row['message'] ?? '1' ) ) ?: 1, $rows ) );
-$more_providers = max( 0, (int) ( $teaser_data['more_providers'] ?? 0 ) );
-$is_delayed = empty( $rows ) && 'delayed' === (string) ( $teaser_data['status'] ?? '' );
+$active_count = max( 0, array_sum( array_map( static fn( $row ) => (int) preg_replace( '/\D+/', '', (string) ( $row['message'] ?? '1' ) ) ?: 1, $rows ) ) );
 $provider_names = [];
 foreach ( $rows as $row ) {
     $provider = trim( (string) ( $row['provider'] ?? '' ) );
@@ -27,67 +26,39 @@ foreach ( $rows as $row ) {
         $provider_names[] = $provider;
     }
 }
-$provider_summary = implode( ' + ', array_slice( $provider_names, 0, 3 ) );
-if ( count( $provider_names ) > 3 ) {
-    $provider_summary .= ' +' . ( count( $provider_names ) - 3 ) . ' more';
+$affected_provider_count = max( count( $provider_names ), (int) ( $teaser_data['affected_provider_count'] ?? 0 ) );
+$other_providers = array_slice( array_values( array_diff( $provider_names, [ (string) ( $lead['provider'] ?? '' ) ] ) ), 0, 2 );
+$is_delayed = empty( $rows ) && 'delayed' === (string) ( $teaser_data['status'] ?? '' );
+$quip = '';
+if ( class_exists( '\SuzyEaston\LousyOutages\PublicCopy' ) ) {
+    $quip = \SuzyEaston\LousyOutages\PublicCopy::line( empty( $rows ) ? ( $is_delayed ? 'delayed' : 'clear' ) : 'minor', [
+        'provider' => (string) ( $lead['provider'] ?? '' ),
+        'severity' => (string) ( $lead['tone'] ?? '' ),
+        'message' => (string) ( $lead['message'] ?? '' ),
+    ] );
 }
 ?>
 <section id="lousy-outages-teaser" class="lo-home-teaser<?php echo esc_attr( empty( $rows ) ? ' lo-home-teaser--clear' : ' lo-home-teaser--active' ); ?>" aria-labelledby="lo-home-heading" data-lo-endpoint="<?php echo esc_url( $teaser_endpoint ); ?>" data-lo-dashboard-url="<?php echo esc_url( $teaser_href ); ?>" data-lo-refresh-interval="<?php echo esc_attr( (string) $teaser_interval ); ?>">
     <div class="lo-home-teaser__titlebar">
-        <div class="lo-home-title-copy">
-            <p class="lo-home-kicker"><?php echo esc_html( 'arcade system monitor' ); ?></p>
-            <h2 id="lo-home-heading" class="lo-home-heading"><?php echo esc_html( 'Live outage signal' ); ?></h2>
+        <div>
+            <p class="lo-home-kicker"><?php echo esc_html( 'live outage signal' ); ?></p>
+            <h2 id="lo-home-heading" class="lo-home-heading"><?php echo esc_html( 'Lousy Outages' ); ?></h2>
         </div>
-        <span class="lo-home-status-light<?php echo esc_attr( empty( $rows ) ? ' lo-home-status-light--clear' : ' lo-home-status-light--alert' ); ?>">
-            <span class="screen-reader-text"><?php echo esc_html( empty( $rows ) ? 'No active provider incidents' : 'Active provider incidents or degraded signals' ); ?></span>
-        </span>
+        <a class="lo-home-dashboard-link" href="<?php echo esc_url( $teaser_href ); ?>">View full status <span aria-hidden="true">→</span></a>
     </div>
-
-    <div class="lo-home-teaser__screen">
-        <?php if ( empty( $rows ) ) : ?>
-            <div class="lo-home-empty">
-                <p><?php echo esc_html( $is_delayed ? 'verification delayed; latest provider checks are unavailable.' : 'all quiet. suspicious, but fine.' ); ?></p>
-                <p><?php echo esc_html( $last_checked ? 'last checked: ' . $last_checked : 'last checked: recently' ); ?></p>
-            </div>
-        <?php else : ?>
-            <div class="lo-home-live-band" role="status" aria-live="polite">
-                <span class="lo-home-live-band__dot" aria-hidden="true"></span>
-                <div>
-                    <p class="lo-home-live-band__label">LIVE OUTAGE SIGNAL</p>
-                    <p class="lo-home-live-band__count"><?php echo esc_html( $active_count . ' active ' . ( 1 === $active_count ? 'incident' : 'incidents' ) ); ?></p>
-                    <?php if ( $provider_summary ) : ?>
-                        <p class="lo-home-live-band__providers"><?php echo esc_html( $provider_summary ); ?></p>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <ul class="lo-home-alert-list">
-                <?php foreach ( $rows as $row ) : ?>
-                    <li class="lo-home-alert lo-home-alert--<?php echo esc_attr( $row['tone'] ?? 'unknown' ); ?>">
-                        <div class="lo-home-alert__meta">
-                            <strong class="lo-home-alert__provider"><?php echo esc_html( $row['provider'] ?? 'Unknown provider' ); ?></strong>
-                            <span class="lo-home-alert__status"><?php echo esc_html( $row['label'] ?? 'Status' ); ?></span>
-                        </div>
-                        <p class="lo-home-alert__body">
-                            <?php echo esc_html( $row['message'] ?? 'Status update' ); ?>
-                            <?php if ( ! empty( $row['region'] ) ) : ?>
-                                <span class="lo-home-alert__region"><?php echo esc_html( $row['region'] ); ?></span>
-                            <?php endif; ?>
-                        </p>
-                        <div class="lo-home-alert__times">
-                            <?php if ( ! empty( $row['started'] ) ) : ?>
-                                <time class="lo-home-alert__time" datetime="<?php echo esc_attr( $row['started'] ); ?>"><?php echo esc_html( 'Started ' . $row['started'] ); ?></time>
-                            <?php endif; ?>
-                            <?php if ( ! empty( $row['updated'] ) ) : ?>
-                                <time class="lo-home-alert__time" datetime="<?php echo esc_attr( $row['updated'] ); ?>"><?php echo esc_html( 'Updated ' . $row['updated'] ); ?></time>
-                            <?php endif; ?>
-                        </div>
-                        <a class="lo-home-alert__details" href="<?php echo esc_url( $row['href'] ?? $teaser_href ); ?>">View incidents</a>
-                    </li>
-                <?php endforeach; ?>
-            <?php if ( $more_providers > 0 ) : ?><p class="lo-home-more"><?php echo esc_html( '+ ' . $more_providers . ' more providers' ); ?></p><?php endif; ?>
-            </ul>
-        <?php endif; ?>
+    <div class="lo-home-ticker" role="status" aria-live="polite">
+        <div class="lo-home-stat"><strong><?php echo esc_html( (string) $active_count ); ?></strong><span>active <?php echo esc_html( 1 === $active_count ? 'event' : 'events' ); ?></span></div>
+        <div class="lo-home-stat"><strong><?php echo esc_html( (string) $affected_provider_count ); ?></strong><span>affected <?php echo esc_html( 1 === $affected_provider_count ? 'provider' : 'providers' ); ?></span></div>
+        <div class="lo-home-lead">
+            <?php if ( $lead ) : ?>
+                <strong><?php echo esc_html( (string) ( $lead['provider'] ?? 'Provider' ) ); ?></strong>
+                <span><?php echo esc_html( (string) ( $lead['message'] ?? 'Status update' ) ); ?></span>
+            <?php else : ?>
+                <strong><?php echo esc_html( $is_delayed ? 'Verification delayed' : 'No active incidents' ); ?></strong>
+                <span><?php echo esc_html( $last_checked ? 'Last checked: ' . $last_checked : 'Provider checks are quiet.' ); ?></span>
+            <?php endif; ?>
+        </div>
+        <?php if ( $other_providers ) : ?><p class="lo-home-other">Also watching: <?php echo esc_html( implode( ', ', $other_providers ) ); ?></p><?php endif; ?>
     </div>
-
-    <a class="lo-home-dashboard-link" href="<?php echo esc_url( $teaser_href ); ?>">View full status page <span aria-hidden="true">→</span></a>
+    <?php if ( $quip ) : ?><p class="lo-home-quip"><?php echo esc_html( $quip ); ?></p><?php endif; ?>
 </section>

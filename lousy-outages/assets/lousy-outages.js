@@ -169,9 +169,27 @@
     return STATUS_MAP[key] || STATUS_MAP.unknown;
   }
 
+  function shouldSuppressQuip(status, summary) {
+    var text = String(status || '') + ' ' + String(summary || '');
+    if (/major|critical|security|breach|attack|malware|fire|flood|earthquake|injur|death|harm|war|conflict/i.test(text)) {
+      return true;
+    }
+    return false;
+  }
+
+  function deterministicIndex(seed, length) {
+    var hash = 0;
+    var text = String(seed || '') + '|' + (new Date()).toISOString().slice(0, 10);
+    for (var i = 0; i < text.length; i += 1) {
+      hash = ((hash << 5) - hash) + text.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash) % Math.max(1, length);
+  }
+
   function snarkOutage(provider, status, summary) {
     var normalized = normalizeStatus(status);
-    if ('operational' === normalized.code || 'maintenance' === normalized.code) {
+    if ('operational' === normalized.code || 'maintenance' === normalized.code || shouldSuppressQuip(status, summary)) {
       return summary || normalized.label;
     }
     var providerKey = String(provider || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -179,7 +197,7 @@
     if (!lines.length) {
       return summary || 'Something feels off.';
     }
-    var index = Math.floor(Math.random() * lines.length);
+    var index = deterministicIndex(providerKey + '|' + normalized.code, lines.length);
     return lines[index] || summary || 'Something feels off.';
   }
 
@@ -3910,5 +3928,7 @@
     [search, category, state].forEach((control) => { if(control) control.addEventListener('input', apply); });
     apply();
   }
-  document.addEventListener('DOMContentLoaded', function(){ initProviderFilters(document.querySelector('.lousy-outages')); });
+  if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', function(){ initProviderFilters(document.querySelector('.lousy-outages')); });
+  }
 })();
