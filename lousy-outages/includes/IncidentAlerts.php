@@ -51,6 +51,7 @@ class IncidentAlerts {
     private const OPTION_LAST_SYNTHETIC_ALERT = 'lousy_outages_last_synthetic_alert';
     private const OPTION_ALERT_DELIVERY_FAILURE = 'lousy_outages_alert_delivery_failure';
     private const OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS = 'lousy_outages_last_alert_recipient_diagnostics';
+    private const OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS = 'lousy_outages_last_alert_processing_diagnostics';
 
     private const ALERT_RETENTION_HOURS        = 48;
     private const SUBJECT_ALERT_WINDOW_HOURS   = 12;
@@ -309,6 +310,51 @@ class IncidentAlerts {
         self::set_alerted_incidents($alertedIncidents);
         self::set_alerted_subjects($alertedSubjects);
         return $result;
+    }
+
+
+    public static function process_snapshot(array $snapshot, array $options = []): array
+    {
+        $started = gmdate('c');
+        $store = $options['store'] ?? new IncidentStore();
+        $incidents = self::collect_from_snapshot($snapshot);
+        $historyPersisted = false;
+        try {
+            $store->persistIncidents($incidents);
+            if (class_exists('\SuzyEaston\LousyOutages\Storage\HistoryStore')) {
+                $history = new Storage\HistoryStore();
+                foreach ($incidents as $incident) {
+                    if ($incident instanceof Incident) {
+                        $history->addEvent([
+                            'id' => $incident->id, 'provider' => sanitize_key((string) $incident->provider), 'name' => $incident->title,
+                            'impact' => $incident->impact, 'status' => $incident->status, 'started_at' => gmdate('c', (int) $incident->detected_at),
+                            'url' => $incident->url, 'components' => $incident->component ? [$incident->component] : [], 'body' => $incident->title,
+                        ]);
+                    }
+                }
+            }
+            $historyPersisted = true;
+            update_option(self::OPTION_LAST_CHECK, gmdate('c'), false);
+            $result = self::process_incidents($incidents, array_merge(['mode' => 'canonical_refresh', 'store' => $store], $options));
+        } catch (\Throwable $e) {
+            $result = ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>0,'failed'=>1,'recipients'=>[],'failures'=>[$e->getMessage()],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
+        }
+        $diag = [
+            'last_run' => $started,
+            'finished_at' => gmdate('c'),
+            'source' => 'lousy_outages_refresh_official_providers',
+            'incidents_considered' => (int) ($result['considered'] ?? 0),
+            'emails_sent' => (int) ($result['sent'] ?? 0),
+            'skipped_incidents' => array_count_values(array_map('strval', (array) ($result['skipped_reasons'] ?? []))),
+            'failures' => array_values(array_map('strval', (array) ($result['failures'] ?? []))),
+            'recipient_count' => count(array_unique(array_map('strval', (array) ($result['recipients'] ?? [])))),
+            'last_successful_delivery' => get_option(self::OPTION_LAST_ALERT_SUCCESS, ''),
+            'next_canonical_refresh' => function_exists('wp_next_scheduled') ? (wp_next_scheduled('lousy_outages_refresh_official_providers') ? gmdate('c', (int) wp_next_scheduled('lousy_outages_refresh_official_providers')) : '') : '',
+            'history_persisted' => $historyPersisted,
+            'result' => $result,
+        ];
+        update_option(self::OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS, $diag, false);
+        return $diag;
     }
 
     public static function send_daily_digest(): void {
@@ -945,8 +991,8 @@ class IncidentAlerts {
         return $incidents;
     }
 
-    private static function collect_from_snapshot(): array {
-        $snapshot  = \lousy_outages_get_snapshot(true);
+    public static function collect_from_snapshot(?array $snapshot = null): array {
+        $snapshot  = is_array($snapshot) ? $snapshot : \lousy_outages_get_snapshot(true);
         $providers = [];
         $fetchedAt = gmdate('c');
         $providerDirectory = Providers::list();
@@ -961,6 +1007,9 @@ class IncidentAlerts {
         }
 
         if (empty($providers)) {
+            if (is_array($snapshot)) {
+                return [];
+            }
             $states = \lousy_outages_collect_statuses(true);
             $stored = get_option('lousy_outages_last_poll');
             if (is_string($stored) && '' !== trim($stored)) {

@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.4.2
+ * Version: 0.4.3
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.4.2' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.4.3' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -559,13 +559,9 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         }
 
         $snapshot  = lousy_outages_refresh_snapshot( $states, $timestamp_iso, 'live' );
-        if ( class_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts' ) && method_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts', 'collect_from_snapshot' ) ) {
-            $incidents_for_history = \SuzyEaston\LousyOutages\IncidentAlerts::collect_from_snapshot();
-            ( new \SuzyEaston\LousyOutages\Storage\IncidentStore() )->persistIncidents( $incidents_for_history );
-            if ( class_exists( '\\SuzyEaston\\LousyOutages\\Storage\\HistoryStore' ) ) {
-                $history_store = new \SuzyEaston\LousyOutages\Storage\HistoryStore();
-                foreach ( $incidents_for_history as $history_incident ) { if ( is_array( $history_incident ) ) { $history_store->addEvent( $history_incident ); } }
-            }
+        $alert_diagnostics = [];
+        if ( class_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts' ) && method_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts', 'process_snapshot' ) ) {
+            $alert_diagnostics = \SuzyEaston\LousyOutages\IncidentAlerts::process_snapshot( $snapshot, [ 'mode' => 'canonical_refresh' ] );
         }
         $providers = isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] ) ? $snapshot['providers'] : [];
         $trending  = isset( $snapshot['trending'] ) && is_array( $snapshot['trending'] ) ? $snapshot['trending'] : [ 'trending' => false, 'signals' => [] ];
@@ -622,6 +618,7 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
             'source'       => ! empty( $quality['ok'] ) ? 'live' : 'last_good_with_errors',
             'refreshedAt'  => $timestamp_iso,
             'refreshed_at' => $timestamp_epoch,
+            'alert_diagnostics' => $alert_diagnostics,
         ];
     } catch ( \Throwable $e ) {
         error_log( '[LO] refresh failed: ' . $e->getMessage() );

@@ -1031,9 +1031,7 @@
       generated_at: ''
     };
     if (meta && typeof meta === 'object') {
-      if (typeof meta.official_incident_count === 'number' && Number.isFinite(meta.official_incident_count)) {
-        counts.active_outage_count = meta.official_incident_count;
-      } else if (typeof meta.active_outage_count === 'number' && Number.isFinite(meta.active_outage_count)) {
+      if (typeof meta.active_outage_count === 'number' && Number.isFinite(meta.active_outage_count)) {
         counts.active_outage_count = meta.active_outage_count;
       }
       if (typeof meta.signal_count === 'number' && Number.isFinite(meta.signal_count)) {
@@ -1107,7 +1105,7 @@
       state.sectionToggles.unverified.textContent = 'Can\u2019t verify (' + (metaCounts.unverified_count || 0) + ')';
     }
     if (state.modeButtons.incidents) {
-      state.modeButtons.incidents.textContent = 'Incidents (' + (metaCounts.active_outage_count || 0) + ')';
+      state.modeButtons.incidents.textContent = 'Outage events (' + (metaCounts.active_outage_count || 0) + ')';
     }
   }
 
