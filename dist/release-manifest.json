@@ -1,8 +1,8 @@
 {
-  "git_commit_sha": "3db260201a5d350c79cd80d0181bc8bf2ca27e16",
-  "plugin_version": "0.4.1",
-  "zip_sha256": "39a2d0068e88fdc786f933f259e2cdb3f4d5077b706bc18242d01b0257857f09",
-  "build_timestamp": "2026-07-21T19:57:09Z",
+  "git_commit_sha": "30323c4a1477e074fd82902517753db80d612628",
+  "plugin_version": "0.4.2",
+  "zip_sha256": "a647475ae3260f0f78d65391c774e6295d0f6f2af01488f2ad1218fbcaa4c4c9",
+  "build_timestamp": "2026-07-22T15:21:32Z",
   "canonical_source_path": "lousy-outages/",
   "files": [
     "lousy-outages/README.md",
@@ -37,6 +37,7 @@
     "lousy-outages/includes/ProviderPages.php",
     "lousy-outages/includes/ProviderRegistry.php",
     "lousy-outages/includes/Providers.php",
+    "lousy-outages/includes/PublicCopy.php",
     "lousy-outages/includes/SMS.php",
     "lousy-outages/includes/SignalCollector.php",
     "lousy-outages/includes/SignalEngine.php",

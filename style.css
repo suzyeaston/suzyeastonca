@@ -6509,3 +6509,154 @@ body,
 #lousy-outages-teaser .lo-home-other, #lousy-outages-teaser .lo-home-quip { margin:.65rem 0 0; }
 @media (max-width: 700px) { .home-arcade-title-screen { min-height: 420px; max-height: 500px; } .home-arcade-screen__panel { padding: 2.1rem .35rem 3.25rem; } .home-arcade-title { font-size: clamp(2.2rem, 13vw, 4rem); } .home-palm { height: 210px; width: 100px; } #lousy-outages-teaser .lo-home-ticker { grid-template-columns: 1fr 1fr; } #lousy-outages-teaser .lo-home-lead { grid-column: 1 / -1; } }
 @media (prefers-reduced-motion: reduce) { .home-arcade-title-screen::before, .home-pixel-rain, .home-pixel-star, .home-press-start { animation: none !important; } }
+
+/* Consolidated homepage layout repair: intrinsic title screen, teaser and footer wrapping. */
+.home-arcade-layout {
+  overflow-x: visible;
+}
+
+.home-arcade-title-screen {
+  align-items: center;
+  min-height: clamp(520px, 72svh, 620px);
+  height: auto;
+  padding-block: clamp(1.25rem, 3vw, 2.25rem);
+  overflow: clip;
+}
+
+.home-arcade-title-screen::after {
+  z-index: 2;
+  background:
+    linear-gradient(90deg, rgba(57,255,20,.1), transparent 12%, transparent 88%, rgba(87,243,255,.1)),
+    linear-gradient(180deg, rgba(0,0,0,.38), transparent 28%, transparent 70%, rgba(0,0,0,.5));
+}
+
+.home-arcade-screen__panel {
+  grid-auto-rows: auto;
+  align-content: center;
+  gap: clamp(.7rem, 1.8vw, 1.15rem);
+  max-width: min(100%, 1040px);
+  padding-block: clamp(1rem, 2.6vw, 2rem);
+}
+
+.home-arcade-kicker,
+.home-arcade-subtitle,
+.home-arcade-positioning,
+.home-title-screen-prompt,
+.home-press-start {
+  position: relative;
+  z-index: 3;
+}
+
+.home-arcade-title {
+  position: relative;
+  z-index: 4;
+  max-width: 100%;
+  overflow-wrap: normal;
+  word-break: normal;
+  line-height: 1.05;
+  font-size: clamp(2.45rem, 9vw, 7.35rem);
+}
+
+.home-arcade-subtitle {
+  max-width: min(100%, 58ch);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.home-arcade-positioning {
+  max-width: 62ch;
+  margin: 0;
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: clamp(.95rem, 1.5vw, 1.18rem);
+  line-height: 1.55;
+  color: rgba(223,255,234,.92);
+  background: rgba(0,0,0,.48);
+  border: 1px solid rgba(87,243,255,.22);
+  border-radius: 999px;
+  padding: .55rem .85rem;
+}
+
+.home-arcade-vancouver {
+  inset-inline: 0;
+  width: 100%;
+  max-width: 100%;
+  height: clamp(140px, 25vh, 230px);
+}
+
+#lousy-outages-teaser.lo-home-teaser {
+  overflow: visible;
+  height: auto;
+  min-height: 0;
+  width: min(1180px, calc(100% - clamp(1rem, 4vw, 2rem)));
+}
+
+#lousy-outages-teaser .lo-home-ticker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, .55fr)) minmax(14rem, 1.8fr);
+  gap: .75rem;
+  align-items: stretch;
+}
+
+#lousy-outages-teaser .lo-home-stat,
+#lousy-outages-teaser .lo-home-lead,
+#lousy-outages-teaser .lo-home-other,
+#lousy-outages-teaser .lo-home-quip {
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+#lousy-outages-teaser .lo-home-other {
+  grid-column: 1 / -1;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.site-footer,
+.footer-content,
+.footer-bottom,
+.footer-marquee,
+.footer-site-links,
+.floating-link-bar,
+.floating-link-bar .link-group {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.floating-link-bar .link-group,
+.footer-site-links,
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .6rem .9rem;
+}
+
+.footer-marquee {
+  overflow: visible;
+  white-space: normal;
+  padding-inline: 1rem;
+}
+
+.footer-marquee span,
+.site-footer p,
+.footer-site-links a,
+.floating-link {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .home-arcade-title-screen {
+    min-height: clamp(420px, 62svh, 500px);
+    width: min(100% - .75rem, 1220px);
+    padding: .85rem;
+  }
+  .home-arcade-screen__panel { padding: .45rem .35rem; }
+  .home-arcade-title { max-width: 9ch; font-size: clamp(2.25rem, 14vw, 4.05rem); line-height: 1.08; }
+  .home-arcade-positioning { border-radius: 14px; font-size: .9rem; }
+  #lousy-outages-teaser .lo-home-ticker { grid-template-columns: 1fr; }
+}

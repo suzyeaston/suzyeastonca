@@ -404,7 +404,23 @@ function render_shortcode(): string {
         }
     }
 
-    $config['initial']['providers'] = array_map(static function ($provider) {
+    usort($ordered_tiles, static function (array $left, array $right): int {
+        $rank = static function (array $tile): array {
+            $incidents = \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider($tile);
+            $raw_status = strtolower((string) ($tile['status'] ?? $tile['stateCode'] ?? $tile['overall'] ?? 'unknown'));
+            $tile_kind = strtolower((string) ($tile['tile_kind'] ?? $tile['tileKind'] ?? ''));
+            $has_error = !empty($tile['error']) || in_array((string) ($tile['verification_status'] ?? ''), ['failed', 'delayed', 'unknown'], true);
+            if (!empty($incidents)) { $priority = 10; }
+            elseif ('signal' === $tile_kind || in_array($raw_status, ['degraded', 'major', 'outage', 'maintenance', 'partial_outage', 'degraded_performance'], true)) { $priority = 20; }
+            elseif ($has_error) { $priority = 30; }
+            elseif ('manual' === $tile_kind || in_array($raw_status, ['unknown', ''], true)) { $priority = 40; }
+            else { $priority = 50; }
+            return [$priority, strtolower((string) ($tile['name'] ?? $tile['provider'] ?? $tile['id'] ?? ''))];
+        };
+        return $rank($left) <=> $rank($right);
+    });
+
+    $config['initial']['providers'] = array_map(static function ($provider) use ($providers_config) {
         if (!is_array($provider)) { return $provider; }
         $provider_id = provider_identity($provider);
         if ('' !== $provider_id) {
@@ -989,9 +1005,9 @@ function render_shortcode(): string {
             $tile_kind = strtolower((string) ($tile['tile_kind'] ?? $tile['tileKind'] ?? ''));
             $has_error = !empty($tile['error']) || in_array((string) ($tile['verification_status'] ?? ''), ['failed','delayed','unknown'], true);
             if (!empty($incidents)) { $state_label = 'Incident'; }
-            elseif ('signal' === $tile_kind || in_array($raw_status, ['degraded','major','outage','maintenance'], true)) { $state_label = 'Degraded'; }
+            elseif ('signal' === $tile_kind || in_array($raw_status, ['degraded','major','outage','maintenance','partial_outage','degraded_performance'], true)) { $state_label = 'Degraded'; }
             elseif ($has_error) { $state_label = 'Verification delayed'; }
-            elseif ('manual' === $tile_kind || 'unknown' === $raw_status) { $state_label = 'Status unavailable'; }
+            elseif ('manual' === $tile_kind || 'unknown' === $raw_status || '' === $raw_status) { $state_label = 'Status unavailable'; }
             else { $state_label = 'Operational'; }
             $state_class = sanitize_html_class(strtolower(str_replace(' ', '-', $state_label)));
             $last_checked = $format_datetime($tile['checked_at'] ?? $tile['fetched_at'] ?? $tile['updated_at'] ?? null);
