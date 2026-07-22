@@ -635,8 +635,8 @@ function render_shortcode(): string {
             </div>
         </div>
         <div class="lo-mode-toggle lo-print-hide" data-lo-mode-toggle>
-            <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Incidents (<?php echo esc_html((string) ($meta_counts['active_outage_count'] ?? 0)); ?>)</button>
-            <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">Monitored services</button>
+            <button type="button" class="lo-mode-toggle__button is-active" data-lo-mode="incidents" aria-pressed="true">Outage events (<?php echo esc_html((string) ($meta_counts['active_outage_count'] ?? 0)); ?>)</button>
+            <button type="button" class="lo-mode-toggle__button" data-lo-mode="all" aria-pressed="false">Affected providers (<?php echo esc_html((string) ($meta_counts['affected_provider_count'] ?? 0)); ?>)</button><span class="lo-mode-toggle__note">Official notices (<?php echo esc_html((string) ($meta_counts['official_incident_count'] ?? 0)); ?>)</span>
         </div>
         <?php
         $fused_public = SignalEngine::summarize_fused_signals(120);
@@ -744,7 +744,7 @@ function render_shortcode(): string {
         ];
         ?>
         <div class="lo-incidents" data-lo-incidents>
-            <section class="lo-section lo-section--incidents" data-lo-section="incidents">
+            <section class="lo-section lo-section--incidents" id="active-incidents" data-lo-section="incidents">
                 <div class="lo-section__head">
                     <h3 class="lo-block-title">Active incidents</h3>
                 </div>
@@ -765,13 +765,13 @@ function render_shortcode(): string {
                     $category = (string) ($tile['category'] ?? ($providers_config[$slug]['category'] ?? 'other'));
                     $source_type = (string) ($tile['source_type'] ?? ($providers_config[$slug]['source_type'] ?? 'unknown'));
                     ?>
-                        <article class="lo-card lo-card--incident" data-provider-id="<?php echo esc_attr($slug); ?>">
+                        <article id="provider-<?php echo esc_attr($slug); ?>" class="lo-card lo-card--incident" data-provider-id="<?php echo esc_attr($slug); ?>">
                             <div class="lo-head">
                                 <h3 class="lo-title"><?php echo esc_html($provider_name); ?></h3>
                                 <span class="lo-pill status--degraded" data-lo-badge><?php echo esc_html((string) ($tile['status_label'] ?? 'Incident')); ?></span>
                             </div>
                             <p class="lo-card-kicker"><?php echo esc_html(count($incidents) . ' active ' . (count($incidents) === 1 ? 'incident' : 'incidents')); ?></p>
-                            <h4 class="lo-incident-title" data-lo-message><?php echo esc_html((string) ($lead_incident_display['title'] ?? 'Active incident')); ?></h4>
+                            <h4 id="incident-<?php echo esc_attr(sanitize_title((string)($lead_active_incident['id'] ?? $slug))); ?>" class="lo-incident-title" data-lo-message><?php echo esc_html((string) ($lead_incident_display['title'] ?? 'Active incident')); ?></h4>
                             <p class="lo-message" data-lo-summary><?php echo esc_html((string) ($lead_incident_display['summary'] ?? 'Latest official update is available from the provider status page.')); ?></p>
                             <dl class="lo-incident-facts">
                                 <div><dt>Affected service / region</dt><dd><?php echo esc_html((string) ($lead_incident_display['region'] ?: 'Provider status page did not specify.')); ?></dd></div>
@@ -1019,7 +1019,7 @@ function render_shortcode(): string {
             <?php
         };
         ?>
-        <section class="lo-services" data-lo-services>
+        <section id="monitored-services" class="lo-services" data-lo-services>
             <div class="lo-section__head"><h3 class="lo-block-title">Monitored services</h3><p class="lo-history__meta">Incident, degraded and verification-delayed providers appear first. Operational services are tucked away until you need them.</p></div>
             <div class="lo-history__controls lo-print-hide" aria-label="Provider filters">
                 <label><span class="sr-only">Search providers</span><input type="search" data-lo-provider-search placeholder="Search services"></label>
