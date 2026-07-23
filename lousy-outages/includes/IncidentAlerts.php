@@ -1436,13 +1436,56 @@ class IncidentAlerts {
     }
 
     public static function get_subscribers(): array {
-        $subscribers = get_option(self::OPTION_SUBSCRIBERS, []);
-        if (!is_array($subscribers)) {
-            return [];
-        }
-
-        return array_values(array_filter(array_map('sanitize_email', $subscribers)));
+        $preview = self::recipient_preview('');
+        return array_values(array_map('strval', (array) ($preview['subscriber_recipients'] ?? [])));
     }
+
+    public static function mask_email(string $email): string {
+        $email = strtolower(sanitize_email($email));
+        if (!$email || false === strpos($email, '@')) { return ''; }
+        [$local, $domain] = explode('@', $email, 2);
+        $localMask = substr($local, 0, 1) . str_repeat('*', max(2, min(6, strlen($local) - 1)));
+        return $localMask . '@' . $domain;
+    }
+
+    public static function recipient_preview(string $providerId = ''): array {
+        $providerId = sanitize_key($providerId);
+        $excluded = ['pending'=>0,'no_realtime_opt_in'=>0,'provider_preference_mismatch'=>0,'invalid_email'=>0,'already_sent_deduped'=>0];
+        $recipients = [];
+        global $wpdb;
+        $table = class_exists(__NAMESPACE__ . '\Subscriptions') ? Subscriptions::table_name() : '';
+        if ($table && isset($wpdb) && is_object($wpdb) && method_exists($wpdb, 'get_results') && method_exists($wpdb, 'prepare')) {
+            $rows = $wpdb->get_results("SELECT email,status,providers,realtime_alerts FROM {$table}", ARRAY_A);
+            foreach ((array) $rows as $row) {
+                $email = strtolower(sanitize_email((string) ($row['email'] ?? '')));
+                if (!$email || !is_email($email)) { $excluded['invalid_email']++; continue; }
+                if (!in_array((string) ($row['status'] ?? ''), [Subscriptions::STATUS_SUBSCRIBED, 'confirmed'], true)) { $excluded['pending']++; continue; }
+                if (isset($row['realtime_alerts']) && (int) $row['realtime_alerts'] !== 1) { $excluded['no_realtime_opt_in']++; continue; }
+                $prefs = [];
+                $decoded = json_decode((string) ($row['providers'] ?? ''), true);
+                if (is_array($decoded)) { $prefs = Subscriptions::normalize_provider_ids($decoded); }
+                if ($providerId && $prefs && !in_array($providerId, $prefs, true)) { $excluded['provider_preference_mismatch']++; continue; }
+                $recipients[] = $email;
+            }
+        }
+        $legacy = get_option(self::OPTION_SUBSCRIBERS, []);
+        if (is_array($legacy)) {
+            foreach ($legacy as $raw) {
+                $email = strtolower(sanitize_email((string) $raw));
+                if (!$email || !is_email($email)) { $excluded['invalid_email']++; continue; }
+                if (class_exists(__NAMESPACE__ . '\Subscriptions') && method_exists(__NAMESPACE__ . '\Subscriptions', 'is_confirmed') && !Subscriptions::is_confirmed($email)) { $excluded['pending']++; continue; }
+                if ($providerId && class_exists(__NAMESPACE__ . '\Subscriptions') && !Subscriptions::subscriber_wants_provider($email, $providerId)) { $excluded['provider_preference_mismatch']++; continue; }
+                if (class_exists(__NAMESPACE__ . '\Subscriptions') && !Subscriptions::subscriber_wants_realtime($email)) { $excluded['no_realtime_opt_in']++; continue; }
+                $recipients[] = $email;
+            }
+        }
+        $before = count($recipients);
+        $recipients = array_values(array_unique($recipients));
+        $excluded['already_sent_deduped'] += max(0, $before - count($recipients));
+        return ['subscriber_recipients'=>$recipients,'subscriber_recipients_count'=>count($recipients),'total_recipients_count'=>count($recipients),'excluded'=>$excluded,'masked_recipients'=>array_map([self::class,'mask_email'],$recipients),'timestamp'=>gmdate('c')];
+    }
+
+    public static function latest_delivery_attempt(): array { return (array) get_option(self::OPTION_LAST_ALERT_DELIVERY_RESULT, []); }
 
     private static function normalize_unsubscribe_email(string $email): string {
         $normalized = strtolower(trim((string) sanitize_email($email)));
@@ -1551,92 +1594,46 @@ class IncidentAlerts {
         );
     }
 
+    public static function send_test_alert_to(string $email): array {
+        $email = sanitize_email($email);
+        if (!$email || !is_email($email)) { return ['ok'=>false,'error'=>'invalid_email','recipients'=>[]]; }
+        $incident = self::make_synthetic_incident(['provider'=>'lousy-outages','title'=>'Lousy Outages realistic test alert','status'=>'degraded']);
+        return self::send_incident_alert_email($incident, ['explicit_recipients'=>[$email], 'mode'=>'admin_test']);
+    }
+
     private static function send_incident_alert_email(Incident $incident, array $options = []): array {
         $providerId = sanitize_key((string) $incident->provider);
-        $excluded = ['pending'=>0,'no_realtime_opt_in'=>0,'provider_preference_mismatch'=>0,'invalid_email'=>0,'already_sent_deduped'=>0];
-        $subscribers = [];
-        foreach (self::get_subscribers() as $email) {
-            $clean = sanitize_email((string) $email);
-            if (!$clean || !is_email($clean)) { $excluded['invalid_email']++; continue; }
-            if (!Subscriptions::is_confirmed($clean)) { $excluded['pending']++; continue; }
-            if (!Subscriptions::subscriber_wants_realtime($clean)) { $excluded['no_realtime_opt_in']++; continue; }
-            if (!Subscriptions::subscriber_wants_provider($clean, $providerId)) { $excluded['provider_preference_mismatch']++; continue; }
-            $subscribers[] = $clean;
+        if (!empty($options['explicit_recipients']) && is_array($options['explicit_recipients'])) {
+            $preview = ['subscriber_recipients'=>array_values(array_filter(array_map('sanitize_email', $options['explicit_recipients']))),'excluded'=>[]];
+            $subscribers = $preview['subscriber_recipients'];
+        } else {
+            $preview = self::recipient_preview($providerId);
+            $subscribers = (array) ($preview['subscriber_recipients'] ?? []);
         }
         $notificationEmail = sanitize_email((string) get_option('lousy_outages_email', get_option('admin_email')));
-        $notificationOnly = !empty($options['notification_only']);
-        if ($notificationOnly) {
-            $subscribers = [];
-        }
-        if ($notificationEmail && is_email($notificationEmail)) {
-            $subscribers[] = $notificationEmail;
-        }
+        if (!empty($options['notification_only'])) { $subscribers = []; }
+        if (empty($options['explicit_recipients']) && $notificationEmail && is_email($notificationEmail)) { $subscribers[] = $notificationEmail; }
         $beforeDedup = count($subscribers);
         $subscribers = array_values(array_unique(array_filter(array_map('sanitize_email', $subscribers))));
-        $excluded['already_sent_deduped'] += max(0, $beforeDedup - count($subscribers));
-        update_option(self::OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS, [
-            'incident_id' => (string) $incident->id,
-            'provider_id' => $providerId,
-            'provider_name' => (string) $incident->provider,
-            'mode' => (string) ($options['mode'] ?? 'real'),
-            'notification_recipients' => ($notificationEmail && is_email($notificationEmail)) ? [$notificationEmail] : [],
-            'subscriber_recipients_count' => (int) count(array_diff($subscribers, [$notificationEmail])),
-            'total_recipients_count' => (int) count($subscribers),
-            'excluded' => $excluded,
-            'timestamp' => gmdate('c'),
-        ], false);
-        if (empty($subscribers)) {
-            return ['ok'=>false,'recipients'=>[],'error'=>'no_recipients'];
-        }
-        if (!empty($options['dry_run'])) {
-            return ['ok'=>true,'recipients'=>$subscribers,'error'=>''];
-        }
+        $excluded = (array) ($preview['excluded'] ?? []);
+        $excluded['already_sent_deduped'] = (int)($excluded['already_sent_deduped'] ?? 0) + max(0, $beforeDedup - count($subscribers));
+        update_option(self::OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS, ['incident_id'=>(string)$incident->id,'provider_id'=>$providerId,'provider_name'=>(string)$incident->provider,'mode'=>(string)($options['mode'] ?? 'real'),'notification_recipients'=>($notificationEmail&&is_email($notificationEmail))?[self::mask_email($notificationEmail)]:[],'subscriber_recipients_count'=>max(0,count(array_diff($subscribers,[$notificationEmail]))),'total_recipients_count'=>count($subscribers),'excluded'=>$excluded,'timestamp'=>gmdate('c')], false);
+        if (empty($subscribers)) { return ['ok'=>false,'recipients'=>[],'error'=>'no_recipients']; }
+        if (!empty($options['dry_run'])) { return ['ok'=>true,'recipients'=>$subscribers,'error'=>'']; }
 
-        $provider      = $incident->provider;
-        $statusLabel   = self::status_label($incident->status);
-        $impact        = $incident->impact ?? self::impact_from_status($incident->status);
-        $timestamp     = gmdate('c', $incident->detected_at);
-        $components    = $incident->component ? array_map('trim', explode(',', $incident->component)) : [];
-        $componentLine = $incident->component ?: 'All monitored components';
-        $url           = $incident->url ?: self::provider_url(sanitize_key($provider));
-        $summary       = $incident->title;
-        if (!empty($options['manual_replay'])) {
-            $summary = '[Lousy Outages replay] ' . preg_replace('/^\[Lousy Outages replay\]\s*/', '', $summary);
-        }
-
+        $provider=$incident->provider; $impact=$incident->impact ?? self::impact_from_status($incident->status); $timestamp=gmdate('c',$incident->detected_at); $components=$incident->component?array_map('trim',explode(',',$incident->component)):[]; $componentLine=$incident->component ?: 'All monitored components'; $url=$incident->url ?: self::provider_url(sanitize_key($provider)); $summary=$incident->title;
+        $accepted=0; $failed=0; $results=[]; $lastError='';
         foreach ($subscribers as $email) {
-            $token = self::build_unsubscribe_token($email);
-            $unsubscribe = add_query_arg(
-                [
-                    'lo_unsub' => 1,
-                    'email'    => rawurlencode($email),
-                    'token'    => $token,
-                ],
-                home_url('/lousy-outages/')
-            );
-
-            $incident_payload = [
-                'service'         => $provider,
-                'status'          => $incident->status,
-                'impact'          => $impact,
-                'summary'         => $summary,
-                'notes'           => !empty($options['manual_replay']) ? 'Administrator-requested replay of a real stored incident. Public subscribers were not notified.' : '',
-                'timestamp'       => $timestamp,
-                'components'      => $componentLine,
-                'components_list' => $components,
-                'url'             => $url,
-                'unsubscribe_url' => $unsubscribe,
-            ];
-
-            $sent = send_lo_outage_alert_email($email, $incident_payload);
-
-            if (! $sent) {
-                self::log_error($provider, 'mail send failed for ' . $email);
-                return ['ok'=>false,'recipients'=>$subscribers,'error'=>'mail send failed for ' . $email];
-            }
+            $token=self::build_unsubscribe_token($email);
+            $unsubscribe=add_query_arg(['lo_unsub'=>1,'email'=>rawurlencode($email),'token'=>$token], home_url('/lousy-outages/'));
+            $payload=['service'=>$provider,'status'=>$incident->status,'impact'=>$impact,'summary'=>$summary,'notes'=>!empty($options['manual_replay'])?'Administrator-requested replay of a real stored incident. Public subscribers were not notified.':'','timestamp'=>$timestamp,'components'=>$componentLine,'components_list'=>$components,'url'=>$url,'unsubscribe_url'=>$unsubscribe];
+            $sent=send_lo_outage_alert_email($email,$payload);
+            if ($sent) { $accepted++; $results[]=['recipient'=>self::mask_email($email),'accepted_for_sending'=>true]; }
+            else { $failed++; $lastError='wp_mail returned false for '.self::mask_email($email); $results[]=['recipient'=>self::mask_email($email),'accepted_for_sending'=>false,'error'=>$lastError]; self::log_error($provider,$lastError); }
         }
-
-        return ['ok'=>true,'recipients'=>$subscribers,'error'=>''];
+        $attempt=['timestamp'=>gmdate('c'),'attempted'=>count($subscribers),'accepted_for_sending'=>$accepted,'immediate_failures'=>$failed,'transport'=>class_exists(__NAMESPACE__.'\MailTransport')?MailTransport::currentTransport():'wordpress','results'=>$results,'last_error'=>$lastError];
+        update_option(self::OPTION_LAST_ALERT_DELIVERY_RESULT, $attempt, false);
+        return ['ok'=>$accepted>0,'recipients'=>$subscribers,'error'=>$failed?($lastError ?: 'one_or_more_failed'):'','attempt'=>$attempt];
     }
 
     /**
@@ -1649,7 +1646,7 @@ class IncidentAlerts {
 
     private static function record_alert_delivery(bool $ok, Incident $incident, array $recipients, string $reason, bool $markSentCalled, array $options = []): void
     {
-        $payload = ['timestamp'=>gmdate('c'),'recipient_count'=>count($recipients),'recipients'=>$recipients,'provider'=>$incident->provider,'incident_id'=>$incident->id,'title'=>$incident->title,'status'=>$incident->status,'mark_sent_called'=>$markSentCalled,'synthetic'=>!empty($options['synthetic']),'mode'=>(string)($options['mode'] ?? 'real'),'reason'=>$reason];
+        $payload = ['timestamp'=>gmdate('c'),'recipient_count'=>count($recipients),'recipients'=>array_map([self::class,'mask_email'],$recipients),'provider'=>$incident->provider,'incident_id'=>$incident->id,'title'=>$incident->title,'status'=>$incident->status,'mark_sent_called'=>$markSentCalled,'synthetic'=>!empty($options['synthetic']),'mode'=>(string)($options['mode'] ?? 'real'),'reason'=>$reason];
         update_option(self::OPTION_LAST_ALERT_DELIVERY_RESULT, $payload, false);
         if ($ok) {
             update_option(self::OPTION_LAST_ALERT_SUCCESS, $payload, false);

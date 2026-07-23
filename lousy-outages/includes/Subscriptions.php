@@ -69,9 +69,9 @@ class Subscriptions {
         $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table}");
         $confirmed = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE status IN (%s,%s)", self::STATUS_SUBSCRIBED, 'confirmed'));
         $pending = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE status = %s", self::STATUS_PENDING));
-        $realtime = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE COALESCE(realtime_alerts, 0) <> 0");
-        $digest = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE COALESCE(daily_digest, 0) <> 0");
-        $newsletter = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE COALESCE(newsletter, 0) <> 0");
+        $realtime = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE status IN ('subscribed','confirmed') AND COALESCE(realtime_alerts, 0) <> 0");
+        $digest = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE status IN ('subscribed','confirmed') AND COALESCE(daily_digest, 0) <> 0");
+        $newsletter = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE status IN ('subscribed','confirmed') AND COALESCE(newsletter, 0) <> 0");
 
         $provider_all = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table} WHERE status IN ('subscribed','confirmed') AND (providers = '' OR providers IS NULL)");
         $provider_specific = max(0, $confirmed - $provider_all);
@@ -222,8 +222,12 @@ class Subscriptions {
             'consent_version' => '2026-05',
         ];
 
-        $existing = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$table} WHERE email = %s", $email));
+        $existing = $wpdb->get_row($wpdb->prepare("SELECT id,status,confirmed_at FROM {$table} WHERE email = %s", $email));
         if ($existing) {
+            if (in_array((string) $existing->status, [self::STATUS_SUBSCRIBED, 'confirmed'], true)) {
+                unset($data['status']);
+                if (!empty($existing->confirmed_at)) { unset($data['confirmed_at']); }
+            }
             $wpdb->update($table, $data, ['id' => (int) $existing->id]);
             return;
         }

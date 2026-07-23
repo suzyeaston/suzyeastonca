@@ -21,6 +21,7 @@ class MailTransport
     {
         add_action('phpmailer_init', [self::class, 'configure']);
         add_action('wp_mail_failed', [self::class, 'handleFailure']);
+        add_action('wp_mail_succeeded', [self::class, 'handleSuccess']);
         add_filter('wp_mail_from', [self::class, 'fromAddress']);
         add_filter('wp_mail_from_name', [self::class, 'fromName']);
     }
@@ -64,31 +65,28 @@ class MailTransport
 
         $phpmailer->Sender = $envelopeSender;
 
-        if (self::$forceMail) {
+        $mode = self::compatMode();
+        if ('local_mail' === $mode || self::$forceMail) {
             $phpmailer->isMail();
             $phpmailer->Mailer = 'mail';
-            self::$transport = 'mail';
+            self::$transport = 'local_mail';
             self::$forceMail = false;
             self::addDebugHeaders($phpmailer, $envelopeSender, $fromAddress);
             return;
         }
 
-        $sendmailPath = self::SENDMAIL_PATH;
-        if (is_string($sendmailPath) && is_executable($sendmailPath)) {
-            $phpmailer->isSendmail();
-            $phpmailer->Sendmail = $sendmailPath . ' -t -i -f ' . escapeshellarg($envelopeSender);
-            self::$transport = 'sendmail';
-            self::addDebugHeaders($phpmailer, $envelopeSender, $fromAddress);
-            return;
+        if ('local_sendmail' === $mode) {
+            $sendmailPath = self::SENDMAIL_PATH;
+            if (is_string($sendmailPath) && is_executable($sendmailPath)) {
+                $phpmailer->isSendmail();
+                $phpmailer->Sendmail = $sendmailPath . ' -t -i -f ' . escapeshellarg($envelopeSender);
+                self::$transport = 'local_sendmail';
+                self::addDebugHeaders($phpmailer, $envelopeSender, $fromAddress);
+                return;
+            }
         }
 
-        $phpmailer->isSMTP();
-        $phpmailer->Host = '127.0.0.1';
-        $phpmailer->Port = 25;
-        $phpmailer->SMTPAuth = false;
-        $phpmailer->SMTPAutoTLS = false;
-        $phpmailer->SMTPKeepAlive = false;
-        self::$transport = 'smtp';
+        self::$transport = 'wordpress_' . (string) $phpmailer->Mailer;
         self::addDebugHeaders($phpmailer, $envelopeSender, $fromAddress);
     }
 
@@ -126,6 +124,12 @@ class MailTransport
         return $desired ?: $name;
     }
 
+    public static function handleSuccess($mailData): void
+    {
+        if (! self::isActive()) { return; }
+        update_option('lousy_outages_last_wp_mail_succeeded', ['timestamp'=>gmdate('c'), 'transport'=>self::$transport], false);
+    }
+
     public static function handleFailure(WP_Error $error): void
     {
         if (! self::isActive()) {
@@ -134,7 +138,7 @@ class MailTransport
 
         self::logFailure($error);
 
-        if ('smtp' !== self::$transport || self::$fallbackAttempted) {
+        if (false === strpos(self::$transport, 'smtp') || self::$fallbackAttempted || 'wordpress_smtp' === self::$transport) {
             return;
         }
 
@@ -176,6 +180,15 @@ class MailTransport
 
         $target = trailingslashit(WP_CONTENT_DIR) . 'uploads/lo-mail.log';
         error_log($logMessage, 3, $target);
+    }
+
+    public static function currentTransport(): string { return self::$transport; }
+
+    private static function compatMode(): string
+    {
+        $mode = defined('LOUSY_OUTAGES_MAIL_TRANSPORT') ? (string) LOUSY_OUTAGES_MAIL_TRANSPORT : (string) get_option('lousy_outages_mail_transport_mode', 'wordpress');
+        $mode = sanitize_key((string) apply_filters('lousy_outages_mail_transport_mode', $mode));
+        return in_array($mode, ['wordpress','local_mail','local_sendmail'], true) ? $mode : 'wordpress';
     }
 
     private static function resolveFromAddress(): string
