@@ -23,14 +23,14 @@ $is_active = $outage_count > 0;
         <a class="lo-home-dashboard-link" href="<?php echo esc_url( $dashboard_url ); ?>">View full status <span aria-hidden="true">→</span></a>
     </div>
     <div class="lo-home-ticker lo-home-teaser__screen" role="status" aria-live="polite">
-        <a class="lo-home-stat" href="<?php echo esc_url( $teaser_data['active_url'] ?? ( $dashboard_url . '#active-incidents' ) ); ?>"><strong><?php echo esc_html( (string) $outage_count ); ?></strong><span><?php echo esc_html( 'Outage ' . ( 1 === $outage_count ? 'event' : 'events' ) ); ?></span></a>
-        <a class="lo-home-stat" href="<?php echo esc_url( $teaser_data['affected_url'] ?? ( $dashboard_url . '#monitored-services' ) ); ?>"><strong><?php echo esc_html( (string) $provider_count ); ?></strong><span><?php echo esc_html( 'Affected ' . ( 1 === $provider_count ? 'provider' : 'providers' ) ); ?></span></a>
-        <a class="lo-home-stat" href="<?php echo esc_url( $teaser_data['active_url'] ?? ( $dashboard_url . '#active-incidents' ) ); ?>"><strong><?php echo esc_html( (string) $notice_count ); ?></strong><span><?php echo esc_html( 'Official ' . ( 1 === $notice_count ? 'notice' : 'notices' ) ); ?></span></a>
-        <div class="lo-home-lead">
+        <a class="lo-home-stat" data-lo-stat="outages" href="<?php echo esc_url( $teaser_data['active_url'] ?? ( $dashboard_url . '#active-incidents' ) ); ?>"><strong><?php echo esc_html( (string) $outage_count ); ?></strong><span><?php echo esc_html( 'Outage ' . ( 1 === $outage_count ? 'event' : 'events' ) ); ?></span></a>
+        <a class="lo-home-stat" data-lo-stat="providers" href="<?php echo esc_url( $teaser_data['affected_url'] ?? ( $dashboard_url . '#monitored-services' ) ); ?>"><strong><?php echo esc_html( (string) $provider_count ); ?></strong><span><?php echo esc_html( 'Affected ' . ( 1 === $provider_count ? 'provider' : 'providers' ) ); ?></span></a>
+        <a class="lo-home-stat" data-lo-stat="notices" href="<?php echo esc_url( $teaser_data['active_url'] ?? ( $dashboard_url . '#active-incidents' ) ); ?>"><strong><?php echo esc_html( (string) $notice_count ); ?></strong><span><?php echo esc_html( 'Official ' . ( 1 === $notice_count ? 'notice' : 'notices' ) ); ?></span></a>
+        <div class="lo-home-lead" data-lo-lead>
             <?php if ( $is_active ) : ?>
-                <a class="lo-home-lead__link" href="<?php echo esc_url( $teaser_data['lead_url'] ?? $dashboard_url ); ?>"><strong><?php echo esc_html( $lead_title ?: 'Active provider incident' ); ?></strong></a>
-                <span><?php echo esc_html( $summary ?: 'Latest official update is available on the full dashboard.' ); ?></span>
-                <a class="lo-home-provider-link" href="<?php echo esc_url( $teaser_data['provider_url'] ?? $dashboard_url ); ?>"><?php echo esc_html( trim( $provider_name . ( $lifecycle ? ' · ' . $lifecycle : '' ) ) ); ?></a>
+                <a class="lo-home-lead__link" data-lo-lead-link href="<?php echo esc_url( $teaser_data['lead_url'] ?? $dashboard_url ); ?>"><strong data-lo-lead-title><?php echo esc_html( $lead_title ?: 'Active provider incident' ); ?></strong></a>
+                <span data-lo-lead-summary><?php echo esc_html( $summary ?: 'Latest official update is available on the full dashboard.' ); ?></span>
+                <a class="lo-home-provider-link" data-lo-provider-link href="<?php echo esc_url( $teaser_data['provider_url'] ?? $dashboard_url ); ?>"><span data-lo-lead-provider><?php echo esc_html( trim( $provider_name . ( $lifecycle ? ' · ' . $lifecycle : '' ) ) ); ?></span></a>
             <?php else : ?>
                 <strong><?php echo esc_html( 'No active incidents' ); ?></strong>
                 <span><?php echo esc_html( ! empty( $teaser_data['last_checked'] ) ? 'Last checked: ' . $teaser_data['last_checked'] : 'Provider checks are quiet.' ); ?></span>

@@ -861,10 +861,10 @@
       }
       var card = null;
       if (state.container) {
-        card = state.container.querySelector('[data-provider-id="' + escapeSelector(String(id)) + '"]');
+        card = state.container.querySelector('[data-lo-provider-row="' + escapeSelector(String(id)) + '"]');
       }
       if (!card && state.doc) {
-        card = state.doc.querySelector('[data-provider-id="' + escapeSelector(String(id)) + '"]') || state.doc.querySelector('.provider-card[data-id="' + String(id) + '"]');
+        card = state.doc.querySelector('[data-lo-provider-row="' + escapeSelector(String(id)) + '"]') || state.doc.querySelector('.provider-card[data-id="' + String(id) + '"]');
       }
       if (!card) {
         return;
@@ -876,18 +876,7 @@
       } else {
         updateModernCard(card, provider, normalized);
       }
-      if (state.viewMode === 'incidents') {
-        var kind = resolveTileKind(provider, normalized);
-        if (kind === 'outage' || kind === 'incident') {
-          incidentsCards.push(card);
-        } else if (kind === 'signal') {
-          signalCards.push(card);
-        } else if (kind === 'unknown' || kind === 'manual') {
-          unverifiedCards.push(card);
-        } else if (state.grid) {
-          state.grid.appendChild(card);
-        }
-      } else if (state.grid) {
+      if (state.grid && card.parentNode === state.grid) {
         state.grid.appendChild(card);
       }
     });
@@ -897,16 +886,12 @@
       } else {
         var hasAnyCard = false;
         if (state.container) {
-          hasAnyCard = !!state.container.querySelector('[data-provider-id]');
+          hasAnyCard = !!state.container.querySelector('[data-lo-provider-row], [data-lo-incident-card]');
         }
         toggleSpinner(!hasAnyCard);
       }
     }
-    if (state.viewMode === 'incidents') {
-      appendCardsToSection(state.sectionGrids.incidents, incidentsCards);
-      appendCardsToSection(state.sectionGrids.signals, signalCards);
-      appendCardsToSection(state.sectionGrids.unverified, unverifiedCards);
-    } else if (state.grid && orderedCards.length) {
+    if (state.grid && orderedCards.length) {
       orderedCards.forEach(function (card) {
         if (card.parentNode === state.grid) {
           state.grid.appendChild(card);
@@ -927,6 +912,16 @@
 
   function resolveTileKind(provider, normalizedStatus) {
     var tileKind = String((provider && (provider.tile_kind || provider.tileKind)) || '').toLowerCase();
+    var incidents = Array.isArray(provider && provider.incidents) ? provider.incidents : [];
+    var hasUnresolved = incidents.some(function (incident) {
+      if (!incident || typeof incident !== 'object') return false;
+      if (incident.resolved_at || incident.resolvedAt) return false;
+      var status = String(incident.status || incident.lifecycle || '').toLowerCase();
+      return ['resolved','completed','postmortem','operational','ok','none'].indexOf(status) === -1;
+    });
+    if (hasUnresolved) {
+      return 'incident';
+    }
     if (tileKind) {
       return tileKind;
     }
@@ -936,10 +931,6 @@
     }
     if (statusInfo.code === 'unknown') {
       return 'unknown';
-    }
-    var incidents = Array.isArray(provider && provider.incidents) ? provider.incidents : [];
-    if (incidents.length) {
-      return 'incident';
     }
     return 'signal';
   }
@@ -3044,10 +3035,10 @@
     setHistoryLoading();
 
     var providerIds = [];
-    var cards = state.container ? state.container.querySelectorAll('[data-provider-id], .provider-card') : [];
+    var cards = state.container ? state.container.querySelectorAll('[data-lo-provider-row], .provider-card') : [];
     if (cards && cards.length) {
       cards.forEach(function (card) {
-        var slug = card.getAttribute ? card.getAttribute('data-provider-id') || card.getAttribute('data-id') : null;
+        var slug = card.getAttribute ? card.getAttribute('data-lo-provider-row') || card.getAttribute('data-id') : null;
         if (slug) {
           providerIds.push(String(slug));
         }
@@ -3461,7 +3452,7 @@
     state.isRefreshing = true;
 
     if (state.loadingEl && state.container) {
-      var hasCards = !!state.container.querySelector('[data-provider-id]');
+      var hasCards = !!state.container.querySelector('[data-lo-provider-row], [data-lo-incident-card]');
       if (!hasCards) {
         toggleSpinner(true);
       }

@@ -765,7 +765,7 @@ function render_shortcode(): string {
                     $category = (string) ($tile['category'] ?? ($providers_config[$slug]['category'] ?? 'other'));
                     $source_type = (string) ($tile['source_type'] ?? ($providers_config[$slug]['source_type'] ?? 'unknown'));
                     ?>
-                        <article id="provider-<?php echo esc_attr($slug); ?>" class="lo-card lo-card--incident" data-provider-id="<?php echo esc_attr($slug); ?>">
+                        <article id="provider-<?php echo esc_attr($slug); ?>" class="lo-card lo-card--incident" data-lo-incident-card="<?php echo esc_attr($slug); ?>" data-provider-id="<?php echo esc_attr($slug); ?>">
                             <div class="lo-head">
                                 <h3 class="lo-title"><?php echo esc_html($provider_name); ?></h3>
                                 <span class="lo-pill status--degraded" data-lo-badge><?php echo esc_html((string) ($tile['status_label'] ?? 'Incident')); ?></span>
@@ -1015,7 +1015,7 @@ function render_shortcode(): string {
             $category = (string) ($tile['category'] ?? ($providers_config[$slug]['category'] ?? 'other'));
             $source_type = (string) ($tile['source_type'] ?? ($providers_config[$slug]['source_type'] ?? 'unknown'));
             ?>
-            <div class="lo-services__row lo-services__row--<?php echo esc_attr($state_class); ?>" data-lo-provider-row="<?php echo esc_attr($slug); ?>" data-lo-provider-name="<?php echo esc_attr(strtolower((string) ($tile['name'] ?? $slug))); ?>" data-lo-provider-category="<?php echo esc_attr($category); ?>" data-lo-provider-state="<?php echo esc_attr($state_class); ?>" role="row"><span role="cell"><strong><?php echo esc_html((string) ($tile['name'] ?? ucfirst($slug))); ?></strong></span><span role="cell"><span class="lo-pill status--<?php echo esc_attr($state_class); ?>"><?php echo esc_html($state_label); ?></span></span><span role="cell"><?php echo esc_html(ucfirst($category) . ' / ' . $source_type); ?></span><span role="cell"><?php echo esc_html($last_checked); ?></span><span role="cell"><?php if ('' !== $status_url) : ?><a class="lo-status-link" href="<?php echo esc_url($status_url); ?>" target="_blank" rel="noopener">Open</a><?php else : ?>—<?php endif; ?></span></div>
+            <div class="lo-services__row lo-services__row--<?php echo esc_attr($state_class); ?>" data-lo-provider-row="<?php echo esc_attr($slug); ?>" data-provider-id="<?php echo esc_attr($slug); ?>" data-lo-provider-name="<?php echo esc_attr(strtolower((string) ($tile['name'] ?? $slug))); ?>" data-lo-provider-category="<?php echo esc_attr($category); ?>" data-lo-provider-state="<?php echo esc_attr($state_class); ?>" role="row"><span role="cell" data-label="Provider"><strong><?php echo esc_html((string) ($tile['name'] ?? ucfirst($slug))); ?></strong></span><span role="cell" data-label="State"><span class="lo-pill status--<?php echo esc_attr($state_class); ?>"><?php echo esc_html($state_label); ?></span></span><span role="cell" data-label="Category / source"><?php echo esc_html(ucfirst($category) . ' / ' . $source_type); ?></span><span role="cell" data-label="Last checked"><?php echo esc_html($last_checked); ?></span><span role="cell" data-label="Status page"><?php if ('' !== $status_url) : ?><a class="lo-status-link" href="<?php echo esc_url($status_url); ?>" target="_blank" rel="noopener">Open</a><?php else : ?>—<?php endif; ?></span></div>
             <?php
         };
         ?>

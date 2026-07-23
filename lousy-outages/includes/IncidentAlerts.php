@@ -317,7 +317,14 @@ class IncidentAlerts {
     {
         $started = gmdate('c');
         $store = $options['store'] ?? new IncidentStore();
-        $incidents = self::collect_from_snapshot($snapshot);
+        $rawIncidents = self::collect_from_snapshot($snapshot);
+        $incidents = [];
+        foreach ($rawIncidents as $rawIncident) {
+            $incident = $rawIncident instanceof Incident ? $rawIncident : (is_array($rawIncident) ? self::incident_from_array($rawIncident) : null);
+            if ($incident instanceof Incident) {
+                $incidents[] = $incident;
+            }
+        }
         $historyPersisted = false;
         try {
             $store->persistIncidents($incidents);
@@ -355,6 +362,64 @@ class IncidentAlerts {
         ];
         update_option(self::OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS, $diag, false);
         return $diag;
+    }
+
+
+    public static function alert_health(): array
+    {
+        $stats = class_exists(__NAMESPACE__ . '\Subscriptions') && method_exists(__NAMESPACE__ . '\Subscriptions', 'stats') ? Subscriptions::stats() : [];
+        $next = function_exists('wp_next_scheduled') ? wp_next_scheduled('lousy_outages_refresh_official_providers') : false;
+        return [
+            'notification_email' => (string) get_option('lousy_outages_email', get_option('admin_email')),
+            'confirmed_subscribers' => (int) ($stats['confirmed'] ?? 0),
+            'realtime_subscribers' => (int) ($stats['realtime'] ?? 0),
+            'last_canonical_refresh' => (string) get_option('lousy_outages_last_refresh_at', get_option(self::OPTION_LAST_CHECK, '')),
+            'next_canonical_refresh' => $next ? gmdate('c', (int) $next) : '',
+            'canonical_cron_scheduled' => (bool) $next,
+            'processing' => (array) get_option(self::OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS, []),
+            'recipient_diagnostics' => (array) get_option(self::OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS, []),
+            'last_successful_real_alert' => (array) get_option(self::OPTION_LAST_ALERT_SUCCESS, []),
+            'last_failed_real_alert' => (array) get_option(self::OPTION_LAST_ALERT_FAILURE, []),
+            'last_synthetic_alert' => (array) get_option(self::OPTION_LAST_SYNTHETIC_ALERT, []),
+            'last_replayed_real_incident' => (array) get_option('lousy_outages_last_replay_alert', []),
+        ];
+    }
+
+    public static function latest_replay_candidate(): ?Incident
+    {
+        $candidates = [];
+        foreach (self::collect_from_snapshot((array) get_option('lousy_outages_current_state', [])) as $candidate) {
+            $incident = $candidate instanceof Incident ? $candidate : (is_array($candidate) ? self::incident_from_array($candidate) : null);
+            if ($incident instanceof Incident && self::is_alertable_incident($incident) && !$incident->isResolved()) {
+                $candidates[] = $incident;
+            }
+        }
+        if (empty($candidates)) {
+            $store = new IncidentStore();
+            foreach ($store->getStoredIncidents(25) as $event) {
+                $incident = is_array($event) ? self::incident_from_array($event) : null;
+                if ($incident instanceof Incident && self::is_alertable_incident($incident) && !$incident->isResolved()) {
+                    $candidates[] = $incident;
+                }
+            }
+        }
+        usort($candidates, static fn(Incident $a, Incident $b): int => $b->detected_at <=> $a->detected_at);
+        return $candidates[0] ?? null;
+    }
+
+    public static function replay_latest_real_incident_to_notification_inbox(): array
+    {
+        $incident = self::latest_replay_candidate();
+        if (!$incident instanceof Incident) {
+            $result = ['ok'=>false,'sent'=>0,'recipients'=>[],'error'=>'no_real_incident_candidate','timestamp'=>gmdate('c')];
+            update_option('lousy_outages_last_replay_alert', $result, false);
+            return $result;
+        }
+        $replay = new Incident($incident->provider, $incident->id, '[Lousy Outages replay] ' . $incident->title, $incident->status, $incident->url, $incident->component, $incident->impact, $incident->detected_at, $incident->resolved_at);
+        $send = self::send_incident_alert_email($replay, ['notification_only'=>true, 'mode'=>'admin_replay', 'manual_replay'=>true]);
+        $result = ['ok'=>!empty($send['ok']),'sent'=>!empty($send['ok']) ? count((array)($send['recipients'] ?? [])) : 0,'recipients'=>(array)($send['recipients'] ?? []),'error'=>(string)($send['error'] ?? ''),'provider'=>$incident->provider,'incident_id'=>$incident->id,'title'=>$incident->title,'status'=>$incident->status,'detected_at'=>gmdate('c', $incident->detected_at),'timestamp'=>gmdate('c'),'mark_sent_called'=>false];
+        update_option('lousy_outages_last_replay_alert', $result, false);
+        return $result;
     }
 
     public static function send_daily_digest(): void {
@@ -1535,6 +1600,9 @@ class IncidentAlerts {
         $componentLine = $incident->component ?: 'All monitored components';
         $url           = $incident->url ?: self::provider_url(sanitize_key($provider));
         $summary       = $incident->title;
+        if (!empty($options['manual_replay'])) {
+            $summary = '[Lousy Outages replay] ' . preg_replace('/^\[Lousy Outages replay\]\s*/', '', $summary);
+        }
 
         foreach ($subscribers as $email) {
             $token = self::build_unsubscribe_token($email);
@@ -1552,7 +1620,7 @@ class IncidentAlerts {
                 'status'          => $incident->status,
                 'impact'          => $impact,
                 'summary'         => $summary,
-                'notes'           => '',
+                'notes'           => !empty($options['manual_replay']) ? 'Administrator-requested replay of a real stored incident. Public subscribers were not notified.' : '',
                 'timestamp'       => $timestamp,
                 'components'      => $componentLine,
                 'components_list' => $components,
