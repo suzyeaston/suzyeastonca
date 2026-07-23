@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.4.4
+ * Version: 0.4.5
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.4.4' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.4.5' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -46,10 +46,15 @@ if ( ! function_exists( 'lousy_outages_require' ) ) {
             require_once $path;
             return;
         }
-        error_log( '[LO] missing include: ' . $relative );
-        if ( $required ) {
-            return;
+        $severity = $required ? 'required' : 'optional';
+        error_log( '[LO] missing ' . $severity . ' include: ' . $relative );
+        if ( function_exists( 'do_action' ) ) {
+            do_action( 'lousy_outages_missing_include', $relative, $required, $path );
         }
+        $missing = (array) get_option( 'lousy_outages_missing_includes', [] );
+        $missing[ $relative ] = [ 'required' => $required, 'path' => $path, 'last_seen' => gmdate( 'c' ) ];
+        update_option( 'lousy_outages_missing_includes', $missing, false );
+        return;
     }
 }
 
@@ -98,6 +103,12 @@ lousy_outages_require( 'includes/Sources/ProviderFeedSource.php' );
 lousy_outages_require( 'includes/Sources/SourceBudgetManager.php' );
 lousy_outages_require( 'includes/Sources/ChatterRejectionReasons.php' );
 lousy_outages_require( 'includes/Sources/StatuspageIntelSource.php' );
+lousy_outages_require( 'includes/Sources/PublicChatterSource.php', false );
+lousy_outages_require( 'includes/Sources/CloudflareRadarSource.php', false );
+lousy_outages_require( 'includes/Sources/CommunityReportIntelSource.php', false );
+lousy_outages_require( 'includes/Sources/HackerNewsChatterSource.php', false );
+lousy_outages_require( 'includes/Sources/RedditFieldReportsSource.php', false );
+lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php', false );
 lousy_outages_require( 'includes/SignalCollector.php' );
 lousy_outages_require( 'includes/Api.php' );
 lousy_outages_require( 'includes/AdminCleanup.php' );
@@ -1428,9 +1439,11 @@ function lousy_outages_settings_page() {
                 </tr>
                 
                 <?php
-                $lo_public_chatter_source = class_exists('\\SuzyEaston\\LousyOutages\\Sources\\PublicChatterSource') ? new \SuzyEaston\LousyOutages\Sources\PublicChatterSource() : null;
+                $lo_public_chatter_class = '\\SuzyEaston\\LousyOutages\\Sources\\PublicChatterSource';
+                $lo_public_chatter_source = class_exists( $lo_public_chatter_class ) ? new \SuzyEaston\LousyOutages\Sources\PublicChatterSource() : null;
                 $lo_public_chatter_master_enabled = ! empty( get_option( 'lousy_outages_public_chatter_enabled', '1' ) );
-                $lo_public_chatter_direct_enabled = $lo_public_chatter_source->direct_sources_enabled();
+                $lo_public_chatter_direct_enabled = $lo_public_chatter_source && method_exists( $lo_public_chatter_source, 'direct_sources_enabled' ) ? (bool) $lo_public_chatter_source->direct_sources_enabled() : false;
+                $lo_public_chatter_missing = ! $lo_public_chatter_source;
                 $lo_public_chatter_source_statuses = [
                     'Bluesky' => ! empty( get_option( 'lousy_outages_public_chatter_bluesky_enabled', '1' ) ),
                     'Mastodon' => ! empty( get_option( 'lousy_outages_public_chatter_mastodon_enabled', '1' ) ),
@@ -1451,7 +1464,9 @@ function lousy_outages_settings_page() {
                     <p><strong>Open web:</strong> GDELT is open-web/news corroboration with budget/cooldown protection. <strong>Internet health:</strong> Cloudflare Radar and CAIDA IODA are telemetry and do not prove SaaS application outages. <strong>Community:</strong> first-party reports remain unconfirmed.</p>
                     <p class="description">Enabled sources affect dashboard diagnostics/watch candidates only. Email alerts remain thresholded; community reports remains unconfirmed and raw social post text is not shown publicly.</p>
                     <p><strong>Master Public Chatter Radar:</strong> <?php echo esc_html( $lo_public_chatter_master_enabled ? 'Enabled' : 'Disabled' ); ?> | <strong>Direct public source gate:</strong> <?php echo esc_html( $lo_public_chatter_direct_enabled ? 'Enabled' : 'Disabled' ); ?></p>
-                    <?php if ( ! $lo_public_chatter_direct_enabled ) : ?>
+                    <?php if ( $lo_public_chatter_missing ) : ?>
+                        <div class="notice notice-warning inline"><p><?php echo esc_html__( 'Optional source class PublicChatterSource is unavailable; public chatter controls are shown disabled instead of interrupting wp-admin.', 'lousy-outages' ); ?></p></div>
+                    <?php elseif ( ! $lo_public_chatter_direct_enabled ) : ?>
                         <div class="notice notice-warning inline"><p><?php echo esc_html__( 'Direct community reports source gate is disabled. Saved source checkboxes will be visible but collection is blocked until the gate is enabled.', 'lousy-outages' ); ?></p></div>
                     <?php endif; ?>
                     <?php if ( $lo_gdelt_limited ) : ?>
@@ -1506,6 +1521,18 @@ function lousy_outages_settings_page() {
             <?php submit_button( 'Send Synthetic Incident Alert', 'secondary', 'submit', false ); ?>
         </form>
         <p class="description">Synthetic incident verifies the modern template and notification pipeline.</p>
+
+        <h2>Email Delivery Diagnostics</h2>
+        <?php $lo_preview = IncidentAlerts::recipient_preview( '' ); $lo_latest = IncidentAlerts::latest_delivery_attempt(); ?>
+        <p><strong>Recipient preview:</strong> <?php echo esc_html( (string) ( $lo_preview['total_recipients_count'] ?? 0 ) ); ?> recipients would receive a realtime alert. Exclusions: <?php echo esc_html( wp_json_encode( $lo_preview['excluded'] ?? [] ) ); ?></p>
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5rem;">
+            <?php wp_nonce_field( 'lousy_outages_send_test_alert' ); ?>
+            <input type="hidden" name="action" value="lousy_outages_send_test_alert">
+            <label for="lo_test_alert_email">Send test alert to</label>
+            <input id="lo_test_alert_email" type="email" name="test_email" value="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>" class="regular-text" required>
+            <?php submit_button( 'Send Test Alert', 'secondary', 'submit', false ); ?>
+        </form>
+        <p><strong>Latest delivery attempt:</strong> <?php echo esc_html( wp_json_encode( $lo_latest ) ); ?></p>
 
         <?php $lo_replay_candidate = IncidentAlerts::latest_replay_candidate(); ?>
         <h2>Alert Health</h2>
@@ -1625,6 +1652,25 @@ add_action( 'admin_post_lousy_outages_test_email', function () {
 
     $redirect = add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) );
     wp_safe_redirect( $redirect );
+    exit;
+} );
+
+
+add_action( 'admin_post_lousy_outages_send_test_alert', function () {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lousy-outages' ) );
+    }
+    if ( 'POST' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) {
+        wp_die( esc_html__( 'Test alert must be submitted with POST.', 'lousy-outages' ) );
+    }
+    check_admin_referer( 'lousy_outages_send_test_alert' );
+    $to = sanitize_email( wp_unslash( (string) ( $_POST['test_email'] ?? '' ) ) );
+    if ( ! $to || ! is_email( $to ) ) {
+        wp_die( esc_html__( 'Enter a valid test email address.', 'lousy-outages' ), 400 );
+    }
+    $result = IncidentAlerts::send_test_alert_to( $to );
+    set_transient( 'lousy_outages_notice', [ 'message' => ! empty( $result['ok'] ) ? 'Test alert accepted for sending by wp_mail().' : 'Test alert failed immediately: ' . (string) ( $result['error'] ?? 'unknown' ), 'type' => ! empty( $result['ok'] ) ? 'success' : 'error' ], 30 );
+    wp_safe_redirect( add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) ) );
     exit;
 } );
 

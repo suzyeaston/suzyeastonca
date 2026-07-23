@@ -1,5 +1,13 @@
 # Lousy Outages
 
+## 0.4.5
+
+- Settings page now treats public chatter sources as optional and shows an admin diagnostic when `PublicChatterSource` is unavailable.
+- Realtime alert recipients are selected from the subscriptions table first, with legacy `lo_subscribers` compatibility and duplicate removal.
+- Email alert batches attempt each recipient independently and store admin-only diagnostics for attempted, accepted-for-sending, immediate failures, transport, masked recipient results, and last error.
+- Mail transport no longer forces local sendmail or unauthenticated localhost SMTP by default; WordPress, the host, or SMTP plugins remain in control unless `LOUSY_OUTAGES_MAIL_TRANSPORT`, `lousy_outages_mail_transport_mode`, or the matching filter opts into `local_mail` or `local_sendmail`.
+
+
 Monitor third‑party service status and get SMS and email alerts when things break.
 
 ## Providers
