@@ -1,6 +1,6 @@
 # Suzy Easton
 
-*Practical AI, strange interfaces, and useful systems built in Vancouver.*
+*Practical AI, strange interfaces, and cool systems built in Vancouver, BC, on the shared, unceded, ancestral territories of the xʷməθkʷəy̓əm (Musqueam), Sḵwx̱wú7mesh Úxwumixw (Squamish Nation), and səlilwətaɬ (Tsleil-Waututh) Nations.*
 
 This repository powers [suzyeaston.ca](https://suzyeaston.ca), the public creative-technology home of Suzy Easton.
 
