@@ -18,7 +18,7 @@ Some projects are polished. Some are mid-mutation. All of them have survived con
 
 ## What this is
 
-This is a public lab for building useful things in plain sight.
+This is a public lab for building things in plain sight.
 
 The repository contains selected experiments, production code, prototypes, documentation, and the visible remains of ideas being tested properly rather than discussed forever.
 
@@ -32,7 +32,7 @@ The code is public where that makes sense. Client work, private infrastructure, 
 
 **Lousy Outages** is independent outage intelligence for AI, cloud, developer, and creative tools.
 
-It watches official provider sources, groups related notices into clearer incidents, and turns status-page language into information people can actually use. The public dashboard is built for the awkward space between “all systems operational” and an entire group chat quietly confirming that nothing works.
+It watches official provider sources, groups related notices into clearer incidents, and turns status-page language into information people and businesses can use. The public dashboard is built for the awkward space between “all systems operational” and an entire group chat quietly confirming that nothing works.
 
 Current public work includes:
 
@@ -111,7 +111,7 @@ Suzy is available for selected consulting, prototyping, and collaboration involv
 - technical discovery and architecture
 - troubleshooting complicated systems that have acquired folklore
 
-The work is especially suited to organisations and creative teams that need to move from a broad idea to something testable, understandable, and genuinely useful.
+The work is especially suited to organizations and creative teams that need to move from a broad idea to something testable, understandable, and useful.
 
 This repository shows the process:
 
