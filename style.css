@@ -6497,7 +6497,7 @@ body,
 .home-palm { position: absolute; bottom: 0; width: 150px; height: 310px; background: #030303; z-index: 2; clip-path: polygon(47% 100%,56% 100%,53% 38%,73% 29%,54% 31%,82% 19%,55% 25%,64% 4%,47% 24%,29% 6%,39% 28%,9% 19%,34% 33%,11% 34%,46% 40%); opacity: .94; }
 .home-palm--left { left: 1%; transform: rotate(-7deg); }
 .home-palm--right { right: 2%; transform: scaleX(-1) rotate(-5deg); opacity: .75; }
-#lousy-outages-teaser.lo-home-teaser { display: block; width: min(100% - 2rem, 980px); max-height: 260px; overflow: hidden; margin: 1.35rem auto; padding: 1rem; border-radius: 18px; border-color: rgba(87,243,255,.75); background: linear-gradient(135deg, rgba(0,0,0,.92), rgba(7,16,39,.86)); }
+#lousy-outages-teaser.lo-home-teaser { display: block; width: min(100% - 2rem, 980px); height: auto; max-height: none; min-height: 0; overflow: visible; margin: 1.35rem auto; padding: 1rem; border-radius: 18px; border-color: rgba(87,243,255,.75); background: linear-gradient(135deg, rgba(0,0,0,.92), rgba(7,16,39,.86)); }
 #lousy-outages-teaser .lo-home-teaser__titlebar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.75rem; }
 #lousy-outages-teaser .lo-home-kicker { margin:0 0 .25rem; color:#ff4fd8; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; }
 #lousy-outages-teaser .lo-home-heading { font-size:clamp(1rem,2.5vw,1.45rem); }

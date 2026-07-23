@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.4.3
+ * Version: 0.4.4
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.4.3' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.4.4' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -202,6 +202,15 @@ if ( ! has_action( 'lousy_outages_refresh_official_providers', 'lousy_outages_re
 function lousy_outages_refresh_official_providers( bool $bypass_cache = true ): array {
     return lousy_outages_refresh_data( $bypass_cache );
 }
+
+function lousy_outages_ensure_canonical_cron_scheduled(): void {
+    if ( wp_next_scheduled( 'lousy_outages_refresh_official_providers' ) ) {
+        return;
+    }
+    $recurrence = 'lousy_outages_interval';
+    wp_schedule_event( time() + MINUTE_IN_SECONDS, $recurrence, 'lousy_outages_refresh_official_providers' );
+}
+add_action( 'init', 'lousy_outages_ensure_canonical_cron_scheduled', 30 );
 
 
 function lousy_outages_maybe_install_schema( bool $force = false ): void {
@@ -533,6 +542,7 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         'source'       => 'live',
         'refreshedAt'  => null,
         'refreshed_at' => null,
+        'alert_diagnostics' => [],
     ];
 
     try {
@@ -571,6 +581,7 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         }
 
         update_option( 'lousy_outages_last_refresh_attempt', [ 'timestamp' => $timestamp_gmt, 'providers_attempted' => count( $states ), 'quality' => $quality ], false );
+        update_option( 'lousy_outages_last_refresh_at', $timestamp_gmt, false );
         $health = (array) get_option( 'lousy_outages_provider_health', [] );
         foreach ( $states as $id => $state ) {
             $prior_health = isset( $health[ $id ] ) && is_array( $health[ $id ] ) ? $health[ $id ] : [];
@@ -613,6 +624,7 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
             'providers'    => $providers,
             'errors'       => $errors,
             'trending'     => $trending,
+            'alert_diagnostics' => $alert_diagnostics,
             'quality'      => $quality,
             'current_state'=> isset( $snapshot['current_state'] ) && is_array( $snapshot['current_state'] ) ? $snapshot['current_state'] : lousy_outages_current_state_from_snapshot( $snapshot ),
             'source'       => ! empty( $quality['ok'] ) ? 'live' : 'last_good_with_errors',
@@ -1485,7 +1497,7 @@ function lousy_outages_settings_page() {
             <input type="hidden" name="action" value="lousy_outages_test_email">
             <?php submit_button( 'Send Legacy Test Email', 'secondary' ); ?>
         </form>
-        <p class="description">Legacy test checks the older basic mail path only.</p>
+        <p class="description">Legacy test verifies the old basic mail transport only; it does not exercise the modern incident pipeline.</p>
 
         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5rem;">
             <?php wp_nonce_field( 'lousy_outages_synthetic_alert' ); ?>
@@ -1493,6 +1505,20 @@ function lousy_outages_settings_page() {
             <label><input type="checkbox" name="notification_only" value="1" checked> Test configured notification inbox only</label>
             <?php submit_button( 'Send Synthetic Incident Alert', 'secondary', 'submit', false ); ?>
         </form>
+        <p class="description">Synthetic incident verifies the modern template and notification pipeline.</p>
+
+        <?php $lo_replay_candidate = IncidentAlerts::latest_replay_candidate(); ?>
+        <h2>Alert Health</h2>
+        <?php $lo_alert_health = IncidentAlerts::alert_health(); ?>
+        <table class="widefat striped"><tbody><?php foreach ( $lo_alert_health as $lo_health_key => $lo_health_value ) : ?><tr><th scope="row"><?php echo esc_html( ucwords( str_replace( '_', ' ', (string) $lo_health_key ) ) ); ?></th><td><?php echo esc_html( is_scalar( $lo_health_value ) ? (string) $lo_health_value : wp_json_encode( $lo_health_value ) ); ?></td></tr><?php endforeach; ?></tbody></table>
+        <h3>Replay latest real incident to notification inbox</h3>
+        <?php if ( $lo_replay_candidate ) : ?><p><strong>Provider:</strong> <?php echo esc_html( $lo_replay_candidate->provider ); ?> · <strong>Title:</strong> <?php echo esc_html( $lo_replay_candidate->title ); ?> · <strong>Status:</strong> <?php echo esc_html( $lo_replay_candidate->status ); ?> · <strong>Detected:</strong> <?php echo esc_html( gmdate( 'c', $lo_replay_candidate->detected_at ) ); ?> · <strong>Source:</strong> stored canonical incident</p><?php else : ?><p>No replayable real incident is currently retained.</p><?php endif; ?>
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5rem;">
+            <?php wp_nonce_field( 'lousy_outages_replay_latest_real_incident' ); ?>
+            <input type="hidden" name="action" value="lousy_outages_replay_latest_real_incident">
+            <?php submit_button( 'Replay latest real incident to notification inbox', 'secondary', 'submit', false, $lo_replay_candidate ? [] : [ 'disabled' => 'disabled' ] ); ?>
+        </form>
+        <p class="description">Replay sends actual stored incident content only to the configured administrative notification inbox; public subscribers are never included.</p>
 
         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5rem;">
             <?php wp_nonce_field( 'lousy_outages_test_sms' ); ?>
@@ -1670,6 +1696,28 @@ add_action( 'admin_post_lousy_outages_synthetic_alert', function () {
     exit;
 } );
 
+
+add_action( 'admin_post_lousy_outages_replay_latest_real_incident', function () {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lousy-outages' ) );
+    }
+    if ( 'POST' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) {
+        wp_die( esc_html__( 'Replay must be submitted with POST.', 'lousy-outages' ) );
+    }
+    check_admin_referer( 'lousy_outages_replay_latest_real_incident' );
+    $result = IncidentAlerts::replay_latest_real_incident_to_notification_inbox();
+    set_transient(
+        'lousy_outages_notice',
+        [
+            'message' => ! empty( $result['ok'] ) ? 'Replay sent to configured notification inbox. Public subscribers were not notified.' : 'Replay failed: ' . (string) ( $result['error'] ?? 'unknown error' ),
+            'type'    => ! empty( $result['ok'] ) ? 'success' : 'error',
+        ],
+        30
+    );
+    wp_safe_redirect( add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) ) );
+    exit;
+} );
+
 add_action( 'admin_post_lousy_outages_queue_poll', function () {
     if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'lousy-outages' ) ); }
     check_admin_referer( 'lousy_outages_poll_now' );
@@ -1679,7 +1727,7 @@ add_action( 'admin_post_lousy_outages_queue_poll', function () {
         wp_safe_redirect( add_query_arg( 'page', 'lousy-outages', admin_url( 'options-general.php' ) ) );
         exit;
     }
-    $hook = 'lousy_outages_poll';
+    $hook = 'lousy_outages_refresh_official_providers';
     $nextRun = time() + 30;
     $scheduled = wp_schedule_single_event( $nextRun, $hook ) !== false;
     if ( ! $scheduled ) {
@@ -1716,20 +1764,21 @@ add_action( 'admin_post_lousy_outages_poll_now', function () {
         'changed_count'  => 0,
         'errors'         => [],
         'duration_ms'    => 0,
-        'triggered_by'   => 'admin_poll_now',
+        'triggered_by'   => 'admin_canonical_refresh',
         'memory_before'  => $memoryBefore,
         'memory_after'   => 0,
         'memory_peak'    => 0,
     ];
     $notice = [ 'message' => 'Poll failed safely. Check diagnostics/logs for details.', 'type' => 'error' ];
     try {
-        $count = lousy_outages_run_poll();
-        $result['provider_count'] = is_numeric( $count ) ? (int) $count : 0;
+        $refresh = lousy_outages_refresh_official_providers( true );
+        $result['provider_count'] = is_array( $refresh['providers'] ?? null ) ? count( $refresh['providers'] ) : 0;
+        $result['alert_diagnostics'] = $refresh['alert_diagnostics'] ?? [];
         $result['success']        = true;
         if ( class_exists( 'SuzyEaston\LousyOutages\Feeds' ) ) {
             SuzyEaston\LousyOutages\Feeds::clear_status_feed_cache();
         }
-        $notice = [ 'message' => sprintf( 'Poll completed (%d providers).', (int) $result['provider_count'] ), 'type' => 'success' ];
+        $notice = [ 'message' => sprintf( 'Canonical refresh completed (%d providers).', (int) $result['provider_count'] ), 'type' => 'success' ];
     } catch ( \Throwable $e ) {
         $result['errors'][] = $e->getMessage();
         error_log( '[LO] poll_now_failed ' . wp_json_encode( [ 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString() ] ) );

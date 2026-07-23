@@ -44,7 +44,7 @@ require_once get_template_directory() . '/inc/vancouver-tech-events.php';
 function retro_game_music_theme_scripts() {
     // Retro font + main stylesheet
     wp_enqueue_style('retro-font', 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-    wp_enqueue_style('main-styles', get_stylesheet_uri());
+    wp_enqueue_style('main-styles', get_stylesheet_uri(), [], filemtime( get_stylesheet_directory() . '/style.css' ));
     wp_enqueue_style(
         'buttons',
         get_template_directory_uri() . '/assets/css/buttons.css',
@@ -123,7 +123,6 @@ add_action('wp_enqueue_scripts', 'retro_game_music_theme_scripts');
 
 function suzy_enqueue_scripts() {
     $ver = wp_get_theme()->get( 'Version' ) . '-' . substr( md5( filemtime( get_stylesheet_directory() . '/assets/js/canucksPuckBash.js' ) ), 0, 8 );
-    wp_enqueue_style( 'suzy-style', get_stylesheet_uri(), [], $ver );
 
     if ( is_page_template( 'page-arcade.php' ) ) {
         wp_enqueue_script( 'canucks-game', get_stylesheet_directory_uri() . '/assets/js/canucksPuckBash.js', [], $ver, true );
@@ -541,7 +540,7 @@ add_action( 'phpmailer_init', function( $phpmailer ) {
 function lousy_outages_feed_autodiscovery() {
     if ( is_front_page() || is_page_template( 'page-lousy-outages.php' ) || is_page( 'lousy-outages' ) ) {
         $feed_url = home_url( '/?feed=lousy_outages_status' ); // Pretty /feed/lousy_outages_status/ works once permalinks flush, but we keep the query form for reliability.
-        echo '\n<link rel="alternate" type="application/rss+xml" title="Lousy Outages" href="' . esc_url( $feed_url ) . '" />\n';
+        printf( "\n<link rel=\"alternate\" type=\"application/rss+xml\" title=\"Lousy Outages\" href=\"%s\" />\n", esc_url( $feed_url ) );
     }
 }
 add_action( 'wp_head', 'lousy_outages_feed_autodiscovery' );

@@ -2951,3 +2951,20 @@
   .lo-services__row--head { display:none; }
   .lo-history__controls { display:grid; grid-template-columns:1fr; }
 }
+
+/* 0.4.4 canonical layout repair: retained for active incident/service row split. */
+.lo-section,.lo-history,.lo-services,.lo-subscribe{scroll-margin-top:calc(96px + var(--wp-admin--admin-bar--height,0px))}
+.lo-grid--section[data-lo-section-grid="incidents"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(1rem,2vw,1.4rem);align-items:start}
+.lo-card--incident{height:auto;min-height:0;overflow:visible}
+.lo-card--incident .lo-message,.lo-card--incident .lo-why,.lo-inc-item{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55}
+.lo-incident-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin:1rem 0}
+.lo-incident-facts>div{min-width:0;overflow-wrap:anywhere}
+.lo-history__heading,.lo-history__controls{gap:.75rem;align-items:center}
+.lo-history__controls label{display:inline-flex;align-items:center;gap:.45rem;min-height:44px}
+.lo-services__table{overflow:visible;width:100%}
+.lo-services__row{grid-template-columns:minmax(12rem,1.4fr) minmax(8rem,.8fr) minmax(12rem,1fr) minmax(9rem,.9fr) minmax(7rem,.7fr);align-items:center;gap:.75rem}
+.lo-services__row [role="cell"]{min-width:0;overflow-wrap:anywhere}
+.lo-subscribe,.lo-report{max-width:100%;overflow:visible}
+.lo-subscribe input,.lo-report input,.lo-report textarea{max-width:100%}
+@media (max-width:900px){.lo-grid--section[data-lo-section-grid="incidents"]{grid-template-columns:1fr}.lo-incident-facts{grid-template-columns:1fr}}
+@media (max-width:680px){.lo-history__heading{display:grid}.lo-history__controls{display:grid;grid-template-columns:1fr}.lo-services__row{display:grid;grid-template-columns:1fr;gap:.45rem;padding:.85rem;border:1px solid rgba(87,243,255,.25);border-radius:14px;margin:.65rem 0;background:rgba(3,7,19,.72)}.lo-services__row--head{display:none}.lo-services__row [role="cell"]{display:grid;grid-template-columns:minmax(8rem,.55fr) minmax(0,1fr);gap:.6rem;align-items:start}.lo-services__row [role="cell"]::before{content:attr(data-label);font-family:'Press Start 2P',monospace;font-size:.58rem;line-height:1.5;color:var(--lo-accent,#57f3ff);text-transform:uppercase}.lo-status-link,.lo-subscribe button,.lo-report button{min-height:44px}}
