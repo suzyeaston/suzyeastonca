@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 use SuzyEaston\LousyOutages\Storage\IncidentStore;
+use SuzyEaston\LousyOutages\Storage\EpisodeStore;
 
 /** Canonical, shared RSS status feed. Feed.php is intentionally not bootstrapped. */
 class Feeds {
@@ -48,15 +49,15 @@ class Feeds {
         $build=['sources_included'=>[],'excluded'=>['quiet_signals'=>0,'duplicate_items'=>0,'expired_signals'=>0,'unknown_excluded'=>0,'operational_excluded'=>0,'old_incidents_excluded'=>0,'provider_states_with_official_incident'=>0,'cross_source_duplicates'=>0],'current_provider_items'=>0,'official_incident_items'=>0,'unconfirmed_signal_items'=>0,'stable_identities_reused'=>0,'new_logical_items'=>0];
         $incidentDays=(int)apply_filters('lo_status_feed_official_incident_days',self::INCIDENT_WINDOW_DAYS); $maxItems=(int)apply_filters('lo_status_feed_max_items',self::INCIDENT_LIMIT); $includeUnknown=(bool)apply_filters('lo_status_feed_include_unknown',false); $cutoff=$now-(max(1,$incidentDays)*DAY_IN_SECONDS);
         $providers=$options['providers']??Providers::list(); $states=$options['states']??(new Store())->get_all(); $lastPoll=(string)($options['last_poll']??get_option('lousy_outages_last_poll',gmdate('c',$now)));
-        $events=$options['incidents']??(new IncidentStore())->getStoredIncidents(self::INCIDENT_LIMIT*3);
+        $events=$options['incidents']??(new EpisodeStore())->publications(self::INCIDENT_LIMIT*3);
         $fused=$options['fused_signals']??SignalEngine::summarize_fused_signals(120); $external=$options['external_signals']??ExternalSignals::get_recent_signals(['windowMinutes'=>120,'limit'=>20]);
         $identity=is_array($options['identity_map']??null)?$options['identity_map']:(array)get_option(self::OPTION_IDENTITIES,[]); $identity+=['official'=>[],'providers'=>[],'signals'=>[]]; $items=[]; $officialProviders=[];
 
         foreach ((array)$events as $event) {
-            if(!is_array($event))continue; $event=(new IncidentStore())->normalizeEvent($event); $published=self::feed_publication_timestamp($event); if($published&&$published<$cutoff){$build['excluded']['old_incidents_excluded']++;continue;}
-            $pid=sanitize_key((string)($event['provider']??'')); $title=trim((string)($event['title']??$event['description']??'Incident')); $severity=strtolower((string)($event['severity']??'info'));
+            if(!is_array($event))continue; if(!isset($event['episode_guid'])){$event=(new IncidentStore())->normalizeEvent($event);} $published=self::feed_publication_timestamp($event); if($published&&$published<$cutoff){$build['excluded']['old_incidents_excluded']++;continue;}
+            $pid=sanitize_key((string)($event['provider_id']??$event['provider']??'')); $title=trim((string)($event['title']??$event['description']??'Incident')); $severity=strtolower((string)($event['severity']??'info'));
             $logical=self::official_incident_identity($event,$pid,$title); $entry=$identity['official'][$logical]??null;
-            if(is_array($entry)){$guid=(string)$entry['guid'];$published=(int)($entry['started_at']??$published);$build['stable_identities_reused']++;}else{$legacy=self::legacy_cached_identity($pid,$title);$guid=(string)($legacy['guid']??sha1('official|'.$logical));$published=(int)($legacy['started_at']??$published);$build['new_logical_items']++;}
+            if(is_array($entry)){$guid=(string)$entry['guid'];$published=(int)($entry['started_at']??$published);$build['stable_identities_reused']++;}else{$legacy=self::legacy_cached_identity($pid,$title);$guid=(string)($event['episode_guid']??$legacy['guid']??sha1('official|'.$logical));$published=(int)($legacy['started_at']??$published);$build['new_logical_items']++;}
             $identity['official'][$logical]=['guid'=>$guid,'started_at'=>$published?:$now,'touched_at'=>$now];$officialProviders[$pid]=true;
             self::put_item($items,['title'=>'['.strtoupper($severity).'] '.($event['provider_label']??ucfirst($pid)).' – '.$title,'link'=>(string)($event['incident_url']??$event['url']??home_url('/lousy-outages/')),'guid'=>$guid,'pubDate'=>self::format_rss_date(gmdate('c',$published?:$now)),'description'=>self::truncate_text((string)($event['description']??$title),200),'timestamp'=>$published?:$now,'categories'=>['official_incident',$severity]],$build);
         }
@@ -85,7 +86,7 @@ class Feeds {
         if($persist)update_option(self::OPTION_IDENTITIES,$identity,false); $build['identity_map_size']=count($identity['official'])+count($identity['providers'])+count($identity['signals']);
         $values=array_values($items);usort($values,static fn($a,$b)=>(int)$b['timestamp']<=>(int)$a['timestamp']);$values=array_slice($values,0,max(1,$maxItems));
         foreach($values as $item){if(in_array('official_incident',$item['categories'],true))$build['official_incident_items']++;if(in_array('current-provider-state',$item['categories'],true))$build['current_provider_items']++;if(in_array('unconfirmed',$item['categories'],true))$build['unconfirmed_signal_items']++;}
-        $build['max_items_applied']=max(1,$maxItems);$build['item_count']=count($values);$newest=$values?(int)$values[0]['timestamp']:$now;$lastUpdated=gmdate('c',$newest);$build['newest_item_date']=$lastUpdated;
+        $build['max_items_applied']=max(1,$maxItems);$build['item_count']=count($values);$build['latest_guid']=$values?(string)$values[0]['guid']:'';$newest=$values?(int)$values[0]['timestamp']:$now;$lastUpdated=gmdate('c',$newest);$build['newest_item_date']=$lastUpdated;
         $public=array_map(static function($item){unset($item['timestamp']);return $item;},$values);$build['feed_content_fingerprint']=self::feed_content_fingerprint($public);update_option(self::OPTION_STATUS_FEED_LAST_BUILD,$lastUpdated,false);return[$public,$lastUpdated,$build];
     }
 
@@ -96,8 +97,8 @@ class Feeds {
     private static function rebuild_cache(bool $save,string $reason): array {[$items,$last,$build]=self::get_status_feed_items();$build['cache_invalidation_reason']=$reason;$payload=['items'=>$items,'last_updated'=>$last,'build'=>$build,'expires_at'=>time()+self::FEED_CACHE_TTL];if($save)update_option(self::OPTION_STATUS_FEED_CACHE,$payload,false);return$payload;}
     private static function valid_cached_payload(bool $checkExpiry=true): ?array {$cached=get_option(self::OPTION_STATUS_FEED_CACHE,[]);if(!is_array($cached)||!isset($cached['items'],$cached['build']))return null;if($checkExpiry&&(int)($cached['expires_at']??0)<=time())return null;return$cached;}
     private static function put_item(array &$items,array $item,array &$build): void {$guid=(string)$item['guid'];if(isset($items[$guid])){$build['excluded']['duplicate_items']++;return;}$items[$guid]=$item;}
-    private static function official_incident_identity(array $event,string $pid,string $title): string {foreach(['guid','incident_id','id'] as $key){if(trim((string)($event[$key]??''))!=='')return $pid.'|id|'.trim((string)$event[$key]);}foreach(['incident_url','shortlink','url'] as $key){$url=trim((string)($event[$key]??''));if($url!==''&&preg_match('#^https?://#i',$url))return $pid.'|url|'.strtolower(rtrim($url,'/'));}$start=self::feed_publication_timestamp($event);return $pid.'|fallback|'.self::normalize_title($title).'|'.$start;}
-    private static function feed_publication_timestamp(array $event): int {foreach(['first_seen','started_at','startedAt','published','created_at','detected_at'] as $key){$v=$event[$key]??null;$ts=is_numeric($v)?(int)$v:self::parse_time((string)$v);if($ts>0)return$ts;}return 0;}
+    private static function official_incident_identity(array $event,string $pid,string $title): string {foreach(['episode_guid','guid','incident_id','id'] as $key){if(trim((string)($event[$key]??''))!=='')return $pid.'|id|'.trim((string)$event[$key]);}foreach(['incident_url','shortlink','url'] as $key){$url=trim((string)($event[$key]??''));if($url!==''&&preg_match('#^https?://#i',$url))return $pid.'|url|'.strtolower(rtrim($url,'/'));}$start=self::feed_publication_timestamp($event);return $pid.'|fallback|'.self::normalize_title($title).'|'.$start;}
+    private static function feed_publication_timestamp(array $event): int {foreach(['first_detected','first_seen','started_at','startedAt','published','created_at','detected_at'] as $key){$v=$event[$key]??null;$ts=is_numeric($v)?(int)$v:self::parse_time((string)$v);if($ts>0)return$ts;}return 0;}
     private static function signal_logical_key(array $row,string $pid): string {foreach(['episode_id','signal_id','id'] as $key){if(trim((string)($row[$key]??''))!=='')return$pid.'|'.trim((string)$row[$key]);}return$pid.'|'.sanitize_key((string)($row['source_type']??$row['_kind']??'signal'));}
     /** Pin a matching v2 item during rollout so an active official incident is not replayed. */
     private static function legacy_cached_identity(string $pid,string $title): array {$old=get_option('lousy_outages_status_feed_cache_v2',[]);foreach((array)($old['items']??[]) as $item){$itemTitle=strtolower((string)($item['title']??''));if(strpos($itemTitle,strtolower($title))===false||($pid!==''&&strpos($itemTitle,strtolower($pid))===false&&strpos($itemTitle,strtolower(str_replace('_',' ',$pid)))===false))continue;$started=self::parse_time((string)($item['pubDate']??''));if(!empty($item['guid'])&&$started)return['guid'=>(string)$item['guid'],'started_at'=>$started];}return[];}

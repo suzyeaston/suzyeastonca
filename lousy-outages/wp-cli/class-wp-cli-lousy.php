@@ -136,6 +136,7 @@ WP_CLI::add_command( 'lousy:alert-test', AlertTestCommand::class );
 class AlertHealthCommand {
     public function __invoke( array $args, array $assoc_args ): void {
         $subscribers = get_option( 'lo_subscribers', [] );
+        $health = \SuzyEaston\LousyOutages\IncidentAlerts::alert_health();
         $rows = [
             [ 'key' => 'configured_notification_email', 'value' => (string) get_option( 'lousy_outages_email', get_option( 'admin_email' ) ) ],
             [ 'key' => 'subscriber_count', 'value' => is_array( $subscribers ) ? (string) count( $subscribers ) : '0' ],
@@ -144,6 +145,7 @@ class AlertHealthCommand {
             [ 'key' => 'last_synthetic_test', 'value' => wp_json_encode( get_option( 'lousy_outages_last_synthetic_alert', [] ) ) ?: '{}' ],
             [ 'key' => 'cron_lo_check_statuses_scheduled', 'value' => wp_next_scheduled( 'lo_check_statuses' ) ? 'yes' : 'no' ],
             [ 'key' => 'recent_failure_exists', 'value' => get_option( 'lousy_outages_alert_delivery_failure' ) ? 'yes' : 'no' ],
+            [ 'key' => 'canonical_refresh_health', 'value' => wp_json_encode( $health ) ?: '{}' ],
         ];
         format_items( 'table', $rows, [ 'key', 'value' ] );
     }

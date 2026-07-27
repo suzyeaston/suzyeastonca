@@ -21,6 +21,7 @@ class AdminDiagnostics {
         $completed = (array) get_option('lousy_outages_last_refresh_complete', []);
         $provider_health = (array) get_option('lousy_outages_provider_health', []);
         $next = function_exists('wp_next_scheduled') ? wp_next_scheduled('lousy_outages_refresh_official_providers') : false;
+        $alert_health = IncidentAlerts::alert_health();
         $healthy = 0; $failed = 0; $delayed = 0;
         foreach (ProviderRegistry::enabled() as $provider) {
             $id = (string)($provider['id'] ?? '');
@@ -39,6 +40,7 @@ class AdminDiagnostics {
             'Canonical cron hook'=>'lousy_outages_refresh_official_providers',
             'Intended cadence'=>'30 minutes',
             'Next scheduled run'=>$next ? gmdate('c', (int)$next) : 'not scheduled',
+            'Alert / publication health'=>wp_json_encode($alert_health, JSON_PRETTY_PRINT),
             'Last attempted refresh'=>wp_json_encode($attempted),
             'Last successful complete refresh'=>wp_json_encode($completed),
             'Overall refresh health'=>($failed > 0 || $delayed > 0) ? 'attention_needed' : 'healthy',
