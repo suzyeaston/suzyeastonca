@@ -1,5 +1,12 @@
 # Lousy Outages
 
+## 0.4.7
+
+- Adds an ultra-narrow layout layer that keeps the dashboard readable at the
+  required 248px viewport instead of dividing content into slivers.
+- Adds real-browser viewport diagnostics, screenshots, and a standalone
+  representative fixture for environments where WordPress is unavailable.
+
 ## 0.4.6
 
 Mobile dashboard layout repair and file-versioned early asset loading.

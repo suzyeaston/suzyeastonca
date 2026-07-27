@@ -2,6 +2,7 @@
 const { defineConfig, devices } = require('@playwright/test');
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${process.env.LOCAL_WP_PORT || '8080'}`;
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 module.exports = defineConfig({
   testDir: './tests/e2e',
@@ -17,11 +18,11 @@ module.exports = defineConfig({
   projects: [
     {
       name: 'chromium-desktop',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], ...(executablePath ? { executablePath } : {}) },
     },
     {
       name: 'mobile-chrome',
-      use: { ...devices['Pixel 5'] },
+      use: { ...devices['Pixel 5'], ...(executablePath ? { executablePath } : {}) },
     },
   ],
   webServer: process.env.PLAYWRIGHT_SKIP_WEB_SERVER

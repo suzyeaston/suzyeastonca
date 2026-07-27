@@ -31,12 +31,12 @@ test('operational services use a four-column semantic table and one filtering pa
   assert.match(js, /Show ' \+ visibleOperational/);
 });
 
-test('0.4.6 release metadata is canonical', () => {
+test('0.4.7 release metadata is canonical', () => {
   const plugin = fs.readFileSync('lousy-outages/lousy-outages.php', 'utf8');
   const readme = fs.readFileSync('lousy-outages/README.md', 'utf8');
   const build = fs.readFileSync('scripts/build-lousy-outages-release.sh', 'utf8');
-  assert.match(plugin, /Version: 0\.4\.6/);
-  assert.match(plugin, /LOUSY_OUTAGES_VERSION', '0\.4\.6'/);
-  assert.match(readme, /## 0\.4\.6/);
-  assert.match(build, /VERSION="0\.4\.6"/);
+  assert.match(plugin, /Version: 0\.4\.7/);
+  assert.match(plugin, /LOUSY_OUTAGES_VERSION', '0\.4\.7'/);
+  assert.match(readme, /## 0\.4\.7/);
+  assert.match(build, /VERSION="0\.4\.7"/);
 });

@@ -2815,3 +2815,39 @@
   .lo-operational-table th, .lo-operational-table td { display: grid; grid-template-columns: minmax(7rem, .55fr) minmax(0, 1fr); gap: .6rem; padding: 0; border: 0; font-size: .8rem; }
   .lo-operational-table th::before, .lo-operational-table td::before { content: attr(data-label); color: var(--lo-accent); font: .55rem/1.5 "Press Start 2P", monospace; text-transform: uppercase; }
 }
+
+/* A 248px capture leaves less than 200px inside the themed console.  Do not
+ * let the otherwise useful two-part mobile rows divide that space again. */
+@media (max-width: 320px) {
+  .lousy-outages { padding: 6px; }
+  .lo-status-board__frame { border-width: 1px; border-radius: 10px; }
+  .lo-status-board__header { gap: 8px; padding: 9px 8px; }
+  .lo-status-board__body { padding: 6px; }
+  .lo-status-board__body .lousy-outages { border-width: 1px; }
+
+  .lo-grid--section[data-lo-section-grid="incidents"],
+  .lo-incident-facts,
+  .lo-actions,
+  .lo-mode-toggle,
+  .lo-history__controls,
+  .lo-attention-services__grid,
+  .lo-service-card__header,
+  .lo-service-card__meta,
+  .lo-operational-table tr,
+  .lo-operational-table th,
+  .lo-operational-table td {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .lo-card, .lo-card--incident, .lo-history, .lo-services,
+  .lo-service-card, .lo-operational-table tr { padding: 8px; }
+  .lo-attention-summary { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .lo-attention-summary__item { border-radius: 8px; }
+  .lo-service-card { gap: .75rem; overflow: visible; }
+  .lo-service-card__badge { justify-self: stretch; width: 100%; }
+  .lo-service-card__diagnostic { width: 100%; overflow-wrap: break-word; word-break: normal; }
+  .lo-service-card__footer .lo-status-link { max-width: 100%; }
+  .lo-operational-table th, .lo-operational-table td { gap: .2rem; }
+  .lo-operational-table th::before, .lo-operational-table td::before { margin-bottom: .15rem; }
+}
