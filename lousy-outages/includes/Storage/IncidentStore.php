@@ -199,8 +199,10 @@ class IncidentStore
         $events = array_values($stored);
         if ($limit > 0) {
             usort($events, static function (array $a, array $b): int {
-                $aTs = (int) ($a['last_seen'] ?? $a['first_seen'] ?? 0);
-                $bTs = (int) ($b['last_seen'] ?? $b['first_seen'] ?? 0);
+                // Feed/history consumers need creation order; polling last_seen must not
+                // make an old incident look newly published.
+                $aTs = (int) ($a['first_seen'] ?? 0);
+                $bTs = (int) ($b['first_seen'] ?? 0);
                 return $bTs <=> $aTs;
             });
             return array_slice($events, 0, $limit);
