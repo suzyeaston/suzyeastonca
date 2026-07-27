@@ -159,7 +159,7 @@ function se_enqueue_hero_wordmark_styles() {
 add_action('wp_enqueue_scripts', 'se_enqueue_hero_wordmark_styles');
 
 function se_enqueue_lousy_outages_page_styles() {
-    if ( is_page_template( 'page-lousy-outages.php' ) || is_page( 'lousy-outages' ) ) {
+    if ( is_page_template( 'page-lousy-outages.php' ) || is_page_template( 'page-lousy-outages-pricing.php' ) || is_page_template( 'page-lousy-outages-account.php' ) || is_page( 'lousy-outages' ) ) {
         $dir = get_stylesheet_directory();
         $uri = get_stylesheet_directory_uri();
         $path = '/assets/css/lousy-outages-page.css';

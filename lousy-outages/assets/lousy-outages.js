@@ -474,6 +474,7 @@
   }
 
   function downloadCSV() {
+    if (root && typeof root.dispatchEvent === 'function' && typeof root.CustomEvent === 'function') root.dispatchEvent(new root.CustomEvent('lousy-outages:event', { detail: { event: 'export_csv' } }));
     var incidents = Array.isArray(state.historyIncidents) ? state.historyIncidents : [];
     if (!incidents.length) {
       if (state.root && state.root.alert) {
@@ -523,6 +524,7 @@
   }
 
   function exportPDF() {
+    if (root && typeof root.dispatchEvent === 'function' && typeof root.CustomEvent === 'function') root.dispatchEvent(new root.CustomEvent('lousy-outages:event', { detail: { event: 'export_pdf' } }));
     if (!state.root || !state.historyCharts) {
       return;
     }

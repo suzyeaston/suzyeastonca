@@ -1,5 +1,11 @@
 # Lousy Outages
 
+## 0.5.0
+
+- Adds Free, Pro, and Team entitlements with server-side gates for watchlists, alert destinations, shared/private-board scaffolding, and API tokens.
+- Adds Stripe-hosted recurring Checkout, Customer Portal sessions, signed idempotent webhooks, and low-friction magic-link accounts without bundling a payment SDK.
+- Adds pricing/account pages, upgrade prompts, product analytics hooks, additive commerce storage, admin rollout settings, and migration/runbook documentation while leaving the public dashboard, history, RSS, and basic email path intact.
+
 ## 0.4.9
 
 - Publishes the RSS cache inside every canonical refresh, including refreshes started directly by the dashboard, REST API, or admin tools.

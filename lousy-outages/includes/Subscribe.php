@@ -165,6 +165,8 @@ class Lousy_Outages_Subscribe {
             self::send_welcome_email($email, $token);
         }
 
+        do_action('lousy_outages_product_event', 'subscription_confirm', ['email_hash' => hash('sha256', $email)]);
+
         return self::redirect_with_status('confirmed');
     }
 
@@ -392,6 +394,7 @@ HTML;
 }
 
 function lo_handle_subscribe(\WP_REST_Request $request) {
+    do_action('lousy_outages_product_event', 'subscription_start', []);
     $responseParam  = $request->get_param('challenge_response');
     $noscriptParam  = $request->get_param('lo_noscript_challenge');
     $challengeReply = is_string($responseParam) ? trim((string) $responseParam) : '';

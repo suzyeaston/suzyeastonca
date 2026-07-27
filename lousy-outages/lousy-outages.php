@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.4.9
+ * Version: 0.5.0
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.4.9' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.5.0' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -111,6 +111,11 @@ lousy_outages_require( 'includes/Sources/RedditFieldReportsSource.php', false );
 lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php', false );
 lousy_outages_require( 'includes/SignalCollector.php' );
 lousy_outages_require( 'includes/Api.php' );
+lousy_outages_require( 'includes/Entitlements.php' );
+lousy_outages_require( 'includes/CommerceStore.php' );
+lousy_outages_require( 'includes/StripeBilling.php' );
+lousy_outages_require( 'includes/Product.php' );
+lousy_outages_require( 'includes/CommerceAdmin.php' );
 lousy_outages_require( 'includes/AdminCleanup.php' );
 lousy_outages_require( 'includes/AdminDiagnostics.php' );
 lousy_outages_require( 'includes/ProviderPages.php' );
@@ -148,6 +153,9 @@ RefreshCron::bootstrap();
 \SuzyEaston\LousyOutages\AdminCleanup::bootstrap();
 \SuzyEaston\LousyOutages\AdminDiagnostics::bootstrap();
 \SuzyEaston\LousyOutages\ProviderPages::bootstrap();
+\SuzyEaston\LousyOutages\StripeBilling::bootstrap();
+\SuzyEaston\LousyOutages\Product::bootstrap();
+\SuzyEaston\LousyOutages\CommerceAdmin::bootstrap();
 
 lo_snapshot_bootstrap();
 lo_cron_bootstrap();
@@ -171,6 +179,8 @@ function lousy_outages_activate() {
     lousy_outages_schedule_canonical_refresh();
     lousy_outages_create_page();
     lousy_outages_maybe_install_schema( true );
+    \SuzyEaston\LousyOutages\CommerceStore::install();
+    \SuzyEaston\LousyOutages\Product::install_pages();
     if ( class_exists( '\\SuzyEaston\\LousyOutages\\Storage\\HistoryStore' ) ) { ( new \SuzyEaston\LousyOutages\Storage\HistoryStore() )->installTable(); }
     Subscriptions::schedule_purge();
     $default_email = 'suzyeaston@gmail.com';
@@ -253,6 +263,11 @@ function lousy_outages_maybe_repair_snapshot_caches(): void {
     update_option( $option_key, (int) LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION, false );
 }
 add_action( 'admin_init', 'lousy_outages_maybe_install_schema' );
+add_action( 'admin_init', static function (): void {
+    if ( version_compare( (string) get_option( 'lousy_outages_commerce_schema_version', '0' ), \SuzyEaston\LousyOutages\CommerceStore::SCHEMA_VERSION, '<' ) ) {
+        \SuzyEaston\LousyOutages\CommerceStore::install();
+    }
+}, 6 );
 add_action( 'init', 'lousy_outages_maybe_repair_snapshot_caches', 4 );
 add_action( 'init', static function (): void {
     if ( is_admin() ) {
