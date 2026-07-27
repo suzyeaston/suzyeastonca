@@ -36,6 +36,12 @@
     margin-top: 0;
 }
 
+/* The page theme must not paint or pixel-font the plugin's diagnostic prose. */
+.lousy-outages-page .lousy-outages :where(.lo-service-card__diagnostic, .lo-service-card__diagnostic p, .lo-service-card__footer, .lo-service-card__footer p) {
+    background-color: transparent;
+    font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
 .page-template-page-lousy-outages .lousy-outages-page,
 .page-template-page-lousy-outages-php .lousy-outages-page,
 .page-slug-lousy-outages .lousy-outages-page {

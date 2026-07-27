@@ -11,6 +11,7 @@ test('canonical Lousy Outages mobile selectors and early versioned assets remain
   assert.match(css, /@media \(max-width: 320px\)[\s\S]*\.lo-attention-services__grid[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
   assert.match(css, /\.lo-actions \.lo-meta[^}]*grid-column: 1 \/ -1/);
   assert.match(css, /\.lousy-outages, \.lousy-outages \*, \.lousy-outages \*::before/);
+  assert.match(css, /\.lousy-outages :where\(p, dl, dt, dd, ul, li, header, footer\)\s*{[^}]*background-color: transparent/);
   assert.match(shortcode, /add_action\('wp_enqueue_scripts',[\s\S]*enqueue_dashboard_assets/);
   assert.match(shortcode, /asset_version\(\$base_path, 'lousy-outages\.css'\)/);
 });
