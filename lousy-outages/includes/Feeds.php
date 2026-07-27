@@ -21,8 +21,6 @@ class Feeds {
 
     public static function bootstrap(): void {
         add_action('init', [self::class, 'register']);
-        // Runs after the canonical refresh callback and updates only when feed content changed.
-        add_action('lousy_outages_refresh_official_providers', [self::class, 'refresh_status_feed_cache'], 20);
     }
     public static function register(): void { add_feed(self::FEED_NAME, [self::class, 'render_status_feed']); add_feed('lousy-outages-status', [self::class, 'render_status_feed']); }
 

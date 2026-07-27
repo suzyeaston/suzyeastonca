@@ -326,8 +326,14 @@ class IncidentAlerts {
             }
         }
         $historyPersisted = false;
+        $persistenceFailures = [];
         try {
             $store->persistIncidents($incidents);
+        } catch (\Throwable $e) {
+            $persistenceFailures[] = 'incident_store: ' . $e->getMessage();
+        }
+
+        try {
             if (class_exists('\SuzyEaston\LousyOutages\Storage\HistoryStore')) {
                 $history = new Storage\HistoryStore();
                 foreach ($incidents as $incident) {
@@ -341,10 +347,18 @@ class IncidentAlerts {
                 }
             }
             $historyPersisted = true;
-            update_option(self::OPTION_LAST_CHECK, gmdate('c'), false);
+        } catch (\Throwable $e) {
+            $persistenceFailures[] = 'history_store: ' . $e->getMessage();
+        }
+
+        update_option(self::OPTION_LAST_CHECK, gmdate('c'), false);
+        try {
             $result = self::process_incidents($incidents, array_merge(['mode' => 'canonical_refresh', 'store' => $store], $options));
         } catch (\Throwable $e) {
             $result = ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>0,'failed'=>1,'recipients'=>[],'failures'=>[$e->getMessage()],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
+        }
+        if ($persistenceFailures) {
+            $result['failures'] = array_values(array_merge((array) ($result['failures'] ?? []), $persistenceFailures));
         }
         $diag = [
             'last_run' => $started,
@@ -358,6 +372,7 @@ class IncidentAlerts {
             'last_successful_delivery' => get_option(self::OPTION_LAST_ALERT_SUCCESS, ''),
             'next_canonical_refresh' => function_exists('wp_next_scheduled') ? (wp_next_scheduled('lousy_outages_refresh_official_providers') ? gmdate('c', (int) wp_next_scheduled('lousy_outages_refresh_official_providers')) : '') : '',
             'history_persisted' => $historyPersisted,
+            'persistence_failures' => $persistenceFailures,
             'result' => $result,
         ];
         update_option(self::OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS, $diag, false);
