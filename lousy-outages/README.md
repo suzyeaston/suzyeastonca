@@ -1,5 +1,10 @@
 # Lousy Outages
 
+## 0.4.9
+
+- Publishes the RSS cache inside every canonical refresh, including refreshes started directly by the dashboard, REST API, or admin tools.
+- Keeps realtime email processing running when optional incident-history persistence fails, and records the storage failure in alert diagnostics.
+
 ## 0.4.8
 
 - Isolates monitored-service diagnostics and footer prose from broad theme

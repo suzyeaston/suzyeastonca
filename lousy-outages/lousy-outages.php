@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.4.8
+ * Version: 0.4.9
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.4.8' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.4.9' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -583,6 +583,12 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         $alert_diagnostics = [];
         if ( class_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts' ) && method_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts', 'process_snapshot' ) ) {
             $alert_diagnostics = \SuzyEaston\LousyOutages\IncidentAlerts::process_snapshot( $snapshot, [ 'mode' => 'canonical_refresh' ] );
+        }
+        // Publish from the same canonical snapshot cycle. Refreshes can be invoked
+        // directly by REST/admin code, so relying on a later action priority left RSS
+        // stale even while the dashboard already showed the new incident.
+        if ( class_exists( '\\SuzyEaston\\LousyOutages\\Feeds' ) ) {
+            \SuzyEaston\LousyOutages\Feeds::refresh_status_feed_cache();
         }
         $providers = isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] ) ? $snapshot['providers'] : [];
         $trending  = isset( $snapshot['trending'] ) && is_array( $snapshot['trending'] ) ? $snapshot['trending'] : [ 'trending' => false, 'signals' => [] ];
