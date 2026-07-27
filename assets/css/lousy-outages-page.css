@@ -36,6 +36,34 @@
     margin-top: 0;
 }
 
+/*
+ * This stylesheet is enqueued after the plugin stylesheet. Keep service-card
+ * prose readable even when the parent theme applies global pixel-text or
+ * vertical-writing utilities with !important.
+ */
+.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__diagnostic,
+.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__diagnostic p,
+.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__footer,
+.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__footer p {
+    background: transparent !important;
+    font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    font-style: normal !important;
+    letter-spacing: normal !important;
+    text-align: left !important;
+    text-transform: none !important;
+    writing-mode: horizontal-tb !important;
+}
+
+.lousy-outages-page .lousy-outages .lo-service-card__diagnostic,
+.lousy-outages-page .lousy-outages .lo-service-card__diagnostic p,
+.lousy-outages-page .lousy-outages .lo-service-card__footer p {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal !important;
+    word-break: normal;
+}
+
 .page-template-page-lousy-outages .lousy-outages-page,
 .page-template-page-lousy-outages-php .lousy-outages-page,
 .page-slug-lousy-outages .lousy-outages-page {
