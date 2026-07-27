@@ -77,6 +77,12 @@ if ($unsub_success) {
         </div>
       </div>
     </section>
+    <section class="lo-upgrade-callout">
+      <p class="lo-status-board__eyebrow">make the robot remember</p>
+      <h2>Watch the providers that wreck your day.</h2>
+      <p>The dashboard, history, RSS and basic email stay free. Pro adds watchlists, filters and a proper alert destination.</p>
+      <a class="lo-product-button" data-lo-upgrade href="<?php echo esc_url(home_url('/lousy-outages/pricing/')); ?>">See plans</a>
+    </section>
         <?php echo do_shortcode('[lousy_outages_report]'); ?>
     <footer class="lo-support">
       <p class="lo-support__lead">Support the independent status monitor and the infrastructure behind it:</p>

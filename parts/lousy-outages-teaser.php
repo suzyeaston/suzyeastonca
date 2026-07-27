@@ -38,4 +38,5 @@ $is_active = $outage_count > 0;
         </div>
         <?php if ( $other_providers ) : ?><p class="lo-home-other">Also watching: <?php foreach ( $other_providers as $i => $provider ) : ?><?php if ( $i ) : ?>, <?php endif; ?><a href="<?php echo esc_url( $provider['href'] ?? $dashboard_url ); ?>"><?php echo esc_html( (string) ( $provider['name'] ?? 'Provider' ) ); ?></a><?php endforeach; ?></p><?php endif; ?>
     </div>
+    <p class="lo-home-upgrade"><a class="lo-home-dashboard-link" data-lo-upgrade href="<?php echo esc_url(home_url('/lousy-outages/pricing/')); ?>">Save your watchlist <span aria-hidden="true">→</span></a></p>
 </section>

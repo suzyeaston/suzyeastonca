@@ -108,3 +108,7 @@
         padding-inline: 6px;
     }
 }
+/* Paid controls use the same status-console language without touching the public board. */
+.lo-upgrade-callout,.lo-product{margin:2rem 0;padding:clamp(1.25rem,4vw,2.5rem);border:1px solid rgba(94,234,212,.45);background:linear-gradient(135deg,rgba(5,20,29,.96),rgba(21,33,46,.96));box-shadow:8px 8px 0 rgba(0,0,0,.3);color:#e8fbff}
+.lo-product__kicker{color:#5eead4;text-transform:uppercase;letter-spacing:.16em;font-weight:800}.lo-product h1,.lo-product h2,.lo-upgrade-callout h2{color:#fff}.lo-price-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:2rem 0}.lo-price-card{display:flex;flex-direction:column;gap:.8rem;padding:1.3rem;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.23)}.lo-price-card p{flex:1}.lo-product-button{display:inline-block;width:max-content;max-width:100%;padding:.75rem 1rem;border:1px solid #5eead4;background:#102c36;color:#fff;text-decoration:none;font:inherit;font-weight:800;cursor:pointer}.lo-product-button:hover,.lo-product-button:focus{background:#5eead4;color:#07131a}.lo-comparison{overflow-x:auto}.lo-comparison table{width:100%;border-collapse:collapse;min-width:560px}.lo-comparison th,.lo-comparison td{padding:.8rem;border-bottom:1px solid rgba(255,255,255,.15);text-align:left}.lo-account{max-width:760px;margin-inline:auto}.lo-account input{display:block;width:100%;max-width:420px;margin:.5rem 0 1rem;padding:.75rem}.lo-home-upgrade{text-align:right}
+@media(max-width:720px){.lo-price-grid{grid-template-columns:1fr}}
