@@ -50,6 +50,15 @@ test('monitored services cards and operational rows remain intrinsic', async ({ 
   expect(desktop.localLabels).toBe(true);
   expect(desktop.providerUpdatesSeparate).toBe(true);
 
+  const isolatedProse = await page.locator('.lo-service-card__diagnostic p').first().evaluate((node) => {
+    const css = getComputedStyle(node);
+    return { background: css.backgroundColor, fontFamily: css.fontFamily, textAlign: css.textAlign, writingMode: css.writingMode };
+  });
+  expect(isolatedProse.background).toBe('rgba(0, 0, 0, 0)');
+  expect(isolatedProse.fontFamily).toContain('Inter');
+  expect(isolatedProse.textAlign).toBe('left');
+  expect(isolatedProse.writingMode).toBe('horizontal-tb');
+
   await openDashboard(page, sizes.find((size) => size.width === 435));
   const mobile = await page.evaluate(() => ({
     columns: getComputedStyle(document.querySelector('.lo-attention-services__grid')).gridTemplateColumns.split(' ').length,
