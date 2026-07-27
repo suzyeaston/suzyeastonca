@@ -10,7 +10,6 @@ class IncidentStore
     private const OPTION_EVENTS = 'lo_event_log';
     private const OPTION_EVENTS_COMPACTED = 'lo_event_log_compacted_v1';
     private const OPTION_LAST_DIGEST = 'lousy_outages_daily_digest_last_sent';
-    private const ALERT_COOLDOWN = 90; // Minutes.
     // Keep events long enough for multi-year comparisons.
     private const EVENT_RETENTION = 2 * YEAR_IN_SECONDS; // (~24 months)
     private const IMPORTANT_EVENT_RETENTION = 4 * YEAR_IN_SECONDS;
@@ -61,12 +60,6 @@ class IncidentStore
 
         $lastGuid = (string) get_option($this->lastGuidOption($providerKey), '');
         if ('' !== $lastGuid && '' !== $guid && hash_equals($lastGuid, $guid)) {
-            return false;
-        }
-
-        $lastAlertAt = (int) get_option($this->lastAlertOption($providerKey), 0);
-        $now         = time();
-        if ($lastAlertAt && ($now - $lastAlertAt) < (self::ALERT_COOLDOWN * MINUTE_IN_SECONDS)) {
             return false;
         }
 

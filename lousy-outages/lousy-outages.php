@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.5.0
+ * Version: 0.5.1
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.5.0' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.5.1' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -90,6 +90,7 @@ lousy_outages_require( 'includes/Sources/StatuspageSource.php' );
 lousy_outages_require( 'includes/Model/Incident.php' );
 lousy_outages_require( 'includes/Storage/HistoryStore.php' );
 lousy_outages_require( 'includes/Storage/IncidentStore.php' );
+lousy_outages_require( 'includes/Storage/EpisodeStore.php' );
 lousy_outages_require( 'includes/Email/Composer.php' );
 lousy_outages_require( 'includes/Sources/Sources.php' );
 lousy_outages_require( 'includes/Sources/SourceRegistry.php' );
@@ -225,11 +226,23 @@ function lousy_outages_refresh_official_providers( bool $bypass_cache = true ): 
 }
 
 function lousy_outages_ensure_canonical_cron_scheduled(): void {
-    if ( wp_next_scheduled( 'lousy_outages_refresh_official_providers' ) ) {
+    $hook = 'lousy_outages_refresh_official_providers';
+    $next = wp_next_scheduled( $hook );
+    $interval = max( 60, (int) get_option( 'lousy_outages_interval', 300 ) );
+    $last = strtotime( (string) get_option( 'lousy_outages_last_refresh_finish', get_option( 'lousy_outages_last_refresh_at', '' ) ) ) ?: 0;
+    $stale = ! $last || time() - $last > 2 * $interval;
+    $disabled = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
+    update_option( 'lousy_outages_cron_health', [ 'checked_at'=>gmdate('c'), 'next_scheduled'=>$next?gmdate('c',(int)$next):'', 'last_finish'=>$last?gmdate('c',$last):'', 'age_seconds'=>$last?time()-$last:null, 'stale'=>$stale, 'wp_cron_disabled'=>$disabled, 'external_cron_required'=>$disabled ], false );
+    if ( $disabled ) {
         return;
     }
-    $recurrence = 'lousy_outages_interval';
-    wp_schedule_event( time() + MINUTE_IN_SECONDS, $recurrence, 'lousy_outages_refresh_official_providers' );
+    if ( ! $next ) wp_schedule_event( time() + MINUTE_IN_SECONDS, 'lousy_outages_interval', $hook );
+    // A short-lived atomic transient prevents multiple frontend requests from
+    // enqueueing duplicate recovery jobs. Provider I/O still happens in WP-Cron.
+    if ( $stale && ! get_transient( 'lousy_outages_cron_repair_lock' ) ) {
+        set_transient( 'lousy_outages_cron_repair_lock', time(), $interval );
+        wp_schedule_single_event( time() + 5, $hook );
+    }
 }
 add_action( 'init', 'lousy_outages_ensure_canonical_cron_scheduled', 30 );
 
@@ -558,7 +571,11 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         ];
     }
 
-    set_transient( $lock_key, 1, 5 * MINUTE_IN_SECONDS );
+    $started_micro = microtime( true );
+    $started_at = gmdate( 'c' );
+    set_transient( $lock_key, time(), 5 * MINUTE_IN_SECONDS );
+    update_option( 'lousy_outages_last_refresh_start', $started_at, false );
+    update_option( 'lousy_outages_refresh_runtime', [ 'scheduled_time'=>(string)(wp_next_scheduled('lousy_outages_refresh_official_providers')?gmdate('c',(int)wp_next_scheduled('lousy_outages_refresh_official_providers')):''), 'actual_start'=>$started_at, 'finish'=>'', 'duration_ms'=>0, 'lock_state'=>'held', 'result'=>'running', 'next_scheduled_run'=>'' ], false );
 
     $response = [
         'ok'           => false,
@@ -669,6 +686,8 @@ function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
         $response['message'] = $e->getMessage();
     } finally {
         delete_transient( $lock_key );
+        $finish=gmdate('c'); update_option('lousy_outages_last_refresh_finish',$finish,false);
+        update_option('lousy_outages_refresh_runtime',[ 'scheduled_time'=>(string)(wp_next_scheduled('lousy_outages_refresh_official_providers')?gmdate('c',(int)wp_next_scheduled('lousy_outages_refresh_official_providers')):''), 'actual_start'=>$started_at, 'finish'=>$finish, 'duration_ms'=>(int)round((microtime(true)-$started_micro)*1000), 'lock_state'=>'released', 'result'=>!empty($response['ok'])?'success':(!empty($response['skipped'])?'skipped':'failed'), 'next_scheduled_run'=>(string)(wp_next_scheduled('lousy_outages_refresh_official_providers')?gmdate('c',(int)wp_next_scheduled('lousy_outages_refresh_official_providers')):'') ],false);
     }
 
     return $response;

@@ -1,5 +1,11 @@
 # Lousy Outages
 
+## 0.5.1
+
+- Coordinates RSS and realtime email around a bounded, persistent logical incident-episode ledger. Mutable provider prose and polling timestamps no longer republish an ongoing incident; confirmed recovery closes it and permits a later recurrence.
+- Repairs missing or stale canonical refresh scheduling without doing provider I/O during page rendering, records refresh timing/lock/result diagnostics, and clearly identifies installations that require an external cron runner.
+- Tracks successful and failed email recipients per episode so partial batches retry only immediate failures, and removes the provider-wide 90-minute throttle that suppressed distinct incidents.
+
 ## 0.5.0
 
 - Adds Free, Pro, and Team entitlements with server-side gates for watchlists, alert destinations, shared/private-board scaffolding, and API tokens.
@@ -120,7 +126,7 @@ Place `[lousy_outages]` in any page or post to render the status table. A page t
 
 ## Development
 
-Official-provider refresh runs via WP-Cron (`lousy_outages_refresh_official_providers`) and updates the saved snapshot and "Last fetched" timestamp every 15 minutes; on low-traffic sites, point a system cron at `wp-cron.php` to keep it firing. Results are stored in an option and also exposed at `/wp-json/lousy-outages/v1/status`.
+Official-provider refresh runs via WP-Cron (`lousy_outages_refresh_official_providers`) and updates the saved snapshot and "Last fetched" timestamp at the configured interval. Missing or refresh-stale schedules receive one guarded immediate recovery event. When `DISABLE_WP_CRON` is true, an external runner must invoke `wp-cron.php` (or run `wp cron event run lousy_outages_refresh_official_providers`) at least as often as the configured interval. Results are stored in an option and also exposed at `/wp-json/lousy-outages/v1/status`.
 
 ## How to subscribe to RSS
 
