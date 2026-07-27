@@ -165,6 +165,16 @@ function se_enqueue_lousy_outages_page_styles() {
         $path = '/assets/css/lousy-outages-page.css';
         $version = file_exists( $dir . $path ) ? filemtime( $dir . $path ) : null;
         wp_enqueue_style( 'se-lousy-outages-page', $uri . $path, array(), $version );
+
+        $isolation_path = '/assets/css/lousy-outages-theme-isolation.css';
+        if ( file_exists( $dir . $isolation_path ) ) {
+            wp_enqueue_style(
+                'se-lousy-outages-theme-isolation',
+                $uri . $isolation_path,
+                array( 'se-lousy-outages-page' ),
+                filemtime( $dir . $isolation_path )
+            );
+        }
     }
 }
 add_action( 'wp_enqueue_scripts', 'se_enqueue_lousy_outages_page_styles' );
