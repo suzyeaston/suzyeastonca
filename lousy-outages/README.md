@@ -1,5 +1,12 @@
 # Lousy Outages
 
+## 0.4.8
+
+- Isolates monitored-service diagnostics and footer prose from broad theme
+  background and pixel-font rules.
+- Makes attention cards fill their grid tracks consistently while retaining the
+  248px ultra-narrow layout and browser diagnostics introduced in 0.4.7.
+
 ## 0.4.7
 
 - Adds an ultra-narrow layout layer that keeps the dashboard readable at the
