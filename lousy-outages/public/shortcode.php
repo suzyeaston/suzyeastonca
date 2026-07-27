@@ -27,6 +27,29 @@ function asset_version(string $base_path, string $asset): string
     return $version . '-' . (file_exists($path) ? (string) filemtime($path) : '0');
 }
 
+/**
+ * Load dashboard assets in wp_head for the canonical page.
+ *
+ * Enqueuing only while the shortcode renders happens after wp_head in the page
+ * template. WordPress can print those styles later, but full-page caches may
+ * retain that late asset tag. Early loading keeps the file-mtime versioned URL
+ * in the cached document's head; render_shortcode remains a safe fallback for
+ * shortcodes embedded on another page.
+ */
+function enqueue_dashboard_assets(): void
+{
+    if (!is_page_template('page-lousy-outages.php') && !is_page('lousy-outages')) {
+        return;
+    }
+
+    [$base_path, $base_url] = locate_assets_base();
+    wp_enqueue_style('lousy-outages', $base_url . 'lousy-outages.css', [], asset_version($base_path, 'lousy-outages.css'));
+    wp_enqueue_style('lousy-outages-hud', $base_url . 'hud.css', ['lousy-outages'], asset_version($base_path, 'hud.css'));
+    wp_enqueue_script('lousy-outages', $base_url . 'lousy-outages.js', [], asset_version($base_path, 'lousy-outages.js'), true);
+    wp_enqueue_script('lousy-outages-hud', $base_url . 'hud.js', ['lousy-outages'], asset_version($base_path, 'hud.js'), true);
+}
+add_action('wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_dashboard_assets', 20);
+
 
 function provider_identity(array $tile): string
 {

@@ -1,5 +1,15 @@
 # Lousy Outages
 
+## 0.4.6
+
+Mobile dashboard layout repair and file-versioned early asset loading.
+
+The public CSS and JavaScript are enqueued in `wp_head` on the canonical page
+with a version composed from the plugin version and asset file modification
+time. After deploying the release ZIP, purge the LiteSpeed/full-page cache once
+so cached HTML is regenerated with the new `?ver=0.4.6-<mtime>` asset URL;
+browsers then update normally without manual query-string changes.
+
 ## 0.4.5
 
 - Settings page now treats public chatter sources as optional and shows an admin diagnostic when `PublicChatterSource` is unavailable.
