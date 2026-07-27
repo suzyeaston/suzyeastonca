@@ -1,5 +1,22 @@
 # Lousy Outages
 
+## 0.4.8
+
+- Isolates monitored-service cards from the theme's global heading, paragraph,
+  and link rules, which were forcing black backgrounds and the pixel display
+  font onto diagnostic prose.
+- Replaces the cyclic flex-sized attention card with a definite full-width grid
+  so every article fills its parent track at desktop and narrow viewports.
+- Loads the real theme stylesheet in the browser fixture so regressions caused
+  by production stylesheet interactions are covered.
+
+## 0.4.7
+
+- Adds an ultra-narrow layout layer that keeps the dashboard readable at the
+  required 248px viewport instead of dividing content into slivers.
+- Adds real-browser viewport diagnostics, screenshots, and a standalone
+  representative fixture for environments where WordPress is unavailable.
+
 ## 0.4.6
 
 Mobile dashboard layout repair and file-versioned early asset loading.
