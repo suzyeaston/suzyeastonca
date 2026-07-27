@@ -10,6 +10,7 @@ use SuzyEaston\LousyOutages\Providers;
 use SuzyEaston\LousyOutages\Sources\Sources;
 use SuzyEaston\LousyOutages\Sources\StatuspageSource;
 use SuzyEaston\LousyOutages\Storage\IncidentStore;
+use SuzyEaston\LousyOutages\Storage\EpisodeStore;
 use WP_REST_Request;
 
 class IncidentAlerts {
@@ -352,8 +353,16 @@ class IncidentAlerts {
         }
 
         update_option(self::OPTION_LAST_CHECK, gmdate('c'), false);
+        $providerStates = [];
+        foreach ((array)($snapshot['providers'] ?? []) as $provider) {
+            if (is_array($provider) && !empty($provider['id'])) {
+                $providerStates[(string)$provider['id']] = (string)($provider['stateCode'] ?? $provider['state'] ?? 'unknown');
+            }
+        }
+        $episodeStore = $options['episode_store'] ?? new EpisodeStore();
+        $transitions = $episodeStore->observe($incidents, $providerStates);
         try {
-            $result = self::process_incidents($incidents, array_merge(['mode' => 'canonical_refresh', 'store' => $store], $options));
+            $result = self::process_episodes(array_merge($transitions['opened'], array_filter($transitions['continuing'], static fn($e) => !empty($e['email_pending_recipients']))), $episodeStore, $options);
         } catch (\Throwable $e) {
             $result = ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>0,'failed'=>1,'recipients'=>[],'failures'=>[$e->getMessage()],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
         }
@@ -373,10 +382,43 @@ class IncidentAlerts {
             'next_canonical_refresh' => function_exists('wp_next_scheduled') ? (wp_next_scheduled('lousy_outages_refresh_official_providers') ? gmdate('c', (int) wp_next_scheduled('lousy_outages_refresh_official_providers')) : '') : '',
             'history_persisted' => $historyPersisted,
             'persistence_failures' => $persistenceFailures,
+            'snapshot_incident_count' => count($incidents),
+            'newly_opened_episodes' => count($transitions['opened']),
+            'continuing_episodes' => count($transitions['continuing']),
+            'closed_episodes' => count($transitions['closed']),
             'result' => $result,
         ];
         update_option(self::OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS, $diag, false);
         return $diag;
+    }
+
+    private static function process_episodes(array $episodes, EpisodeStore $store, array $options): array
+    {
+        $result=['total_incidents'=>count($episodes),'considered'=>count($episodes),'sent'=>0,'skipped'=>0,'failed'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
+        foreach($episodes as $episode){
+            if(!empty($episode['legacy_suppressed'])){$result['skipped']++;$result['skipped_reasons'][]='legacy_active_incident_imported';continue;}
+            $incident=new Incident((string)$episode['provider_id'],(string)$episode['episode_guid'],(string)$episode['title'],(string)$episode['status'],(string)$episode['url'],null,(string)$episode['severity'],(int)$episode['first_detected'],null);
+            $eligible=self::eligible_recipients($incident);
+            $pending=$store->pendingRecipients((string)$episode['episode_guid'],$eligible);
+            if(!$pending){$result['skipped']++;$result['skipped_reasons'][]='all_eligible_recipients_already_sent';continue;}
+            $send=self::send_incident_alert_email($incident,['explicit_recipients'=>$pending,'mode'=>'canonical_refresh']);
+            $success=(array)($send['accepted_recipients']??[]);$failed=(array)($send['failed_recipients']??[]);
+            $store->saveDelivery((string)$episode['episode_guid'],$success,$failed,$eligible);
+            $result['recipients']=array_values(array_unique(array_merge($result['recipients'],$success)));
+            $result['sent']+=count($success);$result['failed']+=count($failed);
+            if($failed)$result['failures'][]='recipient_send_failed';
+            self::record_alert_delivery(!empty($success),$incident,array_merge($success,$failed),$failed?'recipient_send_failed':'',false,$options);
+        }
+        return $result;
+    }
+
+    private static function eligible_recipients(Incident $incident): array
+    {
+        $preview=self::recipient_preview(sanitize_key($incident->provider));
+        $emails=(array)($preview['subscriber_recipients']??[]);
+        $inbox=sanitize_email((string)get_option('lousy_outages_email',get_option('admin_email')));
+        if($inbox&&is_email($inbox))$emails[]=$inbox;
+        return array_values(array_unique(array_filter(array_map('sanitize_email',$emails))));
     }
 
 
@@ -384,6 +426,8 @@ class IncidentAlerts {
     {
         $stats = class_exists(__NAMESPACE__ . '\Subscriptions') && method_exists(__NAMESPACE__ . '\Subscriptions', 'stats') ? Subscriptions::stats() : [];
         $next = function_exists('wp_next_scheduled') ? wp_next_scheduled('lousy_outages_refresh_official_providers') : false;
+        $finish=(string)get_option('lousy_outages_last_refresh_finish','');$finishTs=$finish?strtotime($finish):0;$interval=max(60,(int)get_option('lousy_outages_interval',300));
+        $feed=class_exists(__NAMESPACE__.'\\Feeds')?Feeds::get_status_feed_diagnostics():[];
         return [
             'notification_email' => (string) get_option('lousy_outages_email', get_option('admin_email')),
             'confirmed_subscribers' => (int) ($stats['confirmed'] ?? 0),
@@ -391,6 +435,14 @@ class IncidentAlerts {
             'last_canonical_refresh' => (string) get_option('lousy_outages_last_refresh_at', get_option(self::OPTION_LAST_CHECK, '')),
             'next_canonical_refresh' => $next ? gmdate('c', (int) $next) : '',
             'canonical_cron_scheduled' => (bool) $next,
+            'last_canonical_refresh_start'=>(string)get_option('lousy_outages_last_refresh_start',''),
+            'last_canonical_refresh_finish'=>$finish,
+            'refresh_age_seconds'=>$finishTs?time()-$finishTs:null,
+            'refresh_stale'=>!$finishTs||time()-$finishTs>2*$interval,
+            'wp_cron_disabled'=>defined('DISABLE_WP_CRON')&&DISABLE_WP_CRON,
+            'refresh_lock_age'=>get_transient('lousy_outages_refresh_lock')?time()-(int)get_transient('lousy_outages_refresh_lock'):null,
+            'refresh_runtime'=>(array)get_option('lousy_outages_refresh_runtime',[]),
+            'rss_item_count'=>(int)($feed['item_count']??0),'rss_latest_guid'=>(string)($feed['latest_guid']??''),'rss_content_fingerprint'=>(string)($feed['feed_content_fingerprint']??''),
             'processing' => (array) get_option(self::OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS, []),
             'recipient_diagnostics' => (array) get_option(self::OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS, []),
             'last_successful_real_alert' => (array) get_option(self::OPTION_LAST_ALERT_SUCCESS, []),
@@ -1637,18 +1689,18 @@ class IncidentAlerts {
         if (!empty($options['dry_run'])) { return ['ok'=>true,'recipients'=>$subscribers,'error'=>'']; }
 
         $provider=$incident->provider; $impact=$incident->impact ?? self::impact_from_status($incident->status); $timestamp=gmdate('c',$incident->detected_at); $components=$incident->component?array_map('trim',explode(',',$incident->component)):[]; $componentLine=$incident->component ?: 'All monitored components'; $url=$incident->url ?: self::provider_url(sanitize_key($provider)); $summary=$incident->title;
-        $accepted=0; $failed=0; $results=[]; $lastError='';
+        $accepted=0; $failed=0; $results=[]; $lastError=''; $acceptedRecipients=[]; $failedRecipients=[];
         foreach ($subscribers as $email) {
             $token=self::build_unsubscribe_token($email);
             $unsubscribe=add_query_arg(['lo_unsub'=>1,'email'=>rawurlencode($email),'token'=>$token], home_url('/lousy-outages/'));
             $payload=['service'=>$provider,'status'=>$incident->status,'impact'=>$impact,'summary'=>$summary,'notes'=>!empty($options['manual_replay'])?'Administrator-requested replay of a real stored incident. Public subscribers were not notified.':'','timestamp'=>$timestamp,'components'=>$componentLine,'components_list'=>$components,'url'=>$url,'unsubscribe_url'=>$unsubscribe];
             $sent=send_lo_outage_alert_email($email,$payload);
-            if ($sent) { $accepted++; $results[]=['recipient'=>self::mask_email($email),'accepted_for_sending'=>true]; }
-            else { $failed++; $lastError='wp_mail returned false for '.self::mask_email($email); $results[]=['recipient'=>self::mask_email($email),'accepted_for_sending'=>false,'error'=>$lastError]; self::log_error($provider,$lastError); }
+            if ($sent) { $accepted++; $acceptedRecipients[]=$email; $results[]=['recipient'=>self::mask_email($email),'accepted_for_sending'=>true]; }
+            else { $failed++; $failedRecipients[]=$email; $lastError='wp_mail returned false for '.self::mask_email($email); $results[]=['recipient'=>self::mask_email($email),'accepted_for_sending'=>false,'error'=>$lastError]; self::log_error($provider,$lastError); }
         }
         $attempt=['timestamp'=>gmdate('c'),'attempted'=>count($subscribers),'accepted_for_sending'=>$accepted,'immediate_failures'=>$failed,'transport'=>class_exists(__NAMESPACE__.'\MailTransport')?MailTransport::currentTransport():'wordpress','results'=>$results,'last_error'=>$lastError];
         update_option(self::OPTION_LAST_ALERT_DELIVERY_RESULT, $attempt, false);
-        return ['ok'=>$accepted>0,'recipients'=>$subscribers,'error'=>$failed?($lastError ?: 'one_or_more_failed'):'','attempt'=>$attempt];
+        return ['ok'=>$accepted>0,'recipients'=>$subscribers,'accepted_recipients'=>$acceptedRecipients,'failed_recipients'=>$failedRecipients,'error'=>$failed?($lastError ?: 'one_or_more_failed'):'','attempt'=>$attempt];
     }
 
     /**
