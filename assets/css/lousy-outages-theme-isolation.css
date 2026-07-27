@@ -1,0 +1,23 @@
+/* Loaded after the page and plugin styles to isolate service-card prose. */
+.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__diagnostic,
+.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__diagnostic p,
+.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__footer,
+.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__footer p {
+    background: transparent !important;
+    font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    font-style: normal !important;
+    letter-spacing: normal !important;
+    text-align: left !important;
+    text-transform: none !important;
+    white-space: normal !important;
+    writing-mode: horizontal-tb !important;
+}
+
+.lousy-outages-page .lousy-outages .lo-service-card__diagnostic,
+.lousy-outages-page .lousy-outages .lo-service-card__diagnostic p,
+.lousy-outages-page .lousy-outages .lo-service-card__footer p {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
