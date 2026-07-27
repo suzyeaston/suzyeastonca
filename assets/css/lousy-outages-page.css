@@ -94,3 +94,11 @@
         gap: 16px;
     }
 }
+
+@media (max-width: 320px) {
+    .page-template-page-lousy-outages .lousy-outages-page,
+    .page-template-page-lousy-outages-php .lousy-outages-page,
+    .page-slug-lousy-outages .lousy-outages-page {
+        padding-inline: 6px;
+    }
+}
