@@ -70,10 +70,11 @@ test('full-page JS keeps incident cards and service rows in separate DOM compone
   const js = read('lousy-outages/assets/lousy-outages.js');
   assert.match(php, /data-lo-incident-card=/);
   assert.match(php, /data-lo-provider-row=/);
+  assert.match(php, /lo-attention-services__grid/);
+  assert.match(php, /<article class="lo-service-card/);
   assert.match(php, /data-label="Provider"/);
-  assert.match(php, /data-label="State"/);
   assert.match(php, /data-label="Category \/ source"/);
-  assert.match(php, /data-label="Last checked"/);
+  assert.match(php, /data-label="Checked by Lousy Outages"/);
   assert.match(php, /data-label="Status page"/);
   assert.doesNotMatch(js, /querySelector\('\[data-provider-id=/);
   assert.doesNotMatch(js, /appendChild\(card\)[\s\S]{0,80}\[data-lo-grid\]/);
