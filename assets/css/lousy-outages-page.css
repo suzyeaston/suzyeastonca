@@ -36,7 +36,60 @@
     margin-top: 0;
 }
 
+.page-template-page-lousy-outages .lousy-outages-page,
+.page-template-page-lousy-outages-php .lousy-outages-page,
+.page-slug-lousy-outages .lousy-outages-page {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+}
+
 @media (max-width: 768px) {
+    .page-template-page-lousy-outages,
+    .page-template-page-lousy-outages-php,
+    .page-slug-lousy-outages {
+        --se-header-height: 72px;
+        overflow-x: hidden;
+    }
+
+    .page-template-page-lousy-outages .main-header,
+    .page-template-page-lousy-outages-php .main-header,
+    .page-slug-lousy-outages .main-header {
+        min-height: 72px;
+        padding: 8px 10px;
+    }
+
+    .page-template-page-lousy-outages .lousy-outages-page,
+    .page-template-page-lousy-outages-php .lousy-outages-page,
+    .page-slug-lousy-outages .lousy-outages-page {
+        padding-inline: 10px;
+    }
+
+    .lousy-outages-page .lo-atmosphere .retro-title {
+        font-size: clamp(1.55rem, 8vw, 2.4rem);
+        line-height: 1.25;
+        letter-spacing: .03em;
+    }
+
+    .lousy-outages-page .lo-atmosphere__kicker,
+    .lousy-outages-page .lo-atmosphere__lede {
+        max-width: 100%;
+        font-size: 15px;
+        line-height: 1.6;
+        letter-spacing: normal;
+    }
+
+    .page-template-page-lousy-outages .site-footer,
+    .page-template-page-lousy-outages-php .site-footer,
+    .page-slug-lousy-outages .site-footer,
+    .page-template-page-lousy-outages .floating-link-bar,
+    .page-template-page-lousy-outages-php .floating-link-bar,
+    .page-slug-lousy-outages .floating-link-bar {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
     .lousy-outages-page .lousy-outages-root {
         gap: 16px;
     }
