@@ -3906,13 +3906,39 @@
       const q = (search && search.value || '').trim().toLowerCase();
       const c = (category && category.value || '').trim().toLowerCase();
       const s = (state && state.value || '').trim().toLowerCase();
+      const visibleAttentionCounts = {};
+      let visibleAttention = 0;
+      let visibleOperational = 0;
       rows.forEach((row) => {
         const name = (row.dataset.loProviderName || '').toLowerCase();
         const rowCategory = (row.dataset.loProviderCategory || '').toLowerCase();
         const rowState = (row.dataset.loProviderState || '').toLowerCase();
         const visible = (!q || name.indexOf(q) !== -1) && (!c || rowCategory === c) && (!s || rowState === s);
         row.hidden = !visible;
+        if (!visible) return;
+        if (rowState === 'operational') visibleOperational += 1;
+        else {
+          visibleAttention += 1;
+          visibleAttentionCounts[rowState] = (visibleAttentionCounts[rowState] || 0) + 1;
+        }
       });
+      const summary = root.querySelector('[data-lo-attention-summary]');
+      if (summary) {
+        summary.replaceChildren();
+        Object.keys(visibleAttentionCounts).sort().forEach((status) => {
+          const item = document.createElement('span');
+          const count = visibleAttentionCounts[status];
+          const label = status.replace(/-/g, ' ');
+          item.className = 'lo-attention-summary__item';
+          item.textContent = count + ' ' + label + (count === 1 ? '' : ' services');
+          summary.appendChild(item);
+        });
+        summary.hidden = visibleAttention === 0;
+      }
+      const empty = root.querySelector('[data-lo-attention-empty]');
+      if (empty) empty.hidden = visibleAttention !== 0;
+      const operationalSummary = root.querySelector('[data-lo-operational-summary]');
+      if (operationalSummary) operationalSummary.textContent = 'Show ' + visibleOperational + ' operational ' + (visibleOperational === 1 ? 'service' : 'services');
     };
     [search, category, state].forEach((control) => { if(control) control.addEventListener('input', apply); });
     apply();
