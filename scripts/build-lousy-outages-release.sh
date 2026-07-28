@@ -4,13 +4,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="$ROOT/lousy-outages"
 DIST="$ROOT/dist"
 ZIP="$DIST/lousy-outages.zip"
-VERSION="0.5.1"
+VERSION="0.5.2"
 PLUGIN_HEADER="Plugin Name: Lousy"$' '"Outages"
 rm -rf "$DIST/.lousy-outages-build" "$ZIP" "$ZIP.sha256" "$DIST/release-manifest.json"
 mkdir -p "$DIST/.lousy-outages-build/lousy-outages" "$DIST"
 rsync -a --delete \
   --exclude 'tests/' --exclude 'scripts/' --exclude 'node_modules/' --exclude '.git/' --exclude '.github/' \
-  --exclude '.ea-php-cli.cache' --exclude '*recovery*' --exclude '*diagnostic*' \
+  --exclude '.ea-php-cli.cache' --exclude '*recovery*' \
   --exclude 'screenshots/' --exclude '*.local.*' --exclude '.env*' \
   "$SRC/" "$DIST/.lousy-outages-build/lousy-outages/"
 ( cd "$DIST/.lousy-outages-build" && find lousy-outages -type f -print | LC_ALL=C sort | zip -X -q "$ZIP" -@ )
@@ -21,7 +21,7 @@ printf '%s\n' "${entries[@]}" | grep -qx 'lousy-outages/lousy-outages.php'
 count=0; tmp="$DIST/.lousy-outages-build/check"; rm -rf "$tmp"; mkdir -p "$tmp"; unzip -q "$ZIP" -d "$tmp"
 while IFS= read -r -d '' f; do grep -q "$PLUGIN_HEADER" "$f" && count=$((count+1)) || true; done < <(find "$tmp" -type f -print0)
 [ "$count" -eq 1 ]
-for bad in '.ea-php-cli.cache' 'tests/' 'recovery' 'diagnostic' '\\'; do ! printf '%s\n' "${entries[@]}" | grep -qiF "$bad"; done
+for bad in '.ea-php-cli.cache' 'tests/' 'recovery' '\\'; do ! printf '%s\n' "${entries[@]}" | grep -qiF "$bad"; done
 grep -Eq '^ \* Version: '"$VERSION"'$' "$tmp/lousy-outages/lousy-outages.php"
 grep -Eq "define\( 'LOUSY_OUTAGES_VERSION', '$VERSION' \);" "$tmp/lousy-outages/lousy-outages.php"
 sha256sum "$ZIP" | awk '{print $1"  lousy-outages.zip"}' > "$ZIP.sha256"

@@ -1,5 +1,9 @@
 # Lousy Outages
 
+## 0.5.2
+
+- Loads the shared source pack before concrete intelligence sources and includes admin diagnostics in release archives.
+
 ## 0.5.1
 
 - Coordinates RSS and realtime email around a bounded, persistent logical incident-episode ledger. Mutable provider prose and polling timestamps no longer republish an ongoing incident; confirmed recovery closes it and permits a later recurrence.
