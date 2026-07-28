@@ -1,8 +1,8 @@
 {
-  "git_commit_sha": "121e7b565469d3d0b1bf71e4e035238b5be76e82",
-  "plugin_version": "0.5.2",
-  "zip_sha256": "b06724f7c2645ac6b1b9de0957f627c2c1e651b509d18f0ed2e9e5a53abe6677",
-  "build_timestamp": "2026-07-28T03:42:17Z",
+  "git_commit_sha": "3d0c692454e6d1a929b854c94015b8b52d969de3",
+  "plugin_version": "0.5.3",
+  "zip_sha256": "e61e33306d1e13bb687a4491954da242022e09e4b681c96cc793d242a1f1a452",
+  "build_timestamp": "2026-07-28T16:52:51Z",
   "canonical_source_path": "lousy-outages/",
   "files": [
     "lousy-outages/README.md",
@@ -19,6 +19,7 @@
     "lousy-outages/includes/CommerceAdmin.php",
     "lousy-outages/includes/CommerceStore.php",
     "lousy-outages/includes/Cron.php",
+    "lousy-outages/includes/Cron/CanonicalPipeline.php",
     "lousy-outages/includes/Cron/Refresh.php",
     "lousy-outages/includes/CurrentState.php",
     "lousy-outages/includes/Detector.php",

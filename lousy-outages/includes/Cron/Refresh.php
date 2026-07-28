@@ -25,9 +25,8 @@ class Refresh
 
         if (! isset($schedules['lousy_outages_15min'])) {
             $schedules['lousy_outages_15min'] = [
-                // Snapshot refresh cadence for HUD data (~30 minutes).
-                'interval' => 30 * MINUTE_IN_SECONDS,
-                'display'  => __('Every 30 Minutes', 'lousy-outages'),
+                'interval' => 15 * MINUTE_IN_SECONDS,
+                'display'  => __('Every 15 Minutes', 'lousy-outages'),
             ];
         }
 

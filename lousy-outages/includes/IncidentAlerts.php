@@ -362,7 +362,9 @@ class IncidentAlerts {
         $episodeStore = $options['episode_store'] ?? new EpisodeStore();
         $transitions = $episodeStore->observe($incidents, $providerStates);
         try {
-            $result = self::process_episodes(array_merge($transitions['opened'], array_filter($transitions['continuing'], static fn($e) => !empty($e['email_pending_recipients']))), $episodeStore, $options);
+            $result = !empty($options['skip_delivery'])
+                ? ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>count($incidents),'failed'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>['publication_checkpointed'],'mode'=>'canonical_refresh']
+                : self::process_episodes(array_merge($transitions['opened'], array_filter($transitions['continuing'], static fn($e) => !empty($e['email_pending_recipients']) || empty($e['email_successful_recipients']))), $episodeStore, $options);
         } catch (\Throwable $e) {
             $result = ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>0,'failed'=>1,'recipients'=>[],'failures'=>[$e->getMessage()],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
         }
@@ -373,6 +375,7 @@ class IncidentAlerts {
             'last_run' => $started,
             'finished_at' => gmdate('c'),
             'source' => 'lousy_outages_refresh_official_providers',
+            'cycle_id' => (string)($options['cycle_id'] ?? ''),
             'incidents_considered' => (int) ($result['considered'] ?? 0),
             'emails_sent' => (int) ($result['sent'] ?? 0),
             'skipped_incidents' => array_count_values(array_map('strval', (array) ($result['skipped_reasons'] ?? []))),
@@ -394,20 +397,22 @@ class IncidentAlerts {
 
     private static function process_episodes(array $episodes, EpisodeStore $store, array $options): array
     {
-        $result=['total_incidents'=>count($episodes),'considered'=>count($episodes),'sent'=>0,'skipped'=>0,'failed'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
+        $result=['total_incidents'=>count($episodes),'considered'=>count($episodes),'sent'=>0,'skipped'=>0,'failed'=>0,'pending'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
         foreach($episodes as $episode){
             if(!empty($episode['legacy_suppressed'])){$result['skipped']++;$result['skipped_reasons'][]='legacy_active_incident_imported';continue;}
             $incident=new Incident((string)$episode['provider_id'],(string)$episode['episode_guid'],(string)$episode['title'],(string)$episode['status'],(string)$episode['url'],null,(string)$episode['severity'],(int)$episode['first_detected'],null);
             $eligible=self::eligible_recipients($incident);
             $pending=$store->pendingRecipients((string)$episode['episode_guid'],$eligible);
             if(!$pending){$result['skipped']++;$result['skipped_reasons'][]='all_eligible_recipients_already_sent';continue;}
-            $send=self::send_incident_alert_email($incident,['explicit_recipients'=>$pending,'mode'=>'canonical_refresh']);
+            $batch=array_slice($pending,0,max(1,(int)apply_filters('lousy_outages_alert_recipient_batch_size',25)));
+            $send=self::send_incident_alert_email($incident,['explicit_recipients'=>$batch,'mode'=>'canonical_refresh']);
             $success=(array)($send['accepted_recipients']??[]);$failed=(array)($send['failed_recipients']??[]);
             $store->saveDelivery((string)$episode['episode_guid'],$success,$failed,$eligible);
             $result['recipients']=array_values(array_unique(array_merge($result['recipients'],$success)));
             $result['sent']+=count($success);$result['failed']+=count($failed);
             if($failed)$result['failures'][]='recipient_send_failed';
             self::record_alert_delivery(!empty($success),$incident,array_merge($success,$failed),$failed?'recipient_send_failed':'',false,$options);
+            $result['pending']+=count($store->pendingRecipients((string)$episode['episode_guid'],$eligible));
         }
         return $result;
     }

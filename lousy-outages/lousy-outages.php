@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.5.2
+ * Version: 0.5.3
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.5.2' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.5.3' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -96,6 +96,7 @@ lousy_outages_require( 'includes/Sources/Sources.php' );
 lousy_outages_require( 'includes/Sources/SourceRegistry.php' );
 lousy_outages_require( 'includes/Sources/index.php' );
 lousy_outages_require( 'includes/Cron/Refresh.php' );
+lousy_outages_require( 'includes/Cron/CanonicalPipeline.php' );
 
 // External signal infrastructure must load before concrete source classes.
 lousy_outages_require( 'includes/SignalSourceInterface.php' );
@@ -145,6 +146,7 @@ use SuzyEaston\LousyOutages\IncidentAlerts;
 use SuzyEaston\LousyOutages\ExternalSignals;
 use SuzyEaston\LousyOutages\SignalCollector;
 use SuzyEaston\LousyOutages\Cron\Refresh as RefreshCron;
+use SuzyEaston\LousyOutages\Cron\CanonicalPipeline;
 
 Api::bootstrap();
 // LO: Legacy feed slug removed to avoid clashing with the dashboard page; status feed now handled below.
@@ -152,6 +154,7 @@ Feeds::bootstrap();
 MailTransport::bootstrap();
 IncidentAlerts::bootstrap();
 RefreshCron::bootstrap();
+CanonicalPipeline::bootstrap();
 \SuzyEaston\LousyOutages\AdminCleanup::bootstrap();
 \SuzyEaston\LousyOutages\AdminDiagnostics::bootstrap();
 \SuzyEaston\LousyOutages\ProviderPages::bootstrap();
@@ -197,10 +200,13 @@ function lousy_outages_activate() {
 register_activation_hook( __FILE__, 'lousy_outages_activate' );
 
 function lousy_outages_schedule_canonical_refresh(): void {
-    wp_clear_scheduled_hook( 'lousy_outages_refresh_official_providers' );
-    $schedules  = function_exists( 'wp_get_schedules' ) ? wp_get_schedules() : [];
-    $recurrence = isset( $schedules['lousy_outages_15min'] ) ? 'lousy_outages_15min' : ( isset( $schedules['lo_five_minutes'] ) ? 'lo_five_minutes' : 'hourly' );
-    wp_schedule_event( time() + MINUTE_IN_SECONDS, $recurrence, 'lousy_outages_refresh_official_providers' );
+    $timestamps = [];
+    if ( function_exists( '_get_cron_array' ) ) foreach ( (array) _get_cron_array() as $timestamp => $events ) if ( isset( $events[ CanonicalPipeline::RECURRING_HOOK ] ) ) $timestamps[] = (int) $timestamp;
+    sort( $timestamps, SORT_NUMERIC );
+    foreach ( array_slice( $timestamps, 1 ) as $duplicate ) wp_unschedule_event( $duplicate, CanonicalPipeline::RECURRING_HOOK );
+    if ( ! wp_next_scheduled( CanonicalPipeline::RECURRING_HOOK ) ) {
+        wp_schedule_event( time() + MINUTE_IN_SECONDS, 'lousy_outages_15min', CanonicalPipeline::RECURRING_HOOK );
+    }
 }
 
 function lousy_outages_upgrade_032_runtime(): void {
@@ -212,24 +218,26 @@ function lousy_outages_upgrade_032_runtime(): void {
         delete_transient( $key );
     }
     update_option( 'lousy_outages_runtime_version', LOUSY_OUTAGES_VERSION, false );
+    delete_transient( 'lousy_outages_refresh_lock' );
+    delete_transient( 'lousy_outages_cron_repair_lock' );
+    $lease = get_option( CanonicalPipeline::LEASE_OPTION, [] );
+    if ( is_array( $lease ) && (int) ( $lease['expires_at'] ?? 0 ) <= time() ) delete_option( CanonicalPipeline::LEASE_OPTION );
+    delete_option( 'lousy_outages_refresh_runtime' );
     lousy_outages_schedule_canonical_refresh();
 }
 add_action( 'init', static function (): void {
-    if ( version_compare( (string) get_option( 'lousy_outages_runtime_version', '0.0.0' ), '0.3.2', '<' ) ) {
+    if ( version_compare( (string) get_option( 'lousy_outages_runtime_version', '0.0.0' ), LOUSY_OUTAGES_VERSION, '<' ) ) {
         lousy_outages_upgrade_032_runtime();
     }
 }, 3 );
-if ( ! has_action( 'lousy_outages_refresh_official_providers', 'lousy_outages_refresh_official_providers' ) ) {
-    add_action( 'lousy_outages_refresh_official_providers', 'lousy_outages_refresh_official_providers' );
-}
 function lousy_outages_refresh_official_providers( bool $bypass_cache = true ): array {
-    return lousy_outages_refresh_data( $bypass_cache );
+    return CanonicalPipeline::run();
 }
 
 function lousy_outages_ensure_canonical_cron_scheduled(): void {
     $hook = 'lousy_outages_refresh_official_providers';
     $next = wp_next_scheduled( $hook );
-    $interval = max( 60, (int) get_option( 'lousy_outages_interval', 300 ) );
+    $interval = CanonicalPipeline::cadence();
     $last = strtotime( (string) get_option( 'lousy_outages_last_refresh_finish', get_option( 'lousy_outages_last_refresh_at', '' ) ) ) ?: 0;
     $stale = ! $last || time() - $last > 2 * $interval;
     $disabled = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
@@ -237,12 +245,12 @@ function lousy_outages_ensure_canonical_cron_scheduled(): void {
     if ( $disabled ) {
         return;
     }
-    if ( ! $next ) wp_schedule_event( time() + MINUTE_IN_SECONDS, 'lousy_outages_interval', $hook );
+    if ( ! $next ) lousy_outages_schedule_canonical_refresh();
     // A short-lived atomic transient prevents multiple frontend requests from
     // enqueueing duplicate recovery jobs. Provider I/O still happens in WP-Cron.
     if ( $stale && ! get_transient( 'lousy_outages_cron_repair_lock' ) ) {
         set_transient( 'lousy_outages_cron_repair_lock', time(), $interval );
-        wp_schedule_single_event( time() + 5, $hook );
+        if ( ! wp_next_scheduled( CanonicalPipeline::RECOVERY_HOOK ) ) wp_schedule_single_event( time() + 5, CanonicalPipeline::RECOVERY_HOOK );
     }
 }
 add_action( 'init', 'lousy_outages_ensure_canonical_cron_scheduled', 30 );
@@ -563,137 +571,34 @@ function lousy_outages_format_external_collection_summary( $raw ): string {
 }
 
 function lousy_outages_refresh_data( bool $bypass_cache = true ): array {
-    $lock_key = 'lousy_outages_refresh_lock';
-    if ( get_transient( $lock_key ) ) {
-        return [
-            'ok'      => false,
-            'skipped' => true,
-            'message' => 'Refresh already in progress',
-        ];
-    }
-
-    $started_micro = microtime( true );
-    $started_at = gmdate( 'c' );
-    set_transient( $lock_key, time(), 5 * MINUTE_IN_SECONDS );
-    update_option( 'lousy_outages_last_refresh_start', $started_at, false );
-    update_option( 'lousy_outages_refresh_runtime', [ 'scheduled_time'=>(string)(wp_next_scheduled('lousy_outages_refresh_official_providers')?gmdate('c',(int)wp_next_scheduled('lousy_outages_refresh_official_providers')):''), 'actual_start'=>$started_at, 'finish'=>'', 'duration_ms'=>0, 'lock_state'=>'held', 'result'=>'running', 'next_scheduled_run'=>'' ], false );
-
-    $response = [
-        'ok'           => false,
-        'providers'    => [],
-        'errors'       => [],
-        'trending'     => [ 'trending' => false, 'signals' => [] ],
-        'source'       => 'live',
-        'refreshedAt'  => null,
-        'refreshed_at' => null,
-        'alert_diagnostics' => [],
-    ];
-
-    try {
-        // Use UTC to avoid double-applying the site timezone offset when formatting below.
-        $timestamp_epoch = current_time( 'timestamp', true );
-        $timestamp_iso   = wp_date( 'c', $timestamp_epoch );
-        $timestamp_gmt   = gmdate( 'c', $timestamp_epoch );
-        $store        = new Store();
-        $previous_states = $store->get_all();
-        $raw_states   = lousy_outages_collect_statuses( $bypass_cache );
-        $quality      = lousy_outages_snapshot_quality( $raw_states, $previous_states );
-        $states       = lousy_outages_merge_verified_states( $raw_states, $previous_states, $timestamp_gmt );
-        $errors       = [];
-
-        foreach ( $states as $id => $state ) {
-            $store->update( $id, $state );
-            if ( is_array( $state ) && ! empty( $state['error'] ) ) {
-                $errors[] = [
-                    'id'       => $id,
-                    'provider' => isset( $state['name'] ) ? (string) $state['name'] : ( isset( $state['provider'] ) ? (string) $state['provider'] : $id ),
-                    'message'  => (string) $state['error'],
-                ];
-            }
-        }
-
-        $snapshot  = lousy_outages_refresh_snapshot( $states, $timestamp_iso, 'live' );
-        $alert_diagnostics = [];
-        if ( class_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts' ) && method_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts', 'process_snapshot' ) ) {
-            $alert_diagnostics = \SuzyEaston\LousyOutages\IncidentAlerts::process_snapshot( $snapshot, [ 'mode' => 'canonical_refresh' ] );
-        }
-        // Publish from the same canonical snapshot cycle. Refreshes can be invoked
-        // directly by REST/admin code, so relying on a later action priority left RSS
-        // stale even while the dashboard already showed the new incident.
-        if ( class_exists( '\\SuzyEaston\\LousyOutages\\Feeds' ) ) {
-            \SuzyEaston\LousyOutages\Feeds::refresh_status_feed_cache();
-        }
-        $providers = isset( $snapshot['providers'] ) && is_array( $snapshot['providers'] ) ? $snapshot['providers'] : [];
-        $trending  = isset( $snapshot['trending'] ) && is_array( $snapshot['trending'] ) ? $snapshot['trending'] : [ 'trending' => false, 'signals' => [] ];
-
-        if ( empty( $errors ) && isset( $snapshot['errors'] ) && is_array( $snapshot['errors'] ) ) {
-            $errors = $snapshot['errors'];
-        }
-
-        update_option( 'lousy_outages_last_refresh_attempt', [ 'timestamp' => $timestamp_gmt, 'providers_attempted' => count( $states ), 'quality' => $quality ], false );
-        update_option( 'lousy_outages_last_refresh_at', $timestamp_gmt, false );
-        $health = (array) get_option( 'lousy_outages_provider_health', [] );
-        foreach ( $states as $id => $state ) {
-            $prior_health = isset( $health[ $id ] ) && is_array( $health[ $id ] ) ? $health[ $id ] : [];
-            $failed_state = is_array( $state ) && lousy_outages_provider_fetch_failed( $state );
-            $consecutive = $failed_state ? ( (int) ( $prior_health['consecutive_failures'] ?? 0 ) + 1 ) : 0;
-            $health[ $id ] = [
-                'last_attempt' => $timestamp_gmt,
-                'last_success' => $failed_state ? (string) ( $prior_health['last_success'] ?? ( $state['last_successful_at'] ?? '' ) ) : $timestamp_gmt,
-                'last_error' => $failed_state ? (string) ( $state['fetch_error'] ?? $state['error'] ?? 'Fetch failed' ) : '',
-                'endpoint' => is_array( $state ) ? (string) ( $state['endpoint'] ?? '' ) : '',
-                'final_url' => is_array( $state ) ? (string) ( $state['final_url'] ?? $state['endpoint'] ?? '' ) : '',
-                'http_status' => is_array( $state ) ? ( $state['http_status'] ?? null ) : null,
-                'content_type' => is_array( $state ) ? (string) ( $state['content_type'] ?? '' ) : '',
-                'adapter' => is_array( $state ) ? (string) ( $state['adapter'] ?? '' ) : '',
-                'schema_result' => is_array( $state ) ? (string) ( $state['schema_result'] ?? '' ) : '',
-                'current_error' => $failed_state ? (string) ( $state['fetch_error'] ?? $state['error'] ?? 'Fetch failed' ) : '',
-                'consecutive_failures' => $consecutive,
-                'snapshot_age_seconds' => ! empty( $state['updated_at'] ) ? max( 0, time() - ( strtotime( (string) $state['updated_at'] ) ?: time() ) ) : null,
-            ];
-        }
-        update_option( 'lousy_outages_provider_health', $health, false );
-        if ( ! empty( $quality['ok'] ) && 0 === (int) ( $quality['failed'] ?? 0 ) ) {
-            update_option( 'lousy_outages_last_refresh_complete', [ 'timestamp' => $timestamp_gmt, 'providers_successful' => (int) ( $quality['verified'] ?? 0 ) ], false );
-        }
-
-        update_option( 'lousy_outages_last_poll', $timestamp_iso, false );
-        update_option( 'lousy_outages_last_attempted', $timestamp_epoch, false );
-        update_option( 'lousy_outages_last_attempted_iso', $timestamp_gmt, false );
-        if ( ! empty( $quality['ok'] ) ) {
-            update_option( 'lousy_outages_last_fetched', $timestamp_epoch, false );
-            update_option( 'lousy_outages_last_fetched_iso', $timestamp_gmt, false );
-        }
-        do_action( 'lousy_outages_log', 'refresh_complete', [
-            'count' => count( $states ),
-            'ts'    => $timestamp_iso,
-        ] );
-
-        $response = [
-            'ok'           => ! empty( $quality['ok'] ),
-            'providers'    => $providers,
-            'errors'       => $errors,
-            'trending'     => $trending,
-            'alert_diagnostics' => $alert_diagnostics,
-            'quality'      => $quality,
-            'current_state'=> isset( $snapshot['current_state'] ) && is_array( $snapshot['current_state'] ) ? $snapshot['current_state'] : lousy_outages_current_state_from_snapshot( $snapshot ),
-            'source'       => ! empty( $quality['ok'] ) ? 'live' : 'last_good_with_errors',
-            'refreshedAt'  => $timestamp_iso,
-            'refreshed_at' => $timestamp_epoch,
-            'alert_diagnostics' => $alert_diagnostics,
-        ];
-    } catch ( \Throwable $e ) {
-        error_log( '[LO] refresh failed: ' . $e->getMessage() );
-        $response['message'] = $e->getMessage();
-    } finally {
-        delete_transient( $lock_key );
-        $finish=gmdate('c'); update_option('lousy_outages_last_refresh_finish',$finish,false);
-        update_option('lousy_outages_refresh_runtime',[ 'scheduled_time'=>(string)(wp_next_scheduled('lousy_outages_refresh_official_providers')?gmdate('c',(int)wp_next_scheduled('lousy_outages_refresh_official_providers')):''), 'actual_start'=>$started_at, 'finish'=>$finish, 'duration_ms'=>(int)round((microtime(true)-$started_micro)*1000), 'lock_state'=>'released', 'result'=>!empty($response['ok'])?'success':(!empty($response['skipped'])?'skipped':'failed'), 'next_scheduled_run'=>(string)(wp_next_scheduled('lousy_outages_refresh_official_providers')?gmdate('c',(int)wp_next_scheduled('lousy_outages_refresh_official_providers')):'') ],false);
-    }
-
-    return $response;
+    // Compatibility entry point: collection is always bounded and resumable.
+    return \SuzyEaston\LousyOutages\Cron\CanonicalPipeline::run();
 }
 
+/** Atomically publish only a fully collected provider set from a canonical cycle. */
+function lousy_outages_commit_collected_states( array $raw_states, string $cycle_id ): array {
+    $timestamp_epoch = current_time( 'timestamp', true );
+    $timestamp_iso = wp_date( 'c', $timestamp_epoch );
+    $timestamp_gmt = gmdate( 'c', $timestamp_epoch );
+    $store = new Store();
+    $previous_states = $store->get_all();
+    $quality = lousy_outages_snapshot_quality( $raw_states, $previous_states );
+    $states = lousy_outages_merge_verified_states( $raw_states, $previous_states, $timestamp_gmt );
+    foreach ( $states as $id => $state ) $store->update( $id, $state );
+    $snapshot = lousy_outages_refresh_snapshot( $states, $timestamp_iso, 'live' );
+    $snapshot['canonical_cycle_id'] = $cycle_id;
+    update_option( 'lousy_outages_current_state', $snapshot, false );
+    // Persist incident/episode history now, but delivery belongs to its own cron phase.
+    IncidentAlerts::process_snapshot( $snapshot, [ 'mode'=>'canonical_refresh', 'skip_delivery'=>true, 'cycle_id'=>$cycle_id ] );
+    update_option( 'lousy_outages_last_refresh_attempt', [ 'timestamp'=>$timestamp_gmt, 'providers_attempted'=>count($states), 'quality'=>$quality, 'cycle_id'=>$cycle_id ], false );
+    update_option( 'lousy_outages_last_refresh_at', $timestamp_gmt, false );
+    update_option( 'lousy_outages_last_refresh_finish', $timestamp_gmt, false );
+    update_option( 'lousy_outages_last_poll', $timestamp_iso, false );
+    update_option( 'lousy_outages_last_fetched', $timestamp_epoch, false );
+    update_option( 'lousy_outages_last_fetched_iso', $timestamp_gmt, false );
+    if ( ! empty( $quality['ok'] ) ) update_option( 'lousy_outages_last_refresh_complete', [ 'timestamp'=>$timestamp_gmt, 'providers_successful'=>(int)$quality['verified'], 'cycle_id'=>$cycle_id ], false );
+    return $snapshot;
+}
 
 function lousy_outages_provider_fetch_failed( array $state ): bool {
     $status = strtolower( (string) ( $state['status'] ?? '' ) );
