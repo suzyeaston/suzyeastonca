@@ -87,7 +87,7 @@ test('admin alert health, canonical manual refresh, cron self-heal, and replay s
   assert.match(plugin, /Alert Health/);
   assert.match(alerts, /public static function alert_health\(\)/);
   assert.match(plugin, /lousy_outages_ensure_canonical_cron_scheduled/);
-  assert.match(plugin, /wp_next_scheduled\( 'lousy_outages_refresh_official_providers' \)/);
+  assert.match(plugin, /wp_next_scheduled\( CanonicalPipeline::RECURRING_HOOK \)/);
   assert.match(plugin, /\$hook = 'lousy_outages_refresh_official_providers'/);
   assert.doesNotMatch(plugin, /\$hook = 'lousy_outages_poll'/);
   assert.match(plugin, /lousy_outages_refresh_official_providers\( true \)/);

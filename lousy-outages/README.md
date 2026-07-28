@@ -1,5 +1,11 @@
 # Lousy Outages
 
+## 0.5.3
+
+- Replaces the monolithic provider refresh with a bounded, option-checkpointed cycle and recoverable owner lease.
+- Publishes alerts and RSS through independent, idempotent cron phases with cycle and fingerprint diagnostics.
+- Unifies the canonical 15-minute cadence, repairs only missing/overdue schedules, and adds safe expired-cycle recovery.
+
 ## 0.5.2
 
 - Loads the shared source pack before concrete intelligence sources and includes admin diagnostics in release archives.

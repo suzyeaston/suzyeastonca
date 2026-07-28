@@ -4,7 +4,19 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 class AdminDiagnostics {
-    public static function bootstrap(): void { add_action('admin_menu', [self::class, 'menu']); }
+    public static function bootstrap(): void { add_action('admin_menu', [self::class, 'menu']); add_action('admin_post_lousy_outages_abandon_expired_cycle',[self::class,'abandonExpiredCycle']); }
+    public static function abandonExpiredCycle(): void {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !current_user_can('manage_options')) wp_die('Forbidden',403);
+        check_admin_referer('lousy_outages_abandon_expired_cycle');
+        $lease=(array)get_option(\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::LEASE_OPTION,[]);
+        $cycle=(array)get_option(\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::CYCLE_OPTION,[]);
+        $heartbeat=strtotime((string)($cycle['heartbeat_at']??''))?:0;
+        if ((!$lease || (int)($lease['expires_at']??0)<=time()) && $heartbeat && time()-$heartbeat>2*\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::cadence()) {
+            delete_option(\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::LEASE_OPTION);$cycle['final_status']='abandoned';$cycle['abandoned_at']=gmdate('c');update_option(\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::CYCLE_OPTION,$cycle,false);
+            if(!wp_next_scheduled(\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::RECOVERY_HOOK))wp_schedule_single_event(time()+5,\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::RECOVERY_HOOK);
+        }
+        wp_safe_redirect(admin_url('tools.php?page=lousy-outages-diagnostics'));exit;
+    }
     public static function menu(): void {
         add_management_page('Lousy Outages Diagnostics', 'Lousy Outages Diagnostics', 'manage_options', 'lousy-outages-diagnostics', [self::class, 'render']);
     }
@@ -22,6 +34,8 @@ class AdminDiagnostics {
         $provider_health = (array) get_option('lousy_outages_provider_health', []);
         $next = function_exists('wp_next_scheduled') ? wp_next_scheduled('lousy_outages_refresh_official_providers') : false;
         $alert_health = IncidentAlerts::alert_health();
+        $cycle=(array)get_option(\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::CYCLE_OPTION,[]);$lease=(array)get_option(\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::LEASE_OPTION,[]);if($lease&&(int)($lease['expires_at']??0)<=time())$lease=[];
+        $counts=['recurring'=>0,'continuation'=>0,'recovery'=>0];foreach((array)$hooks as $events)foreach((array)$events as $hook=>$items){if($hook===\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::RECURRING_HOOK)$counts['recurring']+=count($items);if($hook===\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::CONTINUATION_HOOK)$counts['continuation']+=count($items);if($hook===\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::RECOVERY_HOOK)$counts['recovery']+=count($items);}
         $healthy = 0; $failed = 0; $delayed = 0;
         foreach (ProviderRegistry::enabled() as $provider) {
             $id = (string)($provider['id'] ?? '');
@@ -38,8 +52,21 @@ class AdminDiagnostics {
             'Plugin version'=>LOUSY_OUTAGES_VERSION, 'Plugin path'=>LOUSY_OUTAGES_PATH, 'Asset URL base'=>$asset_url,
             'Snapshot schema'=>(string)LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION, 'Snapshot fetched_at'=>(string)($state['fetched_at'] ?? ''),
             'Canonical cron hook'=>'lousy_outages_refresh_official_providers',
-            'Intended cadence'=>'30 minutes',
+            'Canonical recurring interval'=>(string)\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::cadence(),
+            'Recurring / continuation / recovery event counts'=>wp_json_encode($counts),
             'Next scheduled run'=>$next ? gmdate('c', (int)$next) : 'not scheduled',
+            'Active cycle ID'=>(string)($cycle['cycle_id']??''),'Current phase'=>(string)($cycle['phase']??''),
+            'Cycle age seconds'=>!empty($cycle['started_at'])?time()-(strtotime((string)$cycle['started_at'])?:time()):'',
+            'Lease owner suffix'=>$lease?substr((string)($lease['owner_token']??''),-8):'none',
+            'Lease age seconds'=>$lease?time()-(int)($lease['acquired_at']??time()):'',
+            'Heartbeat age seconds'=>!empty($cycle['heartbeat_at'])?time()-(strtotime((string)$cycle['heartbeat_at'])?:time()):'',
+            'Provider progress'=>(int)($cycle['completed_provider_count']??0).' / '.count((array)($cycle['provider_ids']??[])),
+            'Last completed provider'=>(string)($cycle['last_completed_provider']??''),
+            'Last successful snapshot commit'=>wp_json_encode(get_option('lousy_outages_last_snapshot_commit',[])),
+            'Alert publication status'=>(string)($cycle['publication']['alerts']??''),'Alert recipients pending'=>wp_json_encode($cycle['publication_results']['alerts']['result']['pending']??[]),
+            'RSS publication status'=>(string)($cycle['publication']['rss']??''),'RSS source cycle'=>(string)(Feeds::get_status_feed_diagnostics()['source_cycle_id']??''),
+            'Last fatal or interrupted invocation'=>wp_json_encode(get_option('lousy_outages_last_interrupted_invocation',[])),
+            'Last completely successful end-to-end cycle'=>wp_json_encode(get_option('lousy_outages_last_end_to_end_cycle',[])),
             'Alert / publication health'=>wp_json_encode($alert_health, JSON_PRETTY_PRINT),
             'Last attempted refresh'=>wp_json_encode($attempted),
             'Last successful complete refresh'=>wp_json_encode($completed),
@@ -55,6 +82,6 @@ class AdminDiagnostics {
             'Old theme assets exist'=>$theme_old ? 'yes' : 'no', 'Cached old plugin HTML'=>'manual page-cache inspection required',
         ];
         foreach ($rows as $k=>$v) { echo '<tr><th>'.esc_html((string)$k).'</th><td><pre>'.esc_html((string)$v).'</pre></td></tr>'; }
-        echo '</tbody></table></div>';
+        echo '</tbody></table><form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="lousy_outages_abandon_expired_cycle">';wp_nonce_field('lousy_outages_abandon_expired_cycle');submit_button('Abandon expired cycle and queue recovery','secondary');echo '</form></div>';
     }
 }
