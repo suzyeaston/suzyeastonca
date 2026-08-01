@@ -7,8 +7,8 @@
 function home_yvr_ascii_art_lines(): array {
     return [
         '       _.---._   _.---._',
-        '      / snow  \ /  rain \  north shore',
-        '     /  caps   X   caps  \',
+        '      / snow  \\ /  rain \\  north shore',
+        '     /  caps   X   caps  \\',
         '    |~~|##|##|##|##|##|~~|',
         '    |##||##||##||##||##||##|',
         '    |##||##||##||##||##||##| downtown',
