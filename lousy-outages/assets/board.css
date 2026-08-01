@@ -1,0 +1,743 @@
+/*
+ * Lousy Outages public board.
+ * Scoped under .lox so the retro arcade theme's global rules stay out of it.
+ */
+
+.lox {
+  --lox-bg: #05080a;
+  --lox-panel: rgba(9, 16, 14, 0.82);
+  --lox-panel-solid: #08110e;
+  --lox-line: rgba(94, 234, 160, 0.22);
+  --lox-line-soft: rgba(94, 234, 160, 0.1);
+  --lox-text: #cfe7d8;
+  --lox-dim: #7d9a8b;
+  --lox-ok: #4ade80;
+  --lox-warn: #ffb300;
+  --lox-down: #ff5468;
+  --lox-advisory: #b98bff;
+  --lox-unknown: #58c7ff;
+  --lox-mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 0 3rem;
+  font-family: var(--lox-mono);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--lox-text);
+  text-align: left;
+  isolation: isolate;
+}
+
+.lox *,
+.lox *::before,
+.lox *::after {
+  box-sizing: border-box;
+}
+
+/* Board rules set display on buttons and table rows, which would otherwise win
+   against the user-agent [hidden] rule and leak placeholder states. */
+.lox [hidden],
+.lox-section[hidden] {
+  display: none !important;
+}
+
+.lox p,
+.lox h2,
+.lox h3,
+.lox dl,
+.lox dd,
+.lox ol,
+.lox ul {
+  margin: 0;
+  padding: 0;
+}
+
+.lox ol,
+.lox ul {
+  list-style: none;
+}
+
+.lox a {
+  color: var(--lox-ok);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(74, 222, 128, 0.35);
+}
+
+.lox a:hover,
+.lox a:focus-visible {
+  color: #eafff2;
+  border-bottom-color: #eafff2;
+}
+
+.lox :focus-visible {
+  outline: 2px solid var(--lox-ok);
+  outline-offset: 2px;
+}
+
+.lox-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Faint CRT wash behind the whole board. */
+.lox-scan {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(120, 255, 190, 0.035) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 0%, rgba(38, 96, 74, 0.35), transparent 65%);
+  opacity: 0.7;
+}
+
+/* ---------- terminal shell ---------- */
+
+.lox-shell {
+  border: 1px solid var(--lox-line);
+  border-radius: 10px;
+  background: var(--lox-panel);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 24px 60px -30px rgba(74, 222, 128, 0.5);
+  overflow: hidden;
+}
+
+.lox-shell__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--lox-line-soft);
+  background: rgba(4, 10, 8, 0.9);
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  color: var(--lox-dim);
+}
+
+.lox-shell__dots {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.lox-shell__dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--lox-down);
+}
+
+.lox-shell__dots i:nth-child(2) { background: var(--lox-warn); }
+.lox-shell__dots i:nth-child(3) { background: var(--lox-ok); }
+
+.lox-shell__path { flex: 1 1 auto; }
+.lox-shell__build { opacity: 0.7; }
+
+.lox-shell__body {
+  padding: 1.5rem 1.25rem 1.35rem;
+}
+
+.lox-prompt {
+  font-size: 0.85rem;
+  color: var(--lox-dim);
+  letter-spacing: 0.02em;
+}
+
+.lox-prompt__sigil {
+  color: var(--lox-ok);
+  margin-right: 0.4rem;
+}
+
+.lox-caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.35rem;
+  vertical-align: -0.14em;
+  background: var(--lox-ok);
+  animation: lox-blink 1.1s steps(1) infinite;
+}
+
+@keyframes lox-blink {
+  50% { opacity: 0; }
+}
+
+.lox-verdict {
+  margin-top: 0.75rem !important;
+  font-size: clamp(1.9rem, 6vw, 3.1rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.05;
+}
+
+.lox-verdict--ok { color: var(--lox-ok); text-shadow: 0 0 22px rgba(74, 222, 128, 0.45); }
+.lox-verdict--warn { color: var(--lox-warn); text-shadow: 0 0 22px rgba(255, 179, 0, 0.4); }
+.lox-verdict--down { color: var(--lox-down); text-shadow: 0 0 22px rgba(255, 84, 104, 0.45); }
+.lox-verdict--unknown { color: var(--lox-unknown); text-shadow: 0 0 22px rgba(88, 199, 255, 0.4); }
+
+.lox-verdict__sub {
+  margin-top: 0.3rem !important;
+  font-size: 0.98rem;
+  color: var(--lox-text);
+}
+
+.lox-shell__meta {
+  margin-top: 0.9rem !important;
+  font-size: 0.8rem;
+  color: var(--lox-dim);
+}
+
+.lox-shell__next::before {
+  content: " ";
+}
+
+/* ---------- readout ---------- */
+
+.lox-readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.lox-readout__cell {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--lox-line-soft);
+  border-radius: 8px;
+  background: var(--lox-panel);
+}
+
+.lox-readout__value {
+  display: block;
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.lox-readout__label {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: var(--lox-dim);
+}
+
+.lox-readout__cell--ok .lox-readout__value { color: var(--lox-ok); }
+.lox-readout__cell--warn .lox-readout__value { color: var(--lox-warn); }
+.lox-readout__cell--down .lox-readout__value { color: var(--lox-down); }
+.lox-readout__cell--advisory .lox-readout__value { color: var(--lox-advisory); }
+.lox-readout__cell--unknown .lox-readout__value { color: var(--lox-unknown); }
+.lox-readout__cell--dim .lox-readout__value { color: var(--lox-text); }
+
+.lox-readout__cell--down { border-color: rgba(255, 84, 104, 0.35); }
+.lox-readout__cell--warn { border-color: rgba(255, 179, 0, 0.3); }
+
+/* ---------- toolbar ---------- */
+
+.lox-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.lox-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--lox-ok);
+  border-radius: 6px;
+  background: rgba(74, 222, 128, 0.12);
+  color: var(--lox-ok);
+  font: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.lox-btn:hover,
+.lox-btn:focus-visible {
+  background: var(--lox-ok);
+  color: #04120a;
+}
+
+.lox-btn--ghost {
+  border-color: var(--lox-line);
+  background: transparent;
+  color: var(--lox-dim);
+}
+
+.lox-btn--ghost:hover,
+.lox-btn--ghost:focus-visible {
+  background: rgba(94, 234, 160, 0.12);
+  color: var(--lox-text);
+}
+
+.lox-btn[disabled] {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.lox-toolbar__status {
+  font-size: 0.78rem;
+  color: var(--lox-dim);
+}
+
+/* ---------- sections ---------- */
+
+.lox-section {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--lox-line-soft);
+}
+
+.lox-section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.lox-section__title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--lox-text);
+}
+
+.lox-section__marker { color: var(--lox-ok); }
+
+.lox-section__count {
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--lox-line);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--lox-dim);
+}
+
+.lox-section--down .lox-section__marker,
+.lox-section--down .lox-section__count { color: var(--lox-down); border-color: rgba(255, 84, 104, 0.45); }
+.lox-section--warn .lox-section__marker,
+.lox-section--warn .lox-section__count { color: var(--lox-warn); border-color: rgba(255, 179, 0, 0.45); }
+.lox-section--advisory .lox-section__marker,
+.lox-section--advisory .lox-section__count { color: var(--lox-advisory); border-color: rgba(185, 139, 255, 0.45); }
+.lox-section--unknown .lox-section__marker,
+.lox-section--unknown .lox-section__count { color: var(--lox-unknown); border-color: rgba(88, 199, 255, 0.45); }
+
+.lox-section__note {
+  font-size: 0.82rem;
+  color: var(--lox-dim);
+}
+
+/* ---------- cards ---------- */
+
+.lox-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0.85rem;
+}
+
+.lox-card {
+  position: relative;
+  padding: 1rem 1.05rem 1.05rem;
+  border: 1px solid var(--lox-line);
+  border-left-width: 3px;
+  border-radius: 8px;
+  background: var(--lox-panel);
+}
+
+.lox-card--down { border-left-color: var(--lox-down); }
+.lox-card--warn { border-left-color: var(--lox-warn); }
+.lox-card--advisory { border-left-color: var(--lox-advisory); }
+.lox-card--unknown { border-left-color: var(--lox-unknown); }
+
+.lox-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.lox-card__provider {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #eafff2;
+}
+
+.lox-chip {
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.lox-chip--down { background: rgba(255, 84, 104, 0.16); color: var(--lox-down); }
+.lox-chip--warn { background: rgba(255, 179, 0, 0.16); color: var(--lox-warn); }
+.lox-chip--advisory { background: rgba(185, 139, 255, 0.16); color: var(--lox-advisory); }
+.lox-chip--unknown { background: rgba(88, 199, 255, 0.16); color: var(--lox-unknown); }
+.lox-chip--ok { background: rgba(74, 222, 128, 0.16); color: var(--lox-ok); }
+
+.lox-card__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #eafff2;
+}
+
+.lox-card__body {
+  margin-top: 0.4rem !important;
+  font-size: 0.86rem;
+  color: var(--lox-text);
+}
+
+.lox-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 0.45rem 0.9rem;
+  margin-top: 0.85rem !important;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--lox-line-soft);
+}
+
+.lox-facts dt {
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lox-dim);
+}
+
+.lox-facts dd {
+  font-size: 0.83rem;
+  color: var(--lox-text);
+  word-break: break-word;
+}
+
+.lox-out {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.lox-empty {
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--lox-line-soft);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--lox-dim);
+}
+
+/* ---------- filters ---------- */
+
+.lox-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+
+.lox-field {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.lox-field--check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--lox-dim);
+}
+
+.lox-field__label {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lox-dim);
+}
+
+.lox input[type="search"],
+.lox input[type="text"],
+.lox input[type="email"],
+.lox select,
+.lox textarea {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--lox-line);
+  border-radius: 6px;
+  background: rgba(3, 8, 6, 0.9);
+  color: var(--lox-text);
+  font: inherit;
+  font-size: 0.84rem;
+  min-width: 9rem;
+}
+
+.lox-filters__count {
+  margin-left: auto;
+  font-size: 0.74rem;
+  color: var(--lox-dim);
+}
+
+/* ---------- matrix ---------- */
+
+.lox-table-wrap {
+  border: 1px solid var(--lox-line-soft);
+  border-radius: 8px;
+  overflow-x: auto;
+  background: var(--lox-panel);
+}
+
+.lox-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.lox-table th,
+.lox-table td {
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--lox-line-soft);
+}
+
+.lox-table thead th {
+  position: sticky;
+  top: 0;
+  background: rgba(4, 10, 8, 0.97);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lox-dim);
+  white-space: nowrap;
+}
+
+.lox-table tbody tr:hover {
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.lox-table tbody th {
+  font-weight: 700;
+  color: #eafff2;
+  white-space: nowrap;
+}
+
+.lox-table__detail {
+  max-width: 32ch;
+  color: var(--lox-dim);
+}
+
+.lox-led {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 0.45rem;
+  border-radius: 50%;
+  vertical-align: 0.05em;
+}
+
+.lox-led--ok { background: var(--lox-ok); box-shadow: 0 0 8px var(--lox-ok); }
+.lox-led--warn { background: var(--lox-warn); box-shadow: 0 0 8px var(--lox-warn); }
+.lox-led--down { background: var(--lox-down); box-shadow: 0 0 8px var(--lox-down); animation: lox-pulse 1.4s ease-in-out infinite; }
+.lox-led--advisory { background: var(--lox-advisory); box-shadow: 0 0 8px var(--lox-advisory); }
+.lox-led--unknown { background: var(--lox-unknown); box-shadow: 0 0 8px var(--lox-unknown); }
+
+@keyframes lox-pulse {
+  50% { opacity: 0.35; }
+}
+
+.lox-state {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.lox-state--ok { color: var(--lox-ok); }
+.lox-state--warn { color: var(--lox-warn); }
+.lox-state--down { color: var(--lox-down); }
+.lox-state--advisory { color: var(--lox-advisory); }
+.lox-state--unknown { color: var(--lox-unknown); }
+
+/* ---------- log ---------- */
+
+.lox-log {
+  border: 1px solid var(--lox-line-soft);
+  border-radius: 8px;
+  background: var(--lox-panel);
+  overflow: hidden;
+}
+
+.lox-log__row {
+  display: grid;
+  grid-template-columns: 7.5rem 9rem 5.5rem 1fr;
+  gap: 0.75rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.82rem;
+  border-bottom: 1px solid var(--lox-line-soft);
+}
+
+.lox-log__row:last-child { border-bottom: 0; }
+.lox-log__row:hover { background: rgba(74, 222, 128, 0.05); }
+
+.lox-log__when { color: var(--lox-dim); white-space: nowrap; }
+.lox-log__provider { color: #eafff2; font-weight: 600; }
+.lox-log__sev { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; padding-top: 0.15rem; }
+.lox-log__row--outage .lox-log__sev { color: var(--lox-down); }
+.lox-log__row--degraded .lox-log__sev { color: var(--lox-warn); }
+.lox-log__row--maintenance .lox-log__sev { color: var(--lox-unknown); }
+.lox-log__title { color: var(--lox-text); }
+
+.lox-log__more {
+  margin-top: 0.7rem;
+  text-align: center;
+}
+
+/* ---------- forms ---------- */
+
+.lox-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid var(--lox-line-soft);
+  border-radius: 8px;
+  background: var(--lox-panel);
+}
+
+.lox-form__wide { grid-column: 1 / -1; }
+
+.lox-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lox-dim);
+}
+
+.lox-form input,
+.lox-form select,
+.lox-form textarea {
+  width: 100%;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.86rem;
+  color: var(--lox-text);
+}
+
+.lox-form textarea { min-height: 4.5rem; resize: vertical; }
+
+.lox-form__note {
+  grid-column: 1 / -1;
+  font-size: 0.78rem;
+  color: var(--lox-dim);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.lox-form__status {
+  grid-column: 1 / -1;
+  min-height: 1.2em;
+  font-size: 0.82rem;
+  color: var(--lox-ok);
+}
+
+.lox-form__status--error { color: var(--lox-down); }
+
+.lox-form .lox-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.82rem;
+  color: var(--lox-text);
+}
+
+.lox-form .lox-check input { width: auto; }
+
+.lox-hp {
+  position: absolute;
+  left: -9999px;
+}
+
+.lox-checkgrid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.3rem 0.8rem;
+}
+
+/* ---------- footer ---------- */
+
+.lox-foot {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--lox-line-soft);
+  font-size: 0.8rem;
+  color: var(--lox-dim);
+}
+
+.lox-foot p + p { margin-top: 0.4rem !important; }
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 760px) {
+  .lox { font-size: 14px; }
+
+  .lox-log__row {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+
+  .lox-table thead { display: none; }
+
+  .lox-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+    padding: 0.6rem 0.7rem;
+    border-bottom: 1px solid var(--lox-line-soft);
+  }
+
+  .lox-table th,
+  .lox-table td {
+    border: 0;
+    padding: 0;
+  }
+
+  .lox-table td::before {
+    content: attr(data-label) ": ";
+    color: var(--lox-dim);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .lox-table__detail { max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lox-caret,
+  .lox-led--down {
+    animation: none;
+  }
+}
