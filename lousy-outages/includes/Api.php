@@ -429,6 +429,9 @@ class Api {
             $state['meta']['operational_count'] = count($state['operational']);
         }
         $payload = ['providers'=>$state['providers'],'fetched_at'=>$state['fetched_at'],'source'=>$state['source'],'meta'=>$state['meta'],'current_state'=>$state,'plugin_version'=>$state['plugin_version'] ?? (defined('LOUSY_OUTAGES_VERSION') ? LOUSY_OUTAGES_VERSION : ''),'snapshot_schema_version'=>$state['snapshot_schema_version'] ?? (defined('LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION') ? LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION : 0)];
+        if (class_exists(\SuzyEaston\LousyOutages\HomeTeaser::class)) {
+            $payload['teaser'] = \SuzyEaston\LousyOutages\HomeTeaser::build($state);
+        }
         if (!empty($state['errors'])) { $payload['errors'] = $state['errors']; }
         $response = new WP_REST_Response($payload, 200);
         $response->header('Cache-Control', 'no-store, no-cache, must-revalidate');

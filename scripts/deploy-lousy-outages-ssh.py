@@ -28,9 +28,13 @@ THEME_DIR = f"{HOME}/public_html/wp-content/themes/suzyeastonca-main"
 # Theme files the board renders inside. Keep this list tight: the whole repo is the
 # theme, but only these files affect the Lousy Outages page.
 THEME_FILES = [
+    "functions.php",
     "page-lousy-outages.php",
+    "parts/lousy-outages-teaser.php",
     "assets/css/lousy-outages-page.css",
     "assets/css/lousy-outages-theme-isolation.css",
+    "assets/css/lousy-outages-teaser.css",
+    "assets/js/lousy-outages-teaser.js",
 ]
 
 

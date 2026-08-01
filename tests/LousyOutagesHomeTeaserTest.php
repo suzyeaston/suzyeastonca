@@ -43,8 +43,9 @@ assert_true(\SuzyEaston\LousyOutages\Summary::ordered_current_incidents(5)===[],
 $summary = file_get_contents(__DIR__ . '/../lousy-outages/includes/Summary.php');
 assert_true(str_contains($summary, "'eta'") && strpos($summary, "incident['impact'] ?? incident['status']") === false, 'WordPress-loaded plugin tree contains repaired Summary implementation');
 $functions = file_get_contents(__DIR__ . '/../functions.php'); $part = file_get_contents(__DIR__ . '/../parts/lousy-outages-teaser.php'); $js = file_get_contents(__DIR__ . '/../assets/js/lousy-outages-teaser.js');
+assert_true(str_contains($functions, 'lousy_outages_home_teaser_data') && str_contains($part, 'data-lo-stat="down"') && str_contains($js, 'payload.teaser'), 'homepage teaser uses plugin teaser payload');
 assert_true(str_contains($functions, 'lousy-outages/v1/summary') && str_contains($part, 'lousy-outages/v1/summary'), 'homepage endpoint configuration is summary');
-assert_true(!str_contains($functions.$part.$js, 'lousy-outages/v1/status'), 'no homepage code references status endpoint');
+assert_true(!str_contains($functions.$part.$js, 'outage_event_count'), 'legacy outage_event_count labels removed from homepage teaser');
 set_snapshot([['id'=>'tv','name'=>'TeamViewer','stateCode'=>'degraded','tile_kind'=>'outage','updatedAt'=>$base,'verification_status'=>'stale','is_stale'=>true,'incidents'=>[['id'=>'tv1','title'=>'DEX PLATFORM. Inventory Software pages not loading','status'=>'monitoring','impact'=>'degraded','startedAt'=>'2026-07-20T10:00:00Z','updatedAt'=>'2026-07-20T10:30:00Z']]]]);
 $rows = \SuzyEaston\LousyOutages\Summary::ordered_current_incidents(5);
 assert_true(count($rows)===1 && $rows[0]['provider_id']==='tv', 'stale failed provider remains visible during grace via canonical snapshot');

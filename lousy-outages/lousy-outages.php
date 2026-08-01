@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.5.5
+ * Version: 0.5.6
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.5.5' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.5.6' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -123,6 +123,7 @@ lousy_outages_require( 'includes/AdminCleanup.php' );
 lousy_outages_require( 'includes/AdminDiagnostics.php' );
 lousy_outages_require( 'includes/ProviderPages.php' );
 
+lousy_outages_require( 'includes/HomeTeaser.php' );
 lousy_outages_require( 'public/board.php' );
 lousy_outages_require( 'public/shortcode.php' );
 
@@ -162,6 +163,15 @@ CanonicalPipeline::bootstrap();
 \SuzyEaston\LousyOutages\StripeBilling::bootstrap();
 \SuzyEaston\LousyOutages\Product::bootstrap();
 \SuzyEaston\LousyOutages\CommerceAdmin::bootstrap();
+
+if ( ! function_exists( 'lousy_outages_home_teaser_data' ) ) {
+    /**
+     * @return array<string, mixed>
+     */
+    function lousy_outages_home_teaser_data(): array {
+        return \SuzyEaston\LousyOutages\HomeTeaser::build();
+    }
+}
 
 lo_snapshot_bootstrap();
 lo_cron_bootstrap();
