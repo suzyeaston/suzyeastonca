@@ -572,6 +572,12 @@ class Fetcher {
         if ('' === $trimmed) {
             return false;
         }
+        // XML feeds also start with '<'; only flag actual HTML documents.
+        foreach (['<?xml', '<rss', '<feed', '<urlset'] as $xmlPrefix) {
+            if (0 === stripos($trimmed, $xmlPrefix)) {
+                return false;
+            }
+        }
         if (0 === strpos($trimmed, '<')) {
             return true;
         }
