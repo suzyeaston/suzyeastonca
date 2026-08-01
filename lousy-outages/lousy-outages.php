@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.5.3
+ * Version: 0.5.4
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.5.3' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.5.4' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -1989,39 +1989,10 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'lousy-outages/v1', '/status', [
         'methods'             => 'GET',
         'permission_callback' => '__return_true',
-        'callback'            => function ( \WP_REST_Request $request ) {
-            $store    = new Store();
-            $refresh  = $request->get_param( 'refresh' );
-            $bypass   = null !== $refresh ? filter_var( $refresh, FILTER_VALIDATE_BOOLEAN ) : false;
-            $fetched  = gmdate( 'c' );
-            $data     = lousy_outages_collect_statuses( $bypass );
-
-            foreach ( $data as $id => $state ) {
-                $store->update( $id, $state );
-            }
-
-            $providers = [];
-            foreach ( $data as $id => $state ) {
-                $providers[] = lousy_outages_build_provider_payload( $id, $state, $fetched );
-            }
-
-            $providers = lousy_outages_sort_providers( $providers );
-
-            $payload  = [
-                'providers' => $providers,
-                'meta'      => [
-                    'fetchedAt'   => $fetched,
-                    'generatedAt' => gmdate( 'c' ),
-                    'fresh'       => (bool) $bypass,
-                ],
-            ];
-            $response = rest_ensure_response( $payload );
-            $response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
-            $response->header( 'Pragma', 'no-cache' );
-            $response->header( 'Expires', '0' );
-
-            return $response;
-        },
+        // Legacy endpoint. It used to run the synchronous legacy collector and
+        // rewrite the giant legacy Store options on every anonymous GET, which
+        // exhausted PHP memory (HTTP 500). Serve the canonical snapshot instead.
+        'callback'            => [ Api::class, 'handle_summary' ],
     ] );
 } );
 

@@ -2,10 +2,16 @@
 namespace SuzyEaston\LousyOutages;
 
 class Store {
+    // Hard caps: these legacy options are appended on every poll and once grew
+    // to ~18MB each, exhausting PHP memory on every wpdb read. Canonical
+    // history lives in HistoryStore; these only need a recent window.
+    private const LOG_MAX_ENTRIES = 500;
+    private const HISTORY_MAX_ENTRIES = 10000;
+
     private string $option = 'lousy_outages_states';
     private string $log_option = 'lousy_outages_log';
     private string $history_option = 'lousy_outages_history';
-    private int $history_retention = 3 * YEAR_IN_SECONDS; // retain 3 years of daily signals.
+    private int $history_retention = 90 * DAY_IN_SECONDS;
 
     public function get_all(): array {
         $stored = get_option( $this->option, [] );
@@ -41,8 +47,14 @@ class Store {
     }
 
     private function log( string $id, string $status ): void {
-        $log   = get_option( $this->log_option, [] );
+        $log = get_option( $this->log_option, [] );
+        if ( ! is_array( $log ) ) {
+            $log = [];
+        }
         $log[] = [ 'id' => $id, 'status' => $status, 'time' => time() ];
+        if ( count( $log ) > self::LOG_MAX_ENTRIES ) {
+            $log = array_slice( $log, -self::LOG_MAX_ENTRIES );
+        }
         update_option( $this->log_option, $log, false );
         $this->append_history( $id, $status, time() );
     }
@@ -110,6 +122,10 @@ class Store {
 
             return (int) $entry['time'] >= $cutoff;
         } ) );
+
+        if ( count( $history ) > self::HISTORY_MAX_ENTRIES ) {
+            $history = array_slice( $history, -self::HISTORY_MAX_ENTRIES );
+        }
 
         update_option( $this->history_option, $history, false );
     }
