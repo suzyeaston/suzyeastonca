@@ -18,6 +18,7 @@ import paramiko
 ROOT = Path(__file__).resolve().parent.parent
 ENV = ROOT / ".env.deploy.local"
 ZIP = Path("/tmp/lousy-outages-deploy.zip")
+DIST_ZIP = ROOT / "dist" / "lousy-outages.zip"
 HOME = "/home/uquklkik"
 REMOTE_ZIP = f"{HOME}/tmp/lousy-outages-deploy.zip"
 PLUGIN_REL = "public_html/wp-content/plugins"
@@ -61,6 +62,8 @@ def run(client, cmd: str, timeout: int = 300) -> int:
 
 
 def deploy_plugin(client, sftp, stamp: str) -> None:
+    if not ZIP.is_file() and DIST_ZIP.is_file():
+        ZIP.write_bytes(DIST_ZIP.read_bytes())
     if not ZIP.is_file():
         raise SystemExit(f"Build ZIP missing: {ZIP}. Run scripts/build-lousy-outages-release.sh first.")
 
