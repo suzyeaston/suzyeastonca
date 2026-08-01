@@ -87,6 +87,17 @@ function retro_game_music_theme_scripts() {
             true
         );
 
+        $scanner_js = get_template_directory() . '/js/home-city-scanner.js';
+        if ( file_exists( $scanner_js ) ) {
+            wp_enqueue_script(
+                'home-city-scanner',
+                get_template_directory_uri() . '/js/home-city-scanner.js',
+                array(),
+                filemtime( $scanner_js ),
+                true
+            );
+        }
+
         $teaser_css = get_template_directory() . '/assets/css/lousy-outages-teaser.css';
         if ( file_exists( $teaser_css ) ) {
             wp_enqueue_style(

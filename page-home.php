@@ -10,40 +10,45 @@ get_template_part( 'parts/home-yvr-ascii-art' );
         <div class="home-arcade-screen__backdrop" role="img" aria-label="<?php echo esc_attr( 'ASCII art of Vancouver downtown skyline and harbor' ); ?>">
             <pre class="home-yvr-ascii"><?php echo esc_html( home_yvr_ascii_art() ); ?></pre>
             <div class="home-amp-stack">
-                <div class="home-amp">
-                    <span class="home-amp__badge"><?php echo esc_html( 'YVR' ); ?></span>
-                    <div class="home-amp__grille"></div>
-                    <div class="home-amp__face">
-                        <div class="home-amp__vu" aria-hidden="true">
-                            <span class="home-amp__vu-bar"></span>
-                            <span class="home-amp__vu-bar"></span>
-                            <span class="home-amp__vu-bar"></span>
-                            <span class="home-amp__vu-bar"></span>
-                            <span class="home-amp__vu-bar"></span>
-                        </div>
-                        <div class="home-amp__knobs" aria-hidden="true">
-                            <span class="home-amp__knob home-amp__knob--gain"></span>
-                            <span class="home-amp__knob home-amp__knob--tone"></span>
-                            <span class="home-amp__knob"></span>
-                        </div>
+                <div class="home-city-scanner" data-city-scanner aria-label="<?php echo esc_attr( 'Vancouver public band scanner' ); ?>">
+                    <div class="home-city-scanner__header">
+                        <span class="home-city-scanner__badge pixel-font"><?php echo esc_html( 'YVR SCAN' ); ?></span>
+                        <span class="home-city-scanner__freq pixel-font" data-scanner-freq>162.450</span>
                     </div>
-                    <p class="home-amp__plate"><?php echo esc_html( 'bass stack // headroom limited' ); ?></p>
+                    <div class="home-city-scanner__display">
+                        <span class="home-city-scanner__channel pixel-font" data-scanner-channel><?php echo esc_html( 'STANDBY' ); ?></span>
+                        <p class="home-city-scanner__caption" data-scanner-caption><?php echo esc_html( 'Live public bands only. Metro police and SkyTrain ops are encrypted — not on this dial.' ); ?></p>
+                        <div class="home-city-scanner__embed" data-scanner-embed hidden></div>
+                    </div>
+                    <div class="home-city-scanner__bars" aria-hidden="true">
+                        <span class="home-city-scanner__bar" data-scanner-bar></span>
+                        <span class="home-city-scanner__bar" data-scanner-bar></span>
+                        <span class="home-city-scanner__bar" data-scanner-bar></span>
+                        <span class="home-city-scanner__bar" data-scanner-bar></span>
+                        <span class="home-city-scanner__bar" data-scanner-bar></span>
+                    </div>
+                    <div class="home-city-scanner__controls">
+                        <button type="button" class="home-city-scanner__btn home-city-scanner__scan pixel-font" data-scanner-scan><?php echo esc_html( 'SCAN' ); ?></button>
+                        <button type="button" class="home-city-scanner__btn home-city-scanner__mute pixel-font" data-scanner-mute aria-pressed="false"><?php echo esc_html( 'MUTE' ); ?></button>
+                    </div>
+                    <audio data-scanner-audio preload="none" crossorigin="anonymous"></audio>
                 </div>
             </div>
         </div>
         <div class="home-arcade-screen__panel">
-            <p class="home-arcade-kicker pixel-font"><?php echo esc_html( 'YVR practice room // cabinet online' ); ?></p>
+            <p class="home-arcade-kicker pixel-font"><?php echo esc_html( 'founder // principal technologist' ); ?></p>
             <h1 id="home-hero-title" class="home-arcade-title pixel-font"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
-            <p class="home-arcade-subtitle pixel-font"><?php echo esc_html( 'music // AI strategy // creative technology' ); ?></p>
-            <p class="home-arcade-positioning"><?php echo esc_html( 'Punk bassist brain. Infra, creative tech, and music — rain city edition.' ); ?></p>
+            <p class="home-arcade-subtitle pixel-font"><?php echo esc_html( 'AI strategy // systems integration // creative technology' ); ?></p>
+            <p class="home-arcade-positioning"><?php echo esc_html( 'Punk bassist brain. Builds infra, creative tech, browser tools and applications that are practical and cool.' ); ?></p>
             <div class="home-amp-console">
                 <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
                 <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START // VIEW WORK"><?php echo esc_html( 'PRESS START // VIEW WORK' ); ?></button>
             </div>
             <ul class="home-title-screen-meta pixel-font" aria-label="<?php echo esc_attr( 'Scene tags' ); ?>">
                 <li><?php echo esc_html( 'Vancouver' ); ?></li>
-                <li><?php echo esc_html( 'harbor rain' ); ?></li>
-                <li><?php echo esc_html( 'amp glow' ); ?></li>
+                <li><?php echo esc_html( 'independent practice' ); ?></li>
+                <li><?php echo esc_html( 'civic tech' ); ?></li>
+                <li><?php echo esc_html( 'west coast' ); ?></li>
             </ul>
         </div>
     </section>
