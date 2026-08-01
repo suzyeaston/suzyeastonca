@@ -29,8 +29,10 @@ THEME_DIR = f"{HOME}/public_html/wp-content/themes/suzyeastonca-main"
 # theme, but only these files affect the Lousy Outages page.
 THEME_FILES = [
     "functions.php",
+    "page-home.php",
     "page-lousy-outages.php",
     "parts/lousy-outages-teaser.php",
+    "assets/css/home-hero-cabinet.css",
     "assets/css/lousy-outages-page.css",
     "assets/css/lousy-outages-theme-isolation.css",
     "assets/css/lousy-outages-teaser.css",
