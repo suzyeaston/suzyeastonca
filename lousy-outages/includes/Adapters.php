@@ -109,9 +109,17 @@ function describe_affected_components(array $affected, string $fallback = ''): s
     $count = count($affected);
     if (0 === $count) { return trim($fallback); }
 
+    $labels = [
+        'degraded_performance' => 'degraded',
+        'partial_outage'       => 'partially out',
+        'major_outage'         => 'fully out',
+        'under_maintenance'    => 'in maintenance',
+        're_routed'            => 're-routed',
+    ];
     $byStatus = [];
     foreach ($affected as $component) {
-        $status = str_replace('_', ' ', (string) $component['status']);
+        $status = (string) $component['status'];
+        $status = $labels[$status] ?? str_replace('_', ' ', $status);
         $byStatus[$status] = ($byStatus[$status] ?? 0) + 1;
     }
     arsort($byStatus);

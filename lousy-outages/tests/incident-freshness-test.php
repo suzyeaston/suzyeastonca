@@ -62,7 +62,7 @@ $described = describe_affected_components([
     ['name' => 'Harare', 'status' => 're_routed'],
 ], 'Minor Service Outage');
 ok(str_contains($described, '4 of the provider’s components'), 'component summary counts affected components');
-ok(str_contains($described, '3 re routed'), 'component summary breaks down by status');
+ok(str_contains($described, '3 re-routed'), 'component summary breaks down by status');
 ok(str_contains($described, '+1 more'), 'component summary truncates the example list');
 ok(describe_affected_components([], 'Minor Service Outage') === 'Minor Service Outage', 'empty component lists fall back to the provider description');
 
