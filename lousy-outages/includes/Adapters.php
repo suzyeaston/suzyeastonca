@@ -68,12 +68,76 @@ function from_statuspage_summary(string $json): array {
         ];
     }
 
+    $affected = affected_statuspage_components($data);
+
     return [
         'state'      => $state,
         'incidents'  => $incidents,
         'updated_at' => $data['page']['updated_at'] ?? null,
+        'summary'    => $incidents ? '' : describe_affected_components($affected, (string) ($data['status']['description'] ?? '')),
+        'components_affected' => $affected,
         'raw'        => $data,
     ];
+}
+
+/**
+ * Collect non-operational leaf components from a Statuspage summary payload.
+ *
+ * Group rows mirror their children, so counting them doubles the total and makes a
+ * handful of re-routed edge nodes look like a continent-wide failure.
+ *
+ * @return array<int, array{name: string, status: string}>
+ */
+function affected_statuspage_components(array $data): array {
+    $affected = [];
+    foreach (($data['components'] ?? []) as $component) {
+        if (!is_array($component)) { continue; }
+        if (!empty($component['group'])) { continue; }
+        $status = strtolower((string) ($component['status'] ?? 'operational'));
+        if ('' === $status || 'operational' === $status) { continue; }
+        $name = trim((string) ($component['name'] ?? ''));
+        if ('' === $name) { continue; }
+        $affected[] = ['name' => $name, 'status' => $status];
+    }
+    return $affected;
+}
+
+/**
+ * Turn a component list into a sentence a human can act on.
+ */
+function describe_affected_components(array $affected, string $fallback = ''): string {
+    $count = count($affected);
+    if (0 === $count) { return trim($fallback); }
+
+    $labels = [
+        'degraded_performance' => 'degraded',
+        'partial_outage'       => 'partially out',
+        'major_outage'         => 'fully out',
+        'under_maintenance'    => 'in maintenance',
+        're_routed'            => 're-routed',
+    ];
+    $byStatus = [];
+    foreach ($affected as $component) {
+        $status = (string) $component['status'];
+        $status = $labels[$status] ?? str_replace('_', ' ', $status);
+        $byStatus[$status] = ($byStatus[$status] ?? 0) + 1;
+    }
+    arsort($byStatus);
+    $breakdown = [];
+    foreach ($byStatus as $status => $statusCount) {
+        $breakdown[] = $statusCount . ' ' . $status;
+    }
+
+    $names = array_slice(array_column($affected, 'name'), 0, 3);
+    $extra = $count - count($names);
+    $examples = implode(', ', $names) . ($extra > 0 ? ' +' . $extra . ' more' : '');
+
+    return sprintf(
+        '%d of the provider’s components are not operational (%s): %s.',
+        $count,
+        implode(', ', $breakdown),
+        $examples
+    );
 }
 
 function from_statuspage_status(string $json): array {
@@ -143,6 +207,44 @@ function from_slack_current(string $json): array {
     ];
 }
 
+/**
+ * Reduce a feed title to a single readable line.
+ *
+ * Google's Workspace/Cloud feeds put the whole incident write-up in <title>, complete
+ * with "**Title**" / "**Description**" markdown headings and newlines, which renders as
+ * a wall of text wherever a headline is expected.
+ */
+function clean_feed_title(string $raw): string {
+    $value = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $value = strip_tags($value);
+    $value = str_replace(["\r\n", "\r"], "\n", $value);
+
+    $prefix = '';
+    if (preg_match('/^\s*(RESOLVED|ONGOING|UPDATE|SCHEDULED|COMPLETED)\s*:\s*/i', $value, $match)) {
+        $prefix = ucfirst(strtolower($match[1])) . ': ';
+        $value = (string) preg_replace('/^\s*(RESOLVED|ONGOING|UPDATE|SCHEDULED|COMPLETED)\s*:\s*/i', '', $value);
+    }
+
+    $headline = '';
+    if (preg_match('/\*\*\s*Title\s*\*\*\s*(.+?)(?=\n\s*\*\*|\z)/is', $value, $match)) {
+        $headline = $match[1];
+    } else {
+        foreach (explode("\n", $value) as $line) {
+            $line = trim(str_replace('*', '', $line));
+            if ('' !== $line) { $headline = $line; break; }
+        }
+    }
+
+    $headline = trim((string) preg_replace('/\s+/', ' ', str_replace('*', '', $headline)));
+    if ('' === $headline) { return trim((string) preg_replace('/\s+/', ' ', $value)); }
+    if (strlen($headline) > 160) {
+        $truncated = function_exists('mb_substr') ? mb_substr($headline, 0, 159) : (string) preg_replace('/.{0,159}\K.*/su', '', $headline);
+        $headline = rtrim($truncated, " \t.,;:-") . '…';
+    }
+
+    return $prefix . $headline;
+}
+
 function from_rss_atom(string $xml): array {
     $clean_summary = static function (string $value): string {
         $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -181,7 +283,7 @@ function from_rss_atom(string $xml): array {
     };
     if (isset($feed->channel)) {
         foreach ($feed->channel->item as $item) {
-            $title = (string) ($item->title ?? 'Incident');
+            $title = clean_feed_title((string) ($item->title ?? 'Incident'));
             $summary = $clean_summary((string) ($item->description ?? ''));
             $items[] = [
                 'name'       => $title ?: 'Incident',
@@ -195,7 +297,7 @@ function from_rss_atom(string $xml): array {
         }
     } else {
         foreach ($feed->entry as $item) {
-            $title = (string) ($item->title ?? 'Incident');
+            $title = clean_feed_title((string) ($item->title ?? 'Incident'));
             $summary = $clean_summary((string) ($item->summary ?? $item->content ?? ''));
             $items[] = [
                 'name'       => $title ?: 'Incident',

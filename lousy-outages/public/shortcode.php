@@ -117,21 +117,11 @@ function render_shortcode(): string {
     $cached    = ($cache_key) ? get_transient($cache_key) : null;
     $snapshot_endpoint = esc_url_raw(rest_url('lousy/v1/snapshot'));
 
-    $fetcher      = new Lousy_Outages_Fetcher();
-    $provider_map = $fetcher->get_provider_map();
-
+    // Only the canonical registry drives the public board. The legacy Fetcher provider
+    // map still carries retired entries (link-only CrowdStrike and friends) that would
+    // otherwise render as permanently "Unavailable" tiles nobody can act on.
+    $provider_map     = [];
     $providers_config = Providers::enabled();
-    if (is_array($provider_map) && $provider_map) {
-        foreach ($provider_map as $slug => $info) {
-            if (!isset($providers_config[$slug]) && is_array($info)) {
-                $providers_config[$slug] = [
-                    'id'         => $slug,
-                    'name'       => isset($info['name']) ? (string) $info['name'] : ucfirst((string) $slug),
-                    'status_url' => isset($info['status_url']) ? (string) $info['status_url'] : '',
-                ];
-            }
-        }
-    }
 
     $fetched_at = '';
     $last_fetched_iso = \function_exists('lousy_outages_get_last_fetched_iso')

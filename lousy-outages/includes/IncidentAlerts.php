@@ -339,10 +339,19 @@ class IncidentAlerts {
                 $history = new Storage\HistoryStore();
                 foreach ($incidents as $incident) {
                     if ($incident instanceof Incident) {
+                        $detected = (int) $incident->detected_at ?: time();
                         $history->addEvent([
-                            'id' => $incident->id, 'provider' => sanitize_key((string) $incident->provider), 'name' => $incident->title,
-                            'impact' => $incident->impact, 'status' => $incident->status, 'started_at' => gmdate('c', (int) $incident->detected_at),
-                            'url' => $incident->url, 'components' => $incident->component ? [$incident->component] : [], 'body' => $incident->title,
+                            'guid' => sanitize_key((string) $incident->provider) . ':' . $incident->id,
+                            'provider' => sanitize_key((string) $incident->provider),
+                            'title' => $incident->title,
+                            'description' => $incident->title,
+                            'status' => $incident->status,
+                            'severity' => strtolower((string) ($incident->impact ?: $incident->status)),
+                            'source' => 'provider',
+                            'url' => $incident->url,
+                            'components' => $incident->component ? [$incident->component] : [],
+                            'first_seen' => $detected,
+                            'last_seen' => (int) ($incident->resolved_at ?: time()),
                         ]);
                     }
                 }
