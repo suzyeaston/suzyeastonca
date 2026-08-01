@@ -137,7 +137,7 @@ test('manual refresh falls back to status endpoint when refresh endpoint fails',
 
   const calls = mockFetch.calls;
   assert.ok(calls.length >= 2);
-  const refreshCall = calls.find(call => call[0] === '/wp-json/lousy/v1/refresh');
+  const refreshCall = calls.find(call => String(call[0] || '').includes('/wp-json/lousy/v1/refresh'));
   assert.ok(refreshCall);
   const summaryCall = calls.find(call => {
     const target = String(call[0] || '');
@@ -242,7 +242,7 @@ test('manual refresh treats skipped lock as success and keeps timestamp aligned'
   await wait(120);
   await flushPromises();
 
-  const refreshCall = mockFetch.calls.find(call => call[0] === '/wp-json/lousy-outages/v1/refresh');
+  const refreshCall = mockFetch.calls.find(call => String(call[0] || '').includes('/wp-json/lousy-outages/v1/refresh'));
   assert.ok(refreshCall);
 
   const updatedText = lastUpdated.textContent;

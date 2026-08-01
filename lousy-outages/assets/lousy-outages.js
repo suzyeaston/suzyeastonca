@@ -3616,7 +3616,17 @@
     state.manualQueued = false;
     state.pendingManual = false;
     setLoading(true);
-    refreshSummary(true, true)
+    var refreshChain = state.refreshEndpoint
+      ? callRefreshEndpoint().catch(function (err) {
+          if (state.debug && state.root && state.root.console && typeof state.root.console.error === 'function') {
+            state.root.console.error(err);
+          }
+        })
+      : Promise.resolve();
+    refreshChain
+      .then(function () {
+        return refreshSummary(true, true);
+      })
       .catch(function (err) {
         if (state.debug && state.root && state.root.console && typeof state.root.console.error === 'function') {
           state.root.console.error(err);
