@@ -1,21 +1,21 @@
 <?php
 /**
- * ASCII Vancouver downtown + harbor for the homepage hero left panel.
+ * ASCII Vancouver downtown + harbour for the homepage hero left panel.
  *
  * @return string[]
  */
 function home_yvr_ascii_art_lines(): array {
     return [
-        '              /\      /\\',
-        '             /  \\    /  \\',
-        '            /    \\__/    \\',
-        '           /  north shore   \\',
-        '        [::]|##| |##| |##| |##|',
-        '        |##||##||##||##||##||##|',
-        '        |##||##||##||##||##||##|',
-        '         \\ /\\  /\\  /\\  /\\  sail',
-        '        ~~~~~~~~~~~~~~~~~~~~~~~~',
-        '         downtown // harbor // YVR',
+        '       _.---._   _.---._',
+        '      / snow  \ /  rain \  north shore',
+        '     /  caps   X   caps  \',
+        '    |~~|##|##|##|##|##|~~|',
+        '    |##||##||##||##||##||##|',
+        '    |##||##||##||##||##||##| downtown',
+        '     \\=SkyTrain==SkyTrain=/',
+        '    ~~~~~~~~~~~~~~~~~~~~~~~~',
+        '      \\  sails /  cranes  /',
+        '   harbour // burrard inlet // YVR',
     ];
 }
 

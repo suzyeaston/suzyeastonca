@@ -7,17 +7,18 @@ get_template_part( 'parts/home-yvr-ascii-art' );
 <main id="homepage-content" class="home-layout home-arcade-layout">
 
     <section class="home-arcade-title-screen crt-block home-amp-cabinet" aria-labelledby="home-hero-title" data-arcade-hero>
-        <div class="home-arcade-screen__backdrop" role="img" aria-label="<?php echo esc_attr( 'ASCII art of Vancouver downtown skyline and harbor' ); ?>">
+        <div class="home-arcade-screen__backdrop" role="img" aria-label="<?php echo esc_attr( 'ASCII art of Vancouver downtown skyline and harbour' ); ?>">
             <pre class="home-yvr-ascii"><?php echo esc_html( home_yvr_ascii_art() ); ?></pre>
             <div class="home-amp-stack">
-                <div class="home-city-scanner" data-city-scanner aria-label="<?php echo esc_attr( 'SkyTrain TransLink alert scanner' ); ?>">
+                <div class="home-city-scanner" data-city-scanner aria-label="<?php echo esc_attr( 'YVR live band scanner' ); ?>">
                     <div class="home-city-scanner__header">
                         <span class="home-city-scanner__badge pixel-font"><?php echo esc_html( 'YVR SCAN' ); ?></span>
-                        <span class="home-city-scanner__freq pixel-font" data-scanner-freq>162.450</span>
+                        <span class="home-city-scanner__freq pixel-font" data-scanner-freq>154.100</span>
                     </div>
                     <div class="home-city-scanner__display">
                         <span class="home-city-scanner__channel pixel-font" data-scanner-channel><?php echo esc_html( 'STANDBY' ); ?></span>
-                        <p class="home-city-scanner__caption" data-scanner-caption><?php echo esc_html( 'SkyTrain voice ops are encrypted. This dial reads live TransLink service alerts.' ); ?></p>
+                        <p class="home-city-scanner__caption" data-scanner-caption><?php echo esc_html( 'Live bands only. BC haulers use LADD VHF — scan locks to ham repeaters and fire dispatch.' ); ?></p>
+                        <div class="home-city-scanner__embed" data-scanner-embed hidden></div>
                     </div>
                     <div class="home-city-scanner__bars" aria-hidden="true">
                         <span class="home-city-scanner__bar" data-scanner-bar></span>

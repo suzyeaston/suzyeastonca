@@ -2,46 +2,54 @@
   'use strict';
 
   /**
-   * SkyTrain / TransLink scanner — live alert text from TransLink's public API.
-   * BCRTC ops voice is encrypted on E-Comm; this dial reads real service alerts.
-   * Channel labels mirror documented SkyTrain talkgroups (RadioReference / legacy freqs).
+   * YVR band scanner — live voice via Broadcastify + live TransLink alert text.
+   * BC haulers use LADD VHF (154.100), not CB — no public LADD internet stream exists.
+   * These are legit repeater / dispatch feeds with highway-adjacent chatter.
    */
+  var AUDIO_CHANNELS = [
+    {
+      type: 'broadcastify',
+      label: 'LADD 1 HWY',
+      freq: '154.100',
+      feedId: 33907,
+      caption: 'Live VE7RPT ham repeater. BC truckers run LADD VHF — not CB.'
+    },
+    {
+      type: 'broadcastify',
+      label: 'HWY CH19',
+      freq: '27.185',
+      feedId: 43789,
+      caption: 'Live Fraser Valley ham repeater — hauler corridor east of Vancouver.'
+    },
+    {
+      type: 'broadcastify',
+      label: 'FIRE DISP',
+      freq: '154.400',
+      feedId: 38213,
+      caption: 'Live Burnaby Fire dispatch on 154.4 MHz.'
+    },
+    {
+      type: 'broadcastify',
+      label: 'VE7RPT HAM',
+      freq: '146.940',
+      feedId: 33907,
+      caption: 'Live Lower Mainland amateur repeater hub.'
+    },
+    {
+      type: 'broadcastify',
+      label: 'FVARESS',
+      freq: '147.120',
+      feedId: 43789,
+      caption: 'Live VE7RVA Fraser Valley repeater network.'
+    }
+  ];
+
   var TRANSIT_CHANNELS = [
     {
       type: 'translink',
-      label: 'ST CH1 EXPO-W',
+      label: 'ST EXPO LINE',
       freq: '410.287',
-      match: function (a) { return /expo/i.test(a.route) || /expo line/i.test(a.header + a.text); }
-    },
-    {
-      type: 'translink',
-      label: 'ST CH2 EXPO-E',
-      freq: '410.288',
-      match: function (a) { return /expo/i.test(a.route) || /expo line/i.test(a.header + a.text); }
-    },
-    {
-      type: 'translink',
-      label: 'ST CH3 MIL-W',
-      freq: '410.062',
-      match: function (a) {
-        var hay = a.route + a.header + a.text;
-        return /millennium/i.test(hay) || /vcc-clark/i.test(hay) || /lafarge/i.test(hay);
-      }
-    },
-    {
-      type: 'translink',
-      label: 'ST CH4 MIL-E',
-      freq: '410.063',
-      match: function (a) {
-        var hay = a.route + a.header + a.text;
-        return /millennium/i.test(hay) || /vcc-clark/i.test(hay) || /lafarge/i.test(hay);
-      }
-    },
-    {
-      type: 'translink',
-      label: 'ST CH5 MAINT',
-      freq: '410.487',
-      match: function (a) { return a.group === 6 || /maintenance|escalator|elevator|out of service/i.test(a.header + a.text); }
+      match: function (a) { return /expo/i.test(a.route + a.header + a.text); }
     },
     {
       type: 'translink',
@@ -51,25 +59,20 @@
     },
     {
       type: 'translink',
-      label: 'ST SEABUS',
-      freq: '156.800',
-      match: function (a) { return /seabus/i.test(a.route + a.header + a.text); }
-    },
-    {
-      type: 'translink',
-      label: 'ST WCE',
-      freq: '161.475',
-      match: function (a) { return /west coast express/i.test(a.route + a.header + a.text); }
+      label: 'ST MILLENNIUM',
+      freq: '410.062',
+      match: function (a) { return /millennium|vcc-clark|lafarge/i.test(a.route + a.header + a.text); }
     }
   ];
 
   var STANDBY_CAPTION =
-    'SkyTrain voice ops are encrypted. This dial reads live TransLink service alerts.';
-  var SCAN_CAPTION = 'Tuning SkyTrain data bands…';
-  var ATTRIBUTION = ' Alert data: TransLink.';
+    'Live bands only. BC haulers use LADD VHF — scan locks to ham repeaters and fire dispatch.';
+  var SCAN_CAPTION = 'Sweeping live VHF bands…';
+  var ATTRIBUTION_TRANSIT = ' Alert data: TransLink.';
 
   var SCAN_MS = 1400;
-  var AUTO_SCAN_MS = 42000;
+  var AUTO_SCAN_MS = 50000;
+  var AUDIO_BIAS = 0.88;
 
   function pick(list) {
     return list[Math.floor(Math.random() * list.length)];
@@ -100,56 +103,25 @@
     return { ctx: ctx, gain: gain, source: source };
   }
 
-  function playSkytrainPass() {
-    try {
-      var ctx = new (window.AudioContext || window.webkitAudioContext)();
-      var duration = 2.2;
-      var now = ctx.currentTime;
-      var master = ctx.createGain();
-      master.gain.value = 0.22;
-      master.connect(ctx.destination);
-
-      function tone(freq, start, len, peak, type, pan) {
-        var osc = ctx.createOscillator();
-        var g = ctx.createGain();
-        var p = ctx.createStereoPanner();
-        osc.type = type || 'sawtooth';
-        osc.frequency.setValueAtTime(freq, start);
-        g.gain.setValueAtTime(0, start);
-        g.gain.linearRampToValueAtTime(peak, start + 0.2);
-        g.gain.linearRampToValueAtTime(peak * 0.7, start + len * 0.5);
-        g.gain.linearRampToValueAtTime(0, start + len);
-        p.pan.value = pan || 0;
-        osc.connect(g);
-        g.connect(p);
-        p.connect(master);
-        osc.start(start);
-        osc.stop(start + len + 0.05);
-      }
-
-      tone(58, now, duration, 0.04, 'sawtooth', -0.2);
-      tone(140, now + 0.05, duration * 0.9, 0.015, 'triangle', 0.15);
-      window.setTimeout(function () { ctx.close(); }, (duration + 1) * 1000);
-    } catch (e) { /* optional ambience */ }
-  }
-
   function HomeCityScanner(root) {
     this.root = root;
+    this.embedEl = root.querySelector('[data-scanner-embed]');
     this.freqEl = root.querySelector('[data-scanner-freq]');
     this.channelEl = root.querySelector('[data-scanner-channel]');
     this.captionEl = root.querySelector('[data-scanner-caption]');
     this.scanBtn = root.querySelector('[data-scanner-scan]');
     this.muteBtn = root.querySelector('[data-scanner-mute]');
     this.bars = root.querySelectorAll('[data-scanner-bar]');
-    this.channels = TRANSIT_CHANNELS.slice();
+    this.audioChannels = AUDIO_CHANNELS.slice();
+    this.transitChannels = TRANSIT_CHANNELS.slice();
     this.alerts = [];
     this.skytrainAlerts = [];
-    this.alertsLoaded = false;
     this.muted = false;
     this.scanning = false;
     this.static = null;
     this.autoTimer = null;
     this.current = null;
+    this.embedIframe = null;
     this.alertsUrl = (window.HomeCityScannerConfig && HomeCityScannerConfig.alertsUrl) || '/wp-json/se/v1/translink-alerts';
   }
 
@@ -173,6 +145,18 @@
     window.setTimeout(function () { self.scan(false); }, 1800);
   };
 
+  HomeCityScanner.prototype.pickChannel = function () {
+    var audio = this.audioChannels;
+    var transit = this.transitChannels;
+    if (audio.length && Math.random() < AUDIO_BIAS) {
+      return pick(audio);
+    }
+    if (transit.length) {
+      return pick(transit);
+    }
+    return pick(audio);
+  };
+
   HomeCityScanner.prototype.loadAlerts = function () {
     var self = this;
     fetch(this.alertsUrl, { credentials: 'same-origin' })
@@ -181,9 +165,8 @@
         if (!payload) return;
         self.alerts = Array.isArray(payload.alerts) ? payload.alerts : [];
         self.skytrainAlerts = Array.isArray(payload.skytrain) ? payload.skytrain : [];
-        self.alertsLoaded = true;
-        if (self.current && self.captionEl) {
-          self.captionEl.textContent = self.alertCaption(self.current) + ATTRIBUTION;
+        if (self.current && self.current.type === 'translink' && self.captionEl) {
+          self.captionEl.textContent = self.alertCaption(self.current) + ATTRIBUTION_TRANSIT;
         }
       })
       .catch(function () { /* standby copy only */ });
@@ -214,8 +197,15 @@
     if (alert.header && alert.text && alert.text !== alert.header) {
       line = alert.header + ' — ' + alert.text;
     }
-    if (line.length > 220) line = line.slice(0, 217) + '…';
+    if (line.length > 200) line = line.slice(0, 197) + '…';
     return line;
+  };
+
+  HomeCityScanner.prototype.channelCaption = function (channel) {
+    if (channel.type === 'translink') {
+      return this.alertCaption(channel) + ATTRIBUTION_TRANSIT;
+    }
+    return channel.caption || STANDBY_CAPTION;
   };
 
   HomeCityScanner.prototype.ensureStatic = function () {
@@ -242,6 +232,44 @@
     });
   };
 
+  HomeCityScanner.prototype.clearEmbed = function () {
+    if (this.embedIframe) {
+      this.embedIframe.remove();
+      this.embedIframe = null;
+    }
+    if (this.embedEl) {
+      this.embedEl.hidden = true;
+      this.embedEl.innerHTML = '';
+    }
+    this.root.classList.remove('is-audio-live');
+  };
+
+  HomeCityScanner.prototype.playBroadcastify = function (channel) {
+    if (!this.embedEl || !channel.feedId || this.muted) return;
+
+    this.clearEmbed();
+    this.embedEl.hidden = false;
+    this.root.classList.add('is-audio-live');
+
+    var iframe = document.createElement('iframe');
+    iframe.className = 'home-city-scanner__iframe';
+    iframe.title = channel.label + ' live feed';
+    iframe.setAttribute(
+      'src',
+      'https://api.broadcastify.com/embed/player/?feedId=' + encodeURIComponent(String(channel.feedId))
+    );
+    iframe.setAttribute('allow', 'autoplay');
+    iframe.setAttribute('loading', 'lazy');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+
+    this.embedEl.appendChild(iframe);
+    this.embedIframe = iframe;
+  };
+
+  HomeCityScanner.prototype.stopAudio = function () {
+    this.clearEmbed();
+  };
+
   HomeCityScanner.prototype.updateDisplay = function (channel, scanning, caption) {
     if (this.freqEl) this.freqEl.textContent = formatFreq(channel.freq || '0');
     if (this.channelEl) {
@@ -254,14 +282,16 @@
     this.root.classList.toggle('is-scanning', scanning);
     this.root.classList.toggle('is-locked', !scanning);
     this.root.classList.toggle('is-translink', channel.type === 'translink');
+    this.root.classList.toggle('is-broadcastify', channel.type === 'broadcastify');
   };
 
   HomeCityScanner.prototype.scan = function (userInitiated) {
     var self = this;
     if (this.scanning) return;
     this.scanning = true;
+    this.stopAudio();
     this.updateDisplay(
-      { label: 'SCANNING…', freq: this.freqEl ? this.freqEl.textContent : '000.000', type: 'translink' },
+      { label: 'SCANNING…', freq: this.freqEl ? this.freqEl.textContent : '000.000', type: 'broadcastify' },
       true,
       SCAN_CAPTION
     );
@@ -270,15 +300,17 @@
     if (!this.muted) this.setStatic(0.22);
 
     window.setTimeout(function () {
-      var channel = pick(self.channels);
+      var channel = self.pickChannel();
       self.current = channel;
       self.scanning = false;
       self.setStatic(0);
-      var caption = self.alertCaption(channel) + ATTRIBUTION;
+      var caption = self.channelCaption(channel);
       self.updateDisplay(channel, false, caption);
       self.setBars(!self.muted);
 
-      if (!self.muted) playSkytrainPass();
+      if (!self.muted && channel.type === 'broadcastify') {
+        self.playBroadcastify(channel);
+      }
 
       if (userInitiated && self.scanBtn) {
         self.scanBtn.textContent = 'LOCKED';
@@ -295,12 +327,16 @@
     }
     if (this.muted) {
       this.setStatic(0);
+      this.stopAudio();
       this.setBars(false);
       if (this.captionEl) {
-        this.captionEl.textContent = 'Muted. Hit SCAN to read live SkyTrain alerts.';
+        this.captionEl.textContent = 'Muted. Hit SCAN to tune a live channel.';
       }
     } else if (this.current) {
       this.setBars(true);
+      if (this.current.type === 'broadcastify') {
+        this.playBroadcastify(this.current);
+      }
     }
   };
 
