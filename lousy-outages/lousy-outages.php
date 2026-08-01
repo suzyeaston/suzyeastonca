@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.5.4
+ * Version: 0.5.5
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.5.4' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.5.5' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -225,10 +225,43 @@ function lousy_outages_upgrade_032_runtime(): void {
     delete_option( 'lousy_outages_refresh_runtime' );
     lousy_outages_schedule_canonical_refresh();
 }
+/**
+ * Create/repair storage the plugin needs at runtime.
+ *
+ * The plugin ships as a folder that gets replaced in place, so the activation hook
+ * usually never fires again after the first install. Anything schema-shaped therefore
+ * has to be reconciled on load, or the history table silently stays missing and every
+ * incident write is dropped on the floor.
+ */
+function lousy_outages_maybe_install_storage(): void {
+    if ( ! class_exists( '\\SuzyEaston\\LousyOutages\\Storage\\HistoryStore' ) ) {
+        return;
+    }
+
+    $store = new \SuzyEaston\LousyOutages\Storage\HistoryStore();
+    if ( ! $store->tableExists() ) {
+        $store->installTable();
+    }
+    if ( ! $store->tableExists() ) {
+        return;
+    }
+
+    if ( get_option( 'lousy_outages_history_table_seeded' ) ) {
+        return;
+    }
+    $imported = $store->importLegacyOptions();
+    update_option(
+        'lousy_outages_history_table_seeded',
+        [ 'completed_at' => gmdate( 'c' ), 'imported' => $imported ],
+        false
+    );
+}
+
 add_action( 'init', static function (): void {
     if ( version_compare( (string) get_option( 'lousy_outages_runtime_version', '0.0.0' ), LOUSY_OUTAGES_VERSION, '<' ) ) {
         lousy_outages_upgrade_032_runtime();
     }
+    lousy_outages_maybe_install_storage();
 }, 3 );
 function lousy_outages_refresh_official_providers( bool $bypass_cache = true ): array {
     return CanonicalPipeline::run();
@@ -789,10 +822,13 @@ function lousy_outages_current_state_from_snapshot( array $snapshot ): array {
     $now = time();
     $fresh_window = lousy_outages_signal_freshness_seconds();
     $outages = [];
+    $long_running = [];
+    $long_running_providers = [];
     $signals = [];
     $unverified = [];
     $operational = [];
     $current_provider_ids = [];
+    $long_running_provider_ids = [];
     foreach ( $providers as $provider ) {
         if ( ! is_array( $provider ) ) { continue; }
         $provider_id = sanitize_key( (string) ( $provider['id'] ?? $provider['provider'] ?? $provider['name'] ?? '' ) );
@@ -812,17 +848,34 @@ function lousy_outages_current_state_from_snapshot( array $snapshot ): array {
             $unverified[] = $provider;
             continue;
         }
-        $current_incidents = class_exists( '\\SuzyEaston\\LousyOutages\\Summary' ) ? \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider( $provider ) : (array) ( $provider['incidents'] ?? [] );
+        $has_summary_class = class_exists( '\\SuzyEaston\\LousyOutages\\Summary' );
+        $current_incidents = $has_summary_class ? \SuzyEaston\LousyOutages\Summary::current_incidents_for_provider( $provider ) : (array) ( $provider['incidents'] ?? [] );
+        $advisory_incidents = $has_summary_class ? \SuzyEaston\LousyOutages\Summary::long_running_incidents_for_provider( $provider ) : [];
+        $decorate_incident = static function ( array $incident ) use ( $provider, $provider_id ): array {
+            $incident['provider_id'] = $provider_id;
+            $incident['provider'] = (string) ( $provider['name'] ?? $provider['provider'] ?? $provider_id );
+            $incident['provider_url'] = (string) ( $provider['url'] ?? $provider['link'] ?? '' );
+            return $incident;
+        };
         foreach ( $current_incidents as $incident ) {
             if ( ! is_array( $incident ) ) { continue; }
-            $record = $incident;
-            $record['provider_id'] = $provider_id;
-            $record['provider'] = (string) ( $provider['name'] ?? $provider['provider'] ?? $provider_id );
-            $record['provider_url'] = (string) ( $provider['url'] ?? $provider['link'] ?? '' );
-            $outages[] = $record;
+            $outages[] = $decorate_incident( $incident );
             if ( '' !== $provider_id ) { $current_provider_ids[] = $provider_id; }
         }
+        foreach ( $advisory_incidents as $incident ) {
+            if ( ! is_array( $incident ) ) { continue; }
+            $long_running[] = $decorate_incident( $incident );
+            if ( '' !== $provider_id ) { $long_running_provider_ids[] = $provider_id; }
+        }
         if ( $current_incidents ) { continue; }
+        if ( $advisory_incidents ) {
+            $provider['lane'] = 'long_running';
+            $provider['tile_kind'] = 'advisory';
+            $provider['advisory_count'] = count( $advisory_incidents );
+            $provider['long_running_incidents'] = $advisory_incidents;
+            $long_running_providers[] = $provider;
+            continue;
+        }
         $tile_kind = strtolower( (string) ( $provider['tile_kind'] ?? $provider['tileKind'] ?? '' ) );
         $ts = lousy_outages_provider_timestamp( $provider );
         $fresh = $ts > 0 && ( $now - $ts ) <= $fresh_window;
@@ -837,17 +890,22 @@ function lousy_outages_current_state_from_snapshot( array $snapshot ): array {
     }
     return [
         'outages' => array_values( $outages ),
+        'long_running' => array_values( $long_running ),
+        'long_running_providers' => array_values( $long_running_providers ),
         'signals' => array_values( $signals ),
         'unverified' => array_values( $unverified ),
         'operational' => array_values( $operational ),
         'meta' => [
             'active_outage_count' => count( $outages ),
+            'long_running_count' => count( $long_running ),
             'signal_count' => count( $signals ),
             'unverified_count' => count( $unverified ),
             'operational_count' => count( $operational ),
             'generated_at' => gmdate( 'c' ),
             'freshness_window_seconds' => $fresh_window,
+            'active_incident_window_seconds' => class_exists( '\\SuzyEaston\\LousyOutages\\Summary' ) ? \SuzyEaston\LousyOutages\Summary::active_window_seconds() : 2 * DAY_IN_SECONDS,
             'current_official_provider_ids' => array_values( array_unique( $current_provider_ids ) ),
+            'long_running_provider_ids' => array_values( array_unique( $long_running_provider_ids ) ),
         ],
     ];
 }

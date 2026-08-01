@@ -6,6 +6,24 @@ namespace SuzyEaston\LousyOutages;
 use SuzyEaston\LousyOutages\Storage\IncidentStore;
 
 class Summary {
+    /** Default cut-off after which an unresolved incident stops counting as "happening now". */
+    public const ACTIVE_WINDOW = 2 * DAY_IN_SECONDS;
+
+    /** Default cut-off after which an unresolved incident is dropped from the board entirely. */
+    public const ADVISORY_WINDOW = 180 * DAY_IN_SECONDS;
+
+    public static function active_window_seconds(): int
+    {
+        $window = (int) apply_filters('lo_active_incident_window', self::ACTIVE_WINDOW);
+        return max(HOUR_IN_SECONDS, $window);
+    }
+
+    public static function advisory_window_seconds(): int
+    {
+        $window = (int) apply_filters('lo_advisory_incident_window', self::ADVISORY_WINDOW);
+        return max(self::active_window_seconds(), $window);
+    }
+
     public static function current(): array {
         $providers = self::providers();
         $latestIncident = self::latest_incident($providers);
@@ -111,26 +129,78 @@ class Summary {
 
     public static function current_incidents_for_provider(array $provider): array
     {
+        return self::incidents_for_provider_by_lane($provider, 'active');
+    }
+
+    /**
+     * Unresolved incidents the provider has not updated inside the active window.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function long_running_incidents_for_provider(array $provider): array
+    {
+        return self::incidents_for_provider_by_lane($provider, 'long_running');
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function incidents_for_provider_by_lane(array $provider, string $lane): array
+    {
         $incidents = isset($provider['incidents']) && is_array($provider['incidents']) ? array_values(array_filter($provider['incidents'], 'is_array')) : [];
-        $current = array_values(array_filter($incidents, static function (array $incident): bool {
-            return self::is_current_official_incident($incident);
-        }));
-        usort($current, static function (array $left, array $right): int { return self::incident_timestamp($right) <=> self::incident_timestamp($left); });
-        return $current;
+        $matched = [];
+        foreach ($incidents as $incident) {
+            if (self::classify_incident($incident) !== $lane) { continue; }
+            $incident['incident_lane'] = $lane;
+            $incident['is_long_running'] = ('long_running' === $lane);
+            $matched[] = $incident;
+        }
+        usort($matched, static function (array $left, array $right): int { return self::incident_timestamp($right) <=> self::incident_timestamp($left); });
+        return $matched;
+    }
+
+    /**
+     * Bucket an official incident record by how recently the provider spoke about it.
+     *
+     * Providers routinely leave regional advisories open for months. Those are worth
+     * showing, but treating them as "happening right now" makes the board lie, so
+     * anything without a fresh official update drops to the long-running lane.
+     *
+     * @return string One of active|long_running|closed
+     */
+    public static function classify_incident(array $incident, ?int $now = null): string
+    {
+        $now = $now ?? time();
+        if (!self::is_unresolved_incident($incident)) { return 'closed'; }
+
+        $updated = self::incident_timestamp($incident);
+        if (null === $updated || $updated <= 0) {
+            // No usable timestamp: trust the lifecycle wording rather than guessing an age.
+            return self::has_ongoing_language($incident) ? 'active' : 'closed';
+        }
+
+        $age = $now - $updated;
+        if ($age <= self::active_window_seconds()) { return 'active'; }
+        if ($age <= self::advisory_window_seconds() && self::has_ongoing_language($incident)) { return 'long_running'; }
+        return 'closed';
     }
 
     public static function is_current_official_incident(array $incident, ?int $now = null): bool
     {
-        $now = $now ?? time();
-        if (!self::is_unresolved_incident($incident)) { return false; }
+        return 'active' === self::classify_incident($incident, $now);
+    }
+
+    private static function has_ongoing_language(array $incident): bool
+    {
         $status = strtolower((string) ($incident['status'] ?? $incident['impact'] ?? ''));
-        $text = strtolower((string)($incident['title'] ?? '') . ' ' . (string)($incident['name'] ?? '') . ' ' . (string)($incident['summary'] ?? '') . ' ' . (string)($incident['eta'] ?? ''));
-        $ongoing = in_array($status, ['investigating','identified','monitoring','ongoing'], true)
-            || preg_match('/\b(investigating|identified|monitoring|ongoing|continues?|continuing|currently|still experiencing|working to resolve|recovery is expected|unresolved)\b/i', $text);
-        $updated = self::incident_timestamp($incident);
-        $ageWindow = 7 * DAY_IN_SECONDS;
-        if ($updated && ($now - $updated) <= $ageWindow) { return true; }
-        return (bool) $ongoing;
+        if (in_array($status, ['investigating', 'identified', 'monitoring', 'ongoing', 'outage', 'major', 'degraded'], true)) { return true; }
+        $text = strtolower(
+            (string) ($incident['title'] ?? '') . ' '
+            . (string) ($incident['name'] ?? '') . ' '
+            . (string) ($incident['summary'] ?? '') . ' '
+            . (string) ($incident['eta'] ?? '')
+        );
+        return 1 === preg_match('/\b(investigating|identified|monitoring|ongoing|continues?|continuing|currently|still experiencing|working to resolve|recovery is expected|unresolved)\b/i', $text);
     }
 
     /**

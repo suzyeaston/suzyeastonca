@@ -28,8 +28,8 @@ function lousy_outages_get_current_state(): array {
     $schema = defined('LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION') ? (int) LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION : 0;
     $version = defined('LOUSY_OUTAGES_VERSION') ? (string) LOUSY_OUTAGES_VERSION : '';
     $base = [
-        'outages' => [], 'signals' => [], 'unverified' => [], 'operational' => [], 'providers' => [],
-        'meta' => ['active_outage_count'=>0,'affected_provider_count'=>0,'signal_count'=>0,'unverified_count'=>0,'operational_count'=>0,'generated_at'=>gmdate('c'),'freshness_window_seconds'=>function_exists('lousy_outages_signal_freshness_seconds') ? lousy_outages_signal_freshness_seconds() : 2700,'current_official_provider_ids'=>[]],
+        'outages' => [], 'long_running' => [], 'long_running_providers' => [], 'signals' => [], 'unverified' => [], 'operational' => [], 'providers' => [],
+        'meta' => ['active_outage_count'=>0,'affected_provider_count'=>0,'long_running_count'=>0,'signal_count'=>0,'unverified_count'=>0,'operational_count'=>0,'generated_at'=>gmdate('c'),'freshness_window_seconds'=>function_exists('lousy_outages_signal_freshness_seconds') ? lousy_outages_signal_freshness_seconds() : 2700,'current_official_provider_ids'=>[],'long_running_provider_ids'=>[]],
         'fetched_at' => '', 'source' => 'missing_snapshot', 'errors' => [], 'plugin_version' => $version, 'snapshot_schema_version' => $schema,
     ];
     if (!is_array($snapshot) || empty($snapshot['providers']) || (function_exists('lousy_outages_snapshot_schema_is_current') && !lousy_outages_snapshot_schema_is_current($snapshot))) {
@@ -49,10 +49,10 @@ function lousy_outages_get_current_state(): array {
     $stored_count = (int)($stored_state['meta']['active_outage_count'] ?? count((array)($stored_state['outages'] ?? [])));
     $derived_count = count((array)($derived_state['outages'] ?? []));
     $state = $stored_state;
-    if (!$state || $stored_count !== $derived_count || $stored_outage_ids !== $derived_outage_ids) {
+    if (!$state || !array_key_exists('long_running', $stored_state) || $stored_count !== $derived_count || $stored_outage_ids !== $derived_outage_ids) {
         $state = $derived_state;
     }
-    foreach (['outages','signals','unverified','operational'] as $lane) { $base[$lane] = array_values(array_filter((array)($state[$lane] ?? []), 'is_array')); }
+    foreach (['outages','long_running','long_running_providers','signals','unverified','operational'] as $lane) { $base[$lane] = array_values(array_filter((array)($state[$lane] ?? []), 'is_array')); }
     $base['providers'] = array_values(array_filter((array)($snapshot['providers'] ?? []), 'is_array'));
     $base['fetched_at'] = (string)($snapshot['fetched_at'] ?? '');
     $base['source'] = (string)($snapshot['source'] ?? 'snapshot');
@@ -76,5 +76,9 @@ function lousy_outages_get_current_state(): array {
     $base['meta']['signal_count'] = count($base['signals']);
     $base['meta']['unverified_count'] = count($base['unverified']);
     $base['meta']['operational_count'] = count($base['operational']);
+    $base['meta']['long_running_count'] = count($base['long_running']);
+    $base['meta']['long_running_provider_ids'] = array_values(array_unique(array_filter(array_map(static function ($incident): string {
+        return is_array($incident) ? sanitize_key((string)($incident['provider_id'] ?? $incident['provider'] ?? '')) : '';
+    }, $base['long_running']))));
     return $base;
 }

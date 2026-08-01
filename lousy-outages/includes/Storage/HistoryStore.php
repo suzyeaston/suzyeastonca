@@ -80,6 +80,44 @@ class HistoryStore
         return $normalized;
     }
 
+    /**
+     * Copy option-backed legacy history into the events table.
+     *
+     * Years of incidents were parked in the pre-table options and were invisible to the
+     * public history panel because every read path now goes through the table.
+     *
+     * @return int Number of rows written.
+     */
+    public function importLegacyOptions(int $limit = 5000): int
+    {
+        if (!$this->tableExists()) { return 0; }
+
+        // Only the rich event logs are worth importing. lousy_outages_history and
+        // lousy_outages_log are per-poll status pings ("Status reported: Operational"),
+        // which would bury real incidents under thousands of non-events.
+        $rows = [];
+        foreach (['lo_event_log', self::OPTION_CANONICAL] as $option) {
+            $stored = get_option($option, []);
+            if (!is_array($stored)) { continue; }
+            foreach ($stored as $row) {
+                if (is_array($row)) { $rows[] = self::normalizeRichEvent($row); }
+            }
+        }
+
+        $events = self::dedupeEvents($rows);
+        if (!$events) { return 0; }
+
+        $written = 0;
+        foreach ($events as $event) {
+            if ($written >= max(1, $limit)) { break; }
+            if (!is_array($event) || empty($event['first_seen'])) { continue; }
+            if (in_array((string) $event['status'], ['operational', 'ok', 'none', 'resolved'], true)) { continue; }
+            $this->addEvent($event);
+            $written++;
+        }
+        return $written;
+    }
+
     public function migrationStatus(): array
     {
         $marker = get_option(self::OPTION_MARKER, []);
