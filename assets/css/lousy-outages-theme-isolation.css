@@ -1,23 +1,33 @@
-/* Loaded after the page and plugin styles to isolate service-card prose. */
-.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__diagnostic,
-.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__diagnostic p,
-.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__footer,
-.lousy-outages-page .lousy-outages .lo-service-card .lo-service-card__footer p {
-    background: transparent !important;
-    font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-    font-style: normal !important;
-    letter-spacing: normal !important;
-    text-align: left !important;
-    text-transform: none !important;
-    white-space: normal !important;
-    writing-mode: horizontal-tb !important;
+/*
+ * Loaded last on the Lousy Outages page.
+ *
+ * The retro arcade theme paints headings, buttons and table cells globally. The board
+ * has its own type scale and palette, so it opts out of the theme's decoration here.
+ */
+
+.lousy-outages-page .lox :where(h1, h2, h3, h4, p, dt, dd, th, td, li, caption, legend, label, span) {
+    font-family: inherit;
+    font-style: normal;
+    letter-spacing: inherit;
+    text-align: inherit;
+    text-transform: none;
+    text-shadow: none;
+    background-image: none;
+    writing-mode: horizontal-tb;
 }
 
-.lousy-outages-page .lousy-outages .lo-service-card__diagnostic,
-.lousy-outages-page .lousy-outages .lo-service-card__diagnostic p,
-.lousy-outages-page .lousy-outages .lo-service-card__footer p {
-    max-width: 100%;
-    min-width: 0;
-    overflow-wrap: anywhere;
-    word-break: normal;
+.lousy-outages-page .lox :where(button, input, select, textarea) {
+    font-family: inherit;
+    text-transform: none;
+    letter-spacing: normal;
+    box-shadow: none;
+    image-rendering: auto;
+}
+
+.lousy-outages-page .lox :where(table, th, td) {
+    background-image: none;
+}
+
+.lousy-outages-page .lox :where(a) {
+    text-shadow: none;
 }

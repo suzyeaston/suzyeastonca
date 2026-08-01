@@ -3,7 +3,6 @@
 get_header();
 
 $sub_status = isset($_GET['sub']) ? sanitize_key(wp_unslash($_GET['sub'])) : '';
-$cookie_status = '';
 if (isset($_COOKIE['lo_sub_msg'])) {
     $cookie_status = sanitize_key(wp_unslash($_COOKIE['lo_sub_msg']));
     if ('' === $sub_status && '' !== $cookie_status) {
@@ -13,81 +12,56 @@ if (isset($_COOKIE['lo_sub_msg'])) {
         setcookie('lo_sub_msg', '', time() - HOUR_IN_SECONDS, '/', '', is_ssl(), false);
     }
 }
-$banner        = '';
-$tone          = 'info';
-$unsub_success = 0;
-if (isset($_GET['lo_unsub_success'])) {
-    $unsub_success = absint(wp_unslash($_GET['lo_unsub_success']));
-}
 
-if ($unsub_success) {
-    $banner = 'You’re unsubscribed from Lousy Outages alerts.';
-    $tone   = 'success';
+$banner = '';
+$tone   = 'info';
+
+if (isset($_GET['lo_unsub_success']) && absint(wp_unslash($_GET['lo_unsub_success']))) {
+    $banner = 'Done. No more alerts.';
+    $tone   = 'ok';
 } else {
     switch ($sub_status) {
         case 'confirmed':
-            $banner = "You’re in. Outage alerts will start landing soon.";
-            $tone   = 'success';
+            $banner = 'You’re in. Alerts start with the next incident.';
+            $tone   = 'ok';
             break;
         case 'check-email':
-            $banner = 'Check your inbox for the confirmation link. The machine needs one more click.';
+            $banner = 'Check your inbox. One more click and you’re on the list.';
             $tone   = 'info';
             break;
         case 'invalid':
-            $banner = 'That link is invalid or has expired. Please try subscribing again.';
+            $banner = 'That link is dead. Sign up again.';
             $tone   = 'error';
             break;
         case 'unsubscribed':
-            $banner = "You’re unsubscribed from Lousy Outages alerts.";
-            $tone   = 'warning';
+            $banner = 'Done. No more alerts.';
+            $tone   = 'warn';
             break;
     }
 }
 ?>
 
 <main class="lousy-outages-page">
-  <div class="lousy-outages-root">
-    <div class="lo-atmosphere">
-      <h1 class="retro-title glow-lite">Lousy Outages</h1>
-      <p class="lo-atmosphere__kicker">Checking status pages from Waterfront to the cloud.</p>
-      <p class="lo-atmosphere__lede">Plain-language outage intelligence for AI, cloud and creative tools, with official updates, recent history, monitored services, alerts and community reports in one Vancouver-built view.</p>
-    </div>
+  <div class="lox-page">
+    <header class="lox-page__intro">
+      <h1 class="lox-page__title">LOUSY OUTAGES</h1>
+      <p class="lox-page__tagline">Official status pages, read for you every 15 minutes. No spin, no vibes.</p>
+    </header>
+
     <?php if ($banner) : ?>
-      <div class="lo-banner lo-banner--<?php echo esc_attr($tone); ?>">
-        <p><?php echo esc_html($banner); ?></p>
-      </div>
+      <p class="lox-page__banner lox-page__banner--<?php echo esc_attr($tone); ?>"><?php echo esc_html($banner); ?></p>
     <?php endif; ?>
-    <section class="lo-status-board">
-      <div class="lo-status-board__frame">
-        <header class="lo-status-board__header">
-          <div class="lo-status-board__lights" aria-hidden="true">
-            <span class="lo-led lo-led--green"></span>
-            <span class="lo-led lo-led--amber"></span>
-            <span class="lo-led lo-led--red"></span>
-          </div>
-          <div class="lo-status-board__titles">
-            <p class="lo-status-board__eyebrow">Status receipts console</p>
-            <h2 class="lo-status-board__title">Current service incidents</h2>
-          </div>
-          <div class="lo-status-board__badge" aria-hidden="true">Standalone plugin beta</div>
-        </header>
-        <div class="lo-status-board__body">
-          <div class="lo-scanline" aria-hidden="true"></div>
-          <?php echo do_shortcode('[lousy_outages]'); ?>
-        </div>
-      </div>
-    </section>
-    <section class="lo-upgrade-callout">
-      <p class="lo-status-board__eyebrow">make the robot remember</p>
-      <h2>Watch the providers that wreck your day.</h2>
-      <p>The dashboard, history, RSS and basic email stay free. Pro adds watchlists, filters and a proper alert destination.</p>
-      <a class="lo-product-button" data-lo-upgrade href="<?php echo esc_url(home_url('/lousy-outages/pricing/')); ?>">See plans</a>
-    </section>
-        <?php echo do_shortcode('[lousy_outages_report]'); ?>
-    <footer class="lo-support">
-      <p class="lo-support__lead">Support the independent status monitor and the infrastructure behind it:</p>
-      <p><a class="lo-link" href="https://buymeacoffee.com/wi0amge" target="_blank" rel="noopener noreferrer">Support this project</a></p>
-      <p class="lo-support__note">Thanks for fueling the weird little status machine.</p>
+
+    <?php echo do_shortcode('[lousy_outages]'); ?>
+    <?php echo do_shortcode('[lousy_outages_report]'); ?>
+    <?php echo do_shortcode('[lousy_outages_subscribe]'); ?>
+
+    <footer class="lox-page__foot">
+      <p>Built in Vancouver. Runs on the providers' own feeds — nothing scraped, nothing guessed.</p>
+      <p>
+        <a href="<?php echo esc_url(home_url('/lousy-outages/pricing/')); ?>">Watchlists and alert routing</a>
+        · <a href="https://buymeacoffee.com/wi0amge" target="_blank" rel="noopener noreferrer">Keep the machine running</a>
+      </p>
     </footer>
   </div>
 </main>

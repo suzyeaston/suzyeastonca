@@ -123,6 +123,7 @@ lousy_outages_require( 'includes/AdminCleanup.php' );
 lousy_outages_require( 'includes/AdminDiagnostics.php' );
 lousy_outages_require( 'includes/ProviderPages.php' );
 
+lousy_outages_require( 'public/board.php' );
 lousy_outages_require( 'public/shortcode.php' );
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
