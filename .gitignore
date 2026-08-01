@@ -1,5 +1,7 @@
 .env
 .env.*
+!.env.example
+.env.deploy.local
 wp-config.php
 local-config.php
 secrets.php
