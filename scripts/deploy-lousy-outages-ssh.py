@@ -34,6 +34,7 @@ THEME_FILES = [
     "parts/home-yvr-ascii-art.php",
     "parts/lousy-outages-teaser.php",
     "assets/css/home-hero-cabinet.css",
+    "js/home-city-scanner.js",
     "assets/css/lousy-outages-page.css",
     "assets/css/lousy-outages-theme-isolation.css",
     "assets/css/lousy-outages-teaser.css",
