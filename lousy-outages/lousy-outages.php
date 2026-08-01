@@ -829,6 +829,7 @@ function lousy_outages_current_state_from_snapshot( array $snapshot ): array {
     $operational = [];
     $current_provider_ids = [];
     $long_running_provider_ids = [];
+    $annotated = [];
     foreach ( $providers as $provider ) {
         if ( ! is_array( $provider ) ) { continue; }
         $provider_id = sanitize_key( (string) ( $provider['id'] ?? $provider['provider'] ?? $provider['name'] ?? '' ) );
@@ -840,12 +841,14 @@ function lousy_outages_current_state_from_snapshot( array $snapshot ): array {
             $provider['lane'] = 'unverified';
             $provider['stale_label'] = $is_stale ? 'Delayed provider data' : 'Could not verify provider status';
             $unverified[] = $provider;
+            $annotated[] = $provider;
             continue;
         }
         if ( $is_stale ) {
             $provider['lane'] = 'unverified';
             $provider['stale_label'] = 'Delayed provider data; showing bounded last-known-good context.';
             $unverified[] = $provider;
+            $annotated[] = $provider;
             continue;
         }
         $has_summary_class = class_exists( '\\SuzyEaston\\LousyOutages\\Summary' );
@@ -867,13 +870,27 @@ function lousy_outages_current_state_from_snapshot( array $snapshot ): array {
             $long_running[] = $decorate_incident( $incident );
             if ( '' !== $provider_id ) { $long_running_provider_ids[] = $provider_id; }
         }
-        if ( $current_incidents ) { continue; }
+        if ( $current_incidents ) {
+            $provider['lane'] = 'outages';
+            $provider['active_incident_count'] = count( $current_incidents );
+            $provider['long_running_incidents'] = $advisory_incidents;
+            $annotated[] = $provider;
+            continue;
+        }
         if ( $advisory_incidents ) {
+            // The provider still calls these open, but it stopped updating them, so the
+            // tile must not read like a live outage.
+            $latest_advisory = $advisory_incidents[0];
             $provider['lane'] = 'long_running';
             $provider['tile_kind'] = 'advisory';
+            $provider['state'] = 'Advisory';
+            $provider['stateCode'] = 'advisory';
+            $provider['sort_key'] = 35;
             $provider['advisory_count'] = count( $advisory_incidents );
             $provider['long_running_incidents'] = $advisory_incidents;
+            $provider['summary'] = (string) ( $latest_advisory['display_title'] ?? $latest_advisory['title'] ?? $provider['summary'] ?? 'Open advisory with no recent official update.' );
             $long_running_providers[] = $provider;
+            $annotated[] = $provider;
             continue;
         }
         $tile_kind = strtolower( (string) ( $provider['tile_kind'] ?? $provider['tileKind'] ?? '' ) );
@@ -887,8 +904,10 @@ function lousy_outages_current_state_from_snapshot( array $snapshot ): array {
             $provider['lane'] = 'operational';
             $operational[] = $provider;
         }
+        $annotated[] = $provider;
     }
     return [
+        'providers' => array_values( $annotated ),
         'outages' => array_values( $outages ),
         'long_running' => array_values( $long_running ),
         'long_running_providers' => array_values( $long_running_providers ),

@@ -53,7 +53,10 @@ function lousy_outages_get_current_state(): array {
         $state = $derived_state;
     }
     foreach (['outages','long_running','long_running_providers','signals','unverified','operational'] as $lane) { $base[$lane] = array_values(array_filter((array)($state[$lane] ?? []), 'is_array')); }
-    $base['providers'] = array_values(array_filter((array)($snapshot['providers'] ?? []), 'is_array'));
+    // Prefer the lane-annotated provider tiles: they carry the reconciled state for
+    // providers whose only open incidents have gone quiet.
+    $annotated_providers = array_values(array_filter((array)($state['providers'] ?? []), 'is_array'));
+    $base['providers'] = $annotated_providers ?: array_values(array_filter((array)($snapshot['providers'] ?? []), 'is_array'));
     $base['fetched_at'] = (string)($snapshot['fetched_at'] ?? '');
     $base['source'] = (string)($snapshot['source'] ?? 'snapshot');
     $base['errors'] = array_values((array)($snapshot['errors'] ?? []));
