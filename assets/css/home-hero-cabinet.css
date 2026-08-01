@@ -38,39 +38,39 @@
 .home-amp-cabinet .home-arcade-screen__backdrop {
   position: relative;
   z-index: 1;
-  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.45rem;
+  min-height: 100%;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(87, 243, 255, 0.22);
-  background: linear-gradient(180deg, rgba(2, 8, 18, 0.4), rgba(0, 0, 0, 0.75));
+  background:
+    radial-gradient(circle at 30% 18%, rgba(87, 243, 255, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(2, 8, 18, 0.55), rgba(0, 0, 0, 0.88));
+}
+
+.home-yvr-ascii {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: clamp(0.35rem, 1vw, 0.55rem) clamp(0.25rem, 0.8vw, 0.45rem) 0;
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: clamp(0.44rem, 0.92vw, 0.58rem);
+  line-height: 1.14;
+  letter-spacing: 0.02em;
+  white-space: pre;
+  overflow: hidden;
+  user-select: none;
+  background: linear-gradient(180deg, rgba(57, 255, 20, 0.92) 0%, #57f3ff 38%, #8fdcff 62%, rgba(255, 230, 109, 0.88) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 12px rgba(87, 243, 255, 0.22));
 }
 
 .home-amp-cabinet .home-arcade-vancouver {
-  position: absolute;
-  inset: auto 0 0;
-  width: 100%;
-  height: clamp(110px, 38%, 168px);
-  opacity: 0.92;
-  filter: drop-shadow(0 -4px 18px rgba(87, 243, 255, 0.2));
-}
-
-.home-amp-cabinet .home-arcade-vancouver__mountains {
-  fill: rgba(6, 18, 36, 0.95);
-  stroke: rgba(87, 243, 255, 0.45);
-}
-
-.home-amp-cabinet .home-arcade-vancouver__city {
-  fill: rgba(1, 4, 10, 0.98);
-  stroke: rgba(57, 255, 20, 0.35);
-}
-
-.home-amp-cabinet .home-arcade-vancouver__sails {
-  fill: rgba(232, 255, 243, 0.88);
-  stroke: rgba(87, 243, 255, 0.8);
-}
-
-.home-amp-cabinet .home-arcade-vancouver__water {
-  stroke: rgba(87, 243, 255, 0.65);
+  display: none !important;
 }
 
 /* Hide Miami-noir leftovers */
@@ -82,11 +82,11 @@
 }
 
 .home-amp-stack {
-  position: absolute;
-  left: clamp(0.5rem, 2vw, 1rem);
-  bottom: clamp(0.35rem, 1.2vw, 0.75rem);
-  z-index: 3;
-  width: min(46%, 220px);
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 220px;
+  margin: 0 auto 0 clamp(0.25rem, 1vw, 0.5rem);
   display: grid;
   gap: 0.35rem;
 }
