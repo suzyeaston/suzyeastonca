@@ -28,9 +28,13 @@ THEME_DIR = f"{HOME}/public_html/wp-content/themes/suzyeastonca-main"
 # Theme files the board renders inside. Keep this list tight: the whole repo is the
 # theme, but only these files affect the Lousy Outages page.
 THEME_FILES = [
+    "functions.php",
     "page-lousy-outages.php",
+    "parts/lousy-outages-teaser.php",
     "assets/css/lousy-outages-page.css",
     "assets/css/lousy-outages-theme-isolation.css",
+    "assets/css/lousy-outages-teaser.css",
+    "assets/js/lousy-outages-teaser.js",
 ]
 
 
@@ -62,9 +66,9 @@ def run(client, cmd: str, timeout: int = 300) -> int:
 
 
 def deploy_plugin(client, sftp, stamp: str) -> None:
-    if not ZIP.is_file() and DIST_ZIP.is_file():
+    if DIST_ZIP.is_file():
         ZIP.write_bytes(DIST_ZIP.read_bytes())
-    if not ZIP.is_file():
+    elif not ZIP.is_file():
         raise SystemExit(f"Build ZIP missing: {ZIP}. Run scripts/build-lousy-outages-release.sh first.")
 
     print(f"Uploading plugin zip ({ZIP.stat().st_size} bytes)...")

@@ -1,20 +1,67 @@
-#lousy-outages-teaser.lo-home-teaser{--lo-cyan:#57f3ff;--lo-pink:#ff4fd8;--lo-yellow:#ffe66d;--lo-green:#39ff14;--lo-panel:rgba(3,7,19,.86);box-sizing:border-box;display:block;width:min(100% - 2rem,980px);height:auto;max-height:none;min-height:0;overflow:visible;margin:1.35rem auto;padding:clamp(.85rem,2vw,1.15rem);border:1px solid rgba(87,243,255,.72);border-radius:18px;background:linear-gradient(135deg,rgba(0,0,0,.92),rgba(7,16,39,.86));box-shadow:0 0 0 1px rgba(255,79,216,.22),0 18px 42px rgba(0,0,0,.3);color:#f7fbff}
+#lousy-outages-teaser.lo-home-teaser{
+  --lo-cyan:#57f3ff;
+  --lo-pink:#ff4fd8;
+  --lo-yellow:#ffe66d;
+  --lo-green:#39ff14;
+  --lo-red:#ff4b4b;
+  --lo-panel:rgba(3,7,19,.86);
+  box-sizing:border-box;
+  display:block;
+  width:min(100% - 2rem,980px);
+  margin:1.35rem auto;
+  padding:clamp(.85rem,2vw,1.15rem);
+  border:1px solid rgba(87,243,255,.72);
+  border-radius:18px;
+  background:linear-gradient(135deg,rgba(0,0,0,.92),rgba(7,16,39,.86));
+  box-shadow:0 0 0 1px rgba(255,79,216,.22),0 18px 42px rgba(0,0,0,.3);
+  color:#f7fbff;
+}
 #lousy-outages-teaser *{box-sizing:border-box;min-width:0}
-#lousy-outages-teaser .lo-home-teaser__titlebar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.75rem}
+#lousy-outages-teaser.lo-home-teaser--down{border-color:rgba(255,75,75,.75)}
+#lousy-outages-teaser.lo-home-teaser--warn{border-color:rgba(255,230,109,.65)}
+#lousy-outages-teaser.lo-home-teaser--advisory{border-color:rgba(255,79,216,.55)}
+#lousy-outages-teaser .lo-home-teaser__titlebar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem}
 #lousy-outages-teaser .lo-home-kicker,#lousy-outages-teaser .lo-home-heading{margin:0;font-family:'Press Start 2P',monospace;text-transform:uppercase;letter-spacing:.08em}
 #lousy-outages-teaser .lo-home-kicker{color:var(--lo-yellow);font-size:clamp(.55rem,1vw,.68rem)}
 #lousy-outages-teaser .lo-home-heading{margin-top:.35rem;color:#fff;font-size:clamp(.9rem,2vw,1.25rem);text-shadow:0 0 12px rgba(87,243,255,.5)}
 #lousy-outages-teaser .lo-home-dashboard-link,#lousy-outages-teaser a{color:var(--lo-cyan)}
 #lousy-outages-teaser .lo-home-dashboard-link{display:inline-flex;align-items:center;min-height:44px;font-weight:800;text-decoration:none}
-#lousy-outages-teaser .lo-home-teaser__screen{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;overflow:visible}
-#lousy-outages-teaser .lo-home-stat{display:flex;align-items:center;gap:.55rem;min-height:44px;padding:.7rem;border:1px solid rgba(87,243,255,.35);border-radius:12px;background:rgba(87,243,255,.08);text-decoration:none;color:#fff}
-#lousy-outages-teaser .lo-home-stat strong{font-size:clamp(1.15rem,3vw,1.65rem);line-height:1;color:var(--lo-green)}
-#lousy-outages-teaser .lo-home-stat span{font-family:'Press Start 2P',monospace;font-size:clamp(.48rem,.9vw,.62rem);line-height:1.45;text-transform:uppercase}
-#lousy-outages-teaser .lo-home-lead{grid-column:1/-1;display:grid;gap:.45rem;padding:.9rem;border:1px solid rgba(255,79,216,.35);border-radius:14px;background:linear-gradient(90deg,rgba(255,79,216,.11),rgba(87,243,255,.07)),var(--lo-panel)}
-#lousy-outages-teaser .lo-home-lead__link{font-size:clamp(1rem,2.2vw,1.25rem);line-height:1.25;color:#fff;text-decoration:none}
-#lousy-outages-teaser .lo-home-lead span{line-height:1.45;color:#eaf7ff;overflow-wrap:anywhere}
-#lousy-outages-teaser .lo-home-provider-link{display:inline-flex;width:max-content;max-width:100%;min-height:44px;align-items:center;color:var(--lo-yellow);font-weight:800;text-decoration:none;overflow-wrap:anywhere}
-#lousy-outages-teaser .lo-home-other{grid-column:1/-1;margin:.1rem 0 0;line-height:1.55;color:#dff;overflow-wrap:anywhere}
-#lousy-outages-teaser .lo-home-delayed{grid-column:1/-1;margin:.1rem 0 0;padding:.45rem .6rem;border:1px dashed rgba(255,230,109,.5);border-radius:10px;color:var(--lo-yellow);font-size:.82rem}
-@media (max-width:760px){#lousy-outages-teaser.lo-home-teaser{width:min(100% - 1rem,980px)}#lousy-outages-teaser .lo-home-teaser__titlebar{align-items:flex-start;flex-direction:column}#lousy-outages-teaser .lo-home-teaser__screen{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
-@media (max-width:430px){#lousy-outages-teaser .lo-home-teaser__screen{grid-template-columns:1fr}#lousy-outages-teaser .lo-home-stat{padding:.65rem}#lousy-outages-teaser .lo-home-lead{padding:.75rem}}
+#lousy-outages-teaser .lo-home-verdict{margin:.35rem 0 0;font-family:'Press Start 2P',monospace;font-size:clamp(.62rem,1.4vw,.78rem);letter-spacing:.06em;color:var(--lo-green)}
+#lousy-outages-teaser.lo-home-teaser--down .lo-home-verdict{color:var(--lo-red)}
+#lousy-outages-teaser.lo-home-teaser--warn .lo-home-verdict{color:var(--lo-yellow)}
+#lousy-outages-teaser.lo-home-teaser--advisory .lo-home-verdict{color:var(--lo-pink)}
+#lousy-outages-teaser .lo-home-verdict__sub{margin:.25rem 0 .65rem;color:#c8e8ff;font-size:.82rem;line-height:1.45}
+#lousy-outages-teaser .lo-home-teaser__screen{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.55rem}
+#lousy-outages-teaser .lo-home-stat{display:flex;flex-direction:column;gap:.2rem;min-height:44px;padding:.65rem .7rem;border-radius:12px;text-decoration:none;color:#fff;border:1px solid rgba(87,243,255,.28);background:rgba(87,243,255,.06)}
+#lousy-outages-teaser .lo-home-stat strong{font-family:'Press Start 2P',monospace;font-size:clamp(1rem,2.8vw,1.45rem);line-height:1}
+#lousy-outages-teaser .lo-home-stat span{font-family:'Press Start 2P',monospace;font-size:clamp(.45rem,.85vw,.58rem);line-height:1.35;text-transform:uppercase;color:#dff}
+#lousy-outages-teaser .lo-home-stat--down strong{color:var(--lo-red)}
+#lousy-outages-teaser .lo-home-stat--warn strong{color:var(--lo-yellow)}
+#lousy-outages-teaser .lo-home-stat--advisory strong{color:var(--lo-pink)}
+#lousy-outages-teaser .lo-home-stat--ok strong{color:var(--lo-green)}
+#lousy-outages-teaser .lo-home-lead{grid-column:1/-1;display:grid;gap:.4rem;padding:.85rem;border:1px solid rgba(255,79,216,.35);border-radius:14px;background:linear-gradient(90deg,rgba(255,79,216,.11),rgba(87,243,255,.07)),var(--lo-panel)}
+#lousy-outages-teaser .lo-home-chip{display:inline-flex;align-items:center;padding:.2rem .45rem;border-radius:999px;font-family:'Press Start 2P',monospace;font-size:.48rem;text-transform:uppercase;border:1px solid rgba(255,255,255,.2)}
+#lousy-outages-teaser .lo-home-chip--down,#lousy-outages-teaser .lo-home-chip--warn{color:var(--lo-yellow);border-color:rgba(255,230,109,.45)}
+#lousy-outages-teaser .lo-home-chip--advisory{color:var(--lo-pink);border-color:rgba(255,79,216,.45)}
+#lousy-outages-teaser .lo-home-chip--ok,#lousy-outages-teaser .lo-home-chip--clear{color:var(--lo-green);border-color:rgba(57,255,20,.35)}
+#lousy-outages-teaser .lo-home-lead__link{font-size:clamp(.95rem,2vw,1.15rem);line-height:1.25;color:#fff;text-decoration:none}
+#lousy-outages-teaser .lo-home-lead span{line-height:1.45;color:#eaf7ff;overflow-wrap:anywhere;font-size:.88rem}
+#lousy-outages-teaser .lo-home-provider-link{display:inline-flex;max-width:100%;min-height:36px;align-items:center;color:var(--lo-yellow);font-weight:800;text-decoration:none;overflow-wrap:anywhere;font-size:.82rem}
+#lousy-outages-teaser .lo-home-also{grid-column:1/-1;list-style:none;margin:0;padding:0;display:grid;gap:.35rem}
+#lousy-outages-teaser .lo-home-also__link{display:grid;gap:.1rem;padding:.45rem .55rem;border:1px solid rgba(87,243,255,.18);border-radius:10px;background:rgba(0,0,0,.25);text-decoration:none}
+#lousy-outages-teaser .lo-home-also__label{font-family:'Press Start 2P',monospace;font-size:.48rem;text-transform:uppercase;color:var(--lo-cyan)}
+#lousy-outages-teaser .lo-home-also__title{color:#fff;font-size:.82rem;line-height:1.35}
+#lousy-outages-teaser .lo-home-also__link--advisory .lo-home-also__label{color:var(--lo-pink)}
+#lousy-outages-teaser .lo-home-also__link--warn .lo-home-also__label{color:var(--lo-yellow)}
+#lousy-outages-teaser .lo-home-sync{grid-column:1/-1;margin:0;font-size:.75rem;color:#9fd6ff}
+#lousy-outages-teaser .lo-home-delayed{grid-column:1/-1;margin:0;padding:.45rem .6rem;border:1px dashed rgba(255,230,109,.5);border-radius:10px;color:var(--lo-yellow);font-size:.82rem}
+#lousy-outages-teaser .lo-home-upgrade{margin:.65rem 0 0}
+#lousy-outages-teaser [hidden]{display:none!important}
+@media (max-width:760px){
+  #lousy-outages-teaser.lo-home-teaser{width:min(100% - 1rem,980px)}
+  #lousy-outages-teaser .lo-home-teaser__titlebar{align-items:flex-start;flex-direction:column}
+  #lousy-outages-teaser .lo-home-teaser__screen{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:430px){
+  #lousy-outages-teaser .lo-home-teaser__screen{grid-template-columns:1fr}
+}
