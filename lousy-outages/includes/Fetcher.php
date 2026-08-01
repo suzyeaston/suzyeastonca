@@ -145,6 +145,10 @@ class Fetcher {
             return $this->handle_failed_response($defaults, $provider, $type, $response, $fallbackSummary, $optional);
         }
 
+        if ('zscaler' === $providerId && in_array($adapterType, ['rss', 'atom'], true)) {
+            $body = \SuzyEaston\LousyOutages\Adapters\filter_zscaler_trust_feed($body);
+        }
+
         $normalized = $this->adapt_response($adapterType, $body);
         if (array_key_exists('schema_valid', $normalized) && !$normalized['schema_valid']) {
             $failed = $this->failed_defaults($defaults, 'data_error:unexpected_schema', 'Status unavailable: unexpected source schema', 'unknown', (int)($response['status'] ?? 0), null, 'Unexpected schema');

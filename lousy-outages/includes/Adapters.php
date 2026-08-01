@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace SuzyEaston\LousyOutages\Adapters;
 
+if (!defined('DAY_IN_SECONDS')) {
+    define('DAY_IN_SECONDS', 24 * 60 * 60);
+}
+
 function from_statuspage_summary(string $json): array {
     $data = json_decode($json, true);
     if (!is_array($data)) {
@@ -347,13 +351,64 @@ function from_better_stack_index(string $json): array {
     return ['state'=>$state,'incidents'=>$incidents,'updated_at'=>$data['meta']['updated_at'] ?? null,'raw'=>$data,'schema_valid'=>true];
 }
 
+/**
+ * Reduce the Zscaler trust portal RSS feed to service-incident items.
+ *
+ * The feed mixes "Recent incident" posts with a high volume of
+ * "Scheduled maintenance" advisories whose wording ("disruption",
+ * "unavailable") false-positives the keyword classifier in from_rss_atom.
+ */
+function filter_zscaler_trust_feed(string $xml): string {
+    $previous = libxml_use_internal_errors(true);
+    $feed = simplexml_load_string($xml);
+    if (!$feed || !isset($feed->channel)) {
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+        return $xml;
+    }
+
+    $cutoff = time() - (7 * DAY_IN_SECONDS);
+    $remove = [];
+    foreach ($feed->channel->item as $item) {
+        $isIncident = false;
+        foreach ($item->category as $category) {
+            if (false !== stripos((string) $category, 'incident')) {
+                $isIncident = true;
+                break;
+            }
+        }
+
+        // Trust posts are never retro-resolved in the feed, so a stale
+        // "investigating" item would otherwise pin the tile to degraded.
+        $timestamp = strtotime((string) $item->pubDate) ?: 0;
+        $isRecent = $timestamp >= $cutoff;
+
+        if (!$isIncident || !$isRecent) {
+            $remove[] = dom_import_simplexml($item);
+        }
+    }
+    foreach ($remove as $node) {
+        if ($node && $node->parentNode) {
+            $node->parentNode->removeChild($node);
+        }
+    }
+
+    $filtered = $feed->asXML();
+    libxml_clear_errors();
+    libxml_use_internal_errors($previous);
+
+    return is_string($filtered) && '' !== $filtered ? $filtered : $xml;
+}
+
 function from_gcp_incidents_json(string $json): array {
     $data = json_decode($json, true);
     if (!is_array($data)) {
         return ['state' => 'unknown', 'incidents' => [], 'raw' => null];
     }
 
-    $incidentsRaw = $data['incidents'] ?? null;
+    // status.cloud.google.com/incidents.json serves a top-level array of
+    // incidents; older payloads wrapped them in an "incidents" key.
+    $incidentsRaw = array_is_list($data) ? $data : ($data['incidents'] ?? null);
     if (!is_array($incidentsRaw)) {
         return ['state' => 'unknown', 'incidents' => [], 'raw' => $data];
     }

@@ -14,6 +14,7 @@ class IncidentStore
     private const EVENT_RETENTION = 2 * YEAR_IN_SECONDS; // (~24 months)
     private const IMPORTANT_EVENT_RETENTION = 4 * YEAR_IN_SECONDS;
     private const IMPORTANT_EVENT_CAP = 1000;
+    private const TOTAL_EVENT_CAP = 1500;
 
     /**
      * Determine whether an alert email should fire for the incident.
@@ -614,6 +615,16 @@ class IncidentStore
                 unset($events[$key]);
                 $excess--;
             }
+        }
+
+        // Hard overall cap: this option is stored serialized in wp_options and
+        // once ballooned to ~18MB, exhausting PHP memory on every load. Keep
+        // the newest events (by last_seen) regardless of retention windows.
+        if (count($events) > self::TOTAL_EVENT_CAP) {
+            uasort($events, static function (array $a, array $b): int {
+                return ((int) ($b['last_seen'] ?? 0)) <=> ((int) ($a['last_seen'] ?? 0));
+            });
+            $events = array_slice($events, 0, self::TOTAL_EVENT_CAP, true);
         }
 
         return $events;
