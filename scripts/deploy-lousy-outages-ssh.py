@@ -29,6 +29,7 @@ THEME_DIR = f"{HOME}/public_html/wp-content/themes/suzyeastonca-main"
 # theme, but only these files affect the Lousy Outages page.
 THEME_FILES = [
     "functions.php",
+    "inc/home-translink-alerts.php",
     "page-home.php",
     "page-lousy-outages.php",
     "parts/home-yvr-ascii-art.php",

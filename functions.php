@@ -31,6 +31,7 @@ require_once get_template_directory() . '/inc/albini-quotes.php';
 require_once get_template_directory() . '/inc/ai-guardrails.php';
 require_once get_template_directory() . '/inc/openai.php';
 require_once get_template_directory() . '/inc/vancouver-tech-events.php';
+require_once get_template_directory() . '/inc/home-translink-alerts.php';
 /**
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
@@ -95,6 +96,13 @@ function retro_game_music_theme_scripts() {
                 array(),
                 filemtime( $scanner_js ),
                 true
+            );
+            wp_localize_script(
+                'home-city-scanner',
+                'HomeCityScannerConfig',
+                array(
+                    'alertsUrl' => rest_url( 'se/v1/translink-alerts' ),
+                )
             );
         }
 
@@ -780,6 +788,12 @@ add_action('rest_api_init', function() {
         'methods'             => 'POST',
         'callback'            => 'se_handle_gastown_start_sting',
         'permission_callback' => 'se_rest_expensive_ai_permission',
+    ]);
+
+    register_rest_route('se/v1', '/translink-alerts', [
+        'methods'             => 'GET',
+        'callback'            => 'se_get_translink_alerts_rest',
+        'permission_callback' => '__return_true',
     ]);
 });
 

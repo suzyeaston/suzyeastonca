@@ -10,15 +10,14 @@ get_template_part( 'parts/home-yvr-ascii-art' );
         <div class="home-arcade-screen__backdrop" role="img" aria-label="<?php echo esc_attr( 'ASCII art of Vancouver downtown skyline and harbor' ); ?>">
             <pre class="home-yvr-ascii"><?php echo esc_html( home_yvr_ascii_art() ); ?></pre>
             <div class="home-amp-stack">
-                <div class="home-city-scanner" data-city-scanner aria-label="<?php echo esc_attr( 'Vancouver public band scanner' ); ?>">
+                <div class="home-city-scanner" data-city-scanner aria-label="<?php echo esc_attr( 'SkyTrain TransLink alert scanner' ); ?>">
                     <div class="home-city-scanner__header">
                         <span class="home-city-scanner__badge pixel-font"><?php echo esc_html( 'YVR SCAN' ); ?></span>
                         <span class="home-city-scanner__freq pixel-font" data-scanner-freq>162.450</span>
                     </div>
                     <div class="home-city-scanner__display">
                         <span class="home-city-scanner__channel pixel-font" data-scanner-channel><?php echo esc_html( 'STANDBY' ); ?></span>
-                        <p class="home-city-scanner__caption" data-scanner-caption><?php echo esc_html( 'Live public bands only. Metro police and SkyTrain ops are encrypted — not on this dial.' ); ?></p>
-                        <div class="home-city-scanner__embed" data-scanner-embed hidden></div>
+                        <p class="home-city-scanner__caption" data-scanner-caption><?php echo esc_html( 'SkyTrain voice ops are encrypted. This dial reads live TransLink service alerts.' ); ?></p>
                     </div>
                     <div class="home-city-scanner__bars" aria-hidden="true">
                         <span class="home-city-scanner__bar" data-scanner-bar></span>
@@ -31,7 +30,6 @@ get_template_part( 'parts/home-yvr-ascii-art' );
                         <button type="button" class="home-city-scanner__btn home-city-scanner__scan pixel-font" data-scanner-scan><?php echo esc_html( 'SCAN' ); ?></button>
                         <button type="button" class="home-city-scanner__btn home-city-scanner__mute pixel-font" data-scanner-mute aria-pressed="false"><?php echo esc_html( 'MUTE' ); ?></button>
                     </div>
-                    <audio data-scanner-audio preload="none" crossorigin="anonymous"></audio>
                 </div>
             </div>
         </div>

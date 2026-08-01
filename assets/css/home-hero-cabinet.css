@@ -156,9 +156,11 @@
 .home-city-scanner__caption {
   margin: 0.28rem 0 0;
   font-family: "IBM Plex Mono", "Courier New", monospace;
-  font-size: 0.48rem;
+  font-size: 0.46rem;
   line-height: 1.35;
   color: rgba(200, 235, 220, 0.78);
+  max-height: 4.2em;
+  overflow: hidden;
 }
 
 .home-city-scanner__embed {
