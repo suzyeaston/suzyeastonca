@@ -5,30 +5,50 @@ get_header();
 
 <main id="homepage-content" class="home-layout home-arcade-layout">
 
-    <section class="home-arcade-title-screen crt-block" aria-labelledby="home-hero-title" data-arcade-hero>
+    <section class="home-arcade-title-screen crt-block home-amp-cabinet" aria-labelledby="home-hero-title" data-arcade-hero>
         <div class="home-arcade-screen__backdrop" aria-hidden="true">
-            <span class="home-pixel-star home-pixel-star--one"></span>
-            <span class="home-pixel-star home-pixel-star--two"></span>
-            <span class="home-pixel-star home-pixel-star--three"></span>
-            <span class="home-pixel-rain home-pixel-rain--one"></span>
-            <span class="home-pixel-rain home-pixel-rain--two"></span>
-            <span class="home-arcade-moon"></span>
-            <span class="home-palm home-palm--left"></span>
-            <span class="home-palm home-palm--right"></span>
-            <svg class="home-arcade-vancouver" viewBox="0 0 1200 280" focusable="false">
+            <svg class="home-arcade-vancouver" viewBox="0 0 1200 280" focusable="false" role="img" aria-label="<?php echo esc_attr( 'Pixel Vancouver harbor skyline' ); ?>">
                 <path class="home-arcade-vancouver__mountains" d="M0 154 78 126 146 82 215 122 286 48 360 132 428 84 508 140 584 76 646 126 718 52 794 136 878 82 948 130 1016 58 1094 136 1200 94 1200 280 0 280Z" />
                 <path class="home-arcade-vancouver__city" d="M0 214h46v-34h34v-24h28v58h34v-82h38v82h24v-48h36v48h24v-92h40v92h24v-58h34v58h22v-40h28v40h30v-74h22v-20h30v20h22v74h18v-42h28v42h30l18-38 18 38h20l22-52 24 52h18l18-34 24 34h26v-62h44v62h30v48h112v66H0Z" />
                 <path class="home-arcade-vancouver__sails" d="M760 204 790 138 820 204Zm48 0 36-82 34 82Zm58 0 40-68 30 68Z" />
                 <path class="home-arcade-vancouver__water" d="M64 242h164M282 252h240M580 240h332M182 266h190M464 270h310" />
             </svg>
+            <div class="home-amp-stack">
+                <div class="home-amp">
+                    <span class="home-amp__badge"><?php echo esc_html( 'YVR' ); ?></span>
+                    <div class="home-amp__grille"></div>
+                    <div class="home-amp__face">
+                        <div class="home-amp__vu" aria-hidden="true">
+                            <span class="home-amp__vu-bar"></span>
+                            <span class="home-amp__vu-bar"></span>
+                            <span class="home-amp__vu-bar"></span>
+                            <span class="home-amp__vu-bar"></span>
+                            <span class="home-amp__vu-bar"></span>
+                        </div>
+                        <div class="home-amp__knobs" aria-hidden="true">
+                            <span class="home-amp__knob home-amp__knob--gain"></span>
+                            <span class="home-amp__knob home-amp__knob--tone"></span>
+                            <span class="home-amp__knob"></span>
+                        </div>
+                    </div>
+                    <p class="home-amp__plate"><?php echo esc_html( 'bass stack // headroom limited' ); ?></p>
+                </div>
+            </div>
         </div>
         <div class="home-arcade-screen__panel">
-            <p class="home-arcade-kicker pixel-font"><?php echo esc_html( 'VANCOUVER CABINET // SYSTEM BOOT' ); ?></p>
+            <p class="home-arcade-kicker pixel-font"><?php echo esc_html( 'YVR practice room // cabinet online' ); ?></p>
             <h1 id="home-hero-title" class="home-arcade-title pixel-font"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
             <p class="home-arcade-subtitle pixel-font"><?php echo esc_html( 'music // AI strategy // creative technology' ); ?></p>
-            <p class="home-arcade-positioning"><?php echo esc_html( 'AI strategist and systems builder working across infrastructure, creative technology and music.' ); ?></p>
-            <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
-            <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START // VIEW WORK"><?php echo esc_html( 'PRESS START // VIEW WORK' ); ?></button>
+            <p class="home-arcade-positioning"><?php echo esc_html( 'Punk bassist brain. Builds infra, creative tech, and browser tools that shouldn\'t work but do.' ); ?></p>
+            <div class="home-amp-console">
+                <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
+                <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START // VIEW WORK"><?php echo esc_html( 'PRESS START // VIEW WORK' ); ?></button>
+            </div>
+            <ul class="home-title-screen-meta pixel-font" aria-label="<?php echo esc_attr( 'Scene tags' ); ?>">
+                <li><?php echo esc_html( 'Vancouver' ); ?></li>
+                <li><?php echo esc_html( 'harbor rain' ); ?></li>
+                <li><?php echo esc_html( 'amp glow' ); ?></li>
+            </ul>
         </div>
     </section>
 

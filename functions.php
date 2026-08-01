@@ -69,6 +69,16 @@ function retro_game_music_theme_scripts() {
     }
 
     if ( is_front_page() || is_page_template( 'page-home.php' ) ) {
+        $hero_css = get_template_directory() . '/assets/css/home-hero-cabinet.css';
+        if ( file_exists( $hero_css ) ) {
+            wp_enqueue_style(
+                'home-hero-cabinet',
+                get_template_directory_uri() . '/assets/css/home-hero-cabinet.css',
+                array( 'main-styles' ),
+                filemtime( $hero_css )
+            );
+        }
+
         wp_enqueue_script(
             'home-arcade-start',
             get_template_directory_uri() . '/js/home-arcade-start.js',
