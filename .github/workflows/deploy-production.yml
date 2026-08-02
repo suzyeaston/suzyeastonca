@@ -1,0 +1,80 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      theme: ${{ steps.filter.outputs.theme }}
+      plugin: ${{ steps.filter.outputs.plugin }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            theme:
+              - 'functions.php'
+              - 'inc/**'
+              - 'page-home.php'
+              - 'page-lousy-outages.php'
+              - 'parts/**'
+              - 'assets/css/home-hero-cabinet.css'
+              - 'assets/css/lousy-outages-page.css'
+              - 'assets/css/lousy-outages-theme-isolation.css'
+              - 'assets/css/lousy-outages-teaser.css'
+              - 'assets/js/lousy-outages-teaser.js'
+              - 'js/home-city-scanner.js'
+              - 'scripts/deploy-lousy-outages-ssh.py'
+            plugin:
+              - 'lousy-outages/**'
+              - 'dist/lousy-outages.zip'
+              - 'dist/lousy-outages.zip.sha256'
+              - 'dist/release-manifest.json'
+              - 'scripts/build-lousy-outages-release.sh'
+
+  deploy:
+    needs: changes
+    if: needs.changes.outputs.theme == 'true' || needs.changes.outputs.plugin == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deploy dependencies
+        run: pip install paramiko
+
+      - name: Build plugin release ZIP
+        if: needs.changes.outputs.plugin == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip unzip
+          scripts/build-lousy-outages-release.sh
+
+      - name: Deploy theme files
+        if: needs.changes.outputs.theme == 'true'
+        env:
+          LOUSY_SSH_HOST: ${{ secrets.LOUSY_SSH_HOST }}
+          LOUSY_SSH_PORT: ${{ secrets.LOUSY_SSH_PORT }}
+          LOUSY_SSH_USER: ${{ secrets.LOUSY_SSH_USER }}
+          LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
+        run: python3 scripts/deploy-lousy-outages-ssh.py --theme
+
+      - name: Deploy Lousy Outages plugin
+        if: needs.changes.outputs.plugin == 'true'
+        env:
+          LOUSY_SSH_HOST: ${{ secrets.LOUSY_SSH_HOST }}
+          LOUSY_SSH_PORT: ${{ secrets.LOUSY_SSH_PORT }}
+          LOUSY_SSH_USER: ${{ secrets.LOUSY_SSH_USER }}
+          LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
+        run: python3 scripts/deploy-lousy-outages-ssh.py --plugin

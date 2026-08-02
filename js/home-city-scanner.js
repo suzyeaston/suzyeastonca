@@ -2,47 +2,15 @@
   'use strict';
 
   /**
-   * YVR band scanner — live voice via Broadcastify + live TransLink alert text.
-   * BC haulers use LADD VHF (154.100), not CB — no public LADD internet stream exists.
-   * These are legit repeater / dispatch feeds with highway-adjacent chatter.
+   * YVR scanner — one live audio stream (CKNW 980 Vancouver) + TransLink alert text on SCAN.
+   * Broadcastify embeds are deprecated; leanstream MP3/AAC is browser-safe.
    */
-  var AUDIO_CHANNELS = [
-    {
-      type: 'broadcastify',
-      label: 'LADD 1 HWY',
-      freq: '154.100',
-      feedId: 33907,
-      caption: 'Live VE7RPT ham repeater. BC truckers run LADD VHF — not CB.'
-    },
-    {
-      type: 'broadcastify',
-      label: 'HWY CH19',
-      freq: '27.185',
-      feedId: 43789,
-      caption: 'Live Fraser Valley ham repeater — hauler corridor east of Vancouver.'
-    },
-    {
-      type: 'broadcastify',
-      label: 'FIRE DISP',
-      freq: '154.400',
-      feedId: 38213,
-      caption: 'Live Burnaby Fire dispatch on 154.4 MHz.'
-    },
-    {
-      type: 'broadcastify',
-      label: 'VE7RPT HAM',
-      freq: '146.940',
-      feedId: 33907,
-      caption: 'Live Lower Mainland amateur repeater hub.'
-    },
-    {
-      type: 'broadcastify',
-      label: 'FVARESS',
-      freq: '147.120',
-      feedId: 43789,
-      caption: 'Live VE7RVA Fraser Valley repeater network.'
-    }
-  ];
+  var LIVE_STREAM = 'https://live.leanstream.co/CKNWAM';
+  var LIVE_CHANNEL = {
+    label: 'CKNW 980',
+    freq: '980.000',
+    caption: 'Live CKNW 980 — Vancouver AM news and traffic.'
+  };
 
   var TRANSIT_CHANNELS = [
     {
@@ -65,14 +33,12 @@
     }
   ];
 
-  var STANDBY_CAPTION =
-    'Live bands only. BC haulers use LADD VHF — scan locks to ham repeaters and fire dispatch.';
-  var SCAN_CAPTION = 'Sweeping live VHF bands…';
+  var STANDBY_CAPTION = LIVE_CHANNEL.caption;
+  var SCAN_CAPTION = 'Sweeping live bands…';
   var ATTRIBUTION_TRANSIT = ' Alert data: TransLink.';
 
   var SCAN_MS = 1400;
-  var AUTO_SCAN_MS = 50000;
-  var AUDIO_BIAS = 0.88;
+  var AUTO_SCAN_MS = 55000;
 
   function pick(list) {
     return list[Math.floor(Math.random() * list.length)];
@@ -105,29 +71,28 @@
 
   function HomeCityScanner(root) {
     this.root = root;
-    this.embedEl = root.querySelector('[data-scanner-embed]');
+    this.audio = root.querySelector('[data-scanner-audio]');
     this.freqEl = root.querySelector('[data-scanner-freq]');
     this.channelEl = root.querySelector('[data-scanner-channel]');
     this.captionEl = root.querySelector('[data-scanner-caption]');
     this.scanBtn = root.querySelector('[data-scanner-scan]');
     this.muteBtn = root.querySelector('[data-scanner-mute]');
     this.bars = root.querySelectorAll('[data-scanner-bar]');
-    this.audioChannels = AUDIO_CHANNELS.slice();
-    this.transitChannels = TRANSIT_CHANNELS.slice();
     this.alerts = [];
     this.skytrainAlerts = [];
     this.muted = false;
     this.scanning = false;
     this.static = null;
     this.autoTimer = null;
-    this.current = null;
-    this.embedIframe = null;
+    this.showingTransit = false;
+    this.currentTransit = null;
     this.alertsUrl = (window.HomeCityScannerConfig && HomeCityScannerConfig.alertsUrl) || '/wp-json/se/v1/translink-alerts';
   }
 
   HomeCityScanner.prototype.init = function () {
     var self = this;
     this.loadAlerts();
+    this.showLiveChannel(false);
 
     if (this.scanBtn) {
       this.scanBtn.addEventListener('click', function () { self.scan(true); });
@@ -142,19 +107,9 @@
       }, AUTO_SCAN_MS);
     }
 
-    window.setTimeout(function () { self.scan(false); }, 1800);
-  };
-
-  HomeCityScanner.prototype.pickChannel = function () {
-    var audio = this.audioChannels;
-    var transit = this.transitChannels;
-    if (audio.length && Math.random() < AUDIO_BIAS) {
-      return pick(audio);
-    }
-    if (transit.length) {
-      return pick(transit);
-    }
-    return pick(audio);
+    window.setTimeout(function () {
+      if (!self.muted) self.playLiveStream();
+    }, 1200);
   };
 
   HomeCityScanner.prototype.loadAlerts = function () {
@@ -165,8 +120,8 @@
         if (!payload) return;
         self.alerts = Array.isArray(payload.alerts) ? payload.alerts : [];
         self.skytrainAlerts = Array.isArray(payload.skytrain) ? payload.skytrain : [];
-        if (self.current && self.current.type === 'translink' && self.captionEl) {
-          self.captionEl.textContent = self.alertCaption(self.current) + ATTRIBUTION_TRANSIT;
+        if (self.showingTransit && self.captionEl) {
+          self.captionEl.textContent = self.transitCaption(self.currentTransit) + ATTRIBUTION_TRANSIT;
         }
       })
       .catch(function () { /* standby copy only */ });
@@ -180,32 +135,18 @@
     return this.alerts;
   };
 
-  HomeCityScanner.prototype.pickAlert = function (channel) {
+  HomeCityScanner.prototype.transitCaption = function (channel) {
     var pool = this.alertPool(channel);
     if (!pool.length) {
-      return {
-        header: 'No active TransLink alerts on this channel.',
-        text: 'System clear — or feed still loading.'
-      };
+      return 'No active TransLink alerts — audio stays on CKNW 980.';
     }
-    return pick(pool);
-  };
-
-  HomeCityScanner.prototype.alertCaption = function (channel) {
-    var alert = this.pickAlert(channel);
+    var alert = pick(pool);
     var line = alert.header || alert.text || 'TransLink alert';
     if (alert.header && alert.text && alert.text !== alert.header) {
       line = alert.header + ' — ' + alert.text;
     }
     if (line.length > 200) line = line.slice(0, 197) + '…';
     return line;
-  };
-
-  HomeCityScanner.prototype.channelCaption = function (channel) {
-    if (channel.type === 'translink') {
-      return this.alertCaption(channel) + ATTRIBUTION_TRANSIT;
-    }
-    return channel.caption || STANDBY_CAPTION;
   };
 
   HomeCityScanner.prototype.ensureStatic = function () {
@@ -232,42 +173,11 @@
     });
   };
 
-  HomeCityScanner.prototype.clearEmbed = function () {
-    if (this.embedIframe) {
-      this.embedIframe.remove();
-      this.embedIframe = null;
-    }
-    if (this.embedEl) {
-      this.embedEl.hidden = true;
-      this.embedEl.innerHTML = '';
-    }
-    this.root.classList.remove('is-audio-live');
-  };
-
-  HomeCityScanner.prototype.playBroadcastify = function (channel) {
-    if (!this.embedEl || !channel.feedId || this.muted) return;
-
-    this.clearEmbed();
-    this.embedEl.hidden = false;
-    this.root.classList.add('is-audio-live');
-
-    var iframe = document.createElement('iframe');
-    iframe.className = 'home-city-scanner__iframe';
-    iframe.title = channel.label + ' live feed';
-    iframe.setAttribute(
-      'src',
-      'https://api.broadcastify.com/embed/player/?feedId=' + encodeURIComponent(String(channel.feedId))
-    );
-    iframe.setAttribute('allow', 'autoplay');
-    iframe.setAttribute('loading', 'lazy');
-    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-
-    this.embedEl.appendChild(iframe);
-    this.embedIframe = iframe;
-  };
-
-  HomeCityScanner.prototype.stopAudio = function () {
-    this.clearEmbed();
+  HomeCityScanner.prototype.showLiveChannel = function (scanning) {
+    this.showingTransit = false;
+    this.currentTransit = null;
+    this.updateDisplay(LIVE_CHANNEL, scanning, scanning ? SCAN_CAPTION : LIVE_CHANNEL.caption);
+    this.root.classList.toggle('is-live-audio', !scanning && !this.muted);
   };
 
   HomeCityScanner.prototype.updateDisplay = function (channel, scanning, caption) {
@@ -276,41 +186,68 @@
       this.channelEl.textContent = scanning ? 'SCANNING…' : channel.label || 'STANDBY';
       this.channelEl.classList.toggle('is-lock', !scanning);
     }
-    if (this.captionEl) {
-      this.captionEl.textContent = caption || channel.caption || STANDBY_CAPTION;
+    if (this.captionEl && caption) {
+      this.captionEl.textContent = caption;
     }
     this.root.classList.toggle('is-scanning', scanning);
     this.root.classList.toggle('is-locked', !scanning);
     this.root.classList.toggle('is-translink', channel.type === 'translink');
-    this.root.classList.toggle('is-broadcastify', channel.type === 'broadcastify');
+  };
+
+  HomeCityScanner.prototype.playLiveStream = function () {
+    var self = this;
+    if (!this.audio || this.muted) return;
+
+    if (!this.audio.src) {
+      this.audio.src = LIVE_STREAM;
+      this.audio.volume = 0.55;
+    }
+
+    var playPromise = this.audio.play();
+    if (playPromise && typeof playPromise.then === 'function') {
+      playPromise
+        .then(function () {
+          self.setBars(true);
+          self.root.classList.add('is-live-audio');
+        })
+        .catch(function () {
+          if (self.captionEl && !self.showingTransit) {
+            self.captionEl.textContent = LIVE_CHANNEL.caption + ' (tap SCAN or unmute to retry playback)';
+          }
+          self.setBars(false);
+          self.root.classList.remove('is-live-audio');
+        });
+    } else {
+      this.setBars(true);
+      this.root.classList.add('is-live-audio');
+    }
+  };
+
+  HomeCityScanner.prototype.stopLiveStream = function () {
+    if (!this.audio) return;
+    this.audio.pause();
+    this.root.classList.remove('is-live-audio');
   };
 
   HomeCityScanner.prototype.scan = function (userInitiated) {
     var self = this;
     if (this.scanning) return;
     this.scanning = true;
-    this.stopAudio();
-    this.updateDisplay(
-      { label: 'SCANNING…', freq: this.freqEl ? this.freqEl.textContent : '000.000', type: 'broadcastify' },
-      true,
-      SCAN_CAPTION
-    );
+    this.showLiveChannel(true);
     this.setBars(true);
 
     if (!this.muted) this.setStatic(0.22);
 
     window.setTimeout(function () {
-      var channel = self.pickChannel();
-      self.current = channel;
+      var transit = pick(TRANSIT_CHANNELS);
       self.scanning = false;
       self.setStatic(0);
-      var caption = self.channelCaption(channel);
-      self.updateDisplay(channel, false, caption);
+      self.showingTransit = true;
+      self.currentTransit = transit;
+      self.updateDisplay(transit, false, self.transitCaption(transit) + ATTRIBUTION_TRANSIT);
+      self.root.classList.toggle('is-translink', true);
       self.setBars(!self.muted);
-
-      if (!self.muted && channel.type === 'broadcastify') {
-        self.playBroadcastify(channel);
-      }
+      self.playLiveStream();
 
       if (userInitiated && self.scanBtn) {
         self.scanBtn.textContent = 'LOCKED';
@@ -327,15 +264,20 @@
     }
     if (this.muted) {
       this.setStatic(0);
-      this.stopAudio();
+      this.stopLiveStream();
       this.setBars(false);
       if (this.captionEl) {
-        this.captionEl.textContent = 'Muted. Hit SCAN to tune a live channel.';
+        this.captionEl.textContent = 'Muted. CKNW 980 stays off until you unmute.';
       }
-    } else if (this.current) {
+    } else {
       this.setBars(true);
-      if (this.current.type === 'broadcastify') {
-        this.playBroadcastify(this.current);
+      this.playLiveStream();
+      if (this.captionEl) {
+        if (this.showingTransit && this.currentTransit) {
+          this.captionEl.textContent = this.transitCaption(this.currentTransit) + ATTRIBUTION_TRANSIT;
+        } else {
+          this.captionEl.textContent = LIVE_CHANNEL.caption;
+        }
       }
     }
   };
