@@ -113,6 +113,8 @@
     this.telepromptRoot = document.querySelector('[data-broadcaster-teleprompt]');
     this.scriptEl = document.querySelector('[data-broadcaster-script]');
     this.metaEl = document.querySelector('[data-broadcaster-meta]');
+    this.mouthEl = root.querySelector('[data-broadcaster-mouth]');
+    this.faceEl = root.querySelector('[data-broadcaster-face]');
     this.feedsUrl = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.feedsUrl) ||
       '/wp-json/se/v1/broadcaster/feeds';
     this.feeds = null;
@@ -121,6 +123,8 @@
     this.wordSpans = [];
     this.fallbackTimer = null;
     this.voice = null;
+    this.mouthTimer = null;
+    this.autoMuteTimer = null;
   }
 
   HomeYvrBroadcaster.prototype.init = function () {
@@ -151,6 +155,61 @@
 
     this.loadFeeds();
     this.setStandby();
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) self.stopAll(true);
+    });
+  };
+
+  HomeYvrBroadcaster.prototype.clearAutoMuteTimer = function () {
+    if (this.autoMuteTimer) {
+      clearTimeout(this.autoMuteTimer);
+      this.autoMuteTimer = null;
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.setMouthIdle = function () {
+    if (this.mouthTimer) {
+      clearTimeout(this.mouthTimer);
+      this.mouthTimer = null;
+    }
+    if (this.mouthEl) {
+      this.mouthEl.classList.remove('is-open', 'is-flap');
+    }
+    if (this.faceEl) {
+      this.faceEl.classList.remove('is-talking');
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.setMouthTalking = function (mode) {
+    if (this.faceEl) {
+      this.faceEl.classList.add('is-talking');
+    }
+    if (!this.mouthEl) return;
+    this.mouthEl.classList.toggle('is-flap', mode === 'radio');
+    if (mode !== 'radio') {
+      this.mouthEl.classList.remove('is-flap');
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.pulseMouth = function () {
+    var self = this;
+    if (!this.mouthEl) return;
+    this.mouthEl.classList.add('is-open');
+    if (this.mouthTimer) clearTimeout(this.mouthTimer);
+    this.mouthTimer = setTimeout(function () {
+      if (self.mouthEl) self.mouthEl.classList.remove('is-open');
+    }, 110);
+  };
+
+  HomeYvrBroadcaster.prototype.scheduleAutoMute = function (channelKey) {
+    var self = this;
+    this.clearAutoMuteTimer();
+    this.autoMuteTimer = setTimeout(function () {
+      if (self.activeKey === channelKey) {
+        self.stopAll(true);
+      }
+    }, 900);
   };
 
   HomeYvrBroadcaster.prototype.clearFallbackTimer = function () {
@@ -288,6 +347,8 @@
       this.captionEl.hidden = true;
     }
     this.setTelepromptStandby();
+    this.setMouthIdle();
+    this.clearAutoMuteTimer();
     this.root.classList.remove('is-live', 'is-speaking', 'is-radio');
     this.setBars(false);
     this.highlightChannel(null);
@@ -337,18 +398,24 @@
     }
     this.speechUtterance = null;
     this.root.classList.remove('is-speaking');
+    if (!this.root.classList.contains('is-radio')) {
+      this.setMouthIdle();
+    }
   };
 
   HomeYvrBroadcaster.prototype.stopRadio = function () {
+    this.clearAutoMuteTimer();
     if (this.audio) {
       this.audio.pause();
       this.audio.removeAttribute('src');
     }
     this.root.classList.remove('is-radio');
     if (this.telepromptRoot) this.telepromptRoot.classList.remove('is-radio');
+    this.setMouthIdle();
   };
 
   HomeYvrBroadcaster.prototype.stopAll = function (toStandby) {
+    this.clearAutoMuteTimer();
     this.stopSpeech();
     this.stopRadio();
     this.activeKey = null;
@@ -386,6 +453,7 @@
         return;
       }
       self.highlightWordAt(words[idx].start);
+      self.pulseMouth();
     }, msPerWord);
   };
 
@@ -406,6 +474,7 @@
     }
     this.root.classList.add('is-live', 'is-speaking');
     this.setBars(true);
+    this.setMouthTalking('speech');
 
     var utterance = new SpeechSynthesisUtterance(text);
     var voice = this.voice || pickModernVoice();
@@ -423,10 +492,12 @@
         boundarySeen = true;
         self.clearFallbackTimer();
         self.highlightWordAt(event.charIndex);
+        self.pulseMouth();
       }
     };
 
     utterance.onstart = function () {
+      self.setMouthTalking('speech');
       if (!boundarySeen && self.wordSpans.length) {
         self.startFallbackHighlight(text);
       }
@@ -439,13 +510,19 @@
         self.wordSpans.forEach(function (span) { span.classList.add('is-spoken'); });
       }
       self.root.classList.remove('is-speaking');
-      if (self.activeKey === channel.key) self.setBars(false);
+      self.setMouthIdle();
+      if (self.activeKey === channel.key) {
+        self.setBars(false);
+        self.scheduleAutoMute(channel.key);
+      }
     };
 
     utterance.onerror = function () {
       self.clearFallbackTimer();
       self.root.classList.remove('is-speaking');
       self.setBars(false);
+      self.setMouthIdle();
+      self.scheduleAutoMute(channel.key);
     };
 
     this.speechUtterance = utterance;
@@ -473,6 +550,7 @@
       this.telepromptRoot.classList.add('is-live', 'is-radio');
     }
     this.root.classList.add('is-live', 'is-radio');
+    this.setMouthTalking('radio');
     this.audio.src = CKNW_STREAM;
     this.audio.volume = 0.55;
 
@@ -485,6 +563,7 @@
         .catch(function () {
           self.renderScript('CKNW blocked autoplay — tap CKNW 980 again or STOP then retry.', 'plain');
           self.setBars(false);
+          self.setMouthIdle();
         });
     } else {
       this.setBars(true);

@@ -11,7 +11,14 @@ get_header();
                 <p class="home-yvr-rack__kicker pixel-font"><?php echo esc_html( 'live feeds // yvr' ); ?></p>
                 <div class="home-yvr-broadcaster" data-yvr-broadcaster aria-label="<?php echo esc_attr( 'YVR broadcaster — live feeds and radio' ); ?>">
                     <div class="home-yvr-broadcaster__header">
-                        <span class="home-yvr-broadcaster__badge pixel-font"><?php echo esc_html( 'YVR BCAST' ); ?></span>
+                        <div class="home-yvr-broadcaster__identity">
+                            <div class="home-yvr-broadcaster__face" data-broadcaster-face aria-hidden="true">
+                                <span class="home-yvr-broadcaster__eye"></span>
+                                <span class="home-yvr-broadcaster__eye"></span>
+                                <div class="home-yvr-broadcaster__mouth" data-broadcaster-mouth></div>
+                            </div>
+                            <span class="home-yvr-broadcaster__badge pixel-font"><?php echo esc_html( 'YVR BCAST' ); ?></span>
+                        </div>
                         <span class="home-yvr-broadcaster__channel pixel-font" data-broadcaster-channel><?php echo esc_html( 'STANDBY' ); ?></span>
                         <span class="home-yvr-broadcaster__freq pixel-font" data-broadcaster-freq>000.000</span>
                     </div>
@@ -29,10 +36,10 @@ get_header();
                             <span class="home-yvr-broadcaster__bar" data-broadcaster-bar></span>
                         </div>
                         <div class="home-yvr-broadcaster__channels">
-                            <button type="button" class="home-yvr-broadcaster__ch pixel-font" data-broadcaster-channel-btn="translink" aria-pressed="false"><?php echo esc_html( 'TL' ); ?></button>
-                            <button type="button" class="home-yvr-broadcaster__ch pixel-font" data-broadcaster-channel-btn="cknw" aria-pressed="false"><?php echo esc_html( '980' ); ?></button>
-                            <button type="button" class="home-yvr-broadcaster__ch pixel-font" data-broadcaster-channel-btn="drivers" aria-pressed="false"><?php echo esc_html( 'ROADS' ); ?></button>
-                            <button type="button" class="home-yvr-broadcaster__ch pixel-font" data-broadcaster-channel-btn="ferries" aria-pressed="false"><?php echo esc_html( 'FERRY' ); ?></button>
+                            <button type="button" class="home-yvr-broadcaster__ch pixel-font" data-broadcaster-channel-btn="translink" aria-pressed="false" aria-label="<?php echo esc_attr( 'TransLink' ); ?>"><?php echo esc_html( 'TL' ); ?></button>
+                            <button type="button" class="home-yvr-broadcaster__ch pixel-font" data-broadcaster-channel-btn="cknw" aria-pressed="false" aria-label="<?php echo esc_attr( 'CKNW 980' ); ?>"><?php echo esc_html( '980' ); ?></button>
+                            <button type="button" class="home-yvr-broadcaster__ch pixel-font" data-broadcaster-channel-btn="drivers" aria-pressed="false" aria-label="<?php echo esc_attr( 'DriveBC' ); ?>"><?php echo esc_html( 'ROADS' ); ?></button>
+                            <button type="button" class="home-yvr-broadcaster__ch pixel-font" data-broadcaster-channel-btn="ferries" aria-pressed="false" aria-label="<?php echo esc_attr( 'BC Ferries' ); ?>"><?php echo esc_html( 'FERRY' ); ?></button>
                         </div>
                         <button type="button" class="home-yvr-broadcaster__btn home-yvr-broadcaster__stop pixel-font" data-broadcaster-stop><?php echo esc_html( 'STOP' ); ?></button>
                     </div>
