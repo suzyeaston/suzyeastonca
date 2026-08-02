@@ -90,13 +90,13 @@ function retro_game_music_theme_scripts() {
         );
 
         $broadcaster_js = get_template_directory() . '/js/home-yvr-broadcaster.js';
-        $wildfire_map_js = get_template_directory() . '/js/home-yvr-wildfire-map.js';
-        if ( file_exists( $wildfire_map_js ) ) {
+        $metro_map_js = get_template_directory() . '/js/home-yvr-metro-map.js';
+        if ( file_exists( $metro_map_js ) ) {
             wp_enqueue_script(
-                'home-yvr-wildfire-map',
-                get_template_directory_uri() . '/js/home-yvr-wildfire-map.js',
+                'home-yvr-metro-map',
+                get_template_directory_uri() . '/js/home-yvr-metro-map.js',
                 array(),
-                filemtime( $wildfire_map_js ),
+                filemtime( $metro_map_js ),
                 true
             );
         }
@@ -104,7 +104,7 @@ function retro_game_music_theme_scripts() {
             wp_enqueue_script(
                 'home-yvr-broadcaster',
                 get_template_directory_uri() . '/js/home-yvr-broadcaster.js',
-                file_exists( $wildfire_map_js ) ? array( 'home-yvr-wildfire-map' ) : array(),
+                file_exists( $metro_map_js ) ? array( 'home-yvr-metro-map' ) : array(),
                 filemtime( $broadcaster_js ),
                 true
             );
@@ -112,7 +112,10 @@ function retro_game_music_theme_scripts() {
                 'home-yvr-broadcaster',
                 'HomeYvrBroadcasterConfig',
                 array(
-                    'feedsUrl' => rest_url( 'se/v1/broadcaster/feeds' ),
+                    'feedsUrl'  => rest_url( 'se/v1/broadcaster/feeds' ),
+                    'metroMap'  => function_exists( 'se_broadcaster_metro_map_static' )
+                        ? se_broadcaster_metro_map_static()
+                        : array(),
                 )
             );
         }
