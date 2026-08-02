@@ -5,16 +5,37 @@ get_header();
 
 <main id="homepage-content" class="home-layout home-arcade-layout">
 
-    <section class="home-arcade-title-screen crt-block home-amp-cabinet home-map-hero" aria-labelledby="home-hero-title" data-arcade-hero>
-        <div class="home-map-hero__content">
-        <div class="home-map-hero__left">
-            <div class="home-map-hero__map-frame" data-home-hero-map-lane>
-                <div class="home-map-hero__map-stage" data-home-hero-map aria-label="<?php echo esc_attr( 'Greater Vancouver live map' ); ?>"></div>
-                <div class="home-map-hero__map-scan" aria-hidden="true"></div>
-                <p class="home-map-hero__map-label pixel-font"><?php echo esc_html( 'greater vancouver // drag · tap pins' ); ?></p>
+    <section class="home-yvr-radar-deck" aria-labelledby="home-hero-title" data-arcade-hero>
+        <header class="home-yvr-radar-deck__mast">
+            <p class="home-yvr-radar-deck__kicker pixel-font"><?php echo esc_html( 'founder // principal technologist' ); ?></p>
+            <h1 id="home-hero-title" class="home-yvr-radar-deck__title pixel-font"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
+        </header>
+
+        <div class="home-yvr-radar-deck__radar-unit">
+            <div class="home-yvr-radar-deck__unit-head pixel-font">
+                <span class="home-yvr-radar-deck__unit-badge"><?php echo esc_html( 'YVR RADAR' ); ?></span>
+                <span class="home-yvr-radar-deck__unit-status"><?php echo esc_html( 'live greater vancouver' ); ?></span>
             </div>
-            <div class="home-arcade-screen__backdrop" aria-label="<?php echo esc_attr( 'YVR live feed radio rack' ); ?>">
-            <div class="home-yvr-rack">
+            <div class="home-yvr-radar-deck__bezel">
+                <div class="home-yvr-radar-deck__crt-ring">
+                    <div class="home-yvr-radar-deck__map-wrap">
+                        <div class="home-yvr-radar-deck__map" data-home-hero-map></div>
+                    </div>
+                    <div class="home-yvr-radar-deck__grid" aria-hidden="true"></div>
+                    <div class="home-yvr-radar-deck__sweep" aria-hidden="true"></div>
+                    <div class="home-yvr-radar-deck__scan" aria-hidden="true"></div>
+                    <p class="home-yvr-radar-deck__ring-label pixel-font"><?php echo esc_html( 'drag · tap pins' ); ?></p>
+                </div>
+                <div class="home-yvr-radar-deck__knobs" aria-hidden="true">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+            <p class="home-yvr-radar-deck__hint pixel-font"><?php echo esc_html( "map pins match dave's channels — wildfire, skytrain, drivebc" ); ?></p>
+        </div>
+
+        <div class="home-yvr-radar-deck__console">
+            <div class="home-yvr-radar-deck__rack">
+                <div class="home-yvr-rack">
                 <div class="home-yvr-broadcaster" data-yvr-broadcaster aria-label="<?php echo esc_attr( 'YVR broadcaster — live feeds and radio' ); ?>">
                     <div class="home-yvr-broadcaster__mast">
                         <div class="home-yvr-broadcaster__avatar" data-broadcaster-face aria-hidden="true">
@@ -94,25 +115,22 @@ get_header();
                     </button>
                     <audio data-broadcaster-audio preload="none" crossorigin="anonymous"></audio>
                 </div>
+                </div>
             </div>
+            <div class="home-yvr-radar-deck__cta">
+                <p class="home-yvr-radar-deck__subtitle pixel-font"><?php echo esc_html( 'AI strategy // systems integration // creative technology' ); ?></p>
+                <p class="home-yvr-radar-deck__positioning"><?php echo esc_html( 'Punk bassist brain. Builds infra, creative tech, browser tools and applications that are practical and cool.' ); ?></p>
+                <div class="home-amp-console">
+                    <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
+                    <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START // VIEW WORK"><?php echo esc_html( 'PRESS START // VIEW WORK' ); ?></button>
+                </div>
+                <ul class="home-title-screen-meta pixel-font" aria-label="<?php echo esc_attr( 'Scene tags' ); ?>">
+                    <li><?php echo esc_html( 'Vancouver' ); ?></li>
+                    <li><?php echo esc_html( 'independent practice' ); ?></li>
+                    <li><?php echo esc_html( 'civic tech' ); ?></li>
+                    <li><?php echo esc_html( 'west coast' ); ?></li>
+                </ul>
             </div>
-        </div>
-        <div class="home-arcade-screen__panel">
-            <p class="home-arcade-kicker pixel-font"><?php echo esc_html( 'founder // principal technologist' ); ?></p>
-            <h1 id="home-hero-title" class="home-arcade-title pixel-font"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
-            <p class="home-arcade-subtitle pixel-font"><?php echo esc_html( 'AI strategy // systems integration // creative technology' ); ?></p>
-            <p class="home-arcade-positioning"><?php echo esc_html( 'Punk bassist brain. Builds infra, creative tech, browser tools and applications that are practical and cool.' ); ?></p>
-            <div class="home-amp-console">
-                <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
-                <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START // VIEW WORK"><?php echo esc_html( 'PRESS START // VIEW WORK' ); ?></button>
-            </div>
-            <ul class="home-title-screen-meta pixel-font" aria-label="<?php echo esc_attr( 'Scene tags' ); ?>">
-                <li><?php echo esc_html( 'Vancouver' ); ?></li>
-                <li><?php echo esc_html( 'independent practice' ); ?></li>
-                <li><?php echo esc_html( 'civic tech' ); ?></li>
-                <li><?php echo esc_html( 'west coast' ); ?></li>
-            </ul>
-        </div>
         </div>
     </section>
 
