@@ -32,6 +32,7 @@ require_once get_template_directory() . '/inc/ai-guardrails.php';
 require_once get_template_directory() . '/inc/openai.php';
 require_once get_template_directory() . '/inc/vancouver-tech-events.php';
 require_once get_template_directory() . '/inc/home-translink-alerts.php';
+require_once get_template_directory() . '/inc/home-yvr-broadcaster.php';
 /**
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
@@ -88,20 +89,20 @@ function retro_game_music_theme_scripts() {
             true
         );
 
-        $scanner_js = get_template_directory() . '/js/home-city-scanner.js';
-        if ( file_exists( $scanner_js ) ) {
+        $broadcaster_js = get_template_directory() . '/js/home-yvr-broadcaster.js';
+        if ( file_exists( $broadcaster_js ) ) {
             wp_enqueue_script(
-                'home-city-scanner',
-                get_template_directory_uri() . '/js/home-city-scanner.js',
+                'home-yvr-broadcaster',
+                get_template_directory_uri() . '/js/home-yvr-broadcaster.js',
                 array(),
-                filemtime( $scanner_js ),
+                filemtime( $broadcaster_js ),
                 true
             );
             wp_localize_script(
-                'home-city-scanner',
-                'HomeCityScannerConfig',
+                'home-yvr-broadcaster',
+                'HomeYvrBroadcasterConfig',
                 array(
-                    'alertsUrl' => rest_url( 'se/v1/translink-alerts' ),
+                    'feedsUrl' => rest_url( 'se/v1/broadcaster/feeds' ),
                 )
             );
         }
@@ -793,6 +794,12 @@ add_action('rest_api_init', function() {
     register_rest_route('se/v1', '/translink-alerts', [
         'methods'             => 'GET',
         'callback'            => 'se_get_translink_alerts_rest',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('se/v1', '/broadcaster/feeds', [
+        'methods'             => 'GET',
+        'callback'            => 'se_get_broadcaster_feeds_rest',
         'permission_callback' => '__return_true',
     ]);
 });

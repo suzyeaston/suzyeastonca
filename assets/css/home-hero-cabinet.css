@@ -85,13 +85,166 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 240px;
+  max-width: 268px;
   margin: 0 auto 0 clamp(0.25rem, 1vw, 0.5rem);
   display: grid;
   gap: 0.35rem;
 }
 
-/* YVR public-band scanner — live feeds only */
+/* YVR broadcaster — computer voice + CKNW */
+.home-yvr-broadcaster {
+  position: relative;
+  padding: 0.5rem 0.55rem 0.45rem;
+  border-radius: 10px;
+  border: 2px solid rgba(20, 20, 20, 0.95);
+  background:
+    linear-gradient(180deg, #141820 0%, #0a0c12 55%, #050608 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -6px 14px rgba(0, 0, 0, 0.65),
+    4px 5px 0 rgba(255, 79, 216, 0.32);
+}
+
+.home-yvr-broadcaster__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.home-yvr-broadcaster__badge {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.4rem;
+  letter-spacing: 0.06em;
+  color: #ff4fd8;
+  text-shadow: 0 0 8px rgba(255, 79, 216, 0.45);
+}
+
+.home-yvr-broadcaster__freq {
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: #ffe66d;
+  text-shadow: 0 0 6px rgba(255, 230, 109, 0.35);
+}
+
+.home-yvr-broadcaster__display {
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.85);
+  background: rgba(0, 8, 4, 0.92);
+  padding: 0.35rem 0.4rem;
+  min-height: 3rem;
+  box-shadow: inset 0 0 12px rgba(87, 243, 255, 0.1);
+}
+
+.home-yvr-broadcaster__channel {
+  display: block;
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.44rem;
+  line-height: 1.35;
+  letter-spacing: 0.05em;
+  color: #57f3ff;
+  text-shadow: 0 0 8px rgba(87, 243, 255, 0.35);
+}
+
+.home-yvr-broadcaster__caption {
+  margin: 0.28rem 0 0;
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: 0.46rem;
+  line-height: 1.35;
+  color: rgba(200, 235, 220, 0.82);
+  max-height: 4.4em;
+  overflow: hidden;
+}
+
+.home-yvr-broadcaster__bars {
+  display: flex;
+  gap: 0.22rem;
+  align-items: flex-end;
+  height: 20px;
+  margin-top: 0.32rem;
+}
+
+.home-yvr-broadcaster__bar {
+  display: block;
+  width: 0.34rem;
+  height: 35%;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #39ff14, #ffe66d 72%, #ff4b4b);
+  opacity: 0.35;
+  transform: scaleY(0.5);
+}
+
+.home-yvr-broadcaster__bar.is-live {
+  opacity: 1;
+  animation: homeScannerBar 0.9s steps(4, end) infinite;
+}
+
+.home-yvr-broadcaster__channels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.28rem;
+  margin-top: 0.38rem;
+}
+
+.home-yvr-broadcaster__ch {
+  padding: 0.32rem 0.2rem;
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.38rem;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  cursor: pointer;
+  border: 2px solid #020308;
+  border-radius: 4px;
+  background: #1a1f28;
+  color: #dfe7ff;
+  box-shadow: 2px 2px 0 rgba(87, 243, 255, 0.25);
+}
+
+.home-yvr-broadcaster__ch:hover,
+.home-yvr-broadcaster__ch:focus-visible {
+  color: #57f3ff;
+  background: #243040;
+}
+
+.home-yvr-broadcaster__ch.is-active {
+  background: #39ff14;
+  color: #020805;
+  box-shadow: 2px 2px 0 #ff4fd8;
+}
+
+.home-yvr-broadcaster__controls {
+  margin-top: 0.32rem;
+}
+
+.home-yvr-broadcaster__btn {
+  width: 100%;
+  padding: 0.34rem 0.35rem;
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.42rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 2px solid #020308;
+  border-radius: 4px;
+}
+
+.home-yvr-broadcaster__stop {
+  background: #ff4b4b;
+  color: #fff;
+  box-shadow: 3px 3px 0 #020308;
+}
+
+.home-yvr-broadcaster.is-speaking .home-yvr-broadcaster__channel {
+  color: #39ff14;
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+}
+
+.home-yvr-broadcaster.is-radio .home-yvr-broadcaster__channel {
+  color: #ffe66d;
+}
+
+/* legacy scanner styles (unused) */
 .home-city-scanner {
   position: relative;
   padding: 0.5rem 0.55rem 0.45rem;
@@ -524,7 +677,8 @@
   .home-amp-cabinet .home-title-screen-prompt,
   .home-amp-cabinet .home-press-start,
   .home-city-scanner__bar,
-  .home-city-scanner.is-scanning .home-city-scanner__freq {
+  .home-city-scanner.is-scanning .home-city-scanner__freq,
+  .home-yvr-broadcaster__bar {
     animation: none !important;
   }
 }
