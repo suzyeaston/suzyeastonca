@@ -148,6 +148,232 @@ function se_broadcaster_translink_script(): array {
     );
 }
 
+function se_broadcaster_geography_point( array $geo ): array {
+    if ( empty( $geo['type'] ) || empty( $geo['coordinates'] ) || ! is_array( $geo['coordinates'] ) ) {
+        return array( 'lat' => 0.0, 'lon' => 0.0 );
+    }
+    if ( $geo['type'] === 'Point' ) {
+        return array(
+            'lon' => (float) ( $geo['coordinates'][0] ?? 0 ),
+            'lat' => (float) ( $geo['coordinates'][1] ?? 0 ),
+        );
+    }
+    if ( $geo['type'] === 'LineString' && is_array( $geo['coordinates'][0] ) ) {
+        return array(
+            'lon' => (float) ( $geo['coordinates'][0][0] ?? 0 ),
+            'lat' => (float) ( $geo['coordinates'][0][1] ?? 0 ),
+        );
+    }
+    return array( 'lat' => 0.0, 'lon' => 0.0 );
+}
+
+function se_broadcaster_point_in_bounds( float $lat, float $lon, array $bounds ): bool {
+    if ( ! $lat || ! $lon ) {
+        return false;
+    }
+    return $lon >= (float) $bounds['west']
+        && $lon <= (float) $bounds['east']
+        && $lat >= (float) $bounds['south']
+        && $lat <= (float) $bounds['north'];
+}
+
+function se_broadcaster_metro_map_bounds(): array {
+    return array(
+        'west'  => -123.40,
+        'east'  => -122.28,
+        'south' => 48.97,
+        'north' => 49.38,
+    );
+}
+
+/**
+ * Fixed geographic homes for each YVR BCAST channel — map pins match feed territory.
+ */
+function se_broadcaster_metro_map_anchors(): array {
+    return array(
+        array(
+            'key'   => 'dave',
+            'label' => 'DAVE',
+            'hint'  => 'YVR rack',
+            'lat'   => 49.1967,
+            'lon'   => -123.1815,
+        ),
+        array(
+            'key'   => 'translink',
+            'label' => 'SkyTrain',
+            'hint'  => 'Waterfront hub',
+            'lat'   => 49.2857,
+            'lon'   => -123.1119,
+        ),
+        array(
+            'key'   => 'drivers',
+            'label' => 'DriveBC',
+            'hint'  => 'Port Mann corridor',
+            'lat'   => 49.1989,
+            'lon'   => -122.8434,
+        ),
+        array(
+            'key'   => 'ferries',
+            'label' => 'Ferries',
+            'hint'  => 'Tsawwassen terminal',
+            'lat'   => 49.0067,
+            'lon'   => -123.1292,
+        ),
+        array(
+            'key'   => 'weather',
+            'label' => 'Weather',
+            'hint'  => 'Downtown Van',
+            'lat'   => 49.2827,
+            'lon'   => -123.1207,
+        ),
+        array(
+            'key'   => 'wildfire',
+            'label' => 'Wildfire',
+            'hint'  => 'Coastal corridor',
+            'lat'   => 49.2480,
+            'lon'   => -122.8900,
+        ),
+        array(
+            'key'   => 'air',
+            'label' => 'Air quality',
+            'hint'  => 'Metro AQ network',
+            'lat'   => 49.2500,
+            'lon'   => -123.0200,
+        ),
+        array(
+            'key'   => 'cknw',
+            'label' => 'CKNW',
+            'hint'  => '980 Burrard',
+            'lat'   => 49.2863,
+            'lon'   => -123.1240,
+        ),
+    );
+}
+
+function se_broadcaster_metro_map_static(): array {
+    return array(
+        'bounds'  => se_broadcaster_metro_map_bounds(),
+        'anchors' => se_broadcaster_metro_map_anchors(),
+    );
+}
+
+function se_broadcaster_metro_map_marker_row(
+    string $id,
+    string $name,
+    float $lat,
+    float $lon,
+    string $detail = '',
+    string $url = '',
+    string $tier = 'other'
+): array {
+    return array(
+        'id'     => $id,
+        'name'   => $name,
+        'detail' => $detail,
+        'lat'    => $lat,
+        'lon'    => $lon,
+        'url'    => $url,
+        'tier'   => $tier,
+    );
+}
+
+function se_broadcaster_metro_map_overlays(): array {
+    $bounds = se_broadcaster_metro_map_bounds();
+
+    $drivers = array();
+    foreach ( se_fetch_open511_bc_events() as $event ) {
+        $lat = (float) ( $event['lat'] ?? 0 );
+        $lon = (float) ( $event['lon'] ?? 0 );
+        if ( ! se_broadcaster_point_in_bounds( $lat, $lon, $bounds ) ) {
+            continue;
+        }
+        $headline = (string) ( $event['headline'] ?? 'Road incident' );
+        $drivers[] = se_broadcaster_metro_map_marker_row(
+            sanitize_title( $headline ),
+            $headline,
+            $lat,
+            $lon,
+            (string) ( $event['type'] ?? '' ),
+            (string) ( $event['url'] ?? '' ),
+            'alert'
+        );
+    }
+
+    $air = array();
+    foreach ( se_fetch_ec_aqhi_metro() as $row ) {
+        $lat = (float) ( $row['lat'] ?? 0 );
+        $lon = (float) ( $row['lon'] ?? 0 );
+        if ( ! se_broadcaster_point_in_bounds( $lat, $lon, $bounds ) ) {
+            continue;
+        }
+        $aqhi = round( (float) ( $row['aqhi'] ?? 0 ), 1 );
+        $air[] = se_broadcaster_metro_map_marker_row(
+            sanitize_title( (string) ( $row['location'] ?? 'aq' ) ),
+            (string) ( $row['location'] ?? 'Metro Vancouver' ),
+            $lat,
+            $lon,
+            'AQHI ' . $aqhi,
+            'https://metrovancouver.org/services/air-quality-climate-action/air-quality-data-and-advisories',
+            'air'
+        );
+    }
+
+    $wildfire = array();
+    foreach ( se_fetch_bc_wildfire_near_yvr() as $fire ) {
+        $lat = (float) ( $fire['lat'] ?? 0 );
+        $lon = (float) ( $fire['lon'] ?? 0 );
+        if ( ! se_broadcaster_point_in_bounds( $lat, $lon, $bounds ) ) {
+            continue;
+        }
+        $name = (string) ( $fire['name'] ?? '' );
+        $wildfire[] = se_broadcaster_metro_map_marker_row(
+            sanitize_title( $name ),
+            $name,
+            $lat,
+            $lon,
+            (string) ( $fire['status'] ?? '' ),
+            (string) ( $fire['url'] ?? '' ),
+            (string) ( $fire['tier'] ?? 'other' )
+        );
+    }
+
+    $ferries = array(
+        se_broadcaster_metro_map_marker_row(
+            'tsawwassen',
+            'Tsawwassen',
+            49.0067,
+            -123.1292,
+            'BC Ferries terminal',
+            'https://www.bcferries.com/',
+            'ferry'
+        ),
+        se_broadcaster_metro_map_marker_row(
+            'horseshoe-bay',
+            'Horseshoe Bay',
+            49.3769,
+            -123.2728,
+            'BC Ferries terminal',
+            'https://www.bcferries.com/',
+            'ferry'
+        ),
+    );
+
+    return array(
+        'drivers'   => array( 'markers' => $drivers ),
+        'air'       => array( 'markers' => $air ),
+        'wildfire'  => array( 'markers' => $wildfire ),
+        'ferries'   => array( 'markers' => $ferries ),
+    );
+}
+
+function se_broadcaster_metro_map_payload(): array {
+    return array(
+        'bounds'   => se_broadcaster_metro_map_bounds(),
+        'anchors'  => se_broadcaster_metro_map_anchors(),
+        'overlays' => se_broadcaster_metro_map_overlays(),
+    );
+}
+
 function se_broadcaster_vancouver_event_match( array $event ): bool {
     $hay = strtolower(
         ( $event['headline'] ?? '' ) . ' ' . ( $event['description'] ?? '' ) . ' ' . ( $event['event_type'] ?? '' )
@@ -218,13 +444,16 @@ function se_fetch_open511_bc_events(): array {
         $desc     = wp_strip_all_tags( (string) ( $event['description'] ?? '' ) );
         $api_url   = (string) ( $event['url'] ?? '' );
         $updated   = (string) ( $event['updated'] ?? $event['created'] ?? '' );
+        $geo_pt    = se_broadcaster_geography_point( is_array( $event['geography'] ?? null ) ? $event['geography'] : array() );
         $out[]     = array(
-            'headline'     => $headline,
-            'description'  => se_broadcaster_trim_script( $desc, 240 ),
-            'type'         => (string) ( $event['event_type'] ?? '' ),
-            'updated'      => $updated,
+            'headline'      => $headline,
+            'description'   => se_broadcaster_trim_script( $desc, 240 ),
+            'type'          => (string) ( $event['event_type'] ?? '' ),
+            'updated'       => $updated,
             'updated_label' => se_broadcaster_format_posted( $updated ),
-            'url'          => se_broadcaster_drivebc_url( $api_url ),
+            'url'           => se_broadcaster_drivebc_url( $api_url ),
+            'lat'           => $geo_pt['lat'],
+            'lon'           => $geo_pt['lon'],
         );
     }
 
@@ -596,58 +825,6 @@ function se_broadcaster_wildfire_summary_prefix( array $fires ): string {
     return 'BC Wildfire bulletin for the southwest coastal corridor. ';
 }
 
-function se_broadcaster_wildfire_map_bounds(): array {
-    return array(
-        'west'  => -123.45,
-        'east'  => -119.25,
-        'south' => 48.88,
-        'north' => 50.42,
-    );
-}
-
-function se_broadcaster_wildfire_map_payload( array $fires, array $bulletin_fires = array() ): array {
-    $bounds   = se_broadcaster_wildfire_map_bounds();
-    $bulletin = array();
-    foreach ( $bulletin_fires as $fire ) {
-        if ( ! empty( $fire['name'] ) ) {
-            $bulletin[] = (string) $fire['name'];
-        }
-    }
-
-    $markers = array();
-    foreach ( $fires as $fire ) {
-        $lat = isset( $fire['lat'] ) ? (float) $fire['lat'] : 0.0;
-        $lon = isset( $fire['lon'] ) ? (float) $fire['lon'] : 0.0;
-        if ( ! $lat || ! $lon ) {
-            continue;
-        }
-
-        $name = (string) ( $fire['name'] ?? '' );
-        $markers[] = array(
-            'id'        => sanitize_title( $name ),
-            'name'      => $name,
-            'status'    => (string) ( $fire['status'] ?? '' ),
-            'tier'      => (string) ( $fire['tier'] ?? se_broadcaster_wildfire_status_tier( (string) ( $fire['status'] ?? '' ) ) ),
-            'lat'       => $lat,
-            'lon'       => $lon,
-            'url'       => (string) ( $fire['url'] ?? '' ),
-            'age_label' => (string) ( $fire['age_label'] ?? '' ),
-            'bulletin'  => in_array( $name, $bulletin, true ),
-        );
-    }
-
-    return array(
-        'bounds'  => $bounds,
-        'labels'  => array(
-            array( 'name' => 'YVR', 'lat' => 49.1967, 'lon' => -123.1815 ),
-            array( 'name' => 'Van', 'lat' => 49.2827, 'lon' => -123.1207 ),
-            array( 'name' => 'Squamish', 'lat' => 49.7016, 'lon' => -123.1558 ),
-            array( 'name' => 'Victoria', 'lat' => 48.4284, 'lon' => -123.3656 ),
-        ),
-        'markers' => $markers,
-    );
-}
-
 function se_fetch_bc_wildfire_near_yvr(): array {
     $cached = get_transient( 'se_bc_wildfire_near_yvr' );
     if ( false !== $cached && is_array( $cached ) ) {
@@ -782,7 +959,6 @@ function se_broadcaster_wildfire_script(): array {
         'BC Wildfire Service',
         'https://wildfiresituation.nrs.gov.bc.ca/map'
     );
-    $pack['map'] = se_broadcaster_wildfire_map_payload( $fires, $bulletin_fires );
 
     return $pack;
 }
@@ -830,12 +1006,17 @@ function se_fetch_ec_aqhi_metro(): array {
             $seen[ $lid ] = true;
         }
         $aqhi = isset( $props['aqhi'] ) ? (float) $props['aqhi'] : 0;
+        $coords = is_array( $feature['geometry']['coordinates'] ?? null ) ? $feature['geometry']['coordinates'] : array();
+        $lon    = isset( $coords[0] ) ? (float) $coords[0] : 0.0;
+        $lat    = isset( $coords[1] ) ? (float) $coords[1] : 0.0;
         $out[] = array(
             'location'       => wp_strip_all_tags( (string) ( $props['location_name_en'] ?? 'Metro Vancouver' ) ),
             'aqhi'           => $aqhi,
             'risk'           => se_aqhi_risk_label( $aqhi ),
             'observed'       => (string) ( $props['observation_datetime'] ?? '' ),
             'observed_label' => wp_strip_all_tags( (string) ( $props['observation_datetime_text_en'] ?? '' ) ),
+            'lat'            => $lat,
+            'lon'            => $lon,
         );
     }
 
@@ -903,6 +1084,7 @@ function se_get_broadcaster_feeds_rest( WP_REST_Request $request ): WP_REST_Resp
         array(
             'updated'       => current_time( 'mysql' ),
             'fetched_label' => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
+            'metro_map'     => se_broadcaster_metro_map_payload(),
             'translink'     => se_broadcaster_translink_script(),
             'drivers'       => se_broadcaster_drivers_script(),
             'ferries'       => se_broadcaster_ferries_script(),
