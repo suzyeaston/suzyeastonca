@@ -4,7 +4,7 @@
   var CKNW_STREAM = 'https://live.leanstream.co/CKNWAM';
 
   var CHANNELS = {
-    translink: { label: 'TRANSLINK', freq: '410.287', key: 'translink' },
+    translink: { label: 'SKYTRAIN', freq: '410.287', key: 'translink' },
     cknw: { label: 'CKNW 980', freq: '980.000', key: 'cknw', stream: true },
     drivers: { label: 'DRIVE BC', freq: '154.100', key: 'drivers' },
     ferries: { label: 'BC FERRIES', freq: '156.800', key: 'ferries' }
@@ -333,7 +333,7 @@
 
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
-    this.renderScript('Tap a channel. Words track the voice.', 'plain');
+    this.renderScript('Pick a channel. Words light up as CHIP talks.', 'plain');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.remove('is-live', 'is-radio');
     }

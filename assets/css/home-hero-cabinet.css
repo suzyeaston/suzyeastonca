@@ -57,7 +57,7 @@
 .home-yvr-rack {
   position: relative;
   width: 100%;
-  max-width: 252px;
+  max-width: 300px;
   margin: 0 auto;
 }
 
@@ -214,12 +214,15 @@
   display: none;
 }
 
-/* YVR broadcaster — rack-mounted CRT + deck */
+/* YVR broadcaster — CHIP avatar + rack */
 .home-yvr-broadcaster {
   position: relative;
   z-index: 1;
   pointer-events: auto;
-  padding: 0.42rem 0.45rem 0.38rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.45rem 0.5rem;
+  padding: 0.45rem 0.48rem 0.4rem;
   border-radius: 8px;
   border: 2px solid #0a0c10;
   background:
@@ -240,66 +243,146 @@
   pointer-events: none;
 }
 
-.home-yvr-broadcaster__header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 0.28rem 0.35rem;
-  margin-bottom: 0.28rem;
-}
-
-.home-yvr-broadcaster__identity {
-  display: flex;
-  align-items: center;
-  gap: 0.32rem;
+.home-yvr-broadcaster__body {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
 }
 
-.home-yvr-broadcaster__face {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3px;
-  width: 22px;
+.home-yvr-broadcaster__avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.2rem 0.15rem 0;
   flex-shrink: 0;
-  padding: 2px;
+}
+
+.home-yvr-broadcaster__avatar-frame {
+  position: relative;
+  width: 52px;
+  height: 58px;
+}
+
+.home-yvr-broadcaster__avatar-hair {
+  position: absolute;
+  top: 2px;
+  left: 8px;
+  right: 8px;
+  height: 14px;
+  border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(180deg, #57f3ff, #2a8aa8);
+  box-shadow: 0 0 10px rgba(87, 243, 255, 0.35);
+}
+
+.home-yvr-broadcaster__avatar-head {
+  position: absolute;
+  top: 12px;
+  left: 10px;
+  right: 10px;
+  height: 34px;
+  border-radius: 8px 8px 12px 12px;
+  background: linear-gradient(180deg, #f0c9a8 0%, #d4a574 100%);
+  border: 2px solid #0a0c10;
+  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.home-yvr-broadcaster__avatar-visor {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 7px;
+  padding: 3px 4px;
   border-radius: 4px;
-  border: 1px solid rgba(87, 243, 255, 0.22);
-  background: rgba(0, 8, 14, 0.85);
-  box-shadow: inset 0 0 8px rgba(87, 243, 255, 0.08);
+  background: linear-gradient(180deg, #1a2030, #050608);
+  border: 1px solid rgba(87, 243, 255, 0.35);
+  box-shadow: inset 0 0 8px rgba(87, 243, 255, 0.15);
 }
 
 .home-yvr-broadcaster__eye {
-  width: 5px;
-  height: 5px;
-  margin: 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
   background: #39ff14;
-  box-shadow: 0 0 6px rgba(57, 255, 20, 0.65);
+  box-shadow: 0 0 8px rgba(57, 255, 20, 0.75);
   animation: homeBcastBlink 5s steps(2, end) infinite;
 }
 
 .home-yvr-broadcaster__mouth {
-  grid-column: 1 / -1;
-  width: 12px;
-  height: 3px;
-  margin: 1px auto 0;
-  border-radius: 0 0 6px 6px;
-  background: #0a0c12;
-  border: 1px solid rgba(87, 243, 255, 0.55);
-  box-shadow: inset 0 -2px 4px rgba(255, 79, 216, 0.35);
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 16px;
+  height: 4px;
+  margin-left: -8px;
+  border-radius: 0 0 8px 8px;
+  background: #1a0a14;
+  border: 1px solid rgba(255, 79, 216, 0.65);
+  box-shadow: inset 0 -2px 5px rgba(255, 79, 216, 0.4);
   transform-origin: center top;
   transition: height 0.07s ease-out, border-radius 0.07s ease-out;
 }
 
+.home-yvr-broadcaster__avatar-headset {
+  position: absolute;
+  top: 22px;
+  width: 10px;
+  height: 22px;
+  border: 2px solid #2a3040;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #3a4458, #1a1e28);
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+}
+
+.home-yvr-broadcaster__avatar-headset--l { left: 0; }
+.home-yvr-broadcaster__avatar-headset--r { right: 0; }
+
+.home-yvr-broadcaster__avatar-mic {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  width: 4px;
+  height: 10px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: #888;
+  box-shadow: -14px 0 0 -2px #666, -14px 8px 0 0 #555;
+}
+
+.home-yvr-broadcaster__avatar-name {
+  margin: 0;
+  font-size: 0.42rem;
+  letter-spacing: 0.08em;
+  color: #39ff14;
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.45);
+}
+
+.home-yvr-broadcaster__avatar-tag {
+  margin: 0;
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: 0.38rem;
+  letter-spacing: 0.06em;
+  color: rgba(180, 220, 235, 0.65);
+  text-transform: lowercase;
+}
+
+.home-yvr-broadcaster__avatar.is-talking .home-yvr-broadcaster__eye,
 .home-yvr-broadcaster__face.is-talking .home-yvr-broadcaster__eye {
   animation: homeBcastBlinkFast 1.2s steps(2, end) infinite;
 }
 
+.home-yvr-broadcaster__avatar.is-talking .home-yvr-broadcaster__avatar-head,
+.home-yvr-broadcaster__face.is-talking .home-yvr-broadcaster__avatar-head {
+  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.2), 0 0 12px rgba(57, 255, 20, 0.15);
+}
+
 .home-yvr-broadcaster__mouth.is-open {
-  height: 9px;
-  border-radius: 0 0 9px 9px;
-  background: linear-gradient(180deg, #1a1020 0%, #ff4fd8 88%);
-  border-color: rgba(255, 79, 216, 0.75);
-  box-shadow: 0 0 8px rgba(255, 79, 216, 0.45);
+  height: 11px;
+  border-radius: 0 0 10px 10px;
+  background: linear-gradient(180deg, #2a1020 0%, #ff4fd8 90%);
+  border-color: rgba(255, 79, 216, 0.85);
+  box-shadow: 0 0 10px rgba(255, 79, 216, 0.55);
 }
 
 .home-yvr-broadcaster__mouth.is-flap {
@@ -317,8 +400,30 @@
 }
 
 @keyframes homeBcastMouthFlap {
-  0%, 100% { height: 3px; border-radius: 2px; }
-  50% { height: 10px; border-radius: 0 0 10px 10px; }
+  0%, 100% { height: 4px; border-radius: 2px; }
+  50% { height: 12px; border-radius: 0 0 11px 11px; }
+}
+
+.home-yvr-broadcaster__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.home-yvr-broadcaster__status {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.home-yvr-broadcaster__legend {
+  margin: 0;
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: clamp(0.4rem, 0.78vw, 0.48rem);
+  line-height: 1.35;
+  color: rgba(170, 210, 200, 0.72);
 }
 
 .home-yvr-broadcaster__badge {
@@ -327,20 +432,21 @@
   letter-spacing: 0.05em;
   color: #ff4fd8;
   text-shadow: 0 0 8px rgba(255, 79, 216, 0.45);
+  flex-shrink: 0;
 }
 
 .home-yvr-broadcaster__channel {
-  justify-self: center;
   font-family: "Press Start 2P", monospace;
-  font-size: 0.36rem;
+  font-size: 0.34rem;
   line-height: 1.2;
   letter-spacing: 0.05em;
   color: #57f3ff;
   text-shadow: 0 0 8px rgba(87, 243, 255, 0.35);
-  padding: 0.12rem 0.28rem;
+  padding: 0.1rem 0.26rem;
   border-radius: 3px;
   border: 1px solid rgba(87, 243, 255, 0.25);
   background: rgba(0, 12, 20, 0.65);
+  white-space: nowrap;
 }
 
 .home-yvr-broadcaster__freq {
@@ -353,7 +459,6 @@
 
 .home-yvr-broadcaster__crt {
   position: relative;
-  margin-bottom: 0.32rem;
   border-radius: 6px;
   padding: 0.22rem;
   border: 2px solid #020308;
@@ -385,7 +490,68 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 0.28rem;
-  align-items: end;
+  align-items: stretch;
+}
+
+.home-yvr-broadcaster__channels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.22rem;
+}
+
+.home-yvr-broadcaster__ch {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.12rem;
+  padding: 0.28rem 0.3rem;
+  text-align: left;
+  cursor: pointer;
+  border: 2px solid #020308;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #1e2430 0%, #12161e 100%);
+  color: #dfe7ff;
+  box-shadow: 2px 2px 0 rgba(87, 243, 255, 0.18);
+  min-height: 2.35rem;
+}
+
+.home-yvr-broadcaster__ch-label {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.36rem;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  color: #e8f4ff;
+}
+
+.home-yvr-broadcaster__ch-hint {
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: 0.38rem;
+  line-height: 1.25;
+  color: rgba(160, 200, 215, 0.78);
+}
+
+.home-yvr-broadcaster__ch:hover,
+.home-yvr-broadcaster__ch:focus-visible {
+  border-color: rgba(87, 243, 255, 0.45);
+  background: linear-gradient(180deg, #243040 0%, #1a2030 100%);
+}
+
+.home-yvr-broadcaster__ch:hover .home-yvr-broadcaster__ch-label,
+.home-yvr-broadcaster__ch:focus-visible .home-yvr-broadcaster__ch-label {
+  color: #57f3ff;
+}
+
+.home-yvr-broadcaster__ch.is-active {
+  background: linear-gradient(180deg, #39ff14 0%, #2ad010 100%);
+  box-shadow: 2px 2px 0 #ff4fd8;
+}
+
+.home-yvr-broadcaster__ch.is-active .home-yvr-broadcaster__ch-label {
+  color: #020805;
+}
+
+.home-yvr-broadcaster__ch.is-active .home-yvr-broadcaster__ch-hint {
+  color: rgba(2, 12, 6, 0.75);
 }
 
 .home-yvr-broadcaster__display {
@@ -425,38 +591,6 @@
 .home-yvr-broadcaster__bar.is-live {
   opacity: 1;
   animation: homeScannerBar 0.9s steps(4, end) infinite;
-}
-
-.home-yvr-broadcaster__channels {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.18rem;
-}
-
-.home-yvr-broadcaster__ch {
-  padding: 0.28rem 0.1rem;
-  font-family: "Press Start 2P", monospace;
-  font-size: 0.34rem;
-  letter-spacing: 0.03em;
-  line-height: 1.25;
-  cursor: pointer;
-  border: 2px solid #020308;
-  border-radius: 3px;
-  background: #1a1f28;
-  color: #dfe7ff;
-  box-shadow: 1px 1px 0 rgba(87, 243, 255, 0.22);
-}
-
-.home-yvr-broadcaster__ch:hover,
-.home-yvr-broadcaster__ch:focus-visible {
-  color: #57f3ff;
-  background: #243040;
-}
-
-.home-yvr-broadcaster__ch.is-active {
-  background: #39ff14;
-  color: #020805;
-  box-shadow: 2px 2px 0 #ff4fd8;
 }
 
 .home-yvr-broadcaster__controls {
@@ -883,11 +1017,11 @@
   }
 
   .home-yvr-rack {
-    max-width: min(100%, 280px);
+    max-width: min(100%, 320px);
   }
 
-  .home-yvr-broadcaster__deck {
-    grid-template-columns: auto 1fr auto;
+  .home-yvr-broadcaster {
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .home-yvr-teleprompt__script {
@@ -921,6 +1055,20 @@
 
   .home-yvr-rack {
     max-width: 100%;
+  }
+
+  .home-yvr-broadcaster__deck {
+    grid-template-columns: 1fr;
+  }
+
+  .home-yvr-broadcaster__bars {
+    justify-content: center;
+    height: 22px;
+  }
+
+  .home-yvr-broadcaster__stop {
+    min-height: 2rem;
+    width: 100%;
   }
 }
 
