@@ -31,7 +31,7 @@ jobs:
               - 'assets/css/lousy-outages-theme-isolation.css'
               - 'assets/css/lousy-outages-teaser.css'
               - 'assets/js/lousy-outages-teaser.js'
-              - 'js/home-city-scanner.js'
+              - 'js/home-yvr-broadcaster.js'
               - 'scripts/deploy-lousy-outages-ssh.py'
             plugin:
               - 'lousy-outages/**'
