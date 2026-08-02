@@ -93,6 +93,9 @@ get_header();
                 </div>
             </div>
         </div>
+        <div class="home-map-hero__lane" data-home-hero-map-lane>
+            <p class="home-map-hero__lane-label pixel-font"><?php echo esc_html( 'greater vancouver // drag map · tap pins' ); ?></p>
+        </div>
         <div class="home-arcade-screen__panel">
             <p class="home-arcade-kicker pixel-font"><?php echo esc_html( 'founder // principal technologist' ); ?></p>
             <h1 id="home-hero-title" class="home-arcade-title pixel-font"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
