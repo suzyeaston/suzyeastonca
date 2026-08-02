@@ -11,6 +11,43 @@ function se_broadcaster_trim_script( string $text, int $max = 520 ): string {
     return $text;
 }
 
+function se_broadcaster_format_posted( string $raw ): string {
+    if ( ! $raw ) {
+        return '';
+    }
+    $ts = strtotime( $raw );
+    if ( ! $ts ) {
+        return '';
+    }
+    return wp_date( 'M j, Y g:i a', $ts );
+}
+
+function se_broadcaster_drivebc_url( string $api_url ): string {
+    if ( preg_match( '/(DBC-\d+)/', $api_url, $m ) ) {
+        return 'https://www.drivebc.ca/mobile/event/' . $m[1];
+    }
+    return 'https://www.drivebc.ca/';
+}
+
+function se_broadcaster_pack_from_items( array $items, string $prefix, string $source, string $source_url = '' ): array {
+    $lines = array();
+    foreach ( $items as $item ) {
+        if ( ! empty( $item['text'] ) ) {
+            $lines[] = $item['text'];
+        }
+    }
+
+    $script = $lines ? $prefix . implode( ' Next. ', $lines ) : '';
+
+    return array(
+        'caption'    => se_broadcaster_trim_script( $lines[0] ?? $prefix, 220 ),
+        'script'     => se_broadcaster_trim_script( $script ),
+        'source'     => $source,
+        'source_url' => $source_url,
+        'items'      => $items,
+    );
+}
+
 function se_broadcaster_translink_script(): array {
     $alerts = function_exists( 'se_fetch_translink_alerts' ) ? se_fetch_translink_alerts() : array();
     $sky    = array_values(
@@ -26,28 +63,41 @@ function se_broadcaster_translink_script(): array {
         $sky = array_slice( $alerts, 0, 5 );
     }
 
-    $lines = array();
+    $items = array();
     foreach ( array_slice( $sky, 0, 3 ) as $row ) {
         $line = $row['header'] ?? '';
         if ( ! empty( $row['text'] ) && $row['text'] !== $line ) {
             $line = trim( $line . '. ' . $row['text'] );
         }
-        if ( $line ) {
-            $lines[] = se_broadcaster_trim_script( $line, 200 );
+        if ( ! $line ) {
+            continue;
         }
-    }
-
-    if ( ! $lines ) {
-        return array(
-            'caption' => 'TransLink reports all clear on SkyTrain lines.',
-            'script'  => 'TransLink feed is quiet. No major SkyTrain service alerts right now.',
+        $title = $row['route'] ? $row['route'] : ( $row['header'] ?? 'TransLink alert' );
+        $items[] = array(
+            'title'        => se_broadcaster_trim_script( $title, 80 ),
+            'text'         => se_broadcaster_trim_script( $line, 200 ),
+            'posted'       => (string) ( $row['posted'] ?? '' ),
+            'posted_label' => (string) ( $row['posted_label'] ?? '' ),
+            'url'          => (string) ( $row['url'] ?? '' ),
+            'link_label'   => 'TransLink alert',
         );
     }
 
-    $script = 'TransLink update. ' . implode( ' Next. ', $lines );
-    return array(
-        'caption' => se_broadcaster_trim_script( $lines[0], 220 ),
-        'script'  => se_broadcaster_trim_script( $script ),
+    if ( ! $items ) {
+        return array(
+            'caption'    => 'TransLink reports all clear on SkyTrain lines.',
+            'script'     => 'TransLink feed is quiet. No major SkyTrain service alerts right now.',
+            'source'     => 'TransLink',
+            'source_url' => 'https://www.translink.ca/alerts',
+            'items'      => array(),
+        );
+    }
+
+    return se_broadcaster_pack_from_items(
+        $items,
+        'TransLink update. ',
+        'TransLink',
+        'https://www.translink.ca/alerts'
     );
 }
 
@@ -119,10 +169,15 @@ function se_fetch_open511_bc_events(): array {
         }
         $headline = wp_strip_all_tags( (string) ( $event['headline'] ?? '' ) );
         $desc     = wp_strip_all_tags( (string) ( $event['description'] ?? '' ) );
-        $out[]    = array(
-            'headline'    => $headline,
-            'description' => se_broadcaster_trim_script( $desc, 240 ),
-            'type'        => (string) ( $event['event_type'] ?? '' ),
+        $api_url   = (string) ( $event['url'] ?? '' );
+        $updated   = (string) ( $event['updated'] ?? $event['created'] ?? '' );
+        $out[]     = array(
+            'headline'     => $headline,
+            'description'  => se_broadcaster_trim_script( $desc, 240 ),
+            'type'         => (string) ( $event['event_type'] ?? '' ),
+            'updated'      => $updated,
+            'updated_label' => se_broadcaster_format_posted( $updated ),
+            'url'          => se_broadcaster_drivebc_url( $api_url ),
         );
     }
 
@@ -134,26 +189,35 @@ function se_broadcaster_drivers_script(): array {
     $events = se_fetch_open511_bc_events();
     if ( ! $events ) {
         return array(
-            'caption' => 'BC Open511 — no active Lower Mainland road alerts.',
-            'script'  => 'DriveBC and Open511 show no major active incidents around Metro Vancouver right now.',
-            'source'  => 'BC Open511',
+            'caption'    => 'BC Open511 — no active Lower Mainland road alerts.',
+            'script'     => 'DriveBC and Open511 show no major active incidents around Metro Vancouver right now.',
+            'source'     => 'BC Open511',
+            'source_url' => 'https://www.drivebc.ca/',
+            'items'      => array(),
         );
     }
 
-    $lines = array();
+    $items = array();
     foreach ( array_slice( $events, 0, 3 ) as $event ) {
         $line = $event['headline'];
         if ( ! empty( $event['description'] ) ) {
             $line .= '. ' . $event['description'];
         }
-        $lines[] = se_broadcaster_trim_script( $line, 200 );
+        $items[] = array(
+            'title'        => se_broadcaster_trim_script( $event['headline'], 80 ),
+            'text'         => se_broadcaster_trim_script( $line, 200 ),
+            'posted'       => (string) ( $event['updated'] ?? '' ),
+            'posted_label' => (string) ( $event['updated_label'] ?? '' ),
+            'url'          => (string) ( $event['url'] ?? '' ),
+            'link_label'   => 'DriveBC incident',
+        );
     }
 
-    $script = 'Lower Mainland roads. ' . implode( ' Next. ', $lines );
-    return array(
-        'caption' => se_broadcaster_trim_script( $lines[0], 220 ),
-        'script'  => se_broadcaster_trim_script( $script ),
-        'source'  => 'BC Open511',
+    return se_broadcaster_pack_from_items(
+        $items,
+        'Lower Mainland roads. ',
+        'BC Open511',
+        'https://www.drivebc.ca/'
     );
 }
 
@@ -215,13 +279,15 @@ function se_broadcaster_ferries_script(): array {
     $routes = se_fetch_bc_ferries_capacity();
     if ( ! $routes ) {
         return array(
-            'caption' => 'BC Ferries capacity feed unavailable.',
-            'script'  => 'BC Ferries sailing data is offline right now. Check bcferries.com before you drive to the terminal.',
-            'source'  => 'bcferriesapi.ca',
+            'caption'    => 'BC Ferries capacity feed unavailable.',
+            'script'     => 'BC Ferries sailing data is offline right now. Check bcferries.com before you drive to the terminal.',
+            'source'     => 'bcferriesapi.ca',
+            'source_url' => 'https://www.bcferries.com/current_conditions',
+            'items'      => array(),
         );
     }
 
-    $lines = array();
+    $items = array();
     foreach ( array_slice( $routes, 0, 4 ) as $route ) {
         $from = se_terminal_label( (string) ( $route['fromTerminalCode'] ?? '' ) );
         $to   = se_terminal_label( (string) ( $route['toTerminalCode'] ?? '' ) );
@@ -241,14 +307,22 @@ function se_broadcaster_ferries_script(): array {
         if ( $status ) {
             $bit .= ', status ' . $status;
         }
-        $lines[] = $bit;
+
+        $items[] = array(
+            'title'        => $from . ' → ' . $to,
+            'text'         => $bit,
+            'posted'       => $time,
+            'posted_label' => 'Sails ' . $time,
+            'url'          => 'https://www.bcferries.com/current_conditions',
+            'link_label'   => 'BC Ferries conditions',
+        );
     }
 
-    $script = 'BC Ferries check. ' . implode( ' Next route. ', $lines );
-    return array(
-        'caption' => se_broadcaster_trim_script( $lines[0] ?? 'BC Ferries routes loaded.', 220 ),
-        'script'  => se_broadcaster_trim_script( $script ),
-        'source'  => 'bcferriesapi.ca',
+    return se_broadcaster_pack_from_items(
+        $items,
+        'BC Ferries check. ',
+        'bcferriesapi.ca',
+        'https://www.bcferries.com/current_conditions'
     );
 }
 

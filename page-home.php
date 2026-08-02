@@ -1,14 +1,16 @@
 <?php
 /* Template Name: Homepage */
 get_header();
-get_template_part( 'parts/home-yvr-ascii-art' );
 ?>
 
 <main id="homepage-content" class="home-layout home-arcade-layout">
 
     <section class="home-arcade-title-screen crt-block home-amp-cabinet" aria-labelledby="home-hero-title" data-arcade-hero>
-        <div class="home-arcade-screen__backdrop" role="img" aria-label="<?php echo esc_attr( 'ASCII art of Vancouver downtown skyline and harbour' ); ?>">
-            <pre class="home-yvr-ascii"><?php echo esc_html( home_yvr_ascii_art() ); ?></pre>
+        <div class="home-arcade-screen__backdrop" aria-label="<?php echo esc_attr( 'YVR live feed teleprompter' ); ?>">
+            <div class="home-yvr-teleprompt" data-broadcaster-teleprompt>
+                <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>
+                <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'Pick a channel below. Words light up as the computer voice reads.' ); ?></p>
+            </div>
             <div class="home-amp-stack">
                 <div class="home-yvr-broadcaster" data-yvr-broadcaster aria-label="<?php echo esc_attr( 'YVR broadcaster — live feeds and radio' ); ?>">
                     <div class="home-yvr-broadcaster__header">
@@ -17,7 +19,7 @@ get_template_part( 'parts/home-yvr-ascii-art' );
                     </div>
                     <div class="home-yvr-broadcaster__display">
                         <span class="home-yvr-broadcaster__channel pixel-font" data-broadcaster-channel><?php echo esc_html( 'STANDBY' ); ?></span>
-                        <p class="home-yvr-broadcaster__caption" data-broadcaster-caption><?php echo esc_html( 'Pick a channel. Computer voice reads live feeds — CKNW is live radio.' ); ?></p>
+                        <p class="home-yvr-broadcaster__caption" data-broadcaster-caption hidden><?php echo esc_html( 'Pick a channel. Computer voice reads live feeds — CKNW is live radio.' ); ?></p>
                     </div>
                     <div class="home-yvr-broadcaster__bars" aria-hidden="true">
                         <span class="home-yvr-broadcaster__bar" data-broadcaster-bar></span>

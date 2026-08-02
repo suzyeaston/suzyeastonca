@@ -70,13 +70,22 @@ function se_fetch_translink_alerts(): array {
             $text = mb_substr( $text, 0, 317 ) . '…';
         }
 
+        $posted_raw = (string) ( $row['lastModified'] ?? $row['startTime'] ?? '' );
+        $posted_label = '';
+        if ( $posted_raw ) {
+            $posted_label = wp_date( 'M j, Y g:i a', strtotime( $posted_raw ) );
+        }
+
         $entry = array(
-            'id'       => $row['alertId'] ?? $row['id'] ?? null,
-            'group'    => isset( $row['group'] ) ? (int) $row['group'] : null,
-            'route'    => wp_strip_all_tags( (string) ( $row['routeLongName'] ?? '' ) ),
-            'header'   => $header,
-            'text'     => $text,
-            'critical' => ! empty( $row['critical'] ),
+            'id'           => $row['alertId'] ?? $row['id'] ?? null,
+            'group'        => isset( $row['group'] ) ? (int) $row['group'] : null,
+            'route'        => wp_strip_all_tags( (string) ( $row['routeLongName'] ?? '' ) ),
+            'header'       => $header,
+            'text'         => $text,
+            'critical'     => ! empty( $row['critical'] ),
+            'url'          => esc_url_raw( (string) ( $row['url'] ?? '' ) ),
+            'posted'       => $posted_raw,
+            'posted_label' => $posted_label,
         );
 
         $entry['skytrain'] = se_translink_alert_is_skytrain( $entry );

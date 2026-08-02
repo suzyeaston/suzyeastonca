@@ -52,23 +52,122 @@
     linear-gradient(180deg, rgba(2, 8, 18, 0.55), rgba(0, 0, 0, 0.88));
 }
 
-.home-yvr-ascii {
+.home-yvr-teleprompt {
   flex: 1 1 auto;
-  margin: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: clamp(0.35rem, 1vw, 0.55rem) clamp(0.3rem, 0.8vw, 0.45rem) 0.2rem;
   pointer-events: none;
-  padding: clamp(0.35rem, 1vw, 0.55rem) clamp(0.25rem, 0.8vw, 0.45rem) 0;
-  font-family: "IBM Plex Mono", "Courier New", monospace;
-  font-size: clamp(0.44rem, 0.92vw, 0.58rem);
-  line-height: 1.14;
-  letter-spacing: 0.02em;
-  white-space: pre;
+}
+
+.home-yvr-teleprompt.is-live .home-yvr-teleprompt__script {
+  border-color: rgba(57, 255, 20, 0.45);
+  box-shadow: inset 0 0 16px rgba(57, 255, 20, 0.12);
+}
+
+.home-yvr-teleprompt.is-radio .home-yvr-teleprompt__script {
+  border-color: rgba(255, 230, 109, 0.5);
+  box-shadow: inset 0 0 16px rgba(255, 230, 109, 0.12);
+}
+
+.home-yvr-teleprompt__meta {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  max-height: 4.2rem;
   overflow: hidden;
-  user-select: none;
-  background: linear-gradient(180deg, rgba(57, 255, 20, 0.92) 0%, #57f3ff 38%, #8fdcff 62%, rgba(255, 230, 109, 0.88) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 0 12px rgba(87, 243, 255, 0.22));
+}
+
+.home-yvr-teleprompt__meta[hidden] {
+  display: none;
+}
+
+.home-yvr-teleprompt__item {
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: clamp(0.42rem, 0.82vw, 0.52rem);
+  line-height: 1.35;
+  color: rgba(180, 220, 235, 0.88);
+}
+
+.home-yvr-teleprompt__time {
+  display: block;
+  color: #ffe66d;
+  font-size: clamp(0.4rem, 0.78vw, 0.48rem);
+  letter-spacing: 0.03em;
+}
+
+.home-yvr-teleprompt__title {
+  color: rgba(200, 235, 220, 0.92);
+}
+
+.home-yvr-teleprompt__link {
+  color: #57f3ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  pointer-events: auto;
+}
+
+.home-yvr-teleprompt__link:hover,
+.home-yvr-teleprompt__link:focus-visible {
+  color: #39ff14;
+}
+
+.home-yvr-teleprompt__item--source {
+  opacity: 0.85;
+}
+
+.home-yvr-teleprompt__script {
+  flex: 1 1 auto;
+  min-height: clamp(72px, 14vh, 110px);
+  max-height: clamp(88px, 18vh, 130px);
+  margin: 0;
+  padding: 0.4rem 0.42rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(87, 243, 255, 0.35) transparent;
+  border-radius: 6px;
+  border: 1px solid rgba(87, 243, 255, 0.22);
+  background: rgba(0, 6, 12, 0.82);
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: clamp(0.46rem, 0.9vw, 0.58rem);
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: rgba(170, 210, 200, 0.55);
+  scroll-behavior: smooth;
+}
+
+.home-yvr-teleprompt__script::-webkit-scrollbar {
+  width: 4px;
+}
+
+.home-yvr-teleprompt__script::-webkit-scrollbar-thumb {
+  background: rgba(87, 243, 255, 0.35);
+  border-radius: 4px;
+}
+
+.home-yvr-teleprompt__word {
+  transition: color 0.08s linear, background 0.08s linear, text-shadow 0.08s linear;
+}
+
+.home-yvr-teleprompt__word.is-spoken {
+  color: rgba(87, 243, 255, 0.72);
+}
+
+.home-yvr-teleprompt__word.is-current {
+  color: #39ff14;
+  background: rgba(57, 255, 20, 0.14);
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.55);
+  border-radius: 2px;
+}
+
+.home-yvr-ascii {
+  display: none !important;
 }
 
 .home-amp-cabinet .home-arcade-vancouver {
@@ -161,6 +260,10 @@
   color: rgba(200, 235, 220, 0.82);
   max-height: 4.4em;
   overflow: hidden;
+}
+
+.home-yvr-broadcaster__caption[hidden] {
+  display: none;
 }
 
 .home-yvr-broadcaster__bars {
