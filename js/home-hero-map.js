@@ -154,9 +154,16 @@
     this.booted = true;
 
     var self = this;
-    requestAnimationFrame(function () {
+    var resize = function () {
       if (self.map) self.map.invalidateSize({ animate: false });
-    });
+    };
+    requestAnimationFrame(resize);
+    if (typeof ResizeObserver !== 'undefined' && self.stage.parentElement) {
+      var observer = new ResizeObserver(function () {
+        requestAnimationFrame(resize);
+      });
+      observer.observe(self.stage.parentElement);
+    }
   };
 
   HeroMap.prototype.boot = function (config) {

@@ -6,11 +6,14 @@ get_header();
 <main id="homepage-content" class="home-layout home-arcade-layout">
 
     <section class="home-arcade-title-screen crt-block home-amp-cabinet home-map-hero" aria-labelledby="home-hero-title" data-arcade-hero>
-        <div class="home-map-hero__map-stage" data-home-hero-map aria-hidden="true"></div>
-        <div class="home-map-hero__shade" aria-hidden="true"></div>
-        <div class="home-map-hero__scan" aria-hidden="true"></div>
         <div class="home-map-hero__content">
-        <div class="home-arcade-screen__backdrop" aria-label="<?php echo esc_attr( 'YVR live feed radio rack' ); ?>">
+        <div class="home-map-hero__left">
+            <div class="home-map-hero__map-frame" data-home-hero-map-lane>
+                <div class="home-map-hero__map-stage" data-home-hero-map aria-label="<?php echo esc_attr( 'Greater Vancouver live map' ); ?>"></div>
+                <div class="home-map-hero__map-scan" aria-hidden="true"></div>
+                <p class="home-map-hero__map-label pixel-font"><?php echo esc_html( 'greater vancouver // drag · tap pins' ); ?></p>
+            </div>
+            <div class="home-arcade-screen__backdrop" aria-label="<?php echo esc_attr( 'YVR live feed radio rack' ); ?>">
             <div class="home-yvr-rack">
                 <div class="home-yvr-broadcaster" data-yvr-broadcaster aria-label="<?php echo esc_attr( 'YVR broadcaster — live feeds and radio' ); ?>">
                     <div class="home-yvr-broadcaster__mast">
@@ -92,9 +95,7 @@ get_header();
                     <audio data-broadcaster-audio preload="none" crossorigin="anonymous"></audio>
                 </div>
             </div>
-        </div>
-        <div class="home-map-hero__lane" data-home-hero-map-lane>
-            <p class="home-map-hero__lane-label pixel-font"><?php echo esc_html( 'greater vancouver // drag map · tap pins' ); ?></p>
+            </div>
         </div>
         <div class="home-arcade-screen__panel">
             <p class="home-arcade-kicker pixel-font"><?php echo esc_html( 'founder // principal technologist' ); ?></p>
