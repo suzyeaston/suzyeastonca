@@ -38,6 +38,7 @@
 .home-amp-cabinet .home-arcade-screen__backdrop {
   position: relative;
   z-index: 1;
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -54,6 +55,7 @@
 .home-yvr-ascii {
   flex: 1 1 auto;
   margin: 0;
+  pointer-events: none;
   padding: clamp(0.35rem, 1vw, 0.55rem) clamp(0.25rem, 0.8vw, 0.45rem) 0;
   font-family: "IBM Plex Mono", "Courier New", monospace;
   font-size: clamp(0.44rem, 0.92vw, 0.58rem);
@@ -83,7 +85,8 @@
 
 .home-amp-stack {
   position: relative;
-  z-index: 2;
+  z-index: 3;
+  pointer-events: auto;
   width: 100%;
   max-width: 268px;
   margin: 0 auto 0 clamp(0.25rem, 1vw, 0.5rem);
@@ -94,6 +97,8 @@
 /* YVR broadcaster — computer voice + CKNW */
 .home-yvr-broadcaster {
   position: relative;
+  z-index: 1;
+  pointer-events: auto;
   padding: 0.5rem 0.55rem 0.45rem;
   border-radius: 10px;
   border: 2px solid rgba(20, 20, 20, 0.95);

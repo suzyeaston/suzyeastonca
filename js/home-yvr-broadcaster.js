@@ -210,13 +210,16 @@
 
     this.stopAll(false);
     this.activeKey = key;
+    this.updateDisplay(channel, 'Tuning ' + channel.label + '…');
+    this.root.classList.add('is-live');
+    this.setBars(true);
 
     if (channel.stream) {
       this.playRadio(channel);
       return;
     }
 
-  this.ensureFeeds().then(function (feeds) {
+    this.ensureFeeds().then(function (feeds) {
       var pack = feeds && feeds[channel.key] ? feeds[channel.key] : null;
       if (!pack) {
         self.updateDisplay(channel, 'Feed still loading — try again in a moment.');
