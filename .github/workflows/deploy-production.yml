@@ -79,8 +79,29 @@ jobs:
     needs: changes
     if: needs.changes.outputs.theme == 'true' || needs.changes.outputs.plugin == 'true'
     runs-on: ubuntu-latest
+    env:
+      LOUSY_SSH_HOST: ${{ secrets.LOUSY_SSH_HOST }}
+      LOUSY_SSH_PORT: ${{ secrets.LOUSY_SSH_PORT }}
+      LOUSY_SSH_USER: ${{ secrets.LOUSY_SSH_USER }}
+      LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Verify deploy secrets are configured
+        run: |
+          missing=()
+          [ -z "$LOUSY_SSH_HOST" ] && missing+=("LOUSY_SSH_HOST")
+          [ -z "$LOUSY_SSH_USER" ] && missing+=("LOUSY_SSH_USER")
+          [ -z "$LOUSY_SSH_PASSWORD" ] && missing+=("LOUSY_SSH_PASSWORD")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=Missing deploy secrets::GitHub Actions cannot read .env.deploy.local. Add repository secrets: ${missing[*]}."
+            echo "Go to: Settings → Secrets and variables → Actions → New repository secret"
+            echo "Use the same values as your local .env.deploy.local (see docs/deploy-production.md)."
+            exit 1
+          fi
+          if [ -z "$LOUSY_SSH_PORT" ]; then
+            echo "LOUSY_SSH_PORT=22" >> "$GITHUB_ENV"
+          fi
 
       - uses: actions/setup-python@v5
         with:
@@ -98,18 +119,8 @@ jobs:
 
       - name: Deploy theme files
         if: needs.changes.outputs.theme == 'true'
-        env:
-          LOUSY_SSH_HOST: ${{ secrets.LOUSY_SSH_HOST }}
-          LOUSY_SSH_PORT: ${{ secrets.LOUSY_SSH_PORT }}
-          LOUSY_SSH_USER: ${{ secrets.LOUSY_SSH_USER }}
-          LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
         run: python3 scripts/deploy-lousy-outages-ssh.py --theme
 
       - name: Deploy Lousy Outages plugin
         if: needs.changes.outputs.plugin == 'true'
-        env:
-          LOUSY_SSH_HOST: ${{ secrets.LOUSY_SSH_HOST }}
-          LOUSY_SSH_PORT: ${{ secrets.LOUSY_SSH_PORT }}
-          LOUSY_SSH_USER: ${{ secrets.LOUSY_SSH_USER }}
-          LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
         run: python3 scripts/deploy-lousy-outages-ssh.py --plugin
