@@ -57,7 +57,7 @@
 .home-yvr-rack {
   position: relative;
   width: 100%;
-  max-width: 300px;
+  max-width: 320px;
   margin: 0 auto;
 }
 
@@ -514,15 +514,30 @@
 .home-yvr-broadcaster__channels {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.22rem;
+  gap: 0.2rem;
+  max-height: 5.8rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(87, 243, 255, 0.3) transparent;
+  padding-right: 0.1rem;
+}
+
+.home-yvr-broadcaster__channels::-webkit-scrollbar {
+  width: 3px;
+}
+
+.home-yvr-broadcaster__channels::-webkit-scrollbar-thumb {
+  background: rgba(87, 243, 255, 0.35);
+  border-radius: 3px;
 }
 
 .home-yvr-broadcaster__ch {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.12rem;
-  padding: 0.28rem 0.3rem;
+  gap: 0.1rem;
+  padding: 0.24rem 0.28rem;
   text-align: left;
   cursor: pointer;
   border: 2px solid #020308;
@@ -530,21 +545,21 @@
   background: linear-gradient(180deg, #1e2430 0%, #12161e 100%);
   color: #dfe7ff;
   box-shadow: 2px 2px 0 rgba(87, 243, 255, 0.18);
-  min-height: 2.35rem;
+  min-height: 2.1rem;
 }
 
 .home-yvr-broadcaster__ch-label {
   font-family: "Press Start 2P", monospace;
-  font-size: 0.36rem;
-  letter-spacing: 0.04em;
+  font-size: 0.34rem;
+  letter-spacing: 0.03em;
   line-height: 1.25;
   color: #e8f4ff;
 }
 
 .home-yvr-broadcaster__ch-hint {
   font-family: "IBM Plex Mono", "Courier New", monospace;
-  font-size: 0.38rem;
-  line-height: 1.25;
+  font-size: 0.36rem;
+  line-height: 1.2;
   color: rgba(160, 200, 215, 0.78);
 }
 
