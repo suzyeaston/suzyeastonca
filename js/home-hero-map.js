@@ -154,9 +154,20 @@
     this.booted = true;
 
     var self = this;
-    requestAnimationFrame(function () {
+    var resize = function () {
       if (self.map) self.map.invalidateSize({ animate: false });
-    });
+    };
+    requestAnimationFrame(resize);
+    if (typeof ResizeObserver !== 'undefined') {
+      var observeTarget = self.stage.parentElement || self.stage;
+      var observer = new ResizeObserver(function () {
+        requestAnimationFrame(resize);
+      });
+      observer.observe(observeTarget);
+      if (observeTarget.parentElement && observeTarget.parentElement !== observeTarget) {
+        observer.observe(observeTarget.parentElement);
+      }
+    }
   };
 
   HeroMap.prototype.boot = function (config) {
