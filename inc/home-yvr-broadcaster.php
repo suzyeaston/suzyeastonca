@@ -488,6 +488,9 @@ function se_broadcaster_weather_script(): array {
 function se_broadcaster_wildfire_status_rank( string $status ): int {
     $status = strtolower( $status );
     if ( str_contains( $status, 'out of control' ) ) {
+        return 4;
+    }
+    if ( str_contains( $status, 'fire of note' ) ) {
         return 3;
     }
     if ( str_contains( $status, 'being held' ) ) {
@@ -497,6 +500,18 @@ function se_broadcaster_wildfire_status_rank( string $status ): int {
         return 1;
     }
     return 0;
+}
+
+function se_broadcaster_wildfire_name( array $row ): string {
+    $geo = wp_strip_all_tags( (string) ( $row['GEOGRAPHIC_DESCRIPTION'] ?? '' ) );
+    $inc = wp_strip_all_tags( (string) ( $row['INCIDENT_NAME'] ?? '' ) );
+    if ( $geo ) {
+        return $geo;
+    }
+    if ( $inc && ! preg_match( '/^V\d+$/i', $inc ) ) {
+        return $inc;
+    }
+    return $inc ? 'BC wildfire ' . $inc : 'BC wildfire';
 }
 
 function se_fetch_bc_wildfire_near_yvr(): array {
@@ -527,8 +542,11 @@ function se_fetch_bc_wildfire_near_yvr(): array {
     );
 
     if ( is_wp_error( $response ) || (int) wp_remote_retrieve_response_code( $response ) !== 200 ) {
+        set_transient( 'se_bc_wildfire_near_yvr_error', 1, 2 * MINUTE_IN_SECONDS );
         return array();
     }
+
+    delete_transient( 'se_bc_wildfire_near_yvr_error' );
 
     $body = json_decode( wp_remote_retrieve_body( $response ), true );
     if ( ! is_array( $body ) || empty( $body['features'] ) || ! is_array( $body['features'] ) ) {
@@ -545,7 +563,7 @@ function se_fetch_bc_wildfire_near_yvr(): array {
         if ( ! is_array( $row ) ) {
             continue;
         }
-        $name   = wp_strip_all_tags( (string) ( $row['GEOGRAPHIC_DESCRIPTION'] ?? $row['INCIDENT_NAME'] ?? 'BC wildfire' ) );
+        $name   = se_broadcaster_wildfire_name( $row );
         $status = wp_strip_all_tags( (string) ( $row['FIRE_STATUS'] ?? '' ) );
         $size   = isset( $row['CURRENT_SIZE'] ) ? (float) $row['CURRENT_SIZE'] : 0;
         $url    = esc_url_raw( (string) ( $row['FIRE_URL'] ?? 'https://wildfiresituation.nrs.gov.bc.ca/map' ) );
@@ -570,17 +588,23 @@ function se_fetch_bc_wildfire_near_yvr(): array {
         );
     }
 
-    $out = se_broadcaster_prioritize_recent( $out, 'posted', 120 );
-
+    // Urgency first, then largest active fires, then newest ignition.
     usort(
         $out,
         static function ( array $a, array $b ): int {
+            $ra = (int) ( $a['status_rank'] ?? 0 );
+            $rb = (int) ( $b['status_rank'] ?? 0 );
+            if ( $rb !== $ra ) {
+                return $rb <=> $ra;
+            }
+            $sa = (float) ( $a['size'] ?? 0 );
+            $sb = (float) ( $b['size'] ?? 0 );
+            if ( $sb !== $sa ) {
+                return $sb <=> $sa;
+            }
             $ta = strtotime( (string) ( $a['posted'] ?? '' ) ) ?: 0;
             $tb = strtotime( (string) ( $b['posted'] ?? '' ) ) ?: 0;
-            if ( $tb !== $ta ) {
-                return $tb <=> $ta;
-            }
-            return ( $b['status_rank'] ?? 0 ) <=> ( $a['status_rank'] ?? 0 );
+            return $tb <=> $ta;
         }
     );
 
@@ -591,6 +615,17 @@ function se_fetch_bc_wildfire_near_yvr(): array {
 function se_broadcaster_wildfire_script(): array {
     $fires = se_fetch_bc_wildfire_near_yvr();
     if ( ! $fires ) {
+        if ( get_transient( 'se_bc_wildfire_near_yvr_error' ) ) {
+            return array(
+                'caption'       => 'BC Wildfire feed temporarily unavailable.',
+                'script'        => 'BC Wildfire Service data did not load. Try again in a minute.',
+                'source'        => 'BC Wildfire Service',
+                'source_url'    => 'https://wildfiresituation.nrs.gov.bc.ca/map',
+                'items'         => array(),
+                'fetched_label' => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
+            );
+        }
+
         return array(
             'caption'       => 'No active wildfires in southwest Coastal Fire Centre.',
             'script'        => 'BC Wildfire Service shows no active fires in the southwest Coastal corridor right now.',
@@ -621,7 +656,7 @@ function se_broadcaster_wildfire_script(): array {
 
     return se_broadcaster_pack_from_items(
         $items,
-        'BC Wildfire update for southwest Coastal Fire Centre. ',
+        'BC Wildfire — southwest coast. ',
         'BC Wildfire Service',
         'https://wildfiresituation.nrs.gov.bc.ca/map'
     );
@@ -735,6 +770,7 @@ function se_get_broadcaster_feeds_rest( WP_REST_Request $request ): WP_REST_Resp
         delete_transient( 'se_bc_ferries_capacity' );
         delete_transient( 'se_ec_weather_alerts' );
         delete_transient( 'se_bc_wildfire_near_yvr' );
+        delete_transient( 'se_bc_wildfire_near_yvr_error' );
         delete_transient( 'se_ec_aqhi_metro' );
     }
 

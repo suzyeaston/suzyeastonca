@@ -140,7 +140,7 @@ def main() -> None:
         port=int(env.get("LOUSY_SSH_PORT", "22")),
         username=env.get("LOUSY_SSH_USER", ""),
         password=env.get("LOUSY_SSH_PASSWORD", ""),
-        timeout=30,
+        timeout=60,
     )
     sftp = paramiko.SFTPClient.from_transport(client.get_transport())
 
