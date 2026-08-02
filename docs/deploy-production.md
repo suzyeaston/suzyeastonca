@@ -32,6 +32,14 @@ In the repo: **Settings → Secrets and variables → Actions → New repository
 
 These match the local-only file `.env.deploy.local` (never commit that file).
 
+From a machine with `gh` logged in as a repo admin:
+
+```bash
+cp scripts/env.deploy.example .env.deploy.local   # if needed
+# edit .env.deploy.local with your hosting panel values
+./scripts/setup-github-deploy-secrets.sh
+```
+
 **Important:** GitHub Actions does **not** read `.env.deploy.local`. If deploy fails with “Missing deploy credentials”, the secrets above are not set in GitHub yet — earlier workflow runs may have “succeeded” only because no theme/plugin paths changed and the deploy job was skipped.
 
 ## Troubleshooting
