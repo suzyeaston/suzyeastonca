@@ -49,11 +49,23 @@ get_header();
                             <div class="home-yvr-broadcaster__map-head pixel-font">
                                 <span class="home-yvr-broadcaster__map-kicker"><?php echo esc_html( 'greater vancouver // yvr bcast' ); ?></span>
                                 <span class="home-yvr-broadcaster__map-legend" data-broadcaster-map-legend aria-hidden="true"></span>
+                                <button type="button" class="home-yvr-broadcaster__map-expand pixel-font" data-broadcaster-map-expand aria-label="<?php echo esc_attr( 'Expand Greater Vancouver map' ); ?>"><?php echo esc_html( 'EXPAND' ); ?></button>
                             </div>
-                            <div class="home-yvr-broadcaster__map-stage" data-broadcaster-map-stage>
+                            <div class="home-yvr-broadcaster__map-stage" data-broadcaster-map-stage title="<?php echo esc_attr( 'Click map to expand' ); ?>">
                                 <svg class="home-yvr-broadcaster__map-svg" data-broadcaster-map-svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="<?php echo esc_attr( 'Greater Vancouver broadcaster map' ); ?>"></svg>
                                 <div class="home-yvr-broadcaster__map-tooltip pixel-font" data-broadcaster-map-tooltip hidden></div>
                                 <div class="home-yvr-broadcaster__map-scan" aria-hidden="true"></div>
+                            </div>
+                        </div>
+                        <div class="home-yvr-broadcaster__map-modal" data-broadcaster-map-modal hidden>
+                            <button type="button" class="home-yvr-broadcaster__map-modal-backdrop" data-broadcaster-map-close aria-label="<?php echo esc_attr( 'Close map' ); ?>"></button>
+                            <div class="home-yvr-broadcaster__map-modal-panel crt-block" role="dialog" aria-modal="true" aria-label="<?php echo esc_attr( 'Greater Vancouver map' ); ?>">
+                                <div class="home-yvr-broadcaster__map-modal-head pixel-font">
+                                    <span><?php echo esc_html( 'greater vancouver // live map' ); ?></span>
+                                    <button type="button" class="home-yvr-broadcaster__map-modal-close pixel-font" data-broadcaster-map-close><?php echo esc_html( 'CLOSE' ); ?></button>
+                                </div>
+                                <div class="home-yvr-broadcaster__map-modal-stage" data-broadcaster-map-modal-stage></div>
+                                <p class="home-yvr-broadcaster__map-modal-hint pixel-font"><?php echo esc_html( 'Pins match channel homes · tap to tune · scroll to zoom' ); ?></p>
                             </div>
                         </div>
                         <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'Tap a channel. Dave reads the feed — words light up.' ); ?></p>
