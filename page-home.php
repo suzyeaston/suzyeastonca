@@ -13,11 +13,11 @@ get_template_part( 'parts/home-yvr-ascii-art' );
                 <div class="home-city-scanner" data-city-scanner aria-label="<?php echo esc_attr( 'YVR live band scanner' ); ?>">
                     <div class="home-city-scanner__header">
                         <span class="home-city-scanner__badge pixel-font"><?php echo esc_html( 'YVR SCAN' ); ?></span>
-                        <span class="home-city-scanner__freq pixel-font" data-scanner-freq>980.000</span>
+                        <span class="home-city-scanner__freq pixel-font" data-scanner-freq>154.220</span>
                     </div>
                     <div class="home-city-scanner__display">
-                        <span class="home-city-scanner__channel pixel-font" data-scanner-channel><?php echo esc_html( 'CKNW 980' ); ?></span>
-                        <p class="home-city-scanner__caption" data-scanner-caption><?php echo esc_html( 'Live CKNW 980 — Vancouver AM news and traffic.' ); ?></p>
+                        <span class="home-city-scanner__channel pixel-font" data-scanner-channel><?php echo esc_html( 'BC FIRE DISP' ); ?></span>
+                        <p class="home-city-scanner__caption" data-scanner-caption><?php echo esc_html( 'Live Kamloops Fire dispatch. Metro Vancouver police, SkyTrain & VFRS are encrypted. Hit UNMUTE for live dispatch audio.' ); ?></p>
                     </div>
                     <div class="home-city-scanner__bars" aria-hidden="true">
                         <span class="home-city-scanner__bar" data-scanner-bar></span>
@@ -28,7 +28,7 @@ get_template_part( 'parts/home-yvr-ascii-art' );
                     </div>
                     <div class="home-city-scanner__controls">
                         <button type="button" class="home-city-scanner__btn home-city-scanner__scan pixel-font" data-scanner-scan><?php echo esc_html( 'SCAN' ); ?></button>
-                        <button type="button" class="home-city-scanner__btn home-city-scanner__mute pixel-font" data-scanner-mute aria-pressed="false"><?php echo esc_html( 'MUTE' ); ?></button>
+                        <button type="button" class="home-city-scanner__btn home-city-scanner__mute pixel-font" data-scanner-mute aria-pressed="true"><?php echo esc_html( 'UNMUTE' ); ?></button>
                     </div>
                     <audio data-scanner-audio preload="none" crossorigin="anonymous"></audio>
                 </div>

@@ -2,14 +2,15 @@
   'use strict';
 
   /**
-   * YVR scanner — one live audio stream (CKNW 980 Vancouver) + TransLink alert text on SCAN.
-   * Broadcastify embeds are deprecated; leanstream MP3/AAC is browser-safe.
+   * YVR scanner — one live BC fire-dispatch stream + TransLink alert text on SCAN.
+   * Metro Vancouver police, SkyTrain ops & VFRS use encrypted E-Comm — no public stream.
+   * ScanBC Kamloops feed is the nearest working open public-safety audio we can pipe in.
    */
-  var LIVE_STREAM = 'https://live.leanstream.co/CKNWAM';
+  var LIVE_STREAM = 'https://icecast0.scanbc.com/kamloops';
   var LIVE_CHANNEL = {
-    label: 'CKNW 980',
-    freq: '980.000',
-    caption: 'Live CKNW 980 — Vancouver AM news and traffic.'
+    label: 'BC FIRE DISP',
+    freq: '154.220',
+    caption: 'Live Kamloops Fire dispatch. Metro Vancouver police, SkyTrain & VFRS are encrypted.'
   };
 
   var TRANSIT_CHANNELS = [
@@ -33,7 +34,7 @@
     }
   ];
 
-  var STANDBY_CAPTION = LIVE_CHANNEL.caption;
+  var STANDBY_CAPTION = LIVE_CHANNEL.caption + ' Hit UNMUTE for live dispatch audio.';
   var SCAN_CAPTION = 'Sweeping live bands…';
   var ATTRIBUTION_TRANSIT = ' Alert data: TransLink.';
 
@@ -80,7 +81,7 @@
     this.bars = root.querySelectorAll('[data-scanner-bar]');
     this.alerts = [];
     this.skytrainAlerts = [];
-    this.muted = false;
+    this.muted = true;
     this.scanning = false;
     this.static = null;
     this.autoTimer = null;
@@ -92,6 +93,7 @@
   HomeCityScanner.prototype.init = function () {
     var self = this;
     this.loadAlerts();
+    this.syncMuteButton();
     this.showLiveChannel(false);
 
     if (this.scanBtn) {
@@ -103,13 +105,15 @@
 
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.autoTimer = window.setInterval(function () {
-        if (!self.muted && !self.scanning) self.scan(false);
+        if (!self.scanning) self.scan(false);
       }, AUTO_SCAN_MS);
     }
+  };
 
-    window.setTimeout(function () {
-      if (!self.muted) self.playLiveStream();
-    }, 1200);
+  HomeCityScanner.prototype.syncMuteButton = function () {
+    if (!this.muteBtn) return;
+    this.muteBtn.setAttribute('aria-pressed', this.muted ? 'true' : 'false');
+    this.muteBtn.textContent = this.muted ? 'UNMUTE' : 'MUTE';
   };
 
   HomeCityScanner.prototype.loadAlerts = function () {
@@ -138,7 +142,7 @@
   HomeCityScanner.prototype.transitCaption = function (channel) {
     var pool = this.alertPool(channel);
     if (!pool.length) {
-      return 'No active TransLink alerts — audio stays on CKNW 980.';
+      return 'No active TransLink alerts on this data channel.';
     }
     var alert = pick(pool);
     var line = alert.header || alert.text || 'TransLink alert';
@@ -176,7 +180,7 @@
   HomeCityScanner.prototype.showLiveChannel = function (scanning) {
     this.showingTransit = false;
     this.currentTransit = null;
-    this.updateDisplay(LIVE_CHANNEL, scanning, scanning ? SCAN_CAPTION : LIVE_CHANNEL.caption);
+    this.updateDisplay(LIVE_CHANNEL, scanning, scanning ? SCAN_CAPTION : STANDBY_CAPTION);
     this.root.classList.toggle('is-live-audio', !scanning && !this.muted);
   };
 
@@ -200,7 +204,13 @@
 
     if (!this.audio.src) {
       this.audio.src = LIVE_STREAM;
-      this.audio.volume = 0.55;
+      this.audio.volume = 0.5;
+    }
+
+    if (!this.audio.paused) {
+      this.setBars(true);
+      this.root.classList.add('is-live-audio');
+      return;
     }
 
     var playPromise = this.audio.play();
@@ -212,7 +222,7 @@
         })
         .catch(function () {
           if (self.captionEl && !self.showingTransit) {
-            self.captionEl.textContent = LIVE_CHANNEL.caption + ' (tap SCAN or unmute to retry playback)';
+            self.captionEl.textContent = STANDBY_CAPTION + ' (browser blocked playback — try UNMUTE again)';
           }
           self.setBars(false);
           self.root.classList.remove('is-live-audio');
@@ -227,15 +237,25 @@
     if (!this.audio) return;
     this.audio.pause();
     this.root.classList.remove('is-live-audio');
+    this.setBars(false);
   };
 
   HomeCityScanner.prototype.scan = function (userInitiated) {
     var self = this;
     if (this.scanning) return;
     this.scanning = true;
-    this.showLiveChannel(true);
-    this.setBars(true);
 
+    if (this.showingTransit) {
+      this.showLiveChannel(true);
+    } else {
+      this.updateDisplay(
+        { label: 'SCANNING…', freq: this.freqEl ? this.freqEl.textContent : '000.000' },
+        true,
+        SCAN_CAPTION
+      );
+    }
+
+    this.setBars(!this.muted);
     if (!this.muted) this.setStatic(0.22);
 
     window.setTimeout(function () {
@@ -247,7 +267,6 @@
       self.updateDisplay(transit, false, self.transitCaption(transit) + ATTRIBUTION_TRANSIT);
       self.root.classList.toggle('is-translink', true);
       self.setBars(!self.muted);
-      self.playLiveStream();
 
       if (userInitiated && self.scanBtn) {
         self.scanBtn.textContent = 'LOCKED';
@@ -258,26 +277,21 @@
 
   HomeCityScanner.prototype.toggleMute = function () {
     this.muted = !this.muted;
-    if (this.muteBtn) {
-      this.muteBtn.setAttribute('aria-pressed', this.muted ? 'true' : 'false');
-      this.muteBtn.textContent = this.muted ? 'UNMUTE' : 'MUTE';
-    }
+    this.syncMuteButton();
     if (this.muted) {
       this.setStatic(0);
       this.stopLiveStream();
-      this.setBars(false);
-      if (this.captionEl) {
-        this.captionEl.textContent = 'Muted. CKNW 980 stays off until you unmute.';
-      }
-    } else {
-      this.setBars(true);
-      this.playLiveStream();
       if (this.captionEl) {
         if (this.showingTransit && this.currentTransit) {
           this.captionEl.textContent = this.transitCaption(this.currentTransit) + ATTRIBUTION_TRANSIT;
         } else {
-          this.captionEl.textContent = LIVE_CHANNEL.caption;
+          this.captionEl.textContent = STANDBY_CAPTION;
         }
+      }
+    } else {
+      this.playLiveStream();
+      if (this.captionEl && !this.showingTransit) {
+        this.captionEl.textContent = LIVE_CHANNEL.caption;
       }
     }
   };
