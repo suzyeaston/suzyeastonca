@@ -274,7 +274,7 @@
 
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
-    this.renderScript('Pick a channel below. Words light up as the computer voice reads.', 'plain');
+    this.renderScript('Tap a channel. Words track the voice.', 'plain');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.remove('is-live', 'is-radio');
     }
