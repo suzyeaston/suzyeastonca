@@ -89,27 +89,18 @@ function retro_game_music_theme_scripts() {
             true
         );
 
+        $hero_map_js = get_template_directory() . '/js/home-hero-map.js';
         $broadcaster_js = get_template_directory() . '/js/home-yvr-broadcaster.js';
-        $metro_map_js = get_template_directory() . '/js/home-yvr-metro-map.js';
-        if ( file_exists( $metro_map_js ) ) {
+        if ( file_exists( $hero_map_js ) ) {
             wp_enqueue_script(
-                'home-yvr-metro-map',
-                get_template_directory_uri() . '/js/home-yvr-metro-map.js',
+                'home-hero-map',
+                get_template_directory_uri() . '/js/home-hero-map.js',
                 array(),
-                filemtime( $metro_map_js ),
-                true
-            );
-        }
-        if ( file_exists( $broadcaster_js ) ) {
-            wp_enqueue_script(
-                'home-yvr-broadcaster',
-                get_template_directory_uri() . '/js/home-yvr-broadcaster.js',
-                file_exists( $metro_map_js ) ? array( 'home-yvr-metro-map' ) : array(),
-                filemtime( $broadcaster_js ),
+                filemtime( $hero_map_js ),
                 true
             );
             wp_localize_script(
-                'home-yvr-broadcaster',
+                'home-hero-map',
                 'HomeYvrBroadcasterConfig',
                 array(
                     'feedsUrl'  => rest_url( 'se/v1/broadcaster/feeds' ),
@@ -117,6 +108,15 @@ function retro_game_music_theme_scripts() {
                         ? se_broadcaster_metro_map_static()
                         : array(),
                 )
+            );
+        }
+        if ( file_exists( $broadcaster_js ) ) {
+            wp_enqueue_script(
+                'home-yvr-broadcaster',
+                get_template_directory_uri() . '/js/home-yvr-broadcaster.js',
+                file_exists( $hero_map_js ) ? array( 'home-hero-map' ) : array(),
+                filemtime( $broadcaster_js ),
+                true
             );
         }
 

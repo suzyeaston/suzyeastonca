@@ -117,7 +117,7 @@
     this.metaEl = root.querySelector('[data-broadcaster-meta]');
     this.mouthEl = root.querySelector('[data-broadcaster-mouth]');
     this.faceEl = root.querySelector('[data-broadcaster-face]');
-    this.metroMap = null;
+    this.heroMap = window.HomeHeroMap || null;
     this.feedsUrl = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.feedsUrl) ||
       '/wp-json/se/v1/broadcaster/feeds';
     this.feeds = null;
@@ -133,14 +133,11 @@
   HomeYvrBroadcaster.prototype.init = function () {
     var self = this;
 
-    if (window.HomeYvrMetroMap) {
-      this.metroMap = new window.HomeYvrMetroMap(this.root, function (key) {
+    this.heroMap = window.HomeHeroMap || null;
+    if (this.heroMap) {
+      this.heroMap.onChannelSelect = function (key) {
         if (CHANNELS[key]) self.activate(key);
-      });
-      var metroConfig = window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.metroMap;
-      if (metroConfig && metroConfig.bounds) {
-        this.metroMap.boot(metroConfig);
-      }
+      };
     }
 
     this.channelBtns.forEach(function (btn) {
@@ -261,10 +258,10 @@
       box.scrollTop = Math.max(0, target);
     }
 
-    if (this.metroMap && this.activeKey === 'wildfire') {
-      var matched = this.metroMap.matchMarkerByText(this.wordSpans[idx].textContent);
-      if (matched) {
-        this.metroMap.highlightMarker(matched.id);
+    if (this.heroMap && this.activeKey) {
+      var matched = this.heroMap.matchMarkerByText(this.wordSpans[idx].textContent);
+      if (matched && matched.id) {
+        this.heroMap.highlightMarker(matched.id);
       }
     }
   };
@@ -350,8 +347,8 @@
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.remove('is-live', 'is-radio');
     }
-    if (this.metroMap) {
-      this.metroMap.setActiveChannel(null);
+    if (this.heroMap) {
+      this.heroMap.setActiveChannel(null);
     }
   };
 
@@ -389,20 +386,20 @@
       .catch(function () { return self.feeds; });
   };
 
-  HomeYvrBroadcaster.prototype.updateMetroFromFeeds = function (feeds) {
-    if (!this.metroMap || !feeds) return;
+  HomeYvrBroadcaster.prototype.updateHeroMapFromFeeds = function (feeds) {
+    if (!this.heroMap || !feeds) return;
     if (feeds.metro_map && feeds.metro_map.overlays) {
-      this.metroMap.setOverlays(feeds.metro_map.overlays);
+      this.heroMap.setOverlays(feeds.metro_map.overlays);
     }
     if (this.activeKey) {
-      this.metroMap.setActiveChannel(this.activeKey);
+      this.heroMap.setActiveChannel(this.activeKey);
     }
   };
 
   HomeYvrBroadcaster.prototype.loadFeeds = function () {
     var self = this;
     this.fetchFeeds(false).then(function (feeds) {
-      self.updateMetroFromFeeds(feeds);
+      self.updateHeroMapFromFeeds(feeds);
     });
   };
 
@@ -441,8 +438,8 @@
     this.activeKey = null;
     this.setBars(false);
     this.root.classList.remove('is-live');
-    if (this.metroMap) {
-      this.metroMap.setActiveChannel(null);
+    if (this.heroMap) {
+      this.heroMap.setActiveChannel(null);
     }
     if (toStandby) this.setStandby();
   };
@@ -610,7 +607,7 @@
     this.setBars(true);
 
     if (channel.stream) {
-      if (this.metroMap) this.metroMap.setActiveChannel(key);
+      if (this.heroMap) this.heroMap.setActiveChannel(key);
       this.playRadio(channel);
       return;
     }
@@ -623,9 +620,9 @@
         return;
       }
 
-      self.updateMetroFromFeeds(feeds);
-      if (self.metroMap) {
-        self.metroMap.setActiveChannel(channel.key);
+      self.updateHeroMapFromFeeds(feeds);
+      if (self.heroMap) {
+        self.heroMap.setActiveChannel(channel.key);
       }
 
       var script = pack.script || pack.caption || '';
