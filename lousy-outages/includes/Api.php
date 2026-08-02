@@ -454,7 +454,17 @@ class Api {
         $last_refresh_local = $last_refresh_epoch > 0 ? wp_date('c', $last_refresh_epoch) : null;
 
         $next_refresh      = wp_next_scheduled('lousy_outages_refresh_official_providers');
-        $next_alert_run    = null;
+        $next_alert_run    = wp_next_scheduled(\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::ALERT_HOOK);
+        if (!$next_alert_run) {
+            $cron = function_exists('_get_cron_array') ? _get_cron_array() : [];
+            foreach ((array) $cron as $timestamp => $events) {
+                if (!is_array($events) || !isset($events[\SuzyEaston\LousyOutages\Cron\CanonicalPipeline::ALERT_HOOK])) {
+                    continue;
+                }
+                $next_alert_run = (int) $timestamp;
+                break;
+            }
+        }
         $next_daily_digest = wp_next_scheduled('lo_send_daily_digest');
 
         $payload = [

@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.5.6
+ * Version: 0.5.7
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.5.6' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.5.7' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -234,6 +234,9 @@ function lousy_outages_upgrade_032_runtime(): void {
     $lease = get_option( CanonicalPipeline::LEASE_OPTION, [] );
     if ( is_array( $lease ) && (int) ( $lease['expires_at'] ?? 0 ) <= time() ) delete_option( CanonicalPipeline::LEASE_OPTION );
     delete_option( 'lousy_outages_refresh_runtime' );
+    if ( class_exists( '\\SuzyEaston\\LousyOutages\\Storage\\EpisodeStore' ) ) {
+        ( new \SuzyEaston\LousyOutages\Storage\EpisodeStore() )->releaseLegacyEmailSuppression();
+    }
     lousy_outages_schedule_canonical_refresh();
 }
 /**

@@ -370,10 +370,17 @@ class IncidentAlerts {
         }
         $episodeStore = $options['episode_store'] ?? new EpisodeStore();
         $transitions = $episodeStore->observe($incidents, $providerStates);
+        $legacyReleased = 0;
+        if (empty($options['skip_delivery'])) {
+            $legacyReleased = $episodeStore->releaseLegacyEmailSuppression();
+        }
         try {
             $result = !empty($options['skip_delivery'])
                 ? ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>count($incidents),'failed'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>['publication_checkpointed'],'mode'=>'canonical_refresh']
                 : self::process_episodes(array_merge($transitions['opened'], array_filter($transitions['continuing'], static fn($e) => !empty($e['email_pending_recipients']) || empty($e['email_successful_recipients']))), $episodeStore, $options);
+            if ($legacyReleased > 0 && is_array($result)) {
+                $result['legacy_suppression_released'] = $legacyReleased;
+            }
         } catch (\Throwable $e) {
             $result = ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>0,'failed'=>1,'recipients'=>[],'failures'=>[$e->getMessage()],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
         }
@@ -408,7 +415,11 @@ class IncidentAlerts {
     {
         $result=['total_incidents'=>count($episodes),'considered'=>count($episodes),'sent'=>0,'skipped'=>0,'failed'=>0,'pending'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
         foreach($episodes as $episode){
-            if(!empty($episode['legacy_suppressed'])){$result['skipped']++;$result['skipped_reasons'][]='legacy_active_incident_imported';continue;}
+            if (!empty($episode['legacy_suppressed']) && !empty($episode['email_successful_recipients'])) {
+                $result['skipped']++;
+                $result['skipped_reasons'][] = 'legacy_active_incident_imported';
+                continue;
+            }
             $incident=new Incident((string)$episode['provider_id'],(string)$episode['episode_guid'],(string)$episode['title'],(string)$episode['status'],(string)$episode['url'],null,(string)$episode['severity'],(int)$episode['first_detected'],null);
             $eligible=self::eligible_recipients($incident);
             $pending=$store->pendingRecipients((string)$episode['episode_guid'],$eligible);

@@ -131,7 +131,18 @@ final class CanonicalPipeline
     private static function publishChannel(string $channel, string $cycleId, callable $callback): void
     {
         $cycle = self::cycle();
-        if (!$cycle || ($cycleId && $cycleId !== $cycle['cycle_id']) || (($cycle['publication'][$channel] ?? '') === 'completed')) return;
+        if (!$cycle) {
+            return;
+        }
+        if ($cycleId && $cycleId !== $cycle['cycle_id']) {
+            // Stale queued event — skip only if the active cycle already finished this channel.
+            if (($cycle['publication'][$channel] ?? '') === 'completed') {
+                return;
+            }
+        }
+        if (($cycle['publication'][$channel] ?? '') === 'completed') {
+            return;
+        }
         $cycle['publication'][$channel] = 'running'; self::saveCycle($cycle);
         try {
             $cycle['publication_results'][$channel] = $callback($cycle);

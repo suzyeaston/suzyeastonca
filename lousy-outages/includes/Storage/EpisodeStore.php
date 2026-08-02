@@ -93,6 +93,29 @@ final class EpisodeStore
     public function pendingRecipients(string $guid,array $eligible): array
     { $all=$this->all(); $sent=(array)($all[$guid]['email_successful_recipients']??[]); return array_values(array_diff(array_unique($eligible),$sent)); }
 
+    /** Episodes imported during migration were flagged to avoid duplicate blast — clear when nothing was ever mailed. */
+    public function releaseLegacyEmailSuppression(): int
+    {
+        $all = $this->all();
+        $released = 0;
+        foreach ($all as $key => &$episode) {
+            if (empty($episode['legacy_suppressed'])) {
+                continue;
+            }
+            $sent = (array) ($episode['email_successful_recipients'] ?? []);
+            if (!empty($sent)) {
+                continue;
+            }
+            $episode['legacy_suppressed'] = false;
+            $released++;
+        }
+        unset($episode);
+        if ($released > 0) {
+            update_option(self::OPTION, $all, false);
+        }
+        return $released;
+    }
+
     private function identity(Incident $i,string $provider): array
     {
         $id=trim($i->id); $isFallback=(bool)preg_match('/(^|:)status:/',$id);
