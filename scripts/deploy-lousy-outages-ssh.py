@@ -42,6 +42,7 @@ THEME_FILES = [
     "page-lousy-outages.php",
     "parts/lousy-outages-teaser.php",
     "assets/css/home-hero-cabinet.css",
+    "js/home-yvr-wildfire-map.js",
     "js/home-yvr-broadcaster.js",
     "assets/css/lousy-outages-page.css",
     "assets/css/lousy-outages-theme-isolation.css",

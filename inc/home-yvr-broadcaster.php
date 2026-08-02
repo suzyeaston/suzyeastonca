@@ -485,6 +485,17 @@ function se_broadcaster_weather_script(): array {
     );
 }
 
+function se_broadcaster_wildfire_status_tier( string $status ): string {
+    $status = strtolower( $status );
+    if ( str_contains( $status, 'out of control' ) ) {
+        return 'ooc';
+    }
+    if ( str_contains( $status, 'being held' ) ) {
+        return 'held';
+    }
+    return 'other';
+}
+
 function se_broadcaster_wildfire_name( array $row ): string {
     $geo = wp_strip_all_tags( (string) ( $row['GEOGRAPHIC_DESCRIPTION'] ?? '' ) );
     $inc = wp_strip_all_tags( (string) ( $row['INCIDENT_NAME'] ?? '' ) );
@@ -585,6 +596,58 @@ function se_broadcaster_wildfire_summary_prefix( array $fires ): string {
     return 'BC Wildfire bulletin for the southwest coastal corridor. ';
 }
 
+function se_broadcaster_wildfire_map_bounds(): array {
+    return array(
+        'west'  => -123.45,
+        'east'  => -119.25,
+        'south' => 48.88,
+        'north' => 50.42,
+    );
+}
+
+function se_broadcaster_wildfire_map_payload( array $fires, array $bulletin_fires = array() ): array {
+    $bounds   = se_broadcaster_wildfire_map_bounds();
+    $bulletin = array();
+    foreach ( $bulletin_fires as $fire ) {
+        if ( ! empty( $fire['name'] ) ) {
+            $bulletin[] = (string) $fire['name'];
+        }
+    }
+
+    $markers = array();
+    foreach ( $fires as $fire ) {
+        $lat = isset( $fire['lat'] ) ? (float) $fire['lat'] : 0.0;
+        $lon = isset( $fire['lon'] ) ? (float) $fire['lon'] : 0.0;
+        if ( ! $lat || ! $lon ) {
+            continue;
+        }
+
+        $name = (string) ( $fire['name'] ?? '' );
+        $markers[] = array(
+            'id'        => sanitize_title( $name ),
+            'name'      => $name,
+            'status'    => (string) ( $fire['status'] ?? '' ),
+            'tier'      => (string) ( $fire['tier'] ?? se_broadcaster_wildfire_status_tier( (string) ( $fire['status'] ?? '' ) ) ),
+            'lat'       => $lat,
+            'lon'       => $lon,
+            'url'       => (string) ( $fire['url'] ?? '' ),
+            'age_label' => (string) ( $fire['age_label'] ?? '' ),
+            'bulletin'  => in_array( $name, $bulletin, true ),
+        );
+    }
+
+    return array(
+        'bounds'  => $bounds,
+        'labels'  => array(
+            array( 'name' => 'YVR', 'lat' => 49.1967, 'lon' => -123.1815 ),
+            array( 'name' => 'Van', 'lat' => 49.2827, 'lon' => -123.1207 ),
+            array( 'name' => 'Squamish', 'lat' => 49.7016, 'lon' => -123.1558 ),
+            array( 'name' => 'Victoria', 'lat' => 48.4284, 'lon' => -123.3656 ),
+        ),
+        'markers' => $markers,
+    );
+}
+
 function se_fetch_bc_wildfire_near_yvr(): array {
     $cached = get_transient( 'se_bc_wildfire_near_yvr' );
     if ( false !== $cached && is_array( $cached ) ) {
@@ -595,7 +658,7 @@ function se_fetch_bc_wildfire_near_yvr(): array {
     $query = add_query_arg(
         array(
             'where'              => "FIRE_CENTRE = 2 AND FIRE_STATUS NOT IN ('Out') AND LATITUDE >= 48.95 AND LATITUDE <= 50.35",
-            'outFields'          => 'INCIDENT_NAME,GEOGRAPHIC_DESCRIPTION,FIRE_STATUS,FIRE_URL,IGNITION_DATE',
+            'outFields'          => 'INCIDENT_NAME,GEOGRAPHIC_DESCRIPTION,FIRE_STATUS,FIRE_URL,IGNITION_DATE,LATITUDE,LONGITUDE',
             'returnGeometry'     => 'false',
             'resultRecordCount'  => '60',
             'orderByFields'      => 'IGNITION_DATE DESC',
@@ -645,11 +708,16 @@ function se_fetch_bc_wildfire_near_yvr(): array {
         $ignition_ts  = $ignition_ms ? (int) round( $ignition_ms / 1000 ) : 0;
         $ignition_label = $ignition_ms ? se_broadcaster_format_arcgis_ms( $ignition_ms ) : '';
         $age_label    = se_broadcaster_wildfire_age_label( $ignition_ts, $ignition_label );
+        $lat          = is_numeric( $row['LATITUDE'] ?? null ) ? (float) $row['LATITUDE'] : 0.0;
+        $lon          = is_numeric( $row['LONGITUDE'] ?? null ) ? (float) $row['LONGITUDE'] : 0.0;
 
         $out[] = array(
             'name'           => $name,
             'status'         => $status,
             'url'            => $url,
+            'tier'           => se_broadcaster_wildfire_status_tier( $status ),
+            'lat'            => $lat,
+            'lon'            => $lon,
             'ignition'       => (string) ( $row['IGNITION_DATE'] ?? '' ),
             'posted'         => $ignition_iso,
             'ignition_label' => $ignition_label,
@@ -708,12 +776,15 @@ function se_broadcaster_wildfire_script(): array {
         );
     }
 
-    return se_broadcaster_pack_from_items(
+    $pack = se_broadcaster_pack_from_items(
         $items,
         se_broadcaster_wildfire_summary_prefix( $fires ),
         'BC Wildfire Service',
         'https://wildfiresituation.nrs.gov.bc.ca/map'
     );
+    $pack['map'] = se_broadcaster_wildfire_map_payload( $fires, $bulletin_fires );
+
+    return $pack;
 }
 
 function se_fetch_ec_aqhi_metro(): array {

@@ -45,6 +45,17 @@ get_header();
                         </div>
                     </div>
                     <div class="home-yvr-broadcaster__crt" data-broadcaster-teleprompt>
+                        <div class="home-yvr-broadcaster__map-wrap" data-broadcaster-map-wrap hidden>
+                            <div class="home-yvr-broadcaster__map-head pixel-font">
+                                <span class="home-yvr-broadcaster__map-kicker"><?php echo esc_html( 'SW BC // coastal fire centre' ); ?></span>
+                                <span class="home-yvr-broadcaster__map-legend" data-broadcaster-map-legend aria-hidden="true"></span>
+                            </div>
+                            <div class="home-yvr-broadcaster__map-stage" data-broadcaster-map-stage>
+                                <svg class="home-yvr-broadcaster__map-svg" data-broadcaster-map-svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="<?php echo esc_attr( 'Interactive southwest BC wildfire map' ); ?>"></svg>
+                                <div class="home-yvr-broadcaster__map-tooltip pixel-font" data-broadcaster-map-tooltip hidden></div>
+                                <div class="home-yvr-broadcaster__map-scan" aria-hidden="true"></div>
+                            </div>
+                        </div>
                         <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'Tap a channel. Dave reads the feed — words light up.' ); ?></p>
                         <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>
                         <div class="home-yvr-broadcaster__crt-scan" aria-hidden="true"></div>
