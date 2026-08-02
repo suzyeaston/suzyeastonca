@@ -65,9 +65,14 @@ def load_env(path: Path) -> dict:
             k, v = line.split("=", 1)
             data.setdefault(k.strip(), v.strip())
     if not data.get("LOUSY_SSH_HOST") or not data.get("LOUSY_SSH_USER") or not data.get("LOUSY_SSH_PASSWORD"):
+        hint = (
+            "For GitHub Actions, add LOUSY_SSH_* as repository secrets "
+            "(Settings → Secrets and variables → Actions). "
+            "See docs/deploy-production.md."
+        )
         raise SystemExit(
             f"Missing deploy credentials. Set {', '.join(DEPLOY_ENV_KEYS)} in the environment "
-            f"or in {path}."
+            f"or in {path}. {hint}"
         )
     return data
 

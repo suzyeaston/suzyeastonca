@@ -32,6 +32,23 @@ In the repo: **Settings → Secrets and variables → Actions → New repository
 
 These match the local-only file `.env.deploy.local` (never commit that file).
 
+**Important:** GitHub Actions does **not** read `.env.deploy.local`. If deploy fails with “Missing deploy credentials”, the secrets above are not set in GitHub yet — earlier workflow runs may have “succeeded” only because no theme/plugin paths changed and the deploy job was skipped.
+
+## Troubleshooting
+
+### `Missing deploy credentials` on GitHub Actions
+
+1. Open the repo on GitHub → **Settings** → **Secrets and variables** → **Actions**
+2. Create repository secrets (names must match exactly):
+   - `LOUSY_SSH_HOST`
+   - `LOUSY_SSH_PORT` (optional; defaults to `22`)
+   - `LOUSY_SSH_USER`
+   - `LOUSY_SSH_PASSWORD`
+3. Copy values from your local `.env.deploy.local`
+4. Re-run the failed workflow (Actions → Deploy to Production → Re-run jobs) or push again
+
+Local deploys from Cursor/cloud agents can still work via `.env.deploy.local` even when GitHub Actions fails.
+
 ## Local deploy (same script)
 
 ```bash
