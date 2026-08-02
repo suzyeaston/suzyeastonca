@@ -90,11 +90,21 @@ function retro_game_music_theme_scripts() {
         );
 
         $broadcaster_js = get_template_directory() . '/js/home-yvr-broadcaster.js';
+        $wildfire_map_js = get_template_directory() . '/js/home-yvr-wildfire-map.js';
+        if ( file_exists( $wildfire_map_js ) ) {
+            wp_enqueue_script(
+                'home-yvr-wildfire-map',
+                get_template_directory_uri() . '/js/home-yvr-wildfire-map.js',
+                array(),
+                filemtime( $wildfire_map_js ),
+                true
+            );
+        }
         if ( file_exists( $broadcaster_js ) ) {
             wp_enqueue_script(
                 'home-yvr-broadcaster',
                 get_template_directory_uri() . '/js/home-yvr-broadcaster.js',
-                array(),
+                file_exists( $wildfire_map_js ) ? array( 'home-yvr-wildfire-map' ) : array(),
                 filemtime( $broadcaster_js ),
                 true
             );

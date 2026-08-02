@@ -117,6 +117,7 @@
     this.metaEl = root.querySelector('[data-broadcaster-meta]');
     this.mouthEl = root.querySelector('[data-broadcaster-mouth]');
     this.faceEl = root.querySelector('[data-broadcaster-face]');
+    this.wildfireMap = window.HomeYvrWildfireMap ? new window.HomeYvrWildfireMap(root) : null;
     this.feedsUrl = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.feedsUrl) ||
       '/wp-json/se/v1/broadcaster/feeds';
     this.feeds = null;
@@ -249,6 +250,13 @@
       var target = top - (box.clientHeight / 2) + (current.clientHeight / 2);
       box.scrollTop = Math.max(0, target);
     }
+
+    if (this.wildfireMap && this.activeKey === 'wildfire') {
+      var matched = this.wildfireMap.matchMarkerByText(this.wordSpans[idx].textContent);
+      if (matched) {
+        this.wildfireMap.highlightMarker(matched.id);
+      }
+    }
   };
 
   HomeYvrBroadcaster.prototype.renderMeta = function (pack) {
@@ -330,7 +338,10 @@
     this.renderMeta(null);
     this.renderScript('Tap a channel. Dave reads the feed — words light up.', 'plain');
     if (this.telepromptRoot) {
-      this.telepromptRoot.classList.remove('is-live', 'is-radio');
+      this.telepromptRoot.classList.remove('is-live', 'is-radio', 'is-wildfire');
+    }
+    if (this.wildfireMap) {
+      this.wildfireMap.hide();
     }
   };
 
@@ -582,8 +593,18 @@
       if (!pack) {
         self.renderScript('Feed still loading — try again in a moment.', 'plain');
         self.setBars(false);
+        if (self.wildfireMap) self.wildfireMap.hide();
         return;
       }
+
+      if (channel.key === 'wildfire' && self.wildfireMap) {
+        if (self.telepromptRoot) self.telepromptRoot.classList.add('is-wildfire');
+        self.wildfireMap.render(pack.map || null);
+      } else if (self.wildfireMap) {
+        if (self.telepromptRoot) self.telepromptRoot.classList.remove('is-wildfire');
+        self.wildfireMap.hide();
+      }
+
       var script = pack.script || pack.caption || '';
       self.speak(script, channel, pack);
     });
