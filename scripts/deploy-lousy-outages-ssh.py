@@ -40,7 +40,6 @@ THEME_FILES = [
     "inc/home-yvr-broadcaster.php",
     "page-home.php",
     "page-lousy-outages.php",
-    "parts/home-yvr-ascii-art.php",
     "parts/lousy-outages-teaser.php",
     "assets/css/home-hero-cabinet.css",
     "js/home-yvr-broadcaster.js",

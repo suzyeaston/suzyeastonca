@@ -8,7 +8,6 @@ get_header();
     <section class="home-arcade-title-screen crt-block home-amp-cabinet" aria-labelledby="home-hero-title" data-arcade-hero>
         <div class="home-arcade-screen__backdrop" aria-label="<?php echo esc_attr( 'YVR live feed radio rack' ); ?>">
             <div class="home-yvr-rack">
-                <p class="home-yvr-rack__kicker pixel-font"><?php echo esc_html( 'live feeds // yvr' ); ?></p>
                 <div class="home-yvr-broadcaster" data-yvr-broadcaster aria-label="<?php echo esc_attr( 'YVR broadcaster — live feeds and radio' ); ?>">
                     <div class="home-yvr-broadcaster__mast">
                         <div class="home-yvr-broadcaster__avatar" data-broadcaster-face aria-hidden="true">
@@ -46,12 +45,11 @@ get_header();
                         </div>
                     </div>
                     <div class="home-yvr-broadcaster__crt" data-broadcaster-teleprompt>
+                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'Tap a channel. Dave reads the feed — words light up.' ); ?></p>
                         <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>
-                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'Pick a feed below. Dave narrates — words light up.' ); ?></p>
                         <div class="home-yvr-broadcaster__crt-scan" aria-hidden="true"></div>
                     </div>
                     <div class="home-yvr-broadcaster__feeds">
-                        <p class="home-yvr-broadcaster__feeds-label pixel-font"><?php echo esc_html( 'pick a feed' ); ?></p>
                         <div class="home-yvr-broadcaster__channels">
                             <button type="button" class="home-yvr-broadcaster__ch" data-broadcaster-channel-btn="translink" aria-pressed="false">
                                 <span class="home-yvr-broadcaster__ch-label pixel-font"><?php echo esc_html( 'SkyTrain' ); ?></span>
@@ -87,7 +85,6 @@ get_header();
                         <span class="home-yvr-broadcaster__stop-label"><?php echo esc_html( 'STOP' ); ?></span>
                         <span class="home-yvr-broadcaster__stop-hint"><?php echo esc_html( 'silence dave' ); ?></span>
                     </button>
-                    <p class="home-yvr-broadcaster__caption" data-broadcaster-caption hidden></p>
                     <audio data-broadcaster-audio preload="none" crossorigin="anonymous"></audio>
                 </div>
             </div>

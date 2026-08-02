@@ -109,13 +109,12 @@
     this.audio = root.querySelector('[data-broadcaster-audio]');
     this.freqEl = root.querySelector('[data-broadcaster-freq]');
     this.channelEl = root.querySelector('[data-broadcaster-channel]');
-    this.captionEl = root.querySelector('[data-broadcaster-caption]');
     this.stopBtn = root.querySelector('[data-broadcaster-stop]');
     this.bars = root.querySelectorAll('[data-broadcaster-bar]');
     this.channelBtns = root.querySelectorAll('[data-broadcaster-channel-btn]');
-    this.telepromptRoot = document.querySelector('[data-broadcaster-teleprompt]');
-    this.scriptEl = document.querySelector('[data-broadcaster-script]');
-    this.metaEl = document.querySelector('[data-broadcaster-meta]');
+    this.telepromptRoot = root.querySelector('[data-broadcaster-teleprompt]');
+    this.scriptEl = root.querySelector('[data-broadcaster-script]');
+    this.metaEl = root.querySelector('[data-broadcaster-meta]');
     this.mouthEl = root.querySelector('[data-broadcaster-mouth]');
     this.faceEl = root.querySelector('[data-broadcaster-face]');
     this.feedsUrl = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.feedsUrl) ||
@@ -255,31 +254,22 @@
   HomeYvrBroadcaster.prototype.renderMeta = function (pack) {
     if (!this.metaEl) return;
 
-    var items = (pack && pack.items) ? pack.items : [];
     var html = '';
-
-    items.forEach(function (item) {
-      var title = escapeHtml(item.title || 'Update');
-      var when = escapeHtml(item.posted_label || item.posted || '');
-      var url = item.url || '';
-      var linkLabel = escapeHtml(item.link_label || 'Open source');
-
-      html += '<li class="home-yvr-teleprompt__item">';
-      if (when) {
-        html += '<time class="home-yvr-teleprompt__time">' + when + '</time>';
-      }
-      html += '<span class="home-yvr-teleprompt__title">' + title + '</span>';
-      if (url) {
-        html += ' <a class="home-yvr-teleprompt__link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' + linkLabel + '</a>';
-      }
-      html += '</li>';
-    });
 
     if (pack && pack.fetched_label) {
       html += '<li class="home-yvr-teleprompt__item home-yvr-teleprompt__item--fetched">';
       html += '<span class="home-yvr-teleprompt__time">' + escapeHtml(pack.fetched_label) + '</span>';
       html += '</li>';
     }
+
+    var items = (pack && pack.items) ? pack.items : [];
+    items.forEach(function (item, index) {
+      if (!item.url) return;
+      var linkLabel = escapeHtml(item.link_label || 'Source ' + (index + 1));
+      html += '<li class="home-yvr-teleprompt__item home-yvr-teleprompt__item--link">';
+      html += '<a class="home-yvr-teleprompt__link" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer">' + linkLabel + '</a>';
+      html += '</li>';
+    });
 
     if (pack && pack.source_url) {
       html += '<li class="home-yvr-teleprompt__item home-yvr-teleprompt__item--source">';
@@ -291,9 +281,11 @@
     if (html) {
       this.metaEl.innerHTML = html;
       this.metaEl.hidden = false;
+      this.metaEl.classList.add('is-footer');
     } else {
       this.metaEl.innerHTML = '';
       this.metaEl.hidden = true;
+      this.metaEl.classList.remove('is-footer');
     }
   };
 
@@ -336,7 +328,7 @@
 
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
-    this.renderScript('Pick a feed below. Dave narrates — words light up.', 'plain');
+    this.renderScript('Tap a channel. Dave reads the feed — words light up.', 'plain');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.remove('is-live', 'is-radio');
     }
@@ -345,10 +337,6 @@
   HomeYvrBroadcaster.prototype.setStandby = function () {
     if (this.freqEl) this.freqEl.textContent = '000.000';
     if (this.channelEl) this.channelEl.textContent = 'STANDBY';
-    if (this.captionEl) {
-      this.captionEl.textContent = '';
-      this.captionEl.hidden = true;
-    }
     this.setTelepromptStandby();
     this.setMouthIdle();
     this.clearAutoMuteTimer();
@@ -365,23 +353,8 @@
     });
   };
 
-  HomeYvrBroadcaster.prototype.loadFeeds = function (refresh) {
+  HomeYvrBroadcaster.prototype.fetchFeeds = function (refresh) {
     var self = this;
-    var url = this.feedsUrl;
-    if (refresh) {
-      url += (url.indexOf('?') === -1 ? '?' : '&') + 'refresh=1';
-    }
-    fetch(url, { credentials: 'same-origin' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (data) {
-        if (data) self.feeds = data;
-      })
-      .catch(function () { /* standby */ });
-  };
-
-  HomeYvrBroadcaster.prototype.ensureFeeds = function (refresh) {
-    var self = this;
-    if (this.feeds && !refresh) return Promise.resolve(this.feeds);
     var url = this.feedsUrl;
     if (refresh) {
       url += (url.indexOf('?') === -1 ? '?' : '&') + 'refresh=1';
@@ -391,7 +364,17 @@
       .then(function (data) {
         if (data) self.feeds = data;
         return self.feeds;
-      });
+      })
+      .catch(function () { return self.feeds; });
+  };
+
+  HomeYvrBroadcaster.prototype.loadFeeds = function () {
+    this.fetchFeeds(false);
+  };
+
+  HomeYvrBroadcaster.prototype.ensureFeeds = function (refresh) {
+    if (this.feeds && !refresh) return Promise.resolve(this.feeds);
+    return this.fetchFeeds(true);
   };
 
   HomeYvrBroadcaster.prototype.stopSpeech = function () {
@@ -541,14 +524,13 @@
     this.renderMeta(pack || {
       source: 'CKNW 980',
       source_url: 'https://www.cknw.com/',
+      fetched_label: 'Live now',
       items: [{
-        title: 'CKNW 980 AM',
-        posted_label: 'Live now',
         url: 'https://www.cknw.com/',
         link_label: 'cknw.com'
       }]
     });
-    this.renderScript('Live CKNW 980 — Vancouver AM radio. Dave goes quiet — hit STOP to silence.', 'plain');
+    this.renderScript('Live CKNW 980. Dave goes quiet — hit STOP to silence.', 'plain');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.add('is-live', 'is-radio');
     }
