@@ -4,20 +4,101 @@
   var CKNW_STREAM = 'https://live.leanstream.co/CKNWAM';
 
   var CHANNELS = {
-    translink: { label: 'TRANSLINK', freq: '410.287', key: 'translink' },
+    translink: { label: 'SKYTRAIN', freq: '410.287', key: 'translink' },
     cknw: { label: 'CKNW 980', freq: '980.000', key: 'cknw', stream: true },
     drivers: { label: 'DRIVE BC', freq: '154.100', key: 'drivers' },
     ferries: { label: 'BC FERRIES', freq: '156.800', key: 'ferries' }
   };
 
-  function pickComputerVoice() {
+  var VOICE_PREFS = [
+    'Microsoft Aria Online (Natural)',
+    'Microsoft Aria',
+    'Microsoft Jenny Online (Natural)',
+    'Microsoft Jenny',
+    'Google US English',
+    'Samantha (Enhanced)',
+    'Samantha',
+    'Microsoft Zira',
+    'Karen',
+    'Moira'
+  ];
+
+  var VOICE_BLOCK = [
+    'David',
+    'UK English Male',
+    'Fred',
+    'Albert',
+    'Bad News',
+    'Cellos',
+    'Trinoids',
+    'Whisper'
+  ];
+
+  function scoreVoice(voice) {
+    if (!voice || !voice.lang || !/^en/i.test(voice.lang)) {
+      return -1000;
+    }
+
+    var name = voice.name || '';
+    var lang = voice.lang.toLowerCase();
+    var score = 0;
+
+    if (lang === 'en-us') score += 24;
+    else if (lang === 'en-gb') score -= 18;
+    else if (lang.indexOf('en') !== -1) score += 8;
+
+    if (/natural|neural|online|premium|enhanced/i.test(name)) score += 42;
+
+    VOICE_PREFS.forEach(function (pref, i) {
+      if (name.indexOf(pref) !== -1) score += 36 - i;
+    });
+
+    VOICE_BLOCK.forEach(function (bad) {
+      if (name.indexOf(bad) !== -1) score -= 80;
+    });
+
+    if (voice.localService) score += 4;
+
+    return score;
+  }
+
+  function pickModernVoice() {
     if (!('speechSynthesis' in window)) return null;
     var voices = window.speechSynthesis.getVoices();
-    return voices.find(function (v) {
-      return v.name.indexOf('Google UK English Male') !== -1 ||
-        v.name.indexOf('Microsoft David') !== -1 ||
-        /en/i.test(v.lang);
-    }) || voices[0] || null;
+    if (!voices.length) return null;
+
+    var best = null;
+    var bestScore = -9999;
+    voices.forEach(function (v) {
+      var s = scoreVoice(v);
+      if (s > bestScore) {
+        bestScore = s;
+        best = v;
+      }
+    });
+    return best;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function splitWords(text) {
+    var words = [];
+    var regex = /\S+/g;
+    var match;
+    while ((match = regex.exec(text)) !== null) {
+      words.push({
+        word: match[0],
+        start: match.index,
+        end: match.index + match[0].length
+      });
+    }
+    return words;
   }
 
   function HomeYvrBroadcaster(root) {
@@ -29,11 +110,21 @@
     this.stopBtn = root.querySelector('[data-broadcaster-stop]');
     this.bars = root.querySelectorAll('[data-broadcaster-bar]');
     this.channelBtns = root.querySelectorAll('[data-broadcaster-channel-btn]');
+    this.telepromptRoot = document.querySelector('[data-broadcaster-teleprompt]');
+    this.scriptEl = document.querySelector('[data-broadcaster-script]');
+    this.metaEl = document.querySelector('[data-broadcaster-meta]');
+    this.mouthEl = root.querySelector('[data-broadcaster-mouth]');
+    this.faceEl = root.querySelector('[data-broadcaster-face]');
     this.feedsUrl = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.feedsUrl) ||
       '/wp-json/se/v1/broadcaster/feeds';
     this.feeds = null;
     this.activeKey = null;
     this.speechUtterance = null;
+    this.wordSpans = [];
+    this.fallbackTimer = null;
+    this.voice = null;
+    this.mouthTimer = null;
+    this.autoMuteTimer = null;
   }
 
   HomeYvrBroadcaster.prototype.init = function () {
@@ -54,19 +145,210 @@
     }
 
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.addEventListener('voiceschanged', function () { pickComputerVoice(); });
+      var self = this;
+      var primeVoice = function () {
+        self.voice = pickModernVoice();
+      };
+      primeVoice();
+      window.speechSynthesis.addEventListener('voiceschanged', primeVoice);
     }
 
     this.loadFeeds();
     this.setStandby();
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) self.stopAll(true);
+    });
+  };
+
+  HomeYvrBroadcaster.prototype.clearAutoMuteTimer = function () {
+    if (this.autoMuteTimer) {
+      clearTimeout(this.autoMuteTimer);
+      this.autoMuteTimer = null;
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.setMouthIdle = function () {
+    if (this.mouthTimer) {
+      clearTimeout(this.mouthTimer);
+      this.mouthTimer = null;
+    }
+    if (this.mouthEl) {
+      this.mouthEl.classList.remove('is-open', 'is-flap');
+    }
+    if (this.faceEl) {
+      this.faceEl.classList.remove('is-talking');
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.setMouthTalking = function (mode) {
+    if (this.faceEl) {
+      this.faceEl.classList.add('is-talking');
+    }
+    if (!this.mouthEl) return;
+    this.mouthEl.classList.toggle('is-flap', mode === 'radio');
+    if (mode !== 'radio') {
+      this.mouthEl.classList.remove('is-flap');
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.pulseMouth = function () {
+    var self = this;
+    if (!this.mouthEl) return;
+    this.mouthEl.classList.add('is-open');
+    if (this.mouthTimer) clearTimeout(this.mouthTimer);
+    this.mouthTimer = setTimeout(function () {
+      if (self.mouthEl) self.mouthEl.classList.remove('is-open');
+    }, 110);
+  };
+
+  HomeYvrBroadcaster.prototype.scheduleAutoMute = function (channelKey) {
+    var self = this;
+    this.clearAutoMuteTimer();
+    this.autoMuteTimer = setTimeout(function () {
+      if (self.activeKey === channelKey) {
+        self.stopAll(true);
+      }
+    }, 900);
+  };
+
+  HomeYvrBroadcaster.prototype.clearFallbackTimer = function () {
+    if (this.fallbackTimer) {
+      clearInterval(this.fallbackTimer);
+      this.fallbackTimer = null;
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.clearWordHighlights = function () {
+    this.wordSpans.forEach(function (span) {
+      span.classList.remove('is-current', 'is-spoken');
+    });
+  };
+
+  HomeYvrBroadcaster.prototype.highlightWordAt = function (charIndex) {
+    var idx = -1;
+    for (var i = 0; i < this.wordSpans.length; i++) {
+      var start = parseInt(this.wordSpans[i].getAttribute('data-start'), 10);
+      if (start <= charIndex) idx = i;
+      if (start > charIndex) break;
+    }
+    if (idx < 0) return;
+
+    for (var j = 0; j < this.wordSpans.length; j++) {
+      var span = this.wordSpans[j];
+      span.classList.toggle('is-spoken', j < idx);
+      span.classList.toggle('is-current', j === idx);
+    }
+
+    var current = this.wordSpans[idx];
+    if (current && this.scriptEl) {
+      var box = this.scriptEl;
+      var top = current.offsetTop - box.offsetTop;
+      var target = top - (box.clientHeight / 2) + (current.clientHeight / 2);
+      box.scrollTop = Math.max(0, target);
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.renderMeta = function (pack) {
+    if (!this.metaEl) return;
+
+    var items = (pack && pack.items) ? pack.items : [];
+    var html = '';
+
+    items.forEach(function (item) {
+      var title = escapeHtml(item.title || 'Update');
+      var when = escapeHtml(item.posted_label || item.posted || '');
+      var url = item.url || '';
+      var linkLabel = escapeHtml(item.link_label || 'Open source');
+
+      html += '<li class="home-yvr-teleprompt__item">';
+      if (when) {
+        html += '<time class="home-yvr-teleprompt__time">' + when + '</time>';
+      }
+      html += '<span class="home-yvr-teleprompt__title">' + title + '</span>';
+      if (url) {
+        html += ' <a class="home-yvr-teleprompt__link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' + linkLabel + '</a>';
+      }
+      html += '</li>';
+    });
+
+    if (pack && pack.fetched_label) {
+      html += '<li class="home-yvr-teleprompt__item home-yvr-teleprompt__item--fetched">';
+      html += '<span class="home-yvr-teleprompt__time">' + escapeHtml(pack.fetched_label) + '</span>';
+      html += '</li>';
+    }
+
+    if (pack && pack.source_url) {
+      html += '<li class="home-yvr-teleprompt__item home-yvr-teleprompt__item--source">';
+      html += '<a class="home-yvr-teleprompt__link" href="' + escapeHtml(pack.source_url) + '" target="_blank" rel="noopener noreferrer">';
+      html += escapeHtml(pack.source || 'Source') + '</a>';
+      html += '</li>';
+    }
+
+    if (html) {
+      this.metaEl.innerHTML = html;
+      this.metaEl.hidden = false;
+    } else {
+      this.metaEl.innerHTML = '';
+      this.metaEl.hidden = true;
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.renderScript = function (text, mode) {
+    if (!this.scriptEl) return;
+
+    this.clearFallbackTimer();
+    this.clearWordHighlights();
+    this.wordSpans = [];
+
+    if (!text) {
+      this.scriptEl.textContent = '';
+      return;
+    }
+
+    if (mode === 'plain') {
+      this.scriptEl.textContent = text;
+      return;
+    }
+
+    var words = splitWords(text);
+    var frag = document.createDocumentFragment();
+
+    words.forEach(function (w, i) {
+      var span = document.createElement('span');
+      span.className = 'home-yvr-teleprompt__word';
+      span.setAttribute('data-start', String(w.start));
+      span.textContent = w.word;
+      frag.appendChild(span);
+      if (i < words.length - 1) {
+        frag.appendChild(document.createTextNode(' '));
+      }
+      this.wordSpans.push(span);
+    }, this);
+
+    this.scriptEl.innerHTML = '';
+    this.scriptEl.appendChild(frag);
+    this.scriptEl.scrollTop = 0;
+  };
+
+  HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
+    this.renderMeta(null);
+    this.renderScript('Pick a channel. Words light up as CHIP talks.', 'plain');
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.remove('is-live', 'is-radio');
+    }
   };
 
   HomeYvrBroadcaster.prototype.setStandby = function () {
     if (this.freqEl) this.freqEl.textContent = '000.000';
     if (this.channelEl) this.channelEl.textContent = 'STANDBY';
     if (this.captionEl) {
-      this.captionEl.textContent = 'Pick a channel. Computer voice reads live feeds — CKNW is live radio.';
+      this.captionEl.textContent = '';
+      this.captionEl.hidden = true;
     }
+    this.setTelepromptStandby();
+    this.setMouthIdle();
+    this.clearAutoMuteTimer();
     this.root.classList.remove('is-live', 'is-speaking', 'is-radio');
     this.setBars(false);
     this.highlightChannel(null);
@@ -80,9 +362,13 @@
     });
   };
 
-  HomeYvrBroadcaster.prototype.loadFeeds = function () {
+  HomeYvrBroadcaster.prototype.loadFeeds = function (refresh) {
     var self = this;
-    fetch(this.feedsUrl, { credentials: 'same-origin' })
+    var url = this.feedsUrl;
+    if (refresh) {
+      url += (url.indexOf('?') === -1 ? '?' : '&') + 'refresh=1';
+    }
+    fetch(url, { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (data) self.feeds = data;
@@ -90,10 +376,14 @@
       .catch(function () { /* standby */ });
   };
 
-  HomeYvrBroadcaster.prototype.ensureFeeds = function () {
+  HomeYvrBroadcaster.prototype.ensureFeeds = function (refresh) {
     var self = this;
-    if (this.feeds) return Promise.resolve(this.feeds);
-    return fetch(this.feedsUrl, { credentials: 'same-origin' })
+    if (this.feeds && !refresh) return Promise.resolve(this.feeds);
+    var url = this.feedsUrl;
+    if (refresh) {
+      url += (url.indexOf('?') === -1 ? '?' : '&') + 'refresh=1';
+    }
+    return fetch(url, { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (data) self.feeds = data;
@@ -102,22 +392,30 @@
   };
 
   HomeYvrBroadcaster.prototype.stopSpeech = function () {
+    this.clearFallbackTimer();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
     this.speechUtterance = null;
     this.root.classList.remove('is-speaking');
+    if (!this.root.classList.contains('is-radio')) {
+      this.setMouthIdle();
+    }
   };
 
   HomeYvrBroadcaster.prototype.stopRadio = function () {
+    this.clearAutoMuteTimer();
     if (this.audio) {
       this.audio.pause();
       this.audio.removeAttribute('src');
     }
     this.root.classList.remove('is-radio');
+    if (this.telepromptRoot) this.telepromptRoot.classList.remove('is-radio');
+    this.setMouthIdle();
   };
 
   HomeYvrBroadcaster.prototype.stopAll = function (toStandby) {
+    this.clearAutoMuteTimer();
     this.stopSpeech();
     this.stopRadio();
     this.activeKey = null;
@@ -133,51 +431,126 @@
     });
   };
 
-  HomeYvrBroadcaster.prototype.updateDisplay = function (channel, caption) {
+  HomeYvrBroadcaster.prototype.updateDisplay = function (channel) {
     if (this.freqEl) this.freqEl.textContent = channel.freq;
     if (this.channelEl) this.channelEl.textContent = channel.label;
-    if (this.captionEl && caption) this.captionEl.textContent = caption;
     this.highlightChannel(channel.key || null);
   };
 
-  HomeYvrBroadcaster.prototype.speak = function (text, channel, caption) {
+  HomeYvrBroadcaster.prototype.startFallbackHighlight = function (text) {
+    var self = this;
+    var words = splitWords(text);
+    if (!words.length) return;
+
+    var msPerWord = 340;
+    var idx = 0;
+    self.highlightWordAt(words[0].start);
+
+    this.fallbackTimer = setInterval(function () {
+      idx += 1;
+      if (idx >= words.length) {
+        self.clearFallbackTimer();
+        return;
+      }
+      self.highlightWordAt(words[idx].start);
+      self.pulseMouth();
+    }, msPerWord);
+  };
+
+  HomeYvrBroadcaster.prototype.speak = function (text, channel, pack) {
     var self = this;
     if (!text || !('speechSynthesis' in window)) {
-      if (this.captionEl) this.captionEl.textContent = caption || text || 'Voice not available in this browser.';
+      this.renderScript(text || 'Voice not available in this browser.', 'plain');
       return;
     }
 
     this.stopSpeech();
-    this.updateDisplay(channel, caption || text);
+    this.updateDisplay(channel);
+    this.renderMeta(pack);
+    this.renderScript(text);
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.add('is-live');
+      this.telepromptRoot.classList.remove('is-radio');
+    }
     this.root.classList.add('is-live', 'is-speaking');
     this.setBars(true);
+    this.setMouthTalking('speech');
 
     var utterance = new SpeechSynthesisUtterance(text);
-    var voice = pickComputerVoice();
-    if (voice) utterance.voice = voice;
-    utterance.rate = 0.92;
-    utterance.pitch = 0.88;
+    var voice = this.voice || pickModernVoice();
+    if (voice) {
+      utterance.voice = voice;
+      this.voice = voice;
+    }
+    utterance.rate = 1.02;
+    utterance.pitch = 1.0;
+
+    var boundarySeen = false;
+
+    utterance.onboundary = function (event) {
+      if (event.name === 'word' || event.charIndex > 0) {
+        boundarySeen = true;
+        self.clearFallbackTimer();
+        self.highlightWordAt(event.charIndex);
+        self.pulseMouth();
+      }
+    };
+
+    utterance.onstart = function () {
+      self.setMouthTalking('speech');
+      if (!boundarySeen && self.wordSpans.length) {
+        self.startFallbackHighlight(text);
+      }
+    };
 
     utterance.onend = function () {
+      self.clearFallbackTimer();
+      self.clearWordHighlights();
+      if (self.wordSpans.length) {
+        self.wordSpans.forEach(function (span) { span.classList.add('is-spoken'); });
+      }
       self.root.classList.remove('is-speaking');
-      if (self.activeKey === channel.key) self.setBars(false);
+      self.setMouthIdle();
+      if (self.activeKey === channel.key) {
+        self.setBars(false);
+        self.scheduleAutoMute(channel.key);
+      }
     };
+
     utterance.onerror = function () {
+      self.clearFallbackTimer();
       self.root.classList.remove('is-speaking');
       self.setBars(false);
+      self.setMouthIdle();
+      self.scheduleAutoMute(channel.key);
     };
 
     this.speechUtterance = utterance;
     window.speechSynthesis.speak(utterance);
   };
 
-  HomeYvrBroadcaster.prototype.playRadio = function (channel) {
+  HomeYvrBroadcaster.prototype.playRadio = function (channel, pack) {
     var self = this;
     if (!this.audio) return;
 
     this.stopRadio();
-    this.updateDisplay(channel, 'Live CKNW 980 — Vancouver AM. Hit STOP to silence.');
+    this.updateDisplay(channel);
+    this.renderMeta(pack || {
+      source: 'CKNW 980',
+      source_url: 'https://www.cknw.com/',
+      items: [{
+        title: 'CKNW 980 AM',
+        posted_label: 'Live now',
+        url: 'https://www.cknw.com/',
+        link_label: 'cknw.com'
+      }]
+    });
+    this.renderScript('Live CKNW 980 — Vancouver AM radio. Computer voice channels are on the buttons below. Hit STOP to silence.', 'plain');
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.add('is-live', 'is-radio');
+    }
     this.root.classList.add('is-live', 'is-radio');
+    this.setMouthTalking('radio');
     this.audio.src = CKNW_STREAM;
     this.audio.volume = 0.55;
 
@@ -188,10 +561,9 @@
           self.setBars(true);
         })
         .catch(function () {
-          if (self.captionEl) {
-            self.captionEl.textContent = 'CKNW blocked autoplay — tap CKNW 980 again or STOP then retry.';
-          }
+          self.renderScript('CKNW blocked autoplay — tap CKNW 980 again or STOP then retry.', 'plain');
           self.setBars(false);
+          self.setMouthIdle();
         });
     } else {
       this.setBars(true);
@@ -210,22 +582,25 @@
 
     this.stopAll(false);
     this.activeKey = key;
+    this.updateDisplay(channel);
+    this.renderScript('Tuning ' + channel.label + '…', 'plain');
+    this.root.classList.add('is-live');
+    this.setBars(true);
 
     if (channel.stream) {
       this.playRadio(channel);
       return;
     }
 
-  this.ensureFeeds().then(function (feeds) {
+    this.ensureFeeds(true).then(function (feeds) {
       var pack = feeds && feeds[channel.key] ? feeds[channel.key] : null;
       if (!pack) {
-        self.updateDisplay(channel, 'Feed still loading — try again in a moment.');
+        self.renderScript('Feed still loading — try again in a moment.', 'plain');
+        self.setBars(false);
         return;
       }
       var script = pack.script || pack.caption || '';
-      var caption = pack.caption || script;
-      if (pack.source) caption += ' Source: ' + pack.source + '.';
-      self.speak(script, channel, caption);
+      self.speak(script, channel, pack);
     });
   };
 
