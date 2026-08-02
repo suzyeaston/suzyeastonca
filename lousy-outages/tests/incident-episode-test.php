@@ -13,6 +13,8 @@ $store=new EpisodeStore();$first=$store->observe([incident('acme:one')],['acme'=
 $repeat=$store->observe([incident('acme:one','Renamed','investigating','minor')],['acme'=>'degraded'],1100);ok(count($repeat['opened'])===0&&$repeat['continuing'][0]['episode_guid']===$guid&&$repeat['continuing'][0]['first_detected']===$pub,'mutable fields retain episode');
 $second=$store->observe([incident('acme:one','Renamed'),incident('acme:two','Second incident')],['acme'=>'outage'],1150);ok(count($second['opened'])===1,'distinct same-provider incident opens without cooldown');
 $store->saveDelivery($guid,['a@example.test'],['b@example.test'],['a@example.test','b@example.test']);ok($store->pendingRecipients($guid,['a@example.test','b@example.test'])===['b@example.test'],'partial batch retries only failure');
+$legacy=$store->all();$legacyKey=array_key_first($legacy);$legacy[$legacyKey]['legacy_suppressed']=true;$legacy[$legacyKey]['email_successful_recipients']=[];update_option(EpisodeStore::OPTION,$legacy,false);
+ok($store->releaseLegacyEmailSuppression()===1,'legacy suppression cleared when nothing was mailed');
 $closed=$store->observe([],['acme'=>'operational'],1200);ok(count($closed['closed'])===2,'recovery closes active episodes');
 $fallback=$store->observe([incident('acme:status:abc','Acme degraded','degraded','minor','https://status.test')],['acme'=>'degraded'],1300);$fallbackGuid=$fallback['opened'][0]['episode_guid'];
 $store->observe([],['acme'=>'operational'],1400);$recurrence=$store->observe([incident('acme:status:def','Changed wording','major_outage','critical','https://status.test')],['acme'=>'major_outage'],1500);ok($recurrence['opened'][0]['episode_guid']!==$fallbackGuid,'fallback recurrence gets new GUID');

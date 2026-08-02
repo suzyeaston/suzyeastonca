@@ -5,9 +5,12 @@
 
   var CHANNELS = {
     translink: { label: 'SKYTRAIN', freq: '410.287', key: 'translink' },
-    cknw: { label: 'CKNW 980', freq: '980.000', key: 'cknw', stream: true },
     drivers: { label: 'DRIVE BC', freq: '154.100', key: 'drivers' },
-    ferries: { label: 'BC FERRIES', freq: '156.800', key: 'ferries' }
+    ferries: { label: 'BC FERRIES', freq: '156.800', key: 'ferries' },
+    weather: { label: 'WEATHER', freq: '162.550', key: 'weather' },
+    wildfire: { label: 'WILDFIRE', freq: '168.050', key: 'wildfire' },
+    air: { label: 'AIR QUALITY', freq: '153.785', key: 'air' },
+    cknw: { label: 'CKNW 980', freq: '980.000', key: 'cknw', stream: true }
   };
 
   var VOICE_PREFS = [
@@ -333,7 +336,7 @@
 
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
-    this.renderScript('Pick a channel. Words light up as CHIP talks.', 'plain');
+    this.renderScript('Pick a feed below. Dave narrates — words light up.', 'plain');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.remove('is-live', 'is-radio');
     }
@@ -545,7 +548,7 @@
         link_label: 'cknw.com'
       }]
     });
-    this.renderScript('Live CKNW 980 — Vancouver AM radio. Computer voice channels are on the buttons below. Hit STOP to silence.', 'plain');
+    this.renderScript('Live CKNW 980 — Vancouver AM radio. Dave goes quiet — hit STOP to silence.', 'plain');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.add('is-live', 'is-radio');
     }
