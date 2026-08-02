@@ -22,6 +22,17 @@ function se_broadcaster_format_posted( string $raw ): string {
     return wp_date( 'M j, Y g:i a', $ts );
 }
 
+function se_broadcaster_format_arcgis_ms( mixed $raw ): string {
+    if ( ! $raw || ! is_numeric( $raw ) ) {
+        return '';
+    }
+    $ms = (float) $raw;
+    if ( $ms < 1e11 ) {
+        return '';
+    }
+    return wp_date( 'M j, Y g:i a', (int) round( $ms / 1000 ) );
+}
+
 function se_broadcaster_drivebc_url( string $api_url ): string {
     if ( preg_match( '/(DBC-\d+)/', $api_url, $m ) ) {
         return 'https://www.drivebc.ca/mobile/event/' . $m[1];
@@ -536,7 +547,7 @@ function se_fetch_bc_wildfire_near_yvr(): array {
             'url'             => $url,
             'fire_of_note'    => $note,
             'ignition'        => $ignition,
-            'ignition_label'  => se_broadcaster_format_posted( $ignition ),
+            'ignition_label'  => se_broadcaster_format_arcgis_ms( $row['IGNITION_DATE'] ?? '' ),
             'priority'        => ( $note ? 1000 : 0 ) + ( str_contains( strtolower( $status ), 'out of control' ) ? 500 : 0 ) + min( 400, (int) $size ),
         );
     }

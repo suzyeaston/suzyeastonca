@@ -336,7 +336,7 @@
 
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
-    this.renderScript('Pick a channel. Dave narrates. Words light up.', 'plain');
+    this.renderScript('Pick a feed below. Dave narrates — words light up.', 'plain');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.remove('is-live', 'is-radio');
     }
