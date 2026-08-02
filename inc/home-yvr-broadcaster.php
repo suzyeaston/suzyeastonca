@@ -500,12 +500,89 @@ function se_broadcaster_wildfire_name( array $row ): string {
 function se_broadcaster_wildfire_line( array $fire ): string {
     $parts = array( $fire['name'] );
     if ( ! empty( $fire['status'] ) ) {
-        $parts[] = 'status ' . $fire['status'];
+        $parts[] = strtolower( $fire['status'] );
     }
-    if ( ! empty( $fire['ignition_label'] ) ) {
-        $parts[] = 'started ' . $fire['ignition_label'];
+    if ( ! empty( $fire['age_label'] ) ) {
+        $parts[] = $fire['age_label'];
     }
     return implode( ', ', $parts ) . '.';
+}
+
+/**
+ * BC's open-data layer only has ignition time — not last update. Label accordingly.
+ */
+function se_broadcaster_wildfire_age_label( int $ignition_ts, string $full_label ): string {
+    if ( ! $ignition_ts || ! $full_label ) {
+        return '';
+    }
+    $days = ( time() - $ignition_ts ) / DAY_IN_SECONDS;
+    if ( $days <= 4 ) {
+        return 'started ' . $full_label;
+    }
+    return 'active since ' . wp_date( 'M j', $ignition_ts );
+}
+
+/**
+ * Prefer incidents that still need attention; skip stale mop-up under control.
+ */
+function se_broadcaster_wildfire_pick_for_bulletin( array $fires, int $limit = 3 ): array {
+    $out_of_control = array();
+    $being_held     = array();
+    $recent_other   = array();
+
+    foreach ( $fires as $fire ) {
+        $status = strtolower( (string) ( $fire['status'] ?? '' ) );
+        if ( str_contains( $status, 'out of control' ) ) {
+            $out_of_control[] = $fire;
+            continue;
+        }
+        if ( str_contains( $status, 'being held' ) ) {
+            $being_held[] = $fire;
+            continue;
+        }
+        $ts = strtotime( (string) ( $fire['posted'] ?? '' ) ) ?: 0;
+        if ( $ts >= time() - ( 4 * DAY_IN_SECONDS ) ) {
+            $recent_other[] = $fire;
+        }
+    }
+
+    $sort_recent = static function ( array $a, array $b ): int {
+        $ta = strtotime( (string) ( $a['posted'] ?? '' ) ) ?: 0;
+        $tb = strtotime( (string) ( $b['posted'] ?? '' ) ) ?: 0;
+        return $tb <=> $ta;
+    };
+
+    usort( $out_of_control, $sort_recent );
+    usort( $being_held, $sort_recent );
+    usort( $recent_other, $sort_recent );
+
+    $picked = array_merge( $out_of_control, $being_held, $recent_other );
+
+    return array_slice( $picked, 0, $limit );
+}
+
+function se_broadcaster_wildfire_summary_prefix( array $fires ): string {
+    $ooc = 0;
+    foreach ( $fires as $fire ) {
+        if ( str_contains( strtolower( (string) ( $fire['status'] ?? '' ) ), 'out of control' ) ) {
+            $ooc++;
+        }
+    }
+    $total = count( $fires );
+
+    if ( $ooc > 0 ) {
+        $prefix = 'BC Wildfire — ' . $ooc . ' out of control on the southwest coast';
+        if ( $total > $ooc ) {
+            $prefix .= ', ' . $total . ' incidents still open';
+        }
+        return $prefix . '. ';
+    }
+
+    if ( $total > 3 ) {
+        return 'BC Wildfire — ' . $total . ' incidents still open on the southwest coast. ';
+    }
+
+    return 'BC Wildfire bulletin for the southwest coastal corridor. ';
 }
 
 function se_fetch_bc_wildfire_near_yvr(): array {
@@ -565,7 +642,9 @@ function se_fetch_bc_wildfire_near_yvr(): array {
             $ignition_ms = 0;
         }
         $ignition_iso = $ignition_ms ? gmdate( 'c', (int) round( $ignition_ms / 1000 ) ) : '';
+        $ignition_ts  = $ignition_ms ? (int) round( $ignition_ms / 1000 ) : 0;
         $ignition_label = $ignition_ms ? se_broadcaster_format_arcgis_ms( $ignition_ms ) : '';
+        $age_label    = se_broadcaster_wildfire_age_label( $ignition_ts, $ignition_label );
 
         $out[] = array(
             'name'           => $name,
@@ -574,6 +653,7 @@ function se_fetch_bc_wildfire_near_yvr(): array {
             'ignition'       => (string) ( $row['IGNITION_DATE'] ?? '' ),
             'posted'         => $ignition_iso,
             'ignition_label' => $ignition_label,
+            'age_label'      => $age_label,
         );
     }
 
@@ -614,30 +694,23 @@ function se_broadcaster_wildfire_script(): array {
         );
     }
 
-    $items = array();
-    foreach ( array_slice( $fires, 0, 3 ) as $fire ) {
+    $bulletin_fires = se_broadcaster_wildfire_pick_for_bulletin( $fires, 3 );
+    $items          = array();
+    foreach ( $bulletin_fires as $fire ) {
         $line = se_broadcaster_wildfire_line( $fire );
-        $started_label = (string) ( $fire['ignition_label'] ?? '' );
         $items[] = array(
             'title'        => se_broadcaster_trim_script( $fire['name'], 80 ),
             'text'         => se_broadcaster_trim_script( $line, 200 ),
             'posted'       => (string) ( $fire['posted'] ?? $fire['ignition'] ?? '' ),
-            'posted_label' => $started_label ? 'Started ' . $started_label : '',
+            'posted_label' => (string) ( $fire['age_label'] ?? '' ),
             'url'          => (string) ( $fire['url'] ?? '' ),
             'link_label'   => 'BC Wildfire incident',
         );
     }
 
-    $count = count( $fires );
-    if ( $count > 3 ) {
-        $prefix = 'BC Wildfire bulletin — ' . $count . ' active fires in the southwest coastal corridor. ';
-    } else {
-        $prefix = 'BC Wildfire bulletin for the southwest coastal corridor. ';
-    }
-
     return se_broadcaster_pack_from_items(
         $items,
-        $prefix,
+        se_broadcaster_wildfire_summary_prefix( $fires ),
         'BC Wildfire Service',
         'https://wildfiresituation.nrs.gov.bc.ca/map'
     );
