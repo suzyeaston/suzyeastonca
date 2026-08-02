@@ -485,22 +485,34 @@ function se_broadcaster_weather_script(): array {
     );
 }
 
+function se_broadcaster_wildfire_status_rank( string $status ): int {
+    $status = strtolower( $status );
+    if ( str_contains( $status, 'out of control' ) ) {
+        return 3;
+    }
+    if ( str_contains( $status, 'being held' ) ) {
+        return 2;
+    }
+    if ( str_contains( $status, 'under control' ) ) {
+        return 1;
+    }
+    return 0;
+}
+
 function se_fetch_bc_wildfire_near_yvr(): array {
     $cached = get_transient( 'se_bc_wildfire_near_yvr' );
     if ( false !== $cached && is_array( $cached ) ) {
         return $cached;
     }
 
+    // Coastal Fire Centre, southwest sector (Metro Vancouver through Sea to Sky / Fraser Canyon south).
     $query = add_query_arg(
         array(
-            'where'              => "FIRE_STATUS NOT IN ('Out')",
-            'geometry'           => '-123.5,49.0,-121.0,50.5',
-            'geometryType'       => 'esriGeometryEnvelope',
-            'inSR'               => '4326',
-            'spatialRel'         => 'esriSpatialRelIntersects',
+            'where'              => "FIRE_CENTRE = 2 AND FIRE_STATUS NOT IN ('Out') AND LATITUDE >= 48.95 AND LATITUDE <= 50.35",
             'outFields'          => 'INCIDENT_NAME,GEOGRAPHIC_DESCRIPTION,CURRENT_SIZE,FIRE_STATUS,FIRE_URL,FIRE_OF_NOTE_IND,IGNITION_DATE',
             'returnGeometry'     => 'false',
-            'resultRecordCount'  => '40',
+            'resultRecordCount'  => '60',
+            'orderByFields'      => 'IGNITION_DATE DESC',
             'f'                  => 'json',
         ),
         'https://delivery.maps.gov.bc.ca/arcgis/rest/services/mpcm/bcgwpub/MapServer/502/query'
@@ -536,9 +548,14 @@ function se_fetch_bc_wildfire_near_yvr(): array {
         $name   = wp_strip_all_tags( (string) ( $row['GEOGRAPHIC_DESCRIPTION'] ?? $row['INCIDENT_NAME'] ?? 'BC wildfire' ) );
         $status = wp_strip_all_tags( (string) ( $row['FIRE_STATUS'] ?? '' ) );
         $size   = isset( $row['CURRENT_SIZE'] ) ? (float) $row['CURRENT_SIZE'] : 0;
-        $url    = esc_url_raw( (string) ( $row['FIRE_URL'] ?? 'https://www2.gov.bc.ca/gov/content/safety/wildfire-status' ) );
+        $url    = esc_url_raw( (string) ( $row['FIRE_URL'] ?? 'https://wildfiresituation.nrs.gov.bc.ca/map' ) );
         $note   = ! empty( $row['FIRE_OF_NOTE_IND'] ) && strtoupper( (string) $row['FIRE_OF_NOTE_IND'] ) === 'Y';
-        $ignition = (string) ( $row['IGNITION_DATE'] ?? '' );
+        $ignition_ms = is_numeric( $row['IGNITION_DATE'] ?? null ) ? (float) $row['IGNITION_DATE'] : 0;
+        if ( $ignition_ms < 1.5e12 ) {
+            $ignition_ms = 0;
+        }
+        $ignition_iso = $ignition_ms ? gmdate( 'c', (int) round( $ignition_ms / 1000 ) ) : '';
+        $ignition_label = $ignition_ms ? se_broadcaster_format_arcgis_ms( $ignition_ms ) : '';
 
         $out[] = array(
             'name'            => $name,
@@ -546,16 +563,24 @@ function se_fetch_bc_wildfire_near_yvr(): array {
             'size'            => $size,
             'url'             => $url,
             'fire_of_note'    => $note,
-            'ignition'        => $ignition,
-            'ignition_label'  => se_broadcaster_format_arcgis_ms( $row['IGNITION_DATE'] ?? '' ),
-            'priority'        => ( $note ? 1000 : 0 ) + ( str_contains( strtolower( $status ), 'out of control' ) ? 500 : 0 ) + min( 400, (int) $size ),
+            'ignition'        => (string) ( $row['IGNITION_DATE'] ?? '' ),
+            'posted'          => $ignition_iso,
+            'ignition_label'  => $ignition_label,
+            'status_rank'     => se_broadcaster_wildfire_status_rank( $status ),
         );
     }
+
+    $out = se_broadcaster_prioritize_recent( $out, 'posted', 120 );
 
     usort(
         $out,
         static function ( array $a, array $b ): int {
-            return ( $b['priority'] ?? 0 ) <=> ( $a['priority'] ?? 0 );
+            $ta = strtotime( (string) ( $a['posted'] ?? '' ) ) ?: 0;
+            $tb = strtotime( (string) ( $b['posted'] ?? '' ) ) ?: 0;
+            if ( $tb !== $ta ) {
+                return $tb <=> $ta;
+            }
+            return ( $b['status_rank'] ?? 0 ) <=> ( $a['status_rank'] ?? 0 );
         }
     );
 
@@ -567,10 +592,10 @@ function se_broadcaster_wildfire_script(): array {
     $fires = se_fetch_bc_wildfire_near_yvr();
     if ( ! $fires ) {
         return array(
-            'caption'       => 'No active wildfires near Metro Vancouver and Sea to Sky.',
-            'script'        => 'BC Wildfire Service shows no active fires in the southwest corridor right now.',
+            'caption'       => 'No active wildfires in southwest Coastal Fire Centre.',
+            'script'        => 'BC Wildfire Service shows no active fires in the southwest Coastal corridor right now.',
             'source'        => 'BC Wildfire Service',
-            'source_url'    => 'https://www2.gov.bc.ca/gov/content/safety/wildfire-status',
+            'source_url'    => 'https://wildfiresituation.nrs.gov.bc.ca/map',
             'items'         => array(),
             'fetched_label' => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
         );
@@ -583,11 +608,12 @@ function se_broadcaster_wildfire_script(): array {
         if ( ! empty( $fire['fire_of_note'] ) ) {
             $line = 'Fire of note. ' . $line;
         }
+        $started_label = (string) ( $fire['ignition_label'] ?? '' );
         $items[] = array(
             'title'        => se_broadcaster_trim_script( $fire['name'], 80 ),
             'text'         => se_broadcaster_trim_script( $line, 200 ),
-            'posted'       => (string) ( $fire['ignition'] ?? '' ),
-            'posted_label' => (string) ( $fire['ignition_label'] ?? '' ),
+            'posted'       => (string) ( $fire['posted'] ?? $fire['ignition'] ?? '' ),
+            'posted_label' => $started_label ? 'Started ' . $started_label : '',
             'url'          => (string) ( $fire['url'] ?? '' ),
             'link_label'   => 'BC wildfire incident',
         );
@@ -595,9 +621,9 @@ function se_broadcaster_wildfire_script(): array {
 
     return se_broadcaster_pack_from_items(
         $items,
-        'BC Wildfire update for southwest BC. ',
+        'BC Wildfire update for southwest Coastal Fire Centre. ',
         'BC Wildfire Service',
-        'https://www2.gov.bc.ca/gov/content/safety/wildfire-status'
+        'https://wildfiresituation.nrs.gov.bc.ca/map'
     );
 }
 
