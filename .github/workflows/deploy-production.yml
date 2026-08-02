@@ -4,6 +4,17 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: What to deploy to production
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - theme
+          - plugin
 
 permissions:
   contents: read
@@ -12,12 +23,14 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      theme: ${{ steps.filter.outputs.theme }}
-      plugin: ${{ steps.filter.outputs.plugin }}
+      theme: ${{ steps.resolve.outputs.theme }}
+      plugin: ${{ steps.resolve.outputs.plugin }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: dorny/paths-filter@v3
         id: filter
+        if: github.event_name == 'push'
         with:
           filters: |
             theme:
@@ -39,6 +52,28 @@ jobs:
               - 'dist/lousy-outages.zip.sha256'
               - 'dist/release-manifest.json'
               - 'scripts/build-lousy-outages-release.sh'
+
+      - id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            case "${{ inputs.deploy_target }}" in
+              theme)
+                echo "theme=true" >> "$GITHUB_OUTPUT"
+                echo "plugin=false" >> "$GITHUB_OUTPUT"
+                ;;
+              plugin)
+                echo "theme=false" >> "$GITHUB_OUTPUT"
+                echo "plugin=true" >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "theme=true" >> "$GITHUB_OUTPUT"
+                echo "plugin=true" >> "$GITHUB_OUTPUT"
+                ;;
+            esac
+          else
+            echo "theme=${{ steps.filter.outputs.theme }}" >> "$GITHUB_OUTPUT"
+            echo "plugin=${{ steps.filter.outputs.plugin }}" >> "$GITHUB_OUTPUT"
+          fi
 
   deploy:
     needs: changes
