@@ -333,7 +333,7 @@
 
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
-    this.renderScript('Pick a channel. Words light up as CHIP talks.', 'plain');
+    this.renderScript('Pick a channel. Dave narrates. Words light up.', 'plain');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.remove('is-live', 'is-radio');
     }
@@ -545,7 +545,7 @@
         link_label: 'cknw.com'
       }]
     });
-    this.renderScript('Live CKNW 980 — Vancouver AM radio. Computer voice channels are on the buttons below. Hit STOP to silence.', 'plain');
+    this.renderScript('Live CKNW 980 — Vancouver AM radio. Dave goes quiet — hit STOP to silence.', 'plain');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.add('is-live', 'is-radio');
     }

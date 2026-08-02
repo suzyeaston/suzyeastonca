@@ -11,21 +11,21 @@ get_header();
                 <p class="home-yvr-rack__kicker pixel-font"><?php echo esc_html( 'live feeds // yvr' ); ?></p>
                 <div class="home-yvr-broadcaster" data-yvr-broadcaster aria-label="<?php echo esc_attr( 'YVR broadcaster — live feeds and radio' ); ?>">
                     <div class="home-yvr-broadcaster__avatar" data-broadcaster-face aria-hidden="true">
-                        <div class="home-yvr-broadcaster__avatar-frame">
-                            <div class="home-yvr-broadcaster__avatar-hair"></div>
-                            <div class="home-yvr-broadcaster__avatar-head">
-                                <div class="home-yvr-broadcaster__avatar-visor">
-                                    <span class="home-yvr-broadcaster__eye"></span>
-                                    <span class="home-yvr-broadcaster__eye"></span>
+                        <div class="home-yvr-broadcaster__avatar-frame home-yvr-broadcaster__pigeon">
+                            <div class="home-yvr-broadcaster__pigeon-tail"></div>
+                            <div class="home-yvr-broadcaster__pigeon-body"></div>
+                            <div class="home-yvr-broadcaster__pigeon-wing"></div>
+                            <div class="home-yvr-broadcaster__pigeon-head">
+                                <span class="home-yvr-broadcaster__eye"></span>
+                                <div class="home-yvr-broadcaster__pigeon-beak">
+                                    <span class="home-yvr-broadcaster__pigeon-beak-top"></span>
+                                    <span class="home-yvr-broadcaster__mouth" data-broadcaster-mouth></span>
                                 </div>
-                                <div class="home-yvr-broadcaster__mouth" data-broadcaster-mouth></div>
                             </div>
-                            <div class="home-yvr-broadcaster__avatar-headset home-yvr-broadcaster__avatar-headset--l"></div>
-                            <div class="home-yvr-broadcaster__avatar-headset home-yvr-broadcaster__avatar-headset--r"></div>
-                            <div class="home-yvr-broadcaster__avatar-mic"></div>
+                            <div class="home-yvr-broadcaster__pigeon-mic" aria-hidden="true"></div>
                         </div>
-                        <p class="home-yvr-broadcaster__avatar-name pixel-font"><?php echo esc_html( 'CHIP' ); ?></p>
-                        <p class="home-yvr-broadcaster__avatar-tag"><?php echo esc_html( 'on-air bot' ); ?></p>
+                        <p class="home-yvr-broadcaster__avatar-name pixel-font"><?php echo esc_html( 'DAVE' ); ?></p>
+                        <p class="home-yvr-broadcaster__avatar-tag"><?php echo esc_html( 'yvr pigeon // broadcaster' ); ?></p>
                     </div>
                     <div class="home-yvr-broadcaster__body">
                         <div class="home-yvr-broadcaster__header">
@@ -35,10 +35,10 @@ get_header();
                             </div>
                             <span class="home-yvr-broadcaster__freq pixel-font" data-broadcaster-freq>000.000</span>
                         </div>
-                        <p class="home-yvr-broadcaster__legend"><?php echo esc_html( 'Live Lower Mainland feeds. CHIP reads scripts aloud — 980 is real radio.' ); ?></p>
+                        <p class="home-yvr-broadcaster__legend"><?php echo esc_html( 'Live Lower Mainland feeds. Dave reads the script — 980 is real radio.' ); ?></p>
                         <div class="home-yvr-broadcaster__crt" data-broadcaster-teleprompt>
                             <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>
-                            <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'Pick a channel. Words light up as CHIP talks.' ); ?></p>
+                            <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'Pick a channel. Dave narrates. Words light up.' ); ?></p>
                             <div class="home-yvr-broadcaster__crt-scan" aria-hidden="true"></div>
                         </div>
                         <div class="home-yvr-broadcaster__deck">
