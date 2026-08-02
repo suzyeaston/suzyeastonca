@@ -121,6 +121,13 @@
   opacity: 0.85;
 }
 
+.home-yvr-teleprompt__item--fetched {
+  opacity: 0.72;
+  border-top: 1px solid rgba(87, 243, 255, 0.12);
+  padding-top: 0.2rem;
+  margin-top: 0.1rem;
+}
+
 .home-yvr-teleprompt__script {
   flex: 1 1 auto;
   min-height: clamp(72px, 14vh, 110px);
@@ -744,6 +751,11 @@
 
   .home-amp-stack {
     width: min(52%, 200px);
+  }
+
+  .home-yvr-teleprompt__script {
+    min-height: 64px;
+    max-height: 96px;
   }
 
   .home-amp-cabinet .home-arcade-screen__panel {

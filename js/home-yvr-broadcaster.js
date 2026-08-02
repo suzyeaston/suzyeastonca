@@ -10,14 +10,81 @@
     ferries: { label: 'BC FERRIES', freq: '156.800', key: 'ferries' }
   };
 
-  function pickComputerVoice() {
+  var VOICE_PREFS = [
+    'Microsoft Aria Online (Natural)',
+    'Microsoft Aria',
+    'Microsoft Jenny Online (Natural)',
+    'Microsoft Jenny',
+    'Google US English',
+    'Samantha (Enhanced)',
+    'Samantha',
+    'Microsoft Zira',
+    'Karen',
+    'Moira'
+  ];
+
+  var VOICE_BLOCK = [
+    'David',
+    'UK English Male',
+    'Fred',
+    'Albert',
+    'Bad News',
+    'Cellos',
+    'Trinoids',
+    'Whisper'
+  ];
+
+  function scoreVoice(voice) {
+    if (!voice || !voice.lang || !/^en/i.test(voice.lang)) {
+      return -1000;
+    }
+
+    var name = voice.name || '';
+    var lang = voice.lang.toLowerCase();
+    var score = 0;
+
+    if (lang === 'en-us') score += 24;
+    else if (lang === 'en-gb') score -= 18;
+    else if (lang.indexOf('en') !== -1) score += 8;
+
+    if (/natural|neural|online|premium|enhanced/i.test(name)) score += 42;
+
+    VOICE_PREFS.forEach(function (pref, i) {
+      if (name.indexOf(pref) !== -1) score += 36 - i;
+    });
+
+    VOICE_BLOCK.forEach(function (bad) {
+      if (name.indexOf(bad) !== -1) score -= 80;
+    });
+
+    if (voice.localService) score += 4;
+
+    return score;
+  }
+
+  function pickModernVoice() {
     if (!('speechSynthesis' in window)) return null;
     var voices = window.speechSynthesis.getVoices();
-    return voices.find(function (v) {
-      return v.name.indexOf('Google UK English Male') !== -1 ||
-        v.name.indexOf('Microsoft David') !== -1 ||
-        /en/i.test(v.lang);
-    }) || voices[0] || null;
+    if (!voices.length) return null;
+
+    var best = null;
+    var bestScore = -9999;
+    voices.forEach(function (v) {
+      var s = scoreVoice(v);
+      if (s > bestScore) {
+        bestScore = s;
+        best = v;
+      }
+    });
+    return best;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   function splitWords(text) {
@@ -53,6 +120,7 @@
     this.speechUtterance = null;
     this.wordSpans = [];
     this.fallbackTimer = null;
+    this.voice = null;
   }
 
   HomeYvrBroadcaster.prototype.init = function () {
@@ -73,7 +141,12 @@
     }
 
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.addEventListener('voiceschanged', function () { pickComputerVoice(); });
+      var self = this;
+      var primeVoice = function () {
+        self.voice = pickModernVoice();
+      };
+      primeVoice();
+      window.speechSynthesis.addEventListener('voiceschanged', primeVoice);
     }
 
     this.loadFeeds();
@@ -124,10 +197,10 @@
     var html = '';
 
     items.forEach(function (item) {
-      var title = item.title || 'Update';
-      var when = item.posted_label || item.posted || '';
+      var title = escapeHtml(item.title || 'Update');
+      var when = escapeHtml(item.posted_label || item.posted || '');
       var url = item.url || '';
-      var linkLabel = item.link_label || 'Open source';
+      var linkLabel = escapeHtml(item.link_label || 'Open source');
 
       html += '<li class="home-yvr-teleprompt__item">';
       if (when) {
@@ -135,15 +208,21 @@
       }
       html += '<span class="home-yvr-teleprompt__title">' + title + '</span>';
       if (url) {
-        html += ' <a class="home-yvr-teleprompt__link" href="' + url + '" target="_blank" rel="noopener noreferrer">' + linkLabel + '</a>';
+        html += ' <a class="home-yvr-teleprompt__link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' + linkLabel + '</a>';
       }
       html += '</li>';
     });
 
+    if (pack && pack.fetched_label) {
+      html += '<li class="home-yvr-teleprompt__item home-yvr-teleprompt__item--fetched">';
+      html += '<span class="home-yvr-teleprompt__time">' + escapeHtml(pack.fetched_label) + '</span>';
+      html += '</li>';
+    }
+
     if (pack && pack.source_url) {
       html += '<li class="home-yvr-teleprompt__item home-yvr-teleprompt__item--source">';
-      html += '<a class="home-yvr-teleprompt__link" href="' + pack.source_url + '" target="_blank" rel="noopener noreferrer">';
-      html += (pack.source || 'Source') + '</a>';
+      html += '<a class="home-yvr-teleprompt__link" href="' + escapeHtml(pack.source_url) + '" target="_blank" rel="noopener noreferrer">';
+      html += escapeHtml(pack.source || 'Source') + '</a>';
       html += '</li>';
     }
 
@@ -222,9 +301,13 @@
     });
   };
 
-  HomeYvrBroadcaster.prototype.loadFeeds = function () {
+  HomeYvrBroadcaster.prototype.loadFeeds = function (refresh) {
     var self = this;
-    fetch(this.feedsUrl, { credentials: 'same-origin' })
+    var url = this.feedsUrl;
+    if (refresh) {
+      url += (url.indexOf('?') === -1 ? '?' : '&') + 'refresh=1';
+    }
+    fetch(url, { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (data) self.feeds = data;
@@ -232,10 +315,14 @@
       .catch(function () { /* standby */ });
   };
 
-  HomeYvrBroadcaster.prototype.ensureFeeds = function () {
+  HomeYvrBroadcaster.prototype.ensureFeeds = function (refresh) {
     var self = this;
-    if (this.feeds) return Promise.resolve(this.feeds);
-    return fetch(this.feedsUrl, { credentials: 'same-origin' })
+    if (this.feeds && !refresh) return Promise.resolve(this.feeds);
+    var url = this.feedsUrl;
+    if (refresh) {
+      url += (url.indexOf('?') === -1 ? '?' : '&') + 'refresh=1';
+    }
+    return fetch(url, { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (data) self.feeds = data;
@@ -321,10 +408,13 @@
     this.setBars(true);
 
     var utterance = new SpeechSynthesisUtterance(text);
-    var voice = pickComputerVoice();
-    if (voice) utterance.voice = voice;
-    utterance.rate = 0.92;
-    utterance.pitch = 0.88;
+    var voice = this.voice || pickModernVoice();
+    if (voice) {
+      utterance.voice = voice;
+      this.voice = voice;
+    }
+    utterance.rate = 1.02;
+    utterance.pitch = 1.0;
 
     var boundarySeen = false;
 
@@ -423,7 +513,7 @@
       return;
     }
 
-    this.ensureFeeds().then(function (feeds) {
+    this.ensureFeeds(true).then(function (feeds) {
       var pack = feeds && feeds[channel.key] ? feeds[channel.key] : null;
       if (!pack) {
         self.renderScript('Feed still loading — try again in a moment.', 'plain');

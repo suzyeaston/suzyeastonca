@@ -40,12 +40,42 @@ function se_broadcaster_pack_from_items( array $items, string $prefix, string $s
     $script = $lines ? $prefix . implode( ' Next. ', $lines ) : '';
 
     return array(
-        'caption'    => se_broadcaster_trim_script( $lines[0] ?? $prefix, 220 ),
-        'script'     => se_broadcaster_trim_script( $script ),
-        'source'     => $source,
-        'source_url' => $source_url,
-        'items'      => $items,
+        'caption'       => se_broadcaster_trim_script( $lines[0] ?? $prefix, 220 ),
+        'script'        => se_broadcaster_trim_script( $script ),
+        'source'        => $source,
+        'source_url'    => $source_url,
+        'items'         => $items,
+        'fetched_label' => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
     );
+}
+
+/**
+ * Sort rows by a datetime field (newest first), preferring recent window then older.
+ */
+function se_broadcaster_prioritize_recent( array $rows, string $key = 'posted', int $recent_days = 21 ): array {
+    $cutoff = time() - ( $recent_days * DAY_IN_SECONDS );
+    $recent = array();
+    $older  = array();
+
+    foreach ( $rows as $row ) {
+        $ts = strtotime( (string) ( $row[ $key ] ?? '' ) ) ?: 0;
+        if ( $ts >= $cutoff ) {
+            $recent[] = $row;
+        } else {
+            $older[] = $row;
+        }
+    }
+
+    $sort = static function ( array $a, array $b ) use ( $key ): int {
+        $ta = strtotime( (string) ( $a[ $key ] ?? '' ) ) ?: 0;
+        $tb = strtotime( (string) ( $b[ $key ] ?? '' ) ) ?: 0;
+        return $tb <=> $ta;
+    };
+
+    usort( $recent, $sort );
+    usort( $older, $sort );
+
+    return array_merge( $recent, $older );
 }
 
 function se_broadcaster_translink_script(): array {
@@ -60,22 +90,27 @@ function se_broadcaster_translink_script(): array {
     );
 
     if ( ! $sky ) {
-        $sky = array_slice( $alerts, 0, 5 );
+        $sky = array_slice( $alerts, 0, 8 );
     }
+
+    $sky = se_broadcaster_prioritize_recent( $sky, 'posted', 21 );
 
     $items = array();
     foreach ( array_slice( $sky, 0, 3 ) as $row ) {
-        $line = $row['header'] ?? '';
-        if ( ! empty( $row['text'] ) && $row['text'] !== $line ) {
-            $line = trim( $line . '. ' . $row['text'] );
+        $snippet = (string) ( $row['alert_text'] ?? '' );
+        if ( ! $snippet ) {
+            $snippet = $row['header'] ?? '';
         }
-        if ( ! $line ) {
+        if ( ! empty( $row['text'] ) && $row['text'] !== $snippet && mb_strlen( $snippet ) < 40 ) {
+            $snippet = trim( $snippet . '. ' . mb_substr( $row['text'], 0, 120 ) );
+        }
+        if ( ! $snippet ) {
             continue;
         }
         $title = $row['route'] ? $row['route'] : ( $row['header'] ?? 'TransLink alert' );
         $items[] = array(
             'title'        => se_broadcaster_trim_script( $title, 80 ),
-            'text'         => se_broadcaster_trim_script( $line, 200 ),
+            'text'         => se_broadcaster_trim_script( $snippet, 180 ),
             'posted'       => (string) ( $row['posted'] ?? '' ),
             'posted_label' => (string) ( $row['posted_label'] ?? '' ),
             'url'          => (string) ( $row['url'] ?? '' ),
@@ -85,11 +120,12 @@ function se_broadcaster_translink_script(): array {
 
     if ( ! $items ) {
         return array(
-            'caption'    => 'TransLink reports all clear on SkyTrain lines.',
-            'script'     => 'TransLink feed is quiet. No major SkyTrain service alerts right now.',
-            'source'     => 'TransLink',
-            'source_url' => 'https://www.translink.ca/alerts',
-            'items'      => array(),
+            'caption'       => 'TransLink reports all clear on SkyTrain lines.',
+            'script'        => 'TransLink feed is quiet. No major SkyTrain service alerts right now.',
+            'source'        => 'TransLink',
+            'source_url'    => 'https://www.translink.ca/alerts',
+            'items'         => array(),
+            'fetched_label' => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
         );
     }
 
@@ -181,19 +217,21 @@ function se_fetch_open511_bc_events(): array {
         );
     }
 
-    set_transient( 'se_open511_bc_events', $out, 5 * MINUTE_IN_SECONDS );
-    return $out;
+    set_transient( 'se_open511_bc_events', $out, 2 * MINUTE_IN_SECONDS );
+
+    return se_broadcaster_prioritize_recent( $out, 'updated', 14 );
 }
 
 function se_broadcaster_drivers_script(): array {
     $events = se_fetch_open511_bc_events();
     if ( ! $events ) {
         return array(
-            'caption'    => 'BC Open511 — no active Lower Mainland road alerts.',
-            'script'     => 'DriveBC and Open511 show no major active incidents around Metro Vancouver right now.',
-            'source'     => 'BC Open511',
-            'source_url' => 'https://www.drivebc.ca/',
-            'items'      => array(),
+            'caption'       => 'BC Open511 — no active Lower Mainland road alerts.',
+            'script'        => 'DriveBC and Open511 show no major active incidents around Metro Vancouver right now.',
+            'source'        => 'BC Open511',
+            'source_url'    => 'https://www.drivebc.ca/',
+            'items'         => array(),
+            'fetched_label' => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
         );
     }
 
@@ -258,7 +296,7 @@ function se_fetch_bc_ferries_capacity(): array {
         $routes[] = $route;
     }
 
-    set_transient( 'se_bc_ferries_capacity', $routes, 5 * MINUTE_IN_SECONDS );
+    set_transient( 'se_bc_ferries_capacity', $routes, 2 * MINUTE_IN_SECONDS );
     return $routes;
 }
 
@@ -279,11 +317,12 @@ function se_broadcaster_ferries_script(): array {
     $routes = se_fetch_bc_ferries_capacity();
     if ( ! $routes ) {
         return array(
-            'caption'    => 'BC Ferries capacity feed unavailable.',
-            'script'     => 'BC Ferries sailing data is offline right now. Check bcferries.com before you drive to the terminal.',
-            'source'     => 'bcferriesapi.ca',
-            'source_url' => 'https://www.bcferries.com/current_conditions',
-            'items'      => array(),
+            'caption'       => 'BC Ferries capacity feed unavailable.',
+            'script'        => 'BC Ferries sailing data is offline right now. Check bcferries.com before you drive to the terminal.',
+            'source'        => 'bcferriesapi.ca',
+            'source_url'    => 'https://www.bcferries.com/current_conditions',
+            'items'         => array(),
+            'fetched_label' => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
         );
     }
 
@@ -312,9 +351,9 @@ function se_broadcaster_ferries_script(): array {
             'title'        => $from . ' → ' . $to,
             'text'         => $bit,
             'posted'       => $time,
-            'posted_label' => 'Sails ' . $time,
+            'posted_label' => 'Next sail ' . $time . ' PT',
             'url'          => 'https://www.bcferries.com/current_conditions',
-            'link_label'   => 'BC Ferries conditions',
+            'link_label'   => 'Live conditions',
         );
     }
 
@@ -327,12 +366,19 @@ function se_broadcaster_ferries_script(): array {
 }
 
 function se_get_broadcaster_feeds_rest( WP_REST_Request $request ): WP_REST_Response {
+    if ( $request->get_param( 'refresh' ) ) {
+        delete_transient( 'se_translink_alerts' );
+        delete_transient( 'se_open511_bc_events' );
+        delete_transient( 'se_bc_ferries_capacity' );
+    }
+
     return rest_ensure_response(
         array(
-            'updated'   => current_time( 'mysql' ),
-            'translink' => se_broadcaster_translink_script(),
-            'drivers'   => se_broadcaster_drivers_script(),
-            'ferries'   => se_broadcaster_ferries_script(),
+            'updated'       => current_time( 'mysql' ),
+            'fetched_label' => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
+            'translink'     => se_broadcaster_translink_script(),
+            'drivers'       => se_broadcaster_drivers_script(),
+            'ferries'       => se_broadcaster_ferries_script(),
         )
     );
 }

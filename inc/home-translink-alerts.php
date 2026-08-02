@@ -64,7 +64,8 @@ function se_fetch_translink_alerts(): array {
         }
 
         $header = wp_strip_all_tags( (string) ( $row['header'] ?? '' ) );
-        $raw    = (string) ( $row['description'] ?? $row['alertText'] ?? $header );
+        $alert_text = wp_strip_all_tags( (string) ( $row['alertText'] ?? '' ) );
+        $raw    = (string) ( $row['description'] ?? $alert_text ?? $header );
         $text   = preg_replace( '/\s+/', ' ', trim( wp_strip_all_tags( $raw ) ) );
         if ( mb_strlen( $text ) > 320 ) {
             $text = mb_substr( $text, 0, 317 ) . '…';
@@ -81,6 +82,7 @@ function se_fetch_translink_alerts(): array {
             'group'        => isset( $row['group'] ) ? (int) $row['group'] : null,
             'route'        => wp_strip_all_tags( (string) ( $row['routeLongName'] ?? '' ) ),
             'header'       => $header,
+            'alert_text'   => $alert_text,
             'text'         => $text,
             'critical'     => ! empty( $row['critical'] ),
             'url'          => esc_url_raw( (string) ( $row['url'] ?? '' ) ),
@@ -92,7 +94,7 @@ function se_fetch_translink_alerts(): array {
         $out[] = $entry;
     }
 
-    set_transient( 'se_translink_alerts', $out, 3 * MINUTE_IN_SECONDS );
+    set_transient( 'se_translink_alerts', $out, 2 * MINUTE_IN_SECONDS );
     return $out;
 }
 
