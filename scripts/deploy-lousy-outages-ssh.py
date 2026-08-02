@@ -9,6 +9,7 @@ Usage:
     python3 scripts/deploy-lousy-outages-ssh.py --plugin   # plugin only
     python3 scripts/deploy-lousy-outages-ssh.py --theme    # theme files only
 """
+import os
 import sys
 import time
 from pathlib import Path
@@ -17,6 +18,12 @@ import paramiko
 
 ROOT = Path(__file__).resolve().parent.parent
 ENV = ROOT / ".env.deploy.local"
+DEPLOY_ENV_KEYS = (
+    "LOUSY_SSH_HOST",
+    "LOUSY_SSH_PORT",
+    "LOUSY_SSH_USER",
+    "LOUSY_SSH_PASSWORD",
+)
 ZIP = Path("/tmp/lousy-outages-deploy.zip")
 DIST_ZIP = ROOT / "dist" / "lousy-outages.zip"
 HOME = "/home/uquklkik"
@@ -45,14 +52,22 @@ THEME_FILES = [
 
 def load_env(path: Path) -> dict:
     data = {}
-    if not path.is_file():
-        raise SystemExit(f"Missing {path}")
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        k, v = line.split("=", 1)
-        data[k.strip()] = v.strip()
+    for key in DEPLOY_ENV_KEYS:
+        value = os.environ.get(key)
+        if value:
+            data[key] = value
+    if path.is_file():
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            data.setdefault(k.strip(), v.strip())
+    if not data.get("LOUSY_SSH_HOST") or not data.get("LOUSY_SSH_USER") or not data.get("LOUSY_SSH_PASSWORD"):
+        raise SystemExit(
+            f"Missing deploy credentials. Set {', '.join(DEPLOY_ENV_KEYS)} in the environment "
+            f"or in {path}."
+        )
     return data
 
 
