@@ -71,7 +71,7 @@ get_header();
                             </button>
                             <button type="button" class="home-yvr-broadcaster__ch" data-broadcaster-channel-btn="wildfire" aria-pressed="false">
                                 <span class="home-yvr-broadcaster__ch-label pixel-font"><?php echo esc_html( 'Wildfire' ); ?></span>
-                                <span class="home-yvr-broadcaster__ch-hint"><?php echo esc_html( 'SW BC fires' ); ?></span>
+                                <span class="home-yvr-broadcaster__ch-hint"><?php echo esc_html( 'Coastal status' ); ?></span>
                             </button>
                             <button type="button" class="home-yvr-broadcaster__ch" data-broadcaster-channel-btn="air" aria-pressed="false">
                                 <span class="home-yvr-broadcaster__ch-label pixel-font"><?php echo esc_html( 'Air quality' ); ?></span>
