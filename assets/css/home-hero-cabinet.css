@@ -1266,6 +1266,16 @@ body.home-yvr-map-modal-open {
   margin-top: 0.12rem;
 }
 
+.home-yvr-broadcaster__native {
+  display: block;
+  width: 100%;
+  height: 36px;
+  margin-top: 0.35rem;
+  border-radius: 4px;
+  background: #020308;
+  accent-color: #39ff14;
+}
+
 .home-yvr-broadcaster__transport .home-yvr-broadcaster__btn {
   width: auto;
   flex: 1;
