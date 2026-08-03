@@ -11,6 +11,8 @@ get_header();
             <h1 id="home-hero-title" class="home-yvr-radar-deck__title pixel-font"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
         </header>
 
+        <?php get_template_part( 'parts/home-hero-pitch' ); ?>
+
         <?php get_template_part( 'parts/home-commercial-strip' ); ?>
 
         <div class="home-yvr-radar-deck__radar-unit">
@@ -28,9 +30,9 @@ get_header();
                     <div class="home-yvr-radar-deck__scan" aria-hidden="true"></div>
                     <p class="home-yvr-radar-deck__ring-label pixel-font" data-yvr-ring-label><?php echo esc_html( 'drag · tap pins' ); ?></p>
                     <div class="home-yvr-radar-deck__wander pixel-font" data-yvr-wander-hint hidden>
-                        <p class="home-yvr-radar-deck__wander-kicker"><?php echo esc_html( 'you wandered in.' ); ?></p>
-                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'big pins = territory channels. listen row = direct live feeds. small dots = incidents — they land on Dave, not a new tab.' ); ?></p>
-                        <button type="button" class="home-yvr-radar-deck__wander-dismiss pixel-font" data-yvr-wander-dismiss><?php echo esc_html( 'got it' ); ?></button>
+                        <p class="home-yvr-radar-deck__wander-kicker"><?php echo esc_html( 'night watch online.' ); ?></p>
+                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'Ham-radio view of the lower mainland. Big pins tune live territory feeds — coast guard, wildfire, skytrain, towers. Dave keeps audio on deck.' ); ?></p>
+                        <button type="button" class="home-yvr-radar-deck__wander-dismiss pixel-font" data-yvr-wander-dismiss><?php echo esc_html( 'on band' ); ?></button>
                     </div>
                 </div>
                 <div class="home-yvr-radar-deck__knobs" aria-hidden="true">
@@ -121,8 +123,6 @@ get_header();
                 </div>
             </div>
             <div class="home-yvr-radar-deck__cta">
-                <p class="home-yvr-radar-deck__subtitle pixel-font"><?php echo esc_html( 'AI strategy // systems integration // civic data products' ); ?></p>
-                <p class="home-yvr-radar-deck__positioning"><?php echo esc_html( 'Builds infra, browser tools, and live data layers for Vancouver — outage intel today, API + MCP next.' ); ?></p>
                 <div class="home-amp-console">
                     <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
                     <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START // VIEW WORK"><?php echo esc_html( 'PRESS START // VIEW WORK' ); ?></button>

@@ -229,7 +229,7 @@
 
 <!-- Hero banner lives in page templates (e.g., homepage hero); this header stays compact above it -->
 <!-- Full‑screen moving starfield background -->
-<canvas id="starfield" role="img" aria-label="Animated starfield background"></canvas>
+<canvas id="starfield" role="img" aria-label="Starfield background"></canvas>
 
 <?php
   // You can drop in your site header/branding or navigation here if you like,

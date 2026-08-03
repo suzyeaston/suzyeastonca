@@ -48,6 +48,74 @@
     0 0 18px rgba(255, 255, 102, 0.35);
 }
 
+.home-yvr-radar-deck__pitch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  width: min(100%, 920px);
+  margin: 0 auto;
+  padding: clamp(0.55rem, 1.2vw, 0.85rem) clamp(0.65rem, 1.5vw, 1rem);
+  text-align: center;
+  border: 2px solid rgba(255, 79, 216, 0.35);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(255, 79, 216, 0.08), rgba(87, 243, 255, 0.06)),
+    rgba(2, 8, 18, 0.78);
+  box-shadow:
+    inset 0 0 24px rgba(87, 243, 255, 0.06),
+    0 0 20px rgba(255, 79, 216, 0.08);
+}
+
+.home-yvr-radar-deck__pitch-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.45rem;
+  margin: 0;
+}
+
+.home-yvr-radar-deck__pitch-tag {
+  padding: 0.2rem 0.42rem;
+  border: 1px solid rgba(87, 243, 255, 0.35);
+  border-radius: 4px;
+  background: rgba(0, 8, 16, 0.55);
+  color: rgba(210, 240, 255, 0.92);
+  font-size: clamp(0.42rem, 0.88vw, 0.58rem);
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+.home-yvr-radar-deck__pitch-tag--accent {
+  color: #ffe66d;
+  border-color: rgba(255, 230, 109, 0.45);
+  background: rgba(255, 230, 109, 0.08);
+  box-shadow: 0 0 12px rgba(255, 230, 109, 0.12);
+}
+
+.home-yvr-radar-deck__pitch-sep {
+  color: rgba(255, 79, 216, 0.65);
+  font-size: clamp(0.4rem, 0.82vw, 0.52rem);
+}
+
+.home-yvr-radar-deck__pitch-lead {
+  margin: 0;
+  max-width: 42rem;
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: clamp(0.72rem, 1.15vw, 0.92rem);
+  line-height: 1.5;
+  color: rgba(232, 247, 255, 0.92);
+}
+
+.home-yvr-radar-deck__pitch-sub {
+  margin: 0;
+  color: rgba(150, 190, 180, 0.72);
+  font-size: clamp(0.38rem, 0.78vw, 0.48rem);
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
 /* —— Radar unit (the map IS the hero) —— */
 .home-yvr-radar-deck__radar-unit {
   display: flex;
@@ -548,11 +616,16 @@
   .home-yvr-radar-deck__unit-status::before,
   .home-yvr-radar-deck.is-starting,
   .home-yvr-radar-deck__cta .home-title-screen-prompt,
-  .home-yvr-radar-deck__cta .home-press-start {
+  .home-yvr-radar-deck__cta .home-press-start,
+  .home-yvr-radar-deck__map-wrap.is-discover .home-yvr-leaflet-pin span,
+  .home-yvr-radar-deck__map-wrap.is-listening .home-yvr-radar-deck__ring-label,
+  .home-yvr-radar-deck__map-wrap.is-loading .home-yvr-radar-deck__ring-label,
+  .home-yvr-radar-deck__map-wrap.is-listening .home-yvr-radar-deck__sweep {
     animation: none !important;
   }
 
-  .home-yvr-radar-deck__map-wrap.is-discover .home-yvr-leaflet-pin span {
-    animation: none !important;
+  .home-yvr-radar-deck__sweep,
+  .home-yvr-radar-deck__scan {
+    opacity: 0.22;
   }
 }
