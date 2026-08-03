@@ -5,6 +5,28 @@ const alerts = fs.readFileSync('lousy-outages/includes/IncidentAlerts.php','utf8
 const subs = fs.readFileSync('lousy-outages/includes/Subscriptions.php','utf8');
 const transport = fs.readFileSync('lousy-outages/includes/MailTransport.php','utf8');
 const plugin = fs.readFileSync('lousy-outages/lousy-outages.php','utf8');
+const templates = fs.readFileSync('lousy-outages/includes/email-templates.php','utf8');
+const adminEmail = fs.readFileSync('lousy-outages/includes/Email.php','utf8');
+
+test('outage email templates declare dark-mode color-scheme support', () => {
+  assert.match(templates, /function lo_email_dark_mode_head/);
+  assert.match(templates, /name="color-scheme" content="light dark"/);
+  assert.match(templates, /@media \(prefers-color-scheme: dark\)/);
+  assert.match(templates, /class="lo-text-primary"/);
+  assert.match(templates, /function send_lo_burst_alert_email/);
+});
+
+test('admin ops email declares dark-mode color-scheme support', () => {
+  assert.match(adminEmail, /name="color-scheme" content="light dark"/);
+  assert.match(adminEmail, /@media \(prefers-color-scheme: dark\)/);
+});
+
+test('canonical episode delivery coalesces burst alerts per recipient', () => {
+  assert.match(alerts, /send_lo_burst_alert_email/);
+  assert.match(alerts, /stale_episode_backlog/);
+  assert.match(alerts, /'coalesced'/);
+  assert.match(alerts, /\$recipientEpisodes\[\$recipient\]/);
+});
 
 test('settings page renders with missing PublicChatterSource diagnostic', () => {
   assert.match(plugin, /includes\/Sources\/PublicChatterSource\.php', false/);

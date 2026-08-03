@@ -120,29 +120,44 @@ class Email {
 
         $html_body = <<<HTML
 <!doctype html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
-<body style="margin:0;background:#040211;color:#f7f8ff;font-family:'Share Tech Mono','Lucida Console','Courier New',monospace;">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<style type="text/css">
+@media (prefers-color-scheme: dark) {
+  .lo-email-body { background-color: #040211 !important; background-image: linear-gradient(#040211, #040211) !important; color: #f7f8ff !important; }
+  .lo-email-panel { background-color: {$panel_start} !important; background-image: linear-gradient({$panel_start}, {$panel_end}) !important; }
+  .lo-text-ops, .lo-text-ops * { color: #f7f8ff !important; }
+  .lo-text-ops-muted, .lo-text-ops-muted * { color: rgba(247, 248, 255, 0.88) !important; }
+}
+</style>
+</head>
+<body class="lo-email-body" style="margin:0;background:#040211;color:#f7f8ff;font-family:'Share Tech Mono','Lucida Console','Courier New',monospace;">
   <div style="max-width:640px;margin:0 auto;padding:32px 18px;">
-    <div style="background:linear-gradient(135deg,{$panel_start},{$panel_end});border:3px solid {$accent};box-shadow:0 0 36px {$accent_soft};border-radius:22px;padding:30px 28px;">
+    <div class="lo-email-panel" style="background:linear-gradient(135deg,{$panel_start},{$panel_end});border:3px solid {$accent};box-shadow:0 0 36px {$accent_soft};border-radius:22px;padding:30px 28px;">
       <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;text-transform:uppercase;">
         <span style="font-size:14px;letter-spacing:0.14em;color:{$accent};">lousy outages ops</span>
-        <span style="font-size:12px;color:rgba(247,248,255,0.75);">{$meta_caption}</span>
+        <span class="lo-text-ops-muted" style="font-size:12px;color:rgba(247,248,255,0.75);">{$meta_caption}</span>
       </header>
       <div style="display:inline-flex;align-items:center;gap:10px;background:{$badge_bg};padding:10px 16px;border-radius:999px;margin-bottom:18px;">
         <span style="font-size:11px;letter-spacing:0.22em;color:{$accent};">{$badge_label}</span>
-        <span style="font-size:12px;letter-spacing:0.16em;color:rgba(247,248,255,0.8);">{$status_html}</span>
+        <span class="lo-text-ops-muted" style="font-size:12px;letter-spacing:0.16em;color:rgba(247,248,255,0.8);">{$status_html}</span>
       </div>
-      <h1 style="margin:0 0 12px;font-size:26px;color:#fefefe;letter-spacing:0.08em;text-transform:uppercase;">{$provider_html}</h1>
-      <p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:rgba(247,248,255,0.88);">{$summary_html}</p>
+      <h1 class="lo-text-ops" style="margin:0 0 12px;font-size:26px;color:#fefefe;letter-spacing:0.08em;text-transform:uppercase;">{$provider_html}</h1>
+      <p class="lo-text-ops-muted" style="margin:0 0 14px;font-size:14px;line-height:1.7;color:rgba(247,248,255,0.88);">{$summary_html}</p>
       <div style="margin:0 0 20px;padding:16px 18px;border:1px dashed rgba({$this->rgbaFromHex($accent)},0.55);border-radius:16px;background:rgba(5,5,25,0.55);">
-        <p style="margin:0;font-size:13px;line-height:1.7;color:#f7f8ff;">{$message_html}</p>
+        <p class="lo-text-ops" style="margin:0;font-size:13px;line-height:1.7;color:#f7f8ff;">{$message_html}</p>
       </div>
-      <p style="margin:0 0 18px;font-size:12px;color:rgba(247,248,255,0.75);">One alert per incident. For live play-by-play, keep the provider status console open.</p>
+      <p class="lo-text-ops-muted" style="margin:0 0 18px;font-size:12px;color:rgba(247,248,255,0.75);">One alert per incident. For live play-by-play, keep the provider status console open.</p>
       <p style="margin:0 0 22px;">{$cta_html}</p>
-      <p style="margin:0;font-size:11px;color:rgba(247,248,255,0.6);">If the button stalls, open this link: <a href="{$link_html}" style="color:{$accent};">{$link_html}</a></p>
+      <p class="lo-text-ops-muted" style="margin:0;font-size:11px;color:rgba(247,248,255,0.6);">If the button stalls, open this link: <a href="{$link_html}" style="color:{$accent};">{$link_html}</a></p>
     </div>
   </div>
 </body>
+</html>
 HTML;
 
         return [$text_body, $html_body];
