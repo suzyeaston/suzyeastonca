@@ -94,6 +94,7 @@
     this.playbackRate = 1;
     this.focusTimer = null;
     this.pendingMapSelectKey = null;
+    this.unmuteWatchdog = null;
   }
 
   HomeYvrBroadcaster.prototype.isKnownChannel = function (key) {
@@ -257,6 +258,7 @@
     if (this.playBtn) {
       this.playBtn.addEventListener('click', function () {
         self.unlockAudio();
+        self.primeAudioElement();
         if (self.isAudioPlaying()) {
           self.audio.pause();
           self.setBars(false);
@@ -264,6 +266,10 @@
           self.setListeningUi(false);
           self.setMouthIdle();
           self.updatePlayButton();
+          return;
+        }
+        if (self.audio && self.audio.src && !self.audio.error) {
+          self.playAudioElement();
           return;
         }
         self.startPlayback();
@@ -666,13 +672,41 @@
 
   HomeYvrBroadcaster.prototype.primeAudioElement = function () {
     if (!this.audio) return;
+    try {
+      this.audio.defaultMuted = false;
+      this.audio.removeAttribute('muted');
+    } catch (e) {
+      /* ignore */
+    }
     this.audio.muted = false;
-    if (this.audio.volume < 0.2) this.audio.volume = 0.9;
+    if (!(this.audio.volume > 0.2)) this.audio.volume = 0.95;
+    if (this.audio.volume < 0.85 && this.activeAudioKey) {
+      var ch = this.audioChannels[this.activeAudioKey];
+      if (!ch || ch.mode !== 'soundscape') this.audio.volume = 0.95;
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.startUnmuteWatchdog = function () {
+    var self = this;
+    this.stopUnmuteWatchdog();
+    this.unmuteWatchdog = setInterval(function () {
+      if (!self.audio) return;
+      if (self.audio.muted) self.audio.muted = false;
+      if (!self.audio.paused && self.audio.volume < 0.2) self.audio.volume = 0.95;
+    }, 400);
+  };
+
+  HomeYvrBroadcaster.prototype.stopUnmuteWatchdog = function () {
+    if (this.unmuteWatchdog) {
+      clearInterval(this.unmuteWatchdog);
+      this.unmuteWatchdog = null;
+    }
   };
 
   HomeYvrBroadcaster.prototype.playAudioElement = function () {
     var self = this;
     this.primeAudioElement();
+    this.startUnmuteWatchdog();
     var playPromise = this.audio.play();
     if (playPromise && typeof playPromise.then === 'function') {
       return playPromise
@@ -684,7 +718,9 @@
           self.root.classList.remove('is-armed');
           return true;
         })
-        .catch(function (err) {
+        .catch(function () {
+          // Autoplay blocked unmuted — arm deck and keep native controls visible.
+          self.primeAudioElement();
           self.setListeningUi(false);
           self.root.classList.add('is-armed');
           self.updatePlayButton();
@@ -700,6 +736,7 @@
   HomeYvrBroadcaster.prototype.stopRadio = function () {
     this.clearAutoMuteTimer();
     this.stopMeter();
+    this.stopUnmuteWatchdog();
     if (this.hls) {
       this.hls.destroy();
       this.hls = null;
