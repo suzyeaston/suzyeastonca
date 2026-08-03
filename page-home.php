@@ -24,7 +24,7 @@ get_header();
                     <div class="home-yvr-radar-deck__grid" aria-hidden="true"></div>
                     <div class="home-yvr-radar-deck__sweep" aria-hidden="true"></div>
                     <div class="home-yvr-radar-deck__scan" aria-hidden="true"></div>
-                    <p class="home-yvr-radar-deck__ring-label pixel-font"><?php echo esc_html( 'drag · tap pins' ); ?></p>
+                    <p class="home-yvr-radar-deck__ring-label pixel-font" data-yvr-ring-label><?php echo esc_html( 'drag · tap pins' ); ?></p>
                     <div class="home-yvr-radar-deck__wander pixel-font" data-yvr-wander-hint hidden>
                         <p class="home-yvr-radar-deck__wander-kicker"><?php echo esc_html( 'you wandered in.' ); ?></p>
                         <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'drag the scope. tap a pin — bulletin text plus matched live scanner.' ); ?></p>

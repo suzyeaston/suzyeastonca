@@ -453,6 +453,17 @@
   animation: none;
 }
 
+.home-yvr-broadcaster.is-listening .home-yvr-broadcaster__led {
+  background: #39ff14;
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.9);
+  animation: homeBcastLedPulse 0.85s ease-in-out infinite;
+}
+
+.home-yvr-broadcaster.is-listening .home-yvr-broadcaster__channel {
+  color: #39ff14;
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.55);
+}
+
 @keyframes homeBcastLedPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.55; }
@@ -884,6 +895,7 @@
   border-radius: 50%;
   border: 2px solid #020308;
   box-shadow: 0 0 8px currentColor;
+  margin: auto;
 }
 
 body.home-yvr-map-modal-open {
