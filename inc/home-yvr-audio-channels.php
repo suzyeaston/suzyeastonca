@@ -653,7 +653,7 @@ function se_broadcaster_resolve_audio_channel( array $channel ): array {
             $resolved = se_broadcaster_broadcastify_stream_url( $feed_id );
             if ( $resolved ) {
                 $out['stream_url'] = $resolved;
-                $out['format']     = str_contains( $resolved, '.m3u8' ) ? 'hls' : 'mp3';
+                $out['format']     = ( strpos( $resolved, '.m3u8' ) !== false ) ? 'hls' : 'mp3';
                 $out['stream_ok']  = true;
                 break;
             }
@@ -690,6 +690,12 @@ function se_broadcaster_audio_channels_for_client(): array {
             'pin_tier'   => $channel['pin_tier'] ?? 'radio',
             'deck_copy'  => $channel['deck_copy'] ?? '',
             'deck_note'  => $channel['deck_note'] ?? '',
+            'broadcastify_ids' => array_values(
+                array_map(
+                    'intval',
+                    $channel['broadcastify_ids'] ?? array( (int) ( $channel['broadcastify_id'] ?? 0 ) )
+                )
+            ),
             'map_lat'    => (float) ( $channel['map_lat'] ?? 0 ),
             'map_lon'    => (float) ( $channel['map_lon'] ?? 0 ),
         );

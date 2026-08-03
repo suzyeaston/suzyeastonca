@@ -51,6 +51,10 @@
     return null;
   }
 
+  function broadcastifyHlsUrl(feedId) {
+    return 'https://hls-o1.broadcastify.com/s2/feed/' + feedId + '/playlist.m3u8';
+  }
+
   function HomeYvrBroadcaster(root) {
     this.root = root;
     this.audio = root.querySelector('[data-broadcaster-audio]');
