@@ -14,7 +14,14 @@ $advisory = (int) ( $counts['advisory'] ?? 0 );
 $up = (int) ( $counts['up'] ?? 0 );
 $tracked = (int) ( $counts['tracked'] ?? 0 );
 ?>
-<section id="lousy-outages-teaser" class="lo-home-teaser lo-home-teaser--<?php echo esc_attr( $tone ); ?>" aria-labelledby="lo-home-heading" data-lo-endpoint="<?php echo esc_url( $teaser_endpoint ); ?>" data-lo-dashboard-url="<?php echo esc_url( $dashboard_url ); ?>" data-lo-refresh-interval="<?php echo esc_attr( (string) $teaser_interval ); ?>">
+<section id="lousy-outages-teaser" class="lo-home-teaser lo-home-teaser--<?php echo esc_attr( $tone ); ?> lo-home-teaser-panel" aria-labelledby="lo-home-heading" data-lo-endpoint="<?php echo esc_url( $teaser_endpoint ); ?>" data-lo-dashboard-url="<?php echo esc_url( $dashboard_url ); ?>" data-lo-refresh-interval="<?php echo esc_attr( (string) $teaser_interval ); ?>">
+    <details class="lo-home-teaser__details">
+        <summary class="lo-home-teaser__summary pixel-font">
+            <span class="lo-home-teaser__summary-label"><?php echo esc_html( 'lousy outages' ); ?></span>
+            <span class="lo-home-teaser__summary-verdict" data-lo-summary-verdict><?php echo esc_html( (string) ( $teaser['verdict_line'] ?? '' ) ); ?></span>
+            <span class="lo-home-teaser__summary-action"><?php echo esc_html( 'expand live board' ); ?></span>
+        </summary>
+    <div class="lo-home-teaser__body">
     <div class="lo-home-teaser__titlebar">
         <div>
             <p class="lo-home-kicker"><?php echo esc_html( 'live outage signal' ); ?></p>
@@ -90,4 +97,6 @@ $tracked = (int) ( $counts['tracked'] ?? 0 );
     </div>
 
     <p class="lo-home-upgrade"><a class="lo-home-dashboard-link" data-lo-upgrade href="<?php echo esc_url( home_url( '/lousy-outages/pricing/' ) ); ?>"><?php echo esc_html( 'Save your watchlist' ); ?> <span aria-hidden="true">→</span></a></p>
+    </div>
+    </details>
 </section>

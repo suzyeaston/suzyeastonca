@@ -1,0 +1,138 @@
+/* Compact commercial strip — above radar, below mast */
+
+.home-signal-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  width: 100%;
+  max-width: min(92vw, 900px);
+  margin: 0 auto;
+  padding: 0.45rem 0.65rem;
+  border: 2px solid rgba(87, 243, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(2, 8, 18, 0.72);
+  font-size: clamp(0.38rem, 0.78vw, 0.48rem);
+  letter-spacing: 0.06em;
+}
+
+.home-signal-strip--warn,
+.home-signal-strip--degraded {
+  border-color: rgba(255, 179, 71, 0.45);
+}
+
+.home-signal-strip--bad,
+.home-signal-strip--down {
+  border-color: rgba(255, 79, 79, 0.5);
+}
+
+.home-signal-strip__product {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.28rem 0.4rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-signal-strip__product:hover,
+.home-signal-strip__product:focus-visible {
+  color: #57f3ff;
+}
+
+.home-signal-strip__label {
+  color: #ffe66d;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+.home-signal-strip__verdict {
+  color: rgba(210, 240, 230, 0.88);
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  text-transform: lowercase;
+}
+
+.home-signal-strip__badge {
+  padding: 0.12rem 0.35rem;
+  border-radius: 3px;
+  background: rgba(255, 79, 79, 0.18);
+  color: #ff6b6b;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+}
+
+.home-signal-strip--warn .home-signal-strip__badge,
+.home-signal-strip--degraded .home-signal-strip__badge {
+  background: rgba(255, 179, 71, 0.18);
+  color: #ffb347;
+}
+
+.home-signal-strip__link {
+  color: rgba(180, 230, 220, 0.85);
+  text-decoration: none;
+  text-transform: lowercase;
+}
+
+.home-signal-strip__link:hover,
+.home-signal-strip__link:focus-visible {
+  color: #39ff14;
+}
+
+.home-signal-strip__pipe {
+  color: rgba(120, 160, 150, 0.45);
+}
+
+.home-signal-strip__future {
+  color: rgba(150, 190, 180, 0.62);
+  text-transform: lowercase;
+}
+
+.home-signal-strip__contact {
+  margin-left: auto;
+  padding: 0.22rem 0.45rem;
+  border: 2px solid rgba(57, 255, 20, 0.45);
+  border-radius: 4px;
+  background: rgba(57, 255, 20, 0.1);
+  color: #39ff14;
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(0.34rem, 0.72vw, 0.42rem);
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  cursor: pointer;
+}
+
+.home-signal-strip__contact:hover,
+.home-signal-strip__contact:focus-visible {
+  background: rgba(57, 255, 20, 0.2);
+}
+
+.home-mission-card--featured {
+  border-color: rgba(255, 179, 71, 0.65);
+  box-shadow: 0 0 20px rgba(255, 179, 71, 0.12);
+}
+
+.home-mission-card--featured .home-mission-card__label {
+  color: #ffb347;
+}
+
+@media (max-width: 720px) {
+  .home-signal-strip {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .home-signal-strip__contact {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .home-signal-strip__pipe {
+    display: none;
+  }
+
+  .home-signal-strip__future {
+    font-size: clamp(0.34rem, 0.72vw, 0.42rem);
+  }
+}

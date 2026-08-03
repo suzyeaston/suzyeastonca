@@ -92,6 +92,16 @@ function retro_game_music_theme_scripts() {
             );
         }
 
+        $signal_css = get_template_directory() . '/assets/css/home-commercial-strip.css';
+        if ( file_exists( $signal_css ) ) {
+            wp_enqueue_style(
+                'home-commercial-strip',
+                get_template_directory_uri() . '/assets/css/home-commercial-strip.css',
+                array( 'main-styles' ),
+                filemtime( $signal_css )
+            );
+        }
+
         wp_enqueue_script(
             'home-arcade-start',
             get_template_directory_uri() . '/js/home-arcade-start.js',
