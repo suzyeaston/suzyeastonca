@@ -5,6 +5,49 @@
 
 declare(strict_types=1);
 
+if (!function_exists('lo_email_dark_mode_head')) {
+    /**
+     * Shared head markup so dark-themed emails stay readable in Gmail/Apple Mail dark mode.
+     *
+     * Clients that auto-invert light text on dark backgrounds need explicit overrides.
+     */
+    function lo_email_dark_mode_head(string $title): string {
+        $title = esc_html($title);
+        return <<<HTML
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>{$title}</title>
+<style type="text/css">
+:root { color-scheme: light dark; supported-color-schemes: light dark; }
+@media (prefers-color-scheme: dark) {
+  .lo-email-body { background-color: #050607 !important; background-image: linear-gradient(#050607, #050607) !important; color: #FFEB3B !important; }
+  .lo-email-shell { background-color: #050607 !important; background-image: linear-gradient(#050607, #050607) !important; }
+  .lo-email-panel { background-color: #0a0418 !important; background-image: linear-gradient(#0a0418, #140628) !important; }
+  .lo-email-panel-purple { background-color: #0d0c1f !important; background-image: linear-gradient(#0d0c1f, #1b1540) !important; }
+  .lo-email-panel-digest { background-color: #120b2d !important; background-image: linear-gradient(#120b2d, #09061c) !important; }
+  .lo-text-primary, .lo-text-primary * { color: #FFEB3B !important; }
+  .lo-text-secondary, .lo-text-secondary * { color: #FFF59D !important; }
+  .lo-text-muted, .lo-text-muted * { color: #FFE082 !important; }
+  .lo-text-accent, .lo-text-accent * { color: #80D8FF !important; }
+  .lo-text-alert, .lo-text-alert * { color: #FF1744 !important; }
+  .lo-text-link, .lo-text-link * { color: #FFAB40 !important; }
+  .lo-text-body, .lo-text-body * { color: #FFCCBC !important; }
+  .lo-text-light, .lo-text-light * { color: #f7f4ff !important; }
+  .lo-text-light-muted, .lo-text-light-muted * { color: #d0c6ff !important; }
+  .lo-text-light-accent, .lo-text-light-accent * { color: #8f80ff !important; }
+  .lo-text-light-soft, .lo-text-light-soft * { color: #c5bfff !important; }
+  .lo-text-ops, .lo-text-ops * { color: #f7f8ff !important; }
+  .lo-text-ops-muted, .lo-text-ops-muted * { color: rgba(247, 248, 255, 0.88) !important; }
+  .lo-email-btn { color: #FFEB3B !important; background-color: #0A0418 !important; border-color: #FF1744 !important; }
+  .lo-email-btn-purple { color: #ffffff !important; background-color: #6c5ce7 !important; border-color: rgba(170, 144, 255, 0.9) !important; }
+}
+</style>
+HTML;
+    }
+}
+
 if (!function_exists('lo_unsubscribe_url_for')) {
     function lo_unsubscribe_url_for(string $email): string {
         $email = sanitize_email($email);
@@ -114,8 +157,7 @@ if (!function_exists('send_lo_confirmation_email')) {
         <!doctype html>
         <html lang="en">
         <head>
-            <meta charset="utf-8">
-            <title>Lousy Outages Confirmation</title>
+            <?php echo lo_email_dark_mode_head('Lousy Outages Confirmation'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
         </head>
         <body style="margin:0;background:#05050a;color:#f7f4ff;font-family:Segoe UI,Roboto,system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;">
             <div style="max-width:640px;margin:0 auto;padding:32px 20px;">
@@ -245,20 +287,19 @@ if (!function_exists('LO_compose_daily_digest')) {
         <!doctype html>
         <html lang="en">
         <head>
-            <meta charset="utf-8">
-            <title><?php echo esc_html($heading); ?></title>
+            <?php echo lo_email_dark_mode_head($heading); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
         </head>
-        <body style="margin:0;background:#070412;color:#f7f4ff;font-family:Segoe UI,Roboto,system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;">
-            <div style="max-width:680px;margin:0 auto;padding:36px 24px;">
-                <div style="border-radius:20px;border:1px solid rgba(143,128,255,0.35);background:linear-gradient(155deg,rgba(18,11,45,0.95),rgba(9,6,28,0.92));box-shadow:0 26px 48px rgba(20,14,46,0.6);padding:32px 28px;">
-                    <h1 style="margin:0 0 12px;font-size:26px;letter-spacing:0.04em;color:#d0c6ff;"><?php echo esc_html($heading); ?></h1>
-                    <p style="margin:0 0 20px;font-size:16px;line-height:1.5;color:rgba(255,255,255,0.85);"><?php echo esc_html($intro); ?></p>
+        <body class="lo-email-body" style="margin:0;background:#070412;color:#f7f4ff;font-family:Segoe UI,Roboto,system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;">
+            <div class="lo-email-shell" style="max-width:680px;margin:0 auto;padding:36px 24px;">
+                <div class="lo-email-panel-digest" style="border-radius:20px;border:1px solid rgba(143,128,255,0.35);background:linear-gradient(155deg,rgba(18,11,45,0.95),rgba(9,6,28,0.92));box-shadow:0 26px 48px rgba(20,14,46,0.6);padding:32px 28px;">
+                    <h1 class="lo-text-light-muted" style="margin:0 0 12px;font-size:26px;letter-spacing:0.04em;color:#d0c6ff;"><?php echo esc_html($heading); ?></h1>
+                    <p class="lo-text-light-soft" style="margin:0 0 20px;font-size:16px;line-height:1.5;color:rgba(255,255,255,0.85);"><?php echo esc_html($intro); ?></p>
                     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
                         <tbody>
                             <?php echo $rows_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                         </tbody>
                     </table>
-                    <p style="margin:24px 0 0;font-size:14px;line-height:1.5;color:#c5bfff;"><?php echo esc_html($signoff_html); ?></p>
+                    <p class="lo-text-light-soft" style="margin:24px 0 0;font-size:14px;line-height:1.5;color:#c5bfff;"><?php echo esc_html($signoff_html); ?></p>
                 </div>
             </div>
         </body>
@@ -380,32 +421,31 @@ if (!function_exists('send_lo_outage_alert_email')) {
         <!doctype html>
         <html lang="en">
         <head>
-            <meta charset="utf-8">
-            <title>Lousy Outages Alert</title>
+            <?php echo lo_email_dark_mode_head('Lousy Outages Alert'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
         </head>
-        <body style="margin:0;background:#050607;color:#FFEB3B;font-family:'Courier New','Lucida Console',monospace;font-size:16px;line-height:1.5;">
-            <div style="max-width:720px;margin:0 auto;padding:40px 24px;">
-                <div style="border:3px solid #FFEB3B;border-radius:24px;padding:34px 30px;background:linear-gradient(160deg,rgba(7,12,20,0.95),rgba(20,6,40,0.92));box-shadow:0 0 32px rgba(255,235,59,0.35);">
-                    <p style="margin:0 0 10px;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#FF1744;">alert: <?php echo esc_html($service_label); ?></p>
-                    <h1 style="margin:0 0 14px;font-size:32px;color:#FFEB3B;text-transform:uppercase;letter-spacing:0.05em;"><?php echo esc_html($service_label); ?> status: <?php echo esc_html(strtoupper($status_label)); ?></h1>
-                    <p style="margin:0 0 18px;font-size:16px;line-height:1.5;color:#FFF59D;"><?php echo esc_html($clean_summary); ?></p>
-                    <dl style="margin:0 0 20px;color:#FFF59D;font-size:14px;line-height:1.5;">
+        <body class="lo-email-body" style="margin:0;background:#050607;color:#FFEB3B;font-family:'Courier New','Lucida Console',monospace;font-size:16px;line-height:1.5;">
+            <div class="lo-email-shell" style="max-width:720px;margin:0 auto;padding:40px 24px;">
+                <div class="lo-email-panel" style="border:3px solid #FFEB3B;border-radius:24px;padding:34px 30px;background:linear-gradient(160deg,rgba(7,12,20,0.95),rgba(20,6,40,0.92));box-shadow:0 0 32px rgba(255,235,59,0.35);">
+                    <p class="lo-text-alert" style="margin:0 0 10px;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#FF1744;">alert: <?php echo esc_html($service_label); ?></p>
+                    <h1 class="lo-text-primary" style="margin:0 0 14px;font-size:32px;color:#FFEB3B;text-transform:uppercase;letter-spacing:0.05em;"><?php echo esc_html($service_label); ?> status: <?php echo esc_html(strtoupper($status_label)); ?></h1>
+                    <p class="lo-text-secondary" style="margin:0 0 18px;font-size:16px;line-height:1.5;color:#FFF59D;"><?php echo esc_html($clean_summary); ?></p>
+                    <dl class="lo-text-secondary" style="margin:0 0 20px;color:#FFF59D;font-size:14px;line-height:1.5;">
                         <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:10px;">
-                            <dt style="width:120px;text-transform:uppercase;letter-spacing:0.08em;color:#80D8FF;">Status</dt>
-                            <dd style="margin:0;font-weight:700;"><?php echo esc_html($status_label); ?></dd>
+                            <dt class="lo-text-accent" style="width:120px;text-transform:uppercase;letter-spacing:0.08em;color:#80D8FF;">Status</dt>
+                            <dd class="lo-text-secondary" style="margin:0;font-weight:700;"><?php echo esc_html($status_label); ?></dd>
                         </div>
                         <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:10px;">
-                            <dt style="width:120px;text-transform:uppercase;letter-spacing:0.08em;color:#80D8FF;">Components</dt>
-                            <dd style="margin:0;"><?php echo esc_html($component_line); ?></dd>
+                            <dt class="lo-text-accent" style="width:120px;text-transform:uppercase;letter-spacing:0.08em;color:#80D8FF;">Components</dt>
+                            <dd class="lo-text-secondary" style="margin:0;"><?php echo esc_html($component_line); ?></dd>
                         </div>
                         <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:10px;">
-                            <dt style="width:120px;text-transform:uppercase;letter-spacing:0.08em;color:#80D8FF;">Detected</dt>
-                            <dd style="margin:0;"><?php echo esc_html($timestamp_display); ?></dd>
+                            <dt class="lo-text-accent" style="width:120px;text-transform:uppercase;letter-spacing:0.08em;color:#80D8FF;">Detected</dt>
+                            <dd class="lo-text-secondary" style="margin:0;"><?php echo esc_html($timestamp_display); ?></dd>
                         </div>
                     </dl>
-                    <p style="margin:0 0 18px;font-size:14px;color:#FFCCBC;">Keep eyes on the incident console:</p>
+                    <p class="lo-text-body" style="margin:0 0 18px;font-size:14px;color:#FFCCBC;">Keep eyes on the incident console:</p>
                     <p style="margin:0 0 24px;">
-                        <a href="<?php echo esc_url($status_url_html); ?>" style="display:inline-block;padding:16px 28px;border-radius:999px;border:2px solid #FF1744;background:#0A0418;color:#FFEB3B;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:0.14em;">View live status feed</a>
+                        <a class="lo-email-btn" href="<?php echo esc_url($status_url_html); ?>" style="display:inline-block;padding:16px 28px;border-radius:999px;border:2px solid #FF1744;background:#0A0418;color:#FFEB3B;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:0.14em;">View live status feed</a>
                     </p>
                     <?php
                     $follow_line = apply_filters(
@@ -415,19 +455,19 @@ if (!function_exists('send_lo_outage_alert_email')) {
                     );
                     if (is_string($follow_line) && '' !== trim($follow_line)) :
                     ?>
-                        <p style="margin:0 0 20px;font-size:14px;color:#FFE082;">
+                        <p class="lo-text-muted" style="margin:0 0 20px;font-size:14px;color:#FFE082;">
                             <?php echo esc_html($follow_line); ?>
                         </p>
                     <?php endif; ?>
-                    <p style="margin:0 0 14px;font-size:13px;color:#FFF59D;">Backup link:<br><span style="color:#FFAB40;"><?php echo esc_html($status_url_raw); ?></span></p>
+                    <p class="lo-text-secondary" style="margin:0 0 14px;font-size:13px;color:#FFF59D;">Backup link:<br><span class="lo-text-link" style="color:#FFAB40;"><?php echo esc_html($status_url_raw); ?></span></p>
                     <?php if ($extra_notes) : ?>
-                        <p style="margin:0 0 28px;font-size:13px;color:#FFCDD2;"><?php echo esc_html($extra_notes); ?></p>
+                        <p class="lo-text-body" style="margin:0 0 28px;font-size:13px;color:#FFCDD2;"><?php echo esc_html($extra_notes); ?></p>
                     <?php endif; ?>
-                    <div style="margin:26px 0;padding:18px;border:1px dashed rgba(255,235,59,0.7);border-radius:16px;background:rgba(29,8,48,0.8);color:#FFEB3B;font-size:13px;">
-                        <strong style="display:block;font-size:11px;letter-spacing:0.18em;color:#FF1744;margin-bottom:6px;text-transform:uppercase;">Need to bail?</strong>
-                        Unsubscribe instantly: <a style="color:#FFAB40;text-decoration:none;" href="<?php echo esc_url($unsubscribe_html); ?>"><?php echo esc_html($unsubscribe_raw); ?></a>
+                    <div class="lo-text-primary" style="margin:26px 0;padding:18px;border:1px dashed rgba(255,235,59,0.7);border-radius:16px;background:rgba(29,8,48,0.8);color:#FFEB3B;font-size:13px;">
+                        <strong class="lo-text-alert" style="display:block;font-size:11px;letter-spacing:0.18em;color:#FF1744;margin-bottom:6px;text-transform:uppercase;">Need to bail?</strong>
+                        <span class="lo-text-secondary">Unsubscribe instantly:</span> <a class="lo-text-link" style="color:#FFAB40;text-decoration:none;" href="<?php echo esc_url($unsubscribe_html); ?>"><?php echo esc_html($unsubscribe_raw); ?></a>
                     </div>
-                    <p style="margin:0;font-size:12px;color:rgba(255,235,59,0.75);">Stay patched &mdash; Lousy Outages monitoring team.</p>
+                    <p class="lo-text-muted" style="margin:0;font-size:12px;color:rgba(255,235,59,0.75);">Stay patched &mdash; Lousy Outages monitoring team.</p>
                 </div>
             </div>
         </body>
@@ -455,6 +495,142 @@ if (!function_exists('send_lo_outage_alert_email')) {
             error_log('[lousy_outages] outage_email send failed for ' . $email . ' subject=' . $subject);
         } elseif (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Sent Lousy Outages alert to ' . $email . ' at ' . current_time('mysql'));
+        }
+
+        return (bool) $sent;
+    }
+}
+
+if (!function_exists('send_lo_burst_alert_email')) {
+    /**
+     * Sends one combined alert when multiple provider episodes queue up at once.
+     *
+     * @param array<int,array<string,mixed>> $episodes
+     */
+    function send_lo_burst_alert_email(string $email, array $episodes): bool {
+        $email = sanitize_email($email);
+        if (!$email || !is_email($email) || empty($episodes)) {
+            return false;
+        }
+
+        $status_map = [
+            'degraded'       => 'Degraded',
+            'partial_outage' => 'Partial Outage',
+            'major_outage'   => 'Major Outage',
+            'maintenance'    => 'Maintenance',
+            'resolved'       => 'Resolved',
+            'operational'    => 'Operational',
+        ];
+
+        $items = [];
+        foreach ($episodes as $episode) {
+            if (!is_array($episode)) {
+                continue;
+            }
+            $provider = trim((string) ($episode['provider_id'] ?? $episode['provider'] ?? ''));
+            $title    = trim((string) ($episode['title'] ?? ''));
+            $status   = strtolower(trim((string) ($episode['status'] ?? 'degraded')));
+            $url      = trim((string) ($episode['url'] ?? ''));
+            if ('' === $provider) {
+                continue;
+            }
+            $status_label = $status_map[$status] ?? ucfirst(str_replace('_', ' ', $status));
+            $detected = (int) ($episode['first_detected'] ?? 0);
+            $detected_label = $detected > 0 ? wp_date('M j, Y g:i A T', $detected) : wp_date('M j, Y g:i A T');
+            if ('' === $url) {
+                $url = home_url('/lousy-outages/');
+            }
+            $items[] = [
+                'provider' => $provider,
+                'title'    => $title ?: ($provider . ' status update'),
+                'status'   => $status_label,
+                'detected' => $detected_label,
+                'url'      => esc_url_raw($url),
+            ];
+        }
+
+        if (empty($items)) {
+            return false;
+        }
+
+        $count = count($items);
+        $subject = sprintf('[Outage Alert] %d providers flagged at once', $count);
+        $subject = (string) apply_filters('lo_burst_alert_subject', $subject, $items, $email);
+
+        $unsubscribe_url = lo_unsubscribe_url_for($email);
+        $unsubscribe_raw  = esc_url_raw($unsubscribe_url);
+        $unsubscribe_html = esc_url($unsubscribe_url);
+        $dashboard_url    = esc_url(home_url('/lousy-outages/'));
+
+        $text_lines = [
+            sprintf('Multiple outage alerts (%d providers)', $count),
+            'Several providers flipped at once. One email instead of a pile.',
+            '',
+        ];
+        foreach ($items as $item) {
+            $text_lines[] = sprintf('%s — %s (%s) — detected %s', $item['provider'], $item['title'], $item['status'], $item['detected']);
+            $text_lines[] = $item['url'];
+            $text_lines[] = '';
+        }
+        $text_lines[] = 'Live board: ' . esc_url_raw(home_url('/lousy-outages/'));
+        $text_lines[] = 'Unsubscribe: ' . $unsubscribe_raw;
+        $text_body = implode("\n", $text_lines);
+
+        $rows_html = '';
+        foreach ($items as $item) {
+            $rows_html .= sprintf(
+                '<tr><td style="padding:14px 0;border-bottom:1px solid rgba(255,235,59,0.25);"><strong class="lo-text-primary" style="display:block;font-size:16px;color:#FFEB3B;">%s</strong><span class="lo-text-secondary" style="display:block;font-size:14px;color:#FFF59D;margin-top:4px;">%s</span><span class="lo-text-accent" style="display:block;font-size:13px;color:#80D8FF;margin-top:6px;">%s · detected %s</span><a class="lo-text-link" href="%s" style="display:inline-block;margin-top:10px;font-size:13px;color:#FFAB40;text-decoration:none;">View status</a></td></tr>',
+                esc_html($item['provider']),
+                esc_html($item['title']),
+                esc_html($item['status']),
+                esc_html($item['detected']),
+                esc_url($item['url'])
+            );
+        }
+
+        ob_start();
+        ?>
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <?php echo lo_email_dark_mode_head('Lousy Outages Alert'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+        </head>
+        <body class="lo-email-body" style="margin:0;background:#050607;color:#FFEB3B;font-family:'Courier New','Lucida Console',monospace;font-size:16px;line-height:1.5;">
+            <div class="lo-email-shell" style="max-width:720px;margin:0 auto;padding:40px 24px;">
+                <div class="lo-email-panel" style="border:3px solid #FFEB3B;border-radius:24px;padding:34px 30px;background:linear-gradient(160deg,rgba(7,12,20,0.95),rgba(20,6,40,0.92));box-shadow:0 0 32px rgba(255,235,59,0.35);">
+                    <p class="lo-text-alert" style="margin:0 0 10px;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#FF1744;">multi-provider alert</p>
+                    <h1 class="lo-text-primary" style="margin:0 0 14px;font-size:28px;color:#FFEB3B;text-transform:uppercase;letter-spacing:0.05em;"><?php echo esc_html((string) $count); ?> providers flagged</h1>
+                    <p class="lo-text-secondary" style="margin:0 0 18px;font-size:16px;line-height:1.5;color:#FFF59D;">Several services flipped around the same time. One ping instead of a pile in your inbox.</p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+                        <tbody>
+                            <?php echo $rows_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        </tbody>
+                    </table>
+                    <p class="lo-text-body" style="margin:20px 0 18px;font-size:14px;color:#FFCCBC;">Keep eyes on the live board:</p>
+                    <p style="margin:0 0 24px;">
+                        <a class="lo-email-btn" href="<?php echo $dashboard_url; ?>" style="display:inline-block;padding:16px 28px;border-radius:999px;border:2px solid #FF1744;background:#0A0418;color:#FFEB3B;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:0.14em;">Open Lousy Outages</a>
+                    </p>
+                    <p class="lo-text-muted" style="margin:0 0 20px;font-size:14px;color:#FFE082;">We won't email every update. Follow each status page for play-by-play.</p>
+                    <div class="lo-text-primary" style="margin:26px 0;padding:18px;border:1px dashed rgba(255,235,59,0.7);border-radius:16px;background:rgba(29,8,48,0.8);color:#FFEB3B;font-size:13px;">
+                        <strong class="lo-text-alert" style="display:block;font-size:11px;letter-spacing:0.18em;color:#FF1744;margin-bottom:6px;text-transform:uppercase;">Need to bail?</strong>
+                        <span class="lo-text-secondary">Unsubscribe instantly:</span> <a class="lo-text-link" style="color:#FFAB40;text-decoration:none;" href="<?php echo esc_url($unsubscribe_html); ?>"><?php echo esc_html($unsubscribe_raw); ?></a>
+                    </div>
+                    <p class="lo-text-muted" style="margin:0;font-size:12px;color:rgba(255,235,59,0.75);">Stay patched &mdash; Lousy Outages monitoring team.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        $html_body = trim((string) ob_get_clean());
+
+        $headers = [
+            'List-Unsubscribe: <' . $unsubscribe_raw . '>',
+            'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+        ];
+
+        $sent = \SuzyEaston\LousyOutages\Mailer::send($email, $subject, $text_body, $html_body, $headers);
+        if (!$sent) {
+            error_log('[lousy_outages] burst_outage_email send failed for ' . $email . ' subject=' . $subject);
         }
 
         return (bool) $sent;

@@ -413,27 +413,100 @@ class IncidentAlerts {
 
     private static function process_episodes(array $episodes, EpisodeStore $store, array $options): array
     {
-        $result=['total_incidents'=>count($episodes),'considered'=>count($episodes),'sent'=>0,'skipped'=>0,'failed'=>0,'pending'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
-        foreach($episodes as $episode){
+        $result=['total_incidents'=>count($episodes),'considered'=>count($episodes),'sent'=>0,'skipped'=>0,'failed'=>0,'pending'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>[],'mode'=>'canonical_refresh','coalesced'=>0];
+        $nowUtc = current_time('timestamp', true);
+        $staleWindow = self::REALTIME_ALERT_WINDOW_HOURS * HOUR_IN_SECONDS;
+        $recipientEpisodes = [];
+
+        foreach ($episodes as $episode) {
             if (!empty($episode['legacy_suppressed']) && !empty($episode['email_successful_recipients'])) {
                 $result['skipped']++;
                 $result['skipped_reasons'][] = 'legacy_active_incident_imported';
                 continue;
             }
-            $incident=new Incident((string)$episode['provider_id'],(string)$episode['episode_guid'],(string)$episode['title'],(string)$episode['status'],(string)$episode['url'],null,(string)$episode['severity'],(int)$episode['first_detected'],null);
-            $eligible=self::eligible_recipients($incident);
-            $pending=$store->pendingRecipients((string)$episode['episode_guid'],$eligible);
-            if(!$pending){$result['skipped']++;$result['skipped_reasons'][]='all_eligible_recipients_already_sent';continue;}
-            $batch=array_slice($pending,0,max(1,(int)apply_filters('lousy_outages_alert_recipient_batch_size',25)));
-            $send=self::send_incident_alert_email($incident,['explicit_recipients'=>$batch,'mode'=>'canonical_refresh']);
-            $success=(array)($send['accepted_recipients']??[]);$failed=(array)($send['failed_recipients']??[]);
-            $store->saveDelivery((string)$episode['episode_guid'],$success,$failed,$eligible);
-            $result['recipients']=array_values(array_unique(array_merge($result['recipients'],$success)));
-            $result['sent']+=count($success);$result['failed']+=count($failed);
-            if($failed)$result['failures'][]='recipient_send_failed';
-            self::record_alert_delivery(!empty($success),$incident,array_merge($success,$failed),$failed?'recipient_send_failed':'',false,$options);
-            $result['pending']+=count($store->pendingRecipients((string)$episode['episode_guid'],$eligible));
+
+            $firstDetected = (int) ($episode['first_detected'] ?? 0);
+            $hasDeliveryHistory = !empty($episode['email_successful_recipients']) || !empty($episode['email_pending_recipients']);
+            if ($firstDetected > 0 && !$hasDeliveryHistory && ($nowUtc - $firstDetected) > $staleWindow) {
+                $result['skipped']++;
+                $result['skipped_reasons'][] = 'stale_episode_backlog';
+                continue;
+            }
+
+            $incident = new Incident((string)$episode['provider_id'],(string)$episode['episode_guid'],(string)$episode['title'],(string)$episode['status'],(string)$episode['url'],null,(string)$episode['severity'],(int)$episode['first_detected'],null);
+            $eligible = self::eligible_recipients($incident);
+            $pending = $store->pendingRecipients((string)$episode['episode_guid'], $eligible);
+            if (!$pending) {
+                $result['skipped']++;
+                $result['skipped_reasons'][] = 'all_eligible_recipients_already_sent';
+                continue;
+            }
+
+            $batchSize = max(1, (int) apply_filters('lousy_outages_alert_recipient_batch_size', 25));
+            $pending = array_slice($pending, 0, $batchSize);
+            foreach ($pending as $recipient) {
+                $recipientEpisodes[$recipient][] = [
+                    'episode' => $episode,
+                    'incident' => $incident,
+                    'eligible' => $eligible,
+                ];
+            }
         }
+
+        foreach ($recipientEpisodes as $recipient => $entries) {
+            $successful = [];
+            $failed = [];
+
+            if (count($entries) > 1 && function_exists('send_lo_burst_alert_email')) {
+                $sent = send_lo_burst_alert_email($recipient, array_map(static fn(array $entry): array => (array) $entry['episode'], $entries));
+                $result['coalesced']++;
+                foreach ($entries as $entry) {
+                    $episode = (array) $entry['episode'];
+                    $eligible = (array) $entry['eligible'];
+                    $guid = (string) ($episode['episode_guid'] ?? '');
+                    if ($sent) {
+                        $successful[] = $recipient;
+                        $store->saveDelivery($guid, [$recipient], [], $eligible);
+                    } else {
+                        $failed[] = $recipient;
+                        $store->saveDelivery($guid, [], [$recipient], $eligible);
+                    }
+                }
+            } else {
+                $entry = $entries[0];
+                $episode = (array) $entry['episode'];
+                $incident = $entry['incident'];
+                $eligible = (array) $entry['eligible'];
+                $send = self::send_incident_alert_email($incident, ['explicit_recipients'=>[$recipient], 'mode'=>'canonical_refresh']);
+                $success = (array) ($send['accepted_recipients'] ?? []);
+                $fail = (array) ($send['failed_recipients'] ?? []);
+                $store->saveDelivery((string) $episode['episode_guid'], $success, $fail, $eligible);
+                if ($success) {
+                    $successful = $success;
+                }
+                if ($fail) {
+                    $failed = $fail;
+                }
+            }
+
+            if ($successful) {
+                $result['recipients'] = array_values(array_unique(array_merge($result['recipients'], $successful)));
+                $result['sent'] += count($successful);
+                self::record_alert_delivery(true, $entries[0]['incident'], $successful, '', false, $options);
+            }
+            if ($failed) {
+                $result['failed'] += count($failed);
+                $result['failures'][] = 'recipient_send_failed';
+                self::record_alert_delivery(false, $entries[0]['incident'], array_merge($successful, $failed), 'recipient_send_failed', false, $options);
+            }
+
+            foreach ($entries as $entry) {
+                $episode = (array) $entry['episode'];
+                $eligible = (array) $entry['eligible'];
+                $result['pending'] += count($store->pendingRecipients((string) $episode['episode_guid'], $eligible));
+            }
+        }
+
         return $result;
     }
 
