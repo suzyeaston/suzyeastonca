@@ -18,6 +18,10 @@
     cbc: '#ffe66d',
     yvr_tower: '#57f3ff',
     yvr_ground: '#57f3ff',
+    yvr_combo: '#57f3ff',
+    yvr_dep2: '#57f3ff',
+    vzvr_acc: '#57f3ff',
+    burnaby_fire: '#ff4b4b',
     marine_vhf: '#7effc6',
     hydro_bush: '#39ff14',
     hydro_mast: '#39ff14',
@@ -110,12 +114,14 @@
   }
 
   HeroMap.prototype.makeIcon = function (color, large) {
-    var size = large ? 14 : 10;
+    var mobile = window.matchMedia('(max-width: 768px)').matches;
+    var visual = large ? (mobile ? 20 : 14) : (mobile ? 14 : 10);
+    var hit = large ? (mobile ? 40 : 24) : (mobile ? 28 : 16);
     return window.L.divIcon({
-      className: 'home-yvr-leaflet-pin',
-      html: '<span style="background:' + color + ';width:' + size + 'px;height:' + size + 'px"></span>',
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2]
+      className: 'home-yvr-leaflet-pin' + (large ? ' home-yvr-leaflet-pin--anchor' : ''),
+      html: '<span style="background:' + color + ';width:' + visual + 'px;height:' + visual + 'px"></span>',
+      iconSize: [hit, hit],
+      iconAnchor: [hit / 2, hit / 2]
     });
   };
 

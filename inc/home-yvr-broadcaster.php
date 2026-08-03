@@ -253,7 +253,7 @@ function se_broadcaster_data_channel_pin_config(): array {
     return array(
         'translink' => array(
             'feed_key'       => 'translink',
-            'audio_keys'     => array( 'sound_skytrain' ),
+            'audio_keys'     => array( 'cknw', 'marine_vhf', 'sound_skytrain' ),
             'bulletin_label' => 'TransLink bulletin',
             'tier'           => 'translink',
         ),
@@ -278,17 +278,17 @@ function se_broadcaster_data_channel_pin_config(): array {
         'wildfire'  => array(
             'feed_key'       => 'wildfire',
             'audio_keys'     => array(
+                'burnaby_fire',
                 'wildfire_fraser',
                 'wildfire_seatosky',
                 'wildfire_island',
-                'burnaby_fire',
             ),
             'bulletin_label' => 'BC wildfire bulletin',
             'tier'           => 'wildfire',
         ),
         'air'       => array(
             'feed_key'       => 'air',
-            'audio_keys'     => array( 'hydro_bush' ),
+            'audio_keys'     => array( 'hydro_bush', 'hydro_mast' ),
             'bulletin_label' => 'Metro AQHI bulletin',
             'tier'           => 'air',
         ),
@@ -308,6 +308,7 @@ function se_home_yvr_broadcaster_client_config(): array {
         'metroMap'         => se_broadcaster_metro_map_static(),
         'daveAmbientCycle' => se_broadcaster_dave_ambient_cycle_keys(),
         'dataChannelPins'  => se_broadcaster_data_channel_pin_config(),
+        'channels'         => se_broadcaster_audio_channels_for_client(),
     );
 }
 
