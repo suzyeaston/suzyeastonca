@@ -1005,6 +1005,14 @@ body.home-yvr-map-modal-open {
   gap: 0.28rem;
 }
 
+.home-yvr-broadcaster__feeds-note {
+  margin: 0.35rem 0 0;
+  color: rgba(150, 190, 180, 0.65);
+  font-size: clamp(0.36rem, 0.72vw, 0.48rem);
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+}
+
 .home-yvr-broadcaster__feeds-label {
   margin: 0.12rem 0 0;
   font-size: clamp(0.36rem, 0.72vw, 0.46rem);

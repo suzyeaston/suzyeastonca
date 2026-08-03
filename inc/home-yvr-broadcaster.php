@@ -201,42 +201,42 @@ function se_broadcaster_metro_map_anchors(): array {
         array(
             'key'   => 'translink',
             'label' => 'SkyTrain',
-            'hint'  => 'Waterfront hub',
+            'hint'  => 'live train bed',
             'lat'   => 49.2857,
             'lon'   => -123.1119,
         ),
         array(
             'key'   => 'drivers',
             'label' => 'DriveBC',
-            'hint'  => 'Port Mann corridor',
+            'hint'  => 'CKNW live',
             'lat'   => 49.1989,
             'lon'   => -122.8434,
         ),
         array(
             'key'   => 'ferries',
             'label' => 'Ferries',
-            'hint'  => 'Tsawwassen terminal',
+            'hint'  => 'marine VHF live',
             'lat'   => 49.0067,
             'lon'   => -123.1292,
         ),
         array(
             'key'   => 'weather',
             'label' => 'Weather',
-            'hint'  => 'Downtown Van',
+            'hint'  => 'CBC live',
             'lat'   => 49.2827,
             'lon'   => -123.1207,
         ),
         array(
             'key'   => 'wildfire',
             'label' => 'Wildfire',
-            'hint'  => 'Coastal corridor',
+            'hint'  => 'CBC live',
             'lat'   => 49.2480,
             'lon'   => -122.8900,
         ),
         array(
             'key'   => 'air',
             'label' => 'Air quality',
-            'hint'  => 'Metro AQ network',
+            'hint'  => 'hydro live',
             'lat'   => 49.2500,
             'lon'   => -123.0200,
         ),
@@ -249,14 +249,14 @@ function se_broadcaster_metro_map_anchors(): array {
     return $anchors;
 }
 
-function se_broadcaster_data_channel_bed_keys(): array {
+function se_broadcaster_data_channel_live_keys(): array {
     return array(
         'translink' => 'sound_skytrain',
-        'ferries'   => 'sound_ferry',
-        'weather'   => 'sound_rain',
-        'drivers'   => '',
-        'wildfire'  => '',
-        'air'       => '',
+        'drivers'   => 'cknw',
+        'ferries'   => 'marine_vhf',
+        'weather'   => 'cbc',
+        'wildfire'  => 'cbc',
+        'air'       => 'hydro_bush',
     );
 }
 
@@ -1097,7 +1097,7 @@ function se_get_broadcaster_feeds_rest( WP_REST_Request $request ): WP_REST_Resp
             'metro_map'          => se_broadcaster_metro_map_payload(),
             'channels'           => se_broadcaster_audio_channels_for_client(),
             'dave_ambient_cycle' => se_broadcaster_dave_ambient_cycle_keys(),
-            'data_channel_beds'  => se_broadcaster_data_channel_bed_keys(),
+            'data_channel_live'  => se_broadcaster_data_channel_live_keys(),
             'translink'          => se_broadcaster_translink_script(),
             'drivers'            => se_broadcaster_drivers_script(),
             'ferries'            => se_broadcaster_ferries_script(),

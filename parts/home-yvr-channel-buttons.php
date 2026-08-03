@@ -1,32 +1,5 @@
                     <div class="home-yvr-broadcaster__feeds">
-                        <p class="home-yvr-broadcaster__feeds-label pixel-font"><?php echo esc_html( 'feeds // dave reads' ); ?></p>
-                        <div class="home-yvr-broadcaster__channels home-yvr-broadcaster__channels--data">
-                            <button type="button" class="home-yvr-broadcaster__ch" data-broadcaster-channel-btn="translink" aria-pressed="false">
-                                <span class="home-yvr-broadcaster__ch-label pixel-font"><?php echo esc_html( 'SkyTrain' ); ?></span>
-                                <span class="home-yvr-broadcaster__ch-hint"><?php echo esc_html( 'TransLink alerts' ); ?></span>
-                            </button>
-                            <button type="button" class="home-yvr-broadcaster__ch" data-broadcaster-channel-btn="drivers" aria-pressed="false">
-                                <span class="home-yvr-broadcaster__ch-label pixel-font"><?php echo esc_html( 'DriveBC' ); ?></span>
-                                <span class="home-yvr-broadcaster__ch-hint"><?php echo esc_html( 'Road incidents' ); ?></span>
-                            </button>
-                            <button type="button" class="home-yvr-broadcaster__ch" data-broadcaster-channel-btn="ferries" aria-pressed="false">
-                                <span class="home-yvr-broadcaster__ch-label pixel-font"><?php echo esc_html( 'BC Ferries' ); ?></span>
-                                <span class="home-yvr-broadcaster__ch-hint"><?php echo esc_html( 'Sailings & fill' ); ?></span>
-                            </button>
-                            <button type="button" class="home-yvr-broadcaster__ch" data-broadcaster-channel-btn="weather" aria-pressed="false">
-                                <span class="home-yvr-broadcaster__ch-label pixel-font"><?php echo esc_html( 'Weather' ); ?></span>
-                                <span class="home-yvr-broadcaster__ch-hint"><?php echo esc_html( 'EC warnings' ); ?></span>
-                            </button>
-                            <button type="button" class="home-yvr-broadcaster__ch" data-broadcaster-channel-btn="wildfire" aria-pressed="false">
-                                <span class="home-yvr-broadcaster__ch-label pixel-font"><?php echo esc_html( 'Wildfire' ); ?></span>
-                                <span class="home-yvr-broadcaster__ch-hint"><?php echo esc_html( 'Coastal status' ); ?></span>
-                            </button>
-                            <button type="button" class="home-yvr-broadcaster__ch" data-broadcaster-channel-btn="air" aria-pressed="false">
-                                <span class="home-yvr-broadcaster__ch-label pixel-font"><?php echo esc_html( 'Air quality' ); ?></span>
-                                <span class="home-yvr-broadcaster__ch-hint"><?php echo esc_html( 'Metro AQHI' ); ?></span>
-                            </button>
-                        </div>
-                        <p class="home-yvr-broadcaster__feeds-label pixel-font"><?php echo esc_html( 'listen // live + beds' ); ?></p>
+                        <p class="home-yvr-broadcaster__feeds-label pixel-font"><?php echo esc_html( 'listen // live only' ); ?></p>
                         <div class="home-yvr-broadcaster__channels home-yvr-broadcaster__channels--listen">
                             <?php foreach ( se_broadcaster_audio_channel_catalog() as $audio_ch ) : ?>
                                 <?php
@@ -48,4 +21,5 @@
                                 </button>
                             <?php endforeach; ?>
                         </div>
+                        <p class="home-yvr-broadcaster__feeds-note pixel-font"><?php echo esc_html( 'map pins tune the same live feeds — no robot voice' ); ?></p>
                     </div>

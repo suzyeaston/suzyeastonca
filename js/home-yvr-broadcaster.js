@@ -1,7 +1,8 @@
 (function () {
   'use strict';
 
-  var DATA_CHANNELS = {
+  /** Map pin keys — label/freq for CRT; audio resolves via dataChannelLive. */
+  var PIN_CHANNELS = {
     translink: { label: 'SKYTRAIN', freq: '410.287', key: 'translink' },
     drivers: { label: 'DRIVE BC', freq: '154.100', key: 'drivers' },
     ferries: { label: 'BC FERRIES', freq: '156.800', key: 'ferries' },
@@ -10,95 +11,12 @@
     air: { label: 'AIR QUALITY', freq: '153.785', key: 'air' }
   };
 
-  var VOICE_PREFS = [
-    'Microsoft Aria Online (Natural)',
-    'Microsoft Aria',
-    'Microsoft Jenny Online (Natural)',
-    'Microsoft Jenny',
-    'Google US English',
-    'Samantha (Enhanced)',
-    'Samantha',
-    'Microsoft Zira',
-    'Karen',
-    'Moira'
-  ];
-
-  var VOICE_BLOCK = [
-    'David',
-    'UK English Male',
-    'Fred',
-    'Albert',
-    'Bad News',
-    'Cellos',
-    'Trinoids',
-    'Whisper'
-  ];
-
-  function scoreVoice(voice) {
-    if (!voice || !voice.lang || !/^en/i.test(voice.lang)) {
-      return -1000;
-    }
-
-    var name = voice.name || '';
-    var lang = voice.lang.toLowerCase();
-    var score = 0;
-
-    if (lang === 'en-us') score += 24;
-    else if (lang === 'en-gb') score -= 18;
-    else if (lang.indexOf('en') !== -1) score += 8;
-
-    if (/natural|neural|online|premium|enhanced/i.test(name)) score += 42;
-
-    VOICE_PREFS.forEach(function (pref, i) {
-      if (name.indexOf(pref) !== -1) score += 36 - i;
-    });
-
-    VOICE_BLOCK.forEach(function (bad) {
-      if (name.indexOf(bad) !== -1) score -= 80;
-    });
-
-    if (voice.localService) score += 4;
-
-    return score;
-  }
-
-  function pickModernVoice() {
-    if (!('speechSynthesis' in window)) return null;
-    var voices = window.speechSynthesis.getVoices();
-    if (!voices.length) return null;
-
-    var best = null;
-    var bestScore = -9999;
-    voices.forEach(function (v) {
-      var s = scoreVoice(v);
-      if (s > bestScore) {
-        bestScore = s;
-        best = v;
-      }
-    });
-    return best;
-  }
-
   function escapeHtml(str) {
     return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
-  }
-
-  function splitWords(text) {
-    var words = [];
-    var regex = /\S+/g;
-    var match;
-    while ((match = regex.exec(text)) !== null) {
-      words.push({
-        word: match[0],
-        start: match.index,
-        end: match.index + match[0].length
-      });
-    }
-    return words;
   }
 
   function attachHls(audio, url) {
@@ -117,7 +35,6 @@
   function HomeYvrBroadcaster(root) {
     this.root = root;
     this.audio = root.querySelector('[data-broadcaster-audio]');
-    this.bedAudio = root.querySelector('[data-broadcaster-bed-audio]');
     this.attributionEl = root.querySelector('[data-broadcaster-attribution]');
     this.freqEl = root.querySelector('[data-broadcaster-freq]');
     this.channelEl = root.querySelector('[data-broadcaster-channel]');
@@ -135,12 +52,9 @@
     this.feeds = null;
     this.audioChannels = {};
     this.ambientCycleKeys = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.daveAmbientCycle) || [];
-    this.dataChannelBeds = {};
+    this.dataChannelLive = {};
     this.activeKey = null;
-    this.speechUtterance = null;
-    this.wordSpans = [];
-    this.fallbackTimer = null;
-    this.voice = null;
+    this.activePinKey = null;
     this.mouthTimer = null;
     this.autoMuteTimer = null;
     this.hls = null;
@@ -149,15 +63,20 @@
     this.meterActive = false;
     this.meterRaf = null;
     this.audioSourceNode = null;
-    this.bedHls = null;
   }
 
   HomeYvrBroadcaster.prototype.isKnownChannel = function (key) {
-    return DATA_CHANNELS[key] || (this.audioChannels && this.audioChannels[key]);
+    return this.audioChannels[key] || PIN_CHANNELS[key] || this.dataChannelLive[key];
+  };
+
+  HomeYvrBroadcaster.prototype.resolveLiveKey = function (key) {
+    if (this.audioChannels[key]) return key;
+    if (this.dataChannelLive[key]) return this.dataChannelLive[key];
+    return key;
   };
 
   HomeYvrBroadcaster.prototype.getDisplayChannel = function (key) {
-    if (DATA_CHANNELS[key]) return DATA_CHANNELS[key];
+    if (PIN_CHANNELS[key]) return PIN_CHANNELS[key];
     var ac = this.audioChannels[key];
     if (!ac) return null;
     return { label: ac.label, freq: ac.freq, key: key };
@@ -198,14 +117,6 @@
       });
     }
 
-    if ('speechSynthesis' in window) {
-      var primeVoice = function () {
-        self.voice = pickModernVoice();
-      };
-      primeVoice();
-      window.speechSynthesis.addEventListener('voiceschanged', primeVoice);
-    }
-
     this.loadFeeds();
     this.setStandby();
 
@@ -234,25 +145,12 @@
     }
   };
 
-  HomeYvrBroadcaster.prototype.setMouthTalking = function (mode) {
+  HomeYvrBroadcaster.prototype.setMouthTalking = function () {
     if (this.faceEl) {
       this.faceEl.classList.add('is-talking');
     }
     if (!this.mouthEl) return;
-    this.mouthEl.classList.toggle('is-flap', mode === 'radio');
-    if (mode !== 'radio') {
-      this.mouthEl.classList.remove('is-flap');
-    }
-  };
-
-  HomeYvrBroadcaster.prototype.pulseMouth = function () {
-    var self = this;
-    if (!this.mouthEl) return;
-    this.mouthEl.classList.add('is-open');
-    if (this.mouthTimer) clearTimeout(this.mouthTimer);
-    this.mouthTimer = setTimeout(function () {
-      if (self.mouthEl) self.mouthEl.classList.remove('is-open');
-    }, 110);
+    this.mouthEl.classList.add('is-flap');
   };
 
   HomeYvrBroadcaster.prototype.scheduleAutoMute = function (channelKey) {
@@ -266,50 +164,6 @@
         self.stopAll(true);
       }
     }, delay);
-  };
-
-  HomeYvrBroadcaster.prototype.clearFallbackTimer = function () {
-    if (this.fallbackTimer) {
-      clearInterval(this.fallbackTimer);
-      this.fallbackTimer = null;
-    }
-  };
-
-  HomeYvrBroadcaster.prototype.clearWordHighlights = function () {
-    this.wordSpans.forEach(function (span) {
-      span.classList.remove('is-current', 'is-spoken');
-    });
-  };
-
-  HomeYvrBroadcaster.prototype.highlightWordAt = function (charIndex) {
-    var idx = -1;
-    for (var i = 0; i < this.wordSpans.length; i++) {
-      var start = parseInt(this.wordSpans[i].getAttribute('data-start'), 10);
-      if (start <= charIndex) idx = i;
-      if (start > charIndex) break;
-    }
-    if (idx < 0) return;
-
-    for (var j = 0; j < this.wordSpans.length; j++) {
-      var span = this.wordSpans[j];
-      span.classList.toggle('is-spoken', j < idx);
-      span.classList.toggle('is-current', j === idx);
-    }
-
-    var current = this.wordSpans[idx];
-    if (current && this.scriptEl) {
-      var box = this.scriptEl;
-      var top = current.offsetTop - box.offsetTop;
-      var target = top - (box.clientHeight / 2) + (current.clientHeight / 2);
-      box.scrollTop = Math.max(0, target);
-    }
-
-    if (this.heroMap && this.activeKey) {
-      var matched = this.heroMap.matchMarkerByText(this.wordSpans[idx].textContent);
-      if (matched && matched.id) {
-        this.heroMap.highlightMarker(matched.id);
-      }
-    }
   };
 
   HomeYvrBroadcaster.prototype.renderAttribution = function (channel) {
@@ -407,46 +261,14 @@
     }
   };
 
-  HomeYvrBroadcaster.prototype.renderScript = function (text, mode) {
+  HomeYvrBroadcaster.prototype.renderScript = function (text) {
     if (!this.scriptEl) return;
-
-    this.clearFallbackTimer();
-    this.clearWordHighlights();
-    this.wordSpans = [];
-
-    if (!text) {
-      this.scriptEl.textContent = '';
-      return;
-    }
-
-    if (mode === 'plain') {
-      this.scriptEl.textContent = text;
-      return;
-    }
-
-    var words = splitWords(text);
-    var frag = document.createDocumentFragment();
-
-    words.forEach(function (w, i) {
-      var span = document.createElement('span');
-      span.className = 'home-yvr-teleprompt__word';
-      span.setAttribute('data-start', String(w.start));
-      span.textContent = w.word;
-      frag.appendChild(span);
-      if (i < words.length - 1) {
-        frag.appendChild(document.createTextNode(' '));
-      }
-      this.wordSpans.push(span);
-    }, this);
-
-    this.scriptEl.innerHTML = '';
-    this.scriptEl.appendChild(frag);
-    this.scriptEl.scrollTop = 0;
+    this.scriptEl.textContent = text || '';
   };
 
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
-    this.renderScript('drag the map. tap a pin. dave reads feeds — listen row is live audio.', 'plain');
+    this.renderScript('tap a pin or channel. live audio only — no robot voice.');
     this.renderAttribution(null);
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.remove('is-live', 'is-radio');
@@ -488,7 +310,7 @@
           self.feeds = data;
           if (data.channels) self.audioChannels = data.channels;
           if (data.dave_ambient_cycle) self.ambientCycleKeys = data.dave_ambient_cycle;
-          if (data.data_channel_beds) self.dataChannelBeds = data.data_channel_beds;
+          if (data.data_channel_live) self.dataChannelLive = data.data_channel_live;
         }
         return self.feeds;
       })
@@ -500,8 +322,8 @@
     if (feeds.metro_map && feeds.metro_map.overlays) {
       this.heroMap.setOverlays(feeds.metro_map.overlays);
     }
-    if (this.activeKey) {
-      this.heroMap.setActiveChannel(this.activeKey);
+    if (this.activePinKey) {
+      this.heroMap.setActiveChannel(this.activePinKey);
     }
   };
 
@@ -571,55 +393,6 @@
     }
   };
 
-  HomeYvrBroadcaster.prototype.stopBed = function () {
-    if (this.bedHls) {
-      this.bedHls.destroy();
-      this.bedHls = null;
-    }
-    if (this.bedAudio) {
-      this.bedAudio.pause();
-      this.bedAudio.removeAttribute('src');
-      this.bedAudio.loop = false;
-    }
-  };
-
-  HomeYvrBroadcaster.prototype.startSpeechBed = function (dataKey) {
-    var self = this;
-    var bedKey = this.dataChannelBeds[dataKey];
-    if (!bedKey || !this.bedAudio) return;
-
-    var bedChannel = this.getAudioChannel(bedKey);
-    if (!bedChannel || !bedChannel.stream_ok || !bedChannel.stream_url) return;
-
-    this.stopBed();
-    this.bedAudio.loop = true;
-    this.bedAudio.volume = 0.14;
-
-    if (bedChannel.format === 'hls') {
-      this.bedHls = attachHls(this.bedAudio, bedChannel.stream_url);
-    } else {
-      this.bedAudio.src = bedChannel.stream_url;
-    }
-
-    var playPromise = this.bedAudio.play();
-    if (playPromise && typeof playPromise.catch === 'function') {
-      playPromise.catch(function () { /* bed optional */ });
-    }
-  };
-
-  HomeYvrBroadcaster.prototype.stopSpeech = function () {
-    this.stopBed();
-    this.clearFallbackTimer();
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-    this.speechUtterance = null;
-    this.root.classList.remove('is-speaking');
-    if (!this.root.classList.contains('is-radio')) {
-      this.setMouthIdle();
-    }
-  };
-
   HomeYvrBroadcaster.prototype.stopRadio = function () {
     this.clearAutoMuteTimer();
     this.stopMeter();
@@ -639,10 +412,9 @@
 
   HomeYvrBroadcaster.prototype.stopAll = function (toStandby) {
     this.clearAutoMuteTimer();
-    this.stopSpeech();
     this.stopRadio();
-    this.stopBed();
     this.activeKey = null;
+    this.activePinKey = null;
     this.setBars(false);
     this.root.classList.remove('is-live');
     if (this.heroMap) {
@@ -662,124 +434,30 @@
   HomeYvrBroadcaster.prototype.updateDisplay = function (channel) {
     if (this.freqEl) this.freqEl.textContent = channel.freq;
     if (this.channelEl) this.channelEl.textContent = channel.label;
-    this.highlightChannel(channel.key || null);
   };
 
-  HomeYvrBroadcaster.prototype.startFallbackHighlight = function (text) {
-    var self = this;
-    var words = splitWords(text);
-    if (!words.length) return;
-
-    var msPerWord = 340;
-    var idx = 0;
-    self.highlightWordAt(words[0].start);
-
-    this.fallbackTimer = setInterval(function () {
-      idx += 1;
-      if (idx >= words.length) {
-        self.clearFallbackTimer();
-        return;
-      }
-      self.highlightWordAt(words[idx].start);
-      self.pulseMouth();
-    }, msPerWord);
-  };
-
-  HomeYvrBroadcaster.prototype.speak = function (text, channel, pack) {
-    var self = this;
-    if (!text || !('speechSynthesis' in window)) {
-      this.renderScript(text || 'Voice not available in this browser.', 'plain');
-      return;
-    }
-
-    this.stopSpeech();
-    this.updateDisplay(channel);
-    this.renderMeta(pack);
-    this.renderAttribution(channel);
-    this.renderScript(text);
-    if (this.telepromptRoot) {
-      this.telepromptRoot.classList.add('is-live');
-      this.telepromptRoot.classList.remove('is-radio');
-    }
-    this.root.classList.add('is-live', 'is-speaking');
-    this.setBars(true);
-    this.setMouthTalking('speech');
-
-    var utterance = new SpeechSynthesisUtterance(text);
-    var voice = this.voice || pickModernVoice();
-    if (voice) {
-      utterance.voice = voice;
-      this.voice = voice;
-    }
-    utterance.rate = 1.02;
-    utterance.pitch = 1.0;
-
-    var boundarySeen = false;
-
-    utterance.onboundary = function (event) {
-      if (event.name === 'word' || event.charIndex > 0) {
-        boundarySeen = true;
-        self.clearFallbackTimer();
-        self.highlightWordAt(event.charIndex);
-        self.pulseMouth();
-      }
-    };
-
-    utterance.onstart = function () {
-      self.setMouthTalking('speech');
-      self.startSpeechBed(channel.key);
-      if (!boundarySeen && self.wordSpans.length) {
-        self.startFallbackHighlight(text);
-      }
-    };
-
-    utterance.onend = function () {
-      self.stopBed();
-      self.clearFallbackTimer();
-      self.clearWordHighlights();
-      if (self.wordSpans.length) {
-        self.wordSpans.forEach(function (span) { span.classList.add('is-spoken'); });
-      }
-      self.root.classList.remove('is-speaking');
-      self.setMouthIdle();
-      if (self.activeKey === channel.key) {
-        self.setBars(false);
-        self.scheduleAutoMute(channel.key);
-      }
-    };
-
-    utterance.onerror = function () {
-      self.stopBed();
-      self.clearFallbackTimer();
-      self.root.classList.remove('is-speaking');
-      self.setBars(false);
-      self.setMouthIdle();
-      self.scheduleAutoMute(channel.key);
-    };
-
-    this.speechUtterance = utterance;
-    window.speechSynthesis.speak(utterance);
-  };
-
-  HomeYvrBroadcaster.prototype.playStream = function (channel, pack) {
+  HomeYvrBroadcaster.prototype.playStream = function (channel, pack, pinKey) {
     var self = this;
     if (!this.audio || !channel.stream_url) return;
 
     this.stopRadio();
-    this.updateDisplay(this.getDisplayChannel(channel.key));
+    var display = pinKey ? this.getDisplayChannel(pinKey) : this.getDisplayChannel(channel.key);
+    if (display) this.updateDisplay(display);
+    this.highlightChannel(channel.key);
     this.renderMeta(pack);
     this.renderAttribution(channel);
     this.renderScript(
       channel.mode === 'soundscape'
-        ? 'Ambient bed on loop. Dave quiet — STOP to cut it.'
-        : 'Live audio. Dave quiet — STOP to silence.',
-      'plain'
+        ? 'Field audio bed on loop. STOP to cut.'
+        : (channel.attribution
+          ? 'Live feed on deck. Attribution on screen — STOP to cut.'
+          : 'Live audio on deck. STOP to silence.')
     );
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.add('is-live', 'is-radio');
     }
     this.root.classList.add('is-live', 'is-radio');
-    this.setMouthTalking('radio');
+    this.setMouthTalking();
 
     this.audio.loop = !!channel.loop;
     this.audio.volume = channel.mode === 'soundscape' ? 0.42 : 0.55;
@@ -800,7 +478,7 @@
           self.startMeter();
         })
         .catch(function () {
-          self.renderScript('Autoplay blocked — tap channel again or hit STOP then retry.', 'plain');
+          self.renderScript('Autoplay blocked — tap again or hit STOP then retry.');
           self.setBars(false);
           self.setMouthIdle();
         });
@@ -810,15 +488,14 @@
     }
   };
 
-  HomeYvrBroadcaster.prototype.playLinkOut = function (channel, pack) {
+  HomeYvrBroadcaster.prototype.playLinkOut = function (channel, pack, pinKey) {
     this.stopRadio();
-    this.updateDisplay(this.getDisplayChannel(channel.key));
+    var display = pinKey ? this.getDisplayChannel(pinKey) : this.getDisplayChannel(channel.key);
+    if (display) this.updateDisplay(display);
+    this.highlightChannel(channel.key);
     this.renderMeta(pack);
     this.renderAttribution(channel);
-    this.renderScript(
-      'Third-party live feed — opens off-site. Dave stays quiet on purpose.',
-      'plain'
-    );
+    this.renderScript('Live feed opens off-site — no robot voice on this deck.');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.add('is-live');
       this.telepromptRoot.classList.remove('is-radio');
@@ -827,14 +504,12 @@
     this.setBars(true);
   };
 
-  HomeYvrBroadcaster.prototype.activateAudioChannel = function (channel) {
-    var self = this;
+  HomeYvrBroadcaster.prototype.activateAudioChannel = function (channel, pinKey) {
     var pack = this.packFromAudioChannel(channel);
-    var display = this.getDisplayChannel(channel.key);
 
     if (channel.mode === 'link_out') {
-      if (this.heroMap) this.heroMap.setActiveChannel(channel.key);
-      this.playLinkOut(channel, pack);
+      if (this.heroMap && pinKey) this.heroMap.setActiveChannel(pinKey);
+      this.playLinkOut(channel, pack, pinKey);
       if (channel.link_url) {
         window.open(channel.link_url, '_blank', 'noopener,noreferrer');
       }
@@ -843,13 +518,13 @@
 
     if (channel.mode === 'broadcastify') {
       if (channel.stream_ok && channel.stream_url) {
-        if (this.heroMap) this.heroMap.setActiveChannel(channel.key);
-        this.playStream(channel, pack);
+        if (this.heroMap && pinKey) this.heroMap.setActiveChannel(pinKey);
+        this.playStream(channel, pack, pinKey);
         return;
       }
-      if (this.heroMap) this.heroMap.setActiveChannel(channel.key);
-      this.playLinkOut(channel, pack);
-      this.renderScript('Scanner feed offline or blocked — opening Broadcastify.', 'plain');
+      if (this.heroMap && pinKey) this.heroMap.setActiveChannel(pinKey);
+      this.playLinkOut(channel, pack, pinKey);
+      this.renderScript('Scanner offline — opening Broadcastify in a new tab.');
       if (channel.link_url) {
         window.open(channel.link_url, '_blank', 'noopener,noreferrer');
       }
@@ -858,12 +533,12 @@
 
     if (channel.mode === 'stream' || channel.mode === 'soundscape') {
       if (!channel.stream_ok || !channel.stream_url) {
-        this.renderScript('Stream not available right now — try again soon.', 'plain');
+        this.renderScript('Live feed not available right now — try another channel.');
         this.setBars(false);
         return;
       }
-      if (this.heroMap) this.heroMap.setActiveChannel(channel.key);
-      this.playStream(channel, pack);
+      if (this.heroMap && pinKey) this.heroMap.setActiveChannel(pinKey);
+      this.playStream(channel, pack, pinKey);
       return;
     }
   };
@@ -890,51 +565,35 @@
 
     if (!this.isKnownChannel(key)) return;
 
-    if (this.activeKey === key) {
+    var liveKey = this.resolveLiveKey(key);
+    var pinKey = PIN_CHANNELS[key] ? key : null;
+
+    if (this.activeKey === liveKey && (pinKey === this.activePinKey || !pinKey)) {
       this.stopAll(true);
       return;
     }
 
     this.stopAll(false);
-    this.activeKey = key;
+    this.activeKey = liveKey;
+    this.activePinKey = pinKey;
 
-    var audioChannel = this.getAudioChannel(key);
-    if (audioChannel) {
-      var display = this.getDisplayChannel(key);
-      this.updateDisplay(display);
-      this.renderScript('Tuning ' + display.label + '…', 'plain');
-      this.root.classList.add('is-live');
-      this.setBars(true);
-
-      this.ensureFeeds(true).then(function (feeds) {
-        var fresh = feeds && feeds.channels && feeds.channels[key];
-        if (fresh) self.audioChannels[key] = fresh;
-        self.activateAudioChannel(self.audioChannels[key] || audioChannel);
-      });
-      return;
-    }
-
-    var channel = DATA_CHANNELS[key];
-    this.updateDisplay(channel);
-    this.renderScript('Tuning ' + channel.label + '…', 'plain');
+    var display = pinKey ? this.getDisplayChannel(pinKey) : this.getDisplayChannel(liveKey);
+    if (display) this.updateDisplay(display);
+    this.renderScript('Tuning live audio…');
     this.root.classList.add('is-live');
     this.setBars(true);
 
     this.ensureFeeds(true).then(function (feeds) {
-      var pack = feeds && feeds[channel.key] ? feeds[channel.key] : null;
-      if (!pack) {
-        self.renderScript('Feed still loading — try again in a moment.', 'plain');
+      self.updateHeroMapFromFeeds(feeds);
+
+      var channel = self.audioChannels[liveKey];
+      if (!channel) {
+        self.renderScript('Live feed still loading — try again in a moment.');
         self.setBars(false);
         return;
       }
 
-      self.updateHeroMapFromFeeds(feeds);
-      if (self.heroMap) {
-        self.heroMap.setActiveChannel(channel.key);
-      }
-
-      var script = pack.script || pack.caption || '';
-      self.speak(script, channel, pack);
+      self.activateAudioChannel(channel, pinKey);
     });
   };
 
