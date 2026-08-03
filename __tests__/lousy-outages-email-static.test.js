@@ -10,15 +10,18 @@ const adminEmail = fs.readFileSync('lousy-outages/includes/Email.php','utf8');
 
 test('outage email templates declare dark-mode color-scheme support', () => {
   assert.match(templates, /function lo_email_dark_mode_head/);
-  assert.match(templates, /name="color-scheme" content="light dark"/);
-  assert.match(templates, /@media \(prefers-color-scheme: dark\)/);
-  assert.match(templates, /class="lo-text-primary"/);
+  assert.match(templates, /name="color-scheme" content="light only"/);
+  assert.match(templates, /gmail-blend-screen/);
+  assert.match(templates, /u \+ \.body \.gmail-blend-screen/);
+  assert.match(templates, /class="body lo-email-body"/);
+  assert.match(templates, /function lo_email_gmail_blend_open/);
   assert.match(templates, /function send_lo_burst_alert_email/);
 });
 
 test('admin ops email declares dark-mode color-scheme support', () => {
-  assert.match(adminEmail, /name="color-scheme" content="light dark"/);
-  assert.match(adminEmail, /@media \(prefers-color-scheme: dark\)/);
+  assert.match(adminEmail, /name="color-scheme" content="light only"/);
+  assert.match(adminEmail, /gmail-blend-screen/);
+  assert.match(adminEmail, /class="body"/);
 });
 
 test('canonical episode delivery coalesces burst alerts per recipient', () => {
