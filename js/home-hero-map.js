@@ -145,8 +145,15 @@
       });
       marker.bindTooltip(anchor.label + ' — ' + anchor.hint, { direction: 'top' });
       if (key !== 'dave') {
-        marker.on('click', function () {
-          if (self.onChannelSelect) self.onChannelSelect(key);
+        marker.on('click', function (e) {
+          if (window.L && window.L.DomEvent) {
+            window.L.DomEvent.stopPropagation(e);
+          }
+          if (window.HomeYvrBroadcaster && window.HomeYvrBroadcaster.handleMapSelect) {
+            window.HomeYvrBroadcaster.handleMapSelect(key);
+          } else if (self.onChannelSelect) {
+            self.onChannelSelect(key);
+          }
         });
       }
       marker.addTo(self.layer);

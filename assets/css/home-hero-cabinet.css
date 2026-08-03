@@ -1259,8 +1259,110 @@ body.home-yvr-map-modal-open {
   border-radius: 4px;
 }
 
+.home-yvr-broadcaster__transport {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  margin-top: 0.12rem;
+}
+
+.home-yvr-broadcaster__transport .home-yvr-broadcaster__btn {
+  width: auto;
+  flex: 1;
+}
+
+.home-yvr-broadcaster__play {
+  background: linear-gradient(180deg, #39ff14 0%, #1faa0a 100%);
+  color: #020308;
+  box-shadow: 2px 2px 0 #020308;
+}
+
+.home-yvr-broadcaster__play:hover,
+.home-yvr-broadcaster__play:focus-visible {
+  background: linear-gradient(180deg, #57ff3a 0%, #39ff14 100%);
+}
+
+.home-yvr-broadcaster__play.is-playing {
+  background: linear-gradient(180deg, #ffe66d 0%, #d4a800 100%);
+  color: #020308;
+}
+
+.home-yvr-broadcaster__play-hint,
+.home-yvr-broadcaster__stop-hint {
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: clamp(0.36rem, 0.78vw, 0.44rem);
+  letter-spacing: 0.03em;
+  opacity: 0.88;
+  text-transform: lowercase;
+}
+
+.home-yvr-broadcaster__speed {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.28rem 0.35rem;
+  padding: 0.28rem 0.35rem;
+  border: 2px solid rgba(87, 243, 255, 0.22);
+  border-radius: 4px;
+  background: rgba(2, 8, 18, 0.55);
+}
+
+.home-yvr-broadcaster__speed-label {
+  font-size: clamp(0.34rem, 0.72vw, 0.42rem);
+  letter-spacing: 0.08em;
+  color: rgba(180, 230, 220, 0.75);
+  text-transform: lowercase;
+}
+
+.home-yvr-broadcaster__speed-readout {
+  min-width: 2.2rem;
+  text-align: center;
+  color: #ffe66d;
+  font-size: clamp(0.38rem, 0.82vw, 0.48rem);
+}
+
+.home-yvr-broadcaster__speed-btn {
+  min-width: 1.65rem;
+  min-height: 1.45rem;
+  padding: 0.2rem 0.35rem;
+  border: 2px solid #020308;
+  border-radius: 3px;
+  background: rgba(87, 243, 255, 0.12);
+  color: #57f3ff;
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(0.34rem, 0.72vw, 0.42rem);
+  cursor: pointer;
+}
+
+.home-yvr-broadcaster__speed-btn:hover,
+.home-yvr-broadcaster__speed-btn:focus-visible {
+  background: rgba(87, 243, 255, 0.22);
+}
+
+.home-yvr-broadcaster__speed-btn.is-active {
+  background: #39ff14;
+  color: #020308;
+}
+
+.home-yvr-broadcaster.is-armed .home-yvr-broadcaster__play {
+  animation: homeYvrPlayPulse 1.1s ease-in-out infinite;
+}
+
+.home-yvr-broadcaster.is-focused {
+  outline: 2px solid rgba(57, 255, 20, 0.75);
+  outline-offset: 4px;
+  box-shadow: 0 0 24px rgba(57, 255, 20, 0.35);
+}
+
+@keyframes homeYvrPlayPulse {
+  0%, 100% { box-shadow: 2px 2px 0 #020308, 0 0 0 rgba(57, 255, 20, 0); }
+  50% { box-shadow: 2px 2px 0 #020308, 0 0 14px rgba(57, 255, 20, 0.65); }
+}
+
 .home-yvr-broadcaster__stop {
-  margin-top: 0.08rem;
+  margin-top: 0;
   background: linear-gradient(180deg, #ff5c5c 0%, #e03a3a 100%);
   color: #fff;
   box-shadow: 2px 2px 0 #020308;
@@ -1273,14 +1375,6 @@ body.home-yvr-map-modal-open {
 
 .home-yvr-broadcaster__stop-label {
   flex-shrink: 0;
-}
-
-.home-yvr-broadcaster__stop-hint {
-  font-family: "IBM Plex Mono", "Courier New", monospace;
-  font-size: clamp(0.36rem, 0.78vw, 0.44rem);
-  letter-spacing: 0.03em;
-  opacity: 0.88;
-  text-transform: lowercase;
 }
 
 .home-yvr-broadcaster.is-speaking .home-yvr-broadcaster__channel {
