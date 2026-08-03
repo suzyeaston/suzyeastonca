@@ -584,6 +584,13 @@
 .home-yvr-broadcaster__crt[data-broadcaster-teleprompt].is-radio .home-yvr-teleprompt__script {
   border-color: rgba(255, 230, 109, 0.5);
   box-shadow: inset 0 0 16px rgba(255, 230, 109, 0.12);
+  color: rgba(223, 255, 234, 0.92);
+}
+
+.home-yvr-broadcaster__crt[data-broadcaster-teleprompt].is-status .home-yvr-teleprompt__script {
+  border-color: rgba(255, 179, 71, 0.55);
+  box-shadow: inset 0 0 16px rgba(255, 179, 71, 0.14);
+  color: rgba(255, 236, 179, 0.95);
 }
 
 .home-yvr-map__anchor {
