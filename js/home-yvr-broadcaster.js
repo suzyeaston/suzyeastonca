@@ -782,7 +782,7 @@
     this.renderChannelDetail(null);
     if (this.scriptEl) {
       this.scriptEl.innerHTML = '';
-      this.scriptEl.textContent = 'tap a pin — bulletin lands here. live audio starts on its own.';
+      this.scriptEl.textContent = 'tap a pin on the map — bulletin + audio lands here.';
     }
     this.renderAttribution(null);
     if (this.telepromptRoot) {

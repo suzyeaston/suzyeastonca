@@ -31,7 +31,7 @@ get_header();
                     <p class="home-yvr-radar-deck__ring-label pixel-font" data-yvr-ring-label><?php echo esc_html( 'drag · tap pins' ); ?></p>
                     <div class="home-yvr-radar-deck__wander pixel-font" data-yvr-wander-hint hidden>
                         <p class="home-yvr-radar-deck__wander-kicker"><?php echo esc_html( 'night watch online.' ); ?></p>
-                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'Ham-radio view of the lower mainland. Big pins tune live territory feeds — coast guard, wildfire, skytrain, towers. Dave keeps audio on deck.' ); ?></p>
+                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'Ham-radio view of the lower mainland. Big pins tune live territory feeds — coast guard, wildfire, skytrain, towers. Bulletins + audio land in the deck below.' ); ?></p>
                         <button type="button" class="home-yvr-radar-deck__wander-dismiss pixel-font" data-yvr-wander-dismiss><?php echo esc_html( 'on band' ); ?></button>
                     </div>
                 </div>
@@ -39,13 +39,17 @@ get_header();
                     <span></span><span></span><span></span>
                 </div>
             </div>
-            <p class="home-yvr-radar-deck__hint pixel-font"><?php echo esc_html( "pins = channels — wildfire, skytrain, marine scan, liveatc" ); ?></p>
+            <p class="home-yvr-radar-deck__hint pixel-font"><?php echo esc_html( 'tap a pin — bulletins + live audio land in the deck below' ); ?></p>
         </div>
 
-        <div class="home-yvr-radar-deck__console">
+        <div class="home-yvr-radar-deck__deck">
+            <div class="home-yvr-radar-deck__deck-head pixel-font">
+                <span class="home-yvr-radar-deck__deck-badge"><?php echo esc_html( 'deck output' ); ?></span>
+                <span class="home-yvr-radar-deck__deck-status"><?php echo esc_html( 'map pins in · bulletins + audio out' ); ?></span>
+            </div>
             <div class="home-yvr-radar-deck__rack">
                 <div class="home-yvr-rack">
-                <div class="home-yvr-broadcaster" data-yvr-broadcaster tabindex="-1" aria-label="<?php echo esc_attr( 'YVR broadcaster — live feeds and radio' ); ?>">
+                <div class="home-yvr-broadcaster" data-yvr-broadcaster tabindex="-1" aria-label="<?php echo esc_attr( 'YVR radar deck — bulletins and live audio from map pins' ); ?>">
                     <div class="home-yvr-broadcaster__mast">
                         <div class="home-yvr-broadcaster__avatar" data-broadcaster-face data-broadcaster-dave-cycle title="<?php echo esc_attr( 'Tap Dave to cycle ambient beds' ); ?>" aria-label="<?php echo esc_attr( 'Dave — tap to cycle ambient sound' ); ?>">
                             <div class="home-yvr-broadcaster__avatar-frame home-yvr-broadcaster__pigeon">
@@ -93,7 +97,7 @@ get_header();
                             <span class="home-yvr-broadcaster__load-bar-fill"></span>
                         </div>
                         <p class="home-yvr-broadcaster__load-status pixel-font" data-broadcaster-load-status hidden aria-live="polite"></p>
-                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'tap a pin — bulletin lands here. live audio starts on its own.' ); ?></p>
+                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'tap a pin on the map — bulletin + audio lands here.' ); ?></p>
                         <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>
                         <div class="home-yvr-broadcaster__crt-scan" aria-hidden="true"></div>
                     </div>
@@ -122,18 +126,9 @@ get_header();
                 </div>
                 </div>
             </div>
-            <div class="home-yvr-radar-deck__cta">
-                <div class="home-amp-console">
-                    <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
-                    <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START // VIEW WORK"><?php echo esc_html( 'PRESS START // VIEW WORK' ); ?></button>
-                </div>
-                <ul class="home-title-screen-meta pixel-font" aria-label="<?php echo esc_attr( 'Scene tags' ); ?>">
-                    <li><?php echo esc_html( 'Vancouver' ); ?></li>
-                    <li><?php echo esc_html( 'independent practice' ); ?></li>
-                    <li><?php echo esc_html( 'civic tech' ); ?></li>
-                    <li><?php echo esc_html( 'west coast' ); ?></li>
-                </ul>
-            </div>
+            <p class="home-yvr-radar-deck__deck-foot pixel-font">
+                <a class="home-yvr-radar-deck__work-link" href="#mission-select"><?php echo esc_html( 'view projects ↓' ); ?></a>
+            </p>
         </div>
     </section>
 
