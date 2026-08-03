@@ -1,0 +1,48 @@
+name: Send Lousy Outages test alert
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: Recipient email address
+        required: true
+        type: string
+        default: suzanneeaston@gmail.com
+
+permissions:
+  contents: read
+
+jobs:
+  send-test-alert:
+    runs-on: ubuntu-latest
+    env:
+      LOUSY_SSH_HOST: ${{ secrets.LOUSY_SSH_HOST }}
+      LOUSY_SSH_PORT: ${{ secrets.LOUSY_SSH_PORT }}
+      LOUSY_SSH_USER: ${{ secrets.LOUSY_SSH_USER }}
+      LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify deploy secrets are configured
+        run: |
+          missing=()
+          [ -z "$LOUSY_SSH_HOST" ] && missing+=("LOUSY_SSH_HOST")
+          [ -z "$LOUSY_SSH_USER" ] && missing+=("LOUSY_SSH_USER")
+          [ -z "$LOUSY_SSH_PASSWORD" ] && missing+=("LOUSY_SSH_PASSWORD")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=Missing deploy secrets::Add repository secrets: ${missing[*]}"
+            exit 1
+          fi
+          if [ -z "$LOUSY_SSH_PORT" ]; then
+            echo "LOUSY_SSH_PORT=22" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install SSH dependencies
+        run: pip install paramiko
+
+      - name: Send test alert on production
+        run: python3 scripts/lo-remote.py php lousy-outages/scripts/send-test-alert.php "${{ github.event.inputs.email }}"

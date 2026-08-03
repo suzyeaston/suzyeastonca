@@ -6,6 +6,7 @@ Usage:
   python3 scripts/lo-remote.py php /path/to/local-snippet.php
 Reads credentials from /workspace/.env.deploy.local
 """
+import os
 import sys
 from pathlib import Path
 
@@ -19,12 +20,16 @@ REMOTE_TMP = "/home/uquklkik/tmp"
 
 def load_env() -> dict:
     data = {}
-    for line in ENV.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        k, v = line.split("=", 1)
-        data[k.strip()] = v.strip()
+    if ENV.is_file():
+        for line in ENV.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            data[k.strip()] = v.strip()
+    for key in ("LOUSY_SSH_HOST", "LOUSY_SSH_PORT", "LOUSY_SSH_USER", "LOUSY_SSH_PASSWORD"):
+        if key not in data and os.environ.get(key):
+            data[key] = os.environ[key]
     return data
 
 
@@ -58,6 +63,7 @@ def main() -> None:
     if len(sys.argv) < 3:
         raise SystemExit(__doc__)
     mode, arg = sys.argv[1], sys.argv[2]
+    extra_args = sys.argv[3:]
     client = connect()
     try:
         if mode == "sh":
@@ -69,7 +75,8 @@ def main() -> None:
             sftp = paramiko.SFTPClient.from_transport(client.get_transport())
             sftp.put(str(local), remote)
             sftp.close()
-            code = run(client, f"cd {WP_ROOT} && php {remote} 2>&1")
+            quoted = " ".join([remote] + [f"'{a.replace("'", "'\\''")}'" for a in extra_args])
+            code = run(client, f"cd {WP_ROOT} && php {quoted} 2>&1")
             run(client, f"rm -f {remote}")
         else:
             raise SystemExit("mode must be sh or php")
