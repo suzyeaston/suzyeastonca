@@ -254,8 +254,8 @@ function se_broadcaster_channel_deck_notes(): array {
             'deck_note' => 'Broadcastify scanner. Footer link opens source only if you tap it.',
         ),
         'marine_vhf'     => array(
-            'deck_copy' => 'Marine VHF — port traffic, Coast Guard, distress. Tries Vancouver ch 11/12/16 first, then Comox, Sointula, EC marine weather WX.',
-            'deck_note' => 'Broadcastify chain. Stays on Dave — footer link is optional.',
+            'deck_copy' => 'Marine VHF — port traffic, Coast Guard, distress. Walks Vancouver → Comox → Sointula → EC marine WX automatically. Coast dead? Dave jumps to YVR combo.',
+            'deck_note' => 'Broadcastify chain. No retry button — Dave finds a live feed or switches.',
         ),
         'hydro_bush'     => array(
             'deck_copy' => 'Orcasound hydrophone at Bush Point — Salish Sea live. Whales, ships, weird water noise.',
@@ -284,7 +284,7 @@ function se_broadcaster_pin_deck_copy( string $pin_key ): string {
     $copy = array(
         'translink' => 'TransLink alerts on screen. Audio tries CKNW, then marine VHF, then skytrain bed.',
         'drivers'   => 'DriveBC incidents on the map dots and bulletin. CKNW for road/traffic radio.',
-        'ferries'   => 'BC Ferries sailings + capacity bulletin. Live marine VHF first, ferry horn bed if scanners are down.',
+        'ferries'   => 'BC Ferries sailings + capacity bulletin. Marine VHF auto-scans the coast; ferry horn bed if everything\'s dead.',
         'weather'   => 'Environment Canada weather alerts bulletin. CBC Radio One for live forecast chatter.',
         'wildfire'  => 'BC wildfire incidents bulletin. Burnaby FD + BCWS repeater chain underneath.',
         'air'       => 'Metro Vancouver AQHI bulletin. Salish hydrophones when you want ambience with the data.',

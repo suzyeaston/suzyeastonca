@@ -55,6 +55,37 @@
     return 'https://hls-o1.broadcastify.com/s2/feed/' + feedId + '/playlist.m3u8';
   }
 
+  var BROADCASTIFY_FEED_LABELS = {
+    47189: 'Vancouver port',
+    32393: 'Comox coast',
+    32901: 'Sointula',
+    44288: 'EC marine WX',
+    38213: 'Burnaby Fire',
+    47303: 'BCWS south',
+    47304: 'BCWS north',
+    47305: 'BCWS central'
+  };
+
+  /** When every scanner in a chain is dead, jump here before giving up. */
+  var CHANNEL_AUDIO_FALLBACKS = {
+    marine_vhf: 'yvr_combo',
+    burnaby_fire: 'yvr_combo'
+  };
+
+  function broadcastifyFeedLabel(feedId) {
+    return BROADCASTIFY_FEED_LABELS[feedId] || ('feed ' + feedId);
+  }
+
+  function probeHlsLive(url) {
+    return fetch(url, { credentials: 'omit', mode: 'cors' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (body) {
+        if (!body) return false;
+        return /\.ts(?:\?|$)/m.test(body) || body.indexOf('#EXTINF:') !== -1;
+      })
+      .catch(function () { return false; });
+  }
+
   function HomeYvrBroadcaster(root) {
     this.root = root;
     this.audio = root.querySelector('[data-broadcaster-audio]');
@@ -107,6 +138,7 @@
     this.focusTimer = null;
     this.pendingMapSelectKey = null;
     this.unmuteWatchdog = null;
+    this.broadcastifyChainGen = 0;
   }
 
   HomeYvrBroadcaster.prototype.isKnownChannel = function (key) {
@@ -644,6 +676,34 @@
   HomeYvrBroadcaster.prototype.renderScript = function (text) {
     if (!this.scriptEl) return;
     this.scriptEl.textContent = text || '';
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.remove('is-status');
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.renderStatusScript = function (text) {
+    if (!this.scriptEl) return;
+    this.scriptEl.textContent = text || '';
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.add('is-live', 'is-status');
+      this.telepromptRoot.classList.remove('is-radio');
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.getBroadcastifyFeedIds = function (channel) {
+    if (!channel) return [];
+    var ids = channel.broadcastify_ids;
+    if (ids && ids.length) {
+      return ids.map(function (id) { return parseInt(id, 10); }).filter(function (id) { return id > 0; });
+    }
+    if (channel.broadcastify_id) {
+      return [parseInt(channel.broadcastify_id, 10)];
+    }
+    return [];
+  };
+
+  HomeYvrBroadcaster.prototype.cancelBroadcastifyChain = function () {
+    this.broadcastifyChainGen += 1;
   };
 
   HomeYvrBroadcaster.prototype.packFromFeedPack = function (pack) {
@@ -722,11 +782,11 @@
     this.renderChannelDetail(null);
     if (this.scriptEl) {
       this.scriptEl.innerHTML = '';
-      this.scriptEl.textContent = 'tap a pin — bulletin lands here. PLAY for live audio.';
+      this.scriptEl.textContent = 'tap a pin — bulletin lands here. live audio starts on its own.';
     }
     this.renderAttribution(null);
     if (this.telepromptRoot) {
-      this.telepromptRoot.classList.remove('is-live', 'is-radio', 'is-bulletin');
+      this.telepromptRoot.classList.remove('is-live', 'is-radio', 'is-bulletin', 'is-status');
     }
     if (this.heroMap) {
       this.heroMap.setActiveChannel(null);
@@ -878,6 +938,7 @@
 
   HomeYvrBroadcaster.prototype.stopRadio = function () {
     this.setLoadingUi(false);
+    this.cancelBroadcastifyChain();
     this.clearAutoMuteTimer();
     this.stopMeter();
     this.stopUnmuteWatchdog();
@@ -897,6 +958,7 @@
   };
 
   HomeYvrBroadcaster.prototype.stopAll = function (toStandby) {
+    this.setLoadingUi(false);
     this.clearAutoMuteTimer();
     this.stopRadio();
     this.activeKey = null;
@@ -924,6 +986,123 @@
     if (this.channelEl) this.channelEl.textContent = channel.label;
   };
 
+  HomeYvrBroadcaster.prototype.handleBroadcastifyChainFailed = function (channel, pack, pinKey, chainTail) {
+    var self = this;
+    var fallbackKey = CHANNEL_AUDIO_FALLBACKS[channel.key];
+
+    if (fallbackKey) {
+      var fallback = this.audioChannels[fallbackKey];
+      if (fallback && fallback.mode !== 'link_out') {
+        var status = channel.key === 'marine_vhf'
+          ? 'Coast scanners dead — YVR combo instead.'
+          : 'Scanner quiet — YVR combo instead.';
+        if (pinKey) {
+          this.appendBulletinAudioNote(status);
+        } else {
+          this.renderStatusScript(status);
+        }
+        this.activeAudioKey = fallbackKey;
+        this.highlightChannel(fallbackKey);
+        var fbPack = this.packFromAudioChannel(fallback);
+        if (fallback.stream_ok && fallback.stream_url) {
+          this.playStream(fallback, fbPack, pinKey);
+          return;
+        }
+        this.activateAudioChannel(fallback, pinKey);
+        return;
+      }
+    }
+
+    if (chainTail && chainTail.length) {
+      this.tryPlayAudioChain(chainTail, pinKey);
+      return;
+    }
+
+    this.root.classList.add('is-bulletin-only');
+    var deadCopy = channel.key === 'marine_vhf'
+      ? 'All coast feeds quiet. Bulletin still live — YVR MIX usually has traffic.'
+      : 'Scanner offline. Bulletin still live — pick another channel.';
+    if (pinKey) {
+      this.appendBulletinAudioNote(deadCopy);
+    } else {
+      this.renderStatusScript(deadCopy);
+    }
+    this.setBars(true);
+    this.updatePlayButton();
+  };
+
+  HomeYvrBroadcaster.prototype.playBroadcastifyChain = function (channel, pack, pinKey, opts) {
+    var self = this;
+    opts = opts || {};
+    var chainTail = opts.chainTail || [];
+    var pinMode = !!pinKey;
+    var onStatus = opts.onStatus || function (msg) {
+      self.setLoadingUi(true, msg);
+      self.renderStatusScript(msg);
+    };
+
+    var feedIds = this.getBroadcastifyFeedIds(channel);
+    if (!feedIds.length) {
+      this.handleBroadcastifyChainFailed(channel, pack, pinKey, chainTail);
+      return;
+    }
+
+    var gen = ++this.broadcastifyChainGen;
+
+    this.activeAudioKey = channel.key;
+    this.highlightChannel(channel.key);
+    if (this.heroMap && pinKey) this.heroMap.setActiveChannel(pinKey);
+    if (!pinKey) this.renderListenChannelDetail(channel);
+    this.renderMeta(pack);
+    this.renderAttribution(channel);
+    onStatus('Scanning scanner chain…');
+    this.root.classList.add('is-live', 'is-armed');
+    this.root.classList.remove('is-bulletin-only');
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.add('is-live', 'is-status');
+      this.telepromptRoot.classList.remove('is-radio');
+    }
+    this.setBars(true);
+    this.setMouthTalking();
+    this.unlockAudio();
+
+    var idx = 0;
+
+    function tryNext() {
+      if (gen !== self.broadcastifyChainGen) return;
+      if (idx >= feedIds.length) {
+        self.handleBroadcastifyChainFailed(channel, pack, pinKey, chainTail);
+        return;
+      }
+
+      var feedId = feedIds[idx];
+      var label = broadcastifyFeedLabel(feedId);
+      idx += 1;
+      onStatus(idx === 1 ? 'Checking ' + label + '…' : label + ' quiet — trying next…');
+
+      probeHlsLive(broadcastifyHlsUrl(feedId)).then(function (live) {
+        if (gen !== self.broadcastifyChainGen) return;
+        if (!live) {
+          tryNext();
+          return;
+        }
+
+        var liveChannel = Object.assign({}, channel, {
+          stream_url: broadcastifyHlsUrl(feedId),
+          stream_ok: true,
+          format: 'hls'
+        });
+        var statusMsg = feedId === feedIds[0]
+          ? 'Live on ' + label + '.'
+          : broadcastifyFeedLabel(feedIds[0]) + ' quiet — on ' + label + ' now.';
+        onStatus(statusMsg);
+        self.playStream(liveChannel, pack, pinKey);
+      });
+    }
+
+    tryNext();
+  };
+
   HomeYvrBroadcaster.prototype.startBulletinAudio = function (channel) {
     var self = this;
     if (!this.audio || !channel.stream_url) return false;
@@ -945,10 +1124,8 @@
     this.primeAudioElement();
 
     var afterArm = function (ok) {
-      if (ok) {
-        self.setLoadingUi(false);
-      } else {
-        self.setLoadingUi(false);
+      self.setLoadingUi(false);
+      if (!ok) {
         self.appendBulletinAudioNote('Tap PLAY below if audio didn\'t start.');
       }
     };
@@ -1002,7 +1179,13 @@
           this.appendBulletinAudioNote('Live scan: ' + (channel.label || audioKey) + '.');
           return;
         }
-        continue;
+        this.playBroadcastifyChain(channel, this.packFromAudioChannel(channel), pinKey, {
+          chainTail: keys.slice(i + 1),
+          onStatus: function (msg) {
+            self.appendBulletinAudioNote(msg);
+          }
+        });
+        return;
       }
 
       if ((channel.mode === 'stream' || channel.mode === 'soundscape') && channel.stream_ok && channel.stream_url) {
@@ -1018,7 +1201,7 @@
     this.setBars(true);
     this.setLoadingUi(false);
     this.appendBulletinAudioNote(
-      'Scanners offline (' + tried.join(', ') + ') — bulletin text is still current. Hit PLAY to retry or pick another channel.'
+      'Scanners quiet (' + tried.join(', ') + ') — bulletin still current. YVR MIX usually has traffic.'
     );
   };
 
@@ -1031,7 +1214,7 @@
       kicker: channel.label || channel.key,
       deck_copy: channel.deck_copy || channel.hint || '',
       deck_note: channel.deck_note || (channel.mode === 'broadcastify'
-        ? 'Broadcastify scanner — audio stays on Dave. Footer link is optional.'
+        ? 'Broadcastify chain — Dave walks feeds until something\'s live.'
         : 'In-page live audio.')
     });
   };
@@ -1160,6 +1343,7 @@
     );
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.add('is-live', 'is-radio');
+      this.telepromptRoot.classList.remove('is-status');
     }
     this.root.classList.add('is-live', 'is-radio');
     this.setMouthTalking();
@@ -1170,11 +1354,9 @@
     this.primeAudioElement();
 
     var afterArm = function (ok) {
-      if (ok) {
-        self.setLoadingUi(false);
-      } else {
-        self.setLoadingUi(false);
-        self.renderScript('Tap PLAY below if audio didn\'t start.');
+      self.setLoadingUi(false);
+      if (!ok) {
+        self.renderStatusScript('Tap PLAY below if audio didn\'t start.');
         self.setBars(false);
         self.setMouthIdle();
       }
@@ -1234,10 +1416,7 @@
         return;
       }
       if (this.heroMap && pinKey) this.heroMap.setActiveChannel(pinKey);
-      this.playLinkOut(channel, pack, pinKey);
-      this.root.classList.add('is-armed');
-      this.setLoadingUi(false);
-      this.renderScript('Scanner offline — hit PLAY to retry. Tries the next feed in the marine chain automatically.');
+      this.playBroadcastifyChain(channel, pack, pinKey, { chainTail: [] });
       this.updatePlayButton();
       return;
     }
