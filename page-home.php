@@ -102,7 +102,7 @@ get_header();
                             <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="1.5" aria-label="<?php echo esc_attr( 'Fast' ); ?>">++</button>
                         </div>
                     </div>
-                    <audio data-broadcaster-audio preload="none" crossorigin="anonymous"></audio>
+                    <audio data-broadcaster-audio preload="none" playsinline webkit-playsinline></audio>
                 </div>
                 </div>
             </div>

@@ -19,15 +19,34 @@
       .replace(/"/g, '&quot;');
   }
 
-  function attachHls(audio, url) {
+  function attachHls(audio, url, onReady) {
     if (window.Hls && window.Hls.isSupported()) {
-      var hls = new window.Hls({ enableWorker: true, lowLatencyMode: true });
+      var hls = new window.Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        xhrSetup: function (xhr) {
+          try {
+            xhr.withCredentials = false;
+          } catch (e) {
+            /* ignore */
+          }
+        }
+      });
+      hls.on(window.Hls.Events.MANIFEST_PARSED, function () {
+        if (typeof onReady === 'function') onReady();
+      });
+      hls.on(window.Hls.Events.ERROR, function (_event, data) {
+        if (data && data.fatal && typeof onReady === 'function') {
+          /* still try native play; caller handles failure */
+        }
+      });
       hls.loadSource(url);
       hls.attachMedia(audio);
       return hls;
     }
     if (audio.canPlayType('application/vnd.apple.mpegurl')) {
       audio.src = url;
+      if (typeof onReady === 'function') onReady();
     }
     return null;
   }
@@ -144,9 +163,8 @@
   };
 
   HomeYvrBroadcaster.prototype.resumeAudioContext = function () {
-    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      return this.audioCtx.resume();
-    }
+    // Intentionally no-op for playback. MediaElementSource was silencing
+    // live streams when the context stayed suspended. Meter is CSS-only.
     return Promise.resolve();
   };
 
@@ -283,52 +301,45 @@
     this.updatePlayButton();
 
     if (this.audio) {
+      this.audio.muted = false;
+      this.audio.setAttribute('playsinline', '');
+      this.audio.setAttribute('webkit-playsinline', '');
+
       this.audio.addEventListener('playing', function () {
-        self.setupAudioMeter();
+        self.audio.muted = false;
         self.setListeningUi(true);
         self.setBars(true);
-        self.startMeter();
         self.updatePlayButton();
         self.root.classList.remove('is-armed');
       });
       this.audio.addEventListener('pause', function () {
         self.updatePlayButton();
       });
+      this.audio.addEventListener('volumechange', function () {
+        if (self.audio.muted) self.audio.muted = false;
+      });
     }
 
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden) self.stopAll(true);
+      // Don't kill live audio just for switching tabs — users hop
+      // between Broadcastify and the deck all the time.
+      if (!document.hidden && self.audio && !self.audio.paused) {
+        self.primeAudioElement();
+      }
     });
   };
 
   HomeYvrBroadcaster.prototype.unlockAudio = function () {
     if (!this.audio) return;
 
-    if (this.audioUnlocked) {
+    // Never leave the element muted — unlock used to mute for a silent
+    // gesture play, then bail on reject and stay muted forever.
+    this.audio.muted = false;
+    this.audio.volume = Math.max(this.audio.volume || 0, 0.85);
+    this.audioUnlocked = true;
+
+    if (this.audioCtx && this.audioCtx.state === 'suspended') {
       this.resumeAudioContext();
-      return;
-    }
-
-    try {
-      this.audio.muted = true;
-      var playPromise = this.audio.play();
-      var finish = function () {
-        if (!this.audio) return;
-        this.audio.pause();
-        this.audio.muted = false;
-        this.audioUnlocked = true;
-        this.resumeAudioContext();
-      }.bind(this);
-
-      if (playPromise && typeof playPromise.then === 'function') {
-        playPromise.then(finish).catch(function () {
-          this.audioUnlocked = true;
-        }.bind(this));
-      } else {
-        finish();
-      }
-    } catch (e) {
-      this.audioUnlocked = true;
     }
   };
 
@@ -645,45 +656,45 @@
   };
 
   HomeYvrBroadcaster.prototype.startMeter = function () {
-    var self = this;
-    if (!this.audio || !this.analyser) return;
-
-    this.meterActive = true;
-    var data = new Uint8Array(this.analyser.frequencyBinCount);
-
-    function tick() {
-      if (!self.meterActive) return;
-      self.analyser.getByteFrequencyData(data);
-      var sum = 0;
-      for (var i = 0; i < data.length; i++) sum += data[i];
-      var avg = sum / data.length;
-      var level = 0.35 + (avg / 255) * 0.65;
-      self.bars.forEach(function (bar, i) {
-        var jitter = 0.85 + (i * 0.04);
-        bar.style.transform = 'scaleY(' + Math.min(1, level * jitter).toFixed(3) + ')';
-      });
-      self.meterRaf = requestAnimationFrame(tick);
-    }
-
-    tick();
+    /* CSS bar animation via .is-live — no Web Audio graph. */
   };
 
   HomeYvrBroadcaster.prototype.setupAudioMeter = function () {
-    if (!this.audio || this.meterWired) return;
-    try {
-      if (!this.audioCtx) {
-        this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        this.analyser = this.audioCtx.createAnalyser();
-        this.analyser.fftSize = 64;
-        this.audioSourceNode = this.audioCtx.createMediaElementSource(this.audio);
-        this.audioSourceNode.connect(this.analyser);
-        this.analyser.connect(this.audioCtx.destination);
-        this.meterWired = true;
-      }
-      this.resumeAudioContext();
-    } catch (e) {
-      /* meter optional — keep native element output */
+    /* Disabled: createMediaElementSource hijacks element output and
+       goes silent when AudioContext is suspended or CORS is incomplete. */
+  };
+
+  HomeYvrBroadcaster.prototype.primeAudioElement = function () {
+    if (!this.audio) return;
+    this.audio.muted = false;
+    if (this.audio.volume < 0.2) this.audio.volume = 0.9;
+  };
+
+  HomeYvrBroadcaster.prototype.playAudioElement = function () {
+    var self = this;
+    this.primeAudioElement();
+    var playPromise = this.audio.play();
+    if (playPromise && typeof playPromise.then === 'function') {
+      return playPromise
+        .then(function () {
+          self.primeAudioElement();
+          self.setBars(true);
+          self.setListeningUi(true);
+          self.updatePlayButton();
+          self.root.classList.remove('is-armed');
+          return true;
+        })
+        .catch(function (err) {
+          self.setListeningUi(false);
+          self.root.classList.add('is-armed');
+          self.updatePlayButton();
+          return false;
+        });
     }
+    this.setBars(true);
+    this.setListeningUi(true);
+    this.updatePlayButton();
+    return Promise.resolve(true);
   };
 
   HomeYvrBroadcaster.prototype.stopRadio = function () {
@@ -697,6 +708,7 @@
       this.audio.pause();
       this.audio.removeAttribute('src');
       this.audio.loop = false;
+      this.audio.muted = false;
     }
     this.root.classList.remove('is-radio');
     if (this.telepromptRoot) this.telepromptRoot.classList.remove('is-radio');
@@ -745,36 +757,31 @@
     this.setMouthTalking();
 
     this.audio.loop = !!channel.loop;
-    this.audio.volume = channel.mode === 'soundscape' ? 0.35 : 0.5;
+    this.audio.volume = channel.mode === 'soundscape' ? 0.55 : 0.95;
     this.audio.playbackRate = this.playbackRate;
+    this.primeAudioElement();
+
+    var afterArm = function (ok) {
+      if (!ok) {
+        self.appendBulletinAudioNote('Hit PLAY below — live audio is armed.');
+      }
+    };
 
     if (channel.format === 'hls') {
-      this.hls = attachHls(this.audio, channel.stream_url);
+      this.hls = attachHls(this.audio, channel.stream_url, function () {
+        self.playAudioElement().then(afterArm);
+      });
+      if (!this.hls && this.audio.src) {
+        this.playAudioElement().then(afterArm);
+      }
     } else {
       this.audio.src = channel.stream_url;
-    }
-
-    var self = this;
-    this.resumeAudioContext();
-
-    var playPromise = this.audio.play();
-    if (playPromise && typeof playPromise.then === 'function') {
-      playPromise
-        .then(function () {
-          self.setBars(true);
-          self.startMeter();
-          self.setListeningUi(true);
-        })
-        .catch(function () {
-          self.setListeningUi(false);
-          self.root.classList.add('is-armed');
-          self.appendBulletinAudioNote('Hit PLAY below — live audio is armed.');
-          self.updatePlayButton();
-        });
-    } else {
-      this.setBars(true);
-      this.startMeter();
-      this.setListeningUi(true);
+      try {
+        this.audio.load();
+      } catch (e) {
+        /* ignore */
+      }
+      this.playAudioElement().then(afterArm);
     }
     return true;
   };
@@ -946,37 +953,33 @@
     this.setMouthTalking();
 
     this.audio.loop = !!channel.loop;
-    this.audio.volume = channel.mode === 'soundscape' ? 0.42 : 0.55;
+    this.audio.volume = channel.mode === 'soundscape' ? 0.55 : 0.95;
     this.audio.playbackRate = this.playbackRate;
+    this.primeAudioElement();
+
+    var afterArm = function (ok) {
+      if (!ok) {
+        self.renderScript('Hit PLAY below — channel is armed on deck.');
+        self.setBars(false);
+        self.setMouthIdle();
+      }
+    };
 
     if (channel.format === 'hls') {
-      this.hls = attachHls(this.audio, channel.stream_url);
+      this.hls = attachHls(this.audio, channel.stream_url, function () {
+        self.playAudioElement().then(afterArm);
+      });
+      if (!this.hls && this.audio.src) {
+        this.playAudioElement().then(afterArm);
+      }
     } else {
       this.audio.src = channel.stream_url;
-    }
-
-    this.resumeAudioContext();
-
-    var playPromise = this.audio.play();
-    if (playPromise && typeof playPromise.then === 'function') {
-      playPromise
-        .then(function () {
-          self.setBars(true);
-          self.startMeter();
-          self.setListeningUi(true);
-        })
-        .catch(function () {
-          self.renderScript('Hit PLAY below — channel is armed on deck.');
-          self.setBars(false);
-          self.setMouthIdle();
-          self.setListeningUi(false);
-          self.root.classList.add('is-armed');
-          self.updatePlayButton();
-        });
-    } else {
-      this.setBars(true);
-      this.startMeter();
-      this.setListeningUi(true);
+      try {
+        this.audio.load();
+      } catch (e) {
+        /* ignore */
+      }
+      this.playAudioElement().then(afterArm);
     }
   };
 
