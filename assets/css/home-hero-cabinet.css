@@ -857,9 +857,26 @@
   color: rgba(150, 190, 180, 0.65);
 }
 
-.home-yvr-leaflet-pin {
-  background: transparent;
-  border: 0;
+.home-yvr-broadcaster__attribution {
+  margin: 0 0 0.35rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid rgba(87, 243, 255, 0.35);
+  border-radius: 4px;
+  background: rgba(87, 243, 255, 0.08);
+  font-size: clamp(0.38rem, 0.72vw, 0.48rem);
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  color: rgba(180, 230, 255, 0.9);
+}
+
+.home-yvr-broadcaster__attribution a {
+  color: #57f3ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.home-yvr-broadcaster__attribution[hidden] {
+  display: none;
 }
 
 .home-yvr-leaflet-pin span {

@@ -278,6 +278,63 @@
   text-align: center;
 }
 
+.home-yvr-radar-deck__wander {
+  position: absolute;
+  left: 50%;
+  top: 14%;
+  z-index: 6;
+  transform: translateX(-50%);
+  width: min(88%, 280px);
+  padding: 0.45rem 0.55rem;
+  border: 2px solid rgba(255, 230, 109, 0.65);
+  border-radius: 6px;
+  background: rgba(2, 6, 10, 0.92);
+  text-align: center;
+  box-shadow: 0 0 20px rgba(255, 230, 109, 0.15);
+  pointer-events: auto;
+}
+
+.home-yvr-radar-deck__wander-kicker {
+  margin: 0 0 0.25rem;
+  color: #ffe66d;
+  font-size: clamp(0.42rem, 0.85vw, 0.55rem);
+  letter-spacing: 0.1em;
+}
+
+.home-yvr-radar-deck__wander-body {
+  margin: 0 0 0.4rem;
+  color: rgba(200, 240, 230, 0.88);
+  font-size: clamp(0.38rem, 0.75vw, 0.5rem);
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+}
+
+.home-yvr-radar-deck__wander-dismiss {
+  margin: 0;
+  padding: 0.28rem 0.55rem;
+  border: 2px solid rgba(57, 255, 20, 0.55);
+  border-radius: 4px;
+  background: rgba(57, 255, 20, 0.12);
+  color: #39ff14;
+  font-size: clamp(0.38rem, 0.75vw, 0.48rem);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.home-yvr-radar-deck__wander-dismiss:hover,
+.home-yvr-radar-deck__wander-dismiss:focus-visible {
+  background: rgba(57, 255, 20, 0.22);
+}
+
+.home-yvr-radar-deck__map-wrap.is-discover .home-yvr-leaflet-pin span {
+  animation: homeYvrPinDiscover 1.6s ease-in-out infinite;
+}
+
+@keyframes homeYvrPinDiscover {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 8px currentColor; }
+  50% { transform: scale(1.35); box-shadow: 0 0 16px currentColor, 0 0 24px currentColor; }
+}
+
 /* —— Console: Dave + CTA —— */
 .home-yvr-radar-deck__console {
   display: grid;
@@ -440,6 +497,10 @@
   .home-yvr-radar-deck.is-starting,
   .home-yvr-radar-deck__cta .home-title-screen-prompt,
   .home-yvr-radar-deck__cta .home-press-start {
+    animation: none !important;
+  }
+
+  .home-yvr-radar-deck__map-wrap.is-discover .home-yvr-leaflet-pin span {
     animation: none !important;
   }
 }

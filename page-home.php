@@ -25,12 +25,17 @@ get_header();
                     <div class="home-yvr-radar-deck__sweep" aria-hidden="true"></div>
                     <div class="home-yvr-radar-deck__scan" aria-hidden="true"></div>
                     <p class="home-yvr-radar-deck__ring-label pixel-font"><?php echo esc_html( 'drag · tap pins' ); ?></p>
+                    <div class="home-yvr-radar-deck__wander pixel-font" data-yvr-wander-hint hidden>
+                        <p class="home-yvr-radar-deck__wander-kicker"><?php echo esc_html( 'you wandered in.' ); ?></p>
+                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'drag the scope. tap a pin. dave reads feeds — listen row is live audio.' ); ?></p>
+                        <button type="button" class="home-yvr-radar-deck__wander-dismiss pixel-font" data-yvr-wander-dismiss><?php echo esc_html( 'got it' ); ?></button>
+                    </div>
                 </div>
                 <div class="home-yvr-radar-deck__knobs" aria-hidden="true">
                     <span></span><span></span><span></span>
                 </div>
             </div>
-            <p class="home-yvr-radar-deck__hint pixel-font"><?php echo esc_html( "map pins match dave's channels — wildfire, skytrain, drivebc" ); ?></p>
+            <p class="home-yvr-radar-deck__hint pixel-font"><?php echo esc_html( "pins = channels — wildfire, skytrain, marine scan, liveatc" ); ?></p>
         </div>
 
         <div class="home-yvr-radar-deck__console">
@@ -73,7 +78,8 @@ get_header();
                         </div>
                     </div>
                     <div class="home-yvr-broadcaster__crt" data-broadcaster-teleprompt>
-                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'Tap a channel. Dave reads the feed — words light up.' ); ?></p>
+                        <p class="home-yvr-broadcaster__attribution pixel-font" data-broadcaster-attribution hidden></p>
+                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'wrong site on purpose? drag the map. tap a pin.' ); ?></p>
                         <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>
                         <div class="home-yvr-broadcaster__crt-scan" aria-hidden="true"></div>
                     </div>
@@ -83,6 +89,7 @@ get_header();
                         <span class="home-yvr-broadcaster__stop-hint"><?php echo esc_html( 'silence dave' ); ?></span>
                     </button>
                     <audio data-broadcaster-audio preload="none" crossorigin="anonymous"></audio>
+                    <audio data-broadcaster-bed-audio preload="none" crossorigin="anonymous"></audio>
                 </div>
                 </div>
             </div>

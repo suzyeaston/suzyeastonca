@@ -190,7 +190,7 @@ function se_broadcaster_metro_map_bounds(): array {
  * Fixed geographic homes for each YVR BCAST channel — map pins match feed territory.
  */
 function se_broadcaster_metro_map_anchors(): array {
-    return array(
+    $anchors = array(
         array(
             'key'   => 'dave',
             'label' => 'DAVE',
@@ -243,10 +243,21 @@ function se_broadcaster_metro_map_anchors(): array {
     );
 
     if ( function_exists( 'se_broadcaster_audio_map_anchors' ) ) {
-        $anchors = array_merge( $anchors, se_broadcaster_audio_map_anchors() );
+        return array_merge( $anchors, se_broadcaster_audio_map_anchors() );
     }
 
     return $anchors;
+}
+
+function se_broadcaster_data_channel_bed_keys(): array {
+    return array(
+        'translink' => 'sound_skytrain',
+        'ferries'   => 'sound_ferry',
+        'weather'   => 'sound_rain',
+        'drivers'   => '',
+        'wildfire'  => '',
+        'air'       => '',
+    );
 }
 
 function se_broadcaster_metro_map_static(): array {
@@ -1086,6 +1097,7 @@ function se_get_broadcaster_feeds_rest( WP_REST_Request $request ): WP_REST_Resp
             'metro_map'          => se_broadcaster_metro_map_payload(),
             'channels'           => se_broadcaster_audio_channels_for_client(),
             'dave_ambient_cycle' => se_broadcaster_dave_ambient_cycle_keys(),
+            'data_channel_beds'  => se_broadcaster_data_channel_bed_keys(),
             'translink'          => se_broadcaster_translink_script(),
             'drivers'            => se_broadcaster_drivers_script(),
             'ferries'            => se_broadcaster_ferries_script(),

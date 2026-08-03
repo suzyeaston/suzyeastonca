@@ -44,8 +44,66 @@ function se_broadcaster_orcasound_live_hls_url( string $node_name ): ?string {
     return $hls;
 }
 
+function se_broadcaster_broadcastify_api_key(): string {
+    if ( defined( 'SE_BROADCASTIFY_API_KEY' ) && SE_BROADCASTIFY_API_KEY ) {
+        return (string) SE_BROADCASTIFY_API_KEY;
+    }
+    return '';
+}
+
+function se_broadcaster_liveatc_embed_enabled(): bool {
+    if ( defined( 'SE_LIVEATC_EMBED' ) ) {
+        return (bool) SE_LIVEATC_EMBED;
+    }
+    return true;
+}
+
+function se_broadcaster_broadcastify_feed_online( int $feed_id ): ?bool {
+    $api_key = se_broadcaster_broadcastify_api_key();
+    if ( ! $api_key || $feed_id < 1 ) {
+        return null;
+    }
+
+    $cache_key = 'se_bcfy_online_' . $feed_id;
+    $cached    = get_transient( $cache_key );
+    if ( is_bool( $cached ) ) {
+        return $cached;
+    }
+
+    $url = add_query_arg(
+        array(
+            'a'      => 'feed',
+            'feedId' => $feed_id,
+            'type'   => 'json',
+            'key'    => $api_key,
+        ),
+        'https://api.broadcastify.com/audio/'
+    );
+
+    $response = wp_remote_get( $url, array( 'timeout' => 10 ) );
+    if ( is_wp_error( $response ) ) {
+        return null;
+    }
+
+    $body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+    if ( ! is_array( $body ) || empty( $body['feed'] ) || ! is_array( $body['feed'] ) ) {
+        return null;
+    }
+
+    $online = ! empty( $body['feed']['online'] ) || (string) ( $body['feed']['status'] ?? '' ) === '1';
+    set_transient( $cache_key, $online, 2 * MINUTE_IN_SECONDS );
+
+    return $online;
+}
+
 function se_broadcaster_broadcastify_stream_url( int $feed_id ): ?string {
     if ( $feed_id < 1 ) {
+        return null;
+    }
+
+    $online = se_broadcaster_broadcastify_feed_online( $feed_id );
+    if ( $online === false ) {
+        set_transient( 'se_bcfy_stream_' . $feed_id, '', 5 * MINUTE_IN_SECONDS );
         return null;
     }
 
@@ -104,10 +162,14 @@ function se_broadcaster_broadcastify_stream_url( int $feed_id ): ?string {
     return $stream_url;
 }
 
+function se_broadcaster_marine_broadcastify_feed_ids(): array {
+    return array( 47189 );
+}
+
 function se_broadcaster_audio_channel_catalog(): array {
     $theme_uri = get_template_directory_uri();
 
-    return array(
+    $channels = array(
         'cknw'           => array(
             'key'         => 'cknw',
             'label'       => 'CKNW 980',
@@ -136,19 +198,57 @@ function se_broadcaster_audio_channel_catalog(): array {
             'source_url'  => 'https://www.cbc.ca/listen/live-radio/1-cbc-radio-one-vancouver',
             'pin_tier'    => 'radio',
         ),
-        'yvr_tower'      => array(
-            'key'         => 'yvr_tower',
-            'label'       => 'YVR TWR',
-            'hint'        => 'LiveATC approach',
-            'freq'        => '119.300',
-            'mode'        => 'link_out',
-            'link_url'    => 'https://www.liveatc.net/hlisten.php?mount=cyvr1_app&icao=cyvr',
-            'link_label'  => 'Listen on LiveATC',
-            'map_lat'     => 49.1939,
-            'map_lon'     => -123.1764,
-            'source'      => 'LiveATC.net',
-            'source_url'  => 'https://www.liveatc.net/search/?icao=CYVR',
-            'pin_tier'    => 'atc',
+        'yvr_tower'      => se_broadcaster_liveatc_embed_enabled()
+            ? array(
+                'key'              => 'yvr_tower',
+                'label'            => 'YVR APP',
+                'hint'             => 'LiveATC approach',
+                'freq'             => '119.300',
+                'mode'             => 'stream',
+                'format'           => 'mp3',
+                'stream_url'       => 'https://d.liveatc.net/cyvr1_app',
+                'link_url'         => 'https://www.liveatc.net/hlisten.php?mount=cyvr1_app&icao=cyvr',
+                'link_label'       => 'LiveATC.net',
+                'map_lat'          => 49.1939,
+                'map_lon'          => -123.1764,
+                'source'           => 'LiveATC.net',
+                'source_url'       => 'https://www.liveatc.net/search/?icao=CYVR',
+                'pin_tier'         => 'atc',
+                'attribution'      => 'Audio via LiveATC.net — not affiliated. Do not redistribute.',
+                'attribution_url'  => 'https://www.liveatc.net/',
+            )
+            : array(
+                'key'         => 'yvr_tower',
+                'label'       => 'YVR TWR',
+                'hint'        => 'LiveATC approach',
+                'freq'        => '119.300',
+                'mode'        => 'link_out',
+                'link_url'    => 'https://www.liveatc.net/hlisten.php?mount=cyvr1_app&icao=cyvr',
+                'link_label'  => 'Listen on LiveATC',
+                'map_lat'     => 49.1939,
+                'map_lon'     => -123.1764,
+                'source'      => 'LiveATC.net',
+                'source_url'  => 'https://www.liveatc.net/search/?icao=CYVR',
+                'pin_tier'    => 'atc',
+            ),
+        'yvr_ground'     => array(
+            'key'              => 'yvr_ground',
+            'label'            => 'YVR GND',
+            'hint'             => 'LiveATC ground/twr',
+            'freq'             => '121.700',
+            'mode'             => 'stream',
+            'format'           => 'mp3',
+            'stream_url'       => 'https://d.liveatc.net/cyvr1_gnd_twr',
+            'link_url'         => 'https://www.liveatc.net/hlisten.php?mount=cyvr1_gnd_twr&icao=cyvr',
+            'link_label'       => 'LiveATC.net',
+            'map_lat'          => 49.1945,
+            'map_lon'          => -123.1750,
+            'source'           => 'LiveATC.net',
+            'source_url'       => 'https://www.liveatc.net/search/?icao=CYVR',
+            'pin_tier'         => 'atc',
+            'attribution'      => 'Audio via LiveATC.net — not affiliated. Do not redistribute.',
+            'attribution_url'  => 'https://www.liveatc.net/',
+            'embed_only'       => true,
         ),
         'marine_vhf'     => array(
             'key'               => 'marine_vhf',
@@ -157,6 +257,7 @@ function se_broadcaster_audio_channel_catalog(): array {
             'freq'              => '156.800',
             'mode'              => 'broadcastify',
             'broadcastify_id'   => 47189,
+            'broadcastify_ids'  => se_broadcaster_marine_broadcastify_feed_ids(),
             'link_url'          => 'https://www.broadcastify.com/listen/feed/47189',
             'link_label'        => 'Broadcastify marine feed',
             'map_lat'           => 49.2700,
@@ -204,8 +305,9 @@ function se_broadcaster_audio_channel_catalog(): array {
             'loop'        => true,
             'map_lat'     => 49.2857,
             'map_lon'     => -123.1119,
-            'source'      => 'Site soundscape',
-            'source_url'  => home_url( '/' ),
+            'source'      => 'Wikimedia Commons — electric train pass',
+            'source_url'  => 'https://commons.wikimedia.org/wiki/File:Sound_of_a_MoHa_201_series_electric_multiple_unit_train_on_the_Ch%C5%AB%C5%8D_Main_Line_(Ochanomizu%E2%80%93Yotsuya),_Tokyo,_Japan_-_20101010.ogg',
+            'credit'      => 'Tokyo Chuo Line field recording, CC BY-SA 3.0',
             'pin_tier'    => 'bed',
         ),
         'sound_rain'     => array(
@@ -219,8 +321,9 @@ function se_broadcaster_audio_channel_catalog(): array {
             'loop'        => true,
             'map_lat'     => 49.2827,
             'map_lon'     => -123.1207,
-            'source'      => 'Site soundscape',
-            'source_url'  => home_url( '/' ),
+            'source'      => 'Effib — Wikimedia Commons',
+            'source_url'  => 'https://commons.wikimedia.org/wiki/File:Sound_of_rain.ogg',
+            'credit'      => 'Sound of rain by Effib, CC BY-SA 3.0',
             'pin_tier'    => 'bed',
         ),
         'sound_ferry'    => array(
@@ -234,11 +337,34 @@ function se_broadcaster_audio_channel_catalog(): array {
             'loop'        => true,
             'map_lat'     => 49.0067,
             'map_lon'     => -123.1292,
-            'source'      => 'Site soundscape',
-            'source_url'  => home_url( '/' ),
+            'source'      => 'Wikimedia Commons — steamboat whistle',
+            'source_url'  => 'https://commons.wikimedia.org/wiki/File:WWS_Steamwhistle.ogg',
+            'credit'      => 'WWS Steamwhistle, CC BY-SA 4.0',
             'pin_tier'    => 'bed',
         ),
     );
+
+    if ( ! se_broadcaster_liveatc_embed_enabled() ) {
+        unset( $channels['yvr_ground'] );
+        if ( isset( $channels['yvr_tower'] ) && $channels['yvr_tower']['mode'] === 'stream' ) {
+            $channels['yvr_tower'] = array(
+                'key'         => 'yvr_tower',
+                'label'       => 'YVR TWR',
+                'hint'        => 'LiveATC approach',
+                'freq'        => '119.300',
+                'mode'        => 'link_out',
+                'link_url'    => 'https://www.liveatc.net/hlisten.php?mount=cyvr1_app&icao=cyvr',
+                'link_label'  => 'Listen on LiveATC',
+                'map_lat'     => 49.1939,
+                'map_lon'     => -123.1764,
+                'source'      => 'LiveATC.net',
+                'source_url'  => 'https://www.liveatc.net/search/?icao=CYVR',
+                'pin_tier'    => 'atc',
+            );
+        }
+    }
+
+    return $channels;
 }
 
 function se_broadcaster_resolve_audio_channel( array $channel ): array {
@@ -261,12 +387,19 @@ function se_broadcaster_resolve_audio_channel( array $channel ): array {
     }
 
     if ( $channel['mode'] === 'broadcastify' ) {
-        $feed_id = (int) ( $channel['broadcastify_id'] ?? 0 );
-        $resolved = se_broadcaster_broadcastify_stream_url( $feed_id );
-        if ( $resolved ) {
-            $out['stream_url'] = $resolved;
-            $out['format']     = 'mp3';
-            $out['stream_ok']  = true;
+        $feed_ids = $channel['broadcastify_ids'] ?? array( (int) ( $channel['broadcastify_id'] ?? 0 ) );
+        foreach ( $feed_ids as $feed_id ) {
+            $feed_id = (int) $feed_id;
+            if ( $feed_id < 1 ) {
+                continue;
+            }
+            $resolved = se_broadcaster_broadcastify_stream_url( $feed_id );
+            if ( $resolved ) {
+                $out['stream_url'] = $resolved;
+                $out['format']     = 'mp3';
+                $out['stream_ok']  = true;
+                break;
+            }
         }
     }
 
@@ -293,6 +426,9 @@ function se_broadcaster_audio_channels_for_client(): array {
             'link_label' => $channel['link_label'] ?? '',
             'source'     => $channel['source'] ?? '',
             'source_url' => $channel['source_url'] ?? '',
+            'credit'     => $channel['credit'] ?? '',
+            'attribution' => $channel['attribution'] ?? '',
+            'attribution_url' => $channel['attribution_url'] ?? '',
             'pin_tier'   => $channel['pin_tier'] ?? 'radio',
             'map_lat'    => (float) ( $channel['map_lat'] ?? 0 ),
             'map_lon'    => (float) ( $channel['map_lon'] ?? 0 ),

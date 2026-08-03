@@ -17,6 +17,7 @@
     cknw: '#ffb347',
     cbc: '#ffe66d',
     yvr_tower: '#57f3ff',
+    yvr_ground: '#57f3ff',
     marine_vhf: '#7effc6',
     hydro_bush: '#39ff14',
     hydro_mast: '#39ff14',
@@ -239,6 +240,27 @@
     /* leaflet pins — highlight handled via tooltip on sync */
   };
 
+  function initWanderHint() {
+    var storageKey = 'se-yvr-wander-seen';
+    if (localStorage.getItem(storageKey)) return;
+
+    var hint = document.querySelector('[data-yvr-wander-hint]');
+    var mapWrap = document.querySelector('.home-yvr-radar-deck__map-wrap');
+    if (!hint) return;
+
+    hint.hidden = false;
+    if (mapWrap) mapWrap.classList.add('is-discover');
+
+    var dismiss = hint.querySelector('[data-yvr-wander-dismiss]');
+    if (dismiss) {
+      dismiss.addEventListener('click', function () {
+        localStorage.setItem(storageKey, '1');
+        hint.hidden = true;
+        if (mapWrap) mapWrap.classList.remove('is-discover');
+      });
+    }
+  }
+
   function init() {
     var stage = document.querySelector('[data-home-hero-map]');
     if (!stage || stage.dataset.heroMapReady === '1') return;
@@ -251,6 +273,8 @@
     if (config && config.bounds) {
       heroMap.boot(config);
     }
+
+    initWanderHint();
   }
 
   if (document.readyState === 'loading') {
