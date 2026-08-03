@@ -59,6 +59,11 @@ function se_broadcaster_liveatc_embed_enabled(): bool {
 }
 
 function se_broadcaster_broadcastify_feed_online( int $feed_id ): ?bool {
+    $status = se_broadcaster_broadcastify_feed_status( $feed_id );
+    if ( is_array( $status ) && array_key_exists( 'online', $status ) ) {
+        return (bool) $status['online'];
+    }
+
     $api_key = se_broadcaster_broadcastify_api_key();
     if ( ! $api_key || $feed_id < 1 ) {
         return null;
@@ -96,70 +101,117 @@ function se_broadcaster_broadcastify_feed_online( int $feed_id ): ?bool {
     return $online;
 }
 
-function se_broadcaster_broadcastify_stream_url( int $feed_id ): ?string {
+function se_broadcaster_broadcastify_feed_status( int $feed_id ): ?array {
     if ( $feed_id < 1 ) {
         return null;
     }
 
-    $online = se_broadcaster_broadcastify_feed_online( $feed_id );
-    if ( $online === false ) {
-        set_transient( 'se_bcfy_stream_' . $feed_id, '', 5 * MINUTE_IN_SECONDS );
+    $cache_key = 'se_bcfy_status_' . $feed_id;
+    $cached    = get_transient( $cache_key );
+    if ( is_array( $cached ) ) {
+        return $cached;
+    }
+
+    $response = wp_remote_get(
+        'https://status.broadcastify.com/feed-status/' . $feed_id,
+        array(
+            'timeout' => 8,
+            'headers' => array(
+                'User-Agent' => 'suzyeastonca-yvr-bcast/1.0',
+            ),
+        )
+    );
+    if ( is_wp_error( $response ) ) {
+        return null;
+    }
+
+    $body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+    if ( ! is_array( $body ) ) {
+        return null;
+    }
+
+    $out = array(
+        'online'    => (int) ( $body['status'] ?? 0 ) === 1,
+        'listeners' => (int) ( $body['listeners'] ?? 0 ),
+    );
+    set_transient( $cache_key, $out, 90 );
+
+    return $out;
+}
+
+function se_broadcaster_broadcastify_hls_url_from_page( int $feed_id ): ?string {
+    $page_url = 'https://www.broadcastify.com/listen/feed/' . $feed_id;
+    $page     = wp_remote_get(
+        $page_url,
+        array(
+            'timeout' => 12,
+            'headers' => array(
+                'User-Agent' => 'Mozilla/5.0 (compatible; suzyeastonca-yvr-bcast/1.0)',
+            ),
+        )
+    );
+    if ( is_wp_error( $page ) ) {
+        return null;
+    }
+
+    $body = (string) wp_remote_retrieve_body( $page );
+    if ( preg_match( '/hlsUrl:\s*"([^"]+)"/', $body, $match ) ) {
+        return str_replace( '\\/', '/', $match[1] );
+    }
+
+    return null;
+}
+
+function se_broadcaster_broadcastify_hls_playlist_url( int $feed_id ): string {
+    $from_page = se_broadcaster_broadcastify_hls_url_from_page( $feed_id );
+    if ( $from_page ) {
+        return $from_page;
+    }
+
+    return sprintf( 'https://hls-o1.broadcastify.com/s2/feed/%d/playlist.m3u8', $feed_id );
+}
+
+function se_broadcaster_broadcastify_hls_has_segments( string $playlist_url ): bool {
+    $response = wp_remote_get(
+        $playlist_url,
+        array(
+            'timeout' => 10,
+            'headers' => array(
+                'User-Agent' => 'suzyeastonca-yvr-bcast/1.0',
+            ),
+        )
+    );
+    if ( is_wp_error( $response ) ) {
+        return false;
+    }
+
+    $body = (string) wp_remote_retrieve_body( $response );
+    return str_contains( $body, '.ts' );
+}
+
+function se_broadcaster_broadcastify_stream_url( int $feed_id ): ?string {
+    if ( $feed_id < 1 ) {
         return null;
     }
 
     $cache_key = 'se_bcfy_stream_' . $feed_id;
     $cached    = get_transient( $cache_key );
     if ( is_string( $cached ) && $cached !== '' ) {
-        return $cached;
+        if ( se_broadcaster_broadcastify_hls_has_segments( $cached ) ) {
+            return $cached;
+        }
+        delete_transient( $cache_key );
     }
 
-    $page_url = 'https://www.broadcastify.com/listen/feed/' . $feed_id . '/web';
-    $page     = wp_remote_get(
-        $page_url,
-        array(
-            'timeout' => 12,
-            'headers' => array(
-                'User-Agent' => 'suzyeastonca-yvr-bcast/1.0',
-            ),
-        )
-    );
-    if ( is_wp_error( $page ) ) {
-        set_transient( $cache_key, '', 5 * MINUTE_IN_SECONDS );
+    $playlist = se_broadcaster_broadcastify_hls_playlist_url( $feed_id );
+    if ( ! se_broadcaster_broadcastify_hls_has_segments( $playlist ) ) {
+        set_transient( $cache_key, '', 3 * MINUTE_IN_SECONDS );
         return null;
     }
 
-    $body = (string) wp_remote_retrieve_body( $page );
-    if ( ! preg_match( '/"webAuth":\s*"([^"]+)"/', $body, $auth_match ) ) {
-        set_transient( $cache_key, '', 5 * MINUTE_IN_SECONDS );
-        return null;
-    }
+    set_transient( $cache_key, $playlist, 10 * MINUTE_IN_SECONDS );
 
-    $relay = wp_remote_post(
-        'https://www.broadcastify.com/listen/webpl.php?feedId=' . $feed_id,
-        array(
-            'timeout' => 12,
-            'headers' => array(
-                'webAuth'    => $auth_match[1],
-                'User-Agent' => 'suzyeastonca-yvr-bcast/1.0',
-            ),
-            'body'    => 't=14',
-        )
-    );
-    if ( is_wp_error( $relay ) ) {
-        set_transient( $cache_key, '', 5 * MINUTE_IN_SECONDS );
-        return null;
-    }
-
-    $relay_body = (string) wp_remote_retrieve_body( $relay );
-    if ( ! preg_match( '/https?:\/\/[^"\s]+\.mp3[^"\s]*/', $relay_body, $url_match ) ) {
-        set_transient( $cache_key, '', 5 * MINUTE_IN_SECONDS );
-        return null;
-    }
-
-    $stream_url = html_entity_decode( $url_match[0] );
-    set_transient( $cache_key, $stream_url, 10 * MINUTE_IN_SECONDS );
-
-    return $stream_url;
+    return $playlist;
 }
 
 function se_broadcaster_marine_broadcastify_feed_ids(): array {
@@ -601,7 +653,7 @@ function se_broadcaster_resolve_audio_channel( array $channel ): array {
             $resolved = se_broadcaster_broadcastify_stream_url( $feed_id );
             if ( $resolved ) {
                 $out['stream_url'] = $resolved;
-                $out['format']     = 'mp3';
+                $out['format']     = str_contains( $resolved, '.m3u8' ) ? 'hls' : 'mp3';
                 $out['stream_ok']  = true;
                 break;
             }
