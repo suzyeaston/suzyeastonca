@@ -1,16 +1,13 @@
 (function () {
   'use strict';
 
-  var CKNW_STREAM = 'https://live.leanstream.co/CKNWAM';
-
-  var CHANNELS = {
+  var DATA_CHANNELS = {
     translink: { label: 'SKYTRAIN', freq: '410.287', key: 'translink' },
     drivers: { label: 'DRIVE BC', freq: '154.100', key: 'drivers' },
     ferries: { label: 'BC FERRIES', freq: '156.800', key: 'ferries' },
     weather: { label: 'WEATHER', freq: '162.550', key: 'weather' },
     wildfire: { label: 'WILDFIRE', freq: '168.050', key: 'wildfire' },
-    air: { label: 'AIR QUALITY', freq: '153.785', key: 'air' },
-    cknw: { label: 'CKNW 980', freq: '980.000', key: 'cknw', stream: true }
+    air: { label: 'AIR QUALITY', freq: '153.785', key: 'air' }
   };
 
   var VOICE_PREFS = [
@@ -104,6 +101,19 @@
     return words;
   }
 
+  function attachHls(audio, url) {
+    if (window.Hls && window.Hls.isSupported()) {
+      var hls = new window.Hls({ enableWorker: true, lowLatencyMode: true });
+      hls.loadSource(url);
+      hls.attachMedia(audio);
+      return hls;
+    }
+    if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+      audio.src = url;
+    }
+    return null;
+  }
+
   function HomeYvrBroadcaster(root) {
     this.root = root;
     this.audio = root.querySelector('[data-broadcaster-audio]');
@@ -121,6 +131,8 @@
     this.feedsUrl = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.feedsUrl) ||
       '/wp-json/se/v1/broadcaster/feeds';
     this.feeds = null;
+    this.audioChannels = {};
+    this.ambientCycleKeys = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.daveAmbientCycle) || [];
     this.activeKey = null;
     this.speechUtterance = null;
     this.wordSpans = [];
@@ -128,7 +140,28 @@
     this.voice = null;
     this.mouthTimer = null;
     this.autoMuteTimer = null;
+    this.hls = null;
+    this.audioCtx = null;
+    this.analyser = null;
+    this.meterActive = false;
+    this.meterRaf = null;
+    this.audioSourceNode = null;
   }
+
+  HomeYvrBroadcaster.prototype.isKnownChannel = function (key) {
+    return DATA_CHANNELS[key] || (this.audioChannels && this.audioChannels[key]);
+  };
+
+  HomeYvrBroadcaster.prototype.getDisplayChannel = function (key) {
+    if (DATA_CHANNELS[key]) return DATA_CHANNELS[key];
+    var ac = this.audioChannels[key];
+    if (!ac) return null;
+    return { label: ac.label, freq: ac.freq, key: key };
+  };
+
+  HomeYvrBroadcaster.prototype.getAudioChannel = function (key) {
+    return this.audioChannels[key] || null;
+  };
 
   HomeYvrBroadcaster.prototype.init = function () {
     var self = this;
@@ -136,14 +169,14 @@
     this.heroMap = window.HomeHeroMap || null;
     if (this.heroMap) {
       this.heroMap.onChannelSelect = function (key) {
-        if (CHANNELS[key]) self.activate(key);
+        if (self.isKnownChannel(key)) self.activate(key);
       };
     }
 
     this.channelBtns.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var key = btn.getAttribute('data-broadcaster-channel-btn');
-        if (!key || !CHANNELS[key]) return;
+        if (!key || !self.isKnownChannel(key)) return;
         self.activate(key);
       });
     });
@@ -154,8 +187,14 @@
       });
     }
 
+    if (this.faceEl) {
+      this.faceEl.style.cursor = 'pointer';
+      this.faceEl.addEventListener('click', function () {
+        self.cycleDaveAmbient();
+      });
+    }
+
     if ('speechSynthesis' in window) {
-      var self = this;
       var primeVoice = function () {
         self.voice = pickModernVoice();
       };
@@ -215,11 +254,14 @@
   HomeYvrBroadcaster.prototype.scheduleAutoMute = function (channelKey) {
     var self = this;
     this.clearAutoMuteTimer();
+    var ac = this.getAudioChannel(channelKey);
+    var delay = ac && ac.loop ? 0 : 900;
+    if (!delay) return;
     this.autoMuteTimer = setTimeout(function () {
       if (self.activeKey === channelKey) {
         self.stopAll(true);
       }
-    }, 900);
+    }, delay);
   };
 
   HomeYvrBroadcaster.prototype.clearFallbackTimer = function () {
@@ -264,6 +306,22 @@
         this.heroMap.highlightMarker(matched.id);
       }
     }
+  };
+
+  HomeYvrBroadcaster.prototype.packFromAudioChannel = function (channel) {
+    var items = [];
+    if (channel.link_url) {
+      items.push({
+        url: channel.link_url,
+        link_label: channel.link_label || 'Open feed'
+      });
+    }
+    return {
+      source: channel.source || channel.label,
+      source_url: channel.source_url || '',
+      fetched_label: channel.mode === 'link_out' ? 'Opens off-site' : 'Live now',
+      items: items
+    };
   };
 
   HomeYvrBroadcaster.prototype.renderMeta = function (pack) {
@@ -343,7 +401,7 @@
 
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
-    this.renderScript('Tap a channel. Dave reads the feed — words light up.', 'plain');
+    this.renderScript('Tap a channel. Dave reads feeds — or tune live audio on listen row.', 'plain');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.remove('is-live', 'is-radio');
     }
@@ -380,7 +438,11 @@
     return fetch(url, { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
-        if (data) self.feeds = data;
+        if (data) {
+          self.feeds = data;
+          if (data.channels) self.audioChannels = data.channels;
+          if (data.dave_ambient_cycle) self.ambientCycleKeys = data.dave_ambient_cycle;
+        }
         return self.feeds;
       })
       .catch(function () { return self.feeds; });
@@ -408,6 +470,60 @@
     return this.fetchFeeds(true);
   };
 
+  HomeYvrBroadcaster.prototype.stopMeter = function () {
+    this.meterActive = false;
+    if (this.meterRaf) {
+      cancelAnimationFrame(this.meterRaf);
+      this.meterRaf = null;
+    }
+    this.bars.forEach(function (bar) {
+      bar.style.transform = '';
+    });
+  };
+
+  HomeYvrBroadcaster.prototype.startMeter = function () {
+    var self = this;
+    if (!this.audio || !this.analyser) return;
+
+    this.meterActive = true;
+    var data = new Uint8Array(this.analyser.frequencyBinCount);
+
+    function tick() {
+      if (!self.meterActive) return;
+      self.analyser.getByteFrequencyData(data);
+      var sum = 0;
+      for (var i = 0; i < data.length; i++) sum += data[i];
+      var avg = sum / data.length;
+      var level = 0.35 + (avg / 255) * 0.65;
+      self.bars.forEach(function (bar, i) {
+        var jitter = 0.85 + (i * 0.04);
+        bar.style.transform = 'scaleY(' + Math.min(1, level * jitter).toFixed(3) + ')';
+      });
+      self.meterRaf = requestAnimationFrame(tick);
+    }
+
+    tick();
+  };
+
+  HomeYvrBroadcaster.prototype.setupAudioMeter = function () {
+    if (!this.audio) return;
+    try {
+      if (!this.audioCtx) {
+        this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        this.analyser = this.audioCtx.createAnalyser();
+        this.analyser.fftSize = 64;
+        this.audioSourceNode = this.audioCtx.createMediaElementSource(this.audio);
+        this.audioSourceNode.connect(this.analyser);
+        this.analyser.connect(this.audioCtx.destination);
+      }
+      if (this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume();
+      }
+    } catch (e) {
+      /* meter optional */
+    }
+  };
+
   HomeYvrBroadcaster.prototype.stopSpeech = function () {
     this.clearFallbackTimer();
     if ('speechSynthesis' in window) {
@@ -422,9 +538,15 @@
 
   HomeYvrBroadcaster.prototype.stopRadio = function () {
     this.clearAutoMuteTimer();
+    this.stopMeter();
+    if (this.hls) {
+      this.hls.destroy();
+      this.hls = null;
+    }
     if (this.audio) {
       this.audio.pause();
       this.audio.removeAttribute('src');
+      this.audio.loop = false;
     }
     this.root.classList.remove('is-radio');
     if (this.telepromptRoot) this.telepromptRoot.classList.remove('is-radio');
@@ -449,6 +571,7 @@
       bar.classList.toggle('is-live', on);
       bar.style.animationDelay = (i * 0.1) + 's';
     });
+    if (!on) this.stopMeter();
   };
 
   HomeYvrBroadcaster.prototype.updateDisplay = function (channel) {
@@ -549,50 +672,132 @@
     window.speechSynthesis.speak(utterance);
   };
 
-  HomeYvrBroadcaster.prototype.playRadio = function (channel, pack) {
+  HomeYvrBroadcaster.prototype.playStream = function (channel, pack) {
     var self = this;
-    if (!this.audio) return;
+    if (!this.audio || !channel.stream_url) return;
 
     this.stopRadio();
-    this.updateDisplay(channel);
-    this.renderMeta(pack || {
-      source: 'CKNW 980',
-      source_url: 'https://www.cknw.com/',
-      fetched_label: 'Live now',
-      items: [{
-        url: 'https://www.cknw.com/',
-        link_label: 'cknw.com'
-      }]
-    });
-    this.renderScript('Live CKNW 980. Dave goes quiet — hit STOP to silence.', 'plain');
+    this.updateDisplay(this.getDisplayChannel(channel.key));
+    this.renderMeta(pack);
+    this.renderScript(
+      channel.mode === 'soundscape'
+        ? 'Ambient bed on loop. Dave quiet — STOP to cut it.'
+        : 'Live audio. Dave quiet — STOP to silence.',
+      'plain'
+    );
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.add('is-live', 'is-radio');
     }
     this.root.classList.add('is-live', 'is-radio');
     this.setMouthTalking('radio');
-    this.audio.src = CKNW_STREAM;
-    this.audio.volume = 0.55;
+
+    this.audio.loop = !!channel.loop;
+    this.audio.volume = channel.mode === 'soundscape' ? 0.42 : 0.55;
+
+    if (channel.format === 'hls') {
+      this.hls = attachHls(this.audio, channel.stream_url);
+    } else {
+      this.audio.src = channel.stream_url;
+    }
+
+    this.setupAudioMeter();
 
     var playPromise = this.audio.play();
     if (playPromise && typeof playPromise.then === 'function') {
       playPromise
         .then(function () {
           self.setBars(true);
+          self.startMeter();
         })
         .catch(function () {
-          self.renderScript('CKNW blocked autoplay — tap CKNW 980 again or STOP then retry.', 'plain');
+          self.renderScript('Autoplay blocked — tap channel again or hit STOP then retry.', 'plain');
           self.setBars(false);
           self.setMouthIdle();
         });
     } else {
       this.setBars(true);
+      this.startMeter();
     }
+  };
+
+  HomeYvrBroadcaster.prototype.playLinkOut = function (channel, pack) {
+    this.stopRadio();
+    this.updateDisplay(this.getDisplayChannel(channel.key));
+    this.renderMeta(pack);
+    this.renderScript(
+      'Third-party live feed — opens off-site. Dave stays quiet on purpose.',
+      'plain'
+    );
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.add('is-live');
+      this.telepromptRoot.classList.remove('is-radio');
+    }
+    this.root.classList.add('is-live');
+    this.setBars(true);
+  };
+
+  HomeYvrBroadcaster.prototype.activateAudioChannel = function (channel) {
+    var self = this;
+    var pack = this.packFromAudioChannel(channel);
+    var display = this.getDisplayChannel(channel.key);
+
+    if (channel.mode === 'link_out') {
+      if (this.heroMap) this.heroMap.setActiveChannel(channel.key);
+      this.playLinkOut(channel, pack);
+      if (channel.link_url) {
+        window.open(channel.link_url, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
+
+    if (channel.mode === 'broadcastify') {
+      if (channel.stream_ok && channel.stream_url) {
+        if (this.heroMap) this.heroMap.setActiveChannel(channel.key);
+        this.playStream(channel, pack);
+        return;
+      }
+      if (this.heroMap) this.heroMap.setActiveChannel(channel.key);
+      this.playLinkOut(channel, pack);
+      this.renderScript('Scanner feed offline or blocked — opening Broadcastify.', 'plain');
+      if (channel.link_url) {
+        window.open(channel.link_url, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
+
+    if (channel.mode === 'stream' || channel.mode === 'soundscape') {
+      if (!channel.stream_ok || !channel.stream_url) {
+        this.renderScript('Stream not available right now — try again soon.', 'plain');
+        this.setBars(false);
+        return;
+      }
+      if (this.heroMap) this.heroMap.setActiveChannel(channel.key);
+      this.playStream(channel, pack);
+      return;
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.cycleDaveAmbient = function () {
+    if (!this.ambientCycleKeys.length) return;
+
+    var idx = -1;
+    if (this.activeKey) {
+      idx = this.ambientCycleKeys.indexOf(this.activeKey);
+    }
+
+    var nextIdx = idx + 1;
+    if (nextIdx >= this.ambientCycleKeys.length) {
+      this.stopAll(true);
+      return;
+    }
+
+    this.activate(this.ambientCycleKeys[nextIdx]);
   };
 
   HomeYvrBroadcaster.prototype.activate = function (key) {
     var self = this;
-    var channel = CHANNELS[key];
-    if (!channel) return;
+
+    if (!this.isKnownChannel(key)) return;
 
     if (this.activeKey === key) {
       this.stopAll(true);
@@ -601,16 +806,28 @@
 
     this.stopAll(false);
     this.activeKey = key;
+
+    var audioChannel = this.getAudioChannel(key);
+    if (audioChannel) {
+      var display = this.getDisplayChannel(key);
+      this.updateDisplay(display);
+      this.renderScript('Tuning ' + display.label + '…', 'plain');
+      this.root.classList.add('is-live');
+      this.setBars(true);
+
+      this.ensureFeeds(true).then(function (feeds) {
+        var fresh = feeds && feeds.channels && feeds.channels[key];
+        if (fresh) self.audioChannels[key] = fresh;
+        self.activateAudioChannel(self.audioChannels[key] || audioChannel);
+      });
+      return;
+    }
+
+    var channel = DATA_CHANNELS[key];
     this.updateDisplay(channel);
     this.renderScript('Tuning ' + channel.label + '…', 'plain');
     this.root.classList.add('is-live');
     this.setBars(true);
-
-    if (channel.stream) {
-      if (this.heroMap) this.heroMap.setActiveChannel(key);
-      this.playRadio(channel);
-      return;
-    }
 
     this.ensureFeeds(true).then(function (feeds) {
       var pack = feeds && feeds[channel.key] ? feeds[channel.key] : null;

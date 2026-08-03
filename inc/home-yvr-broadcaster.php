@@ -240,14 +240,13 @@ function se_broadcaster_metro_map_anchors(): array {
             'lat'   => 49.2500,
             'lon'   => -123.0200,
         ),
-        array(
-            'key'   => 'cknw',
-            'label' => 'CKNW',
-            'hint'  => '980 Burrard',
-            'lat'   => 49.2863,
-            'lon'   => -123.1240,
-        ),
     );
+
+    if ( function_exists( 'se_broadcaster_audio_map_anchors' ) ) {
+        $anchors = array_merge( $anchors, se_broadcaster_audio_map_anchors() );
+    }
+
+    return $anchors;
 }
 
 function se_broadcaster_metro_map_static(): array {
@@ -1082,15 +1081,17 @@ function se_get_broadcaster_feeds_rest( WP_REST_Request $request ): WP_REST_Resp
 
     return rest_ensure_response(
         array(
-            'updated'       => current_time( 'mysql' ),
-            'fetched_label' => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
-            'metro_map'     => se_broadcaster_metro_map_payload(),
-            'translink'     => se_broadcaster_translink_script(),
-            'drivers'       => se_broadcaster_drivers_script(),
-            'ferries'       => se_broadcaster_ferries_script(),
-            'weather'       => se_broadcaster_weather_script(),
-            'wildfire'      => se_broadcaster_wildfire_script(),
-            'air'           => se_broadcaster_air_script(),
+            'updated'            => current_time( 'mysql' ),
+            'fetched_label'      => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
+            'metro_map'          => se_broadcaster_metro_map_payload(),
+            'channels'           => se_broadcaster_audio_channels_for_client(),
+            'dave_ambient_cycle' => se_broadcaster_dave_ambient_cycle_keys(),
+            'translink'          => se_broadcaster_translink_script(),
+            'drivers'            => se_broadcaster_drivers_script(),
+            'ferries'            => se_broadcaster_ferries_script(),
+            'weather'            => se_broadcaster_weather_script(),
+            'wildfire'           => se_broadcaster_wildfire_script(),
+            'air'                => se_broadcaster_air_script(),
         )
     );
 }

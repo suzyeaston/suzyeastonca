@@ -33,6 +33,7 @@ require_once get_template_directory() . '/inc/openai.php';
 require_once get_template_directory() . '/inc/vancouver-tech-events.php';
 require_once get_template_directory() . '/inc/home-translink-alerts.php';
 require_once get_template_directory() . '/inc/home-yvr-broadcaster.php';
+require_once get_template_directory() . '/inc/home-yvr-audio-channels.php';
 /**
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
@@ -122,11 +123,31 @@ function retro_game_music_theme_scripts() {
         }
         if ( file_exists( $broadcaster_js ) ) {
             wp_enqueue_script(
+                'hls-js',
+                'https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js',
+                array(),
+                '1.5.15',
+                true
+            );
+            wp_enqueue_script(
                 'home-yvr-broadcaster',
                 get_template_directory_uri() . '/js/home-yvr-broadcaster.js',
-                file_exists( $hero_map_js ) ? array( 'home-hero-map' ) : array(),
+                array_merge(
+                    file_exists( $hero_map_js ) ? array( 'home-hero-map' ) : array(),
+                    array( 'hls-js' )
+                ),
                 filemtime( $broadcaster_js ),
                 true
+            );
+            wp_localize_script(
+                'home-yvr-broadcaster',
+                'HomeYvrBroadcasterConfig',
+                array(
+                    'feedsUrl'         => rest_url( 'se/v1/broadcaster/feeds' ),
+                    'daveAmbientCycle' => function_exists( 'se_broadcaster_dave_ambient_cycle_keys' )
+                        ? se_broadcaster_dave_ambient_cycle_keys()
+                        : array(),
+                )
             );
         }
 
