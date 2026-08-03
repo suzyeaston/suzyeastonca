@@ -41,7 +41,7 @@ get_header();
         <div class="home-yvr-radar-deck__console">
             <div class="home-yvr-radar-deck__rack">
                 <div class="home-yvr-rack">
-                <div class="home-yvr-broadcaster" data-yvr-broadcaster aria-label="<?php echo esc_attr( 'YVR broadcaster — live feeds and radio' ); ?>">
+                <div class="home-yvr-broadcaster" data-yvr-broadcaster tabindex="-1" aria-label="<?php echo esc_attr( 'YVR broadcaster — live feeds and radio' ); ?>">
                     <div class="home-yvr-broadcaster__mast">
                         <div class="home-yvr-broadcaster__avatar" data-broadcaster-face data-broadcaster-dave-cycle title="<?php echo esc_attr( 'Tap Dave to cycle ambient beds' ); ?>" aria-label="<?php echo esc_attr( 'Dave — tap to cycle ambient sound' ); ?>">
                             <div class="home-yvr-broadcaster__avatar-frame home-yvr-broadcaster__pigeon">
@@ -79,15 +79,29 @@ get_header();
                     </div>
                     <div class="home-yvr-broadcaster__crt" data-broadcaster-teleprompt>
                         <p class="home-yvr-broadcaster__attribution pixel-font" data-broadcaster-attribution hidden></p>
-                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'tap a pin — bulletin on screen, live scanner underneath.' ); ?></p>
+                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'tap a pin — bulletin lands here. PLAY for live audio.' ); ?></p>
                         <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>
                         <div class="home-yvr-broadcaster__crt-scan" aria-hidden="true"></div>
                     </div>
                     <?php get_template_part( 'parts/home-yvr-channel-buttons' ); ?>
-                    <button type="button" class="home-yvr-broadcaster__btn home-yvr-broadcaster__stop pixel-font" data-broadcaster-stop aria-label="<?php echo esc_attr( 'Stop audio' ); ?>">
-                        <span class="home-yvr-broadcaster__stop-label"><?php echo esc_html( 'STOP' ); ?></span>
-                        <span class="home-yvr-broadcaster__stop-hint"><?php echo esc_html( 'silence deck' ); ?></span>
-                    </button>
+                    <div class="home-yvr-broadcaster__transport">
+                        <button type="button" class="home-yvr-broadcaster__btn home-yvr-broadcaster__play pixel-font" data-broadcaster-play aria-pressed="false" aria-label="<?php echo esc_attr( 'Play or pause live audio' ); ?>">
+                            <span class="home-yvr-broadcaster__play-label" data-broadcaster-play-label><?php echo esc_html( 'PLAY' ); ?></span>
+                            <span class="home-yvr-broadcaster__play-hint" data-broadcaster-play-hint><?php echo esc_html( 'start live audio' ); ?></span>
+                        </button>
+                        <button type="button" class="home-yvr-broadcaster__btn home-yvr-broadcaster__stop pixel-font" data-broadcaster-stop aria-label="<?php echo esc_attr( 'Stop audio' ); ?>">
+                            <span class="home-yvr-broadcaster__stop-label"><?php echo esc_html( 'STOP' ); ?></span>
+                            <span class="home-yvr-broadcaster__stop-hint"><?php echo esc_html( 'silence deck' ); ?></span>
+                        </button>
+                        <div class="home-yvr-broadcaster__speed pixel-font" aria-label="<?php echo esc_attr( 'Playback speed' ); ?>">
+                            <span class="home-yvr-broadcaster__speed-label"><?php echo esc_html( 'speed' ); ?></span>
+                            <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="0.75" aria-label="<?php echo esc_attr( 'Slower' ); ?>">−</button>
+                            <span class="home-yvr-broadcaster__speed-readout" data-broadcaster-speed-label>1×</span>
+                            <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="1" aria-label="<?php echo esc_attr( 'Normal speed' ); ?>">1×</button>
+                            <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="1.25" aria-label="<?php echo esc_attr( 'Faster' ); ?>">+</button>
+                            <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="1.5" aria-label="<?php echo esc_attr( 'Fast' ); ?>">++</button>
+                        </div>
+                    </div>
                     <audio data-broadcaster-audio preload="none" crossorigin="anonymous"></audio>
                 </div>
                 </div>
