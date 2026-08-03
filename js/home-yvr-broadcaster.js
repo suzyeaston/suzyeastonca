@@ -117,6 +117,8 @@
   function HomeYvrBroadcaster(root) {
     this.root = root;
     this.audio = root.querySelector('[data-broadcaster-audio]');
+    this.bedAudio = root.querySelector('[data-broadcaster-bed-audio]');
+    this.attributionEl = root.querySelector('[data-broadcaster-attribution]');
     this.freqEl = root.querySelector('[data-broadcaster-freq]');
     this.channelEl = root.querySelector('[data-broadcaster-channel]');
     this.stopBtn = root.querySelector('[data-broadcaster-stop]');
@@ -133,6 +135,7 @@
     this.feeds = null;
     this.audioChannels = {};
     this.ambientCycleKeys = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.daveAmbientCycle) || [];
+    this.dataChannelBeds = {};
     this.activeKey = null;
     this.speechUtterance = null;
     this.wordSpans = [];
@@ -146,6 +149,7 @@
     this.meterActive = false;
     this.meterRaf = null;
     this.audioSourceNode = null;
+    this.bedHls = null;
   }
 
   HomeYvrBroadcaster.prototype.isKnownChannel = function (key) {
@@ -308,6 +312,28 @@
     }
   };
 
+  HomeYvrBroadcaster.prototype.renderAttribution = function (channel) {
+    if (!this.attributionEl) return;
+
+    var text = channel && channel.attribution ? channel.attribution : '';
+    var url = channel && channel.attribution_url ? channel.attribution_url : '';
+
+    if (!text) {
+      this.attributionEl.hidden = true;
+      this.attributionEl.innerHTML = '';
+      return;
+    }
+
+    this.attributionEl.hidden = false;
+    if (url) {
+      this.attributionEl.innerHTML =
+        '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
+        escapeHtml(text) + '</a>';
+    } else {
+      this.attributionEl.textContent = text;
+    }
+  };
+
   HomeYvrBroadcaster.prototype.packFromAudioChannel = function (channel) {
     var items = [];
     if (channel.link_url) {
@@ -316,10 +342,18 @@
         link_label: channel.link_label || 'Open feed'
       });
     }
+    if (channel.credit) {
+      items.push({
+        url: channel.source_url || '',
+        link_label: channel.credit
+      });
+    }
     return {
       source: channel.source || channel.label,
       source_url: channel.source_url || '',
       fetched_label: channel.mode === 'link_out' ? 'Opens off-site' : 'Live now',
+      attribution: channel.attribution || '',
+      attribution_url: channel.attribution_url || '',
       items: items
     };
   };
@@ -332,6 +366,17 @@
     if (pack && pack.fetched_label) {
       html += '<li class="home-yvr-teleprompt__item home-yvr-teleprompt__item--fetched">';
       html += '<span class="home-yvr-teleprompt__time">' + escapeHtml(pack.fetched_label) + '</span>';
+      html += '</li>';
+    }
+
+    if (pack && pack.attribution) {
+      html += '<li class="home-yvr-teleprompt__item home-yvr-teleprompt__item--attribution">';
+      if (pack.attribution_url) {
+        html += '<a class="home-yvr-teleprompt__link" href="' + escapeHtml(pack.attribution_url) + '" target="_blank" rel="noopener noreferrer">';
+        html += escapeHtml(pack.attribution) + '</a>';
+      } else {
+        html += '<span class="home-yvr-teleprompt__time">' + escapeHtml(pack.attribution) + '</span>';
+      }
       html += '</li>';
     }
 
@@ -401,7 +446,8 @@
 
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
-    this.renderScript('Tap a channel. Dave reads feeds — or tune live audio on listen row.', 'plain');
+    this.renderScript('drag the map. tap a pin. dave reads feeds — listen row is live audio.', 'plain');
+    this.renderAttribution(null);
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.remove('is-live', 'is-radio');
     }
@@ -442,6 +488,7 @@
           self.feeds = data;
           if (data.channels) self.audioChannels = data.channels;
           if (data.dave_ambient_cycle) self.ambientCycleKeys = data.dave_ambient_cycle;
+          if (data.data_channel_beds) self.dataChannelBeds = data.data_channel_beds;
         }
         return self.feeds;
       })
@@ -524,7 +571,44 @@
     }
   };
 
+  HomeYvrBroadcaster.prototype.stopBed = function () {
+    if (this.bedHls) {
+      this.bedHls.destroy();
+      this.bedHls = null;
+    }
+    if (this.bedAudio) {
+      this.bedAudio.pause();
+      this.bedAudio.removeAttribute('src');
+      this.bedAudio.loop = false;
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.startSpeechBed = function (dataKey) {
+    var self = this;
+    var bedKey = this.dataChannelBeds[dataKey];
+    if (!bedKey || !this.bedAudio) return;
+
+    var bedChannel = this.getAudioChannel(bedKey);
+    if (!bedChannel || !bedChannel.stream_ok || !bedChannel.stream_url) return;
+
+    this.stopBed();
+    this.bedAudio.loop = true;
+    this.bedAudio.volume = 0.14;
+
+    if (bedChannel.format === 'hls') {
+      this.bedHls = attachHls(this.bedAudio, bedChannel.stream_url);
+    } else {
+      this.bedAudio.src = bedChannel.stream_url;
+    }
+
+    var playPromise = this.bedAudio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(function () { /* bed optional */ });
+    }
+  };
+
   HomeYvrBroadcaster.prototype.stopSpeech = function () {
+    this.stopBed();
     this.clearFallbackTimer();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -557,6 +641,7 @@
     this.clearAutoMuteTimer();
     this.stopSpeech();
     this.stopRadio();
+    this.stopBed();
     this.activeKey = null;
     this.setBars(false);
     this.root.classList.remove('is-live');
@@ -610,6 +695,7 @@
     this.stopSpeech();
     this.updateDisplay(channel);
     this.renderMeta(pack);
+    this.renderAttribution(channel);
     this.renderScript(text);
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.add('is-live');
@@ -641,12 +727,14 @@
 
     utterance.onstart = function () {
       self.setMouthTalking('speech');
+      self.startSpeechBed(channel.key);
       if (!boundarySeen && self.wordSpans.length) {
         self.startFallbackHighlight(text);
       }
     };
 
     utterance.onend = function () {
+      self.stopBed();
       self.clearFallbackTimer();
       self.clearWordHighlights();
       if (self.wordSpans.length) {
@@ -661,6 +749,7 @@
     };
 
     utterance.onerror = function () {
+      self.stopBed();
       self.clearFallbackTimer();
       self.root.classList.remove('is-speaking');
       self.setBars(false);
@@ -679,6 +768,7 @@
     this.stopRadio();
     this.updateDisplay(this.getDisplayChannel(channel.key));
     this.renderMeta(pack);
+    this.renderAttribution(channel);
     this.renderScript(
       channel.mode === 'soundscape'
         ? 'Ambient bed on loop. Dave quiet — STOP to cut it.'
@@ -724,6 +814,7 @@
     this.stopRadio();
     this.updateDisplay(this.getDisplayChannel(channel.key));
     this.renderMeta(pack);
+    this.renderAttribution(channel);
     this.renderScript(
       'Third-party live feed — opens off-site. Dave stays quiet on purpose.',
       'plain'
