@@ -352,6 +352,17 @@
   animation: homeYvrPinDiscover 1.6s ease-in-out infinite;
 }
 
+.home-yvr-radar-deck__map-wrap.is-loading .home-yvr-radar-deck__ring-label {
+  color: #ffb347;
+  text-shadow: 0 0 10px rgba(255, 179, 71, 0.65);
+  animation: homeYvrRingLive 0.85s ease-in-out infinite;
+}
+
+.home-yvr-radar-deck__map-wrap.is-loading .home-yvr-radar-deck__sweep {
+  opacity: 0.45;
+  animation-duration: 2.2s;
+}
+
 .home-yvr-radar-deck__map-wrap.is-listening .home-yvr-radar-deck__ring-label {
   color: #39ff14;
   text-shadow: 0 0 10px rgba(57, 255, 20, 0.65);

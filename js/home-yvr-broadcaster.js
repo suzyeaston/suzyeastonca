@@ -75,6 +75,9 @@
     this.detailBodyEl = root.querySelector('[data-broadcaster-detail-body]');
     this.detailNoteEl = root.querySelector('[data-broadcaster-detail-note]');
     this.feedsNoteEl = root.querySelector('[data-broadcaster-feeds-note]');
+    this.loadStatusEl = root.querySelector('[data-broadcaster-load-status]');
+    this.loadBarEl = root.querySelector('[data-broadcaster-load-bar]');
+    this.loadTagEl = root.querySelector('[data-broadcaster-load-tag]');
     this.mouthEl = root.querySelector('[data-broadcaster-mouth]');
     this.faceEl = root.querySelector('[data-broadcaster-face]');
     this.heroMap = window.HomeHeroMap || null;
@@ -330,6 +333,20 @@
       this.audio.addEventListener('pause', function () {
         self.updatePlayButton();
       });
+      this.audio.addEventListener('playing', function () {
+        self.setLoadingUi(false);
+        self.updatePlayButton();
+      });
+      this.audio.addEventListener('waiting', function () {
+        if (!self.audio.paused) {
+          self.setLoadingUi(true, 'buffering…');
+        }
+      });
+      this.audio.addEventListener('canplay', function () {
+        if (!self.audio.paused) {
+          self.setLoadingUi(false);
+        }
+      });
       this.audio.addEventListener('volumechange', function () {
         if (self.audio.muted) self.audio.muted = false;
       });
@@ -370,6 +387,56 @@
     if (this.ringLabelEl) {
       this.ringLabelEl.textContent = on ? 'live audio on deck' : 'drag · tap pins';
     }
+    if (on) {
+      this.setLoadingUi(false);
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.setLoadingUi = function (on, message) {
+    var label = message || 'loading audio…';
+    this.root.classList.toggle('is-loading', on);
+    if (this.mapWrapEl) {
+      this.mapWrapEl.classList.toggle('is-loading', on);
+    }
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.toggle('is-loading', on);
+    }
+    if (this.loadStatusEl) {
+      if (on) {
+        this.loadStatusEl.textContent = label;
+        this.loadStatusEl.hidden = false;
+      } else {
+        this.loadStatusEl.hidden = true;
+        this.loadStatusEl.textContent = '';
+      }
+    }
+    if (this.loadBarEl) {
+      this.loadBarEl.hidden = !on;
+    }
+    if (this.loadTagEl) {
+      this.loadTagEl.hidden = !on;
+    }
+    if (this.ringLabelEl && on) {
+      this.ringLabelEl.textContent = label;
+    } else if (this.ringLabelEl && !on && !this.isAudioPlaying()) {
+      this.ringLabelEl.textContent = 'drag · tap pins';
+    }
+    if (this.activeAudioKey) {
+      this.highlightChannelLoading(this.activeAudioKey, on);
+    }
+  };
+
+  HomeYvrBroadcaster.prototype.highlightChannelLoading = function (key, on) {
+    this.channelBtns.forEach(function (btn) {
+      var match = btn.getAttribute('data-broadcaster-channel-btn') === key;
+      if (match) {
+        btn.classList.toggle('is-loading', on);
+        btn.setAttribute('aria-busy', on ? 'true' : 'false');
+      } else if (on) {
+        btn.classList.remove('is-loading');
+        btn.setAttribute('aria-busy', 'false');
+      }
+    });
   };
 
   HomeYvrBroadcaster.prototype.clearAutoMuteTimer = function () {
@@ -810,6 +877,7 @@
   };
 
   HomeYvrBroadcaster.prototype.stopRadio = function () {
+    this.setLoadingUi(false);
     this.clearAutoMuteTimer();
     this.stopMeter();
     this.stopUnmuteWatchdog();
@@ -861,6 +929,8 @@
     if (!this.audio || !channel.stream_url) return false;
 
     this.stopRadio();
+    this.activeAudioKey = channel.key;
+    this.setLoadingUi(true, 'loading ' + (channel.label || channel.key).toLowerCase() + '…');
     this.renderAttribution(channel);
     this.root.classList.add('is-radio');
     this.root.classList.remove('is-bulletin-only');
@@ -875,8 +945,11 @@
     this.primeAudioElement();
 
     var afterArm = function (ok) {
-      if (!ok) {
-        self.appendBulletinAudioNote('Hit PLAY below — live audio is armed.');
+      if (ok) {
+        self.setLoadingUi(false);
+      } else {
+        self.setLoadingUi(false);
+        self.appendBulletinAudioNote('Tap PLAY below if audio didn\'t start.');
       }
     };
 
@@ -943,6 +1016,7 @@
 
     this.root.classList.add('is-bulletin-only');
     this.setBars(true);
+    this.setLoadingUi(false);
     this.appendBulletinAudioNote(
       'Scanners offline (' + tried.join(', ') + ') — bulletin text is still current. Hit PLAY to retry or pick another channel.'
     );
@@ -1030,6 +1104,7 @@
 
     this.setBars(true);
     this.setMouthTalking();
+    this.setLoadingUi(true, 'pulling bulletin…');
 
     var feeds = this.feeds;
     var feedKey = config.feed_key || pinKey;
@@ -1039,7 +1114,8 @@
       this.renderBulletin(pack, config, pinKey);
       this.renderMeta(this.packFromFeedPack(pack));
     } else {
-      this.renderScript('Pulling bulletin… hit PLAY for live audio.');
+      this.setLoadingUi(true, 'pulling bulletin…');
+      this.renderScript('Pulling bulletin… scanning for live audio.');
     }
     this.renderAttribution(null);
 
@@ -1067,6 +1143,8 @@
     if (!this.audio || !channel.stream_url) return;
 
     this.stopRadio();
+    this.activeAudioKey = channel.key;
+    this.setLoadingUi(true, 'loading ' + (channel.label || channel.key).toLowerCase() + '…');
     var display = pinKey ? this.getDisplayChannel(pinKey) : this.getDisplayChannel(channel.key);
     if (display) this.updateDisplay(display);
     this.highlightChannel(channel.key);
@@ -1092,8 +1170,11 @@
     this.primeAudioElement();
 
     var afterArm = function (ok) {
-      if (!ok) {
-        self.renderScript('Hit PLAY below — channel is armed on deck.');
+      if (ok) {
+        self.setLoadingUi(false);
+      } else {
+        self.setLoadingUi(false);
+        self.renderScript('Tap PLAY below if audio didn\'t start.');
         self.setBars(false);
         self.setMouthIdle();
       }
@@ -1155,6 +1236,7 @@
       if (this.heroMap && pinKey) this.heroMap.setActiveChannel(pinKey);
       this.playLinkOut(channel, pack, pinKey);
       this.root.classList.add('is-armed');
+      this.setLoadingUi(false);
       this.renderScript('Scanner offline — hit PLAY to retry. Tries the next feed in the marine chain automatically.');
       this.updatePlayButton();
       return;
@@ -1162,6 +1244,7 @@
 
     if (channel.mode === 'stream' || channel.mode === 'soundscape') {
       if (!channel.stream_ok || !channel.stream_url) {
+        this.setLoadingUi(false);
         this.renderScript('Live feed not available right now — try another channel.');
         this.setBars(false);
         return;
@@ -1215,6 +1298,7 @@
 
     var display = this.getDisplayChannel(key);
     if (display) this.updateDisplay(display);
+    this.setLoadingUi(true, 'tuning live audio…');
     this.renderScript('Tuning live audio…');
     var chPreview = this.audioChannels[key];
     if (chPreview) this.renderListenChannelDetail(chPreview);
@@ -1244,6 +1328,7 @@
 
       var freshChannel = self.audioChannels[key];
       if (!freshChannel) {
+        self.setLoadingUi(false);
         self.renderScript('Live feed still loading — try again in a moment.');
         self.setBars(false);
         self.setMouthIdle();

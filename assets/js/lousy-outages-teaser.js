@@ -48,6 +48,12 @@
 
     setText(container, '[data-lo-verdict-line]', teaser.verdict_line || '');
     setText(container, '[data-lo-verdict-sub]', teaser.verdict_sub || '');
+    setText(container, '[data-lo-summary-verdict]', teaser.verdict_line || '');
+
+    var signalVerdict = document.querySelector('[data-signal-lo-verdict]');
+    if (signalVerdict && teaser.verdict_line) {
+      signalVerdict.textContent = teaser.verdict_line;
+    }
 
     setText(container, '[data-lo-stat="down"] strong', padCount(counts.down));
     setText(container, '[data-lo-stat="degraded"] strong', padCount(counts.degraded));

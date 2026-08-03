@@ -1,5 +1,6 @@
+                    <details class="home-yvr-broadcaster__feeds-panel">
+                        <summary class="home-yvr-broadcaster__feeds-summary pixel-font"><?php echo esc_html( 'listen // live feeds' ); ?></summary>
                     <div class="home-yvr-broadcaster__feeds">
-                        <p class="home-yvr-broadcaster__feeds-label pixel-font"><?php echo esc_html( 'listen // live only' ); ?></p>
                         <div class="home-yvr-broadcaster__channels home-yvr-broadcaster__channels--listen">
                             <?php foreach ( se_broadcaster_audio_channel_catalog() as $audio_ch ) : ?>
                                 <?php if ( ! empty( $audio_ch['pin_only'] ) ) {
@@ -26,3 +27,4 @@
                         </div>
                         <p class="home-yvr-broadcaster__feeds-note pixel-font" data-broadcaster-feeds-note><?php echo esc_html( 'big pins = territory bulletins · listen row = direct live feeds' ); ?></p>
                     </div>
+                    </details>

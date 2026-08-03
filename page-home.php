@@ -11,6 +11,8 @@ get_header();
             <h1 id="home-hero-title" class="home-yvr-radar-deck__title pixel-font"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
         </header>
 
+        <?php get_template_part( 'parts/home-commercial-strip' ); ?>
+
         <div class="home-yvr-radar-deck__radar-unit">
             <div class="home-yvr-radar-deck__unit-head pixel-font">
                 <span class="home-yvr-radar-deck__unit-badge"><?php echo esc_html( 'YVR RADAR' ); ?></span>
@@ -64,6 +66,7 @@ get_header();
                                 <span class="home-yvr-broadcaster__badge pixel-font"><?php echo esc_html( 'YVR BCAST' ); ?></span>
                                 <span class="home-yvr-broadcaster__on-air" role="status" aria-live="polite">
                                     <span class="home-yvr-broadcaster__led" aria-hidden="true"></span>
+                                    <span class="home-yvr-broadcaster__load-tag pixel-font" data-broadcaster-load-tag hidden><?php echo esc_html( 'LOADING' ); ?></span>
                                     <span class="home-yvr-broadcaster__channel pixel-font" data-broadcaster-channel><?php echo esc_html( 'STANDBY' ); ?></span>
                                 </span>
                                 <span class="home-yvr-broadcaster__freq pixel-font" data-broadcaster-freq>000.000</span>
@@ -84,7 +87,11 @@ get_header();
                             <p class="home-yvr-broadcaster__channel-detail-note pixel-font" data-broadcaster-detail-note></p>
                         </div>
                         <p class="home-yvr-broadcaster__attribution pixel-font" data-broadcaster-attribution hidden></p>
-                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'tap a pin — bulletin lands here. PLAY for live audio.' ); ?></p>
+                        <div class="home-yvr-broadcaster__load-bar" data-broadcaster-load-bar hidden aria-hidden="true">
+                            <span class="home-yvr-broadcaster__load-bar-fill"></span>
+                        </div>
+                        <p class="home-yvr-broadcaster__load-status pixel-font" data-broadcaster-load-status hidden aria-live="polite"></p>
+                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'tap a pin — bulletin lands here. live audio starts on its own.' ); ?></p>
                         <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>
                         <div class="home-yvr-broadcaster__crt-scan" aria-hidden="true"></div>
                     </div>
@@ -98,22 +105,24 @@ get_header();
                             <span class="home-yvr-broadcaster__stop-label"><?php echo esc_html( 'STOP' ); ?></span>
                             <span class="home-yvr-broadcaster__stop-hint"><?php echo esc_html( 'silence deck' ); ?></span>
                         </button>
-                        <div class="home-yvr-broadcaster__speed pixel-font" aria-label="<?php echo esc_attr( 'Playback speed' ); ?>">
-                            <span class="home-yvr-broadcaster__speed-label"><?php echo esc_html( 'speed' ); ?></span>
-                            <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="0.75" aria-label="<?php echo esc_attr( 'Slower' ); ?>">−</button>
-                            <span class="home-yvr-broadcaster__speed-readout" data-broadcaster-speed-label>1×</span>
-                            <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="1" aria-label="<?php echo esc_attr( 'Normal speed' ); ?>">1×</button>
-                            <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="1.25" aria-label="<?php echo esc_attr( 'Faster' ); ?>">+</button>
-                            <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="1.5" aria-label="<?php echo esc_attr( 'Fast' ); ?>">++</button>
-                        </div>
+                        <details class="home-yvr-broadcaster__speed-panel">
+                            <summary class="home-yvr-broadcaster__speed-summary pixel-font"><?php echo esc_html( 'speed' ); ?></summary>
+                            <div class="home-yvr-broadcaster__speed pixel-font" aria-label="<?php echo esc_attr( 'Playback speed' ); ?>">
+                                <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="0.75" aria-label="<?php echo esc_attr( 'Slower' ); ?>">−</button>
+                                <span class="home-yvr-broadcaster__speed-readout" data-broadcaster-speed-label>1×</span>
+                                <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="1" aria-label="<?php echo esc_attr( 'Normal speed' ); ?>">1×</button>
+                                <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="1.25" aria-label="<?php echo esc_attr( 'Faster' ); ?>">+</button>
+                                <button type="button" class="home-yvr-broadcaster__speed-btn" data-broadcaster-speed="1.5" aria-label="<?php echo esc_attr( 'Fast' ); ?>">++</button>
+                            </div>
+                        </details>
                     </div>
                     <audio class="home-yvr-broadcaster__native" data-broadcaster-audio controls preload="none" playsinline webkit-playsinline controlslist="nodownload noplaybackrate"></audio>
                 </div>
                 </div>
             </div>
             <div class="home-yvr-radar-deck__cta">
-                <p class="home-yvr-radar-deck__subtitle pixel-font"><?php echo esc_html( 'AI strategy // systems integration // creative technology' ); ?></p>
-                <p class="home-yvr-radar-deck__positioning"><?php echo esc_html( 'Punk bassist brain. Builds infra, creative tech, browser tools and applications that are practical and cool.' ); ?></p>
+                <p class="home-yvr-radar-deck__subtitle pixel-font"><?php echo esc_html( 'AI strategy // systems integration // civic data products' ); ?></p>
+                <p class="home-yvr-radar-deck__positioning"><?php echo esc_html( 'Builds infra, browser tools, and live data layers for Vancouver — outage intel today, API + MCP next.' ); ?></p>
                 <div class="home-amp-console">
                     <div class="home-title-screen-prompt pixel-font" role="status" aria-live="polite" data-arcade-status><?php echo esc_html( 'INSERT COIN' ); ?></div>
                     <button type="button" class="pixel-button home-press-start" data-home-start data-start-label="PRESS START // VIEW WORK"><?php echo esc_html( 'PRESS START // VIEW WORK' ); ?></button>
@@ -128,14 +137,12 @@ get_header();
         </div>
     </section>
 
-    <?php get_template_part( 'parts/lousy-outages-teaser' ); ?>
-
     <section id="mission-select" class="home-project-grid home-mission-select crt-block" aria-labelledby="selected-projects-title">
         <p class="home-section-kicker pixel-font"><?php echo esc_html( 'LEVEL SELECT' ); ?></p>
         <h2 id="selected-projects-title" class="pixel-font"><?php echo esc_html( 'CHOOSE YOUR SYSTEM' ); ?></h2>
         <div class="selected-work__grid home-mission-grid">
+            <article class="home-project-card selected-work__card home-mission-card home-mission-card--featured"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'status weather' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Lousy Outages' ); ?></h3><p><?php echo esc_html( 'Independent outage intelligence for AI, cloud and creative tools, translated from status-page language into something humans can use.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>"><?php echo esc_html( 'Check status' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'hockey arcade' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Pacific Power Play' ); ?></h3><p><?php echo esc_html( 'Choose your line, drop the puck, and survive the rain city static in a Vancouver hockey cabinet.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/pacific-power-play/' ) ); ?>"><?php echo esc_html( 'Play game' ); ?></a></article>
-            <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'status weather' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Lousy Outages' ); ?></h3><p><?php echo esc_html( 'Independent outage intelligence for AI, cloud and creative tools, translated from status-page language into something humans can use.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>"><?php echo esc_html( 'Check status' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'civic arcade world' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Gastown Simulator' ); ?></h3><p><?php echo esc_html( 'A playable Vancouver corridor built from civic data, route logic, street mood, and arcade-map obsession.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/gastown-sim/' ) ); ?>"><?php echo esc_html( 'Walk Gastown' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'audio notes' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Track Analyzer' ); ?></h3><p><?php echo esc_html( 'Upload an MP3 and get clear notes on feel, lyrics, structure, and what might actually help the track.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/suzys-track-analyzer/' ) ); ?>"><?php echo esc_html( 'Analyze track' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'early music tool' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Loop Lab' ); ?></h3><p><?php echo esc_html( 'A browser tape deck for playing first, looping fast, and stacking little mistakes on purpose.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/loop-lab/' ) ); ?>"><?php echo esc_html( 'Make noise' ); ?></a></article>
@@ -144,6 +151,8 @@ get_header();
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'discography' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Music / Records' ); ?></h3><p><?php echo esc_html( 'Solo releases, past bands, touring history, and the music side of the machine.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/music-releases/' ) ); ?>"><?php echo esc_html( 'Listen' ); ?></a></article>
         </div>
     </section>
+
+    <?php get_template_part( 'parts/lousy-outages-teaser' ); ?>
 
     <section id="music" class="music-world home-unlocks crt-block" aria-labelledby="music-world-title">
         <p class="home-section-kicker pixel-font"><?php echo esc_html( 'UNLOCKS' ); ?></p>
