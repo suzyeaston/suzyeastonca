@@ -2,6 +2,9 @@
                         <p class="home-yvr-broadcaster__feeds-label pixel-font"><?php echo esc_html( 'listen // live only' ); ?></p>
                         <div class="home-yvr-broadcaster__channels home-yvr-broadcaster__channels--listen">
                             <?php foreach ( se_broadcaster_audio_channel_catalog() as $audio_ch ) : ?>
+                                <?php if ( ! empty( $audio_ch['pin_only'] ) ) {
+                                    continue;
+                                } ?>
                                 <?php
                                 $ch_key   = $audio_ch['key'];
                                 $ch_class = 'home-yvr-broadcaster__ch home-yvr-broadcaster__ch--listen';
@@ -21,5 +24,5 @@
                                 </button>
                             <?php endforeach; ?>
                         </div>
-                        <p class="home-yvr-broadcaster__feeds-note pixel-font"><?php echo esc_html( 'map pins tune the same live feeds — no robot voice' ); ?></p>
+                        <p class="home-yvr-broadcaster__feeds-note pixel-font"><?php echo esc_html( 'map pins show bulletins + tune matched live scanners' ); ?></p>
                     </div>

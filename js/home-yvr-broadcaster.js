@@ -52,9 +52,10 @@
     this.feeds = null;
     this.audioChannels = {};
     this.ambientCycleKeys = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.daveAmbientCycle) || [];
-    this.dataChannelLive = {};
+    this.dataChannelPins = {};
     this.activeKey = null;
     this.activePinKey = null;
+    this.activeAudioKey = null;
     this.mouthTimer = null;
     this.autoMuteTimer = null;
     this.hls = null;
@@ -66,13 +67,11 @@
   }
 
   HomeYvrBroadcaster.prototype.isKnownChannel = function (key) {
-    return this.audioChannels[key] || PIN_CHANNELS[key] || this.dataChannelLive[key];
+    return this.audioChannels[key] || PIN_CHANNELS[key];
   };
 
-  HomeYvrBroadcaster.prototype.resolveLiveKey = function (key) {
-    if (this.audioChannels[key]) return key;
-    if (this.dataChannelLive[key]) return this.dataChannelLive[key];
-    return key;
+  HomeYvrBroadcaster.prototype.getPinConfig = function (key) {
+    return this.dataChannelPins[key] || null;
   };
 
   HomeYvrBroadcaster.prototype.getDisplayChannel = function (key) {
@@ -266,12 +265,86 @@
     this.scriptEl.textContent = text || '';
   };
 
+  HomeYvrBroadcaster.prototype.packFromFeedPack = function (pack) {
+    if (!pack) return null;
+    var items = [];
+    (pack.items || []).forEach(function (item) {
+      if (item.url) {
+        items.push({
+          url: item.url,
+          link_label: item.link_label || item.title || 'Source'
+        });
+      }
+    });
+    return {
+      source: pack.source || '',
+      source_url: pack.source_url || '',
+      fetched_label: pack.fetched_label || '',
+      items: items
+    };
+  };
+
+  HomeYvrBroadcaster.prototype.renderBulletin = function (pack, config, pinKey) {
+    if (!this.scriptEl) return;
+
+    var tier = (config && config.tier) || pinKey || 'data';
+    var label = (config && config.bulletin_label) || 'Territory bulletin';
+    var html = '<div class="home-yvr-bulletin home-yvr-bulletin--' + escapeHtml(tier) + '">';
+    html += '<p class="home-yvr-bulletin__kicker pixel-font">' + escapeHtml(label) + '</p>';
+
+    if (pack && pack.caption) {
+      html += '<p class="home-yvr-bulletin__lead">' + escapeHtml(pack.caption) + '</p>';
+    }
+
+    var items = (pack && pack.items) ? pack.items : [];
+    if (items.length) {
+      html += '<ul class="home-yvr-bulletin__list">';
+      items.forEach(function (item) {
+        html += '<li class="home-yvr-bulletin__row">';
+        if (item.title) {
+          html += '<span class="home-yvr-bulletin__title">' + escapeHtml(item.title) + '</span>';
+        }
+        if (item.text) {
+          html += '<span class="home-yvr-bulletin__text">' + escapeHtml(item.text) + '</span>';
+        }
+        if (item.posted_label) {
+          html += '<span class="home-yvr-bulletin__time">' + escapeHtml(item.posted_label) + '</span>';
+        }
+        if (item.url) {
+          html += '<a class="home-yvr-bulletin__link" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer">';
+          html += escapeHtml(item.link_label || 'Open incident') + '</a>';
+        }
+        html += '</li>';
+      });
+      html += '</ul>';
+    } elseif (pack && pack.script) {
+      html += '<p class="home-yvr-bulletin__text">' + escapeHtml(pack.script) + '</p>';
+    } else {
+      html += '<p class="home-yvr-bulletin__text">No active incidents in this feed right now.</p>';
+    }
+
+    html += '</div>';
+    this.scriptEl.innerHTML = html;
+    this.scriptEl.scrollTop = 0;
+  };
+
+  HomeYvrBroadcaster.prototype.appendBulletinAudioNote = function (message) {
+    if (!this.scriptEl) return;
+    var note = document.createElement('p');
+    note.className = 'home-yvr-bulletin__audio-note pixel-font';
+    note.textContent = message;
+    this.scriptEl.appendChild(note);
+  };
+
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
-    this.renderScript('tap a pin or channel. live audio only — no robot voice.');
+    if (this.scriptEl) {
+      this.scriptEl.innerHTML = '';
+      this.scriptEl.textContent = 'tap a pin — bulletin on screen, matched live scanner underneath.';
+    }
     this.renderAttribution(null);
     if (this.telepromptRoot) {
-      this.telepromptRoot.classList.remove('is-live', 'is-radio');
+      this.telepromptRoot.classList.remove('is-live', 'is-radio', 'is-bulletin');
     }
     if (this.heroMap) {
       this.heroMap.setActiveChannel(null);
@@ -284,7 +357,7 @@
     this.setTelepromptStandby();
     this.setMouthIdle();
     this.clearAutoMuteTimer();
-    this.root.classList.remove('is-live', 'is-speaking', 'is-radio');
+    this.root.classList.remove('is-live', 'is-speaking', 'is-radio', 'is-bulletin', 'is-bulletin-only');
     this.setBars(false);
     this.highlightChannel(null);
   };
@@ -310,7 +383,7 @@
           self.feeds = data;
           if (data.channels) self.audioChannels = data.channels;
           if (data.dave_ambient_cycle) self.ambientCycleKeys = data.dave_ambient_cycle;
-          if (data.data_channel_live) self.dataChannelLive = data.data_channel_live;
+          if (data.data_channel_pins) self.dataChannelPins = data.data_channel_pins;
         }
         return self.feeds;
       })
@@ -415,8 +488,9 @@
     this.stopRadio();
     this.activeKey = null;
     this.activePinKey = null;
+    this.activeAudioKey = null;
     this.setBars(false);
-    this.root.classList.remove('is-live');
+    this.root.classList.remove('is-live', 'is-bulletin', 'is-bulletin-only');
     if (this.heroMap) {
       this.heroMap.setActiveChannel(null);
     }
@@ -434,6 +508,131 @@
   HomeYvrBroadcaster.prototype.updateDisplay = function (channel) {
     if (this.freqEl) this.freqEl.textContent = channel.freq;
     if (this.channelEl) this.channelEl.textContent = channel.label;
+  };
+
+  HomeYvrBroadcaster.prototype.startBulletinAudio = function (channel) {
+    var self = this;
+    if (!this.audio || !channel.stream_url) return false;
+
+    this.stopRadio();
+    this.renderAttribution(channel);
+    this.root.classList.add('is-radio');
+    this.root.classList.remove('is-bulletin-only');
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.add('is-radio');
+    }
+    this.setMouthTalking();
+
+    this.audio.loop = !!channel.loop;
+    this.audio.volume = channel.mode === 'soundscape' ? 0.35 : 0.5;
+
+    if (channel.format === 'hls') {
+      this.hls = attachHls(this.audio, channel.stream_url);
+    } else {
+      this.audio.src = channel.stream_url;
+    }
+
+    this.setupAudioMeter();
+
+    var playPromise = this.audio.play();
+    if (playPromise && typeof playPromise.then === 'function') {
+      playPromise
+        .then(function () {
+          self.setBars(true);
+          self.startMeter();
+        })
+        .catch(function () {
+          self.appendBulletinAudioNote('Autoplay blocked — tap STOP then try the pin again.');
+        });
+    } else {
+      this.setBars(true);
+      this.startMeter();
+    }
+    return true;
+  };
+
+  HomeYvrBroadcaster.prototype.tryPlayAudioChain = function (keys, pinKey) {
+    var self = this;
+    var tried = [];
+
+    if (!keys || !keys.length) {
+      this.root.classList.add('is-bulletin-only');
+      this.setBars(true);
+      this.appendBulletinAudioNote('Bulletin only — no matched live scanner for this pin.');
+      return;
+    }
+
+    for (var i = 0; i < keys.length; i++) {
+      var audioKey = keys[i];
+      var channel = this.audioChannels[audioKey];
+      if (!channel) continue;
+
+      tried.push(channel.label || audioKey);
+
+      if (channel.mode === 'link_out') {
+        continue;
+      }
+
+      if (channel.mode === 'broadcastify') {
+        if (channel.stream_ok && channel.stream_url) {
+          this.activeAudioKey = audioKey;
+          this.highlightChannel(audioKey);
+          this.startBulletinAudio(channel);
+          this.appendBulletinAudioNote('Live scan: ' + (channel.label || audioKey) + '.');
+          return;
+        }
+        continue;
+      }
+
+      if ((channel.mode === 'stream' || channel.mode === 'soundscape') && channel.stream_ok && channel.stream_url) {
+        this.activeAudioKey = audioKey;
+        this.highlightChannel(audioKey);
+        this.startBulletinAudio(channel);
+        this.appendBulletinAudioNote('Live audio: ' + (channel.label || audioKey) + '.');
+        return;
+      }
+    }
+
+    this.root.classList.add('is-bulletin-only');
+    this.setBars(true);
+    this.appendBulletinAudioNote(
+      'Scanners offline (' + tried.join(', ') + ') — bulletin text is still current.'
+    );
+  };
+
+  HomeYvrBroadcaster.prototype.activatePin = function (pinKey) {
+    var self = this;
+    var config = this.getPinConfig(pinKey);
+    if (!config) return;
+
+    this.stopAll(false);
+    this.activeKey = pinKey;
+    this.activePinKey = pinKey;
+
+    var display = this.getDisplayChannel(pinKey);
+    if (display) this.updateDisplay(display);
+    this.highlightChannel(null);
+
+    this.root.classList.add('is-live', 'is-bulletin');
+    this.root.classList.remove('is-bulletin-only', 'is-radio');
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.add('is-live', 'is-bulletin');
+      this.telepromptRoot.classList.remove('is-radio');
+    }
+
+    this.ensureFeeds(true).then(function (feeds) {
+      self.updateHeroMapFromFeeds(feeds);
+
+      var feedKey = config.feed_key || pinKey;
+      var pack = feeds && feeds[feedKey] ? feeds[feedKey] : null;
+
+      self.renderBulletin(pack, config, pinKey);
+      self.renderMeta(self.packFromFeedPack(pack));
+      self.renderAttribution(null);
+
+      var audioKeys = config.audio_keys || [];
+      self.tryPlayAudioChain(audioKeys, pinKey);
+    });
   };
 
   HomeYvrBroadcaster.prototype.playStream = function (channel, pack, pinKey) {
@@ -565,19 +764,26 @@
 
     if (!this.isKnownChannel(key)) return;
 
-    var liveKey = this.resolveLiveKey(key);
-    var pinKey = PIN_CHANNELS[key] ? key : null;
+    if (PIN_CHANNELS[key]) {
+      if (this.activePinKey === key) {
+        this.stopAll(true);
+        return;
+      }
+      this.activatePin(key);
+      return;
+    }
 
-    if (this.activeKey === liveKey && (pinKey === this.activePinKey || !pinKey)) {
+    if (this.activeKey === key) {
       this.stopAll(true);
       return;
     }
 
     this.stopAll(false);
-    this.activeKey = liveKey;
-    this.activePinKey = pinKey;
+    this.activeKey = key;
+    this.activePinKey = null;
+    this.activeAudioKey = key;
 
-    var display = pinKey ? this.getDisplayChannel(pinKey) : this.getDisplayChannel(liveKey);
+    var display = this.getDisplayChannel(key);
     if (display) this.updateDisplay(display);
     this.renderScript('Tuning live audio…');
     this.root.classList.add('is-live');
@@ -586,14 +792,14 @@
     this.ensureFeeds(true).then(function (feeds) {
       self.updateHeroMapFromFeeds(feeds);
 
-      var channel = self.audioChannels[liveKey];
+      var channel = self.audioChannels[key];
       if (!channel) {
         self.renderScript('Live feed still loading — try again in a moment.');
         self.setBars(false);
         return;
       }
 
-      self.activateAudioChannel(channel, pinKey);
+      self.activateAudioChannel(channel, null);
     });
   };
 

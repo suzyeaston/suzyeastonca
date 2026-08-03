@@ -222,14 +222,14 @@ function se_broadcaster_metro_map_anchors(): array {
         array(
             'key'   => 'weather',
             'label' => 'Weather',
-            'hint'  => 'CBC live',
+            'hint'  => 'bulletin + CBC live',
             'lat'   => 49.2827,
             'lon'   => -123.1207,
         ),
         array(
             'key'   => 'wildfire',
             'label' => 'Wildfire',
-            'hint'  => 'CBC live',
+            'hint'  => 'bulletin + BCWS scan',
             'lat'   => 49.2480,
             'lon'   => -122.8900,
         ),
@@ -249,14 +249,49 @@ function se_broadcaster_metro_map_anchors(): array {
     return $anchors;
 }
 
-function se_broadcaster_data_channel_live_keys(): array {
+function se_broadcaster_data_channel_pin_config(): array {
     return array(
-        'translink' => 'sound_skytrain',
-        'drivers'   => 'cknw',
-        'ferries'   => 'marine_vhf',
-        'weather'   => 'cbc',
-        'wildfire'  => 'cbc',
-        'air'       => 'hydro_bush',
+        'translink' => array(
+            'feed_key'       => 'translink',
+            'audio_keys'     => array( 'sound_skytrain' ),
+            'bulletin_label' => 'TransLink bulletin',
+            'tier'           => 'translink',
+        ),
+        'drivers'   => array(
+            'feed_key'       => 'drivers',
+            'audio_keys'     => array( 'cknw' ),
+            'bulletin_label' => 'DriveBC bulletin',
+            'tier'           => 'drivers',
+        ),
+        'ferries'   => array(
+            'feed_key'       => 'ferries',
+            'audio_keys'     => array( 'marine_vhf', 'sound_ferry' ),
+            'bulletin_label' => 'BC Ferries bulletin',
+            'tier'           => 'ferries',
+        ),
+        'weather'   => array(
+            'feed_key'       => 'weather',
+            'audio_keys'     => array( 'cbc' ),
+            'bulletin_label' => 'EC weather bulletin',
+            'tier'           => 'weather',
+        ),
+        'wildfire'  => array(
+            'feed_key'       => 'wildfire',
+            'audio_keys'     => array(
+                'wildfire_fraser',
+                'wildfire_seatosky',
+                'wildfire_island',
+                'burnaby_fire',
+            ),
+            'bulletin_label' => 'BC wildfire bulletin',
+            'tier'           => 'wildfire',
+        ),
+        'air'       => array(
+            'feed_key'       => 'air',
+            'audio_keys'     => array( 'hydro_bush' ),
+            'bulletin_label' => 'Metro AQHI bulletin',
+            'tier'           => 'air',
+        ),
     );
 }
 
@@ -1097,7 +1132,7 @@ function se_get_broadcaster_feeds_rest( WP_REST_Request $request ): WP_REST_Resp
             'metro_map'          => se_broadcaster_metro_map_payload(),
             'channels'           => se_broadcaster_audio_channels_for_client(),
             'dave_ambient_cycle' => se_broadcaster_dave_ambient_cycle_keys(),
-            'data_channel_live'  => se_broadcaster_data_channel_live_keys(),
+            'data_channel_pins'  => se_broadcaster_data_channel_pin_config(),
             'translink'          => se_broadcaster_translink_script(),
             'drivers'            => se_broadcaster_drivers_script(),
             'ferries'            => se_broadcaster_ferries_script(),

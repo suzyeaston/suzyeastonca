@@ -27,7 +27,7 @@ get_header();
                     <p class="home-yvr-radar-deck__ring-label pixel-font"><?php echo esc_html( 'drag · tap pins' ); ?></p>
                     <div class="home-yvr-radar-deck__wander pixel-font" data-yvr-wander-hint hidden>
                         <p class="home-yvr-radar-deck__wander-kicker"><?php echo esc_html( 'you wandered in.' ); ?></p>
-                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'drag the scope. tap a pin. everything here is live audio.' ); ?></p>
+                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'drag the scope. tap a pin — bulletin text plus matched live scanner.' ); ?></p>
                         <button type="button" class="home-yvr-radar-deck__wander-dismiss pixel-font" data-yvr-wander-dismiss><?php echo esc_html( 'got it' ); ?></button>
                     </div>
                 </div>
@@ -79,7 +79,7 @@ get_header();
                     </div>
                     <div class="home-yvr-broadcaster__crt" data-broadcaster-teleprompt>
                         <p class="home-yvr-broadcaster__attribution pixel-font" data-broadcaster-attribution hidden></p>
-                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'tap a pin or channel. live audio only.' ); ?></p>
+                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'tap a pin — bulletin on screen, live scanner underneath.' ); ?></p>
                         <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>
                         <div class="home-yvr-broadcaster__crt-scan" aria-hidden="true"></div>
                     </div>

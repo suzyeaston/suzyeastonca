@@ -984,6 +984,113 @@ body.home-yvr-map-modal-open {
   border-radius: 4px;
 }
 
+.home-yvr-teleprompt__script::-webkit-scrollbar-thumb {
+  background: rgba(87, 243, 255, 0.35);
+}
+
+.home-yvr-bulletin {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.home-yvr-bulletin__kicker {
+  margin: 0;
+  color: #ffe66d;
+  font-size: clamp(0.4rem, 0.78vw, 0.52rem);
+  letter-spacing: 0.1em;
+  text-transform: lowercase;
+}
+
+.home-yvr-bulletin--wildfire .home-yvr-bulletin__kicker {
+  color: #ff6b6b;
+}
+
+.home-yvr-bulletin--drivers .home-yvr-bulletin__kicker {
+  color: #ffe66d;
+}
+
+.home-yvr-bulletin--ferries .home-yvr-bulletin__kicker {
+  color: #57f3ff;
+}
+
+.home-yvr-bulletin__lead {
+  margin: 0;
+  color: rgba(232, 247, 255, 0.95);
+  font-size: clamp(0.44rem, 0.85vw, 0.58rem);
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+}
+
+.home-yvr-bulletin__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.home-yvr-bulletin__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.35rem 0.4rem;
+  border: 1px solid rgba(87, 243, 255, 0.22);
+  border-radius: 4px;
+  background: rgba(0, 12, 22, 0.55);
+}
+
+.home-yvr-bulletin--wildfire .home-yvr-bulletin__row {
+  border-color: rgba(255, 75, 75, 0.35);
+  background: rgba(40, 8, 12, 0.45);
+}
+
+.home-yvr-bulletin__title {
+  color: #57f3ff;
+  font-size: clamp(0.42rem, 0.8vw, 0.55rem);
+  letter-spacing: 0.06em;
+}
+
+.home-yvr-bulletin__text {
+  color: rgba(210, 240, 230, 0.9);
+  font-size: clamp(0.4rem, 0.76vw, 0.52rem);
+  line-height: 1.4;
+}
+
+.home-yvr-bulletin__time {
+  color: rgba(150, 190, 180, 0.75);
+  font-size: clamp(0.36rem, 0.7vw, 0.46rem);
+  letter-spacing: 0.05em;
+}
+
+.home-yvr-bulletin__link {
+  color: #39ff14;
+  font-size: clamp(0.38rem, 0.72vw, 0.48rem);
+  letter-spacing: 0.06em;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.home-yvr-bulletin__audio-note {
+  margin: 0.35rem 0 0;
+  padding: 0.28rem 0.4rem;
+  border: 1px dashed rgba(87, 243, 255, 0.35);
+  border-radius: 4px;
+  color: rgba(180, 230, 220, 0.85);
+  font-size: clamp(0.36rem, 0.7vw, 0.46rem);
+  letter-spacing: 0.05em;
+}
+
+.home-yvr-broadcaster.is-bulletin-only .home-yvr-broadcaster__led {
+  background: #ffe66d;
+  box-shadow: 0 0 10px rgba(255, 230, 109, 0.65);
+}
+
+.home-yvr-broadcaster__crt[data-broadcaster-teleprompt].is-bulletin .home-yvr-teleprompt__script {
+  color: rgba(223, 255, 234, 0.95);
+}
+
 .home-yvr-teleprompt__word {
   transition: color 0.08s linear, background 0.08s linear, text-shadow 0.08s linear;
 }
