@@ -1182,6 +1182,7 @@
         this.playBroadcastifyChain(channel, this.packFromAudioChannel(channel), pinKey, {
           chainTail: keys.slice(i + 1),
           onStatus: function (msg) {
+            self.setLoadingUi(true, msg);
             self.appendBulletinAudioNote(msg);
           }
         });
