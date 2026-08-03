@@ -148,6 +148,7 @@
         marker.on('click', function (e) {
           if (window.L && window.L.DomEvent) {
             window.L.DomEvent.stopPropagation(e);
+            window.L.DomEvent.preventDefault(e);
           }
           if (window.HomeYvrBroadcaster && window.HomeYvrBroadcaster.handleMapSelect) {
             window.HomeYvrBroadcaster.handleMapSelect(key);

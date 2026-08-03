@@ -1002,9 +1002,9 @@
     if (channel.mode === 'link_out') {
       if (this.heroMap && pinKey) this.heroMap.setActiveChannel(pinKey);
       this.playLinkOut(channel, pack, pinKey);
-      if (channel.link_url) {
-        window.open(channel.link_url, '_blank', 'noopener,noreferrer');
-      }
+      this.root.classList.add('is-armed');
+      this.renderScript('Off-site feed — link in footer. Or pick another pin.');
+      this.updatePlayButton();
       return;
     }
 
@@ -1016,10 +1016,9 @@
       }
       if (this.heroMap && pinKey) this.heroMap.setActiveChannel(pinKey);
       this.playLinkOut(channel, pack, pinKey);
-      this.renderScript('Scanner offline — opening Broadcastify in a new tab.');
-      if (channel.link_url) {
-        window.open(channel.link_url, '_blank', 'noopener,noreferrer');
-      }
+      this.root.classList.add('is-armed');
+      this.renderScript('Scanner offline right now — hit PLAY to retry or use the footer link.');
+      this.updatePlayButton();
       return;
     }
 
