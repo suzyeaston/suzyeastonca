@@ -14,7 +14,20 @@
     weather: '#c8a0ff',
     wildfire: '#ff4b4b',
     air: '#7effc6',
-    cknw: '#ffb347'
+    cknw: '#ffb347',
+    cbc: '#ffe66d',
+    yvr_tower: '#57f3ff',
+    marine_vhf: '#7effc6',
+    hydro_bush: '#39ff14',
+    hydro_mast: '#39ff14',
+    sound_skytrain: '#c8a0ff',
+    sound_rain: '#57f3ff',
+    sound_ferry: '#ffb347',
+    radio: '#ffb347',
+    atc: '#57f3ff',
+    marine: '#7effc6',
+    hydro: '#39ff14',
+    bed: '#c8a0ff'
   };
 
   var TIER_COLORS = {
@@ -93,7 +106,8 @@
 
     this.anchors.forEach(function (anchor) {
       var key = anchor.key || '';
-      var color = ANCHOR_COLORS[key] || '#57f3ff';
+      var tier = anchor.tier || '';
+      var color = ANCHOR_COLORS[key] || ANCHOR_COLORS[tier] || '#57f3ff';
       var marker = window.L.marker([anchor.lat, anchor.lon], {
         icon: self.makeIcon(color, true),
         zIndexOffset: key === self.activeChannel ? 500 : 100

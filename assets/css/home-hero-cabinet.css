@@ -985,7 +985,48 @@ body.home-yvr-map-modal-open {
 .home-yvr-broadcaster__feeds {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.28rem;
+}
+
+.home-yvr-broadcaster__feeds-label {
+  margin: 0.12rem 0 0;
+  font-size: clamp(0.36rem, 0.72vw, 0.46rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(87, 243, 255, 0.62);
+}
+
+.home-yvr-broadcaster__channels--listen {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.home-yvr-broadcaster__ch--listen {
+  border-color: rgba(255, 179, 71, 0.35);
+}
+
+.home-yvr-broadcaster__ch--listen.is-active {
+  background: linear-gradient(180deg, #ffb347 0%, #e8922a 100%);
+  box-shadow: 2px 2px 0 #57f3ff;
+}
+
+.home-yvr-broadcaster__ch--link {
+  border-color: rgba(87, 243, 255, 0.45);
+}
+
+.home-yvr-broadcaster__ch--bed {
+  border-color: rgba(200, 160, 255, 0.4);
+}
+
+.home-yvr-broadcaster__ch--scan.is-active {
+  animation: homeBcastLedPulse 1.2s ease-in-out infinite;
+}
+
+.home-yvr-broadcaster__avatar[data-broadcaster-dave-cycle] {
+  cursor: pointer;
+}
+
+.home-yvr-broadcaster__avatar[data-broadcaster-dave-cycle]:hover .home-yvr-broadcaster__pigeon-head {
+  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.15), 0 0 12px rgba(255, 230, 109, 0.35);
 }
 
 .home-yvr-broadcaster__channels {
