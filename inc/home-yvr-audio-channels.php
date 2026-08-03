@@ -186,7 +186,7 @@ function se_broadcaster_broadcastify_hls_has_segments( string $playlist_url ): b
     }
 
     $body = (string) wp_remote_retrieve_body( $response );
-    return str_contains( $body, '.ts' );
+    return strpos( $body, '.ts' ) !== false;
 }
 
 function se_broadcaster_broadcastify_stream_url( int $feed_id ): ?string {
