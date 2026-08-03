@@ -1,8 +1,8 @@
 (function () {
   'use strict';
 
-  var LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-  var LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  var LEAFLET_CSS = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';
+  var LEAFLET_JS = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
   var TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   var TILE_ATTR = '&copy; OpenStreetMap &copy; CARTO';
 
@@ -72,6 +72,29 @@
     document.head.appendChild(link);
   }
 
+  function readMetroConfig() {
+    var cfg = window.HomeYvrBroadcasterConfig;
+    if (!cfg || !cfg.metroMap || !cfg.metroMap.bounds) return null;
+    return cfg.metroMap;
+  }
+
+  function fetchMetroConfigFromFeeds() {
+    var cfg = window.HomeYvrBroadcasterConfig || {};
+    var url = cfg.feedsUrl || '/wp-json/se/v1/broadcaster/feeds';
+    return fetch(url, { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (data && data.metro_map && data.metro_map.bounds) {
+          return {
+            bounds: data.metro_map.bounds,
+            anchors: data.metro_map.anchors || []
+          };
+        }
+        return null;
+      })
+      .catch(function () { return null; });
+  }
+
   function HeroMap(stage, onChannelSelect) {
     this.stage = stage;
     this.onChannelSelect = onChannelSelect || null;
@@ -83,6 +106,7 @@
     this.map = null;
     this.layer = null;
     this.booted = false;
+    this.booting = false;
   }
 
   HeroMap.prototype.makeIcon = function (color, large) {
@@ -140,10 +164,30 @@
     });
   };
 
+  HeroMap.prototype.scheduleInvalidate = function () {
+    var self = this;
+    if (!this.map) return;
+    var delays = [0, 80, 240, 600, 1200];
+    delays.forEach(function (ms) {
+      setTimeout(function () {
+        if (self.map) self.map.invalidateSize({ animate: false });
+      }, ms);
+    });
+  };
+
+  HeroMap.prototype.showMapError = function (message) {
+    if (!this.stage) return;
+    this.stage.classList.add('is-map-error');
+    this.stage.setAttribute('data-map-error', message);
+  };
+
   HeroMap.prototype.initMap = function () {
     if (!this.stage || !window.L || this.map) return;
 
     var bounds = this.bounds;
+    this.stage.classList.remove('is-map-error');
+    this.stage.removeAttribute('data-map-error');
+
     this.map = window.L.map(this.stage, {
       zoomControl: true,
       attributionControl: true,
@@ -167,27 +211,33 @@
 
     this.syncMarkers();
     this.booted = true;
+    this.stage.classList.add('is-map-ready');
+
+    this.scheduleInvalidate();
 
     var self = this;
-    var resize = function () {
-      if (self.map) self.map.invalidateSize({ animate: false });
-    };
-    requestAnimationFrame(resize);
     if (typeof ResizeObserver !== 'undefined') {
       var observeTarget = self.stage.parentElement || self.stage;
       var observer = new ResizeObserver(function () {
-        requestAnimationFrame(resize);
+        self.scheduleInvalidate();
       });
       observer.observe(observeTarget);
       if (observeTarget.parentElement && observeTarget.parentElement !== observeTarget) {
         observer.observe(observeTarget.parentElement);
       }
     }
+
+    window.addEventListener('orientationchange', function () {
+      self.scheduleInvalidate();
+    });
   };
 
   HeroMap.prototype.boot = function (config) {
-    if (!this.stage || !config || !config.bounds) return;
+    if (!this.stage || !config || !config.bounds || this.booted || this.booting) {
+      return Promise.resolve();
+    }
     var self = this;
+    this.booting = true;
 
     this.bounds = config.bounds;
     this.anchors = config.anchors || [];
@@ -198,8 +248,29 @@
         self.initMap();
       })
       .catch(function () {
-        /* map stage stays empty */
+        self.showMapError('Map tiles failed to load — try a refresh.');
+      })
+      .finally(function () {
+        self.booting = false;
       });
+  };
+
+  HeroMap.prototype.ensureBoot = function () {
+    var self = this;
+    if (this.booted || this.booting) return Promise.resolve();
+
+    var config = readMetroConfig();
+    if (config) {
+      return this.boot(config);
+    }
+
+    return fetchMetroConfigFromFeeds().then(function (fetched) {
+      if (fetched) {
+        return self.boot(fetched);
+      }
+      self.showMapError('Radar map config missing — try refreshing.');
+      return null;
+    });
   };
 
   HeroMap.prototype.setActiveChannel = function (channelKey) {
@@ -266,15 +337,12 @@
     if (!stage || stage.dataset.heroMapReady === '1') return;
     stage.dataset.heroMapReady = '1';
 
-    var config = window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.metroMap;
     var heroMap = new HeroMap(stage);
     window.HomeHeroMap = heroMap;
 
-    if (config && config.bounds) {
-      heroMap.boot(config);
-    }
-
-    initWanderHint();
+    heroMap.ensureBoot().then(function () {
+      initWanderHint();
+    });
   }
 
   if (document.readyState === 'loading') {

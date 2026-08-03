@@ -52,7 +52,7 @@
     this.feeds = null;
     this.audioChannels = {};
     this.ambientCycleKeys = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.daveAmbientCycle) || [];
-    this.dataChannelPins = {};
+    this.dataChannelPins = (window.HomeYvrBroadcasterConfig && HomeYvrBroadcasterConfig.dataChannelPins) || {};
     this.activeKey = null;
     this.activePinKey = null;
     this.activeAudioKey = null;

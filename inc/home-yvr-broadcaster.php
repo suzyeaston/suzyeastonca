@@ -302,6 +302,15 @@ function se_broadcaster_metro_map_static(): array {
     );
 }
 
+function se_home_yvr_broadcaster_client_config(): array {
+    return array(
+        'feedsUrl'         => rest_url( 'se/v1/broadcaster/feeds' ),
+        'metroMap'         => se_broadcaster_metro_map_static(),
+        'daveAmbientCycle' => se_broadcaster_dave_ambient_cycle_keys(),
+        'dataChannelPins'  => se_broadcaster_data_channel_pin_config(),
+    );
+}
+
 function se_broadcaster_metro_map_marker_row(
     string $id,
     string $name,

@@ -110,16 +110,6 @@ function retro_game_music_theme_scripts() {
                 filemtime( $hero_map_js ),
                 true
             );
-            wp_localize_script(
-                'home-hero-map',
-                'HomeYvrBroadcasterConfig',
-                array(
-                    'feedsUrl'  => rest_url( 'se/v1/broadcaster/feeds' ),
-                    'metroMap'  => function_exists( 'se_broadcaster_metro_map_static' )
-                        ? se_broadcaster_metro_map_static()
-                        : array(),
-                )
-            );
         }
         if ( file_exists( $broadcaster_js ) ) {
             wp_enqueue_script(
@@ -142,12 +132,11 @@ function retro_game_music_theme_scripts() {
             wp_localize_script(
                 'home-yvr-broadcaster',
                 'HomeYvrBroadcasterConfig',
-                array(
-                    'feedsUrl'         => rest_url( 'se/v1/broadcaster/feeds' ),
-                    'daveAmbientCycle' => function_exists( 'se_broadcaster_dave_ambient_cycle_keys' )
-                        ? se_broadcaster_dave_ambient_cycle_keys()
-                        : array(),
-                )
+                function_exists( 'se_home_yvr_broadcaster_client_config' )
+                    ? se_home_yvr_broadcaster_client_config()
+                    : array(
+                        'feedsUrl' => rest_url( 'se/v1/broadcaster/feeds' ),
+                    )
             );
         }
 
