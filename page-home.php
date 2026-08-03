@@ -27,7 +27,7 @@ get_header();
                     <p class="home-yvr-radar-deck__ring-label pixel-font" data-yvr-ring-label><?php echo esc_html( 'drag · tap pins' ); ?></p>
                     <div class="home-yvr-radar-deck__wander pixel-font" data-yvr-wander-hint hidden>
                         <p class="home-yvr-radar-deck__wander-kicker"><?php echo esc_html( 'you wandered in.' ); ?></p>
-                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'drag the scope. tap a pin — bulletin text plus matched live scanner.' ); ?></p>
+                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'big pins = territory channels. listen row = direct live feeds. small dots = incidents — they land on Dave, not a new tab.' ); ?></p>
                         <button type="button" class="home-yvr-radar-deck__wander-dismiss pixel-font" data-yvr-wander-dismiss><?php echo esc_html( 'got it' ); ?></button>
                     </div>
                 </div>
@@ -78,6 +78,11 @@ get_header();
                         </div>
                     </div>
                     <div class="home-yvr-broadcaster__crt" data-broadcaster-teleprompt>
+                        <div class="home-yvr-broadcaster__channel-detail" data-broadcaster-channel-detail hidden>
+                            <p class="home-yvr-broadcaster__channel-detail-kicker pixel-font" data-broadcaster-detail-kicker><?php echo esc_html( 'channel' ); ?></p>
+                            <p class="home-yvr-broadcaster__channel-detail-body" data-broadcaster-detail-body></p>
+                            <p class="home-yvr-broadcaster__channel-detail-note pixel-font" data-broadcaster-detail-note></p>
+                        </div>
                         <p class="home-yvr-broadcaster__attribution pixel-font" data-broadcaster-attribution hidden></p>
                         <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'tap a pin — bulletin lands here. PLAY for live audio.' ); ?></p>
                         <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>

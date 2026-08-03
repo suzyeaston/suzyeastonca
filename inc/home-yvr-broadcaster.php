@@ -250,7 +250,7 @@ function se_broadcaster_metro_map_anchors(): array {
 }
 
 function se_broadcaster_data_channel_pin_config(): array {
-    return array(
+    $pins = array(
         'translink' => array(
             'feed_key'       => 'translink',
             'audio_keys'     => array( 'cknw', 'marine_vhf', 'sound_skytrain' ),
@@ -293,6 +293,13 @@ function se_broadcaster_data_channel_pin_config(): array {
             'tier'           => 'air',
         ),
     );
+
+    foreach ( $pins as $key => $pin ) {
+        $pins[ $key ]['deck_copy'] = se_broadcaster_pin_deck_copy( $key );
+        $pins[ $key ]['deck_note'] = 'Territory pin — bulletin on CRT, live audio on Dave. Small map dots are incidents; they land here too, not in a new tab.';
+    }
+
+    return $pins;
 }
 
 function se_broadcaster_metro_map_static(): array {

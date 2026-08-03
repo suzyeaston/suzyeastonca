@@ -170,8 +170,14 @@
       });
       om.bindTooltip((m.name || '') + (m.detail ? ' — ' + m.detail : ''));
       if (m.url) {
-        om.on('click', function () {
-          window.open(m.url, '_blank', 'noopener,noreferrer');
+        om.on('click', function (e) {
+          if (window.L && window.L.DomEvent) {
+            window.L.DomEvent.stopPropagation(e);
+            window.L.DomEvent.preventDefault(e);
+          }
+          if (window.HomeYvrBroadcaster && window.HomeYvrBroadcaster.showMapOverlay) {
+            window.HomeYvrBroadcaster.showMapOverlay(m);
+          }
         });
       }
       om.addTo(self.layer);

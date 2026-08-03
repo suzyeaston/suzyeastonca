@@ -66,6 +66,11 @@
     this.telepromptRoot = root.querySelector('[data-broadcaster-teleprompt]');
     this.scriptEl = root.querySelector('[data-broadcaster-script]');
     this.metaEl = root.querySelector('[data-broadcaster-meta]');
+    this.detailRoot = root.querySelector('[data-broadcaster-channel-detail]');
+    this.detailKickerEl = root.querySelector('[data-broadcaster-detail-kicker]');
+    this.detailBodyEl = root.querySelector('[data-broadcaster-detail-body]');
+    this.detailNoteEl = root.querySelector('[data-broadcaster-detail-note]');
+    this.feedsNoteEl = root.querySelector('[data-broadcaster-feeds-note]');
     this.mouthEl = root.querySelector('[data-broadcaster-mouth]');
     this.faceEl = root.querySelector('[data-broadcaster-face]');
     this.heroMap = window.HomeHeroMap || null;
@@ -404,6 +409,72 @@
     }, delay);
   };
 
+  HomeYvrBroadcaster.prototype.renderChannelDetail = function (opts) {
+    if (!this.detailRoot) return;
+
+    var copy = (opts && opts.deck_copy) ? opts.deck_copy : '';
+    var note = (opts && opts.deck_note) ? opts.deck_note : '';
+    var kicker = (opts && opts.kicker) ? opts.kicker : 'channel';
+
+    if (!copy && !note) {
+      this.detailRoot.hidden = true;
+      if (this.detailBodyEl) this.detailBodyEl.textContent = '';
+      if (this.detailNoteEl) this.detailNoteEl.textContent = '';
+      return;
+    }
+
+    if (this.detailKickerEl) this.detailKickerEl.textContent = kicker;
+    if (this.detailBodyEl) this.detailBodyEl.textContent = copy;
+    if (this.detailNoteEl) this.detailNoteEl.textContent = note;
+    this.detailRoot.hidden = false;
+  };
+
+  HomeYvrBroadcaster.prototype.showMapOverlay = function (marker) {
+    if (!marker) return;
+
+    this.stopAll(false);
+    this.focusDavePlayer();
+
+    var name = marker.name || 'Map incident';
+    var detail = marker.detail || '';
+    var html = '<div class="home-yvr-bulletin home-yvr-bulletin--overlay">';
+    html += '<p class="home-yvr-bulletin__kicker pixel-font">map incident</p>';
+    html += '<p class="home-yvr-bulletin__title">' + escapeHtml(name) + '</p>';
+    if (detail) {
+      html += '<p class="home-yvr-bulletin__text">' + escapeHtml(detail) + '</p>';
+    }
+    html += '<p class="home-yvr-bulletin__text">Incident dot from the active territory layer. Audio unchanged — pick a listen-row channel or territory pin for live sound.</p>';
+    html += '</div>';
+
+    if (this.scriptEl) {
+      this.scriptEl.innerHTML = html;
+      this.scriptEl.scrollTop = 0;
+    }
+
+    this.renderChannelDetail({
+      kicker: 'map dot',
+      deck_copy: name + (detail ? ' — ' + detail : ''),
+      deck_note: 'Stays on Dave. Footer link opens the official source only if you tap it — no auto pop-ups.'
+    });
+
+    var items = [];
+    if (marker.url) {
+      items.push({
+        url: marker.url,
+        link_label: 'Open official source (new tab)'
+      });
+    }
+    this.renderMeta({
+      fetched_label: 'Map overlay',
+      items: items
+    });
+
+    this.root.classList.add('is-live', 'is-bulletin');
+    if (this.telepromptRoot) {
+      this.telepromptRoot.classList.add('is-live', 'is-bulletin');
+    }
+  };
+
   HomeYvrBroadcaster.prototype.renderAttribution = function (channel) {
     if (!this.attributionEl) return;
 
@@ -577,6 +648,7 @@
 
   HomeYvrBroadcaster.prototype.setTelepromptStandby = function () {
     this.renderMeta(null);
+    this.renderChannelDetail(null);
     if (this.scriptEl) {
       this.scriptEl.innerHTML = '';
       this.scriptEl.textContent = 'tap a pin — bulletin lands here. PLAY for live audio.';
@@ -868,8 +940,22 @@
     this.root.classList.add('is-bulletin-only');
     this.setBars(true);
     this.appendBulletinAudioNote(
-      'Scanners offline (' + tried.join(', ') + ') — bulletin text is still current.'
+      'Scanners offline (' + tried.join(', ') + ') — bulletin text is still current. Hit PLAY to retry or pick another channel.'
     );
+  };
+
+  HomeYvrBroadcaster.prototype.renderListenChannelDetail = function (channel) {
+    if (!channel) {
+      this.renderChannelDetail(null);
+      return;
+    }
+    this.renderChannelDetail({
+      kicker: channel.label || channel.key,
+      deck_copy: channel.deck_copy || channel.hint || '',
+      deck_note: channel.deck_note || (channel.mode === 'broadcastify'
+        ? 'Broadcastify scanner — audio stays on Dave. Footer link is optional.'
+        : 'In-page live audio.')
+    });
   };
 
   HomeYvrBroadcaster.prototype.mergeFeeds = function (data) {
@@ -920,6 +1006,12 @@
     var display = this.getDisplayChannel(pinKey);
     if (display) this.updateDisplay(display);
     this.highlightChannel(null);
+
+    this.renderChannelDetail({
+      kicker: (config && config.bulletin_label) || pinKey,
+      deck_copy: (config && config.deck_copy) || '',
+      deck_note: (config && config.deck_note) || ''
+    });
 
     this.root.classList.add('is-live', 'is-bulletin', 'is-armed');
     this.root.classList.remove('is-bulletin-only', 'is-radio');
@@ -974,6 +1066,7 @@
     var display = pinKey ? this.getDisplayChannel(pinKey) : this.getDisplayChannel(channel.key);
     if (display) this.updateDisplay(display);
     this.highlightChannel(channel.key);
+    if (!pinKey) this.renderListenChannelDetail(channel);
     this.renderMeta(pack);
     this.renderAttribution(channel);
     this.renderScript(
@@ -1025,9 +1118,10 @@
     var display = pinKey ? this.getDisplayChannel(pinKey) : this.getDisplayChannel(channel.key);
     if (display) this.updateDisplay(display);
     this.highlightChannel(channel.key);
+    if (!pinKey) this.renderListenChannelDetail(channel);
     this.renderMeta(pack);
     this.renderAttribution(channel);
-    this.renderScript('Live feed opens off-site — no robot voice on this deck.');
+    this.renderScript('Off-site source — use the footer link if you need their player.');
     if (this.telepromptRoot) {
       this.telepromptRoot.classList.add('is-live');
       this.telepromptRoot.classList.remove('is-radio');
@@ -1057,7 +1151,7 @@
       if (this.heroMap && pinKey) this.heroMap.setActiveChannel(pinKey);
       this.playLinkOut(channel, pack, pinKey);
       this.root.classList.add('is-armed');
-      this.renderScript('Scanner offline right now — hit PLAY to retry or use the footer link.');
+      this.renderScript('Scanner offline — hit PLAY to retry. Tries the next feed in the marine chain automatically.');
       this.updatePlayButton();
       return;
     }
@@ -1118,6 +1212,8 @@
     var display = this.getDisplayChannel(key);
     if (display) this.updateDisplay(display);
     this.renderScript('Tuning live audio…');
+    var chPreview = this.audioChannels[key];
+    if (chPreview) this.renderListenChannelDetail(chPreview);
     this.root.classList.add('is-live', 'is-armed');
     this.setBars(true);
     this.setMouthTalking();

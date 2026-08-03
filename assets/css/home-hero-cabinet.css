@@ -511,6 +511,40 @@
   animation: homeScannerBar 0.9s steps(4, end) infinite;
 }
 
+.home-yvr-broadcaster__channel-detail {
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.28rem;
+  border-bottom: 1px solid rgba(87, 243, 255, 0.18);
+}
+
+.home-yvr-broadcaster__channel-detail[hidden] {
+  display: none;
+}
+
+.home-yvr-broadcaster__channel-detail-kicker {
+  margin: 0 0 0.2rem;
+  color: #ffe66d;
+  font-size: clamp(0.38rem, 0.78vw, 0.48rem);
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+.home-yvr-broadcaster__channel-detail-body {
+  margin: 0 0 0.22rem;
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: clamp(0.42rem, 0.85vw, 0.52rem);
+  line-height: 1.45;
+  color: rgba(223, 255, 234, 0.92);
+}
+
+.home-yvr-broadcaster__channel-detail-note {
+  margin: 0;
+  font-size: clamp(0.34rem, 0.72vw, 0.44rem);
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  color: rgba(180, 230, 220, 0.72);
+}
+
 .home-yvr-broadcaster__crt {
   position: relative;
   border-radius: 6px;
