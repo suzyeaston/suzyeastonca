@@ -24,5 +24,5 @@
                                 </button>
                             <?php endforeach; ?>
                         </div>
-                        <p class="home-yvr-broadcaster__feeds-note pixel-font"><?php echo esc_html( 'map pins show bulletins + tune matched live scanners' ); ?></p>
+                        <p class="home-yvr-broadcaster__feeds-note pixel-font" data-broadcaster-feeds-note><?php echo esc_html( 'big pins = territory bulletins · listen row = direct live feeds' ); ?></p>
                     </div>

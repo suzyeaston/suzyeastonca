@@ -163,7 +163,91 @@ function se_broadcaster_broadcastify_stream_url( int $feed_id ): ?string {
 }
 
 function se_broadcaster_marine_broadcastify_feed_ids(): array {
-    return array( 47189 );
+    // 47189 = Vancouver port ch 11/12/16 (often offline). Fallbacks: Comox, Sointula, EC marine WX.
+    return array( 47189, 32393, 32901, 44288 );
+}
+
+function se_broadcaster_channel_deck_notes(): array {
+    return array(
+        'cknw'           => array(
+            'deck_copy' => 'CKNW 980 — Vancouver news talk. Traffic, politics, local chaos. LeanStream relay.',
+            'deck_note' => 'In-page stream. No new tabs.',
+        ),
+        'cbc'            => array(
+            'deck_copy' => 'CBC Radio One Vancouver — national + local news on the HLS feed.',
+            'deck_note' => 'In-page stream. No new tabs.',
+        ),
+        'yvr_tower'      => array(
+            'deck_copy' => 'YVR approach — planes lining up over the Fraser. LiveATC embed.',
+            'deck_note' => 'In-page stream. Attribution on screen.',
+        ),
+        'yvr_ground'     => array(
+            'deck_copy' => 'YVR ground and tower mix from LiveATC. Taxi, takeoff, tower handoffs.',
+            'deck_note' => 'In-page stream.',
+        ),
+        'yvr_combo'      => array(
+            'deck_copy' => 'YVR combo — clearance, ground, tower, approach on one mount. Busy hours only.',
+            'deck_note' => 'Hidden gem. LiveATC mash feed.',
+        ),
+        'yvr_dep2'       => array(
+            'deck_copy' => 'YVR departure lane two — second approach/dep frequency when it splits.',
+            'deck_note' => 'LiveATC. Quieter than the combo mount.',
+        ),
+        'vzvr_acc'       => array(
+            'deck_copy' => 'Vancouver area control — high-altitude handoffs around YVR airspace.',
+            'deck_note' => 'LiveATC ACC feed.',
+        ),
+        'burnaby_fire'   => array(
+            'deck_copy' => 'Burnaby Fire dispatch — municipal fire/EMS scanner. Often the liveliest public-safety feed near YVR.',
+            'deck_note' => 'Broadcastify scanner. Footer link opens source only if you tap it.',
+        ),
+        'marine_vhf'     => array(
+            'deck_copy' => 'Marine VHF — port traffic, Coast Guard, distress. Tries Vancouver ch 11/12/16 first, then Comox, Sointula, EC marine weather WX.',
+            'deck_note' => 'Broadcastify chain. Stays on Dave — footer link is optional.',
+        ),
+        'hydro_bush'     => array(
+            'deck_copy' => 'Orcasound hydrophone at Bush Point — Salish Sea live. Whales, ships, weird water noise.',
+            'deck_note' => 'HLS from Orcasound. Field mic, not radio.',
+        ),
+        'hydro_mast'     => array(
+            'deck_copy' => 'Orcasound MaST Center hydrophone — Puget-side listen. Same vibe, different inlet.',
+            'deck_note' => 'HLS from Orcasound.',
+        ),
+        'sound_skytrain' => array(
+            'deck_copy' => 'SkyTrain rumble loop — field bed, not live airwaves.',
+            'deck_note' => 'Soundscape only. Dave ambient cycle.',
+        ),
+        'sound_rain'     => array(
+            'deck_copy' => 'West coast rain bed — looped field recording.',
+            'deck_note' => 'Soundscape only.',
+        ),
+        'sound_ferry'    => array(
+            'deck_copy' => 'Ferry horn bed — terminal whistle loop when marine scanners are quiet.',
+            'deck_note' => 'Soundscape fallback for ferries pin.',
+        ),
+    );
+}
+
+function se_broadcaster_pin_deck_copy( string $pin_key ): string {
+    $copy = array(
+        'translink' => 'TransLink alerts on screen. Audio tries CKNW, then marine VHF, then skytrain bed.',
+        'drivers'   => 'DriveBC incidents on the map dots and bulletin. CKNW for road/traffic radio.',
+        'ferries'   => 'BC Ferries sailings + capacity bulletin. Live marine VHF first, ferry horn bed if scanners are down.',
+        'weather'   => 'Environment Canada weather alerts bulletin. CBC Radio One for live forecast chatter.',
+        'wildfire'  => 'BC wildfire incidents bulletin. Burnaby FD + BCWS repeater chain underneath.',
+        'air'       => 'Metro Vancouver AQHI bulletin. Salish hydrophones when you want ambience with the data.',
+    );
+    return $copy[ $pin_key ] ?? '';
+}
+
+function se_broadcaster_apply_channel_deck_notes( array $channel ): array {
+    $notes = se_broadcaster_channel_deck_notes();
+    $key   = (string) ( $channel['key'] ?? '' );
+    if ( isset( $notes[ $key ] ) ) {
+        $channel['deck_copy'] = $notes[ $key ]['deck_copy'];
+        $channel['deck_note'] = $notes[ $key ]['deck_note'];
+    }
+    return $channel;
 }
 
 function se_broadcaster_audio_channel_catalog(): array {
@@ -374,17 +458,17 @@ function se_broadcaster_audio_channel_catalog(): array {
         'marine_vhf'     => array(
             'key'               => 'marine_vhf',
             'label'             => 'MARINE VHF',
-            'hint'              => 'Port traffic scan',
+            'hint'              => 'Port + coast VHF',
             'freq'              => '156.800',
             'mode'              => 'broadcastify',
             'broadcastify_id'   => 47189,
             'broadcastify_ids'  => se_broadcaster_marine_broadcastify_feed_ids(),
             'link_url'          => 'https://www.broadcastify.com/listen/feed/47189',
-            'link_label'        => 'Broadcastify marine feed',
+            'link_label'        => 'Vancouver marine feed (Broadcastify)',
             'map_lat'           => 49.2700,
             'map_lon'           => -123.1500,
-            'source'            => 'Broadcastify',
-            'source_url'        => 'https://www.broadcastify.com/listen/feed/47189',
+            'source'            => 'Broadcastify — BC marine VHF chain',
+            'source_url'        => 'https://www.broadcastify.com/listen/stid/102/marine',
             'pin_tier'          => 'marine',
         ),
         'hydro_bush'     => array(
@@ -532,6 +616,7 @@ function se_broadcaster_audio_channels_for_client(): array {
     $out     = array();
 
     foreach ( $catalog as $key => $channel ) {
+        $channel  = se_broadcaster_apply_channel_deck_notes( $channel );
         $resolved = se_broadcaster_resolve_audio_channel( $channel );
         $out[ $key ] = array(
             'key'        => $key,
@@ -551,6 +636,8 @@ function se_broadcaster_audio_channels_for_client(): array {
             'attribution' => $channel['attribution'] ?? '',
             'attribution_url' => $channel['attribution_url'] ?? '',
             'pin_tier'   => $channel['pin_tier'] ?? 'radio',
+            'deck_copy'  => $channel['deck_copy'] ?? '',
+            'deck_note'  => $channel['deck_note'] ?? '',
             'map_lat'    => (float) ( $channel['map_lat'] ?? 0 ),
             'map_lon'    => (float) ( $channel['map_lon'] ?? 0 ),
         );
