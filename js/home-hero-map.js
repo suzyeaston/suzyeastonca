@@ -339,8 +339,10 @@
     var mapWrap = document.querySelector('.home-yvr-radar-deck__map-wrap');
     if (!hint) return;
 
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     hint.hidden = false;
-    if (mapWrap) mapWrap.classList.add('is-discover');
+    if (mapWrap && !reduceMotion) mapWrap.classList.add('is-discover');
 
     var dismiss = hint.querySelector('[data-yvr-wander-dismiss]');
     if (dismiss) {

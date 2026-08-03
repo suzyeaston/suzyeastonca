@@ -1936,7 +1936,14 @@ body.home-yvr-map-modal-open {
   .home-yvr-broadcaster__crt-scan,
   .home-yvr-broadcaster__eye,
   .home-yvr-broadcaster__mouth.is-flap,
-  .home-yvr-broadcaster.is-live .home-yvr-broadcaster__led {
+  .home-yvr-broadcaster.is-live .home-yvr-broadcaster__led,
+  .home-yvr-broadcaster.is-loading .home-yvr-broadcaster__led,
+  .home-yvr-broadcaster.is-loading .home-yvr-broadcaster__load-tag,
+  .home-yvr-broadcaster.is-loading .home-yvr-broadcaster__load-bar-fill,
+  .home-yvr-broadcaster.is-loading .home-yvr-broadcaster__ch.is-loading,
+  .home-yvr-broadcaster.is-listening .home-yvr-broadcaster__led,
+  .home-yvr-broadcaster.is-armed .home-yvr-broadcaster__play,
+  .home-yvr-broadcaster__ch--scan.is-active {
     animation: none !important;
   }
 }
