@@ -27,7 +27,7 @@ get_header();
                     <p class="home-yvr-radar-deck__ring-label pixel-font"><?php echo esc_html( 'drag · tap pins' ); ?></p>
                     <div class="home-yvr-radar-deck__wander pixel-font" data-yvr-wander-hint hidden>
                         <p class="home-yvr-radar-deck__wander-kicker"><?php echo esc_html( 'you wandered in.' ); ?></p>
-                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'drag the scope. tap a pin. dave reads feeds — listen row is live audio.' ); ?></p>
+                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'drag the scope. tap a pin. everything here is live audio.' ); ?></p>
                         <button type="button" class="home-yvr-radar-deck__wander-dismiss pixel-font" data-yvr-wander-dismiss><?php echo esc_html( 'got it' ); ?></button>
                     </div>
                 </div>
@@ -79,17 +79,16 @@ get_header();
                     </div>
                     <div class="home-yvr-broadcaster__crt" data-broadcaster-teleprompt>
                         <p class="home-yvr-broadcaster__attribution pixel-font" data-broadcaster-attribution hidden></p>
-                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'wrong site on purpose? drag the map. tap a pin.' ); ?></p>
+                        <p class="home-yvr-teleprompt__script" data-broadcaster-script><?php echo esc_html( 'tap a pin or channel. live audio only.' ); ?></p>
                         <ul class="home-yvr-teleprompt__meta" data-broadcaster-meta hidden></ul>
                         <div class="home-yvr-broadcaster__crt-scan" aria-hidden="true"></div>
                     </div>
                     <?php get_template_part( 'parts/home-yvr-channel-buttons' ); ?>
                     <button type="button" class="home-yvr-broadcaster__btn home-yvr-broadcaster__stop pixel-font" data-broadcaster-stop aria-label="<?php echo esc_attr( 'Stop audio' ); ?>">
                         <span class="home-yvr-broadcaster__stop-label"><?php echo esc_html( 'STOP' ); ?></span>
-                        <span class="home-yvr-broadcaster__stop-hint"><?php echo esc_html( 'silence dave' ); ?></span>
+                        <span class="home-yvr-broadcaster__stop-hint"><?php echo esc_html( 'silence deck' ); ?></span>
                     </button>
                     <audio data-broadcaster-audio preload="none" crossorigin="anonymous"></audio>
-                    <audio data-broadcaster-bed-audio preload="none" crossorigin="anonymous"></audio>
                 </div>
                 </div>
             </div>
