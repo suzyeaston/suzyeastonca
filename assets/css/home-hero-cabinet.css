@@ -1443,6 +1443,10 @@ body.home-yvr-map-modal-open {
     grid-template-columns: 1fr;
   }
 
+  .home-yvr-broadcaster__channels--listen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .home-yvr-teleprompt__script {
     min-height: 3.5rem;
     max-height: 4.5rem;
