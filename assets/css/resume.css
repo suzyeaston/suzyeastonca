@@ -1,0 +1,417 @@
+/*
+ * Resume page — isolated from the retro arcade theme.
+ * Screen: editorial two-column layout. Print: clean single-document PDF.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+.page-template-page-resume {
+  --resume-ink: #0f172a;
+  --resume-muted: #475569;
+  --resume-faint: #94a3b8;
+  --resume-surface: #f8fafc;
+  --resume-panel: #ffffff;
+  --resume-sidebar: #0c1a2e;
+  --resume-sidebar-text: #e2e8f0;
+  --resume-accent: #14b8a6;
+  --resume-accent-soft: rgba(20, 184, 166, 0.12);
+  --resume-blue: #38bdf8;
+  --resume-border: #e2e8f0;
+  --resume-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+}
+
+.page-template-page-resume body,
+.page-template-page-resume #page,
+.page-template-page-resume #main-content {
+  background: #e8edf4 !important;
+}
+
+.page-template-page-resume body::before {
+  display: none !important;
+}
+
+/* Theme isolation */
+.resume-page :where(h1, h2, h3, h4, p, li, span, a, dt, dd, strong, em) {
+  font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  font-style: normal;
+  letter-spacing: normal;
+  text-transform: none;
+  text-shadow: none;
+  background-image: none;
+  text-align: inherit;
+  color: inherit;
+  line-height: inherit;
+}
+
+.resume-page {
+  padding: 1.5rem 1rem 3rem;
+  color: var(--resume-ink);
+}
+
+.resume-toolbar {
+  max-width: 920px;
+  margin: 0 auto 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.resume-toolbar__label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--resume-muted);
+}
+
+.resume-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.resume-btn {
+  appearance: none;
+  border: 1px solid var(--resume-border);
+  background: var(--resume-panel);
+  color: var(--resume-ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.55rem 0.95rem;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.resume-btn:hover,
+.resume-btn:focus-visible {
+  border-color: var(--resume-accent);
+  box-shadow: 0 0 0 3px var(--resume-accent-soft);
+  outline: none;
+}
+
+.resume-btn--primary {
+  background: var(--resume-sidebar);
+  border-color: var(--resume-sidebar);
+  color: #fff;
+}
+
+.resume-btn--primary:hover,
+.resume-btn--primary:focus-visible {
+  border-color: var(--resume-accent);
+  box-shadow: 0 0 0 3px var(--resume-accent-soft);
+}
+
+.resume-sheet {
+  max-width: 920px;
+  margin: 0 auto;
+  background: var(--resume-panel);
+  border-radius: 14px;
+  box-shadow: var(--resume-shadow);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 250px 1fr;
+}
+
+.resume-sidebar {
+  background: linear-gradient(180deg, #0c1a2e 0%, #132238 100%);
+  color: var(--resume-sidebar-text);
+  padding: 1.75rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.resume-sidebar__name {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #fff;
+  margin: 0;
+}
+
+.resume-sidebar__title {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--resume-blue);
+}
+
+.resume-sidebar__tags {
+  margin: 0.75rem 0 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.58rem;
+  line-height: 1.55;
+  letter-spacing: 0.04em;
+  color: var(--resume-accent);
+}
+
+.resume-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.resume-contact a {
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.8rem;
+  word-break: break-word;
+}
+
+.resume-contact a:hover {
+  color: var(--resume-accent);
+}
+
+.resume-availability {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.58rem;
+  line-height: 1.55;
+  letter-spacing: 0.06em;
+  color: #86efac;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(134, 239, 172, 0.25);
+  border-radius: 8px;
+  background: rgba(134, 239, 172, 0.06);
+}
+
+.resume-sidebar-block h3 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--resume-accent);
+  margin: 0 0 0.55rem;
+}
+
+.resume-sidebar-block p,
+.resume-sidebar-block li {
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.resume-sidebar-block ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resume-sidebar-block li + li {
+  margin-top: 0.35rem;
+}
+
+.resume-sidebar-block .toolkit-group {
+  margin-bottom: 0.65rem;
+}
+
+.resume-sidebar-block .toolkit-group strong {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 0.2rem;
+}
+
+.resume-main {
+  padding: 1.75rem 1.65rem 1.5rem;
+}
+
+.resume-section + .resume-section {
+  margin-top: 1.35rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--resume-border);
+}
+
+.resume-section__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  margin-bottom: 0.65rem;
+}
+
+.resume-section__num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--resume-accent);
+  white-space: nowrap;
+}
+
+.resume-section__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--resume-ink);
+  margin: 0;
+}
+
+.resume-section p,
+.resume-section li {
+  font-size: 0.86rem;
+  line-height: 1.62;
+  color: var(--resume-muted);
+}
+
+.resume-section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.resume-section li + li {
+  margin-top: 0.35rem;
+}
+
+.resume-alignment li::marker {
+  color: var(--resume-accent);
+}
+
+.resume-role {
+  margin-top: 0.85rem;
+}
+
+.resume-role:first-of-type {
+  margin-top: 0;
+}
+
+.resume-role__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.35rem 1rem;
+  margin-bottom: 0.15rem;
+}
+
+.resume-role__company {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--resume-ink);
+  margin: 0;
+}
+
+.resume-role__meta {
+  font-size: 0.76rem;
+  color: var(--resume-faint);
+  white-space: nowrap;
+}
+
+.resume-role__location {
+  font-size: 0.76rem;
+  color: var(--resume-faint);
+  margin: 0 0 0.35rem;
+}
+
+.resume-role ul {
+  margin: 0;
+}
+
+.resume-role--continued .resume-role__company {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--resume-muted);
+}
+
+.resume-builds li strong {
+  color: var(--resume-ink);
+  font-weight: 600;
+}
+
+.resume-footer {
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--resume-border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--resume-faint);
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .resume-sheet {
+    grid-template-columns: 1fr;
+  }
+
+  .resume-sidebar {
+    padding: 1.35rem 1.15rem;
+  }
+
+  .resume-main {
+    padding: 1.35rem 1.15rem;
+  }
+}
+
+/* Print / PDF */
+@media print {
+  @page {
+    size: letter;
+    margin: 0.45in 0.5in;
+  }
+
+  .page-template-page-resume body,
+  .page-template-page-resume #page,
+  .page-template-page-resume #main-content {
+    background: #fff !important;
+  }
+
+  .page-template-page-resume .main-header,
+  .page-template-page-resume .site-footer,
+  .page-template-page-resume .floating-link-bar,
+  .page-template-page-resume .se-contact-modal,
+  .page-template-page-resume .resume-toolbar,
+  .page-template-page-resume #starfield {
+    display: none !important;
+  }
+
+  .resume-page {
+    padding: 0;
+  }
+
+  .resume-sheet {
+    max-width: none;
+    box-shadow: none;
+    border-radius: 0;
+    grid-template-columns: 210px 1fr;
+    page-break-inside: avoid;
+  }
+
+  .resume-sidebar {
+    background: #0c1a2e !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .resume-availability {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .resume-section {
+    break-inside: avoid;
+  }
+
+  .resume-role {
+    break-inside: avoid;
+  }
+
+  .resume-contact a {
+    color: #cbd5e1 !important;
+  }
+
+  a[href^='http']::after,
+  a[href^='mailto']::after {
+    content: none;
+  }
+}

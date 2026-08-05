@@ -263,6 +263,26 @@ function se_enqueue_vanops_radar_styles() {
 }
 add_action( 'wp_enqueue_scripts', 'se_enqueue_vanops_radar_styles' );
 
+function se_enqueue_resume_assets() {
+    if ( ! is_page_template( 'page-resume.php' ) ) {
+        return;
+    }
+
+    $dir = get_stylesheet_directory();
+    $uri = get_stylesheet_directory_uri();
+
+    $css_path = '/assets/css/resume.css';
+    if ( file_exists( $dir . $css_path ) ) {
+        wp_enqueue_style( 'se-resume', $uri . $css_path, array(), filemtime( $dir . $css_path ) );
+    }
+
+    $js_path = '/js/resume.js';
+    if ( file_exists( $dir . $js_path ) ) {
+        wp_enqueue_script( 'se-resume', $uri . $js_path, array(), filemtime( $dir . $js_path ), true );
+    }
+}
+add_action( 'wp_enqueue_scripts', 'se_enqueue_resume_assets' );
+
 function se_enqueue_asmr_lab_assets() {
     if ( ! is_page_template( 'page-asmr-lab.php' ) ) {
         return;
