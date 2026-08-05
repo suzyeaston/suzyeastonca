@@ -107,6 +107,7 @@
 }
 
 .resume-sheet {
+  position: relative;
   max-width: 920px;
   margin: 0 auto;
   background: var(--resume-panel);
@@ -114,21 +115,37 @@
   box-shadow: var(--resume-shadow);
   overflow: hidden;
   display: grid;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 262px 1fr;
+  align-items: stretch;
+}
+
+.resume-sheet::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 262px;
+  background: linear-gradient(180deg, #0c1a2e 0%, #132238 100%);
+  border-radius: 14px 0 0 14px;
+  z-index: 0;
 }
 
 .resume-sidebar {
-  background: linear-gradient(180deg, #0c1a2e 0%, #132238 100%);
+  position: relative;
+  z-index: 1;
   color: var(--resume-sidebar-text);
-  padding: 1.75rem 1.35rem;
+  padding: 1.85rem 1.45rem 1.85rem;
   display: flex;
   flex-direction: column;
-  gap: 1.35rem;
+  gap: 1.45rem;
+  min-height: 100%;
+  align-self: stretch;
 }
 
 .resume-sidebar__name {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 1.55rem;
+  font-size: 1.65rem;
   font-weight: 700;
   line-height: 1.1;
   color: #fff;
@@ -136,8 +153,8 @@
 }
 
 .resume-sidebar__title {
-  margin: 0.35rem 0 0;
-  font-size: 0.78rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.84rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -145,10 +162,10 @@
 }
 
 .resume-sidebar__tags {
-  margin: 0.75rem 0 0;
+  margin: 0.8rem 0 0;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.58rem;
-  line-height: 1.55;
+  font-size: 0.64rem;
+  line-height: 1.6;
   letter-spacing: 0.04em;
   color: var(--resume-accent);
 }
@@ -159,10 +176,11 @@
   gap: 0.45rem;
 }
 
-.resume-contact a {
+.resume-contact a,
+.resume-contact span {
   color: #cbd5e1;
   text-decoration: none;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   word-break: break-word;
 }
 
@@ -172,11 +190,11 @@
 
 .resume-availability {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.58rem;
-  line-height: 1.55;
+  font-size: 0.64rem;
+  line-height: 1.6;
   letter-spacing: 0.06em;
   color: #86efac;
-  padding: 0.55rem 0.65rem;
+  padding: 0.65rem 0.75rem;
   border: 1px solid rgba(134, 239, 172, 0.25);
   border-radius: 8px;
   background: rgba(134, 239, 172, 0.06);
@@ -184,17 +202,17 @@
 
 .resume-sidebar-block h3 {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--resume-accent);
-  margin: 0 0 0.55rem;
+  margin: 0 0 0.65rem;
 }
 
 .resume-sidebar-block p,
 .resume-sidebar-block li {
-  font-size: 0.78rem;
-  line-height: 1.55;
+  font-size: 0.84rem;
+  line-height: 1.58;
   color: #cbd5e1;
   margin: 0;
 }
@@ -215,14 +233,20 @@
 
 .resume-sidebar-block .toolkit-group strong {
   display: block;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #f1f5f9;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.resume-sidebar-block--toolkit {
+  flex: 1;
 }
 
 .resume-main {
-  padding: 1.75rem 1.65rem 1.5rem;
+  position: relative;
+  z-index: 1;
+  padding: 1.85rem 1.75rem 1.65rem;
 }
 
 .resume-section + .resume-section {
@@ -240,7 +264,7 @@
 
 .resume-section__num {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   color: var(--resume-accent);
@@ -248,7 +272,7 @@
 }
 
 .resume-section__title {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -258,8 +282,8 @@
 
 .resume-section p,
 .resume-section li {
-  font-size: 0.86rem;
-  line-height: 1.62;
+  font-size: 0.94rem;
+  line-height: 1.65;
   color: var(--resume-muted);
 }
 
@@ -294,22 +318,22 @@
 }
 
 .resume-role__company {
-  font-size: 0.92rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: var(--resume-ink);
   margin: 0;
 }
 
 .resume-role__meta {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   color: var(--resume-faint);
   white-space: nowrap;
 }
 
 .resume-role__location {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   color: var(--resume-faint);
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.4rem;
 }
 
 .resume-role ul {
@@ -327,12 +351,25 @@
   font-weight: 600;
 }
 
+.resume-education__list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.resume-education__list li + li {
+  margin-top: 0.35rem;
+}
+
+.resume-education__note {
+  margin-top: 0.75rem;
+}
+
 .resume-footer {
   margin-top: 1.25rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--resume-border);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--resume-faint);
@@ -344,8 +381,13 @@
     grid-template-columns: 1fr;
   }
 
+  .resume-sheet::before {
+    display: none;
+  }
+
   .resume-sidebar {
-    padding: 1.35rem 1.15rem;
+    background: linear-gradient(180deg, #0c1a2e 0%, #132238 100%);
+    padding: 1.45rem 1.2rem;
   }
 
   .resume-main {
@@ -383,12 +425,19 @@
     max-width: none;
     box-shadow: none;
     border-radius: 0;
-    grid-template-columns: 210px 1fr;
+    grid-template-columns: 220px 1fr;
     page-break-inside: avoid;
   }
 
-  .resume-sidebar {
+  .resume-sheet::before {
+    width: 220px;
+    border-radius: 0;
     background: #0c1a2e !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .resume-sidebar {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

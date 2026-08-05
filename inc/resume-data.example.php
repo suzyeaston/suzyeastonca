@@ -48,6 +48,7 @@ return array(
     'earlier_roles' => array(),
     'builds' => array(),
     'education' => array(
-        'School — Certificate',
+        'School — Certificate or Program',
+        'High School Name',
     ),
 );
