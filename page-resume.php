@@ -140,13 +140,15 @@ $builds = array(
 );
 
 $download_html = get_template_directory_uri() . '/assets/resume/suzy-easton-bsa-resume.html';
+$download_pdf  = get_template_directory_uri() . '/assets/resume/Suzy_Easton_BSA_Resume.pdf';
 ?>
 
 <main id="main-content" class="resume-page">
     <div class="resume-toolbar" aria-label="Resume actions">
         <span class="resume-toolbar__label">Suzy Easton // BSA Resume</span>
         <div class="resume-toolbar__actions">
-            <button type="button" class="resume-btn resume-btn--primary" data-resume-print>Download PDF</button>
+            <a class="resume-btn resume-btn--primary" href="<?php echo esc_url( $download_pdf ); ?>" download="Suzy_Easton_BSA_Resume.pdf">Download PDF</a>
+            <button type="button" class="resume-btn" data-resume-print>Print</button>
             <a class="resume-btn" href="<?php echo esc_url( $download_html ); ?>" download="Suzy_Easton_BSA_Resume.html">Download HTML</a>
             <a class="resume-btn" href="<?php echo esc_url( home_url( '/work-with-suzy/' ) ); ?>">Work With Suzy</a>
         </div>
