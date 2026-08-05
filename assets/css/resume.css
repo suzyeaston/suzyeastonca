@@ -395,11 +395,11 @@
   }
 }
 
-/* Print / PDF */
+/* Print / PDF — single-column compact layout (no broken two-column pagination) */
 @media print {
   @page {
     size: letter;
-    margin: 0.45in 0.5in;
+    margin: 0.32in 0.38in;
   }
 
   .page-template-page-resume body,
@@ -422,41 +422,166 @@
   }
 
   .resume-sheet {
+    display: block;
     max-width: none;
     box-shadow: none;
     border-radius: 0;
-    grid-template-columns: 220px 1fr;
-    page-break-inside: avoid;
+    page-break-inside: auto;
   }
 
   .resume-sheet::before {
-    width: 220px;
-    border-radius: 0;
-    background: #0c1a2e !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    display: none;
   }
 
   .resume-sidebar {
+    background: #0c1a2e !important;
+    color: #e2e8f0;
+    padding: 0.14in 0.16in 0.12in;
+    margin: 0 0 0.1in;
+    display: block;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  .resume-sidebar__name {
+    font-size: 1.35rem;
+  }
+
+  .resume-sidebar__title {
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+  }
+
+  .resume-sidebar__tags {
+    font-size: 0.58rem;
+    letter-spacing: 0.02em;
+    line-height: 1.45;
+    margin-top: 0.35rem;
   }
 
   .resume-availability {
+    display: inline-block;
+    font-size: 0.56rem;
+    letter-spacing: 0.03em;
+    padding: 0.2rem 0.35rem;
+    margin-top: 0.35rem;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .resume-section {
+  .resume-contact {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.05in 0.12in;
+    margin-top: 0.3rem;
+  }
+
+  .resume-contact a,
+  .resume-contact span {
+    font-size: 0.58rem;
+    color: #cbd5e1 !important;
+  }
+
+  .resume-sidebar-block--toolkit {
+    margin-top: 0.1in;
+    columns: 2;
+    column-gap: 0.14in;
+  }
+
+  .resume-sidebar-block h3 {
+    column-span: all;
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.35rem;
+  }
+
+  .resume-sidebar-block p,
+  .resume-sidebar-block li {
+    font-size: 0.56rem;
+    line-height: 1.35;
+  }
+
+  .resume-sidebar-block .toolkit-group {
     break-inside: avoid;
+    margin-bottom: 0.35rem;
+  }
+
+  .resume-sidebar-block .toolkit-group strong {
+    font-size: 0.58rem;
+    margin-bottom: 0.1rem;
+  }
+
+  .resume-main {
+    padding: 0;
+  }
+
+  .resume-section {
+    margin-top: 0.1in;
+    padding-top: 0.08in;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .resume-section + .resume-section {
+    margin-top: 0.1in;
+    padding-top: 0.08in;
+  }
+
+  .resume-section__head {
+    margin-bottom: 0.25rem;
+  }
+
+  .resume-section__num,
+  .resume-section__title {
+    font-size: 0.58rem;
+    letter-spacing: 0.05em;
+  }
+
+  .resume-section p,
+  .resume-section li {
+    font-size: 0.62rem;
+    line-height: 1.38;
+  }
+
+  .resume-section li + li {
+    margin-top: 0.12rem;
   }
 
   .resume-role {
-    break-inside: avoid;
+    margin-top: 0.3rem;
+    break-inside: auto;
+    page-break-inside: auto;
   }
 
-  .resume-contact a {
-    color: #cbd5e1 !important;
+  .resume-role__header {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .resume-role__company {
+    font-size: 0.68rem;
+  }
+
+  .resume-role__meta,
+  .resume-role__location {
+    font-size: 0.56rem;
+    margin-bottom: 0.12rem;
+  }
+
+  .resume-role li {
+    font-size: 0.62rem;
+    line-height: 1.35;
+  }
+
+  .resume-role li + li {
+    margin-top: 0.1rem;
+  }
+
+  .resume-footer {
+    margin-top: 0.12in;
+    padding-top: 0.08in;
+    font-size: 0.52rem;
+    letter-spacing: 0.05em;
   }
 
   a[href^='http']::after,
