@@ -16,6 +16,8 @@ test-results/
 inc/resume-data.php
 assets/resume/*.pdf
 assets/resume/suzy-easton-bsa-resume.html
+downloads/*
+!downloads/README.md
 /build/*.zip
 
 # Generated release binaries are shared as artifacts, not committed.
