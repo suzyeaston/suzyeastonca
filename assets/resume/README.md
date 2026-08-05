@@ -13,6 +13,12 @@ Regenerate the PDF after editing the HTML:
 npm run build:resume-pdf
 ```
 
+Export copies to your computer (repo `downloads/resume/` + Mac `~/Downloads/`):
+
+```bash
+npm run resume:export
+```
+
 Deploy everything to production (theme files + private resume assets):
 
 ```bash
