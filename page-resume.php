@@ -58,7 +58,7 @@ $has_pdf         = file_exists( $resume_dir . '/Suzy_Easton_BSA_Resume.pdf' );
                 <?php endforeach; ?>
             </nav>
 
-            <section class="resume-sidebar-block" aria-labelledby="resume-toolkit-title">
+            <section class="resume-sidebar-block resume-sidebar-block--toolkit" aria-labelledby="resume-toolkit-title">
                 <h3 id="resume-toolkit-title">03 // Core Toolkit</h3>
                 <?php foreach ( $resume['toolkit_groups'] as $group ) : ?>
                     <div class="toolkit-group">
@@ -66,16 +66,6 @@ $has_pdf         = file_exists( $resume_dir . '/Suzy_Easton_BSA_Resume.pdf' );
                         <p><?php echo esc_html( $group['items'] ); ?></p>
                     </div>
                 <?php endforeach; ?>
-            </section>
-
-            <section class="resume-sidebar-block" aria-labelledby="resume-education-title">
-                <h3 id="resume-education-title">07 // Education</h3>
-                <ul>
-                    <?php foreach ( $resume['education'] as $item ) : ?>
-                        <li><?php echo esc_html( $item ); ?></li>
-                    <?php endforeach; ?>
-                </ul>
-                <p style="margin-top:0.65rem;"><?php echo esc_html( $resume['education_note'] ); ?></p>
             </section>
         </aside>
 
@@ -169,6 +159,19 @@ $has_pdf         = file_exists( $resume_dir . '/Suzy_Easton_BSA_Resume.pdf' );
                         </li>
                     <?php endforeach; ?>
                 </ul>
+            </section>
+
+            <section class="resume-section resume-education" aria-labelledby="resume-education-title">
+                <div class="resume-section__head">
+                    <span class="resume-section__num">07 //</span>
+                    <h2 class="resume-section__title" id="resume-education-title">Education and Creative Signal</h2>
+                </div>
+                <ul class="resume-education__list">
+                    <?php foreach ( $resume['education'] as $item ) : ?>
+                        <li><?php echo esc_html( $item ); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <p class="resume-education__note"><?php echo esc_html( $resume['education_note'] ); ?></p>
             </section>
 
             <footer class="resume-footer"><?php echo esc_html( $resume['footer'] ); ?></footer>
