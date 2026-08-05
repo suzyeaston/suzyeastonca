@@ -19,7 +19,7 @@ async function main() {
     path: pdfPath,
     format: 'Letter',
     printBackground: true,
-    margin: { top: '0.45in', right: '0.5in', bottom: '0.45in', left: '0.5in' },
+    margin: { top: '0.32in', right: '0.38in', bottom: '0.32in', left: '0.38in' },
   });
 
   await browser.close();
