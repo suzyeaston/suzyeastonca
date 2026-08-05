@@ -399,7 +399,7 @@
 @media print {
   @page {
     size: letter;
-    margin: 0.32in 0.38in;
+    margin: 0.3in 0.36in;
   }
 
   .page-template-page-resume body,
@@ -436,35 +436,35 @@
   .resume-sidebar {
     background: #0c1a2e !important;
     color: #e2e8f0;
-    padding: 0.14in 0.16in 0.12in;
-    margin: 0 0 0.1in;
+    padding: 0.12in 0.15in 0.1in;
+    margin: 0 0 0.085in;
     display: block;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
   .resume-sidebar__name {
-    font-size: 1.35rem;
+    font-size: 1.45rem;
   }
 
   .resume-sidebar__title {
-    font-size: 0.68rem;
+    font-size: 0.74rem;
     letter-spacing: 0.05em;
   }
 
   .resume-sidebar__tags {
-    font-size: 0.58rem;
+    font-size: 0.62rem;
     letter-spacing: 0.02em;
-    line-height: 1.45;
-    margin-top: 0.35rem;
+    line-height: 1.42;
+    margin-top: 0.3rem;
   }
 
   .resume-availability {
     display: inline-block;
-    font-size: 0.56rem;
+    font-size: 0.6rem;
     letter-spacing: 0.03em;
-    padding: 0.2rem 0.35rem;
-    margin-top: 0.35rem;
+    padding: 0.18rem 0.32rem;
+    margin-top: 0.3rem;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -478,37 +478,37 @@
 
   .resume-contact a,
   .resume-contact span {
-    font-size: 0.58rem;
+    font-size: 0.62rem;
     color: #cbd5e1 !important;
   }
 
   .resume-sidebar-block--toolkit {
-    margin-top: 0.1in;
+    margin-top: 0.085in;
     columns: 2;
-    column-gap: 0.14in;
+    column-gap: 0.13in;
   }
 
   .resume-sidebar-block h3 {
     column-span: all;
-    font-size: 0.58rem;
+    font-size: 0.62rem;
     letter-spacing: 0.06em;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.3rem;
   }
 
   .resume-sidebar-block p,
   .resume-sidebar-block li {
-    font-size: 0.56rem;
-    line-height: 1.35;
+    font-size: 0.6rem;
+    line-height: 1.34;
   }
 
   .resume-sidebar-block .toolkit-group {
     break-inside: avoid;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.3rem;
   }
 
   .resume-sidebar-block .toolkit-group strong {
-    font-size: 0.58rem;
-    margin-bottom: 0.1rem;
+    font-size: 0.62rem;
+    margin-bottom: 0.08rem;
   }
 
   .resume-main {
@@ -516,39 +516,39 @@
   }
 
   .resume-section {
-    margin-top: 0.1in;
-    padding-top: 0.08in;
+    margin-top: 0.085in;
+    padding-top: 0.07in;
     break-inside: auto;
     page-break-inside: auto;
   }
 
   .resume-section + .resume-section {
-    margin-top: 0.1in;
-    padding-top: 0.08in;
+    margin-top: 0.085in;
+    padding-top: 0.07in;
   }
 
   .resume-section__head {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.22rem;
   }
 
   .resume-section__num,
   .resume-section__title {
-    font-size: 0.58rem;
+    font-size: 0.64rem;
     letter-spacing: 0.05em;
   }
 
   .resume-section p,
   .resume-section li {
-    font-size: 0.62rem;
-    line-height: 1.38;
+    font-size: 0.68rem;
+    line-height: 1.36;
   }
 
   .resume-section li + li {
-    margin-top: 0.12rem;
+    margin-top: 0.1rem;
   }
 
   .resume-role {
-    margin-top: 0.3rem;
+    margin-top: 0.26rem;
     break-inside: auto;
     page-break-inside: auto;
   }
@@ -559,28 +559,28 @@
   }
 
   .resume-role__company {
-    font-size: 0.68rem;
+    font-size: 0.74rem;
   }
 
   .resume-role__meta,
   .resume-role__location {
-    font-size: 0.56rem;
-    margin-bottom: 0.12rem;
+    font-size: 0.62rem;
+    margin-bottom: 0.1rem;
   }
 
   .resume-role li {
-    font-size: 0.62rem;
-    line-height: 1.35;
+    font-size: 0.68rem;
+    line-height: 1.34;
   }
 
   .resume-role li + li {
-    margin-top: 0.1rem;
+    margin-top: 0.08rem;
   }
 
   .resume-footer {
-    margin-top: 0.12in;
-    padding-top: 0.08in;
-    font-size: 0.52rem;
+    margin-top: 0.1in;
+    padding-top: 0.07in;
+    font-size: 0.56rem;
     letter-spacing: 0.05em;
   }
 
