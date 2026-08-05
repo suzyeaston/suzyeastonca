@@ -11,6 +11,11 @@ secrets.php
 screenshots/
 playwright-report/
 test-results/
+
+# Private resume content and downloads (deploy manually, never commit)
+inc/resume-data.php
+assets/resume/*.pdf
+assets/resume/suzy-easton-bsa-resume.html
 /build/*.zip
 
 # Generated release binaries are shared as artifacts, not committed.
