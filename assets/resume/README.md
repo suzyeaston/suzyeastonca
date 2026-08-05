@@ -13,4 +13,22 @@ Regenerate the PDF after editing the HTML:
 npm run build:resume-pdf
 ```
 
+Deploy everything to production (theme files + private resume assets):
+
+```bash
+python3 scripts/deploy-resume-ssh.py
+```
+
+Or via GitHub Actions after storing resume secrets once:
+
+```bash
+./scripts/setup-github-resume-secrets.sh
+gh workflow run deploy-resume.yml
+```
+
+## Live URLs (after deploy)
+
+- **PDF download:** https://suzyeaston.ca/resume/download/
+- **Resume page:** https://suzyeaston.ca/resume/ (create WP page + assign Resume template)
+
 The `/resume/` WordPress page renders from `inc/resume-data.php` and links to these files when present.

@@ -3515,6 +3515,32 @@ add_action('wp_head', function () {
 });
 
 // =========================================
+// 9d) RESUME DOWNLOAD ROUTE
+// =========================================
+add_action('init', function () {
+    add_rewrite_rule('^resume/download/?$', 'index.php?se_resume_download=1', 'top');
+    add_rewrite_tag('%se_resume_download%', '([0-9]+)');
+});
+
+add_action('template_redirect', function () {
+    if (!get_query_var('se_resume_download')) {
+        return;
+    }
+
+    $pdf = get_template_directory() . '/assets/resume/Suzy_Easton_BSA_Resume.pdf';
+    if (!is_readable($pdf)) {
+        wp_die('Resume PDF is not available yet.', 'Resume unavailable', array('response' => 404));
+    }
+
+    nocache_headers();
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment; filename="Suzy_Easton_BSA_Resume.pdf"');
+    header('Content-Length: ' . filesize($pdf));
+    readfile($pdf);
+    exit;
+});
+
+// =========================================
 // 10. CRAWLABILITY / INDEXING CONTROLS
 // =========================================
 function se_get_utility_page_templates(): array {

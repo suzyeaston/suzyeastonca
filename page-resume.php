@@ -10,7 +10,7 @@ $resume           = file_exists( $resume_data_path ) ? require $resume_data_path
 $resume_dir      = get_template_directory() . '/assets/resume';
 $resume_uri      = get_template_directory_uri() . '/assets/resume';
 $download_html   = $resume_uri . '/suzy-easton-bsa-resume.html';
-$download_pdf    = $resume_uri . '/Suzy_Easton_BSA_Resume.pdf';
+$download_pdf    = home_url( '/resume/download/' );
 $has_html        = file_exists( $resume_dir . '/suzy-easton-bsa-resume.html' );
 $has_pdf         = file_exists( $resume_dir . '/Suzy_Easton_BSA_Resume.pdf' );
 ?>
@@ -28,7 +28,7 @@ $has_pdf         = file_exists( $resume_dir . '/Suzy_Easton_BSA_Resume.pdf' );
         <span class="resume-toolbar__label"><?php echo esc_html( $resume['name'] ); ?> // BSA Resume</span>
         <div class="resume-toolbar__actions">
             <?php if ( $has_pdf ) : ?>
-                <a class="resume-btn resume-btn--primary" href="<?php echo esc_url( $download_pdf ); ?>" download="Suzy_Easton_BSA_Resume.pdf">Download PDF</a>
+                <a class="resume-btn resume-btn--primary" href="<?php echo esc_url( $download_pdf ); ?>">Download PDF</a>
             <?php endif; ?>
             <button type="button" class="resume-btn<?php echo $has_pdf ? '' : ' resume-btn--primary'; ?>" data-resume-print>Print<?php echo $has_pdf ? '' : ' / Save PDF'; ?></button>
             <?php if ( $has_html ) : ?>
