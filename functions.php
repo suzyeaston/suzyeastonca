@@ -3520,6 +3520,7 @@ add_action('wp_head', function () {
 function se_get_utility_page_templates(): array {
     return array(
         'page-subscribe-thanks.php',
+        'page-resume.php',
     );
 }
 
