@@ -11,6 +11,9 @@ secrets.php
 screenshots/
 playwright-report/
 test-results/
+
+# Local-only folders
+private-resume/
 /build/*.zip
 
 # Generated release binaries are shared as artifacts, not committed.
