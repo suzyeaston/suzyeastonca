@@ -263,26 +263,6 @@ function se_enqueue_vanops_radar_styles() {
 }
 add_action( 'wp_enqueue_scripts', 'se_enqueue_vanops_radar_styles' );
 
-function se_enqueue_resume_assets() {
-    if ( ! is_page_template( 'page-resume.php' ) ) {
-        return;
-    }
-
-    $dir = get_stylesheet_directory();
-    $uri = get_stylesheet_directory_uri();
-
-    $css_path = '/assets/css/resume.css';
-    if ( file_exists( $dir . $css_path ) ) {
-        wp_enqueue_style( 'se-resume', $uri . $css_path, array(), filemtime( $dir . $css_path ) );
-    }
-
-    $js_path = '/js/resume.js';
-    if ( file_exists( $dir . $js_path ) ) {
-        wp_enqueue_script( 'se-resume', $uri . $js_path, array(), filemtime( $dir . $js_path ), true );
-    }
-}
-add_action( 'wp_enqueue_scripts', 'se_enqueue_resume_assets' );
-
 function se_enqueue_asmr_lab_assets() {
     if ( ! is_page_template( 'page-asmr-lab.php' ) ) {
         return;
@@ -3515,38 +3495,11 @@ add_action('wp_head', function () {
 });
 
 // =========================================
-// 9d) RESUME DOWNLOAD ROUTE
-// =========================================
-add_action('init', function () {
-    add_rewrite_rule('^resume/download/?$', 'index.php?se_resume_download=1', 'top');
-    add_rewrite_tag('%se_resume_download%', '([0-9]+)');
-});
-
-add_action('template_redirect', function () {
-    if (!get_query_var('se_resume_download')) {
-        return;
-    }
-
-    $pdf = get_template_directory() . '/assets/resume/Suzy_Easton_BSA_Resume.pdf';
-    if (!is_readable($pdf)) {
-        wp_die('Resume PDF is not available yet.', 'Resume unavailable', array('response' => 404));
-    }
-
-    nocache_headers();
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="Suzy_Easton_BSA_Resume.pdf"');
-    header('Content-Length: ' . filesize($pdf));
-    readfile($pdf);
-    exit;
-});
-
-// =========================================
 // 10. CRAWLABILITY / INDEXING CONTROLS
 // =========================================
 function se_get_utility_page_templates(): array {
     return array(
         'page-subscribe-thanks.php',
-        'page-resume.php',
     );
 }
 

@@ -50,11 +50,6 @@
       $meta_desc  = 'Coffee chats in Vancouver for people building things—tech, music, civic projects, and sports takes. Low-key, public, and intentional.';
       $meta_keywords = 'coffee chats Vancouver, builders, Suzy Easton, tech, music, civic projects, sports takes';
       $meta_img   = $default_img;
-    } elseif ( is_page_template( 'page-resume.php' ) ) {
-      $meta_title = 'Suzy Easton — Senior Business Systems Analyst | Resume';
-      $meta_desc  = 'Resume for Suzy Easton — BSA specializing in agentic AI, integration, ecommerce systems, API data flows, and QA automation. Available for contract and hybrid/remote work.';
-      $meta_keywords = 'Suzy Easton resume, business systems analyst, agentic AI, ecommerce QA, integration, Vancouver contractor';
-      $meta_img   = $default_img;
     } else {
       $meta_title = wp_title( '|', false, 'right' ) . $site_name;
       $meta_desc  = get_bloginfo( 'description' );

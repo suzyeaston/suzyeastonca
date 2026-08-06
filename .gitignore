@@ -12,12 +12,8 @@ screenshots/
 playwright-report/
 test-results/
 
-# Private resume content and downloads (deploy manually, never commit)
-inc/resume-data.php
-assets/resume/*.pdf
-assets/resume/suzy-easton-bsa-resume.html
-downloads/*
-!downloads/README.md
+# Private resume tooling and exports (local only — not in public repo)
+private-resume/
 /build/*.zip
 
 # Generated release binaries are shared as artifacts, not committed.

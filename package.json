@@ -8,8 +8,6 @@
     "preview": "astro preview",
     "test": "node --test \"./__tests__/**/*.test.js\"",
     "build:gastown-world": "npm run sync:cov && node scripts/build-gastown-world.js",
-    "build:resume-pdf": "node scripts/generate-resume-pdf.js",
-    "resume:export": "node scripts/export-resume-local.js",
     "sync:cov": "node scripts/sync-cov-open-data.js",
     "local:start": "docker compose up -d",
     "local:setup": "./scripts/setup-local-wp.sh",
