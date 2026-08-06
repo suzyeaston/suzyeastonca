@@ -193,7 +193,7 @@ function se_broadcaster_metro_map_anchors(): array {
     $anchors = array(
         array(
             'key'   => 'dave',
-            'label' => 'DAVE',
+            'label' => 'BEULAH',
             'hint'  => 'YVR rack',
             'lat'   => 49.1967,
             'lon'   => -123.1815,
@@ -296,7 +296,7 @@ function se_broadcaster_data_channel_pin_config(): array {
 
     foreach ( $pins as $key => $pin ) {
         $pins[ $key ]['deck_copy'] = se_broadcaster_pin_deck_copy( $key );
-        $pins[ $key ]['deck_note'] = 'Territory pin — bulletin on CRT, live audio on Dave. Small map dots are incidents; they land here too, not in a new tab.';
+        $pins[ $key ]['deck_note'] = 'Territory pin — bulletin on CRT, live audio on Beulah. Small map dots are incidents; they land here too, not in a new tab.';
     }
 
     return $pins;

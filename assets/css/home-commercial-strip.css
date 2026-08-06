@@ -27,6 +27,28 @@
   border-color: rgba(255, 79, 79, 0.5);
 }
 
+.home-signal-strip--hot {
+  border-color: rgba(255, 79, 79, 0.65);
+  box-shadow: 0 0 18px rgba(255, 79, 79, 0.15);
+}
+
+.home-signal-strip--hot.home-signal-strip--warn,
+.home-signal-strip--hot.home-signal-strip--degraded {
+  border-color: rgba(255, 179, 71, 0.65);
+  box-shadow: 0 0 16px rgba(255, 179, 71, 0.14);
+}
+
+.home-signal-strip--hot .home-signal-strip__label {
+  color: #ff6b6b;
+  text-shadow: 0 0 8px rgba(255, 107, 107, 0.45);
+}
+
+.home-signal-strip--hot.home-signal-strip--warn .home-signal-strip__label,
+.home-signal-strip--hot.home-signal-strip--degraded .home-signal-strip__label {
+  color: #ffb347;
+  text-shadow: 0 0 8px rgba(255, 179, 71, 0.4);
+}
+
 .home-signal-strip__product {
   display: inline-flex;
   align-items: center;

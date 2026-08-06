@@ -7,8 +7,9 @@ $tone       = sanitize_html_class( (string) ( $teaser['tone'] ?? 'ok' ) );
 $counts     = is_array( $teaser['counts'] ?? null ) ? $teaser['counts'] : [];
 $down       = (int) ( $counts['down'] ?? 0 );
 $degraded   = (int) ( $counts['degraded'] ?? 0 );
+$highlight  = $down > 0 || $degraded > 0 || in_array( $tone, [ 'down', 'warn', 'advisory', 'degraded', 'bad' ], true );
 ?>
-<nav class="home-signal-strip home-signal-strip--<?php echo esc_attr( $tone ); ?>" aria-label="<?php echo esc_attr( 'Products and live signals' ); ?>">
+<nav class="home-signal-strip home-signal-strip--<?php echo esc_attr( $tone ); ?><?php echo $highlight ? ' home-signal-strip--hot' : ''; ?>" aria-label="<?php echo esc_attr( 'Products and live signals' ); ?>">
     <a class="home-signal-strip__product home-signal-strip__product--lo" href="<?php echo esc_url( $lo_url ); ?>">
         <span class="home-signal-strip__label pixel-font"><?php echo esc_html( 'lousy outages' ); ?></span>
         <span class="home-signal-strip__verdict" data-signal-lo-verdict><?php echo esc_html( $verdict ); ?></span>

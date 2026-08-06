@@ -254,8 +254,8 @@ function se_broadcaster_channel_deck_notes(): array {
             'deck_note' => 'Broadcastify scanner. Footer link opens source only if you tap it.',
         ),
         'marine_vhf'     => array(
-            'deck_copy' => 'Marine VHF — port traffic, Coast Guard, distress. Walks Vancouver → Comox → Sointula → EC marine WX automatically. Coast dead? Dave jumps to YVR combo.',
-            'deck_note' => 'Broadcastify chain. No retry button — Dave finds a live feed or switches.',
+            'deck_copy' => 'Marine VHF — port traffic, Coast Guard, distress. Walks Vancouver → Comox → Sointula → EC marine WX automatically. Coast dead? Beulah jumps to YVR combo.',
+            'deck_note' => 'Broadcastify chain. No retry button — Beulah finds a live feed or switches.',
         ),
         'hydro_bush'     => array(
             'deck_copy' => 'Orcasound hydrophone at Bush Point — Salish Sea live. Whales, ships, weird water noise.',
@@ -267,7 +267,7 @@ function se_broadcaster_channel_deck_notes(): array {
         ),
         'sound_skytrain' => array(
             'deck_copy' => 'SkyTrain rumble loop — field bed, not live airwaves.',
-            'deck_note' => 'Soundscape only. Dave ambient cycle.',
+            'deck_note' => 'Soundscape only. Beulah ambient cycle.',
         ),
         'sound_rain'     => array(
             'deck_copy' => 'West coast rain bed — looped field recording.',

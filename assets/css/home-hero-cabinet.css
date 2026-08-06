@@ -203,7 +203,7 @@
 .home-yvr-rack::before { left: 0; }
 .home-yvr-rack::after { right: 0; }
 
-/* YVR broadcaster — Dave the pigeon + rack */
+/* YVR broadcaster — Beulah the beluga + rack */
 .home-yvr-broadcaster {
   position: relative;
   z-index: 1;
@@ -260,103 +260,101 @@
   height: 60px;
 }
 
-.home-yvr-broadcaster__pigeon-tail {
+.home-yvr-broadcaster__beluga-fluke {
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  width: 16px;
+  height: 10px;
+  border-radius: 2px 2px 8px 8px;
+  background: linear-gradient(180deg, #d8e4ef 0%, #a8b8c8 100%);
+  border: 2px solid #0a0c10;
+  transform: rotate(-12deg);
+}
+
+.home-yvr-broadcaster__beluga-body {
   position: absolute;
   bottom: 10px;
-  left: 4px;
-  width: 14px;
-  height: 10px;
-  border-radius: 2px 0 8px 8px;
-  background: linear-gradient(135deg, #6a7588, #4a5568);
+  left: 14px;
+  width: 34px;
+  height: 28px;
+  border-radius: 45% 50% 40% 40%;
+  background: linear-gradient(160deg, #f4f8fc 0%, #d0dce8 55%, #b0c0d0 100%);
   border: 2px solid #0a0c10;
-  transform: rotate(-18deg);
+  box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.12);
 }
 
-.home-yvr-broadcaster__pigeon-body {
+.home-yvr-broadcaster__beluga-fin {
   position: absolute;
-  bottom: 8px;
-  left: 12px;
-  width: 30px;
-  height: 26px;
-  border-radius: 50% 50% 45% 45%;
-  background: linear-gradient(160deg, #9aa5b8 0%, #6a7588 55%, #505a68 100%);
-  border: 2px solid #0a0c10;
-  box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.25);
-}
-
-.home-yvr-broadcaster__pigeon-wing {
-  position: absolute;
-  bottom: 12px;
-  left: 18px;
-  width: 18px;
-  height: 14px;
+  bottom: 16px;
+  width: 10px;
+  height: 8px;
   border-radius: 0 60% 40% 60%;
-  background: linear-gradient(180deg, #7a8598, #525c6e);
+  background: linear-gradient(180deg, #c8d8e8, #98a8b8);
   border: 2px solid #0a0c10;
-  transform: rotate(-8deg);
-  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.15);
 }
 
-.home-yvr-broadcaster__pigeon-head {
-  position: absolute;
-  top: 8px;
-  left: 22px;
-  width: 24px;
-  height: 22px;
-  border-radius: 55% 55% 45% 45%;
-  background: linear-gradient(180deg, #b8c0d0 0%, #8a94a8 100%);
-  border: 2px solid #0a0c10;
-  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.15);
+.home-yvr-broadcaster__beluga-fin--left {
+  left: 16px;
+  transform: rotate(18deg);
 }
 
-.home-yvr-broadcaster__pigeon-head .home-yvr-broadcaster__eye {
+.home-yvr-broadcaster__beluga-fin--right {
+  left: 28px;
+  transform: rotate(-8deg) scaleX(0.85);
+}
+
+.home-yvr-broadcaster__beluga-head {
   position: absolute;
-  top: 7px;
-  left: 6px;
+  top: 4px;
+  left: 18px;
+  width: 30px;
+  height: 28px;
+  border-radius: 50% 50% 42% 42%;
+  background: linear-gradient(180deg, #ffffff 0%, #e0eaf2 70%, #c0d0e0 100%);
+  border: 2px solid #0a0c10;
+  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.home-yvr-broadcaster__beluga-head .home-yvr-broadcaster__eye {
+  position: absolute;
+  top: 10px;
+  left: 8px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: #0a0c10;
-  box-shadow: inset -1px -1px 0 #39ff14, 0 0 6px rgba(57, 255, 20, 0.55);
+  box-shadow: inset -1px -1px 0 #57f3ff, 0 0 6px rgba(87, 243, 255, 0.55);
   animation: homeBcastBlink 5s steps(2, end) infinite;
 }
 
-.home-yvr-broadcaster__pigeon-beak {
+.home-yvr-broadcaster__beluga-smile {
   position: absolute;
-  top: 10px;
-  right: -2px;
-  width: 14px;
-  height: 12px;
+  bottom: 5px;
+  left: 6px;
+  width: 18px;
+  height: 10px;
 }
 
-.home-yvr-broadcaster__pigeon-beak-top {
-  display: block;
-  width: 14px;
-  height: 5px;
-  border-radius: 0 6px 2px 2px;
-  background: linear-gradient(180deg, #ffb347, #e8922a);
-  border: 2px solid #0a0c10;
-  border-bottom: none;
-}
-
-.home-yvr-broadcaster__pigeon-beak .home-yvr-broadcaster__mouth {
+.home-yvr-broadcaster__beluga-smile .home-yvr-broadcaster__mouth {
   position: relative;
   display: block;
-  width: 12px;
+  width: 14px;
   height: 4px;
-  margin-top: -1px;
-  border-radius: 0 0 6px 6px;
-  background: linear-gradient(180deg, #e8922a, #c9781a);
+  margin: 0 auto;
+  border-radius: 0 0 10px 10px;
   border: 2px solid #0a0c10;
   border-top: none;
+  background: linear-gradient(180deg, #98a8b8, #708090);
   transform-origin: center top;
-  transition: height 0.07s ease-out;
+  transition: height 0.07s ease-out, border-radius 0.07s ease-out;
 }
 
-.home-yvr-broadcaster__pigeon-mic {
+.home-yvr-broadcaster__beluga-mic {
   position: absolute;
-  bottom: 14px;
-  right: 6px;
+  bottom: 16px;
+  right: 4px;
   width: 5px;
   height: 8px;
   border-radius: 2px;
@@ -378,22 +376,22 @@
   animation: homeBcastBlinkFast 1.2s steps(2, end) infinite;
 }
 
-.home-yvr-broadcaster__avatar.is-talking .home-yvr-broadcaster__pigeon-head,
-.home-yvr-broadcaster__face.is-talking .home-yvr-broadcaster__pigeon-head {
-  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.15), 0 0 10px rgba(255, 230, 109, 0.25);
+.home-yvr-broadcaster__avatar.is-talking .home-yvr-broadcaster__beluga-head,
+.home-yvr-broadcaster__face.is-talking .home-yvr-broadcaster__beluga-head {
+  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.08), 0 0 12px rgba(87, 243, 255, 0.35);
 }
 
-.home-yvr-broadcaster__pigeon-beak .home-yvr-broadcaster__mouth.is-open {
+.home-yvr-broadcaster__beluga-smile .home-yvr-broadcaster__mouth.is-open {
   height: 9px;
-  background: linear-gradient(180deg, #ff4fd8 0%, #e8922a 80%);
-  box-shadow: 0 0 8px rgba(255, 79, 216, 0.4);
+  background: linear-gradient(180deg, #ff4fd8 0%, #708090 80%);
+  box-shadow: 0 0 8px rgba(255, 79, 216, 0.35);
 }
 
-.home-yvr-broadcaster__pigeon-beak .home-yvr-broadcaster__mouth.is-flap {
-  animation: homeDaveBeakFlap 0.26s steps(3, end) infinite;
+.home-yvr-broadcaster__beluga-smile .home-yvr-broadcaster__mouth.is-flap {
+  animation: homeBeulahSmileFlap 0.26s steps(3, end) infinite;
 }
 
-@keyframes homeDaveBeakFlap {
+@keyframes homeBeulahSmileFlap {
   0%, 100% { height: 4px; }
   50% { height: 10px; }
 }
@@ -1349,8 +1347,8 @@ body.home-yvr-map-modal-open {
   cursor: pointer;
 }
 
-.home-yvr-broadcaster__avatar[data-broadcaster-dave-cycle]:hover .home-yvr-broadcaster__pigeon-head {
-  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.15), 0 0 12px rgba(255, 230, 109, 0.35);
+.home-yvr-broadcaster__avatar[data-broadcaster-dave-cycle]:hover .home-yvr-broadcaster__beluga-head {
+  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.08), 0 0 14px rgba(87, 243, 255, 0.4);
 }
 
 .home-yvr-broadcaster__channels {
