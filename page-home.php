@@ -51,21 +51,21 @@ get_header();
                 <div class="home-yvr-rack">
                 <div class="home-yvr-broadcaster" data-yvr-broadcaster tabindex="-1" aria-label="<?php echo esc_attr( 'YVR radar deck — bulletins and live audio from map pins' ); ?>">
                     <div class="home-yvr-broadcaster__mast">
-                        <div class="home-yvr-broadcaster__avatar" data-broadcaster-face data-broadcaster-dave-cycle title="<?php echo esc_attr( 'Tap Dave to cycle ambient beds' ); ?>" aria-label="<?php echo esc_attr( 'Dave — tap to cycle ambient sound' ); ?>">
-                            <div class="home-yvr-broadcaster__avatar-frame home-yvr-broadcaster__pigeon">
-                                <div class="home-yvr-broadcaster__pigeon-tail"></div>
-                                <div class="home-yvr-broadcaster__pigeon-body"></div>
-                                <div class="home-yvr-broadcaster__pigeon-wing"></div>
-                                <div class="home-yvr-broadcaster__pigeon-head">
+                        <div class="home-yvr-broadcaster__avatar" data-broadcaster-face data-broadcaster-dave-cycle title="<?php echo esc_attr( 'Tap Beulah to cycle ambient beds' ); ?>" aria-label="<?php echo esc_attr( 'Beulah — tap to cycle ambient sound' ); ?>">
+                            <div class="home-yvr-broadcaster__avatar-frame home-yvr-broadcaster__beluga">
+                                <div class="home-yvr-broadcaster__beluga-fluke"></div>
+                                <div class="home-yvr-broadcaster__beluga-body"></div>
+                                <div class="home-yvr-broadcaster__beluga-fin home-yvr-broadcaster__beluga-fin--left"></div>
+                                <div class="home-yvr-broadcaster__beluga-fin home-yvr-broadcaster__beluga-fin--right"></div>
+                                <div class="home-yvr-broadcaster__beluga-head">
                                     <span class="home-yvr-broadcaster__eye"></span>
-                                    <div class="home-yvr-broadcaster__pigeon-beak">
-                                        <span class="home-yvr-broadcaster__pigeon-beak-top"></span>
+                                    <div class="home-yvr-broadcaster__beluga-smile">
                                         <span class="home-yvr-broadcaster__mouth" data-broadcaster-mouth></span>
                                     </div>
                                 </div>
-                                <div class="home-yvr-broadcaster__pigeon-mic" aria-hidden="true"></div>
+                                <div class="home-yvr-broadcaster__beluga-mic" aria-hidden="true"></div>
                             </div>
-                            <p class="home-yvr-broadcaster__avatar-name pixel-font"><?php echo esc_html( 'DAVE' ); ?></p>
+                            <p class="home-yvr-broadcaster__avatar-name pixel-font"><?php echo esc_html( 'BEULAH' ); ?></p>
                         </div>
                         <div class="home-yvr-broadcaster__mast-info">
                             <div class="home-yvr-broadcaster__header">

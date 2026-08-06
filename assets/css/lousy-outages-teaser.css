@@ -17,6 +17,17 @@
   color:#f7fbff;
 }
 #lousy-outages-teaser *{box-sizing:border-box;min-width:0}
+#lousy-outages-teaser.lo-home-teaser--hot{border-color:rgba(255,75,75,.85);box-shadow:0 0 28px rgba(255,75,75,.22),inset 0 0 0 1px rgba(255,230,109,.18);animation:loHomeTeaserHotPulse 2.4s ease-in-out infinite}
+#lousy-outages-teaser.lo-home-teaser--hot.lo-home-teaser--warn{border-color:rgba(255,230,109,.75);box-shadow:0 0 24px rgba(255,230,109,.18),inset 0 0 0 1px rgba(255,79,216,.12)}
+@keyframes loHomeTeaserHotPulse{0%,100%{box-shadow:0 0 28px rgba(255,75,75,.22),inset 0 0 0 1px rgba(255,230,109,.18)}50%{box-shadow:0 0 36px rgba(255,75,75,.34),inset 0 0 0 1px rgba(255,230,109,.28)}}
+#lousy-outages-teaser .lo-home-alert{grid-column:1/-1;display:grid;grid-template-columns:minmax(5.5rem,auto) minmax(0,1fr) auto;gap:.35rem .65rem;align-items:center;padding:.7rem .85rem;border:1px solid rgba(255,230,109,.45);border-radius:12px;background:linear-gradient(90deg,rgba(255,230,109,.14),rgba(255,79,216,.08)),rgba(0,0,0,.35)}
+#lousy-outages-teaser .lo-home-alert--outage{border-color:rgba(255,75,75,.55);background:linear-gradient(90deg,rgba(255,75,75,.16),rgba(255,79,216,.06)),rgba(0,0,0,.35)}
+#lousy-outages-teaser .lo-home-alert__label{font-family:'Press Start 2P',monospace;font-size:.48rem;text-transform:uppercase;letter-spacing:.06em;color:var(--lo-yellow)}
+#lousy-outages-teaser .lo-home-alert--outage .lo-home-alert__label{color:var(--lo-red)}
+#lousy-outages-teaser .lo-home-alert__body{color:#fff;text-decoration:none;min-width:0}
+#lousy-outages-teaser .lo-home-alert__body strong{display:block;font-size:.88rem;line-height:1.3}
+#lousy-outages-teaser .lo-home-alert__body span{display:block;color:#c8e8ff;font-size:.78rem;line-height:1.35}
+#lousy-outages-teaser .lo-home-alert__time{font-family:"IBM Plex Mono","Courier New",monospace;font-size:.72rem;color:var(--lo-yellow);white-space:nowrap}
 #lousy-outages-teaser.lo-home-teaser--down{border-color:rgba(255,75,75,.75)}
 #lousy-outages-teaser.lo-home-teaser--warn{border-color:rgba(255,230,109,.65)}
 #lousy-outages-teaser.lo-home-teaser--advisory{border-color:rgba(255,79,216,.55)}

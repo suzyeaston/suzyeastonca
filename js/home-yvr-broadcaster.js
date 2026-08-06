@@ -557,7 +557,7 @@
     this.renderChannelDetail({
       kicker: 'map dot',
       deck_copy: name + (detail ? ' — ' + detail : ''),
-      deck_note: 'Stays on Dave. Footer link opens the official source only if you tap it — no auto pop-ups.'
+      deck_note: 'Stays on Beulah. Footer link opens the official source only if you tap it — no auto pop-ups.'
     });
 
     var items = [];
@@ -1215,7 +1215,7 @@
       kicker: channel.label || channel.key,
       deck_copy: channel.deck_copy || channel.hint || '',
       deck_note: channel.deck_note || (channel.mode === 'broadcastify'
-        ? 'Broadcastify chain — Dave walks feeds until something\'s live.'
+        ? 'Broadcastify chain — Beulah walks feeds until something\'s live.'
         : 'In-page live audio.')
     });
   };

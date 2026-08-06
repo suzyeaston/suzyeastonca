@@ -7,19 +7,22 @@ $counts = is_array( $teaser['counts'] ?? null ) ? $teaser['counts'] : [];
 $lead = is_array( $teaser['lead'] ?? null ) ? $teaser['lead'] : [];
 $also = is_array( $teaser['also'] ?? null ) ? $teaser['also'] : [];
 $urls = is_array( $teaser['urls'] ?? null ) ? $teaser['urls'] : [];
+$last_alert = is_array( $teaser['last_alert'] ?? null ) ? $teaser['last_alert'] : null;
 $tone = sanitize_html_class( (string) ( $teaser['tone'] ?? 'ok' ) );
 $down = (int) ( $counts['down'] ?? 0 );
 $degraded = (int) ( $counts['degraded'] ?? 0 );
 $advisory = (int) ( $counts['advisory'] ?? 0 );
 $up = (int) ( $counts['up'] ?? 0 );
 $tracked = (int) ( $counts['tracked'] ?? 0 );
+$highlight = $down > 0 || $degraded > 0 || in_array( $tone, [ 'down', 'warn', 'advisory', 'degraded', 'bad' ], true );
+$alert_tone = sanitize_html_class( (string) ( $last_alert['tone'] ?? 'signal' ) );
 ?>
-<section id="lousy-outages-teaser" class="lo-home-teaser lo-home-teaser--<?php echo esc_attr( $tone ); ?> lo-home-teaser-panel" aria-labelledby="lo-home-heading" data-lo-endpoint="<?php echo esc_url( $teaser_endpoint ); ?>" data-lo-dashboard-url="<?php echo esc_url( $dashboard_url ); ?>" data-lo-refresh-interval="<?php echo esc_attr( (string) $teaser_interval ); ?>">
-    <details class="lo-home-teaser__details">
+<section id="lousy-outages-teaser" class="lo-home-teaser lo-home-teaser--<?php echo esc_attr( $tone ); ?> lo-home-teaser-panel<?php echo $highlight ? ' lo-home-teaser--hot' : ''; ?>" aria-labelledby="lo-home-heading" data-lo-endpoint="<?php echo esc_url( $teaser_endpoint ); ?>" data-lo-dashboard-url="<?php echo esc_url( $dashboard_url ); ?>" data-lo-refresh-interval="<?php echo esc_attr( (string) $teaser_interval ); ?>">
+    <details class="lo-home-teaser__details"<?php echo $highlight ? ' open' : ''; ?>>
         <summary class="lo-home-teaser__summary pixel-font">
             <span class="lo-home-teaser__summary-label"><?php echo esc_html( 'lousy outages' ); ?></span>
             <span class="lo-home-teaser__summary-verdict" data-lo-summary-verdict><?php echo esc_html( (string) ( $teaser['verdict_line'] ?? '' ) ); ?></span>
-            <span class="lo-home-teaser__summary-action"><?php echo esc_html( 'expand live board' ); ?></span>
+            <span class="lo-home-teaser__summary-action"><?php echo esc_html( $highlight ? 'live board open' : 'expand live board' ); ?></span>
         </summary>
     <div class="lo-home-teaser__body">
     <div class="lo-home-teaser__titlebar">
@@ -50,6 +53,15 @@ $tracked = (int) ( $counts['tracked'] ?? 0 );
             <strong><?php echo esc_html( str_pad( (string) $up, 2, '0', STR_PAD_LEFT ) ); ?></strong>
             <span><?php echo esc_html( 'UP' ); ?></span>
         </a>
+
+        <div class="lo-home-alert lo-home-alert--<?php echo esc_attr( $alert_tone ); ?>" data-lo-last-alert<?php echo $last_alert ? '' : ' hidden'; ?>>
+            <span class="lo-home-alert__label" data-lo-last-alert-label><?php echo esc_html( (string) ( $last_alert['label'] ?? 'LAST EMAIL' ) ); ?></span>
+            <a class="lo-home-alert__body" data-lo-last-alert-link href="<?php echo esc_url( (string) ( $last_alert['url'] ?? $dashboard_url . '#active' ) ); ?>">
+                <strong data-lo-last-alert-title><?php echo esc_html( (string) ( $last_alert['title'] ?? '' ) ); ?></strong>
+                <span data-lo-last-alert-provider><?php echo esc_html( (string) ( $last_alert['provider'] ?? '' ) ); ?></span>
+            </a>
+            <time class="lo-home-alert__time" data-lo-last-alert-time><?php echo esc_html( (string) ( $last_alert['time_label'] ?? '' ) ); ?></time>
+        </div>
 
         <div class="lo-home-lead" data-lo-lead>
             <span class="lo-home-chip lo-home-chip--<?php echo esc_attr( sanitize_html_class( (string) ( $lead['kind'] ?? $tone ) ) ); ?>" data-lo-lead-label><?php echo esc_html( (string) ( $lead['label'] ?? '' ) ); ?></span>

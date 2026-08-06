@@ -53,6 +53,7 @@ final class HomeTeaser
             'counts'          => $counts,
             'lead'            => $lead,
             'also'            => $also,
+            'last_alert'      => self::last_alert_view($dashboard),
             'fetched_at'      => $fetched_raw,
             'fetched_label'   => $fetched_ts > 0 ? Board\relative_time($fetched_ts) : '',
             'urls'            => [
@@ -63,6 +64,48 @@ final class HomeTeaser
                 'full'       => $dashboard,
             ],
             'delayed'         => !empty($state['errors']) && $counts['down'] === 0 && $counts['degraded'] === 0,
+        ];
+    }
+
+    /**
+     * @return array<string, string>|null
+     */
+    private static function last_alert_view(string $dashboard): ?array
+    {
+        $raw = get_option('lousy_outages_last_alert_success', []);
+        if (!is_array($raw) || empty($raw['timestamp'])) {
+            return null;
+        }
+
+        if (!empty($raw['synthetic'])) {
+            return null;
+        }
+
+        $provider = Board\tidy((string) ($raw['provider'] ?? ''), 80);
+        $title = Board\tidy((string) ($raw['title'] ?? ''), 140);
+        if ('' === $provider && '' === $title) {
+            return null;
+        }
+
+        $status = strtolower((string) ($raw['status'] ?? ''));
+        $tone = 'signal';
+        if (in_array($status, ['major_outage', 'major', 'outage', 'critical'], true)) {
+            $tone = 'outage';
+        } elseif (in_array($status, ['degraded', 'partial_outage', 'partial', 'minor', 'maintenance'], true)) {
+            $tone = 'signal';
+        } elseif ('' !== $status) {
+            $tone = 'unknown';
+        }
+
+        $ts = Board\timestamp_from((string) $raw['timestamp']);
+
+        return [
+            'label'        => 'LAST EMAIL',
+            'provider'     => $provider,
+            'title'        => $title ?: $provider,
+            'tone'         => $tone,
+            'time_label'   => $ts > 0 ? Board\relative_time($ts) : '',
+            'url'          => $dashboard . '#active',
         ];
     }
 
