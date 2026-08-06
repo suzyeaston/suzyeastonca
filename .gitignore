@@ -12,8 +12,8 @@ screenshots/
 playwright-report/
 test-results/
 
-# Local-only folders
-private-resume/
+# Local-only folders (never commit)
+.local-only/
 /build/*.zip
 
 # Generated release binaries are shared as artifacts, not committed.
