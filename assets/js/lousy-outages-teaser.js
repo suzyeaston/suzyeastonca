@@ -34,6 +34,19 @@
     return String(n).padStart(2, '0');
   }
 
+  function updateToneClasses(container, tone) {
+    container.className = container.className
+      .replace(/lo-home-teaser--\w+/g, '')
+      .replace(/home-feature-preview--(ok|warn|down|advisory|degraded|bad|unknown|clear|dim)\b/g, '')
+      .trim();
+    if (container.classList.contains('lo-home-teaser')) {
+      container.classList.add('lo-home-teaser--' + tone);
+    }
+    if (container.classList.contains('home-feature-preview--live')) {
+      container.classList.add('home-feature-preview--' + tone);
+    }
+  }
+
   function render(container, payload, config) {
     var teaser = payload && payload.teaser ? payload.teaser : null;
     if (!teaser) return;
@@ -43,9 +56,10 @@
     var tone = teaser.tone || 'ok';
     var urls = teaser.urls || {};
 
-    container.className = container.className.replace(/lo-home-teaser--\w+/g, '').trim();
-    container.classList.add('lo-home-teaser');
-    container.classList.add('lo-home-teaser--' + tone);
+    if (container.classList.contains('lo-home-teaser')) {
+      container.classList.add('lo-home-teaser');
+    }
+    updateToneClasses(container, tone);
 
     var downCount = parseInt(counts.down, 10) || 0;
     var degradedCount = parseInt(counts.degraded, 10) || 0;
@@ -73,6 +87,33 @@
     setText(container, '[data-lo-verdict-line]', teaser.verdict_line || '');
     setText(container, '[data-lo-verdict-sub]', teaser.verdict_sub || '');
     setText(container, '[data-lo-summary-verdict]', teaser.verdict_line || '');
+    setText(container, '[data-lo-preview-verdict]', teaser.verdict_line || '');
+    setText(container, '[data-lo-preview-verdict-sub]', teaser.verdict_sub || '');
+
+    var previewVerdict = container.querySelector('[data-lo-preview-verdict]');
+    if (previewVerdict) {
+      previewVerdict.className = 'home-feature-preview__verdict home-feature-preview__verdict--' + tone;
+    }
+
+    var previewStats = container.querySelectorAll('[data-lo-preview-stat]');
+    if (previewStats.length) {
+      previewStats.forEach(function (cell) {
+        var key = cell.getAttribute('data-lo-preview-stat');
+        var valueEl = cell.querySelector('.home-feature-preview__value');
+        if (valueEl && counts[key] !== undefined) {
+          valueEl.textContent = padCount(counts[key]);
+        }
+      });
+    }
+
+    var syncBits = [];
+    if (teaser.fetched_label) {
+      syncBits.push('Last sync ' + teaser.fetched_label);
+    }
+    if (counts.tracked) {
+      syncBits.push(padCount(counts.tracked) + ' tracked');
+    }
+    setText(container, '[data-lo-preview-sync]', syncBits.join(' · '));
 
     if (typeof document !== 'undefined' && typeof document.querySelector === 'function') {
       var signalVerdict = document.querySelector('[data-signal-lo-verdict]');
@@ -169,11 +210,15 @@
       var delayed = container.querySelector('.lo-home-delayed');
       if (delayed) delayed.remove();
       container.classList.remove('lo-home-teaser--delayed');
+      container.classList.remove('home-feature-preview--delayed');
     }
   }
 
   function markDelayed(container) {
     container.classList.add('lo-home-teaser--delayed');
+    if (container.classList.contains('home-feature-preview--live')) {
+      container.classList.add('home-feature-preview--delayed');
+    }
     var screen = container.querySelector('.lo-home-teaser__screen');
     if (screen && !screen.querySelector('.lo-home-delayed')) {
       var p = document.createElement('p');
@@ -209,7 +254,7 @@
 
   window.LousyOutagesTeaser = { render, markDelayed, init };
   document.addEventListener('DOMContentLoaded', function () {
-    var c = document.getElementById('lousy-outages-teaser');
-    if (c) init(c);
+    var containers = document.querySelectorAll('[data-lo-endpoint]');
+    containers.forEach(init);
   });
 }());

@@ -160,6 +160,16 @@ function retro_game_music_theme_scripts() {
             );
         }
 
+        $feature_previews_css = get_template_directory() . '/assets/css/home-feature-previews.css';
+        if ( file_exists( $feature_previews_css ) ) {
+            wp_enqueue_style(
+                'home-feature-previews',
+                get_template_directory_uri() . '/assets/css/home-feature-previews.css',
+                array( 'main-styles' ),
+                filemtime( $feature_previews_css )
+            );
+        }
+
         $teaser_js = get_template_directory() . '/assets/js/lousy-outages-teaser.js';
         if ( file_exists( $teaser_js ) ) {
             wp_enqueue_script(
