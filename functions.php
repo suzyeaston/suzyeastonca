@@ -671,6 +671,75 @@ function get_lousy_outages_home_teaser_data(): array {
     ];
 }
 
+/**
+ * Conservative homepage flyover copy from Lousy Outages teaser data.
+ *
+ * @param array<string, mixed> $teaser
+ * @return array{banner: string, report: string, tone: string, highlight: bool}
+ */
+function se_home_lo_flyover_copy( array $teaser ): array {
+    $counts   = is_array( $teaser['counts'] ?? null ) ? $teaser['counts'] : [];
+    $down     = (int) ( $counts['down'] ?? 0 );
+    $degraded = (int) ( $counts['degraded'] ?? 0 );
+    $advisory = (int) ( $counts['advisory'] ?? 0 );
+    $lead     = is_array( $teaser['lead'] ?? null ) ? $teaser['lead'] : [];
+    $kind     = (string) ( $lead['kind'] ?? 'clear' );
+    $provider = trim( (string) ( $lead['provider'] ?? '' ) );
+    $tone     = sanitize_html_class( (string) ( $teaser['tone'] ?? 'ok' ) );
+
+    $highlight = $down > 0
+        || $degraded > 0
+        || $advisory > 0
+        || in_array( $tone, [ 'down', 'warn', 'advisory', 'degraded', 'bad', 'unknown' ], true )
+        || in_array( $kind, [ 'down', 'warn', 'advisory', 'unknown' ], true );
+
+    $banner_parts = [];
+    if ( $down > 0 ) {
+        $banner_parts[] = $down . ' provider' . ( 1 === $down ? '' : 's' ) . ' down';
+    }
+    if ( $degraded > 0 ) {
+        $banner_parts[] = $degraded . ' degraded';
+    }
+    if ( $advisory > 0 ) {
+        $banner_parts[] = $advisory . ' advisory' . ( 1 === $advisory ? '' : 'ies' );
+    }
+
+    if ( empty( $banner_parts ) ) {
+        $banner = 'LOUSY OUTAGES → monitoring provider signals';
+    } else {
+        $banner = 'LOUSY OUTAGES → ' . implode( ' · ', $banner_parts ) . ' · open status';
+    }
+
+    if ( ! $highlight || 'clear' === $kind ) {
+        $report = 'latest report: no major active incident summary available right now';
+    } elseif ( 'down' === $kind ) {
+        $report = '' !== $provider
+            ? "latest report: {$provider} status page indicates service disruption"
+            : 'latest report: status page indicates service disruption';
+    } elseif ( 'warn' === $kind ) {
+        $report = '' !== $provider
+            ? "latest report: {$provider} status page shows degraded service"
+            : 'latest report: provider status page shows degraded service';
+    } elseif ( 'advisory' === $kind ) {
+        $report = '' !== $provider
+            ? "latest report: {$provider} open advisory still active"
+            : 'latest report: open advisory still active';
+    } elseif ( 'unknown' === $kind ) {
+        $report = '' !== $provider
+            ? "latest report: {$provider} status could not be verified"
+            : 'latest report: status verification incomplete';
+    } else {
+        $report = 'latest report: provider signals under watch';
+    }
+
+    return [
+        'banner'    => $banner,
+        'report'    => $report,
+        'tone'      => $tone,
+        'highlight' => $highlight,
+    ];
+}
+
 function lousy_outages_home_format_incident_time( $value ): string {
     if ( empty( $value ) ) {
         return '';

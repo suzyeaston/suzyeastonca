@@ -47,6 +47,79 @@
     }
   }
 
+  function flyoverCopy(teaser) {
+    var counts = teaser.counts || {};
+    var down = parseInt(counts.down, 10) || 0;
+    var degraded = parseInt(counts.degraded, 10) || 0;
+    var advisory = parseInt(counts.advisory, 10) || 0;
+    var lead = teaser.lead || {};
+    var kind = lead.kind || 'clear';
+    var provider = String(lead.provider || '').trim();
+    var tone = teaser.tone || 'ok';
+    var highlight = down > 0 || degraded > 0 || advisory > 0
+      || ['down', 'warn', 'advisory', 'degraded', 'bad', 'unknown'].indexOf(tone) !== -1
+      || ['down', 'warn', 'advisory', 'unknown'].indexOf(kind) !== -1;
+    var bannerParts = [];
+
+    if (down > 0) bannerParts.push(down + ' provider' + (down === 1 ? '' : 's') + ' down');
+    if (degraded > 0) bannerParts.push(degraded + ' degraded');
+    if (advisory > 0) bannerParts.push(advisory + ' advisory' + (advisory === 1 ? '' : 'ies'));
+
+    var banner = bannerParts.length
+      ? 'LOUSY OUTAGES → ' + bannerParts.join(' · ') + ' · open status'
+      : 'LOUSY OUTAGES → monitoring provider signals';
+
+    var report = 'latest report: no major active incident summary available right now';
+    if (highlight && kind !== 'clear') {
+      if (kind === 'down') {
+        report = provider
+          ? 'latest report: ' + provider + ' status page indicates service disruption'
+          : 'latest report: status page indicates service disruption';
+      } else if (kind === 'warn') {
+        report = provider
+          ? 'latest report: ' + provider + ' status page shows degraded service'
+          : 'latest report: provider status page shows degraded service';
+      } else if (kind === 'advisory') {
+        report = provider
+          ? 'latest report: ' + provider + ' open advisory still active'
+          : 'latest report: open advisory still active';
+      } else if (kind === 'unknown') {
+        report = provider
+          ? 'latest report: ' + provider + ' status could not be verified'
+          : 'latest report: status verification incomplete';
+      } else {
+        report = 'latest report: provider signals under watch';
+      }
+    }
+
+    return { banner: banner, report: report, tone: tone, highlight: highlight };
+  }
+
+  function updateFlyoverTone(flyover, tone, highlight) {
+    flyover.className = flyover.className
+      .replace(/home-lo-flyover--\w+/g, '')
+      .replace(/\bhome-lo-flyover--hot\b/g, '')
+      .trim();
+    flyover.classList.add('home-lo-flyover');
+    flyover.classList.add('home-lo-flyover--' + tone);
+    if (highlight) flyover.classList.add('home-lo-flyover--hot');
+  }
+
+  function renderFlyover(flyover, teaser) {
+    if (!flyover || !teaser) return;
+    var copy = flyoverCopy(teaser);
+    updateFlyoverTone(flyover, copy.tone, copy.highlight);
+    flyover.querySelectorAll('[data-lo-flyover-banner]').forEach(function (el) {
+      el.textContent = copy.banner;
+    });
+    var reportEl = flyover.querySelector('[data-lo-flyover-report]');
+    if (reportEl) reportEl.textContent = copy.report;
+    var primary = flyover.querySelector('.home-lo-flyover__primary');
+    if (primary) primary.setAttribute('aria-label', copy.banner + ' — view Lousy Outages status');
+    var mastState = flyover.querySelector('.home-lo-flyover__mast-state');
+    if (mastState) mastState.textContent = copy.highlight ? 'signal detected' : 'monitoring';
+  }
+
   function render(container, payload, config) {
     var teaser = payload && payload.teaser ? payload.teaser : null;
     if (!teaser) return;
@@ -114,6 +187,12 @@
       syncBits.push(padCount(counts.tracked) + ' tracked');
     }
     setText(container, '[data-lo-preview-sync]', syncBits.join(' · '));
+
+    if (typeof document !== 'undefined' && typeof document.querySelector === 'function') {
+      document.querySelectorAll('[data-lo-flyover]').forEach(function (flyover) {
+        renderFlyover(flyover, teaser);
+      });
+    }
 
     if (typeof document !== 'undefined' && typeof document.querySelector === 'function') {
       var signalVerdict = document.querySelector('[data-signal-lo-verdict]');
@@ -242,7 +321,12 @@
       url.searchParams.set('_lo_cache_bust', Date.now().toString());
       fetch(url.toString(), { cache: 'no-store', credentials: 'same-origin' })
         .then(function (r) { if (!r.ok) throw new Error('summary fetch failed'); return r.json(); })
-        .then(function (payload) { render(container, payload, config); })
+        .then(function (payload) {
+          render(container, payload, config);
+          if (container.hasAttribute('data-lo-flyover') && payload && payload.teaser) {
+            renderFlyover(container, payload.teaser);
+          }
+        })
         .catch(function () { markDelayed(container); })
         .finally(function () { inFlight = false; });
     };
@@ -252,9 +336,10 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
   }
 
-  window.LousyOutagesTeaser = { render, markDelayed, init };
+  window.LousyOutagesTeaser = { render, renderFlyover, flyoverCopy, markDelayed, init };
   document.addEventListener('DOMContentLoaded', function () {
     var containers = document.querySelectorAll('[data-lo-endpoint]');
     containers.forEach(init);
+    document.querySelectorAll('[data-lo-flyover][data-lo-endpoint]').forEach(init);
   });
 }());
