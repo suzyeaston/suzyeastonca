@@ -81,6 +81,7 @@ fi
 home_id="$(create_or_update_page "Home" "home" "page-home.php")"
 create_or_update_page "Lousy Outages" "lousy-outages" "page-lousy-outages.php" >/dev/null
 create_or_update_page "Work With Suzy" "work-with-suzy" "page-work-with-suzy.php" >/dev/null
+create_or_update_page "Shop" "shop" "page-shop.php" >/dev/null
 create_or_update_page "Projects" "projects" "page-projects.php" >/dev/null
 create_or_update_page "Suzy's Track Analyzer" "suzys-track-analyzer" "page-track-analyzer.php" >/dev/null
 create_or_update_page "Gastown Simulator" "gastown-sim" "page-gastown-sim.php" >/dev/null

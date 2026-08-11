@@ -4,6 +4,7 @@ const criticalPages = [
   ['home', '/'],
   ['lousy outages', '/lousy-outages/'],
   ['work with suzy', '/work-with-suzy/'],
+  ['shop', '/shop/'],
   ['projects', '/projects/'],
   ['track analyzer', '/suzys-track-analyzer/'],
   ['gastown simulator', '/gastown-sim/'],
@@ -51,6 +52,13 @@ test('lousy outages dashboard exposes status surface and report form area', asyn
   await page.goto('/lousy-outages/', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: /lousy outages/i })).toBeVisible();
   await expect(page.locator('.lousy-outages, [data-lo-endpoint]').first()).toBeVisible();
+});
+
+test('shop page exposes product cards and checkout links', async ({ page }) => {
+  await page.goto('/shop/', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: /shop suzy/i })).toBeVisible();
+  await expect(page.locator('[data-shop-product-card]')).toHaveCount(3);
+  await expect(page.locator('[data-shop-checkout]').first()).toBeVisible();
 });
 
 test('track analyzer upload form exposes expected controls', async ({ page }) => {

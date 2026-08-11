@@ -14,7 +14,8 @@ get_header();
             <p class="wws-hero-subcopy">I work across custom WordPress, JavaScript/PHP, QA automation, IT operations, API/integration debugging, dashboards, workflow automation, and AI-assisted prototypes with reviewable outputs.</p>
             <p class="wws-hero-subcopy">My strongest work happens where product, support, QA, ops, and real users collide. I can find the failure path, explain it clearly, and help build the fix.</p>
             <div class="wws-actions" role="group" aria-label="Work With Suzy contact links">
-                <a class="pixel-button wws-hero-cta" href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy">Email Suzy</a>
+                <a class="pixel-button wws-hero-cta" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">Book a session</a>
+                <a class="pixel-button wws-secondary-button" href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy">Email Suzy</a>
                 <a class="pixel-button wws-secondary-button" href="https://www.linkedin.com/in/suzyeaston/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
                 <a class="pixel-button wws-secondary-button" href="https://github.com/suzyeaston" target="_blank" rel="noopener noreferrer">View GitHub</a>
             </div>
@@ -125,6 +126,7 @@ get_header();
 
         <section class="crt-block wws-section" aria-labelledby="ways-to-work">
             <h2 id="ways-to-work" class="pixel-font">Ways we can work together</h2>
+            <p>Need a fixed-price session first? <a class="wws-highlight-link" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">Shop Suzy</a> — debug rescue, automation session, or deep dive.</p>
             <div class="wws-work-modes">
                 <div class="wws-mode"><strong>Senior role conversations</strong><span>For teams hiring someone who can bridge IT operations, QA, support engineering, automation, and practical product thinking.</span></div>
                 <div class="wws-mode"><strong>Contract QA / automation sprint</strong><span>A focused engagement to reproduce issues, improve test coverage, validate workflows, and reduce release panic.</span></div>

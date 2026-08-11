@@ -15,6 +15,8 @@ get_header();
 
         <?php get_template_part( 'parts/home-commercial-strip' ); ?>
 
+        <?php get_template_part( 'parts/home-hire-strip' ); ?>
+
         <div class="home-yvr-radar-deck__radar-unit">
             <div class="home-yvr-radar-deck__unit-head pixel-font">
                 <span class="home-yvr-radar-deck__unit-badge"><?php echo esc_html( 'YVR RADAR' ); ?></span>

@@ -28,6 +28,11 @@ $highlight  = $down > 0 || $degraded > 0 || in_array( $tone, [ 'down', 'warn', '
     <span class="home-signal-strip__pipe" aria-hidden="true">·</span>
     <a class="home-signal-strip__link pixel-font" href="<?php echo esc_url( $pricing ); ?>"><?php echo esc_html( 'watchlists' ); ?></a>
     <span class="home-signal-strip__pipe" aria-hidden="true">·</span>
+    <a class="home-signal-strip__product home-signal-strip__product--shop" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">
+        <span class="home-signal-strip__label pixel-font"><?php echo esc_html( 'hire suzy' ); ?></span>
+        <span class="home-signal-strip__verdict"><?php echo esc_html( 'debug · automate · deep dive' ); ?></span>
+    </a>
+    <span class="home-signal-strip__pipe" aria-hidden="true">·</span>
     <span class="home-signal-strip__future pixel-font"><?php echo esc_html( 'yvr data layer — api + mcp soon' ); ?></span>
     <button type="button" class="home-signal-strip__contact pixel-font" data-contact-trigger aria-haspopup="dialog" aria-controls="contact-suzy-modal"><?php echo esc_html( 'contact' ); ?></button>
 </nav>

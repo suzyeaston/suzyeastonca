@@ -50,6 +50,12 @@
       $meta_desc  = 'Coffee chats in Vancouver for people building things—tech, music, civic projects, and sports takes. Low-key, public, and intentional.';
       $meta_keywords = 'coffee chats Vancouver, builders, Suzy Easton, tech, music, civic projects, sports takes';
       $meta_img   = $default_img;
+    } elseif ( is_page_template( 'page-shop.php' ) || is_page( 'shop' ) ) {
+      $shop_meta  = function_exists( 'se_shop_meta' ) ? se_shop_meta() : [];
+      $meta_title = (string) ( $shop_meta['title'] ?? 'Shop Suzy | Hire Suzy Easton' );
+      $meta_desc  = (string) ( $shop_meta['description'] ?? 'Book focused consulting time with Suzy Easton.' );
+      $meta_keywords = (string) ( $shop_meta['keywords'] ?? 'hire Suzy Easton, tech consulting Vancouver' );
+      $meta_img   = $default_img;
     } else {
       $meta_title = wp_title( '|', false, 'right' ) . $site_name;
       $meta_desc  = get_bloginfo( 'description' );
@@ -125,6 +131,10 @@
     if ( ! empty( $home_profile_graph ) ) {
       $structured_data['@graph'] = array_merge( $structured_data['@graph'], $home_profile_graph );
     }
+
+    if ( ( is_page_template( 'page-shop.php' ) || is_page( 'shop' ) ) && function_exists( 'se_shop_structured_data' ) ) {
+      $structured_data = se_shop_structured_data();
+    }
   ?>
   <title><?php echo esc_html( $meta_title ); ?></title>
   <meta name="description" content="<?php echo esc_attr( $meta_desc ); ?>">
@@ -170,6 +180,10 @@
     </a>
   </div>
   <div class="header-actions">
+    <nav class="se-header-nav" aria-label="Site actions">
+      <a class="se-header-nav__link se-header-nav__link--shop" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">SHOP</a>
+      <a class="se-header-nav__link" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">HIRE SUZY</a>
+    </nav>
     <button class="pixel-button header-contact-trigger"
             type="button"
             data-contact-trigger
