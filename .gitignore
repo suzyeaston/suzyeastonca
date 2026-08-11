@@ -14,6 +14,9 @@ test-results/
 
 # Local-only folders (never commit)
 .local-only/
+**/uploads/
+*Resume*.pdf
+*resume*.pdf
 /build/*.zip
 
 # Generated release binaries are shared as artifacts, not committed.
