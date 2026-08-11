@@ -54,6 +54,7 @@ THEME_FILES = [
     "parts/shop-product-detail.php",
     "parts/lousy-outages-teaser.php",
     "parts/home-yvr-channel-buttons.php",
+    "assets/css/home-commercial-strip.css",
     "assets/css/shop.css",
     "assets/css/shop-console.css",
     "assets/js/shop.js",
