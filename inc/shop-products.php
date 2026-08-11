@@ -57,7 +57,7 @@ function se_shop_products_raw() {
 			'tier'          => 'workflow',
 			'price'         => 125,
 			'currency'      => 'CAD',
-			'duration'      => '60 minutes',
+			'duration'      => '45 minutes',
 			'tagline'       => 'Stop copy-pasting your Tuesday.',
 			'description'   => 'Map the workflow, spot the boring manual steps, and sketch what automation or AI could actually help — without the magic-thinking deck.',
 			'good_for'      => [
