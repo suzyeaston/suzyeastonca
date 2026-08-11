@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deploy the Lousy Outages plugin (and the theme files it renders inside) over SFTP.
+"""Deploy the Lousy Outages plugin and selected production theme files over SFTP.
 
 Reads credentials from /workspace/.env.deploy.local:
     LOUSY_SSH_HOST, LOUSY_SSH_PORT, LOUSY_SSH_USER, LOUSY_SSH_PASSWORD
@@ -32,17 +32,30 @@ PLUGIN_REL = "public_html/wp-content/plugins"
 PLUGIN_DIR = f"{HOME}/{PLUGIN_REL}/lousy-outages"
 THEME_DIR = f"{HOME}/public_html/wp-content/themes/suzyeastonca-main"
 
-# Theme files the board renders inside. Keep this list tight: the whole repo is the
-# theme, but only these files affect the Lousy Outages page.
+# Production theme files managed by this deploy workflow.
+# Dependencies required by functions.php must appear before functions.php so a
+# partial upload cannot leave WordPress fatally requiring a file that is absent.
 THEME_FILES = [
+    "inc/shop-products.php",
+    "inc/shop.php",
     "functions.php",
+    "header.php",
+    "footer.php",
     "inc/home-translink-alerts.php",
     "inc/home-yvr-broadcaster.php",
     "inc/home-yvr-audio-channels.php",
     "page-home.php",
+    "page-shop.php",
+    "page-work-with-suzy.php",
     "page-lousy-outages.php",
+    "parts/home-commercial-strip.php",
+    "parts/home-hire-strip.php",
+    "parts/shop-product-card.php",
+    "parts/shop-product-detail.php",
     "parts/lousy-outages-teaser.php",
     "parts/home-yvr-channel-buttons.php",
+    "assets/css/shop.css",
+    "assets/js/shop.js",
     "assets/css/home-hero-cabinet.css",
     "assets/css/home-yvr-radar-deck.css",
     "assets/audio/yvr/rain-loop.mp3",
