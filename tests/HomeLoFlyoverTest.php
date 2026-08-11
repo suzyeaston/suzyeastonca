@@ -37,7 +37,9 @@ assert_true($hot['highlight'] === true, 'hot state is highlighted');
 
 $part = file_get_contents(__DIR__ . '/../parts/home-commercial-strip.php');
 assert_true(str_contains($part, 'home-lo-flyover'), 'homepage strip replaced with flyover module');
+assert_true(str_contains($part, 'home-lo-flyover__orca'), 'signal whale orca in flyover');
 assert_true(str_contains($part, 'data-lo-flyover-banner'), 'flyover banner is data-driven');
+assert_true(!str_contains($part, 'home-lo-flyover__plane'), 'legacy plane removed');
 assert_true(!str_contains($part, 'home-signal-strip'), 'legacy signal strip markup removed');
 
 echo "OK\n";

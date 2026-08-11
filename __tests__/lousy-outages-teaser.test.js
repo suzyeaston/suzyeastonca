@@ -219,9 +219,9 @@ test('renderFlyover updates homepage flyover module', () => {
   banner.setAttribute('data-lo-flyover-banner', '');
   const report = new El('p');
   report.setAttribute('data-lo-flyover-report', '');
-  const mast = new El('span');
-  mast.className = 'home-lo-flyover__mast-state';
-  flyover.append(banner, report, mast);
+  const cta = new El('a');
+  cta.className = 'home-lo-flyover__cta';
+  flyover.append(banner, report, cta);
   teaser.renderFlyover(flyover, sampleTeaser());
   assert.match(banner.textContent, /open status/);
   assert.match(report.textContent, /degraded service/);
