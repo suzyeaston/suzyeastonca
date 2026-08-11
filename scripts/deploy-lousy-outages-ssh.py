@@ -171,6 +171,9 @@ def main() -> None:
         if do_theme:
             deploy_theme(client, sftp, stamp)
 
+        # WordPress can leave this flag behind when an update is interrupted.
+        run(client, f"rm -f {HOME}/public_html/.maintenance && echo 'maintenance flag cleared'")
+
         # Warm the runtime so schema upgrades and a fresh collection run immediately.
         run(
             client,
