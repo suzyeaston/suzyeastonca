@@ -48,6 +48,16 @@ function se_enqueue_shop_assets() {
 		);
 	}
 
+	$console_css_path = '/assets/css/shop-console.css';
+	if ( file_exists( $dir . $console_css_path ) ) {
+		wp_enqueue_style(
+			'se-shop-console',
+			$uri . $console_css_path,
+			[ 'se-shop' ],
+			filemtime( $dir . $console_css_path )
+		);
+	}
+
 	if ( ! se_shop_is_active() ) {
 		return;
 	}
