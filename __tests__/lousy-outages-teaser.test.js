@@ -193,3 +193,38 @@ test('init fetches summary endpoint', async () => {
   assert.match(urls[0], /\/summary/);
   assert.match(textOf(container), /01/);
 });
+
+test('flyoverCopy uses conservative outage language from teaser data', () => {
+  const { teaser } = load();
+  const clear = teaser.flyoverCopy({
+    tone: 'ok',
+    counts: { down: 0, degraded: 0, advisory: 0 },
+    lead: { kind: 'clear' }
+  });
+  assert.equal(clear.banner, 'LOUSY OUTAGES → monitoring provider signals');
+  assert.match(clear.report, /no major active incident summary available right now/);
+
+  const hot = teaser.flyoverCopy(sampleTeaser());
+  assert.match(hot.banner, /LOUSY OUTAGES → 1 degraded · 1 advisory · open status/);
+  assert.match(hot.report, /Cloudflare status page shows degraded service/);
+  assert.equal(hot.highlight, true);
+});
+
+test('renderFlyover updates homepage flyover module', () => {
+  const { teaser } = load();
+  const flyover = new El('aside');
+  flyover.setAttribute('class', 'home-lo-flyover home-lo-flyover--ok');
+  flyover.setAttribute('data-lo-flyover', '');
+  const banner = new El('span');
+  banner.setAttribute('data-lo-flyover-banner', '');
+  const report = new El('p');
+  report.setAttribute('data-lo-flyover-report', '');
+  const mast = new El('span');
+  mast.className = 'home-lo-flyover__mast-state';
+  flyover.append(banner, report, mast);
+  teaser.renderFlyover(flyover, sampleTeaser());
+  assert.match(banner.textContent, /open status/);
+  assert.match(report.textContent, /degraded service/);
+  assert.ok(flyover.classList.contains('home-lo-flyover--warn'));
+  assert.ok(flyover.classList.contains('home-lo-flyover--hot'));
+});
