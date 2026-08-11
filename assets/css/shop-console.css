@@ -1,0 +1,448 @@
+/* Sleek shop + hire overrides inspired by the Lousy Outages status-console language. */
+
+.page-template-page-shop-php {
+	--shop-console-bg: #050907;
+	--shop-console-panel: rgba(8, 15, 12, 0.92);
+	--shop-console-panel-soft: rgba(10, 19, 15, 0.78);
+	--shop-console-border: rgba(94, 234, 160, 0.22);
+	--shop-console-text: #d7e8df;
+	--shop-console-muted: #8eaa9b;
+	--shop-console-green: #4ade80;
+	--shop-console-cyan: #58c7ff;
+	--shop-console-magenta: #df77ff;
+	--shop-console-yellow: #ffb300;
+}
+
+.page-template-page-shop-php .shop-page {
+	background:
+		linear-gradient(rgba(4, 8, 6, 0.96), rgba(4, 8, 6, 0.98)),
+		radial-gradient(circle at 82% 12%, rgba(88, 199, 255, 0.06), transparent 32%),
+		radial-gradient(circle at 16% 24%, rgba(74, 222, 128, 0.05), transparent 30%);
+	min-height: 100vh;
+}
+
+.page-template-page-shop-php .shop-content {
+	max-width: 1180px;
+	padding: 1.5rem clamp(0.75rem, 3vw, 2rem) 3.5rem;
+	gap: 1rem;
+	text-align: left;
+}
+
+.page-template-page-shop-php .shop-hero,
+.page-template-page-shop-php .shop-catalog,
+.page-template-page-shop-php .shop-custom-work {
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+.page-template-page-shop-php .shop-hero {
+	padding-bottom: 1.15rem;
+	border-bottom: 1px solid rgba(94, 234, 160, 0.12);
+}
+
+.page-template-page-shop-php .shop-kicker {
+	margin: 0 0 0.55rem;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.76rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #5eead4;
+}
+
+.page-template-page-shop-php .shop-hero .retro-title {
+	margin: 0 0 0.55rem;
+	font-size: clamp(1.3rem, 4.3vw, 2.2rem);
+	line-height: 1.25;
+	letter-spacing: 0.04em;
+	color: var(--shop-console-green);
+	text-shadow: 0 0 18px rgba(74, 222, 128, 0.28);
+}
+
+.page-template-page-shop-php .shop-lead {
+	max-width: 760px;
+	margin: 0 0 0.35rem;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: clamp(1rem, 1.8vw, 1.15rem);
+	line-height: 1.55;
+	color: #e2eee8;
+}
+
+.page-template-page-shop-php .shop-hero-subcopy {
+	max-width: 760px;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.9rem;
+	color: var(--shop-console-muted);
+}
+
+.page-template-page-shop-php .shop-hero-terminal {
+	margin: 1rem 0 0;
+	padding: 0.7rem 0.9rem;
+	border: 1px solid rgba(94, 234, 160, 0.28);
+	border-left: 3px solid var(--shop-console-green);
+	border-radius: 6px;
+	background: rgba(9, 16, 14, 0.82);
+	box-shadow: none;
+}
+
+.page-template-page-shop-php .shop-hero-terminal__line {
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.86rem;
+	line-height: 1.55;
+	color: #cfe7d8;
+}
+
+.page-template-page-shop-php .shop-hero-terminal__line--muted {
+	margin-top: 0.15rem;
+	color: #7e9b8b;
+}
+
+.page-template-page-shop-php .shop-catalog {
+	padding-top: 0.25rem;
+}
+
+.page-template-page-shop-php .shop-catalog h2,
+.page-template-page-shop-php .shop-custom-work h2 {
+	margin: 0 0 0.35rem;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 1.05rem;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	color: #e6f4ec;
+}
+
+.page-template-page-shop-php .shop-catalog h2::before,
+.page-template-page-shop-php .shop-custom-work h2::before {
+	content: "> ";
+	color: var(--shop-console-green);
+}
+
+.page-template-page-shop-php .shop-catalog__lede,
+.page-template-page-shop-php .shop-custom-work p,
+.page-template-page-shop-php .shop-fine-print p {
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.9rem;
+	color: var(--shop-console-muted);
+}
+
+.page-template-page-shop-php .shop-product-grid {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.75rem;
+}
+
+.page-template-page-shop-php .shop-product-card {
+	position: relative;
+	min-height: 100%;
+	padding: 1.05rem 1rem 0.95rem;
+	border: 1px solid var(--shop-console-border);
+	border-left: 3px solid var(--shop-tier-color, var(--shop-console-green));
+	border-radius: 6px;
+	background:
+		linear-gradient(180deg, rgba(255,255,255,0.012), rgba(255,255,255,0)),
+		var(--shop-console-panel);
+	box-shadow: none;
+	transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.page-template-page-shop-php .shop-product-card:hover,
+.page-template-page-shop-php .shop-product-card:focus-within {
+	transform: translateY(-1px);
+	border-color: color-mix(in srgb, var(--shop-tier-color, var(--shop-console-green)) 55%, transparent);
+	background: rgba(10, 20, 16, 0.96);
+	box-shadow: none;
+}
+
+.page-template-page-shop-php .shop-product-card--featured {
+	box-shadow: none;
+}
+
+.page-template-page-shop-php .shop-product-card__tier {
+	margin: 0 0 0.55rem;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.7rem;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	color: var(--shop-tier-color, var(--shop-console-green));
+}
+
+.page-template-page-shop-php .shop-product-card__title {
+	margin: 0 0 0.35rem;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 1.02rem;
+	line-height: 1.35;
+	color: #f1f7f4;
+}
+
+.page-template-page-shop-php .shop-product-card__subtitle {
+	margin: 0 0 0.65rem;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.82rem;
+	line-height: 1.45;
+	color: var(--shop-tier-color, var(--shop-console-cyan));
+}
+
+.page-template-page-shop-php .shop-product-card__tagline {
+	margin: 0 0 0.8rem;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.88rem;
+	line-height: 1.5;
+	color: #afc5b9;
+}
+
+.page-template-page-shop-php .shop-product-card__meta {
+	padding-top: 0.65rem;
+	border-top: 1px dashed rgba(94, 234, 160, 0.13);
+	align-items: baseline;
+}
+
+.page-template-page-shop-php .shop-product-card__price,
+.page-template-page-shop-php .shop-product-card__duration,
+.page-template-page-shop-php .shop-product-card__prompt {
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+.page-template-page-shop-php .shop-product-card__price {
+	font-size: 0.84rem;
+	font-weight: 800;
+	color: var(--shop-console-yellow);
+}
+
+.page-template-page-shop-php .shop-product-card__duration {
+	font-size: 0.78rem;
+	color: #8bdcc9;
+}
+
+.page-template-page-shop-php .shop-product-card__prompt {
+	font-size: 0.72rem;
+	color: #6fae89;
+}
+
+.page-template-page-shop-php .shop-product-card__actions {
+	margin-top: auto;
+	padding-top: 0.25rem;
+}
+
+.page-template-page-shop-php .shop-product-card__actions .pixel-button,
+.page-template-page-shop-php .shop-product-detail__cta-row .pixel-button,
+.page-template-page-shop-php .shop-custom-work__actions .pixel-button {
+	padding: 0.62rem 0.78rem;
+	border-width: 1px;
+	border-radius: 2px;
+	background: rgba(7, 15, 12, 0.8);
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.78rem;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	text-transform: none;
+	box-shadow: none;
+}
+
+.page-template-page-shop-php .shop-product-card__buy:hover,
+.page-template-page-shop-php .shop-product-card__buy:focus-visible,
+.page-template-page-shop-php .shop-product-detail__buy:hover,
+.page-template-page-shop-php .shop-product-detail__buy:focus-visible {
+	background: var(--shop-tier-color, var(--shop-console-green));
+	color: #041008;
+}
+
+.page-template-page-shop-php .shop-product-card__detail-link:hover,
+.page-template-page-shop-php .shop-product-card__detail-link:focus-visible {
+	background: rgba(88, 199, 255, 0.12);
+}
+
+.page-template-page-shop-php .shop-details {
+	gap: 0.75rem;
+}
+
+.page-template-page-shop-php .shop-product-detail {
+	padding: 0;
+	border: 1px solid var(--shop-console-border);
+	border-left: 3px solid var(--shop-tier-color, var(--shop-console-green));
+	border-radius: 6px;
+	background: var(--shop-console-panel);
+	box-shadow: none;
+}
+
+.page-template-page-shop-php .shop-product-detail.is-active {
+	box-shadow: none;
+}
+
+.page-template-page-shop-php .shop-product-detail__terminal {
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+}
+
+.page-template-page-shop-php .shop-product-detail__shell-bar {
+	padding: 0.55rem 0.75rem;
+	border-bottom: 1px solid rgba(94, 234, 160, 0.12);
+	background: rgba(0, 0, 0, 0.18);
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.72rem;
+}
+
+.page-template-page-shop-php .shop-product-detail__shell-body {
+	padding: 1rem 1.05rem 1.1rem;
+}
+
+.page-template-page-shop-php .shop-product-detail__prompt,
+.page-template-page-shop-php .shop-product-detail__title,
+.page-template-page-shop-php .shop-product-detail__subtitle,
+.page-template-page-shop-php .shop-product-detail__spec-label,
+.page-template-page-shop-php .shop-product-detail__block h4 {
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+.page-template-page-shop-php .shop-product-detail__prompt {
+	font-size: 0.76rem;
+	color: var(--shop-tier-color, var(--shop-console-green));
+}
+
+.page-template-page-shop-php .shop-product-detail__title {
+	font-size: 1.1rem;
+}
+
+.page-template-page-shop-php .shop-product-detail__subtitle {
+	font-size: 0.82rem;
+}
+
+.page-template-page-shop-php .shop-product-detail__description,
+.page-template-page-shop-php .shop-product-detail__list,
+.page-template-page-shop-php .shop-product-detail__spec-value {
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	color: #aec5b8;
+}
+
+.page-template-page-shop-php .shop-custom-work {
+	margin-top: 0.25rem;
+	padding: 1rem 1.05rem;
+	border: 1px solid rgba(223, 119, 255, 0.3);
+	border-left: 3px solid var(--shop-console-magenta);
+	border-radius: 6px;
+	background: rgba(16, 9, 18, 0.72);
+}
+
+.page-template-page-shop-php .shop-fine-print {
+	padding: 0.5rem 0 0;
+	border-top: 1px solid rgba(94, 234, 160, 0.1);
+}
+
+/* Homepage hire console */
+.home-hire-strip {
+	position: relative;
+	max-width: min(92vw, 1080px);
+	margin: 0.9rem auto 0;
+	padding: 0.85rem 1rem;
+	border: 1px solid rgba(94, 234, 160, 0.28);
+	border-left: 3px solid #4ade80;
+	border-radius: 6px;
+	background: rgba(7, 14, 11, 0.9);
+	box-shadow: none;
+	text-align: left;
+}
+
+.home-hire-strip::before {
+	content: "AVAILABLE // CONSULTING";
+	display: inline-block;
+	margin-bottom: 0.45rem;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	color: #4ade80;
+}
+
+.home-hire-strip .home-section-kicker {
+	display: none;
+}
+
+.home-hire-strip__title {
+	margin: 0 0 0.3rem;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: clamp(1rem, 2.2vw, 1.25rem);
+	line-height: 1.35;
+	color: #f0f7f3;
+	text-shadow: none;
+}
+
+.home-hire-strip__title::before {
+	content: "> ";
+	color: #4ade80;
+}
+
+.home-hire-strip__lede {
+	max-width: 760px;
+	margin: 0 0 0.75rem;
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.88rem;
+	line-height: 1.55;
+	color: #9fb8ab;
+}
+
+.home-hire-strip__actions {
+	justify-content: flex-start;
+	gap: 0.45rem;
+}
+
+.home-hire-strip__actions .pixel-button {
+	padding: 0.52rem 0.7rem;
+	border-width: 1px;
+	border-radius: 2px;
+	background: rgba(0, 0, 0, 0.2);
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.76rem;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	text-transform: none;
+	box-shadow: none;
+}
+
+.home-hire-strip__cta--primary {
+	border-color: #4ade80;
+	color: #4ade80;
+	box-shadow: none;
+}
+
+.home-hire-strip__footnote {
+	margin: 0.65rem 0 0;
+	padding-top: 0.55rem;
+	border-top: 1px dashed rgba(94, 234, 160, 0.12);
+	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+	font-size: 0.72rem;
+	color: #799586;
+}
+
+.home-hire-strip__footnote a {
+	color: #58c7ff;
+}
+
+@media (max-width: 860px) {
+	.page-template-page-shop-php .shop-product-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 640px) {
+	.page-template-page-shop-php .shop-content {
+		padding-inline: 0.75rem;
+	}
+
+	.page-template-page-shop-php .shop-product-card__actions,
+	.page-template-page-shop-php .shop-product-detail__cta-row,
+	.page-template-page-shop-php .shop-custom-work__actions,
+	.home-hire-strip__actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.page-template-page-shop-php .shop-product-card__actions .pixel-button,
+	.page-template-page-shop-php .shop-product-detail__cta-row .pixel-button,
+	.page-template-page-shop-php .shop-custom-work__actions .pixel-button,
+	.home-hire-strip__actions .pixel-button {
+		width: 100%;
+		text-align: center;
+	}
+}
