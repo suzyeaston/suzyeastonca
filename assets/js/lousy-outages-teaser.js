@@ -74,7 +74,7 @@
       if (kind === 'down') {
         report = provider
           ? 'latest report: ' + provider + ' status page indicates service disruption'
-          : 'latest report: status page indicates service disruption';
+          : 'latest report: service disruption is being reported';
       } else if (kind === 'warn') {
         report = provider
           ? 'latest report: ' + provider + ' status page shows degraded service'
@@ -114,10 +114,10 @@
     });
     var reportEl = flyover.querySelector('[data-lo-flyover-report]');
     if (reportEl) reportEl.textContent = copy.report;
-    var primary = flyover.querySelector('.home-lo-flyover__primary');
-    if (primary) primary.setAttribute('aria-label', copy.banner + ' — view Lousy Outages status');
-    var mastState = flyover.querySelector('.home-lo-flyover__mast-state');
-    if (mastState) mastState.textContent = copy.highlight ? 'signal detected' : 'monitoring';
+    var cta = flyover.querySelector('.home-lo-flyover__cta');
+    if (cta) cta.setAttribute('aria-label', copy.banner + ' — view Lousy Outages status');
+    var craft = flyover.querySelector('.home-lo-flyover__craft');
+    if (craft && teaser.dashboard_url) craft.setAttribute('href', teaser.dashboard_url);
   }
 
   function render(container, payload, config) {

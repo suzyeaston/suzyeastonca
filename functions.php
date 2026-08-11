@@ -715,7 +715,7 @@ function se_home_lo_flyover_copy( array $teaser ): array {
     } elseif ( 'down' === $kind ) {
         $report = '' !== $provider
             ? "latest report: {$provider} status page indicates service disruption"
-            : 'latest report: status page indicates service disruption';
+            : 'latest report: service disruption is being reported';
     } elseif ( 'warn' === $kind ) {
         $report = '' !== $provider
             ? "latest report: {$provider} status page shows degraded service"
