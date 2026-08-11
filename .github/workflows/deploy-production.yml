@@ -40,6 +40,7 @@ jobs:
               - 'page-shop.php'
               - 'page-lousy-outages.php'
               - 'assets/css/shop.css'
+              - 'assets/css/shop-console.css'
               - 'assets/js/shop.js'
               - 'parts/**'
               - 'assets/css/home-hero-cabinet.css'
