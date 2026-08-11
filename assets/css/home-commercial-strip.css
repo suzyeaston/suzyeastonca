@@ -1,4 +1,4 @@
-/* Homepage Lousy Outages signal whale — cinematic live transmission above the hero deck. */
+/* Homepage Lousy Outages signal whale — cinematic Vancouver night flyover. */
 
 .home-lo-flyover {
   --fly-green: #4ade80;
@@ -9,7 +9,8 @@
   --fly-text: #d7e8df;
   --fly-muted: #8eaa9b;
   --fly-border: rgba(94, 234, 160, 0.18);
-  --fly-scene-h: clamp(6.75rem, 17vw, 9.25rem);
+  --fly-scene-h: clamp(7.25rem, 18vw, 10rem);
+  --fly-pass-duration: 14s;
 
   position: relative;
   width: min(92vw, 920px);
@@ -23,12 +24,32 @@
   border: 1px solid var(--fly-border);
   border-radius: 10px;
   background:
-    radial-gradient(ellipse 130% 90% at 50% 115%, rgba(88, 199, 255, 0.07), transparent 58%),
+    radial-gradient(ellipse 130% 90% at 50% 115%, rgba(88, 199, 255, 0.08), transparent 58%),
     radial-gradient(circle at 14% 18%, rgba(223, 119, 255, 0.05), transparent 40%),
     linear-gradient(180deg, rgba(6, 12, 18, 0.96) 0%, rgba(3, 6, 12, 0.98) 100%);
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.home-lo-flyover__scene-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.home-lo-flyover__scene-link:hover .home-lo-flyover__banner-skin,
+.home-lo-flyover__scene-link:focus-visible .home-lo-flyover__banner-skin {
+  border-color: rgba(88, 199, 255, 0.42);
+  box-shadow:
+    0 0 18px rgba(88, 199, 255, 0.16),
+    inset 0 0 0 1px rgba(74, 222, 128, 0.12);
+}
+
+.home-lo-flyover__scene-link:focus-visible {
+  outline: 2px solid var(--fly-cyan);
+  outline-offset: -2px;
 }
 
 .home-lo-flyover__scene {
@@ -37,15 +58,17 @@
   overflow: hidden;
   border-bottom: 1px solid rgba(88, 199, 255, 0.08);
   background:
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(18, 32, 52, 0.55), transparent 70%),
     radial-gradient(ellipse 120% 80% at 50% 110%, rgba(88, 199, 255, 0.1), transparent 55%),
     radial-gradient(circle at 18% 22%, rgba(223, 119, 255, 0.06), transparent 38%),
-    linear-gradient(180deg, #020408 0%, #050b14 46%, #03060d 100%);
+    linear-gradient(180deg, #010308 0%, #050b14 38%, #03060d 72%, #010205 100%);
   box-shadow: inset 0 -24px 36px rgba(88, 199, 255, 0.04);
 }
 
 .home-lo-flyover__sky {
   position: absolute;
   inset: 0;
+  z-index: 1;
 }
 
 .home-lo-flyover__star,
@@ -60,27 +83,28 @@
   width: 2px;
   height: 2px;
   color: #c8e8ff;
-  animation: homeLoWhaleStarTwinkle 5.2s ease-in-out infinite;
+  animation: homeLoWhaleStarTwinkle 4.6s ease-in-out infinite;
 }
 
-.home-lo-flyover__star--1 { top: 12%; left: 10%; animation-delay: 0s; }
-.home-lo-flyover__star--2 { top: 20%; left: 28%; animation-delay: 0.7s; opacity: 0.35; }
-.home-lo-flyover__star--3 { top: 8%; left: 52%; animation-delay: 1.3s; }
-.home-lo-flyover__star--4 { top: 26%; left: 68%; animation-delay: 2s; opacity: 0.4; }
-.home-lo-flyover__star--5 { top: 14%; left: 84%; animation-delay: 0.4s; }
-.home-lo-flyover__star--6 { top: 34%; left: 42%; animation-delay: 2.6s; opacity: 0.3; width: 1px; height: 1px; }
+.home-lo-flyover__star--1 { top: 10%; left: 8%; animation-delay: 0s; }
+.home-lo-flyover__star--2 { top: 18%; left: 24%; animation-delay: 0.6s; opacity: 0.35; }
+.home-lo-flyover__star--3 { top: 6%; left: 48%; animation-delay: 1.2s; }
+.home-lo-flyover__star--4 { top: 22%; left: 64%; animation-delay: 1.8s; opacity: 0.4; }
+.home-lo-flyover__star--5 { top: 12%; left: 82%; animation-delay: 0.3s; }
+.home-lo-flyover__star--6 { top: 30%; left: 38%; animation-delay: 2.4s; opacity: 0.3; width: 1px; height: 1px; }
+.home-lo-flyover__star--7 { top: 8%; left: 92%; animation-delay: 3.1s; opacity: 0.45; width: 1px; height: 1px; }
 
 .home-lo-flyover__signal {
   width: 3px;
   height: 3px;
   color: var(--fly-green);
   box-shadow: 0 0 6px rgba(74, 222, 128, 0.55);
-  animation: homeLoWhaleSignalPulse 2.8s ease-in-out infinite;
+  animation: homeLoWhaleSignalPulse 2.4s ease-in-out infinite;
 }
 
-.home-lo-flyover__signal--1 { top: 38%; left: 18%; animation-delay: 0.2s; }
-.home-lo-flyover__signal--2 { top: 48%; left: 46%; animation-delay: 1.1s; opacity: 0.7; }
-.home-lo-flyover__signal--3 { top: 34%; left: 74%; animation-delay: 1.9s; }
+.home-lo-flyover__signal--1 { top: 34%; left: 14%; animation-delay: 0.15s; }
+.home-lo-flyover__signal--2 { top: 42%; left: 44%; animation-delay: 0.9s; opacity: 0.7; }
+.home-lo-flyover__signal--3 { top: 28%; left: 76%; animation-delay: 1.6s; }
 
 .home-lo-flyover--hot .home-lo-flyover__signal {
   color: var(--fly-yellow);
@@ -96,9 +120,9 @@
 .home-lo-flyover__horizon {
   position: absolute;
   right: 0;
-  bottom: 0;
+  bottom: 38%;
   left: 0;
-  height: 44%;
+  height: 42%;
 }
 
 .home-lo-flyover__mountains {
@@ -108,10 +132,12 @@
   left: 0;
   height: 100%;
   background:
-    linear-gradient(158deg, transparent 40%, rgba(8, 18, 28, 0.94) 40%),
-    linear-gradient(145deg, transparent 50%, rgba(12, 24, 36, 0.9) 50%),
-    linear-gradient(170deg, transparent 34%, rgba(6, 14, 22, 0.96) 34%);
-  opacity: 0.92;
+    linear-gradient(155deg, transparent 36%, rgba(8, 18, 28, 0.94) 36%),
+    linear-gradient(142deg, transparent 46%, rgba(12, 24, 36, 0.9) 46%),
+    linear-gradient(168deg, transparent 28%, rgba(6, 14, 22, 0.96) 28%),
+    linear-gradient(125deg, transparent 58%, rgba(10, 20, 30, 0.88) 58%);
+  opacity: 0.94;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 55%);
 }
 
 .home-lo-flyover__skyline {
@@ -119,59 +145,145 @@
   right: 0;
   bottom: 0;
   left: 0;
-  height: 58%;
+  height: 62%;
   background:
     linear-gradient(90deg,
       transparent 0%,
-      rgba(88, 199, 255, 0.1) 16%,
-      rgba(88, 199, 255, 0.2) 20%,
-      rgba(88, 199, 255, 0.07) 23%,
-      transparent 27%,
-      rgba(223, 119, 255, 0.08) 40%,
-      rgba(223, 119, 255, 0.16) 43%,
-      transparent 47%,
-      rgba(88, 199, 255, 0.12) 60%,
-      rgba(88, 199, 255, 0.22) 64%,
-      transparent 69%,
-      rgba(74, 222, 128, 0.08) 82%,
-      rgba(74, 222, 128, 0.14) 85%,
-      transparent 91%
+      rgba(88, 199, 255, 0.1) 14%,
+      rgba(88, 199, 255, 0.22) 18%,
+      rgba(88, 199, 255, 0.08) 21%,
+      transparent 25%,
+      rgba(223, 119, 255, 0.08) 38%,
+      rgba(223, 119, 255, 0.18) 41%,
+      transparent 45%,
+      rgba(88, 199, 255, 0.14) 58%,
+      rgba(88, 199, 255, 0.26) 62%,
+      transparent 67%,
+      rgba(74, 222, 128, 0.1) 80%,
+      rgba(74, 222, 128, 0.16) 84%,
+      transparent 90%
     );
-  mask-image: linear-gradient(180deg, transparent 0%, #000 72%);
-  opacity: 0.72;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 78%);
+  opacity: 0.78;
+}
+
+/* Coastal water — bay, shimmer, harbour glow */
+.home-lo-flyover__water {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  height: 42%;
+  pointer-events: none;
+}
+
+.home-lo-flyover__bay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 85% 120% at 22% 0%, rgba(88, 199, 255, 0.06), transparent 52%),
+    linear-gradient(180deg, transparent 0%, rgba(2, 8, 16, 0.55) 18%, rgba(1, 4, 10, 0.92) 100%);
+  clip-path: polygon(0 38%, 8% 32%, 18% 36%, 32% 28%, 48% 34%, 62% 26%, 78% 32%, 92% 24%, 100% 30%, 100% 100%, 0 100%);
+}
+
+.home-lo-flyover__waterline {
+  position: absolute;
+  right: 0;
+  top: 26%;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(88, 199, 255, 0.12) 12%,
+    rgba(88, 199, 255, 0.28) 35%,
+    rgba(223, 119, 255, 0.18) 55%,
+    rgba(88, 199, 255, 0.22) 78%,
+    transparent 100%
+  );
+  opacity: 0.65;
+}
+
+.home-lo-flyover__shimmer {
+  position: absolute;
+  inset: 28% 0 0;
+  background:
+    repeating-linear-gradient(100deg,
+      transparent 0,
+      transparent 18px,
+      rgba(88, 199, 255, 0.03) 18px,
+      rgba(88, 199, 255, 0.03) 19px
+    ),
+    linear-gradient(180deg, transparent 0%, rgba(88, 199, 255, 0.04) 40%, rgba(74, 222, 128, 0.03) 100%);
+  opacity: 0.55;
+  animation: homeLoWaterShimmer 5.5s ease-in-out infinite;
+}
+
+.home-lo-flyover__harbour-glow {
+  position: absolute;
+  right: 12%;
+  bottom: 8%;
+  width: 28%;
+  height: 42%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255, 179, 0, 0.08) 0%, rgba(88, 199, 255, 0.05) 45%, transparent 72%);
+  opacity: 0.7;
+  animation: homeLoHarbourPulse 3.8s ease-in-out infinite;
 }
 
 .home-lo-flyover__track {
   position: absolute;
   inset: 0;
+  z-index: 3;
 }
 
-/* Banner trails behind the orca: banner → tether → whale (whale leads rightward). */
+/*
+ * Whale leads, banner trails.
+ * DOM: orca → tether → banner. Position anchors on the orca (left edge),
+ * so the whale enters the scene first when moving left-to-right.
+ */
 .home-lo-flyover__craft {
   position: absolute;
-  top: 24%;
-  left: -28%;
+  top: 22%;
+  left: -36%;
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 0;
   width: max-content;
-  color: inherit;
-  text-decoration: none;
-  pointer-events: auto;
-  animation: homeLoWhalePass 20s linear infinite;
-  will-change: transform, left;
+  animation: homeLoWhalePass var(--fly-pass-duration) linear infinite;
+  will-change: left;
+}
+
+.home-lo-flyover__orca {
+  position: relative;
+  flex: 0 0 auto;
+  width: 58px;
+  height: 34px;
+  filter: drop-shadow(0 0 8px rgba(88, 199, 255, 0.28));
+  animation: homeLoWhaleFace var(--fly-pass-duration) linear infinite;
+}
+
+.home-lo-flyover__tether {
+  flex: 0 0 auto;
+  width: clamp(1.25rem, 3vw, 2rem);
+  height: 1px;
+  background: linear-gradient(90deg, rgba(88, 199, 255, 0.55), rgba(88, 199, 255, 0.12));
+  box-shadow: 0 0 6px rgba(88, 199, 255, 0.2);
+  animation: homeLoTetherFade var(--fly-pass-duration) linear infinite;
 }
 
 .home-lo-flyover__banner-skin {
   display: inline-flex;
   align-items: center;
   min-height: 1.85rem;
+  max-width: min(72vw, 28rem);
   padding: 0.32rem 0.62rem;
   border: 1px solid rgba(88, 199, 255, 0.26);
   border-radius: 2px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent),
-    rgba(4, 12, 18, 0.9);
+    rgba(4, 12, 18, 0.92);
   box-shadow:
     0 0 14px rgba(88, 199, 255, 0.1),
     inset 0 0 0 1px rgba(74, 222, 128, 0.07);
@@ -184,6 +296,8 @@
   letter-spacing: 0.025em;
   line-height: 1.3;
   white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .home-lo-flyover--hot .home-lo-flyover__banner-skin {
@@ -199,24 +313,7 @@
   box-shadow: 0 0 18px rgba(255, 107, 107, 0.14);
 }
 
-.home-lo-flyover__tether {
-  flex: 0 0 auto;
-  width: clamp(1.25rem, 3vw, 2rem);
-  height: 1px;
-  background: linear-gradient(90deg, rgba(88, 199, 255, 0.12), rgba(88, 199, 255, 0.55));
-  box-shadow: 0 0 6px rgba(88, 199, 255, 0.2);
-}
-
-/* Pixel-inspired signal whale — side profile facing right. */
-.home-lo-flyover__orca {
-  position: relative;
-  flex: 0 0 auto;
-  width: 58px;
-  height: 34px;
-  filter: drop-shadow(0 0 8px rgba(88, 199, 255, 0.28));
-  animation: homeLoWhaleBob 3.6s ease-in-out infinite;
-}
-
+/* Pixel-inspired signal whale — side profile, default facing right. */
 .home-lo-flyover__orca-fluke,
 .home-lo-flyover__orca-body,
 .home-lo-flyover__orca-belly,
@@ -302,7 +399,7 @@
   box-shadow:
     0 0 6px rgba(87, 243, 255, 0.75),
     0 0 12px rgba(87, 243, 255, 0.35);
-  animation: homeLoWhaleEyePulse 2.4s ease-in-out infinite;
+  animation: homeLoWhaleEyePulse 2s ease-in-out infinite;
 }
 
 .home-lo-flyover__orca-spray {
@@ -313,7 +410,7 @@
   border-radius: 50%;
   background: radial-gradient(circle, rgba(88, 199, 255, 0.35) 0%, transparent 70%);
   opacity: 0.55;
-  animation: homeLoWhaleSpray 2.8s ease-in-out infinite;
+  animation: homeLoWhaleSpray 2.4s ease-in-out infinite;
 }
 
 .home-lo-flyover--hot .home-lo-flyover__orca-eye {
@@ -329,31 +426,8 @@
 
 .home-lo-flyover__readout {
   display: grid;
-  gap: 0.42rem;
-  padding: 0.82rem 0.92rem 0.88rem;
-}
-
-.home-lo-flyover__summary {
-  margin: 0;
-  color: #f1f7f4;
-  font-size: clamp(0.46rem, 0.82vw, 0.54rem);
-  letter-spacing: 0.06em;
-  line-height: 1.55;
-  text-transform: uppercase;
-  word-break: break-word;
-}
-
-.home-lo-flyover--warn .home-lo-flyover__summary,
-.home-lo-flyover--degraded .home-lo-flyover__summary,
-.home-lo-flyover--advisory .home-lo-flyover__summary {
-  color: #ffe9a8;
-  text-shadow: 0 0 10px rgba(255, 179, 0, 0.12);
-}
-
-.home-lo-flyover--down .home-lo-flyover__summary,
-.home-lo-flyover--bad .home-lo-flyover__summary {
-  color: #ffc9c9;
-  text-shadow: 0 0 10px rgba(255, 107, 107, 0.12);
+  gap: 0.38rem;
+  padding: 0.72rem 0.92rem 0.82rem;
 }
 
 .home-lo-flyover__report {
@@ -365,7 +439,7 @@
 
 .home-lo-flyover__cta {
   justify-self: start;
-  margin-top: 0.12rem;
+  margin-top: 0.08rem;
   color: #74d9c4;
   font-size: clamp(0.64rem, 0.98vw, 0.74rem);
   font-weight: 700;
@@ -380,34 +454,68 @@
   outline: none;
 }
 
+/* LTR pass: whale faces right, banner trails rightward. RTL pass: whale flips left. */
 @keyframes homeLoWhalePass {
   0% {
-    left: -28%;
-    transform: translateY(0);
+    left: -36%;
+    top: 22%;
   }
-  10% {
-    transform: translateY(-4px);
+  12% {
+    top: 19%;
   }
   24% {
-    transform: translateY(2px);
+    top: 23%;
   }
-  48% {
-    left: 112%;
-    transform: translateY(-3px);
+  47% {
+    left: 108%;
+    top: 20%;
   }
-  48.01% {
-    left: -28%;
-    transform: translateY(0);
+  50% {
+    left: 108%;
+    top: 22%;
+  }
+  62% {
+    top: 19%;
+  }
+  74% {
+    top: 23%;
+  }
+  97% {
+    left: -36%;
+    top: 20%;
   }
   100% {
-    left: -28%;
-    transform: translateY(0);
+    left: -36%;
+    top: 22%;
   }
 }
 
-@keyframes homeLoWhaleBob {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-3px) rotate(1deg); }
+@keyframes homeLoWhaleFace {
+  0%, 49% {
+    transform: scaleX(1);
+  }
+  50%, 100% {
+    transform: scaleX(-1);
+  }
+}
+
+@keyframes homeLoTetherFade {
+  0%, 49% {
+    background: linear-gradient(90deg, rgba(88, 199, 255, 0.55), rgba(88, 199, 255, 0.12));
+  }
+  50%, 100% {
+    background: linear-gradient(90deg, rgba(88, 199, 255, 0.12), rgba(88, 199, 255, 0.55));
+  }
+}
+
+@keyframes homeLoWaterShimmer {
+  0%, 100% { opacity: 0.42; transform: translateX(0); }
+  50% { opacity: 0.62; transform: translateX(6px); }
+}
+
+@keyframes homeLoHarbourPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.06); }
 }
 
 @keyframes homeLoWhaleStarTwinkle {
@@ -432,12 +540,12 @@
 
 @media (max-width: 720px) {
   .home-lo-flyover {
-    --fly-scene-h: 5.25rem;
+    --fly-scene-h: 5.75rem;
+    --fly-pass-duration: 17s;
   }
 
   .home-lo-flyover__craft {
-    top: 20%;
-    animation-duration: 24s;
+    top: 18%;
   }
 
   .home-lo-flyover__orca {
@@ -454,18 +562,19 @@
     font-size: 0.58rem;
   }
 
+  .home-lo-flyover__banner-skin {
+    max-width: min(68vw, 22rem);
+  }
+
   .home-lo-flyover__readout {
-    padding: 0.68rem 0.72rem 0.74rem;
+    padding: 0.62rem 0.72rem 0.72rem;
   }
 }
 
 @media (max-width: 520px) {
   .home-lo-flyover {
-    --fly-scene-h: 4.75rem;
-  }
-
-  .home-lo-flyover__craft {
-    animation-duration: 28s;
+    --fly-scene-h: 5.25rem;
+    --fly-pass-duration: 20s;
   }
 
   .home-lo-flyover__banner-text {
@@ -476,25 +585,31 @@
     width: 42px;
     height: 24px;
   }
-
-  .home-lo-flyover__summary {
-    font-size: 0.42rem;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .home-lo-flyover {
+    --fly-pass-duration: 0s;
+  }
+
   .home-lo-flyover__craft,
   .home-lo-flyover__orca,
   .home-lo-flyover__orca-eye,
   .home-lo-flyover__orca-spray,
   .home-lo-flyover__star,
-  .home-lo-flyover__signal {
+  .home-lo-flyover__signal,
+  .home-lo-flyover__shimmer,
+  .home-lo-flyover__harbour-glow {
     animation: none !important;
   }
 
   .home-lo-flyover__craft {
     left: 50%;
-    transform: translateX(-42%);
+    transform: translateX(-48%);
+  }
+
+  .home-lo-flyover__orca {
+    transform: scaleX(1);
   }
 
   .home-lo-flyover__scene {

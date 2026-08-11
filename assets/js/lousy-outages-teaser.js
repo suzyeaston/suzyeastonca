@@ -114,10 +114,14 @@
     });
     var reportEl = flyover.querySelector('[data-lo-flyover-report]');
     if (reportEl) reportEl.textContent = copy.report;
+    var aria = copy.banner + ' — view Lousy Outages status';
     var cta = flyover.querySelector('.home-lo-flyover__cta');
-    if (cta) cta.setAttribute('aria-label', copy.banner + ' — view Lousy Outages status');
-    var craft = flyover.querySelector('.home-lo-flyover__craft');
-    if (craft && teaser.dashboard_url) craft.setAttribute('href', teaser.dashboard_url);
+    if (cta) cta.setAttribute('aria-label', aria);
+    var sceneLink = flyover.querySelector('[data-lo-flyover-scene-link]');
+    if (sceneLink) {
+      if (teaser.dashboard_url) sceneLink.setAttribute('href', teaser.dashboard_url);
+      sceneLink.setAttribute('aria-label', aria);
+    }
   }
 
   function render(container, payload, config) {
