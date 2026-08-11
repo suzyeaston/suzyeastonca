@@ -43,6 +43,7 @@ jobs:
               - 'assets/css/shop-console.css'
               - 'assets/js/shop.js'
               - 'parts/**'
+              - 'assets/css/home-commercial-strip.css'
               - 'assets/css/home-hero-cabinet.css'
               - 'assets/css/home-yvr-radar-deck.css'
               - 'assets/audio/yvr/**'
