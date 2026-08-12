@@ -113,6 +113,7 @@ TEMPLATE_PART_PATTERN = re.compile(
 LOCAL_ASSET_PATTERN = re.compile(
     r"get_template_directory\(\)\s*\.\s*['\"](/(?:assets|js)/[^'\"]+)['\"]"
 )
+QUOTED_ASSET_PATTERN = re.compile(r"['\"](/(?:assets|js)/[^'\"]+\.(?:css|js|mp3))['\"]")
 
 # Files validated for template-part and local-asset closure. Scoped to Meanwhile/blog
 # so pre-existing selective-deploy gaps elsewhere do not block unrelated work.
@@ -184,6 +185,8 @@ def referenced_paths_from_php(relative: str) -> set[str]:
         refs.add(resolve_template_part(slug, name or None))
     if should_validate_transitive(relative):
         for asset in LOCAL_ASSET_PATTERN.findall(text):
+            refs.add(asset.lstrip("/"))
+        for asset in QUOTED_ASSET_PATTERN.findall(text):
             refs.add(asset.lstrip("/"))
     return refs
 
