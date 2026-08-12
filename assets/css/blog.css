@@ -445,7 +445,7 @@
 
 .se-signal-log-home {
 	max-width: min(92vw, 1080px);
-	margin: 1.5rem auto 0;
+	margin: clamp(1.25rem, 2.5vw, 1.75rem) auto clamp(1rem, 2vw, 1.5rem);
 	padding: 1.15rem clamp(0.85rem, 2.5vw, 1.25rem);
 	border: 1px solid var(--sl-border);
 	border-left: 3px solid var(--sl-green);
@@ -559,6 +559,257 @@
 .se-signal-log-home__archive-link:focus-visible {
 	color: var(--sl-cyan);
 	text-decoration: underline;
+}
+
+/* Homepage mission-select — Meanwhile field terminal */
+
+.home-mission-card--meanwhile {
+	--mm-amber: #ffb300;
+	--mm-phosphor: #4ade80;
+	--mm-cyan: #58c7ff;
+	--mm-panel: rgba(6, 12, 10, 0.92);
+	grid-column: span 2;
+	border-color: rgba(255, 179, 0, 0.42);
+	background:
+		linear-gradient(145deg, rgba(255, 179, 0, 0.08), transparent 42%),
+		linear-gradient(180deg, rgba(0, 18, 12, 0.82), rgba(0, 0, 0, 0.72));
+	box-shadow:
+		0 0 0 1px rgba(255, 179, 0, 0.08),
+		0 14px 34px rgba(0, 0, 0, 0.32),
+		inset 0 1px 0 rgba(255, 179, 0, 0.12);
+}
+
+.home-mission-card--meanwhile-live {
+	border-color: rgba(74, 222, 128, 0.45);
+	box-shadow:
+		0 0 18px rgba(74, 222, 128, 0.1),
+		0 14px 34px rgba(0, 0, 0, 0.32);
+}
+
+.home-mission-card--meanwhile .home-mission-card__label {
+	color: var(--mm-amber);
+}
+
+.home-mission-card--meanwhile h3 {
+	color: var(--mm-phosphor);
+	text-shadow: 0 0 14px rgba(74, 222, 128, 0.28);
+}
+
+.home-mission-meanwhile__tagline {
+	margin: 0;
+	font-family: var(--sl-mono);
+	font-size: 0.76rem;
+	line-height: 1.55;
+	color: var(--sl-muted);
+}
+
+.home-mission-meanwhile__terminal {
+	position: relative;
+	display: grid;
+	margin-top: 0.15rem;
+	isolation: isolate;
+}
+
+.home-mission-meanwhile__scan {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	border-radius: 10px;
+	background:
+		repeating-linear-gradient(
+			0deg,
+			rgba(0, 0, 0, 0) 0,
+			rgba(0, 0, 0, 0) 2px,
+			rgba(0, 0, 0, 0.16) 3px
+		);
+	opacity: 0.35;
+}
+
+.home-mission-meanwhile__shell {
+	position: relative;
+	z-index: 1;
+	border: 1px solid rgba(94, 234, 160, 0.2);
+	border-radius: 10px;
+	background: var(--mm-panel);
+	overflow: hidden;
+}
+
+.home-mission-meanwhile__shell-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.65rem;
+	padding: 0.45rem 0.65rem;
+	border-bottom: 1px solid rgba(94, 234, 160, 0.14);
+	background: rgba(0, 0, 0, 0.35);
+	font-size: clamp(0.42rem, 0.85vw, 0.52rem);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--sl-muted);
+}
+
+.home-mission-meanwhile__status {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	color: var(--mm-amber);
+}
+
+.home-mission-card--meanwhile-live .home-mission-meanwhile__status {
+	color: var(--mm-phosphor);
+}
+
+.home-mission-meanwhile__led {
+	width: 0.45rem;
+	height: 0.45rem;
+	border-radius: 50%;
+	background: var(--mm-amber);
+	box-shadow: 0 0 8px rgba(255, 179, 0, 0.55);
+}
+
+.home-mission-card--meanwhile-live .home-mission-meanwhile__led {
+	background: var(--mm-phosphor);
+	box-shadow: 0 0 10px rgba(74, 222, 128, 0.65);
+	animation: home-mission-meanwhile-pulse 2.4s ease-in-out infinite;
+}
+
+.home-mission-meanwhile__path {
+	color: rgba(142, 170, 155, 0.85);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.home-mission-meanwhile__body {
+	padding: 0.7rem 0.75rem 0.8rem;
+	font-family: var(--sl-mono);
+}
+
+.home-mission-meanwhile__prompt {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.2rem;
+	margin: 0 0 0.55rem;
+	font-size: clamp(0.48rem, 0.95vw, 0.58rem);
+	color: rgba(142, 170, 155, 0.9);
+}
+
+.home-mission-meanwhile__sigil {
+	color: var(--mm-phosphor);
+}
+
+.home-mission-meanwhile__caret {
+	display: inline-block;
+	width: 0.45rem;
+	height: 0.85em;
+	margin-left: 0.1rem;
+	background: var(--mm-phosphor);
+	animation: home-mission-meanwhile-blink 1.1s step-end infinite;
+}
+
+.home-mission-meanwhile__entry-label,
+.home-mission-meanwhile__empty-label {
+	margin: 0 0 0.35rem;
+	font-size: clamp(0.45rem, 0.9vw, 0.55rem);
+	letter-spacing: 0.08em;
+	color: var(--mm-cyan);
+}
+
+.home-mission-meanwhile__entry {
+	display: grid;
+	gap: 0.3rem;
+}
+
+.home-mission-meanwhile__date {
+	font-size: 0.72rem;
+	color: var(--sl-muted);
+}
+
+.home-mission-meanwhile__cat {
+	display: inline-block;
+	width: fit-content;
+	padding: 0.12rem 0.35rem;
+	border: 1px solid rgba(94, 234, 160, 0.22);
+	border-radius: 3px;
+	font-size: 0.48rem;
+	letter-spacing: 0.06em;
+	text-transform: lowercase;
+	color: var(--mm-phosphor);
+}
+
+.home-mission-meanwhile__entry-title {
+	font-size: clamp(0.78rem, 1.5vw, 0.92rem);
+	line-height: 1.45;
+	color: #e8f7ee;
+	text-decoration: none;
+}
+
+.home-mission-meanwhile__entry-title:hover,
+.home-mission-meanwhile__entry-title:focus-visible {
+	color: var(--mm-cyan);
+	text-decoration: underline;
+	outline: 2px solid rgba(88, 199, 255, 0.45);
+	outline-offset: 2px;
+}
+
+.home-mission-meanwhile__entry-excerpt {
+	margin: 0.15rem 0 0;
+	font-size: 0.74rem;
+	line-height: 1.55;
+	color: var(--sl-muted);
+}
+
+.home-mission-meanwhile__empty-copy {
+	margin: 0;
+	font-size: 0.76rem;
+	line-height: 1.55;
+	color: var(--sl-muted);
+}
+
+.home-mission-meanwhile__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.65rem 1rem;
+	margin-top: 0.15rem;
+}
+
+.home-mission-meanwhile__latest-link {
+	font-family: var(--sl-mono);
+	font-size: 0.72rem;
+	color: var(--mm-cyan);
+	text-decoration: none;
+}
+
+.home-mission-meanwhile__latest-link:hover,
+.home-mission-meanwhile__latest-link:focus-visible {
+	color: var(--mm-phosphor);
+	text-decoration: underline;
+	outline: 2px solid rgba(88, 199, 255, 0.45);
+	outline-offset: 2px;
+}
+
+@keyframes home-mission-meanwhile-blink {
+	50% { opacity: 0; }
+}
+
+@keyframes home-mission-meanwhile-pulse {
+	50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.home-mission-meanwhile__caret,
+	.home-mission-meanwhile__led {
+		animation: none;
+	}
+}
+
+@media (max-width: 980px) {
+	.home-mission-card--meanwhile {
+		grid-column: 1 / -1;
+	}
 }
 
 /* Responsive */

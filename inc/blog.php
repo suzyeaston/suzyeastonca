@@ -295,6 +295,78 @@ function se_blog_latest_query( $count = 3 ) {
 }
 
 /**
+ * Latest-post payload for the homepage mission-select Meanwhile card.
+ *
+ * @return array{
+ *     blog_url: string,
+ *     has_post: bool,
+ *     status_label: string,
+ *     post_id: int,
+ *     post_title: string,
+ *     post_url: string,
+ *     post_date: string,
+ *     post_date_iso: string,
+ *     post_excerpt: string,
+ *     category_name: string
+ * }
+ */
+function se_blog_home_mission_data() {
+	$blog_url = se_blog_archive_url();
+	$data     = [
+		'blog_url'        => $blog_url,
+		'has_post'        => false,
+		'status_label'    => 'STANDBY',
+		'post_id'         => 0,
+		'post_title'      => '',
+		'post_url'        => '',
+		'post_date'       => '',
+		'post_date_iso'   => '',
+		'post_excerpt'    => '',
+		'category_name'   => '',
+	];
+
+	if ( ! function_exists( 'get_posts' ) ) {
+		return $data;
+	}
+
+	$query = se_blog_latest_query( 1 );
+
+	if ( ! $query instanceof WP_Query || ! $query->have_posts() ) {
+		if ( $query instanceof WP_Query ) {
+			wp_reset_postdata();
+		}
+		return $data;
+	}
+
+	$query->the_post();
+
+	$post_id = get_the_ID();
+	$post    = get_post( $post_id );
+
+	if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) {
+		wp_reset_postdata();
+		return $data;
+	}
+
+	$title = get_the_title( $post );
+	$cat   = se_blog_primary_category( $post_id );
+
+	$data['has_post']      = true;
+	$data['status_label']  = 'NOW TRANSMITTING';
+	$data['post_id']       = (int) $post_id;
+	$data['post_title']    = $title ? $title : 'untitled entry';
+	$data['post_url']      = get_permalink( $post ) ?: $blog_url;
+	$data['post_date']     = se_blog_format_date( $post_id );
+	$data['post_date_iso'] = get_the_date( DATE_W3C, $post ) ?: '';
+	$data['post_excerpt']  = se_blog_excerpt( $post_id, 18 );
+	$data['category_name'] = ( $cat instanceof WP_Term ) ? $cat->name : '';
+
+	wp_reset_postdata();
+
+	return $data;
+}
+
+/**
  * Register default blog categories on theme setup (idempotent).
  */
 function se_blog_register_default_categories() {

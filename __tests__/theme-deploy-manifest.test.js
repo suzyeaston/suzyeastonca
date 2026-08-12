@@ -29,6 +29,7 @@ test("Meanwhile runtime files are listed in THEME_FILES", () => {
     "archive.php",
     "category.php",
     "parts/home-signal-log.php",
+    "parts/home-mission-meanwhile.php",
     "parts/blog-card.php",
     "parts/blog-empty.php",
     "parts/blog-hero.php",
