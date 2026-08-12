@@ -152,8 +152,6 @@ get_header();
         </div>
     </section>
 
-    <?php get_template_part( 'parts/home-signal-log' ); ?>
-
     <section id="music" class="music-world home-unlocks crt-block" aria-labelledby="music-world-title">
         <p class="home-section-kicker pixel-font"><?php echo esc_html( 'UNLOCKS' ); ?></p>
         <h2 id="music-world-title" class="pixel-font"><?php echo esc_html( 'Music / tools / contact' ); ?></h2>

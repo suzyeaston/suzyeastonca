@@ -50,9 +50,6 @@ $has_post = ! empty( $mission['has_post'] );
 						<a class="home-mission-meanwhile__entry-title" href="<?php echo esc_url( $mission['post_url'] ); ?>">
 							<?php echo esc_html( $mission['post_title'] ); ?>
 						</a>
-						<?php if ( $mission['post_excerpt'] ) : ?>
-							<p class="home-mission-meanwhile__entry-excerpt"><?php echo esc_html( $mission['post_excerpt'] ); ?></p>
-						<?php endif; ?>
 					</div>
 				<?php else : ?>
 					<p class="home-mission-meanwhile__empty-label pixel-font"><?php echo esc_html( 'NO CARRIER' ); ?></p>

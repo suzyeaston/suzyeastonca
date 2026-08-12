@@ -5,13 +5,10 @@ const test = require("node:test");
 
 const ROOT = path.resolve(__dirname, "..");
 
-test("homepage includes Meanwhile mission card template part", () => {
+test("homepage includes Meanwhile mission card but not the full posts feed", () => {
   const source = fs.readFileSync(path.join(ROOT, "page-home.php"), "utf8");
   assert.match(source, /get_template_part\(\s*'parts\/home',\s*'mission-meanwhile'\s*\)/);
-  const missionIndex = source.indexOf("get_template_part( 'parts/home', 'mission-meanwhile' )");
-  const feedIndex = source.indexOf("get_template_part( 'parts/home-signal-log' )");
-  assert.ok(missionIndex > -1 && feedIndex > -1);
-  assert.ok(missionIndex < feedIndex, "mission card should appear before the Meanwhile feed");
+  assert.doesNotMatch(source, /get_template_part\(\s*'parts\/home-signal-log'\s*\)/);
 });
 
 test("Meanwhile mission card part handles empty and live states", () => {
@@ -24,6 +21,7 @@ test("Meanwhile mission card part handles empty and live states", () => {
   assert.match(source, /LATEST ENTRY/);
   assert.match(source, /Open channel/);
   assert.match(source, /aria-live="polite"/);
+  assert.doesNotMatch(source, /post_excerpt/);
 });
 
 test("blog helper exposes homepage mission payload", () => {
