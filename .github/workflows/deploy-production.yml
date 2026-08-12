@@ -48,6 +48,7 @@ jobs:
               - 'assets/data/**'
               - 'js/**'
               - 'scripts/deploy-lousy-outages-ssh.py'
+              - 'scripts/theme_deploy_manifest.py'
             plugin:
               - 'lousy-outages/**'
               - 'dist/lousy-outages.zip'
@@ -111,6 +112,14 @@ jobs:
 
       - name: Install deploy dependencies
         run: pip install paramiko
+
+      - name: Validate theme deploy manifest
+        if: needs.changes.outputs.theme == 'true'
+        run: python3 scripts/theme_deploy_manifest.py validate
+
+      - name: Validate changed deployable theme files
+        if: needs.changes.outputs.theme == 'true' && github.event_name == 'push'
+        run: python3 scripts/theme_deploy_manifest.py validate --git-base ${{ github.event.before }}
 
       - name: Build plugin release ZIP
         if: needs.changes.outputs.plugin == 'true'
