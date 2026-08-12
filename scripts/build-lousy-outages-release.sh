@@ -4,8 +4,19 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="$ROOT/lousy-outages"
 DIST="$ROOT/dist"
 ZIP="$DIST/lousy-outages.zip"
-VERSION="0.5.7"
+PLUGIN_MAIN="$SRC/lousy-outages.php"
 PLUGIN_HEADER="Plugin Name: Lousy"$' '"Outages"
+# Read the shipped version from the plugin itself so deploy never drifts after a bump.
+VERSION="$(sed -nE 's/^ \* Version: ([0-9]+\.[0-9]+\.[0-9]+)$/\1/p' "$PLUGIN_MAIN" | head -n1)"
+if [[ -z "$VERSION" ]]; then
+  echo "Unable to read Version header from $PLUGIN_MAIN" >&2
+  exit 1
+fi
+CONST_VERSION="$(sed -nE "s/.*define\\( 'LOUSY_OUTAGES_VERSION', '([0-9]+\\.[0-9]+\\.[0-9]+)' \\);.*/\\1/p" "$PLUGIN_MAIN" | head -n1)"
+if [[ "$CONST_VERSION" != "$VERSION" ]]; then
+  echo "Plugin Version header ($VERSION) does not match LOUSY_OUTAGES_VERSION ($CONST_VERSION)" >&2
+  exit 1
+fi
 rm -rf "$DIST/.lousy-outages-build" "$ZIP" "$ZIP.sha256" "$DIST/release-manifest.json"
 mkdir -p "$DIST/.lousy-outages-build/lousy-outages" "$DIST"
 rsync -a --delete \
