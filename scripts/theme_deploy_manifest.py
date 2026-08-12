@@ -76,6 +76,7 @@ THEME_FILES = [
     "parts/home-commercial-strip.php",
     "parts/home-hire-strip.php",
     "parts/home-signal-log.php",
+    "parts/home-mission-meanwhile.php",
     "parts/blog-card.php",
     "parts/blog-empty.php",
     "parts/blog-hero.php",
@@ -124,6 +125,7 @@ TRANSITIVE_VALIDATION_PREFIXES = (
     "category.php",
     "inc/blog.php",
     "parts/home-signal-log.php",
+    "parts/home-mission-meanwhile.php",
     "parts/blog-",
 )
 
