@@ -359,6 +359,14 @@
 	display: none;
 }
 
+.home-hire-strip__location {
+    margin: 0 0 0.65rem;
+    color: rgba(244, 247, 255, 0.82);
+    font-size: clamp(0.58rem, 1.2vw, 0.68rem);
+    letter-spacing: 0.08em;
+    text-transform: lowercase;
+}
+
 .home-hire-strip__title {
 	margin: 0 0 0.3rem;
 	font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;

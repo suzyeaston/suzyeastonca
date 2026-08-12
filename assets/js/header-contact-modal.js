@@ -62,6 +62,12 @@
     modal.hidden = false;
     document.body.classList.add('se-modal-open');
 
+    if (typeof window.seTrackEvent === 'function') {
+      window.seTrackEvent('contact_open', {
+        trigger: event && event.currentTarget ? (event.currentTarget.getAttribute('data-hire-cta-label') || 'contact_trigger') : 'programmatic',
+      });
+    }
+
     if (formBody) {
       formBody.scrollTop = 0;
     }
@@ -131,6 +137,10 @@
       setStatus(data.data && data.data.message ? data.data.message : 'Message sent.', false);
       form.hidden = true;
       if (successEl) successEl.hidden = false;
+
+      if (typeof window.seTrackEvent === 'function') {
+        window.seTrackEvent('contact_submit', { surface: 'contact_modal' });
+      }
     } catch (error) {
       setStatus(error.message || 'Could not send message right now.', true);
     }

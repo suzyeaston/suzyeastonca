@@ -35,6 +35,7 @@ require_once get_template_directory() . '/inc/home-translink-alerts.php';
 require_once get_template_directory() . '/inc/home-yvr-audio-channels.php';
 require_once get_template_directory() . '/inc/home-yvr-broadcaster.php';
 require_once get_template_directory() . '/inc/shop.php';
+require_once get_template_directory() . '/inc/seo.php';
 /**
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)
@@ -3563,14 +3564,6 @@ add_action('template_redirect', function() {
     if ( is_author() ) {
         wp_redirect(home_url(), 301);
         exit;
-    }
-});
-
-// Advertise Lousy Outages RSS feed for readers (auto-discovery)
-add_action('wp_head', function () {
-    if (function_exists('home_url')) {
-        $href = esc_url( home_url('/outages/feed') );
-        echo "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"Lousy Outages Alerts\" href=\"{$href}\" />\n";
     }
 });
 

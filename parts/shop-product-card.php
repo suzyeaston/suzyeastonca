@@ -43,7 +43,7 @@ $detail_id = 'shop-detail-' . $slug;
 	<div class="shop-product-card__actions">
 		<a
 			class="pixel-button shop-product-card__detail-link"
-			href="<?php echo esc_url( home_url( '/shop/#' . $slug ) ); ?>"
+			href="<?php echo esc_url( se_preserve_utm_url( home_url( '/shop/#' . $slug ) ) ); ?>"
 			data-shop-detail-trigger
 			data-shop-slug="<?php echo esc_attr( $slug ); ?>"
 			aria-controls="<?php echo esc_attr( $detail_id ); ?>"

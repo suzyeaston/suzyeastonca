@@ -14,127 +14,13 @@
   <link rel="profile" href="http://gmpg.org/xfn/11">
 
   <?php
-    global $wp;
-    $site_name   = 'Suzy Easton';
-    $default_img = 'https://suzyeaston.ca/arcade/og-image.png';
-
-    $meta_keywords = 'Suzy Easton, musician, creative technologist';
-
-    if ( is_front_page() ) {
-      $meta_title = 'Suzy Easton | AI Strategist, Musician & Creative Technologist — Vancouver';
-      $meta_desc  = 'Suzy Easton is a Vancouver musician, AI strategist, and creative technologist building practical AI tools, outage dashboards, music experiments, and strange useful web projects.';
-      $meta_keywords = 'Suzy Easton, AI Strategist, Vancouver creative technologist, musician, Quercus IT, creative tools, music tech, retro tools';
-      $meta_img   = $default_img;
-    } elseif ( is_page_template( 'page-asmr-lab.php' ) ) {
-      $meta_title = 'ASMR Lab – experimental predecessor now under major redevelopment';
-      $meta_desc  = 'ASMR Lab is Suzy\'s earlier audio/visual prototype that inspired the Gastown simulator and is now being rebuilt in public.';
-      $meta_keywords = 'ASMR Lab, Gastown simulator predecessor, creative tech prototype, Suzy Easton';
-      $meta_img   = $default_img;
-    } elseif ( is_page_template( 'page-lousy-outages.php' ) ) {
-      $meta_title = 'Lousy Outages | Status dashboard for modern chaos';
-      $meta_desc  = 'A retro status dashboard for provider incidents, SaaS weirdness, community reports, and alerts when things go sideways.';
-      $meta_keywords = 'lousy outages status dashboard, outage tracker, retro status board';
-      $meta_img   = $default_img;
-    } elseif ( is_page_template( 'page-track-analyzer.php' ) ) {
-      $meta_title = "Suzy’s Track Analyzer | AI-assisted song feedback";
-      $meta_desc  = 'Upload an MP3 and get direct AI-assisted notes on lyrics, structure, feel, and production direction.';
-      $meta_keywords = 'track analyzer, music AI tool, Suzy Easton, mix feedback';
-      $meta_img   = $default_img;
-    } elseif ( is_page_template( 'page-arcade.php' ) ) {
-      $meta_title = 'Canucks Puck Bash - Retro Hockey Arcade';
-      $meta_desc  = "Shoot, score, and hear 'Don't You Forget About Me' in this 80s-style hockey arcade game.";
-      $meta_keywords = 'Canucks arcade game, retro hockey game, Suzy Easton arcade';
-      $meta_img   = $default_img;
-    } elseif ( is_page_template( 'page-coffee-for-builders.php' ) ) {
-      $meta_title = 'Coffee for Builders in Vancouver | Suzy Easton';
-      $meta_desc  = 'Coffee chats in Vancouver for people building things—tech, music, civic projects, and sports takes. Low-key, public, and intentional.';
-      $meta_keywords = 'coffee chats Vancouver, builders, Suzy Easton, tech, music, civic projects, sports takes';
-      $meta_img   = $default_img;
-    } elseif ( is_page_template( 'page-shop.php' ) || is_page( 'shop' ) ) {
-      $shop_meta  = function_exists( 'se_shop_meta' ) ? se_shop_meta() : [];
-      $meta_title = (string) ( $shop_meta['title'] ?? 'Shop Suzy | Hire Suzy Easton' );
-      $meta_desc  = (string) ( $shop_meta['description'] ?? 'Book focused consulting time with Suzy Easton.' );
-      $meta_keywords = (string) ( $shop_meta['keywords'] ?? 'hire Suzy Easton, tech consulting Vancouver' );
-      $meta_img   = $default_img;
-    } else {
-      $meta_title = wp_title( '|', false, 'right' ) . $site_name;
-      $meta_desc  = get_bloginfo( 'description' );
-      $meta_keywords = 'Suzy Easton, musician, creative technologist, Vancouver artist';
-      $meta_img   = $default_img;
-    }
-    if ( is_singular() ) {
-      $meta_url = get_permalink();
-    } else {
-      $meta_url = home_url( add_query_arg( [], $wp->request ) );
-    }
-    $home_profile_graph = [];
-    if ( is_front_page() ) {
-      $home_profile_graph[] = [
-        '@type' => 'ProfilePage',
-        'name' => 'Suzy Easton',
-        'url' => home_url( '/' ),
-        'description' => $meta_desc,
-        'mainEntity' => [
-          '@type' => 'Person',
-          'name' => 'Suzy Easton',
-          'jobTitle' => 'AI Strategist & Creative Technologist',
-          'address' => [
-            '@type' => 'PostalAddress',
-            'addressLocality' => 'Vancouver',
-            'addressCountry' => 'CA',
-          ],
-          'sameAs' => [
-            'https://suzyeaston.bandcamp.com',
-            'https://soundcloud.com/suzyeaston',
-            'https://instagram.com/suzyeaston',
-            'https://youtube.com/@suzyeaston',
-          ],
-        ],
-      ];
-    }
-
-    $structured_data = [
-      '@context' => 'https://schema.org',
-      '@graph'   => [
-        [
-          '@type' => 'WebSite',
-          'name' => $site_name,
-          'url'  => home_url( '/' ),
-          'description' => $meta_desc,
-          'inLanguage'  => get_bloginfo( 'language' ),
-          'potentialAction' => [
-            '@type' => 'SearchAction',
-            'target' => home_url( '/?s={search_term_string}' ),
-            'query-input' => 'required name=search_term_string',
-          ],
-        ],
-        [
-          '@type' => 'Person',
-          'name' => 'Suzy Easton',
-          'url'  => 'https://www.suzyeaston.ca',
-          'jobTitle' => 'AI Strategist & Creative Technologist',
-          'address' => [
-            '@type' => 'PostalAddress',
-            'addressLocality' => 'Vancouver',
-            'addressCountry'  => 'CA',
-          ],
-          'sameAs' => [
-            'https://suzyeaston.bandcamp.com',
-            'https://soundcloud.com/suzyeaston',
-            'https://instagram.com/suzyeaston',
-            'https://youtube.com/@suzyeaston',
-          ],
-        ],
-      ],
-    ];
-
-    if ( ! empty( $home_profile_graph ) ) {
-      $structured_data['@graph'] = array_merge( $structured_data['@graph'], $home_profile_graph );
-    }
-
-    if ( ( is_page_template( 'page-shop.php' ) || is_page( 'shop' ) ) && function_exists( 'se_shop_structured_data' ) ) {
-      $structured_data = se_shop_structured_data();
-    }
+    $page_meta       = se_page_meta();
+    $meta_title      = $page_meta['title'];
+    $meta_desc       = $page_meta['description'];
+    $meta_keywords   = $page_meta['keywords'];
+    $meta_img        = $page_meta['image'];
+    $meta_url        = $page_meta['url'];
+    $structured_data = se_page_structured_data();
   ?>
   <title><?php echo esc_html( $meta_title ); ?></title>
   <meta name="description" content="<?php echo esc_attr( $meta_desc ); ?>">
@@ -181,8 +67,8 @@
   </div>
   <div class="header-actions">
     <nav class="se-header-nav" aria-label="Site actions">
-      <a class="se-header-nav__link se-header-nav__link--shop" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">SHOP</a>
-      <a class="se-header-nav__link" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">HIRE SUZY</a>
+      <a class="se-header-nav__link se-header-nav__link--shop" href="<?php echo esc_url( se_preserve_utm_url( home_url( '/shop/' ) ) ); ?>" data-hire-cta data-hire-cta-label="header_shop">SHOP</a>
+      <a class="se-header-nav__link" href="<?php echo esc_url( se_preserve_utm_url( home_url( '/work-with-suzy/' ) ) ); ?>" data-hire-cta data-hire-cta-label="header_hire">HIRE SUZY</a>
     </nav>
     <button class="pixel-button header-contact-trigger"
             type="button"
