@@ -136,6 +136,8 @@ get_header();
 
     <?php get_template_part( 'parts/home-feature-previews' ); ?>
 
+    <?php get_template_part( 'parts/home-signal-log' ); ?>
+
     <section id="mission-select" class="home-project-grid home-mission-select crt-block" aria-labelledby="selected-projects-title">
         <p class="home-section-kicker pixel-font"><?php echo esc_html( 'LEVEL SELECT' ); ?></p>
         <h2 id="selected-projects-title" class="pixel-font"><?php echo esc_html( 'CHOOSE YOUR SYSTEM' ); ?></h2>

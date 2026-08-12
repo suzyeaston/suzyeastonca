@@ -29,6 +29,7 @@
     <div class="footer-content">
         <nav class="footer-site-links" aria-label="Explore creative projects">
             <a href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">Shop / Hire Suzy</a>
+            <a href="<?php echo esc_url( home_url( '/blog/' ) ); ?>">Meanwhile</a>
             <a href="<?php echo esc_url( home_url( '/work-with-suzy/' ) ); ?>">Work With Suzy</a>
             <a href="<?php echo esc_url( home_url( '/asmr-lab/' ) ); ?>">ASMR Lab</a>
             <a href="<?php echo esc_url( home_url( '/suzys-track-analyzer/' ) ); ?>">Track Analyzer</a>

@@ -281,6 +281,28 @@ function se_page_meta() {
 		$meta_title = (string) ( $shop_meta['title'] ?? 'Shop Suzy | Hire Suzy Easton' );
 		$meta_desc  = (string) ( $shop_meta['description'] ?? 'Book focused consulting time with Suzy Easton.' );
 		$keywords   = (string) ( $shop_meta['keywords'] ?? 'hire Suzy Easton, tech consulting Vancouver' );
+	} elseif ( is_home() && ! is_front_page() ) {
+		$blog_meta  = se_blog_archive_meta();
+		$meta_title = $blog_meta['title'];
+		$meta_desc  = $blog_meta['description'];
+		$keywords   = $blog_meta['keywords'];
+	} elseif ( is_category() ) {
+		$blog_meta  = se_blog_category_meta();
+		$meta_title = $blog_meta['title'];
+		$meta_desc  = $blog_meta['description'];
+		$keywords   = $blog_meta['keywords'];
+	} elseif ( is_singular( 'post' ) ) {
+		$post       = get_queried_object();
+		$blog_meta  = ( $post instanceof WP_Post ) ? se_blog_post_meta( $post ) : se_blog_archive_meta();
+		$meta_title = $blog_meta['title'];
+		$meta_desc  = $blog_meta['description'];
+		$keywords   = $blog_meta['keywords'];
+		if ( $post instanceof WP_Post && has_post_thumbnail( $post ) ) {
+			$thumb = wp_get_attachment_image_url( get_post_thumbnail_id( $post ), 'large' );
+			if ( is_string( $thumb ) && $thumb !== '' ) {
+				$default_img = $thumb;
+			}
+		}
 	} else {
 		$meta_title = wp_title( '|', false, 'right' ) . $site_name;
 		$meta_desc  = get_bloginfo( 'description' );
@@ -318,6 +340,34 @@ function se_page_structured_data() {
 
 	if ( ( is_page_template( 'page-shop.php' ) || is_page( 'shop' ) ) && function_exists( 'se_shop_structured_data' ) ) {
 		return se_shop_structured_data();
+	}
+
+	if ( is_home() && ! is_front_page() ) {
+		return se_blog_archive_structured_data();
+	}
+
+	if ( is_singular( 'post' ) ) {
+		$post = get_queried_object();
+		if ( $post instanceof WP_Post ) {
+			return se_blog_post_structured_data( $post );
+		}
+	}
+
+	if ( is_category() ) {
+		$meta = se_blog_category_meta();
+		return [
+			'@context' => 'https://schema.org',
+			'@graph'   => [
+				se_website_schema( $meta['description'] ),
+				se_person_schema(),
+				[
+					'@type'       => 'CollectionPage',
+					'name'        => $meta['title'],
+					'url'         => get_term_link( get_queried_object() ),
+					'description' => $meta['description'],
+				],
+			],
+		];
 	}
 
 	return [
@@ -395,6 +445,10 @@ function se_seo_current_surface() {
 
 	if ( is_front_page() ) {
 		return 'home';
+	}
+
+	if ( is_home() || is_singular( 'post' ) || is_category() ) {
+		return 'blog';
 	}
 
 	return 'site';

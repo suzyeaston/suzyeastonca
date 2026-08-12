@@ -21,12 +21,13 @@
     $meta_img        = $page_meta['image'];
     $meta_url        = $page_meta['url'];
     $structured_data = se_page_structured_data();
+    $og_type         = function_exists( 'se_page_og_type' ) ? se_page_og_type() : 'website';
   ?>
   <title><?php echo esc_html( $meta_title ); ?></title>
   <meta name="description" content="<?php echo esc_attr( $meta_desc ); ?>">
   <meta name="keywords" content="<?php echo esc_attr( $meta_keywords ); ?>">
   <link rel="canonical" href="<?php echo esc_url( $meta_url ); ?>">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="<?php echo esc_attr( $og_type ); ?>">
   <meta property="og:title" content="<?php echo esc_attr( $meta_title ); ?>">
   <meta property="og:description" content="<?php echo esc_attr( $meta_desc ); ?>">
   <meta property="og:image" content="<?php echo esc_url( $meta_img ); ?>">
@@ -68,6 +69,7 @@
   <div class="header-actions">
     <nav class="se-header-nav" aria-label="Site actions">
       <a class="se-header-nav__link se-header-nav__link--shop" href="<?php echo esc_url( se_preserve_utm_url( home_url( '/shop/' ) ) ); ?>" data-hire-cta data-hire-cta-label="header_shop">SHOP</a>
+      <a class="se-header-nav__link se-header-nav__link--blog" href="<?php echo esc_url( home_url( '/blog/' ) ); ?>">MEANWHILE</a>
       <a class="se-header-nav__link" href="<?php echo esc_url( se_preserve_utm_url( home_url( '/work-with-suzy/' ) ) ); ?>" data-hire-cta data-hire-cta-label="header_hire">HIRE SUZY</a>
     </nav>
     <button class="pixel-button header-contact-trigger"
