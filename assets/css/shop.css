@@ -587,6 +587,18 @@
 	box-shadow: 0 0 12px rgba(255, 79, 216, 0.2);
 }
 
+.se-header-nav__link--blog {
+	border-color: rgba(94, 234, 160, 0.35);
+	color: #4ade80;
+}
+
+.se-header-nav__link--blog:hover,
+.se-header-nav__link--blog:focus-visible {
+	border-color: #4ade80;
+	color: #58c7ff;
+	box-shadow: 0 0 12px rgba(74, 222, 128, 0.18);
+}
+
 .main-header .header-contact-trigger {
 	font-size: clamp(0.42rem, 1vw, 0.52rem);
 	padding: 0.45rem 0.65rem;

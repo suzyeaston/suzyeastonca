@@ -79,6 +79,7 @@ if wp_cli plugin is-installed "${PLUGIN_SLUG}" --allow-root >/dev/null 2>&1; the
 fi
 
 home_id="$(create_or_update_page "Home" "home" "page-home.php")"
+blog_id="$(create_or_update_page "Signal Log" "blog" "" "Blog archive placeholder — posts render via home.php.")"
 create_or_update_page "Lousy Outages" "lousy-outages" "page-lousy-outages.php" >/dev/null
 create_or_update_page "Work With Suzy" "work-with-suzy" "page-work-with-suzy.php" >/dev/null
 create_or_update_page "Shop" "shop" "page-shop.php" >/dev/null
@@ -94,6 +95,7 @@ create_or_update_page "VanOps Radar" "vanops-radar" "page-vanops-radar.php" >/de
 
 wp_cli option update show_on_front page --allow-root >/dev/null
 wp_cli option update page_on_front "${home_id}" --allow-root >/dev/null
+wp_cli option update page_for_posts "${blog_id}" --allow-root >/dev/null
 wp_cli rewrite structure '/%postname%/' --allow-root >/dev/null
 wp_cli rewrite flush --hard --allow-root >/dev/null
 
