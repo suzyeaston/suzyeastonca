@@ -77,4 +77,6 @@ Credentials: `.env.deploy.local` or the `LOUSY_SSH_*` environment variables.
 - Deploy is **not** WordPress auto-sync — it replaces specific files on the server.
 - Theme deploy backs up touched files under `theme-backups/` on the host before overwrite.
 - Plugin deploy backs up the previous plugin directory under `plugin-backups/`.
-- After deploy, the script warms WordPress cron/runtime and touches LiteSpeed cache.
+- Theme uploads use the explicit manifest in `scripts/theme_deploy_manifest.py` (imported by the deploy script). CI validates that manifest before deploy and fails when changed files under the workflow's theme path filters are missing from it.
+- After a theme deploy, the script purges LiteSpeed page cache when the plugin API is available. CSS/JS use `filemtime()` versions, so asset updates still bust browser caches even without a purge.
+- After deploy, the script warms WordPress cron/runtime.
