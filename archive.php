@@ -1,6 +1,6 @@
 <?php
 /**
- * Generic archive fallback — Signal Log
+ * Generic archive fallback — Meanwhile
  *
  * @package SuzysMusicTheme
  */
@@ -26,11 +26,11 @@ $hero_args = [
 		<?php get_template_part( 'parts/blog', 'hero', $hero_args ); ?>
 
 		<p class="se-signal-log__filter-note">
-			<a class="se-signal-log__back-link" href="<?php echo esc_url( se_blog_archive_url() ); ?>"><?php echo esc_html( '← all transmissions' ); ?></a>
+			<a class="se-signal-log__back-link" href="<?php echo esc_url( se_blog_archive_url() ); ?>"><?php echo esc_html( '← all posts' ); ?></a>
 		</p>
 
 		<?php if ( have_posts() ) : ?>
-			<section class="se-signal-log__feed" aria-label="<?php echo esc_attr( 'Archive transmissions' ); ?>">
+			<section class="se-signal-log__feed" aria-label="<?php echo esc_attr( 'Archive posts' ); ?>">
 				<div class="se-signal-log__grid">
 					<?php
 					while ( have_posts() ) :

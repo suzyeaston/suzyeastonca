@@ -9,8 +9,8 @@
 
 $args = isset( $args ) && is_array( $args ) ? $args : [];
 
-$title      = isset( $args['title'] ) ? (string) $args['title'] : 'SIGNAL LOG';
-$kicker     = isset( $args['kicker'] ) ? (string) $args['kicker'] : 'field notes // east vancouver';
+$title      = isset( $args['title'] ) ? (string) $args['title'] : 'MEANWHILE';
+$kicker     = isset( $args['kicker'] ) ? (string) $args['kicker'] : 'writing // east vancouver';
 $show_intro = ! empty( $args['show_intro'] );
 ?>
 <header class="se-signal-log__hero">

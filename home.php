@@ -1,6 +1,6 @@
 <?php
 /**
- * Blog archive — Signal Log posts index at /blog/
+ * Blog archive — Meanwhile posts index at /blog/
  *
  * @package SuzysMusicTheme
  */
@@ -8,8 +8,8 @@
 get_header();
 
 $hero_args = [
-	'title'      => 'SIGNAL LOG',
-	'kicker'     => 'field notes // east vancouver',
+	'title'      => 'MEANWHILE',
+	'kicker'     => 'writing // east vancouver',
 	'show_intro' => true,
 ];
 ?>
@@ -18,7 +18,7 @@ $hero_args = [
 		<?php get_template_part( 'parts/blog', 'hero', $hero_args ); ?>
 
 		<?php if ( have_posts() ) : ?>
-			<section class="se-signal-log__feed" aria-label="<?php echo esc_attr( 'Signal Log transmissions' ); ?>">
+			<section class="se-signal-log__feed" aria-label="<?php echo esc_attr( 'Meanwhile posts' ); ?>">
 				<div class="se-signal-log__grid">
 					<?php
 					while ( have_posts() ) :

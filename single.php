@@ -1,6 +1,6 @@
 <?php
 /**
- * Single post — Signal Log transmission
+ * Single post — Meanwhile
  *
  * @package SuzysMusicTheme
  */
@@ -20,7 +20,7 @@ while ( have_posts() ) :
 		<article id="post-<?php the_ID(); ?>" <?php post_class( 'se-signal-log__article' ); ?>>
 			<header class="se-signal-log__article-head">
 				<p class="se-signal-log__article-kicker">
-					<a class="se-signal-log__back-link" href="<?php echo esc_url( se_blog_archive_url() ); ?>"><?php echo esc_html( 'signal log' ); ?></a>
+					<a class="se-signal-log__back-link" href="<?php echo esc_url( se_blog_archive_url() ); ?>"><?php echo esc_html( 'meanwhile' ); ?></a>
 					<span class="se-signal-log__article-sep" aria-hidden="true">/</span>
 					<span class="se-signal-log__article-date"><?php echo esc_html( se_blog_format_date() ); ?></span>
 				</p>
@@ -46,7 +46,7 @@ while ( have_posts() ) :
 		<nav class="se-signal-log__post-nav" aria-label="<?php echo esc_attr( 'Post navigation' ); ?>">
 			<?php if ( $prev_post instanceof WP_Post ) : ?>
 				<a class="se-signal-log__post-nav-link se-signal-log__post-nav-link--prev" href="<?php echo esc_url( get_permalink( $prev_post ) ); ?>">
-					<span class="se-signal-log__post-nav-label"><?php echo esc_html( '← previous transmission' ); ?></span>
+					<span class="se-signal-log__post-nav-label"><?php echo esc_html( '← previous' ); ?></span>
 					<span class="se-signal-log__post-nav-title"><?php echo esc_html( get_the_title( $prev_post ) ); ?></span>
 				</a>
 			<?php else : ?>
@@ -55,7 +55,7 @@ while ( have_posts() ) :
 
 			<?php if ( $next_post instanceof WP_Post ) : ?>
 				<a class="se-signal-log__post-nav-link se-signal-log__post-nav-link--next" href="<?php echo esc_url( get_permalink( $next_post ) ); ?>">
-					<span class="se-signal-log__post-nav-label"><?php echo esc_html( 'next transmission →' ); ?></span>
+					<span class="se-signal-log__post-nav-label"><?php echo esc_html( 'next →' ); ?></span>
 					<span class="se-signal-log__post-nav-title"><?php echo esc_html( get_the_title( $next_post ) ); ?></span>
 				</a>
 			<?php else : ?>

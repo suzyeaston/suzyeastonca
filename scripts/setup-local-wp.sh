@@ -79,7 +79,7 @@ if wp_cli plugin is-installed "${PLUGIN_SLUG}" --allow-root >/dev/null 2>&1; the
 fi
 
 home_id="$(create_or_update_page "Home" "home" "page-home.php")"
-blog_id="$(create_or_update_page "Signal Log" "blog" "" "Blog archive placeholder — posts render via home.php.")"
+blog_id="$(create_or_update_page "Meanwhile" "blog" "" "Blog archive placeholder — posts render via home.php.")"
 create_or_update_page "Lousy Outages" "lousy-outages" "page-lousy-outages.php" >/dev/null
 create_or_update_page "Work With Suzy" "work-with-suzy" "page-work-with-suzy.php" >/dev/null
 create_or_update_page "Shop" "shop" "page-shop.php" >/dev/null

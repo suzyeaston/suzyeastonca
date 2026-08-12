@@ -1,6 +1,6 @@
 <?php
 /**
- * Signal Log — blog helpers, queries, and asset loading.
+ * Meanwhile — blog helpers, queries, and asset loading.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Intro copy for the blog archive hero.
  */
 function se_blog_intro_copy() {
-	return 'notes from East Vancouver on AI, systems, music, code, public infrastructure, open source and whatever I\'m building instead of sleeping.';
+	return 'notes from East Vancouver on what I\'m building, thinking about, questioning, noticing, and occasionally breaking.';
 }
 
 /**
@@ -118,9 +118,9 @@ function se_blog_excerpt( $post_id = 0, $words = 32 ) {
  */
 function se_blog_archive_meta() {
 	return [
-		'title'       => 'Signal Log | Suzy Easton',
+		'title'       => 'Meanwhile | Suzy Easton',
 		'description' => se_blog_intro_copy(),
-		'keywords'    => 'Signal Log, Suzy Easton blog, East Vancouver, AI systems, open source, creative technology',
+		'keywords'    => 'Meanwhile, Suzy Easton, East Vancouver, essays, writing, building in public, creative technology',
 	];
 }
 
@@ -132,9 +132,9 @@ function se_blog_category_meta() {
 	$name = ( $term instanceof WP_Term ) ? $term->name : 'Category';
 
 	return [
-		'title'       => $name . ' | Signal Log | Suzy Easton',
-		'description' => 'Notes from Suzy Easton on ' . strtolower( $name ) . '. Field notes from East Vancouver on AI, systems, music, code, and whatever is being built instead of sleeping.',
-		'keywords'    => 'Signal Log, Suzy Easton, ' . $name . ', East Vancouver',
+		'title'       => $name . ' | Meanwhile | Suzy Easton',
+		'description' => 'Writing from Suzy Easton on ' . strtolower( $name ) . '. Notes from East Vancouver on building, thinking, and whatever else is worth writing down.',
+		'keywords'    => 'Meanwhile, Suzy Easton, ' . $name . ', East Vancouver',
 	];
 }
 
@@ -147,9 +147,9 @@ function se_blog_post_meta( WP_Post $post ) {
 	$desc  = se_blog_excerpt( $post->ID, 40 );
 
 	return [
-		'title'       => $title . ' | Signal Log | Suzy Easton',
+		'title'       => $title . ' | Meanwhile | Suzy Easton',
 		'description' => $desc ?: se_blog_intro_copy(),
-		'keywords'    => 'Signal Log, Suzy Easton, ' . $title,
+		'keywords'    => 'Meanwhile, Suzy Easton, ' . $title,
 	];
 }
 
@@ -176,7 +176,7 @@ function se_blog_archive_structured_data() {
 				se_person_schema(),
 				[
 					'@type'       => 'Blog',
-					'name'        => 'Signal Log',
+					'name'        => 'Meanwhile',
 					'url'         => se_blog_archive_url(),
 					'description' => $meta['description'],
 					'author'      => [

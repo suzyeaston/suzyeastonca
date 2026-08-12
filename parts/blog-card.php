@@ -24,5 +24,5 @@ $cat_class = $cat instanceof WP_Term ? se_blog_category_tone_class( $cat->slug )
 
 	<p class="se-signal-log__card-excerpt"><?php echo esc_html( se_blog_excerpt() ); ?></p>
 
-	<a class="se-signal-log__card-link" href="<?php echo esc_url( get_permalink() ); ?>"><?php echo esc_html( 'read transmission →' ); ?></a>
+	<a class="se-signal-log__card-link" href="<?php echo esc_url( get_permalink() ); ?>"><?php echo esc_html( 'keep reading →' ); ?></a>
 </article>

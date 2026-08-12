@@ -1,6 +1,6 @@
 <?php
 /**
- * Homepage — latest Signal Log notes
+ * Homepage — latest Meanwhile notes
  *
  * @package SuzysMusicTheme
  */
@@ -15,7 +15,7 @@ if ( ! $query->have_posts() ) {
 <section class="se-signal-log-home" aria-labelledby="home-signal-log-title">
 	<div class="se-signal-log-home__shell">
 		<p class="se-signal-log-home__kicker pixel-font"><?php echo esc_html( 'latest notes' ); ?></p>
-		<h2 id="home-signal-log-title" class="se-signal-log-home__title pixel-font"><?php echo esc_html( 'SIGNAL LOG' ); ?></h2>
+		<h2 id="home-signal-log-title" class="se-signal-log-home__title pixel-font"><?php echo esc_html( 'MEANWHILE' ); ?></h2>
 		<p class="se-signal-log-home__intro"><?php echo esc_html( se_blog_intro_copy() ); ?></p>
 
 		<div class="se-signal-log-home__grid">
@@ -36,13 +36,13 @@ if ( ! $query->have_posts() ) {
 						<a href="<?php echo esc_url( get_permalink() ); ?>"><?php the_title(); ?></a>
 					</h3>
 					<p class="se-signal-log-home__card-excerpt"><?php echo esc_html( se_blog_excerpt( get_the_ID(), 24 ) ); ?></p>
-					<a class="se-signal-log-home__card-link" href="<?php echo esc_url( get_permalink() ); ?>"><?php echo esc_html( 'read transmission →' ); ?></a>
+					<a class="se-signal-log-home__card-link" href="<?php echo esc_url( get_permalink() ); ?>"><?php echo esc_html( 'keep reading →' ); ?></a>
 				</article>
 			<?php endwhile; ?>
 		</div>
 
 		<p class="se-signal-log-home__more">
-			<a class="se-signal-log-home__archive-link" href="<?php echo esc_url( $blog_url ); ?>"><?php echo esc_html( 'open signal log →' ); ?></a>
+			<a class="se-signal-log-home__archive-link" href="<?php echo esc_url( $blog_url ); ?>"><?php echo esc_html( 'read Meanwhile →' ); ?></a>
 		</p>
 	</div>
 </section>

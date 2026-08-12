@@ -69,7 +69,7 @@
   <div class="header-actions">
     <nav class="se-header-nav" aria-label="Site actions">
       <a class="se-header-nav__link se-header-nav__link--shop" href="<?php echo esc_url( se_preserve_utm_url( home_url( '/shop/' ) ) ); ?>" data-hire-cta data-hire-cta-label="header_shop">SHOP</a>
-      <a class="se-header-nav__link se-header-nav__link--blog" href="<?php echo esc_url( home_url( '/blog/' ) ); ?>">SIGNAL LOG</a>
+      <a class="se-header-nav__link se-header-nav__link--blog" href="<?php echo esc_url( home_url( '/blog/' ) ); ?>">MEANWHILE</a>
       <a class="se-header-nav__link" href="<?php echo esc_url( se_preserve_utm_url( home_url( '/work-with-suzy/' ) ) ); ?>" data-hire-cta data-hire-cta-label="header_hire">HIRE SUZY</a>
     </nav>
     <button class="pixel-button header-contact-trigger"
