@@ -100,9 +100,9 @@ add_action( 'wp_enqueue_scripts', 'se_enqueue_shop_assets', 25 );
  */
 function se_shop_meta() {
 	return [
-		'title'       => 'Shop Suzy | Hire Suzy Easton — Debug, Automate, Deep Dive',
-		'description' => 'Book focused consulting time with Suzy Easton: 30-minute tech rescue, AI + workflow sessions, and 90-minute deep dives. Vancouver-built, no corporate brochureware.',
-		'keywords'    => 'hire Suzy Easton, tech consulting Vancouver, WordPress debugging, workflow automation, AI strategy session',
+		'title'       => 'Technical Consulting Sessions in Vancouver | Suzy Easton',
+		'description' => 'Book focused technical help with Suzy Easton in Vancouver: debugging, AI workflows, automation, integrations and deep technical problem-solving. Remote sessions available.',
+		'keywords'    => 'technical consulting Vancouver, hire Suzy Easton, WordPress debugging Vancouver, workflow automation, AI consulting session, East Vancouver consultant',
 	];
 }
 
@@ -112,16 +112,39 @@ function se_shop_meta() {
  * @return array<string, mixed>
  */
 function se_shop_structured_data() {
+	$meta  = se_shop_meta();
 	$items = [];
 
 	foreach ( se_get_shop_products() as $product ) {
+		$product_name = (string) ( $product['title'] ?? '' ) . ' · ' . (string) ( $product['subtitle'] ?? '' );
+
 		$items[] = [
-			'@type'           => 'Product',
-			'name'            => (string) ( $product['title'] ?? '' ) . ' · ' . (string) ( $product['subtitle'] ?? '' ),
-			'description'     => (string) ( $product['description'] ?? '' ),
-			'sku'             => (string) ( $product['sku'] ?? '' ),
-			'url'             => home_url( '/shop/#' . (string) ( $product['slug'] ?? '' ) ),
-			'offers'          => [
+			'@type'       => 'Product',
+			'name'        => $product_name,
+			'description' => (string) ( $product['description'] ?? '' ),
+			'sku'         => (string) ( $product['sku'] ?? '' ),
+			'url'         => home_url( '/shop/#' . (string) ( $product['slug'] ?? '' ) ),
+			'offers'      => [
+				'@type'         => 'Offer',
+				'price'         => (string) ( $product['price'] ?? 0 ),
+				'priceCurrency' => (string) ( $product['currency'] ?? 'CAD' ),
+				'availability'  => 'https://schema.org/InStock',
+				'url'           => se_shop_product_checkout_url( $product ),
+			],
+		];
+
+		$items[] = [
+			'@type'       => 'Service',
+			'name'        => $product_name,
+			'description' => (string) ( $product['description'] ?? '' ),
+			'provider'    => [
+				'@type' => 'Person',
+				'name'  => 'Suzy Easton',
+				'url'   => home_url( '/' ),
+			],
+			'serviceType' => (string) ( $product['subtitle'] ?? 'Technical consulting' ),
+			'areaServed'  => se_service_area_served(),
+			'offers'      => [
 				'@type'         => 'Offer',
 				'price'         => (string) ( $product['price'] ?? 0 ),
 				'priceCurrency' => (string) ( $product['currency'] ?? 'CAD' ),
@@ -135,11 +158,13 @@ function se_shop_structured_data() {
 		'@context' => 'https://schema.org',
 		'@graph'   => array_merge(
 			[
+				se_website_schema( $meta['description'] ),
+				se_person_schema(),
 				[
 					'@type'       => 'WebPage',
-					'name'        => 'Shop Suzy',
+					'name'        => $meta['title'],
 					'url'         => home_url( '/shop/' ),
-					'description' => se_shop_meta()['description'],
+					'description' => $meta['description'],
 				],
 			],
 			$items
@@ -154,11 +179,20 @@ function se_shop_analytics_bootstrap() {
 	?>
 	<script>
 	(function () {
+		var conversionMap = {
+			page_view: 'shop_view',
+			product_view: 'consulting_product_view',
+			checkout_click: 'checkout_click'
+		};
+
 		function seShopEvent(name, data) {
 			var detail = Object.assign({ event: name }, data || {});
 			window.dispatchEvent(new CustomEvent('se-shop:event', { detail: detail }));
 			if (window.dataLayer) {
 				window.dataLayer.push(Object.assign({ event: 'shop_' + name }, data || {}));
+			}
+			if (typeof window.seTrackEvent === 'function' && conversionMap[name]) {
+				window.seTrackEvent(conversionMap[name], Object.assign({ page: 'shop' }, data || {}));
 			}
 		}
 		window.seShopEvent = seShopEvent;

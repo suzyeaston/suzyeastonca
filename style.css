@@ -3866,6 +3866,14 @@ body.page-template-page-bio-php .bio-content {
     font-size: clamp(0.72rem, 1.5vw, 0.86rem);
 }
 
+.page-template-page-work-with-suzy .wws-location {
+    margin: 0 0 1rem;
+    color: var(--wws-muted);
+    font-size: clamp(0.62rem, 1.4vw, 0.72rem);
+    letter-spacing: 0.08em;
+    text-transform: lowercase;
+}
+
 .page-template-page-work-with-suzy .wws-hero,
 .page-template-page-work-with-suzy .wws-section,
 .page-template-page-work-with-suzy .wws-final-cta {

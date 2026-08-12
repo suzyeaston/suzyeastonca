@@ -3,26 +3,40 @@
 Template Name: Work With Suzy
 */
 get_header();
+
+$shop_url = se_preserve_utm_url( home_url( '/shop/' ) );
 ?>
 
 <main id="main-content" class="work-with-suzy-page">
     <article class="page-content work-with-suzy-content">
         <section class="crt-block wws-hero" aria-labelledby="work-with-suzy-title">
-            <p class="wws-kicker pixel-font wws-eyebrow">Senior technical work • custom WordPress • QA automation • practical AI • weird bug triage</p>
+            <p class="wws-kicker pixel-font wws-eyebrow">East Vancouver // available</p>
+            <p class="wws-location pixel-font">AI · automation · systems · creative technology</p>
             <h1 id="work-with-suzy-title" class="retro-title glow-lite">Work With Suzy</h1>
-            <p class="wws-lead">I help teams make messy systems understandable, testable, and shippable.</p>
-            <p class="wws-hero-subcopy">I work across custom WordPress, JavaScript/PHP, QA automation, IT operations, API/integration debugging, dashboards, workflow automation, and AI-assisted prototypes with reviewable outputs.</p>
-            <p class="wws-hero-subcopy">My strongest work happens where product, support, QA, ops, and real users collide. I can find the failure path, explain it clearly, and help build the fix.</p>
+            <p class="wws-lead">Bring me the broken thing, repetitive workflow, integration mess or ambitious idea.</p>
+            <p class="wws-hero-subcopy">I help teams make messy systems understandable, testable, and shippable — across custom WordPress, JavaScript/PHP, QA automation, IT operations, API/integration debugging, dashboards, workflow automation, and AI-assisted prototypes with reviewable outputs.</p>
+            <p class="wws-hero-subcopy">Based in East Vancouver. I work locally across Vancouver and remotely. Available for consulting, technical roles, projects and collaborations now.</p>
             <div class="wws-actions" role="group" aria-label="Work With Suzy contact links">
-                <a class="pixel-button wws-hero-cta" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">Book a session</a>
-                <a class="pixel-button wws-secondary-button" href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy">Email Suzy</a>
+                <a class="pixel-button wws-hero-cta" href="<?php echo esc_url( $shop_url ); ?>" data-hire-cta data-hire-cta-label="wws_book_session">Book a session</a>
+                <a class="pixel-button wws-secondary-button" href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy" data-hire-cta data-hire-cta-label="wws_email">Email Suzy</a>
                 <a class="pixel-button wws-secondary-button" href="https://www.linkedin.com/in/suzyeaston/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
                 <a class="pixel-button wws-secondary-button" href="https://github.com/suzyeaston" target="_blank" rel="noopener noreferrer">View GitHub</a>
             </div>
         </section>
 
+        <section class="crt-block wws-section" aria-labelledby="who-this-is-for">
+            <h2 id="who-this-is-for" class="pixel-font">Who this is for</h2>
+            <p>Founders, small businesses, creative teams, and operators who need a senior technical generalist — not another slide deck. Also a fit if you are hiring for a contract sprint or the right full-time senior role.</p>
+            <ul class="wws-fit-list">
+                <li>Teams stuck between product, support, QA, ops, and engineering with nobody who speaks all of them.</li>
+                <li>WordPress or custom web builds that need careful hands, not plugin chaos.</li>
+                <li>Workflows drowning in copy-paste rituals, spreadsheet archaeology, or manual checks.</li>
+                <li>Integrations, identity, or API behaviour that works in staging and lies in production.</li>
+            </ul>
+        </section>
+
         <section class="crt-block wws-section" aria-labelledby="what-i-help-with">
-            <h2 id="what-i-help-with" class="pixel-font">How I can help</h2>
+            <h2 id="what-i-help-with" class="pixel-font">What I solve</h2>
             <div class="wws-grid">
                 <article class="wws-card wws-card--featured">
                     <h3>Web development and custom builds</h3>
@@ -49,6 +63,12 @@ get_header();
                     <p>I use AI as leverage, not theatre: focused prototypes, summarizers, internal helpers, content workflows, dashboards, and code acceleration where the output is reviewable and useful.</p>
                 </article>
             </div>
+        </section>
+
+        <section class="crt-block wws-section" aria-labelledby="how-to-start">
+            <h2 id="how-to-start" class="pixel-font">How to start</h2>
+            <p>Fastest path: book a fixed-price session in the <a class="wws-highlight-link" href="<?php echo esc_url( $shop_url ); ?>" data-hire-cta data-hire-cta-label="wws_shop_link">Shop</a> — 30-minute debug rescue, 45-minute AI + workflow session, or 90-minute deep dive. Larger builds, roles, or scoped consulting: email me with what is broken, what &ldquo;done&rdquo; looks like, and your timeline.</p>
+            <p>I usually reply within one business day. Vancouver time.</p>
         </section>
 
         <section class="crt-block wws-section" aria-labelledby="current-focus">
@@ -126,7 +146,7 @@ get_header();
 
         <section class="crt-block wws-section" aria-labelledby="ways-to-work">
             <h2 id="ways-to-work" class="pixel-font">Ways we can work together</h2>
-            <p>Need a fixed-price session first? <a class="wws-highlight-link" href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">Shop Suzy</a> — debug rescue, automation session, or deep dive.</p>
+            <p>Need a fixed-price session first? <a class="wws-highlight-link" href="<?php echo esc_url( $shop_url ); ?>" data-hire-cta data-hire-cta-label="wws_shop_sessions">Shop Suzy</a> — debug rescue, automation session, or deep dive.</p>
             <div class="wws-work-modes">
                 <div class="wws-mode"><strong>Senior role conversations</strong><span>For teams hiring someone who can bridge IT operations, QA, support engineering, automation, and practical product thinking.</span></div>
                 <div class="wws-mode"><strong>Contract QA / automation sprint</strong><span>A focused engagement to reproduce issues, improve test coverage, validate workflows, and reduce release panic.</span></div>
@@ -141,7 +161,7 @@ get_header();
             <h2 id="work-with-suzy-contact" class="pixel-font">Let&rsquo;s make the messy thing make sense</h2>
             <p>Email me with the role, project, bug, workflow, or idea. Tell me what is broken, what &ldquo;done&rdquo; looks like, and any timeline or budget constraints. I&rsquo;ll tell you honestly whether I&rsquo;m a fit.</p>
             <p>Email: <a href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy%20%E2%80%94%20%5Brole%2Fproject%5D">suzyeaston@icloud.com</a></p>
-            <a class="pixel-button wws-final-button" href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy%20%E2%80%94%20%5Brole%2Fproject%5D">Email Suzy</a>
+            <a class="pixel-button wws-final-button" href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy%20%E2%80%94%20%5Brole%2Fproject%5D" data-hire-cta data-hire-cta-label="wws_final_email">Email Suzy</a>
             <div class="wws-subject-list">
                 <p><strong>Suggested subject lines:</strong></p>
                 <ul>
