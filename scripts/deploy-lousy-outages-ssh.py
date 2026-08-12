@@ -56,6 +56,8 @@ THEME_FILES = [
     "page-shop.php",
     "page-work-with-suzy.php",
     "page-lousy-outages.php",
+    "page-lousy-outages-pricing.php",
+    "page-lousy-outages-account.php",
     "parts/home-commercial-strip.php",
     "parts/home-hire-strip.php",
     "parts/shop-product-card.php",
