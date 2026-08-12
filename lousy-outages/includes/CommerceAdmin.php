@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 final class CommerceAdmin {
+    /** Admin-only menu slug. Must never collide with a public page path. */
+    public const PAGE_SLUG = 'lousy-outages-access-admin';
+
     private const OPTIONS = [
         'lousy_outages_stripe_publishable_key',
         'lousy_outages_stripe_secret_key',
@@ -22,13 +25,17 @@ final class CommerceAdmin {
         add_action('admin_post_lousy_outages_revoke_manual_access', [self::class, 'handle_revoke']);
     }
 
+    public static function admin_url(): string {
+        return admin_url('admin.php?page=' . self::PAGE_SLUG);
+    }
+
     public static function menu(): void {
         add_submenu_page(
             'lousy-outages',
-            'Plans & Billing',
-            'Plans & Billing',
+            'Plans & Access',
+            'Manual Access',
             'manage_options',
-            'lousy-outages-billing',
+            self::PAGE_SLUG,
             [self::class, 'page']
         );
     }
@@ -48,9 +55,15 @@ final class CommerceAdmin {
 
         $notice = self::consume_notice();
         $manual_rows = CommerceStore::list_manual_entitlements();
+        $pricing_url = home_url('/lousy-outages/pricing/');
+        $account_url = home_url('/lousy-outages/account/');
         ?>
         <div class="wrap">
-            <h1>Plans &amp; Billing</h1>
+            <h1>Plans &amp; Access</h1>
+            <p>
+                <a class="button" href="<?php echo esc_url($pricing_url); ?>" target="_blank" rel="noopener noreferrer">Open public pricing ↗</a>
+                <a class="button" href="<?php echo esc_url($account_url); ?>" target="_blank" rel="noopener noreferrer">Open account page ↗</a>
+            </p>
             <?php if ($notice !== null) : ?>
                 <div class="notice notice-<?php echo esc_attr($notice['type']); ?> is-dismissible"><p><?php echo esc_html($notice['message']); ?></p></div>
             <?php endif; ?>
@@ -88,7 +101,7 @@ final class CommerceAdmin {
             <hr>
             <h2>Manual Access</h2>
             <p>Grant Founding Pro / Team after you verify PayPal, Buy Me a Coffee, GitHub Sponsors, or complimentary access. No payment credentials or transaction payloads are stored here — only entitlement provenance.</p>
-            <p>The buyer must already have a Lousy Outages account (magic-link sign-in). This form will not invent users.</p>
+            <p>The buyer must already have a Lousy Outages account (magic-link sign-in at <code>/lousy-outages/account/</code>). This form will not invent users.</p>
 
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                 <input type="hidden" name="action" value="lousy_outages_grant_manual_access">
@@ -260,7 +273,7 @@ final class CommerceAdmin {
 
     private static function redirect_with_notice(string $type, string $message): void {
         set_transient('lo_billing_notice_' . get_current_user_id(), ['type' => $type, 'message' => $message], 60);
-        wp_safe_redirect(admin_url('admin.php?page=lousy-outages-billing'));
+        wp_safe_redirect(self::admin_url());
         exit;
     }
 

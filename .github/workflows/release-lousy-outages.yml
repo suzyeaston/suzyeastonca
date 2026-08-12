@@ -34,6 +34,11 @@ jobs:
         run: php tests/lousy-outages/current-state-contract-test.php
       - name: Run homepage teaser JavaScript/PHP tests
         run: php tests/LousyOutagesHomeTeaserTest.php
+      - name: Run access-admin routing and product page repair tests
+        run: |
+          php tests/LousyOutagesAccessAdminRoutingTest.php
+          php tests/LousyOutagesCommerceStoreTest.php
+          php tests/LousyOutagesEntitlementsTest.php
       - name: Build release ZIP
         run: scripts/build-lousy-outages-release.sh
       - name: Validate release ZIP

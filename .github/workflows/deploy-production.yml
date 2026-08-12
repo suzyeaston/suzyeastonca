@@ -35,6 +35,9 @@ jobs:
           filters: |
             theme:
               - '*.php'
+              - 'page-lousy-outages.php'
+              - 'page-lousy-outages-pricing.php'
+              - 'page-lousy-outages-account.php'
               - 'style.css'
               - 'inc/**'
               - 'parts/**'
