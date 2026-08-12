@@ -10,6 +10,7 @@ Usage:
     python3 scripts/deploy-lousy-outages-ssh.py --theme    # theme files only
 """
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -33,17 +34,24 @@ PLUGIN_DIR = f"{HOME}/{PLUGIN_REL}/lousy-outages"
 THEME_DIR = f"{HOME}/public_html/wp-content/themes/suzyeastonca-main"
 
 # Production theme files managed by this deploy workflow.
-# Dependencies required by functions.php must appear before functions.php so a
-# partial upload cannot leave WordPress fatally requiring a file that is absent.
+# Bootstrap dependencies required by functions.php MUST appear before
+# functions.php so a partial upload cannot leave WordPress requiring a file
+# that has not reached production yet.
 THEME_FILES = [
+    "inc/albini-quotes.php",
+    "inc/ai-guardrails.php",
+    "inc/openai.php",
+    "inc/vancouver-tech-events.php",
+    "inc/home-translink-alerts.php",
+    "inc/home-yvr-audio-channels.php",
+    "inc/home-yvr-broadcaster.php",
     "inc/shop-products.php",
     "inc/shop.php",
+    "inc/seo.php",
     "functions.php",
+    "style.css",
     "header.php",
     "footer.php",
-    "inc/home-translink-alerts.php",
-    "inc/home-yvr-broadcaster.php",
-    "inc/home-yvr-audio-channels.php",
     "page-home.php",
     "page-shop.php",
     "page-work-with-suzy.php",
@@ -58,6 +66,8 @@ THEME_FILES = [
     "assets/css/shop.css",
     "assets/css/shop-console.css",
     "assets/js/shop.js",
+    "assets/js/header-contact-modal.js",
+    "assets/js/seo-analytics.js",
     "assets/css/home-hero-cabinet.css",
     "assets/css/home-yvr-radar-deck.css",
     "assets/audio/yvr/rain-loop.mp3",
@@ -98,6 +108,33 @@ def load_env(path: Path) -> dict:
     return data
 
 
+def validate_theme_manifest() -> None:
+    """Fail before touching production if bootstrap dependencies are omitted."""
+    missing_local = [relative for relative in THEME_FILES if not (ROOT / relative).is_file()]
+    if missing_local:
+        raise SystemExit(
+            "Theme deploy manifest contains missing local files: " + ", ".join(missing_local)
+        )
+
+    functions_text = (ROOT / "functions.php").read_text(encoding="utf-8")
+    require_pattern = re.compile(
+        r"require_once\s+get_template_directory\(\)\s*\.\s*['\"](/[^'\"]+)['\"]"
+    )
+    direct_requires = {
+        match.group(1).lstrip("/") for match in require_pattern.finditer(functions_text)
+    }
+    omitted = sorted(
+        relative
+        for relative in direct_requires
+        if (ROOT / relative).is_file() and relative not in THEME_FILES
+    )
+    if omitted:
+        raise SystemExit(
+            "Refusing theme deploy: functions.php requires files missing from THEME_FILES: "
+            + ", ".join(omitted)
+        )
+
+
 def run(client, cmd: str, timeout: int = 300) -> int:
     _, stdout, stderr = client.exec_command(cmd, timeout=timeout)
     code = stdout.channel.recv_exit_status()
@@ -132,13 +169,11 @@ def deploy_plugin(client, sftp, stamp: str) -> None:
 
 
 def deploy_theme(client, sftp, stamp: str) -> None:
+    validate_theme_manifest()
     backup = f"{HOME}/theme-backups/{stamp}"
     run(client, f"mkdir -p {backup}")
     for relative in THEME_FILES:
         local = ROOT / relative
-        if not local.is_file():
-            print(f"SKIP missing {relative}")
-            continue
         remote = f"{THEME_DIR}/{relative}"
         run(client, f"mkdir -p $(dirname {remote}) && cp -a {remote} {backup}/$(basename {remote}) 2>/dev/null || true")
         print(f"Uploading {relative}...")
