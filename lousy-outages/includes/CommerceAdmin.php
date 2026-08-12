@@ -19,7 +19,9 @@ final class CommerceAdmin {
     ];
 
     public static function bootstrap(): void {
-        add_action('admin_menu', [self::class, 'menu']);
+        // After the parent Lousy Outages menu (priority 10). Registering earlier
+        // makes WordPress emit a bare /wp-admin/{slug} href instead of admin.php?page=.
+        add_action('admin_menu', [self::class, 'menu'], 20);
         add_action('admin_init', [self::class, 'settings']);
         add_action('admin_post_lousy_outages_grant_manual_access', [self::class, 'handle_grant']);
         add_action('admin_post_lousy_outages_revoke_manual_access', [self::class, 'handle_revoke']);
@@ -36,7 +38,8 @@ final class CommerceAdmin {
             'Manual Access',
             'manage_options',
             self::PAGE_SLUG,
-            [self::class, 'page']
+            [self::class, 'page'],
+            80
         );
     }
 

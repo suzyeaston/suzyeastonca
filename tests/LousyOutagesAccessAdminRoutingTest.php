@@ -12,6 +12,7 @@ $GLOBALS['lo_test_next_page_id'] = 1;
 $GLOBALS['lo_test_is_admin'] = false;
 $GLOBALS['lo_test_is_page_slug'] = null;
 $GLOBALS['lo_test_submenu'] = [];
+$GLOBALS['lo_test_actions'] = [];
 
 if (!defined('ABSPATH')) {
     define('ABSPATH', __DIR__ . '/');
@@ -26,7 +27,13 @@ if (!defined('DAY_IN_SECONDS')) {
     define('DAY_IN_SECONDS', 86400);
 }
 
-function add_action($hook, $callback, $priority = 10, $accepted_args = 1): void {}
+function add_action($hook, $callback, $priority = 10, $accepted_args = 1): void {
+    $GLOBALS['lo_test_actions'][] = [
+        'hook' => $hook,
+        'callback' => $callback,
+        'priority' => $priority,
+    ];
+}
 function add_filter($hook, $callback, $priority = 10, $accepted_args = 1): void {}
 function apply_filters($tag, $value) { return $value; }
 function do_action($tag, ...$args): void {}
@@ -53,8 +60,8 @@ function update_option($key, $value, $autoload = null) {
     $GLOBALS['lo_test_options'][$key] = $value;
     return true;
 }
-function add_submenu_page($parent, $page_title, $menu_title, $capability, $menu_slug, $callback = '') {
-    $GLOBALS['lo_test_submenu'][] = compact('parent', 'page_title', 'menu_title', 'capability', 'menu_slug', 'callback');
+function add_submenu_page($parent, $page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null) {
+    $GLOBALS['lo_test_submenu'][] = compact('parent', 'page_title', 'menu_title', 'capability', 'menu_slug', 'callback', 'position');
     return 'lousy-outages_page_' . $menu_slug;
 }
 function is_admin() { return (bool) $GLOBALS['lo_test_is_admin']; }
@@ -139,6 +146,15 @@ $assert = static function (bool $condition, string $message): void {
 };
 
 // Admin slug registers correctly under Lousy Outages as Manual Access.
+$GLOBALS['lo_test_actions'] = [];
+CommerceAdmin::bootstrap();
+$menu_actions = array_values(array_filter(
+    $GLOBALS['lo_test_actions'],
+    static fn(array $a): bool => $a['hook'] === 'admin_menu' && $a['callback'] === [CommerceAdmin::class, 'menu']
+));
+$assert(count($menu_actions) === 1, 'Expected one admin_menu registration for CommerceAdmin::menu');
+$assert((int) $menu_actions[0]['priority'] > 10, 'Manual Access must register after the parent Lousy Outages menu (priority > 10)');
+
 $GLOBALS['lo_test_submenu'] = [];
 CommerceAdmin::menu();
 $assert(count($GLOBALS['lo_test_submenu']) === 1, 'Expected one Manual Access submenu registration');
@@ -147,6 +163,7 @@ $assert($submenu['menu_slug'] === 'lousy-outages-access-admin', 'Admin menu slug
 $assert($submenu['menu_slug'] === CommerceAdmin::PAGE_SLUG, 'PAGE_SLUG constant must match registered menu slug');
 $assert($submenu['menu_title'] === 'Manual Access', 'Menu title must be Manual Access');
 $assert($submenu['parent'] === 'lousy-outages', 'Must nest under Lousy Outages menu');
+$assert(($submenu['position'] ?? null) === 80, 'Manual Access should sit at the end of the Lousy Outages submenu');
 $assert($submenu['menu_slug'] !== Product::LEGACY_BILLING_SLUG, 'Admin slug must not reuse legacy public billing slug');
 
 $admin_src = (string) file_get_contents(__DIR__ . '/../lousy-outages/includes/CommerceAdmin.php');
@@ -157,6 +174,10 @@ $assert(str_contains($admin_src, 'Open account page'), 'Admin screen must link o
 $assert(
     CommerceAdmin::admin_url() === 'https://example.com/wp-admin/admin.php?page=lousy-outages-access-admin',
     'Canonical admin URL must be admin.php?page=lousy-outages-access-admin'
+);
+$assert(
+    !str_contains(CommerceAdmin::admin_url(), '/wp-admin/lousy-outages-access-admin'),
+    'Admin URL must not be a bare /wp-admin/{slug} path'
 );
 
 // Legacy public slug cannot replace/hijack the admin route.
