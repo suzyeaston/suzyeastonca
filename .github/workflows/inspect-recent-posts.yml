@@ -1,0 +1,32 @@
+name: Inspect Recent WordPress Posts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-recent-posts.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    env:
+      LOUSY_SSH_HOST: ${{ secrets.LOUSY_SSH_HOST }}
+      LOUSY_SSH_PORT: ${{ secrets.LOUSY_SSH_PORT }}
+      LOUSY_SSH_USER: ${{ secrets.LOUSY_SSH_USER }}
+      LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install paramiko
+      - name: List recent WordPress posts
+        shell: python
+        run: |
+          import os, paramiko
+          host=os.environ['LOUSY_SSH_HOST']; user=os.environ['LOUSY_SSH_USER']; password=os.environ['LOUSY_SSH_PASSWORD']; port=int(os.environ.get('LOUSY_SSH_PORT') or 22)
+          c=paramiko.SSHClient(); c.set_missing_host_key_policy(paramiko.AutoAddPolicy()); c.connect(host, port=port, username=user, password=password, timeout=60)
+          cmd="cd /home/uquklkik/public_html && php -r 'require \"wp-load.php\"; $q=new WP_Query([\"post_type\"=>\"post\",\"post_status\"=>[\"publish\",\"draft\",\"private\",\"pending\",\"future\"],\"posts_per_page\"=>25,\"orderby\"=>\"date\",\"order\"=>\"DESC\"]); foreach($q->posts as $p){ echo $p->ID.\"\\t\".$p->post_status.\"\\t\".$p->post_date.\"\\t\".$p->post_name.\"\\t\".str_replace([\"\\n\",\"\\r\"],\" \",$p->post_title).\"\\n\"; }'"
+          _,out,err=c.exec_command(cmd, timeout=120); code=out.channel.recv_exit_status(); print(out.read().decode()); print(err.read().decode()); c.close(); raise SystemExit(code)
