@@ -1,0 +1,402 @@
+/* Suzy Easton — technical dossier resume
+   US Letter · WeasyPrint / print-first · ATS-readable text */
+
+:root {
+  --ink: #1a2228;
+  --ink-soft: #2e3942;
+  --muted: #5a6670;
+  --muted-soft: #7a8791;
+  --rule: #c8d0d4;
+  --rule-strong: #9aa6ae;
+  --accent: #2f5f5c;
+  --accent-ink: #244c4a;
+  --accent-wash: #eef3f2;
+  --paper: #ffffff;
+
+  --font-sans: "Liberation Sans", "Noto Sans", "DejaVu Sans", Arial, sans-serif;
+  --font-serif: "Liberation Serif", "Noto Serif", "DejaVu Serif", Georgia, serif;
+}
+
+@page {
+  size: Letter;
+  margin: 0.6in 0.65in 0.55in 0.65in;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: var(--ink);
+  background: #f3f5f5;
+  font-family: var(--font-sans);
+  font-size: 10pt;
+  line-height: 1.38;
+  font-weight: 400;
+}
+
+a {
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+.resume {
+  width: 8.5in;
+  margin: 1rem auto;
+  padding: 0.6in 0.65in;
+  background: var(--paper);
+  box-shadow: 0 12px 36px rgba(26, 34, 40, 0.08);
+}
+
+/* ——— Masthead ——— */
+
+.masthead {
+  margin: 0 0 0.55rem;
+  padding: 0 0 0.45rem;
+  border-bottom: 1.75px solid var(--ink);
+}
+
+.name {
+  margin: 0 0 0.12rem;
+  font-family: var(--font-serif);
+  font-size: 24pt;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+.role-title {
+  margin: 0 0 0.22rem;
+  font-size: 11.5pt;
+  font-weight: 700;
+  color: var(--accent-ink);
+  line-height: 1.2;
+}
+
+.strapline {
+  margin: 0 0 0.35rem;
+  padding: 0.28rem 0.4rem;
+  background: var(--accent-wash);
+  border-left: 2.5px solid var(--accent);
+  font-size: 8.9pt;
+  font-weight: 600;
+  color: var(--ink-soft);
+  line-height: 1.35;
+}
+
+.strapline .dot {
+  color: var(--muted-soft);
+  font-weight: 400;
+  margin: 0 0.15rem;
+}
+
+.contact {
+  margin: 0 0 0.18rem;
+  font-size: 8.4pt;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.contact a {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.contact .sep {
+  margin: 0 0.22rem;
+  color: var(--rule-strong);
+}
+
+.availability {
+  margin: 0;
+  font-size: 8.2pt;
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* ——— Sections ——— */
+
+.section {
+  margin: 0 0 0.48rem;
+}
+
+.section-heading {
+  margin: 0 0 0.28rem;
+  padding: 0 0 0.12rem;
+  font-family: var(--font-serif);
+  font-size: 11pt;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  border-bottom: 1px solid var(--rule);
+}
+
+.profile-text {
+  margin: 0;
+  font-size: 9.7pt;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+/* ——— Toolkit ——— */
+
+.toolkit-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.toolkit-table tr {
+  page-break-inside: avoid;
+}
+
+.toolkit-table th,
+.toolkit-table td {
+  vertical-align: top;
+  text-align: left;
+  padding: 0.18rem 0.35rem 0.18rem 0;
+  border-bottom: 1px solid #e4e9eb;
+}
+
+.toolkit-table th {
+  width: 28%;
+  padding-right: 0.55rem;
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  line-height: 1.25;
+}
+
+.toolkit-table td {
+  font-size: 8.85pt;
+  line-height: 1.34;
+  color: var(--ink-soft);
+}
+
+.toolkit-table tr:last-child th,
+.toolkit-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ——— Experience ——— */
+
+.job {
+  margin: 0 0 0.42rem;
+}
+
+.job-quercus,
+.job-winedirect,
+.earlier .job {
+  page-break-inside: avoid;
+}
+
+.job-alida {
+  margin: 0 0 0.5rem;
+  padding: 0.28rem 0.35rem 0.15rem;
+  background: var(--accent-wash);
+  border-left: 2.5px solid var(--accent);
+}
+
+.job-head {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 0.05rem;
+}
+
+.job-head td {
+  vertical-align: baseline;
+  padding: 0;
+}
+
+.job-head .company-cell {
+  font-size: 11pt;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  padding-right: 0.45rem;
+}
+
+.job-head .meta-cell {
+  width: 2.9in;
+  text-align: right;
+  font-size: 8.3pt;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.job-role {
+  margin: 0 0 0.12rem;
+  font-size: 10pt;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.25;
+}
+
+.bullets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bullets li {
+  margin: 0 0 0.16rem;
+  padding: 0 0 0 0.85rem;
+  font-size: 9.55pt;
+  line-height: 1.34;
+  color: var(--ink-soft);
+  position: relative;
+}
+
+.bullets li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.bullets li:last-child {
+  margin-bottom: 0;
+}
+
+.ownership-mark {
+  font-weight: 700;
+  color: var(--ink);
+  background: rgba(47, 95, 92, 0.14);
+}
+
+/* WineDirect progression */
+.role-progression {
+  margin: 0.08rem 0 0.18rem;
+  padding: 0.18rem 0.3rem;
+  border: 1px solid var(--rule);
+  background: #fafbfb;
+  page-break-inside: avoid;
+}
+
+.role-step {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.role-step + .role-step {
+  border-top: 1px dotted var(--rule);
+}
+
+.role-step td {
+  padding: 0.1rem 0;
+  vertical-align: baseline;
+}
+
+.role-step .job-role {
+  margin: 0;
+  font-size: 9.7pt;
+}
+
+.role-step .role-dates {
+  width: 34%;
+  text-align: right;
+  font-size: 8.2pt;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ——— Education ——— */
+
+.education-list {
+  margin: 0 0 0.28rem;
+  padding: 0;
+  list-style: none;
+}
+
+.education-list li {
+  display: inline;
+  font-size: 9.3pt;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.education-list li:not(:last-child)::after {
+  content: "  ·  ";
+  color: var(--muted-soft);
+}
+
+.edu-school {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.additional-note {
+  margin: 0.2rem 0 0;
+  padding-top: 0.22rem;
+  border-top: 1px solid var(--rule);
+  font-size: 9pt;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* ——— Screen only ——— */
+
+@media screen and (max-width: 900px) {
+  body { background: var(--paper); }
+  .resume {
+    width: auto;
+    margin: 0;
+    padding: 1.1rem 1rem 2rem;
+    box-shadow: none;
+  }
+  .job-head .meta-cell,
+  .role-step .role-dates {
+    white-space: normal;
+  }
+}
+
+/* ——— Print / PDF (WeasyPrint) ——— */
+
+@media print {
+  body {
+    background: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .resume {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .section-heading {
+    break-after: avoid;
+  }
+
+  .job-head,
+  .job-role,
+  .role-progression {
+    break-after: avoid;
+  }
+
+  .education {
+    break-inside: avoid;
+  }
+}
