@@ -6458,6 +6458,7 @@ body,
 }
 .power-play-page .hero-game-stage.is-power-play .hero-game-stage__header { color: #d8ffef; text-shadow: 0 0 10px rgba(57,255,20,.55), 0 0 18px rgba(87,243,255,.4); }
 .power-play-page .hero-game-stage.is-power-play .hero-game-stage__screen {
+  min-height: clamp(260px, 36vw, 420px);
   background:
     radial-gradient(circle at 12% 8%, rgba(87,243,255,.16), transparent 24%),
     radial-gradient(circle at 88% 52%, rgba(57,255,20,.12), transparent 30%),
@@ -6465,9 +6466,77 @@ body,
     #020713;
 }
 .power-play-page .hero-game-stage.is-power-play .hero-game-stage__screen::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 0 14%, rgba(57,255,20,.09) 15% 17%, transparent 18% 45%, rgba(87,243,255,.08) 46% 48%, transparent 49%); pointer-events: none; z-index: 2; }
+
+/* Standalone page needs the galaga layer rules that still live on homepage selectors. */
+.power-play-page .hero-galaga-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  z-index: 4;
+  pointer-events: none;
+}
+.power-play-page .hero-galaga-ui {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: auto;
+  width: auto;
+  max-width: min(320px, calc(100vw - 24px));
+  display: none;
+  z-index: 5;
+  pointer-events: none;
+  font-size: 0.53rem;
+  line-height: 1.25;
+  color: var(--primary-color);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+  flex-direction: column;
+  gap: 6px;
+}
+.power-play-page .hero-galaga-status,
+.power-play-page .hero-galaga-scoreline,
+.power-play-page .hero-galaga-wavecall {
+  margin: 0;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(128, 225, 255, 0.44);
+  border-radius: 999px;
+  padding: 4px 7px;
+}
+.power-play-page .hero-galaga-overlay {
+  position: absolute;
+  inset: 0;
+  transform: none;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  z-index: 7;
+  display: none;
+  pointer-events: none;
+}
+.power-play-page .hero-game-stage.has-galaga .hero-galaga-canvas,
+.power-play-page .hero-game-stage.is-galaga .hero-galaga-canvas {
+  display: block;
+}
+.power-play-page .hero-game-stage.is-galaga .hero-galaga-ui {
+  display: flex;
+}
+.power-play-page .hero-game-stage.has-galaga .hero-game-stage__idle,
+.power-play-page .hero-game-stage.is-galaga .hero-game-stage__idle {
+  display: none;
+}
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="playing"] .hero-galaga-canvas,
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="goal"] .hero-galaga-canvas {
+  pointer-events: auto;
+}
 .power-play-page .pacific-power-play-canvas { touch-action: none; }
 .power-play-page .pacific-power-play-ui .hero-galaga-status { color: #d8ffef; border-color: rgba(57,255,20,.58); }
-.power-play-page .hero-game-stage.is-power-play .pacific-power-play-overlay { inset: 0; transform: none; min-width: 0; max-width: none; width: 100%; height: 100%; z-index: 7; }
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-overlay,
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-overlay,
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="versus"] .pacific-power-play-overlay,
@@ -6475,9 +6544,34 @@ body,
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="playing"] .pacific-power-play-overlay,
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="goal"] .pacific-power-play-overlay { display: none; pointer-events: none; }
 .power-play-page .pacific-power-play-overlay [hidden] { display: none !important; }
+.power-play-page .hero-galaga-overlay[hidden] { display: none !important; pointer-events: none; }
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-ui,
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-ui { opacity: 0; }
 .power-play-page .power-play-select { font-size: clamp(.42rem, .68vw, .56rem); overflow: auto; }
+
+@media (max-width: 560px) {
+  .power-play-page .power-play-select {
+    padding: .55rem;
+  }
+  .power-play-page .power-play-select__grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .power-play-page .power-play-card {
+    min-width: 78vw;
+    scroll-snap-align: center;
+  }
+  .power-play-page .power-play-select__hero,
+  .power-play-page .power-play-select__opponent {
+    display: none;
+  }
+  .power-play-page .power-play-select > .power-play-ready {
+    position: sticky;
+    bottom: 0;
+  }
+}
 
 /* 2026 compact Miami-noir homepage pass. */
 .home-arcade-title-screen {
