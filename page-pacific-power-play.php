@@ -20,7 +20,7 @@ get_header();
                 <div class="hero-game-stage__screen" role="img" aria-label="Pacific Power Play arcade cabinet with a tappable 1993-94 Canucks roster and a neon Coliseum rink.">
                     <p class="hero-game-stage__idle pixel-font"><?php echo wp_kses_post( 'INSERT COIN<br>OPEN ROSTER<br>#10 #16 #1 #14 #7 #29' ); ?></p>
                 </div>
-                <p class="hero-game-stage__mobile-note pixel-font"><?php echo esc_html( 'Tap a number to swap skaters. Swipe the card. Then drop the puck.' ); ?></p>
+                <p class="hero-game-stage__mobile-note pixel-font"><?php echo esc_html( 'Same cabinet everywhere. Click or tap a skater, then drop the puck.' ); ?></p>
             </div>
         </div>
     </section>
