@@ -95,6 +95,7 @@ THEME_FILES = [
     "assets/js/header-contact-modal.js",
     "assets/js/seo-analytics.js",
     "assets/css/home-hero-cabinet.css",
+    "assets/css/home-feature-previews.css",
     "assets/css/home-yvr-radar-deck.css",
     "assets/audio/yvr/rain-loop.mp3",
     "assets/audio/yvr/skytrain-rumble.mp3",
