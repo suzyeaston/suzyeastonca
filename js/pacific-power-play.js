@@ -157,7 +157,7 @@
     const overlay = document.createElement('div');
     overlay.className = 'hero-galaga-overlay pacific-power-play-overlay';
     overlay.innerHTML =
-      '<section class="power-play-attract" data-attract><h3>PACIFIC POWER PLAY</h3><p>1993–94 // PACIFIC COLISEUM</p><strong>INSERT COIN / PICK YOUR SKATER</strong><small>TAP A JERSEY TO SWAP<br>WASD / ARROWS SKATE<br>SPACE SHOOT · E ABILITY</small><button type="button" class="pixel-button" data-open-select>Open Roster</button></section><section class="power-play-select" data-select hidden></section><section class="power-play-vs" data-vs hidden></section><section class="power-play-ready" data-pause hidden><h3>BENCH DOOR OPEN</h3><p>Paused between periods.</p><button type="button" class="pixel-button" data-resume>Resume</button></section>';
+      '<section class="power-play-attract" data-attract><h3>PACIFIC POWER PLAY</h3><p>1993–94 // PACIFIC COLISEUM</p><strong>INSERT COIN / PICK YOUR SKATER</strong><small>CLICK OR TAP A SKATER<br>ARROWS SWAP · ENTER LOCKS IN<br>SPACE SHOOT · E ABILITY</small><button type="button" class="pixel-button" data-open-select>Select Skater</button></section><section class="power-play-select" data-select hidden></section><section class="power-play-vs" data-vs hidden></section><section class="power-play-ready" data-pause hidden><h3>BENCH DOOR OPEN</h3><p>Paused between periods.</p><button type="button" class="pixel-button" data-resume>Resume</button></section>';
 
     screen.append(canvas, ui, overlay);
     const ctx = canvas.getContext('2d');
@@ -210,7 +210,7 @@
       els.select.innerHTML =
         '<header class="power-play-swap">' +
         '<button type="button" class="power-play-swap__btn" data-prev aria-label="Previous skater">◀</button>' +
-        '<p class="power-play-swap__meta"><span data-line></span><small>TAP A NAME TO SWAP LINES</small></p>' +
+        '<p class="power-play-swap__meta"><span data-line></span><small>CLICK OR TAP A SKATER</small></p>' +
         '<button type="button" class="power-play-swap__btn" data-next aria-label="Next skater">▶</button>' +
         '</header>' +
         '<div class="power-play-select__hero" data-big></div>' +
@@ -229,15 +229,11 @@
             '</i></button>'
         ).join('') +
         '</nav>' +
-        '<div class="power-play-select__grid">' +
-        PLAYERS.map((skater, i) => cardMarkup(skater, i, 'button', '')).join('') +
-        '</div>' +
-        '<aside class="power-play-select__opponent"><b>VS</b><span>STATIC BLOCKERS</span><i>PACIFIC COLISEUM ICE</i></aside>' +
         '<div class="power-play-ready"><span>READY?</span><button type="button" class="pixel-button" data-confirm>Drop The Puck</button></div>';
 
       els.select.querySelector('[data-prev]').onclick = () => pick(S.sel - 1);
       els.select.querySelector('[data-next]').onclick = () => pick(S.sel + 1);
-      els.select.querySelectorAll('.power-play-select__grid [data-i], .power-play-roster [data-i]').forEach((btn) => {
+      els.select.querySelectorAll('.power-play-roster [data-i]').forEach((btn) => {
         btn.onclick = () => pick(Number(btn.dataset.i));
         btn.ondblclick = confirm;
       });
@@ -285,11 +281,10 @@
     function renderSelect() {
       if (!els.select.querySelector('[data-big]')) return;
       const p = PLAYERS[S.sel];
-      els.select.querySelectorAll('.power-play-select__grid .power-play-card, .power-play-roster__chip').forEach((b) => {
+      els.select.querySelectorAll('.power-play-roster__chip').forEach((b) => {
         const i = Number(b.dataset.i);
         b.classList.toggle('is-selected', i === S.sel);
         b.setAttribute('aria-pressed', i === S.sel ? 'true' : 'false');
-        b.tabIndex = i === S.sel ? 0 : -1;
       });
       els.select.querySelector('[data-big]').innerHTML =
         cardMarkup(p, S.sel, 'article', 'is-selected power-play-card--big') + '<span class="power-play-p1">P1</span>';
@@ -312,7 +307,7 @@
         if (S.mode !== 'characterSelect') return;
         const dx = e.clientX - startX;
         if (Math.abs(dx) < 40) return;
-        if (e.target.closest('[data-confirm], .power-play-roster, .power-play-select__grid, [data-prev], [data-next]')) return;
+        if (e.target.closest('[data-confirm], .power-play-roster, [data-prev], [data-next]')) return;
         pick(S.sel + (dx < 0 ? 1 : -1));
       });
     }
@@ -654,7 +649,7 @@
     );
     addEventListener('resize', resize);
     resize();
-    mode(matchMedia('(pointer: coarse)').matches || innerWidth < 900 ? 'characterSelect' : 'attract');
+    mode('attract');
     requestAnimationFrame(loop);
   }
 
