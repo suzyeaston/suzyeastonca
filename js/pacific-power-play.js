@@ -130,6 +130,9 @@
     'RENDEZ-VOUS RINK HEATS UP'
   ];
 
+  const LINE_SIZE = 3;
+  const KLM = USSR.line.slice(0, 3);
+
   const T = {
     bg: '#0c0c0c',
     bar: '#141414',
@@ -150,8 +153,10 @@
     const goalie = !!opts.goalie;
     const num = opts.num || '';
     const bodyY = goalie ? -10 : -16;
+    const alpha = opts.dim ? 0.55 : 1;
 
     ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.translate(x, y);
     ctx.scale(facing * scale, scale);
 
@@ -238,7 +243,7 @@
     stage.setAttribute('role', 'application');
     stage.setAttribute(
       'aria-label',
-      'Pacific Power Play. Tap a 1993-94 Canucks jersey to pick your skater, then skate with WASD or arrows, shoot with Space, use ability with E, and pause with Escape.'
+      'Pacific Power Play. Pick three 1993-94 Canucks for your line, then face the USSR KLM line. Skate with WASD or arrows, shoot with Space, switch skaters with 1/2/3, ability with E, pause with Escape.'
     );
 
     const canvas = document.createElement('canvas');
@@ -254,7 +259,7 @@
     const overlay = document.createElement('div');
     overlay.className = 'hero-galaga-overlay pacific-power-play-overlay';
     overlay.innerHTML =
-      '<section class="power-play-attract" data-attract><h3>PACIFIC POWER PLAY</h3><p>1993–94 CANUCKS vs USSR RED ARMY</p><strong>INSERT COIN / PICK YOUR SKATER</strong><small>KLM LINE AWAITS · LARIONOV #11<br>CLICK OR TAP A SKATER<br>ARROWS SWAP · ENTER LOCKS IN<br>SPACE SHOOT · E ABILITY</small><button type="button" class="pixel-button" data-open-select>Select Skater</button></section><section class="power-play-select" data-select hidden></section><section class="power-play-vs" data-vs hidden></section><section class="power-play-ready" data-pause hidden><h3>BENCH DOOR OPEN</h3><p>Paused between periods.</p><button type="button" class="pixel-button" data-resume>Resume</button></section>';
+      '<section class="power-play-attract" data-attract><h3>PACIFIC POWER PLAY</h3><p>1993–94 CANUCKS vs USSR KLM LINE</p><strong>PICK YOUR LINE OF 3</strong><small>KRUTOV · LARIONOV · MAKAROV AWAIT<br>TAP SKATERS TO BUILD YOUR LINE<br>1/2/3 SWITCH ON ICE · SPACE SHOOT · E ABILITY</small><button type="button" class="pixel-button" data-open-select>Build Your Line</button></section><section class="power-play-select" data-select hidden></section><section class="power-play-vs" data-vs hidden></section><section class="power-play-ready" data-pause hidden><h3>BENCH DOOR OPEN</h3><p>Paused between periods.</p><button type="button" class="pixel-button" data-resume>Resume</button></section>';
 
     screen.append(canvas, ui, overlay);
     const ctx = canvas.getContext('2d');
@@ -283,6 +288,8 @@
       w: 640,
       h: 420,
       sel: 0,
+      line: [],
+      active: 0,
       p: PLAYERS[0],
       goals: 0,
       shots: 0,
@@ -297,22 +304,60 @@
       blockers: []
     };
 
+    function linePlayers() {
+      return S.line.map((i) => PLAYERS[i]);
+    }
+
+    function activePlayer() {
+      return PLAYERS[S.line[S.active]] || PLAYERS[S.sel];
+    }
+
     function pick(i) {
       S.sel = (i + count) % count;
       S.p = PLAYERS[S.sel];
       renderSelect();
     }
 
+    function toggleLine(i) {
+      const slot = S.line.indexOf(i);
+      if (slot >= 0) {
+        S.line.splice(slot, 1);
+        if (S.active >= S.line.length) S.active = Math.max(0, S.line.length - 1);
+      } else if (S.line.length < LINE_SIZE) {
+        S.line.push(i);
+      }
+      S.sel = i;
+      S.p = PLAYERS[i];
+      renderSelect();
+    }
+
+    function canConfirm() {
+      return S.line.length === LINE_SIZE;
+    }
+
+    function switchActive(i) {
+      if (S.mode !== 'playing' || i < 0 || i >= S.line.length) return;
+      S.active = i;
+      S.p = activePlayer();
+      updateHud();
+      call('#' + S.p.num + ' ' + S.p.name + ' ON THE PUCK');
+    }
+
     function cards() {
       els.select.innerHTML =
         '<header class="power-play-swap">' +
         '<button type="button" class="power-play-swap__btn" data-prev aria-label="Previous skater">◀</button>' +
-        '<p class="power-play-swap__meta"><span data-line></span><small>CLICK OR TAP A SKATER</small></p>' +
+        '<p class="power-play-swap__meta"><span data-line></span><small>TAP TO ADD/REMOVE · LINE <span data-line-count>0</span>/' +
+        LINE_SIZE +
+        '</small></p>' +
         '<button type="button" class="power-play-swap__btn" data-next aria-label="Next skater">▶</button>' +
         '</header>' +
         '<div class="power-play-select__hero" data-big></div>' +
         '<nav class="power-play-roster" aria-label="1993-94 Canucks roster">' +
-        '<p class="power-play-roster__label">1993–94 ROSTER</p>' +
+        '<p class="power-play-roster__label">BUILD YOUR LINE (' +
+        LINE_SIZE +
+        ' SKATERS)</p>' +
+        '<div class="power-play-line-slots" data-line-slots aria-label="Selected Canucks line"></div>' +
         PLAYERS.map(
           (skater, i) =>
             '<button type="button" class="power-play-roster__chip" data-i="' +
@@ -332,30 +377,42 @@
         '</p><i>' +
         USSR.tag +
         '</i><ul class="power-play-opponent-line">' +
-        USSR.line
-          .map(
-            (sk) =>
-              '<li><b>#' +
-              sk.num +
-              '</b> ' +
-              sk.name +
-              ' <i>' +
-              sk.pos +
-              '</i></li>'
-          )
-          .join('') +
+        KLM.map(
+          (sk) =>
+            '<li><b>#' +
+            sk.num +
+            '</b> ' +
+            sk.name +
+            ' <i>' +
+            sk.pos +
+            '</i></li>'
+        ).join('') +
+        USSR.line.slice(3).map(
+          (sk) =>
+            '<li class="power-play-opponent-line__d"><b>#' +
+            sk.num +
+            '</b> ' +
+            sk.name +
+            ' <i>' +
+            sk.pos +
+            '</i></li>'
+        ).join('') +
         '<li class="power-play-opponent-line__goalie"><b>#' +
         USSR.goalie.num +
         '</b> ' +
         USSR.goalie.name +
         ' <i>G</i></li></ul></aside>' +
-        '<div class="power-play-ready"><span>READY?</span><button type="button" class="pixel-button" data-confirm>Drop The Puck</button></div>';
+        '<div class="power-play-ready"><span data-ready-msg>PICK ' +
+        LINE_SIZE +
+        ' CANUCKS</span><button type="button" class="pixel-button" data-confirm disabled>Drop The Puck</button></div>';
 
       els.select.querySelector('[data-prev]').onclick = () => pick(S.sel - 1);
       els.select.querySelector('[data-next]').onclick = () => pick(S.sel + 1);
       els.select.querySelectorAll('.power-play-roster [data-i]').forEach((btn) => {
-        btn.onclick = () => pick(Number(btn.dataset.i));
-        btn.ondblclick = confirm;
+        btn.onclick = () => toggleLine(Number(btn.dataset.i));
+        btn.ondblclick = () => {
+          if (canConfirm()) confirm();
+        };
       });
       els.select.querySelector('[data-confirm]').onclick = confirm;
       renderSelect();
@@ -403,13 +460,62 @@
       const p = PLAYERS[S.sel];
       els.select.querySelectorAll('.power-play-roster__chip').forEach((b) => {
         const i = Number(b.dataset.i);
+        const slot = S.line.indexOf(i);
         b.classList.toggle('is-selected', i === S.sel);
-        b.setAttribute('aria-pressed', i === S.sel ? 'true' : 'false');
+        b.classList.toggle('is-in-line', slot >= 0);
+        b.setAttribute('aria-pressed', slot >= 0 ? 'true' : 'false');
+        let badge = b.querySelector('.power-play-roster__slot');
+        if (slot >= 0) {
+          if (!badge) {
+            badge = document.createElement('em');
+            badge.className = 'power-play-roster__slot';
+            b.appendChild(badge);
+          }
+          badge.textContent = 'P' + (slot + 1);
+        } else if (badge) {
+          badge.remove();
+        }
       });
       els.select.querySelector('[data-big]').innerHTML =
-        cardMarkup(p, S.sel, 'article', 'is-selected power-play-card--big') + '<span class="power-play-p1">P1</span>';
+        cardMarkup(p, S.sel, 'article', 'is-selected power-play-card--big') +
+        (S.line.indexOf(S.sel) >= 0
+          ? '<span class="power-play-p1">P' + (S.line.indexOf(S.sel) + 1) + '</span>'
+          : '');
       const line = els.select.querySelector('[data-line]');
-      if (line) line.textContent = '#' + p.num + '  ' + p.name + '  ' + (S.sel + 1) + '/' + count;
+      if (line) line.textContent = '#' + p.num + '  ' + p.name;
+      const lineCount = els.select.querySelector('[data-line-count]');
+      if (lineCount) lineCount.textContent = String(S.line.length);
+      const slots = els.select.querySelector('[data-line-slots]');
+      if (slots) {
+        slots.innerHTML = Array.from({ length: LINE_SIZE }, (_, i) => {
+          const idx = S.line[i];
+          if (idx == null) {
+            return '<span class="power-play-line-slots__slot is-empty">P' + (i + 1) + '</span>';
+          }
+          const sk = PLAYERS[idx];
+          return (
+            '<span class="power-play-line-slots__slot is-filled" style="--c1:' +
+            sk.colors[0] +
+            ';--c2:' +
+            sk.colors[1] +
+            '"><b>P' +
+            (i + 1) +
+            '</b> #' +
+            sk.num +
+            ' ' +
+            sk.name.split(' ').pop() +
+            '</span>'
+          );
+        }).join('');
+      }
+      const confirmBtn = els.select.querySelector('[data-confirm]');
+      const readyMsg = els.select.querySelector('[data-ready-msg]');
+      if (confirmBtn) confirmBtn.disabled = !canConfirm();
+      if (readyMsg) {
+        readyMsg.textContent = canConfirm()
+          ? 'LINE SET · DROP THE PUCK'
+          : 'PICK ' + (LINE_SIZE - S.line.length) + ' MORE CANUCK' + (LINE_SIZE - S.line.length === 1 ? '' : 'S');
+      }
       const selectedChip = els.select.querySelector('.power-play-roster__chip.is-selected');
       if (selectedChip) selectedChip.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
     }
@@ -444,6 +550,10 @@
       els.vs.hidden = m !== 'versus';
       els.pause.hidden = m !== 'paused';
       if (m === 'characterSelect') {
+        if (S.mode === 'attract') {
+          S.line = [];
+          S.active = 0;
+        }
         cards();
         els.select.hidden = false;
       }
@@ -461,7 +571,7 @@
       S.player.x = 115;
       S.player.y = S.h / 2;
       S.goalie.y = S.h / 2;
-      S.blockers = USSR.line.slice(0, 3).map((sk, i) => ({
+      S.blockers = KLM.map((sk, i) => ({
         x: S.w * (0.52 + i * 0.1),
         y: S.h * (0.34 + i * 0.14),
         r: 16,
@@ -470,6 +580,8 @@
         num: sk.num,
         name: sk.name
       }));
+      S.active = 0;
+      S.p = activePlayer();
       puck();
       updateHud();
     }
@@ -484,28 +596,34 @@
     }
 
     function confirm() {
-      S.p = PLAYERS[S.sel];
+      if (!canConfirm()) return;
+      S.p = activePlayer();
+      const canucks = linePlayers();
       els.vs.innerHTML =
-        '<h3>#' +
-        S.p.num +
-        ' ' +
-        S.p.name +
-        '</h3><b>VS</b><p>' +
-        USSR.name +
-        '</p><small>' +
+        '<div class="power-play-vs-teams">' +
+        '<div class="power-play-vs-side power-play-vs-side--canucks">' +
+        '<h4>CANUCKS LINE</h4><ul class="power-play-vs-line">' +
+        canucks.map((p) => '<li>#' + p.num + ' ' + p.name + '</li>').join('') +
+        '</ul></div>' +
+        '<b>VS</b>' +
+        '<div class="power-play-vs-side power-play-vs-side--ussr">' +
+        '<h4>KLM LINE</h4><ul class="power-play-vs-line power-play-vs-line--soviet">' +
+        KLM.map((sk) => '<li>#' + sk.num + ' ' + sk.name + '</li>').join('') +
+        '</ul></div></div>' +
+        '<small>' +
         USSR.tag +
-        '</small><ul class="power-play-vs-line">' +
-        USSR.line
-          .map((sk) => '<li>#' + sk.num + ' ' + sk.name + '</li>')
-          .join('') +
-        '</ul>';
+        ' · #' +
+        USSR.goalie.num +
+        ' ' +
+        USSR.goalie.name +
+        ' IN NET</small>';
       mode('versus');
       setTimeout(
         () => {
           reset();
           mode('playing');
           stage.focus({ preventScroll: true });
-          call('COLISEUM CROWD WAKES UP · USSR LINE ON ICE');
+          call('3 ON 3 · CANUCKS vs KLM LINE');
         },
         reduced.matches ? 650 : 1200
       );
@@ -564,6 +682,7 @@
 
     function update(dt) {
       if (S.mode !== 'playing') return;
+      S.p = activePlayer();
       let dx = 0;
       let dy = 0;
       if (keys.has('arrowleft') || keys.has('a')) dx--;
@@ -620,13 +739,55 @@
     }
 
     function updateHud() {
-      els.player.textContent = '#' + S.p.num + ' ' + S.p.name;
+      S.p = activePlayer();
+      const lineLabel = linePlayers()
+        .map((p, i) => (i === S.active ? '[' + p.num + ']' : p.num))
+        .join(' · ');
+      els.player.textContent = lineLabel + ' // #' + S.p.num + ' ' + S.p.name;
       els.goals.textContent = S.goals;
       els.shots.textContent = S.shots;
       els.signal.textContent = Math.round(S.signal);
       els.ability.textContent = Math.round(S.ability);
       els.mini.hidden = S.mode === 'attract';
-      els.mini.innerHTML = '<b>#' + S.p.num + ' ' + S.p.pos + '</b><span>' + S.p.name + '</span><i>' + S.p.ability + '</i>';
+      els.mini.innerHTML =
+        '<b>#' +
+        S.p.num +
+        ' ' +
+        S.p.pos +
+        ' · P' +
+        (S.active + 1) +
+        '</b><span>' +
+        S.p.name +
+        '</span><i>' +
+        S.p.ability +
+        '</i>';
+    }
+
+    function teammatePos(i) {
+      const offsets = [
+        [0, 0],
+        [-28, -42],
+        [-28, 42]
+      ];
+      const off = offsets[i] || [-20, 0];
+      return {
+        x: Math.max(45, S.player.x + off[0]),
+        y: Math.max(70, Math.min(S.h - 40, S.player.y + off[1]))
+      };
+    }
+
+    function drawCanucksLine() {
+      linePlayers().forEach((p, i) => {
+        const isActive = i === S.active;
+        const pos = isActive ? S.player : teammatePos(i);
+        drawHockeyPlayer(pos.x, pos.y, {
+          colors: p.colors,
+          num: p.num,
+          facing: 1,
+          scale: isActive ? 1 : 0.9,
+          dim: !isActive
+        });
+      });
     }
 
     function draw() {
@@ -669,7 +830,7 @@
         ctx.fillStyle = 'rgba(253,184,39,' + (0.8 - i * 0.08) + ')';
         ctx.fillRect(p[0] - 4, p[1] - 2, 8, 4);
       });
-      drawHockeyPlayer(S.player.x, S.player.y, { colors: S.p.colors, num: S.p.num, facing: 1 });
+      drawCanucksLine();
       ctx.fillStyle = T.puck;
       ctx.fillRect(S.puck.x - 4, S.puck.y - 3, 8, 6);
       drawHockeyPlayer(S.goalie.x, S.goalie.y, {
@@ -731,13 +892,17 @@
 
     document.addEventListener('keydown', (e) => {
       const k = e.key.toLowerCase();
-      if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'spacebar', 'w', 'a', 's', 'd', 'escape', 'enter', 'e'].includes(k)) {
+      if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'spacebar', 'w', 'a', 's', 'd', 'escape', 'enter', 'e', '1', '2', '3'].includes(k)) {
         e.preventDefault();
       }
       if (S.mode === 'characterSelect') {
         if (k === 'escape') mode('attract');
-        else if (k === 'enter' || k === ' ' || k === 'spacebar') confirm();
+        else if ((k === 'enter' || k === ' ' || k === 'spacebar') && canConfirm()) confirm();
         else moveSel(k);
+        return;
+      }
+      if (S.mode === 'playing' && (k === '1' || k === '2' || k === '3')) {
+        switchActive(Number(k) - 1);
         return;
       }
       if (k === 'escape') {
@@ -752,6 +917,10 @@
     screen.addEventListener('pointerdown', (e) => {
       if (S.mode !== 'playing') return;
       const r = screen.getBoundingClientRect();
+      const relX = (e.clientX - r.left) / r.width;
+      if (relX < 0.22) switchActive(0);
+      else if (relX > 0.78) switchActive(2);
+      else if (relX > 0.4 && relX < 0.6 && S.line.length > 1) switchActive(1);
       S.player.x = Math.min(S.w * 0.62, Math.max(45, e.clientX - r.left));
       S.player.y = Math.max(70, Math.min(S.h - 40, e.clientY - r.top));
       shoot();
