@@ -23,7 +23,7 @@ $sync_line = implode( ' · ', $sync_bits );
 <section id="feature-previews" class="home-feature-previews" aria-labelledby="feature-previews-title">
     <p class="home-section-kicker pixel-font"><?php echo esc_html( 'live previews' ); ?></p>
     <h2 id="feature-previews-title" class="pixel-font"><?php echo esc_html( 'FEATURE BUILDS' ); ?></h2>
-    <p class="home-feature-previews__lede"><?php echo esc_html( 'Terminal windows into the stuff that actually ships. No brochureware.' ); ?></p>
+    <p class="home-feature-previews__lede"><?php echo esc_html( 'Terminal windows into the stuff. No brochureware.' ); ?></p>
 
     <div class="home-feature-previews__grid">
         <article
