@@ -128,7 +128,7 @@ $sync_line = implode( ' · ', $sync_bits );
             <header class="home-feature-preview__head">
                 <p class="home-feature-preview__label pixel-font"><?php echo esc_html( 'hockey arcade' ); ?></p>
                 <h3 id="home-preview-ppp-title" class="home-feature-preview__title pixel-font"><?php echo esc_html( 'Pacific Power Play' ); ?></h3>
-                <p class="home-feature-preview__tagline"><?php echo esc_html( 'Rain city hockey cabinet. Pick your line, drop the puck, survive the static.' ); ?></p>
+                <p class="home-feature-preview__tagline"><?php echo esc_html( '1993–94 Coliseum cabinet. Tap Bure, Linden, McLean. Drop the puck.' ); ?></p>
             </header>
 
             <div class="home-feature-preview__terminal">
