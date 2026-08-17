@@ -210,20 +210,23 @@
       els.select.innerHTML =
         '<header class="power-play-swap">' +
         '<button type="button" class="power-play-swap__btn" data-prev aria-label="Previous skater">◀</button>' +
-        '<p class="power-play-swap__meta"><span data-line></span><small>TAP A NUMBER. SWIPE TO SWAP.</small></p>' +
+        '<p class="power-play-swap__meta"><span data-line></span><small>TAP A NAME TO SWAP LINES</small></p>' +
         '<button type="button" class="power-play-swap__btn" data-next aria-label="Next skater">▶</button>' +
         '</header>' +
         '<div class="power-play-select__hero" data-big></div>' +
         '<nav class="power-play-roster" aria-label="1993-94 Canucks roster">' +
+        '<p class="power-play-roster__label">1993–94 ROSTER</p>' +
         PLAYERS.map(
           (skater, i) =>
             '<button type="button" class="power-play-roster__chip" data-i="' +
             i +
-            '"><b>' +
+            '"><b>#' +
             skater.num +
             '</b><span>' +
-            skater.name.split(' ').pop() +
-            '</span></button>'
+            skater.name +
+            '</span><i>' +
+            skater.pos +
+            '</i></button>'
         ).join('') +
         '</nav>' +
         '<div class="power-play-select__grid">' +
@@ -651,7 +654,7 @@
     );
     addEventListener('resize', resize);
     resize();
-    mode('attract');
+    mode(matchMedia('(pointer: coarse)').matches || innerWidth < 900 ? 'characterSelect' : 'attract');
     requestAnimationFrame(loop);
   }
 

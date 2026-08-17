@@ -6502,8 +6502,9 @@ body,
   }
 }
 @media (max-width: 560px) {
+  .power-play-page .hero-game-stage.is-power-play .hero-game-stage__screen,
   .power-play-page .hero-game-stage__screen {
-    min-height: min(72svh, 560px);
+    min-height: min(78svh, 680px);
   }
   .power-play-page__copy {
     margin-top: 0.75rem;
@@ -6703,8 +6704,20 @@ body,
   color: #0a0a0a;
   box-shadow: 3px 3px 0 #e03a3e;
 }
-.power-play-roster__chip.is-selected b {
+.power-play-roster__label {
+  flex: 0 0 100%;
+  margin: 0 0 0.15rem;
+  color: #fdb827;
+  font-size: 0.42rem;
+  letter-spacing: 0.08em;
+}
+.power-play-roster__chip i {
+  font-style: normal;
   color: #e03a3e;
+  font-size: 0.42rem;
+}
+.power-play-roster__chip.is-selected i {
+  color: #0a0a0a;
 }
 .power-play-card__portrait {
   display: grid;
@@ -6763,32 +6776,115 @@ body,
       "vs"
       "ready";
   }
+  .power-play-page .power-play-card {
+    min-width: 0 !important;
+  }
+  .power-play-page .power-play-select {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "swap"
+      "hero"
+      "roster"
+      "ready";
+    gap: 0.45rem;
+    padding: 0.5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .power-play-page .power-play-select__grid,
+  .power-play-page .power-play-select__opponent {
+    display: none !important;
+  }
+  .power-play-page .power-play-select__hero {
+    display: block;
+    min-height: 0;
+    overflow: visible;
+  }
+  .power-play-page .power-play-card--big {
+    gap: 0.25rem;
+    padding: 0.4rem;
+  }
+  .power-play-page .power-play-card--big .power-play-card__stats,
+  .power-play-page .power-play-card--big .power-play-card__set,
+  .power-play-page .power-play-card--big .power-play-card__ability {
+    display: none;
+  }
+  .power-play-page .power-play-card--big .power-play-card__portrait {
+    min-height: 56px;
+  }
+  .power-play-page .power-play-card__num {
+    font-size: 1.8rem;
+  }
+  .power-play-page .power-play-card__name {
+    min-height: 0;
+    font-size: 0.62rem;
+  }
+  .power-play-page .power-play-roster {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.32rem;
+    overflow: visible;
+    padding: 0;
+  }
+  .power-play-page .power-play-roster__chip {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.7rem;
+    display: grid;
+    grid-template-columns: 3.1rem minmax(0, 1fr) auto;
+    align-items: center;
+    justify-items: start;
+    gap: 0.45rem;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.48rem;
+    text-align: left;
+  }
+  .power-play-page .power-play-roster__chip b {
+    font-size: 0.72rem;
+  }
+  .power-play-page .power-play-roster__chip span {
+    line-height: 1.3;
+  }
+  .power-play-page .power-play-swap__btn {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .power-play-page .power-play-select > .power-play-ready {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+  }
+  .power-play-page .hero-game-stage.is-power-play .hero-game-stage__screen,
+  .power-play-page .hero-game-stage__screen {
+    min-height: min(78svh, 680px);
+  }
 }
 
 @media (max-width: 560px) {
   .power-play-page .power-play-select {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
     gap: 0.45rem;
     padding: 0.5rem;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
   .power-play-page .power-play-select__grid,
   .power-play-page .power-play-select__opponent {
-    display: none;
+    display: none !important;
   }
   .power-play-page .power-play-select__hero {
     display: block;
     min-height: 0;
-    overflow: auto;
+    overflow: visible;
   }
   .power-play-page .power-play-card {
-    min-width: 0;
+    min-width: 0 !important;
     scroll-snap-align: unset;
-  }
-  .power-play-page .power-play-card--big .power-play-card__portrait {
-    min-height: 92px;
   }
   .power-play-page .power-play-select > .power-play-ready {
     position: sticky;
