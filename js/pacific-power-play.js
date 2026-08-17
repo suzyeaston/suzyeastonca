@@ -99,6 +99,20 @@
     }
   ];
 
+  const USSR = {
+    name: 'USSR RED ARMY',
+    tag: '1987 RENDEZ-VOUS · KLM LINE',
+    colors: ['#c8102e', '#ffffff', '#ffd700'],
+    goalie: { name: 'TRETIAK', num: '20' },
+    line: [
+      { name: 'KRUTOV', num: '9', pos: 'LW' },
+      { name: 'LARIONOV', num: '11', pos: 'C' },
+      { name: 'MAKAROV', num: '24', pos: 'RW' },
+      { name: 'FETISOV', num: '2', pos: 'D' },
+      { name: 'KASATONOV', num: '5', pos: 'D' }
+    ]
+  };
+
   const CALLS = [
     'COLISEUM CROWD WAKES UP',
     'RUSSIAN ROCKET BREAKAWAY',
@@ -108,7 +122,12 @@
     'BOARD SHAKE',
     'HASTINGS PARK NOISE',
     'POWER PLAY HOT',
-    'PUCK LOST IN GRANVILLE FOG'
+    'KLM LINE ON THE ICE',
+    'LARIONOV THREADS THE NEEDLE',
+    'GREEN UNIT CLOSES THE LANE',
+    'TRETIAK STONEWALLS',
+    'CCCP COUNTERATTACK',
+    'RENDEZ-VOUS RINK HEATS UP'
   ];
 
   const T = {
@@ -119,11 +138,89 @@
     zone: 'rgba(253,184,39,.55)',
     accent: '#e03a3e',
     puck: '#fdb827',
-    feed: 'PACIFIC COLISEUM FEED',
-    goalie: '#e03a3e',
-    blocker: 'rgba(253,184,39,.85)',
-    blockerDot: '#e03a3e'
+    feed: 'CANUCKS vs USSR · PACIFIC COLISEUM',
+    soviet: USSR.colors
   };
+
+  function drawHockeyPlayer(x, y, opts) {
+    const colors = opts.colors || ['#0a0a0a', '#fdb827', '#e03a3e'];
+    const facing = opts.facing == null ? 1 : opts.facing;
+    const scale = opts.scale || 1;
+    const soviet = !!opts.soviet;
+    const goalie = !!opts.goalie;
+    const num = opts.num || '';
+    const bodyY = goalie ? -10 : -16;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(facing * scale, scale);
+
+    ctx.fillStyle = '#111';
+    ctx.fillRect(-11, 15, 9, 3);
+    ctx.fillRect(2, 15, 9, 3);
+    ctx.fillStyle = '#9aa3ad';
+    ctx.fillRect(-10, 17, 7, 2);
+    ctx.fillRect(3, 17, 7, 2);
+
+    ctx.fillStyle = colors[0];
+    ctx.fillRect(-9, 5, 7, 12);
+    ctx.fillRect(2, 5, 7, 12);
+
+    if (goalie) {
+      ctx.fillStyle = colors[0];
+      ctx.fillRect(-14, bodyY + 2, 28, 24);
+      ctx.fillStyle = colors[1];
+      ctx.fillRect(-16, bodyY + 8, 32, 6);
+      ctx.fillRect(-18, bodyY + 14, 8, 14);
+      ctx.fillRect(10, bodyY + 14, 8, 14);
+      ctx.fillStyle = colors[2];
+      ctx.fillRect(-20, bodyY + 20, 10, 8);
+      ctx.fillRect(10, bodyY + 20, 10, 8);
+    } else {
+      ctx.fillRect(-10, bodyY + 6, 20, 18);
+      ctx.fillStyle = colors[1];
+      ctx.fillRect(-12, bodyY + 10, 24, 5);
+      ctx.fillRect(-14, bodyY + 4, 6, 8);
+      ctx.fillRect(8, bodyY + 4, 6, 8);
+      ctx.fillStyle = colors[0];
+      ctx.fillRect(-16, bodyY + 8, 5, 12);
+      ctx.fillRect(11, bodyY + 6, 5, 14);
+      ctx.fillStyle = colors[2];
+      ctx.fillRect(-18, bodyY + 18, 6, 5);
+      ctx.fillRect(12, bodyY + 18, 6, 5);
+    }
+
+    ctx.strokeStyle = '#7a5c18';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(goalie ? -16 : 14, bodyY + (goalie ? 22 : 20));
+    ctx.lineTo(goalie ? -30 : 30, bodyY + (goalie ? 34 : 32));
+    ctx.stroke();
+    ctx.fillStyle = '#7a5c18';
+    ctx.fillRect(goalie ? -32 : 28, bodyY + (goalie ? 32 : 30), 4, 8);
+
+    ctx.fillStyle = colors[2];
+    ctx.fillRect(-8, bodyY - 10, 16, 12);
+    ctx.fillStyle = '#05070d';
+    ctx.fillRect(-6, bodyY - 6, 12, 4);
+    ctx.fillStyle = colors[1];
+    ctx.fillRect(-8, bodyY - 10, 16, 3);
+
+    if (num) {
+      ctx.fillStyle = colors[1];
+      ctx.font = (goalie ? '7px' : '8px') + ' monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(num, 0, bodyY + (goalie ? 20 : 22));
+    }
+    if (soviet) {
+      ctx.fillStyle = '#fff';
+      ctx.font = '5px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('CCCP', 0, bodyY + (goalie ? 14 : 16));
+    }
+
+    ctx.restore();
+  }
 
   function init() {
     const stage = document.querySelector('[data-arcade-stage]');
@@ -157,7 +254,7 @@
     const overlay = document.createElement('div');
     overlay.className = 'hero-galaga-overlay pacific-power-play-overlay';
     overlay.innerHTML =
-      '<section class="power-play-attract" data-attract><h3>PACIFIC POWER PLAY</h3><p>1993–94 // PACIFIC COLISEUM</p><strong>INSERT COIN / PICK YOUR SKATER</strong><small>CLICK OR TAP A SKATER<br>ARROWS SWAP · ENTER LOCKS IN<br>SPACE SHOOT · E ABILITY</small><button type="button" class="pixel-button" data-open-select>Select Skater</button></section><section class="power-play-select" data-select hidden></section><section class="power-play-vs" data-vs hidden></section><section class="power-play-ready" data-pause hidden><h3>BENCH DOOR OPEN</h3><p>Paused between periods.</p><button type="button" class="pixel-button" data-resume>Resume</button></section>';
+      '<section class="power-play-attract" data-attract><h3>PACIFIC POWER PLAY</h3><p>1993–94 CANUCKS vs USSR RED ARMY</p><strong>INSERT COIN / PICK YOUR SKATER</strong><small>KLM LINE AWAITS · LARIONOV #11<br>CLICK OR TAP A SKATER<br>ARROWS SWAP · ENTER LOCKS IN<br>SPACE SHOOT · E ABILITY</small><button type="button" class="pixel-button" data-open-select>Select Skater</button></section><section class="power-play-select" data-select hidden></section><section class="power-play-vs" data-vs hidden></section><section class="power-play-ready" data-pause hidden><h3>BENCH DOOR OPEN</h3><p>Paused between periods.</p><button type="button" class="pixel-button" data-resume>Resume</button></section>';
 
     screen.append(canvas, ui, overlay);
     const ctx = canvas.getContext('2d');
@@ -229,6 +326,29 @@
             '</i></button>'
         ).join('') +
         '</nav>' +
+        '<aside class="power-play-select__opponent" aria-label="Opponent lineup">' +
+        '<span>OPPONENT</span><b>VS</b><p>' +
+        USSR.name +
+        '</p><i>' +
+        USSR.tag +
+        '</i><ul class="power-play-opponent-line">' +
+        USSR.line
+          .map(
+            (sk) =>
+              '<li><b>#' +
+              sk.num +
+              '</b> ' +
+              sk.name +
+              ' <i>' +
+              sk.pos +
+              '</i></li>'
+          )
+          .join('') +
+        '<li class="power-play-opponent-line__goalie"><b>#' +
+        USSR.goalie.num +
+        '</b> ' +
+        USSR.goalie.name +
+        ' <i>G</i></li></ul></aside>' +
         '<div class="power-play-ready"><span>READY?</span><button type="button" class="pixel-button" data-confirm>Drop The Puck</button></div>';
 
       els.select.querySelector('[data-prev]').onclick = () => pick(S.sel - 1);
@@ -258,7 +378,7 @@
         p.colors[1] +
         ';--c3:' +
         p.colors[2] +
-        '"><span class="power-play-card__num">' +
+        '"><i aria-hidden="true"></i><span class="power-play-card__num">' +
         p.num +
         '</span></span><span class="power-play-card__name">' +
         p.name +
@@ -341,11 +461,15 @@
       S.player.x = 115;
       S.player.y = S.h / 2;
       S.goalie.y = S.h / 2;
-      S.blockers = [
-        { x: S.w * 0.52, y: S.h * 0.34, r: 14, vx: -45, vy: 42 },
-        { x: S.w * 0.68, y: S.h * 0.66, r: 16, vx: -65, vy: -38 },
-        { x: S.w * 0.78, y: S.h * 0.45, r: 12, vx: -55, vy: 50 }
-      ];
+      S.blockers = USSR.line.slice(0, 3).map((sk, i) => ({
+        x: S.w * (0.52 + i * 0.1),
+        y: S.h * (0.34 + i * 0.14),
+        r: 16,
+        vx: -45 - i * 8,
+        vy: 42 - i * 12,
+        num: sk.num,
+        name: sk.name
+      }));
       puck();
       updateHud();
     }
@@ -361,14 +485,27 @@
 
     function confirm() {
       S.p = PLAYERS[S.sel];
-      els.vs.innerHTML = '<h3>#' + S.p.num + ' ' + S.p.name + '</h3><b>VS</b><p>STATIC BLOCKERS</p>';
+      els.vs.innerHTML =
+        '<h3>#' +
+        S.p.num +
+        ' ' +
+        S.p.name +
+        '</h3><b>VS</b><p>' +
+        USSR.name +
+        '</p><small>' +
+        USSR.tag +
+        '</small><ul class="power-play-vs-line">' +
+        USSR.line
+          .map((sk) => '<li>#' + sk.num + ' ' + sk.name + '</li>')
+          .join('') +
+        '</ul>';
       mode('versus');
       setTimeout(
         () => {
           reset();
           mode('playing');
           stage.focus({ preventScroll: true });
-          call('COLISEUM CROWD WAKES UP');
+          call('COLISEUM CROWD WAKES UP · USSR LINE ON ICE');
         },
         reduced.matches ? 650 : 1200
       );
@@ -459,11 +596,11 @@
       const hitG = Math.abs(S.puck.x - S.goalie.x) < 15 && Math.abs(S.puck.y - S.goalie.y) < S.goalie.h / 2;
       if (!S.puck.attached && hitG) {
         S.signal -= 7;
-        call('STATIC BLOCKER SAVE');
+        call('TRETIAK STONEWALLS');
         puck();
       } else if (!S.puck.attached && hitB) {
         S.signal -= 5;
-        call('PUCK LOST IN GRANVILLE FOG');
+        call('GREEN UNIT CLOSES THE LANE');
         puck();
       } else if (!S.puck.attached && S.puck.x > S.w - 38 && Math.abs(S.puck.y - S.h / 2) < 48) {
         S.goals++;
@@ -532,10 +669,17 @@
         ctx.fillStyle = 'rgba(253,184,39,' + (0.8 - i * 0.08) + ')';
         ctx.fillRect(p[0] - 4, p[1] - 2, 8, 4);
       });
-      drawSkater(S.player.x, S.player.y, S.p.colors);
+      drawHockeyPlayer(S.player.x, S.player.y, { colors: S.p.colors, num: S.p.num, facing: 1 });
       ctx.fillStyle = T.puck;
       ctx.fillRect(S.puck.x - 4, S.puck.y - 3, 8, 6);
-      drawGoalie();
+      drawHockeyPlayer(S.goalie.x, S.goalie.y, {
+        colors: T.soviet,
+        num: USSR.goalie.num,
+        facing: -1,
+        soviet: true,
+        goalie: true,
+        scale: 1.15
+      });
       S.blockers.forEach(drawBlocker);
       if (S.flash > 0) {
         ctx.fillStyle = 'rgba(255,240,80,' + S.flash + ')';
@@ -545,43 +689,18 @@
       ctx.restore();
     }
 
-    function drawSkater(x, y, c) {
-      ctx.fillStyle = c[0];
-      ctx.fillRect(x - 8, y - 16, 16, 22);
-      ctx.fillStyle = c[1];
-      ctx.fillRect(x - 12, y - 7, 24, 6);
-      ctx.fillStyle = c[2];
-      ctx.fillRect(x - 7, y - 25, 14, 9);
-      ctx.fillStyle = '#05070d';
-      ctx.fillRect(x - 4, y - 22, 8, 3);
-      ctx.fillStyle = c[1];
-      ctx.font = '8px monospace';
-      ctx.fillText(S.p.num, x - (S.p.num.length > 1 ? 6 : 3), y + 2);
-      ctx.strokeStyle = T.text;
-      ctx.beginPath();
-      ctx.moveTo(x + 10, y - 5);
-      ctx.lineTo(x + 28, y + 13);
-      ctx.stroke();
-      ctx.fillRect(x - 14, y + 12, 13, 3);
-      ctx.fillRect(x + 2, y + 12, 16, 3);
-    }
-
-    function drawGoalie() {
-      ctx.fillStyle = T.goalie;
-      ctx.fillRect(S.goalie.x - 8, S.goalie.y - S.goalie.h / 2, 16, S.goalie.h);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(S.goalie.x - 13, S.goalie.y - 13, 26, 22);
-      ctx.fillStyle = T.bg;
-      ctx.fillRect(S.goalie.x - 7, S.goalie.y - 4, 14, 4);
-    }
-
     function drawBlocker(b) {
-      ctx.fillStyle = T.blocker;
-      ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
-      ctx.fillStyle = T.bg;
-      ctx.fillRect(b.x - 6, b.y - 6, 12, 12);
-      ctx.fillStyle = T.blockerDot;
-      ctx.fillRect(b.x - 2, b.y - b.r - 7, 4, 6);
+      drawHockeyPlayer(b.x, b.y, {
+        colors: T.soviet,
+        num: b.num,
+        facing: -1,
+        soviet: true,
+        scale: 0.92
+      });
+      ctx.fillStyle = T.text;
+      ctx.font = '5px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(b.name.split(' ')[0], b.x, b.y - 28);
     }
 
     function resize() {

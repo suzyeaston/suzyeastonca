@@ -22,10 +22,10 @@ get_header();
                     <div class="avatar-select">
                         <label for="avatar-select-input" class="pixel-font">Choose Your Avatar</label>
                         <select id="avatar-select-input" aria-label="Choose your Canucks legend" class="pixel-select">
-                            <option value="classic" selected>Pavel Bure (Classic Canuck)</option>
-                            <option value="gino">Gino Odjick</option>
-                            <option value="captain">The Captain</option>
-                            <option value="larionov">Igor Larionov</option>
+                            <option value="classic" selected>Pavel Bure (#10)</option>
+                            <option value="gino">Gino Odjick (#29)</option>
+                            <option value="captain">Trevor Linden (#16)</option>
+                            <option value="courtnall">Geoff Courtnall (#14)</option>
                         </select>
                         <p class="avatar-tip">Press "G" anytime to toggle Gino mode for a surprise.</p>
                     </div>

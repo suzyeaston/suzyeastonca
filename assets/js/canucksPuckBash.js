@@ -44,17 +44,93 @@
 
   const goal = { x: canvas.width / 2 - 60, width: 120, height: 10 };
 
-  const teams = [
-    "Oilers",
-    "Flames",
-    "Leafs",
-    "Bruins",
-    "Sharks",
-    "Jets",
-    "Senators",
-    "Kings",
-  ];
-  let opponent = teams[Math.floor(Math.random() * teams.length)];
+  const opponentTeam = {
+    name: "USSR",
+    label: "USSR Red Army (1987 Rendez-Vous)",
+    colors: ["#c8102e", "#ffffff", "#ffd700"],
+    goalie: { name: "TRETIAK", num: "20" },
+    line: ["KRUTOV #9", "LARIONOV #11", "MAKAROV #24", "FETISOV #2", "KASATONOV #5"],
+  };
+  let opponent = opponentTeam.name;
+
+  function drawHockeyPlayer(x, y, opts) {
+    const colors = opts.colors || ["#0a0a0a", "#fdb827", "#e03a3e"];
+    const facing = opts.facing == null ? 1 : opts.facing;
+    const scale = opts.scale || 1;
+    const soviet = !!opts.soviet;
+    const goalie = !!opts.goalie;
+    const num = opts.num || "";
+    const bodyY = goalie ? -8 : -12;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(facing * scale, scale);
+
+    ctx.fillStyle = "#111";
+    ctx.fillRect(-8, 12, 7, 3);
+    ctx.fillRect(1, 12, 7, 3);
+    ctx.fillStyle = "#9aa3ad";
+    ctx.fillRect(-7, 14, 5, 2);
+    ctx.fillRect(2, 14, 5, 2);
+
+    ctx.fillStyle = colors[0];
+    ctx.fillRect(-7, 4, 6, 10);
+    ctx.fillRect(1, 4, 6, 10);
+
+    if (goalie) {
+      ctx.fillRect(-12, bodyY + 2, 24, 20);
+      ctx.fillStyle = colors[1];
+      ctx.fillRect(-14, bodyY + 6, 28, 5);
+      ctx.fillRect(-15, bodyY + 12, 7, 12);
+      ctx.fillRect(8, bodyY + 12, 7, 12);
+      ctx.fillStyle = colors[2];
+      ctx.fillRect(-16, bodyY + 16, 8, 6);
+      ctx.fillRect(8, bodyY + 16, 8, 6);
+    } else {
+      ctx.fillRect(-8, bodyY + 4, 16, 14);
+      ctx.fillStyle = colors[1];
+      ctx.fillRect(-10, bodyY + 7, 20, 4);
+      ctx.fillRect(-10, bodyY + 2, 5, 6);
+      ctx.fillRect(5, bodyY + 2, 5, 6);
+      ctx.fillStyle = colors[0];
+      ctx.fillRect(-12, bodyY + 6, 4, 10);
+      ctx.fillRect(8, bodyY + 5, 4, 11);
+      ctx.fillStyle = colors[2];
+      ctx.fillRect(-13, bodyY + 14, 5, 4);
+      ctx.fillRect(9, bodyY + 14, 5, 4);
+    }
+
+    ctx.strokeStyle = "#7a5c18";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(goalie ? -12 : 10, bodyY + (goalie ? 18 : 16));
+    ctx.lineTo(goalie ? -22 : 22, bodyY + (goalie ? 26 : 24));
+    ctx.stroke();
+    ctx.fillStyle = "#7a5c18";
+    ctx.fillRect(goalie ? -24 : 20, bodyY + (goalie ? 24 : 22), 3, 6);
+
+    ctx.fillStyle = colors[2];
+    ctx.fillRect(-6, bodyY - 8, 12, 10);
+    ctx.fillStyle = "#05070d";
+    ctx.fillRect(-4, bodyY - 5, 8, 3);
+    ctx.fillStyle = colors[1];
+    ctx.fillRect(-6, bodyY - 8, 12, 2);
+
+    if (num) {
+      ctx.fillStyle = colors[1];
+      ctx.font = "7px 'Press Start 2P', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(num, 0, bodyY + (goalie ? 16 : 14));
+    }
+    if (soviet) {
+      ctx.fillStyle = "#fff";
+      ctx.font = "4px 'Press Start 2P', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("CCCP", 0, bodyY + (goalie ? 11 : 10));
+    }
+
+    ctx.restore();
+  }
 
   const goalie = {
     x: goal.x + goal.width / 2 - 20,
@@ -63,7 +139,8 @@
     height: 10,
     speed: 120,
     dir: 1,
-    color: "#ff5555",
+    colors: opponentTeam.colors,
+    num: opponentTeam.goalie.num,
   };
 
   const player = {
@@ -72,7 +149,7 @@
     width: 20,
     height: 20,
     speed: 200,
-    color: "#0055aa",
+    colors: ["#0a0a0a", "#fdb827", "#e03a3e"],
     jersey: "10",
   };
 
@@ -98,18 +175,34 @@
   let saveShownThisShot = false;
 
   const avatars = {
-    classic: { label: "Pavel Bure", color: "#0055aa", jersey: "10" },
-    gino: { label: "Gino Odjick", color: "#0b6623", jersey: "29" },
-    captain: { label: "The Captain", color: "#003366", jersey: "C" },
-    larionov: { label: "Igor Larionov", color: "#003366", jersey: "18" },
+    classic: {
+      label: "Pavel Bure",
+      colors: ["#0a0a0a", "#fdb827", "#e03a3e"],
+      jersey: "10",
+    },
+    gino: {
+      label: "Gino Odjick",
+      colors: ["#0a0a0a", "#e03a3e", "#fdb827"],
+      jersey: "29",
+    },
+    captain: {
+      label: "Trevor Linden",
+      colors: ["#141414", "#f5f0e6", "#fdb827"],
+      jersey: "16",
+    },
+    courtnall: {
+      label: "Geoff Courtnall",
+      colors: ["#1a1a1a", "#fdb827", "#f5f0e6"],
+      jersey: "14",
+    },
   };
 
   function applyAvatar(selection) {
     const avatar = avatars[selection] || avatars.classic;
     activeAvatar = selection in avatars ? selection : "classic";
-    player.color = avatar.color;
+    player.colors = avatar.colors;
     player.jersey = avatar.jersey;
-    teamDisplayEl.textContent = `Vancouver Canucks (${avatar.label}) vs. ${opponent}`;
+    teamDisplayEl.textContent = `Vancouver Canucks (${avatar.label}) vs. ${opponentTeam.label}`;
   }
 
   function drawRink() {
@@ -123,21 +216,26 @@
   }
 
   function drawPlayer() {
-    ctx.fillStyle = player.color;
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-    ctx.fillStyle = "#fff";
-    ctx.font = "10px 'Press Start 2P', monospace";
-    ctx.textAlign = "center";
-    ctx.fillText(
-      player.jersey,
+    drawHockeyPlayer(
       player.x + player.width / 2,
-      player.y + player.height / 1.6,
+      player.y + player.height / 2 + 4,
+      { colors: player.colors, num: player.jersey, facing: 1, scale: 0.85 },
     );
   }
 
   function drawGoalie() {
-    ctx.fillStyle = goalie.color;
-    ctx.fillRect(goalie.x, goalie.y, goalie.width, goalie.height);
+    drawHockeyPlayer(
+      goalie.x + goalie.width / 2,
+      goalie.y + goalie.height + 6,
+      {
+        colors: goalie.colors,
+        num: goalie.num,
+        facing: -1,
+        soviet: true,
+        goalie: true,
+        scale: 0.8,
+      },
+    );
   }
 
   function updateGoalie(dt) {
@@ -267,7 +365,7 @@
       endGame();
     }
 
-    scoreboardEl.textContent = `Canucks ${canucksScore} – ${opponent} ${opponentScore} | ${Math.ceil(timeLeft)}s | Shots: ${canucksShots}, Goals: ${canucksScore} | Avatar: ${avatars[activeAvatar].label}`;
+    scoreboardEl.textContent = `Canucks ${canucksScore} – ${opponent} ${opponentScore} | ${Math.ceil(timeLeft)}s | Shots: ${canucksShots}, Goals: ${canucksScore} | Avatar: ${avatars[activeAvatar].label} | KLM: ${opponentTeam.line.slice(0, 3).join(" · ")}`;
   }
 
   function resetPuck() {
@@ -408,7 +506,7 @@
 
   function showGoal() {
     overlay.innerHTML =
-      '<div class="overlay-content goal-animation"><div class="goal-light"></div><p class="pixel-font goal-text">GOAL!</p><p class="goal-subtext">Coliseum crowd goes wild!</p></div>';
+      '<div class="overlay-content goal-animation"><div class="goal-light"></div><p class="pixel-font goal-text">GOAL!</p><p class="goal-subtext">Canucks beat Tretiak and the USSR line!</p></div>';
     overlay.style.display = "flex";
     playGoalMelody();
     playCrowdCheer();
@@ -475,8 +573,8 @@
       opponentScore = 0;
       canucksShots = 0;
       timeLeft = 60;
-      opponent = teams[Math.floor(Math.random() * teams.length)];
-      teamDisplayEl.textContent = `Vancouver Canucks (${avatars[activeAvatar].label}) vs. ${opponent}`;
+      opponent = opponentTeam.name;
+      teamDisplayEl.textContent = `Vancouver Canucks (${avatars[activeAvatar].label}) vs. ${opponentTeam.label}`;
       scoreboardEl.textContent = `Canucks 0 – ${opponent} 0 | 60s | Shots: 0, Goals: 0 | Avatar: ${avatars[activeAvatar].label}`;
       running = true;
       lastTime = performance.now();

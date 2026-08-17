@@ -6333,15 +6333,29 @@ body,
 .power-play-attract h3 { margin: 0; font-size: clamp(1.4rem, 4vw, 3.2rem); color: #fff066; text-shadow: 4px 4px 0 #ff4fd8, 0 0 18px rgba(57,255,20,.7); }
 .power-play-attract strong { color: #39ff14; animation: powerPlayBlink .85s steps(2,end) infinite; }
 .power-play-attract small { line-height: 1.9; color: #8ef6ff; }
-.power-play-select { display: grid; grid-template-columns: minmax(170px, .85fr) minmax(280px, 1.5fr) minmax(150px, .75fr); grid-template-rows: 1fr auto; gap: .75rem; padding: .85rem; background: linear-gradient(135deg, rgba(255,255,102,.08), transparent 18%), repeating-linear-gradient(135deg, rgba(87,243,255,.08) 0 2px, transparent 2px 14px), #020713; }
+.power-play-select { display: grid; grid-template-columns: minmax(170px, .85fr) minmax(280px, 1.5fr) minmax(150px, .75fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "swap swap swap" "hero roster opponent" "ready ready ready"; gap: .75rem; padding: .85rem; background: linear-gradient(135deg, rgba(255,255,102,.08), transparent 18%), repeating-linear-gradient(135deg, rgba(87,243,255,.08) 0 2px, transparent 2px 14px), #020713; }
+.power-play-swap { grid-area: swap; }
+.page-template-page-home-php .power-play-select__hero,
+.home .power-play-select__hero,
+.front-page .power-play-select__hero { grid-area: hero; }
+.page-template-page-home-php .power-play-roster,
+.home .power-play-roster,
+.front-page .power-play-roster { grid-area: roster; }
+.page-template-page-home-php .power-play-select__opponent,
+.home .power-play-select__opponent,
+.front-page .power-play-select__opponent { grid-area: opponent; }
+.page-template-page-home-php .power-play-select > .power-play-ready,
+.home .power-play-select > .power-play-ready,
+.front-page .power-play-select > .power-play-ready { grid-area: ready; }
 .power-play-select__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; align-content: center; }
 .power-play-card { position: relative; display: grid; gap: .3rem; width: 100%; padding: .45rem; border: 3px solid #57f3ff; background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.16) 0 1px, transparent 2px), linear-gradient(160deg, rgba(9,31,58,.95), rgba(1,7,19,.98)); color: #fff; text-align: left; font: inherit; box-shadow: 5px 5px 0 rgba(0,0,0,.8), inset 0 0 0 2px rgba(255,255,255,.08); cursor: pointer; image-rendering: pixelated; }
 .power-play-card.is-selected { border-color: #fff066; transform: translate(-2px,-2px); box-shadow: 0 0 0 3px #39ff14, 7px 7px 0 #ff4fd8, 0 0 22px rgba(57,255,20,.48); }
 .power-play-card.is-selected::before { content: 'P1'; position: absolute; top: -.8rem; left: .4rem; padding: .2rem .35rem; background: #fff066; color: #020713; animation: powerPlayBlink .7s steps(2,end) infinite; }
 .power-play-card__set { color: #fff066; font-size: .45rem; letter-spacing: .06em; }
 .power-play-card__portrait { position: relative; min-height: 72px; border: 2px solid #d8ffef; background: radial-gradient(circle at 50% 28%, var(--c3) 0 10px, transparent 11px), linear-gradient(145deg, var(--c1), #020713 60%), repeating-radial-gradient(circle, rgba(255,255,255,.16) 0 1px, transparent 1px 5px); overflow: hidden; }
-.power-play-card__portrait::before { content: ''; position: absolute; left: 50%; bottom: 10px; width: 48px; height: 34px; transform: translateX(-50%); background: var(--c2); box-shadow: -18px 10px 0 var(--c1), 18px 10px 0 var(--c1); }
-.power-play-card__portrait i { position: absolute; left: 50%; top: 18px; width: 28px; height: 22px; transform: translateX(-50%); background: #f6efe1; box-shadow: inset 0 5px 0 var(--c1), 0 0 0 3px rgba(2,7,19,.55); }
+.power-play-card__portrait::before { content: ''; position: absolute; left: 50%; bottom: 8px; width: 44px; height: 30px; transform: translateX(-50%); background: var(--c2); border-radius: 2px 2px 0 0; box-shadow: -16px 8px 0 -2px var(--c1), 16px 8px 0 -2px var(--c1), -20px 18px 0 var(--c1), 20px 18px 0 var(--c1); }
+.power-play-card__portrait::after { content: ''; position: absolute; left: 58%; bottom: 14px; width: 3px; height: 28px; transform: rotate(28deg); background: linear-gradient(180deg, #7a5c18, #c49a2a); box-shadow: 2px 22px 0 -1px #7a5c18; }
+.power-play-card__portrait i { position: absolute; left: 50%; top: 16px; width: 26px; height: 20px; transform: translateX(-50%); background: #f6efe1; border-radius: 4px 4px 2px 2px; box-shadow: inset 0 5px 0 var(--c1), 0 0 0 3px rgba(2,7,19,.55), 0 8px 0 -4px var(--c1); }
 .power-play-card__name { color: #d8ffef; font-size: clamp(.48rem, .8vw, .62rem); line-height: 1.35; min-height: 2.5em; }
 .power-play-card__pos { position: absolute; right: .35rem; top: .35rem; color: #020713; background: #39ff14; padding: .2rem; font-size: .55rem; }
 .power-play-card__stats { display: grid; gap: .18rem; }
@@ -6355,6 +6369,14 @@ body,
 .power-play-select__opponent b, .power-play-vs b { color: #fff066; font-size: clamp(2rem, 6vw, 5rem); text-shadow: 4px 4px 0 #ff4fd8; }
 .power-play-select__opponent span { color: #ff4fd8; line-height: 1.5; }
 .power-play-select__opponent i { color: #8ef6ff; font-style: normal; font-size: .55rem; }
+.power-play-opponent-line { list-style: none; margin: 0; padding: 0; display: grid; gap: .28rem; font-size: .42rem; color: #d8ffef; text-align: left; width: 100%; }
+.power-play-opponent-line li { display: grid; grid-template-columns: 2.2em 1fr auto; gap: .25rem; align-items: center; padding: .18rem .25rem; border: 1px solid rgba(255,255,255,.12); background: rgba(200,16,46,.18); }
+.power-play-opponent-line b { color: #fff066; }
+.power-play-opponent-line i { font-style: normal; color: #8ef6ff; font-size: .38rem; }
+.power-play-opponent-line__goalie { border-color: rgba(255,255,102,.35); background: rgba(255,215,0,.12); }
+.power-play-vs-line { list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem .65rem; font-size: .42rem; color: #8ef6ff; }
+.power-play-vs-line li { padding: .15rem .35rem; border: 1px solid rgba(200,16,46,.45); background: rgba(200,16,46,.2); }
+.power-play-vs small { color: #8ef6ff; font-size: .45rem; letter-spacing: .04em; }
 .power-play-select > .power-play-ready { position: static; grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 1rem; padding: .4rem; background: rgba(2,7,19,.82); border: 2px solid rgba(57,255,20,.5); }
 .power-play-ready span { color: #39ff14; animation: powerPlayBlink .8s steps(2,end) infinite; }
 .power-play-vs { display: grid; place-items: center; align-content: center; gap: 1rem; text-align: center; background: repeating-linear-gradient(180deg, rgba(255,255,255,.07) 0 2px, transparent 2px 7px), #020713; animation: powerPlayGlitch .32s steps(2,end) infinite; }
@@ -6366,8 +6388,8 @@ body,
 .power-play-goal-flash { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; color: #020713; background: rgba(255,240,80,.58); font-family: 'Press Start 2P', monospace; font-size: clamp(1.6rem, 5vw, 4rem); text-shadow: 3px 3px 0 #ff4fd8; pointer-events: none; }
 @keyframes powerPlayBlink { 50% { opacity: .25; } }
 @keyframes powerPlayGlitch { 50% { filter: hue-rotate(40deg); transform: translateX(2px); } }
-@media (max-width: 900px) { .home-play-mode { grid-template-columns: 1fr; } .power-play-select { grid-template-columns: 1fr; overflow: auto; } .power-play-select__grid { grid-template-columns: repeat(2, minmax(170px, 1fr)); } .power-play-card--big .power-play-card__portrait { min-height: 96px; } }
-@media (max-width: 560px) { .home-play-mode .hero-game-stage__screen { min-height: 520px; } .page-template-page-home-php .power-play-select, .home .power-play-select, .front-page .power-play-select { padding: .55rem; } .power-play-select__grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; } .power-play-page .power-play-select__grid { display: none; } .power-play-card { min-width: 78vw; scroll-snap-align: center; } .power-play-page .power-play-card { min-width: 0; scroll-snap-align: unset; } .power-play-select__opponent { display: none; } .power-play-select > .power-play-ready { position: sticky; bottom: 0; } }
+@media (max-width: 900px) { .home-play-mode { grid-template-columns: 1fr; } .power-play-select { grid-template-columns: 1fr; overflow: auto; } .power-play-select__grid { grid-template-columns: repeat(2, minmax(170px, 1fr)); } .power-play-card--big .power-play-card__portrait { min-height: 96px; } .power-play-select__opponent { grid-column: 1 / -1; max-height: none; } }
+@media (max-width: 560px) { .home-play-mode .hero-game-stage__screen { min-height: 520px; } .page-template-page-home-php .power-play-select, .home .power-play-select, .front-page .power-play-select { padding: .55rem; } .power-play-select__grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; } .power-play-page .power-play-select__grid { display: none; } .power-play-card { min-width: 78vw; scroll-snap-align: center; } .power-play-page .power-play-card { min-width: 0; scroll-snap-align: unset; } .power-play-select__opponent { display: grid; grid-column: 1 / -1; padding: .45rem; font-size: .85em; } .power-play-opponent-line { grid-template-columns: 1fr 1fr; gap: .2rem; } .power-play-opponent-line li { grid-template-columns: 2em 1fr auto; font-size: .36rem; } .power-play-select > .power-play-ready { position: sticky; bottom: 0; } }
 @media (prefers-reduced-motion: reduce) { .power-play-attract strong, .power-play-card.is-selected::before, .power-play-p1, .power-play-ready span, .power-play-vs { animation: none; } }
 
 /* Pacific Power Play state visibility fixes. Keep these after legacy Galaga rules. */
@@ -6789,13 +6811,46 @@ body,
   place-items: center;
   min-height: 84px;
   background:
-    linear-gradient(180deg, var(--c1) 0 36%, var(--c3) 36% 44%, var(--c1) 44% 100%);
+    radial-gradient(circle at 50% 22%, var(--c3) 0 12px, transparent 13px),
+    linear-gradient(180deg, var(--c1) 0 34%, var(--c3) 34% 42%, var(--c1) 42% 100%);
+  overflow: hidden;
 }
-.power-play-card__portrait::before,
+.power-play-card__portrait::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 40px;
+  height: 28px;
+  transform: translateX(-50%);
+  background: var(--c2);
+  box-shadow: -14px 8px 0 -2px var(--c1), 14px 8px 0 -2px var(--c1), -18px 18px 0 var(--c1), 18px 18px 0 var(--c1);
+}
+.power-play-card__portrait::after {
+  content: '';
+  position: absolute;
+  left: 58%;
+  bottom: 12px;
+  width: 3px;
+  height: 24px;
+  transform: rotate(28deg);
+  background: linear-gradient(180deg, #7a5c18, #c49a2a);
+  box-shadow: 2px 18px 0 -1px #7a5c18;
+}
 .power-play-card__portrait i {
-  display: none;
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  width: 24px;
+  height: 18px;
+  transform: translateX(-50%);
+  background: var(--c3);
+  border-radius: 3px 3px 1px 1px;
+  box-shadow: inset 0 4px 0 var(--c1), 0 0 0 2px rgba(0,0,0,.45), 0 7px 0 -3px var(--c1);
 }
 .power-play-card__num {
+  position: relative;
+  z-index: 2;
   font-size: clamp(1.7rem, 6vw, 2.8rem);
   line-height: 1;
   color: var(--c2);
@@ -6814,10 +6869,11 @@ body,
 .power-play-page .power-play-select {
   display: grid;
   grid-template-columns: minmax(220px, 0.42fr) minmax(0, 0.58fr);
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   grid-template-areas:
     "swap swap"
     "hero roster"
+    "opponent opponent"
     "ready ready";
   gap: 0.65rem;
   padding: 0.75rem;
@@ -6826,6 +6882,7 @@ body,
 .power-play-swap { grid-area: swap; }
 .power-play-select__hero { grid-area: hero; min-width: 0; }
 .power-play-roster { grid-area: roster; }
+.power-play-page .power-play-select__opponent { grid-area: opponent; }
 .power-play-select > .power-play-ready { grid-area: ready; }
 .power-play-page .power-play-select article.power-play-card {
   cursor: default;
@@ -6839,10 +6896,11 @@ body,
 @media (max-width: 900px) {
   .power-play-page .power-play-select {
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
     grid-template-areas:
       "swap"
       "roster"
+      "opponent"
       "ready";
     gap: 0.45rem;
     padding: 0.5rem;
@@ -6891,7 +6949,14 @@ body,
   }
   .power-play-page .power-play-select__grid,
   .power-play-page .power-play-select__opponent {
-    display: none !important;
+    display: grid !important;
+  }
+  .power-play-page .power-play-select__opponent {
+    grid-column: 1 / -1;
+    padding: .4rem;
+  }
+  .power-play-page .power-play-opponent-line {
+    grid-template-columns: 1fr 1fr;
   }
   .power-play-page .power-play-card {
     min-width: 0 !important;
@@ -7169,7 +7234,26 @@ body.page-template-page-pacific-power-play-php::before {
 }
 .power-play-page .power-play-select__opponent {
   border-color: var(--ppp-orange);
-  background: linear-gradient(180deg, rgba(224, 58, 62, 0.14), rgba(10, 10, 10, 0.96));
+  background: linear-gradient(180deg, rgba(200, 16, 46, 0.18), rgba(10, 10, 10, 0.96));
+}
+.power-play-page .power-play-opponent-line li {
+  border-color: rgba(200, 16, 46, 0.35);
+  background: rgba(200, 16, 46, 0.14);
+  color: var(--ppp-cream);
+}
+.power-play-page .power-play-opponent-line b {
+  color: var(--ppp-gold);
+}
+.power-play-page .power-play-opponent-line i {
+  color: rgba(253, 184, 39, 0.82);
+}
+.power-play-page .power-play-vs-line li {
+  border-color: rgba(200, 16, 46, 0.45);
+  background: rgba(200, 16, 46, 0.18);
+  color: rgba(253, 184, 39, 0.82);
+}
+.power-play-page .power-play-vs small {
+  color: rgba(253, 184, 39, 0.82);
 }
 .power-play-page .power-play-select__opponent b,
 .power-play-page .power-play-vs b {
