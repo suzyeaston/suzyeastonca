@@ -1,0 +1,359 @@
+/* Suzy Easton — technical dossier resume
+   US Letter · WeasyPrint / print-first · ATS-readable text */
+
+:root {
+  --ink: #1a2228;
+  --ink-soft: #2e3942;
+  --muted: #5a6670;
+  --muted-soft: #7a8791;
+  --rule: #c8d0d4;
+  --rule-strong: #9aa6ae;
+  --accent: #2f5f5c;
+  --accent-ink: #244c4a;
+  --accent-wash: #eef3f2;
+  --paper: #ffffff;
+
+  --font-sans: "Liberation Sans", "Noto Sans", "DejaVu Sans", Arial, sans-serif;
+  --font-serif: "Liberation Serif", "Noto Serif", "DejaVu Serif", Georgia, serif;
+}
+
+@page {
+  size: Letter;
+  margin: 0.58in 0.62in 0.52in 0.62in;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: var(--ink);
+  background: #f3f5f5;
+  font-family: var(--font-sans);
+  font-size: 10pt;
+  line-height: 1.36;
+  font-weight: 400;
+}
+
+a {
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+.resume {
+  width: 8.5in;
+  margin: 1rem auto;
+  padding: 0.58in 0.62in;
+  background: var(--paper);
+  box-shadow: 0 12px 36px rgba(26, 34, 40, 0.08);
+}
+
+/* ——— Masthead ——— */
+
+.masthead {
+  margin: 0 0 0.48rem;
+  padding: 0 0 0.4rem;
+  border-bottom: 1.75px solid var(--ink);
+}
+
+.name {
+  margin: 0 0 0.1rem;
+  font-family: var(--font-serif);
+  font-size: 23.5pt;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+.role-title {
+  margin: 0 0 0.2rem;
+  font-size: 11.25pt;
+  font-weight: 700;
+  color: var(--accent-ink);
+  line-height: 1.2;
+}
+
+.strapline {
+  margin: 0 0 0.3rem;
+  padding: 0.24rem 0.38rem;
+  background: var(--accent-wash);
+  border-left: 2.5px solid var(--accent);
+  font-size: 8.7pt;
+  font-weight: 600;
+  color: var(--ink-soft);
+  line-height: 1.32;
+}
+
+.strapline .dot {
+  color: var(--muted-soft);
+  font-weight: 400;
+  margin: 0 0.12rem;
+}
+
+.contact {
+  margin: 0 0 0.14rem;
+  font-size: 8.25pt;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.contact a {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.contact .sep {
+  margin: 0 0.2rem;
+  color: var(--rule-strong);
+}
+
+.availability {
+  margin: 0;
+  font-size: 8pt;
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* ——— Sections ——— */
+
+.section {
+  margin: 0 0 0.42rem;
+}
+
+.section-heading {
+  margin: 0 0 0.22rem;
+  padding: 0 0 0.1rem;
+  font-family: var(--font-serif);
+  font-size: 10.75pt;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  border-bottom: 1px solid var(--rule);
+}
+
+.profile-text {
+  margin: 0;
+  font-size: 9.45pt;
+  line-height: 1.38;
+  color: var(--ink-soft);
+}
+
+/* ——— Toolkit ——— */
+
+.toolkit-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.toolkit-table tr {
+  page-break-inside: avoid;
+}
+
+.toolkit-table th,
+.toolkit-table td {
+  vertical-align: top;
+  text-align: left;
+  padding: 0.14rem 0.3rem 0.14rem 0;
+  border-bottom: 1px solid #e4e9eb;
+}
+
+.toolkit-table th {
+  width: 27%;
+  padding-right: 0.45rem;
+  font-size: 7.7pt;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  line-height: 1.25;
+}
+
+.toolkit-table td {
+  font-size: 8.55pt;
+  line-height: 1.32;
+  color: var(--ink-soft);
+}
+
+.toolkit-table tr:last-child th,
+.toolkit-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ——— Experience ——— */
+
+.job {
+  margin: 0 0 0.36rem;
+}
+
+.job-quercus,
+.job-winedirect,
+.earlier .job {
+  page-break-inside: avoid;
+}
+
+.job-alida {
+  margin: 0 0 0.42rem;
+  padding: 0.08rem 0 0.08rem 0.42rem;
+  border-left: 2.5px solid var(--accent);
+}
+
+.job-head {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 0.04rem;
+}
+
+.job-head td {
+  vertical-align: baseline;
+  padding: 0;
+}
+
+.job-head .company-cell {
+  font-size: 10.6pt;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  padding-right: 0.4rem;
+}
+
+.job-head .meta-cell {
+  width: 2.85in;
+  text-align: right;
+  font-size: 8.1pt;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.job-role {
+  margin: 0 0 0.1rem;
+  font-size: 9.7pt;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.25;
+}
+
+.bullets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bullets li {
+  margin: 0 0 0.13rem;
+  padding: 0 0 0 0.8rem;
+  font-size: 9.3pt;
+  line-height: 1.32;
+  color: var(--ink-soft);
+  position: relative;
+}
+
+.bullets li:last-child {
+  margin-bottom: 0;
+}
+
+.bullets li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.ownership-mark {
+  font-weight: 700;
+  color: var(--ink);
+  background: rgba(47, 95, 92, 0.14);
+}
+
+/* ——— Education ——— */
+
+.education-list {
+  margin: 0 0 0.22rem;
+  padding: 0;
+  list-style: none;
+}
+
+.education-list li {
+  display: inline;
+  font-size: 9.1pt;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.education-list li:not(:last-child)::after {
+  content: "  ·  ";
+  color: var(--muted-soft);
+}
+
+.edu-school {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.additional-note {
+  margin: 0.16rem 0 0;
+  padding-top: 0.18rem;
+  border-top: 1px solid var(--rule);
+  font-size: 8.85pt;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* ——— Screen ——— */
+
+@media screen and (max-width: 900px) {
+  body { background: var(--paper); }
+  .resume {
+    width: auto;
+    margin: 0;
+    padding: 1.1rem 1rem 2rem;
+    box-shadow: none;
+  }
+  .job-head .meta-cell {
+    white-space: normal;
+  }
+}
+
+/* ——— Print / PDF ——— */
+
+@media print {
+  body {
+    background: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .resume {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .section-heading,
+  .job-head,
+  .job-role {
+    break-after: avoid;
+  }
+
+  .education {
+    break-inside: avoid;
+  }
+}
