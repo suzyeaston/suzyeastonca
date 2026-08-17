@@ -254,12 +254,12 @@
     const ui = document.createElement('div');
     ui.className = 'hero-galaga-ui pacific-power-play-ui';
     ui.innerHTML =
-      '<p class="hero-galaga-status">PLAYER: <span data-player>---</span> // PERIOD 1</p><p class="hero-galaga-scoreline">GOALS <span data-goals>0</span> // SHOTS <span data-shots>0</span> // SIGNAL <span data-signal>100</span>% // ABILITY <span data-ability>100</span>%</p><p class="hero-galaga-wavecall" data-call hidden></p><div class="power-play-mini-card" data-mini hidden></div><div class="power-play-goal-flash" data-flash hidden>GOAL LAMP</div>';
+      '<p class="hero-galaga-scoreline" data-hud-scoreline>CANUCKS <span data-goals>0</span> · SHOTS <span data-shots>0</span> · P1</p><p class="hero-galaga-status" data-hud-player>ON ICE: <span data-player>---</span></p><p class="hero-galaga-wavecall" data-call hidden></p><div class="power-play-goal-flash" data-flash hidden>GOAL!</div>';
 
     const overlay = document.createElement('div');
     overlay.className = 'hero-galaga-overlay pacific-power-play-overlay';
     overlay.innerHTML =
-      '<section class="power-play-attract" data-attract><h3>PACIFIC POWER PLAY</h3><p>1993–94 CANUCKS vs USSR KLM LINE</p><strong>PICK YOUR LINE OF 3</strong><small>KRUTOV · LARIONOV · MAKAROV AWAIT<br>TAP SKATERS TO BUILD YOUR LINE<br>1/2/3 SWITCH ON ICE · SPACE SHOOT · E ABILITY</small><button type="button" class="pixel-button" data-open-select>Build Your Line</button></section><section class="power-play-select" data-select hidden></section><section class="power-play-vs" data-vs hidden></section><section class="power-play-ready" data-pause hidden><h3>BENCH DOOR OPEN</h3><p>Paused between periods.</p><button type="button" class="pixel-button" data-resume>Resume</button></section>';
+      '<section class="power-play-attract" data-attract><h3>PACIFIC POWER PLAY</h3><p>1993–94 CANUCKS vs USSR KLM LINE</p><strong>PICK YOUR LINE OF 3</strong><small>KRUTOV · LARIONOV · MAKAROV AWAIT<br>TAP SKATERS TO BUILD YOUR LINE<br>DRAG TO SKATE · TAP TO SHOOT · 1/2/3 SWITCH</small><button type="button" class="pixel-button" data-open-select>Build Your Line</button></section><section class="power-play-select" data-select hidden></section><section class="power-play-vs" data-vs hidden></section><section class="power-play-ready" data-pause hidden><h3>BENCH DOOR OPEN</h3><p>Paused between periods.</p><button type="button" class="pixel-button" data-resume>Resume</button></section>';
 
     screen.append(canvas, ui, overlay);
     const ctx = canvas.getContext('2d');
@@ -271,11 +271,10 @@
       player: ui.querySelector('[data-player]'),
       goals: ui.querySelector('[data-goals]'),
       shots: ui.querySelector('[data-shots]'),
-      signal: ui.querySelector('[data-signal]'),
-      ability: ui.querySelector('[data-ability]'),
       call: ui.querySelector('[data-call]'),
-      mini: ui.querySelector('[data-mini]'),
       flash: ui.querySelector('[data-flash]'),
+      hudScoreline: ui.querySelector('[data-hud-scoreline]'),
+      hudPlayer: ui.querySelector('[data-hud-player]'),
       attract: $('[data-attract]'),
       select: $('[data-select]'),
       vs: $('[data-vs]'),
@@ -298,6 +297,8 @@
       callT: 0,
       flash: 0,
       shake: 0,
+      faceoff: 0,
+      goalT: 0,
       player: { x: 120, y: 210 },
       puck: { x: 140, y: 215, vx: 0, vy: 0, attached: true, trail: [] },
       goalie: { x: 585, y: 210, vy: 105, h: 70 },
@@ -336,7 +337,7 @@
     }
 
     function switchActive(i) {
-      if (S.mode !== 'playing' || i < 0 || i >= S.line.length) return;
+      if (S.mode !== 'playing' || S.faceoff > 0 || i < 0 || i >= S.line.length) return;
       S.active = i;
       S.p = activePlayer();
       updateHud();
@@ -541,6 +542,7 @@
     function mode(m) {
       const valid = ['attract', 'characterSelect', 'versus', 'playing', 'goal', 'paused', 'gameOver'];
       if (!valid.includes(m)) m = 'attract';
+      const prev = S.mode;
       S.mode = m;
       stage.dataset.powerPlayState = m;
       stage.dataset.galagaState = m;
@@ -550,7 +552,7 @@
       els.vs.hidden = m !== 'versus';
       els.pause.hidden = m !== 'paused';
       if (m === 'characterSelect') {
-        if (S.mode === 'attract') {
+        if (prev === 'attract') {
           S.line = [];
           S.active = 0;
         }
@@ -560,6 +562,10 @@
       if (m === 'attract' || m === 'characterSelect' || m === 'versus' || m === 'paused') {
         stage.focus({ preventScroll: true });
       }
+      if (m === 'playing') {
+        S.goalT = 0;
+        els.flash.hidden = true;
+      }
       updateHud();
     }
 
@@ -568,21 +574,32 @@
       S.shots = 0;
       S.signal = 100;
       S.ability = 100;
-      S.player.x = 115;
-      S.player.y = S.h / 2;
-      S.goalie.y = S.h / 2;
+      S.goalT = 0;
+      S.flash = 0;
+      els.flash.hidden = true;
+      const cy = S.h / 2;
+      S.player.x = S.w * 0.42;
+      S.player.y = cy;
+      S.goalie.x = S.w - 52;
+      S.goalie.y = cy;
       S.blockers = KLM.map((sk, i) => ({
-        x: S.w * (0.52 + i * 0.1),
-        y: S.h * (0.34 + i * 0.14),
+        x: S.w * (0.58 + i * 0.08),
+        y: cy + (i - 1) * 52,
         r: 16,
-        vx: -45 - i * 8,
-        vy: 42 - i * 12,
+        vx: -35 - i * 6,
+        vy: 28 - i * 10,
         num: sk.num,
         name: sk.name
       }));
       S.active = 0;
       S.p = activePlayer();
-      puck();
+      S.faceoff = 2.6;
+      S.puck.attached = false;
+      S.puck.vx = 0;
+      S.puck.vy = 0;
+      S.puck.x = S.w / 2;
+      S.puck.y = cy;
+      S.puck.trail = [];
       updateHud();
     }
 
@@ -623,20 +640,38 @@
           reset();
           mode('playing');
           stage.focus({ preventScroll: true });
-          call('3 ON 3 · CANUCKS vs KLM LINE');
+          call('FACE OFF · CENTER ICE');
         },
         reduced.matches ? 650 : 1200
       );
     }
 
-    function call(t) {
+    function call(t, opts) {
+      if (S.goalT > 0 && !(opts && opts.force)) return;
       els.call.textContent = t || CALLS[(Math.random() * CALLS.length) | 0];
       els.call.hidden = false;
       S.callT = 1.6;
     }
 
+    function celebrateGoal() {
+      S.goals++;
+      S.goalT = 1.1;
+      S.flash = 0.55;
+      S.shake = reduced.matches ? 0 : 10;
+      els.call.hidden = true;
+      els.hudScoreline.hidden = true;
+      els.hudPlayer.hidden = true;
+      els.flash.hidden = false;
+      setTimeout(() => {
+        els.flash.hidden = true;
+        els.hudScoreline.hidden = false;
+        els.hudPlayer.hidden = false;
+      }, 520);
+      puck();
+    }
+
     function shoot() {
-      if (S.mode !== 'playing' || !S.puck.attached) return;
+      if (S.mode !== 'playing' || S.faceoff > 0 || !S.puck.attached) return;
       S.puck.attached = false;
       S.shots++;
       S.puck.vx = 430;
@@ -645,7 +680,7 @@
     }
 
     function ability() {
-      if (S.mode !== 'playing' || S.ability < 100) return;
+      if (S.mode !== 'playing' || S.faceoff > 0 || S.ability < 100) return;
       S.ability = 0;
       if (S.p.id === 'bure') {
         S.player.x += 90;
@@ -682,7 +717,27 @@
 
     function update(dt) {
       if (S.mode !== 'playing') return;
+      if (S.goalT > 0) {
+        S.goalT = Math.max(0, S.goalT - dt);
+        if (S.flash > 0) S.flash = Math.max(0, S.flash - dt * 1.8);
+        return;
+      }
       S.p = activePlayer();
+      if (S.faceoff > 0) {
+        S.faceoff = Math.max(0, S.faceoff - dt);
+        if (S.faceoff <= 0) {
+          puck();
+          call('PUCK IS LIVE');
+        } else if (S.faceoff <= 1.2) {
+          els.call.textContent = 'DROP THE PUCK';
+          els.call.hidden = false;
+        }
+        S.signal = Math.max(0, Math.min(100, S.signal - dt * S.p.decay * 0.15));
+        S.ability = Math.min(100, S.ability + dt * 18);
+        if (S.callT > 0 && (S.callT -= dt) <= 0 && S.faceoff > 1.2) els.call.hidden = true;
+        updateHud();
+        return;
+      }
       let dx = 0;
       let dy = 0;
       if (keys.has('arrowleft') || keys.has('a')) dx--;
@@ -722,13 +777,7 @@
         call('GREEN UNIT CLOSES THE LANE');
         puck();
       } else if (!S.puck.attached && S.puck.x > S.w - 38 && Math.abs(S.puck.y - S.h / 2) < 48) {
-        S.goals++;
-        S.flash = 0.55;
-        S.shake = reduced.matches ? 0 : 10;
-        els.flash.hidden = false;
-        setTimeout(() => (els.flash.hidden = true), 420);
-        call('GOAL LAMP GLITCH');
-        puck();
+        celebrateGoal();
       } else if (!S.puck.attached && (S.puck.x > S.w + 20 || S.puck.y < 45 || S.puck.y > S.h + 20)) {
         puck();
       }
@@ -741,38 +790,31 @@
     function updateHud() {
       S.p = activePlayer();
       const lineLabel = linePlayers()
-        .map((p, i) => (i === S.active ? '[' + p.num + ']' : p.num))
+        .map((p, i) => (i === S.active ? p.num : p.num))
         .join(' · ');
-      els.player.textContent = lineLabel + ' // #' + S.p.num + ' ' + S.p.name;
+      els.player.textContent = '#' + S.p.num + ' ' + S.p.name.split(' ').pop();
       els.goals.textContent = S.goals;
       els.shots.textContent = S.shots;
-      els.signal.textContent = Math.round(S.signal);
-      els.ability.textContent = Math.round(S.ability);
-      els.mini.hidden = S.mode === 'attract';
-      els.mini.innerHTML =
-        '<b>#' +
-        S.p.num +
-        ' ' +
-        S.p.pos +
-        ' · P' +
-        (S.active + 1) +
-        '</b><span>' +
-        S.p.name +
-        '</span><i>' +
-        S.p.ability +
-        '</i>';
+      if (S.mode === 'playing' && S.faceoff > 0) {
+        els.hudPlayer.textContent = 'FACE OFF · ' + lineLabel;
+      } else if (S.mode === 'playing') {
+        els.hudPlayer.textContent = 'ON ICE: ' + lineLabel + ' · #' + S.p.num;
+      } else {
+        els.hudPlayer.textContent = 'ON ICE: ' + (lineLabel || '---');
+      }
     }
 
     function teammatePos(i) {
+      const cy = S.h / 2;
       const offsets = [
         [0, 0],
-        [-28, -42],
-        [-28, 42]
+        [-36, -58],
+        [-36, 58]
       ];
-      const off = offsets[i] || [-20, 0];
+      const off = offsets[i] || [-24, 0];
       return {
         x: Math.max(45, S.player.x + off[0]),
-        y: Math.max(70, Math.min(S.h - 40, S.player.y + off[1]))
+        y: Math.max(70, Math.min(S.h - 40, i === 0 ? S.player.y : cy + off[1]))
       };
     }
 
@@ -791,6 +833,10 @@
     }
 
     function draw() {
+      if (S.mode !== 'playing' && S.mode !== 'goal') {
+        ctx.clearRect(0, 0, S.w, S.h);
+        return;
+      }
       const w = S.w;
       const h = S.h;
       const s = S.shake ? (Math.random() - 0.5) * S.shake : 0;
@@ -799,33 +845,53 @@
       ctx.translate(s, 0);
       ctx.fillStyle = T.bg;
       ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = T.bar;
-      ctx.fillRect(0, 0, w, 32);
-      ctx.fillStyle = T.text;
-      ctx.font = '10px monospace';
-      ctx.fillText('PACIFIC POWER PLAY   PERIOD 1   ' + T.feed, 18, 21);
+      const rinkTop = 36;
+      const rinkBottom = h - 18;
+      const rinkLeft = 24;
+      const rinkRight = w - 24;
+      ctx.fillStyle = '#101820';
+      ctx.fillRect(rinkLeft, rinkTop, rinkRight - rinkLeft, rinkBottom - rinkTop);
       ctx.strokeStyle = T.line;
       ctx.lineWidth = 2;
-      ctx.strokeRect(24, 48, w - 48, h - 70);
+      ctx.strokeRect(rinkLeft, rinkTop, rinkRight - rinkLeft, rinkBottom - rinkTop);
       ctx.strokeStyle = T.zone;
       [0.33, 0.66].forEach((x) => {
         ctx.beginPath();
-        ctx.moveTo(w * x, 48);
-        ctx.lineTo(w * x, h - 22);
+        ctx.moveTo(w * x, rinkTop);
+        ctx.lineTo(w * x, rinkBottom);
         ctx.stroke();
       });
       ctx.strokeStyle = T.accent;
       ctx.beginPath();
-      ctx.moveTo(w / 2, 48);
-      ctx.lineTo(w / 2, h - 22);
+      ctx.moveTo(w / 2, rinkTop);
+      ctx.lineTo(w / 2, rinkBottom);
       ctx.stroke();
       ctx.beginPath();
       ctx.arc(w / 2, h / 2, 36, 0, 7);
       ctx.stroke();
+      ctx.fillStyle = T.accent;
+      ctx.beginPath();
+      ctx.arc(w / 2, h / 2, 5, 0, 7);
+      ctx.fill();
       ctx.strokeStyle = T.line;
       ctx.strokeRect(w - 38, h / 2 - 50, 20, 100);
       ctx.fillStyle = T.accent;
       ctx.fillRect(w - 34, h / 2 - 65, 12, 10);
+      ctx.strokeStyle = 'rgba(245,240,230,.25)';
+      ctx.strokeRect(rinkLeft + 8, rinkTop + 8, rinkRight - rinkLeft - 16, 18);
+      ctx.fillStyle = T.text;
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('CANUCKS ' + S.goals + '  ·  SHOTS ' + S.shots + '  ·  PERIOD 1', rinkLeft + 14, rinkTop + 20);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ffb4bc';
+      ctx.fillText('USSR KLM  ·  #' + USSR.goalie.num + ' ' + USSR.goalie.name, rinkRight - 14, rinkTop + 20);
+      if (S.faceoff > 0) {
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(253,184,39,.92)';
+        ctx.font = 'bold 11px monospace';
+        ctx.fillText(S.faceoff > 1.2 ? 'FACE OFF' : 'DROP THE PUCK', w / 2, h / 2 - 52);
+      }
       S.puck.trail.forEach((p, i) => {
         ctx.fillStyle = 'rgba(253,184,39,' + (0.8 - i * 0.08) + ')';
         ctx.fillRect(p[0] - 4, p[1] - 2, 8, 4);
@@ -867,8 +933,24 @@
     function resize() {
       const r = screen.getBoundingClientRect();
       const d = Math.min(devicePixelRatio || 1, 2);
-      S.w = Math.max(320, Math.round(r.width));
-      S.h = Math.max(300, Math.round(r.height));
+      const nw = Math.max(320, Math.round(r.width));
+      const nh = Math.max(300, Math.round(r.height));
+      if (S.w && S.h && S.mode === 'playing') {
+        const sx = nw / S.w;
+        const sy = nh / S.h;
+        S.player.x *= sx;
+        S.player.y *= sy;
+        S.puck.x *= sx;
+        S.puck.y *= sy;
+        S.goalie.x = nw - 52;
+        S.goalie.y *= sy;
+        S.blockers.forEach((b) => {
+          b.x *= sx;
+          b.y *= sy;
+        });
+      }
+      S.w = nw;
+      S.h = nh;
       canvas.width = S.w * d;
       canvas.height = S.h * d;
       ctx.setTransform(d, 0, 0, d, 0, 0);
@@ -914,8 +996,18 @@
       else keys.add(k);
     });
     document.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
+
+    let pointerActive = false;
+    let pointerMoved = false;
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+
     screen.addEventListener('pointerdown', (e) => {
-      if (S.mode !== 'playing') return;
+      if (S.mode !== 'playing' || S.faceoff > 0 || S.goalT > 0) return;
+      pointerActive = true;
+      pointerMoved = false;
+      pointerStartX = e.clientX;
+      pointerStartY = e.clientY;
       const r = screen.getBoundingClientRect();
       const relX = (e.clientX - r.left) / r.width;
       if (relX < 0.22) switchActive(0);
@@ -923,7 +1015,25 @@
       else if (relX > 0.4 && relX < 0.6 && S.line.length > 1) switchActive(1);
       S.player.x = Math.min(S.w * 0.62, Math.max(45, e.clientX - r.left));
       S.player.y = Math.max(70, Math.min(S.h - 40, e.clientY - r.top));
-      shoot();
+      screen.setPointerCapture(e.pointerId);
+    });
+    screen.addEventListener('pointermove', (e) => {
+      if (!pointerActive || S.mode !== 'playing' || S.faceoff > 0 || S.goalT > 0) return;
+      if (Math.hypot(e.clientX - pointerStartX, e.clientY - pointerStartY) > 8) pointerMoved = true;
+      const r = screen.getBoundingClientRect();
+      S.player.x = Math.min(S.w * 0.62, Math.max(45, e.clientX - r.left));
+      S.player.y = Math.max(70, Math.min(S.h - 40, e.clientY - r.top));
+    });
+    screen.addEventListener('pointerup', (e) => {
+      if (!pointerActive || S.mode !== 'playing' || S.faceoff > 0 || S.goalT > 0) return;
+      pointerActive = false;
+      if (!pointerMoved) shoot();
+      try {
+        screen.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+    });
+    screen.addEventListener('pointercancel', () => {
+      pointerActive = false;
     });
 
     $('[data-open-select]').onclick = () => mode('characterSelect');
