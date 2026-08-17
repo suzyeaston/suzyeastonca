@@ -6400,6 +6400,7 @@ body,
 .power-play-mini-card { position: absolute; left: .75rem; bottom: .75rem; z-index: 4; display: grid; gap: .2rem; max-width: 180px; padding: .55rem; border: 2px solid #57f3ff; background: rgba(2,7,19,.9); color: #d8ffef; font-family: 'Press Start 2P', monospace; font-size: .48rem; box-shadow: 4px 4px 0 rgba(0,0,0,.75); }
 .power-play-mini-card b { color: #39ff14; } .power-play-mini-card i { color: #fff066; font-style: normal; }
 .power-play-goal-flash { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; color: #020713; background: rgba(255,240,80,.58); font-family: 'Press Start 2P', monospace; font-size: clamp(1.6rem, 5vw, 4rem); text-shadow: 3px 3px 0 #ff4fd8; pointer-events: none; }
+.power-play-goal-flash[hidden] { display: none !important; }
 @keyframes powerPlayBlink { 50% { opacity: .25; } }
 @keyframes powerPlayGlitch { 50% { filter: hue-rotate(40deg); transform: translateX(2px); } }
 @media (max-width: 900px) { .home-play-mode { grid-template-columns: 1fr; } .power-play-select { grid-template-columns: 1fr; overflow: auto; } .power-play-select__grid { grid-template-columns: repeat(2, minmax(170px, 1fr)); } .power-play-card--big .power-play-card__portrait { min-height: 96px; } .power-play-select__opponent { grid-column: 1 / -1; max-height: none; } }
@@ -7321,6 +7322,30 @@ body.page-template-page-pacific-power-play-php::before {
   background: rgba(253, 184, 39, 0.58);
   color: var(--ppp-black);
   text-shadow: 3px 3px 0 var(--ppp-orange);
+}
+.power-play-page .power-play-goal-flash[hidden] {
+  display: none !important;
+}
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="playing"] .pacific-power-play-ui,
+.page-template-page-home-php .hero-game-stage.is-power-play[data-power-play-state="playing"] .pacific-power-play-ui,
+.home .hero-game-stage.is-power-play[data-power-play-state="playing"] .pacific-power-play-ui,
+.front-page .hero-game-stage.is-power-play[data-power-play-state="playing"] .pacific-power-play-ui {
+  top: auto;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  max-width: none;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+.power-play-page .hero-game-stage.is-power-play[data-power-play-state="playing"] .hero-galaga-wavecall,
+.page-template-page-home-php .hero-game-stage.is-power-play[data-power-play-state="playing"] .hero-galaga-wavecall,
+.home .hero-game-stage.is-power-play[data-power-play-state="playing"] .hero-galaga-wavecall,
+.front-page .hero-game-stage.is-power-play[data-power-play-state="playing"] .hero-galaga-wavecall {
+  flex: 1 1 100%;
+  margin: 0;
 }
 
 body.page-template-page-pacific-power-play-php .floating-link-bar {
