@@ -649,7 +649,7 @@
     );
     addEventListener('resize', resize);
     resize();
-    mode('attract');
+    mode(matchMedia('(pointer: coarse)').matches || innerWidth < 900 ? 'characterSelect' : 'attract');
     requestAnimationFrame(loop);
   }
 

@@ -6309,7 +6309,7 @@ body,
 @keyframes powerPlayBlink { 50% { opacity: .25; } }
 @keyframes powerPlayGlitch { 50% { filter: hue-rotate(40deg); transform: translateX(2px); } }
 @media (max-width: 900px) { .home-play-mode { grid-template-columns: 1fr; } .power-play-select { grid-template-columns: 1fr; overflow: auto; } .power-play-select__grid { grid-template-columns: repeat(2, minmax(170px, 1fr)); } .power-play-card--big .power-play-card__portrait { min-height: 96px; } }
-@media (max-width: 560px) { .home-play-mode .hero-game-stage__screen { min-height: 520px; } .power-play-select { padding: .55rem; } .power-play-select__grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; } .power-play-card { min-width: 78vw; scroll-snap-align: center; } .power-play-select__opponent { display: none; } .power-play-select > .power-play-ready { position: sticky; bottom: 0; } }
+@media (max-width: 560px) { .home-play-mode .hero-game-stage__screen { min-height: 520px; } .page-template-page-home-php .power-play-select, .home .power-play-select, .front-page .power-play-select { padding: .55rem; } .power-play-select__grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; } .power-play-page .power-play-select__grid { display: none; } .power-play-card { min-width: 78vw; scroll-snap-align: center; } .power-play-page .power-play-card { min-width: 0; scroll-snap-align: unset; } .power-play-select__opponent { display: none; } .power-play-select > .power-play-ready { position: sticky; bottom: 0; } }
 @media (prefers-reduced-motion: reduce) { .power-play-attract strong, .power-play-card.is-selected::before, .power-play-p1, .power-play-ready span, .power-play-vs { animation: none; } }
 
 /* Pacific Power Play state visibility fixes. Keep these after legacy Galaga rules. */
@@ -6781,10 +6781,9 @@ body,
 @media (max-width: 900px) {
   .power-play-page .power-play-select {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
       "swap"
-      "hero"
       "roster"
       "ready";
     gap: 0.45rem;
@@ -6793,24 +6792,13 @@ body,
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .power-play-page .power-play-card--big {
-    gap: 0.25rem;
-    padding: 0.4rem;
-    height: auto;
-  }
-  .power-play-page .power-play-card--big .power-play-card__stats,
-  .power-play-page .power-play-card--big .power-play-card__set {
+  .power-play-page .power-play-select__hero {
     display: none;
   }
-  .power-play-page .power-play-card--big .power-play-card__portrait {
-    min-height: 56px;
-  }
-  .power-play-page .power-play-card__num {
-    font-size: 1.8rem;
-  }
-  .power-play-page .power-play-card__name {
-    min-height: 0;
-    font-size: 0.62rem;
+  .power-play-page .power-play-roster {
+    align-content: start;
+    overflow-y: auto;
+    max-height: none;
   }
   .power-play-page .power-play-swap__btn {
     width: 2.75rem;
@@ -6824,6 +6812,32 @@ body,
   .power-play-page .hero-game-stage.is-power-play .hero-game-stage__screen,
   .power-play-page .hero-game-stage__screen {
     min-height: min(78svh, 680px);
+  }
+}
+
+@media (max-width: 560px) {
+  .power-play-page .power-play-roster__chip {
+    min-height: 2.45rem;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.44rem;
+  }
+  .power-play-page .power-play-roster__chip b {
+    font-size: 0.72rem;
+  }
+  .power-play-page .power-play-roster {
+    gap: 0.28rem;
+  }
+  .power-play-page .power-play-select {
+    padding: 0.4rem;
+    gap: 0.35rem;
+  }
+  .power-play-page .power-play-select__grid,
+  .power-play-page .power-play-select__opponent {
+    display: none !important;
+  }
+  .power-play-page .power-play-card {
+    min-width: 0 !important;
+    scroll-snap-align: unset;
   }
 }
 
