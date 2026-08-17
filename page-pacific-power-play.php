@@ -4,8 +4,8 @@ get_header();
 ?>
 
 <main id="pacific-power-play-content" class="power-play-page home-arcade-layout">
-    <section class="power-play-page__hero crt-block" aria-labelledby="power-play-page-title">
-        <div class="power-play-page__copy">
+    <section class="power-play-page__hero" aria-labelledby="power-play-page-title">
+        <div class="power-play-page__copy crt-block">
             <p class="home-section-kicker pixel-font"><?php echo esc_html( 'BONUS LEVEL' ); ?></p>
             <h1 id="power-play-page-title" class="pixel-font"><?php echo esc_html( 'Pacific Power Play' ); ?></h1>
             <p><?php echo esc_html( 'Choose your line, drop the puck, and survive the rain city static.' ); ?></p>
@@ -15,12 +15,6 @@ get_header();
             <p class="hero-game-stage__header pixel-font"><?php echo esc_html( 'PACIFIC POWER PLAY' ); ?></p>
             <div class="hero-game-stage__screen" role="img" aria-label="Pacific Power Play arcade cabinet screen with attract mode, character-select cards, versus splash, and a neon rain city hockey rink.">
                 <p class="hero-game-stage__idle pixel-font"><?php echo wp_kses_post( 'INSERT COIN<br>CHOOSE YOUR LINE<br>VANCOUVER HOCKEY ARCADE' ); ?></p>
-                <div class="home-static-sprites" aria-hidden="true">
-                    <span class="home-static-sprites__ship"></span>
-                    <span class="home-static-sprites__enemy home-static-sprites__enemy--one"></span>
-                    <span class="home-static-sprites__enemy home-static-sprites__enemy--two"></span>
-                    <span class="home-static-sprites__reticle"></span>
-                </div>
             </div>
             <p class="hero-game-stage__mobile-note pixel-font"><?php echo esc_html( 'Best with keyboard. Tap cards to choose your line.' ); ?></p>
         </div>
