@@ -6412,24 +6412,82 @@ body,
 
 /* Pacific Power Play standalone page uses the former homepage cabinet layout. */
 .power-play-page {
+  --ppp-black: #0a0a0a;
+  --ppp-charcoal: #141414;
+  --ppp-gold: #fdb827;
+  --ppp-orange: #e03a3e;
+  --ppp-cream: #f5f0e6;
+  --ppp-ice: #1a1a1a;
   padding-inline: clamp(0.75rem, 3vw, 2rem);
+  padding-bottom: clamp(3rem, 10vw, 5rem);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(253, 184, 39, 0.08), transparent 28%),
+    radial-gradient(circle at 82% 12%, rgba(224, 58, 62, 0.07), transparent 24%),
+    var(--ppp-black);
 }
 .power-play-page__hero {
   display: grid;
   grid-template-columns: minmax(220px, 0.28fr) minmax(0, 0.72fr);
   gap: clamp(1rem, 2.5vw, 2rem);
-  align-items: stretch;
+  align-items: start;
   width: min(1220px, 100%);
   margin: clamp(1rem, 3vw, 2rem) auto;
 }
+.power-play-page__copy {
+  align-self: start;
+  padding: clamp(0.85rem, 2vw, 1.25rem);
+  border: 3px solid var(--ppp-gold);
+  background:
+    linear-gradient(160deg, rgba(253, 184, 39, 0.1), transparent 42%),
+    linear-gradient(180deg, rgba(20, 20, 20, 0.98), rgba(10, 10, 10, 0.99));
+  box-shadow: 6px 6px 0 rgba(224, 58, 62, 0.55), inset 0 0 0 1px rgba(245, 240, 230, 0.08);
+  color: var(--ppp-cream);
+}
+.power-play-page__era {
+  margin: 0 0 0.75rem;
+  font-size: clamp(0.48rem, 0.9vw, 0.62rem);
+  letter-spacing: 0.1em;
+  color: var(--ppp-orange);
+}
+.power-play-page__copy h1 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1rem, 2.4vw, 1.55rem);
+  line-height: 1.35;
+  color: var(--ppp-gold);
+  text-shadow: 3px 3px 0 var(--ppp-orange);
+}
 .power-play-page__copy h1::before {
-  content: "// ";
-  color: #39ff14;
+  content: none;
+}
+.power-play-page__deck {
+  margin: 0 0 1rem;
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: clamp(0.92rem, 1.4vw, 1.05rem);
+  line-height: 1.55;
+  color: rgba(245, 240, 230, 0.92);
+}
+.power-play-page__facts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+  font-size: clamp(0.42rem, 0.75vw, 0.52rem);
+  line-height: 1.5;
+  color: rgba(253, 184, 39, 0.88);
+}
+.power-play-page__facts li::before {
+  content: "▸ ";
+  color: var(--ppp-orange);
+}
+.power-play-page__cabinet {
+  min-width: 0;
 }
 .power-play-page .home-arcade-game {
   max-width: none;
   width: 100%;
   min-width: 0;
+  margin: 0;
 }
 .power-play-page .hero-game-stage__screen {
   min-height: clamp(500px, 48vw, 620px);
@@ -6439,33 +6497,55 @@ body,
   .power-play-page__hero {
     grid-template-columns: 1fr;
   }
+  .power-play-page__cabinet {
+    order: -1;
+  }
 }
 @media (max-width: 560px) {
-  .home-arcade-title-screen {
-    min-height: 540px;
-  }
   .power-play-page .hero-game-stage__screen {
-    min-height: 520px;
+    min-height: min(72svh, 560px);
+  }
+  .power-play-page__copy {
+    margin-top: 0.75rem;
   }
 }
 
 .power-play-page .hero-game-stage.is-power-play {
-  border-color: rgba(57, 255, 20, 0.38);
+  border-color: rgba(253, 184, 39, 0.62);
   background:
-    linear-gradient(135deg, rgba(57, 255, 20, 0.08), transparent 34%, rgba(87, 243, 255, 0.1)),
-    linear-gradient(180deg, rgba(1, 9, 24, 0.94), rgba(0, 3, 12, 0.98));
-  box-shadow: inset 0 0 0 1px rgba(87, 243, 255, 0.18), 0 0 28px rgba(57, 255, 20, 0.16);
+    linear-gradient(135deg, rgba(253, 184, 39, 0.1), transparent 34%, rgba(224, 58, 62, 0.08)),
+    linear-gradient(180deg, rgba(10, 10, 10, 0.98), rgba(0, 0, 0, 0.99));
+  box-shadow: inset 0 0 0 1px rgba(245, 240, 230, 0.12), 0 0 28px rgba(253, 184, 39, 0.14);
 }
-.power-play-page .hero-game-stage.is-power-play .hero-game-stage__header { color: #d8ffef; text-shadow: 0 0 10px rgba(57,255,20,.55), 0 0 18px rgba(87,243,255,.4); }
+.power-play-page .hero-game-stage.is-power-play .hero-game-stage__header {
+  color: var(--ppp-gold);
+  text-shadow: 0 0 10px rgba(253, 184, 39, 0.45), 0 0 16px rgba(224, 58, 62, 0.35);
+}
 .power-play-page .hero-game-stage.is-power-play .hero-game-stage__screen {
   min-height: clamp(260px, 36vw, 420px);
+  border-color: rgba(253, 184, 39, 0.5);
   background:
-    radial-gradient(circle at 12% 8%, rgba(87,243,255,.16), transparent 24%),
-    radial-gradient(circle at 88% 52%, rgba(57,255,20,.12), transparent 30%),
-    repeating-linear-gradient(180deg, rgba(255,255,255,.045) 0 1px, transparent 1px 4px),
-    #020713;
+    radial-gradient(circle at 12% 8%, rgba(253, 184, 39, 0.12), transparent 24%),
+    radial-gradient(circle at 88% 52%, rgba(224, 58, 62, 0.1), transparent 30%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 4px),
+    var(--ppp-charcoal);
 }
-.power-play-page .hero-game-stage.is-power-play .hero-game-stage__screen::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 0 14%, rgba(57,255,20,.09) 15% 17%, transparent 18% 45%, rgba(87,243,255,.08) 46% 48%, transparent 49%); pointer-events: none; z-index: 2; }
+.power-play-page .hero-game-stage.is-power-play .hero-game-stage__screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0 14%, rgba(253, 184, 39, 0.07) 15% 17%, transparent 18% 45%, rgba(224, 58, 62, 0.06) 46% 48%, transparent 49%);
+  pointer-events: none;
+  z-index: 2;
+}
+.power-play-page .hero-game-stage__idle {
+  color: rgba(253, 184, 39, 0.92);
+  border-color: rgba(253, 184, 39, 0.45);
+  background: rgba(0, 0, 0, 0.82);
+}
+.power-play-page .hero-game-stage__mobile-note {
+  color: rgba(245, 240, 230, 0.78);
+}
 
 /* Standalone page needs the galaga layer rules that still live on homepage selectors. */
 .power-play-page .hero-galaga-canvas {
@@ -6536,7 +6616,13 @@ body,
   pointer-events: auto;
 }
 .power-play-page .pacific-power-play-canvas { touch-action: none; }
-.power-play-page .pacific-power-play-ui .hero-galaga-status { color: #d8ffef; border-color: rgba(57,255,20,.58); }
+.power-play-page .pacific-power-play-ui .hero-galaga-status { color: var(--ppp-cream); border-color: rgba(253, 184, 39, 0.58); }
+.power-play-page .hero-galaga-status,
+.power-play-page .hero-galaga-scoreline,
+.power-play-page .hero-galaga-wavecall {
+  border-color: rgba(253, 184, 39, 0.42);
+  color: var(--ppp-cream);
+}
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="attract"] .pacific-power-play-overlay,
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="characterSelect"] .pacific-power-play-overlay,
 .power-play-page .hero-game-stage.is-power-play[data-power-play-state="versus"] .pacific-power-play-overlay,
@@ -6761,4 +6847,161 @@ body,
   .home-arcade-title { max-width: 9ch; font-size: clamp(2.25rem, 14vw, 4.05rem); line-height: 1.08; }
   .home-arcade-positioning { border-radius: 14px; font-size: .9rem; }
   #lousy-outages-teaser .lo-home-ticker { grid-template-columns: 1fr; }
+}
+
+/* Pacific Power Play — Flying Skate cabinet theme (standalone page only). */
+body.page-template-page-pacific-power-play-php::before {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(253, 184, 39, 0.035) 2px,
+      rgba(253, 184, 39, 0.035) 4px
+    );
+}
+
+.power-play-page .power-play-attract {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(253, 184, 39, 0.18), transparent 30%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 5px),
+    var(--ppp-black);
+  color: var(--ppp-cream);
+}
+.power-play-page .power-play-attract h3 {
+  color: var(--ppp-gold);
+  text-shadow: 4px 4px 0 var(--ppp-orange), 0 0 18px rgba(253, 184, 39, 0.55);
+}
+.power-play-page .power-play-attract p {
+  color: rgba(245, 240, 230, 0.82);
+}
+.power-play-page .power-play-attract strong {
+  color: var(--ppp-orange);
+}
+.power-play-page .power-play-attract small {
+  color: rgba(253, 184, 39, 0.82);
+}
+.power-play-page .power-play-attract .pixel-button {
+  border-color: var(--ppp-gold);
+  color: var(--ppp-gold);
+  box-shadow: 4px 4px 0 var(--ppp-orange);
+}
+.power-play-page .power-play-select {
+  background:
+    linear-gradient(135deg, rgba(253, 184, 39, 0.08), transparent 18%),
+    repeating-linear-gradient(135deg, rgba(224, 58, 62, 0.07) 0 2px, transparent 2px 14px),
+    var(--ppp-black);
+}
+.power-play-page .power-play-card {
+  border-color: var(--ppp-gold);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.12) 0 1px, transparent 2px),
+    linear-gradient(160deg, rgba(26, 26, 26, 0.98), rgba(10, 10, 10, 0.99));
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.85), inset 0 0 0 2px rgba(253, 184, 39, 0.08);
+}
+.power-play-page .power-play-card.is-selected {
+  border-color: var(--ppp-cream);
+  box-shadow: 0 0 0 3px var(--ppp-gold), 7px 7px 0 var(--ppp-orange), 0 0 22px rgba(253, 184, 39, 0.35);
+}
+.power-play-page .power-play-card__set,
+.power-play-page .power-play-card__ability,
+.power-play-page .power-play-p1,
+.power-play-page .power-play-card.is-selected::before {
+  color: var(--ppp-black);
+  background: var(--ppp-gold);
+}
+.power-play-page .power-play-card__name {
+  color: var(--ppp-cream);
+}
+.power-play-page .power-play-card__pos {
+  background: var(--ppp-orange);
+  color: var(--ppp-cream);
+}
+.power-play-page .power-play-card__stats em {
+  color: rgba(253, 184, 39, 0.82);
+}
+.power-play-page .power-play-card__stats b {
+  background: linear-gradient(90deg, var(--ppp-orange), var(--ppp-gold));
+  box-shadow: 0 0 8px rgba(253, 184, 39, 0.45);
+}
+.power-play-page .power-play-card__portrait {
+  border-color: rgba(245, 240, 230, 0.55);
+}
+.power-play-page .power-play-select__opponent {
+  border-color: var(--ppp-orange);
+  background: linear-gradient(180deg, rgba(224, 58, 62, 0.14), rgba(10, 10, 10, 0.96));
+}
+.power-play-page .power-play-select__opponent b,
+.power-play-page .power-play-vs b {
+  color: var(--ppp-gold);
+  text-shadow: 4px 4px 0 var(--ppp-orange);
+}
+.power-play-page .power-play-select__opponent span {
+  color: var(--ppp-orange);
+}
+.power-play-page .power-play-select__opponent i {
+  color: rgba(253, 184, 39, 0.82);
+}
+.power-play-page .power-play-select > .power-play-ready {
+  border-color: rgba(253, 184, 39, 0.45);
+  background: rgba(10, 10, 10, 0.9);
+}
+.power-play-page .power-play-ready span {
+  color: var(--ppp-gold);
+}
+.power-play-page .power-play-vs {
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 7px), var(--ppp-black);
+}
+.power-play-page .power-play-vs h3,
+.power-play-page .power-play-vs p {
+  color: var(--ppp-cream);
+}
+.power-play-page .pacific-power-play-ui .hero-galaga-wavecall {
+  color: var(--ppp-gold);
+  background: rgba(10, 10, 10, 0.9);
+  border-color: var(--ppp-orange);
+}
+.power-play-page .power-play-mini-card {
+  border-color: var(--ppp-gold);
+  background: rgba(10, 10, 10, 0.92);
+  color: var(--ppp-cream);
+}
+.power-play-page .power-play-mini-card b {
+  color: var(--ppp-orange);
+}
+.power-play-page .power-play-mini-card i {
+  color: var(--ppp-gold);
+}
+.power-play-page .power-play-goal-flash {
+  background: rgba(253, 184, 39, 0.58);
+  color: var(--ppp-black);
+  text-shadow: 3px 3px 0 var(--ppp-orange);
+}
+
+body.page-template-page-pacific-power-play-php .floating-link-bar {
+  position: relative;
+  margin: 1.5rem auto 0;
+  padding: 0 clamp(0.75rem, 3vw, 2rem);
+  max-width: min(1220px, 100%);
+}
+body.page-template-page-pacific-power-play-php .floating-link-bar .link-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem 0.85rem;
+}
+body.page-template-page-pacific-power-play-php .floating-link {
+  font-size: clamp(0.42rem, 2.8vw, 0.55rem);
+  line-height: 1.35;
+}
+body.page-template-page-pacific-power-play-php .site-footer {
+  margin-top: 1.25rem;
+  padding-inline: clamp(0.75rem, 3vw, 2rem);
+}
+body.page-template-page-pacific-power-play-php .site-footer::before {
+  color: var(--ppp-gold);
+}
+body.page-template-page-pacific-power-play-php .footer-site-links a,
+body.page-template-page-pacific-power-play-php .footer-marquee span {
+  line-height: 1.45;
 }
