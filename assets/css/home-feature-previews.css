@@ -18,6 +18,19 @@
   padding: clamp(1rem, 2.5vw, 1.5rem);
 }
 
+.home-feature-previews .home-section-kicker {
+  margin: 0 0 0.35rem;
+  color: #8fd5ff;
+  font-size: clamp(0.45rem, 0.9vw, 0.55rem);
+  letter-spacing: 0.08em;
+}
+
+#feature-previews-title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(0.72rem, 1.5vw, 0.95rem);
+  line-height: 1.45;
+}
+
 .home-feature-previews__lede {
   margin: 0 0 1.1rem;
   max-width: 52ch;

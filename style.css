@@ -1830,6 +1830,64 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.se-header-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.se-header-nav__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.65rem;
+  border: 2px solid rgba(57, 245, 255, 0.35);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #39f5ff;
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(0.42rem, 1vw, 0.52rem);
+  line-height: 1.4;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.se-header-nav__link--shop {
+  border-color: rgba(255, 79, 216, 0.45);
+  color: #ff4fd8;
+}
+
+.se-header-nav__link--blog {
+  border-color: rgba(57, 255, 20, 0.4);
+  color: #39ff14;
+}
+
+.main-header .header-contact-trigger {
+  font-size: clamp(0.42rem, 1vw, 0.52rem);
+  padding: 0.45rem 0.65rem;
+}
+
+@media (max-width: 640px) {
+  .main-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .main-header .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .se-header-nav__link,
+  .main-header .header-contact-trigger {
+    font-size: 0.42rem;
+    padding: 0.38rem 0.5rem;
+  }
 }
 
 .se-header-branding {
