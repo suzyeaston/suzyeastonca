@@ -6366,12 +6366,12 @@ body,
 .power-play-card--big .power-play-card__portrait { min-height: 160px; }
 .power-play-p1 { position: absolute; top: .4rem; left: .4rem; padding: .25rem .4rem; background: #fff066; color: #020713; animation: powerPlayBlink .7s steps(2,end) infinite; }
 .power-play-select__opponent { display: grid; align-content: center; justify-items: center; gap: .75rem; padding: .75rem; border: 3px solid #ff4fd8; background: linear-gradient(180deg, rgba(255,79,216,.16), rgba(1,7,19,.96)); text-align: center; }
-.power-play-select__opponent b, .power-play-vs b { color: #fff066; font-size: clamp(2rem, 6vw, 5rem); text-shadow: 4px 4px 0 #ff4fd8; }
-.power-play-select__opponent span { color: #ff4fd8; line-height: 1.5; }
-.power-play-select__opponent i { color: #8ef6ff; font-style: normal; font-size: .55rem; }
+.power-play-select__opponent > b, .power-play-vs-teams > b { color: #fff066; font-size: clamp(2rem, 6vw, 5rem); text-shadow: 4px 4px 0 #ff4fd8; line-height: 1; }
+.power-play-select__opponent > span { color: #ff4fd8; line-height: 1.5; }
+.power-play-select__opponent > i { color: #8ef6ff; font-style: normal; font-size: .55rem; }
 .power-play-opponent-line { list-style: none; margin: 0; padding: 0; display: grid; gap: .28rem; font-size: .42rem; color: #d8ffef; text-align: left; width: 100%; }
 .power-play-opponent-line li { display: grid; grid-template-columns: 2.2em 1fr auto; gap: .25rem; align-items: center; padding: .18rem .25rem; border: 1px solid rgba(255,255,255,.12); background: rgba(200,16,46,.18); }
-.power-play-opponent-line b { color: #fff066; }
+.power-play-opponent-line b { color: #fff066; font-size: inherit; line-height: inherit; text-shadow: none; }
 .power-play-opponent-line i { font-style: normal; color: #8ef6ff; font-size: .38rem; }
 .power-play-opponent-line__goalie { border-color: rgba(255,255,102,.35); background: rgba(255,215,0,.12); }
 .power-play-opponent-line__d { opacity: .72; }
@@ -7271,16 +7271,21 @@ body.page-template-page-pacific-power-play-php::before {
 .power-play-page .power-play-vs small {
   color: rgba(253, 184, 39, 0.82);
 }
-.power-play-page .power-play-select__opponent b,
-.power-play-page .power-play-vs b {
+.power-play-page .power-play-select__opponent > b,
+.power-play-page .power-play-vs-teams > b {
   color: var(--ppp-gold);
   text-shadow: 4px 4px 0 var(--ppp-orange);
 }
-.power-play-page .power-play-select__opponent span {
+.power-play-page .power-play-select__opponent > span {
   color: var(--ppp-orange);
 }
-.power-play-page .power-play-select__opponent i {
+.power-play-page .power-play-select__opponent > i {
   color: rgba(253, 184, 39, 0.82);
+}
+.power-play-page .power-play-opponent-line b {
+  font-size: inherit;
+  line-height: inherit;
+  text-shadow: none;
 }
 .power-play-page .power-play-select > .power-play-ready {
   border-color: rgba(253, 184, 39, 0.45);
