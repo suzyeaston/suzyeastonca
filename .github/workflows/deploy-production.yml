@@ -27,6 +27,8 @@ jobs:
       plugin: ${{ steps.resolve.outputs.plugin }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: dorny/paths-filter@v3
         id: filter
@@ -89,6 +91,8 @@ jobs:
       LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Verify deploy secrets are configured
         run: |
