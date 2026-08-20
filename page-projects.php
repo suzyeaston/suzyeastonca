@@ -67,6 +67,14 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
                 </article>
 
                 <article class="projects-card">
+                    <h3 class="pixel-font">Vancouver Tech Events</h3>
+                    <p>Meetup, Luma, and BC Tech in one calendar. No more tab archaeology.</p>
+                    <div class="projects-card__actions">
+                        <a class="pixel-button" href="<?php echo esc_url($project_url('vancouver-tech-events', '/vancouver-tech-events/')); ?>">Open calendar</a>
+                    </div>
+                </article>
+
+                <article class="projects-card">
                     <h3 class="pixel-font">Track Analyzer</h3>
                     <p>MP3 feedback for rough mixes, lyrics, structure, feel, and the part of the song that is almost working.</p>
                     <div class="projects-card__actions">
