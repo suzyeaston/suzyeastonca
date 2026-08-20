@@ -12,6 +12,7 @@ Some projects are polished. Some are mid-mutation. All of them have survived con
 
 - [Live site](https://suzyeaston.ca)
 - [Lousy Outages](https://suzyeaston.ca/lousy-outages/)
+- [Vancouver Tech Events](https://suzyeaston.ca/vancouver-tech-events/)
 - [Gastown Simulator](https://suzyeaston.ca/gastown-sim/)
 - [Track Analyzer](https://suzyeaston.ca/suzys-track-analyzer/)
 - [Work with Suzy](https://suzyeaston.ca/work-with-suzy/)

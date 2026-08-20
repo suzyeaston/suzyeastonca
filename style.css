@@ -4307,6 +4307,96 @@ body.page-template-page-bio-php .bio-content {
   align-items: center;
 }
 
+.home-arcade-layout .vancouver-tech-home {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1rem, 3vw, 2rem);
+  background: rgba(2, 14, 28, 0.72);
+}
+
+.home-arcade-layout .vancouver-tech-home .home-section-kicker {
+  margin: 0 0 0.55rem;
+}
+
+.home-arcade-layout .vancouver-tech-home h2 {
+  margin: 0 0 0.75rem;
+}
+
+.vancouver-tech-events {
+  max-width: 920px;
+  margin: 2rem auto 3.5rem;
+  padding: clamp(1rem, 3vw, 2rem);
+  border: 2px solid rgba(91, 184, 255, 0.45);
+  border-radius: 12px;
+  background: rgba(2, 14, 28, 0.72);
+  box-shadow: 0 0 18px rgba(91, 184, 255, 0.2);
+}
+
+.vancouver-tech-events__kicker {
+  margin: 0 0 0.55rem;
+  color: #9dd5ff;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vancouver-tech-events h1 {
+  margin: 0 0 0.75rem;
+  color: #e5f5ff;
+}
+
+.vancouver-tech-events > p {
+  margin: 0 0 1.25rem;
+  color: #c8ebff;
+  line-height: 1.6;
+}
+
+.vancouver-tech-events .vte-date {
+  margin: 1.75rem 0 0.75rem;
+  color: #9dd5ff;
+  font-size: 1.05rem;
+}
+
+.vancouver-tech-events .vte-event-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.vancouver-tech-events .vte-event {
+  border: 1px solid rgba(123, 198, 255, 0.38);
+  border-radius: 10px;
+  background: rgba(5, 17, 32, 0.45);
+  padding: 12px 14px;
+}
+
+.vancouver-tech-events .vte-title {
+  color: #e5f5ff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.vancouver-tech-events .vte-title:hover,
+.vancouver-tech-events .vte-title:focus {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.vancouver-tech-events .vte-meta {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.7rem;
+  font-size: 0.85rem;
+  color: #c8ebff;
+}
+
+.vancouver-tech-events .vte-source {
+  opacity: 0.82;
+}
+
 
 .home-section-legend-links {
   display: flex;
@@ -5788,7 +5878,8 @@ body {
 
 .home-arcade-layout .home-mission-select,
 .home-arcade-layout .home-unlocks,
-.home-arcade-layout .home-territory {
+.home-arcade-layout .home-territory,
+.home-arcade-layout .vancouver-tech-home {
   width: min(1180px, calc(100% - 2rem));
   margin: 0 auto clamp(1.25rem, 4vw, 3rem);
 }

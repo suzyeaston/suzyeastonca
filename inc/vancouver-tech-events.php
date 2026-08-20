@@ -1187,11 +1187,12 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
     ob_start();
     ?>
     <section class="vancouver-tech-events">
+        <p class="vancouver-tech-events__kicker pixel-font">yvr calendar</p>
         <h1>Vancouver Tech Events</h1>
-        <p>Aggregated from public community sources (Meetup ICS, Luma Vancouver, BC Tech / T-Net, Meetup search).</p>
+        <p>Meetup ICS, Luma, BC Tech / T-Net, Meetup search. One list.</p>
 
         <?php if ( empty( $events ) ) : ?>
-            <p>No upcoming Vancouver tech events found right now. Check back soon!</p>
+            <p>Nothing upcoming right now. Sources still get checked on the next pass.</p>
         <?php else : ?>
             <?php
             $events_by_date = [];
