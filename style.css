@@ -4308,8 +4308,6 @@ body.page-template-page-bio-php .bio-content {
 }
 
 .home-arcade-layout .vancouver-tech-home {
-  width: min(1180px, calc(100% - 2rem));
-  margin: 0 auto clamp(1.25rem, 4vw, 3rem);
   padding: clamp(1rem, 3vw, 2rem);
   background: rgba(2, 14, 28, 0.72);
 }
