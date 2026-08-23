@@ -21,8 +21,10 @@ test("homepage teaser part renders upcoming list and full-calendar CTA", () => {
   assert.match(source, /vancouver-tech-home/);
   assert.match(source, /Open full calendar/);
   assert.match(source, /\/vancouver-tech-events\//);
-  assert.match(source, /above the radar/);
-  assert.match(source, /vancouver_events_radar/);
+  assert.match(source, /Founding member, BC \+ AI/);
+  assert.match(source, /Vancouver Tech Journal/);
+  assert.match(source, /vancouver_events_member/);
+  assert.doesNotMatch(source, /above the radar/);
 });
 
 test("projects page lists Vancouver tech events", () => {
@@ -46,24 +48,29 @@ test("vancouver tech events includes BC + AI and VTJ Luma calendars", () => {
   );
   assert.match(source, /luma_bc_ai/);
   assert.match(source, /vancouver-ai/);
+  assert.match(source, /cal-9QLMVT9CQVtX1u0/);
   assert.match(source, /luma_vtj/);
   assert.match(source, /vantechjournal/);
+  assert.match(source, /cal-i2SXCQcJZBMq8NN/);
   assert.match(source, /luma_calendar/);
   assert.match(source, /suzy_fetch_vancouver_tech_events_from_luma_calendar/);
   assert.match(source, /api\.lu\.ma\/calendar\/get-items/);
 });
 
-test("vancouver tech events highlights above-the-radar rooms", () => {
+test("vancouver tech events highlights member calendars without ranking them", () => {
   const php = fs.readFileSync(
     path.join(ROOT, "inc", "vancouver-tech-events.php"),
     "utf8"
   );
   const css = fs.readFileSync(path.join(ROOT, "style.css"), "utf8");
-  assert.match(php, /above the radar/);
-  assert.match(php, /vte-radar/);
-  assert.match(php, /'radar'\s*=>\s*true/);
-  assert.match(css, /\.vte-event--radar/);
-  assert.match(css, /\.vte-radar-badge/);
+  assert.match(php, /Founding member, BC \+ AI/);
+  assert.match(php, /member calendars/);
+  assert.match(php, /vte-member/);
+  assert.match(php, /'member'\s*=>\s*true/);
+  assert.match(css, /\.vte-event--member/);
+  assert.match(css, /\.vte-member-badge/);
+  assert.doesNotMatch(php, /above the radar/);
+  assert.doesNotMatch(css, /vte-radar/);
 });
 
 test("theme deploy manifest includes events page and homepage teaser", () => {
