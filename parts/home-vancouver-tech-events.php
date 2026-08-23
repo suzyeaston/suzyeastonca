@@ -13,12 +13,20 @@ if ( isset( $vancouver_events_payload['events'] ) && is_array( $vancouver_events
 	$vancouver_events = $vancouver_events_payload['events'];
 }
 
-// Prefer member calendars (BC + AI / VTJ) in the homepage teaser.
+// Prefer spotlight + BC + AI member rooms in the homepage teaser.
+$vancouver_events_spotlight = array_values(
+	array_filter(
+		$vancouver_events,
+		static function ( $event ) {
+			return ! empty( $event['spotlight'] );
+		}
+	)
+);
 $vancouver_events_member = array_values(
 	array_filter(
 		$vancouver_events,
 		static function ( $event ) {
-			return ! empty( $event['member'] );
+			return ! empty( $event['member'] ) && empty( $event['spotlight'] );
 		}
 	)
 );
@@ -26,17 +34,21 @@ $vancouver_events_rest = array_values(
 	array_filter(
 		$vancouver_events,
 		static function ( $event ) {
-			return empty( $event['member'] );
+			return empty( $event['member'] ) && empty( $event['spotlight'] );
 		}
 	)
 );
-$vancouver_events_top = array_slice( array_merge( $vancouver_events_member, $vancouver_events_rest ), 0, 3 );
-$events_url           = home_url( '/vancouver-tech-events/' );
+$vancouver_events_top = array_slice(
+	array_merge( $vancouver_events_spotlight, $vancouver_events_member, $vancouver_events_rest ),
+	0,
+	3
+);
+$events_url = home_url( '/vancouver-tech-events/' );
 ?>
 <section class="vancouver-tech-home crt-block" aria-labelledby="vancouver-tech-home-title">
 	<p class="home-section-kicker pixel-font"><?php echo esc_html( 'yvr calendar' ); ?></p>
 	<h2 id="vancouver-tech-home-title" class="pixel-font"><?php echo esc_html( 'VANCOUVER TECH EVENTS' ); ?></h2>
-	<p class="vancouver-tech-home__intro"><?php echo esc_html( 'Meetup tabs multiply. One feed keeps them honest. Founding member, BC + AI. Member, Vancouver Tech Journal.' ); ?></p>
+	<p class="vancouver-tech-home__intro"><?php echo esc_html( 'Meetup tabs multiply. One feed keeps them honest. Member, BC + AI — Futureproof Festival sits up front.' ); ?></p>
 
 	<?php if ( empty( $vancouver_events_top ) ) : ?>
 		<p><?php echo esc_html( 'Nothing upcoming in the cache. Full calendar still loads.' ); ?></p>
@@ -46,8 +58,15 @@ $events_url           = home_url( '/vancouver-tech-events/' );
 				<?php
 				$event_start = isset( $event['start'] ) ? (int) $event['start'] : 0;
 				$event_url   = isset( $event['url'] ) ? (string) $event['url'] : '';
+				$item_class  = 'vancouver-tech-home__item';
+				if ( ! empty( $event['spotlight'] ) ) {
+					$item_class .= ' vancouver-tech-home__item--spotlight';
+				}
 				?>
-				<li class="vancouver-tech-home__item">
+				<li class="<?php echo esc_attr( $item_class ); ?>">
+					<?php if ( ! empty( $event['spotlight'] ) ) : ?>
+						<p class="vancouver-tech-home__badge pixel-font"><?php echo esc_html( 'spotlight' ); ?></p>
+					<?php endif; ?>
 					<p class="vancouver-tech-home__time">
 						<?php echo esc_html( $event_start > 0 ? wp_date( 'D, M j • g:i A T', $event_start ) : 'Date/time TBD' ); ?>
 					</p>

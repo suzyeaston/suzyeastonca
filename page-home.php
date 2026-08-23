@@ -17,6 +17,8 @@ get_header();
 
         <?php get_template_part( 'parts/home-hire-strip' ); ?>
 
+        <?php get_template_part( 'parts/home-vancouver-tech-events' ); ?>
+
         <div class="home-yvr-radar-deck__radar-unit">
             <div class="home-yvr-radar-deck__unit-head pixel-font">
                 <span class="home-yvr-radar-deck__unit-badge"><?php echo esc_html( 'YVR RADAR' ); ?></span>
@@ -136,15 +138,13 @@ get_header();
 
     <?php get_template_part( 'parts/home-feature-previews' ); ?>
 
-    <?php get_template_part( 'parts/home-vancouver-tech-events' ); ?>
-
     <section id="mission-select" class="home-project-grid home-mission-select crt-block" aria-labelledby="selected-projects-title">
         <p class="home-section-kicker pixel-font"><?php echo esc_html( 'LEVEL SELECT' ); ?></p>
         <h2 id="selected-projects-title" class="pixel-font"><?php echo esc_html( 'CHOOSE YOUR SYSTEM' ); ?></h2>
         <div class="selected-work__grid home-mission-grid">
             <article class="home-project-card selected-work__card home-mission-card home-mission-card--featured"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'status weather' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Lousy Outages' ); ?></h3><p><?php echo esc_html( 'Independent outage intelligence for AI, cloud and creative tools, translated from status-page language into something humans can use.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>"><?php echo esc_html( 'Check status' ); ?></a></article>
             <?php get_template_part( 'parts/home', 'mission-meanwhile' ); ?>
-            <article class="home-project-card selected-work__card home-mission-card home-mission-card--featured"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'city calendar' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Vancouver Tech Events' ); ?></h3><p><?php echo esc_html( 'Meetup, Luma, BC Tech — one list so you stop cross-checking five tabs.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/vancouver-tech-events/' ) ); ?>"><?php echo esc_html( 'See events' ); ?></a></article>
+            <article class="home-project-card selected-work__card home-mission-card home-mission-card--featured"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'city calendar' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Vancouver Tech Events' ); ?></h3><p><?php echo esc_html( 'Meetup, Luma, BC + AI — one list so you stop cross-checking five tabs.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/vancouver-tech-events/' ) ); ?>"><?php echo esc_html( 'See events' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'hockey arcade' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Pacific Power Play' ); ?></h3><p><?php echo esc_html( '1993–94 Canucks roster. Tap a jersey, swap the line, drop the puck at the Coliseum.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/pacific-power-play/' ) ); ?>"><?php echo esc_html( 'Play game' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'civic arcade world' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Gastown Simulator' ); ?></h3><p><?php echo esc_html( 'A playable Vancouver corridor built from civic data, route logic, street mood, and arcade-map obsession.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/gastown-sim/' ) ); ?>"><?php echo esc_html( 'Walk Gastown' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'audio notes' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Track Analyzer' ); ?></h3><p><?php echo esc_html( 'Upload an MP3 and get clear notes on feel, lyrics, structure, and what might actually help the track.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/suzys-track-analyzer/' ) ); ?>"><?php echo esc_html( 'Analyze track' ); ?></a></article>

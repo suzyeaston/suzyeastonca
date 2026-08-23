@@ -5,11 +5,23 @@ const test = require("node:test");
 
 const ROOT = path.resolve(__dirname, "..");
 
-test("homepage surfaces Vancouver tech events teaser and mission card", () => {
+test("homepage surfaces Vancouver tech events teaser above Beulah radar", () => {
   const source = fs.readFileSync(path.join(ROOT, "page-home.php"), "utf8");
   assert.match(source, /get_template_part\(\s*'parts\/home-vancouver-tech-events'\s*\)/);
   assert.match(source, /\/vancouver-tech-events\//);
   assert.match(source, /Vancouver Tech Events/);
+
+  const teaserAt = source.indexOf("parts/home-vancouver-tech-events");
+  const radarAt = source.indexOf("home-yvr-radar-deck__radar-unit");
+  const beulahAt = source.indexOf("BEULAH");
+  assert.ok(teaserAt > -1 && radarAt > -1 && beulahAt > -1);
+  assert.ok(teaserAt < radarAt, "events teaser should sit above the radar unit");
+  assert.ok(teaserAt < beulahAt, "events teaser should sit above Beulah");
+  assert.equal(
+    (source.match(/parts\/home-vancouver-tech-events/g) || []).length,
+    1,
+    "teaser should only render once"
+  );
 });
 
 test("homepage teaser part renders upcoming list and full-calendar CTA", () => {
@@ -21,9 +33,11 @@ test("homepage teaser part renders upcoming list and full-calendar CTA", () => {
   assert.match(source, /vancouver-tech-home/);
   assert.match(source, /Open full calendar/);
   assert.match(source, /\/vancouver-tech-events\//);
-  assert.match(source, /Founding member, BC \+ AI/);
-  assert.match(source, /Vancouver Tech Journal/);
-  assert.match(source, /vancouver_events_member/);
+  assert.match(source, /Member, BC \+ AI/);
+  assert.match(source, /Futureproof Festival/);
+  assert.match(source, /vancouver_events_spotlight/);
+  assert.doesNotMatch(source, /Founding member/);
+  assert.doesNotMatch(source, /Member, Vancouver Tech Journal/);
   assert.doesNotMatch(source, /above the radar/);
 });
 
@@ -55,22 +69,35 @@ test("vancouver tech events includes BC + AI and VTJ Luma calendars", () => {
   assert.match(source, /luma_calendar/);
   assert.match(source, /suzy_fetch_vancouver_tech_events_from_luma_calendar/);
   assert.match(source, /api\.lu\.ma\/calendar\/get-items/);
+  assert.match(source, /futureproof-festival/);
+  assert.match(source, /suzy_get_vancouver_tech_spotlight_events/);
 });
 
-test("vancouver tech events highlights member calendars without ranking them", () => {
+test("vancouver tech events highlights BC + AI membership and Futureproof", () => {
   const php = fs.readFileSync(
     path.join(ROOT, "inc", "vancouver-tech-events.php"),
     "utf8"
   );
   const css = fs.readFileSync(path.join(ROOT, "style.css"), "utf8");
-  assert.match(php, /Founding member, BC \+ AI/);
-  assert.match(php, /member calendars/);
+  assert.match(php, /Member, BC \+ AI/);
+  assert.match(php, /Futureproof Festival/);
+  assert.match(php, /vte-spotlight/);
   assert.match(php, /vte-member/);
   assert.match(php, /'member'\s*=>\s*true/);
   assert.match(css, /\.vte-event--member/);
-  assert.match(css, /\.vte-member-badge/);
+  assert.match(css, /\.vte-event--spotlight/);
+  assert.match(css, /\.vte-spotlight-badge/);
+  assert.doesNotMatch(php, /Founding member/);
+  assert.doesNotMatch(php, /Member, Vancouver Tech Journal/);
   assert.doesNotMatch(php, /above the radar/);
   assert.doesNotMatch(css, /vte-radar/);
+
+  // VTJ is a feed source, not a membership claim.
+  const vtjBlock = php.slice(
+    php.indexOf("'id'              => 'luma_vtj'"),
+    php.indexOf("'id'     => 'bctech_tnet'")
+  );
+  assert.doesNotMatch(vtjBlock, /'member'\s*=>\s*true/);
 });
 
 test("theme deploy manifest includes events page and homepage teaser", () => {
@@ -81,4 +108,5 @@ test("theme deploy manifest includes events page and homepage teaser", () => {
   assert.match(source, /"page-vancouver-tech-events\.php"/);
   assert.match(source, /"page-projects\.php"/);
   assert.match(source, /"parts\/home-vancouver-tech-events\.php"/);
+  assert.match(source, /"page-home\.php"/);
 });
