@@ -12,13 +12,31 @@ $vancouver_events         = [];
 if ( isset( $vancouver_events_payload['events'] ) && is_array( $vancouver_events_payload['events'] ) ) {
 	$vancouver_events = $vancouver_events_payload['events'];
 }
-$vancouver_events_top = array_slice( $vancouver_events, 0, 3 );
+
+// Prefer above-the-radar rooms (BC + AI / VTJ) in the homepage teaser.
+$vancouver_events_radar = array_values(
+	array_filter(
+		$vancouver_events,
+		static function ( $event ) {
+			return ! empty( $event['radar'] );
+		}
+	)
+);
+$vancouver_events_rest = array_values(
+	array_filter(
+		$vancouver_events,
+		static function ( $event ) {
+			return empty( $event['radar'] );
+		}
+	)
+);
+$vancouver_events_top = array_slice( array_merge( $vancouver_events_radar, $vancouver_events_rest ), 0, 3 );
 $events_url           = home_url( '/vancouver-tech-events/' );
 ?>
 <section class="vancouver-tech-home crt-block" aria-labelledby="vancouver-tech-home-title">
 	<p class="home-section-kicker pixel-font"><?php echo esc_html( 'yvr calendar' ); ?></p>
 	<h2 id="vancouver-tech-home-title" class="pixel-font"><?php echo esc_html( 'VANCOUVER TECH EVENTS' ); ?></h2>
-	<p class="vancouver-tech-home__intro"><?php echo esc_html( 'Meetup tabs multiply. One feed keeps them honest.' ); ?></p>
+	<p class="vancouver-tech-home__intro"><?php echo esc_html( 'Meetup tabs multiply. One feed keeps them honest. BC + AI and VTJ sit above the radar.' ); ?></p>
 
 	<?php if ( empty( $vancouver_events_top ) ) : ?>
 		<p><?php echo esc_html( 'Nothing upcoming in the cache. Full calendar still loads.' ); ?></p>

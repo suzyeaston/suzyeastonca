@@ -21,6 +21,8 @@ test("homepage teaser part renders upcoming list and full-calendar CTA", () => {
   assert.match(source, /vancouver-tech-home/);
   assert.match(source, /Open full calendar/);
   assert.match(source, /\/vancouver-tech-events\//);
+  assert.match(source, /above the radar/);
+  assert.match(source, /vancouver_events_radar/);
 });
 
 test("projects page lists Vancouver tech events", () => {
@@ -35,6 +37,33 @@ test("events page template still renders the feed", () => {
     "utf8"
   );
   assert.match(source, /suzy_render_vancouver_tech_events_html/);
+});
+
+test("vancouver tech events includes BC + AI and VTJ Luma calendars", () => {
+  const source = fs.readFileSync(
+    path.join(ROOT, "inc", "vancouver-tech-events.php"),
+    "utf8"
+  );
+  assert.match(source, /luma_bc_ai/);
+  assert.match(source, /vancouver-ai/);
+  assert.match(source, /luma_vtj/);
+  assert.match(source, /vantechjournal/);
+  assert.match(source, /luma_calendar/);
+  assert.match(source, /suzy_fetch_vancouver_tech_events_from_luma_calendar/);
+  assert.match(source, /api\.lu\.ma\/calendar\/get-items/);
+});
+
+test("vancouver tech events highlights above-the-radar rooms", () => {
+  const php = fs.readFileSync(
+    path.join(ROOT, "inc", "vancouver-tech-events.php"),
+    "utf8"
+  );
+  const css = fs.readFileSync(path.join(ROOT, "style.css"), "utf8");
+  assert.match(php, /above the radar/);
+  assert.match(php, /vte-radar/);
+  assert.match(php, /'radar'\s*=>\s*true/);
+  assert.match(css, /\.vte-event--radar/);
+  assert.match(css, /\.vte-radar-badge/);
 });
 
 test("theme deploy manifest includes events page and homepage teaser", () => {

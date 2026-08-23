@@ -44,6 +44,24 @@ function suzy_get_vancouver_tech_event_sources(): array {
             'format' => 'html_luma',
         ],
         [
+            'id'       => 'luma_bc_ai',
+            'label'    => 'Luma: BC + AI Events',
+            'url'      => 'https://luma.com/vancouver-ai',
+            'slug'     => 'vancouver-ai',
+            'source'   => 'BC + AI Events',
+            'format'   => 'luma_calendar',
+            'radar'    => true,
+        ],
+        [
+            'id'       => 'luma_vtj',
+            'label'    => 'Luma: Vancouver Tech Journal',
+            'url'      => 'https://luma.com/vantechjournal',
+            'slug'     => 'vantechjournal',
+            'source'   => 'Vancouver Tech Journal',
+            'format'   => 'luma_calendar',
+            'radar'    => true,
+        ],
+        [
             'id'     => 'bctech_tnet',
             'label'  => 'BC Tech / T-Net Events',
             'url'    => 'https://www.bctechnology.com/events/',
@@ -79,6 +97,9 @@ function suzy_fetch_vancouver_tech_events_raw( bool $debug = false, array &$debu
             case 'html_luma':
                 $result = suzy_fetch_vancouver_tech_events_from_html_luma( $source, $debug );
                 break;
+            case 'luma_calendar':
+                $result = suzy_fetch_vancouver_tech_events_from_luma_calendar( $source, $debug );
+                break;
             case 'html_tnet':
                 $result = suzy_fetch_vancouver_tech_events_from_html_tnet( $source, $debug );
                 break;
@@ -88,6 +109,13 @@ function suzy_fetch_vancouver_tech_events_raw( bool $debug = false, array &$debu
             default:
                 $result = new WP_Error( 'vte_unknown_format', 'Unknown event source format.' );
                 break;
+        }
+
+        if ( is_array( $result ) && ! empty( $result['events'] ) && ! empty( $source['radar'] ) ) {
+            foreach ( $result['events'] as &$radar_event ) {
+                $radar_event['radar'] = true;
+            }
+            unset( $radar_event );
         }
 
         $source_events = [];
@@ -343,7 +371,7 @@ function suzy_vte_parse_ics_datetime( string $property, string $value, string $f
 }
 
 /**
- * Fetch events from the Luma Vancouver HTML page and optional event JSON-LD.
+ * Fetch events from a Luma place/discover HTML page via __NEXT_DATA__ (with link scrape fallback).
  *
  * @param array<string, mixed> $source Source configuration.
  * @return array<string, mixed>|WP_Error
@@ -365,7 +393,7 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
     $response = wp_remote_get(
         $source['url'],
         [
-            'timeout' => 15,
+            'timeout'    => 15,
             'user-agent' => 'suzy-vancouver-tech-events/1.1',
             'headers'    => [
                 'Accept' => 'text/html, */*',
@@ -394,75 +422,80 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
         ];
     }
 
-    $dom = new DOMDocument();
-    libxml_use_internal_errors( true );
-    $dom->loadHTML( $body );
-    libxml_clear_errors();
-    $xpath = new DOMXPath( $dom );
+    $events = suzy_vte_parse_luma_next_data_events( $body, $source['source'] ?? 'Luma Vancouver' );
+    $parser = 'Luma __NEXT_DATA__';
 
-    $events  = [];
-    $anchors = $xpath->query( "//a[@href]" );
-    $seen    = [];
-    $tz      = new DateTimeZone( 'America/Vancouver' );
+    // Fallback: scrape event anchors if structured data is missing.
+    if ( empty( $events ) ) {
+        $parser  = 'HTML Luma';
+        $dom     = new DOMDocument();
+        libxml_use_internal_errors( true );
+        $dom->loadHTML( $body );
+        libxml_clear_errors();
+        $xpath = new DOMXPath( $dom );
 
-    foreach ( $anchors as $anchor ) {
-        $href = trim( $anchor->getAttribute( 'href' ) );
-        if ( empty( $href ) ) {
-            continue;
+        $anchors = $xpath->query( '//a[@href]' );
+        $seen    = [];
+        $tz      = new DateTimeZone( 'America/Vancouver' );
+
+        foreach ( $anchors as $anchor ) {
+            $href = trim( $anchor->getAttribute( 'href' ) );
+            if ( empty( $href ) ) {
+                continue;
+            }
+
+            $absolute_url = suzy_vte_make_absolute_url( $href, $source['url'] );
+            if ( empty( $absolute_url ) || isset( $seen[ $absolute_url ] ) ) {
+                continue;
+            }
+
+            $parsed = wp_parse_url( $absolute_url );
+            $host   = $parsed['host'] ?? '';
+            $path   = $parsed['path'] ?? '';
+
+            if ( empty( $host ) || ( false === stripos( $host, 'luma.com' ) && false === stripos( $host, 'lu.ma' ) ) ) {
+                continue;
+            }
+
+            if ( ! preg_match( '#^/(event|events)/#', $path ) && ! preg_match( '#^/[A-Za-z0-9]{6,}$#', $path ) ) {
+                continue;
+            }
+
+            $seen[ $absolute_url ] = true;
+
+            $title_node = $xpath->query( './/*[self::h2 or self::h3]', $anchor )->item( 0 );
+            $title      = $title_node ? trim( $title_node->textContent ) : trim( $anchor->textContent );
+            if ( empty( $title ) && $anchor->parentNode ) {
+                $title = trim( $anchor->parentNode->textContent );
+            }
+
+            $card_text = $anchor->parentNode ? trim( $anchor->parentNode->textContent ) : '';
+            $start     = suzy_vte_parse_human_datetime( $card_text, $tz );
+
+            $detail_data = suzy_vte_fetch_event_json_ld( $absolute_url, $debug );
+            if ( $detail_data ) {
+                $title = $detail_data['title'] ?: $title;
+                $start = $detail_data['start'] ?: $start;
+                $end   = $detail_data['end'] ?? null;
+                $loc   = $detail_data['location'] ?? null;
+            } else {
+                $end = null;
+                $loc = null;
+            }
+
+            if ( empty( $title ) || null === $start ) {
+                continue;
+            }
+
+            $events[] = [
+                'title'    => $title,
+                'start'    => (int) $start,
+                'end'      => $end ? (int) $end : null,
+                'location' => $loc,
+                'url'      => $absolute_url,
+                'source'   => $source['source'] ?? 'Luma Vancouver',
+            ];
         }
-
-        $absolute_url = suzy_vte_make_absolute_url( $href, $source['url'] );
-        if ( empty( $absolute_url ) || isset( $seen[ $absolute_url ] ) ) {
-            continue;
-        }
-
-        $parsed = wp_parse_url( $absolute_url );
-        $host   = $parsed['host'] ?? '';
-        $path   = $parsed['path'] ?? '';
-
-        if ( empty( $host ) || ( false === stripos( $host, 'luma.com' ) && false === stripos( $host, 'lu.ma' ) ) ) {
-            continue;
-        }
-
-        if ( ! preg_match( '#^/(event|events)/#', $path ) && ! preg_match( '#^/[A-Za-z0-9]{6,}$#', $path ) ) {
-            continue;
-        }
-
-        $seen[ $absolute_url ] = true;
-
-        $title_node = $xpath->query( './/*[self::h2 or self::h3]', $anchor )->item( 0 );
-        $title      = $title_node ? trim( $title_node->textContent ) : trim( $anchor->textContent );
-        if ( empty( $title ) && $anchor->parentNode ) {
-            $title = trim( $anchor->parentNode->textContent );
-        }
-
-        // Attempt to extract a date string from the surrounding card text.
-        $card_text = $anchor->parentNode ? trim( $anchor->parentNode->textContent ) : '';
-        $start     = suzy_vte_parse_human_datetime( $card_text, $tz );
-
-        $detail_data = suzy_vte_fetch_event_json_ld( $absolute_url, $debug );
-        if ( $detail_data ) {
-            $title = $detail_data['title'] ?: $title;
-            $start = $detail_data['start'] ?: $start;
-            $end   = $detail_data['end'] ?? null;
-            $loc   = $detail_data['location'] ?? null;
-        } else {
-            $end = null;
-            $loc = null;
-        }
-
-        if ( empty( $title ) || null === $start ) {
-            continue;
-        }
-
-        $events[] = [
-            'title'    => $title,
-            'start'    => (int) $start,
-            'end'      => $end ? (int) $end : null,
-            'location' => $loc,
-            'url'      => $absolute_url,
-            'source'   => $source['source'] ?? 'Luma Vancouver',
-        ];
     }
 
     $result = [
@@ -471,7 +504,7 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
             'http_status'  => $status_code,
             'content_type' => $content_type,
             'bytes'        => $bytes,
-            'parser'       => 'HTML Luma',
+            'parser'       => $parser,
         ],
     ];
 
@@ -480,6 +513,337 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
     }
 
     return $result;
+}
+
+/**
+ * Fetch events from a Luma calendar slug via the public calendar API.
+ *
+ * @param array<string, mixed> $source Source configuration.
+ * @return array<string, mixed>|WP_Error
+ */
+function suzy_fetch_vancouver_tech_events_from_luma_calendar( array $source, bool $debug = false ) {
+    $slug = isset( $source['slug'] ) ? sanitize_title( (string) $source['slug'] ) : '';
+    if ( '' === $slug && ! empty( $source['url'] ) ) {
+        $path = wp_parse_url( (string) $source['url'], PHP_URL_PATH );
+        $slug = sanitize_title( trim( (string) $path, '/' ) );
+    }
+
+    if ( '' === $slug ) {
+        return $debug ? new WP_Error( 'vte_luma_slug', 'Missing Luma calendar slug.' ) : [];
+    }
+
+    $transient_key = 'suzy_vte_luma_cal_' . md5( $slug );
+
+    if ( ! $debug ) {
+        $cached = get_transient( $transient_key );
+        if ( false !== $cached && is_array( $cached ) ) {
+            return $cached;
+        }
+    }
+
+    $calendar_id = suzy_vte_resolve_luma_calendar_api_id( $slug, $debug );
+    if ( is_wp_error( $calendar_id ) ) {
+        return $debug ? $calendar_id : [];
+    }
+    if ( empty( $calendar_id ) ) {
+        return [
+            'events' => [],
+            'meta'   => [
+                'http_status'  => null,
+                'content_type' => 'application/json',
+                'bytes'        => 0,
+                'parser'       => 'Luma Calendar API',
+            ],
+        ];
+    }
+
+    $entries = [];
+    $cursor  = null;
+    $pages   = 0;
+    $bytes   = 0;
+    $status  = null;
+
+    do {
+        $query = [
+            'calendar_api_id'  => $calendar_id,
+            'period'           => 'future',
+            'pagination_limit' => 50,
+        ];
+        if ( $cursor ) {
+            $query['pagination_cursor'] = $cursor;
+        }
+
+        $api_url  = add_query_arg( $query, 'https://api.lu.ma/calendar/get-items' );
+        $response = wp_remote_get(
+            $api_url,
+            [
+                'timeout' => 15,
+                'headers' => [
+                    'User-Agent' => 'suzy-vancouver-tech-events/1.1',
+                    'Accept'     => 'application/json',
+                ],
+            ]
+        );
+
+        if ( is_wp_error( $response ) ) {
+            return $debug ? $response : [];
+        }
+
+        $status = wp_remote_retrieve_response_code( $response );
+        $body   = wp_remote_retrieve_body( $response );
+        $bytes += is_string( $body ) ? strlen( $body ) : 0;
+        $data   = json_decode( (string) $body, true );
+
+        if ( ! is_array( $data ) ) {
+            break;
+        }
+
+        $page_entries = isset( $data['entries'] ) && is_array( $data['entries'] ) ? $data['entries'] : [];
+        $entries      = array_merge( $entries, $page_entries );
+        $has_more     = ! empty( $data['has_more'] );
+        $cursor       = $has_more && ! empty( $data['next_cursor'] ) ? (string) $data['next_cursor'] : null;
+        $pages++;
+    } while ( $cursor && $pages < 5 );
+
+    // HTML __NEXT_DATA__ fallback when the API returns nothing.
+    if ( empty( $entries ) && ! empty( $source['url'] ) ) {
+        $html_response = wp_remote_get(
+            $source['url'],
+            [
+                'timeout' => 15,
+                'headers' => [
+                    'User-Agent' => 'suzy-vancouver-tech-events/1.1',
+                    'Accept'     => 'text/html, */*',
+                ],
+            ]
+        );
+
+        if ( ! is_wp_error( $html_response ) ) {
+            $html_body = wp_remote_retrieve_body( $html_response );
+            $events    = suzy_vte_parse_luma_next_data_events( (string) $html_body, $source['source'] ?? 'Luma' );
+            $result    = [
+                'events' => $events,
+                'meta'   => [
+                    'http_status'  => wp_remote_retrieve_response_code( $html_response ),
+                    'content_type' => wp_remote_retrieve_header( $html_response, 'content-type' ),
+                    'bytes'        => strlen( (string) $html_body ),
+                    'parser'       => 'Luma Calendar __NEXT_DATA__',
+                ],
+            ];
+
+            if ( ! $debug ) {
+                set_transient( $transient_key, $result, 30 * MINUTE_IN_SECONDS );
+            }
+
+            return $result;
+        }
+    }
+
+    $events = [];
+    foreach ( $entries as $entry ) {
+        $normalized = suzy_vte_normalize_luma_entry( $entry, $source['source'] ?? 'Luma' );
+        if ( $normalized ) {
+            $events[] = $normalized;
+        }
+    }
+
+    $result = [
+        'events' => $events,
+        'meta'   => [
+            'http_status'  => $status,
+            'content_type' => 'application/json',
+            'bytes'        => $bytes,
+            'parser'       => 'Luma Calendar API',
+        ],
+    ];
+
+    if ( ! $debug ) {
+        set_transient( $transient_key, $result, 30 * MINUTE_IN_SECONDS );
+    }
+
+    return $result;
+}
+
+/**
+ * Resolve a Luma calendar slug to its calendar_api_id.
+ *
+ * @param string $slug  Calendar slug.
+ * @param bool   $debug Debug mode.
+ * @return string|WP_Error|null
+ */
+function suzy_vte_resolve_luma_calendar_api_id( string $slug, bool $debug = false ) {
+    $transient_key = 'suzy_vte_luma_cal_id_' . md5( $slug );
+
+    if ( ! $debug ) {
+        $cached = get_transient( $transient_key );
+        if ( false !== $cached && is_string( $cached ) && '' !== $cached ) {
+            return $cached;
+        }
+    }
+
+    $api_url  = add_query_arg( [ 'url' => $slug ], 'https://api.lu.ma/url' );
+    $response = wp_remote_get(
+        $api_url,
+        [
+            'timeout' => 12,
+            'headers' => [
+                'User-Agent' => 'suzy-vancouver-tech-events/1.1',
+                'Accept'     => 'application/json',
+            ],
+        ]
+    );
+
+    if ( is_wp_error( $response ) ) {
+        return $debug ? $response : null;
+    }
+
+    $data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+    if ( ! is_array( $data ) ) {
+        return null;
+    }
+
+    $calendar_id = null;
+    if ( isset( $data['data']['calendar']['api_id'] ) ) {
+        $calendar_id = (string) $data['data']['calendar']['api_id'];
+    } elseif ( isset( $data['calendar']['api_id'] ) ) {
+        $calendar_id = (string) $data['calendar']['api_id'];
+    }
+
+    if ( $calendar_id && ! $debug ) {
+        set_transient( $transient_key, $calendar_id, DAY_IN_SECONDS );
+    }
+
+    return $calendar_id ?: null;
+}
+
+/**
+ * Parse Luma events out of a page's __NEXT_DATA__ payload.
+ *
+ * @param string $html   Raw HTML.
+ * @param string $source Source label.
+ * @return array<int, array<string, mixed>>
+ */
+function suzy_vte_parse_luma_next_data_events( string $html, string $source ): array {
+    if ( ! preg_match( '/<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/is', $html, $matches ) ) {
+        return [];
+    }
+
+    $payload = json_decode( $matches[1], true );
+    if ( ! is_array( $payload ) ) {
+        return [];
+    }
+
+    $data = $payload['props']['pageProps']['initialData']['data'] ?? null;
+    if ( ! is_array( $data ) ) {
+        return [];
+    }
+
+    $items = [];
+    if ( ! empty( $data['featured_items'] ) && is_array( $data['featured_items'] ) ) {
+        $items = $data['featured_items'];
+    } elseif ( ! empty( $data['events'] ) && is_array( $data['events'] ) ) {
+        $items = $data['events'];
+    }
+
+    $events = [];
+    foreach ( $items as $item ) {
+        $normalized = suzy_vte_normalize_luma_entry( $item, $source );
+        if ( $normalized ) {
+            $events[] = $normalized;
+        }
+    }
+
+    return $events;
+}
+
+/**
+ * Normalize a Luma calendar/place entry into the shared event shape.
+ *
+ * @param mixed  $entry  Raw entry.
+ * @param string $source Source label.
+ * @return array<string, mixed>|null
+ */
+function suzy_vte_normalize_luma_entry( $entry, string $source ): ?array {
+    if ( ! is_array( $entry ) ) {
+        return null;
+    }
+
+    $event = isset( $entry['event'] ) && is_array( $entry['event'] ) ? $entry['event'] : $entry;
+    $title = trim( (string) ( $event['name'] ?? '' ) );
+    if ( '' === $title ) {
+        return null;
+    }
+
+    $tz_name = ! empty( $event['timezone'] ) ? (string) $event['timezone'] : 'America/Vancouver';
+    try {
+        $tz = new DateTimeZone( $tz_name );
+    } catch ( Exception $e ) {
+        $tz = new DateTimeZone( 'America/Vancouver' );
+    }
+
+    $start = suzy_vte_parse_iso_datetime( isset( $event['start_at'] ) ? (string) $event['start_at'] : null, $tz );
+    if ( null === $start && ! empty( $entry['start_at'] ) ) {
+        $start = suzy_vte_parse_iso_datetime( (string) $entry['start_at'], $tz );
+    }
+    if ( null === $start ) {
+        return null;
+    }
+
+    $end = suzy_vte_parse_iso_datetime( isset( $event['end_at'] ) ? (string) $event['end_at'] : null, $tz );
+
+    $url_slug = trim( (string) ( $event['url'] ?? '' ), '/' );
+    $url      = '';
+    if ( '' !== $url_slug ) {
+        if ( str_starts_with( $url_slug, 'http://' ) || str_starts_with( $url_slug, 'https://' ) ) {
+            $url = $url_slug;
+        } else {
+            $url = 'https://luma.com/' . ltrim( $url_slug, '/' );
+        }
+    }
+
+    $calendar_name = '';
+    if ( isset( $entry['calendar']['name'] ) ) {
+        $calendar_name = trim( (string) $entry['calendar']['name'] );
+    }
+
+    $location = suzy_vte_extract_location_from_luma_event( $event );
+
+    return [
+        'title'    => $title,
+        'start'    => (int) $start,
+        'end'      => $end ? (int) $end : null,
+        'location' => $location,
+        'url'      => $url,
+        'source'   => $calendar_name !== '' ? $calendar_name : $source,
+    ];
+}
+
+/**
+ * Pull a readable location string from a Luma event payload.
+ *
+ * @param array<string, mixed> $event Event data.
+ * @return string|null
+ */
+function suzy_vte_extract_location_from_luma_event( array $event ): ?string {
+    $geo = $event['geo_address_info'] ?? null;
+    if ( is_array( $geo ) ) {
+        foreach ( [ 'address', 'short_address', 'city_state', 'full_address' ] as $key ) {
+            if ( ! empty( $geo[ $key ] ) ) {
+                return (string) $geo[ $key ];
+            }
+        }
+    }
+
+    if ( isset( $event['location_type'] ) && 'online' === strtolower( (string) $event['location_type'] ) ) {
+        return 'Online';
+    }
+
+    $virtual = $event['virtual_info'] ?? null;
+    if ( is_array( $virtual ) && ! empty( $virtual['location'] ) ) {
+        return (string) $virtual['location'];
+    }
+
+    return null;
 }
 
 /**
@@ -1118,6 +1482,7 @@ function suzy_get_vancouver_tech_events(): array {
     );
 
     // Dedupe across sources based on title, start, and location.
+    // Prefer radar-tagged copies when two sources list the same event.
     $seen_keys = [];
     $deduped   = [];
 
@@ -1128,10 +1493,17 @@ function suzy_get_vancouver_tech_events(): array {
         $key      = $title . '|' . $start . '|' . $location;
 
         if ( isset( $seen_keys[ $key ] ) ) {
+            $existing_index = $seen_keys[ $key ];
+            if ( ! empty( $event['radar'] ) && empty( $deduped[ $existing_index ]['radar'] ) ) {
+                $deduped[ $existing_index ]['radar'] = true;
+                if ( ! empty( $event['source'] ) ) {
+                    $deduped[ $existing_index ]['source'] = $event['source'];
+                }
+            }
             continue;
         }
 
-        $seen_keys[ $key ] = true;
+        $seen_keys[ $key ] = count( $deduped );
         $deduped[]         = $event;
     }
 
@@ -1148,9 +1520,9 @@ function suzy_get_vancouver_tech_events(): array {
         }
     );
 
-    // Limit to 50 upcoming events.
-    if ( count( $events ) > 50 ) {
-        $events = array_slice( $events, 0, 50 );
+    // Limit to 80 upcoming events (radar calendars add volume).
+    if ( count( $events ) > 80 ) {
+        $events = array_slice( $events, 0, 80 );
     }
 
     if ( ! $debug ) {
@@ -1189,12 +1561,22 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
     <section class="vancouver-tech-events">
         <p class="vancouver-tech-events__kicker pixel-font">yvr calendar</p>
         <h1>Vancouver Tech Events</h1>
-        <p>Meetup ICS, Luma, BC Tech / T-Net, Meetup search. One list.</p>
+        <p>Meetup ICS, Luma, BC + AI, Vancouver Tech Journal, BC Tech / T-Net. One list.</p>
 
         <?php if ( empty( $events ) ) : ?>
             <p>Nothing upcoming right now. Sources still get checked on the next pass.</p>
         <?php else : ?>
             <?php
+            $radar_events = array_values(
+                array_filter(
+                    $events,
+                    static function ( $event ) {
+                        return ! empty( $event['radar'] );
+                    }
+                )
+            );
+            $radar_events = array_slice( $radar_events, 0, 12 );
+
             $events_by_date = [];
             foreach ( $events as $event ) {
                 $start    = isset( $event['start'] ) ? (int) $event['start'] : time();
@@ -1206,6 +1588,19 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
             }
             ksort( $events_by_date );
             ?>
+
+            <?php if ( ! empty( $radar_events ) ) : ?>
+                <section class="vte-radar" aria-labelledby="vte-radar-title">
+                    <p class="vte-radar__kicker pixel-font">above the radar</p>
+                    <h2 id="vte-radar-title">BC + AI &amp; Vancouver Tech Journal</h2>
+                    <p class="vte-radar__intro">The rooms that keep showing up. Pulled straight off their Luma calendars.</p>
+                    <ul class="vte-event-list vte-event-list--radar">
+                        <?php foreach ( $radar_events as $event ) : ?>
+                            <?php echo suzy_vte_render_event_list_item( $event, true, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        <?php endforeach; ?>
+                    </ul>
+                </section>
+            <?php endif; ?>
 
             <?php foreach ( $events_by_date as $date_key => $date_events ) : ?>
                 <h2 class="vte-date">
@@ -1219,22 +1614,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                 </h2>
                 <ul class="vte-event-list">
                     <?php foreach ( $date_events as $event ) : ?>
-                        <li class="vte-event">
-                            <a href="<?php echo esc_url( $event['url'] ); ?>" target="_blank" rel="noopener noreferrer" class="vte-title">
-                                <?php echo esc_html( $event['title'] ); ?>
-                            </a>
-                            <div class="vte-meta">
-                                <?php if ( isset( $event['start'] ) ) : ?>
-                                    <span class="vte-time">
-                                        <?php echo esc_html( wp_date( get_option( 'time_format' ), (int) $event['start'] ) ); ?>
-                                    </span>
-                                <?php endif; ?>
-                                <?php if ( ! empty( $event['location'] ) ) : ?>
-                                    <span class="vte-location"><?php echo esc_html( $event['location'] ); ?></span>
-                                <?php endif; ?>
-                                <span class="vte-source"><?php echo esc_html( $event['source'] ?? '' ); ?></span>
-                            </div>
-                        </li>
+                        <?php echo suzy_vte_render_event_list_item( $event, ! empty( $event['radar'] ), false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                     <?php endforeach; ?>
                 </ul>
             <?php endforeach; ?>
@@ -1268,6 +1648,52 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
             </div>
         <?php endif; ?>
     </section>
+    <?php
+
+    return ob_get_clean();
+}
+
+/**
+ * Render a single Vancouver tech event list item.
+ *
+ * @param array<string, mixed> $event      Event data.
+ * @param bool                 $radar      Whether to mark as above-the-radar.
+ * @param bool                 $show_badge Whether to show the radar badge label.
+ * @return string
+ */
+function suzy_vte_render_event_list_item( array $event, bool $radar = false, bool $show_badge = false ): string {
+    $classes = 'vte-event';
+    if ( $radar ) {
+        $classes .= ' vte-event--radar';
+    }
+
+    ob_start();
+    ?>
+    <li class="<?php echo esc_attr( $classes ); ?>">
+        <?php if ( $show_badge ) : ?>
+            <span class="vte-radar-badge pixel-font">above the radar</span>
+        <?php endif; ?>
+        <a href="<?php echo esc_url( $event['url'] ?? '' ); ?>" target="_blank" rel="noopener noreferrer" class="vte-title">
+            <?php echo esc_html( $event['title'] ?? '' ); ?>
+        </a>
+        <div class="vte-meta">
+            <?php if ( isset( $event['start'] ) ) : ?>
+                <span class="vte-time">
+                    <?php
+                    $time_label = wp_date( 'D, M j · ' . get_option( 'time_format' ), (int) $event['start'] );
+                    if ( ! $show_badge ) {
+                        $time_label = wp_date( get_option( 'time_format' ), (int) $event['start'] );
+                    }
+                    echo esc_html( $time_label );
+                    ?>
+                </span>
+            <?php endif; ?>
+            <?php if ( ! empty( $event['location'] ) ) : ?>
+                <span class="vte-location"><?php echo esc_html( $event['location'] ); ?></span>
+            <?php endif; ?>
+            <span class="vte-source"><?php echo esc_html( $event['source'] ?? '' ); ?></span>
+        </div>
+    </li>
     <?php
 
     return ob_get_clean();
