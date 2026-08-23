@@ -266,8 +266,8 @@ function se_page_meta() {
 		$keywords   = 'lousy outages status dashboard, outage tracker, retro status board';
 	} elseif ( is_page_template( 'page-vancouver-tech-events.php' ) || is_page( 'vancouver-tech-events' ) ) {
 		$meta_title = 'Vancouver Tech Events | Meetup, Luma, BC Tech in one feed';
-		$meta_desc  = 'Upcoming Vancouver tech events from Meetup, Luma, and BC Tech — founder nights, meetups, and hangouts in one calendar.';
-		$keywords   = 'Vancouver tech events, Meetup Vancouver, Luma Vancouver, BC Tech events, Suzy Easton';
+		$meta_desc  = 'Upcoming Vancouver tech events from Meetup, Luma, BC + AI, Vancouver Tech Journal, and BC Tech — one calendar.';
+		$keywords   = 'Vancouver tech events, Meetup Vancouver, Luma Vancouver, BC + AI, Vancouver Tech Journal, BC Tech events, Suzy Easton';
 	} elseif ( is_page_template( 'page-track-analyzer.php' ) ) {
 		$meta_title = "Suzy's Track Analyzer | AI-assisted song feedback";
 		$meta_desc  = 'Upload an MP3 and get direct AI-assisted notes on lyrics, structure, feel, and production direction.';
