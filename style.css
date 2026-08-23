@@ -4456,6 +4456,74 @@ body.page-template-page-bio-php .bio-content {
   gap: 12px;
 }
 
+.vancouver-tech-events .vte-spotlight {
+  margin: 0 0 1.75rem;
+  padding: 1rem 1rem 1.1rem;
+  border: 1px solid rgba(255, 214, 102, 0.55);
+  border-radius: 12px;
+  background:
+    linear-gradient(160deg, rgba(42, 28, 8, 0.9), rgba(18, 12, 4, 0.78)),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(255, 214, 102, 0.05) 3px,
+      rgba(255, 214, 102, 0.05) 4px
+    );
+  box-shadow: inset 0 0 0 1px rgba(255, 184, 91, 0.14);
+}
+
+.vancouver-tech-events .vte-spotlight__kicker {
+  margin: 0 0 0.4rem;
+  color: #ffd666;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vancouver-tech-events .vte-spotlight h2 {
+  margin: 0 0 0.45rem;
+  color: #fff4d2;
+  font-size: 1.2rem;
+}
+
+.vancouver-tech-events .vte-spotlight__intro {
+  margin: 0 0 0.9rem;
+  color: #ffe7a8;
+  line-height: 1.5;
+}
+
+.vancouver-tech-events .vte-event--spotlight {
+  border-color: rgba(255, 214, 102, 0.55);
+  background: rgba(48, 32, 8, 0.62);
+}
+
+.vancouver-tech-events .vte-spotlight-badge {
+  display: inline-block;
+  margin: 0 0 0.45rem;
+  color: #ffd666;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vancouver-tech-events .vte-event-list--spotlight {
+  gap: 12px;
+}
+
+.vancouver-tech-home__item--spotlight {
+  border-color: rgba(255, 214, 102, 0.5);
+  background: rgba(48, 32, 8, 0.45);
+}
+
+.vancouver-tech-home__badge {
+  margin: 0 0 0.35rem;
+  color: #ffd666;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 
 .home-section-legend-links {
   display: flex;
