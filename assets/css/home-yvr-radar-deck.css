@@ -1,13 +1,19 @@
 /* YVR Radar Deck — map-first homepage hero (no title-screen overlay stack). */
 
 .home-yvr-radar-deck {
+  --yvr-radar-shell-max: min(980px, calc(100% - clamp(1rem, 3vw, 2rem)));
+  --yvr-radar-unit-max: min(100%, 320px);
+  --yvr-radar-ring-max-h: min(34vh, 300px);
+  --yvr-radar-ring-min-h: 150px;
+  --yvr-radar-deck-max: min(100%, 560px);
+
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: clamp(0.75rem, 1.8vw, 1.15rem);
-  width: min(1220px, calc(100% - clamp(1rem, 3vw, 2rem)));
-  margin: 0 auto clamp(1rem, 2vw, 1.5rem);
-  padding: clamp(0.85rem, 2vw, 1.35rem);
+  gap: clamp(0.55rem, 1.4vw, 0.9rem);
+  width: var(--yvr-radar-shell-max);
+  margin: 0 auto clamp(0.75rem, 1.6vw, 1.15rem);
+  padding: clamp(0.65rem, 1.6vw, 1rem);
   border: 3px solid rgba(57, 255, 20, 0.65);
   border-radius: 18px;
   background:
@@ -39,7 +45,7 @@
 .home-yvr-radar-deck__title {
   margin: 0;
   color: #ffff66;
-  font-size: clamp(1.75rem, 5.5vw, 3.25rem);
+  font-size: clamp(1.45rem, 4.5vw, 2.65rem);
   line-height: 0.98;
   letter-spacing: 0.04em;
   text-shadow:
@@ -52,10 +58,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.45rem;
-  width: min(100%, 920px);
+  gap: 0.35rem;
+  width: min(100%, 760px);
   margin: 0 auto;
-  padding: clamp(0.55rem, 1.2vw, 0.85rem) clamp(0.65rem, 1.5vw, 1rem);
+  padding: clamp(0.45rem, 1vw, 0.65rem) clamp(0.55rem, 1.2vw, 0.85rem);
   text-align: center;
   border: 2px solid rgba(255, 79, 216, 0.35);
   border-radius: 10px;
@@ -101,9 +107,9 @@
 
 .home-yvr-radar-deck__pitch-lead {
   margin: 0;
-  max-width: 42rem;
+  max-width: 36rem;
   font-family: "IBM Plex Mono", "Courier New", monospace;
-  font-size: clamp(0.72rem, 1.15vw, 0.92rem);
+  font-size: clamp(0.66rem, 1vw, 0.82rem);
   line-height: 1.5;
   color: rgba(232, 247, 255, 0.92);
 }
@@ -132,7 +138,7 @@
   flex-wrap: wrap;
   gap: 0.5rem 0.75rem;
   width: 100%;
-  max-width: min(92vw, 680px);
+  max-width: var(--yvr-radar-unit-max);
 }
 
 .home-yvr-radar-deck__unit-badge {
@@ -172,8 +178,8 @@
 
 .home-yvr-radar-deck__bezel {
   position: relative;
-  width: min(100%, 680px);
-  padding: clamp(0.65rem, 1.5vw, 1rem);
+  width: var(--yvr-radar-unit-max);
+  padding: clamp(0.5rem, 1.1vw, 0.75rem);
   border-radius: 20px;
   border: 4px solid #1a1e28;
   background:
@@ -198,8 +204,8 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  max-height: min(52vh, 520px);
-  min-height: 220px;
+  max-height: var(--yvr-radar-ring-max-h);
+  min-height: var(--yvr-radar-ring-min-h);
   margin: 0 auto;
 }
 
@@ -214,7 +220,7 @@
     inset 0 0 40px rgba(0, 0, 0, 0.65),
     0 0 24px rgba(57, 255, 20, 0.15);
   background: #020610;
-  min-height: 180px;
+  min-height: 140px;
 }
 
 .home-yvr-radar-deck__map {
@@ -222,7 +228,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  min-height: 180px;
+  min-height: 140px;
 }
 
 .home-yvr-radar-deck__map.is-map-error::after {
@@ -459,9 +465,9 @@
 .home-yvr-radar-deck__deck {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.45rem, 1vw, 0.65rem);
+  gap: clamp(0.35rem, 0.8vw, 0.5rem);
   width: 100%;
-  max-width: min(100%, 680px);
+  max-width: var(--yvr-radar-deck-max);
   margin: 0 auto;
 }
 
@@ -540,23 +546,56 @@
   75% { filter: brightness(1.08); }
 }
 
+@media (min-width: 900px) {
+  .home-yvr-radar-deck {
+    display: grid;
+    grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+    column-gap: clamp(0.75rem, 2vw, 1.1rem);
+    row-gap: clamp(0.55rem, 1.2vw, 0.85rem);
+    align-items: start;
+  }
+
+  .home-yvr-radar-deck__mast,
+  .home-yvr-radar-deck__pitch,
+  .home-yvr-radar-deck > .home-lo-flyover,
+  .home-yvr-radar-deck > .home-hire-strip,
+  .home-yvr-radar-deck > .vancouver-tech-home {
+    grid-column: 1 / -1;
+  }
+
+  .home-yvr-radar-deck__radar-unit {
+    grid-column: 1;
+    align-self: start;
+  }
+
+  .home-yvr-radar-deck__deck {
+    grid-column: 2;
+    max-width: none;
+    margin: 0;
+    align-self: stretch;
+  }
+}
+
 @media (max-width: 820px) {
   .home-yvr-radar-deck__crt-ring {
-    max-height: min(46vh, 380px);
+    max-height: min(32vh, 280px);
   }
 }
 
 @media (max-width: 520px) {
   .home-yvr-radar-deck {
-    padding: 0.75rem;
+    --yvr-radar-unit-max: min(100%, 280px);
+    --yvr-radar-ring-max-h: min(30vh, 250px);
+    --yvr-radar-ring-min-h: 140px;
+    padding: 0.65rem;
   }
 
   .home-yvr-radar-deck__title {
-    font-size: clamp(1.5rem, 9vw, 2.2rem);
+    font-size: clamp(1.35rem, 8vw, 2rem);
   }
 
   .home-yvr-radar-deck__crt-ring {
-    max-height: min(42vh, 320px);
+    max-height: var(--yvr-radar-ring-max-h);
   }
 
   .home-yvr-radar-deck__map-wrap {
@@ -567,6 +606,33 @@
   .home-yvr-radar-deck__sweep,
   .home-yvr-radar-deck__scan {
     inset: 6%;
+  }
+}
+
+/* Compact Beulah deck inside the radar shell */
+.home-yvr-radar-deck .home-yvr-broadcaster {
+  gap: 0.3rem;
+  padding: 0.4rem 0.42rem 0.36rem;
+}
+
+.home-yvr-radar-deck .home-yvr-broadcaster__avatar-frame {
+  width: 48px;
+  height: 52px;
+}
+
+.home-yvr-radar-deck .home-yvr-teleprompt__script {
+  min-height: 3rem;
+  max-height: 4rem;
+  font-size: clamp(0.58rem, 1vw, 0.68rem);
+}
+
+.home-yvr-radar-deck .home-yvr-broadcaster__transport {
+  gap: 0.35rem;
+}
+
+@media (max-width: 899px) {
+  .home-yvr-radar-deck__crt-ring {
+    max-height: min(34vh, 300px);
   }
 }
 
