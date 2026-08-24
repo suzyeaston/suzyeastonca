@@ -43,7 +43,7 @@ get_header();
                     <span></span><span></span><span></span>
                 </div>
             </div>
-            <p class="home-yvr-radar-deck__hint pixel-font"><?php echo esc_html( 'tap a pin — bulletins + live audio land in the deck below' ); ?></p>
+            <p class="home-yvr-radar-deck__hint pixel-font"><?php echo esc_html( 'tap a pin — bulletins + live audio land in the deck' ); ?></p>
         </div>
 
         <div class="home-yvr-radar-deck__deck">
