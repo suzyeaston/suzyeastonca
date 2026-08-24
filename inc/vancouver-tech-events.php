@@ -1488,7 +1488,7 @@ function suzy_vte_make_absolute_url( string $url, string $base_url ): string {
 }
 
 /**
- * Curated spotlight event(s). Futureproof only — everything else stays chronological.
+ * Curated spotlight event(s). Futureproof only.
  *
  * @return array<int, array<string, mixed>>
  */

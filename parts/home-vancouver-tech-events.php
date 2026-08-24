@@ -13,7 +13,7 @@ if ( isset( $vancouver_events_payload['events'] ) && is_array( $vancouver_events
 	$vancouver_events = $vancouver_events_payload['events'];
 }
 
-// Futureproof spotlight first (if present), then chronological everything else.
+// Futureproof spotlight first (if present), then the next upcoming events.
 $vancouver_events_spotlight = array_values(
 	array_filter(
 		$vancouver_events,
