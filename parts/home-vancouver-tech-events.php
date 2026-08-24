@@ -40,7 +40,7 @@ $events_url = home_url( '/vancouver-tech-events/' );
 <section class="vancouver-tech-home crt-block" aria-labelledby="vancouver-tech-home-title">
 	<p class="home-section-kicker pixel-font"><?php echo esc_html( 'yvr calendar' ); ?></p>
 	<h2 id="vancouver-tech-home-title" class="pixel-font"><?php echo esc_html( 'VANCOUVER TECH EVENTS' ); ?></h2>
-	<p class="vancouver-tech-home__intro"><?php echo esc_html( 'Meetup tabs multiply. One feed keeps them honest. Futureproof Festival sits up front — everything else is chronological.' ); ?></p>
+	<p class="vancouver-tech-home__intro"><?php echo esc_html( 'Meetup tabs multiply. One feed.' ); ?></p>
 
 	<?php if ( empty( $vancouver_events_top ) ) : ?>
 		<p><?php echo esc_html( 'Nothing upcoming in the cache. Full calendar still loads.' ); ?></p>

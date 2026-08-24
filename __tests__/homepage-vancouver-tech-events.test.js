@@ -24,7 +24,7 @@ test("homepage surfaces Vancouver tech events teaser above Beulah radar", () => 
   );
 });
 
-test("homepage teaser highlights Futureproof then chronological events", () => {
+test("homepage teaser keeps short intro and Futureproof spotlight slot", () => {
   const source = fs.readFileSync(
     path.join(ROOT, "parts", "home-vancouver-tech-events.php"),
     "utf8"
@@ -33,9 +33,11 @@ test("homepage teaser highlights Futureproof then chronological events", () => {
   assert.match(source, /vancouver-tech-home/);
   assert.match(source, /Open full calendar/);
   assert.match(source, /\/vancouver-tech-events\//);
-  assert.match(source, /Futureproof Festival/);
-  assert.match(source, /chronological/);
+  assert.match(source, /Meetup tabs multiply\. One feed\./);
   assert.match(source, /vancouver_events_spotlight/);
+  assert.doesNotMatch(source, /keeps them honest/);
+  assert.doesNotMatch(source, /sits up front/);
+  assert.doesNotMatch(source, /chronological/);
   assert.doesNotMatch(source, /[Mm]ember/);
   assert.doesNotMatch(source, /Founding/);
   assert.doesNotMatch(source, /vancouver_events_member/);
@@ -81,9 +83,11 @@ test("vancouver tech events spotlights Futureproof without membership bias", () 
   const css = fs.readFileSync(path.join(ROOT, "style.css"), "utf8");
   assert.match(php, /Futureproof Festival/);
   assert.match(php, /vte-spotlight/);
-  assert.match(php, /No ranking/);
+  assert.match(php, /Oct 29–30 at the Space Centre\./);
   assert.match(css, /\.vte-event--spotlight/);
   assert.match(css, /\.vte-spotlight-badge/);
+  assert.doesNotMatch(php, /No ranking/);
+  assert.doesNotMatch(php, /stays chronological/);
   assert.doesNotMatch(php, /[Mm]ember, BC/);
   assert.doesNotMatch(php, /I.?m a member/);
   assert.doesNotMatch(php, /Founding member/);

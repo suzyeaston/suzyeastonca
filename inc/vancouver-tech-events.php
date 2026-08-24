@@ -1651,7 +1651,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
     <section class="vancouver-tech-events">
         <p class="vancouver-tech-events__kicker pixel-font">yvr calendar</p>
         <h1>Vancouver Tech Events</h1>
-        <p>Meetup ICS, Luma, BC + AI, Vancouver Tech Journal, BC Tech / T-Net. One list. No ranking.</p>
+        <p>Meetup ICS, Luma, BC + AI, Vancouver Tech Journal, BC Tech / T-Net. One list.</p>
 
         <?php if ( empty( $events ) ) : ?>
             <p>Nothing upcoming right now. Sources still get checked on the next pass.</p>
@@ -1682,7 +1682,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                 <section class="vte-spotlight" aria-labelledby="vte-spotlight-title">
                     <p class="vte-spotlight__kicker pixel-font">on the board</p>
                     <h2 id="vte-spotlight-title">Futureproof Festival</h2>
-                    <p class="vte-spotlight__intro">Oct 29–30 at the Space Centre. The rest of the calendar stays chronological.</p>
+                    <p class="vte-spotlight__intro">Oct 29–30 at the Space Centre.</p>
                     <ul class="vte-event-list vte-event-list--spotlight">
                         <?php foreach ( $spotlight_events as $event ) : ?>
                             <?php echo suzy_vte_render_event_list_item( $event, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
