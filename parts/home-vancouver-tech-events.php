@@ -13,7 +13,7 @@ if ( isset( $vancouver_events_payload['events'] ) && is_array( $vancouver_events
 	$vancouver_events = $vancouver_events_payload['events'];
 }
 
-// Prefer spotlight + BC + AI member rooms in the homepage teaser.
+// Futureproof spotlight first (if present), then chronological everything else.
 $vancouver_events_spotlight = array_values(
 	array_filter(
 		$vancouver_events,
@@ -22,24 +22,16 @@ $vancouver_events_spotlight = array_values(
 		}
 	)
 );
-$vancouver_events_member = array_values(
-	array_filter(
-		$vancouver_events,
-		static function ( $event ) {
-			return ! empty( $event['member'] ) && empty( $event['spotlight'] );
-		}
-	)
-);
 $vancouver_events_rest = array_values(
 	array_filter(
 		$vancouver_events,
 		static function ( $event ) {
-			return empty( $event['member'] ) && empty( $event['spotlight'] );
+			return empty( $event['spotlight'] );
 		}
 	)
 );
 $vancouver_events_top = array_slice(
-	array_merge( $vancouver_events_spotlight, $vancouver_events_member, $vancouver_events_rest ),
+	array_merge( $vancouver_events_spotlight, $vancouver_events_rest ),
 	0,
 	3
 );
@@ -48,7 +40,7 @@ $events_url = home_url( '/vancouver-tech-events/' );
 <section class="vancouver-tech-home crt-block" aria-labelledby="vancouver-tech-home-title">
 	<p class="home-section-kicker pixel-font"><?php echo esc_html( 'yvr calendar' ); ?></p>
 	<h2 id="vancouver-tech-home-title" class="pixel-font"><?php echo esc_html( 'VANCOUVER TECH EVENTS' ); ?></h2>
-	<p class="vancouver-tech-home__intro"><?php echo esc_html( 'Meetup tabs multiply. One feed keeps them honest. Member, BC + AI — Futureproof Festival sits up front.' ); ?></p>
+	<p class="vancouver-tech-home__intro"><?php echo esc_html( 'Meetup tabs multiply. One feed keeps them honest. Futureproof Festival sits up front — everything else is chronological.' ); ?></p>
 
 	<?php if ( empty( $vancouver_events_top ) ) : ?>
 		<p><?php echo esc_html( 'Nothing upcoming in the cache. Full calendar still loads.' ); ?></p>
