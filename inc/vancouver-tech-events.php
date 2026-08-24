@@ -51,7 +51,6 @@ function suzy_get_vancouver_tech_event_sources(): array {
             'calendar_api_id' => 'cal-9QLMVT9CQVtX1u0',
             'source'          => 'BC + AI Events',
             'format'          => 'luma_calendar',
-            'member'          => true,
         ],
         [
             'id'              => 'luma_vtj',
@@ -110,17 +109,6 @@ function suzy_fetch_vancouver_tech_events_raw( bool $debug = false, array &$debu
             default:
                 $result = new WP_Error( 'vte_unknown_format', 'Unknown event source format.' );
                 break;
-        }
-
-        if ( is_array( $result ) && ! empty( $result['events'] ) && ! empty( $source['member'] ) ) {
-            foreach ( $result['events'] as &$member_event ) {
-                $member_event['member'] = true;
-                // Keep the configured room label even when Luma nests a host calendar.
-                if ( ! empty( $source['source'] ) ) {
-                    $member_event['source'] = (string) $source['source'];
-                }
-            }
-            unset( $member_event );
         }
 
         $source_events = [];
@@ -1500,12 +1488,7 @@ function suzy_vte_make_absolute_url( string $url, string $base_url ): string {
 }
 
 /**
- * Returns a cached list of upcoming Vancouver tech events.
- *
- * @return array<int, array<string, mixed>>
- */
-/**
- * Curated spotlight events that must stay visible even if remote fetches flake.
+ * Curated spotlight event(s). Futureproof only — everything else stays chronological.
  *
  * @return array<int, array<string, mixed>>
  */
@@ -1527,17 +1510,7 @@ function suzy_get_vancouver_tech_spotlight_events(): array {
             'location'  => 'H.R. MacMillan Space Centre',
             'url'       => 'https://luma.com/futureproof-festival',
             'source'    => 'BC + AI Events',
-            'member'    => true,
             'spotlight' => true,
-        ],
-        [
-            'title'    => 'Vancouver AI Community Meetup: Data for Good!',
-            'start'    => $parse( '2026-08-27T01:00:00.000Z' ),
-            'end'      => $parse( '2026-08-27T05:00:00.000Z' ),
-            'location' => 'H.R. MacMillan Space Centre',
-            'url'      => 'https://luma.com/data-for-good',
-            'source'   => 'BC + AI Events',
-            'member'   => true,
         ],
     ];
 
@@ -1551,10 +1524,15 @@ function suzy_get_vancouver_tech_spotlight_events(): array {
     );
 }
 
+/**
+ * Returns a cached list of upcoming Vancouver tech events.
+ *
+ * @return array<int, array<string, mixed>>
+ */
 function suzy_get_vancouver_tech_events(): array {
     // Only show debug output when explicitly requested AND user is an admin.
     $debug          = ( isset( $_GET['vte_debug'] ) && '1' === $_GET['vte_debug'] && current_user_can( 'manage_options' ) );
-    $transient_key  = 'suzy_vancouver_tech_events_cache_v3';
+    $transient_key  = 'suzy_vancouver_tech_events_cache_v4';
     $cached         = $debug ? false : get_transient( $transient_key );
     $debug_report   = [];
     $cache_bypassed = $debug;
@@ -1570,18 +1548,14 @@ function suzy_get_vancouver_tech_events(): array {
     $events = suzy_fetch_vancouver_tech_events_raw( $debug, $debug_report );
     $events = array_merge( suzy_get_vancouver_tech_spotlight_events(), $events );
 
-    // Promote known BC + AI tentpoles even when they arrive from another parser.
+    // Mark Futureproof as the only spotlight — no membership / source bias.
     foreach ( $events as &$event ) {
         $url   = strtolower( (string) ( $event['url'] ?? '' ) );
         $title = strtolower( (string) ( $event['title'] ?? '' ) );
         if ( false !== strpos( $url, 'futureproof-festival' ) || false !== strpos( $title, 'futureproof festival' ) ) {
             $event['spotlight'] = true;
-            $event['member']    = true;
-            $event['source']    = 'BC + AI Events';
-        }
-        if ( false !== strpos( $url, 'data-for-good' ) || false !== strpos( $title, 'data for good' ) ) {
-            $event['member'] = true;
-            $event['source'] = 'BC + AI Events';
+        } else {
+            unset( $event['member'], $event['spotlight'] );
         }
     }
     unset( $event );
@@ -1601,7 +1575,7 @@ function suzy_get_vancouver_tech_events(): array {
     );
 
     // Dedupe across sources based on title, start, and location.
-    // Prefer member-calendar copies when two sources list the same event.
+    // Prefer spotlight copies when two sources list the same event.
     $seen_keys = [];
     $deduped   = [];
 
@@ -1613,12 +1587,6 @@ function suzy_get_vancouver_tech_events(): array {
 
         if ( isset( $seen_keys[ $key ] ) ) {
             $existing_index = $seen_keys[ $key ];
-            if ( ! empty( $event['member'] ) && empty( $deduped[ $existing_index ]['member'] ) ) {
-                $deduped[ $existing_index ]['member'] = true;
-                if ( ! empty( $event['source'] ) ) {
-                    $deduped[ $existing_index ]['source'] = $event['source'];
-                }
-            }
             if ( ! empty( $event['spotlight'] ) ) {
                 $deduped[ $existing_index ]['spotlight'] = true;
             }
@@ -1642,7 +1610,7 @@ function suzy_get_vancouver_tech_events(): array {
         }
     );
 
-    // Limit to 80 upcoming events (member calendars add volume).
+    // Limit to 80 upcoming events.
     if ( count( $events ) > 80 ) {
         $events = array_slice( $events, 0, 80 );
     }
@@ -1683,8 +1651,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
     <section class="vancouver-tech-events">
         <p class="vancouver-tech-events__kicker pixel-font">yvr calendar</p>
         <h1>Vancouver Tech Events</h1>
-        <p>Meetup ICS, Luma, BC + AI, Vancouver Tech Journal, BC Tech / T-Net. One list.</p>
-        <p class="vancouver-tech-events__membership">Member, BC + AI. Their Luma calendar lands here.</p>
+        <p>Meetup ICS, Luma, BC + AI, Vancouver Tech Journal, BC Tech / T-Net. One list. No ranking.</p>
 
         <?php if ( empty( $events ) ) : ?>
             <p>Nothing upcoming right now. Sources still get checked on the next pass.</p>
@@ -1698,16 +1665,6 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                     }
                 )
             );
-
-            $member_events = array_values(
-                array_filter(
-                    $events,
-                    static function ( $event ) {
-                        return ! empty( $event['member'] ) && empty( $event['spotlight'] );
-                    }
-                )
-            );
-            $member_events = array_slice( $member_events, 0, 12 );
 
             $events_by_date = [];
             foreach ( $events as $event ) {
@@ -1725,23 +1682,10 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                 <section class="vte-spotlight" aria-labelledby="vte-spotlight-title">
                     <p class="vte-spotlight__kicker pixel-font">on the board</p>
                     <h2 id="vte-spotlight-title">Futureproof Festival</h2>
-                    <p class="vte-spotlight__intro">BC + AI&apos;s big weekend. Space Centre. Don&apos;t miss it.</p>
+                    <p class="vte-spotlight__intro">Oct 29–30 at the Space Centre. The rest of the calendar stays chronological.</p>
                     <ul class="vte-event-list vte-event-list--spotlight">
                         <?php foreach ( $spotlight_events as $event ) : ?>
-                            <?php echo suzy_vte_render_event_list_item( $event, true, true, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                        <?php endforeach; ?>
-                    </ul>
-                </section>
-            <?php endif; ?>
-
-            <?php if ( ! empty( $member_events ) ) : ?>
-                <section class="vte-member" aria-labelledby="vte-member-title">
-                    <p class="vte-member__kicker pixel-font">member calendar</p>
-                    <h2 id="vte-member-title">BC + AI</h2>
-                    <p class="vte-member__intro">I&apos;m a member. Their Luma feed sits here with the rest of the city.</p>
-                    <ul class="vte-event-list vte-event-list--member">
-                        <?php foreach ( $member_events as $event ) : ?>
-                            <?php echo suzy_vte_render_event_list_item( $event, true, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                            <?php echo suzy_vte_render_event_list_item( $event, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                         <?php endforeach; ?>
                     </ul>
                 </section>
@@ -1759,7 +1703,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                 </h2>
                 <ul class="vte-event-list">
                     <?php foreach ( $date_events as $event ) : ?>
-                        <?php echo suzy_vte_render_event_list_item( $event, ! empty( $event['member'] ), false, ! empty( $event['spotlight'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        <?php echo suzy_vte_render_event_list_item( $event, ! empty( $event['spotlight'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                     <?php endforeach; ?>
                 </ul>
             <?php endforeach; ?>
@@ -1801,30 +1745,22 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
 /**
  * Render a single Vancouver tech event list item.
  *
- * @param array<string, mixed> $event      Event data.
- * @param bool                 $member     Whether this is from a member calendar.
- * @param bool                 $show_badge Whether to show a badge label.
- * @param bool                 $spotlight  Whether this is a spotlight event.
+ * @param array<string, mixed> $event     Event data.
+ * @param bool                 $spotlight Whether this is the Futureproof spotlight.
  * @return string
  */
-function suzy_vte_render_event_list_item( array $event, bool $member = false, bool $show_badge = false, bool $spotlight = false ): string {
-    $classes = 'vte-event';
-    if ( $spotlight || ! empty( $event['spotlight'] ) ) {
+function suzy_vte_render_event_list_item( array $event, bool $spotlight = false ): string {
+    $spotlight = $spotlight || ! empty( $event['spotlight'] );
+    $classes   = 'vte-event';
+    if ( $spotlight ) {
         $classes .= ' vte-event--spotlight';
-        $spotlight = true;
-    } elseif ( $member ) {
-        $classes .= ' vte-event--member';
     }
 
     ob_start();
     ?>
     <li class="<?php echo esc_attr( $classes ); ?>">
-        <?php if ( $show_badge ) : ?>
-            <?php if ( $spotlight ) : ?>
-                <span class="vte-spotlight-badge pixel-font">spotlight</span>
-            <?php else : ?>
-                <span class="vte-member-badge pixel-font">member calendar</span>
-            <?php endif; ?>
+        <?php if ( $spotlight ) : ?>
+            <span class="vte-spotlight-badge pixel-font">spotlight</span>
         <?php endif; ?>
         <a href="<?php echo esc_url( $event['url'] ?? '' ); ?>" target="_blank" rel="noopener noreferrer" class="vte-title">
             <?php echo esc_html( $event['title'] ?? '' ); ?>
@@ -1833,10 +1769,9 @@ function suzy_vte_render_event_list_item( array $event, bool $member = false, bo
             <?php if ( isset( $event['start'] ) ) : ?>
                 <span class="vte-time">
                     <?php
-                    $time_label = wp_date( 'D, M j · ' . get_option( 'time_format' ), (int) $event['start'] );
-                    if ( ! $show_badge ) {
-                        $time_label = wp_date( get_option( 'time_format' ), (int) $event['start'] );
-                    }
+                    $time_label = $spotlight
+                        ? wp_date( 'D, M j · ' . get_option( 'time_format' ), (int) $event['start'] )
+                        : wp_date( get_option( 'time_format' ), (int) $event['start'] );
                     echo esc_html( $time_label );
                     ?>
                 </span>

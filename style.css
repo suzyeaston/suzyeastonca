@@ -4395,67 +4395,6 @@ body.page-template-page-bio-php .bio-content {
   opacity: 0.82;
 }
 
-.vancouver-tech-events__membership {
-  margin: 0.35rem 0 1.1rem;
-  color: #9bf7dc;
-  line-height: 1.5;
-}
-
-.vancouver-tech-events .vte-member {
-  margin: 0 0 1.75rem;
-  padding: 1rem 1rem 1.1rem;
-  border: 1px solid rgba(95, 247, 205, 0.42);
-  border-radius: 12px;
-  background:
-    linear-gradient(160deg, rgba(8, 36, 42, 0.88), rgba(4, 18, 34, 0.72)),
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 3px,
-      rgba(95, 247, 205, 0.04) 3px,
-      rgba(95, 247, 205, 0.04) 4px
-    );
-  box-shadow: inset 0 0 0 1px rgba(91, 184, 255, 0.12);
-}
-
-.vancouver-tech-events .vte-member__kicker {
-  margin: 0 0 0.4rem;
-  color: #9bf7dc;
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.vancouver-tech-events .vte-member h2 {
-  margin: 0 0 0.45rem;
-  color: #e8fff7;
-  font-size: 1.15rem;
-}
-
-.vancouver-tech-events .vte-member__intro {
-  margin: 0 0 0.9rem;
-  color: #c8ebff;
-  line-height: 1.5;
-}
-
-.vancouver-tech-events .vte-event--member {
-  border-color: rgba(95, 247, 205, 0.5);
-  background: rgba(8, 40, 44, 0.55);
-}
-
-.vancouver-tech-events .vte-member-badge {
-  display: inline-block;
-  margin: 0 0 0.45rem;
-  color: #9bf7dc;
-  font-size: 0.58rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.vancouver-tech-events .vte-event-list--member {
-  gap: 12px;
-}
-
 .vancouver-tech-events .vte-spotlight {
   margin: 0 0 1.75rem;
   padding: 1rem 1rem 1.1rem;
