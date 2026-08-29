@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "gallery": {
+    "publicTitle": "MACHINE VISIONS",
+    "appName": "Moving Picture Machine",
+    "route": "/ai-art/",
+    "eyebrow": "SYNTHETIC IMAGE LAB // VANCOUVER",
+    "intro": "AI-assisted films, stills and visual experiments by Suzy Easton — made through prompting, editing, sound, code, iteration and the occasional beautiful failure.",
+    "processNote": "These works use generative AI as material, not autopilot. Each project records the tools, inputs and human choices behind it.",
+    "emptyState": "FIRST TRANSMISSION IN RENDER QUEUE",
+    "ctaHeading": "Make something strange and useful.",
+    "ctaButton": "Work with Suzy",
+    "ctaHref": "/work-with-suzy/"
+  },
+  "works": []
+}

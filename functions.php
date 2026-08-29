@@ -37,6 +37,7 @@ require_once get_template_directory() . '/inc/home-yvr-broadcaster.php';
 require_once get_template_directory() . '/inc/shop.php';
 require_once get_template_directory() . '/inc/seo.php';
 require_once get_template_directory() . '/inc/blog.php';
+require_once get_template_directory() . '/inc/ai-art.php';
 /**
  * Functions file for Suzy’s Music Theme
  *   - Canucks App Integration (News + Betting)

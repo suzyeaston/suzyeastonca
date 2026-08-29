@@ -32,6 +32,7 @@
             <a href="<?php echo esc_url( home_url( '/blog/' ) ); ?>">Meanwhile</a>
             <a href="<?php echo esc_url( home_url( '/work-with-suzy/' ) ); ?>">Work With Suzy</a>
             <a href="<?php echo esc_url( home_url( '/asmr-lab/' ) ); ?>">ASMR Lab</a>
+            <a href="<?php echo esc_url( home_url( '/ai-art/' ) ); ?>">MACHINE VISIONS</a>
             <a href="<?php echo esc_url( home_url( '/suzys-track-analyzer/' ) ); ?>">Track Analyzer</a>
             <a href="<?php echo esc_url( home_url( '/riff-generator/' ) ); ?>">Riff Generator</a>
             <a href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>">Lousy Outages</a>

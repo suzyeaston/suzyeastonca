@@ -15,6 +15,8 @@ Some projects are polished. Some are mid-mutation. All of them have survived con
 - [Vancouver Tech Events](https://suzyeaston.ca/vancouver-tech-events/)
 - [Gastown Simulator](https://suzyeaston.ca/gastown-sim/)
 - [Track Analyzer](https://suzyeaston.ca/suzys-track-analyzer/)
+- [ASMR Lab](https://suzyeaston.ca/asmr-lab/)
+- [MACHINE VISIONS](https://suzyeaston.ca/ai-art/)
 - [Work with Suzy](https://suzyeaston.ca/work-with-suzy/)
 
 ## What this is

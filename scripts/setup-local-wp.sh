@@ -87,6 +87,7 @@ create_or_update_page "Projects" "projects" "page-projects.php" >/dev/null
 create_or_update_page "Suzy's Track Analyzer" "suzys-track-analyzer" "page-track-analyzer.php" >/dev/null
 create_or_update_page "Gastown Simulator" "gastown-sim" "page-gastown-sim.php" >/dev/null
 create_or_update_page "ASMR Lab" "asmr-lab" "page-asmr-lab.php" >/dev/null
+create_or_update_page "MACHINE VISIONS" "ai-art" "page-ai-art.php" >/dev/null
 create_or_update_page "Albini Q&A" "albini-qa" "page-albini-qa.php" >/dev/null
 create_or_update_page "Music Releases" "music-releases" "page-music-releases.php" >/dev/null
 create_or_update_page "Riff Generator" "riff-generator" "page-riff-generator.php" >/dev/null

@@ -7,6 +7,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "test": "node --test \"./__tests__/**/*.test.js\"",
+    "import:ai-art": "node scripts/import-ai-art-bundle.js",
     "build:gastown-world": "npm run sync:cov && node scripts/build-gastown-world.js",
     "sync:cov": "node scripts/sync-cov-open-data.js",
     "local:start": "docker compose up -d",

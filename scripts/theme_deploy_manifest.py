@@ -59,6 +59,7 @@ THEME_FILES = [
     "inc/shop.php",
     "inc/seo.php",
     "inc/blog.php",
+    "inc/ai-art.php",
     "functions.php",
     "style.css",
     "header.php",
@@ -75,6 +76,7 @@ THEME_FILES = [
     "page-lousy-outages-account.php",
     "page-pacific-power-play.php",
     "page-projects.php",
+    "page-ai-art.php",
     "page-vancouver-tech-events.php",
     "parts/home-commercial-strip.php",
     "parts/home-feature-previews.php",
@@ -110,6 +112,9 @@ THEME_FILES = [
     "assets/css/lousy-outages-theme-isolation.css",
     "assets/css/lousy-outages-teaser.css",
     "assets/js/lousy-outages-teaser.js",
+    "assets/css/ai-art.css",
+    "assets/data/ai-art/works.json",
+    "js/ai-art.js",
 ]
 
 REQUIRE_PATTERN = re.compile(
