@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://suzyeaston.ca/schemas/ai-art-publish-bundle.schema.json",
+  "title": "AI Art Publish Bundle",
+  "description": "Provider-neutral publish bundle for MACHINE VISIONS / Moving Picture Machine. Public metadata only — no private prompts, secrets, absolute local paths, or rejected generations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "artwork"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "exporter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app": { "type": "string" },
+        "appVersion": { "type": "string" }
+      }
+    },
+    "artwork": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "status",
+        "title",
+        "date",
+        "kind",
+        "description",
+        "alt",
+        "src",
+        "thumbnailSrc",
+        "width",
+        "height",
+        "tags",
+        "tools",
+        "humanContribution",
+        "featured",
+        "sortOrder"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "title": { "type": "string", "minLength": 1 },
+        "date": { "type": "string", "format": "date" },
+        "kind": { "type": "string", "enum": ["film", "still", "loop", "process"] },
+        "description": { "type": "string" },
+        "artistNote": { "type": "string" },
+        "alt": { "type": "string", "minLength": 1 },
+        "src": { "type": "string", "minLength": 1 },
+        "thumbnailSrc": { "type": "string", "minLength": 1 },
+        "posterSrc": { "type": "string" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "durationSeconds": { "type": "number", "minimum": 0 },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "model": { "type": "string" },
+              "role": { "type": "string" }
+            }
+          }
+        },
+        "humanContribution": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "promptExcerpt": { "type": "string" },
+        "credits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label", "value"],
+            "properties": {
+              "label": { "type": "string" },
+              "value": { "type": "string" },
+              "url": { "type": "string" }
+            }
+          }
+        },
+        "contentCredentialsUrl": { "type": "string" },
+        "audioDescription": { "type": "string" },
+        "captionsSrc": { "type": "string" },
+        "transcript": { "type": "string" },
+        "mediaHashes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "disclosureSummary": { "type": "string" },
+        "featured": { "type": "boolean" },
+        "sortOrder": { "type": "integer" }
+      }
+    },
+    "mediaFiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "role", "sha256"],
+        "properties": {
+          "path": { "type": "string" },
+          "role": {
+            "type": "string",
+            "enum": ["primary", "poster", "thumbnail", "captions", "provenance"]
+          },
+          "mimeType": { "type": "string" },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

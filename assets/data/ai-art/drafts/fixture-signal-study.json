@@ -1,0 +1,28 @@
+{
+  "id": "draft-signal-study-001",
+  "slug": "signal-study-001",
+  "status": "draft",
+  "title": "Signal Study 001",
+  "date": "2026-08-01",
+  "kind": "still",
+  "description": "Development fixture only. Not a finished public work.",
+  "artistNote": "Kept as a draft so empty-state and import tooling can be tested without inventing finished art.",
+  "alt": "Placeholder dark frame with faint green scan lines and a soft magenta bloom.",
+  "src": "drafts/media/signal-study-001.svg",
+  "thumbnailSrc": "drafts/media/signal-study-001.svg",
+  "width": 1280,
+  "height": 720,
+  "tags": ["fixture", "process"],
+  "tools": [
+    { "name": "Moving Picture Machine", "role": "authoring" },
+    { "name": "MockProvider", "model": "mock-still-v1", "role": "generation" }
+  ],
+  "humanContribution": [
+    "continuity brief",
+    "prompt composition",
+    "selection and framing"
+  ],
+  "promptExcerpt": "night signal desk, restrained neon bleed, no faces",
+  "featured": false,
+  "sortOrder": 999
+}

@@ -260,6 +260,11 @@ function se_page_meta() {
 		$meta_title = 'ASMR Lab – experimental predecessor now under major redevelopment';
 		$meta_desc  = 'ASMR Lab is Suzy\'s earlier audio/visual prototype that inspired the Gastown simulator and is now being rebuilt in public.';
 		$keywords   = 'ASMR Lab, Gastown simulator predecessor, creative tech prototype, Suzy Easton';
+	} elseif ( is_page_template( 'page-ai-art.php' ) || is_page( 'ai-art' ) ) {
+		$ai_art     = function_exists( 'se_ai_art_meta' ) ? se_ai_art_meta() : [];
+		$meta_title = (string) ( $ai_art['title'] ?? 'MACHINE VISIONS | Suzy Easton' );
+		$meta_desc  = (string) ( $ai_art['description'] ?? 'AI-assisted films, stills and visual experiments by Suzy Easton.' );
+		$keywords   = (string) ( $ai_art['keywords'] ?? 'MACHINE VISIONS, AI art, Suzy Easton' );
 	} elseif ( is_page_template( 'page-lousy-outages.php' ) ) {
 		$meta_title = 'Lousy Outages | Status dashboard for modern chaos';
 		$meta_desc  = 'A retro status dashboard for provider incidents, SaaS weirdness, community reports, and alerts when things go sideways.';
@@ -340,6 +345,10 @@ function se_page_structured_data() {
 
 	if ( is_page_template( 'page-work-with-suzy.php' ) || is_page( 'work-with-suzy' ) ) {
 		return se_work_with_suzy_structured_data();
+	}
+
+	if ( ( is_page_template( 'page-ai-art.php' ) || is_page( 'ai-art' ) ) && function_exists( 'se_ai_art_structured_data' ) ) {
+		return se_ai_art_structured_data();
 	}
 
 	if ( ( is_page_template( 'page-shop.php' ) || is_page( 'shop' ) ) && function_exists( 'se_shop_structured_data' ) ) {

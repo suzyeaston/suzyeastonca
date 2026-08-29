@@ -112,6 +112,14 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
                         <a class="pixel-button" href="<?php echo esc_url($project_url('albini-qa')); ?>">Open project</a>
                     </div>
                 </article>
+
+                <article class="projects-card">
+                    <h3 class="pixel-font">MACHINE VISIONS</h3>
+                    <p>AI-assisted films, stills, and process notes. Exhibition layer for work built in the Moving Picture Machine.</p>
+                    <div class="projects-card__actions">
+                        <a class="pixel-button" href="<?php echo esc_url($project_url('ai-art', '/ai-art/')); ?>">Open gallery</a>
+                    </div>
+                </article>
             </div>
         </section>
     </div>
