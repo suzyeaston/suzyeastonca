@@ -666,11 +666,97 @@ function suzy_fetch_vancouver_tech_events_from_luma_calendar( array $source, boo
 }
 
 /**
+ * Whether an event is the canonical Futureproof Festival.
+ *
+ * Matches the Luma slug futureproof-festival, or a clearly equivalent
+ * "Futureproof Festival…" title. Intentionally narrow — not fuzzy title matching.
+ *
+ * @param array<string, mixed> $event Event.
+ */
+function suzy_vte_is_futureproof_event( array $event ): bool {
+    $url   = strtolower( (string) ( $event['url'] ?? '' ) );
+    $title = strtolower( trim( (string) ( $event['title'] ?? '' ) ) );
+
+    if ( false !== strpos( $url, 'futureproof-festival' ) ) {
+        return true;
+    }
+
+    return (bool) preg_match( '/\bfutureproof\s+festival\b/', $title );
+}
+
+/**
+ * Stable identity key for cross-source event dedupe.
+ *
+ * Futureproof records share one canonical key so curated + live copies collapse.
+ * All other events keep title|start|location equality.
+ *
+ * @param array<string, mixed> $event Event.
+ */
+function suzy_vte_event_identity_key( array $event ): string {
+    if ( suzy_vte_is_futureproof_event( $event ) ) {
+        return 'futureproof-festival-2026';
+    }
+
+    $title    = strtolower( trim( (string) ( $event['title'] ?? '' ) ) );
+    $start    = isset( $event['start'] ) ? (int) $event['start'] : 0;
+    $location = isset( $event['location'] ) ? strtolower( trim( (string) $event['location'] ) ) : '';
+
+    if ( '' === $title ) {
+        return '';
+    }
+
+    return $title . '|' . $start . '|' . $location;
+}
+
+/**
+ * Merge two Futureproof (or other same-identity) records into one.
+ *
+ * Prefer populated fields from $preferred (live Luma/BC+AI); $fallback (curated)
+ * only fills blanks. Always preserves spotlight => true for Futureproof.
+ *
+ * @param array<string, mixed> $preferred Preferred (usually live) record.
+ * @param array<string, mixed> $fallback  Fallback (usually curated) record.
+ * @return array<string, mixed>
+ */
+function suzy_vte_merge_event_records( array $preferred, array $fallback ): array {
+    $merged = $preferred;
+
+    foreach ( [ 'title', 'start', 'end', 'location', 'url', 'source' ] as $field ) {
+        $pref_value = $preferred[ $field ] ?? null;
+        $pref_empty = null === $pref_value || '' === $pref_value;
+
+        if ( $pref_empty ) {
+            $fallback_value = $fallback[ $field ] ?? null;
+            if ( null !== $fallback_value && '' !== $fallback_value ) {
+                $merged[ $field ] = $fallback_value;
+            }
+        }
+    }
+
+    if ( suzy_vte_is_futureproof_event( $preferred ) || suzy_vte_is_futureproof_event( $fallback ) ) {
+        $merged['spotlight'] = true;
+    } elseif ( ! empty( $preferred['spotlight'] ) || ! empty( $fallback['spotlight'] ) ) {
+        $merged['spotlight'] = true;
+    }
+
+    // Curated is only a fallback marker — drop it once merged into a live record.
+    if ( empty( $preferred['curated'] ) ) {
+        unset( $merged['curated'] );
+    }
+
+    return $merged;
+}
+
+/**
  * Build a stable dedupe key for a normalized event.
  *
  * @param array<string, mixed> $event Event.
  */
 function suzy_vte_event_dedupe_key( array $event ): string {
+    if ( suzy_vte_is_futureproof_event( $event ) ) {
+        return suzy_vte_event_identity_key( $event );
+    }
+
     $title    = strtolower( trim( (string) ( $event['title'] ?? '' ) ) );
     $start    = isset( $event['start'] ) ? (int) $event['start'] : 0;
     $location = isset( $event['location'] ) ? strtolower( trim( (string) $event['location'] ) ) : '';
@@ -1488,7 +1574,7 @@ function suzy_vte_make_absolute_url( string $url, string $base_url ): string {
 }
 
 /**
- * Curated spotlight event(s). Futureproof only.
+ * Curated Futureproof spotlight — FALLBACK only when the live Luma event is missing.
  *
  * @return array<int, array<string, mixed>>
  */
@@ -1511,6 +1597,7 @@ function suzy_get_vancouver_tech_spotlight_events(): array {
             'url'       => 'https://luma.com/futureproof-festival',
             'source'    => 'BC + AI Events',
             'spotlight' => true,
+            'curated'   => true,
         ],
     ];
 
@@ -1532,7 +1619,7 @@ function suzy_get_vancouver_tech_spotlight_events(): array {
 function suzy_get_vancouver_tech_events(): array {
     // Only show debug output when explicitly requested AND user is an admin.
     $debug          = ( isset( $_GET['vte_debug'] ) && '1' === $_GET['vte_debug'] && current_user_can( 'manage_options' ) );
-    $transient_key  = 'suzy_vancouver_tech_events_cache_v4';
+    $transient_key  = 'suzy_vancouver_tech_events_cache_v5';
     $cached         = $debug ? false : get_transient( $transient_key );
     $debug_report   = [];
     $cache_bypassed = $debug;
@@ -1546,13 +1633,12 @@ function suzy_get_vancouver_tech_events(): array {
     }
 
     $events = suzy_fetch_vancouver_tech_events_raw( $debug, $debug_report );
-    $events = array_merge( suzy_get_vancouver_tech_spotlight_events(), $events );
+    // Curated Futureproof is appended as a fallback; live Luma wins on merge.
+    $events = array_merge( $events, suzy_get_vancouver_tech_spotlight_events() );
 
     // Mark Futureproof as the only spotlight — no membership / source bias.
     foreach ( $events as &$event ) {
-        $url   = strtolower( (string) ( $event['url'] ?? '' ) );
-        $title = strtolower( (string) ( $event['title'] ?? '' ) );
-        if ( false !== strpos( $url, 'futureproof-festival' ) || false !== strpos( $title, 'futureproof festival' ) ) {
+        if ( suzy_vte_is_futureproof_event( $event ) ) {
             $event['spotlight'] = true;
         } else {
             unset( $event['member'], $event['spotlight'] );
@@ -1574,20 +1660,34 @@ function suzy_get_vancouver_tech_events(): array {
         }
     );
 
-    // Dedupe across sources based on title, start, and location.
-    // Prefer spotlight copies when two sources list the same event.
+    // Dedupe across sources. Futureproof uses a canonical identity so curated +
+    // live copies (different titles) collapse into one spotlight record.
     $seen_keys = [];
     $deduped   = [];
 
     foreach ( $events as $event ) {
-        $title    = strtolower( trim( $event['title'] ?? '' ) );
-        $start    = isset( $event['start'] ) ? (int) $event['start'] : 0;
-        $location = isset( $event['location'] ) ? strtolower( trim( (string) $event['location'] ) ) : '';
-        $key      = $title . '|' . $start . '|' . $location;
+        $key = suzy_vte_event_identity_key( $event );
+        if ( '' === $key ) {
+            continue;
+        }
 
         if ( isset( $seen_keys[ $key ] ) ) {
             $existing_index = $seen_keys[ $key ];
-            if ( ! empty( $event['spotlight'] ) ) {
+            $existing       = $deduped[ $existing_index ];
+
+            if ( suzy_vte_is_futureproof_event( $event ) || suzy_vte_is_futureproof_event( $existing ) ) {
+                // Prefer live (non-curated) fields; curated only fills blanks.
+                $existing_curated = ! empty( $existing['curated'] );
+                $incoming_curated = ! empty( $event['curated'] );
+
+                if ( $existing_curated && ! $incoming_curated ) {
+                    $deduped[ $existing_index ] = suzy_vte_merge_event_records( $event, $existing );
+                } elseif ( ! $existing_curated && $incoming_curated ) {
+                    $deduped[ $existing_index ] = suzy_vte_merge_event_records( $existing, $event );
+                } else {
+                    $deduped[ $existing_index ] = suzy_vte_merge_event_records( $existing, $event );
+                }
+            } elseif ( ! empty( $event['spotlight'] ) ) {
                 $deduped[ $existing_index ]['spotlight'] = true;
             }
             continue;
@@ -1598,6 +1698,15 @@ function suzy_get_vancouver_tech_events(): array {
     }
 
     $events = $deduped;
+
+    // Internal fallback marker — never expose on the public feed.
+    $events = array_map(
+        static function ( $event ) {
+            unset( $event['curated'] );
+            return $event;
+        },
+        $events
+    );
 
     // Sort ascending by start time.
     usort(
@@ -1666,8 +1775,13 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                 )
             );
 
+            // Spotlight renders in its dedicated section only — skip it here
+            // so Futureproof does not also appear in the chronological list.
             $events_by_date = [];
             foreach ( $events as $event ) {
+                if ( ! empty( $event['spotlight'] ) ) {
+                    continue;
+                }
                 $start    = isset( $event['start'] ) ? (int) $event['start'] : time();
                 $date_key = wp_date( 'Y-m-d', $start );
                 if ( ! isset( $events_by_date[ $date_key ] ) ) {
