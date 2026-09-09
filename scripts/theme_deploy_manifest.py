@@ -78,6 +78,7 @@ THEME_FILES = [
     "page-projects.php",
     "page-ai-art.php",
     "page-vancouver-tech-events.php",
+    "page-loop-lab.php",
     "parts/home-commercial-strip.php",
     "parts/home-feature-previews.php",
     "parts/home-hire-strip.php",
@@ -115,6 +116,8 @@ THEME_FILES = [
     "assets/css/ai-art.css",
     "assets/data/ai-art/works.json",
     "js/ai-art.js",
+    "assets/css/loop-lab.css",
+    "js/loop-lab.js",
 ]
 
 REQUIRE_PATTERN = re.compile(

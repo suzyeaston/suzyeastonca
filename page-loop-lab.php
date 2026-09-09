@@ -27,7 +27,9 @@ get_header();
       <div class="loop-lab-controls" role="group" aria-label="Recording controls">
         <button type="button" class="loop-lab-record" data-loop-record>record first loop</button>
         <button type="button" class="pixel-button secondary" data-loop-stop disabled>stop</button>
-        <button type="button" class="pixel-button secondary" data-loop-reset disabled>restart</button>
+        <button type="button" class="pixel-button secondary" data-loop-restart disabled>restart loop</button>
+        <button type="button" class="pixel-button secondary" data-loop-export disabled>export mix</button>
+        <button type="button" class="pixel-button secondary loop-lab-danger" data-loop-clear disabled>clear tape</button>
       </div>
 
       <p class="loop-lab-message" data-loop-message role="status" aria-live="polite">first move: make sound into the mic.</p>
@@ -46,8 +48,20 @@ get_header();
       <ol class="loop-lab-layer-list" data-loop-layers></ol>
     </section>
 
+    <dialog class="loop-lab-dialog" data-loop-clear-dialog role="dialog" aria-modal="true" aria-labelledby="loop-clear-title" aria-describedby="loop-clear-copy">
+      <div class="loop-lab-dialog__inner">
+        <h2 class="loop-lab-dialog__title pixel-font" id="loop-clear-title">clear the tape?</h2>
+        <p class="loop-lab-dialog__copy" id="loop-clear-copy">this removes every recorded layer. you can&rsquo;t undo this.</p>
+        <div class="loop-lab-dialog__actions">
+          <button type="button" class="loop-lab-dialog__keep" data-loop-clear-cancel>keep it</button>
+          <button type="button" class="loop-lab-danger" data-loop-clear-confirm>clear tape</button>
+        </div>
+      </div>
+    </dialog>
+
     <aside class="loop-lab-note" aria-label="Prototype notes">
       <p><strong>prototype note:</strong> this records local browser audio only. no upload. no AI costume.</p>
+      <p>export mix prints the unmuted layers to a wav on your machine. nothing leaves the browser.</p>
       <p>overdubs play while you record. browsers do not guarantee studio-tight sync, and speaker bleed can sneak into the mic. headphones help.</p>
     </aside>
   </section>
