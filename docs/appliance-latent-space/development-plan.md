@@ -6,9 +6,9 @@ Each phase has to be shippable and tested before the next one starts. Nothing he
 
 Define the vocabulary and prove it resolves, with no page and no sound.
 
-1. `control-map.json`, `js/appliance-control-map.js`, these documents, and their tests. **← current step**
-2. `page-appliance-latent-space.php` and `assets/css/appliance-latent-space.css`. Static markup, inert controls, bidirectional parity test against the JSON.
-3. `functions.php` enqueue and `se_appliance_control_map()`, `THEME_FILES` entries in `scripts/theme_deploy_manifest.py`, and a page line in `scripts/setup-local-wp.sh`.
+1. `control-map.json`, `js/appliance-control-map.js`, these documents, and their tests. **Done.**
+2. `page-appliance-latent-space.php` and `assets/css/appliance-latent-space.css`. Static markup, inert controls, bidirectional parity test against the JSON. **Done.**
+3. `functions.php` enqueue and `se_appliance_control_map()`, and a page line in `scripts/setup-local-wp.sh`. **← current step**
 4. `js/appliance-latent-space.js`: pointer and keyboard input resolved through the control map into control events, shown in a status readout. Still silent.
 5. A Web Audio test-tone engine behind the control-event path. Oscillators and gain only.
 6. Add `/appliance-latent-space/` to `criticalPages` in `tests/e2e/site-smoke.spec.js`.
@@ -37,3 +37,4 @@ Model inference, and the point at which `neural_mix` stops being aspirational. N
 - No microphone capture and no uploads. Everything stays in the browser.
 - Existing production functionality stays untouched. No unrelated refactors, including to Loop Lab.
 - Any new file under a deployable path must be added to `THEME_FILES` in the same commit.
+- Page copy never claims a model is running. Saying one is *not* running is fine; a test enforces the direction.

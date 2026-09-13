@@ -26,9 +26,19 @@ Everything that needs a browser lives outside it.
 | `assets/data/appliance-latent-space/control-map.json` | Source of truth for the vocabulary |
 | `js/appliance-control-map.js` | Validation and binding resolution (UMD, pure) |
 | `__tests__/appliance-latent-space.test.js` | Automated tests |
-| `page-appliance-latent-space.php` | Page template (not built yet) |
-| `assets/css/appliance-latent-space.css` | Page styles (not built yet) |
+| `page-appliance-latent-space.php` | Page template and control surface markup |
+| `assets/css/appliance-latent-space.css` | Page styles, scoped under `.appliance-page` |
 | `js/appliance-latent-space.js` | DOM wiring and Web Audio engine (not built yet) |
+
+## The control surface
+
+Controls are native form elements, not styled divs. Continuous controls are `<input type="range">` with `min`, `max`, `step` and `value` taken from the map. Momentary and toggle controls are `<button type="button">`, and toggles carry `aria-pressed`. Groups are `<fieldset>` with a `<legend>`, so the four groupings are real structure rather than headings that look like structure.
+
+Every interactive element carries `data-control="<id>"` and nothing else does — readouts use `data-control-readout` instead. That keeps the attribute unambiguous as the thing JavaScript binds to, and lets the tests treat it as the template's claim about which controls exist. The parity tests run that claim against the JSON in both directions, so a control cannot be added to one without the other.
+
+Keyboard hints are shown twice on purpose: a visible `<kbd>` chip that is `aria-hidden`, and the same key named in the hint text that `aria-describedby` points at. Screen readers get it once, sighted players get the chip. The space binding renders as `SPACE`, never as a literal space.
+
+All CSS is scoped under `.appliance-page`, including the bare-element and pseudo-element rules that style the sliders. A test walks every selector in the stylesheet and fails on any that could reach the rest of the site.
 
 ## How the map reaches the browser
 

@@ -12,9 +12,10 @@ What exists:
 
 - `assets/data/appliance-latent-space/control-map.json` — the shared control vocabulary
 - `js/appliance-control-map.js` — validation and binding resolution, no DOM, no audio
-- `__tests__/appliance-latent-space.test.js` — automated tests for both
+- `page-appliance-latent-space.php` and `assets/css/appliance-latent-space.css` — the control surface, static and inert
+- `__tests__/appliance-latent-space.test.js` — automated tests for all of it
 
-What does not exist yet: the page template, the audio engine, Web MIDI, any hardware, any model.
+What does not exist yet: the enqueue, any browser behaviour, the audio engine, Web MIDI, any hardware, any model. The page is not registered in WordPress and is not linked from anywhere.
 
 ## Documents
 
