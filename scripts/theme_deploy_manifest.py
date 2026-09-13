@@ -118,6 +118,10 @@ THEME_FILES = [
     "js/ai-art.js",
     "assets/css/loop-lab.css",
     "js/loop-lab.js",
+    "page-appliance-latent-space.php",
+    "assets/css/appliance-latent-space.css",
+    "assets/data/appliance-latent-space/control-map.json",
+    "js/appliance-control-map.js",
 ]
 
 REQUIRE_PATTERN = re.compile(
