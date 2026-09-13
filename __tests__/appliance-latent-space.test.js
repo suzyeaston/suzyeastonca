@@ -21,6 +21,47 @@ const RAW_MAP = JSON.parse(fs.readFileSync(CONTROL_MAP_PATH, 'utf8'));
 const MAP = normalizeControlMap(RAW_MAP);
 const CONTROL_MAP_DOC = fs.readFileSync(path.join(ROOT, 'docs', 'appliance-latent-space', 'control-map.md'), 'utf8');
 const MODULE_SOURCE = fs.readFileSync(path.join(ROOT, 'js', 'appliance-control-map.js'), 'utf8');
+const TEMPLATE = fs.readFileSync(path.join(ROOT, 'page-appliance-latent-space.php'), 'utf8');
+const STYLES = fs.readFileSync(path.join(ROOT, 'assets', 'css', 'appliance-latent-space.css'), 'utf8');
+
+// Interactive elements are the only things allowed to carry data-control, so this doubles
+// as the list of controls the template claims to expose.
+function templateControlTags() {
+  const tags = [];
+  const pattern = /<(input|button|select|textarea)\b[^>]*\bdata-control="([^"]*)"[^>]*>/g;
+  let match = pattern.exec(TEMPLATE);
+  while (match) {
+    tags.push({ element: match[1], id: match[2], markup: match[0] });
+    match = pattern.exec(TEMPLATE);
+  }
+  return tags;
+}
+
+function attribute(markup, name) {
+  const match = markup.match(new RegExp(`\\b${name}="([^"]*)"`));
+  return match ? match[1] : null;
+}
+
+function keyHint(control) {
+  return control.keyboard.key === ' ' ? 'SPACE' : control.keyboard.key.toUpperCase();
+}
+
+// Splits the stylesheet into the selector list in front of every declaration block.
+function styleSelectors() {
+  const withoutComments = STYLES.replace(/\/\*[\s\S]*?\*\//g, '');
+  const selectors = [];
+  const pattern = /([^{}]+)\{/g;
+  let match = pattern.exec(withoutComments);
+  while (match) {
+    match[1]
+      .split(',')
+      .map((selector) => selector.trim())
+      .filter(Boolean)
+      .forEach((selector) => selectors.push(selector));
+    match = pattern.exec(withoutComments);
+  }
+  return selectors;
+}
 
 const EXPECTED_IDS = [
   'browning',
@@ -297,8 +338,127 @@ test('control events clamp their value and reject unknown sources', () => {
   assert.equal(createControlEvent(null, 1), null);
 });
 
+test('the template exposes exactly the controls the map declares', () => {
+  const rendered = templateControlTags().map((tag) => tag.id);
+  assert.deepEqual(rendered.slice().sort(), EXPECTED_IDS.slice().sort(), 'template and control map disagree');
+  assert.equal(new Set(rendered).size, rendered.length, 'a control is rendered more than once');
+});
+
+test('every rendered control id resolves against the control map', () => {
+  for (const tag of templateControlTags()) {
+    assert.ok(controlById(MAP, tag.id), `template renders ${tag.id}, which the control map does not define`);
+  }
+});
+
+test('continuous controls render as native range inputs matching the map', () => {
+  for (const control of MAP.controls.filter((entry) => entry.kind === 'continuous')) {
+    const tag = templateControlTags().find((entry) => entry.id === control.id);
+    assert.equal(tag.element, 'input', `${control.id} must be an input`);
+    assert.equal(attribute(tag.markup, 'type'), 'range', `${control.id} must be a range input`);
+    assert.equal(Number(attribute(tag.markup, 'min')), control.range[0], `${control.id} min drifted from the map`);
+    assert.equal(Number(attribute(tag.markup, 'max')), control.range[1], `${control.id} max drifted from the map`);
+    assert.equal(Number(attribute(tag.markup, 'step')), control.keyboard.step, `${control.id} step drifted from the map`);
+    assert.equal(Number(attribute(tag.markup, 'value')), control.default, `${control.id} value drifted from the map`);
+  }
+});
+
+test('momentary and toggle controls render as native buttons', () => {
+  for (const control of MAP.controls.filter((entry) => entry.kind !== 'continuous')) {
+    const tag = templateControlTags().find((entry) => entry.id === control.id);
+    assert.equal(tag.element, 'button', `${control.id} must be a button`);
+    assert.equal(attribute(tag.markup, 'type'), 'button', `${control.id} must not submit anything`);
+    const pressed = attribute(tag.markup, 'aria-pressed');
+    if (control.kind === 'toggle') assert.equal(pressed, 'false', `${control.id} needs a starting pressed state`);
+    else assert.equal(pressed, null, `${control.id} is momentary and should not claim a pressed state`);
+  }
+});
+
+test('every control sits inside its declared group', () => {
+  const groupPattern = /data-control-group="([a-z_]+)"([\s\S]*?)<\/fieldset>/g;
+  const rendered = {};
+  let match = groupPattern.exec(TEMPLATE);
+  while (match) {
+    rendered[match[1]] = match[2];
+    match = groupPattern.exec(TEMPLATE);
+  }
+
+  assert.deepEqual(Object.keys(rendered), MAP.groups.map((group) => group.id));
+  for (const control of MAP.controls) {
+    assert.match(rendered[control.group], new RegExp(`data-control="${control.id}"`), `${control.id} is outside the ${control.group} group`);
+  }
+});
+
+test('groups render as fieldsets with a visible legend', () => {
+  for (const group of MAP.groups) {
+    assert.match(TEMPLATE, new RegExp(`<fieldset[^>]*data-control-group="${group.id}"`), `${group.id} must be a fieldset`);
+    assert.match(TEMPLATE, new RegExp(`<legend[^>]*>${group.label}</legend>`), `${group.id} needs a legend`);
+  }
+});
+
+test('every control shows its keyboard hint, with space spelled out', () => {
+  for (const control of MAP.controls) {
+    const hint = keyHint(control);
+    assert.match(TEMPLATE, new RegExp(`<kbd[^>]*>${hint}</kbd>`), `${control.id} is missing its ${hint} key chip`);
+    assert.match(TEMPLATE, new RegExp(`id="appliance-hint-${control.id}"[^>]*>[^<]*key ${hint}`), `${control.id} hint text should name its key`);
+  }
+  assert.match(TEMPLATE, /<kbd[^>]*>SPACE<\/kbd>/);
+  assert.doesNotMatch(TEMPLATE, /<kbd[^>]*> <\/kbd>/, 'the space binding must never render as a literal space');
+});
+
+test('controls are described and labelled for assistive tech', () => {
+  for (const tag of templateControlTags()) {
+    assert.equal(attribute(tag.markup, 'aria-describedby'), `appliance-hint-${tag.id}`, `${tag.id} needs its hint wired up`);
+  }
+  for (const control of MAP.controls.filter((entry) => entry.kind === 'continuous')) {
+    assert.match(TEMPLATE, new RegExp(`<label[^>]*for="appliance-control-${control.id}"[^>]*>${control.label}</label>`), `${control.id} needs a real label`);
+  }
+});
+
+test('the template registers itself the way every other page template does', () => {
+  assert.match(TEMPLATE, /^<\?php\s*\/\*\s*Template Name: Appliance Latent Space\s*\*\//);
+  assert.match(TEMPLATE, /^get_header\(\);$/m);
+  assert.match(TEMPLATE, /<\?php get_footer\(\); \?>\s*$/);
+  assert.equal((TEMPLATE.match(/<\?php/g) || []).length, (TEMPLATE.match(/\?>/g) || []).length);
+});
+
+test('the template is static markup with no behaviour attached yet', () => {
+  assert.match(TEMPLATE, /id="appliance-latent-space-app"/);
+  assert.doesNotMatch(TEMPLATE, /<script/i);
+  assert.doesNotMatch(TEMPLATE, /\son[a-z]+="/i, 'no inline event handlers');
+});
+
+test('status copy states the prototype has no model and no sound', () => {
+  assert.match(TEMPLATE, /no audio engine behind them yet/);
+  assert.match(TEMPLATE, /no model is running/);
+  assert.doesNotMatch(TEMPLATE, /ai-powered|powered by ai|neural network/i);
+  // The page may say a model is not running. It may never say one is.
+  assert.doesNotMatch(TEMPLATE, /(?<!no )(model|inference) is running/i);
+  assert.doesNotMatch(TEMPLATE, /seamless|innovative|cutting-edge|leverage/i);
+});
+
+test('every style rule is scoped to the appliance page', () => {
+  const selectors = styleSelectors();
+  assert.ok(selectors.length > 20, 'expected a real stylesheet');
+  for (const selector of selectors) {
+    if (selector.startsWith('@') || /^(from|to|\d+%)$/.test(selector)) continue;
+    assert.ok(
+      selector === '.appliance-page' || selector.startsWith('.appliance-page '),
+      `unscoped selector would leak into the rest of the site: ${selector}`
+    );
+  }
+});
+
+test('slider pseudo-elements stay in separate rules per engine', () => {
+  assert.doesNotMatch(STYLES, /::-webkit-[^{,]*,[^{]*::-moz-/);
+  assert.doesNotMatch(STYLES, /::-moz-[^{,]*,[^{]*::-webkit-/);
+  assert.match(STYLES, /::-webkit-slider-runnable-track/);
+  assert.match(STYLES, /::-moz-range-track/);
+});
+
 test('appliance runtime files are listed in the theme deploy manifest', () => {
   const manifest = fs.readFileSync(path.join(ROOT, 'scripts', 'theme_deploy_manifest.py'), 'utf8');
+  assert.match(manifest, /"page-appliance-latent-space\.php"/);
+  assert.match(manifest, /"assets\/css\/appliance-latent-space\.css"/);
   assert.match(manifest, /"assets\/data\/appliance-latent-space\/control-map\.json"/);
   assert.match(manifest, /"js\/appliance-control-map\.js"/);
 });

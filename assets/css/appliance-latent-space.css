@@ -1,0 +1,299 @@
+/* The Appliance Latent Space control surface.
+   Every selector is scoped under .appliance-page so nothing reaches the rest of the site. */
+
+.appliance-page {
+  min-height: 100vh;
+  padding: 2rem 1rem 4rem;
+  background:
+    radial-gradient(circle at 12% 0, rgba(255, 138, 61, .16), transparent 30rem),
+    radial-gradient(circle at 88% 12%, rgba(124, 96, 255, .10), transparent 28rem),
+    #0b0a09;
+  color: #e9ded2;
+}
+
+.appliance-page .appliance-shell {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+/* Faceplate: warm metal, silk-screened labels, visible fasteners. */
+.appliance-page .appliance-hero,
+.appliance-page .appliance-status,
+.appliance-page .appliance-group,
+.appliance-page .appliance-note {
+  position: relative;
+  border: 2px solid #47392d;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .022), rgba(255, 255, 255, .022) 1px, transparent 1px, transparent 3px),
+    linear-gradient(160deg, #1b1714, #121010 62%, #171311);
+  box-shadow: inset 0 1px 0 rgba(255, 220, 190, .08), 0 10px 24px rgba(0, 0, 0, .45);
+}
+
+.appliance-page .appliance-hero {
+  padding: clamp(1rem, 4vw, 2rem);
+  overflow: hidden;
+}
+
+.appliance-page .appliance-kicker {
+  margin: 0 0 .8rem;
+  color: #ff8a3d;
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.appliance-page .appliance-title {
+  margin: 0;
+  color: #f6e7d6;
+  font-size: clamp(1.6rem, 6vw, 3.6rem);
+  line-height: 1.05;
+  text-shadow: 0 0 18px rgba(255, 138, 61, .28);
+}
+
+.appliance-page .appliance-intro {
+  margin: 1rem 0 0;
+  max-width: 52ch;
+  color: #bcaa9a;
+}
+
+/* Status strip reads like a panel legend, not a web notice. */
+.appliance-page .appliance-status {
+  display: grid;
+  gap: .35rem .9rem;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  margin-top: 1.25rem;
+  padding: 1rem clamp(1rem, 3vw, 1.5rem);
+  border-left-width: 8px;
+  border-left-color: #ff8a3d;
+}
+
+.appliance-page .appliance-status__label {
+  margin: 0;
+  color: #9a8d80;
+  font-size: .6rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.appliance-page .appliance-state {
+  margin: 0;
+  color: #ffb066;
+  font-size: clamp(.9rem, 2.6vw, 1.2rem);
+  letter-spacing: .08em;
+}
+
+.appliance-page .appliance-status__note {
+  grid-column: 1 / -1;
+  margin: .35rem 0 0;
+  color: #9a8d80;
+  font-size: .85rem;
+}
+
+.appliance-page .appliance-rack {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.appliance-page .appliance-group {
+  min-width: 0;
+  margin: 0;
+  padding: 1.25rem clamp(1rem, 3vw, 1.5rem) 1.5rem;
+}
+
+.appliance-page .appliance-group__legend {
+  margin-left: -.35rem;
+  padding: .2rem .7rem;
+  border: 2px solid #47392d;
+  background: #0b0a09;
+  color: #ff8a3d;
+  font-size: .7rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.appliance-page .appliance-group__note {
+  margin: 0 0 1.25rem;
+  color: #7d7166;
+  font-size: .8rem;
+}
+
+.appliance-page .appliance-control + .appliance-control {
+  margin-top: 1.4rem;
+  padding-top: 1.4rem;
+  border-top: 1px dashed #332a22;
+}
+
+.appliance-page .appliance-control__head {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.appliance-page .appliance-control__name {
+  color: #e9ded2;
+  font-size: .8rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.appliance-page .appliance-control__key {
+  padding: .15rem .45rem;
+  border: 1px solid #5a463a;
+  border-radius: 2px;
+  background: #0b0a09;
+  color: #9a8d80;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .65rem;
+  letter-spacing: .1em;
+}
+
+.appliance-page .appliance-control__hint {
+  margin: .5rem 0 0;
+  color: #7d7166;
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.appliance-page .appliance-control__readout {
+  display: block;
+  margin-top: .4rem;
+  color: #ffb066;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .8rem;
+  letter-spacing: .08em;
+}
+
+/* Sliders. Webkit and Firefox pseudo-elements must stay in separate rules or
+   neither browser accepts the declaration block. */
+.appliance-page .appliance-control__range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  margin-top: .9rem;
+  background: transparent;
+  cursor: ew-resize;
+}
+
+.appliance-page .appliance-control__range:focus-visible {
+  outline: 2px solid #ff8a3d;
+  outline-offset: 6px;
+}
+
+.appliance-page .appliance-control__range::-webkit-slider-runnable-track {
+  height: 10px;
+  border: 1px solid #47392d;
+  background: linear-gradient(180deg, #080706, #191512);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, .7);
+}
+
+.appliance-page .appliance-control__range::-moz-range-track {
+  height: 10px;
+  border: 1px solid #47392d;
+  background: linear-gradient(180deg, #080706, #191512);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, .7);
+}
+
+.appliance-page .appliance-control__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 26px;
+  margin-top: -9px;
+  border: 1px solid #2a201a;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #f3c9a0, #c07a3c 55%, #8a4f1f);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .6);
+}
+
+.appliance-page .appliance-control__range::-moz-range-thumb {
+  width: 18px;
+  height: 26px;
+  border: 1px solid #2a201a;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #f3c9a0, #c07a3c 55%, #8a4f1f);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .6);
+}
+
+/* Buttons read as panel switches. */
+.appliance-page .appliance-control__button {
+  display: block;
+  width: 100%;
+  margin-top: .9rem;
+  padding: .85rem 1rem;
+  border: 2px solid #6a5238;
+  background: linear-gradient(180deg, #2c241d, #171311);
+  box-shadow: inset 0 1px 0 rgba(255, 220, 190, .12), 0 3px 0 #0a0908;
+  color: #f0dcc6;
+  font-family: inherit;
+  font-size: .82rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.appliance-page .appliance-control__button:hover {
+  border-color: #ff8a3d;
+  color: #ffd9b0;
+}
+
+.appliance-page .appliance-control__button:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, .7);
+}
+
+.appliance-page .appliance-control__button:focus-visible {
+  outline: 2px solid #ff8a3d;
+  outline-offset: 4px;
+}
+
+.appliance-page .appliance-control__button--lever {
+  padding: 1.4rem 1rem;
+  border-color: #ff8a3d;
+  background: linear-gradient(180deg, #46341f, #1d1713);
+}
+
+.appliance-page .appliance-control__button--danger {
+  border-color: #8d3326;
+  color: #ffb9a6;
+}
+
+.appliance-page .appliance-control__button--danger:hover {
+  border-color: #ff5c3d;
+  color: #ffd2c4;
+}
+
+.appliance-page .appliance-control__button[aria-pressed="true"] {
+  border-color: #ff8a3d;
+  background: linear-gradient(180deg, #6a3f18, #34210f);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, .75);
+  color: #ffe3c4;
+}
+
+.appliance-page .appliance-note {
+  margin-top: 1.25rem;
+  padding: 1.1rem clamp(1rem, 3vw, 1.5rem);
+  color: #9a8d80;
+  font-size: .85rem;
+}
+
+.appliance-page .appliance-note p {
+  margin: 0 0 .6rem;
+}
+
+.appliance-page .appliance-note p:last-child {
+  margin-bottom: 0;
+}
+
+.appliance-page .appliance-note strong {
+  color: #ff8a3d;
+}
+
+@media (min-width: 900px) {
+  .appliance-page .appliance-rack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
