@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "0.1.0",
+  "instrumentId": "appliance-latent-space",
+  "instrumentName": "The Appliance Latent Space",
+  "groups": [
+    { "id": "tone", "label": "tone" },
+    { "id": "latent", "label": "latent" },
+    { "id": "time", "label": "time" },
+    { "id": "gesture", "label": "gesture" }
+  ],
+  "controls": [
+    {
+      "id": "browning",
+      "label": "browning",
+      "description": "how hard the signal is cooked.",
+      "kind": "continuous",
+      "group": "tone",
+      "range": [0, 1],
+      "default": 0.35,
+      "keyboard": { "key": "b", "step": 0.05 },
+      "midi": { "type": "cc", "channel": 1, "number": 21 }
+    },
+    {
+      "id": "destruction",
+      "label": "destruction",
+      "description": "controlled damage.",
+      "kind": "continuous",
+      "group": "tone",
+      "range": [0, 1],
+      "default": 0,
+      "keyboard": { "key": "d", "step": 0.05 },
+      "midi": { "type": "cc", "channel": 1, "number": 22 }
+    },
+    {
+      "id": "latent_x",
+      "label": "latent x",
+      "description": "first axis of the space. moves timbre sideways.",
+      "kind": "continuous",
+      "group": "latent",
+      "range": [0, 1],
+      "default": 0.5,
+      "keyboard": { "key": "x", "step": 0.05 },
+      "midi": { "type": "cc", "channel": 1, "number": 23 }
+    },
+    {
+      "id": "latent_y",
+      "label": "latent y",
+      "description": "second axis. moves it up and down.",
+      "kind": "continuous",
+      "group": "latent",
+      "range": [0, 1],
+      "default": 0.5,
+      "keyboard": { "key": "y", "step": 0.05 },
+      "midi": { "type": "cc", "channel": 1, "number": 24 }
+    },
+    {
+      "id": "neural_mix",
+      "label": "neural mix",
+      "description": "dry to wet. nothing neural behind it yet.",
+      "kind": "continuous",
+      "group": "latent",
+      "range": [0, 1],
+      "default": 0,
+      "keyboard": { "key": "n", "step": 0.05 },
+      "midi": { "type": "cc", "channel": 1, "number": 25 }
+    },
+    {
+      "id": "memory",
+      "label": "memory",
+      "description": "how much of the last thing survives.",
+      "kind": "continuous",
+      "group": "time",
+      "range": [0, 1],
+      "default": 0.25,
+      "keyboard": { "key": "m", "step": 0.05 },
+      "midi": { "type": "cc", "channel": 1, "number": 26 }
+    },
+    {
+      "id": "freeze",
+      "label": "freeze",
+      "description": "hold the space still.",
+      "kind": "toggle",
+      "group": "time",
+      "range": [0, 1],
+      "default": 0,
+      "keyboard": { "key": "f" },
+      "midi": { "type": "note", "channel": 1, "number": 38 }
+    },
+    {
+      "id": "plunge",
+      "label": "plunge",
+      "description": "push the lever. something starts.",
+      "kind": "momentary",
+      "group": "gesture",
+      "range": [0, 1],
+      "default": 0,
+      "keyboard": { "key": " " },
+      "midi": { "type": "note", "channel": 1, "number": 36 }
+    },
+    {
+      "id": "capture",
+      "label": "capture",
+      "description": "keep the current position.",
+      "kind": "momentary",
+      "group": "gesture",
+      "range": [0, 1],
+      "default": 0,
+      "keyboard": { "key": "c" },
+      "midi": { "type": "note", "channel": 1, "number": 37 }
+    },
+    {
+      "id": "kill",
+      "label": "kill",
+      "description": "everything stops.",
+      "kind": "momentary",
+      "group": "gesture",
+      "range": [0, 1],
+      "default": 0,
+      "keyboard": { "key": "k" },
+      "midi": { "type": "note", "channel": 1, "number": 39 }
+    }
+  ]
+}
