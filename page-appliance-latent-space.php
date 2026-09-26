@@ -4,6 +4,25 @@ Template Name: Appliance Latent Space
 */
 
 get_header();
+
+// The slug selects this template even when WordPress says "Default template".
+// Saved editor blocks take precedence over the original empty-page prototype.
+if ( '' !== trim( (string) get_post_field( 'post_content', get_queried_object_id() ) ) ) {
+    ?>
+    <main id="primary" class="appliance-editor-page content-area" style="box-sizing:border-box;width:100%;max-width:1440px;margin:0 auto;padding:24px 16px;position:relative;z-index:1;">
+        <div class="entry-content" style="width:100%;min-width:0;">
+            <?php
+            while ( have_posts() ) :
+                the_post();
+                the_content();
+            endwhile;
+            ?>
+        </div>
+    </main>
+    <?php
+    get_footer();
+    return;
+}
 ?>
 <main id="primary" class="appliance-page content-area">
   <section class="appliance-shell" id="appliance-latent-space-app" data-instrument="appliance-latent-space" aria-labelledby="appliance-title">
