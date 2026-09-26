@@ -299,3 +299,51 @@
     font-size: 0.52rem;
   }
 }
+
+/* Appliance spotlight. Static artwork: no audio, canvas or iframe on the homepage. */
+#homepage-content .home-appliance {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 24px;
+  width: 100%;
+  margin: 24px 0;
+  padding: clamp(20px, 4vw, 44px);
+  border: 1px solid #8b63ad;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at 90% 10%, #30203e 0%, #12101d 65%);
+  color: #f4eefb;
+  text-align: left;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+#homepage-content .home-appliance__copy { min-width: 0; }
+#homepage-content .home-appliance__eyebrow {
+  margin: 0 0 18px; color: #bcefe4; font: 700 11px/1.6 ui-monospace, monospace; letter-spacing: .12em;
+}
+#homepage-content #home-appliance-title {
+  margin: 0 0 20px; color: #f4eefb; font: 800 clamp(26px, 4vw, 52px)/1.06 system-ui, sans-serif;
+  letter-spacing: -.035em; text-shadow: none; overflow-wrap: anywhere;
+}
+#homepage-content .home-appliance__lead { margin: 0 0 12px; color: #e0baff; font: 600 18px/1.5 system-ui, sans-serif; }
+#homepage-content .home-appliance__description { max-width: 52ch; margin: 0 0 22px; color: #d5ccdf; font: 15px/1.7 system-ui, sans-serif; }
+#homepage-content .home-appliance__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+#homepage-content .home-appliance__play {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 18px; min-height: 44px; box-sizing: border-box; border: 1px solid #85f5e0; border-radius: 4px;
+  background: #85f5e0; color: #101b1a; text-decoration: none; font: 800 12px/1.5 ui-monospace, monospace; text-shadow: none;
+}
+#homepage-content .home-appliance__source,
+#homepage-content .home-appliance__basecamp a { color: #e0baff; text-decoration: underline; text-underline-offset: 4px; }
+#homepage-content .home-appliance__source { font-size: 13px; padding: 10px 0; }
+#homepage-content .home-appliance a:focus-visible { outline: 3px solid #fff; outline-offset: 5px; }
+#homepage-content .home-appliance__play:hover { background: #bafff1; }
+#homepage-content .home-appliance__basecamp { margin: 22px 0 0; color: #bcb0ca; font: 12px/1.8 system-ui, sans-serif; }
+#homepage-content .home-appliance__art { display: flex; flex-direction: column; justify-content: center; min-width: 0; border-left: 1px solid #594265; padding-left: 24px; }
+#homepage-content .home-appliance__art svg { display: block; width: 100%; height: auto; margin: 20px 0; }
+#homepage-content .home-appliance__art-label,
+#homepage-content .home-appliance__art-footer { color: #bdabc9; font: 10px/1.6 ui-monospace, monospace; letter-spacing: .14em; }
+@media (max-width: 700px) {
+  #homepage-content .home-appliance { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  #homepage-content .home-appliance__art { border-left: 0; border-top: 1px solid #594265; padding: 20px 0 0; }
+  #homepage-content .home-appliance__art svg { max-height: 145px; margin: 10px 0; }
+}

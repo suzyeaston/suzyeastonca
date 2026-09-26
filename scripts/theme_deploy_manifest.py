@@ -81,6 +81,7 @@ THEME_FILES = [
     "page-loop-lab.php",
     "parts/home-commercial-strip.php",
     "parts/home-feature-previews.php",
+    "parts/home-appliance-feature.php",
     "parts/home-hire-strip.php",
     "parts/home-signal-log.php",
     "parts/home-mission-meanwhile.php",

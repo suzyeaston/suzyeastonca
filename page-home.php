@@ -13,6 +13,8 @@ get_header();
 
         <?php get_template_part( 'parts/home-hero-pitch' ); ?>
 
+        <?php get_template_part( 'parts/home-appliance-feature' ); ?>
+
         <?php get_template_part( 'parts/home-commercial-strip' ); ?>
 
         <?php get_template_part( 'parts/home-hire-strip' ); ?>
