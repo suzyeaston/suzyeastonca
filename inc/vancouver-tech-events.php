@@ -35,7 +35,71 @@ function suzy_get_vancouver_tech_event_sources(): array {
             'source' => 'Meetup Vancouver AWS',
             'format' => 'ics',
         ],
-        // Add more Vancouver Meetup ICS feeds here using format "ics".
+        // Organizer calendars verified 2026-09-26; city discovery is not exhaustive.
+        [
+            'id'     => 'luma_yvr_crypto',
+            'label'  => 'Vancouver Crypto Events / DCTRL & EthVan',
+            'url'    => 'https://luma.com/yvr',
+            'slug'   => 'yvr',
+            'source' => 'Vancouver Crypto Events / DCTRL & EthVan',
+            'format' => 'luma_calendar',
+        ],
+        [
+            'id'     => 'luma_dc604',
+            'label'  => 'DC604 DEFCON Vancouver',
+            'url'    => 'https://luma.com/dc604',
+            'slug'   => 'dc604',
+            'source' => 'DC604 DEFCON Vancouver',
+            'format' => 'luma_calendar',
+        ],
+        [
+            'id'     => 'luma_vancitysec',
+            'label'  => 'VanCitySec',
+            'url'    => 'https://luma.com/vancitysec',
+            'slug'   => 'vancitysec',
+            'source' => 'VanCitySec',
+            'format' => 'luma_calendar',
+        ],
+        [
+            'id'     => 'luma_vancouver_dev',
+            'label'  => 'Vancouver.dev',
+            'url'    => 'https://luma.com/vancouver.dev',
+            'slug'   => 'vancouver.dev',
+            'source' => 'Vancouver.dev',
+            'format' => 'luma_calendar',
+        ],
+        [
+            'id'     => 'luma_vantug',
+            'label'  => 'VanTUG',
+            'url'    => 'https://luma.com/Vantug',
+            'slug'   => 'Vantug',
+            'source' => 'VanTUG',
+            'format' => 'luma_calendar',
+        ],
+        [
+            'id'     => 'luma_code_together',
+            'label'  => 'Code Together Vancouver',
+            'url'    => 'https://luma.com/code-together-vancouver',
+            'slug'   => 'code-together-vancouver',
+            'source' => 'Code Together Vancouver',
+            'format' => 'luma_calendar',
+        ],
+        [
+            'id'     => 'luma_whitehat',
+            'label'  => 'White-Hat Security Community',
+            'url'    => 'https://luma.com/WhiteHatSecurityCommunityVancouver',
+            'slug'   => 'WhiteHatSecurityCommunityVancouver',
+            'source' => 'White-Hat Security Community',
+            'format' => 'luma_calendar',
+        ],
+        [
+            'id'     => 'luma_vancouver_impact',
+            'label'  => 'Vancouver Impact',
+            'url'    => 'https://luma.com/vancouverimpact',
+            'slug'   => 'vancouverimpact',
+            'source' => 'Vancouver Impact',
+            'format' => 'luma_calendar',
+        ],
         [
             'id'     => 'luma_vancouver',
             'label'  => 'Luma Vancouver',
@@ -136,6 +200,9 @@ function suzy_fetch_vancouver_tech_events_raw( bool $debug = false, array &$debu
             $debug_entry['status']  = 'error';
             $debug_entry['message'] = $result->get_error_message();
             $source_events          = [];
+        } elseif ( empty( $source_events ) && (int) ( $meta['http_status'] ?? 0 ) >= 400 ) {
+            $debug_entry['status']  = 'error';
+            $debug_entry['message'] = 'Source request failed; use the organizer calendar link.';
         } elseif ( empty( $source_events ) ) {
             $debug_entry['status']  = 'empty';
             $debug_entry['message'] = $debug_entry['message'] ?: 'No events returned.';
@@ -374,7 +441,7 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
         return [];
     }
 
-    $transient_key = 'suzy_vte_luma_' . md5( $source['url'] );
+    $transient_key = 'suzy_vte_luma_v2_' . md5( $source['url'] );
 
     if ( ! $debug ) {
         $cached = get_transient( $transient_key );
@@ -518,10 +585,10 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
  * @return array<string, mixed>|WP_Error
  */
 function suzy_fetch_vancouver_tech_events_from_luma_calendar( array $source, bool $debug = false ) {
-    $slug = isset( $source['slug'] ) ? sanitize_title( (string) $source['slug'] ) : '';
+    $slug = isset( $source['slug'] ) ? trim( (string) $source['slug'], '/' ) : '';
     if ( '' === $slug && ! empty( $source['url'] ) ) {
         $path = wp_parse_url( (string) $source['url'], PHP_URL_PATH );
-        $slug = sanitize_title( trim( (string) $path, '/' ) );
+        $slug = trim( (string) $path, '/' );
     }
 
     if ( '' === $slug && empty( $source['calendar_api_id'] ) && empty( $source['url'] ) ) {
@@ -529,7 +596,7 @@ function suzy_fetch_vancouver_tech_events_from_luma_calendar( array $source, boo
     }
 
     $cache_key     = $slug !== '' ? $slug : md5( (string) ( $source['url'] ?? $source['calendar_api_id'] ?? '' ) );
-    $transient_key = 'suzy_vte_luma_cal_v3_' . md5( $cache_key );
+    $transient_key = 'suzy_vte_luma_cal_v4_' . md5( $cache_key );
 
     if ( ! $debug ) {
         $cached = get_transient( $transient_key );
@@ -688,7 +755,7 @@ function suzy_vte_is_futureproof_event( array $event ): bool {
  * Stable identity key for cross-source event dedupe.
  *
  * Futureproof records share one canonical key so curated + live copies collapse.
- * All other events keep title|start|location equality.
+ * Known event URLs identify an occurrence; other records use title|start|location.
  *
  * @param array<string, mixed> $event Event.
  */
@@ -703,6 +770,17 @@ function suzy_vte_event_identity_key( array $event ): string {
 
     if ( '' === $title ) {
         return '';
+    }
+
+    $url = wp_parse_url( (string) ( $event['url'] ?? '' ) );
+    if ( is_array( $url ) && ! empty( $url['host'] ) && ! empty( $url['path'] ) ) {
+        $host = strtolower( $url['host'] );
+        $host = in_array( $host, [ 'lu.ma', 'www.lu.ma', 'www.luma.com' ], true ) ? 'luma.com' : $host;
+        // Only strip tracking queries for known event hosts; other hosts may use ?id=.
+        if ( in_array( $host, [ 'luma.com', 'www.meetup.com', 'meetup.com' ], true ) ) {
+            $host = 'meetup.com' === $host ? 'www.meetup.com' : $host;
+            return $host . rtrim( $url['path'], '/' ) . '|' . $start;
+        }
     }
 
     return $title . '|' . $start . '|' . $location;
@@ -867,22 +945,25 @@ function suzy_vte_parse_luma_next_data_events( string $html, string $source ): a
         return [];
     }
 
+    // A featured list can coexist with the regular event list.
     $items = [];
-    if ( ! empty( $data['featured_items'] ) && is_array( $data['featured_items'] ) ) {
-        $items = $data['featured_items'];
-    } elseif ( ! empty( $data['events'] ) && is_array( $data['events'] ) ) {
-        $items = $data['events'];
+    foreach ( [ 'featured_items', 'events', 'entries' ] as $collection ) {
+        if ( ! empty( $data[ $collection ] ) && is_array( $data[ $collection ] ) ) {
+            $items = array_merge( $items, $data[ $collection ] );
+        }
     }
 
     $events = [];
     foreach ( $items as $item ) {
         $normalized = suzy_vte_normalize_luma_entry( $item, $source );
         if ( $normalized ) {
-            $events[] = $normalized;
+            $key = suzy_vte_event_identity_key( $normalized );
+            $events[ $key ] = isset( $events[ $key ] )
+                ? suzy_vte_merge_event_records( $events[ $key ], $normalized ) : $normalized;
         }
     }
 
-    return $events;
+    return array_values( $events );
 }
 
 /**
@@ -920,7 +1001,7 @@ function suzy_vte_normalize_luma_entry( $entry, string $source ): ?array {
 
     $end = suzy_vte_parse_iso_datetime( isset( $event['end_at'] ) ? (string) $event['end_at'] : null, $tz );
 
-    $url_slug = trim( (string) ( $event['url'] ?? '' ), '/' );
+    $url_slug = trim( (string) ( $event['external_url'] ?? $event['url'] ?? '' ), '/' );
     $url      = '';
     if ( '' !== $url_slug ) {
         if ( str_starts_with( $url_slug, 'http://' ) || str_starts_with( $url_slug, 'https://' ) ) {
@@ -1616,17 +1697,30 @@ function suzy_get_vancouver_tech_spotlight_events(): array {
  *
  * @return array<int, array<string, mixed>>
  */
+/** Keep ongoing events, and discard finished events on every cache read. */
+function suzy_vte_upcoming_events( array $events, ?int $now = null ): array {
+    $now = $now ?? time();
+    return array_values( array_filter( $events, static function ( $event ) use ( $now ) {
+        if ( empty( $event['start'] ) ) {
+            return false;
+        }
+        $start = (int) $event['start'];
+        $end = ! empty( $event['end'] ) ? (int) $event['end'] : $start;
+        return $end > $start ? $end >= $now : $start >= $now - 6 * HOUR_IN_SECONDS;
+    } ) );
+}
+
 function suzy_get_vancouver_tech_events(): array {
     // Only show debug output when explicitly requested AND user is an admin.
     $debug          = ( isset( $_GET['vte_debug'] ) && '1' === $_GET['vte_debug'] && current_user_can( 'manage_options' ) );
-    $transient_key  = 'suzy_vancouver_tech_events_cache_v5';
+    $transient_key  = 'suzy_vancouver_tech_events_cache_v6';
     $cached         = $debug ? false : get_transient( $transient_key );
     $debug_report   = [];
     $cache_bypassed = $debug;
 
     if ( false !== $cached && is_array( $cached ) ) {
         return [
-            'events'         => $cached,
+            'events'         => suzy_vte_upcoming_events( $cached ),
             'debug'          => $debug ? $debug_report : null,
             'cache_bypassed' => $cache_bypassed,
         ];
@@ -1646,19 +1740,7 @@ function suzy_get_vancouver_tech_events(): array {
     }
     unset( $event );
 
-    $now = time();
-
-    // Filter out events that are clearly in the past (older than 6 hours ago).
-    $events = array_filter(
-        $events,
-        static function ( $event ) use ( $now ) {
-            if ( ! isset( $event['start'] ) ) {
-                return false;
-            }
-
-            return (int) $event['start'] >= ( $now - ( 6 * HOUR_IN_SECONDS ) );
-        }
-    );
+    $events = suzy_vte_upcoming_events( $events );
 
     // Dedupe across sources. Futureproof uses a canonical identity so curated +
     // live copies (different titles) collapse into one spotlight record.
@@ -1687,8 +1769,8 @@ function suzy_get_vancouver_tech_events(): array {
                 } else {
                     $deduped[ $existing_index ] = suzy_vte_merge_event_records( $existing, $event );
                 }
-            } elseif ( ! empty( $event['spotlight'] ) ) {
-                $deduped[ $existing_index ]['spotlight'] = true;
+            } else {
+                $deduped[ $existing_index ] = suzy_vte_merge_event_records( $existing, $event );
             }
             continue;
         }
@@ -1760,7 +1842,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
     <section class="vancouver-tech-events">
         <p class="vancouver-tech-events__kicker pixel-font">yvr calendar</p>
         <h1>Vancouver Tech Events</h1>
-        <p>Meetup ICS, Luma, BC + AI, Vancouver Tech Journal, BC Tech / T-Net. One list.</p>
+        <p>Vancouver tech, maker, security and developer communities. One list. Times are Vancouver local time.</p>
 
         <?php if ( empty( $events ) ) : ?>
             <p>Nothing upcoming right now. Sources still get checked on the next pass.</p>
@@ -1783,7 +1865,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                     continue;
                 }
                 $start    = isset( $event['start'] ) ? (int) $event['start'] : time();
-                $date_key = wp_date( 'Y-m-d', $start );
+                $date_key = wp_date( 'Y-m-d', $start, new DateTimeZone( 'America/Vancouver' ) );
                 if ( ! isset( $events_by_date[ $date_key ] ) ) {
                     $events_by_date[ $date_key ] = [];
                 }
@@ -1796,7 +1878,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                 <section class="vte-spotlight" aria-labelledby="vte-spotlight-title">
                     <p class="vte-spotlight__kicker pixel-font">on the board</p>
                     <h2 id="vte-spotlight-title">Futureproof Festival</h2>
-                    <p class="vte-spotlight__intro">Oct 29–30 at the Space Centre.</p>
+                    <p class="vte-spotlight__intro">Oct 28–30 at the Space Centre.</p>
                     <ul class="vte-event-list vte-event-list--spotlight">
                         <?php foreach ( $spotlight_events as $event ) : ?>
                             <?php echo suzy_vte_render_event_list_item( $event, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -1808,11 +1890,11 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
             <?php foreach ( $events_by_date as $date_key => $date_events ) : ?>
                 <h2 class="vte-date">
                     <?php
-                    $timezone = wp_timezone();
+                    $timezone = new DateTimeZone( 'America/Vancouver' );
                     $date_dt  = DateTime::createFromFormat( 'Y-m-d H:i:s', $date_key . ' 12:00:00', $timezone );
                     $date_ts  = $date_dt ? $date_dt->getTimestamp() : (int) ( $date_events[0]['start'] ?? time() );
                     $format = 'l, ' . get_option( 'date_format' );
-                    echo esc_html( wp_date( $format, $date_ts ) );
+                    echo esc_html( wp_date( $format, $date_ts, $timezone ) );
                     ?>
                 </h2>
                 <ul class="vte-event-list">
@@ -1822,6 +1904,18 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                 </ul>
             <?php endforeach; ?>
         <?php endif; ?>
+        <details class="vte-community-links">
+            <summary>More community calendars &amp; open nights</summary>
+            <p>Check the organizer for the latest schedule, cancellations and RSVP requirements. This list is not exhaustive.</p>
+            <ul>
+                <li><a href="https://luma.com/user/usr-XQ1OMFlMqL7Ajax" target="_blank" rel="noopener noreferrer">DCTRL hosted events &amp; open houses</a> · <a href="https://www.dctrl.wtf/" target="_blank" rel="noopener noreferrer">Visit DCTRL</a></li>
+                <li><a href="https://vanhack.ca/events-calendar" target="_blank" rel="noopener noreferrer">Vancouver Hack Space calendar</a> · Tuesday public nights, workshops, electronics and maker projects. Check their calendar before heading over; these dates are not imported into the list above.</li>
+                <?php foreach ( suzy_get_vancouver_tech_event_sources() as $source ) : ?>
+                    <?php if ( 'luma_calendar' !== ( $source['format'] ?? '' ) ) { continue; } ?>
+                    <li><a href="<?php echo esc_url( $source['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $source['label'] ); ?></a></li>
+                <?php endforeach; ?>
+            </ul>
+        </details>
         <?php if ( ! empty( $debug_data ) ) : ?>
             <div class="vte-debug" style="margin-top:2rem; padding:1rem; border:1px dashed #888; background:#111; color:#ddd;">
                 <strong>DEBUG</strong>
@@ -1884,8 +1978,8 @@ function suzy_vte_render_event_list_item( array $event, bool $spotlight = false 
                 <span class="vte-time">
                     <?php
                     $time_label = $spotlight
-                        ? wp_date( 'D, M j · ' . get_option( 'time_format' ), (int) $event['start'] )
-                        : wp_date( get_option( 'time_format' ), (int) $event['start'] );
+                        ? wp_date( 'D, M j · ' . get_option( 'time_format' ), (int) $event['start'], new DateTimeZone( 'America/Vancouver' ) )
+                        : wp_date( get_option( 'time_format' ), (int) $event['start'], new DateTimeZone( 'America/Vancouver' ) );
                     echo esc_html( $time_label );
                     ?>
                 </span>

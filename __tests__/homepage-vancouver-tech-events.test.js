@@ -83,7 +83,7 @@ test("vancouver tech events spotlights Futureproof without membership bias", () 
   const css = fs.readFileSync(path.join(ROOT, "style.css"), "utf8");
   assert.match(php, /Futureproof Festival/);
   assert.match(php, /vte-spotlight/);
-  assert.match(php, /Oct 29–30 at the Space Centre\./);
+  assert.match(php, /Oct 28–30 at the Space Centre\./);
   assert.match(css, /\.vte-event--spotlight/);
   assert.match(css, /\.vte-spotlight-badge/);
   assert.doesNotMatch(php, /No ranking/);
@@ -217,7 +217,7 @@ function dedupeVancouverTechEvents(events) {
   return deduped;
 }
 
-test("Futureproof helpers and cache v5 land in the aggregator", () => {
+test("Futureproof helpers and cache v6 land in the aggregator", () => {
   const php = fs.readFileSync(
     path.join(ROOT, "inc", "vancouver-tech-events.php"),
     "utf8"
@@ -226,7 +226,7 @@ test("Futureproof helpers and cache v5 land in the aggregator", () => {
   assert.match(php, /function suzy_vte_event_identity_key\s*\(/);
   assert.match(php, /function suzy_vte_merge_event_records\s*\(/);
   assert.match(php, /futureproof-festival-2026/);
-  assert.match(php, /suzy_vancouver_tech_events_cache_v5/);
+  assert.match(php, /suzy_vancouver_tech_events_cache_v6/);
   assert.doesNotMatch(php, /suzy_vancouver_tech_events_cache_v4/);
   assert.match(php, /'curated'\s*=>\s*true/);
   assert.match(

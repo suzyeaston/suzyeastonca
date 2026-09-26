@@ -60,7 +60,7 @@ $events_url = home_url( '/vancouver-tech-events/' );
 						<p class="vancouver-tech-home__badge pixel-font"><?php echo esc_html( 'spotlight' ); ?></p>
 					<?php endif; ?>
 					<p class="vancouver-tech-home__time">
-						<?php echo esc_html( $event_start > 0 ? wp_date( 'D, M j • g:i A T', $event_start ) : 'Date/time TBD' ); ?>
+						<?php echo esc_html( $event_start > 0 ? wp_date( 'D, M j • g:i A T', $event_start, new DateTimeZone( 'America/Vancouver' ) ) : 'Date/time TBD' ); ?>
 					</p>
 					<a href="<?php echo esc_url( $event_url ); ?>" target="_blank" rel="noopener noreferrer" class="vancouver-tech-home__title">
 						<?php echo esc_html( $event['title'] ?? 'Upcoming event' ); ?>
