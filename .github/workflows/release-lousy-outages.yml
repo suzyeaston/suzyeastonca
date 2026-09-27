@@ -28,6 +28,7 @@ jobs:
         run: |
           php tests/lousy-outages/rss-long-running-regression.php
           php tests/lousy-outages/aws-snapshot-pipeline-regression.php
+          php tests/lousy-outages/alert-dispatch-regression.php
       - name: Run history migration tests
         run: php lousy-outages/tests/history-store-test.php
       - name: Run count-parity/current-state tests

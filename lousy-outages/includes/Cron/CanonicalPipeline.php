@@ -60,6 +60,16 @@ final class CanonicalPipeline
         register_shutdown_function([self::class, 'shutdown']);
 
         try {
+            if (!isset($cycle['errors']) || !is_array($cycle['errors'])) {
+                $cycle['errors'] = [];
+            }
+            self::dispatchUnalertedProviders($cycle);
+            try {
+                IncidentAlerts::drain_deferred_alerts(['cycle_id' => (string) $cycle['cycle_id']]);
+            } catch (\Throwable $e) {
+                $cycle['errors'][] = ['id' => '', 'message' => 'alert_drain_failed'];
+                self::saveCycle($cycle);
+            }
             $providers = Providers::enabled();
             $byId = [];
             foreach ($providers as $provider) $byId[(string)$provider['id']] = $provider;
@@ -83,6 +93,7 @@ final class CanonicalPipeline
                 self::saveCycle($cycle);
                 self::heartbeat($token, 'collection');
                 $done++;
+                self::rememberProviderAlert($cycle, $id, $cycle['provider_states'][$id]);
             }
             if ((int)$cycle['provider_cursor'] < count($cycle['provider_ids'])) {
                 $cycle['continuation_count']++;
@@ -102,8 +113,18 @@ final class CanonicalPipeline
             $cycle['publication'] = ['alerts'=>'pending', 'rss'=>'pending'];
             $cycle['final_status'] = 'collection_completed';
             self::saveCycle($cycle);
-            self::scheduleOnce(self::ALERT_HOOK, time() + 2, [$cycle['cycle_id']]);
-            self::scheduleOnce(self::RSS_HOOK, time() + 2, [$cycle['cycle_id']]);
+            try {
+                self::publishAlerts((string) $cycle['cycle_id']);
+            } catch (\Throwable $e) {
+                $cycle = self::cycle();
+                $cycle['publication_errors']['alerts'] = self::sanitizeMessage($e->getMessage());
+                self::saveCycle($cycle);
+            }
+            $cycle = self::cycle();
+            if (($cycle['publication']['alerts'] ?? '') !== 'completed') {
+                self::scheduleOnce(self::ALERT_HOOK, time() + 10, [(string) $cycle['cycle_id']]);
+            }
+            self::scheduleOnce(self::RSS_HOOK, time() + 2, [(string) $cycle['cycle_id']]);
             update_option('lousy_outages_last_snapshot_commit', ['cycle_id'=>$cycle['cycle_id'], 'timestamp'=>$cycle['snapshot_committed_at'], 'fingerprint'=>$cycle['snapshot_fingerprint']], false);
             return ['ok'=>true, 'cycle_id'=>$cycle['cycle_id'], 'snapshot'=>$snapshot];
         } finally {
@@ -172,7 +193,116 @@ final class CanonicalPipeline
     private static function heartbeat(string $token,string $phase): void { $l=get_option(self::LEASE_OPTION,[]);if(!is_array($l)||!hash_equals((string)($l['owner_token']??''),$token))return;$l['heartbeat']=time();$l['expires_at']=time()+self::leaseLifetime();$l['phase']=$phase;update_option(self::LEASE_OPTION,$l,false); }
     public static function cycle(): array { $v=get_option(self::CYCLE_OPTION,[]);return is_array($v)?$v:[]; }
     private static function saveCycle(array $cycle): void { update_option(self::CYCLE_OPTION,$cycle,false); }
-    private static function newCycle(): array { $ids=[];foreach(Providers::enabled() as $p)$ids[]=(string)$p['id'];$now=gmdate('c');$cycle=['cycle_id'=>wp_generate_uuid4(),'started_at'=>$now,'heartbeat_at'=>$now,'phase'=>'collection','provider_ids'=>$ids,'provider_cursor'=>0,'completed_provider_count'=>0,'provider_states'=>[],'errors'=>[],'previous_states'=>(new Store())->get_all(),'last_completed_provider'=>'','continuation_count'=>0,'publication'=>['alerts'=>'not_ready','rss'=>'not_ready'],'publication_results'=>[],'publication_errors'=>[],'final_status'=>'running'];self::saveCycle($cycle);return$cycle; }
+    private static function newCycle(): array { $ids=[];foreach(Providers::enabled() as $p)$ids[]=(string)$p['id'];$now=gmdate('c');$cycle=['cycle_id'=>wp_generate_uuid4(),'started_at'=>$now,'heartbeat_at'=>$now,'phase'=>'collection','provider_ids'=>$ids,'provider_cursor'=>0,'completed_provider_count'=>0,'provider_states'=>[],'alerted_provider_ids'=>[],'errors'=>[],'previous_states'=>(new Store())->get_all(),'last_completed_provider'=>'','continuation_count'=>0,'publication'=>['alerts'=>'not_ready','rss'=>'not_ready'],'publication_results'=>[],'publication_errors'=>[],'final_status'=>'running'];self::saveCycle($cycle);return$cycle; }
+
+    /**
+     * Mail incidents from one freshly fetched provider before the rest of the sweep.
+     *
+     * @param array<string,mixed> $state
+     * @return array<string,mixed>
+     */
+    public static function publishProviderDetection(string $providerId, array $state, string $cycleId = ''): array
+    {
+        if (!self::providerStateNeedsAlert($state)) {
+            return ['delivery_locked' => false, 'skipped' => true, 'reason' => 'not_alertable', 'sent' => 0];
+        }
+        $fetchedAt = gmdate('c');
+        $payload = function_exists('lousy_outages_build_provider_payload')
+            ? lousy_outages_build_provider_payload($providerId, $state, $fetchedAt)
+            : self::providerPayload($providerId, $state, $fetchedAt);
+        return IncidentAlerts::process_snapshot(
+            ['providers' => [$payload], 'fetched_at' => $fetchedAt],
+            ['mode' => 'canonical_refresh', 'cycle_id' => $cycleId, 'prompt_dispatch' => true]
+        );
+    }
+
+    /**
+     * @param array<string,mixed> $cycle
+     * @param array<string,mixed> $state
+     */
+    private static function rememberProviderAlert(array &$cycle, string $providerId, array $state): void
+    {
+        $alerted = array_fill_keys(array_map('strval', (array) ($cycle['alerted_provider_ids'] ?? [])), true);
+        if (isset($alerted[$providerId])) {
+            return;
+        }
+        try {
+            $diag = self::publishProviderDetection($providerId, $state, (string) ($cycle['cycle_id'] ?? ''));
+        } catch (\Throwable $e) {
+            $cycle['errors'][] = ['id' => $providerId, 'message' => 'alert_dispatch_failed'];
+            self::saveCycle($cycle);
+            return;
+        }
+        if (!empty($diag['delivery_locked'])) {
+            return;
+        }
+        $cycle['alerted_provider_ids'][] = $providerId;
+        self::saveCycle($cycle);
+    }
+
+    /**
+     * @param array<string,mixed> $cycle
+     */
+    private static function dispatchUnalertedProviders(array &$cycle): void
+    {
+        foreach ((array) ($cycle['provider_states'] ?? []) as $id => $state) {
+            if (!is_array($state)) {
+                continue;
+            }
+            self::rememberProviderAlert($cycle, (string) $id, $state);
+        }
+    }
+
+    /**
+     * @param array<string,mixed> $state
+     */
+    private static function providerStateNeedsAlert(array $state): bool
+    {
+        $status = strtolower(trim((string) ($state['status'] ?? '')));
+        if (in_array($status, ['degraded', 'partial_outage', 'major_outage', 'maintenance', 'major', 'outage', 'partial', 'critical', 'minor'], true)) {
+            return true;
+        }
+        foreach ((array) ($state['incidents'] ?? []) as $incident) {
+            if (is_array($incident) && $incident) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param array<string,mixed> $state
+     * @return array<string,mixed>
+     */
+    private static function providerPayload(string $id, array $state, string $fetchedAt): array
+    {
+        $incidents = [];
+        foreach ((array) ($state['incidents'] ?? []) as $incident) {
+            if (!is_array($incident)) {
+                continue;
+            }
+            $incidents[] = [
+                'id' => (string) ($incident['id'] ?? ''),
+                'title' => (string) ($incident['title'] ?? $incident['name'] ?? 'Incident'),
+                'summary' => (string) ($incident['summary'] ?? ''),
+                'impact' => (string) ($incident['impact'] ?? $incident['status'] ?? 'major'),
+                'status' => (string) ($incident['status'] ?? ''),
+                'startedAt' => (string) ($incident['startedAt'] ?? $incident['started_at'] ?? ''),
+                'url' => (string) ($incident['url'] ?? $incident['shortlink'] ?? ($state['url'] ?? '')),
+            ];
+        }
+        return [
+            'id' => $id,
+            'name' => (string) ($state['name'] ?? $id),
+            'stateCode' => (string) ($state['status'] ?? 'unknown'),
+            'state' => (string) ($state['status_label'] ?? $state['status'] ?? ''),
+            'summary' => (string) ($state['summary'] ?? ''),
+            'updatedAt' => (string) ($state['updated_at'] ?? $fetchedAt),
+            'url' => (string) ($state['url'] ?? ''),
+            'sourceType' => (string) ($state['source_type'] ?? 'statuspage'),
+            'incidents' => $incidents,
+        ];
+    }
     private static function scheduleOnce(string $hook,int $at,array $args=[]): void { if(!wp_next_scheduled($hook,$args))wp_schedule_single_event($at,$hook,$args); }
     private static function sanitizeMessage(string $m): string { return substr(preg_replace('/https?:\/\/\S+|[A-Z0-9._%+-]+@[A-Z0-9.-]+/i','[redacted]',$m)??'',0,240); }
 

@@ -80,7 +80,7 @@ class Mailer {
         }
 
         if (! $sent && defined('WP_DEBUG') && WP_DEBUG) {
-            error_log(sprintf('[lousy_outages] mail_send_failed recipient=%s subject=%s', $email, $subject));
+            error_log('[lousy_outages] mail_send_failed subject=' . $subject);
         }
 
         return (bool) $sent;

@@ -11,12 +11,14 @@ No provider is considered supported only because a link exists. Enabled provider
 ## Refresh and cron
 
 - Canonical hook: `lousy_outages_refresh_official_providers`.
-- Intended cadence: every 30 minutes via `lousy_outages_15min`.
-- Lock: transient `lousy_outages_refresh_lock`, five-minute TTL.
+- Recurring schedule name: `lousy_outages_15min` (900 seconds). The settings option `lousy_outages_interval` (default 300) does not drive this hook.
+- Each invocation fetches a bounded batch, then schedules `lousy_outages_refresh_continue`. Alert retries use `lousy_outages_publish_alerts`. Both are single events and run only when something executes all due cron events.
+- An incident is mailed in the same invocation that fetched its provider. Acceptance by `wp_mail` is not inbox delivery.
+- Lock: canonical lease `lousy_outages_canonical_lease_v1` plus alert delivery lock `lousy_outages_alert_delivery_lock`.
 - Timeout: provider fetch timeout defaults to eight seconds; individual HTTP calls also retry likely DNS/TLS failures once over IPv4.
 - Partial refresh: quality metadata records total/verified/failed providers. A complete successful refresh is only recorded when quality is OK and there are zero failed providers.
 - Last-known-good: recent verified provider state is preserved through transient provider failures instead of erasing active incidents.
-- cPanel cron recommendation: disable unreliable visitor-triggered WP-Cron with `DISABLE_WP_CRON`, then run `wp cron event run --due-now` every five minutes from cPanel using the account's PHP/WP-CLI path. Do not expose an unauthenticated refresh URL.
+- cPanel cron: this install lives in `public_html`. Set `define('DISABLE_WP_CRON', true);` in `wp-config.php`. Every two minutes, from the WordPress root, run `wp cron event run --due-now` with the account's WP-CLI (or `php -q wp-cron.php` with the account's PHP). Do not schedule only `wp cron event run lousy_outages_refresh_official_providers`. Do not expose an unauthenticated refresh URL. See `lousy-outages/README.md`.
 
 ## Coverage table
 

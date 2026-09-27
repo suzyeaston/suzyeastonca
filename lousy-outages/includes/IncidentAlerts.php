@@ -53,6 +53,7 @@ class IncidentAlerts {
     private const OPTION_ALERT_DELIVERY_FAILURE = 'lousy_outages_alert_delivery_failure';
     private const OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS = 'lousy_outages_last_alert_recipient_diagnostics';
     private const OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS = 'lousy_outages_last_alert_processing_diagnostics';
+    private const OPTION_DELIVERY_LOCK = 'lousy_outages_alert_delivery_lock';
 
     private const ALERT_RETENTION_HOURS        = 48;
     private const SUBJECT_ALERT_WINDOW_HOURS   = 12;
@@ -369,24 +370,35 @@ class IncidentAlerts {
             }
         }
         $episodeStore = $options['episode_store'] ?? new EpisodeStore();
-        $transitions = $episodeStore->observe($incidents, $providerStates);
+        $transitions = ['opened'=>[], 'continuing'=>[], 'closed'=>[]];
         $legacyReleased = 0;
-        if (empty($options['skip_delivery'])) {
-            $legacyReleased = $episodeStore->releaseLegacyEmailSuppression();
-        }
-        try {
-            $result = !empty($options['skip_delivery'])
-                ? ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>count($incidents),'failed'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>['publication_checkpointed'],'mode'=>'canonical_refresh']
-                : self::process_episodes(array_merge($transitions['opened'], array_filter($transitions['continuing'], static fn($e) => !empty($e['email_pending_recipients']) || empty($e['email_successful_recipients']))), $episodeStore, $options);
-            if ($legacyReleased > 0 && is_array($result)) {
-                $result['legacy_suppression_released'] = $legacyReleased;
+        $lock = self::acquire_delivery_lock();
+        if ($lock === null) {
+            $result = ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>0,'failed'=>0,'pending'=>1,'recipients'=>[],'failures'=>['delivery_locked'],'skipped_reasons'=>['delivery_locked'],'mode'=>'canonical_refresh','delivery_locked'=>true,'detection_to_send'=>[]];
+        } else {
+            try {
+                $transitions = $episodeStore->observe($incidents, $providerStates);
+                if (empty($options['skip_delivery'])) {
+                    $legacyReleased = $episodeStore->releaseLegacyEmailSuppression();
+                    $result = self::process_episodes(self::episodes_to_deliver($transitions, $episodeStore), $episodeStore, $options, $lock);
+                } else {
+                    $result = ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>count($incidents),'failed'=>0,'pending'=>self::pending_slot_count($episodeStore),'recipients'=>[],'failures'=>[],'skipped_reasons'=>['publication_checkpointed'],'mode'=>'canonical_refresh','delivery_locked'=>false,'detection_to_send'=>[]];
+                }
+                if ($legacyReleased > 0 && is_array($result)) {
+                    $result['legacy_suppression_released'] = $legacyReleased;
+                }
+            } catch (\Throwable $e) {
+                $result = ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>0,'failed'=>1,'pending'=>1,'recipients'=>[],'failures'=>[$e->getMessage()],'skipped_reasons'=>[],'mode'=>'canonical_refresh','delivery_locked'=>false,'detection_to_send'=>[]];
+            } finally {
+                self::release_delivery_lock($lock);
             }
-        } catch (\Throwable $e) {
-            $result = ['total_incidents'=>count($incidents),'considered'=>0,'sent'=>0,'skipped'=>0,'failed'=>1,'recipients'=>[],'failures'=>[$e->getMessage()],'skipped_reasons'=>[],'mode'=>'canonical_refresh'];
         }
         if ($persistenceFailures) {
             $result['failures'] = array_values(array_merge((array) ($result['failures'] ?? []), $persistenceFailures));
         }
+        $publicResult = $result;
+        $publicResult['recipient_count'] = count(array_unique(array_map('strval', (array) ($publicResult['recipients'] ?? []))));
+        unset($publicResult['recipients']);
         $diag = [
             'last_run' => $started,
             'finished_at' => gmdate('c'),
@@ -396,8 +408,12 @@ class IncidentAlerts {
             'emails_sent' => (int) ($result['sent'] ?? 0),
             'skipped_incidents' => array_count_values(array_map('strval', (array) ($result['skipped_reasons'] ?? []))),
             'failures' => array_values(array_map('strval', (array) ($result['failures'] ?? []))),
-            'recipient_count' => count(array_unique(array_map('strval', (array) ($result['recipients'] ?? [])))),
-            'last_successful_delivery' => get_option(self::OPTION_LAST_ALERT_SUCCESS, ''),
+            'recipient_count' => (int) $publicResult['recipient_count'],
+            'pending_recipient_slots' => self::pending_slot_count($episodeStore),
+            'delivery_locked' => !empty($result['delivery_locked']),
+            'detection_to_send' => array_values((array) ($result['detection_to_send'] ?? [])),
+            'scheduling' => self::scheduling_diagnostics(),
+            'last_successful_delivery' => self::redact_delivery_record(get_option(self::OPTION_LAST_ALERT_SUCCESS, [])),
             'next_canonical_refresh' => function_exists('wp_next_scheduled') ? (wp_next_scheduled('lousy_outages_refresh_official_providers') ? gmdate('c', (int) wp_next_scheduled('lousy_outages_refresh_official_providers')) : '') : '',
             'history_persisted' => $historyPersisted,
             'persistence_failures' => $persistenceFailures,
@@ -405,20 +421,49 @@ class IncidentAlerts {
             'newly_opened_episodes' => count($transitions['opened']),
             'continuing_episodes' => count($transitions['continuing']),
             'closed_episodes' => count($transitions['closed']),
-            'result' => $result,
+            'skip_delivery' => !empty($options['skip_delivery']),
+            'result' => $publicResult,
         ];
         update_option(self::OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS, $diag, false);
         return $diag;
     }
 
-    private static function process_episodes(array $episodes, EpisodeStore $store, array $options): array
+    /**
+     * Send episodes already checkpointed by snapshot publication.
+     * Does not fetch providers.
+     *
+     * @param array<string,mixed> $options
+     * @return array<string,mixed>
+     */
+    public static function drain_deferred_alerts(array $options = []): array
     {
-        $result=['total_incidents'=>count($episodes),'considered'=>count($episodes),'sent'=>0,'skipped'=>0,'failed'=>0,'pending'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>[],'mode'=>'canonical_refresh','coalesced'=>0];
-        $nowUtc = current_time('timestamp', true);
+        $snapshot = [];
+        if (isset($options['snapshot']) && is_array($options['snapshot'])) {
+            $snapshot = $options['snapshot'];
+            unset($options['snapshot']);
+        } else {
+            $stored = get_option('lousy_outages_current_state', []);
+            $snapshot = is_array($stored) ? $stored : [];
+        }
+        $options['mode'] = (string) ($options['mode'] ?? 'canonical_refresh');
+        $options['drain'] = true;
+        return self::process_snapshot($snapshot, $options);
+    }
+
+    private static function process_episodes(array $episodes, EpisodeStore $store, array $options, ?string $lockToken = null): array
+    {
+        $result=['total_incidents'=>count($episodes),'considered'=>count($episodes),'sent'=>0,'skipped'=>0,'failed'=>0,'pending'=>0,'recipients'=>[],'failures'=>[],'skipped_reasons'=>[],'mode'=>'canonical_refresh','coalesced'=>0,'delivery_locked'=>false,'detection_to_send'=>[]];
+        $nowUtc = (int) current_time('timestamp', true);
         $staleWindow = self::REALTIME_ALERT_WINDOW_HOURS * HOUR_IN_SECONDS;
-        $recipientEpisodes = [];
+        $actionable = [];
+        $recorded = [];
 
         foreach ($episodes as $episode) {
+            if (!is_array($episode)) {
+                $result['skipped']++;
+                $result['skipped_reasons'][] = 'invalid_episode';
+                continue;
+            }
             if (!empty($episode['legacy_suppressed']) && !empty($episode['email_successful_recipients'])) {
                 $result['skipped']++;
                 $result['skipped_reasons'][] = 'legacy_active_incident_imported';
@@ -432,87 +477,350 @@ class IncidentAlerts {
                 $result['skipped_reasons'][] = 'stale_episode_backlog';
                 continue;
             }
-
-            $incident = new Incident((string)$episode['provider_id'],(string)$episode['episode_guid'],(string)$episode['title'],(string)$episode['status'],(string)$episode['url'],null,(string)$episode['severity'],(int)$episode['first_detected'],null);
-            $eligible = self::eligible_recipients($incident);
-            $pending = $store->pendingRecipients((string)$episode['episode_guid'], $eligible);
-            if (!$pending) {
-                $result['skipped']++;
-                $result['skipped_reasons'][] = 'all_eligible_recipients_already_sent';
-                continue;
-            }
-
-            $batchSize = max(1, (int) apply_filters('lousy_outages_alert_recipient_batch_size', 25));
-            $pending = array_slice($pending, 0, $batchSize);
-            foreach ($pending as $recipient) {
-                $recipientEpisodes[$recipient][] = [
-                    'episode' => $episode,
-                    'incident' => $incident,
-                    'eligible' => $eligible,
-                ];
-            }
+            $actionable[] = $episode;
         }
 
-        foreach ($recipientEpisodes as $recipient => $entries) {
-            $successful = [];
-            $failed = [];
+        $attempted = [];
+        $deadline = microtime(true) + max(1, (int) apply_filters('lousy_outages_alert_drain_budget_seconds', 20));
+        $passes = 0;
+        do {
+            if (null !== $lockToken) {
+                self::heartbeat_delivery_lock($lockToken);
+            }
+            $batchSize = max(1, (int) apply_filters('lousy_outages_alert_recipient_batch_size', 25));
+            $recipientEpisodes = [];
+            $selected = [];
+            foreach ($actionable as $episode) {
+                $incident = self::incident_from_episode($episode);
+                $eligible = self::eligible_recipients($incident, (string) ($episode['provider_id'] ?? ''));
+                $pending = self::fair_pending($episode, $eligible, $store);
+                if (!$pending) {
+                    continue;
+                }
+                foreach ($pending as $recipient) {
+                    if (isset($attempted[$recipient])) {
+                        continue;
+                    }
+                    if (count($selected) >= $batchSize && !isset($selected[$recipient])) {
+                        continue;
+                    }
+                    $selected[$recipient] = true;
+                    $recipientEpisodes[$recipient][] = [
+                        'episode' => $episode,
+                        'incident' => $incident,
+                        'eligible' => $eligible,
+                    ];
+                }
+            }
+            if (!$recipientEpisodes) {
+                break;
+            }
 
-            if (count($entries) > 1 && function_exists('send_lo_burst_alert_email')) {
-                $sent = send_lo_burst_alert_email($recipient, array_map(static fn(array $entry): array => (array) $entry['episode'], $entries));
-                $result['coalesced']++;
-                foreach ($entries as $entry) {
+            foreach ($recipientEpisodes as $recipient => $entries) {
+                $attempted[(string) $recipient] = true;
+                $successful = [];
+                $failed = [];
+
+                if (count($entries) > 1 && function_exists('send_lo_burst_alert_email')) {
+                    $sent = send_lo_burst_alert_email((string) $recipient, array_map(static fn(array $entry): array => (array) $entry['episode'], $entries));
+                    $result['coalesced']++;
+                    foreach ($entries as $entry) {
+                        $episode = (array) $entry['episode'];
+                        $eligible = (array) $entry['eligible'];
+                        $guid = (string) ($episode['episode_guid'] ?? '');
+                        if ($sent) {
+                            $successful[] = (string) $recipient;
+                            $store->saveDelivery($guid, [(string) $recipient], [], $eligible);
+                            self::record_detection_delay($result, $recorded, $episode);
+                        } else {
+                            $failed[] = (string) $recipient;
+                            $store->saveDelivery($guid, [], [(string) $recipient], $eligible);
+                        }
+                    }
+                } else {
+                    $entry = $entries[0];
                     $episode = (array) $entry['episode'];
-                    $eligible = (array) $entry['eligible'];
-                    $guid = (string) ($episode['episode_guid'] ?? '');
-                    if ($sent) {
-                        $successful[] = $recipient;
-                        $store->saveDelivery($guid, [$recipient], [], $eligible);
-                    } else {
-                        $failed[] = $recipient;
-                        $store->saveDelivery($guid, [], [$recipient], $eligible);
+                    $send = self::send_incident_alert_email($entry['incident'], ['explicit_recipients'=>[(string) $recipient], 'mode'=>'canonical_refresh']);
+                    $success = (array) ($send['accepted_recipients'] ?? []);
+                    $fail = (array) ($send['failed_recipients'] ?? []);
+                    $store->saveDelivery((string) $episode['episode_guid'], $success, $fail, (array) $entry['eligible']);
+                    if ($success) {
+                        $successful = $success;
+                        self::record_detection_delay($result, $recorded, $episode);
+                    }
+                    if ($fail) {
+                        $failed = $fail;
                     }
                 }
-            } else {
-                $entry = $entries[0];
-                $episode = (array) $entry['episode'];
-                $incident = $entry['incident'];
-                $eligible = (array) $entry['eligible'];
-                $send = self::send_incident_alert_email($incident, ['explicit_recipients'=>[$recipient], 'mode'=>'canonical_refresh']);
-                $success = (array) ($send['accepted_recipients'] ?? []);
-                $fail = (array) ($send['failed_recipients'] ?? []);
-                $store->saveDelivery((string) $episode['episode_guid'], $success, $fail, $eligible);
-                if ($success) {
-                    $successful = $success;
+
+                if ($successful) {
+                    $result['recipients'] = array_values(array_unique(array_merge($result['recipients'], $successful)));
+                    $result['sent'] += count($successful);
+                    self::record_alert_delivery(true, $entries[0]['incident'], $successful, '', false, $options);
                 }
-                if ($fail) {
-                    $failed = $fail;
+                if ($failed) {
+                    $result['failed'] += count($failed);
+                    $result['failures'][] = 'recipient_send_failed';
+                    self::record_alert_delivery(false, $entries[0]['incident'], array_merge($successful, $failed), 'recipient_send_failed', false, $options);
                 }
             }
 
-            if ($successful) {
-                $result['recipients'] = array_values(array_unique(array_merge($result['recipients'], $successful)));
-                $result['sent'] += count($successful);
-                self::record_alert_delivery(true, $entries[0]['incident'], $successful, '', false, $options);
-            }
-            if ($failed) {
-                $result['failed'] += count($failed);
-                $result['failures'][] = 'recipient_send_failed';
-                self::record_alert_delivery(false, $entries[0]['incident'], array_merge($successful, $failed), 'recipient_send_failed', false, $options);
-            }
+            $actionable = self::reload_episodes($actionable, $store);
+            $passes++;
+        } while ($passes < 100 && microtime(true) < $deadline);
 
-            foreach ($entries as $entry) {
-                $episode = (array) $entry['episode'];
-                $eligible = (array) $entry['eligible'];
-                $result['pending'] += count($store->pendingRecipients((string) $episode['episode_guid'], $eligible));
-            }
+        foreach ($actionable as $episode) {
+            $incident = self::incident_from_episode($episode);
+            $eligible = self::eligible_recipients($incident, (string) ($episode['provider_id'] ?? ''));
+            $result['pending'] += count($store->pendingRecipients((string) ($episode['episode_guid'] ?? ''), $eligible));
+        }
+        if (0 === $result['pending'] && 0 === $result['sent'] && 0 === $result['failed'] && $actionable) {
+            $result['skipped'] += count($actionable);
+            $result['skipped_reasons'][] = 'all_eligible_recipients_already_sent';
         }
 
         return $result;
     }
 
-    private static function eligible_recipients(Incident $incident): array
+    /**
+     * @param array{opened?:array,continuing?:array} $transitions
+     * @return array<int,array<string,mixed>>
+     */
+    private static function episodes_to_deliver(array $transitions, EpisodeStore $store): array
     {
-        $preview=self::recipient_preview(sanitize_key($incident->provider));
+        $continuing = array_values(array_filter((array) ($transitions['continuing'] ?? []), static function ($episode): bool {
+            return is_array($episode) && (!empty($episode['email_pending_recipients']) || empty($episode['email_successful_recipients']));
+        }));
+        return self::dedupe_episodes(array_merge((array) ($transitions['opened'] ?? []), $continuing, $store->awaitingDelivery()));
+    }
+
+    /**
+     * @param array<int,mixed> $episodes
+     * @return array<int,array<string,mixed>>
+     */
+    private static function dedupe_episodes(array $episodes): array
+    {
+        $byGuid = [];
+        foreach ($episodes as $episode) {
+            if (!is_array($episode)) {
+                continue;
+            }
+            $guid = (string) ($episode['episode_guid'] ?? '');
+            if ('' === $guid) {
+                continue;
+            }
+            $byGuid[$guid] = $episode;
+        }
+        return array_values($byGuid);
+    }
+
+    private static function incident_from_episode(array $episode): Incident
+    {
+        $provider = trim((string) ($episode['provider_label'] ?? ''));
+        if ('' === $provider) {
+            $provider = (string) ($episode['provider_id'] ?? 'provider');
+        }
+        return new Incident(
+            $provider,
+            (string) ($episode['episode_guid'] ?? ''),
+            (string) ($episode['title'] ?? 'Incident'),
+            (string) ($episode['status'] ?? 'degraded'),
+            (string) ($episode['url'] ?? ''),
+            null,
+            (string) ($episode['severity'] ?? ''),
+            (int) ($episode['first_detected'] ?? time()),
+            null
+        );
+    }
+
+    /**
+     * Never-tried recipients go before addresses that already failed, so a stuck prefix cannot block the rest.
+     *
+     * @param array<string,mixed> $episode
+     * @param array<int,string> $eligible
+     * @return array<int,string>
+     */
+    private static function fair_pending(array $episode, array $eligible, EpisodeStore $store): array
+    {
+        $guid = (string) ($episode['episode_guid'] ?? '');
+        $pending = $store->pendingRecipients($guid, $eligible);
+        $stored = $store->all();
+        $failed = array_fill_keys(array_map('strval', (array) ($stored[$guid]['email_failed_recipients'] ?? $episode['email_failed_recipients'] ?? [])), true);
+        $fresh = [];
+        $retry = [];
+        foreach ($pending as $email) {
+            $email = (string) $email;
+            if (isset($failed[$email])) {
+                $retry[] = $email;
+            } else {
+                $fresh[] = $email;
+            }
+        }
+        return array_merge($fresh, $retry);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $episodes
+     * @return array<int,array<string,mixed>>
+     */
+    private static function reload_episodes(array $episodes, EpisodeStore $store): array
+    {
+        $all = $store->all();
+        $out = [];
+        foreach ($episodes as $episode) {
+            $guid = (string) ($episode['episode_guid'] ?? '');
+            if ('' !== $guid && isset($all[$guid]) && is_array($all[$guid])) {
+                $out[] = $all[$guid];
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @param array<string,mixed> $result
+     * @param array<string,bool> $recorded
+     * @param array<string,mixed> $episode
+     */
+    private static function record_detection_delay(array &$result, array &$recorded, array $episode): void
+    {
+        $guid = (string) ($episode['episode_guid'] ?? '');
+        if ('' === $guid || isset($recorded[$guid])) {
+            return;
+        }
+        $recorded[$guid] = true;
+        if (count((array) $result['detection_to_send']) >= 20) {
+            return;
+        }
+        $first = (int) ($episode['first_detected'] ?? 0);
+        $sentAt = time();
+        $result['detection_to_send'][] = [
+            'provider_id' => (string) ($episode['provider_id'] ?? ''),
+            'episode_guid' => $guid,
+            'first_detected' => $first,
+            'provider_occurred_at' => (int) ($episode['provider_occurred_at'] ?? 0),
+            'sent_at' => $sentAt,
+            'delay_seconds' => $first > 0 ? max(0, $sentAt - $first) : null,
+        ];
+    }
+
+    private static function pending_slot_count(EpisodeStore $store): int
+    {
+        $slots = 0;
+        foreach ($store->all() as $episode) {
+            if (!is_array($episode) || empty($episode['active'])) {
+                continue;
+            }
+            $pending = (array) ($episode['email_pending_recipients'] ?? []);
+            if ($pending) {
+                $slots += count($pending);
+                continue;
+            }
+            if (empty($episode['email_successful_recipients'])) {
+                $slots++;
+            }
+        }
+        return $slots;
+    }
+
+    private static function acquire_delivery_lock(): ?string
+    {
+        $now = time();
+        $current = get_option(self::OPTION_DELIVERY_LOCK, null);
+        if (is_array($current) && (int) ($current['expires_at'] ?? 0) > $now) {
+            return null;
+        }
+        if (is_array($current)) {
+            delete_option(self::OPTION_DELIVERY_LOCK);
+        }
+        $token = function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : bin2hex(random_bytes(8));
+        $ok = add_option(self::OPTION_DELIVERY_LOCK, ['token'=>$token, 'acquired_at'=>$now, 'expires_at'=>$now + 90], '', false);
+        return $ok ? $token : null;
+    }
+
+    private static function heartbeat_delivery_lock(string $token): void
+    {
+        $current = get_option(self::OPTION_DELIVERY_LOCK, []);
+        if (!is_array($current) || !hash_equals((string) ($current['token'] ?? ''), $token)) {
+            return;
+        }
+        $current['expires_at'] = time() + 90;
+        update_option(self::OPTION_DELIVERY_LOCK, $current, false);
+    }
+
+    private static function release_delivery_lock(string $token): void
+    {
+        $current = get_option(self::OPTION_DELIVERY_LOCK, []);
+        if (!is_array($current) || !hash_equals((string) ($current['token'] ?? ''), $token)) {
+            return;
+        }
+        delete_option(self::OPTION_DELIVERY_LOCK);
+    }
+
+    private static function next_hook_timestamp(string $hook): int
+    {
+        if (function_exists('_get_cron_array')) {
+            $next = 0;
+            foreach ((array) _get_cron_array() as $timestamp => $events) {
+                if (!is_array($events) || !isset($events[$hook])) {
+                    continue;
+                }
+                $ts = (int) $timestamp;
+                if ($ts > 0 && (0 === $next || $ts < $next)) {
+                    $next = $ts;
+                }
+            }
+            return $next;
+        }
+        if (!function_exists('wp_next_scheduled')) {
+            return 0;
+        }
+        $scheduled = wp_next_scheduled($hook);
+        return $scheduled ? (int) $scheduled : 0;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function scheduling_diagnostics(): array
+    {
+        $now = time();
+        $next = self::next_hook_timestamp('lousy_outages_refresh_official_providers');
+        $alert = self::next_hook_timestamp('lousy_outages_publish_alerts');
+        $continuation = self::next_hook_timestamp('lousy_outages_refresh_continue');
+        return [
+            'checked_at' => gmdate('c', $now),
+            'next_canonical_refresh' => $next ? gmdate('c', $next) : '',
+            'schedule_overdue_seconds' => $next > 0 && $next < $now ? $now - $next : 0,
+            'recurring_schedule_seconds' => 15 * MINUTE_IN_SECONDS,
+            'interval_option_seconds' => max(60, (int) get_option('lousy_outages_interval', 300)),
+            'alert_hook_next' => $alert ? gmdate('c', $alert) : '',
+            'alert_hook_overdue_seconds' => $alert > 0 && $alert < $now ? $now - $alert : 0,
+            'continuation_hook_next' => $continuation ? gmdate('c', $continuation) : '',
+            'continuation_hook_overdue_seconds' => $continuation > 0 && $continuation < $now ? $now - $continuation : 0,
+            'wp_cron_disabled' => defined('DISABLE_WP_CRON') && DISABLE_WP_CRON,
+        ];
+    }
+
+    /**
+     * @param mixed $record
+     * @return array<string,mixed>
+     */
+    private static function redact_delivery_record($record): array
+    {
+        if (!is_array($record)) {
+            return [];
+        }
+        unset($record['recipients'], $record['recipient']);
+        if (isset($record['results']) && is_array($record['results'])) {
+            unset($record['results']);
+        }
+        return $record;
+    }
+
+    private static function eligible_recipients(Incident $incident, string $providerId = ''): array
+    {
+        $providerId = sanitize_key($providerId !== '' ? $providerId : (string) $incident->provider);
+        $preview=self::recipient_preview($providerId);
         $emails=(array)($preview['subscriber_recipients']??[]);
         $inbox=sanitize_email((string)get_option('lousy_outages_email',get_option('admin_email')));
         if($inbox&&is_email($inbox))$emails[]=$inbox;
@@ -526,6 +834,16 @@ class IncidentAlerts {
         $next = function_exists('wp_next_scheduled') ? wp_next_scheduled('lousy_outages_refresh_official_providers') : false;
         $finish=(string)get_option('lousy_outages_last_refresh_finish','');$finishTs=$finish?strtotime($finish):0;$interval=max(60,(int)get_option('lousy_outages_interval',300));
         $feed=class_exists(__NAMESPACE__.'\\Feeds')?Feeds::get_status_feed_diagnostics():[];
+        $scheduling = self::scheduling_diagnostics();
+        $processing = (array) get_option(self::OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS, []);
+        $delays = (array) ($processing['detection_to_send'] ?? []);
+        $lastDelay = null;
+        foreach ($delays as $row) {
+            if (is_array($row) && array_key_exists('delay_seconds', $row) && null !== $row['delay_seconds']) {
+                $lastDelay = (int) $row['delay_seconds'];
+            }
+        }
+        $failure = (array) get_option(self::OPTION_LAST_ALERT_FAILURE, []);
         return [
             'notification_email' => (string) get_option('lousy_outages_email', get_option('admin_email')),
             'confirmed_subscribers' => (int) ($stats['confirmed'] ?? 0),
@@ -541,10 +859,20 @@ class IncidentAlerts {
             'refresh_lock_age'=>get_transient('lousy_outages_refresh_lock')?time()-(int)get_transient('lousy_outages_refresh_lock'):null,
             'refresh_runtime'=>(array)get_option('lousy_outages_refresh_runtime',[]),
             'rss_item_count'=>(int)($feed['item_count']??0),'rss_latest_guid'=>(string)($feed['latest_guid']??''),'rss_content_fingerprint'=>(string)($feed['feed_content_fingerprint']??''),
-            'processing' => (array) get_option(self::OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS, []),
-            'recipient_diagnostics' => (array) get_option(self::OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS, []),
-            'last_successful_real_alert' => (array) get_option(self::OPTION_LAST_ALERT_SUCCESS, []),
-            'last_failed_real_alert' => (array) get_option(self::OPTION_LAST_ALERT_FAILURE, []),
+            'pending_recipient_slots' => self::pending_slot_count(new EpisodeStore()),
+            'schedule_overdue_seconds' => (int) ($scheduling['schedule_overdue_seconds'] ?? 0),
+            'recurring_schedule_seconds' => (int) ($scheduling['recurring_schedule_seconds'] ?? 0),
+            'interval_option_seconds' => (int) ($scheduling['interval_option_seconds'] ?? 0),
+            'alert_hook_next' => (string) ($scheduling['alert_hook_next'] ?? ''),
+            'alert_hook_overdue_seconds' => (int) ($scheduling['alert_hook_overdue_seconds'] ?? 0),
+            'continuation_hook_next' => (string) ($scheduling['continuation_hook_next'] ?? ''),
+            'continuation_hook_overdue_seconds' => (int) ($scheduling['continuation_hook_overdue_seconds'] ?? 0),
+            'last_detection_to_send_seconds' => $lastDelay,
+            'transport_failure_reason' => (string) ($failure['reason'] ?? ''),
+            'processing' => $processing,
+            'recipient_diagnostics' => self::redact_delivery_record(get_option(self::OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS, [])),
+            'last_successful_real_alert' => self::redact_delivery_record(get_option(self::OPTION_LAST_ALERT_SUCCESS, [])),
+            'last_failed_real_alert' => self::redact_delivery_record($failure),
             'last_synthetic_alert' => (array) get_option(self::OPTION_LAST_SYNTHETIC_ALERT, []),
             'last_replayed_real_incident' => (array) get_option('lousy_outages_last_replay_alert', []),
         ];
@@ -1782,7 +2110,7 @@ class IncidentAlerts {
         $subscribers = array_values(array_unique(array_filter(array_map('sanitize_email', $subscribers))));
         $excluded = (array) ($preview['excluded'] ?? []);
         $excluded['already_sent_deduped'] = (int)($excluded['already_sent_deduped'] ?? 0) + max(0, $beforeDedup - count($subscribers));
-        update_option(self::OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS, ['incident_id'=>(string)$incident->id,'provider_id'=>$providerId,'provider_name'=>(string)$incident->provider,'mode'=>(string)($options['mode'] ?? 'real'),'notification_recipients'=>($notificationEmail&&is_email($notificationEmail))?[self::mask_email($notificationEmail)]:[],'subscriber_recipients_count'=>max(0,count(array_diff($subscribers,[$notificationEmail]))),'total_recipients_count'=>count($subscribers),'excluded'=>$excluded,'timestamp'=>gmdate('c')], false);
+        update_option(self::OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS, ['incident_id'=>(string)$incident->id,'provider_id'=>$providerId,'provider_name'=>(string)$incident->provider,'mode'=>(string)($options['mode'] ?? 'real'),'notification_inbox_included'=>($notificationEmail&&is_email($notificationEmail)&&in_array($notificationEmail,$subscribers,true)),'subscriber_recipients_count'=>max(0,count(array_diff($subscribers,[$notificationEmail]))),'total_recipients_count'=>count($subscribers),'excluded'=>$excluded,'timestamp'=>gmdate('c')], false);
         if (empty($subscribers)) { return ['ok'=>false,'recipients'=>[],'error'=>'no_recipients']; }
         if (!empty($options['dry_run'])) { return ['ok'=>true,'recipients'=>$subscribers,'error'=>'']; }
 
@@ -1793,8 +2121,8 @@ class IncidentAlerts {
             $unsubscribe=add_query_arg(['lo_unsub'=>1,'email'=>rawurlencode($email),'token'=>$token], home_url('/lousy-outages/'));
             $payload=['service'=>$provider,'status'=>$incident->status,'impact'=>$impact,'summary'=>$summary,'notes'=>!empty($options['manual_replay'])?'Administrator-requested replay of a real stored incident. Public subscribers were not notified.':'','timestamp'=>$timestamp,'components'=>$componentLine,'components_list'=>$components,'url'=>$url,'unsubscribe_url'=>$unsubscribe];
             $sent=send_lo_outage_alert_email($email,$payload);
-            if ($sent) { $accepted++; $acceptedRecipients[]=$email; $results[]=['recipient'=>self::mask_email($email),'accepted_for_sending'=>true]; }
-            else { $failed++; $failedRecipients[]=$email; $lastError='wp_mail returned false for '.self::mask_email($email); $results[]=['recipient'=>self::mask_email($email),'accepted_for_sending'=>false,'error'=>$lastError]; self::log_error($provider,$lastError); }
+            if ($sent) { $accepted++; $acceptedRecipients[]=$email; $results[]=['accepted_for_sending'=>true]; }
+            else { $failed++; $failedRecipients[]=$email; $lastError='wp_mail returned false'; $results[]=['accepted_for_sending'=>false,'error'=>$lastError]; self::log_error($provider,$lastError); }
         }
         $attempt=['timestamp'=>gmdate('c'),'attempted'=>count($subscribers),'accepted_for_sending'=>$accepted,'immediate_failures'=>$failed,'transport'=>class_exists(__NAMESPACE__.'\MailTransport')?MailTransport::currentTransport():'wordpress','results'=>$results,'last_error'=>$lastError];
         update_option(self::OPTION_LAST_ALERT_DELIVERY_RESULT, $attempt, false);
@@ -1811,7 +2139,7 @@ class IncidentAlerts {
 
     private static function record_alert_delivery(bool $ok, Incident $incident, array $recipients, string $reason, bool $markSentCalled, array $options = []): void
     {
-        $payload = ['timestamp'=>gmdate('c'),'recipient_count'=>count($recipients),'recipients'=>array_map([self::class,'mask_email'],$recipients),'provider'=>$incident->provider,'incident_id'=>$incident->id,'title'=>$incident->title,'status'=>$incident->status,'mark_sent_called'=>$markSentCalled,'synthetic'=>!empty($options['synthetic']),'mode'=>(string)($options['mode'] ?? 'real'),'reason'=>$reason];
+        $payload = ['timestamp'=>gmdate('c'),'recipient_count'=>count($recipients),'provider'=>$incident->provider,'incident_id'=>$incident->id,'title'=>$incident->title,'status'=>$incident->status,'mark_sent_called'=>$markSentCalled,'synthetic'=>!empty($options['synthetic']),'mode'=>(string)($options['mode'] ?? 'real'),'reason'=>$reason];
         update_option(self::OPTION_LAST_ALERT_DELIVERY_RESULT, $payload, false);
         if ($ok) {
             update_option(self::OPTION_LAST_ALERT_SUCCESS, $payload, false);
@@ -2110,9 +2438,9 @@ class IncidentAlerts {
         }
 
         if (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) {
-            $messages[] = 'WordPress cron is disabled. Configure a real server cron to hit wp-cron.php or run "wp cron event run lo_check_statuses" regularly.';
-        } elseif (!wp_next_scheduled('lo_check_statuses')) {
-            $messages[] = 'No upcoming outage scans are scheduled. A fallback run was queued, but setting up a server cron is recommended for reliability.';
+            $messages[] = 'WordPress cron is disabled. Run `wp cron event run --due-now` from the WordPress root at least every two minutes so continuation and alert retries are not left behind the 15-minute provider refresh.';
+        } elseif (!wp_next_scheduled('lousy_outages_refresh_official_providers')) {
+            $messages[] = 'The canonical provider refresh is not scheduled.';
         }
 
         $safe_messages = array_map('esc_html', $messages);
