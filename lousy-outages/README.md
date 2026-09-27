@@ -136,7 +136,27 @@ Place `[lousy_outages]` in any page or post to render the status table. A page t
 
 ## Development
 
-Official-provider refresh runs via WP-Cron (`lousy_outages_refresh_official_providers`) and updates the saved snapshot and "Last fetched" timestamp at the configured interval. Missing or refresh-stale schedules receive one guarded immediate recovery event. When `DISABLE_WP_CRON` is true, an external runner must invoke `wp-cron.php` (or run `wp cron event run lousy_outages_refresh_official_providers`) at least as often as the configured interval. Results are stored in an option and also exposed at `/wp-json/lousy-outages/v1/status`.
+Official-provider refresh uses one hook, `lousy_outages_refresh_official_providers`, on the `lousy_outages_15min` schedule (900 seconds). The settings field `lousy_outages_interval` (default 300) does not change that schedule. A fetch invocation is capped (about 25 seconds, four providers) and schedules `lousy_outages_refresh_continue` for the rest. Newly detected incidents are mailed in the same invocation that fetched them. `lousy_outages_publish_alerts` retries anyone still pending. `wp_mail` returning true means the local transport accepted the message, not that Gmail has delivered it.
+
+This site is deployed over SSH/SFTP into cPanel `public_html` (`wp-content/plugins/lousy-outages/`). Visitor-triggered WP-Cron is not a clock. In `wp-config.php`:
+
+```
+define('DISABLE_WP_CRON', true);
+```
+
+cPanel → Cron Jobs, every two minutes, from the WordPress root. Use the account's WP-CLI or PHP binary (cPanel → Select PHP Version / MultiPHP), not a guessed path:
+
+```
+*/2 * * * * cd /home/ACCOUNT/public_html && /usr/local/bin/wp cron event run --due-now --path=/home/ACCOUNT/public_html >/dev/null 2>&1
+```
+
+Without WP-CLI:
+
+```
+*/2 * * * * /usr/local/bin/php -q /home/ACCOUNT/public_html/wp-cron.php >/dev/null 2>&1
+```
+
+Do not schedule only `wp cron event run lousy_outages_refresh_official_providers`. That skips continuation and alert-retry events, so providers later in the registry stay unseen until the next 15-minute tick that happens to resume the same cycle. A code change cannot promise a Gmail timestamp.
 
 ## How to subscribe to RSS
 

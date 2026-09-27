@@ -57,6 +57,22 @@ if (!function_exists('lo_email_gmail_blend_close')) {
     }
 }
 
+if (!function_exists('lo_alert_timezone')) {
+    function lo_alert_timezone(): \DateTimeZone {
+        return new \DateTimeZone('America/Vancouver');
+    }
+}
+
+if (!function_exists('lo_format_alert_timestamp')) {
+    /** Render a unix timestamp in America/Vancouver. The stored value stays an absolute epoch. */
+    function lo_format_alert_timestamp(int $epoch): string {
+        if ($epoch <= 0) {
+            $epoch = time();
+        }
+        return wp_date('M j, Y g:i A T', $epoch, lo_alert_timezone());
+    }
+}
+
 if (!function_exists('lo_unsubscribe_url_for')) {
     function lo_unsubscribe_url_for(string $email): string {
         $email = sanitize_email($email);
@@ -372,10 +388,10 @@ if (!function_exists('send_lo_outage_alert_email')) {
         if ('' !== $timestamp_raw) {
             $time = strtotime($timestamp_raw);
             if (false !== $time) {
-                $timestamp_display = wp_date('M j, Y g:i A T', $time);
+                $timestamp_display = lo_format_alert_timestamp($time);
             }
         }
-        $timestamp_display = $timestamp_display ?: wp_date('M j, Y g:i A T');
+        $timestamp_display = $timestamp_display ?: lo_format_alert_timestamp(time());
 
         $component_line = trim($components);
         if ('' === $component_line && isset($incident_data['components_list']) && is_array($incident_data['components_list'])) {
@@ -513,9 +529,9 @@ if (!function_exists('send_lo_outage_alert_email')) {
         $sent = \SuzyEaston\LousyOutages\Mailer::send($email, $subject, $text_body, $html_body, $headers);
 
         if (!$sent) {
-            error_log('[lousy_outages] outage_email send failed for ' . $email . ' subject=' . $subject);
+            error_log('[lousy_outages] outage_email send failed subject=' . $subject);
         } elseif (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Sent Lousy Outages alert to ' . $email . ' at ' . current_time('mysql'));
+            error_log('[lousy_outages] outage_email accepted subject=' . $subject);
         }
 
         return (bool) $sent;
@@ -524,7 +540,7 @@ if (!function_exists('send_lo_outage_alert_email')) {
 
 if (!function_exists('send_lo_burst_alert_email')) {
     /**
-     * Sends one combined alert when multiple provider episodes queue up at once.
+     * Sends one combined alert for episodes already pending in the same check.
      *
      * @param array<int,array<string,mixed>> $episodes
      */
@@ -557,13 +573,22 @@ if (!function_exists('send_lo_burst_alert_email')) {
             }
             $status_label = $status_map[$status] ?? ucfirst(str_replace('_', ' ', $status));
             $detected = (int) ($episode['first_detected'] ?? 0);
-            $detected_label = $detected > 0 ? wp_date('M j, Y g:i A T', $detected) : wp_date('M j, Y g:i A T');
+            $detected_label = lo_format_alert_timestamp($detected > 0 ? $detected : time());
             if ('' === $url) {
                 $url = home_url('/lousy-outages/');
             }
+            $providerId = sanitize_key((string) ($episode['provider_id'] ?? ''));
+            $providerLabel = trim((string) ($episode['provider_label'] ?? ''));
+            if ('' === $providerLabel) {
+                $providerLabel = $provider;
+            }
+            if ('' === $providerId) {
+                $providerId = sanitize_key($providerLabel);
+            }
             $items[] = [
-                'provider' => $provider,
-                'title'    => $title ?: ($provider . ' status update'),
+                'provider_id' => $providerId,
+                'provider' => $providerLabel,
+                'title'    => $title ?: ($providerLabel . ' status update'),
                 'status'   => $status_label,
                 'detected' => $detected_label,
                 'url'      => esc_url_raw($url),
@@ -574,8 +599,26 @@ if (!function_exists('send_lo_burst_alert_email')) {
             return false;
         }
 
-        $count = count($items);
-        $subject = sprintf('[Outage Alert] %d providers flagged at once', $count);
+        $providerIds = [];
+        foreach ($items as $item) {
+            $providerKey = sanitize_key((string) ($item['provider_id'] ?? $item['provider'] ?? ''));
+            if ('' !== $providerKey) {
+                $providerIds[$providerKey] = true;
+            }
+        }
+        $incidentCount = count($items);
+        $providerCount = count($providerIds);
+        if ($providerCount < 1) {
+            $providerCount = 1;
+        }
+        $summaryLine = sprintf(
+            '%d %s affecting %d %s',
+            $incidentCount,
+            1 === $incidentCount ? 'incident' : 'incidents',
+            $providerCount,
+            1 === $providerCount ? 'provider' : 'providers'
+        );
+        $subject = sprintf('[Outage Alert] %s', $summaryLine);
         $subject = (string) apply_filters('lo_burst_alert_subject', $subject, $items, $email);
 
         $unsubscribe_url = lo_unsubscribe_url_for($email);
@@ -584,8 +627,8 @@ if (!function_exists('send_lo_burst_alert_email')) {
         $dashboard_url    = esc_url(home_url('/lousy-outages/'));
 
         $text_lines = [
-            sprintf('Multiple outage alerts (%d providers)', $count),
-            'Several providers flipped at once. One email instead of a pile.',
+            $summaryLine,
+            'Collected in the same check. One email instead of a pile.',
             '',
         ];
         foreach ($items as $item) {
@@ -622,9 +665,9 @@ if (!function_exists('send_lo_burst_alert_email')) {
             <div style="<?php echo esc_attr($shell_style); ?>">
                 <div style="<?php echo esc_attr($panel_style); ?>">
                     <?php echo lo_email_gmail_blend_open(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                    <p style="margin:0 0 10px;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#ffffff;">multi-provider alert</p>
-                    <h1 style="margin:0 0 14px;font-size:28px;color:#ffffff;text-transform:uppercase;letter-spacing:0.05em;"><?php echo esc_html((string) $count); ?> providers flagged</h1>
-                    <p style="margin:0 0 18px;font-size:16px;line-height:1.5;color:#ffffff;">Several services flipped around the same time. One ping instead of a pile in your inbox.</p>
+                    <p style="margin:0 0 10px;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#ffffff;">outage alert</p>
+                    <h1 style="margin:0 0 14px;font-size:28px;color:#ffffff;text-transform:uppercase;letter-spacing:0.05em;"><?php echo esc_html($summaryLine); ?></h1>
+                    <p style="margin:0 0 18px;font-size:16px;line-height:1.5;color:#ffffff;">Collected in the same check. One email instead of a pile.</p>
                     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
                         <tbody>
                             <?php echo $rows_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -657,7 +700,7 @@ if (!function_exists('send_lo_burst_alert_email')) {
 
         $sent = \SuzyEaston\LousyOutages\Mailer::send($email, $subject, $text_body, $html_body, $headers);
         if (!$sent) {
-            error_log('[lousy_outages] burst_outage_email send failed for ' . $email . ' subject=' . $subject);
+            error_log('[lousy_outages] burst_outage_email send failed subject=' . $subject);
         }
 
         return (bool) $sent;

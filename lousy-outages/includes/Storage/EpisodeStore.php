@@ -36,6 +36,8 @@ final class EpisodeStore
                     'canonical_url' => $identity['url'], 'fallback_signature' => $identity['fallback'],
                     'identity_type' => $identity['type'], 'identity_value' => $identity['value'],
                     'episode_guid' => $guid, 'first_detected' => $now, 'last_observed' => $now,
+                    'provider_occurred_at' => (int) $incident->detected_at,
+                    'provider_label' => (string) $incident->provider,
                     'active' => true, 'closed_at' => null, 'rss_published' => !$suppressImported,
                     'legacy_suppressed' => $suppressImported,
                     'email_successful_recipients' => [], 'email_pending_recipients' => [],
@@ -48,6 +50,12 @@ final class EpisodeStore
                 $continuing[] = $key;
             }
             $episodes[$key]['last_observed'] = $now;
+            if (empty($episodes[$key]['provider_occurred_at']) && (int) $incident->detected_at > 0) {
+                $episodes[$key]['provider_occurred_at'] = (int) $incident->detected_at;
+            }
+            if ((string) $incident->provider !== '') {
+                $episodes[$key]['provider_label'] = (string) $incident->provider;
+            }
             $episodes[$key]['title'] = $incident->title;
             $episodes[$key]['description'] = $incident->title;
             $episodes[$key]['status'] = $incident->status;
@@ -84,11 +92,30 @@ final class EpisodeStore
     public function saveDelivery(string $guid, array $successful, array $failed, array $eligible): void
     {
         $all=$this->all(); if(!isset($all[$guid])) return;
-        $ok=array_values(array_unique(array_merge((array)$all[$guid]['email_successful_recipients'],$successful)));
+        $ok=array_values(array_unique(array_merge((array)$all[$guid]['email_successful_recipients'], array_map('strval', $successful))));
+        $prevFailed=(array)($all[$guid]['email_failed_recipients'] ?? []);
+        $mergedFailed=array_values(array_diff(array_unique(array_merge($prevFailed, array_map('strval', $failed))), $ok));
         $all[$guid]['email_successful_recipients']=$ok;
-        $all[$guid]['email_failed_recipients']=array_values(array_unique($failed));
-        $all[$guid]['email_pending_recipients']=array_values(array_diff(array_unique($eligible),$ok));
+        $all[$guid]['email_failed_recipients']=$mergedFailed;
+        $all[$guid]['email_pending_recipients']=array_values(array_diff(array_unique(array_map('strval', $eligible)), $ok));
         update_option(self::OPTION,$all,false);
+    }
+
+    /** Active episodes that still need a successful send. Addresses stay in the option, not in logs. */
+    public function awaitingDelivery(): array
+    {
+        $out = [];
+        foreach ($this->all() as $episode) {
+            if (!is_array($episode) || empty($episode['active'])) {
+                continue;
+            }
+            $pending = (array) ($episode['email_pending_recipients'] ?? []);
+            $sent = (array) ($episode['email_successful_recipients'] ?? []);
+            if ($pending || !$sent) {
+                $out[] = $episode;
+            }
+        }
+        return $out;
     }
     public function pendingRecipients(string $guid,array $eligible): array
     { $all=$this->all(); $sent=(array)($all[$guid]['email_successful_recipients']??[]); return array_values(array_diff(array_unique($eligible),$sent)); }
