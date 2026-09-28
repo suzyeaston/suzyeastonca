@@ -361,6 +361,33 @@ $marked = count($GLOBALS['mails']);
 $rememberCaller($retryCycle);
 ok(count($GLOBALS['mails']) === $marked, 'marked provider is not mailed again');
 
+reset_state();
+subscribers(['owed@subscribers.test']);
+$owedStore = new EpisodeStore();
+$owedStore->observe([
+    new Incident('Zoom', 'zoom:zoom-live', 'Service degradation', 'degraded', 'https://status.zoom.us/live', null, 'degraded', time() - 20 * HOUR_IN_SECONDS, null),
+], ['zoom' => 'degraded']);
+$owedEpisodes = $owedStore->all();
+$owedGuid = (string) array_key_first($owedEpisodes);
+ok($owedGuid !== '', 'owed episode exists');
+$owedEpisodes[$owedGuid]['first_detected'] = time() - 20 * HOUR_IN_SECONDS;
+$owedEpisodes[$owedGuid]['email_successful_recipients'] = [];
+$owedEpisodes[$owedGuid]['email_pending_recipients'] = [];
+$owedEpisodes[$owedGuid]['active'] = true;
+update_option(EpisodeStore::OPTION, $owedEpisodes, false);
+$owedBefore = count($GLOBALS['mails']);
+IncidentAlerts::process_snapshot(snapshot_from_states([
+    'zoom' => provider_state('zoom', 'Service degradation', 'zoom-live', gmdate('c', time() - 20 * HOUR_IN_SECONDS), 'degraded'),
+]), ['mode' => 'canonical_refresh']);
+ok(count($GLOBALS['mails']) === $owedBefore + 1, 'active outage older than 12 hours still mails when nothing was accepted');
+ok(!empty($GLOBALS['mails'][$owedBefore]['ok']), 'owed outage mail was accepted');
+ok(count((new EpisodeStore())->all()) === 1, 'owed outage reuses the original episode instead of opening a fresh one');
+$owedAfter = count($GLOBALS['mails']);
+IncidentAlerts::process_snapshot(snapshot_from_states([
+    'zoom' => provider_state('zoom', 'Service degradation', 'zoom-live', gmdate('c', time() - 20 * HOUR_IN_SECONDS), 'degraded'),
+]), ['mode' => 'canonical_refresh']);
+ok(count($GLOBALS['mails']) === $owedAfter, 'owed outage is not mailed twice');
+
 $pipeline = (string) file_get_contents(__DIR__ . '/../../lousy-outages/includes/Cron/CanonicalPipeline.php');
 $runStart = strpos($pipeline, 'public static function run');
 $publishStart = strpos($pipeline, 'public static function publishAlerts');

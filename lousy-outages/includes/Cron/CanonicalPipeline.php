@@ -269,6 +269,9 @@ final class CanonicalPipeline
         if ((int) ($diag['emails_sent'] ?? 0) > 0) {
             return true;
         }
+        if ((int) ($diag['pending_recipient_slots'] ?? 0) > 0) {
+            return false;
+        }
         if (array_key_exists('snapshot_incident_count', $diag) && (int) $diag['snapshot_incident_count'] === 0) {
             return false;
         }

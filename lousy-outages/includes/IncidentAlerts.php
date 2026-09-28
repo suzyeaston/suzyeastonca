@@ -472,7 +472,9 @@ class IncidentAlerts {
 
             $firstDetected = (int) ($episode['first_detected'] ?? 0);
             $hasDeliveryHistory = !empty($episode['email_successful_recipients']) || !empty($episode['email_pending_recipients']);
-            if ($firstDetected > 0 && !$hasDeliveryHistory && ($nowUtc - $firstDetected) > $staleWindow) {
+            // Age only drops inactive backlog. An outage still on the board that never
+            // got an accepted send stays eligible, even if we first saw it hours ago.
+            if (empty($episode['active']) && $firstDetected > 0 && !$hasDeliveryHistory && ($nowUtc - $firstDetected) > $staleWindow) {
                 $result['skipped']++;
                 $result['skipped_reasons'][] = 'stale_episode_backlog';
                 continue;
