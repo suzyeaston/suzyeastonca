@@ -388,6 +388,54 @@ IncidentAlerts::process_snapshot(snapshot_from_states([
 ]), ['mode' => 'canonical_refresh']);
 ok(count($GLOBALS['mails']) === $owedAfter, 'owed outage is not mailed twice');
 
+reset_state();
+update_option('lo_subscribers', ['other@subscribers.test'], false);
+update_option('lousy_outages_email', 'suzyeaston@gmail.com', false);
+update_option('admin_email', '', false);
+$now = time();
+$zoomGuid = 'lo-episode-zoom-owed';
+$vercelGuid = 'lo-episode-vercel-missed';
+update_option(EpisodeStore::OPTION, [
+    $zoomGuid => [
+        'provider_id' => 'zoom', 'provider_label' => 'Zoom', 'episode_guid' => $zoomGuid,
+        'first_detected' => $now - 20 * HOUR_IN_SECONDS, 'last_observed' => $now, 'closed_at' => null,
+        'active' => true, 'title' => 'Service degradation', 'status' => 'degraded', 'severity' => 'degraded',
+        'url' => 'https://status.example/zoom', 'email_successful_recipients' => ['other@subscribers.test', 'suzyeaston@gmail.com'],
+        'email_pending_recipients' => [], 'email_failed_recipients' => [],
+    ],
+    $vercelGuid => [
+        'provider_id' => 'vercel', 'provider_label' => 'Vercel', 'episode_guid' => $vercelGuid,
+        'first_detected' => $now - 5 * HOUR_IN_SECONDS, 'last_observed' => $now - 4 * HOUR_IN_SECONDS,
+        'closed_at' => $now - 4 * HOUR_IN_SECONDS, 'active' => false,
+        'title' => 'Build failures and deployments serving 500s', 'status' => 'degraded', 'severity' => 'degraded',
+        'url' => 'https://status.example/vercel', 'email_successful_recipients' => ['other@subscribers.test', 'suzyeaston@gmail.com'],
+        'email_pending_recipients' => [], 'email_failed_recipients' => [],
+    ],
+], false);
+IncidentAlerts::requeue_operator_inbox();
+ok(get_option('lousy_outages_email') === 'suzanneeaston@gmail.com', 'typo notification inbox is corrected to the address that actually gets read');
+$rewritten = (new EpisodeStore())->all();
+ok(!in_array('suzanneeaston@gmail.com', (array) $rewritten[$zoomGuid]['email_successful_recipients'], true), 'a recorded accept for the typo address does not count as delivered');
+ok(in_array('other@subscribers.test', (array) $rewritten[$zoomGuid]['email_successful_recipients'], true), 'people who already accepted the alert stay marked sent');
+$rewritten[$zoomGuid]['email_pending_recipients'] = [];
+update_option(EpisodeStore::OPTION, $rewritten, false);
+$keptOpen = (new EpisodeStore())->observe([], ['zoom' => 'operational'], $now);
+ok($keptOpen['closed'] === [], 'recovery does not close an episode the operator inbox has not accepted');
+ok(in_array('suzanneeaston@gmail.com', (array) ((new EpisodeStore())->all()[$zoomGuid]['email_pending_recipients'] ?? []), true), 'operator inbox is put back on the pending list');
+$catchupBefore = count($GLOBALS['mails']);
+IncidentAlerts::process_snapshot(['providers' => []], ['mode' => 'operator_catchup']);
+$catchupMails = array_slice($GLOBALS['mails'], $catchupBefore);
+ok(count($catchupMails) === 1, 'missed zoom and vercel incidents coalesce into one operator email');
+ok(($catchupMails[0]['to'] ?? '') === 'suzanneeaston@gmail.com', 'catch-up mail is addressed to suzanneeaston@gmail.com');
+ok(str_contains((string) ($catchupMails[0]['body'] ?? ''), 'Zoom') && str_contains((string) ($catchupMails[0]['body'] ?? ''), 'Vercel'), 'catch-up names both missed incidents');
+$tos = array_map(static fn(array $mail): string => (string) $mail['to'], $GLOBALS['mails']);
+ok(!in_array('other@subscribers.test', $tos, true), 'catch-up does not remail recipients who already accepted');
+ok(!in_array('suzyeaston@gmail.com', $tos, true), 'catch-up does not mail the typo inbox');
+$afterCatchup = count($GLOBALS['mails']);
+IncidentAlerts::requeue_operator_inbox();
+IncidentAlerts::process_snapshot(['providers' => []], ['mode' => 'operator_catchup']);
+ok(count($GLOBALS['mails']) === $afterCatchup, 'operator catch-up does not send a second time');
+
 $pipeline = (string) file_get_contents(__DIR__ . '/../../lousy-outages/includes/Cron/CanonicalPipeline.php');
 $runStart = strpos($pipeline, 'public static function run');
 $publishStart = strpos($pipeline, 'public static function publishAlerts');

@@ -54,6 +54,7 @@ class IncidentAlerts {
     private const OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS = 'lousy_outages_last_alert_recipient_diagnostics';
     private const OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS = 'lousy_outages_last_alert_processing_diagnostics';
     private const OPTION_DELIVERY_LOCK = 'lousy_outages_alert_delivery_lock';
+    public const OWED_INBOX_HOOK = 'lousy_outages_dispatch_owed_inbox';
 
     private const ALERT_RETENTION_HOURS        = 48;
     private const SUBJECT_ALERT_WINDOW_HOURS   = 12;
@@ -464,7 +465,7 @@ class IncidentAlerts {
                 $result['skipped_reasons'][] = 'invalid_episode';
                 continue;
             }
-            if (!empty($episode['legacy_suppressed']) && !empty($episode['email_successful_recipients'])) {
+            if (!empty($episode['legacy_suppressed']) && !empty($episode['email_successful_recipients']) && !self::operator_still_owed($episode)) {
                 $result['skipped']++;
                 $result['skipped_reasons'][] = 'legacy_active_incident_imported';
                 continue;
@@ -472,9 +473,10 @@ class IncidentAlerts {
 
             $firstDetected = (int) ($episode['first_detected'] ?? 0);
             $hasDeliveryHistory = !empty($episode['email_successful_recipients']) || !empty($episode['email_pending_recipients']);
-            // Age only drops inactive backlog. An outage still on the board that never
-            // got an accepted send stays eligible, even if we first saw it hours ago.
-            if (empty($episode['active']) && $firstDetected > 0 && !$hasDeliveryHistory && ($nowUtc - $firstDetected) > $staleWindow) {
+            $operatorOwed = self::operator_still_owed($episode);
+            // Age only drops inactive backlog nobody is still owed. An outage still on
+            // the board, or a recent one the operator inbox never accepted, stays eligible.
+            if (!$operatorOwed && empty($episode['active']) && $firstDetected > 0 && !$hasDeliveryHistory && ($nowUtc - $firstDetected) > $staleWindow) {
                 $result['skipped']++;
                 $result['skipped_reasons'][] = 'stale_episode_backlog';
                 continue;
@@ -593,7 +595,7 @@ class IncidentAlerts {
         $continuing = array_values(array_filter((array) ($transitions['continuing'] ?? []), static function ($episode): bool {
             return is_array($episode) && (!empty($episode['email_pending_recipients']) || empty($episode['email_successful_recipients']));
         }));
-        return self::dedupe_episodes(array_merge((array) ($transitions['opened'] ?? []), $continuing, $store->awaitingDelivery()));
+        return self::dedupe_episodes(array_merge((array) ($transitions['opened'] ?? []), $continuing, $store->awaitingDelivery(), self::episodes_missing_operator($store)));
     }
 
     /**
@@ -819,14 +821,167 @@ class IncidentAlerts {
         return $record;
     }
 
+    /**
+     * Addresses that must receive the alert. The operator inbox is first so a
+     * full subscriber batch cannot burn the send budget before she is attempted.
+     *
+     * @return array<int,string>
+     */
+    public static function requiredAlertRecipients(): array
+    {
+        return self::notification_recipients();
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private static function notification_recipients(): array
+    {
+        $configured = strtolower(sanitize_email((string) get_option('lousy_outages_email', '')));
+        if ('suzyeaston@gmail.com' === $configured) {
+            $configured = 'suzanneeaston@gmail.com';
+            update_option('lousy_outages_email', $configured, false);
+        }
+        $out = [];
+        if ('' !== $configured && is_email($configured)) {
+            $out[] = $configured;
+        } else {
+            $admin = strtolower(sanitize_email((string) get_option('admin_email', '')));
+            if ('suzyeaston@gmail.com' === $admin) {
+                $admin = 'suzanneeaston@gmail.com';
+            }
+            if ('' !== $admin && is_email($admin)) {
+                $out[] = $admin;
+            }
+        }
+        if (function_exists('lousy_outages_operator_email')) {
+            $operator = strtolower(sanitize_email((string) lousy_outages_operator_email()));
+            if ('' !== $operator && is_email($operator)) {
+                $out[] = $operator;
+            }
+        }
+        return array_values(array_unique($out));
+    }
+
+    /**
+     * @param array<string,mixed> $episode
+     */
+    private static function operator_still_owed(array $episode): bool
+    {
+        $required = self::notification_recipients();
+        if (!$required) {
+            return false;
+        }
+        $sent = array_map(static fn($email): string => strtolower(trim((string) $email)), (array) ($episode['email_successful_recipients'] ?? []));
+        return array_diff($required, $sent) !== [];
+    }
+
+    /**
+     * Active incidents, plus ones that recovered in the last two days, still owe the operator
+     * when someone else was accepted and she was not.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    private static function episodes_missing_operator(EpisodeStore $store): array
+    {
+        $required = self::notification_recipients();
+        if (!$required) {
+            return [];
+        }
+        $cutoff = time() - (48 * HOUR_IN_SECONDS);
+        $out = [];
+        foreach ($store->all() as $episode) {
+            if (!is_array($episode) || !self::operator_still_owed($episode)) {
+                continue;
+            }
+            $active = !empty($episode['active']);
+            $openedAt = (int) ($episode['first_detected'] ?? 0);
+            $closedAt = (int) ($episode['closed_at'] ?? 0);
+            $recent = $active ? $openedAt : max($openedAt, $closedAt);
+            if ($recent <= 0 || $recent < $cutoff) {
+                continue;
+            }
+            $out[] = $episode;
+        }
+        return $out;
+    }
+
+    /**
+     * One pass after deploy. A recorded accept for the typo inbox, or for other
+     * recipients only, is not delivery to the address that actually reads the mail.
+     */
+    public static function requeue_operator_inbox(): void
+    {
+        if (get_option('lousy_outages_operator_catchup_v1')) {
+            return;
+        }
+        $targets = self::notification_recipients();
+        $store = new EpisodeStore();
+        $all = $store->all();
+        $cutoff = time() - (48 * HOUR_IN_SECONDS);
+        $touched = 0;
+        if ($targets) {
+            foreach ($all as $guid => $episode) {
+                if (!is_array($episode)) {
+                    continue;
+                }
+                $active = !empty($episode['active']);
+                $openedAt = (int) ($episode['first_detected'] ?? 0);
+                $closedAt = (int) ($episode['closed_at'] ?? 0);
+                $recent = $active ? $openedAt : max($openedAt, $closedAt);
+                if ($recent <= 0 || $recent < $cutoff) {
+                    continue;
+                }
+                $normalize = static function (array $list): array {
+                    $out = [];
+                    foreach ($list as $email) {
+                        $email = strtolower(trim((string) $email));
+                        if ('suzyeaston@gmail.com' === $email) {
+                            $email = 'suzanneeaston@gmail.com';
+                        }
+                        if ('' !== $email) {
+                            $out[] = $email;
+                        }
+                    }
+                    return array_values(array_unique($out));
+                };
+                $successful = array_values(array_diff($normalize((array) ($episode['email_successful_recipients'] ?? [])), $targets));
+                $failed = array_values(array_diff($normalize((array) ($episode['email_failed_recipients'] ?? [])), $targets));
+                $episode['email_successful_recipients'] = $successful;
+                $episode['email_failed_recipients'] = $failed;
+                $episode['email_pending_recipients'] = array_values(array_diff(array_unique(array_merge($normalize((array) ($episode['email_pending_recipients'] ?? [])), $targets)), $successful));
+                $all[$guid] = $episode;
+                $touched++;
+            }
+            if ($touched > 0) {
+                update_option(EpisodeStore::OPTION, $all, false);
+            }
+        }
+        update_option('lousy_outages_operator_catchup_v1', gmdate('c'), false);
+        if ($touched > 0 && function_exists('wp_next_scheduled') && function_exists('wp_schedule_single_event') && !wp_next_scheduled(self::OWED_INBOX_HOOK)) {
+            wp_schedule_single_event(time() + 15, self::OWED_INBOX_HOOK);
+        }
+    }
+
+    public static function dispatchOwedInbox(): void
+    {
+        $snapshot = get_option('lousy_outages_current_state', []);
+        self::process_snapshot(is_array($snapshot) ? $snapshot : [], ['mode' => 'operator_catchup']);
+    }
+
     private static function eligible_recipients(Incident $incident, string $providerId = ''): array
     {
         $providerId = sanitize_key($providerId !== '' ? $providerId : (string) $incident->provider);
         $preview=self::recipient_preview($providerId);
-        $emails=(array)($preview['subscriber_recipients']??[]);
-        $inbox=sanitize_email((string)get_option('lousy_outages_email',get_option('admin_email')));
-        if($inbox&&is_email($inbox))$emails[]=$inbox;
-        return array_values(array_unique(array_filter(array_map('sanitize_email',$emails))));
+        $emails=array_merge(self::notification_recipients(), (array)($preview['subscriber_recipients']??[]));
+        $out=[];
+        foreach ($emails as $email) {
+            $email=strtolower(sanitize_email((string)$email));
+            if ($email!=='' && is_email($email)) {
+                $out[]=$email;
+            }
+        }
+        return array_values(array_unique($out));
     }
 
 
@@ -1013,6 +1168,11 @@ class IncidentAlerts {
         $subscribers = array_values(array_filter(self::get_subscribers(), static function (string $email): bool {
             return Subscriptions::subscriber_wants_digest($email);
         }));
+        foreach (self::notification_recipients() as $inbox) {
+            if (!in_array($inbox, $subscribers, true)) {
+                $subscribers[] = $inbox;
+            }
+        }
         if (empty($subscribers)) {
             return;
         }
@@ -2105,9 +2265,10 @@ class IncidentAlerts {
             $preview = self::recipient_preview($providerId);
             $subscribers = (array) ($preview['subscriber_recipients'] ?? []);
         }
-        $notificationEmail = sanitize_email((string) get_option('lousy_outages_email', get_option('admin_email')));
-        if (!empty($options['notification_only'])) { $subscribers = []; }
-        if (empty($options['explicit_recipients']) && $notificationEmail && is_email($notificationEmail)) { $subscribers[] = $notificationEmail; }
+        $operators = self::notification_recipients();
+        $notificationEmail = $operators[0] ?? '';
+        if (!empty($options['notification_only'])) { $subscribers = $operators; }
+        elseif (empty($options['explicit_recipients'])) { $subscribers = array_merge($subscribers, $operators); }
         $beforeDedup = count($subscribers);
         $subscribers = array_values(array_unique(array_filter(array_map('sanitize_email', $subscribers))));
         $excluded = (array) ($preview['excluded'] ?? []);
@@ -2141,13 +2302,18 @@ class IncidentAlerts {
 
     private static function record_alert_delivery(bool $ok, Incident $incident, array $recipients, string $reason, bool $markSentCalled, array $options = []): void
     {
-        $payload = ['timestamp'=>gmdate('c'),'recipient_count'=>count($recipients),'provider'=>$incident->provider,'incident_id'=>$incident->id,'title'=>$incident->title,'status'=>$incident->status,'mark_sent_called'=>$markSentCalled,'synthetic'=>!empty($options['synthetic']),'mode'=>(string)($options['mode'] ?? 'real'),'reason'=>$reason];
+        $operators = array_map('strtolower', self::notification_recipients());
+        $accepted = array_map(static fn($email): string => strtolower(trim((string) $email)), $recipients);
+        $operatorNotified = !$operators || array_intersect($operators, $accepted) !== [];
+        $payload = ['timestamp'=>gmdate('c'),'recipient_count'=>count($recipients),'provider'=>$incident->provider,'incident_id'=>$incident->id,'title'=>$incident->title,'status'=>$incident->status,'mark_sent_called'=>$markSentCalled,'synthetic'=>!empty($options['synthetic']),'mode'=>(string)($options['mode'] ?? 'real'),'reason'=>$reason,'operator_notified'=>$operatorNotified];
         update_option(self::OPTION_LAST_ALERT_DELIVERY_RESULT, $payload, false);
-        if ($ok) {
+        if ($ok && $operatorNotified) {
             update_option(self::OPTION_LAST_ALERT_SUCCESS, $payload, false);
             if (!empty($options['synthetic'])) {
                 update_option(self::OPTION_LAST_SYNTHETIC_ALERT, $payload, false);
             }
+        } elseif ($ok) {
+            return;
         } else {
             update_option(self::OPTION_LAST_ALERT_FAILURE, $payload, false);
             update_option(self::OPTION_ALERT_DELIVERY_FAILURE, $payload, false);
