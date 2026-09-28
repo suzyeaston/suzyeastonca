@@ -65,7 +65,10 @@ final class CanonicalPipeline
             }
             self::dispatchUnalertedProviders($cycle);
             try {
-                IncidentAlerts::drain_deferred_alerts(['cycle_id' => (string) $cycle['cycle_id']]);
+                IncidentAlerts::drain_deferred_alerts([
+                    'cycle_id' => (string) $cycle['cycle_id'],
+                    'snapshot' => self::snapshotForAlertDrain($cycle),
+                ]);
             } catch (\Throwable $e) {
                 $cycle['errors'][] = ['id' => '', 'message' => 'alert_drain_failed'];
                 self::saveCycle($cycle);
@@ -233,11 +236,77 @@ final class CanonicalPipeline
             self::saveCycle($cycle);
             return;
         }
-        if (!empty($diag['delivery_locked'])) {
+        if (!self::alertDispatchSettled($diag)) {
             return;
         }
         $cycle['alerted_provider_ids'][] = $providerId;
         self::saveCycle($cycle);
+    }
+
+    /**
+     * A provider stays eligible for the next pass until mail is accepted or there is nothing to send.
+     * A locked worker, a failed transport, or leftover recipients must not count as done.
+     *
+     * @param array<string,mixed> $diag
+     */
+    private static function alertDispatchSettled(array $diag): bool
+    {
+        if (!empty($diag['delivery_locked'])) {
+            return false;
+        }
+        if (!empty($diag['skipped']) && (string) ($diag['reason'] ?? '') === 'not_alertable') {
+            return true;
+        }
+        if ((int) ($diag['result']['pending'] ?? 0) > 0) {
+            return false;
+        }
+        $failures = array_values(array_filter(array_map('strval', (array) ($diag['failures'] ?? [])), static function (string $failure): bool {
+            return !str_starts_with($failure, 'incident_store:') && !str_starts_with($failure, 'history_store:');
+        }));
+        if ($failures) {
+            return false;
+        }
+        if ((int) ($diag['emails_sent'] ?? 0) > 0) {
+            return true;
+        }
+        if (array_key_exists('snapshot_incident_count', $diag) && (int) $diag['snapshot_incident_count'] === 0) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Drain against fetched states from this cycle, not the last committed snapshot.
+     * Otherwise a provider already seen in outage still looks operational and the retry is closed.
+     *
+     * @param array<string,mixed> $cycle
+     * @return array<string,mixed>
+     */
+    private static function snapshotForAlertDrain(array $cycle): array
+    {
+        $stored = get_option('lousy_outages_current_state', []);
+        $snapshot = is_array($stored) ? $stored : [];
+        $providers = [];
+        foreach ((array) ($snapshot['providers'] ?? []) as $provider) {
+            if (is_array($provider) && !empty($provider['id'])) {
+                $providers[(string) $provider['id']] = $provider;
+            }
+        }
+        $fetchedAt = gmdate('c');
+        foreach ((array) ($cycle['provider_states'] ?? []) as $id => $state) {
+            if (!is_array($state)) {
+                continue;
+            }
+            $providerId = (string) $id;
+            $providers[$providerId] = function_exists('lousy_outages_build_provider_payload')
+                ? lousy_outages_build_provider_payload($providerId, $state, $fetchedAt)
+                : self::providerPayload($providerId, $state, $fetchedAt);
+        }
+        $snapshot['providers'] = array_values($providers);
+        if (empty($snapshot['fetched_at'])) {
+            $snapshot['fetched_at'] = $fetchedAt;
+        }
+        return $snapshot;
     }
 
     /**
