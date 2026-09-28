@@ -366,10 +366,10 @@ function se_broadcaster_radar_scopes(): array {
             'id'     => 'salish',
             'label'  => 'salish sea',
             'bounds' => array(
-                'west'  => -123.70,
-                'east'  => -122.15,
-                'south' => 47.22,
-                'north' => 49.55,
+                'west'  => -124.35,
+                'east'  => -121.35,
+                'south' => 46.55,
+                'north' => 50.15,
             ),
         ),
     );

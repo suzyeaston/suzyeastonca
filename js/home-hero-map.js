@@ -484,20 +484,49 @@
       return;
     }
     var bounds = scope.bounds;
+    this.map.setMinZoom(4);
+    var rect = this.stage.getBoundingClientRect();
+    var side = Math.min(rect.width || 240, rect.height || 240);
+    var padding = Math.max(28, Math.round(side * 0.2));
     this.map.setMaxBounds([
       [bounds.west - 0.2, bounds.south - 0.12],
       [bounds.east + 0.2, bounds.north + 0.12]
     ]);
     this.map.fitBounds(this.boundsPair(bounds), {
-      padding: 18,
+      padding: padding,
       animate: !!animate,
       duration: animate ? 700 : 0
     });
     this.syncMarkers();
     this.syncScopeButtons();
-    if (!this.activePostId) {
-      var geo = this.scopeGeo();
+    var tuned = this.activeChannel ? this.findPostByKey(this.activeChannel) : null;
+    var tunedVisible = tuned && this.visiblePosts().some(function (post) {
+      return post.id === tuned.id;
+    });
+    var geo = this.scopeGeo();
+    if (tunedVisible) {
+      this.writeGeo(tuned.place, tuned.geo);
+      this.highlightPost(tuned.id);
+    } else {
+      this.activePostId = null;
       this.writeGeo(geo.place, geo.line);
+    }
+    if (animate) {
+      window.dispatchEvent(new CustomEvent('yvr-radar-preview', {
+        detail: tunedVisible ? {
+          label: tuned.label,
+          place: tuned.place,
+          geo: tuned.geo,
+          band: 'still on this post.'
+        } : {
+          label: this.scopeId === 'salish' ? 'SALISH' : 'CITY',
+          place: geo.place,
+          geo: geo.line,
+          band: this.scopeId === 'salish'
+            ? 'city up top. hydrophones down the sea.'
+            : 'five posts. tap one.'
+        }
+      }));
     }
   };
 
@@ -599,8 +628,8 @@
       style: this.tileStyle || DEFAULT_STYLE,
       attributionControl: false,
       bounds: this.boundsPair(bounds),
-      fitBoundsOptions: { padding: 18 },
-      minZoom: 6,
+      fitBoundsOptions: { padding: 46 },
+      minZoom: 4,
       maxZoom: 14,
       dragRotate: false,
       pitchWithRotate: false,
@@ -670,8 +699,9 @@
       .then(function () {
         self.initMap();
       })
-      .catch(function () {
-        self.showMapError('Map library failed to load — try a refresh.');
+      .catch(function (err) {
+        var detail = err && err.message ? err.message : '';
+        self.showMapError(detail || 'Map library failed to load — try a refresh.');
       })
       .finally(function () {
         self.booting = false;
