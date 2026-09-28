@@ -54,6 +54,7 @@ class IncidentAlerts {
     private const OPTION_LAST_ALERT_RECIPIENT_DIAGNOSTICS = 'lousy_outages_last_alert_recipient_diagnostics';
     private const OPTION_LAST_ALERT_PROCESSING_DIAGNOSTICS = 'lousy_outages_last_alert_processing_diagnostics';
     private const OPTION_DELIVERY_LOCK = 'lousy_outages_alert_delivery_lock';
+    public const SUBSCRIBER_CATCHUP_HOOK = 'lousy_outages_dispatch_subscriber_alerts';
 
     private const ALERT_RETENTION_HOURS        = 48;
     private const SUBJECT_ALERT_WINDOW_HOURS   = 12;
@@ -464,7 +465,7 @@ class IncidentAlerts {
                 $result['skipped_reasons'][] = 'invalid_episode';
                 continue;
             }
-            if (!empty($episode['legacy_suppressed']) && !empty($episode['email_successful_recipients'])) {
+            if (empty($episode['subscriber_retry']) && !empty($episode['legacy_suppressed']) && !empty($episode['email_successful_recipients'])) {
                 $result['skipped']++;
                 $result['skipped_reasons'][] = 'legacy_active_incident_imported';
                 continue;
@@ -472,7 +473,9 @@ class IncidentAlerts {
 
             $firstDetected = (int) ($episode['first_detected'] ?? 0);
             $hasDeliveryHistory = !empty($episode['email_successful_recipients']) || !empty($episode['email_pending_recipients']);
-            if ($firstDetected > 0 && !$hasDeliveryHistory && ($nowUtc - $firstDetected) > $staleWindow) {
+            // Age only drops inactive backlog. An outage still on the board, or one
+            // explicitly queued for the WordPress subscriber list, stays eligible.
+            if (empty($episode['subscriber_retry']) && empty($episode['active']) && $firstDetected > 0 && !$hasDeliveryHistory && ($nowUtc - $firstDetected) > $staleWindow) {
                 $result['skipped']++;
                 $result['skipped_reasons'][] = 'stale_episode_backlog';
                 continue;
@@ -578,6 +581,7 @@ class IncidentAlerts {
             $result['skipped'] += count($actionable);
             $result['skipped_reasons'][] = 'all_eligible_recipients_already_sent';
         }
+        self::clear_finished_subscriber_retries($actionable, $store);
 
         return $result;
     }
@@ -591,7 +595,7 @@ class IncidentAlerts {
         $continuing = array_values(array_filter((array) ($transitions['continuing'] ?? []), static function ($episode): bool {
             return is_array($episode) && (!empty($episode['email_pending_recipients']) || empty($episode['email_successful_recipients']));
         }));
-        return self::dedupe_episodes(array_merge((array) ($transitions['opened'] ?? []), $continuing, $store->awaitingDelivery()));
+        return self::dedupe_episodes(array_merge((array) ($transitions['opened'] ?? []), $continuing, $store->awaitingDelivery(), self::episodes_pending_subscriber_retry($store)));
     }
 
     /**
@@ -817,14 +821,166 @@ class IncidentAlerts {
         return $record;
     }
 
+    /**
+     * Registry id for a stored episode. Display names do not match the ids saved
+     * on WordPress subscriber rows ("Google Cloud" is google_cloud, not googlecloud).
+     */
+    public static function canonicalProviderId(string $incidentIdOrStored, string $label = ''): string
+    {
+        $providers = class_exists(Providers::class) ? Providers::list() : [];
+        $prefix = sanitize_key(strstr($incidentIdOrStored, ':', true) ?: '');
+        if ('' !== $prefix && isset($providers[$prefix])) {
+            return $prefix;
+        }
+        $stored = sanitize_key($incidentIdOrStored);
+        if ('' !== $stored && isset($providers[$stored])) {
+            return $stored;
+        }
+        $labelKey = sanitize_key($label);
+        foreach ([$stored, $labelKey] as $candidate) {
+            if ('' === $candidate) {
+                continue;
+            }
+            foreach ($providers as $id => $provider) {
+                if (!is_array($provider)) {
+                    continue;
+                }
+                if (sanitize_key((string) ($provider['name'] ?? '')) === $candidate) {
+                    return sanitize_key((string) $id);
+                }
+            }
+        }
+        if ('' !== $stored) {
+            return $stored;
+        }
+        return $labelKey;
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function episodes_pending_subscriber_retry(EpisodeStore $store): array
+    {
+        $out = [];
+        foreach ($store->all() as $episode) {
+            if (is_array($episode) && !empty($episode['subscriber_retry'])) {
+                $out[] = $episode;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $episodes
+     */
+    private static function clear_finished_subscriber_retries(array $episodes, EpisodeStore $store): void
+    {
+        $all = $store->all();
+        $changed = false;
+        foreach ($episodes as $episode) {
+            if (!is_array($episode)) {
+                continue;
+            }
+            $guid = (string) ($episode['episode_guid'] ?? '');
+            if ('' === $guid || empty($all[$guid]['subscriber_retry'])) {
+                continue;
+            }
+            $current = $all[$guid];
+            $incident = self::incident_from_episode($current);
+            $eligible = self::eligible_recipients($incident, (string) ($current['provider_id'] ?? ''));
+            if ($store->pendingRecipients($guid, $eligible) !== []) {
+                continue;
+            }
+            unset($all[$guid]['subscriber_retry']);
+            $changed = true;
+        }
+        if ($changed) {
+            update_option(EpisodeStore::OPTION, $all, false);
+        }
+    }
+
+    /**
+     * One pass after deploy. A recorded accept did not reach the WordPress subscriber
+     * table, so recent episodes are queued again for whoever is subscribed now.
+     */
+    public static function requeue_subscriber_alerts(): void
+    {
+        if (get_option('lousy_outages_subscriber_catchup_v1')) {
+            return;
+        }
+        $store = new EpisodeStore();
+        $all = $store->all();
+        $cutoff = time() - (48 * HOUR_IN_SECONDS);
+        $touched = 0;
+        foreach ($all as $guid => $episode) {
+            if (!is_array($episode)) {
+                continue;
+            }
+            $providerId = self::canonicalProviderId(
+                (string) ($episode['source_incident_id'] ?? $episode['provider_id'] ?? ''),
+                (string) ($episode['provider_label'] ?? '')
+            );
+            if ('' === $providerId) {
+                $providerId = self::canonicalProviderId((string) ($episode['provider_id'] ?? ''), (string) ($episode['provider_label'] ?? ''));
+            }
+            if ('' !== $providerId) {
+                $episode['provider_id'] = $providerId;
+            }
+            $active = !empty($episode['active']);
+            $openedAt = (int) ($episode['first_detected'] ?? 0);
+            $closedAt = (int) ($episode['closed_at'] ?? 0);
+            $recent = $active ? $openedAt : max($openedAt, $closedAt);
+            if ($recent > 0 && $recent >= $cutoff) {
+                $episode['email_successful_recipients'] = [];
+                $episode['email_pending_recipients'] = [];
+                $episode['email_failed_recipients'] = [];
+                $episode['subscriber_retry'] = true;
+                $touched++;
+            }
+            $all[$guid] = $episode;
+        }
+        if ($all) {
+            update_option(EpisodeStore::OPTION, $all, false);
+        }
+        update_option('lousy_outages_subscriber_catchup_v1', gmdate('c'), false);
+        if ($touched > 0 && function_exists('wp_next_scheduled') && function_exists('wp_schedule_single_event') && !wp_next_scheduled(self::SUBSCRIBER_CATCHUP_HOOK)) {
+            wp_schedule_single_event(time() + 15, self::SUBSCRIBER_CATCHUP_HOOK);
+        }
+    }
+
+    public static function dispatchSubscriberAlerts(): void
+    {
+        $snapshot = get_option('lousy_outages_current_state', []);
+        self::process_snapshot(is_array($snapshot) ? $snapshot : [], ['mode' => 'subscriber_catchup']);
+    }
+
+    private static function notification_inbox(): string
+    {
+        $configured = strtolower(sanitize_email((string) get_option('lousy_outages_email', '')));
+        if ('' !== $configured && is_email($configured)) {
+            return $configured;
+        }
+        $admin = strtolower(sanitize_email((string) get_option('admin_email', '')));
+        return ('' !== $admin && is_email($admin)) ? $admin : '';
+    }
+
     private static function eligible_recipients(Incident $incident, string $providerId = ''): array
     {
-        $providerId = sanitize_key($providerId !== '' ? $providerId : (string) $incident->provider);
+        $providerId = self::canonicalProviderId($providerId !== '' ? $providerId : (string) $incident->provider, (string) $incident->provider);
         $preview=self::recipient_preview($providerId);
         $emails=(array)($preview['subscriber_recipients']??[]);
-        $inbox=sanitize_email((string)get_option('lousy_outages_email',get_option('admin_email')));
-        if($inbox&&is_email($inbox))$emails[]=$inbox;
-        return array_values(array_unique(array_filter(array_map('sanitize_email',$emails))));
+        $inbox=self::notification_inbox();
+        if ($inbox !== '') {
+            $emails[]=$inbox;
+        }
+        $out=[];
+        foreach ($emails as $email) {
+            $email=strtolower(sanitize_email((string)$email));
+            if ($email!=='' && is_email($email)) {
+                $out[]=$email;
+            }
+        }
+        return array_values(array_unique($out));
     }
 
 
@@ -1946,9 +2102,18 @@ class IncidentAlerts {
         $excluded = ['pending'=>0,'no_realtime_opt_in'=>0,'provider_preference_mismatch'=>0,'invalid_email'=>0,'already_sent_deduped'=>0];
         $recipients = [];
         global $wpdb;
-        $table = class_exists(__NAMESPACE__ . '\Subscriptions') ? Subscriptions::table_name() : '';
+        $table = '';
+        if (class_exists(__NAMESPACE__ . '\Subscriptions')) {
+            if (method_exists(__NAMESPACE__ . '\Subscriptions', 'ensure_ready')) {
+                Subscriptions::ensure_ready();
+            }
+            $table = Subscriptions::table_name();
+        }
         if ($table && isset($wpdb) && is_object($wpdb) && method_exists($wpdb, 'get_results') && method_exists($wpdb, 'prepare')) {
             $rows = $wpdb->get_results("SELECT email,status,providers,realtime_alerts FROM {$table}", ARRAY_A);
+            if (!is_array($rows) && is_object($wpdb) && !empty($wpdb->last_error)) {
+                $rows = $wpdb->get_results("SELECT email,status,providers FROM {$table}", ARRAY_A);
+            }
             foreach ((array) $rows as $row) {
                 $email = strtolower(sanitize_email((string) ($row['email'] ?? '')));
                 if (!$email || !is_email($email)) { $excluded['invalid_email']++; continue; }
@@ -2103,9 +2268,9 @@ class IncidentAlerts {
             $preview = self::recipient_preview($providerId);
             $subscribers = (array) ($preview['subscriber_recipients'] ?? []);
         }
-        $notificationEmail = sanitize_email((string) get_option('lousy_outages_email', get_option('admin_email')));
+        $notificationEmail = self::notification_inbox();
         if (!empty($options['notification_only'])) { $subscribers = []; }
-        if (empty($options['explicit_recipients']) && $notificationEmail && is_email($notificationEmail)) { $subscribers[] = $notificationEmail; }
+        if (empty($options['explicit_recipients']) && $notificationEmail !== '') { $subscribers[] = $notificationEmail; }
         $beforeDedup = count($subscribers);
         $subscribers = array_values(array_unique(array_filter(array_map('sanitize_email', $subscribers))));
         $excluded = (array) ($preview['excluded'] ?? []);

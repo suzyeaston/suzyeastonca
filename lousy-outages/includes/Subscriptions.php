@@ -12,6 +12,10 @@ class Subscriptions {
     /** @var bool */
     private static $schema_checked = false;
 
+    public static function ensure_ready(): void {
+        self::ensure_schema();
+    }
+
     private static function ensure_schema(): void {
         if (self::$schema_checked) {
             return;

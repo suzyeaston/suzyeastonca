@@ -361,6 +361,98 @@ $marked = count($GLOBALS['mails']);
 $rememberCaller($retryCycle);
 ok(count($GLOBALS['mails']) === $marked, 'marked provider is not mailed again');
 
+reset_state();
+subscribers(['owed@subscribers.test']);
+$owedStore = new EpisodeStore();
+$owedStore->observe([
+    new Incident('Zoom', 'zoom:zoom-live', 'Service degradation', 'degraded', 'https://status.zoom.us/live', null, 'degraded', time() - 20 * HOUR_IN_SECONDS, null),
+], ['zoom' => 'degraded']);
+$owedEpisodes = $owedStore->all();
+$owedGuid = (string) array_key_first($owedEpisodes);
+ok($owedGuid !== '', 'owed episode exists');
+$owedEpisodes[$owedGuid]['first_detected'] = time() - 20 * HOUR_IN_SECONDS;
+$owedEpisodes[$owedGuid]['email_successful_recipients'] = [];
+$owedEpisodes[$owedGuid]['email_pending_recipients'] = [];
+$owedEpisodes[$owedGuid]['active'] = true;
+update_option(EpisodeStore::OPTION, $owedEpisodes, false);
+$owedBefore = count($GLOBALS['mails']);
+IncidentAlerts::process_snapshot(snapshot_from_states([
+    'zoom' => provider_state('zoom', 'Service degradation', 'zoom-live', gmdate('c', time() - 20 * HOUR_IN_SECONDS), 'degraded'),
+]), ['mode' => 'canonical_refresh']);
+ok(count($GLOBALS['mails']) === $owedBefore + 1, 'active outage older than 12 hours still mails when nothing was accepted');
+ok(!empty($GLOBALS['mails'][$owedBefore]['ok']), 'owed outage mail was accepted');
+ok(count((new EpisodeStore())->all()) === 1, 'owed outage reuses the original episode instead of opening a fresh one');
+$owedAfter = count($GLOBALS['mails']);
+IncidentAlerts::process_snapshot(snapshot_from_states([
+    'zoom' => provider_state('zoom', 'Service degradation', 'zoom-live', gmdate('c', time() - 20 * HOUR_IN_SECONDS), 'degraded'),
+]), ['mode' => 'canonical_refresh']);
+ok(count($GLOBALS['mails']) === $owedAfter, 'owed outage is not mailed twice');
+
+reset_state();
+require_once __DIR__ . '/../../lousy-outages/includes/Subscriptions.php';
+update_option('lo_subscribers', [], false);
+update_option('lousy_outages_email', '', false);
+update_option('admin_email', '', false);
+$GLOBALS['wpdb'] = new class {
+    public string $prefix = 'wp_';
+    public string $last_error = '';
+    public function esc_like($text) { return (string) $text; }
+    public function prepare($query, ...$args) { return (string) $query; }
+    public function get_var($query) { return 'wp_lousy_outages_subs'; }
+    public function get_col($query) {
+        return ['email','status','token','created_at','updated_at','ip_hash','consent_source','providers','components','severity_threshold','delivery_mode','quiet_hours','include_maintenance','entitlement_status','billing_status','realtime_alerts','daily_digest','newsletter','consent_version','confirmed_at'];
+    }
+    public function get_results($query, $output = null) {
+        return [
+            ['email' => 'cloud@subscribers.test', 'status' => 'subscribed', 'providers' => '["google_cloud"]', 'realtime_alerts' => 1],
+            ['email' => 'vercel@subscribers.test', 'status' => 'subscribed', 'providers' => '["vercel"]', 'realtime_alerts' => 1],
+            ['email' => 'zoom-only@subscribers.test', 'status' => 'subscribed', 'providers' => '["zoom"]', 'realtime_alerts' => 1],
+            ['email' => 'pending@subscribers.test', 'status' => 'pending', 'providers' => '["google_cloud","vercel"]', 'realtime_alerts' => 1],
+            ['email' => 'quiet@subscribers.test', 'status' => 'subscribed', 'providers' => '[]', 'realtime_alerts' => 0],
+        ];
+    }
+};
+global $wpdb;
+$wpdb = $GLOBALS['wpdb'];
+$now = time();
+$cloudGuid = 'lo-episode-cloud-owed';
+$vercelGuid = 'lo-episode-vercel-missed';
+update_option(EpisodeStore::OPTION, [
+    $cloudGuid => [
+        'provider_id' => 'googlecloud', 'provider_label' => 'Google Cloud', 'source_incident_id' => 'google_cloud:live',
+        'episode_guid' => $cloudGuid, 'first_detected' => $now - 20 * HOUR_IN_SECONDS, 'last_observed' => $now,
+        'closed_at' => null, 'active' => true, 'title' => 'Elevated errors', 'status' => 'degraded', 'severity' => 'degraded',
+        'url' => 'https://status.example/google', 'email_successful_recipients' => ['already@subscribers.test'],
+        'email_pending_recipients' => [], 'email_failed_recipients' => [],
+    ],
+    $vercelGuid => [
+        'provider_id' => 'vercel', 'provider_label' => 'Vercel', 'source_incident_id' => 'vercel:build-500',
+        'episode_guid' => $vercelGuid, 'first_detected' => $now - 5 * HOUR_IN_SECONDS,
+        'last_observed' => $now - 4 * HOUR_IN_SECONDS, 'closed_at' => $now - 4 * HOUR_IN_SECONDS, 'active' => false,
+        'title' => 'Build failures and deployments serving 500s', 'status' => 'degraded', 'severity' => 'degraded',
+        'url' => 'https://status.example/vercel', 'email_successful_recipients' => ['already@subscribers.test'],
+        'email_pending_recipients' => [], 'email_failed_recipients' => [],
+    ],
+], false);
+IncidentAlerts::requeue_subscriber_alerts();
+$rewritten = (new EpisodeStore())->all();
+ok(($rewritten[$cloudGuid]['provider_id'] ?? '') === 'google_cloud', 'subscriber prefs use the registry id, not the squashed display name');
+ok(($rewritten[$cloudGuid]['email_successful_recipients'] ?? null) === [], 'a recorded accept is not treated as delivered to the subscriber table');
+ok(!empty($rewritten[$vercelGuid]['subscriber_retry']), 'a recovered incident from the last two days is queued for subscribers');
+$catchupBefore = count($GLOBALS['mails']);
+IncidentAlerts::process_snapshot(['providers' => []], ['mode' => 'subscriber_catchup']);
+$catchupMails = array_slice($GLOBALS['mails'], $catchupBefore);
+$tos = array_map(static fn(array $mail): string => (string) $mail['to'], $catchupMails);
+sort($tos);
+ok($tos === ['cloud@subscribers.test', 'vercel@subscribers.test'], 'catch-up mails the WordPress subscribers watching those providers, got ' . implode(',', $tos));
+ok(!in_array('zoom-only@subscribers.test', $tos, true), 'a subscriber watching other providers is not mailed');
+ok(!in_array('pending@subscribers.test', $tos, true), 'an unconfirmed row is not mailed');
+ok(!in_array('quiet@subscribers.test', $tos, true), 'a row with realtime alerts off is not mailed');
+$afterCatchup = count($GLOBALS['mails']);
+IncidentAlerts::requeue_subscriber_alerts();
+IncidentAlerts::process_snapshot(['providers' => []], ['mode' => 'subscriber_catchup']);
+ok(count($GLOBALS['mails']) === $afterCatchup, 'subscriber catch-up does not send a second time');
+
 $pipeline = (string) file_get_contents(__DIR__ . '/../../lousy-outages/includes/Cron/CanonicalPipeline.php');
 $runStart = strpos($pipeline, 'public static function run');
 $publishStart = strpos($pipeline, 'public static function publishAlerts');

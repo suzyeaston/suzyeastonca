@@ -283,6 +283,11 @@ add_action( 'init', static function (): void {
     }
     lousy_outages_maybe_install_storage();
 }, 3 );
+add_action( 'init', static function (): void {
+    if ( class_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts' ) ) {
+        \SuzyEaston\LousyOutages\IncidentAlerts::requeue_subscriber_alerts();
+    }
+}, 4 );
 function lousy_outages_refresh_official_providers( bool $bypass_cache = true ): array {
     return CanonicalPipeline::run();
 }

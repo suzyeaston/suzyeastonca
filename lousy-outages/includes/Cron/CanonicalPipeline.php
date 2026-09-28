@@ -29,6 +29,7 @@ final class CanonicalPipeline
         add_action(self::RECOVERY_HOOK, [self::class, 'run']);
         add_action(self::ALERT_HOOK, [self::class, 'publishAlerts']);
         add_action(self::RSS_HOOK, [self::class, 'publishRss']);
+        add_action(IncidentAlerts::SUBSCRIBER_CATCHUP_HOOK, [IncidentAlerts::class, 'dispatchSubscriberAlerts']);
     }
 
     public static function cadence(): int
@@ -268,6 +269,9 @@ final class CanonicalPipeline
         }
         if ((int) ($diag['emails_sent'] ?? 0) > 0) {
             return true;
+        }
+        if ((int) ($diag['pending_recipient_slots'] ?? 0) > 0) {
+            return false;
         }
         if (array_key_exists('snapshot_incident_count', $diag) && (int) $diag['snapshot_incident_count'] === 0) {
             return false;

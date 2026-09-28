@@ -26,6 +26,12 @@ final class EpisodeStore
                 continue;
             }
             $provider = sanitize_key($incident->provider) ?: 'provider';
+            if (class_exists(\SuzyEaston\LousyOutages\IncidentAlerts::class)) {
+                $resolved = \SuzyEaston\LousyOutages\IncidentAlerts::canonicalProviderId((string) $incident->id, (string) $incident->provider);
+                if ('' !== $resolved) {
+                    $provider = $resolved;
+                }
+            }
             $identity = $this->identity($incident, $provider);
             $key = $this->findActive($episodes, $provider, $identity);
             if ($key === '') {
@@ -72,7 +78,7 @@ final class EpisodeStore
                     continue;
                 }
                 // A healthy reading must not swallow mail that has not been accepted yet.
-                if (!empty($episode['email_pending_recipients'])) {
+                if (!empty($episode['email_pending_recipients']) || !empty($episode['subscriber_retry'])) {
                     continue;
                 }
                 $episode['active'] = false; $episode['closed_at'] = $now; $closed[] = $key;
@@ -97,12 +103,22 @@ final class EpisodeStore
     public function saveDelivery(string $guid, array $successful, array $failed, array $eligible): void
     {
         $all=$this->all(); if(!isset($all[$guid])) return;
-        $ok=array_values(array_unique(array_merge((array)$all[$guid]['email_successful_recipients'], array_map('strval', $successful))));
-        $prevFailed=(array)($all[$guid]['email_failed_recipients'] ?? []);
-        $mergedFailed=array_values(array_diff(array_unique(array_merge($prevFailed, array_map('strval', $failed))), $ok));
+        $norm = static function (array $list): array {
+            $out = [];
+            foreach ($list as $email) {
+                $email = strtolower(trim((string) $email));
+                if ('' !== $email) {
+                    $out[] = $email;
+                }
+            }
+            return array_values(array_unique($out));
+        };
+        $ok=array_values(array_unique(array_merge($norm((array)$all[$guid]['email_successful_recipients']), $norm($successful))));
+        $prevFailed=$norm((array)($all[$guid]['email_failed_recipients'] ?? []));
+        $mergedFailed=array_values(array_diff(array_unique(array_merge($prevFailed, $norm($failed))), $ok));
         $all[$guid]['email_successful_recipients']=$ok;
         $all[$guid]['email_failed_recipients']=$mergedFailed;
-        $all[$guid]['email_pending_recipients']=array_values(array_diff(array_unique(array_map('strval', $eligible)), $ok));
+        $all[$guid]['email_pending_recipients']=array_values(array_diff($norm($eligible), $ok));
         update_option(self::OPTION,$all,false);
     }
 
@@ -123,7 +139,19 @@ final class EpisodeStore
         return $out;
     }
     public function pendingRecipients(string $guid,array $eligible): array
-    { $all=$this->all(); $sent=(array)($all[$guid]['email_successful_recipients']??[]); return array_values(array_diff(array_unique($eligible),$sent)); }
+    {
+        $all=$this->all();
+        $sent=array_map(static fn($email): string => strtolower(trim((string) $email)), (array)($all[$guid]['email_successful_recipients']??[]));
+        $pending=[];
+        foreach ($eligible as $email) {
+            $email=strtolower(trim((string) $email));
+            if ('' === $email || in_array($email, $sent, true) || in_array($email, $pending, true)) {
+                continue;
+            }
+            $pending[]=$email;
+        }
+        return $pending;
+    }
 
     /** Episodes imported during migration were flagged to avoid duplicate blast — clear when nothing was ever mailed. */
     public function releaseLegacyEmailSuppression(): int
