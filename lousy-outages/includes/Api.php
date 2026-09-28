@@ -412,6 +412,22 @@ class Api {
     }
 
     public static function handle_summary(WP_REST_Request $request) {
+        $view = sanitize_key((string) $request->get_param('view'));
+        if ('teaser' === $view && function_exists('lousy_outages_home_teaser_data')) {
+            $teaser = lousy_outages_home_teaser_data();
+            $payload = [
+                'teaser' => $teaser,
+                'fetched_at' => (string) ($teaser['fetched_at'] ?? ''),
+                'source' => 'snapshot',
+                'plugin_version' => defined('LOUSY_OUTAGES_VERSION') ? LOUSY_OUTAGES_VERSION : '',
+                'snapshot_schema_version' => defined('LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION') ? LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION : 0,
+            ];
+            $response = new WP_REST_Response($payload, 200);
+            $response->header('Cache-Control', 'public, max-age=60');
+            $response->header('X-Lousy-Outages-Version', (string) $payload['plugin_version']);
+            $response->header('X-Lousy-Outages-Snapshot-Schema', (string) $payload['snapshot_schema_version']);
+            return $response;
+        }
         $state = function_exists('lousy_outages_get_current_state') ? \lousy_outages_get_current_state() : ['providers'=>[], 'meta'=>[], 'outages'=>[], 'signals'=>[], 'unverified'=>[], 'operational'=>[], 'fetched_at'=>gmdate('c'), 'source'=>'snapshot', 'errors'=>[]];
         $providerParam = $request->get_param('provider');
         $filters = self::sanitize_provider_list(is_string($providerParam) ? $providerParam : null);

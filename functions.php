@@ -187,7 +187,7 @@ function retro_game_music_theme_scripts() {
                 'lousy-outages-home-teaser',
                 'lousyOutagesTeaser',
                 array(
-                    'endpoint'        => esc_url_raw( rest_url( 'lousy-outages/v1/summary' ) ),
+                    'endpoint'        => esc_url_raw( se_lousy_outages_home_summary_endpoint() ),
                     'dashboardUrl'    => esc_url_raw( home_url( '/lousy-outages/' ) ),
                     'refreshInterval' => 5 * MINUTE_IN_SECONDS * 1000,
                 )
@@ -654,12 +654,21 @@ if ( ! defined( 'LOUSY_OUTAGES_HOME_COMMUNITY_WINDOW_HOURS' ) ) {
     define( 'LOUSY_OUTAGES_HOME_COMMUNITY_WINDOW_HOURS', 2 );
 }
 
+function se_lousy_outages_home_summary_endpoint(): string {
+    return add_query_arg( 'view', 'teaser', rest_url( 'lousy-outages/v1/summary' ) );
+}
+
 function get_lousy_outages_home_teaser_data(): array {
+    static $memo = null;
+    if ( is_array( $memo ) ) {
+        return $memo;
+    }
     if ( function_exists( 'lousy_outages_home_teaser_data' ) ) {
-        return lousy_outages_home_teaser_data();
+        $memo = lousy_outages_home_teaser_data();
+        return $memo;
     }
 
-    return [
+    $memo = [
         'dashboard_url' => home_url( '/lousy-outages/' ),
         'verdict_line'  => 'STATUS UNKNOWN',
         'verdict_sub'   => 'Plugin not loaded.',
@@ -672,6 +681,7 @@ function get_lousy_outages_home_teaser_data(): array {
         'urls'          => ['full' => home_url( '/lousy-outages/' )],
         'delayed'       => true,
     ];
+    return $memo;
 }
 
 /**

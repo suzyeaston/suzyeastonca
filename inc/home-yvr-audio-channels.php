@@ -3,7 +3,7 @@
  * YVR BCAST live audio channels — streams, link-outs, soundscapes, map pins.
  */
 
-function se_broadcaster_orcasound_live_hls_url( string $node_name ): ?string {
+function se_broadcaster_orcasound_live_hls_url( string $node_name, bool $live = true ): ?string {
     $node_name = preg_replace( '/[^a-z0-9_]/', '', strtolower( $node_name ) );
     if ( ! $node_name ) {
         return null;
@@ -11,8 +11,11 @@ function se_broadcaster_orcasound_live_hls_url( string $node_name ): ?string {
 
     $cache_key = 'se_orcasound_latest_' . $node_name;
     $cached    = get_transient( $cache_key );
-    if ( is_array( $cached ) && ! empty( $cached['url'] ) && ( time() - (int) ( $cached['ts'] ?? 0 ) ) < 120 ) {
+    if ( is_array( $cached ) && ! empty( $cached['url'] ) ) {
         return (string) $cached['url'];
+    }
+    if ( ! $live ) {
+        return null;
     }
 
     $latest_url = sprintf(
@@ -189,7 +192,7 @@ function se_broadcaster_broadcastify_hls_has_segments( string $playlist_url ): b
     return strpos( $body, '.ts' ) !== false;
 }
 
-function se_broadcaster_broadcastify_stream_url( int $feed_id ): ?string {
+function se_broadcaster_broadcastify_stream_url( int $feed_id, bool $live = true ): ?string {
     if ( $feed_id < 1 ) {
         return null;
     }
@@ -197,10 +200,10 @@ function se_broadcaster_broadcastify_stream_url( int $feed_id ): ?string {
     $cache_key = 'se_bcfy_stream_' . $feed_id;
     $cached    = get_transient( $cache_key );
     if ( is_string( $cached ) && $cached !== '' ) {
-        if ( se_broadcaster_broadcastify_hls_has_segments( $cached ) ) {
-            return $cached;
-        }
-        delete_transient( $cache_key );
+        return $cached;
+    }
+    if ( '' === $cached || ! $live ) {
+        return null;
     }
 
     $playlist = se_broadcaster_broadcastify_hls_playlist_url( $feed_id );
@@ -624,14 +627,14 @@ function se_broadcaster_audio_channel_catalog(): array {
     return $channels;
 }
 
-function se_broadcaster_resolve_audio_channel( array $channel ): array {
+function se_broadcaster_resolve_audio_channel( array $channel, bool $live = true ): array {
     $out = $channel;
     $out['stream_url'] = '';
     $out['stream_ok']  = false;
 
     if ( $channel['mode'] === 'stream' || $channel['mode'] === 'soundscape' ) {
         if ( ! empty( $channel['orcasound_node'] ) ) {
-            $resolved = se_broadcaster_orcasound_live_hls_url( (string) $channel['orcasound_node'] );
+            $resolved = se_broadcaster_orcasound_live_hls_url( (string) $channel['orcasound_node'], $live );
             if ( $resolved ) {
                 $out['stream_url'] = $resolved;
                 $out['format']     = 'hls';
@@ -650,7 +653,7 @@ function se_broadcaster_resolve_audio_channel( array $channel ): array {
             if ( $feed_id < 1 ) {
                 continue;
             }
-            $resolved = se_broadcaster_broadcastify_stream_url( $feed_id );
+            $resolved = se_broadcaster_broadcastify_stream_url( $feed_id, $live );
             if ( $resolved ) {
                 $out['stream_url'] = $resolved;
                 $out['format']     = ( strpos( $resolved, '.m3u8' ) !== false ) ? 'hls' : 'mp3';
@@ -663,13 +666,13 @@ function se_broadcaster_resolve_audio_channel( array $channel ): array {
     return $out;
 }
 
-function se_broadcaster_audio_channels_for_client(): array {
+function se_broadcaster_audio_channels_for_client( bool $live = true ): array {
     $catalog = se_broadcaster_audio_channel_catalog();
     $out     = array();
 
     foreach ( $catalog as $key => $channel ) {
         $channel  = se_broadcaster_apply_channel_deck_notes( $channel );
-        $resolved = se_broadcaster_resolve_audio_channel( $channel );
+        $resolved = se_broadcaster_resolve_audio_channel( $channel, $live );
         $out[ $key ] = array(
             'key'        => $key,
             'label'      => $channel['label'],

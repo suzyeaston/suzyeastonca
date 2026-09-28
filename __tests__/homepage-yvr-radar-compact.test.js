@@ -26,6 +26,22 @@ test("homepage YVR radar deck uses side-by-side layout on desktop", () => {
   assert.match(source, /\.home-yvr-radar-deck__deck[\s\S]*grid-column:\s*2/);
 });
 
+test("homepage first load does not live-resolve radar audio or bust the outage teaser", () => {
+  const config = fs.readFileSync(path.join(ROOT, "inc/home-yvr-broadcaster.php"), "utf8");
+  const feeds = fs.readFileSync(path.join(ROOT, "inc/home-yvr-broadcaster.php"), "utf8");
+  const audio = fs.readFileSync(path.join(ROOT, "inc/home-yvr-audio-channels.php"), "utf8");
+  const teaser = fs.readFileSync(path.join(ROOT, "assets/js/lousy-outages-teaser.js"), "utf8");
+  const summary = fs.readFileSync(path.join(ROOT, "lousy-outages/includes/Api.php"), "utf8");
+  assert.match(config, /se_broadcaster_audio_channels_for_client\(\s*false\s*\)/);
+  assert.match(feeds, /se_yvr_broadcaster_feeds_v1/);
+  assert.match(feeds, /se_broadcaster_feed_budget_start\(\s*5\s*\)/);
+  assert.doesNotMatch(feeds, /'timeout'\s*=>\s*15/);
+  assert.match(audio, /if \( is_string\( \$cached \) && \$cached !== '' \) \{\s*return \$cached;/);
+  assert.doesNotMatch(teaser, /_lo_cache_bust/);
+  assert.match(summary, /'teaser' === \$view/);
+  assert.match(summary, /public, max-age=60/);
+});
+
 test("theme deploy manifest includes compact radar deck CSS", () => {
   const source = fs.readFileSync(
     path.join(ROOT, "scripts", "theme_deploy_manifest.py"),
