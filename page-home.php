@@ -24,7 +24,7 @@ get_header();
         <div class="home-yvr-radar-deck__radar-unit">
             <div class="home-yvr-radar-deck__unit-head pixel-font">
                 <span class="home-yvr-radar-deck__unit-badge"><?php echo esc_html( 'YVR RADAR' ); ?></span>
-                <span class="home-yvr-radar-deck__unit-status"><?php echo esc_html( 'live greater vancouver' ); ?></span>
+                <span class="home-yvr-radar-deck__unit-status"><?php echo esc_html( 'on the air' ); ?></span>
             </div>
             <div class="home-yvr-radar-deck__bezel">
                 <div class="home-yvr-radar-deck__crt-ring">
@@ -34,10 +34,10 @@ get_header();
                     <div class="home-yvr-radar-deck__grid" aria-hidden="true"></div>
                     <div class="home-yvr-radar-deck__sweep" aria-hidden="true"></div>
                     <div class="home-yvr-radar-deck__scan" aria-hidden="true"></div>
-                    <p class="home-yvr-radar-deck__ring-label pixel-font" data-yvr-ring-label><?php echo esc_html( 'drag · tap pins' ); ?></p>
+                    <p class="home-yvr-radar-deck__ring-label pixel-font" data-yvr-ring-label><?php echo esc_html( 'drag · tap posts' ); ?></p>
                     <div class="home-yvr-radar-deck__wander pixel-font" data-yvr-wander-hint hidden>
                         <p class="home-yvr-radar-deck__wander-kicker"><?php echo esc_html( 'night watch online.' ); ?></p>
-                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'Ham-radio view of the lower mainland. Big pins tune live territory feeds — coast guard, wildfire, skytrain, towers. Bulletins + audio land in the deck below.' ); ?></p>
+                        <p class="home-yvr-radar-deck__wander-body"><?php echo esc_html( 'Ham-radio scope of the lower mainland. Tap a post, pick a frequency. Salish zooms out to the hydrophones — they are not in Abbotsford.' ); ?></p>
                         <button type="button" class="home-yvr-radar-deck__wander-dismiss pixel-font" data-yvr-wander-dismiss><?php echo esc_html( 'on band' ); ?></button>
                     </div>
                 </div>
@@ -45,7 +45,22 @@ get_header();
                     <span></span><span></span><span></span>
                 </div>
             </div>
-            <p class="home-yvr-radar-deck__hint pixel-font"><?php echo esc_html( 'tap a pin — bulletins + live audio land in the deck' ); ?></p>
+            <div class="home-yvr-radar-deck__scope pixel-font" role="group" aria-label="<?php echo esc_attr( 'Radar scope' ); ?>">
+                <button type="button" data-yvr-scope="city" aria-pressed="true"><?php echo esc_html( 'city' ); ?></button>
+                <button type="button" data-yvr-scope="salish" aria-pressed="false"><?php echo esc_html( 'salish sea' ); ?></button>
+                <button type="button" data-yvr-scan aria-pressed="false"><?php echo esc_html( 'scan' ); ?></button>
+            </div>
+            <p class="home-yvr-radar-deck__geo pixel-font" data-yvr-geo>
+                <span class="home-yvr-radar-deck__geo-place" data-yvr-geo-place><?php echo esc_html( 'lower mainland' ); ?></span>
+                <span class="home-yvr-radar-deck__geo-line" data-yvr-geo-line><?php echo esc_html( 'Five posts. Tap one. The stack is the band.' ); ?></span>
+            </p>
+            <div class="home-yvr-radar-deck__stack" data-yvr-stack hidden></div>
+            <p class="home-yvr-radar-deck__hint pixel-font"><?php echo esc_html( 'tap a post. pick a frequency. the deck catches it.' ); ?></p>
+            <p class="home-yvr-radar-deck__tiles">
+                <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer"><?php echo esc_html( '© OpenStreetMap' ); ?></a>
+                <span aria-hidden="true"> · </span>
+                <a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer"><?php echo esc_html( 'OpenFreeMap' ); ?></a>
+            </p>
         </div>
 
         <div class="home-yvr-radar-deck__deck">

@@ -261,11 +261,11 @@ function se_broadcaster_channel_deck_notes(): array {
             'deck_note' => 'Broadcastify chain. No retry button — Beulah finds a live feed or switches.',
         ),
         'hydro_bush'     => array(
-            'deck_copy' => 'Orcasound hydrophone at Bush Point — Salish Sea live. Whales, ships, weird water noise.',
+            'deck_copy' => 'Orcasound hydrophone at Bush Point, Whidbey Island — Admiralty Inlet, south of the border. Whales, ships, weird water noise.',
             'deck_note' => 'HLS from Orcasound. Field mic, not radio.',
         ),
         'hydro_mast'     => array(
-            'deck_copy' => 'Orcasound MaST Center hydrophone — Puget-side listen. Same vibe, different inlet.',
+            'deck_copy' => 'Orcasound MaST Center hydrophone — Des Moines, east side of Puget Sound. Same whales, different inlet.',
             'deck_note' => 'HLS from Orcasound.',
         ),
         'sound_skytrain' => array(
@@ -534,7 +534,7 @@ function se_broadcaster_audio_channel_catalog(): array {
             'mode'            => 'stream',
             'format'          => 'hls',
             'orcasound_node'  => 'rpi_bush_point',
-            'map_lat'         => 49.0337,
+            'map_lat'         => 48.0337,
             'map_lon'         => -122.6040,
             'source'          => 'Orcasound — Bush Point',
             'source_url'      => 'https://live.orcasound.net/listen/bush-point',
@@ -717,6 +717,7 @@ function se_broadcaster_audio_map_anchors(): array {
             'key'   => $channel['key'],
             'label' => $channel['label'],
             'hint'  => $channel['hint'],
+            'freq'  => (string) ( $channel['freq'] ?? '' ),
             'lat'   => (float) $channel['map_lat'],
             'lon'   => (float) $channel['map_lon'],
             'tier'  => $channel['pin_tier'] ?? 'radio',

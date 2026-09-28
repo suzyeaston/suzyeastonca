@@ -350,6 +350,10 @@
     this.setStandby();
     this.updatePlayButton();
 
+    window.addEventListener('yvr-radar-preview', function (event) {
+      self.previewStation(event.detail || {});
+    });
+
     if (this.audio) {
       this.audio.muted = false;
       this.audio.setAttribute('playsinline', '');
@@ -393,6 +397,24 @@
     });
   };
 
+  HomeYvrBroadcaster.prototype.previewStation = function (detail) {
+    if (!detail || this.isAudioPlaying()) return;
+    var place = detail.place || detail.label || 'listening post';
+    var geo = detail.geo || '';
+    var band = detail.band || '';
+    if (this.ringLabelEl && !this.root.classList.contains('is-listening')) {
+      this.ringLabelEl.textContent = String(detail.label || 'scan').toLowerCase();
+    }
+    this.renderChannelDetail({
+      kicker: place,
+      deck_copy: geo,
+      deck_note: band
+    });
+    if (this.scriptEl) {
+      this.scriptEl.textContent = geo ? (place + ' — ' + geo) : place;
+    }
+  };
+
   HomeYvrBroadcaster.prototype.unlockAudio = function () {
     if (!this.audio) return;
 
@@ -417,7 +439,7 @@
       this.mapWrapEl.classList.toggle('is-listening', on);
     }
     if (this.ringLabelEl) {
-      this.ringLabelEl.textContent = on ? 'live audio on deck' : 'drag · tap pins';
+      this.ringLabelEl.textContent = on ? 'live audio on deck' : 'drag · tap posts';
     }
     if (on) {
       this.setLoadingUi(false);
@@ -451,7 +473,7 @@
     if (this.ringLabelEl && on) {
       this.ringLabelEl.textContent = label;
     } else if (this.ringLabelEl && !on && !this.isAudioPlaying()) {
-      this.ringLabelEl.textContent = 'drag · tap pins';
+      this.ringLabelEl.textContent = 'drag · tap posts';
     }
     if (this.activeAudioKey) {
       this.highlightChannelLoading(this.activeAudioKey, on);
