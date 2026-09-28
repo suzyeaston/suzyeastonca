@@ -312,27 +312,33 @@
     }
   }
 
+  var teaserFetches = {};
+
+  function fetchTeaser(endpoint) {
+    if (teaserFetches[endpoint]) return teaserFetches[endpoint];
+    var url = new URL(endpoint, window.location.href);
+    var pending = fetch(url.toString(), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { if (!r.ok) throw new Error('summary fetch failed'); return r.json(); })
+      .finally(function () { delete teaserFetches[endpoint]; });
+    teaserFetches[endpoint] = pending;
+    return pending;
+  }
+
   function init(container) {
     var config = parseConfig(container);
     if (!config.endpoint || container.dataset.loTeaserReady === '1') return;
     container.dataset.loTeaserReady = '1';
 
-    var inFlight = false;
     var refresh = function () {
-      if (inFlight || document.hidden) return;
-      inFlight = true;
-      var url = new URL(config.endpoint, window.location.href);
-      url.searchParams.set('_lo_cache_bust', Date.now().toString());
-      fetch(url.toString(), { cache: 'no-store', credentials: 'same-origin' })
-        .then(function (r) { if (!r.ok) throw new Error('summary fetch failed'); return r.json(); })
+      if (document.hidden) return;
+      fetchTeaser(config.endpoint)
         .then(function (payload) {
           render(container, payload, config);
           if (container.hasAttribute('data-lo-flyover') && payload && payload.teaser) {
             renderFlyover(container, payload.teaser);
           }
         })
-        .catch(function () { markDelayed(container); })
-        .finally(function () { inFlight = false; });
+        .catch(function () { markDelayed(container); });
     };
 
     refresh();

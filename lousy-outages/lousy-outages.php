@@ -169,7 +169,13 @@ if ( ! function_exists( 'lousy_outages_home_teaser_data' ) ) {
      * @return array<string, mixed>
      */
     function lousy_outages_home_teaser_data(): array {
-        return \SuzyEaston\LousyOutages\HomeTeaser::build();
+        $cached = get_transient( 'lousy_outages_home_teaser_v1' );
+        if ( is_array( $cached ) && isset( $cached['verdict_line'] ) ) {
+            return $cached;
+        }
+        $built = \SuzyEaston\LousyOutages\HomeTeaser::build();
+        set_transient( 'lousy_outages_home_teaser_v1', $built, 2 * MINUTE_IN_SECONDS );
+        return $built;
     }
 }
 
@@ -947,6 +953,13 @@ function lousy_outages_store_snapshot( array $snapshot ): void {
     $cache_key = lousy_outages_snapshot_cache_key();
     $ttl       = (int) apply_filters( 'lousy_outages_snapshot_ttl', 5 * MINUTE_IN_SECONDS );
     $snapshot['current_state'] = lousy_outages_current_state_from_snapshot( $snapshot );
+    if ( class_exists( \SuzyEaston\LousyOutages\HomeTeaser::class ) ) {
+        set_transient(
+            'lousy_outages_home_teaser_v1',
+            \SuzyEaston\LousyOutages\HomeTeaser::build( $snapshot['current_state'] ),
+            15 * MINUTE_IN_SECONDS
+        );
+    }
     set_transient( $cache_key, $snapshot, max( 60, $ttl ) );
     update_option( 'lousy_outages_snapshot', $snapshot, false );
     update_option( 'lousy_outages_current_state', $snapshot['current_state'], false );

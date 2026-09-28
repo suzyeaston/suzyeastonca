@@ -191,7 +191,25 @@ test('init fetches summary endpoint', async () => {
   teaser.init(container);
   await new Promise((r) => setImmediate(r));
   assert.match(urls[0], /\/summary/);
+  assert.doesNotMatch(urls[0], /_lo_cache_bust/);
   assert.match(textOf(container), /01/);
+});
+
+test('two homepage teaser widgets share one summary fetch', async () => {
+  let calls = 0;
+  const { teaser } = load({
+    fetchImpl: () => {
+      calls += 1;
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ teaser: sampleTeaser() }) });
+    }
+  });
+  const first = makeContainer();
+  const second = makeContainer();
+  second.dataset.loEndpoint = first.dataset.loEndpoint;
+  teaser.init(first);
+  teaser.init(second);
+  await new Promise((r) => setImmediate(r));
+  assert.equal(calls, 1);
 });
 
 test('flyoverCopy uses conservative outage language from teaser data', () => {

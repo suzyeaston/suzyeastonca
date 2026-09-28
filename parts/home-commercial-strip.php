@@ -17,7 +17,7 @@ $scene_label = $banner . ' — view Lousy Outages status';
     class="home-lo-flyover home-lo-flyover--<?php echo esc_attr( $tone ); ?><?php echo $highlight ? ' home-lo-flyover--hot' : ''; ?>"
     aria-label="<?php echo esc_attr( 'Lousy Outages live signal' ); ?>"
     data-lo-flyover
-    data-lo-endpoint="<?php echo esc_url( rest_url( 'lousy-outages/v1/summary' ) ); ?>"
+    data-lo-endpoint="<?php echo esc_url( function_exists( 'se_lousy_outages_home_summary_endpoint' ) ? se_lousy_outages_home_summary_endpoint() : rest_url( 'lousy-outages/v1/summary' ) ); ?>"
     data-lo-dashboard-url="<?php echo esc_url( $lo_url ); ?>"
 >
     <div class="home-lo-flyover__module">

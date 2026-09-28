@@ -1,7 +1,7 @@
 <?php
 $teaser = function_exists( 'get_lousy_outages_home_teaser_data' ) ? get_lousy_outages_home_teaser_data() : [];
 $dashboard_url = (string) ( $teaser['dashboard_url'] ?? home_url( '/lousy-outages/' ) );
-$teaser_endpoint = rest_url( 'lousy-outages/v1/summary' );
+$teaser_endpoint = function_exists( 'se_lousy_outages_home_summary_endpoint' ) ? se_lousy_outages_home_summary_endpoint() : rest_url( 'lousy-outages/v1/summary' );
 $teaser_interval = 5 * MINUTE_IN_SECONDS * 1000;
 $counts = is_array( $teaser['counts'] ?? null ) ? $teaser['counts'] : [];
 $lead = is_array( $teaser['lead'] ?? null ) ? $teaser['lead'] : [];

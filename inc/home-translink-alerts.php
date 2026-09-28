@@ -40,15 +40,23 @@ function se_fetch_translink_alerts(): array {
         return $cached;
     }
 
-    $response = wp_remote_get(
-        'https://getaway.translink.ca/api/allalerts',
-        array(
-            'timeout' => 12,
-            'headers' => array( 'Accept' => 'application/json' ),
+    $response = function_exists( 'se_broadcaster_remote_get' )
+        ? se_broadcaster_remote_get(
+            'https://getaway.translink.ca/api/allalerts',
+            array( 'Accept' => 'application/json' )
         )
-    );
+        : wp_remote_get(
+            'https://getaway.translink.ca/api/allalerts',
+            array(
+                'timeout' => 4,
+                'headers' => array( 'Accept' => 'application/json' ),
+            )
+        );
 
     if ( is_wp_error( $response ) || (int) wp_remote_retrieve_response_code( $response ) !== 200 ) {
+        if ( ! is_wp_error( $response ) || 'se_feed_budget' !== $response->get_error_code() ) {
+            set_transient( 'se_translink_alerts', array(), 90 );
+        }
         return array();
     }
 

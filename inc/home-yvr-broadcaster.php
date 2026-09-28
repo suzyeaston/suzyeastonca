@@ -3,6 +3,57 @@
  * YVR homepage broadcaster feeds — speakable scripts for computer voice channels.
  */
 
+/**
+ * Cap a homepage feed build so one dead upstream cannot stall first paint.
+ */
+function se_broadcaster_feed_budget_start( float $seconds = 5 ): void {
+    $GLOBALS['se_yvr_feed_deadline'] = microtime( true ) + $seconds;
+}
+
+function se_broadcaster_upstream_timeout(): int {
+    if ( empty( $GLOBALS['se_yvr_feed_deadline'] ) ) {
+        return 4;
+    }
+    $left = (float) $GLOBALS['se_yvr_feed_deadline'] - microtime( true );
+    if ( $left < 0.8 ) {
+        return 0;
+    }
+    return (int) min( 4, max( 1, floor( $left ) ) );
+}
+
+function se_broadcaster_cache_empty( string $key, int $ttl = 90 ): void {
+    set_transient( $key, array(), $ttl );
+}
+
+/**
+ * @param array<string, string> $headers
+ * @return array<string, mixed>|WP_Error
+ */
+function se_broadcaster_remote_get( string $url, array $headers = array() ) {
+    $timeout = se_broadcaster_upstream_timeout();
+    if ( $timeout < 1 ) {
+        return new WP_Error( 'se_feed_budget', 'feed budget spent' );
+    }
+    return wp_remote_get(
+        $url,
+        array(
+            'timeout' => $timeout,
+            'headers' => $headers,
+        )
+    );
+}
+
+function se_broadcaster_upstream_failed( $response ): bool {
+    return is_wp_error( $response ) || (int) wp_remote_retrieve_response_code( $response ) !== 200;
+}
+
+function se_broadcaster_remember_upstream_failure( string $key, $response ): void {
+    if ( is_wp_error( $response ) && 'se_feed_budget' === $response->get_error_code() ) {
+        return;
+    }
+    se_broadcaster_cache_empty( $key, 90 );
+}
+
 function se_broadcaster_trim_script( string $text, int $max = 520 ): string {
     $text = preg_replace( '/\s+/', ' ', trim( wp_strip_all_tags( $text ) ) );
     if ( mb_strlen( $text ) > $max ) {
@@ -315,7 +366,7 @@ function se_home_yvr_broadcaster_client_config(): array {
         'metroMap'         => se_broadcaster_metro_map_static(),
         'daveAmbientCycle' => se_broadcaster_dave_ambient_cycle_keys(),
         'dataChannelPins'  => se_broadcaster_data_channel_pin_config(),
-        'channels'         => se_broadcaster_audio_channels_for_client(),
+        'channels'         => se_broadcaster_audio_channels_for_client( false ),
     );
 }
 
@@ -477,15 +528,13 @@ function se_fetch_open511_bc_events(): array {
         return $cached;
     }
 
-    $response = wp_remote_get(
+    $response = se_broadcaster_remote_get(
         'https://api.open511.gov.bc.ca/events?status=ACTIVE&limit=80',
-        array(
-            'timeout' => 15,
-            'headers' => array( 'Accept' => 'application/json' ),
-        )
+        array( 'Accept' => 'application/json' )
     );
 
-    if ( is_wp_error( $response ) || (int) wp_remote_retrieve_response_code( $response ) !== 200 ) {
+    if ( se_broadcaster_upstream_failed( $response ) ) {
+        se_broadcaster_remember_upstream_failure( 'se_open511_bc_events', $response );
         return array();
     }
 
@@ -567,15 +616,13 @@ function se_fetch_bc_ferries_capacity(): array {
         return $cached;
     }
 
-    $response = wp_remote_get(
+    $response = se_broadcaster_remote_get(
         'https://www.bcferriesapi.ca/v2/capacity/',
-        array(
-            'timeout' => 15,
-            'headers' => array( 'Accept' => 'application/json' ),
-        )
+        array( 'Accept' => 'application/json' )
     );
 
-    if ( is_wp_error( $response ) || (int) wp_remote_retrieve_response_code( $response ) !== 200 ) {
+    if ( se_broadcaster_upstream_failed( $response ) ) {
+        se_broadcaster_remember_upstream_failure( 'se_bc_ferries_capacity', $response );
         return array();
     }
 
@@ -687,15 +734,13 @@ function se_fetch_ec_weather_alerts(): array {
     }
 
     $bbox = '-123.6,48.9,-122.1,49.6';
-    $response = wp_remote_get(
+    $response = se_broadcaster_remote_get(
         'https://api.weather.gc.ca/collections/weather-alerts/items?bbox=' . rawurlencode( $bbox ) . '&limit=25',
-        array(
-            'timeout' => 15,
-            'headers' => array( 'Accept' => 'application/geo+json' ),
-        )
+        array( 'Accept' => 'application/geo+json' )
     );
 
-    if ( is_wp_error( $response ) || (int) wp_remote_retrieve_response_code( $response ) !== 200 ) {
+    if ( se_broadcaster_upstream_failed( $response ) ) {
+        se_broadcaster_remember_upstream_failure( 'se_ec_weather_alerts', $response );
         return array();
     }
 
@@ -906,16 +951,16 @@ function se_fetch_bc_wildfire_near_yvr(): array {
         'https://delivery.maps.gov.bc.ca/arcgis/rest/services/mpcm/bcgwpub/MapServer/502/query'
     );
 
-    $response = wp_remote_get(
+    $response = se_broadcaster_remote_get(
         $query,
-        array(
-            'timeout' => 15,
-            'headers' => array( 'Accept' => 'application/json' ),
-        )
+        array( 'Accept' => 'application/json' )
     );
 
-    if ( is_wp_error( $response ) || (int) wp_remote_retrieve_response_code( $response ) !== 200 ) {
-        set_transient( 'se_bc_wildfire_near_yvr_error', 1, 2 * MINUTE_IN_SECONDS );
+    if ( se_broadcaster_upstream_failed( $response ) ) {
+        se_broadcaster_remember_upstream_failure( 'se_bc_wildfire_near_yvr', $response );
+        if ( ! is_wp_error( $response ) || 'se_feed_budget' !== $response->get_error_code() ) {
+            set_transient( 'se_bc_wildfire_near_yvr_error', 1, 2 * MINUTE_IN_SECONDS );
+        }
         return array();
     }
 
@@ -1032,15 +1077,13 @@ function se_fetch_ec_aqhi_metro(): array {
     }
 
     $bbox = '-123.4,49.1,-122.5,49.4';
-    $response = wp_remote_get(
+    $response = se_broadcaster_remote_get(
         'https://api.weather.gc.ca/collections/aqhi-observations-realtime/items?bbox=' . rawurlencode( $bbox ) . '&latest=true&limit=20',
-        array(
-            'timeout' => 15,
-            'headers' => array( 'Accept' => 'application/geo+json' ),
-        )
+        array( 'Accept' => 'application/geo+json' )
     );
 
-    if ( is_wp_error( $response ) || (int) wp_remote_retrieve_response_code( $response ) !== 200 ) {
+    if ( se_broadcaster_upstream_failed( $response ) ) {
+        se_broadcaster_remember_upstream_failure( 'se_ec_aqhi_metro', $response );
         return array();
     }
 
@@ -1131,8 +1174,34 @@ function se_broadcaster_air_script(): array {
     );
 }
 
+function se_broadcaster_feeds_payload( bool $resolve_live_audio = false ): array {
+    return array(
+        'updated'            => current_time( 'mysql' ),
+        'fetched_label'      => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
+        'metro_map'          => se_broadcaster_metro_map_payload(),
+        'channels'           => se_broadcaster_audio_channels_for_client( $resolve_live_audio ),
+        'dave_ambient_cycle' => se_broadcaster_dave_ambient_cycle_keys(),
+        'data_channel_pins'  => se_broadcaster_data_channel_pin_config(),
+        'translink'          => se_broadcaster_translink_script(),
+        'drivers'            => se_broadcaster_drivers_script(),
+        'ferries'            => se_broadcaster_ferries_script(),
+        'weather'            => se_broadcaster_weather_script(),
+        'wildfire'           => se_broadcaster_wildfire_script(),
+        'air'                => se_broadcaster_air_script(),
+    );
+}
+
 function se_get_broadcaster_feeds_rest( WP_REST_Request $request ): WP_REST_Response {
-    if ( $request->get_param( 'refresh' ) ) {
+    $refresh = (bool) $request->get_param( 'refresh' );
+    if ( ! $refresh ) {
+        $cached = get_transient( 'se_yvr_broadcaster_feeds_v1' );
+        if ( is_array( $cached ) ) {
+            $response = rest_ensure_response( $cached );
+            $response->header( 'Cache-Control', 'public, max-age=60' );
+            return $response;
+        }
+    } else {
+        delete_transient( 'se_yvr_broadcaster_feeds_v1' );
         delete_transient( 'se_translink_alerts' );
         delete_transient( 'se_open511_bc_events' );
         delete_transient( 'se_bc_ferries_capacity' );
@@ -1142,20 +1211,10 @@ function se_get_broadcaster_feeds_rest( WP_REST_Request $request ): WP_REST_Resp
         delete_transient( 'se_ec_aqhi_metro' );
     }
 
-    return rest_ensure_response(
-        array(
-            'updated'            => current_time( 'mysql' ),
-            'fetched_label'      => 'Pulled ' . wp_date( 'M j, Y g:i a T' ),
-            'metro_map'          => se_broadcaster_metro_map_payload(),
-            'channels'           => se_broadcaster_audio_channels_for_client(),
-            'dave_ambient_cycle' => se_broadcaster_dave_ambient_cycle_keys(),
-            'data_channel_pins'  => se_broadcaster_data_channel_pin_config(),
-            'translink'          => se_broadcaster_translink_script(),
-            'drivers'            => se_broadcaster_drivers_script(),
-            'ferries'            => se_broadcaster_ferries_script(),
-            'weather'            => se_broadcaster_weather_script(),
-            'wildfire'           => se_broadcaster_wildfire_script(),
-            'air'                => se_broadcaster_air_script(),
-        )
-    );
+    se_broadcaster_feed_budget_start( 5 );
+    $payload = se_broadcaster_feeds_payload( $refresh );
+    set_transient( 'se_yvr_broadcaster_feeds_v1', $payload, 3 * MINUTE_IN_SECONDS );
+    $response = rest_ensure_response( $payload );
+    $response->header( 'Cache-Control', 'public, max-age=60' );
+    return $response;
 }
