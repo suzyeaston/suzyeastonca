@@ -80,9 +80,6 @@ final class HomeTeaser
         if (!empty($raw['synthetic'])) {
             return null;
         }
-        if (array_key_exists('operator_notified', $raw) && empty($raw['operator_notified'])) {
-            return null;
-        }
 
         $provider = Board\tidy((string) ($raw['provider'] ?? ''), 80);
         $title = Board\tidy((string) ($raw['title'] ?? ''), 140);

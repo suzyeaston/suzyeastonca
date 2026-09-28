@@ -26,6 +26,12 @@ final class EpisodeStore
                 continue;
             }
             $provider = sanitize_key($incident->provider) ?: 'provider';
+            if (class_exists(\SuzyEaston\LousyOutages\IncidentAlerts::class)) {
+                $resolved = \SuzyEaston\LousyOutages\IncidentAlerts::canonicalProviderId((string) $incident->id, (string) $incident->provider);
+                if ('' !== $resolved) {
+                    $provider = $resolved;
+                }
+            }
             $identity = $this->identity($incident, $provider);
             $key = $this->findActive($episodes, $provider, $identity);
             if ($key === '') {
@@ -72,16 +78,7 @@ final class EpisodeStore
                     continue;
                 }
                 // A healthy reading must not swallow mail that has not been accepted yet.
-                if (!empty($episode['email_pending_recipients'])) {
-                    continue;
-                }
-                $required = class_exists(\SuzyEaston\LousyOutages\IncidentAlerts::class)
-                    ? \SuzyEaston\LousyOutages\IncidentAlerts::requiredAlertRecipients()
-                    : [];
-                $sent = array_map(static fn($email): string => strtolower(trim((string) $email)), (array) ($episode['email_successful_recipients'] ?? []));
-                $missing = array_values(array_diff($required, $sent));
-                if ($missing) {
-                    $episode['email_pending_recipients'] = $missing;
+                if (!empty($episode['email_pending_recipients']) || !empty($episode['subscriber_retry'])) {
                     continue;
                 }
                 $episode['active'] = false; $episode['closed_at'] = $now; $closed[] = $key;

@@ -29,7 +29,7 @@ final class CanonicalPipeline
         add_action(self::RECOVERY_HOOK, [self::class, 'run']);
         add_action(self::ALERT_HOOK, [self::class, 'publishAlerts']);
         add_action(self::RSS_HOOK, [self::class, 'publishRss']);
-        add_action(IncidentAlerts::OWED_INBOX_HOOK, [IncidentAlerts::class, 'dispatchOwedInbox']);
+        add_action(IncidentAlerts::SUBSCRIBER_CATCHUP_HOOK, [IncidentAlerts::class, 'dispatchSubscriberAlerts']);
     }
 
     public static function cadence(): int

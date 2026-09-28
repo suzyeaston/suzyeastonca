@@ -205,7 +205,7 @@ function lousy_outages_activate() {
     \SuzyEaston\LousyOutages\Product::install_pages();
     if ( class_exists( '\\SuzyEaston\\LousyOutages\\Storage\\HistoryStore' ) ) { ( new \SuzyEaston\LousyOutages\Storage\HistoryStore() )->installTable(); }
     Subscriptions::schedule_purge();
-    $default_email = 'suzanneeaston@gmail.com';
+    $default_email = 'suzyeaston@gmail.com';
     $stored_email  = get_option( 'lousy_outages_email' );
     if ( empty( $stored_email ) && is_email( $default_email ) ) {
         update_option( 'lousy_outages_email', sanitize_email( $default_email ) );
@@ -277,10 +277,6 @@ function lousy_outages_maybe_install_storage(): void {
     );
 }
 
-function lousy_outages_operator_email(): string {
-    return 'suzanneeaston@gmail.com';
-}
-
 add_action( 'init', static function (): void {
     if ( version_compare( (string) get_option( 'lousy_outages_runtime_version', '0.0.0' ), LOUSY_OUTAGES_VERSION, '<' ) ) {
         lousy_outages_upgrade_032_runtime();
@@ -289,7 +285,7 @@ add_action( 'init', static function (): void {
 }, 3 );
 add_action( 'init', static function (): void {
     if ( class_exists( '\\SuzyEaston\\LousyOutages\\IncidentAlerts' ) ) {
-        \SuzyEaston\LousyOutages\IncidentAlerts::requeue_operator_inbox();
+        \SuzyEaston\LousyOutages\IncidentAlerts::requeue_subscriber_alerts();
     }
 }, 4 );
 function lousy_outages_refresh_official_providers( bool $bypass_cache = true ): array {
