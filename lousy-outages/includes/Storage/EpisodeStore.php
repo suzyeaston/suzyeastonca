@@ -68,9 +68,14 @@ final class EpisodeStore
             $provider = sanitize_key((string)$provider);
             if (!$this->isHealthy((string)$status)) continue;
             foreach ($episodes as $key => &$episode) {
-                if (!empty($episode['active']) && ($episode['provider_id'] ?? '') === $provider) {
-                    $episode['active'] = false; $episode['closed_at'] = $now; $closed[] = $key;
+                if (empty($episode['active']) || ($episode['provider_id'] ?? '') !== $provider) {
+                    continue;
                 }
+                // A healthy reading must not swallow mail that has not been accepted yet.
+                if (!empty($episode['email_pending_recipients'])) {
+                    continue;
+                }
+                $episode['active'] = false; $episode['closed_at'] = $now; $closed[] = $key;
             }
             unset($episode);
         }

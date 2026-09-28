@@ -301,6 +301,66 @@ ok(array_key_exists('pending_recipient_slots', $health), 'pending recipient slot
 ok(array_key_exists('last_detection_to_send_seconds', $health), 'detection-to-send delay is surfaced');
 assert_no_address((string) json_encode($health), 'tz@subscribers.test', 'alert health');
 
+reset_state();
+subscribers(['retry@subscribers.test']);
+$GLOBALS['mail_fail']['retry@subscribers.test'] = true;
+$retryState = provider_state('openai', 'Issues with Codex', 'codex-retry', '2026-09-25T23:09:00Z');
+$retryCycle = [
+    'cycle_id' => 'cycle-retry',
+    'provider_states' => ['openai' => $retryState],
+    'alerted_provider_ids' => [],
+    'errors' => [],
+];
+$remember = new ReflectionMethod(CanonicalPipeline::class, 'rememberProviderAlert');
+$remember->setAccessible(true);
+$rememberCaller = function (array &$cycle) use ($remember, $retryState): void {
+    $remember->invokeArgs(null, [&$cycle, 'openai', $retryState]);
+};
+$rememberCaller($retryCycle);
+ok(!in_array('openai', (array) $retryCycle['alerted_provider_ids'], true), 'failed outage send stays unmarked for the next pass');
+ok($GLOBALS['mails'] !== [] && $GLOBALS['mails'][0]['ok'] === false, 'failed attempt was actually handed to the mailer');
+$pendingEpisode = (new EpisodeStore())->all();
+ok(count($pendingEpisode) === 1, 'failed send still opens the episode');
+$pendingGuid = (string) array_key_first($pendingEpisode);
+ok(!empty($pendingEpisode[$pendingGuid]['email_pending_recipients']), 'failed recipient stays pending');
+$closedWhileOwed = (new EpisodeStore())->observe([], ['openai' => 'operational'], time());
+ok($closedWhileOwed['closed'] === [], 'a healthy stale snapshot does not close an episode that still owes mail');
+ok(!empty((new EpisodeStore())->all()[$pendingGuid]['active']), 'owed episode stays active');
+
+update_option('lousy_outages_current_state', [
+    'providers' => [[
+        'id' => 'openai',
+        'name' => 'OpenAI',
+        'stateCode' => 'operational',
+        'state' => 'Operational',
+        'summary' => 'Operational',
+        'sourceType' => 'statuspage',
+        'incidents' => [],
+    ]],
+    'fetched_at' => gmdate('c'),
+], false);
+$overlay = new ReflectionMethod(CanonicalPipeline::class, 'snapshotForAlertDrain');
+$overlay->setAccessible(true);
+$overlaid = $overlay->invoke(null, $retryCycle);
+$overlaidCodes = [];
+foreach ((array) ($overlaid['providers'] ?? []) as $provider) {
+    if (is_array($provider)) {
+        $overlaidCodes[(string) ($provider['id'] ?? '')] = (string) ($provider['stateCode'] ?? '');
+    }
+}
+ok(($overlaidCodes['openai'] ?? '') === 'major_outage', 'drain snapshot keeps the fetched outage over the stale operational commit');
+$GLOBALS['mail_fail'] = [];
+$beforeRetry = count($GLOBALS['mails']);
+IncidentAlerts::drain_deferred_alerts(['cycle_id' => 'cycle-retry', 'snapshot' => $overlaid]);
+$retriedMails = array_slice($GLOBALS['mails'], $beforeRetry);
+ok(count($retriedMails) === 1 && !empty($retriedMails[0]['ok']), 'next drain sends the owed outage email');
+ok(!empty((new EpisodeStore())->all()[$pendingGuid]['active']), 'episode stays open while the provider is still in outage');
+$rememberCaller($retryCycle);
+ok(in_array('openai', (array) $retryCycle['alerted_provider_ids'], true), 'accepted retry marks the provider alerted');
+$marked = count($GLOBALS['mails']);
+$rememberCaller($retryCycle);
+ok(count($GLOBALS['mails']) === $marked, 'marked provider is not mailed again');
+
 $pipeline = (string) file_get_contents(__DIR__ . '/../../lousy-outages/includes/Cron/CanonicalPipeline.php');
 $runStart = strpos($pipeline, 'public static function run');
 $publishStart = strpos($pipeline, 'public static function publishAlerts');
