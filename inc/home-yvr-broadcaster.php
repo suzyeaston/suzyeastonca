@@ -233,7 +233,145 @@ function se_broadcaster_metro_map_bounds(): array {
         'west'  => -123.40,
         'east'  => -122.28,
         'south' => 48.97,
-        'north' => 49.38,
+        'north' => 49.48,
+    );
+}
+
+/**
+ * Listening posts — one pin per place, many frequencies behind it.
+ * Salish posts sit at the real hydrophone, south of the city scope.
+ */
+function se_broadcaster_radar_sites(): array {
+    return array(
+        'sea-island' => array(
+            'id'    => 'sea-island',
+            'label' => 'YVR',
+            'place' => 'Sea Island, Richmond',
+            'geo'   => 'YVR is a Fraser delta island. Approach lines up over the south arm of the river, south of the city.',
+            'lat'   => 49.1947,
+            'lon'   => -123.1840,
+            'color' => '#57f3ff',
+            'scope' => 'city',
+        ),
+        'harbour'    => array(
+            'id'    => 'harbour',
+            'label' => 'HARBOUR',
+            'place' => 'Downtown peninsula',
+            'geo'   => 'Burrard Inlet north, False Creek south. SkyTrain hits the water at Waterfront. Channel 16 still belongs to the whole coast.',
+            'lat'   => 49.2856,
+            'lon'   => -123.1145,
+            'color' => '#ffb347',
+            'scope' => 'city',
+        ),
+        'burnaby'    => array(
+            'id'    => 'burnaby',
+            'label' => 'BURNABY',
+            'place' => 'Burnaby ridge',
+            'geo'   => 'Between the inlet and the Fraser. City fire on this side, wildfire repeaters for the valleys, AQHI for the air over the river.',
+            'lat'   => 49.2488,
+            'lon'   => -122.9805,
+            'color' => '#ff4b4b',
+            'scope' => 'city',
+        ),
+        'cape-horn'  => array(
+            'id'    => 'cape-horn',
+            'label' => 'CAPE HORN',
+            'place' => 'Cape Horn, Coquitlam',
+            'geo'   => 'Hwy 1 pinches between the Fraser and the Mary Hill bypass. DriveBC incidents stack up on this bend.',
+            'lat'   => 49.1989,
+            'lon'   => -122.8434,
+            'color' => '#ffe66d',
+            'scope' => 'city',
+        ),
+        'tsawwassen' => array(
+            'id'    => 'tsawwassen',
+            'label' => 'TSAWW',
+            'place' => 'Tsawwassen causeway',
+            'geo'   => 'The terminal sticks into the Strait of Georgia off Delta. Horseshoe Bay, the other dock, sits up where Howe Sound opens.',
+            'lat'   => 49.0067,
+            'lon'   => -123.1292,
+            'color' => '#7effc6',
+            'scope' => 'city',
+        ),
+        'bush-point' => array(
+            'id'    => 'bush-point',
+            'label' => 'BUSH PT',
+            'place' => 'Bush Point, Whidbey Island',
+            'geo'   => 'Admiralty Inlet, a full degree south of Abbotsford. Orcas pass this mic on the way through the Salish Sea.',
+            'lat'   => 48.0337,
+            'lon'   => -122.6040,
+            'color' => '#39ff14',
+            'scope' => 'salish',
+        ),
+        'mast'       => array(
+            'id'    => 'mast',
+            'label' => 'MAST',
+            'place' => 'MaST, Des Moines',
+            'geo'   => 'East side of Puget Sound. Same whales, different inlet, south of the border.',
+            'lat'   => 47.3492,
+            'lon'   => -122.3251,
+            'color' => '#39ff14',
+            'scope' => 'salish',
+        ),
+    );
+}
+
+function se_broadcaster_channel_site_id( string $key ): string {
+    $map = array(
+        'dave'           => 'sea-island',
+        'yvr_tower'      => 'sea-island',
+        'yvr_ground'     => 'sea-island',
+        'yvr_combo'      => 'sea-island',
+        'yvr_dep2'       => 'sea-island',
+        'translink'      => 'harbour',
+        'sound_skytrain' => 'harbour',
+        'weather'        => 'harbour',
+        'cknw'           => 'harbour',
+        'cbc'            => 'harbour',
+        'sound_rain'     => 'harbour',
+        'marine_vhf'     => 'harbour',
+        'vzvr_acc'       => 'harbour',
+        'burnaby_fire'   => 'burnaby',
+        'wildfire'       => 'burnaby',
+        'air'            => 'burnaby',
+        'drivers'        => 'cape-horn',
+        'ferries'        => 'tsawwassen',
+        'sound_ferry'    => 'tsawwassen',
+        'hydro_bush'     => 'bush-point',
+        'hydro_mast'     => 'mast',
+    );
+
+    return $map[ $key ] ?? '';
+}
+
+function se_broadcaster_decorate_anchor( array $anchor ): array {
+    $site_id = se_broadcaster_channel_site_id( (string) ( $anchor['key'] ?? '' ) );
+    $sites   = se_broadcaster_radar_sites();
+    if ( $site_id && isset( $sites[ $site_id ] ) ) {
+        $anchor['site']  = $site_id;
+        $anchor['place'] = $sites[ $site_id ]['place'];
+        $anchor['geo']   = $sites[ $site_id ]['geo'];
+    }
+    return $anchor;
+}
+
+function se_broadcaster_radar_scopes(): array {
+    return array(
+        'city'   => array(
+            'id'     => 'city',
+            'label'  => 'city',
+            'bounds' => se_broadcaster_metro_map_bounds(),
+        ),
+        'salish' => array(
+            'id'     => 'salish',
+            'label'  => 'salish sea',
+            'bounds' => array(
+                'west'  => -124.35,
+                'east'  => -121.35,
+                'south' => 46.55,
+                'north' => 50.15,
+            ),
+        ),
     );
 }
 
@@ -246,58 +384,72 @@ function se_broadcaster_metro_map_anchors(): array {
             'key'   => 'dave',
             'label' => 'BEULAH',
             'hint'  => 'YVR rack',
+            'freq'  => '',
+            'tier'  => 'bulletin',
             'lat'   => 49.1967,
             'lon'   => -123.1815,
         ),
         array(
             'key'   => 'translink',
-            'label' => 'SkyTrain',
-            'hint'  => 'live train bed',
+            'label' => 'SKYTRAIN',
+            'hint'  => 'alerts bulletin',
+            'freq'  => '410.287',
+            'tier'  => 'bulletin',
             'lat'   => 49.2857,
             'lon'   => -123.1119,
         ),
         array(
             'key'   => 'drivers',
-            'label' => 'DriveBC',
-            'hint'  => 'CKNW live',
+            'label' => 'DRIVE BC',
+            'hint'  => 'road bulletin',
+            'freq'  => '154.100',
+            'tier'  => 'bulletin',
             'lat'   => 49.1989,
             'lon'   => -122.8434,
         ),
         array(
             'key'   => 'ferries',
-            'label' => 'Ferries',
-            'hint'  => 'marine VHF live',
+            'label' => 'FERRIES',
+            'hint'  => 'sailings bulletin',
+            'freq'  => '156.800',
+            'tier'  => 'bulletin',
             'lat'   => 49.0067,
             'lon'   => -123.1292,
         ),
         array(
             'key'   => 'weather',
-            'label' => 'Weather',
-            'hint'  => 'bulletin + CBC live',
+            'label' => 'WEATHER',
+            'hint'  => 'EC bulletin',
+            'freq'  => '162.550',
+            'tier'  => 'bulletin',
             'lat'   => 49.2827,
             'lon'   => -123.1207,
         ),
         array(
             'key'   => 'wildfire',
-            'label' => 'Wildfire',
-            'hint'  => 'bulletin + BCWS scan',
+            'label' => 'WILDFIRE',
+            'hint'  => 'BCWS bulletin',
+            'freq'  => '168.050',
+            'tier'  => 'bulletin',
             'lat'   => 49.2480,
             'lon'   => -122.8900,
         ),
         array(
             'key'   => 'air',
-            'label' => 'Air quality',
-            'hint'  => 'hydro live',
+            'label' => 'AQHI',
+            'hint'  => 'metro air bulletin',
+            'freq'  => '153.785',
+            'tier'  => 'bulletin',
             'lat'   => 49.2500,
             'lon'   => -123.0200,
         ),
     );
 
     if ( function_exists( 'se_broadcaster_audio_map_anchors' ) ) {
-        return array_merge( $anchors, se_broadcaster_audio_map_anchors() );
+        $anchors = array_merge( $anchors, se_broadcaster_audio_map_anchors() );
     }
 
-    return $anchors;
+    return array_map( 'se_broadcaster_decorate_anchor', $anchors );
 }
 
 function se_broadcaster_data_channel_pin_config(): array {
@@ -357,6 +509,11 @@ function se_broadcaster_metro_map_static(): array {
     return array(
         'bounds'  => se_broadcaster_metro_map_bounds(),
         'anchors' => se_broadcaster_metro_map_anchors(),
+        'sites'   => array_values( se_broadcaster_radar_sites() ),
+        'scopes'  => se_broadcaster_radar_scopes(),
+        'tiles'   => array(
+            'style' => 'https://tiles.openfreemap.org/styles/dark',
+        ),
     );
 }
 
@@ -484,6 +641,11 @@ function se_broadcaster_metro_map_payload(): array {
         'bounds'   => se_broadcaster_metro_map_bounds(),
         'anchors'  => se_broadcaster_metro_map_anchors(),
         'overlays' => se_broadcaster_metro_map_overlays(),
+        'sites'    => array_values( se_broadcaster_radar_sites() ),
+        'scopes'   => se_broadcaster_radar_scopes(),
+        'tiles'    => array(
+            'style' => 'https://tiles.openfreemap.org/styles/dark',
+        ),
     );
 }
 

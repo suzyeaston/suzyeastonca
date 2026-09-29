@@ -42,6 +42,32 @@ test("homepage first load does not live-resolve radar audio or bust the outage t
   assert.match(summary, /public, max-age=60/);
 });
 
+test("homepage radar uses free OpenFreeMap tiles, not a keyed basemap", () => {
+  const source = fs.readFileSync(path.join(ROOT, "js", "home-hero-map.js"), "utf8");
+  assert.match(source, /tiles\.openfreemap\.org\/styles\/dark/);
+  assert.doesNotMatch(source, /basemaps\.cartocdn\.com/);
+});
+
+test("radar listening posts use real Salish Sea coordinates", () => {
+  const php = fs.readFileSync(path.join(ROOT, "inc", "home-yvr-broadcaster.php"), "utf8");
+  const audio = fs.readFileSync(path.join(ROOT, "inc", "home-yvr-audio-channels.php"), "utf8");
+  assert.match(php, /function se_broadcaster_radar_sites/);
+  assert.match(php, /Bush Point, Whidbey Island/);
+  assert.match(php, /'lat'\s*=>\s*48\.0337/);
+  assert.match(audio, /'map_lat'\s*=>\s*48\.0337/);
+  assert.doesNotMatch(audio, /49\.0337/);
+});
+
+test("radar scope exposes scan, salish zoom, and a geography readout", () => {
+  const page = fs.readFileSync(path.join(ROOT, "page-home.php"), "utf8");
+  assert.match(page, /data-yvr-scan/);
+  assert.match(page, /data-yvr-scope="salish"/);
+  assert.match(page, /data-yvr-geo-place/);
+  assert.match(page, /data-yvr-stack/);
+  assert.match(page, /OpenStreetMap/);
+  assert.match(page, /OpenFreeMap/);
+});
+
 test("theme deploy manifest includes compact radar deck CSS", () => {
   const source = fs.readFileSync(
     path.join(ROOT, "scripts", "theme_deploy_manifest.py"),

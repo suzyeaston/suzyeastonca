@@ -25,6 +25,6 @@
                                 </button>
                             <?php endforeach; ?>
                         </div>
-                        <p class="home-yvr-broadcaster__feeds-note pixel-font" data-broadcaster-feeds-note><?php echo esc_html( 'big pins = territory bulletins · listen row = direct live feeds' ); ?></p>
+                        <p class="home-yvr-broadcaster__feeds-note pixel-font" data-broadcaster-feeds-note><?php echo esc_html( 'posts = a place · stack = the band · listen row = same feeds' ); ?></p>
                     </div>
                     </details>
