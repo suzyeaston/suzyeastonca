@@ -58,14 +58,12 @@ test("radar listening posts use real Salish Sea coordinates", () => {
   assert.doesNotMatch(audio, /49\.0337/);
 });
 
-test("radar scope exposes scan, salish zoom, and a geography readout", () => {
+test("homepage introduces the dedicated radio app", () => {
   const page = fs.readFileSync(path.join(ROOT, "page-home.php"), "utf8");
-  assert.match(page, /data-yvr-scan/);
-  assert.match(page, /data-yvr-scope="salish"/);
-  assert.match(page, /data-yvr-geo-place/);
-  assert.match(page, /data-yvr-stack/);
-  assert.match(page, /OpenStreetMap/);
-  assert.match(page, /OpenFreeMap/);
+  const feature = fs.readFileSync(path.join(ROOT, "parts/home-radio-feature.php"), "utf8");
+  assert.match(page, /parts\/home-radio-feature/);
+  assert.doesNotMatch(page, /data-yvr-broadcaster/);
+  assert.match(feature, /home_url\(\s*'\/radio\/'\s*\)/);
 });
 
 test("theme deploy manifest includes compact radar deck CSS", () => {
