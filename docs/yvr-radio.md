@@ -1,5 +1,10 @@
 # YVR Radio — implementation and rollout
 
+> Current update: see [YVR Radio v2](yvr-radio-v2.md) for the restored map, real
+> Vancouver recording collection and working local internet broadcast stack.
+> The v1 notes below are historical; its recorded loops and map removal have
+> been superseded.
+
 Prepared 5 October 2026 for suzyeaston/suzyeastonca.
 
 ## What was actually wrong

@@ -6,6 +6,8 @@
   const channels = YvrRadio.channels;
   let selected = null, audio = el('audio'), hls = null, generation = 0;
   let state = 'idle', timer = null, lastTime = 0, lastProgress = 0;
+  let region = 'vancouver';
+  let healthController = null, healthTimer = null;
   let favourites = [];
   try { const saved = JSON.parse(localStorage.getItem('yvr-radio-favourites') || '[]'); if (Array.isArray(saved)) favourites = saved.filter(x => typeof x === 'string'); } catch (_) {}
   audio.volume = 0.8;
@@ -14,7 +16,7 @@
     state = next;
     el('status').dataset.state = next;
     const muted = next === 'playing' && (audio.muted || audio.volume === 0) ? ' · MUTED' : '';
-    el('status').textContent = messages[next] + muted + ' · ' + (detail || (selected ? selected.label : 'Pick a station'));
+    el('status').textContent = (next==='ended'&&selected?.mode==='soundscape'?'RECORDING FINISHED':messages[next]) + muted + ' · ' + (detail || (selected ? selected.label : 'Pick a station'));
     const pending = next === 'connecting' || next === 'buffering';
     el('play').textContent = pending ? 'Cancel connection' : next === 'playing' ? 'Pause' : 'Play';
     el('play').disabled = !selected || selected.mode === 'link_out';
@@ -86,28 +88,56 @@
     release(); selected = channel;
     el('title').textContent = channel.label;
     el('description').textContent = channel.hint || '';
-    el('note').textContent = channel.mode === 'soundscape' ? 'RECORDED LOOP · ' + (channel.credit || 'Not a live feed.') : channel.mode === 'link_out' ? 'Opens the provider’s player. Its playback state is not visible here.' : 'LIVE STREAM · Quiet periods can be normal. No automatic station switching.';
+    el('note').textContent = channel.mode === 'soundscape' ? 'FIELD RECORDING · ' + (channel.credit || 'Not a live feed.') : channel.mode === 'link_out' ? 'Opens the provider’s player. Its playback state is not visible here.' : 'LIVE STREAM · Quiet periods can be normal. No automatic station switching.';
     const link = channel.link_url || channel.source_url;
     el('source').hidden = !link;
     if (link) el('source').href = link;
+    el('source').textContent=channel.mode==='soundscape'?'Recording source & credits ↗':'Open station’s official player ↗';
+    if(el('license')) {el('license').hidden=!channel.license_url;if(channel.license_url)el('license').href=channel.license_url;}
     el('share').disabled = false;
     el('share-result').textContent = '';
     const url = new URL(location.href); url.searchParams.set('station', channel.key); history.replaceState(null, '', url);
     setState(channel.mode === 'link_out' ? 'external' : 'selected');
     render();
+    if(window.YvrListeningMap) window.YvrListeningMap.select(channel.key);
+    if(el('origin')) el('origin').textContent = [channel.place,channel.recorded_at ? 'Recorded '+channel.recorded_at : '',channel.credit].filter(Boolean).join(' · ');
+    watchStation(channel);
     if (autoplay && channel.mode !== 'link_out') start();
+  }
+  function watchStation(channel) {
+    if(healthController) healthController.abort();
+    if(healthTimer) clearTimeout(healthTimer);
+    const output=el('station-health'); if(!output) return;
+    output.textContent='';
+    if(!channel.status_url) return;
+    healthController=new AbortController();
+    const controller=healthController;
+    async function poll() {
+      const request=new AbortController();
+      const abort=()=>request.abort(); controller.signal.addEventListener('abort',abort,{once:true});
+      const timeout=setTimeout(abort,5000);
+      try {
+        const response=await fetch(channel.status_url,{signal:request.signal,credentials:'omit',cache:'no-store'});
+        if(!response.ok) throw new Error('Status unavailable');
+        const info=await response.json();
+        if(!controller.signal.aborted && selected===channel) output.textContent=info.online===true?'TRANSMITTER ONLINE · '+Number(info.listeners||0)+' listeners':'TRANSMITTER OFFLINE · Waiting for the next show';
+      } catch(_) {if(!controller.signal.aborted && selected===channel) output.textContent='Transmitter status unavailable. You can still try Play.';}
+      finally {clearTimeout(timeout);controller.signal.removeEventListener('abort',abort);}
+      if(!controller.signal.aborted && selected===channel) healthTimer=setTimeout(poll,15000);
+    }
+    poll();
   }
   function render() {
     const q = el('search').value.toLowerCase().trim(), group = el('category').value;
-    const visible = channels.filter(c => (!group || (group === 'Favourites' ? favourites.includes(c.key) : c.group === group)) && [c.label,c.hint,c.group].join(' ').toLowerCase().includes(q));
+    const visible = channels.filter(c => (region === 'salish' || c.region !== 'salish') && (!group || (group === 'Favourites' ? favourites.includes(c.key) : c.group === group)) && [c.label,c.hint,c.group].join(' ').toLowerCase().includes(q));
     const list = el('stations'); list.replaceChildren();
     el('count').textContent = visible.length + ' signals' + (visible.length ? '' : ' · Try another search or save a favourite.');
     visible.forEach(c => {
       const row = document.createElement('article'); row.className = 'yr-station' + (selected && selected.key === c.key ? ' is-selected' : '');
       const body = document.createElement('div');
       const title = document.createElement('h3'); title.textContent = c.label;
-      const hint = document.createElement('p'); hint.textContent = c.hint;
-      const type = document.createElement('p'); type.textContent = c.mode === 'link_out' ? c.group + ' · Official player ↗' : c.mode === 'soundscape' ? 'Recorded loop · In this page' : c.group + ' · In-page stream';
+      const hint = document.createElement('p'); hint.textContent = [c.hint,c.place].filter(Boolean).join(' · ');
+      const type = document.createElement('p'); type.textContent = c.mode === 'link_out' ? c.group + ' · Official player ↗' : c.mode === 'soundscape' ? 'Vancouver field recording · In this page' : c.group + ' · In-page stream';
       const tune = document.createElement(c.mode === 'link_out' ? 'a' : 'button'); tune.className='yr-tune'; tune.textContent = c.mode === 'link_out' ? 'Open official player ↗' : 'Tune in';
       if(c.mode === 'link_out') { tune.href = c.link_url || c.source_url; tune.target='_blank'; tune.rel='noopener noreferrer'; }
       tune.addEventListener('click', () => select(c, true));
@@ -115,6 +145,7 @@
       star.addEventListener('click', () => { favourites=favourites.includes(c.key)?favourites.filter(k=>k!==c.key):favourites.concat(c.key); try { localStorage.setItem('yvr-radio-favourites',JSON.stringify(favourites)); } catch (_) {} render(); const replacement=Array.from(list.querySelectorAll('.yr-star')).find(b=>b.getAttribute('aria-label')==='Favourite '+c.label); if(replacement) replacement.focus(); else el('category').focus(); });
       body.append(title,hint,type,tune); row.append(body,star); list.append(row);
     });
+    if(window.YvrListeningMap) window.YvrListeningMap.filter(visible.map(c=>c.key));
   }
   el('search').addEventListener('input',render); el('category').addEventListener('change',render);
   el('play').addEventListener('click',() => {
@@ -130,8 +161,9 @@
   });
   // Detect a connection that stopped making playback progress without a waiting event.
   setInterval(() => {if(state === 'playing' && lastProgress && Date.now()-lastProgress>15000 && !audio.paused) {setState('buffering');armTimeout(generation);}},3000);
-  window.addEventListener('pagehide',() => { release();setState('stopped'); });
+  window.addEventListener('pagehide',() => { if(healthController) healthController.abort();if(healthTimer) clearTimeout(healthTimer);release();setState('stopped'); });
+  if(window.YvrListeningMap) window.YvrListeningMap.init(channels,(key)=>{const c=channels.find(c=>c.key===key);if(c) select(c,c.mode!=='link_out');},(next)=>{region=next;render();});
   render();
   const requested=channels.find(c=>c.key===new URL(location.href).searchParams.get('station'));
-  if(requested) select(requested,false);
+  if(requested) { if(requested.region==='salish') {region='salish';if(window.YvrListeningMap) window.YvrListeningMap.scope('salish');} select(requested,false); }
 })();
