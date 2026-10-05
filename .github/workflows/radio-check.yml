@@ -1,0 +1,33 @@
+name: YVR Radio checks
+on:
+  pull_request:
+    paths:
+      - '**yvr-radio**'
+      - 'template-yvr-radio.php'
+      - 'parts/home-radio-feature.php'
+      - 'page-home.php'
+      - 'functions.php'
+      - 'tests/radio-player.e2e.cjs'
+      - 'scripts/theme_deploy_manifest.py'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          php -l inc/yvr-radio.php
+          php -l template-yvr-radio.php
+          php -l parts/home-radio-feature.php
+          php -l functions.php
+          php -l page-home.php
+          node --check assets/js/yvr-radio.js
+          python3 scripts/theme_deploy_manifest.py validate
+          node --test __tests__/homepage-yvr-radar-compact.test.js __tests__/homepage-appliance-spotlight.test.js __tests__/theme-deploy-manifest.test.js
+      - run: npm install --no-package-lock --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/radio-player.e2e.cjs

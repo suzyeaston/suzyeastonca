@@ -1,0 +1,45 @@
+const {chromium}=require('@playwright/test');
+const fs=require('fs'); const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({headless:true}); const page=await browser.newPage({viewport:{width:1280,height:1000}});
+ const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+ let html=fs.readFileSync('template-yvr-radio.php','utf8').replace(/<\?php[\s\S]*?\?>/g,'');
+ const channels=[{key:'citr',label:'CiTR 101.9 FM',hint:'Campus and community radio · UBC',group:'Community radio',mode:'stream',format:'aac',stream_url:'https://example.com/citr.aac',source_url:'https://player.citr.ca/'},{key:'cbc',label:'CBC Radio One',hint:'Vancouver live',group:'Radio',mode:'stream',format:'hls',stream_url:'https://example.com/master.m3u8',source_url:'https://www.cbc.ca/listen/'},{key:'rain',label:'Rain',hint:'Recorded rain loop',group:'Recorded loops',mode:'soundscape',stream_url:'https://example.com/rain.mp3',loop:true},{key:'cfro',label:'CFRO 100.5 FM',hint:'Vancouver Co-operative Radio',group:'Community radio',mode:'link_out',source_url:'https://coopradio.org/'}];
+ html='<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{background:#060d12;margin:0}'+fs.readFileSync('assets/css/yvr-radio.css','utf8')+'</style></head><body>'+html+'</body></html>';
+ await page.route('https://radio.test/**',r=>r.fulfill({contentType:'text/html',body:html}));
+ await page.goto('https://radio.test/');
+ await page.clock.install();
+ await page.evaluate(channels=>{
+  window.YvrRadio={channels};
+  const p=HTMLMediaElement.prototype;
+  p.play=function(){this._paused=false;return Promise.resolve();};
+  p.pause=function(){this._paused=true;this.dispatchEvent(new Event('pause'));};p.load=function(){};
+  Object.defineProperty(p,'src',{get(){return this._src||'';},set(value){this._src=value;}});
+  Object.defineProperty(p,'paused',{get(){return this._paused!==false;}});
+ },channels);
+ await page.addScriptTag({content:fs.readFileSync('assets/js/yvr-radio.js','utf8')});
+ const state=()=>page.locator('#yr-status').getAttribute('data-state');
+ await page.getByRole('button',{name:'Tune in',exact:true}).first().click(); assert.equal(await state(),'connecting');
+ await page.evaluate(()=>document.querySelector('#yr-audio').dispatchEvent(new Event('playing'))); assert.equal(await state(),'playing');
+ await page.evaluate(()=>document.querySelector('#yr-audio').dispatchEvent(new Event('waiting'))); assert.equal(await state(),'buffering');
+ await page.clock.fastForward(20001); assert.equal(await state(),'error');
+ await page.getByRole('button',{name:'Retry stream'}).click(); assert.equal(await state(),'connecting');
+ await page.evaluate(()=>{window.oldAudio=document.querySelector('#yr-audio');});
+ await page.getByRole('button',{name:'Stop',exact:true}).click(); assert.equal(await state(),'stopped');
+ await page.evaluate(()=>window.oldAudio.dispatchEvent(new Event('playing'))); assert.equal(await state(),'stopped');
+ await page.getByRole('button',{name:'Play',exact:true}).click();
+ await page.evaluate(()=>document.querySelector('#yr-audio').dispatchEvent(new Event('playing')));
+ await page.getByRole('button',{name:'Pause',exact:true}).click();assert.equal(await state(),'paused');
+ await page.locator('#yr-search').fill('CBC');await page.getByRole('button',{name:'Tune in',exact:true}).click(); assert.equal(await state(),'error'); // HLS unavailable
+ await page.locator('#yr-search').fill(''); await page.getByRole('button',{name:'Favourite CiTR 101.9 FM',exact:true}).click();
+ await page.locator('#yr-category').selectOption('Favourites');assert.equal(await page.locator('.yr-station').count(),1);
+ await page.locator('#yr-category').selectOption('Community radio');
+ await page.getByRole('button',{name:'Tune in',exact:true}).click();
+ await page.evaluate(()=>document.querySelector('#yr-audio').dispatchEvent(new Event('playing')));
+ await page.screenshot({path:'/tmp/yvr-radio-desktop.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ await page.screenshot({path:'/tmp/yvr-radio-mobile.png',fullPage:true});
+ assert.deepEqual(errors,[]); console.log('PASS: connecting, playing, buffering, timeout, retry, stop, stale events, pause, unsupported HLS, favourites, filters, mobile overflow.');
+ await browser.close();
+})();

@@ -34,6 +34,7 @@ require_once get_template_directory() . '/inc/vancouver-tech-events.php';
 require_once get_template_directory() . '/inc/home-translink-alerts.php';
 require_once get_template_directory() . '/inc/home-yvr-audio-channels.php';
 require_once get_template_directory() . '/inc/home-yvr-broadcaster.php';
+require_once get_template_directory() . '/inc/yvr-radio.php';
 require_once get_template_directory() . '/inc/shop.php';
 require_once get_template_directory() . '/inc/seo.php';
 require_once get_template_directory() . '/inc/blog.php';
