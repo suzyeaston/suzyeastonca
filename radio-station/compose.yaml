@@ -1,0 +1,26 @@
+# Run on a dedicated host with DNS configured, not alongside an occupied WP port.
+services:
+  relay:
+    build: .
+    restart: unless-stopped
+    environment:
+      SOURCE_TOKEN: ${SOURCE_TOKEN:?Set a private SOURCE_TOKEN}
+      MAX_LISTENERS: ${MAX_LISTENERS:-30}
+    expose: ["8788"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      RADIO_DOMAIN: ${RADIO_DOMAIN:?Set the public station hostname}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [relay]
+volumes:
+  caddy_data:
+  caddy_config:

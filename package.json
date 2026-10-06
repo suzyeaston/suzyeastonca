@@ -24,6 +24,7 @@
     "preact": "^10.28.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.0"
+    "@playwright/test": "^1.56.0",
+    "maplibre-gl": "4.7.1"
   }
 }

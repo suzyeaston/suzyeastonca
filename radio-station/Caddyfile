@@ -1,0 +1,10 @@
+{
+    servers {
+        enable_full_duplex
+    }
+}
+{$RADIO_DOMAIN} {
+    reverse_proxy relay:8788 {
+        flush_interval -1
+    }
+}

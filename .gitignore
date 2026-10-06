@@ -21,3 +21,7 @@ test-results/
 
 # Generated release binaries are shared as artifacts, not committed.
 /dist/*.zip
+
+# Generated Python bytecode
+__pycache__/
+*.pyc
