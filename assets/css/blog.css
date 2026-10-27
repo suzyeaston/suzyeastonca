@@ -852,3 +852,78 @@
 		transition: none;
 	}
 }
+
+/* Homepage editorial spotlight: make the latest Meanwhile note the first feature. */
+.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight {
+	box-sizing: border-box;
+	width: 100%;
+	margin: 0;
+	padding: clamp(1rem, 2.5vw, 1.65rem);
+	display: grid;
+	grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+	gap: 0.65rem clamp(1rem, 3vw, 2rem);
+	align-items: start;
+	border: 1px solid rgba(255, 179, 0, 0.43);
+	border-radius: 14px;
+}
+
+.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight .home-mission-card__label {
+	margin: 0;
+	color: #ffcc66;
+}
+
+.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight h3 {
+	margin: 0;
+	font-size: clamp(1.05rem, 2.4vw, 1.6rem);
+}
+
+.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight .home-mission-meanwhile__tagline {
+	max-width: 36ch;
+	font-size: clamp(0.78rem, 1.35vw, 0.9rem);
+}
+
+.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight .home-mission-meanwhile__terminal {
+	grid-column: 2;
+	grid-row: 1 / span 4;
+	margin: 0;
+}
+
+.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight .home-mission-meanwhile__body {
+	padding: clamp(0.8rem, 1.8vw, 1.3rem);
+}
+
+.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight .home-mission-meanwhile__entry-title {
+	font-size: clamp(1.15rem, 2.3vw, 1.7rem);
+	line-height: 1.25;
+	font-weight: 700;
+}
+
+.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight .home-mission-meanwhile__entry-excerpt {
+	font-size: clamp(0.78rem, 1.25vw, 0.9rem);
+	line-height: 1.65;
+}
+
+.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight .home-mission-meanwhile__actions {
+	grid-column: 1;
+	margin-top: 0.5rem;
+	align-self: end;
+}
+
+@media (min-width: 900px) {
+	.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight {
+		grid-column: 1 / -1;
+	}
+}
+
+@media (max-width: 700px) {
+	.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight {
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+	}
+
+	.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight .home-mission-meanwhile__terminal,
+	.home-yvr-radar-deck > .home-mission-card--meanwhile-spotlight .home-mission-meanwhile__actions {
+		width: 100%;
+	}
+}

@@ -14,12 +14,12 @@ $blog_url = $mission['blog_url'];
 $has_post = ! empty( $mission['has_post'] );
 ?>
 <article
-	class="home-project-card selected-work__card home-mission-card home-mission-card--meanwhile<?php echo $has_post ? ' home-mission-card--meanwhile-live' : ''; ?>"
+	class="home-project-card selected-work__card home-mission-card home-mission-card--meanwhile home-mission-card--meanwhile-spotlight<?php echo $has_post ? ' home-mission-card--meanwhile-live' : ''; ?>"
 	aria-labelledby="home-mission-meanwhile-title"
 >
-	<p class="home-mission-card__label pixel-font"><?php echo esc_html( 'field notes // east van' ); ?></p>
+	<p class="home-mission-card__label pixel-font"><?php echo esc_html( 'field notes // vancouver' ); ?></p>
 	<h3 id="home-mission-meanwhile-title" class="pixel-font"><?php echo esc_html( 'Meanwhile' ); ?></h3>
-	<p class="home-mission-meanwhile__tagline"><?php echo esc_html( 'Field notes from East Vancouver — what I\'m building, questioning, and thinking out loud.' ); ?></p>
+	<p class="home-mission-meanwhile__tagline"><?php echo esc_html( 'Small transmissions on belonging, music, machines, and the space between.' ); ?></p>
 
 	<div class="home-mission-meanwhile__terminal" role="status" aria-live="polite">
 		<div class="home-mission-meanwhile__scan" aria-hidden="true"></div>
@@ -50,6 +50,9 @@ $has_post = ! empty( $mission['has_post'] );
 						<a class="home-mission-meanwhile__entry-title" href="<?php echo esc_url( $mission['post_url'] ); ?>">
 							<?php echo esc_html( $mission['post_title'] ); ?>
 						</a>
+						<?php if ( $mission['post_excerpt'] ) : ?>
+							<p class="home-mission-meanwhile__entry-excerpt"><?php echo esc_html( $mission['post_excerpt'] ); ?></p>
+						<?php endif; ?>
 					</div>
 				<?php else : ?>
 					<p class="home-mission-meanwhile__empty-label pixel-font"><?php echo esc_html( 'NO CARRIER' ); ?></p>
@@ -60,9 +63,9 @@ $has_post = ! empty( $mission['has_post'] );
 	</div>
 
 	<div class="home-mission-meanwhile__actions">
-		<a class="pixel-button home-mission-meanwhile__cta" href="<?php echo esc_url( $blog_url ); ?>"><?php echo esc_html( 'Open channel' ); ?></a>
+		<a class="pixel-button home-mission-meanwhile__cta" href="<?php echo esc_url( $has_post ? $mission['post_url'] : $blog_url ); ?>"><?php echo esc_html( $has_post ? 'Read the latest note' : 'Open channel' ); ?></a>
 		<?php if ( $has_post ) : ?>
-			<a class="home-mission-meanwhile__latest-link" href="<?php echo esc_url( $mission['post_url'] ); ?>"><?php echo esc_html( 'read latest →' ); ?></a>
+			<a class="home-mission-meanwhile__latest-link" href="<?php echo esc_url( $blog_url ); ?>"><?php echo esc_html( 'All field notes →' ); ?></a>
 		<?php endif; ?>
 	</div>
 </article>

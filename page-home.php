@@ -13,7 +13,7 @@ get_header();
 
         <?php get_template_part( 'parts/home-hero-pitch' ); ?>
 
-        <?php get_template_part( 'parts/home-appliance-feature' ); ?>
+        <?php get_template_part( 'parts/home', 'mission-meanwhile' ); ?>
 
         <?php get_template_part( 'parts/home-commercial-strip' ); ?>
 
@@ -31,7 +31,6 @@ get_header();
         <h2 id="selected-projects-title" class="pixel-font"><?php echo esc_html( 'CHOOSE YOUR SYSTEM' ); ?></h2>
         <div class="selected-work__grid home-mission-grid">
             <article class="home-project-card selected-work__card home-mission-card home-mission-card--featured"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'status weather' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Lousy Outages' ); ?></h3><p><?php echo esc_html( 'Independent outage intelligence for AI, cloud and creative tools, translated from status-page language into something humans can use.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>"><?php echo esc_html( 'Check status' ); ?></a></article>
-            <?php get_template_part( 'parts/home', 'mission-meanwhile' ); ?>
             <article class="home-project-card selected-work__card home-mission-card home-mission-card--featured"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'city calendar' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Vancouver Tech Events' ); ?></h3><p><?php echo esc_html( 'Meetup, Luma, BC Tech — one list so you stop cross-checking five tabs.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/vancouver-tech-events/' ) ); ?>"><?php echo esc_html( 'See events' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'hockey arcade' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Pacific Power Play' ); ?></h3><p><?php echo esc_html( '1993–94 Canucks roster. Tap a jersey, swap the line, drop the puck at the Coliseum.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/pacific-power-play/' ) ); ?>"><?php echo esc_html( 'Play game' ); ?></a></article>
             <article class="home-project-card selected-work__card home-mission-card"><p class="home-mission-card__label pixel-font"><?php echo esc_html( 'civic arcade world' ); ?></p><h3 class="pixel-font"><?php echo esc_html( 'Gastown Simulator' ); ?></h3><p><?php echo esc_html( 'A playable Vancouver corridor built from civic data, route logic, street mood, and arcade-map obsession.' ); ?></p><a class="pixel-button" href="<?php echo esc_url( home_url( '/gastown-sim/' ) ); ?>"><?php echo esc_html( 'Walk Gastown' ); ?></a></article>
