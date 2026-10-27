@@ -104,6 +104,7 @@ THEME_FILES = [
     "parts/home-yvr-channel-buttons.php",
     "assets/css/home-commercial-strip.css",
     "assets/css/blog.css",
+    "assets/brand/meanwhile-october-portrait.webp",
     "assets/css/shop.css",
     "assets/css/shop-console.css",
     "assets/js/shop.js",

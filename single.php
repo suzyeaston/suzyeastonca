@@ -14,11 +14,13 @@ while ( have_posts() ) :
 	$cat_class = $cat instanceof WP_Term ? se_blog_category_tone_class( $cat->slug ) : 'se-signal-log__cat--default';
 	$prev_post = get_previous_post();
 	$next_post = get_next_post();
+	$show_october_portrait = is_single( 'what-we-leave-open' );
 	?>
 <main id="main-content" class="se-signal-log se-signal-log--single">
 	<div class="se-signal-log__shell">
-		<article id="post-<?php the_ID(); ?>" <?php post_class( 'se-signal-log__article' ); ?>>
-			<header class="se-signal-log__article-head">
+		<article id="post-<?php the_ID(); ?>" <?php post_class( 'se-signal-log__article' . ( $show_october_portrait ? ' se-signal-log__article--with-portrait' : '' ) ); ?>>
+			<header class="se-signal-log__article-head<?php echo $show_october_portrait ? ' se-signal-log__article-head--with-portrait' : ''; ?>">
+				<div class="se-signal-log__article-heading">
 				<p class="se-signal-log__article-kicker">
 					<a class="se-signal-log__back-link" href="<?php echo esc_url( se_blog_archive_url() ); ?>"><?php echo esc_html( 'meanwhile' ); ?></a>
 					<span class="se-signal-log__article-sep" aria-hidden="true">/</span>
@@ -33,6 +35,20 @@ while ( have_posts() ) :
 
 				<h1 class="se-signal-log__article-title"><?php the_title(); ?></h1>
                 <p class="se-signal-log__article-invocation" aria-hidden="true">✧ &nbsp; a little space to listen &nbsp; ✧</p>
+				</div>
+				<?php if ( $show_october_portrait ) : ?>
+					<figure class="se-signal-log__october-portrait">
+						<img
+							src="<?php echo esc_url( get_template_directory_uri() . '/assets/brand/meanwhile-october-portrait.webp' ); ?>"
+							alt="Suzy smiling in translucent glasses, with a hockey game on a screen behind her."
+							width="280"
+							height="393"
+							decoding="async"
+							fetchpriority="high"
+						>
+						<figcaption><?php echo esc_html( 'October, somewhere between the notes.' ); ?></figcaption>
+					</figure>
+				<?php endif; ?>
 			</header>
 
 			<div class="se-signal-log__article-body entry-content">
