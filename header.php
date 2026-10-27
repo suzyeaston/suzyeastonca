@@ -31,6 +31,14 @@
   <meta property="og:title" content="<?php echo esc_attr( $meta_title ); ?>">
   <meta property="og:description" content="<?php echo esc_attr( $meta_desc ); ?>">
   <meta property="og:image" content="<?php echo esc_url( $meta_img ); ?>">
+  <meta property="og:image:secure_url" content="<?php echo esc_url( $meta_img ); ?>">
+  <?php if ( is_singular( 'post' ) && 'what-we-leave-open' === get_post_field( 'post_name', get_queried_object_id() ) ) : ?>
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:alt" content="What We Leave Open, a celestial portrait of Suzy Easton.">
+  <meta name="twitter:image:alt" content="What We Leave Open, a celestial portrait of Suzy Easton.">
+  <?php endif; ?>
   <meta property="og:url" content="<?php echo esc_url( $meta_url ); ?>">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="<?php echo esc_attr( $meta_title ); ?>">

@@ -13,6 +13,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * @return string
  */
+/**
+ * A dedicated image for the personal Meanwhile essay linked from Facebook/Threads.
+ * Its JPEG is reproducibly built before the production theme deployment.
+ */
+function se_what_we_leave_open_social_image_url() {
+    return get_template_directory_uri() . '/assets/brand/what-we-leave-open-social.jpg';
+}
+
+/**
+ * @param WP_Post $post
+ */
+function se_post_social_image_url( WP_Post $post ) {
+    if ( 'what-we-leave-open' === $post->post_name ) {
+        return se_what_we_leave_open_social_image_url();
+    }
+
+    if ( has_post_thumbnail( $post ) ) {
+        $thumb = wp_get_attachment_image_url( get_post_thumbnail_id( $post ), 'large' );
+        if ( is_string( $thumb ) && '' !== $thumb ) {
+            return $thumb;
+        }
+    }
+
+    return se_default_og_image();
+}
+
 function se_default_og_image() {
 	return 'https://suzyeaston.ca/arcade/og-image.png';
 }
@@ -306,11 +332,8 @@ function se_page_meta() {
 		$meta_title = $blog_meta['title'];
 		$meta_desc  = $blog_meta['description'];
 		$keywords   = $blog_meta['keywords'];
-		if ( $post instanceof WP_Post && has_post_thumbnail( $post ) ) {
-			$thumb = wp_get_attachment_image_url( get_post_thumbnail_id( $post ), 'large' );
-			if ( is_string( $thumb ) && $thumb !== '' ) {
-				$default_img = $thumb;
-			}
+		if ( $post instanceof WP_Post ) {
+			$default_img = se_post_social_image_url( $post );
 		}
 	} else {
 		$meta_title = wp_title( '|', false, 'right' ) . $site_name;

@@ -105,6 +105,7 @@ THEME_FILES = [
     "assets/css/home-commercial-strip.css",
     "assets/css/blog.css",
     "assets/brand/meanwhile-october-portrait.webp",
+    "assets/brand/what-we-leave-open-social.jpg",
     "assets/css/shop.css",
     "assets/css/shop-console.css",
     "assets/js/shop.js",

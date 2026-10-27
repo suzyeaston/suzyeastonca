@@ -115,7 +115,11 @@ jobs:
           python-version: '3.12'
 
       - name: Install deploy dependencies
-        run: pip install paramiko
+        run: pip install paramiko pillow
+
+      - name: Build Meanwhile social thumbnail
+        if: needs.changes.outputs.theme == 'true'
+        run: python3 scripts/build_meanwhile_social_card.py
 
       - name: Validate theme deploy manifest
         if: needs.changes.outputs.theme == 'true'

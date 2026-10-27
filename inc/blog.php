@@ -202,14 +202,7 @@ function se_blog_archive_structured_data() {
  * @return array<string, mixed>
  */
 function se_blog_posting_schema( WP_Post $post ) {
-	$image = se_default_og_image();
-
-	if ( has_post_thumbnail( $post ) ) {
-		$thumb = wp_get_attachment_image_url( get_post_thumbnail_id( $post ), 'large' );
-		if ( is_string( $thumb ) && $thumb !== '' ) {
-			$image = $thumb;
-		}
-	}
+	$image = se_post_social_image_url( $post );
 
 	$schema = [
 		'@type'            => 'BlogPosting',
