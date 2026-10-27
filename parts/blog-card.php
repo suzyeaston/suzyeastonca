@@ -10,7 +10,7 @@ $cat_class = $cat instanceof WP_Term ? se_blog_category_tone_class( $cat->slug )
 ?>
 <article <?php post_class( 'se-signal-log__card' ); ?>>
 	<div class="se-signal-log__card-meta">
-		<?php if ( $cat instanceof WP_Term ) : ?>
+		<?php if ( $cat instanceof WP_Term && 'uncategorized' !== $cat->slug ) : ?>
 			<span class="se-signal-log__cat <?php echo esc_attr( $cat_class ); ?>">
 				<a href="<?php echo esc_url( get_category_link( $cat->term_id ) ); ?>"><?php echo esc_html( $cat->name ); ?></a>
 			</span>

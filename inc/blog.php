@@ -406,10 +406,18 @@ function se_enqueue_blog_assets() {
 		return;
 	}
 
+	// Literary display type meets a clean, futuristic reading font.
+	wp_enqueue_style(
+		'se-meanwhile-type',
+		'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600;700&display=swap',
+		[],
+		null
+	);
+
 	wp_enqueue_style(
 		'se-signal-log',
 		$uri . $css,
-		[ 'main-styles' ],
+		[ 'main-styles', 'se-meanwhile-type' ],
 		filemtime( $dir . $css )
 	);
 }

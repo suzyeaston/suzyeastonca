@@ -25,17 +25,31 @@ while ( have_posts() ) :
 					<span class="se-signal-log__article-date"><?php echo esc_html( se_blog_format_date() ); ?></span>
 				</p>
 
-				<?php if ( $cat instanceof WP_Term ) : ?>
+				<?php if ( $cat instanceof WP_Term && 'uncategorized' !== $cat->slug ) : ?>
 					<p class="se-signal-log__cat <?php echo esc_attr( $cat_class ); ?>">
 						<a href="<?php echo esc_url( get_category_link( $cat->term_id ) ); ?>"><?php echo esc_html( $cat->name ); ?></a>
 					</p>
 				<?php endif; ?>
 
 				<h1 class="se-signal-log__article-title"><?php the_title(); ?></h1>
+                <p class="se-signal-log__article-invocation" aria-hidden="true">✧ &nbsp; a little space to listen &nbsp; ✧</p>
 			</header>
 
 			<div class="se-signal-log__article-body entry-content">
-				<?php the_content(); ?>
+				<?php
+                // WordPress content imported from a standalone draft may repeat the post title.
+                // Remove only a leading heading whose visible text exactly matches the title.
+                // The saved post remains untouched; this is a presentation-only cleanup.
+                $rendered_content = apply_filters( 'the_content', get_the_content() );
+                if ( preg_match( '/^\s*<h([1-6])\b[^>]*>(.*?)<\/h\1>\s*/is', $rendered_content, $opening_heading ) ) {
+                    $opening_text = trim( wp_strip_all_tags( html_entity_decode( $opening_heading[2], ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ) );
+                    $post_title   = trim( wp_strip_all_tags( get_the_title() ) );
+                    if ( $opening_text === $post_title ) {
+                        $rendered_content = substr( $rendered_content, strlen( $opening_heading[0] ) );
+                    }
+                }
+                echo $rendered_content; // Already passed through WordPress the_content filters.
+                ?>
 			</div>
 
 			<footer class="se-signal-log__article-foot">
