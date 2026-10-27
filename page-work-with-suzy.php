@@ -10,12 +10,12 @@ $shop_url = se_preserve_utm_url( home_url( '/shop/' ) );
 <main id="main-content" class="work-with-suzy-page">
     <article class="page-content work-with-suzy-content">
         <section class="crt-block wws-hero" aria-labelledby="work-with-suzy-title">
-            <p class="wws-kicker pixel-font wws-eyebrow">East Vancouver // available</p>
+            <p class="wws-kicker pixel-font wws-eyebrow">Jericho Beach, Vancouver // available</p>
             <p class="wws-location pixel-font">AI · automation · systems · creative technology</p>
             <h1 id="work-with-suzy-title" class="retro-title glow-lite">Work With Suzy</h1>
             <p class="wws-lead">Bring me the broken thing, repetitive workflow, integration mess or ambitious idea.</p>
             <p class="wws-hero-subcopy">I help teams make messy systems understandable, testable, and shippable — across custom WordPress, JavaScript/PHP, QA automation, IT operations, API/integration debugging, dashboards, workflow automation, and AI-assisted prototypes with reviewable outputs.</p>
-            <p class="wws-hero-subcopy">Based in East Vancouver. I work locally across Vancouver and remotely. Available for consulting, technical roles, projects and collaborations now.</p>
+            <p class="wws-hero-subcopy">Based in Jericho Beach, Vancouver. I work locally across Vancouver and remotely. Available for consulting, technical roles, projects and collaborations now.</p>
             <div class="wws-actions" role="group" aria-label="Work With Suzy contact links">
                 <a class="pixel-button wws-hero-cta" href="<?php echo esc_url( $shop_url ); ?>" data-hire-cta data-hire-cta-label="wws_book_session">Book a session</a>
                 <a class="pixel-button wws-secondary-button" href="mailto:suzyeaston@icloud.com?subject=Work%20With%20Suzy" data-hire-cta data-hire-cta-label="wws_email">Email Suzy</a>

@@ -17,9 +17,9 @@ $has_post = ! empty( $mission['has_post'] );
 	class="home-project-card selected-work__card home-mission-card home-mission-card--meanwhile home-mission-card--meanwhile-spotlight<?php echo $has_post ? ' home-mission-card--meanwhile-live' : ''; ?>"
 	aria-labelledby="home-mission-meanwhile-title"
 >
-	<p class="home-mission-card__label pixel-font"><?php echo esc_html( 'field notes // vancouver' ); ?></p>
+	<p class="home-mission-card__label pixel-font"><?php echo esc_html( 'field notes // jericho beach' ); ?></p>
 	<h3 id="home-mission-meanwhile-title" class="pixel-font"><?php echo esc_html( 'Meanwhile' ); ?></h3>
-	<p class="home-mission-meanwhile__tagline"><?php echo esc_html( 'Small transmissions on belonging, music, machines, and the space between.' ); ?></p>
+	<p class="home-mission-meanwhile__tagline"><?php echo esc_html( 'Field notes from Jericho Beach on music, belonging, technology, and everything in between.' ); ?></p>
 
 	<div class="home-mission-meanwhile__terminal" role="status" aria-live="polite">
 		<div class="home-mission-meanwhile__scan" aria-hidden="true"></div>

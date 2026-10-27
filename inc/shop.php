@@ -102,7 +102,7 @@ function se_shop_meta() {
 	return [
 		'title'       => 'Technical Consulting Sessions in Vancouver | Suzy Easton',
 		'description' => 'Book focused technical help with Suzy Easton in Vancouver: debugging, AI workflows, automation, integrations and deep technical problem-solving. Remote sessions available.',
-		'keywords'    => 'technical consulting Vancouver, hire Suzy Easton, WordPress debugging Vancouver, workflow automation, AI consulting session, East Vancouver consultant',
+		'keywords'    => 'technical consulting Vancouver, hire Suzy Easton, WordPress debugging Vancouver, workflow automation, AI consulting session, Jericho Beach, Vancouver consultant',
 	];
 }
 

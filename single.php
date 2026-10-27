@@ -39,7 +39,7 @@ while ( have_posts() ) :
 			</div>
 
 			<footer class="se-signal-log__article-foot">
-				<p class="se-signal-log__article-byline"><?php echo esc_html( 'Suzy Easton · East Vancouver' ); ?></p>
+				<p class="se-signal-log__article-byline"><?php echo esc_html( 'Suzy Easton · Jericho Beach, Vancouver' ); ?></p>
 			</footer>
 		</article>
 

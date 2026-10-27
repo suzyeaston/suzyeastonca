@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Intro copy for the blog archive hero.
  */
 function se_blog_intro_copy() {
-	return 'notes from East Vancouver on what I\'m building, thinking about, questioning, noticing, and occasionally breaking.';
+	return 'notes from Jericho Beach, Vancouver on what I\'m building, thinking about, questioning, noticing, and occasionally breaking.';
 }
 
 /**
@@ -120,7 +120,7 @@ function se_blog_archive_meta() {
 	return [
 		'title'       => 'Meanwhile | Suzy Easton',
 		'description' => se_blog_intro_copy(),
-		'keywords'    => 'Meanwhile, Suzy Easton, East Vancouver, essays, writing, building in public, creative technology',
+		'keywords'    => 'Meanwhile, Suzy Easton, Jericho Beach, Vancouver, essays, writing, building in public, creative technology',
 	];
 }
 
@@ -133,8 +133,8 @@ function se_blog_category_meta() {
 
 	return [
 		'title'       => $name . ' | Meanwhile | Suzy Easton',
-		'description' => 'Writing from Suzy Easton on ' . strtolower( $name ) . '. Notes from East Vancouver on building, thinking, and whatever else is worth writing down.',
-		'keywords'    => 'Meanwhile, Suzy Easton, ' . $name . ', East Vancouver',
+		'description' => 'Writing from Suzy Easton on ' . strtolower( $name ) . '. Notes from Jericho Beach, Vancouver on building, thinking, and whatever else is worth writing down.',
+		'keywords'    => 'Meanwhile, Suzy Easton, ' . $name . ', Jericho Beach, Vancouver',
 	];
 }
 

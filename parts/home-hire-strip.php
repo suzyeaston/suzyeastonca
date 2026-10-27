@@ -5,7 +5,7 @@ $projects = home_url( '/projects/' );
 ?>
 <section class="home-hire-strip" aria-label="<?php echo esc_attr( 'Hire Suzy and book consulting' ); ?>">
 	<p class="home-section-kicker pixel-font"><?php echo esc_html( 'available // consulting' ); ?></p>
-	<p class="home-hire-strip__location pixel-font"><?php echo esc_html( 'Based in East Vancouver · working across Vancouver and remotely' ); ?></p>
+	<p class="home-hire-strip__location pixel-font"><?php echo esc_html( 'Based at Jericho Beach · working across Vancouver and remotely' ); ?></p>
 	<h2 class="home-hire-strip__title"><?php echo esc_html( 'Need another brain on it?' ); ?></h2>
 	<p class="home-hire-strip__lede"><?php echo esc_html( 'AI, automation, systems and creative technology consulting. Debug something broken, map a workflow, or dig into the complicated system problem. Available for Vancouver projects and remote work now.' ); ?></p>
 	<nav class="home-hire-strip__actions" aria-label="<?php echo esc_attr( 'Consulting links' ); ?>">

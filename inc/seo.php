@@ -61,7 +61,7 @@ function se_person_schema() {
 		'knowsAbout'  => se_person_knows_about(),
 		'homeLocation' => [
 			'@type' => 'Place',
-			'name'  => 'East Vancouver',
+			'name'  => 'Jericho Beach, Vancouver',
 			'address' => [
 				'@type'           => 'PostalAddress',
 				'addressLocality' => 'Vancouver',
@@ -105,7 +105,7 @@ function se_website_schema( $description = '' ) {
 function se_home_meta() {
 	return [
 		'title'       => 'Suzy Easton | AI, Automation & Creative Technology Consultant in Vancouver',
-		'description' => 'Vancouver-based AI strategist, solutions engineer and creative technologist helping teams debug systems, automate workflows, integrate tools and build useful technology. Based in East Vancouver and available now.',
+		'description' => 'Vancouver-based AI strategist, solutions engineer and creative technologist helping teams debug systems, automate workflows, integrate tools and build useful technology. Based in Vancouver and available now.',
 		'keywords'    => 'Suzy Easton, AI consultant Vancouver, automation consultant Vancouver, creative technologist Vancouver, technical consulting Vancouver, workflow automation',
 	];
 }
@@ -116,8 +116,8 @@ function se_home_meta() {
 function se_work_with_suzy_meta() {
 	return [
 		'title'       => 'Hire Suzy Easton | AI & Automation Consultant in Vancouver, BC',
-		'description' => 'Hire Suzy Easton for AI strategy, workflow automation, integrations, debugging and technical consulting in Vancouver or remotely. Based in East Vancouver and available for projects now.',
-		'keywords'    => 'hire Suzy Easton, AI consultant Vancouver, automation consultant Vancouver, technical consultant Vancouver, workflow automation Vancouver, East Vancouver consultant',
+		'description' => 'Hire Suzy Easton for AI strategy, workflow automation, integrations, debugging and technical consulting in Vancouver or remotely. Based in Jericho Beach, Vancouver and available for projects now.',
+		'keywords'    => 'hire Suzy Easton, AI consultant Vancouver, automation consultant Vancouver, technical consultant Vancouver, workflow automation Vancouver, Jericho Beach, Vancouver consultant',
 	];
 }
 

@@ -10,7 +10,7 @@ $work_url = se_preserve_utm_url( home_url( '/work-with-suzy/' ) );
 <main id="main-content" class="shop-page">
 	<article class="page-content shop-content">
 		<section class="shop-hero" aria-labelledby="shop-title">
-			<p class="shop-kicker shop-eyebrow"><?php echo esc_html( 'East Vancouver // available' ); ?></p>
+			<p class="shop-kicker shop-eyebrow"><?php echo esc_html( 'Jericho Beach, Vancouver // available' ); ?></p>
 			<h1 id="shop-title" class="retro-title glow-lite"><?php echo esc_html( 'Technical consulting sessions' ); ?></h1>
 			<p class="shop-lead"><?php echo esc_html( 'Focused technical help without turning every problem into a six-week engagement.' ); ?></p>
 			<p class="shop-hero-subcopy"><?php echo esc_html( 'Debugging, AI workflows, automation, integrations and deep technical problem-solving. Vancouver-based, remote sessions available.' ); ?></p>
