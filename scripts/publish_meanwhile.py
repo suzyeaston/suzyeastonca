@@ -124,7 +124,7 @@ def publish(prepared: list[dict]) -> None:
         client.set_missing_host_key_policy(paramiko.RejectPolicy())
         import tempfile
         with tempfile.NamedTemporaryFile(mode="w", suffix=".known_hosts", encoding="utf-8") as f:
-            f.write(known_hosts + "\\n")
+            f.write(known_hosts + "\n")
             f.flush()
             client.load_host_keys(f.name)
     else:
