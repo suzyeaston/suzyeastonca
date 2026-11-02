@@ -144,6 +144,10 @@ jobs:
         if: needs.changes.outputs.theme == 'true'
         run: python3 scripts/deploy-lousy-outages-ssh.py --theme
 
+      - name: Verify live Open Graph image for The Toaster Was a Decoy
+        if: needs.changes.outputs.theme == 'true'
+        run: python3 scripts/verify_toaster_social_preview.py
+
       - name: Deploy Lousy Outages plugin
         if: needs.changes.outputs.plugin == 'true'
         run: python3 scripts/deploy-lousy-outages-ssh.py --plugin
