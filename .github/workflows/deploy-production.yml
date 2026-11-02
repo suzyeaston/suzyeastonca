@@ -51,6 +51,7 @@ jobs:
               - 'js/**'
               - 'scripts/deploy-lousy-outages-ssh.py'
               - 'scripts/theme_deploy_manifest.py'
+              - 'scripts/build_toaster_social_card.py'
             plugin:
               - 'lousy-outages/**'
               - 'dist/lousy-outages.zip'
@@ -122,6 +123,7 @@ jobs:
         run: |
           python3 scripts/build_meanwhile_social_card.py
           python3 scripts/build_toaster_social_card.py
+          node --test __tests__/toaster-social-preview.test.js
 
       - name: Validate theme deploy manifest
         if: needs.changes.outputs.theme == 'true'
