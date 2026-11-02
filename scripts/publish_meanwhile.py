@@ -47,7 +47,10 @@ def prepare(path: Path) -> dict | None:
     if not title:
         raise ValueError(f"{path}: missing title")
     image_dir = ENTRIES / "media" / slug
-    image_zip = ENTRIES / "media" / (slug + ".zip")
+    archive_name = str(meta.get("media_archive") or (slug + ".zip")).strip()
+    if archive_name != Path(archive_name).name or not archive_name.lower().endswith(".zip"):
+        raise ValueError(f"{path}: invalid media_archive filename")
+    image_zip = ENTRIES / "media" / archive_name
     photos: list[dict] = []
     used_names: set[str] = set()
     body = source[frontmatter.end():]
