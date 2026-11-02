@@ -220,9 +220,26 @@ def publish(prepared: list[dict]) -> None:
                 output = run_command(
                     client, shlex.quote(php_bin) + " " + shlex.quote(stage + "/publisher.php") + " " + shlex.quote(stage + "/post.json")
                 )
-                print(post["slug"] + ": " + output.strip())
-            checked = run_command(client, shlex.quote(php_bin) + " " + shlex.quote(stage + "/verify-order.php"))
-            print("Meanwhile chronology verification: " + checked.strip())
+                try:
+                    result = json.loads(output.strip())
+                except json.JSONDecodeError as exc:
+                    raise RuntimeError(
+                        "WordPress returned a non-JSON response for "
+                        + post["slug"] + ": " + output[-320:]
+                    ) from exc
+                if (not isinstance(result, dict)
+                    or result.get("status") != "publish"
+                    or result.get("images") != len(post["photos"])
+                    or result.get("post_date") != post.get("published_at")
+                    or not str(result.get("url", "")).rstrip("/").endswith("/" + post["slug"])):
+                    raise RuntimeError(
+                        "WordPress confirmation did not match "
+                        + post["slug"] + ": " + json.dumps(result)
+                    )
+                print(post["slug"] + ": " + json.dumps(result))
+            # The importer has already read back the post's status, date and
+            # permalink. A second, immediate WordPress CLI bootstrap can trip
+            # the host's rate limiter even after a successful update.
         finally:
             sftp.close()
     finally:

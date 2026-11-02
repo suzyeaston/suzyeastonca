@@ -31,7 +31,7 @@ In September, *The Appliance Latent Space* was supposed to be a physical toaster
 
 The useful discovery was that the hardware didn't have to house the intelligence. A physical controller could send events to the computer. Eventually, even the toaster could be optional.
 
-My earlier SUZY//AI experiments included a locally running Qwen language model, Python tools, musical analysis, and note-generation prototypes. But a language model that returns a plausible chord progression is not the same thing as a real-time musician. A text model can reason about harmony and propose events. But a useful live musical instrument needs controlled audio generation with meaningful interactions between notes, timbre, and time.
+My earlier SUZY//AI experiments involved a locally running Qwen language model, Python tools, and MIDI prototypes. Text models can propose chords and notes. But a live instrument needs playable **audio**, with meaningful control over timing, harmony, and timbre.
 
 The pivot was [Google's Magenta RealTime 2 Small](https://magenta.withgoogle.com/mrt2): a 230-million-parameter, music-native streaming model with an Apple Silicon Audio Unit. It generates audio, accepts MIDI steering, and blends text-conditioned musical styles. Google's published architecture uses frame-level autoregression, roughly 40ms audio frames, frame-aligned MIDI conditioning, and MusicCoCa-embedded style prompts. Its published roughly 200ms control latency is not a benchmark of my complete microphone-to-headphones system. The Small model was the realistic option on an 8GB Apple Silicon laptop.
 
@@ -62,9 +62,11 @@ MY VOICE → BOSS VE-22 → SCARLETT SOLO
  Browser microphone monitoring + AudioWorklet vocal loops
 ```
 
+In practical terms: I press a chord, Swift steers the locally running music model, and I capture the generated sound as audio. That sound becomes a loop I can build on, mute, or remove. The browser handles the performance controls; the native host handles the sound.
+
 The [browser interface](https://github.com/suzyeaston/suzy-ai/blob/main/suzy_ai/music/toaster_play.html) is the instrument panel. The [Python stage server](https://github.com/suzyeaston/suzy-ai/blob/main/suzy_ai/music/magenta_stage.py) runs on `127.0.0.1` and accepts bounded, token-checked commands. The [Swift host](https://github.com/suzyeaston/suzy-ai/blob/main/apps/toaster-magenta/ToasterMagentaHost.swift) owns the actual native Audio Unit and audio graph. The [Python native bridge](https://github.com/suzyeaston/suzy-ai/blob/main/suzy_ai/music/magenta_native_host.py) speaks to that host as one subprocess, rather than spawning a new model every time I touch a chord.
 
-The web UI isn't secretly synthesizing Magenta. And Magenta isn't quietly listening to all of Chrome. They are separate audio worlds, connected by control messages and explicit capture routes. That distinction would later consume a slightly unholy amount of debugging.
+The web UI isn't synthesizing Magenta, and Magenta isn't quietly listening to Chrome. They're separate audio worlds connected by commands and deliberate capture routes, a distinction that would consume a slightly unholy amount of debugging.
 
 The local server checks browser origin, uses a per-session token with constant-time comparison, and bounds JSON request sizes. Python owns a process and command boundary; Swift owns the native audio graph. Local-first requires those boundaries to be concrete.
 
@@ -98,22 +100,20 @@ I wanted my own strange little arrangement, not a text box that says “make Rad
 
 The evolving set grew a family of prompt-conditioned sounds: warm piano, expressive violin, low cello/harmonium, glassy celesta/harp textures, and nimble jazz drums. The harmonic centre was my simplified *Pyramid Song* orbit: **F♯ → Gmaj7 → A6 → F♯**. I could play harmony with `Z / X / C`, and the old *Weird Fishes* bank remained on `B / N / M / ,` as an alternate scene.
 
-Underneath, the Swift host writes prompt weights into the **same** Google AU's parameter tree. These aren't five separately running models or five isolated generated stems. It's one generative stereo output being steered through different musical directions. That's why recorded layers matter: you select a sound, print a phrase as audio, and then move to the next voice.
+Underneath, the Swift host writes prompt weights into **one** Google AU's parameter tree. It generates a shared stereo output, not five independent stems. To build an arrangement, I select a sound, capture its audio, then move to the next voice.
 
 <!-- PHOTO: 01_prompt_mixer.png | Swift source showing five Audio Unit prompt weights, note adherence, drum filtering, prompt adherence and MIDI gate. | Source: ToasterMagentaHost.swift, lines 391–407. Five prompt roles, one stereo generative model. -->
 
 *Code: [ToasterMagentaHost.swift, lines 391–407](https://github.com/suzyeaston/suzy-ai/blob/main/apps/toaster-magenta/ToasterMagentaHost.swift#L391-L407).*
 
-The code exposes note adherence, prompt adherence, MIDI gating, drum filtering, and gain. The prompts describe *musical behaviour* rather than asking the system to impersonate another musician. Notes still come from my choices. A model can surprise me within the arrangement, but it doesn't get to author the arrangement for me.
+The code exposes note adherence, prompt adherence, MIDI gating, drum filtering, and gain. The prompts describe *musical behaviour*, not impersonations of other artists. **I choose the harmonic structure, prompts, and musical entrances. The model generates within those constraints, and I decide what becomes part of the arrangement.**
 
 This is what I mean by human-led AI. Not a moral slogan. A control surface.
 
 
-### One model, not five generators
+### The render path stays musical
 
-The Magenta Audio Unit exposes a bank of weighted prompts, but still produces one shared stereo output. This is a constraint, not an implementation detail. If I wanted five independently fadeable instruments, I couldn't simply turn five imaginary stem faders. I needed to **commit a sound to audio**, then change the prompt and create the next layer.
-
-I kept the earlier Qwen text-model work available for musical planning experiments, but not as a synchronous dependency of the native render callback. That was an architectural choice: text inference can be useful without occupying the latency-sensitive signal path.
+I kept Qwen available for musical planning experiments, but never made text inference a synchronous dependency of the native audio callback. Each generated sound had to be **committed to PCM** before I could mix it independently. One model, a deliberately bounded signal path, and an arrangement built one layer at a time.
 
 ## 05 / Print the sound, not the instructions
 
@@ -131,14 +131,11 @@ We added a real native capture path: the Swift host taps the AU's reverb output,
 
 The loop is scheduled against a native audio host timestamp and a measured period, not merely when a browser network request happens to finish. `scheduleBuffer(..., options: [.loops])` handles the repeated samples within that engine. The older WAV/browser path remains a fallback and is **not** zero-latency.
 
-And no, this doesn't mean every clock in the system is magically sample-locked. Native AU time, browser `AudioContext` time, and physical audio-device latency are separate concerns. The code tries to preserve phase and align downbeats, but end-to-end timing still needs hardware measurement. Claiming otherwise would be a fantastic way to discover the laws of physics during a soundcheck.
-
-
 ### Three clocks and a real downbeat
 
-The native engine's host time, the browser's AudioContext time, and the physical Scarlett I/O timeline are not the same clock. A mouse click also traverses a network request and a process boundary before the native host sees it. A button responding instantly does not necessarily mean the phrase begins on beat one.
+The native host, the browser's `AudioContext`, and the Scarlett's hardware I/O have different timelines. A click also has to cross HTTP and process boundaries. Button responsiveness is not the same as landing on beat one.
 
-The native code preserves its first capture's host-time origin, computes a loop period, and schedules a buffer at the next appropriate boundary. That permits precise repeating samples *within that engine*. It does not magically phase-lock independent hardware, browser output, and AU rendering. A trustworthy next version needs measured end-to-end latency and loopback tests, not impressive figures borrowed from a model announcement.
+The native code preserves the first capture's host-time origin and schedules playback at the next appropriate loop boundary. That gives precise repetition *within the native engine*, not automatic synchronization with Chrome or the Scarlett. The next version needs end-to-end loopback measurements, not aspirational latency numbers. The laws of physics remain stubbornly employed.
 
 ### Eight gigabytes is a design constraint
 
@@ -169,13 +166,13 @@ That distinction is why I also documented an experimental vocal follower accurat
 
 For a while the interface held two song decks, various arpeggios, and a very ambitious idea of how many things one person could control while singing. By the end I pulled the centre of gravity back to one *Pyramid Song* master loop, with voice, piano, strings, glass textures, and rhythm orbiting it. Less feature demonstration, more music.
 
-The October 29 performance was an experimental demonstration of a musician-controlled system, not a production DAW or a standardized latency benchmark. I was playing and singing with a locally hosted AI instrument in the arrangement. I wasn't presenting a fully autonomous bandmate, a fine-tuned model of my musical identity, or a proven sample-accurate synchronization system across native and browser audio. The experimental voice-to-MIDI follower existed in the code, but shouldn't be mistaken for Magenta continuously listening to and interpreting everything I sang.
+The October 29 set was a musician-controlled experiment, not a production DAW or a latency benchmark. I played and sang with a locally hosted generative instrument inside the arrangement. It wasn't an autonomous bandmate or a model fine-tuned on my musical identity. The experimental voice-to-MIDI follower was separate from Magenta's audio generation.
 
-The GitHub history is pretty honest about the scramble. There are tests for transport, routes, capture, keyboard state, timing, and regressions. There are also reverts, unresolved experimental paths, and explicit notes that software CI can't verify what an actual microphone, headphones, and Mac are doing. [PR #95](https://github.com/suzyeaston/suzy-ai/pull/95) literally reverted an interface change that broke audible output. I respect that commit. Sometimes the feature is knowing when to retreat.
+The GitHub history includes tests for transport, capture, keyboard ownership, and timing, alongside reverts and unfinished experiments. Software CI can't prove what happens through real headphones. [PR #95](https://github.com/suzyeaston/suzy-ai/pull/95) reverted a UI change that broke audible output. I respect that commit. Sometimes the feature is knowing when to retreat.
 
 ## 08 / The interface between intention and surprise
 
-The technical lesson wasn't “AI can generate music.” We already knew that. It was learning how to make a stochastic sound engine observable, reversible, playable, and safe to mute. It was learning how much engineering is required for generative sound to become **performable**: observable state, bounded resource use, separated audio paths, real capture, predictable loop ownership, an emergency stop, and controls that make sense while somebody is actually playing.
+The technical lesson wasn't “AI can generate music.” We already knew that. It was learning how to make a stochastic sound engine **observable, reversible, playable, and safe to mute**: bounded resources, independent signal paths, real audio capture, predictable loop ownership, and controls that make sense with a microphone in your hand.
 
 The artistic lesson was strangely similar. Studying composition and improvisation taught me to listen to what emerges without surrendering form. Software engineering taught me to debug the conditions that make emergence possible. Somehow those disciplines finally met inside an 8GB laptop.
 

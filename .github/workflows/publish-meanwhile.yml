@@ -71,11 +71,29 @@ jobs:
       POST_SLUG: ${{ inputs.slug }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install publishing requirements
         run: pip install --disable-pip-version-check "Markdown>=3.7,<4" "PyYAML>=6,<7" "paramiko>=3.4,<5" "Pillow>=10,<12" "Pygments>=2.18,<3"
+      - name: Select the changed article for a one-post deploy
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        shell: bash
+        run: |
+          if [ -z "$POST_SLUG" ] && git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
+            mapfile -t changed_posts < <(git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA" -- 'content/meanwhile/*.md' | grep -v '/README.md$' || true)
+            if [ "${#changed_posts[@]}" -eq 1 ]; then
+              slug="$(sed -n 's/^slug: *//p' "${changed_posts[0]}" | head -n 1)"
+              if [[ "$slug" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+                echo "POST_SLUG=$slug" >> "$GITHUB_ENV"
+                echo "Publishing just updated article: $slug"
+              fi
+            fi
+          fi
       - name: Reproduce Part II performance and source-code images
         run: python scripts/build_toaster_part2_media.py
       - name: Validate publication inputs
