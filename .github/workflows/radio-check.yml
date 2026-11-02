@@ -23,7 +23,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Build generated social assets required by theme manifest
+        run: |
+          python3 -m pip install --disable-pip-version-check pillow
+          python3 scripts/build_meanwhile_social_card.py
+          python3 scripts/build_toaster_social_card.py
+          python3 scripts/build_orchestra_social_card.py
       - run: |
+          php -l inc/seo.php
+          php -l page-shop.php
+          php -l page-work-with-suzy.php
           php -l inc/yvr-radio.php
           php -l inc/yvr-radio-fields.php
           php -l template-yvr-radio.php
