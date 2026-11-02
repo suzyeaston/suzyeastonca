@@ -141,6 +141,22 @@ $payload = array(
 if ( $existing_post instanceof WP_Post ) {
     $payload['ID'] = $existing_post->ID;
 }
+// An idempotent reimport must not move an older article to the top of the
+// feed merely because its body or media was updated. Honor the publication
+// timestamp from Git-managed frontmatter, in the WordPress site's timezone.
+$published_at = isset( $manifest['published_at'] ) ? trim( (string) $manifest['published_at'] ) : '';
+if ( '' !== $published_at ) {
+    $parsed = DateTimeImmutable::createFromFormat( '!Y-m-d H:i:s', $published_at, wp_timezone() );
+    if ( ! $parsed || $parsed->format( 'Y-m-d H:i:s' ) !== $published_at ) {
+        se_import_fail( 'Invalid published_at timestamp; expected WordPress-local YYYY-MM-DD HH:MM:SS.' );
+    }
+    $payload['post_date'] = $published_at;
+    $payload['post_date_gmt'] = get_gmt_from_date( $published_at );
+} elseif ( $existing_post instanceof WP_Post ) {
+    // Preserve legacy posts' published dates on future reimports.
+    $payload['post_date'] = $existing_post->post_date;
+    $payload['post_date_gmt'] = $existing_post->post_date_gmt;
+}
 $post_id = wp_insert_post( wp_slash( $payload ), true );
 if ( is_wp_error( $post_id ) || ! $post_id ) {
     se_import_fail( 'WordPress rejected the post: ' . ( is_wp_error( $post_id ) ? $post_id->get_error_message() : 'unknown error' ) );
@@ -174,6 +190,8 @@ if ( function_exists( 'do_action' ) ) {
 echo wp_json_encode( array(
     'post_id' => (int) $post_id,
     'url' => get_permalink( $post_id ),
+    'post_date' => get_post_field( 'post_date', $post_id ),
+    'post_date_gmt' => get_post_field( 'post_date_gmt', $post_id ),
     'images' => count( $attached ),
     'status' => get_post_status( $post_id ),
 ), JSON_UNESCAPED_SLASHES ) . PHP_EOL;
