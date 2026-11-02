@@ -177,7 +177,7 @@ def main() -> int:
     parser.add_argument("--slug", default="", help="Only publish one named entry")
     parser.add_argument("--validate-only", action="store_true")
     args = parser.parse_args()
-    entries = sorted(ENTRIES.glob("*.md"))
+    entries = sorted(path for path in ENTRIES.glob("*.md") if path.name != "README.md")
     if args.slug:
         entries = [
             path for path in entries
