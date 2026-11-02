@@ -281,6 +281,8 @@ function se_blog_latest_query( $count = 3 ) {
 			'post_type'           => 'post',
 			'post_status'         => 'publish',
 			'posts_per_page'      => max( 1, (int) $count ),
+			'orderby'             => 'date',
+			'order'               => 'DESC',
 			'ignore_sticky_posts' => true,
 			'no_found_rows'       => true,
 		]
