@@ -25,6 +25,10 @@ function se_what_we_leave_open_social_image_url() {
  * @param WP_Post $post
  */
 function se_post_social_image_url( WP_Post $post ) {
+    if ( 'an-orchestra-in-8gb' === $post->post_name ) {
+        return get_template_directory_uri() . '/assets/brand/orchestra-in-8gb-social.jpg';
+    }
+
     if ( 'the-toaster-was-a-decoy' === $post->post_name ) {
         return get_template_directory_uri() . '/assets/brand/toaster-was-a-decoy-social.jpg';
     }
