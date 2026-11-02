@@ -8,9 +8,9 @@ excerpt: "The toaster didn't fail. It led somewhere else: an entire portable mus
 featured_image: DayTwo_FPF2026_MichelleDiamond-351(1).jpg
 ---
 
-<!-- EDITORIAL: Hero image: DayTwo_FPF2026_MichelleDiamond-351(1).jpg (Suzy with Kris at Futureproof). Upload to WordPress Media Library first; do not display broken image links. -->
-
 *Meanwhile / November 2026 / Part I: No Fixed Studio*
+
+<!-- PHOTO: DayTwo_FPF2026_MichelleDiamond-351(1).jpg | Suzy and another speaker holding microphones onstage at Futureproof Festival. | Futureproof Festival. Photograph by Michelle Diamond. -->
 
 A few days ago I wrote [What We Leave Open](https://www.suzyeaston.ca/2026/10/27/what-we-leave-open/), about the spaces between things, impermanence, and learning to listen.
 
@@ -20,19 +20,21 @@ September had me between tech jobs, navigating Vancouver's housing market, and t
 
 Martin invited me into the inaugural cohort, just in time to spend October developing my performance for Futureproof Festival.
 
-<!-- PHOTO: IMG_3552(2).jpg — outside HI Jericho; opening portrait / arrival. -->
-<!-- PHOTO: IMG_3543(2).jpg — the empty Basecamp bed; use as quiet secondary image. -->
+<!-- PHOTO: IMG_3549(2).jpg | Suzy outside the HI Jericho Beach hostel, wearing clear glasses and a dark jacket. | - -->
 
 I arrived with a project called *The Appliance Latent Space*. The plan? Turn a toaster into an AI-powered musical instrument using sensors, code, and sound.
 
 Naturally.
 
+<!-- PHOTO: IMG_3543(2).jpg | A simple bunk bed and backpack inside the Basecamp residency. | - -->
+
 I started exploring DCTRL, Vancouver's wonderfully experimental hacker collective, thinking about physical computing and hardware. Meanwhile, I was booking recording sessions at the Vancouver Public Library's Inspiration Lab, recording vocals from my bed, walking along Jericho Beach, and writing an absolutely unreasonable amount of code.
 
-<!-- PHOTO: IMG_3537(2).jpg — Jericho shoreline; wide breathing space. -->
-<!-- PHOTO: IMG_3553(2).jpg — orange-red autumn tree; transition. -->
+<!-- PHOTO: IMG_3537(2).jpg | The sandy shoreline at Jericho Beach, curving toward autumn trees under a blue sky. | - -->
 
 There was something interesting happening underneath all of this.
+
+<!-- PHOTO: IMG_3553(2).jpg | A maple tree glowing red-orange in the autumn sunlight. | - -->
 
 **The more temporary my physical spaces became, the more I wanted my creative space to be portable.**
 
@@ -44,6 +46,8 @@ Turns out I've been doing some rather committed method acting.
 
 But somewhere in the movement, I began to understand what I actually needed.
 
+<!-- PHOTO: IMG_3552(2).jpg | Small waves rolling onto the Jericho Beach shoreline, with trees in the distance. | - -->
+
 Not necessarily a toaster. Not even a traditional studio.
 
 A laptop, a microphone, my voice, and instruments I could build myself.
@@ -54,26 +58,27 @@ Before engineering, I studied composition and improvisation, trained in digital 
 
 Then came software engineering, automation, and AI.
 
+<!-- PHOTO: IMG_3513(2).jpg | A Futureproof presentation explaining local AI inference on different hardware platforms. | - -->
+
 And somewhere between the musical arrangements and the lines of code, all those seemingly separate chapters started talking to each other.
 
 **What if the instrument wasn't a fixed object, but an evolving relationship between musician, machine, and sound?**
 
-<!-- PHOTO: IMG_3513(2).jpg — local AI presentation; technical community context. -->
-<!-- PHOTO: IMG_3556(2).JPG — Futureproof, Suzy performing with microphone; performance opener. -->
-
 On October 29, that experiment made its way onto the stage at Futureproof Festival, as my first solo electronic performance, an AI-integrated interpretation of Radiohead's *Pyramid Song*, complete with live vocal looping.
 
-<!-- PHOTO: IMG_3557(2).JPG — wide live setup with laptop, vocal processor, projected software; centerpiece. -->
+<!-- PHOTO: IMG_3556(2).JPG | Suzy holding a microphone while performing with live music software projected behind her. | - -->
 
 Beautifully imperfect. Very much alive.
+
+<!-- PHOTO: IMG_3557(2).JPG | Suzy working at a laptop with microphones, cables, and an effects pedal on the Futureproof stage. | The live instrument, software and all. -->
 
 I've been thinking about how much of creativity is really learning to pay attention. To make room for the unexpected without giving up authorship. To let an idea change shape without feeling like you've lost it.
 
 The toaster didn't fail. It just led somewhere else.
 
-<!-- PHOTO: IMG_3544(2).jpg — luggage assembled outside; transition to next chapter. -->
-
 Now Basecamp has ended, and I'm writing from a little Airbnb in Vancouver, continuing my search for the next chapter in tech while figuring out where this creative adventure might lead.
+
+<!-- PHOTO: IMG_3544(2).jpg | A cluster of suitcases and instrument bags arranged on a paved sidewalk. | - -->
 
 The practical world keeps turning. So does the creative one.
 
@@ -83,12 +88,9 @@ I want to keep building instruments, exploring orchestration, and eventually tur
 
 The address may change. The music can come with me.
 
-**Maybe finding your way isn't about knowing where you're going. Maybe it's about recognizing what you want to carry.**
+<!-- PHOTO: IMG_3551(2).jpg | Suzy with pale lavender hair and clear glasses, smiling and making a peace sign. | - -->
 
-<!-- PHOTO: IMG_3551(2).jpg — peace-sign portrait, gently optimistic closing image. -->
-<!-- PHOTO: IMG_3549(2).jpg — second portrait at Jericho, optional instead of duplicate selfie. -->
-<!-- PHOTO: IMG_3553(2).jpg — autumn detail, if not used earlier. -->
-<!-- PHOTO: IMG_3537(2).jpg or IMG_3552(2).jpg — use only one primary shoreline frame; omit the near duplicate. -->
+**Maybe finding your way isn't about knowing where you're going. Maybe it's about recognizing what you want to carry.**
 
 And yes, I'd still quite like a permanent address. Vancouver, please fix your housing API. 😂
 
