@@ -3,6 +3,12 @@ name: Publish Meanwhile to WordPress
 # Publishing is deliberately separate from the existing theme/plugin deploy.
 # Only trusted main-branch commits get access to production SSH secrets.
 on:
+  pull_request:
+    paths:
+      - 'content/meanwhile/**'
+      - 'scripts/publish_meanwhile.py'
+      - 'scripts/wp_publish_meanwhile.php'
+      - '.github/workflows/publish-meanwhile.yml'
   push:
     branches:
       - main
@@ -27,7 +33,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validation dependencies
+        run: pip install --disable-pip-version-check "Markdown>=3.7,<4" "PyYAML>=6,<7" "paramiko>=3.4,<5"
+      - name: Verify script syntax
+        run: |
+          python -m py_compile scripts/publish_meanwhile.py
+          php -l scripts/wp_publish_meanwhile.php
+      - name: Validate post and all image references
+        run: python scripts/publish_meanwhile.py --validate-only
+
   publish:
+    if: github.event_name != 'pull_request'
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
