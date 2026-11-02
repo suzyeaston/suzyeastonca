@@ -139,6 +139,7 @@ def publish(prepared: list[dict]) -> None:
         sftp = client.open_sftp()
         try:
             sftp.put(str(ROOT / "scripts" / "wp_publish_meanwhile.php"), stage + "/publisher.php")
+            print(run_command(client, "php -l " + shlex.quote(stage + "/publisher.php")).strip())
             for post in prepared:
                 manifest = {key: value for key, value in post.items()}
                 manifest["photos"] = []
