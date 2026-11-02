@@ -70,10 +70,10 @@ function se_person_same_as() {
  */
 function se_person_knows_about() {
 	return [
-		'Artificial intelligence consulting',
+		'Applied artificial intelligence',
 		'Workflow automation',
 		'Systems integration',
-		'Technical consulting',
+		'Systems engineering',
 		'API integration',
 		'WordPress development',
 		'Software debugging',
@@ -90,12 +90,12 @@ function se_person_schema() {
 		'@type'       => 'Person',
 		'name'        => 'Suzy Easton',
 		'url'         => home_url( '/' ),
-		'jobTitle'    => 'AI, Automation & Creative Technology Consultant',
-		'description' => 'Vancouver-based AI strategist, solutions engineer and creative technologist helping teams debug systems, automate workflows, integrate tools and build useful technology.',
+		'jobTitle'    => 'Musician, Systems Engineer and Creative Technologist',
+		'description' => 'Vancouver-based musician, systems engineer and creative technologist making music, open technical experiments and useful software.',
 		'knowsAbout'  => se_person_knows_about(),
 		'homeLocation' => [
 			'@type' => 'Place',
-			'name'  => 'Jericho Beach, Vancouver',
+			'name'  => 'Vancouver, British Columbia',
 			'address' => [
 				'@type'           => 'PostalAddress',
 				'addressLocality' => 'Vancouver',
@@ -138,87 +138,9 @@ function se_website_schema( $description = '' ) {
  */
 function se_home_meta() {
 	return [
-		'title'       => 'Suzy Easton | AI, Automation & Creative Technology Consultant in Vancouver',
-		'description' => 'Vancouver-based AI strategist, solutions engineer and creative technologist helping teams debug systems, automate workflows, integrate tools and build useful technology. Based in Vancouver and available now.',
-		'keywords'    => 'Suzy Easton, AI consultant Vancouver, automation consultant Vancouver, creative technologist Vancouver, technical consulting Vancouver, workflow automation',
-	];
-}
-
-/**
- * @return array<string, string>
- */
-function se_work_with_suzy_meta() {
-	return [
-		'title'       => 'Hire Suzy Easton | AI & Automation Consultant in Vancouver, BC',
-		'description' => 'Hire Suzy Easton for AI strategy, workflow automation, integrations, debugging and technical consulting in Vancouver or remotely. Based in Jericho Beach, Vancouver and available for projects now.',
-		'keywords'    => 'hire Suzy Easton, AI consultant Vancouver, automation consultant Vancouver, technical consultant Vancouver, workflow automation Vancouver, Jericho Beach, Vancouver consultant',
-	];
-}
-
-/**
- * @return array<string, mixed>
- */
-function se_work_with_suzy_structured_data() {
-	$meta     = se_work_with_suzy_meta();
-	$services = [];
-
-	foreach ( se_get_shop_products() as $product ) {
-		$services[] = [
-			'@type'       => 'Service',
-			'name'        => (string) ( $product['title'] ?? '' ) . ' — ' . (string) ( $product['subtitle'] ?? '' ),
-			'description' => (string) ( $product['description'] ?? '' ),
-			'provider'    => [
-				'@type' => 'Person',
-				'name'  => 'Suzy Easton',
-				'url'   => home_url( '/' ),
-			],
-			'serviceType' => (string) ( $product['subtitle'] ?? 'Technical consulting' ),
-			'areaServed'  => se_service_area_served(),
-			'offers'      => [
-				'@type'         => 'Offer',
-				'price'         => (string) ( $product['price'] ?? 0 ),
-				'priceCurrency' => (string) ( $product['currency'] ?? 'CAD' ),
-				'availability'  => 'https://schema.org/InStock',
-				'url'           => home_url( '/shop/#' . (string) ( $product['slug'] ?? '' ) ),
-			],
-		];
-	}
-
-	return [
-		'@context' => 'https://schema.org',
-		'@graph'   => array_merge(
-			[
-				se_website_schema( $meta['description'] ),
-				se_person_schema(),
-				[
-					'@type'       => 'WebPage',
-					'name'        => $meta['title'],
-					'url'         => home_url( '/work-with-suzy/' ),
-					'description' => $meta['description'],
-				],
-				[
-					'@type'       => 'Service',
-					'name'        => 'AI, Automation & Technical Consulting',
-					'description' => $meta['description'],
-					'provider'    => [
-						'@type' => 'Person',
-						'name'  => 'Suzy Easton',
-						'url'   => home_url( '/' ),
-					],
-					'serviceType' => [
-						'AI consulting',
-						'workflow automation',
-						'technical consulting',
-						'systems integration',
-						'debugging',
-						'creative technology',
-					],
-					'areaServed' => se_service_area_served(),
-					'url'        => home_url( '/work-with-suzy/' ),
-				],
-			],
-			$services
-		),
+		'title'       => 'Suzy Easton | Music, Software & Experiments',
+		'description' => 'Music, code, AI experiments and field notes from Vancouver. A living archive of Suzy Easton\'s performances, projects and work in progress.'
+		'keywords'    => 'Suzy Easton, Vancouver musician, creative technologist, experimental music, software projects, AI music, field notes',
 	];
 }
 
@@ -285,11 +207,6 @@ function se_page_meta() {
 		$meta_title = $home['title'];
 		$meta_desc  = $home['description'];
 		$keywords   = $home['keywords'];
-	} elseif ( is_page_template( 'page-work-with-suzy.php' ) || is_page( 'work-with-suzy' ) ) {
-		$wws        = se_work_with_suzy_meta();
-		$meta_title = $wws['title'];
-		$meta_desc  = $wws['description'];
-		$keywords   = $wws['keywords'];
 	} elseif ( is_page_template( 'page-asmr-lab.php' ) ) {
 		$meta_title = 'ASMR Lab – experimental predecessor now under major redevelopment';
 		$meta_desc  = 'ASMR Lab is Suzy\'s earlier audio/visual prototype that inspired the Gastown simulator and is now being rebuilt in public.';
@@ -319,11 +236,6 @@ function se_page_meta() {
 		$meta_title = 'Coffee for Builders in Vancouver | Suzy Easton';
 		$meta_desc  = 'Coffee chats in Vancouver for people building things—tech, music, civic projects, and sports takes. Low-key, public, and intentional.';
 		$keywords   = 'coffee chats Vancouver, builders, Suzy Easton, tech, music, civic projects, sports takes';
-	} elseif ( is_page_template( 'page-shop.php' ) || is_page( 'shop' ) ) {
-		$shop_meta  = function_exists( 'se_shop_meta' ) ? se_shop_meta() : [];
-		$meta_title = (string) ( $shop_meta['title'] ?? 'Shop Suzy | Hire Suzy Easton' );
-		$meta_desc  = (string) ( $shop_meta['description'] ?? 'Book focused consulting time with Suzy Easton.' );
-		$keywords   = (string) ( $shop_meta['keywords'] ?? 'hire Suzy Easton, tech consulting Vancouver' );
 	} elseif ( is_home() && ! is_front_page() ) {
 		$blog_meta  = se_blog_archive_meta();
 		$meta_title = $blog_meta['title'];
@@ -374,16 +286,8 @@ function se_page_structured_data() {
 		return se_home_structured_data( $meta['description'] );
 	}
 
-	if ( is_page_template( 'page-work-with-suzy.php' ) || is_page( 'work-with-suzy' ) ) {
-		return se_work_with_suzy_structured_data();
-	}
-
 	if ( ( is_page_template( 'page-ai-art.php' ) || is_page( 'ai-art' ) ) && function_exists( 'se_ai_art_structured_data' ) ) {
 		return se_ai_art_structured_data();
-	}
-
-	if ( ( is_page_template( 'page-shop.php' ) || is_page( 'shop' ) ) && function_exists( 'se_shop_structured_data' ) ) {
-		return se_shop_structured_data();
 	}
 
 	if ( is_home() && ! is_front_page() ) {
@@ -479,14 +383,6 @@ function se_seo_track_event( $event_name, $payload = [] ) {
  * @return string
  */
 function se_seo_current_surface() {
-	if ( is_page_template( 'page-work-with-suzy.php' ) || is_page( 'work-with-suzy' ) ) {
-		return 'work_with_suzy';
-	}
-
-	if ( is_page_template( 'page-shop.php' ) || is_page( 'shop' ) ) {
-		return 'shop';
-	}
-
 	if ( is_front_page() ) {
 		return 'home';
 	}
@@ -524,10 +420,6 @@ function se_enqueue_seo_analytics_assets() {
 		'SeSeoConfig',
 		[
 			'surface' => se_seo_current_surface(),
-			'paths'   => [
-				'shop'           => home_url( '/shop/' ),
-				'workWithSuzy'   => home_url( '/work-with-suzy/' ),
-			],
 		]
 	);
 }
@@ -551,20 +443,8 @@ function se_seo_analytics_bootstrap() {
 		}
 		window.seTrackEvent = seTrackEvent;
 
-		<?php if ( 'work_with_suzy' === $surface ) : ?>
-		seTrackEvent('work_with_suzy_view', { page: 'work_with_suzy' });
-		<?php endif; ?>
 	})();
 	</script>
 	<?php
 }
 add_action( 'wp_head', 'se_seo_analytics_bootstrap', 98 );
-
-function se_work_with_suzy_page_view() {
-	if ( ! is_page_template( 'page-work-with-suzy.php' ) && ! is_page( 'work-with-suzy' ) ) {
-		return;
-	}
-
-	se_seo_track_event( 'work_with_suzy_view', [ 'page' => 'work_with_suzy' ] );
-}
-add_action( 'wp', 'se_work_with_suzy_page_view' );

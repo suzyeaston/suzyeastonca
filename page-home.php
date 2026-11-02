@@ -7,7 +7,7 @@ get_header();
 
     <section class="home-yvr-radar-deck" aria-labelledby="home-hero-title" data-arcade-hero>
         <header class="home-yvr-radar-deck__mast">
-            <p class="home-yvr-radar-deck__kicker pixel-font"><?php echo esc_html( 'founder // principal technologist' ); ?></p>
+            <p class="home-yvr-radar-deck__kicker pixel-font"><?php echo esc_html( 'music // software // human signal' ); ?></p>
             <h1 id="home-hero-title" class="home-yvr-radar-deck__title pixel-font"><?php echo esc_html( 'SUZY EASTON' ); ?></h1>
         </header>
 
@@ -16,8 +16,6 @@ get_header();
         <?php get_template_part( 'parts/home', 'mission-meanwhile' ); ?>
 
         <?php get_template_part( 'parts/home-commercial-strip' ); ?>
-
-        <?php get_template_part( 'parts/home-hire-strip' ); ?>
 
         <?php get_template_part( 'parts/home-vancouver-tech-events' ); ?>
 

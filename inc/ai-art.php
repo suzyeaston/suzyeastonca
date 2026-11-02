@@ -99,8 +99,8 @@ function se_ai_art_default_gallery_copy() {
 		'processNote' => 'These works use generative AI as material, not autopilot. Each project records the tools, inputs and human choices behind it.',
 		'emptyState'  => 'FIRST TRANSMISSION IN RENDER QUEUE',
 		'ctaHeading'  => 'Make something strange and useful.',
-		'ctaButton'   => 'Work with Suzy',
-		'ctaHref'     => '/work-with-suzy/',
+		'ctaButton'   => 'Explore projects',
+		'ctaHref'     => '/projects/',
 	);
 }
 
