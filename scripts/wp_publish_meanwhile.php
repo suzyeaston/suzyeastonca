@@ -7,6 +7,16 @@ if ( PHP_SAPI !== 'cli' ) {
     http_response_code( 403 );
     exit;
 }
+// Keep a diagnostic in CI if WordPress's fatal-error handler replaces the
+// real PHP exception with a generic "critical error" HTML page.
+register_shutdown_function( static function () {
+    $error = error_get_last();
+    if ( is_array( $error ) && in_array( $error['type'], array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR ), true ) ) {
+        $message = (string) $error['message'];
+        $message = preg_replace( '~/(?:home|var|tmp)/[^ ]+~', '[server path]', $message );
+        fwrite( STDERR, 'Meanwhile PHP fatal [' . $error['type'] . '] at ' . basename( $error['file'] ) . ':' . $error['line'] . ' ' . $message . PHP_EOL );
+    }
+} );
 function se_import_fail( $message ) {
     fwrite( STDERR, "Meanwhile import: " . $message . PHP_EOL );
     exit( 1 );
@@ -29,7 +39,9 @@ if ( ! file_exists( $wp_root . '/wp-load.php' ) ) {
     se_import_fail( 'Cannot locate WordPress installation.' );
 }
 define( 'WP_USE_THEMES', false );
+fwrite( STDERR, 'Meanwhile bootstrapping WordPress' . PHP_EOL );
 require_once $wp_root . '/wp-load.php';
+fwrite( STDERR, 'Meanwhile WordPress loaded' . PHP_EOL );
 require_once ABSPATH . 'wp-admin/includes/file.php';
 require_once ABSPATH . 'wp-admin/includes/image.php';
 require_once ABSPATH . 'wp-admin/includes/media.php';
@@ -53,6 +65,7 @@ foreach ( $manifest['photos'] as $photo ) {
     if ( basename( $name ) !== $name || ! preg_match( '/\.(jpe?g|png|webp)$/i', $name ) ) {
         se_import_fail( 'Unsafe photo filename.' );
     }
+    fwrite( STDERR, 'Meanwhile importing media: ' . $name . PHP_EOL );
     $key = $slug . ':' . $name;
     $existing = get_posts( array(
         'post_type' => 'attachment',
@@ -106,6 +119,7 @@ foreach ( $manifest['photos'] as $photo ) {
 if ( strpos( $html, 'MEANWHILE_PHOTO_' ) !== false ) {
     se_import_fail( 'Unresolved image marker found in article.' );
 }
+fwrite( STDERR, 'Meanwhile images prepared; creating post' . PHP_EOL );
 $existing_post = get_page_by_path( $slug, OBJECT, 'post' );
 $reference_post = get_page_by_path( 'what-we-leave-open', OBJECT, 'post' );
 $author_id = $existing_post instanceof WP_Post ? (int) $existing_post->post_author
