@@ -1,0 +1,77 @@
+name: Publish Meanwhile to WordPress
+
+# Publishing is deliberately separate from the existing theme/plugin deploy.
+# Only trusted main-branch commits get access to production SSH secrets.
+on:
+  pull_request:
+    paths:
+      - 'content/meanwhile/**'
+      - 'scripts/publish_meanwhile.py'
+      - 'scripts/wp_publish_meanwhile.php'
+      - '.github/workflows/publish-meanwhile.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'content/meanwhile/**'
+      - 'scripts/publish_meanwhile.py'
+      - 'scripts/wp_publish_meanwhile.php'
+      - '.github/workflows/publish-meanwhile.yml'
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Only publish this article slug (blank = all ready articles)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-meanwhile-production
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validation dependencies
+        run: pip install --disable-pip-version-check "Markdown>=3.7,<4" "PyYAML>=6,<7" "paramiko>=3.4,<5"
+      - name: Verify script syntax
+        run: |
+          python -m py_compile scripts/publish_meanwhile.py
+          php -l scripts/wp_publish_meanwhile.php
+      - name: Validate post and all image references
+        run: python scripts/publish_meanwhile.py --validate-only
+
+  publish:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LOUSY_SSH_HOST: ${{ secrets.LOUSY_SSH_HOST }}
+      LOUSY_SSH_PORT: ${{ secrets.LOUSY_SSH_PORT }}
+      LOUSY_SSH_USER: ${{ secrets.LOUSY_SSH_USER }}
+      LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
+      LOUSY_SSH_KNOWN_HOSTS: ${{ secrets.LOUSY_SSH_KNOWN_HOSTS }}
+      POST_SLUG: ${{ inputs.slug }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install publishing requirements
+        run: pip install --disable-pip-version-check "Markdown>=3.7,<4" "PyYAML>=6,<7" "paramiko>=3.4,<5"
+      - name: Validate publication inputs
+        run: python scripts/publish_meanwhile.py --validate-only ${POST_SLUG:+--slug "$POST_SLUG"}
+        shell: bash
+      - name: Publish opted-in posts and photos
+        run: python scripts/publish_meanwhile.py ${POST_SLUG:+--slug "$POST_SLUG"}
+        shell: bash
