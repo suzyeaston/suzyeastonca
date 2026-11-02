@@ -32,6 +32,13 @@
   <meta property="og:description" content="<?php echo esc_attr( $meta_desc ); ?>">
   <meta property="og:image" content="<?php echo esc_url( $meta_img ); ?>">
   <meta property="og:image:secure_url" content="<?php echo esc_url( $meta_img ); ?>">
+  <?php if ( is_singular( 'post' ) && 'an-orchestra-in-8gb' === get_post_field( 'post_name', get_queried_object_id() ) ) : ?>
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:alt" content="An Orchestra in 8GB, Suzy Easton performing with a laptop and local AI instruments at Futureproof Festival.">
+  <meta name="twitter:image:alt" content="An Orchestra in 8GB, Suzy Easton performing with a laptop and local AI instruments at Futureproof Festival.">
+  <?php endif; ?>
   <?php if ( is_singular( 'post' ) && 'the-toaster-was-a-decoy' === get_post_field( 'post_name', get_queried_object_id() ) ) : ?>
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
