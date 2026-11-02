@@ -3,6 +3,7 @@ title: "An Orchestra in 8GB: Inside SUZY//TOAST"
 slug: an-orchestra-in-8gb
 series: "Meanwhile / November 2026 / Part II: Inside the Instrument"
 status: publish
+published_at: "2026-11-02 11:18:00"
 category: "music + sound"
 excerpt: "Inside a locally hosted AI instrument: Magenta RealTime 2, Swift AUv3, MIDI conditioning, native PCM loops, and the clock-domain challenges of making generative audio playable."
 featured_image: futureproof-stage.jpg

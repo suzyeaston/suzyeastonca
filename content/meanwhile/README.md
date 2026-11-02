@@ -8,6 +8,7 @@ Media Library over the already established SSH hosting connection. This is
 **separate** from the theme deploy and does not require a WordPress API password.
 
 - Edit a Markdown file in `content/meanwhile/` and set `status: publish` only when ready.
+- Set `published_at: "YYYY-MM-DD HH:MM:SS"` in the site's local timezone to preserve chronological order across reimports and keep the homepage, archive and adjacent-post links consistent. The importer preserves legacy post dates when this field is absent.
 - Add its original photos as individual files under
   `content/meanwhile/media/<slug>/`, **or** put them into one ZIP at
   `content/meanwhile/media/<slug>.zip`, with filenames at the ZIP root.
