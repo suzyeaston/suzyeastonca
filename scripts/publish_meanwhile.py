@@ -199,6 +199,7 @@ def publish(prepared: list[dict]) -> None:
         sftp = client.open_sftp()
         try:
             sftp.put(str(ROOT / "scripts" / "wp_publish_meanwhile.php"), stage + "/publisher.php")
+            sftp.put(str(ROOT / "scripts" / "wp_verify_meanwhile_order.php"), stage + "/verify-order.php")
             print(run_command(client, shlex.quote(php_bin) + " -l " + shlex.quote(stage + "/publisher.php")).strip())
             for post in prepared:
                 manifest = {key: value for key, value in post.items()}
@@ -220,6 +221,8 @@ def publish(prepared: list[dict]) -> None:
                     client, shlex.quote(php_bin) + " " + shlex.quote(stage + "/publisher.php") + " " + shlex.quote(stage + "/post.json")
                 )
                 print(post["slug"] + ": " + output.strip())
+            checked = run_command(client, shlex.quote(php_bin) + " " + shlex.quote(stage + "/verify-order.php"))
+            print("Meanwhile chronology verification: " + checked.strip())
         finally:
             sftp.close()
     finally:
