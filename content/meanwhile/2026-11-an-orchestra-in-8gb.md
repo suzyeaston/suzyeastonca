@@ -168,7 +168,7 @@ For a while the interface held two song decks, various arpeggios, and a very amb
 
 The October 29 set was a musician-controlled experiment, not a production DAW or a latency benchmark. I played and sang with a locally hosted generative instrument inside the arrangement. It wasn't an autonomous bandmate or a model fine-tuned on my musical identity. The experimental voice-to-MIDI follower was separate from Magenta's audio generation.
 
-The GitHub history is pretty honest about the scramble. There are tests for transport, routes, capture, keyboard state, timing, and regressions. There are also reverts, unresolved experimental paths, and explicit notes that software CI can't verify what an actual microphone, headphones, and Mac are doing. [PR #95](https://github.com/suzyeaston/suzy-ai/pull/95) literally reverted an interface change that broke audible output. I respect that commit. Sometimes the feature is knowing when to retreat.
+The GitHub history includes tests for transport, capture, keyboard ownership, and timing, alongside reverts and unfinished experiments. Software CI can't prove what happens through real headphones. [PR #95](https://github.com/suzyeaston/suzy-ai/pull/95) reverted a UI change that broke audible output. I respect that commit. Sometimes the feature is knowing when to retreat.
 
 ## 08 / The interface between intention and surprise
 
