@@ -9,6 +9,7 @@ on:
       - 'scripts/publish_meanwhile.py'
       - 'scripts/build_toaster_part2_media.py'
       - 'scripts/wp_publish_meanwhile.php'
+      - 'scripts/wp_verify_meanwhile_order.php'
       - '.github/workflows/publish-meanwhile.yml'
   push:
     branches:
@@ -18,6 +19,7 @@ on:
       - 'scripts/publish_meanwhile.py'
       - 'scripts/build_toaster_part2_media.py'
       - 'scripts/wp_publish_meanwhile.php'
+      - 'scripts/wp_verify_meanwhile_order.php'
       - '.github/workflows/publish-meanwhile.yml'
   workflow_dispatch:
     inputs:
@@ -49,6 +51,7 @@ jobs:
         run: |
           python -m py_compile scripts/publish_meanwhile.py scripts/build_toaster_part2_media.py
           php -l scripts/wp_publish_meanwhile.php
+          php -l scripts/wp_verify_meanwhile_order.php
       - name: Reproduce Part II performance and source-code images
         run: python scripts/build_toaster_part2_media.py
       - name: Validate post and all image references
