@@ -2,7 +2,7 @@
 title: "The Toaster Was a Decoy"
 slug: the-toaster-was-a-decoy
 series: "Meanwhile / November 2026 / Part I: No Fixed Studio"
-status: pending-wordpress-import
+status: publish
 category: "music + sound"
 excerpt: "The toaster didn't fail. It led somewhere else: an entire portable musical environment built around a laptop, a microphone, and a voice."
 featured_image: DayTwo_FPF2026_MichelleDiamond-351(1).jpg
