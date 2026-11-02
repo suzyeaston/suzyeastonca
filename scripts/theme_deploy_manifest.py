@@ -87,6 +87,7 @@ THEME_FILES = [
     "page-ai-art.php",
     "page-vancouver-tech-events.php",
     "page-loop-lab.php",
+    "parts/home-hero-pitch.php",
     "parts/home-commercial-strip.php",
     "parts/home-feature-previews.php",
     "parts/home-appliance-feature.php",
