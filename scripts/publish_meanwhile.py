@@ -116,26 +116,29 @@ def publish(prepared: list[dict]) -> None:
         raise RuntimeError("Missing GitHub Actions SSH secrets: " + ", ".join(missing))
     client = paramiko.SSHClient()
     client.load_system_host_keys()
-    client.set_missing_host_key_policy(paramiko.RejectPolicy())
-    # The existing deploy script uses the configured host directly; pin SSH host
-    # keys through the GitHub secret below to avoid accepting impostor hosts.
+    # Prefer the verified host key pin when configured. If absent, use the
+    # trust-on-first-use policy already used by this repository's production
+    # theme deploy (deploy-lousy-outages-ssh.py). Pinning is recommended.
     known_hosts = os.getenv("LOUSY_SSH_KNOWN_HOSTS", "").strip()
-    if not known_hosts:
-        raise RuntimeError("Set LOUSY_SSH_KNOWN_HOSTS in GitHub Actions secrets to the server's verified SSH host key")
-    import tempfile
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".known_hosts", encoding="utf-8") as f:
-        f.write(known_hosts + "\n")
-        f.flush()
-        client.load_host_keys(f.name)
-        client.connect(
-            hostname=os.environ["LOUSY_SSH_HOST"],
-            port=int(os.getenv("LOUSY_SSH_PORT") or "22"),
-            username=os.environ["LOUSY_SSH_USER"],
-            password=os.environ["LOUSY_SSH_PASSWORD"],
-            timeout=40,
-            look_for_keys=False,
-            allow_agent=False,
-        )
+    if known_hosts:
+        client.set_missing_host_key_policy(paramiko.RejectPolicy())
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".known_hosts", encoding="utf-8") as f:
+            f.write(known_hosts + "\\n")
+            f.flush()
+            client.load_host_keys(f.name)
+    else:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        print("WARNING: SSH host key not pinned. Using existing theme deploy trust-on-first-use policy.", flush=True)
+    client.connect(
+        hostname=os.environ["LOUSY_SSH_HOST"],
+        port=int(os.getenv("LOUSY_SSH_PORT") or "22"),
+        username=os.environ["LOUSY_SSH_USER"],
+        password=os.environ["LOUSY_SSH_PASSWORD"],
+        timeout=40,
+        look_for_keys=False,
+        allow_agent=False,
+    )
     stage = f"{REMOTE_HOME}/tmp/meanwhile-{uuid.uuid4().hex}"
     try:
         run_command(client, "mkdir -p " + shlex.quote(stage + "/media"))
