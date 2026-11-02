@@ -1,0 +1,41 @@
+name: Repair November Meanwhile Post Order
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/repair_meanwhile_dates.py'
+      - 'scripts/wp_repair_meanwhile_dates.php'
+      - '.github/workflows/repair-meanwhile-dates.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: meanwhile-date-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LOUSY_SSH_HOST: ${{ secrets.LOUSY_SSH_HOST }}
+      LOUSY_SSH_PORT: ${{ secrets.LOUSY_SSH_PORT }}
+      LOUSY_SSH_USER: ${{ secrets.LOUSY_SSH_USER }}
+      LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
+      LOUSY_SSH_KNOWN_HOSTS: ${{ secrets.LOUSY_SSH_KNOWN_HOSTS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install SSH and publishing dependencies
+        run: pip install --disable-pip-version-check "paramiko>=3.4,<5" "PyYAML>=6,<7" "Markdown>=3.7,<4"
+      - name: Validate standalone repair scripts
+        run: |
+          python -m py_compile scripts/repair_meanwhile_dates.py scripts/publish_meanwhile.py
+          php -l scripts/wp_repair_meanwhile_dates.php
+      - name: Set WordPress dates in one bootstrap and verify homepage and archive
+        run: python scripts/repair_meanwhile_dates.py
