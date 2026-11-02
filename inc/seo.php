@@ -139,7 +139,7 @@ function se_website_schema( $description = '' ) {
 function se_home_meta() {
 	return [
 		'title'       => 'Suzy Easton | Music, Software & Experiments',
-		'description' => 'Music, code, AI experiments and field notes from Vancouver. A living archive of Suzy Easton\'s performances, projects and work in progress.'
+		'description' => 'Music, code, AI experiments and field notes from Vancouver. A living archive of Suzy Easton\'s performances, projects and work in progress.',
 		'keywords'    => 'Suzy Easton, Vancouver musician, creative technologist, experimental music, software projects, AI music, field notes',
 	];
 }
