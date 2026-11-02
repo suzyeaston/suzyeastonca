@@ -6,6 +6,7 @@ status: pending-wordpress-import
 category: "music + sound"
 excerpt: "The toaster didn't fail. It led somewhere else: an entire portable musical environment built around a laptop, a microphone, and a voice."
 featured_image: DayTwo_FPF2026_MichelleDiamond-351(1).jpg
+media_archive: Suzy_The_Toaster_Was_a_Decoy_11_Photos.zip
 ---
 
 *Meanwhile / November 2026 / Part I: No Fixed Studio*
