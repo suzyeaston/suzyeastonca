@@ -92,7 +92,7 @@ def prepare(path: Path) -> dict | None:
         raise ValueError(f"{path}: featured image must appear in the article")
     published_at = meta.get("published_at", "")
     if published_at:
-        if not isinstance(published_at, str) or not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}", published_at):
+        if not isinstance(published_at, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", published_at):
             raise ValueError(f"{path}: published_at must be quoted YYYY-MM-DD HH:MM:SS in WordPress local time")
         try:
             datetime.strptime(published_at, "%Y-%m-%d %H:%M:%S")
