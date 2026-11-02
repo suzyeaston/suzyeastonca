@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import io
+import zipfile
 import os
 import re
 import shlex
@@ -45,6 +47,7 @@ def prepare(path: Path) -> dict | None:
     if not title:
         raise ValueError(f"{path}: missing title")
     image_dir = ENTRIES / "media" / slug
+    image_zip = ENTRIES / "media" / (slug + ".zip")
     photos: list[dict] = []
     used_names: set[str] = set()
     body = source[frontmatter.end():]
@@ -60,11 +63,15 @@ def prepare(path: Path) -> dict | None:
         used_names.add(filename)
         photo_path = image_dir / filename
         if not photo_path.is_file():
-            raise ValueError(f"{path}: missing image: {photo_path.relative_to(ROOT)}")
+            if not image_zip.is_file():
+                raise ValueError(f"{path}: missing image {filename}; add {image_zip.relative_to(ROOT)}")
+            with zipfile.ZipFile(image_zip) as zf:
+                if filename not in zf.namelist():
+                    raise ValueError(f"{path}: {image_zip.name} does not contain {filename}")
         if not alt:
             raise ValueError(f"{path}: missing alt text for {filename}")
         token = f"MEANWHILE_PHOTO_{len(photos)}_TOKEN"
-        photos.append({"name": filename, "alt": alt, "caption": caption if caption != "-" else "", "token": token, "path": str(photo_path)})
+        photos.append({"name": filename, "alt": alt, "caption": caption if caption != "-" else "", "token": token, "path": str(photo_path) if photo_path.is_file() else "", "zip": str(image_zip) if not photo_path.is_file() else ""})
         return f"\n\n{token}\n\n"
 
     body = PHOTO_PATTERN.sub(substitute, body)
@@ -136,7 +143,12 @@ def publish(prepared: list[dict]) -> None:
                 manifest = {key: value for key, value in post.items()}
                 manifest["photos"] = []
                 for photo in post["photos"]:
-                    sftp.put(photo["path"], stage + "/media/" + photo["name"])
+                    if photo["path"]:
+                        sftp.put(photo["path"], stage + "/media/" + photo["name"])
+                    else:
+                        with zipfile.ZipFile(photo["zip"]) as zf:
+                            payload = zf.read(photo["name"])
+                        sftp.putfo(io.BytesIO(payload), stage + "/media/" + photo["name"], file_size=len(payload))
                     manifest["photos"].append({key: photo[key] for key in ("name", "alt", "caption", "token")})
                 import tempfile
                 with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".json") as tmp:
@@ -163,7 +175,13 @@ def main() -> int:
     args = parser.parse_args()
     entries = sorted(ENTRIES.glob("*.md"))
     if args.slug:
-        entries = [ENTRIES / (args.slug + ".md")]
+        entries = [
+            path for path in entries
+            if (fm := META_PATTERN.match(path.read_text(encoding="utf-8")))
+            and (yaml.safe_load(fm.group(1)) or {}).get("slug") == args.slug
+        ]
+        if not entries:
+            raise ValueError(f"No Meanwhile entry has slug {args.slug!r}")
     prepared = [x for path in entries if (x := prepare(path)) is not None]
     if not prepared:
         print("No entries marked for publication.")
