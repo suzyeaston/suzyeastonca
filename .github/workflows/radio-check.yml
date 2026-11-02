@@ -44,7 +44,7 @@ jobs:
           python3 -m py_compile radio-station/transmit.py
           bash -n radio-station/setup-local.sh
           python3 scripts/theme_deploy_manifest.py validate
-          node --test __tests__/homepage-yvr-radar-compact.test.js __tests__/homepage-appliance-spotlight.test.js __tests__/theme-deploy-manifest.test.js
+          node --test __tests__/homepage-yvr-radar-compact.test.js __tests__/homepage-appliance-spotlight.test.js __tests__/theme-deploy-manifest.test.js __tests__/seo-sem-readiness.test.js
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
       - run: node --test radio-station/server.test.mjs
       - run: npm install --no-package-lock --no-audit --no-fund
