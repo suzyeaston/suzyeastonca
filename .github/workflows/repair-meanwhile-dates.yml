@@ -1,6 +1,11 @@
 name: Repair November Meanwhile Post Order
 
 on:
+  pull_request:
+    paths:
+      - 'scripts/repair_meanwhile_dates.py'
+      - 'scripts/wp_repair_meanwhile_dates.php'
+      - '.github/workflows/repair-meanwhile-dates.yml'
   push:
     branches:
       - main
@@ -17,7 +22,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check Python and PHP scripts
+        run: |
+          python -m py_compile scripts/repair_meanwhile_dates.py scripts/publish_meanwhile.py
+          php -l scripts/wp_repair_meanwhile_dates.php
   repair:
+    if: github.event_name == 'push'
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
