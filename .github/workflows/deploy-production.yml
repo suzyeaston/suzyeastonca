@@ -52,6 +52,7 @@ jobs:
               - 'scripts/deploy-lousy-outages-ssh.py'
               - 'scripts/theme_deploy_manifest.py'
               - 'scripts/build_toaster_social_card.py'
+              - 'scripts/build_orchestra_social_card.py'
             plugin:
               - 'lousy-outages/**'
               - 'dist/lousy-outages.zip'
@@ -123,7 +124,9 @@ jobs:
         run: |
           python3 scripts/build_meanwhile_social_card.py
           python3 scripts/build_toaster_social_card.py
+          python3 scripts/build_orchestra_social_card.py
           node --test __tests__/toaster-social-preview.test.js
+          node --test __tests__/orchestra-social-preview.test.js
 
       - name: Validate theme deploy manifest
         if: needs.changes.outputs.theme == 'true'
@@ -147,6 +150,10 @@ jobs:
       - name: Verify live Open Graph image for The Toaster Was a Decoy
         if: needs.changes.outputs.theme == 'true'
         run: python3 scripts/verify_toaster_social_preview.py
+
+      - name: Verify live Open Graph image for An Orchestra in 8GB
+        if: needs.changes.outputs.theme == 'true'
+        run: python3 scripts/verify_orchestra_social_preview.py
 
       - name: Deploy Lousy Outages plugin
         if: needs.changes.outputs.plugin == 'true'
