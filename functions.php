@@ -47,6 +47,25 @@ require_once get_template_directory() . '/inc/ai-art.php';
  *   - Security hardening: disable XML-RPC, hide users, block author archives
  */
 
+/**
+ * Retire former consulting and session-booking URLs before rendering, even
+ * when a page's WordPress template assignment changes. Keep inbound links.
+ */
+function se_redirect_retired_sales_pages() {
+    if ( is_admin() || is_preview() ) {
+        return;
+    }
+    if ( is_page( 'shop' ) || is_page_template( 'page-shop.php' ) ) {
+        wp_safe_redirect( home_url( '/projects/' ), 301, 'Suzy Easton' );
+        exit;
+    }
+    if ( is_page( 'work-with-suzy' ) || is_page_template( 'page-work-with-suzy.php' ) ) {
+        wp_safe_redirect( home_url( '/bio/' ), 301, 'Suzy Easton' );
+        exit;
+    }
+}
+add_action( 'template_redirect', 'se_redirect_retired_sales_pages', 1 );
+
 // =========================================
 // 1. THEME SCRIPTS & STYLES
 // =========================================

@@ -9,7 +9,7 @@ get_header();
 
 $hero_args = [
 	'title'      => 'MEANWHILE',
-	'kicker'     => 'writing // jericho beach',
+	'kicker'     => 'writing // vancouver',
 	'show_intro' => true,
 ];
 ?>

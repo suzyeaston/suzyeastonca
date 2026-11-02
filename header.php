@@ -89,10 +89,10 @@
     </a>
   </div>
   <div class="header-actions">
-    <nav class="se-header-nav" aria-label="Site actions">
-      <a class="se-header-nav__link se-header-nav__link--shop" href="<?php echo esc_url( se_preserve_utm_url( home_url( '/shop/' ) ) ); ?>" data-hire-cta data-hire-cta-label="header_shop">SHOP</a>
+    <nav class="se-header-nav" aria-label="Explore the site">
       <a class="se-header-nav__link se-header-nav__link--blog" href="<?php echo esc_url( home_url( '/blog/' ) ); ?>">MEANWHILE</a>
-      <a class="se-header-nav__link" href="<?php echo esc_url( se_preserve_utm_url( home_url( '/work-with-suzy/' ) ) ); ?>" data-hire-cta data-hire-cta-label="header_hire">HIRE SUZY</a>
+      <a class="se-header-nav__link" href="<?php echo esc_url( home_url( '/projects/' ) ); ?>">PROJECTS</a>
+      <a class="se-header-nav__link" href="<?php echo esc_url( home_url( '/music-releases/' ) ); ?>">MUSIC</a>
     </nav>
     <button class="pixel-button header-contact-trigger"
             type="button"
@@ -100,7 +100,7 @@
             aria-haspopup="dialog"
             aria-controls="contact-suzy-modal"
             aria-label="Contact Suzy">
-      CONTACT SUZY
+      SAY HELLO
     </button>
   </div>
 </header>
@@ -141,12 +141,12 @@
 
       <div class="se-contact-success" data-contact-success hidden>
         <p class="se-contact-success__headline">Message received. I’ll get back to you soon.</p>
-        <p>Want to fuel the weird little upgrades? <a href="https://buymeacoffee.com/wi0amge" target="_blank" rel="noopener noreferrer">Buy Suzy a coffee</a> or <a href="<?php echo esc_url( home_url( '/' ) ); ?>">share the site</a>.</p>
+        <p>If the form gives you trouble, <a href="mailto:suzyeaston@icloud.com">email me directly</a>.</p>
       </div>
     </div>
 
     <div class="se-contact-modal__footer">
-      <p>Want to fuel the weird little upgrades? Buy Suzy a coffee or share the site.</p>
+      <p>Music, projects, field notes, or just a hello. All welcome.</p>
     </div>
   </div>
 </div>

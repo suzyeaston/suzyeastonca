@@ -10,7 +10,7 @@ $catalog = se_ai_art_load_catalog();
 $gallery = $catalog['gallery'];
 $works   = se_ai_art_published_works();
 $featured = se_ai_art_featured_work();
-$cta_href = home_url( (string) ( $gallery['ctaHref'] ?? '/work-with-suzy/' ) );
+$cta_href = home_url( (string) ( $gallery['ctaHref'] ?? '/projects/' ) );
 $filters  = array(
 	'all'     => 'ALL',
 	'film'    => 'FILM',
@@ -180,7 +180,7 @@ $render_work_card = static function ( array $work ) {
 
 		<section class="ai-art-cta" aria-labelledby="ai-art-cta-title">
 			<h2 id="ai-art-cta-title" class="pixel-font"><?php echo esc_html( (string) $gallery['ctaHeading'] ); ?></h2>
-			<a class="pixel-button" href="<?php echo esc_url( se_preserve_utm_url( $cta_href ) ); ?>" data-hire-cta data-hire-cta-label="ai_art_cta">
+			<a class="pixel-button" href="<?php echo esc_url( $cta_href ); ?>">
 				<?php echo esc_html( (string) $gallery['ctaButton'] ); ?>
 			</a>
 		</section>
