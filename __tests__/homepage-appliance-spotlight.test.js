@@ -15,11 +15,11 @@ test("homepage spotlights Meanwhile instead of the Appliance app", () => {
 
   assert.ok(pitchAt !== -1 && meanwhileAt > pitchAt && stripAt > meanwhileAt,
     "latest writing sits just below the hero pitch");
-  assert.doesNotMatch(home, /get_template_part\\(\\s*'parts\\/home-appliance-feature'/,
+  assert.doesNotMatch(home, /get_template_part\(\s*'parts\/home-appliance-feature'/,
     "Appliance feature is not called by homepage");
-  assert.equal((home.match(/parts\\/home', 'mission-meanwhile/g) || []).length, 1,
+  assert.equal((home.match(/parts\/home', 'mission-meanwhile/g) || []).length, 1,
     "Meanwhile appears once, as the spotlight");
   assert.match(appliance, /appliance/i, "the standalone Appliance page is retained");
-  assert.match(blogStyles, /\\.home-yvr-radar-deck > \\.home-mission-card--meanwhile-spotlight/,
+  assert.match(blogStyles, /\.home-yvr-radar-deck > \.home-mission-card--meanwhile-spotlight/,
     "spotlight has its own responsive styling");
 });
