@@ -110,6 +110,48 @@ def run_command(client: paramiko.SSHClient, command: str) -> str:
     return output
 
 
+def select_php(client: paramiko.SSHClient) -> str:
+    """Use a hosting-provider PHP CLI matching the site's modern PHP runtime.
+
+    Many cPanel/CloudLinux hosts default 'php' to 7.x even when WordPress
+    runs under PHP 8.x in the web server. Their plugins cannot bootstrap
+    through the old CLI.
+    """
+    candidates = [
+        "/opt/cpanel/ea-php84/root/usr/bin/php",
+        "/opt/cpanel/ea-php83/root/usr/bin/php",
+        "/opt/cpanel/ea-php82/root/usr/bin/php",
+        "/opt/cpanel/ea-php81/root/usr/bin/php",
+        "/opt/alt/php84/usr/bin/php",
+        "/opt/alt/php83/usr/bin/php",
+        "/opt/alt/php82/usr/bin/php",
+        "/opt/alt/php81/usr/bin/php",
+        "php8.4",
+        "php8.3",
+        "php8.2",
+        "php8.1",
+        "php",
+    ]
+    available: list[tuple[int, str]] = []
+    for name in candidates:
+        try:
+            result = run_command(
+                client, shlex.quote(name) + " -r 'echo PHP_VERSION_ID;'"
+            ).strip()
+            if result.isdecimal() and int(result) >= 80100:
+                available.append((int(result), name))
+        except RuntimeError:
+            continue
+    if not available:
+        raise RuntimeError(
+            "No compatible PHP 8.1+ CLI found on hosting server; "
+            "please configure the path to the web server's PHP 8.x binary."
+        )
+    version, binary = max(available)
+    print(f"Remote PHP CLI selected: {binary} (version id {version})", flush=True)
+    return binary
+
+
 def publish(prepared: list[dict]) -> None:
     missing = [name for name in ("LOUSY_SSH_HOST", "LOUSY_SSH_USER", "LOUSY_SSH_PASSWORD") if not os.getenv(name)]
     if missing:
@@ -139,13 +181,14 @@ def publish(prepared: list[dict]) -> None:
         look_for_keys=False,
         allow_agent=False,
     )
+    php_bin = select_php(client)
     stage = f"{REMOTE_HOME}/tmp/meanwhile-{uuid.uuid4().hex}"
     try:
         run_command(client, "mkdir -p " + shlex.quote(stage + "/media"))
         sftp = client.open_sftp()
         try:
             sftp.put(str(ROOT / "scripts" / "wp_publish_meanwhile.php"), stage + "/publisher.php")
-            print(run_command(client, "php -l " + shlex.quote(stage + "/publisher.php")).strip())
+            print(run_command(client, shlex.quote(php_bin) + " -l " + shlex.quote(stage + "/publisher.php")).strip())
             for post in prepared:
                 manifest = {key: value for key, value in post.items()}
                 manifest["photos"] = []
@@ -163,7 +206,7 @@ def publish(prepared: list[dict]) -> None:
                     tmp.flush()
                     sftp.put(tmp.name, stage + "/post.json")
                 output = run_command(
-                    client, "php " + shlex.quote(stage + "/publisher.php") + " " + shlex.quote(stage + "/post.json")
+                    client, shlex.quote(php_bin) + " " + shlex.quote(stage + "/publisher.php") + " " + shlex.quote(stage + "/post.json")
                 )
                 print(post["slug"] + ": " + output.strip())
         finally:
