@@ -47,7 +47,7 @@ arguments, URLs or browser JavaScript. The relay binds to loopback by default.
 
 ## Connect it to suzyeaston.ca
 
-The WordPress player is ready to consume the stream, but a public HTTPS relay
+The Suzy Pirate Radio WordPress receiver is ready to consume the stream, but a public HTTPS relay
 has to exist first. A visitor's localhost is their own device, not your Mac.
 
 For an always-on station, use a dedicated server that supports Docker or a
@@ -70,8 +70,8 @@ A dedicated-host deployment example is included:
    Avoid CDN/proxy caching or buffering of `/source` and `/live.mp3`.
 5. Keep the matching source token in your Mac's private `radio-station/.env`.
    Run `python3 transmit.py --server https://YOUR-RADIO-HOST --mic 0`.
-6. In WordPress **Settings → YVR Radio**, enter:
-   - Community stream URL: `https://YOUR-RADIO-HOST/live.mp3`
+6. In WordPress **Settings → Pirate Radio**, enter:
+   - Public MP3 stream URL: `https://YOUR-RADIO-HOST/live.mp3`
    - Relay status URL: `https://YOUR-RADIO-HOST/status.json`
 7. Purge the radio page cache. The station appears as **Suzy Pirate Radio**.
    Test listening from a different network before inviting listeners.

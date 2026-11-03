@@ -1,138 +1,82 @@
 <?php
-/** YVR Radio: page provisioning, directory and station configuration. */
+/** Suzy Pirate Radio: optional public HTTPS listener and transmitter-status URLs. */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 function se_radio_url( $value ) {
     $url = esc_url_raw( trim( (string) $value ), array( 'https' ) );
-    if ( wp_parse_url($url, PHP_URL_USER) || wp_parse_url($url, PHP_URL_PASS) ) { return ''; }
-    return wp_parse_url( $url, PHP_URL_SCHEME ) === 'https' ? $url : '';
+    if ( ! $url || wp_parse_url( $url, PHP_URL_SCHEME ) !== 'https' ) { return ''; }
+    if ( wp_parse_url( $url, PHP_URL_USER ) || wp_parse_url( $url, PHP_URL_PASS ) ) { return ''; }
+    return $url;
 }
 
-function se_radio_channels() {
-    // Catalog only: no slow network probes during page render.
-    $channels = se_broadcaster_audio_channel_catalog();
-    foreach ( $channels as $key => $channel ) {
-        if ( $channel['mode'] === 'soundscape' || strpos($key, 'wildfire_') === 0 ) { unset($channels[$key]); }
-    }
-    foreach ( $channels as $key => &$channel ) {
-        $channel['group'] = 'Radio';
-        if ( ($channel['pin_tier'] ?? '') === 'atc' || $channel['mode'] === 'broadcastify' ) {
-            $channel['group'] = 'Scanners';
-            // Provider player preserves attribution and avoids scraping stream mounts.
-            $channel['mode'] = 'link_out';
-            $channel['stream_url'] = '';
-            $channel['link_url'] = $channel['link_url'] ?? $channel['source_url'];
-        }
-        if ( ! empty( $channel['orcasound_node'] ) ) {
-            $channel['group'] = 'Hydrophones';
-            $channel['mode'] = 'link_out';
-            $channel['stream_url'] = '';
-            $channel['link_url'] = $channel['source_url'];
-        }
-
-    }
-    unset( $channel );
-    $channels['hydro_bush']['label'] = 'Bush Point, WA';
-    $channels['hydro_bush']['hint'] = 'Live hydrophone · Whidbey Island, Washington';
-    $channels['hydro_mast']['label'] = 'MaST Center, WA';
-    $channels['hydro_mast']['hint'] = 'Live hydrophone · Des Moines, Washington';
-    $channels['marine_vhf']['hint'] = 'Vancouver marine feed · availability varies';
-    $channels['cknw']['label'] = 'CKNW';
-    $channels['cknw']['source'] = 'CKNW';
-    $channels['cknw']['freq'] = '';
-    $channels['cknw']['hint'] = 'Vancouver news and talk';
-    $extra = array(
-        'citr' => array('CiTR 101.9 FM', 'Campus and community radio · UBC', 'https://player.citr.ca/', 'https://live.citr.ca/live.aac', 'aac'),
-        'cfro' => array('CFRO 100.5 FM', 'Vancouver Co-operative Radio', 'https://coopradio.org/', '', 'mp3'),
-        'cjsf' => array('CJSF 90.1 FM', 'Independent radio · SFU', 'https://www.cjsf.ca/streaming', '', 'mp3'),
-    );
-    foreach ( $extra as $key => $row ) {
-        $channels[$key] = array('key'=>$key, 'label'=>$row[0], 'hint'=>$row[1], 'source_url'=>$row[2], 'link_url'=>$row[2], 'stream_url'=>$row[3], 'format'=>$row[4], 'mode'=>$row[3] ? 'stream' : 'link_out', 'group'=>'Community radio');
-    }
-    $places = array(
-        'citr'=>array(49.2666,-123.2499,'UBC campus · approximate studio location'),
-        'cfro'=>array(49.2815,-123.1021,'370 Columbia Street · approximate studio location'),
-        'cjsf'=>array(49.2788,-122.9197,'SFU Burnaby campus · approximate studio location'),
-        'cknw'=>array(49.2825,-123.1190,'Downtown Vancouver · studio area'),
-        'cbc'=>array(49.2795,-123.1144,'CBC Vancouver · studio area'),
-        'marine_vhf'=>array(49.305,-123.08,'Vancouver harbour · listening area, not receiver position'),
-        'burnaby_fire'=>array(49.25,-122.98,'Burnaby · listening area, not receiver position'),
-        'vzvr_acc'=>array(49.1939,-123.1764,'Vancouver airspace · reference point at YVR'),
-    );
-    foreach ($channels as $key=>&$channel) {
-        $channel['region'] = !empty($channel['orcasound_node']) ? 'salish' : 'vancouver';
-        $channel['place'] = $channel['region'] === 'salish' ? 'Washington State · hydrophone location' : 'YVR airspace · reference point, not receiver position';
-        if(isset($places[$key])) { $channel['map_lat']=$places[$key][0]; $channel['map_lon']=$places[$key][1]; $channel['place']=$places[$key][2]; }
-    }
-    unset($channel);
-    $channels['gastown_clock'] = array('key'=>'gastown_clock','label'=>'Gastown steam clock · 2012','hint'=>'Actual Gastown clock chiming · archive recording, not live','group'=>'Vancouver recordings','region'=>'vancouver','mode'=>'soundscape','format'=>'mp3','loop'=>false,'stream_url'=>get_template_directory_uri().'/assets/audio/vancouver/gastown-steam-clock-2012.mp3','map_lat'=>49.2844,'map_lon'=>-123.1080,'place'=>'Water & Cambie, Gastown · approximate recording location','recorded_at'=>'2012-08-30','credit'=>'Joshua May · CC BY-SA 3.0 · audio extracted from original video','source_url'=>'https://commons.wikimedia.org/wiki/File:Vancouver_Gastown_steam_clock_chiming.webm','license_url'=>'https://creativecommons.org/licenses/by-sa/3.0/');
-    foreach (se_radio_field_channels() as $field) { $channels[$field['key']]=$field; }
-    $stream = se_radio_url( get_option( 'se_radio_stream', '' ) );
-    if ( $stream ) {
-        $channels['community'] = array('key'=>'community', 'label'=>'Suzy Pirate Radio', 'hint'=>'Our own independent internet broadcast', 'stream_url'=>$stream, 'format'=>strpos($stream,'.m3u8')!==false?'hls':'mp3', 'mode'=>'stream', 'group'=>'Our station', 'region'=>'vancouver', 'source_url'=>home_url('/radio/'), 'status_url'=>se_radio_url(get_option('se_radio_status','')));
-    }
-    return array_values( $channels );
-}
-
-// Provision once after all required theme files have reached the server.
+// Keep the existing /radio/ URL and template assignment for bookmarks.
 add_action( 'init', function () {
-    if ( get_option( 'se_radio_page_id' ) || ! file_exists( get_template_directory() . '/template-yvr-radio.php' ) || ! file_exists( get_template_directory() . '/assets/js/yvr-radio.js' ) || ! file_exists( get_template_directory() . '/assets/css/yvr-radio.css' ) ) { return; }
-    if ( get_page_by_path( 'radio' ) ) { return; } // Never overwrite an existing page.
+    if ( ! file_exists( get_template_directory() . '/template-yvr-radio.php' ) ) { return; }
+    $existing = get_page_by_path( 'radio' );
+    if ( $existing ) {
+        if ( get_post_meta( $existing->ID, '_wp_page_template', true ) === 'template-yvr-radio.php' ) {
+            if ( $existing->post_title === 'YVR Radio' ) {
+                wp_update_post( array(
+                    'ID' => $existing->ID,
+                    'post_title' => 'Suzy Pirate Radio',
+                    'post_content' => 'An independent live internet-radio station operated by Suzy Easton.',
+                ) );
+            }
+            if ( ! get_option( 'se_radio_page_id' ) ) {
+                update_option( 'se_radio_page_id', $existing->ID, false );
+            }
+        }
+        return; // Never replace an unrelated page with the same slug.
+    }
+    if ( get_option( 'se_radio_page_id' ) ) { return; }
     $lock = (int) get_option( 'se_radio_setup_lock', 0 );
     if ( $lock && time() - $lock > 120 ) { delete_option( 'se_radio_setup_lock' ); }
     if ( ! add_option( 'se_radio_setup_lock', time(), '', false ) ) { return; }
-    $id = wp_insert_post( array('post_type'=>'page', 'post_status'=>'publish', 'post_title'=>'YVR Radio', 'post_name'=>'radio', 'post_content'=>'Listen to Vancouver. Community radio, public scanner links, hydrophones and recorded soundscapes.', 'comment_status'=>'open', 'ping_status'=>'closed', 'meta_input'=>array('_wp_page_template'=>'template-yvr-radio.php')), true );
-    if ( ! is_wp_error($id) && $id ) { update_option('se_radio_page_id', $id, false); }
+    $id = wp_insert_post( array(
+        'post_type' => 'page', 'post_status' => 'publish',
+        'post_title' => 'Suzy Pirate Radio', 'post_name' => 'radio',
+        'post_content' => 'An independent live internet-radio station operated by Suzy Easton.',
+        'comment_status' => 'closed', 'ping_status' => 'closed',
+        'meta_input' => array( '_wp_page_template' => 'template-yvr-radio.php' ),
+    ), true );
+    if ( ! is_wp_error( $id ) && $id ) { update_option( 'se_radio_page_id', $id, false ); }
     delete_option( 'se_radio_setup_lock' );
 }, 30 );
 
 add_action( 'wp_enqueue_scripts', function () {
-    $page = is_page_template('template-yvr-radio.php');
-    if ( ! $page && ! is_front_page() && ! is_page_template('page-home.php') ) { return; }
-    wp_enqueue_style('yvr-radio', get_template_directory_uri().'/assets/css/yvr-radio.css', array('main-styles'), filemtime(get_template_directory().'/assets/css/yvr-radio.css'));
-    if ( ! $page ) {
-        wp_dequeue_script('home-yvr-broadcaster');
-        wp_dequeue_script('home-hero-map');
-        wp_dequeue_script('hls-js');
-        return;
+    $on_radio_page = is_page_template( 'template-yvr-radio.php' );
+    if ( ! $on_radio_page && ! is_front_page() && ! is_page_template( 'page-home.php' ) ) { return; }
+    wp_enqueue_style( 'yvr-radio', get_template_directory_uri() . '/assets/css/yvr-radio.css', array( 'main-styles' ), filemtime( get_template_directory() . '/assets/css/yvr-radio.css' ) );
+    wp_enqueue_script( 'yvr-radio', get_template_directory_uri() . '/assets/js/yvr-radio.js', array(), filemtime( get_template_directory() . '/assets/js/yvr-radio.js' ), true );
+    if ( ! $on_radio_page ) {
+        wp_dequeue_script( 'home-yvr-broadcaster' );
+        wp_dequeue_script( 'home-hero-map' );
+        wp_dequeue_script( 'hls-js' );
     }
-    wp_enqueue_script('hls-js', 'https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js', array(), '1.5.15', true);
-    wp_enqueue_style('yvr-maplibre', 'https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css', array(), '4.7.1');
-    wp_enqueue_script('yvr-maplibre', 'https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js', array(), '4.7.1', true);
-    wp_enqueue_script('yvr-radio-map', get_template_directory_uri().'/assets/js/yvr-radio-map.js', array('yvr-maplibre'), filemtime(get_template_directory().'/assets/js/yvr-radio-map.js'), true);
-    wp_enqueue_script('yvr-radio', get_template_directory_uri().'/assets/js/yvr-radio.js', array('hls-js','yvr-radio-map'), filemtime(get_template_directory().'/assets/js/yvr-radio.js'), true);
-    wp_localize_script('yvr-radio', 'YvrRadio', array('channels'=>se_radio_channels()));
 }, 99 );
 
-add_action('admin_init', function () {
-    register_setting('se_radio', 'se_radio_stream', array('type'=>'string', 'sanitize_callback'=>'se_radio_url', 'default'=>''));
-    register_setting('se_radio', 'se_radio_status', array('type'=>'string', 'sanitize_callback'=>'se_radio_url', 'default'=>''));
-    register_setting('se_radio', 'se_radio_room', array('type'=>'string', 'sanitize_callback'=>'se_radio_url', 'default'=>''));
-});
-add_action('admin_menu', function () {
-    add_options_page('YVR Radio', 'YVR Radio', 'manage_options', 'se-radio', 'se_radio_settings');
-});
+add_action( 'admin_init', function () {
+    register_setting( 'se_radio', 'se_radio_stream', array( 'type' => 'string', 'sanitize_callback' => 'se_radio_url', 'default' => '' ) );
+    register_setting( 'se_radio', 'se_radio_status', array( 'type' => 'string', 'sanitize_callback' => 'se_radio_url', 'default' => '' ) );
+} );
+add_action( 'admin_menu', function () {
+    add_options_page( 'Suzy Pirate Radio', 'Pirate Radio', 'manage_options', 'se-radio', 'se_radio_settings' );
+} );
 function se_radio_settings() {
-    if ( ! current_user_can('manage_options') ) { return; }
+    if ( ! current_user_can( 'manage_options' ) ) { return; }
     ?>
-    <div class="wrap"><h1>YVR Radio</h1>
-    <p>Use a public HTTPS listener URL from our Pirate Radio relay (or Icecast/AzuraCast). Never enter a source password or private studio URL here.</p>
-    <form action="options.php" method="post"><?php settings_fields('se_radio'); ?>
-    <p><label for="se-radio-stream">Community stream URL</label><br><input class="large-text" id="se-radio-stream" type="url" name="se_radio_stream" value="<?php echo esc_attr(get_option('se_radio_stream','')); ?>"></p>
-    <p><label for="se-radio-status">Optional relay status URL (our relay: /status.json)</label><br><input class="large-text" id="se-radio-status" type="url" name="se_radio_status" value="<?php echo esc_attr(get_option('se_radio_status','')); ?>"></p>
-    <p><label for="se-radio-room">Optional public community room URL</label><br><input class="large-text" id="se-radio-room" type="url" name="se_radio_room" value="<?php echo esc_attr(get_option('se_radio_room','')); ?>"></p>
-    <?php submit_button(); ?></form>
-    <p>Messages use WordPress comments, require a site login and await moderation. Approve them in Comments. This is a message board, not live voice chat.</p>
-    <?php if ( ! get_option('se_radio_page_id') && get_page_by_path('radio') ) : ?>
-    <p>A page already uses /radio/. It was not changed. Edit that page and select the YVR Radio template to use this app.</p>
-    <?php endif; ?></div><?php
+    <div class="wrap">
+        <h1>Suzy Pirate Radio</h1>
+        <p>Configure public HTTPS listener URLs from the independent radio relay. Never paste a source password, transmitter token or private upload endpoint here.</p>
+        <form action="options.php" method="post">
+            <?php settings_fields( 'se_radio' ); ?>
+            <p><label for="se-radio-stream">Public MP3 stream URL (relay: /live.mp3)</label><br>
+            <input class="large-text" id="se-radio-stream" type="url" name="se_radio_stream" value="<?php echo esc_attr( get_option( 'se_radio_stream', '' ) ); ?>" placeholder="https://radio.example.com/live.mp3"></p>
+            <p><label for="se-radio-status">Public status URL (relay: /status.json)</label><br>
+            <input class="large-text" id="se-radio-status" type="url" name="se_radio_status" value="<?php echo esc_attr( get_option( 'se_radio_status', '' ) ); ?>" placeholder="https://radio.example.com/status.json"></p>
+            <?php submit_button(); ?>
+        </form>
+        <p>The player reports a source as online only after the status endpoint confirms it. A running website is not proof of a running transmitter. Server deployment instructions live in <code>radio-station/README.md</code>.</p>
+    </div>
+    <?php
 }
-function se_radio_is_post( $id ) { return get_post_meta( (int)$id, '_wp_page_template', true ) === 'template-yvr-radio.php'; }
-add_filter('preprocess_comment', function($comment) {
-    if ( se_radio_is_post($comment['comment_post_ID'] ?? 0) && ! is_user_logged_in() ) { wp_die('Please sign in to send a radio message.', '', array('response'=>403)); }
-    return $comment;
-});
-add_filter('pre_comment_approved', function($approved, $comment) {
-    if ( se_radio_is_post($comment['comment_post_ID'] ?? 0) && ! is_wp_error($approved) && $approved !== 'spam' && $approved !== 'trash' ) { return 0; }
-    return $approved;
-}, 20, 2);
