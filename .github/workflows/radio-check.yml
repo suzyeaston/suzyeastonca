@@ -1,16 +1,17 @@
-name: YVR Radio checks
+name: Suzy Pirate Radio checks
 on:
   pull_request:
     paths:
       - '**yvr-radio**'
       - 'radio-station/**'
+      - 'parts/home-radio-feature.php'
+      - 'tests/radio-player.e2e.cjs'
+      - '__tests__/pirate-radio-static.test.js'
       - '.github/workflows/radio-check.yml'
       - 'template-yvr-radio.php'
-      - 'parts/home-radio-feature.php'
       - 'page-home.php'
       - 'functions.php'
-      - 'tests/radio-player.e2e.cjs'
-      - 'tests/radio-map.e2e.cjs'
+      - 'inc/yvr-radio.php'
       - 'package.json'
       - 'scripts/theme_deploy_manifest.py'
 jobs:
@@ -40,20 +41,18 @@ jobs:
           php -l functions.php
           php -l page-home.php
           node --check assets/js/yvr-radio.js
-          node --check assets/js/yvr-radio-map.js
           python3 -m py_compile radio-station/transmit.py
           bash -n radio-station/setup-local.sh
           python3 scripts/theme_deploy_manifest.py validate
-          node --test __tests__/homepage-yvr-radar-compact.test.js __tests__/homepage-appliance-spotlight.test.js __tests__/theme-deploy-manifest.test.js __tests__/seo-sem-readiness.test.js
+          node --test __tests__/pirate-radio-static.test.js __tests__/homepage-yvr-radar-compact.test.js __tests__/homepage-appliance-spotlight.test.js __tests__/theme-deploy-manifest.test.js __tests__/seo-sem-readiness.test.js
       - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
       - run: node --test radio-station/server.test.mjs
       - run: npm install --no-package-lock --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - run: node tests/radio-player.e2e.cjs
-      - run: node tests/radio-map.e2e.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: yvr-radio-screenshots
-          path: /tmp/yvr-radio-*.png
+          name: pirate-radio-screenshots
+          path: /tmp/suzy-pirate-radio-*.png
           if-no-files-found: ignore
