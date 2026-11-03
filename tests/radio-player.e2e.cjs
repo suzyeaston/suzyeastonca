@@ -34,7 +34,7 @@ const assert = require('node:assert/strict');
   await action.click();
   await page.waitForFunction(()=>document.querySelector('[data-pirate-radio]').dataset.playerState==='playing');
   assert.equal(await action.textContent(),'Pause');
-  await page.locator('[data-radio-volume]').fill('0.4');
+  await page.locator('[data-radio-volume]').evaluate(input=>{input.value='0.4';input.dispatchEvent(new Event('input',{bubbles:true}));});
   assert.equal(await page.locator('[data-radio-volume-value]').textContent(),'40%');
   await action.click();
   assert.equal(await root.getAttribute('data-player-state'),'paused');

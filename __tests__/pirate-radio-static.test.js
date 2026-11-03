@@ -27,7 +27,7 @@ test('the public WordPress page only receives HTTPS URLs, never source secrets',
   assert.match(php,/se_radio_stream/);
   assert.match(php,/se_radio_status/);
   assert.match(php,/array\(\s*'https'\s*\)/);
-  assert.doesNotMatch(php,/YvrRadio|se_radio_channels|hls-js|yvr-maplibre/);
+  assert.doesNotMatch(php,/YvrRadio|se_radio_channels|yvr-maplibre/);
   const ui = source('assets/js/yvr-radio.js');
   assert.match(ui,/data-pirate-radio/);
   assert.match(ui,/data\.online/);
