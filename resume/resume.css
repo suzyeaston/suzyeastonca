@@ -1,0 +1,510 @@
+/* Suzy Easton — studio resume
+   Albini honesty × Suzy signal · US Letter · Chrome print · 2 pages */
+
+@font-face {
+  font-family: "Syne";
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url("fonts/Syne-700.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Syne";
+  font-style: normal;
+  font-weight: 800;
+  font-display: block;
+  src: url("fonts/Syne-800.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("fonts/IBMPlexSans-400.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("fonts/IBMPlexSans-500.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("fonts/IBMPlexSans-600.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url("fonts/IBMPlexSans-700.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("fonts/IBMPlexMono-400.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("fonts/IBMPlexMono-500.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("fonts/IBMPlexMono-600.ttf") format("truetype");
+}
+
+:root {
+  --paper: #0c0d10;
+  --ink: #eef1f6;
+  --ink-soft: #c5ccd6;
+  --muted: #8a93a1;
+  --rule: rgba(238, 241, 246, 0.16);
+  --rule-strong: rgba(238, 241, 246, 0.28);
+  --green: #39ff14;
+  --magenta: #ff2d95;
+  --cyan: #3de7ff;
+  --amber: #ffc857;
+
+  --font-display: "Syne", "Arial Black", Impact, sans-serif;
+  --font-sans: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+}
+
+@page {
+  size: Letter;
+  margin: 0.45in 0.5in 0.45in 0.55in;
+  background: var(--paper);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: var(--ink);
+  background: #040406;
+  font-family: var(--font-sans);
+  font-size: 9pt;
+  line-height: 1.34;
+  font-weight: 400;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+
+.resume {
+  position: relative;
+  width: 8.5in;
+  min-height: 11in;
+  margin: 0 auto;
+  padding: 0 0 0 0.12in;
+  background:
+    radial-gradient(90% 50% at 100% 0%, rgba(255, 45, 149, 0.12), transparent 48%),
+    radial-gradient(70% 40% at 0% 10%, rgba(61, 231, 255, 0.08), transparent 45%),
+    linear-gradient(180deg, #12141a 0%, var(--paper) 24%, #0a0b0e 100%);
+  color: var(--ink);
+  overflow: visible;
+}
+
+/* left studio rail — inset so it never clips content */
+.resume::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--green), var(--cyan) 45%, var(--magenta));
+  z-index: 2;
+}
+
+.resume > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ——— Masthead ——— */
+
+.masthead {
+  margin: 0 0 0.4rem;
+  padding: 0 0 0.32rem;
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.name {
+  margin: 0 0 0.08rem;
+  font-family: var(--font-display);
+  font-size: 28pt;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: #fff;
+  text-transform: none;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.role-title {
+  margin: 0 0 0.24rem;
+  font-family: var(--font-sans);
+  font-size: 11pt;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--magenta);
+  line-height: 1.2;
+  text-transform: none;
+}
+
+.strapline {
+  margin: 0 0 0.22rem;
+  padding: 0.22rem 0.35rem;
+  background: rgba(57, 255, 20, 0.08);
+  border-left: 3px solid var(--green);
+  font-family: var(--font-mono);
+  font-size: 7.6pt;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.strapline .dot {
+  color: var(--muted);
+  font-weight: 400;
+  margin: 0 0.12rem;
+}
+
+.contact {
+  margin: 0 0 0.1rem;
+  font-size: 8pt;
+  color: var(--ink-soft);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.contact .sep {
+  color: var(--muted);
+  margin: 0 0.18rem;
+}
+
+.availability {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 7.2pt;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--amber);
+}
+
+/* ——— Sections ——— */
+
+.section {
+  margin: 0 0 0.38rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0 0 0.22rem;
+  padding: 0.08rem 0 0.14rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.track {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 7.4pt;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--green);
+}
+
+.heading-text {
+  font-family: var(--font-mono);
+  font-size: 8pt;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.profile-text {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 8.85pt;
+  line-height: 1.38;
+}
+
+/* ——— Toolkit matrix ——— */
+
+.toolkit-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.toolkit-table th,
+.toolkit-table td {
+  vertical-align: top;
+  padding: 0.2rem 0.28rem;
+  border: 1px solid var(--rule);
+  font-size: 7.6pt;
+  line-height: 1.32;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+}
+
+.toolkit-table th {
+  width: 1.7in;
+  background: rgba(57, 255, 20, 0.06);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 6.6pt;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+}
+
+.toolkit-table td {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--ink-soft);
+}
+
+.toolkit-table tr:nth-child(even) td {
+  background: rgba(61, 231, 255, 0.03);
+}
+
+/* highlight QA row */
+.toolkit-table tr:nth-child(3) th {
+  color: var(--magenta);
+  background: rgba(255, 45, 149, 0.08);
+}
+
+/* ——— Jobs ——— */
+
+.job {
+  margin: 0 0 0.32rem;
+  padding: 0 0 0.24rem;
+  border-bottom: 1px dashed rgba(238, 241, 246, 0.12);
+}
+
+.job:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.job-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0 0 0.1rem;
+}
+
+.job-id {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.company {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 10.5pt;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: #fff;
+}
+
+.job-role {
+  display: block;
+  margin-top: 0.04rem;
+  font-family: var(--font-sans);
+  font-size: 8.4pt;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--magenta);
+}
+
+.job-meta {
+  flex: 0 0 auto;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 7pt;
+  line-height: 1.35;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.job-meta .dates {
+  display: block;
+  color: var(--cyan);
+  font-weight: 500;
+}
+
+.job-meta .loc {
+  display: block;
+}
+
+.bullets {
+  margin: 0;
+  padding: 0 0 0 0.85rem;
+}
+
+.bullets li {
+  margin: 0 0 0.08rem;
+  color: var(--ink-soft);
+  font-size: 8.35pt;
+  line-height: 1.32;
+}
+
+.bullets li::marker {
+  color: var(--green);
+}
+
+.earlier .job {
+  margin-bottom: 0.36rem;
+  padding-bottom: 0.28rem;
+}
+
+/* keep WineDirect QA with experience flow — no forced blank page jump */
+.job-keep {
+  break-before: auto;
+  page-break-before: auto;
+}
+
+/* ——— Outro ——— */
+
+.music-edu {
+  margin-top: 0.4rem;
+}
+
+.outro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.outro-block {
+  padding: 0.32rem 0.35rem;
+  background: rgba(255, 45, 149, 0.05);
+  border: 1px solid rgba(255, 45, 149, 0.24);
+  border-top: 2px solid var(--magenta);
+}
+
+.outro-block:last-child {
+  background: rgba(61, 231, 255, 0.05);
+  border-color: rgba(61, 231, 255, 0.24);
+  border-top-color: var(--cyan);
+}
+
+.outro-label {
+  margin: 0 0 0.12rem;
+  font-family: var(--font-mono);
+  font-size: 7pt;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--green);
+}
+
+.outro-block p {
+  margin: 0;
+  font-size: 8pt;
+  line-height: 1.36;
+  color: var(--ink-soft);
+}
+
+.footer-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding-top: 0.22rem;
+  border-top: 1px solid var(--rule-strong);
+  font-family: var(--font-mono);
+  font-size: 6.4pt;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.footer-mid {
+  color: var(--green);
+}
+
+/* ——— Print / PDF ——— */
+
+@media print {
+  body {
+    background: var(--paper);
+  }
+
+  .resume {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .section-heading,
+  .job-head {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .outro-grid,
+  .footer-strip {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .job {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+@media screen {
+  body {
+    padding: 1.25rem 0 2rem;
+  }
+
+  .resume {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      0 24px 80px rgba(0, 0, 0, 0.55);
+    padding: 0.45in 0.5in 0.45in 0.62in;
+  }
+}
