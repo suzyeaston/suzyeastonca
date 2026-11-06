@@ -3,7 +3,7 @@
  * Template Name: AFTERIMAGE / Vancouver
  * Description: Experimental creative-work atlas, hosted separately on GitHub Pages.
  *
- * Create a WordPress page with the slug "afterimage" and choose this template.
+ * Routed automatically at /afterimage/ by functions.php. No database page required.
  * The frame contains public job signals only. Personal applications stay local.
  */
 get_header();
