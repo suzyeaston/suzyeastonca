@@ -220,6 +220,10 @@ function se_page_meta() {
 		$meta_title = 'Lousy Outages | Status dashboard for modern chaos';
 		$meta_desc  = 'A retro status dashboard for provider incidents, SaaS weirdness, community reports, and alerts when things go sideways.';
 		$keywords   = 'lousy outages status dashboard, outage tracker, retro status board';
+	} elseif ( function_exists( 'se_afterimage_is_request' ) && se_afterimage_is_request() ) {
+		$meta_title = 'AFTERIMAGE / Vancouver | Creative work atlas';
+		$meta_desc  = 'An interactive map of creative employers, film and games studios, engineering jobs and emerging technology signals across Vancouver.';
+		$keywords   = 'AFTERIMAGE, Vancouver creative technology jobs, engineering, film VFX, music technology, career atlas, Suzy Easton';
 	} elseif ( is_page_template( 'page-vancouver-tech-events.php' ) || is_page( 'vancouver-tech-events' ) ) {
 		$meta_title = 'Vancouver Tech Events | Meetup, Luma, BC Tech in one feed';
 		$meta_desc  = 'Upcoming Vancouver tech events from Meetup, Luma, and BC Tech — plus a Futureproof Festival spotlight.';
