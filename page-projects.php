@@ -67,6 +67,16 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
                 </article>
 
                 <article class="projects-card">
+                    <h3 class="pixel-font">AFTERIMAGE / Vancouver</h3>
+                    <p>An experimental signal atlas mapping creative employers, engineering opportunities, and currents in Vancouver's film, audio and games scene. Updated from source-backed observations.</p>
+                    <ul class="projects-badges" aria-label="AFTERIMAGE technologies"><li>OpenStreetMap</li><li>SQLite</li><li>Python</li><li>GitHub Actions</li></ul>
+                    <div class="projects-card__actions">
+                        <a class="pixel-button" href="<?php echo esc_url( home_url( '/afterimage/' ) ); ?>">Explore atlas</a>
+                        <a class="pixel-button" href="https://github.com/suzyeaston/afterimage-vancouver" target="_blank" rel="noopener noreferrer">View source</a>
+                    </div>
+                </article>
+
+                <article class="projects-card">
                     <h3 class="pixel-font">Vancouver Tech Events</h3>
                     <p>Meetup, Luma, and BC Tech in one calendar. No more tab archaeology.</p>
                     <div class="projects-card__actions">
