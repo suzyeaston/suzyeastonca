@@ -143,6 +143,16 @@ jobs:
           sudo apt-get install -y zip unzip
           scripts/build-lousy-outages-release.sh
 
+      - name: Validate AFTERIMAGE integration
+        if: needs.changes.outputs.theme == 'true'
+        run: |
+          php -l functions.php
+          php -l inc/seo.php
+          php -l page-home.php
+          php -l page-projects.php
+          php -l page-afterimage.php
+          node --test __tests__/afterimage-integration.test.js
+
       - name: Deploy theme files
         if: needs.changes.outputs.theme == 'true'
         run: python3 scripts/deploy-lousy-outages-ssh.py --theme
