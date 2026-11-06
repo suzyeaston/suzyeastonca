@@ -86,6 +86,7 @@ THEME_FILES = [
     "page-projects.php",
     "page-ai-art.php",
     "page-vancouver-tech-events.php",
+    "page-afterimage.php",
     "page-loop-lab.php",
     "parts/home-hero-pitch.php",
     "parts/home-commercial-strip.php",
