@@ -66,6 +66,64 @@ function se_redirect_retired_sales_pages() {
 }
 add_action( 'template_redirect', 'se_redirect_retired_sales_pages', 1 );
 
+/**
+ * Serve AFTERIMAGE at /afterimage/ as a GitHub-managed site experience,
+ * even before a corresponding WordPress page exists in the database.
+ *
+ * Keep this narrowly scoped so other missing URLs still return real 404s.
+ * The atlas itself is a public, read-only GitHub Pages application.
+ */
+function se_afterimage_is_request() {
+    if ( is_admin() ) {
+        return false;
+    }
+
+    $path = (string) wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '', PHP_URL_PATH );
+    $site_base = trim( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ), '/' );
+    $relative = trim( $path, '/' );
+
+    if ( '' !== $site_base ) {
+        if ( 0 !== strpos( $relative, $site_base . '/' ) ) {
+            return false;
+        }
+        $relative = substr( $relative, strlen( $site_base ) + 1 );
+    }
+
+    return 'afterimage' === $relative;
+}
+
+// WordPress can mark an unknown slug as 404 before choosing a template.
+add_filter( 'pre_handle_404', function ( $preempt ) {
+    if ( se_afterimage_is_request() ) {
+        status_header( 200 );
+        return true;
+    }
+    return $preempt;
+}, 10, 1 );
+
+add_filter( 'redirect_canonical', function ( $redirect_url ) {
+    return se_afterimage_is_request() ? false : $redirect_url;
+} );
+
+add_filter( 'template_include', function ( $template ) {
+    if ( ! se_afterimage_is_request() ) {
+        return $template;
+    }
+
+    $atlas_template = get_template_directory() . '/page-afterimage.php';
+    if ( ! is_file( $atlas_template ) ) {
+        return $template;
+    }
+
+    // Normalize a stale query flag, if another component marked the route 404.
+    global $wp_query;
+    if ( $wp_query instanceof WP_Query ) {
+        $wp_query->is_404 = false;
+    }
+    status_header( 200 );
+    return $atlas_template;
+}, 99 );
+
 // =========================================
 // 1. THEME SCRIPTS & STYLES
 // =========================================
