@@ -3494,6 +3494,10 @@
     return cleaned;
   }
 
+  // City GIS uses +Z for north. Three.js XZ ground geometry formed from XY
+  // ShapeGeometry.rotateX(-PI/2) maps shape Y to world -Z. Negate the second
+  // shape component once and use -yaw for building groups so visible meshes,
+  // collision polygons and the north-up minimap share identical coordinates.
   function toShape(points) {
     const sanitizedPoints = sanitizePolygon(points);
     if (sanitizedPoints.length < 3) {
@@ -3502,9 +3506,9 @@
     const shape = new THREE.Shape();
     sanitizedPoints.forEach((point, index) => {
       if (index === 0) {
-        shape.moveTo(point.x, point.z);
+        shape.moveTo(point.x, -point.z);
       } else {
-        shape.lineTo(point.x, point.z);
+        shape.lineTo(point.x, -point.z);
       }
     });
     shape.closePath();
@@ -3839,7 +3843,7 @@
         hasHeroTreatment ? 8.4 : 7.6,
         hasHeroTreatment ? 17.8 : 15.2
       );
-      const geom = new THREE.ExtrudeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, point.z))), {
+      const geom = new THREE.ExtrudeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, -point.z))), {
         depth: renderedHeight,
         bevelEnabled: false,
       });
@@ -3860,7 +3864,7 @@
       const mesh = new THREE.Mesh(geom, mat);
       mesh.scale.set(massingInset, 1, massingInset);
       mesh.position.set(b.x, 0, b.z);
-      mesh.rotation.y = b.yaw || 0;
+      mesh.rotation.y = -(b.yaw || 0);
       worldGroup.add(mesh);
       visualState.buildingMeshes.push(mesh);
 
@@ -3871,7 +3875,7 @@
         const roofMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.74, metalness: 0.1 }), 'metalMaterials');
         const roof = new THREE.Mesh(roofGeom, roofMat);
         roof.position.set(b.x, renderedHeight + roofHeight / 2, b.z);
-        roof.rotation.y = (b.yaw || 0) + (rooflineType === 'angled_parapet' ? 0.45 : 0);
+        roof.rotation.y = -(b.yaw || 0) + (rooflineType === 'angled_parapet' ? 0.45 : 0);
         if (rooflineType === 'stepped') {
           roof.scale.set(0.86, 1, 0.86);
         } else if (rooflineType === 'gable_shallow') {
@@ -3889,7 +3893,7 @@
       );
       const storefrontPos = localPointToWorld(b, 0, (b.depth || 8) * 0.34);
       storefront.position.set(storefrontPos.x, storefrontBandHeight / 2 + 0.2, storefrontPos.z);
-      storefront.rotation.y = b.yaw || 0;
+      storefront.rotation.y = -(b.yaw || 0);
       storefront.scale.x = heroScale;
       worldGroup.add(storefront);
       visualState.buildingMeshes.push(storefront);
@@ -3923,7 +3927,7 @@
           const depthOffset = (b.depth || 8) * 0.52;
           const winPos = localPointToWorld(b, xOffset, depthOffset);
           win.position.set(winPos.x, yOffset, winPos.z);
-          win.rotation.y = b.yaw || 0;
+          win.rotation.y = -(b.yaw || 0);
           worldGroup.add(win);
           visualState.buildingMeshes.push(win);
 
@@ -3932,7 +3936,7 @@
             new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.72, metalness: 0.12 })
           );
           sill.position.set(winPos.x, yOffset - 0.36, winPos.z - 0.02);
-          sill.rotation.y = b.yaw || 0;
+          sill.rotation.y = -(b.yaw || 0);
           worldGroup.add(sill);
           visualState.buildingMeshes.push(sill);
         }
@@ -3953,7 +3957,7 @@
         const glass = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (displayCount + 0.8), storefrontBandHeight * 0.68), storefrontWindowMat);
         const glassPos = localPointToWorld(b, xOffset, (b.depth || 8) * 0.49);
         glass.position.set(glassPos.x, (storefrontBandHeight * 0.5) + 0.36, glassPos.z);
-        glass.rotation.y = b.yaw || 0;
+        glass.rotation.y = -(b.yaw || 0);
         worldGroup.add(glass);
         visualState.buildingMeshes.push(glass);
       }
@@ -3966,7 +3970,7 @@
         );
         const awningPos = localPointToWorld(b, 0, (b.depth || 8) * 0.45);
         awning.position.set(awningPos.x, storefrontBandHeight + 0.6, awningPos.z);
-        awning.rotation.y = b.yaw || 0;
+        awning.rotation.y = -(b.yaw || 0);
         worldGroup.add(awning);
         visualState.buildingMeshes.push(awning);
       }
@@ -3984,7 +3988,7 @@
       );
       const signBandPos = localPointToWorld(b, 0, (b.depth || 8) * 0.495);
       signBand.position.set(signBandPos.x, storefrontBandHeight + 0.16, signBandPos.z);
-      signBand.rotation.y = b.yaw || 0;
+      signBand.rotation.y = -(b.yaw || 0);
       worldGroup.add(signBand);
       visualState.buildingMeshes.push(signBand);
 
@@ -4037,7 +4041,7 @@
             );
             const doorPos = localPointToWorld(b, t, (b.depth || 8) * 0.48 + 0.23);
             door.position.set(doorPos.x, 1.6, doorPos.z);
-            door.rotation.y = b.yaw || 0;
+            door.rotation.y = -(b.yaw || 0);
             worldGroup.add(door);
             visualState.buildingMeshes.push(door);
 
@@ -4047,7 +4051,7 @@
             );
             const transomPos = localPointToWorld(b, t, (b.depth || 8) * 0.48 + 0.24);
             transom.position.set(transomPos.x, 3.2, transomPos.z);
-            transom.rotation.y = b.yaw || 0;
+            transom.rotation.y = -(b.yaw || 0);
             worldGroup.add(transom);
             visualState.buildingMeshes.push(transom);
           }
@@ -4061,7 +4065,7 @@
         );
         const canopyPos = localPointToWorld(b, 0, (b.depth || 10) * 0.52);
         canopy.position.set(canopyPos.x, storefrontBandHeight + 1.8, canopyPos.z);
-        canopy.rotation.y = b.yaw || 0;
+        canopy.rotation.y = -(b.yaw || 0);
         worldGroup.add(canopy);
         visualState.buildingMeshes.push(canopy);
 
@@ -4071,7 +4075,7 @@
         );
         const recessPos = localPointToWorld(b, 0, (b.depth || 10) * 0.49);
         recess.position.set(recessPos.x, Math.max(1.9, storefrontBandHeight * 0.4) + 0.3, recessPos.z);
-        recess.rotation.y = b.yaw || 0;
+        recess.rotation.y = -(b.yaw || 0);
         worldGroup.add(recess);
         visualState.buildingMeshes.push(recess);
       }
