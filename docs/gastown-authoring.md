@@ -1,12 +1,27 @@
 # Gastown authoring notes
 
+## Civic GIS alignment (November 2026)
+
+The production world is now rebuilt by `scripts/rebuild-gastown-civic-world.js` from the **cached** City of Vancouver public street centerlines and 2015 approximate building outlines. The normal `scripts/generate-gastown-world.js` pipeline delegates to that civic builder when the expected streets are present.
+
+The authored walk follows the connected named segments `600 W CORDOVA ST`, `500 W CORDOVA ST`, and `200-300 WATER ST`. The emitted walk corridor is roughly 292 metres from the station-view start to the Water/Cambie intersection, with the Steam Clock anchored to the published WGS84 location of 49.2843841111, -123.10889. The **building footprint** and **street centerline** datasets are separate sources, so make sure they are both projected through `data/reference/route-anchors.json` before drawing or measuring geometry. In scene coordinates, +X is east and +Z is north. The minimap is north-up unless the user toggles it.
+
+The station colonnade anchor uses City 2015 frontage outline `object_id=6563395`, and the adjacent main station block `object_id=6562725` is excluded from generic massing to prevent the hero model being hidden under black boxes. The camera is spawned on the opposite West Cordova sidewalk and faces the real frontage orientation. For testing run `node --test __tests__/gastown-gis-alignment.test.js`.
+
+**Fidelity limits:** Open Data street centerlines are approximate rights-of-way, not pedestrian wayfinding guarantees. The 2015 building footprints have changed since capture. Street surface widths, building heights, exact entrance door dimensions, incidental street furniture and NPC movement remain stylized estimates. This project is a place-based simulation, not a certified GIS or accessible routing map. The scene does not use live positions of actual people.
+
+Authoritative source pages:
+- [City public streets](https://opendata.vancouver.ca/explore/dataset/public-streets/)
+- [City building footprints 2015](https://opendata.vancouver.ca/explore/dataset/building-footprints-2015/)
+- [TransLink Waterfront Station](https://www.translink.ca/translink/schedules-and-maps/skytrain)
+
 ## Waterfront Station exterior (2026 station-first scene)
 
 The entry scene now has an original procedural model in `js/gastown-waterfront-station.js`, staged across the near-side Cordova sidewalk from the starting camera. It is a **recognizable, reference-led interpretation**, not a survey-accurate 3D scan or verified GIS footprint. Do not advertise exact dimensions or precise spatial placement.
 
 Reference-led characteristics include the original CPR red-brick Beaux-Arts facade, cream Ionic columns and their capitals, projecting stone cornices, upper sash windows, arched wing glazing, the incised railway name, three modern black dome awnings reading THE STATION, and glazed main entrance doors. The entrance doors are the street-level portals. Actual fare gates are indoors and are **not** depicted as an outdoor fence.
 
-The model deliberately uses original procedural brick texture painting. No third-party reference photos are copied into runtime assets. Its `anchorFor(world)` stages the facade facing the existing world spawn, while `arrivalYaw(world)` and `arrivalPitch()` initially point the player at the doors and inscription. `isWalkableForecourt()` lets the player walk up to the entrance without opening the interiors; it stops at the doorway so the station is not a ghost wall. The model owns eight short, reversible commuter patrols in the forecourt, fed into the existing NPC walking/stride system; low-graphics mode limits that population.
+The model uses original procedural brick texture painting. The production position is now georeferenced against the cached civic facade footprint; the fallback spawn-relative staging is retained only for legacy synthetic scenes. No third-party reference photos are copied into runtime assets. Its `anchorFor(world)` stages the facade facing the existing world spawn, while `arrivalYaw(world)` and `arrivalPitch()` initially point the player at the doors and inscription. `isWalkableForecourt()` lets the player walk up to the entrance without opening the interiors; it stops at the doorway so the station is not a ghost wall. The model owns eight short, reversible commuter patrols in the forecourt, fed into the existing NPC walking/stride system; low-graphics mode limits that population.
 
 For the next fidelity pass, replace the temporary local-stage coordinate offset with verified building footprints and an exterior survey/photo-matched view. The current long Water Street corridor remains unchanged.
 
