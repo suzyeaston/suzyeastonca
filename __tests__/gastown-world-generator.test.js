@@ -159,7 +159,7 @@ test('committed world json files include the expanded intersection-based fallbac
 
 test('fallback Steam Clock plaza stays on the signed plaza side of the Water/Cambie approach frame', () => {
   const root = path.resolve(__dirname, '..');
-  const data = JSON.parse(fs.readFileSync(path.join(root, 'assets', 'world', 'gastown-water-street.json'), 'utf8'));
+  const data = JSON.parse(fs.readFileSync(path.join(root, 'assets', 'world', 'gastown-water-street-starter.json'), 'utf8'));
 
   const approachNode = data.route.centerline.find((node) => node.id === 'steam-clock-approach');
   const intersectionNode = data.nodes.find((node) => node.id === 'water-cambie-intersection');
@@ -302,7 +302,7 @@ test('fallback generator remains deterministic across repeated runs', () => {
 
 test('fallback world splits Water Street roadway around the Cambie intersection and sanitizes zone polygons', () => {
   const root = path.resolve(__dirname, '..');
-  const data = JSON.parse(fs.readFileSync(path.join(root, 'assets', 'world', 'gastown-water-street.json'), 'utf8'));
+  const data = JSON.parse(fs.readFileSync(path.join(root, 'assets', 'world', 'gastown-water-street-starter.json'), 'utf8'));
 
   const streetIds = new Set(data.zones.street.map((zone) => zone.id));
   assert.equal(streetIds.has('water-street-west-roadway'), true);
