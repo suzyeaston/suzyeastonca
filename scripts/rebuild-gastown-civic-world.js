@@ -230,8 +230,14 @@ function reflectCivicWorldToThree(value) {
     } else if (key === 'yaw' && Number.isFinite(entry)) {
       // Building yaw is a GIS +X-edge angle. Station/people/props yaw
       // describes a local +Z-facing object in the Three.js convention.
-      const angle = Array.isArray(value.footprint_local) ? -entry : Math.PI - entry;
-      result[key] = Math.atan2(Math.sin(angle), Math.cos(angle));
+      // Building yaw was already normalized in the civic builder; a direct
+      // sign flip avoids accumulating floating-point noise across rebuilds.
+      if (Array.isArray(value.footprint_local)) {
+        result[key] = -entry;
+      } else {
+        const angle = Math.PI - entry;
+        result[key] = Math.atan2(Math.sin(angle), Math.cos(angle));
+      }
     } else {
       result[key] = reflectCivicWorldToThree(entry);
     }
