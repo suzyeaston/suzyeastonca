@@ -34,6 +34,7 @@ test('committed world is deterministic and keeps City GIS attribution', () => {
   const regenerated = rebuild(world, streets, buildings, anchors, poles, trees);
   assert.deepEqual(regenerated, world, 'built world must exactly match the committed JSON');
   assert.deepEqual(world.meta.gis.streetHblocks, ['600 W CORDOVA ST', '500 W CORDOVA ST', '200-300 WATER ST']);
+  assert.equal(world.meta.gis.sceneAxisConvention, '+X east / +Z south (right-handed Three.js)');
   assert.equal(world.meta.source.includes('2015'), true);
   assert.equal(world.meta.fallbackMode, null);
   assert.equal(world.routeId, 'gastown_civic_route_2026_11_07');
@@ -50,7 +51,9 @@ test('spawn is on a walkable sidewalk and outside all building footprints', () =
   assert.ok(world.hero_landmarks.some(l => l.id === 'steam-clock-hero'));
   const clock = world.landmarks.find(l => l.id === 'steam-clock');
   assert.ok(clock);
-  assert.ok(distance(clock, project([anchors.dest.lon, anchors.dest.lat], anchors.origin)) < 0.8);
+  const civicClock = project([anchors.dest.lon, anchors.dest.lat], anchors.origin);
+  assert.ok(distance(clock, { x: civicClock.x, z: -civicClock.z }) < 0.8,
+    'render-space Steam Clock must be projected with true north on -Z');
   assert.ok(!world.nodes.some(n => Math.abs(n.x) > 450), 'no orphaned fictional route nodes');
 });
 

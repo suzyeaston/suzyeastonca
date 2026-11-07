@@ -3513,10 +3513,10 @@
     return cleaned;
   }
 
-  // City GIS uses +Z for north. Three.js XZ ground geometry formed from XY
-  // ShapeGeometry.rotateX(-PI/2) maps shape Y to world -Z. Negate the second
-  // shape component once and use -yaw for building groups so visible meshes,
-  // collision polygons and the north-up minimap share identical coordinates.
+  // Raw City GIS uses +Z north, but the offline builder reflects game-space
+  // Z so north is -Z, matching Three.js's upright right-handed camera.
+  // ShapeGeometry.rotateX(-PI/2) maps shape Y to world -Z; use (x,-z)
+  // to place surfaces at their game-space x/z coordinates, once.
   function toShape(points) {
     const sanitizedPoints = sanitizePolygon(points);
     if (sanitizedPoints.length < 3) {
@@ -4611,8 +4611,9 @@
 
   function getFacingLabel(heading) {
     const normalized = heading || getHeadingVector();
-    // GIS +Z points to true north. Using -Z here inverted the compass.
-    const angle = (Math.atan2(normalized.x, normalized.z) * (180 / Math.PI) + 360) % 360;
+    // Render-space +Z is SOUTH, as required by the upright Three.js
+    // camera. GIS north is reflected to -Z by the offline world builder.
+    const angle = (Math.atan2(normalized.x, -normalized.z) * (180 / Math.PI) + 360) % 360;
     const cardinals = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
     return cardinals[Math.round(angle / 45) % cardinals.length];
   }
@@ -5047,12 +5048,16 @@
     const active = view || metrics;
     return {
       x: padding + ((point.x - active.minX) / active.width) * usableW,
-      y: minimapState.height - (padding + ((point.z - active.minZ) / active.height) * usableH),
+      // In right-handed scene space -Z is true north, and canvas Y
+      // increases downward. Do not flip the Z axis a second time.
+      y: padding + ((point.z - active.minZ) / active.height) * usableH,
     };
   }
 
   function getMinimapHeadingRotation(heading) {
-    return minimapState.mode === 'heading-up' ? (-Math.atan2(-heading.z, heading.x) - (Math.PI / 2)) : 0;
+    // Map pixels run +X right / +Z down. Rotate the world heading into
+    // screen-up; a north-facing (+0,-1) player needs zero rotation.
+    return minimapState.mode === 'heading-up' ? (-Math.atan2(heading.z, heading.x) - (Math.PI / 2)) : 0;
   }
 
   function getCanonicalCorridorSegment(world) {
@@ -5321,7 +5326,7 @@
     }
 
     if (compassEl) {
-      const degrees = (Math.atan2(heading.x, heading.z) * 180 / Math.PI + 360) % 360;
+      const degrees = (Math.atan2(heading.x, -heading.z) * 180 / Math.PI + 360) % 360;
       compassEl.textContent = 'Facing ' + getFacingLabel(heading).toUpperCase() + '  ·  ' + String(Math.round(degrees) % 360).padStart(3, '0') + '°';
     }
     if (minimapDistanceEl) {
@@ -5442,7 +5447,7 @@
 
     const dirLength = 13;
     const headingX = minimapState.mode === 'heading-up' ? 0 : heading.x;
-    const headingY = minimapState.mode === 'heading-up' ? -1 : -heading.z;
+    const headingY = minimapState.mode === 'heading-up' ? -1 : heading.z;
     const sideX = -headingY;
     const sideY = headingX;
     const headingAngle = Math.atan2(headingY, headingX);

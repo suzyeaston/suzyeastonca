@@ -79,11 +79,11 @@ test('true north, east and south compass bearings match 3D world coordinates',()
  const source=read('js/gastown-sim.js');
  const fn=extract(source,'  function getFacingLabel(heading)', '  function classifyRelativeDirection(');
  const label=new Function(fn+'; return getFacingLabel;')();
- assert.equal(label({x:0,z:1}),'north');
+ assert.equal(label({x:0,z:-1}),'north');
  assert.equal(label({x:1,z:0}),'east');
- assert.equal(label({x:0,z:-1}),'south');
+ assert.equal(label({x:0,z:1}),'south');
  assert.equal(label({x:-1,z:0}),'west');
- assert.equal(label({x:Math.SQRT1_2,z:Math.SQRT1_2}),'northeast');
+ assert.equal(label({x:Math.SQRT1_2,z:-Math.SQRT1_2}),'northeast');
  const viewSrc=extract(source,'  function getMinimapView(metrics)', '  function toMinimapPoint(');
  const view=new Function('minimapState','player',viewSrc+'; return getMinimapView;')(
   {width:240,height:240,zoom:1},{position:{x:0,z:0}}
@@ -108,4 +108,57 @@ test('Esc reminder and named minimap legend remain visible on the page',()=>{
  assert.doesNotMatch(css,/\.gastown-minimap-compass, \.gastown-minimap-legend, .*display: none !important/);
  assert.match(fn,/'se-gastown-waterfront-places'/);
  assert.ok(manifest.includes('"js/gastown-waterfront-places.js"'));
+});
+
+
+test('Waterfront, Station East and The Landing stay LEFT when walking SE along Cordova',()=>{
+  // Three.js is right-handed: +X east, +Y up, -Z north.
+  // For a southeast-facing player (forward +X/+Z), screen right is SW
+  // (-Z,+X); the real station and adjacent sites must be screen-left.
+  const route=world.route.centerline;
+  function signedScreenRight(point) {
+    let nearest=null;
+    for(let i=1;i<route.length;i++){
+      const a=route[i-1],b=route[i],dx=b.x-a.x,dz=b.z-a.z;
+      const q=dx*dx+dz*dz||1;
+      const u=Math.max(0,Math.min(1,((point.x-a.x)*dx+(point.z-a.z)*dz)/q));
+      const center={x:a.x+u*dx,z:a.z+u*dz};
+      const dist=distance(point,center);
+      const len=Math.sqrt(q);
+      const right={x:-dz/len,z:dx/len};
+      const lateral=(point.x-center.x)*right.x+(point.z-center.z)*right.z;
+      if(!nearest||dist<nearest.dist)nearest={dist,lateral};
+    }
+    return nearest;
+  }
+  assert.ok(route[1].x>route[0].x && route[1].z>route[0].z,
+    'walking from the station toward Gastown must head southeast in scene space');
+  for(const [name,point] of Object.entries({
+    'Waterfront Station':world.station,
+    'Station East parking':world.parkingLot.center,
+    'The Landing':world.landing,
+  })){
+    const site=signedScreenRight(point);
+    assert.ok(site.lateral < -5, name+' must be on the LEFT of the waterfront-to-Gastown walk; got '+JSON.stringify(site));
+  }
+});
+
+test('north-up minimap and camera heading use the same right-handed scene axes',()=>{
+  const src=read('js/gastown-sim.js');
+  const mapFn=extract(src,'  function toMinimapPoint(', '  function getMinimapHeadingRotation(');
+  const renderMapPoint=new Function('minimapState',mapFn+'; return toMinimapPoint;')(
+    {width:240,height:240}
+  );
+  const metrics={minX:-100,maxX:100,minZ:-100,maxZ:100,width:200,height:200};
+  const north=renderMapPoint({x:0,z:-40},metrics,16,metrics);
+  const south=renderMapPoint({x:0,z:40},metrics,16,metrics);
+  assert.ok(north.y<south.y,'smaller world Z (north) must render above south on the minimap');
+  const rotationFn=extract(src,'  function getMinimapHeadingRotation(', '  function getCanonicalCorridorSegment(');
+  const rotate=new Function('minimapState',rotationFn+'; return getMinimapHeadingRotation;')(
+    {mode:'heading-up'}
+  );
+  assert.ok(Math.abs(rotate({x:0,z:-1}))<1e-8,'north-facing player must need zero map rotation');
+  const e=rotate({x:1,z:0});
+  assert.ok(Math.abs(e+Math.PI/2)<1e-8,'east-facing player rotates the map 90° clockwise into heading-up');
+  assert.match(src,/const headingY = minimapState\.mode === 'heading-up' \? -1 : heading\.z;/);
 });
