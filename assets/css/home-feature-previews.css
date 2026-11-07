@@ -679,6 +679,12 @@
 /* Station East / Gastown feature now sits immediately beneath MEANWHILE,
    inside the compact YVR hero deck, not below all the homepage modules. */
 #homepage-content .home-yvr-radar-deck > .home-gastown-spotlight {
+  /* Above 900px the parent changes from flex to a TWO-COLUMN CSS grid.
+     Without this the spotlight auto-places into its narrow 320px track. */
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  align-self: stretch;
+  min-width: 0;
   box-sizing: border-box;
   flex: 0 0 auto;
   width: 100%;
@@ -705,6 +711,8 @@
   width: 100%;
   max-width: 100%;
   height: auto;
+  aspect-ratio: 1000 / 580;
+  object-fit: contain;
   border-radius: 9px;
   background: #17313c;
 }
