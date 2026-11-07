@@ -3913,17 +3913,55 @@
       }
 
       const storefrontBandHeight = Math.max(1.6, renderedHeight * ((b.storefront_rhythm && b.storefront_rhythm.base_band) || profilePreset.storefrontBand));
-      const storefrontMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.accent, roughness: 0.62, metalness: 0.16, emissive: 0x120d0a, emissiveIntensity: 0.06 }), 'emissiveMaterials');
-      const storefront = new THREE.Mesh(
-        new THREE.BoxGeometry((b.width || 8) * 0.92, storefrontBandHeight, Math.max(2, (b.depth || 8) * 0.15)),
-        storefrontMat
-      );
-      const storefrontPos = localPointToWorld(b, 0, (b.depth || 8) * 0.34);
-      storefront.position.set(storefrontPos.x, storefrontBandHeight / 2 + 0.2, storefrontPos.z);
-      storefront.rotation.y = -(b.yaw || 0);
-      storefront.scale.x = heroScale;
-      worldGroup.add(storefront);
-      visualState.buildingMeshes.push(storefront);
+      // The legacy storefront was ONE solid BoxGeometry with width=b.width,
+      // offset from an arbitrary footprint centroid. For L-shaped civic
+      // footprints that generated giant dark volumes, sometimes cutting
+      // across Water Street when viewed west. Use real footprint EDGES.
+      // Each decorative panel now stays flush to its own civic wall.
+      const storefrontMat = registerMaterial(new THREE.MeshStandardMaterial({
+        color: new THREE.Color(colors.primary).lerp(new THREE.Color(0x98755f), 0.46),
+        roughness: 0.84,
+        metalness: 0.04,
+        emissive: 0x342018,
+        emissiveIntensity: 0.16,
+      }), 'buildingMaterials');
+      const routePoints = world.route && Array.isArray(world.route.centerline) ? world.route.centerline : [];
+      function distanceToRoute(point) {
+        let shortest = Infinity;
+        for (let i = 1; i < routePoints.length; i++) {
+          const a = routePoints[i - 1], next = routePoints[i];
+          const dx = next.x - a.x, dz = next.z - a.z;
+          const lengthSq = dx * dx + dz * dz || 1;
+          const t = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.z - a.z) * dz) / lengthSq));
+          shortest = Math.min(shortest, Math.hypot(point.x - a.x - t * dx, point.z - a.z - t * dz));
+        }
+        return shortest;
+      }
+      const frontageEdges = shapePoints.map((p, index) => {
+        const next = shapePoints[(index + 1) % shapePoints.length];
+        const startPoint = localPointToWorld(b, p.x, p.z);
+        const endPoint = localPointToWorld(b, next.x, next.z);
+        const dx = endPoint.x - startPoint.x, dz = endPoint.z - startPoint.z;
+        const length = Math.hypot(dx, dz);
+        const midpoint = { x: (startPoint.x + endPoint.x) / 2, z: (startPoint.z + endPoint.z) / 2 };
+        return { length, midpoint, yaw: -Math.atan2(dz, dx), distance: distanceToRoute(midpoint) };
+      }).filter((edge) => edge.length > 2.2 && edge.distance < 34);
+      const nearestFrontage = Math.min(Infinity, ...frontageEdges.map((edge) => edge.distance));
+      frontageEdges
+        .filter((edge) => edge.distance < nearestFrontage + 5.5)
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 6)
+        .forEach((edge) => {
+          const facadePanel = new THREE.Mesh(
+            new THREE.BoxGeometry(edge.length * 0.94, storefrontBandHeight, 0.10),
+            storefrontMat
+          );
+          facadePanel.name = 'Civic footprint-edge storefront trim';
+          facadePanel.position.set(edge.midpoint.x, storefrontBandHeight / 2 + 0.1, edge.midpoint.z);
+          facadePanel.rotation.y = edge.yaw;
+          worldGroup.add(facadePanel);
+          visualState.buildingMeshes.push(facadePanel);
+        });
       const edge = new THREE.LineSegments(
         new THREE.EdgesGeometry(geom),
         new THREE.LineBasicMaterial({ color: b.hero_fidelity === 'hero' ? 0x8f9eb0 : 0x6f8197, transparent: true, opacity: b.hero_fidelity === 'hero' ? 0.34 : 0.28 })
@@ -3932,7 +3970,11 @@
       edge.rotation.y = mesh.rotation.y;
       worldGroup.add(edge);
       visualState.buildingMeshes.push(edge);
-      if (!hasHeroTreatment) return;
+      // Upper-story rectangular decorations use an approximate facade axis.
+      // They are safe only for small regular buildings. Suppress them on
+      // complex/large civic footprints to prevent floating walls and awnings.
+      const safeRectangularFacade = b.width <= 42 && b.depth <= 28 && shapePoints.length <= 10;
+      if (!hasHeroTreatment || !safeRectangularFacade) return;
 
       const bayCount = Math.max(2, Math.min(8, b.window_bay_count || 4));
       const windowRows = Math.max(1, Math.min(5, (b.storefront_rhythm && b.storefront_rhythm.upper_rows) || profilePreset.windowRows));

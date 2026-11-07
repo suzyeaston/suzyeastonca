@@ -82,7 +82,7 @@ $sync_line = implode( ' · ', $sync_bits );
             <header class="home-feature-preview__head">
                 <p class="home-feature-preview__label pixel-font"><?php echo esc_html( 'civic arcade world' ); ?></p>
                 <h3 id="home-preview-gastown-title" class="home-feature-preview__title pixel-font"><?php echo esc_html( 'Gastown Simulator' ); ?></h3>
-                <p class="home-feature-preview__tagline"><?php echo esc_html( 'Open data, street mood, route logic. A Vancouver corridor you can walk.' ); ?></p>
+                <p class="home-feature-preview__tagline"><?php echo esc_html( 'Walk from Waterfront Station to the Steam Clock, then turn toward Canada Place and the mountains.' ); ?></p>
             </header>
 
             <div class="home-feature-preview__terminal">
@@ -91,32 +91,32 @@ $sync_line = implode( ' · ', $sync_bits );
                     <div class="home-feature-preview__shell-bar pixel-font">
                         <span class="home-feature-preview__dots" aria-hidden="true"><i></i><i></i><i></i></span>
                         <span class="home-feature-preview__path">gastown@yvr — sim --corridor</span>
-                        <span class="home-feature-preview__build">build 0.3.1</span>
+                        <span class="home-feature-preview__build">civic GIS / 3D</span>
                     </div>
                     <div class="home-feature-preview__shell-body">
-                        <p class="home-feature-preview__prompt pixel-font"><span class="home-feature-preview__sigil">$</span> ./walk --from=water-st<span class="home-feature-preview__caret" aria-hidden="true"></span></p>
+                        <p class="home-feature-preview__prompt pixel-font"><span class="home-feature-preview__sigil">$</span> ./walk --from=waterfront<span class="home-feature-preview__caret" aria-hidden="true"></span></p>
                         <p class="home-feature-preview__verdict home-feature-preview__verdict--ok"><?php echo esc_html( 'CORRIDOR LIVE' ); ?></p>
-                        <p class="home-feature-preview__verdict-sub"><?php echo esc_html( 'Civic tiles loaded. Steam clock ticking. Pigeons hostile.' ); ?></p>
-                        <p class="home-feature-preview__meta"><?php echo esc_html( 'Open data · arcade physics · mood engine' ); ?></p>
+                        <p class="home-feature-preview__verdict-sub"><?php echo esc_html( 'Real street geometry, wandering locals, and a Canada Place harbour vista.' ); ?></p>
+                        <p class="home-feature-preview__meta"><?php echo esc_html( 'Waterfront Station → Water Street → Steam Clock' ); ?></p>
                     </div>
                 </div>
 
                 <div class="home-feature-preview__readout" aria-hidden="true">
                     <div class="home-feature-preview__cell home-feature-preview__cell--ok">
-                        <span class="home-feature-preview__value">12</span>
-                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'STOPS' ); ?></span>
+                        <span class="home-feature-preview__value">292m</span>
+                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'ROUTE' ); ?></span>
                     </div>
                     <div class="home-feature-preview__cell home-feature-preview__cell--warn">
-                        <span class="home-feature-preview__value">03</span>
-                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'EVENTS' ); ?></span>
-                    </div>
-                    <div class="home-feature-preview__cell home-feature-preview__cell--dim">
-                        <span class="home-feature-preview__value">47</span>
-                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'TILES' ); ?></span>
+                        <span class="home-feature-preview__value">06</span>
+                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'LANDMARKS' ); ?></span>
                     </div>
                     <div class="home-feature-preview__cell home-feature-preview__cell--dim">
                         <span class="home-feature-preview__value">01</span>
-                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'MOOD' ); ?></span>
+                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'HARBOUR' ); ?></span>
+                    </div>
+                    <div class="home-feature-preview__cell home-feature-preview__cell--dim">
+                        <span class="home-feature-preview__value">3D</span>
+                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'WORLD' ); ?></span>
                     </div>
                 </div>
             </div>

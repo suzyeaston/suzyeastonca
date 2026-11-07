@@ -94,6 +94,7 @@ THEME_FILES = [
     "page-gastown-sim.php",
     "parts/home-hero-pitch.php",
     "parts/home-commercial-strip.php",
+    "parts/home-gastown-spotlight.php",
     "parts/home-feature-previews.php",
     "parts/home-appliance-feature.php",
     "parts/home-hire-strip.php",

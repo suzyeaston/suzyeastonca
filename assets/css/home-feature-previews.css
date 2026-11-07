@@ -510,3 +510,167 @@
     text-align: center;
   }
 }
+
+
+/* Gastown's playable-world spotlight. The public homepage renders only this
+   original static SVG, never a second WebGL instance or heavy texture. */
+#homepage-content .home-gastown-spotlight {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(1.1rem, 3vw, 2.8rem);
+  align-items: center;
+  width: min(100% - 2rem, 1180px);
+  margin: clamp(1.3rem, 3.5vw, 2.5rem) auto 1rem;
+  padding: clamp(1.25rem, 3vw, 2.6rem);
+  border: 1px solid rgba(150, 219, 223, 0.55);
+  border-radius: 18px;
+  color: #f0f6f3;
+  background:
+    radial-gradient(ellipse 65% 90% at 105% -10%, rgba(49, 124, 148, 0.28), transparent 78%),
+    linear-gradient(135deg, #0b1b25 0%, #111e22 53%, #0c141e 100%);
+  box-shadow: 0 0 0 1px rgba(6, 31, 34, 0.8), 0 18px 40px rgba(0,0,0,0.24);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+#homepage-content .home-gastown-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.12;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(198, 243, 228, 0.08) 3px 4px);
+}
+#homepage-content .home-gastown-spotlight__copy,
+#homepage-content .home-gastown-spotlight__art {
+  min-width: 0;
+}
+#homepage-content .home-gastown-spotlight__eyebrow {
+  color: #b0f4dc;
+  font-size: clamp(0.55rem, 1vw, 0.69rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin: 0 0 1.1rem;
+}
+#homepage-content .home-gastown-spotlight__eyebrow span {
+  color: #f5cf7f;
+  margin-left: 0.3rem;
+}
+#homepage-content #home-gastown-spotlight-title {
+  margin: 0 0 1rem;
+  color: #f2f8f5;
+  font: 900 clamp(2.3rem, 5vw, 4.5rem)/0.96 system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.055em;
+  text-shadow: none;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+#homepage-content #home-gastown-spotlight-title span {
+  color: #a5e9d9;
+}
+#homepage-content .home-gastown-spotlight__lead {
+  color: #f7d98d;
+  font: 700 clamp(1rem, 1.7vw, 1.32rem)/1.35 system-ui, sans-serif;
+  margin: 0 0 0.6rem;
+}
+#homepage-content .home-gastown-spotlight__detail {
+  color: #c9dde2;
+  font: 400 clamp(0.88rem, 1.25vw, 1rem)/1.65 system-ui, sans-serif;
+  max-width: 55ch;
+  margin: 0 0 1.25rem;
+}
+#homepage-content .home-gastown-spotlight__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 1.4rem;
+}
+#homepage-content .home-gastown-spotlight__tags span {
+  border: 1px solid rgba(130, 207, 199, 0.36);
+  border-radius: 100px;
+  padding: 0.3rem 0.62rem;
+  color: #c6e5e1;
+  background: rgba(20, 63, 72, 0.43);
+  font: 700 0.7rem/1.25 ui-monospace, Menlo, monospace;
+}
+#homepage-content .home-gastown-spotlight__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+}
+#homepage-content .home-gastown-spotlight__play {
+  display: inline-flex;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  box-sizing: border-box;
+  padding: 0.85rem 1.15rem;
+  border: 1px solid #b2f3d7;
+  border-radius: 7px;
+  color: #08231f;
+  background: #b2f3d7;
+  text-decoration: none;
+  font: 900 0.86rem/1.2 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.055em;
+  transition: background-color 150ms ease, transform 150ms ease;
+  white-space: nowrap;
+}
+#homepage-content .home-gastown-spotlight__play:hover {
+  color: #071a1a;
+  background: #e6ffea;
+  transform: translateY(-2px);
+}
+#homepage-content .home-gastown-spotlight__play:focus-visible {
+  outline: 3px solid #f9dc8a;
+  outline-offset: 4px;
+}
+#homepage-content .home-gastown-spotlight__actions p {
+  margin: 0;
+  color: #9db7bd;
+  font: 0.7rem/1.4 ui-monospace, Menlo, monospace;
+}
+#homepage-content .home-gastown-spotlight__art {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(147, 210, 215, 0.29);
+  border-radius: 14px;
+  background: rgba(6, 18, 25, 0.8);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+}
+#homepage-content .home-gastown-spotlight__art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 9px;
+}
+#homepage-content .home-gastown-spotlight__art figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0.65rem 0.25rem 0.1rem;
+  color: #a7d5d8;
+  font: 700 0.62rem/1.45 ui-monospace, Menlo, monospace;
+  letter-spacing: 0.03em;
+}
+#homepage-content .home-gastown-spotlight__art figcaption span {
+  color: #9dabb5;
+}
+@media (max-width: 850px) {
+  #homepage-content .home-gastown-spotlight { grid-template-columns: minmax(0, 1fr); }
+  #homepage-content .home-gastown-spotlight__art { max-width: 720px; }
+}
+@media (max-width: 520px) {
+  #homepage-content .home-gastown-spotlight { width: calc(100% - 1rem); padding: 1rem; border-radius: 12px; }
+  #homepage-content #home-gastown-spotlight-title { font-size: clamp(2.1rem, 10vw, 3.3rem); }
+  #homepage-content .home-gastown-spotlight__play { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #homepage-content .home-gastown-spotlight__play { transition: none; }
+  #homepage-content .home-gastown-spotlight__play:hover { transform: none; }
+}
