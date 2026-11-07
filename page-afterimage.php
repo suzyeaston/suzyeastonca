@@ -26,10 +26,18 @@ get_header();
     window.addEventListener('message', function (event) {
       if (event.origin !== 'https://suzyeaston.github.io' || event.source !== frame.contentWindow) return;
       var data = event.data;
-      if (!data || data.type !== 'afterimage:resize') return;
-      var height = Number(data.height);
-      if (!Number.isFinite(height) || height < 350 || height > 50000) return;
-      frame.style.height = Math.ceil(height + 12) + 'px';
+      if (!data) return;
+      if (data.type === 'afterimage:resize') {
+        var height = Number(data.height);
+        if (!Number.isFinite(height) || height < 350 || height > 50000) return;
+        frame.style.height = Math.ceil(height + 12) + 'px';
+        frame.contentWindow.postMessage({type: 'afterimage:ready'}, 'https://suzyeaston.github.io');
+      } else if (data.type === 'afterimage:scroll') {
+        var y = Number(data.y);
+        if (!Number.isFinite(y) || y < 0 || y > 50000) return;
+        var top = frame.getBoundingClientRect().top + window.scrollY + y - 15;
+        window.scrollTo({top: Math.max(0, top), behavior: 'smooth'});
+      }
     }, false);
   }());
   </script>
