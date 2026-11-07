@@ -28,7 +28,8 @@
     const yaw = Number.isFinite(start.yaw) ? start.yaw + 0.1 : -0.77;
     const x = Number.isFinite(start.x) ? start.x : -16.48;
     const z = Number.isFinite(start.z) ? start.z : -57.65;
-    const frontageDistance = 13;
+    // Give the 17-metre roofline room in the initial first-person view.
+    const frontageDistance = 22;
     return {
       x: x + (Math.sin(yaw) * frontageDistance),
       z: z - (Math.cos(yaw) * frontageDistance),
@@ -42,6 +43,17 @@
       x: anchor.x + (x * Math.cos(anchor.yaw)) - (z * Math.sin(anchor.yaw)),
       z: anchor.z + (x * Math.sin(anchor.yaw)) + (z * Math.cos(anchor.yaw))
     };
+  }
+
+  function isWalkableForecourt(world, point) {
+    if (!world || !world.spawn || !point) return false;
+    const anchor = anchorFor(world);
+    const dx = point.x - anchor.x;
+    const dz = point.z - anchor.z;
+    const localX = dx * Math.cos(anchor.yaw) + dz * Math.sin(anchor.yaw);
+    const localZ = -dx * Math.sin(anchor.yaw) + dz * Math.cos(anchor.yaw);
+    // A walkable frontage that joins the original corridor but stops at the doors.
+    return Math.abs(localX) <= 24 && localZ >= 4.7 && localZ <= 25;
   }
 
   function arrivalYaw(world, point) {
@@ -239,6 +251,13 @@
     // Entrance threshold / flush pedestrian paving. Physical transit fare gates
     // are *inside* the station, not freestanding fences across Cordova Street.
     box('Stone entrance landing', 0, 0.055, 3.9, 49, 0.11, 4.8, pavement);
+    box('Cordova station forecourt', 0, 0.038, 14, 49, 0.075, 15.3, pavement);
+    for (let x = -24; x <= 24; x += 4) {
+      box('Forecourt paving joint', x, 0.079, 14, 0.038, 0.008, 15.1, stoneShadow);
+    }
+    for (let z = 8; z <= 21; z += 4) {
+      box('Forecourt cross joint', 0, 0.079, z, 48.6, 0.008, 0.04, stoneShadow);
+    }
     [-17.2, -3.5, 10.4].forEach(x => box('Landing stone seam', x, 0.12, 4.1, 0.06, 0.012, 4.1, stoneShadow));
     sign('601 WEST CORDOVA', 29.5, 5.15, 0.48, 6.5, 0.49, '#d4c8b2', 'bold 61px Georgia, serif');
 
@@ -287,6 +306,8 @@
     anchorFor,
     toWorld,
     arrivalYaw,
+    arrivalPitch: () => 0.095,
+    isWalkableForecourt,
     create,
     commutersFor
   });
