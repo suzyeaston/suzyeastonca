@@ -41,6 +41,10 @@ test('AFTERIMAGE iframe uses strict origin, source and dimension verification to
   const page=read('page-afterimage.php');
   assert.match(page, /id="afterimage-frame"/);
   assert.match(page, /afterimage:resize/);
+  assert.match(page, /afterimage:ready/);
+  assert.match(page, /afterimage:scroll/);
+  assert.match(page, /window\.scrollTo/);
+
   assert.match(page, /event\.origin !== 'https:\/\/suzyeaston\.github\.io'/);
   assert.match(page, /event\.source !== frame\.contentWindow/);
   assert.match(page, /Number\.isFinite\(height\)/);
