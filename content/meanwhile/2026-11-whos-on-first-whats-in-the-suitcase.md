@@ -24,31 +24,21 @@ My winter hat has archival footnotes. lol.
 
 Vancouver's home, but there's a whole Bay Area branch of the family tree rattling around under that pom-pom. Funny what you notice when you have to decide which things are worth carrying.
 
-## No fixed studio. Apparently no fixed anything.
+## Load-out
 
-On Monday I published [The Toaster Was a Decoy](https://www.suzyeaston.ca/2026/11/02/the-toaster-was-a-decoy/). It was supposed to be a post about a toaster. Instead it documented how I spent October living in a strange beachside artist residency, building an AI-assisted performance rig, and playing Radiohead's *Pyramid Song* at the planetarium.
+October already has two posts of its own: [The Toaster Was a Decoy](https://www.suzyeaston.ca/2026/11/02/the-toaster-was-a-decoy/) and [An Orchestra in 8GB](https://www.suzyeaston.ca/2026/11/02/an-orchestra-in-8gb/). The toaster has had enough press.
 
-I went into the forest with an idea for a ridiculous household appliance. I came out with a small orchestra running on my laptop.
+<!-- PHOTO: IMG_3556(2).JPG | Suzy performing into a microphone with her custom live-music interface projected at Futureproof Festival. | Futureproof, October 29. Last week's operating environment. -->
 
-The toaster didn't make it onstage. [The software did](https://www.suzyeaston.ca/2026/11/02/an-orchestra-in-8gb/): live vocal loops, synths, an audio model steered by MIDI, and me trying to keep all these little clocks in a working relationship while singing.
-
-<!-- PHOTO: IMG_3556(2).JPG | Suzy performing into a microphone with her custom live-music interface projected at Futureproof Festival. | Futureproof. A microphone, a computer, and a somewhat ambitious definition of portable. -->
-
-The point wasn't to press a button and ask AI to make me a song. I wanted an instrument I could push, interrupt, layer, mute, and argue with. One that left room for improvisation, including the messy bits. Especially the messy bits.
-
-Somewhere in there I remembered that a live loop is basically a scheduling problem with feelings.
-
-I love that. It also explains an unreasonable amount about my career.
-
-October was forests, code, rehearsals, and an artist residency with approximately zero privacy. Then I performed, packed up, and the beach dimension closed behind me. By Tuesday I was still trying to re-enter Earth's atmosphere.
+That was the stage. Then came the load-out.
 
 <!-- PHOTO: november-suitcases.jpg | Two black rolling suitcases on a rain-damp Vancouver sidewalk scattered with fallen leaves. | Load-out complete. Next venue: another Airbnb. -->
 
-November has less cosmic lighting and more emails that say checkout is 11 a.m. The calendar is still aggressively experimental.
+Turns out the most difficult timing problem this week didn't involve audio. It involved two Airbnb check-in windows.
 
 ## Who's on first?
 
-On Thursday I had to vacate one temporary room before I could get into the next. My new host let me drop my luggage early, which was lovely. My bags had somewhere to be. I did not.
+On Thursday the new host let me drop off my luggage early, which was lovely. My bags had somewhere to be. I did not.
 
 Then I discovered I had enough Scene+ points sitting on my debit card for a movie ticket. Finally, a rewards program with narrative purpose.
 
