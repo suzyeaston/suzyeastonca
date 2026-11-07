@@ -157,6 +157,7 @@ jobs:
           php -l page-gastown-sim.php
           node --test __tests__/afterimage-integration.test.js
           node --test __tests__/gastown-sim-config.test.js
+          node --test __tests__/gastown-waterfront-station.test.js
 
       - name: Deploy theme files
         if: needs.changes.outputs.theme == 'true'

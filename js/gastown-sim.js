@@ -100,6 +100,7 @@
   const dialogFallbackCloseEl = app.querySelector('[data-dialog-close-fallback]');
   const fullscreenBtn = app.querySelector('[data-action="sim-fullscreen"]');
   const dialogUtils = window.GastownDialog || {};
+  const stationModel = window.GastownWaterfrontStation || null;
   const normalizeDialogEntry = typeof dialogUtils.normalizeDialogEntry === 'function'
     ? dialogUtils.normalizeDialogEntry
     : function fallbackNormalizeDialogEntry(entry, options) {
@@ -2460,11 +2461,21 @@
   }
 
   function makeNpcVisual(npc) {
-    const style = NPC_ROLE_STYLE[npc.role] || NPC_ROLE_STYLE.pedestrian;
+    const commuterCoats = [0x354c60, 0x5b695b, 0x7a5750, 0x82745f, 0x38464c, 0x746d87, 0x435d64, 0x6e5347];
+    const commuterVariant = Math.floor(deterministicUnit(npc.id + '-coat') * commuterCoats.length);
+    const style = npc.role === 'commuter'
+      ? Object.assign({}, NPC_ROLE_STYLE.pedestrian, {
+          color: commuterCoats[commuterVariant],
+          accent: commuterVariant % 2 ? 0x282d36 : 0x35404a,
+          bag: commuterVariant % 3 === 0
+        })
+      : (NPC_ROLE_STYLE[npc.role] || NPC_ROLE_STYLE.pedestrian);
     const scaleFactor = Math.max(0.72, Math.min(1.15, npc.silhouetteScale || 1));
     const root = new THREE.Group();
     const bodyMaterial = new THREE.MeshStandardMaterial({ color: style.color, roughness: 0.8, metalness: 0.1 });
-    const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xe0c7aa, roughness: 0.92, metalness: 0.02 });
+    const skinPalette = [0xe0c7aa, 0xcda581, 0x987257, 0xe9cfb8];
+    const skinTone = npc.role === 'commuter' ? skinPalette[commuterVariant % skinPalette.length] : 0xe0c7aa;
+    const skinMaterial = new THREE.MeshStandardMaterial({ color: skinTone, roughness: 0.92, metalness: 0.02 });
     const accentMaterial = new THREE.MeshStandardMaterial({ color: style.accent, roughness: 0.72, metalness: 0.14 });
     const trimMaterial = new THREE.MeshStandardMaterial({ color: 0x161b20, roughness: 0.58, metalness: 0.2 });
     const body = new THREE.Mesh(
@@ -2585,6 +2596,7 @@
     const lowGraphicsPenalty = state.lowGraphics ? 1 : 0;
     return {
       pedestrian: (weather === 'fog' ? 1 : 2) + (mood === 'commuter' ? 1 : 0) - lowGraphicsPenalty,
+      commuter: state.lowGraphics ? 3 : (weather === 'fog' ? 5 : 8),
       tourist: (weather === 'clear' && mood === 'lively' ? 5 : weather === 'clear' ? 4 : weather === 'drizzle' ? 3 : 2) - lowGraphicsPenalty,
       cyclist: (weather === 'rain' || weather === 'thunderstorm' || weather === 'fog' ? 0 : 1),
       skateboarder: (weather === 'rain' || weather === 'thunderstorm' ? 0 : 1),
@@ -2597,7 +2609,8 @@
   function filterSpawnNpcs(world) {
     const profile = getNpcSpawnProfile();
     const counts = {};
-    return (world.npcs || []).filter((npc) => {
+    const stationCommuters = stationModel ? stationModel.commutersFor(world) : [];
+    return stationCommuters.concat(world.npcs || []).filter((npc) => {
       const role = npc.role || 'pedestrian';
       counts[role] = counts[role] || 0;
       const limit = Number.isFinite(profile[role]) ? profile[role] : 99;
@@ -3019,7 +3032,7 @@
       const startYaw = typeof npc.yaw === 'number' ? npc.yaw : deterministicUnit(npc.id + '-yaw') * Math.PI * 2;
       const npcState = Object.assign({
         mesh: visual, patrolIndex: 0, direction: 1, baseY: 0, baseYaw: startYaw, currentYaw: startYaw,
-        speed: npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : npc.role === 'guide' ? 0.18 : npc.role === 'skateboarder' ? 2.35 : npc.role === 'cyclist' ? 3.1 : 0,
+        speed: npc.role === 'pedestrian' || npc.role === 'commuter' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : npc.role === 'guide' ? 0.18 : npc.role === 'skateboarder' ? 2.35 : npc.role === 'cyclist' ? 3.1 : 0,
         pauseUntil: 0, animPhase: swaySeed * Math.PI * 2, swayAmount: 0.012 + (swaySeed * 0.014),
         microEvent: '', interactionTargetId: '', socialRadius: npc.role === 'tourist' || npc.role === 'photographer' ? 3.2 : 2.2,
       }, npc);
@@ -3043,7 +3056,7 @@
     if (weather === 'rain' || weather === 'thunderstorm') multiplier *= npc.role === 'cyclist' || npc.role === 'skateboarder' ? 0.62 : 0.82;
     if (weather === 'fog') multiplier *= npc.role === 'tourist' || npc.role === 'photographer' ? 0.76 : 0.9;
     if (timeOfDay === 'night') multiplier *= npc.role === 'guide' || npc.role === 'busker' ? 0.9 : 0.8;
-    if (timeOfDay === 'morning' && npc.role === 'pedestrian') multiplier *= 1.14;
+    if (timeOfDay === 'morning' && (npc.role === 'pedestrian' || npc.role === 'commuter')) multiplier *= 1.14;
     if (nearPlayer && (npc.role === 'cyclist' || npc.role === 'skateboarder')) multiplier *= 0.74;
     return Math.max(0, (npc.speed || 0) * multiplier);
   }
@@ -3095,7 +3108,7 @@
       const touristPause = npc.behavior === 'tourist_pause' || npc.behavior === 'photo_idle' || npc.behavior === 'tourist_wander';
       const subtleWalker = npc.role === 'guide';
       const rollingMover = npc.role === 'skateboarder' || npc.role === 'cyclist';
-      const canWalk = isWalker && (npc.role === 'pedestrian' || npc.role === 'tourist' || npc.role === 'photographer' || subtleWalker || rollingMover);
+      const canWalk = isWalker && (npc.role === 'pedestrian' || npc.role === 'commuter' || npc.role === 'tourist' || npc.role === 'photographer' || subtleWalker || rollingMover);
 
       if (canWalk) {
         const target = npc.patrol[npc.patrolIndex] || npc.patrol[0];
@@ -4067,6 +4080,10 @@
   }
 
   function addHeroLandmarks(world) {
+    if (stationModel) {
+      const stationExterior = stationModel.create(THREE, world);
+      if (stationExterior) worldGroup.add(stationExterior);
+    }
     (world.hero_landmarks || []).forEach((hero) => {
       if (hero.id === 'steam-clock-hero') {
         const ironMaterial = new THREE.MeshStandardMaterial({ color: 0x24282d, roughness: 0.48, metalness: 0.68 });
@@ -4542,7 +4559,7 @@
   function enforceWorldBounds() {
     const walkBounds = state.world.route.walkBounds;
     const point = { x: player.position.x, z: player.position.z };
-    if (isPointInPolygon(point, walkBounds)) {
+    if (isPointInPolygon(point, walkBounds) || (stationModel && stationModel.isWalkableForecourt(state.world, point))) {
       state.lastSafePosition.set(player.position.x, player.position.y, player.position.z);
       return;
     }
@@ -5805,8 +5822,8 @@
     const spawn = resolveSafeSpawn();
     player.position.set(spawn.x, spawn.y, spawn.z);
     state.lastSafePosition.copy(player.position);
-    state.yaw = spawn.yaw || 0;
-    state.pitch = Number.isFinite(spawn.pitch) ? clampPitch(spawn.pitch) : 0;
+    state.yaw = stationModel ? stationModel.arrivalYaw(state.world, spawn) : (spawn.yaw || 0);
+    state.pitch = stationModel ? stationModel.arrivalPitch() : (Number.isFinite(spawn.pitch) ? clampPitch(spawn.pitch) : 0);
     if (state.cameraMode === 'overview') {
       applyOverviewCameraPose();
     } else {
@@ -6211,7 +6228,7 @@
         }
       }
       setWorldModeStatus(state.world);
-      setStatus('Gastown corridor ready. Streaming in details… click in to explore.');
+      setStatus('Waterfront Station, West Cordova. Explore the entrance, then turn toward Water Street.');
       updateCameraModeUi();
       renderer.setAnimationLoop((time) => {
         const delta = Math.min(0.03, (time - (init.prevTime || time)) / 1000);
