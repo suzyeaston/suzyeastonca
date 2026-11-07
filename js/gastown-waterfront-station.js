@@ -34,7 +34,8 @@
     // Give the 17-metre roofline room in the initial first-person view.
     const frontageDistance = 22;
     return {
-      x: x + (Math.sin(yaw) * frontageDistance),
+      // Spawn is outside the facade along the object's +Z axis.
+      x: x - (Math.sin(yaw) * frontageDistance),
       z: z - (Math.cos(yaw) * frontageDistance),
       yaw
     };
@@ -43,8 +44,10 @@
   function toWorld(world, x, z) {
     const anchor = anchorFor(world);
     return {
-      x: anchor.x + (x * Math.cos(anchor.yaw)) - (z * Math.sin(anchor.yaw)),
-      z: anchor.z + (x * Math.sin(anchor.yaw)) + (z * Math.cos(anchor.yaw))
+      // Match Three.js Group.rotation.y exactly. The old 2D conversion used
+      // the opposite sign, putting commuters on the wrong side of the station.
+      x: anchor.x + (x * Math.cos(anchor.yaw)) + (z * Math.sin(anchor.yaw)),
+      z: anchor.z - (x * Math.sin(anchor.yaw)) + (z * Math.cos(anchor.yaw))
     };
   }
 
@@ -53,8 +56,8 @@
     const anchor = anchorFor(world);
     const dx = point.x - anchor.x;
     const dz = point.z - anchor.z;
-    const localX = dx * Math.cos(anchor.yaw) + dz * Math.sin(anchor.yaw);
-    const localZ = -dx * Math.sin(anchor.yaw) + dz * Math.cos(anchor.yaw);
+    const localX = dx * Math.cos(anchor.yaw) - dz * Math.sin(anchor.yaw);
+    const localZ = dx * Math.sin(anchor.yaw) + dz * Math.cos(anchor.yaw);
     // A walkable frontage that joins the original corridor but stops at the doors.
     return Math.abs(localX) <= 24 && localZ >= 4.7 && localZ <= 31;
   }
@@ -123,7 +126,8 @@
     root.rotation.y = anchor.yaw;
 
     const brick = new THREE.MeshStandardMaterial({
-      color: 0xffffff, map: brickTexture(THREE), roughness: 0.89, metalness: 0.01
+      color: 0xffeee1, map: brickTexture(THREE), roughness: 0.87, metalness: 0.01,
+      emissive: 0x43170f, emissiveIntensity: 0.15
     });
     const stone = new THREE.MeshStandardMaterial({ color: 0xd5cbbd, roughness: 0.83, metalness: 0.02 });
     const stoneShadow = new THREE.MeshStandardMaterial({ color: 0xb4a99a, roughness: 0.84, metalness: 0.02 });
@@ -186,17 +190,17 @@
     }
 
     // Massing / wing sections. Three street-side storeys with raised parapet.
-    box('Red-brick CPR station body', 0, 8.1, -8.5, 68, 16.2, 17, brick);
+    box('Red-brick CPR station body', 0, 8.1, -8.5, 106, 16.2, 17, brick);
     box('Projecting central entry block', 0, 7.2, -0.15, 53, 14.4, 1.2, brick);
-    box('Ground-floor ashlar plinth', 0, 0.5, -0.12, 68.5, 1, 0.62, stoneShadow);
-    box('Primary stone belt course', 0, 10.3, 0.32, 69.5, 0.62, 0.82, stone);
-    box('Upper stone belt course', 0, 15.5, -0.05, 69.4, 0.46, 0.84, stone);
+    box('Ground-floor ashlar plinth', 0, 0.5, -0.12, 106.5, 1, 0.62, stoneShadow);
+    box('Primary stone belt course', 0, 10.3, 0.32, 107.5, 0.62, 0.82, stone);
+    box('Upper stone belt course', 0, 15.5, -0.05, 107.4, 0.46, 0.84, stone);
     box('Projecting entablature', 0, 11.0, 1.35, 53.5, 0.96, 3.8, stone);
     box('Entablature frieze', 0, 11.65, 1.53, 53.2, 0.44, 3.7, stoneShadow);
-    box('Pediment and cornice', 0, 16.55, -0.06, 71, 0.65, 18.7, stone);
-    box('Upper coping', 0, 17.07, 0.2, 70.5, 0.18, 18, stoneShadow);
+    box('Pediment and cornice', 0, 16.55, -0.06, 109, 0.65, 18.7, stone);
+    box('Upper coping', 0, 17.07, 0.2, 108.5, 0.18, 18, stoneShadow);
     box('Central raised parapet', 0, 17.75, -0.3, 23, 1.25, 0.78, stone);
-    box('Lower roof', 0, 16.5, -8.5, 68, 0.25, 17, iron);
+    box('Lower roof', 0, 16.5, -8.5, 106, 0.25, 17, iron);
 
     // Colonnade: pale Ionic columns and scroll-like capitals.
     const colX = [-24, -17.2, -10.4, -3.5, 3.5, 10.4, 17.2, 24];
@@ -216,14 +220,14 @@
     sign('CANADIAN PACIFIC RAILWAY', 0, 11.58, 3.47, 36, 0.95, '#75634a', '62px Georgia, serif');
 
     // Upper-storey sash windows / vertical brick rhythm.
-    for (let x = -31.1; x <= 31.1; x += 4.2) {
+    for (let x = -48; x <= 48; x += 4.8) {
       box('Upper window surround', x, 13.58, 0.63, 2.18, 3.24, 0.15, stone);
       box('Upper dark glazing', x, 13.57, 0.72, 1.72, 2.76, 0.06, glass);
       box('Vertical sash mullion', x, 13.56, 0.77, 0.11, 2.72, 0.11, iron);
       box('Upper sash rail', x, 13.3, 0.8, 1.76, 0.1, 0.11, stoneShadow);
       box('Window keystone', x, 15.23, 0.81, 0.37, 0.24, 0.18, stone);
     }
-    [-31.1, -27.6, 27.6, 31.1].forEach(x => archWindow(x, 2.9, 4.3));
+    [-48, -43, -38, -33, 33, 38, 43, 48].forEach(x => archWindow(x, 2.9, 4.3));
 
     // The Cordova Street doors sit behind modern black domed THE STATION awnings.
     [-7, 0, 7].forEach((x, i) => {
@@ -245,11 +249,11 @@
     });
 
     // Decorative terra cotta panels and parapet balustrade.
-    for (let x = -32; x <= 32; x += 2.4) {
+    for (let x = -52; x <= 52; x += 2.6) {
       box('Balustrade post', x, 17.54, 0.12, 0.22, 0.65, 0.28, stone);
-      if (Math.abs(x) > 24) box('Street-facing brick pilaster', x, 8.0, 0.25, 0.42, 13.9, 0.4, stoneShadow);
+      if (Math.abs(x) > 28) box('Street-facing brick pilaster', x, 8.0, 0.25, 0.42, 13.9, 0.4, stoneShadow);
     }
-    box('Balustrade coping', 0, 17.96, 0.13, 68.2, 0.16, 0.45, stone);
+    box('Balustrade coping', 0, 17.96, 0.13, 106.2, 0.16, 0.45, stone);
 
     // Entrance threshold / flush pedestrian paving. Physical transit fare gates
     // are *inside* the station, not freestanding fences across Cordova Street.

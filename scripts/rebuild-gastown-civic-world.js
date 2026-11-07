@@ -155,7 +155,9 @@ function stationFacade(frontage, route) {
   // W Cordova runs SE. Building's Cordova-facing facade looks SW.
   const dx = route[1].x - route[0].x, dz = route[1].z - route[0].z;
   const tangent = Math.atan2(dz, dx);
-  const yaw = tangent + Math.PI; // local facade +X runs NW; local +Z faces the roadway SW
+  // Three.js rotates local +Z to (sin(yaw), cos(yaw)); point that vector
+  // southwest toward W Cordova, not southeast along the road.
+  const yaw = -Math.PI - tangent;
   return {
     id: 'waterfront-station',
     x: Number(center.x.toFixed(2)),
@@ -227,6 +229,41 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
   );
   const stationBuilding = nearestStationFootprint(footprints.features || [], origin, fullStationFrontage);
   const station = stationFacade(stationBuilding, fullStationFrontage);
+  // 555 W Cordova / Station East is a documented *surface* lot east of the
+  // heritage station and immediately west of The Landing. Its parcel outline
+  // is approximated using the neighbouring 2015 civic building boundaries;
+  // this is NOT a surveyed parking-lot boundary.
+  const parkingLot = {
+    id: 'station-east-parking',
+    label: 'Station East surface parking / 555 W Cordova',
+    lotNumber: '531',
+    address: '555 West Cordova Street',
+    approximate: true,
+    source: 'Heritage Vancouver 555 W Cordova; Impark Station East Lot 531; adjacent 2015 building outlines',
+    polygon: [
+      { x: 14, z: -68 }, { x: 44, z: -107 }, { x: 61, z: -79 },
+      { x: 82, z: -43 }, { x: 59, z: -13 }, { x: 37, z: -28 },
+      { x: 25, z: -58 }
+    ],
+  };
+  parkingLot.center = pt(parkingLot.polygon.reduce((sum, p) => ({
+    x: sum.x + p.x / parkingLot.polygon.length,
+    z: sum.z + p.z / parkingLot.polygon.length
+  }), { x: 0, z: 0 }));
+  const landingSource = (footprints.features || []).find(f => Number((f.properties || {}).object_id) === 6506600);
+  if (!landingSource) throw Error('The Landing civic building outline is missing: object_id=6506600');
+  const landingPolygon = geometryPoints(landingSource, origin);
+  const landingCenter = landingPolygon.reduce((sum, point) => ({
+    x: sum.x + point.x / landingPolygon.length, z: sum.z + point.z / landingPolygon.length
+  }), { x: 0, z: 0 });
+  const landing = {
+    id: 'the-landing', label: 'The Landing / Kelly-Douglas Warehouse',
+    address: '375 Water Street', sourceFootprintId: String(landingSource.id),
+    source: 'City of Vancouver 2015 building footprints; Vancouver Heritage Foundation',
+    x: +landingCenter.x.toFixed(2), z: +landingCenter.z.toFixed(2),
+    height: 24, heightIsApproximate: true,
+    footprint: landingPolygon.map(pt),
+  };
   const samples = Math.ceil(routeLength / 19);
   const centerline = Array.from({ length: samples + 1 }, (_, i) => ({
     ...pt(sampleLine(route, routeLength * i / samples)),
@@ -255,7 +292,7 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
   const mid = pt(sampleLine(route, routeLength * 0.73));
   const nearStationBuildings = [];
   for (const feature of footprints.features || []) {
-    if (feature === stationBuilding.feature || [6563395, 6562725].includes(Number((feature.properties || {}).object_id))) continue;
+    if (feature === stationBuilding.feature || [6563395, 6562725, 6506600].includes(Number((feature.properties || {}).object_id))) continue;
     const pts = geometryPoints(feature, origin);
     if (pts.length < 3) continue;
     const near = Math.min(...pts.map(p => toLineDistance(p, route)));
@@ -279,6 +316,10 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
   const landmarks = [
     { id: 'waterfront-station-threshold', label: 'Waterfront Station / 601 W Cordova', kind: 'district_gate', x: station.x, z: station.z, y: 0,
       cue: '1914 CPR station entrance, across West Cordova.' },
+    { id: 'station-east-parking', label: 'Station East surface lot / 555 W Cordova', kind: 'parking', ...parkingLot.center, y: 0,
+      cue: 'Open-air parking between Waterfront Station and The Landing; approximate boundary.' },
+    { id: 'the-landing', label: 'The Landing / Kelly-Douglas Warehouse', kind: 'heritage_frontage', x: landing.x, z: landing.z, y: 0,
+      cue: 'Seven-storey historic warehouse at 375 Water Street.' },
     { id: 'water-street-transition', label: 'Water Street bend', kind: 'street_pivot', ...entry, y: 0,
       cue: 'West Cordova meets the diagonal approach to Water Street.' },
     { id: 'water-street-mid-block', label: 'Water Street storefronts', kind: 'heritage_frontage', ...mid, y: 0,
@@ -306,6 +347,8 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
         'Station building envelope uses the City 2015 approximate footprint; architectural detailing is authored and approximate.',
         'Sidewalk widths, building heights, door positions and NPC movement are visual approximations, not survey measurements.',
         'No live mapping API is called during gameplay.',
+        'The Station East surface lot is deliberately retained as open parking; proposed tower is not an existing building.',
+        'Parking outline and architectural textures are illustrative, with reference citations in the model source.',
       ],
       gis: { crs: 'local metres, +x east/+z north (WGS84 equirectangular tangent at station anchor)',
         origin, routeDistanceMeters: Number(routeLength.toFixed(1)), sourceFootprintId: station.sourceFootprintId,
@@ -317,7 +360,7 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
       sidewalkWidth: sidewalkOuter - streetHalf, softBoundary: 5.0, hardResetDistance: 22 },
     nodes: [centerline[0], centerline[Math.floor(centerline.length * 0.32)], centerline[Math.floor(centerline.length * 0.72)], centerline[centerline.length - 1]],
     navigator: { focusCorridor: [{ id: 'civic-cordova-water', label: 'Cordova / Water Street', points: centerline.map(p => ({ x:p.x,z:p.z })) }] },
-    zones, spawn, station,
+    zones, spawn, station, parkingLot, landing,
     hero_landmarks: [{ id: 'steam-clock-hero', label: 'Gastown Steam Clock', ...clock, y: 0,
       yaw: -1.4, ground_emphasis_radius: 5, plaza: { radius: 5.5, depth: 6 } }],
     landmarks, buildings, npcs: newNpcs, props: [], microAreas: [

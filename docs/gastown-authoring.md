@@ -1,5 +1,21 @@
 # Gastown authoring notes
 
+## Waterfront public realm and map alignment (November 7, 2026)
+
+**Modeled scene:** Waterfront Station (601 W Cordova), Station East surface lot (555 W Cordova / Lot 531), then The Landing / Kelly-Douglas Warehouse (375 Water Street). The parking site remains a surface lot in this simulation; a 2026 office-tower application is **not** evidence that a building was completed.
+
+**References:** [Heritage Vancouver, 555 W Cordova](https://heritagevancouver.org/top10-watch-list/2021/8-555-west-cordova/), [Impark Station East surface lot](https://impark.com/vancouver-tourism/), [Vancouver Heritage Foundation, The Landing](https://www.heritagesitefinder.ca/location/375-water-st-vancouver-bc), and [City development application](https://www.shapeyourcity.ca/555-w-cordova-st).
+
+The civic map now anchors `world.landing` to City 2015 outline `object_id=6506600`. The parking polygon is explicitly **approximate**, drawn between the station frontage and The Landing. Parked vehicle positions, curb controls, door/window designs and surfaces are representational, not surveyed or live. The station model's footprint remains stylistically authored using the civic facade position and heading, not a photogrammetry scan.
+
+**Critical geometry correction:** City local projection uses +X east and +Z north; Three.js `ShapeGeometry` / `ExtrudeGeometry` rotated by `-Math.PI / 2` requires using shape coordinates `(x, -z)` to avoid a north/south mirror. The building renderer uses `rotation.y = -yaw` when source GIS yaw is a conventional +X-to-+Z angle. For a Three.js group rotated around Y by `theta`, local `(x,z)` maps to world `(x cos theta + z sin theta, -x sin theta + z cos theta)`. Both station pedestrian paths and collision/visual geometry must share that transform.
+
+The minimap keeps player position centered, applies **one metres-per-pixel scale** to both axes, draws its true-north cardinal labels and a measured 25 m scale bar, and shows an arrow derived from the same camera yaw as the visible first-person scene. The static legend lists only colors that the map actually draws. The station/lot/Landing/clock anchors are the only named context markers at this scale, reducing clutter.
+
+**Mouse controls:** click the 3D world to capture the cursor; **Esc releases pointer lock**. A persistent instruction sits inside the view, and a release control is available when pointer lock is active. The tutorial repeats this explicitly.
+
+Run `node --test __tests__/gastown-waterfront-public-realm.test.js` as well as `node --test __tests__/gastown-gis-alignment.test.js`. Test geometric alignment separately from a real Chrome/WebGL visual inspection.
+
 ## Civic GIS alignment (November 2026)
 
 The production world is now rebuilt by `scripts/rebuild-gastown-civic-world.js` from the **cached** City of Vancouver public street centerlines and 2015 approximate building outlines. The normal `scripts/generate-gastown-world.js` pipeline delegates to that civic builder when the expected streets are present.

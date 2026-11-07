@@ -87,6 +87,10 @@
   const tutorialCloseEls = app.querySelectorAll('[data-action="tutorial-close"]');
   const tutorialStartBtn = app.querySelector('[data-action="tutorial-start"]');
   const minimapLegendEl = app.querySelector('[data-sim-minimap-legend]');
+  const minimapDistanceEl = app.querySelector('[data-sim-map-distance]');
+  const pointerHelpEl = app.querySelector('[data-sim-pointer-help]');
+  const pointerHintEl = app.querySelector('[data-sim-pointer-hint]');
+  const releasePointerBtn = app.querySelector('[data-action="sim-release-pointer"]');
   const minimapTooltipEl = app.querySelector('[data-sim-minimap-tooltip]');
   const compassEl = app.querySelector('[data-sim-compass]');
   const lowGraphicsToggle = app.querySelector('[data-setting="low-graphics"]');
@@ -101,6 +105,7 @@
   const fullscreenBtn = app.querySelector('[data-action="sim-fullscreen"]');
   const dialogUtils = window.GastownDialog || {};
   const stationModel = window.GastownWaterfrontStation || null;
+  const waterfrontPlaces = window.GastownWaterfrontPlaces || null;
   const normalizeDialogEntry = typeof dialogUtils.normalizeDialogEntry === 'function'
     ? dialogUtils.normalizeDialogEntry
     : function fallbackNormalizeDialogEntry(entry, options) {
@@ -415,10 +420,10 @@
     worldMetrics: null,
     nearestNode: null,
     nearestGuidance: null,
-    zoom: 1.2,
-    minZoom: 0.8,
-    maxZoom: 3.2,
-    zoomStep: 0.2,
+    zoom: 1,
+    minZoom: 0.5,
+    maxZoom: 3.5,
+    zoomStep: 0.25,
     mode: 'north-up',
   };
 
@@ -847,6 +852,20 @@
   function setPointerStatus(text) {
     if (pointerStatusEl) {
       pointerStatusEl.textContent = text;
+    }
+  }
+
+  function updatePointerHelp() {
+    const locked = document.pointerLockElement === renderer.domElement;
+    if (pointerHelpEl) pointerHelpEl.dataset.locked = locked ? 'true' : 'false';
+    if (pointerHintEl) {
+      pointerHintEl.textContent = locked
+        ? 'Mouse captured · W A S D to move'
+        : 'Click the 3D scene to look around · W A S D move';
+    }
+    if (releasePointerBtn) {
+      releasePointerBtn.disabled = !locked;
+      releasePointerBtn.textContent = locked ? 'Release mouse' : 'Mouse free';
     }
   }
 
@@ -3494,6 +3513,10 @@
     return cleaned;
   }
 
+  // City GIS uses +Z for north. Three.js XZ ground geometry formed from XY
+  // ShapeGeometry.rotateX(-PI/2) maps shape Y to world -Z. Negate the second
+  // shape component once and use -yaw for building groups so visible meshes,
+  // collision polygons and the north-up minimap share identical coordinates.
   function toShape(points) {
     const sanitizedPoints = sanitizePolygon(points);
     if (sanitizedPoints.length < 3) {
@@ -3502,9 +3525,9 @@
     const shape = new THREE.Shape();
     sanitizedPoints.forEach((point, index) => {
       if (index === 0) {
-        shape.moveTo(point.x, point.z);
+        shape.moveTo(point.x, -point.z);
       } else {
-        shape.lineTo(point.x, point.z);
+        shape.lineTo(point.x, -point.z);
       }
     });
     shape.closePath();
@@ -3839,7 +3862,7 @@
         hasHeroTreatment ? 8.4 : 7.6,
         hasHeroTreatment ? 17.8 : 15.2
       );
-      const geom = new THREE.ExtrudeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, point.z))), {
+      const geom = new THREE.ExtrudeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, -point.z))), {
         depth: renderedHeight,
         bevelEnabled: false,
       });
@@ -3850,7 +3873,8 @@
         roughness: b.tone === 'brickWarm' ? 0.84 : 0.7,
         metalness: 0.08,
         emissive: 0x191913,
-        emissiveIntensity: hasHeroTreatment ? 0.1 : 0.08,
+        emissiveIntensity: hasHeroTreatment ? 0.16 : 0.13,
+        side: THREE.DoubleSide,
       }), 'buildingMaterials');
       mat.userData = {
         baseRoughness: mat.roughness,
@@ -3860,18 +3884,21 @@
       const mesh = new THREE.Mesh(geom, mat);
       mesh.scale.set(massingInset, 1, massingInset);
       mesh.position.set(b.x, 0, b.z);
-      mesh.rotation.y = b.yaw || 0;
+      mesh.rotation.y = -(b.yaw || 0);
       worldGroup.add(mesh);
       visualState.buildingMeshes.push(mesh);
 
       const rooflineType = b.roofline_type || 'flat_cornice';
       if (rooflineType !== 'flat') {
         const roofHeight = Math.max(0.2, Math.min(0.55, ((b.cornice_emphasis || 0.2) * 0.8) + (profilePreset.rooflineLift * 0.08)));
-        const roofGeom = new THREE.BoxGeometry((b.width || 10) * 0.94, roofHeight, (b.depth || 10) * 0.94);
+        // Follow the GIS footprint, not the building's bounding rectangle:
+      // those old oversized roof slabs visibly floated above the roadway.
+      const roofGeom = new THREE.ShapeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, -point.z))));
+      roofGeom.rotateX(-Math.PI / 2);
         const roofMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.74, metalness: 0.1 }), 'metalMaterials');
         const roof = new THREE.Mesh(roofGeom, roofMat);
-        roof.position.set(b.x, renderedHeight + roofHeight / 2, b.z);
-        roof.rotation.y = (b.yaw || 0) + (rooflineType === 'angled_parapet' ? 0.45 : 0);
+        roof.position.set(b.x, renderedHeight + 0.06, b.z);
+        roof.rotation.y = -(b.yaw || 0) + (rooflineType === 'angled_parapet' ? 0.45 : 0);
         if (rooflineType === 'stepped') {
           roof.scale.set(0.86, 1, 0.86);
         } else if (rooflineType === 'gable_shallow') {
@@ -3889,7 +3916,7 @@
       );
       const storefrontPos = localPointToWorld(b, 0, (b.depth || 8) * 0.34);
       storefront.position.set(storefrontPos.x, storefrontBandHeight / 2 + 0.2, storefrontPos.z);
-      storefront.rotation.y = b.yaw || 0;
+      storefront.rotation.y = -(b.yaw || 0);
       storefront.scale.x = heroScale;
       worldGroup.add(storefront);
       visualState.buildingMeshes.push(storefront);
@@ -3923,7 +3950,7 @@
           const depthOffset = (b.depth || 8) * 0.52;
           const winPos = localPointToWorld(b, xOffset, depthOffset);
           win.position.set(winPos.x, yOffset, winPos.z);
-          win.rotation.y = b.yaw || 0;
+          win.rotation.y = -(b.yaw || 0);
           worldGroup.add(win);
           visualState.buildingMeshes.push(win);
 
@@ -3932,7 +3959,7 @@
             new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.72, metalness: 0.12 })
           );
           sill.position.set(winPos.x, yOffset - 0.36, winPos.z - 0.02);
-          sill.rotation.y = b.yaw || 0;
+          sill.rotation.y = -(b.yaw || 0);
           worldGroup.add(sill);
           visualState.buildingMeshes.push(sill);
         }
@@ -3953,7 +3980,7 @@
         const glass = new THREE.Mesh(new THREE.PlaneGeometry((b.width || 8) / (displayCount + 0.8), storefrontBandHeight * 0.68), storefrontWindowMat);
         const glassPos = localPointToWorld(b, xOffset, (b.depth || 8) * 0.49);
         glass.position.set(glassPos.x, (storefrontBandHeight * 0.5) + 0.36, glassPos.z);
-        glass.rotation.y = b.yaw || 0;
+        glass.rotation.y = -(b.yaw || 0);
         worldGroup.add(glass);
         visualState.buildingMeshes.push(glass);
       }
@@ -3966,7 +3993,7 @@
         );
         const awningPos = localPointToWorld(b, 0, (b.depth || 8) * 0.45);
         awning.position.set(awningPos.x, storefrontBandHeight + 0.6, awningPos.z);
-        awning.rotation.y = b.yaw || 0;
+        awning.rotation.y = -(b.yaw || 0);
         worldGroup.add(awning);
         visualState.buildingMeshes.push(awning);
       }
@@ -3984,7 +4011,7 @@
       );
       const signBandPos = localPointToWorld(b, 0, (b.depth || 8) * 0.495);
       signBand.position.set(signBandPos.x, storefrontBandHeight + 0.16, signBandPos.z);
-      signBand.rotation.y = b.yaw || 0;
+      signBand.rotation.y = -(b.yaw || 0);
       worldGroup.add(signBand);
       visualState.buildingMeshes.push(signBand);
 
@@ -4037,7 +4064,7 @@
             );
             const doorPos = localPointToWorld(b, t, (b.depth || 8) * 0.48 + 0.23);
             door.position.set(doorPos.x, 1.6, doorPos.z);
-            door.rotation.y = b.yaw || 0;
+            door.rotation.y = -(b.yaw || 0);
             worldGroup.add(door);
             visualState.buildingMeshes.push(door);
 
@@ -4047,7 +4074,7 @@
             );
             const transomPos = localPointToWorld(b, t, (b.depth || 8) * 0.48 + 0.24);
             transom.position.set(transomPos.x, 3.2, transomPos.z);
-            transom.rotation.y = b.yaw || 0;
+            transom.rotation.y = -(b.yaw || 0);
             worldGroup.add(transom);
             visualState.buildingMeshes.push(transom);
           }
@@ -4061,7 +4088,7 @@
         );
         const canopyPos = localPointToWorld(b, 0, (b.depth || 10) * 0.52);
         canopy.position.set(canopyPos.x, storefrontBandHeight + 1.8, canopyPos.z);
-        canopy.rotation.y = b.yaw || 0;
+        canopy.rotation.y = -(b.yaw || 0);
         worldGroup.add(canopy);
         visualState.buildingMeshes.push(canopy);
 
@@ -4071,7 +4098,7 @@
         );
         const recessPos = localPointToWorld(b, 0, (b.depth || 10) * 0.49);
         recess.position.set(recessPos.x, Math.max(1.9, storefrontBandHeight * 0.4) + 0.3, recessPos.z);
-        recess.rotation.y = b.yaw || 0;
+        recess.rotation.y = -(b.yaw || 0);
         worldGroup.add(recess);
         visualState.buildingMeshes.push(recess);
       }
@@ -4080,6 +4107,10 @@
   }
 
   function addHeroLandmarks(world) {
+    if (waterfrontPlaces) {
+      const shorelinePlaces = waterfrontPlaces.create(THREE, world);
+      if (shorelinePlaces) worldGroup.add(shorelinePlaces);
+    }
     if (stationModel) {
       const stationExterior = stationModel.create(THREE, world);
       if (stationExterior) worldGroup.add(stationExterior);
@@ -4580,7 +4611,8 @@
 
   function getFacingLabel(heading) {
     const normalized = heading || getHeadingVector();
-    const angle = (Math.atan2(normalized.x, -normalized.z) * (180 / Math.PI) + 360) % 360;
+    // GIS +Z points to true north. Using -Z here inverted the compass.
+    const angle = (Math.atan2(normalized.x, normalized.z) * (180 / Math.PI) + 360) % 360;
     const cardinals = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
     return cardinals[Math.round(angle / 45) % cardinals.length];
   }
@@ -4989,27 +5021,23 @@
   }
 
   function getMinimapView(metrics) {
-    const worldCenterX = (metrics.minX + metrics.maxX) / 2;
-    const worldCenterZ = (metrics.minZ + metrics.maxZ) / 2;
-    const playerX = player.position.x || worldCenterX;
-    const playerZ = player.position.z || worldCenterZ;
-    const isHeadingUp = minimapState.mode === 'heading-up';
-    const centerX = isHeadingUp ? playerX : (((playerX - worldCenterX) * 0.8) + worldCenterX);
-    const centerZ = isHeadingUp ? playerZ : (((playerZ - worldCenterZ) * 0.8) + worldCenterZ);
-
+    // Fixed physical metres/pixel on both axes. The old map stretched
+    // longitude and latitude independently, so direction did not match
+    // what the player actually saw when turning.
     const zoom = minimapState.zoom || 1;
-    const viewWidth = metrics.width / zoom;
-    const viewHeight = metrics.height / zoom;
-
+    const padding = 16;
+    const metresPerPixel = 0.90 / zoom;
+    const width = Math.max(1, (minimapState.width - 2 * padding) * metresPerPixel);
+    const height = Math.max(1, (minimapState.height - 2 * padding) * metresPerPixel);
+    const centerX = player.position.x;
+    const centerZ = player.position.z;
     return {
-      centerX,
-      centerZ,
-      minX: centerX - (viewWidth / 2),
-      maxX: centerX + (viewWidth / 2),
-      minZ: centerZ - (viewHeight / 2),
-      maxZ: centerZ + (viewHeight / 2),
-      width: Math.max(1, viewWidth),
-      height: Math.max(1, viewHeight),
+      centerX, centerZ, metresPerPixel,
+      minX: centerX - width / 2,
+      maxX: centerX + width / 2,
+      minZ: centerZ - height / 2,
+      maxZ: centerZ + height / 2,
+      width, height,
     };
   }
 
@@ -5199,11 +5227,11 @@
   }
 
   function updateMinimapLegend() {
+    // The static, accessible key in the page now matches real map layers.
+    // Do not replace colored swatches with unstyled dynamic text.
     if (!minimapLegendEl) return;
     const npcCounts = getActiveNpcCounts();
-    const collectibleCount = getCollectibleProps().filter((prop) => !prop.collected).length;
-    const items = ['You', 'Route', 'Sidewalk', 'Street', 'Landmark', 'Details left: ' + collectibleCount, 'Locals: ' + (npcCounts.pedestrian || 0), 'Visitors: ' + ((npcCounts.tourist || 0) + (npcCounts.photographer || 0)), 'Riders: ' + ((npcCounts.cyclist || 0) + (npcCounts.skateboarder || 0))];
-    minimapLegendEl.innerHTML = items.map((item) => '<li>' + item + '</li>').join('');
+    minimapLegendEl.setAttribute('data-sim-people', String((npcCounts.pedestrian || 0) + (npcCounts.commuter || 0) + (npcCounts.tourist || 0)));
   }
 
   function drawMinimapCompass(playerPoint, rotation) {
@@ -5284,18 +5312,32 @@
       const style = getMinimapStreetStyle(zone);
       drawPolygon(zone.polygon, metrics, pad, style.fill, style.stroke, 1.15, view, projectionOptions);
     });
-    (state.world.microAreas || []).forEach((area) => {
-      drawPolygon(area.polygon, metrics, pad, 'rgba(255, 210, 135, 0.72)', 'rgba(255, 210, 135, 0.08)', 0.85, view, projectionOptions);
-    });
+    // Micro-area squares were broad gameplay triggers, NOT surveyed sites.
+    // Don't cover the reference map with fictional orange blocks.
+    if (!state.world.meta || !state.world.meta.gis) {
+      (state.world.microAreas || []).forEach((area) => {
+        drawPolygon(area.polygon, metrics, pad, 'rgba(255, 210, 135, 0.2)', null, 0.85, view, projectionOptions);
+      });
+    }
 
     if (compassEl) {
-      compassEl.textContent = 'Heading: ' + getFacingLabel(getHeadingVector());
+      const degrees = (Math.atan2(heading.x, heading.z) * 180 / Math.PI + 360) % 360;
+      compassEl.textContent = 'Facing ' + getFacingLabel(heading).toUpperCase() + '  ·  ' + String(Math.round(degrees) % 360).padStart(3, '0') + '°';
+    }
+    if (minimapDistanceEl) {
+      minimapDistanceEl.textContent = 'Visible: ' + Math.round(view.width) + ' m × ' + Math.round(view.height) + ' m  ·  true north ↑';
     }
     updateMinimapLegend();
 
     (state.world.buildings || []).forEach((building) => {
       drawPolygon(getBuildingPolygon(building), metrics, pad, '#7d5e53', 'rgba(245, 218, 197, 0.34)', 0.95, view, projectionOptions);
     });
+    if (state.world.landing && Array.isArray(state.world.landing.footprint)) {
+      drawPolygon(state.world.landing.footprint, metrics, pad, '#aa5f4e', '#e9bfa5', 1.2, view, projectionOptions);
+    }
+    if (state.world.parkingLot && Array.isArray(state.world.parkingLot.polygon)) {
+      drawPolygon(state.world.parkingLot.polygon, metrics, pad, '#595f62', '#eac36d', 2, view, projectionOptions);
+    }
 
     getCollectibleProps().forEach((prop) => {
       if (!(state.quest.active || !prop.collected)) return;
@@ -5366,43 +5408,27 @@
       ctx.setLineDash([]);
     }
 
-    const majorNodes = ['waterfront-station-threshold', 'water-cordova-seam', 'water-street-mid-block', 'water-cambie-intersection', 'steam-clock', 'maple-tree-square-edge'];
-    state.world.nodes.forEach((node) => {
-      if (!majorNodes.includes(node.id)) return;
-      const markerPoint = node.id === 'steam-clock' ? getMinimapLandmarkAnchor(node, state.world) : node;
-      const mini = projectWorldToMinimap(markerPoint, metrics, pad, view, projectionOptions);
-      ctx.fillStyle = node.id === 'steam-clock' ? '#d8a968' : node.id === 'water-cambie-intersection' ? '#9cc7e4' : '#b7d4ea';
+    // Authoritative location markers use the same world-space coordinates as
+    // their rendered meshes. Distinguish the approximate lot from civic anchors.
+    [
+      {id:'waterfront-station-threshold', text:'Waterfront', color:'#96c5e8'},
+      {id:'station-east-parking', text:'Parking', color:'#eac36d'},
+      {id:'the-landing', text:'The Landing', color:'#d99577'},
+      {id:'steam-clock', text:'Steam Clock', color:'#f5d08e'},
+    ].forEach((marker) => {
+      const item=(state.world.landmarks||[]).find(l => l.id === marker.id);
+      if (!item) return;
+      const p=projectWorldToMinimap(item, metrics, pad, view, projectionOptions);
+      if (p.x < -20 || p.y < -20 || p.x > minimapState.width+20 || p.y > minimapState.height+20) return;
+      ctx.fillStyle = marker.color;
       ctx.beginPath();
-      ctx.arc(mini.x, mini.y, node.id === 'steam-clock' ? 5.2 : 4.1, 0, Math.PI * 2);
+      ctx.arc(p.x,p.y,4.4,0,Math.PI*2);
       ctx.fill();
-
-      ctx.fillStyle = 'rgba(228, 240, 255, 0.92)';
-      ctx.font = '600 9px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif';
+      ctx.font = '700 9px system-ui, sans-serif';
+      ctx.fillStyle = '#f7f6ef';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      if (node.id === 'waterfront-station-threshold') {
-        ctx.fillText('Waterfront', mini.x + 6, mini.y - 5);
-      }
-      if (node.id === 'steam-clock') {
-        const steamClockLabelAnchor = {
-          x: markerPoint.x + 1.9,
-          z: markerPoint.z + (minimapState.mode === 'heading-up' ? 0.4 : -2.1),
-        };
-        const labelMini = projectWorldToMinimap(steamClockLabelAnchor, metrics, pad, view, projectionOptions);
-        ctx.fillText('Steam Clock', labelMini.x + 5, labelMini.y - 4);
-      }
-      if (node.id === 'water-cordova-seam') {
-        ctx.fillText('Water/Cordova', mini.x + 6, mini.y - 5);
-      }
-      if (node.id === 'water-cambie-intersection') {
-        ctx.fillText('Cambie', mini.x + 6, mini.y - 5);
-      }
-      if (node.id === 'water-street-mid-block') {
-        ctx.fillText('Water St mid', mini.x + 6, mini.y + 7);
-      }
-      if (node.id === 'maple-tree-square-edge') {
-        ctx.fillText('Maple Tree Sq', mini.x + 6, mini.y + 7);
-      }
+      ctx.fillText(marker.text, Math.min(p.x + 7, minimapState.width - 62), p.y - 7);
     });
 
     (state.world.microAreas || []).forEach((area) => {
@@ -5493,6 +5519,23 @@
 
     drawMinimapCompass(playerPoint, headingRotation);
 
+    // Physical scale bar, tied to the same un-stretched metres/pixel
+    // projection used by buildings, routes, landmarks and player heading.
+    const scaleMetres = 25;
+    const barPixels = scaleMetres / view.metresPerPixel;
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#eef2ef';
+    ctx.beginPath();
+    ctx.moveTo(minimapState.width - 14 - barPixels, minimapState.height - 18);
+    ctx.lineTo(minimapState.width - 14, minimapState.height - 18);
+    ctx.stroke();
+    ctx.font = '700 10px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#f5f2e9';
+    ctx.fillText('25 m', minimapState.width - 14, minimapState.height - 23);
+    ctx.restore();
+
     if (minimapState.nearestNode) {
       const nearestPoint = projectWorldToMinimap(minimapState.nearestNode, metrics, pad, view, projectionOptions);
       ctx.strokeStyle = '#8af7cb';
@@ -5549,13 +5592,15 @@
     const timeOfDay = state.world.timeOfDayPresets[state.activeTimeOfDay] || state.world.timeOfDayPresets.night;
 
     const weatherFogBoost = state.activeWeather === 'fog' ? 0.006 : state.activeWeather === 'rain' ? 0.002 : state.activeWeather === 'thunderstorm' ? 0.004 : 0;
-    const fogDensity = Math.max(0.0035, (weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
+    // Keep near-distance facades crisp. Fog is atmosphere, not a substitute
+    // for buildings, and the old density washed out even adjacent landmarks.
+    const fogDensity = Math.max(0.0018, Math.min(0.012, ((weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost) * 0.55));
     scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
     renderer.setClearColor(timeOfDay.sky, 1);
-    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 0.79 : state.activeTimeOfDay === 'night' ? 0.61 : state.activeTimeOfDay === 'dusk' ? 0.68 : 0.74) - ((weather.rainIntensity || 0) * 0.03);
+    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 1.12 : state.activeTimeOfDay === 'night' ? 0.83 : state.activeTimeOfDay === 'dusk' ? 0.92 : 1.04) - ((weather.rainIntensity || 0) * 0.04);
 
     ambient.color.set(timeOfDay.ambientColor);
-    ambient.intensity = Math.max(0.24, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.82);
+    ambient.intensity = Math.max(0.4, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 1.05);
     keyLight.color.set(timeOfDay.keyColor);
     keyLight.intensity = (timeOfDay.keyIntensity || 0.6) * (0.72 + (mood.lightIntensity * 0.34));
     fillLight.color.set(timeOfDay.fillColor || '#526782');
@@ -6021,6 +6066,7 @@
     });
 
     document.addEventListener('pointerlockchange', () => {
+      updatePointerHelp();
       if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
         setPointerStatus('Pointer live. Esc releases.');
       } else if (state.cameraMode === 'overview') {
@@ -6056,6 +6102,15 @@
     if (lowGraphicsToggle) lowGraphicsToggle.addEventListener('change', (event) => setLowGraphicsMode(event.target.checked));
     if (reopenTutorialToggle) reopenTutorialToggle.addEventListener('change', (event) => { try { window.localStorage.setItem('gastownTutorialReopen', event.target.checked ? '1' : '0'); } catch (error) {} });
     if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreenMode);
+    if (releasePointerBtn) {
+      releasePointerBtn.addEventListener('click', () => {
+        if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) {
+          document.exitPointerLock();
+        } else {
+          setStatus('Click the 3D scene to enter. Esc releases your cursor.');
+        }
+      });
+    }
     if (dialogModalEl) {
       dialogModalEl.addEventListener('click', (event) => {
         if (event.target === dialogModalEl) {
@@ -6209,6 +6264,7 @@
       renderProgressionUi();
       updateNextMeaningfulThing();
       attachEvents();
+      updatePointerHelp();
       updateFullscreenButton();
       if (!hadWalkerName) { openWalkerNameOverlay(''); }
       setDebugState(state.debugEnabled);

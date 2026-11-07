@@ -7,6 +7,10 @@ on:
       - 'scripts/generate-gastown-world.js'
       - 'js/gastown-sim.js'
       - 'js/gastown-waterfront-station.js'
+      - 'js/gastown-waterfront-places.js'
+      - 'page-gastown-sim.php'
+      - 'assets/css/gastown-sim.css'
+      - 'functions.php'
       - 'assets/world/**'
       - 'data/cov/**'
       - 'data/reference/**'
@@ -18,6 +22,10 @@ on:
       - 'scripts/generate-gastown-world.js'
       - 'js/gastown-sim.js'
       - 'js/gastown-waterfront-station.js'
+      - 'js/gastown-waterfront-places.js'
+      - 'page-gastown-sim.php'
+      - 'assets/css/gastown-sim.css'
+      - 'functions.php'
       - 'assets/world/**'
       - 'data/cov/**'
       - 'data/reference/**'
@@ -41,5 +49,6 @@ jobs:
       - name: Validate civic route, station, and runtime geometry
         run: |
           node --test __tests__/gastown-gis-alignment.test.js
+          node --test __tests__/gastown-waterfront-public-realm.test.js
           node --test __tests__/gastown-waterfront-station.test.js
           node --test __tests__/gastown-sim-config.test.js
