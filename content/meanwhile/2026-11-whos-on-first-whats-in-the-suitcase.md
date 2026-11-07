@@ -56,17 +56,27 @@ Then I discovered I had enough Scene+ points sitting on my debit card for a movi
 
 I went to see *[You Can See Everything](https://a24films.com/films/you-can-see-everything)*, the new Nathan Fielder and Lance Oppenheim documentary about Elizabeth Holmes. It's deranged, funny, uncomfortable, and much smarter than a simple gotcha.
 
-There's a scene where Fielder plays Holmes the old Abbott and Costello routine *Who's on First?* She doesn't seem to get it. Or maybe she's not giving him the reaction he's after. With this film, good luck knowing.
+At one point Holmes tells Nathan the Theranos machine *can* run any test. Except the chemistry needed for those tests hadn't all been developed. Nathan keeps circling one tiny word: **can**. As in *it does this now*? Or *it might do this one day if the missing science exists*?
 
-The joke is an entire universe built from a broken naming convention. Who is a name. What is a name. Everybody is certain they're answering the question and nobody can agree on the question.
+A whole blood-testing empire apparently fits inside the space between those two definitions. Amazing what you can build with a verb.
 
-A magnificent interface bug.
+So Nathan plays her Abbott and Costello's *Who's on First?* Who is on first. What is on second. I Don't Know is on third. The joke works because the same words mean two different things depending on who's listening.
 
-Watching it, I kept thinking about Silicon Valley's addiction to a convincing demonstration. Holmes is an extreme, consequential case, not a metaphor for every half-finished prototype. But the distance between *what a system is said to do* and *what happens when someone uses it* is familiar territory.
+She laughs at the routine. Nathan asks her who plays first base. She says she doesn't know.
 
-When you're onstage singing against a loop and the timing drifts, there's no investor deck to hide behind. The room hears it. The fix is technical, musical, or both. You don't get to substitute confidence for an audio signal.
+Which is perfect, because **I Don't Know is on third.**
 
-I find that weirdly comforting.
+And then the comedy goes somewhere much darker. Is she genuinely missing the joke? Is she too busy figuring out what Nathan wants from her? Or does admitting she understands a double meaning get a little awkward when your entire defence is that people misunderstood what you said about your machine?
+
+I went down a [Reddit rabbit hole about this scene](https://www.reddit.com/r/nathanfielder/comments/1xfi2ik/elizabeth_understands_whos_on_first/). Nobody agrees. Some think she's performing confusion. Others think she's simply confused. Her partner treats it as evidence that her brain works differently. Nathan keeps trying to find the bottom of the conversation. There may not be one.
+
+The extraordinary thing isn't the baseball joke. It's watching someone turn **the possibility of misunderstanding** into a place to hide. You can't tell whether it's deliberate. You also can't make the question go away.
+
+And then I thought about the month I'd just spent building an AI music instrument. A model *can* generate audio. Great. Can I steer it, loop it, sing over it, recover when it drifts, and get through an actual performance? Entirely different baseball diamond.
+
+Obviously a live music experiment and a company making medical claims are not comparable stakes. But after this film I am even less interested in what someone says technology *can* do.
+
+Show me what it does. Then let somebody else touch it.
 
 ## The other kind of orchestration
 
