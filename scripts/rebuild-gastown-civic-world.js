@@ -125,6 +125,15 @@ function polygonArea(points) {
   }, 0) * 0.5);
 }
 function nearestStationFootprint(features, origin, route) {
+  // Stable City of Vancouver 2015 object_id for the station's Cordova-facing
+  // footprint section in our cached extract, not a generated feature index.
+  const frontage = features.find(f => Number((f.properties || {}).object_id) === 6563395);
+  if (frontage) {
+    const points = geometryPoints(frontage, origin);
+    if (points.length >= 4 && points.some(p => toLineDistance(p, route) < 36)) {
+      return { feature: frontage, points };
+    }
+  }
   const candidates = features
     .map(f => ({ feature: f, points: geometryPoints(f, origin) }))
     .filter(c => c.points.length >= 4 && polygonArea(c.points) >= 1800)
@@ -237,7 +246,7 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
   const mid = pt(sampleLine(route, routeLength * 0.73));
   const nearStationBuildings = [];
   for (const feature of footprints.features || []) {
-    if (feature === stationBuilding.feature || feature.id === stationBuilding.feature.id) continue;
+    if (feature === stationBuilding.feature || [6563395, 6562725].includes(Number((feature.properties || {}).object_id))) continue;
     const pts = geometryPoints(feature, origin);
     if (pts.length < 3) continue;
     const near = Math.min(...pts.map(p => toLineDistance(p, route)));
