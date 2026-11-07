@@ -1,0 +1,45 @@
+name: Gastown GIS QA
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/rebuild-gastown-civic-world.js'
+      - 'scripts/generate-gastown-world.js'
+      - 'js/gastown-sim.js'
+      - 'js/gastown-waterfront-station.js'
+      - 'assets/world/**'
+      - 'data/cov/**'
+      - 'data/reference/**'
+      - '__tests__/gastown-*.test.js'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/rebuild-gastown-civic-world.js'
+      - 'scripts/generate-gastown-world.js'
+      - 'js/gastown-sim.js'
+      - 'js/gastown-waterfront-station.js'
+      - 'assets/world/**'
+      - 'data/cov/**'
+      - 'data/reference/**'
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript syntax
+        run: |
+          node --check scripts/rebuild-gastown-civic-world.js
+          node --check scripts/generate-gastown-world.js
+          node --check js/gastown-waterfront-station.js
+          node --check js/gastown-sim.js
+      - name: Validate civic route, station, and runtime geometry
+        run: |
+          node --test __tests__/gastown-gis-alignment.test.js
+          node --test __tests__/gastown-waterfront-station.test.js
+          node --test __tests__/gastown-sim-config.test.js
