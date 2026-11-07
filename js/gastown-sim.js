@@ -5618,22 +5618,30 @@
     return Math.max(0, Math.min(max, Number.isFinite(value) ? value : 0));
   }
   function setupAudio(world) {
-    const base = (config.audioBaseUrl || '').replace(/\/$/, '');
-    const src = (name) => [base + '/' + name + '.mp3', base + '/' + name + '.ogg'];
+    // PHP publishes an allowlist of URLs backed by real files on the theme's
+    // filesystem. Do not guess filenames or probe missing .mp3/.ogg variants:
+    // those placeholders produced noisy 404s on every simulator visit.
+    const catalog = (config.audioSources && typeof config.audioSources === 'object')
+      ? config.audioSources : {};
+    const makeSound = (id, options) => {
+      const url = catalog[id];
+      if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) return null;
+      return createSafeHowl(Object.assign({}, options, { src: [url] }));
+    };
 
     try {
-      ['quiet_night', 'commuter_mix'].forEach((id) => {
-        state.sounds.beds[id] = createSafeHowl({ src: src('beds/' + id), loop: true, volume: 0, html5: false });
+      ['quiet_night', 'commuter_mix', 'nightlife_hum', 'eerie_drones'].forEach((id) => {
+        const howl = makeSound('beds/' + id, { loop: true, volume: 0, html5: false });
+        if (howl) state.sounds.beds[id] = howl;
       });
 
-      state.sounds.rainLoop = createSafeHowl({ src: src('weather/rain_pavement'), loop: true, volume: 0 });
-      state.sounds.thunder = createSafeHowl({ src: src('weather/thunder_roll'), volume: AUDIO_MIX.thunderMax });
+      state.sounds.rainLoop = makeSound('weather/rain_pavement', { loop: true, volume: 0 });
+      state.sounds.thunder = makeSound('weather/thunder_roll', { volume: AUDIO_MIX.thunderMax });
 
       (world.audioZones || []).forEach((zone) => {
-        if (!zone || !zone.id || !zone.bed) {
-          return;
-        }
-        state.sounds.zoneBeds[zone.id] = createSafeHowl({ src: src('zones/' + zone.bed), loop: true, volume: 0 });
+        if (!zone || !zone.id || !zone.bed) return;
+        const howl = makeSound('zones/' + zone.bed, { loop: true, volume: 0 });
+        if (howl) state.sounds.zoneBeds[zone.id] = howl;
       });
     } catch (error) {
       warnAudioUnavailable('Gastown audio setup failed; simulator continuing without ambient audio.', error);
