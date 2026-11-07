@@ -1,5 +1,22 @@
 # Gastown authoring notes
 
+## Waterfront Station exterior (2026 station-first scene)
+
+The entry scene now has an original procedural model in `js/gastown-waterfront-station.js`, staged across the near-side Cordova sidewalk from the starting camera. It is a **recognizable, reference-led interpretation**, not a survey-accurate 3D scan or verified GIS footprint. Do not advertise exact dimensions or precise spatial placement.
+
+Reference-led characteristics include the original CPR red-brick Beaux-Arts facade, cream Ionic columns and their capitals, projecting stone cornices, upper sash windows, arched wing glazing, the incised railway name, three modern black dome awnings reading THE STATION, and glazed main entrance doors. The entrance doors are the street-level portals. Actual fare gates are indoors and are **not** depicted as an outdoor fence.
+
+The model deliberately uses original procedural brick texture painting. No third-party reference photos are copied into runtime assets. Its `anchorFor(world)` stages the facade facing the existing world spawn, while `arrivalYaw(world)` initially points the player at the doors. The model owns eight short, reversible commuter patrols in the forecourt, fed into the existing NPC walking/stride system; low-graphics mode limits that population.
+
+For the next fidelity pass, replace the temporary local-stage coordinate offset with verified building footprints and an exterior survey/photo-matched view. The current long Water Street corridor remains unchanged.
+
+Visual/reference sources:
+
+- [Cadillac Fairview, The Station](https://www.cadillacfairview.com/office/properties/the-station/): street-side facade and canopies.
+- [TransLink, station map](https://www.translink.ca/translink/schedules-and-maps/skytrain): station entrance and transit connections.
+- [SRA Architects, Waterfront Station renovation](https://srarch.net/projects/waterfront-station-renovation): historic entrance glazing and restoration notes.
+
+
 These notes cover lightweight world authoring for the Gastown First-Person Simulator.
 
 ## Props
