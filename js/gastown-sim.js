@@ -3873,7 +3873,8 @@
         roughness: b.tone === 'brickWarm' ? 0.84 : 0.7,
         metalness: 0.08,
         emissive: 0x191913,
-        emissiveIntensity: hasHeroTreatment ? 0.1 : 0.08,
+        emissiveIntensity: hasHeroTreatment ? 0.16 : 0.13,
+        side: THREE.DoubleSide,
       }), 'buildingMaterials');
       mat.userData = {
         baseRoughness: mat.roughness,
@@ -3893,10 +3894,10 @@
         // Follow the GIS footprint, not the building's bounding rectangle:
       // those old oversized roof slabs visibly floated above the roadway.
       const roofGeom = new THREE.ShapeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, -point.z))));
+      roofGeom.rotateX(-Math.PI / 2);
         const roofMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.74, metalness: 0.1 }), 'metalMaterials');
         const roof = new THREE.Mesh(roofGeom, roofMat);
         roof.position.set(b.x, renderedHeight + 0.06, b.z);
-        roof.rotation.x = -Math.PI / 2;
         roof.rotation.y = -(b.yaw || 0) + (rooflineType === 'angled_parapet' ? 0.45 : 0);
         if (rooflineType === 'stepped') {
           roof.scale.set(0.86, 1, 0.86);
