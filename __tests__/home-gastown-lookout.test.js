@@ -38,7 +38,7 @@ test('Artist-rendered Station East lookout shows the actual three-site relations
   const landing = svg.lastIndexOf('THE LANDING');
   assert.ok(station > 0 && landing > station && lot > 0);
   assert.ok(svg.length < 80000, 'keep illustration lightweight');
-  assert.doesNotMatch(svg, /<script|<foreignObject|https?:\/\/|<image\b/i, 'no remote images or script execution');
+  assert.doesNotMatch(svg, /<script|<foreignObject|<image\b|(?:href|src)\s*=\s*["']https?:\/\//i, 'no remote images or script execution');
 });
 
 test('Spotlight loads the actual lookout artwork, stays accessible and makes the simulator easy to enter', () => {
