@@ -44,7 +44,7 @@ October was forests, code, rehearsals, and an artist residency with approximatel
 
 <!-- PHOTO: november-suitcases.jpg | Two black rolling suitcases on a rain-damp Vancouver sidewalk scattered with fallen leaves. | Load-out complete. Next venue: another Airbnb. -->
 
-November is less of a psychedelic-looking space opera and more of an email that says checkout is 11 a.m. No substances required; just an extremely compressed calendar.
+November has less cosmic lighting and more emails that say checkout is 11 a.m. The calendar is still aggressively experimental.
 
 ## Who's on first?
 
@@ -88,7 +88,7 @@ For years I supported other people's systems. In October I built one to play. Ne
 
 Next Thursday, November 12, the [BC + AI Film Club meets at 375 Water Street](https://luma.com/noir). The challenge is **make art not war**. I have a weekend to turn my Futureproof music rig into something cinematic.
 
-I've been thinking about Grimes' *ACCELERANDO* as a jumping-off point. Not to reproduce her video. I'm interested in answering the acceleration with my own little machine-human collision.
+I've been thinking about Grimes' [*ACCELERANDO*](https://music.apple.com/us/music-video/accelerando/6820798095) as a jumping-off point. Not to reproduce her video. I'm interested in answering the acceleration with my own little machine-human collision.
 
 And I want to try something backwards. Usually you cut images together and put a score underneath. What if the music leads? Build the piece from my voice, synths, loops, and generated textures, then make the images answer the arrangement.
 
