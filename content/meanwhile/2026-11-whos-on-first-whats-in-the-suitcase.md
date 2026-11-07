@@ -12,9 +12,9 @@ media_archive: Suzy_The_Toaster_Was_a_Decoy_11_Photos.zip
 
 *Meanwhile / Friday, November 6, 2026 / Temporary Coordinates*
 
-Friday night. Vancouver is getting absolutely rinsed. I'm in Airbnb number two this week, closer to the Fraser River now. Two suitcases, an 8GB MacBook, a red pom-pom toque, and enough experience with check-in instructions to start offering professional consulting.
+Friday night. Vancouver is getting absolutely rinsed, but my inbox has decided to do something useful. Interviews are coming in. There's a possible platform engineering contract downtown, other conversations underway, and for the first time in a while the job hunt has some serious momentum. I'm stoked.
 
-I used to tour with a band. At least there was usually a show at the end of the load-in.
+I'm writing this from a little Airbnb near the Fraser River, a temporary stop while I sort out the next chapter. My 8GB MacBook is here, the rain has opinions, and the 49ers toque is back in circulation.
 
 <!-- PHOTO: november-red-toque.jpg | Suzy outside in Vancouver in a red San Francisco 49ers pom-pom toque, clear glasses and a dark coat. | California roots. Vancouver weather. -->
 
@@ -22,7 +22,9 @@ And yes, it's a 49ers toque. My brother and I grew up worshipping Joe Montana an
 
 My hat has municipal documentation. lol.
 
-Vancouver's home. California's in the wiring. Both things can be true, including when I'm hauling my entire portable kingdom down a wet sidewalk.
+California's in the wiring. But Vancouver is home. I was born and raised here, and for all the things this city makes unnecessarily difficult, I really, really don't want to leave.
+
+For a split second I considered Toronto. My big brother, Jimmy the Bag, is there with his family, and being near them sounded pretty wonderful. I even looked at flights. But the more I thought about it, the clearer it got: I want to stay in Vancouver. Especially now, with the interviews picking up and a whole scene of people here I want to keep making things with.
 
 ## Load-out
 
@@ -76,7 +78,7 @@ But I am increasingly allergic to the word *can* without a demonstration attache
 
 ## The other kind of orchestration
 
-Anyway! In considerably better news, the tech interviews are rolling in. I'm several conversations into a possible year-long platform engineering contract downtown, and there's more than one opportunity on the horizon. I'm stoked.
+And about those interviews: I'm several conversations into a possible year-long platform engineering contract downtown, with other opportunities in play too. No victory lap yet, but it's good to be back in these conversations.
 
 Identity, APIs, cloud systems, digital workplace infrastructure, automation, all the weird invisible machinery that keeps everybody's workday from collapsing. I know this world. I've spent years inside it, usually figuring out why one piece of software has decided to stop speaking to another.
 
@@ -110,13 +112,11 @@ The film only needs to be sixty seconds. Incredible. Just enough time to make so
 
 The rain came down hard today. There are cables hanging off utility poles, everything is reflective, and the city looks like it has too many browser tabs open.
 
-I could frame this whole week as a beautiful lesson in uncertainty. I would rather have a lease. Temporary housing is expensive and exhausting and I don't intend to romanticize it for the blog.
+I could turn the temporary living arrangements into some grand wandering-artist mythology. Nah. I want a home base, good work, and somewhere to leave a microphone stand assembled. That's the plan.
 
-But the interviews are coming. I have a film to make. October was ridiculous in the best possible way, and I met people I want to keep making things with.
+In the meantime the job search has momentum, I have a film to make, and October introduced me to people I want to keep making things with. All right here in Vancouver.
 
-The rest is still being negotiated.
-
-Two suitcases, a laptop, a 49ers toque with historical documentation, and an unreasonable amount of tabs open.
+A laptop full of instruments, a calendar full of possibilities, a 49ers toque with municipal documentation, and an unreasonable amount of tabs open.
 
 No comeback speech. I haven't gone anywhere.
 
