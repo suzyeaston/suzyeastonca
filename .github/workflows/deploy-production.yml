@@ -159,6 +159,7 @@ jobs:
           node --test __tests__/gastown-sim-config.test.js
           node --test __tests__/gastown-waterfront-station.test.js
           node --test __tests__/gastown-gis-alignment.test.js
+          node --test __tests__/gastown-waterfront-public-realm.test.js
 
       - name: Deploy theme files
         if: needs.changes.outputs.theme == 'true'
