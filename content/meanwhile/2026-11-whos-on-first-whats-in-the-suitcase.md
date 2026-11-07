@@ -100,8 +100,6 @@ I've got a weekend, the music instrument I built for Futureproof, and a dangerou
 
 Grimes' [*ACCELERANDO*](https://music.apple.com/us/music-video/accelerando/6820798095) has been rattling around my head. I don't want to remake it. I want to reply from my own little corner of the machine.
 
-Normally you make a film and score it. I want to start with the music: voice, loops, synths, generative textures. Let the images chase the sound instead. See what kind of creature crawls out.
-
 The AI can generate material. Cool. I'm still the person deciding what belongs in the song. If it sounds wrong, I don't need a philosophical summit. I need to change the arrangement.
 
 The film only needs to be sixty seconds. Incredible. Just enough time to make something weird and spend the rest of the weekend debugging why it isn't rendering.
