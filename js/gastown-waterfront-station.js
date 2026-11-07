@@ -24,6 +24,9 @@
   // Position the facade across the near-side walkway of the authored corridor.
   // This is a local world-space stage, not a claimed GIS building footprint.
   function anchorFor(world) {
+    if (world && world.station && Number.isFinite(world.station.x) && Number.isFinite(world.station.z) && Number.isFinite(world.station.yaw)) {
+      return { x: world.station.x, z: world.station.z, yaw: world.station.yaw };
+    }
     const start = (world && world.spawn) || (world && world.route && world.route.centerline && world.route.centerline[0]) || {};
     const yaw = Number.isFinite(start.yaw) ? start.yaw + 0.1 : -0.77;
     const x = Number.isFinite(start.x) ? start.x : -16.48;
@@ -53,7 +56,7 @@
     const localX = dx * Math.cos(anchor.yaw) + dz * Math.sin(anchor.yaw);
     const localZ = -dx * Math.sin(anchor.yaw) + dz * Math.cos(anchor.yaw);
     // A walkable frontage that joins the original corridor but stops at the doors.
-    return Math.abs(localX) <= 24 && localZ >= 4.7 && localZ <= 25;
+    return Math.abs(localX) <= 24 && localZ >= 4.7 && localZ <= 31;
   }
 
   function arrivalYaw(world, point) {
