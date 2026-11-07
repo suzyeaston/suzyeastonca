@@ -301,6 +301,32 @@
       root.add(ferry);
     }
   }
+  // A public-sidewalk viewing pose across the open Station East surface lot.
+  // It does not falsely imply a pedestrian route through the rail yard,
+  // station interior, cruise terminal or private lot.
+  function lookoutFor(world) {
+    const line = world && world.route && world.route.centerline;
+    const place = positionFor(world);
+    if (!place || !Array.isArray(line) || line.length < 8) return null;
+    const index = 5; // 500 W Cordova, alongside the Station East gap
+    const center = line[index], before = line[index - 1], after = line[index + 1];
+    const tx = after.x - before.x, tz = after.z - before.z;
+    const len = Math.hypot(tx, tz);
+    if (!(len > 0.1)) return null;
+    // North-side civic sidewalk, 8 metres left of southeast-bound road.
+    const x = center.x + (tz / len) * 8.0;
+    const z = center.z - (tx / len) * 8.0;
+    const dx = place.x - x, dz = place.z - z;
+    return {
+      x, y: 1.7, z,
+      yaw: Math.atan2(-dx, -dz),
+      pitch: 0.10,
+      facing: 'north-northwest toward Canada Place and the North Shore',
+      label: 'Station East / West Cordova harbour view (sidewalk)',
+      publicSidewalkApproximation: true
+    };
+  }
+
   function create(THREE, world) {
     if(!THREE||!world||!world.meta||!world.meta.gis) return null;
     const anchor=positionFor(world);
@@ -333,6 +359,6 @@
     return root;
   }
   window.GastownHarbourVista=Object.freeze({
-    create,projectScene,positionFor,reference:CANADA_PLACE_COORD
+    create,projectScene,positionFor,lookoutFor,reference:CANADA_PLACE_COORD
   });
 })(window);
