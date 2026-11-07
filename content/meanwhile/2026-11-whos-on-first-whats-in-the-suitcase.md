@@ -18,7 +18,7 @@ I'm writing this from a little Airbnb near the Fraser River, a temporary stop wh
 
 <!-- PHOTO: november-red-toque.jpg | Suzy outside in Vancouver in a red San Francisco 49ers pom-pom toque, clear glasses and a dark coat. | California roots. Vancouver weather. -->
 
-And yes, it's a 49ers toque. My brother and I grew up with a lot of respect for Joe Montana and Jerry Rice. We were Giants fans too, especially Kevin Mitchell and Will Clark. My mom's from Palo Alto, half my family is American, and my grandpa James Bloch was [mayor of Menlo Park in 1979](https://upload.wikimedia.org/wikipedia/commons/c/c8/Federal_Register_1979-02-23-_Vol_44_Iss_38_%28IA_sim_federal-register-find_1979-02-23_44_38%29.pdf). He's in the Federal Register, to boot.
+And yes, it's a 49ers toque. My brother and I grew up with a lot of respect for Joe Montana and Jerry Rice. We were Giants fans too, especially Kevin Mitchell and Will Clark. My mom's from Palo Alto, half my family is American, and my grandpa was [mayor of Menlo Park in 1979](https://upload.wikimedia.org/wikipedia/commons/c/c8/Federal_Register_1979-02-23-_Vol_44_Iss_38_%28IA_sim_federal-register-find_1979-02-23_44_38%29.pdf). He's in the Federal Register, to boot.
 
 My hat has municipal documentation. lol.
 
