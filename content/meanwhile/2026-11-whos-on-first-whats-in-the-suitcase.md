@@ -3,7 +3,7 @@ title: "Who's on First, What's in the Suitcase?"
 slug: whos-on-first-whats-in-the-suitcase
 series: "Meanwhile / November 2026 / Temporary Coordinates"
 status: publish
-published_at: "2026-11-06 19:15:00"
+published_at: "2026-11-06 18:00:00"
 category: "notes / ideas"
 excerpt: "An Airbnb-to-Airbnb migration, a Nathan Fielder documentary, a promising run of tech interviews, and the small problem of making art while the future keeps accelerating."
 featured_image: november-red-toque.jpg
