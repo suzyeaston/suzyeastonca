@@ -18,7 +18,7 @@ Vancouver is getting rinsed tonight. I'm writing this from my second Airbnb of t
 
 On Monday I published [The Toaster Was a Decoy](https://www.suzyeaston.ca/2026/11/02/the-toaster-was-a-decoy/), about building a little AI orchestra, performing Radiohead in a planetarium, and realizing that the studio might be something I carry instead of somewhere I live.
 
-By Tuesday I was telling friends that October felt like coming down from a mushroom trip, despite not taking any mushrooms in October.
+By Tuesday I was telling friends I was still trying to re-enter Earth's atmosphere after October. An entire season seemed to have happened in thirty-one days.
 
 There was a beach dimension. There were forests and an artist residency with essentially zero privacy. There was an experimental instrument that started life as a toaster and ended up as software I could actually improvise with. There was a stage, a microphone, some wildly temperamental live-looping code, and a room full of humans listening.
 
@@ -26,7 +26,7 @@ Then the residency ended, the stage disappeared, and I had to figure out where t
 
 <!-- PHOTO: november-suitcases.jpg | Two black wheeled suitcases on a rain-damp Vancouver sidewalk scattered with autumn leaves. | The entire portable headquarters, waiting for check-in. -->
 
-**Mushroom-Moshtober: no mushrooms, all the narrative consequences.**
+**October had the narrative logic of a fever dream. November has checkout times.**
 
 ## The five-hour intermission
 
