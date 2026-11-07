@@ -82,7 +82,7 @@ $sync_line = implode( ' · ', $sync_bits );
             <header class="home-feature-preview__head">
                 <p class="home-feature-preview__label pixel-font"><?php echo esc_html( 'civic arcade world' ); ?></p>
                 <h3 id="home-preview-gastown-title" class="home-feature-preview__title pixel-font"><?php echo esc_html( 'Gastown Simulator' ); ?></h3>
-                <p class="home-feature-preview__tagline"><?php echo esc_html( 'Open data, street mood, route logic. A Vancouver corridor you can walk.' ); ?></p>
+                <p class="home-feature-preview__tagline"><?php echo esc_html( 'Walk from Waterfront Station to the Steam Clock, then turn toward Canada Place and the mountains.' ); ?></p>
             </header>
 
             <div class="home-feature-preview__terminal">
