@@ -217,8 +217,16 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
   const routeLength = polyLength(route);
   const clock = pt(project([anchors.dest.lon, anchors.dest.lat], origin));
   if (distance(clock, route[route.length - 1]) > 15) throw Error('Steam Clock geolocation does not match the Water/Cambie centerline');
-  const stationBuilding = nearestStationFootprint(footprints.features || [], origin, route);
-  const station = stationFacade(stationBuilding, route);
+  const stationWestSource = getStreet(streets, '600 W CORDOVA ST')[0].geometry.coordinates.map(c => project(c, origin));
+  const stationWestOrdered = stationWestSource[0].x < stationWestSource[stationWestSource.length - 1].x
+    ? stationWestSource : stationWestSource.slice().reverse();
+  const fullStationFrontage = appendConnected(
+    stationWestOrdered,
+    getStreet(streets, '500 W CORDOVA ST')[0].geometry.coordinates.map(c => project(c, origin)),
+    1.8
+  );
+  const stationBuilding = nearestStationFootprint(footprints.features || [], origin, fullStationFrontage);
+  const station = stationFacade(stationBuilding, fullStationFrontage);
   const samples = Math.ceil(routeLength / 19);
   const centerline = Array.from({ length: samples + 1 }, (_, i) => ({
     ...pt(sampleLine(route, routeLength * i / samples)),
