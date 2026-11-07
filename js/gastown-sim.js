@@ -4559,7 +4559,7 @@
   function enforceWorldBounds() {
     const walkBounds = state.world.route.walkBounds;
     const point = { x: player.position.x, z: player.position.z };
-    if (isPointInPolygon(point, walkBounds)) {
+    if (isPointInPolygon(point, walkBounds) || (stationModel && stationModel.isWalkableForecourt(state.world, point))) {
       state.lastSafePosition.set(player.position.x, player.position.y, player.position.z);
       return;
     }
@@ -5823,7 +5823,7 @@
     player.position.set(spawn.x, spawn.y, spawn.z);
     state.lastSafePosition.copy(player.position);
     state.yaw = stationModel ? stationModel.arrivalYaw(state.world, spawn) : (spawn.yaw || 0);
-    state.pitch = Number.isFinite(spawn.pitch) ? clampPitch(spawn.pitch) : 0;
+    state.pitch = stationModel ? stationModel.arrivalPitch() : (Number.isFinite(spawn.pitch) ? clampPitch(spawn.pitch) : 0);
     if (state.cameraMode === 'overview') {
       applyOverviewCameraPose();
     } else {
