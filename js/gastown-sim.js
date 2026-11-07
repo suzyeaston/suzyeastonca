@@ -855,6 +855,20 @@
     }
   }
 
+  function updatePointerHelp() {
+    const locked = document.pointerLockElement === renderer.domElement;
+    if (pointerHelpEl) pointerHelpEl.dataset.locked = locked ? 'true' : 'false';
+    if (pointerHintEl) {
+      pointerHintEl.textContent = locked
+        ? 'Mouse captured · W A S D to move'
+        : 'Click the 3D scene to look around · W A S D move';
+    }
+    if (releasePointerBtn) {
+      releasePointerBtn.disabled = !locked;
+      releasePointerBtn.textContent = locked ? 'Release mouse' : 'Mouse free';
+    }
+  }
+
   function getStartupStingFallbackSpec() {
     return JSON.parse(JSON.stringify(STARTUP_STING_FALLBACK_SPEC));
   }
@@ -3876,10 +3890,13 @@
       const rooflineType = b.roofline_type || 'flat_cornice';
       if (rooflineType !== 'flat') {
         const roofHeight = Math.max(0.2, Math.min(0.55, ((b.cornice_emphasis || 0.2) * 0.8) + (profilePreset.rooflineLift * 0.08)));
-        const roofGeom = new THREE.BoxGeometry((b.width || 10) * 0.94, roofHeight, (b.depth || 10) * 0.94);
+        // Follow the GIS footprint, not the building's bounding rectangle:
+      // those old oversized roof slabs visibly floated above the roadway.
+      const roofGeom = new THREE.ShapeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, -point.z))));
         const roofMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.74, metalness: 0.1 }), 'metalMaterials');
         const roof = new THREE.Mesh(roofGeom, roofMat);
-        roof.position.set(b.x, renderedHeight + roofHeight / 2, b.z);
+        roof.position.set(b.x, renderedHeight + 0.06, b.z);
+        roof.rotation.x = -Math.PI / 2;
         roof.rotation.y = -(b.yaw || 0) + (rooflineType === 'angled_parapet' ? 0.45 : 0);
         if (rooflineType === 'stepped') {
           roof.scale.set(0.86, 1, 0.86);
@@ -5557,13 +5574,15 @@
     const timeOfDay = state.world.timeOfDayPresets[state.activeTimeOfDay] || state.world.timeOfDayPresets.night;
 
     const weatherFogBoost = state.activeWeather === 'fog' ? 0.006 : state.activeWeather === 'rain' ? 0.002 : state.activeWeather === 'thunderstorm' ? 0.004 : 0;
-    const fogDensity = Math.max(0.0035, (weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost);
+    // Keep near-distance facades crisp. Fog is atmosphere, not a substitute
+    // for buildings, and the old density washed out even adjacent landmarks.
+    const fogDensity = Math.max(0.0018, Math.min(0.012, ((weather.fogDensity || 0.009) + (timeOfDay.fogBoost || 0) + weatherFogBoost) * 0.55));
     scene.fog = new THREE.FogExp2(timeOfDay.sky, fogDensity);
     renderer.setClearColor(timeOfDay.sky, 1);
-    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 0.79 : state.activeTimeOfDay === 'night' ? 0.61 : state.activeTimeOfDay === 'dusk' ? 0.68 : 0.74) - ((weather.rainIntensity || 0) * 0.03);
+    renderer.toneMappingExposure = (state.activeTimeOfDay === 'morning' ? 1.12 : state.activeTimeOfDay === 'night' ? 0.83 : state.activeTimeOfDay === 'dusk' ? 0.92 : 1.04) - ((weather.rainIntensity || 0) * 0.04);
 
     ambient.color.set(timeOfDay.ambientColor);
-    ambient.intensity = Math.max(0.24, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 0.82);
+    ambient.intensity = Math.max(0.4, mood.lightIntensity * (timeOfDay.ambientIntensity || 1) * 1.05);
     keyLight.color.set(timeOfDay.keyColor);
     keyLight.intensity = (timeOfDay.keyIntensity || 0.6) * (0.72 + (mood.lightIntensity * 0.34));
     fillLight.color.set(timeOfDay.fillColor || '#526782');
@@ -6029,6 +6048,7 @@
     });
 
     document.addEventListener('pointerlockchange', () => {
+      updatePointerHelp();
       if (state.cameraMode === 'street' && document.pointerLockElement === renderer.domElement) {
         setPointerStatus('Pointer live. Esc releases.');
       } else if (state.cameraMode === 'overview') {
@@ -6064,6 +6084,15 @@
     if (lowGraphicsToggle) lowGraphicsToggle.addEventListener('change', (event) => setLowGraphicsMode(event.target.checked));
     if (reopenTutorialToggle) reopenTutorialToggle.addEventListener('change', (event) => { try { window.localStorage.setItem('gastownTutorialReopen', event.target.checked ? '1' : '0'); } catch (error) {} });
     if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreenMode);
+    if (releasePointerBtn) {
+      releasePointerBtn.addEventListener('click', () => {
+        if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) {
+          document.exitPointerLock();
+        } else {
+          setStatus('Click the 3D scene to enter. Esc releases your cursor.');
+        }
+      });
+    }
     if (dialogModalEl) {
       dialogModalEl.addEventListener('click', (event) => {
         if (event.target === dialogModalEl) {
@@ -6217,6 +6246,7 @@
       renderProgressionUi();
       updateNextMeaningfulThing();
       attachEvents();
+      updatePointerHelp();
       updateFullscreenButton();
       if (!hadWalkerName) { openWalkerNameOverlay(''); }
       setDebugState(state.debugEnabled);
