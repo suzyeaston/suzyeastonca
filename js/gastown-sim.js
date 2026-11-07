@@ -101,6 +101,7 @@
   const fullscreenBtn = app.querySelector('[data-action="sim-fullscreen"]');
   const dialogUtils = window.GastownDialog || {};
   const stationModel = window.GastownWaterfrontStation || null;
+  const waterfrontPlaces = window.GastownWaterfrontPlaces || null;
   const normalizeDialogEntry = typeof dialogUtils.normalizeDialogEntry === 'function'
     ? dialogUtils.normalizeDialogEntry
     : function fallbackNormalizeDialogEntry(entry, options) {
@@ -4084,6 +4085,10 @@
   }
 
   function addHeroLandmarks(world) {
+    if (waterfrontPlaces) {
+      const shorelinePlaces = waterfrontPlaces.create(THREE, world);
+      if (shorelinePlaces) worldGroup.add(shorelinePlaces);
+    }
     if (stationModel) {
       const stationExterior = stationModel.create(THREE, world);
       if (stationExterior) worldGroup.add(stationExterior);
