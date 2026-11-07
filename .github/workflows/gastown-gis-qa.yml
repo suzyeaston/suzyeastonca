@@ -18,6 +18,8 @@ on:
       - 'assets/css/gastown-sim.css'
       - 'functions.php'
       - 'assets/world/**'
+      - 'assets/audio/gastown/**'
+      - 'assets/audio/yvr/**'
       - 'data/cov/**'
       - 'data/reference/**'
       - '__tests__/gastown-*.test.js'
@@ -39,8 +41,11 @@ on:
       - 'assets/css/gastown-sim.css'
       - 'functions.php'
       - 'assets/world/**'
+      - 'assets/audio/gastown/**'
+      - 'assets/audio/yvr/**'
       - 'data/cov/**'
       - 'data/reference/**'
+      - '__tests__/gastown-audio-assets.test.js'
 permissions:
   contents: read
 
@@ -68,3 +73,4 @@ jobs:
           node --test __tests__/home-gastown-lookout.test.js
           node --test __tests__/gastown-waterfront-station.test.js
           node --test __tests__/gastown-sim-config.test.js
+          node --test __tests__/gastown-audio-assets.test.js
