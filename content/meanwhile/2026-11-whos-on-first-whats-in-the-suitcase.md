@@ -5,115 +5,119 @@ series: "Meanwhile / November 2026 / Temporary Coordinates"
 status: publish
 published_at: "2026-11-06 18:00:00"
 category: "notes / ideas"
-excerpt: "A 49ers toque with archival footnotes, two Airbnbs, Nathan Fielder, a fourth tech interview, and a sixty-second film trying to escape an 8GB laptop."
+excerpt: "A 49ers toque with archival footnotes, two Airbnbs, Nathan Fielder, tech interviews, and the next tiny film escaping my 8GB MacBook."
 featured_image: november-red-toque.jpg
 media_archive: Suzy_The_Toaster_Was_a_Decoy_11_Photos.zip
 ---
 
 *Meanwhile / Friday, November 6, 2026 / Temporary Coordinates*
 
-Friday night. Vancouver has switched on the industrial rinse cycle. I'm in Airbnb number two, somewhere south of the beach, closer to the Fraser. I'm not on tour, which is the annoying part.
+Friday night. Vancouver is getting absolutely rinsed. I'm in Airbnb number two this week, closer to the Fraser River now. Two suitcases, an 8GB MacBook, a red pom-pom toque, and enough experience with check-in instructions to start offering professional consulting.
 
-Two suitcases, one 8GB MacBook, a red pom-pom toque, and a remarkably detailed understanding of what time check-in starts.
+I used to tour with a band. At least there was usually a show at the end of the load-in.
 
 <!-- PHOTO: november-red-toque.jpg | Suzy outside in Vancouver in a red San Francisco 49ers pom-pom toque, clear glasses and a dark coat. | California roots. Vancouver weather. -->
 
-The toque is 49ers, obviously. My brother and I grew up obsessed with Joe Montana and Jerry Rice. My mom's from Palo Alto, half my family is American, and my grandpa James Bloch was [mayor of Menlo Park in 1979](https://upload.wikimedia.org/wikipedia/commons/c/c8/Federal_Register_1979-02-23-_Vol_44_Iss_38_%28IA_sim_federal-register-find_1979-02-23_44_38%29.pdf). I went digging and found him in the Federal Register.
+And yes, it's a 49ers toque. My brother and I grew up worshipping Joe Montana and Jerry Rice. My mom's from Palo Alto, half my family is American, and my grandpa James Bloch was [mayor of Menlo Park in 1979](https://upload.wikimedia.org/wikipedia/commons/c/c8/Federal_Register_1979-02-23-_Vol_44_Iss_38_%28IA_sim_federal-register-find_1979-02-23_44_38%29.pdf). I found him in the Federal Register.
 
-My winter hat has archival footnotes. lol.
+My hat has municipal documentation. lol.
 
-Vancouver's home, but there's a whole Bay Area branch of the family tree rattling around under that pom-pom. Funny what you notice when you have to decide which things are worth carrying.
+Vancouver's home. California's in the wiring. Both things can be true, including when I'm hauling my entire portable kingdom down a wet sidewalk.
 
 ## Load-out
 
-October already has two posts of its own: [The Toaster Was a Decoy](https://www.suzyeaston.ca/2026/11/02/the-toaster-was-a-decoy/) and [An Orchestra in 8GB](https://www.suzyeaston.ca/2026/11/02/an-orchestra-in-8gb/). The toaster has had enough press.
+I wrote two whole posts about October already: [The Toaster Was a Decoy](https://www.suzyeaston.ca/2026/11/02/the-toaster-was-a-decoy/) and [An Orchestra in 8GB](https://www.suzyeaston.ca/2026/11/02/an-orchestra-in-8gb/). The toaster has had enough press.
 
-<!-- PHOTO: IMG_3556(2).JPG | Suzy performing into a microphone with her custom live-music interface projected at Futureproof Festival. | Futureproof, October 29. Last week's operating environment. -->
+<!-- PHOTO: IMG_3556(2).JPG | Suzy performing into a microphone with her custom live-music interface projected at Futureproof Festival. | October 29, Futureproof. Last week's operating environment. -->
 
-That was the stage. Then came the load-out.
+That was the stage.
 
-<!-- PHOTO: november-suitcases.jpg | Two black rolling suitcases on a rain-damp Vancouver sidewalk scattered with fallen leaves. | Load-out complete. Next venue: another Airbnb. -->
+<!-- PHOTO: november-suitcases.jpg | Two black rolling suitcases on a rain-damp Vancouver sidewalk scattered with fallen leaves. | This week's load-out. Very glamorous. -->
 
-Turns out the most difficult timing problem this week didn't involve audio. It involved two Airbnb check-in windows.
+This is the load-out.
+
+By Thursday I had a logistical problem: one room ended before the next one began. My new host kindly let me drop the luggage early. The bags had an address. I had several hours to kill.
 
 ## Who's on first?
 
-On Thursday the new host let me drop off my luggage early, which was lovely. My bags had somewhere to be. I did not.
+Turns out I had enough Scene+ points for a movie ticket. Finally, my debit card's loyalty program became a cultural arts grant.
 
-Then I discovered I had enough Scene+ points sitting on my debit card for a movie ticket. Finally, a rewards program with narrative purpose.
+<!-- PHOTO: november-coffee.jpg | Suzy smiling in a red knit 49ers toque and clear glasses while holding a takeaway coffee outdoors. | The temporary headquarters has a coffee department. -->
 
-<!-- PHOTO: november-coffee.jpg | Suzy smiling in a red knit 49ers toque and clear glasses while holding a takeaway coffee outdoors. | Between check-out and check-in. The coffee department remains operational. -->
+I went to see *[You Can See Everything](https://a24films.com/films/you-can-see-everything)*, Nathan Fielder and Lance Oppenheim's documentary about Elizabeth Holmes. Absolutely bonkers. Funny in the way something becomes funny when you can't believe the person is still talking.
 
-I went to see *[You Can See Everything](https://a24films.com/films/you-can-see-everything)*, the new Nathan Fielder and Lance Oppenheim documentary about Elizabeth Holmes. It's deranged, funny, uncomfortable, and much smarter than a simple gotcha.
+**⚠️ SPOILER ALERT: I'm about to discuss a specific scene, including the punchline.** If you want to see the film fresh, skip ahead to **The other kind of orchestration**.
 
-At one point Holmes tells Nathan the Theranos machine *can* run any test. Except the chemistry needed for those tests hadn't all been developed. Nathan keeps circling one tiny word: **can**. As in *it does this now*? Or *it might do this one day if the missing science exists*?
+Nathan is trying to pin down one tiny word: **can**.
 
-A whole blood-testing empire apparently fits inside the space between those two definitions. Amazing what you can build with a verb.
+Holmes says the Theranos machine *can* run any test. But does *can* mean it works right now, on that machine? Or that it could, theoretically, once somebody invents the chemistry to make it work?
 
-So Nathan plays her Abbott and Costello's *Who's on First?* Who is on first. What is on second. I Don't Know is on third. The joke works because the same words mean two different things depending on who's listening.
+That is an enormous amount of corporate mythology to balance on three letters.
 
-She laughs at the routine. Nathan asks her who plays first base. She says she doesn't know.
+So Nathan plays her Abbott and Costello's *Who's on First?* The players have names that also sound like questions: Who is on first, What is on second, I Don't Know is on third. It's a joke about two people using the same language while apparently occupying different universes.
 
-Which is perfect, because **I Don't Know is on third.**
+Holmes laughs, but doesn't seem to grasp what's happening. Nathan asks who plays first. She says she doesn't know.
 
-And then the comedy goes somewhere much darker. Is she genuinely missing the joke? Is she too busy figuring out what Nathan wants from her? Or does admitting she understands a double meaning get a little awkward when your entire defence is that people misunderstood what you said about your machine?
+**I Don't Know is on third.**
 
-I went down a [Reddit rabbit hole about this scene](https://www.reddit.com/r/nathanfielder/comments/1xfi2ik/elizabeth_understands_whos_on_first/). Nobody agrees. Some think she's performing confusion. Others think she's simply confused. Her partner treats it as evidence that her brain works differently. Nathan keeps trying to find the bottom of the conversation. There may not be one.
+I nearly died.
 
-The extraordinary thing isn't the baseball joke. It's watching someone turn **the possibility of misunderstanding** into a place to hide. You can't tell whether it's deliberate. You also can't make the question go away.
+Except it's also kind of terrifying. Does she not get it? Is she refusing to get it? Would understanding the joke mean acknowledging that words can be engineered to make someone believe something different from what you technically said?
 
-And then I thought about the month I'd just spent building an AI music instrument. A model *can* generate audio. Great. Can I steer it, loop it, sing over it, recover when it drifts, and get through an actual performance? Entirely different baseball diamond.
+People are [arguing about it on Reddit](https://www.reddit.com/r/nathanfielder/comments/1xfi2ik/elizabeth_understands_whos_on_first/), which is part of the fun. Maybe she's confused. Maybe she's performing confusion. Maybe Nathan's performing *his* confusion. Nobody gets an answer key.
 
-Obviously a live music experiment and a company making medical claims are not comparable stakes. But after this film I am even less interested in what someone says technology *can* do.
+And that's the little black hole in the scene. Not whether she's smart enough to understand a baseball routine. Whether you can ever establish what somebody means when they keep moving the definition.
 
-Show me what it does. Then let somebody else touch it.
+The film also made me think about every spectacular AI demo that has ever entered a room wearing a very expensive blazer. *Can* the model make music? Sure. Can it hold a loop together while a human sings and changes her mind halfway through a phrase? Different question.
+
+The Theranos stakes were medical and profoundly serious. My stage rig is a musical experiment. I'm not confusing the two.
+
+But I am increasingly allergic to the word *can* without a demonstration attached.
 
 ## The other kind of orchestration
 
-The tech interviews have started coming in, and I'm stoked. I'm deep into conversations about a possible year-long platform-engineering contract downtown. There's more than one opportunity to pursue, which is how I want it.
+Anyway! In considerably better news, the tech interviews are rolling in. I'm several conversations into a possible year-long platform engineering contract downtown, and there's more than one opportunity on the horizon. I'm stoked.
 
-I've spent over a decade working in IT operations, software, identity, security, automation, integrations, and digital workplace systems. This is my habitat too. Give me a pile of systems that refuse to speak to each other and I will start asking inconvenient questions until they do.
+Identity, APIs, cloud systems, digital workplace infrastructure, automation, all the weird invisible machinery that keeps everybody's workday from collapsing. I know this world. I've spent years inside it, usually figuring out why one piece of software has decided to stop speaking to another.
 
-One of the nicest messages I got this week was a reminder not to hand one employer the authority to decide what my skills are worth. A job interview goes both ways. An obvious fact, but sometimes you need someone else to put it in your ears.
+Somebody close to me sent a message this week reminding me that a single employer doesn't get to decide what my skills are worth.
 
-The funny thing is that people keep treating my music and engineering backgrounds as two separate lives. They're not.
+I needed to hear that. Especially from someone who knows me outside of a résumé.
 
-Live music asks: what's the signal, who's listening, who's controlling the clock, and what happens if something fails?
+It's funny that music and engineering keep getting filed under separate chapters. In a band you learn to listen, keep time, notice a bad signal, and recover when something goes wrong. In IT you do all of that, except the drummer is sometimes Microsoft Entra.
 
-So does platform engineering. The consequences are different, but the work requires the same combination of structure, attention, and knowing when to stop touching things.
+I want to get back into tech. I also want to make strange little sound worlds and keep playing with other people. There is no actual conflict here.
 
-For years I supported other people's systems. In October I built one to play. Next I'd like a job, a proper desk, and somewhere to leave an instrument plugged in overnight. Radical demands, I know.
+Mostly I would like a stable contract and somewhere I can leave a microphone stand assembled overnight. Outrageous.
 
-## Accelerando, from the wrong side of the screen
+## Accelerando / tiny film department
 
-Next Thursday, November 12, the [BC + AI Film Club meets at 375 Water Street](https://luma.com/noir). The challenge is **make art not war**. I have a weekend to turn my Futureproof music rig into something cinematic.
+Next Thursday, November 12, [BC + AI Film Club is back at 375 Water Street](https://luma.com/noir). The challenge is **make art not war**.
 
-I've been thinking about Grimes' [*ACCELERANDO*](https://music.apple.com/us/music-video/accelerando/6820798095) as a jumping-off point. Not to reproduce her video. I'm interested in answering the acceleration with my own little machine-human collision.
+I've got a weekend, the music instrument I built for Futureproof, and a dangerously optimistic idea for a short film.
 
-And I want to try something backwards. Usually you cut images together and put a score underneath. What if the music leads? Build the piece from my voice, synths, loops, and generated textures, then make the images answer the arrangement.
+Grimes' [*ACCELERANDO*](https://music.apple.com/us/music-video/accelerando/6820798095) has been rattling around my head. I don't want to remake it. I want to reply from my own little corner of the machine.
 
-The model can produce sound. That doesn't make it the composer, the performer, or the person responsible for the choices. Generating material is easy to mistake for making a decision. I want the decisions to be audible.
+Normally you make a film and score it. I want to start with the music: voice, loops, synths, generative textures. Let the images chase the sound instead. See what kind of creature crawls out.
 
-The prompt is only sixty seconds. Which is excellent, because I have about sixty seconds' worth of spare production capacity right now.
+The AI can generate material. Cool. I'm still the person deciding what belongs in the song. If it sounds wrong, I don't need a philosophical summit. I need to change the arrangement.
 
-Maybe the film turns out wild. Maybe it's a beautiful little failure with interesting timing. Either way, it won't be a slideshow pretending to be the future.
+The film only needs to be sixty seconds. Incredible. Just enough time to make something weird and spend the rest of the weekend debugging why it isn't rendering.
 
-<!-- PHOTO: november-mirror.jpg | Suzy in a dark coat, red toque and clear glasses, making a rock hand gesture in a dim mirror selfie. | Current film crew. Also responsible for catering. -->
+<!-- PHOTO: november-mirror.jpg | Suzy in a dark coat, red toque and clear glasses, making a rock hand gesture in a dim mirror selfie. | Film department: director, composer, technical support, catering. -->
 
-## Friday night transmission
+## Friday night, somewhere in Vancouver
 
-The storm came in today. Outside, somebody has left a massive loop of cable hanging off a utility pole. Looks like the city itself is halfway through a patch and forgot to close the ticket.
+The rain came down hard today. There are cables hanging off utility poles, everything is reflective, and the city looks like it has too many browser tabs open.
 
-I could write a triumphant paragraph about embracing uncertainty, but I would much rather have stable housing and a decent contract. There's no virtue in pretending the expensive, inconvenient parts are adorable.
+I could frame this whole week as a beautiful lesson in uncertainty. I would rather have a lease. Temporary housing is expensive and exhausting and I don't intend to romanticize it for the blog.
 
-There *is* something good happening, though. Interviews are moving. I found people I love making things around. The little orchestra survived its first performance, and now it's trying to become a film.
+But the interviews are coming. I have a film to make. October was ridiculous in the best possible way, and I met people I want to keep making things with.
 
-The weird part isn't that music and engineering have finally converged. It's that they were never very far apart. I just needed enough noise to hear the same rhythm in both.
+The rest is still being negotiated.
 
-Two suitcases. One city. A 49ers toque with a municipal paper trail.
+Two suitcases, a laptop, a 49ers toque with historical documentation, and an unreasonable amount of tabs open.
 
-Does this count as a comeback?
-
-I haven't gone anywhere. I've been loading in.
+No comeback speech. I haven't gone anywhere.
 
 🐟
