@@ -1392,6 +1392,22 @@ function buildWorld(options = {}) {
   const trees = tryReadJson(treesPath);
   const heritageSites = tryReadJson(heritagePath);
 
+  // The previous nearest-segment stitching could chain unrelated arterial
+  // branches into a 500m+ path. Our civic cache contains connected named
+  // West Cordova/Water segments, so use their audited geometry as the source
+  // of truth. Synthetic test fixtures without those segments retain legacy
+  // fallback behavior.
+  const names = new Set((streets.features || []).map(f => String((f.properties || {}).hblock || '').toUpperCase()));
+  if (['600 W CORDOVA ST', '500 W CORDOVA ST', '200-300 WATER ST'].every(name => names.has(name))) {
+    const { rebuild } = require('./rebuild-gastown-civic-world');
+    const currentWorld = tryReadJson(outputPath)
+      || tryReadJson(path.join(root, 'assets', 'world', 'gastown-water-street.json'))
+      || {};
+    const civicWorld = rebuild(currentWorld, streets, buildingsGeo, anchors, poles, trees);
+    fs.writeFileSync(outputPath, JSON.stringify(civicWorld, null, 2) + '\n', 'utf8');
+    return { generated: true, outputPath, usedStarterFallback: false, routeLength: civicWorld.meta.gis.routeDistanceMeters };
+  }
+
   const origin = anchors.origin;
   const dest = anchors.dest;
   const originProjected = projectLonLat(origin.lon, origin.lat, origin);
