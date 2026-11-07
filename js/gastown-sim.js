@@ -87,6 +87,10 @@
   const tutorialCloseEls = app.querySelectorAll('[data-action="tutorial-close"]');
   const tutorialStartBtn = app.querySelector('[data-action="tutorial-start"]');
   const minimapLegendEl = app.querySelector('[data-sim-minimap-legend]');
+  const minimapDistanceEl = app.querySelector('[data-sim-map-distance]');
+  const pointerHelpEl = app.querySelector('[data-sim-pointer-help]');
+  const pointerHintEl = app.querySelector('[data-sim-pointer-hint]');
+  const releasePointerBtn = app.querySelector('[data-action="sim-release-pointer"]');
   const minimapTooltipEl = app.querySelector('[data-sim-minimap-tooltip]');
   const compassEl = app.querySelector('[data-sim-compass]');
   const lowGraphicsToggle = app.querySelector('[data-setting="low-graphics"]');
@@ -416,10 +420,10 @@
     worldMetrics: null,
     nearestNode: null,
     nearestGuidance: null,
-    zoom: 1.2,
-    minZoom: 0.8,
-    maxZoom: 3.2,
-    zoomStep: 0.2,
+    zoom: 1,
+    minZoom: 0.5,
+    maxZoom: 3.5,
+    zoomStep: 0.25,
     mode: 'north-up',
   };
 
@@ -4589,7 +4593,8 @@
 
   function getFacingLabel(heading) {
     const normalized = heading || getHeadingVector();
-    const angle = (Math.atan2(normalized.x, -normalized.z) * (180 / Math.PI) + 360) % 360;
+    // GIS +Z points to true north. Using -Z here inverted the compass.
+    const angle = (Math.atan2(normalized.x, normalized.z) * (180 / Math.PI) + 360) % 360;
     const cardinals = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
     return cardinals[Math.round(angle / 45) % cardinals.length];
   }
@@ -4998,27 +5003,23 @@
   }
 
   function getMinimapView(metrics) {
-    const worldCenterX = (metrics.minX + metrics.maxX) / 2;
-    const worldCenterZ = (metrics.minZ + metrics.maxZ) / 2;
-    const playerX = player.position.x || worldCenterX;
-    const playerZ = player.position.z || worldCenterZ;
-    const isHeadingUp = minimapState.mode === 'heading-up';
-    const centerX = isHeadingUp ? playerX : (((playerX - worldCenterX) * 0.8) + worldCenterX);
-    const centerZ = isHeadingUp ? playerZ : (((playerZ - worldCenterZ) * 0.8) + worldCenterZ);
-
+    // Fixed physical metres/pixel on both axes. The old map stretched
+    // longitude and latitude independently, so direction did not match
+    // what the player actually saw when turning.
     const zoom = minimapState.zoom || 1;
-    const viewWidth = metrics.width / zoom;
-    const viewHeight = metrics.height / zoom;
-
+    const padding = 16;
+    const metresPerPixel = 0.68 / zoom;
+    const width = Math.max(1, (minimapState.width - 2 * padding) * metresPerPixel);
+    const height = Math.max(1, (minimapState.height - 2 * padding) * metresPerPixel);
+    const centerX = player.position.x;
+    const centerZ = player.position.z;
     return {
-      centerX,
-      centerZ,
-      minX: centerX - (viewWidth / 2),
-      maxX: centerX + (viewWidth / 2),
-      minZ: centerZ - (viewHeight / 2),
-      maxZ: centerZ + (viewHeight / 2),
-      width: Math.max(1, viewWidth),
-      height: Math.max(1, viewHeight),
+      centerX, centerZ, metresPerPixel,
+      minX: centerX - width / 2,
+      maxX: centerX + width / 2,
+      minZ: centerZ - height / 2,
+      maxZ: centerZ + height / 2,
+      width, height,
     };
   }
 
@@ -5208,11 +5209,11 @@
   }
 
   function updateMinimapLegend() {
+    // The static, accessible key in the page now matches real map layers.
+    // Do not replace colored swatches with unstyled dynamic text.
     if (!minimapLegendEl) return;
     const npcCounts = getActiveNpcCounts();
-    const collectibleCount = getCollectibleProps().filter((prop) => !prop.collected).length;
-    const items = ['You', 'Route', 'Sidewalk', 'Street', 'Landmark', 'Details left: ' + collectibleCount, 'Locals: ' + (npcCounts.pedestrian || 0), 'Visitors: ' + ((npcCounts.tourist || 0) + (npcCounts.photographer || 0)), 'Riders: ' + ((npcCounts.cyclist || 0) + (npcCounts.skateboarder || 0))];
-    minimapLegendEl.innerHTML = items.map((item) => '<li>' + item + '</li>').join('');
+    minimapLegendEl.setAttribute('data-sim-people', String((npcCounts.pedestrian || 0) + (npcCounts.commuter || 0) + (npcCounts.tourist || 0)));
   }
 
   function drawMinimapCompass(playerPoint, rotation) {
@@ -5293,18 +5294,32 @@
       const style = getMinimapStreetStyle(zone);
       drawPolygon(zone.polygon, metrics, pad, style.fill, style.stroke, 1.15, view, projectionOptions);
     });
-    (state.world.microAreas || []).forEach((area) => {
-      drawPolygon(area.polygon, metrics, pad, 'rgba(255, 210, 135, 0.72)', 'rgba(255, 210, 135, 0.08)', 0.85, view, projectionOptions);
-    });
+    // Micro-area squares were broad gameplay triggers, NOT surveyed sites.
+    // Don't cover the reference map with fictional orange blocks.
+    if (!state.world.meta || !state.world.meta.gis) {
+      (state.world.microAreas || []).forEach((area) => {
+        drawPolygon(area.polygon, metrics, pad, 'rgba(255, 210, 135, 0.2)', null, 0.85, view, projectionOptions);
+      });
+    }
 
     if (compassEl) {
-      compassEl.textContent = 'Heading: ' + getFacingLabel(getHeadingVector());
+      const degrees = (Math.atan2(heading.x, heading.z) * 180 / Math.PI + 360) % 360;
+      compassEl.textContent = 'Facing ' + getFacingLabel(heading).toUpperCase() + '  ·  ' + String(Math.round(degrees) % 360).padStart(3, '0') + '°';
+    }
+    if (minimapDistanceEl) {
+      minimapDistanceEl.textContent = 'Visible: ' + Math.round(view.width) + ' m × ' + Math.round(view.height) + ' m  ·  true north ↑';
     }
     updateMinimapLegend();
 
     (state.world.buildings || []).forEach((building) => {
       drawPolygon(getBuildingPolygon(building), metrics, pad, '#7d5e53', 'rgba(245, 218, 197, 0.34)', 0.95, view, projectionOptions);
     });
+    if (state.world.landing && Array.isArray(state.world.landing.footprint)) {
+      drawPolygon(state.world.landing.footprint, metrics, pad, '#aa5f4e', '#e9bfa5', 1.2, view, projectionOptions);
+    }
+    if (state.world.parkingLot && Array.isArray(state.world.parkingLot.polygon)) {
+      drawPolygon(state.world.parkingLot.polygon, metrics, pad, '#595f62', '#eac36d', 2, view, projectionOptions);
+    }
 
     getCollectibleProps().forEach((prop) => {
       if (!(state.quest.active || !prop.collected)) return;
@@ -5375,43 +5390,27 @@
       ctx.setLineDash([]);
     }
 
-    const majorNodes = ['waterfront-station-threshold', 'water-cordova-seam', 'water-street-mid-block', 'water-cambie-intersection', 'steam-clock', 'maple-tree-square-edge'];
-    state.world.nodes.forEach((node) => {
-      if (!majorNodes.includes(node.id)) return;
-      const markerPoint = node.id === 'steam-clock' ? getMinimapLandmarkAnchor(node, state.world) : node;
-      const mini = projectWorldToMinimap(markerPoint, metrics, pad, view, projectionOptions);
-      ctx.fillStyle = node.id === 'steam-clock' ? '#d8a968' : node.id === 'water-cambie-intersection' ? '#9cc7e4' : '#b7d4ea';
+    // Authoritative location markers use the same world-space coordinates as
+    // their rendered meshes. Distinguish the approximate lot from civic anchors.
+    [
+      {id:'waterfront-station-threshold', text:'Waterfront', color:'#96c5e8'},
+      {id:'station-east-parking', text:'Parking', color:'#eac36d'},
+      {id:'the-landing', text:'The Landing', color:'#d99577'},
+      {id:'steam-clock', text:'Steam Clock', color:'#f5d08e'},
+    ].forEach((marker) => {
+      const item=(state.world.landmarks||[]).find(l => l.id === marker.id);
+      if (!item) return;
+      const p=projectWorldToMinimap(item, metrics, pad, view, projectionOptions);
+      if (p.x < -20 || p.y < -20 || p.x > minimapState.width+20 || p.y > minimapState.height+20) return;
+      ctx.fillStyle = marker.color;
       ctx.beginPath();
-      ctx.arc(mini.x, mini.y, node.id === 'steam-clock' ? 5.2 : 4.1, 0, Math.PI * 2);
+      ctx.arc(p.x,p.y,4.4,0,Math.PI*2);
       ctx.fill();
-
-      ctx.fillStyle = 'rgba(228, 240, 255, 0.92)';
-      ctx.font = '600 9px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif';
+      ctx.font = '700 9px system-ui, sans-serif';
+      ctx.fillStyle = '#f7f6ef';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      if (node.id === 'waterfront-station-threshold') {
-        ctx.fillText('Waterfront', mini.x + 6, mini.y - 5);
-      }
-      if (node.id === 'steam-clock') {
-        const steamClockLabelAnchor = {
-          x: markerPoint.x + 1.9,
-          z: markerPoint.z + (minimapState.mode === 'heading-up' ? 0.4 : -2.1),
-        };
-        const labelMini = projectWorldToMinimap(steamClockLabelAnchor, metrics, pad, view, projectionOptions);
-        ctx.fillText('Steam Clock', labelMini.x + 5, labelMini.y - 4);
-      }
-      if (node.id === 'water-cordova-seam') {
-        ctx.fillText('Water/Cordova', mini.x + 6, mini.y - 5);
-      }
-      if (node.id === 'water-cambie-intersection') {
-        ctx.fillText('Cambie', mini.x + 6, mini.y - 5);
-      }
-      if (node.id === 'water-street-mid-block') {
-        ctx.fillText('Water St mid', mini.x + 6, mini.y + 7);
-      }
-      if (node.id === 'maple-tree-square-edge') {
-        ctx.fillText('Maple Tree Sq', mini.x + 6, mini.y + 7);
-      }
+      ctx.fillText(marker.text, Math.min(p.x + 7, minimapState.width - 62), p.y - 7);
     });
 
     (state.world.microAreas || []).forEach((area) => {
