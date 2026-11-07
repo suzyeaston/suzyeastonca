@@ -48,6 +48,9 @@ jobs:
               - 'assets/brand/**'
               - 'assets/audio/**'
               - 'assets/data/**'
+              - 'assets/world/**'
+              - 'assets/dialog/**'
+              - 'assets/textures/**'
               - 'js/**'
               - 'scripts/deploy-lousy-outages-ssh.py'
               - 'scripts/theme_deploy_manifest.py'
@@ -151,7 +154,9 @@ jobs:
           php -l page-home.php
           php -l page-projects.php
           php -l page-afterimage.php
+          php -l page-gastown-sim.php
           node --test __tests__/afterimage-integration.test.js
+          node --test __tests__/gastown-sim-config.test.js
 
       - name: Deploy theme files
         if: needs.changes.outputs.theme == 'true'

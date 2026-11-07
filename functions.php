@@ -422,7 +422,8 @@ add_action( 'wp_enqueue_scripts', 'se_enqueue_loop_lab_assets' );
 
 
 function se_enqueue_gastown_sim_assets() {
-    if ( ! is_page_template( 'page-gastown-sim.php' ) ) {
+    // WordPress selects page-gastown-sim.php by slug even when no custom template is assigned.
+    if ( ! is_page( 'gastown-sim' ) && ! is_page_template( 'page-gastown-sim.php' ) ) {
         return;
     }
 
