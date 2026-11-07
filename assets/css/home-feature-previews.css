@@ -674,3 +674,67 @@
   #homepage-content .home-gastown-spotlight__play { transition: none; }
   #homepage-content .home-gastown-spotlight__play:hover { transform: none; }
 }
+
+
+/* Station East / Gastown feature now sits immediately beneath MEANWHILE,
+   inside the compact YVR hero deck, not below all the homepage modules. */
+#homepage-content .home-yvr-radar-deck > .home-gastown-spotlight {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0.35rem 0 0.5rem;
+  padding: clamp(1rem, 2.4vw, 1.8rem);
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  gap: clamp(1rem, 2.2vw, 1.75rem);
+  border-color: rgba(168, 223, 223, 0.65);
+}
+#homepage-content .home-yvr-radar-deck #home-gastown-spotlight-title {
+  font-size: clamp(2rem, 4.2vw, 3.35rem);
+  letter-spacing: -0.065em;
+  line-height: 0.99;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+#homepage-content .home-gastown-spotlight__art {
+  position: relative;
+  overflow: hidden;
+}
+#homepage-content .home-gastown-spotlight__art img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 9px;
+  background: #17313c;
+}
+#homepage-content .home-gastown-spotlight__art figcaption {
+  color: #b5e8e2;
+}
+#homepage-content .home-gastown-spotlight__eyebrow {
+  margin-bottom: 0.75rem;
+}
+#homepage-content .home-gastown-spotlight__detail {
+  margin-bottom: 0.9rem;
+}
+#homepage-content .home-gastown-spotlight__tags {
+  margin-bottom: 0.9rem;
+}
+@media (max-width: 850px) {
+  #homepage-content .home-yvr-radar-deck > .home-gastown-spotlight {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #homepage-content .home-yvr-radar-deck #home-gastown-spotlight-title {
+    font-size: clamp(2.2rem, 7.2vw, 3.4rem);
+  }
+}
+@media (max-width: 520px) {
+  #homepage-content .home-yvr-radar-deck > .home-gastown-spotlight {
+    margin: 0.25rem 0 0.45rem;
+    padding: 0.85rem;
+    border-radius: 10px;
+  }
+  #homepage-content .home-yvr-radar-deck #home-gastown-spotlight-title {
+    font-size: clamp(1.9rem, 8.7vw, 2.8rem);
+  }
+}
