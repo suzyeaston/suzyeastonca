@@ -79,11 +79,11 @@ test('true north, east and south compass bearings match 3D world coordinates',()
  const source=read('js/gastown-sim.js');
  const fn=extract(source,'  function getFacingLabel(heading)', '  function classifyRelativeDirection(');
  const label=new Function(fn+'; return getFacingLabel;')();
- assert.equal(label({x:0,z:1}),'north');
+ assert.equal(label({x:0,z:-1}),'north');
  assert.equal(label({x:1,z:0}),'east');
- assert.equal(label({x:0,z:-1}),'south');
+ assert.equal(label({x:0,z:1}),'south');
  assert.equal(label({x:-1,z:0}),'west');
- assert.equal(label({x:Math.SQRT1_2,z:Math.SQRT1_2}),'northeast');
+ assert.equal(label({x:Math.SQRT1_2,z:-Math.SQRT1_2}),'northeast');
  const viewSrc=extract(source,'  function getMinimapView(metrics)', '  function toMinimapPoint(');
  const view=new Function('minimapState','player',viewSrc+'; return getMinimapView;')(
   {width:240,height:240,zoom:1},{position:{x:0,z:0}}
