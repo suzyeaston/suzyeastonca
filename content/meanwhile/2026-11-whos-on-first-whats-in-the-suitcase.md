@@ -12,19 +12,19 @@ media_archive: Suzy_The_Toaster_Was_a_Decoy_11_Photos.zip
 
 *Meanwhile / Friday, November 6, 2026 / Temporary Coordinates*
 
-Friday night. Vancouver is getting absolutely rinsed, but my inbox has decided to do something useful. Interviews are coming in. There's a possible platform engineering contract downtown, other conversations underway, and for the first time in a while the job hunt has some serious momentum. I'm stoked.
+Friday night. Vancouver is getting absolutely rinsed. October was a full-on Futureproof wormhole, so this week I've been switching gears back to finding my next role in tech. And hey, the interviews are rolling in, including a possible year-long platform engineering contract downtown. I'm stoked. Apparently November has plans.
 
 I'm writing this from a little Airbnb near the Fraser River, a temporary stop while I sort out the next chapter. My 8GB MacBook is here, the rain has opinions, and the 49ers toque is back in circulation.
 
 <!-- PHOTO: november-red-toque.jpg | Suzy outside in Vancouver in a red San Francisco 49ers pom-pom toque, clear glasses and a dark coat. | California roots. Vancouver weather. -->
 
-And yes, it's a 49ers toque. My brother and I grew up worshipping Joe Montana and Jerry Rice. My mom's from Palo Alto, half my family is American, and my grandpa James Bloch was [mayor of Menlo Park in 1979](https://upload.wikimedia.org/wikipedia/commons/c/c8/Federal_Register_1979-02-23-_Vol_44_Iss_38_%28IA_sim_federal-register-find_1979-02-23_44_38%29.pdf). I found him in the Federal Register.
+And yes, it's a 49ers toque. My brother and I grew up worshipping Joe Montana and Jerry Rice. My mom's from Palo Alto, half my family is American, and my grandpa James Bloch was [mayor of Menlo Park in 1979](https://upload.wikimedia.org/wikipedia/commons/c/c8/Federal_Register_1979-02-23-_Vol_44_Iss_38_%28IA_sim_federal-register-find_1979-02-23_44_38%29.pdf). He's in the Federal Register, to boot.
 
 My hat has municipal documentation. lol.
 
 California's in the wiring. But Vancouver is home. I was born and raised here, and for all the things this city makes unnecessarily difficult, I really, really don't want to leave.
 
-For a split second I considered Toronto. My big brother, Jimmy the Bag, is there with his family, and being near them sounded pretty wonderful. I even looked at flights. But the more I thought about it, the clearer it got: I want to stay in Vancouver. Especially now, with the interviews picking up and a whole scene of people here I want to keep making things with.
+For a split second I considered Toronto. My big brother, [Jimmy the Bag](https://x.com/JimmyTheBag), is there with his family, and being near them sounded pretty wonderful. I even looked at flights. But the more I thought about it, the clearer it got: I want to stay in Vancouver. Especially now, with the interviews picking up and a whole scene of people here I want to keep making things with.
 
 ## Load-out
 
@@ -78,7 +78,7 @@ But I am increasingly allergic to the word *can* without a demonstration attache
 
 ## The other kind of orchestration
 
-And about those interviews: I'm several conversations into a possible year-long platform engineering contract downtown, with other opportunities in play too. No victory lap yet, but it's good to be back in these conversations.
+The fun part of the interviews is getting back into the things I know how to do. Not the shiny AI demo. The plumbing underneath it.
 
 Identity, APIs, cloud systems, digital workplace infrastructure, automation, all the weird invisible machinery that keeps everybody's workday from collapsing. I know this world. I've spent years inside it, usually figuring out why one piece of software has decided to stop speaking to another.
 
