@@ -107,6 +107,7 @@
   const stationModel = window.GastownWaterfrontStation || null;
   const waterfrontPlaces = window.GastownWaterfrontPlaces || null;
   const harbourVista = window.GastownHarbourVista || null;
+  const harbourLookBtn = app.querySelector('[data-action="harbour-lookout"]');
   const normalizeDialogEntry = typeof dialogUtils.normalizeDialogEntry === 'function'
     ? dialogUtils.normalizeDialogEntry
     : function fallbackNormalizeDialogEntry(entry, options) {
@@ -5882,6 +5883,28 @@
     return false;
   }
 
+  function goToHarbourLookout() {
+    if (!harbourVista || !state.world || state.cameraMode !== 'street') {
+      setStatus('Use street mode to look across Burrard Inlet.');
+      return false;
+    }
+    const pose = harbourVista.lookoutFor(state.world);
+    if (!pose || !isSpawnSafe(pose)) {
+      setStatus('The waterfront sidewalk viewing position is not accessible in this map.');
+      return false;
+    }
+    clearMovementInput();
+    player.position.set(pose.x, pose.y, pose.z);
+    state.lastSafePosition.copy(player.position);
+    state.yaw = pose.yaw;
+    state.pitch = clampPitch(pose.pitch);
+    applyStreetCameraPose();
+    updateNearestNode();
+    drawMinimap();
+    setStatus('Harbour view: North Shore mountains, Canada Place sails and an illustrative docked cruise ship. Rail-yard sightlines are preserved.');
+    return true;
+  }
+
   function resetToStart() {
     stopBandAudio('reset');
     const spawn = resolveSafeSpawn();
@@ -6069,6 +6092,7 @@
 
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
+    if (harbourLookBtn) harbourLookBtn.addEventListener('click', goToHarbourLookout);
 
     if (timeOfDaySelect) {
       timeOfDaySelect.addEventListener('change', (event) => applyTimeOfDay(event.target.value));
