@@ -68,7 +68,7 @@ get_header();
           <li><strong>W / ↑</strong> hold to run (Shift still works)</li>
           <li><strong>A S D + arrows</strong> move / turn</li>
           <li><strong>E / click</strong> interact</li>
-          <li><strong>Esc</strong> close / release</li>
+          <li><strong>Esc</strong> releases your mouse so you can click browser controls, settings, or leave the simulator</li>
         </ul>
         <p class="gastown-help-note">This simulator runs on a deterministic local world build. If optional audio or dialog extras fail, the walk continues.</p>
       </section>
@@ -83,7 +83,7 @@ get_header();
         <div class="gastown-dialog-body" id="gastown-tutorial-copy">
           <p>Name your walker if you want, then click in and move.</p>
           <p>The corridor is tuned as a focused two-block walk: Waterfront threshold, Water Street rhythm, Steam Clock corner, and Maple Tree Square edge.</p>
-          <p>Startup is intentionally simple: click in, move, explore.</p>
+          <p>Click the 3D scene to capture your mouse. <strong>Press Esc at any time to release it</strong> and use the page normally. W/A/S/D moves, mouse looks around, E interacts.</p>
         </div>
         <div class="gastown-dialog-actions">
           <button type="button" class="pixel-button secondary" data-action="tutorial-start" aria-label="Start the simulator tutorial">Start walk</button>
@@ -131,6 +131,11 @@ get_header();
         aria-pressed="false"
         title="Enter fullscreen"
       >⛶</button>
+      <div class="gastown-pointer-help" data-sim-pointer-help role="status" aria-live="polite">
+        <span class="gastown-pointer-help-label" data-sim-pointer-hint>Click the scene to look around · W A S D move</span>
+        <span class="gastown-pointer-help-escape">ESC = RELEASE MOUSE</span>
+        <button type="button" data-action="sim-release-pointer" class="gastown-release-pointer" aria-label="Release simulator mouse pointer">Release mouse</button>
+      </div>
       <aside class="gastown-minimap" aria-label="Exploration minimap">
         <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap controls">
           <button type="button" class="gastown-minimap-mode" data-action="minimap-mode-toggle" aria-pressed="false" aria-label="Switch minimap to heading-up mode">North up</button>
@@ -138,8 +143,17 @@ get_header();
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>
         <p class="gastown-minimap-tooltip" data-sim-minimap-tooltip aria-live="polite">Steam Clock corridor ahead.</p>
-        <canvas data-sim-minimap width="220" height="220"></canvas>
-        
+        <p class="gastown-minimap-compass" data-sim-compass aria-live="off">Facing NE · 045°</p>
+        <canvas data-sim-minimap width="240" height="240" aria-label="North-referenced local map with the player and facing arrow"></canvas>
+        <ul class="gastown-minimap-legend" data-sim-minimap-legend aria-label="Map legend">
+          <li><span class="dot player"></span>You + facing</li>
+          <li><span class="dot route"></span>Walking route</li>
+          <li><span class="dot station"></span>Waterfront</li>
+          <li><span class="dot parking"></span>Station East lot</li>
+          <li><span class="dot landing"></span>The Landing</li>
+          <li><span class="dot steam"></span>Steam Clock</li>
+        </ul>
+        <p class="gastown-map-distance" data-sim-map-distance>Each map square is to scale</p>
         <p class="gastown-minimap-label" data-sim-minimap-landmark>Waterfront Station threshold</p>
       </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
