@@ -534,3 +534,26 @@
   .gastown-pointer-help { left: 0.6rem; top: 2.8rem; transform: none; max-width: calc(100% - 1.2rem); justify-content: flex-start; }
   .gastown-minimap { width: min(216px, 55vw); }
 }
+
+
+/* Keep the geographical Harbour view shortcut visible on narrow minimaps.
+   The previous one-row toolbar could squeeze or clip the zoom controls. */
+.gastown-minimap-toolbar {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  row-gap: 0.32rem;
+}
+.gastown-minimap-toolbar [data-action="harbour-lookout"] {
+  order: 4;
+  flex: 1 0 100%;
+  min-width: 0;
+  height: 1.65rem;
+  color: #d6f5ff;
+  border-color: rgba(110, 190, 220, 0.8);
+  background: rgba(21, 58, 75, 0.94);
+  letter-spacing: 0.05em;
+}
+.gastown-minimap-toolbar [data-action="harbour-lookout"]:focus-visible {
+  outline: 2px solid #efffc2;
+  outline-offset: 2px;
+}
