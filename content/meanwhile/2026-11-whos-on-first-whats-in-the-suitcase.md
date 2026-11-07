@@ -105,17 +105,3 @@ The AI can generate material. Cool. I'm still the person deciding what belongs i
 The film only needs to be sixty seconds. Incredible. Just enough time to make something weird and spend the rest of the weekend debugging why it isn't rendering.
 
 <!-- PHOTO: november-mirror.jpg | Suzy in a dark coat, red toque and clear glasses, making a rock hand gesture in a dim mirror selfie. | Film department: director, composer, technical support, catering. -->
-
-## Friday night, somewhere in Vancouver
-
-The rain came down hard today. There are cables hanging off utility poles, everything is reflective, and the city looks like it has too many browser tabs open.
-
-I could turn the temporary living arrangements into some grand wandering-artist mythology. Nah. I want a home base, good work, and somewhere to leave a microphone stand assembled. That's the plan.
-
-In the meantime the job search has momentum, I have a film to make, and October introduced me to people I want to keep making things with. All right here in Vancouver.
-
-A laptop full of instruments, a calendar full of possibilities, a 49ers toque with municipal documentation, and an unreasonable amount of tabs open.
-
-No comeback speech. I haven't gone anywhere.
-
-🐟
