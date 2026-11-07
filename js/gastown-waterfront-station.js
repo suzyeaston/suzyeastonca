@@ -34,7 +34,8 @@
     // Give the 17-metre roofline room in the initial first-person view.
     const frontageDistance = 22;
     return {
-      x: x + (Math.sin(yaw) * frontageDistance),
+      // Spawn is outside the facade along the object's +Z axis.
+      x: x - (Math.sin(yaw) * frontageDistance),
       z: z - (Math.cos(yaw) * frontageDistance),
       yaw
     };
