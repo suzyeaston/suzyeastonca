@@ -5026,7 +5026,7 @@
     // what the player actually saw when turning.
     const zoom = minimapState.zoom || 1;
     const padding = 16;
-    const metresPerPixel = 0.68 / zoom;
+    const metresPerPixel = 0.90 / zoom;
     const width = Math.max(1, (minimapState.width - 2 * padding) * metresPerPixel);
     const height = Math.max(1, (minimapState.height - 2 * padding) * metresPerPixel);
     const centerX = player.position.x;
@@ -5518,6 +5518,23 @@
     }
 
     drawMinimapCompass(playerPoint, headingRotation);
+
+    // Physical scale bar, tied to the same un-stretched metres/pixel
+    // projection used by buildings, routes, landmarks and player heading.
+    const scaleMetres = 25;
+    const barPixels = scaleMetres / view.metresPerPixel;
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#eef2ef';
+    ctx.beginPath();
+    ctx.moveTo(minimapState.width - 14 - barPixels, minimapState.height - 18);
+    ctx.lineTo(minimapState.width - 14, minimapState.height - 18);
+    ctx.stroke();
+    ctx.font = '700 10px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#f5f2e9';
+    ctx.fillText('25 m', minimapState.width - 14, minimapState.height - 23);
+    ctx.restore();
 
     if (minimapState.nearestNode) {
       const nearestPoint = projectWorldToMinimap(minimapState.nearestNode, metrics, pad, view, projectionOptions);
