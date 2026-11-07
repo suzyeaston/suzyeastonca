@@ -22,6 +22,8 @@ get_header();
         <?php get_template_part( 'parts/home-radio-feature' ); ?>
     </section>
 
+    <?php get_template_part( 'parts/home-gastown-spotlight' ); ?>
+
     <?php get_template_part( 'parts/home-feature-previews' ); ?>
 
     <section id="mission-select" class="home-project-grid home-mission-select crt-block" aria-labelledby="selected-projects-title">
