@@ -210,6 +210,35 @@ function thinPoints(geo, origin, route, maxDistance, stride, limit, make) {
   }
   return selected.map((p, i) => make(pt(p), i));
 }
+// City coordinates are deliberately processed as +Z north for source
+// validation. Three.js uses +Y up and an upright, right-handed camera, so
+// its geographic north must be -Z (east remains +X). The previous "north is
+// +Z" scene used a left-handed ground plane: Waterfront appeared on the
+// RIGHT when the player walked southeast toward Water Street, even though
+// the civic footprint was correctly north of West Cordova.
+//
+// Reflect only rendered/metre coordinates here, once, at the offline build
+// boundary. WGS84 lat/lon, GIS source IDs, labels, and unprojected anchors
+// remain untouched. No runtime second reflection or model-specific hack.
+function reflectCivicWorldToThree(value) {
+  if (Array.isArray(value)) return value.map(reflectCivicWorldToThree);
+  if (!value || typeof value !== 'object') return value;
+  const result = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === 'z' && Number.isFinite(value.x) && Number.isFinite(entry)) {
+      result[key] = -entry;
+    } else if (key === 'yaw' && Number.isFinite(entry)) {
+      // Building yaw is a GIS +X-edge angle. Station/people/props yaw
+      // describes a local +Z-facing object in the Three.js convention.
+      const angle = Array.isArray(value.footprint_local) ? -entry : Math.PI - entry;
+      result[key] = Math.atan2(Math.sin(angle), Math.cos(angle));
+    } else {
+      result[key] = reflectCivicWorldToThree(entry);
+    }
+  }
+  return result;
+}
+
 function rebuild(world, streets, footprints, anchors, poles, trees) {
   if (!world || !streets || !footprints || !anchors || !anchors.origin || !anchors.dest) {
     throw Error('Missing required cached civic data or route anchors');
@@ -327,7 +356,7 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
     { id: 'steam-clock', label: 'Gastown Steam Clock / Water & Cambie', kind: 'clock', ...clock, y: 0, radius: 4,
       cue: 'Steam Clock, northwest corner of Water and Cambie.' },
   ];
-  return {
+  return reflectCivicWorldToThree({
     ...world,
     routeId: 'gastown_civic_route_2026_11_07',
     meta: {
@@ -350,7 +379,9 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
         'The Station East surface lot is deliberately retained as open parking; proposed tower is not an existing building.',
         'Parking outline and architectural textures are illustrative, with reference citations in the model source.',
       ],
-      gis: { crs: 'local metres, +x east/+z north (WGS84 equirectangular tangent at station anchor)',
+      gis: { crs: 'Three.js local metres: +X east, +Z south (north is -Z); WGS84 tangent-plane GIS source is +Z north',
+        sourceAxisConvention: '+X east / +Z north (raw City GIS)',
+        sceneAxisConvention: '+X east / +Z south (right-handed Three.js)',
         origin, routeDistanceMeters: Number(routeLength.toFixed(1)), sourceFootprintId: station.sourceFootprintId,
         streetHblocks: ['600 W CORDOVA ST', '500 W CORDOVA ST', '200-300 WATER ST'],
         sourceVintage: { buildings: 2015, streets: 'cached 2026 snapshot' } },
@@ -378,6 +409,6 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
       bollards: [], surfaceBands: [], streetFurniture: [], signs: [],
       heroViewCorridors: [{ id: 'station-to-clock', from: 'station-threshold', to: 'steam-clock', emphasis: 'hero' }],
     },
-  };
+  });
 }
-module.exports = { project, officialRoute, rebuild, polyLength, distance, toLineDistance };
+module.exports = { project, officialRoute, rebuild, polyLength, distance, toLineDistance, reflectCivicWorldToThree };
