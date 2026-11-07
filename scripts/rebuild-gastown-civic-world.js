@@ -155,7 +155,9 @@ function stationFacade(frontage, route) {
   // W Cordova runs SE. Building's Cordova-facing facade looks SW.
   const dx = route[1].x - route[0].x, dz = route[1].z - route[0].z;
   const tangent = Math.atan2(dz, dx);
-  const yaw = tangent + Math.PI; // local facade +X runs NW; local +Z faces the roadway SW
+  // Three.js rotates local +Z to (sin(yaw), cos(yaw)); point that vector
+  // southwest toward W Cordova, not southeast along the road.
+  const yaw = -Math.PI - tangent;
   return {
     id: 'waterfront-station',
     x: Number(center.x.toFixed(2)),
