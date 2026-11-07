@@ -2461,11 +2461,21 @@
   }
 
   function makeNpcVisual(npc) {
-    const style = NPC_ROLE_STYLE[npc.role] || NPC_ROLE_STYLE.pedestrian;
+    const commuterCoats = [0x354c60, 0x5b695b, 0x7a5750, 0x82745f, 0x38464c, 0x746d87, 0x435d64, 0x6e5347];
+    const commuterVariant = Math.floor(deterministicUnit(npc.id + '-coat') * commuterCoats.length);
+    const style = npc.role === 'commuter'
+      ? Object.assign({}, NPC_ROLE_STYLE.pedestrian, {
+          color: commuterCoats[commuterVariant],
+          accent: commuterVariant % 2 ? 0x282d36 : 0x35404a,
+          bag: commuterVariant % 3 === 0
+        })
+      : (NPC_ROLE_STYLE[npc.role] || NPC_ROLE_STYLE.pedestrian);
     const scaleFactor = Math.max(0.72, Math.min(1.15, npc.silhouetteScale || 1));
     const root = new THREE.Group();
     const bodyMaterial = new THREE.MeshStandardMaterial({ color: style.color, roughness: 0.8, metalness: 0.1 });
-    const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xe0c7aa, roughness: 0.92, metalness: 0.02 });
+    const skinPalette = [0xe0c7aa, 0xcda581, 0x987257, 0xe9cfb8];
+    const skinTone = npc.role === 'commuter' ? skinPalette[commuterVariant % skinPalette.length] : 0xe0c7aa;
+    const skinMaterial = new THREE.MeshStandardMaterial({ color: skinTone, roughness: 0.92, metalness: 0.02 });
     const accentMaterial = new THREE.MeshStandardMaterial({ color: style.accent, roughness: 0.72, metalness: 0.14 });
     const trimMaterial = new THREE.MeshStandardMaterial({ color: 0x161b20, roughness: 0.58, metalness: 0.2 });
     const body = new THREE.Mesh(
