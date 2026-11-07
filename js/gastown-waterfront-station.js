@@ -43,8 +43,10 @@
   function toWorld(world, x, z) {
     const anchor = anchorFor(world);
     return {
-      x: anchor.x + (x * Math.cos(anchor.yaw)) - (z * Math.sin(anchor.yaw)),
-      z: anchor.z + (x * Math.sin(anchor.yaw)) + (z * Math.cos(anchor.yaw))
+      // Match Three.js Group.rotation.y exactly. The old 2D conversion used
+      // the opposite sign, putting commuters on the wrong side of the station.
+      x: anchor.x + (x * Math.cos(anchor.yaw)) + (z * Math.sin(anchor.yaw)),
+      z: anchor.z - (x * Math.sin(anchor.yaw)) + (z * Math.cos(anchor.yaw))
     };
   }
 
@@ -53,8 +55,8 @@
     const anchor = anchorFor(world);
     const dx = point.x - anchor.x;
     const dz = point.z - anchor.z;
-    const localX = dx * Math.cos(anchor.yaw) + dz * Math.sin(anchor.yaw);
-    const localZ = -dx * Math.sin(anchor.yaw) + dz * Math.cos(anchor.yaw);
+    const localX = dx * Math.cos(anchor.yaw) - dz * Math.sin(anchor.yaw);
+    const localZ = dx * Math.sin(anchor.yaw) + dz * Math.cos(anchor.yaw);
     // A walkable frontage that joins the original corridor but stops at the doors.
     return Math.abs(localX) <= 24 && localZ >= 4.7 && localZ <= 31;
   }
