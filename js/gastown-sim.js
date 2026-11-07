@@ -3513,10 +3513,10 @@
     return cleaned;
   }
 
-  // City GIS uses +Z for north. Three.js XZ ground geometry formed from XY
-  // ShapeGeometry.rotateX(-PI/2) maps shape Y to world -Z. Negate the second
-  // shape component once and use -yaw for building groups so visible meshes,
-  // collision polygons and the north-up minimap share identical coordinates.
+  // Raw City GIS uses +Z north, but the offline builder reflects game-space
+  // Z so north is -Z, matching Three.js's upright right-handed camera.
+  // ShapeGeometry.rotateX(-PI/2) maps shape Y to world -Z; use (x,-z)
+  // to place surfaces at their game-space x/z coordinates, once.
   function toShape(points) {
     const sanitizedPoints = sanitizePolygon(points);
     if (sanitizedPoints.length < 3) {
