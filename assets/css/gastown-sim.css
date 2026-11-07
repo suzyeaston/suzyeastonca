@@ -515,6 +515,22 @@
 .gastown-interact-prompt { font-size: 0.72rem; padding: 0.26rem 0.46rem; }
 .gastown-live-strip { max-width: 14rem; padding: 0.38rem 0.5rem; }
 .gastown-landmark { font-size: 0.76rem; margin: 0; }
-.gastown-route-segment, .gastown-minimap-mode-status, .gastown-minimap-context, .gastown-minimap-compass, .gastown-minimap-legend, .gastown-hud-next-step, [data-sim-objective] { display: none !important; }
-.gastown-minimap { width: 158px; padding: 0.35rem; }
-.gastown-minimap-label, .gastown-minimap-tooltip { font-size: 0.68rem; margin: 0.18rem 0 0; }
+.gastown-route-segment, .gastown-minimap-mode-status, .gastown-minimap-context, .gastown-hud-next-step, [data-sim-objective] { display: none !important; }
+.gastown-minimap { width: min(248px, calc(100vw - 2rem)); padding: 0.6rem; z-index: 5; }
+.gastown-minimap-label, .gastown-minimap-tooltip { font-size: 0.72rem; margin: 0.18rem 0 0; white-space: normal; line-height: 1.35; }
+.gastown-minimap-compass { display: block; font-family: ui-monospace, monospace; font-size: 0.78rem; color: #f7e8c6; margin: 0.1rem 0; letter-spacing: 0.04em; }
+.gastown-minimap-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0.15rem 0 0; padding: 0; gap: 0.25rem 0.4rem; font-family: system-ui, sans-serif; font-size: 0.64rem; list-style: none; }
+.gastown-minimap-legend li { display: flex; gap: 0.28rem; align-items: center; white-space: nowrap; }
+.gastown-minimap-legend .dot { flex: 0 0 0.55rem; width: 0.55rem; height: 0.55rem; border-radius: 2px; border: 1px solid rgba(249,246,238,0.45); }
+.gastown-minimap-legend .dot.parking { background: #eac36d; }
+.gastown-minimap-legend .dot.landing { background: #aa5f4e; }
+.gastown-map-distance { margin: 0; font: 0.67rem/1.35 ui-monospace, monospace; color: #b6cae1; }
+.gastown-pointer-help { position: absolute; top: 0.72rem; left: 50%; transform: translateX(-50%); z-index: 9; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 0.35rem 0.75rem; padding: 0.48rem 0.6rem; max-width: calc(100% - 17rem); border: 1px solid rgba(250,208,135,0.76); border-radius: 8px; color: #f2f7ff; background: rgba(8,16,25,0.93); font: 700 0.75rem/1.4 system-ui, sans-serif; box-shadow: 0 5px 20px rgba(0,0,0,0.35); }
+.gastown-pointer-help-escape { color: #ffdb8e; border: 1px solid rgba(255,218,139,0.45); padding: 0.14rem 0.42rem; border-radius: 4px; letter-spacing: 0.035em; }
+.gastown-release-pointer { display: inline-flex; padding: 0.18rem 0.45rem; border-radius: 4px; background: #244863; color: white; border: 1px solid #7fc6ea; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
+.gastown-release-pointer:disabled { opacity: 0.55; cursor: default; }
+.gastown-pointer-help[data-locked="true"] { border-color: #f8b54f; }
+@media (max-width: 880px) {
+  .gastown-pointer-help { left: 0.6rem; top: 2.8rem; transform: none; max-width: calc(100% - 1.2rem); justify-content: flex-start; }
+  .gastown-minimap { width: min(216px, 55vw); }
+}
