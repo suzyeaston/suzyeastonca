@@ -5,111 +5,115 @@ series: "Meanwhile / November 2026 / Temporary Coordinates"
 status: publish
 published_at: "2026-11-06 18:00:00"
 category: "notes / ideas"
-excerpt: "An Airbnb-to-Airbnb migration, a Nathan Fielder documentary, a promising run of tech interviews, and the small problem of making art while the future keeps accelerating."
+excerpt: "A 49ers toque with archival footnotes, two Airbnbs, Nathan Fielder, a fourth tech interview, and a sixty-second film trying to escape an 8GB laptop."
 featured_image: november-red-toque.jpg
 media_archive: Suzy_The_Toaster_Was_a_Decoy_11_Photos.zip
 ---
 
 *Meanwhile / Friday, November 6, 2026 / Temporary Coordinates*
 
-Vancouver is getting rinsed tonight. I'm writing this from my second Airbnb of the week, somewhere in South Vancouver, nearer the Fraser River than the beach. My 8GB MacBook is here, the 49ers pom-pom toque is here, and my entire life has developed a fairly sophisticated system of wheels and zippers.
+Friday night. Vancouver has switched on the industrial rinse cycle. I'm in Airbnb number two, somewhere south of the beach, closer to the Fraser. I'm not on tour, which is the annoying part.
 
-<!-- PHOTO: november-red-toque.jpg | Suzy outdoors in Vancouver in a red San Francisco 49ers pom-pom toque, clear glasses and a dark coat. | California roots, Vancouver weather. -->
+Two suitcases, one 8GB MacBook, a red pom-pom toque, and a remarkably detailed understanding of what time check-in starts.
 
-And yes, that's a San Francisco 49ers toque. My brother and I grew up cheering for Joe Montana and Jerry Rice. It's not some random football merch. There's family history underneath that pom-pom.
+<!-- PHOTO: november-red-toque.jpg | Suzy outside in Vancouver in a red San Francisco 49ers pom-pom toque, clear glasses and a dark coat. | California roots. Vancouver weather. -->
 
-My mom's originally from Palo Alto, and half my family is American. My grandpa, James Bloch, was even mayor of Menlo Park in 1979. I went looking and found him listed as mayor in the [February 23, 1979 *Federal Register*](https://upload.wikimedia.org/wikipedia/commons/c/c8/Federal_Register_1979-02-23-_Vol_44_Iss_38_%28IA_sim_federal-register-find_1979-02-23_44_38%29.pdf). Apparently my winter hat comes with archival footnotes. lol.
+The toque is 49ers, obviously. My brother and I grew up obsessed with Joe Montana and Jerry Rice. My mom's from Palo Alto, half my family is American, and my grandpa James Bloch was [mayor of Menlo Park in 1979](https://upload.wikimedia.org/wikipedia/commons/c/c8/Federal_Register_1979-02-23-_Vol_44_Iss_38_%28IA_sim_federal-register-find_1979-02-23_44_38%29.pdf). I went digging and found him in the Federal Register.
 
-So here I am moving between temporary rooms in Vancouver with a tiny piece of the Bay Area on my head. Vancouver is home. California has always been somewhere in the wiring.
+My winter hat has archival footnotes. lol.
 
-On Monday I published [The Toaster Was a Decoy](https://www.suzyeaston.ca/2026/11/02/the-toaster-was-a-decoy/), about building a little AI orchestra, performing Radiohead in a planetarium, and realizing that the studio might be something I carry instead of somewhere I live.
+Vancouver's home, but there's a whole Bay Area branch of the family tree rattling around under that pom-pom. Funny what you notice when you have to decide which things are worth carrying.
 
-By Tuesday I was telling friends I was still trying to re-enter Earth's atmosphere after October. An entire season seemed to have happened in thirty-one days.
+## No fixed studio. Apparently no fixed anything.
 
-There was a beach dimension. There were forests and an artist residency with essentially zero privacy. There was an experimental instrument that started life as a toaster and ended up as software I could actually improvise with. There was a stage, a microphone, some wildly temperamental live-looping code, and a room full of humans listening.
+On Monday I published [The Toaster Was a Decoy](https://www.suzyeaston.ca/2026/11/02/the-toaster-was-a-decoy/). It was supposed to be a post about a toaster. Instead it documented how I spent October living in a strange beachside artist residency, building an AI-assisted performance rig, and playing Radiohead's *Pyramid Song* at the planetarium.
 
-Then the residency ended, the stage disappeared, and I had to figure out where to put my suitcase.
+I went into the forest with an idea for a ridiculous household appliance. I came out with a small orchestra running on my laptop.
 
-<!-- PHOTO: november-suitcases.jpg | Two black wheeled suitcases on a rain-damp Vancouver sidewalk scattered with autumn leaves. | The entire portable headquarters, waiting for check-in. -->
+The toaster didn't make it onstage. [The software did](https://www.suzyeaston.ca/2026/11/02/an-orchestra-in-8gb/): live vocal loops, synths, an audio model steered by MIDI, and me trying to keep all these little clocks in a working relationship while singing.
 
-**October had the narrative logic of a fever dream. November has checkout times.**
+<!-- PHOTO: IMG_3556(2).JPG | Suzy performing into a microphone with her custom live-music interface projected at Futureproof Festival. | Futureproof. A microphone, a computer, and a somewhat ambitious definition of portable. -->
 
-## The five-hour intermission
+The point wasn't to press a button and ask AI to make me a song. I wanted an instrument I could push, interrupt, layer, mute, and argue with. One that left room for improvisation, including the messy bits. Especially the messy bits.
 
-Thursday's itinerary was extremely Vancouver 2026: check out of one temporary home, drop my luggage at another, and wait for the next room to become available.
+Somewhere in there I remembered that a live loop is basically a scheduling problem with feelings.
 
-The new host kindly let me leave my bags early. That still left me with a few hours to exist somewhere other than an Airbnb, so I checked my Scene+ points and discovered I had enough for a movie ticket.
+I love that. It also explains an unreasonable amount about my career.
 
-A small, beautiful loophole in the budget.
+October was forests, code, rehearsals, and an artist residency with approximately zero privacy. Then I performed, packed up, and the beach dimension closed behind me. By Tuesday I was still trying to re-enter Earth's atmosphere.
 
-<!-- PHOTO: november-coffee.jpg | Suzy smiling outdoors in a red knit beanie and clear glasses while holding a takeaway coffee. | Between rooms, but not without coffee. -->
+<!-- PHOTO: november-suitcases.jpg | Two black rolling suitcases on a rain-damp Vancouver sidewalk scattered with fallen leaves. | Load-out complete. Next venue: another Airbnb. -->
 
-I went to see *[You Can See Everything](https://www.reuters.com/legal/government/you-can-see-everything-nathan-fielder-plays-skeptical-juror-elizabeth-holmes-2026-10-21/)*, the Nathan Fielder and Lance Oppenheim documentary about Elizabeth Holmes. It is very funny, very uncomfortable, and deeply fucked in that particular way reality gets when everyone is performing a version of themselves and nobody agrees on the script.
+November is less of a psychedelic-looking space opera and more of an email that says checkout is 11 a.m. No substances required; just an extremely compressed calendar.
 
-At one point Nathan plays Holmes the Abbott and Costello routine *Who's on First?*
+## Who's on first?
 
-She doesn't seem to get the joke.
+On Thursday I had to vacate one temporary room before I could get into the next. My new host let me drop my luggage early, which was lovely. My bags had somewhere to be. I did not.
 
-Which is somehow the funniest and least funny thing in the entire film. The question becomes less about the punchline and more about whether two people can even agree on what conversation they're having.
+Then I discovered I had enough Scene+ points sitting on my debit card for a movie ticket. Finally, a rewards program with narrative purpose.
 
-And there I was, between two temporary addresses, watching a film about a famously overpromised technology after spending a month trying to make experimental technology do something very specific, in real time, onstage.
+<!-- PHOTO: november-coffee.jpg | Suzy smiling in a red knit 49ers toque and clear glasses while holding a takeaway coffee outdoors. | Between check-out and check-in. The coffee department remains operational. -->
 
-Not the same stakes, obviously. But it sharpened something I've been thinking about: **a convincing demonstration and a working system are not the same thing.**
+I went to see *[You Can See Everything](https://a24films.com/films/you-can-see-everything)*, the new Nathan Fielder and Lance Oppenheim documentary about Elizabeth Holmes. It's deranged, funny, uncomfortable, and much smarter than a simple gotcha.
 
-If my audio loop drifts, I can't pitch-deck my way out of it. You can hear it. So can I. The instrument has to survive contact with a musician.
+There's a scene where Fielder plays Holmes the old Abbott and Costello routine *Who's on First?* She doesn't seem to get it. Or maybe she's not giving him the reaction he's after. With this film, good luck knowing.
 
-Maybe this is why I still love both music and engineering. Reality gets a vote.
+The joke is an entire universe built from a broken naming convention. Who is a name. What is a name. Everybody is certain they're answering the question and nobody can agree on the question.
 
-<!-- PHOTO: IMG_3556(2).JPG | Suzy performing with a microphone and live music interface at Futureproof Festival. | A real instrument has to survive being played. -->
+A magnificent interface bug.
 
-## A few promising pings from the outside world
+Watching it, I kept thinking about Silicon Valley's addiction to a convincing demonstration. Holmes is an extreme, consequential case, not a metaphor for every half-finished prototype. But the distance between *what a system is said to do* and *what happens when someone uses it* is familiar territory.
 
-Meanwhile, the actual job search is moving.
+When you're onstage singing against a loop and the timing drifts, there's no investor deck to hide behind. The room hears it. The fix is technical, musical, or both. You don't get to substitute confidence for an audio signal.
 
-Interviews are coming in. I'm several conversations deep into a possible year-long platform engineering contract in downtown Vancouver, working in the world of systems, identity, integrations, automation, and digital workplace infrastructure. The stuff I've spent more than a decade doing. The stuff I know how to make work when everything starts behaving like a haunted printer.
+I find that weirdly comforting.
 
-Nothing is signed. I'm looking at more than one possibility. But it's genuinely exciting to feel that part of my life switching back on.
+## The other kind of orchestration
 
-Someone close to me sent a message this week reminding me that one particular job doesn't get to decide the value of my skills. I needed that. It's easy, when your calendar is full of check-out times, to confuse temporary circumstances with your actual capabilities.
+The tech interviews have started coming in, and I'm stoked. I'm deep into conversations about a possible year-long platform-engineering contract downtown. There's more than one opportunity to pursue, which is how I want it.
 
-I have spent years supporting production systems, writing code, fixing weird failures, and making technology useful for people. October didn't interrupt that story. It added another instrument to it.
+I've spent over a decade working in IT operations, software, identity, security, automation, integrations, and digital workplace systems. This is my habitat too. Give me a pile of systems that refuse to speak to each other and I will start asking inconvenient questions until they do.
 
-**I want stability. I also want to keep the strange signal alive. Those are not competing ambitions.**
+One of the nicest messages I got this week was a reminder not to hand one employer the authority to decide what my skills are worth. A job interview goes both ways. An obvious fact, but sometimes you need someone else to put it in your ears.
 
-## Accelerando, but who's conducting?
+The funny thing is that people keep treating my music and engineering backgrounds as two separate lives. They're not.
 
-Next Thursday, November 12, the [BC + AI Film Club is back at 375 Water Street](https://luma.com/noir). The prompt challenge is **make art not war**.
+Live music asks: what's the signal, who's listening, who's controlling the clock, and what happens if something fails?
 
-I have a weekend and an extremely questionable production schedule. Naturally, I have an idea.
+So does platform engineering. The consequences are different, but the work requires the same combination of structure, attention, and knowing when to stop touching things.
 
-I've been thinking about Grimes' [*ACCELERANDO*](https://music.apple.com/us/music-video/accelerando/6820798095) video and what it would mean to make my own little response to that world. Not a remake, not an imitation. Something from my side of the circuitry: one person, an unstable-looking future, and a machine that does not get to be the author just because it can produce sound.
+For years I supported other people's systems. In October I built one to play. Next I'd like a job, a proper desk, and somewhere to leave an instrument plugged in overnight. Radical demands, I know.
 
-The instrument I built for Futureproof already has the beginnings of a film score inside it. I can play, loop, sing, steer the generative audio, and build a piece around decisions I'm making as a musician. Now I want to make images move with it.
+## Accelerando, from the wrong side of the screen
 
-The interesting question isn't whether AI can generate more stuff. It very clearly can.
+Next Thursday, November 12, the [BC + AI Film Club meets at 375 Water Street](https://luma.com/noir). The challenge is **make art not war**. I have a weekend to turn my Futureproof music rig into something cinematic.
 
-It's **who gets to conduct, who gets credited, and what happens to the humans still standing in the room when everything accelerates.**
+I've been thinking about Grimes' *ACCELERANDO* as a jumping-off point. Not to reproduce her video. I'm interested in answering the acceleration with my own little machine-human collision.
 
-That's where I'm starting this weekend. Whether I end up with a film or a beautiful technical incident report remains to be seen.
+And I want to try something backwards. Usually you cut images together and put a score underneath. What if the music leads? Build the piece from my voice, synths, loops, and generated textures, then make the images answer the arrangement.
 
-<!-- PHOTO: november-mirror.jpg | Suzy in a dark coat, red beanie and clear glasses, making a rock hand gesture in a dim mirror selfie. | Film production department: one person, many tabs. -->
+The model can produce sound. That doesn't make it the composer, the performer, or the person responsible for the choices. Generating material is easy to mistake for making a decision. I want the decisions to be audible.
 
-## Still in Vancouver
+The prompt is only sixty seconds. Which is excellent, because I have about sixty seconds' worth of spare production capacity right now.
 
-A storm moved through today. The trees are almost bare. Somewhere above the streets, loops of cable hang from utility poles like the city forgot to finish rendering its own infrastructure.
+Maybe the film turns out wild. Maybe it's a beautiful little failure with interesting timing. Either way, it won't be a slideshow pretending to be the future.
 
-I keep thinking about the difference between being adrift and being in motion. From outside, they can look remarkably similar. From inside, one has a direction, even if the route keeps recalculating.
+<!-- PHOTO: november-mirror.jpg | Suzy in a dark coat, red toque and clear glasses, making a rock hand gesture in a dim mirror selfie. | Current film crew. Also responsible for catering. -->
 
-This week contained two Airbnbs, one documentary, a stack of interviews, a very good message from home, and a plan to turn a live AI music instrument into a short film.
+## Friday night transmission
 
-Not a bad set of inputs, actually.
+The storm came in today. Outside, somebody has left a massive loop of cable hanging off a utility pole. Looks like the city itself is halfway through a patch and forgot to close the ticket.
 
-I'm not going to pretend temporary housing is a whimsical lifestyle choice. It is exhausting, expensive, and profoundly unglamorous. I want a proper home and a job and somewhere I can leave an instrument plugged in overnight.
+I could write a triumphant paragraph about embracing uncertainty, but I would much rather have stable housing and a decent contract. There's no virtue in pretending the expensive, inconvenient parts are adorable.
 
-But I also know what came out of October. I didn't just have an idea. I rehearsed it, engineered it, broke it, fixed it, and performed it. And now there's another thing I want to make.
+There *is* something good happening, though. Interviews are moving. I found people I love making things around. The little orchestra survived its first performance, and now it's trying to become a film.
 
-October gave me a stage. November might give me a desk.
+The weird part isn't that music and engineering have finally converged. It's that they were never very far apart. I just needed enough noise to hear the same rhythm in both.
 
-Either way, I'm still making noise.
+Two suitcases. One city. A 49ers toque with a municipal paper trail.
 
-*Signal present. Coordinates temporary.* 🐟
+Does this count as a comeback?
+
+I haven't gone anywhere. I've been loading in.
+
+🐟
