@@ -8,6 +8,7 @@ on:
       - 'js/gastown-sim.js'
       - 'page-home.php'
       - 'parts/home-gastown-spotlight.php'
+      - 'assets/illustrations/gastown-station-east-lookout.svg'
       - 'parts/home-feature-previews.php'
       - 'assets/css/home-feature-previews.css'
       - 'js/gastown-waterfront-station.js'
@@ -28,6 +29,7 @@ on:
       - 'js/gastown-sim.js'
       - 'page-home.php'
       - 'parts/home-gastown-spotlight.php'
+      - 'assets/illustrations/gastown-station-east-lookout.svg'
       - 'parts/home-feature-previews.php'
       - 'assets/css/home-feature-previews.css'
       - 'js/gastown-waterfront-station.js'
@@ -63,5 +65,6 @@ jobs:
           node --test __tests__/gastown-waterfront-public-realm.test.js
           node --test __tests__/gastown-harbour-vista.test.js
           node --test __tests__/gastown-storefront-home.test.js
+          node --test __tests__/home-gastown-lookout.test.js
           node --test __tests__/gastown-waterfront-station.test.js
           node --test __tests__/gastown-sim-config.test.js
