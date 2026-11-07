@@ -133,7 +133,7 @@ test('generator keeps world polygons valid with existing or generated output', (
 
 test('committed world json files include the expanded intersection-based fallback layout', () => {
   const root = path.resolve(__dirname, '..');
-  ['assets/world/gastown-water-street.json'].forEach((relPath) => {
+  ['assets/world/gastown-water-street-starter.json'].forEach((relPath) => {
     const data = JSON.parse(fs.readFileSync(path.join(root, relPath), 'utf8'));
     assert.ok(Array.isArray(data.npcs), relPath + ' should include npcs');
     assert.ok(data.npcs.length > 4, relPath + ' should have more than the original 4 npcs');
