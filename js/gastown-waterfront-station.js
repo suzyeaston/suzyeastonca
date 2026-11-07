@@ -202,24 +202,24 @@
 
     // Upper-storey sash windows / vertical brick rhythm.
     for (let x = -31.1; x <= 31.1; x += 4.2) {
-      box('Upper window surround', x, 13.58, 0.15, 2.18, 3.24, 0.15, stone);
-      box('Upper dark glazing', x, 13.57, 0.25, 1.72, 2.76, 0.06, glass);
-      box('Vertical sash mullion', x, 13.56, 0.3, 0.11, 2.72, 0.11, iron);
-      box('Upper sash rail', x, 13.3, 0.32, 1.76, 0.1, 0.11, stoneShadow);
-      box('Window keystone', x, 15.23, 0.3, 0.37, 0.24, 0.18, stone);
+      box('Upper window surround', x, 13.58, 0.63, 2.18, 3.24, 0.15, stone);
+      box('Upper dark glazing', x, 13.57, 0.72, 1.72, 2.76, 0.06, glass);
+      box('Vertical sash mullion', x, 13.56, 0.77, 0.11, 2.72, 0.11, iron);
+      box('Upper sash rail', x, 13.3, 0.8, 1.76, 0.1, 0.11, stoneShadow);
+      box('Window keystone', x, 15.23, 0.81, 0.37, 0.24, 0.18, stone);
     }
     [-31.1, -27.6, 27.6, 31.1].forEach(x => archWindow(x, 2.9, 4.3));
 
     // The Cordova Street doors sit behind modern black domed THE STATION awnings.
     [-7, 0, 7].forEach((x, i) => {
-      box('Portal shadow', x, 2.25, 0.09, 3.45, 4.5, 0.13, iron);
-      box('Door glazed pair', x, 1.93, 0.18, 2.55, 3.58, 0.12, glass);
+      box('Portal shadow', x, 2.25, 0.6, 3.45, 4.5, 0.13, iron);
+      box('Door glazed pair', x, 1.93, 0.72, 2.55, 3.58, 0.12, glass);
       [-0.68, 0.68].forEach(dx => {
-        box('Entry gate glass panel', x + dx, 1.91, 0.28, 1.14, 3.18, 0.08, glass);
-        box('Entry gate stile', x + dx * 0.1, 1.9, 0.36, 0.08, 3.42, 0.12, iron);
-        cylinder('Door handle', x + dx + (dx > 0 ? -0.29 : 0.29), 1.62, 0.42, 0.025, 0.025, 0.28, brass, 8);
+        box('Entry gate glass panel', x + dx, 1.91, 0.81, 1.14, 3.18, 0.08, glass);
+        box('Entry gate stile', x + dx * 0.1, 1.9, 0.9, 0.08, 3.42, 0.12, iron);
+        cylinder('Door handle', x + dx + (dx > 0 ? -0.29 : 0.29), 1.62, 0.96, 0.025, 0.025, 0.28, brass, 8);
       });
-      box('Portal transom', x, 3.72, 0.3, 3.2, 0.17, 0.22, stone);
+      box('Portal transom', x, 3.72, 0.82, 3.2, 0.17, 0.22, stone);
       const dome = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), canopyBlack);
       dome.scale.set(2.04, 0.86, 1.32);
       dome.position.set(x, 4.28, 1.99);
