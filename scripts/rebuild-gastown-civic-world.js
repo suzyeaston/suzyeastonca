@@ -238,7 +238,8 @@ function rebuild(world, streets, footprints, anchors, poles, trees) {
   const len = Math.hypot(tangent.x, tangent.z) || 1;
   const spawn = {
     ...world.spawn,
-    ...pt({ x: route[0].x + tangent.z / len * 8.2, z: route[0].z - tangent.x / len * 8.2 }),
+    ...pt({ x: route[0].x + tangent.x / len * 2.2 + tangent.z / len * 8.2,
+      z: route[0].z + tangent.z / len * 2.2 - tangent.x / len * 8.2 }),
     y: 1.7, yaw: -2.5, pitch: 0.06,
   };
   const streetHalf = 5.4, sidewalkOuter = 10.2, walkOuter = 15.2;
