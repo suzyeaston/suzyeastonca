@@ -106,6 +106,8 @@
   const dialogUtils = window.GastownDialog || {};
   const stationModel = window.GastownWaterfrontStation || null;
   const waterfrontPlaces = window.GastownWaterfrontPlaces || null;
+  const harbourVista = window.GastownHarbourVista || null;
+  const harbourLookBtn = app.querySelector('[data-action="harbour-lookout"]');
   const normalizeDialogEntry = typeof dialogUtils.normalizeDialogEntry === 'function'
     ? dialogUtils.normalizeDialogEntry
     : function fallbackNormalizeDialogEntry(entry, options) {
@@ -393,8 +395,10 @@
   const WHEEL_PITCH_SENSITIVITY = 0.0011;
   const KEYBOARD_PITCH_STEP = 0.055;
   const STREET_CAMERA_NEAR = 0.08;
-  const STREET_CAMERA_FAR = 700;
-  const OVERVIEW_CAMERA_FAR = 1600;
+  // Canada Place is ~300 metres north of the station; the compressed North
+  // Shore mountain panorama sits further out so it needs a longer far plane.
+  const STREET_CAMERA_FAR = 1000;
+  const OVERVIEW_CAMERA_FAR = 1800;
   const OVERVIEW_CAMERA_PITCH = THREE.MathUtils.degToRad(-60);
   const OVERVIEW_ALTITUDE_MIN = 18;
   const OVERVIEW_ALTITUDE_MAX = 90;
@@ -4107,6 +4111,13 @@
   }
 
   function addHeroLandmarks(world) {
+    // All harbour layers are outside the walkable polygon; always render them
+    // before/behind the civic building hero meshes so depth-test occlusion
+    // remains honest from street level.
+    if (harbourVista) {
+      const northHarbour = harbourVista.create(THREE, world);
+      if (northHarbour) worldGroup.add(northHarbour);
+    }
     if (waterfrontPlaces) {
       const shorelinePlaces = waterfrontPlaces.create(THREE, world);
       if (shorelinePlaces) worldGroup.add(shorelinePlaces);
@@ -5872,6 +5883,28 @@
     return false;
   }
 
+  function goToHarbourLookout() {
+    if (!harbourVista || !state.world || state.cameraMode !== 'street') {
+      setStatus('Use street mode to look across Burrard Inlet.');
+      return false;
+    }
+    const pose = harbourVista.lookoutFor(state.world);
+    if (!pose || !isSpawnSafe(pose)) {
+      setStatus('The waterfront sidewalk viewing position is not accessible in this map.');
+      return false;
+    }
+    clearMovementInput();
+    player.position.set(pose.x, pose.y, pose.z);
+    state.lastSafePosition.copy(player.position);
+    state.yaw = pose.yaw;
+    state.pitch = clampPitch(pose.pitch);
+    applyStreetCameraPose();
+    updateNearestNode();
+    drawMinimap();
+    setStatus('Harbour view: North Shore mountains, Canada Place sails and an illustrative docked cruise ship. Rail-yard sightlines are preserved.');
+    return true;
+  }
+
   function resetToStart() {
     stopBandAudio('reset');
     const spawn = resolveSafeSpawn();
@@ -6059,6 +6092,7 @@
 
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
+    if (harbourLookBtn) harbourLookBtn.addEventListener('click', goToHarbourLookout);
 
     if (timeOfDaySelect) {
       timeOfDaySelect.addEventListener('change', (event) => applyTimeOfDay(event.target.value));

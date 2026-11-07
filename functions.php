@@ -506,12 +506,23 @@ function se_enqueue_gastown_sim_assets() {
         );
     }
 
+    $harbour_vista_path = '/js/gastown-harbour-vista.js';
+    if ( file_exists( $dir . $harbour_vista_path ) ) {
+        wp_enqueue_script(
+            'se-gastown-harbour-vista',
+            $uri . $harbour_vista_path,
+            array( 'three-js' ),
+            filemtime( $dir . $harbour_vista_path ),
+            true
+        );
+    }
+
     $app_path = '/js/gastown-sim.js';
     if ( file_exists( $dir . $app_path ) ) {
         wp_enqueue_script(
             'se-gastown-sim',
             $uri . $app_path,
-            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places' ),
+            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista' ),
             filemtime( $dir . $app_path ) . '-tone-clock-tourists',
             true
         );
