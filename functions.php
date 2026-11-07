@@ -517,6 +517,44 @@ function se_enqueue_gastown_sim_assets() {
         );
     }
 
+    // The Gastown ambience directory currently contains only a README.
+    // Never tell Howler to fetch a speculative MP3/OGG path. Build a per-
+    // request allowlist from files actually present in the deployed theme.
+    // Prefer bespoke Gastown recordings whenever added in the future, with
+    // existing bundled YVR rain/transit loops as graceful local fallbacks.
+    $gastown_audio_ids = array(
+        'beds/quiet_night',
+        'beds/commuter_mix',
+        'beds/nightlife_hum',
+        'beds/eerie_drones',
+        'weather/rain_pavement',
+        'weather/thunder_roll',
+        'zones/distant_transit',
+        'zones/steam_clock_mech',
+        'zones/street_crowd',
+    );
+    $gastown_audio_fallbacks = array(
+        'beds/commuter_mix'    => '/assets/audio/yvr/skytrain-rumble.mp3',
+        'weather/rain_pavement'=> '/assets/audio/yvr/rain-loop.mp3',
+        'zones/distant_transit'=> '/assets/audio/yvr/skytrain-rumble.mp3',
+    );
+    $gastown_audio_sources = array();
+    foreach ( $gastown_audio_ids as $sound_id ) {
+        $candidate_paths = array(
+            '/assets/audio/gastown/' . $sound_id . '.mp3',
+            '/assets/audio/gastown/' . $sound_id . '.ogg',
+        );
+        if ( isset( $gastown_audio_fallbacks[ $sound_id ] ) ) {
+            $candidate_paths[] = $gastown_audio_fallbacks[ $sound_id ];
+        }
+        foreach ( $candidate_paths as $candidate_path ) {
+            if ( is_file( $dir . $candidate_path ) && is_readable( $dir . $candidate_path ) ) {
+                $gastown_audio_sources[ $sound_id ] = esc_url_raw( $uri . $candidate_path );
+                break;
+            }
+        }
+    }
+
     $app_path = '/js/gastown-sim.js';
     if ( file_exists( $dir . $app_path ) ) {
         wp_enqueue_script(
@@ -533,7 +571,8 @@ function se_enqueue_gastown_sim_assets() {
             'seGastownSim',
             array(
                 'worldDataUrl'   => esc_url_raw( $uri . '/assets/world/gastown-water-street.json' ),
-                'audioBaseUrl'   => esc_url_raw( $uri . '/assets/audio/gastown' ),
+                // Only URLs backed by files checked above are passed to JS.
+                'audioSources'   => $gastown_audio_sources,
                 'textureBaseUrl' => esc_url_raw( $uri . '/assets/textures' ),
                 'dialogDataUrl'  => esc_url_raw( $uri . '/assets/dialog/gastown.json' ),
                 'nonce' => wp_create_nonce( 'wp_rest' ),
