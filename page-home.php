@@ -15,14 +15,14 @@ get_header();
 
         <?php get_template_part( 'parts/home', 'mission-meanwhile' ); ?>
 
+        <?php get_template_part( 'parts/home-gastown-spotlight' ); ?>
+
         <?php get_template_part( 'parts/home-commercial-strip' ); ?>
 
         <?php get_template_part( 'parts/home-vancouver-tech-events' ); ?>
 
         <?php get_template_part( 'parts/home-radio-feature' ); ?>
     </section>
-
-    <?php get_template_part( 'parts/home-gastown-spotlight' ); ?>
 
     <?php get_template_part( 'parts/home-feature-previews' ); ?>
 

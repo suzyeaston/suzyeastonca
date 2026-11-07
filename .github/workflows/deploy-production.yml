@@ -162,6 +162,7 @@ jobs:
           node --test __tests__/gastown-waterfront-public-realm.test.js
           node --test __tests__/gastown-harbour-vista.test.js
           node --test __tests__/gastown-storefront-home.test.js
+          node --test __tests__/home-gastown-lookout.test.js
 
       - name: Deploy theme files
         if: needs.changes.outputs.theme == 'true'

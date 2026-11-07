@@ -95,6 +95,7 @@ THEME_FILES = [
     "parts/home-hero-pitch.php",
     "parts/home-commercial-strip.php",
     "parts/home-gastown-spotlight.php",
+    "assets/illustrations/gastown-station-east-lookout.svg",
     "parts/home-feature-previews.php",
     "parts/home-appliance-feature.php",
     "parts/home-hire-strip.php",

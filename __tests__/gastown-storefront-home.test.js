@@ -71,7 +71,8 @@ test('Home front page features the playable simulation above small project previ
   assert.match(spotlight, /home_url\( '\/gastown-sim\/' \)/);
   assert.match(spotlight, /ENTER GASTOWN/);
   assert.match(spotlight, /Canada Place/);
-  assert.match(spotlight, /SCHEMATIC \/ NOT TO SCALE/);
+  assert.match(spotlight, /ILLUSTRATED VIEW · SHIP REPRESENTATIVE/);
+  assert.match(spotlight, /gastown-station-east-lookout\.svg/);
   assert.match(spotlight, /aria-labelledby="home-gastown-spotlight-title"/);
   assert.match(css, /\.home-gastown-spotlight__play:focus-visible/);
   assert.match(css, /@media \(max-width: 520px\)/);
