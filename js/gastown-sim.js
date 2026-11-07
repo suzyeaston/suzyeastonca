@@ -4765,6 +4765,11 @@
     if (!onStreet && !onSidewalk) return false;
 
     const intersectsBuilding = state.world.buildings.some((building) => {
+      // Civic footprints are often long, narrow or L-shaped. A bounding
+      // circle blocks real sidewalks, so prefer the actual polygon.
+      if (Array.isArray(building.footprint) && building.footprint.length >= 3) {
+        return isPointInPolygon(spawn, building.footprint);
+      }
       const distance = Math.hypot(spawn.x - building.x, spawn.z - building.z);
       return distance < getBuildingCollisionRadius(building);
     });
