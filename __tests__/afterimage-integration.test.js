@@ -36,3 +36,18 @@ test('Atlas template is in the selected production deployment manifest', () => {
   const manifest = read('scripts/theme_deploy_manifest.py');
   assert.match(manifest, /"page-afterimage\.php"/);
 });
+
+test('AFTERIMAGE iframe uses strict origin, source and dimension verification to resize', () => {
+  const page=read('page-afterimage.php');
+  assert.match(page, /id="afterimage-frame"/);
+  assert.match(page, /afterimage:resize/);
+  assert.match(page, /afterimage:ready/);
+  assert.match(page, /afterimage:scroll/);
+  assert.match(page, /window\.scrollTo/);
+
+  assert.match(page, /event\.origin !== 'https:\/\/suzyeaston\.github\.io'/);
+  assert.match(page, /event\.source !== frame\.contentWindow/);
+  assert.match(page, /Number\.isFinite\(height\)/);
+  assert.match(page, /height > 50000/);
+  assert.match(page, /scrolling="no"/);
+});
