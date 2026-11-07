@@ -12,9 +12,15 @@ media_archive: Suzy_The_Toaster_Was_a_Decoy_11_Photos.zip
 
 *Meanwhile / Friday, November 6, 2026 / Temporary Coordinates*
 
-Vancouver is getting rinsed tonight. I'm writing this from my second Airbnb of the week, somewhere in South Vancouver, nearer the Fraser River than the beach. My 8GB MacBook is here, the red pom-pom toque is here, and my entire life has developed a fairly sophisticated system of wheels and zippers.
+Vancouver is getting rinsed tonight. I'm writing this from my second Airbnb of the week, somewhere in South Vancouver, nearer the Fraser River than the beach. My 8GB MacBook is here, the 49ers pom-pom toque is here, and my entire life has developed a fairly sophisticated system of wheels and zippers.
 
-<!-- PHOTO: november-red-toque.jpg | Suzy outdoors in Vancouver in a red 49ers pom-pom beanie, clear glasses and a dark coat. | November in Vancouver. Temporary coordinates, consistent hat. -->
+<!-- PHOTO: november-red-toque.jpg | Suzy outdoors in Vancouver in a red San Francisco 49ers pom-pom toque, clear glasses and a dark coat. | California roots, Vancouver weather. -->
+
+And yes, that's a San Francisco 49ers toque. My brother and I grew up cheering for Joe Montana and Jerry Rice. It's not some random football merch. There's family history underneath that pom-pom.
+
+My mom's originally from Palo Alto, and half my family is American. My grandpa, James Bloch, was even mayor of Menlo Park in 1979. I went looking and found him listed as mayor in the [February 23, 1979 *Federal Register*](https://upload.wikimedia.org/wikipedia/commons/c/c8/Federal_Register_1979-02-23-_Vol_44_Iss_38_%28IA_sim_federal-register-find_1979-02-23_44_38%29.pdf). Apparently my winter hat comes with archival footnotes. lol.
+
+So here I am moving between temporary rooms in Vancouver with a tiny piece of the Bay Area on my head. Vancouver is home. California has always been somewhere in the wiring.
 
 On Monday I published [The Toaster Was a Decoy](https://www.suzyeaston.ca/2026/11/02/the-toaster-was-a-decoy/), about building a little AI orchestra, performing Radiohead in a planetarium, and realizing that the studio might be something I carry instead of somewhere I live.
 
