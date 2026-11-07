@@ -1398,7 +1398,12 @@ function buildWorld(options = {}) {
   // of truth. Synthetic test fixtures without those segments retain legacy
   // fallback behavior.
   const names = new Set((streets.features || []).map(f => String((f.properties || {}).hblock || '').toUpperCase()));
-  if (['600 W CORDOVA ST', '500 W CORDOVA ST', '200-300 WATER ST'].every(name => names.has(name))) {
+  // Explicit reference-fixture tests and the legacy 2015 override continue
+  // to exercise the original generator without mutating cached civic data.
+  const referenceOverride = fs.existsSync(path.join(root, 'data', 'reference', 'refresh', 'gastown-route-reference.geojson'));
+  const testFootprintOverride = fs.existsSync(path.join(root, 'data', 'cov', 'building-footprints-2015.geojson'));
+  if (!referenceOverride && !testFootprintOverride
+      && ['600 W CORDOVA ST', '500 W CORDOVA ST', '200-300 WATER ST'].every(name => names.has(name))) {
     const { rebuild } = require('./rebuild-gastown-civic-world');
     const currentWorld = tryReadJson(outputPath)
       || tryReadJson(path.join(root, 'assets', 'world', 'gastown-water-street.json'))
