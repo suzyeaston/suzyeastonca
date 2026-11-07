@@ -141,6 +141,7 @@ THEME_FILES = [
     "assets/css/gastown-sim.css",
     "js/gastown-sim.js",
     "js/gastown-waterfront-station.js",
+    "js/gastown-waterfront-places.js",
     "js/gastown-world-loader.js",
     "js/gastown-building-normalizer.js",
     "js/gastown-dialog.js",
