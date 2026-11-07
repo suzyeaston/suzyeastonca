@@ -41,6 +41,24 @@ test('Artist-rendered Station East lookout shows the actual three-site relations
   assert.doesNotMatch(svg, /<script|<foreignObject|<image\b|(?:href|src)\s*=\s*["']https?:\/\//i, 'no remote images or script execution');
 });
 
+test('Gastown spans BOTH desktop hero columns instead of squeezing into the 320px lane', () => {
+  const hero = read('assets/css/home-yvr-radar-deck.css');
+  const css = read('assets/css/home-feature-previews.css');
+  const desktop = hero.slice(hero.indexOf('@media (min-width: 900px)'));
+  assert.match(desktop,
+    /\.home-yvr-radar-deck\s*>\s*\.home-gastown-spotlight[\s\S]*?grid-column:\s*1\s*\/\s*-1/,
+    'parent grid must explicitly assign Gastown to both columns');
+  const ownRule = css.match(/#homepage-content \.home-yvr-radar-deck > \.home-gastown-spotlight\s*\{([^}]*)\}/);
+  assert.ok(ownRule, 'spotlight should have dedicated layout rules');
+  assert.match(ownRule[1], /grid-column:\s*1\s*\/\s*-1/);
+  assert.match(ownRule[1], /width:\s*100%/);
+  assert.match(ownRule[1], /min-width:\s*0/);
+  assert.match(css, /grid-template-columns:\s*minmax\(0,\s*0\.86fr\)\s+minmax\(0,\s*1\.14fr\)/);
+  assert.match(css, /aspect-ratio:\s*1000\s*\/\s*580/);
+  assert.match(css, /@media\s*\(max-width:\s*850px\)/,
+    'single column on tablets and phones');
+});
+
 test('Spotlight loads the actual lookout artwork, stays accessible and makes the simulator easy to enter', () => {
   const spotlight = read('parts/home-gastown-spotlight.php');
   const css = read('assets/css/home-feature-previews.css');
