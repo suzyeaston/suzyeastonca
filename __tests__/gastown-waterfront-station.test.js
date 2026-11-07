@@ -67,11 +67,17 @@ const world = {
 test('station is staged in front of the player, not over the starting point', () => {
   const { station } = loadModel();
   const anchor = station.anchorFor(world);
-  assert.ok(Math.abs(Math.hypot(anchor.x - world.spawn.x, anchor.z - world.spawn.z) - 13) < 0.001);
+  assert.ok(Math.abs(Math.hypot(anchor.x - world.spawn.x, anchor.z - world.spawn.z) - 22) < 0.001);
   const arrivalYaw = station.arrivalYaw(world);
   const forward = { x: -Math.sin(arrivalYaw), z: -Math.cos(arrivalYaw) };
-  const direction = { x: (anchor.x - world.spawn.x) / 13, z: (anchor.z - world.spawn.z) / 13 };
+  const direction = { x: (anchor.x - world.spawn.x) / 22, z: (anchor.z - world.spawn.z) / 22 };
   assert.ok((forward.x * direction.x + forward.z * direction.z) > 0.999, 'player faces station frontage');
+  assert.ok(station.arrivalPitch() > 0.05, 'initial camera tilts enough to show the historic inscription');
+  assert.ok(station.isWalkableForecourt(world, world.spawn), 'spawn connects to the modeled forecourt');
+  const landing = station.toWorld(world, 0, 5.2);
+  assert.ok(station.isWalkableForecourt(world, landing), 'player can approach the front doors');
+  const insideBuilding = station.toWorld(world, 0, -5);
+  assert.equal(station.isWalkableForecourt(world, insideBuilding), false, 'station mass remains blocked');
 });
 
 test('reference-led station exterior contains its distinctive architectural elements', () => {
@@ -87,6 +93,7 @@ test('reference-led station exterior contains its distinctive architectural elem
   assert.equal(names.filter(n => n === 'THE STATION').length, 3);
   assert.ok(names.includes('Arched ground-floor glazing'));
   assert.ok(names.includes('Stone entrance landing'));
+  assert.ok(names.includes('Cordova station forecourt'));
   assert.ok(names.includes('Transit wayfinding sign'));
 });
 
