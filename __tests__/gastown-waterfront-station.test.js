@@ -118,7 +118,7 @@ test('WordPress loads the station builder before the simulator and deploys the m
   const manifest = fs.readFileSync(path.join(ROOT, 'scripts/theme_deploy_manifest.py'), 'utf8');
   const simulator = fs.readFileSync(path.join(ROOT, 'js/gastown-sim.js'), 'utf8');
   assert.match(functions, /'se-gastown-waterfront-station'/);
-  assert.match(functions, /array\( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista' \)/);
+  assert.match(functions, /array\( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista', 'se-gastown-suzy-avatar' \)/);
   assert.ok(manifest.includes('"js/gastown-waterfront-station.js"'));
   assert.match(simulator, /stationModel\.create\(THREE, world\)/);
   assert.match(simulator, /stationModel\.commutersFor\(world\)/);
