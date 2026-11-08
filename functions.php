@@ -555,12 +555,23 @@ function se_enqueue_gastown_sim_assets() {
         }
     }
 
+    $suzy_avatar_path = '/js/gastown-suzy-avatar.js';
+    if ( file_exists( $dir . $suzy_avatar_path ) ) {
+        wp_enqueue_script(
+            'se-gastown-suzy-avatar',
+            $uri . $suzy_avatar_path,
+            array( 'three-js' ),
+            filemtime( $dir . $suzy_avatar_path ),
+            true
+        );
+    }
+
     $app_path = '/js/gastown-sim.js';
     if ( file_exists( $dir . $app_path ) ) {
         wp_enqueue_script(
             'se-gastown-sim',
             $uri . $app_path,
-            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista' ),
+            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista', 'se-gastown-suzy-avatar' ),
             filemtime( $dir . $app_path ) . '-tone-clock-tourists',
             true
         );
