@@ -142,12 +142,12 @@
 
   function waterSurface(THREE, root) {
     const water = new THREE.Mesh(
-      new THREE.PlaneGeometry(1320, 850),
+      new THREE.PlaneGeometry(1320, 900),
       new THREE.MeshBasicMaterial({ color: 0x266d91, fog: false, side: THREE.DoubleSide })
     );
     water.name = 'Burrard Inlet water';
     water.rotation.x = -Math.PI / 2;
-    water.position.set(0, -0.46, -555); // shoreline approx. -130; far edge -980
+    water.position.set(0, -0.11, -566); // visually distinct tidal water, starts near the seaward edge of the yard
     root.add(water);
 
     // One lightweight line-segments geometry, rather than a texture download.
@@ -157,7 +157,7 @@
       for (let col = 0; col < 13; col++) {
         const x = -370 + col * 59 + (row % 2) * 18;
         const length = 7 + ((col * 9 + row * 7) % 15);
-        ripples.push(x, -0.405, z, x + length, -0.405, z + 1.2);
+        ripples.push(x, -0.035, z, x + length, -0.035, z + 1.2);
       }
     }
     const geom = new THREE.BufferGeometry();
@@ -178,7 +178,7 @@
     for(let i=0;i<16;i++){
       const z=-148-i*13.5;
       const ribbon=box(THREE,root,'Sea surface cross-harbour reflection '+i,
-        75, -0.38, z, 140+i*5, 0.018, 0.38, waveMaterial);
+        75, -0.025, z, 140+i*5, 0.018, 0.38, waveMaterial);
       ribbon.rotation.y=0.04;
     }
   }
@@ -503,7 +503,7 @@
     return {
       x, y: 1.7, z,
       yaw: Math.atan2(-dx, -dz),
-      pitch: 0.10,
+      pitch: -0.012, // eye-line now catches the water rather than sky alone
       facing: 'north-northwest toward Canada Place and the North Shore',
       label: 'Station East / West Cordova harbour view (sidewalk)',
       publicSidewalkApproximation: true
