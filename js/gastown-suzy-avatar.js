@@ -152,11 +152,15 @@
           ink.fillRect(col*tile,row*tile,tile,tile);
         }
         // Subtle woven grid, not a bright neon checkerboard.
-        ink.strokeStyle='rgba(37,27,27,.12)';ink.lineWidth=1;
-        for(let v=0;v<256;v+=8){ink.beginPath();ink.moveTo(v,0);ink.lineTo(v,256);ink.stroke();}
+        if(ink.beginPath&&ink.moveTo&&ink.lineTo&&ink.stroke){
+          ink.strokeStyle='rgba(37,27,27,.12)';ink.lineWidth=1;
+          for(let v=0;v<256;v+=8){
+            ink.beginPath();ink.moveTo(v,0);ink.lineTo(v,256);ink.stroke();
+          }
+        }
         const fabric=new THREE.CanvasTexture(cloth);
         fabric.colorSpace=THREE.SRGBColorSpace;
-        checker.color.setHex(0xffffff);
+        if(checker.color&&typeof checker.color.setHex==='function')checker.color.setHex(0xffffff);
         checker.map=fabric;
         checker.needsUpdate=true;
       }
