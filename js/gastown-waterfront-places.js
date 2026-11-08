@@ -175,6 +175,15 @@
         const t=j/n,x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t;
         addCylinder(THREE,root,'Waterfront fence steel upright',x,1.13,z,0.065,2.18,postMat);
         addBox(THREE,root,'Fence post cap',x,2.25,z,0.18,0.09,0.18,capMat);
+        // The reference has tightly spaced black metal pickets. The former
+        // three-rail outline read as an empty industrial handrail.
+        if(j<n){
+          for(let k=1;k<=5;k++){
+            const t2=(j+k/6)/n;
+            addCylinder(THREE,root,'Waterfront fence vertical black picket',
+              a.x+(b.x-a.x)*t2,1.12,a.z+(b.z-a.z)*t2,0.028,2.02,postMat);
+          }
+        }
       }
       for(const y of [0.46,1.35,2.12]){
         addSegment(THREE,root,'Rail-yard lookout open metal fence rail',a,b,y,0.065,railMat);
@@ -183,7 +192,7 @@
     const view=fenceLookoutFor(lot);
     // A low viewing marker establishes the experience without hiding the harbour.
     addCylinder(THREE,root,'Harbour view wayfinding post',view.x+2,0.82,view.z+1,0.08,1.58,postMat);
-    sign(THREE,root,'RAIL YARD / BURRARD INLET',{x:view.x+2,y:1.78,z:view.z+1},3.2,0.66,-0.64,
+    sign(THREE,root,'RAIL YARD / BURRARD INLET',{x:view.x+7.3,y:1.44,z:view.z+1.6},1.92,0.31,-0.64,
       {background:'#274251',color:'#fff4dc'});
   }
 
@@ -213,6 +222,91 @@
     addBox(THREE,car,'Vehicle front bumper',0,0.35,-2.12,1.72,0.22,0.16,dark);
     addBox(THREE,car,'Vehicle rear bumper',0,0.35,2.12,1.72,0.22,0.16,dark);
     group.add(car);
+  }
+
+  // Reference-led, deliberately approximate street furniture. The yellow
+  // barricades, driveway gantry, speed sign and painted markings are what make
+  // this an identifiable Vancouver parking lot instead of a grey rectangle.
+  // All objects stay at the perimeter, outside the clear entrance-to-fence walk.
+  function addLotReferenceDetails(THREE, root, lot) {
+    const yellow = new THREE.MeshStandardMaterial({color:0xf5bf2c,roughness:0.85});
+    const wornYellow = new THREE.MeshStandardMaterial({color:0xc49b24,roughness:0.96});
+    const concrete = new THREE.MeshStandardMaterial({color:0xa6a8a3,roughness:0.96});
+    const iron = new THREE.MeshStandardMaterial({color:0x353d43,roughness:0.63,metalness:0.34});
+    const white = new THREE.MeshBasicMaterial({color:0xe2e1d6});
+    const dark = new THREE.MeshBasicMaterial({color:0x31353a});
+    const start = entranceFor(lot), end = fenceLookoutFor(lot);
+    const sideA=lot.polygon[0], sideB=lot.polygon[1];
+    const length=Math.hypot(sideB.x-sideA.x,sideB.z-sideA.z)||1;
+    const axis={x:(sideB.x-sideA.x)/length,z:(sideB.z-sideA.z)/length};
+    const toCenter={x:lot.center.x-start.x,z:lot.center.z-start.z};
+    const inwardLength=Math.hypot(toCenter.x,toCenter.z)||1;
+    const inward={x:toCenter.x/inwardLength,z:toCenter.z/inwardLength};
+    const point=(along,inside)=>({x:start.x+axis.x*along+inward.x*inside,
+      z:start.z+axis.z*along+inward.z*inside});
+
+    // Two upright columns and a raised overhead 2.0 m clearance structure.
+    // The driving corridor remains open: NO horizontal ground-level gate arm.
+    const left=point(-5.0,1.2),right=point(5.0,1.2);
+    for(const [i,p] of [left,right].entries()){
+      addBox(THREE,root,'Station East yellow gantry footing',p.x,0.29,p.z,0.78,0.5,0.78,concrete);
+      addBox(THREE,root,'Station East clearance gantry upright',p.x,1.42,p.z,0.15,2.7,0.15,iron);
+      addBox(THREE,root,'Reflective yellow gantry sleeve',p.x,0.85,p.z,0.23,0.9,0.23,yellow);
+    }
+    addSegment(THREE,root,'Station East overhead 2m clearance gantry',left,right,2.75,0.18,iron);
+    const gantryMid=point(0,1.2);
+    addSegment(THREE,root,'Station East yellow warning header',point(-2.4,1.2),point(2.4,1.2),2.56,0.39,yellow);
+    const signYaw=Math.atan2(-inward.x,-inward.z);
+    sign(THREE,root,'MAX HEIGHT 2.00m',{x:gantryMid.x,y:2.6,z:gantryMid.z},4.65,0.29,signYaw,
+      {background:'#f5c432',color:'#171a1c'});
+    const speed=point(-6.2,1.1);
+    addCylinder(THREE,root,'8 km/h speed sign pole',speed.x,1.35,speed.z,0.055,2.5,iron);
+    sign(THREE,root,'8 km/h',{x:speed.x,y:2.5,z:speed.z},1.0,0.85,signYaw,
+      {background:'#f2f3e9',color:'#171b20'});
+    const warning=point(5.8,1.3);
+    sign(THREE,root,'WARNING',{x:warning.x,y:2.15,z:warning.z},1.25,0.56,signYaw,
+      {background:'#f2ce42',color:'#202124'});
+
+    // Painted entry arrows and yellow curb hatching reference the real photos.
+    for(const inside of [4,9]){
+      const tail=point(0,inside+2),tip=point(0,inside-0.9);
+      addSegment(THREE,root,'Lot inbound white painted arrow stem',tail,tip,0.23,0.14,white);
+      const l={x:tip.x+axis.x*0.9+inward.x*1.25,z:tip.z+axis.z*0.9+inward.z*1.25};
+      const r={x:tip.x-axis.x*0.9+inward.x*1.25,z:tip.z-axis.z*0.9+inward.z*1.25};
+      addSegment(THREE,root,'Lot inbound painted arrow head',tip,l,0.23,0.14,wornYellow);
+      addSegment(THREE,root,'Lot inbound painted arrow head',tip,r,0.23,0.14,wornYellow);
+    }
+    for(let i=-3;i<=3;i++){
+      const a=point(i*0.75,2.0),b=point(i*0.75+1.9,5.1);
+      if(i%2===0)addSegment(THREE,root,'Station East entry yellow hatching',a,b,0.232,0.095,wornYellow);
+    }
+
+    // Short yellow Jersey barriers sit beside the harbour fence. They avoid
+    // the centre walkway and cannot be mistaken for port pedestrian access.
+    let count=0;
+    for(const edgeIndex of [3,4,5]){
+      const a=lot.polygon[edgeIndex],b=lot.polygon[(edgeIndex+1)%lot.polygon.length];
+      const n=Math.max(1,Math.floor(Math.hypot(b.x-a.x,b.z-a.z)/5.5));
+      const yaw=Math.atan2(-(b.z-a.z),b.x-a.x);
+      for(let j=0;j<n;j++){
+        const t=(j+0.5)/n,p={x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t};
+        if(distSegment(p,start,end)<6.5 || Math.hypot(p.x-end.x,p.z-end.z)<5.2)continue;
+        const span=Math.min(3.0,Math.hypot(b.x-a.x,b.z-a.z)/n-0.45);
+        if(span<0.8)continue;
+        addBox(THREE,root,'Yellow waterfront concrete barricade',p.x,0.48,p.z,span,0.78,0.66,yellow,yaw);
+        addBox(THREE,root,'Barricade scuffed concrete foot',p.x,0.16,p.z,span+0.16,0.2,0.9,concrete,yaw);
+        addBox(THREE,root,'Barricade worn horizontal stripe',p.x,0.64,p.z,span-0.08,0.055,0.68,wornYellow,yaw);
+        count++;
+      }
+    }
+    // Small striped wheel stops at the edge of the driveway (not on its path).
+    for(const side of [-1,1]){
+      const p=point(side*7.2,4.2);
+      addBox(THREE,root,'Yellow parking wheel stop',p.x,0.27,p.z,1.55,0.25,0.36,yellow,
+        Math.atan2(-axis.z,axis.x));
+    }
+    root.userData.yellowBarricades=count;
+    root.userData.referenceProps='painted bays / open gantry / 8 kmh / yellow concrete barriers';
   }
 
   function createParking(THREE, world) {
@@ -259,6 +353,7 @@
     sign(THREE,root,'P  STATION EAST',{x:gate.x-5.0,y:2.6,z:gate.z+3.6},
       5.7,1.05,0.7,{background:'#164b73'});
     addHarbourFence(THREE,root,lot);
+    addLotReferenceDetails(THREE,root,lot);
     root.userData.provenance=lot.source;
     root.userData.parkedCars=stalls.length;
     root.userData.walkableFromCordova=true;
@@ -332,6 +427,21 @@
       Math.atan2(-(b.x-a.x),b.z-a.z),{background:'#5d5148'});
     sign(THREE,root,'STEAMWORKS',{x:center.x,y:2.7,z:center.z},8.7,0.9,
       Math.atan2(-(b.x-a.x),b.z-a.z),{background:'#6d3028',color:'#f1d1af'});
+    // Low Steamworks patio enclosure on the parking-facing edge, anchored
+    // to the existing warehouse facade rather than to an invented building.
+    const toward=world && world.parkingLot ? world.parkingLot.center : center;
+    const dx=toward.x-center.x,dz=toward.z-center.z;
+    const d=Math.hypot(dx,dz)||1;
+    const p={x:center.x+dx/d*3.0,z:center.z+dz/d*3.0};
+    const patioYaw=Math.atan2(-(b.z-a.z),b.x-a.x);
+    const awning=new THREE.MeshStandardMaterial({color:0x996b43,roughness:0.85});
+    const frame=new THREE.MeshStandardMaterial({color:0x30373a,roughness:0.72,metalness:0.25});
+    addBox(THREE,root,'Steamworks patio copper awning',p.x,2.88,p.z,8.5,0.22,3.2,awning,patioYaw);
+    for(const offset of [-3.6,3.6]){
+      const axis={x:(b.x-a.x)/Math.hypot(b.x-a.x,b.z-a.z),z:(b.z-a.z)/Math.hypot(b.x-a.x,b.z-a.z)};
+      const px=p.x+axis.x*offset,pz=p.z+axis.z*offset;
+      addBox(THREE,root,'Steamworks outdoor patio frame',px,1.36,pz,0.14,2.7,0.14,frame);
+    }
     root.userData.provenance = landing.source;
     return root;
   }
