@@ -593,3 +593,85 @@
   color: #11131b;
   background: #d1b8f4;
 }
+
+/* Original SOFT RESET 60-second film conductor. Isolated from navigation UI. */
+.gastown-minimap-toolbar [data-action="film-panel-toggle"] {
+  order: 7;
+  flex: 1 0 100%;
+  min-width: 0;
+  color: #b9fff3;
+  background: rgba(24, 62, 64, 0.96);
+  border-color: rgba(104, 228, 213, 0.88);
+  letter-spacing: .12em;
+}
+.gastown-film-panel[hidden] { display: none !important; }
+.gastown-film-panel {
+  position: absolute;
+  right: .9rem;
+  bottom: .85rem;
+  z-index: 15;
+  width: min(340px, calc(100vw - 1.4rem));
+  max-height: min(76vh, 650px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .62rem;
+  padding: .9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(103, 224, 209, .85);
+  color: #eaf2f5;
+  background: rgba(7, 17, 25, .96);
+  box-shadow: 0 12px 35px rgba(0,0,0,.65);
+  font: 500 .76rem/1.4 system-ui, sans-serif;
+  pointer-events: auto;
+}
+.gastown-film-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.gastown-film-panel-head h2 {
+  margin: 0;
+  font: 700 .92rem/1.3 ui-monospace, monospace;
+  color: #b1fff0;
+  letter-spacing: .035em;
+}
+.gastown-film-panel-head button {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  font-size: 1.3rem;
+}
+.gastown-film-panel p { margin: .1rem 0; }
+.gastown-film-disclosure { color: #c8b9f0; font-size: .71rem; }
+.gastown-film-panel select,
+.gastown-film-panel input[type="file"],
+.gastown-film-panel input[type="range"],
+.gastown-film-panel button,
+.gastown-film-panel audio { max-width: 100%; width: 100%; }
+.gastown-film-panel select,
+.gastown-film-panel button {
+  padding: .43rem .55rem;
+  border-radius: 6px;
+  border: 1px solid #6f8d99;
+  background: #192c3a;
+  color: #effffd;
+}
+.gastown-film-panel label { font-weight: 700; color: #e1f6f5; }
+.gastown-film-panel audio { height: 2.6rem; }
+.gastown-film-prompt {
+  padding: .55rem;
+  min-height: 3rem;
+  color: #e5d7fc;
+  border-left: 2px solid #ba92f4;
+  background: rgba(132, 86, 166, .13);
+}
+.gastown-film-toggle { display: flex; align-items: start; gap: .45rem; }
+.gastown-film-toggle input { margin-top: .16rem; }
+.gastown-film-instrument-link { color: #9cfae8; text-decoration: underline; }
+.gastown-film-panel output { color: #a8f6e3; font: 700 .78rem ui-monospace, monospace; }
+.gastown-film-panel [data-film-status] { color: #f9d4a4; font-size: .69rem; }
+@media (max-width:740px) {
+  .gastown-film-panel { left: .45rem; right: .45rem; width: auto; bottom: .3rem; max-height: 58vh; }
+}
