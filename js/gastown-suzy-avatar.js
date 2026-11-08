@@ -10,8 +10,8 @@
 (function (window) {
   'use strict';
   const COLORS = Object.freeze({
-    hair: 0xc6b8ce,
-    hairShade: 0x9785a5,
+    hair: 0xc9c2c6,
+    hairShade: 0xa69aa9,
     jacket: 0x1c2027,
     jacketEdge: 0x323846,
     denim: 0xbac9cf,
@@ -82,14 +82,31 @@
     ];
     [-1,1].forEach((sign,i)=>sphere(THREE,arms[i],'Hand holding musical possibility',0.093,skin,[0,-0.59,0],[0.8,1.05,0.9]));
     mesh(THREE,avatar,'Neck',new THREE.CylinderGeometry(0.12,0.13,0.17,10),skin,[0,1.57,0]);
-    sphere(THREE,avatar,'Head',0.22,skin,[0,1.79,-0.015],[0.86,1.15,0.88]);
-    sphere(THREE,avatar,'Silver lavender crown',0.223,hair,[0,1.96,0.025],[0.91,0.47,0.9]);
-    sphere(THREE,avatar,'Messy lavender bun',0.17,hairShade,[0.045,2.11,0.15],[1.05,0.76,0.89]);
-    sphere(THREE,avatar,'Bun stray tuft',0.081,hair,[0.14,2.21,0.17],[0.75,1.6,0.8]);
-    for(const x of [-0.2,0.19]){
-      const lock=mesh(THREE,avatar,'Long pale face-framing hair',
-        new THREE.CylinderGeometry(0.035,0.075,0.42,7),hair,[x,1.67,-0.112],[0,0,x>0?0.13:-0.15]);
+    // The first model's enormous purple tuft read as animal ears and left a
+    // bald tan hemisphere visible from behind. Build the hair around an
+    // actual scalp volume, with side fringe and a restrained messy half-up bun.
+    sphere(THREE,avatar,'Silver blonde full hair cap',0.228,hair,[0,1.83,0.042],[0.98,1.16,1.03]);
+    sphere(THREE,avatar,'Face with sculpted chin',0.215,skin,[0,1.765,-0.069],[0.85,1.16,0.81]);
+    sphere(THREE,avatar,'Cheek left',0.048,skin,[-0.141,1.730,-0.189],[1.0,0.63,0.42]);
+    sphere(THREE,avatar,'Cheek right',0.048,skin,[0.141,1.730,-0.189],[1.0,0.63,0.42]);
+    sphere(THREE,avatar,'Silver blonde hair crown',0.219,hair,[0,1.953,0.035],[1.0,0.48,0.94]);
+    sphere(THREE,avatar,'Low half-up loose bun',0.126,hairShade,[0.062,2.042,0.206],[1.18,0.95,0.89]);
+    // Distinctive soft bangs sweep across the forehead; no pointed spikes.
+    for(let i=0;i<7;i++){
+      const x=-0.16+i*0.052;
+      const length=0.07+(i%3)*0.017;
+      const strand=mesh(THREE,avatar,'Wispy layered bangs '+i,
+        new THREE.CylinderGeometry(0.016,0.029,length,7),i%3?hair:hairShade,
+        [x,1.932-length*0.2,-0.170],[0,0,-0.14]);
+      strand.castShadow=false;
+    }
+    for(const x of [-0.204,0.202]){
+      const lock=mesh(THREE,avatar,'Silver-blonde face framing lengths',
+        new THREE.CylinderGeometry(0.024,0.060,0.52,9),hair,
+        [x,1.678,-0.080],[0,0,x>0?0.11:-0.10]);
       lock.castShadow=false;
+      sphere(THREE,avatar,'Soft loose hair ends',0.060,hair,
+        [x*1.10,1.432,-0.085],[0.9,1.2,0.65]);
     }
     const lens=mat(THREE,COLORS.lens,0.08);
     // Glasses on the forward (-Z) face; separate rims and transparent-ish lenses.
@@ -102,7 +119,61 @@
       l.material.opacity=0.16;
     });
     box(THREE,avatar,'Glasses nose bridge',[0.044,0.012,0.03],glass,[0,1.81,-0.227]);
-    box(THREE,avatar,'Small smile',[0.087,0.009,0.012],top,[0,1.714,-0.204]);
+    // Features read clearly when the film camera moves around in front:
+    // distinct dark eyes behind clear frames, natural brows, nose and lips.
+    const features=mat(THREE,0x443a3b);
+    const lip=mat(THREE,0x9d696c);
+    for(const x of [-0.088,0.088]){
+      sphere(THREE,avatar,'Warm brown visible eye',0.028,features,
+        [x,1.795,-0.225],[1.0,0.60,0.37]);
+      box(THREE,avatar,'Natural eyebrow',[0.075,0.013,0.011],features,
+        [x,1.858,-0.211],[0,0,x>0?0.10:-0.10]);
+    }
+    sphere(THREE,avatar,'Sculpted nose',0.035,skin,[0,1.752,-0.234],[0.65,1.18,0.90]);
+    sphere(THREE,avatar,'Mouth with soft smile',0.042,lip,[0,1.690,-0.217],[1.16,0.18,0.30]);
+
+    // The black Vans backpack is part of the actual artist silhouette.
+    // Lightweight geometry with hanging shoulder straps, carry handle,
+    // front pocket, zip seam and a small recognisable woven wordmark.
+    const bag=mat(THREE,0x11151b);
+    const bagTrim=mat(THREE,0x30343c);
+    const stitch=mat(THREE,0xc9d1db);
+    const backpack=new THREE.Group();
+    backpack.name='Suzy black Vans backpack';
+    backpack.position.set(0,1.20,0.245);
+    avatar.add(backpack);
+    sphere(THREE,backpack,'Rounded Vans daypack shell',0.305,bag,
+      [0,-0.04,0.13],[0.89,1.17,0.60]);
+    sphere(THREE,backpack,'Vans front pocket',0.213,bagTrim,
+      [0,-0.165,0.287],[1.02,0.61,0.28]);
+    for(const x of [-0.205,0.205]){
+      box(THREE,backpack,'Backpack webbing shoulder strap',[0.067,0.62,0.065],bagTrim,
+        [x,-0.01,-0.06],[x>0?0.16:-0.16,0,0]);
+    }
+    box(THREE,backpack,'Backpack top carry handle',[0.16,0.047,0.07],bagTrim,[0,0.335,0.04]);
+    box(THREE,backpack,'Backpack pocket zipper',[0.28,0.017,0.012],stitch,[0,-0.075,0.357]);
+    const patch=box(THREE,backpack,'Vans backpack white woven label',[0.17,0.080,0.02],stitch,[0,0.113,0.325]);
+    patch.userData.wordmark='VANS';
+    // Texture is optional for test doubles that have no browser canvas.
+    if(window.document&&THREE.CanvasTexture&&THREE.PlaneGeometry){
+      const canvas=window.document.createElement('canvas');
+      canvas.width=192;canvas.height=96;
+      const ctx=canvas.getContext&&canvas.getContext('2d');
+      if(ctx){
+        ctx.fillStyle='#efefef';ctx.fillRect(0,0,192,96);
+        ctx.fillStyle='#131519';ctx.font='900 64px Arial';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('VANS',96,50,178);
+        const texture=new THREE.CanvasTexture(canvas);
+        texture.colorSpace=THREE.SRGBColorSpace;
+        const mark=new THREE.Mesh(new THREE.PlaneGeometry(0.165,0.078),
+          new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));
+        mark.name='VANS woven patch lettering';
+        mark.position.set(0,0.113,0.34);
+        backpack.add(mark);
+      }
+    }
+    avatar.userData.backpack='Black Vans daypack with woven label';
     // Compact handheld microphone in right hand. It also makes this an
     // unmistakably musical protagonist when framed against the harbour.
     const instrument=new THREE.Group();
