@@ -88,8 +88,8 @@ test('Suzy is a real stylized third-person model with film-ready cues',()=>{
   const avatar=boot().GastownSuzyAvatar.create(threeStub());
   const names=all(avatar).map(x=>x.name);
   for(const feature of [
-    'Black overshirt torso','Light denim waist','Silver lavender crown',
-    'Messy lavender bun','Translucent spectacle rim','Handheld dynamic microphone'
+    'Black overshirt torso','Light denim waist','Silver blonde full hair cap',
+    'Low half-up loose bun','Translucent spectacle rim','Handheld dynamic microphone'
   ]) assert.ok(names.includes(feature),'missing Suzy avatar element: '+feature);
   assert.equal(avatar.userData.identity,'Suzy Easton');
   assert.equal(avatar.visible,false,'default first-person must not render an obstructing character');

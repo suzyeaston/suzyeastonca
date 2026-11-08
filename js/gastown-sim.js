@@ -1075,8 +1075,8 @@
       }
       // A collider footprint also keeps the boom out of generic building
       // walls and parked cars, including when nearby meshes load later.
-      let safeDistance=Math.min(0.38,maxBoom);
-      for(let distance=0.48;distance<=maxBoom;distance+=0.20) {
+      let safeDistance=Math.min(1.25,maxBoom);
+      for(let distance=0.55;distance<=maxBoom;distance+=0.16) {
         const candidate={
           x:player.position.x+Math.sin(state.yaw)*distance,
           z:player.position.z+Math.cos(state.yaw)*distance
@@ -1087,17 +1087,21 @@
         if(insideLanding || !isSpawnSafe(candidate))break;
         safeDistance=distance;
       }
-      state.avatarCameraBoom=Math.max(0.32,Math.min(maxBoom,safeDistance));
+      state.avatarCameraBoom=Math.max(0.40,Math.min(maxBoom,safeDistance));
       state.avatarCameraNextRefresh=state.avatarElapsed+0.12;
     }
-    const boom=state.avatarCameraBoom||0.38;
-    // The historical station spawn uses Y=1.7 while normal walking uses
-    // floorY=0. Normalizing against floorY prevents a floating 4.4m camera.
-    const y=getGroundY()-player.position.y+2.65+state.motion.bobOffset*0.12;
+    const proposed=state.avatarCameraBoom||1.25;
+    // Retreat immediately when a wall is behind the player, but ease the
+    // camera back out to avoid jump cuts while Suzy turns near the station.
+    const old=Number.isFinite(state.followCameraDistance)?state.followCameraDistance:proposed;
+    const boom=proposed<old?proposed:old+(proposed-old)*0.13;
+    state.followCameraDistance=boom;
+    const headroom=boom<1.10?3.35:2.55;
+    const y=getGroundY()-player.position.y+headroom+state.motion.bobOffset*0.12;
     camera.position.set(0,y,boom);
-    // Look toward Suzy's upper torso so the player remains in shot even
-    // when geometry forces a short camera boom.
-    camera.rotation.set(-Math.atan2(2.65-1.44,Math.max(0.45,boom)),0,0);
+    // Rig-local camera always points ahead along the avatar's actual facing,
+    // with a downward tilt toward Suzy's upper torso.
+    camera.rotation.set(-Math.atan2(headroom-1.55,Math.max(0.55,boom)),0,0);
   }
 
   function applyStreetCameraPose() {
@@ -1118,6 +1122,7 @@
   function toggleSuzyView() {
     if (state.cameraMode !== 'street') return false;
     state.thirdPerson = !state.thirdPerson;
+    state.followCameraDistance=undefined;
     applyStreetCameraPose();
     if (suzyViewBtn) {
       suzyViewBtn.textContent = state.thirdPerson ? 'First-person' : 'See Suzy';
