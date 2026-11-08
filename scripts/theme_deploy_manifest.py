@@ -146,8 +146,6 @@ THEME_FILES = [
     "js/gastown-waterfront-places.js",
     "js/gastown-harbour-vista.js",
     "js/gastown-suzy-avatar.js",
-    "js/gastown-film-cues.js",
-    "js/gastown-film-conductor.js",
     "js/gastown-world-loader.js",
     "js/gastown-building-normalizer.js",
     "js/gastown-dialog.js",
