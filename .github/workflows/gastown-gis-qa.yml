@@ -73,6 +73,7 @@ jobs:
           node --test __tests__/gastown-gis-alignment.test.js
           node --test __tests__/gastown-waterfront-public-realm.test.js
           node --test __tests__/gastown-harbour-vista.test.js
+          node --test __tests__/gastown-harbour-v3-regression.test.js
           node --test __tests__/gastown-parking-lookout.test.js
           node --test __tests__/gastown-station-east-v2.test.js
           node --test __tests__/gastown-storefront-home.test.js

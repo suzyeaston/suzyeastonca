@@ -143,7 +143,7 @@
   function waterSurface(THREE, root) {
     const water = new THREE.Mesh(
       new THREE.PlaneGeometry(1320, 850),
-      new THREE.MeshStandardMaterial({ color: 0x28607a, roughness: 0.5, metalness: 0.27, fog: false })
+      new THREE.MeshBasicMaterial({ color: 0x266d91, fog: false, side: THREE.DoubleSide })
     );
     water.name = 'Burrard Inlet water';
     water.rotation.x = -Math.PI / 2;
@@ -176,7 +176,7 @@
       const z = -97 - i * 8;
       box(THREE, root, 'Waterfront track north rail', 0, 0.19, z, 670, 0.1, 0.14, rail);
       box(THREE, root, 'Waterfront track south rail', 0, 0.19, z - 1.4, 670, 0.1, 0.14, rail);
-      for (let c = 0; c < 20; c++) box(THREE, root, 'Track timber sleeper', -315 + c * 33, 0.12, z - 0.7, 1.6, 0.06, 2.7, sleeper);
+      for (let c = 0; c < 7; c++) box(THREE, root, 'Track timber sleeper', -300 + c * 93, 0.12, z - 0.7, 2.6, 0.06, 2.7, sleeper);
     }
   }
 
@@ -284,35 +284,93 @@
   }
 
   function waterfrontRailYard(THREE, root, world) {
-    // Unplayable railway/terminal ground BEHIND Lot 531's fence. This fills
-    // the old void between the lot and the waterfront tracks and follows the
-    // lot's approximate back boundary without drawing across the parking.
+    // The waterfront CPR tracks run broadly east/west, parallel to Cordova
+    // and the terminal footbridge. Our older yard drew rails north/south,
+    // making it read as a blank utility apron from the parking-lot fence.
+    // Approximate scenic geometry ONLY, beyond the playable public lot.
     const lot=world&&world.parkingLot;
     if(!lot||!Array.isArray(lot.polygon)||lot.polygon.length<7)return;
     const pts=[lot.polygon[6],lot.polygon[5],lot.polygon[4],lot.polygon[3],
-      {x:116,z:-101},{x:-23,z:-101}];
+      {x:116,z:-106},{x:-45,z:-106}];
     const shape=new THREE.Shape();
     pts.forEach((p,i)=>i?shape.lineTo(p.x,-p.z):shape.moveTo(p.x,-p.z));
     shape.closePath();
-    const surface=new THREE.Mesh(new THREE.ShapeGeometry(shape),standard(THREE,0x535957,0.94,0.035));
+    const surface=new THREE.Mesh(
+      new THREE.ShapeGeometry(shape),
+      new THREE.MeshBasicMaterial({color:0x535c5f,side:THREE.DoubleSide,fog:false}));
     surface.name='Fenced waterfront rail service yard (non-walkable)';
     surface.rotation.x=-Math.PI/2;
-    surface.position.y=0.08;
+    surface.position.y=0.075;
     root.add(surface);
-    const ballast=standard(THREE,0x454a49,0.95);
-    const tracks=standard(THREE,0x9ea8a7,0.4,0.28);
-    for(let i=0;i<4;i++) {
-      const x=15+i*17;
-      box(THREE,root,'Fenced yard gravel track bed',x,0.12,-47,3.2,0.14,79,ballast);
-      for(const dx of [-0.6,0.6]) {
-        box(THREE,root,'Yard rail pair',x+dx,0.22,-47,0.12,0.12,79,tracks);
+
+    const ballast=standard(THREE,0x565958,0.94);
+    const steel=standard(THREE,0xb8b6aa,0.35,0.48);
+    const sleepers=standard(THREE,0x67594c,0.88);
+    for(const z of [-27,-42,-57,-72,-87]){
+      box(THREE,root,'Waterfront east west railroad ballast',28,0.12,z,165,0.11,3.5,ballast);
+      for(const edge of [-0.7,0.7]){
+        box(THREE,root,'Yard rail pair',28,0.24,z+edge,165,0.095,0.105,steel);
+      }
+      for(let x=-49;x<=107;x+=26){
+        box(THREE,root,'Railroad brown sleeper',x,0.18,z,1.1,0.08,2.7,sleepers);
       }
     }
-    // Very restrained service clutter, all beyond the public fence.
-    const rust=standard(THREE,0x7b655a,0.94),dark=standard(THREE,0x424a4d,0.91);
-    for(let i=0;i<4;i++) {
-      box(THREE,root,'Rail-yard utility container',13+i*22,1.4,-78,10.5,2.6,3.4,i%2?rust:dark);
+
+    // Three small recognizable railcar silhouettes in the near apron,
+    // beneath bright cargo containers and behind the public fence.
+    const freightColors=[
+      standard(THREE,0xaa6345,0.86),
+      standard(THREE,0x427568,0.84),
+      standard(THREE,0xa1a6aa,0.87),
+      standard(THREE,0x9a5947,0.87),
+      standard(THREE,0x38778b,0.86),
+      standard(THREE,0xd4a044,0.88)
+    ];
+    const undercarriage=standard(THREE,0x252d32,0.79);
+    const carriageWheels=standard(THREE,0x11191e,0.88);
+    [
+      {x:-12,z:-40,paint:0},
+      {x:31,z:-56,paint:1},
+      {x:74,z:-71,paint:3}
+    ].forEach((car,index)=>{
+      const wagon=new THREE.Group();
+      wagon.name='CP freight railcar in waterfront yard '+(index+1);
+      wagon.position.set(car.x,0,car.z);
+      box(THREE,wagon,'Rail wagon long frame',0,0.72,0,26,0.6,2.8,undercarriage);
+      for(const x of [-9.4,9.4]){
+        for(const z of [-1.05,1.05]){
+          const wheel=cylinder(THREE,wagon,'Freight steel wheel',x,0.43,z,0.4,0.16,carriageWheels,8);
+          wheel.rotation.x=Math.PI/2;
+        }
+      }
+      box(THREE,wagon,'Waterfront double-length intermodal container',0,2.35,0,24,2.8,2.65,
+        freightColors[car.paint%freightColors.length]);
+      box(THREE,wagon,'Corrugated freight container dark roof',0,3.82,0,23.6,0.12,2.4,
+        undercarriage);
+      root.add(wagon);
+    });
+
+    // SkyTrain/SeaBus access is read through the terminal roof, the white
+    // waterfront gangway, and the rust-red overhead pedestrian connection.
+    const stationWhite=standard(THREE,0xe1e5e3,0.76);
+    const glass=standard(THREE,0x5f8494,0.38,0.16);
+    const rust=standard(THREE,0x7b4b42,0.83);
+    const terminal=new THREE.Group();
+    terminal.name='Waterfront SeaBus south terminal building';
+    terminal.position.set(-43,0,-148);
+    box(THREE,terminal,'SeaBus terminal white roof',0,6,0,46,1.1,23,stationWhite);
+    box(THREE,terminal,'SeaBus terminal glass departure hall',0,3.25,0,41,5.2,17,glass);
+    box(THREE,terminal,'SeaBus terminal sheltered pier',0,0.9,-15,42,1.4,27,stationWhite);
+    for(const x of [-18,-9,0,9,18]){
+      box(THREE,terminal,'SeaBus terminal white roof truss',x,6.6,0,0.35,1,21,stationWhite);
     }
+    root.add(terminal);
+    box(THREE,root,'Waterfront Station red elevated transfer walkway',
+      -38,11,-93,78,5,8,rust);
+    for(const x of [-74,-53,-32,-11]){
+      box(THREE,root,'Red bridge open truss bay',x,12,-88.6,1.3,7.1,0.25,rust);
+    }
+    root.userData.hasFreightYard=true;
   }
 
   function containerPortCranes(THREE, root) {
@@ -349,24 +407,52 @@
   }
 
   function harbourTraffic(THREE, root) {
-    const shell = standard(THREE, 0xe2e7e5, 0.64);
-    const teal = standard(THREE, 0x356675, 0.62);
-    const dark = standard(THREE, 0x294a5e, 0.57);
-    for (const [name,x,z,yaw] of [
-      ['North Vancouver SeaBus silhouette',172,-270,0.48],
-      ['Working harbour tug silhouette',-240,-365,-0.85]
-    ]) {
-      const ferry=new THREE.Group();
-      ferry.position.set(x,0,z);
-      ferry.rotation.y=yaw;
-      ferry.name=name;
-      const long=name.includes('SeaBus')?26:18;
-      box(THREE,ferry,'Vessel hull',0,1.15,0,12,3.1,long,dark);
-      box(THREE,ferry,'Vessel cabin',0,4.0,-1,9.8,3.8,long*0.62,shell);
-      box(THREE,ferry,'Vessel window band',0,4.4,long*0.3,9.2,0.75,0.18,teal);
-      root.add(ferry);
+    // The SeaBus is not a huge distant office-like box: twin pontoons,
+    // bright passenger saloon, blue-yellow banding and wraparound windows.
+    // Scenic route/position, not a live TransLink departure or GPS feed.
+    const white=standard(THREE,0xf0f3ef,0.68);
+    const navy=standard(THREE,0x244d79,0.57,0.14);
+    const gold=standard(THREE,0xe0af39,0.61);
+    const windowGlass=new THREE.MeshBasicMaterial({color:0x385b72,fog:false});
+    const ferry=new THREE.Group();
+    ferry.name='North Vancouver SeaBus silhouette';
+    ferry.position.set(-13,-0.02,-195);
+    ferry.rotation.y=0.20;
+    box(THREE,ferry,'SeaBus twin catamaran starboard hull',4.0,1.2,0,3.15,2.3,35,navy);
+    box(THREE,ferry,'SeaBus twin catamaran port hull',-4.0,1.2,0,3.15,2.3,35,navy);
+    box(THREE,ferry,'SeaBus bright white passenger deck',0,3.2,0,11.6,2.3,32,white);
+    box(THREE,ferry,'SeaBus passenger cabin',0,5.6,0,10.1,3.1,28,white);
+    for(const x of [-5.1,5.1]){
+      box(THREE,ferry,'SeaBus blue passenger window belt',x,5.9,0,0.15,1.12,26,windowGlass);
+      box(THREE,ferry,'SeaBus golden hull stripe',x,2.7,0,0.14,0.37,32,gold);
     }
+    for(const z of [-13.9,13.9]){
+      box(THREE,ferry,'SeaBus broad front windscreen',0,5.85,z,8.8,1.34,0.15,windowGlass);
+      box(THREE,ferry,'SeaBus white end deck',0,3.2,z*1.14,9.1,1.0,3.6,white);
+    }
+    box(THREE,ferry,'SeaBus flat white roof',0,7.22,0,11.3,0.39,30,white);
+    box(THREE,ferry,'SeaBus rooftop comms antenna',0,8.65,0,0.16,2.6,0.16,navy);
+    root.add(ferry);
+
+    const tug=new THREE.Group();
+    tug.name='Working harbour tug silhouette';
+    tug.position.set(-240,0,-365);
+    tug.rotation.y=-0.85;
+    box(THREE,tug,'Harbour tug blue hull',0,1.15,0,10.8,3.1,19,navy);
+    box(THREE,tug,'Harbour tug white bridge',0,4.2,-1.0,8.6,3.5,9.5,white);
+    box(THREE,tug,'Harbour tug windows',0,4.5,3.8,8.0,0.7,0.17,windowGlass);
+    root.add(tug);
+    return ferry;
   }
+  // A very slow cinematic crossing puts a real, readable SeaBus in shot.
+  function animate(root,timeSeconds) {
+    const bus=root && root.userData && root.userData.seaBus;
+    if(!bus||!Number.isFinite(timeSeconds))return;
+    bus.position.x = -13 + Math.sin(timeSeconds*0.045)*11;
+    bus.position.y = -0.02 + Math.sin(timeSeconds*0.8)*0.09;
+    bus.rotation.y = 0.20 + Math.sin(timeSeconds*0.03)*0.025;
+  }
+
   // A public-sidewalk viewing pose across the open Station East surface lot.
   // It does not falsely imply a pedestrian route through the rail yard,
   // station interior, cruise terminal or private lot.
@@ -415,8 +501,9 @@
     containerPortCranes(THREE,root);
     const pier=canadaPlace(THREE,root,anchor);
     dockedCruiseShip(THREE,root,pier);
-    harbourTraffic(THREE,root);
+    const seaBus=harbourTraffic(THREE,root);
     root.userData={
+      seaBus,
       canadaPlace:anchor,
       coordinateSource:CANADA_PLACE_COORD,
       representativeShip:true,
@@ -427,6 +514,6 @@
     return root;
   }
   window.GastownHarbourVista=Object.freeze({
-    create,projectScene,positionFor,lookoutFor,reference:CANADA_PLACE_COORD
+    create,animate,projectScene,positionFor,lookoutFor,reference:CANADA_PLACE_COORD
   });
 })(window);
