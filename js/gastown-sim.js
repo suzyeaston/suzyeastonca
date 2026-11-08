@@ -3989,7 +3989,13 @@
         bevelEnabled: false,
       });
       geom.rotateX(-Math.PI / 2);
-      const facadeBaseColor = new THREE.Color(colors.primary).lerp(new THREE.Color(hasHeroTreatment ? 0x846a54 : 0x6f5b49), hasHeroTreatment ? 0.18 : 0.14);
+      // The large concrete/office block across Cordova was rendered as an
+      // almost-black featureless wall. Repaint that approximate massing in
+      // pale stone/glass tones seen in the supplied Seymour/Cordova photos.
+      const modernCordovaBlock=b.id==='feature-16';
+      const facadeBaseColor = new THREE.Color(colors.primary).lerp(
+        new THREE.Color(modernCordovaBlock?0x9aa7ae:(hasHeroTreatment?0x846a54:0x6f5b49)),
+        modernCordovaBlock?0.78:(hasHeroTreatment?0.18:0.14));
       const mat = registerMaterial(new THREE.MeshStandardMaterial({
         color: facadeBaseColor,
         roughness: b.tone === 'brickWarm' ? 0.84 : 0.7,
@@ -4092,6 +4098,72 @@
       // They are safe only for small regular buildings. Suppress them on
       // complex/large civic footprints to prevent floating walls and awnings.
       const safeRectangularFacade = b.width <= 42 && b.depth <= 28 && shapePoints.length <= 10;
+
+      // LARGE GIS POLYGONS: instanced glass panes are flush to the *edges*
+      // nearest West Cordova. Unlike the old axis-aligned window overlays,
+      // these never float across the street at bends and corners. This gives
+      // the SFU/Harbour-Centre-side blocks real upper-storey rhythm, using
+      // two draw calls rather than hundreds of individual windows.
+      if(!safeRectangularFacade && THREE.InstancedMesh && THREE.Object3D){
+        const openings=[];
+        const edges=frontageEdges
+          .filter(edge=>edge.distance<nearestFrontage+7)
+          .sort((a,b)=>a.distance-b.distance)
+          .slice(0,4);
+        const available=Math.max(0,renderedHeight-storefrontBandHeight-1.8);
+        const rows=Math.max(1,Math.min(5,Math.floor(available/2.8)));
+        edges.forEach(edge=>{
+          const bays=Math.max(2,Math.min(20,Math.floor(edge.length/3.8)));
+          for(let row=0;row<rows;row++){
+            const y=storefrontBandHeight+1.6+row*(available/Math.max(1,rows));
+            if(y>renderedHeight-0.6)continue;
+            for(let bay=0;bay<bays;bay++){
+              const t=((bay+0.5)/bays-0.5)*edge.length*0.95;
+              const x=edge.midpoint.x+Math.cos(edge.yaw)*t;
+              const z=edge.midpoint.z-Math.sin(edge.yaw)*t;
+              for(const side of [-1,1]){
+                openings.push({x:x+side*Math.sin(edge.yaw)*0.15,
+                  y,z:z+side*Math.cos(edge.yaw)*0.15,
+                  yaw:edge.yaw,width:Math.min(2.05,edge.length/bays*0.72)});
+              }
+            }
+          }
+        });
+        if(openings.length){
+          const glassMat=registerMaterial(new THREE.MeshStandardMaterial({
+            color:0x52788a,roughness:0.22,metalness:0.23,
+            emissive:0x243c4c,emissiveIntensity:0.10,side:THREE.DoubleSide
+          }),'glassMaterials');
+          const sillMat=new THREE.MeshStandardMaterial({
+            color:0xb7bdbb,roughness:0.76
+          });
+          const sash=new THREE.InstancedMesh(
+            new THREE.PlaneGeometry(1,1.55),glassMat,openings.length);
+          const sill=new THREE.InstancedMesh(
+            new THREE.BoxGeometry(1.15,0.09,0.15),sillMat,openings.length);
+          sash.name='Cordova GIS footprint-edge upper sash glazing';
+          sill.name='Cordova GIS footprint-edge upper window sill';
+          const dummy=new THREE.Object3D();
+          openings.forEach((entry,i)=>{
+            dummy.position.set(entry.x,entry.y,entry.z);
+            dummy.rotation.set(0,entry.yaw,0);
+            dummy.scale.set(entry.width,1,1);
+            dummy.updateMatrix();
+            sash.setMatrixAt(i,dummy.matrix);
+            dummy.position.y=entry.y-0.88;
+            dummy.scale.set(entry.width,1,1);
+            dummy.updateMatrix();
+            sill.setMatrixAt(i,dummy.matrix);
+          });
+          sash.instanceMatrix.needsUpdate=true;
+          sill.instanceMatrix.needsUpdate=true;
+          sash.frustumCulled=false;
+          sill.frustumCulled=false;
+          worldGroup.add(sash);
+          worldGroup.add(sill);
+          visualState.buildingMeshes.push(sash,sill);
+        }
+      }
       if (!hasHeroTreatment || !safeRectangularFacade) return;
 
       const bayCount = Math.max(2, Math.min(8, b.window_bay_count || 4));
@@ -4268,6 +4340,73 @@
       }
 
     });
+  }
+
+  function addCordovaStreetDetails(world) {
+    const route=world&&world.route&&world.route.centerline;
+    if(!Array.isArray(route)||route.length<8)return;
+    const details=new THREE.Group();
+    details.name='West Cordova: overhead trolley wires and civic lane markings';
+    const wireMaterial=new THREE.LineBasicMaterial({
+      color:0x272b2e,transparent:true,opacity:0.83
+    });
+    const wirePositions=[];
+    const segments=route.slice(0,9);
+    function unitNormal(a,b){
+      const dx=b.x-a.x,dz=b.z-a.z,n=Math.hypot(dx,dz)||1;
+      return {x:-dz/n,z:dx/n};
+    }
+    for(const lateral of [-4.2,4.2]){
+      for(let i=1;i<segments.length;i++){
+        const a=segments[i-1],b=segments[i],side=unitNormal(a,b);
+        // Slight hanging sag at the midpoint instead of floating string.
+        const start={x:a.x+side.x*lateral,y:8.6,z:a.z+side.z*lateral};
+        const end={x:b.x+side.x*lateral,y:8.6,z:b.z+side.z*lateral};
+        const mid={x:(start.x+end.x)/2,y:8.26,z:(start.z+end.z)/2};
+        wirePositions.push(start.x,start.y,start.z,mid.x,mid.y,mid.z);
+        wirePositions.push(mid.x,mid.y,mid.z,end.x,end.y,end.z);
+      }
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(wirePositions,3));
+    const wires=new THREE.LineSegments(geo,wireMaterial);
+    wires.name='West Cordova suspended trolley catenary wires';
+    details.add(wires);
+
+    const lineMaterial=new THREE.MeshBasicMaterial({
+      color:0xd3d9d8,side:THREE.DoubleSide
+    });
+    const yellowMaterial=new THREE.MeshBasicMaterial({
+      color:0xdfbd69,side:THREE.DoubleSide
+    });
+    for(let i=0;i<Math.min(9,route.length-1);i++){
+      const a=route[i],b=route[i+1];
+      const dx=b.x-a.x,dz=b.z-a.z,dist=Math.hypot(dx,dz);
+      if(dist<1)return;
+      const axis={x:dx/dist,z:dz/dist};
+      const side={x:-axis.z,z:axis.x};
+      for(const offset of [-3.8,3.8]){
+        if(i%2!==0)continue;
+        const mid={x:(a.x+b.x)/2+side.x*offset,
+          z:(a.z+b.z)/2+side.z*offset};
+        const marking=new THREE.Mesh(new THREE.PlaneGeometry(0.09,Math.min(3.2,dist*0.6)),
+          lineMaterial);
+        marking.rotation.set(-Math.PI/2,0,-Math.atan2(dx,dz));
+        marking.position.set(mid.x,0.23,mid.z);
+        marking.name='West Cordova dashed roadway lane stripe';
+        details.add(marking);
+      }
+      if(i===1||i===5){
+        const mid={x:(a.x+b.x)/2,z:(a.z+b.z)/2};
+        const stripe=new THREE.Mesh(new THREE.PlaneGeometry(0.13,Math.min(6,dist*0.85)),
+          yellowMaterial);
+        stripe.rotation.set(-Math.PI/2,0,-Math.atan2(dx,dz));
+        stripe.position.set(mid.x,0.225,mid.z);
+        stripe.name='West Cordova centreline yellow paint';
+        details.add(stripe);
+      }
+    }
+    worldGroup.add(details);
   }
 
   function addHeroLandmarks(world) {
@@ -6530,6 +6669,7 @@
         ['ground', addGround],
         ['buildings', (world) => addBuildings(world, { coreOnly: true })],
         ['streetscape', (world) => addStreetscape(world, { includeSecondary: false })],
+        ['West Cordova reference details', addCordovaStreetDetails],
         ['hero landmarks', addHeroLandmarks],
       ];
       coreSystems.forEach(([label, fn]) => {
