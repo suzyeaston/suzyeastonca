@@ -1058,8 +1058,9 @@
     // over Suzy's shoulder and shorten it at real hero-mesh intersections.
     if (force || state.avatarElapsed >= (state.avatarCameraNextRefresh || 0)) {
       player.updateMatrixWorld(true);
-      thirdPersonCameraFrom.set(0,2.25,0).applyMatrix4(player.matrixWorld);
-      thirdPersonCameraTo.set(0,2.70,3.25).applyMatrix4(player.matrixWorld);
+      const groundOffset=getGroundY()-player.position.y;
+      thirdPersonCameraFrom.set(0,groundOffset+1.82,0).applyMatrix4(player.matrixWorld);
+      thirdPersonCameraTo.set(0,groundOffset+2.65,3.25).applyMatrix4(player.matrixWorld);
       const ray=thirdPersonCameraTo.clone().sub(thirdPersonCameraFrom);
       const rayLength=ray.length();
       let maxBoom=3.25;
@@ -1090,11 +1091,13 @@
       state.avatarCameraNextRefresh=state.avatarElapsed+0.12;
     }
     const boom=state.avatarCameraBoom||0.38;
-    const y=2.75 + state.motion.bobOffset*0.12;
+    // The historical station spawn uses Y=1.7 while normal walking uses
+    // floorY=0. Normalizing against floorY prevents a floating 4.4m camera.
+    const y=getGroundY()-player.position.y+2.65+state.motion.bobOffset*0.12;
     camera.position.set(0,y,boom);
     // Look toward Suzy's upper torso so the player remains in shot even
     // when geometry forces a short camera boom.
-    camera.rotation.set(-Math.atan2(y-1.44,Math.max(0.45,boom)),0,0);
+    camera.rotation.set(-Math.atan2(2.65-1.44,Math.max(0.45,boom)),0,0);
   }
 
   function applyStreetCameraPose() {
