@@ -350,6 +350,26 @@
       root.add(wagon);
     });
 
+    // Readability pass from the *actual* parking-lot viewpoint: the old
+    // freight rows were 60–100m away and below a 2.2m fence, so screenshots
+    // looked like an empty grey void. Add vivid double-stack silhouettes
+    // immediately behind the public boundary, never inside the playable lot.
+    // These are illustrative trains, not live rolling-stock positions.
+    const trainFrame=standard(THREE,0x2c3336,0.82);
+    const nearPaint=[
+      0xc26b47,0x4f8ba0,0xdfa741,0x54815c,
+      0x8e5c61,0x7b88a8,0xb97350,0x91a9a8
+    ].map(color=>standard(THREE,color,0.81));
+    [-10,-24,-38].forEach((z,row)=>{
+      box(THREE,root,'Station East visible railcar spine',52,0.72,z,104,0.50,3.5,trainFrame);
+      const xs=row===0?[14,40,66,91]:row===1?[25,51,77]:[35,61];
+      xs.forEach((x,index)=>{
+        box(THREE,root,'Visible Station East freight container',
+          x,2.8,z,22.3,3.8,3.0,nearPaint[(row*3+index)%nearPaint.length]);
+      });
+    });
+    root.userData.nearbyContainers=9;
+
     // SkyTrain/SeaBus access is read through the terminal roof, the white
     // waterfront gangway, and the rust-red overhead pedestrian connection.
     const stationWhite=standard(THREE,0xe1e5e3,0.76);
