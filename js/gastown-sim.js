@@ -112,6 +112,7 @@
   const diagonalLookBtn = app.querySelector('[data-action="lot-diagonal-view"]');
   const suzyViewBtn = app.querySelector('[data-action="suzy-view"]');
   const suzyAvatarModel = window.GastownSuzyAvatar || null;
+  const filmConductorModel = window.GastownFilmConductor || null;
   const normalizeDialogEntry = typeof dialogUtils.normalizeDialogEntry === 'function'
     ? dialogUtils.normalizeDialogEntry
     : function fallbackNormalizeDialogEntry(entry, options) {
@@ -6505,6 +6506,13 @@
       coreSystems.forEach(([label, fn]) => {
         try { fn(state.world); } catch (error) { if (window.console && window.console.warn) { window.console.warn('[Gastown Sim] Optional system failed during init: ' + label, error); } }
       });
+      if (filmConductorModel && typeof filmConductorModel.mount === 'function') {
+        try {
+          state.filmConductor = filmConductorModel.mount(app, THREE, worldGroup, state.world);
+        } catch (error) {
+          if(window.console&&window.console.warn)window.console.warn('[Gastown Film] Conductor disabled; walking simulation continues.',error);
+        }
+      }
       minimapState.worldMetrics = getWorldMetrics();
       try { if (window.localStorage.getItem('gastownLowGraphics') === '1') { setLowGraphicsMode(true); } } catch (error) {}
       restoreWalkerName();
@@ -6570,6 +6578,7 @@
         if (state.harbourVistaRoot && harbourVista && typeof harbourVista.animate === 'function') {
           harbourVista.animate(state.harbourVistaRoot,time/1000);
         }
+        if (state.filmConductor) state.filmConductor.tick();
         drawMinimap();
         refreshDebugRuntimeReadout();
         renderer.render(scene, camera);
