@@ -557,3 +557,39 @@
   outline: 2px solid #efffc2;
   outline-offset: 2px;
 }
+
+
+/* Station East v2: compact shot controls and the authored character identity. */
+.gastown-character-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.62rem;
+  font: 700 0.72rem/1.2 ui-monospace, SFMono-Regular, monospace;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(181, 151, 218, 0.5);
+  border-radius: 6px;
+  background: rgba(50, 32, 66, 0.5);
+  color: #e7d5ff;
+}
+.gastown-minimap-toolbar [data-action="lot-entrance-view"],
+.gastown-minimap-toolbar [data-action="lot-diagonal-view"] {
+  order: 5;
+  flex: 1 1 40%;
+  min-width: 0;
+  color: #f5e6b3;
+  border-color: rgba(221, 185, 100, 0.6);
+  background: rgba(58, 46, 26, 0.94);
+}
+.gastown-minimap-toolbar [data-action="suzy-view"] {
+  order: 6;
+  flex: 1 0 100%;
+  min-width: 0;
+  color: #eee2ff;
+  border-color: rgba(180, 150, 222, 0.8);
+  background: rgba(54, 38, 70, 0.94);
+}
+.gastown-minimap-toolbar [data-action="suzy-view"][aria-pressed="true"] {
+  color: #11131b;
+  background: #d1b8f4;
+}
