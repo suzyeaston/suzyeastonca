@@ -205,7 +205,13 @@
       wheel.position.set(x, 0.33, z);
       car.add(wheel);
     }));
-    [-0.58, 0.58].forEach(x => addBox(THREE, car, 'Vehicle headlight', x, 0.61, -2.08, 0.28, 0.14, 0.08, lights));
+    [-0.58, 0.58].forEach(x => {
+      addBox(THREE, car, 'Vehicle headlight', x, 0.61, -2.08, 0.28, 0.14, 0.08, lights);
+      addBox(THREE, car, 'Vehicle rear lamp', x, 0.59, 2.08, 0.3, 0.12, 0.09,
+        new THREE.MeshBasicMaterial({color:0x8f3034}));
+    });
+    addBox(THREE,car,'Vehicle front bumper',0,0.35,-2.12,1.72,0.22,0.16,dark);
+    addBox(THREE,car,'Vehicle rear bumper',0,0.35,2.12,1.72,0.22,0.16,dark);
     group.add(car);
   }
 
@@ -282,10 +288,31 @@
     if(!landing || !Array.isArray(landing.footprint) || landing.footprint.length<3) return null;
     const root = new THREE.Group();
     root.name = 'The Landing / Kelly-Douglas Warehouse at 375 Water St';
-    const brick = new THREE.MeshStandardMaterial({ color: 0xa45b48, roughness: 0.87, emissive:0x2e100a, emissiveIntensity:0.25 });
-    const stone = new THREE.MeshStandardMaterial({ color:0xd3c7b5, roughness:0.87 });
-    const trim = new THREE.MeshStandardMaterial({ color:0x855144, roughness:0.88 });
-    const glass = new THREE.MeshStandardMaterial({ color:0x5b8290, roughness:0.3, metalness:0.26, emissive:0x234354, emissiveIntensity:0.3 });
+    // The Kelly-Douglas/Steamworks block is pale weathered masonry in the
+    // user's Cordova Street View, not a second red-brick station.
+    const brick = new THREE.MeshStandardMaterial({ color: 0xaaa79d, roughness: 0.91 });
+    const stone = new THREE.MeshStandardMaterial({ color:0xc9c8bf, roughness:0.85 });
+    const trim = new THREE.MeshStandardMaterial({ color:0x8d8a80, roughness:0.88 });
+    const sashCanvas=window.document&&window.document.createElement('canvas');
+    let sashTexture=null;
+    if(sashCanvas) {
+      sashCanvas.width=128;sashCanvas.height=160;
+      const ctx=sashCanvas.getContext('2d');
+      if(ctx){
+        ctx.fillStyle='#284353';ctx.fillRect(0,0,128,160);
+        ctx.fillStyle='#66879b';ctx.fillRect(4,5,21,150);ctx.fillRect(78,5,12,150);
+        ctx.fillStyle='#334751';ctx.fillRect(25,5,53,150);
+        ctx.fillStyle='#b5b7ac';
+        ctx.fillRect(0,0,8,160);ctx.fillRect(120,0,8,160);
+        ctx.fillRect(60,0,6,160);ctx.fillRect(0,77,128,6);ctx.fillRect(0,151,128,9);
+        sashTexture=new THREE.CanvasTexture(sashCanvas);
+        sashTexture.colorSpace=THREE.SRGBColorSpace;
+      }
+    }
+    const glass = new THREE.MeshStandardMaterial({
+      color:0xb1bec4,map:sashTexture,roughness:0.37,metalness:0.14,
+      emissive:0x162a39,emissiveIntensity:0.12
+    });
     const shape = new THREE.Shape();
     landing.footprint.forEach((p,i) => i ? shape.lineTo(p.x,-p.z):shape.moveTo(p.x,-p.z));
     shape.closePath();
@@ -301,7 +328,10 @@
     facadeOnEdge(THREE,root,pts[1],pts[4],6,glass,stone,trim);
     facadeOnEdge(THREE,root,pts[5],pts[8],6,glass,stone,trim);
     const a=pts[0], b=pts[1], center={x:(a.x+b.x)/2,y:4.0,z:(a.z+b.z)/2};
-    sign(THREE,root,'THE LANDING',center,Math.min(7,Math.hypot(b.x-a.x,b.z-a.z)*0.8),0.9,Math.atan2(- (b.x-a.x), b.z-a.z),{background:'#5d3026'});
+    sign(THREE,root,'THE LANDING',center,Math.min(7,Math.hypot(b.x-a.x,b.z-a.z)*0.8),0.9,
+      Math.atan2(-(b.x-a.x),b.z-a.z),{background:'#5d5148'});
+    sign(THREE,root,'STEAMWORKS',{x:center.x,y:2.7,z:center.z},8.7,0.9,
+      Math.atan2(-(b.x-a.x),b.z-a.z),{background:'#6d3028',color:'#f1d1af'});
     root.userData.provenance = landing.source;
     return root;
   }
