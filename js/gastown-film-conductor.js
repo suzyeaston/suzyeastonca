@@ -137,7 +137,12 @@
       }
       if(!morph.checked){morph.checked=true;visuals.visible=true;}
     });
-    audio.addEventListener('ended',()=>{audio.pause();setStatus('Clip finished. Scrub for still-frame capture.');});
+    audio.addEventListener('pause',()=>{if(audio.src)pausedTime=clamp(audio.currentTime,0,60);});
+    audio.addEventListener('ended',()=>{
+      pausedTime=Math.min(60,audio.duration||60);
+      audio.pause();
+      setStatus('Clip finished. Scrub for still-frame capture.');
+    });
     ruler.addEventListener('input',()=>{
       pausedTime=clamp(Number(ruler.value),0,60);
       if(audio.src&&audio.readyState>=1){
