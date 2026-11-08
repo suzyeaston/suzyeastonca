@@ -4119,8 +4119,12 @@
             if(y>renderedHeight-0.6)continue;
             for(let bay=0;bay<bays;bay++){
               const t=((bay+0.5)/bays-0.5)*edge.length*0.95;
-              const x=edge.midpoint.x+Math.cos(edge.yaw)*t;
-              const z=edge.midpoint.z-Math.sin(edge.yaw)*t;
+              // Match the scaled footprint mesh; otherwise the glazing
+              // floats metres away from the old brick/concrete walls.
+              const rawX=edge.midpoint.x+Math.cos(edge.yaw)*t;
+              const rawZ=edge.midpoint.z-Math.sin(edge.yaw)*t;
+              const x=b.x+(rawX-b.x)*massingInset;
+              const z=b.z+(rawZ-b.z)*massingInset;
               for(const side of [-1,1]){
                 openings.push({x:x+side*Math.sin(edge.yaw)*0.15,
                   y,z:z+side*Math.cos(edge.yaw)*0.15,
@@ -4389,18 +4393,18 @@
         if(i%2!==0)continue;
         const mid={x:(a.x+b.x)/2+side.x*offset,
           z:(a.z+b.z)/2+side.z*offset};
-        const marking=new THREE.Mesh(new THREE.PlaneGeometry(0.09,Math.min(3.2,dist*0.6)),
+        const marking=new THREE.Mesh(new THREE.BoxGeometry(Math.min(3.2,dist*0.6),0.018,0.10),
           lineMaterial);
-        marking.rotation.set(-Math.PI/2,0,-Math.atan2(dx,dz));
+        marking.rotation.y=Math.atan2(-dz,dx);
         marking.position.set(mid.x,0.23,mid.z);
         marking.name='West Cordova dashed roadway lane stripe';
         details.add(marking);
       }
       if(i===1||i===5){
         const mid={x:(a.x+b.x)/2,z:(a.z+b.z)/2};
-        const stripe=new THREE.Mesh(new THREE.PlaneGeometry(0.13,Math.min(6,dist*0.85)),
+        const stripe=new THREE.Mesh(new THREE.BoxGeometry(Math.min(6,dist*0.85),0.018,0.13),
           yellowMaterial);
-        stripe.rotation.set(-Math.PI/2,0,-Math.atan2(dx,dz));
+        stripe.rotation.y=Math.atan2(-dz,dx);
         stripe.position.set(mid.x,0.225,mid.z);
         stripe.name='West Cordova centreline yellow paint';
         details.add(stripe);
