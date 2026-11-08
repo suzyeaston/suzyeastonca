@@ -108,6 +108,10 @@
   const waterfrontPlaces = window.GastownWaterfrontPlaces || null;
   const harbourVista = window.GastownHarbourVista || null;
   const harbourLookBtn = app.querySelector('[data-action="harbour-lookout"]');
+  const entranceLookBtn = app.querySelector('[data-action="lot-entrance-view"]');
+  const diagonalLookBtn = app.querySelector('[data-action="lot-diagonal-view"]');
+  const suzyViewBtn = app.querySelector('[data-action="suzy-view"]');
+  const suzyAvatarModel = window.GastownSuzyAvatar || null;
   const normalizeDialogEntry = typeof dialogUtils.normalizeDialogEntry === 'function'
     ? dialogUtils.normalizeDialogEntry
     : function fallbackNormalizeDialogEntry(entry, options) {
@@ -171,7 +175,9 @@
     npcVoiceTimer: null,
     lastNpcVoiceAt: -Infinity,
     npcVoiceIndex: 0,
-    walkerName: 'Walker',
+    walkerName: 'Suzy',
+    thirdPerson: false,
+    avatarElapsed: 0,
     hasInteracted: false,
     npcSpeechCache: {},
     npcSpeechController: null,
@@ -309,6 +315,8 @@
   const player = new THREE.Object3D();
   player.add(camera);
   scene.add(player);
+  const suzyAvatar = suzyAvatarModel ? suzyAvatarModel.create(THREE) : null;
+  if (suzyAvatar) player.add(suzyAvatar);
 
   const ambient = new THREE.AmbientLight(0x8798b8, 0.78);
   scene.add(ambient);
@@ -448,7 +456,7 @@
   }
 
   function getStartupWelcomeText(payload) {
-    return (payload && (payload.welcomeText || payload.welcome_text)) || ('Welcome to the Gastown Simulator, ' + (state.walkerName || 'Walker') + '. Follow the street.');
+    return 'Suzy is walking the city she built. Follow the waterfront.';
   }
 
   function setQuestStatus(text) {
@@ -472,15 +480,11 @@
   }
 
   function restoreWalkerName() {
-    try {
-      const saved = window.localStorage.getItem(WALKER_NAME_STORAGE_KEY);
-      if (saved) {
-        setWalkerName(saved, { skipStore: true });
-        return true;
-      }
-    } catch (error) {}
-    setWalkerName('Walker', { skipStore: true });
-    return false;
+    // This is Suzy's authored world. Ignore legacy browser-saved aliases.
+    // Preserve the optional naming helpers for older integration code, but
+    // don't prompt visitors or allow a stale localStorage name to take over.
+    setWalkerName('Suzy', { skipStore: true });
+    return true;
   }
 
   function openWalkerNameOverlay(prefill) {
@@ -1045,10 +1049,25 @@
     if (camera.parent !== player) {
       player.add(camera);
     }
-    camera.position.set(0, 1.7, 0);
-    camera.rotation.set(state.pitch, 0, 0);
+    camera.position.set(0, state.thirdPerson ? 2.82 : 1.7, state.thirdPerson ? 4.7 : 0);
+    camera.rotation.set(state.thirdPerson ? (-0.18 + state.pitch * 0.18) : state.pitch, 0, 0);
+    if (suzyAvatar) suzyAvatar.visible = !!state.thirdPerson;
     player.rotation.y = state.yaw;
     syncCameraProjection('street');
+  }
+
+  function toggleSuzyView() {
+    if (state.cameraMode !== 'street') return false;
+    state.thirdPerson = !state.thirdPerson;
+    applyStreetCameraPose();
+    if (suzyViewBtn) {
+      suzyViewBtn.textContent = state.thirdPerson ? 'First-person' : 'See Suzy';
+      suzyViewBtn.setAttribute('aria-pressed', state.thirdPerson ? 'true' : 'false');
+      suzyViewBtn.setAttribute('aria-label', state.thirdPerson
+        ? 'Return to first-person walking' : 'See Suzy in third-person view');
+    }
+    setStatus(state.thirdPerson ? 'Suzy in frame. Walk or use a parking-lot shot.' : 'Back behind Suzy\'s eyes.');
+    return state.thirdPerson;
   }
 
   function applyOverviewCameraPose() {
@@ -1611,8 +1630,15 @@
     const targetSway = moving ? Math.cos(state.motion.bobPhase * 0.5) * movementProfile.swayAmount * normalizedSpeed : 0;
     state.motion.bobOffset = THREE.MathUtils.lerp(state.motion.bobOffset || 0, targetBob, 1 - Math.exp(-delta * 10));
     state.motion.swayOffset = THREE.MathUtils.lerp(state.motion.swayOffset || 0, targetSway, 1 - Math.exp(-delta * 8));
+    state.avatarElapsed += delta;
+    if (suzyAvatar && suzyAvatarModel) {
+      suzyAvatarModel.animate(suzyAvatar, state.avatarElapsed, normalizedSpeed);
+    }
 
-    if (state.cameraMode === 'street') {
+    if (state.cameraMode === 'street' && state.thirdPerson) {
+      camera.position.set(state.motion.swayOffset * 0.3, 2.82 + state.motion.bobOffset * 0.18, 4.7);
+      camera.rotation.set(-0.18 + state.pitch * 0.18, 0, 0);
+    } else if (state.cameraMode === 'street') {
       camera.position.y = DEFAULT_EYE_HEIGHT + state.motion.bobOffset;
       camera.position.x = state.motion.swayOffset;
       camera.rotation.set(state.pitch + (state.motion.surface === 'street' ? state.motion.bobOffset * 0.16 : state.motion.bobOffset * 0.1), 0, state.motion.swayOffset * 1.8);
@@ -5975,6 +6001,46 @@
     return true;
   }
 
+  // Shot anchors are derived from the actual Station East polygon. This is
+  // not a new navigable camera world: all poses pass the same spawn safety
+  // checks and can always be returned to on foot.
+  function goToLotView(shot) {
+    if (shot === 'fence') return goToHarbourLookout();
+    const lot=state.world && state.world.parkingLot;
+    if (!lot || !waterfrontPlaces || state.cameraMode !== 'street') return false;
+    const gate=waterfrontPlaces.entranceFor(lot);
+    const fence=waterfrontPlaces.lookoutFor(state.world,harbourVista && harbourVista.positionFor(state.world));
+    if (!fence) return false;
+    let pose, focus;
+    if (shot === 'entrance') {
+      const toward={x:fence.x-gate.x,z:fence.z-gate.z};
+      const d=Math.hypot(toward.x,toward.z)||1;
+      pose={x:gate.x+toward.x/d*2.5,y:1.7,z:gate.z+toward.z/d*2.5};
+      focus={x:lot.center.x,z:lot.center.z};
+    } else if (shot === 'diagonal') {
+      // The already validated Waterfront Station sidewalk spawn offers a
+      // safe oblique view back across the wedge-shaped parking lot.
+      pose={x:state.world.spawn.x,y:1.7,z:state.world.spawn.z};
+      focus={x:lot.center.x,z:lot.center.z};
+    } else return false;
+    if (!isSpawnSafe(pose)) {
+      setStatus('That parking-lot camera is outside the current safe walking corridor.');
+      return false;
+    }
+    clearMovementInput();
+    player.position.set(pose.x,pose.y,pose.z);
+    state.lastSafePosition.copy(player.position);
+    state.yaw=Math.atan2(-(focus.x-pose.x),-(focus.z-pose.z));
+    state.pitch=0.02;
+    applyStreetCameraPose();
+    updateNearestNode();
+    drawMinimap();
+    setStatus(shot==='entrance'
+      ? 'Station East: the clearance gantry, parking signs and harbour beyond.'
+      : 'Station East from the Waterfront sidewalk: the urban harbour threshold.');
+    return true;
+  }
+
   function resetToStart() {
     stopBandAudio('reset');
     const spawn = resolveSafeSpawn();
@@ -6122,6 +6188,11 @@
         toggleCameraMode();
         return;
       }
+      if (event.code === 'KeyB' && !['INPUT','TEXTAREA','SELECT'].includes((event.target && event.target.tagName)||'')) {
+        event.preventDefault();
+        toggleSuzyView();
+        return;
+      }
       if (event.code === 'Escape' && state.activeDialogNpcId) {
         event.preventDefault();
         closeDialog();
@@ -6163,6 +6234,9 @@
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
     if (harbourLookBtn) harbourLookBtn.addEventListener('click', goToHarbourLookout);
+    if (entranceLookBtn) entranceLookBtn.addEventListener('click', () => goToLotView('entrance'));
+    if (diagonalLookBtn) diagonalLookBtn.addEventListener('click', () => goToLotView('diagonal'));
+    if (suzyViewBtn) suzyViewBtn.addEventListener('click', toggleSuzyView);
 
     if (timeOfDaySelect) {
       timeOfDaySelect.addEventListener('change', (event) => applyTimeOfDay(event.target.value));
@@ -6206,7 +6280,7 @@
     if (tutorialStartBtn) tutorialStartBtn.addEventListener('click', () => { closeTutorialOverlay(); resetToStart(); setStatus('Click in and move.'); });
     if (renameWalkerBtn) renameWalkerBtn.addEventListener('click', () => openWalkerNameOverlay(state.walkerName));
     if (walkerStartBtn) walkerStartBtn.addEventListener('click', () => confirmWalkerName(walkerNameInputEl ? walkerNameInputEl.value : state.walkerName));
-    if (walkerSkipBtn) walkerSkipBtn.addEventListener('click', () => confirmWalkerName('Walker'));
+    if (walkerSkipBtn) walkerSkipBtn.addEventListener('click', () => confirmWalkerName('Suzy'));
     if (walkerNameInputEl) walkerNameInputEl.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); confirmWalkerName(walkerNameInputEl.value); } });
     if (lowGraphicsToggle) lowGraphicsToggle.addEventListener('change', (event) => setLowGraphicsMode(event.target.checked));
     if (reopenTutorialToggle) reopenTutorialToggle.addEventListener('change', (event) => { try { window.localStorage.setItem('gastownTutorialReopen', event.target.checked ? '1' : '0'); } catch (error) {} });
@@ -6358,7 +6432,7 @@
       });
       minimapState.worldMetrics = getWorldMetrics();
       try { if (window.localStorage.getItem('gastownLowGraphics') === '1') { setLowGraphicsMode(true); } } catch (error) {}
-      const hadWalkerName = restoreWalkerName();
+      restoreWalkerName();
       state.progression.openingObjectiveStartedAt = window.performance && typeof window.performance.now === 'function' ? window.performance.now() : Date.now();
       setQuestStatus('Get your bearings and see what the street gives you.');
       restoreMinimapZoom();
@@ -6375,7 +6449,7 @@
       attachEvents();
       updatePointerHelp();
       updateFullscreenButton();
-      if (!hadWalkerName) { openWalkerNameOverlay(''); }
+      // No generic walker setup screen: this is Suzy's playable world.
       setDebugState(state.debugEnabled);
       if (state.debugEnabled) {
         debugPanel.removeAttribute('hidden');
