@@ -98,7 +98,10 @@
     const a=lot.polygon[4], b=lot.polygon[5], middle={x:(a.x+b.x)/2,z:(a.z+b.z)/2};
     const toward={x:lot.center.x-middle.x,z:lot.center.z-middle.z};
     const n=Math.hypot(toward.x,toward.z)||1;
-    return {x:middle.x+2.6*toward.x/n,z:middle.z+2.6*toward.z/n};
+    // Standing 2.6m from the fence made the steel posts fill the lens.
+    // Move the cinematic lookout into the open central aisle to reveal the
+    // trains, SeaBus terminal and inlet through the railings.
+    return {x:middle.x+6.8*toward.x/n,z:middle.z+6.8*toward.z/n};
   }
   function parkingCars(lot) {
     const u={x:0.704,z:-0.710}, v={x:0.710,z:0.704};
