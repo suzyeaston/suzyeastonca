@@ -140,7 +140,7 @@ get_header();
       <aside class="gastown-minimap" aria-label="Exploration minimap">
         <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap controls">
           <button type="button" class="gastown-minimap-mode" data-action="minimap-mode-toggle" aria-pressed="false" aria-label="Switch minimap to heading-up mode">North up</button>
-          <button type="button" class="gastown-minimap-mode" data-action="harbour-lookout" aria-label="Move to the West Cordova sidewalk and face the North Shore mountains and Canada Place">Harbour view</button>
+          <button type="button" class="gastown-minimap-mode" data-action="harbour-lookout" aria-label="Go to the Station East parking lot fence lookout, facing the working rail yard, cranes and Burrard Inlet">Fence lookout</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>

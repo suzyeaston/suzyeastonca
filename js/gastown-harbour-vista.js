@@ -282,6 +282,72 @@
     };
     return ship;
   }
+
+  function waterfrontRailYard(THREE, root, world) {
+    // Unplayable railway/terminal ground BEHIND Lot 531's fence. This fills
+    // the old void between the lot and the waterfront tracks and follows the
+    // lot's approximate back boundary without drawing across the parking.
+    const lot=world&&world.parkingLot;
+    if(!lot||!Array.isArray(lot.polygon)||lot.polygon.length<7)return;
+    const pts=[lot.polygon[6],lot.polygon[5],lot.polygon[4],lot.polygon[3],
+      {x:116,z:-101},{x:-23,z:-101}];
+    const shape=new THREE.Shape();
+    pts.forEach((p,i)=>i?shape.lineTo(p.x,-p.z):shape.moveTo(p.x,-p.z));
+    shape.closePath();
+    const surface=new THREE.Mesh(new THREE.ShapeGeometry(shape),standard(THREE,0x535957,0.94,0.035));
+    surface.name='Fenced waterfront rail service yard (non-walkable)';
+    surface.rotation.x=-Math.PI/2;
+    surface.position.y=0.08;
+    root.add(surface);
+    const ballast=standard(THREE,0x454a49,0.95);
+    const tracks=standard(THREE,0x9ea8a7,0.4,0.28);
+    for(let i=0;i<4;i++) {
+      const x=15+i*17;
+      box(THREE,root,'Fenced yard gravel track bed',x,0.12,-47,3.2,0.14,79,ballast);
+      for(const dx of [-0.6,0.6]) {
+        box(THREE,root,'Yard rail pair',x+dx,0.22,-47,0.12,0.12,79,tracks);
+      }
+    }
+    // Very restrained service clutter, all beyond the public fence.
+    const rust=standard(THREE,0x7b655a,0.94),dark=standard(THREE,0x424a4d,0.91);
+    for(let i=0;i<4;i++) {
+      box(THREE,root,'Rail-yard utility container',13+i*22,1.4,-78,10.5,2.6,3.4,i%2?rust:dark);
+    }
+  }
+
+  function containerPortCranes(THREE, root) {
+    // Silhouette of the distant North Shore working-port container cranes,
+    // not surveyed terminal equipment or live vessel/berth assignments.
+    const quay=standard(THREE,0x667271,0.84);
+    const orange=standard(THREE,0xc17d47,0.59,0.12);
+    const steel=standard(THREE,0x4b626b,0.76,0.24);
+    const cargoColors=[0x58717b,0x9f5741,0x7c8581,0x596b60,0x857463];
+    box(THREE,root,'North Shore container terminal quay',-151,0.95,-419,293,2,32,quay);
+    for(let j=0;j<16;j++) {
+      const x=-290+j*18.5;
+      for(let tier=0;tier<((j*3)%3)+1;tier++){
+        box(THREE,root,'Distant stacked shipping container',x,2.2+tier*2.5,-413,
+          14,2.3,5.2,standard(THREE,cargoColors[(j+tier)%cargoColors.length],0.91));
+      }
+    }
+    for(let i=0;i<4;i++){
+      const g=new THREE.Group();
+      g.name='North Shore orange container gantry crane '+(i+1);
+      g.position.set(-274+i*68,0,-396-i*5);
+      root.add(g);
+      // An open gantry, angled outreach boom and suspended hoist cable.
+      for(const x of [-12,12]){
+        box(THREE,g,'Crane tall vertical',x,26,0,1.15,52,1.2,orange);
+        box(THREE,g,'Crane base foot',x,1,0,5,2.1,5,steel);
+      }
+      box(THREE,g,'Crane overhead crossbeam',0,52,0,44,1.5,1.2,orange);
+      const boom=box(THREE,g,'Crane projecting orange boom',-22,55,0,62,1.35,1.3,orange);
+      boom.rotation.z=-0.19;
+      box(THREE,g,'Crane hanging hoist cable',-40,35,0,0.14,35,0.14,steel);
+      box(THREE,g,'Crane apex',0,64,0,2.1,24,1,orange);
+    }
+  }
+
   function harbourTraffic(THREE, root) {
     const shell = standard(THREE, 0xe2e7e5, 0.64);
     const teal = standard(THREE, 0x356675, 0.62);
@@ -345,6 +411,8 @@
       const h=3+((i*13+7)%9);
       box(THREE,root,'North Vancouver shore silhouette',x,h/2-0.6,-489,10.2,h,9,city);
     }
+    waterfrontRailYard(THREE,root,world);
+    containerPortCranes(THREE,root);
     const pier=canadaPlace(THREE,root,anchor);
     dockedCruiseShip(THREE,root,pier);
     harbourTraffic(THREE,root);

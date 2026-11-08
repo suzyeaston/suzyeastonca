@@ -4643,8 +4643,23 @@
   function enforceWorldBounds() {
     const walkBounds = state.world.route.walkBounds;
     const point = { x: player.position.x, z: player.position.z };
-    if (isPointInPolygon(point, walkBounds) || (stationModel && stationModel.isWalkableForecourt(state.world, point))) {
+    const onLot = waterfrontPlaces && waterfrontPlaces.isWalkableLot
+      && waterfrontPlaces.isWalkableLot(state.world, point);
+    if (isPointInPolygon(point, walkBounds)
+        || (stationModel && stationModel.isWalkableForecourt(state.world, point))
+        || onLot) {
       state.lastSafePosition.set(player.position.x, player.position.y, player.position.z);
+      return;
+    }
+
+    // A walker already in the lot should hit the rail-yard fence or parked
+    // cars, not snap all the way back onto West Cordova street.
+    const lotOutline = state.world.parkingLot && state.world.parkingLot.polygon;
+    if (lotOutline && (isPointInPolygon(point, lotOutline)
+        || isPointInPolygon(state.lastSafePosition, lotOutline))) {
+      player.position.copy(state.lastSafePosition);
+      state.velocity.set(0, 0, 0);
+      flashBoundaryStatus('Station East fence / parked cars: stay in the lot.');
       return;
     }
 
@@ -4844,11 +4859,13 @@
     if (!state.world) return true;
 
     const inWalkBounds = isPointInPolygon(spawn, state.world.route.walkBounds);
-    if (!inWalkBounds) return false;
+    const onLot = waterfrontPlaces && waterfrontPlaces.isWalkableLot
+      && waterfrontPlaces.isWalkableLot(state.world, spawn);
+    if (!inWalkBounds && !onLot) return false;
 
     const onStreet = state.world.zones.street.some((zone) => isPointInPolygon(spawn, zone.polygon));
     const onSidewalk = state.world.zones.sidewalk.some((zone) => isPointInPolygon(spawn, zone.polygon));
-    if (!onStreet && !onSidewalk) return false;
+    if (!onStreet && !onSidewalk && !onLot) return false;
 
     const intersectsBuilding = state.world.buildings.some((building) => {
       // Civic footprints are often long, narrow or L-shaped. A bounding
@@ -5938,9 +5955,12 @@
       setStatus('Use street mode to look across Burrard Inlet.');
       return false;
     }
-    const pose = harbourVista.lookoutFor(state.world);
+    const target = harbourVista.positionFor(state.world);
+    const pose = (waterfrontPlaces && waterfrontPlaces.lookoutFor)
+      ? waterfrontPlaces.lookoutFor(state.world, target)
+      : harbourVista.lookoutFor(state.world);
     if (!pose || !isSpawnSafe(pose)) {
-      setStatus('The waterfront sidewalk viewing position is not accessible in this map.');
+      setStatus('The Station East fence lookout is not accessible in this map.');
       return false;
     }
     clearMovementInput();
@@ -5951,7 +5971,7 @@
     applyStreetCameraPose();
     updateNearestNode();
     drawMinimap();
-    setStatus('Harbour view: North Shore mountains, Canada Place sails and an illustrative docked cruise ship. Rail-yard sightlines are preserved.');
+    setStatus('Station East fence lookout: container cranes, working rail yard, Canada Place and the North Shore. Explore the parking lot on foot!');
     return true;
   }
 
