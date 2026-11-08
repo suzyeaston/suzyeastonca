@@ -111,8 +111,9 @@
   const entranceLookBtn = app.querySelector('[data-action="lot-entrance-view"]');
   const diagonalLookBtn = app.querySelector('[data-action="lot-diagonal-view"]');
   const suzyViewBtn = app.querySelector('[data-action="suzy-view"]');
+  const suzyFrontBtn = app.querySelector('[data-action="suzy-front-view"]');
+  const suzyBackBtn = app.querySelector('[data-action="suzy-back-view"]');
   const suzyAvatarModel = window.GastownSuzyAvatar || null;
-  const filmConductorModel = window.GastownFilmConductor || null;
   const normalizeDialogEntry = typeof dialogUtils.normalizeDialogEntry === 'function'
     ? dialogUtils.normalizeDialogEntry
     : function fallbackNormalizeDialogEntry(entry, options) {
@@ -178,6 +179,8 @@
     npcVoiceIndex: 0,
     walkerName: 'Suzy',
     thirdPerson: false,
+    avatarCameraFacing: 'back', // 'front' films the face, 'back' frames the backpack
+    followCameraDistance: undefined,
     avatarElapsed: 0,
     hasInteracted: false,
     npcSpeechCache: {},
@@ -1054,84 +1057,108 @@
 
   function updateThirdPersonCameraPose(force) {
     if (!state.thirdPerson || state.cameraMode !== 'street') return;
-    // The old fixed 4.7m camera lived *inside Waterfront Station's brick
-    // wall* when the avatar stood beside the building. Cast a short boom from
-    // over Suzy's shoulder and shorten it at real hero-mesh intersections.
-    if (force || state.avatarElapsed >= (state.avatarCameraNextRefresh || 0)) {
+    // A true shoulder rig on both sides of Suzy. The camera stays aligned
+    // with her body when the mouse turns; the avatar never rotates to face
+    // the camera, which made the old "front" workaround feel like a mirror.
+    const facingFront=state.avatarCameraFacing==='front';
+    const side=facingFront?-1:1;
+    const maxDistance=facingFront?3.35:3.25;
+    const desiredHeight=facingFront?2.44:2.68;
+    if(force || state.avatarElapsed >= (state.avatarCameraNextRefresh || 0)){
       player.updateMatrixWorld(true);
       const groundOffset=getGroundY()-player.position.y;
-      thirdPersonCameraFrom.set(0,groundOffset+1.82,0).applyMatrix4(player.matrixWorld);
-      thirdPersonCameraTo.set(0,groundOffset+2.65,3.25).applyMatrix4(player.matrixWorld);
+      thirdPersonCameraFrom.set(0,groundOffset+1.80,0).applyMatrix4(player.matrixWorld);
+      thirdPersonCameraTo.set(0,groundOffset+desiredHeight,side*maxDistance).applyMatrix4(player.matrixWorld);
       const ray=thirdPersonCameraTo.clone().sub(thirdPersonCameraFrom);
       const rayLength=ray.length();
-      let maxBoom=3.25;
-      if (rayLength > 0.01 && thirdPersonCameraBlockers.length) {
+      let maxBoom=maxDistance;
+      if(rayLength>0.01 && thirdPersonCameraBlockers.length){
         thirdPersonCameraRay.set(thirdPersonCameraFrom,ray.multiplyScalar(1/rayLength));
-        thirdPersonCameraRay.near=0.10;
+        thirdPersonCameraRay.near=0.12;
         thirdPersonCameraRay.far=rayLength;
         const hits=thirdPersonCameraRay.intersectObjects(thirdPersonCameraBlockers,true);
-        if(hits.length) {
-          maxBoom=Math.min(maxBoom,Math.max(0.32,(hits[0].distance-0.28)*3.25/rayLength));
-        }
+        if(hits.length)maxBoom=Math.min(maxBoom,
+          Math.max(0.45,(hits[0].distance-0.28)*maxDistance/rayLength));
       }
-      // A collider footprint also keeps the boom out of generic building
-      // walls and parked cars, including when nearby meshes load later.
-      let safeDistance=Math.min(1.25,maxBoom);
-      for(let distance=0.55;distance<=maxBoom;distance+=0.16) {
+      // Use the same sidewalk/lot collision rules in either camera direction.
+      // Never allow the camera to tunnel through a storefront or parked car.
+      let safeDistance=Math.min(0.48,maxBoom);
+      for(let distance=0.55;distance<=maxBoom;distance+=0.17){
         const candidate={
-          x:player.position.x+Math.sin(state.yaw)*distance,
-          z:player.position.z+Math.cos(state.yaw)*distance
+          x:player.position.x+Math.sin(state.yaw)*side*distance,
+          z:player.position.z+Math.cos(state.yaw)*side*distance
         };
         const landing=state.world&&state.world.landing;
         const insideLanding=landing&&Array.isArray(landing.footprint)
           &&isPointInPolygon(candidate,landing.footprint);
-        if(insideLanding || !isSpawnSafe(candidate))break;
+        if(insideLanding||!isSpawnSafe(candidate))break;
         safeDistance=distance;
       }
-      state.avatarCameraBoom=Math.max(0.40,Math.min(maxBoom,safeDistance));
-      state.avatarCameraNextRefresh=state.avatarElapsed+0.12;
+      state.avatarCameraBoom=Math.max(0.4,Math.min(maxBoom,safeDistance));
+      state.avatarCameraNextRefresh=state.avatarElapsed+0.10;
     }
-    const proposed=state.avatarCameraBoom||1.25;
-    // Retreat immediately when a wall is behind the player, but ease the
-    // camera back out to avoid jump cuts while Suzy turns near the station.
+    const proposed=state.avatarCameraBoom||0.48;
     const old=Number.isFinite(state.followCameraDistance)?state.followCameraDistance:proposed;
-    const boom=proposed<old?proposed:old+(proposed-old)*0.13;
+    const boom=proposed<old?proposed:old+(proposed-old)*0.15;
     state.followCameraDistance=boom;
-    const headroom=boom<1.10?3.35:2.55;
-    const y=getGroundY()-player.position.y+headroom+state.motion.bobOffset*0.12;
-    camera.position.set(0,y,boom);
-    // Rig-local camera always points ahead along the avatar's actual facing,
-    // with a downward tilt toward Suzy's upper torso.
-    camera.rotation.set(-Math.atan2(headroom-1.55,Math.max(0.55,boom)),0,0);
+    const headroom=boom<1.05?3.18:desiredHeight;
+    const y=getGroundY()-player.position.y+headroom+state.motion.bobOffset*0.10;
+    camera.position.set(0,y,side*boom);
+    // View direction +Z for front portraits, -Z for backpack follow shots.
+    // Both have a world-down pitch towards the centre of the body.
+    camera.rotation.set(-Math.atan2(headroom-1.46,Math.max(0.55,boom)),
+      facingFront?Math.PI:0,0);
+  }
+
+  function updateSuzyCameraButtons() {
+    if(suzyViewBtn){
+      suzyViewBtn.textContent=state.thirdPerson?'First-person':'See Suzy';
+      suzyViewBtn.setAttribute('aria-pressed',state.thirdPerson?'true':'false');
+      suzyViewBtn.setAttribute('aria-label',state.thirdPerson
+        ?'Return to Suzy first-person walking':'See Suzy in third-person view');
+    }
+    for(const [control,direction] of [[suzyFrontBtn,'front'],[suzyBackBtn,'back']]){
+      if(!control)continue;
+      const active=state.thirdPerson&&state.avatarCameraFacing===direction;
+      control.setAttribute('aria-pressed',active?'true':'false');
+    }
   }
 
   function applyStreetCameraPose() {
-    if (camera.parent !== player) {
-      player.add(camera);
-    }
-    player.rotation.y = state.yaw;
-    if (suzyAvatar) suzyAvatar.visible = !!state.thirdPerson;
-    if (state.thirdPerson) {
+    if(camera.parent!==player)player.add(camera);
+    player.rotation.y=state.yaw;
+    if(suzyAvatar)suzyAvatar.visible=!!state.thirdPerson;
+    if(state.thirdPerson){
       updateThirdPersonCameraPose(true);
     } else {
-      camera.position.set(0, 1.7, 0);
+      camera.position.set(0,1.7,0);
       camera.rotation.set(state.pitch,0,0);
     }
+    updateSuzyCameraButtons();
     syncCameraProjection('street');
   }
 
+  function setSuzyCameraFacing(direction) {
+    if(state.cameraMode!=='street')return false;
+    if(direction!=='front'&&direction!=='back')return false;
+    state.thirdPerson=true;
+    state.avatarCameraFacing=direction;
+    state.followCameraDistance=undefined;
+    state.avatarCameraNextRefresh=0;
+    applyStreetCameraPose();
+    setStatus(direction==='front'?'Front portrait: Suzy, facing the lens.':
+      'Behind Suzy: walking toward the city and harbour.');
+    return true;
+  }
+
   function toggleSuzyView() {
-    if (state.cameraMode !== 'street') return false;
-    state.thirdPerson = !state.thirdPerson;
+    if(state.cameraMode!=='street')return false;
+    state.thirdPerson=!state.thirdPerson;
+    if(state.thirdPerson)state.avatarCameraFacing='back';
     state.followCameraDistance=undefined;
     applyStreetCameraPose();
-    if (suzyViewBtn) {
-      suzyViewBtn.textContent = state.thirdPerson ? 'First-person' : 'See Suzy';
-      suzyViewBtn.setAttribute('aria-pressed', state.thirdPerson ? 'true' : 'false');
-      suzyViewBtn.setAttribute('aria-label', state.thirdPerson
-        ? 'Return to first-person walking' : 'See Suzy in third-person view');
-    }
-    setStatus(state.thirdPerson ? 'Suzy in frame. Walk or use a parking-lot shot.' : 'Back behind Suzy\'s eyes.');
+    setStatus(state.thirdPerson?'Behind Suzy: third-person walking.':
+      'Back behind Suzy\'s eyes.');
     return state.thirdPerson;
   }
 
@@ -6313,6 +6340,8 @@
     if (entranceLookBtn) entranceLookBtn.addEventListener('click', () => goToLotView('entrance'));
     if (diagonalLookBtn) diagonalLookBtn.addEventListener('click', () => goToLotView('diagonal'));
     if (suzyViewBtn) suzyViewBtn.addEventListener('click', toggleSuzyView);
+  if (suzyFrontBtn) suzyFrontBtn.addEventListener('click', () => setSuzyCameraFacing('front'));
+  if (suzyBackBtn) suzyBackBtn.addEventListener('click', () => setSuzyCameraFacing('back'));
 
     if (timeOfDaySelect) {
       timeOfDaySelect.addEventListener('change', (event) => applyTimeOfDay(event.target.value));
@@ -6506,13 +6535,6 @@
       coreSystems.forEach(([label, fn]) => {
         try { fn(state.world); } catch (error) { if (window.console && window.console.warn) { window.console.warn('[Gastown Sim] Optional system failed during init: ' + label, error); } }
       });
-      if (filmConductorModel && typeof filmConductorModel.mount === 'function') {
-        try {
-          state.filmConductor = filmConductorModel.mount(app, THREE, worldGroup, state.world);
-        } catch (error) {
-          if(window.console&&window.console.warn)window.console.warn('[Gastown Film] Conductor disabled; walking simulation continues.',error);
-        }
-      }
       minimapState.worldMetrics = getWorldMetrics();
       try { if (window.localStorage.getItem('gastownLowGraphics') === '1') { setLowGraphicsMode(true); } } catch (error) {}
       restoreWalkerName();
@@ -6578,7 +6600,6 @@
         if (state.harbourVistaRoot && harbourVista && typeof harbourVista.animate === 'function') {
           harbourVista.animate(state.harbourVistaRoot,time/1000);
         }
-        if (state.filmConductor) state.filmConductor.tick();
         drawMinimap();
         refreshDebugRuntimeReadout();
         renderer.render(scene, camera);
