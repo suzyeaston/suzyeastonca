@@ -566,30 +566,12 @@ function se_enqueue_gastown_sim_assets() {
         );
     }
 
-    // Original Film Club score + local Magenta recording bridge.
-    // Both are local JavaScript only; no cloud model, recording upload or
-    // third-party media request is performed by the conductor.
-    foreach ( array(
-        'se-gastown-film-cues' => '/js/gastown-film-cues.js',
-        'se-gastown-film-conductor' => '/js/gastown-film-conductor.js',
-    ) as $handle => $relative ) {
-        if ( file_exists( $dir . $relative ) ) {
-            wp_enqueue_script(
-                $handle,
-                $uri . $relative,
-                $handle === 'se-gastown-film-conductor' ? array( 'three-js', 'se-gastown-film-cues' ) : array(),
-                filemtime( $dir . $relative ),
-                true
-            );
-        }
-    }
-
     $app_path = '/js/gastown-sim.js';
     if ( file_exists( $dir . $app_path ) ) {
         wp_enqueue_script(
             'se-gastown-sim',
             $uri . $app_path,
-            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista', 'se-gastown-suzy-avatar', 'se-gastown-film-conductor' ),
+            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista', 'se-gastown-suzy-avatar' ),
             filemtime( $dir . $app_path ) . '-tone-clock-tourists',
             true
         );
