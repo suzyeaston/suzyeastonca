@@ -117,7 +117,7 @@
     avatar.visible=false;
     return avatar;
   }
-  function animate(avatar, seconds, walking) {
+  function animate(avatar, seconds, walking, groundOffset) {
     if(!avatar||!avatar.userData||!avatar.userData.limbs)return;
     const active=Math.max(0,Math.min(1,walking||0));
     const stride=Math.sin((Number.isFinite(seconds)?seconds:0)*9)*0.36*active;
@@ -126,7 +126,10 @@
     legs[1].rotation.x=-stride;
     arms[0].rotation.x=-stride*0.64-0.04;
     arms[1].rotation.x=stride*0.4-0.48; // mic held toward the face
-    avatar.position.y=Math.abs(Math.sin((Number.isFinite(seconds)?seconds:0)*9))*0.018*active;
+    // Player Y may begin at the legacy 1.7m spawn eye offset, then become
+    // floorY during movement. Keep Suzy's feet on the actual ground.
+    avatar.position.y=(Number.isFinite(groundOffset)?groundOffset:0)
+      +Math.abs(Math.sin((Number.isFinite(seconds)?seconds:0)*9))*0.018*active;
   }
   window.GastownSuzyAvatar=Object.freeze({COLORS,create,animate});
 })(window);
