@@ -339,6 +339,12 @@
   const debugGroup = new THREE.Group();
   debugGroup.visible = state.debugEnabled;
   scene.add(worldGroup);
+  // Static hero facades are potential third-person occluders. Keep this list
+  // small instead of raycasting the whole civic model on every animation frame.
+  const thirdPersonCameraBlockers = [];
+  const thirdPersonCameraRay = new THREE.Raycaster();
+  const thirdPersonCameraFrom = new THREE.Vector3();
+  const thirdPersonCameraTo = new THREE.Vector3();
   scene.add(rainGroup);
   scene.add(cloudGroup);
   scene.add(debugGroup);
@@ -1045,14 +1051,64 @@
     camera.updateProjectionMatrix();
   }
 
+  function updateThirdPersonCameraPose(force) {
+    if (!state.thirdPerson || state.cameraMode !== 'street') return;
+    // The old fixed 4.7m camera lived *inside Waterfront Station's brick
+    // wall* when the avatar stood beside the building. Cast a short boom from
+    // over Suzy's shoulder and shorten it at real hero-mesh intersections.
+    if (force || state.avatarElapsed >= (state.avatarCameraNextRefresh || 0)) {
+      player.updateMatrixWorld(true);
+      thirdPersonCameraFrom.set(0,2.25,0).applyMatrix4(player.matrixWorld);
+      thirdPersonCameraTo.set(0,2.70,3.25).applyMatrix4(player.matrixWorld);
+      const ray=thirdPersonCameraTo.clone().sub(thirdPersonCameraFrom);
+      const rayLength=ray.length();
+      let maxBoom=3.25;
+      if (rayLength > 0.01 && thirdPersonCameraBlockers.length) {
+        thirdPersonCameraRay.set(thirdPersonCameraFrom,ray.multiplyScalar(1/rayLength));
+        thirdPersonCameraRay.near=0.10;
+        thirdPersonCameraRay.far=rayLength;
+        const hits=thirdPersonCameraRay.intersectObjects(thirdPersonCameraBlockers,true);
+        if(hits.length) {
+          maxBoom=Math.min(maxBoom,Math.max(0.32,(hits[0].distance-0.28)*3.25/rayLength));
+        }
+      }
+      // A collider footprint also keeps the boom out of generic building
+      // walls and parked cars, including when nearby meshes load later.
+      let safeDistance=Math.min(0.38,maxBoom);
+      for(let distance=0.48;distance<=maxBoom;distance+=0.20) {
+        const candidate={
+          x:player.position.x+Math.sin(state.yaw)*distance,
+          z:player.position.z+Math.cos(state.yaw)*distance
+        };
+        const landing=state.world&&state.world.landing;
+        const insideLanding=landing&&Array.isArray(landing.footprint)
+          &&isPointInPolygon(candidate,landing.footprint);
+        if(insideLanding || !isSpawnSafe(candidate))break;
+        safeDistance=distance;
+      }
+      state.avatarCameraBoom=Math.max(0.32,Math.min(maxBoom,safeDistance));
+      state.avatarCameraNextRefresh=state.avatarElapsed+0.12;
+    }
+    const boom=state.avatarCameraBoom||0.38;
+    const y=2.75 + state.motion.bobOffset*0.12;
+    camera.position.set(0,y,boom);
+    // Look toward Suzy's upper torso so the player remains in shot even
+    // when geometry forces a short camera boom.
+    camera.rotation.set(-Math.atan2(y-1.44,Math.max(0.45,boom)),0,0);
+  }
+
   function applyStreetCameraPose() {
     if (camera.parent !== player) {
       player.add(camera);
     }
-    camera.position.set(0, state.thirdPerson ? 2.82 : 1.7, state.thirdPerson ? 4.7 : 0);
-    camera.rotation.set(state.thirdPerson ? (-0.18 + state.pitch * 0.18) : state.pitch, 0, 0);
-    if (suzyAvatar) suzyAvatar.visible = !!state.thirdPerson;
     player.rotation.y = state.yaw;
+    if (suzyAvatar) suzyAvatar.visible = !!state.thirdPerson;
+    if (state.thirdPerson) {
+      updateThirdPersonCameraPose(true);
+    } else {
+      camera.position.set(0, 1.7, 0);
+      camera.rotation.set(state.pitch,0,0);
+    }
     syncCameraProjection('street');
   }
 
@@ -1636,8 +1692,7 @@
     }
 
     if (state.cameraMode === 'street' && state.thirdPerson) {
-      camera.position.set(state.motion.swayOffset * 0.3, 2.82 + state.motion.bobOffset * 0.18, 4.7);
-      camera.rotation.set(-0.18 + state.pitch * 0.18, 0, 0);
+      updateThirdPersonCameraPose(false);
     } else if (state.cameraMode === 'street') {
       camera.position.y = DEFAULT_EYE_HEIGHT + state.motion.bobOffset;
       camera.position.x = state.motion.swayOffset;
@@ -4184,15 +4239,26 @@
     // remains honest from street level.
     if (harbourVista) {
       const northHarbour = harbourVista.create(THREE, world);
-      if (northHarbour) worldGroup.add(northHarbour);
+      if (northHarbour) {
+        worldGroup.add(northHarbour);
+        state.harbourVistaRoot = northHarbour;
+      }
     }
     if (waterfrontPlaces) {
       const shorelinePlaces = waterfrontPlaces.create(THREE, world);
-      if (shorelinePlaces) worldGroup.add(shorelinePlaces);
+      if (shorelinePlaces) {
+        worldGroup.add(shorelinePlaces);
+        // Landing's broad pale wall is a key camera collision surface.
+        const landingGroup=shorelinePlaces.children.find(g=>g && /Kelly-Douglas/.test(g.name));
+        if(landingGroup)thirdPersonCameraBlockers.push(landingGroup);
+      }
     }
     if (stationModel) {
       const stationExterior = stationModel.create(THREE, world);
-      if (stationExterior) worldGroup.add(stationExterior);
+      if (stationExterior) {
+        worldGroup.add(stationExterior);
+        thirdPersonCameraBlockers.push(stationExterior);
+      }
     }
     (world.hero_landmarks || []).forEach((hero) => {
       if (hero.id === 'steam-clock-hero') {
@@ -6492,6 +6558,9 @@
         updateLandmarkDiscoveries();
         updateQuestChainsFromProgress();
         animateRain(delta);
+        if (state.harbourVistaRoot && harbourVista && typeof harbourVista.animate === 'function') {
+          harbourVista.animate(state.harbourVistaRoot,time/1000);
+        }
         drawMinimap();
         refreshDebugRuntimeReadout();
         renderer.render(scene, camera);
