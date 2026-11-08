@@ -20,7 +20,7 @@ get_header();
         <button type="button" class="pixel-button secondary" data-action="pause">Pause</button>
         <button type="button" class="pixel-button secondary" data-action="reset" aria-label="Reset to the start of the route">Reset</button>
         <button type="button" class="pixel-button secondary" data-action="tutorial-open" aria-label="Open the controls tutorial overlay">Help</button>
-        <button type="button" class="pixel-button secondary" data-action="rename-walker" aria-label="Rename your walker">Rename</button>
+        <span class="gastown-character-chip" aria-label="Current character is Suzy">CHARACTER · SUZY</span>
         <label>
           Time
           <select name="time-of-day">
@@ -68,6 +68,8 @@ get_header();
           <li><strong>W / ↑</strong> hold to run (Shift still works)</li>
           <li><strong>A S D + arrows</strong> move / turn</li>
           <li><strong>E / click</strong> interact</li>
+          <li><strong>B / See Suzy</strong> switch between first-person and third-person</li>
+          <li><strong>Entrance / Fence / Diagonal</strong> jump between safe Station East viewpoints</li>
           <li><strong>Esc</strong> releases your mouse so you can click browser controls, settings, or leave the simulator</li>
           <li><strong>Harbour view</strong> frames the North Shore and Canada Place from the Cordova sidewalk (representative ship, not live berth status)</li>
         </ul>
@@ -82,7 +84,7 @@ get_header();
           <button type="button" class="pixel-button tiny secondary" data-action="tutorial-close" aria-label="Close tutorial overlay">Close</button>
         </div>
         <div class="gastown-dialog-body" id="gastown-tutorial-copy">
-          <p>Name your walker if you want, then click in and move.</p>
+          <p>You're Suzy. This is your playable Vancouver. Click in and move.</p>
           <p>The corridor is tuned as a focused two-block walk: Waterfront threshold, Water Street rhythm, Steam Clock corner, and Maple Tree Square edge.</p>
           <p>Click the 3D scene to capture your mouse. <strong>Press Esc at any time to release it</strong> and use the page normally. W/A/S/D moves, mouse looks around, E interacts.</p>
         </div>
@@ -93,28 +95,9 @@ get_header();
       </div>
     </section>
 
-    <section class="gastown-name-overlay" data-name-overlay role="dialog" aria-modal="true" aria-labelledby="gastown-name-title" hidden>
-      <div class="gastown-dialog-panel gastown-name-panel">
-        <div class="gastown-dialog-header">
-          <h2 id="gastown-name-title">Name your walker</h2>
-        </div>
-        <div class="gastown-dialog-body">
-          <p>Optional. Keep it short.</p>
-          <label class="gastown-name-field">
-            <span>Walker name</span>
-            <input type="text" maxlength="24" autocomplete="nickname" data-walker-name-input placeholder="SUZY">
-          </label>
-        </div>
-        <div class="gastown-dialog-actions">
-          <button type="button" class="pixel-button secondary" data-action="walker-start">Start</button>
-          <button type="button" class="pixel-button secondary" data-action="walker-skip">Skip</button>
-        </div>
-      </div>
-    </section>
-
     <section class="gastown-hud" aria-label="Exploration HUD">
       <div class="gastown-hud-identity">
-        <p class="gastown-hud-name" data-walker-name-display>WALKER · 0% mapped</p>
+        <p class="gastown-hud-name" data-walker-name-display>SUZY · 0% mapped</p>
       </div>
       <div class="gastown-hud-route">
         <p class="gastown-expedition-value" data-sim-route-score aria-live="polite">0% mapped</p>
@@ -141,6 +124,9 @@ get_header();
         <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap controls">
           <button type="button" class="gastown-minimap-mode" data-action="minimap-mode-toggle" aria-pressed="false" aria-label="Switch minimap to heading-up mode">North up</button>
           <button type="button" class="gastown-minimap-mode" data-action="harbour-lookout" aria-label="Go to the Station East parking lot fence lookout, facing the working rail yard, cranes and Burrard Inlet">Fence lookout</button>
+          <button type="button" class="gastown-minimap-mode" data-action="lot-entrance-view" aria-label="Station East driveway and entrance camera">Entrance</button>
+          <button type="button" class="gastown-minimap-mode" data-action="lot-diagonal-view" aria-label="Station East oblique camera from the Waterfront Station sidewalk">Diagonal</button>
+          <button type="button" class="gastown-minimap-mode gastown-view-suzy" data-action="suzy-view" aria-label="See Suzy in third-person view" aria-pressed="false">See Suzy</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>
