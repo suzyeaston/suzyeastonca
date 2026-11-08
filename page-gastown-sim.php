@@ -68,7 +68,7 @@ get_header();
           <li><strong>W / ↑</strong> hold to run (Shift still works)</li>
           <li><strong>A S D + arrows</strong> move / turn</li>
           <li><strong>E / click</strong> interact</li>
-          <li><strong>B / See Suzy</strong> switch between first-person and third-person</li>
+          <li><strong>B / See Suzy</strong> switch between first-person and behind-Suzy; <strong>Face / Front</strong> and <strong>Back / Follow</strong> choose the film camera side</li>
           <li><strong>Entrance / Fence / Diagonal</strong> jump between safe Station East viewpoints</li>
           <li><strong>Esc</strong> releases your mouse so you can click browser controls, settings, or leave the simulator</li>
           <li><strong>Harbour view</strong> frames the North Shore and Canada Place from the Cordova sidewalk (representative ship, not live berth status)</li>
@@ -127,7 +127,8 @@ get_header();
           <button type="button" class="gastown-minimap-mode" data-action="lot-entrance-view" aria-label="Station East driveway and entrance camera">Entrance</button>
           <button type="button" class="gastown-minimap-mode" data-action="lot-diagonal-view" aria-label="Station East oblique camera from the Waterfront Station sidewalk">Diagonal</button>
           <button type="button" class="gastown-minimap-mode gastown-view-suzy" data-action="suzy-view" aria-label="See Suzy in third-person view" aria-pressed="false">See Suzy</button>
-          <button type="button" class="gastown-minimap-mode gastown-film-button" data-action="film-panel-toggle" aria-controls="gastown-film-panel" aria-expanded="false">FILM // AI</button>
+          <button type="button" class="gastown-minimap-mode gastown-view-front" data-action="suzy-front-view" aria-label="Film Suzy from the front and show her face" aria-pressed="false">Face / Front</button>
+          <button type="button" class="gastown-minimap-mode gastown-view-back" data-action="suzy-back-view" aria-label="Follow Suzy from behind and show her checkerboard backpack" aria-pressed="false">Back / Follow</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>
@@ -145,34 +146,6 @@ get_header();
         <p class="gastown-map-distance" data-sim-map-distance>Each map square is to scale</p>
         <p class="gastown-minimap-label" data-sim-minimap-landmark>Waterfront Station threshold</p>
       </aside>
-      <section class="gastown-film-panel" id="gastown-film-panel" data-film-panel aria-label="SOFT RESET original film score conductor" hidden>
-        <header class="gastown-film-panel-head">
-          <h2>SOFT RESET // SUZY AI</h2>
-          <button type="button" data-film-close aria-label="Close film conductor">×</button>
-        </header>
-        <p>60-second AI Film Club scoring instrument. Original prompts for local Magenta RealTime, then bring your rendered audio back to this world.</p>
-        <p class="gastown-film-disclosure">No AI model runs in this browser. Audio stems stay on your computer; the scene listens to the exported soundtrack.</p>
-        <label for="gastown-film-preset">Magenta prompt bank</label>
-        <select id="gastown-film-preset" data-film-preset>
-          <option value="harbour-pulse">Harbour pulse</option>
-          <option value="rail-memory">Rail memory</option>
-          <option value="container-choir">Container choir</option>
-          <option value="human-signal">Human signal</option>
-          <option value="terminal-bloom">Terminal bloom</option>
-          <option value="seabus-lullaby">SeaBus lullaby</option>
-        </select>
-        <p class="gastown-film-prompt" data-film-prompt></p>
-        <button type="button" data-film-copy>Copy Magenta prompt</button>
-        <a href="https://suzyeaston.github.io/appliance-latent-space-live/" target="_blank" rel="noopener noreferrer" class="gastown-film-instrument-link">Open original browser instrument (synth)</a>
-        <label for="gastown-film-audio">Import Magenta audio export (local MP3/WAV)</label>
-        <input id="gastown-film-audio" type="file" accept="audio/*" data-film-audio>
-        <audio data-film-player controls preload="none" aria-label="Film soundtrack preview"></audio>
-        <label for="gastown-film-timeline">Film timeline <span data-film-time>00:00</span></label>
-        <input id="gastown-film-timeline" type="range" min="0" max="60" step="0.1" value="0" data-film-timeline>
-        <output data-film-phase>The world</output>
-        <label class="gastown-film-toggle"><input type="checkbox" data-film-morph> Show audio-reactive science fiction structures</label>
-        <p data-film-status role="status" aria-live="polite">Import a Magenta take or scrub the timeline for still-frame shots.</p>
-      </section>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
       <div class="gastown-live-strip">
         <p class="gastown-landmark" data-sim-landmark aria-live="polite">Water Street working corridor</p>

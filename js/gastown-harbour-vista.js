@@ -142,12 +142,12 @@
 
   function waterSurface(THREE, root) {
     const water = new THREE.Mesh(
-      new THREE.PlaneGeometry(1320, 850),
+      new THREE.PlaneGeometry(1320, 900),
       new THREE.MeshBasicMaterial({ color: 0x266d91, fog: false, side: THREE.DoubleSide })
     );
     water.name = 'Burrard Inlet water';
     water.rotation.x = -Math.PI / 2;
-    water.position.set(0, -0.46, -555); // shoreline approx. -130; far edge -980
+    water.position.set(0, -0.11, -566); // visually distinct tidal water, starts near the seaward edge of the yard
     root.add(water);
 
     // One lightweight line-segments geometry, rather than a texture download.
@@ -157,7 +157,7 @@
       for (let col = 0; col < 13; col++) {
         const x = -370 + col * 59 + (row % 2) * 18;
         const length = 7 + ((col * 9 + row * 7) % 15);
-        ripples.push(x, -0.405, z, x + length, -0.405, z + 1.2);
+        ripples.push(x, -0.035, z, x + length, -0.035, z + 1.2);
       }
     }
     const geom = new THREE.BufferGeometry();
@@ -168,15 +168,18 @@
     lines.name = 'Harbour water reflections';
     root.add(lines);
 
-    // Shore/working-port transition behind the historic CPR station.
-    box(THREE, root, 'Waterfront rail-yard apron', 0, 0.03, -113, 690, 0.13, 52, standard(THREE, 0x555d60));
-    const rail = standard(THREE, 0x6f7675, 0.5, 0.3);
-    const sleeper = standard(THREE, 0x4f423b, 0.86);
-    for (let i = 0; i < 5; i++) {
-      const z = -97 - i * 8;
-      box(THREE, root, 'Waterfront track north rail', 0, 0.19, z, 670, 0.1, 0.14, rail);
-      box(THREE, root, 'Waterfront track south rail', 0, 0.19, z - 1.4, 670, 0.1, 0.14, rail);
-      for (let c = 0; c < 7; c++) box(THREE, root, 'Track timber sleeper', -300 + c * 93, 0.12, z - 0.7, 2.6, 0.06, 2.7, sleeper);
+    // Keep the shore apron as a narrow land transition rather than another
+    // set of perpendicular ghost tracks crossing the visible harbour.
+    box(THREE,root,'Waterfront rail-yard apron',0,0.03,-128,690,0.13,22,
+      standard(THREE,0x555d60));
+    const waveMaterial=new THREE.MeshBasicMaterial({
+      color:0x62bfd0,transparent:true,opacity:0.24,depthWrite:false,fog:false
+    });
+    for(let i=0;i<16;i++){
+      const z=-148-i*13.5;
+      const ribbon=box(THREE,root,'Sea surface cross-harbour reflection '+i,
+        75, -0.025, z, 140+i*5, 0.018, 0.38, waveMaterial);
+      ribbon.rotation.y=0.04;
     }
   }
 
@@ -284,10 +287,11 @@
   }
 
   function waterfrontRailYard(THREE, root, world) {
-    // The waterfront CPR tracks run broadly east/west, parallel to Cordova
-    // and the terminal footbridge. Our older yard drew rails north/south,
-    // making it read as a blank utility apron from the parking-lot fence.
-    // Approximate scenic geometry ONLY, beyond the playable public lot.
+    // Station East is a wedge north of Cordova, while CPR tracks run on a
+    // diagonal behind its north fence. Older models placed all cars on fixed
+    // global Z values, so looking from the fence toward The Landing showed a
+    // blank asphalt void. Derive the rails from the photographed back edge.
+    // The placement remains representative, not a surveyed rail alignment.
     const lot=world&&world.parkingLot;
     if(!lot||!Array.isArray(lot.polygon)||lot.polygon.length<7)return;
     const pts=[lot.polygon[6],lot.polygon[5],lot.polygon[4],lot.polygon[3],
@@ -295,83 +299,90 @@
     const shape=new THREE.Shape();
     pts.forEach((p,i)=>i?shape.lineTo(p.x,-p.z):shape.moveTo(p.x,-p.z));
     shape.closePath();
-    const surface=new THREE.Mesh(
-      new THREE.ShapeGeometry(shape),
-      new THREE.MeshBasicMaterial({color:0x535c5f,side:THREE.DoubleSide,fog:false}));
+    const surface=new THREE.Mesh(new THREE.ShapeGeometry(shape),
+      new THREE.MeshBasicMaterial({color:0x616562,side:THREE.DoubleSide,fog:false}));
     surface.name='Fenced waterfront rail service yard (non-walkable)';
     surface.rotation.x=-Math.PI/2;
     surface.position.y=0.075;
     root.add(surface);
 
-    const ballast=standard(THREE,0x565958,0.94);
-    const steel=standard(THREE,0xb8b6aa,0.35,0.48);
-    const sleepers=standard(THREE,0x67594c,0.88);
-    for(const z of [-27,-42,-57,-72,-87]){
-      box(THREE,root,'Waterfront east west railroad ballast',28,0.12,z,165,0.11,3.5,ballast);
-      for(const edge of [-0.7,0.7]){
-        box(THREE,root,'Yard rail pair',28,0.24,z+edge,165,0.095,0.105,steel);
+    const edgeA=lot.polygon[5],edgeB=lot.polygon[4];
+    const length=Math.hypot(edgeB.x-edgeA.x,edgeB.z-edgeA.z)||1;
+    const dir={x:(edgeB.x-edgeA.x)/length,z:(edgeB.z-edgeA.z)/length};
+    const outside={x:dir.z,z:-dir.x};
+    const yaw=Math.atan2(-dir.z,dir.x);
+    const mid={x:(edgeB.x+edgeA.x)*0.5,z:(edgeB.z+edgeA.z)*0.5};
+    // Move the long rails toward The Landing so a left/right turn from the
+    // public parking aisle reveals several tracks instead of a black wall.
+    const origin={x:mid.x+dir.x*30,z:mid.z+dir.z*30};
+    const trackPoint=(longitudinal,offset)=>({
+      x:origin.x+dir.x*longitudinal+outside.x*offset,
+      z:origin.z+dir.z*longitudinal+outside.z*offset
+    });
+    const placeBox=(name,along,offset,y,w,h,d,material)=>{
+      const p=trackPoint(along,offset);
+      const part=box(THREE,root,name,p.x,y,p.z,w,h,d,material);
+      part.rotation.y=yaw;
+      return part;
+    };
+    const ballast=standard(THREE,0x656766,0.96);
+    const steel=standard(THREE,0xb4b2aa,0.36,0.49);
+    const sleeper=standard(THREE,0x665649,0.9);
+    // Tracks are all beyond the public fence: cannot walk into them.
+    for(let i=0;i<7;i++){
+      const offset=8+i*7.1;
+      placeBox('Waterfront east west railroad ballast',0,offset,0.14,150,0.13,3.6,ballast);
+      for(const side of [-0.75,0.75]){
+        placeBox('Yard rail pair',0,offset+side,0.27,150,0.095,0.13,steel);
       }
-      for(let x=-49;x<=107;x+=26){
-        box(THREE,root,'Railroad brown sleeper',x,0.18,z,1.1,0.08,2.7,sleepers);
+      for(let t=-64;t<=64;t+=24){
+        placeBox('Railroad brown sleeper',t,offset,0.19,1.5,0.08,2.8,sleeper);
       }
     }
 
-    // Three small recognizable railcar silhouettes in the near apron,
-    // beneath bright cargo containers and behind the public fence.
-    const freightColors=[
-      standard(THREE,0xaa6345,0.86),
-      standard(THREE,0x427568,0.84),
-      standard(THREE,0xa1a6aa,0.87),
-      standard(THREE,0x9a5947,0.87),
-      standard(THREE,0x38778b,0.86),
-      standard(THREE,0xd4a044,0.88)
-    ];
-    const undercarriage=standard(THREE,0x252d32,0.79);
-    const carriageWheels=standard(THREE,0x11191e,0.88);
-    [
-      {x:-12,z:-40,paint:0},
-      {x:31,z:-56,paint:1},
-      {x:74,z:-71,paint:3}
-    ].forEach((car,index)=>{
-      const wagon=new THREE.Group();
-      wagon.name='CP freight railcar in waterfront yard '+(index+1);
-      wagon.position.set(car.x,0,car.z);
-      box(THREE,wagon,'Rail wagon long frame',0,0.72,0,26,0.6,2.8,undercarriage);
-      for(const x of [-9.4,9.4]){
-        for(const z of [-1.05,1.05]){
-          const wheel=cylinder(THREE,wagon,'Freight steel wheel',x,0.43,z,0.4,0.16,carriageWheels,8);
-          wheel.rotation.x=Math.PI/2;
+    const freightColors=[0xba644b,0x518c83,0xc99d47,0x8b6168,0x487f9f,
+      0xb2a49b,0xa94d39,0x508470].map(color=>standard(THREE,color,0.83));
+    const dark=standard(THREE,0x292e34,0.81);
+    const wheelMat=standard(THREE,0x181b20,0.87);
+    const rows=[0,2,4,6];
+    let containerCount=0;
+    rows.forEach((row,rowIndex)=>{
+      const offset=8+row*7.1;
+      placeBox('Station East visible railcar spine',0,offset,0.88,143,0.61,3.25,dark);
+      const centers=rowIndex===0?[-49,-23,3,29,55]:
+        rowIndex===1?[-40,-12,17,44]:[-31,-3,25,53];
+      centers.forEach((longitudinal,index)=>{
+        // Rotated long sides follow the diagonal rail line; this makes the
+        // cargo rhythm visible when turning toward either end of the fence.
+        placeBox('Visible Station East freight container',longitudinal,offset,
+          2.63,22.1,2.98,2.85,freightColors[(rowIndex*3+index)%freightColors.length]);
+        if((rowIndex===0&&index===1)||(rowIndex===2&&index===2)){
+          placeBox('Double-stack freight upper container',longitudinal,offset,
+            5.72,22.1,2.92,2.85,freightColors[(index+4)%freightColors.length]);
         }
-      }
-      box(THREE,wagon,'Waterfront double-length intermodal container',0,2.35,0,24,2.8,2.65,
-        freightColors[car.paint%freightColors.length]);
-      box(THREE,wagon,'Corrugated freight container dark roof',0,3.82,0,23.6,0.12,2.4,
-        undercarriage);
-      root.add(wagon);
-    });
-
-    // Readability pass from the *actual* parking-lot viewpoint: the old
-    // freight rows were 60–100m away and below a 2.2m fence, so screenshots
-    // looked like an empty grey void. Add vivid double-stack silhouettes
-    // immediately behind the public boundary, never inside the playable lot.
-    // These are illustrative trains, not live rolling-stock positions.
-    const trainFrame=standard(THREE,0x2c3336,0.82);
-    const nearPaint=[
-      0xc26b47,0x4f8ba0,0xdfa741,0x54815c,
-      0x8e5c61,0x7b88a8,0xb97350,0x91a9a8
-    ].map(color=>standard(THREE,color,0.81));
-    [-10,-24,-38].forEach((z,row)=>{
-      box(THREE,root,'Station East visible railcar spine',52,0.72,z,104,0.50,3.5,trainFrame);
-      const xs=row===0?[14,40,66,91]:row===1?[25,51,77]:[35,61];
-      xs.forEach((x,index)=>{
-        box(THREE,root,'Visible Station East freight container',
-          x,2.8,z,22.3,3.8,3.0,nearPaint[(row*3+index)%nearPaint.length]);
+        containerCount++;
       });
     });
-    root.userData.nearbyContainers=9;
+    [0,3,5].forEach((row,index)=>{
+      const position=trackPoint(-20+index*25,8+row*7.1);
+      const wagon=new THREE.Group();
+      wagon.name='CP freight railcar in waterfront yard '+(index+1);
+      wagon.position.set(position.x,0,position.z);
+      wagon.rotation.y=yaw;
+      box(THREE,wagon,'Rail wagon long frame',0,0.69,0,23.0,0.54,2.82,dark);
+      for(const x of [-8.8,8.8]){
+        for(const z of [-1.03,1.03]){
+          const w=cylinder(THREE,wagon,'Freight steel wheel',x,0.43,z,0.34,0.14,wheelMat,8);
+          w.rotation.x=Math.PI/2;
+        }
+      }
+      box(THREE,wagon,'Waterfront double-length intermodal container',0,2.28,0,
+        22.5,2.8,2.6,freightColors[(index*2)%freightColors.length]);
+      root.add(wagon);
+    });
+    root.userData.nearbyContainers=containerCount;
+    root.userData.tracksAlignedToLotFence=true;
 
-    // SkyTrain/SeaBus access is read through the terminal roof, the white
-    // waterfront gangway, and the rust-red overhead pedestrian connection.
     const stationWhite=standard(THREE,0xe1e5e3,0.76);
     const glass=standard(THREE,0x5f8494,0.38,0.16);
     const rust=standard(THREE,0x7b4b42,0.83);
@@ -492,7 +503,7 @@
     return {
       x, y: 1.7, z,
       yaw: Math.atan2(-dx, -dz),
-      pitch: 0.10,
+      pitch: -0.012, // eye-line now catches the water rather than sky alone
       facing: 'north-northwest toward Canada Place and the North Shore',
       label: 'Station East / West Cordova harbour view (sidewalk)',
       publicSidewalkApproximation: true

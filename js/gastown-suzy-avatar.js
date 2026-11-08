@@ -1,7 +1,7 @@
 /*
  * Suzy: deliberately stylized, lightweight procedural avatar.
  * Visual identity references the artist's own Futureproof performance photos:
- * silver-lavender half-up hair, clear glasses, dark jacket, pale denim,
+ * silver-blonde half-up hair, clear glasses, dark jacket, pale denim,
  * microphone and a portable music rig. This is an original low-poly
  * character, not a photorealistic likeness or a biometric reconstruction.
  *
@@ -10,8 +10,8 @@
 (function (window) {
   'use strict';
   const COLORS = Object.freeze({
-    hair: 0xc9c2c6,
-    hairShade: 0xa69aa9,
+    hair: 0xd5d2c9,
+    hairShade: 0xb3aca7,
     jacket: 0x1c2027,
     jacketEdge: 0x323846,
     denim: 0xbac9cf,
@@ -69,7 +69,7 @@
     box(THREE,avatar,'Charcoal undershirt',[0.24,0.57,0.03],top,[0,1.17,-0.142]);
     box(THREE,avatar,'Open jacket left lapel',[0.095,0.52,0.045],jacketEdge,[-0.18,1.25,-0.15],[0,0,-0.13]);
     box(THREE,avatar,'Open jacket right lapel',[0.095,0.52,0.045],jacketEdge,[0.18,1.25,-0.15],[0,0,0.13]);
-    box(THREE,avatar,'Lavender hair collar',[0.30,0.15,0.17],hair,[0,1.55,0.07]);
+    box(THREE,avatar,'Long platinum hair across shoulders',[0.37,0.27,0.17],hair,[0,1.54,0.075]);
     box(THREE,avatar,'Light denim waist',[0.44,0.19,0.25],denim,[0,0.79,0]);
     const legs=[
       joint(THREE,avatar,'Left denim leg',[-0.14,0.77,0],0.65,0.119,denim),
@@ -132,23 +132,52 @@
     sphere(THREE,avatar,'Sculpted nose',0.035,skin,[0,1.752,-0.234],[0.65,1.18,0.90]);
     sphere(THREE,avatar,'Mouth with soft smile',0.042,lip,[0,1.690,-0.217],[1.16,0.18,0.30]);
 
-    // The black Vans backpack is part of the actual artist silhouette.
-    // Lightweight geometry with hanging shoulder straps, carry handle,
-    // front pocket, zip seam and a small recognisable woven wordmark.
-    const bag=mat(THREE,0x11151b);
-    const bagTrim=mat(THREE,0x30343c);
+    // The orange/cream checkerboard straps in Suzy's reference photo are
+    // distinctive from the previous all-black bag. The backpack carries the
+    // same checker motif, with black edging and a front pocket. Procedural
+    // texture is local; no photograph or face scan enters the website bundle.
+    const bag=mat(THREE,0x16191d);
+    const bagTrim=mat(THREE,0x29292d);
     const stitch=mat(THREE,0xc9d1db);
+    const checker=mat(THREE,0xd46d44);
+    if(window.document&&THREE.CanvasTexture){
+      const cloth=window.document.createElement('canvas');
+      cloth.width=256;cloth.height=256;
+      const ink=cloth.getContext&&cloth.getContext('2d');
+      if(ink){
+        ink.fillStyle='#be512f';ink.fillRect(0,0,256,256);
+        const tiles=8,tile=256/tiles;
+        for(let row=0;row<tiles;row++)for(let col=0;col<tiles;col++){
+          ink.fillStyle=(row+col)%2===0?'#e9d7ba':'#b84a2c';
+          ink.fillRect(col*tile,row*tile,tile,tile);
+        }
+        // Subtle woven grid, not a bright neon checkerboard.
+        if(ink.beginPath&&ink.moveTo&&ink.lineTo&&ink.stroke){
+          ink.strokeStyle='rgba(37,27,27,.12)';ink.lineWidth=1;
+          for(let v=0;v<256;v+=8){
+            ink.beginPath();ink.moveTo(v,0);ink.lineTo(v,256);ink.stroke();
+          }
+        }
+        const fabric=new THREE.CanvasTexture(cloth);
+        fabric.colorSpace=THREE.SRGBColorSpace;
+        if(checker.color&&typeof checker.color.setHex==='function')checker.color.setHex(0xffffff);
+        checker.map=fabric;
+        checker.needsUpdate=true;
+      }
+    }
     const backpack=new THREE.Group();
-    backpack.name='Suzy black Vans backpack';
+    backpack.name='Suzy orange checkerboard Vans backpack';
     backpack.position.set(0,1.20,0.245);
     avatar.add(backpack);
-    sphere(THREE,backpack,'Rounded Vans daypack shell',0.305,bag,
+    sphere(THREE,backpack,'Rounded orange checkerboard Vans daypack shell',0.305,checker,
       [0,-0.04,0.13],[0.89,1.17,0.60]);
-    sphere(THREE,backpack,'Vans front pocket',0.213,bagTrim,
+    sphere(THREE,backpack,'Orange checkerboard Vans front pocket',0.213,checker,
       [0,-0.165,0.287],[1.02,0.61,0.28]);
     for(const x of [-0.205,0.205]){
-      box(THREE,backpack,'Backpack webbing shoulder strap',[0.067,0.62,0.065],bagTrim,
+      box(THREE,backpack,'Backpack black edge webbing',[0.084,0.66,0.078],bagTrim,
         [x,-0.01,-0.06],[x>0?0.16:-0.16,0,0]);
+      box(THREE,backpack,'Orange checker shoulder strap',[0.065,0.64,0.014],checker,
+        [x,-0.01,-0.106],[x>0?0.16:-0.16,0,0]);
     }
     box(THREE,backpack,'Backpack top carry handle',[0.16,0.047,0.07],bagTrim,[0,0.335,0.04]);
     box(THREE,backpack,'Backpack pocket zipper',[0.28,0.017,0.012],stitch,[0,-0.075,0.357]);
@@ -173,7 +202,7 @@
         backpack.add(mark);
       }
     }
-    avatar.userData.backpack='Black Vans daypack with woven label';
+    avatar.userData.backpack='Orange/ivory checkerboard Vans backpack and straps';
     // Compact handheld microphone in right hand. It also makes this an
     // unmistakably musical protagonist when framed against the harbour.
     const instrument=new THREE.Group();

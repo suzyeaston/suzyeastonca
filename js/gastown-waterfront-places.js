@@ -140,7 +140,7 @@
     return {
       x:point.x,y:1.7,z:point.z,
       yaw:Math.atan2(-(target.x-point.x),-(target.z-point.z)),
-      pitch:0.055,
+      pitch:-0.012, // level harbour horizon with enough down-angle for the inlet
       label:'Station East / waterfront fence lookout',
       approximate:true,
       publicAccessNotVerified:true
