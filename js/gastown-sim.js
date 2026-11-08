@@ -1688,7 +1688,8 @@
     state.motion.swayOffset = THREE.MathUtils.lerp(state.motion.swayOffset || 0, targetSway, 1 - Math.exp(-delta * 8));
     state.avatarElapsed += delta;
     if (suzyAvatar && suzyAvatarModel) {
-      suzyAvatarModel.animate(suzyAvatar, state.avatarElapsed, normalizedSpeed);
+      suzyAvatarModel.animate(suzyAvatar, state.avatarElapsed, normalizedSpeed,
+        getGroundY() - player.position.y);
     }
 
     if (state.cameraMode === 'street' && state.thirdPerson) {
