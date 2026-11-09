@@ -142,7 +142,7 @@ test('covered station concourse suppresses rain while outdoor drizzle equips Suz
   const runtime=read('js/gastown-sim.js');
   const avatar=read('js/gastown-suzy-avatar.js');
   assert.match(runtime,/function isPlayerInsideWaterfront\(\)/);
-  assert.match(runtime,/rainGroup\.visible = !isPlayerInsideWaterfront\(\)/);
+  assert.match(runtime,/rainGroup\.visible = !state\.landingLab\.inside && !isPlayerInsideWaterfront\(\)/);
   assert.match(runtime,/if \(!rainGroup\.visible\) return;/);
   assert.match(runtime,/wet && !isPlayerInsideWaterfront\(\)/);
   assert.match(runtime,/state\.activeWeather === 'drizzle'/);
