@@ -551,8 +551,8 @@
     const root=new THREE.Group();
     root.name='Fictional Multimodal Lab | sixth-floor imagination at The Landing';
     const wall=new THREE.MeshStandardMaterial({color:0xd5c7ae,roughness:0.91});
-    const cream=new THREE.MeshStandardMaterial({color:0xf0e6d4,roughness:0.86});
-    const oak=new THREE.MeshStandardMaterial({color:0x906d4f,roughness:0.83});
+    const cream=new THREE.MeshStandardMaterial({color:0xf4f2ec,roughness:0.86});
+    const oak=new THREE.MeshStandardMaterial({color:0xc89c66,roughness:0.83});
     const dark=new THREE.MeshStandardMaterial({color:0x222a2f,roughness:0.48});
     const blue=new THREE.MeshBasicMaterial({color:0x93bbcd,side:THREE.DoubleSide});
     const mountain=new THREE.MeshBasicMaterial({color:0x557383,side:THREE.DoubleSide});
@@ -570,7 +570,17 @@
     cube('Multimodal Lab pale left wall',792.1,3.7,800,0.28,7.4,20,cream);
     cube('Multimodal Lab pale right wall',807.9,3.7,800,0.28,7.4,20,cream);
     cube('Multimodal Lab entry wall',800,3.7,810,16,7.4,0.25,cream);
-    cube('Multimodal Lab ceiling beams',800,7.35,800,16,0.26,20,cream);
+    cube('Multimodal Lab timber ceiling',800,7.35,800,16,0.26,20,oak);
+    for(let z=791;z<=808;z+=2.1)cube('Multimodal Lab exposed wood ceiling beam',800,7.04,z,15.6,0.25,0.31,oak);
+    for(let z=793;z<=806;z+=4.2)cube('Multimodal Lab suspended linear light',800,6.65,z,6.7,0.095,0.14,
+      new THREE.MeshBasicMaterial({color:0xfff5db}));
+    for(const x of [795.5,804.5])for(const z of [798,805])cube('Multimodal Lab white timber support column',
+      x,3.2,z,0.25,6.4,0.25,cream);
+    cube('Multimodal Lab glowing media wall',805.9,3.3,802.2,0.15,2.3,3.9,
+      new THREE.MeshBasicMaterial({color:0x327cae}));
+    sign(THREE,root,'MML  ·  Multimodal Media Lab',
+      {x:805.77,y:4.82,z:804.8},3.5,0.58,Math.PI/2,
+      {background:'#f5f4f1',color:'#236ca2'});
     for(const z of [796,801,806])for(const x of [793.2,806.8])cube('Sixth floor gallery pilaster',x,3.65,z,0.44,7.3,0.5,wall);
     cube('Window wall lower railing',800,0.6,790.1,16,1.15,0.24,cream);
     cube('Panoramic North Shore view',800,4.3,790.08,15.2,5.8,0.03,blue);
@@ -594,6 +604,14 @@
     cube('Piano keyboard',799.5,1.03,796.2,1.75,0.08,0.36,cream);
     for(const x of [797.5,799.5])for(const z of [794.35,795.8])cube('Grand piano leg',x,0.47,z,0.12,0.85,0.14,dark);
     cube('Lab communal workshop table',801,0.96,802,4.7,0.16,2.4,wood);
+    for(let i=0;i<4;i++){
+      const x=795.1+i*2.35;
+      cube('Multimodal Lab gathering cocktail table '+i,x,1.09,799.9,0.85,0.09,0.85,cream);
+      cube('Multimodal Lab gathering table support '+i,x,0.57,799.9,0.075,1.04,0.075,dark);
+    }
+    // Photos of the actual venue show a bright event space with exposed
+    // timber ceiling, white pillars, daylight windows and blue MML brand.
+    // This is a fictionalized walkthrough, not an actual surveyed floorplan.
     for(const x of [799.1,802.9])for(const z of [801.3,802.7])cube('Worktable leg',x,0.48,z,0.14,0.93,0.14,dark);
     cube('Creative coding laptop screen',801.5,1.31,801.65,1.05,0.64,0.08,dark);
     // Stylized fictionalized KK greeter: not a scanned photograph or claim
@@ -616,7 +634,7 @@
     npcBox('KK hair',0,2.16,0.01,0.39,0.14,0.3,beard);
     npcBox('KK welcoming arm',-0.5,1.28,-0.10,0.2,0.55,0.24,denim);
     npcBox('KK welcoming hand',-0.52,1.02,-0.15,0.16,0.2,0.18,skin);
-    cube('Exit to Water Street door',800,1.65,809.83,2.6,3.3,0.1,dark);
+    cube('Exit to Water Street door',800,1.65,809.83,2.6,3.3,0.1,glass);
     cube('Exit door glass',800,1.7,809.74,2.24,2.8,0.09,glass);
     sign(THREE,root,'MULTIMODAL LAB  ·  FLOOR 6',
       {x:800,y:4.5,z:809.64},5.4,0.48,0,{background:'#213b45',color:'#e4f5e9'});
@@ -653,15 +671,17 @@
     block('The Landing entrance wall',850,3.3,860,16,6.6,0.2,stone);
     block('The Landing ceiling',850,6.65,850,16,0.22,20,cream);
     // The ground floor entry deliberately looks back toward Water Street.
-    block('Glass main entrance facing Water Street',850,1.76,859.85,3.6,3.5,0.1,glass);
+    const entranceLeft=block('Glass main entrance left hinged door',849.08,1.76,859.85,1.75,3.5,0.09,glass);
+    const entranceRight=block('Glass main entrance right hinged door',850.92,1.76,859.85,1.75,3.5,0.09,glass);
     block('Brass paired entrance door stile',850,1.75,859.73,0.075,3.5,0.18,gold);
     for(const side of [-1,1])block('Main door brass pull',850+side*0.3,1.44,859.59,0.04,0.52,0.08,gold);
     block('Reception desk',854,1.04,853,3.6,1.1,1.0,stone);
     block('Reception desk brass trim',854,1.61,853.45,3.6,0.10,0.13,gold);
     // Lift on player-left as they walk inward (negative X at X=845).
     block('Elevator vestibule black stone surround',842.26,2.45,850,0.36,4.9,4.5,dark);
-    block('Elevator door brushed metal',842.02,2.0,850,0.12,3.75,2.7,metal);
-    block('Elevator paired-door central seam',841.91,2.0,850,0.14,3.7,0.045,dark);
+    const liftLeft=block('Elevator left sliding leaf',842.02,2.0,849.34,0.12,3.75,1.33,metal);
+    const liftRight=block('Elevator right sliding leaf',842.02,2.0,850.66,0.12,3.75,1.33,metal);
+    // Door leaves move sideways when KK presses the lift call button.
     block('Elevator call-button plate',842.01,1.36,852.25,0.15,0.54,0.32,gold);
     block('Elevator floor indicator',842.0,4.4,850,0.10,0.36,1.5,dark);
     for(const z of [843,855])block('Lobby art deco arch stone pillar',843.4,2.6,z,0.6,5.2,0.7,stone);
@@ -692,13 +712,18 @@
     block('Elevator cabin left panel',877.5,2.15,850,0.18,4.3,5,metal);
     block('Elevator cabin right panel',882.5,2.15,850,0.18,4.3,5,metal);
     block('Elevator cabin rear wall',880,2.15,847.5,5,4.3,0.18,metal);
-    block('Elevator cabin doors',880,2.1,852.5,5,4.2,0.12,metal);
+    const carLeft=block('Elevator cabin left sliding leaf',878.77,2.1,852.5,2.42,4.2,0.12,metal);
+    const carRight=block('Elevator cabin right sliding leaf',881.23,2.1,852.5,2.42,4.2,0.12,metal);
     block('Elevator cabin ceiling',880,4.25,850,5,0.2,5,cream);
     block('Elevator cabin button panel',882.27,1.7,850.9,0.08,2.3,0.5,gold);
     for(let n=1;n<=6;n++)block('Elevator floor button '+n,882.19,0.8+n*0.29,850.83,0.13,0.09,0.11,glass);
     const display=sign(THREE,root,'6  ·  MULTIMODAL LAB',
       {x:880,y:3.7,z:852.32},2.9,0.37,0,{background:'#2d3637',color:'#f4e9cf'});
-    root.userData={kk,lobby:true,elevator:true,fictionalInterior:true};
+    root.userData={kk,lobby:true,elevator:true,fictionalInterior:true,
+      entranceLeft,entranceRight,liftLeft,liftRight,carLeft,carRight,
+      entranceLeftX:entranceLeft.position.x,entranceRightX:entranceRight.position.x,
+      liftLeftZ:liftLeft.position.z,liftRightZ:liftRight.position.z,
+      carLeftX:carLeft.position.x,carRightX:carRight.position.x};
     return root;
   }
 
