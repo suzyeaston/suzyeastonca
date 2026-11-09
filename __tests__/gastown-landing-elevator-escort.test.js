@@ -51,7 +51,7 @@ test('KK journey is proximity driven with speech, wait-for-player and animated p
   assert.match(game,/function landingSpeak\(phrase\)/);
   assert.match(game,/window\.SpeechSynthesisUtterance/);
   assert.match(game,/window\.speechSynthesis\.speak\(utterance\)/);
-  assert.match(game,/if\(distance<2\.15&&lab\.outdoorGreeting&&state\.isRunning\)/);
+  assert.match(game,/if\(distance<4\.0&&lab\.outdoorGreeting&&state\.isRunning\)/);
   assert.match(game,/if\(d>0\.08&&following<4\.2\)/);
   assert.match(game,/if\(near\(\{x:845,z:851\},2\.4\)/);
   assert.match(game,/lab\.escort\.position\.set\(879\.35,0,849\.45\)/);
@@ -84,6 +84,7 @@ test('Suzy starts in rear third person and secret suzyfly enables cape and fligh
   assert.match(game,/secretBuffer\.endsWith\('suzyfly'\)/);
   assert.match(game,/suzyCape\.visible=state\.flight\.enabled/);
   assert.match(game,/fly\.altitude=THREE\.MathUtils\.clamp/);
+  assert.match(game,/state\.flight\.enabled \? 0 : getGroundY\(\) - player\.position\.y/);
   assert.match(game,/if\(code==='Space'\)state\.flight\.up=pressed/);
   assert.match(game,/if\(code==='ControlLeft'\|\|code==='ControlRight'\)state\.flight\.down=pressed/);
 });
