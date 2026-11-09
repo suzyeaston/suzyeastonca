@@ -51,6 +51,17 @@ test('the authored characters have locally available dialog even without online 
   }
   const src = read('js/gastown-sim.js');
   assert.match(src, /enableNpcVoiceSnippets: true/);
-  assert.match(src, /High five!/);
-  assert.match(src, /high-five successfully/i);
+  assert.match(src, /Another ticket\?/);
+  assert.match(src, /Impark Lot 531 complaint/i);
+});
+
+test('Impark NPC speech bubbles, captions and interactions are review-themed',()=>{
+ const src=read('js/gastown-sim.js');
+ const dialogs=JSON.parse(read('assets/dialog/gastown.json'));
+ assert.match(src,/still ticketed!/);
+ assert.match(src,/one star!/);
+ assert.match(src,/npcState.voiceCue \|\| ''/);
+ assert.match(dialogs.parking_small_talk.lines.join(' '),/ticketed|ticket/i);
+ assert.match(dialogs.parking_high_five.lines.join(' '),/ticket/i);
+ assert.doesNotMatch(dialogs.parking_small_talk.lines.join(' '),/Steam Clock/);
 });
