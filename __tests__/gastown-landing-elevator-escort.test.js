@@ -56,8 +56,8 @@ test('KK journey is proximity driven with speech, wait-for-player and animated p
   assert.match(game,/if\(near\(\{x:845,z:851\},2\.4\)/);
   assert.match(game,/lab\.escort\.position\.set\(879\.35,0,849\.45\)/);
   assert.match(game,/lab\.farewellSpoken=true/);
-  assert.match(game,/landingSpeak\('see ya snoozy!'\)/);
-  assert.match(game,/state\.thirdPerson=false/);
+  assert.match(game,/landingSpeak\('bye snoooozie!'\)/);
+  assert.match(game,/state\.thirdPerson=lab\.indoorPreviousView\.thirdPerson/);
   assert.match(game,/lab\.indoorPreviousView/);
   for (const name of ['entranceLeft','entranceRight','liftLeft','liftRight','carLeft','carRight']){
     assert.ok(places.includes(name),name);
@@ -87,4 +87,33 @@ test('Suzy starts in rear third person and secret suzyfly enables cape and fligh
   assert.match(game,/state\.flight\.enabled \? 0 : getGroundY\(\) - player\.position\.y/);
   assert.match(game,/if\(code==='Space'\)state\.flight\.up=pressed/);
   assert.match(game,/if\(code==='ControlLeft'\|\|code==='ControlRight'\)state\.flight\.down=pressed/);
+});
+
+test('third-person backpack camera survives staged lobby, elevator and lab arrival',()=>{
+  assert.match(game,/if\(suzyAvatar\)suzyAvatar\.visible=!!state\.thirdPerson/);
+  assert.match(game,/state\.avatarCameraFacing=lab\.indoorPreviousView\.facing/);
+  assert.match(game,/state\.landingLab\.inside \? 1\.55/);
+  assert.match(game,/!state\.landingLab\.inside\) \{/);
+});
+test('flight uses its own speed and suspends gait-based footstep animation',()=>{
+  const avatar=read('js/gastown-suzy-avatar.js');
+  assert.match(game,/FLIGHT_CRUISE_SPEED = 27/);
+  assert.match(game,/FLIGHT_SPRINT_SPEED = 45/);
+  assert.match(game,/state\.flight\.enabled \? 'flying'/);
+  assert.match(game,/state\.flight\.enabled \? 0 : normalizedSpeed/);
+  assert.match(game,/!state\.flight\.enabled && normalizedSpeed > 0\.08/);
+  assert.match(avatar,/if\(mode==='flying'\)/);
+});
+test('sustained walking enables sprint with a visible run cycle',()=>{
+  const avatar=read('js/gastown-suzy-avatar.js');
+  assert.match(game,/HOLD_TO_RUN_THRESHOLD_SECONDS = 0\.9/);
+  assert.match(game,/HOLD_TO_RUN_FORWARD_MULTIPLIER = 1\.95/);
+  assert.match(game,/state\.motion\.runHoldSeconds >= HOLD_TO_RUN_THRESHOLD_SECONDS/);
+  assert.match(avatar,/const running=mode==='running'/);
+});
+test('lab worker types and KK says goodbye upon arrival',()=>{
+  assert.match(places,/MML fictional creative technologist at computer/);
+  assert.match(places,/Creative technologist typing hand/);
+  assert.match(game,/lab\.roomRoot\.userData\.coderHands\.forEach/);
+  assert.match(game,/landingSpeak\('bye snoooozie!'\)/);
 });
