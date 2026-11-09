@@ -1803,6 +1803,11 @@
     if (suzyAvatar && suzyAvatarModel) {
       suzyAvatarModel.animate(suzyAvatar, state.avatarElapsed, normalizedSpeed,
         getGroundY() - player.position.y);
+      if (typeof suzyAvatarModel.setUmbrellaWeather === 'function') {
+        const wet = state.activeWeather === 'drizzle' || state.activeWeather === 'rain'
+          || state.activeWeather === 'thunderstorm';
+        suzyAvatarModel.setUmbrellaWeather(suzyAvatar, wet && !isPlayerInsideWaterfront());
+      }
     }
 
     if (state.cameraMode === 'street' && state.thirdPerson) {
@@ -5049,9 +5054,21 @@
     }
   }
 
+  function isPlayerInsideWaterfront() {
+    return !!(state.world && stationModel
+      && typeof stationModel.isWalkableInterior === 'function'
+      && stationModel.isWalkableInterior(state.world,
+        { x: player.position.x, z: player.position.z }));
+  }
+
   function animateRain(delta) {
     // Follow the moving player: otherwise rain stays at map origin and the
     // Steam Clock end of Water Street appears dry despite 'Rain' in the menu.
+    // Weather may be active across Vancouver but drops must not fall through
+    // the solid roof of Waterfront Station's playable public concourse.
+    // Restore particles on exit without rebuilding/reseeding the weather.
+    rainGroup.visible = !isPlayerInsideWaterfront();
+    if (!rainGroup.visible) return;
     if (rainGroup.children.length) rainGroup.position.set(player.position.x, 0, player.position.z);
     rainGroup.children.forEach((node) => {
       if (node.isPoints) {
