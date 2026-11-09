@@ -71,6 +71,9 @@ THEME_FILES = [
     "assets/js/yvr-radio-map.js",
     "assets/audio/vancouver/gastown-steam-clock-2012.mp3",
     "inc/yvr-radio.php",
+    # The skyline module is a runtime dependency; upload it before PHP
+    # ever declares a script handle requiring it.
+    "js/gastown-cordova-architecture.js",
     "functions.php",
     "style.css",
     "header.php",

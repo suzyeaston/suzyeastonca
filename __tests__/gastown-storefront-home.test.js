@@ -41,7 +41,8 @@ test('Old 3D solid-box storefront slabs are gone',()=>{
   assert.doesNotMatch(source,/new THREE\.BoxGeometry\(\(b\.width \|\| 8\) \* 0\.92, storefrontBandHeight/);
   assert.doesNotMatch(source,/const storefrontPos = localPointToWorld\(b, 0, \(b\.depth \|\| 8\) \* 0\.34\)/);
   assert.match(source,/Civic footprint-edge storefront trim/);
-  assert.match(source,/new THREE\.BoxGeometry\(edge\.length \* 0\.94, storefrontBandHeight, 0\.10\)/);
+  assert.match(source,/new THREE\.BoxGeometry\(edge\.length \* 0\.90 \* massingInset, storefrontBandHeight, 0\.10\)/);
+  assert.match(source,/b\.x \+ \(edge\.midpoint\.x - b\.x\) \* massingInset/);
   assert.match(source,/const safeRectangularFacade = b\.width <= 42 && b\.depth <= 28/);
 });
 
