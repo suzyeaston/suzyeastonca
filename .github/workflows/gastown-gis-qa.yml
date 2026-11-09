@@ -85,6 +85,7 @@ jobs:
           node --test __tests__/gastown-storefront-home.test.js
           node --test __tests__/home-gastown-lookout.test.js
           node --test __tests__/gastown-waterfront-station.test.js
+          node --test __tests__/gastown-waterfront-concourse.test.js
           node --test __tests__/gastown-sim-config.test.js
           node --test __tests__/gastown-audio-assets.test.js
           node --test __tests__/gastown-street-life.test.js
