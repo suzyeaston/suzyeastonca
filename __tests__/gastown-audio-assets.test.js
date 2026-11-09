@@ -85,8 +85,8 @@ test('WordPress publishes sound URLs only after a readable file check', () => {
   assert.doesNotMatch(php, /'audioBaseUrl'\s*=>/);
   // Fallbacks are files already deployed by the production theme manifest,
   // not speculative network URLs or placeholders.
-  assert.doesNotMatch(php, /'beds\\/commuter_mix'\\s*=>\\s*'\\/assets\\/audio\\/yvr\\/skytrain-rumble/);
-  assert.doesNotMatch(php, /'zones\\/distant_transit'\\s*=>\\s*'\\/assets\\/audio\\/yvr\\/skytrain-rumble/);
+  assert.ok(!php.includes("'beds/commuter_mix'    => '/assets/audio/yvr/skytrain-rumble.mp3'"));
+  assert.ok(!php.includes("'zones/distant_transit'=> '/assets/audio/yvr/skytrain-rumble.mp3'"));
   for (const relative of ['assets/audio/yvr/rain-loop.mp3']) {
     assert.ok(fs.existsSync(path.join(ROOT,relative)), relative + ' exists in the repository');
     assert.ok(manifest.includes('"'+relative+'"'), relative + ' included in production deployment');
