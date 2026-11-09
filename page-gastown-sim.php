@@ -16,39 +16,12 @@ get_header();
 
     <details class="gastown-controls-drawer">
       <summary>Settings + help</summary>
+      <p class="gastown-controls-location">Weather, time and street mood are also available from <strong>Scene &amp; weather</strong> beside the minimap.</p>
       <div class="gastown-controls" role="group" aria-label="Simulator controls">
         <button type="button" class="pixel-button secondary" data-action="pause">Pause</button>
         <button type="button" class="pixel-button secondary" data-action="reset" aria-label="Reset to the start of the route">Reset</button>
         <button type="button" class="pixel-button secondary" data-action="tutorial-open" aria-label="Open the controls tutorial overlay">Help</button>
         <span class="gastown-character-chip" aria-label="Current character is Suzy">CHARACTER · SUZY</span>
-        <label>
-          Time
-          <select name="time-of-day">
-            <option value="morning" selected>Morning</option>
-            <option value="afternoon">Afternoon</option>
-            <option value="dusk">Dusk</option>
-            <option value="night">Night</option>
-          </select>
-        </label>
-        <label>
-          Weather
-          <select name="weather">
-            <option value="clear" selected>Clear</option>
-            <option value="drizzle">Drizzle</option>
-            <option value="rain">Rain</option>
-            <option value="thunderstorm">Thunderstorm</option>
-            <option value="fog">Fog</option>
-          </select>
-        </label>
-        <label>
-          Street mood
-          <select name="mood">
-            <option value="calm" selected>Calm</option>
-            <option value="commuter">Commuter</option>
-            <option value="lively">Lively</option>
-            <option value="eerie">Eerie</option>
-          </select>
-        </label>
         <label>
           <input type="checkbox" name="low-graphics" data-setting="low-graphics" aria-label="Enable low graphics mode">
           Low graphics
@@ -136,6 +109,40 @@ get_header();
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-in" aria-label="Zoom in minimap">+</button>
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>
+        <details class="gastown-scene-options" data-scene-options>
+          <summary>☁ Scene &amp; weather <span class="gastown-scene-chevron" aria-hidden="true">▾</span></summary>
+          <div class="gastown-scene-options-grid" role="group" aria-label="Change scene conditions">
+        <label>
+          Time
+          <select name="time-of-day">
+            <option value="morning" selected>Morning</option>
+            <option value="afternoon">Afternoon</option>
+            <option value="dusk">Dusk</option>
+            <option value="night">Night</option>
+          </select>
+        </label>
+        <label>
+          Weather
+          <select name="weather">
+            <option value="clear" selected>Clear</option>
+            <option value="drizzle">Drizzle</option>
+            <option value="rain">Rain</option>
+            <option value="thunderstorm">Thunderstorm</option>
+            <option value="fog">Fog</option>
+          </select>
+        </label>
+        <label>
+          Street mood
+          <select name="mood">
+            <option value="calm" selected>Calm</option>
+            <option value="commuter">Commuter</option>
+            <option value="lively">Lively</option>
+            <option value="eerie">Eerie</option>
+          </select>
+        </label>
+          </div>
+          <p class="gastown-scene-tip">Press Esc to release your mouse before changing conditions.</p>
+        </details>
         <p class="gastown-minimap-tooltip" data-sim-minimap-tooltip aria-live="polite">Steam Clock corridor ahead.</p>
         <p class="gastown-minimap-compass" data-sim-compass aria-live="off">Facing NE · 045°</p>
         <canvas data-sim-minimap width="240" height="240" aria-label="North-referenced local map with the player and facing arrow"></canvas>
