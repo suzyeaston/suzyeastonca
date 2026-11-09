@@ -50,7 +50,7 @@ test('sound is optional, user-activated and synthetic, never a foreign voice ass
   const css = read('assets/css/gastown-sim.css');
   assert.match(street, /function makeLocalAmbience\(/);
   assert.match(street, /window\.AudioContext \|\| window\.webkitAudioContext/);
-  assert.match(street, /return \\{root,update,startAudio:ambience\\.start,stopAudio:ambience\\.stop,setWeather:ambience\\.setWeather\\}/);
+  assert.match(street, /return \{root,update,startAudio:ambience\.start,stopAudio:ambience\.stop,setWeather:ambience\.setWeather\}/);
   assert.match(sim, /streetLifeScene\.startAudio\(\)/);
   assert.match(sim, /utterance\.voice = voice/);
   assert.match(sim, /\^en\[-_\]CA\$/);
