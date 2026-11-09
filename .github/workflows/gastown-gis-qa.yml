@@ -15,6 +15,7 @@ on:
       - 'js/gastown-waterfront-places.js'
       - 'js/gastown-suzy-avatar.js'
       - 'js/gastown-harbour-vista.js'
+      - 'js/gastown-cordova-architecture.js'
       - 'page-gastown-sim.php'
       - 'assets/css/gastown-sim.css'
       - 'functions.php'
@@ -39,6 +40,7 @@ on:
       - 'js/gastown-waterfront-places.js'
       - 'js/gastown-suzy-avatar.js'
       - 'js/gastown-harbour-vista.js'
+      - 'js/gastown-cordova-architecture.js'
       - 'page-gastown-sim.php'
       - 'assets/css/gastown-sim.css'
       - 'functions.php'
@@ -66,6 +68,7 @@ jobs:
           node --check js/gastown-waterfront-station.js
           node --check js/gastown-sim.js
           node --check js/gastown-harbour-vista.js
+          node --check js/gastown-cordova-architecture.js
           node --check js/gastown-waterfront-places.js
           node --check js/gastown-suzy-avatar.js
       - name: Validate civic route, station, and runtime geometry
@@ -77,6 +80,7 @@ jobs:
           node --test __tests__/gastown-parking-lookout.test.js
           node --test __tests__/gastown-station-east-v2.test.js
           node --test __tests__/gastown-suzy-film-avatar.test.js
+          node --test __tests__/gastown-cordova-architecture.test.js
           node --test __tests__/gastown-storefront-home.test.js
           node --test __tests__/home-gastown-lookout.test.js
           node --test __tests__/gastown-waterfront-station.test.js
