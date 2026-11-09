@@ -141,14 +141,42 @@
   }
 
   function waterSurface(THREE, root) {
-    const water = new THREE.Mesh(
-      new THREE.PlaneGeometry(1320, 900),
-      new THREE.MeshBasicMaterial({ color: 0x266d91, fog: false, side: THREE.DoubleSide })
-    );
-    water.name = 'Burrard Inlet water';
-    water.rotation.x = -Math.PI / 2;
-    water.position.set(0, -0.11, -566); // visually distinct tidal water, starts near the seaward edge of the yard
-    root.add(water);
+    // The previous uniform rectangular water plane began at Z=-116.
+    // Beyond the lot fence the railway ground ended at Z=-106, creating an
+    // apparent blank drop-off as the player looked east. Trace an approximate
+    // eastward-receding waterfront edge rather than a constant latitude.
+    // This is NOT a surveyed shoreline or a real-time berth/yard map.
+    const shore = [
+      { x: -660, z: -158 }, { x: -240, z: -151 },
+      { x: 0, z: -149 }, { x: 165, z: -170 },
+      { x: 390, z: -205 }, { x: 660, z: -240 }
+    ];
+    const horizontalPatch = (name, points, elevation, color) => {
+      const outline = new THREE.Shape();
+      points.forEach((p, i) => {
+        if (!i) outline.moveTo(p.x, -p.z);
+        else outline.lineTo(p.x, -p.z);
+      });
+      outline.closePath();
+      const mesh = new THREE.Mesh(new THREE.ShapeGeometry(outline),
+        new THREE.MeshBasicMaterial({ color, fog: false, side: THREE.DoubleSide }));
+      mesh.name = name;
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.y = elevation;
+      root.add(mesh);
+      return mesh;
+    };
+    // A below-grade contextual apron fills the previously unrendered space
+    // beyond the parking rail fence. It never covers the playable paved lot.
+    horizontalPatch('CPR waterfront continuous land apron (approximate GIS context)',
+      [{ x: -660, z: 240 }, { x: 660, z: 240 },
+        ...shore.slice().reverse()], -0.21, 0x525d5d);
+    const water = horizontalPatch('Burrard Inlet water',
+      [{ x: -660, z: -1040 }, { x: 660, z: -1040 },
+        ...shore.slice().reverse()], -0.11, 0x266d91);
+    root.userData.approximateShoreline = true;
+    root.userData.shorelineEdge = shore;
+    root.userData.waterfrontGroundContinuity = true;
 
     // One lightweight line-segments geometry, rather than a texture download.
     const ripples = [];
@@ -436,6 +464,46 @@
         22.5,2.8,2.6,freightColors[(index*2)%freightColors.length]);
       root.add(wagon);
     });
+    // The City of Vancouver's railways layer records CPR alignments across
+    // the waterfront (indicative, not survey-accurate). The federal/municipal
+    // waterfront rail study describes a 20-track N-Yard east of the station.
+    // Extend existing at-grade tracks east of the little parking-lot model,
+    // where looking along the fence previously showed blank scenery.
+    // Low-profile lines and ties preserve the cruise ship/sea sightline.
+    const corridorRailVertices = [], corridorTieVertices = [];
+    function addCorridorStroke(vertices, a, b, y) {
+      vertices.push(a.x, y, a.z, b.x, y, b.z);
+    }
+    for (let row = 0; row < 9; row++) {
+      const begin = { x: 68, z: -19 - row * 4.3 };
+      const end = { x: 490, z: -102 - row * 4.3 };
+      const dx = end.x - begin.x, dz = end.z - begin.z;
+      const length = Math.hypot(dx, dz);
+      const cross = { x: -dz / length, z: dx / length };
+      for (const railOffset of [-0.74, 0.74]) {
+        const a = { x: begin.x + cross.x * railOffset,
+          z: begin.z + cross.z * railOffset };
+        const b = { x: end.x + cross.x * railOffset,
+          z: end.z + cross.z * railOffset };
+        addCorridorStroke(corridorRailVertices, a, b, 0.30);
+      }
+      for (let step = 0; step <= 46; step++) {
+        const t = step / 46;
+        const x = begin.x + dx * t, z = begin.z + dz * t;
+        addCorridorStroke(corridorTieVertices,
+          { x: x - cross.x * 1.38, z: z - cross.z * 1.38 },
+          { x: x + cross.x * 1.38, z: z + cross.z * 1.38 }, 0.14);
+      }
+    }
+    addBatchedYardLines('CP N-Yard eastward railway GIS corridor continuation',
+      corridorRailVertices, 0xb9b6ae);
+    addBatchedYardLines('CP N-Yard eastward timber railway sleepers',
+      corridorTieVertices, 0x84766a);
+    root.userData.eastboundRailCorridorVisible = true;
+    root.userData.railwayDataReference =
+      'https://opendata.vancouver.ca/explore/assets/railways/';
+    root.userData.railCorridorSurveyed = false;
+
     root.userData.nearbyContainers=containerCount;
     root.userData.tracksAlignedToLotFence=true;
     root.userData.openCanadaPlaceSightline=true;
