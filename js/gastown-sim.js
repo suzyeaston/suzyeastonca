@@ -1255,7 +1255,7 @@
       const voices=window.speechSynthesis.getVoices();
       // Prefer recognizable lower-register system voices over the first
       // Canadian voice (which may have been feminine on macOS).
-      const maleNames=/\\b(daniel|alex|fred|aaron|oliver|thomas|arthur|george|rishi|lee|gordon|albert|reed|male)\\b/i;
+      const maleNames=/\b(daniel|alex|fred|aaron|oliver|thomas|arthur|george|rishi|lee|gordon|albert|reed|male)\b/i;
       const voice=voices.find(v=>/^en/i.test(v.lang)&&maleNames.test(v.name))
         ||voices.find(v=>/^en[-_]CA/i.test(v.lang)&&maleNames.test(v.name))
         ||voices.find(v=>/^en[-_]GB/i.test(v.lang))
@@ -1303,7 +1303,7 @@
     lab.returnPosition={x:portal.threshold.x,z:portal.threshold.z};
     if(lab.escort)lab.escort.position.set(851.3,0,855.1);
     lab.lastGreeting='';
-    lab.greetPlayed=lab.outdoorGreeting;lab.farewellSpoken=false;lab.lastNear=false;
+    lab.greetPlayed=lab.outdoorGreeting;lab.farewellSpoken=false;lab.lastNear=false;lab.hasLeftEntry=false;
     lab.doorProgress=1;lab.liftDoorProgress=0;lab.carDoorProgress=0;
     return landingTravel('lobby',portal.lobbySpawn,
       'The Landing doors are open. KK is waiting inside. Follow him to the elevator.');
@@ -1317,7 +1317,7 @@
     if(!portal)return false;
     const lab=state.landingLab;
     if(lab.stage==='street'&&Math.hypot(player.position.x-portal.threshold.x,
-      player.position.z-portal.threshold.z)<5.3)return startLandingJourney(portal);
+      player.position.z-portal.threshold.z)<2.3)return startLandingJourney(portal);
     return lab.inside;
   }
 
@@ -1356,8 +1356,10 @@
         lab.stage='escort';lab.stageSince=nowSeconds;
         setStatus('KK is leading the way. Stay close; he waits for you.');
       }
-      // Leave via the entry only after moving away from the initial spawn.
-      if(elapsed>1.0&&near(portal.lobbyExit,1.55)){
+      // Avoid immediate exit: the spawn is only 1m from the threshold.
+      // The player has to walk into the lobby first and then turn back.
+      if(player.position.z<855.6)lab.hasLeftEntry=true;
+      if(lab.hasLeftEntry&&elapsed>1.0&&near(portal.lobbyExit,1.55)){
         const outside={x:portal.threshold.x+portal.outward.x*2.6,
           z:portal.threshold.z+portal.outward.z*2.6};
         landingTravel('street',outside,
@@ -1458,7 +1460,7 @@
       }
     }
     // Enter before the uncut outdoor warehouse mesh can trap the player.
-    if(distance<5.15&&lab.outdoorGreeting&&state.isRunning){
+    if(distance<2.15&&lab.outdoorGreeting&&state.isRunning){
       startLandingJourney(portal);
     }
   }
