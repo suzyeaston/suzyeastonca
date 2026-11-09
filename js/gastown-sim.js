@@ -44,7 +44,7 @@
     enableBandSystem: false,
     deferDialogFetch: true,
     deferAudioSetup: true,
-    enableNpcVoiceSnippets: false,
+    enableNpcVoiceSnippets: true,
   };
 
   const canvasWrap = app.querySelector('[data-sim-canvas]');
@@ -108,6 +108,7 @@
   const waterfrontPlaces = window.GastownWaterfrontPlaces || null;
   const harbourVista = window.GastownHarbourVista || null;
   const cordovaArchitecture = window.GastownCordovaArchitecture || null;
+  const streetLife = window.GastownStreetLife || null;
   const harbourLookBtn = app.querySelector('[data-action="harbour-lookout"]');
   const railYardLookBtn = app.querySelector('[data-action="rail-yard-view"]');
   const entranceLookBtn = app.querySelector('[data-action="lot-entrance-view"]');
@@ -342,6 +343,7 @@
   const rainGroup = new THREE.Group();
   const cloudGroup = new THREE.Group();
   const worldGroup = new THREE.Group();
+  let streetLifeScene = null;
   const debugGroup = new THREE.Group();
   debugGroup.visible = state.debugEnabled;
   scene.add(worldGroup);
@@ -1925,6 +1927,8 @@
       'busker-hook': ['Clock corner tune, folks.', 'Gather round the clock.'],
       'tourist-cluster': ['One more picture here.', 'Stand by the clock, please.'],
       'photo-direction': ['Hold still by the clock.', 'Okay, one more shot.'],
+      'parking-smalltalk': ['It is a parking lot, but with a really good view.', 'I think we both got here early.'],
+      'parking-highfive': ['High five?', 'That was a very efficient greeting.'],
     };
     const options = snippetsByCue[selected.voiceCue] || [];
     if (!options.length) {
@@ -2276,6 +2280,18 @@
   function getNpcDialogActions(npcState) {
     if (!npcState) {
       return [{ type: 'close', label: 'Back to walk' }];
+    }
+    if (npcState.voiceCue === 'parking-highfive') {
+      return [
+        { type: 'response', label: 'High five!', responseLines: ['Excellent. Very strong commitment to a brief social interaction.', 'Okay, we should probably both continue walking now.'], followupStatus: 'High-five successfully exchanged.' },
+        { type: 'close', label: 'Back to walk' }
+      ];
+    }
+    if (npcState.voiceCue === 'parking-smalltalk') {
+      return [
+        { type: 'response', label: 'How is your day?', responseLines: ['Pretty good. I was going somewhere, and then I stopped to appreciate the fact that we are both here.', 'Anyway, nice chat.'], followupStatus: 'A small but memorable Vancouver conversation.' },
+        { type: 'close', label: 'Back to walk' }
+      ];
     }
     if (npcState.role === 'guide') {
       return [
@@ -2801,7 +2817,7 @@
     const lowGraphicsPenalty = state.lowGraphics ? 1 : 0;
     return {
       pedestrian: (weather === 'fog' ? 1 : 2) + (mood === 'commuter' ? 1 : 0) - lowGraphicsPenalty,
-      commuter: state.lowGraphics ? 3 : (weather === 'fog' ? 5 : 8),
+      commuter: state.lowGraphics ? 7 : (weather === 'fog' ? 10 : 14),
       tourist: (weather === 'clear' && mood === 'lively' ? 5 : weather === 'clear' ? 4 : weather === 'drizzle' ? 3 : 2) - lowGraphicsPenalty,
       cyclist: (weather === 'rain' || weather === 'thunderstorm' || weather === 'fog' ? 0 : 1),
       skateboarder: (weather === 'rain' || weather === 'thunderstorm' ? 0 : 1),
@@ -2815,7 +2831,8 @@
     const profile = getNpcSpawnProfile();
     const counts = {};
     const stationCommuters = stationModel ? stationModel.commutersFor(world) : [];
-    return stationCommuters.concat(world.npcs || []).filter((npc) => {
+    const lotWalkers = streetLife && stationModel ? streetLife.peopleFor(world, stationModel) : [];
+    return lotWalkers.concat(stationCommuters, world.npcs || []).filter((npc) => {
       const role = npc.role || 'pedestrian';
       counts[role] = counts[role] || 0;
       const limit = Number.isFinite(profile[role]) ? profile[role] : 99;
@@ -3233,6 +3250,11 @@
       const start = npc.idleSpot || npc.patrol[0] || { x: 0, z: 0 };
       visual.position.set(start.x, 0, start.z);
       worldGroup.add(visual);
+      if (streetLife && npc.voiceCue && typeof streetLife.bubble === 'function') {
+        const label = npc.voiceCue === 'parking-highfive' ? 'high five?' : 'nice chat';
+        const callout = streetLife.bubble(THREE, label);
+        if (callout) visual.add(callout);
+      }
       const swaySeed = deterministicUnit(npc.id + '-sway');
       const startYaw = typeof npc.yaw === 'number' ? npc.yaw : deterministicUnit(npc.id + '-yaw') * Math.PI * 2;
       const npcState = Object.assign({
@@ -3415,6 +3437,9 @@
       }
       if (npc.microEvent === 'chatting_cluster' && rig.leftArm) {
         rig.leftArm.rotation.z = 0.08 + (Math.sin((nowSeconds * 2) + npc.animPhase) * 0.08);
+      }
+      if (npc.voiceCue === 'parking-highfive' && npc.reactingToPlayer && rig.rightArm) {
+        rig.rightArm.rotation.x = -1.25 + Math.sin(nowSeconds * 2 + npc.animPhase) * 0.1;
       }
       npc.currentYaw = Number.isFinite(npc.currentYaw) ? npc.currentYaw : (npc.baseYaw || 0);
       if (npc.role === 'busker') {
@@ -4650,7 +4675,7 @@
 
   function addLandmarks(world) {
     const heroLandmarkIds = new Set((world.hero_landmarks || []).map((hero) => String(hero.id || '').replace(/-hero$/, '')));
-    const suppressedKinds = new Set(['clock', 'street_pivot', 'plaza_edge', 'district_gate', 'view_axis']);
+    const suppressedKinds = new Set(['clock', 'street_pivot', 'plaza_edge', 'district_gate', 'view_axis', 'parking', 'heritage_frontage']);
     world.landmarks.forEach((landmark) => {
       const landmarkKind = landmark.kind || landmark.type;
       const col = landmarkKind === 'clock' ? 0xc8a460 : landmarkKind === 'street_pivot' ? 0x7ea2c7 : 0x8793a1;
@@ -6300,9 +6325,14 @@
       updateCameraModeUi();
       return;
     }
-    if (!canUseLookFallbackControls()) return;
+    // Wheel zooms the actual 3D camera and map together, including when
+    // the pointer is not locked; Alt+wheel retains the legacy pitch adjustment.
     event.preventDefault();
-    adjustPitch(event.deltaY * WHEEL_PITCH_SENSITIVITY);
+    if (event.altKey && canUseLookFallbackControls()) {
+      adjustPitch(event.deltaY * WHEEL_PITCH_SENSITIVITY);
+      return;
+    }
+    setMinimapZoom(minimapState.zoom + (event.deltaY < 0 ? minimapState.zoomStep : -minimapState.zoomStep));
   }
 
   function setMoveKey(code, pressed) {
@@ -6544,6 +6574,7 @@
     });
     document.addEventListener('mousemove', onMouseMove);
     renderer.domElement.addEventListener('wheel', onWheelLook, { passive: false });
+    if (minimapCanvas) minimapCanvas.addEventListener('wheel', onWheelLook, { passive: false });
 
     document.addEventListener('keydown', (event) => {
       if (event.code === 'KeyM') {
@@ -6806,6 +6837,12 @@
         ['streetscape', (world) => addStreetscape(world, { includeSecondary: false })],
         ['West Cordova reference details', addCordovaStreetDetails],
         ['hero landmarks', addHeroLandmarks],
+        ['animated street life', (world) => {
+          if (streetLife) {
+            streetLifeScene = streetLife.create(THREE, world);
+            if (streetLifeScene) worldGroup.add(streetLifeScene.root);
+          }
+        }],
       ];
       coreSystems.forEach(([label, fn]) => {
         try { fn(state.world); } catch (error) { if (window.console && window.console.warn) { window.console.warn('[Gastown Sim] Optional system failed during init: ' + label, error); } }
@@ -6868,6 +6905,7 @@
         updateSteamClock(delta, time / 1000);
         updateProgressiveVisibility();
         updateNpcs(delta);
+        if (streetLifeScene) streetLifeScene.update(time / 1000);
         updateInteractionTarget();
         updateLandmarkDiscoveries();
         updateQuestChainsFromProgress();
