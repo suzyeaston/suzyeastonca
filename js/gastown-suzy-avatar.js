@@ -221,6 +221,25 @@
     arms[1].add(instrument);
     mesh(THREE,instrument,'Microphone handle',new THREE.CylinderGeometry(0.027,0.025,0.30,9),mic,[0,0.045,0]);
     sphere(THREE,instrument,'Microphone grille',0.066,mat(THREE,0x78868c,0.58),[0,0.23,0],[0.85,0.76,0.85]);
+    // Weather-responsive personal umbrella, shaped as an upward canopy rather
+    // than an inverted bowl. It is hidden inside buildings and in dry weather.
+    const umbrella = new THREE.Group();
+    umbrella.name = 'Suzy upright Vancouver rain umbrella';
+    const umbrellaFabric = mat(THREE,0x273548,0.68);
+    const umbrellaMetal = mat(THREE,0x8796a0,0.45);
+    const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0,0.83,0.38,12,1,true),umbrellaFabric);
+    canopy.name = 'Umbrella upright rain canopy';
+    canopy.position.set(0.43,2.31,0.08);
+    umbrella.add(canopy);
+    mesh(THREE,umbrella,'Umbrella metal shaft',
+      new THREE.CylinderGeometry(0.018,0.018,0.88,8),
+      umbrellaMetal,[0.43,1.81,0.08]);
+    mesh(THREE,umbrella,'Umbrella hand grip',
+      new THREE.CylinderGeometry(0.04,0.04,0.18,8),
+      umbrellaFabric,[0.43,1.41,0.08]);
+    umbrella.visible=false;
+    avatar.add(umbrella);
+    avatar.userData.umbrella=umbrella;
     avatar.userData.rig='microphone / local AI orchestra';
     avatar.userData.limbs={arms,legs};
     avatar.visible=false;
@@ -240,5 +259,9 @@
     avatar.position.y=(Number.isFinite(groundOffset)?groundOffset:0)
       +Math.abs(Math.sin((Number.isFinite(seconds)?seconds:0)*9))*0.018*active;
   }
-  window.GastownSuzyAvatar=Object.freeze({COLORS,create,animate});
+  function setUmbrellaWeather(avatar, isRainingOutside) {
+    if (!avatar || !avatar.userData || !avatar.userData.umbrella) return;
+    avatar.userData.umbrella.visible=!!isRainingOutside;
+  }
+  window.GastownSuzyAvatar=Object.freeze({COLORS,create,animate,setUmbrellaWeather});
 })(window);

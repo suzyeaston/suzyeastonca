@@ -129,11 +129,38 @@ test('a generously proportioned hall replaces the formerly shallow narrow stage'
   assert.doesNotMatch(runtime, /exterior navigation shortcut to Cordova/);
 });
 
-test('trolley side advert is an original suzyeaston.ca local canvas, livery unchanged', () => {
+test('trolley side advert is an original MAKE ART NOT WAR local canvas, livery unchanged', () => {
   const src = read('js/gastown-street-life.js');
-  assert.match(src, /suzyeaston\.ca trolley side advertisement/);
-  assert.match(src, /ctx\.fillText\('suzyeaston\.ca'/);
-  assert.match(src, /root\.userData\.advertiser = 'suzyeaston\.ca'/);
+  assert.match(src, /MAKE ART NOT WAR trolley side advertisement/);
+  assert.match(src, /ctx\.fillText\('MAKE ART NOT WAR'/);
+  assert.match(src, /root\.userData\.advertiser = 'MAKE ART NOT WAR'/);
   assert.match(src, /color:0x0866ae/);
   assert.match(src, /color:0xc7d1d4/);
+});
+
+test('covered station concourse suppresses rain while outdoor drizzle equips Suzy', () => {
+  const runtime=read('js/gastown-sim.js');
+  const avatar=read('js/gastown-suzy-avatar.js');
+  assert.match(runtime,/function isPlayerInsideWaterfront\(\)/);
+  assert.match(runtime,/rainGroup\.visible = !isPlayerInsideWaterfront\(\)/);
+  assert.match(runtime,/if \(!rainGroup\.visible\) return;/);
+  assert.match(runtime,/wet && !isPlayerInsideWaterfront\(\)/);
+  assert.match(runtime,/state\.activeWeather === 'drizzle'/);
+  assert.match(avatar,/Suzy upright Vancouver rain umbrella/);
+  assert.match(avatar,/Umbrella upright rain canopy/);
+  assert.match(avatar,/umbrella\.visible=false/);
+  assert.match(avatar,/setUmbrellaWeather/);
+});
+
+test('Station East arcade uses light plaster arches and a proper glazed transom', () => {
+  const station = read('js/gastown-waterfront-station.js');
+  for (const name of [
+    'Station East arched arcade cream inner wall',
+    'Waterfront Station East cream passage arch',
+    'Station East arcade jamb',
+    'Station East green transom mullion',
+    'Station East entrance glazed transom',
+    'Station East deep green door stile'
+  ]) assert.ok(station.includes(name), name);
+  assert.match(station,/sideEntranceStyle='cream arched arcade, dark green framed glazing'/);
 });
