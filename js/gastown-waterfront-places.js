@@ -454,6 +454,40 @@
       arch.position.set(entry.x,3.05,entry.z);
       root.add(arch);
     }
+    // The Landing's arched sidewalk canopy is unmistakable in the user's
+    // Water Street reference. Use curved metal ribs and a translucent roof,
+    // not a generic flat floating storefront awning.
+    if(typeof THREE.TorusGeometry==='function'){
+      const canopyFrame=new THREE.MeshStandardMaterial({
+        color:0x303638,roughness:0.56,metalness:0.52
+      });
+      const canopyGlazing=new THREE.MeshStandardMaterial({
+        color:0xa4b9b5,transparent:true,opacity:0.25,
+        roughness:0.26,metalness:0.08,side:THREE.DoubleSide,depthWrite:false
+      });
+      const outward={x:fdz/flength,z:-fdx/flength};
+      for(let rib=0;rib<5;rib++){
+        const distance=0.45+rib*0.65;
+        const arc=new THREE.Mesh(new THREE.TorusGeometry(1.42,0.05,6,18,Math.PI),canopyFrame);
+        arc.name='The Landing sidewalk barrel canopy curved iron rib';
+        arc.position.set(entry.x+outward.x*distance,4.42,entry.z+outward.z*distance);
+        arc.rotation.y=fyaw;root.add(arc);
+      }
+      for(let strip=-2;strip<=2;strip++){
+        const panel=addBox(THREE,root,
+          'The Landing translucent overhead canopy glazing',
+          entry.x+outward.x*1.8,4.85+0.48*Math.cos(strip*0.45),
+          entry.z+outward.z*1.8,0.55,0.045,3.0,canopyGlazing,fyaw);
+        panel.userData.approximate=true;
+      }
+      for(const t of [-1.24,1.24]){
+        const support=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.065,3.8,8),canopyFrame);
+        support.name='The Landing Victorian canopy sidewalk support';
+        support.position.set(entry.x+outward.x*2.7 + fdx/flength*t,1.9,
+          entry.z+outward.z*2.7 + fdz/flength*t);
+        root.add(support);
+      }
+    }
     sign(THREE,root,'THE LANDING',
       {x:entry.x,y:4.48,z:entry.z},3.65,0.48,fyaw,
       {background:'#384741',color:'#f9f2db'});
