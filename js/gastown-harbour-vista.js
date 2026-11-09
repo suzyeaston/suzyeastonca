@@ -340,6 +340,62 @@
       }
     }
 
+
+    // Vancouver's CPR N-Yard is a 20-track facility east of the station.
+    // The seven detailed near-field tracks above are preserved; this is a
+    // lightweight, batched *illustration* of the other thirteen tracks and
+    // the west-end switching ladder. The alignment is not a rail survey.
+    // Keep everything at grade so the harbour and cruise ship stay visible.
+    const fanRails = [];
+    const fanTies = [];
+    const appendSegment = (array, a, b, y) => {
+      array.push(a.x, y, a.z, b.x, y, b.z);
+    };
+    const lerp = (a, b, t) => ({
+      x: a.x + (b.x - a.x) * t,
+      z: a.z + (b.z - a.z) * t
+    });
+    for (let branch = 0; branch < 13; branch++) {
+      // The low west-end ladder converges without placing tall railcars
+      // across the sightline from the Station East parking lot.
+      const west = trackPoint(-28, 50.6 + branch * 0.33);
+      const switchEnd = trackPoint(10, 55.0 + branch * 4.38);
+      const east = trackPoint(76 - branch * 2.0, 55.0 + branch * 4.38);
+      for (const side of [-0.73, 0.73]) {
+        const shifted = point => ({
+          x: point.x + outside.x * side,
+          z: point.z + outside.z * side
+        });
+        appendSegment(fanRails, shifted(west), shifted(switchEnd), 0.33);
+        appendSegment(fanRails, shifted(switchEnd), shifted(east), 0.33);
+      }
+      // A single batched line geometry paints sleepers; no dozens of
+      // individual cast-shadow meshes on an 8 GB laptop.
+      for (let index = 0; index <= 14; index++) {
+        const t = index / 14;
+        const center = t < 0.46
+          ? lerp(west, switchEnd, t / 0.46)
+          : lerp(switchEnd, east, (t - 0.46) / 0.54);
+        appendSegment(fanTies,
+          { x: center.x - outside.x * 1.43, z: center.z - outside.z * 1.43 },
+          { x: center.x + outside.x * 1.43, z: center.z + outside.z * 1.43 },
+          0.19);
+      }
+    }
+    function addBatchedYardLines(name, vertices, color) {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      const lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({
+        color, fog: false, depthWrite: false
+      }));
+      lines.name = name;
+      root.add(lines);
+    }
+    addBatchedYardLines('CP N-Yard batched switching ladder rails', fanRails, 0xe0d8c6);
+    addBatchedYardLines('CP N-Yard batched sleepers', fanTies, 0x9b8977);
+    root.userData.yardTrackCount = 20;
+    root.userData.yardRailFanBatched = true;
+
     const freightColors=[0xba644b,0x518c83,0xc99d47,0x8b6168,0x487f9f,
       0xb2a49b,0xa94d39,0x508470].map(color=>standard(THREE,color,0.83));
     const dark=standard(THREE,0x292e34,0.81);
@@ -534,7 +590,7 @@
     const pier=canadaPlace(THREE,root,anchor);
     dockedCruiseShip(THREE,root,pier);
     const seaBus=harbourTraffic(THREE,root);
-    root.userData={
+    root.userData=Object.assign({}, root.userData, {
       seaBus,
       canadaPlace:anchor,
       coordinateSource:CANADA_PLACE_COORD,
@@ -542,7 +598,7 @@
       mountainElevationSurveyed:false,
       materialReferences:REFS,
       northAxis:'-Z'
-    };
+    });
     return root;
   }
   window.GastownHarbourVista=Object.freeze({

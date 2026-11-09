@@ -69,7 +69,7 @@ get_header();
           <li><strong>A S D + arrows</strong> move / turn</li>
           <li><strong>E / click</strong> interact</li>
           <li><strong>B / See Suzy</strong> switch between first-person and behind-Suzy; <strong>Face / Front</strong> and <strong>Back / Follow</strong> choose the film camera side</li>
-          <li><strong>Entrance / Fence / Diagonal</strong> jump between safe Station East viewpoints</li>
+          <li><strong>Entrance / Harbour / Rail-yard / Diagonal</strong> jump between safe Station East viewpoints, with no track access</li>
           <li><strong>Esc</strong> releases your mouse so you can click browser controls, settings, or leave the simulator</li>
           <li><strong>Harbour view</strong> frames the North Shore and Canada Place from the Cordova sidewalk (representative ship, not live berth status)</li>
         </ul>
@@ -123,7 +123,8 @@ get_header();
       <aside class="gastown-minimap" aria-label="Exploration minimap">
         <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap controls">
           <button type="button" class="gastown-minimap-mode" data-action="minimap-mode-toggle" aria-pressed="false" aria-label="Switch minimap to heading-up mode">North up</button>
-          <button type="button" class="gastown-minimap-mode" data-action="harbour-lookout" aria-label="Go to the Station East parking lot fence lookout, facing the working rail yard, cranes and Burrard Inlet">Fence lookout</button>
+          <button type="button" class="gastown-minimap-mode" data-action="harbour-lookout" aria-label="Go to the Station East fence lookout, facing Canada Place and Burrard Inlet">Harbour lookout</button>
+          <button type="button" class="gastown-minimap-mode" data-action="rail-yard-view" aria-label="View the illustrated CPR N-Yard tracks from the safe Station East parking lot walkway">Rail-yard lookout</button>
           <button type="button" class="gastown-minimap-mode" data-action="lot-entrance-view" aria-label="Station East driveway and entrance camera">Entrance</button>
           <button type="button" class="gastown-minimap-mode" data-action="lot-diagonal-view" aria-label="Station East oblique camera from the Waterfront Station sidewalk">Diagonal</button>
           <button type="button" class="gastown-minimap-mode gastown-view-suzy" data-action="suzy-view" aria-label="See Suzy in third-person view" aria-pressed="false">See Suzy</button>

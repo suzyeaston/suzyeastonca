@@ -19,6 +19,14 @@ Reference materials:
 
 The harbour scene is built during the core landmark pass and uses fog-independent distant materials so the backdrop is visible without bringing a 600m mountain silhouette into near-field scene fog. Street camera far clip is 1000m to allow the approximate distant ridge. The scene loader must enqueue `se-gastown-harbour-vista` **before** `se-gastown-sim`; production manifest includes the module. Run `node --test __tests__/gastown-harbour-vista.test.js` before deploying.
 
+## Working rail-yard sightlines (November 8, 2026)
+
+The City of Vancouver's *Rail Dangerous Goods Mitigation and Management Study* (February 2022, public FOI release 2023) describes CPR N-Yard east of Waterfront Station as **20 tracks**, with the western ladder feeding storage/sorting tracks, while three adjacent mainline tracks serve Waterfront/West Coast Express. The harbour scene retains seven detailed near tracks and paints thirteen extra branching tracks as **two batched line geometries** (rails and sleepers), avoiding hundreds of meshes and keeping the Canada Place cruise-ship sightline open. These are representational alignments, not exact train positions, clearance dimensions or live operations. The lot remains fenced and the railway non-walkable. The front-view Suzy avatar now has a subtle procedural curved smile.
+
+Source: [City of Vancouver FOI 2022-519, N-Yard case study, Figure 8 and Figure 17](https://vancouver.ca/files/cov/2022-519-release.pdf); [City of Vancouver railways dataset](https://opendata.vancouver.ca/explore/assets/railways/); [TransLink Waterfront Station map](https://infomaps.translink.ca/system_maps/wce_station_maps/waterfront_station.pdf).
+
+Run `node --test __tests__/gastown-harbour-v3-regression.test.js __tests__/gastown-suzy-film-avatar.test.js` and perform a Chrome/WebGL visual QA at the Station East fence. The rail geometry is artistic spatial context, not a route or safety guide.
+
 ## Waterfront public realm and map alignment (November 7, 2026)
 
 **Modeled scene:** Waterfront Station (601 W Cordova), Station East surface lot (555 W Cordova / Lot 531), then The Landing / Kelly-Douglas Warehouse (375 Water Street). The parking site remains a surface lot in this simulation; a 2026 office-tower application is **not** evidence that a building was completed.

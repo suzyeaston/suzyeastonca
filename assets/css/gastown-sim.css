@@ -553,6 +553,19 @@
   background: rgba(21, 58, 75, 0.94);
   letter-spacing: 0.05em;
 }
+/* Second fence-facing camera: aim into the rail fan instead of the cruise berth. */
+.gastown-minimap-toolbar [data-action="rail-yard-view"] {
+  order: 4;
+  flex: 1 0 100%;
+  min-width: 0;
+  color: #e2f7e9;
+  border-color: rgba(112, 193, 172, 0.74);
+  background: rgba(19, 60, 53, 0.94);
+}
+.gastown-minimap-toolbar [data-action="rail-yard-view"]:focus-visible {
+  outline: 2px solid #efffc2;
+  outline-offset: 2px;
+}
 .gastown-minimap-toolbar [data-action="harbour-lookout"]:focus-visible {
   outline: 2px solid #efffc2;
   outline-offset: 2px;
