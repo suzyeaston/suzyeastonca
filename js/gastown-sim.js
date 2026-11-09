@@ -454,9 +454,11 @@
   };
 
   function updateSize() {
-    const width = canvasWrap.clientWidth;
-    const height = Math.max(440, Math.min(window.innerHeight * 0.72, 760));
-    renderer.setSize(width, height);
+    // In film fullscreen the wrapper is much taller than 72vh. The old fixed
+    // inner height left an entire quarter of the camera viewport black.
+    const width = Math.max(1, Math.round(canvasWrap.clientWidth));
+    const height = Math.max(1, Math.round(canvasWrap.clientHeight));
+    renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
   }
@@ -4674,6 +4676,9 @@
   }
 
   function addLandmarks(world) {
+    // Film mode uses real landmark meshes and debug route overlays, never
+    // the old anonymous four-metre cylinders in the parking lot.
+    if (!state.debugEnabled) return;
     const heroLandmarkIds = new Set((world.hero_landmarks || []).map((hero) => String(hero.id || '').replace(/-hero$/, '')));
     const suppressedKinds = new Set(['clock', 'street_pivot', 'plaza_edge', 'district_gate', 'view_axis', 'parking', 'heritage_frontage']);
     world.landmarks.forEach((landmark) => {
@@ -6553,6 +6558,11 @@
 
   function attachEvents() {
     window.addEventListener('resize', updateSize);
+    if (typeof window.ResizeObserver === 'function') {
+      const viewportObserver = new window.ResizeObserver(() => updateSize());
+      viewportObserver.observe(canvasWrap);
+    }
+    document.addEventListener('fullscreenchange', updateSize);
     window.addEventListener('blur', () => { pauseSim(); stopBandAudio('window-blur'); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) { pauseSim(); stopBandAudio('visibility-hidden'); } });
     ['pointerdown', 'click', 'keydown'].forEach((eventName) => {
@@ -6821,7 +6831,7 @@
     (state.npcs || []).forEach((npc) => {
       if (!npc.mesh) return;
       const distance = Math.hypot(player.position.x - npc.mesh.position.x, player.position.z - npc.mesh.position.z);
-      npc.mesh.visible = distance < (state.lowGraphics ? 24 : 42);
+      npc.mesh.visible = distance < (state.lowGraphics ? 36 : 70);
     });
   }
 
@@ -6837,6 +6847,8 @@
         ['streetscape', (world) => addStreetscape(world, { includeSecondary: false })],
         ['West Cordova reference details', addCordovaStreetDetails],
         ['hero landmarks', addHeroLandmarks],
+        // Characters are part of the film set, not an idle-time enhancement.
+        ['station pedestrians', addNpcs],
         ['animated street life', (world) => {
           if (streetLife) {
             streetLifeScene = streetLife.create(THREE, world);
@@ -6883,7 +6895,8 @@
           }).catch(() => {});
         }, 120);
         scheduleDeferredWork(() => { addProps(state.world); }, 230);
-        scheduleDeferredWork(() => { addNpcs(state.world); }, 320);
+        // Characters were created synchronously above so a saturated main
+        // thread or deferred callback cannot leave the lot deserted.
         if (RUNTIME_PROFILE.deferAudioSetup) {
           scheduleDeferredWork(() => { setupAudio(state.world); }, 420);
         }
