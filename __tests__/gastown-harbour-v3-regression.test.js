@@ -47,6 +47,18 @@ test('waterfront rail yard is a recognisable east-west working freight yard',()=
  assert.ok(nodes.some(n=>n.name==='Waterfront Station red elevated transfer walkway'));
  assert.ok(nodes.some(n=>n.name==='Waterfront SeaBus south terminal building'));
 });
+test('Canada Place sightline has sparse, single-height trains and no near-fence container wall',()=>{
+  const root=boot().GastownHarbourVista.create(stub(),world);
+  const nodes=all(root);
+  const containers=nodes.filter(n=>n.name==='Visible Station East freight container');
+  assert.ok(containers.length>0,'retain some active-freight visual context');
+  assert.ok(containers.length<=5,'leave an open western view toward the cruise ship');
+  assert.equal(nodes.filter(n=>n.name==='Double-stack freight upper container').length,0);
+  assert.ok(nodes.some(n=>n.name==='Representative cruise ship at Canada Place east berth'));
+  const railcars=nodes.filter(n=>/^CP freight railcar in waterfront yard/.test(n.name));
+  assert.ok(railcars.length>=3,'keep a recognisable railway');
+});
+
 test('inlet is visibly water and includes a readable, moving SeaBus',()=>{
  const vista=boot().GastownHarbourVista;
  const root=vista.create(stub(),world);
@@ -80,10 +92,11 @@ test('fence camera stands back from rails so the harbour is visible',()=>{
 test('third-person camera avoids a fixed boom into the station wall',()=>{
  const sim=read('js/gastown-sim.js');
  assert.match(sim,/function updateThirdPersonCameraPose\(force\)/);
- assert.match(sim,/intersectObjects\(thirdPersonCameraBlockers,true\)/);
- assert.match(sim,/getGroundY\(\)-player.position.y/);
+ assert.match(sim,/intersectObjects\(thirdPersonCameraBlockers,\s*true\)/);
+ assert.match(sim,/getGroundY\(\)\s*-\s*player\.position\.y/);
  assert.match(sim,/thirdPersonCameraBlockers.push\(stationExterior\)/);
- assert.match(sim,/safeDistance=distance/);
+ assert.match(sim,/const shoulders = \[0, -0\.85, 0\.85, -1\.55, 1\.55\]/);
+ assert.match(sim,/state\.avatarCameraBoom = best\.boom/);
  assert.doesNotMatch(sim,/camera.position.set\([^\n]*4\.7/);
  assert.match(sim,/harbourVista.animate\(state.harbourVistaRoot,time\/1000\)/);
 });

@@ -103,6 +103,9 @@
     // trains, SeaBus terminal and inlet through the railings.
     return {x:middle.x+6.8*toward.x/n,z:middle.z+6.8*toward.z/n};
   }
+  // Stalls run across the two parking rows. Car lengths must follow v
+  // (into the parking stall), not u (along the entire row).
+  const PARKED_CAR_YAW = Math.atan2(0.710, 0.704);
   function parkingCars(lot) {
     const u={x:0.704,z:-0.710}, v={x:0.710,z:0.704};
     const start=entranceFor(lot), end=fenceLookoutFor(lot), cars=[];
@@ -126,7 +129,7 @@
       if(distSegment(point,a,b)<1.05)return false;
     }
     // Parked cars are scenery with real collision clearance for the walker.
-    const yaw=2.36, cos=Math.cos(yaw), sin=Math.sin(yaw);
+    const yaw=PARKED_CAR_YAW, cos=Math.cos(yaw), sin=Math.sin(yaw);
     return !parkingCars(lot).some(car=>{
       const dx=point.x-car.x,dz=point.z-car.z;
       return Math.abs(dx*cos-dz*sin)<1.43 && Math.abs(dx*sin+dz*cos)<2.46;
@@ -208,7 +211,7 @@
     const car = new THREE.Group();
     car.name = 'Parked vehicle ' + (index + 1);
     car.position.set(point.x, 0, point.z);
-    car.rotation.y = 2.36;
+    car.rotation.y = PARKED_CAR_YAW;
     addBox(THREE, car, 'Vehicle body', 0, 0.58, 0, 1.8, 0.66, 4.1, body);
     addBox(THREE, car, 'Vehicle cabin', 0, 1.15, -0.16, 1.55, 0.61, 2.18, glass);
     [-0.96, 0.96].forEach(x => [-1.27, 1.26].forEach(z => {
@@ -343,7 +346,7 @@
       const a={x:p.x-v.x*2.45,z:p.z-v.z*2.45};
       const b={x:p.x+v.x*2.45,z:p.z+v.z*2.45};
       addSegment(THREE,root,'Painted parking bay',a,b,0.275,0.07,stripe);
-      addBox(THREE,root,'Concrete parking wheel stop',p.x+v.x*2.0,0.35,p.z+v.z*2.0,1.5,0.27,0.29,edge,2.36);
+      addBox(THREE,root,'Concrete parking wheel stop',p.x+v.x*2.0,0.35,p.z+v.z*2.0,1.5,0.27,0.29,edge,PARKED_CAR_YAW);
     });
     // Parking equipment belongs at the Cordova entrance, not 100 metres
     // north of the lot (an old sign-position bug).

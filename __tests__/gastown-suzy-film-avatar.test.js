@@ -20,13 +20,25 @@ test('Suzy is grounded in reference photos rather than the purple placeholder', 
   assert.doesNotMatch(avatar,/Bun stray tuft/);
   assert.doesNotMatch(avatar,/Messy lavender bun/);
 });
-test('Follow camera remains locked behind Suzy and moves above her when obstructed',()=>{
+test('Follow camera stays at eye level and uses a shoulder path instead of top-down clipping',()=>{
   const js=read('js/gastown-sim.js');
-  assert.match(js,/const headroom=boom<1\.05\?3\.18:desiredHeight/);
-  assert.match(js,/camera\.position\.set\(0,y,side\*boom\)/);
-  assert.match(js,/camera\.rotation\.set\(-Math\.atan2\(headroom-1\.46/);
+  assert.match(js,/const shoulders = \[0, -0\.85, 0\.85, -1\.55, 1\.55\]/);
   assert.match(js,/thirdPersonCameraRay\.intersectObjects/);
+  assert.match(js,/const headroom = desiredHeight/);
+  assert.match(js,/camera\.position\.set\(offset, y, side \* boom\)/);
+  assert.match(js,/Math\.atan2\(offset, side \* boom\)/);
+  assert.doesNotMatch(js,/headroom=boom<1\.05\?3\.18/);
+  assert.doesNotMatch(js,/!isSpawnSafe\(candidate\)/);
   assert.match(js,/state\.followCameraDistance=undefined/);
+});
+test('Map +/- zoom the map, third-person portrait boom and first-person lens',()=>{
+  const js=read('js/gastown-sim.js');
+  assert.match(js,/1 \/ Math\.sqrt\(minimapState\.zoom \|\| 1\)/);
+  assert.match(js,/camera\.zoom = state\.thirdPerson \? 1/);
+  assert.match(js,/function setMinimapZoom\(nextZoom\)/);
+  assert.match(js,/updateThirdPersonCameraPose\(true\)/);
+  assert.match(js,/camera\.updateProjectionMatrix\(\)/);
+  assert.match(js,/Zoom map and camera closer to Suzy/);
 });
 test('Working harbour is visibly populated behind fence',()=>{
   const harbour=read('js/gastown-harbour-vista.js');
@@ -40,7 +52,7 @@ test('Front and rear are independent film angles with a visible checkerboard sil
   const html=read('page-gastown-sim.php');
   const avatar=read('js/gastown-suzy-avatar.js');
   assert.match(js,/avatarCameraFacing: 'back'/);
-  assert.match(js,/facingFront\?Math\.PI:0/);
+  assert.match(js,/Math\.atan2\(offset, side \* boom\)/);
   assert.match(js,/function setSuzyCameraFacing\(direction\)/);
   assert.match(js,/state\.avatarCameraFacing=direction/);
   assert.match(js,/suzyFrontBtn\.addEventListener\('click'/);
