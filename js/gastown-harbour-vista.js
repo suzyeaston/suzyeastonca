@@ -364,42 +364,57 @@
     const railLengthMetres = 150;
     const tieStart = -railLengthMetres / 2 + 0.5;
     const tiesPerTrack = Math.floor((railLengthMetres - 1) / tieSpacingMetres) + 1;
-    const ties = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(0.24, 0.105, 2.62),
-      sleeper,
-      nearTrackCount * tiesPerTrack
-    );
-    ties.name = 'CP N-Yard near-field instanced timber sleepers';
-    ties.castShadow = false;
-    ties.receiveShadow = true;
-    const tieDummy = new THREE.Object3D();
-    let tieIndex = 0;
+    // Test stubs and older minimal Three.js integrations may not expose
+    // instancing: retain readable rails and a small tie fallback.
+    const useInstancing = typeof THREE.InstancedMesh === 'function'
+      && typeof THREE.Object3D === 'function';
+    let ties = null, tieDummy = null, tieIndex = 0;
+    if (useInstancing) {
+      ties = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.24, 0.105, 2.62),
+        sleeper,
+        nearTrackCount * tiesPerTrack
+      );
+      ties.name = 'CP N-Yard near-field instanced timber sleepers';
+      ties.castShadow = false;
+      ties.receiveShadow = true;
+      tieDummy = new THREE.Object3D();
+    }
     // All rail geometry stays outside the lot fence and non-walkable.
     for (let i = 0; i < nearTrackCount; i++) {
       const offset = 8 + i * 7.1;
-      placeBox('CP N-Yard track ballast', 0, offset, 0.14, railLengthMetres, 0.13, 3.55, ballast);
-      // Raised steel heads catch daylight at grazing angles, making tracks
-      // readable from the public-side rail-yard and harbour viewpoints.
+      placeBox('CP N-Yard track ballast', 0, offset, 0.14,
+        railLengthMetres, 0.13, 3.55, ballast);
       for (const side of [-0.75, 0.75]) {
         placeBox('CP N-Yard steel rail head', 0, offset + side, 0.345,
           railLengthMetres, 0.13, 0.095, steel);
         placeBox('CP N-Yard steel rail web', 0, offset + side, 0.258,
           railLengthMetres, 0.075, 0.052, steel);
       }
-      for (let t = 0; t < tiesPerTrack; t++) {
-        const position = trackPoint(tieStart + t * tieSpacingMetres, offset);
-        tieDummy.position.set(position.x, 0.238, position.z);
-        tieDummy.rotation.set(0, yaw, 0);
-        tieDummy.updateMatrix();
-        ties.setMatrixAt(tieIndex++, tieDummy.matrix);
+      if (useInstancing) {
+        for (let t = 0; t < tiesPerTrack; t++) {
+          const position = trackPoint(tieStart + t * tieSpacingMetres, offset);
+          tieDummy.position.set(position.x, 0.238, position.z);
+          tieDummy.rotation.set(0, yaw, 0);
+          tieDummy.updateMatrix();
+          ties.setMatrixAt(tieIndex++, tieDummy.matrix);
+        }
+      } else {
+        // Keep this fallback bounded for non-WebGL test doubles.
+        for (let t = -68; t <= 68; t += 6) {
+          placeBox('CP N-Yard fallback timber sleeper', t, offset,
+            0.238, 0.24, 0.105, 2.62, sleeper);
+          tieIndex++;
+        }
       }
     }
-    ties.instanceMatrix.needsUpdate = true;
-    ties.computeBoundingSphere();
-    root.add(ties);
+    if (ties) {
+      ties.instanceMatrix.needsUpdate = true;
+      if (typeof ties.computeBoundingSphere === 'function') ties.computeBoundingSphere();
+      root.add(ties);
+    }
     root.userData.nearTrackTieCount = tieIndex;
     root.userData.nearTrackTieSpacingMetres = tieSpacingMetres;
-
 
     // Vancouver's CPR N-Yard is a 20-track facility east of the station.
     // The seven detailed near-field tracks above are preserved; this is a
