@@ -441,13 +441,16 @@
     const fyaw=Math.atan2(-fdz,fdx);
     const entry={x:(frontA.x+frontB.x)*0.5+fdz/flength*0.94,
       z:(frontA.z+frontB.z)*0.5-fdx/flength*0.94};
-    const darkEntry=new THREE.MeshStandardMaterial({color:0x203845,transparent:false,depthTest:false,roughness:0.18,metalness:0.16});
+    const darkEntry=new THREE.MeshStandardMaterial({color:0x243e48,transparent:true,opacity:0.25,depthWrite:false,depthTest:false,roughness:0.18,metalness:0.16});
     const bronze=new THREE.MeshStandardMaterial({color:0x464c45,roughness:0.7,metalness:0.32});
     const entrancePane=addBox(THREE,root,'The Landing arched Water Street entry glazing',
       entry.x,1.56,entry.z,2.7,3.0,0.18,darkEntry,fyaw);
-    entrancePane.renderOrder=4; // readable doorway in front of extruded facade mass
-    addBox(THREE,root,'The Landing paired glass door mullion',
-      entry.x,1.54,entry.z,0.085,2.95,0.23,bronze,fyaw);
+    entrancePane.renderOrder=4;
+    // The doorway is a visual portal in the solid city mesh. Keep its
+    // glazing almost clear and allow the automatic transition BEFORE the
+    // player reaches the solid building footprint.
+    // Keep the center of the entrance visually unobstructed.
+    // A central mullion in the earlier mockup looked like a sealed door.
     const tangent={x:fdx/flength,z:fdz/flength};
     const outward={x:fdz/flength,z:-fdx/flength};
     for(const side of [-1,1]){
@@ -654,7 +657,7 @@
     const stone=new THREE.MeshStandardMaterial({color:0xb6a99a,roughness:0.86});
     const metal=new THREE.MeshStandardMaterial({color:0x555c5e,metalness:0.57,roughness:0.4});
     const gold=new THREE.MeshStandardMaterial({color:0xb99855,metalness:0.58,roughness:0.3});
-    const glass=new THREE.MeshStandardMaterial({color:0x789ba9,roughness:0.22,metalness:0.18});
+    const glass=new THREE.MeshStandardMaterial({color:0xb2d3d9,transparent:true,opacity:0.28,depthWrite:false,side:THREE.DoubleSide,roughness:0.16,metalness:0.02});
     const tile=new THREE.MeshStandardMaterial({color:0x89745e,roughness:0.79});
     const denim=new THREE.MeshStandardMaterial({color:0x35586a,roughness:0.91});
     const skin=new THREE.MeshStandardMaterial({color:0xc79b7c,roughness:0.91});
@@ -668,13 +671,17 @@
     block('The Landing cream lobby west wall',842,3.3,850,0.2,6.6,20,cream);
     block('The Landing cream lobby east wall',858,3.3,850,0.2,6.6,20,cream);
     block('The Landing lobby north back wall',850,3.3,840,16,6.6,0.2,cream);
-    block('The Landing entrance wall',850,3.3,860,16,6.6,0.2,stone);
+    // Split the lobby south wall around the central 3.6m entrance, with a lintel
+    // above it; the former full-width wall literally sealed the doors.
+    block('The Landing entrance wall west wing',845.7,3.3,860,7.4,6.6,0.2,stone);
+    block('The Landing entrance wall east wing',854.3,3.3,860,7.4,6.6,0.2,stone);
+    block('The Landing entrance lintel above door',850,5.1,860,3.6,3.0,0.2,stone);
     block('The Landing ceiling',850,6.65,850,16,0.22,20,cream);
     // The ground floor entry deliberately looks back toward Water Street.
-    const entranceLeft=block('Glass main entrance left hinged door',849.08,1.76,859.85,1.75,3.5,0.09,glass);
-    const entranceRight=block('Glass main entrance right hinged door',850.92,1.76,859.85,1.75,3.5,0.09,glass);
-    block('Brass paired entrance door stile',850,1.75,859.73,0.075,3.5,0.18,gold);
-    for(const side of [-1,1])block('Main door brass pull',850+side*0.3,1.44,859.59,0.04,0.52,0.08,gold);
+    const entranceLeft=block('Glass main entrance left hinged door',848.68,1.76,859.85,0.95,3.5,0.09,glass);
+    const entranceRight=block('Glass main entrance right hinged door',851.32,1.76,859.85,0.95,3.5,0.09,glass);
+    // No central stile: the pair is already fully opened to invite Suzy in.
+    for(const side of [-1,1])block('Main door brass pull',850+side*1.32,1.44,859.59,0.04,0.52,0.08,gold);
     block('Reception desk',854,1.04,853,3.6,1.1,1.0,stone);
     block('Reception desk brass trim',854,1.61,853.45,3.6,0.10,0.13,gold);
     // Lift on player-left as they walk inward (negative X at X=845).
