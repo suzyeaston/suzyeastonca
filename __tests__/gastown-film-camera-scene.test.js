@@ -46,7 +46,7 @@ test('staged pedestrians are in the accessible lot aisle and two buses remain in
   assert.ok(people.every(p => p.patrol.length >= 2));
   const src = read('js/gastown-street-life.js');
   assert.match(src, /buses=\[makeBus\(THREE\),makeBus\(THREE\)\]/);
-  assert.match(src, /const d=\(seconds\*4\.1\+20\+\(index\*total\/2\)\)%total/);
+  assert.match(src, /along\(seconds\*4\.1\+20\+index\*total\/2,0,false,bus\)/);
   const sim = read('js/gastown-sim.js');
   assert.match(sim, /\['station pedestrians', addNpcs\]/);
   assert.match(sim, /streetLifeScene\.update\(time \/ 1000\)/);
