@@ -47,6 +47,18 @@ test('waterfront rail yard is a recognisable east-west working freight yard',()=
  assert.ok(nodes.some(n=>n.name==='Waterfront Station red elevated transfer walkway'));
  assert.ok(nodes.some(n=>n.name==='Waterfront SeaBus south terminal building'));
 });
+test('Canada Place sightline has sparse, single-height trains and no near-fence container wall',()=>{
+  const root=boot().GastownHarbourVista.create(stub(),world);
+  const nodes=all(root);
+  const containers=nodes.filter(n=>n.name==='Visible Station East freight container');
+  assert.ok(containers.length>0,'retain some active-freight visual context');
+  assert.ok(containers.length<=5,'leave an open western view toward the cruise ship');
+  assert.equal(nodes.filter(n=>n.name==='Double-stack freight upper container').length,0);
+  assert.ok(nodes.some(n=>n.name==='Representative cruise ship at Canada Place east berth'));
+  const railcars=nodes.filter(n=>/^CP freight railcar in waterfront yard/.test(n.name));
+  assert.ok(railcars.length>=3,'keep a recognisable railway');
+});
+
 test('inlet is visibly water and includes a readable, moving SeaBus',()=>{
  const vista=boot().GastownHarbourVista;
  const root=vista.create(stub(),world);
