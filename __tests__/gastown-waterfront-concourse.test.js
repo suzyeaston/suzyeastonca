@@ -50,3 +50,41 @@ test('world bounds admit the interior and keep wall collision local', () => {
   assert.match(sim, /Waterfront Station public concourse: passage ends here/);
   assert.match(sim, /player\.position\.copy\(state\.lastSafePosition\)/);
 });
+
+test('heritage concourse includes photo-reference architectural rhythm', () => {
+  const src = read('js/gastown-waterfront-station.js');
+  for (const feature of [
+    'Waterfront ceiling longitudinal coffer rib',
+    'Waterfront ceiling transverse coffer rib',
+    'Waterfront recessed blue-grey coffer panel',
+    'Concourse rose frieze',
+    'Waterfront hall Ionic column',
+    'Concourse terrazzo longitudinal border',
+    'Concourse terrazzo cross border',
+    'Historic concourse arcade arch',
+    'Waterfront historic arcade clock surround'
+  ]) {
+    assert.ok(src.includes(feature), feature + ' must be authored');
+  }
+  assert.match(src, /root\.userData\.ornamentProcedural = true/);
+  assert.doesNotMatch(src, /box\('Public concourse rear wayfinding wall'/);
+});
+
+test('central entrance has no opaque stiles in the middle of walking route', () => {
+  const src = read('js/gastown-waterfront-station.js');
+  assert.match(src, /i === 1 \? Math\.sign\(dx\) \* 1\.02/);
+  assert.match(src, /i === 1 \? Math\.sign\(dx\) \* 1\.1/);
+  assert.doesNotMatch(src, /Entry gate stile', x \+ dx \* 0\.1/);
+});
+
+test('Angel of Victory is a distinct named historical memorial east of station entrance', () => {
+  const src = read('js/gastown-waterfront-station.js');
+  assert.match(src, /Angel of Victory \/ Coeur de Lion MacCarthy/);
+  assert.match(src, /memorial\.position\.set\(40\.5, 0, 11\.0\)/);
+  assert.match(src, /Angel of Victory raised bronze wing/);
+  assert.match(src, /Fallen soldier supported torso/);
+  assert.match(src, /Angel of Victory memorial plaque/);
+  assert.match(src, /root\.userData\.memorialIncluded = true/);
+  assert.match(src, /ArtworkId=24/);
+  assert.match(src, /fidelity:'original, approximate procedural interpretation'/);
+});

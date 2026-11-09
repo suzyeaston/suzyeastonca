@@ -40,3 +40,29 @@ The project already uses +X east, -Z north, with one civic-to-scene transformati
 ## Follow-up acceptance criteria
 
 Walk from Cordova into the public historic concourse and back without snapping; distinguish real storefronts from illustrative ones; view rails from both fence viewpoints; hear *an attributed, locally served actual clock recording* only in a sensible sound zone; experience rain only when the weather state is rain.
+
+## PR follow-up: heritage hall detail and Angel of Victory
+
+User-supplied 2024/2025 Street View screenshots and interior photographs prompted a
+visual-fidelity pass. The prior "public concourse" was a narrow, almost featureless
+tube; the current model adds *procedurally authored* recessed coffer panels,
+orthogonal ceiling ribs, a pink frieze, cream Ionic columns, a three-arch
+terminal treatment, small clock motif and terrazzo floor bands. Central entry
+stiles have been moved out of the walking gap.
+
+An original low-poly **Angel of Victory** memorial is now east of the station
+front entrance, on a granite-colored plinth with an interpretive plaque. The
+sculpture shows the angel, separate raised wings, and carried fallen soldier;
+it is a recognizable landmark, **not** a reproduction of the original bronze
+and not a photogrammetry model. Sculpture placement is relative to the authored
+station stage and still needs on-site measurement.
+
+Grounding:
+- [City of Vancouver Public Art Registry, artwork 24](https://covapp.vancouver.ca/PublicArtRegistry/ArtworkDetail.aspx?ArtworkId=24): artist Coeur de Lion MacCarthy, east of station entrance, bronze memorial.
+- [Veterans Affairs Canada](https://www.veterans.gc.ca/en/remembrance/memorials/canada/winged-victory): memorial unveiled April 28, 1922.
+- [SRA Architects Waterfront Station renovation](https://srarch.net/projects/waterfront-station-renovation): documented restoration of original arched openings and historic concourse.
+- [Vancouver structural/heritage overview](https://www.seabc.ca/wordpress/files/notable_structures/Vancouver_Notable_Structures_IABSE_SEABC_2017.pdf): photographs and original coffered ceiling.
+
+No Street View, commercial photography, stock model, or copyrighted third-party
+texture is embedded. The hall remains representative rather than an exact
+architectural plan; circulation and camera behavior require browser QA.
