@@ -293,16 +293,16 @@
     ]
   },
   "parking_small_talk": {
-    "title": "Station East walker",
+    "title": "Impark Lot 531 · parking reviews",
     "lines": [
-      "Someone left a one-star review because the Steam Clock was... a clock.",
-      "Mate, it whistles and shoots steam. The rest is your emotional journey.",
-      "Anyway, SeaBus is right there and the harbour view's free. Give the mountains five stars."
+      "I paid online for three hours. They still ticketed me while I was sorting out the app.",
+      "These stalls are so narrow you need to negotiate with the next car just to open your door.",
+      "But the view of the harbour and North Vancouver? Five stars. Parking enforcement? Different story."
     ],
     "actions": [
       {
         "type": "close",
-        "label": "Back to walk"
+        "label": "Back to the lot"
       }
     ],
     "variants": [
@@ -311,8 +311,8 @@
           "weather": "rain"
         },
         "lines": [
-          "A tourist said Gastown was damp. In Vancouver. In November.",
-          "I'm forwarding their review directly to the clouds."
+          "The app wouldn't recognize the lot number. It was pouring rain while I tried to pay.",
+          "The harbour view's gorgeous. The parking experience really isn't."
         ]
       },
       {
@@ -320,21 +320,23 @@
           "timeOfDay": "night"
         },
         "lines": [
-          "Apparently the clock is underwhelming at night too. I dunno, the harbour lights are doing all the heavy lifting."
+          "It's expensive to park here, and the spaces are tiny.",
+          "At least the harbour lights are worth a look."
         ]
       }
     ]
   },
   "parking_high_five": {
-    "title": "Friendly stranger",
+    "title": "Lot 531 · frustrated driver",
     "lines": [
-      "A reviewer said this city wasn't friendly. High five to dispute that?",
-      "Five stars for the interaction. Zero stars for the parking situation."
+      "I extended my parking and still got a ticket. How does that even happen?",
+      "People say they got tickets within minutes, even while trying to pay.",
+      "I'm leaving the car where it is until I read every single restriction sign."
     ],
     "actions": [
       {
         "type": "close",
-        "label": "Back to walk"
+        "label": "Back to the lot"
       }
     ],
     "variants": [
@@ -343,8 +345,8 @@
           "weather": "rain"
         },
         "lines": [
-          "Someone gave the rain two stars. That's honestly generous.",
-          "High five before my sleeve becomes a sponge?"
+          "Trying to pay in this app in the rain was a nightmare.",
+          "If I get ticketed after paying, I'm going to start reviewing parking lots professionally."
         ]
       },
       {
@@ -352,7 +354,8 @@
           "mood": "commuter"
         },
         "lines": [
-          "A high five? Quick, before both our SkyTrains leave."
+          "Two-minute pickup. One parking ticket. That's one impressive business model.",
+          "Read the posted restrictions before you stop here."
         ]
       }
     ]
