@@ -13,9 +13,9 @@ test('The Landing corner portal is anchored to the real Water Street frontage',(
  assert.match(source,/function landingEntranceFor\(world\)/);
  assert.match(source,/const a=pts\[6\],b=pts\[7\]/);
  assert.match(source,/The Landing sidewalk barrel canopy curved iron rib/);
- assert.match(source,/The Landing paired door mullion/);
+ assert.match(source,/The Landing paired glass door mullion/);
  assert.match(source,/The Landing translucent overhead canopy glazing/);
- assert.match(source,/transparent:true,opacity:0\.49/);
+ assert.match(source,/entrancePane.renderOrder=4/);
  const a=world.landing.footprint[6],b=world.landing.footprint[7];
  const d=Math.hypot(b.x-a.x,b.z-a.z);
  const threshold={x:(a.x+b.x)/2+(b.z-a.z)/d*3.22,z:(a.z+b.z)/2-(b.x-a.x)/d*3.22};
