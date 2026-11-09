@@ -441,7 +441,7 @@
     const fyaw=Math.atan2(-fdz,fdx);
     const entry={x:(frontA.x+frontB.x)*0.5+fdz/flength*0.22,
       z:(frontA.z+frontB.z)*0.5-fdx/flength*0.22};
-    const darkEntry=new THREE.MeshStandardMaterial({color:0x172e3c,roughness:0.35,metalness:0.25});
+    const darkEntry=new THREE.MeshStandardMaterial({color:0x294957,transparent:true,opacity:0.49,depthWrite:false,roughness:0.2,metalness:0.13});
     const bronze=new THREE.MeshStandardMaterial({color:0x464c45,roughness:0.7,metalness:0.32});
     addBox(THREE,root,'The Landing arched Water Street entry glazing',
       entry.x,1.56,entry.z,2.7,3.0,0.18,darkEntry,fyaw);
@@ -466,8 +466,8 @@
         roughness:0.26,metalness:0.08,side:THREE.DoubleSide,depthWrite:false
       });
       const outward={x:fdz/flength,z:-fdx/flength};
-      for(let rib=0;rib<5;rib++){
-        const distance=0.45+rib*0.65;
+      for(let rib=0;rib<6;rib++){
+        const distance=0.45+rib*0.55;
         const arc=new THREE.Mesh(new THREE.TorusGeometry(1.42,0.05,6,18,Math.PI),canopyFrame);
         arc.name='The Landing sidewalk barrel canopy curved iron rib';
         arc.position.set(entry.x+outward.x*distance,4.42,entry.z+outward.z*distance);
@@ -519,6 +519,96 @@
     return root;
   }
 
+  // An optional fictional sixth-floor room, spatially separate from the GIS
+  // street. No real office floor plan or claim of public access is implied.
+  function landingEntranceFor(world) {
+    const pts=world && world.landing && world.landing.footprint;
+    if(!pts || pts.length<8)return null;
+    const a=pts[6],b=pts[7],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1;
+    const outward={x:dz/len,z:-dx/len};
+    const door={x:(a.x+b.x)*0.5+outward.x*0.22,z:(a.z+b.z)*0.5+outward.z*0.22};
+    return {door,threshold:{x:door.x+outward.x*3.0,z:door.z+outward.z*3.0},
+      outward,roomSpawn:{x:800,z:808},roomExit:{x:800,z:809.2}};
+  }
+  function createLabInterior(THREE) {
+    const root=new THREE.Group();
+    root.name='Fictional Multimodal Lab | sixth-floor imagination at The Landing';
+    const wall=new THREE.MeshStandardMaterial({color:0xd5c7ae,roughness:0.91});
+    const cream=new THREE.MeshStandardMaterial({color:0xf0e6d4,roughness:0.86});
+    const oak=new THREE.MeshStandardMaterial({color:0x906d4f,roughness:0.83});
+    const dark=new THREE.MeshStandardMaterial({color:0x222a2f,roughness:0.48});
+    const blue=new THREE.MeshBasicMaterial({color:0x93bbcd,side:THREE.DoubleSide});
+    const mountain=new THREE.MeshBasicMaterial({color:0x557383,side:THREE.DoubleSide});
+    const glass=new THREE.MeshStandardMaterial({color:0x9ec9d6,transparent:true,opacity:0.3,roughness:0.2,depthWrite:false});
+    const wood=new THREE.MeshStandardMaterial({color:0xb98c60,roughness:0.79});
+    const denim=new THREE.MeshStandardMaterial({color:0x36536c,roughness:0.92});
+    const skin=new THREE.MeshStandardMaterial({color:0xc99372,roughness:0.92});
+    const beard=new THREE.MeshStandardMaterial({color:0x3c3029,roughness:0.93});
+    const green=new THREE.MeshStandardMaterial({color:0x3d614a,roughness:0.89});
+    function cube(name,x,y,z,w,h,d,mat) {
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+      m.name=name;m.position.set(x,y,z);root.add(m);return m;
+    }
+    cube('Multimodal Lab sixth-floor timber floor',800,-0.16,800,16,0.3,20,oak);
+    cube('Multimodal Lab pale left wall',792.1,3.7,800,0.28,7.4,20,cream);
+    cube('Multimodal Lab pale right wall',807.9,3.7,800,0.28,7.4,20,cream);
+    cube('Multimodal Lab entry wall',800,3.7,810,16,7.4,0.25,cream);
+    cube('Multimodal Lab ceiling beams',800,7.35,800,16,0.26,20,cream);
+    for(const z of [796,801,806])for(const x of [793.2,806.8])cube('Sixth floor gallery pilaster',x,3.65,z,0.44,7.3,0.5,wall);
+    cube('Window wall lower railing',800,0.6,790.1,16,1.15,0.24,cream);
+    cube('Panoramic North Shore view',800,4.3,790.08,15.2,5.8,0.03,blue);
+    // A graphical mountains-and-harbour silhouette, not a photo texture.
+    for(let i=0;i<8;i++)cube('North Shore mountain ridge silhouette',793+i*1.95,1.7+(i%3)*0.28,790.01,2.15,1.6+(i%3)*0.42,0.05,mountain);
+    cube('Burrard Inlet blue horizon',800,1.38,789.98,15.1,0.36,0.07,blue);
+    for(const x of [793,795,797,799,801,803,805,807]){
+      cube('Arched harbour window iron mullion',x,4.12,789.91,0.065,5.5,0.09,dark);
+    }
+    cube('Harbour window horizontal transom',800,4.4,789.89,15.1,0.09,0.12,dark);
+    cube('Window arch upper beam',800,7.02,789.89,15.0,0.18,0.14,dark);
+    cube('Window glazing',800,4,789.8,15,5.65,0.04,glass);
+    for(const x of [795,805]) {
+      cube('Multimodal Lab green indoor plant stalk',x,0.8,792.6,0.13,1.2,0.13,green);
+      const leaves=new THREE.Mesh(new THREE.SphereGeometry(0.64,8,6),green);
+      leaves.name='Lab leafy indoor plant';leaves.position.set(x,1.9,792.6);root.add(leaves);
+    }
+    // Suggestive grand piano silhouette under the window as in the supplied photo.
+    cube('Black grand piano body',798.5,0.98,795.1,3.2,0.28,2.1,dark);
+    cube('Black grand piano raised lid',798.2,1.7,794.65,3.0,0.10,1.6,dark);
+    cube('Piano keyboard',799.5,1.03,796.2,1.75,0.08,0.36,cream);
+    for(const x of [797.5,799.5])for(const z of [794.35,795.8])cube('Grand piano leg',x,0.47,z,0.12,0.85,0.14,dark);
+    cube('Lab communal workshop table',801,0.96,802,4.7,0.16,2.4,wood);
+    for(const x of [799.1,802.9])for(const z of [801.3,802.7])cube('Worktable leg',x,0.48,z,0.14,0.93,0.14,dark);
+    cube('Creative coding laptop screen',801.5,1.31,801.65,1.05,0.64,0.08,dark);
+    // Stylized fictionalized KK greeter: not a scanned photograph or claim
+    // about the real person's whereabouts.
+    const greeter=new THREE.Group();
+    greeter.name='KK | fictional welcoming lab NPC';
+    greeter.position.set(803.0,0,804.7);root.add(greeter);
+    function npcBox(name,x,y,z,w,h,d,mat){
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+      m.name=name;m.position.set(x,y,z);greeter.add(m);
+    }
+    npcBox('KK denim jacket',0,1.15,0,0.72,0.82,0.37,denim);
+    npcBox('KK jeans',-0.21,0.45,0,0.24,0.8,0.28,denim);
+    npcBox('KK jeans',0.21,0.45,0,0.24,0.8,0.28,denim);
+    npcBox('KK neck',0,1.66,0,0.17,0.16,0.17,skin);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(0.27,10,8),skin);
+    head.name='KK stylized portrait head';head.position.set(0,1.91,0);greeter.add(head);
+    npcBox('KK beard',0,1.78,-0.19,0.37,0.25,0.12,beard);
+    npcBox('KK glasses bridge',0,1.96,-0.264,0.38,0.045,0.035,dark);
+    npcBox('KK hair',0,2.16,0.01,0.39,0.14,0.3,beard);
+    npcBox('KK welcoming arm',-0.5,1.28,-0.10,0.2,0.55,0.24,denim);
+    npcBox('KK welcoming hand',-0.52,1.02,-0.15,0.16,0.2,0.18,skin);
+    cube('Exit to Water Street door',800,1.65,809.83,2.6,3.3,0.1,dark);
+    cube('Exit door glass',800,1.7,809.74,2.24,2.8,0.09,glass);
+    sign(THREE,root,'MULTIMODAL LAB  ·  FLOOR 6',
+      {x:800,y:4.5,z:809.64},5.4,0.48,0,{background:'#213b45',color:'#e4f5e9'});
+    sign(THREE,root,'E: RETURN TO WATER STREET',
+      {x:800,y:2.05,z:809.59},3.8,0.29,0,{background:'#294744',color:'#f3e9c9'});
+    root.userData.fictionalInterior=true;
+    return root;
+  }
+
   function create(THREE, world) {
     const group=new THREE.Group();
     group.name='Waterfront Station / surface lot / The Landing public realm';
@@ -529,5 +619,5 @@
     return group;
   }
 
-  window.GastownWaterfrontPlaces=Object.freeze({ reference:REFERENCE, create, createParking, createLanding, inPolygon, isWalkableLot, entranceFor, lookoutFor, parkingCars });
+  window.GastownWaterfrontPlaces=Object.freeze({ reference:REFERENCE, create, createParking, createLanding, createLabInterior, landingEntranceFor, inPolygon, isWalkableLot, entranceFor, lookoutFor, parkingCars });
 })(window);

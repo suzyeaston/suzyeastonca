@@ -63,7 +63,7 @@ test('interaction raycast failure is isolated from subsequent WebGL rendering', 
   const end = src.indexOf('        renderer.render(scene, camera);', start);
   assert.ok(start > 0 && end > start);
   const frame = src.slice(start, end);
-  assert.match(frame, /if \(!state\.interactionRaycastUnavailable\)\s*\{\s*try\s*\{\s*updateInteractionTarget\(\)/);
+  assert.match(frame, /if \(!state\.interactionRaycastUnavailable && !state\.landingLab\.inside\)\s*\{\s*try\s*\{\s*updateInteractionTarget\(\)/);
   assert.match(frame, /catch \(error\) \{\s*state\.interactionRaycastUnavailable = true/);
   assert.match(frame, /state\.hoveredNpcId = '';/);
   assert.match(frame, /updateLandmarkDiscoveries\(\)/,

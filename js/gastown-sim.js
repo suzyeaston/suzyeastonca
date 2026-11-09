@@ -163,6 +163,8 @@
     steamClockState: {
       anchor: null,
       plume: null,
+      wisps: [],
+      steamBurstUntil: 0,
       toneReady: false,
       enabled: false,
       lastChimeAt: -Infinity,
@@ -170,6 +172,7 @@
       proximityCooldownUntil: 0,
       lastPlayerNear: false,
     },
+    landingLab: { inside: false, returnPosition: null, roomRoot: null, lastNear: false },
     dialogData: {},
     activeDialogNpcId: '',
     activeDialogEntry: null,
@@ -1207,6 +1210,67 @@
     return state.thirdPerson;
   }
 
+  function interactWithLanding() {
+    if (!waterfrontPlaces || !waterfrontPlaces.landingEntranceFor || !state.world) return false;
+    const portal=waterfrontPlaces.landingEntranceFor(state.world);
+    if (!portal) return false;
+    if (state.landingLab.inside) {
+      const nearKK=Math.hypot(player.position.x-803,player.position.z-804.7)<3.1;
+      if (nearKK) {
+        openDialogForNpc({id:'lab-kk-greeter',role:'guide',
+          name:'KK (fictional NPC)',dialogId:'kk_lab_greeter'});
+        return true;
+      }
+      const nearExit=Math.hypot(player.position.x-portal.roomExit.x,
+        player.position.z-portal.roomExit.z)<3.4;
+      if (!nearExit) {
+        setStatus('Sixth-floor Multimodal Lab (fictional scene). Talk to KK or head back to the entrance.');
+        return true;
+      }
+      const back=state.landingLab.returnPosition || portal.threshold;
+      player.position.set(back.x,getGroundY(),back.z);
+      state.landingLab.inside=false;
+      if (state.landingLab.roomRoot) state.landingLab.roomRoot.visible=false;
+      state.yaw=Math.atan2(portal.outward.x,portal.outward.z);
+      player.rotation.y=state.yaw;
+      state.lastSafePosition.copy(player.position);
+      state.velocity.set(0,0,0);
+      applyStreetCameraPose();
+      setStatus('Back on Water Street outside The Landing.');
+      return true;
+    }
+    const near=Math.hypot(player.position.x-portal.threshold.x,
+      player.position.z-portal.threshold.z)<5.3;
+    if(!near)return false;
+    state.landingLab.returnPosition={x:player.position.x,z:player.position.z};
+    state.landingLab.inside=true;
+    if(state.landingLab.roomRoot)state.landingLab.roomRoot.visible=true;
+    player.position.set(portal.roomSpawn.x,getGroundY(),portal.roomSpawn.z);
+    state.yaw=0;
+    state.lastSafePosition.copy(player.position);
+    state.velocity.set(0,0,0);
+    state.followCameraDistance=undefined;
+    state.avatarCameraNextRefresh=0;
+    applyStreetCameraPose();
+    setStatus('Welcome to the fictional Multimodal Lab on floor six. Walk toward KK, press E to chat.');
+    return true;
+  }
+
+  function updateLandingHint() {
+    if (!waterfrontPlaces || !waterfrontPlaces.landingEntranceFor || !state.world) return;
+    const portal=waterfrontPlaces.landingEntranceFor(state.world);
+    if(!portal)return;
+    const near=state.landingLab.inside
+      ? Math.hypot(player.position.x-803,player.position.z-804.7)<3.1
+      : Math.hypot(player.position.x-portal.threshold.x,player.position.z-portal.threshold.z)<5.3;
+    if(near && !state.landingLab.lastNear){
+      setStatus(state.landingLab.inside
+        ? 'KK is welcoming visitors. Press E to talk; return to the glass entry to exit.'
+        : 'The Landing, 375 Water: press E to visit an imagined sixth-floor Multimodal Lab.');
+    }
+    state.landingLab.lastNear=near;
+  }
+
   function interactWithStationSideEntrance() {
     if (!stationModel || !stationModel.sideEntranceFor || !state.world) return false;
     const doorway = stationModel.sideEntranceFor(state.world);
@@ -2165,6 +2229,12 @@
   }
 
   function getNpcConversationFallback(npcState) {
+    if (npcState && npcState.id === 'lab-kk-greeter') {
+      const authored=state.dialogData && state.dialogData.kk_lab_greeter;
+      return authored && Array.isArray(authored.lines)
+        ? {title:authored.title,lines:authored.lines}
+        : {title:'KK · imagined lab greeter',lines:['Welcome to the sixth floor. This is an imagined version of the lab.','Make art not war. The weird projects are welcome here.']};
+    }
     // Parking characters always use authored, review-inspired local dialogue.
     // Do not let the generic online Gastown conversation endpoint overwrite it.
     const localParking = npcState && /^(parking-smalltalk|parking-highfive)$/.test(npcState.voiceCue || '');
@@ -2190,7 +2260,7 @@
 
   async function requestNpcConversation(npcState) {
     const fallback = getNpcConversationFallback(npcState);
-    if (npcState && /^(parking-smalltalk|parking-highfive)$/.test(npcState.voiceCue || '')) {
+    if (npcState && (npcState.id === 'lab-kk-greeter' || /^(parking-smalltalk|parking-highfive)$/.test(npcState.voiceCue || ''))) {
       return { title: fallback.title, lines: fallback.lines, fallback: true };
     }
     if (!config.conversationEndpoint || !window.fetch) {
@@ -2344,6 +2414,19 @@
   }
 
   function getNpcDialogActions(npcState) {
+    if (npcState && npcState.id==='lab-kk-greeter') {
+      return [
+        {type:'response',label:'What happens up here?',responseLines:[
+          'Art, technology, sound, experiments and conversations that do not fit in neat boxes.',
+          'This is a playful fictional version of a lab, not a real visitor invitation.'
+        ],followupStatus:'Explored the imaginary Multimodal Lab.'},
+        {type:'response',label:'Make art not war?',responseLines:[
+          'Exactly. Build improbable things with people who make you curious.',
+          'And yes, the piano has excellent harbour views.'
+        ]},
+        {type:'close',label:'Back to the lab'}
+      ];
+    }
     if (!npcState) {
       return [{ type: 'close', label: 'Back to walk' }];
     }
@@ -4613,6 +4696,14 @@
       }
     }
     if (waterfrontPlaces) {
+      if(typeof waterfrontPlaces.createLabInterior==='function'){
+        const lab=waterfrontPlaces.createLabInterior(THREE);
+        if(lab){
+          lab.visible=false;
+          worldGroup.add(lab);
+          state.landingLab.roomRoot=lab;
+        }
+      }
       const shorelinePlaces = waterfrontPlaces.create(THREE, world);
       if (shorelinePlaces) {
         worldGroup.add(shorelinePlaces);
@@ -4749,7 +4840,24 @@
         steamPlume.position.set(0, 9.72, 0.08);
         clockRoot.add(steamPlume);
 
+        // Multiple lightweight, translucent puffs rise from the brass vents.
+        // No sprite raycasts, so the NPC interaction system remains stable.
+        const wisps=[];
+        const ventPoints=[{x:0,z:0.08,y:9.75},...steamVents];
+        for(let i=0;i<15;i++){
+          const vent=ventPoints[i%ventPoints.length];
+          const mist=new THREE.Mesh(new THREE.SphereGeometry(0.26+(i%4)*0.12,7,6),
+            new THREE.MeshBasicMaterial({color:0xe4f0f2,transparent:true,opacity:0,
+              depthWrite:false,depthTest:true}));
+          mist.name='Steam Clock animated vent plume '+i;
+          mist.userData.vent=vent;
+          mist.userData.offset=i/15;
+          mist.position.set(vent.x,vent.y,vent.z);
+          clockRoot.add(mist);
+          wisps.push(mist);
+        }
         worldGroup.add(clockRoot);
+        state.steamClockState.wisps=wisps;
         state.steamClockState.anchor = { x: hero.x, z: hero.z };
         state.steamClockState.plume = steamPlume;
         visualState.steamClockVisuals.push({ steamMaterial, glassMaterial, brassMaterial });
@@ -5160,6 +5268,12 @@
   }
 
   function enforceWorldBounds() {
+    if(state.landingLab.inside){
+      player.position.x=Math.max(792.75,Math.min(807.25,player.position.x));
+      player.position.z=Math.max(791.1,Math.min(809.25,player.position.z));
+      state.lastSafePosition.copy(player.position);
+      return;
+    }
     const walkBounds = state.world.route.walkBounds;
     const point = { x: player.position.x, z: player.position.z };
     const onLot = waterfrontPlaces && waterfrontPlaces.isWalkableLot
@@ -6425,9 +6539,9 @@
     player.position.y = getGroundY();
 
     enforceWorldBounds();
-    updateStationSideEntranceHint();
-    updateNearestNode();
-    updateAudioZones();
+    if(!state.landingLab.inside)updateStationSideEntranceHint();
+    updateLandingHint();
+    if(!state.landingLab.inside){updateNearestNode();updateAudioZones();}
     updateCameraMotionFeedback(delta, movementProfile);
     updateInteractionTarget();
   }
@@ -6723,18 +6837,6 @@
   function attachEvents() {
     // UI outside the WebGL canvas should immediately regain its cursor.
     // A locked cursor otherwise makes the side menu appear unresponsive.
-    document.addEventListener('keydown', (event) => {
-      // M remains available when the WebGL canvas has captured pointer lock.
-      if (event.code !== 'KeyM' || event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
-      const target = event.target;
-      if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName || ''))) return;
-      const sideMenu = app.querySelector('[data-side-menu]');
-      if (!sideMenu) return;
-      event.preventDefault();
-      if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) document.exitPointerLock();
-      sideMenu.open = !sideMenu.open;
-      updatePointerHelp();
-    });
     const sidebar = app.querySelector('.gastown-minimap');
     if (sidebar) sidebar.addEventListener('pointerdown', () => {
       if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) {
@@ -6837,9 +6939,19 @@
         return;
       }
       if (state.cameraMode === 'street' && event.code === 'KeyE') {
+        if (state.landingLab.inside && interactWithLanding()) { event.preventDefault(); return; }
         if (interactWithHoveredNpc()) { event.preventDefault(); return; }
         if (collectNearbyProp()) { event.preventDefault(); return; }
         if (interactWithStationSideEntrance()) { event.preventDefault(); return; }
+        if (interactWithLanding()) { event.preventDefault(); return; }
+        const steamAnchor=state.steamClockState.anchor || getSteamClockAnchor(state.world);
+        if (steamAnchor && Math.hypot(player.position.x-steamAnchor.x,player.position.z-steamAnchor.z)<16) {
+          event.preventDefault();
+          unlockSteamClockAudio().then(()=>triggerSteamClockChime('manual'));
+          state.steamClockState.steamBurstUntil=performance.now()/1000+8.2;
+          setStatus('Steam Clock: Westminster chimes and a proper steam burst!');
+          return;
+        }
       }
       const consumedPitch = handlePitchKeyControl(event);
       setMoveKey(event.code, true);
@@ -7007,6 +7119,7 @@
       });
       state.sounds.steamClockChime.bell.triggerAttackRelease('2n', now, 0.32);
       state.steamClockState.lastChimeAt = performance.now() / 1000;
+      state.steamClockState.steamBurstUntil=state.steamClockState.lastChimeAt+8.2;
       state.steamClockState.nextChimeAt = (performance.now() / 1000) + (reason === 'proximity' ? 42 : 58);
       return true;
     } catch (error) {
@@ -7016,11 +7129,24 @@
   }
 
   function updateSteamClock(delta, nowSeconds) {
+    const st=state.steamClockState;
+    const burst=nowSeconds<(st.steamBurstUntil||0);
+    const phase=(nowSeconds%17)/17;
+    (st.wisps||[]).forEach((puff,index)=>{
+      const v=puff.userData.vent,t=(phase+puff.userData.offset)%1;
+      // Keep gentle steam breathing between audible quarter-hour chimes.
+      const intensity=burst?0.47:0.17;
+      const rise=burst?3.8:2.2;
+      puff.position.set(v.x+Math.sin(nowSeconds*0.83+index)*t*0.42,
+        v.y+t*rise,v.z+Math.cos(nowSeconds*0.69+index)*t*0.3);
+      puff.scale.setScalar(0.35+t*(burst?2.5:1.4));
+      puff.material.opacity=intensity*Math.sin(Math.PI*t);
+    });
     if (state.steamClockState.plume) {
       const pulse = 0.65 + (Math.sin(nowSeconds * 1.8) * 0.12);
       state.steamClockState.plume.scale.setScalar(pulse);
       state.steamClockState.plume.position.y = 9.4 + (Math.sin(nowSeconds * 2.4) * 0.16);
-      state.steamClockState.plume.material.opacity = 0.08 + Math.max(0, 0.18 - ((nowSeconds - state.steamClockState.lastChimeAt) * 0.07));
+      state.steamClockState.plume.material.opacity = nowSeconds < state.steamClockState.steamBurstUntil ? 0.25 : 0.09;
     }
 
     const steamClock = state.steamClockState.anchor || getSteamClockAnchor(state.world);
@@ -7139,15 +7265,15 @@
         const currentWeather = state.world.weatherPresets[state.activeWeather] || null;
         maybeTriggerLightning(currentWeather);
         updateLightning(currentWeather);
-        maybeSpeakNearNpc(time / 1000);
+        if (!state.landingLab.inside) maybeSpeakNearNpc(time / 1000);
         updateSteamClock(delta, time / 1000);
         updateProgressiveVisibility();
-        updateNpcs(delta);
+        if(!state.landingLab.inside)updateNpcs(delta);
         if (streetLifeScene) streetLifeScene.update(time / 1000);
         // Optional NPC hit tests must never take down the 3D renderer.
         // Disable only interaction picking after a fault, leaving movement,
         // scenery, the minimap, and audio independent of speech bubbles.
-        if (!state.interactionRaycastUnavailable) {
+        if (!state.interactionRaycastUnavailable && !state.landingLab.inside) {
           try {
             updateInteractionTarget();
           } catch (error) {
