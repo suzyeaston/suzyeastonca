@@ -1064,7 +1064,9 @@
     const zoomScale = Math.max(0.70, Math.min(1.48, 1 / Math.sqrt(minimapState.zoom || 1)));
     const desiredDistance = (facingFront ? 3.35 : 3.25) * zoomScale;
     // Never pop the camera three metres overhead on a close collision.
-    const desiredHeight = facingFront ? 2.36 : 2.56;
+    // Lower, consistent shoulder height keeps close building encounters from
+    // pulling the portrait into a straight-down overhead camera.
+    const desiredHeight = facingFront ? 2.25 : 2.38;
 
     if (force || state.avatarElapsed >= (state.avatarCameraNextRefresh || 0)) {
       player.updateMatrixWorld(true);
@@ -1077,7 +1079,8 @@
       // The old isSpawnSafe camera test compressed almost every orbit to
       // 0.48m and triggered the overhead shot seen at Waterfront Station.
       const shoulders = [0, -0.85, 0.85, -1.55, 1.55];
-      let best = { boom: 0.9, offset: 0, score: -Infinity };
+      const previousShoulder = state.avatarCameraShoulder || 0;
+      let best = { boom: 0.72, offset: 0, score: -Infinity };
       for (const offset of shoulders) {
         thirdPersonCameraTo.set(offset, groundOffset + desiredHeight, side * desiredDistance)
           .applyMatrix4(player.matrixWorld);
@@ -1089,15 +1092,23 @@
           thirdPersonCameraRay.near = 0.12;
           thirdPersonCameraRay.far = rayLength;
           const hits = thirdPersonCameraRay.intersectObjects(thirdPersonCameraBlockers, true);
-          // Near-zero hits usually mean the avatar begins inside a bulky
-          // approximate station shell. They cannot define a usable portrait.
-          const obstruction = hits.find(hit => hit.distance > 0.72 && hit.distance < rayLength - 0.1);
+          // Ignore transparent glazing, ground paving and small decoration:
+          // those aren't walls. But DO catch close walls: the old 0.72m
+          // minimum missed the station's near-face and placed the lens inside
+          // its solid brick shell, creating the giant black diagonal wedge.
+          const obstruction = hits.find(hit => hit.distance > 0.06
+            && hit.distance < rayLength - 0.08
+            && !(hit.object.material && hit.object.material.transparent)
+            && !/paving|glass|mullion|sign|sill|trim|canopy|frieze|door handle|tactile/i.test(hit.object.name || ''));
           if (obstruction) {
-            boom = Math.min(boom, Math.max(0.9,
-              (obstruction.distance - 0.24) * desiredDistance / rayLength));
+            boom = Math.min(boom, Math.max(0.48,
+              (obstruction.distance - 0.18) * desiredDistance / rayLength));
           }
         }
-        const score = boom - Math.abs(offset) * 0.42;
+        // Keep the previous shoulder unless another is substantially clearer.
+        // The 100ms winner-takes-all flip caused the top-down / back jitter.
+        const score = boom - Math.abs(offset) * 0.48
+          - Math.abs(offset - previousShoulder) * 0.75;
         if (score > best.score) best = { boom, offset, score };
       }
       state.avatarCameraBoom = best.boom;
@@ -1109,17 +1120,21 @@
       ? state.followCameraDistance : proposed;
     const boom = proposed < old ? proposed : old + (proposed - old) * 0.24;
     state.followCameraDistance = boom;
-    const offset = (state.avatarCameraShoulder || 0) * (boom / desiredDistance);
+    const targetShoulder = (state.avatarCameraShoulder || 0) * (boom / desiredDistance);
+    // Smooth shoulder movement independently of the collision distance so a
+    // side wall cannot jerk the orbit sideways every tenth of a second.
+    const oldShoulder = Number.isFinite(state.followCameraShoulder)
+      ? state.followCameraShoulder : targetShoulder;
+    const offset = oldShoulder + (targetShoulder - oldShoulder) * (force ? 1 : 0.12);
+    state.followCameraShoulder = offset;
     const headroom = desiredHeight;
-    const y = getGroundY() - player.position.y + headroom + state.motion.bobOffset * 0.10;
+    const y = getGroundY() - player.position.y + headroom + state.motion.bobOffset * 0.05;
     camera.position.set(offset, y, side * boom);
-    // Aim toward Suzy's face or backpack even when the safe camera moves
-    // sideways. Maintain an eye-level portrait, not an accidental top view.
-    camera.rotation.set(
-      -Math.atan2(headroom - 1.46, Math.max(0.65, Math.hypot(offset, boom))),
-      Math.atan2(offset, side * boom),
-      0
-    );
+    // Even when the boom is forced close, cap pitch to an eye-level portrait.
+    // A short camera boom must NEVER turn into a top-down view of the backpack.
+    const lensDistance = Math.max(1.75, Math.hypot(offset, boom));
+    const pitch = -Math.min(0.36, Math.atan2(headroom - 1.58, lensDistance));
+    camera.rotation.set(pitch, Math.atan2(offset, side * boom), 0);
   }
 
   function updateSuzyCameraButtons() {
@@ -1159,6 +1174,7 @@
     state.avatarCameraFacing=direction;
     state.followCameraDistance=undefined;
     state.avatarCameraShoulder=0;
+    state.followCameraShoulder=undefined;
     state.avatarCameraNextRefresh=0;
     applyStreetCameraPose();
     setStatus(direction==='front'?'Front portrait: Suzy, facing the lens.':
@@ -1172,11 +1188,41 @@
     if(state.thirdPerson)state.avatarCameraFacing='back';
     state.followCameraDistance=undefined;
     state.avatarCameraShoulder=0;
+    state.followCameraShoulder=undefined;
     state.avatarCameraNextRefresh=0;
     applyStreetCameraPose();
     setStatus(state.thirdPerson?'Behind Suzy: third-person walking.':
       'Back behind Suzy\'s eyes.');
     return state.thirdPerson;
+  }
+
+  function interactWithStationSideEntrance() {
+    if (!stationModel || !stationModel.sideEntranceFor || !state.world) return false;
+    const doorway = stationModel.sideEntranceFor(state.world);
+    if (!doorway || Math.hypot(player.position.x - doorway.threshold.x,
+      player.position.z - doorway.threshold.z) > 4.6) return false;
+    // An exterior navigation shortcut to Cordova; never claim the interior
+    // transit concourse exists in this 3D scene.
+    player.position.set(doorway.forecourt.x, getGroundY(), doorway.forecourt.z);
+    state.lastSafePosition.copy(player.position);
+    state.velocity.set(0, 0, 0);
+    state.followCameraDistance = undefined;
+    state.followCameraShoulder = undefined;
+    state.avatarCameraNextRefresh = 0;
+    applyStreetCameraPose();
+    setStatus('Station side access: arrived at the Cordova entrance.');
+    return true;
+  }
+
+  function updateStationSideEntranceHint() {
+    if (!stationModel || !stationModel.sideEntranceFor || !state.world) return;
+    const doorway = stationModel.sideEntranceFor(state.world);
+    const near = doorway && Math.hypot(player.position.x - doorway.threshold.x,
+      player.position.z - doorway.threshold.z) < 4.6;
+    if (near && !state.nearStationSideDoor) {
+      setStatus('Station East side entrance: press E for the Cordova entrance.');
+    }
+    state.nearStationSideDoor = !!near;
   }
 
   function applyOverviewCameraPose() {
@@ -6209,6 +6255,7 @@
     player.position.y = getGroundY();
 
     enforceWorldBounds();
+    updateStationSideEntranceHint();
     updateNearestNode();
     updateAudioZones();
     updateCameraMotionFeedback(delta, movementProfile);
@@ -6510,6 +6557,7 @@
       if (state.cameraMode === 'street' && event.code === 'KeyE') {
         if (interactWithHoveredNpc()) { event.preventDefault(); return; }
         if (collectNearbyProp()) { event.preventDefault(); return; }
+        if (interactWithStationSideEntrance()) { event.preventDefault(); return; }
       }
       const consumedPitch = handlePitchKeyControl(event);
       setMoveKey(event.code, true);
