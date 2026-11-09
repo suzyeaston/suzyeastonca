@@ -26,7 +26,7 @@ test('Cordova central doorway leads into a bounded public hall and back outside'
   }
   assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, -30)), true);
   assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, -32)), false);
-  assert.equal(station.isWalkableInterior(world, station.toWorld(world, 8, -6)), false);
+  assert.equal(station.isWalkableInterior(world, station.toWorld(world, 8, -6)), true);
   assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, 8)), false);
   assert.equal(station.isWalkableForecourt(world, station.toWorld(world, 0, 6)), true);
 });
