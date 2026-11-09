@@ -92,6 +92,23 @@ test('parking and warehouse visual details match the Cordova reference without b
   assert.ok(warehouse.some(x=>x.name==='STEAMWORKS'));
 });
 
+test('parking cars point into their spaces, not along the rows',()=>{
+  const {GastownWaterfrontPlaces:places}=boot();
+  const group=places.createParking(threeStub(),world);
+  const cars=group.children.filter(item=>/^Parked vehicle /.test(item.name));
+  assert.ok(cars.length>=5);
+  const v={x:0.710,z:0.704};
+  for(const car of cars) {
+    const yaw=car.rotation.y;
+    const axis={x:Math.sin(yaw),z:Math.cos(yaw)};
+    const alignment=axis.x*v.x+axis.z*v.z;
+    assert.ok(alignment>0.99,'car long axis should run into the stall');
+  }
+  const stops=group.children.filter(item=>item.name==='Concrete parking wheel stop');
+  assert.equal(stops.length,cars.length);
+  for(const stop of stops)assert.ok(Math.abs(stop.rotation.y-cars[0].rotation.y)<0.001);
+});
+
 test('harbour skyline includes the fenced service yard and four orange gantry cranes',()=>{
   const {GastownHarbourVista:vista}=boot();
   const root=vista.create(threeStub(),world),nodes=all(root);
