@@ -172,7 +172,10 @@
       proximityCooldownUntil: 0,
       lastPlayerNear: false,
     },
-    landingLab: { inside: false, stage: 'street', returnPosition: null, roomRoot: null, journeyRoot: null, escort: null, lastNear: false, farewellAt: 0, lastStageMessage: '' },
+    landingLab: { inside:false, stage:'street', returnPosition:null, roomRoot:null,
+      journeyRoot:null, escort:null, lastNear:false, farewellAt:0,
+      stageSince:0, greetPlayed:false, lastGreeting:'', indoorPreviousView:null,
+      doorProgress:0, liftDoorProgress:0, carDoorProgress:0, escortPaused:false },
     dialogData: {},
     activeDialogNpcId: '',
     activeDialogEntry: null,
@@ -1168,7 +1171,7 @@
   function applyStreetCameraPose() {
     if(camera.parent!==player)player.add(camera);
     player.rotation.y=state.yaw;
-    if(suzyAvatar)suzyAvatar.visible=!!state.thirdPerson;
+    if(suzyAvatar)suzyAvatar.visible=!!state.thirdPerson && !state.landingLab.inside;
     camera.zoom = state.thirdPerson ? 1 :
       Math.max(0.8, Math.min(1.65, minimapState.zoom || 1));
     if(state.thirdPerson){
@@ -1198,6 +1201,10 @@
 
   function toggleSuzyView() {
     if(state.cameraMode!=='street')return false;
+    if(state.landingLab.inside){
+      setStatus('Indoor camera stays at eye level to prevent wall clipping.');
+      return state.thirdPerson;
+    }
     state.thirdPerson=!state.thirdPerson;
     if(state.thirdPerson)state.avatarCameraFacing='back';
     state.followCameraDistance=undefined;
@@ -1210,107 +1217,176 @@
     return state.thirdPerson;
   }
 
-  function landingTravel(stage, point, status) {
-    const journey=state.landingLab;
-    journey.inside=stage!=='street';
-    journey.stage=stage;
-    if(journey.roomRoot)journey.roomRoot.visible=stage==='lab';
-    if(journey.journeyRoot)journey.journeyRoot.visible=stage==='lobby'||stage==='escort'||stage==='lift';
-    if(journey.escort)journey.escort.visible=stage==='lobby'||stage==='escort';
+  // Audio is intentionally fictional NPC speech, never a voice clone of KK.
+  // Browser speech is reliably available without a cloud voice endpoint.
+  function landingSpeak(phrase) {
+    const lab=state.landingLab;
+    if(lab.lastGreeting===phrase)return;
+    lab.lastGreeting=phrase;
+    setStatus('KK: "'+phrase+'"');
+    if(!state.hasInteracted||!window.speechSynthesis||!window.SpeechSynthesisUtterance)return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance=new window.SpeechSynthesisUtterance(phrase);
+      utterance.rate=0.96;utterance.pitch=0.91;utterance.volume=0.95;
+      utterance.lang='en-CA';
+      const voices=window.speechSynthesis.getVoices();
+      const voice=voices.find(v=>/en[-_]CA/i.test(v.lang))
+        ||voices.find(v=>/^en/i.test(v.lang));
+      if(voice)utterance.voice=voice;
+      window.speechSynthesis.speak(utterance);
+    }catch(error){if(window.console)window.console.warn('[Gastown] Speech unavailable',error);}
+  }
+
+  function landingTravel(stage,point,status) {
+    const lab=state.landingLab;
+    const wasInside=lab.inside;
+    lab.inside=stage!=='street';lab.stage=stage;
+    lab.stageSince=performance.now()/1000;
+    if(lab.roomRoot)lab.roomRoot.visible=stage==='lab';
+    if(lab.journeyRoot)lab.journeyRoot.visible=stage==='lobby'||stage==='escort'||stage==='lift'||stage==='riding';
+    if(lab.escort)lab.escort.visible=stage==='lobby'||stage==='escort'||stage==='lift';
+    if(!wasInside&&lab.inside){
+      lab.indoorPreviousView={thirdPerson:state.thirdPerson,facing:state.avatarCameraFacing};
+      // Indoor rooms are too small for the normal outdoor shoulder boom.
+      // Use eye-level camera to prevent the giant black wall occluding the view.
+      state.thirdPerson=false;
+    }else if(wasInside&&!lab.inside&&lab.indoorPreviousView){
+      state.thirdPerson=lab.indoorPreviousView.thirdPerson;
+      state.avatarCameraFacing=lab.indoorPreviousView.facing;
+      lab.indoorPreviousView=null;
+    }
     player.position.set(point.x,getGroundY(),point.z);
     state.velocity.set(0,0,0);
     state.lastSafePosition.copy(player.position);
     state.followCameraDistance=undefined;
     state.followCameraShoulder=undefined;
     state.avatarCameraNextRefresh=0;
-    // Facing into the lobby / lab with a stable walkable camera pose.
-    state.yaw=0;
-    state.pitch=0;
-    player.rotation.y=state.yaw;
+    state.yaw=0;state.pitch=0;player.rotation.y=0;
     applyStreetCameraPose();
     setStatus(status);
     return true;
   }
 
+  function startLandingJourney(portal) {
+    const lab=state.landingLab;
+    if(lab.stage!=='street')return false;
+    lab.returnPosition={x:portal.threshold.x,z:portal.threshold.z};
+    if(lab.escort)lab.escort.position.set(851.3,0,855.1);
+    lab.lastGreeting='';
+    lab.greetPlayed=false;lab.lastNear=false;
+    lab.doorProgress=0;lab.liftDoorProgress=0;lab.carDoorProgress=0;
+    return landingTravel('lobby',portal.lobbySpawn,
+      'The Landing. Follow KK to the elevator on the left. No interaction key required.');
+  }
+
   function interactWithLanding() {
+    // This is a legacy fallback for players who still press E.
+    // All progression in The Landing also works with ordinary walking.
     if(!waterfrontPlaces||!waterfrontPlaces.landingEntranceFor||!state.world)return false;
     const portal=waterfrontPlaces.landingEntranceFor(state.world);
     if(!portal)return false;
     const lab=state.landingLab;
-    const near=(p,r)=>Math.hypot(player.position.x-p.x,player.position.z-p.z)<r;
-    if(lab.stage==='street'){
-      if(!near(portal.threshold,5.1))return false;
-      lab.returnPosition={x:portal.threshold.x,z:portal.threshold.z};
-      if(lab.escort)lab.escort.position.set(851.3,0,855.1);
-      lab.lastNear=false;
-      return landingTravel('lobby',portal.lobbySpawn,
-        'The Landing lobby. KK: "hey snoozy! elevator is on the left. come on, I’ll show you." Walk up to KK and press E.');
-    }
-    if(lab.stage==='lobby'){
-      if(near(portal.lobbyExit,2.3)){
-        lab.lastNear=false;
-        return landingTravel('street',lab.returnPosition||portal.threshold,'Back outside The Landing on Water Street.');
-      }
-      if(near({x:851.3,z:855.1},3.2)){
-        lab.stage='escort';
-        setStatus('KK: "this way, snoozy." Follow him to the elevator on your left; press E at the lift.');
-        return true;
-      }
-      setStatus('Walk up to KK near the lobby entrance, then press E. The elevator is to the left.');
-      return true;
-    }
-    if(lab.stage==='escort'){
-      const arrived=lab.escort&&Math.hypot(lab.escort.position.x-845,lab.escort.position.z-850.5)<1.2;
-      if(near({x:845,z:851},3.9)&&arrived){
-        lab.lastNear=false;
-        return landingTravel('lift',portal.elevatorCar,
-          'Elevator doors close. Floor 6 button is glowing. Press E to ride up.');
-      }
-      setStatus('Follow KK to the left-side elevator. He will wait for you there.');
-      return true;
-    }
-    if(lab.stage==='lift'){
-      lab.farewellAt=performance.now()/1000;
-      if(lab.roomRoot&&lab.roomRoot.userData.greeter) {
-        const kk=lab.roomRoot.userData.greeter;
-        kk.visible=true;
-        kk.position.set(801,0,806.7);
-      }
-      lab.lastNear=false;
-      return landingTravel('lab',portal.roomSpawn,
-        'Ding! Sixth floor. KK: "see ya snoozy!" He heads back to the elevator. Welcome to the imaginary Multimodal Lab.');
-    }
-    if(lab.stage==='lab'){
-      if(near(portal.roomExit,3.4)){
-        lab.lastNear=false;
-        return landingTravel('street',lab.returnPosition||portal.threshold,'Back outside The Landing. See ya snoozy!');
-      }
-      setStatus('Multimodal Lab, floor six. Explore the harbour window and piano; return to the glass exit and press E.');
-      return true;
-    }
-    return false;
+    if(lab.stage==='street'&&Math.hypot(player.position.x-portal.threshold.x,
+      player.position.z-portal.threshold.z)<5.3)return startLandingJourney(portal);
+    return lab.inside;
   }
 
   function updateLandingEscort(delta,nowSeconds) {
     const lab=state.landingLab;
-    if(lab.stage==='escort'&&lab.escort){
-      const target={x:845,z:850.5},kk=lab.escort;
-      const dx=target.x-kk.position.x,dz=target.z-kk.position.z;
-      const d=Math.hypot(dx,dz);
-      if(d>0.08){
-        const step=Math.min(d,delta*1.85);
+    if(!lab.inside||!lab.journeyRoot&&!lab.roomRoot)return;
+    const portal=waterfrontPlaces&&waterfrontPlaces.landingEntranceFor(state.world);
+    if(!portal)return;
+    const near=(point,r)=>Math.hypot(player.position.x-point.x,player.position.z-point.z)<r;
+    const elapsed=nowSeconds-lab.stageSince;
+    const data=lab.journeyRoot&&lab.journeyRoot.userData;
+    const approach=(current,target,speed)=>current+(target-current)*Math.min(1,delta*speed);
+    const setDoors=()=>{
+      if(!data)return;
+      const entryTarget=lab.stage==='lobby'||lab.stage==='escort'?1:0;
+      lab.doorProgress=approach(lab.doorProgress,entryTarget,3);
+      data.entranceLeft.position.x=data.entranceLeftX-0.85*lab.doorProgress;
+      data.entranceRight.position.x=data.entranceRightX+0.85*lab.doorProgress;
+      const liftTarget=(lab.stage==='escort'&&lab.escort&&
+        Math.hypot(lab.escort.position.x-845,lab.escort.position.z-850.5)<0.85)
+        ||lab.stage==='lift'?1:0;
+      lab.liftDoorProgress=approach(lab.liftDoorProgress,liftTarget,3.4);
+      data.liftLeft.position.z=data.liftLeftZ-1.16*lab.liftDoorProgress;
+      data.liftRight.position.z=data.liftRightZ+1.16*lab.liftDoorProgress;
+      const carTarget=lab.stage==='lift'&&elapsed<1.35?1:0;
+      lab.carDoorProgress=approach(lab.carDoorProgress,carTarget,3.2);
+      data.carLeft.position.x=data.carLeftX-1.2*lab.carDoorProgress;
+      data.carRight.position.x=data.carRightX+1.2*lab.carDoorProgress;
+    };
+    if(lab.stage==='lobby'){
+      if(near({x:851.3,z:855.1},4.4)&&!lab.greetPlayed){
+        lab.greetPlayed=true;
+        landingSpeak('hi snoozy! come on, I’ll show you the elevator.');
+      }
+      if(lab.greetPlayed&&elapsed>2.2&&near({x:851.3,z:855.1},3.0)){
+        lab.stage='escort';lab.stageSince=nowSeconds;
+        setStatus('KK is leading the way. Stay close; he waits for you.');
+      }
+      // Leave via the entry only after moving away from the initial spawn.
+      if(elapsed>2.5&&near(portal.lobbyExit,0.7)){
+        landingTravel('street',lab.returnPosition||portal.threshold,
+          'Back on Water Street outside The Landing.');
+      }
+    }else if(lab.stage==='escort'&&lab.escort){
+      const kk=lab.escort;
+      const target={x:845,z:850.5};
+      const dx=target.x-kk.position.x,dz=target.z-kk.position.z,d=Math.hypot(dx,dz);
+      const following=Math.hypot(kk.position.x-player.position.x,kk.position.z-player.position.z);
+      if(d>0.08&&following<4.2){
+        const step=Math.min(d,delta*1.42);
         kk.position.x+=dx/d*step;kk.position.z+=dz/d*step;
         kk.rotation.y=Math.atan2(dx,dz);
+        lab.escortPaused=false;
+      }else if(d>0.08&&!lab.escortPaused){
+        lab.escortPaused=true;
+        setStatus('KK waits for you. Walk closer to keep following.');
+      }
+      if(d<=0.85){
+        if(!lab.calledLift){
+          lab.calledLift=true;
+          landingSpeak('here we are. I’ll call the elevator.');
+        }
+        if(near({x:845,z:851},2.4)&&elapsed>1.2&&lab.liftDoorProgress>0.82){
+          lab.calledLift=false;
+          landingTravel('lift',portal.elevatorCar,'KK steps into the elevator with Suzy. Going up to six.');
+        }
+      }
+    }else if(lab.stage==='lift'){
+      if(elapsed>2.7){
+        lab.stage='riding';lab.stageSince=nowSeconds;
+        setStatus('Elevator riding to floor six…');
+      }
+    }else if(lab.stage==='riding'){
+      if(elapsed>2.5){
+        landingTravel('lab',portal.roomSpawn,'Sixth floor. Welcome to the Multimodal Media Lab.');
+        lab.farewellAt=nowSeconds;
+        if(lab.roomRoot&&lab.roomRoot.userData.greeter){
+          const kk=lab.roomRoot.userData.greeter;
+          kk.visible=true;kk.position.set(800.9,0,807);
+        }
+        landingSpeak('see ya snoozy!');
+      }
+    }else if(lab.stage==='lab'){
+      if(lab.roomRoot&&lab.roomRoot.userData.greeter){
+        const kk=lab.roomRoot.userData.greeter;
+        const t=nowSeconds-lab.farewellAt;
+        if(t>0.6&&t<4.8){
+          kk.position.z=Math.min(809,807+(t-0.6)*0.5);
+          kk.rotation.y=Math.PI;
+        }else if(t>=4.8)kk.visible=false;
+      }
+      if(elapsed>2.7&&near(portal.roomExit,1.0)){
+        landingTravel('street',lab.returnPosition||portal.threshold,
+          'Outside The Landing on Water Street.');
+        lab.greetPlayed=false;lab.lastGreeting='';
       }
     }
-    if(lab.stage==='lab'&&lab.roomRoot&&lab.roomRoot.userData.greeter){
-      const kk=lab.roomRoot.userData.greeter;
-      const t=nowSeconds-lab.farewellAt;
-      if(t>0.8&&t<4.8){
-        kk.position.z=Math.min(809.35,806.7+(t-0.8)*0.7);
-        kk.rotation.y=Math.PI;
-      } else if(t>=4.8)kk.visible=false;
-    }
+    setDoors();
   }
 
   function updateLandingHint() {
@@ -1318,15 +1394,12 @@
     const portal=waterfrontPlaces.landingEntranceFor(state.world);
     if(!portal)return;
     const lab=state.landingLab;
-    if(lab.stage==='street'){
-      const dist=Math.hypot(player.position.x-portal.threshold.x,player.position.z-portal.threshold.z);
-      if(dist<4.9&&!lab.lastNear)setStatus('The Landing: double glass doors at 375 Water. Press E to enter the lobby.');
-      lab.lastNear=dist<4.9;
-      // Crossing the door threshold is a walk-in action, not a solid-wall glitch.
-      if(dist<1.1&&lab.lastNear&&state.isRunning)interactWithLanding();
-    } else if(lab.stage==='lobby') {
-      lab.lastNear=false;
-    }
+    if(lab.stage!=='street')return;
+    const distance=Math.hypot(player.position.x-portal.threshold.x,
+      player.position.z-portal.threshold.z);
+    if(distance<4.9&&!lab.lastNear)setStatus('The Landing: walk into the glass doors; they open automatically.');
+    lab.lastNear=distance<4.9;
+    if(distance<1.35&&state.isRunning)startLandingJourney(portal);
   }
 
   function interactWithStationSideEntrance() {
@@ -5339,7 +5412,7 @@
       const stage=state.landingLab.stage;
       const bounds=stage==='lab'
         ? {minX:792.75,maxX:807.25,minZ:791.1,maxZ:809.25}
-        : stage==='lift'
+        : stage==='lift'||stage==='riding'
         ? {minX:878.4,maxX:881.6,minZ:848.5,maxZ:851.8}
         : {minX:843.0,maxX:857.0,minZ:841.0,maxZ:858.6};
       player.position.x=Math.max(bounds.minX,Math.min(bounds.maxX,player.position.x));
@@ -7012,7 +7085,7 @@
         return;
       }
       if (state.cameraMode === 'street' && event.code === 'KeyE') {
-        if (state.landingLab.inside && interactWithLanding()) { event.preventDefault(); return; }
+        if (state.landingLab.inside) { event.preventDefault(); return; }
         if (interactWithHoveredNpc()) { event.preventDefault(); return; }
         if (collectNearbyProp()) { event.preventDefault(); return; }
         if (interactWithStationSideEntrance()) { event.preventDefault(); return; }
@@ -7340,7 +7413,7 @@
         updateLightning(currentWeather);
         if (!state.landingLab.inside) maybeSpeakNearNpc(time / 1000);
         updateSteamClock(delta, time / 1000);
-        updateLandingEscort(delta,time/1000);
+        if(state.isRunning)updateLandingEscort(delta,time/1000);
         updateProgressiveVisibility();
         if(!state.landingLab.inside)updateNpcs(delta);
         if (streetLifeScene) streetLifeScene.update(time / 1000);
