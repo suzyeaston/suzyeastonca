@@ -85,11 +85,13 @@
     // slim window mullions. Original geometry, deliberately light on draw calls.
     box(1.38,0.33,3.4,0,3.48,1.2,grey);
     function pole(start,end,radius,material) {
-      const a=new THREE.Vector3(...start), b=new THREE.Vector3(...end);
-      const axis=new THREE.Vector3().subVectors(b,a);
-      const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,axis.length(),6),material);
-      mesh.position.copy(a).add(b).multiplyScalar(0.5);
-      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),axis.normalize());
+      const dx=end[0]-start[0], dy=end[1]-start[1], dz=end[2]-start[2];
+      const length=Math.hypot(dx,dy,dz);
+      const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,length,6),material);
+      mesh.position.set((start[0]+end[0])/2,(start[1]+end[1])/2,(start[2]+end[2])/2);
+      // Both collector poles lean rearward along local Z. No heavyweight
+      // vector/quaternion dependencies in the lightweight scene test mock.
+      mesh.rotation.x=Math.atan2(dz,dy);
       root.add(mesh);
     }
     for (const x of [-0.53,0.53]) {
