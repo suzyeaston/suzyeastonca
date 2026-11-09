@@ -58,8 +58,7 @@
     const dz = point.z - anchor.z;
     const localX = dx * Math.cos(anchor.yaw) - dz * Math.sin(anchor.yaw);
     const localZ = dx * Math.sin(anchor.yaw) + dz * Math.cos(anchor.yaw);
-    // A walkable frontage that joins the original corridor but stops at the doors.
-    // Public exterior connection around the east end, not a playable interior.
+    // Connected public forecourt and eastern accessible-side walking approach.
     const mainFrontage = Math.abs(localX) <= 55 && localZ >= 4.7 && localZ <= 31;
     const lotSidePassage = localX >= 52.5 && localX <= 64
       && localZ >= -10 && localZ <= 9;
@@ -75,7 +74,11 @@
     const dx = point.x - a.x, dz = point.z - a.z;
     const x = dx * Math.cos(a.yaw) - dz * Math.sin(a.yaw);
     const z = dx * Math.sin(a.yaw) + dz * Math.cos(a.yaw);
-    return Math.abs(x) <= 5.4 && z >= -13.25 && z <= 5.1;
+    // Expanded historic hall plus public east-west side-entry circulation.
+    // The corridor joins the same concourse, rather than snapping to Cordova.
+    const grandHall = Math.abs(x) <= 18.9 && z >= -31.5 && z <= 5.1;
+    const eastPassage = x >= 18.3 && x <= 56.5 && z >= -6.15 && z <= -1.85;
+    return grandHall || eastPassage;
   }
 
   function sideEntranceFor(world) {
@@ -84,6 +87,7 @@
       threshold: toWorld(world, 55.1, -4.0),
       approach: toWorld(world, 60.1, -4.0),
       forecourt: toWorld(world, 23.0, 8.0),
+      interior: toWorld(world, 18.0, -4.0),
       label: 'Waterfront Station east side access'
     };
   }
@@ -215,192 +219,174 @@
       box('Window mullion', x, height * 0.5 + 0.2, 0.34, 0.09, height - 0.6, 0.13, iron);
     }
 
-    // Massing / wing sections. Three street-side storeys with raised parapet.
-    // Articulated shell around the central public hall, rather than a solid
-    // box swallowing the walker. Keep the original recognizable roofline.
-    box('Red-brick CPR station body', -30.5, 8.1, -8.5, 45, 16.2, 17, brick);
-    box('CPR station east wing', 30.5, 8.1, -8.5, 45, 16.2, 17, brick);
-    box('CPR station hall upper masonry', 0, 13.7, -8.5, 16, 5, 17, brick);
-    box('CPR station hall rear masonry', 0, 5.6, -16.35, 16, 11.2, 1.3, brick);
+    // Large, single-volume public hall. Authoring scale approximates the
+    // *character* of the 1914 station and is not a measured interior plan.
+    // The east wing is split at ground level so the side-entry corridor has
+    // real visual and pedestrian continuity with the main concourse.
+    box('Red-brick CPR station body', -38, 8.1, -17, 30, 16.2, 34, brick);
+    for (const side of [-1, 1]) {
+      if (side > 0) {
+        box('CPR station east wing', 38, 8.1, -20.5, 30, 16.2, 27, brick);
+        box('East wing corridor header', 38, 10.6, -3.75, 30, 11.2, 7.5, brick);
+        box('East wing Cordova edge', 38, 3.0, -0.42, 30, 6, 0.85, brick);
+      }
+    }
+    box('CPR station hall upper masonry', 0, 15.4, -17, 46, 2.2, 34, brick);
+    box('CPR station hall rear masonry', 0, 7.8, -33.75, 46, 15.6, 0.5, brick);
     box('Projecting central entry block', -15.5, 7.2, -0.15, 22, 14.4, 1.2, brick);
     box('Projecting east entry block', 15.5, 7.2, -0.15, 22, 14.4, 1.2, brick);
     box('Entry block crosshead above hall', 0, 9.5, -0.15, 9, 9.3, 1.2, brick);
-    box('Ground-floor ashlar plinth', -30.5, 0.5, -0.12, 45.5, 1, 0.62, stoneShadow);
-    box('Ground-floor ashlar east plinth', 30.5, 0.5, -0.12, 45.5, 1, 0.62, stoneShadow);
+    box('Ground-floor ashlar plinth', -38, 0.5, -0.12, 30, 1, 0.62, stoneShadow);
+    box('Ground-floor ashlar east plinth', 38, 0.5, -0.12, 30, 1, 0.62, stoneShadow);
     box('Primary stone belt course', 0, 10.3, 0.32, 107.5, 0.62, 0.82, stone);
     box('Upper stone belt course', 0, 15.5, -0.05, 107.4, 0.46, 0.84, stone);
     box('Projecting entablature', 0, 11.0, 1.35, 53.5, 0.96, 3.8, stone);
     box('Entablature frieze', 0, 11.65, 1.53, 53.2, 0.44, 3.7, stoneShadow);
-    box('Pediment and cornice', 0, 16.55, -0.06, 109, 0.65, 18.7, stone);
-    box('Upper coping', 0, 17.07, 0.2, 108.5, 0.18, 18, stoneShadow);
+    box('Pediment and cornice', 0, 16.55, -0.06, 109, 0.65, 34.5, stone);
+    box('Upper coping', 0, 17.07, 0.2, 108.5, 0.18, 34.5, stoneShadow);
     box('Central raised parapet', 0, 17.75, -0.3, 23, 1.25, 0.78, stone);
-    box('Lower roof', 0, 16.5, -8.5, 106, 0.25, 17, iron);
+    box('Lower roof', 0, 16.5, -17, 106, 0.25, 34, iron);
 
-    // The historic concourse is a reference-inspired playable stage, not a
-    // transit operator's engineering plan. Ceiling, columns, floor rhythm and
-    // public orientation are modeled; restricted/fare-paid areas stay closed.
-    const hallFloor = new THREE.MeshStandardMaterial({ color: 0xd2bea0, roughness: 0.83 });
+    const hallFloor = new THREE.MeshStandardMaterial({ color: 0xd2cabc, roughness: 0.83 });
     const hallTrim = new THREE.MeshStandardMaterial({ color: 0xeee2cf, roughness: 0.8 });
     const hallDark = new THREE.MeshStandardMaterial({ color: 0x594f46, roughness: 0.8 });
-    const warmLight = new THREE.MeshBasicMaterial({ color: 0xffe8b4 });
-    box('Waterfront public concourse tiled floor', 0, 0.046, -6.6, 14.7, 0.09, 19.5, hallFloor);
-    box('Waterfront concourse coffered ceiling', 0, 11.0, -7.8, 14.6, 0.26, 16.5, hallTrim);
-    for (let z = -13; z <= -1; z += 3) {
-      box('Concourse stone floor joint', 0, 0.098, z, 14, 0.008, 0.035, hallDark);
-      box('Concourse ceiling cross beam', 0, 10.72, z, 14.4, 0.4, 0.35, hallTrim);
-    }
-    for (let x = -6; x <= 6; x += 3) {
-      box('Concourse longitudinal tile joint', x, 0.099, -6.8, 0.03, 0.008, 18.6, hallDark);
-    }
-    for (const x of [-6.65, 6.65]) {
-      box('Historic hall dado wall', x, 1.4, -7.5, 0.26, 2.8, 14.8, stone);
-      box('Historic hall wall plaster', x, 6.55, -7.5, 0.28, 7.55, 14.8, hallTrim);
-      for (const z of [-11.8, -6.8, -1.8]) {
-        cylinder('Concourse pilaster', x, 5.15, z, 0.34, 0.38, 8.2, stone, 12);
-        box('Concourse pilaster capital', x, 9.37, z, 0.85, 0.38, 0.85, stoneShadow);
-      }
-    }
-    for (const z of [-10.5, -4.3]) {
-      cylinder('Waterfront concourse pendant stem', 0, 10.0, z, 0.07, 0.07, 1.75, brass, 10);
-      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.68, 14, 10), warmLight);
-      lamp.name = 'Historic concourse pendant glow';
-      lamp.position.set(0, 8.9, z);
-      root.add(lamp);
-    }
-    // Reference-led interior detail: the real waiting hall reads as an airy
-    // Beaux-Arts space, with ivory coffers, blush frieze, tall Ionic bays and
-    // contrasting terrazzo borders, not a featureless grey concrete box.
-    // Coordinates are still authored approximations, not measured floor plans.
     const terrazzo = new THREE.MeshStandardMaterial({ color: 0xb7b3a8, roughness: 0.9 });
     const rose = new THREE.MeshStandardMaterial({ color: 0xa77b81, roughness: 0.86 });
     const inset = new THREE.MeshStandardMaterial({ color: 0xc3c8c5, roughness: 0.87 });
     const mural = new THREE.MeshStandardMaterial({ color: 0x99715e, roughness: 0.82 });
-    // Pink/grey geometric terrazzo banding flows toward the interior arches.
-    for (const x of [-5.6, 5.6]) {
-      box('Concourse terrazzo longitudinal border', x, 0.113, -6.7, 0.75, 0.018, 17.2, rose);
-    }
-    for (const z of [-12.7, -8.7, -4.7, -0.7]) {
-      box('Concourse terrazzo cross border', 0, 0.114, z, 11.9, 0.018, 0.34, rose);
-    }
-    for (const x of [-3.4, 0, 3.4]) {
-      for (const z of [-11.1, -7.1, -3.1]) {
-        box('Concourse terrazzo inset', x, 0.114, z, 1.8, 0.015, 1.65, terrazzo);
-      }
-    }
-    // A repeated, two-axis coffer grid and inset panels make the ceiling
-    // readable even in low graphics mode without downloading image textures.
-    for (const x of [-5.4, -3.6, -1.8, 0, 1.8, 3.6, 5.4]) {
-      box('Waterfront ceiling longitudinal coffer rib', x, 10.65, -7.6,
-        0.22, 0.48, 16.4, hallTrim);
-    }
-    for (let z = -14; z <= -1; z += 1.8) {
-      box('Waterfront ceiling transverse coffer rib', 0, 10.63, z,
-        13.1, 0.47, 0.22, hallTrim);
-    }
-    for (const x of [-4.5, -2.7, -0.9, 0.9, 2.7, 4.5]) {
-      for (let z = -13.1; z <= -1.9; z += 1.8) {
-        box('Waterfront recessed blue-grey coffer panel', x, 10.92, z,
-          1.42, 0.012, 1.42, inset);
-      }
-    }
-    // Full-height warm ivory hall columns, each with circular bases/capitals
-    // and a terracotta-pink frieze overhead.
-    for (const side of [-1, 1]) {
-      const x = side * 5.72;
-      box('Concourse rose frieze', side * 6.26, 9.1, -7.4,
-        0.19, 1.28, 14.3, rose);
-      box('Concourse cream crown molding', side * 6.29, 9.83, -7.4,
-        0.3, 0.22, 14.5, hallTrim);
-      for (const z of [-12.2, -8.1, -4.0, 0.1]) {
-        cylinder('Waterfront hall Ionic column', x, 4.9, z,
-          0.36, 0.44, 8.3, hallTrim, 16);
-        cylinder('Waterfront hall column plinth', x, 0.4, z,
-          0.64, 0.7, 0.75, stone, 16);
-        box('Waterfront hall column capital', x, 9.11, z,
-          1.05, 0.35, 1.05, hallTrim);
-      }
-      for (const z of [-10.3, -6.2, -2.1]) {
-        box('Heritage mural inset panel', side * 6.4, 8.98, z,
-          0.09, 0.72, 1.7, mural);
-      }
-    }
-    // Arcade-inspired terminal wall: three recessed arch bays are a closer
-    // visual match to the station photographs than the former black billboard.
     const archDark = new THREE.MeshStandardMaterial({ color: 0x514a44, roughness: 0.84 });
-    for (const x of [-3.75, 0, 3.75]) {
-      box('Concourse arch recessed opening', x, 3.15, -13.9,
-        2.7, 6.3, 0.1, archDark);
+    const warmLight = new THREE.MeshBasicMaterial({ color: 0xffe8b4 });
+    // A single contiguous 44 m wide, 34 m deep public floor, with the
+    // central Cordova entrance aligned to the east pedestrian connector.
+    box('Waterfront public concourse tiled floor', 0, 0.046, -16.0, 44.4, 0.09, 35.7, hallFloor);
+    box('Waterfront east entrance passage floor', 39, 0.046, -4, 34.5, 0.09, 4.5, hallFloor);
+    box('Waterfront concourse coffered ceiling', 0, 14.45, -17, 44.2, 0.26, 34, hallTrim);
+    box('Waterfront east connector plaster ceiling', 39, 5.12, -4, 34.5, 0.22, 6, hallTrim);
+    for (let z = -30; z <= -1; z += 4.2) {
+      box('Concourse stone floor joint', 0, 0.098, z, 40, 0.008, 0.05, hallDark);
+      box('Concourse ceiling cross beam', 0, 14.15, z, 42, 0.4, 0.37, hallTrim);
+      box('Concourse terrazzo cross border', 0, 0.114, z, 38.4, 0.018, 0.34, rose);
+    }
+    for (const x of [-17.5, 17.5]) {
+      box('Concourse terrazzo longitudinal border', x, 0.113, -16.4, 0.75, 0.018, 33.8, rose);
+    }
+    for (const x of [-12, -6, 0, 6, 12]) {
+      box('Concourse longitudinal tile joint', x, 0.099, -16, 0.035, 0.008, 32.7, hallDark);
+      for (let z = -28; z <= -4; z += 6) {
+        box('Concourse terrazzo inset', x, 0.114, z, 3, 0.015, 2.9, terrazzo);
+      }
+    }
+    // Broad 2-axis ceiling coffers, their recessed blue-grey panels visible
+    // from the entrances. Wider bays allow the 14 m ceiling to read properly.
+    for (let x = -20; x <= 20; x += 2.5) {
+      box('Waterfront ceiling longitudinal coffer rib', x, 14.08, -17,
+        0.22, 0.48, 33.5, hallTrim);
+    }
+    for (let z = -32; z <= -2; z += 2.5) {
+      box('Waterfront ceiling transverse coffer rib', 0, 14.07, z,
+        42, 0.47, 0.22, hallTrim);
+    }
+    for (let x = -18.75; x <= 18.75; x += 2.5) {
+      for (let z = -30.75; z <= -3.25; z += 2.5) {
+        box('Waterfront recessed blue-grey coffer panel', x, 14.33, z,
+          2.0, 0.012, 2.0, inset);
+      }
+    }
+    // Side wall sections are open to public circulation at the east entry.
+    for (const side of [-1, 1]) {
+      const x = side * 21.5;
+      box('Concourse cream crown molding', side * 21.87, 13.25, -17,
+        0.33, 0.29, 33, hallTrim);
+      box('Concourse rose frieze', side * 21.83, 12.2, -17,
+        0.18, 1.5, 33.2, rose);
+      for (let z = -30; z <= -12; z += 6) {
+        box('Historic hall dado wall', x, 1.4, z, 0.3, 2.8, 5.3, stone);
+        box('Historic hall wall plaster', x, 7.0, z, 0.3, 8.4, 5.3, hallTrim);
+        box('Heritage mural inset panel', side * 21.67, 12.2, z,
+          0.11, 0.76, 2.1, mural);
+      }
+      // The side-entry bay, z=-4, stays completely open at floor level.
+      for (let z = -29; z <= 1; z += 6) {
+        cylinder('Waterfront hall Ionic column', side * 19.9, 6.65, z,
+          0.48, 0.58, 11.6, hallTrim, 16);
+        cylinder('Waterfront hall column plinth', side * 19.9, 0.44, z,
+          0.71, 0.75, 0.84, stone, 16);
+        box('Waterfront hall column capital', side * 19.9, 12.55, z,
+          1.2, 0.39, 1.2, hallTrim);
+      }
+    }
+    for (const z of [-24.4, -13.2, -2.0]) {
+      cylinder('Waterfront concourse pendant stem', 0, 13.05, z,
+        0.075, 0.075, 2.0, brass, 10);
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.85, 14, 10), warmLight);
+      lamp.name = 'Historic concourse pendant glow';
+      lamp.position.set(0, 11.7, z);
+      root.add(lamp);
+    }
+    // Arched rear arcade and clock are part of a *deeper* visual terminus.
+    // The dark openings indicate onward transit circulation, not walkable
+    // fare-paid space. Their backs are beyond the publicly walkable boundary.
+    for (const x of [-12.0, 0, 12.0]) {
+      box('Concourse arch recessed opening', x, 4.65, -33.36,
+        7.1, 9.3, 0.1, archDark);
       const arch = new THREE.Mesh(
-        new THREE.TorusGeometry(1.38, 0.2, 8, 20, Math.PI),
+        new THREE.TorusGeometry(3.6, 0.28, 8, 24, Math.PI),
         hallTrim
       );
-      arch.position.set(x, 6.3, -13.73);
       arch.name = 'Historic concourse arcade arch';
+      arch.position.set(x, 9.3, -33.1);
       root.add(arch);
-      for (const side of [-1, 1]) {
-        cylinder('Arcade opening ivory pier', x + side * 1.48, 3.08, -13.71,
-          0.19, 0.24, 6.15, hallTrim, 10);
+      for (const edge of [-1, 1]) {
+        cylinder('Arcade opening ivory pier', x + edge * 3.7, 4.55, -33.09,
+          0.27, 0.32, 9.1, hallTrim, 12);
       }
     }
     const heritageClock = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.56, 0.56, 0.08, 20), brass
+      new THREE.CylinderGeometry(0.68, 0.68, 0.09, 24), brass
     );
     heritageClock.name = 'Waterfront historic arcade clock surround';
-    heritageClock.position.set(0, 8.75, -13.56);
+    heritageClock.position.set(0, 12.1, -33.07);
     heritageClock.rotation.x = Math.PI / 2;
     root.add(heritageClock);
-    sign('WATERFRONT', 0, 6.24, -13.69, 2.45, 0.34,
-      '#f5f0e3', 'bold 62px Arial, sans-serif');
-    root.userData.heritageHallReference = 'SRA renovation / user-supplied interior photos';
-    root.userData.ornamentProcedural = true;
-
-    // Retain terminal wayfinding as a small sign rather than a black wall.
-    sign('WATERFRONT STATION', 0, 2.35, -13.68, 3.0, 0.4, '#f7e7c4', 'bold 70px Georgia, serif');
-    sign('PUBLIC CONCOURSE', 0, 1.85, -13.67, 2.5, 0.28, '#e9d8b5', 'bold 65px Arial, sans-serif');
-    // Leave a pedestrian-width central entrance gap in every foreground
-    // surface. Glass panels at either side remain visible as open doors.
+    sign('WATERFRONT', 0, 9.2, -33.0, 3.0, 0.43, '#f5f0e3',
+      'bold 62px Arial, sans-serif');
+    sign('WATERFRONT STATION', 0, 3.5, -33.0, 5, 0.42, '#f7e7c4',
+      'bold 70px Georgia, serif');
+    sign('PUBLIC CONCOURSE', 0, 2.8, -32.99, 4.6, 0.32, '#e9d8b5',
+      'bold 65px Arial, sans-serif');
     root.userData.interiorApproximate = true;
     root.userData.publicHallOnly = true;
+    root.userData.heritageHallReference = 'SRA renovation / user-supplied interior photos';
+    root.userData.ornamentProcedural = true;
+    root.userData.interiorHallDimensions = { width: 44.4, depth: 35.7, ceiling: 14.45 };
+    root.userData.eastEntryConnectsToHall = true;
 
-    // Parking-lot side of the station: glass doors and the exterior
-    // pedestrian connector seen in the user-supplied Waterfront reference.
-    // The interior is NOT modeled; E at the side access leads to the
-    // walkable Cordova front entrance.
-    box('Station East side access door recess', 53.12, 2.08, -4.0,
-      0.16, 4.14, 3.58, iron);
-    box('Station East side entrance glass double doors', 53.25, 1.88, -4.0,
-      0.12, 3.6, 2.78, glass);
-    [-5.55, -2.45].forEach(z => box('Station East entrance stone jamb',
-      53.35, 2.04, z, 0.32, 4.08, 0.23, stone));
+    // East Station / parking-lot entrance shares the historic hall volume.
+    // This is a plausible visual public connector, not a surveyed doorway.
+    // No opaque pane spans the passage: visitors may walk in from the lot.
+    const sideDoorGlass = new THREE.MeshStandardMaterial({
+      color:0x587a88,roughness:0.19,metalness:0.12,
+      transparent:true,opacity:0.66,side:THREE.DoubleSide
+    });
+    for (const dz of [-1.53, 1.53]) {
+      box('Station East open leaf glass door', 53.3, 1.91, -4.0 + dz,
+        0.10, 3.5, 0.54, sideDoorGlass);
+      box('Station East entrance stone jamb', 53.36, 2.04,
+        -4.0 + dz * 1.15, 0.3, 4.08, 0.26, stone);
+    }
     box('Station East entrance stone header', 53.38, 4.12, -4.0,
-      0.38, 0.35, 3.52, stone);
+      0.38, 0.35, 4.5, stone);
     box('Station East entrance small awning', 54.25, 4.4, -4.0,
-      2.45, 0.28, 4.2, stoneShadow);
-    box('Station East side entry door handle', 53.40, 1.82, -3.46,
-      0.17, 0.36, 0.08, brass);
-    const sideLabel = sign('STATION SIDE ACCESS', 53.54, 4.80, -4.0,
+      2.45, 0.28, 4.8, stoneShadow);
+    const sideLabel = sign('STATION SIDE ACCESS', 53.54, 4.82, -4.0,
       3.7, 0.42, '#f5e5be', 'bold 60px Arial, sans-serif');
     sideLabel.rotation.y = Math.PI / 2;
     box('Station East to Cordova pedestrian connection', 58.5, 0.063, 1.0,
       12.2, 0.125, 14.2, pavement);
-    box('Station east entry tactile threshold', 55.7, 0.13, -4.0,
+    box('Waterfront east entry tactile threshold', 55.7, 0.13, -4.0,
       2.3, 0.055, 3.0, stoneShadow);
-
-    // Street-level detail pass: readable arrival threshold and inset glass,
-    // without closing the accessible walking corridor or inventing new doors.
-    const warmGlass = new THREE.MeshStandardMaterial({
-      color: 0x65818c, emissive: 0x6c4c25, emissiveIntensity: 0.16,
-      roughness: 0.23, metalness: 0.19
-    });
-    box('Station East glazed door warm inner reflection', 53.17, 2.0, -4.0,
-      0.045, 3.30, 2.43, warmGlass);
-    [-4.79, -3.21].forEach(z => box('Station East double door vertical rail',
-      53.49, 1.91, z, 0.08, 3.42, 0.045, brass));
-    box('Station East canopy dark reveal', 54.4, 4.24, -4.0,
-      2.2, 0.1, 4.0, iron);
-    box('Station East access tactile paving edge', 56.9, 0.146, -4,
+    box('Station East access tactile paving edge', 56.9, 0.146, -4.0,
       0.12, 0.014, 3.25, brass);
-    // Thin joint lines keep large flat concrete areas from reading as one slab.
     for (let i = 0; i < 4; i += 1) {
       box('Station East side path expansion joint ' + i,
         54.2 + i * 2.5, 0.132, 1.0,

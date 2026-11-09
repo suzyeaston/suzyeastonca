@@ -131,6 +131,38 @@
         board.position.set(0,3.12,-5.48); root.add(board);
       }
     }
+    // Original website house-ad, locally generated, with no third-party
+    // transit branding or remote textures. Keep TransLink bus livery intact.
+    // One panel faces each side of the illustrated electric trolley.
+    if (typeof document !== 'undefined' && document.createElement) {
+      const adCanvas = document.createElement('canvas');
+      adCanvas.width = 1024;
+      adCanvas.height = 256;
+      const ctx = adCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#11151d';
+        ctx.fillRect(0, 0, 1024, 256);
+        ctx.fillStyle = '#75fa73';
+        ctx.font = 'bold 112px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('suzyeaston.ca', 512, 128, 965);
+        const adTexture = new THREE.CanvasTexture(adCanvas);
+        adTexture.colorSpace = THREE.SRGBColorSpace;
+        const adMaterial = new THREE.MeshBasicMaterial({
+          map: adTexture, side: THREE.DoubleSide
+        });
+        for (const side of [-1, 1]) {
+          const panel = new THREE.Mesh(new THREE.PlaneGeometry(4.75, 1.15), adMaterial);
+          panel.name = 'suzyeaston.ca trolley side advertisement';
+          // Local bus runs along Z; plane local X is aligned with Z after yaw.
+          panel.position.set(side * 1.354, 1.96, 0.22);
+          panel.rotation.y = side * Math.PI / 2;
+          root.add(panel);
+        }
+        root.userData.advertiser = 'suzyeaston.ca';
+      }
+    }
     return root;
   }
 

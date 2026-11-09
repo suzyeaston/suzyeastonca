@@ -34,6 +34,8 @@ test('new dialogue stays grounded in transit and Vancouver weather without canne
 
 test('the station east street-facing entry has richer low-poly material detail', () => {
   const src = read('js/gastown-waterfront-station.js');
-  assert.match(src,/Station East glazed door warm inner reflection/);
+  assert.match(src,/Station East open leaf glass door/);
+  assert.match(src,/Station East entrance stone jamb/);
+  assert.doesNotMatch(src,/Station East glazed door warm inner reflection/);
   assert.match(src,/Station East side path expansion joint/);
 });

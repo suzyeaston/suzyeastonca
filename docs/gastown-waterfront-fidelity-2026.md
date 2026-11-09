@@ -66,3 +66,36 @@ Grounding:
 No Street View, commercial photography, stock model, or copyrighted third-party
 texture is embedded. The hall remains representative rather than an exact
 architectural plan; circulation and camera behavior require browser QA.
+
+## Follow-up: Grand hall and Station East entry circulation
+
+The first public hall was too narrow and shallow (about 15m × 20m). This
+iteration expands the *authored* hall to 44.4m × 35.7m with an approximate
+14.45m coffered ceiling, preserving the exterior's local geospatial anchor.
+The east wing is hollowed at street level to let visitors walk from Station
+East Lot through its side doorway into the same public hall. The side-door E
+action now enters the hall directly rather than teleporting to Cordova.
+
+The footprint and interior detailing remain **illustrative**, not measured
+architectural documentation, accessible-wayfinding instructions or a verified
+fire-egress plan. The east access uses the previously authored door location,
+which needs a separate real-world survey. Restricted transit areas remain
+non-walkable.
+
+Sources consulted:
+- [SRA Architects Waterfront Station renovation](https://srarch.net/projects/waterfront-station-renovation) describes the original restored concourse bays and glazed elevator.
+- [TransLink Waterfront Station accessible entrances](https://www.translink.ca/-/media/translink/documents/schedules-and-maps/skytrain-accessible-entrance-maps/waterfront_station_elevator_map.pdf) distinguishes public station entrances from station service areas.
+- [Notable Structures Vancouver (2017)](https://www.seabc.ca/wordpress/files/notable_structures/Vancouver_Notable_Structures_IABSE_SEABC_2017.pdf) depicts original hall architecture and modern renovations.
+
+The illustrated trolley retains its grey/blue/yellow paint with small,
+original locally generated `suzyeaston.ca` side advertising panels. The
+advertiser panel is fictional placement, not a claim of paid transit advertising.
+
+### Next browser QA
+1. Walk continuously from Cordova through the central arch to the back of the hall.
+2. Walk from Station East Lot through the glass side entrance into the hall;
+   verify the E interaction also ends inside, not outside.
+3. Inspect interior ceiling, upper wall geometry and third-person camera for
+   occlusion and clipping from all four corners.
+4. Confirm no visible solid wall still blocks the side corridor or Cordova
+   doorway and the trolley text is legible from each side.
