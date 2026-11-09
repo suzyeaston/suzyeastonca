@@ -359,5 +359,19 @@
         ]
       }
     ]
+  },
+  "kk_lab_greeter": {
+    "title": "KK · fictional Multimodal Lab host",
+    "lines": [
+      "Welcome to the sixth floor! This is the simulator's imaginary Multimodal Lab.",
+      "Art, sound, AI, unfinished experiments and good conversations. Bring your curiosity.",
+      "Make art not war. And yes, that piano gets the best view."
+    ],
+    "actions": [
+      {
+        "type": "close",
+        "label": "Back to the lab"
+      }
+    ]
   }
 }
