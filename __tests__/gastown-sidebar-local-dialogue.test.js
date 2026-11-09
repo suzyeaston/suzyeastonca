@@ -23,11 +23,11 @@ test('side menu contains all visual controls, settings and help while keeping a 
   assert.doesNotMatch(html.slice(0,html.indexOf('data-tutorial-overlay')), /<details class="gastown-controls-drawer"/);
 });
 
-test('new dialogue stays grounded in transit and Vancouver weather without canned phrasing', () => {
+test('parking dialogue stays grounded in local review complaints and weather variants', () => {
   const dialog = JSON.parse(read('assets/dialog/gastown.json'));
-  assert.match(dialog.parking_small_talk.lines.join(' '), /SeaBus/);
+  assert.match(dialog.parking_small_talk.lines.join(' '), /ticketed/);
   assert.match(dialog.guide_intro.lines.join(' '), /Musqueam/);
-  assert.match(dialog.parking_high_five.lines.join(' '), /High five/);
+  assert.match(dialog.parking_high_five.lines.join(' '), /ticket/);
   assert.ok(dialog.parking_small_talk.variants.some(v=>v.when.weather==='rain'));
   assert.doesNotMatch(dialog.parking_small_talk.lines.join(' '), /Anyway, nice chat/);
 });

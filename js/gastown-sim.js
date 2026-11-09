@@ -1943,8 +1943,8 @@
       'busker-hook': ['Clock corner tune, folks.', 'Gather round the clock.'],
       'tourist-cluster': ['One more picture here.', 'Stand by the clock, please.'],
       'photo-direction': ['Hold still by the clock.', 'Okay, one more shot.'],
-      'parking-smalltalk': ['It is a parking lot, but with a really good view.', 'I think we both got here early.'],
-      'parking-highfive': ['High five?', 'That was a very efficient greeting.'],
+      'parking-smalltalk': ['Paid for three hours and still got a ticket!', 'The parking app refused to recognize this lot.', 'Tiny stalls, spectacular harbour view.'],
+      'parking-highfive': ['I extended the meter and still got ticketed.', 'Two minutes stopped here, and a ticket!', 'Read the weight restrictions before parking.'],
     };
     const options = snippetsByCue[selected.voiceCue] || [];
     if (!options.length) {
@@ -1980,15 +1980,15 @@
     if (!state.isRunning || !state.hasInteracted || !localAmbienceEnabled ||
       !window.speechSynthesis || !state.npcs || seconds < nextAmbientNpcAt ||
       state.activeDialogNpcId || window.speechSynthesis.speaking) return;
-    const candidate = state.npcs.filter(npc => npc.mesh && npc.mesh.visible !== false
-      && Math.hypot(npc.mesh.position.x - player.position.x, npc.mesh.position.z - player.position.z) < 6.5
+    const candidate = state.npcs.filter(npc => npc.voiceCue && npc.mesh && npc.mesh.visible !== false
+      && Math.hypot(npc.mesh.position.x - player.position.x, npc.mesh.position.z - player.position.z) < 9.5
       && seconds > (npcAmbientCooldown.get(npc.id) || 0))
       .sort((a,b) => Math.hypot(a.mesh.position.x-player.position.x,a.mesh.position.z-player.position.z)
         - Math.hypot(b.mesh.position.x-player.position.x,b.mesh.position.z-player.position.z))[0];
     if (!candidate) return;
     const entries = {
-      'parking-smalltalk': ['Parking lot view is weirdly elite.', 'The SeaBus is doing all the work today.'],
-      'parking-highfive': ['Five stars for a high five?', 'The reviews said the clock was too clock-shaped.'],
+      'parking-smalltalk': ['I paid online and still got ticketed.', 'The parking stalls are ridiculously narrow.', 'Great view of the bay and North Van, though.'],
+      'parking-highfive': ['A ticket while I was trying to pay?', 'I extended my parking and still got a fine.', 'A two-minute pickup turned into a parking ticket.'],
       'tourist-cluster': ['Wait, that was the whole steam show?', 'Who is blocking the clock? Oh. Me.'],
       'photo-direction': ['One more photo, then we can get coffee.', 'You are in my clock photo!'],
       'busker-hook': ['Clock corner show, coming through.', 'Tips appreciated, even in the rain.']
@@ -2165,6 +2165,13 @@
   }
 
   function getNpcConversationFallback(npcState) {
+    // Parking characters always use authored, review-inspired local dialogue.
+    // Do not let the generic online Gastown conversation endpoint overwrite it.
+    const localParking = npcState && /^(parking-smalltalk|parking-highfive)$/.test(npcState.voiceCue || '');
+    if (localParking && state.dialogData) {
+      const authored = state.dialogData[npcState.dialogId];
+      if (authored && Array.isArray(authored.lines)) return { title: authored.title, lines: authored.lines };
+    }
     const role = npcState && npcState.role ? npcState.role : 'pedestrian';
     const fallbackByRole = {
       guide: ['You can start anywhere here — the station edge, the storefront rhythm, the clock corner, or Maple Tree Square all pull the walk in different directions.', 'This area sits on the unceded territories of the Musqueam, Squamish, and Tsleil-Waututh Nations, so it helps to read the street as a layered place rather than a single-origin myth.'],
@@ -2183,6 +2190,9 @@
 
   async function requestNpcConversation(npcState) {
     const fallback = getNpcConversationFallback(npcState);
+    if (npcState && /^(parking-smalltalk|parking-highfive)$/.test(npcState.voiceCue || '')) {
+      return { title: fallback.title, lines: fallback.lines, fallback: true };
+    }
     if (!config.conversationEndpoint || !window.fetch) {
       return { title: fallback.title, lines: fallback.lines, fallback: true };
     }
@@ -2339,13 +2349,13 @@
     }
     if (npcState.voiceCue === 'parking-highfive') {
       return [
-        { type: 'response', label: 'High five!', responseLines: ['Excellent. Very strong commitment to a brief social interaction.', 'Okay, we should probably both continue walking now.'], followupStatus: 'High-five successfully exchanged.' },
+        { type: 'response', label: 'Another ticket?', responseLines: ['I extended my parking and still got ticketed.', 'Someone else got a ticket after a two-minute pickup. Read those signs carefully.'], followupStatus: 'Heard another Impark Lot 531 complaint.' },
         { type: 'close', label: 'Back to walk' }
       ];
     }
     if (npcState.voiceCue === 'parking-smalltalk') {
       return [
-        { type: 'response', label: 'How is your day?', responseLines: ['Pretty good. I was going somewhere, and then I stopped to appreciate the fact that we are both here.', 'Anyway, nice chat.'], followupStatus: 'A small but memorable Vancouver conversation.' },
+        { type: 'response', label: 'Is the parking worth it?', responseLines: ['The stalls are tiny, the app is frustrating, and people say they get tickets despite paying.', 'The view of the harbour and North Van is the redeeming part.'], followupStatus: 'Heard an Impark Lot 531 parking review.' },
         { type: 'close', label: 'Back to walk' }
       ];
     }
@@ -3307,7 +3317,7 @@
       visual.position.set(start.x, 0, start.z);
       worldGroup.add(visual);
       if (streetLife && npc.voiceCue && typeof streetLife.bubble === 'function') {
-        const label = npc.voiceCue === 'parking-highfive' ? 'high five?' : 'nice chat';
+        const label = npc.voiceCue === 'parking-highfive' ? 'still ticketed!' : 'one star!';
         const callout = streetLife.bubble(THREE, label);
         if (callout) visual.add(callout);
       }
@@ -6713,6 +6723,18 @@
   function attachEvents() {
     // UI outside the WebGL canvas should immediately regain its cursor.
     // A locked cursor otherwise makes the side menu appear unresponsive.
+    document.addEventListener('keydown', (event) => {
+      // M remains available when the WebGL canvas has captured pointer lock.
+      if (event.code !== 'KeyM' || event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+      const target = event.target;
+      if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName || ''))) return;
+      const sideMenu = app.querySelector('[data-side-menu]');
+      if (!sideMenu) return;
+      event.preventDefault();
+      if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) document.exitPointerLock();
+      sideMenu.open = !sideMenu.open;
+      updatePointerHelp();
+    });
     const sidebar = app.querySelector('.gastown-minimap');
     if (sidebar) sidebar.addEventListener('pointerdown', () => {
       if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) {
