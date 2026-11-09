@@ -1460,7 +1460,7 @@
       }
     }
     // Enter before the uncut outdoor warehouse mesh can trap the player.
-    if(distance<2.15&&lab.outdoorGreeting&&state.isRunning){
+    if(distance<4.0&&lab.outdoorGreeting&&state.isRunning){
       startLandingJourney(portal);
     }
   }
@@ -2070,7 +2070,7 @@
     }
     if (suzyAvatar && suzyAvatarModel) {
       suzyAvatarModel.animate(suzyAvatar, state.avatarElapsed, normalizedSpeed,
-        getGroundY() - player.position.y);
+        state.flight.enabled ? 0 : getGroundY() - player.position.y);
       if (typeof suzyAvatarModel.setUmbrellaWeather === 'function') {
         const wet = state.activeWeather === 'drizzle' || state.activeWeather === 'rain'
           || state.activeWeather === 'thunderstorm';
