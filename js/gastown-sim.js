@@ -175,7 +175,8 @@
     landingLab: { inside:false, stage:'street', returnPosition:null, roomRoot:null,
       journeyRoot:null, escort:null, lastNear:false, farewellAt:0,
       stageSince:0, greetPlayed:false, lastGreeting:'', indoorPreviousView:null,
-      doorProgress:0, liftDoorProgress:0, carDoorProgress:0, escortPaused:false },
+      doorProgress:1, liftDoorProgress:0, carDoorProgress:0, escortPaused:false,
+      outsideEscort:null, outdoorGreeting:false, outdoorWalkStarted:false },
     dialogData: {},
     activeDialogNpcId: '',
     activeDialogEntry: null,
@@ -189,8 +190,9 @@
     lastNpcVoiceAt: -Infinity,
     npcVoiceIndex: 0,
     walkerName: 'Suzy',
-    thirdPerson: false,
-    avatarCameraFacing: 'back', // 'front' films the face, 'back' frames the backpack
+    thirdPerson: true,
+    avatarCameraFacing: 'back', // Initial camera sees Suzy walking toward the city.
+    flight: {enabled:false,altitude:0,vertical:0,secretBuffer:''},
     followCameraDistance: undefined,
     avatarElapsed: 0,
     hasInteracted: false,
@@ -332,6 +334,26 @@
   scene.add(player);
   const suzyAvatar = suzyAvatarModel ? suzyAvatarModel.create(THREE) : null;
   if (suzyAvatar) player.add(suzyAvatar);
+  // A physically attached, double-sided cloth-like red cape. The geometry
+  // flutters gently in the animation loop; no external assets needed.
+  let suzyCape=null;
+  if(suzyAvatar){
+    const shape=new THREE.BufferGeometry();
+    const vertices=new Float32Array([
+      -0.28,1.47,0.20, 0.28,1.47,0.20,
+      -0.59,0.43,0.63, 0.59,0.43,0.63,
+      0,0.22,0.78
+    ]);
+    shape.setAttribute('position',new THREE.BufferAttribute(vertices,3));
+    shape.setIndex([0,2,4,0,4,1,1,4,3]);
+    shape.computeVertexNormals();
+    suzyCape=new THREE.Mesh(shape,new THREE.MeshStandardMaterial({
+      color:0xc12645,roughness:0.76,side:THREE.DoubleSide
+    }));
+    suzyCape.name='Suzyfly secret crimson flying cape';
+    suzyCape.visible=false;
+    suzyAvatar.add(suzyCape);
+  }
 
   const ambient = new THREE.AmbientLight(0x8798b8, 0.78);
   scene.add(ambient);
@@ -1228,10 +1250,16 @@
     try {
       window.speechSynthesis.cancel();
       const utterance=new window.SpeechSynthesisUtterance(phrase);
-      utterance.rate=0.96;utterance.pitch=0.91;utterance.volume=0.95;
+      utterance.rate=0.93;utterance.pitch=0.68;utterance.volume=1;
       utterance.lang='en-CA';
       const voices=window.speechSynthesis.getVoices();
-      const voice=voices.find(v=>/en[-_]CA/i.test(v.lang))
+      // Prefer recognizable lower-register system voices over the first
+      // Canadian voice (which may have been feminine on macOS).
+      const maleNames=/\b(daniel|alex|fred|aaron|oliver|thomas|arthur|george|rishi|lee|gordon|albert|reed|male)\b/i;
+      const voice=voices.find(v=>/^en/i.test(v.lang)&&maleNames.test(v.name))
+        ||voices.find(v=>/^en[-_]CA/i.test(v.lang)&&maleNames.test(v.name))
+        ||voices.find(v=>/^en[-_]GB/i.test(v.lang))
+        ||voices.find(v=>/^en[-_]CA/i.test(v.lang))
         ||voices.find(v=>/^en/i.test(v.lang));
       if(voice)utterance.voice=voice;
       window.speechSynthesis.speak(utterance);
@@ -1246,6 +1274,7 @@
     if(lab.roomRoot)lab.roomRoot.visible=stage==='lab';
     if(lab.journeyRoot)lab.journeyRoot.visible=stage==='lobby'||stage==='escort'||stage==='lift'||stage==='riding';
     if(lab.escort)lab.escort.visible=stage==='lobby'||stage==='escort'||stage==='lift'||stage==='riding';
+    if(lab.outsideEscort)lab.outsideEscort.visible=stage==='street';
     if(!wasInside&&lab.inside){
       lab.indoorPreviousView={thirdPerson:state.thirdPerson,facing:state.avatarCameraFacing};
       // Indoor rooms are too small for the normal outdoor shoulder boom.
@@ -1274,10 +1303,10 @@
     lab.returnPosition={x:portal.threshold.x,z:portal.threshold.z};
     if(lab.escort)lab.escort.position.set(851.3,0,855.1);
     lab.lastGreeting='';
-    lab.greetPlayed=false;lab.farewellSpoken=false;lab.lastNear=false;
-    lab.doorProgress=0;lab.liftDoorProgress=0;lab.carDoorProgress=0;
+    lab.greetPlayed=lab.outdoorGreeting;lab.farewellSpoken=false;lab.lastNear=false;lab.hasLeftEntry=false;
+    lab.doorProgress=1;lab.liftDoorProgress=0;lab.carDoorProgress=0;
     return landingTravel('lobby',portal.lobbySpawn,
-      'The Landing. Follow KK to the elevator on the left. No interaction key required.');
+      'The Landing doors are open. KK is waiting inside. Follow him to the elevator.');
   }
 
   function interactWithLanding() {
@@ -1288,7 +1317,7 @@
     if(!portal)return false;
     const lab=state.landingLab;
     if(lab.stage==='street'&&Math.hypot(player.position.x-portal.threshold.x,
-      player.position.z-portal.threshold.z)<5.3)return startLandingJourney(portal);
+      player.position.z-portal.threshold.z)<2.3)return startLandingJourney(portal);
     return lab.inside;
   }
 
@@ -1303,10 +1332,10 @@
     const approach=(current,target,speed)=>current+(target-current)*Math.min(1,delta*speed);
     const setDoors=()=>{
       if(!data)return;
-      const entryTarget=lab.stage==='lobby'||lab.stage==='escort'?1:0;
+      const entryTarget=1; // The Landing is always welcoming, including on exit.
       lab.doorProgress=approach(lab.doorProgress,entryTarget,3);
-      data.entranceLeft.position.x=data.entranceLeftX-0.85*lab.doorProgress;
-      data.entranceRight.position.x=data.entranceRightX+0.85*lab.doorProgress;
+      data.entranceLeft.position.x=data.entranceLeftX;
+      data.entranceRight.position.x=data.entranceRightX;
       const liftTarget=(lab.stage==='escort'&&lab.escort&&
         Math.hypot(lab.escort.position.x-845,lab.escort.position.z-850.5)<0.85)
         ||lab.stage==='lift'?1:0;
@@ -1319,7 +1348,7 @@
       data.carRight.position.x=data.carRightX+1.2*lab.carDoorProgress;
     };
     if(lab.stage==='lobby'){
-      if(near({x:851.3,z:855.1},4.4)&&!lab.greetPlayed){
+      if(near({x:851.3,z:855.1},6.0)&&!lab.greetPlayed){
         lab.greetPlayed=true;
         landingSpeak('hi snoozy! come on, I’ll show you the elevator.');
       }
@@ -1327,9 +1356,13 @@
         lab.stage='escort';lab.stageSince=nowSeconds;
         setStatus('KK is leading the way. Stay close; he waits for you.');
       }
-      // Leave via the entry only after moving away from the initial spawn.
-      if(elapsed>2.5&&near(portal.lobbyExit,0.7)){
-        landingTravel('street',lab.returnPosition||portal.threshold,
+      // Avoid immediate exit: the spawn is only 1m from the threshold.
+      // The player has to walk into the lobby first and then turn back.
+      if(player.position.z<855.6)lab.hasLeftEntry=true;
+      if(lab.hasLeftEntry&&elapsed>1.0&&near(portal.lobbyExit,1.55)){
+        const outside={x:portal.threshold.x+portal.outward.x*2.6,
+          z:portal.threshold.z+portal.outward.z*2.6};
+        landingTravel('street',outside,
           'Back on Water Street outside The Landing.');
       }
     }else if(lab.stage==='escort'&&lab.escort){
@@ -1404,9 +1437,32 @@
     if(lab.stage!=='street')return;
     const distance=Math.hypot(player.position.x-portal.threshold.x,
       player.position.z-portal.threshold.z);
-    if(distance<4.9&&!lab.lastNear)setStatus('The Landing: walk into the glass doors; they open automatically.');
-    lab.lastNear=distance<4.9;
-    if(distance<1.35&&state.isRunning)startLandingJourney(portal);
+    if(distance<10&&!lab.lastNear)setStatus('KK is waiting by the open doors at The Landing.');
+    lab.lastNear=distance<10;
+    // At close range KK says hello outside, then walks to the doorway and
+    // pauses until Suzy follows. Never require walking into the solid mesh.
+    if(distance<8.0&&!lab.outdoorGreeting){
+      lab.outdoorGreeting=true;
+      landingSpeak('hi snoozy! welcome to the Landing. follow me!');
+    }
+    const kk=lab.outsideEscort;
+    if(kk&&lab.outdoorGreeting){
+      const destination={x:portal.threshold.x-portal.outward.x*1.15,
+        z:portal.threshold.z-portal.outward.z*1.15};
+      const dx=destination.x-kk.position.x,dz=destination.z-kk.position.z;
+      const d=Math.hypot(dx,dz);
+      const following=Math.hypot(player.position.x-kk.position.x,
+        player.position.z-kk.position.z);
+      if(d>0.1&&following<5.2){
+        const step=Math.min(d,0.08);
+        kk.position.x+=step*dx/d;kk.position.z+=step*dz/d;
+        kk.rotation.y=Math.atan2(dx,dz);
+      }
+    }
+    // Enter before the uncut outdoor warehouse mesh can trap the player.
+    if(distance<4.0&&lab.outdoorGreeting&&state.isRunning){
+      startLandingJourney(portal);
+    }
   }
 
   function interactWithStationSideEntrance() {
@@ -2002,9 +2058,19 @@
     state.motion.bobOffset = THREE.MathUtils.lerp(state.motion.bobOffset || 0, targetBob, 1 - Math.exp(-delta * 10));
     state.motion.swayOffset = THREE.MathUtils.lerp(state.motion.swayOffset || 0, targetSway, 1 - Math.exp(-delta * 8));
     state.avatarElapsed += delta;
+    if(suzyCape){
+      suzyCape.visible=state.flight.enabled;
+      const attribute=suzyCape.geometry.attributes.position;
+      const flutter=state.flight.enabled?Math.sin(state.avatarElapsed*9)*0.085:0;
+      attribute.setZ(2,0.63+flutter);
+      attribute.setZ(3,0.63-flutter);
+      attribute.setZ(4,0.78+flutter*1.5);
+      attribute.needsUpdate=true;
+      suzyCape.geometry.computeVertexNormals();
+    }
     if (suzyAvatar && suzyAvatarModel) {
       suzyAvatarModel.animate(suzyAvatar, state.avatarElapsed, normalizedSpeed,
-        getGroundY() - player.position.y);
+        state.flight.enabled ? 0 : getGroundY() - player.position.y);
       if (typeof suzyAvatarModel.setUmbrellaWeather === 'function') {
         const wet = state.activeWeather === 'drizzle' || state.activeWeather === 'rain'
           || state.activeWeather === 'thunderstorm';
@@ -4841,6 +4907,16 @@
           worldGroup.add(journey);
           state.landingLab.journeyRoot=journey;
           state.landingLab.escort=journey.userData.kk;
+          const portal=waterfrontPlaces.landingEntranceFor(state.world);
+          if(portal&&journey.userData.kk){
+            const outdoor=journey.userData.kk.clone(true);
+            outdoor.name='KK waiting outside The Landing doors';
+            outdoor.position.set(portal.threshold.x-portal.outward.x*0.1,0,
+              portal.threshold.z-portal.outward.z*0.1);
+            outdoor.rotation.y=Math.atan2(-portal.outward.x,-portal.outward.z);
+            worldGroup.add(outdoor);
+            state.landingLab.outsideEscort=outdoor;
+          }
         }
       }
       if(typeof waterfrontPlaces.createLabInterior==='function'){
@@ -6689,11 +6765,17 @@
 
     player.position.x += state.velocity.x * delta;
     player.position.z += state.velocity.z * delta;
-    player.position.y = getGroundY();
+    if(state.flight.enabled){
+      const fly=state.flight;
+      const vertical=(fly.up?1:0)-(fly.down?1:0);
+      fly.vertical=THREE.MathUtils.lerp(fly.vertical,vertical*6.4,Math.min(1,delta*5));
+      fly.altitude=THREE.MathUtils.clamp(fly.altitude+fly.vertical*delta,0,72);
+      player.position.y=getGroundY()+fly.altitude;
+    } else player.position.y = getGroundY();
 
-    enforceWorldBounds();
-    if(!state.landingLab.inside)updateStationSideEntranceHint();
-    updateLandingHint();
+    if(!state.flight.enabled||state.landingLab.inside)enforceWorldBounds();
+    if(!state.landingLab.inside&&!state.flight.enabled)updateStationSideEntranceHint();
+    if(!state.flight.enabled)updateLandingHint();
     if(!state.landingLab.inside){updateNearestNode();updateAudioZones();}
     updateCameraMotionFeedback(delta, movementProfile);
     updateInteractionTarget();
@@ -6757,6 +6839,8 @@
     if (code === 'ArrowRight') state.turn.right = pressed;
     if (code === 'AltLeft' || code === 'AltRight') state.gait.precise = pressed;
     if (code === 'ShiftLeft' || code === 'ShiftRight') state.gait.traverse = pressed;
+    if(code==='Space')state.flight.up=pressed;
+    if(code==='ControlLeft'||code==='ControlRight')state.flight.down=pressed;
     if ((code === 'KeyW' || code === 'ArrowUp') && !pressed) {
       state.motion.runHoldSeconds = 0;
       state.motion.runActive = false;
@@ -6858,6 +6942,9 @@
   function resetToStart() {
     stopBandAudio('reset');
     const spawn = resolveSafeSpawn();
+    state.flight.enabled=false;state.flight.altitude=0;state.flight.vertical=0;
+    state.flight.secretBuffer='';state.flight.up=false;state.flight.down=false;
+    state.thirdPerson=true;state.avatarCameraFacing='back';
     player.position.set(spawn.x, spawn.y, spawn.z);
     state.lastSafePosition.copy(player.position);
     state.yaw = stationModel ? stationModel.arrivalYaw(state.world, spawn) : (spawn.yaw || 0);
@@ -7047,6 +7134,29 @@
     if (minimapCanvas) minimapCanvas.addEventListener('wheel', onWheelLook, { passive: false });
 
     document.addEventListener('keydown', (event) => {
+      const writing=['INPUT','TEXTAREA','SELECT'].includes((event.target&&event.target.tagName)||'')
+        ||(event.target&&event.target.isContentEditable);
+      if(!writing&&!event.repeat&&!event.altKey&&!event.metaKey&&!event.ctrlKey
+        &&/^Key[A-Z]$/.test(event.code)){
+        state.flight.secretBuffer=(state.flight.secretBuffer+event.code.slice(3).toLowerCase()).slice(-16);
+        if(state.flight.secretBuffer.endsWith('suzyfly')){
+          const fly=state.flight;
+          fly.enabled=!fly.enabled;fly.secretBuffer='';
+          if(fly.enabled){
+            state.thirdPerson=true;state.avatarCameraFacing='back';
+            state.followCameraDistance=undefined;
+            applyStreetCameraPose();
+            setStatus('SUZYFLY unlocked! Cape deployed. WASD to steer, SPACE to climb, CTRL to descend. Type SUZYFLY to land.');
+          }else{
+            fly.altitude=0;fly.vertical=0;fly.up=false;fly.down=false;
+            player.position.y=getGroundY();
+            enforceWorldBounds();
+            setStatus('Suzy has landed. Cape folded away.');
+          }
+          event.preventDefault();return;
+        }
+      }
+      if(state.flight.enabled&&['Space','ControlLeft','ControlRight'].includes(event.code))event.preventDefault();
       if (event.code === 'KeyP' && !event.repeat &&
           !['INPUT','TEXTAREA','SELECT'].includes((event.target && event.target.tagName)||'')) {
         event.preventDefault();

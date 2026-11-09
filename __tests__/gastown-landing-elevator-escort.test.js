@@ -9,7 +9,7 @@ const game=read('js/gastown-sim.js');
 const world=JSON.parse(read('assets/world/gastown-water-street.json'));
 
 test('The Landing street door includes historically inspired glazing, stone jambs and handles',()=>{
-  for(const marker of ['The Landing paired glass door mullion','The Landing double-door brass pull handle',
+  for(const marker of ['The Landing arched Water Street entry glazing','The Landing double-door brass pull handle',
     'The Landing carved golden 375 lintel','The Landing limestone door jambs',
     'The Landing sidewalk barrel canopy curved iron rib']){
     assert.ok(places.includes(marker),marker);
@@ -21,7 +21,7 @@ test('The Landing street door includes historically inspired glazing, stone jamb
 
 test('lobby is separate, walkable, lift is on left and escort shares journey',()=>{
   for(const marker of ['createLandingJourney(THREE)','The Landing lobby stone floor',
-    'Glass main entrance facing Water Street','Elevator door brushed metal',
+    'Glass main entrance left hinged door','Elevator left sliding leaf',
     'Elevator floor button ','KK fictional lobby escort']){
     assert.ok(places.includes(marker),marker);
   }
@@ -51,7 +51,7 @@ test('KK journey is proximity driven with speech, wait-for-player and animated p
   assert.match(game,/function landingSpeak\(phrase\)/);
   assert.match(game,/window\.SpeechSynthesisUtterance/);
   assert.match(game,/window\.speechSynthesis\.speak\(utterance\)/);
-  assert.match(game,/if\(distance<1\.35&&state\.isRunning\)startLandingJourney\(portal\)/);
+  assert.match(game,/if\(distance<4\.0&&lab\.outdoorGreeting&&state\.isRunning\)/);
   assert.match(game,/if\(d>0\.08&&following<4\.2\)/);
   assert.match(game,/if\(near\(\{x:845,z:851\},2\.4\)/);
   assert.match(game,/lab\.escort\.position\.set\(879\.35,0,849\.45\)/);
@@ -65,4 +65,26 @@ test('KK journey is proximity driven with speech, wait-for-player and animated p
   assert.match(places,/Multimodal Lab timber ceiling/);
   assert.match(places,/Multimodal Lab exposed wood ceiling beam/);
   assert.match(places,/MML  ·  Multimodal Media Lab/);
+});
+
+test('Landing doors remain clear, KK greets outdoors, and exiting requires walking into lobby first',()=>{
+  assert.match(places,/The Landing entrance wall west wing/);
+  assert.match(places,/The Landing entrance wall east wing/);
+  assert.doesNotMatch(places,/block\('The Landing entrance wall',850,3\.3,860,16/);
+  assert.match(game,/outsideEscort=outdoor/);
+  assert.match(game,/lab\.outdoorGreeting=true/);
+  assert.match(game,/lab\.hasLeftEntry=true/);
+  assert.match(game,/if\(lab\.hasLeftEntry&&elapsed>1\.0/);
+  assert.match(game,/const maleNames=/);
+});
+
+test('Suzy starts in rear third person and secret suzyfly enables cape and flight',()=>{
+  assert.match(game,/thirdPerson: true/);
+  assert.match(game,/avatarCameraFacing: 'back'/);
+  assert.match(game,/secretBuffer\.endsWith\('suzyfly'\)/);
+  assert.match(game,/suzyCape\.visible=state\.flight\.enabled/);
+  assert.match(game,/fly\.altitude=THREE\.MathUtils\.clamp/);
+  assert.match(game,/state\.flight\.enabled \? 0 : getGroundY\(\) - player\.position\.y/);
+  assert.match(game,/if\(code==='Space'\)state\.flight\.up=pressed/);
+  assert.match(game,/if\(code==='ControlLeft'\|\|code==='ControlRight'\)state\.flight\.down=pressed/);
 });
