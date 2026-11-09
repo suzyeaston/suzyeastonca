@@ -143,10 +143,10 @@
         ctx.fillStyle = '#11151d';
         ctx.fillRect(0, 0, 1024, 256);
         ctx.fillStyle = '#75fa73';
-        ctx.font = 'bold 112px monospace';
+        ctx.font = 'bold 91px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('suzyeaston.ca', 512, 128, 965);
+        ctx.fillText('MAKE ART NOT WAR', 512, 128, 965);
         const adTexture = new THREE.CanvasTexture(adCanvas);
         adTexture.colorSpace = THREE.SRGBColorSpace;
         const adMaterial = new THREE.MeshBasicMaterial({
@@ -154,13 +154,13 @@
         });
         for (const side of [-1, 1]) {
           const panel = new THREE.Mesh(new THREE.PlaneGeometry(4.75, 1.15), adMaterial);
-          panel.name = 'suzyeaston.ca trolley side advertisement';
+          panel.name = 'MAKE ART NOT WAR trolley side advertisement';
           // Local bus runs along Z; plane local X is aligned with Z after yaw.
           panel.position.set(side * 1.354, 1.96, 0.22);
           panel.rotation.y = side * Math.PI / 2;
           root.add(panel);
         }
-        root.userData.advertiser = 'suzyeaston.ca';
+        root.userData.advertiser = 'MAKE ART NOT WAR';
       }
     }
     return root;
