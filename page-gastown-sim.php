@@ -57,6 +57,8 @@ get_header();
         <span class="gastown-pointer-help-escape">ESC = RELEASE MOUSE</span>
         <button type="button" data-action="sim-release-pointer" class="gastown-release-pointer" aria-label="Release simulator mouse pointer">Release mouse</button>
       </div>
+      <button type="button" class="gastown-photo-button" data-action="scene-photo"
+        aria-label="Save a PNG photo of the current Gastown camera view" title="Save a clean PNG of the 3D view (P)">📸 Take photo</button>
       <button type="button" class="gastown-local-ambience" data-action="local-ambience-toggle"
         aria-pressed="true" aria-label="Toggle locally synthesized Vancouver traffic, harbour and seabird ambience"
         title="Original procedural ambience. No external voices or location recording.">🔊 Vancouver ambience · traffic / gulls</button>
@@ -111,6 +113,8 @@ get_header();
           </div>
           <p class="gastown-scene-tip">Press Esc to release your mouse before changing conditions.</p>
         </details>
+          <div class="gastown-side-menu-section">Film</div>
+          <button type="button" class="gastown-photo-side-button" data-action="scene-photo" aria-label="Download a clean screenshot of this scene">📸 Save shot (P)</button>
           <div class="gastown-side-menu-section">More</div>
     <details class="gastown-controls-drawer">
       <summary>⚙ Advanced &amp; help</summary>
@@ -134,7 +138,8 @@ get_header();
         <h2>Controls</h2>
         <ul>
           <li><strong>Click</strong> to step into the street</li>
-          <li><strong>Mouse</strong> look</li>
+          <li><strong>Mouse</strong> look left, right, up or down (including third-person), or click and drag</li>
+          <li><strong>P / Take photo</strong> save a clean PNG of the current 3D camera, without menus</li>
           <li><strong>W / ↑</strong> hold to run (Shift still works)</li>
           <li><strong>A S D + arrows</strong> move / turn</li>
           <li><strong>E / click</strong> interact</li>
