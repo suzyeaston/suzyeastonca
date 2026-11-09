@@ -1141,7 +1141,10 @@
     // Even when the boom is forced close, cap pitch to an eye-level portrait.
     // A short camera boom must NEVER turn into a top-down view of the backpack.
     const lensDistance = Math.max(1.75, Math.hypot(offset, boom));
-    const pitch = -Math.min(0.36, Math.atan2(headroom - 1.58, lensDistance));
+    const portraitPitch = -Math.min(0.36, Math.atan2(headroom - 1.58, lensDistance));
+    // Honour vertical mouse look in both Suzy camera views. Previously this
+    // fixed portrait pitch discarded state.pitch every frame.
+    const pitch = THREE.MathUtils.clamp(portraitPitch + state.pitch * 0.75, -0.95, 0.95);
     camera.rotation.set(pitch, Math.atan2(offset, side * boom), 0);
   }
 
@@ -6325,15 +6328,23 @@
     renderer.domElement.requestPointerLock();
   }
 
+  // A normal click captures the cursor; click-drag also works when browser
+  // pointer lock is unavailable, and leaves sidebar controls unaffected.
+  let lookDrag = null;
   function onMouseMove(event) {
-    if (state.cameraMode !== 'street' || document.pointerLockElement !== renderer.domElement || !state.isRunning) {
-      return;
+    if (state.cameraMode !== 'street') return;
+    const locked = document.pointerLockElement === renderer.domElement;
+    if (!locked && !lookDrag) return;
+    if (locked && !state.isRunning) return;
+    const dx = locked ? event.movementX : event.clientX - lookDrag.x;
+    const dy = locked ? event.movementY : event.clientY - lookDrag.y;
+    if (!locked) {
+      lookDrag.x = event.clientX;
+      lookDrag.y = event.clientY;
     }
-
     const sensitivity = 0.00225;
-    state.yaw -= event.movementX * sensitivity;
-    adjustPitch(-(event.movementY * sensitivity));
-
+    state.yaw -= dx * sensitivity;
+    adjustPitch(-(dy * sensitivity));
     player.rotation.y = state.yaw;
   }
 
@@ -6546,6 +6557,29 @@
     setStatus('Fullscreen is not supported in this browser.');
   }
 
+  // Save the rendered WebGL frame, not the HUD or sidebar. A fresh frame
+  // ensures a paused or just-adjusted camera still produces the latest shot.
+  function takeScenePhoto() {
+    try {
+      renderer.render(scene, camera);
+      const dataUrl = renderer.domElement.toDataURL('image/png');
+      if (!dataUrl || !dataUrl.startsWith('data:image/png')) throw new Error('PNG capture unavailable');
+      const filename = 'gastown-' + new Date().toISOString().replace(/[:.]/g, '-') + '.png';
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setStatus('Scene photo saved as ' + filename);
+      return true;
+    } catch (error) {
+      setStatus('Screenshot unavailable. Try again with WebGL active.');
+      if (window.console) window.console.warn('[Gastown Sim] Could not capture scene.', error);
+      return false;
+    }
+  }
+
   function startSim() {
     unlockAudioFromGesture().finally(() => unlockSteamClockAudio());
     state.isRunning = true;
@@ -6615,11 +6649,24 @@
       unlockAudioFromGesture().finally(() => unlockSteamClockAudio());
       enterPlayMode();
     });
+    renderer.domElement.addEventListener('pointerdown', (event) => {
+      if (event.button === 0 && state.cameraMode === 'street') {
+        lookDrag = { x: event.clientX, y: event.clientY };
+      }
+    });
+    document.addEventListener('pointerup', () => { lookDrag = null; });
+    document.addEventListener('pointercancel', () => { lookDrag = null; });
     document.addEventListener('mousemove', onMouseMove);
     renderer.domElement.addEventListener('wheel', onWheelLook, { passive: false });
     if (minimapCanvas) minimapCanvas.addEventListener('wheel', onWheelLook, { passive: false });
 
     document.addEventListener('keydown', (event) => {
+      if (event.code === 'KeyP' && !event.repeat &&
+          !['INPUT','TEXTAREA','SELECT'].includes((event.target && event.target.tagName)||'')) {
+        event.preventDefault();
+        takeScenePhoto();
+        return;
+      }
       if (event.code === 'KeyM') {
         const now = performance.now();
         if (now - state.tutorial.lastMKeyAt < 450) {
@@ -6681,6 +6728,8 @@
       minimapModeBtn.addEventListener('click', toggleMinimapMode);
     }
 
+    const photoBtns = app.querySelectorAll('[data-action="scene-photo"]');
+    photoBtns.forEach(button => button.addEventListener('click', takeScenePhoto));
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
     if (harbourLookBtn) harbourLookBtn.addEventListener('click', goToHarbourLookout);
