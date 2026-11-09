@@ -439,12 +439,13 @@
     const fdx=frontB.x-frontA.x, fdz=frontB.z-frontA.z;
     const flength=Math.hypot(fdx,fdz)||1;
     const fyaw=Math.atan2(-fdz,fdx);
-    const entry={x:(frontA.x+frontB.x)*0.5+fdz/flength*0.22,
-      z:(frontA.z+frontB.z)*0.5-fdx/flength*0.22};
-    const darkEntry=new THREE.MeshStandardMaterial({color:0x294957,transparent:true,opacity:0.49,depthWrite:false,roughness:0.2,metalness:0.13});
+    const entry={x:(frontA.x+frontB.x)*0.5+fdz/flength*0.94,
+      z:(frontA.z+frontB.z)*0.5-fdx/flength*0.94};
+    const darkEntry=new THREE.MeshStandardMaterial({color:0x203845,transparent:false,depthTest:false,roughness:0.18,metalness:0.16});
     const bronze=new THREE.MeshStandardMaterial({color:0x464c45,roughness:0.7,metalness:0.32});
-    addBox(THREE,root,'The Landing arched Water Street entry glazing',
+    const entrancePane=addBox(THREE,root,'The Landing arched Water Street entry glazing',
       entry.x,1.56,entry.z,2.7,3.0,0.18,darkEntry,fyaw);
+    entrancePane.renderOrder=4; // readable doorway in front of extruded facade mass
     addBox(THREE,root,'The Landing paired glass door mullion',
       entry.x,1.54,entry.z,0.085,2.95,0.23,bronze,fyaw);
     const tangent={x:fdx/flength,z:fdz/flength};
@@ -506,7 +507,7 @@
       }
     }
     sign(THREE,root,'THE LANDING',
-      {x:entry.x,y:4.48,z:entry.z},3.65,0.48,fyaw,
+      {x:entry.x,y:4.48,z:entry.z},3.65,0.48,fyaw+Math.PI,
       {background:'#384741',color:'#f9f2db'});
     // Keep exterior historic; the speculative lab exists only inside the game.
     const a=pts[0], b=pts[1], center={x:(a.x+b.x)/2,y:4.0,z:(a.z+b.z)/2};
@@ -540,7 +541,7 @@
     if(!pts || pts.length<8)return null;
     const a=pts[6],b=pts[7],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1;
     const outward={x:dz/len,z:-dx/len};
-    const door={x:(a.x+b.x)*0.5+outward.x*0.22,z:(a.z+b.z)*0.5+outward.z*0.22};
+    const door={x:(a.x+b.x)*0.5+outward.x*0.94,z:(a.z+b.z)*0.5+outward.z*0.94};
     return {door,threshold:{x:door.x+outward.x*4.0,z:door.z+outward.z*4.0},
       outward,lobbySpawn:{x:850,z:858},lobbyExit:{x:850,z:859},
       elevatorLobby:{x:845,z:851},elevatorCar:{x:880,z:850},
