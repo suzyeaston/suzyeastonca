@@ -361,11 +361,66 @@
     root.userData.interiorHallDimensions = { width: 44.4, depth: 35.7, ceiling: 14.45 };
     root.userData.eastEntryConnectsToHall = true;
 
+    // Reference-led glazed arched side access, not a windowless red-brick
+    // tunnel. The real Station East portal has tall dark green frames and an
+    // open passage behind it. Keep the authored walking centreline unobstructed.
+    const entranceIvory = new THREE.MeshStandardMaterial({color:0xe4d8c6,roughness:0.87});
+    const entranceGreen = new THREE.MeshStandardMaterial({color:0x274746,roughness:0.54,metalness:0.24});
+    const entranceGlass = new THREE.MeshStandardMaterial({
+      color:0x87aeb4,transparent:true,opacity:0.29,roughness:0.18,
+      metalness:0.16,side:THREE.DoubleSide,depthWrite:false
+    });
+    // Both corridor elevations face cream plaster and pilasters, so they
+    // no longer read as the bare brick walls of a subterranean tunnel.
+    for (const side of [-1, 1]) {
+      const z=-4+side*2.98;
+      box('Station East arched arcade cream inner wall',37.4,2.4,z,
+        28.1,4.8,0.16,entranceIvory);
+      box('Station East arcade stone dado',37.4,0.88,z+(-side*0.10),
+        28.1,1.65,0.18,stone);
+      for (const x of [27.2,35.8,44.4,51.0]) {
+        box('Station East arcade cream pilaster',x,2.4,z-side*0.18,
+          0.45,4.8,0.38,entranceIvory);
+        box('Station East arcade Ionic-style capital',x,4.8,z-side*0.2,
+          0.78,0.26,0.52,stone);
+      }
+    }
+    // Repeated arched ceiling frames lead toward a glazed daylight-filled
+    // vestibule. Unlike the previous rectangular brick corridor, these
+    // arches read as public heritage architecture from either end.
+    for (const x of [26.0,35.2,44.4,52.9]) {
+      const arcadeArch = new THREE.Mesh(
+        new THREE.TorusGeometry(2.02,0.18,8,24,Math.PI),entranceIvory);
+      arcadeArch.name='Waterfront Station East cream passage arch';
+      arcadeArch.position.set(x,4.65,-4);
+      arcadeArch.rotation.y=Math.PI/2;
+      root.add(arcadeArch);
+      for (const z of [-6.05,-1.95]) {
+        box('Station East arcade jamb',x,2.3,z,0.25,4.6,0.34,entranceIvory);
+      }
+    }
+    // Green-framed glass transom at the outer portal, matching the look of
+    // the photographed Station East side entrance rather than a blank wall.
+    for (const z of [-5.46,-4.5,-3.5,-2.54]) {
+      box('Station East green transom mullion',53.44,5.88,z,
+        0.12,2.00,0.075,entranceGreen);
+    }
+    box('Station East green transom sill',53.45,4.84,-4,
+      0.14,0.18,3.90,entranceGreen);
+    box('Station East green transom lintel',53.45,6.92,-4,
+      0.14,0.18,3.90,entranceGreen);
+    box('Station East entrance glazed transom',53.4,5.88,-4,
+      0.052,1.90,3.80,entranceGlass);
+    for (const z of [-5.54,-2.46]) {
+      box('Station East deep green door stile',53.51,2.04,z,
+        0.16,3.87,0.12,entranceGreen);
+    }
+    root.userData.sideEntranceStyle='cream arched arcade, dark green framed glazing';
     // East Station / parking-lot entrance shares the historic hall volume.
     // This is a plausible visual public connector, not a surveyed doorway.
     // No opaque pane spans the passage: visitors may walk in from the lot.
     const sideDoorGlass = new THREE.MeshStandardMaterial({
-      color:0x587a88,roughness:0.19,metalness:0.12,
+      color:0x37615e,roughness:0.19,metalness:0.12,
       transparent:true,opacity:0.66,side:THREE.DoubleSide
     });
     for (const dz of [-1.53, 1.53]) {
