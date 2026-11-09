@@ -353,20 +353,52 @@
       part.rotation.y=yaw;
       return part;
     };
-    const ballast=standard(THREE,0x656766,0.96);
-    const steel=standard(THREE,0xb4b2aa,0.36,0.49);
-    const sleeper=standard(THREE,0x665649,0.9);
-    // Tracks are all beyond the public fence: cannot walk into them.
-    for(let i=0;i<7;i++){
-      const offset=8+i*7.1;
-      placeBox('Waterfront east west railroad ballast',0,offset,0.14,150,0.13,3.6,ballast);
-      for(const side of [-0.75,0.75]){
-        placeBox('Yard rail pair',0,offset+side,0.27,150,0.095,0.13,steel);
+    const ballast=standard(THREE,0x595d5d,0.96);
+    const steel=standard(THREE,0xc8c6bb,0.34,0.67);
+    const sleeper=standard(THREE,0x59483a,0.91);
+    // The previous 24-metre tie spacing made these read as seven long bars
+    // rather than recognizable rails. Instance realistic, repeated ties in a
+    // single draw call, preserving the fenced 20-track illustrative yard.
+    const nearTrackCount = 7;
+    const tieSpacingMetres = 0.72;
+    const railLengthMetres = 150;
+    const tieStart = -railLengthMetres / 2 + 0.5;
+    const tiesPerTrack = Math.floor((railLengthMetres - 1) / tieSpacingMetres) + 1;
+    const ties = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.24, 0.105, 2.62),
+      sleeper,
+      nearTrackCount * tiesPerTrack
+    );
+    ties.name = 'CP N-Yard near-field instanced timber sleepers';
+    ties.castShadow = false;
+    ties.receiveShadow = true;
+    const tieDummy = new THREE.Object3D();
+    let tieIndex = 0;
+    // All rail geometry stays outside the lot fence and non-walkable.
+    for (let i = 0; i < nearTrackCount; i++) {
+      const offset = 8 + i * 7.1;
+      placeBox('CP N-Yard track ballast', 0, offset, 0.14, railLengthMetres, 0.13, 3.55, ballast);
+      // Raised steel heads catch daylight at grazing angles, making tracks
+      // readable from the public-side rail-yard and harbour viewpoints.
+      for (const side of [-0.75, 0.75]) {
+        placeBox('CP N-Yard steel rail head', 0, offset + side, 0.345,
+          railLengthMetres, 0.13, 0.095, steel);
+        placeBox('CP N-Yard steel rail web', 0, offset + side, 0.258,
+          railLengthMetres, 0.075, 0.052, steel);
       }
-      for(let t=-64;t<=64;t+=24){
-        placeBox('Railroad brown sleeper',t,offset,0.19,1.5,0.08,2.8,sleeper);
+      for (let t = 0; t < tiesPerTrack; t++) {
+        const position = trackPoint(tieStart + t * tieSpacingMetres, offset);
+        tieDummy.position.set(position.x, 0.238, position.z);
+        tieDummy.rotation.set(0, yaw, 0);
+        tieDummy.updateMatrix();
+        ties.setMatrixAt(tieIndex++, tieDummy.matrix);
       }
     }
+    ties.instanceMatrix.needsUpdate = true;
+    ties.computeBoundingSphere();
+    root.add(ties);
+    root.userData.nearTrackTieCount = tieIndex;
+    root.userData.nearTrackTieSpacingMetres = tieSpacingMetres;
 
 
     // Vancouver's CPR N-Yard is a 20-track facility east of the station.
