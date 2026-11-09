@@ -59,7 +59,21 @@
     const localX = dx * Math.cos(anchor.yaw) - dz * Math.sin(anchor.yaw);
     const localZ = dx * Math.sin(anchor.yaw) + dz * Math.cos(anchor.yaw);
     // A walkable frontage that joins the original corridor but stops at the doors.
-    return Math.abs(localX) <= 24 && localZ >= 4.7 && localZ <= 31;
+    // Public exterior connection around the east end, not a playable interior.
+    const mainFrontage = Math.abs(localX) <= 55 && localZ >= 4.7 && localZ <= 31;
+    const lotSidePassage = localX >= 52.5 && localX <= 64
+      && localZ >= -10 && localZ <= 9;
+    return mainFrontage || lotSidePassage;
+  }
+
+  function sideEntranceFor(world) {
+    if (!world || !world.spawn) return null;
+    return {
+      threshold: toWorld(world, 55.1, -4.0),
+      approach: toWorld(world, 60.1, -4.0),
+      forecourt: toWorld(world, 23.0, 8.0),
+      label: 'Waterfront Station east side access'
+    };
   }
 
   function arrivalYaw(world, point) {
@@ -202,6 +216,30 @@
     box('Central raised parapet', 0, 17.75, -0.3, 23, 1.25, 0.78, stone);
     box('Lower roof', 0, 16.5, -8.5, 106, 0.25, 17, iron);
 
+    // Parking-lot side of the station: glass doors and the exterior
+    // pedestrian connector seen in the user-supplied Waterfront reference.
+    // The interior is NOT modeled; E at the side access leads to the
+    // walkable Cordova front entrance.
+    box('Station East side access door recess', 53.12, 2.08, -4.0,
+      0.16, 4.14, 3.58, iron);
+    box('Station East side entrance glass double doors', 53.25, 1.88, -4.0,
+      0.12, 3.6, 2.78, glass);
+    [-5.55, -2.45].forEach(z => box('Station East entrance stone jamb',
+      53.35, 2.04, z, 0.32, 4.08, 0.23, stone));
+    box('Station East entrance stone header', 53.38, 4.12, -4.0,
+      0.38, 0.35, 3.52, stone);
+    box('Station East entrance small awning', 54.25, 4.4, -4.0,
+      2.45, 0.28, 4.2, stoneShadow);
+    box('Station East side entry door handle', 53.40, 1.82, -3.46,
+      0.17, 0.36, 0.08, brass);
+    const sideLabel = sign('STATION SIDE ACCESS', 53.54, 4.80, -4.0,
+      3.7, 0.42, '#f5e5be', 'bold 60px Arial, sans-serif');
+    sideLabel.rotation.y = Math.PI / 2;
+    box('Station East to Cordova pedestrian connection', 58.5, 0.063, 1.0,
+      12.2, 0.125, 14.2, pavement);
+    box('Station east entry tactile threshold', 55.7, 0.13, -4.0,
+      2.3, 0.055, 3.0, stoneShadow);
+
     // Colonnade: pale Ionic columns and scroll-like capitals.
     const colX = [-24, -17.2, -10.4, -3.5, 3.5, 10.4, 17.2, 24];
     colX.forEach((x, index) => {
@@ -274,6 +312,7 @@
     cylinder('Transit sign pole', -28.5, 1.52, 4.05, 0.06, 0.06, 3.04, iron);
 
     root.userData.reference = REFERENCE;
+    root.userData.sideEntrance = sideEntranceFor(world);
     return root;
   }
 
@@ -315,6 +354,7 @@
     arrivalYaw,
     arrivalPitch: () => 0.095,
     isWalkableForecourt,
+    sideEntranceFor,
     create,
     commutersFor
   });
