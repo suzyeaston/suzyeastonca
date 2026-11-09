@@ -10,7 +10,7 @@ test('Vancouver electric trolley art has paired roof collectors and a local rout
   assert.match(src, /Route 3 Waterfront electric trolley/);
   assert.match(src, /3 WATERFRONT/);
   assert.match(src, /for \(const x of \[-0\.53,0\.53\]\)/);
-  assert.match(src, /CylinderGeometry\(radius,radius,axis\.length\(\),6\)/);
+  assert.match(src, /CylinderGeometry\(radius,radius,length,6\)/);
   assert.match(src, /bike rack distinguish/);
   assert.doesNotMatch(src, /50 WATERFRONT/);
 });
