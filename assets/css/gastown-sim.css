@@ -689,3 +689,9 @@
 .gastown-photo-button:hover,.gastown-photo-side-button:hover {background:#286783;}
 .gastown-photo-button:focus-visible,.gastown-photo-side-button:focus-visible {outline:2px solid #ffd977;outline-offset:2px;}
 @media(max-width:740px){.gastown-photo-button{top:5.5rem;right:.5rem;font-size:.68rem;}}
+
+/* Keep camera and photo shortcuts apart from the ambience control. */
+.gastown-photo-button {top:6rem;right:1rem;}
+.gastown-minimap {max-height:min(82vh,760px);}
+.gastown-minimap::-webkit-scrollbar {width:8px;}
+.gastown-minimap::-webkit-scrollbar-thumb {background:#547387;border-radius:8px;}
