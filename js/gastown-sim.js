@@ -4970,6 +4970,23 @@
       flash.thunderPlayed = true;
       if (state.sounds.thunder && typeof state.sounds.thunder.play === 'function') {
         playHowl(state.sounds.thunder);
+      } else if (state.audioUnlocked && state.audioContext) {
+        // Local thunder fallback: filtered broadband noise, not an external
+        // sample or an uncanny pitched oscillator. Safely optional.
+        try {
+          const ctx = state.audioContext;
+          const length = Math.floor(ctx.sampleRate * 2.5);
+          const buffer = ctx.createBuffer(1,length,ctx.sampleRate);
+          const channel = buffer.getChannelData(0);
+          for (let i=0;i<length;i++) channel[i]=(Math.random()*2-1)*Math.exp(-i/length*5);
+          const source=ctx.createBufferSource();
+          const lowpass=ctx.createBiquadFilter();
+          const gain=ctx.createGain();
+          lowpass.type='lowpass';lowpass.frequency.value=240;
+          gain.gain.value=0.17;
+          source.buffer=buffer;source.connect(lowpass);lowpass.connect(gain);gain.connect(ctx.destination);
+          source.start();
+        } catch (error) { /* weather visuals remain available without audio */ }
       }
     }
   }
@@ -6714,7 +6731,16 @@
         takeScenePhoto();
         return;
       }
-      if (event.code === 'KeyM') {
+      if (event.code === 'KeyM' && !['INPUT','TEXTAREA','SELECT'].includes((event.target && event.target.tagName)||'')) {
+        const menu = app.querySelector('[data-side-menu]');
+        if (menu) {
+          event.preventDefault();
+          if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) document.exitPointerLock();
+          menu.open = !menu.open;
+          if (menu.open) menu.querySelector('summary').focus();
+          setStatus(menu.open ? 'Menu open. Adjust conditions, then click the street to walk.' : 'Menu closed. Click the street to resume.');
+          return;
+        }
         const now = performance.now();
         if (now - state.tutorial.lastMKeyAt < 450) {
           toggleMinimapMode();
