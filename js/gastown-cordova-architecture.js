@@ -26,13 +26,13 @@
     if(!THREE||!THREE.Group||!world||!Array.isArray(world.buildings))return null;
     const rootGroup=new THREE.Group();
     rootGroup.name='W Cordova reference architecture and clean skyline';
-    const cyan=new THREE.MeshBasicMaterial({color:0x6da5bc,side:THREE.DoubleSide});
-    const blue=new THREE.MeshBasicMaterial({color:0x366685,side:THREE.DoubleSide});
-    const bright=new THREE.MeshBasicMaterial({color:0x96c9d9,side:THREE.DoubleSide});
+    const cyan=new THREE.MeshBasicMaterial({color:0x718b99,side:THREE.DoubleSide});
+    const blue=new THREE.MeshBasicMaterial({color:0x334b5e,side:THREE.DoubleSide});
+    const bright=new THREE.MeshBasicMaterial({color:0x8aa7b0,side:THREE.DoubleSide});
     const mullion=new THREE.MeshStandardMaterial({color:0xb5c3c8,roughness:0.5,metalness:0.4});
     const limestone=new THREE.MeshStandardMaterial({color:0xaeb1b1,roughness:0.89,metalness:0.04,emissive:0x27292b,emissiveIntensity:0.22});
     const paleStone=new THREE.MeshStandardMaterial({color:0xd1c8b8,roughness:0.85,emissive:0x35312b,emissiveIntensity:0.11});
-    const glassBase=new THREE.MeshStandardMaterial({color:0x4c819c,roughness:0.2,metalness:0.28,emissive:0x264355,emissiveIntensity:0.15});
+    const glassBase=new THREE.MeshStandardMaterial({color:0x365366,roughness:0.2,metalness:0.28,emissive:0x264355,emissiveIntensity:0.15});
     const charcoal=new THREE.MeshStandardMaterial({color:0x3b444d,roughness:0.77,metalness:0.05});
 
     function addBox(group,name,cx,cy,cz,width,height,depth,mat){
@@ -49,29 +49,29 @@
       addBox(group,tag+' clean orthogonal body',cx,h/2,cz,w,h,d,baseMat);
       const floors=Math.max(2,Math.min(20,storeys||Math.floor(h/3.8)));
       const floorHeight=h/floors;
-      // Four inset luminous faces, not 700 individually triangulated GIS
-      // storefront panels. Slight offsets avoid z fighting.
+      // Earlier full-width cyan ribbons looked like missing building geometry.
+      // Discrete dark sash bays and pale floor bands read as actual facades
+      // from a moving camera, without introducing 3D GIS tile dependencies.
       for(let i=1;i<floors;i++){
-        const y=i*floorHeight+floorHeight*0.54;
-        for(const sign of [-1,1]){
-          addBox(group,tag+' continuous glazed street-facing floor',cx,y,
-            cz+sign*(d/2+0.045),w*0.87,Math.max(0.58,floorHeight*0.58),0.085,
-            windowMat);
-        }
-        for(const sign of [-1,1]){
-          addBox(group,tag+' glazed side elevation',cx+sign*(w/2+0.045),
-            y,cz,0.085,Math.max(0.58,floorHeight*0.58),d*0.84,windowMat);
-        }
-      }
-      for(const sign of [-1,1]){
-        for(let bay=-2;bay<=2;bay++){
-          addBox(group,tag+' facade vertical mullion',cx+bay*(w*0.16),h/2,
-            cz+sign*(d/2+0.105),0.10,h*0.98,0.09,mullion);
+        const y=i*floorHeight+floorHeight*0.48;
+        for(const side of [-1,1]){
+          const faceZ=cz+side*(d/2+0.056);
+          for(let bay=-2;bay<=2;bay++){
+            addBox(group,tag+' individual front sash',cx+bay*(w*0.176),y,
+              faceZ,w*0.138,Math.max(0.62,floorHeight*0.49),0.08,windowMat);
+          }
+          addBox(group,tag+' continuous floor string course',cx,y-floorHeight*0.38,
+            faceZ,w*0.97,0.11,0.09,mullion);
+          const sideX=cx+side*(w/2+0.056);
+          for(let bay=-1.5;bay<=1.5;bay++){
+            addBox(group,tag+' individual side sash',sideX,y,
+              cz+bay*(d*0.19),0.08,Math.max(0.62,floorHeight*0.49),d*0.145,windowMat);
+          }
         }
       }
       addBox(group,tag+' roof coping',cx,h+0.18,cz,w+0.65,0.36,d+0.65,paleStone);
-      addBox(group,tag+' storefront glass',cx,1.7,cz+d/2+0.13,w*0.73,2.75,0.1,bright);
-      addBox(group,tag+' ground-floor canopy',cx,3.3,cz+d/2+0.95,w*0.52,0.30,1.60,charcoal);
+      addBox(group,tag+' recessed ground-floor glazing',cx,1.65,cz+d/2+0.14,w*0.72,2.65,0.1,glassBase);
+      addBox(group,tag+' ground-floor canopy',cx,3.3,cz+d/2+0.92,w*0.52,0.26,1.60,charcoal);
     }
     function blockFor(id,title){
       const source=world.buildings.find(b=>b&&b.id===id);

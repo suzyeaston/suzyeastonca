@@ -369,19 +369,23 @@
 
   function facadeOnEdge(THREE, root, a, b, rows, glass, stone, trim) {
     const dx=b.x-a.x, dz=b.z-a.z, length=Math.hypot(dx,dz);
-    if(length<3) return;
-    const yaw = Math.atan2(-dz, dx);
-    const count = Math.max(2, Math.floor(length / 3.9));
-    for(let level=0; level<rows; level++){
-      const y=5.0+level*2.75;
+    if(length<7) return;
+    // Historic 1905 Kelly-Douglas: individually spaced factory sash windows,
+    // stone lintels and deep horizontal cornice, never blue office curtain wall.
+    const yaw=Math.atan2(-dz,dx);
+    const count=Math.max(2,Math.floor(length/3.9));
+    for(let level=0;level<rows;level++){
+      const y=5.05+level*2.78;
       for(let i=0;i<count;i++){
-        const t=(i+0.5)/count;
-        const x=a.x+dx*t, z=a.z+dz*t;
-        addBox(THREE,root,'The Landing warehouse sash window',x,y,z,2.0,1.62,0.15,glass,yaw);
-        addBox(THREE,root,'Stone window sill',x,y-0.88,z,2.35,0.16,0.26,stone,yaw);
-        if(i===0 || i===count-1) addBox(THREE,root,'Brick-window pier',x,y,z,0.16,2.15,0.22,trim,yaw);
+        const t=(i+0.5)/count, x=a.x+dx*t, z=a.z+dz*t;
+        addBox(THREE,root,'The Landing warehouse sash window',x,y,z,2.0,1.72,0.15,glass,yaw);
       }
+      // Continuous limestone courses read clearly at camera distance and
+      // save hundreds of individual draw calls on an 8 GB machine.
+      addSegment(THREE,root,'Limestone sill course',a,b,y-0.94,0.16,stone);
+      addSegment(THREE,root,'Limestone lintel course',a,b,y+0.95,0.13,trim);
     }
+    addSegment(THREE,root,'The Landing ground-floor masonry stringcourse',a,b,4.03,0.22,stone);
     addSegment(THREE,root,'The Landing parapet cornice',a,b,23.9,0.54,stone);
   }
   function createLanding(THREE, world) {
@@ -423,11 +427,40 @@
     mass.name = 'The Landing seven-storey civic footprint';
     root.add(mass);
     const pts=landing.footprint;
-    // West/parking and northern heritage warehouse walls. Dimensions of the
-    // modeled floors remain approximate; the underlying outline is civic data.
-    facadeOnEdge(THREE,root,pts[0],pts[1],6,glass,stone,trim);
-    facadeOnEdge(THREE,root,pts[1],pts[4],6,glass,stone,trim);
-    facadeOnEdge(THREE,root,pts[5],pts[8],6,glass,stone,trim);
+    // Respect every actual perimeter edge: spanning [1,4] used to stretch
+    // fake windows across polygon corners, leaving the true road facade blank.
+    for(let edge=0;edge<pts.length;edge++){
+      facadeOnEdge(THREE,root,pts[edge],pts[(edge+1)%pts.length],6,glass,stone,trim);
+    }
+    // The Water Street frontage holds the arched entry visible in photographs
+    // of 375 Water. This is an illustrative doorway on a GIS-backed wall, not
+    // a claim about surveyed entrance coordinates or interior floor plans.
+    const frontA=pts[6], frontB=pts[7];
+    const fdx=frontB.x-frontA.x, fdz=frontB.z-frontA.z;
+    const flength=Math.hypot(fdx,fdz)||1;
+    const fyaw=Math.atan2(-fdz,fdx);
+    const entry={x:(frontA.x+frontB.x)*0.5+fdz/flength*0.22,
+      z:(frontA.z+frontB.z)*0.5-fdx/flength*0.22};
+    const darkEntry=new THREE.MeshStandardMaterial({color:0x172e3c,roughness:0.35,metalness:0.25});
+    const bronze=new THREE.MeshStandardMaterial({color:0x464c45,roughness:0.7,metalness:0.32});
+    addBox(THREE,root,'The Landing arched Water Street entry glazing',
+      entry.x,1.56,entry.z,2.7,3.0,0.18,darkEntry,fyaw);
+    addBox(THREE,root,'The Landing paired door mullion',
+      entry.x,1.54,entry.z,0.09,2.95,0.23,bronze,fyaw);
+    if (typeof THREE.TorusGeometry === 'function') {
+      const arch=new THREE.Mesh(new THREE.TorusGeometry(1.38,0.13,7,24,Math.PI),stone);
+      arch.name='The Landing entrance arch';
+      arch.rotation.y=fyaw;
+      arch.position.set(entry.x,3.05,entry.z);
+      root.add(arch);
+    }
+    sign(THREE,root,'THE LANDING',
+      {x:entry.x,y:4.48,z:entry.z},3.65,0.48,fyaw,
+      {background:'#384741',color:'#f9f2db'});
+    const signX=entry.x+(fdx/flength)*3.9,signZ=entry.z+(fdz/flength)*3.9;
+    sign(THREE,root,'MULTIMODAL MEDIA LAB',
+      {x:signX,y:2.22,z:signZ},2.75,0.32,fyaw,
+      {background:'#253f45',color:'#d4f7ed'});
     const a=pts[0], b=pts[1], center={x:(a.x+b.x)/2,y:4.0,z:(a.z+b.z)/2};
     sign(THREE,root,'THE LANDING',center,Math.min(7,Math.hypot(b.x-a.x,b.z-a.z)*0.8),0.9,
       Math.atan2(-(b.x-a.x),b.z-a.z),{background:'#5d5148'});

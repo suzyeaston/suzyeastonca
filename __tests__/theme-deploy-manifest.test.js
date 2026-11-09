@@ -54,3 +54,14 @@ test("deploy script imports THEME_FILES from the shared manifest module", () => 
   assert.match(source, /from theme_deploy_manifest import THEME_FILES/);
   assert.doesNotMatch(source, /THEME_FILES = \[/);
 });
+
+
+test("Gastown street life is deployed before WordPress registers it as a mandatory script dependency", () => {
+  const source = fs.readFileSync(MANIFEST, "utf8");
+  const streetLifeIndex = source.indexOf('"js/gastown-street-life.js"');
+  const functionsIndex = source.indexOf('"functions.php"');
+  assert.ok(streetLifeIndex >= 0, "street life module must be deployed");
+  assert.ok(streetLifeIndex < functionsIndex, "street life module must deploy before functions.php");
+  const php = fs.readFileSync(path.join(ROOT, "functions.php"), "utf8");
+  assert.match(php, /se-gastown-street-life/);
+});

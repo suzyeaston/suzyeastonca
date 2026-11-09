@@ -8,24 +8,42 @@
   // Creative local-world scene, not a live GIS or vehicle tracking feed.
   function peopleFor(world, station) {
     if (!world || !world.parkingLot || !station || !station.sideEntranceFor) return [];
-    const side = station.sideEntranceFor(world).approach;
-    const p = world.parkingLot.center;
-    const paths = [
-      [['lot-chat-1', 'parking-smalltalk'], [{x:side.x+2,z:side.z+1},{x:side.x+7,z:side.z+4}]],
-      [['lot-chat-2', 'parking-smalltalk'], [{x:side.x+6,z:side.z+5},{x:side.x+3,z:side.z+2}]],
-      [['lot-highfive-1', 'parking-highfive'], [{x:p.x-4,z:p.z+2},{x:p.x-1.6,z:p.z+2.5}]],
-      [['lot-highfive-2', 'parking-highfive'], [{x:p.x+1,z:p.z+2},{x:p.x+2,z:p.z+3}]],
-      [['lot-walker-1', ''], [{x:p.x-6,z:p.z-7},{x:p.x+3,z:p.z-2}]],
-      [['lot-walker-2', ''], [{x:p.x+6,z:p.z-8},{x:p.x+1,z:p.z-5}]]
+    const lot = world.parkingLot;
+    if (!Array.isArray(lot.polygon) || lot.polygon.length < 7) return [];
+    // The real parcel has a clear drive aisle between the Cordova entrance
+    // and the harbour fence. Keep our walkers in that aisle instead of
+    // accidentally putting them behind Waterfront Station's masonry walls.
+    const entrance = { x: (lot.polygon[0].x + lot.polygon[1].x) / 2,
+      z: (lot.polygon[0].z + lot.polygon[1].z) / 2 };
+    const rear = { x: (lot.polygon[4].x + lot.polygon[5].x) / 2,
+      z: (lot.polygon[4].z + lot.polygon[5].z) / 2 };
+    const dx = rear.x - entrance.x, dz = rear.z - entrance.z;
+    const length = Math.hypot(dx,dz) || 1;
+    const lateral = { x: -dz/length, z: dx/length };
+    function point(t, side) { return {
+      x: entrance.x + dx*t + lateral.x*side,
+      z: entrance.z + dz*t + lateral.z*side
+    }; }
+    const characters = [
+      {id:'lot-chat-1',cue:'parking-smalltalk',t:0.26,side:-1.4},
+      {id:'lot-chat-2',cue:'parking-smalltalk',t:0.34,side:1.4},
+      {id:'lot-highfive-1',cue:'parking-highfive',t:0.49,side:-1.3},
+      {id:'lot-highfive-2',cue:'parking-highfive',t:0.54,side:1.5},
+      {id:'lot-walker-1',cue:'',t:0.69,side:-1.5},
+      {id:'lot-walker-2',cue:'',t:0.75,side:1.2}
     ];
-    return paths.map(([identity, patrol], i) => ({
-      id: identity[0], role: 'commuter', voiceCue: identity[1],
-      name: identity[1] === 'parking-highfive' ? 'Friendly stranger' : 'Station East walker',
-      dialogId: identity[1] === 'parking-highfive' ? 'parking_high_five' : 'parking_small_talk',
-      behavior: 'route_walk', interactRadius: 2.7, silhouetteScale: 0.9 + (i % 3) * 0.04,
-      patrol, idleSpot: patrol[0],
-      companionGroup: i < 2 ? 'parking-chat' : i < 4 ? 'parking-highfive' : undefined
-    }));
+    return characters.map((item,i) => {
+      const patrol = [point(item.t,item.side),point(Math.min(0.83,item.t+0.045),item.side)];
+      return {
+        id:item.id, role:'commuter',
+        name:item.cue==='parking-highfive'?'Friendly stranger':'Station East walker',
+        voiceCue:item.cue,
+        dialogId:item.cue==='parking-highfive'?'parking_high_five':'parking_small_talk',
+        behavior:'route_walk', interactRadius:2.9, silhouetteScale:0.93+(i%3)*0.045,
+        patrol, idleSpot:patrol[0],
+        companionGroup:i<2?'station-chat':i<4?'station-high-five':undefined
+      };
+    });
   }
 
   function bubble(THREE, label) {
@@ -88,27 +106,12 @@
 
   function create(THREE, world) {
     const root = new THREE.Group(); root.name='Station East street life';
-    const lot = world && world.parkingLot;
-    if (lot) {
-      const lantern = new THREE.Group(); lantern.name='Station East lantern';
-      const iron = new THREE.MeshStandardMaterial({color:0x2f3c43, roughness:0.6});
-      const stone = new THREE.MeshStandardMaterial({color:0x9a9f9f,roughness:0.95});
-      const glow = new THREE.MeshStandardMaterial({color:0xffe9b7,emissive:0xffc77e,emissiveIntensity:0.42});
-      const base = new THREE.Mesh(new THREE.BoxGeometry(0.62,0.5,0.62),stone);
-      base.position.y=0.25; lantern.add(base);
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.10,0.13,4.3,8),iron);
-      pole.position.y=2.6; lantern.add(pole);
-      const light = new THREE.Mesh(new THREE.BoxGeometry(0.54,0.55,0.54),glow);
-      light.position.y=4.9; lantern.add(light);
-      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.47,0.25,4),iron);
-      cap.rotation.y=Math.PI/4;cap.position.y=5.3;lantern.add(cap);
-      lantern.position.set(lot.center.x+9,0,lot.center.z-13);root.add(lantern);
-    }
-
+    // No invented freestanding light or giant post in the parking-lot centre.
+    // The real lot already has entrance signs and perimeter fencing.
     const centerline = world && world.route && world.route.centerline;
-    let bus = null; const segments=[]; let total=0;
+    let buses = []; const segments=[]; let total=0;
     if (Array.isArray(centerline) && centerline.length >= 3) {
-      const first = centerline.slice(0,8);
+      const first = centerline.slice(0,9);
       const points = first.map((pt,i) => {
         const before=first[Math.max(i-1,0)], after=first[Math.min(i+1,first.length-1)];
         const dx=after.x-before.x, dz=after.z-before.z, norm=Math.hypot(dx,dz)||1;
@@ -118,17 +121,20 @@
         const a=points[i-1],b=points[i],length=Math.hypot(b.x-a.x,b.z-a.z);
         segments.push({a,b,length,from:total}); total+=length;
       }
-      bus=makeBus(THREE);root.add(bus);
+      buses=[makeBus(THREE),makeBus(THREE)];
+      buses.forEach((bus,i)=>{ bus.name+=' / vehicle '+(i+1); root.add(bus); });
     }
     function update(seconds) {
-      if (!bus || !total) return;
-      const d=((seconds*4.1+35)%(total+25))-12;
-      bus.visible=d>=0&&d<=total; if (!bus.visible) return;
-      const s=segments.find(item=>d<=item.from+item.length)||segments[segments.length-1];
-      const t=Math.max(0,Math.min(1,(d-s.from)/(s.length||1)));
-      const dx=s.b.x-s.a.x,dz=s.b.z-s.a.z;
-      bus.position.set(s.a.x+dx*t,0.12,s.a.z+dz*t);
-      bus.rotation.y=Math.atan2(-dx,-dz);
+      if (!buses.length || !total) return;
+      buses.forEach((bus,index) => {
+        const d=(seconds*4.1+20+(index*total/2))%total;
+        const s=segments.find(item=>d<=item.from+item.length)||segments[segments.length-1];
+        if (!s) return;
+        const t=Math.max(0,Math.min(1,(d-s.from)/(s.length||1)));
+        const dx=s.b.x-s.a.x,dz=s.b.z-s.a.z;
+        bus.position.set(s.a.x+dx*t,0.12,s.a.z+dz*t);
+        bus.rotation.y=Math.atan2(-dx,-dz);
+      });
     }
     update(0);
     return {root,update};
