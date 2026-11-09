@@ -14,42 +14,6 @@ get_header();
       <p class="gastown-sim-platform-note">Desktop only right now — mobile support is not available yet.</p>
     </header>
 
-    <details class="gastown-controls-drawer">
-      <summary>Settings + help</summary>
-      <p class="gastown-controls-location">Weather, time and street mood are also available from <strong>Scene &amp; weather</strong> beside the minimap.</p>
-      <div class="gastown-controls" role="group" aria-label="Simulator controls">
-        <button type="button" class="pixel-button secondary" data-action="pause">Pause</button>
-        <button type="button" class="pixel-button secondary" data-action="reset" aria-label="Reset to the start of the route">Reset</button>
-        <button type="button" class="pixel-button secondary" data-action="tutorial-open" aria-label="Open the controls tutorial overlay">Help</button>
-        <span class="gastown-character-chip" aria-label="Current character is Suzy">CHARACTER · SUZY</span>
-        <label>
-          <input type="checkbox" name="low-graphics" data-setting="low-graphics" aria-label="Enable low graphics mode">
-          Low graphics
-        </label>
-        <label>
-          <input type="checkbox" name="reopen-tutorial" data-setting="reopen-tutorial" aria-label="Show the tutorial overlay again">
-          Show help on load
-        </label>
-        <button type="button" class="pixel-button tiny secondary" data-action="debug-toggle" aria-label="Toggle the debug notes panel">Debug</button>
-      </div>
-
-      <section class="gastown-help" aria-label="Simulator controls guide">
-        <h2>Controls</h2>
-        <ul>
-          <li><strong>Click</strong> to step into the street</li>
-          <li><strong>Mouse</strong> look</li>
-          <li><strong>W / ↑</strong> hold to run (Shift still works)</li>
-          <li><strong>A S D + arrows</strong> move / turn</li>
-          <li><strong>E / click</strong> interact</li>
-          <li><strong>B / See Suzy</strong> switch between first-person and behind-Suzy; <strong>Face / Front</strong> and <strong>Back / Follow</strong> choose the film camera side</li>
-          <li><strong>Entrance / Harbour / Rail-yard / Diagonal</strong> jump between safe Station East viewpoints, with no track access</li>
-          <li><strong>Esc</strong> releases your mouse so you can click browser controls, settings, or leave the simulator</li>
-          <li><strong>Harbour view</strong> frames the North Shore and Canada Place from the Cordova sidewalk (representative ship, not live berth status)</li>
-        </ul>
-        <p class="gastown-help-note">This simulator runs on a deterministic local world build. If optional audio or dialog extras fail, the walk continues.</p>
-      </section>
-    </details>
-
     <section class="gastown-tutorial-overlay" data-tutorial-overlay role="dialog" aria-modal="true" aria-labelledby="gastown-tutorial-title" aria-describedby="gastown-tutorial-copy" hidden>
       <div class="gastown-dialog-panel">
         <div class="gastown-dialog-header">
@@ -97,7 +61,11 @@ get_header();
         aria-pressed="true" aria-label="Toggle locally synthesized Vancouver traffic, harbour and seabird ambience"
         title="Original procedural ambience. No external voices or location recording.">🔊 Vancouver ambience · traffic / gulls</button>
       <aside class="gastown-minimap" aria-label="Exploration minimap">
-        <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap controls">
+        <details class="gastown-side-menu" data-side-menu>
+          <summary>☰ Menu <span aria-hidden="true">▾</span></summary>
+          <p class="gastown-side-menu-hint">Tap a view or change the weather. Esc frees the mouse.</p>
+          <div class="gastown-side-menu-section">Views</div>
+          <div class="gastown-minimap-toolbar" role="group" aria-label="Camera and minimap controls">
           <button type="button" class="gastown-minimap-mode" data-action="minimap-mode-toggle" aria-pressed="false" aria-label="Switch minimap to heading-up mode">North up</button>
           <button type="button" class="gastown-minimap-mode" data-action="harbour-lookout" aria-label="Go to the Station East fence lookout, facing Canada Place and Burrard Inlet">Harbour lookout</button>
           <button type="button" class="gastown-minimap-mode" data-action="rail-yard-view" aria-label="View the illustrated CPR N-Yard tracks from the safe Station East parking lot walkway">Rail-yard lookout</button>
@@ -110,7 +78,7 @@ get_header();
           <button type="button" class="gastown-minimap-zoom" data-action="minimap-zoom-out" aria-label="Zoom out minimap">−</button>
         </div>
         <details class="gastown-scene-options" data-scene-options>
-          <summary>☁ Scene &amp; weather <span class="gastown-scene-chevron" aria-hidden="true">▾</span></summary>
+          <summary>☁ Environment <span class="gastown-scene-chevron" aria-hidden="true">▾</span></summary>
           <div class="gastown-scene-options-grid" role="group" aria-label="Change scene conditions">
         <label>
           Time
@@ -143,6 +111,45 @@ get_header();
           </div>
           <p class="gastown-scene-tip">Press Esc to release your mouse before changing conditions.</p>
         </details>
+          <div class="gastown-side-menu-section">More</div>
+    <details class="gastown-controls-drawer">
+      <summary>⚙ Advanced &amp; help</summary>
+      <div class="gastown-controls" role="group" aria-label="Simulator controls">
+        <button type="button" class="pixel-button secondary" data-action="pause">Pause</button>
+        <button type="button" class="pixel-button secondary" data-action="reset" aria-label="Reset to the start of the route">Reset</button>
+        <button type="button" class="pixel-button secondary" data-action="tutorial-open" aria-label="Open the controls tutorial overlay">Help</button>
+        <span class="gastown-character-chip" aria-label="Current character is Suzy">CHARACTER · SUZY</span>
+        <label>
+          <input type="checkbox" name="low-graphics" data-setting="low-graphics" aria-label="Enable low graphics mode">
+          Low graphics
+        </label>
+        <label>
+          <input type="checkbox" name="reopen-tutorial" data-setting="reopen-tutorial" aria-label="Show the tutorial overlay again">
+          Show help on load
+        </label>
+        <button type="button" class="pixel-button tiny secondary" data-action="debug-toggle" aria-label="Toggle the debug notes panel">Debug</button>
+      </div>
+
+      <section class="gastown-help" aria-label="Simulator controls guide">
+        <h2>Controls</h2>
+        <ul>
+          <li><strong>Click</strong> to step into the street</li>
+          <li><strong>Mouse</strong> look</li>
+          <li><strong>W / ↑</strong> hold to run (Shift still works)</li>
+          <li><strong>A S D + arrows</strong> move / turn</li>
+          <li><strong>E / click</strong> interact</li>
+          <li><strong>B / See Suzy</strong> switch between first-person and behind-Suzy; <strong>Face / Front</strong> and <strong>Back / Follow</strong> choose the film camera side</li>
+          <li><strong>Entrance / Harbour / Rail-yard / Diagonal</strong> jump between safe Station East viewpoints, with no track access</li>
+          <li><strong>Esc</strong> releases your mouse so you can click browser controls, settings, or leave the simulator</li>
+          <li><strong>Harbour view</strong> frames the North Shore and Canada Place from the Cordova sidewalk (representative ship, not live berth status)</li>
+        </ul>
+        <p class="gastown-help-note">This simulator runs on a deterministic local world build. If optional audio or dialog extras fail, the walk continues.</p>
+      </section>
+    </details>
+
+        </details>
+        <details class="gastown-map-fold" open>
+          <summary>▣ Map</summary>
         <p class="gastown-minimap-tooltip" data-sim-minimap-tooltip aria-live="polite">Steam Clock corridor ahead.</p>
         <p class="gastown-minimap-compass" data-sim-compass aria-live="off">Facing NE · 045°</p>
         <canvas data-sim-minimap width="240" height="240" aria-label="North-referenced local map with the player and facing arrow"></canvas>
@@ -156,6 +163,7 @@ get_header();
         </ul>
         <p class="gastown-map-distance" data-sim-map-distance>Each map square is to scale</p>
         <p class="gastown-minimap-label" data-sim-minimap-landmark>Waterfront Station threshold</p>
+        </details>
       </aside>
       <pre class="gastown-route-debug-overlay" data-route-debug-overlay hidden></pre>
       <div class="gastown-live-strip">

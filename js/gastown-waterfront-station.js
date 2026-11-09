@@ -240,6 +240,27 @@
     box('Station east entry tactile threshold', 55.7, 0.13, -4.0,
       2.3, 0.055, 3.0, stoneShadow);
 
+    // Street-level detail pass: readable arrival threshold and inset glass,
+    // without closing the accessible walking corridor or inventing new doors.
+    const warmGlass = new THREE.MeshStandardMaterial({
+      color: 0x65818c, emissive: 0x6c4c25, emissiveIntensity: 0.16,
+      roughness: 0.23, metalness: 0.19
+    });
+    box('Station East glazed door warm inner reflection', 53.17, 2.0, -4.0,
+      0.045, 3.30, 2.43, warmGlass);
+    [-4.79, -3.21].forEach(z => box('Station East double door vertical rail',
+      53.49, 1.91, z, 0.08, 3.42, 0.045, brass));
+    box('Station East canopy dark reveal', 54.4, 4.24, -4.0,
+      2.2, 0.1, 4.0, iron);
+    box('Station East access tactile paving edge', 56.9, 0.146, -4,
+      0.12, 0.014, 3.25, brass);
+    // Thin joint lines keep large flat concrete areas from reading as one slab.
+    for (let i = 0; i < 4; i += 1) {
+      box('Station East side path expansion joint ' + i,
+        54.2 + i * 2.5, 0.132, 1.0,
+        0.035, 0.008, 13.6, stoneShadow);
+    }
+
     // Colonnade: pale Ionic columns and scroll-like capitals.
     const colX = [-24, -17.2, -10.4, -3.5, 3.5, 10.4, 17.2, 24];
     colX.forEach((x, index) => {

@@ -2,9 +2,9 @@
   "guide_intro": {
     "title": "Gastown local",
     "lines": [
-      "Start walking. The street will tell you what matters first.",
-      "Look for the sax, the storefront glow, and the pull toward the clock.",
-      "This place sits on the unceded territories of the Musqueam, Squamish, and Tsleil-Waututh Nations."
+      "Waterfront's right here. SeaBus, SkyTrain, West Coast Express: pick your adventure.",
+      "Head toward Water Street if you want the old brick and a ridiculous number of clock photos.",
+      "You're on the unceded territories of the Musqueam, Squamish, and Tsleil-Waututh Nations."
     ],
     "actions": [
       {
@@ -43,9 +43,9 @@
   "busker_clock_corner": {
     "title": "Street band",
     "lines": [
-      "We set up early so the first block already has a pulse.",
-      "Sax carries the lead, mandolin answers, bass walks, guitar chops, and the rhythm stays light enough for the corner to breathe.",
-      "If the weather shifts, the arrangement shifts with it."
+      "Got a tune going. Hang out a sec if you're not rushing for the train.",
+      "This corner changes every five minutes. Tourists, commuters, someone trying to find their Compass card.",
+      "If the rain kicks in, we just shorten the set."
     ],
     "actions": [
       {
@@ -59,7 +59,7 @@
           "weather": "rain"
         },
         "lines": [
-          "Rain trims the set down and leaves more air between phrases, but we never stop sounding like a band."
+          "If my amp survives the rain, I'm counting that as a great gig."
         ]
       },
       {
@@ -67,15 +67,7 @@
           "timeOfDay": "dusk"
         },
         "lines": [
-          "At dusk we stretch the phrases and let the corner glow do part of the work for us."
-        ]
-      },
-      {
-        "when": {
-          "location": "waterfront_station"
-        },
-        "lines": [
-          "Right off the station edge, the trick is making the street feel inhabited before people even see the clock."
+          "Golden hour on wet bricks? Kind of impossible to take a bad shot."
         ]
       }
     ]
@@ -83,9 +75,9 @@
   "pedestrian_route_tip": {
     "title": "Water Street walker",
     "lines": [
-      "Water Street still feels like old Gastown because the narrow lots and warehouse façades keep the block tight and walkable.",
-      "Before tourists filled the sidewalks, this corridor served the port economy — teamsters, merchants, and dock traffic all funneled through here.",
-      "If you ask me for a second tip, I'll tell you where the neighbourhood really started."
+      "Water Street's just down there. It's better on foot, honestly.",
+      "Keep an eye out for deliveries and people suddenly stopping for photos.",
+      "If you miss the clock, just follow the crowd looking up."
     ],
     "actions": [
       {
@@ -118,9 +110,9 @@
   "pedestrian_clock_hint": {
     "title": "Gastown passerby",
     "lines": [
-      "Maple Tree Square up ahead is better understood as a layered public space where several streets, later heritage framing, and urban history meet.",
-      "The Steam Clock is a 1977 landmark nearby, but it does not have to carry the whole story of the district.",
-      "Catch me on a follow-up question and I will point out how the flow changes between the square and the clock corner."
+      "The clock's cute, but the whole neighbourhood's worth a wander.",
+      "Fun fact: it's from 1977, not the 1800s. Still gets an audience every time.",
+      "Maple Tree Square's just farther along."
     ],
     "actions": [
       {
@@ -150,8 +142,8 @@
   "tourist_clock_stop": {
     "title": "Tourist",
     "lines": [
-      "We stopped because the band and the storefronts made the first stretch feel alive immediately.",
-      "Once that rhythm starts, you want to keep walking to see what the next corner is doing."
+      "Okay, I get it now. The clock is a little ridiculous, but I love it.",
+      "We're waiting for it to whistle. Apparently that's the whole event."
     ],
     "actions": [
       {
@@ -192,8 +184,8 @@
   "tourist_clock_photo": {
     "title": "Street photographer",
     "lines": [
-      "This angle works because the band, the paving, and the facades all stack into one frame.",
-      "If the street feels active, the photo feels earned."
+      "Can you move like half a step? Trying to get the bricks and the clock in frame.",
+      "The light after rain here is actually unreal."
     ],
     "actions": [
       {
@@ -233,9 +225,9 @@
   "skateboarder_corridor": {
     "title": "Gastown skateboarder",
     "lines": [
-      "The fun part of this block is that the feel changes in stages — threshold, storefront rhythm, clock crowd, then the looser edge near Maple Tree Square.",
-      "If you want a challenge, use me as your cue to survey the route: notice where Water Street starts reading like a real corridor instead of a simple starter strip.",
-      "Once you have read the mid-block and the eastern rise, the whole route makes more sense."
+      "These bricks are not exactly forgiving on wheels.",
+      "Watch for people stepping backwards to film the clock.",
+      "If it's wet out, I'm walking this stretch. Not worth eating pavement."
     ],
     "actions": [
       {
@@ -266,9 +258,9 @@
   "cyclist_water_street": {
     "title": "Gastown cyclist",
     "lines": [
-      "Riding this stretch teaches you the route structure fast: you can feel when the corridor tightens, when the plaza interrupts it, and when the east leg opens back up.",
-      "Treat the minimap like a soft cue, not a GPS arrow — it is best when it confirms something you already noticed in the street itself.",
-      "If you keep the survey going past the clock, the Cambie rise gives you the last big contrast point."
+      "Heads up, this block gets busy with folks wandering into the street.",
+      "I just slow down near the clock. Everyone's filming something.",
+      "Honestly, more room to walk and bike around here would be nice."
     ],
     "actions": [
       {
@@ -308,27 +300,64 @@
   "parking_small_talk": {
     "title": "Station East walker",
     "lines": [
-      "I came here because I thought there would be a good view.",
-      "Turns out there's a parking lot, and then an incredible view behind it.",
-      "Anyway, nice chat."
+      "Yo, you here for the harbour view too?",
+      "Kind of funny that one of the best views is hiding behind a parking lot.",
+      "SeaBus is over there. Mountains doing their thing. Not bad for a grey day."
     ],
     "actions": [
       {
         "type": "close",
         "label": "Back to walk"
       }
+    ],
+    "variants": [
+      {
+        "when": {
+          "weather": "rain"
+        },
+        "lines": [
+          "Classic Vancouver: leave the house in drizzle, arrive in sideways rain.",
+          "At least the North Shore looks unreal when the clouds lift."
+        ]
+      },
+      {
+        "when": {
+          "timeOfDay": "night"
+        },
+        "lines": [
+          "The harbour lights are pretty good from here. Honestly, better than another photo of the clock."
+        ]
+      }
     ]
   },
   "parking_high_five": {
     "title": "Friendly stranger",
     "lines": [
-      "Hey. Quick question. Are you available for a high five?",
-      "I think this could be a very positive interaction with almost no follow-up obligations."
+      "Hey, solid fit. High five?",
+      "No pressure. This city could use one uncomplicated interaction."
     ],
     "actions": [
       {
         "type": "close",
         "label": "Back to walk"
+      }
+    ],
+    "variants": [
+      {
+        "when": {
+          "weather": "rain"
+        },
+        "lines": [
+          "You're still out walking in this? Respect. High five?"
+        ]
+      },
+      {
+        "when": {
+          "mood": "commuter"
+        },
+        "lines": [
+          "Everyone's speed-running their connection. You got time for one high five?"
+        ]
       }
     ]
   }

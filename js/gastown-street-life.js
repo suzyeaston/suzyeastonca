@@ -36,7 +36,7 @@
       const patrol = [point(item.t,item.side),point(Math.min(0.83,item.t+0.045),item.side)];
       return {
         id:item.id, role:'commuter',
-        name:item.cue==='parking-highfive'?'Friendly stranger':'Station East walker',
+        name:item.cue==='parking-highfive'?'Friendly local':'Station East local',
         voiceCue:item.cue,
         dialogId:item.cue==='parking-highfive'?'parking_high_five':'parking_small_talk',
         behavior:'route_walk', interactRadius:2.9, silhouetteScale:0.93+(i%3)*0.045,

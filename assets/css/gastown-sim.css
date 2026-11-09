@@ -662,3 +662,23 @@
 .gastown-scene-options-grid select:focus-visible { outline: 2px solid #ffd166; }
 .gastown-scene-tip { font-size: .67rem; line-height: 1.3; margin: 0 .6rem .6rem; color: #a8c9da; }
 .gastown-controls-location { padding: .35rem .65rem; margin: .2rem 0; color: #d8e8f7; }
+
+/* Unified collapsible sidebar: all simulator settings live beside the map. */
+.gastown-side-menu { border: 1px solid #62869b; border-radius: 8px; background: rgba(8,20,31,.97); margin-bottom:.45rem; }
+.gastown-side-menu > summary, .gastown-map-fold > summary { cursor:pointer; padding:.55rem .6rem; color:#e4f7ff; background:#17374a; border-radius:7px; font:800 .85rem/1.25 system-ui,sans-serif; }
+.gastown-side-menu > summary span {float:right;}
+.gastown-side-menu > summary:focus-visible, .gastown-map-fold > summary:focus-visible, .gastown-controls-drawer > summary:focus-visible {outline:2px solid #ffd778;outline-offset:2px;}
+.gastown-side-menu:not([open]) > summary span {transform:rotate(-90deg);}
+.gastown-side-menu-hint {font-size:.69rem;line-height:1.4;margin:.45rem .55rem;color:#bfd5e0;}
+.gastown-side-menu-section {font:800 .68rem/1.2 system-ui,sans-serif;letter-spacing:.1em;color:#f3cf82;text-transform:uppercase;margin:.6rem .55rem .35rem;border-bottom:1px solid #3f5f70;padding-bottom:.25rem;}
+.gastown-side-menu .gastown-minimap-toolbar {margin:.25rem .5rem .55rem;}
+.gastown-side-menu .gastown-scene-options {margin:.4rem .5rem .6rem;}
+.gastown-side-menu .gastown-controls-drawer {margin:.25rem .5rem .65rem; background:#0e2534;border:1px solid #466778;border-radius:7px;}
+.gastown-side-menu .gastown-controls-drawer > summary {cursor:pointer;padding:.5rem .55rem;font-size:.78rem;}
+.gastown-side-menu .gastown-controls {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.35rem;padding:.4rem;}
+.gastown-side-menu .gastown-controls > * {min-width:0;white-space:normal;}
+.gastown-side-menu .gastown-help {padding:.4rem .65rem;max-height:32vh;overflow:auto;font-size:.73rem;}
+.gastown-map-fold > summary {font-size:.75rem;padding:.35rem .55rem;background:#102c3c;}
+.gastown-map-fold:not([open]) > :not(summary) {display:none;}
+.gastown-minimap {max-height:min(92vh,870px);overflow-y:auto;scrollbar-width:thin;}
+@media(max-width:740px){.gastown-minimap{max-height:80vh;}.gastown-side-menu .gastown-controls{grid-template-columns:1fr;}}
