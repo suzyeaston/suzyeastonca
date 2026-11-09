@@ -30,10 +30,10 @@ function nodes(root){return [root,...root.children.flatMap(nodes)]}
 test('heritage kit only occupies Water Street route and references civic centerline',()=>{
  const s=scene(),all=nodes(s);
  assert.equal(s.userData.referenceApproximation,true);
- assert.equal(s.userData.routeStart,9);
+ assert.equal(s.userData.routeStart,7);
  assert.equal(s.userData.routeEnd,world.route.centerline.length-1);
  const road=all.filter(n=>/Water Street brick roadway/.test(n.name));
- assert.equal(road.length,world.route.centerline.length-10);
+ assert.equal(road.length,world.route.centerline.length-8);
  assert.ok(road.every(p=>p.rotation.order==='YXZ'));
  assert.ok(road.every(p=>p.geometry.args[0]<=world.route.streetWidth));
 });
@@ -64,4 +64,23 @@ test('The Landing retains its civic building envelope and adds curved glass cano
  assert.match(source,/The Landing translucent overhead canopy glazing/);
  assert.match(source,/The Landing Victorian canopy sidewalk support/);
  assert.match(source,/landing\.footprint/);
+});
+
+test('heritage frontages attach to mapped civic building footprints, not fake street walls',()=>{
+ const sceneRoot=scene(),all=nodes(sceneRoot);
+ const frontages=all.filter(n=>/^Mapped Water Street heritage frontage /.test(n.name));
+ assert.ok(frontages.length>=5,'street needs meaningful historic frontage coverage');
+ assert.ok(frontages.length<=14,'constrain draw calls');
+ assert.equal(sceneRoot.userData.mappedHeritageFrontages,frontages.length);
+ for(const face of frontages){
+  const id=face.name.replace('Mapped Water Street heritage frontage ','');
+  const building=world.buildings.find(b=>b.id===id);
+  assert.ok(building,'each facade must reference a real footprint');
+  assert.equal(face.position.x,building.x);
+  assert.equal(face.position.z,building.z);
+  assert.equal(face.rotation.y,-building.yaw);
+ }
+ assert.ok(all.some(n=>n.name==='Heritage upper sash window'));
+ assert.ok(all.some(n=>n.name==='Ground floor glazing band'));
+ assert.ok(all.some(n=>n.name==='Gastown mature tree fine canopy'));
 });
