@@ -1943,8 +1943,8 @@
       'busker-hook': ['Clock corner tune, folks.', 'Gather round the clock.'],
       'tourist-cluster': ['One more picture here.', 'Stand by the clock, please.'],
       'photo-direction': ['Hold still by the clock.', 'Okay, one more shot.'],
-      'parking-smalltalk': ['It is a parking lot, but with a really good view.', 'I think we both got here early.'],
-      'parking-highfive': ['High five?', 'That was a very efficient greeting.'],
+      'parking-smalltalk': ['The stalls are so tight I can barely open my door.', 'I extended my parking and still got a ticket.', 'The view of North Van is fantastic, though.', 'The app did not recognize the lot number.'],
+      'parking-highfive': ['I paid online and still got ticketed.', 'Two minutes in the lot and I got a ticket.', 'The harbour view is worth a photo, at least.'],
     };
     const options = snippetsByCue[selected.voiceCue] || [];
     if (!options.length) {
@@ -1987,8 +1987,8 @@
         - Math.hypot(b.mesh.position.x-player.position.x,b.mesh.position.z-player.position.z))[0];
     if (!candidate) return;
     const entries = {
-      'parking-smalltalk': ['Parking lot view is weirdly elite.', 'The SeaBus is doing all the work today.'],
-      'parking-highfive': ['Five stars for a high five?', 'The reviews said the clock was too clock-shaped.'],
+      'parking-smalltalk': ['I was here two minutes and got a ticket!', 'They are serious about the vehicle weight limit.', 'Great view of the port and North Van.', 'I had trouble paying in their app.'],
+      'parking-highfive': ['I extended my parking and still got a ticket.', 'The stalls are ridiculously narrow.', 'I came back to a towing notice.'],
       'tourist-cluster': ['Wait, that was the whole steam show?', 'Who is blocking the clock? Oh. Me.'],
       'photo-direction': ['One more photo, then we can get coffee.', 'You are in my clock photo!'],
       'busker-hook': ['Clock corner show, coming through.', 'Tips appreciated, even in the rain.']
@@ -6713,6 +6713,19 @@
   function attachEvents() {
     // UI outside the WebGL canvas should immediately regain its cursor.
     // A locked cursor otherwise makes the side menu appear unresponsive.
+    // Pointer lock hides the OS cursor, so the menu needs a keyboard route too.
+    // M opens/closes the in-game controls and releases the captured pointer.
+    document.addEventListener('keydown', (event) => {
+      if (event.key.toLowerCase() !== 'm' || event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+      const target = event.target;
+      if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName || ''))) return;
+      const menu = app.querySelector('[data-side-menu]');
+      if (!menu) return;
+      event.preventDefault();
+      if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) document.exitPointerLock();
+      menu.open = !menu.open;
+      updatePointerHelp();
+    });
     const sidebar = app.querySelector('.gastown-minimap');
     if (sidebar) sidebar.addEventListener('pointerdown', () => {
       if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) {
