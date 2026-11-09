@@ -95,3 +95,4 @@ jobs:
           node --test __tests__/gastown-sidebar-local-dialogue.test.js
           node --test __tests__/gastown-photo-look-review-dialogue.test.js
           node --test __tests__/gastown-weather-direction-ambient.test.js
+          node --test __tests__/gastown-water-street-heritage.test.js
