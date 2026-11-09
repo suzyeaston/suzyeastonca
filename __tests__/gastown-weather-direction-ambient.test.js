@@ -29,5 +29,5 @@ test('side controls hand off pointer lock, ambient voices use nearby consented s
  assert.match(js,/!state\.hasInteracted \|\| !localAmbienceEnabled/);
  assert.match(js,/npcAmbientCooldown\.set/);
  const page=read('page-gastown-sim.php');
- assert.match(page,/Press Esc for the menu/);
+ assert.match(page,/Press M to open\/close this menu/);
 });
