@@ -149,6 +149,7 @@
     velocity: new THREE.Vector3(),
     lastSafePosition: new THREE.Vector3(),
     debugEnabled: new URLSearchParams(window.location.search).get('gastownDebug') === '1',
+    interactionRaycastUnavailable: false,
     activeWeather: config.defaultWeather || 'clear',
     activeTimeOfDay: config.defaultTimeOfDay || 'morning',
     activeMood: config.defaultMood || 'calm',
@@ -3524,12 +3525,20 @@
     camera.getWorldDirection(lookTarget);
     camera.getWorldPosition(tempCameraWorldPosition);
     sharedRaycaster.set(tempCameraWorldPosition, lookTarget);
+    // THREE.Sprite speech bubbles are children of NPC groups. A manually
+    // positioned raycaster has camera=null unless assigned explicitly.
+    // Three r160 Sprite.raycast dereferences camera.matrixWorld and crashes
+    // the animation loop before renderer.render() when camera is missing.
+    sharedRaycaster.camera = camera;
     let best = null;
     state.npcs.forEach((npc) => {
       if (!npc.mesh) return;
-      const hits = sharedRaycaster.intersectObject(npc.mesh, true);
+      // Decorative speech-bubble sprites should not count as hitting the NPC.
+      // Still traverse them safely so other character geometry remains pickable.
+      const hits = sharedRaycaster.intersectObject(npc.mesh, true)
+        .filter((hit) => !hit.object || !hit.object.isSprite);
       const hitDistance = hits.length ? hits[0].distance : null;
-      const centered = hits.length || lookTarget.dot(new THREE.Vector3().subVectors(npc.mesh.position, tempCameraWorldPosition).normalize()) > 0.92;
+      const centered = hits.length > 0 || lookTarget.dot(new THREE.Vector3().subVectors(npc.mesh.position, tempCameraWorldPosition).normalize()) > 0.92;
       const candidate = scoreNpcInteractionCandidate(npc, { rayHit: hits.length > 0, centered });
       if (!candidate) return;
       candidate.hitDistance = hitDistance;
@@ -6943,7 +6952,21 @@
         updateProgressiveVisibility();
         updateNpcs(delta);
         if (streetLifeScene) streetLifeScene.update(time / 1000);
-        updateInteractionTarget();
+        // Optional NPC hit tests must never take down the 3D renderer.
+        // Disable only interaction picking after a fault, leaving movement,
+        // scenery, the minimap, and audio independent of speech bubbles.
+        if (!state.interactionRaycastUnavailable) {
+          try {
+            updateInteractionTarget();
+          } catch (error) {
+            state.interactionRaycastUnavailable = true;
+            state.hoveredNpcId = '';
+            setInteractPrompt('');
+            if (window.console && typeof window.console.warn === 'function') {
+              window.console.warn('[Gastown Sim] NPC hit testing disabled after error; 3D rendering continues.', error);
+            }
+          }
+        }
         updateLandmarkDiscoveries();
         updateQuestChainsFromProgress();
         animateRain(delta);

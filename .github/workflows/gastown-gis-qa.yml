@@ -90,3 +90,4 @@ jobs:
           node --test __tests__/gastown-street-life.test.js
           node --test __tests__/gastown-film-camera-scene.test.js
           node --test __tests__/gastown-film-scene-v11.test.js
+          node --test __tests__/gastown-sprite-raycast-safety.test.js
