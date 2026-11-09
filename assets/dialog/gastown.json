@@ -43,9 +43,9 @@
   "busker_clock_corner": {
     "title": "Street band",
     "lines": [
-      "Got a tune going. Hang out a sec if you're not rushing for the train.",
-      "This corner changes every five minutes. Tourists, commuters, someone trying to find their Compass card.",
-      "If the rain kicks in, we just shorten the set."
+      "One review said Gastown was nothing but souvenir shops and an underwhelming clock.",
+      "Cool, I'm providing the deluxe soundtrack for free. Tips accepted.",
+      "At least my set lasts longer than the steam."
     ],
     "actions": [
       {
@@ -59,7 +59,7 @@
           "weather": "rain"
         },
         "lines": [
-          "If my amp survives the rain, I'm counting that as a great gig."
+          "The clock can whistle in the rain. My amp is filing a complaint."
         ]
       },
       {
@@ -67,7 +67,7 @@
           "timeOfDay": "dusk"
         },
         "lines": [
-          "Golden hour on wet bricks? Kind of impossible to take a bad shot."
+          "Even the bad reviews admit the bricks photograph well at dusk."
         ]
       }
     ]
@@ -110,9 +110,9 @@
   "pedestrian_clock_hint": {
     "title": "Gastown passerby",
     "lines": [
-      "The clock's cute, but the whole neighbourhood's worth a wander.",
-      "Fun fact: it's from 1977, not the 1800s. Still gets an audience every time.",
-      "Maple Tree Square's just farther along."
+      "Locals don't usually schedule their day around the Steam Clock. Tourists do.",
+      "Somebody was mad it's from 1977. Sorry it wasn't forged by a Victorian wizard.",
+      "Water Street's the good bit. Keep walking."
     ],
     "actions": [
       {
@@ -142,8 +142,9 @@
   "tourist_clock_stop": {
     "title": "Tourist",
     "lines": [
-      "Okay, I get it now. The clock is a little ridiculous, but I love it.",
-      "We're waiting for it to whistle. Apparently that's the whole event."
+      "I waited fifteen minutes for a clock to do a small toot.",
+      "Honestly, I've paid more for worse entertainment.",
+      "My review: three stars. One for each minute I spent explaining it to my family."
     ],
     "actions": [
       {
@@ -159,7 +160,8 @@
           "location": "steam_clock"
         },
         "lines": [
-          "Afternoon is when the corner feels busiest: one group waits for the chime, another frames photos, and someone always asks whether the steam is real."
+          "Five hundred people here to photograph an object that literally tells them when to go home.",
+          "I still took twelve photos. Obviously."
         ]
       },
       {
@@ -168,7 +170,7 @@
           "location": "steam_clock"
         },
         "lines": [
-          "In the rain we all end up clustering under the nearest cornice, then stepping back out together when the clock starts to sing."
+          "One star. It steamed, I steamed, and then it rained on my pastry."
         ]
       },
       {
@@ -176,7 +178,7 @@
           "location": "maple_tree_square"
         },
         "lines": [
-          "Near Maple Tree Square people slow down and point more — it feels less like passing through and more like arriving at the part everyone wants to remember."
+          "Wait, I thought the clock was the whole attraction. There are more streets?"
         ]
       }
     ]
@@ -184,8 +186,9 @@
   "tourist_clock_photo": {
     "title": "Street photographer",
     "lines": [
-      "Can you move like half a step? Trying to get the bricks and the clock in frame.",
-      "The light after rain here is actually unreal."
+      "Could everyone stop standing in front of the famous tiny clock?",
+      "I've got forty-seven photos of strangers' jackets and half a whistle.",
+      "Five stars for the brickwork, though. It knows its angles."
     ],
     "actions": [
       {
@@ -196,28 +199,20 @@
     "variants": [
       {
         "when": {
-          "weather": "clear",
-          "location": "steam_clock"
-        },
-        "lines": [
-          "On a clear day you can feel people queuing themselves without meaning to: one person takes the shot, the next steps in, and the corner keeps performing."
-        ]
-      },
-      {
-        "when": {
           "weather": "fog",
           "location": "steam_clock"
         },
         "lines": [
-          "Fog makes the Steam Clock photos moodier, so photographers wait longer between shots and end up talking to strangers about whether to stay for the next plume."
+          "The fog makes my photo look like a period drama about disappointing clocks."
         ]
       },
       {
         "when": {
-          "foundProp": "foundHistoricPlaque"
+          "weather": "clear",
+          "location": "steam_clock"
         },
         "lines": [
-          "If you already read the plaque, the image lands differently — you are not just photographing an icon, you are catching a block that knows its own backstory."
+          "Someone reviewed the clock as 'too crowded'. Sir, you are also the crowd."
         ]
       }
     ]
@@ -225,9 +220,9 @@
   "skateboarder_corridor": {
     "title": "Gastown skateboarder",
     "lines": [
-      "These bricks are not exactly forgiving on wheels.",
-      "Watch for people stepping backwards to film the clock.",
-      "If it's wet out, I'm walking this stretch. Not worth eating pavement."
+      "Some tourist complained about the cobblestones. As a skateboarder, I actually have notes.",
+      "This entire street is one giant vibration setting.",
+      "Clock's fine though. Very committed to standing still."
     ],
     "actions": [
       {
@@ -258,9 +253,9 @@
   "cyclist_water_street": {
     "title": "Gastown cyclist",
     "lines": [
-      "Heads up, this block gets busy with folks wandering into the street.",
-      "I just slow down near the clock. Everyone's filming something.",
-      "Honestly, more room to walk and bike around here would be nice."
+      "Someone reviewed Gastown as too busy. They arrived on a cruise ship.",
+      "I am begging everyone to look up from the camera before stepping into the street.",
+      "Also, whoever designed the cobblestones has clearly never ridden a bike."
     ],
     "actions": [
       {
@@ -300,9 +295,9 @@
   "parking_small_talk": {
     "title": "Station East walker",
     "lines": [
-      "Yo, you here for the harbour view too?",
-      "Kind of funny that one of the best views is hiding behind a parking lot.",
-      "SeaBus is over there. Mountains doing their thing. Not bad for a grey day."
+      "Someone left a one-star review because the Steam Clock was... a clock.",
+      "Mate, it whistles and shoots steam. The rest is your emotional journey.",
+      "Anyway, SeaBus is right there and the harbour view's free. Give the mountains five stars."
     ],
     "actions": [
       {
@@ -316,8 +311,8 @@
           "weather": "rain"
         },
         "lines": [
-          "Classic Vancouver: leave the house in drizzle, arrive in sideways rain.",
-          "At least the North Shore looks unreal when the clouds lift."
+          "A tourist said Gastown was damp. In Vancouver. In November.",
+          "I'm forwarding their review directly to the clouds."
         ]
       },
       {
@@ -325,7 +320,7 @@
           "timeOfDay": "night"
         },
         "lines": [
-          "The harbour lights are pretty good from here. Honestly, better than another photo of the clock."
+          "Apparently the clock is underwhelming at night too. I dunno, the harbour lights are doing all the heavy lifting."
         ]
       }
     ]
@@ -333,8 +328,8 @@
   "parking_high_five": {
     "title": "Friendly stranger",
     "lines": [
-      "Hey, solid fit. High five?",
-      "No pressure. This city could use one uncomplicated interaction."
+      "A reviewer said this city wasn't friendly. High five to dispute that?",
+      "Five stars for the interaction. Zero stars for the parking situation."
     ],
     "actions": [
       {
@@ -348,7 +343,8 @@
           "weather": "rain"
         },
         "lines": [
-          "You're still out walking in this? Respect. High five?"
+          "Someone gave the rain two stars. That's honestly generous.",
+          "High five before my sleeve becomes a sponge?"
         ]
       },
       {
@@ -356,7 +352,7 @@
           "mood": "commuter"
         },
         "lines": [
-          "Everyone's speed-running their connection. You got time for one high five?"
+          "A high five? Quick, before both our SkyTrains leave."
         ]
       }
     ]
