@@ -1402,26 +1402,34 @@
         setStatus('Elevator riding to floor six…');
       }
     }else if(lab.stage==='riding'){
-      if(elapsed>1.3&&!lab.farewellSpoken){
-        lab.farewellSpoken=true;
-        landingSpeak('see ya snoozy!');
-      }
       if(elapsed>3.8){
         landingTravel('lab',portal.roomSpawn,'Sixth floor. Welcome to the Multimodal Media Lab.');
         lab.farewellAt=nowSeconds;
+        lab.farewellSpoken=false;
         if(lab.roomRoot&&lab.roomRoot.userData.greeter){
           const kk=lab.roomRoot.userData.greeter;
           kk.visible=true;kk.position.set(800.9,0,807);
         }
       }
     }else if(lab.stage==='lab'){
+      if(!lab.farewellSpoken&&elapsed>1.05){
+        lab.farewellSpoken=true;
+        lab.lastGreeting='';
+        landingSpeak('bye snoooozie!');
+      }
+      if(lab.roomRoot&&lab.roomRoot.userData.coderHands){
+        // Small alternating typing rhythm, no repeated full-scene rebuild.
+        lab.roomRoot.userData.coderHands.forEach((hand,i)=>{
+          hand.position.y=0.99+Math.sin(nowSeconds*11+i*Math.PI)*0.035;
+        });
+      }
       if(lab.roomRoot&&lab.roomRoot.userData.greeter){
         const kk=lab.roomRoot.userData.greeter;
         const t=nowSeconds-lab.farewellAt;
-        if(t>0.6&&t<4.8){
-          kk.position.z=Math.min(809,807+(t-0.6)*0.5);
+        if(t>1.25&&t<5.6){
+          kk.position.z=Math.min(809,807+(t-1.25)*0.5);
           kk.rotation.y=Math.PI;
-        }else if(t>=4.8)kk.visible=false;
+        }else if(t>=5.6)kk.visible=false;
       }
       if(elapsed>2.7&&near(portal.roomExit,1.0)){
         landingTravel('street',lab.returnPosition||portal.threshold,
