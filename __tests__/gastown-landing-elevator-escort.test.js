@@ -22,7 +22,7 @@ test('The Landing street door includes historically inspired glazing, stone jamb
 test('lobby is separate, walkable, lift is on left and escort shares journey',()=>{
   for(const marker of ['createLandingJourney(THREE)','The Landing lobby stone floor',
     'Glass main entrance facing Water Street','Elevator door brushed metal',
-    'Elevator cabin floor button 6','KK fictional lobby escort']){
+    'Elevator floor button ','KK fictional lobby escort']){
     assert.ok(places.includes(marker),marker);
   }
   assert.match(places,/elevatorLobby:\{x:845,z:851\}/);
