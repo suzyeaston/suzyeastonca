@@ -107,6 +107,7 @@
   const stationModel = window.GastownWaterfrontStation || null;
   const waterfrontPlaces = window.GastownWaterfrontPlaces || null;
   const harbourVista = window.GastownHarbourVista || null;
+  const cordovaArchitecture = window.GastownCordovaArchitecture || null;
   const harbourLookBtn = app.querySelector('[data-action="harbour-lookout"]');
   const entranceLookBtn = app.querySelector('[data-action="lot-entrance-view"]');
   const diagonalLookBtn = app.querySelector('[data-action="lot-diagonal-view"]');
@@ -3966,8 +3967,14 @@
     }
     world.buildings = (world.buildings || []).map((building) => window.GastownBuildingNormalizer.normalizeBuildingForRender(building));
 
+    const replacedBuildings = new Set(cordovaArchitecture && typeof cordovaArchitecture.replacementIds === 'function'
+      ? cordovaArchitecture.replacementIds() : []);
     world.buildings.forEach((b) => {
       if (!Number.isFinite(b.x) || !Number.isFinite(b.z)) return;
+      // Curated scene blockouts share the same GIS building IDs. Do not draw
+      // the old deeply concave extrusions behind/through them: those produce
+      // black triangular fins in the first-person Cordova screenshots.
+      if (replacedBuildings.has(b.id)) return;
       const isPriority = isPriorityBuilding(b, startupAnchor, renderOptions.nearRadius, renderOptions.heroRadius);
       if (renderOptions.coreOnly && !isPriority) return;
       const shapePoints = toRenderableShapePoints(b);
@@ -4026,12 +4033,13 @@
         const roofMat = registerMaterial(new THREE.MeshStandardMaterial({ color: colors.trim, roughness: 0.74, metalness: 0.1 }), 'metalMaterials');
         const roof = new THREE.Mesh(roofGeom, roofMat);
         roof.position.set(b.x, renderedHeight + 0.06, b.z);
-        roof.rotation.y = -(b.yaw || 0) + (rooflineType === 'angled_parapet' ? 0.45 : 0);
-        if (rooflineType === 'stepped') {
-          roof.scale.set(0.86, 1, 0.86);
-        } else if (rooflineType === 'gable_shallow') {
-          roof.scale.set(0.9, 1, 0.78);
-        }
+        // Roof and body MUST use the same footprint transform. Rotating an
+        // angled parapet relative to the wall created a large floating
+        // diagonal polygon; each roof now caps the mass beneath it.
+        roof.rotation.y = mesh.rotation.y;
+        roof.scale.set(massingInset, 1, massingInset);
+        roof.material.side = THREE.DoubleSide;
+        roof.receiveShadow = false;
         worldGroup.add(roof);
         visualState.buildingMeshes.push(roof);
       }
@@ -4077,23 +4085,35 @@
         .slice(0, 6)
         .forEach((edge) => {
           const facadePanel = new THREE.Mesh(
-            new THREE.BoxGeometry(edge.length * 0.94, storefrontBandHeight, 0.10),
+            new THREE.BoxGeometry(edge.length * 0.90 * massingInset, storefrontBandHeight, 0.10),
             storefrontMat
           );
           facadePanel.name = 'Civic footprint-edge storefront trim';
-          facadePanel.position.set(edge.midpoint.x, storefrontBandHeight / 2 + 0.1, edge.midpoint.z);
+          // Keep decorative storefront trim on the inset wall rather than
+          // hanging over the sidewalk in front of the building.
+          facadePanel.position.set(
+            b.x + (edge.midpoint.x - b.x) * massingInset,
+            storefrontBandHeight / 2 + 0.1,
+            b.z + (edge.midpoint.z - b.z) * massingInset
+          );
           facadePanel.rotation.y = edge.yaw;
           worldGroup.add(facadePanel);
           visualState.buildingMeshes.push(facadePanel);
         });
-      const edge = new THREE.LineSegments(
-        new THREE.EdgesGeometry(geom),
-        new THREE.LineBasicMaterial({ color: b.hero_fidelity === 'hero' ? 0x8f9eb0 : 0x6f8197, transparent: true, opacity: b.hero_fidelity === 'hero' ? 0.34 : 0.28 })
-      );
-      edge.position.copy(mesh.position);
-      edge.rotation.y = mesh.rotation.y;
-      worldGroup.add(edge);
-      visualState.buildingMeshes.push(edge);
+      // Wireframe is a diagnostic tool, not urban architecture. Suppress
+      // it in cinematic view: unscaled EdgesGeometry used to cross building
+      // skins and made the downtown façades flicker at oblique angles.
+      if (state.debugEnabled) {
+        const edge = new THREE.LineSegments(
+          new THREE.EdgesGeometry(geom),
+          new THREE.LineBasicMaterial({ color: 0x7e9eb0, transparent: true, opacity: 0.18 })
+        );
+        edge.position.copy(mesh.position);
+        edge.rotation.y = mesh.rotation.y;
+        edge.scale.copy(mesh.scale);
+        worldGroup.add(edge);
+        visualState.buildingMeshes.push(edge);
+      }
       // Upper-story rectangular decorations use an approximate facade axis.
       // They are safe only for small regular buildings. Suppress them on
       // complex/large civic footprints to prevent floating walls and awnings.
@@ -4431,6 +4451,15 @@
         // Landing's broad pale wall is a key camera collision surface.
         const landingGroup=shorelinePlaces.children.find(g=>g && /Kelly-Douglas/.test(g.name));
         if(landingGroup)thirdPersonCameraBlockers.push(landingGroup);
+      }
+    }
+    if (cordovaArchitecture && typeof cordovaArchitecture.create === 'function') {
+      const southSkyline = cordovaArchitecture.create(THREE, world);
+      if (southSkyline) {
+        worldGroup.add(southSkyline);
+        // Cast the follow camera against physical building elevations;
+        // the GIS walkability footprint remains authoritative.
+        thirdPersonCameraBlockers.push(southSkyline);
       }
     }
     if (stationModel) {
