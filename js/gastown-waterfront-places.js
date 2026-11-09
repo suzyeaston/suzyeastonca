@@ -379,9 +379,11 @@
       for(let i=0;i<count;i++){
         const t=(i+0.5)/count, x=a.x+dx*t, z=a.z+dz*t;
         addBox(THREE,root,'The Landing warehouse sash window',x,y,z,2.0,1.72,0.15,glass,yaw);
-        addBox(THREE,root,'Limestone sash sill',x,y-0.94,z,2.35,0.17,0.26,stone,yaw);
-        addBox(THREE,root,'Limestone window lintel',x,y+0.95,z,2.31,0.14,0.24,trim,yaw);
       }
+      // Continuous limestone courses read clearly at camera distance and
+      // save hundreds of individual draw calls on an 8 GB machine.
+      addSegment(THREE,root,'Limestone sill course',a,b,y-0.94,0.16,stone);
+      addSegment(THREE,root,'Limestone lintel course',a,b,y+0.95,0.13,trim);
     }
     addSegment(THREE,root,'The Landing ground-floor masonry stringcourse',a,b,4.03,0.22,stone);
     addSegment(THREE,root,'The Landing parapet cornice',a,b,23.9,0.54,stone);
