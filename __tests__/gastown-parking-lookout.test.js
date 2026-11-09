@@ -129,5 +129,9 @@ test('main runtime recognizes lot movement and the UI offers the fence destinati
   assert.match(js,/state\.lastSafePosition\)/);
   assert.match(js,/waterfrontPlaces\.lookoutFor\(state\.world, target\)/);
   assert.match(php,/data-action="harbour-lookout"/);
-  assert.match(php,/>Fence lookout<\/button>/);
+  assert.match(php,/>Harbour lookout<\/button>/);
+  assert.match(php,/data-action="rail-yard-view"/);
+  assert.match(js,/railYardLookBtn\.addEventListener\('click', \(\) => goToLotView\('yard'\)\)/);
+  assert.match(js,/shot === 'yard'/);
+  assert.match(js,/CP N-Yard: twenty illustrative rail alignments/);
 });
