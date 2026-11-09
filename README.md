@@ -1,231 +1,139 @@
-# Suzy Easton
+# suzyeaston.ca
 
-*Practical AI, strange interfaces, and cool systems built in Vancouver, BC, on the shared, unceded, ancestral territories of the xʷməθkʷəy̓əm (Musqueam), Sḵwx̱wú7mesh Úxwumixw (Squamish Nation), and səlilwətaɬ (Tsleil-Waututh) Nations.*
+**music // systems // experiments**
 
-This repository powers [suzyeaston.ca](https://suzyeaston.ca), the public creative-technology home of Suzy Easton.
+This is the code behind [suzyeaston.ca](https://suzyeaston.ca/): a custom WordPress site, a service-status product, a browser-built Vancouver, music tools, publishing automation, and a growing collection of experiments. Not a résumé in repository form. The machinery is the point.
 
-It is part portfolio, part workshop, and part open notebook. The work moves between AI strategy, cloud operations, automation, civic data, music technology, interactive storytelling, and the occasional interface that looks like it escaped from an arcade cabinet.
+Built in Vancouver, BC, on the shared, unceded, ancestral territories of the xʷməθkʷəy̓əm (Musqueam), Sḵwx̱wú7mesh Úxwumixw (Squamish Nation), and səlilwətaɬ (Tsleil-Waututh) Nations.
 
-Some projects are polished. Some are mid-mutation. All of them have survived contact with reality.
+> **Scope:** This repository holds the WordPress theme, the Lousy Outages plugin, selected browser applications, tooling, and source content. It is not a full WordPress database export, a copy of every service behind the site, or a guarantee that each experiment is currently deployed.
 
-## Doors in
+## Enter the site
 
-- [Live site](https://suzyeaston.ca)
-- [Lousy Outages](https://suzyeaston.ca/lousy-outages/)
-- [Vancouver Tech Events](https://suzyeaston.ca/vancouver-tech-events/)
-- [AFTERIMAGE / Vancouver](https://suzyeaston.ca/afterimage/)
-- [Gastown Simulator](https://suzyeaston.ca/gastown-sim/)
-- [Track Analyzer](https://suzyeaston.ca/suzys-track-analyzer/)
-- [ASMR Lab](https://suzyeaston.ca/asmr-lab/)
-- [MACHINE VISIONS](https://suzyeaston.ca/ai-art/)
-- [Work with Suzy](https://suzyeaston.ca/work-with-suzy/)
+| Experience | What lives here |
+| --- | --- |
+| [Gastown Simulator](https://suzyeaston.ca/gastown-sim/) | Walkable, filmable, stylized Vancouver built with Three.js and civic-data references |
+| [Lousy Outages](https://suzyeaston.ca/lousy-outages/) | WordPress-native monitoring, incident intelligence, status feeds, and alerts |
+| [Meanwhile](https://suzyeaston.ca/blog/) | Writing and performance notes, with Git-to-WordPress publishing |
+| [Suzy Pirate Radio](https://suzyeaston.ca/radio/) | A real-stream receiver for a separately hosted independent internet station |
+| [AFTERIMAGE / Vancouver](https://suzyeaston.ca/afterimage/) | WordPress entry point for a separately hosted creative-work atlas |
+| [MACHINE VISIONS](https://suzyeaston.ca/ai-art/) | AI-assisted moving-image exhibition and publishing framework |
+| [Vancouver Tech Events](https://suzyeaston.ca/vancouver-tech-events/) | Local event aggregation and presentation |
+| [Loop Lab](https://suzyeaston.ca/loop-lab/) | Browser recording, overdubbing, arrangement, and WAV mix export |
+| [Music / Records](https://suzyeaston.ca/music-releases/) | Music releases and listening |
+| [Projects](https://suzyeaston.ca/projects/) | The wider selection, including Track Analyzer, ASMR Lab, and arcade experiments |
 
-## What this is
+## Systems currently represented in this repo
 
-This is a public lab for building things in plain sight.
+### Gastown Simulator
 
-The repository contains selected experiments, production code, prototypes, documentation, and the visible remains of ideas being tested properly rather than discussed forever.
+The most rapidly evolving part of the site is an interactive **Waterfront Station / Station East / Water Street** world. It is a browser-based film set, not Google Street View or a surveyed digital twin.
 
-It also shows how Suzy works: start with an unclear problem, find the useful part, build a working system, test it, listen to what breaks, and improve it without sanding off all the personality.
+- Three.js scene, third-person Suzy avatar, walking/running/flight controls, camera and photo tools
+- Waterfront Station public concourse, Station East parking/rail-yard viewpoints, harbour panorama, heritage streetscapes, Steam Clock, traffic, and weather
+- NPC encounters and a **fictional** visit to the Multimodal Media Lab at The Landing
+- Selected City of Vancouver open-data inputs, generated world geometry, procedural and optional file-backed audio, and regression tests
+- Distinct renderings of physical landmarks and deliberately invented interactions. Geometry, access, dialogue, traffic, and audio are not authoritative real-world conditions.
 
-The code is public where that makes sense. Client work, private infrastructure, subscriber data, and future commercial layers live elsewhere.
-
-## Featured work
+Start with [the simulator template](page-gastown-sim.php), [its browser runtime](js/gastown-sim.js), [authoring notes](docs/gastown-authoring.md), and [film-scene implementation notes](docs/gastown-film-scene-v11.md). The supporting scripts and tests matter just as much as the scenery.
 
 ### Lousy Outages
 
-**Lousy Outages** is independent outage intelligence for AI, cloud, developer, and creative tools.
+The standalone [Lousy Outages plugin](lousy-outages/) powers a status console for third-party AI, cloud, and developer services. Its code covers provider ingestion, incident lifecycles, status/history surfaces, RSS, email notifications, diagnostics, and account/entitlement foundations. A feature existing in code does **not** imply that every paid or notification flow is enabled in production.
 
-It watches official provider sources, groups related notices into clearer incidents, and turns status-page language into information people and businesses can use. The public dashboard is built for the awkward space between “all systems operational” and an entire group chat quietly confirming that nothing works.
+Public REST entry point:
 
-Current public work includes:
-
-- source-backed provider monitoring
-- incident grouping and lifecycle tracking
-- public status and history views
-- RSS and notification foundations
-- email-alert infrastructure
-- community-signal experiments
-- provider and incident diagnostics
-
-Future commercial layers may include personalised monitoring, higher-signal alerting, private operational views, and custom provider coverage.
-
-Subscriber information, customer systems, and private infrastructure are not included in this repository.
-
-Developer entry point:
-
-```text
+~~~http
 GET /wp-json/lousy-outages/v1/status
-```
+~~~
 
-Implementation and deployment notes live in [`lousy-outages/README.md`](lousy-outages/README.md).
+See [plugin documentation](lousy-outages/README.md) and [release/deployment notes](docs/lousy-outages-release-and-cleanup.md). Do not commit subscriber records, live credentials, or private customer data.
 
-### Gastown First-Person Simulator
+### Meanwhile: posts from source control
 
-Gastown Simulator is an interactive Vancouver experiment built around civic data, browser-based world building, route logic, atmosphere, and public-place storytelling.
+Writing lives in [content/meanwhile/](content/meanwhile/). A dedicated GitHub Actions workflow validates opted-in Markdown posts and their media, then imports them into WordPress over configured SSH access. This is **separate from the theme/plugin deployment**. Drafts do not publish simply because they are committed.
 
-The current world focuses on the corridor around Waterfront Station, Water Street, and the Steam Clock. It combines generated world data, local textures, dialogue, sound, navigation systems, and selected City of Vancouver datasets.
+Read [the publishing guide](content/meanwhile/README.md). The WordPress database and Media Library remain the published content store.
 
-It is not trying to reproduce the city perfectly. It is exploring what happens when maps, memory, public data, and a slightly haunted sense of place share the same browser window.
+### Suzy Pirate Radio
 
-The repository includes:
+[radio-station/](radio-station/) contains an independent Node MP3 relay, a Python/FFmpeg source transmitter, tests, and a Docker/Caddy hosting example. The WordPress homepage and [radio receiver](template-yvr-radio.php) listen to a configured public stream and report transmitter status; they do not fabricate an on-air broadcast.
 
-- the WordPress page template
-- simulator JavaScript
-- generated world data
-- dialogue and audio systems
-- local texture references
-- civic-data build tooling
-- props and NPC authoring structures
+**Important:** the radio server is *not* launched by the WordPress deploy. It needs its own persistent host, HTTPS endpoint, source token, and real end-to-end test. See [radio-station/README.md](radio-station/README.md) and [the integration notes](docs/pirate-radio.md).
 
-Detailed authoring notes live in [`docs/gastown-authoring.md`](docs/gastown-authoring.md).
+### AFTERIMAGE, MACHINE VISIONS, and the other rooms
 
-### Track Analyzer
+- **AFTERIMAGE / Vancouver:** [page-afterimage.php](page-afterimage.php) integrates a separately hosted atlas through a constrained iframe/message bridge. The atlas application itself is not implemented in this repository.
+- **MACHINE VISIONS:** [page-ai-art.php](page-ai-art.php), a catalog/schema and [import CLI](scripts/import-ai-art-bundle.js) provide the public gallery layer. Only entries marked published should appear; the presence of a gallery is not evidence of finished works. See [docs/ai-art.md](docs/ai-art.md).
+- **Music tools:** Loop Lab, Track Analyzer, riff experiments, ASMR Lab, and music releases live alongside the main theme.
+- **Other interfaces:** Vancouver Tech Events, the retro arcade/Pacific Power Play, and recording-culture experiments remain part of the site.
 
-Track Analyzer is an AI-assisted feedback tool for musicians working with uploaded MP3s.
+## Where the code lives
 
-It offers practical notes on feel, lyrics, structure, arrangement, and creative direction. The goal is not to replace judgement or taste. It is to help a musician hear the next decision more clearly.
+~~~text
+page-*.php, functions.php, inc/, parts/   WordPress templates, routing, integrations
+assets/, js/                           Browser runtimes, styles, world and media assets
+lousy-outages/                        Standalone WordPress monitoring plugin
+radio-station/                        Separate streaming relay and source transmitter
+content/meanwhile/                    Versioned posts and publishing media
+data/, scripts/                       Civic-data, asset, import, and deployment tooling
+schemas/                              Publish/data contracts
+__tests__/, tests/                    Node regression checks and browser tests
+.github/workflows/                   CI, production deploy, and publishing actions
+src/, astro.config.mjs                Ancillary Astro/front-end scaffold
+docs/                                 Architecture, QA, and operations notes
+~~~
 
-That approach runs through much of this repository: AI works best here as a collaborator, checkpoint, research tool, or second set of ears.
+The **production site is WordPress/PHP**, not an Astro deployment. The Astro build is a separate front-end scaffold. Some older page templates remain in the tree for compatibility; notably, the former consulting and shop routes now redirect rather than serving active storefronts.
 
-### Other experiments
+## Develop and test
 
-Other projects and archives include:
+**Requirements:** Node/npm; Docker Compose for local WordPress; Playwright browser installation for end-to-end tests. Some data/audio workflows have additional requirements described in their own docs.
 
-- Albini Q&A and recording-culture tools
-- ASMR Lab
-- Loop Lab
-- riff and music-generation experiments
-- audiovisual sketches
-- Vancouver civic-data pieces
-- Suzy’s Retro Arcade interface system
-
-Not every experiment needs the same size billboard. Some are active, some are resting, and some are waiting for the right strange afternoon.
-
-## Consulting and collaboration
-
-Suzy is available for selected consulting, prototyping, and collaboration involving:
-
-- practical AI strategy and implementation
-- AI workflows and automation
-- internal tools and product prototypes
-- cloud and service-status intelligence
-- creative-technology systems
-- music and multimedia tools
-- technical discovery and architecture
-- troubleshooting complicated systems that have acquired folklore
-
-The work is especially suited to organizations and creative teams that need to move from a broad idea to something testable, understandable, and useful.
-
-This repository shows the process:
-
-- find the real problem
-- reduce the ambiguity
-- design the system
-- build the prototype
-- test the failure paths
-- improve it in public where appropriate
-- keep the result accessible and human
-
-For consulting, collaboration, or useful strange ideas, visit the [Work with Suzy](https://suzyeaston.ca/work-with-suzy/) page or use the contact options on the live site.
-
-## Technical foundations
-
-The stack is practical, flexible, and mostly uninterested in technological fashion shows.
-
-Core technologies include:
-
-- WordPress and PHP
-- JavaScript
-- REST APIs
-- Node tooling
-- scheduled jobs and automation
-- cloud and provider-status integrations
-- open-data pipelines
-- responsive interface design
-- accessibility testing
-- Docker-based local QA tooling
-
-There is also Astro tooling for selected front-end build and preview workflows.
-
-The custom WordPress theme and Lousy Outages plugin remain the main production shape of the site.
-
-Built in Vancouver, where the rain provides free resilience testing.
-
-## Running the project
-
-This is primarily a production WordPress theme and public development repository. It includes Docker-based local QA support, but it is not packaged as a universal one-command product installation.
-
-Install Node dependencies:
-
-```sh
+~~~sh
 npm install
-```
+npm test                 # Node regression suite
+npm run build            # ancillary Astro build, NOT a WordPress deploy
+~~~
 
-Run the JavaScript test suite:
+Run a local WordPress instance with the theme and Lousy Outages plugin mounted from this checkout:
 
-```sh
-npm test
-```
-
-Run the Astro build:
-
-```sh
-npm run build
-```
-
-Start and prepare the local WordPress QA environment:
-
-```sh
+~~~sh
 npm run local:start
 npm run local:setup
-```
-
-Stop the local environment:
-
-```sh
+# Site: http://localhost:8080
+npx playwright install chromium
+npm run test:e2e
 npm run local:stop
-```
+~~~
 
-Refresh the Gastown civic-data world build:
+The local environment uses WordPress, MariaDB, Docker Compose, and WP-CLI. See [docs/local-wordpress.md](docs/local-wordpress.md) for setup, credentials, and reset instructions. Never reuse its demo credentials on a real host.
 
-```sh
-npm run build:gastown-world
-```
+To refresh the generated Gastown civic world, use `npm run build:gastown-world` (which synchronizes external City of Vancouver inputs). For the station relay, run `node --test radio-station/server.test.mjs` and follow its own setup guide; the full audio path needs FFmpeg.
 
-The local WordPress environment uses Docker Compose, WordPress, MariaDB, and WP-CLI. The theme and Lousy Outages plugin are mounted directly from this repository for testing.
+## What ships, and what doesn't
 
-## Project documentation
+| Workflow | Responsibility |
+| --- | --- |
+| [Deploy to Production](.github/workflows/deploy-production.yml) | On `main`, deploy changed WordPress theme and/or plugin paths over SSH/SFTP using an explicit theme manifest; supports manual dispatch |
+| [Publish Meanwhile](.github/workflows/publish-meanwhile.yml) | Validate source posts and import ready Markdown/media into WordPress on trusted `main` runs |
+| [Gastown GIS QA](.github/workflows/gastown-gis-qa.yml) | Validate simulator syntax, scene behavior, world alignment, and related regressions on relevant changes |
+| [Radio Check](.github/workflows/radio-check.yml) | Radio-specific checks; **not** a radio-server deployment |
+| [Release Lousy Outages](.github/workflows/release-lousy-outages.yml) | Plugin release workflow; separate from the radio relay |
 
-Specialised notes live outside the main README so this page can remain an introduction rather than becoming a basement filing cabinet.
+Production uploads are **path-filtered**. Merging documentation alone does not replace the live WordPress files. GitHub Actions does not deploy the external AFTERIMAGE app, start the radio transmitter, or automatically publish unpublished artwork. Refer to [docs/deploy-production.md](docs/deploy-production.md) and the individual subsystem guides before changing production behavior.
 
-- [`docs/gastown-authoring.md`](docs/gastown-authoring.md), props, NPCs, textures, and civic-data world builds
-- [`lousy-outages/README.md`](lousy-outages/README.md), monitoring, notifications, feeds, QA, and deployment
-- [`assets/audio/gastown/README.md`](assets/audio/gastown/README.md), Gastown audio assets
-- [`assets/brand/README.md`](assets/brand/README.md), brand assets and usage notes
+## Working principles
 
-## Open source and commercial development
+Build it, test it, admit what's illustrative, and keep the weirdness where it belongs.
 
-This repository contains selected public experiments and portfolio work.
-
-It is a community resource, a professional proof point, and a place for ideas that benefit from being developed in the open.
-
-That does not mean every future layer belongs here.
-
-Commercial services, consulting systems, customer implementations, subscriber infrastructure, and proprietary components may be developed in private repositories. Client work and private infrastructure are not included here.
-
-Public code remains governed by its applicable licence. Contributions and issue reports are welcome where they fit the public project, but this repository should not be read as a promise that all related work will always remain open.
-
-## About Suzy
-
-Suzy Easton is a Vancouver-based AI strategist, solutions engineer, musician, and creative technologist.
-
-Her background spans music performance and recording, technical support, QA, IT operations, cloud systems, automation, and software development. That mix shapes the work: direct, iterative, technically grounded, and suspicious of unnecessary gloss.
-
-Suzy’s Retro Arcade is still part of the house style. It is not the whole job description.
+- Do not present generated Gastown traffic, viewpoints, voices, weather, or geometry as verified real-time Vancouver conditions.
+- Do not describe a radio transmitter as live unless the separate source and host are actually on air.
+- Do not invent published films, shipped paid features, working alerts, or deployment success from code presence alone.
+- Keep credentials and personal/subscriber information out of commits; see [SECURITY.md](SECURITY.md).
 
 ## Licence
 
-Public code in this repository is available under the MIT Licence where applicable.
+The repository includes an [MIT Licence](LICENSE) for the software. Check provenance and any separately stated terms before reusing third-party datasets, photographs, recordings, or other media.
 
-See [`LICENSE`](LICENSE) for the full licence text.
+Made in Vancouver. Still in progress.
