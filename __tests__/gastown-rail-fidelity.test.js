@@ -22,7 +22,7 @@ test('Near-field sleepers use instancing instead of sparse 24-metre blocks', () 
 });
 
 test('Rail heads and webs remain distinct from ballast', () => {
-  assert.match(harbourSource, /CP N-Yard steel rail head/);
+  assert.match(harbourSource, /Yard rail pair/);
   assert.match(harbourSource, /CP N-Yard steel rail web/);
   assert.match(harbourSource, /CP N-Yard track ballast/);
 });
