@@ -1245,7 +1245,7 @@
     lab.stageSince=performance.now()/1000;
     if(lab.roomRoot)lab.roomRoot.visible=stage==='lab';
     if(lab.journeyRoot)lab.journeyRoot.visible=stage==='lobby'||stage==='escort'||stage==='lift'||stage==='riding';
-    if(lab.escort)lab.escort.visible=stage==='lobby'||stage==='escort'||stage==='lift';
+    if(lab.escort)lab.escort.visible=stage==='lobby'||stage==='escort'||stage==='lift'||stage==='riding';
     if(!wasInside&&lab.inside){
       lab.indoorPreviousView={thirdPerson:state.thirdPerson,facing:state.avatarCameraFacing};
       // Indoor rooms are too small for the normal outdoor shoulder boom.
@@ -1274,7 +1274,7 @@
     lab.returnPosition={x:portal.threshold.x,z:portal.threshold.z};
     if(lab.escort)lab.escort.position.set(851.3,0,855.1);
     lab.lastGreeting='';
-    lab.greetPlayed=false;lab.lastNear=false;
+    lab.greetPlayed=false;lab.farewellSpoken=false;lab.lastNear=false;
     lab.doorProgress=0;lab.liftDoorProgress=0;lab.carDoorProgress=0;
     return landingTravel('lobby',portal.lobbySpawn,
       'The Landing. Follow KK to the elevator on the left. No interaction key required.');
@@ -1353,7 +1353,11 @@
         }
         if(near({x:845,z:851},2.4)&&elapsed>1.2&&lab.liftDoorProgress>0.82){
           lab.calledLift=false;
-          landingTravel('lift',portal.elevatorCar,'KK steps into the elevator with Suzy. Going up to six.');
+          landingTravel('lift',portal.elevatorCar,'KK steps inside and presses the sixth-floor button.');
+          if(lab.escort){
+            lab.escort.position.set(879.35,0,849.45);
+            lab.escort.rotation.y=0;
+          }
         }
       }
     }else if(lab.stage==='lift'){
@@ -1362,14 +1366,17 @@
         setStatus('Elevator riding to floor six…');
       }
     }else if(lab.stage==='riding'){
-      if(elapsed>2.5){
+      if(elapsed>1.3&&!lab.farewellSpoken){
+        lab.farewellSpoken=true;
+        landingSpeak('see ya snoozy!');
+      }
+      if(elapsed>3.8){
         landingTravel('lab',portal.roomSpawn,'Sixth floor. Welcome to the Multimodal Media Lab.');
         lab.farewellAt=nowSeconds;
         if(lab.roomRoot&&lab.roomRoot.userData.greeter){
           const kk=lab.roomRoot.userData.greeter;
           kk.visible=true;kk.position.set(800.9,0,807);
         }
-        landingSpeak('see ya snoozy!');
       }
     }else if(lab.stage==='lab'){
       if(lab.roomRoot&&lab.roomRoot.userData.greeter){
