@@ -109,6 +109,7 @@
   const harbourVista = window.GastownHarbourVista || null;
   const cordovaArchitecture = window.GastownCordovaArchitecture || null;
   const streetLife = window.GastownStreetLife || null;
+  const localAmbienceBtn = app.querySelector('[data-action="local-ambience-toggle"]');
   const harbourLookBtn = app.querySelector('[data-action="harbour-lookout"]');
   const railYardLookBtn = app.querySelector('[data-action="rail-yard-view"]');
   const entranceLookBtn = app.querySelector('[data-action="lot-entrance-view"]');
@@ -344,6 +345,7 @@
   const cloudGroup = new THREE.Group();
   const worldGroup = new THREE.Group();
   let streetLifeScene = null;
+  let localAmbienceEnabled = true;
   const debugGroup = new THREE.Group();
   debugGroup.visible = state.debugEnabled;
   scene.add(worldGroup);
@@ -1936,7 +1938,15 @@
     if (!options.length) {
       return false;
     }
+    // Do not let Chrome choose a non-English default system voice.
+    // If this device has no English voice installed, use silent subtitles.
+    const voices = typeof window.speechSynthesis.getVoices === 'function' ? window.speechSynthesis.getVoices() : [];
+    const voice = voices.find(v => /^en[-_]CA$/i.test(v.lang))
+      || voices.find(v => /^en[-_]/i.test(v.lang));
+    if (!voice) return false;
     const utterance = new window.SpeechSynthesisUtterance(options[state.npcVoiceIndex % options.length]);
+    utterance.lang = voice.lang;
+    utterance.voice = voice;
     utterance.volume = 0.18;
     utterance.rate = 0.96;
     utterance.pitch = selected.role === 'busker' ? 0.84 : 1;
@@ -6566,8 +6576,22 @@
     window.addEventListener('blur', () => { pauseSim(); stopBandAudio('window-blur'); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) { pauseSim(); stopBandAudio('visibility-hidden'); } });
     ['pointerdown', 'click', 'keydown'].forEach((eventName) => {
-      document.addEventListener(eventName, () => { state.hasInteracted = true; unlockAudioFromGesture().finally(() => unlockSteamClockAudio()); }, { passive: true });
+      document.addEventListener(eventName, () => { state.hasInteracted = true; unlockAudioFromGesture().finally(() => unlockSteamClockAudio()); if (localAmbienceEnabled && streetLifeScene && typeof streetLifeScene.startAudio === 'function') streetLifeScene.startAudio(); }, { passive: true });
     });
+    if (localAmbienceBtn) {
+      localAmbienceBtn.addEventListener('click', () => {
+        localAmbienceEnabled = !localAmbienceEnabled;
+        let supported = true;
+        if (streetLifeScene) {
+          if (localAmbienceEnabled) supported = streetLifeScene.startAudio();
+          else streetLifeScene.stopAudio();
+        }
+        localAmbienceBtn.setAttribute('aria-pressed', String(localAmbienceEnabled && supported));
+        localAmbienceBtn.textContent = localAmbienceEnabled
+          ? (supported ? '🔊 Vancouver ambience · traffic / gulls' : '🔇 Ambience unavailable')
+          : '🔇 Vancouver ambience off';
+      });
+    }
     renderer.domElement.addEventListener('click', () => {
       if (state.activeDialogNpcId) {
         closeDialog({ resumePointer: true });
@@ -6852,7 +6876,7 @@
         ['animated street life', (world) => {
           if (streetLife) {
             streetLifeScene = streetLife.create(THREE, world);
-            if (streetLifeScene) worldGroup.add(streetLifeScene.root);
+            if (streetLifeScene) { worldGroup.add(streetLifeScene.root); if (state.hasInteracted && localAmbienceEnabled) streetLifeScene.startAudio(); }
           }
         }],
       ];
