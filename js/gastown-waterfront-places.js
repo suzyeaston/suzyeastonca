@@ -445,8 +445,25 @@
     const bronze=new THREE.MeshStandardMaterial({color:0x464c45,roughness:0.7,metalness:0.32});
     addBox(THREE,root,'The Landing arched Water Street entry glazing',
       entry.x,1.56,entry.z,2.7,3.0,0.18,darkEntry,fyaw);
-    addBox(THREE,root,'The Landing paired door mullion',
-      entry.x,1.54,entry.z,0.09,2.95,0.23,bronze,fyaw);
+    addBox(THREE,root,'The Landing paired glass door mullion',
+      entry.x,1.54,entry.z,0.085,2.95,0.23,bronze,fyaw);
+    const tangent={x:fdx/flength,z:fdz/flength};
+    const outward={x:fdz/flength,z:-fdx/flength};
+    for(const side of [-1,1]){
+      addBox(THREE,root,'The Landing double-door brass pull handle',
+        entry.x+tangent.x*side*0.22+outward.x*0.18,1.32,
+        entry.z+tangent.z*side*0.22+outward.z*0.18,
+        0.048,0.52,0.065,new THREE.MeshStandardMaterial({color:0xc9a563,metalness:0.7,roughness:0.24}),fyaw);
+    }
+    addBox(THREE,root,'The Landing carved golden 375 lintel',
+      entry.x,3.29,entry.z,3.2,0.22,0.24,
+      new THREE.MeshStandardMaterial({color:0xbb9a61,metalness:0.45,roughness:0.48}),fyaw);
+    for(const offset of [-1.5,1.5])addBox(THREE,root,
+      'The Landing limestone door jambs',
+      entry.x+tangent.x*offset,1.72,entry.z+tangent.z*offset,
+      0.3,3.45,0.34,stone,fyaw);
+    // The lobby portal is activated on the sidewalk *before* entering the
+    // solid warehouse mass. Do not ever teleport the avatar into its mesh.
     if (typeof THREE.TorusGeometry === 'function') {
       const arch=new THREE.Mesh(new THREE.TorusGeometry(1.38,0.13,7,24,Math.PI),stone);
       arch.name='The Landing entrance arch';
@@ -491,10 +508,7 @@
     sign(THREE,root,'THE LANDING',
       {x:entry.x,y:4.48,z:entry.z},3.65,0.48,fyaw,
       {background:'#384741',color:'#f9f2db'});
-    const signX=entry.x+(fdx/flength)*3.9,signZ=entry.z+(fdz/flength)*3.9;
-    sign(THREE,root,'MULTIMODAL MEDIA LAB',
-      {x:signX,y:2.22,z:signZ},2.75,0.32,fyaw,
-      {background:'#253f45',color:'#d4f7ed'});
+    // Keep exterior historic; the speculative lab exists only inside the game.
     const a=pts[0], b=pts[1], center={x:(a.x+b.x)/2,y:4.0,z:(a.z+b.z)/2};
     sign(THREE,root,'THE LANDING',center,Math.min(7,Math.hypot(b.x-a.x,b.z-a.z)*0.8),0.9,
       Math.atan2(-(b.x-a.x),b.z-a.z),{background:'#5d5148'});
@@ -527,8 +541,10 @@
     const a=pts[6],b=pts[7],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1;
     const outward={x:dz/len,z:-dx/len};
     const door={x:(a.x+b.x)*0.5+outward.x*0.22,z:(a.z+b.z)*0.5+outward.z*0.22};
-    return {door,threshold:{x:door.x+outward.x*3.0,z:door.z+outward.z*3.0},
-      outward,roomSpawn:{x:800,z:808},roomExit:{x:800,z:809.2}};
+    return {door,threshold:{x:door.x+outward.x*4.0,z:door.z+outward.z*4.0},
+      outward,lobbySpawn:{x:850,z:858},lobbyExit:{x:850,z:859},
+      elevatorLobby:{x:845,z:851},elevatorCar:{x:880,z:850},
+      roomSpawn:{x:800,z:808},roomExit:{x:800,z:809.2}};
   }
   function createLabInterior(THREE) {
     const root=new THREE.Group();
@@ -583,7 +599,7 @@
     // about the real person's whereabouts.
     const greeter=new THREE.Group();
     greeter.name='KK | fictional welcoming lab NPC';
-    greeter.position.set(803.0,0,804.7);root.add(greeter);
+    greeter.position.set(803.0,0,804.7);greeter.visible=false;root.add(greeter);
     function npcBox(name,x,y,z,w,h,d,mat){
       const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
       m.name=name;m.position.set(x,y,z);greeter.add(m);
@@ -606,6 +622,82 @@
     sign(THREE,root,'E: RETURN TO WATER STREET',
       {x:800,y:2.05,z:809.59},3.8,0.29,0,{background:'#294744',color:'#f3e9c9'});
     root.userData.fictionalInterior=true;
+    root.userData.greeter=greeter;
+    return root;
+  }
+
+  // Separate 3D vignettes prevent the real warehouse's full solid mass from
+  // swallowing Suzy and give the entrance, lift and destination readable walls.
+  function createLandingJourney(THREE) {
+    const root=new THREE.Group();
+    root.name='The Landing entrance lobby and staged lift (fictional reconstruction)';
+    const cream=new THREE.MeshStandardMaterial({color:0xe5d8c1,roughness:0.9});
+    const stone=new THREE.MeshStandardMaterial({color:0xb6a99a,roughness:0.86});
+    const metal=new THREE.MeshStandardMaterial({color:0x555c5e,metalness:0.57,roughness:0.4});
+    const gold=new THREE.MeshStandardMaterial({color:0xb99855,metalness:0.58,roughness:0.3});
+    const glass=new THREE.MeshStandardMaterial({color:0x789ba9,roughness:0.22,metalness:0.18});
+    const tile=new THREE.MeshStandardMaterial({color:0x89745e,roughness:0.79});
+    const denim=new THREE.MeshStandardMaterial({color:0x35586a,roughness:0.91});
+    const skin=new THREE.MeshStandardMaterial({color:0xc79b7c,roughness:0.91});
+    const dark=new THREE.MeshStandardMaterial({color:0x292e32,roughness:0.9});
+    function block(name,x,y,z,w,h,d,material){
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+      m.name=name;m.position.set(x,y,z);root.add(m);return m;
+    }
+    // Entrance facing south, with the lift down the hallway on the LEFT.
+    block('The Landing lobby stone floor',850,-0.13,850,16,0.24,20,tile);
+    block('The Landing cream lobby west wall',842,3.3,850,0.2,6.6,20,cream);
+    block('The Landing cream lobby east wall',858,3.3,850,0.2,6.6,20,cream);
+    block('The Landing lobby north back wall',850,3.3,840,16,6.6,0.2,cream);
+    block('The Landing entrance wall',850,3.3,860,16,6.6,0.2,stone);
+    block('The Landing ceiling',850,6.65,850,16,0.22,20,cream);
+    // The ground floor entry deliberately looks back toward Water Street.
+    block('Glass main entrance facing Water Street',850,1.76,859.85,3.6,3.5,0.1,glass);
+    block('Brass paired entrance door stile',850,1.75,859.73,0.075,3.5,0.18,gold);
+    for(const side of [-1,1])block('Main door brass pull',850+side*0.3,1.44,859.59,0.04,0.52,0.08,gold);
+    block('Reception desk',854,1.04,853,3.6,1.1,1.0,stone);
+    block('Reception desk brass trim',854,1.61,853.45,3.6,0.10,0.13,gold);
+    // Lift on player-left as they walk inward (negative X at X=845).
+    block('Elevator vestibule black stone surround',842.26,2.45,850,0.36,4.9,4.5,dark);
+    block('Elevator door brushed metal',842.02,2.0,850,0.12,3.75,2.7,metal);
+    block('Elevator paired-door central seam',841.91,2.0,850,0.14,3.7,0.045,dark);
+    block('Elevator call-button plate',842.01,1.36,852.25,0.15,0.54,0.32,gold);
+    block('Elevator floor indicator',842.0,4.4,850,0.10,0.36,1.5,dark);
+    for(const z of [843,855])block('Lobby art deco arch stone pillar',843.4,2.6,z,0.6,5.2,0.7,stone);
+    for(const z of [845,850,855])block('Lobby gold wall sconce',842.3,3.5,z,0.24,0.55,0.28,gold);
+    sign(THREE,root,'THE LANDING  ·  375 WATER',
+      {x:850,y:4.7,z:859.48},4.9,0.43,0,{background:'#3a4140',color:'#f4e6be'});
+    sign(THREE,root,'LIFTS  ⇦',
+      {x:848,y:3.55,z:857.7},2.2,0.44,0,{background:'#3c4243',color:'#f7e7bf'});
+    // Identifiable low-poly KK escort. His location and movements are entirely fictional.
+    const kk=new THREE.Group();kk.name='KK fictional lobby escort';
+    kk.position.set(851.3,0,855.1);root.add(kk);
+    function personBox(name,x,y,z,w,h,d,mat){
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+      m.name=name;m.position.set(x,y,z);kk.add(m);
+    }
+    personBox('KK blue denim jacket',0,1.19,0,0.8,0.8,0.39,denim);
+    personBox('KK left trouser leg',-0.2,0.48,0,0.27,0.85,0.29,denim);
+    personBox('KK right trouser leg',0.2,0.48,0,0.27,0.85,0.29,denim);
+    personBox('KK left arm',-0.54,1.18,0,0.23,0.58,0.27,denim);
+    personBox('KK right arm',0.54,1.18,0,0.23,0.58,0.27,denim);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(0.26,10,8),skin);
+    head.name='KK head';head.position.set(0,1.9,0);kk.add(head);
+    personBox('KK dark beard',0,1.78,-0.17,0.39,0.25,0.12,dark);
+    personBox('KK dark glasses',0,1.97,-0.255,0.42,0.045,0.09,dark);
+    personBox('KK hair',0,2.15,0,0.41,0.12,0.3,dark);
+    // The lift cabin is off-map so the street remains uninterrupted.
+    block('The Landing elevator car floor',880,-0.12,850,5,0.23,5,tile);
+    block('Elevator cabin left panel',877.5,2.15,850,0.18,4.3,5,metal);
+    block('Elevator cabin right panel',882.5,2.15,850,0.18,4.3,5,metal);
+    block('Elevator cabin rear wall',880,2.15,847.5,5,4.3,0.18,metal);
+    block('Elevator cabin doors',880,2.1,852.5,5,4.2,0.12,metal);
+    block('Elevator cabin ceiling',880,4.25,850,5,0.2,5,cream);
+    block('Elevator cabin button panel',882.27,1.7,850.9,0.08,2.3,0.5,gold);
+    for(let n=1;n<=6;n++)block('Elevator floor button '+n,882.19,0.8+n*0.29,850.83,0.13,0.09,0.11,glass);
+    const display=sign(THREE,root,'6  ·  MULTIMODAL LAB',
+      {x:880,y:3.7,z:852.32},2.9,0.37,0,{background:'#2d3637',color:'#f4e9cf'});
+    root.userData={kk,lobby:true,elevator:true,fictionalInterior:true};
     return root;
   }
 
@@ -619,5 +711,5 @@
     return group;
   }
 
-  window.GastownWaterfrontPlaces=Object.freeze({ reference:REFERENCE, create, createParking, createLanding, createLabInterior, landingEntranceFor, inPolygon, isWalkableLot, entranceFor, lookoutFor, parkingCars });
+  window.GastownWaterfrontPlaces=Object.freeze({ reference:REFERENCE, create, createParking, createLanding, createLabInterior, createLandingJourney, landingEntranceFor, inPolygon, isWalkableLot, entranceFor, lookoutFor, parkingCars });
 })(window);
