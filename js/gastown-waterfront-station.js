@@ -299,7 +299,7 @@
         0.33, 0.29, 33, hallTrim);
       box('Concourse rose frieze', side * 21.83, 12.2, -17,
         0.18, 1.5, 33.2, rose);
-      for (let z = -30; z <= -6; z += 6) {
+      for (let z = -30; z <= -12; z += 6) {
         box('Historic hall dado wall', x, 1.4, z, 0.3, 2.8, 5.3, stone);
         box('Historic hall wall plaster', x, 7.0, z, 0.3, 8.4, 5.3, hallTrim);
         box('Heritage mural inset panel', side * 21.67, 12.2, z,
