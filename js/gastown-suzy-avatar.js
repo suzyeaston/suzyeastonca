@@ -130,7 +130,16 @@
         [x,1.858,-0.211],[0,0,x>0?0.10:-0.10]);
     }
     sphere(THREE,avatar,'Sculpted nose',0.035,skin,[0,1.752,-0.234],[0.65,1.18,0.90]);
-    sphere(THREE,avatar,'Mouth with soft smile',0.042,lip,[0,1.690,-0.217],[1.16,0.18,0.30]);
+    // A nine-point, gently upturned mouth survives the low-poly front view.
+    // The old flat lip ellipsoid was largely buried inside the chin mesh.
+    // Keep every point just forward of the cheeks, not pasted onto glasses.
+    for (let i = -4; i <= 4; i++) {
+      const x = i * 0.019;
+      const lift = 0.001 + 0.021 * Math.pow(Math.abs(i) / 4, 1.65);
+      sphere(THREE, avatar, 'Mouth with soft smile arc ' + (i + 4),
+        0.012, lip, [x, 1.667 + lift, -0.253],
+        [1.02, 0.72, 0.57]);
+    }
 
     // The orange/cream checkerboard straps in Suzy's reference photo are
     // distinctive from the previous all-black bag. The backpack carries the
