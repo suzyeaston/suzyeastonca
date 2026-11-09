@@ -92,7 +92,7 @@ test('fence camera stands back from rails so the harbour is visible',()=>{
 test('third-person camera avoids a fixed boom into the station wall',()=>{
  const sim=read('js/gastown-sim.js');
  assert.match(sim,/function updateThirdPersonCameraPose\(force\)/);
- assert.match(sim,/intersectObjects\(thirdPersonCameraBlockers,true\)/);
+ assert.match(sim,/intersectObjects\(thirdPersonCameraBlockers,\s*true\)/);
  assert.match(sim,/getGroundY\(\)-player.position.y/);
  assert.match(sim,/thirdPersonCameraBlockers.push\(stationExterior\)/);
  assert.match(sim,/const shoulders = \[0, -0\.85, 0\.85, -1\.55, 1\.55\]/);
