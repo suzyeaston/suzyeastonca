@@ -169,6 +169,7 @@
   // copyrighted transit announcements, or externally hosted media.
   function makeLocalAmbience() {
     let ctx=null, master=null, active=false, nextGull=3.5, nextHorn=23, lastRoadWhoosh=-30;
+    let currentWeather='clear', roadNoiseGain=null, rainNoiseGain=null;
     const AudioCtor = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
     function makeTone(start,peak,end,length,volume) {
       if(!ctx || !active) return;
@@ -193,15 +194,26 @@
         seed=(Math.imul(1664525,seed)+1013904223)>>>0;
         samples[i]=(seed/2147483648-1)*0.55;
       }
-      // Layered local character: wet low-speed traffic, harbour air and
-      // broad-band tyre wash. Synthetic fallback remains openly labelled;
-// Low road noise and an almost inaudible waterfront-air layer.
-      for(const spec of [{type:'lowpass',hz:320,level:0.062},{type:'bandpass',hz:820,level:0.018},{type:'highpass',hz:1600,level:0.009}]) {
+      // Clear weather: light, filtered city air. Rain: a separately gated,
+      // brighter wash. Never leave a rain-like hiss playing when clear.
+      for(const spec of [
+        {type:'lowpass',hz:220,level:0.017,kind:'road'},
+        {type:'highpass',hz:1200,level:0.10,kind:'rain'}
+      ]) {
         const noise=ctx.createBufferSource();noise.buffer=buffer;noise.loop=true;
         const filter=ctx.createBiquadFilter();filter.type=spec.type;filter.frequency.value=spec.hz;
-        const volume=ctx.createGain();volume.gain.value=spec.level;
+        const volume=ctx.createGain();volume.gain.value=spec.kind==='rain'?0:spec.level;
         noise.connect(filter);filter.connect(volume);volume.connect(master);noise.start();
+        if(spec.kind==='rain')rainNoiseGain=volume;else roadNoiseGain=volume;
       }
+      setWeather(currentWeather);
+    }
+    function setWeather(weather) {
+      currentWeather=['clear','fog','drizzle','rain','thunderstorm'].includes(weather)?weather:'clear';
+      if(!ctx)return;
+      const rainLevel=currentWeather==='thunderstorm'?0.16:currentWeather==='rain'?0.10:currentWeather==='drizzle'?0.035:0;
+      if(rainNoiseGain)rainNoiseGain.gain.setTargetAtTime(rainLevel,ctx.currentTime,0.4);
+      if(roadNoiseGain)roadNoiseGain.gain.setTargetAtTime(rainLevel?0.008:0.017,ctx.currentTime,0.4);
     }
     function start() {
       if(!AudioCtor) return false;
@@ -236,7 +248,7 @@
         makeTone(175,280,110,1.2,0.014);lastRoadWhoosh=seconds;
       }
     }
-    return {start,stop,update};
+    return {start,stop,update,setWeather};
   }
 
   function create(THREE, world) {
@@ -299,7 +311,7 @@
       ambience.update(seconds);
     }
     update(0);
-    return {root,update,startAudio:ambience.start,stopAudio:ambience.stop};
+    return {root,update,startAudio:ambience.start,stopAudio:ambience.stop,setWeather:ambience.setWeather};
   }
 
   // Water Street heritage art-direction layer. GIS route points are authoritative;
@@ -396,38 +408,12 @@
       const plate=box(group,label+' signboard',x,y,z,w,0.43,0.16,mat);
       plate.userData.displayLabel=label;return plate;
     }
-    // One small architectural vignette per side per Water Street segment.
-    // These are local facade modules, not another enormous building extrusion.
+    // The GIS building meshes already supply real wall footprints. Previously
+    // this pass added freestanding 12.7m opaque facade boxes into the roadway,
+    // blocking the entire route. Keep *only* street furniture here; dedicated
+    // footprint-aligned facade modules need a separately surveyed frontage.
     for(let i=9;i<route.length-1;i++){
       const f=frame(i);
-      for(const side of [-1,1]){
-        if((i+side)%3===0 && i!==15)continue; // varied rhythm and gaps
-        const frontage=new THREE.Group();
-        frontage.name='Water Street mixed brick-and-stone shopfront '+i+' '+side;
-        frontage.position.set(f.x,0,f.z);
-        frontage.rotation.y=f.yaw;
-        root.add(frontage);
-        const z=side*11.2;
-        const width=Math.min(14.4,f.length-1.8);
-        const tone=brick[(i+side+8)%brick.length];
-        box(frontage,'Heritage brick pier and facade',0,6.5,z,width,12.7,0.65,tone);
-        box(frontage,'Historic sandstone shop plinth',0,0.7,z-side*0.39,width+0.25,1.4,0.21,stone);
-        box(frontage,'Shopfront dark glazing',0,2.25,z-side*0.47,width-1.2,2.7,0.12,warmGlass);
-        box(frontage,'Storefront fascia',0,3.95,z-side*0.54,width,0.65,0.25,shop);
-        box(frontage,'Projecting stone cornice',0,12.75,z-side*0.54,width+0.55,0.36,0.55,lightStone);
-        for(let bay=-2;bay<=2;bay++){
-          const x=bay*(width/5);
-          if(bay!==-2)box(frontage,'Vertical sandstone facade pier',x-width/10,7.8,z-side*0.54,0.25,7.1,0.19,stone);
-          for(let level=0;level<2;level++){
-            const y=6.1+level*3.45;
-            box(frontage,'Tall heritage sash window',x,y,z-side*0.53,width/6.8,2.55,0.1,glass);
-            box(frontage,'Window sill',x,y-1.39,z-side*0.62,width/6.5,0.14,0.27,lightStone);
-          }
-        }
-        // Realistic variety: small dark awnings, some bright painted fronts.
-        if(i%2===0)box(frontage,'Water Street retail awning',0,4.18,z-side*1.11,width*0.68,0.15,1.08,shop);
-        if(i===12||i===14)sign(frontage,'GASTOWN / WATER ST',0,4.04,z-side*0.69,width*0.5,shop);
-      }
       for(const side of [-1,1]) {
         const street=new THREE.Group();street.name='Water Street heritage sidewalk furniture';
         street.position.set(f.x,0,f.z);street.rotation.y=f.yaw;root.add(street);

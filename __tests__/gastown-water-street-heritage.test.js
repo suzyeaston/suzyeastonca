@@ -37,13 +37,14 @@ test('heritage kit only occupies Water Street route and references civic centerl
  assert.ok(road.every(p=>p.rotation.order==='YXZ'));
  assert.ok(road.every(p=>p.geometry.args[0]<=world.route.streetWidth));
 });
-test('historic identity includes storefronts, globe lights, chains, benches and courier van',()=>{
+test('street kit adds furniture without freestanding facade walls blocking walking route',()=>{
  const all=nodes(scene());
- for(const name of ['Heritage brick pier','Tall heritage sash','heritage street light',
+ for(const name of ['heritage street light',
  'chain bollard','Sagging heritage curb chain','sidewalk bench','street tree','delivery van']){
   assert.ok(all.some(n=>n.name.toLowerCase().includes(name.toLowerCase())),name);
  }
- assert.ok(all.filter(n=>n.name.includes('Tall heritage sash window')).length>=30);
+ assert.equal(all.filter(n=>n.name.includes('Heritage brick pier and facade')).length,0);
+ assert.equal(all.filter(n=>n.name.includes('Tall heritage sash window')).length,0);
  assert.ok(all.filter(n=>n.name.includes('Five globe heritage street light')).length>=12);
 });
 test('new Water Street layer uses sensible lightweight physical dimensions',()=>{

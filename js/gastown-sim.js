@@ -2844,10 +2844,10 @@
       umbrellaShaft: null,
     };
     if ((state.activeWeather === 'rain' || state.activeWeather === 'thunderstorm') && npc.role !== 'cyclist' && npc.role !== 'skateboarder') {
-      const umbrellaMat = new THREE.MeshStandardMaterial({ color: 0x1a2028, roughness: 0.44, metalness: 0.26 });
+      const umbrellaMat = new THREE.MeshStandardMaterial({ color: 0x25313d, roughness: 0.55, metalness: 0.08, side: THREE.DoubleSide });
       const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.22, 14, 1, true), umbrellaMat);
-      canopy.rotation.x = Math.PI;
-      canopy.position.set(0.28, style.height + 0.18, 0);
+      // Cone apex points UP by default; rotating PI made umbrellas into bowls.
+      canopy.position.set(0.28, style.height + 0.21, 0);
       const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.9, 8), trimMaterial);
       shaft.position.set(0.28, style.height * 0.88, 0);
       root.add(canopy);
@@ -5011,21 +5011,21 @@
     }
 
     const qualityFactor = state.lowGraphics ? 0.4 : 1;
-    const dropCount = Math.floor((420 + (intensity * 900)) * qualityFactor);
+    const dropCount = Math.floor((750 + (intensity * 1550)) * qualityFactor);
     const geom = new THREE.BufferGeometry();
     const points = new Float32Array(dropCount * 3);
     const velocities = new Float32Array(dropCount);
 
     for (let i = 0; i < dropCount; i += 1) {
-      points[i * 3] = (Math.random() - 0.5) * 150;
+      points[i * 3] = (Math.random() - 0.5) * 42;
       points[(i * 3) + 1] = Math.random() * 42 + 5;
-      points[(i * 3) + 2] = (Math.random() - 0.5) * 190 - 40;
+      points[(i * 3) + 2] = (Math.random() - 0.5) * 46;
       velocities[i] = 16 + (Math.random() * 11) + (intensity * 10);
     }
 
     geom.setAttribute('position', new THREE.BufferAttribute(points, 3));
     geom.setAttribute('velocity', new THREE.BufferAttribute(velocities, 1));
-    const rain = new THREE.Points(geom, new THREE.PointsMaterial({ color: 0xa9c6d9, size: 0.08 + (intensity * 0.06), transparent: true, opacity: 0.22 + (intensity * 0.36) }));
+    const rain = new THREE.Points(geom, new THREE.PointsMaterial({ color: 0xa9c6d9, size: 0.10 + (intensity * 0.10), transparent: true, opacity: 0.42 + (intensity * 0.3), depthWrite: false }));
     rain.userData.kind = 'rain-core';
     rainGroup.add(rain);
 
@@ -5033,20 +5033,23 @@
       return;
     }
 
-    const streakCount = Math.floor((8 + ((intensity - 0.72) * 28)) * (state.lowGraphics ? 0.45 : 1));
+    const streakCount = Math.floor((26 + ((intensity - 0.72) * 90)) * (state.lowGraphics ? 0.45 : 1));
     for (let i = 0; i < streakCount; i += 1) {
       const streak = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.025, 0.7 + (intensity * 0.85)),
-        new THREE.MeshBasicMaterial({ color: 0xc7d9e6, transparent: true, opacity: 0.012 + (intensity * 0.012), depthWrite: false, depthTest: true })
+        new THREE.PlaneGeometry(0.035, 0.8 + (intensity * 0.9)),
+        new THREE.MeshBasicMaterial({ color: 0xc7d9e6, transparent: true, opacity: 0.13 + (intensity * 0.07), depthWrite: false, depthTest: true, side: THREE.DoubleSide })
       );
       streak.rotation.x = -0.22;
-      streak.position.set((Math.random() - 0.5) * 55, 9 + (Math.random() * 14), -8 - (Math.random() * 26));
+      streak.position.set((Math.random() - 0.5) * 26, 9 + (Math.random() * 14), (Math.random() - 0.5) * 28);
       streak.userData.fallSpeed = 19 + (Math.random() * 8) + (intensity * 12);
       rainGroup.add(streak);
     }
   }
 
   function animateRain(delta) {
+    // Follow the moving player: otherwise rain stays at map origin and the
+    // Steam Clock end of Water Street appears dry despite 'Rain' in the menu.
+    if (rainGroup.children.length) rainGroup.position.set(player.position.x, 0, player.position.z);
     rainGroup.children.forEach((node) => {
       if (node.isPoints) {
         const pos = node.geometry.attributes.position;
@@ -6317,6 +6320,7 @@
     state.nextLightningAt = 0;
     state.lightning = null;
     state.activeWeather = weatherId;
+    if (streetLifeScene && typeof streetLifeScene.setWeather === 'function') streetLifeScene.setWeather(weatherId);
     applyVisualState();
     refreshNpcPopulation();
   }
@@ -7017,7 +7021,7 @@
         ['animated street life', (world) => {
           if (streetLife) {
             streetLifeScene = streetLife.create(THREE, world);
-            if (streetLifeScene) { worldGroup.add(streetLifeScene.root); if (state.hasInteracted && localAmbienceEnabled) streetLifeScene.startAudio(); }
+            if (streetLifeScene) { worldGroup.add(streetLifeScene.root); if (typeof streetLifeScene.setWeather === 'function') streetLifeScene.setWeather(state.activeWeather); if (state.hasInteracted && localAmbienceEnabled) streetLifeScene.startAudio(); }
           }
         }],
       ];
