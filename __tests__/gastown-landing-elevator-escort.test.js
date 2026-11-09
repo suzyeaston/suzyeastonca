@@ -46,3 +46,23 @@ test('player cannot roam beyond lobby, elevator car or sixth-floor lab boundarie
   assert.match(game,/function interactWithLanding\(\)/);
   assert.match(game,/if \(state\.landingLab\.inside && interactWithLanding\(\)\)/);
 });
+
+test('KK journey is proximity driven with speech, wait-for-player and animated physical doors',()=>{
+  assert.match(game,/function landingSpeak\(phrase\)/);
+  assert.match(game,/window\.SpeechSynthesisUtterance/);
+  assert.match(game,/window\.speechSynthesis\.speak\(utterance\)/);
+  assert.match(game,/if\(distance<1\.35&&state\.isRunning\)startLandingJourney\(portal\)/);
+  assert.match(game,/if\(d>0\.08&&following<4\.2\)/);
+  assert.match(game,/if\(near\(\{x:845,z:851\},2\.4\)/);
+  assert.match(game,/lab\.escort\.position\.set\(879\.35,0,849\.45\)/);
+  assert.match(game,/lab\.farewellSpoken=true/);
+  assert.match(game,/landingSpeak\('see ya snoozy!'\)/);
+  assert.match(game,/state\.thirdPerson=false/);
+  assert.match(game,/lab\.indoorPreviousView/);
+  for (const name of ['entranceLeft','entranceRight','liftLeft','liftRight','carLeft','carRight']){
+    assert.match(places,new RegExp('\\\\b'+name+'\\\\b'));
+  }
+  assert.match(places,/Multimodal Lab timber ceiling/);
+  assert.match(places,/Multimodal Lab exposed wood ceiling beam/);
+  assert.match(places,/MML  ·  Multimodal Media Lab/);
+});
