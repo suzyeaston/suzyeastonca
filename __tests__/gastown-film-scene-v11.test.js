@@ -25,7 +25,7 @@ const THREE = {
 test('Station East creates moving road and parking traffic without placeholder pillars', () => {
   const world = JSON.parse(read('assets/world/gastown-water-street.json'));
   const scene = streetLife.create(THREE, world);
-  const buses = scene.root.children.filter(node => /Illustrated 50 Waterfront bus/.test(node.name));
+  const buses = scene.root.children.filter(node => /Illustrated Route 3 Waterfront electric trolley/.test(node.name));
   const cars = scene.root.children.filter(node => /moving street car/.test(node.name));
   const lotCars = scene.root.children.filter(node => /Station East arrival/.test(node.name));
   assert.equal(buses.length, 2);
