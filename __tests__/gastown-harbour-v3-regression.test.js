@@ -8,7 +8,7 @@ const read=file=>fs.readFileSync(path.join(ROOT,file),'utf8');
 const world=JSON.parse(read('assets/world/gastown-water-street.json'));
 function stub(){
   class V{set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}}
-  class G{constructor(...args){this.args=args;}rotateX(){return this;}setAttribute(){return this;}}
+  class G{constructor(...args){this.args=args;}rotateX(){return this;}setAttribute(name,attribute){this[name]=attribute;return this;}}
   class Sh{moveTo(){}lineTo(){}quadraticCurveTo(){}closePath(){}}
   class M{constructor(options){this.options=options;}}
   class N{constructor(geo,mat){this.geometry=geo;this.material=mat;this.position=new V();this.rotation={};this.scale=new V();this.children=[];this.name='';this.userData={};}}
@@ -99,4 +99,22 @@ test('third-person camera avoids a fixed boom into the station wall',()=>{
  assert.match(sim,/state\.avatarCameraBoom = best\.boom/);
  assert.doesNotMatch(sim,/camera.position.set\([^\n]*4\.7/);
  assert.match(sim,/harbourVista.animate\(state.harbourVistaRoot,time\/1000\)/);
+});
+
+test('City-informed N-Yard fans out to twenty low-profile track alignments without a container wall',()=>{
+  const root=boot().GastownHarbourVista.create(stub(),world);
+  const nodes=all(root);
+  const rails=nodes.find(n=>n.name==='CP N-Yard batched switching ladder rails');
+  const sleepers=nodes.find(n=>n.name==='CP N-Yard batched sleepers');
+  assert.ok(rails&&sleepers,'rail ladder and sleepers should be visible beyond the fence');
+  assert.equal(root.userData.yardTrackCount,20);
+  assert.equal(root.userData.yardRailFanBatched,true);
+  assert.equal(root.userData.tracksAlignedToLotFence,true);
+  assert.equal(root.userData.openCanadaPlaceSightline,true);
+  assert.equal(root.userData.hasFreightYard,true);
+  assert.equal(rails.geometry.position.args[0].length,13*2*2*2*3,
+    '13 further tracks, each with paired rails and two switch-to-yard segments');
+  assert.equal(sleepers.geometry.position.args[0].length,13*15*2*3);
+  assert.ok(nodes.filter(n=>n.name==='Visible Station East freight container').length<=5);
+  assert.ok(nodes.length<400,'all additional rail strokes are batched for low-end hardware');
 });
