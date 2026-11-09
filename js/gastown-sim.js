@@ -1058,57 +1058,68 @@
 
   function updateThirdPersonCameraPose(force) {
     if (!state.thirdPerson || state.cameraMode !== 'street') return;
-    // A true shoulder rig on both sides of Suzy. The camera stays aligned
-    // with her body when the mouse turns; the avatar never rotates to face
-    // the camera, which made the old "front" workaround feel like a mirror.
-    const facingFront=state.avatarCameraFacing==='front';
-    const side=facingFront?-1:1;
-    const maxDistance=facingFront?3.35:3.25;
-    const desiredHeight=facingFront?2.44:2.68;
-    if(force || state.avatarElapsed >= (state.avatarCameraNextRefresh || 0)){
+    const facingFront = state.avatarCameraFacing === 'front';
+    const side = facingFront ? -1 : 1;
+    // The +/- controls zoom both the map and the actual filming camera.
+    const zoomScale = Math.max(0.70, Math.min(1.48, 1 / Math.sqrt(minimapState.zoom || 1)));
+    const desiredDistance = (facingFront ? 3.35 : 3.25) * zoomScale;
+    // Never pop the camera three metres overhead on a close collision.
+    const desiredHeight = facingFront ? 2.36 : 2.56;
+
+    if (force || state.avatarElapsed >= (state.avatarCameraNextRefresh || 0)) {
       player.updateMatrixWorld(true);
-      const groundOffset=getGroundY()-player.position.y;
-      thirdPersonCameraFrom.set(0,groundOffset+1.80,0).applyMatrix4(player.matrixWorld);
-      thirdPersonCameraTo.set(0,groundOffset+desiredHeight,side*maxDistance).applyMatrix4(player.matrixWorld);
-      const ray=thirdPersonCameraTo.clone().sub(thirdPersonCameraFrom);
-      const rayLength=ray.length();
-      let maxBoom=maxDistance;
-      if(rayLength>0.01 && thirdPersonCameraBlockers.length){
-        thirdPersonCameraRay.set(thirdPersonCameraFrom,ray.multiplyScalar(1/rayLength));
-        thirdPersonCameraRay.near=0.12;
-        thirdPersonCameraRay.far=rayLength;
-        const hits=thirdPersonCameraRay.intersectObjects(thirdPersonCameraBlockers,true);
-        if(hits.length)maxBoom=Math.min(maxBoom,
-          Math.max(0.45,(hits[0].distance-0.28)*maxDistance/rayLength));
+      const groundOffset = getGroundY() - player.position.y;
+      thirdPersonCameraFrom.set(0, groundOffset + 1.72, 0).applyMatrix4(player.matrixWorld);
+
+      // Probe shoulder alternatives before collapsing the boom. The station
+      // frontage and harbour blocks can flank a legal pedestrian position,
+      // while the walkability polygon is NOT a camera collision boundary.
+      // The old isSpawnSafe camera test compressed almost every orbit to
+      // 0.48m and triggered the overhead shot seen at Waterfront Station.
+      const shoulders = [0, -0.85, 0.85, -1.55, 1.55];
+      let best = { boom: 0.9, offset: 0, score: -Infinity };
+      for (const offset of shoulders) {
+        thirdPersonCameraTo.set(offset, groundOffset + desiredHeight, side * desiredDistance)
+          .applyMatrix4(player.matrixWorld);
+        const ray = thirdPersonCameraTo.clone().sub(thirdPersonCameraFrom);
+        const rayLength = ray.length();
+        let boom = desiredDistance;
+        if (rayLength > 0.01 && thirdPersonCameraBlockers.length) {
+          thirdPersonCameraRay.set(thirdPersonCameraFrom, ray.multiplyScalar(1 / rayLength));
+          thirdPersonCameraRay.near = 0.12;
+          thirdPersonCameraRay.far = rayLength;
+          const hits = thirdPersonCameraRay.intersectObjects(thirdPersonCameraBlockers, true);
+          // Near-zero hits usually mean the avatar begins inside a bulky
+          // approximate station shell. They cannot define a usable portrait.
+          const obstruction = hits.find(hit => hit.distance > 0.72 && hit.distance < rayLength - 0.1);
+          if (obstruction) {
+            boom = Math.min(boom, Math.max(0.9,
+              (obstruction.distance - 0.24) * desiredDistance / rayLength));
+          }
+        }
+        const score = boom - Math.abs(offset) * 0.42;
+        if (score > best.score) best = { boom, offset, score };
       }
-      // Use the same sidewalk/lot collision rules in either camera direction.
-      // Never allow the camera to tunnel through a storefront or parked car.
-      let safeDistance=Math.min(0.48,maxBoom);
-      for(let distance=0.55;distance<=maxBoom;distance+=0.17){
-        const candidate={
-          x:player.position.x+Math.sin(state.yaw)*side*distance,
-          z:player.position.z+Math.cos(state.yaw)*side*distance
-        };
-        const landing=state.world&&state.world.landing;
-        const insideLanding=landing&&Array.isArray(landing.footprint)
-          &&isPointInPolygon(candidate,landing.footprint);
-        if(insideLanding||!isSpawnSafe(candidate))break;
-        safeDistance=distance;
-      }
-      state.avatarCameraBoom=Math.max(0.4,Math.min(maxBoom,safeDistance));
-      state.avatarCameraNextRefresh=state.avatarElapsed+0.10;
+      state.avatarCameraBoom = best.boom;
+      state.avatarCameraShoulder = best.offset;
+      state.avatarCameraNextRefresh = state.avatarElapsed + 0.10;
     }
-    const proposed=state.avatarCameraBoom||0.48;
-    const old=Number.isFinite(state.followCameraDistance)?state.followCameraDistance:proposed;
-    const boom=proposed<old?proposed:old+(proposed-old)*0.15;
-    state.followCameraDistance=boom;
-    const headroom=boom<1.05?3.18:desiredHeight;
-    const y=getGroundY()-player.position.y+headroom+state.motion.bobOffset*0.10;
-    camera.position.set(0,y,side*boom);
-    // View direction +Z for front portraits, -Z for backpack follow shots.
-    // Both have a world-down pitch towards the centre of the body.
-    camera.rotation.set(-Math.atan2(headroom-1.46,Math.max(0.55,boom)),
-      facingFront?Math.PI:0,0);
+    const proposed = state.avatarCameraBoom || desiredDistance;
+    const old = Number.isFinite(state.followCameraDistance)
+      ? state.followCameraDistance : proposed;
+    const boom = proposed < old ? proposed : old + (proposed - old) * 0.24;
+    state.followCameraDistance = boom;
+    const offset = (state.avatarCameraShoulder || 0) * (boom / desiredDistance);
+    const headroom = desiredHeight;
+    const y = getGroundY() - player.position.y + headroom + state.motion.bobOffset * 0.10;
+    camera.position.set(offset, y, side * boom);
+    // Aim toward Suzy's face or backpack even when the safe camera moves
+    // sideways. Maintain an eye-level portrait, not an accidental top view.
+    camera.rotation.set(
+      -Math.atan2(headroom - 1.46, Math.max(0.65, Math.hypot(offset, boom))),
+      Math.atan2(offset, side * boom),
+      0
+    );
   }
 
   function updateSuzyCameraButtons() {
@@ -1129,6 +1140,8 @@
     if(camera.parent!==player)player.add(camera);
     player.rotation.y=state.yaw;
     if(suzyAvatar)suzyAvatar.visible=!!state.thirdPerson;
+    camera.zoom = state.thirdPerson ? 1 :
+      Math.max(0.8, Math.min(1.65, minimapState.zoom || 1));
     if(state.thirdPerson){
       updateThirdPersonCameraPose(true);
     } else {
@@ -1145,6 +1158,7 @@
     state.thirdPerson=true;
     state.avatarCameraFacing=direction;
     state.followCameraDistance=undefined;
+    state.avatarCameraShoulder=0;
     state.avatarCameraNextRefresh=0;
     applyStreetCameraPose();
     setStatus(direction==='front'?'Front portrait: Suzy, facing the lens.':
@@ -1157,6 +1171,8 @@
     state.thirdPerson=!state.thirdPerson;
     if(state.thirdPerson)state.avatarCameraFacing='back';
     state.followCameraDistance=undefined;
+    state.avatarCameraShoulder=0;
+    state.avatarCameraNextRefresh=0;
     applyStreetCameraPose();
     setStatus(state.thirdPerson?'Behind Suzy: third-person walking.':
       'Back behind Suzy\'s eyes.');
@@ -5220,6 +5236,18 @@
     } catch (error) {
       // ignore session storage failures
     }
+    // These are also the camera zoom controls, not solely minimap magnifiers.
+    if (state.cameraMode === 'street') {
+      if (state.thirdPerson) {
+        state.followCameraDistance = undefined;
+        state.avatarCameraNextRefresh = 0;
+        updateThirdPersonCameraPose(true);
+      } else {
+        camera.zoom = Math.max(0.8, Math.min(1.65, minimapState.zoom));
+        camera.updateProjectionMatrix();
+      }
+    }
+    drawMinimap();
   }
 
   function isValidMinimapMode(value) {
@@ -6497,9 +6525,13 @@
     }, { passive: false });
 
     if (minimapZoomInBtn) {
+      minimapZoomInBtn.title = 'Zoom map and camera closer to Suzy';
+      minimapZoomInBtn.setAttribute('aria-label', 'Zoom map and camera in');
       minimapZoomInBtn.addEventListener('click', () => setMinimapZoom(minimapState.zoom + minimapState.zoomStep));
     }
     if (minimapZoomOutBtn) {
+      minimapZoomOutBtn.title = 'Zoom map and camera farther from Suzy';
+      minimapZoomOutBtn.setAttribute('aria-label', 'Zoom map and camera out');
       minimapZoomOutBtn.addEventListener('click', () => setMinimapZoom(minimapState.zoom - minimapState.zoomStep));
     }
     if (minimapModeBtn) {
