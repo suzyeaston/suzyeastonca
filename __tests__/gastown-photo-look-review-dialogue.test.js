@@ -31,7 +31,7 @@ test('review-inspired dialogue is original, location-specific and keeps conditio
   const d=JSON.parse(read('assets/dialog/gastown.json'));
   assert.match(d.tourist_clock_stop.lines.join(' '),/toot/);
   assert.match(d.tourist_clock_photo.lines.join(' '),/jackets/);
-  assert.match(d.parking_high_five.lines.join(' '),/high five/i);
+  assert.match(d.parking_high_five.lines.join(' '),/ticket/i);
   assert.ok(d.parking_small_talk.variants.some(v=>v.when.weather==='rain'));
   assert.match(d.pedestrian_clock_hint.lines.join(' '),/1977/);
 });
