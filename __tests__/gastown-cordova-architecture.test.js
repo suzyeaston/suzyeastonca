@@ -30,7 +30,7 @@ test('replaced GIS near-station masses are all mapped to local building footprin
   const m=model(), group=m.create(threeStub(),world);
   assert.deepEqual(Array.from(m.replacementIds()),['feature-92','feature-15','feature-16']);
   assert.equal(group.children.length,3);
-  assert.deepEqual(Array.from(group.userData.replacedIds()),Array.from(m.replacementIds()));
+  assert.deepEqual(Array.from(group.userData.replacedIds),Array.from(m.replacementIds()));
   for(const child of group.children){
     assert.ok(child.userData.sourceFootprintId);
     const source=world.buildings.find(b=>b.id===child.userData.sourceFootprintId);
