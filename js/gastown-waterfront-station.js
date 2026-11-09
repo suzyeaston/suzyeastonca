@@ -66,6 +66,18 @@
     return mainFrontage || lotSidePassage;
   }
 
+  // A bounded, public-facing *interpretation* of the historic main hall.
+  // Coordinates use the same transform as the station shell and are not
+  // surveyed interior floor plans. The far end is deliberately closed.
+  function isWalkableInterior(world, point) {
+    if (!world || !world.spawn || !point) return false;
+    const a = anchorFor(world);
+    const dx = point.x - a.x, dz = point.z - a.z;
+    const x = dx * Math.cos(a.yaw) - dz * Math.sin(a.yaw);
+    const z = dx * Math.sin(a.yaw) + dz * Math.cos(a.yaw);
+    return Math.abs(x) <= 5.4 && z >= -13.25 && z <= 5.1;
+  }
+
   function sideEntranceFor(world) {
     if (!world || !world.spawn) return null;
     return {
@@ -204,9 +216,17 @@
     }
 
     // Massing / wing sections. Three street-side storeys with raised parapet.
-    box('Red-brick CPR station body', 0, 8.1, -8.5, 106, 16.2, 17, brick);
-    box('Projecting central entry block', 0, 7.2, -0.15, 53, 14.4, 1.2, brick);
-    box('Ground-floor ashlar plinth', 0, 0.5, -0.12, 106.5, 1, 0.62, stoneShadow);
+    // Articulated shell around the central public hall, rather than a solid
+    // box swallowing the walker. Keep the original recognizable roofline.
+    box('Red-brick CPR station body', -30.5, 8.1, -8.5, 45, 16.2, 17, brick);
+    box('CPR station east wing', 30.5, 8.1, -8.5, 45, 16.2, 17, brick);
+    box('CPR station hall upper masonry', 0, 13.7, -8.5, 16, 5, 17, brick);
+    box('CPR station hall rear masonry', 0, 5.6, -16.35, 16, 11.2, 1.3, brick);
+    box('Projecting central entry block', -15.5, 7.2, -0.15, 22, 14.4, 1.2, brick);
+    box('Projecting east entry block', 15.5, 7.2, -0.15, 22, 14.4, 1.2, brick);
+    box('Entry block crosshead above hall', 0, 9.5, -0.15, 9, 9.3, 1.2, brick);
+    box('Ground-floor ashlar plinth', -30.5, 0.5, -0.12, 45.5, 1, 0.62, stoneShadow);
+    box('Ground-floor ashlar east plinth', 30.5, 0.5, -0.12, 45.5, 1, 0.62, stoneShadow);
     box('Primary stone belt course', 0, 10.3, 0.32, 107.5, 0.62, 0.82, stone);
     box('Upper stone belt course', 0, 15.5, -0.05, 107.4, 0.46, 0.84, stone);
     box('Projecting entablature', 0, 11.0, 1.35, 53.5, 0.96, 3.8, stone);
@@ -215,6 +235,45 @@
     box('Upper coping', 0, 17.07, 0.2, 108.5, 0.18, 18, stoneShadow);
     box('Central raised parapet', 0, 17.75, -0.3, 23, 1.25, 0.78, stone);
     box('Lower roof', 0, 16.5, -8.5, 106, 0.25, 17, iron);
+
+    // The historic concourse is a reference-inspired playable stage, not a
+    // transit operator's engineering plan. Ceiling, columns, floor rhythm and
+    // public orientation are modeled; restricted/fare-paid areas stay closed.
+    const hallFloor = new THREE.MeshStandardMaterial({ color: 0xd2bea0, roughness: 0.83 });
+    const hallTrim = new THREE.MeshStandardMaterial({ color: 0xeee2cf, roughness: 0.8 });
+    const hallDark = new THREE.MeshStandardMaterial({ color: 0x594f46, roughness: 0.8 });
+    const warmLight = new THREE.MeshBasicMaterial({ color: 0xffe8b4 });
+    box('Waterfront public concourse tiled floor', 0, 0.046, -6.6, 14.7, 0.09, 19.5, hallFloor);
+    box('Waterfront concourse coffered ceiling', 0, 11.0, -7.8, 14.6, 0.26, 16.5, hallTrim);
+    for (let z = -13; z <= -1; z += 3) {
+      box('Concourse stone floor joint', 0, 0.098, z, 14, 0.008, 0.035, hallDark);
+      box('Concourse ceiling cross beam', 0, 10.72, z, 14.4, 0.4, 0.35, hallTrim);
+    }
+    for (let x = -6; x <= 6; x += 3) {
+      box('Concourse longitudinal tile joint', x, 0.099, -6.8, 0.03, 0.008, 18.6, hallDark);
+    }
+    for (const x of [-6.65, 6.65]) {
+      box('Historic hall dado wall', x, 1.4, -7.5, 0.26, 2.8, 14.8, stone);
+      box('Historic hall wall plaster', x, 6.55, -7.5, 0.28, 7.55, 14.8, hallTrim);
+      for (const z of [-11.8, -6.8, -1.8]) {
+        cylinder('Concourse pilaster', x, 5.15, z, 0.34, 0.38, 8.2, stone, 12);
+        box('Concourse pilaster capital', x, 9.37, z, 0.85, 0.38, 0.85, stoneShadow);
+      }
+    }
+    for (const z of [-10.5, -4.3]) {
+      cylinder('Waterfront concourse pendant stem', 0, 10.0, z, 0.07, 0.07, 1.75, brass, 10);
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.68, 14, 10), warmLight);
+      lamp.name = 'Historic concourse pendant glow';
+      lamp.position.set(0, 8.9, z);
+      root.add(lamp);
+    }
+    box('Public concourse rear wayfinding wall', 0, 2.1, -14.1, 10.5, 4.2, 0.35, hallDark);
+    sign('WATERFRONT STATION', 0, 3.4, -13.89, 8.8, 0.62, '#f7e7c4', 'bold 70px Georgia, serif');
+    sign('PUBLIC CONCOURSE', 0, 2.5, -13.87, 7.4, 0.42, '#e9d8b5', 'bold 65px Arial, sans-serif');
+    // Leave a pedestrian-width central entrance gap in every foreground
+    // surface. Glass panels at either side remain visible as open doors.
+    root.userData.interiorApproximate = true;
+    root.userData.publicHallOnly = true;
 
     // Parking-lot side of the station: glass doors and the exterior
     // pedestrian connector seen in the user-supplied Waterfront reference.
@@ -290,10 +349,15 @@
 
     // The Cordova Street doors sit behind modern black domed THE STATION awnings.
     [-7, 0, 7].forEach((x, i) => {
-      box('Portal shadow', x, 2.25, 0.6, 3.45, 4.5, 0.13, iron);
-      box('Door glazed pair', x, 1.93, 0.72, 2.55, 3.58, 0.12, glass);
+      // The middle portal is physically open; no opaque face spans the
+      // entrance at x=0. Outer portals remain reference-led glazing.
+      if (i !== 1) {
+        box('Portal shadow', x, 2.25, 0.6, 3.45, 4.5, 0.13, iron);
+        box('Door glazed pair', x, 1.93, 0.72, 2.55, 3.58, 0.12, glass);
+      }
       [-0.68, 0.68].forEach(dx => {
-        box('Entry gate glass panel', x + dx, 1.91, 0.81, 1.14, 3.18, 0.08, glass);
+        box('Entry gate glass panel', x + (i === 1 ? Math.sign(dx) * 1.52 : dx),
+          1.91, 0.81, 1.14, 3.18, 0.08, glass);
         box('Entry gate stile', x + dx * 0.1, 1.9, 0.9, 0.08, 3.42, 0.12, iron);
         cylinder('Door handle', x + dx + (dx > 0 ? -0.29 : 0.29), 1.62, 0.96, 0.025, 0.025, 0.28, brass, 8);
       });
@@ -375,6 +439,7 @@
     arrivalYaw,
     arrivalPitch: () => 0.095,
     isWalkableForecourt,
+    isWalkableInterior,
     sideEntranceFor,
     create,
     commutersFor
