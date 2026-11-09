@@ -533,8 +533,8 @@ function se_enqueue_gastown_sim_assets() {
     // The Gastown ambience directory currently contains only a README.
     // Never tell Howler to fetch a speculative MP3/OGG path. Build a per-
     // request allowlist from files actually present in the deployed theme.
-    // Prefer bespoke Gastown recordings whenever added in the future, with
-    // existing bundled YVR rain/transit loops as graceful local fallbacks.
+    // Prefer locally authored Gastown recordings. Only rain uses a verified
+    // existing YVR loop; commuter audio must not borrow unknown spoken voices.
     $gastown_audio_ids = array(
         'beds/quiet_night',
         'beds/commuter_mix',
@@ -547,9 +547,7 @@ function se_enqueue_gastown_sim_assets() {
         'zones/street_crowd',
     );
     $gastown_audio_fallbacks = array(
-        'beds/commuter_mix'    => '/assets/audio/yvr/skytrain-rumble.mp3',
         'weather/rain_pavement'=> '/assets/audio/yvr/rain-loop.mp3',
-        'zones/distant_transit'=> '/assets/audio/yvr/skytrain-rumble.mp3',
     );
     $gastown_audio_sources = array();
     foreach ( $gastown_audio_ids as $sound_id ) {

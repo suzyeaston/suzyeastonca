@@ -7,10 +7,7 @@ const streetLife = require('../js/gastown-street-life.js');
 const read = (file) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 
 test('Station East has reproducible walking characters and two interaction types', () => {
-  const world = {
-    parkingLot: { center: { x: 46, z: 56.57 } },
-    route: { centerline: [{x:-38,z:36},{x:-25,z:49},{x:-12,z:62}] }
-  };
+  const world = JSON.parse(read('assets/world/gastown-water-street.json'));
   const station = { sideEntranceFor: () => ({ approach: { x: 24, z: 53 } }) };
   const people = streetLife.peopleFor(world, station);
   assert.equal(people.length, 6);

@@ -104,40 +104,163 @@
     return root;
   }
 
-  function create(THREE, world) {
-    const root = new THREE.Group(); root.name='Station East street life';
-    // No invented freestanding light or giant post in the parking-lot centre.
-    // The real lot already has entrance signs and perimeter fencing.
-    const centerline = world && world.route && world.route.centerline;
-    let buses = []; const segments=[]; let total=0;
-    if (Array.isArray(centerline) && centerline.length >= 3) {
-      const first = centerline.slice(0,9);
-      const points = first.map((pt,i) => {
-        const before=first[Math.max(i-1,0)], after=first[Math.min(i+1,first.length-1)];
-        const dx=after.x-before.x, dz=after.z-before.z, norm=Math.hypot(dx,dz)||1;
-        return {x:pt.x+dz/norm*3.2,z:pt.z-dx/norm*3.2};
-      });
-      for (let i=1;i<points.length;i++) {
-        const a=points[i-1],b=points[i],length=Math.hypot(b.x-a.x,b.z-a.z);
-        segments.push({a,b,length,from:total}); total+=length;
+
+  // Original lightweight meshes, not third-party models or live traffic.
+  // Traffic follows the existing illustrated Cordova route; no road-network API.
+  function makeStreetCar(THREE, index) {
+    const car = new THREE.Group();
+    car.name = 'Illustrated moving street car ' + (index + 1);
+    const colors = [0x71858b, 0x9b4840, 0xc2ad8e, 0x334e69, 0x687b62, 0x9c9b94];
+    const paint = new THREE.MeshStandardMaterial({color: colors[index % colors.length], roughness: 0.58});
+    const glass = new THREE.MeshStandardMaterial({color:0x253b48, roughness:0.27});
+    const rubber = new THREE.MeshStandardMaterial({color:0x1a2024,roughness:0.9});
+    const headlight = new THREE.MeshBasicMaterial({color:0xffedc5});
+    const taillight = new THREE.MeshBasicMaterial({color:0xa93c3c});
+    function box(w,h,d,x,y,z,mat) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+      mesh.position.set(x,y,z);car.add(mesh);
+    }
+    box(1.9,0.65,4.15,0,0.68,0,paint);
+    box(1.62,0.61,2.25,0,1.18,-0.18,glass);
+    for(const side of [-1,1]) {
+      for(const z of [-1.35,1.27]) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,0.17,10),rubber);
+        wheel.position.set(side*0.97,0.38,z);
+        wheel.rotation.z = Math.PI/2;car.add(wheel);
       }
-      buses=[makeBus(THREE),makeBus(THREE)];
-      buses.forEach((bus,i)=>{ bus.name+=' / vehicle '+(i+1); root.add(bus); });
+      box(0.3,0.16,0.06,side*0.67,0.65,-2.11,headlight);
+      box(0.3,0.16,0.06,side*0.67,0.65,2.11,taillight);
+    }
+    return car;
+  }
+
+  // Vancouver-flavoured, ORIGINAL procedural soundscape. This does not
+  // contain recorded conversations, unknown-language commuter samples,
+  // copyrighted transit announcements, or externally hosted media.
+  function makeLocalAmbience() {
+    let ctx=null, master=null, active=false, nextGull=3.5, nextHorn=23;
+    const AudioCtor = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
+    function makeTone(start,peak,end,length,volume) {
+      if(!ctx || !active) return;
+      const now=ctx.currentTime, osc=ctx.createOscillator(), amp=ctx.createGain();
+      osc.type='sine';
+      osc.frequency.setValueAtTime(start,now);
+      osc.frequency.linearRampToValueAtTime(peak,now+length*0.5);
+      osc.frequency.linearRampToValueAtTime(end,now+length);
+      amp.gain.setValueAtTime(0.0001,now);
+      amp.gain.linearRampToValueAtTime(volume,now+length*0.22);
+      amp.gain.exponentialRampToValueAtTime(0.0001,now+length);
+      osc.connect(amp);amp.connect(master);osc.start(now);osc.stop(now+length+0.02);
+    }
+    function initialize() {
+      ctx=new AudioCtor();
+      master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);
+      const sampleCount=Math.floor(ctx.sampleRate*2);
+      const buffer=ctx.createBuffer(1,sampleCount,ctx.sampleRate);
+      const samples=buffer.getChannelData(0);
+      let seed=14071986;
+      for(let i=0;i<samples.length;i++) {
+        seed=(Math.imul(1664525,seed)+1013904223)>>>0;
+        samples[i]=(seed/2147483648-1)*0.55;
+      }
+      // Low road noise and an almost inaudible waterfront-air layer.
+      for(const spec of [{type:'lowpass',hz:320,level:0.045},{type:'highpass',hz:750,level:0.006}]) {
+        const noise=ctx.createBufferSource();noise.buffer=buffer;noise.loop=true;
+        const filter=ctx.createBiquadFilter();filter.type=spec.type;filter.frequency.value=spec.hz;
+        const volume=ctx.createGain();volume.gain.value=spec.level;
+        noise.connect(filter);filter.connect(volume);volume.connect(master);noise.start();
+      }
+    }
+    function start() {
+      if(!AudioCtor) return false;
+      try {
+        if(!ctx) initialize();
+        active=true;
+        master.gain.setTargetAtTime(0.75,ctx.currentTime,0.35);
+        if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+        return true;
+      } catch(error) {
+        active=false;
+        return false; // Ambient failure must never block the walk.
+      }
+    }
+    function stop() {
+      active=false;
+      if(master && ctx) master.gain.setTargetAtTime(0,ctx.currentTime,0.16);
     }
     function update(seconds) {
-      if (!buses.length || !total) return;
-      buses.forEach((bus,index) => {
-        const d=(seconds*4.1+20+(index*total/2))%total;
-        const s=segments.find(item=>d<=item.from+item.length)||segments[segments.length-1];
-        if (!s) return;
-        const t=Math.max(0,Math.min(1,(d-s.from)/(s.length||1)));
-        const dx=s.b.x-s.a.x,dz=s.b.z-s.a.z;
-        bus.position.set(s.a.x+dx*t,0.12,s.a.z+dz*t);
-        bus.rotation.y=Math.atan2(-dx,-dz);
+      if(!active || !ctx || (typeof document!=='undefined' && document.hidden)) return;
+      if(seconds>=nextGull) {
+        makeTone(890,1190,740,0.48,0.015);
+        nextGull=seconds+9.5+(Math.sin(seconds*0.3)+1)*3.7;
+      }
+      if(seconds>=nextHorn) {
+        makeTone(115,128,110,1.45,0.008);
+        nextHorn=seconds+44;
+      }
+    }
+    return {start,stop,update};
+  }
+
+  function create(THREE, world) {
+    const root = new THREE.Group(); root.name='Station East street life';
+    const ambience=makeLocalAmbience();
+    // Keep the lot central aisle open: do not generate a marker pillar or lantern.
+    const centerline = world && world.route && world.route.centerline;
+    let buses=[], segments=[], total=0, cars=[], lotCar=null;
+    if(Array.isArray(centerline) && centerline.length>=3) {
+      const first=centerline.slice(0,9);
+      const points=first.map((pt,i)=>{
+        const before=first[Math.max(i-1,0)],after=first[Math.min(i+1,first.length-1)];
+        const dx=after.x-before.x,dz=after.z-before.z,norm=Math.hypot(dx,dz)||1;
+        return {x:pt.x+dz/norm*3.2,z:pt.z-dx/norm*3.2};
       });
+      for(let i=1;i<points.length;i++) {
+        const a=points[i-1],b=points[i],length=Math.hypot(b.x-a.x,b.z-a.z);
+        segments.push({a,b,length,from:total});total+=length;
+      }
+      buses=[makeBus(THREE),makeBus(THREE)];
+      buses.forEach((bus,i)=>{bus.name+=' / vehicle '+(i+1);root.add(bus);});
+      cars=Array.from({length:4},(_,i)=>makeStreetCar(THREE,i));
+      cars.forEach(car=>root.add(car));
+    }
+    if(world && world.parkingLot && world.parkingLot.center && world.parkingLot.polygon && world.parkingLot.polygon.length>=2) {
+      const lot=world.parkingLot;
+      const entrance={x:(lot.polygon[0].x+lot.polygon[1].x)/2,z:(lot.polygon[0].z+lot.polygon[1].z)/2};
+      const end={x:entrance.x+(lot.center.x-entrance.x)*0.78,z:entrance.z+(lot.center.z-entrance.z)*0.78};
+      lotCar={mesh:makeStreetCar(THREE,4),entrance,end};
+      lotCar.mesh.name='Slow moving illustrated Station East arrival';
+      root.add(lotCar.mesh);
+    }
+    function along(distance,lateral,reverse,mesh) {
+      if(!total || !segments.length) return;
+      const d=((distance%total)+total)%total;
+      const segment=segments.find(s=>d<=s.from+s.length)||segments[segments.length-1];
+      const t=Math.max(0,Math.min(1,(d-segment.from)/(segment.length||1)));
+      const dx=segment.b.x-segment.a.x,dz=segment.b.z-segment.a.z;
+      const norm=Math.hypot(dx,dz)||1;
+      mesh.position.set(segment.a.x+dx*t+dz/norm*lateral,0.12,segment.a.z+dz*t-dx/norm*lateral);
+      mesh.rotation.y=Math.atan2(-dx,-dz)+(reverse?Math.PI:0);
+    }
+    function update(seconds) {
+      buses.forEach((bus,index)=>along(seconds*4.1+20+index*total/2,0,false,bus));
+      cars.forEach((car,index)=>{
+        const reverse=index%2===1;
+        const distance=seconds*(3.0+index*0.5)+index*total/4;
+        along(reverse?total-distance:distance,reverse?-6.4:2.5,reverse,car);
+      });
+      if(lotCar) {
+        const cycle=(seconds*0.115)%2, inbound=cycle<1;
+        const t=inbound?cycle:2-cycle;
+        const {entrance,end,mesh}=lotCar;
+        const dx=end.x-entrance.x,dz=end.z-entrance.z;
+        mesh.position.set(entrance.x+dx*t,0.12,entrance.z+dz*t);
+        mesh.rotation.y=Math.atan2(-dx,-dz)+(inbound?0:Math.PI);
+      }
+      ambience.update(seconds);
     }
     update(0);
-    return {root,update};
+    return {root,update,startAudio:ambience.start,stopAudio:ambience.stop};
   }
   return Object.freeze({peopleFor,bubble,create});
 });

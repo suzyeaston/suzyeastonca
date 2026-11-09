@@ -120,6 +120,9 @@ get_header();
         <span class="gastown-pointer-help-escape">ESC = RELEASE MOUSE</span>
         <button type="button" data-action="sim-release-pointer" class="gastown-release-pointer" aria-label="Release simulator mouse pointer">Release mouse</button>
       </div>
+      <button type="button" class="gastown-local-ambience" data-action="local-ambience-toggle"
+        aria-pressed="true" aria-label="Toggle locally synthesized Vancouver traffic, harbour and seabird ambience"
+        title="Original procedural ambience. No external voices or location recording.">🔊 Vancouver ambience · traffic / gulls</button>
       <aside class="gastown-minimap" aria-label="Exploration minimap">
         <div class="gastown-minimap-toolbar" role="group" aria-label="Minimap controls">
           <button type="button" class="gastown-minimap-mode" data-action="minimap-mode-toggle" aria-pressed="false" aria-label="Switch minimap to heading-up mode">North up</button>

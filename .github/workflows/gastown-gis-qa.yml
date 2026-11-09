@@ -71,6 +71,7 @@ jobs:
           node --check js/gastown-cordova-architecture.js
           node --check js/gastown-waterfront-places.js
           node --check js/gastown-suzy-avatar.js
+          node --check js/gastown-street-life.js
       - name: Validate civic route, station, and runtime geometry
         run: |
           node --test __tests__/gastown-gis-alignment.test.js
@@ -86,3 +87,6 @@ jobs:
           node --test __tests__/gastown-waterfront-station.test.js
           node --test __tests__/gastown-sim-config.test.js
           node --test __tests__/gastown-audio-assets.test.js
+          node --test __tests__/gastown-street-life.test.js
+          node --test __tests__/gastown-film-camera-scene.test.js
+          node --test __tests__/gastown-film-scene-v11.test.js
