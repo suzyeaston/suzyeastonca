@@ -19,7 +19,7 @@
           "location": "waterfront_station"
         },
         "lines": [
-          "In the morning this end of the route still feels half commuter corridor, half heritage reveal \u2014 you can watch office workers peel away while visitors are only just orienting themselves."
+          "In the morning this end of the route still feels half commuter corridor, half heritage reveal — you can watch office workers peel away while visitors are only just orienting themselves."
         ]
       },
       {
@@ -83,8 +83,8 @@
   "pedestrian_route_tip": {
     "title": "Water Street walker",
     "lines": [
-      "Water Street still feels like old Gastown because the narrow lots and warehouse fa\u00e7ades keep the block tight and walkable.",
-      "Before tourists filled the sidewalks, this corridor served the port economy \u2014 teamsters, merchants, and dock traffic all funneled through here.",
+      "Water Street still feels like old Gastown because the narrow lots and warehouse façades keep the block tight and walkable.",
+      "Before tourists filled the sidewalks, this corridor served the port economy — teamsters, merchants, and dock traffic all funneled through here.",
       "If you ask me for a second tip, I'll tell you where the neighbourhood really started."
     ],
     "actions": [
@@ -134,7 +134,7 @@
           "location": "steam_clock"
         },
         "lines": [
-          "Closer to the Steam Clock, the flow changes every few seconds \u2014 somebody stops for a photo, somebody slips around them, and the whole street recomposes itself."
+          "Closer to the Steam Clock, the flow changes every few seconds — somebody stops for a photo, somebody slips around them, and the whole street recomposes itself."
         ]
       },
       {
@@ -184,7 +184,7 @@
           "location": "maple_tree_square"
         },
         "lines": [
-          "Near Maple Tree Square people slow down and point more \u2014 it feels less like passing through and more like arriving at the part everyone wants to remember."
+          "Near Maple Tree Square people slow down and point more — it feels less like passing through and more like arriving at the part everyone wants to remember."
         ]
       }
     ]
@@ -225,7 +225,7 @@
           "foundProp": "foundHistoricPlaque"
         },
         "lines": [
-          "If you already read the plaque, the image lands differently \u2014 you are not just photographing an icon, you are catching a block that knows its own backstory."
+          "If you already read the plaque, the image lands differently — you are not just photographing an icon, you are catching a block that knows its own backstory."
         ]
       }
     ]
@@ -233,7 +233,7 @@
   "skateboarder_corridor": {
     "title": "Gastown skateboarder",
     "lines": [
-      "The fun part of this block is that the feel changes in stages \u2014 threshold, storefront rhythm, clock crowd, then the looser edge near Maple Tree Square.",
+      "The fun part of this block is that the feel changes in stages — threshold, storefront rhythm, clock crowd, then the looser edge near Maple Tree Square.",
       "If you want a challenge, use me as your cue to survey the route: notice where Water Street starts reading like a real corridor instead of a simple starter strip.",
       "Once you have read the mid-block and the eastern rise, the whole route makes more sense."
     ],
@@ -267,7 +267,7 @@
     "title": "Gastown cyclist",
     "lines": [
       "Riding this stretch teaches you the route structure fast: you can feel when the corridor tightens, when the plaza interrupts it, and when the east leg opens back up.",
-      "Treat the minimap like a soft cue, not a GPS arrow \u2014 it is best when it confirms something you already noticed in the street itself.",
+      "Treat the minimap like a soft cue, not a GPS arrow — it is best when it confirms something you already noticed in the street itself.",
       "If you keep the survey going past the clock, the Cambie rise gives you the last big contrast point."
     ],
     "actions": [
@@ -283,7 +283,7 @@
           "location": "water_street"
         },
         "lines": [
-          "Morning makes this stretch feel more utilitarian \u2014 delivery workers, commuters, and early walkers all negotiate the same narrow line."
+          "Morning makes this stretch feel more utilitarian — delivery workers, commuters, and early walkers all negotiate the same narrow line."
         ]
       },
       {
@@ -302,6 +302,33 @@
         "lines": [
           "If you already spotted the painted wall detail, you have probably noticed how the quieter walls pull people a block farther than the famous clock does."
         ]
+      }
+    ]
+  },
+  "parking_small_talk": {
+    "title": "Station East walker",
+    "lines": [
+      "I came here because I thought there would be a good view.",
+      "Turns out there's a parking lot, and then an incredible view behind it.",
+      "Anyway, nice chat."
+    ],
+    "actions": [
+      {
+        "type": "close",
+        "label": "Back to walk"
+      }
+    ]
+  },
+  "parking_high_five": {
+    "title": "Friendly stranger",
+    "lines": [
+      "Hey. Quick question. Are you available for a high five?",
+      "I think this could be a very positive interaction with almost no follow-up obligations."
+    ],
+    "actions": [
+      {
+        "type": "close",
+        "label": "Back to walk"
       }
     ]
   }
