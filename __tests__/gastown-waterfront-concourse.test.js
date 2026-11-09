@@ -24,7 +24,8 @@ test('Cordova central doorway leads into a bounded public hall and back outside'
     const point = station.toWorld(world, 0, z);
     assert.equal(station.isWalkableInterior(world, point), true, 'walkable at local z=' + z);
   }
-  assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, -15)), false);
+  assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, -30)), true);
+  assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, -32)), false);
   assert.equal(station.isWalkableInterior(world, station.toWorld(world, 8, -6)), false);
   assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, 8)), false);
   assert.equal(station.isWalkableForecourt(world, station.toWorld(world, 0, 6)), true);
@@ -87,4 +88,52 @@ test('Angel of Victory is a distinct named historical memorial east of station e
   assert.match(src, /root\.userData\.memorialIncluded = true/);
   assert.match(src, /ArtworkId=24/);
   assert.match(src, /fidelity:'original, approximate procedural interpretation'/);
+});
+
+test('expanded hall and Station East public corridor form one traversable route', () => {
+  const station = loadStation();
+  const side = station.sideEntranceFor(world);
+  assert.ok(side.interior, 'side entrance has a public hall destination');
+  assert.equal(station.isWalkableInterior(world, side.interior), true);
+  // Sample an actual continuous pedestrian centreline across the side doorway,
+  // east connector and the central concourse. A teleport alone is insufficient.
+  for (let x = 55.5; x >= 0; x -= 0.25) {
+    assert.equal(
+      station.isWalkableInterior(world, station.toWorld(world, x, -4)),
+      true, 'east access blocked at local x=' + x
+    );
+  }
+  for (let z = -4; z >= -30; z -= 0.25) {
+    assert.equal(
+      station.isWalkableInterior(world, station.toWorld(world, 0, z)),
+      true, 'hall blocked at local z=' + z
+    );
+  }
+  for (const point of [[60, -4], [38, -10], [22, -12], [0, -33], [-22, -4]]) {
+    assert.equal(station.isWalkableInterior(world, station.toWorld(world, ...point)), false);
+  }
+});
+
+test('a generously proportioned hall replaces the formerly shallow narrow stage', () => {
+  const src = read('js/gastown-waterfront-station.js');
+  assert.match(src, /interiorHallDimensions = \{ width: 44\.4, depth: 35\.7, ceiling: 14\.45 \}/);
+  assert.match(src, /Waterfront east entrance passage floor/);
+  assert.match(src, /East wing corridor header/);
+  assert.match(src, /Waterfront east connector plaster ceiling/);
+  assert.match(src, /Station East open leaf glass door/);
+  assert.doesNotMatch(src, /Station East side entrance glass double doors/);
+  assert.match(src, /eastEntryConnectsToHall = true/);
+  const runtime = read('js/gastown-sim.js');
+  assert.match(runtime, /const destination = doorway\.interior/);
+  assert.match(runtime, /Entered the Waterfront Station public concourse from Station East/);
+  assert.doesNotMatch(runtime, /exterior navigation shortcut to Cordova/);
+});
+
+test('trolley side advert is an original suzyeaston.ca local canvas, livery unchanged', () => {
+  const src = read('js/gastown-street-life.js');
+  assert.match(src, /suzyeaston\.ca trolley side advertisement/);
+  assert.match(src, /ctx\.fillText\('suzyeaston\.ca'/);
+  assert.match(src, /root\.userData\.advertiser = 'suzyeaston\.ca'/);
+  assert.match(src, /color:0x0866ae/);
+  assert.match(src, /color:0xc7d1d4/);
 });
