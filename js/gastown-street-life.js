@@ -301,5 +301,190 @@
     update(0);
     return {root,update,startAudio:ambience.start,stopAudio:ambience.stop};
   }
-  return Object.freeze({peopleFor,bubble,create});
+
+  // Water Street heritage art-direction layer. GIS route points are authoritative;
+  // facades and street furniture are illustrative, never surveyed placements.
+  // Draw-call budget: shared materials and a small number of sampled frontage bays.
+  function createWaterStreetDetails(THREE, world) {
+    const root = new THREE.Group();
+    root.name = 'Water Street / heritage streetscape and Steam Clock walk';
+    const route = world && world.route && world.route.centerline;
+    if (!Array.isArray(route) || route.length < 13) return root;
+    const iron = new THREE.MeshStandardMaterial({color:0x252b2c,roughness:0.62,metalness:0.46});
+    const stone = new THREE.MeshStandardMaterial({color:0xb8aa94,roughness:0.88});
+    const lightStone = new THREE.MeshStandardMaterial({color:0xd4c7b0,roughness:0.86});
+    const brick = [
+      new THREE.MeshStandardMaterial({color:0x8a463b,roughness:0.9}),
+      new THREE.MeshStandardMaterial({color:0x9e5844,roughness:0.9}),
+      new THREE.MeshStandardMaterial({color:0x786356,roughness:0.9}),
+      new THREE.MeshStandardMaterial({color:0x6e3a32,roughness:0.9})
+    ];
+    const shop = new THREE.MeshStandardMaterial({color:0x253940,roughness:0.65,metalness:0.16});
+    const glass = new THREE.MeshStandardMaterial({color:0x375467,roughness:0.24,metalness:0.24});
+    const warmGlass = new THREE.MeshStandardMaterial({color:0x74919a,emissive:0x71512e,emissiveIntensity:0.18,roughness:0.3});
+    const foliage = new THREE.MeshStandardMaterial({color:0x3f5037,roughness:0.9});
+    const wood = new THREE.MeshStandardMaterial({color:0x6c4935,roughness:0.85});
+    const globe = new THREE.MeshStandardMaterial({color:0xffe6bb,emissive:0xffc883,emissiveIntensity:0.24,roughness:0.46});
+    const darkRoad = new THREE.MeshStandardMaterial({color:0x624039,roughness:0.84,metalness:0.03});
+    function box(group,name,x,y,z,w,h,d,mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+      m.position.set(x,y,z);m.name=name;m.castShadow=false;m.receiveShadow=true;
+      group.add(m);return m;
+    }
+    function cylinder(group,name,x,y,z,r,h,mat,edges) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,edges||8),mat);
+      m.position.set(x,y,z);m.name=name;m.castShadow=false;group.add(m);return m;
+    }
+    function join(group,name,a,b,r,mat) {
+      const dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z;
+      const len=Math.hypot(dx,dy,dz);
+      if(len<0.01)return;
+      const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,6),mat);
+      mesh.name=name;
+      mesh.position.set((a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2);
+      if(mesh.quaternion && typeof mesh.quaternion.setFromUnitVectors==='function' && THREE.Vector3) {
+        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(dx,dy,dz).normalize());
+      } else {
+        mesh.rotation.x=Math.atan2(dz,dy);
+        mesh.rotation.z=-Math.atan2(dx,Math.hypot(dy,dz));
+      }
+      group.add(mesh);
+    }
+    function frame(i) {
+      const a=route[i],b=route[i+1],dx=b.x-a.x,dz=b.z-a.z;
+      const length=Math.hypot(dx,dz)||1;
+      return {x:(a.x+b.x)/2,z:(a.z+b.z)/2,length,
+        yaw:Math.atan2(-dx,-dz)};
+    }
+    function slab(i,width,material,y) {
+      const f=frame(i);
+      const pane=new THREE.Mesh(new THREE.PlaneGeometry(width,f.length+0.16),material);
+      pane.rotation.set(-Math.PI/2,f.yaw,0,'YXZ');
+      pane.position.set(f.x,y||0.04,f.z);
+      pane.name='Water Street brick roadway / historic paver lane';
+      pane.receiveShadow=true;pane.renderOrder=2;root.add(pane);
+    }
+    // Self-authored repeating brick pattern. No third-party Street View
+    // imagery or geolocation textures are reproduced in the simulator.
+    let paving=darkRoad;
+    if(typeof document!=='undefined' && document.createElement && THREE.CanvasTexture) {
+      const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
+      const cx=canvas.getContext('2d');
+      if(cx) {
+        cx.fillStyle='#634037';cx.fillRect(0,0,256,256);
+        for(let row=0;row<16;row++){
+          for(let col=-1;col<9;col++){
+            const x=col*34+(row%2)*17,y=row*16,shade=(row*11+col*7+53)%5;
+            cx.fillStyle=['#895244','#78443a','#995c4e','#70463d','#815248'][Math.abs(shade)];
+            cx.fillRect(x+1,y+1,32,14);
+            cx.fillStyle='rgba(228,182,143,.07)';cx.fillRect(x+2,y+2,30,1);
+          }
+        }
+        const texture=new THREE.CanvasTexture(canvas);
+        texture.wrapS=THREE.RepeatWrapping;texture.wrapT=THREE.RepeatWrapping;
+        texture.repeat.set(1.4,4);
+        texture.colorSpace=THREE.SRGBColorSpace;
+        texture.anisotropy=4;
+        paving=new THREE.MeshStandardMaterial({map:texture,color:0xb6a49a,roughness:0.79,metalness:0.09});
+      }
+    }
+    // Indices 9-15 belong to Water Street, not the West Cordova trolley zone.
+    for(let i=9;i<route.length-1;i++)slab(i,10.4,paving,0.055);
+
+    function sign(group,label,x,y,z,w,mat) {
+      // Simple original shop signs; no historic or current tenant claims.
+      const plate=box(group,label+' signboard',x,y,z,w,0.43,0.16,mat);
+      plate.userData.displayLabel=label;return plate;
+    }
+    // One small architectural vignette per side per Water Street segment.
+    // These are local facade modules, not another enormous building extrusion.
+    for(let i=9;i<route.length-1;i++){
+      const f=frame(i);
+      for(const side of [-1,1]){
+        if((i+side)%3===0 && i!==15)continue; // varied rhythm and gaps
+        const frontage=new THREE.Group();
+        frontage.name='Water Street mixed brick-and-stone shopfront '+i+' '+side;
+        frontage.position.set(f.x,0,f.z);
+        frontage.rotation.y=f.yaw;
+        root.add(frontage);
+        const z=side*11.2;
+        const width=Math.min(14.4,f.length-1.8);
+        const tone=brick[(i+side+8)%brick.length];
+        box(frontage,'Heritage brick pier and facade',0,6.5,z,width,12.7,0.65,tone);
+        box(frontage,'Historic sandstone shop plinth',0,0.7,z-side*0.39,width+0.25,1.4,0.21,stone);
+        box(frontage,'Shopfront dark glazing',0,2.25,z-side*0.47,width-1.2,2.7,0.12,warmGlass);
+        box(frontage,'Storefront fascia',0,3.95,z-side*0.54,width,0.65,0.25,shop);
+        box(frontage,'Projecting stone cornice',0,12.75,z-side*0.54,width+0.55,0.36,0.55,lightStone);
+        for(let bay=-2;bay<=2;bay++){
+          const x=bay*(width/5);
+          if(bay!==-2)box(frontage,'Vertical sandstone facade pier',x-width/10,7.8,z-side*0.54,0.25,7.1,0.19,stone);
+          for(let level=0;level<2;level++){
+            const y=6.1+level*3.45;
+            box(frontage,'Tall heritage sash window',x,y,z-side*0.53,width/6.8,2.55,0.1,glass);
+            box(frontage,'Window sill',x,y-1.39,z-side*0.62,width/6.5,0.14,0.27,lightStone);
+          }
+        }
+        // Realistic variety: small dark awnings, some bright painted fronts.
+        if(i%2===0)box(frontage,'Water Street retail awning',0,4.18,z-side*1.11,width*0.68,0.15,1.08,shop);
+        if(i===12||i===14)sign(frontage,'GASTOWN / WATER ST',0,4.04,z-side*0.69,width*0.5,shop);
+      }
+      for(const side of [-1,1]) {
+        const street=new THREE.Group();street.name='Water Street heritage sidewalk furniture';
+        street.position.set(f.x,0,f.z);street.rotation.y=f.yaw;root.add(street);
+        for(let n=-1;n<=1;n++){
+          const x=n*5.1,z=side*7.35;
+          const post=cylinder(street,'Black cast iron chain bollard',x,0.48,z,0.085,0.95,iron);
+          cylinder(street,'Bollard spherical cap',x,1.02,z,0.13,0.18,iron);
+          if(n<1) {
+            const next=x+5.1;
+            join(street,'Sagging heritage curb chain',{x,y:0.87,z},{x:(x+next)/2,y:0.65,z},0.023,iron);
+            join(street,'Sagging heritage curb chain',{x:(x+next)/2,y:0.65,z},{x:next,y:0.87,z},0.023,iron);
+          }
+        }
+        // Five globe lamps, warm and ornate, at alternating sidewalk bays.
+        if(i%2===1){
+          const z=side*8.6;
+          cylinder(street,'Gastown five-globe iron lamppost',0,2.65,z,0.10,5.2,iron);
+          for(const dx of [-0.52,0,0.52]){
+            const y=dx===0?5.55:4.92;
+            if(dx!==0)join(street,'Lamp ornate bracket',{x:0,y:4.8,z},{x:dx,y:y-0.1,z},0.045,iron);
+            const orb=new THREE.Mesh(new THREE.SphereGeometry(0.23,9,7),globe);
+            orb.name='Five globe heritage street light';orb.position.set(dx,y,z);street.add(orb);
+          }
+        }
+        if(i%3===1) {
+          // Leafless branching shape is recognizable in grey Vancouver weather.
+          const z=side*8.85,x=3.3;
+          cylinder(street,'Water Street mature tree trunk',x,2,z,0.21,3.8,wood);
+          for(const arm of [-1,1])join(street,'Gastown street tree winter branches',
+            {x,y:3.4,z},{x:x+arm*1.3,y:5.9,z:z+0.65},0.055,wood);
+          box(street,'Iron street-tree grate',x,0.15,z,1.6,0.04,1.6,iron);
+        }
+        if(i===11 || i===14){
+          box(street,'Gastown sidewalk bench seat',-2,0.56,side*8.85,1.6,0.12,0.5,wood);
+          for(const x of [-2.6,-1.4])box(street,'Iron bench leg',x,0.3,side*8.85,0.09,0.54,0.14,iron);
+          box(street,'Gastown bicycle rack',3.0,0.56,side*8.4,0.13,1,1.2,iron);
+        }
+      }
+    }
+    // A compact serviced delivery van at the curb, not a free-floating
+    // fast traffic car; place it after the Steam Clock plaza approach.
+    const vf=frame(12),delivery=new THREE.Group();
+    delivery.name='Water Street parked local delivery van';
+    delivery.position.set(vf.x,0.12,vf.z);
+    delivery.rotation.y=vf.yaw;
+    box(delivery,'White courier van body',3.8,1.45,-3.4,2.1,2.25,4.6,lightStone);
+    box(delivery,'Van windscreen',3.8,1.75,-5.74,1.85,1.12,0.09,glass);
+    for(const x of [2.65,4.95])for(const z of [-4.8,-2.3]){
+      const wheel=new THREE.Mesh(new THREE.CylinderGeometry(0.46,0.46,0.15,10),iron);
+      wheel.rotation.z=Math.PI/2;wheel.position.set(x,0.52,z);delivery.add(wheel);
+    }
+    root.add(delivery);
+    root.userData.referenceApproximation=true;
+    root.userData.routeStart=9;
+    root.userData.routeEnd=route.length-1;
+    return root;
+  }
+
+  return Object.freeze({peopleFor,bubble,create,createWaterStreetDetails});
 });
