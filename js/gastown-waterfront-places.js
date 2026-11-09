@@ -617,6 +617,36 @@
     // This is a fictionalized walkthrough, not an actual surveyed floorplan.
     for(const x of [799.1,802.9])for(const z of [801.3,802.7])cube('Worktable leg',x,0.48,z,0.14,0.93,0.14,dark);
     cube('Creative coding laptop screen',801.5,1.31,801.65,1.05,0.64,0.08,dark);
+    // Fictional working artist, seated at a lit creative-coding laptop.
+    // The computer and worker are visible upon arrival, without interaction.
+    const coder=new THREE.Group();
+    coder.name='MML fictional creative technologist at computer';
+    coder.position.set(801.55,0,803.35);coder.rotation.y=Math.PI;
+    root.add(coder);
+    function coderPart(name,x,y,z,w,h,d,material){
+      const part=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+      part.name=name;part.position.set(x,y,z);coder.add(part);return part;
+    }
+    const coderShirt=new THREE.MeshStandardMaterial({color:0x755d9b,roughness:0.87});
+    const coderHair=new THREE.MeshStandardMaterial({color:0x27252b,roughness:0.93});
+    coderPart('Creative technologist seated torso',0,1.12,0,0.7,0.73,0.38,coderShirt);
+    coderPart('Creative technologist seated legs',0,0.57,-0.24,0.66,0.22,0.8,denim);
+    coderPart('Creative technologist chair seat',0,0.63,0.08,0.9,0.15,0.85,dark);
+    coderPart('Creative technologist chair back',0,1.17,0.43,0.85,1.1,0.13,dark);
+    const coderHead=new THREE.Mesh(new THREE.SphereGeometry(0.25,12,10),skin);
+    coderHead.name='Creative technologist focused at screen';
+    coderHead.position.set(0,1.7,-0.02);coder.add(coderHead);
+    coderPart('Creative technologist hair',0,1.91,0.02,0.47,0.13,0.46,coderHair);
+    const coderHands=[];
+    for(const side of [-1,1]){
+      coderPart('Creative technologist forearm',side*0.41,0.99,-0.44,0.17,0.17,0.65,coderShirt);
+      const hand=coderPart('Creative technologist typing hand',side*0.41,0.99,-0.73,0.18,0.10,0.18,skin);
+      coderHands.push(hand);
+    }
+    const screenGlow=new THREE.MeshBasicMaterial({color:0x52d9d0});
+    cube('Multimodal Lab laptop luminous code display',801.5,1.32,801.59,0.89,0.49,0.012,screenGlow);
+    root.userData.coder=coder;
+    root.userData.coderHands=coderHands;
     // Stylized fictionalized KK greeter: not a scanned photograph or claim
     // about the real person's whereabouts.
     const greeter=new THREE.Group();
