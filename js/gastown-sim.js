@@ -109,6 +109,7 @@
   const harbourVista = window.GastownHarbourVista || null;
   const cordovaArchitecture = window.GastownCordovaArchitecture || null;
   const harbourLookBtn = app.querySelector('[data-action="harbour-lookout"]');
+  const railYardLookBtn = app.querySelector('[data-action="rail-yard-view"]');
   const entranceLookBtn = app.querySelector('[data-action="lot-entrance-view"]');
   const diagonalLookBtn = app.querySelector('[data-action="lot-diagonal-view"]');
   const suzyViewBtn = app.querySelector('[data-action="suzy-view"]');
@@ -6368,7 +6369,19 @@
     const fence=waterfrontPlaces.lookoutFor(state.world,harbourVista && harbourVista.positionFor(state.world));
     if (!fence) return false;
     let pose, focus;
-    if (shot === 'entrance') {
+    if (shot === 'yard') {
+      // Same safe parking-lot camera as the harbour preset, rotated toward
+      // the east-side CP N-Yard ladder instead of the west-side cruise berth.
+      const edgeA=lot.polygon[5],edgeB=lot.polygon[4];
+      const dx=edgeB.x-edgeA.x,dz=edgeB.z-edgeA.z;
+      const len=Math.hypot(dx,dz)||1;
+      const dir={x:dx/len,z:dz/len};
+      const outward={x:dir.z,z:-dir.x};
+      const middle={x:(edgeA.x+edgeB.x)/2,z:(edgeA.z+edgeB.z)/2};
+      pose={x:fence.x,y:1.7,z:fence.z};
+      focus={x:middle.x+dir.x*82+outward.x*32,
+        z:middle.z+dir.z*82+outward.z*32};
+    } else if (shot === 'entrance') {
       const toward={x:fence.x-gate.x,z:fence.z-gate.z};
       const d=Math.hypot(toward.x,toward.z)||1;
       pose={x:gate.x+toward.x/d*2.5,y:1.7,z:gate.z+toward.z/d*2.5};
@@ -6391,9 +6404,11 @@
     applyStreetCameraPose();
     updateNearestNode();
     drawMinimap();
-    setStatus(shot==='entrance'
-      ? 'Station East: the clearance gantry, parking signs and harbour beyond.'
-      : 'Station East from the Waterfront sidewalk: the urban harbour threshold.');
+    setStatus(shot==='yard'
+      ? 'CP N-Yard: twenty illustrative rail alignments, viewed safely from Station East. The tracks are not public access.'
+      : shot==='entrance'
+        ? 'Station East: the clearance gantry, parking signs and harbour beyond.'
+        : 'Station East from the Waterfront sidewalk: the urban harbour threshold.');
     return true;
   }
 
@@ -6595,6 +6610,7 @@
     pauseBtn.addEventListener('click', pauseSim);
     resetBtn.addEventListener('click', resetToStart);
     if (harbourLookBtn) harbourLookBtn.addEventListener('click', goToHarbourLookout);
+    if (railYardLookBtn) railYardLookBtn.addEventListener('click', () => goToLotView('yard'));
     if (entranceLookBtn) entranceLookBtn.addEventListener('click', () => goToLotView('entrance'));
     if (diagonalLookBtn) diagonalLookBtn.addEventListener('click', () => goToLotView('diagonal'));
     if (suzyViewBtn) suzyViewBtn.addEventListener('click', toggleSuzyView);
