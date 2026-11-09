@@ -109,16 +109,26 @@
         // creating hundreds of independent deep glass cubes.
         for(let floor=0;floor<levels;floor++){
           const y=towerBase+(floor+0.52)*(towerTop-towerBase)/levels;
-          for(let bay=-3;bay<=3;bay++){
-            const offset=bay*2.42;
-            for(const side of [-1,1]){
-              addBox(group,'Harbour Centre square front glazing',
-                towerX+offset,y,towerZ+side*(towerDepth/2+0.052),
-                1.72,1.78,0.07,blue);
-              addBox(group,'Harbour Centre square side glazing',
-                towerX+side*(towerWidth/2+0.052),y,towerZ+offset,
-                0.07,1.78,1.72,blue);
-            }
+          for(const side of [-1,1]){
+            addBox(group,'Harbour Centre front window ribbon',
+              towerX,y,towerZ+side*(towerDepth/2+0.052),
+              towerWidth-1.55,1.7,0.07,blue);
+            addBox(group,'Harbour Centre side window ribbon',
+              towerX+side*(towerWidth/2+0.052),y,towerZ,
+              0.07,1.7,towerDepth-1.55,blue);
+          }
+        }
+        // Concrete vertical mullions divide the horizontal glazing into
+        // repeated square bays without hundreds of separate draw calls.
+        for(let bay=-3;bay<=3;bay++){
+          const offset=bay*2.42;
+          for(const side of [-1,1]){
+            addBox(group,'Harbour Centre front concrete mullion',
+              towerX+offset,(towerBase+towerTop)/2,
+              towerZ+side*(towerDepth/2+0.12),0.24,towerTop-towerBase,0.12,limestone);
+            addBox(group,'Harbour Centre side concrete mullion',
+              towerX+side*(towerWidth/2+0.12),(towerBase+towerTop)/2,
+              towerZ+offset,0.12,towerTop-towerBase,0.24,limestone);
           }
         }
         // Disc-shaped observation gallery with a slim pedestal and broad
