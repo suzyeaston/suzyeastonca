@@ -36,7 +36,7 @@
       const patrol = [point(item.t,item.side),point(Math.min(0.83,item.t+0.045),item.side)];
       return {
         id:item.id, role:'commuter',
-        name:item.cue==='parking-highfive'?'Friendly local':'Station East local',
+        name:item.cue==='parking-highfive'?'Ticketed driver':'Parking lot reviewer',
         voiceCue:item.cue,
         dialogId:item.cue==='parking-highfive'?'parking_high_five':'parking_small_talk',
         behavior:'route_walk', interactRadius:2.9, silhouetteScale:0.93+(i%3)*0.045,
@@ -433,7 +433,7 @@
       }
     }
     // Indices 9-15 belong to Water Street, not the West Cordova trolley zone.
-    for(let i=9;i<route.length-1;i++)slab(i,10.4,paving,0.055);
+    for(let i=7;i<route.length-1;i++)slab(i,10.4,paving,0.055);
 
     function sign(group,label,x,y,z,w,mat) {
       // Simple original shop signs; no historic or current tenant claims.
@@ -444,7 +444,7 @@
     // this pass added freestanding 12.7m opaque facade boxes into the roadway,
     // blocking the entire route. Keep *only* street furniture here; dedicated
     // footprint-aligned facade modules need a separately surveyed frontage.
-    for(let i=9;i<route.length-1;i++){
+    for(let i=7;i<route.length-1;i++){
       const f=frame(i);
       for(const side of [-1,1]) {
         const street=new THREE.Group();street.name='Water Street heritage sidewalk furniture';
@@ -474,8 +474,16 @@
           // Leafless branching shape is recognizable in grey Vancouver weather.
           const z=side*8.85,x=3.3;
           cylinder(street,'Water Street mature tree trunk',x,2,z,0.21,3.8,wood);
-          for(const arm of [-1,1])join(street,'Gastown street tree winter branches',
-            {x,y:3.4,z},{x:x+arm*1.3,y:5.9,z:z+0.65},0.055,wood);
+          for(const arm of [-1,1]) {
+            join(street,'Gastown street tree winter branches',
+              {x,y:3.4,z},{x:x+arm*1.7,y:5.5,z:z+0.75},0.065,wood);
+            join(street,'Gastown mature tree branching crown',
+              {x:x+arm*1.1,y:4.85,z:z+0.5},
+              {x:x+arm*2.75,y:6.75,z:z+1.25},0.034,wood);
+            join(street,'Gastown mature tree fine canopy',
+              {x:x+arm*1.5,y:5.2,z:z+0.7},
+              {x:x+arm*2.5,y:6.9,z:z-0.8},0.025,wood);
+          }
           box(street,'Iron street-tree grate',x,0.15,z,1.6,0.04,1.6,iron);
         }
         if(i===11 || i===14){
@@ -498,8 +506,97 @@
       wheel.rotation.z=Math.PI/2;wheel.position.set(x,0.52,z);delivery.add(wheel);
     }
     root.add(delivery);
+
+    // The earlier Water Street was a canyon of anonymous, dark extrusions.
+    // Dress ACTUAL mapped wall edges rather than adding free-standing blocks.
+    // These thin architectural skins carry no collision geometry. This is
+    // intentionally a stylized facade rhythm, not a parcel-level survey.
+    const heritageFrontages=new THREE.Group();
+    heritageFrontages.name='Water Street mapped heritage streetwall details';
+    root.add(heritageFrontages);
+    const facadePaint=[
+      new THREE.MeshStandardMaterial({color:0x986353,roughness:0.93}),
+      new THREE.MeshStandardMaterial({color:0xbbb09d,roughness:0.93}),
+      new THREE.MeshStandardMaterial({color:0x977264,roughness:0.91}),
+      new THREE.MeshStandardMaterial({color:0xb0a28e,roughness:0.91}),
+      new THREE.MeshStandardMaterial({color:0xa15245,roughness:0.91})
+    ];
+    const darkFrame=new THREE.MeshStandardMaterial({color:0x283a3d,roughness:0.65});
+    const awning=new THREE.MeshStandardMaterial({color:0x293f36,roughness:0.78});
+    const storefront=new THREE.MeshStandardMaterial({color:0x49636a,roughness:0.26,metalness:0.13});
+    let mappedFrontageCount=0;
+    const streetRoute=route.slice(7);
+    function onSegment(p,a,b) {
+      const dx=b.x-a.x,dz=b.z-a.z,den=dx*dx+dz*dz||1;
+      const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.z-a.z)*dz)/den));
+      return {x:a.x+t*dx,z:a.z+t*dz};
+    }
+    (world.buildings||[]).forEach((building,index)=>{
+      if(mappedFrontageCount>=14 || !Array.isArray(building.footprint_local))return;
+      const points=building.footprint_local;
+      if(points.length<3)return;
+      const yaw=building.yaw||0,c=Math.cos(yaw),si=Math.sin(yaw);
+      const worldToLocal=p=>{
+        const dx=p.x-building.x,dz=p.z-building.z;
+        return {x:dx*c-dz*si,z:dx*si+dz*c};
+      };
+      const localRoute=streetRoute.map(worldToLocal);
+      let best=null;
+      for(let i=0;i<points.length;i++){
+        const a=points[i],b=points[(i+1)%points.length];
+        const dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);
+        if(len<9 || len>58)continue;
+        const mid={x:(a.x+b.x)/2,z:(a.z+b.z)/2};
+        for(let j=0;j<localRoute.length-1;j++){
+          const near=onSegment(mid,localRoute[j],localRoute[j+1]);
+          const dist=Math.hypot(near.x-mid.x,near.z-mid.z);
+          // Avoid walls facing away from the walking route and deeply
+          // inset parcel segments with no pedestrian frontage.
+          if(dist>20 || (best && best.dist<=dist))continue;
+          best={a,b,len,mid,near,dist};
+        }
+      }
+      if(!best)return;
+      const {a,b,len,mid,near}=best;
+      const ex=(b.x-a.x)/len,ez=(b.z-a.z)/len;
+      const side=(ex*(near.z-mid.z)-ez*(near.x-mid.x))>=0?1:-1;
+      const frontage=new THREE.Group();
+      frontage.name='Mapped Water Street heritage frontage '+building.id;
+      frontage.position.set(building.x,0,building.z);
+      frontage.rotation.y=-yaw;
+      heritageFrontages.add(frontage);
+      const wall=new THREE.Group();
+      wall.name='Footprint edge trim and historic sash';
+      wall.position.set(mid.x,0,mid.z);
+      wall.rotation.y=-Math.atan2(ez,ex);
+      frontage.add(wall);
+      const w=Math.min(len*0.91,38),height=Math.max(9,Math.min(16.5,building.height||13));
+      const material=facadePaint[index%facadePaint.length];
+      // All layers are within 0.4m of the actual civic footprint wall.
+      const front=side*0.17;
+      box(wall,'Heritage mapped masonry facade',0,height/2,front,w,height,0.14,material);
+      box(wall,'Limestone shopfront plinth',0,0.62,front+side*0.11,w,1.2,0.16,stone);
+      box(wall,'Historic projecting cornice',0,height-0.27,front+side*0.12,w+0.26,0.34,0.46,lightStone);
+      box(wall,'Ground floor glazing band',0,2.43,front+side*0.15,w*0.9,2.4,0.11,storefront);
+      box(wall,'Dark storefront fascia',0,3.75,front+side*0.23,w*0.94,0.48,0.19,darkFrame);
+      // A row of shop canopies makes Water Street legible from pedestrian
+      // height without inventing real tenant names or signage.
+      if(index%3!==0)box(wall,'Gastown shop entrance awning',0,3.48,front+side*0.62,w*0.35,0.12,0.92,awning);
+      const bays=Math.max(3,Math.min(7,Math.floor(w/3.5))),floors=Math.min(3,Math.floor((height-4)/2.8));
+      for(let floor=0;floor<floors;floor++){
+        const y=5.15+floor*2.85;
+        for(let n=0;n<bays;n++){
+          const x=((n+0.5)/bays-0.5)*w*0.89;
+          box(wall,'Heritage upper sash window',x,y,front+side*0.17,w*0.69/bays,1.72,0.10,glass);
+          box(wall,'Stone window sill',x,y-0.92,front+side*0.24,w*0.79/bays,0.10,0.22,lightStone);
+        }
+      }
+      wall.userData.mappedFootprintId=building.id;
+      mappedFrontageCount++;
+    });
+    root.userData.mappedHeritageFrontages=mappedFrontageCount;
     root.userData.referenceApproximation=true;
-    root.userData.routeStart=9;
+    root.userData.routeStart=7;
     root.userData.routeEnd=route.length-1;
     return root;
   }
