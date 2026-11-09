@@ -74,6 +74,7 @@ THEME_FILES = [
     # The skyline module is a runtime dependency; upload it before PHP
     # ever declares a script handle requiring it.
     "js/gastown-cordova-architecture.js",
+    "js/gastown-street-life.js",
     "functions.php",
     "style.css",
     "header.php",
