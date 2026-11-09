@@ -3794,9 +3794,15 @@
           return material;
         })()
       );
-      paver.rotation.x = -Math.PI / 2;
+      // Road bands are authored in a local XY plane. Rotate the plane flat
+      // FIRST, then turn it around world Y. Euler's default 'XYZ' applies
+      // the yaw before the -90deg X tilt, standing dark pavement sections
+      // upright as enormous diagonal slabs across the street and skyline.
+      // 'YXZ' keeps the ground normal vertical at every route heading.
+      paver.rotation.set(-Math.PI / 2, Number.isFinite(band.yaw) ? band.yaw : 0, 0, 'YXZ');
+      paver.name = 'Street-level surface band: ' + (band.tone || 'pavement');
+      paver.userData.groundSurfaceBand = true;
       paver.renderOrder = 0;
-      paver.rotation.y = band.yaw || 0;
       paver.position.set(segment.x + (band.offset_x || 0), band.elevation || 0.02, segment.z + (band.offset_z || 0));
       worldGroup.add(paver);
     });
