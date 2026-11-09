@@ -1966,6 +1966,38 @@
     }
   }
 
+  let nextAmbientNpcAt = 0;
+  const npcAmbientCooldown = new Map();
+  function maybeSpeakNearNpc(seconds) {
+    if (!state.isRunning || !state.hasInteracted || !localAmbienceEnabled ||
+      !window.speechSynthesis || !state.npcs || seconds < nextAmbientNpcAt ||
+      state.activeDialogNpcId || window.speechSynthesis.speaking) return;
+    const candidate = state.npcs.filter(npc => npc.mesh && npc.mesh.visible !== false
+      && Math.hypot(npc.mesh.position.x - player.position.x, npc.mesh.position.z - player.position.z) < 6.5
+      && seconds > (npcAmbientCooldown.get(npc.id) || 0))
+      .sort((a,b) => Math.hypot(a.mesh.position.x-player.position.x,a.mesh.position.z-player.position.z)
+        - Math.hypot(b.mesh.position.x-player.position.x,b.mesh.position.z-player.position.z))[0];
+    if (!candidate) return;
+    const entries = {
+      'parking-smalltalk': ['Parking lot view is weirdly elite.', 'The SeaBus is doing all the work today.'],
+      'parking-highfive': ['Five stars for a high five?', 'The reviews said the clock was too clock-shaped.'],
+      'tourist-cluster': ['Wait, that was the whole steam show?', 'Who is blocking the clock? Oh. Me.'],
+      'photo-direction': ['One more photo, then we can get coffee.', 'You are in my clock photo!'],
+      'busker-hook': ['Clock corner show, coming through.', 'Tips appreciated, even in the rain.']
+    };
+    const lines = entries[candidate.voiceCue] || ['Classic Vancouver weather.', 'Watch the trolley poles.'];
+    const voices = typeof window.speechSynthesis.getVoices === 'function' ? window.speechSynthesis.getVoices() : [];
+    const voice = voices.find(v => /^en[-_]CA$/i.test(v.lang)) || voices.find(v => /^en[-_]/i.test(v.lang));
+    if (!voice) { nextAmbientNpcAt = seconds + 20; return; }
+    const u = new window.SpeechSynthesisUtterance(lines[Math.floor(seconds / 7) % lines.length]);
+    u.lang = voice.lang; u.voice = voice; u.rate = 0.96;
+    const distance = Math.hypot(candidate.mesh.position.x-player.position.x,candidate.mesh.position.z-player.position.z);
+    u.volume = Math.min(0.24, 0.07 + 0.17 * (1 - distance / 6.5));
+    npcAmbientCooldown.set(candidate.id, seconds + 48);
+    nextAmbientNpcAt = seconds + 13;
+    try { window.speechSynthesis.speak(u); } catch (error) { nextAmbientNpcAt = seconds + 30; }
+  }
+
   function clearMovementInput() {
     state.move.forward = false;
     state.move.backward = false;
@@ -4899,17 +4931,25 @@
   }
 
   function maybeTriggerLightning(weather) {
+    if (!weather || state.activeWeather !== 'thunderstorm') return;
+    // Schedule distinct storm cells, rather than a nearly invisible
+    // random flash with no predictable arrival after changing the setting.
+    const now = performance.now();
+    if (!state.nextLightningAt) state.nextLightningAt = now + 700;
+    if (now < state.nextLightningAt || (state.lightning && now < state.lightning.activeUntil)) return;
+    state.nextLightningAt = now + 6500 + Math.random() * 9500;
+    /*
     if (!weather || !weather.lightningFrequency || state.lightning && state.lightning.activeUntil > performance.now()) {
       return;
     }
     if (Math.random() > weather.lightningFrequency * 0.012) {
       return;
     }
-    const now = performance.now();
+    */
     state.lightning = {
-      activeUntil: now + 120 + (Math.random() * 140),
+      activeUntil: now + 520 + (Math.random() * 260),
       intensity: weather.lightningIntensity || 1,
-      thunderAt: now + 380 + (Math.random() * 820),
+      thunderAt: now + 750 + (Math.random() * 1100),
       thunderPlayed: false,
     };
   }
@@ -4918,21 +4958,35 @@
     const overlay = ensureLightningOverlay();
     const now = performance.now();
     const flash = state.lightning;
-    if (!flash || now >= flash.activeUntil) {
-      overlay.material.opacity = 0;
-      lightningLight.intensity = 0;
-      return;
-    }
-    const remaining = Math.max(0, flash.activeUntil - now);
-    const pulse = Math.min(1, remaining / 220);
-    const intensity = (0.08 + (pulse * 0.2)) * (flash.intensity || 1);
-    overlay.material.opacity = Math.min(0.2, intensity);
-    lightningLight.intensity = intensity * 1.8;
-
+    if (!flash || state.activeWeather !== 'thunderstorm') { overlay.material.opacity = 0; lightningLight.intensity = 0; return; }
+    const live = now < flash.activeUntil;
+    // Double-flash with a dark gap makes the lightning visibly electrical.
+    const age = Math.max(0, now - (flash.activeUntil - 650));
+    const intensity = live ? (age < 100 ? 2.7 : age < 210 ? 0.15 : age < 320 ? 3.3 : 0.32) : 0;
+    overlay.position.copy(camera.position);
+    overlay.material.opacity = Math.min(0.33, intensity * 0.095);
+    lightningLight.intensity = intensity;
     if (weather && weather.thunderEnabled && !flash.thunderPlayed && now >= flash.thunderAt) {
       flash.thunderPlayed = true;
       if (state.sounds.thunder && typeof state.sounds.thunder.play === 'function') {
         playHowl(state.sounds.thunder);
+      } else if (state.audioUnlocked && state.audioContext) {
+        // Local thunder fallback: filtered broadband noise, not an external
+        // sample or an uncanny pitched oscillator. Safely optional.
+        try {
+          const ctx = state.audioContext;
+          const length = Math.floor(ctx.sampleRate * 2.5);
+          const buffer = ctx.createBuffer(1,length,ctx.sampleRate);
+          const channel = buffer.getChannelData(0);
+          for (let i=0;i<length;i++) channel[i]=(Math.random()*2-1)*Math.exp(-i/length*5);
+          const source=ctx.createBufferSource();
+          const lowpass=ctx.createBiquadFilter();
+          const gain=ctx.createGain();
+          lowpass.type='lowpass';lowpass.frequency.value=240;
+          gain.gain.value=0.17;
+          source.buffer=buffer;source.connect(lowpass);lowpass.connect(gain);gain.connect(ctx.destination);
+          source.start();
+        } catch (error) { /* weather visuals remain available without audio */ }
       }
     }
   }
@@ -6250,6 +6304,8 @@
   }
 
   function applyWeather(weatherId) {
+    state.nextLightningAt = 0;
+    state.lightning = null;
     state.activeWeather = weatherId;
     applyVisualState();
     refreshNpcPopulation();
@@ -6610,6 +6666,14 @@
   }
 
   function attachEvents() {
+    // UI outside the WebGL canvas should immediately regain its cursor.
+    // A locked cursor otherwise makes the side menu appear unresponsive.
+    const sidebar = app.querySelector('.gastown-minimap');
+    if (sidebar) sidebar.addEventListener('pointerdown', () => {
+      if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) {
+        document.exitPointerLock();
+      }
+    });
     window.addEventListener('resize', updateSize);
     if (typeof window.ResizeObserver === 'function') {
       const viewportObserver = new window.ResizeObserver(() => updateSize());
@@ -6667,7 +6731,16 @@
         takeScenePhoto();
         return;
       }
-      if (event.code === 'KeyM') {
+      if (event.code === 'KeyM' && !['INPUT','TEXTAREA','SELECT'].includes((event.target && event.target.tagName)||'')) {
+        const menu = app.querySelector('[data-side-menu]');
+        if (menu) {
+          event.preventDefault();
+          if (document.pointerLockElement === renderer.domElement && document.exitPointerLock) document.exitPointerLock();
+          menu.open = !menu.open;
+          if (menu.open) menu.querySelector('summary').focus();
+          setStatus(menu.open ? 'Menu open. Adjust conditions, then click the street to walk.' : 'Menu closed. Click the street to resume.');
+          return;
+        }
         const now = performance.now();
         if (now - state.tutorial.lastMKeyAt < 450) {
           toggleMinimapMode();
@@ -6996,7 +7069,10 @@
           updateCameraMotionFeedback(delta, getMovementProfile());
         }
 
-        maybeTriggerLightning(state.world.weatherPresets[state.activeWeather] || null);
+        const currentWeather = state.world.weatherPresets[state.activeWeather] || null;
+        maybeTriggerLightning(currentWeather);
+        updateLightning(currentWeather);
+        maybeSpeakNearNpc(time / 1000);
         updateSteamClock(delta, time / 1000);
         updateProgressiveVisibility();
         updateNpcs(delta);
