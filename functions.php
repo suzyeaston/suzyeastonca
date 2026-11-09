@@ -517,6 +517,19 @@ function se_enqueue_gastown_sim_assets() {
         );
     }
 
+    // Reference-informed skyline for the buildings opposite Waterfront.
+    // Load before the simulator; it replaces three old complex GIS meshes.
+    $cordova_skyline_path = '/js/gastown-cordova-architecture.js';
+    if ( file_exists( $dir . $cordova_skyline_path ) ) {
+        wp_enqueue_script(
+            'se-gastown-cordova-architecture',
+            $uri . $cordova_skyline_path,
+            array( 'three-js' ),
+            filemtime( $dir . $cordova_skyline_path ),
+            true
+        );
+    }
+
     // The Gastown ambience directory currently contains only a README.
     // Never tell Howler to fetch a speculative MP3/OGG path. Build a per-
     // request allowlist from files actually present in the deployed theme.
@@ -571,7 +584,7 @@ function se_enqueue_gastown_sim_assets() {
         wp_enqueue_script(
             'se-gastown-sim',
             $uri . $app_path,
-            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista', 'se-gastown-suzy-avatar' ),
+            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista', 'se-gastown-cordova-architecture', 'se-gastown-suzy-avatar' ),
             filemtime( $dir . $app_path ) . '-tone-clock-tourists',
             true
         );
