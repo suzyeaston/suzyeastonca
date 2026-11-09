@@ -267,9 +267,96 @@
       lamp.position.set(0, 8.9, z);
       root.add(lamp);
     }
-    box('Public concourse rear wayfinding wall', 0, 2.1, -14.1, 10.5, 4.2, 0.35, hallDark);
-    sign('WATERFRONT STATION', 0, 3.4, -13.89, 8.8, 0.62, '#f7e7c4', 'bold 70px Georgia, serif');
-    sign('PUBLIC CONCOURSE', 0, 2.5, -13.87, 7.4, 0.42, '#e9d8b5', 'bold 65px Arial, sans-serif');
+    // Reference-led interior detail: the real waiting hall reads as an airy
+    // Beaux-Arts space, with ivory coffers, blush frieze, tall Ionic bays and
+    // contrasting terrazzo borders, not a featureless grey concrete box.
+    // Coordinates are still authored approximations, not measured floor plans.
+    const terrazzo = new THREE.MeshStandardMaterial({ color: 0xb7b3a8, roughness: 0.9 });
+    const rose = new THREE.MeshStandardMaterial({ color: 0xa77b81, roughness: 0.86 });
+    const inset = new THREE.MeshStandardMaterial({ color: 0xc3c8c5, roughness: 0.87 });
+    const mural = new THREE.MeshStandardMaterial({ color: 0x99715e, roughness: 0.82 });
+    // Pink/grey geometric terrazzo banding flows toward the interior arches.
+    for (const x of [-5.6, 5.6]) {
+      box('Concourse terrazzo longitudinal border', x, 0.113, -6.7, 0.75, 0.018, 17.2, rose);
+    }
+    for (const z of [-12.7, -8.7, -4.7, -0.7]) {
+      box('Concourse terrazzo cross border', 0, 0.114, z, 11.9, 0.018, 0.34, rose);
+    }
+    for (const x of [-3.4, 0, 3.4]) {
+      for (const z of [-11.1, -7.1, -3.1]) {
+        box('Concourse terrazzo inset', x, 0.114, z, 1.8, 0.015, 1.65, terrazzo);
+      }
+    }
+    // A repeated, two-axis coffer grid and inset panels make the ceiling
+    // readable even in low graphics mode without downloading image textures.
+    for (const x of [-5.4, -3.6, -1.8, 0, 1.8, 3.6, 5.4]) {
+      box('Waterfront ceiling longitudinal coffer rib', x, 10.65, -7.6,
+        0.22, 0.48, 16.4, hallTrim);
+    }
+    for (let z = -14; z <= -1; z += 1.8) {
+      box('Waterfront ceiling transverse coffer rib', 0, 10.63, z,
+        13.1, 0.47, 0.22, hallTrim);
+    }
+    for (const x of [-4.5, -2.7, -0.9, 0.9, 2.7, 4.5]) {
+      for (let z = -13.1; z <= -1.9; z += 1.8) {
+        box('Waterfront recessed blue-grey coffer panel', x, 10.92, z,
+          1.42, 0.012, 1.42, inset);
+      }
+    }
+    // Full-height warm ivory hall columns, each with circular bases/capitals
+    // and a terracotta-pink frieze overhead.
+    for (const side of [-1, 1]) {
+      const x = side * 5.72;
+      box('Concourse rose frieze', side * 6.26, 9.1, -7.4,
+        0.19, 1.28, 14.3, rose);
+      box('Concourse cream crown molding', side * 6.29, 9.83, -7.4,
+        0.3, 0.22, 14.5, hallTrim);
+      for (const z of [-12.2, -8.1, -4.0, 0.1]) {
+        cylinder('Waterfront hall Ionic column', x, 4.9, z,
+          0.36, 0.44, 8.3, hallTrim, 16);
+        cylinder('Waterfront hall column plinth', x, 0.4, z,
+          0.64, 0.7, 0.75, stone, 16);
+        box('Waterfront hall column capital', x, 9.11, z,
+          1.05, 0.35, 1.05, hallTrim);
+      }
+      for (const z of [-10.3, -6.2, -2.1]) {
+        box('Heritage mural inset panel', side * 6.4, 8.98, z,
+          0.09, 0.72, 1.7, mural);
+      }
+    }
+    // Arcade-inspired terminal wall: three recessed arch bays are a closer
+    // visual match to the station photographs than the former black billboard.
+    const archDark = new THREE.MeshStandardMaterial({ color: 0x514a44, roughness: 0.84 });
+    for (const x of [-3.75, 0, 3.75]) {
+      box('Concourse arch recessed opening', x, 3.15, -13.9,
+        2.7, 6.3, 0.1, archDark);
+      const arch = new THREE.Mesh(
+        new THREE.TorusGeometry(1.38, 0.2, 8, 20, Math.PI),
+        hallTrim
+      );
+      arch.position.set(x, 6.3, -13.73);
+      arch.name = 'Historic concourse arcade arch';
+      root.add(arch);
+      for (const side of [-1, 1]) {
+        cylinder('Arcade opening ivory pier', x + side * 1.48, 3.08, -13.71,
+          0.19, 0.24, 6.15, hallTrim, 10);
+      }
+    }
+    const heritageClock = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.56, 0.56, 0.08, 20), brass
+    );
+    heritageClock.name = 'Waterfront historic arcade clock surround';
+    heritageClock.position.set(0, 8.75, -13.56);
+    heritageClock.rotation.x = Math.PI / 2;
+    root.add(heritageClock);
+    sign('WATERFRONT', 0, 6.24, -13.69, 2.45, 0.34,
+      '#f5f0e3', 'bold 62px Arial, sans-serif');
+    root.userData.heritageHallReference = 'SRA renovation / user-supplied interior photos';
+    root.userData.ornamentProcedural = true;
+
+    // Retain terminal wayfinding as a small sign rather than a black wall.
+    sign('WATERFRONT STATION', 0, 2.35, -13.68, 3.0, 0.4, '#f7e7c4', 'bold 70px Georgia, serif');
+    sign('PUBLIC CONCOURSE', 0, 1.85, -13.67, 2.5, 0.28, '#e9d8b5', 'bold 65px Arial, sans-serif');
     // Leave a pedestrian-width central entrance gap in every foreground
     // surface. Glass panels at either side remain visible as open doors.
     root.userData.interiorApproximate = true;
@@ -358,8 +445,8 @@
       [-0.68, 0.68].forEach(dx => {
         box('Entry gate glass panel', x + (i === 1 ? Math.sign(dx) * 1.52 : dx),
           1.91, 0.81, 1.14, 3.18, 0.08, glass);
-        box('Entry gate stile', x + dx * 0.1, 1.9, 0.9, 0.08, 3.42, 0.12, iron);
-        cylinder('Door handle', x + dx + (dx > 0 ? -0.29 : 0.29), 1.62, 0.96, 0.025, 0.025, 0.28, brass, 8);
+        box('Entry gate stile', x + (i === 1 ? Math.sign(dx) * 1.02 : dx * 0.1), 1.9, 0.9, 0.08, 3.42, 0.12, iron);
+        cylinder('Door handle', x + (i === 1 ? Math.sign(dx) * 1.1 : dx + (dx > 0 ? -0.29 : 0.29)), 1.62, 0.96, 0.025, 0.025, 0.28, brass, 8);
       });
       box('Portal transom', x, 3.72, 0.82, 3.2, 0.17, 0.22, stone);
       const dome = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), canopyBlack);
