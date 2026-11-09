@@ -27,11 +27,11 @@ test('film cameras never insert big generic landmark pillars at the Station East
   assert.doesNotMatch(street, /lot\.center\.x\s*\+\s*9/);
 });
 
-test('The Landing is modeled from actual perimeter edges with Water Street arches and lab placard', () => {
+test('The Landing is modeled from actual perimeter edges with Water Street arches and upstairs lab label', () => {
   const src = read('js/gastown-waterfront-places.js');
   assert.match(src, /pts\[edge\],pts\[\(edge\+1\)%pts\.length\]/);
   assert.match(src, /new THREE\.TorusGeometry\(1\.38/);
-  assert.match(src, /MULTIMODAL MEDIA LAB/);
+  assert.match(src, /MULTIMODAL LAB  ·  FLOOR 6/);
   assert.match(src, /The Landing warehouse sash window/);
   assert.match(src, /Limestone lintel course/);
 });
