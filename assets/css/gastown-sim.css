@@ -682,3 +682,10 @@
 .gastown-map-fold:not([open]) > :not(summary) {display:none;}
 .gastown-minimap {max-height:min(92vh,870px);overflow-y:auto;scrollbar-width:thin;}
 @media(max-width:740px){.gastown-minimap{max-height:80vh;}.gastown-side-menu .gastown-controls{grid-template-columns:1fr;}}
+
+/* Photo mode: visible above the WebGL canvas, never baked into the PNG. */
+.gastown-photo-button { position:absolute;top:3.7rem;right:1rem;z-index:10;border:1px solid #96d0e4;border-radius:7px;background:rgba(9,25,36,.92);color:#f7fafc;font:700 .76rem/1.2 system-ui,sans-serif;padding:.48rem .7rem;cursor:pointer; }
+.gastown-photo-side-button {width:calc(100% - 1rem);margin:.25rem .5rem .6rem;padding:.55rem;border:1px solid #7ec0d5;border-radius:6px;background:#1a465c;color:#f6ffff;font:700 .78rem system-ui,sans-serif;cursor:pointer;}
+.gastown-photo-button:hover,.gastown-photo-side-button:hover {background:#286783;}
+.gastown-photo-button:focus-visible,.gastown-photo-side-button:focus-visible {outline:2px solid #ffd977;outline-offset:2px;}
+@media(max-width:740px){.gastown-photo-button{top:5.5rem;right:.5rem;font-size:.68rem;}}
