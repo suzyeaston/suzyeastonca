@@ -172,7 +172,7 @@
       proximityCooldownUntil: 0,
       lastPlayerNear: false,
     },
-    landingLab: { inside: false, returnPosition: null, roomRoot: null, lastNear: false },
+    landingLab: { inside: false, stage: 'street', returnPosition: null, roomRoot: null, journeyRoot: null, escort: null, lastNear: false, farewellAt: 0, lastStageMessage: '' },
     dialogData: {},
     activeDialogNpcId: '',
     activeDialogEntry: null,
@@ -1210,65 +1210,123 @@
     return state.thirdPerson;
   }
 
-  function interactWithLanding() {
-    if (!waterfrontPlaces || !waterfrontPlaces.landingEntranceFor || !state.world) return false;
-    const portal=waterfrontPlaces.landingEntranceFor(state.world);
-    if (!portal) return false;
-    if (state.landingLab.inside) {
-      const nearKK=Math.hypot(player.position.x-803,player.position.z-804.7)<3.1;
-      if (nearKK) {
-        openDialogForNpc({id:'lab-kk-greeter',role:'guide',
-          name:'KK (fictional NPC)',dialogId:'kk_lab_greeter'});
-        return true;
-      }
-      const nearExit=Math.hypot(player.position.x-portal.roomExit.x,
-        player.position.z-portal.roomExit.z)<3.4;
-      if (!nearExit) {
-        setStatus('Sixth-floor Multimodal Lab (fictional scene). Talk to KK or head back to the entrance.');
-        return true;
-      }
-      const back=state.landingLab.returnPosition || portal.threshold;
-      player.position.set(back.x,getGroundY(),back.z);
-      state.landingLab.inside=false;
-      if (state.landingLab.roomRoot) state.landingLab.roomRoot.visible=false;
-      state.yaw=Math.atan2(portal.outward.x,portal.outward.z);
-      player.rotation.y=state.yaw;
-      state.lastSafePosition.copy(player.position);
-      state.velocity.set(0,0,0);
-      applyStreetCameraPose();
-      setStatus('Back on Water Street outside The Landing.');
-      return true;
-    }
-    const near=Math.hypot(player.position.x-portal.threshold.x,
-      player.position.z-portal.threshold.z)<5.3;
-    if(!near)return false;
-    state.landingLab.returnPosition={x:player.position.x,z:player.position.z};
-    state.landingLab.inside=true;
-    if(state.landingLab.roomRoot)state.landingLab.roomRoot.visible=true;
-    player.position.set(portal.roomSpawn.x,getGroundY(),portal.roomSpawn.z);
-    state.yaw=0;
-    state.lastSafePosition.copy(player.position);
+  function landingTravel(stage, point, status) {
+    const journey=state.landingLab;
+    journey.inside=stage!=='street';
+    journey.stage=stage;
+    if(journey.roomRoot)journey.roomRoot.visible=stage==='lab';
+    if(journey.journeyRoot)journey.journeyRoot.visible=stage==='lobby'||stage==='escort'||stage==='lift';
+    if(journey.escort)journey.escort.visible=stage==='lobby'||stage==='escort';
+    player.position.set(point.x,getGroundY(),point.z);
     state.velocity.set(0,0,0);
+    state.lastSafePosition.copy(player.position);
     state.followCameraDistance=undefined;
+    state.followCameraShoulder=undefined;
     state.avatarCameraNextRefresh=0;
+    // Facing into the lobby / lab with a stable walkable camera pose.
+    state.yaw=0;
+    state.pitch=0;
+    player.rotation.y=state.yaw;
     applyStreetCameraPose();
-    setStatus('Welcome to the fictional Multimodal Lab on floor six. Walk toward KK, press E to chat.');
+    setStatus(status);
     return true;
   }
 
+  function interactWithLanding() {
+    if(!waterfrontPlaces||!waterfrontPlaces.landingEntranceFor||!state.world)return false;
+    const portal=waterfrontPlaces.landingEntranceFor(state.world);
+    if(!portal)return false;
+    const lab=state.landingLab;
+    const near=(p,r)=>Math.hypot(player.position.x-p.x,player.position.z-p.z)<r;
+    if(lab.stage==='street'){
+      if(!near(portal.threshold,5.1))return false;
+      lab.returnPosition={x:portal.threshold.x,z:portal.threshold.z};
+      if(lab.escort)lab.escort.position.set(851.3,0,855.1);
+      lab.lastNear=false;
+      return landingTravel('lobby',portal.lobbySpawn,
+        'The Landing lobby. KK: "hey snoozy! elevator is on the left. come on, I’ll show you." Walk up to KK and press E.');
+    }
+    if(lab.stage==='lobby'){
+      if(near(portal.lobbyExit,2.3)){
+        lab.lastNear=false;
+        return landingTravel('street',lab.returnPosition||portal.threshold,'Back outside The Landing on Water Street.');
+      }
+      if(near({x:851.3,z:855.1},3.2)){
+        lab.stage='escort';
+        setStatus('KK: "this way, snoozy." Follow him to the elevator on your left; press E at the lift.');
+        return true;
+      }
+      setStatus('Walk up to KK near the lobby entrance, then press E. The elevator is to the left.');
+      return true;
+    }
+    if(lab.stage==='escort'){
+      const arrived=lab.escort&&Math.hypot(lab.escort.position.x-845,lab.escort.position.z-850.5)<1.2;
+      if(near({x:845,z:851},3.9)&&arrived){
+        lab.lastNear=false;
+        return landingTravel('lift',portal.elevatorCar,
+          'Elevator doors close. Floor 6 button is glowing. Press E to ride up.');
+      }
+      setStatus('Follow KK to the left-side elevator. He will wait for you there.');
+      return true;
+    }
+    if(lab.stage==='lift'){
+      lab.farewellAt=performance.now()/1000;
+      if(lab.roomRoot&&lab.roomRoot.userData.greeter) {
+        const kk=lab.roomRoot.userData.greeter;
+        kk.visible=true;
+        kk.position.set(801,0,806.7);
+      }
+      lab.lastNear=false;
+      return landingTravel('lab',portal.roomSpawn,
+        'Ding! Sixth floor. KK: "see ya snoozy!" He heads back to the elevator. Welcome to the imaginary Multimodal Lab.');
+    }
+    if(lab.stage==='lab'){
+      if(near(portal.roomExit,3.4)){
+        lab.lastNear=false;
+        return landingTravel('street',lab.returnPosition||portal.threshold,'Back outside The Landing. See ya snoozy!');
+      }
+      setStatus('Multimodal Lab, floor six. Explore the harbour window and piano; return to the glass exit and press E.');
+      return true;
+    }
+    return false;
+  }
+
+  function updateLandingEscort(delta,nowSeconds) {
+    const lab=state.landingLab;
+    if(lab.stage==='escort'&&lab.escort){
+      const target={x:845,z:850.5},kk=lab.escort;
+      const dx=target.x-kk.position.x,dz=target.z-kk.position.z;
+      const d=Math.hypot(dx,dz);
+      if(d>0.08){
+        const step=Math.min(d,delta*1.85);
+        kk.position.x+=dx/d*step;kk.position.z+=dz/d*step;
+        kk.rotation.y=Math.atan2(dx,dz);
+      }
+    }
+    if(lab.stage==='lab'&&lab.roomRoot&&lab.roomRoot.userData.greeter){
+      const kk=lab.roomRoot.userData.greeter;
+      const t=nowSeconds-lab.farewellAt;
+      if(t>0.8&&t<4.8){
+        kk.position.z=Math.min(809.35,806.7+(t-0.8)*0.7);
+        kk.rotation.y=Math.PI;
+      } else if(t>=4.8)kk.visible=false;
+    }
+  }
+
   function updateLandingHint() {
-    if (!waterfrontPlaces || !waterfrontPlaces.landingEntranceFor || !state.world) return;
+    if(!waterfrontPlaces||!waterfrontPlaces.landingEntranceFor||!state.world)return;
     const portal=waterfrontPlaces.landingEntranceFor(state.world);
     if(!portal)return;
-    const near=state.landingLab.inside
-      ? Math.hypot(player.position.x-803,player.position.z-804.7)<3.1
-      : Math.hypot(player.position.x-portal.threshold.x,player.position.z-portal.threshold.z)<5.3;
-    if(near && !state.landingLab.lastNear){
-      setStatus(state.landingLab.inside
-        ? 'KK is welcoming visitors. Press E to talk; return to the glass entry to exit.'
-        : 'The Landing, 375 Water: press E to visit an imagined sixth-floor Multimodal Lab.');
+    const lab=state.landingLab;
+    if(lab.stage==='street'){
+      const dist=Math.hypot(player.position.x-portal.threshold.x,player.position.z-portal.threshold.z);
+      if(dist<4.9&&!lab.lastNear)setStatus('The Landing: double glass doors at 375 Water. Press E to enter the lobby.');
+      lab.lastNear=dist<4.9;
+      // Crossing the door threshold is a walk-in action, not a solid-wall glitch.
+      if(dist<1.1&&lab.lastNear&&state.isRunning)interactWithLanding();
+    } else if(lab.stage==='lobby') {
+      lab.lastNear=false;
     }
-    state.landingLab.lastNear=near;
   }
 
   function interactWithStationSideEntrance() {
@@ -4696,6 +4754,15 @@
       }
     }
     if (waterfrontPlaces) {
+      if(typeof waterfrontPlaces.createLandingJourney==='function'){
+        const journey=waterfrontPlaces.createLandingJourney(THREE);
+        if(journey){
+          journey.visible=false;
+          worldGroup.add(journey);
+          state.landingLab.journeyRoot=journey;
+          state.landingLab.escort=journey.userData.kk;
+        }
+      }
       if(typeof waterfrontPlaces.createLabInterior==='function'){
         const lab=waterfrontPlaces.createLabInterior(THREE);
         if(lab){
@@ -5185,7 +5252,7 @@
     // Weather may be active across Vancouver but drops must not fall through
     // the solid roof of Waterfront Station's playable public concourse.
     // Restore particles on exit without rebuilding/reseeding the weather.
-    rainGroup.visible = !isPlayerInsideWaterfront();
+    rainGroup.visible = !state.landingLab.inside && !isPlayerInsideWaterfront();
     if (!rainGroup.visible) return;
     if (rainGroup.children.length) rainGroup.position.set(player.position.x, 0, player.position.z);
     rainGroup.children.forEach((node) => {
@@ -5269,8 +5336,14 @@
 
   function enforceWorldBounds() {
     if(state.landingLab.inside){
-      player.position.x=Math.max(792.75,Math.min(807.25,player.position.x));
-      player.position.z=Math.max(791.1,Math.min(809.25,player.position.z));
+      const stage=state.landingLab.stage;
+      const bounds=stage==='lab'
+        ? {minX:792.75,maxX:807.25,minZ:791.1,maxZ:809.25}
+        : stage==='lift'
+        ? {minX:878.4,maxX:881.6,minZ:848.5,maxZ:851.8}
+        : {minX:843.0,maxX:857.0,minZ:841.0,maxZ:858.6};
+      player.position.x=Math.max(bounds.minX,Math.min(bounds.maxX,player.position.x));
+      player.position.z=Math.max(bounds.minZ,Math.min(bounds.maxZ,player.position.z));
       state.lastSafePosition.copy(player.position);
       return;
     }
@@ -7267,6 +7340,7 @@
         updateLightning(currentWeather);
         if (!state.landingLab.inside) maybeSpeakNearNpc(time / 1000);
         updateSteamClock(delta, time / 1000);
+        updateLandingEscort(delta,time/1000);
         updateProgressiveVisibility();
         if(!state.landingLab.inside)updateNpcs(delta);
         if (streetLifeScene) streetLifeScene.update(time / 1000);
