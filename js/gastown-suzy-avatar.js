@@ -245,19 +245,29 @@
     avatar.visible=false;
     return avatar;
   }
-  function animate(avatar, seconds, walking, groundOffset) {
+  function animate(avatar, seconds, walking, groundOffset, mode='walking') {
     if(!avatar||!avatar.userData||!avatar.userData.limbs)return;
     const active=Math.max(0,Math.min(1,walking||0));
-    const stride=Math.sin((Number.isFinite(seconds)?seconds:0)*9)*0.36*active;
+    const t=Number.isFinite(seconds)?seconds:0;
     const {arms,legs}=avatar.userData.limbs;
+    if(mode==='flying'){
+      // Hold a superhero flight silhouette. No footsteps, swinging legs or
+      // walking bob while Suzy and her cape are airborne.
+      legs[0].rotation.x=-0.12;legs[1].rotation.x=-0.12;
+      arms[0].rotation.x=-0.85;arms[1].rotation.x=-0.85;
+      arms[0].rotation.z=-0.22;arms[1].rotation.z=0.22;
+      avatar.position.y=0;
+      return;
+    }
+    arms[0].rotation.z=0;arms[1].rotation.z=0;
+    const running=mode==='running';
+    const stride=Math.sin(t*(running?14:9))*(running?0.59:0.36)*active;
     legs[0].rotation.x=stride;
     legs[1].rotation.x=-stride;
-    arms[0].rotation.x=-stride*0.64-0.04;
-    arms[1].rotation.x=stride*0.4-0.48; // mic held toward the face
-    // Player Y may begin at the legacy 1.7m spawn eye offset, then become
-    // floorY during movement. Keep Suzy's feet on the actual ground.
+    arms[0].rotation.x=-stride*(running?0.85:0.64)-0.04;
+    arms[1].rotation.x=stride*(running?0.75:0.4)-0.48;
     avatar.position.y=(Number.isFinite(groundOffset)?groundOffset:0)
-      +Math.abs(Math.sin((Number.isFinite(seconds)?seconds:0)*9))*0.018*active;
+      +Math.abs(Math.sin(t*(running?14:9)))*(running?0.034:0.018)*active;
   }
   function setUmbrellaWeather(avatar, isRainingOutside) {
     if (!avatar || !avatar.userData || !avatar.userData.umbrella) return;
