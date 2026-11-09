@@ -386,7 +386,7 @@
       placeBox('CP N-Yard track ballast', 0, offset, 0.14,
         railLengthMetres, 0.13, 3.55, ballast);
       for (const side of [-0.75, 0.75]) {
-        placeBox('CP N-Yard steel rail head', 0, offset + side, 0.345,
+        placeBox('Yard rail pair', 0, offset + side, 0.345,
           railLengthMetres, 0.13, 0.095, steel);
         placeBox('CP N-Yard steel rail web', 0, offset + side, 0.258,
           railLengthMetres, 0.075, 0.052, steel);
