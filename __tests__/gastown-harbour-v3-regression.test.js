@@ -118,3 +118,23 @@ test('City-informed N-Yard fans out to twenty low-profile track alignments witho
   assert.ok(nodes.filter(n=>n.name==='Visible Station East freight container').length<=5);
   assert.ok(nodes.length<400,'all additional rail strokes are batched for low-end hardware');
 });
+
+test('GIS-informed waterfront ground and rail corridor continue east of Station East without occluding the harbour',()=>{
+  const root=boot().GastownHarbourVista.create(stub(),world);
+  const nodes=all(root);
+  const get=name=>nodes.find(node=>node.name===name);
+  assert.ok(root.userData.waterfrontGroundContinuity);
+  assert.ok(root.userData.approximateShoreline);
+  assert.ok(root.userData.eastboundRailCorridorVisible);
+  assert.equal(root.userData.railCorridorSurveyed,false);
+  assert.match(root.userData.railwayDataReference,/vancouver.*railways/);
+  assert.ok(get('CPR waterfront continuous land apron (approximate GIS context)'));
+  assert.ok(get('Burrard Inlet water'));
+  const rails=get('CP N-Yard eastward railway GIS corridor continuation');
+  const sleepers=get('CP N-Yard eastward timber railway sleepers');
+  assert.ok(rails&&sleepers);
+  assert.equal(rails.geometry.position.args[0].length,9*2*2*3,
+    'nine rail-pair continuations are batched into one low-cost geometry');
+  assert.equal(sleepers.geometry.position.args[0].length,9*47*2*3);
+  assert.ok(nodes.length<400,'shoreline/yard detail stays inside the 8GB-Mac scene budget');
+});
