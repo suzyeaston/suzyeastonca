@@ -263,10 +263,12 @@
   };
 
   const DEFAULT_EYE_HEIGHT = 1.7;
-  const HOLD_TO_RUN_THRESHOLD_SECONDS = 0.34;
+  const HOLD_TO_RUN_THRESHOLD_SECONDS = 0.9;
   const HOLD_TO_RUN_RAMP_IN = 5.8;
   const HOLD_TO_RUN_RAMP_OUT = 8.2;
-  const HOLD_TO_RUN_FORWARD_MULTIPLIER = 1.58;
+  const HOLD_TO_RUN_FORWARD_MULTIPLIER = 1.95;
+  const FLIGHT_CRUISE_SPEED = 27;
+  const FLIGHT_SPRINT_SPEED = 45;
   const STARTUP_CORE_BUILDING_RADIUS = 64;
   const STARTUP_HERO_BUILDING_RADIUS = 96;
   const WALKER_NAME_STORAGE_KEY = 'gastownWalkerName';
@@ -1098,15 +1100,15 @@
     const side = facingFront ? -1 : 1;
     // The +/- controls zoom both the map and the actual filming camera.
     const zoomScale = Math.max(0.70, Math.min(1.48, 1 / Math.sqrt(minimapState.zoom || 1)));
-    const desiredDistance = (facingFront ? 3.35 : 3.25) * zoomScale;
+    const desiredDistance = (state.landingLab.inside ? 1.55 : (facingFront ? 3.35 : 3.25)) * zoomScale;
     // Never pop the camera three metres overhead on a close collision.
     // Lower, consistent shoulder height keeps close building encounters from
     // pulling the portrait into a straight-down overhead camera.
-    const desiredHeight = facingFront ? 2.25 : 2.38;
+    const desiredHeight = state.landingLab.inside ? 2.08 : (facingFront ? 2.25 : 2.38);
 
     if (force || state.avatarElapsed >= (state.avatarCameraNextRefresh || 0)) {
       player.updateMatrixWorld(true);
-      const groundOffset = getGroundY() - player.position.y;
+      const groundOffset = state.flight.enabled ? 0 : getGroundY() - player.position.y;
       thirdPersonCameraFrom.set(0, groundOffset + 1.72, 0).applyMatrix4(player.matrixWorld);
 
       // Probe shoulder alternatives before collapsing the boom. The station
@@ -1123,7 +1125,7 @@
         const ray = thirdPersonCameraTo.clone().sub(thirdPersonCameraFrom);
         const rayLength = ray.length();
         let boom = desiredDistance;
-        if (rayLength > 0.01 && thirdPersonCameraBlockers.length) {
+        if (rayLength > 0.01 && thirdPersonCameraBlockers.length && !state.landingLab.inside) {
           thirdPersonCameraRay.set(thirdPersonCameraFrom, ray.multiplyScalar(1 / rayLength));
           thirdPersonCameraRay.near = 0.12;
           thirdPersonCameraRay.far = rayLength;
@@ -1164,7 +1166,7 @@
     const offset = oldShoulder + (targetShoulder - oldShoulder) * (force ? 1 : 0.12);
     state.followCameraShoulder = offset;
     const headroom = desiredHeight;
-    const y = getGroundY() - player.position.y + headroom + state.motion.bobOffset * 0.05;
+    const y = (state.flight.enabled ? 0 : getGroundY() - player.position.y) + headroom + state.motion.bobOffset * 0.05;
     camera.position.set(offset, y, side * boom);
     // Even when the boom is forced close, cap pitch to an eye-level portrait.
     // A short camera boom must NEVER turn into a top-down view of the backpack.
@@ -1193,7 +1195,7 @@
   function applyStreetCameraPose() {
     if(camera.parent!==player)player.add(camera);
     player.rotation.y=state.yaw;
-    if(suzyAvatar)suzyAvatar.visible=!!state.thirdPerson && !state.landingLab.inside;
+    if(suzyAvatar)suzyAvatar.visible=!!state.thirdPerson;
     camera.zoom = state.thirdPerson ? 1 :
       Math.max(0.8, Math.min(1.65, minimapState.zoom || 1));
     if(state.thirdPerson){
@@ -1277,9 +1279,10 @@
     if(lab.outsideEscort)lab.outsideEscort.visible=stage==='street';
     if(!wasInside&&lab.inside){
       lab.indoorPreviousView={thirdPerson:state.thirdPerson,facing:state.avatarCameraFacing};
-      // Indoor rooms are too small for the normal outdoor shoulder boom.
-      // Use eye-level camera to prevent the giant black wall occluding the view.
-      state.thirdPerson=false;
+      // Keep the Suzy/backpack follow camera throughout KK's tour.
+      // The indoor boom is shortened below to fit the small staged rooms.
+      state.thirdPerson=lab.indoorPreviousView.thirdPerson;
+      state.avatarCameraFacing=lab.indoorPreviousView.facing;
     }else if(wasInside&&!lab.inside&&lab.indoorPreviousView){
       state.thirdPerson=lab.indoorPreviousView.thirdPerson;
       state.avatarCameraFacing=lab.indoorPreviousView.facing;
@@ -2050,7 +2053,7 @@
     state.motion.currentSpeed = speed;
     state.motion.smoothedSpeed = THREE.MathUtils.lerp(state.motion.smoothedSpeed || 0, speed, 1 - Math.exp(-delta * 8));
     state.motion.surface = detectPlayerSurface();
-    const moving = normalizedSpeed > 0.08;
+    const moving = !state.flight.enabled && normalizedSpeed > 0.08;
     const cadence = (state.motion.surface === 'street' ? 7.2 : 8.8) * (0.55 + normalizedSpeed);
     state.motion.bobPhase += delta * cadence * Math.PI * 2;
     const targetBob = moving ? Math.sin(state.motion.bobPhase) * movementProfile.bobAmount * normalizedSpeed * (state.motion.surface === 'street' ? 1.1 : 0.82) : 0;
@@ -2069,12 +2072,18 @@
       suzyCape.geometry.computeVertexNormals();
     }
     if (suzyAvatar && suzyAvatarModel) {
-      suzyAvatarModel.animate(suzyAvatar, state.avatarElapsed, normalizedSpeed,
-        state.flight.enabled ? 0 : getGroundY() - player.position.y);
+      suzyAvatarModel.animate(suzyAvatar, state.avatarElapsed,
+        state.flight.enabled ? 0 : normalizedSpeed,
+        state.flight.enabled ? 0 : getGroundY() - player.position.y,
+        state.flight.enabled ? 'flying' : (state.motion.runActive ? 'running' : 'walking'));
+      if(state.flight.enabled){
+        // Arms swept outward, legs held still. No ground-based walk cycle in flight.
+        suzyAvatar.rotation.x=-0.16;
+      }else suzyAvatar.rotation.x=0;
       if (typeof suzyAvatarModel.setUmbrellaWeather === 'function') {
         const wet = state.activeWeather === 'drizzle' || state.activeWeather === 'rain'
           || state.activeWeather === 'thunderstorm';
-        suzyAvatarModel.setUmbrellaWeather(suzyAvatar, wet && !isPlayerInsideWaterfront());
+        suzyAvatarModel.setUmbrellaWeather(suzyAvatar, !state.flight.enabled && wet && !isPlayerInsideWaterfront());
       }
     }
 
@@ -2283,6 +2292,7 @@
     state.turn.right = false;
     state.gait.precise = false;
     state.gait.traverse = false;
+    state.flight.up=false;state.flight.down=false;
     state.velocity.set(0, 0, 0);
     state.motion.runBlend = 0;
     state.motion.runHoldSeconds = 0;
@@ -6742,7 +6752,10 @@
     const forward = Number(state.move.forward) - Number(state.move.backward);
     const strafe = Number(state.move.right) - Number(state.move.left);
     const runState = updateHoldToRunState(delta, forward);
-    const movementProfile = getDynamicMovementProfile(baseMovementProfile, runState);
+    const movementProfile = state.flight.enabled
+      ? { ...baseMovementProfile, label:'flying', maxSpeed: state.gait.traverse ? FLIGHT_SPRINT_SPEED : FLIGHT_CRUISE_SPEED,
+        acceleration:8.8, deceleration:4.2, bobAmount:0, swayAmount:0, runBlend:0 }
+      : getDynamicMovementProfile(baseMovementProfile, runState);
     const turning = Number(state.turn.right) - Number(state.turn.left);
 
     if (turning !== 0) {
@@ -6750,8 +6763,9 @@
       player.rotation.y = state.yaw;
     }
 
-    const runForwardFactor = forward > 0 ? (1 + ((HOLD_TO_RUN_FORWARD_MULTIPLIER - 1) * movementProfile.runBlend)) : 1;
-    const runStrafeFactor = 1 - (movementProfile.runBlend * 0.17);
+    const runForwardFactor = state.flight.enabled ? 1 :
+      (forward > 0 ? (1 + ((HOLD_TO_RUN_FORWARD_MULTIPLIER - 1) * movementProfile.runBlend)) : 1);
+    const runStrafeFactor = state.flight.enabled ? 1 : 1 - (movementProfile.runBlend * 0.17);
     const input = new THREE.Vector3(strafe * runStrafeFactor, 0, -forward * runForwardFactor);
     if (input.lengthSq() > 1) {
       input.normalize();
@@ -7146,7 +7160,7 @@
             state.thirdPerson=true;state.avatarCameraFacing='back';
             state.followCameraDistance=undefined;
             applyStreetCameraPose();
-            setStatus('SUZYFLY unlocked! Cape deployed. WASD to steer, SPACE to climb, CTRL to descend. Type SUZYFLY to land.');
+            setStatus('SUZYFLY! WASD to fly, SPACE up, CTRL down, SHIFT for turbo. Type SUZYFLY again to land.');
           }else{
             fly.altitude=0;fly.vertical=0;fly.up=false;fly.down=false;
             player.position.y=getGroundY();
