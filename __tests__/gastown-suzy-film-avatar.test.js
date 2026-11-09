@@ -52,7 +52,7 @@ test('Front and rear are independent film angles with a visible checkerboard sil
   const html=read('page-gastown-sim.php');
   const avatar=read('js/gastown-suzy-avatar.js');
   assert.match(js,/avatarCameraFacing: 'back'/);
-  assert.match(js,/facingFront\?Math\.PI:0/);
+  assert.match(js,/Math\.atan2\(offset, side \* boom\)/);
   assert.match(js,/function setSuzyCameraFacing\(direction\)/);
   assert.match(js,/state\.avatarCameraFacing=direction/);
   assert.match(js,/suzyFrontBtn\.addEventListener\('click'/);
