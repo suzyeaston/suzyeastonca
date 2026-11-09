@@ -65,9 +65,10 @@
   }
 
   function makeBus(THREE) {
-    const root = new THREE.Group(); root.name = 'Illustrated 50 Waterfront bus (non-live)';
-    const blue = new THREE.MeshStandardMaterial({color:0x195786, roughness:0.6});
-    const grey = new THREE.MeshStandardMaterial({color:0xd0d7d8, roughness:0.64});
+    const root = new THREE.Group(); root.name = 'Illustrated Route 3 Waterfront electric trolley (non-live)';
+    const blue = new THREE.MeshStandardMaterial({color:0x0866ae, roughness:0.6});
+    const grey = new THREE.MeshStandardMaterial({color:0xc7d1d4, roughness:0.64});
+    const steel = new THREE.MeshStandardMaterial({color:0x454e55, roughness:0.58});
     const yellow = new THREE.MeshStandardMaterial({color:0xf9bb31});
     const glass = new THREE.MeshStandardMaterial({color:0x203646, roughness:0.25, metalness:0.19});
     const tyre = new THREE.MeshStandardMaterial({color:0x181e24, roughness:0.9});
@@ -80,6 +81,33 @@
     box(2.59,0.75,10.68,0,0.96,0,blue);
     box(2.60,0.18,10.70,0,1.42,0,yellow);
     box(2.60,0.12,10.71,0,3.25,0,blue);
+    // Characteristic twin trolley collectors, rooftop electrical housing and
+    // slim window mullions. Original geometry, deliberately light on draw calls.
+    box(1.38,0.33,3.4,0,3.48,1.2,grey);
+    function pole(start,end,radius,material) {
+      const a=new THREE.Vector3(...start), b=new THREE.Vector3(...end);
+      const axis=new THREE.Vector3().subVectors(b,a);
+      const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,axis.length(),6),material);
+      mesh.position.copy(a).add(b).multiplyScalar(0.5);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),axis.normalize());
+      root.add(mesh);
+    }
+    for (const x of [-0.53,0.53]) {
+      box(0.45,0.14,0.52,x,3.69,2.9,steel);
+      pole([x,3.76,2.9],[x,5.42,5.8],0.055,steel);
+      box(0.2,0.15,0.37,x,5.43,5.8,steel);
+    }
+    // Doors, mirrors, rear markers and low-profile bike rack distinguish the
+    // vehicle from the old rectangular Route 50 placeholder.
+    for (const z of [-2.7,2.65]) {
+      box(0.065,1.62,1.14,-1.33,1.82,z,glass);
+      box(0.082,1.64,0.055,-1.38,1.82,z,grey);
+    }
+    for (const x of [-1.44,1.44]) {
+      box(0.32,0.42,0.12,x,2.6,-5.25,steel);
+    }
+    box(1.9,0.14,0.28,0,0.72,-5.53,steel);
+    box(1.82,0.09,0.12,0,1.04,-5.56,steel);
     for (const side of [-1,1]) {
       for (let i=-4;i<=4;i++) box(0.045,0.86,0.92,side*1.29,2.33,i*1.1,glass);
       for (const z of [-3.5,3.5]) {
@@ -95,7 +123,7 @@
       const cx = cv.getContext('2d');
       if (cx) {
         cx.fillStyle = '#091313'; cx.fillRect(0,0,512,96);
-        cx.fillStyle = '#ffd158'; cx.font='bold 46px monospace'; cx.fillText('50 WATERFRONT',12,65);
+        cx.fillStyle = '#ffd158'; cx.font='bold 46px monospace'; cx.fillText('3 WATERFRONT',12,65);
         const t = new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace;
         const board = new THREE.Mesh(new THREE.PlaneGeometry(2.12,0.34),new THREE.MeshBasicMaterial({map:t}));
         board.position.set(0,3.12,-5.48); root.add(board);
