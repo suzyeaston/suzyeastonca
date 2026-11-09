@@ -483,6 +483,110 @@
     sign('T', -28.5, 3.42, 4.24, 0.86, 0.69, '#ffffff', 'bold 90px Arial, sans-serif');
     cylinder('Transit sign pole', -28.5, 1.52, 4.05, 0.06, 0.06, 3.04, iron);
 
+    // Angel of Victory / Winged Victory memorial, 601 West Cordova.
+    // City Public Art Registry: artwork 24, east of the front entrance.
+    // An original low-poly *interpretation*, not a scan or sculptural replica.
+    // Preserve the recognizable iconography: patinated winged angel lifting a
+    // fallen soldier, on a granite pedestal with commemorative bronze plaque.
+    // The historical memorial is solemn, not an interactive NPC.
+    const memorial = new THREE.Group();
+    memorial.name = 'Angel of Victory / Coeur de Lion MacCarthy (interpretation)';
+    memorial.position.set(40.5, 0, 11.0);
+    root.add(memorial);
+    const granite = new THREE.MeshStandardMaterial({ color: 0xa5a49f, roughness: 0.94 });
+    const graniteEdge = new THREE.MeshStandardMaterial({ color: 0x858680, roughness: 0.95 });
+    const patina = new THREE.MeshStandardMaterial({
+      color: 0x47776e, roughness: 0.76, metalness: 0.48,
+      side: THREE.DoubleSide
+    });
+    const patinaDeep = new THREE.MeshStandardMaterial({
+      color: 0x335f59, roughness: 0.77, metalness: 0.52,
+      side: THREE.DoubleSide
+    });
+    const plaque = new THREE.MeshStandardMaterial({ color: 0x554b37, roughness: 0.68, metalness: 0.58 });
+    function monumentBox(name,x,y,z,w,h,d,material){
+      const piece = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+      piece.name=name;piece.position.set(x,y,z);memorial.add(piece);
+      return piece;
+    }
+    function monumentSphere(name,x,y,z,r,material,sx,sy,sz){
+      const piece = new THREE.Mesh(new THREE.SphereGeometry(r,12,8),material);
+      piece.name=name;piece.position.set(x,y,z);
+      piece.scale.set(sx||1,sy||1,sz||1);memorial.add(piece);
+      return piece;
+    }
+    function monumentLink(name,a,b,r,material){
+      const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2];
+      const length=Math.hypot(dx,dy,dz);
+      const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r*0.78,r,length,10),material);
+      mesh.name=name;
+      mesh.position.set((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2);
+      // Cylinder's local +Y axis follows the limb via a real quaternion.
+      // Older unit-test THREE doubles do not have Quaternion.setFromUnitVectors.
+      if(mesh.quaternion&&typeof mesh.quaternion.setFromUnitVectors==='function'){
+        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),
+          new THREE.Vector3(dx/length,dy/length,dz/length));
+      }else{
+        mesh.rotation.z=-Math.atan2(dx,dy);
+      }
+      memorial.add(mesh);return mesh;
+    }
+    monumentBox('Angel of Victory granite base',0,0.38,0,2.7,0.76,2.3,graniteEdge);
+    monumentBox('Angel of Victory granite pedestal',0,1.32,0,2.16,1.23,1.79,granite);
+    monumentBox('Angel of Victory pedestal upper molding',0,2.01,0,2.5,0.16,2.01,graniteEdge);
+    monumentBox('Angel of Victory memorial plaque',0,1.38,0.906,1.55,0.82,0.05,plaque);
+    const plaqueText = textTexture(THREE,'1914 - 1918  /  1939 - 1945',{
+      font:'bold 45px Georgia, serif',color:'#dfd4b6'
+    });
+    const plaqueFront=new THREE.Mesh(new THREE.PlaneGeometry(1.43,0.22),
+      new THREE.MeshBasicMaterial({map:plaqueText,transparent:true,side:THREE.DoubleSide}));
+    plaqueFront.name='Angel of Victory war remembrance dates';
+    plaqueFront.position.set(0,1.30,0.945);
+    memorial.add(plaqueFront);
+    // Bronze figures above the base; about seven feet of figurative sculpture.
+    monumentSphere('Angel draped torso',0.05,3.22,-0.05,0.55,patina,0.76,1.42,0.63);
+    monumentSphere('Angel head',0.02,4.16,-0.04,0.28,patina,0.82,1.07,0.85);
+    monumentSphere('Angel robe folds',0.04,2.58,0.03,0.62,patinaDeep,0.85,0.9,0.8);
+    for(const side of [-1,1]){
+      const wing=new THREE.Shape();
+      wing.moveTo(side*0.20,3.58);
+      wing.lineTo(side*0.62,4.26);
+      wing.lineTo(side*0.90,4.99);
+      wing.lineTo(side*1.08,5.63);
+      wing.lineTo(side*1.38,5.34);
+      wing.lineTo(side*1.57,4.92);
+      wing.lineTo(side*1.48,4.44);
+      wing.lineTo(side*1.14,3.95);
+      wing.lineTo(side*0.56,3.48);
+      const feather=new THREE.Mesh(new THREE.ShapeGeometry(wing),patina);
+      feather.name='Angel of Victory raised bronze wing';
+      feather.position.z=-0.28;
+      memorial.add(feather);
+      for(let t=0;t<4;t++){
+        monumentLink('Angel of Victory wing feather rib',
+          [side*(0.30+t*0.07),3.65,-0.26],
+          [side*(1.12+t*0.12),4.70+t*0.20,-0.26],0.026,patinaDeep);
+      }
+    }
+    monumentLink('Angel raised arm',[0.30,3.82,0.02],[0.67,5.08,0.12],0.13,patina);
+    monumentSphere('Angel raised hand',0.69,5.14,0.12,0.12,patina);
+    monumentLink('Angel supporting arm',[-0.30,3.54,0.20],[-0.88,3.15,0.62],0.14,patina);
+    // The carried figure is visibly distinct and horizontal, not a second
+    // standing pedestrian or a generic winged trophy.
+    monumentSphere('Fallen soldier supported torso',-0.62,3.20,0.58,0.34,
+      patinaDeep,1.67,0.69,0.76);
+    monumentSphere('Fallen soldier head',-1.30,3.03,0.64,0.22,patinaDeep);
+    monumentLink('Fallen soldier lower legs',[-0.12,3.12,0.57],[0.66,2.80,0.60],0.12,patinaDeep);
+    monumentLink('Fallen soldier hanging arm',[-0.85,3.06,0.77],[-0.98,2.42,0.92],0.105,patinaDeep);
+    memorial.userData.reference = {
+      title:'Angel of Victory',artist:'Coeur de Lion MacCarthy',
+      source:'https://covapp.vancouver.ca/PublicArtRegistry/ArtworkDetail.aspx?ArtworkId=24',
+      installed:'1921 (registry); unveiled 1922 (Veterans Affairs Canada)',
+      placement:'east of station front entrance',
+      fidelity:'original, approximate procedural interpretation'
+    };
+    root.userData.memorialIncluded = true;
+
     root.userData.reference = REFERENCE;
     root.userData.sideEntrance = sideEntranceFor(world);
     return root;
