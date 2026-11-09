@@ -1212,16 +1212,19 @@
     const doorway = stationModel.sideEntranceFor(state.world);
     if (!doorway || Math.hypot(player.position.x - doorway.threshold.x,
       player.position.z - doorway.threshold.z) > 4.6) return false;
-    // An exterior navigation shortcut to Cordova; never claim the interior
-    // transit concourse exists in this 3D scene.
-    player.position.set(doorway.forecourt.x, getGroundY(), doorway.forecourt.z);
+    // Enter the same playable public hall from Station East rather than
+    // teleporting the walker around the building to the Cordova forecourt.
+    const destination = doorway.interior;
+    if (!destination || !stationModel.isWalkableInterior
+        || !stationModel.isWalkableInterior(state.world, destination)) return false;
+    player.position.set(destination.x, getGroundY(), destination.z);
     state.lastSafePosition.copy(player.position);
     state.velocity.set(0, 0, 0);
     state.followCameraDistance = undefined;
     state.followCameraShoulder = undefined;
     state.avatarCameraNextRefresh = 0;
     applyStreetCameraPose();
-    setStatus('Station side access: arrived at the Cordova entrance.');
+    setStatus('Entered the Waterfront Station public concourse from Station East.');
     return true;
   }
 
@@ -1231,7 +1234,7 @@
     const near = doorway && Math.hypot(player.position.x - doorway.threshold.x,
       player.position.z - doorway.threshold.z) < 4.6;
     if (near && !state.nearStationSideDoor) {
-      setStatus('Station East side entrance: press E for the Cordova entrance.');
+      setStatus('Station East entrance: walk through the doors or press E to enter the concourse.');
     }
     state.nearStationSideDoor = !!near;
   }
