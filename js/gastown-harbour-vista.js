@@ -344,27 +344,27 @@
       0xb2a49b,0xa94d39,0x508470].map(color=>standard(THREE,color,0.83));
     const dark=standard(THREE,0x292e34,0.81);
     const wheelMat=standard(THREE,0x181b20,0.87);
-    const rows=[0,2,4,6];
+    // The parking-lot view looks WEST toward Canada Place's sails/cruise
+    // berth. Four densely filled container trains formed a solid coloured
+    // wall over the ship. Keep the tracks and a couple of plausible freight
+    // strings farther east, while opening a clear western sightline.
+    // We never imply that the active yard is empty in real life.
+    const rows=[2,5];
     let containerCount=0;
     rows.forEach((row,rowIndex)=>{
       const offset=8+row*7.1;
-      placeBox('Station East visible railcar spine',0,offset,0.88,143,0.61,3.25,dark);
-      const centers=rowIndex===0?[-49,-23,3,29,55]:
-        rowIndex===1?[-40,-12,17,44]:[-31,-3,25,53];
+      placeBox('Station East visible railcar spine',26,offset,0.88,80,0.61,3.25,dark);
+      const centers=rowIndex===0?[8,38]:[19,49];
       centers.forEach((longitudinal,index)=>{
-        // Rotated long sides follow the diagonal rail line; this makes the
-        // cargo rhythm visible when turning toward either end of the fence.
+        // Single-height freight leaves the upper cruise decks and white
+        // sails visible from the public side of the parking-lot fence.
         placeBox('Visible Station East freight container',longitudinal,offset,
           2.63,22.1,2.98,2.85,freightColors[(rowIndex*3+index)%freightColors.length]);
-        if((rowIndex===0&&index===1)||(rowIndex===2&&index===2)){
-          placeBox('Double-stack freight upper container',longitudinal,offset,
-            5.72,22.1,2.92,2.85,freightColors[(index+4)%freightColors.length]);
-        }
         containerCount++;
       });
     });
-    [0,3,5].forEach((row,index)=>{
-      const position=trackPoint(-20+index*25,8+row*7.1);
+    [2,4,6].forEach((row,index)=>{
+      const position=trackPoint(8+index*23,8+row*7.1);
       const wagon=new THREE.Group();
       wagon.name='CP freight railcar in waterfront yard '+(index+1);
       wagon.position.set(position.x,0,position.z);
@@ -382,6 +382,7 @@
     });
     root.userData.nearbyContainers=containerCount;
     root.userData.tracksAlignedToLotFence=true;
+    root.userData.openCanadaPlaceSightline=true;
 
     const stationWhite=standard(THREE,0xe1e5e3,0.76);
     const glass=standard(THREE,0x5f8494,0.38,0.16);
