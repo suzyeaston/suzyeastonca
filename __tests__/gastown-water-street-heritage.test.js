@@ -56,3 +56,11 @@ test('new Water Street layer uses sensible lightweight physical dimensions',()=>
  assert.match(sim,/streetLife.createWaterStreetDetails\(THREE, world\)/);
  assert.match(sim,/Deliberately not a collider/);
 });
+
+test('The Landing retains its civic building envelope and adds curved glass canopy',()=>{
+ const source=read('js/gastown-waterfront-places.js');
+ assert.match(source,/The Landing sidewalk barrel canopy curved iron rib/);
+ assert.match(source,/The Landing translucent overhead canopy glazing/);
+ assert.match(source,/The Landing Victorian canopy sidewalk support/);
+ assert.match(source,/landing\.footprint/);
+});
