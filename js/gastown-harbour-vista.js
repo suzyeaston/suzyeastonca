@@ -401,7 +401,7 @@
         }
       } else {
         // Keep this fallback bounded for non-WebGL test doubles.
-        for (let t = -68; t <= 68; t += 6) {
+        for (let t = -32; t <= 32; t += 64) {
           placeBox('CP N-Yard fallback timber sleeper', t, offset,
             0.238, 0.24, 0.105, 2.62, sleeper);
           tieIndex++;
