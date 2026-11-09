@@ -5136,8 +5136,19 @@
       && waterfrontPlaces.isWalkableLot(state.world, point);
     if (isPointInPolygon(point, walkBounds)
         || (stationModel && stationModel.isWalkableForecourt(state.world, point))
+        || (stationModel && stationModel.isWalkableInterior && stationModel.isWalkableInterior(state.world, point))
         || onLot) {
       state.lastSafePosition.set(player.position.x, player.position.y, player.position.z);
+      return;
+    }
+
+    // Keep an indoor walker against the nearest concourse wall rather than
+    // snapping across the station building into the outdoor route polygon.
+    if (stationModel && stationModel.isWalkableInterior
+        && stationModel.isWalkableInterior(state.world, state.lastSafePosition)) {
+      player.position.copy(state.lastSafePosition);
+      state.velocity.set(0, 0, 0);
+      flashBoundaryStatus('Waterfront Station public concourse: passage ends here.');
       return;
     }
 
