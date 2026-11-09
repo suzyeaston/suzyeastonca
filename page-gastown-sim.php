@@ -65,7 +65,7 @@ get_header();
       <aside class="gastown-minimap" aria-label="Exploration minimap">
         <details class="gastown-side-menu" data-side-menu>
           <summary>☰ Menu <span aria-hidden="true">▾</span></summary>
-          <p class="gastown-side-menu-hint">Tap a view or change the weather. Esc frees the mouse.</p>
+          <p class="gastown-side-menu-hint">Press Esc for the menu, then click the scene to resume. Walk-by voices begin after you start audio.</p>
           <div class="gastown-side-menu-section">Views</div>
           <div class="gastown-minimap-toolbar" role="group" aria-label="Camera and minimap controls">
           <button type="button" class="gastown-minimap-mode" data-action="minimap-mode-toggle" aria-pressed="false" aria-label="Switch minimap to heading-up mode">North up</button>
