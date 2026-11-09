@@ -168,7 +168,7 @@
   // contain recorded conversations, unknown-language commuter samples,
   // copyrighted transit announcements, or externally hosted media.
   function makeLocalAmbience() {
-    let ctx=null, master=null, active=false, nextGull=3.5, nextHorn=23;
+    let ctx=null, master=null, active=false, nextGull=3.5, nextHorn=23, lastRoadWhoosh=-30;
     const AudioCtor = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
     function makeTone(start,peak,end,length,volume) {
       if(!ctx || !active) return;
@@ -193,8 +193,10 @@
         seed=(Math.imul(1664525,seed)+1013904223)>>>0;
         samples[i]=(seed/2147483648-1)*0.55;
       }
-      // Low road noise and an almost inaudible waterfront-air layer.
-      for(const spec of [{type:'lowpass',hz:320,level:0.045},{type:'highpass',hz:750,level:0.006}]) {
+      // Layered local character: wet low-speed traffic, harbour air and
+      // broad-band tyre wash. Synthetic fallback remains openly labelled;
+// Low road noise and an almost inaudible waterfront-air layer.
+      for(const spec of [{type:'lowpass',hz:320,level:0.062},{type:'bandpass',hz:820,level:0.018},{type:'highpass',hz:1600,level:0.009}]) {
         const noise=ctx.createBufferSource();noise.buffer=buffer;noise.loop=true;
         const filter=ctx.createBiquadFilter();filter.type=spec.type;filter.frequency.value=spec.hz;
         const volume=ctx.createGain();volume.gain.value=spec.level;
@@ -227,6 +229,11 @@
       if(seconds>=nextHorn) {
         makeTone(115,128,110,1.45,0.008);
         nextHorn=seconds+44;
+      }
+      // Soft intermittent street-crossing tone, vehicle hiss and a
+      // waterfront ferry horn. These are procedural effects, not recordings.
+      if(Math.floor(seconds)%17===3 && seconds-lastRoadWhoosh>16){
+        makeTone(175,280,110,1.2,0.014);lastRoadWhoosh=seconds;
       }
     }
     return {start,stop,update};
@@ -273,11 +280,13 @@
       mesh.rotation.y=Math.atan2(-dx,-dz)+(reverse?Math.PI:0);
     }
     function update(seconds) {
+      // Route #3 trolleys run on the illustrated Cordova-side circuit.
       buses.forEach((bus,index)=>along(seconds*4.1+20+index*total/2,0,false,bus));
       cars.forEach((car,index)=>{
-        const reverse=index%2===1;
+        // Water Street is westbound through-traffic, not a bidirectional
+        // arcade. Centerline runs from Waterfront east toward Steam Clock.
         const distance=seconds*(3.0+index*0.5)+index*total/4;
-        along(reverse?total-distance:distance,reverse?-6.4:2.5,reverse,car);
+        along(total-distance,-6.4,true,car);
       });
       if(lotCar) {
         const cycle=(seconds*0.115)%2, inbound=cycle<1;
