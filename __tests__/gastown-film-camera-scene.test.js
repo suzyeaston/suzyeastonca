@@ -33,7 +33,7 @@ test('The Landing is modeled from actual perimeter edges with Water Street arche
   assert.match(src, /new THREE\.TorusGeometry\(1\.38/);
   assert.match(src, /MULTIMODAL MEDIA LAB/);
   assert.match(src, /The Landing warehouse sash window/);
-  assert.match(src, /Limestone window lintel/);
+  assert.match(src, /Limestone lintel course/);
 });
 
 test('staged pedestrians are in the accessible lot aisle and two buses remain in circuit', () => {
