@@ -227,7 +227,7 @@
     umbrella.name = 'Suzy upright Vancouver rain umbrella';
     const umbrellaFabric = mat(THREE,0x273548,0.68);
     const umbrellaMetal = mat(THREE,0x8796a0,0.45);
-    const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.83,0.38,12,1,true),umbrellaFabric);
+    const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0,0.83,0.38,12,1,true),umbrellaFabric);
     canopy.name = 'Umbrella upright rain canopy';
     canopy.position.set(0.43,2.31,0.08);
     umbrella.add(canopy);
