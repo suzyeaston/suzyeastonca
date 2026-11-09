@@ -80,3 +80,11 @@ test('Cordova has GIS-edge glazing and real-scale road fixtures',()=>{
   assert.match(js,/West Cordova suspended trolley catenary wires/);
   assert.match(js,/West Cordova dashed roadway lane stripe/);
 });
+
+test('Suzy smiles visibly in face/front view instead of hiding a flat mouth inside her head',()=>{
+  const avatar=read('js/gastown-suzy-avatar.js');
+  assert.match(avatar,/Mouth with soft smile arc/);
+  assert.match(avatar,/i = -4; i <= 4; i\+\+/);
+  assert.match(avatar,/1\.667 \+ lift, -0\.253/);
+  assert.doesNotMatch(avatar,/Mouth with soft smile',0\.042/);
+});
