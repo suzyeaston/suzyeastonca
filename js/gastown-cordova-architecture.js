@@ -96,6 +96,52 @@
         const cx=(b.minX+b.maxX)*0.5,cz=(b.minZ+b.maxZ)*0.5;
         shell(group,'Stone square-bay Cordova office block',cx,cz,24,25,30,limestone,blue,8);
         addBox(group,'Office stepped parapet',cx,30.45,cz,20,0.6,20,paleStone);
+        // Harbour Centre is the 28-storey office tower rising above the
+        // heritage Spencer podium, with a circular lookout / restaurant crown.
+        // Anchor the interpretation to this existing civic parcel, never to a
+        // free-floating skyline coordinate. Dimensions remain illustrative.
+        const towerX=cx-1.0, towerZ=cz-1.2;
+        const towerWidth=19.0, towerDepth=18.5;
+        const towerBase=21.0, towerTop=105.0, levels=28;
+        addBox(group,'Harbour Centre concrete gridded 28 storey shaft',
+          towerX,(towerBase+towerTop)/2,towerZ,towerWidth,towerTop-towerBase,towerDepth,limestone);
+        // Reinforce the distinctive repetitive square window rhythm without
+        // creating hundreds of independent deep glass cubes.
+        for(let floor=0;floor<levels;floor++){
+          const y=towerBase+(floor+0.52)*(towerTop-towerBase)/levels;
+          for(let bay=-3;bay<=3;bay++){
+            const offset=bay*2.42;
+            for(const side of [-1,1]){
+              addBox(group,'Harbour Centre square front glazing',
+                towerX+offset,y,towerZ+side*(towerDepth/2+0.052),
+                1.72,1.78,0.07,blue);
+              addBox(group,'Harbour Centre square side glazing',
+                towerX+side*(towerWidth/2+0.052),y,towerZ+offset,
+                0.07,1.78,1.72,blue);
+            }
+          }
+        }
+        // Disc-shaped observation gallery with a slim pedestal and broad
+        // silver roof is its unmistakable silhouette from the station lot.
+        const lookoutMetal=new THREE.MeshStandardMaterial({
+          color:0xb2bdc5,metalness:0.55,roughness:0.42
+        });
+        const lookoutGlass=new THREE.MeshStandardMaterial({
+          color:0x568094,metalness:0.28,roughness:0.18
+        });
+        function disc(name,radius,height,y,material){
+          const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,height,32),material);
+          mesh.name=name;mesh.position.set(towerX,y,towerZ);
+          mesh.castShadow=false;mesh.receiveShadow=false;
+          group.add(mesh);return mesh;
+        }
+        disc('Harbour Centre lookout pedestal',5.8,5,107.5,limestone);
+        disc('Vancouver Lookout panoramic glass ring',13.1,4.6,111.9,lookoutGlass);
+        disc('Vancouver Lookout lower silver rim',13.7,0.72,109.35,lookoutMetal);
+        disc('Vancouver Lookout overhanging circular roof',14.7,1.05,114.5,lookoutMetal);
+        disc('Vancouver Lookout roof cap',10.6,0.65,115.35,paleStone);
+        group.userData.landmark='Harbour Centre / Spencer Building';
+        group.userData.landmarkHeightApproximate=true;
       }
     }
     // A second rectilinear glass-and-stone mass brings the actual downtown
