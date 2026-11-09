@@ -445,11 +445,13 @@
       entry.x,1.56,entry.z,2.7,3.0,0.18,darkEntry,fyaw);
     addBox(THREE,root,'The Landing paired door mullion',
       entry.x,1.54,entry.z,0.09,2.95,0.23,bronze,fyaw);
-    const arch=new THREE.Mesh(new THREE.TorusGeometry(1.38,0.13,7,24,Math.PI),stone);
-    arch.name='The Landing entrance arch';
-    arch.rotation.y=fyaw;
-    arch.position.set(entry.x,3.05,entry.z);
-    root.add(arch);
+    if (typeof THREE.TorusGeometry === 'function') {
+      const arch=new THREE.Mesh(new THREE.TorusGeometry(1.38,0.13,7,24,Math.PI),stone);
+      arch.name='The Landing entrance arch';
+      arch.rotation.y=fyaw;
+      arch.position.set(entry.x,3.05,entry.z);
+      root.add(arch);
+    }
     sign(THREE,root,'THE LANDING',
       {x:entry.x,y:4.48,z:entry.z},3.65,0.48,fyaw,
       {background:'#384741',color:'#f9f2db'});
