@@ -4603,6 +4603,16 @@
         if(landingGroup)thirdPersonCameraBlockers.push(landingGroup);
       }
     }
+    // Lightweight reference-inspired Water Street frontage. Keep this
+    // separate from the survey-aligned collision footprints and harbour.
+    if (streetLife && typeof streetLife.createWaterStreetDetails === 'function') {
+      const waterStreetDetails = streetLife.createWaterStreetDetails(THREE, world);
+      if (waterStreetDetails) {
+        worldGroup.add(waterStreetDetails);
+        // Deliberately not a collider: authored storefront stages must never
+        // trap walkers against approximate civic footprints.
+      }
+    }
     if (cordovaArchitecture && typeof cordovaArchitecture.create === 'function') {
       const southSkyline = cordovaArchitecture.create(THREE, world);
       if (southSkyline) {
