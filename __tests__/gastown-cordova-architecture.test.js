@@ -17,7 +17,7 @@ function threeStub(){
     constructor(){this.position=new Vec();this.rotation={};this.children=[];this.userData={};this.name='';}
     add(child){this.children.push(child);}
   }
-  return {Group,Mesh,BoxGeometry:Geometry,MeshBasicMaterial:Material,
+  return {Group,Mesh,BoxGeometry:Geometry,CylinderGeometry:Geometry,MeshBasicMaterial:Material,
     MeshStandardMaterial:Material,DoubleSide:2};
 }
 function model(){
@@ -75,4 +75,20 @@ test('WordPress and theme deploy load this model before Gastown sim',()=>{
   assert.match(manifest,/"js\/gastown-cordova-architecture.js"/);
   assert.match(sim,/cordovaArchitecture\.create\(THREE, world\)/);
   assert.match(sim,/worldGroup\.add\(southSkyline\)/);
+});
+
+test('Harbour Centre has recognizable 28-floor shaft and Vancouver Lookout disc',()=>{
+  const group=model().create(threeStub(),world);
+  const landmark=group.children.find(child=>child.userData.landmark==='Harbour Centre / Spencer Building');
+  assert.ok(landmark,'landmark must use an existing civic footprint');
+  assert.equal(landmark.userData.sourceFootprintId,'feature-92');
+  const names=landmark.children.map(child=>child.name);
+  assert.ok(names.includes('Harbour Centre concrete gridded 28 storey shaft'));
+  assert.equal(names.filter(n=>n==='Harbour Centre front window ribbon').length,56);
+  assert.ok(names.includes('Vancouver Lookout panoramic glass ring'));
+  assert.ok(names.includes('Vancouver Lookout overhanging circular roof'));
+  const crown=landmark.children.find(child=>child.name==='Vancouver Lookout overhanging circular roof');
+  assert.equal(crown.geometry.args[0],14.7);
+  assert.equal(crown.geometry.args[1],14.7);
+  assert.equal(crown.castShadow,false);
 });
