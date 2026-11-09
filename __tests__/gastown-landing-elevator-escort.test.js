@@ -1,0 +1,48 @@
+'use strict';
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+const places=read('js/gastown-waterfront-places.js');
+const game=read('js/gastown-sim.js');
+const world=JSON.parse(read('assets/world/gastown-water-street.json'));
+
+test('The Landing street door includes historically inspired glazing, stone jambs and handles',()=>{
+  for(const marker of ['The Landing paired glass door mullion','The Landing double-door brass pull handle',
+    'The Landing carved golden 375 lintel','The Landing limestone door jambs',
+    'The Landing sidewalk barrel canopy curved iron rib']){
+    assert.ok(places.includes(marker),marker);
+  }
+  assert.match(places,/const frontA=pts\[6\], frontB=pts\[7\]/);
+  assert.equal(world.landing.address,'375 Water Street');
+  assert.doesNotMatch(places,/sign\(THREE,root,'MULTIMODAL MEDIA LAB',\s*\{x:signX/);
+});
+
+test('lobby is separate, walkable, lift is on left and escort shares journey',()=>{
+  for(const marker of ['createLandingJourney(THREE)','The Landing lobby stone floor',
+    'Glass main entrance facing Water Street','Elevator door brushed metal',
+    'Elevator cabin floor button 6','KK fictional lobby escort']){
+    assert.ok(places.includes(marker),marker);
+  }
+  assert.match(places,/elevatorLobby:\{x:845,z:851\}/);
+  assert.match(game,/function landingTravel\(stage, point, status\)/);
+  assert.match(game,/function updateLandingEscort\(delta,nowSeconds\)/);
+  assert.match(game,/lab\.stage==='escort'/);
+  assert.match(game,/lab\.stage==='lift'/);
+  assert.match(game,/lab\.stage==='lab'/);
+  assert.match(game,/state\.landingLab\.journeyRoot=journey/);
+  assert.match(game,/!state\.landingLab\.inside && !isPlayerInsideWaterfront/);
+  assert.match(game,/if\(state\.landingLab\.inside\)\{/);
+  assert.match(game,/see ya snoozy!/i);
+});
+
+test('player cannot roam beyond lobby, elevator car or sixth-floor lab boundaries',()=>{
+  assert.match(game,/stage==='lab'/);
+  assert.match(game,/stage==='lift'/);
+  assert.match(game,/minX:843\.0,maxX:857\.0,minZ:841\.0,maxZ:858\.6/);
+  assert.match(game,/minX:878\.4,maxX:881\.6,minZ:848\.5,maxZ:851\.8/);
+  assert.match(game,/minX:792\.75,maxX:807\.25,minZ:791\.1,maxZ:809\.25/);
+  assert.match(game,/function interactWithLanding\(\)/);
+  assert.match(game,/if \(state\.landingLab\.inside && interactWithLanding\(\)\)/);
+});
