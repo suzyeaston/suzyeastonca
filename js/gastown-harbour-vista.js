@@ -596,15 +596,6 @@
       const body=box(THREE,skylineGroup,'Illustrative Vancouver downtown skyline infill '+(index+1),
         x,h/2-1,z,w,h,d,standard(THREE,wall[index%wall.length],0.78));
       body.userData.scenicOnly=true;
-      box(THREE,skylineGroup,'Skyline roof setback '+(index+1),
-        x,h+1.3,z,w*0.72,2.4,d*0.74,glass);
-      // A small number of broad horizontal glazing strips is far cheaper
-      // than hundreds of individual window meshes at flying-camera distance.
-      for(let level=0;level<Math.min(11,Math.floor(h/10));level++){
-        const y=7+level*9;
-        box(THREE,skylineGroup,'Distant downtown curtain wall strip',
-          x,y,z-d/2-0.04,w*0.81,0.53,0.09,glass);
-      }
     });
     root.userData.approximateSkylineInfillCount=blocks.length;
   }
@@ -626,13 +617,8 @@
       wagon.name='Eastbound CPR N-Yard context freight wagon '+(i+1);
       wagon.position.set(x,0,z);
       wagon.rotation.y=Math.atan2(83,422);
-      box(THREE,wagon,'Stationary rail wagon undercarriage',0,0.79,0,17,0.46,2.6,steel);
       box(THREE,wagon,'Stationary intermodal freight container',0,2.35,0,
         16.4,2.65,2.43,standard(THREE,tones[i%tones.length],0.88));
-      for(const xx of [-6.8,6.8])for(const zz of [-0.86,0.86]){
-        const wheel=cylinder(THREE,wagon,'Freight wagon wheel',xx,0.37,zz,0.36,0.17,steel,8);
-        wheel.rotation.x=Math.PI/2;
-      }
       freightGroup.add(wagon);
     }
     root.userData.additionalFreightWagons=6;
