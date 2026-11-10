@@ -5,18 +5,17 @@ const test = require("node:test");
 
 const ROOT = path.resolve(__dirname, "..");
 
-test("homepage surfaces Vancouver tech events teaser above Beulah radar", () => {
+test("homepage shows Vancouver tech events inside the YVR radar deck", () => {
   const source = fs.readFileSync(path.join(ROOT, "page-home.php"), "utf8");
   assert.match(source, /get_template_part\(\s*'parts\/home-vancouver-tech-events'\s*\)/);
   assert.match(source, /\/vancouver-tech-events\//);
   assert.match(source, /Vancouver Tech Events/);
 
   const teaserAt = source.indexOf("parts/home-vancouver-tech-events");
-  const radarAt = source.indexOf("home-yvr-radar-deck__radar-unit");
-  const beulahAt = source.indexOf("BEULAH");
-  assert.ok(teaserAt > -1 && radarAt > -1 && beulahAt > -1);
-  assert.ok(teaserAt < radarAt, "events teaser should sit above the radar unit");
-  assert.ok(teaserAt < beulahAt, "events teaser should sit above Beulah");
+  const deckAt = source.indexOf('class="home-yvr-radar-deck"');
+  const mastAt = source.indexOf("home-yvr-radar-deck__mast");
+  assert.ok(deckAt > -1 && mastAt > deckAt && teaserAt > mastAt,
+    "events teaser should render within the existing YVR radar deck");
   assert.equal(
     (source.match(/parts\/home-vancouver-tech-events/g) || []).length,
     1,
@@ -217,7 +216,7 @@ function dedupeVancouverTechEvents(events) {
   return deduped;
 }
 
-test("Futureproof helpers and cache v6 land in the aggregator", () => {
+test("Futureproof helpers and cache v7 land in the aggregator", () => {
   const php = fs.readFileSync(
     path.join(ROOT, "inc", "vancouver-tech-events.php"),
     "utf8"
@@ -226,12 +225,12 @@ test("Futureproof helpers and cache v6 land in the aggregator", () => {
   assert.match(php, /function suzy_vte_event_identity_key\s*\(/);
   assert.match(php, /function suzy_vte_merge_event_records\s*\(/);
   assert.match(php, /futureproof-festival-2026/);
-  assert.match(php, /suzy_vancouver_tech_events_cache_v6/);
+  assert.match(php, /suzy_vancouver_tech_events_cache_v7/);
   assert.doesNotMatch(php, /suzy_vancouver_tech_events_cache_v4/);
   assert.match(php, /'curated'\s*=>\s*true/);
   assert.match(
     php,
-    /array_merge\s*\(\s*\$events\s*,\s*suzy_get_vancouver_tech_spotlight_events\s*\(\s*\)\s*\)/
+    /array_merge\s*\(\s*\$events\s*,\s*suzy_get_vancouver_tech_spotlight_events\s*\(\s*\)\s*,\s*suzy_get_vancouver_tech_verified_fallback_events\s*\(\s*\)\s*\)/
   );
   assert.match(php, /suzy_vte_event_identity_key\s*\(\s*\$event\s*\)/);
   assert.match(php, /suzy_vte_merge_event_records\s*\(/);

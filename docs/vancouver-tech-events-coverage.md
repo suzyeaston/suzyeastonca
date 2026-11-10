@@ -80,3 +80,76 @@ No credentials are embedded and no force push is used. Conflicts stop before pus
 
 If rollback is needed, revert the printed commit SHA in a clean checkout and push
 that revert. Do not reset or force-push shared history.
+
+## November 9, 2026: Eventbrite and conference gap
+
+The source inventory above reflected September 2026. On November 9, the live
+calendar did not show three verified events:
+
+| Event | Verified occurrence (Vancouver time) | Authoritative link |
+| --- | --- | --- |
+| AI Builders Guild: Build, Demo & Connect | Nov 9, 6:30–9:30 pm | https://www.eventbrite.com/e/ai-builders-guild-vancouver-build-demo-connect-tickets-2002478930386 |
+| DNS-OARC 47 | Nov 9–10 | https://indico.dns-oarc.net/event/58/ |
+| MiningTech North America | Nov 9–10 | https://www.miningtechnorthamerica.com/ |
+
+The Google AI Overview also put events on **November 9** that organizer /
+third-party evidence places on **November 25**, notably the VTJ Critical
+Minerals discussion, Cloud Native Vancouver and Vancouver Java User Group.
+The VTJ discussion was already correctly listed on Nov 25 on the live page.
+Do not copy dates from AI summaries into the event records.
+
+### New automated sources and behavior
+
+- Cloud Native Vancouver's confirmed Luma calendar:
+  https://luma.com/cloudnativevan
+- Eventbrite Vancouver tech discovery:
+  https://www.eventbrite.ca/d/canada--vancouver/tech/
+- Eventbrite Vancouver AI discovery:
+  https://www.eventbrite.ca/d/canada--vancouver/artificial-intelligence/
+- Each Eventbrite search result is canonicalized by its ticket ID. At most
+  12 unique event detail pages per source are requested per 30-minute cache
+  window. A detail page must publish a parseable start date; the code does
+  not infer dates from search-card copy.
+- Three verified event dates are added as short-lived fallback records.
+  The existing time filter hides them automatically once they end. They
+  are not recurring events or future promises.
+- The full aggregate cache key is now `v7`, avoiding the earlier cached
+  coverage set. Source debug continues to show HTTP and empty-source status.
+- Links to the Java User Group organizer profile, DNS-OARC, Convention Centre
+  and Eventbrite discovery searches remain available when scraping is blocked.
+
+### Tests and operational caveats
+
+Run `php -l inc/vancouver-tech-events.php`,
+`php tests/VancouverTechEventsTest.php` and
+`node --test __tests__/homepage-vancouver-tech-events.test.js`.
+The PR adds a separate GitHub Actions validation workflow for these checks.
+
+This is a **coverage improvement, not an exhaustive guarantee**. Search pages
+may block WordPress's server or stop rendering event anchors, and JSON-LD
+on detail pages can change. Admins can visit
+`/vancouver-tech-events/?vte_debug=1` while logged in and inspect source
+counts. In particular, if both Eventbrite sources show 403 or 0 entries,
+those events will not auto-import; the linked official discovery pages are
+the fallback. The production site and its CDN cache should be checked
+after deployment. Correct data and timezone settings still depend on
+organizers publishing accurate timestamps.
+
+### Critical: B.C. permanent Pacific time (PCT)
+
+In March 2026 B.C. announced that the March 8 clock change was its last;
+from November 1 Vancouver no longer falls back to PST. Its local civil time
+remains UTC−7 year round. An outdated `America/Vancouver` timezone
+database still converts November dates at UTC−8, making some event times
+show an hour too early. See:
+
+- Province of B.C.: https://www2.gov.bc.ca/gov/content/governments/celebrating-british-columbia/daylight-saving-time
+- UBC IT, Oct. 20, 2026: https://it.ubc.ca/news/october-20-2026/bc-time-zone-change-what-it-means-your-calendar-and-devices
+
+The aggregator uses a fixed UTC−7 offset for post-March-8-2026
+Vancouver event parsing and rendering, while retaining historical IANA
+timezone rules for events before the final spring-forward. The PHP test
+suite asserts that November 2026 01:30 UTC is 6:30 p.m. in Vancouver,
+including when run on servers with outdated timezone data. Eventbrite
+structured data should have an accurate UTC−7 offset for B.C. dates;
+incorrect offsets from an upstream organizer are not silently rewritten.

@@ -1,0 +1,40 @@
+name: Vancouver Tech Events QA
+
+on:
+  pull_request:
+    paths:
+      - 'inc/vancouver-tech-events.php'
+      - 'tests/VancouverTechEventsTest.php'
+      - '__tests__/homepage-vancouver-tech-events.test.js'
+      - '.github/workflows/vancouver-tech-events-qa.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'inc/vancouver-tech-events.php'
+      - 'tests/VancouverTechEventsTest.php'
+      - '__tests__/homepage-vancouver-tech-events.test.js'
+      - '.github/workflows/vancouver-tech-events-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  calendar-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP with DOM support
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, libxml, json
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: PHP syntax
+        run: php -l inc/vancouver-tech-events.php && php -l tests/VancouverTechEventsTest.php
+      - name: WordPress-free calendar behavior tests
+        run: php tests/VancouverTechEventsTest.php
+      - name: Homepage event UI regression tests
+        run: node --test __tests__/homepage-vancouver-tech-events.test.js
