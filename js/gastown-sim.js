@@ -2207,7 +2207,7 @@
     }
     if (suzyAvatar && suzyAvatarModel) {
       suzyAvatarModel.animate(suzyAvatar, state.avatarElapsed,
-        state.flight.enabled ? 0 : normalizedSpeed,
+        normalizedSpeed, // feed flight velocity into hair wind without restarting footsteps
         state.flight.enabled ? 0 : getGroundY() - player.position.y,
         state.flight.enabled ? 'flying' : (state.motion.runActive ? 'running' : 'walking'));
       if(state.flight.enabled){
