@@ -23,6 +23,15 @@ test("homepage shows Vancouver tech events inside the YVR radar deck", () => {
   );
 });
 
+test("homepage teaser displays permanent B.C. Pacific time", () => {
+  const source = fs.readFileSync(
+    path.join(ROOT, "parts", "home-vancouver-tech-events.php"), "utf8"
+  );
+  assert.match(source, /suzy_vte_vancouver_timezone\(\s*\$event_start\s*\)/);
+  assert.match(source, /' PCT'/);
+  assert.doesNotMatch(source, /new DateTimeZone\(\s*'America\/Vancouver'\s*\)/);
+});
+
 test("homepage teaser keeps short intro and Futureproof spotlight slot", () => {
   const source = fs.readFileSync(
     path.join(ROOT, "parts", "home-vancouver-tech-events.php"),
