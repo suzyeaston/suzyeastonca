@@ -6,7 +6,11 @@ const sim = fs.readFileSync(path.join(__dirname,'../js/gastown-sim.js'),'utf8');
 const harbour = fs.readFileSync(path.join(__dirname,'../js/gastown-harbour-vista.js'),'utf8');
 
 test('secret letsgo only transforms when Suzy is flying and does not retrigger mid-spin',()=>{
-  assert.match(sim,/secretBuffer\.endsWith\('letsgo'\)/);
+  assert.match(sim,/function consumeFlightSpellKey\(event\)/);
+  assert.match(sim,/const word = 'letsgo'/);
+  assert.match(sim,/if \(consumeFlightSpellKey\(event\)\) return;/);
+  assert.doesNotMatch(sim,/secretBuffer\.endsWith\('letsgo'\)/);
+  assert.match(sim,/clearMovementInput\(\);\s*state\.velocity\.set\(0,0,0\);\s*startMagicTransformation\(\)/);
   assert.match(sim,/if \(!state\.flight\.enabled \|\| state\.magic\.active \|\| !suzyAvatar\) return false/);
   assert.match(sim,/function updateMagicTransformation\(delta\)/);
   assert.match(sim,/spell\.active = false/);
@@ -25,4 +29,11 @@ test('skyline and freight detail are constructed inside the existing harbour con
   assert.match(harbour,/function additionalWaterfrontFreight\(THREE,root\)/);
   assert.match(harbour,/additionalFreightWagons=6/);
   assert.match(harbour,/waterfrontRailYard\(THREE,root,world\);\s*additionalWaterfrontFreight\(THREE,root\);\s*downtownSkylineDepth\(THREE,root\)/);
+});
+
+test('eastbound rail corridor sits in the northern apron and freight aligns to it',()=>{
+  assert.match(harbour,/const begin = \{ x: 68, z: -86 - row \* 5\.0 \}/);
+  assert.match(harbour,/const end = \{ x: 490, z: -145 - row \* 5\.0 \}/);
+  assert.match(harbour,/const z=\(-86-row\*5\.0\)/);
+  assert.match(harbour,/Stationary intermodal freight container/);
 });
