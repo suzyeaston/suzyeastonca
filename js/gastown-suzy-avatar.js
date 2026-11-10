@@ -69,7 +69,28 @@
     box(THREE,avatar,'Charcoal undershirt',[0.24,0.57,0.03],top,[0,1.17,-0.142]);
     box(THREE,avatar,'Open jacket left lapel',[0.095,0.52,0.045],jacketEdge,[-0.18,1.25,-0.15],[0,0,-0.13]);
     box(THREE,avatar,'Open jacket right lapel',[0.095,0.52,0.045],jacketEdge,[0.18,1.25,-0.15],[0,0,0.13]);
-    box(THREE,avatar,'Long platinum hair across shoulders',[0.37,0.27,0.17],hair,[0,1.54,0.075]);
+    // Hair is a separate lightweight rig: it floats behind the shoulders rather than
+    // being fused to the torso, so walking and flying can have distinct motion.
+    const hairRig=new THREE.Group();
+    hairRig.name='Windswept silver-blonde hair rig';
+    hairRig.position.set(0,1.77,0.13);
+    avatar.add(hairRig);
+    const hairLocks=[];
+    for(let i=0;i<5;i++){
+      const x=(i-2)*0.087;
+      const pivot=new THREE.Group();
+      pivot.name='Layered back hair pivot '+i;
+      pivot.position.set(x,-0.015,0.105);
+      hairRig.add(pivot);
+      const length=0.44+(i%2)*0.075;
+      mesh(THREE,pivot,'Flowing back hair strand '+i,
+        new THREE.CylinderGeometry(0.039,0.024,length,7),i%2?hairShade:hair,
+        [0,-length*0.46,0.015]);
+      sphere(THREE,pivot,'Soft back hair tip '+i,0.032,i%2?hairShade:hair,
+        [0,-length*0.9,0.02],[0.9,1.3,0.8]);
+      hairLocks.push(pivot);
+    }
+    const faceLocks=[];
     box(THREE,avatar,'Light denim waist',[0.44,0.19,0.25],denim,[0,0.79,0]);
     const legs=[
       joint(THREE,avatar,'Left denim leg',[-0.14,0.77,0],0.65,0.119,denim),
@@ -101,12 +122,17 @@
       strand.castShadow=false;
     }
     for(const x of [-0.204,0.202]){
-      const lock=mesh(THREE,avatar,'Silver-blonde face framing lengths',
-        new THREE.CylinderGeometry(0.024,0.060,0.52,9),hair,
-        [x,1.678,-0.080],[0,0,x>0?0.11:-0.10]);
+      const pivot=new THREE.Group();
+      pivot.name='Face framing hair pivot';
+      pivot.position.set(x,1.89,-0.080);
+      avatar.add(pivot);
+      const lock=mesh(THREE,pivot,'Silver-blonde face framing lengths',
+        new THREE.CylinderGeometry(0.024,0.047,0.53,9),hair,
+        [0,-0.265,0],[0,0,x>0?0.11:-0.10]);
       lock.castShadow=false;
-      sphere(THREE,avatar,'Soft loose hair ends',0.060,hair,
-        [x*1.10,1.432,-0.085],[0.9,1.2,0.65]);
+      sphere(THREE,pivot,'Soft loose hair ends',0.045,hair,
+        [x>0?0.035:-0.035,-0.52,0],[0.9,1.2,0.65]);
+      faceLocks.push(pivot);
     }
     const lens=mat(THREE,COLORS.lens,0.08);
     // Glasses on the forward (-Z) face; separate rims and transparent-ish lenses.
@@ -242,6 +268,7 @@
     avatar.userData.umbrella=umbrella;
     avatar.userData.rig='microphone / local AI orchestra';
     avatar.userData.limbs={arms,legs};
+    avatar.userData.hairMotion={hairRig,hairLocks,faceLocks};
     avatar.visible=false;
     return avatar;
   }
@@ -250,6 +277,28 @@
     const active=Math.max(0,Math.min(1,walking||0));
     const t=Number.isFinite(seconds)?seconds:0;
     const {arms,legs}=avatar.userData.limbs;
+    const hairMotion=avatar.userData.hairMotion;
+    if(hairMotion){
+      const flying=mode==='flying';
+      const wind=flying?0.65+0.35*active:0.04+0.08*active;
+      const smooth=0.12;
+      const rig=hairMotion.hairRig;
+      rig.rotation.x+=( (flying?0.32:0.015)+Math.sin(t*2.1)*wind*0.04-rig.rotation.x)*smooth;
+      rig.rotation.z+=(Math.sin(t*1.7)*wind*0.10-rig.rotation.z)*smooth;
+      hairMotion.hairLocks.forEach((lock,i)=>{
+        const offset=i*0.79;
+        const targetX=(flying?0.45:0.025)+Math.sin(t*3.1+offset)*wind*0.13;
+        const targetZ=Math.sin(t*2.7+offset)*wind*0.17;
+        lock.rotation.x+=(targetX-lock.rotation.x)*smooth;
+        lock.rotation.z+=(targetZ-lock.rotation.z)*smooth;
+      });
+      hairMotion.faceLocks.forEach((lock,i)=>{
+        const targetX=(flying?0.25:0.01)+Math.sin(t*3+i*1.6)*wind*0.07;
+        const targetZ=(i?1:-1)*(flying?0.09:0.02)+Math.sin(t*2.5+i)*wind*0.07;
+        lock.rotation.x+=(targetX-lock.rotation.x)*smooth;
+        lock.rotation.z+=(targetZ-lock.rotation.z)*smooth;
+      });
+    }
     if(mode==='flying'){
       // Hold a superhero flight silhouette. No footsteps, swinging legs or
       // walking bob while Suzy and her cape are airborne.
