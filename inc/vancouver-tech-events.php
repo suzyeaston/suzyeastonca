@@ -126,6 +126,30 @@ function suzy_get_vancouver_tech_event_sources(): array {
             'format'          => 'luma_calendar',
         ],
         [
+            'id'     => 'luma_cloud_native',
+            'label'  => 'Cloud Native Vancouver (CNCF)',
+            'url'    => 'https://luma.com/cloudnativevan',
+            'slug'   => 'cloudnativevan',
+            'source' => 'Cloud Native Vancouver',
+            'format' => 'luma_calendar',
+        ],
+        // Eventbrite listings are separate from Luma and Meetup. Parse actual
+        // event pages for dates rather than trusting search snippets.
+        [
+            'id'     => 'eventbrite_vancouver_tech',
+            'label'  => 'Eventbrite Vancouver Tech',
+            'url'    => 'https://www.eventbrite.ca/d/canada--vancouver/tech/',
+            'source' => 'Eventbrite Vancouver Tech',
+            'format' => 'html_eventbrite',
+        ],
+        [
+            'id'     => 'eventbrite_vancouver_ai',
+            'label'  => 'Eventbrite Vancouver AI',
+            'url'    => 'https://www.eventbrite.ca/d/canada--vancouver/artificial-intelligence/',
+            'source' => 'Eventbrite Vancouver AI',
+            'format' => 'html_eventbrite',
+        ],
+        [
             'id'     => 'bctech_tnet',
             'label'  => 'BC Tech / T-Net Events',
             'url'    => 'https://www.bctechnology.com/events/',
@@ -166,6 +190,9 @@ function suzy_fetch_vancouver_tech_events_raw( bool $debug = false, array &$debu
                 break;
             case 'html_tnet':
                 $result = suzy_fetch_vancouver_tech_events_from_html_tnet( $source, $debug );
+                break;
+            case 'html_eventbrite':
+                $result = suzy_fetch_vancouver_tech_events_from_html_eventbrite( $source, $debug );
                 break;
             case 'html_meetup_search':
                 $result = suzy_fetch_vancouver_tech_events_from_html_meetup_search( $source, $debug );
@@ -428,6 +455,115 @@ function suzy_vte_parse_ics_datetime( string $property, string $value, string $f
     }
 
     return $dt->getTimestamp();
+}
+
+/**
+ * Extract canonical Eventbrite event URLs from a category/search result page.
+ * We only accept event detail links, never search dates or promotional cards.
+ *
+ * @return array<int, string>
+ */
+function suzy_vte_eventbrite_event_urls( string $html, string $base_url, int $limit = 12 ): array {
+    if ( '' === trim( $html ) || $limit < 1 ) {
+        return [];
+    }
+
+    $dom = new DOMDocument();
+    libxml_use_internal_errors( true );
+    $dom->loadHTML( '<?xml encoding="UTF-8">' . $html );
+    libxml_clear_errors();
+    $xpath = new DOMXPath( $dom );
+    $urls = [];
+
+    foreach ( $xpath->query( '//a[@href]' ) as $anchor ) {
+        $absolute = suzy_vte_make_absolute_url( trim( $anchor->getAttribute( 'href' ) ), $base_url );
+        $host = strtolower( (string) wp_parse_url( $absolute, PHP_URL_HOST ) );
+        $path = (string) wp_parse_url( $absolute, PHP_URL_PATH );
+        if ( ! in_array( $host, [ 'www.eventbrite.com', 'eventbrite.com', 'www.eventbrite.ca', 'eventbrite.ca' ], true ) ) {
+            continue;
+        }
+        // Search result tracking queries are not part of the event identity.
+        if ( ! preg_match( '~^/e/[^/?]*-tickets-(\d+)/?$~i', $path, $matches ) ) {
+            continue;
+        }
+
+        $canonical = 'https://www.eventbrite.com/e/' . trim( $path, '/' );
+        $urls[ $matches[1] ] = $canonical;
+        if ( count( $urls ) >= $limit ) {
+            break;
+        }
+    }
+
+    return array_values( $urls );
+}
+
+/**
+ * Discover events from Eventbrite's Vancouver technology search pages.
+ * A genuine published date on the event detail page is required; no inferred
+ * or AI-generated dates are ever inserted into the calendar.
+ *
+ * @return array<string, mixed>|WP_Error
+ */
+function suzy_fetch_vancouver_tech_events_from_html_eventbrite( array $source, bool $debug = false ) {
+    if ( empty( $source['url'] ) ) {
+        return $debug ? new WP_Error( 'vte_eventbrite_url', 'Missing Eventbrite discovery URL.' ) : [];
+    }
+
+    $transient_key = 'suzy_vte_eventbrite_v1_' . md5( $source['url'] );
+    if ( ! $debug ) {
+        $cached = get_transient( $transient_key );
+        if ( false !== $cached && is_array( $cached ) ) {
+            return $cached;
+        }
+    }
+
+    $response = wp_remote_get(
+        $source['url'],
+        [
+            'timeout' => 15,
+            'headers' => [
+                'User-Agent' => 'Mozilla/5.0 (compatible; SuzyVancouverTechEvents/1.0)',
+                'Accept'     => 'text/html,application/xhtml+xml',
+            ],
+        ]
+    );
+    if ( is_wp_error( $response ) ) {
+        return $debug ? $response : [];
+    }
+
+    $status = (int) wp_remote_retrieve_response_code( $response );
+    $body = (string) wp_remote_retrieve_body( $response );
+    $events = [];
+    if ( $status >= 200 && $status < 300 && '' !== $body ) {
+        foreach ( suzy_vte_eventbrite_event_urls( $body, $source['url'] ) as $url ) {
+            $details = suzy_vte_fetch_event_json_ld( $url, $debug );
+            if ( ! is_array( $details ) || empty( $details['title'] ) || empty( $details['start'] ) ) {
+                continue;
+            }
+            $events[] = [
+                'title'    => (string) $details['title'],
+                'start'    => (int) $details['start'],
+                'end'      => ! empty( $details['end'] ) ? (int) $details['end'] : null,
+                'location' => $details['location'] ?? null,
+                'url'      => $url,
+                'source'   => $source['source'] ?? 'Eventbrite Vancouver',
+            ];
+        }
+    }
+
+    $result = [
+        'events' => $events,
+        'meta' => [
+            'http_status'  => $status,
+            'content_type' => wp_remote_retrieve_header( $response, 'content-type' ),
+            'bytes'        => strlen( $body ),
+            'parser'       => 'Eventbrite search + detail JSON-LD',
+        ],
+    ];
+    if ( ! $debug ) {
+        set_transient( $transient_key, $result, 30 * MINUTE_IN_SECONDS );
+    }
+    return $result;
 }
 
 /**
@@ -777,6 +913,10 @@ function suzy_vte_event_identity_key( array $event ): string {
         $host = strtolower( $url['host'] );
         $host = in_array( $host, [ 'lu.ma', 'www.lu.ma', 'www.luma.com' ], true ) ? 'luma.com' : $host;
         // Only strip tracking queries for known event hosts; other hosts may use ?id=.
+        if ( in_array( $host, [ 'www.eventbrite.com', 'eventbrite.com', 'www.eventbrite.ca', 'eventbrite.ca' ], true )
+            && preg_match( '~^/e/[^/?]*-tickets-(d+)/?$~i', $url['path'], $eventbrite_match ) ) {
+            return 'eventbrite:' . $eventbrite_match[1] . '|' . $start;
+        }
         if ( in_array( $host, [ 'luma.com', 'www.meetup.com', 'meetup.com' ], true ) ) {
             $host = 'meetup.com' === $host ? 'www.meetup.com' : $host;
             return $host . rtrim( $url['path'], '/' ) . '|' . $start;
@@ -1697,6 +1837,50 @@ function suzy_get_vancouver_tech_spotlight_events(): array {
  *
  * @return array<int, array<string, mixed>>
  */
+/**
+ * Limited, source-checked one-off events missed by our older Luma-only coverage.
+ * These are a dated fallback, not a substitute for ongoing organizer feeds.
+ * The upcoming-event filter removes each item automatically after it ends.
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function suzy_get_vancouver_tech_verified_fallback_events(): array {
+    $tz = new DateTimeZone( 'America/Vancouver' );
+    $at = static function ( string $local ) use ( $tz ): int {
+        return ( new DateTimeImmutable( $local, $tz ) )->getTimestamp();
+    };
+
+    return [
+        [
+            'title' => 'MiningTech North America 2026',
+            'start' => $at( '2026-11-09 09:20:00' ),
+            'end' => $at( '2026-11-10 17:00:00' ),
+            'location' => 'Vancouver Convention Centre',
+            'url' => 'https://www.miningtechnorthamerica.com/',
+            'source' => 'MiningTech North America (official)',
+            'curated' => true,
+        ],
+        [
+            'title' => 'OARC 47: DNS Infrastructure Workshop',
+            'start' => $at( '2026-11-09 10:00:00' ),
+            'end' => $at( '2026-11-10 17:00:00' ),
+            'location' => 'Morris J Wosk Centre for Dialogue',
+            'url' => 'https://indico.dns-oarc.net/event/58/',
+            'source' => 'DNS-OARC (official)',
+            'curated' => true,
+        ],
+        [
+            'title' => 'AI Builders Guild Vancouver: Build, Demo & Connect',
+            'start' => $at( '2026-11-09 18:30:00' ),
+            'end' => $at( '2026-11-09 21:30:00' ),
+            'location' => 'The Beaumont Studios',
+            'url' => 'https://www.eventbrite.com/e/ai-builders-guild-vancouver-build-demo-connect-tickets-2002478930386',
+            'source' => 'Eventbrite: Mammoth Interactive',
+            'curated' => true,
+        ],
+    ];
+}
+
 /** Keep ongoing events, and discard finished events on every cache read. */
 function suzy_vte_upcoming_events( array $events, ?int $now = null ): array {
     $now = $now ?? time();
@@ -1713,7 +1897,7 @@ function suzy_vte_upcoming_events( array $events, ?int $now = null ): array {
 function suzy_get_vancouver_tech_events(): array {
     // Only show debug output when explicitly requested AND user is an admin.
     $debug          = ( isset( $_GET['vte_debug'] ) && '1' === $_GET['vte_debug'] && current_user_can( 'manage_options' ) );
-    $transient_key  = 'suzy_vancouver_tech_events_cache_v6';
+    $transient_key  = 'suzy_vancouver_tech_events_cache_v7';
     $cached         = $debug ? false : get_transient( $transient_key );
     $debug_report   = [];
     $cache_bypassed = $debug;
@@ -1728,7 +1912,7 @@ function suzy_get_vancouver_tech_events(): array {
 
     $events = suzy_fetch_vancouver_tech_events_raw( $debug, $debug_report );
     // Curated Futureproof is appended as a fallback; live Luma wins on merge.
-    $events = array_merge( $events, suzy_get_vancouver_tech_spotlight_events() );
+    $events = array_merge( $events, suzy_get_vancouver_tech_spotlight_events(), suzy_get_vancouver_tech_verified_fallback_events() );
 
     // Mark Futureproof as the only spotlight — no membership / source bias.
     foreach ( $events as &$event ) {
@@ -1842,7 +2026,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
     <section class="vancouver-tech-events">
         <p class="vancouver-tech-events__kicker pixel-font">yvr calendar</p>
         <h1>Vancouver Tech Events</h1>
-        <p>Vancouver tech, maker, security and developer communities. One list. Times are Vancouver local time.</p>
+        <p>Vancouver tech, maker, security and developer communities. Luma, Meetup, Eventbrite and conferences. Times are Vancouver local time. Check organizers before attending; some sites block automated discovery.</p>
 
         <?php if ( empty( $events ) ) : ?>
             <p>Nothing upcoming right now. Sources still get checked on the next pass.</p>
@@ -1910,8 +2094,11 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
             <ul>
                 <li><a href="https://luma.com/user/usr-XQ1OMFlMqL7Ajax" target="_blank" rel="noopener noreferrer">DCTRL hosted events &amp; open houses</a> · <a href="https://www.dctrl.wtf/" target="_blank" rel="noopener noreferrer">Visit DCTRL</a></li>
                 <li><a href="https://vanhack.ca/events-calendar" target="_blank" rel="noopener noreferrer">Vancouver Hack Space calendar</a> · Tuesday public nights, workshops, electronics and maker projects. Check their calendar before heading over; these dates are not imported into the list above.</li>
+                <li><a href="https://luma.com/user/usr-DXRlf45W4X0wrwl" target="_blank" rel="noopener noreferrer">Vancouver Java User Group (Luma organizer)</a> · Check published dates and registration with the host.</li>
+                <li><a href="https://www.vancouverconventioncentre.com/events" target="_blank" rel="noopener noreferrer">Vancouver Convention Centre upcoming conferences</a></li>
+                <li><a href="https://indico.dns-oarc.net/" target="_blank" rel="noopener noreferrer">DNS-OARC workshops</a></li>
                 <?php foreach ( suzy_get_vancouver_tech_event_sources() as $source ) : ?>
-                    <?php if ( 'luma_calendar' !== ( $source['format'] ?? '' ) ) { continue; } ?>
+                    <?php if ( ! in_array( $source['format'] ?? '', [ 'luma_calendar', 'html_eventbrite' ], true ) ) { continue; } ?>
                     <li><a href="<?php echo esc_url( $source['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $source['label'] ); ?></a></li>
                 <?php endforeach; ?>
             </ul>
