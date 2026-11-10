@@ -193,6 +193,7 @@
     thirdPerson: true,
     avatarCameraFacing: 'back', // Initial camera sees Suzy walking toward the city.
     flight: {enabled:false,altitude:0,vertical:0,secretBuffer:''},
+    magic: {active:false,elapsed:0,duration:2.4,group:null},
     followCameraDistance: undefined,
     avatarElapsed: 0,
     hasInteracted: false,
@@ -2055,6 +2056,95 @@
     thump.stop(now + 0.08);
   }
 
+
+  // Original retro-fantasy transformation. Attached to the avatar so the
+  // existing back/follow camera and absolute player position remain stable.
+  function startMagicTransformation() {
+    if (!state.flight.enabled || state.magic.active || !suzyAvatar) return false;
+    const spell = state.magic;
+    spell.active = true;
+    spell.elapsed = 0;
+    const root = new THREE.Group();
+    root.name = 'Letsgo original neon sword and stardust';
+    const bladeMat = new THREE.MeshStandardMaterial({
+      color: 0xd5f6ff, emissive: 0x368ddd, emissiveIntensity: 0.85,
+      metalness: 0.55, roughness: 0.22
+    });
+    const gold = new THREE.MeshStandardMaterial({
+      color: 0xf3b75a, emissive: 0x6b3f13, emissiveIntensity: 0.26
+    });
+    const blade = new THREE.Mesh(new THREE.ConeGeometry(0.14, 1.62, 4), bladeMat);
+    blade.name = 'Original four-sided luminous sword blade';
+    blade.position.y = 0.98;
+    blade.rotation.y = Math.PI / 4;
+    root.add(blade);
+    const guard = new THREE.Mesh(new THREE.BoxGeometry(0.68,0.12,0.13),gold);
+    guard.position.y = 0.15;
+    root.add(guard);
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.075,0.47,8),
+      new THREE.MeshStandardMaterial({color:0x333348,roughness:0.72}));
+    grip.position.y = -0.13;
+    root.add(grip);
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.15),
+      new THREE.MeshStandardMaterial({color:0xff73ce,emissive:0xae1c7a,emissiveIntensity:1}));
+    gem.position.y = 0.19;
+    root.add(gem);
+    root.position.set(0.72,1.34,-0.13);
+    root.rotation.z = -0.22;
+    suzyAvatar.add(root);
+    const particles = new THREE.Group();
+    particles.name = 'Orbiting original neon spell stars';
+    const tones = [0x9beaff,0xff78d2,0xffe5a0];
+    for (let index=0; index<18; index++) {
+      const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.055+(index%3)*0.017),
+        new THREE.MeshBasicMaterial({color:tones[index%tones.length]}));
+      const angle = index*Math.PI*2/18;
+      star.position.set(Math.cos(angle)*0.88,0.9+(index%6)*0.27,Math.sin(angle)*0.88);
+      particles.add(star);
+    }
+    suzyAvatar.add(particles);
+    spell.group = root;
+    spell.particles = particles;
+    state.thirdPerson = true;
+    state.avatarCameraFacing = 'back';
+    setStatus('LETSGO! Neon sword summoned. Suzy is doing a full magical spin.');
+    return true;
+  }
+
+  function updateMagicTransformation(delta) {
+    const spell = state.magic;
+    if (!spell.active || !suzyAvatar) return;
+    spell.elapsed += delta;
+    const t = Math.min(1,spell.elapsed/spell.duration);
+    const ease = t*t*(3-2*t);
+    suzyAvatar.rotation.y = Math.PI*4*ease;
+    if (spell.group) {
+      spell.group.rotation.z = -0.22 + Math.sin(t*Math.PI*4)*0.3;
+      spell.group.scale.setScalar(0.85+0.3*Math.sin(Math.PI*t));
+    }
+    if (spell.particles) {
+      spell.particles.rotation.y += delta*5.4;
+      spell.particles.scale.setScalar(0.6+0.65*Math.sin(Math.PI*t));
+    }
+    if (t >= 1) {
+      suzyAvatar.rotation.y = 0;
+      if (spell.group) suzyAvatar.remove(spell.group);
+      if (spell.particles) suzyAvatar.remove(spell.particles);
+      for (const group of [spell.group,spell.particles]) {
+        if (!group) continue;
+        group.traverse(object => {
+          if (object.geometry) object.geometry.dispose();
+          if (object.material) object.material.dispose();
+        });
+      }
+      spell.group = null;
+      spell.particles = null;
+      spell.active = false;
+      spell.elapsed = 0;
+      setStatus('Transformation complete. Back to flying, cape and all.');
+    }
+  }
+
   function updateCameraMotionFeedback(delta, movementProfile) {
     const speed = state.velocity.length();
     const normalizedSpeed = THREE.MathUtils.clamp(speed / Math.max(0.01, movementProfile.maxSpeed), 0, 1.25);
@@ -2095,6 +2185,7 @@
       }
     }
 
+    updateMagicTransformation(delta);
     if (state.cameraMode === 'street' && state.thirdPerson) {
       updateThirdPersonCameraPose(false);
     } else if (state.cameraMode === 'street') {
@@ -6756,6 +6847,12 @@
   }
 
   function movePlayer(delta) {
+    // Never let a movement key interrupt the short transformation sequence.
+    if (state.magic.active) {
+      state.velocity.set(0,0,0);
+      updateCameraMotionFeedback(delta, getMovementProfile());
+      return;
+    }
     const baseMovementProfile = getMovementProfile();
     const forward = Number(state.move.forward) - Number(state.move.backward);
     const strafe = Number(state.move.right) - Number(state.move.left);
@@ -7161,8 +7258,13 @@
       if(!writing&&!event.repeat&&!event.altKey&&!event.metaKey&&!event.ctrlKey
         &&/^Key[A-Z]$/.test(event.code)){
         state.flight.secretBuffer=(state.flight.secretBuffer+event.code.slice(3).toLowerCase()).slice(-16);
+        if(state.flight.secretBuffer.endsWith('letsgo')){
+          state.flight.secretBuffer='';
+          if (startMagicTransformation()) { event.preventDefault(); return; }
+        }
         if(state.flight.secretBuffer.endsWith('suzyfly')){
           const fly=state.flight;
+          if (state.magic.active) return;
           fly.enabled=!fly.enabled;fly.secretBuffer='';
           if(fly.enabled){
             state.thirdPerson=true;state.avatarCameraFacing='back';
