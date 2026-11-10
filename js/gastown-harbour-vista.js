@@ -581,6 +581,9 @@
   // These are perspective skyline masses, not surveyed building footprints.
   // Keep them away from Waterfront Station, The Landing and walkable streets.
   function downtownSkylineDepth(THREE,root) {
+    const skylineGroup=new THREE.Group();
+    skylineGroup.name='Batched scenic downtown skyline context';
+    root.add(skylineGroup);
     const wall=[0x42545b,0x667982,0x8e928e,0x665d59,0x536a75];
     const glass=standard(THREE,0x355363,0.48,0.16);
     const blocks=[
@@ -590,16 +593,16 @@
       [575,335,36,29,109]
     ];
     blocks.forEach(([x,z,w,d,h],index)=>{
-      const body=box(THREE,root,'Illustrative Vancouver downtown skyline infill '+(index+1),
+      const body=box(THREE,skylineGroup,'Illustrative Vancouver downtown skyline infill '+(index+1),
         x,h/2-1,z,w,h,d,standard(THREE,wall[index%wall.length],0.78));
       body.userData.scenicOnly=true;
-      box(THREE,root,'Skyline roof setback '+(index+1),
+      box(THREE,skylineGroup,'Skyline roof setback '+(index+1),
         x,h+1.3,z,w*0.72,2.4,d*0.74,glass);
       // A small number of broad horizontal glazing strips is far cheaper
       // than hundreds of individual window meshes at flying-camera distance.
       for(let level=0;level<Math.min(11,Math.floor(h/10));level++){
         const y=7+level*9;
-        box(THREE,root,'Distant downtown curtain wall strip',
+        box(THREE,skylineGroup,'Distant downtown curtain wall strip',
           x,y,z-d/2-0.04,w*0.81,0.53,0.09,glass);
       }
     });
@@ -609,6 +612,9 @@
   function additionalWaterfrontFreight(THREE,root) {
     // Placed on the existing eastbound corridor centerlines instead of adding
     // duplicate north/south tracks. These are stationary illustrative cars.
+    const freightGroup=new THREE.Group();
+    freightGroup.name='Eastbound freight railcars context';
+    root.add(freightGroup);
     const steel=standard(THREE,0x28343b,0.83);
     const tones=[0x9a5548,0x486c72,0x8b7b53,0x53635c];
     for(let i=0;i<6;i++){
@@ -627,7 +633,7 @@
         const wheel=cylinder(THREE,wagon,'Freight wagon wheel',xx,0.37,zz,0.36,0.17,steel,8);
         wheel.rotation.x=Math.PI/2;
       }
-      root.add(wagon);
+      freightGroup.add(wagon);
     }
     root.userData.additionalFreightWagons=6;
   }
