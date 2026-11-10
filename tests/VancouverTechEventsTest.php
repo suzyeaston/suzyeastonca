@@ -97,7 +97,8 @@ check(suzy_vte_event_identity_key($eb_a) === suzy_vte_event_identity_key($eb_b),
 $eb_result = suzy_fetch_vancouver_tech_events_from_html_eventbrite($eb_source, true);
 check(count($eb_result['events']) === 1, 'Eventbrite events parsed from real event details');
 check($eb_result['events'][0]['title'] === 'Example AI Guild', 'Eventbrite detail title not guessed from a search card');
-check(wp_date('g:i a', $eb_result['events'][0]['start'], new DateTimeZone('America/Vancouver')) === '6:30 pm', 'Eventbrite offset converted to Vancouver time');
+$eventbrite_time = wp_date('g:i a', $eb_result['events'][0]['start'], new DateTimeZone('America/Vancouver'));
+check($eventbrite_time === '6:30 pm', 'Eventbrite offset converted to Vancouver time (actual: '.$eventbrite_time.', timestamp: '.$eb_result['events'][0]['start'].')');
 $verified = suzy_get_vancouver_tech_verified_fallback_events();
 check(count($verified) === 3, 'three source-verified one-off events available');
 check($verified[2]['start'] === strtotime('2026-11-10T02:30:00Z'), 'AI Builders Guild starts November 9 6:30 PST');
