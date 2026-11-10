@@ -514,16 +514,18 @@
     // The City of Vancouver's railways layer records CPR alignments across
     // the waterfront (indicative, not survey-accurate). The federal/municipal
     // waterfront rail study describes a 20-track N-Yard east of the station.
-    // Extend existing at-grade tracks east of the little parking-lot model,
-    // where looking along the fence previously showed blank scenery.
+    // Extend existing at-grade tracks east of the little parking-lot model.
+    // Their northward placement follows the broad rail apron in aerial views;
+    // the previous -19m corridor ran too close to buildings, leaving an empty
+    // grey field on the harbour side of Suzy's flying camera.
     // Low-profile lines and ties preserve the cruise ship/sea sightline.
     const corridorRailVertices = [], corridorTieVertices = [];
     function addCorridorStroke(vertices, a, b, y) {
       vertices.push(a.x, y, a.z, b.x, y, b.z);
     }
     for (let row = 0; row < 9; row++) {
-      const begin = { x: 68, z: -19 - row * 4.3 };
-      const end = { x: 490, z: -102 - row * 4.3 };
+      const begin = { x: 68, z: -86 - row * 5.0 };
+      const end = { x: 490, z: -145 - row * 5.0 };
       const dx = end.x - begin.x, dz = end.z - begin.z;
       const length = Math.hypot(dx, dz);
       const cross = { x: -dz / length, z: dx / length };
@@ -609,16 +611,18 @@
     const steel=standard(THREE,0x28343b,0.83);
     const tones=[0x9a5548,0x486c72,0x8b7b53,0x53635c];
     for(let i=0;i<6;i++){
-      const row=1+i%6;
-      const t=0.26+(i%3)*0.24;
+      const row=1+(i%3)*2;
+      const t=0.14+(i%3)*0.19;
       const x=68+(490-68)*t;
-      const z=(-19-row*4.3)+((-102-row*4.3)-(-19-row*4.3))*t;
+      const z=(-86-row*5.0)+((-145-row*5.0)-(-86-row*5.0))*t;
       const wagon=new THREE.Group();
       wagon.name='Eastbound CPR N-Yard context freight wagon '+(i+1);
       wagon.position.set(x,0,z);
-      wagon.rotation.y=Math.atan2(83,422);
-      box(THREE,wagon,'Stationary intermodal freight container',0,2.35,0,
-        16.4,2.65,2.43,standard(THREE,tones[i%tones.length],0.88));
+      wagon.rotation.y=Math.atan2(59,422);
+      box(THREE,wagon,'Stationary railcar underframe',0,0.8,0,
+        20,0.7,2.8,steel);
+      box(THREE,wagon,'Stationary intermodal freight container',0,2.6,0,
+        19.3,2.85,2.65,standard(THREE,tones[i%tones.length],0.88));
       freightGroup.add(wagon);
     }
     root.userData.additionalFreightWagons=6;
