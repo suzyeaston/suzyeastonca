@@ -8,6 +8,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * BC kept UTC-7 permanently after its final clock change on March 8, 2026.
+ * Older PHP/IANA timezone databases still assume a November 2026 fall-back.
+ * This fixed post-transition offset keeps parsing and rendering consistent
+ * across hosting environments. For historical dates, retain IANA rules.
+ *
+ * @param int|null $timestamp Unix timestamp, or null for upcoming local dates.
+ */
+function suzy_vte_vancouver_timezone( ?int $timestamp = null ): DateTimeZone {
+    // 2026-03-08 10:00 UTC = the final Vancouver switch to UTC-7.
+    $permanent_pacific_start = 1772964000;
+    if ( null === $timestamp || $timestamp >= $permanent_pacific_start ) {
+        return new DateTimeZone( '-07:00' );
+    }
+
+    return new DateTimeZone( 'America/Vancouver' );
+}
+
+/**
  * Returns a list of external event sources for Vancouver tech events.
  *
  * @return array<int, array<string, mixed>>
@@ -429,7 +447,7 @@ function suzy_vte_parse_ics_datetime( string $property, string $value, string $f
         $tz     = new DateTimeZone( 'UTC' );
     } elseif ( $tzid ) {
         try {
-            $tz = new DateTimeZone( $tzid );
+            $tz = 'America/Vancouver' === $tzid ? suzy_vte_vancouver_timezone() : new DateTimeZone( $tzid );
         } catch ( Exception $e ) {
             $tz = null;
         }
@@ -437,7 +455,7 @@ function suzy_vte_parse_ics_datetime( string $property, string $value, string $f
 
     if ( null === $tz ) {
         try {
-            $tz = new DateTimeZone( $fallback_tz_str );
+            $tz = 'America/Vancouver' === $fallback_tz_str ? suzy_vte_vancouver_timezone() : new DateTimeZone( $fallback_tz_str );
         } catch ( Exception $e ) {
             $tz = wp_timezone();
         }
@@ -632,7 +650,7 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
 
         $anchors = $xpath->query( '//a[@href]' );
         $seen    = [];
-        $tz      = new DateTimeZone( 'America/Vancouver' );
+        $tz      = suzy_vte_vancouver_timezone();
 
         foreach ( $anchors as $anchor ) {
             $href = trim( $anchor->getAttribute( 'href' ) );
@@ -1126,9 +1144,9 @@ function suzy_vte_normalize_luma_entry( $entry, string $source ): ?array {
 
     $tz_name = ! empty( $event['timezone'] ) ? (string) $event['timezone'] : 'America/Vancouver';
     try {
-        $tz = new DateTimeZone( $tz_name );
+        $tz = 'America/Vancouver' === $tz_name ? suzy_vte_vancouver_timezone() : new DateTimeZone( $tz_name );
     } catch ( Exception $e ) {
-        $tz = new DateTimeZone( 'America/Vancouver' );
+        $tz = suzy_vte_vancouver_timezone();
     }
 
     $start = suzy_vte_parse_iso_datetime( isset( $event['start_at'] ) ? (string) $event['start_at'] : null, $tz );
@@ -1240,7 +1258,7 @@ function suzy_vte_fetch_event_json_ld( string $url, bool $debug = false ) {
     $xpath = new DOMXPath( $dom );
     $nodes = $xpath->query( '//script[@type="application/ld+json"]' );
 
-    $tz = new DateTimeZone( 'America/Vancouver' );
+    $tz = suzy_vte_vancouver_timezone();
 
     $detail = null;
 
@@ -1471,7 +1489,7 @@ function suzy_fetch_vancouver_tech_events_from_html_tnet( array $source, bool $d
         $dom->loadHTML( $body );
         libxml_clear_errors();
         $xpath = new DOMXPath( $dom );
-        $tz    = new DateTimeZone( 'America/Vancouver' );
+        $tz    = suzy_vte_vancouver_timezone();
 
         $rows = $xpath->query( '//table//tr' );
         foreach ( $rows as $row ) {
@@ -1610,7 +1628,7 @@ function suzy_fetch_vancouver_tech_events_from_html_meetup_search( array $source
         $dom->loadHTML( '<?xml encoding="UTF-8">' . $body );
         libxml_clear_errors();
         $xpath = new DOMXPath( $dom );
-        $tz    = new DateTimeZone( 'America/Vancouver' );
+        $tz    = suzy_vte_vancouver_timezone();
 
         $anchors = $xpath->query( "//a[contains(@href,'/events/') or contains(@href,'/e/')]" );
         $seen    = [];
@@ -1845,7 +1863,7 @@ function suzy_get_vancouver_tech_spotlight_events(): array {
  * @return array<int, array<string, mixed>>
  */
 function suzy_get_vancouver_tech_verified_fallback_events(): array {
-    $tz = new DateTimeZone( 'America/Vancouver' );
+    $tz = suzy_vte_vancouver_timezone();
     $at = static function ( string $local ) use ( $tz ): int {
         return ( new DateTimeImmutable( $local, $tz ) )->getTimestamp();
     };
@@ -2049,7 +2067,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                     continue;
                 }
                 $start    = isset( $event['start'] ) ? (int) $event['start'] : time();
-                $date_key = wp_date( 'Y-m-d', $start, new DateTimeZone( 'America/Vancouver' ) );
+                $date_key = wp_date( 'Y-m-d', $start, suzy_vte_vancouver_timezone( $start ) );
                 if ( ! isset( $events_by_date[ $date_key ] ) ) {
                     $events_by_date[ $date_key ] = [];
                 }
@@ -2074,7 +2092,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
             <?php foreach ( $events_by_date as $date_key => $date_events ) : ?>
                 <h2 class="vte-date">
                     <?php
-                    $timezone = new DateTimeZone( 'America/Vancouver' );
+                    $timezone = suzy_vte_vancouver_timezone( (int) ( $date_events[0]['start'] ?? time() ) );
                     $date_dt  = DateTime::createFromFormat( 'Y-m-d H:i:s', $date_key . ' 12:00:00', $timezone );
                     $date_ts  = $date_dt ? $date_dt->getTimestamp() : (int) ( $date_events[0]['start'] ?? time() );
                     $format = 'l, ' . get_option( 'date_format' );
@@ -2165,8 +2183,8 @@ function suzy_vte_render_event_list_item( array $event, bool $spotlight = false 
                 <span class="vte-time">
                     <?php
                     $time_label = $spotlight
-                        ? wp_date( 'D, M j · ' . get_option( 'time_format' ), (int) $event['start'], new DateTimeZone( 'America/Vancouver' ) )
-                        : wp_date( get_option( 'time_format' ), (int) $event['start'], new DateTimeZone( 'America/Vancouver' ) );
+                        ? wp_date( 'D, M j · ' . get_option( 'time_format' ), (int) $event['start'], suzy_vte_vancouver_timezone( (int) $event['start'] ) )
+                        : wp_date( get_option( 'time_format' ), (int) $event['start'], suzy_vte_vancouver_timezone( (int) $event['start'] ) );
                     echo esc_html( $time_label );
                     ?>
                 </span>
