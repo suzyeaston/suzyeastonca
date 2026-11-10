@@ -576,6 +576,62 @@
     root.userData.hasFreightYard=true;
   }
 
+
+  // Low-detail city context beyond the playable downtown/waterfront grid.
+  // These are perspective skyline masses, not surveyed building footprints.
+  // Keep them away from Waterfront Station, The Landing and walkable streets.
+  function downtownSkylineDepth(THREE,root) {
+    const wall=[0x42545b,0x667982,0x8e928e,0x665d59,0x536a75];
+    const glass=standard(THREE,0x355363,0.48,0.16);
+    const blocks=[
+      [165,235,32,24,52],[207,255,29,29,86],[253,245,42,29,104],
+      [300,275,30,32,72],[345,255,34,24,118],[388,283,42,38,81],
+      [433,310,29,32,135],[479,298,39,31,98],[532,326,42,34,75],
+      [575,335,36,29,109]
+    ];
+    blocks.forEach(([x,z,w,d,h],index)=>{
+      const body=box(THREE,root,'Illustrative Vancouver downtown skyline infill '+(index+1),
+        x,h/2-1,z,w,h,d,standard(THREE,wall[index%wall.length],0.78));
+      body.userData.scenicOnly=true;
+      box(THREE,root,'Skyline roof setback '+(index+1),
+        x,h+1.3,z,w*0.72,2.4,d*0.74,glass);
+      // A small number of broad horizontal glazing strips is far cheaper
+      // than hundreds of individual window meshes at flying-camera distance.
+      for(let level=0;level<Math.min(11,Math.floor(h/10));level++){
+        const y=7+level*9;
+        box(THREE,root,'Distant downtown curtain wall strip',
+          x,y,z-d/2-0.04,w*0.81,0.53,0.09,glass);
+      }
+    });
+    root.userData.approximateSkylineInfillCount=blocks.length;
+  }
+
+  function additionalWaterfrontFreight(THREE,root) {
+    // Placed on the existing eastbound corridor centerlines instead of adding
+    // duplicate north/south tracks. These are stationary illustrative cars.
+    const steel=standard(THREE,0x28343b,0.83);
+    const tones=[0x9a5548,0x486c72,0x8b7b53,0x53635c];
+    for(let i=0;i<6;i++){
+      const row=1+i%6;
+      const t=0.26+(i%3)*0.24;
+      const x=68+(490-68)*t;
+      const z=(-19-row*4.3)+((-102-row*4.3)-(-19-row*4.3))*t;
+      const wagon=new THREE.Group();
+      wagon.name='Eastbound CPR N-Yard context freight wagon '+(i+1);
+      wagon.position.set(x,0,z);
+      wagon.rotation.y=Math.atan2(83,422);
+      box(THREE,wagon,'Stationary rail wagon undercarriage',0,0.79,0,17,0.46,2.6,steel);
+      box(THREE,wagon,'Stationary intermodal freight container',0,2.35,0,
+        16.4,2.65,2.43,standard(THREE,tones[i%tones.length],0.88));
+      for(const xx of [-6.8,6.8])for(const zz of [-0.86,0.86]){
+        const wheel=cylinder(THREE,wagon,'Freight wagon wheel',xx,0.37,zz,0.36,0.17,steel,8);
+        wheel.rotation.x=Math.PI/2;
+      }
+      root.add(wagon);
+    }
+    root.userData.additionalFreightWagons=6;
+  }
+
   function containerPortCranes(THREE, root) {
     // Silhouette of the distant North Shore working-port container cranes,
     // not surveyed terminal equipment or live vessel/berth assignments.
@@ -701,6 +757,8 @@
       box(THREE,root,'North Vancouver shore silhouette',x,h/2-0.6,-489,10.2,h,9,city);
     }
     waterfrontRailYard(THREE,root,world);
+    additionalWaterfrontFreight(THREE,root);
+    downtownSkylineDepth(THREE,root);
     containerPortCranes(THREE,root);
     const pier=canadaPlace(THREE,root,anchor);
     dockedCruiseShip(THREE,root,pier);
