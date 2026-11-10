@@ -60,7 +60,18 @@ $events_url = home_url( '/vancouver-tech-events/' );
 						<p class="vancouver-tech-home__badge pixel-font"><?php echo esc_html( 'spotlight' ); ?></p>
 					<?php endif; ?>
 					<p class="vancouver-tech-home__time">
-						<?php echo esc_html( $event_start > 0 ? wp_date( 'D, M j • g:i A T', $event_start, new DateTimeZone( 'America/Vancouver' ) ) : 'Date/time TBD' ); ?>
+						<?php
+						if ( $event_start > 0 ) {
+							$event_timezone = suzy_vte_vancouver_timezone( $event_start );
+							$event_time_label = wp_date( 'D, M j • g:i A', $event_start, $event_timezone );
+							// B.C. stays on UTC-7 year-round after March 8, 2026.
+							// PCT is the new zone name, independent of an outdated host TZDB.
+							$event_time_label .= $event_start >= 1772964000 ? ' PCT' : ' ' . wp_date( 'T', $event_start, $event_timezone );
+							echo esc_html( $event_time_label );
+						} else {
+							echo esc_html( 'Date/time TBD' );
+						}
+						?>
 					</p>
 					<a href="<?php echo esc_url( $event_url ); ?>" target="_blank" rel="noopener noreferrer" class="vancouver-tech-home__title">
 						<?php echo esc_html( $event['title'] ?? 'Upcoming event' ); ?>
