@@ -22,6 +22,17 @@ class WP_Error { public function __construct(...$args) {} }
 function wp_remote_get($url, $args) {
     $GLOBALS['requests'][] = $url;
     if (str_contains($url, '/url?')) { return ['body' => '{"calendar":{"api_id":"cal-test"}}']; }
+    if (str_contains($url, 'eventbrite.ca/d/')) {
+        return ['body' => '<a href="https://www.eventbrite.com/e/example-ai-guild-tickets-1234567890?aff=search">Example guild</a>'];
+    }
+    if (str_contains($url, '/e/example-ai-guild-tickets-1234567890')) {
+        return ['body' => '<script type="application/ld+json">'.json_encode([
+            '@type' => 'Event', 'name' => 'Example AI Guild',
+            'startDate' => '2026-11-20T18:30:00-08:00',
+            'endDate' => '2026-11-20T21:30:00-08:00',
+            'location' => ['name' => 'The Beaumont Studios'],
+        ]).'</script>'];
+    }
     if (str_contains($url, '/calendar/get-items')) { return ['body' => '{"entries":[],"has_more":false}']; }
     return ['body' => '<html></html>'];
 }
@@ -61,7 +72,7 @@ foreach (['vancouver.dev', 'Vantug', 'WhiteHatSecurityCommunityVancouver'] as $s
 $now = time();
 $events = [['title'=>'finished','start'=>$now-5000,'end'=>$now-1], ['title'=>'ongoing','start'=>$now-86400,'end'=>$now+86400], ['title'=>'future','start'=>$now+5000]];
 check(count(suzy_vte_upcoming_events($events, $now)) === 2, 'finished removed, ongoing multiday preserved');
-$GLOBALS['cache']['suzy_vancouver_tech_events_cache_v6'] = $events;
+$GLOBALS['cache']['suzy_vancouver_tech_events_cache_v7'] = $events;
 check(count(suzy_get_vancouver_tech_events()['events']) === 2, 'cached records are filtered again at read time');
 $display = suzy_render_vancouver_tech_events_html([['title'=>'Safe <script>', 'start'=>strtotime('2026-10-01T01:00:00Z'), 'url'=>'https://luma.com/test', 'source'=>'DCTRL']]);
 check(str_contains($display, 'Wednesday, September 30, 2026'), 'date bucket is Vancouver even if WordPress timezone is UTC');
@@ -72,5 +83,25 @@ check(str_contains($winter, '6:00 pm'), 'historical winter date follows Vancouve
 check(str_contains($display, 'https://vanhack.ca/events-calendar'), 'maker calendar remains discoverable');
 check(str_contains($display, 'usr-XQ1OMFlMqL7Ajax'), 'DCTRL hosted events linked directly');
 check(str_contains(suzy_render_vancouver_tech_events_html([]), 'Vancouver Hack Space'), 'community links remain when feed empty');
-check(count(suzy_get_vancouver_tech_event_sources()) === 16, 'eight direct calendars added');
+check(count(suzy_get_vancouver_tech_event_sources()) === 19, 'Eventbrite discovery and CNCF calendar sources registered');
+$eb_source = ['url' => 'https://www.eventbrite.ca/d/canada--vancouver/tech/', 'source' => 'Eventbrite Vancouver Tech'];
+$eb_html = '<a href="https://www.eventbrite.ca/e/ai-night-tickets-999?aff=foo">One</a>'
+    .'<a href="/e/ai-night-tickets-999?aff=other">Duplicate</a>'
+    .'<a href="https://evil.example/e/ai-night-tickets-111">Not Eventbrite</a>';
+$eb_urls = suzy_vte_eventbrite_event_urls($eb_html, $eb_source['url']);
+check(count($eb_urls) === 1 && str_contains($eb_urls[0], '/e/ai-night-tickets-999'), 'search URLs canonicalized, tracking removed, untrusted host rejected');
+check(suzy_vte_eventbrite_event_urls('<html>blocked</html>', $eb_source['url']) === [], 'blocked search page does not invent events');
+$eb_a = ['title'=>'AI Night', 'start'=>100, 'url'=>'https://www.eventbrite.ca/e/ai-night-tickets-999?aff=x'];
+$eb_b = ['title'=>'AI Night', 'start'=>100, 'url'=>'https://www.eventbrite.com/e/ai-night-tickets-999?aff=y'];
+check(suzy_vte_event_identity_key($eb_a) === suzy_vte_event_identity_key($eb_b), 'Eventbrite .com and .ca duplicates share ticket identity');
+$eb_result = suzy_fetch_vancouver_tech_events_from_html_eventbrite($eb_source, true);
+check(count($eb_result['events']) === 1, 'Eventbrite events parsed from real event details');
+check($eb_result['events'][0]['title'] === 'Example AI Guild', 'Eventbrite detail title not guessed from a search card');
+check(wp_date('g:i a', $eb_result['events'][0]['start'], new DateTimeZone('America/Vancouver')) === '6:30 pm', 'Eventbrite offset converted to Vancouver time');
+$verified = suzy_get_vancouver_tech_verified_fallback_events();
+check(count($verified) === 3, 'three source-verified one-off events available');
+check($verified[2]['start'] === strtotime('2026-11-10T02:30:00Z'), 'AI Builders Guild starts November 9 6:30 PST');
+check($verified[2]['end'] === strtotime('2026-11-10T05:30:00Z'), 'AI Builders Guild end time preserved');
+check(str_contains($display, 'Vancouver Java User Group'), 'JUG organizer fallback link visible');
+check(str_contains($display, 'Eventbrite Vancouver Tech'), 'Eventbrite discovery link visible');
 echo "Passed $checks Vancouver event behavior checks.\n";
