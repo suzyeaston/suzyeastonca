@@ -487,7 +487,7 @@ function suzy_vte_eventbrite_event_urls( string $html, string $base_url, int $li
             continue;
         }
 
-        $canonical = 'https://www.eventbrite.com/e/' . trim( $path, '/' );
+        $canonical = 'https://www.eventbrite.com' . rtrim( $path, '/' );
         $urls[ $matches[1] ] = $canonical;
         if ( count( $urls ) >= $limit ) {
             break;
