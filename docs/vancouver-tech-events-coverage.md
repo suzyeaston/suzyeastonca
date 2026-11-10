@@ -134,3 +134,22 @@ those events will not auto-import; the linked official discovery pages are
 the fallback. The production site and its CDN cache should be checked
 after deployment. Correct data and timezone settings still depend on
 organizers publishing accurate timestamps.
+
+### Critical: B.C. permanent Pacific time (PCT)
+
+In March 2026 B.C. announced that the March 8 clock change was its last;
+from November 1 Vancouver no longer falls back to PST. Its local civil time
+remains UTC−7 year round. An outdated `America/Vancouver` timezone
+database still converts November dates at UTC−8, making some event times
+show an hour too early. See:
+
+- Province of B.C.: https://www2.gov.bc.ca/gov/content/governments/celebrating-british-columbia/daylight-saving-time
+- UBC IT, Oct. 20, 2026: https://it.ubc.ca/news/october-20-2026/bc-time-zone-change-what-it-means-your-calendar-and-devices
+
+The aggregator uses a fixed UTC−7 offset for post-March-8-2026
+Vancouver event parsing and rendering, while retaining historical IANA
+timezone rules for events before the final spring-forward. The PHP test
+suite asserts that November 2026 01:30 UTC is 6:30 p.m. in Vancouver,
+including when run on servers with outdated timezone data. Eventbrite
+structured data should have an accurate UTC−7 offset for B.C. dates;
+incorrect offsets from an upstream organizer are not silently rewritten.
