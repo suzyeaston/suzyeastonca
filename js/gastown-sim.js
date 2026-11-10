@@ -193,7 +193,7 @@
     thirdPerson: true,
     avatarCameraFacing: 'back', // Initial camera sees Suzy walking toward the city.
     flight: {enabled:false,altitude:0,vertical:0,secretBuffer:''},
-    magic: {active:false,elapsed:0,duration:2.4,group:null},
+    magic: {active:false,elapsed:0,duration:2.4,group:null,spellIndex:0,spellLastAt:0},
     followCameraDistance: undefined,
     avatarElapsed: 0,
     hasInteracted: false,
@@ -2059,6 +2059,42 @@
 
   // Original retro-fantasy transformation. Attached to the avatar so the
   // existing back/follow camera and absolute player position remain stable.
+  // A flight-only chordless keyboard command. Consume the *whole* LETSGO
+  // sequence before ordinary shortcuts (notably E = interact and S = back).
+  // Otherwise the incantation moves Suzy or opens a door mid-flight.
+  function consumeFlightSpellKey(event) {
+    if (!state.flight.enabled || state.magic.active || event.repeat ||
+        event.altKey || event.ctrlKey || event.metaKey ||
+        !/^Key[A-Z]$/.test(event.code)) return false;
+    const target = event.target || {};
+    if (['INPUT','TEXTAREA','SELECT'].includes(target.tagName) || target.isContentEditable) return false;
+    const spell = state.magic;
+    const letter = event.code.slice(3).toLowerCase();
+    const now = performance.now();
+    if (now - spell.spellLastAt > 3500) spell.spellIndex = 0;
+    const word = 'letsgo';
+    if (spell.spellIndex === 0) {
+      if (letter !== 'l') return false;
+      spell.spellIndex = 1;
+    } else if (letter === word[spell.spellIndex]) {
+      spell.spellIndex += 1;
+    } else {
+      spell.spellIndex = letter === 'l' ? 1 : 0;
+      if (!spell.spellIndex) return false;
+    }
+    spell.spellLastAt = now;
+    event.preventDefault();
+    if (spell.spellIndex === word.length) {
+      spell.spellIndex = 0;
+      state.flight.secretBuffer = '';
+      // Clear movement inherited from keys pressed just before the spell.
+      clearMovementInput();
+      state.velocity.set(0,0,0);
+      startMagicTransformation();
+    }
+    return true;
+  }
+
   function startMagicTransformation() {
     if (!state.flight.enabled || state.magic.active || !suzyAvatar) return false;
     const spell = state.magic;
@@ -7255,13 +7291,10 @@
     document.addEventListener('keydown', (event) => {
       const writing=['INPUT','TEXTAREA','SELECT'].includes((event.target&&event.target.tagName)||'')
         ||(event.target&&event.target.isContentEditable);
+      if (consumeFlightSpellKey(event)) return;
       if(!writing&&!event.repeat&&!event.altKey&&!event.metaKey&&!event.ctrlKey
         &&/^Key[A-Z]$/.test(event.code)){
         state.flight.secretBuffer=(state.flight.secretBuffer+event.code.slice(3).toLowerCase()).slice(-16);
-        if(state.flight.secretBuffer.endsWith('letsgo')){
-          state.flight.secretBuffer='';
-          if (startMagicTransformation()) { event.preventDefault(); return; }
-        }
         if(state.flight.secretBuffer.endsWith('suzyfly')){
           const fly=state.flight;
           if (state.magic.active) return;
