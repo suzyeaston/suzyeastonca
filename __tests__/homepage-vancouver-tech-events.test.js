@@ -69,8 +69,8 @@ test("vancouver tech events discovers independent Vancouver AI and tech organize
   const php = fs.readFileSync(path.join(ROOT, "inc", "vancouver-tech-events.php"), "utf8");
   assert.match(php, /luma_discover_ai/);
   assert.match(php, /luma_discover_tech/);
-  assert.match(php, /luma\\.com\\/discover\\/vancouver\\/ai/);
-  assert.match(php, /luma\\.com\\/discover\\/vancouver\\/tech/);
+  assert.ok(php.includes("https://luma.com/discover/vancouver/ai"));
+  assert.ok(php.includes("https://luma.com/discover/vancouver/tech"));
   assert.match(php, /suzy_vte_fetch_luma_public_event/);
   assert.match(php, /3fkowyad/);
 });
