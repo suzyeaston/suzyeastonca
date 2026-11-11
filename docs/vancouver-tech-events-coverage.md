@@ -153,3 +153,31 @@ suite asserts that November 2026 01:30 UTC is 6:30 p.m. in Vancouver,
 including when run on servers with outdated timezone data. Eventbrite
 structured data should have an accurate UTC−7 offset for B.C. dates;
 incorrect offsets from an upstream organizer are not silently rewritten.
+
+## November 11, 2026: independent Luma creative-tech discovery
+
+A source gap was reported for [DEFRAG: Archive of Synthetic Dreams](https://luma.com/3fkowyad),
+November 18–19 at The Permanent. This public event is listed under
+[Luma Vancouver AI discovery](https://luma.com/discover/vancouver/ai),
+but its organizer (Ministry of Next) was not one of our subscribed Luma calendars.
+
+- Register Luma's public Vancouver **AI** and **Tech** category pages as
+  additional discovery sources. Organizer calendars remain the preferred
+  stable coverage path.
+- For event-card links on those pages, resolve the actual event metadata
+  through Luma's public URL endpoint; only use parseable published dates.
+  A bounded number of detail requests prevents an unbounded scraper loop.
+- Reject non-event pages and non-Luma domains. The existing common
+  aggregation stage handles canonical cross-source deduplication.
+- Seed DEFRAG as a time-limited verified safety-net record (Nov 18 at 2 pm
+  through Nov 19 at 11 pm, matching the official event agenda).
+  This remains useful even if Luma blocks the source feed.
+- Bump the aggregate cache key to v8 so new sources are checked after deployment.
+- Preserve the administrator source-debug mode at
+  `/vancouver-tech-events/?vte_debug=1`.
+
+**Limits:** Public discovery results are not an exhaustive events inventory;
+private, unlisted, outside-radius or newly posted events may be absent.
+Luma's website and unauthenticated endpoint can change or block requests.
+Confirm production HTTP status and ingested counts in administrator debug mode,
+and clear WordPress/CDN HTML caches if the old page persists.
