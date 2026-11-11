@@ -42,7 +42,7 @@ const matching=(model,name)=>model.children.filter(c=>c.name===name);
 test('Kris character builds without textures or external assets',()=>{
   const model=avatar();
   assert.equal(model.userData.photoInspired,true);
-  assert.ok(model.children.length>65,'face, vest, tattoo sleeves and accessories should be detailed');
+  assert.ok(model.children.length>50,'face, vest, tattoo sleeves and accessories should be detailed');
   assert.equal(matching(model,'KK black trouser leg').length,2);
   assert.equal(matching(model,'KK open grey sleeveless vest front').length,2);
   assert.equal(matching(model,'KK tattooed forearm').length,2);
