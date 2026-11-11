@@ -550,6 +550,93 @@
       elevatorLobby:{x:845,z:851},elevatorCar:{x:880,z:850},
       roomSpawn:{x:800,z:808},roomExit:{x:800,z:809.2}};
   }
+
+  // One small, photo-informed, low-poly likeness for the street, lobby and lab.
+  // Illustrated NPC only: no portrait texture, scanned mesh or voice imitation.
+  // The negative Z direction is the character's face (as in the original rig).
+  function createKrisAvatar(THREE) {
+    const avatar=new THREE.Group();
+    avatar.name='KK | photo-inspired fictional Gastown greeter';
+    const fabric=(color,roughness=0.92)=>new THREE.MeshStandardMaterial({color,roughness});
+    const black=fabric(0x17191b),shirt=fabric(0x252528);
+    const vest=fabric(0x8a9294),vestShade=fabric(0x596366);
+    const pocket=fabric(0x3b4244),pants=fabric(0x151619);
+    const skin=fabric(0xb87c60),ink=fabric(0x393434);
+    const beard=fabric(0x29231f),beardHi=fabric(0x413730);
+    const metal=new THREE.MeshStandardMaterial({color:0x858f91,metalness:0.55,roughness:0.48});
+    const bracelet=fabric(0x3c8883);
+    const eye=fabric(0x1e1b1a);
+    function add(name,geometry,material,x,y,z) {
+      const mesh=new THREE.Mesh(geometry,material);
+      mesh.name=name;mesh.position.set(x,y,z);
+      avatar.add(mesh);
+      return mesh;
+    }
+    function box(name,x,y,z,w,h,d,mat) {
+      return add(name,new THREE.BoxGeometry(w,h,d),mat,x,y,z);
+    }
+    function rounded(name,x,y,z,sx,sy,sz,mat) {
+      const mesh=add(name,new THREE.SphereGeometry(1,10,8),mat,x,y,z);
+      mesh.scale.set(sx,sy,sz);
+      return mesh;
+    }
+    function tube(name,x,y,z,top,bottom,height,mat) {
+      return add(name,new THREE.CylinderGeometry(top,bottom,height,9),mat,x,y,z);
+    }
+
+    // Black shoes and trousers, rather than the previous all-denim outfit.
+    for (const side of [-1,1]) {
+      box('KK black trouser leg',side*0.19,0.51,0,0.27,0.91,0.29,pants);
+      box('KK black shoe',side*0.19,0.085,-0.08,0.30,0.17,0.43,black);
+    }
+    box('KK dark shirt',0,1.30,0,0.73,0.78,0.37,shirt);
+    box('KK grey vest back',0,1.31,0.225,0.79,0.77,0.09,vestShade);
+    for (const side of [-1,1]) {
+      box('KK open grey sleeveless vest front',side*0.245,1.31,-0.22,0.27,0.74,0.105,vest);
+      box('KK contrasting vest seam',side*0.107,1.33,-0.283,0.026,0.70,0.02,vestShade);
+      box('KK dark vest pocket',side*0.255,1.10,-0.288,0.19,0.18,0.024,pocket);
+      box('KK vest pocket flap',side*0.255,1.21,-0.309,0.20,0.035,0.026,vestShade);
+      // Short sleeves reveal inked forearms, based on the supplied image.
+      rounded('KK dark sleeve',side*0.49,1.49,0,0.19,0.20,0.19,shirt);
+      tube('KK tattooed forearm',side*0.51,1.17,0,0.115,0.090,0.52,skin);
+      for (let i=0;i<4;i++) {
+        tube('KK tattoo bands',side*0.51,1.00+i*0.105,-0.004,0.118,0.115,0.024,ink);
+      }
+      // Geometric ink strokes, a readable hint rather than a copied tattoo.
+      box('KK forearm geometric tattoo',side*0.51,1.20,-0.115,0.09,0.20,0.014,ink);
+      tube('KK turquoise wrist bracelet',side*0.51,0.91,0,0.111,0.111,0.048,bracelet);
+      rounded('KK hand',side*0.51,0.81,-0.015,0.105,0.12,0.10,skin);
+    }
+    box('KK neck',0,1.75,0,0.19,0.23,0.20,skin);
+    rounded('KK portrait head',0,1.95,0,0.263,0.285,0.240,skin);
+    rounded('KK nose',0,1.94,-0.238,0.055,0.075,0.055,skin);
+    for(const side of [-1,1]){
+      rounded('KK eye behind spectacles',side*0.125,2.005,-0.241,0.025,0.023,0.015,eye);
+      rounded('KK thick beard cheek',side*0.15,1.78,-0.177,0.13,0.17,0.13,beard);
+      // Real individual eyeglass rims rather than one bar across the face.
+      const cx=side*0.135,front=-0.283;
+      box('KK rectangular eyeglass upper rim',cx,2.066,front,0.225,0.027,0.035,black);
+      box('KK rectangular eyeglass lower rim',cx,1.927,front,0.225,0.024,0.035,black);
+      for(const dx of [-0.112,0.112])box('KK rectangular eyeglass side rim',cx+dx,1.996,front,0.023,0.15,0.035,black);
+      box('KK glasses temple',side*0.241,2.025,-0.145,0.03,0.027,0.24,black);
+      rounded('KK moustache half',side*0.073,1.825,-0.253,0.09,0.046,0.065,beardHi);
+    }
+    box('KK glasses bridge',0,2.018,-0.285,0.065,0.029,0.04,black);
+    // Long, full beard reaches the shirt, with a shaped rather than cubic tip.
+    rounded('KK full beard upper',0,1.705,-0.185,0.212,0.18,0.18,beard);
+    tube('KK long pointed beard',0,1.52,-0.207,0.178,0.072,0.43,beard);
+    rounded('KK beard tip',0,1.317,-0.207,0.075,0.060,0.075,beardHi);
+
+    // Low black cap worn backwards; its small bill faces positive Z.
+    rounded('KK black cap crown',0,2.185,0.020,0.268,0.102,0.247,black);
+    box('KK cap band',0,2.139,0.015,0.43,0.048,0.40,black);
+    const bill=rounded('KK backwards cap bill',0,2.125,0.259,0.205,0.025,0.17,black);
+    bill.rotation.x=-0.09;
+    box('KK vest zip pull',0,1.58,-0.299,0.028,0.088,0.018,metal);
+    avatar.userData.photoInspired=true;
+    return avatar;
+  }
+
   function createLabInterior(THREE) {
     const root=new THREE.Group();
     root.name='Fictional Multimodal Lab | sixth-floor imagination at The Landing';
@@ -561,9 +648,7 @@
     const mountain=new THREE.MeshBasicMaterial({color:0x557383,side:THREE.DoubleSide});
     const glass=new THREE.MeshStandardMaterial({color:0x9ec9d6,transparent:true,opacity:0.3,roughness:0.2,depthWrite:false});
     const wood=new THREE.MeshStandardMaterial({color:0xb98c60,roughness:0.79});
-    const denim=new THREE.MeshStandardMaterial({color:0x36536c,roughness:0.92});
     const skin=new THREE.MeshStandardMaterial({color:0xc99372,roughness:0.92});
-    const beard=new THREE.MeshStandardMaterial({color:0x3c3029,roughness:0.93});
     const green=new THREE.MeshStandardMaterial({color:0x3d614a,roughness:0.89});
     function cube(name,x,y,z,w,h,d,mat) {
       const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
@@ -647,26 +732,10 @@
     cube('Multimodal Lab laptop luminous code display',801.5,1.32,801.59,0.89,0.49,0.012,screenGlow);
     root.userData.coder=coder;
     root.userData.coderHands=coderHands;
-    // Stylized fictionalized KK greeter: not a scanned photograph or claim
-    // about the real person's whereabouts.
-    const greeter=new THREE.Group();
+    // Reuse the same recognizable model used on the street and in the lobby.
+    const greeter=createKrisAvatar(THREE);
     greeter.name='KK | fictional welcoming lab NPC';
     greeter.position.set(803.0,0,804.7);greeter.visible=false;root.add(greeter);
-    function npcBox(name,x,y,z,w,h,d,mat){
-      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
-      m.name=name;m.position.set(x,y,z);greeter.add(m);
-    }
-    npcBox('KK denim jacket',0,1.15,0,0.72,0.82,0.37,denim);
-    npcBox('KK jeans',-0.21,0.45,0,0.24,0.8,0.28,denim);
-    npcBox('KK jeans',0.21,0.45,0,0.24,0.8,0.28,denim);
-    npcBox('KK neck',0,1.66,0,0.17,0.16,0.17,skin);
-    const head=new THREE.Mesh(new THREE.SphereGeometry(0.27,10,8),skin);
-    head.name='KK stylized portrait head';head.position.set(0,1.91,0);greeter.add(head);
-    npcBox('KK beard',0,1.78,-0.19,0.37,0.25,0.12,beard);
-    npcBox('KK glasses bridge',0,1.96,-0.264,0.38,0.045,0.035,dark);
-    npcBox('KK hair',0,2.16,0.01,0.39,0.14,0.3,beard);
-    npcBox('KK welcoming arm',-0.5,1.28,-0.10,0.2,0.55,0.24,denim);
-    npcBox('KK welcoming hand',-0.52,1.02,-0.15,0.16,0.2,0.18,skin);
     cube('Exit to Water Street door',800,1.65,809.83,2.6,3.3,0.1,glass);
     cube('Exit door glass',800,1.7,809.74,2.24,2.8,0.09,glass);
     sign(THREE,root,'MULTIMODAL LAB  ·  FLOOR 6',
@@ -689,9 +758,6 @@
     const gold=new THREE.MeshStandardMaterial({color:0xb99855,metalness:0.58,roughness:0.3});
     const glass=new THREE.MeshStandardMaterial({color:0xb2d3d9,transparent:true,opacity:0.28,depthWrite:false,side:THREE.DoubleSide,roughness:0.16,metalness:0.02});
     const tile=new THREE.MeshStandardMaterial({color:0x89745e,roughness:0.79});
-    const denim=new THREE.MeshStandardMaterial({color:0x35586a,roughness:0.91});
-    const skin=new THREE.MeshStandardMaterial({color:0xc79b7c,roughness:0.91});
-    const dark=new THREE.MeshStandardMaterial({color:0x292e32,roughness:0.9});
     function block(name,x,y,z,w,h,d,material){
       const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
       m.name=name;m.position.set(x,y,z);root.add(m);return m;
@@ -727,23 +793,10 @@
       {x:850,y:4.7,z:859.48},4.9,0.43,0,{background:'#3a4140',color:'#f4e6be'});
     sign(THREE,root,'LIFTS  ⇦',
       {x:848,y:3.55,z:857.7},2.2,0.44,0,{background:'#3c4243',color:'#f7e7bf'});
-    // Identifiable low-poly KK escort. His location and movements are entirely fictional.
-    const kk=new THREE.Group();kk.name='KK fictional lobby escort';
+    // This is the same model cloned later for the outdoor first greeting.
+    const kk=createKrisAvatar(THREE);
+    kk.name='KK fictional lobby escort';
     kk.position.set(851.3,0,855.1);root.add(kk);
-    function personBox(name,x,y,z,w,h,d,mat){
-      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
-      m.name=name;m.position.set(x,y,z);kk.add(m);
-    }
-    personBox('KK blue denim jacket',0,1.19,0,0.8,0.8,0.39,denim);
-    personBox('KK left trouser leg',-0.2,0.48,0,0.27,0.85,0.29,denim);
-    personBox('KK right trouser leg',0.2,0.48,0,0.27,0.85,0.29,denim);
-    personBox('KK left arm',-0.54,1.18,0,0.23,0.58,0.27,denim);
-    personBox('KK right arm',0.54,1.18,0,0.23,0.58,0.27,denim);
-    const head=new THREE.Mesh(new THREE.SphereGeometry(0.26,10,8),skin);
-    head.name='KK head';head.position.set(0,1.9,0);kk.add(head);
-    personBox('KK dark beard',0,1.78,-0.17,0.39,0.25,0.12,dark);
-    personBox('KK dark glasses',0,1.97,-0.255,0.42,0.045,0.09,dark);
-    personBox('KK hair',0,2.15,0,0.41,0.12,0.3,dark);
     // The lift cabin is off-map so the street remains uninterrupted.
     block('The Landing elevator car floor',880,-0.12,850,5,0.23,5,tile);
     block('Elevator cabin left panel',877.5,2.15,850,0.18,4.3,5,metal);
@@ -774,5 +827,5 @@
     return group;
   }
 
-  window.GastownWaterfrontPlaces=Object.freeze({ reference:REFERENCE, create, createParking, createLanding, createLabInterior, createLandingJourney, landingEntranceFor, inPolygon, isWalkableLot, entranceFor, lookoutFor, parkingCars });
+  window.GastownWaterfrontPlaces=Object.freeze({ reference:REFERENCE, create, createParking, createLanding, createLabInterior, createLandingJourney, createKrisAvatar, landingEntranceFor, inPolygon, isWalkableLot, entranceFor, lookoutFor, parkingCars });
 })(window);
