@@ -636,7 +636,7 @@ function suzy_vte_fetch_luma_public_event( string $url, string $source ): ?array
     $response = wp_remote_get(
         add_query_arg( [ 'url' => $slug ], 'https://api.lu.ma/url' ),
         [
-            'timeout' => 6,
+            'timeout' => 4,
             'headers' => [
                 'User-Agent' => 'suzy-vancouver-tech-events/1.2',
                 'Accept' => 'application/json',
@@ -720,8 +720,8 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
     $parser = 'Luma __NEXT_DATA__';
 
     // Fallback: scrape event anchors if structured data is missing.
-    if ( empty( $events ) ) {
-        $parser  = 'HTML Luma';
+    if ( empty( $events ) || ! empty( $source['discovery'] ) ) {
+        $parser  = empty( $events ) ? 'HTML Luma' : 'Luma __NEXT_DATA__ + HTML discovery';
         $dom     = new DOMDocument();
         libxml_use_internal_errors( true );
         $dom->loadHTML( $body );
@@ -733,15 +733,25 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
         $tz      = suzy_vte_vancouver_timezone();
         $max_details = ! empty( $source['discovery'] ) ? max( 1, min( 24, (int) ( $source['max_details'] ?? 16 ) ) ) : 24;
         $details_requested = 0;
+        $deadline = microtime( true ) + 8.0; // Category pages must not stall WordPress.
+        $known_urls = [];
+        foreach ( $events as $existing_event ) {
+            if ( ! empty( $existing_event['url'] ) ) {
+                $known_urls[ (string) $existing_event['url'] ] = true;
+            }
+        }
 
         foreach ( $anchors as $anchor ) {
+            if ( ! empty( $source['discovery'] ) && microtime( true ) > $deadline ) {
+                break;
+            }
             $href = trim( $anchor->getAttribute( 'href' ) );
             if ( empty( $href ) ) {
                 continue;
             }
 
             $absolute_url = suzy_vte_make_absolute_url( $href, $source['url'] );
-            if ( empty( $absolute_url ) || isset( $seen[ $absolute_url ] ) ) {
+            if ( empty( $absolute_url ) || isset( $seen[ $absolute_url ] ) || isset( $known_urls[ $absolute_url ] ) ) {
                 continue;
             }
 
@@ -766,8 +776,9 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
                 $resolved_event = suzy_vte_fetch_luma_public_event( $absolute_url, $source['source'] ?? 'Luma Discovery' );
                 if ( $resolved_event ) {
                     $events[] = $resolved_event;
-                    continue;
                 }
+                // Avoid a second slow request for every card on category pages.
+                continue;
             }
 
             $title_node = $xpath->query( './/*[self::h2 or self::h3]', $anchor )->item( 0 );
@@ -2220,7 +2231,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                 <li><a href="https://www.vancouverconventioncentre.com/events" target="_blank" rel="noopener noreferrer">Vancouver Convention Centre upcoming conferences</a></li>
                 <li><a href="https://indico.dns-oarc.net/" target="_blank" rel="noopener noreferrer">DNS-OARC workshops</a></li>
                 <?php foreach ( suzy_get_vancouver_tech_event_sources() as $source ) : ?>
-                    <?php if ( ! in_array( $source['format'] ?? '', [ 'luma_calendar', 'html_eventbrite' ], true ) ) { continue; } ?>
+                    <?php if ( ! in_array( $source['format'] ?? '', [ 'luma_calendar', 'html_eventbrite' ], true ) && empty( $source['discovery'] ) ) { continue; } ?>
                     <li><a href="<?php echo esc_url( $source['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $source['label'] ); ?></a></li>
                 <?php endforeach; ?>
             </ul>
