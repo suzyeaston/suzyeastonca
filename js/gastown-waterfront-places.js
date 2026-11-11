@@ -648,6 +648,7 @@
     const mountain=new THREE.MeshBasicMaterial({color:0x557383,side:THREE.DoubleSide});
     const glass=new THREE.MeshStandardMaterial({color:0x9ec9d6,transparent:true,opacity:0.3,roughness:0.2,depthWrite:false});
     const wood=new THREE.MeshStandardMaterial({color:0xb98c60,roughness:0.79});
+    const denim=new THREE.MeshStandardMaterial({color:0x36536c,roughness:0.92}); // seated lab coder's trousers
     const skin=new THREE.MeshStandardMaterial({color:0xc99372,roughness:0.92});
     const green=new THREE.MeshStandardMaterial({color:0x3d614a,roughness:0.89});
     function cube(name,x,y,z,w,h,d,mat) {
