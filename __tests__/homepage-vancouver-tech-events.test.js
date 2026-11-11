@@ -65,6 +65,16 @@ test("events page template still renders the feed", () => {
   assert.match(source, /suzy_render_vancouver_tech_events_html/);
 });
 
+test("vancouver tech events discovers independent Vancouver AI and tech organizers", () => {
+  const php = fs.readFileSync(path.join(ROOT, "inc", "vancouver-tech-events.php"), "utf8");
+  assert.match(php, /luma_discover_ai/);
+  assert.match(php, /luma_discover_tech/);
+  assert.ok(php.includes("https://luma.com/discover/vancouver/ai"));
+  assert.ok(php.includes("https://luma.com/discover/vancouver/tech"));
+  assert.match(php, /suzy_vte_fetch_luma_public_event/);
+  assert.match(php, /3fkowyad/);
+});
+
 test("vancouver tech events includes BC + AI and VTJ Luma calendars", () => {
   const source = fs.readFileSync(
     path.join(ROOT, "inc", "vancouver-tech-events.php"),
@@ -225,7 +235,7 @@ function dedupeVancouverTechEvents(events) {
   return deduped;
 }
 
-test("Futureproof helpers and cache v7 land in the aggregator", () => {
+test("Futureproof helpers and cache v8 land in the aggregator", () => {
   const php = fs.readFileSync(
     path.join(ROOT, "inc", "vancouver-tech-events.php"),
     "utf8"
@@ -234,7 +244,7 @@ test("Futureproof helpers and cache v7 land in the aggregator", () => {
   assert.match(php, /function suzy_vte_event_identity_key\s*\(/);
   assert.match(php, /function suzy_vte_merge_event_records\s*\(/);
   assert.match(php, /futureproof-festival-2026/);
-  assert.match(php, /suzy_vancouver_tech_events_cache_v7/);
+  assert.match(php, /suzy_vancouver_tech_events_cache_v8/);
   assert.doesNotMatch(php, /suzy_vancouver_tech_events_cache_v4/);
   assert.match(php, /'curated'\s*=>\s*true/);
   assert.match(

@@ -125,6 +125,26 @@ function suzy_get_vancouver_tech_event_sources(): array {
             'source' => 'Luma Vancouver',
             'format' => 'html_luma',
         ],
+        // Category discovery catches independent organizers outside our
+        // curated calendar subscriptions (e.g. creative AI / generative art).
+        [
+            'id'          => 'luma_discover_ai',
+            'label'       => 'Luma Vancouver AI discovery',
+            'url'         => 'https://luma.com/discover/vancouver/ai',
+            'source'      => 'Luma Vancouver AI',
+            'format'      => 'html_luma',
+            'discovery'   => true,
+            'max_details' => 20,
+        ],
+        [
+            'id'          => 'luma_discover_tech',
+            'label'       => 'Luma Vancouver tech discovery',
+            'url'         => 'https://luma.com/discover/vancouver/tech',
+            'source'      => 'Luma Vancouver Tech',
+            'format'      => 'html_luma',
+            'discovery'   => true,
+            'max_details' => 16,
+        ],
         [
             'id'              => 'luma_bc_ai',
             'label'           => 'Luma: BC + AI Events',
@@ -585,6 +605,66 @@ function suzy_fetch_vancouver_tech_events_from_html_eventbrite( array $source, b
 }
 
 /**
+ * Identify public Luma event URLs without treating category, calendar, user or
+ * auth pages as events. Preserve case because Luma event slugs are case-sensitive.
+ */
+function suzy_vte_luma_public_event_slug( string $url ): ?string {
+    $parsed = wp_parse_url( $url );
+    if ( ! is_array( $parsed ) || ! in_array( strtolower( (string) ( $parsed['host'] ?? '' ) ), [ 'luma.com', 'www.luma.com', 'lu.ma', 'www.lu.ma' ], true ) ) {
+        return null;
+    }
+
+    $path = (string) ( $parsed['path'] ?? '' );
+    if ( ! preg_match( '~^/(?:event/)?([A-Za-z0-9][A-Za-z0-9._-]{5,99})/?$~', $path, $matches ) ) {
+        return null;
+    }
+
+    $reserved = [ 'discover', 'vancouver', 'calendar', 'category', 'pricing', 'support', 'sign-in', 'signup', 'login', 'user', 'event', 'events', 'create', 'help', 'about', 'tech', 'ai' ];
+    return in_array( strtolower( $matches[1] ), $reserved, true ) ? null : $matches[1];
+}
+
+/**
+ * Resolve a public event's actual start/end from Luma, never its search card.
+ * If the public URL resolver is unavailable, the existing detail parser follows.
+ */
+function suzy_vte_fetch_luma_public_event( string $url, string $source ): ?array {
+    $slug = suzy_vte_luma_public_event_slug( $url );
+    if ( null === $slug ) {
+        return null;
+    }
+
+    $response = wp_remote_get(
+        add_query_arg( [ 'url' => $slug ], 'https://api.lu.ma/url' ),
+        [
+            'timeout' => 4,
+            'headers' => [
+                'User-Agent' => 'suzy-vancouver-tech-events/1.2',
+                'Accept' => 'application/json',
+            ],
+        ]
+    );
+    if ( is_wp_error( $response ) || (int) wp_remote_retrieve_response_code( $response ) >= 400 ) {
+        return null;
+    }
+
+    $data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+    if ( ! is_array( $data ) ) {
+        return null;
+    }
+
+    foreach ( [ $data['data'] ?? null, $data ] as $entry ) {
+        $event = suzy_vte_normalize_luma_entry( $entry, $source );
+        if ( $event && ! empty( $event['start'] ) ) {
+            // The resolver can omit a shareable slug even for valid events.
+            $event['url'] = $url;
+            return $event;
+        }
+    }
+
+    return null;
+}
+
+/**
  * Fetch events from a Luma place/discover HTML page via __NEXT_DATA__ (with link scrape fallback).
  *
  * @param array<string, mixed> $source Source configuration.
@@ -640,8 +720,8 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
     $parser = 'Luma __NEXT_DATA__';
 
     // Fallback: scrape event anchors if structured data is missing.
-    if ( empty( $events ) ) {
-        $parser  = 'HTML Luma';
+    if ( empty( $events ) || ! empty( $source['discovery'] ) ) {
+        $parser  = empty( $events ) ? 'HTML Luma' : 'Luma __NEXT_DATA__ + HTML discovery';
         $dom     = new DOMDocument();
         libxml_use_internal_errors( true );
         $dom->loadHTML( $body );
@@ -651,15 +731,27 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
         $anchors = $xpath->query( '//a[@href]' );
         $seen    = [];
         $tz      = suzy_vte_vancouver_timezone();
+        $max_details = ! empty( $source['discovery'] ) ? max( 1, min( 24, (int) ( $source['max_details'] ?? 16 ) ) ) : 24;
+        $details_requested = 0;
+        $deadline = microtime( true ) + 8.0; // Category pages must not stall WordPress.
+        $known_urls = [];
+        foreach ( $events as $existing_event ) {
+            if ( ! empty( $existing_event['url'] ) ) {
+                $known_urls[ (string) $existing_event['url'] ] = true;
+            }
+        }
 
         foreach ( $anchors as $anchor ) {
+            if ( ! empty( $source['discovery'] ) && microtime( true ) > $deadline ) {
+                break;
+            }
             $href = trim( $anchor->getAttribute( 'href' ) );
             if ( empty( $href ) ) {
                 continue;
             }
 
             $absolute_url = suzy_vte_make_absolute_url( $href, $source['url'] );
-            if ( empty( $absolute_url ) || isset( $seen[ $absolute_url ] ) ) {
+            if ( empty( $absolute_url ) || isset( $seen[ $absolute_url ] ) || isset( $known_urls[ $absolute_url ] ) ) {
                 continue;
             }
 
@@ -671,11 +763,23 @@ function suzy_fetch_vancouver_tech_events_from_html_luma( array $source, bool $d
                 continue;
             }
 
-            if ( ! preg_match( '#^/(event|events)/#', $path ) && ! preg_match( '#^/[A-Za-z0-9]{6,}$#', $path ) ) {
+            if ( null === suzy_vte_luma_public_event_slug( $absolute_url ) ) {
                 continue;
             }
 
             $seen[ $absolute_url ] = true;
+            if ( ++$details_requested > $max_details ) {
+                break; // Bound synchronous outbound requests on page-cache misses.
+            }
+
+            if ( ! empty( $source['discovery'] ) ) {
+                $resolved_event = suzy_vte_fetch_luma_public_event( $absolute_url, $source['source'] ?? 'Luma Discovery' );
+                if ( $resolved_event ) {
+                    $events[] = $resolved_event;
+                }
+                // Avoid a second slow request for every card on category pages.
+                continue;
+            }
 
             $title_node = $xpath->query( './/*[self::h2 or self::h3]', $anchor )->item( 0 );
             $title      = $title_node ? trim( $title_node->textContent ) : trim( $anchor->textContent );
@@ -1896,6 +2000,17 @@ function suzy_get_vancouver_tech_verified_fallback_events(): array {
             'source' => 'Eventbrite: Mammoth Interactive',
             'curated' => true,
         ],
+        // Official event agenda (Nov 18, 2 pm through Nov 19, 11 pm).
+        // Safety net while Luma's public discovery/JSON endpoints are blocked.
+        [
+            'title' => 'DEFRAG: Archive of Synthetic Dreams',
+            'start' => $at( '2026-11-18 14:00:00' ),
+            'end' => $at( '2026-11-19 23:00:00' ),
+            'location' => 'The Permanent, 330 W Pender St',
+            'url' => 'https://luma.com/3fkowyad',
+            'source' => 'Ministry of Next',
+            'curated' => true,
+        ],
     ];
 }
 
@@ -1915,7 +2030,7 @@ function suzy_vte_upcoming_events( array $events, ?int $now = null ): array {
 function suzy_get_vancouver_tech_events(): array {
     // Only show debug output when explicitly requested AND user is an admin.
     $debug          = ( isset( $_GET['vte_debug'] ) && '1' === $_GET['vte_debug'] && current_user_can( 'manage_options' ) );
-    $transient_key  = 'suzy_vancouver_tech_events_cache_v7';
+    $transient_key  = 'suzy_vancouver_tech_events_cache_v8';
     $cached         = $debug ? false : get_transient( $transient_key );
     $debug_report   = [];
     $cache_bypassed = $debug;
@@ -2116,7 +2231,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                 <li><a href="https://www.vancouverconventioncentre.com/events" target="_blank" rel="noopener noreferrer">Vancouver Convention Centre upcoming conferences</a></li>
                 <li><a href="https://indico.dns-oarc.net/" target="_blank" rel="noopener noreferrer">DNS-OARC workshops</a></li>
                 <?php foreach ( suzy_get_vancouver_tech_event_sources() as $source ) : ?>
-                    <?php if ( ! in_array( $source['format'] ?? '', [ 'luma_calendar', 'html_eventbrite' ], true ) ) { continue; } ?>
+                    <?php if ( ! in_array( $source['format'] ?? '', [ 'luma_calendar', 'html_eventbrite' ], true ) && empty( $source['discovery'] ) ) { continue; } ?>
                     <li><a href="<?php echo esc_url( $source['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $source['label'] ); ?></a></li>
                 <?php endforeach; ?>
             </ul>
