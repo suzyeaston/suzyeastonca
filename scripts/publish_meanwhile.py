@@ -14,6 +14,7 @@ import os
 import re
 import shlex
 import sys
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -121,6 +122,33 @@ def run_command(client: paramiko.SSHClient, command: str) -> str:
     return output
 
 
+# Rate-limit responses can be printed by WordPress during bootstrap and
+# terminate PHP with exit code 0, before our importer ever emits JSON.
+# Respect the server's limit with bounded, increasingly spaced retries.
+RATE_LIMIT_RETRY_DELAYS = (60, 180, 300)
+
+
+def run_publisher_with_backoff(client: paramiko.SSHClient, command: str, slug: str) -> str:
+    for attempt in range(len(RATE_LIMIT_RETRY_DELAYS) + 1):
+        output = run_command(client, command)
+        if not re.search(r"\brate limit exceeded\b", output, re.IGNORECASE):
+            return output
+        if attempt >= len(RATE_LIMIT_RETRY_DELAYS):
+            raise RuntimeError(
+                f"WordPress rate limit persisted for {slug} after "
+                f"{attempt + 1} attempts; stop and investigate hosting/plugin limits. "
+                "No further automatic retries."
+            )
+        delay = RATE_LIMIT_RETRY_DELAYS[attempt]
+        print(
+            f"WordPress rate limited {slug} (attempt {attempt + 1}); "
+            f"respecting a {delay}s cooldown before retry.",
+            flush=True,
+        )
+        time.sleep(delay)
+    raise AssertionError("Unreachable retry state")
+
+
 def select_php(client: paramiko.SSHClient) -> str:
     """Use a hosting-provider PHP CLI matching the site's modern PHP runtime.
 
@@ -217,8 +245,10 @@ def publish(prepared: list[dict]) -> None:
                     json.dump(manifest, tmp, ensure_ascii=False)
                     tmp.flush()
                     sftp.put(tmp.name, stage + "/post.json")
-                output = run_command(
-                    client, shlex.quote(php_bin) + " " + shlex.quote(stage + "/publisher.php") + " " + shlex.quote(stage + "/post.json")
+                output = run_publisher_with_backoff(
+                    client,
+                    shlex.quote(php_bin) + " " + shlex.quote(stage + "/publisher.php") + " " + shlex.quote(stage + "/post.json"),
+                    post["slug"],
                 )
                 try:
                     result = json.loads(output.strip())
