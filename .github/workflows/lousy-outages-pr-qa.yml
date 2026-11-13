@@ -40,7 +40,7 @@ jobs:
         run: |
           scripts/build-lousy-outages-release.sh
           test -s dist/lousy-outages.zip
-          sha256sum -c dist/lousy-outages.zip.sha256
+          ( cd dist && sha256sum -c lousy-outages.zip.sha256 )
           php tests/lousy-outages/wp-install-upgrade-architecture-test.php
       - name: WordPress clean-install smoke
         run: tests/lousy-outages/wp-real-install-test.sh clean
