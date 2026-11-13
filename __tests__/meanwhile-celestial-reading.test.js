@@ -42,3 +42,18 @@ test("blog fonts are loaded only when blog assets are enqueued", () => {
   assert.match(source, /se-meanwhile-type/);
   assert.match(source, /'main-styles', 'se-meanwhile-type'/);
 });
+
+test("Film Club article delegates its page title to the WordPress single-post template", () => {
+  const article = read("content/meanwhile/2026-11-everything-works-except-for-art.md");
+  assert.match(article, /^title: "Make Art Not War: The November 2026 BC \+ AI Film Club Prompt Challenge"$/m);
+  assert.doesNotMatch(article, /^# Make Art Not War: The November 2026 BC \+ AI Film Club Prompt Challenge$/m);
+  assert.equal((article.match(/<!-- PHOTO:/g) || []).length, 7);
+  assert.match(article, /^status: publish$/m);
+});
+
+test("Meanwhile imported photo captions are styled separately from article paragraphs", () => {
+  const styles = read("assets/css/blog.css");
+  assert.match(styles, /figure\.se-meanwhile-photo > figcaption/);
+  assert.match(styles, /font-size: clamp\(0\.78rem, 1vw, 0\.87rem\)/);
+  assert.match(styles, /border-left: 2px solid rgba\(222, 184, 232, 0\.48\)/);
+});

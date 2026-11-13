@@ -11,7 +11,6 @@ featured_image: gastown-night-simulator.jpg
 
 *Meanwhile / November 13, 2026 / Film Club Transmission*
 
-# Make Art Not War: The November 2026 BC + AI Film Club Prompt Challenge
 
 On November 12, a film I made screened at BC + AI Film Club. I wasn't there to introduce it, and there is a fair amount of context missing from the finished video.
 
