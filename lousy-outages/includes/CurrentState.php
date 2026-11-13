@@ -84,7 +84,7 @@ function lousy_outages_get_current_state(): array {
         return is_array($incident) ? sanitize_key((string)($incident['provider_id'] ?? $incident['provider'] ?? '')) : '';
     }, $base['long_running']))));
     if (class_exists('\\SuzyEaston\\LousyOutages\\Microsoft365ServiceHealth')) {
-        $base = \\SuzyEaston\\LousyOutages\\Microsoft365ServiceHealth::augment_state($base);
+        $base = \SuzyEaston\LousyOutages\Microsoft365ServiceHealth::augment_state($base);
     }
     return $base;
 }
