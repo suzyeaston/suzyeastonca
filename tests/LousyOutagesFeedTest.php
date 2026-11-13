@@ -64,7 +64,7 @@ $zscalerAgain=array_replace($zscaler,['episode_guid'=>'lo-zscaler-second','first
 [$deduped,,$dedupDiag]=build(['incidents'=>[$zscalerAgain,$zscaler]]);
 assert_true(count($deduped)===1&&$dedupDiag['excluded']['same_official_post']===1,'same Zscaler post duplicated in RSS');
 // Fifteen newer minor incidents must not displace an active critical event.
-$critical=array_replace($incident,['guid'=>'older-active-critical','severity'=>'critical','active'=>true,'first_seen'=>strtotime('2026-01-09T08:00:00Z')]);
+$critical=array_replace($incident,['episode_guid'=>'older-active-critical','severity'=>'critical','active'=>true,'first_detected'=>strtotime('2026-01-09T08:00:00Z')]);
 $newMinors=[];for($n=0;$n<20;$n++)$newMinors[]=array_replace($incident,['guid'=>'fresh-minor-'.$n,'severity'=>'minor','active'=>false,'first_seen'=>strtotime('2026-01-10T10:00:00Z')+$n]);
 [$prioritized]=build(['incidents'=>array_merge($newMinors,[$critical])]);
 assert_true(count($prioritized)===15,'RSS limit changed while pinning active critical');
