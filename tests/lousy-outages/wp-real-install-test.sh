@@ -45,6 +45,8 @@ if [[ "$mode" == "upgrade" ]]; then
   mkdir -p "$work/fixture/lousy-outages"
   { printf '%s\n' '<?php'; printf '%s\n' '/* Plugin Name: Lousy Out'"ages"; printf '%s\n' 'Version: 0.3.0 */'; } > "$work/fixture/lousy-outages/lousy-outages.php"
   docker compose -f "$work/compose.yml" cp "$work/fixture/lousy-outages" wp:/var/www/html/wp-content/plugins/lousy-outages
+  # Docker cp writes as root; WordPress CLI runs as uid 33 and must replace the fixture.
+  docker compose -f "$work/compose.yml" exec -T -u root wp chown -R 33:33 /var/www/html/wp-content/plugins/lousy-outages
   for opt in lo_event_log lo_event_log_compacted_v1 lousy_outages_history lousy_outages_log lousy_outages_states lo_event_log_v2 lo_history_migration_backup_v2 lo_history_migration_v2_marker; do wp option update "$opt" '{"seed":"preserve"}' --format=json; done
   for hook in lousy_outages_poll lousy_outages_cron_refresh lousy_outages_refresh lo_check_statuses lo_refresh_snapshot; do wp cron event schedule "$hook" now hourly; done
 fi
