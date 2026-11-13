@@ -751,7 +751,13 @@ class Fetcher {
                 $url = $provider['status_url'];
             }
 
-            $metadata = $this->incident_metadata($incident, $title . ' ' . $summary, $updated, $started);
+            // AWS grouped notices retain original impact text separately from the
+            // synthesized summary; include it when deciding long-running lifecycle.
+            $metadataText = $title . ' ' . $summary;
+            if (strtolower((string)($provider['id'] ?? '')) === 'aws') {
+                $metadataText .= ' ' . (string)($incident['official_context'] ?? '');
+            }
+            $metadata = $this->incident_metadata($incident, $metadataText, $updated, $started);
             $entry = [
                 'id'         => (string) ($incident['id'] ?? md5(wp_json_encode($incident))),
                 'title'      => $title ?: 'Incident',
