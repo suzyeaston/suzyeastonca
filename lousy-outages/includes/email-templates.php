@@ -69,7 +69,13 @@ if (!function_exists('lo_format_alert_timestamp')) {
         if ($epoch <= 0) {
             $epoch = time();
         }
-        return wp_date('M j, Y g:i A T', $epoch, lo_alert_timezone());
+        $formatted = wp_date('M j, Y g:i A T', $epoch, lo_alert_timezone());
+        // B.C. moved to year-round Pacific Time (PCT, UTC-7) on Nov 1, 2026.
+        // Some tzdata labels that fixed offset as MST; the local public label is PCT.
+        if ($epoch >= strtotime('2026-11-01T07:00:00Z')) {
+            $formatted = (string) preg_replace('/\\s(?:MST|PST|PDT|PCT)$/', ' PCT', $formatted);
+        }
+        return $formatted;
     }
 }
 
