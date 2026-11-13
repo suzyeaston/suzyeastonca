@@ -52,7 +52,6 @@ jobs:
               - 'assets/dialog/**'
               - 'assets/textures/**'
               - 'js/**'
-              - 'scripts/deploy-lousy-outages-ssh.py'
               - 'scripts/theme_deploy_manifest.py'
               - 'scripts/build_toaster_social_card.py'
               - 'scripts/build_orchestra_social_card.py'
@@ -62,6 +61,7 @@ jobs:
               - 'dist/lousy-outages.zip.sha256'
               - 'dist/release-manifest.json'
               - 'scripts/build-lousy-outages-release.sh'
+              - 'scripts/deploy-lousy-outages-ssh.py'
 
       - id: resolve
         run: |
