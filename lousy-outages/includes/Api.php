@@ -211,7 +211,15 @@ class Api {
                 'last_status' => $source->is_configured() ? 'ready' : 'disabled', 'last_error' => '', 'last_counts' => [], 'last_skipped_reasons' => [],
             ];
         }
-        return new WP_REST_Response(['sources'=>$sources,'last_collection'=>$last], 200);
+        $m365 = get_option('lo_microsoft365_signal_scan_result',[]);
+        $m365Graph=get_option('lo_microsoft365_graph_diagnostics_v1',[]);
+        return new WP_REST_Response([
+            'sources'=>$sources,
+            'last_collection'=>$last,
+            'microsoft365_public_scan'=>is_array($m365)?$m365:[],
+            'microsoft365_graph'=>is_array($m365Graph)?$m365Graph:[],
+            'microsoft365_next_scheduled_gmt'=>($next=wp_next_scheduled('lousy_outages_microsoft365_signal_scan'))?gmdate('c',(int)$next):null,
+        ], 200);
     }
 
     public static function verify_nonce(): bool {
@@ -496,6 +504,10 @@ class Api {
             'next_scheduled_daily_digest_gmt' => $next_daily_digest ? gmdate('c', (int) $next_daily_digest) : null,
             'wp_cron_disabled'                => defined('DISABLE_WP_CRON') && DISABLE_WP_CRON,
             'alternate_wp_cron'               => defined('ALTERNATE_WP_CRON') && ALTERNATE_WP_CRON,
+            'microsoft365_next_scan_gmt'     => ($nextM365=wp_next_scheduled('lousy_outages_microsoft365_signal_scan'))?gmdate('c',(int)$nextM365):null,
+            'microsoft365_last_scan_gmt'     => (string)((array)get_option('lo_microsoft365_signal_scan_result',[]))['at'] ?? '',
+            'microsoft365_scan_status'       => (string)((array)get_option('lo_microsoft365_signal_scan_result',[]))['status'] ?? '',
+            'microsoft365_graph_status'      => (string)((array)get_option('lo_microsoft365_graph_diagnostics_v1',[]))['status'] ?? '',
         ];
 
         return new WP_REST_Response($payload, 200);

@@ -37,5 +37,5 @@ check_lo($first>time(),'isolated scan schedules in the future');
 Microsoft365Signals::schedule();
 check_lo($GLOBALS['cron'][Microsoft365Signals::HOOK]===$first,'scan scheduling is idempotent');
 Microsoft365Signals::scan();
-check_lo($GLOBALS['options']['lo_microsoft365_signal_scan_result']['status']==='disabled','disabled public chatter makes no network calls');
+check_lo($GLOBALS['options']['lo_microsoft365_signal_scan_result']['status']==='public_chatter_disabled','disabled public chatter makes no network calls');
 echo "Microsoft 365 bounded source regression passed\n";

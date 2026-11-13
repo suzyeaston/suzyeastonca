@@ -28,6 +28,7 @@ jobs:
       - name: Run targeted and existing regressions
         run: |
           php lousy-outages/tests/microsoft365-signal-test.php
+          php lousy-outages/tests/microsoft365-graph-test.php
           php tests/LousyOutagesFeedTest.php
           php lousy-outages/tests/incident-episode-test.php
           php lousy-outages/tests/incident-freshness-test.php

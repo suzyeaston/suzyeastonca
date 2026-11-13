@@ -177,6 +177,20 @@ class ExternalSignals {
         $limit = max(1, min(500, $limit));
         return self::get_recent_signals(['windowMinutes' => $windowMinutes, 'window_minutes' => $windowMinutes, 'limit' => $limit]);
     }
+    /** Reserve room for provider-specific signals even when other sources flood the feed. */
+    public static function get_recent_for_provider(string $providerId, int $windowMinutes=120, int $limit=10): array {
+        global $wpdb;
+        $providerId=sanitize_key($providerId);
+        if ($providerId==='' || !self::table_exists()) return [];
+        $windowMinutes=max(5,min(1440,$windowMinutes));
+        $limit=max(1,min(20,$limit));
+        $start=gmdate('Y-m-d H:i:s',time()-$windowMinutes*60);
+        $now=gmdate('Y-m-d H:i:s');
+        return $wpdb->get_results($wpdb->prepare(
+            'SELECT * FROM '.self::table_name().' WHERE provider_id=%s AND observed_at >= %s AND (expires_at IS NULL OR expires_at >= %s) ORDER BY observed_at DESC LIMIT %d',
+            $providerId,$start,$now,$limit
+        ),ARRAY_A) ?: [];
+    }
     public static function get_recent_counts(int $windowMinutes=60): array { global $wpdb; $rows=$wpdb->get_results($wpdb->prepare('SELECT source, COUNT(*) as signal_count FROM '.self::table_name().' WHERE observed_at >= %s GROUP BY source', gmdate('Y-m-d H:i:s', time()-$windowMinutes*60)), ARRAY_A) ?: []; return $rows; }
     public static function clear_expired(): int { global $wpdb; $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE expires_at IS NOT NULL AND expires_at < %s', gmdate('Y-m-d H:i:s'))); return (int)$wpdb->rows_affected; }
     public static function clear_demo_signals(): int { global $wpdb; $wpdb->query($wpdb->prepare('DELETE FROM '.self::table_name().' WHERE source = %s', 'demo_external')); return (int)$wpdb->rows_affected; }

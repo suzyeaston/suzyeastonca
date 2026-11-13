@@ -26,46 +26,94 @@ final class Microsoft365Signals
         }
     }
 
+    /**
+     * A corroborated observation is not an official Microsoft incident.
+     * Require two different provider status sources, with explicit M365/Outlook/
+     * Exchange references in their own incident notices in the last 36 hours.
+     */
+    public static function related_provider_reports(array $events, int $now = 0): ?array
+    {
+        $now=$now?:time();
+        $byProvider=[];
+        foreach ($events as $event) {
+            if (!is_array($event)) continue;
+            $id=sanitize_key((string)($event['provider_id']??$event['provider']??''));
+            if ($id==='' || $id==='microsoft365') continue;
+            $text=(string)($event['title']??'').' '.(string)($event['description']??'');
+            if (!preg_match('/\\b(?:microsoft\\s*365|office\\s*365|exchange\\s*online|outlook)\\b/i',$text)) continue;
+            $date=$event['first_detected']??$event['first_seen']??$event['published']??0;
+            $ts=is_numeric($date)?(int)$date:(strtotime((string)$date)?:0);
+            if ($ts <= 0 || $ts < $now-36*HOUR_IN_SECONDS || $ts > $now+300) continue;
+            if (!isset($byProvider[$id]) || $ts>$byProvider[$id]['timestamp']) {
+                $byProvider[$id]=[
+                    'name'=>(string)($event['provider_label']??ucfirst($id)),
+                    'timestamp'=>$ts,
+                ];
+            }
+        }
+        if (count($byProvider)<2) return null;
+        ksort($byProvider);
+        $timestamps=array_column($byProvider,'timestamp');
+        return [
+            'providers'=>array_values(array_column($byProvider,'name')),
+            'provider_ids'=>array_keys($byProvider),
+            'timestamp'=>max($timestamps),
+            'first_detected'=>min($timestamps),
+        ];
+    }
+
     public static function scan(): void
     {
+        $official=class_exists(Microsoft365ServiceHealth::class)
+            ? Microsoft365ServiceHealth::refresh()
+            : ['status'=>'adapter_not_loaded'];
+        $at=gmdate('c');
+        $scheduled=wp_next_scheduled(self::HOOK);
+        $base=[
+            'at'=>$at,
+            'next_scheduled_at'=>$scheduled?gmdate('c',(int)$scheduled):null,
+            'official_graph'=>$official,
+        ];
         if (!class_exists(PublicChatterSource::class)) {
-            update_option('lo_microsoft365_signal_scan_result', ['status'=>'source_unavailable','at'=>gmdate('c')], false);
+            update_option('lo_microsoft365_signal_scan_result',$base+['status'=>'source_unavailable'],false);
             return;
         }
-        $source = new PublicChatterSource();
+        $source=new PublicChatterSource();
         if (!$source->is_configured()) {
-            update_option('lo_microsoft365_signal_scan_result', ['status'=>'disabled','at'=>gmdate('c')], false);
+            // Disabling public chatter must not disable an authorized official Graph feed.
+            update_option('lo_microsoft365_signal_scan_result',$base+['status'=>'public_chatter_disabled'],false);
             return;
         }
 
         try {
-            // One rotating query for each enabled lane; at most two public requests.
-            // Keep this job separate from the canonical official-provider sweep.
-            $signals = $source->collect([
+            $signals=$source->collect([
                 'microsoft365_only'=>true,
                 'collection_trigger'=>'microsoft365_cron',
                 'window_minutes'=>60,
             ]);
-            $stored = ['inserted'=>0,'failed'=>0,'skipped'=>0];
+            $stored=['inserted'=>0,'failed'=>0,'skipped'=>0];
             if ($signals) {
-                $stored = ExternalSignals::record_many($signals);
+                $stored=ExternalSignals::record_many($signals);
                 Feeds::refresh_status_feed_cache('microsoft365-public-signals');
             }
-            update_option('lo_microsoft365_signal_scan_result', [
+            $diag=get_option('lo_diag_public_chatter',[]);
+            $diag=is_array($diag)?$diag:[];
+            update_option('lo_microsoft365_signal_scan_result',$base+[
                 'status'=>'completed',
-                'at'=>gmdate('c'),
                 'signals'=>count($signals),
                 'stored'=>(int)($stored['inserted']??0),
                 'failed'=>(int)($stored['failed']??0),
-            ], false);
+                'queries_attempted'=>(int)($diag['queries_attempted']??0),
+                'mentions_seen_by_provider'=>(int)($diag['mentions_seen_by_provider']['microsoft365']??0),
+                'skipped_sources'=>(array)($diag['skipped_sources']??[]),
+                'direct_sources_enabled'=>!empty($diag['direct_sources_enabled']),
+            ],false);
         } catch (\Throwable $e) {
-            // Never let optional public chatter interrupt provider collection.
-            update_option('lo_microsoft365_signal_scan_result', [
+            update_option('lo_microsoft365_signal_scan_result',$base+[
                 'status'=>'failed',
-                'at'=>gmdate('c'),
                 'error'=>substr($e->getMessage(),0,180),
-            ], false);
-            error_log('[lousy_outages] Microsoft 365 public signal scan failed: '.$e->getMessage());
+            ],false);
+            error_log('[lousy_outages] Microsoft 365 public signal scan failed');
         }
     }
 }
