@@ -1,5 +1,15 @@
 # Lousy Outages
 
+## 0.5.10: Microsoft 365 public signals and RSS hardening
+
+- Adds a bounded, independent 15-minute Microsoft 365/Outlook/Exchange Online public-signal scan. Results are **unconfirmed**, not official Microsoft health.
+- Keeps Azure separate from Microsoft 365. Microsoft Graph tenant service health requires `ServiceHealth.Read.All` authorization, so no anonymous official Microsoft feed is fabricated.
+- Keeps active critical incidents within the 15-item RSS limit; deduplicates Zscaler trust-post URLs; treats malformed upstream XML as `unknown`.
+- Adds PR-based PHP lint, RSS/lifecycle regressions, packaging, and WordPress clean-install and upgrade smoke tests.
+- Debug option: `lo_microsoft365_signal_scan_result`. The scan respects the existing public-chatter master switch and runs separately from official provider polling.
+- Merging to `main` triggers the existing production deployment workflow. Only merge after PR checks pass and inspect the deployment run after merging.
+
+
 ## 0.5.3
 
 - Replaces the monolithic provider refresh with a bounded, option-checkpointed cycle and recoverable owner lease.
