@@ -24,11 +24,11 @@ Anyway. Here's what I was trying to do.
 
 ## a counterfeit memory of vancouver
 
-I've been building [Gastown Simulator](https://suzyeaston.ca/gastown-sim/) in Three.js. Waterfront Station, the rail yards, Water Street, the Steam Clock, harbour weather, buses, weird little people. A fictional trip into The Landing at 375 Water Street, where the Film Club actually meets.
+I started [Gastown Simulator](https://suzyeaston.ca/gastown-sim/) back in March. It grew out of an attempt to experience the Waterfront Station to Gastown corridor as one continuous place: the rail yards, Water Street, the Steam Clock, the harbour, its weather and architecture, the relationships between buildings and streets that I know from walking through them. It's a world I've been returning to and rebuilding for months. Film Club gave me a reason to go back into it with a camera.
 
-It's part city data, part videogame, part me being ridiculously particular about which side of the street something is on.
+It's part civic data, part videogame, part accumulated memory of a very particular part of Vancouver. The way the street turns matters. So does which side the station is on, what you can see across the tracks, where the harbour appears between buildings. Those details are how I recognize the place.
 
-Not a digital twin. More like a counterfeit memory with a minimap.
+Not a digital twin. More like a playable memory, with room for the city to become something else.
 
 There's a version of me in there with a checkered Vans backpack. She walks, runs, occasionally flies, and is probably having a more interesting time than whoever is debugging her.
 
