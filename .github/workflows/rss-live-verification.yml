@@ -60,13 +60,13 @@ jobs:
               date=item.findtext('pubDate','')
               categories=[c.text or '' for c in item.findall('category')]
               print('ITEM_%02d:'%index,repr(headline[:170]),'|',date,'|',','.join(categories))
-          pattern=re.compile(r'\\b(?:microsoft\\s*365|m365|exchange\\s*online|outlook|office\\s*365|EX1550543|MO1550821)\\b',re.I)
+          pattern=re.compile('microsoft 365|exchange online|outlook|office 365|m365|EX1550543|MO1550821',re.I)
           microsoft=[]
           for item in items:
               searchable=' '.join(item.findtext(k,'') for k in ('title','description','link'))
               if pattern.search(searchable):
                   microsoft.append(item)
-          print('MICROSOFT_MATCH_COUNT:',len(microsoft))
+          print('MICROSOFT_RELATED_MATCH_COUNT:',len(microsoft))
           for item in microsoft:
               print('MICROSOFT_TITLE:',repr(item.findtext('title','')))
               print('MICROSOFT_DATE:',item.findtext('pubDate',''))
