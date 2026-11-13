@@ -52,6 +52,8 @@ jobs:
           python -m py_compile scripts/publish_meanwhile.py scripts/build_toaster_part2_media.py
           php -l scripts/wp_publish_meanwhile.php
           php -l scripts/wp_verify_meanwhile_order.php
+      - name: Test WordPress rate-limit cooldown logic
+        run: python -m unittest discover -s tests -p 'test_publish_meanwhile_rate_limit.py'
       - name: Reproduce Part II performance and source-code images
         run: python scripts/build_toaster_part2_media.py
       - name: Validate post and all image references
@@ -78,21 +80,32 @@ jobs:
           python-version: '3.12'
       - name: Install publishing requirements
         run: pip install --disable-pip-version-check "Markdown>=3.7,<4" "PyYAML>=6,<7" "paramiko>=3.4,<5" "Pillow>=10,<12" "Pygments>=2.18,<3"
-      - name: Select the changed article for a one-post deploy
+      - name: Select only the changed article for a push
         if: github.event_name == 'push'
         env:
           BEFORE_SHA: ${{ github.event.before }}
         shell: bash
         run: |
-          if [ -z "$POST_SLUG" ] && git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
+          # A media-only commit must not reimport every published article.
+          # Code-only or ambiguous multi-post pushes validate but do not publish.
+          slug=""
+          if git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
             mapfile -t changed_posts < <(git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA" -- 'content/meanwhile/*.md' | grep -v '/README.md$' || true)
             if [ "${#changed_posts[@]}" -eq 1 ]; then
               slug="$(sed -n 's/^slug: *//p' "${changed_posts[0]}" | head -n 1)"
-              if [[ "$slug" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
-                echo "POST_SLUG=$slug" >> "$GITHUB_ENV"
-                echo "Publishing just updated article: $slug"
+            elif [ "${#changed_posts[@]}" -eq 0 ]; then
+              mapfile -t changed_archives < <(git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA" -- 'content/meanwhile/media/*.zip' || true)
+              if [ "${#changed_archives[@]}" -eq 1 ]; then
+                slug="$(basename "${changed_archives[0]}" .zip)"
               fi
             fi
+          fi
+          if [[ "$slug" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "POST_SLUG=$slug" >> "$GITHUB_ENV"
+            echo "Publishing only changed article: $slug"
+          else
+            echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
+            echo "No unambiguous changed article; skipping remote publication. Dispatch manually with a slug if needed."
           fi
       - name: Reproduce Part II performance and source-code images
         run: python scripts/build_toaster_part2_media.py
@@ -100,5 +113,6 @@ jobs:
         run: python scripts/publish_meanwhile.py --validate-only ${POST_SLUG:+--slug "$POST_SLUG"}
         shell: bash
       - name: Publish opted-in posts and photos
+        if: env.SKIP_PUBLISH != 'true'
         run: python scripts/publish_meanwhile.py ${POST_SLUG:+--slug "$POST_SLUG"}
         shell: bash

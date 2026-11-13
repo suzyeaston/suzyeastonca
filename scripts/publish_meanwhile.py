@@ -14,6 +14,7 @@ import os
 import re
 import shlex
 import sys
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -111,14 +112,52 @@ def prepare(path: Path) -> dict | None:
     }
 
 
-def run_command(client: paramiko.SSHClient, command: str) -> str:
+def run_command(
+    client: paramiko.SSHClient, command: str, stderr_sink: list[str] | None = None
+) -> str:
     _, stdout, stderr = client.exec_command(command, timeout=180)
     code = stdout.channel.recv_exit_status()
     output = stdout.read().decode("utf-8", errors="replace")
     error = stderr.read().decode("utf-8", errors="replace")
+    if stderr_sink is not None:
+        stderr_sink.append(error)
     if code:
         raise RuntimeError(f"Remote publisher failed (exit {code}): {error[-1200:]} {output[-1200:]}")
     return output
+
+
+# Rate-limit responses can be printed by WordPress during bootstrap and
+# terminate PHP with exit code 0, before our importer ever emits JSON.
+# Respect the server's limit with bounded, increasingly spaced retries.
+RATE_LIMIT_RETRY_DELAYS = (60, 180, 300)
+
+
+def run_publisher_with_backoff(client: paramiko.SSHClient, command: str, slug: str) -> str:
+    for attempt in range(len(RATE_LIMIT_RETRY_DELAYS) + 1):
+        diagnostics: list[str] = []
+        output = run_command(client, command, stderr_sink=diagnostics)
+        if not re.search(r"\brate limit exceeded\b", output, re.IGNORECASE):
+            return output
+        stage = (
+            "after WordPress bootstrap"
+            if diagnostics and "Meanwhile WordPress loaded" in diagnostics[0]
+            else "during WordPress bootstrap"
+        )
+        print(f"WordPress emitted rate-limit text {stage}.", flush=True)
+        if attempt >= len(RATE_LIMIT_RETRY_DELAYS):
+            raise RuntimeError(
+                f"WordPress rate limit persisted for {slug} after "
+                f"{attempt + 1} attempts; stop and investigate hosting/plugin limits. "
+                "No further automatic retries."
+            )
+        delay = RATE_LIMIT_RETRY_DELAYS[attempt]
+        print(
+            f"WordPress rate limited {slug} (attempt {attempt + 1}); "
+            f"respecting a {delay}s cooldown before retry.",
+            flush=True,
+        )
+        time.sleep(delay)
+    raise AssertionError("Unreachable retry state")
 
 
 def select_php(client: paramiko.SSHClient) -> str:
@@ -217,8 +256,10 @@ def publish(prepared: list[dict]) -> None:
                     json.dump(manifest, tmp, ensure_ascii=False)
                     tmp.flush()
                     sftp.put(tmp.name, stage + "/post.json")
-                output = run_command(
-                    client, shlex.quote(php_bin) + " " + shlex.quote(stage + "/publisher.php") + " " + shlex.quote(stage + "/post.json")
+                output = run_publisher_with_backoff(
+                    client,
+                    shlex.quote(php_bin) + " " + shlex.quote(stage + "/publisher.php") + " " + shlex.quote(stage + "/post.json"),
+                    post["slug"],
                 )
                 try:
                     result = json.loads(output.strip())
