@@ -92,6 +92,6 @@ But it's a film I made.
 
 Except the software didn't all work, either.
 
-And somehow the art got out. ♡
+And the art got out anyway. ♡
 
 *The images here are development screenshots, not verified frames from the submitted film. [Explore Gastown Simulator](https://suzyeaston.ca/gastown-sim/) or inspect [SUZY//AI on GitHub](https://github.com/suzyeaston/suzy-ai).*
