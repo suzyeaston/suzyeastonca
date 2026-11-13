@@ -1,0 +1,56 @@
+name: Lousy Outages Live M365 Verification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/lousy-outages-live-m365-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify live RSS, public summary, and cron diagnostics
+        env:
+          RUN_ID: \${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request,urllib.parse,xml.etree.ElementTree as ET
+          base="https://www.suzyeaston.ca/"
+          common={"User-Agent":"LousyOutages-ReadOnlyQA/0.5.11","Accept":"application/rss+xml,application/json,*/*","Cache-Control":"no-cache"}
+          def fetch(path):
+              url=base+path
+              separator="&" if "?" in url else "?"
+              request=urllib.request.Request(url+separator+"qa_run="+os.environ["RUN_ID"],headers=common)
+              with urllib.request.urlopen(request,timeout=25) as response:
+                  return response.status,response.headers.get("content-type",""),response.read(1000000)
+          status,ctype,body=fetch("?feed=lousy_outages_status")
+          root=ET.fromstring(body);channel=root.find("channel")
+          if channel is None: raise RuntimeError("Missing RSS channel")
+          items=channel.findall("item")
+          print("RSS_HTTP",status,"TYPE",ctype,"ENTRIES",len(items),"LAST_BUILD",channel.findtext("lastBuildDate",""))
+          for item in items:
+              title=item.findtext("title","")
+              cats=[x.text or "" for x in item.findall("category")]
+              print("RSS_ITEM",repr(title[:170]),"categories",",".join(cats),"guid",item.findtext("guid","")[:100])
+          microsoft=[i for i in items if "microsoft365" in [x.text for x in i.findall("category")]]
+          print("M365_LABELED_ITEMS",len(microsoft))
+          for item in microsoft:
+              print("M365_ITEM",repr(item.findtext("title","")),"LINK",item.findtext("link",""))
+          for endpoint in ["wp-json/lousy-outages/v1/cron-status","wp-json/lousy-outages/v1/summary"]:
+              try:
+                  code,ctype,data=fetch(endpoint)
+                  obj=json.loads(data.decode("utf8"))
+                  print("API",endpoint,"HTTP",code,"TYPE",ctype)
+                  if "cron-status" in endpoint:
+                      print("CRON",json.dumps({k:obj.get(k) for k in ("wp_cron_disabled","next_scheduled_refresh_gmt","microsoft365_next_scan_gmt","microsoft365_last_scan_gmt","microsoft365_scan_status","microsoft365_graph_status")}))
+                  else:
+                      print("SUMMARY_VERSION",obj.get("plugin_version"))
+                      tiles=obj.get("providers",[])
+                      ms=[{"provider_id":t.get("provider_id",t.get("id")),"lane":t.get("lane"),"summary":t.get("summary"),"tile_kind":t.get("tile_kind")} for t in tiles if t.get("provider_id",t.get("id"))=="microsoft365"]
+                      print("M365_TILES",json.dumps(ms))
+              except Exception as exc:
+                  print("API_CHECK_ERROR",endpoint,type(exc).__name__,str(exc)[:180])
+          PY
