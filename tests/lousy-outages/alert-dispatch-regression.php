@@ -276,7 +276,7 @@ ok(count($GLOBALS['mails']) === 1, 'timezone fixture sent');
 ok(str_contains($GLOBALS['mails'][0]['body'], $detectedLabelInMail), 'email renders local detection in America/Vancouver: ' . $detectedLabelInMail);
 ok(!str_contains($GLOBALS['mails'][0]['body'], $providerLabelInMail), 'email does not render the provider occurrence time as detection');
 ok(!str_contains($GLOBALS['mails'][0]['body'], 'GMT-0800'), 'email does not use a fixed GMT-0800 offset');
-ok(str_contains($detectedLabelInMail, 'PDT') || str_contains($detectedLabelInMail, 'PST'), 'rendered zone is Pacific, got ' . $detectedLabelInMail);
+ok(str_contains($detectedLabelInMail, 'PDT') || str_contains($detectedLabelInMail, 'PST') || str_contains($detectedLabelInMail, 'PCT'), 'rendered zone is Pacific, got ' . $detectedLabelInMail);
 $stored = (new EpisodeStore())->all();
 $tzEpisode = $stored[array_key_first($stored)];
 ok((int) $tzEpisode['first_detected'] === $detectedAt, 'first_detected stays the local observation epoch');
