@@ -35,7 +35,9 @@ jobs:
           client.connect(hostname=host,port=port,username=user,password=password,timeout=25)
           prefix="cd ~/public_html && "
           cases={
-            "php_bootstrap": """php -d display_errors=1 -d log_errors=1 -r 'register_shutdown_function(function(){ $e=error_get_last(); if($e && in_array($e["type"],[E_ERROR,E_PARSE,E_CORE_ERROR,E_COMPILE_ERROR],true))echo "RUNTIME_FATAL: ".substr($e["message"],0,350)."\\n"; }); require "wp-load.php"; echo "BOOTSTRAP_OK_".(defined("LOUSY_OUTAGES_VERSION")?LOUSY_OUTAGES_VERSION:"NO_VERSION")."\\n";' 2>&1""",
+            "cli_php_version": "php -v | head -n 1",
+            "php_candidates": "for p in /opt/cpanel/ea-php*/root/usr/bin/php /usr/local/bin/php /usr/bin/php; do if test -x \"$p\"; then \"$p\" -v | head -n1; fi; done",
+            "php_bootstrap": """php -d display_errors=1 -d log_errors=1 -r 'register_shutdown_function(function(){ $e=error_get_last(); if($e && in_array($e["type"],[E_ERROR,E_PARSE,E_CORE_ERROR,E_COMPILE_ERROR],true))echo "RUNTIME_FATAL: ".substr($e["message"],0,260)." FILE:".$e["file"]." LINE:".$e["line"]."\\n"; }); require "wp-load.php"; echo "BOOTSTRAP_OK_".(defined("LOUSY_OUTAGES_VERSION")?LOUSY_OUTAGES_VERSION:"NO_VERSION")."\\n";' 2>&1""",
             "double_init": """php -d display_errors=1 -d log_errors=1 -r 'register_shutdown_function(function(){ $e=error_get_last(); if($e && in_array($e["type"],[E_ERROR,E_PARSE,E_CORE_ERROR,E_COMPILE_ERROR],true))echo "RUNTIME_FATAL: ".substr($e["message"],0,350)."\\n"; }); define("DOING_CRON",true); require "wp-load.php"; do_action("init"); echo "DOUBLE_INIT_OK\\n";' 2>&1""",
             "recent_fatal_log": """if test -f wp-content/debug.log; then grep -E 'PHP Fatal|Uncaught|Microsoft365Signals|lousy-outages/includes' wp-content/debug.log | tail -n 12; else echo DEBUG_LOG_UNAVAILABLE; fi""",
           }
