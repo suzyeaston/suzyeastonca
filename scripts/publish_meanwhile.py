@@ -112,11 +112,15 @@ def prepare(path: Path) -> dict | None:
     }
 
 
-def run_command(client: paramiko.SSHClient, command: str) -> str:
+def run_command(
+    client: paramiko.SSHClient, command: str, stderr_sink: list[str] | None = None
+) -> str:
     _, stdout, stderr = client.exec_command(command, timeout=180)
     code = stdout.channel.recv_exit_status()
     output = stdout.read().decode("utf-8", errors="replace")
     error = stderr.read().decode("utf-8", errors="replace")
+    if stderr_sink is not None:
+        stderr_sink.append(error)
     if code:
         raise RuntimeError(f"Remote publisher failed (exit {code}): {error[-1200:]} {output[-1200:]}")
     return output
@@ -130,9 +134,16 @@ RATE_LIMIT_RETRY_DELAYS = (60, 180, 300)
 
 def run_publisher_with_backoff(client: paramiko.SSHClient, command: str, slug: str) -> str:
     for attempt in range(len(RATE_LIMIT_RETRY_DELAYS) + 1):
-        output = run_command(client, command)
+        diagnostics: list[str] = []
+        output = run_command(client, command, stderr_sink=diagnostics)
         if not re.search(r"\brate limit exceeded\b", output, re.IGNORECASE):
             return output
+        stage = (
+            "after WordPress bootstrap"
+            if diagnostics and "Meanwhile WordPress loaded" in diagnostics[0]
+            else "during WordPress bootstrap"
+        )
+        print(f"WordPress emitted rate-limit text {stage}.", flush=True)
         if attempt >= len(RATE_LIMIT_RETRY_DELAYS):
             raise RuntimeError(
                 f"WordPress rate limit persisted for {slug} after "
