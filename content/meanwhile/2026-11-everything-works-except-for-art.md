@@ -3,6 +3,7 @@ title: "Make Art Not War: The November 2026 BC + AI Film Club Prompt Challenge"
 slug: make-art-not-war-november-2026-bc-ai-film-club-prompt-challenge
 series: "Meanwhile / November 2026 / Film Club Transmission"
 status: publish
+published_at: "2026-11-13 12:00:00"
 category: "film + moving image"
 excerpt: "The November 2026 BC + AI Film Club prompt challenge, an evolving Gastown Simulator, a generative instrument, and a film made inside a playable Vancouver."
 featured_image: gastown-night-simulator.jpg
