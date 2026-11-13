@@ -9,7 +9,7 @@ $gastown_url = home_url( '/gastown-sim/' );
   <div class="home-gastown-spotlight__copy">
     <p class="home-gastown-spotlight__eyebrow pixel-font">GASTOWN / FIELD SIMULATION <span aria-hidden="true">✦</span></p>
     <h2 id="home-gastown-spotlight-title">GASTOWN<br><span>SIMULATOR.</span></h2>
-    <p class="home-gastown-spotlight__lead">The best view is through the gap.</p>
+    <p class="home-gastown-spotlight__lead">Vancouver’s harbour, from Station East.</p>
     <p class="home-gastown-spotlight__detail">Stand beside Waterfront Station at 555 W Cordova. The Landing is to the east, Station East’s open parking lot frames the harbour, and beyond it are Canada Place, a cruise ship, and the North Shore. Then step into the playable streets and walk to the Steam Clock.</p>
     <div class="home-gastown-spotlight__tags" aria-label="Simulator features">
       <span>City GIS geometry</span>
