@@ -32,7 +32,11 @@ My first little film for one of the prompt challenges was [*Rain City Roll Reser
 
 Then came the ASMR film challenge. I started thinking about sound design, procedural visuals, and how much control I actually wanted over the result. Rather than relying on a sequence of generated clips, I began building my own web platform, ASMR Lab, to experiment with those relationships. The challenge turned into an accidental hackathon.
 
-In March I talked with Mayumi about what I'd been making. In September I submitted *Neon Gods*, a very different little horror film for the prompt challenge of the same name.
+In March I talked with Mayumi about what I'd been making.
+
+For June's **Retro** prompt challenge, there was also [*I AM NOMAD*](https://skywhaleairways.com/), the film Kris Krüg and I are credited on, set inside *Skywhale Airways*, a psychedelic airport for time travellers. My contribution was wonderfully small: I opened [a pull request](https://github.com/WalksWithASwagger/skywhale-airways/pull/78) to change a single pixel in the airport artwork by one unit of blue. Kris later changed the surrounding WebGL sky by that same one unit. One bag, one body, one pixel. I love how a detail almost too small to see can still belong to the whole piece.
+
+In September I submitted *Neon Gods*, a very different little horror film for the prompt challenge of the same name.
 
 <!-- PHOTO: neon-gods.jpg | Still from Neon Gods showing animated mythological figures composited into a lived-in room. | *Neon Gods*, my September Film Club experiment. -->
 
