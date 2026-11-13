@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require __DIR__.'/bootstrap.php';
 if(!defined('DAY_IN_SECONDS'))define('DAY_IN_SECONDS',86400);
+if(!defined('HOUR_IN_SECONDS'))define('HOUR_IN_SECONDS',3600);
 if(!defined('YEAR_IN_SECONDS'))define('YEAR_IN_SECONDS',31536000);
 $GLOBALS['lo_test_options']=[];
 if(!function_exists('get_option')){function get_option($key,$default=false){return $GLOBALS['lo_test_options'][$key]??$default;}}
