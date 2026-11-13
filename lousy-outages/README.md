@@ -1,5 +1,24 @@
 # Lousy Outages
 
+## 0.5.11: Microsoft 365 corroboration and optional official Graph health
+
+- RSS and dashboard surface **UNCONFIRMED** Microsoft 365 integration signals when two or more independent providers published Microsoft 365/Outlook/Exchange connector incidents in the past 36 hours. This does **not** prove an outage at Microsoft. The signal retains a slot in the 15-item RSS limit.
+- If configured, the real Microsoft Graph \`/v1.0/admin/serviceAnnouncement/issues\` endpoint supplies tenant-specific, Microsoft-issued incident IDs, including Exchange Online. Only non-resolved issues are published, with a stable \`microsoft365:graph:EX…\` GUID and **official** provenance. It is unavailable without authorization; there is no fake anonymous official RSS.
+- The same confirmed incidents can appear in the dashboard's outage lane. Expired or failed Graph checks never imply Microsoft is healthy.
+- The independent 15-minute Microsoft scan continues even when public chatter is disabled (official Graph polling is independent), and records bounded diagnostics in \`lo_microsoft365_signal_scan_result\` and \`lo_microsoft365_graph_diagnostics_v1\`.
+- The public \`/wp-json/lousy-outages/v1/cron-status\` endpoint exposes only safe Microsoft scan status and next schedule. The administrator-only \`/wp-json/lousy-outages/v1/intel-health\` includes richer diagnostic counters.
+
+**Optional official integration:** Register an Entra application with application permission \`ServiceHealth.Read.All\`, grant tenant admin consent, then set the following constants in \`wp-config.php\` or environment variables on the WordPress host (never commit secrets):
+
+\`\`\`php
+define('LOUSY_OUTAGES_M365_TENANT_ID', 'YOUR-TENANT-GUID');
+define('LOUSY_OUTAGES_M365_CLIENT_ID', 'YOUR-APPLICATION-GUID');
+define('LOUSY_OUTAGES_M365_CLIENT_SECRET', getenv('LOUSY_OUTAGES_M365_CLIENT_SECRET'));
+\`\`\`
+
+The client secret must be a real, non-empty secure host value. Without these settings, the plugin retains the public-signal/cross-vendor lane; it does not claim official Microsoft verification. Source: https://learn.microsoft.com/en-us/graph/api/serviceannouncement-list-issues
+
+
 ## 0.5.10: Microsoft 365 public signals and RSS hardening
 
 - Adds a bounded, independent 15-minute Microsoft 365/Outlook/Exchange Online public-signal scan. Results are **unconfirmed**, not official Microsoft health.
