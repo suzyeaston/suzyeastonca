@@ -37,7 +37,7 @@ volumes:
   wp:
 YML
 docker compose -f "$work/compose.yml" up -d --quiet-pull
-wp() { docker compose -f "$work/compose.yml" exec -T wp wp --allow-root "$@"; }
+wp() { docker compose -f "$work/compose.yml" exec -T -e WP_CLI_CACHE_DIR=/tmp/wp-cli-cache wp php -d memory_limit=512M /usr/local/bin/wp --allow-root "$@"; }
 wp core download --force
 wp config create --dbname=wordpress --dbuser=wordpress --dbpass=wordpress --dbhost=db --skip-check
 wp core install --url=http://example.test --title=LO --admin_user=admin --admin_password=password --admin_email=admin@example.test
