@@ -52,6 +52,8 @@ jobs:
           python -m py_compile scripts/publish_meanwhile.py scripts/build_toaster_part2_media.py
           php -l scripts/wp_publish_meanwhile.php
           php -l scripts/wp_verify_meanwhile_order.php
+      - name: Test WordPress rate-limit cooldown logic
+        run: python -m unittest discover -s tests -p 'test_publish_meanwhile_rate_limit.py'
       - name: Reproduce Part II performance and source-code images
         run: python scripts/build_toaster_part2_media.py
       - name: Validate post and all image references
