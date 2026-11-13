@@ -108,7 +108,7 @@ final class Microsoft365Signals
                 'skipped_sources'=>(array)($diag['skipped_sources']??[]),
                 'direct_sources_enabled'=>!empty($diag['direct_sources_enabled']),
             ],false);
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             update_option('lo_microsoft365_signal_scan_result',$base+[
                 'status'=>'failed',
                 'error'=>substr($e->getMessage(),0,180),
