@@ -1,0 +1,49 @@
+name: Lousy Outages Production Runtime Diagnostic
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/lousy-outages-runtime-diagnostics.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install paramiko
+      - name: Read-only PHP bootstrap and cron-warmup checks
+        env:
+          LOUSY_SSH_HOST: ${{ secrets.LOUSY_SSH_HOST }}
+          LOUSY_SSH_PORT: ${{ secrets.LOUSY_SSH_PORT }}
+          LOUSY_SSH_USER: ${{ secrets.LOUSY_SSH_USER }}
+          LOUSY_SSH_PASSWORD: ${{ secrets.LOUSY_SSH_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import os
+          import paramiko
+          host=os.environ["LOUSY_SSH_HOST"]
+          port=int(os.environ.get("LOUSY_SSH_PORT") or "22")
+          user=os.environ["LOUSY_SSH_USER"]
+          password=os.environ["LOUSY_SSH_PASSWORD"]
+          client=paramiko.SSHClient()
+          client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+          client.connect(hostname=host,port=port,username=user,password=password,timeout=25)
+          prefix="cd ~/public_html && "
+          cases={
+            "php_bootstrap": """php -d display_errors=1 -d log_errors=1 -r 'register_shutdown_function(function(){ $e=error_get_last(); if($e && in_array($e["type"],[E_ERROR,E_PARSE,E_CORE_ERROR,E_COMPILE_ERROR],true))echo "RUNTIME_FATAL: ".substr($e["message"],0,350)."\\n"; }); require "wp-load.php"; echo "BOOTSTRAP_OK_".(defined("LOUSY_OUTAGES_VERSION")?LOUSY_OUTAGES_VERSION:"NO_VERSION")."\\n";' 2>&1""",
+            "double_init": """php -d display_errors=1 -d log_errors=1 -r 'register_shutdown_function(function(){ $e=error_get_last(); if($e && in_array($e["type"],[E_ERROR,E_PARSE,E_CORE_ERROR,E_COMPILE_ERROR],true))echo "RUNTIME_FATAL: ".substr($e["message"],0,350)."\\n"; }); define("DOING_CRON",true); require "wp-load.php"; do_action("init"); echo "DOUBLE_INIT_OK\\n";' 2>&1""",
+            "recent_fatal_log": """if test -f wp-content/debug.log; then grep -E 'PHP Fatal|Uncaught|Microsoft365Signals|lousy-outages/includes' wp-content/debug.log | tail -n 12; else echo DEBUG_LOG_UNAVAILABLE; fi""",
+          }
+          for label,command in cases.items():
+            _,stdout,stderr=client.exec_command(prefix+command,timeout=90)
+            code=stdout.channel.recv_exit_status()
+            print(f"CASE {label}: exit={code}")
+            for line in (stdout.read().decode("utf-8","replace")+"\\n"+stderr.read().decode("utf-8","replace")).splitlines()[-15:]:
+              print(line[:500])
+          client.close()
+          PY
