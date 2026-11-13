@@ -1,0 +1,74 @@
+name: Public RSS live verification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/rss-live-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check-rss:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect live RSS and Microsoft 365 entries (read-only)
+        env:
+          CHECK_RUN: ${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import email.utils
+          import urllib.parse
+          import urllib.request
+          import xml.etree.ElementTree as ET
+          import os
+          import re
+          base='https://www.suzyeaston.ca/'
+          params={'feed':'lousy_outages_status','qa_verify':os.environ['CHECK_RUN']}
+          url=base+'?'+urllib.parse.urlencode(params)
+          request=urllib.request.Request(url,headers={'User-Agent':'LousyOutages-RSS-QA/0.5.10','Cache-Control':'no-cache','Accept':'application/rss+xml, application/xml, text/xml'})
+          try:
+              with urllib.request.urlopen(request,timeout=25) as response:
+                  status=response.status
+                  ctype=response.headers.get('content-type','')
+                  final_url=response.url
+                  data=response.read(750000)
+          except Exception as exc:
+              print('FEED_FETCH_ERROR:',type(exc).__name__,str(exc)[:250])
+              raise
+          print('HTTP_STATUS:',status)
+          print('CONTENT_TYPE:',ctype)
+          print('FINAL_URL:',final_url)
+          print('RESPONSE_BYTES:',len(data))
+          try:
+              root=ET.fromstring(data)
+          except ET.ParseError as exc:
+              print('XML_PARSE_ERROR:',str(exc))
+              print('RESPONSE_START:',data[:300].decode('utf-8','replace'))
+              raise
+          channel=root.find('channel')
+          if channel is None:
+              raise ValueError('No RSS channel element found')
+          title=channel.findtext('title','')
+          built=channel.findtext('lastBuildDate','')
+          items=channel.findall('item')
+          print('FEED_TITLE:',title)
+          print('LAST_BUILD_DATE:',built)
+          print('TOTAL_ITEMS:',len(items))
+          for index,item in enumerate(items,1):
+              headline=item.findtext('title','')
+              date=item.findtext('pubDate','')
+              categories=[c.text or '' for c in item.findall('category')]
+              print('ITEM_%02d:'%index,repr(headline[:170]),'|',date,'|',','.join(categories))
+          pattern=re.compile(r'\\b(?:microsoft\\s*365|m365|exchange\\s*online|outlook|office\\s*365|EX1550543|MO1550821)\\b',re.I)
+          microsoft=[]
+          for item in items:
+              searchable=' '.join(item.findtext(k,'') for k in ('title','description','link'))
+              if pattern.search(searchable):
+                  microsoft.append(item)
+          print('MICROSOFT_MATCH_COUNT:',len(microsoft))
+          for item in microsoft:
+              print('MICROSOFT_TITLE:',repr(item.findtext('title','')))
+              print('MICROSOFT_DATE:',item.findtext('pubDate',''))
+              print('MICROSOFT_LINK:',item.findtext('link',''))
+          PY
