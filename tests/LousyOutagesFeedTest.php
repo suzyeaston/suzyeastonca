@@ -11,6 +11,7 @@ if(!function_exists('wp_strip_all_tags')){function wp_strip_all_tags($value){ret
 
 require_once __DIR__.'/../lousy-outages/includes/Storage/IncidentStore.php';
 require_once __DIR__.'/../lousy-outages/includes/Feeds.php';
+require_once __DIR__.'/../lousy-outages/includes/Microsoft365Signals.php';
 use SuzyEaston\LousyOutages\Feeds;
 
 function assert_true(bool $condition,string $message):void{if(!$condition){fwrite(STDERR,"FAIL: $message\n");exit(1);}}
@@ -69,4 +70,27 @@ $newMinors=[];for($n=0;$n<20;$n++)$newMinors[]=array_replace($incident,['guid'=>
 [$prioritized]=build(['incidents'=>array_merge($newMinors,[$critical])]);
 assert_true(count($prioritized)===15,'RSS limit changed while pinning active critical');
 assert_true(count(array_filter($prioritized,static fn($item)=>str_contains((string)$item['guid'],'older-active-critical')))===1,'active critical was displaced by minor notices');
-echo "OK: 19 behavioural RSS assertions\n";
+// Multiple distinct first-party vendor reports are an unconfirmed dependency
+// signal, never a Microsoft-first-party incident or root-cause confirmation.
+$clock=strtotime('2026-01-10T12:00:00Z');
+$vendorReports=[
+ ['provider_id'=>'openai','provider_label'=>'OpenAI','episode_guid'=>'openai-m365','title'=>'Elevated errors affecting Microsoft 365 connector','description'=>'Microsoft 365 connector errors','severity'=>'minor','active'=>true,'first_detected'=>$clock-1800],
+ ['provider_id'=>'anthropic','provider_label'=>'Claude / Anthropic','episode_guid'=>'anthropic-m365','title'=>'Elevated errors affecting Microsoft 365 connector','description'=>'Connector trouble','severity'=>'minor','active'=>true,'first_detected'=>$clock-1200],
+];
+$related=\SuzyEaston\LousyOutages\Microsoft365Signals::related_provider_reports($vendorReports,$clock);
+assert_true($related!==null&&count($related['provider_ids'])===2,'two independent M365 integration reports correlate');
+assert_true(\SuzyEaston\LousyOutages\Microsoft365Signals::related_provider_reports([$vendorReports[0]],$clock)===null,'one vendor is not enough to infer cross-vendor signal');
+$unrelated=['provider_id'=>'zoom','title'=>'Microsoft integrations issue','first_detected'=>$clock-100];
+assert_true(\SuzyEaston\LousyOutages\Microsoft365Signals::related_provider_reports([$vendorReports[0],$unrelated],$clock)===null,'ambiguous Microsoft integrations phrasing is not M365 evidence');
+[$corroborated]=build(['incidents'=>array_merge($newMinors,$vendorReports),'microsoft365_related_reports'=>$related]);
+$dependency=item_with($corroborated,'cross_provider_signal');
+assert_true(count($corroborated)===15 && $dependency!==null,'M365 multi-vendor alert retained within 15-item feed');
+assert_true(str_contains($dependency['title'],'[UNCONFIRMED]') && !in_array('official_incident',$dependency['categories'],true),'vendor signal never claims Microsoft confirmation');
+$ex=['id'=>'EX1550543','title'=>'Some users cannot connect to Exchange Online','service'=>'Exchange Online','status'=>'ServiceDegradation','severity'=>'minor','started_at'=>'2026-01-08T08:00:00Z','impact_description'=>'Connectivity affected'];
+[$officialGraph]=build(['incidents'=>$newMinors,'microsoft365_official_issues'=>[$ex],'microsoft365_related_reports'=>$related]);
+$officialRows=array_values(array_filter($officialGraph,static fn($item)=>in_array('microsoft_graph',$item['categories'],true)));
+assert_true(count($officialGraph)===15 && count($officialRows)===1,'tenant Graph issue kept in crowded RSS');
+assert_true($officialRows[0]['guid']==='microsoft365:graph:EX1550543','Graph issue GUID is stable and authoritative');
+assert_true(item_with($officialGraph,'cross_provider_signal')===null,'official Graph incident prevents redundant unconfirmed correlation');
+
+echo "OK: 27 behavioural RSS assertions\n";
