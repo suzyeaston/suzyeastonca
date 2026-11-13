@@ -1252,6 +1252,39 @@ body:is(.blog, .single-post, .category, .tag, .date, .author) .main-header .head
   border-radius: 12px;
 }
 
+/* Imported Meanwhile photos: captions should read as notes, not body text.
+   Scope this to the WordPress importer class so standalone editorial media
+   elsewhere in the site keeps its existing presentation. */
+#main-content.se-signal-log .se-signal-log__article-body figure.se-meanwhile-photo {
+  display: block;
+  margin: clamp(1.8rem, 3vw, 2.65rem) 0 clamp(2.25rem, 4vw, 3rem);
+  padding: 0;
+}
+
+#main-content.se-signal-log .se-signal-log__article-body figure.se-meanwhile-photo > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+#main-content.se-signal-log .se-signal-log__article-body figure.se-meanwhile-photo > figcaption {
+  display: block;
+  max-width: 68ch;
+  margin: 0.7rem 0 0;
+  padding: 0.1rem 0.3rem 0.1rem 0.85rem;
+  border-left: 2px solid rgba(222, 184, 232, 0.48);
+  background: transparent;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: clamp(0.78rem, 1vw, 0.87rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  text-align: left;
+  color: #bdb1ce;
+}
+
 #main-content.se-signal-log .se-signal-log__article-foot {
   margin-top: 3rem;
   padding-top: 1.3rem;
