@@ -32,9 +32,13 @@ My first little film for one of the prompt challenges was [*Rain City Roll Reser
 
 Then came the ASMR film challenge. I started thinking about sound design, procedural visuals, and how much control I actually wanted over the result. Rather than relying on a sequence of generated clips, I began building my own web platform, ASMR Lab, to experiment with those relationships. The challenge turned into an accidental hackathon.
 
-In March I talked with Mayumi about what I'd been making. In September I submitted *Neon Gods*, a very different little horror film. By November I was back with another experiment, this time with a world I could physically navigate on my computer.
+In March I talked with Mayumi about what I'd been making. In September I submitted *Neon Gods*, a very different little horror film for the prompt challenge of the same name.
 
-<!-- PHOTO: neon-gods.jpg | Still from Neon Gods showing animated mythological figures composited into a lived-in room. | *Neon Gods*, an earlier Film Club experiment from September. -->
+<!-- PHOTO: neon-gods.jpg | Still from Neon Gods showing animated mythological figures composited into a lived-in room. | *Neon Gods*, my September Film Club experiment. -->
+
+That September prompt also gave us [*The Sky Smoked Back*](https://lightningstrike.org/), a very trippy 56-second short Kris Krüg made after the August 22 lightning storm. It features AI versions of both of us sheltering on a Vancouver porch, with the sky doing something otherworldly overhead. Kris made the film, asked to use my likeness, and credited me as *with Suzy Easton*. It's surreal seeing a version of yourself inside someone else's film, especially when we're each interpreting the same prompt in completely different ways.
+
+By November I was back with another experiment, this time with a world I could physically navigate on my computer.
 
 I like this about Film Club. It isn't just about showing a finished piece. There are people willing to talk about what you tried, what broke, what you learned, and what might be possible next.
 
