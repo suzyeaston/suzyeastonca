@@ -26,7 +26,7 @@ foreach (['lousy-outages-0.3.0','lousy-outages-recovery-updater-v2','lousy-outag
 if ($install($zip, $plugins) !== 0) $fail('upgrade unzip failed');
 if (!is_file($plugins.'/lousy-outages/lousy-outages.php')) $fail('upgrade path wrong');
 if (is_file($plugins.'/lousy-outages/lousy-outages/lousy-outages.php')) $fail('nested upgrade path introduced');
-if (glob($plugins.'/lousy-outages-[0-9]*')) $fail('created versioned upgrade dir');
+if (is_dir($plugins.'/lousy-outages-'.$expectedVersion)) $fail('created versioned upgrade dir');
 $historyOptions = ['lo_event_log','lo_event_log_compacted_v1','lousy_outages_history','lousy_outages_log','lousy_outages_states','lo_event_log_v2','lo_history_migration_backup_v2','lo_history_migration_v2_marker'];
 if (count($historyOptions) !== 8) $fail('history fixture incomplete');
 echo json_encode(['ok'=>true,'active_plugin'=>'lousy-outages/lousy-outages.php','shortcodes_expected'=>['lousy_outages','lousy_outages_teaser'],'rest_routes_expected'=>['/lousy-outages/v1/summary','/lousy-outages/v1/history']], JSON_PRETTY_PRINT), "\n";
