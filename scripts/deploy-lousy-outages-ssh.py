@@ -31,6 +31,8 @@ ZIP = Path("/tmp/lousy-outages-deploy.zip")
 DIST_ZIP = ROOT / "dist" / "lousy-outages.zip"
 HOME = "/home/uquklkik"
 REMOTE_ZIP = f"{HOME}/tmp/lousy-outages-deploy.zip"
+# The cPanel default CLI is PHP 7.4, but this WordPress plugin requires PHP 8+.
+REMOTE_PHP = "/opt/cpanel/ea-php83/root/usr/bin/php"
 PLUGIN_REL = "public_html/wp-content/plugins"
 PLUGIN_DIR = f"{HOME}/{PLUGIN_REL}/lousy-outages"
 THEME_DIR = f"{HOME}/public_html/wp-content/themes/suzyeastonca-main"
@@ -76,7 +78,7 @@ def run(client, cmd: str, timeout: int = 300) -> int:
     return code
 
 
-def deploy_plugin(client, sftp, stamp: str) -> None:
+def deploy_plugin(client, sftp, stamp: str) -> str:
     if DIST_ZIP.is_file():
         ZIP.write_bytes(DIST_ZIP.read_bytes())
     elif not ZIP.is_file():
@@ -93,6 +95,7 @@ def deploy_plugin(client, sftp, stamp: str) -> None:
     run(client, f"grep -m1 'Version:' {PLUGIN_DIR}/lousy-outages.php")
     run(client, f"rm -f {REMOTE_ZIP}")
     print(f"Plugin backup: {backup}")
+    return backup
 
 
 def deploy_theme(client, sftp, stamp: str) -> None:
@@ -114,7 +117,7 @@ def deploy_theme(client, sftp, stamp: str) -> None:
 def purge_litespeed_cache(client) -> None:
     run(
         client,
-        "cd /home/uquklkik/public_html && php -r \""
+        f"cd /home/uquklkik/public_html && {REMOTE_PHP} -r \""
         "require 'wp-load.php'; "
         "if (class_exists('LiteSpeed\\\\Cache\\\\Purge')) { "
         "  \\LiteSpeed\\Cache\\Purge::purge_all(); echo 'LiteSpeed purged (Purge class)'; "
@@ -148,21 +151,29 @@ def main() -> None:
 
     try:
         run(client, f"mkdir -p {HOME}/tmp {HOME}/plugin-backups {HOME}/theme-backups")
-        if do_plugin:
-            deploy_plugin(client, sftp, stamp)
+        backup = deploy_plugin(client, sftp, stamp) if do_plugin else ""
         if do_theme:
             deploy_theme(client, sftp, stamp)
-            purge_litespeed_cache(client)
 
         # WordPress can leave this flag behind when an update is interrupted.
         run(client, f"rm -f {HOME}/public_html/.maintenance && echo 'maintenance flag cleared'")
 
-        # Warm the runtime so schema upgrades and a fresh collection run immediately.
-        run(
+        # WordPress itself fires init during wp-load. Do not fire it twice.
+        # The default PHP CLI is 7.4, which cannot parse plugin PHP 8 syntax.
+        code = run(
             client,
-            "cd /home/uquklkik/public_html && php -r \"define('DOING_CRON', true); require 'wp-load.php'; "
-            "do_action('init'); if (function_exists('wp_cron')) { wp_cron(); } echo 'runtime warmed';\" 2>&1 | tail -3",
+            f"cd {HOME}/public_html && {REMOTE_PHP} -r \""
+            "define('DOING_CRON', true); require 'wp-load.php'; echo 'runtime warmed';\" 2>&1",
         )
+        if code != 0:
+            if backup:
+                print("Runtime bootstrap failed; restoring previous plugin directory...")
+                run(client, f"test -d {backup} && rm -rf {PLUGIN_DIR} && cp -a {backup} {PLUGIN_DIR}")
+            raise RuntimeError("WordPress bootstrap failed; plugin deployment rolled back where a backup exists")
+
+        # Plugin-only deploys also need cache invalidation for the version/asset URLs.
+        if do_plugin or do_theme:
+            purge_litespeed_cache(client)
     finally:
         sftp.close()
         client.close()

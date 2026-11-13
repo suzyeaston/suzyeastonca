@@ -23,6 +23,8 @@ jobs:
           extensions: simplexml, xml
       - name: Lint plugin
         run: find lousy-outages -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Validate deployment Python
+        run: python3 -m py_compile scripts/deploy-lousy-outages-ssh.py
       - name: Run targeted and existing regressions
         run: |
           php lousy-outages/tests/microsoft365-signal-test.php
