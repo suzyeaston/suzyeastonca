@@ -4,7 +4,7 @@ slug: everything-works-except-for-art
 series: "Meanwhile / November 2026 / Film Club Transmission"
 status: pending-wordpress-import
 category: "film + moving image"
-excerpt: "A film made inside a miniature Vancouver screened at BC + AI Film Club. I wasn't there to explain it. The mouse cursor was."
+excerpt: "A world I started building in March became a film for BC + AI Film Club. The music, the city, the cursor, and the part of making art that doesn't obey instructions."
 featured_image: gastown-night-simulator.jpg
 ---
 
@@ -12,80 +12,86 @@ featured_image: gastown-night-simulator.jpg
 
 *Meanwhile / November 13, 2026 / Film Club Transmission*
 
-Last night a film I made screened at BC + AI Film Club, and I wasn't there to explain it.
+On November 12, a little film of mine screened at BC + AI Film Club. I wasn't there to introduce it, so here's the story behind it.
 
-Which is kind of funny because the film is basically what happens when you give one musician an 8GB MacBook, access to AI, and absolutely no adult supervision.
+The theme was **make art not war**. I'd imagined something like a tiny electronic opera set in a version of Vancouver I'd been building for months.
 
-The theme was **make art not war**. I somehow managed to get into approximately 900 tiny wars with my own audio pipeline.
+What I submitted was considerably stranger.
 
-Anyway. Here's what I was trying to do.
+<!-- PHOTO: gastown-night-simulator.jpg | A pale-haired avatar with a red checkered backpack faces a moody, stylized Vancouver street at night. | A development capture from Gastown Simulator. -->
 
-<!-- PHOTO: gastown-night-simulator.jpg | A pale-haired avatar with a red checkered backpack faces a moody, stylized Vancouver street at night. | Development capture from Gastown Simulator. -->
+## 01 / the city was already there
 
-## a counterfeit memory of vancouver
+I started [Gastown Simulator](https://suzyeaston.ca/gastown-sim/) in March. It grew out of an earlier experiment with sound and visual environments, but I kept coming back to one specific place: the corridor from Waterfront Station into Gastown.
 
-I started [Gastown Simulator](https://suzyeaston.ca/gastown-sim/) back in March. It grew out of an attempt to experience the Waterfront Station to Gastown corridor as one continuous place: the rail yards, Water Street, the Steam Clock, the harbour, its weather and architecture, the relationships between buildings and streets that I know from walking through them. It's a world I've been returning to and rebuilding for months. Film Club gave me a reason to go back into it with a camera.
+I've moved through that part of Vancouver for years. The station, the rail yards, the harbour just beyond them, Water Street, the Steam Clock, the architecture and the way the streets connect. I wanted to reconstruct what it feels like to move through that space, not just assemble a collection of recognizable landmarks.
 
-It's part civic data, part videogame, part accumulated memory of a very particular part of Vancouver. The way the street turns matters. So does which side the station is on, what you can see across the tracks, where the harbour appears between buildings. Those details are how I recognize the place.
+Some of the world comes from civic geographic data and photographs. Some of it comes from looking again at a place I thought I already knew. The direction of a street, the side of a building, what you can see over the railway fence: those things matter because they change how you experience the place.
 
-Not a digital twin. More like a playable memory, with room for the city to become something else.
+It's built in Three.js, and it's still evolving. Not a precise digital twin. More like a playable memory of the city, with weather, people, sound, and the possibility of going somewhere that isn't entirely real.
 
-There's a version of me in there with a checkered Vans backpack. She walks, runs, occasionally flies, and is probably having a more interesting time than whoever is debugging her.
+By November it had become a world I could film inside. There's an avatar of me with a checkered Vans backpack. She can walk, run and fly. The world extends through the harbour and into a fictional interpretation of The Landing, where Film Club meets.
 
-What I wanted was to film inside this world. Not generate some perfect cinematic Vancouver and call it a day. Actually move through a place I knew, break its rules, turn it into an instrument.
+I liked the idea that I could make a film about arriving somewhere by moving through a place I'd already spent months trying to understand.
 
-<!-- PHOTO: simulator-under-construction.jpg | The developing Gastown Simulator shows an angular interior and low-poly characters, with the minimap and navigation controls visible. | Building a city from code, memory and occasionally very suspect geometry. -->
+<!-- PHOTO: simulator-under-construction.jpg | The developing Gastown Simulator shows an angular interior and low-poly characters, with the minimap and navigation controls visible. | Gastown Simulator in development: geography translated into a navigable world. -->
 
-## the tiny haunted orchestra
+## 02 / i wanted to play the soundtrack
 
-The other half was supposed to be music.
+The music was supposed to be the other half.
 
-After [Futureproof](https://www.suzyeaston.ca/2026/11/02/the-toaster-was-a-decoy/), I kept mutating SUZY//TOAST, the local AI instrument I'd built around Google's Magenta RealTime model. I come from composition and improvisation. I don't want to type *make me a soundtrack* and sit there while a machine has all the fun.
+I've spent much of my life playing and studying music: bass, composition, improvisation, recording, being onstage with other musicians. More recently I've been writing software, building AI systems, and trying to bring those two parts of my life into the same room.
 
-I want to play the thing.
+After [Futureproof](https://www.suzyeaston.ca/2026/11/02/the-toaster-was-a-decoy/), I kept developing SUZY//TOAST, my performance instrument built around Google's Magenta RealTime model. I don't really want to type *make me a soundtrack* and get a finished file back. I'm interested in playing with a generative system in real time, making decisions, interrupting it, shaping what happens next.
 
-For Film Club I was working on *Pyramid Afterimage*: E minor, E7, A minor, piano, cello, harmonium, synthetic textures, an electronic pulse. I had Grimes' *Accelerando* in my head, less as a song to imitate than this feeling of everything speeding toward a future nobody has completely agreed to.
+For Film Club I was experimenting with a piece called *Pyramid Afterimage*: piano, cello, harmonium, synthetic textures, an E minor / E7 / A minor harmonic world, and something more electronic and unstable underneath. I wanted the music and the simulated city to respond to each other.
 
-On paper: little cybernetic opera.
+That was the idea.
 
-In my headphones: sometimes literally nothing.
+<!-- PHOTO: afterimage-audio-controls.jpg | The PYRAMID AFTERIMAGE performance scene in SUZY//TOAST, showing blend, instrument, and film-sound design controls. | The soundtrack as a performance instrument, not a single generation prompt. -->
 
-<!-- PHOTO: afterimage-audio-controls.jpg | The PYRAMID AFTERIMAGE performance scene in SUZY//TOAST, showing blend, instrument, and film-sound design controls. | The musical architecture was there. Audio remained an independent philosophical problem. -->
+In practice, the audio chain became its own experiment. The browser, model, audio host, recording software and headphones didn't always agree about where sound should go. Sometimes I could hear the native rhythm but none of the AI instruments. Sometimes the prompts were interesting and the result wasn't. Sometimes there was no result at all.
 
-The native audio host, browser, AI model, recording software and output device were all convinced they were in charge. I'd get a rhythm but no AI instruments. Or a beautiful prompt and no useful sound. Or sound somewhere that wasn't my headphones.
+I kept changing the music, testing the software, recording, listening, going back. It's a strange position to be in when you're both the musician and the engineer: the technical problem can be fascinating even while it's keeping you from finishing the piece.
 
-And I was trying to make a *film*, not establish diplomatic relations between five audio subsystems.
+At some point I had to stop trying to make the system behave and make the film with what existed.
 
-The funniest part is that the failures were technically interesting. Which is the problem with being both the musician and the engineer. You can accidentally spend your entire creative life debugging something fascinating.
+<!-- PHOTO: film-club-capture-ui.jpg | SUZY//TOAST running locally in a browser, with the Film Club recording panel and screen/audio capture controls visible. | Trying to capture a performance from an instrument that was still changing. -->
 
-<!-- PHOTO: film-club-capture-ui.jpg | SUZY//TOAST running locally in a browser, with the Film Club recording panel and screen/audio capture controls visible. | Film department: composer, developer, recording engineer, technical support. Same laptop. -->
+## 03 / the cursor is still in the film
 
-## the cursor is the director
+I assembled the final version in iMovie and sent Mayumi a file called *Make Art Not War.mp4*.
 
-Eventually I cut what I had together in iMovie and sent Mayumi a file called *Make Art Not War.mp4*.
+It ended up darker than I expected. There's something a little unsettling about a familiar city when you can walk through it as a simulated version of yourself. What I'd imagined as an electronic performance became something closer to a small psychological science-fiction film.
 
-It was darker and stranger than the piece I'd planned. Slight psychological horror. Slight unfinished videogame. A small transmission from the part of the creative process where everything is held together with imaginary electrical tape.
+And I accidentally left the mouse cursor visible.
 
-And yes, I left the mouse cursor in the film. lol.
+lol.
 
-Not on purpose. But now I kind of love it.
+At first I wanted to fix it. But the more I thought about it, the more I liked that you can see somebody operating the world. It's such a small thing, and it gives away the entire process.
 
-The cursor gives away the whole operation. Somebody is actually navigating this world. The city isn't dreaming itself into existence. The machine isn't secretly the director. There's a human moving around, making decisions, changing her mind, and occasionally clicking the wrong thing.
+This isn't a machine dreaming up Vancouver by itself. Someone is behind the camera, moving through the streets, choosing where to look, deciding what stays in the edit. Sometimes clicking the wrong thing.
 
-Maybe that's the most interesting part.
+I don't think the accidental cursor is some grand artistic breakthrough. But it does reveal something true about how the film was made.
 
-I've been thinking a lot about AI as a cultural and artistic thing, not just a technical one. People keep asking what the machines can create, but I'm much more interested in what happens to *us* when we start creating with them. Our taste, fears, instincts, strange little obsessions. The parts that aren't conveniently captured in a prompt.
+## 04 / what i think this is actually about
 
-I spent years making music with other humans, and now I build systems that generate audio and imaginary cities. Weirdly, the important part hasn't changed. You listen. You respond. You decide when something is worth keeping.
+There's a lot of conversation about whether AI can make art. I'm more interested in what happens to the *human* part of making things when the tools themselves start generating images, sound and worlds.
 
-Mayumi was lovely about receiving my extremely chaotic submission. I wasn't there when it screened on November 12, so I don't know how the room experienced it. But it made it out of the laptop and into a room with actual people, which feels significant.
+I've played improvised music with people for years. You listen, respond, leave space, change direction. Working with generative systems is very different, but it keeps bringing me back to those same questions about attention and authorship.
 
-It's not a polished AI demo. Thank god.
+I love the technological possibilities. I'm also interested in all the things the technology can't quite understand: why a street feels familiar, why a particular sound matters, why you keep an imperfect take.
+
+The film screened on November 12, in the same part of Vancouver I'd been reconstructing on my laptop. I wasn't there to see how the room responded, which is a little surreal. But I like that the work left the screen I made it on and entered the actual place that inspired it.
+
+It's not a polished AI demo. It isn't the film I'd originally planned.
+
+But it's a film I made.
 
 **Everything works except for art.**
 
-Except actually none of it worked properly.
+Except the software didn't all work, either.
 
-And the art got out anyway. ♡
+And somehow the art got out. ♡
 
 *The images here are development screenshots, not verified frames from the submitted film. [Explore Gastown Simulator](https://suzyeaston.ca/gastown-sim/) or inspect [SUZY//AI on GitHub](https://github.com/suzyeaston/suzy-ai).*
