@@ -32,9 +32,23 @@ class PublicChatterSource implements SignalSourceInterface {
         $queryBuild = $this->build_query_sets($providers, $activeIncidents, $thresholds);
         $queries = (array) apply_filters('lo_public_chatter_queries', $queryBuild['queries'], $providers, $activeIncidents);
         $queries = $this->normalize_query_sets($queries, $queryBuild['providers']);
+        // The recurring M365 check is a separate, strictly bounded scan. These
+        // observations must never be described as official Microsoft incidents.
+        if (!empty($options['microsoft365_only'])) {
+            $m365 = (array)($queries['microsoft365'] ?? []);
+            $candidateQueries = (array)($m365['queries'] ?? []);
+            if ($candidateQueries) {
+                $index = (int) floor(time() / (15 * MINUTE_IN_SECONDS)) % count($candidateQueries);
+                $m365['queries'] = [$candidateQueries[$index]];
+            }
+            $queries = $m365 ? ['microsoft365'=>$m365] : [];
+            $thresholds['queries_per_provider_source'] = 1;
+            $thresholds['source_budgets'] = ['public_chatter_bluesky'=>1,'public_chatter_mastodon'=>0,'public_chatter_gdelt'=>1];
+        }
 
         $diag = $this->base_diagnostics($sourceCheckboxes, $directEnabled, $window, $thresholds, $queryBuild, $activeIncidents, $options);
         $configured = $this->is_configured();
+        $diag['collection_scope'] = !empty($options['microsoft365_only']) ? 'microsoft365_only' : 'all_configured';
         $diag['configured'] = $configured;
         $diag['attempted'] = $configured;
 
@@ -233,8 +247,9 @@ class PublicChatterSource implements SignalSourceInterface {
 
     private function build_query_sets(array $providers, array $activeIncidents, array $thresholds): array {
         $entries = [];
-        foreach ($this->default_queries($providers) as $providerId => $queries) {
-            $provider = (array)($providers[$providerId] ?? ['name'=>ucfirst((string)$providerId), 'category'=>'general']);
+        $publicProviders = ['microsoft365'=>['id'=>'microsoft365','name'=>'Microsoft 365','category'=>'communications']] + $providers;
+        foreach ($this->default_queries($publicProviders) as $providerId => $queries) {
+            $provider = (array)($publicProviders[$providerId] ?? ['name'=>ucfirst((string)$providerId), 'category'=>'general']);
             $entries[$providerId] = ['provider'=>['id'=>(string)$providerId,'name'=>(string)($provider['name'] ?? $providerId),'category'=>(string)($provider['category'] ?? 'general'),'seed_types'=>['default']], 'queries'=>$queries];
         }
         foreach ($activeIncidents as $incident) {
@@ -285,9 +300,10 @@ class PublicChatterSource implements SignalSourceInterface {
 
     private function default_queries(array $providers): array {
         $map = [
+            'microsoft365' => ['microsoft 365 down','outlook down','exchange online outage','microsoft teams outage'],
             'cloudflare' => ['cloudflare down','cloudflare outage','cloudflare warp down'],
             'aws' => ['aws down','aws outage','aws us-east-1 errors'],
-            'azure' => ['azure down','azure outage','microsoft 365 down'],
+            'azure' => ['azure down','azure outage'],
             'google_cloud' => ['google cloud outage','gcp outage','google cloud errors'],
             'google_workspace' => ['google workspace outage','gmail down','google drive down'],
             'openai' => ['chatgpt down','openai outage','openai api errors'],

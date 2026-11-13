@@ -258,7 +258,8 @@ function from_rss_atom(string $xml): array {
     if (! $feed) {
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
-        return ['state' => 'operational', 'incidents' => [], 'raw' => null];
+        // Malformed XML is a verification failure, not evidence of a healthy provider.
+        return ['state' => 'unknown', 'incidents' => [], 'raw' => null, 'schema_valid' => false];
     }
 
     $items = [];

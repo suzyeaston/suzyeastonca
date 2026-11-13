@@ -58,4 +58,15 @@ assert_true(Feeds::feed_content_fingerprint($same1)!==Feeds::feed_content_finger
 $many=[];for($n=0;$n<25;$n++)$many[]=array_replace($incident,['guid'=>'many-'.$n,'first_seen'=>strtotime('2026-01-10T00:00:00Z')+$n]);[$limited]=build(['incidents'=>$many]);assert_true(count($limited)===15,'feed item limit not retained');
 $map=['providers'=>['stale'=>['touched_at'=>1]],'signals'=>['stale'=>['touched_at'=>1]]];[,,$pruned]=build(['identity_map'=>$map,'persist_identities'=>false]);assert_true($pruned['identity_map_size']===0,'identity map was not pruned');
 
-echo "OK: 17 behavioural RSS assertions\n";
+// A trust post republished under two episode GUIDs must appear only once in RSS.
+$zscaler=['provider_id'=>'zscaler','provider_label'=>'Zscaler','episode_guid'=>'lo-zscaler-first','title'=>'Administration UI Issue','description'=>'Issue','severity'=>'minor','active'=>true,'first_detected'=>strtotime('2026-01-10T10:00:00Z'),'url'=>'https://trust.zscaler.com/zscaler.net/posts/32656'];
+$zscalerAgain=array_replace($zscaler,['episode_guid'=>'lo-zscaler-second','first_detected'=>strtotime('2026-01-10T11:00:00Z')]);
+[$deduped,,$dedupDiag]=build(['incidents'=>[$zscalerAgain,$zscaler]]);
+assert_true(count($deduped)===1&&$dedupDiag['excluded']['same_official_post']===1,'same Zscaler post duplicated in RSS');
+// Fifteen newer minor incidents must not displace an active critical event.
+$critical=array_replace($incident,['episode_guid'=>'older-active-critical','severity'=>'critical','active'=>true,'first_detected'=>strtotime('2026-01-09T08:00:00Z')]);
+$newMinors=[];for($n=0;$n<20;$n++)$newMinors[]=array_replace($incident,['guid'=>'fresh-minor-'.$n,'severity'=>'minor','active'=>false,'first_seen'=>strtotime('2026-01-10T10:00:00Z')+$n]);
+[$prioritized]=build(['incidents'=>array_merge($newMinors,[$critical])]);
+assert_true(count($prioritized)===15,'RSS limit changed while pinning active critical');
+assert_true(count(array_filter($prioritized,static fn($item)=>str_contains((string)$item['guid'],'older-active-critical')))===1,'active critical was displaced by minor notices');
+echo "OK: 19 behavioural RSS assertions\n";

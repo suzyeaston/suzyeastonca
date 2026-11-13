@@ -81,4 +81,6 @@ ok($adapted['state'] === 'degraded', 'minor indicator maps to degraded');
 ok(count($adapted['components_affected']) === 1, 'group rows are excluded from the affected component count');
 ok(str_contains((string) $adapted['summary'], 'London'), 'degraded providers without incidents explain which components are affected');
 
+$malformed=\SuzyEaston\LousyOutages\Adapters\from_rss_atom('<rss><channel><item>');
+ok($malformed['state']==='unknown' && $malformed['schema_valid']===false,'malformed RSS cannot be declared operational');
 echo "incident freshness and adapter copy tests passed\n";

@@ -179,8 +179,12 @@ final class EpisodeStore
     private function identity(Incident $i,string $provider): array
     {
         $id=trim($i->id); $isFallback=(bool)preg_match('/(^|:)status:/',$id);
-        if($id!==''&&!$isFallback) return ['type'=>'source_id','value'=>$id,'source_id'=>$id,'url'=>'','fallback'=>''];
         $url=$this->canonicalUrl($i->url);
+        // Zscaler RSS IDs can change while the trust-post URL stays the same.
+        if($provider==='zscaler' && preg_match('#^https://trust[.]zscaler[.]com/[^/]+/posts/[0-9]+$#',$url)) {
+            return ['type'=>'url','value'=>$url,'source_id'=>$id,'url'=>$url,'fallback'=>''];
+        }
+        if($id!==''&&!$isFallback) return ['type'=>'source_id','value'=>$id,'source_id'=>$id,'url'=>'','fallback'=>''];
         if($url!==''&&!$isFallback) return ['type'=>'url','value'=>$url,'source_id'=>'','url'=>$url,'fallback'=>''];
         // Provider-state fallbacks represent one explicit active transition. Mutable
         // status, prose, severity and poll timestamps deliberately are not identity.
@@ -188,7 +192,15 @@ final class EpisodeStore
         return ['type'=>'fallback','value'=>$fallback,'source_id'=>'','url'=>$url,'fallback'=>$fallback];
     }
     private function findActive(array $all,string $provider,array $identity): string
-    { foreach($all as $key=>$e) if(!empty($e['active'])&&($e['provider_id']??'')===$provider&&($e['identity_type']??'')===$identity['type']&&($e['identity_value']??'')===$identity['value']) return (string)$key; return ''; }
+    {
+        foreach($all as $key=>$e) {
+            if(empty($e['active'])||($e['provider_id']??'')!==$provider) continue;
+            if(($e['identity_type']??'')===$identity['type']&&($e['identity_value']??'')===$identity['value']) return (string)$key;
+            // Match pre-migration active episodes by the real post URL too.
+            if($provider==='zscaler' && $identity['type']==='url' && $this->canonicalUrl((string)($e['url']??''))===$identity['value']) return (string)$key;
+        }
+        return '';
+    }
     private function canonicalUrl(string $url): string { $url=trim(strtolower($url)); return preg_match('#^https?://#',$url)?rtrim($url,'/'):''; }
     private function isHealthy(string $status): bool { return in_array(strtolower(trim($status)),['operational','resolved','none','ok'],true); }
     private function select(array $all,array $keys): array { $out=[]; foreach(array_unique($keys) as $k) if(isset($all[$k]))$out[]=$all[$k]; return $out; }

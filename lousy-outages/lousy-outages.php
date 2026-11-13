@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.5.9
+ * Version: 0.5.10
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.5.9' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.5.10' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -113,6 +113,7 @@ lousy_outages_require( 'includes/Sources/HackerNewsChatterSource.php', false );
 lousy_outages_require( 'includes/Sources/RedditFieldReportsSource.php', false );
 lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php', false );
 lousy_outages_require( 'includes/SignalCollector.php' );
+lousy_outages_require( 'includes/Microsoft365Signals.php' );
 lousy_outages_require( 'includes/Api.php' );
 lousy_outages_require( 'includes/Entitlements.php' );
 lousy_outages_require( 'includes/CommerceStore.php' );
@@ -153,6 +154,7 @@ use SuzyEaston\LousyOutages\Cron\CanonicalPipeline;
 Api::bootstrap();
 // LO: Legacy feed slug removed to avoid clashing with the dashboard page; status feed now handled below.
 Feeds::bootstrap();
+\SuzyEaston\LousyOutages\Microsoft365Signals::bootstrap();
 MailTransport::bootstrap();
 IncidentAlerts::bootstrap();
 RefreshCron::bootstrap();

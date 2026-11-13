@@ -751,7 +751,13 @@ class Fetcher {
                 $url = $provider['status_url'];
             }
 
-            $metadata = $this->incident_metadata($incident, $title . ' ' . $summary, $updated, $started);
+            // AWS grouped notices retain original impact text separately from the
+            // synthesized summary; include it when deciding long-running lifecycle.
+            $metadataText = $title . ' ' . $summary;
+            if (strtolower((string)($provider['id'] ?? '')) === 'aws') {
+                $metadataText .= ' ' . (string)($incident['official_context'] ?? '');
+            }
+            $metadata = $this->incident_metadata($incident, $metadataText, $updated, $started);
             $entry = [
                 'id'         => (string) ($incident['id'] ?? md5(wp_json_encode($incident))),
                 'title'      => $title ?: 'Incident',
@@ -836,6 +842,7 @@ class Fetcher {
                     $events[$eventKey]['outage_event'] = true;
                     $events[$eventKey]['source_attribution'] = 'AWS Health Dashboard';
                     $events[$eventKey]['source_url'] = (string)($provider['status_url'] ?? 'https://health.aws.amazon.com/health/status');
+                    $events[$eventKey]['scope'] = 'regional';
                 }
                 $notice = [
                     'id'=>(string)($incident['id'] ?? $incident['guid'] ?? md5(wp_json_encode($incident))),
@@ -848,6 +855,7 @@ class Fetcher {
                 $events[$eventKey]['official_notices'][] = $notice;
                 if ($notice['service'] !== '') { $events[$eventKey]['affected_services'][] = $notice['service']; }
                 if ($region !== '') { $events[$eventKey]['regions'][] = strtoupper($region); }
+                if ($region !== '') { $events[$eventKey]['region_code'] = strtoupper($region); }
                 if ($hasUae) { $events[$eventKey]['region_name'] = 'UAE'; }
                 if ($hasBahrain) { $events[$eventKey]['region_name'] = 'Bahrain'; }
                 if ($hasOfficialContext) { $events[$eventKey]['official_context'] = $this->sanitize($text); }

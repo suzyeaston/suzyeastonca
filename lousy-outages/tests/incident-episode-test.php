@@ -19,4 +19,12 @@ $closed=$store->observe([],['acme'=>'operational'],1200);ok(count($closed['close
 $fallback=$store->observe([incident('acme:status:abc','Acme degraded','degraded','minor','https://status.test')],['acme'=>'degraded'],1300);$fallbackGuid=$fallback['opened'][0]['episode_guid'];
 $store->observe([],['acme'=>'operational'],1400);$recurrence=$store->observe([incident('acme:status:def','Changed wording','major_outage','critical','https://status.test')],['acme'=>'major_outage'],1500);ok($recurrence['opened'][0]['episode_guid']!==$fallbackGuid,'fallback recurrence gets new GUID');
 ok(count($store->publications(2))===2,'feed publications are bounded');
+// A stable Zscaler trust post must not open another episode when its RSS GUID changes.
+$zUrl='https://trust.zscaler.com/zscaler.net/posts/32656';
+$z1=new Incident('zscaler','zscaler:feed:old','Administration UI Issue','degraded',$zUrl,null,'minor',2000,null);
+$z2=new Incident('zscaler','zscaler:feed:new','Administration UI Issue','degraded',$zUrl,null,'minor',2001,null);
+$zOpened=$store->observe([$z1],['zscaler'=>'degraded'],2000);
+$zGuid=$zOpened['opened'][0]['episode_guid'];
+$zRepeated=$store->observe([$z2],['zscaler'=>'degraded'],2001);
+ok(count($zRepeated['opened'])===0 && $zRepeated['continuing'][0]['episode_guid']===$zGuid,'Zscaler RSS GUID churn retains the episode');
 echo "incident episode behavioural tests passed\n";

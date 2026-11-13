@@ -46,12 +46,12 @@ class Feeds {
      */
     public static function get_status_feed_items(array $options=[]): array {
         $now=(int)($options['now']??time()); $persist=!array_key_exists('persist_identities',$options)||$options['persist_identities'];
-        $build=['sources_included'=>[],'excluded'=>['quiet_signals'=>0,'duplicate_items'=>0,'expired_signals'=>0,'unknown_excluded'=>0,'operational_excluded'=>0,'old_incidents_excluded'=>0,'provider_states_with_official_incident'=>0,'cross_source_duplicates'=>0],'current_provider_items'=>0,'official_incident_items'=>0,'unconfirmed_signal_items'=>0,'stable_identities_reused'=>0,'new_logical_items'=>0];
+        $build=['sources_included'=>[],'excluded'=>['quiet_signals'=>0,'duplicate_items'=>0,'expired_signals'=>0,'unknown_excluded'=>0,'operational_excluded'=>0,'old_incidents_excluded'=>0,'provider_states_with_official_incident'=>0,'cross_source_duplicates'=>0,'same_official_post'=>0],'current_provider_items'=>0,'official_incident_items'=>0,'unconfirmed_signal_items'=>0,'stable_identities_reused'=>0,'new_logical_items'=>0];
         $incidentDays=(int)apply_filters('lo_status_feed_official_incident_days',self::INCIDENT_WINDOW_DAYS); $maxItems=(int)apply_filters('lo_status_feed_max_items',self::INCIDENT_LIMIT); $includeUnknown=(bool)apply_filters('lo_status_feed_include_unknown',false); $cutoff=$now-(max(1,$incidentDays)*DAY_IN_SECONDS);
         $providers=$options['providers']??Providers::list(); $states=$options['states']??(new Store())->get_all(); $lastPoll=(string)($options['last_poll']??get_option('lousy_outages_last_poll',gmdate('c',$now)));
         $events=$options['incidents']??(new EpisodeStore())->publications(self::INCIDENT_LIMIT*3);
         $fused=$options['fused_signals']??SignalEngine::summarize_fused_signals(120); $external=$options['external_signals']??ExternalSignals::get_recent_signals(['windowMinutes'=>120,'limit'=>20]);
-        $identity=is_array($options['identity_map']??null)?$options['identity_map']:(array)get_option(self::OPTION_IDENTITIES,[]); $identity+=['official'=>[],'providers'=>[],'signals'=>[]]; $items=[]; $officialProviders=[];
+        $identity=is_array($options['identity_map']??null)?$options['identity_map']:(array)get_option(self::OPTION_IDENTITIES,[]); $identity+=['official'=>[],'providers'=>[],'signals'=>[]]; $items=[]; $officialProviders=[]; $seenOfficialPostUrls=[];
 
         foreach ((array)$events as $event) {
             if(!is_array($event))continue; if(!isset($event['episode_guid'])){$event=(new IncidentStore())->normalizeEvent($event);} $published=self::feed_publication_timestamp($event); if($published&&$published<$cutoff){$build['excluded']['old_incidents_excluded']++;continue;}
@@ -59,7 +59,15 @@ class Feeds {
             $logical=self::official_incident_identity($event,$pid,$title); $entry=$identity['official'][$logical]??null;
             if(is_array($entry)){$guid=(string)$entry['guid'];$published=(int)($entry['started_at']??$published);$build['stable_identities_reused']++;}else{$legacy=self::legacy_cached_identity($pid,$title);$guid=(string)($event['episode_guid']??$legacy['guid']??sha1('official|'.$logical));$published=(int)($legacy['started_at']??$published);$build['new_logical_items']++;}
             $identity['official'][$logical]=['guid'=>$guid,'started_at'=>$published?:$now,'touched_at'=>$now];$officialProviders[$pid]=true;
-            self::put_item($items,['title'=>'['.strtoupper($severity).'] '.($event['provider_label']??ucfirst($pid)).' – '.$title,'link'=>(string)($event['incident_url']??$event['url']??home_url('/lousy-outages/')),'guid'=>$guid,'pubDate'=>self::format_rss_date(gmdate('c',$published?:$now)),'description'=>self::truncate_text((string)($event['description']??$title),200),'timestamp'=>$published?:$now,'categories'=>['official_incident',$severity]],$build);
+            // Zscaler RSS sometimes republishes the same trust post with another GUID.
+            // Dedup only canonical /posts/ URLs, never a generic status dashboard URL.
+            $postUrl=(string)($event['incident_url']??$event['url']??'');
+            if($pid==='zscaler' && preg_match('#^https://trust[.]zscaler[.]com/[^/]+/posts/[0-9]+/?$#i',$postUrl)){
+                $postKey=strtolower(rtrim($postUrl,'/'));
+                if(isset($seenOfficialPostUrls[$postKey])){$build['excluded']['same_official_post']++;continue;}
+                $seenOfficialPostUrls[$postKey]=true;
+            }
+            self::put_item($items,['__active_critical'=>!empty($event['active']) && in_array($severity,['critical','major','outage','major_outage'],true),'title'=>'['.strtoupper($severity).'] '.($event['provider_label']??ucfirst($pid)).' – '.$title,'link'=>(string)($event['incident_url']??$event['url']??home_url('/lousy-outages/')),'guid'=>$guid,'pubDate'=>self::format_rss_date(gmdate('c',$published?:$now)),'description'=>self::truncate_text((string)($event['description']??$title),200),'timestamp'=>$published?:$now,'categories'=>['official_incident',$severity]],$build);
         }
         $build['sources_included'][]='official_incidents';
 
@@ -84,10 +92,15 @@ class Feeds {
 
         foreach(['official','providers','signals'] as $type){foreach((array)$identity[$type] as $key=>$entry){if((int)($entry['touched_at']??0)<$now-self::IDENTITY_RETENTION_SECONDS)unset($identity[$type][$key]);}}
         if($persist)update_option(self::OPTION_IDENTITIES,$identity,false); $build['identity_map_size']=count($identity['official'])+count($identity['providers'])+count($identity['signals']);
-        $values=array_values($items);usort($values,static fn($a,$b)=>(int)$b['timestamp']<=>(int)$a['timestamp']);$values=array_slice($values,0,max(1,$maxItems));
+        $values=array_values($items);
+        // Keep active critical incidents within the feed limit, then put the selected
+        // rows back into publication-date order so RSS readers keep stable timestamps.
+        usort($values,static function($a,$b){$p=((int)!empty($b['__active_critical']))<=>((int)!empty($a['__active_critical']));return $p!==0?$p:((int)$b['timestamp']<=>(int)$a['timestamp']);});
+        $values=array_slice($values,0,max(1,$maxItems));
+        usort($values,static fn($a,$b)=>(int)$b['timestamp']<=>(int)$a['timestamp']);
         foreach($values as $item){if(in_array('official_incident',$item['categories'],true))$build['official_incident_items']++;if(in_array('current-provider-state',$item['categories'],true))$build['current_provider_items']++;if(in_array('unconfirmed',$item['categories'],true))$build['unconfirmed_signal_items']++;}
         $build['max_items_applied']=max(1,$maxItems);$build['item_count']=count($values);$build['latest_guid']=$values?(string)$values[0]['guid']:'';$newest=$values?(int)$values[0]['timestamp']:$now;$lastUpdated=gmdate('c',$newest);$build['newest_item_date']=$lastUpdated;
-        $public=array_map(static function($item){unset($item['timestamp']);return $item;},$values);$build['feed_content_fingerprint']=self::feed_content_fingerprint($public);update_option(self::OPTION_STATUS_FEED_LAST_BUILD,$lastUpdated,false);return[$public,$lastUpdated,$build];
+        $public=array_map(static function($item){unset($item['timestamp'],$item['__active_critical']);return $item;},$values);$build['feed_content_fingerprint']=self::feed_content_fingerprint($public);update_option(self::OPTION_STATUS_FEED_LAST_BUILD,$lastUpdated,false);return[$public,$lastUpdated,$build];
     }
 
     public static function refresh_status_feed_cache(string $cycleId='',string $snapshotFingerprint=''): void { $old=self::valid_cached_payload(false); $new=self::rebuild_cache(false,'scheduled_refresh'); $changed=!is_array($old)||($old['build']['feed_content_fingerprint']??'')!==($new['build']['feed_content_fingerprint']??''); $retried=is_array($old)&&(($old['build']['source_cycle_id']??'')===$cycleId);$new['build']['cache_invalidation_reason']=$changed?'logical_feed_changed':'logical_feed_unchanged';$new['build']['source_cycle_id']=$cycleId;$new['build']['snapshot_fingerprint']=$snapshotFingerprint;$new['build']['publication_result']=$retried?'retried':($changed?'fresh':'unchanged'); update_option(self::OPTION_STATUS_FEED_CACHE,$new,false); update_option(self::OPTION_STATUS_FEED_DIAGNOSTICS,self::build_diagnostics($new['build'],$new['last_updated'],false,self::OPTION_STATUS_FEED_CACHE),false); }

@@ -1,0 +1,48 @@
+name: Lousy Outages PR QA
+
+on:
+  pull_request:
+    paths:
+      - 'lousy-outages/**'
+      - 'tests/lousy-outages/**'
+      - '.github/workflows/lousy-outages-pr-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: simplexml, xml
+      - name: Lint plugin
+        run: find lousy-outages -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Run targeted and existing regressions
+        run: |
+          php lousy-outages/tests/microsoft365-signal-test.php
+          php tests/LousyOutagesFeedTest.php
+          php lousy-outages/tests/incident-episode-test.php
+          php lousy-outages/tests/incident-freshness-test.php
+          php lousy-outages/tests/history-store-test.php
+          php tests/lousy-outages/repository-architecture-test.php
+          php tests/lousy-outages/rss-long-running-regression.php
+          # Historical aws-snapshot-pipeline-regression.php has fixed Apr/Jul 2026 dates
+          # and a stale tile-state expectation; separately tracked for fixture modernization.
+          php tests/lousy-outages/alert-dispatch-regression.php
+          php tests/lousy-outages/current-state-contract-test.php
+      - name: Build and validate distributable
+        run: |
+          scripts/build-lousy-outages-release.sh
+          test -s dist/lousy-outages.zip
+          ( cd dist && sha256sum -c lousy-outages.zip.sha256 )
+          php tests/lousy-outages/wp-install-upgrade-architecture-test.php
+      - name: WordPress clean-install smoke
+        run: tests/lousy-outages/wp-real-install-test.sh clean
+      - name: WordPress upgrade smoke
+        run: tests/lousy-outages/wp-real-install-test.sh upgrade
