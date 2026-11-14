@@ -181,3 +181,47 @@ private, unlisted, outside-radius or newly posted events may be absent.
 Luma's website and unauthenticated endpoint can change or block requests.
 Confirm production HTTP status and ingested counts in administrator debug mode,
 and clear WordPress/CDN HTML caches if the old page persists.
+
+ 
+## November 13, 2026: persistent historical archive
+
+The old calendar used a 30-minute transient cache and removed finished events
+**before** deduplication and caching, so expired listings disappeared. The new
+archive is deliberately separate from the upcoming-event cache.
+
+- Each successful aggregate refresh now captures valid, dated, linked public
+  event listings **before** the upcoming-only filter. It deduplicates using
+  the calendar's existing canonical event identity and retains first-seen
+  timestamps and source/verified provenance.
+- A non-autoloaded WordPress option (`suzy_vte_event_archive_v1`) holds at
+  most 2,500 records. Only fields needed for historical display are stored.
+  Empty or blocked feeds do **not** erase previously observed listings.
+- A twice-daily WordPress cron refresh keeps discovery going even when the
+  calendar page is not visited. This is WP-Cron, not a guaranteed wall-clock
+  service: low-traffic sites or hosts with disabled WP-Cron need a system cron.
+- Past verified curated entries (Futureproof Festival, MiningTech North
+  America, DNS-OARC, AI Builders Guild) serve as a small pre-installation seed
+  without pretending to provide exhaustive historical backfill. Future DEFRAG
+  is not shown until it actually becomes past.
+- Public view: year/topic filters, twelve-month listing counts, newest-first
+  list and 30-record pagination. Topic labels are heuristic title-keyword
+  categories, not authoritative classifications.
+- **Interpretation:** an archived listing does not prove the event happened,
+  had attendees, or wasn't cancelled. Monthly counts will be heavily affected
+  by which calendars are indexed and by tracking start time. Do not call
+  changes in raw listing counts changes in local event *activity* without
+  checking source coverage.
+- Date grouping continues to use the existing Vancouver-local timezone
+  helper, including pre-March-2026 historical PST rules.
+
+QA:
+1. `php -l inc/vancouver-tech-events.php` and
+   `php -l inc/vancouver-tech-events-archive.php`
+2. `php tests/VancouverTechEventsTest.php`
+3. `node --test __tests__/homepage-vancouver-tech-events.test.js`
+4. `python3 scripts/theme_deploy_manifest.py validate`
+5. After merge, inspect the Archive section on
+   `/vancouver-tech-events/#vte-archive`, check 2025/2026 filters and
+   monthly histogram, confirm Futureproof and the November 9 events appear,
+   check DEFRAG is still upcoming, then verify the next calendar refresh
+   appends new events without deleting previous records.
