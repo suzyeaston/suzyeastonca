@@ -12,7 +12,7 @@ test("new culture page is bootstrapped and included in theme deploy manifest", (
   for (const file of [
     "inc/vancouver-music-culture.php", "page-vancouver-music-culture.php",
     "assets/css/vancouver-music-culture.css", "page-projects.php",
-    "parts/home-vancouver-tech-events.php", "inc/seo.php"
+    "parts/home-vancouver-tech-events.php", "parts/home-vancouver-music-culture.php", "inc/seo.php"
   ]) {
     assert.ok(manifest.includes('"' + file + '"'), file + " must deploy");
   }
@@ -57,7 +57,8 @@ test("collectors cover different domains, bound load, and don't silently fabrica
 test("projects and homepage offer discoverability, SEO has dedicated canonical", () => {
   assert.match(read("page-projects.php"), /Vancouver Music &amp; Culture/);
   assert.match(read("page-projects.php"), /\/vancouver-music-culture\//);
-  assert.match(read("parts/home-vancouver-tech-events.php"), /\/vancouver-music-culture\//);
+  assert.match(read("page-home.php"), /parts\/home-vancouver-music-culture/);
+  assert.match(read("parts/home-vancouver-music-culture.php"), /\/vancouver-music-culture\//);
   const seo = read("inc/seo.php");
   assert.match(seo, /Vancouver Music & Culture Events/);
   assert.match(seo, /home_url\( '\/vancouver-music-culture\/' \)/);
