@@ -23,12 +23,12 @@ test('transformation preserves back-follow camera and freezes movement while pla
   assert.match(sim,/updateMagicTransformation\(delta\)/);
   assert.match(sim,/suzyAvatar\.rotation\.y = 0/);
 });
-test('skyline and freight detail are constructed inside the existing harbour context',()=>{
-  assert.match(harbour,/function downtownSkylineDepth\(THREE,root\)/);
-  assert.match(harbour,/approximateSkylineInfillCount=blocks\.length/);
+test('freight remains without fictional high-rise skyline east of Water Street',()=>{
+  assert.doesNotMatch(harbour,/function downtownSkylineDepth\(/);
+  assert.doesNotMatch(harbour,/Illustrative Vancouver downtown skyline infill/);
   assert.match(harbour,/function additionalWaterfrontFreight\(THREE,root\)/);
   assert.match(harbour,/additionalFreightWagons=6/);
-  assert.match(harbour,/waterfrontRailYard\(THREE,root,world\);\s*additionalWaterfrontFreight\(THREE,root\);\s*downtownSkylineDepth\(THREE,root\)/);
+  assert.match(harbour,/waterfrontRailYard\(THREE,root,world\);\s*additionalWaterfrontFreight\(THREE,root\)/);
 });
 
 test('eastbound rail corridor sits in the northern apron and freight aligns to it',()=>{
