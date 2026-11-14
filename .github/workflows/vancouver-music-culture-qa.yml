@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'inc/vancouver-music-culture.php'
+      - 'inc/vancouver-music-culture-source-parsers.php'
       - 'page-vancouver-music-culture.php'
       - 'assets/css/vancouver-music-culture.css'
       - 'functions.php'
@@ -19,6 +20,7 @@ on:
     branches: [main]
     paths:
       - 'inc/vancouver-music-culture.php'
+      - 'inc/vancouver-music-culture-source-parsers.php'
       - 'page-vancouver-music-culture.php'
       - 'assets/css/vancouver-music-culture.css'
       - 'functions.php'
@@ -51,6 +53,7 @@ jobs:
       - name: PHP syntax check
         run: |
           php -l inc/vancouver-music-culture.php
+          php -l inc/vancouver-music-culture-source-parsers.php
           php -l page-vancouver-music-culture.php
           php -l page-projects.php
           php -l inc/seo.php
