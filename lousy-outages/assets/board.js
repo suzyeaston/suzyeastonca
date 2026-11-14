@@ -232,20 +232,53 @@
   }
 
   function signalCard(provider) {
-    var card = el('article', 'lox-card lox-card--warn');
+    var correlated = String(provider.provider_id || provider.id || '') === 'microsoft365'
+      && String(provider.source_type || provider.sourceType || '') === 'cross_provider_corroboration';
+    var count = Number(provider.correlation_count || 0);
+    var sources = Array.isArray(provider.correlation_sources) ? provider.correlation_sources : [];
+    var card = el('article', 'lox-card lox-card--warn' + (correlated ? ' lox-card--correlated' : ''));
     var head = el('header', 'lox-card__head');
     head.appendChild(el('h3', 'lox-card__provider', firstString(provider.name, provider.provider, provider.id)));
-    head.appendChild(el('span', 'lox-chip lox-chip--warn', 'DEGRADED'));
+    head.appendChild(el('span', 'lox-chip lox-chip--warn', correlated ? 'CORRELATED' : 'DEGRADED'));
     card.appendChild(head);
-    card.appendChild(el('p', 'lox-card__title', 'Status page says something is off. No incident filed.'));
+    if (correlated) {
+      card.appendChild(el('p', 'lox-card__title', 'Likely Microsoft 365-related disruption' + (count > 0 ? ' · ' + count + ' provider reports' : '')));
+      card.appendChild(el('p', 'lox-card__context', 'Independent provider incidents point to a shared Microsoft 365 dependency. Microsoft’s own incident status and the common root cause are not verified by this feed.'));
+      if (sources.length) {
+        var list = el('ul', 'lox-card__sources');
+        list.setAttribute('aria-label', 'Corroborating provider notices');
+        sources.forEach(function (source) {
+          var name = firstString(source.name, source.provider_id, 'Provider');
+          var title = tidy(firstString(source.title), 130);
+          var label = name + (title ? ': ' + title : '');
+          var url = firstString(source.url);
+          var item = el('li');
+          if (/^https:\/\//i.test(url)) {
+            var link = el('a', null, label + ' ↗');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            item.appendChild(link);
+          } else {
+            item.textContent = label;
+          }
+          list.appendChild(item);
+        });
+        card.appendChild(list);
+      }
+    } else {
+      card.appendChild(el('p', 'lox-card__title', 'Degraded signal without a linked incident in this feed.'));
+    }
 
     var summary = tidy(firstString(provider.summary, provider.message), 320);
     if (summary) { card.appendChild(el('p', 'lox-card__body', summary)); }
 
-    card.appendChild(factsNode([
-      ['Provider page updated', timeNode(firstTimestamp(provider, ['data_observed_at', 'updatedAt', 'updated_at']))],
-      ['We last checked', timeNode(firstTimestamp(provider, ['checked_at', 'checkedAt', 'last_successful_at']))]
-    ]));
+    var facts = [
+      [correlated ? 'Latest provider report' : 'Provider page updated',
+        timeNode(firstTimestamp(provider, ['data_observed_at', 'updatedAt', 'updated_at']))]
+    ];
+    if (!correlated) { facts.push(['We last checked', timeNode(firstTimestamp(provider, ['checked_at', 'checkedAt', 'last_successful_at']))]); }
+    card.appendChild(factsNode(facts));
 
     var url = firstString(provider.url);
     if (url) { card.appendChild(outLink(url, 'Open status page ↗')); }
@@ -404,7 +437,7 @@
       verdict = {
         tone: 'warn',
         line: 'DEGRADED',
-        sub: signalCount + ' ' + (signalCount === 1 ? 'provider' : 'providers') + ' flagged trouble without filing an incident.'
+        sub: signalCount + ' ' + (signalCount === 1 ? 'provider' : 'providers') + ' showing degraded or correlated signals; confirmation varies by source.'
       };
     } else if ((state.unverified || []).length > 0) {
       var unverifiedCount = state.unverified.length;
