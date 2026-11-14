@@ -147,11 +147,23 @@ $format_date = static function ( array $event ): string {
             <h2 id="vmc-sources-title">Where the good stuff happens</h2>
             <p>There is no single comprehensive feed for grassroots culture. These independent community calendars deserve a look even if their listings cannot always be automatically imported.</p>
         </div>
-        <ul class="vmc__directory">
-            <?php foreach ( suzy_vmc_directory() as $source ) : ?>
-                <li><a href="<?php echo esc_url( $source['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $source['label'] ); ?></a></li>
+        <p class="vmc__directory-note">These are browsable venue and organizer links, not guaranteed automatic event feeds. Open a source to confirm current dates and admission details.</p>
+        <div class="vmc__directory-groups">
+            <?php foreach ( suzy_vmc_directory_groups() as $group_slug => $group_title ) : ?>
+                <section class="vmc__source-group" aria-labelledby="vmc-source-<?php echo esc_attr( $group_slug ); ?>">
+                    <h3 id="vmc-source-<?php echo esc_attr( $group_slug ); ?>"><?php echo esc_html( $group_title ); ?></h3>
+                    <ul class="vmc__directory">
+                        <?php foreach ( suzy_vmc_directory() as $source ) :
+                            if ( ( $source['group'] ?? '' ) !== $group_slug ) {
+                                continue;
+                            }
+                            ?>
+                            <li><a href="<?php echo esc_url( $source['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $source['label'] ); ?></a></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </section>
             <?php endforeach; ?>
-        </ul>
+        </div>
         <?php if ( current_user_can( 'manage_options' ) ) :
             $health = get_option( 'suzy_vmc_source_status_v1', [] ); ?>
             <details class="vmc__health"><summary>Admin: source collection status</summary>
