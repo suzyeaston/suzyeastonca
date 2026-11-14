@@ -34,7 +34,7 @@ test('lobby is separate, walkable, lift is on left and escort shares journey',()
   assert.match(game,/state\.landingLab\.journeyRoot=journey/);
   assert.match(game,/!state\.landingLab\.inside && !isPlayerInsideWaterfront/);
   assert.match(game,/if\(state\.landingLab\.inside\)\{/);
-  assert.match(game,/see ya snoozy!/i);
+  assert.match(game,/landingSpeak\('bye snoooozie!'\)/);
 });
 
 test('player cannot roam beyond lobby, elevator car or sixth-floor lab boundaries',()=>{
