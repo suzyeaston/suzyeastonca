@@ -54,6 +54,7 @@ THEME_FILES = [
     "inc/albini-quotes.php",
     "inc/ai-guardrails.php",
     "inc/openai.php",
+    "inc/vancouver-tech-events-archive.php",
     "inc/vancouver-tech-events.php",
     "inc/home-translink-alerts.php",
     "inc/home-yvr-audio-channels.php",
