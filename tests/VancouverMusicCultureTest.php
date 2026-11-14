@@ -67,8 +67,27 @@ function check_vmc($good,$message) {
 }
 check_vmc( count(suzy_vmc_sources()) === 4, 'four independent, defined automatic sources' );
 check_vmc( count(suzy_vmc_directory()) >= 10, 'organizer directory spans more than one ecosystem' );
+$directory = suzy_vmc_directory();
+$groups = suzy_vmc_directory_groups();
+check_vmc(count($directory) === 26, '26 source-checked venues and cultural calendars');
+check_vmc(count($groups) === 4, 'venues grouped into four readable cultural scenes');
+check_vmc(count(array_unique(array_column($directory, 'url'))) === count($directory), 'one distinct link per venue or organizer');
+foreach ($directory as $entry) {
+    check_vmc(isset($groups[$entry['group']]), 'directory entry belongs to a known group');
+    check_vmc(str_starts_with($entry['url'], 'https://'), 'directory link is HTTPS');
+}
+$labels = implode(' ', array_column($directory, 'label'));
+foreach (['Green Auto', 'Red Gate', 'Tyrant Studios', 'VIVO Media Arts', 'UNIT/PITT', 'Upstart & Crow', 'Poetry House', 'Rhythm Changes'] as $needle) {
+    check_vmc(str_contains($labels, $needle), 'missing scene-space discovered: ' . $needle);
+}
+check_vmc(!str_contains($labels, 'Massy Arts'), 'permanently closed gallery not promoted as active');
+check_vmc(!in_array('https://massyarts.com/', array_column($directory, 'url'), true), 'closed venue has no misleading link');
+
 $seeds = suzy_vmc_verified_events();
 check_vmc( count($seeds) >= 12, 'verified dated safety net includes music and culture' );
+check_vmc(in_array('Dead Peasant: Lisa Baldissera in conversation', array_column($seeds, 'title'), true), 'Upstart & Crow book-launch verified listing added');
+check_vmc(in_array('Radio Discord: Gregor Craigie book launch', array_column($seeds, 'title'), true), 'Upstart & Crow Dec 1 verified listing added');
+
 $seedcats = array_column($seeds,'category');
 foreach (['music-tech','poetry','ideas','experimental','arts'] as $category) {
     check_vmc(in_array($category,$seedcats,true),'verified events include '.$category);
