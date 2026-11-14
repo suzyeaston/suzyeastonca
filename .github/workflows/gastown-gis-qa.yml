@@ -79,6 +79,7 @@ jobs:
           node --test __tests__/gastown-harbour-vista.test.js
           node --test __tests__/gastown-harbour-v3-regression.test.js
           node --test __tests__/gastown-parking-lookout.test.js
+          node --test __tests__/gastown-waterfront-render-regression.test.js
           node --test __tests__/gastown-station-east-v2.test.js
           node --test __tests__/gastown-suzy-film-avatar.test.js
           node --test __tests__/gastown-cordova-architecture.test.js
