@@ -31,6 +31,10 @@ test("page has upcoming, archive, source directory, safe links, and filters", ()
   assert.match(template, /not proof the event took place/);
   assert.match(template, /Months with no captured records are/);
   assert.match(template, /current_user_can\( 'manage_options' \)/);
+  assert.match(template, /suzy_vmc_directory_groups\(\)/);
+  assert.match(template, /vmc__source-group/);
+  assert.match(template, /browsable venue and organizer links, not guaranteed automatic event feeds/);
+
   assert.doesNotMatch(template, /wp_remote_get\(/);
 });
 
@@ -69,6 +73,7 @@ test("responsive culture styling is isolated from tech calendar layout", () => {
   const css = read("assets/css/vancouver-music-culture.css");
   assert.match(css, /\.vmc__events/);
   assert.match(css, /\.vmc__months/);
+  assert.match(css, /\.vmc__directory-groups/);
   assert.match(css, /@media \(max-width: 640px\)/);
   assert.match(css, /:focus-visible/);
   assert.doesNotMatch(read("style.css"), /vmc__event/);
