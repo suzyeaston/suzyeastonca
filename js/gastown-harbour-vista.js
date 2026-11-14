@@ -579,28 +579,9 @@
   }
 
 
-  // Low-detail city context beyond the playable downtown/waterfront grid.
-  // These are perspective skyline masses, not surveyed building footprints.
-  // Keep them away from Waterfront Station, The Landing and walkable streets.
-  function downtownSkylineDepth(THREE,root) {
-    const skylineGroup=new THREE.Group();
-    skylineGroup.name='Batched scenic downtown skyline context';
-    root.add(skylineGroup);
-    const wall=[0x42545b,0x667982,0x8e928e,0x665d59,0x536a75];
-    const glass=standard(THREE,0x355363,0.48,0.16);
-    const blocks=[
-      [165,235,32,24,52],[207,255,29,29,86],[253,245,42,29,104],
-      [300,275,30,32,72],[345,255,34,24,118],[388,283,42,38,81],
-      [433,310,29,32,135],[479,298,39,31,98],[532,326,42,34,75],
-      [575,335,36,29,109]
-    ];
-    blocks.forEach(([x,z,w,d,h],index)=>{
-      const body=box(THREE,skylineGroup,'Illustrative Vancouver downtown skyline infill '+(index+1),
-        x,h/2-1,z,w,h,d,standard(THREE,wall[index%wall.length],0.78));
-      body.userData.scenicOnly=true;
-    });
-    root.userData.approximateSkylineInfillCount=blocks.length;
-  }
+  // Keep the harbour panorama, rail yard and North Shore, but do not add
+  // fictional high-rises east of Water Street. Mapped Gastown footprints
+  // already provide the streetwall and must remain the only city buildings.
 
   function additionalWaterfrontFreight(THREE,root) {
     // Placed on the existing eastbound corridor centerlines instead of adding
@@ -754,7 +735,6 @@
     }
     waterfrontRailYard(THREE,root,world);
     additionalWaterfrontFreight(THREE,root);
-    downtownSkylineDepth(THREE,root);
     containerPortCranes(THREE,root);
     const pier=canadaPlace(THREE,root,anchor);
     dockedCruiseShip(THREE,root,pier);
