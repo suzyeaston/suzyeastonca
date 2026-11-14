@@ -66,6 +66,13 @@ chk(count($state['signals'])===1 && $state['signals'][0]['verification_status']=
 chk($state['signals'][0]['correlation_count']===2,'board surfaces independent source count');
 $state=DependencyCorrelations::augment_state($state,$results);
 chk(count($state['signals'])===1,'repeated aggregation does not add duplicate tiles');
+$cloudflareHit=DependencyCorrelations::detect_all([$other,$other2],$now)['cloudflare'];
+$alreadyTracked=['signals'=>[],'outages'=>[],'providers'=>[['provider_id'=>'cloudflare','name'=>'Cloudflare','status'=>'operational']],'meta'=>[]];
+$observed=DependencyCorrelations::augment_state($alreadyTracked,['cloudflare'=>$cloudflareHit]);
+chk(count($observed['signals'])===1 && count($observed['providers'])===1,'existing upstream provider remains green while downstream correlation is visible');
+$confirmed=['signals'=>[],'outages'=>[['provider_id'=>'cloudflare','title'=>'Official Cloudflare incident']],'providers'=>[],'meta'=>[]];
+$verified=DependencyCorrelations::augment_state($confirmed,['cloudflare'=>$cloudflareHit]);
+chk($verified['signals']===[],'direct upstream official incident suppresses redundant correlated signal');
 
 $GLOBALS['options']['lousy_outages_email']='owner@example.test';
 $first=DependencyCorrelations::send_alerts($now,$results);
