@@ -114,6 +114,7 @@ lousy_outages_require( 'includes/Sources/RedditFieldReportsSource.php', false );
 lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php', false );
 lousy_outages_require( 'includes/SignalCollector.php' );
 lousy_outages_require( 'includes/Microsoft365ServiceHealth.php' );
+lousy_outages_require( 'includes/DependencyCorrelations.php' );
 lousy_outages_require( 'includes/Microsoft365Signals.php' );
 lousy_outages_require( 'includes/Api.php' );
 lousy_outages_require( 'includes/Entitlements.php' );
