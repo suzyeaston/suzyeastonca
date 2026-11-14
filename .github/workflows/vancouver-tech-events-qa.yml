@@ -42,6 +42,12 @@ jobs:
         run: php -l inc/vancouver-tech-events.php && php -l inc/vancouver-tech-events-archive.php && php -l tests/VancouverTechEventsTest.php
       - name: WordPress-free calendar behavior tests
         run: php tests/VancouverTechEventsTest.php
+      - name: Build generated social assets for production manifest check
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/build_meanwhile_social_card.py
+          python3 scripts/build_toaster_social_card.py
+          python3 scripts/build_orchestra_social_card.py
       - name: Verify production theme manifest
         run: python3 scripts/theme_deploy_manifest.py validate
       - name: Homepage event UI regression tests
