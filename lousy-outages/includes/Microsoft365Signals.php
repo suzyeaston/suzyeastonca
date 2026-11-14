@@ -33,39 +33,7 @@ final class Microsoft365Signals
      */
     public static function related_provider_reports(array $events, int $now = 0): ?array
     {
-        $now=$now?:time();
-        $byProvider=[];
-        foreach ($events as $event) {
-            if (!is_array($event)) continue;
-            $id=sanitize_key((string)($event['provider_id']??$event['provider']??''));
-            if ($id==='' || $id==='microsoft365') continue;
-            $text=(string)($event['title']??'').' '.(string)($event['description']??'');
-            if (!preg_match('/\\b(?:microsoft\\s*365|office\\s*365|exchange\\s*online|outlook)\\b/i',$text)) continue;
-            $date=$event['first_detected']??$event['first_seen']??$event['published']??0;
-            $ts=is_numeric($date)?(int)$date:(strtotime((string)$date)?:0);
-            if ($ts <= 0 || $ts < $now-36*HOUR_IN_SECONDS || $ts > $now+300) continue;
-            if (!isset($byProvider[$id]) || $ts>$byProvider[$id]['timestamp']) {
-                $url=trim((string)($event['incident_url']??$event['url']??''));
-                if (!preg_match('#^https://#i',$url)) $url='';
-                $byProvider[$id]=[
-                    'provider_id'=>$id,
-                    'name'=>(string)($event['provider_label']??ucfirst($id)),
-                    'title'=>substr(trim(strip_tags((string)($event['title']??''))),0,180),
-                    'url'=>$url,
-                    'timestamp'=>$ts,
-                ];
-            }
-        }
-        if (count($byProvider)<2) return null;
-        ksort($byProvider);
-        $timestamps=array_column($byProvider,'timestamp');
-        return [
-            'providers'=>array_values(array_column($byProvider,'name')),
-            'provider_ids'=>array_keys($byProvider),
-            'evidence'=>array_values($byProvider),
-            'timestamp'=>max($timestamps),
-            'first_detected'=>min($timestamps),
-        ];
+        return DependencyCorrelations::detect_all($events, $now)['microsoft365'] ?? null;
     }
 
     public static function scan(): void
@@ -73,6 +41,11 @@ final class Microsoft365Signals
         $official=class_exists(Microsoft365ServiceHealth::class)
             ? Microsoft365ServiceHealth::refresh()
             : ['status'=>'adapter_not_loaded'];
+        // Same official-provider episode evidence used by the dashboard/RSS.
+        // This check runs even when optional public chatter is disabled.
+        if (class_exists(DependencyCorrelations::class)) {
+            DependencyCorrelations::send_alerts();
+        }
         $at=gmdate('c');
         $scheduled=wp_next_scheduled(self::HOOK);
         $base=[
