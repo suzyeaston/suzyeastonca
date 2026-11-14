@@ -155,9 +155,13 @@ final class DependencyCorrelations
         if (!class_exists(IncidentAlerts::class) || !class_exists(Mailer::class)) return $result;
         $ledger = (array)get_option(self::OPTION_DELIVERY,[]);
         foreach ($correlations as $id => $hit) {
+            // Authenticated upstream notice takes precedence over a suspicion.
+            if ($id === 'microsoft365' && class_exists(Microsoft365ServiceHealth::class)
+                && Microsoft365ServiceHealth::active_issues($now)) continue;
             $first = (int)($hit['first_detected'] ?? 0);
             $last = (int)($hit['timestamp'] ?? 0);
-            if ($first <= 0 || $now - $first > self::EMAIL_MAX_AGE || $now - $last > self::EMAIL_FRESHNESS) {
+            if ($first <= 0 || $first > $now + 300 || $last > $now + 300
+                || $now - $first > self::EMAIL_MAX_AGE || $now - $last > self::EMAIL_FRESHNESS) {
                 $result['skipped_stale']++; continue;
             }
             $episode = (array)($ledger[$id] ?? []);
