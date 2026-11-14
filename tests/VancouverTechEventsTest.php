@@ -219,7 +219,7 @@ $_GET['vte_topic'] = 'security';
 $archive_html = suzy_vte_render_archive_html($all_archive, $fixed_now);
 check(str_contains($archive_html, 'Security Meetup'), 'year/topic filters include matching records');
 check(!str_contains($archive_html, 'AI Tools Night'), 'year/topic filters exclude other records');
-check(str_contains($archive_html, 'Monthly listings'), 'trend chart has accessible label');
+check(str_contains($archive_html, 'Known archived listings (incomplete coverage)'), 'trend chart states incomplete source coverage');
 check(str_contains($archive_html, 'previously listed') && str_contains($archive_html, 'not confirmed attendance'), 'archive discloses provenance and limitations');
 unset($_GET['vte_year'], $_GET['vte_topic']);
 $archive_safe = suzy_vte_render_archive_html([[
