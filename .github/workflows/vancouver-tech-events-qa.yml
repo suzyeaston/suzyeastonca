@@ -42,5 +42,7 @@ jobs:
         run: php -l inc/vancouver-tech-events.php && php -l inc/vancouver-tech-events-archive.php && php -l tests/VancouverTechEventsTest.php
       - name: WordPress-free calendar behavior tests
         run: php tests/VancouverTechEventsTest.php
+      - name: Verify production theme manifest
+        run: python3 scripts/theme_deploy_manifest.py validate
       - name: Homepage event UI regression tests
         run: node --test __tests__/homepage-vancouver-tech-events.test.js
