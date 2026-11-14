@@ -100,4 +100,15 @@ assert_true(count($officialGraph)===15 && count($officialRows)===1,'tenant Graph
 assert_true($officialRows[0]['guid']==='microsoft365:graph:EX1550543','Graph issue GUID is stable and authoritative');
 assert_true(item_with($officialGraph,'cross_provider_signal')===null,'official Graph incident prevents redundant unconfirmed correlation');
 
-echo "OK: 27 behavioural RSS assertions\n";
+// Upstream-agnostic correlation should produce its own clearly unconfirmed RSS row.
+$cf=['cloudflare'=>[
+ 'dependency_name'=>'Cloudflare','count'=>2,'provider_ids'=>['github','vercel'],
+ 'providers'=>['GitHub','Vercel'],'first_detected'=>$clock-1200,
+ 'timestamp'=>$clock-200,'evidence'=>[]
+]];
+[$shared]=build(['incidents'=>[],'shared_dependency_correlations'=>$cf,'microsoft365_related_reports'=>null]);
+$cross=array_values(array_filter($shared,static fn($item)=>in_array('dependency_correlation',(array)$item['categories'],true)));
+assert_true(count($cross)===1,'generic shared-dependency correlation has RSS entry');
+assert_true(in_array('unconfirmed',$cross[0]['categories'],true) && !in_array('official_incident',$cross[0]['categories'],true),'no upstream attribution from downstream reports');
+assert_true(str_contains($cross[0]['title'],'Cloudflare') && str_contains($cross[0]['description'],'GitHub'),'RSS includes dependency and source names');
+echo "OK: shared dependency and existing behavioural RSS assertions\n";
