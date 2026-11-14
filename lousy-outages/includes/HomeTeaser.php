@@ -216,11 +216,12 @@ final class HomeTeaser
         $pid = sanitize_key((string) ($provider['provider_id'] ?? $provider['id'] ?? ''));
         $name = (string) ($provider['name'] ?? $provider['provider'] ?? $pid);
         $summary = Board\tidy((string) ($provider['summary'] ?? $provider['message'] ?? ''), 220);
+        $correlated = 'microsoft365' === $pid && 'cross_provider_corroboration' === (string) ($provider['source_type'] ?? '');
 
         return [
             'kind'         => 'warn',
-            'title'        => $name . ' — yellow status, no incident filed',
-            'summary'      => $summary ?: 'Status page says something is off. Nobody wrote it up.',
+            'title'        => $correlated ? 'Microsoft 365 — likely cross-provider disruption' : $name . ' — degraded signal',
+            'summary'      => $summary ?: 'Degraded signal; no direct incident is linked in this feed.',
             'provider'     => $name,
             'provider_id'  => $pid,
             'label'        => 'DEGRADED',
