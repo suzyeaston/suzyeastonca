@@ -39,7 +39,7 @@ $format_date = static function ( array $event ): string {
     return wp_date( 'D, M j · g:i a', $stamp, suzy_vmc_tz( $stamp ) );
 };
 ?>
-<link rel="stylesheet" href="<?php echo esc_url( get_template_directory_uri() . '/assets/css/vancouver-music-culture.css' ); ?>">
+
 <main id="main-content" class="vmc" role="main">
     <header class="vmc__hero">
         <p class="vmc__eyebrow pixel-font">VANCOUVER // HUMAN SIGNAL</p>
