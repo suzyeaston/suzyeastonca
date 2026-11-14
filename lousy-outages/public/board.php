@@ -360,7 +360,7 @@ function render_signal_card(array $provider): void
             <span class="lox-chip lox-chip--warn"><?php echo $relatedWatch ? 'RELATED' : ($correlated ? 'CORRELATED' : 'DEGRADED'); ?></span>
         </header>
         <?php if ($correlated) : ?>
-            <p class="lox-card__title"><?php echo $relatedWatch ? 'Related active ' : 'Likely '; ?><?php echo esc_html($name); ?>-related disruption<?php echo $sourceCount > 0 ? ' · ' . esc_html((string) $sourceCount) . ' provider reports' : ''; ?></p>
+            <p class="lox-card__title"><?php echo $relatedWatch ? 'Related active ' . esc_html($name) . ' integration incidents' : 'Likely ' . esc_html($name) . '-related disruption'; ?><?php echo $sourceCount > 0 ? ' · ' . esc_html((string) $sourceCount) . ' provider reports' : ''; ?></p>
             <?php if ($relatedWatch) : ?>
                 <p class="lox-card__context">Independent providers have active issues involving the same ecosystem, but their incident starts are hours apart. This is a related-impact watch, not evidence that the upstream provider caused both failures.</p>
             <?php else : ?>
