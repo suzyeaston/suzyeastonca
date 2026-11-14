@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - 'inc/vancouver-tech-events.php'
+      - 'inc/vancouver-tech-events-archive.php'
+      - 'style.css'
+      - 'scripts/theme_deploy_manifest.py'
       - 'tests/VancouverTechEventsTest.php'
       - '__tests__/homepage-vancouver-tech-events.test.js'
       - '.github/workflows/vancouver-tech-events-qa.yml'
@@ -11,6 +14,9 @@ on:
     branches: [main]
     paths:
       - 'inc/vancouver-tech-events.php'
+      - 'inc/vancouver-tech-events-archive.php'
+      - 'style.css'
+      - 'scripts/theme_deploy_manifest.py'
       - 'tests/VancouverTechEventsTest.php'
       - '__tests__/homepage-vancouver-tech-events.test.js'
       - '.github/workflows/vancouver-tech-events-qa.yml'
@@ -33,7 +39,7 @@ jobs:
         with:
           node-version: '22'
       - name: PHP syntax
-        run: php -l inc/vancouver-tech-events.php && php -l tests/VancouverTechEventsTest.php
+        run: php -l inc/vancouver-tech-events.php && php -l inc/vancouver-tech-events-archive.php && php -l tests/VancouverTechEventsTest.php
       - name: WordPress-free calendar behavior tests
         run: php tests/VancouverTechEventsTest.php
       - name: Homepage event UI regression tests
