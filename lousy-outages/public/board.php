@@ -349,7 +349,7 @@ function render_signal_card(array $provider): void
     $checked = first_timestamp($provider, ['checked_at', 'checkedAt', 'last_successful_at']);
     $observed = first_timestamp($provider, ['data_observed_at', 'updatedAt', 'updated_at']);
     $url = (string) ($provider['url'] ?? '');
-    $correlated = 'microsoft365' === $id && 'cross_provider_corroboration' === (string) ($provider['source_type'] ?? '');
+    $correlated = 'cross_provider_corroboration' === (string) ($provider['source_type'] ?? '');
     $sourceCount = (int) ($provider['correlation_count'] ?? 0);
     $sources = array_values(array_filter((array) ($provider['correlation_sources'] ?? []), 'is_array'));
     ?>
@@ -359,8 +359,11 @@ function render_signal_card(array $provider): void
             <span class="lox-chip lox-chip--warn"><?php echo $correlated ? 'CORRELATED' : 'DEGRADED'; ?></span>
         </header>
         <?php if ($correlated) : ?>
-            <p class="lox-card__title">Likely Microsoft 365-related disruption<?php echo $sourceCount > 0 ? ' · ' . esc_html((string) $sourceCount) . ' provider reports' : ''; ?></p>
-            <p class="lox-card__context">Independent provider incidents point to a shared Microsoft 365 dependency. Microsoft’s own incident status and the common root cause are not verified by this feed.</p>
+            <p class="lox-card__title">Likely <?php echo esc_html($name); ?>-related disruption<?php echo $sourceCount > 0 ? ' · ' . esc_html((string) $sourceCount) . ' provider reports' : ''; ?></p>
+            <p class="lox-card__context">Independent first-party provider incidents point to a shared upstream dependency within a 90-minute window. This is an early warning, not proof of the upstream provider’s root cause or incident status.</p>
+            <?php if ('microsoft365' === $id) : ?>
+                <p class="lox-card__context">Microsoft 365 detailed service health requires authorized tenant access through Microsoft Graph. We correlate public incidents reported by affected third parties instead, without claiming to bypass that access requirement.</p>
+            <?php endif; ?>
             <?php if ($sources) : ?>
                 <ul class="lox-card__sources" aria-label="Corroborating provider notices">
                     <?php foreach ($sources as $source) :

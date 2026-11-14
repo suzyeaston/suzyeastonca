@@ -218,6 +218,7 @@ class Api {
             'last_collection'=>$last,
             'microsoft365_public_scan'=>is_array($m365)?$m365:[],
             'microsoft365_graph'=>is_array($m365Graph)?$m365Graph:[],
+            'dependency_correlation_delivery'=>(array)get_option('lo_dependency_correlation_diagnostics_v1',[]),
             'microsoft365_next_scheduled_gmt'=>($next=wp_next_scheduled('lousy_outages_microsoft365_signal_scan'))?gmdate('c',(int)$next):null,
         ], 200);
     }

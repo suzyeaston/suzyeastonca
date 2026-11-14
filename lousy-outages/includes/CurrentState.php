@@ -86,5 +86,8 @@ function lousy_outages_get_current_state(): array {
     if (class_exists('\\SuzyEaston\\LousyOutages\\Microsoft365ServiceHealth')) {
         $base = \SuzyEaston\LousyOutages\Microsoft365ServiceHealth::augment_state($base);
     }
+    if (class_exists('\\SuzyEaston\\LousyOutages\\DependencyCorrelations')) {
+        $base = \SuzyEaston\LousyOutages\DependencyCorrelations::augment_state($base);
+    }
     return $base;
 }

@@ -175,6 +175,6 @@ ok(str_contains($correlatedHtml, 'https://status.zoom.us/incidents/zoom-test'), 
 ok(str_contains($correlatedHtml, 'Netlify: Delayed mail to Outlook'), 'source incident titles appear on the card');
 ok(!str_contains(strtolower($correlatedHtml), 'no incident filed'), 'board never infers that no Microsoft incident was filed');
 ok(!str_contains($correlatedHtml, 'We last checked</dt><dd>never'), 'cross-provider signal does not imply an unauthenticated Microsoft poll');
-ok(str_contains($correlatedHtml, 'root cause are not verified'), 'correlation does not falsely establish causation');
+ok(str_contains($correlatedHtml, 'root cause or incident status'), 'correlation does not falsely establish causation');
 
 echo "board render tests passed\n";

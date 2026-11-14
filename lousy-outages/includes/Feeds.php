@@ -49,13 +49,16 @@ class Feeds {
         $build=['sources_included'=>[],'excluded'=>['quiet_signals'=>0,'duplicate_items'=>0,'expired_signals'=>0,'unknown_excluded'=>0,'operational_excluded'=>0,'old_incidents_excluded'=>0,'provider_states_with_official_incident'=>0,'cross_source_duplicates'=>0,'same_official_post'=>0],'current_provider_items'=>0,'official_incident_items'=>0,'unconfirmed_signal_items'=>0,'stable_identities_reused'=>0,'new_logical_items'=>0];
         $incidentDays=(int)apply_filters('lo_status_feed_official_incident_days',self::INCIDENT_WINDOW_DAYS); $maxItems=(int)apply_filters('lo_status_feed_max_items',self::INCIDENT_LIMIT); $includeUnknown=(bool)apply_filters('lo_status_feed_include_unknown',false); $cutoff=$now-(max(1,$incidentDays)*DAY_IN_SECONDS);
         $providers=$options['providers']??Providers::list(); $states=$options['states']??(new Store())->get_all(); $lastPoll=(string)($options['last_poll']??get_option('lousy_outages_last_poll',gmdate('c',$now)));
-        $events=$options['incidents']??(new EpisodeStore())->publications(self::INCIDENT_LIMIT*3);
+        $events=$options['incidents']??(new EpisodeStore())->publications(max(150,self::INCIDENT_LIMIT*3));
         $graphIssues=array_key_exists('microsoft365_official_issues',$options)
             ? (array)$options['microsoft365_official_issues']
             : (class_exists(Microsoft365ServiceHealth::class) ? Microsoft365ServiceHealth::active_issues($now) : []);
         $relatedReports=array_key_exists('microsoft365_related_reports',$options)
             ? $options['microsoft365_related_reports']
             : (class_exists(Microsoft365Signals::class) ? Microsoft365Signals::related_provider_reports((array)$events,$now) : null);
+        $sharedCorrelations=array_key_exists('shared_dependency_correlations',$options)
+            ? (array)$options['shared_dependency_correlations']
+            : (class_exists(DependencyCorrelations::class) ? DependencyCorrelations::detect_all((array)$events,$now) : []);
         $fused=$options['fused_signals']??SignalEngine::summarize_fused_signals(120);
         if (array_key_exists('external_signals',$options)) {
             $external=(array)$options['external_signals'];
@@ -119,7 +122,7 @@ class Feeds {
             $sources=implode(', ',array_slice((array)($relatedReports['providers']??[]),0,4));
             $stamp=(int)($relatedReports['timestamp']??$now);
             $dateKey=gmdate('Y-m-d',(int)($relatedReports['first_detected']??$stamp));
-            $logical='microsoft365:correlated:'.sha1(implode('|',(array)($relatedReports['provider_ids']??[])).'|'.$dateKey);
+            $logical='microsoft365:correlated:'.sha1('microsoft365|'.gmdate('Y-m-d-H',(int)(floor((int)$relatedReports['first_detected']/21600)*21600)));
             self::put_item($items,[
                 '__selection_priority'=>1,
                 'title'=>'[UNCONFIRMED] Likely Microsoft 365-related disruption: '.$sourceCount.' independent providers reporting',
@@ -131,6 +134,28 @@ class Feeds {
                 'categories'=>['unconfirmed','cross_provider_signal','microsoft365'],
             ],$build);
             $build['sources_included'][]='microsoft365_cross_provider_corroboration';
+        }
+
+        // Other shared dependencies use the same first-party corroboration rules.
+        // Never promote these signals into upstream-confirmed incidents.
+        foreach ($sharedCorrelations as $id=>$hit) {
+            if ($id==='microsoft365' || !is_array($hit) || (int)($hit['count']??0)<2) continue;
+            $ts=(int)($hit['timestamp']??$now);
+            $first=(int)($hit['first_detected']??$ts);
+            $name=(string)($hit['dependency_name']??$id);
+            $sourceNames=implode(', ',array_slice((array)($hit['providers']??[]),0,5));
+            $slot=gmdate('Y-m-d-H',(int)(floor($first/21600)*21600));
+            self::put_item($items,[
+                '__selection_priority'=>1,
+                'title'=>'[UNCONFIRMED] Likely '.$name.'-related disruption: '.(int)$hit['count'].' independent providers',
+                'link'=>home_url('/lousy-outages/#degraded'),
+                'guid'=>'dependency:'.$id.':'.sha1($id.'|'.$slot),
+                'pubDate'=>self::format_rss_date(gmdate('c',$ts)),
+                'description'=>self::truncate_text($sourceNames.' independently report '. $name.'-related failures in a 90-minute window. Suspected shared dependency; upstream root cause unverified. See source notices on dashboard.',260),
+                'timestamp'=>$ts,
+                'categories'=>['unconfirmed','cross_provider_signal','dependency_correlation',$id],
+            ],$build);
+            $build['sources_included'][]='dependency_correlation_'.$id;
         }
 
         foreach ((array)$states as $pid=>$state) {

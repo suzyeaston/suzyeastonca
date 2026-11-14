@@ -29,6 +29,7 @@ jobs:
         run: |
           php lousy-outages/tests/microsoft365-signal-test.php
           php lousy-outages/tests/microsoft365-graph-test.php
+          php lousy-outages/tests/dependency-correlations-test.php
           php lousy-outages/tests/board-render-test.php
           php tests/LousyOutagesFeedTest.php
           node --check lousy-outages/assets/board.js

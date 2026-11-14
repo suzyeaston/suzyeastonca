@@ -183,7 +183,7 @@ final class Microsoft365ServiceHealth
         $related=null;
         if (!$issues && class_exists(Microsoft365Signals::class) && class_exists(\SuzyEaston\LousyOutages\Storage\EpisodeStore::class)) {
             $related=Microsoft365Signals::related_provider_reports(
-                (new \SuzyEaston\LousyOutages\Storage\EpisodeStore())->publications(45)
+                (new \SuzyEaston\LousyOutages\Storage\EpisodeStore())->publications(150)
             );
         }
         if (!$issues && !$related) return $state;
