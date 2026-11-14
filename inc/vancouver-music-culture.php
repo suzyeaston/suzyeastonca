@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once __DIR__ . '/vancouver-music-culture-source-parsers.php';
+
 function suzy_vmc_tz( ?int $timestamp = null ): DateTimeZone {
     // B.C. stays at UTC-7 after March 8, 2026; retain historic IANA dates.
     return null === $timestamp || $timestamp >= 1772964000
@@ -246,8 +248,8 @@ function suzy_vmc_fetch_source( array $source ): array {
     $events = [];
     $status = 'empty';
     if ( 'luma' === $source['kind'] ) {
-        // Reuse existing constrained Luma discovery parser and public resolver.
-        // Only keep culturally relevant titles explicitly in Vancouver.
+        // Reuse the constrained Luma discovery parser and resolver. The cultural
+        // title + Vancouver-city checks are intentionally stricter than tech.
         $result = suzy_fetch_vancouver_tech_events_from_html_luma(
             [ 'url' => $source['url'], 'source' => $source['label'], 'discovery' => true, 'max_details' => 8 ], false
         );
@@ -264,27 +266,59 @@ function suzy_vmc_fetch_source( array $source ): array {
     } else {
         $response = wp_remote_get( $source['endpoint'], [
             'timeout' => 6, 'redirection' => 2,
-            'headers' => [ 'Accept' => 'application/json', 'User-Agent' => 'SuzyMusicCultureCalendar/1.0' ],
+            'headers' => [ 'Accept' => in_array( $source['kind'], [ 'redgate', 'jazz_html' ], true ) ? 'text/html' : 'application/json',
+                'User-Agent' => 'SuzyMusicCultureCalendar/1.1' ],
         ] );
         if ( is_wp_error( $response ) ) {
             $status = 'request error';
         } else {
             $http_code = (int) wp_remote_retrieve_response_code( $response );
             $body = (string) wp_remote_retrieve_body( $response );
-            $data = $http_code >= 200 && $http_code < 300 && strlen( $body ) < 1000000
-                ? json_decode( $body, true ) : null;
-            if ( is_array( $data ) ) {
-                $events = 'tribe' === $source['kind']
-                    ? suzy_vmc_parse_tribe( $data, $source )
-                    : suzy_vmc_parse_squarespace( $data, $source );
-                $status = ! empty( $events ) ? 'ok' : 'empty';
+            if ( $http_code >= 200 && $http_code < 300 && strlen( $body ) < 1000000 ) {
+                if ( 'redgate' === $source['kind'] ) {
+                    $events = suzy_vmc_parse_redgate_html( $body, $source );
+                } elseif ( 'jazz_html' === $source['kind'] ) {
+                    $events = suzy_vmc_parse_jazz_html( $body, $source );
+                } else {
+                    $data = json_decode( $body, true );
+                    if ( is_array( $data ) ) {
+                        $events = 'tribe' === $source['kind']
+                            ? suzy_vmc_parse_tribe( $data, $source )
+                            : suzy_vmc_parse_squarespace( $data, $source );
+                    }
+                }
+                $status = ! empty( $events ) ? 'ok' : 'empty or unsupported format';
             } else {
                 $status = 'HTTP ' . $http_code . ' / unavailable';
             }
         }
+        // Some organizer sites expose iCalendar but block their JSON API.
+        // Never mistake a failed JSON read for a claim that no events exist.
+        if ( empty( $events ) && ! empty( $source['fallback_endpoint'] ) ) {
+            $fallback = wp_remote_get( $source['fallback_endpoint'], [
+                'timeout' => 6, 'redirection' => 2,
+                'headers' => [ 'Accept' => 'text/calendar', 'User-Agent' => 'SuzyMusicCultureCalendar/1.1' ],
+            ] );
+            if ( ! is_wp_error( $fallback ) && (int) wp_remote_retrieve_response_code( $fallback ) === 200 ) {
+                $events = suzy_vmc_parse_ical( (string) wp_remote_retrieve_body( $fallback ), $source );
+                if ( ! empty( $events ) ) { $status = 'ok (organizer iCalendar fallback)'; }
+            }
+        }
+    }
+
+    // Stale-if-error: protect recently observed listings for at most 24 hours.
+    // It avoids a single 403 making a whole venue vanish from "Upcoming".
+    $good_key = 'suzy_vmc_good_' . md5( $source['id'] );
+    if ( ! empty( $events ) ) {
+        set_transient( $good_key, $events, DAY_IN_SECONDS );
+    } else {
+        $recent = get_transient( $good_key );
+        if ( is_array( $recent ) && ! empty( $recent ) ) {
+            $events = $recent;
+            $status .= '; last good data (max 24h)';
+        }
     }
     $payload = [ 'events' => $events, 'status' => $status ];
-    // Cache failures briefly; no source failure may delete persisted history.
     set_transient( $cache_key, $payload, ! empty( $events ) ? 2 * HOUR_IN_SECONDS : 15 * MINUTE_IN_SECONDS );
     return $payload;
 }
