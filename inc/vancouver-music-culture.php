@@ -29,21 +29,51 @@ function suzy_vmc_sources(): array {
     ];
 }
 
-/** Additional official sources to check when their pages do not expose a dependable feed. */
+/** Browse-only venue and organizer links. These are not claimed as ingested feeds. */
+function suzy_vmc_directory_groups(): array {
+    return [
+        'sound' => 'Experimental sound & creative technology',
+        'diy' => 'Independent gigs, jazz & small stages',
+        'words' => 'Poetry, books, philosophy & conversations',
+        'community' => 'Community arts & local festivals',
+    ];
+}
+
 function suzy_vmc_directory(): array {
     return [
-        [ 'label' => 'Western Front · sound, performance & art', 'url' => 'https://www.westernfront.ca/' ],
-        [ 'label' => 'Music on Main · contemporary music', 'url' => 'https://www.musiconmain.ca/events/' ],
-        [ 'label' => 'Vancouver Public Library · author events', 'url' => 'https://www.vpl.ca/programs/author-events' ],
-        [ 'label' => 'Pandora’s Collective · poetry', 'url' => 'https://www.pandorascollective.com/' ],
-        [ 'label' => 'Vancouver Curiosity Club · ideas & philosophy', 'url' => 'https://vancouvercuriosityclub.com/events' ],
-        [ 'label' => '8EAST · free improvisation and community jams', 'url' => 'https://www.8east.ca/events/' ],
-        [ 'label' => 'Lobe · 4DSOUND and listening sessions', 'url' => 'https://lobestudio.ca/' ],
-        [ 'label' => 'Roundhouse · community arts', 'url' => 'https://www.roundhouse.ca/events/' ],
-        [ 'label' => 'Heart of the City · grassroots cultural festival', 'url' => 'https://www.heartofthecityfestival.com/' ],
-        [ 'label' => 'Eastside Culture Crawl · artists & studios', 'url' => 'https://culturecrawl.ca/' ],
-        [ 'label' => 'The Wise · local live music', 'url' => 'https://www.thewisehall.ca/' ],
-        [ 'label' => 'New Forms Media Society · electronic & audiovisual arts', 'url' => 'https://newformsfestival.com/' ],
+        // Experimental studios, artist-run spaces and new media.
+        [ 'group' => 'sound', 'label' => '8EAST · improvisation & community jams', 'url' => 'https://www.8east.ca/events/' ],
+        [ 'group' => 'sound', 'label' => 'Lobe · 4DSOUND and immersive listening', 'url' => 'https://lobestudio.ca/' ],
+        [ 'group' => 'sound', 'label' => 'Western Front · experimental music and artist talks', 'url' => 'https://www.westernfront.ca/' ],
+        [ 'group' => 'sound', 'label' => 'VIVO Media Arts · sound, video and digital workshops', 'url' => 'https://www.vivomediaarts.com/programming' ],
+        [ 'group' => 'sound', 'label' => 'UNIT/PITT · experimental jazz and critical art', 'url' => 'https://www.unitpitt.ca/events/' ],
+        [ 'group' => 'sound', 'label' => 'Music on Main · contemporary music', 'url' => 'https://www.musiconmain.ca/events/' ],
+        [ 'group' => 'sound', 'label' => 'New Forms · electronic and audiovisual arts', 'url' => 'https://newformsfestival.com/' ],
+
+        // Prioritize local-scale performers and independent stages, not arena tours.
+        [ 'group' => 'diy', 'label' => 'Red Gate Arts Society · DIY concerts and cabaret', 'url' => 'https://redgate.tv/schedule/' ],
+        [ 'group' => 'diy', 'label' => 'Green Auto · East Van DIY shows (Do604 listings)', 'url' => 'https://do604.com/venues/green-auto' ],
+        [ 'group' => 'diy', 'label' => 'The Wise · community concerts', 'url' => 'https://www.thewisehall.ca/' ],
+        [ 'group' => 'diy', 'label' => 'Tyrant Studios · intimate jazz and performances', 'url' => 'https://www.tyrantstudios.com/' ],
+        [ 'group' => 'diy', 'label' => 'Frankie’s Jazz Club · local and visiting jazz', 'url' => 'https://www.frankiesjazzclub.ca/' ],
+        [ 'group' => 'diy', 'label' => 'Guilt & Company · nightly live music', 'url' => 'https://www.guiltandcompany.com/' ],
+        [ 'group' => 'diy', 'label' => 'The Fox Cabaret · independent concerts and ideas nights', 'url' => 'https://www.foxcabaret.com/' ],
+        [ 'group' => 'diy', 'label' => 'Rogue Folk Club · roots, folk and Celtic concerts', 'url' => 'https://roguefolk.bc.ca/' ],
+        [ 'group' => 'diy', 'label' => 'Rhythm Changes · Vancouver jazz gig list (independent calendar)', 'url' => 'https://www.rhythmchanges.ca/gig-list-vancouver/' ],
+
+        // Literary and discussion spaces, not just music venues.
+        [ 'group' => 'words', 'label' => 'Upstart & Crow · literary studio, book launches & ideas', 'url' => 'https://upstartandcrow.com/events/' ],
+        [ 'group' => 'words', 'label' => 'Vancouver Poetry House · Van Slam and spoken word', 'url' => 'https://www.vancouverpoetryhouse.com/vanslam/' ],
+        [ 'group' => 'words', 'label' => 'Vancouver Public Library · author events', 'url' => 'https://www.vpl.ca/programs/author-events' ],
+        [ 'group' => 'words', 'label' => 'Pandora’s Collective · poetry and readings', 'url' => 'https://www.pandorascollective.com/' ],
+        [ 'group' => 'words', 'label' => 'Vancouver Curiosity Club · philosophy and conversation', 'url' => 'https://vancouvercuriosityclub.com/events' ],
+        [ 'group' => 'words', 'label' => 'Artspeak · contemporary art and writing', 'url' => 'https://www.artspeak.ca/' ],
+        [ 'group' => 'words', 'label' => 'Word Vancouver · books and literary festival', 'url' => 'https://www.wordvancouver.ca/' ],
+
+        // Grassroots programming with mixed art forms.
+        [ 'group' => 'community', 'label' => 'Roundhouse · community arts and performance', 'url' => 'https://www.roundhouse.ca/events/' ],
+        [ 'group' => 'community', 'label' => 'Heart of the City · neighbourhood arts', 'url' => 'https://www.heartofthecityfestival.com/' ],
+        [ 'group' => 'community', 'label' => 'Eastside Culture Crawl · artist studios', 'url' => 'https://culturecrawl.ca/' ],
     ];
 }
 
@@ -64,6 +94,10 @@ function suzy_vmc_verified_events(): array {
         [ 'Six Turntables: collective listening & remixed archives', '2026-11-21 14:00', '', 'Grand Luxe Hall, Western Front, 303 E 8th Ave, Vancouver', 'https://www.westernfront.ca/events/six-turntables', 'Western Front', 'music-tech' ],
         [ 'Improv Karaoke #67', '2026-11-25 18:30', '2026-11-25 22:00', '8EAST, 8 E Pender St, Vancouver', 'https://www.8east.ca/event/improv-karaoke-67/', 'NOW Society / 8EAST', 'experimental' ],
         [ 'Music for the Winter Solstice 2026', '2026-12-09 19:30', '', 'Heritage Hall, 3102 Main St, Vancouver', 'https://www.musiconmain.ca/event/music-for-the-winter-solstice-2026/', 'Music on Main', 'music' ],
+        // Small literary-studio events verified on the organizer's own event pages.
+        [ 'Driving Crazy to the Front Door: Michael Foy book launch', '2026-11-13 18:30', '2026-11-13 20:00', 'Upstart & Crow, 1387 Railspur Alley, Vancouver', 'https://upstartandcrow.com/event/driving-crazy-to-the-front-door-book-launch/', 'Upstart & Crow', 'poetry' ],
+        [ 'Dead Peasant: Lisa Baldissera in conversation', '2026-11-26 18:30', '', 'Upstart & Crow, 1387 Railspur Alley, Vancouver', 'https://upstartandcrow.com/event/dead-peasant-vancouver-book-launch/', 'Upstart & Crow', 'poetry' ],
+        [ 'Radio Discord: Gregor Craigie book launch', '2026-12-01 18:30', '', 'Upstart & Crow, 1387 Railspur Alley, Vancouver', 'https://upstartandcrow.com/event/radio-discord-book-launch-with-gregor-craigie/', 'Upstart & Crow', 'poetry' ],
         // Historical provenance seeds support archive QA but don't imply full coverage.
         [ 'BlackGate: contemporary acoustic & electronic music', '2026-11-03 19:30', '', 'Roundhouse, Vancouver', 'https://www.musiconmain.ca/event/blackgate/', 'Music on Main', 'music' ],
         [ 'at the root: listening party, poetry & open mic', '2026-11-10 18:30', '2026-11-10 21:30', 'Lobe, 713 E Hastings St, Vancouver', 'https://roadrunner-red-yde9.squarespace.com/new-events', 'Lobe', 'poetry' ],
