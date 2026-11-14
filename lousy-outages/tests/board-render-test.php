@@ -148,4 +148,33 @@ ok(str_contains($quietHtml, 'ALL CLEAR'), 'quiet board reports all clear');
 ok(str_contains($quietHtml, 'Nothing on fire. Enjoy it.'), 'quiet board shows the active empty state');
 ok(substr_count($quietHtml, 'lox-card--down') === 0, 'quiet board renders no outage cards');
 
+// A correlated Microsoft 365 dependency signal must name its independently
+// reporting providers without fabricating official Microsoft confirmation.
+$related = [
+    'id' => 'microsoft365', 'provider_id' => 'microsoft365', 'name' => 'Microsoft 365',
+    'stateCode' => 'degraded', 'lane' => 'signals', 'source_type' => 'cross_provider_corroboration',
+    'summary' => '3 independent providers reported Microsoft 365-related incidents. Likely shared disruption.',
+    'data_observed_at' => $iso(900), 'url' => 'https://status.cloud.microsoft/m365',
+    'correlation_count' => 3,
+    'correlation_sources' => [
+        ['name' => 'Zoom', 'title' => 'Microsoft 365 integration disruption', 'url' => 'https://status.zoom.us/incidents/zoom-test'],
+        ['name' => 'Netlify', 'title' => 'Delayed mail to Outlook', 'url' => 'https://www.netlifystatus.com/incidents/netlify-test'],
+        ['name' => 'OpenAI', 'title' => 'Microsoft 365 connector errors', 'url' => 'https://status.openai.com/incidents/openai-test'],
+    ],
+];
+$correlatedState = $quiet;
+$correlatedState['signals'] = [$related];
+$correlatedState['providers'] = [$related, $providers[3]];
+$correlatedState['meta']['signal_count'] = 1;
+$correlatedHtml = render($correlatedState, $config);
+ok(str_contains($correlatedHtml, 'DEGRADED + CORRELATED SIGNALS'), 'section title does not claim no incident exists');
+ok(str_contains($correlatedHtml, 'Likely Microsoft 365-related disruption'), 'correlated signal title is prominent');
+ok(str_contains($correlatedHtml, '3 provider reports'), 'corroborating provider count is visible');
+ok(str_contains($correlatedHtml, 'aria-label="Corroborating provider notices"'), 'source evidence is accessible');
+ok(str_contains($correlatedHtml, 'https://status.zoom.us/incidents/zoom-test'), 'source links appear on the card');
+ok(str_contains($correlatedHtml, 'Netlify: Delayed mail to Outlook'), 'source incident titles appear on the card');
+ok(!str_contains(strtolower($correlatedHtml), 'no incident filed'), 'board never infers that no Microsoft incident was filed');
+ok(!str_contains($correlatedHtml, 'We last checked</dt><dd>never'), 'cross-provider signal does not imply an unauthenticated Microsoft poll');
+ok(str_contains($correlatedHtml, 'root cause are not verified'), 'correlation does not falsely establish causation');
+
 echo "board render tests passed\n";
