@@ -186,7 +186,7 @@ final class DependencyCorrelations
             // an implicit opt-in to unconfirmed correlation alerts.
             $owner = sanitize_email((string)get_option('lousy_outages_email',''));
             if ($owner !== '' && is_email($owner)) $recipients[] = $owner;
-            $recipients = array_values(array_unique(array_filter($recipients, 'is_email')));
+            $recipients = array_values(array_unique(array_filter($recipients, static fn($email): bool => is_email((string)$email))));
             $subject = '[Lousy Outages / CORRELATED] Likely '.$hit['dependency_name'].' dependency disruption';
             $link = home_url('/lousy-outages/#degraded');
             $names = implode(', ',array_slice($hit['providers'],0,6));
