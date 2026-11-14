@@ -4617,10 +4617,11 @@
       const heroScale = b.hero_fidelity === 'hero' ? 1.03 : 1;
       const massingInset = b.mass_inset || profilePreset.baseInset;
       const hasHeroTreatment = isPriority || b.hero_fidelity === 'hero';
+      const mappedWaterStreet=b.x>105&&b.x<285&&b.z>105&&b.z<235;
       const renderedHeight = THREE.MathUtils.clamp(
         b.height || 10,
         hasHeroTreatment ? 8.4 : 7.6,
-        hasHeroTreatment ? 17.8 : 15.2
+        mappedWaterStreet ? 19.2 : (hasHeroTreatment ? 17.8 : 15.2)
       );
       const geom = new THREE.ExtrudeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, -point.z))), {
         depth: renderedHeight,
