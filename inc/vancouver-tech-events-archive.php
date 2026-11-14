@@ -192,7 +192,8 @@ function suzy_vte_render_archive_html( ?array $listings = null, ?int $now = null
             $years[ wp_date( 'Y', $stamp, suzy_vte_vancouver_timezone( $stamp ) ) ] = true;
         }
     }
-    $years = array_keys( $years );
+    // PHP casts numeric-looking array keys to ints; normalize for strict GET checks.
+    $years = array_map( 'strval', array_keys( $years ) );
     rsort( $years, SORT_NUMERIC );
 
     $requested_year = isset( $_GET['vte_year'] ) && is_scalar( $_GET['vte_year'] ) ? (int) $_GET['vte_year'] : 0;
