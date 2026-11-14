@@ -7,7 +7,7 @@
 /** Parse an explicitly dated iCalendar DATE-TIME, never invent an hour for all-day entries. */
 function suzy_vmc_ical_timestamp( string $header, string $value ): int {
     $value = trim( $value );
-    if ( str_contains( strtoupper( $header ), 'VALUE=DATE' ) || ! preg_match( '/^(\d{8})T(\d{6}|\d{4})(Z?)$/', $value, $m ) ) {
+    if ( preg_match( '/(?:^|;)VALUE=DATE(?:;|$)/i', $header ) || ! preg_match( '/^(\d{8})T(\d{6}|\d{4})(Z?)$/', $value, $m ) ) {
         return 0;
     }
     $date = $m[1];
@@ -65,7 +65,7 @@ function suzy_vmc_parse_ical( string $body, array $source ): array {
         if ( ! $start ) { continue; }
         $end = isset( $item['DTEND'] ) ? suzy_vmc_ical_timestamp( ...$item['DTEND'] ) : 0;
         $decode = static function ( string $v ): string {
-            return trim( preg_replace( '/\\\\([,;\\\\])/', '$1', str_replace( '\\n', ' ', strip_tags( $v ) ) ) );
+            return trim( str_replace( [ '\\n', '\\N', '\\,', '\\;', '\\\\' ], [ ' ', ' ', ',', ';', '\\' ], strip_tags( $v ) ) );
         };
         $title = $decode( (string) ( $item['SUMMARY'][1] ?? '' ) );
         $location = $decode( (string) ( $item['LOCATION'][1] ?? '' ) );
