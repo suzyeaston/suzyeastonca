@@ -57,6 +57,7 @@ THEME_FILES = [
     "inc/vancouver-tech-events-archive.php",
     "inc/vancouver-tech-events.php",
     "inc/vancouver-music-culture.php",
+    "inc/vancouver-music-culture-source-parsers.php",
     "inc/home-translink-alerts.php",
     "inc/home-yvr-audio-channels.php",
     "inc/home-yvr-broadcaster.php",
