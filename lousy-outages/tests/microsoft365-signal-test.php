@@ -18,6 +18,7 @@ require __DIR__.'/../includes/SignalSourceInterface.php';
 require __DIR__.'/../includes/ProviderRegistry.php';
 require __DIR__.'/../includes/Providers.php';
 require __DIR__.'/../includes/Sources/PublicChatterSource.php';
+require __DIR__.'/../includes/DependencyCorrelations.php';
 require __DIR__.'/../includes/Microsoft365Signals.php';
 
 use SuzyEaston\LousyOutages\Sources\PublicChatterSource;
