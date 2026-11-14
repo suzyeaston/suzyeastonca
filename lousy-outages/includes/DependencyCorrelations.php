@@ -116,11 +116,22 @@ final class DependencyCorrelations
     {
         $correlations = $correlations ?: self::current();
         foreach ($correlations as $id => $hit) {
-            $exists = false;
-            foreach ((array)($state['providers'] ?? []) as $provider) {
-                if (sanitize_key((string)($provider['provider_id'] ?? $provider['id'] ?? '')) === $id) { $exists = true; break; }
+            // Upstream's own open notice wins. A separately monitored but GREEN
+            // provider must not hide independent downstream correlation evidence.
+            $official = false;
+            foreach ((array)($state['outages'] ?? []) as $incident) {
+                if (is_array($incident) && sanitize_key((string)($incident['provider_id'] ?? '')) === $id) { $official = true; break; }
             }
-            if ($exists) continue;
+            if ($official) continue;
+            $existingProvider = false;
+            foreach ((array)($state['providers'] ?? []) as $provider) {
+                if (sanitize_key((string)($provider['provider_id'] ?? $provider['id'] ?? '')) === $id) { $existingProvider = true; break; }
+            }
+            $alreadySignalled = false;
+            foreach ((array)($state['signals'] ?? []) as $signal) {
+                if (sanitize_key((string)($signal['provider_id'] ?? '')) === $id) { $alreadySignalled = true; break; }
+            }
+            if ($alreadySignalled) continue;
             $tile = [
                 'id'=>$id,'provider_id'=>$id,'name'=>$hit['dependency_name'],
                 'stateCode'=>'degraded','status'=>'degraded','state'=>'Correlated downstream disruptions',
@@ -134,7 +145,7 @@ final class DependencyCorrelations
                 'updated_at'=>gmdate('c',$hit['timestamp']),
             ];
             $state['signals'][] = $tile;
-            $state['providers'][] = $tile;
+            if (!$existingProvider) $state['providers'][] = $tile;
         }
         $state['meta']['signal_count'] = count((array)($state['signals'] ?? []));
         return $state;
