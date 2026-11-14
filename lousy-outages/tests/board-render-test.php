@@ -176,5 +176,19 @@ ok(str_contains($correlatedHtml, 'Netlify: Delayed mail to Outlook'), 'source in
 ok(!str_contains(strtolower($correlatedHtml), 'no incident filed'), 'board never infers that no Microsoft incident was filed');
 ok(!str_contains($correlatedHtml, 'We last checked</dt><dd>never'), 'cross-provider signal does not imply an unauthenticated Microsoft poll');
 ok(str_contains($correlatedHtml, 'root cause or incident status'), 'correlation does not falsely establish causation');
+// The public must see a weaker related-impact watch when the two first-party
+// incidents are still active but did not begin in the same 90-minute window.
+$related['correlation_tier'] = 'related_reports';
+$related['correlation_count'] = 2;
+$related['correlation_sources'] = array_slice($related['correlation_sources'], 0, 2);
+$relatedState = $correlatedState;
+$relatedState['signals'] = [$related];
+$relatedState['providers'] = [$related, $providers[3]];
+$relatedHtml = render($relatedState, $config);
+ok(str_contains($relatedHtml, '>RELATED</span>'), 'active related issues use a distinct watch badge');
+ok(str_contains($relatedHtml, 'Related active Microsoft 365 integration incidents'), 'related watch is visibly different from confirmed cluster');
+ok(str_contains($relatedHtml, 'incident starts are hours apart'), 'watch explains its weaker timing evidence');
+ok(str_contains($relatedHtml, 'Netlify: Delayed mail to Outlook'), 'related watch retains source details');
+ok(!str_contains($relatedHtml, 'within a 90-minute window'), 'related watch must not claim simultaneous onsets');
 
 echo "board render tests passed\n";

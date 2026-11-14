@@ -217,10 +217,11 @@ final class HomeTeaser
         $name = (string) ($provider['name'] ?? $provider['provider'] ?? $pid);
         $summary = Board\tidy((string) ($provider['summary'] ?? $provider['message'] ?? ''), 220);
         $correlated = 'cross_provider_corroboration' === (string) ($provider['source_type'] ?? '');
+        $relatedWatch = $correlated && 'related_reports' === (string) ($provider['correlation_tier'] ?? '');
 
         return [
             'kind'         => 'warn',
-            'title'        => $correlated ? $name . ' — likely cross-provider disruption' : $name . ' — degraded signal',
+            'title'        => $relatedWatch ? $name . ' — related active incidents' : ($correlated ? $name . ' — likely cross-provider disruption' : $name . ' — degraded signal'),
             'summary'      => $summary ?: 'Degraded signal; no direct incident is linked in this feed.',
             'provider'     => $name,
             'provider_id'  => $pid,

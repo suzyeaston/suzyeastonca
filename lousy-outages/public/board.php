@@ -350,17 +350,22 @@ function render_signal_card(array $provider): void
     $observed = first_timestamp($provider, ['data_observed_at', 'updatedAt', 'updated_at']);
     $url = (string) ($provider['url'] ?? '');
     $correlated = 'cross_provider_corroboration' === (string) ($provider['source_type'] ?? '');
+    $relatedWatch = $correlated && 'related_reports' === (string) ($provider['correlation_tier'] ?? '');
     $sourceCount = (int) ($provider['correlation_count'] ?? 0);
     $sources = array_values(array_filter((array) ($provider['correlation_sources'] ?? []), 'is_array'));
     ?>
     <article class="lox-card lox-card--warn<?php echo $correlated ? ' lox-card--correlated' : ''; ?>" id="provider-<?php echo esc_attr($id); ?>">
         <header class="lox-card__head">
             <h3 class="lox-card__provider"><?php echo esc_html($name); ?></h3>
-            <span class="lox-chip lox-chip--warn"><?php echo $correlated ? 'CORRELATED' : 'DEGRADED'; ?></span>
+            <span class="lox-chip lox-chip--warn"><?php echo $relatedWatch ? 'RELATED' : ($correlated ? 'CORRELATED' : 'DEGRADED'); ?></span>
         </header>
         <?php if ($correlated) : ?>
-            <p class="lox-card__title">Likely <?php echo esc_html($name); ?>-related disruption<?php echo $sourceCount > 0 ? ' · ' . esc_html((string) $sourceCount) . ' provider reports' : ''; ?></p>
-            <p class="lox-card__context">Independent first-party provider incidents point to a shared upstream dependency within a 90-minute window. This is an early warning, not proof of the upstream provider’s root cause or incident status.</p>
+            <p class="lox-card__title"><?php echo $relatedWatch ? 'Related active ' . esc_html($name) . ' integration incidents' : 'Likely ' . esc_html($name) . '-related disruption'; ?><?php echo $sourceCount > 0 ? ' · ' . esc_html((string) $sourceCount) . ' provider reports' : ''; ?></p>
+            <?php if ($relatedWatch) : ?>
+                <p class="lox-card__context">Independent providers have active issues involving the same ecosystem, but their incident starts are hours apart. This is a related-impact watch, not evidence that the upstream provider caused both failures.</p>
+            <?php else : ?>
+                <p class="lox-card__context">Independent first-party provider incidents point to a shared upstream dependency within a 90-minute window. This is an early warning, not proof of the upstream provider’s root cause or incident status.</p>
+            <?php endif; ?>
             <?php if ('microsoft365' === $id) : ?>
                 <p class="lox-card__context">Microsoft 365 detailed service health requires authorized tenant access through Microsoft Graph. We correlate public incidents reported by affected third parties instead, without claiming to bypass that access requirement.</p>
             <?php endif; ?>

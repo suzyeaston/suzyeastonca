@@ -93,6 +93,16 @@ assert_true(str_contains($dependency['title'],'[UNCONFIRMED]') && !in_array('off
 assert_true(str_contains($dependency['title'],'2 independent providers'),'correlation strength is prominent in RSS');
 assert_true(str_contains($dependency['description'],'OpenAI') && str_contains($dependency['description'],'Claude / Anthropic'),'RSS names the corroborating providers');
 assert_true(str_contains($dependency['link'],'/lousy-outages/#degraded'),'RSS points to corroboration details on the dashboard');
+$watchReports=$related;
+$watchReports['correlation_tier']='related_reports';
+$watchReports['confidence']='watch';
+$watchReports['first_detected']=$clock-8*HOUR_IN_SECONDS;
+[$watchFeed]=build(['incidents'=>[],'microsoft365_related_reports'=>$watchReports]);
+$watchItem=item_with($watchFeed,'cross_provider_watch');
+assert_true($watchItem!==null,'active but time-separated Microsoft reports appear in RSS watch');
+assert_true(str_contains($watchItem['title'],'[WATCH / UNCONFIRMED]'),'RSS watch explicitly separates weak evidence from incident confirmation');
+assert_true(str_contains($watchItem['description'],'onset times differ'),'RSS watch does not assert a shared root cause');
+assert_true(!in_array('official_incident',$watchItem['categories'],true),'related watch is never categorized as official');
 $ex=['id'=>'EX1550543','title'=>'Some users cannot connect to Exchange Online','service'=>'Exchange Online','status'=>'ServiceDegradation','severity'=>'minor','started_at'=>'2026-01-08T08:00:00Z','impact_description'=>'Connectivity affected'];
 [$officialGraph]=build(['incidents'=>$newMinors,'microsoft365_official_issues'=>[$ex],'microsoft365_related_reports'=>$related]);
 $officialRows=array_values(array_filter($officialGraph,static fn($item)=>in_array('microsoft_graph',$item['categories'],true)));

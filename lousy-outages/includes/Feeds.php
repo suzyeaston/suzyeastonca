@@ -119,19 +119,26 @@ class Feeds {
         // evidence or proof that Microsoft is the common root cause.
         if (!$graphIssues && is_array($relatedReports) && count((array)($relatedReports['provider_ids']??[]))>=2) {
             $sourceCount=count((array)($relatedReports['provider_ids']??[]));
+            $watch=(string)($relatedReports['correlation_tier']??'')==='related_reports';
             $sources=implode(', ',array_slice((array)($relatedReports['providers']??[]),0,4));
             $stamp=(int)($relatedReports['timestamp']??$now);
             $dateKey=gmdate('Y-m-d',(int)($relatedReports['first_detected']??$stamp));
             $logical='microsoft365:correlated:'.sha1('microsoft365|'.gmdate('Y-m-d-H',(int)(floor((int)$relatedReports['first_detected']/21600)*21600)));
             self::put_item($items,[
                 '__selection_priority'=>1,
-                'title'=>'[UNCONFIRMED] Likely Microsoft 365-related disruption: '.$sourceCount.' independent providers reporting',
+                'title'=>$watch
+                    ? '[WATCH / UNCONFIRMED] Related active Microsoft integration incidents: '.$sourceCount.' independent providers'
+                    : '[UNCONFIRMED] Likely Microsoft 365-related disruption: '.$sourceCount.' independent providers reporting',
                 'link'=>home_url('/lousy-outages/#degraded'),
                 'guid'=>$logical,
                 'pubDate'=>self::format_rss_date(gmdate('c',$stamp)),
-                'description'=>self::truncate_text($sources.' independently reported Microsoft 365-related disruptions. Shared dependency likely; Microsoft root cause not verified through this feed. See source notices on the dashboard.',260),
+                'description'=>self::truncate_text($watch
+                    ? $sources.' report active Microsoft ecosystem impacts, but onset times differ. Possible relationship, no shared upstream cause established. See linked notices on the dashboard.'
+                    : $sources.' independently reported Microsoft 365-related disruptions within 90 minutes. Shared dependency suspected; Microsoft root cause unverified. See source notices on dashboard.',260),
                 'timestamp'=>$stamp,
-                'categories'=>['unconfirmed','cross_provider_signal','microsoft365'],
+                'categories'=>$watch
+                    ? ['unconfirmed','cross_provider_signal','cross_provider_watch','microsoft365']
+                    : ['unconfirmed','cross_provider_signal','microsoft365'],
             ],$build);
             $build['sources_included'][]='microsoft365_cross_provider_corroboration';
         }
