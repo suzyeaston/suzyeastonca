@@ -57,21 +57,24 @@ test('no oversize triangulated shadow caster or black roof wedge in new silhouet
   assert.match(sim,/roof\.scale\.set\(massingInset, 1, massingInset\)/);
   assert.match(sim,/if \(state\.debugEnabled\) \{\s*const edge = new THREE\.LineSegments/);
 });
-test('reference-derived skylines distinguish gridded glass and curved modern tower',()=>{
+test('mapped waterfront parcels correspond to the real named architecture',()=>{
   const group=model().create(threeStub(),world);
   const all=group.children.flatMap(b=>b.children.map(x=>x.name));
-  assert.ok(all.includes('Stone square-bay Cordova office block clean orthogonal body'));
-  assert.ok(all.includes('Seymour gridded glass tower clean orthogonal body'));
-  assert.ok(all.includes('Cordova glass upper office shaft clean orthogonal body'));
-  assert.equal(all.filter(n=>n.startsWith('Cordova curved glass strip')).length,7);
-  assert.ok(all.some(n=>n==='Cordova glazed rooftop crown'));
+  assert.ok(all.includes('333 Seymour stone and glass office podium clean orthogonal body'));
+  assert.ok(all.includes('320 Granville glazed public lobby clean orthogonal body'));
+  assert.ok(all.includes('Harbour Centre heritage Spencer podium clean orthogonal body'));
+  assert.equal(all.filter(n=>n==='320 Granville offset silver floor ribbon').length,9);
+  assert.equal(all.filter(n=>n==='320 Granville curved front glass fin').length,14);
+  assert.equal(all.filter(n=>n==='320 Granville curved side glass fin').length,14);
+  assert.equal(group.children.find(b=>b.userData.landmark==='320 Granville').userData.sourceFootprintId,'feature-15');
+  assert.equal(group.children.find(b=>b.userData.landmark==='333 Seymour').userData.sourceFootprintId,'feature-92');
 });
 test('WordPress and theme deploy load this model before Gastown sim',()=>{
   const functions=read('functions.php');
   const manifest=read('scripts/theme_deploy_manifest.py');
   const sim=read('js/gastown-sim.js');
   assert.match(functions,/'se-gastown-cordova-architecture'/);
-  assert.match(functions,/'se-gastown-harbour-vista', 'se-gastown-cordova-architecture', 'se-gastown-suzy-avatar'/);
+  assert.match(functions,/'se-gastown-harbour-vista', 'se-gastown-cordova-architecture', 'se-gastown-waterfront-skyline', 'se-gastown-suzy-avatar'/);
   assert.match(manifest,/"js\/gastown-cordova-architecture.js"/);
   assert.match(sim,/cordovaArchitecture\.create\(THREE, world\)/);
   assert.match(sim,/worldGroup\.add\(southSkyline\)/);
@@ -81,7 +84,7 @@ test('Harbour Centre has recognizable 28-floor shaft and Vancouver Lookout disc'
   const group=model().create(threeStub(),world);
   const landmark=group.children.find(child=>child.userData.landmark==='Harbour Centre / Spencer Building');
   assert.ok(landmark,'landmark must use an existing civic footprint');
-  assert.equal(landmark.userData.sourceFootprintId,'feature-92');
+  assert.equal(landmark.userData.sourceFootprintId,'feature-16');
   const names=landmark.children.map(child=>child.name);
   assert.ok(names.includes('Harbour Centre concrete gridded 28 storey shaft'));
   assert.equal(names.filter(n=>n==='Harbour Centre front window ribbon').length,56);
@@ -91,4 +94,21 @@ test('Harbour Centre has recognizable 28-floor shaft and Vancouver Lookout disc'
   assert.equal(crown.geometry.args[0],14.7);
   assert.equal(crown.geometry.args[1],14.7);
   assert.equal(crown.castShadow,false);
+});
+
+test('Vancouver Lookout is within a few metres of the real 555 W Hastings coordinate',()=>{
+  const landmark=model().create(threeStub(),world).children
+    .find(g=>g.userData.landmark==='Harbour Centre / Spencer Building');
+  const tower=landmark.children.find(g=>g.name==='Harbour Centre concrete gridded 28 storey shaft');
+  assert.ok(tower);
+  const yaw=-landmark.rotation.y,c=Math.cos(yaw),s=Math.sin(yaw);
+  const dx=tower.position.x*c-tower.position.z*s;
+  const dz=tower.position.x*s+tower.position.z*c;
+  const global={x:landmark.position.x+dx,z:landmark.position.z+dz};
+  const origin=world.meta.gis.origin,rad=Math.PI/180,R=6371008.8;
+  const expected={x:(-123.111935-origin.lon)*R*rad*Math.cos(origin.lat*rad),
+    z:-(49.284697-origin.lat)*R*rad};
+  assert.ok(Math.hypot(global.x-expected.x,global.z-expected.z)<1,
+    'Lookout must be at 555 W Hastings, not at the 333 Seymour parcel');
+  assert.ok(Math.hypot(global.x-world.parkingLot.center.x,global.z-world.parkingLot.center.z)>45);
 });

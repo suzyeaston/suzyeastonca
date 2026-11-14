@@ -87,105 +87,115 @@
       rootGroup.add(group);
       return{group,b:bounds};
     }
-    // The masonry office mass opposite the CPR brickwork. Its clean stepped
-    // streetwall preserves the 1914 station as the foreground civic landmark.
+    // 333 Seymour / Grant Thornton Place. This civic polygon (feature-92)
+    // corresponds to 49.28533, -123.11246 on the southeast corner of
+    // Seymour and Cordova. The former observation tower was wrongly here.
     {
-      const item=blockFor('feature-92','W Cordova / Seymour pale stone office frontage');
+      const item=blockFor('feature-92','333 Seymour / waterfront office frontage');
       if(item){
         const {group,b}=item;
         const cx=(b.minX+b.maxX)*0.5,cz=(b.minZ+b.maxZ)*0.5;
-        shell(group,'Stone square-bay Cordova office block',cx,cz,24,25,30,limestone,blue,8);
-        addBox(group,'Office stepped parapet',cx,30.45,cz,20,0.6,20,paleStone);
-        // Harbour Centre is the 28-storey office tower rising above the
-        // heritage Spencer podium, with a circular lookout / restaurant crown.
-        // Anchor the interpretation to this existing civic parcel, never to a
-        // free-floating skyline coordinate. Dimensions remain illustrative.
-        const towerX=cx-1.0, towerZ=cz-1.2;
-        const towerWidth=19.0, towerDepth=18.5;
-        const towerBase=21.0, towerTop=105.0, levels=28;
+        shell(group,'333 Seymour stone and glass office podium',cx,cz,25,25,13,
+          limestone,blue,3);
+        shell(group,'333 Seymour 17 storey gridded office tower',cx,cz,
+          22,22,56,glassBase,cyan,17);
+        addBox(group,'333 Seymour stepped roof',cx,56.7,cz,20,1.2,20,paleStone);
+        group.userData.landmark='333 Seymour';
+        group.userData.architectureSource='https://pci-group.com/projects/333-seymour/';
+      }
+    }
+    // 320 Granville (feature-15) is the curving 30-storey KPF design.
+    // Its 2023 built height is about 117m. Previously this was a 47m
+    // rectangular "Seymour" block: accurate coordinate, wrong architecture.
+    {
+      const item=blockFor('feature-15','320 Granville / curved waterfront glass tower');
+      if(item){
+        const {group,b}=item;
+        const cx=(b.minX+b.maxX)*0.5,cz=(b.minZ+b.maxZ)*0.5;
+        shell(group,'320 Granville glazed public lobby',cx,cz,31,29,12,
+          limestone,blue,3);
+        addBox(group,'320 Granville 30 storey tower glass core',cx,62.5,cz,
+          22,105,22,glassBase);
+        for(let level=0;level<9;level++){
+          // The set-back facade shifts gently at each belt, implying the
+          // real undulating stacked ribbon design without using web textures.
+          const y=18+level*11.3,step=Math.sin(level*0.75)*0.72;
+          addBox(group,'320 Granville offset silver floor ribbon',cx+step,y,cz,
+            23.5,0.32,23.5,mullion);
+        }
+        for(const side of [-1,1])for(let bay=-3;bay<=3;bay++){
+          const offset=bay*3.1;
+          addBox(group,'320 Granville curved front glass fin',cx+offset,66,
+            cz+side*11.3,0.30,97,0.31,(bay%2===0)?bright:cyan);
+          addBox(group,'320 Granville curved side glass fin',
+            cx+side*11.3,66,cz+offset,0.31,97,0.30,(bay%2===0)?bright:cyan);
+        }
+        addBox(group,'320 Granville rooftop step',cx,116,cz,17,1.8,18,paleStone);
+        group.userData.landmark='320 Granville';
+        group.userData.architectureSource='https://www.kpf.com/project/320-granville';
+        group.userData.heightApproximateMeters=117.3;
+      }
+    }
+    // Harbour Centre is actually at 555 W HASTINGS, southeast of the station:
+    // 49.284697, -123.111935 (SEABC engineering guide and PeeringDB).
+    // The correct civic parcel is feature-16, not feature-92. Convert the
+    // published position into that polygon's local coordinates once, and
+    // leave the station and public surface lot untouched.
+    {
+      const item=blockFor('feature-16','Harbour Centre / Spencer Building / Vancouver Lookout');
+      if(item){
+        const {group,b}=item;
+        const origin=world.meta&&world.meta.gis&&world.meta.gis.origin;
+        const rad=Math.PI/180,R=6371008.8;
+        const wx=origin&&(Number.isFinite(origin.lat)&&Number.isFinite(origin.lon))
+          ?(-123.111935-origin.lon)*R*rad*Math.cos(origin.lat*rad):b.x;
+        const wz=origin&&Number.isFinite(origin.lat)
+          ?-(49.284697-origin.lat)*R*rad:b.z;
+        const dx=wx-b.x,dz=wz-b.z,c=Math.cos(b.yaw),s=Math.sin(b.yaw);
+        const cx=c*dx+s*dz,cz=-s*dx+c*dz;
+        shell(group,'Harbour Centre heritage Spencer podium',cx,cz,32,30,20,
+          paleStone,blue,5);
+        const towerBase=20,towerTop=123,levels=28,w=22,d=22;
         addBox(group,'Harbour Centre concrete gridded 28 storey shaft',
-          towerX,(towerBase+towerTop)/2,towerZ,towerWidth,towerTop-towerBase,towerDepth,limestone);
-        // Reinforce the distinctive repetitive square window rhythm without
-        // creating hundreds of independent deep glass cubes.
+          cx,(towerBase+towerTop)*0.5,cz,w,towerTop-towerBase,d,limestone);
         for(let floor=0;floor<levels;floor++){
-          const y=towerBase+(floor+0.52)*(towerTop-towerBase)/levels;
+          const y=towerBase+(floor+0.5)*(towerTop-towerBase)/levels;
           for(const side of [-1,1]){
-            addBox(group,'Harbour Centre front window ribbon',
-              towerX,y,towerZ+side*(towerDepth/2+0.052),
-              towerWidth-1.55,1.7,0.07,blue);
+            addBox(group,'Harbour Centre front window ribbon',cx,y,
+              cz+side*(d/2+0.06),w-1.4,1.6,0.07,blue);
             addBox(group,'Harbour Centre side window ribbon',
-              towerX+side*(towerWidth/2+0.052),y,towerZ,
-              0.07,1.7,towerDepth-1.55,blue);
+              cx+side*(w/2+0.06),y,cz,0.07,1.6,d-1.4,blue);
           }
         }
-        // Concrete vertical mullions divide the horizontal glazing into
-        // repeated square bays without hundreds of separate draw calls.
-        for(let bay=-3;bay<=3;bay++){
-          const offset=bay*2.42;
-          for(const side of [-1,1]){
-            addBox(group,'Harbour Centre front concrete mullion',
-              towerX+offset,(towerBase+towerTop)/2,
-              towerZ+side*(towerDepth/2+0.12),0.24,towerTop-towerBase,0.12,limestone);
-            addBox(group,'Harbour Centre side concrete mullion',
-              towerX+side*(towerWidth/2+0.12),(towerBase+towerTop)/2,
-              towerZ+offset,0.12,towerTop-towerBase,0.24,limestone);
-          }
+        for(let bay=-3;bay<=3;bay++)for(const side of [-1,1]){
+          const offset=bay*2.72;
+          addBox(group,'Harbour Centre front concrete mullion',cx+offset,
+            (towerBase+towerTop)/2,cz+side*(d/2+0.1),0.24,towerTop-towerBase,0.1,limestone);
+          addBox(group,'Harbour Centre side concrete mullion',
+            cx+side*(w/2+0.1),(towerBase+towerTop)/2,cz+offset,
+            0.1,towerTop-towerBase,0.24,limestone);
         }
-        // Disc-shaped observation gallery with a slim pedestal and broad
-        // silver roof is its unmistakable silhouette from the station lot.
         const lookoutMetal=new THREE.MeshStandardMaterial({
-          color:0xb2bdc5,metalness:0.55,roughness:0.42
-        });
+          color:0xb2bdc5,metalness:0.55,roughness:0.42});
         const lookoutGlass=new THREE.MeshStandardMaterial({
-          color:0x568094,metalness:0.28,roughness:0.18
-        });
+          color:0x568094,metalness:0.28,roughness:0.18});
         function disc(name,radius,height,y,material){
           const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,height,32),material);
-          mesh.name=name;mesh.position.set(towerX,y,towerZ);
-          mesh.castShadow=false;mesh.receiveShadow=false;
-          group.add(mesh);return mesh;
+          mesh.name=name;mesh.position.set(cx,y,cz);
+          mesh.castShadow=false;mesh.receiveShadow=false;group.add(mesh);
+          return mesh;
         }
-        disc('Harbour Centre lookout pedestal',5.8,5,107.5,limestone);
-        disc('Vancouver Lookout panoramic glass ring',13.1,4.6,111.9,lookoutGlass);
-        disc('Vancouver Lookout lower silver rim',13.7,0.72,109.35,lookoutMetal);
-        disc('Vancouver Lookout overhanging circular roof',14.7,1.05,114.5,lookoutMetal);
-        disc('Vancouver Lookout roof cap',10.6,0.65,115.35,paleStone);
+        disc('Harbour Centre lookout pedestal',5.8,5,125.5,limestone);
+        disc('Vancouver Lookout panoramic glass ring',13.1,4.6,130.3,lookoutGlass);
+        disc('Vancouver Lookout lower silver rim',13.7,0.72,127.8,lookoutMetal);
+        disc('Vancouver Lookout overhanging circular roof',14.7,1.05,132.7,lookoutMetal);
+        disc('Vancouver Lookout roof cap',10.6,0.65,133.6,paleStone);
+        addBox(group,'Harbour Centre slim antenna mast',cx,142.3,cz,
+          0.22,16.6,0.22,mullion);
         group.userData.landmark='Harbour Centre / Spencer Building';
+        group.userData.architectureSource='https://harbourcentre.com/';
+        group.userData.civicAnchor={lat:49.284697,lon:-123.111935};
         group.userData.landmarkHeightApproximate=true;
-      }
-    }
-    // A second rectilinear glass-and-stone mass brings the actual downtown
-    // vertical skyline into the Seymour sightline, rather than blank rows.
-    {
-      const item=blockFor('feature-15','Seymour reflective blue office tower');
-      if(item){
-        const {group,b}=item;
-        const cx=(b.minX+b.maxX)*0.5,cz=(b.minZ+b.maxZ)*0.5;
-        shell(group,'Seymour gridded glass tower',cx,cz,24,25,47,glassBase,cyan,13);
-        addBox(group,'Seymour set-back glass penthouse',cx,49.5,cz,15,5,17,blue);
-      }
-    }
-    // Seymour-to-Gastown transition: the supplied 333 W Cordova images
-    // show highly reflective modern glass with rounded vertical elements.
-    // Build a slim tower within the civic outline plus a lower street wall.
-    {
-      const item=blockFor('feature-16','Cordova modern curved glass and low-rise frontage');
-      if(item){
-        const {group,b}=item;
-        shell(group,'Cordova low-rise sandstone streetwall',-18,-24,37,25,
-          17,paleStone,blue,4);
-        shell(group,'Cordova glass upper office shaft',1,1,19,19,
-          58,glassBase,cyan,16);
-        const cX=1,cZ=1;
-        // Curved corner rhythm without massive triangulated mesh/solid
-        // specular roof wedges, and without claiming a surveyed tower.
-        for(let i=-3;i<=3;i++){
-          const offset=i*2.45;
-          const z=cZ+9.5+0.52*Math.cos(i*0.58);
-          addBox(group,'Cordova curved glass strip '+i,cX+offset,31,z,2.18,53,
-            0.22,(i%2===0)?bright:cyan);
-        }
-        addBox(group,'Cordova glazed rooftop crown',1,60.2,1,16,1.0,16,mullion);
       }
     }
     rootGroup.userData.replacedIds=REPLACED_IDS.slice();
