@@ -22,10 +22,13 @@ function suzy_vmc_at( string $local ): int {
 /** Direct organizer calendars, not general search-engine result pages. */
 function suzy_vmc_sources(): array {
     return [
-        [ 'id' => '8east', 'label' => '8EAST / NOW Society', 'url' => 'https://www.8east.ca/events/', 'endpoint' => 'https://www.8east.ca/wp-json/tribe/events/v1/events?per_page=50', 'kind' => 'tribe', 'venue' => '8EAST, 8 E Pender St, Vancouver', 'category' => 'experimental' ],
+        [ 'id' => '8east', 'label' => '8EAST / NOW Society', 'url' => 'https://www.8east.ca/events/', 'endpoint' => 'https://www.8east.ca/wp-json/tribe/events/v1/events?per_page=50', 'kind' => 'tribe', 'fallback_endpoint' => 'https://www.8east.ca/events/?ical=1', 'venue' => '8EAST, 8 E Pender St, Vancouver', 'category' => 'experimental' ],
         [ 'id' => 'roundhouse', 'label' => 'Roundhouse Arts', 'url' => 'https://www.roundhouse.ca/events/', 'endpoint' => 'https://www.roundhouse.ca/wp-json/tribe/events/v1/events?per_page=50', 'kind' => 'tribe', 'venue' => 'Roundhouse, Vancouver', 'category' => 'arts' ],
         [ 'id' => 'lobe', 'label' => 'Lobe / spatial sound', 'url' => 'https://lobestudio.ca/', 'endpoint' => 'https://roadrunner-red-yde9.squarespace.com/new-events?format=json', 'kind' => 'squarespace', 'venue' => 'Lobe, 713 E Hastings St, Vancouver', 'category' => 'music-tech' ],
         [ 'id' => 'luma_discovery', 'label' => 'Luma Vancouver discovery', 'url' => 'https://luma.com/discover/vancouver', 'kind' => 'luma', 'category' => 'arts' ],
+        [ 'id' => 'upstart', 'label' => 'Upstart & Crow', 'url' => 'https://upstartandcrow.com/events/', 'endpoint' => 'https://upstartandcrow.com/wp-json/tribe/events/v1/events?per_page=50', 'fallback_endpoint' => 'https://upstartandcrow.com/events/?ical=1', 'kind' => 'tribe', 'venue' => 'Upstart & Crow, 1387 Railspur Alley, Vancouver', 'category' => 'poetry' ],
+        [ 'id' => 'redgate', 'label' => 'Red Gate Arts Society', 'url' => 'https://redgate.tv/tickets/', 'endpoint' => 'https://redgate.tv/tickets/', 'kind' => 'redgate', 'venue' => 'Red Gate, 1965 Main St, Vancouver', 'category' => 'music' ],
+        [ 'id' => 'rhythmchanges', 'label' => 'Rhythm Changes (secondary jazz listing)', 'url' => 'https://www.rhythmchanges.ca/gig-list-vancouver/', 'endpoint' => 'https://www.rhythmchanges.ca/gig-list-vancouver/', 'kind' => 'jazz_html', 'venue' => 'Vancouver jazz venues', 'category' => 'music' ],
     ];
 }
 
@@ -164,7 +167,12 @@ function suzy_vmc_normalize( array $event ): ?array {
     }
     $path = strtolower( rtrim( (string) ( $parts['path'] ?? '' ), '/' ) );
     $host = strtolower( (string) $parts['host'] );
+    // Schedule pages can link different shows to the same tickets URL and hour.
+    // Retain event-specific identity for those aggregator links.
     $identity = $host . $path . '|' . $start;
+    if ( in_array( $host, [ 'redgate.tv', 'www.redgate.tv', 'www.rhythmchanges.ca', 'rhythmchanges.ca' ], true ) ) {
+        $identity .= '|' . strtolower( preg_replace( '/[^\\p{L}\\p{N}]+/u', '', $title ) );
+    }
     $end = (int) ( $event['end'] ?? 0 );
     return [
         'id' => sha1( $identity ),
@@ -174,6 +182,7 @@ function suzy_vmc_normalize( array $event ): ?array {
         'url' => $url, 'location' => substr( trim( (string) ( $event['location'] ?? '' ) ), 0, 200 ),
         'source' => substr( trim( (string) ( $event['source'] ?? '' ) ), 0, 100 ),
         'category' => $category,
+        'time_note' => substr( trim( (string) ( $event['time_note'] ?? '' ) ), 0, 120 ),
         'origin' => ( $event['origin'] ?? '' ) === 'verified' ? 'verified' : 'feed',
         'captured_at' => (int) ( $event['captured_at'] ?? time() ),
     ];
