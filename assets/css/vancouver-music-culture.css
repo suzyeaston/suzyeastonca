@@ -153,6 +153,17 @@
 .vmc__events--past .vmc__event { background: rgba(20, 17, 33, .75); }
 .vmc__pagination { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; color: var(--vmc-muted); }
 .vmc__pagination a { color: #f6c5dc; }
+.vmc__directory-note { color: var(--vmc-muted); font-size: .85rem; line-height: 1.6; }
+.vmc__directory-groups { display: grid; gap: 1.4rem; margin-top: 1.4rem; }
+.vmc__source-group { min-width: 0; }
+.vmc__source-group h3 {
+  margin: 0 0 .65rem;
+  color: #ffd5f0;
+  font-size: 1rem;
+  font-weight: 760;
+  line-height: 1.5;
+  letter-spacing: .012em;
+}
 .vmc__directory { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .6rem; margin: .9rem 0; padding: 0; list-style: none; }
 .vmc__directory li { margin: 0; }
 .vmc__directory a {

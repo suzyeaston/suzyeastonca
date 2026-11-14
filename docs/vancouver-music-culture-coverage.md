@@ -37,3 +37,22 @@ The exact public route /vancouver-music-culture/ is served by the theme without 
 Tests: php -l inc/vancouver-music-culture.php; php -l page-vancouver-music-culture.php; php tests/VancouverMusicCultureTest.php; node --test __tests__/vancouver-music-culture.test.js __tests__/homepage-vancouver-tech-events.test.js; python3 scripts/theme_deploy_manifest.py validate after generating existing social-card assets.
 
 After merge, verify HTTP 200 and stylesheet, initial seed records across categories, organizer links, category/year controls, archive caveat, mobile layout, and site navigation. In admin mode, inspect source-status results after WP-Cron runs. Do not assume blocked sources produced records. Live visual QA is intentionally after merge.
+
+
+## November 13: independent venue discovery audit
+
+The first launch only linked twelve organizers, with some obvious missing corners of Vancouver's scene. Research cross-checked artist-run organizations (PAARC), organizers' own published calendars, Vancouver Magazine's December 2025 independent-venue guide, Rhythm Changes' November 2026 jazz gig list, and Upstart & Crow's live event pages.
+
+The directory now contains **26 distinct browse-only links**, grouped across:
+- Experimental audio & media: existing 8EAST, Lobe, Western Front, Music on Main, New Forms, plus VIVO Media Arts and UNIT/PITT (including its documented intimate jazz programming).
+- Indie gigs & small jazz rooms: Red Gate, Green Auto, Wise Hall, Tyrant Studios, Frankie's Jazz Club, Guilt & Company, Fox Cabaret, Rogue Folk Club, plus Rhythm Changes as an **independent jazz listings calendar**, not a venue.
+- Poetry and ideas: VPL, Pandora's, Curiosity Club, Upstart & Crow, Vancouver Poetry House, Artspeak and Word Vancouver.
+- Broader arts programming: Roundhouse, Heart of the City and Eastside Culture Crawl.
+
+Primary sources: https://redgate.tv/schedule/ ; https://www.vivomediaarts.com/programming ; https://www.unitpitt.ca/portfolio/caff/ ; https://upstartandcrow.com/events/ ; https://www.vancouverpoetryhouse.com/vanslam/ ; https://www.rhythmchanges.ca/gig-list-vancouver/ ; https://www.foxcabaret.com/ ; https://www.tyrantstudios.com/ . Green Auto public show discovery links to https://do604.com/venues/green-auto instead of asserting an official standalone calendar.
+
+**Exclusion:** Massy Arts Society's homepage (https://massyarts.com/) says permanently closed. It is not added as an active gallery listing. Massy Books is a separate ongoing bookshop; no assumptions about programming at its former gallery were made.
+
+Three individually dated, linked literary listings were seeded from Upstart & Crow's own event detail pages: Michael Foy (Nov 13, 6:30–8pm), Lisa Baldissera (Nov 26, 6:30pm; unknown end), and Gregor Craigie (Dec 1, 6:30pm; unknown end). No recurring dates or event times were invented. Upstart & Crow specifically warns that Eventbrite sometimes displays incorrect times; use its official event page for reference.
+
+**Important distinction:** These additional directory links do NOT turn into automatic collected events. The four existing feed adapters are unchanged until endpoint reliability can be confirmed. More links improve discovery, not automatic coverage. QA should verify grouped links on mobile, direct venue destinations, and that the homepage's next-event preview and tech calendar were not changed.
