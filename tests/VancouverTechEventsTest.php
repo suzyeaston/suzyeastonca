@@ -175,7 +175,7 @@ suzy_vte_archive_capture([]); // should not delete past observations
 check(count($GLOBALS['options']['suzy_vte_event_archive_v1']) === 1, 'empty/blocked fetch preserves historical listings');
 $archived = suzy_vte_archive_listings($fixed_now);
 check(count($archived) === 5, 'four pre-archive verified records and one observed feed record appear; future excluded');
-check($archived[0]['title'] === 'AI Tools Night' || str_contains($archived[0]['title'], 'MiningTech'), 'archive is sorted recent-first');
+check($archived[0]['start'] >= $archived[1]['start'], 'archive is sorted recent-first');
 check(!in_array('DEFRAG: Archive of Synthetic Dreams', array_column($archived, 'title'), true), 'not-yet-finished events are excluded');
 $other_year = [
     'title' => 'Security Meetup', 'start' => strtotime('2025-07-10T01:00:00Z'),
