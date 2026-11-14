@@ -9,7 +9,22 @@ function wp_parse_url($url, $component = -1) { return parse_url($url, $component
 function esc_html($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
 function esc_attr($s) { return esc_html($s); }
 function esc_url($s) { return esc_html($s); }
-function get_option($key) { return $key === 'date_format' ? 'F j, Y' : 'g:i a'; }
+function get_option($key, $default = false) {
+    if ($key === 'date_format') return 'F j, Y';
+    if ($key === 'time_format') return 'g:i a';
+    return $GLOBALS['options'][$key] ?? $default;
+}
+function add_option($key, $value, $deprecated = '', $autoload = null) {
+    if (isset($GLOBALS['options'][$key])) return false;
+    $GLOBALS['options'][$key] = $value;
+    $GLOBALS['archive_autoload'] = $autoload;
+    return true;
+}
+function update_option($key, $value, $autoload = null) { $GLOBALS['options'][$key] = $value; return true; }
+function add_action(...$args) { $GLOBALS['registered_actions'][] = $args[0]; }
+function wp_next_scheduled($hook) { return $GLOBALS['scheduled'][$hook] ?? false; }
+function wp_schedule_event($timestamp, $recurrence, $hook) { $GLOBALS['scheduled'][$hook] = $timestamp; $GLOBALS['schedule_recurrence'] = $recurrence; return true; }
+function home_url($path = '') { return 'https://www.suzyeaston.ca' . $path; }
 function wp_date($format, $timestamp, $tz = null) {
     return (new DateTimeImmutable('@'.$timestamp))->setTimezone($tz ?? new DateTimeZone('UTC'))->format($format);
 }
@@ -142,4 +157,52 @@ $bc_label = suzy_vte_render_event_list_item(['title'=>'Film Club', 'start'=>$nov
 check(str_contains($bc_label, '6:30 pm'), 'event list renders November UTC-7 regardless of outdated server tzdata');
 $historical_time = strtotime('2025-12-01T02:00:00Z');
 check(wp_date('g:i a', $historical_time, suzy_vte_vancouver_timezone($historical_time)) === '6:00 pm', 'historic winter times remain PST UTC-8');
+
+// Archive: source observations survive expiration, transient resets and blocked feeds.
+$fixed_now = strtotime('2026-11-13T20:00:00Z');
+$archive_event = [
+    'title' => 'AI Tools Night', 'start' => strtotime('2026-09-14T01:30:00Z'),
+    'end' => strtotime('2026-09-14T04:00:00Z'),
+    'url' => 'https://luma.com/ArchiveTest42', 'location' => 'Vancouver', 'source' => 'Test feed',
+];
+check(suzy_vte_archive_normalize(['title'=>'No URL', 'start'=>12345]) === null, 'unlinked/incomplete records are excluded');
+check(suzy_vte_archive_normalize(['title'=>'No date', 'url'=>'https://luma.com/abc']) === null, 'undated records are excluded');
+$GLOBALS['options'] = [];
+suzy_vte_archive_capture([$archive_event, $archive_event]);
+check(count($GLOBALS['options']['suzy_vte_event_archive_v1']) === 1, 'repeat observations of one event are idempotent');
+check($GLOBALS['archive_autoload'] === false, 'archive WordPress option is non-autoloaded');
+suzy_vte_archive_capture([]); // should not delete past observations
+check(count($GLOBALS['options']['suzy_vte_event_archive_v1']) === 1, 'empty/blocked fetch preserves historical listings');
+$archived = suzy_vte_archive_listings($fixed_now);
+check(count($archived) === 5, 'four pre-archive verified records and one observed feed record appear; future excluded');
+check($archived[0]['title'] === 'AI Tools Night' || str_contains($archived[0]['title'], 'MiningTech'), 'archive is sorted recent-first');
+check(!in_array('DEFRAG: Archive of Synthetic Dreams', array_column($archived, 'title'), true), 'not-yet-finished events are excluded');
+$other_year = [
+    'title' => 'Security Meetup', 'start' => strtotime('2025-07-10T01:00:00Z'),
+    'url' => 'https://luma.com/PreviousYear1', 'source' => 'Test',
+];
+suzy_vte_archive_capture([$other_year]);
+check(count($GLOBALS['options']['suzy_vte_event_archive_v1']) === 2, 'multiple years persist together');
+$all_archive = suzy_vte_archive_listings($fixed_now);
+check(count($all_archive) === 6, 'saved prior-year record added to seeded archive');
+check(suzy_vte_archive_topic(['title'=>'Live AI model workshop']) === 'ai', 'AI inferred from title');
+check(suzy_vte_archive_topic(['title'=>'Creative film lab night']) === 'creative', 'film is classified as creative tech');
+$_GET['vte_year'] = '2025';
+$_GET['vte_topic'] = 'security';
+$archive_html = suzy_vte_render_archive_html($all_archive, $fixed_now);
+check(str_contains($archive_html, 'Security Meetup'), 'year/topic filters include matching records');
+check(!str_contains($archive_html, 'AI Tools Night'), 'year/topic filters exclude other records');
+check(str_contains($archive_html, 'Monthly listings'), 'trend chart has accessible label');
+check(str_contains($archive_html, 'previously listed') && str_contains($archive_html, 'not confirmed attendance'), 'archive discloses provenance and limitations');
+unset($_GET['vte_year'], $_GET['vte_topic']);
+$archive_safe = suzy_vte_render_archive_html([[
+    'title'=>'Script <script>alert(1)</script>', 'start'=>strtotime('2025-01-02T01:00:00Z'),
+    'url'=>'https://luma.com/Safe123', 'source'=>'Test', 'location'=>'Anywhere',
+]], $fixed_now);
+check(str_contains($archive_safe, '&lt;script&gt;'), 'archived titles are escaped');
+suzy_vte_archive_schedule();
+check(isset($GLOBALS['scheduled']['suzy_vte_archive_refresh']), 'twice-daily archive refresh scheduled');
+check($GLOBALS['schedule_recurrence'] === 'twicedaily', 'archive refresh cadence is twice-daily');
+check(in_array('suzy_vte_archive_refresh', $GLOBALS['registered_actions'], true), 'archive cron callback registered');
+
 echo "Passed $checks Vancouver event behavior checks.\n";
