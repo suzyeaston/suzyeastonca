@@ -11,22 +11,40 @@ if ( function_exists( 'suzy_vmc_events' ) ) {
 ?>
 <section class="home-culture-spotlight crt-block" aria-labelledby="home-culture-title">
     <div class="home-culture-spotlight__art">
-        <pre class="home-culture-spotlight__clef" role="img" aria-label="Treble clef drawn in ASCII characters on five musical staff lines">             .-.
-            /   \
-            \   /
-             \ /
-             /'
-  ----------/|---------
-           / |
-  --------/--|---------
-       .-'   | '-.
-  ----(   .--|.   )----
-       '-(   | )-'
-  --------\__|/--------
-             |
-  ------------|--------
-            / \
-            \_/</pre>
+        <span class="home-culture-spotlight__staff" aria-hidden="true"></span>
+        <pre class="home-culture-spotlight__clef" role="img" aria-label="Treble clef in hand-built ASCII pixel art over a five-line music staff">              +@@@@         
+             @@@@@@@+       
+            @@@@@@@@@       
+           @@@@+    @@      
+           @@@      @@      
+          +@@       @@      
+          +@+      @@@      
+           @+    +@@@+      
+           @@   @@@@@       
+            @+@@@@@@        
+          +@@@@@@@+         
+        +@@@@@@@@           
+      +@@@@@@@@             
+    +@@@@@@@++@             
+   @@@@@@+    @@            
+ +@@@@@+      +@+           
+ @@@@@      +@@@@@@@@@@+    
+@@@@+     +@@@@@@@@@@@@@@@  
+@@@@     @@@@++ @@   +@@@@@ 
+@@@     +@@@    +@      @@@@
++@@     +@@      +@      @@@
+ +@@     +@@     +@      @@@
+   @@      +++    @+    +@@ 
+    ++++          +@   +@+  
+       +++++     ++@@+++    
+             +++++ +@       
+                    @@      
+                    +@      
+       +@@@@@+       @+     
+      +@@@@@@@@      @@     
+      @@@@@@@@@     +@+     
+       @@@@@++     +@+      
+         +@@++++@@++        </pre>
         <p class="home-culture-spotlight__art-label">YVR // SIDE B</p>
     </div>
     <div class="home-culture-spotlight__content">
