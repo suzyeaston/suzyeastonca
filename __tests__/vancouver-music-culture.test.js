@@ -59,8 +59,9 @@ test("collectors cover different domains, bound load, and don't silently fabrica
 });
 
 test("projects and homepage offer discoverability, SEO has dedicated canonical", () => {
-  assert.match(read("page-projects.php"), /Vancouver Music &amp; Culture/);
-  assert.match(read("page-projects.php"), /\/vancouver-music-culture\//);
+  // The Projects page now renders escaped card data from a PHP array.
+  assert.match(read("page-projects.php"), /Vancouver Music (?:&amp;|&) Culture/);
+  assert.match(read("page-projects.php"), /project_url\(\s*'vancouver-music-culture'\s*\)/);
   assert.match(read("page-home.php"), /parts\/home-vancouver-music-culture/);
   assert.match(read("parts/home-vancouver-music-culture.php"), /\/vancouver-music-culture\//);
   const seo = read("inc/seo.php");

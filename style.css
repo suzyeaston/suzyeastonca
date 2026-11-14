@@ -5351,6 +5351,76 @@ body {
     }
 }
 
+
+/* 2026 project index: compact, status-forward cards that do not hide the work. */
+.page-template-page-projects .projects-section { scroll-margin-top: 1.5rem; }
+.page-template-page-projects .projects-section__kicker {
+    margin: 0 0 0.5rem;
+    font-family: "IBM Plex Mono", "Courier New", monospace;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    letter-spacing: 0.1em;
+    color: #c4a2ff;
+    background: transparent;
+}
+.page-template-page-projects .projects-section-header > p:last-child {
+    max-width: 75ch;
+    margin-bottom: 1rem;
+    color: #d6e9fb;
+    background: transparent;
+}
+.page-template-page-projects .projects-hero__support {
+    margin-top: 0.85rem;
+}
+.page-template-page-projects .projects-actions {
+    row-gap: 0.7rem;
+}
+.page-template-page-projects .projects-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.page-template-page-projects .projects-card .projects-card__status {
+    align-self: flex-start;
+    max-width: 100%;
+    margin-bottom: 0.6rem;
+    border-color: rgba(199, 142, 245, 0.5);
+    background: rgba(61, 27, 82, 0.48);
+    color: #f4dfff;
+    font-family: "IBM Plex Mono", "Courier New", monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+.page-template-page-projects .projects-card--featured .projects-card__status {
+    border-color: rgba(53, 231, 198, 0.65);
+    background: rgba(18, 66, 70, 0.42);
+    color: #c7ffef;
+}
+.page-template-page-projects .projects-card .projects-card__proof {
+    margin-top: 0.35rem;
+    padding-top: 0.7rem;
+    font-size: 0.87rem;
+    line-height: 1.6;
+    color: #d5e9f4;
+    background: transparent;
+}
+.page-template-page-projects .projects-card__actions {
+    margin-top: auto;
+    padding-top: 1rem;
+    gap: 0.6rem;
+}
+.page-template-page-projects .projects-card__actions a {
+    overflow-wrap: anywhere;
+    text-align: center;
+}
+@media (max-width: 700px) {
+    .page-template-page-projects .projects-hero__title { font-size: clamp(1.75rem, 9vw, 2.7rem); }
+    .page-template-page-projects .projects-actions .pixel-button { flex: 1 1 130px; text-align: center; }
+    .page-template-page-projects .projects-card__actions .pixel-button { flex: 1 1 100%; }
+}
+
 /* Homepage clarity refresh */
 .home-layout section { margin-block: 1.5rem; }
 .home-featured-build { border: 2px solid rgba(95, 247, 205, 0.45); box-shadow: 0 0 0 1px rgba(95, 247, 205, 0.2), 0 12px 30px rgba(0,0,0,0.35); }
