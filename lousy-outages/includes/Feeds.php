@@ -115,17 +115,18 @@ class Feeds {
         // Cross-vendor notices are useful corroboration, NEVER official Microsoft
         // evidence or proof that Microsoft is the common root cause.
         if (!$graphIssues && is_array($relatedReports) && count((array)($relatedReports['provider_ids']??[]))>=2) {
+            $sourceCount=count((array)($relatedReports['provider_ids']??[]));
             $sources=implode(', ',array_slice((array)($relatedReports['providers']??[]),0,4));
             $stamp=(int)($relatedReports['timestamp']??$now);
             $dateKey=gmdate('Y-m-d',(int)($relatedReports['first_detected']??$stamp));
             $logical='microsoft365:correlated:'.sha1(implode('|',(array)($relatedReports['provider_ids']??[])).'|'.$dateKey);
             self::put_item($items,[
                 '__selection_priority'=>1,
-                'title'=>'[UNCONFIRMED] Microsoft 365 integration issues reported by multiple providers',
-                'link'=>'https://status.cloud.microsoft/m365',
+                'title'=>'[UNCONFIRMED] Likely Microsoft 365-related disruption: '.$sourceCount.' independent providers reporting',
+                'link'=>home_url('/lousy-outages/#degraded'),
                 'guid'=>$logical,
                 'pubDate'=>self::format_rss_date(gmdate('c',$stamp)),
-                'description'=>self::truncate_text($sources.' reported incidents mentioning Microsoft 365 integrations. Microsoft root cause and service health are unconfirmed.',260),
+                'description'=>self::truncate_text($sources.' independently reported Microsoft 365-related disruptions. Shared dependency likely; Microsoft root cause not verified through this feed. See source notices on the dashboard.',260),
                 'timestamp'=>$stamp,
                 'categories'=>['unconfirmed','cross_provider_signal','microsoft365'],
             ],$build);
