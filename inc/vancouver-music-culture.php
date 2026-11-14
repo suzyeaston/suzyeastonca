@@ -212,8 +212,8 @@ function suzy_vmc_fetch_source( array $source ): array {
         foreach ( $raw as $event ) {
             $title = (string) ( $event['title'] ?? '' );
             $loc = strtolower( (string) ( $event['location'] ?? '' ) );
-            if ( ! preg_match( '/music|sound|jazz|poetry|poet|literary|book|philosoph|artist|improv|performance|film|creative/', $title )
-                || ! str_contains( $loc, 'vancouver' ) ) { continue; }
+            if ( ! preg_match( '/music|sound|jazz|poetry|poet|literary|book|philosoph|artist|improv|performance|film|creative/i', $title )
+                || ! str_contains( $loc, 'vancouver' ) || preg_match( '/vancouver\s*,?\s*(wa|washington)/', $loc ) ) { continue; }
             $event['category'] = suzy_vmc_infer_category( $title );
             $events[] = $event;
         }
