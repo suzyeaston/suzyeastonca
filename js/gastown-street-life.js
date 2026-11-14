@@ -522,6 +522,18 @@
       new THREE.MeshStandardMaterial({color:0xa15245,roughness:0.91})
     ];
     const darkFrame=new THREE.MeshStandardMaterial({color:0x283a3d,roughness:0.65});
+    const ironFacade=new THREE.MeshStandardMaterial({color:0x343d3c,roughness:0.72,metalness:0.22});
+    const warmStone=new THREE.MeshStandardMaterial({color:0xcfc2a9,roughness:0.9});
+    const warehouseBrick=new THREE.MeshStandardMaterial({color:0x9e564a,roughness:0.93});
+    const sashWood=new THREE.MeshStandardMaterial({color:0x493b33,roughness:0.84});
+    // Named Gastown references describe regional typologies. Civic footprints
+    // remain authoritative; unverified addresses are not assigned to IDs.
+    const heritageReferences={
+      warehouse:'https://www.heritagesitefinder.ca/location/353-water-st-vancouver-bc',
+      edwardian:'https://www.historicplaces.ca/en/rep-reg/place-lieu.aspx?id=2549',
+      hotel:'https://www.historicplaces.ca/en/rep-reg/place-lieu.aspx?id=2547',
+      flatiron:'https://www.historicplaces.ca/en/rep-reg/place-lieu.aspx?id=2559'
+    };
     const awning=new THREE.MeshStandardMaterial({color:0x293f36,roughness:0.78});
     const storefront=new THREE.MeshStandardMaterial({color:0x49636a,roughness:0.26,metalness:0.13});
     let mappedFrontageCount=0;
@@ -558,6 +570,13 @@
       }
       if(!best)return;
       const {a,b,len,mid,near}=best;
+      const localToWorld=p=>({x:building.x+p.x*c+p.z*si,
+        z:building.z-p.x*si+p.z*c});
+      const edgeWorld=localToWorld(mid),roadWorld=localToWorld(near);
+      const northSide=edgeWorld.z<roadWorld.z;
+      const typology=building.x<148&&!northSide?'flatiron'
+        :building.x>171&&!northSide?'hotel'
+        :northSide?'warehouse':'edwardian';
       const ex=(b.x-a.x)/len,ez=(b.z-a.z)/len;
       const side=(ex*(near.z-mid.z)-ez*(near.x-mid.x))>=0?1:-1;
       const frontage=new THREE.Group();
@@ -570,15 +589,30 @@
       wall.position.set(mid.x,0,mid.z);
       wall.rotation.y=-Math.atan2(ez,ex);
       frontage.add(wall);
-      const w=Math.min(len*0.91,38),height=Math.max(9,Math.min(16.5,building.height||13));
-      const material=facadePaint[index%facadePaint.length];
+      const w=Math.min(len*0.91,38),height=Math.max(9.5,Math.min(19.2,building.height||13));
+      const material=typology==='warehouse'?(index%2?warehouseBrick:facadePaint[0])
+        :typology==='hotel'?facadePaint[1]
+        :typology==='flatiron'?facadePaint[4]:facadePaint[3];
+      const trimStone=typology==='warehouse'?warmStone:lightStone;
+      wall.userData.architecturalTypology=typology;
+      wall.userData.historicReference=heritageReferences[typology];
+      wall.userData.provenance='heritage-inspired facade, not an exact address assignment';
       // All layers are within 0.4m of the actual civic footprint wall.
       const front=side*0.17;
       box(wall,'Heritage mapped masonry facade',0,height/2,front,w,height,0.14,material);
       box(wall,'Limestone shopfront plinth',0,0.62,front+side*0.11,w,1.2,0.16,stone);
-      box(wall,'Historic projecting cornice',0,height-0.27,front+side*0.12,w+0.26,0.34,0.46,lightStone);
+      box(wall,'Historic projecting cornice',0,height-0.27,front+side*0.12,w+0.26,0.34,0.46,trimStone);
+      box(wall,'Gastown corbelled parapet cap',0,height-0.04,front+side*0.14,w+0.21,0.16,0.45,trimStone);
+      for(const x of [-w*0.34,0,w*0.34])
+        box(wall,'Historic cornice bracket',x,height-0.58,front+side*0.23,0.31,0.43,0.29,trimStone);
+      if(typology==='warehouse')box(wall,'Warehouse sandstone belt course',0,
+        height*0.63,front+side*0.20,w,0.18,0.25,warmStone);
       box(wall,'Ground floor glazing band',0,2.43,front+side*0.15,w*0.9,2.4,0.11,storefront);
       box(wall,'Dark storefront fascia',0,3.75,front+side*0.23,w*0.94,0.48,0.19,darkFrame);
+      for(const x of [-w*0.33,-w*0.11,w*0.11,w*0.33])
+        box(wall,'Historic cast iron storefront column',x,1.91,front+side*0.23,0.13,3.5,0.16,ironFacade);
+      box(wall,'Heritage storefront transom lintel',0,3.58,front+side*0.24,
+        w*0.92,0.15,0.17,typology==='hotel'?warmStone:ironFacade);
       // A row of shop canopies makes Water Street legible from pedestrian
       // height without inventing real tenant names or signage.
       if(index%3!==0)box(wall,'Gastown shop entrance awning',0,3.48,front+side*0.62,w*0.35,0.12,0.92,awning);
@@ -587,11 +621,18 @@
         const y=5.15+floor*2.85;
         for(let n=0;n<bays;n++){
           const x=((n+0.5)/bays-0.5)*w*0.89;
-          box(wall,'Heritage upper sash window',x,y,front+side*0.17,w*0.69/bays,1.72,0.10,glass);
-          box(wall,'Stone window sill',x,y-0.92,front+side*0.24,w*0.79/bays,0.10,0.22,lightStone);
+          box(wall,'Heritage upper sash window',x,y,front+side*0.17,w*0.65/bays,1.72,0.10,glass);
+          box(wall,'Stone window sill',x,y-0.92,front+side*0.24,w*0.79/bays,0.10,0.22,trimStone);
+          if(floor===0||typology==='warehouse'){
+            box(wall,'Two-over-two wood sash meeting rail',x,y,
+              front+side*0.25,w*0.67/bays,0.075,0.08,sashWood);
+            box(wall,'Historic segmental stone window lintel',x,y+0.93,
+              front+side*0.24,w*0.77/bays,0.14,0.16,trimStone);
+          }
         }
       }
       wall.userData.mappedFootprintId=building.id;
+      wall.userData.northSideOfWaterStreet=northSide;
       mappedFrontageCount++;
     });
     root.userData.mappedHeritageFrontages=mappedFrontageCount;

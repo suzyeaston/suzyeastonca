@@ -737,11 +737,15 @@
     const greeter=createKrisAvatar(THREE);
     greeter.name='KK | fictional welcoming lab NPC';
     greeter.position.set(803.0,0,804.7);greeter.visible=false;root.add(greeter);
-    cube('Exit to Water Street door',800,1.65,809.83,2.6,3.3,0.1,glass);
-    cube('Exit door glass',800,1.7,809.74,2.24,2.8,0.09,glass);
+    // Return elevator is an explicit doorway back to the lobby, rather
+    // than an impossible sixth-floor door that teleports directly outdoors.
+    cube('Sixth floor return elevator left open glass leaf',799.37,1.65,809.83,1.06,3.3,0.1,glass);
+    cube('Sixth floor return elevator right open glass leaf',800.63,1.65,809.83,1.06,3.3,0.1,glass);
+    cube('Sixth floor elevator bronze header',800,3.38,809.83,3.15,0.22,0.18,gold);
+    for(const x of [798.57,801.43])cube('Sixth floor elevator stone jamb',x,1.65,809.83,0.2,3.3,0.2,wall);
     sign(THREE,root,'MULTIMODAL LAB  ·  FLOOR 6',
       {x:800,y:4.5,z:809.64},5.4,0.48,0,{background:'#213b45',color:'#e4f5e9'});
-    sign(THREE,root,'E: RETURN TO WATER STREET',
+    sign(THREE,root,'ELEVATOR DOWN TO WATER STREET',
       {x:800,y:2.05,z:809.59},3.8,0.29,0,{background:'#294744',color:'#f3e9c9'});
     root.userData.fictionalInterior=true;
     root.userData.greeter=greeter;

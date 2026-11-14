@@ -177,7 +177,7 @@
       journeyRoot:null, escort:null, lastNear:false, farewellAt:0,
       stageSince:0, greetPlayed:false, lastGreeting:'', indoorPreviousView:null,
       doorProgress:1, liftDoorProgress:0, carDoorProgress:0, escortPaused:false,
-      outsideEscort:null, outdoorGreeting:false, outdoorWalkStarted:false },
+      outsideEscort:null, outdoorGreeting:false, outdoorWalkStarted:false, reentryBlockedUntil:0 },
     dialogData: {},
     activeDialogNpcId: '',
     activeDialogEntry: null,
@@ -193,7 +193,7 @@
     walkerName: 'Suzy',
     thirdPerson: true,
     avatarCameraFacing: 'back', // Initial camera sees Suzy walking toward the city.
-    flight: {enabled:false,altitude:0,vertical:0,secretBuffer:''},
+    flight: {enabled:false,altitude:0,vertical:0,secretBuffer:'',landing:null},
     magic: {active:false,elapsed:0,duration:2.4,group:null,spellIndex:0,spellLastAt:0},
     followCameraDistance: undefined,
     avatarElapsed: 0,
@@ -1276,7 +1276,7 @@
     lab.inside=stage!=='street';lab.stage=stage;
     lab.stageSince=performance.now()/1000;
     if(lab.roomRoot)lab.roomRoot.visible=stage==='lab';
-    if(lab.journeyRoot)lab.journeyRoot.visible=stage==='lobby'||stage==='escort'||stage==='lift'||stage==='riding';
+    if(lab.journeyRoot)lab.journeyRoot.visible=['lobby','escort','lift','riding','return-lift','riding-down','lobby-return'].includes(stage);
     if(lab.escort)lab.escort.visible=stage==='lobby'||stage==='escort'||stage==='lift'||stage==='riding';
     if(lab.outsideEscort)lab.outsideEscort.visible=stage==='street';
     if(!wasInside&&lab.inside){
@@ -1304,7 +1304,7 @@
 
   function startLandingJourney(portal) {
     const lab=state.landingLab;
-    if(lab.stage!=='street')return false;
+    if(lab.stage!=='street'||performance.now()/1000<(lab.reentryBlockedUntil||0))return false;
     lab.returnPosition={x:portal.threshold.x,z:portal.threshold.z};
     if(lab.escort)lab.escort.position.set(851.3,0,855.1);
     lab.lastGreeting='';
@@ -1343,11 +1343,11 @@
       data.entranceRight.position.x=data.entranceRightX;
       const liftTarget=(lab.stage==='escort'&&lab.escort&&
         Math.hypot(lab.escort.position.x-845,lab.escort.position.z-850.5)<0.85)
-        ||lab.stage==='lift'?1:0;
+        ||lab.stage==='lift'||lab.stage==='lobby-return'?1:0;
       lab.liftDoorProgress=approach(lab.liftDoorProgress,liftTarget,3.4);
       data.liftLeft.position.z=data.liftLeftZ-1.16*lab.liftDoorProgress;
       data.liftRight.position.z=data.liftRightZ+1.16*lab.liftDoorProgress;
-      const carTarget=lab.stage==='lift'&&elapsed<1.35?1:0;
+      const carTarget=(lab.stage==='lift'||lab.stage==='return-lift')&&elapsed<1.35?1:0;
       lab.carDoorProgress=approach(lab.carDoorProgress,carTarget,3.2);
       data.carLeft.position.x=data.carLeftX-1.2*lab.carDoorProgress;
       data.carRight.position.x=data.carRightX+1.2*lab.carDoorProgress;
@@ -1433,10 +1433,35 @@
           kk.rotation.y=Math.PI;
         }else if(t>=5.6)kk.visible=false;
       }
-      if(elapsed>2.7&&near(portal.roomExit,1.0)){
-        landingTravel('street',lab.returnPosition||portal.threshold,
-          'Outside The Landing on Water Street.');
-        lab.greetPlayed=false;lab.lastGreeting='';
+      if(elapsed>2.7&&near(portal.roomExit,1.55)){
+        // Sixth-floor return door leads to the same elevator car, never an
+        // instant outdoor teleport through the sixth-floor exterior wall.
+        landingTravel('return-lift',portal.elevatorCar,
+          'The lift doors open. Riding back down to Water Street.');
+      }
+    }else if(lab.stage==='return-lift'){
+      if(elapsed>1.6){
+        lab.stage='riding-down';lab.stageSince=nowSeconds;
+        setStatus('Elevator descending to The Landing lobby…');
+      }
+    }else if(lab.stage==='riding-down'){
+      if(elapsed>3.0){
+        lab.hasLeftEntry=true;
+        landingTravel('lobby-return',{x:850,z:851.6},
+          'Ground floor. Walk out through The Landing glass entrance onto Water Street.');
+      }
+    }else if(lab.stage==='lobby-return'){
+      if(elapsed>0.8&&near(portal.lobbyExit,1.8)){
+        const outside={x:portal.threshold.x+portal.outward.x*2.6,
+          z:portal.threshold.z+portal.outward.z*2.6};
+        landingTravel('street',outside,'Back on Water Street. KK is waiting outside again.');
+        lab.greetPlayed=false;lab.lastGreeting='';lab.outdoorGreeting=false;
+        lab.lastNear=false;lab.reentryBlockedUntil=nowSeconds+8;
+        if(lab.outsideEscort){
+          lab.outsideEscort.position.set(portal.threshold.x+portal.outward.x*0.25,0,
+            portal.threshold.z+portal.outward.z*0.25);
+          lab.outsideEscort.visible=true;
+        }
       }
     }
     setDoors();
@@ -1447,7 +1472,7 @@
     const portal=waterfrontPlaces.landingEntranceFor(state.world);
     if(!portal)return;
     const lab=state.landingLab;
-    if(lab.stage!=='street')return;
+    if(lab.stage!=='street'||performance.now()/1000<(lab.reentryBlockedUntil||0))return;
     const distance=Math.hypot(player.position.x-portal.threshold.x,
       player.position.z-portal.threshold.z);
     if(distance<10&&!lab.lastNear)setStatus('KK is waiting by the open doors at The Landing.');
@@ -2071,6 +2096,11 @@
     if (['INPUT','TEXTAREA','SELECT'].includes(target.tagName) || target.isContentEditable) return false;
     const spell = state.magic;
     const letter = event.code.slice(3).toLowerCase();
+    // SUZYFLY contains an 'l'. Do not mistake that letter for the beginning
+    // of LETSGO; otherwise the second SUZYFLY can never finish while airborne.
+    if(letter==='l'&&state.flight.secretBuffer.endsWith('suzyf')){
+      state.magic.spellIndex=0;return false;
+    }
     const now = performance.now();
     if (now - spell.spellLastAt > 3500) spell.spellIndex = 0;
     const word = 'letsgo';
@@ -4587,10 +4617,11 @@
       const heroScale = b.hero_fidelity === 'hero' ? 1.03 : 1;
       const massingInset = b.mass_inset || profilePreset.baseInset;
       const hasHeroTreatment = isPriority || b.hero_fidelity === 'hero';
+      const mappedWaterStreet=b.x>105&&b.x<285&&b.z>105&&b.z<235;
       const renderedHeight = THREE.MathUtils.clamp(
         b.height || 10,
         hasHeroTreatment ? 8.4 : 7.6,
-        hasHeroTreatment ? 17.8 : 15.2
+        mappedWaterStreet ? 19.2 : (hasHeroTreatment ? 17.8 : 15.2)
       );
       const geom = new THREE.ExtrudeGeometry(new THREE.Shape(shapePoints.map((point) => new THREE.Vector2(point.x, -point.z))), {
         depth: renderedHeight,
@@ -5667,7 +5698,7 @@
       const stage=state.landingLab.stage;
       const bounds=stage==='lab'
         ? {minX:792.75,maxX:807.25,minZ:791.1,maxZ:809.25}
-        : stage==='lift'||stage==='riding'
+        : ['lift','riding','return-lift','riding-down'].includes(stage)
         ? {minX:878.4,maxX:881.6,minZ:848.5,maxZ:851.8}
         : {minX:843.0,maxX:857.0,minZ:841.0,maxZ:858.6};
       player.position.x=Math.max(bounds.minX,Math.min(bounds.maxX,player.position.x));
@@ -6909,7 +6940,74 @@
     applyOverviewCameraPose();
   }
 
+  // The station-east central aisle is the only automatic landing target.
+  // Its walkability rules are the same rules used by normal ground traversal.
+  function findParkingLandingTarget() {
+    const lot=state.world&&state.world.parkingLot;
+    if(!lot||!waterfrontPlaces||!waterfrontPlaces.entranceFor
+      ||!waterfrontPlaces.lookoutFor||!waterfrontPlaces.isWalkableLot)return null;
+    const entry=waterfrontPlaces.entranceFor(lot);
+    const fence=waterfrontPlaces.lookoutFor(state.world,
+      harbourVista&&harbourVista.positionFor&&harbourVista.positionFor(state.world));
+    if(!entry||!fence)return null;
+    for(const t of [0.44,0.38,0.5,0.32,0.56,0.25]){
+      const p={x:entry.x+(fence.x-entry.x)*t,z:entry.z+(fence.z-entry.z)*t};
+      if(waterfrontPlaces.isWalkableLot(state.world,p))return p;
+    }
+    return null;
+  }
+
+  function beginFlightLanding() {
+    const point=findParkingLandingTarget();
+    if(!point){setStatus('Station East landing aisle is not clear. Keep flying.');return false;}
+    state.flight.landing=point;
+    state.flight.secretBuffer='';
+    state.flight.up=false;state.flight.down=false;state.flight.vertical=0;
+    clearMovementInput();state.velocity.set(0,0,0);
+    state.thirdPerson=true;state.avatarCameraFacing='back';
+    state.followCameraDistance=undefined;applyStreetCameraPose();
+    setStatus('SUZYFLY: gently returning to Station East parking. Cape stays out until touchdown.');
+    return true;
+  }
+
+  function updateFlightLanding(delta) {
+    const fly=state.flight,target=fly.landing;
+    if(!target)return;
+    const dx=target.x-player.position.x,dz=target.z-player.position.z;
+    const distance=Math.hypot(dx,dz);
+    const step=Math.min(distance,delta*18);
+    if(distance>0.0001){
+      player.position.x+=dx/distance*step;
+      player.position.z+=dz/distance*step;
+    }
+    const remaining=Math.max(0,distance-step);
+    const ground=getGroundY();
+    // Retain height while traversing toward the lot. The final few metres
+    // descend at human-readable speed, not a single-frame ground teleport.
+    const safeHeight=Math.min(36,remaining*0.16);
+    player.position.y=Math.max(ground+safeHeight,player.position.y-delta*9.5);
+    fly.altitude=Math.max(0,player.position.y-ground);
+    if(remaining<0.04&&fly.altitude<0.04){
+      player.position.set(target.x,ground,target.z);
+      fly.enabled=false;fly.altitude=0;fly.vertical=0;fly.landing=null;
+      fly.up=false;fly.down=false;
+      state.velocity.set(0,0,0);
+      state.lastSafePosition.copy(player.position);
+      enforceWorldBounds();
+      state.followCameraDistance=undefined;
+      applyStreetCameraPose();
+      setStatus('Touchdown at Station East parking! SUZYFLY again whenever you want to take off.');
+    }
+  }
+
   function movePlayer(delta) {
+    // A returning flyer has autopilot; movement keys cannot drift into walls
+    // or parked cars during the descent.
+    if(state.flight.landing){
+      state.velocity.set(0,0,0);
+      updateCameraMotionFeedback(delta,getMovementProfile());
+      return;
+    }
     // Never let a movement key interrupt the short transformation sequence.
     if (state.magic.active) {
       state.velocity.set(0,0,0);
@@ -7124,7 +7222,7 @@
   function resetToStart() {
     stopBandAudio('reset');
     const spawn = resolveSafeSpawn();
-    state.flight.enabled=false;state.flight.altitude=0;state.flight.vertical=0;
+    state.flight.enabled=false;state.flight.altitude=0;state.flight.vertical=0;state.flight.landing=null;
     state.flight.secretBuffer='';state.flight.up=false;state.flight.down=false;
     state.thirdPerson=true;state.avatarCameraFacing='back';
     player.position.set(spawn.x, spawn.y, spawn.z);
@@ -7325,18 +7423,17 @@
         if(state.flight.secretBuffer.endsWith('suzyfly')){
           const fly=state.flight;
           if (state.magic.active) return;
-          fly.enabled=!fly.enabled;fly.secretBuffer='';
+          fly.secretBuffer='';
           if(fly.enabled){
+            if(!fly.landing)beginFlightLanding();
+          }else if(!state.landingLab.inside){
+            fly.enabled=true;fly.altitude=Math.max(0,player.position.y-getGroundY());
+            fly.landing=null;
             state.thirdPerson=true;state.avatarCameraFacing='back';
             state.followCameraDistance=undefined;
             applyStreetCameraPose();
-            setStatus('SUZYFLY! WASD to fly, SPACE up, CTRL down, SHIFT for turbo. Type SUZYFLY again to land.');
-          }else{
-            fly.altitude=0;fly.vertical=0;fly.up=false;fly.down=false;
-            player.position.y=getGroundY();
-            enforceWorldBounds();
-            setStatus('Suzy has landed. Cape folded away.');
-          }
+            setStatus('SUZYFLY! WASD to fly, SPACE up, CTRL down, SHIFT for turbo. Type SUZYFLY again to return to Station East parking.');
+          }else setStatus('Exit The Landing before activating SUZYFLY.');
           event.preventDefault();return;
         }
       }
@@ -7708,6 +7805,8 @@
         } else {
           updateCameraMotionFeedback(delta, getMovementProfile());
         }
+        // Run on every animation frame, even if pointer lock pauses movement.
+        updateFlightLanding(delta);
 
         const currentWeather = state.world.weatherPresets[state.activeWeather] || null;
         maybeTriggerLightning(currentWeather);

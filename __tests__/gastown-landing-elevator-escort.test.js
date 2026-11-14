@@ -26,7 +26,7 @@ test('lobby is separate, walkable, lift is on left and escort shares journey',()
     assert.ok(places.includes(marker),marker);
   }
   assert.match(places,/elevatorLobby:\{x:845,z:851\}/);
-  assert.match(game,/function landingTravel\(stage, point, status\)/);
+  assert.match(game,/function landingTravel\(stage,\s*point,\s*status\)/);
   assert.match(game,/function updateLandingEscort\(delta,nowSeconds\)/);
   assert.match(game,/lab\.stage==='escort'/);
   assert.match(game,/lab\.stage==='lift'/);
@@ -34,7 +34,7 @@ test('lobby is separate, walkable, lift is on left and escort shares journey',()
   assert.match(game,/state\.landingLab\.journeyRoot=journey/);
   assert.match(game,/!state\.landingLab\.inside && !isPlayerInsideWaterfront/);
   assert.match(game,/if\(state\.landingLab\.inside\)\{/);
-  assert.match(game,/see ya snoozy!/i);
+  assert.match(game,/landingSpeak\('bye snoooozie!'\)/);
 });
 
 test('player cannot roam beyond lobby, elevator car or sixth-floor lab boundaries',()=>{
@@ -100,7 +100,7 @@ test('flight uses its own speed and suspends gait-based footstep animation',()=>
   assert.match(game,/FLIGHT_CRUISE_SPEED = 27/);
   assert.match(game,/FLIGHT_SPRINT_SPEED = 45/);
   assert.match(game,/state\.flight\.enabled \? 'flying'/);
-  assert.match(game,/state\.flight\.enabled \? 0 : normalizedSpeed/);
+  assert.match(game,/normalizedSpeed, \/\/ feed flight velocity into hair wind/);
   assert.match(game,/!state\.flight\.enabled && normalizedSpeed > 0\.08/);
   assert.match(avatar,/if\(mode==='flying'\)/);
 });
