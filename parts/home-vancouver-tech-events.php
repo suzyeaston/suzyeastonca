@@ -90,5 +90,4 @@ $events_url = home_url( '/vancouver-tech-events/' );
 	<?php endif; ?>
 
 	<a class="pixel-button vancouver-tech-home__cta" href="<?php echo esc_url( $events_url ); ?>"><?php echo esc_html( 'Open full calendar' ); ?></a>
-    <p class="vancouver-tech-home__culture-bridge"><a href="<?php echo esc_url( home_url( '/vancouver-music-culture/' ) ); ?>">Music, poetry &amp; cultural happenings around Vancouver</a></p>
 </section>

@@ -110,6 +110,7 @@ THEME_FILES = [
     "parts/home-signal-log.php",
     "parts/home-mission-meanwhile.php",
     "parts/home-vancouver-tech-events.php",
+    "parts/home-vancouver-music-culture.php",
     "parts/blog-card.php",
     "parts/blog-empty.php",
     "parts/blog-hero.php",
