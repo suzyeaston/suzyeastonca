@@ -12,6 +12,7 @@ if(!function_exists('wp_strip_all_tags')){function wp_strip_all_tags($value){ret
 
 require_once __DIR__.'/../lousy-outages/includes/Storage/IncidentStore.php';
 require_once __DIR__.'/../lousy-outages/includes/Feeds.php';
+require_once __DIR__.'/../lousy-outages/includes/DependencyCorrelations.php';
 require_once __DIR__.'/../lousy-outages/includes/Microsoft365Signals.php';
 use SuzyEaston\LousyOutages\Feeds;
 
