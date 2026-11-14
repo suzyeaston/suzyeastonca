@@ -33,7 +33,7 @@ test("page has upcoming, archive, source directory, safe links, and filters", ()
   assert.match(template, /current_user_can\( 'manage_options' \)/);
   assert.match(template, /suzy_vmc_directory_groups\(\)/);
   assert.match(template, /vmc__source-group/);
-  assert.match(template, /browsable venue and organizer links, not guaranteed automatic event feeds/);
+  assert.match(template, /wider directory remains browsable/);
 
   assert.match(template, /esc_html\( \$event\['time_note'\] \)/);
   assert.doesNotMatch(template, /wp_remote_get\(/);
