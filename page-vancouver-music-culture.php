@@ -82,6 +82,7 @@ $format_date = static function ( array $event ): string {
                         <h3><a href="<?php echo esc_url( $event['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $event['title'] ); ?></a></h3>
                         <p class="vmc__event-meta"><?php echo esc_html( $event['location'] ); ?> <span aria-hidden="true">·</span> <?php echo esc_html( $event['source'] ); ?></p>
                         <p class="vmc__origin"><?php echo ( $event['origin'] ?? '' ) === 'verified' ? 'Organizer-verified listing' : 'Calendar feed listing'; ?> · verify before attending</p>
+                        <?php if ( ! empty( $event['time_note'] ) ) : ?><p class="vmc__origin"><?php echo esc_html( $event['time_note'] ); ?></p><?php endif; ?>
                     </li>
                 <?php endforeach; ?>
             </ol>
@@ -128,6 +129,7 @@ $format_date = static function ( array $event ): string {
                         <h3><a href="<?php echo esc_url( $event['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $event['title'] ); ?></a></h3>
                         <p class="vmc__event-meta"><?php echo esc_html( $event['location'] ); ?> · <?php echo esc_html( $event['source'] ); ?></p>
                         <p class="vmc__origin"><?php echo ( $event['origin'] ?? '' ) === 'verified' ? 'Organizer-verified historical listing' : 'Previously captured feed listing'; ?> · not proof the event took place</p>
+                        <?php if ( ! empty( $event['time_note'] ) ) : ?><p class="vmc__origin"><?php echo esc_html( $event['time_note'] ); ?></p><?php endif; ?>
                     </li>
                 <?php endforeach; ?>
             </ol>
@@ -147,7 +149,7 @@ $format_date = static function ( array $event ): string {
             <h2 id="vmc-sources-title">Where the good stuff happens</h2>
             <p>There is no single comprehensive feed for grassroots culture. These independent community calendars deserve a look even if their listings cannot always be automatically imported.</p>
         </div>
-        <p class="vmc__directory-note">These are browsable venue and organizer links, not guaranteed automatic event feeds. Open a source to confirm current dates and admission details.</p>
+        <p class="vmc__directory-note">The calendar attempts automatic collection from a small number of organizer and community sources, while the wider directory remains browsable. Feed availability can change; verify dates directly with each venue.</p>
         <div class="vmc__directory-groups">
             <?php foreach ( suzy_vmc_directory_groups() as $group_slug => $group_title ) : ?>
                 <section class="vmc__source-group" aria-labelledby="vmc-source-<?php echo esc_attr( $group_slug ); ?>">
