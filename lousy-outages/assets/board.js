@@ -243,7 +243,7 @@
     head.appendChild(el('span', 'lox-chip lox-chip--warn', relatedWatch ? 'RELATED' : (correlated ? 'CORRELATED' : 'DEGRADED')));
     card.appendChild(head);
     if (correlated) {
-      card.appendChild(el('p', 'lox-card__title', (relatedWatch ? 'Related active ' : 'Likely ') + name + '-related disruption' + (count > 0 ? ' · ' + count + ' provider reports' : '')));
+      card.appendChild(el('p', 'lox-card__title', (relatedWatch ? 'Related active ' + name + ' integration incidents' : 'Likely ' + name + '-related disruption') + (count > 0 ? ' · ' + count + ' provider reports' : '')));
       card.appendChild(el('p', 'lox-card__context', relatedWatch
         ? 'Independent providers have active issues involving the same ecosystem, but their incident starts are hours apart. This is a related-impact watch, not evidence that the upstream provider caused both failures.'
         : 'Independent first-party provider incidents point to a shared upstream dependency within a 90-minute window. This is an early warning, not proof of the upstream provider’s root cause or incident status.'));
