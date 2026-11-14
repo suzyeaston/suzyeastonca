@@ -5034,11 +5034,35 @@
   }
 
   function addHeroLandmarks(world) {
+    // Landmark subsystems must not share a failure boundary. In particular,
+    // a broken optional Landing lobby used to abort before the 1914 station,
+    // Station East surface lot, and even the Steam Clock could render.
+    const safelyCreate = (label, build) => {
+      try { return build(); }
+      catch (error) {
+        if (window.console && window.console.warn) {
+          window.console.warn('[Gastown Sim] Landmark unavailable: ' + label, error);
+        }
+        return null;
+      }
+    };
+    // Render civic anchors FIRST, independently of all scenic/lobby extras.
+    if (stationModel && typeof stationModel.create === 'function') {
+      const stationExterior = safelyCreate('Waterfront Station', () => stationModel.create(THREE, world));
+      if (stationExterior) {
+        worldGroup.add(stationExterior);
+        thirdPersonCameraBlockers.push(stationExterior);
+      }
+    }
+    if (waterfrontPlaces && typeof waterfrontPlaces.createParking === 'function') {
+      const parking = safelyCreate('Station East parking', () => waterfrontPlaces.createParking(THREE, world));
+      if (parking) worldGroup.add(parking);
+    }
     // All harbour layers are outside the walkable polygon; always render them
     // before/behind the civic building hero meshes so depth-test occlusion
     // remains honest from street level.
     if (harbourVista) {
-      const northHarbour = harbourVista.create(THREE, world);
+      const northHarbour = safelyCreate('harbour', () => harbourVista.create(THREE, world));
       if (northHarbour) {
         worldGroup.add(northHarbour);
         state.harbourVistaRoot = northHarbour;
@@ -5046,7 +5070,7 @@
     }
     if (waterfrontPlaces) {
       if(typeof waterfrontPlaces.createLandingJourney==='function'){
-        const journey=waterfrontPlaces.createLandingJourney(THREE);
+        const journey=safelyCreate('The Landing lobby', () => waterfrontPlaces.createLandingJourney(THREE));
         if(journey){
           journey.visible=false;
           worldGroup.add(journey);
@@ -5065,25 +5089,27 @@
         }
       }
       if(typeof waterfrontPlaces.createLabInterior==='function'){
-        const lab=waterfrontPlaces.createLabInterior(THREE);
+        const lab=safelyCreate('The Landing lab', () => waterfrontPlaces.createLabInterior(THREE));
         if(lab){
           lab.visible=false;
           worldGroup.add(lab);
           state.landingLab.roomRoot=lab;
         }
       }
-      const shorelinePlaces = waterfrontPlaces.create(THREE, world);
-      if (shorelinePlaces) {
-        worldGroup.add(shorelinePlaces);
-        // Landing's broad pale wall is a key camera collision surface.
-        const landingGroup=shorelinePlaces.children.find(g=>g && /Kelly-Douglas/.test(g.name));
-        if(landingGroup)thirdPersonCameraBlockers.push(landingGroup);
+      // The surface lot is already safe and visible above; a Landing facade
+      // failure should not remove it from the scene.
+      if (typeof waterfrontPlaces.createLanding === 'function') {
+        const landingGroup=safelyCreate('The Landing exterior', () => waterfrontPlaces.createLanding(THREE, world));
+        if (landingGroup) {
+          worldGroup.add(landingGroup);
+          thirdPersonCameraBlockers.push(landingGroup);
+        }
       }
     }
     // Lightweight reference-inspired Water Street frontage. Keep this
     // separate from the survey-aligned collision footprints and harbour.
     if (streetLife && typeof streetLife.createWaterStreetDetails === 'function') {
-      const waterStreetDetails = streetLife.createWaterStreetDetails(THREE, world);
+      const waterStreetDetails = safelyCreate('Water Street details', () => streetLife.createWaterStreetDetails(THREE, world));
       if (waterStreetDetails) {
         worldGroup.add(waterStreetDetails);
         // Deliberately not a collider: authored storefront stages must never
@@ -5091,19 +5117,12 @@
       }
     }
     if (cordovaArchitecture && typeof cordovaArchitecture.create === 'function') {
-      const southSkyline = cordovaArchitecture.create(THREE, world);
+      const southSkyline = safelyCreate('Cordova architecture', () => cordovaArchitecture.create(THREE, world));
       if (southSkyline) {
         worldGroup.add(southSkyline);
         // Cast the follow camera against physical building elevations;
         // the GIS walkability footprint remains authoritative.
         thirdPersonCameraBlockers.push(southSkyline);
-      }
-    }
-    if (stationModel) {
-      const stationExterior = stationModel.create(THREE, world);
-      if (stationExterior) {
-        worldGroup.add(stationExterior);
-        thirdPersonCameraBlockers.push(stationExterior);
       }
     }
     (world.hero_landmarks || []).forEach((hero) => {

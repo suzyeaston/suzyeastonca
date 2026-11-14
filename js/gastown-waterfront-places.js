@@ -759,6 +759,9 @@
     const gold=new THREE.MeshStandardMaterial({color:0xb99855,metalness:0.58,roughness:0.3});
     const glass=new THREE.MeshStandardMaterial({color:0xb2d3d9,transparent:true,opacity:0.28,depthWrite:false,side:THREE.DoubleSide,roughness:0.16,metalness:0.02});
     const tile=new THREE.MeshStandardMaterial({color:0x89745e,roughness:0.79});
+    // The vestibule and floor display both use this dark stone. A missing
+    // material here used to throw before Station East and the lot were rendered.
+    const dark=new THREE.MeshStandardMaterial({color:0x222a2f,roughness:0.48});
     function block(name,x,y,z,w,h,d,material){
       const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
       m.name=name;m.position.set(x,y,z);root.add(m);return m;
