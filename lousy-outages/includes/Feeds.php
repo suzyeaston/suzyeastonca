@@ -49,7 +49,7 @@ class Feeds {
         $build=['sources_included'=>[],'excluded'=>['quiet_signals'=>0,'duplicate_items'=>0,'expired_signals'=>0,'unknown_excluded'=>0,'operational_excluded'=>0,'old_incidents_excluded'=>0,'provider_states_with_official_incident'=>0,'cross_source_duplicates'=>0,'same_official_post'=>0],'current_provider_items'=>0,'official_incident_items'=>0,'unconfirmed_signal_items'=>0,'stable_identities_reused'=>0,'new_logical_items'=>0];
         $incidentDays=(int)apply_filters('lo_status_feed_official_incident_days',self::INCIDENT_WINDOW_DAYS); $maxItems=(int)apply_filters('lo_status_feed_max_items',self::INCIDENT_LIMIT); $includeUnknown=(bool)apply_filters('lo_status_feed_include_unknown',false); $cutoff=$now-(max(1,$incidentDays)*DAY_IN_SECONDS);
         $providers=$options['providers']??Providers::list(); $states=$options['states']??(new Store())->get_all(); $lastPoll=(string)($options['last_poll']??get_option('lousy_outages_last_poll',gmdate('c',$now)));
-        $events=$options['incidents']??(new EpisodeStore())->publications(self::INCIDENT_LIMIT*3);
+        $events=$options['incidents']??(new EpisodeStore())->publications(max(150,self::INCIDENT_LIMIT*3));
         $graphIssues=array_key_exists('microsoft365_official_issues',$options)
             ? (array)$options['microsoft365_official_issues']
             : (class_exists(Microsoft365ServiceHealth::class) ? Microsoft365ServiceHealth::active_issues($now) : []);
