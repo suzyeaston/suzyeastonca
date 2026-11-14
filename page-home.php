@@ -21,6 +21,8 @@ get_header();
 
         <?php get_template_part( 'parts/home-vancouver-tech-events' ); ?>
 
+        <?php get_template_part( 'parts/home-vancouver-music-culture' ); ?>
+
         <?php get_template_part( 'parts/home-radio-feature' ); ?>
     </section>
 
