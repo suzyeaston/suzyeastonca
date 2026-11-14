@@ -374,7 +374,7 @@ test("archive is mounted after the unchanged upcoming calendar and before commun
   assert.match(archive, /suzy_vte_event_archive_v1/);
   assert.match(archive, /suzy_vte_archive_schedule/);
   assert.match(archive, /wp_schedule_event\( time\(\) \+ 120, 'twicedaily'/);
-  assert.match(archive, /Monthly listings for/);
+  assert.match(archive, /Known archived listings \(incomplete coverage\) for/);
   assert.match(archive, /previously listed/);
   assert.match(style, /\.vte-archive__months/);
   assert.match(manifest, /"inc\/vancouver-tech-events-archive\.php"/);

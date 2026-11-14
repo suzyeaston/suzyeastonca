@@ -225,3 +225,49 @@ QA:
    monthly histogram, confirm Futureproof and the November 9 events appear,
    check DEFRAG is still upcoming, then verify the next calendar refresh
    appends new events without deleting previous records.
+
+ 
+## November 13, 2026: historical-coverage QA correction
+
+The first archive screenshot showed four manually verified old records, all
+starting by November 9. There was no source-backed backfill for Nov 10–12,
+and old Luma/Meetup events may no longer appear in their upcoming feeds.
+This is an **ingestion gap**, not evidence of no tech activity. November
+9–10 conferences also appeared only under their start date.
+
+Add eight verified past event listings directly to the archive reader
+(**not** the public upcoming feed). These are pre-install backfill entries;
+each has a dated organizer link, start, and where published, end:
+
+- Nov 10: NKST Summit Vancouver, 08:00–17:00,
+  https://thenkst.com/nkst-summit-vancouver-2026/
+  (Anvil Centre, New Westminster); Get Tech Vibes, 17:00 start,
+  https://uni.unite.love/events/get-tech-vibes-get-connected-get-funded-a65b9c
+  (The Basement, downtown Vancouver).
+- Nov 11: Vancouver AI/ML & Computer Vision online meetup,
+  https://www.meetup.com/vancouver-ai-machine-learning-and-computer-vision-meetup/events/316572570/
+  (the organizer's event calendar gives 17:00 UTC = 10:00 Vancouver PCT;
+  its description still says "9 PST"); FV + AI 18:00–20:00,
+  https://bc-ai.ca/events/2026-11-11-fv-ai-november-fraser-valley-ai-community-meetup
+  (Langley Township, **regional**, not Vancouver city).
+- Nov 12: Social Pair Coding, 12:00–14:00,
+  https://www.meetup.com/code-together-vancouver/events/317107736/ ;
+  Hardware Behind the AI Buildout, 15:00–17:00,
+  https://luma.com/vancouver-06wa (time corroborated by
+  https://allai.events/event/the-hardware-behind-the-ai-buildout );
+  VanCitySec 17:30–23:30, https://luma.com/8i062xgp ;
+  BC + AI Film Club 18:30–22:00,
+  https://luma.com/noir and
+  https://bc-ai.ca/events/2026-11-12-ai-film-club-with-kevin-friel-nov-12 .
+
+For multi-day events, the card now renders the range (e.g. Nov 9–10)
+but the monthly trend counts the listing **once**, in its start month.
+The histogram labels absent data as a dash and says that absent archive
+records do not mean no events took place. All eight are explicitly
+marked verified listings, not attendance confirmation.
+
+This is an intentionally **limited, documented backfill**, not an
+exhaustive calendar reconstruction. Next QA: verify that Nov 10, 11, 12
+appear in descending chronological order on the published archive, that
+regional/online venues are labelled, and that November 13 upcoming events
+remain in the upcoming list.

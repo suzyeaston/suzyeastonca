@@ -174,8 +174,35 @@ check($GLOBALS['archive_autoload'] === false, 'archive WordPress option is non-a
 suzy_vte_archive_capture([]); // should not delete past observations
 check(count($GLOBALS['options']['suzy_vte_event_archive_v1']) === 1, 'empty/blocked fetch preserves historical listings');
 $archived = suzy_vte_archive_listings($fixed_now);
-check(count($archived) === 5, 'four pre-archive verified records and one observed feed record appear; future excluded');
+check(count($archived) === 13, 'twelve verified records plus one observed feed record appear; future excluded');
 check($archived[0]['start'] >= $archived[1]['start'], 'archive is sorted recent-first');
+
+$backfill = suzy_vte_archive_verified_backfill();
+check(count($backfill) === 8, 'eight individually sourced events added for November 10–12');
+$backfill_dates = array_map(static function ($event) {
+    $stamp = $event['start'];
+    return wp_date('Y-m-d', $stamp, suzy_vte_vancouver_timezone($stamp));
+}, $backfill);
+check(count(array_filter($backfill_dates, static fn($date) => $date === '2026-11-10')) === 2, 'Nov 10 verified organizer listings are present');
+check(count(array_filter($backfill_dates, static fn($date) => $date === '2026-11-11')) === 2, 'Nov 11 local/regional listings are present');
+check(count(array_filter($backfill_dates, static fn($date) => $date === '2026-11-12')) === 4, 'Nov 12 coding, hardware, security and Film Club listings are present');
+check(in_array('AI Film Club with Kevin Friel | Nov 12', array_column($archived, 'title'), true), 'BC + AI Film Club from Nov 12 is visible');
+check(in_array('VanCitySec', array_column($archived, 'title'), true), 'VanCitySec from Nov 12 is visible');
+check($backfill[2]['start'] === strtotime('2026-11-11T17:00:00Z'), 'Nov 11 online meetup uses its published UTC slot, with permanent Vancouver UTC-7');
+check(str_contains($backfill[3]['location'], 'Langley'), 'Fraser Valley venue is not misidentified as downtown Vancouver');
+check(suzy_vte_archive_date_label($backfill[7]) === 'Nov 12, 2026 · 6:30 pm', 'single-day events keep the original date label');
+$multi_day = suzy_get_vancouver_tech_verified_fallback_events()[0];
+check(str_contains(suzy_vte_archive_date_label($multi_day), 'Nov 9–10, 2026'), 'multi-day events show both Nov 9 and 10 in the archive');
+$known_urls = array_column($backfill, 'url');
+check(count(array_unique($known_urls)) === 8, 'backfill keeps a distinct organizer URL per event');
+$repeat = array_merge($backfill, $backfill);
+$unique = [];
+foreach ($repeat as $event) {
+    $normalized = suzy_vte_archive_normalize($event, $fixed_now);
+    $unique[$normalized['id']] = $normalized;
+}
+check(count($unique) === 8, 'backfill remains identity-deduplicated across repeated observations');
+
 check(!in_array('DEFRAG: Archive of Synthetic Dreams', array_column($archived, 'title'), true), 'not-yet-finished events are excluded');
 $other_year = [
     'title' => 'Security Meetup', 'start' => strtotime('2025-07-10T01:00:00Z'),
@@ -184,7 +211,7 @@ $other_year = [
 suzy_vte_archive_capture([$other_year]);
 check(count($GLOBALS['options']['suzy_vte_event_archive_v1']) === 2, 'multiple years persist together');
 $all_archive = suzy_vte_archive_listings($fixed_now);
-check(count($all_archive) === 6, 'saved prior-year record added to seeded archive');
+check(count($all_archive) === 14, 'saved prior-year record added to verified backfill');
 check(suzy_vte_archive_topic(['title'=>'Live AI model workshop']) === 'ai', 'AI inferred from title');
 check(suzy_vte_archive_topic(['title'=>'Creative film lab night']) === 'creative', 'film is classified as creative tech');
 $_GET['vte_year'] = '2025';
@@ -192,7 +219,7 @@ $_GET['vte_topic'] = 'security';
 $archive_html = suzy_vte_render_archive_html($all_archive, $fixed_now);
 check(str_contains($archive_html, 'Security Meetup'), 'year/topic filters include matching records');
 check(!str_contains($archive_html, 'AI Tools Night'), 'year/topic filters exclude other records');
-check(str_contains($archive_html, 'Monthly listings'), 'trend chart has accessible label');
+check(str_contains($archive_html, 'Known archived listings (incomplete coverage)'), 'trend chart states incomplete source coverage');
 check(str_contains($archive_html, 'previously listed') && str_contains($archive_html, 'not confirmed attendance'), 'archive discloses provenance and limitations');
 unset($_GET['vte_year'], $_GET['vte_topic']);
 $archive_safe = suzy_vte_render_archive_html([[

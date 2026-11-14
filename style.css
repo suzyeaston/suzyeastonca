@@ -4469,6 +4469,7 @@ body.page-template-page-bio-php .bio-content {
 .vte-archive__filters button:hover, .vte-archive__filters button:focus-visible { background: #306b9b; }
 .vte-archive__overview { padding: 0.65rem 0.8rem 1rem; margin-bottom: 1rem; border: 1px solid rgba(123, 198, 255, 0.25); border-radius: 9px; }
 .vte-archive__overview > p { margin: 0 0 0.65rem; color: #d9efff; }
+.vte-archive__coverage { color: #aacce2; font-size: 0.78rem; line-height: 1.4; margin: 0 0 0.7rem; }
 .vte-archive__months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: end; gap: 0.35rem; min-height: 96px; }
 .vte-archive__month { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 0.2rem; height: 96px; min-width: 0; font-size: 0.65rem; color: #c8ebff; }
 .vte-archive__month .vte-archive__bar { display: block; min-height: 0; width: min(100%, 24px); background: linear-gradient(0deg, #4c9cce, #a5e3ff); border-radius: 3px 3px 0 0; }
