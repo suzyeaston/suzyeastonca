@@ -271,7 +271,7 @@ function verdict(array $state): array
         return [
             'tone' => 'warn',
             'line' => 'DEGRADED',
-            'sub'  => sprintf('%d %s flagged trouble without filing an incident.', $signals, 1 === $signals ? 'provider' : 'providers'),
+            'sub'  => sprintf('%d %s showing degraded or correlated signals; confirmation varies by source.', $signals, 1 === $signals ? 'provider' : 'providers'),
         ];
     }
     if ($unverified > 0) {
@@ -349,19 +349,46 @@ function render_signal_card(array $provider): void
     $checked = first_timestamp($provider, ['checked_at', 'checkedAt', 'last_successful_at']);
     $observed = first_timestamp($provider, ['data_observed_at', 'updatedAt', 'updated_at']);
     $url = (string) ($provider['url'] ?? '');
+    $correlated = 'microsoft365' === $id && 'cross_provider_corroboration' === (string) ($provider['source_type'] ?? '');
+    $sourceCount = (int) ($provider['correlation_count'] ?? 0);
+    $sources = array_values(array_filter((array) ($provider['correlation_sources'] ?? []), 'is_array'));
     ?>
-    <article class="lox-card lox-card--warn" id="provider-<?php echo esc_attr($id); ?>">
+    <article class="lox-card lox-card--warn<?php echo $correlated ? ' lox-card--correlated' : ''; ?>" id="provider-<?php echo esc_attr($id); ?>">
         <header class="lox-card__head">
             <h3 class="lox-card__provider"><?php echo esc_html($name); ?></h3>
-            <span class="lox-chip lox-chip--warn">DEGRADED</span>
+            <span class="lox-chip lox-chip--warn"><?php echo $correlated ? 'CORRELATED' : 'DEGRADED'; ?></span>
         </header>
-        <p class="lox-card__title">Status page says something is off. No incident filed.</p>
+        <?php if ($correlated) : ?>
+            <p class="lox-card__title">Likely Microsoft 365-related disruption<?php echo $sourceCount > 0 ? ' · ' . esc_html((string) $sourceCount) . ' provider reports' : ''; ?></p>
+            <p class="lox-card__context">Independent provider incidents point to a shared Microsoft 365 dependency. Microsoft’s own incident status and the common root cause are not verified by this feed.</p>
+            <?php if ($sources) : ?>
+                <ul class="lox-card__sources" aria-label="Corroborating provider notices">
+                    <?php foreach ($sources as $source) :
+                        $label = trim((string) ($source['name'] ?? $source['provider_id'] ?? 'Provider'));
+                        $title = tidy((string) ($source['title'] ?? ''), 130);
+                        $noticeUrl = (string) ($source['url'] ?? '');
+                    ?>
+                        <li>
+                            <?php if ('' !== $noticeUrl) : ?>
+                                <a href="<?php echo esc_url($noticeUrl); ?>" target="_blank" rel="noopener"><?php echo esc_html($label); ?><?php echo $title !== '' ? ': ' . esc_html($title) : ''; ?> ↗</a>
+                            <?php else : ?>
+                                <?php echo esc_html($label); ?><?php echo $title !== '' ? ': ' . esc_html($title) : ''; ?>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        <?php else : ?>
+            <p class="lox-card__title">Degraded signal without a linked incident in this feed.</p>
+        <?php endif; ?>
         <?php if ('' !== $summary) : ?>
             <p class="lox-card__body"><?php echo esc_html($summary); ?></p>
         <?php endif; ?>
         <dl class="lox-facts">
-            <div><dt>Provider page updated</dt><dd><?php print_time($observed); ?></dd></div>
-            <div><dt>We last checked</dt><dd><?php print_time($checked); ?></dd></div>
+            <div><dt><?php echo $correlated ? 'Latest provider report' : 'Provider page updated'; ?></dt><dd><?php print_time($observed); ?></dd></div>
+            <?php if (!$correlated) : ?>
+                <div><dt>We last checked</dt><dd><?php print_time($checked); ?></dd></div>
+            <?php endif; ?>
         </dl>
         <?php if ('' !== $url) : ?>
             <a class="lox-out" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener">Open status page <span aria-hidden="true">↗</span></a>
@@ -503,7 +530,7 @@ function render(array $state, array $config): string
             </div>
             <?php render_section_close(); ?>
 
-            <?php render_section_open('degraded', 'DEGRADED, NO INCIDENT FILED', 'The status page is yellow but nobody wrote it up.', count($signals), $signals ? 'warn' : 'dim'); ?>
+            <?php render_section_open('degraded', 'DEGRADED + CORRELATED SIGNALS', 'Degradation without a linked notice, or cross-provider evidence of a shared disruption.', count($signals), $signals ? 'warn' : 'dim'); ?>
             <div class="lox-cards" data-lox-grid="degraded">
                 <?php if ($signals) : ?>
                     <?php foreach ($signals as $provider) { render_signal_card($provider); } ?>
