@@ -172,7 +172,7 @@ function suzy_vmc_normalize( array $event ): ?array {
     // Schedule pages can link different shows to the same tickets URL and hour.
     // Retain event-specific identity for those aggregator links.
     $identity = $host . $path . '|' . $start;
-    if ( in_array( $host, [ 'redgate.tv', 'www.redgate.tv', 'www.rhythmchanges.ca', 'rhythmchanges.ca' ], true ) ) {
+    if ( in_array( $host, [ 'redgate.tv', 'www.redgate.tv', 'www.rhythmchanges.ca', 'rhythmchanges.ca', 'upstartandcrow.com' ], true ) ) {
         $identity .= '|' . strtolower( preg_replace( '/[^\\p{L}\\p{N}]+/u', '', $title ) );
     }
     $end = (int) ( $event['end'] ?? 0 );
