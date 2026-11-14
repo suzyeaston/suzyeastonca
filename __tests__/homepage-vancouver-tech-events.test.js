@@ -379,3 +379,32 @@ test("archive is mounted after the unchanged upcoming calendar and before commun
   assert.match(style, /\.vte-archive__months/);
   assert.match(manifest, /"inc\/vancouver-tech-events-archive\.php"/);
 });
+
+test("ASCII treble clef Music & Culture promo sits immediately below tech events", () => {
+  const home = fs.readFileSync(path.join(ROOT, "page-home.php"), "utf8");
+  const promo = fs.readFileSync(path.join(ROOT, "parts/home-vancouver-music-culture.php"), "utf8");
+  const css = fs.readFileSync(path.join(ROOT, "assets/css/home-yvr-radar-deck.css"), "utf8");
+  const tech = fs.readFileSync(path.join(ROOT, "parts/home-vancouver-tech-events.php"), "utf8");
+  const manifest = fs.readFileSync(path.join(ROOT, "scripts/theme_deploy_manifest.py"), "utf8");
+
+  const techAt = home.indexOf("parts/home-vancouver-tech-events");
+  const musicAt = home.indexOf("parts/home-vancouver-music-culture");
+  const radioAt = home.indexOf("parts/home-radio-feature");
+  assert.ok(techAt > 0 && techAt < musicAt && musicAt < radioAt,
+    "music promo is directly between the tech calendar and radio feature");
+  assert.equal((home.match(/parts\/home-vancouver-music-culture/g) || []).length, 1);
+  assert.match(promo, /class="home-culture-spotlight/);
+  assert.match(promo, /role="img" aria-label="Treble clef drawn in ASCII characters/);
+  assert.match(promo, /<pre[\s\S]*?\\_\/<\/pre>/);
+  assert.match(promo, /home_url\( '\/vancouver-music-culture\/' \)/);
+  assert.match(promo, /suzy_vmc_events\(\)/);
+  assert.match(promo, /esc_html\( \$home_culture_next\['title'\]/);
+  assert.match(promo, /esc_attr\( wp_date\( 'c'/);
+  assert.doesNotMatch(promo, /wp_remote_get|fetch\(/);
+  assert.doesNotMatch(tech, /vancouver-tech-home__culture-bridge/,
+    "old in-tech bridge is replaced by a proper standalone promotion");
+  assert.match(css, /\.home-yvr-radar-deck > \.home-culture-spotlight/);
+  assert.match(css, /\.home-culture-spotlight__clef/);
+  assert.match(css, /@media \(max-width: 650px\)/);
+  assert.match(manifest, /"parts\/home-vancouver-music-culture\.php"/);
+});
