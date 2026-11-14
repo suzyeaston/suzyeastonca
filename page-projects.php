@@ -85,6 +85,14 @@ $project_url = static function (string $slug, string $fallback_path = ''): strin
                 </article>
 
                 <article class="projects-card">
+                    <h3 class="pixel-font">Vancouver Music &amp; Culture</h3>
+                    <p>Small local gigs, experimental sound, music technology, poetry, philosopher conversations, artist-run spaces, and a growing archive from multiple independent organizers.</p>
+                    <div class="projects-card__actions">
+                        <a class="pixel-button" href="<?php echo esc_url( home_url( '/vancouver-music-culture/' ) ); ?>">Explore culture</a>
+                    </div>
+                </article>
+
+                <article class="projects-card">
                     <h3 class="pixel-font">Track Analyzer</h3>
                     <p>MP3 feedback for rough mixes, lyrics, structure, feel, and the part of the song that is almost working.</p>
                     <div class="projects-card__actions">
