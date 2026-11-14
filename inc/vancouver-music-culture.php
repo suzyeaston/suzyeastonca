@@ -332,6 +332,12 @@ function suzy_vmc_schedule(): void {
 }
 add_action( 'init', 'suzy_vmc_schedule' );
 add_action( 'suzy_vmc_refresh', 'suzy_vmc_collect' );
+add_action( 'wp_enqueue_scripts', static function (): void {
+    if ( suzy_vmc_is_route() ) {
+        wp_enqueue_style( 'suzy-vancouver-music-culture', get_template_directory_uri() . '/assets/css/vancouver-music-culture.css', [], '1.0.0' );
+    }
+}, 15 );
+
 
 /**
  * Exact public path makes the new page deployable without a manual WordPress
