@@ -394,8 +394,14 @@ test("ASCII treble clef Music & Culture promo sits immediately below tech events
     "music promo is directly between the tech calendar and radio feature");
   assert.equal((home.match(/parts\/home-vancouver-music-culture/g) || []).length, 1);
   assert.match(promo, /class="home-culture-spotlight/);
-  assert.match(promo, /role="img" aria-label="Treble clef drawn in ASCII characters/);
-  assert.match(promo, /<pre[\s\S]*?\\_\/<\/pre>/);
+  assert.match(promo, /role="img" aria-label="Treble clef in hand-built ASCII pixel art/);
+  const art = promo.match(/<pre class="home-culture-spotlight__clef"[^>]*>([\\s\\S]*?)<\\/pre>/);
+  assert.ok(art, "the treble clef stays text, not an external image");
+  const rows = art[1].split("\\n");
+  assert.equal(rows.length, 33, "ASCII G-clef has a recognizable full-height silhouette");
+  assert.ok(rows.every((row) => /^[ @+]*$/.test(row)), "pure printable ASCII for the art");
+  assert.ok((art[1].match(/@/g) || []).length > 140, "full pixel-art curve, not a stick figure");
+  assert.match(promo, /class="home-culture-spotlight__staff" aria-hidden="true"/);
   assert.match(promo, /home_url\( '\/vancouver-music-culture\/' \)/);
   assert.match(promo, /suzy_vmc_events\(\)/);
   assert.match(promo, /esc_html\( \$home_culture_next\['title'\]/);
@@ -405,6 +411,10 @@ test("ASCII treble clef Music & Culture promo sits immediately below tech events
     "old in-tech bridge is replaced by a proper standalone promotion");
   assert.match(css, /\.home-yvr-radar-deck > \.home-culture-spotlight/);
   assert.match(css, /\.home-culture-spotlight__clef/);
+  assert.match(css, /\\.home-culture-spotlight__staff/);
+  assert.match(css, /box-shadow:[\\s\\S]*calc\\(-2 \\* var\\(--staff-gap\\)\\)/);
+  assert.match(css, /\\.home-culture-spotlight__content h2,[\\s\\S]*background-color: transparent;/);
+  assert.match(css, /font-family: "Courier New", ui-monospace, monospace/);
   assert.match(css, /@media \(max-width: 650px\)/);
   assert.match(manifest, /"parts\/home-vancouver-music-culture\.php"/);
 });
