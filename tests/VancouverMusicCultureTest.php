@@ -39,6 +39,12 @@ function suzy_fetch_vancouver_tech_events_from_html_luma(...$args) {
 function wp_remote_get($url,$opts=[]) {
     $GLOBALS['http_calls'][] = $url;
     if (str_contains($url,'8east.ca')) {
+        if (str_contains($url,'ical=1')) {
+            return ['code'=>200,'body'=>"BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:8EAST Improvisation Workshop\r\nDTSTART;TZID=America/Vancouver:20261122T140000\r\nURL:https://www.8east.ca/event/improv-workshop/\r\nEND:VEVENT\r\nEND:VCALENDAR"];
+        }
+        if (!empty($GLOBALS['8east_block_json'])) {
+            return ['code'=>403,'body'=>'REST temporarily blocked'];
+        }
         return ['code'=>200,'body'=>json_encode(['events'=>[
             ['title'=>'Free Improvisation Jam','url'=>'https://www.8east.ca/event/free-improv-jam/','start_date'=>'2026-11-19 19:00:00','end_date'=>'2026-11-19 22:00:00','venue'=>['venue'=>'8EAST','city'=>'Vancouver']],
             ['title'=>'Private off-city show','url'=>'https://www.8east.ca/event/elsewhere/','start_date'=>'2026-11-20 18:00:00','venue'=>['venue'=>'Elsewhere','city'=>'Surrey']]
@@ -142,6 +148,13 @@ check_vmc(count(suzy_vmc_dedupe([
     ['title'=>'Night A','start'=>suzy_vmc_at('2026-11-15 20:00'),'url'=>$redgate['url']],
     ['title'=>'Night B','start'=>suzy_vmc_at('2026-11-15 20:00'),'url'=>$redgate['url']],
 ])) === 2, 'distinct Red Gate events on a shared tickets page do not collide');
+$GLOBALS['8east_block_json'] = true;
+unset($GLOBALS['transients']['suzy_vmc_source_' . md5('8east')]);
+$eight_fallback = suzy_vmc_fetch_source(suzy_vmc_sources()[0]);
+check_vmc(str_contains($eight_fallback['status'], 'iCalendar fallback'), '8EAST iCalendar rescues blocked organizer JSON');
+check_vmc(in_array('8EAST Improvisation Workshop', array_column($eight_fallback['events'],'title'), true), 'fallback actually imports 8EAST event data');
+unset($GLOBALS['transients']['suzy_vmc_source_' . md5('8east')]);
+$GLOBALS['8east_block_json'] = false;
 $fallback_source = suzy_vmc_sources()[4];
 $ics_fallback = suzy_vmc_fetch_source($fallback_source);
 check_vmc(str_contains($ics_fallback['status'], 'iCalendar fallback'), 'Upstart and Crow falls back to timed iCalendar when REST is blocked');
