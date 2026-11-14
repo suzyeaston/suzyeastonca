@@ -1,0 +1,67 @@
+name: Vancouver Music & Culture QA
+
+on:
+  pull_request:
+    paths:
+      - 'inc/vancouver-music-culture.php'
+      - 'page-vancouver-music-culture.php'
+      - 'assets/css/vancouver-music-culture.css'
+      - 'functions.php'
+      - 'inc/seo.php'
+      - 'page-projects.php'
+      - 'parts/home-vancouver-tech-events.php'
+      - 'scripts/theme_deploy_manifest.py'
+      - 'tests/VancouverMusicCultureTest.php'
+      - '__tests__/vancouver-music-culture.test.js'
+      - '.github/workflows/vancouver-music-culture-qa.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'inc/vancouver-music-culture.php'
+      - 'page-vancouver-music-culture.php'
+      - 'assets/css/vancouver-music-culture.css'
+      - 'functions.php'
+      - 'inc/seo.php'
+      - 'page-projects.php'
+      - 'parts/home-vancouver-tech-events.php'
+      - 'scripts/theme_deploy_manifest.py'
+      - 'tests/VancouverMusicCultureTest.php'
+      - '__tests__/vancouver-music-culture.test.js'
+      - '.github/workflows/vancouver-music-culture-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  calendar-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: json, dom, libxml
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: PHP syntax check
+        run: |
+          php -l inc/vancouver-music-culture.php
+          php -l page-vancouver-music-culture.php
+          php -l inc/seo.php
+          php -l functions.php
+          php -l tests/VancouverMusicCultureTest.php
+      - name: Calendar parsing, retention, and routing regression
+        run: php tests/VancouverMusicCultureTest.php
+      - name: Theme integration tests
+        run: node --test __tests__/vancouver-music-culture.test.js __tests__/homepage-vancouver-tech-events.test.js
+      - name: Build deploy-time social images
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/build_meanwhile_social_card.py
+          python3 scripts/build_toaster_social_card.py
+          python3 scripts/build_orchestra_social_card.py
+      - name: Validate production theme manifest
+        run: python3 scripts/theme_deploy_manifest.py validate
