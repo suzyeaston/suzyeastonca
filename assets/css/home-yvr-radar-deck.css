@@ -743,10 +743,10 @@
   height: 1px;
   background: rgba(244, 199, 255, 0.45);
   box-shadow:
-    0 calc(-2 * var(--staff-gap)) rgba(244, 199, 255, 0.45),
-    0 calc(-1 * var(--staff-gap)) rgba(244, 199, 255, 0.45),
+    0 calc(0px - var(--staff-gap) - var(--staff-gap)) rgba(244, 199, 255, 0.45),
+    0 calc(0px - var(--staff-gap)) rgba(244, 199, 255, 0.45),
     0 var(--staff-gap) rgba(244, 199, 255, 0.45),
-    0 calc(2 * var(--staff-gap)) rgba(244, 199, 255, 0.45);
+    0 calc(var(--staff-gap) + var(--staff-gap)) rgba(244, 199, 255, 0.45);
   pointer-events: none;
 }
 .home-culture-spotlight__clef {
