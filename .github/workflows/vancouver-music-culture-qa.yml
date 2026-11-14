@@ -52,6 +52,7 @@ jobs:
         run: |
           php -l inc/vancouver-music-culture.php
           php -l page-vancouver-music-culture.php
+          php -l page-projects.php
           php -l inc/seo.php
           php -l functions.php
           php -l tests/VancouverMusicCultureTest.php
