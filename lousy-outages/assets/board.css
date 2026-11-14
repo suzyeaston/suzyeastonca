@@ -413,7 +413,8 @@
   font-size: 0.82rem;
   color: var(--lox-dim);
 }
-.lox-card__sources {
+ .lox-card__sources {
+  list-style: disc;
   margin: 0.65rem 0 0 !important;
   padding: 0 0 0 1.15rem !important;
   color: var(--lox-text);
@@ -421,7 +422,7 @@
   line-height: 1.5;
 }
 .lox-card__sources li { margin: 0.3rem 0 !important; }
-.lox-card__sources a { color: var(--lox-link); text-decoration: underline; overflow-wrap: anywhere; }
+.lox-card__sources a { color: var(--lox-ok); text-decoration: underline; overflow-wrap: anywhere; }
 .lox-card__sources a:hover { color: var(--lox-text); }
 
 .lox-facts {
