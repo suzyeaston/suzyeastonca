@@ -108,6 +108,7 @@
   const waterfrontPlaces = window.GastownWaterfrontPlaces || null;
   const harbourVista = window.GastownHarbourVista || null;
   const cordovaArchitecture = window.GastownCordovaArchitecture || null;
+  const waterfrontSkyline = window.GastownWaterfrontSkyline || null;
   const streetLife = window.GastownStreetLife || null;
   const localAmbienceBtn = app.querySelector('[data-action="local-ambience-toggle"]');
   const harbourLookBtn = app.querySelector('[data-action="harbour-lookout"]');
@@ -5124,6 +5125,13 @@
         // the GIS walkability footprint remains authoritative.
         thirdPersonCameraBlockers.push(southSkyline);
       }
+    }
+    // Add only published, address-anchored Vancouver towers *behind* the
+    // existing civic buildings. Scenic groups never alter walking/collision.
+    if (waterfrontSkyline && typeof waterfrontSkyline.create === 'function') {
+      const skylineContext = safelyCreate('Vancouver waterfront skyline',
+        () => waterfrontSkyline.create(THREE, world));
+      if (skylineContext) worldGroup.add(skylineContext);
     }
     (world.hero_landmarks || []).forEach((hero) => {
       if (hero.id === 'steam-clock-hero') {
