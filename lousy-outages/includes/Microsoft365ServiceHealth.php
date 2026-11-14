@@ -238,9 +238,16 @@ final class Microsoft365ServiceHealth
             'stateCode'=>'degraded','status'=>'degraded','state'=>'Unconfirmed reports',
             'tile_kind'=>'signal','lane'=>'signals','sort_key'=>45,
             'verification_status'=>'unconfirmed','is_stale'=>false,
-            'summary'=>'Other providers reported Microsoft 365 integration issues; Microsoft root cause unconfirmed.',
-            'source_type'=>'cross_provider_corroboration','url'=>'https://status.cloud.microsoft/m365',
-            'incidents'=>[],'updated_at'=>gmdate('c',(int)$related['timestamp']),
+            'summary'=>sprintf(
+                '%d independent providers reported Microsoft 365-related incidents. Likely shared disruption; Microsoft root cause not established from these reports.',
+                count((array)($related['provider_ids']??[]))
+            ),
+            'source_type'=>'cross_provider_corroboration','category'=>'communications',
+            'correlation_count'=>count((array)($related['provider_ids']??[])),
+            'correlation_sources'=>array_values((array)($related['evidence']??[])),
+            'url'=>'https://status.cloud.microsoft/m365',
+            'incidents'=>[],'data_observed_at'=>gmdate('c',(int)$related['timestamp']),
+            'updated_at'=>gmdate('c',(int)$related['timestamp']),
         ];
         $state['signals'][]=$tile;
         $state['providers'][]=$tile;
