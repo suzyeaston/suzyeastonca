@@ -59,6 +59,7 @@ if ( function_exists( 'suzy_vmc_events' ) ) {
                 <span class="home-culture-spotlight__next-label">NEXT ON THE FREQUENCY</span>
                 <time datetime="<?php echo esc_attr( wp_date( 'c', $home_culture_start, $home_culture_timezone ) ); ?>"><?php echo esc_html( wp_date( 'D, M j · g:i a', $home_culture_start, $home_culture_timezone ) ); ?></time>
                 <span class="home-culture-spotlight__next-title"><?php echo esc_html( $home_culture_next['title'] ?? 'Upcoming cultural event' ); ?></span>
+                <?php if ( ! empty( $home_culture_next['time_note'] ) ) : ?><span class="home-culture-spotlight__next-title"><?php echo esc_html( $home_culture_next['time_note'] ); ?></span><?php endif; ?>
             </p>
         <?php endif; ?>
         <a class="pixel-button home-culture-spotlight__cta" href="<?php echo esc_url( home_url( '/vancouver-music-culture/' ) ); ?>">Explore music &amp; culture</a>

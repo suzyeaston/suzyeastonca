@@ -10,7 +10,7 @@ test("new culture page is bootstrapped and included in theme deploy manifest", (
   const manifest = read("scripts/theme_deploy_manifest.py");
   assert.match(fn, /require_once get_template_directory\(\) \. '\/inc\/vancouver-music-culture\.php'/);
   for (const file of [
-    "inc/vancouver-music-culture.php", "page-vancouver-music-culture.php",
+    "inc/vancouver-music-culture.php", "inc/vancouver-music-culture-source-parsers.php", "page-vancouver-music-culture.php",
     "assets/css/vancouver-music-culture.css", "page-projects.php",
     "parts/home-vancouver-tech-events.php", "parts/home-vancouver-music-culture.php", "inc/seo.php"
   ]) {
@@ -33,8 +33,9 @@ test("page has upcoming, archive, source directory, safe links, and filters", ()
   assert.match(template, /current_user_can\( 'manage_options' \)/);
   assert.match(template, /suzy_vmc_directory_groups\(\)/);
   assert.match(template, /vmc__source-group/);
-  assert.match(template, /browsable venue and organizer links, not guaranteed automatic event feeds/);
+  assert.match(template, /wider directory remains browsable/);
 
+  assert.match(template, /esc_html\( \$event\['time_note'\] \)/);
   assert.doesNotMatch(template, /wp_remote_get\(/);
 });
 
@@ -44,6 +45,17 @@ test("collectors cover different domains, bound load, and don't silently fabrica
   assert.match(src, /www\.roundhouse\.ca\/wp-json\/tribe\/events\/v1\/events/);
   assert.match(src, /roadrunner-red-yde9\.squarespace\.com\/new-events\?format=json/);
   assert.match(src, /luma\.com\/discover\/vancouver/);
+  assert.match(src, /redgate\.tv\/tickets\//);
+  assert.match(src, /upstartandcrow\.com\/wp-json\/tribe\/events\/v1\/events/);
+  assert.match(src, /rhythmchanges\.ca\/gig-list-vancouver\//);
+  assert.match(src, /8east\.ca\/events\/\?ical=1/);
+  assert.match(src, /fallback_endpoint/);
+  assert.match(src, /suzy_vmc_parse_redgate_html/);
+  assert.match(src, /suzy_vmc_parse_jazz_html/);
+  assert.match(src, /suzy_vmc_parse_ical/);
+  assert.match(src, /last good data \(max 24h\)/);
+  assert.match(src, /'time_note' => substr/);
+  assert.match(src, /require_once __DIR__ \. '\/vancouver-music-culture-source-parsers\.php'/);
   assert.match(src, /function suzy_vmc_parse_tribe/);
   assert.match(src, /function suzy_vmc_parse_squarespace/);
   assert.match(src, /function suzy_vmc_dedupe/);

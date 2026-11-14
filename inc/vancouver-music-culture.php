@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once __DIR__ . '/vancouver-music-culture-source-parsers.php';
+
 function suzy_vmc_tz( ?int $timestamp = null ): DateTimeZone {
     // B.C. stays at UTC-7 after March 8, 2026; retain historic IANA dates.
     return null === $timestamp || $timestamp >= 1772964000
@@ -22,10 +24,13 @@ function suzy_vmc_at( string $local ): int {
 /** Direct organizer calendars, not general search-engine result pages. */
 function suzy_vmc_sources(): array {
     return [
-        [ 'id' => '8east', 'label' => '8EAST / NOW Society', 'url' => 'https://www.8east.ca/events/', 'endpoint' => 'https://www.8east.ca/wp-json/tribe/events/v1/events?per_page=50', 'kind' => 'tribe', 'venue' => '8EAST, 8 E Pender St, Vancouver', 'category' => 'experimental' ],
+        [ 'id' => '8east', 'label' => '8EAST / NOW Society', 'url' => 'https://www.8east.ca/events/', 'endpoint' => 'https://www.8east.ca/wp-json/tribe/events/v1/events?per_page=50', 'kind' => 'tribe', 'fallback_endpoint' => 'https://www.8east.ca/events/?ical=1', 'venue' => '8EAST, 8 E Pender St, Vancouver', 'category' => 'experimental' ],
         [ 'id' => 'roundhouse', 'label' => 'Roundhouse Arts', 'url' => 'https://www.roundhouse.ca/events/', 'endpoint' => 'https://www.roundhouse.ca/wp-json/tribe/events/v1/events?per_page=50', 'kind' => 'tribe', 'venue' => 'Roundhouse, Vancouver', 'category' => 'arts' ],
         [ 'id' => 'lobe', 'label' => 'Lobe / spatial sound', 'url' => 'https://lobestudio.ca/', 'endpoint' => 'https://roadrunner-red-yde9.squarespace.com/new-events?format=json', 'kind' => 'squarespace', 'venue' => 'Lobe, 713 E Hastings St, Vancouver', 'category' => 'music-tech' ],
         [ 'id' => 'luma_discovery', 'label' => 'Luma Vancouver discovery', 'url' => 'https://luma.com/discover/vancouver', 'kind' => 'luma', 'category' => 'arts' ],
+        [ 'id' => 'upstart', 'label' => 'Upstart & Crow', 'url' => 'https://upstartandcrow.com/events/', 'endpoint' => 'https://upstartandcrow.com/wp-json/tribe/events/v1/events?per_page=50', 'fallback_endpoint' => 'https://upstartandcrow.com/events/?ical=1', 'kind' => 'tribe', 'venue' => 'Upstart & Crow, 1387 Railspur Alley, Vancouver', 'category' => 'poetry' ],
+        [ 'id' => 'redgate', 'label' => 'Red Gate Arts Society', 'url' => 'https://redgate.tv/tickets/', 'endpoint' => 'https://redgate.tv/tickets/', 'kind' => 'redgate', 'venue' => 'Red Gate, 1965 Main St, Vancouver', 'category' => 'music' ],
+        [ 'id' => 'rhythmchanges', 'label' => 'Rhythm Changes (secondary jazz listing)', 'url' => 'https://www.rhythmchanges.ca/gig-list-vancouver/', 'endpoint' => 'https://www.rhythmchanges.ca/gig-list-vancouver/', 'kind' => 'jazz_html', 'venue' => 'Vancouver jazz venues', 'category' => 'music' ],
     ];
 }
 
@@ -164,7 +169,12 @@ function suzy_vmc_normalize( array $event ): ?array {
     }
     $path = strtolower( rtrim( (string) ( $parts['path'] ?? '' ), '/' ) );
     $host = strtolower( (string) $parts['host'] );
+    // Schedule pages can link different shows to the same tickets URL and hour.
+    // Retain event-specific identity for those aggregator links.
     $identity = $host . $path . '|' . $start;
+    if ( in_array( $host, [ 'redgate.tv', 'www.redgate.tv', 'www.rhythmchanges.ca', 'rhythmchanges.ca', 'upstartandcrow.com' ], true ) ) {
+        $identity .= '|' . strtolower( preg_replace( '/[^\\p{L}\\p{N}]+/u', '', $title ) );
+    }
     $end = (int) ( $event['end'] ?? 0 );
     return [
         'id' => sha1( $identity ),
@@ -174,6 +184,7 @@ function suzy_vmc_normalize( array $event ): ?array {
         'url' => $url, 'location' => substr( trim( (string) ( $event['location'] ?? '' ) ), 0, 200 ),
         'source' => substr( trim( (string) ( $event['source'] ?? '' ) ), 0, 100 ),
         'category' => $category,
+        'time_note' => substr( trim( (string) ( $event['time_note'] ?? '' ) ), 0, 120 ),
         'origin' => ( $event['origin'] ?? '' ) === 'verified' ? 'verified' : 'feed',
         'captured_at' => (int) ( $event['captured_at'] ?? time() ),
     ];
@@ -237,8 +248,8 @@ function suzy_vmc_fetch_source( array $source ): array {
     $events = [];
     $status = 'empty';
     if ( 'luma' === $source['kind'] ) {
-        // Reuse existing constrained Luma discovery parser and public resolver.
-        // Only keep culturally relevant titles explicitly in Vancouver.
+        // Reuse the constrained Luma discovery parser and resolver. The cultural
+        // title + Vancouver-city checks are intentionally stricter than tech.
         $result = suzy_fetch_vancouver_tech_events_from_html_luma(
             [ 'url' => $source['url'], 'source' => $source['label'], 'discovery' => true, 'max_details' => 8 ], false
         );
@@ -255,27 +266,59 @@ function suzy_vmc_fetch_source( array $source ): array {
     } else {
         $response = wp_remote_get( $source['endpoint'], [
             'timeout' => 6, 'redirection' => 2,
-            'headers' => [ 'Accept' => 'application/json', 'User-Agent' => 'SuzyMusicCultureCalendar/1.0' ],
+            'headers' => [ 'Accept' => in_array( $source['kind'], [ 'redgate', 'jazz_html' ], true ) ? 'text/html' : 'application/json',
+                'User-Agent' => 'SuzyMusicCultureCalendar/1.1' ],
         ] );
         if ( is_wp_error( $response ) ) {
             $status = 'request error';
         } else {
             $http_code = (int) wp_remote_retrieve_response_code( $response );
             $body = (string) wp_remote_retrieve_body( $response );
-            $data = $http_code >= 200 && $http_code < 300 && strlen( $body ) < 1000000
-                ? json_decode( $body, true ) : null;
-            if ( is_array( $data ) ) {
-                $events = 'tribe' === $source['kind']
-                    ? suzy_vmc_parse_tribe( $data, $source )
-                    : suzy_vmc_parse_squarespace( $data, $source );
-                $status = ! empty( $events ) ? 'ok' : 'empty';
+            if ( $http_code >= 200 && $http_code < 300 && strlen( $body ) < 1000000 ) {
+                if ( 'redgate' === $source['kind'] ) {
+                    $events = suzy_vmc_parse_redgate_html( $body, $source );
+                } elseif ( 'jazz_html' === $source['kind'] ) {
+                    $events = suzy_vmc_parse_jazz_html( $body, $source );
+                } else {
+                    $data = json_decode( $body, true );
+                    if ( is_array( $data ) ) {
+                        $events = 'tribe' === $source['kind']
+                            ? suzy_vmc_parse_tribe( $data, $source )
+                            : suzy_vmc_parse_squarespace( $data, $source );
+                    }
+                }
+                $status = ! empty( $events ) ? 'ok' : 'empty or unsupported format';
             } else {
                 $status = 'HTTP ' . $http_code . ' / unavailable';
             }
         }
+        // Some organizer sites expose iCalendar but block their JSON API.
+        // Never mistake a failed JSON read for a claim that no events exist.
+        if ( empty( $events ) && ! empty( $source['fallback_endpoint'] ) ) {
+            $fallback = wp_remote_get( $source['fallback_endpoint'], [
+                'timeout' => 6, 'redirection' => 2,
+                'headers' => [ 'Accept' => 'text/calendar', 'User-Agent' => 'SuzyMusicCultureCalendar/1.1' ],
+            ] );
+            if ( ! is_wp_error( $fallback ) && (int) wp_remote_retrieve_response_code( $fallback ) === 200 ) {
+                $events = suzy_vmc_parse_ical( (string) wp_remote_retrieve_body( $fallback ), $source );
+                if ( ! empty( $events ) ) { $status = 'ok (organizer iCalendar fallback)'; }
+            }
+        }
+    }
+
+    // Stale-if-error: protect recently observed listings for at most 24 hours.
+    // It avoids a single 403 making a whole venue vanish from "Upcoming".
+    $good_key = 'suzy_vmc_good_' . md5( $source['id'] );
+    if ( ! empty( $events ) ) {
+        set_transient( $good_key, $events, DAY_IN_SECONDS );
+    } else {
+        $recent = get_transient( $good_key );
+        if ( is_array( $recent ) && ! empty( $recent ) ) {
+            $events = $recent;
+            $status .= '; last good data (max 24h)';
+        }
     }
     $payload = [ 'events' => $events, 'status' => $status ];
-    // Cache failures briefly; no source failure may delete persisted history.
     set_transient( $cache_key, $payload, ! empty( $events ) ? 2 * HOUR_IN_SECONDS : 15 * MINUTE_IN_SECONDS );
     return $payload;
 }

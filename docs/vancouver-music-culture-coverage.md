@@ -56,3 +56,36 @@ Primary sources: https://redgate.tv/schedule/ ; https://www.vivomediaarts.com/pr
 Three individually dated, linked literary listings were seeded from Upstart & Crow's own event detail pages: Michael Foy (Nov 13, 6:30–8pm), Lisa Baldissera (Nov 26, 6:30pm; unknown end), and Gregor Craigie (Dec 1, 6:30pm; unknown end). No recurring dates or event times were invented. Upstart & Crow specifically warns that Eventbrite sometimes displays incorrect times; use its official event page for reference.
 
 **Important distinction:** These additional directory links do NOT turn into automatic collected events. The four existing feed adapters are unchanged until endpoint reliability can be confirmed. More links improve discovery, not automatic coverage. QA should verify grouped links on mobile, direct venue destinations, and that the homepage's next-event preview and tech calendar were not changed.
+
+
+## November 14, 2026: bringing venues into the actual event feed
+
+**QA gap:** The directory has 26 venues/organizers, but only four were configured for automatic collection. Browsable venue links do not automatically create event cards.
+
+There are now **seven separate configured sources**, with a fallback for one of the originals:
+
+| Source | Collector | Coverage caveat |
+| --- | --- | --- |
+| 8EAST | Existing JSON; fallback to https://www.8east.ca/events/?ical=1 | The iCalendar content type was observed; WP-Cron still needs live QA |
+| Upstart & Crow | JSON; fallback https://upstartandcrow.com/events/?ical=1 | Upcoming event list verified, JSON/ICS availability on production unconfirmed |
+| Red Gate | Bounded official HTML https://redgate.tv/tickets/ | Times are **doors**, never claimed to be show starts |
+| Rhythm Changes | Bounded jazz listing https://www.rhythmchanges.ca/gig-list-vancouver/ | Secondary source, known Vancouver-city venue whitelist, verify with the venue |
+| Roundhouse | Existing JSON | Could block requests |
+| Lobe | Existing Squarespace JSON | Format may change |
+| Luma discovery | Existing citywide title/venue filter | Limited venue matching |
+
+### Source and safety notes
+
+Red Gate's dated organizer ticket page lists events such as GOLERS (Nov 13), EVIL SUMMER CAMP (Nov 15), Ruby Jones (Nov 18) and CODE-22 (Nov 26). The parser accepts only dated names with explicitly published door hours, resolves the year only when the stated weekday agrees with a date near collection, and puts the **doors-not-show-start** qualification visibly on the calendar and homepage preview. It does not invent show times.
+
+The independent Rhythm Changes November listings include Tyrant Studios, Frankie's, 8EAST, Guilt & Co. and other small Vancouver rooms. The source is not the venue operator: each listing keeps attribution, notes secondary-source uncertainty and excludes suburbs and unknown locations rather than guessing.
+
+The Upstart & Crow events list is dated and publicly browsable, including Nov 26 and December literary discussions. The two attempted structured calendar endpoints (JSON then ICS) are **not yet verified from WordPress production**. The 8EAST ICS response was observed to have text/calendar content, providing a potentially more reliable alternative to JSON.
+
+ICS parsing uses timed entries only; cancels and untimed all-day dates are skipped. All source URLs are fixed in code with content-size and event caps. Transient failures can reuse a source's last known good result for at most 24 hours, preserving upcoming events without claiming indefinitely fresh coverage. Historical records are not deleted when feeds fail. Same-time items sharing a venue tickets URL are deduplicated using title as well as date.
+
+**Configured is not confirmed working:** WP-Cron is traffic-dependent, and each source has a per-source count/status visible to logged-in WordPress administrators. Live checks after merge must verify actual ingestion, not just the presence of source configuration.
+
+### Post-merge QA
+
+Inspect the upcoming calendar, category filters and archived listings. After an hourly WP-Cron refresh, check administrator source statuses and counts for all seven sources. Verify Red Gate door-time warnings, new small-room jazz listings including Tyrant and Frankie's, Upstart literary results, source-attribution labels and absence of suburban dates. Confirm homepage preview and Vancouver Tech Events remain intact.
