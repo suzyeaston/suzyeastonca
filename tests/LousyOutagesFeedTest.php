@@ -80,6 +80,8 @@ $vendorReports=[
 ];
 $related=\SuzyEaston\LousyOutages\Microsoft365Signals::related_provider_reports($vendorReports,$clock);
 assert_true($related!==null&&count($related['provider_ids'])===2,'two independent M365 integration reports correlate');
+assert_true(count($related['evidence']??[])===2 && ($related['evidence'][0]['provider_id']??'')==='anthropic','correlation includes one evidence row per provider');
+assert_true(str_contains((string)$related['evidence'][0]['title'],'Microsoft 365'),'correlation preserves source incident title');
 assert_true(\SuzyEaston\LousyOutages\Microsoft365Signals::related_provider_reports([$vendorReports[0]],$clock)===null,'one vendor is not enough to infer cross-vendor signal');
 $unrelated=['provider_id'=>'zoom','title'=>'Microsoft integrations issue','first_detected'=>$clock-100];
 assert_true(\SuzyEaston\LousyOutages\Microsoft365Signals::related_provider_reports([$vendorReports[0],$unrelated],$clock)===null,'ambiguous Microsoft integrations phrasing is not M365 evidence');
@@ -87,6 +89,9 @@ assert_true(\SuzyEaston\LousyOutages\Microsoft365Signals::related_provider_repor
 $dependency=item_with($corroborated,'cross_provider_signal');
 assert_true(count($corroborated)===15 && $dependency!==null,'M365 multi-vendor alert retained within 15-item feed');
 assert_true(str_contains($dependency['title'],'[UNCONFIRMED]') && !in_array('official_incident',$dependency['categories'],true),'vendor signal never claims Microsoft confirmation');
+assert_true(str_contains($dependency['title'],'2 independent providers'),'correlation strength is prominent in RSS');
+assert_true(str_contains($dependency['description'],'OpenAI') && str_contains($dependency['description'],'Claude / Anthropic'),'RSS names the corroborating providers');
+assert_true(str_contains($dependency['link'],'/lousy-outages/#degraded'),'RSS points to corroboration details on the dashboard');
 $ex=['id'=>'EX1550543','title'=>'Some users cannot connect to Exchange Online','service'=>'Exchange Online','status'=>'ServiceDegradation','severity'=>'minor','started_at'=>'2026-01-08T08:00:00Z','impact_description'=>'Connectivity affected'];
 [$officialGraph]=build(['incidents'=>$newMinors,'microsoft365_official_issues'=>[$ex],'microsoft365_related_reports'=>$related]);
 $officialRows=array_values(array_filter($officialGraph,static fn($item)=>in_array('microsoft_graph',$item['categories'],true)));
