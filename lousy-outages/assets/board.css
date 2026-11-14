@@ -407,6 +407,23 @@
   color: var(--lox-text);
 }
 
+.lox-card--correlated { border-left-color: var(--lox-warn); }
+.lox-card__context {
+  margin-top: 0.4rem !important;
+  font-size: 0.82rem;
+  color: var(--lox-dim);
+}
+.lox-card__sources {
+  margin: 0.65rem 0 0 !important;
+  padding: 0 0 0 1.15rem !important;
+  color: var(--lox-text);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.lox-card__sources li { margin: 0.3rem 0 !important; }
+.lox-card__sources a { color: var(--lox-link); text-decoration: underline; overflow-wrap: anywhere; }
+.lox-card__sources a:hover { color: var(--lox-text); }
+
 .lox-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
