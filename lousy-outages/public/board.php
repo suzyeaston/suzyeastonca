@@ -423,7 +423,7 @@ function render_unverified_card(array $provider): void
 function render_section_open(string $key, string $title, string $note, int $count, string $tone = 'dim'): void
 {
     ?>
-    <section class="lox-section lox-section--<?php echo esc_attr($tone); ?>" data-lox-section="<?php echo esc_attr($key); ?>">
+    <section id="<?php echo esc_attr($key); ?>" class="lox-section lox-section--<?php echo esc_attr($tone); ?>" data-lox-section="<?php echo esc_attr($key); ?>">
         <div class="lox-section__head">
             <h2 class="lox-section__title"><span class="lox-section__marker" aria-hidden="true">&gt;</span> <?php echo esc_html($title); ?><span class="lox-section__count"><?php echo esc_html((string) $count); ?></span></h2>
             <p class="lox-section__note"><?php echo esc_html($note); ?></p>
