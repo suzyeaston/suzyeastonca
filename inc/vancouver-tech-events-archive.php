@@ -117,12 +117,124 @@ function suzy_vte_archive_capture( array $events ): void {
     update_option( 'suzy_vte_event_archive_v1', $bounded, false );
 }
 
+/**
+ * Small, manually audited historical backfill for the first archive QA pass.
+ *
+ * These were published by their organizers for Nov 10–12, 2026. An entry
+ * represents a listing, not confirmation that an event took place. Keep
+ * backfill out of the live upcoming feed and use the original event URL
+ * so the existing stable identity logic deduplicates future observations.
+ */
+function suzy_vte_archive_verified_backfill(): array {
+    $timezone = suzy_vte_vancouver_timezone();
+    $at = static function ( string $local ) use ( $timezone ): int {
+        return ( new DateTimeImmutable( $local, $timezone ) )->getTimestamp();
+    };
+
+    return [
+        [
+            'title' => 'NKST Summit Vancouver 2026',
+            'start' => $at( '2026-11-10 08:00:00' ),
+            'end' => $at( '2026-11-10 17:00:00' ),
+            'location' => 'Anvil Centre, New Westminster',
+            'url' => 'https://thenkst.com/nkst-summit-vancouver-2026/',
+            'source' => 'NKST (official)',
+            'curated' => true,
+        ],
+        [
+            'title' => 'Get Tech Vibes. Get Connected. Get Funded.',
+            'start' => $at( '2026-11-10 17:00:00' ),
+            'location' => 'The Basement, 136 W Cordova St, Vancouver',
+            'url' => 'https://uni.unite.love/events/get-tech-vibes-get-connected-get-funded-a65b9c',
+            'source' => 'UNITE (organizer)',
+            'curated' => true,
+        ],
+        [
+            // The Meetup publishes 17:00 UTC (10:00 Vancouver PCT), while
+            // body copy still says "9 PST"; use the dated UTC calendar time.
+            'title' => 'Nov 11 - AI, ML and Computer Vision Meetup',
+            'start' => $at( '2026-11-11 10:00:00' ),
+            'end' => $at( '2026-11-11 12:00:00' ),
+            'location' => 'Online (Vancouver AI, ML and Computer Vision Meetup)',
+            'url' => 'https://www.meetup.com/vancouver-ai-machine-learning-and-computer-vision-meetup/events/316572570/',
+            'source' => 'Meetup: Vancouver AI, ML and Computer Vision',
+            'curated' => true,
+        ],
+        [
+            'title' => 'FV + AI November: Fraser Valley AI Community Meetup',
+            'start' => $at( '2026-11-11 18:00:00' ),
+            'end' => $at( '2026-11-11 20:00:00' ),
+            'location' => 'Coleman Technologies, Langley Township (regional)',
+            'url' => 'https://bc-ai.ca/events/2026-11-11-fv-ai-november-fraser-valley-ai-community-meetup',
+            'source' => 'BC + AI (official)',
+            'curated' => true,
+        ],
+        [
+            'title' => 'Social Pair Coding',
+            'start' => $at( '2026-11-12 12:00:00' ),
+            'end' => $at( '2026-11-12 14:00:00' ),
+            'location' => 'Grant Thornton Place, 320 Granville St, Vancouver',
+            'url' => 'https://www.meetup.com/code-together-vancouver/events/317107736/',
+            'source' => 'Meetup: Code Together Vancouver',
+            'curated' => true,
+        ],
+        [
+            'title' => 'The Hardware Behind the AI Buildout',
+            'start' => $at( '2026-11-12 15:00:00' ),
+            'end' => $at( '2026-11-12 17:00:00' ),
+            'location' => 'And-Co Offices, 1575 W Georgia St, Vancouver',
+            'url' => 'https://luma.com/vancouver-06wa',
+            'source' => 'Vancouver Tech Journal / ReuseTechBC',
+            'curated' => true,
+        ],
+        [
+            'title' => 'VanCitySec',
+            'start' => $at( '2026-11-12 17:30:00' ),
+            'end' => $at( '2026-11-12 23:30:00' ),
+            'location' => 'Taylight, 990 Smithe St, Vancouver',
+            'url' => 'https://luma.com/8i062xgp',
+            'source' => 'VanCitySec (official)',
+            'curated' => true,
+        ],
+        [
+            'title' => 'AI Film Club with Kevin Friel | Nov 12',
+            'start' => $at( '2026-11-12 18:30:00' ),
+            'end' => $at( '2026-11-12 22:00:00' ),
+            'location' => 'Multimodal Media Lab, 375 Water St, Vancouver',
+            'url' => 'https://luma.com/noir',
+            'source' => 'BC + AI Events (official)',
+            'curated' => true,
+        ],
+    ];
+}
+
+/** Display a local date span for multi-day events without counting each day as another event. */
+function suzy_vte_archive_date_label( array $event ): string {
+    $start = (int) ( $event['start'] ?? 0 );
+    $start_timezone = suzy_vte_vancouver_timezone( $start );
+    $label = wp_date( 'M j, Y · ' . get_option( 'time_format' ), $start, $start_timezone );
+    $end = (int) ( $event['end'] ?? 0 );
+    if ( $end <= $start ) {
+        return $label;
+    }
+
+    // End timestamps are often exclusive; subtract a second for all-day feeds.
+    $last_moment = max( $start, $end - 1 );
+    $last_timezone = suzy_vte_vancouver_timezone( $last_moment );
+    if ( wp_date( 'Y-m-d', $start, $start_timezone ) === wp_date( 'Y-m-d', $last_moment, $last_timezone ) ) {
+        return $label;
+    }
+    return wp_date( 'M j', $start, $start_timezone ) . '–'
+        . wp_date( wp_date( 'Y', $start, $start_timezone ) === wp_date( 'Y', $last_moment, $last_timezone ) ? 'j, Y' : 'M j, Y', $last_moment, $last_timezone )
+        . ' · ' . wp_date( get_option( 'time_format' ), $start, $start_timezone );
+}
+
 /** Include known source-verified one-offs from before archiving was installed. */
 function suzy_vte_archive_listings( ?int $now = null ): array {
     $now = $now ?? time();
     $saved = get_option( 'suzy_vte_event_archive_v1', [] );
     $saved = is_array( $saved ) ? $saved : [];
-    $seeded = array_merge( suzy_get_vancouver_tech_spotlight_events(), suzy_get_vancouver_tech_verified_fallback_events() );
+    $seeded = array_merge( suzy_get_vancouver_tech_spotlight_events(), suzy_get_vancouver_tech_verified_fallback_events(), suzy_vte_archive_verified_backfill() );
     $by_id = [];
 
     foreach ( $saved as $event ) {
@@ -248,13 +360,14 @@ function suzy_vte_render_archive_html( ?array $listings = null, ?int $now = null
             </form>
             <div class="vte-archive__overview">
                 <p><strong><?php echo (int) $total; ?></strong> archived listings in <?php echo esc_html( $year ); ?><?php echo 'all' !== $topic ? ' · ' . esc_html( $topics[ $topic ] ) : ''; ?></p>
-                <div class="vte-archive__months" role="img" aria-label="<?php echo esc_attr( 'Monthly listings for ' . $year . ', ' . $topics[ $topic ] ); ?>">
+                <p class="vte-archive__coverage">Partial historical coverage. A dash means no records captured, not no events.</p>
+                <div class="vte-archive__months" role="img" aria-label="<?php echo esc_attr( 'Known archived listings (incomplete coverage) for ' . $year . ', ' . $topics[ $topic ] ); ?>">
                     <?php $peak = max( 1, max( $months ) ); ?>
                     <?php foreach ( $months as $month => $count ) : ?>
                         <div class="vte-archive__month">
                             <span class="vte-archive__bar" style="height:<?php echo (int) round( 100 * $count / $peak ); ?>%" title="<?php echo esc_attr( $count . ' listings' ); ?>"></span>
                             <span><?php echo esc_html( ( new DateTimeImmutable( '2026-' . sprintf( '%02d', $month ) . '-01' ) )->format( 'M' ) ); ?></span>
-                            <small><?php echo (int) $count; ?></small>
+                            <small><?php echo $count > 0 ? (int) $count : '–'; ?></small>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -267,7 +380,7 @@ function suzy_vte_render_archive_html( ?array $listings = null, ?int $now = null
                         <li class="vte-event">
                             <span class="vte-archive__date"><?php
                                 $stamp = (int) $event['start'];
-                                echo esc_html( wp_date( 'M j, Y · ' . get_option( 'time_format' ), $stamp, suzy_vte_vancouver_timezone( $stamp ) ) );
+                                echo esc_html( suzy_vte_archive_date_label( $event ) );
                             ?></span>
                             <a class="vte-title" href="<?php echo esc_url( $event['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $event['title'] ); ?></a>
                             <div class="vte-meta">
@@ -288,7 +401,7 @@ function suzy_vte_render_archive_html( ?array $listings = null, ?int $now = null
                 <?php endif; ?>
             <?php endif; ?>
         <?php endif; ?>
-        <p class="vte-archive__caveat"><strong>Data note:</strong> These are publicly listed events, not confirmed attendance or proof an event was held. The archive is incomplete before tracking began; monthly counts reflect source coverage as well as community activity. Topic labels are keyword-based.</p>
+        <p class="vte-archive__caveat"><strong>Data note:</strong> These are publicly listed events, not confirmed attendance or proof an event was held. The archive is incomplete before tracking began; monthly counts describe known records only and should not be used to infer zero activity. Topic labels are keyword-based.</p>
     </section>
     <?php
     return ob_get_clean();
