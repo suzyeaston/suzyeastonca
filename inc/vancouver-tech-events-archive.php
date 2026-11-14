@@ -274,6 +274,7 @@ function suzy_vte_render_archive_html( ?array $listings = null, ?int $now = null
                                 <?php if ( ! empty( $event['location'] ) ) : ?><span class="vte-location"><?php echo esc_html( $event['location'] ); ?></span><?php endif; ?>
                                 <span class="vte-source"><?php echo esc_html( $event['source'] ?? '' ); ?></span>
                                 <span class="vte-archive__topic"><?php echo esc_html( $topics[ suzy_vte_archive_topic( $event ) ] ); ?></span>
+                                <span class="vte-archive__provenance"><?php echo ( $event['origin'] ?? '' ) === 'verified' ? 'Verified listing' : 'Captured from feed'; ?></span>
                             </div>
                         </li>
                     <?php endforeach; ?>
