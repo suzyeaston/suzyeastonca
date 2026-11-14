@@ -186,7 +186,7 @@ $relatedState['signals'] = [$related];
 $relatedState['providers'] = [$related, $providers[3]];
 $relatedHtml = render($relatedState, $config);
 ok(str_contains($relatedHtml, '>RELATED</span>'), 'active related issues use a distinct watch badge');
-ok(str_contains($relatedHtml, 'Related active Microsoft 365-related disruption'), 'related watch is visibly different from confirmed cluster');
+ok(str_contains($relatedHtml, 'Related active Microsoft 365 integration incidents'), 'related watch is visibly different from confirmed cluster');
 ok(str_contains($relatedHtml, 'incident starts are hours apart'), 'watch explains its weaker timing evidence');
 ok(str_contains($relatedHtml, 'Netlify: Delayed mail to Outlook'), 'related watch retains source details');
 ok(!str_contains($relatedHtml, 'within a 90-minute window'), 'related watch must not claim simultaneous onsets');
