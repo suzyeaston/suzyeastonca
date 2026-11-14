@@ -233,17 +233,19 @@ final class Microsoft365ServiceHealth
             return $state;
         }
 
+        $watch = ($related['correlation_tier'] ?? '') === 'related_reports';
         $tile=[
             'id'=>'microsoft365','provider_id'=>'microsoft365','name'=>'Microsoft 365',
-            'stateCode'=>'degraded','status'=>'degraded','state'=>'Unconfirmed reports',
+            'stateCode'=>'degraded','status'=>'degraded','state'=>$watch ? 'Related active reports' : 'Unconfirmed reports',
             'tile_kind'=>'signal','lane'=>'signals','sort_key'=>45,
             'verification_status'=>'unconfirmed','is_stale'=>false,
-            'summary'=>sprintf(
-                '%d independent providers reported Microsoft 365-related incidents. Likely shared disruption; Microsoft root cause not established from these reports.',
-                count((array)($related['provider_ids']??[]))
-            ),
+            'summary'=>$watch
+                ? sprintf('%d independent providers have active Microsoft-related integration issues. Incident starts differ; a common Microsoft root cause is not established.', count((array)($related['provider_ids']??[])))
+                : sprintf('%d independent providers reported Microsoft 365-related incidents within 90 minutes. Shared dependency suspected; root cause unconfirmed.', count((array)($related['provider_ids']??[]))),
             'source_type'=>'cross_provider_corroboration','category'=>'communications',
             'correlation_count'=>count((array)($related['provider_ids']??[])),
+            'correlation_confidence'=>$related['confidence'] ?? 'moderate',
+            'correlation_tier'=>$related['correlation_tier'] ?? 'onset_cluster',
             'correlation_sources'=>array_values((array)($related['evidence']??[])),
             'url'=>'https://status.cloud.microsoft/m365',
             'incidents'=>[],'data_observed_at'=>gmdate('c',(int)$related['timestamp']),
