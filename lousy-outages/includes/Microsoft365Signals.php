@@ -45,8 +45,13 @@ final class Microsoft365Signals
             $ts=is_numeric($date)?(int)$date:(strtotime((string)$date)?:0);
             if ($ts <= 0 || $ts < $now-36*HOUR_IN_SECONDS || $ts > $now+300) continue;
             if (!isset($byProvider[$id]) || $ts>$byProvider[$id]['timestamp']) {
+                $url=trim((string)($event['incident_url']??$event['url']??''));
+                if (!preg_match('#^https://#i',$url)) $url='';
                 $byProvider[$id]=[
+                    'provider_id'=>$id,
                     'name'=>(string)($event['provider_label']??ucfirst($id)),
+                    'title'=>substr(trim(strip_tags((string)($event['title']??''))),0,180),
+                    'url'=>$url,
                     'timestamp'=>$ts,
                 ];
             }
@@ -57,6 +62,7 @@ final class Microsoft365Signals
         return [
             'providers'=>array_values(array_column($byProvider,'name')),
             'provider_ids'=>array_keys($byProvider),
+            'evidence'=>array_values($byProvider),
             'timestamp'=>max($timestamps),
             'first_detected'=>min($timestamps),
         ];
