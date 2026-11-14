@@ -233,17 +233,20 @@
 
   function signalCard(provider) {
     var correlated = String(provider.source_type || provider.sourceType || '') === 'cross_provider_corroboration';
+    var relatedWatch = correlated && String(provider.correlation_tier || '') === 'related_reports';
     var name = firstString(provider.name, provider.provider, provider.id);
     var count = Number(provider.correlation_count || 0);
     var sources = Array.isArray(provider.correlation_sources) ? provider.correlation_sources : [];
     var card = el('article', 'lox-card lox-card--warn' + (correlated ? ' lox-card--correlated' : ''));
     var head = el('header', 'lox-card__head');
     head.appendChild(el('h3', 'lox-card__provider', firstString(provider.name, provider.provider, provider.id)));
-    head.appendChild(el('span', 'lox-chip lox-chip--warn', correlated ? 'CORRELATED' : 'DEGRADED'));
+    head.appendChild(el('span', 'lox-chip lox-chip--warn', relatedWatch ? 'RELATED' : (correlated ? 'CORRELATED' : 'DEGRADED')));
     card.appendChild(head);
     if (correlated) {
-      card.appendChild(el('p', 'lox-card__title', 'Likely ' + name + '-related disruption' + (count > 0 ? ' · ' + count + ' provider reports' : '')));
-      card.appendChild(el('p', 'lox-card__context', 'Independent first-party provider incidents point to a shared upstream dependency within a 90-minute window. This is an early warning, not proof of the upstream provider’s root cause or incident status.'));
+      card.appendChild(el('p', 'lox-card__title', (relatedWatch ? 'Related active ' : 'Likely ') + name + '-related disruption' + (count > 0 ? ' · ' + count + ' provider reports' : '')));
+      card.appendChild(el('p', 'lox-card__context', relatedWatch
+        ? 'Independent providers have active issues involving the same ecosystem, but their incident starts are hours apart. This is a related-impact watch, not evidence that the upstream provider caused both failures.'
+        : 'Independent first-party provider incidents point to a shared upstream dependency within a 90-minute window. This is an early warning, not proof of the upstream provider’s root cause or incident status.'));
       if (String(provider.provider_id || provider.id || '') === 'microsoft365') {
         card.appendChild(el('p', 'lox-card__context', 'Microsoft 365 detailed service health requires authorized tenant access through Microsoft Graph. We correlate public incidents reported by affected third parties instead, without claiming to bypass that access requirement.'));
       }
