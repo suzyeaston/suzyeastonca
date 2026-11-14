@@ -4450,6 +4450,43 @@ body.page-template-page-bio-php .bio-content {
   gap: 12px;
 }
 
+
+/* Persistent historical listings: distinguish the archive from upcoming events. */
+.vancouver-tech-events .vte-archive {
+  margin: 2.5rem 0 1.75rem;
+  padding: clamp(0.85rem, 2.5vw, 1.35rem);
+  border: 1px solid rgba(149, 205, 255, 0.35);
+  border-radius: 12px;
+  background: rgba(12, 27, 46, 0.74);
+}
+.vte-archive__kicker { margin: 0 0 0.4rem; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: #9dd5ff; }
+.vte-archive h2 { color: #e5f5ff; margin: 0 0 0.65rem; }
+.vte-archive__intro, .vte-archive__caveat { color: #c8ebff; line-height: 1.55; }
+.vte-archive__filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.6rem; margin: 1rem 0 1.5rem; }
+.vte-archive__filters label { font-size: 0.83rem; color: #d2eaff; }
+.vte-archive__filters select, .vte-archive__filters button { font: inherit; padding: 0.45rem 0.6rem; border: 1px solid rgba(123, 198, 255, 0.65); border-radius: 7px; background: #10233b; color: #f2f8ff; }
+.vte-archive__filters button { cursor: pointer; background: #204f78; font-weight: 600; }
+.vte-archive__filters button:hover, .vte-archive__filters button:focus-visible { background: #306b9b; }
+.vte-archive__overview { padding: 0.65rem 0.8rem 1rem; margin-bottom: 1rem; border: 1px solid rgba(123, 198, 255, 0.25); border-radius: 9px; }
+.vte-archive__overview > p { margin: 0 0 0.65rem; color: #d9efff; }
+.vte-archive__months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: end; gap: 0.35rem; min-height: 96px; }
+.vte-archive__month { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 0.2rem; height: 96px; min-width: 0; font-size: 0.65rem; color: #c8ebff; }
+.vte-archive__month .vte-archive__bar { display: block; min-height: 0; width: min(100%, 24px); background: linear-gradient(0deg, #4c9cce, #a5e3ff); border-radius: 3px 3px 0 0; }
+.vte-archive__month small { font-size: 0.65rem; }
+.vte-archive__date { display: block; color: #9dd5ff; font-size: 0.8rem; margin-bottom: 0.3rem; }
+.vte-archive__topic { color: #aee1ff; }
+.vte-archive__pages { display: flex; gap: 0.9rem; justify-content: center; align-items: center; margin: 1.15rem 0; color: #d2eaff; }
+.vte-archive__pages a { color: #b5e3ff; }
+.vte-archive__caveat { margin: 1rem 0 0; font-size: 0.8rem; }
+@media (max-width: 600px) {
+  .vte-archive__filters { align-items: flex-start; }
+  .vte-archive__filters label { width: 100%; }
+  .vte-archive__filters select { max-width: 100%; flex: 1 1 140px; }
+  .vte-archive__months { gap: 0.15rem; }
+  .vte-archive__month { font-size: 0.55rem; }
+  .vte-archive__month small { font-size: 0.55rem; }
+}
+
 .vancouver-tech-home__item--spotlight {
   border-color: rgba(255, 214, 102, 0.5);
   background: rgba(48, 32, 8, 0.45);

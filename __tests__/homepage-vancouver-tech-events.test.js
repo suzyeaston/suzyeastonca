@@ -361,3 +361,21 @@ test("spotlight section items are not re-listed in dated calendar buckets", () =
       .some((event) => event.spotlight)
   );
 });
+
+test("archive is mounted after the unchanged upcoming calendar and before community links", () => {
+  const php = fs.readFileSync(path.join(ROOT, "inc", "vancouver-tech-events.php"), "utf8");
+  const archive = fs.readFileSync(path.join(ROOT, "inc", "vancouver-tech-events-archive.php"), "utf8");
+  const manifest = fs.readFileSync(path.join(ROOT, "scripts", "theme_deploy_manifest.py"), "utf8");
+  const style = fs.readFileSync(path.join(ROOT, "style.css"), "utf8");
+
+  assert.match(php, /require_once __DIR__ \. '\/vancouver-tech-events-archive\.php'/);
+  assert.ok(php.indexOf("suzy_vte_archive_capture( $events )") < php.indexOf("$events = suzy_vte_upcoming_events( $events );"), "historical capture precedes upcoming filter");
+  assert.ok(php.indexOf("suzy_vte_render_archive_html()") < php.indexOf('class="vte-community-links"'), "history renders above community links");
+  assert.match(archive, /suzy_vte_event_archive_v1/);
+  assert.match(archive, /suzy_vte_archive_schedule/);
+  assert.match(archive, /wp_schedule_event\( time\(\) \+ 120, 'twicedaily'/);
+  assert.match(archive, /Monthly listings for/);
+  assert.match(archive, /previously listed/);
+  assert.match(style, /\.vte-archive__months/);
+  assert.match(manifest, /"inc\/vancouver-tech-events-archive\.php"/);
+});

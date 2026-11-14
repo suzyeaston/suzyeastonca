@@ -7,6 +7,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
+require_once __DIR__ . '/vancouver-tech-events-archive.php';
+
 /**
  * BC kept UTC-7 permanently after its final clock change on March 8, 2026.
  * Older PHP/IANA timezone databases still assume a November 2026 fall-back.
@@ -2047,6 +2049,12 @@ function suzy_get_vancouver_tech_events(): array {
     // Curated Futureproof is appended as a fallback; live Luma wins on merge.
     $events = array_merge( $events, suzy_get_vancouver_tech_spotlight_events(), suzy_get_vancouver_tech_verified_fallback_events() );
 
+    // Capture source-verified past and future listings before upcoming-only filtering.
+    // Empty or blocked fetches never erase historical data.
+    if ( ! $debug ) {
+        suzy_vte_archive_capture( $events );
+    }
+
     // Mark Futureproof as the only spotlight — no membership / source bias.
     foreach ( $events as &$event ) {
         if ( suzy_vte_is_futureproof_event( $event ) ) {
@@ -2221,6 +2229,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
                 </ul>
             <?php endforeach; ?>
         <?php endif; ?>
+        <?php echo suzy_vte_render_archive_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
         <details class="vte-community-links">
             <summary>More community calendars &amp; open nights</summary>
             <p>Check the organizer for the latest schedule, cancellations and RSVP requirements. This list is not exhaustive.</p>
