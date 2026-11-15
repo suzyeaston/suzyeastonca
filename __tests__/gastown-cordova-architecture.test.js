@@ -135,9 +135,49 @@ test('Cordova-facing Harbour Centre streetwall follows the real civic edges',()=
     };
     assert.ok(Math.hypot(center.x-worldPos.x,center.z-worldPos.z)<0.05,
       'facade must sit on the correct 2015 civic parcel edge');
-    assert.ok(facade.children.some(node=>node.name==='Harbour Centre Cordova continuous recessed window band'));
+    assert.ok(facade.children.some(node=>node.name==='Harbour Centre individual upper sash window'));
+    assert.ok(facade.children.some(node=>node.name==='Harbour Centre Cordova retail display glass'));
+    const mass=facade.children.find(node=>node.name==='Harbour Centre articulated stone podium body');
+    assert.ok(mass.geometry.args[1] <= 14, 'remove the oversize 17-m blank slab');
+    assert.ok(facade.children.every(node=>node.name!=='Harbour Centre Cordova parkade concrete streetwall'));
+    const outwardAngle=-harbour.rotation.y+facade.rotation.y;
+    const normal={x:Math.sin(outwardAngle),z:Math.cos(outwardAngle)};
+    const towardLot={
+      x:world.parkingLot.center.x-center.x,
+      z:world.parkingLot.center.z-center.z
+    };
+    const signedNormal=towardLot.x*normal.x+towardLot.z*normal.z;
+    assert.ok(signedNormal*facade.userData.parkingFace>0,
+      'public-side windows face the parking lot, not the back of the facade');
+    const sign=facade.children.find(node=>node.name.endsWith('fascia panel'));
+    assert.ok(sign && sign.userData.signText, 'retail sign backing has a readable label');
+    assert.ok(Math.sign(sign.position.z)===facade.userData.parkingFace,
+      'shop sign is visible from the public parking lot');
     assert.ok(facade.children.every(node=>node.castShadow===false),
       'architectural details may not cast black wedges');
   }
   assert.match(harbour.userData.cordovaStreetWallSource,/feature-16/);
+});
+
+test('Harbour Centre adds the 542 W Cordova Dollarama and central food court lobby',()=>{
+  const harbour=model().create(threeStub(),world).children
+    .find(child=>child.userData.landmark==='Harbour Centre / Spencer Building');
+  const west=harbour.children.find(node=>node.userData.streetLevelRetail==='Dollarama');
+  const east=harbour.children.find(node=>node.userData.streetLevelRetail==='Harbour Centre');
+  assert.ok(west && east);
+  assert.deepEqual(west.userData.civicEdge,[5,6]);
+  assert.deepEqual(east.userData.civicEdge,[13,14]);
+  assert.ok(west.children.some(node=>node.name==='Dollarama recessed glass door pair'));
+  assert.ok(west.children.some(node=>node.name==='Dollarama Cordova storefront fascia panel'));
+  assert.ok(east.children.some(node=>node.name==='Harbour Centre Cordova wayfinding fascia panel'));
+  assert.equal(west.children.find(node=>node.name==='Dollarama Cordova storefront fascia panel').userData.signText,'DOLLARAMA');
+  const entry=harbour.children.find(node=>node.name==='Harbour Centre Cordova recessed food court and shops lobby');
+  assert.ok(entry && entry.children.some(node=>node.name==='Harbour Centre food court full-height doors'));
+  assert.deepEqual(entry.userData.recessedBetweenCivicEdges,[6,13]);
+  assert.equal(entry.children.find(node=>node.name==='Harbour Centre food court and shops fascia panel').userData.signText,
+    'FOOD COURT  |  SHOPS');
+  assert.equal(harbour.userData.cordovaFrontFacesComputedFromLot,true);
+  // Preserve the lookout tower's geography and the station/parking route.
+  assert.equal(world.parkingLot.center.x,46);
+  assert.equal(world.station.x,-22.92);
 });
