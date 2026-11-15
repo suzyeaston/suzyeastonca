@@ -29,7 +29,8 @@
 .se-story__photo { margin: 0; min-width: 0; }
 .se-story__photo img { display: block; width: 100%; height: auto; object-fit: cover; background: #3b3b3b; border-radius: 3px; }
 .se-story__photo--hero { transform: rotate(1.75deg); }
-.se-story__photo--hero img { aspect-ratio: 312 / 393; }
+.se-story__photo--hero { max-width: 315px; justify-self: center; }
+.se-story__photo--hero img { aspect-ratio: 4 / 5; object-position: center 12%; }
 .se-story figcaption { color: var(--story-muted); font: .75rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; padding: .75rem .2rem 0; }
 .se-story__contents { display: flex; gap: .5rem 1.5rem; flex-wrap: wrap; padding: 1.1rem 0; border-top: 1px solid var(--story-line); border-bottom: 1px solid var(--story-line); margin-top: clamp(2.5rem, 6vw, 5rem); }
 .se-story a { color: #f7d1bb; text-underline-offset: .2em; text-decoration-thickness: 1px; }
@@ -51,6 +52,10 @@
 .se-story__photo--street { transform: rotate(-2deg); max-width: 360px; justify-self: end; }
 .se-story__photo--coffee { transform: rotate(2deg); max-width: 360px; justify-self: start; }
 .se-story__photo--street img, .se-story__photo--coffee img { aspect-ratio: 228 / 480; }
+.se-story__music-note { border-top: 1px solid var(--story-line); margin-top: clamp(2.5rem, 5vw, 5rem); padding-top: clamp(2rem, 4vw, 3rem); }
+.se-story__music-note h2 { max-width: none; }
+.se-story__music-note > p:not(.se-story__number) { max-width: 61ch; font-size: 1.09rem; line-height: 1.85; color: #eee4d8; }
+.se-story__music-note > a { display: inline-block; margin-top: .4rem; border-bottom: 1px solid var(--story-accent); padding-bottom: .3rem; text-decoration: none; }
 .se-story__ending { border-top: 1px solid var(--story-line); margin-top: clamp(3rem, 7vw, 7rem); padding-top: clamp(2rem, 5vw, 4rem); }
 .se-story__ending > p { font: clamp(1.5rem, 3vw, 2.4rem)/1.42 Georgia, "Times New Roman", serif; max-width: 31ch; }
 .se-story__links { display: flex; flex-wrap: wrap; gap: .9rem 1.7rem; margin-top: 2rem; }
@@ -68,3 +73,35 @@
 @media (prefers-reduced-motion: reduce) {
   .se-story { scroll-behavior: auto; }
 }
+
+/*
+ * The site's arcade base styles target bare p, h1-h6, and a elements
+ * globally. Reset those *inside the bio only*, so black text rectangles
+ * and the pixel font do not bleed into this editorial page.
+ */
+.se-story :is(h1, h2, h3, h4, h5, h6, p, a) {
+  background: transparent;
+}
+.se-story p, .se-story a {
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--story-ink);
+}
+.se-story .se-story__eyebrow,
+.se-story .se-story__number,
+.se-story .se-story__small,
+.se-story .se-story__thread > span,
+.se-story .se-story__contents a,
+.se-story .se-story__links a {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.se-story .se-story__eyebrow, .se-story .se-story__number { color: var(--story-accent); }
+.se-story .se-story__small, .se-story .se-story__thread > span { color: var(--story-muted); }
+.se-story .se-story__hero-copy .se-story__lead,
+.se-story .se-story__ending > p { font-family: Georgia, "Times New Roman", serif; }
+.se-story .se-story__hero-copy .se-story__lead { color: #fff3df; }
+.se-story .se-story__contents a,
+.se-story .se-story__aside a,
+.se-story .se-story__thread a,
+.se-story .se-story__links a,
+.se-story .se-story__music-note a { color: #f7d1bb; }
+.se-story a:hover { color: white; }

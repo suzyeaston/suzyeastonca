@@ -8,8 +8,8 @@
 wp_enqueue_style(
     'se-bio-story',
     get_template_directory_uri() . '/assets/css/bio-story.css',
-    array(),
-    '1.0.0'
+    array('main-styles'),
+    filemtime( get_template_directory() . '/assets/css/bio-story.css' )
 );
 get_header();
 
@@ -26,8 +26,8 @@ $bio_images = get_template_directory_uri() . '/assets/brand/';
                 <p class="se-story__small">Vancouver, BC · Musician &amp; creative technologist · Usually making something</p>
             </div>
             <figure class="se-story__photo se-story__photo--hero">
-                <img src="<?php echo esc_url( $bio_images . 'meanwhile-october-portrait.webp' ); ?>" alt="Suzy smiling in glasses and a jacket, with a hockey game on a screen behind her." width="312" height="393" fetchpriority="high" decoding="async">
-                <figcaption>A recent frame from the ongoing transmission.</figcaption>
+                <img src="<?php echo esc_url( $bio_images . 'bio-red-toque.jpg' ); ?>" alt="Suzy smiling outdoors in Vancouver, wearing a red knit toque and clear-framed glasses." width="228" height="480" fetchpriority="high" decoding="async">
+                <figcaption>Between one thing and the next, in Vancouver.</figcaption>
             </figure>
         </header>
 
@@ -89,16 +89,12 @@ $bio_images = get_template_directory_uri() . '/assets/brand/';
                 <p class="se-story__aside"><a href="<?php echo esc_url( home_url( '/gastown-sim/' ) ); ?>">Walk through Gastown</a> · <a href="<?php echo esc_url( home_url( '/vancouver-events/' ) ); ?>">Find a local event</a> · <a href="<?php echo esc_url( home_url( '/lousy-outages/' ) ); ?>">Check the signals</a></p>
             </div>
             <figure class="se-story__photo se-story__photo--street">
-                <img src="<?php echo esc_url( $bio_images . 'bio-red-toque.jpg' ); ?>" alt="Suzy outside in a red knit hat and clear-framed glasses, smiling with autumn trees behind her." width="228" height="480" loading="lazy" decoding="async">
-                <figcaption>Out in Vancouver. The city is part of the studio.</figcaption>
+                <img src="<?php echo esc_url( $bio_images . 'bio-coffee.jpg' ); ?>" alt="Suzy smiling outside with a takeaway coffee and autumn trees in the background." width="228" height="480" loading="lazy" decoding="async">
+                <figcaption>Small walks, new ideas. The city gets into everything.</figcaption>
             </figure>
         </section>
 
-        <section id="still-making" class="se-story__chapter se-story__split se-story__split--reverse" aria-labelledby="still-making-title">
-            <figure class="se-story__photo se-story__photo--coffee">
-                <img src="<?php echo esc_url( $bio_images . 'bio-coffee.jpg' ); ?>" alt="Suzy smiling outside, wearing a red knit hat and holding a takeaway coffee." width="228" height="480" loading="lazy" decoding="async">
-                <figcaption>Coffee, a walk, another idea.</figcaption>
-            </figure>
+        <section id="still-making" class="se-story__chapter se-story__chapter--rule" aria-labelledby="still-making-title">
             <div>
                 <p class="se-story__number">05 / RIGHT NOW</p>
                 <h2 id="still-making-title">Still figuring it out. Still making things.</h2>
@@ -109,6 +105,13 @@ $bio_images = get_template_directory_uri() . '/assets/brand/';
                 </div>
             </div>
         </section>
+
+        <aside class="se-story__music-note" aria-labelledby="se-story-music-note-title">
+            <p class="se-story__number">P.S. / MORE MUSIC</p>
+            <h2 id="se-story-music-note-title">More recordings soon.</h2>
+            <p>If you’d like to help me keep recording, picking up something I’ve already released on Bandcamp is a lovely way to do it. More music is on its way. Thanks for listening. ♡</p>
+            <a href="<?php echo esc_url( 'https://suzyeaston.bandcamp.com/' ); ?>" target="_blank" rel="noopener noreferrer">Listen or buy a recording on Bandcamp</a>
+        </aside>
 
         <footer class="se-story__ending">
             <p>If you arrived here through a song, a little bit of code, or a very specific Vancouver rabbit hole: hi. It’s all the same person.</p>
