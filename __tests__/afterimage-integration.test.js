@@ -24,11 +24,17 @@ test('AFTERIMAGE page embeds only the public standalone atlas', () => {
   assert.doesNotMatch(html, /track\.py|private\.sqlite|applications\.db/);
 });
 
-test('AFTERIMAGE is discoverable from the home and projects pages', () => {
-  for (const filename of ['page-home.php', 'page-projects.php']) {
-    assert.match(read(filename), /AFTERIMAGE \/ Vancouver/);
-    assert.match(read(filename), /home_url\( '\/afterimage\/' \)/);
-  }
+test('AFTERIMAGE remains discoverable through the home and dynamic projects links', () => {
+  const home = read('page-home.php');
+  const projects = read('page-projects.php');
+  assert.match(home, /AFTERIMAGE \/ Vancouver/);
+  assert.match(home, /home_url\( '\/afterimage\/' \)/);
+  assert.match(projects, /AFTERIMAGE \/ Vancouver/);
+  // Projects now resolves real WordPress page permalinks and falls back to the
+  // same dedicated route. A literal home_url('/afterimage/') is not required.
+  assert.match(projects, /\$project_url\( 'afterimage' \)/);
+  assert.match(projects, /get_page_by_path\( \$slug \)/);
+  assert.match(projects, /home_url\( '' !== \$fallback_path/);
   assert.match(read('inc/seo.php'), /AFTERIMAGE \/ Vancouver \| Creative work atlas/);
 });
 
