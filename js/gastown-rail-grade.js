@@ -119,8 +119,9 @@
         a,b,-0.22,0.48,0.9,concrete);
       segment(THREE,root,'Service road rough gravel shoulder',
         outerA,outerB,LANE_LEVEL-0.028,0.8,0.055,verge);
-      if(!boundary.length)boundary.push(outerA);
-      boundary.push(outerB);
+      // Preserve both outboard corner offsets at the bend. Skipping the
+      // second segment's start draws an accidental diagonal fence shortcut.
+      boundary.push(outerA,outerB);
     }
     // Beyond the lot, a narrow back-of-building service corridor reads as
     // an alley BEFORE the further rail fence. It is outside the playable lot.
