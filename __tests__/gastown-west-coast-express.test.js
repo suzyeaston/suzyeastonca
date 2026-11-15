@@ -44,6 +44,14 @@ test('the station and bi-level train use the historic Waterfront anchor',()=>{
   assert.ok(root.children.some(n=>n.name==='West Coast Express platform roof canopy'));
   assert.ok(root.children.some(n=>n.name.includes('F59PH locomotive')));
   assert.equal(root.children.filter(n=>n.name.startsWith('West Coast Express bi-level coach')).length,3);
+  const consist=root.children.filter(n=>n.name.startsWith('West Coast Express bi-level coach'));
+  for(const coach of consist){
+    assert.equal(coach.children.filter(n=>n.name==='WEST COAST EXPRESS').length,2,
+      'bilateral coach branding remains visible');
+  }
+  const loco=root.children.find(n=>n.name.includes('F59PH locomotive'));
+  assert.equal(loco.children.filter(n=>n.name==='WEST COAST EXPRESS').length,2);
+
 });
 test('commuter rail curves around the Station East lot boundary',()=>{
   const root=scene();
