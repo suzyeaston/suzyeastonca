@@ -39,6 +39,20 @@
       style:'2021 25-storey glazed office tower with lifted corner podium',
       source:'https://pci-group.com/projects/601-west-hastings/',
       width:18, depth:20, height:107.8, scenicOnly:true
+    }),
+    Object.freeze({
+      id:'woodwards-w43', name:"Woodward's W43 / restored W sign",
+      address:'128 West Cordova Street', lat:49.28297, lon:-123.10808,
+      style:'2009 red-framed glass W43 tower, historic masonry base and elevated W',
+      source:'https://www.seabc.ca/wordpress/files/notable_structures/Vancouver_Notable_Structures_IABSE_SEABC_2017.pdf',
+      width:24, depth:22, height:122.3, scenicOnly:true
+    }),
+    Object.freeze({
+      id:'dominion-207', name:'Dominion Building / 207 West Hastings',
+      address:'207 West Hastings Street', lat:49.282902, lon:-123.109644,
+      style:'1909-10 red-and-cream heritage building with green mansard crown',
+      source:'https://localhistory.vpl.ca/link/buildings1114',
+      width:22, depth:20, height:45, scenicOnly:true
     })
   ]);
 
@@ -185,6 +199,66 @@
       officeGrid(g,'601 West Hastings',18,99,20,paleSilver,shadow,25);
       block(g,'601 West Hastings rooftop setback',0,109,0,15,2.8,17,paleSilver);
       block(g,'601 West Hastings angled plaza overhang',2,13.4,9.3,17,0.55,3.1,paleSilver);
+    }
+
+    // Woodward's is southeast of the playable Water Street corridor. The
+    // actual 128 W Cordova location, not the parking lot, sets the skyline.
+    {
+      const g=newLandmark(LANDMARKS[4]);
+      const rust=mat(0x873c36),red=mat(0xc85a45),darkGlass=mat(0x344b58,0.27,0.17);
+      const frame=mat(0x737c7b,0.61,0.24),heritage=mat(0x945346),wRed=mat(0xf04b32,0.58,0.08);
+      block(g,"Woodward's W43 glazed residential shaft",0,61.15,0,23,122.3,21,darkGlass);
+      for(const x of [-11.7,11.7]){
+        block(g,"Woodward's red vertical corner spine",x,60.7,0,0.75,121.4,22.3,rust);
+      }
+      for(const z of [-10.8,10.8]){
+        block(g,"Woodward's red rear/front corner spine",0,60.7,z,23.4,121.4,0.65,red);
+      }
+      for(let y=8;y<121;y+=11){
+        block(g,"Woodward's stacked residential balcony rail",0,y,-11.0,23,0.23,0.28,frame);
+        block(g,"Woodward's stacked residential south fascia",0,y,11.0,23,0.23,0.28,red);
+      }
+      block(g,"Woodward's planted tower roof edge",0,122.4,0,25.2,0.55,23.5,heritage);
+      // Rebuilt brick frontage and supported W are a separate low-rise
+      // element, not an out-of-scale sign painted across the glass shaft.
+      block(g,"Woodward's heritage brick base",-24,11.6,0,28,23.2,24,heritage);
+      block(g,"Woodward's heritage stone cornice",-24,23.4,0,29,0.65,25,sandstone);
+      for(let floor=0;floor<4;floor++){
+        block(g,"Woodward's heritage upper-storey window band",-24,6+floor*4.0,-12.1,24,2.0,0.12,shadow);
+      }
+      const signX=-25,signZ=-13;
+      for(const x of [-5,5])block(g,"Woodward's W steel lattice upright",
+        signX+x,34.4,signZ,0.30,21.0,0.35,frame);
+      function stroke(name,x1,y1,x2,y2,thickness,material){
+        const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy);
+        const node=block(g,name,signX+(x1+x2)/2,(y1+y2)/2,signZ,
+          len,thickness,0.55,material);
+        node.rotation.z=Math.atan2(dy,dx);
+      }
+      for(let y=26;y<45;y+=6){
+        stroke("Woodward's W crisscross steel truss",-5,y,5,y+6,0.22,frame);
+        stroke("Woodward's W crisscross steel truss",5,y,-5,y+6,0.22,frame);
+      }
+      const wp=[[-5,51],[-2.5,45],[0,49],[2.5,45],[5,51]];
+      for(let i=0;i<wp.length-1;i++)stroke("Woodward's replica red W sign",
+        wp[i][0],wp[i][1],wp[i+1][0],wp[i+1][1],1.1,wRed);
+      g.userData.landmarkDetails='128 W Cordova W43, historic brick base, supported W';
+    }
+    // Dominion Trust Building, 207 West Hastings: 1909-10 brick and
+    // cream-stone vertical rhythm, and a dark green mansard crown.
+    {
+      const g=newLandmark(LANDMARKS[5]);
+      const terracotta=mat(0x8e4b40),slate=mat(0x40544d),heritageWindow=mat(0x34434b,0.35,0.08);
+      block(g,'Dominion Building red brick heritage tower',0,19,0,22,38,20,terracotta);
+      for(const z of [-10.15,10.15]){
+        for(let y=6;y<=35;y+=5.1)
+          block(g,'Dominion Building tall sash band',0,y,z,18,2.7,0.12,heritageWindow);
+        for(const x of [-8,-3,3,8])
+          block(g,'Dominion Building stone window pilaster',x,21,z,0.48,33,0.2,sandstone);
+      }
+      block(g,'Dominion Building pale stone cornice',0,38.2,0,24,0.8,22,sandstone);
+      block(g,'Dominion Building green mansard roof',0,42.1,0,20,7,18,slate);
+      block(g,'Dominion Building copper crest',0,45.7,0,13,0.7,12,copper);
     }
     return root;
   }

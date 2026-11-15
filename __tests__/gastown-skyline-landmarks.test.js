@@ -35,13 +35,15 @@ function inside(point,poly){
 }
 test('landmarks are named, sourced, georeferenced and finite',()=>{
   const api=boot(),root=api.create(stub(),world);
-  assert.equal(root.userData.landmarkCount,4);
-  assert.equal(root.children.length,4);
+  assert.equal(root.userData.landmarkCount,6);
+  assert.equal(root.children.length,6);
   const expected={
     '200 Granville Square':'granville-square-200',
     'Royal Bank Tower / Six Seven Five':'royal-bank-675',
     'Sinclair Centre former Post Office':'sinclair-centre',
-    '601 West Hastings':'hastings-601'
+    '601 West Hastings':'hastings-601',
+    "Woodward's W43 / restored W sign":'woodwards-w43',
+    'Dominion Building / 207 West Hastings':'dominion-207'
   };
   for(const g of root.children){
     assert.equal(g.userData.landmarkId,expected[g.name],g.name);
@@ -67,7 +69,11 @@ test('recognizable roofs and heritage details, with a bounded mesh budget',()=>{
   assert.ok(names.includes('Sinclair Centre post office clock tower shaft'));
   assert.equal(names.filter(name=>name.startsWith('Sinclair Centre clock face /')).length,4);
   assert.ok(names.includes('601 West Hastings sculpted glass office shaft'));
-  assert.ok(children.length<280,'do not flood 8GB laptop WebGL with per-window meshes');
+  assert.ok(names.includes("Woodward's W43 glazed residential shaft"));
+  assert.equal(names.filter(name=>name==="Woodward's replica red W sign").length,4);
+  assert.ok(names.includes("Woodward's heritage brick base"));
+  assert.ok(names.includes('Dominion Building green mansard roof'));
+  assert.ok(children.length<350,'keep all six skyline models economical on an 8GB laptop');
   for(const part of children){
     assert.equal(part.castShadow,false,part.name);
     assert.equal(part.receiveShadow,false,part.name);
@@ -89,4 +95,15 @@ test('landmarks are not rendered if civic coordinate data is absent',()=>{
   const api=boot();
   assert.equal(api.create(stub(),{meta:{}}),null);
   assert.equal(api.project({},api.LANDMARKS[0]),null);
+});
+
+test('Woodward and Dominion are on their real southeast anchors, not beside the parking lot',()=>{
+  const api=boot(),root=api.create(stub(),world);
+  const w=root.children.find(group=>group.userData.landmarkId==='woodwards-w43');
+  const d=root.children.find(group=>group.userData.landmarkId==='dominion-207');
+  assert.ok(w && d);
+  assert.ok(w.position.x>240 && w.position.z>300,'W43 must be beyond the Steam Clock corridor');
+  assert.ok(d.position.x>130 && d.position.z>300,'Dominion must be south of Water Street');
+  assert.ok(Math.abs(w.userData.heightApprox-122.3)<0.01);
+  assert.ok(w.position.x>d.position.x,'Woodward lies east of Dominion');
 });

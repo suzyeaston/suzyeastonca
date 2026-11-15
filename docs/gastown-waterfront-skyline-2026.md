@@ -57,3 +57,42 @@ No commercial map screenshots or stock textures ship with the theme.
 6. Check low-graphics mode, third-person camera, elevator lobby and frame rate on an 8 GB Mac.
 
 This is a coordinate-informed visual stage, **not a measured photogrammetric city model**.
+
+## November 15: reference-guided West Cordova / Water Street visual pass
+
+The user compared Station East parking and the southeast-bound corridor with
+July 2024 and June 2025 Street View images. The model had the correct Harbour
+Centre observation tower anchor, but its long Cordova street-facing mass was
+a visually blank gap. The fix adds two lightweight limestone-and-glass frontage
+skins along existing City of Vancouver civic footprint feature-16 edges
+(5→6 and 13→14). Sidewalk, parking lot height, lower alley, tram route,
+movement and collisions are unchanged.
+
+Additional skyline anchors, deliberately southeast of the playable corridor:
+
+- **Woodward's W43, 128 W Cordova**, 49.28297, -123.10808: the approximately
+  122-metre red-trimmed residential tower, historic brick podium and an
+  illuminated-style **replica W sign on its separate steel lattice**.
+  Reference: Structural Engineers Association of BC, 2017 Vancouver Notable
+  Structures guide, https://www.seabc.ca/wordpress/files/notable_structures/Vancouver_Notable_Structures_IABSE_SEABC_2017.pdf
+- **Dominion Building, 207 W Hastings**, 49.282902, -123.109644: the red
+  and cream heritage tower and green mansard roof. Reference: Vancouver
+  Public Library Local History,
+  https://localhistory.vpl.ca/link/buildings1114
+
+These are original, budgeted low-poly meshes at documented address-point
+locations, not photogrammetry or exact footprint-survey reproductions.
+Woodward's is not beside the Waterfront Station parking lot and may be
+partially hidden by nearer buildings from the natural walking route.
+
+### Browser QA to do after merge
+
+1. Face south from Station East parking and confirm Harbour Centre-side
+   Cordova frontage is legible, with recessed horizontal glazing rather than
+   a flat grey block or floating slab.
+2. Turn toward Water Street; check skyline parallax, historic streetwall,
+   and Vancouver Lookout's already georeferenced circular observation crown.
+3. From the Steam Clock approach, look southeast: Woodward's and Dominion
+   should appear beyond the route, not next to the clock or station.
+4. Confirm no new collision blockers, no shadow wedges, no missing street
+   paving, and no interference with elevated parking, WCE, or the Landing.
