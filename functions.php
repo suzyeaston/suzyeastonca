@@ -126,6 +126,54 @@ add_filter( 'template_include', function ( $template ) {
     return $atlas_template;
 }, 99 );
 
+/**
+ * MOSAIC is a local-first multitrack video studio served from this theme.
+ * Virtual WordPress route avoids dependence on a database page or GitHub Pages.
+ */
+function se_mosaic_is_request() {
+    if ( is_admin() ) {
+        return false;
+    }
+    $path = (string) wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '', PHP_URL_PATH );
+    $site_base = trim( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ), '/' );
+    $relative = trim( $path, '/' );
+    if ( '' !== $site_base ) {
+        if ( 0 !== strpos( $relative, $site_base . '/' ) ) {
+            return false;
+        }
+        $relative = substr( $relative, strlen( $site_base ) + 1 );
+    }
+    return 'mosaic' === $relative;
+}
+
+add_filter( 'pre_handle_404', function ( $preempt ) {
+    if ( se_mosaic_is_request() ) {
+        status_header( 200 );
+        return true;
+    }
+    return $preempt;
+}, 10, 1 );
+
+add_filter( 'redirect_canonical', function ( $redirect_url ) {
+    return se_mosaic_is_request() ? false : $redirect_url;
+} );
+
+add_filter( 'template_include', function ( $template ) {
+    if ( ! se_mosaic_is_request() ) {
+        return $template;
+    }
+    $mosaic_template = get_template_directory() . '/page-mosaic.php';
+    if ( ! is_file( $mosaic_template ) ) {
+        return $template;
+    }
+    global $wp_query;
+    if ( $wp_query instanceof WP_Query ) {
+        $wp_query->is_404 = false;
+    }
+    status_header( 200 );
+    return $mosaic_template;
+}, 99 );
+
 // =========================================
 // 1. THEME SCRIPTS & STYLES
 // =========================================

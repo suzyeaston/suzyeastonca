@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#11131f">
+  <meta name="description" content="MOSAIC is a free, private-by-default multitrack video studio. Record a little orchestra of yourself in your browser.">
+  <title>MOSAIC / multitrack video studio</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="core.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="wordmark" href="https://www.suzyeaston.ca/" target="_blank" rel="noopener noreferrer" aria-label="Suzy Easton home">SUZY / LABS</a>
+      <span class="topbar-note"><span class="live-dot" aria-hidden="true"></span> local-first music making</span>
+      <a class="top-link" href="https://www.suzyeaston.ca/loop-lab/" target="_blank" rel="noopener noreferrer">audio-only Loop Lab ↗</a>
+    </header>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">No subscriptions. No server uploads. Just you and the arrangement.</p>
+        <h1>MOSAIC<span class="hero-star">✳</span></h1>
+        <p class="lead">One musician. Many versions. A whole little universe of sound.</p>
+      </div>
+      <div class="hero-tag" aria-label="Free browser recording studio">MULTITRACK<br>VIDEO<br>STUDIO <span>01</span></div>
+    </section>
+    <div class="workspace">
+      <section class="studio panel" aria-labelledby="studio-title">
+        <div class="panel-top">
+          <div><p class="label">01 / the ensemble</p><h2 id="studio-title">Your video grid</h2></div>
+          <div class="layout-controls" role="group" aria-label="Grid layout">
+            <button class="chip is-active" type="button" data-grid="4" aria-pressed="true">2 × 2</button>
+            <button class="chip" type="button" data-grid="9" aria-pressed="false">3 × 3</button>
+          </div>
+        </div>
+        <div class="grid-wrap">
+          <div id="performance-grid" class="performance-grid cols-2" aria-label="Recording tiles"></div>
+          <div id="countdown-overlay" class="countdown-overlay" hidden aria-live="assertive"><span id="countdown-value">4</span><small>COUNT IN</small></div>
+        </div>
+        <p class="grid-hint" id="grid-hint">Select a tile, then record. Use headphones so earlier takes don't bleed into your mic.</p>
+        <div class="transport" role="group" aria-label="Transport controls">
+          <button id="play-btn" type="button" class="transport-btn" disabled>▶ PLAY ALL</button>
+          <button id="stop-btn" type="button" class="transport-btn" disabled>■ STOP</button>
+          <div class="time-display" aria-label="Transport clock"><strong id="clock">00:00</strong><span id="duration-label">/ TARGET 00:15</span></div>
+          <div class="progress" role="progressbar" aria-label="Loop position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-bar"></div></div>
+        </div>
+      </section>
+      <aside class="sidebar">
+        <section class="panel settings" aria-labelledby="setup-title">
+          <p class="label">02 / session settings</p>
+          <h2 id="setup-title">Set your tempo</h2>
+          <label for="duration-select">Planning target <small>(not a recording limit)</small></label>
+          <select id="duration-select"><option value="0">No target / free recording</option><option value="15">15 seconds</option><option value="30">30 seconds</option><option value="60">60 seconds</option><option value="120">2 minutes</option></select>
+          <div class="setting-row"><label for="bpm-input">Count-in tempo</label><output id="bpm-value" for="bpm-input">120 BPM</output></div>
+          <input id="bpm-input" type="range" min="60" max="200" step="1" value="120">
+          <label class="toggle"><input id="metronome-input" type="checkbox" checked><span>Four-beat count-in with clicks</span></label>
+          <label class="toggle"><input id="camera-input" type="checkbox" checked><span>Use camera <small>(uncheck for audio only)</small></span></label>
+          <p class="quiet">This target is only a visual guide. Recording starts after your optional count-in and continues until you press Stop &amp; Keep Take. Shorter tracks repeat during playback; the longest take determines export length. Use headphones.</p>
+        </section>
+        <section class="panel capture" aria-labelledby="capture-title">
+          <p class="label">03 / capture</p>
+          <h2 id="capture-title">Track <span id="selected-track-number">01</span></h2>
+          <p id="selected-track-description">Ready for its first performance.</p>
+          <button id="record-btn" class="record-btn" type="button">● RECORD THIS TILE</button>
+          <button id="cancel-btn" class="ghost-btn" type="button" hidden>DISCARD CURRENT TAKE</button>
+          <p class="record-help" id="record-help">Press Record to start. Press the same button to stop and save your take, whenever you choose.</p>
+          <div id="level-section" class="level-section" hidden><label for="level-input">Track volume</label><div class="setting-row"><input id="level-input" type="range" min="0" max="150" value="100"><output id="level-output" for="level-input">100%</output></div></div>
+          <div class="secondary-controls">
+            <button id="mute-btn" type="button" disabled>Mute tile</button>
+            <button id="download-tile-btn" type="button" disabled>Download tile</button>
+            <button id="remove-btn" type="button" disabled>Remove tile</button>
+          </div>
+        </section>
+        <section class="panel delivery" aria-labelledby="delivery-title">
+          <p class="label">04 / take it with you</p>
+          <h2 id="delivery-title">Export your piece</h2>
+          <button id="export-btn" class="export-btn" type="button" disabled>↓ EXPORT VIDEO GRID</button>
+          <p>Export composites the tiles and audible tracks in real time. Keep the tab open until the download starts.</p>
+          <button id="clear-btn" class="text-btn" type="button" disabled>Clear the whole session</button>
+        </section>
+      </aside>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite">All recordings stay on this device. Nothing is uploaded.</p>
+    <footer><span>MOSAIC / an experiment by <a href="https://www.suzyeaston.ca/">Suzy Easton</a></span><span>Made for people who make things. ♡</span></footer>
+  </main>
+</body>
+</html>
