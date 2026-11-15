@@ -88,6 +88,43 @@ test('three WCE tracks stay parallel, turn east and miss Station East and The La
     }
   }
 });
+test('WCE train moves like the buses, pauses at Waterfront and preserves coach spacing',()=>{
+  const window={document:{createElement:()=>({getContext:()=>({fillRect(){},fillText(){}})})}};
+  new Function('window',read('js/gastown-west-coast-express.js'))(window);
+  const module=window.GastownWestCoastExpress;
+  const root=module.create(stub(),world);
+  const loco=root.children.find(n=>n.name.includes('F59PH locomotive'));
+  const coach=root.children.find(n=>n.name==='West Coast Express bi-level coach 1');
+  assert.equal(root.userData.simulatedMotion,true);
+  assert.equal(root.userData.motionIsNotLiveTracking,true);
+  assert.equal(root.userData.stagedTrainNotLive,true);
+  assert.equal(root.userData.trainMotion.cycleSeconds,66);
+  assert.equal(root.userData.trainMotion.vehicles.length,4);
+  assert.equal(root.userData.trainMotion.path.length,4);
+  const atStation=loco.position.x;
+  assert.ok(Math.abs(atStation-14)<0.01,'locomotive starts on platform track');
+  module.animate(root,5);
+  assert.equal(loco.position.x,atStation,'Waterfront boarding dwell');
+  module.animate(root,20);
+  assert.ok(loco.position.x>atStation+5,'train departs east along the rails');
+  assert.equal(loco.position.y,0,'vehicles remain at rail height relative to group');
+  const spacing=Math.hypot(loco.position.x-root.children.find(
+    n=>n.name==='West Coast Express bi-level coach 3').position.x,
+    loco.position.z-root.children.find(
+    n=>n.name==='West Coast Express bi-level coach 3').position.z);
+  assert.ok(spacing>=19.5&&spacing<=21,'nearest coach retains roughly 20m clearance');
+  const eastbound=loco.position.x;
+  module.animate(root,36);
+  const terminal=loco.position.x;
+  assert.ok(terminal>eastbound);
+  module.animate(root,37);
+  assert.equal(loco.position.x,terminal,'eastern reversal has a brief pause');
+  module.animate(root,52);
+  assert.ok(loco.position.x<terminal,'train returns toward Waterfront');
+  module.animate(root,66);
+  assert.ok(Math.abs(loco.position.x-atStation)<0.01,'loop returns to platform smoothly');
+  assert.ok(Math.abs(coach.position.x+50)<0.01,'last coach returns to original station berth');
+});
 test('track ties are batched, module is deployed, and scene failure stays isolated',()=>{
   const root=scene(),sim=read('js/gastown-sim.js');
   const php=read('functions.php'),manifest=read('scripts/theme_deploy_manifest.py');

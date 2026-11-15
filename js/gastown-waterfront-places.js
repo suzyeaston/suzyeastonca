@@ -326,6 +326,39 @@
     const yellow = new THREE.MeshBasicMaterial({ color: 0xffd057 });
     const iron = new THREE.MeshStandardMaterial({ color: 0x363e43, roughness: 0.65, metalness: 0.22 });
     root.add(polygonMesh(THREE, lot.polygon, asphalt, 0.19));
+    // In the photographed service alley, Cordova and Station East's lot
+    // are an upper deck, almost a storey above the vehicle/utility yard.
+    // Keep the PUBLIC LOT's original Y so driving, walking and spawn
+    // coordinates never change. Build its exposed vertical retaining face
+    // downward instead of raising the whole game-world terrain.
+    const upperDeck=0.19, lowerAlley=-3.60;
+    const wallHeight=upperDeck-lowerAlley;
+    const masonry=new THREE.MeshStandardMaterial({color:0x757875,roughness:0.91});
+    const foundation=new THREE.MeshStandardMaterial({color:0x4e5352,roughness:0.94});
+    const coping=new THREE.MeshStandardMaterial({color:0x9b9e99,roughness:0.83});
+    for (const index of [2,3,4,5]) {
+      const a=lot.polygon[index], b=lot.polygon[(index+1)%lot.polygon.length];
+      const dx=b.x-a.x,dz=b.z-a.z;
+      const length=Math.hypot(dx,dz);
+      if(length<0.5)continue;
+      const yaw=Math.atan2(-dz,dx);
+      const x=(a.x+b.x)/2,z=(a.z+b.z)/2;
+      addBox(THREE,root,'Station East elevated parking deck retaining face',
+        x,lowerAlley+wallHeight/2,z,length,wallHeight,0.72,masonry,yaw);
+      addBox(THREE,root,'Station East raised deck concrete coping',
+        x,upperDeck-0.11,z,length+0.25,0.22,0.92,coping,yaw);
+      addBox(THREE,root,'Station East retaining wall dark foundation',
+        x,lowerAlley+0.24,z,length,0.48,0.78,foundation,yaw);
+      for(let d=5;d<length-2;d+=9) {
+        const t=d/length;
+        addBox(THREE,root,'Station East raised parking deck buttress',
+          a.x+dx*t,lowerAlley+wallHeight/2,a.z+dz*t,
+          0.76,wallHeight,0.98,foundation,yaw);
+      }
+    }
+    root.userData.upperParkingDeckElevation=upperDeck;
+    root.userData.lowerLandingAlleyElevation=lowerAlley;
+    root.userData.exposedRetainingWallHeight=wallHeight;
     for (let i = 0; i < lot.polygon.length; i++) {
       const a=lot.polygon[i], b=lot.polygon[(i+1)%lot.polygon.length];
       if (i === 0) {

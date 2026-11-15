@@ -1,5 +1,5 @@
 /*
- * Waterfront West Coast Express: original low-poly station / stationary train.
+ * Waterfront West Coast Express: original low-poly station / animated train.
  * Representative scenery only: not a surveyed track layout, station wayfinding
  * map or live vehicle-position feed. +X east, +Z south, +Y up.
  * References:
@@ -44,7 +44,7 @@
     const station=world&&world.station;
     if(!station||!Number.isFinite(station.x)||!Number.isFinite(station.z))return null;
     const root=new THREE.Group();
-    root.name='Waterfront West Coast Express platform and stationary commuter train';
+    root.name='Waterfront West Coast Express platform and animated commuter train';
     // Station yaw describes its heritage street facade, NOT the railway.
     // The previous WCE root rotated the commuter line by -45 degrees,
     // sending trains across the N-Yard and toward Station East.
@@ -135,7 +135,7 @@
         box(THREE,root,'WCE platform bench leg',x+leg,0.56,-7.8,0.14,0.67,0.12,steelWeb);
       }
     }
-    // Stationary blue/white bi-level commuter consist. Shortened to three
+    // Animated blue/white bi-level commuter consist. Shortened to three
     // coaches and a recognisable blue/yellow F59PH cab for scene performance.
     for(const [index,center] of [-50,-28,-6].entries()){
       const coach=new THREE.Group();coach.name='West Coast Express bi-level coach '+(index+1);
@@ -181,6 +181,27 @@
     for(const x of [-5.5,5.4]){
       box(THREE,locomotive,'WCE powered bogie',x,0.58,0,3.7,0.78,2.82,wheels);
     }
+    // Bus-style deterministic route animation. All vehicles share ONE motion
+    // controller and sample the same centerline, with fixed consist spacing.
+    // Track geometry/platform remain static. This is an illustrative shuttle,
+    // not a live train schedule or a claim of actual WCE reverse operations.
+    const path=[];
+    let pathLength=0;
+    routes[0].forEach((point,i)=>{
+      if(i>0)pathLength+=Math.hypot(point.x-routes[0][i-1].x,point.z-routes[0][i-1].z);
+      path.push({x:point.x,z:point.z,at:pathLength});
+    });
+    const vehicleOffsets=[-64,-42,-20,0]; // cars 1..3, then locomotive
+    const trainVehicles=[
+      ...root.children.filter(node=>node.name.startsWith('West Coast Express bi-level coach ')),
+      locomotive
+    ];
+    root.userData.trainMotion={
+      path,vehicles:trainVehicles,offsets:vehicleOffsets,
+      platformHeadDistance:110,excursion:120,
+      dwellSeconds:8,runSeconds:28,endPauseSeconds:2,
+      cycleSeconds:66
+    };
     root.userData.westCoastExpress=true;
     root.userData.stagedTrainNotLive=true;
     root.userData.platformSurveyed=false;
@@ -192,9 +213,50 @@
     root.userData.tracksSurveyed=false;
     root.userData.vehicleCount=4;
     root.userData.routeTracks=routes;
+    root.userData.simulatedMotion=true;
+    root.userData.motionIsNotLiveTracking=true;
     root.userData.referenceSources=SOURCES;
     root.userData.noPublicRailAccess=true;
+    animate(root,0);
     return root;
   }
-  window.GastownWestCoastExpress=Object.freeze({create,reference:SOURCES});
+  function sampleTrack(path,distance){
+    if(!Array.isArray(path)||path.length<2)return null;
+    const max=path[path.length-1].at;
+    const d=Math.max(0,Math.min(max,distance));
+    let i=1;
+    while(i<path.length-1&&d>path[i].at)i++;
+    const a=path[i-1],b=path[i];
+    const span=Math.max(0.001,b.at-a.at);
+    const t=(d-a.at)/span;
+    return {x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,
+      yaw:Math.atan2(-(b.z-a.z),b.x-a.x)};
+  }
+  function motionHeadDistance(motion,seconds){
+    const time=((Math.max(0,Number(seconds)||0)%motion.cycleSeconds)
+      +motion.cycleSeconds)%motion.cycleSeconds;
+    const start=motion.platformHeadDistance;
+    const end=start+motion.excursion;
+    const dwell=motion.dwellSeconds;
+    const run=motion.runSeconds;
+    const pause=motion.endPauseSeconds;
+    const ease=t=>t*t*(3-2*t);
+    if(time<=dwell)return start;
+    if(time<dwell+run)return start+(end-start)*ease((time-dwell)/run);
+    if(time<dwell+run+pause)return end;
+    return end-(end-start)*ease(Math.min(1,(time-dwell-run-pause)/run));
+  }
+  function animate(root,seconds){
+    if(!root||!root.userData||!root.userData.trainMotion)return;
+    const motion=root.userData.trainMotion;
+    const head=motionHeadDistance(motion,seconds);
+    motion.vehicles.forEach((vehicle,i)=>{
+      const position=sampleTrack(motion.path,head+motion.offsets[i]);
+      if(!position)return;
+      vehicle.position.set(position.x,0,position.z);
+      vehicle.rotation.y=position.yaw;
+    });
+    root.userData.trainMotionCurrentHead=head;
+  }
+  window.GastownWestCoastExpress=Object.freeze({create,animate,reference:SOURCES});
 })(window);

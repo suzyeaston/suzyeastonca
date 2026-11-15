@@ -5105,7 +5105,10 @@
     }
     if (westCoastExpress && typeof westCoastExpress.create === 'function') {
       const commuterRail = safelyCreate('West Coast Express platform', () => westCoastExpress.create(THREE, world));
-      if (commuterRail) worldGroup.add(commuterRail);
+      if (commuterRail) {
+        worldGroup.add(commuterRail);
+        state.westCoastExpressRoot = commuterRail;
+      }
     }
     if (waterfrontPlaces) {
       if(typeof waterfrontPlaces.createLandingJourney==='function'){
@@ -7844,6 +7847,12 @@
         animateRain(delta);
         if (state.harbourVistaRoot && harbourVista && typeof harbourVista.animate === 'function') {
           harbourVista.animate(state.harbourVistaRoot,time/1000);
+        }
+        // The illustrated WCE moves using the same frame clock as the buses.
+        // Only the train consist moves; static platform and track never shift.
+        if (state.westCoastExpressRoot && westCoastExpress &&
+            typeof westCoastExpress.animate === 'function') {
+          westCoastExpress.animate(state.westCoastExpressRoot,time/1000);
         }
         drawMinimap();
         refreshDebugRuntimeReadout();

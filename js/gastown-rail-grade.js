@@ -11,7 +11,7 @@
  */
 (function(window){
   'use strict';
-  const RAIL_LEVEL=-1.35, LANE_LEVEL=0.11, LOT_LEVEL=0.19;
+  const RAIL_LEVEL=-1.35, LANE_LEVEL=-3.60, LOT_LEVEL=0.19;
   const REFS={
     railway:'https://vancouver.ca/files/cov/2022-519-release.pdf',
     parking:'https://heritagevancouver.org/top10-watch-list/2021/8-555-west-cordova/',
@@ -129,6 +129,8 @@
     const brickDark=standard(THREE,0x5d352e,0.91);
     const metal=standard(THREE,0x34474d,0.57,0.32);
     const yellow=standard(THREE,0xd3b43c,0.9);
+    const dockBeam=standard(THREE,0x585d61,0.8);
+    const dockShade=standard(THREE,0x292d32,0.94);
     const mapped=SERVICE_REFERENCE.map(point=>streetViewInScene(origin,point));
     // Road runs beside The Landing's northern wall, approximately
     // (67,77) -> (80,80) -> (101,86) in scene metres.
@@ -162,6 +164,24 @@
       south.push(farB);
       roadSegments++;
     }
+    // The Feb 2022 photographs show the public street/lot deck overhead
+    // at the west end of the alley, with concrete beams and yellow-tipped
+    // steel supports above the lower service vehicle lane.
+    const deckHeight=LOT_LEVEL-LANE_LEVEL;
+    box(THREE,root,'Raised Cordova station loading deck underside',
+      65,LOT_LEVEL-0.27,73,14.5,0.46,9.1,concrete);
+    box(THREE,root,'Raised loading deck dark steel underside beam',
+      65,LOT_LEVEL-0.58,73,14.6,0.32,0.46,dockShade);
+    for(const x of [60.2,69.8]){
+      box(THREE,root,'Elevated service deck support column',
+        x,LANE_LEVEL+deckHeight/2,69.4,0.54,deckHeight,0.54,dockBeam);
+      box(THREE,root,'Raised dock yellow column safety paint',
+        x,LANE_LEVEL+0.67,69.4,0.63,1.34,0.63,yellow);
+    }
+    // The lane roadbed is physically below the public lot and street.
+    // It must not inherit the street-height ground plane.
+    // Grade metadata is attached below, after all geometry is constructed.
+
     // Compact fenced utility yard, not a second rail-yard surface. It lies
     // immediately NORTH of the real alley and far SOUTH of the CPR rails.
     const yard=[
@@ -192,6 +212,10 @@
       lotElevation:LOT_LEVEL,
       laneElevation:LANE_LEVEL,
       railElevation:RAIL_LEVEL,
+      elevatedStreetAndLot:true,
+      lowerServiceRoad:true,
+      gradeSeparationMetres:LOT_LEVEL-LANE_LEVEL,
+      loadingDeckClearance:deckHeight,
       wireFencePostCount:fencePosts+returnPosts,
       railwayTrackCount:0,
       railRoutes:[],

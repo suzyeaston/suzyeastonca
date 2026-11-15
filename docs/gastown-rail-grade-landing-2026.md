@@ -51,9 +51,26 @@ cut across the rail yard.
 - Continue the 20-track illustrative N-Yard without touching harbour
   and SeaBus components. No physics or gameplay collision changes.
 
-The visual rail grades remain illustrative, with lot +0.19, service alley
-+0.11, and rail -1.35 scene metres. These values are NOT surveyed,
+The visual rail grades remain illustrative, with the **playable lot and
+Cordova-side street at their original ~0/+0.19 scene height**, the service
+alley lowered to -3.60, and the rail scene at -1.35. The lot-to-alley step
+is 3.79 scene metres. Reinforced deck edge, buttresses and overhead loading
+deck support columns expose that step, based on the user's photographed
+alley view. We deliberately did not move the walkable asphalt, traffic,
+landing entrance or player ground plane. These values are NOT surveyed,
 not current rail operations, and do not imply pedestrian access.
+
+## Animated West Coast Express
+The low-poly locomotive and three bi-level coaches are now driven each
+frame from a single deterministic controller using the same time source as
+the illustrated buses. They follow the first of three parallel WCE routes,
+with coach offsets following the track's arc length. The visible motion
+cycle is 66 seconds: pause at Waterfront for 8 seconds, travel outward
+for 28 seconds, pause 2 seconds at the illustrative east end, then return
+for 28 seconds. Rail, sleepers and platform remain static.
+
+This is a short **artistic demonstration loop**, not a real timetable,
+arrival prediction, railway operations simulation, or live vehicle position.
 
 ## Browser QA acceptance
 1. From Station East fence, look west toward the WCE platform. The train
@@ -67,4 +84,6 @@ not current rail operations, and do not imply pedestrian access.
    remain visible without duplicated near-field tracks.
 5. Walk the lot and heritage station, interact with NPCs, then enter and
    exit The Landing via the lift, checking camera clipping and console.
-6. Confirm Gastown GIS QA and production theme deployment in Actions.
+6. Watch the WCE at Waterfront for an 8-second dwell, its gradual
+   departure, brief far-end pause, and return without coach separation.
+7. Confirm Gastown GIS QA and production theme deployment in Actions.
