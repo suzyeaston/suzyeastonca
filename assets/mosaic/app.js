@@ -20,6 +20,7 @@
     fxPreview: el('fx-preview'), fxPreset: el('fx-preset'), fxStrength: el('fx-strength'),
     fxStrengthValue: el('fx-strength-value'), share: el('share-btn'),
     caption: el('share-caption'), copyCaption: el('copy-caption-btn'),
+    formatNote: el('export-format-note'),
   };
   const clips = new Map();
   const mediaNodes = new Map();
@@ -52,12 +53,13 @@
     ui.status.classList.toggle('error', error);
   };
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-  const supported = type => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(type);
+  const supported = type => typeof MediaRecorder !== 'undefined' && typeof MediaRecorder.isTypeSupported === 'function' && MediaRecorder.isTypeSupported(type);
   const recMime = hasVideo => core.chooseMime(hasVideo
     ? ['video/webm;codecs=vp8,opus','video/webm;codecs=vp9,opus','video/mp4','video/webm']
     : ['audio/webm;codecs=opus','audio/mp4','audio/webm'], supported);
   const dateName = () => new Date().toISOString().slice(0, 10);
   const extFor = mime => /mp4|m4a/.test(mime) ? 'mp4' : /ogg/.test(mime) ? 'ogg' : 'webm';
+  const preferredExportMime = () => core.chooseSocialVideoMime(supported);
   const anyClips = () => clips.size > 0;
 
   function openDatabase() {
@@ -629,6 +631,32 @@
       status('Clipboard permission denied. Caption selected; copy it manually.', true);
     }
   }
+  function describeExportFormat(mime) {
+    return core.videoExtension(mime) === 'mp4' ? 'MP4' :
+      core.videoExtension(mime) === 'webm' ? 'WebM' : 'Unknown format';
+  }
+  function showExportFormat() {
+    const planned = preferredExportMime();
+    if (!ui.formatNote) return;
+    ui.formatNote.textContent = core.videoExtension(planned) === 'mp4'
+      ? 'MP4 export available in this browser. H.264/AAC is preferred when the encoder supports it.'
+      : 'This browser may only export WebM. For an Instagram-friendly MP4, try an up-to-date Safari or Chrome, or convert the file locally.';
+  }
+  function makeSocialRecorder(stream) {
+    // Test candidates in order. isTypeSupported() can report yes even when
+    // the actual encoder cannot be initialized with this particular stream.
+    for (const type of core.SOCIAL_VIDEO_MIMES) {
+      if (!supported(type)) continue;
+      try {
+        return new MediaRecorder(stream, {
+          mimeType: type, videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000,
+        });
+      } catch { /* attempt the next real encoder, never just rename files */ }
+    }
+    return new MediaRecorder(stream, {
+      videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000,
+    });
+  }
   async function exportVideo() {
     if (busy || !anyClips()) return;
     if (!HTMLCanvasElement.prototype.captureStream || typeof MediaRecorder === 'undefined') {
@@ -656,8 +684,9 @@
       draw();
       canvasStream = canvas.captureStream(30);
       outputStream = new MediaStream([...canvasStream.getVideoTracks(), ...exportDestination.stream.getAudioTracks()]);
-      const mime = recMime(true);
-      rec = mime ? new MediaRecorder(outputStream, { mimeType: mime, videoBitsPerSecond: 3500000 }) : new MediaRecorder(outputStream);
+      rec = makeSocialRecorder(outputStream);
+      const recordedMime = rec.mimeType || '';
+      status(`Exporting in ${describeExportFormat(recordedMime)}. Finishing the video and sound together…`);
       const chunks = [];
       rec.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
       const stopped = new Promise((resolve, reject) => { rec.onstop = resolve; rec.onerror = e => reject(e.error || new Error('Export recorder failed')); });
@@ -669,12 +698,18 @@
       await stopped;
       drawing = false; cancelAnimationFrame(drawId);
       if (!chunks.some(chunk => chunk.size)) throw new Error('Export file was empty.');
-      const type = rec.mimeType || mime || 'video/webm';
+      // Use the recorder's *actual* container. Never disguise a WebM as MP4:
+      // that creates an unusable Instagram upload.
+      const type = rec.mimeType || '';
+      const extension = core.videoExtension(type);
+      if (!extension) throw new Error('Browser did not report MP4 or WebM output. Try another browser or download individual takes.');
       const blob = new Blob(chunks, { type });
-      const name = `mosaic-${effects.preset(fxPreset)}-${dateName()}.${extFor(type)}`;
+      const name = `mosaic-${effects.preset(fxPreset)}-${dateName()}.${extension}`;
       lastExport = { blob, name };
       downloadBlob(blob, name);
-      status('Your effected video was saved locally. Use Share Exported Video or Copy Caption to post it. ♡');
+      status(extension === 'mp4'
+        ? 'MP4 movie exported! Try uploading the file to Instagram or YouTube, or use Share Exported Video. ♡'
+        : 'WebM exported: this browser could not encode MP4. For Instagram, use current Safari/Chrome or convert to MP4 (H.264/AAC) before uploading. Your video remains private.');
     } catch (error) {
       if (rec?.state === 'recording') rec.stop();
       status(`Export failed: ${error.message || 'unsupported browser'}. Individual tile downloads still work.`, true);
@@ -799,6 +834,7 @@
     setTarget(targetDuration);
     ui.fxPreset.value = fxPreset;
     ui.fxStrength.value = String(fxStrength);
+    showExportFormat();
     renderGrid();
     if (stored.length) status(`${stored.length} saved take${stored.length === 1 ? '' : 's'} restored from this browser. Hit Play All to listen.`);
     else if (!db) status('Private mode / storage unavailable. Recordings will not survive a page reload; download your clips.', true);

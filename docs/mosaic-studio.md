@@ -37,3 +37,10 @@ host, or downloading any project zip. The route is rendered through `page-mosaic
 - Every saved take has an × in its top-left. It is a separate button (not nested inside another button), confirming and deleting only the indexed take and its IndexedDB record.
 - Internal assets use `?v=tiles3` to invalidate caches. Future vendor updates should increment the version.
 - QA: macOS Chrome/Safari; confirm × does not trigger the recording button and works for 2×2 and 3×3 layouts. Ensure short takes still loop as before.
+
+## MP4-first social export (2026-11)
+- Prefer a genuine H.264/AAC MP4 composite from the visitor's MediaRecorder, then generic MP4, then WebM. Camera/microphone source takes are unchanged.
+- The downloaded filename extension always reflects the actual MediaRecorder.mimeType. Renaming WebM to MP4 is deliberately prohibited.
+- The format note explains whether MP4 is supported, and fallbacks explain how to get a social-ready copy using another current browser or a local conversion.
+- Internal asset URLs bump to `?v=mp4-4` to avoid stale cached JavaScript at the site URL.
+- Test on macOS Chrome and Safari with sound, video playback, and Instagram/YouTube upload. This update does not add server or WebAssembly transcoding; true MP4 availability depends on the visitor's browser encoder.

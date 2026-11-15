@@ -73,3 +73,21 @@ test('One-tap tile grid allows recording, active-take stop and independent remov
   assert.match(css, /\.tile \.tile-remove/);
   assert.match(html, /Tap <strong>\+<\/strong> in an empty tile/);
 });
+
+test('MOSAIC now prefers authentic MP4/H.264/AAC for final export', () => {
+  const app = read('assets/mosaic/app.js');
+  const core = require('../assets/mosaic/core.js');
+  const html = read('assets/mosaic/index.html');
+  assert.match(core.SOCIAL_VIDEO_MIMES[0], /^video\/mp4;codecs=avc1\./);
+  assert.match(core.SOCIAL_VIDEO_MIMES[0], /mp4a\.40\.2/);
+  assert.equal(core.chooseSocialVideoMime(() => true), core.SOCIAL_VIDEO_MIMES[0]);
+  assert.equal(core.chooseSocialVideoMime(x => x.startsWith('video/webm')), 'video/webm;codecs=vp8,opus');
+  assert.equal(core.videoExtension('video/mp4;codecs=avc1.424028,mp4a.40.2'), 'mp4');
+  assert.equal(core.videoExtension('video/webm'), 'webm');
+  assert.match(app, /rec = makeSocialRecorder\(outputStream\)/);
+  assert.match(app, /const type = rec\.mimeType \|\| ''/);
+  assert.match(app, /core\.videoExtension\(type\)/);
+  assert.match(html, /id="export-format-note"/);
+  assert.match(html, /MP4 PREFERRED/);
+  assert.match(html, /src="app\.js\?v=mp4-4"/);
+});
