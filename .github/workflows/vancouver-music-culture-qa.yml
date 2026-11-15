@@ -4,32 +4,46 @@ on:
   pull_request:
     paths:
       - 'inc/vancouver-music-culture.php'
+      - 'inc/vancouver-events.php'
       - 'inc/vancouver-music-culture-source-parsers.php'
       - 'page-vancouver-music-culture.php'
+      - 'page-vancouver-events.php'
+      - 'page-home.php'
+      - 'parts/home-vancouver-music-culture.php'
       - 'assets/css/vancouver-music-culture.css'
+      - 'assets/css/vancouver-events.css'
       - 'functions.php'
       - 'inc/seo.php'
       - 'page-projects.php'
       - 'parts/home-vancouver-tech-events.php'
       - 'scripts/theme_deploy_manifest.py'
       - 'tests/VancouverMusicCultureTest.php'
+      - 'tests/VancouverEventsHubTest.php'
       - '__tests__/vancouver-music-culture.test.js'
+      - '__tests__/vancouver-events-hub.test.js'
       - '__tests__/projects-portfolio.test.js'
       - '.github/workflows/vancouver-music-culture-qa.yml'
   push:
     branches: [main]
     paths:
       - 'inc/vancouver-music-culture.php'
+      - 'inc/vancouver-events.php'
       - 'inc/vancouver-music-culture-source-parsers.php'
       - 'page-vancouver-music-culture.php'
+      - 'page-vancouver-events.php'
+      - 'page-home.php'
+      - 'parts/home-vancouver-music-culture.php'
       - 'assets/css/vancouver-music-culture.css'
+      - 'assets/css/vancouver-events.css'
       - 'functions.php'
       - 'inc/seo.php'
       - 'page-projects.php'
       - 'parts/home-vancouver-tech-events.php'
       - 'scripts/theme_deploy_manifest.py'
       - 'tests/VancouverMusicCultureTest.php'
+      - 'tests/VancouverEventsHubTest.php'
       - '__tests__/vancouver-music-culture.test.js'
+      - '__tests__/vancouver-events-hub.test.js'
       - '__tests__/projects-portfolio.test.js'
       - '.github/workflows/vancouver-music-culture-qa.yml'
 
@@ -55,14 +69,19 @@ jobs:
           php -l inc/vancouver-music-culture.php
           php -l inc/vancouver-music-culture-source-parsers.php
           php -l page-vancouver-music-culture.php
+          php -l page-vancouver-events.php
+          php -l inc/vancouver-events.php
+          php -l tests/VancouverEventsHubTest.php
           php -l page-projects.php
           php -l inc/seo.php
           php -l functions.php
           php -l tests/VancouverMusicCultureTest.php
       - name: Calendar parsing, retention, and routing regression
         run: php tests/VancouverMusicCultureTest.php
+      - name: Combined events integration regression
+        run: php tests/VancouverEventsHubTest.php
       - name: Theme integration tests
-        run: node --test __tests__/vancouver-music-culture.test.js __tests__/homepage-vancouver-tech-events.test.js __tests__/projects-portfolio.test.js
+        run: node --test __tests__/vancouver-music-culture.test.js __tests__/homepage-vancouver-tech-events.test.js __tests__/projects-portfolio.test.js __tests__/vancouver-events-hub.test.js
       - name: Build deploy-time social images
         run: |
           python3 -m pip install pillow
