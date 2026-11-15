@@ -43,5 +43,11 @@ jobs:
           php -l functions.php
           php -l page-mosaic.php
           php -l page-loop-lab.php
+      - name: Generate existing deploy-time social preview assets
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/build_meanwhile_social_card.py
+          python3 scripts/build_toaster_social_card.py
+          python3 scripts/build_orchestra_social_card.py
       - name: Production theme manifest
         run: python3 scripts/theme_deploy_manifest.py validate
