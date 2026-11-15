@@ -55,6 +55,8 @@ jobs:
               - 'scripts/theme_deploy_manifest.py'
               - 'scripts/build_toaster_social_card.py'
               - 'scripts/build_orchestra_social_card.py'
+              - 'scripts/ensure_wordpress_public_pages.py'
+              - 'scripts/wp_ensure_public_pages.php'
             plugin:
               - 'lousy-outages/**'
               - 'dist/lousy-outages.zip'
@@ -153,6 +155,8 @@ jobs:
           php -l inc/seo.php
           php -l page-home.php
           php -l page-projects.php
+          php -l scripts/wp_ensure_public_pages.php
+          python3 -m py_compile scripts/ensure_wordpress_public_pages.py
           php -l page-afterimage.php
           php -l functions.php
           php -l page-gastown-sim.php
@@ -169,6 +173,10 @@ jobs:
       - name: Deploy theme files
         if: needs.changes.outputs.theme == 'true'
         run: python3 scripts/deploy-lousy-outages-ssh.py --theme
+
+      - name: Create and verify published WordPress Events page
+        if: needs.changes.outputs.theme == 'true'
+        run: python3 scripts/ensure_wordpress_public_pages.py
 
       - name: Verify live Open Graph image for The Toaster Was a Decoy
         if: needs.changes.outputs.theme == 'true'
