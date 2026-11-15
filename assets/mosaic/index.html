@@ -6,14 +6,14 @@
   <meta name="theme-color" content="#11131f">
   <meta name="description" content="MOSAIC is a free, private-by-default multitrack video studio. Record a little orchestra of yourself in your browser.">
   <title>MOSAIC / multitrack video studio</title>
-  <link rel="stylesheet" href="styles.css?v=sound7">
-  <script defer src="core.js?v=sound7"></script>
-  <script defer src="effects.js?v=sound7"></script>
-  <script defer src="patterns.js?v=sound7"></script>
-  <script defer src="soundbank.js?v=sound7"></script>
-  <script defer src="instruments.js?v=sound7"></script>
-  <script defer src="timeline.js?v=sound7"></script>
-  <script defer src="app.js?v=sound7"></script>
+  <link rel="stylesheet" href="styles.css?v=sync8">
+  <script defer src="core.js?v=sync8"></script>
+  <script defer src="effects.js?v=sync8"></script>
+  <script defer src="patterns.js?v=sync8"></script>
+  <script defer src="soundbank.js?v=sync8"></script>
+  <script defer src="instruments.js?v=sync8"></script>
+  <script defer src="timeline.js?v=sync8"></script>
+  <script defer src="app.js?v=sync8"></script>
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
@@ -47,7 +47,7 @@
         </div>
         <p class="grid-hint" id="grid-hint">Tap <strong>+</strong> in an empty tile to record. Tap <strong>×</strong> on a finished take to remove it. While recording, tap your active tile to <strong>Stop &amp; Keep</strong>. Wear headphones for overdubs.</p>
         <div class="transport" role="group" aria-label="Transport controls">
-          <button id="play-btn" type="button" class="transport-btn" disabled>▶ PLAY ALL</button>
+          <button id="play-btn" type="button" class="transport-btn" disabled>▶ PLAY / LOOP</button>
           <button id="stop-btn" type="button" class="transport-btn" disabled>■ STOP</button>
           <div class="time-display" aria-label="Transport clock"><strong id="clock">00:00</strong><span id="duration-label">/ TARGET 00:15</span></div>
           <div class="progress" role="progressbar" aria-label="Loop position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-bar"></div></div>
@@ -57,13 +57,17 @@
             <div><p class="label">VIDEO + AUDIO / LAYER TIMELINE</p><h2 id="mosaic-arrangement-title">Your arrangement</h2></div>
             <span id="mosaic-arrangement-duration" class="instrument-count">NO CLIPS</span>
           </div>
-          <p class="instrument-tip">Video takes and musical loops share one timeline. Coloured clips repeat with their own phrase length. The white line follows Play All. Mute a layer here, or change its sound in the rack below.</p>
+          <p class="instrument-tip">One transport, one clock. Live loops and video takes repeat in sync. Coloured clips show your arrangement; the playhead follows the groove.</p>
           <div id="mosaic-arrangement-tracks" class="mosaic-arrangement-tracks" aria-label="Video and instrument track lanes"></div>
         </section>
         <section class="instrument-rack" aria-labelledby="instrument-title">
           <div class="instrument-head">
-            <div><p class="label">02 / suzy // instrument layers</p><h2 id="instrument-title">Play another part ✳</h2></div>
-            <span id="instrument-count" class="instrument-count">0 / 12 layers</span>
+            <div><p class="label">02 / SUZY // LIVE MIX</p><h2 id="instrument-title">Make noise. Keep time. ✳</h2></div>
+            <div class="live-mixer-actions">
+              <span id="loop-status" class="loop-status" aria-live="polite">ADD A LOOP TO BEGIN</span>
+              <button id="loop-toggle" type="button" class="live-loop-btn" aria-pressed="false" disabled>▶ LOOP MUSIC</button>
+              <span id="instrument-count" class="instrument-count">0 / 12</span>
+            </div>
           </div>
           <div class="instrument-controls">
             <label for="instrument-kind">Instrument
@@ -79,7 +83,7 @@
             <button id="instrument-record" type="button">● RECORD INSTRUMENT LAYER</button>
           </div>
           <div id="instrument-pads" class="instrument-pads" role="group" aria-label="Instrument notes C to C; keyboard A S D F G H J K"></div>
-          <p class="instrument-tip">Tap notes or use A S D F G H J K. Press Record, play a phrase, then Stop &amp; Keep. Each layer repeats independently with your video. No AI models or cloud audio.</p>
+          <p class="instrument-tip compact-tip">Tap notes or A S D F G H J K. Record a phrase, or drop in a loop below. Musical overdubs follow the shared bar grid.</p>
           <div class="instrument-loop-library" aria-labelledby="loop-library-title">
             <div class="instrument-head">
               <div><p class="label">READY-MADE / DROP IN A LOOP</p><h3 id="loop-library-title">Start with something playing</h3></div>
@@ -108,7 +112,7 @@
               <button id="instrument-preview-loop" type="button" class="instrument-preview-btn">▶ HEAR LOOP</button>
               <button id="instrument-add-loop" type="button">＋ ADD LOOP</button>
             </div>
-            <p class="instrument-tip">Hear the loop and choose its sound before you add it. These are original local synth patterns, not samples. New loops use the BPM from Set Your Tempo; existing layers keep their timing.</p>
+            <p class="instrument-tip compact-tip">Audition repeats until stopped. Add a loop to launch the live mix; further clips enter on the next bar.</p>
             <details class="instrument-beat-builder">
               <summary>🥁 BUILD YOUR OWN RHYTHM / 16 STEPS</summary>
               <p class="instrument-tip">Each row is one 4/4 bar. Toggle kick, snare and hi-hat hits, then add the pattern as an independent loop.</p>
@@ -119,7 +123,10 @@
               </div>
             </details>
           </div>
-          <div id="instrument-layers" class="instrument-layers" aria-label="Saved instrument layers"></div>
+          <details class="instrument-mixer-details">
+            <summary>⚙ SOUND MIXER / <span>EDIT ALL INSTRUMENT LAYERS</span></summary>
+            <div id="instrument-layers" class="instrument-layers" aria-label="Saved instrument layers"></div>
+          </details>
         </section>
       </section>
       <aside class="sidebar">
