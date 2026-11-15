@@ -55,7 +55,9 @@ test("ICS imports calendar events with UTC dates, source provenance and tentativ
   assert.match(content, /DTEND:\d{8}T\d{6}Z/);
   assert.match(content, /STATUS:TENTATIVE/);
   assert.match(content, /not an RSVP or ticket/);
-  assert.match(content, /show time unconfirmed/);
+  // iCalendar intentionally folds long lines; unfold before reading a field.
+  const unfolded = content.replace(/\r\n[ \t]/g, "");
+  assert.match(unfolded, /show time unconfirmed/);
   assert.match(content, /SUMMARY:Poetry\\\, vocals\\; and a line\\nbreak/);
   assert.match(content, /\r\nEND:VCALENDAR\r\n$/);
 });
