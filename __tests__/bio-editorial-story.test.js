@@ -12,6 +12,11 @@ test("bio tells Suzy's story instead of selling services", () => {
   }
   assert.doesNotMatch(bio, /AVAILABLE FOR:|WHERE I.M USEFUL|WORK WITH SUZY|senior technical roles/i);
   assert.match(bio, /home_url\( '\/projects\/' \)/);
+  assert.match(bio, /More recordings soon/);
+  assert.match(bio, /suzyeaston\.bandcamp\.com/);
+  assert.match(bio, /Listen or buy a recording on Bandcamp/);
+  assert.match(bio, /bio-red-toque\.jpg/);
+  assert.doesNotMatch(bio, /meanwhile-october-portrait\.webp/);
   assert.match(bio, /aria-labelledby="se-story-title"/);
 });
 
@@ -31,5 +36,11 @@ test("bio image and CSS dependencies are local theme deploy files", () => {
   }
   assert.match(bio, /loading="lazy"/);
   assert.match(bio, /alt="Suzy/);
-  assert.match(read("assets/css/bio-story.css"), /max-width: 740px/);
+  const css = read("assets/css/bio-story.css");
+  assert.match(css, /max-width: 740px/);
+  assert.match(css, /\.se-story :is\(h1, h2, h3, h4, h5, h6, p, a\)/);
+  assert.match(css, /background: transparent/);
+  assert.match(css, /font-family: Inter/);
+  assert.match(bio, /array\('main-styles'\)/);
+  assert.match(bio, /filemtime\(/);
 });
