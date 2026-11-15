@@ -45,7 +45,12 @@ test('no oversize triangulated shadow caster or black roof wedge in new silhouet
   for(const b of group.children){
     const shells=b.children.filter(x=>/clean orthogonal body/.test(x.name));
     assert.ok(shells.length>=1);
-    for(const part of b.children){
+    // Street-facing facade meshes can be grouped by mapped civic edge.
+    // Check the actual meshes recursively, not their non-rendered Group parents.
+    const queue=[...b.children];
+    for(let i=0;i<queue.length;i++){
+      const part=queue[i];
+      if(!part.geometry){queue.push(...(part.children||[]));continue;}
       assert.equal(part.castShadow,false,part.name);
       assert.equal(part.receiveShadow,false,part.name);
       assert.ok(part.geometry.args.every(Number.isFinite),part.name);
