@@ -79,6 +79,7 @@ THEME_FILES = [
     "js/gastown-cordova-architecture.js",
     "js/gastown-waterfront-skyline.js",
     "js/gastown-west-coast-express.js",
+    "js/gastown-rail-grade.js",
     "js/gastown-street-life.js",
     "functions.php",
     "style.css",
