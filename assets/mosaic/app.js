@@ -2,7 +2,7 @@
   'use strict';
   const core = window.MosaicCore;
   const effects = window.MosaicEffects;
-  if (!core || !effects) return;
+  if (!core || !effects || !window.MosaicInstruments) return;
 
   const el = (id) => document.getElementById(id);
   const ui = {
@@ -22,6 +22,8 @@
     caption: el('share-caption'), copyCaption: el('copy-caption-btn'),
     formatNote: el('export-format-note'),
   };
+  let instrumentRack = null;
+  const hasArrangement = () => clips.size > 0 || !!instrumentRack?.hasLayers;
   const clips = new Map();
   const mediaNodes = new Map();
   const videoElements = new Map();
@@ -124,7 +126,7 @@
     savePreferences();
   }
   function refreshSessionDuration() {
-    sessionDuration = core.sessionSeconds(clips.values());
+    sessionDuration = Math.max(core.sessionSeconds(clips.values()), instrumentRack?.duration || 0);
   }
   function releaseClip(clip) {
     if (clip && clip.url) URL.revokeObjectURL(clip.url);
@@ -295,11 +297,11 @@
     }
     ui.cancel.hidden = !busy || playbackMode === 'exporting';
     ui.cancel.disabled = busy && !!activeRecorder && activeRecorder.state !== 'recording';
-    ui.play.disabled = busy || !anyClips() || playbackMode === 'playing';
+    ui.play.disabled = busy || !hasArrangement() || playbackMode === 'playing';
     ui.stop.disabled = busy || playbackMode !== 'playing';
-    ui.export.disabled = busy || !anyClips();
+    ui.export.disabled = busy || !hasArrangement();
     ui.share.disabled = busy || !lastExport;
-    ui.clear.disabled = busy || !anyClips();
+    ui.clear.disabled = busy || !hasArrangement();
     ui.downloadTile.disabled = busy || !selectedClip;
     ui.mute.disabled = busy || !selectedClip;
     ui.mute.textContent = selectedClip && selectedClip.muted ? 'Unmute tile' : 'Mute tile';
@@ -320,6 +322,7 @@
     ui.fxPreset.disabled = busy;
     ui.fxStrength.disabled = busy;
     ui.fxStrengthValue.textContent = `${fxStrength}%`;
+    instrumentRack?.render(busy);
   }
   async function ensureAudioContext() {
     if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -345,7 +348,7 @@
   }
   function updateClock(seconds) {
     ui.clock.textContent = core.formatTime(seconds);
-    const recording = playbackMode === 'recording';
+    const recording = playbackMode === 'recording' || !!instrumentRack?.isRecording;
     const total = recording ? targetDuration : sessionDuration;
     const percent = recording ? core.targetProgress(seconds, targetDuration)
       : core.targetProgress(seconds, total);
@@ -361,6 +364,7 @@
     cancelAnimationFrame(playbackFrame);
     playbackFrame = 0;
     playbackMode = 'stopped';
+    instrumentRack?.stopPlayback();
     for (const video of videoElements.values()) {
       video.pause();
       try { video.currentTime = 0; } catch { /* metadata not yet ready */ }
@@ -374,7 +378,9 @@
       if (playbackMode === 'stopped') return;
       const elapsed = (performance.now() - playbackStarted) / 1000;
       const position = core.expectedPosition(elapsed, sessionDuration);
-      updateClock(playbackMode === 'recording' ? (performance.now() - takeStartedAt) / 1000 : position);
+      instrumentRack?.tick(elapsed);
+      updateClock(playbackMode === 'recording' ? (performance.now() - takeStartedAt) / 1000 :
+        (instrumentRack?.isRecording ? instrumentRack.elapsed : position));
       if (playbackMode === 'playing' && previewContext) {
         ui.fxPreview.hidden = false;
         renderFinalFrame(previewContext, 720, 720, elapsed);
@@ -397,7 +403,7 @@
     playbackFrame = requestAnimationFrame(step);
   }
   async function startPlayback(mode = 'playing') {
-    if (!anyClips()) return;
+    if (!hasArrangement()) return;
     stopPlayback();
     await ensureAudioContext();
     for (const [i, video] of videoElements) {
@@ -410,6 +416,8 @@
     const results = await Promise.allSettled(videos.map(video => video.play()));
     if (results.length && results.every(result => result.status === 'rejected')) throw new Error('Browser blocked playback. Click Play All, and check sound permissions.');
     playbackStarted = performance.now();
+    instrumentRack?.ensureBus(audioContext);
+    instrumentRack?.startPlayback();
     playbackMode = mode;
     ui.fxPreview.hidden = mode !== 'playing';
     monitorPlayback();
@@ -491,7 +499,7 @@
       activeRecorder.start(250);
       takeStartedAt = performance.now();
       takeStoppedAt = 0;
-      if (anyClips()) {
+      if (hasArrangement()) {
         try { await startPlayback('recording'); }
         catch (error) { status(`Recording started, but monitoring failed: ${error.message}`, true); }
       } else {
@@ -658,7 +666,7 @@
     });
   }
   async function exportVideo() {
-    if (busy || !anyClips()) return;
+    if (busy || !hasArrangement()) return;
     if (!HTMLCanvasElement.prototype.captureStream || typeof MediaRecorder === 'undefined') {
       status('Composite export is unavailable in this browser. You can still download each tile.', true); return;
     }
@@ -679,6 +687,8 @@
         node.gain.connect(exportDestination);
         applyTrackGain(index);
       }
+      instrumentRack?.ensureBus(audioContext);
+      instrumentRack?.connectExport(exportDestination);
       drawing = true;
       const draw = () => { if (!drawing) return; renderFinalFrame(ctx, 720, 720, performance.now() / 1000); drawId = requestAnimationFrame(draw); };
       draw();
@@ -719,6 +729,7 @@
       for (const node of mediaNodes.values()) {
         if (exportDestination) try { node.gain.disconnect(exportDestination); } catch { /* noop */ }
       }
+      instrumentRack?.disconnectExport();
       if (outputStream) for (const track of outputStream.getTracks()) track.stop();
       if (canvasStream) for (const track of canvasStream.getTracks()) track.stop();
       exportDestination = null;
@@ -744,11 +755,12 @@
     status(`Take ${index + 1} removed. Tap + in that tile to record again.`);
   }
   async function clearSession() {
-    if (busy || !anyClips() || !confirm('Clear every recorded tile? This cannot be undone.')) return;
+    if (busy || !hasArrangement() || !confirm('Clear all video takes and instrument layers? This cannot be undone.')) return;
     stopPlayback();
     invalidateExport();
     for (const clip of clips.values()) releaseClip(clip);
     clips.clear();
+    instrumentRack?.clear();
     refreshSessionDuration();
     try { await dbWrite('clear'); } catch { status('Session cleared in memory. Browser storage may still contain old clips.', true); }
     renderGrid();
@@ -775,6 +787,38 @@
     if (selected >= count) selected = count - 1;
     savePreferences();
     renderGrid();
+  }
+  async function toggleInstrumentRecording() {
+    if (!instrumentRack || (busy && !instrumentRack.isRecording)) return;
+    if (instrumentRack.isRecording) {
+      stopPlayback();
+      const layer = instrumentRack.finish();
+      busy = false;
+      refreshSessionDuration();
+      updateUI();
+      status(layer ? `${layer.kind.toUpperCase()} layer saved. Press Play All to hear it with your video. ♡`
+        : 'No notes captured. Press Record, tap some keys, and try again.');
+      return;
+    }
+    stopPlayback();
+    busy = true;lastExport = null;updateUI();
+    try {
+      await ensureAudioContext();
+      if (hasArrangement()) await startPlayback('instrument-recording');
+      if (!instrumentRack.begin()) {
+        stopPlayback();status('Maximum of 12 instrument layers reached.',true);return;
+      }
+      if (playbackMode === 'stopped') {
+        playbackStarted=performance.now();
+        playbackMode='instrument-recording';monitorPlayback();
+      }
+      updateUI();
+      status('Recording instrument notes. Tap the pads or A S D F G H J K, then Stop & Keep Layer.');
+    } catch (error) {
+      stopPlayback();status('Instrument capture failed: '+(error.message||error),true);
+    } finally {
+      if (!instrumentRack.isRecording) {busy=false;updateUI();}
+    }
   }
   function downloadSelected() {
     const clip = clips.get(selected);
@@ -825,6 +869,10 @@
   window.addEventListener('pagehide', () => { stopInput(); stopPlayback(); });
 
   async function init() {
+    instrumentRack = new window.MosaicInstruments.Rack({
+      host:window,ensureAudioContext,onRecord:toggleInstrumentRecording,
+      onChange:()=>{lastExport=null;refreshSessionDuration();updateUI();},onStatus:status,
+    });
     restorePreferences();
     db = await openDatabase();
     const stored = await loadDatabase();

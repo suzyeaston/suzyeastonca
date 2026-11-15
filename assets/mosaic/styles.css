@@ -31,3 +31,28 @@
   .tile .tile-quick-action:not(:empty){font-size:.58rem;padding:8px 3px;min-width:80%}
   .tile .tile-bottom{line-height:1.1}
 }
+
+/* v0.4 · SUZY//AI inspired Web Audio instrument layers */
+.instrument-rack{border-top:1px solid var(--line);margin-top:22px;padding-top:22px}
+.instrument-head{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.instrument-head h2{margin:0 0 14px;font-size:1.15rem}
+.instrument-count{font:700 .7rem ui-monospace,monospace;color:var(--mint);white-space:nowrap}
+.instrument-controls{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.instrument-controls label{flex:1;min-width:180px;color:var(--muted);font-size:.72rem}
+.instrument-controls select{display:block;width:100%;margin-top:5px;padding:10px 12px;border:1px solid #595669;border-radius:8px;background:#10121c;color:var(--text)}
+#instrument-record{flex:1;min-width:205px;padding:12px;background:var(--lav);color:#191324;border:0;border-radius:8px;font-size:.77rem;font-weight:850;letter-spacing:.04em}
+#instrument-record.is-stop{background:var(--mint);color:#15221c}
+.instrument-pads{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
+.instrument-pad{display:flex;flex-direction:column;align-items:center;justify-content:space-around;gap:8px;min-width:0;min-height:70px;border:1px solid #676078;border-radius:7px;background:linear-gradient(180deg,#eee7fa,#ada0d8);color:#1b1729;padding:9px 2px;touch-action:manipulation}
+.instrument-pad:hover,.instrument-pad:focus-visible{background:#f9bed1}
+.instrument-pad:active{transform:translateY(2px);background:var(--mint)}
+.instrument-pad strong{font-size:.82rem}
+.instrument-pad small{font:700 .65rem ui-monospace,monospace;opacity:.65}
+.instrument-tip,.instrument-empty{font-size:.76rem;color:var(--muted);line-height:1.55}
+.instrument-layers{display:grid;gap:6px;margin-top:12px}
+.instrument-layer{display:flex;align-items:center;gap:8px;padding:9px;background:#11131f;border:1px solid #38394d;border-radius:7px}
+.instrument-layer-title{flex:1;min-width:85px;font-size:.76rem;font-weight:700;color:var(--text)}
+.instrument-layer button{border:1px solid #5a536d;border-radius:5px;padding:7px 9px;color:var(--text);background:#343448;font-size:.71rem}
+.instrument-layer .instrument-remove{font-size:1.1rem;line-height:1}
+.instrument-layer input[type=range]{flex:0 1 95px;max-width:95px;min-width:35px;margin:0}
+@media(max-width:570px){.instrument-pads{gap:3px}.instrument-pad{min-height:59px;padding:5px 0}.instrument-layer{flex-wrap:wrap}.instrument-layer-title{flex-basis:100%}}

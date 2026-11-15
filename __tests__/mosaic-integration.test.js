@@ -15,7 +15,7 @@ test('MOSAIC WordPress virtual route is self-hosted without GitHub Pages', () =>
   assert.doesNotMatch(page, /github\.io/);
 });
 test('MOSAIC runtime shipped locally alongside WordPress template', () => {
-  for (const asset of ['index.html','styles.css','core.js','effects.js','app.js']) {
+  for (const asset of ['index.html','styles.css','core.js','effects.js','instruments.js','app.js']) {
     assert.ok(fs.existsSync(path.join(__dirname,'../assets/mosaic',asset)),asset);
   }
   const html = read('assets/mosaic/index.html');
@@ -28,7 +28,7 @@ test('MOSAIC runtime shipped locally alongside WordPress template', () => {
 test('Theme manifest and workflow deploy all MOSAIC assets', () => {
   const manifest = read('scripts/theme_deploy_manifest.py');
   const workflow = read('.github/workflows/deploy-production.yml');
-  for (const asset of ['page-mosaic.php', 'assets/mosaic/index.html','assets/mosaic/styles.css','assets/mosaic/core.js','assets/mosaic/effects.js','assets/mosaic/app.js']) {
+  for (const asset of ['page-mosaic.php', 'assets/mosaic/index.html','assets/mosaic/styles.css','assets/mosaic/core.js','assets/mosaic/effects.js','assets/mosaic/instruments.js','assets/mosaic/app.js']) {
     assert.ok(manifest.includes('"' + asset + '"'),asset);
   }
   assert.ok(manifest.includes('"assets/mosaic/**"'));
@@ -90,4 +90,25 @@ test('MOSAIC now prefers authentic MP4/H.264/AAC for final export', () => {
   assert.match(html, /id="export-format-note"/);
   assert.match(html, /MP4 PREFERRED/);
   assert.match(html, /src="app\.js\?v=mp4-4"/);
+});
+
+
+test('SUZY//AI browser instruments are playable, locally layered, and mixed into export', () => {
+  const app = read('assets/mosaic/app.js');
+  const html = read('assets/mosaic/index.html');
+  const instrument = require('../assets/mosaic/instruments.js');
+  assert.deepEqual(instrument.KINDS, ['keys','bass','pad']);
+  assert.equal(Math.round(instrument.frequency(69)), 440);
+  assert.equal(instrument.pitch('bass',0), 48);
+  assert.match(html, /src="instruments\.js\?v=instrument5"/);
+  assert.match(html, /id="instrument-record"/);
+  assert.match(html, /id="instrument-pads"/);
+  assert.match(app, /instrumentRack\?\.tick\(elapsed\)/);
+  assert.match(app, /instrumentRack\?\.startPlayback\(\)/);
+  assert.match(app, /instrumentRack\?\.connectExport\(exportDestination\)/);
+  assert.match(app, /instrumentRack\?\.disconnectExport\(\)/);
+  assert.match(app, /instrumentRack\.finish\(\)/);
+  assert.match(app, /hasArrangement\(\)/);
+  const layer = {kind:'keys',seconds:2,muted:false,volume:.8,events:[{t:.5,note:60,dur:.4}]};
+  assert.deepEqual(instrument.eventsInWindow(layer,0,5).map(event=>event.t), [.5,2.5,4.5]);
 });
