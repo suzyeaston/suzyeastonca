@@ -63,6 +63,7 @@ get_header();
       <p><strong>prototype note:</strong> this records local browser audio only. no upload. no AI costume.</p>
       <p>export mix prints the unmuted layers to a wav on your machine. nothing leaves the browser.</p>
       <p>overdubs play while you record. browsers do not guarantee studio-tight sync, and speaker bleed can sneak into the mic. headphones help.</p>
+      <p><strong>Want a multiframe video performance?</strong> <a href="<?php echo esc_url( home_url( '/mosaic/' ) ); ?>">Open MOSAIC, our free video studio</a>. Recordings stay on your device.</p>
     </aside>
   </section>
 </main>

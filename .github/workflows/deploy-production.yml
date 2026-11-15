@@ -45,6 +45,7 @@ jobs:
               - 'parts/**'
               - 'assets/css/**'
               - 'assets/js/**'
+              - 'assets/mosaic/**'
               - 'assets/brand/**'
               - 'assets/audio/**'
               - 'assets/data/**'
@@ -158,6 +159,8 @@ jobs:
           php -l scripts/wp_ensure_public_pages.php
           python3 -m py_compile scripts/ensure_wordpress_public_pages.py
           php -l page-afterimage.php
+          php -l page-mosaic.php
+          node --test __tests__/mosaic-integration.test.js
           php -l functions.php
           php -l page-gastown-sim.php
           node --test __tests__/afterimage-integration.test.js
