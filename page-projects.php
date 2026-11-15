@@ -95,6 +95,16 @@ $project_sections = [
                 ],
             ],
             [
+                'title' => 'Vancouver Events / Unified Calendar',
+                'status' => 'Combined city events browser · filters & archive',
+                'description' => 'One searchable calendar over the existing technology and independent music/culture collectors. Browse both scenes chronologically, filter topics or venues, and compare preserved historical listings.',
+                'detail' => 'The combined interface reuses both original caches and archives; it does not create a third scraping pipeline or claim comprehensive coverage.',
+                'tags' => [ 'Event aggregation', 'PHP', 'Filtering', 'Provenance', 'Historic trends' ],
+                'links' => [
+                    [ 'label' => 'Explore all events', 'url' => $project_url( 'vancouver-events' ) ],
+                ],
+            ],
+            [
                 'title' => 'Vancouver Tech Events',
                 'status' => 'Public calendar + accumulating archive',
                 'description' => 'A multi-source local tech-events calendar with historical listings, year and topic filters, and monthly counts. The archive distinguishes captured listings from proof that events occurred.',
@@ -108,7 +118,7 @@ $project_sections = [
                 'title' => 'Vancouver Music & Culture',
                 'status' => 'Public cultural directory + calendar',
                 'description' => 'A home for independent gigs, experimental sound, music technology, poetry, philosophy, artist talks and smaller Vancouver rooms. Twenty-six curated venue/organizer links plus a growing historical event archive.',
-                'detail' => 'Four configured automated source adapters are separate from the larger browse-only venue directory. A linked venue is not a promise of complete ingestion.',
+                'detail' => 'Seven configured automated source adapters are separate from the larger browse-only venue directory. A linked venue is not a promise of complete ingestion.',
                 'tags' => [ 'Local music', 'Independent venues', 'Experimental arts', 'Multi-source research' ],
                 'links' => [
                     [ 'label' => 'Explore culture', 'url' => $project_url( 'vancouver-music-culture' ) ],
