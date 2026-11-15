@@ -27,3 +27,12 @@ test("Part II build and live OG validation are enforced in theme deploy workflow
   assert.ok(builder > 0 && builder < validate, "Image must be generated before validation");
   assert.ok(validate < deploy && deploy < live, "Verify the deployed thumbnail after upload");
 });
+
+test("Part II live preview checker targets the published post slug", () => {
+  const post = read("content/meanwhile/2026-11-an-orchestra-in-8gb.md");
+  const checker = read("scripts/verify_orchestra_social_preview.py");
+  const slug = post.match(/^slug:\s*([^\s]+)$/m)?.[1];
+  assert.equal(slug, "an-orchestra-in-8gb");
+  assert.ok(checker.includes('ARTICLE = "https://www.suzyeaston.ca/2026/11/02/' + slug + '/"'));
+  assert.doesNotMatch(checker, /the-an-orchestra-in-8gb/);
+});
