@@ -35,6 +35,7 @@ test('the station and bi-level train use the historic Waterfront anchor',()=>{
   const root=scene();assert.ok(root);
   assert.equal(root.position.x,world.station.x);
   assert.equal(root.position.z,world.station.z);
+  assert.equal(root.position.y,-1.35,'WCE platform below public parking level');
   assert.equal(root.rotation.y,world.station.yaw);
   assert.equal(root.userData.stagedTrainNotLive,true);
   assert.equal(root.userData.tracksSurveyed,false);

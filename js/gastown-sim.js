@@ -108,6 +108,7 @@
   const waterfrontPlaces = window.GastownWaterfrontPlaces || null;
   const harbourVista = window.GastownHarbourVista || null;
   const westCoastExpress = window.GastownWestCoastExpress || null;
+  const railGrade = window.GastownRailGrade || null;
   const cordovaArchitecture = window.GastownCordovaArchitecture || null;
   const waterfrontSkyline = window.GastownWaterfrontSkyline || null;
   const streetLife = window.GastownStreetLife || null;
@@ -5096,6 +5097,11 @@
         worldGroup.add(northHarbour);
         state.harbourVistaRoot = northHarbour;
       }
+    }
+    if (railGrade && typeof railGrade.create === 'function') {
+      const railEdge = safelyCreate('Station East rail-grade transition',
+        () => railGrade.create(THREE, world));
+      if (railEdge) worldGroup.add(railEdge);
     }
     if (westCoastExpress && typeof westCoastExpress.create === 'function') {
       const commuterRail = safelyCreate('West Coast Express platform', () => westCoastExpress.create(THREE, world));
