@@ -240,12 +240,15 @@
     box('Ground-floor ashlar east plinth', 38, 0.5, -0.12, 30, 1, 0.62, stoneShadow);
     box('Primary stone belt course', 0, 10.3, 0.32, 107.5, 0.62, 0.82, stone);
     box('Upper stone belt course', 0, 15.5, -0.05, 107.4, 0.46, 0.84, stone);
-    box('Projecting entablature', 0, 11.0, 1.35, 53.5, 0.96, 3.8, stone);
-    box('Entablature frieze', 0, 11.65, 1.53, 53.2, 0.44, 3.7, stoneShadow);
-    box('Pediment and cornice', 0, 16.55, -0.06, 109, 0.65, 34.5, stone);
-    box('Upper coping', 0, 17.07, 0.2, 108.5, 0.18, 34.5, stoneShadow);
+    // Keep the colonnade's shallow stone entablature above the capitals,
+    // without letting a deep arcade-size slab read as a huge street awning.
+    // The true roof stays over the historic masonry envelope.
+    box('Projecting entablature', 0, 11.0, 1.35, 53.5, 0.96, 2.9, stone);
+    box('Entablature frieze', 0, 11.65, 1.53, 53.2, 0.44, 2.8, stoneShadow);
+    box('Pediment and cornice', 0, 16.55, -17.4, 108.5, 0.65, 33.2, stone);
+    box('Upper coping', 0, 17.07, -17.4, 108.5, 0.18, 33.2, stoneShadow);
     box('Central raised parapet', 0, 17.75, -0.3, 23, 1.25, 0.78, stone);
-    box('Lower roof', 0, 16.5, -17, 106, 0.25, 34, iron);
+    box('Lower roof', 0, 16.5, -17.4, 106, 0.25, 33.2, iron);
 
     const hallFloor = new THREE.MeshStandardMaterial({ color: 0xd2cabc, roughness: 0.83 });
     const hallTrim = new THREE.MeshStandardMaterial({ color: 0xeee2cf, roughness: 0.8 });
@@ -463,7 +466,7 @@
     });
 
     // Incised historic railway name, above the central entrance.
-    sign('CANADIAN PACIFIC RAILWAY', 0, 11.58, 3.47, 36, 0.95, '#75634a', '62px Georgia, serif');
+    sign('CANADIAN PACIFIC RAILWAY', 0, 11.58, 2.94, 36, 0.95, '#75634a', '62px Georgia, serif');
 
     // Upper-storey sash windows / vertical brick rhythm.
     for (let x = -48; x <= 48; x += 4.8) {
@@ -510,6 +513,14 @@
     // are *inside* the station, not freestanding fences across Cordova Street.
     box('Stone entrance landing', 0, 0.055, 3.9, 49, 0.11, 4.8, pavement);
     box('Cordova station forecourt', 0, 0.038, 14, 49, 0.075, 15.3, pavement);
+    // The central 49 m slab left the west/east station wings over an empty
+    // background after the lot/rail grade pass. Fill ONLY the public frontage
+    // close to the building; do not raise the road or bridge the lower alley.
+    for (const x of [-39.75, 39.75]) {
+      box('Station wing public forecourt paving', x, 0.038, 11.4,
+        30.5, 0.075, 13.2, pavement);
+    }
+    root.userData.stationWingPavingAtStreetGrade = true;
     for (let x = -24; x <= 24; x += 4) {
       box('Forecourt paving joint', x, 0.079, 14, 0.038, 0.008, 15.1, stoneShadow);
     }

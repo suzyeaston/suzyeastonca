@@ -125,3 +125,41 @@ test('WordPress loads the station builder before the simulator and deploys the m
   assert.match(simulator, /stationModel\.arrivalYaw\(state\.world, spawn\)/);
   assert.match(simulator, /npc\.role === 'commuter'/);
 });
+
+test('station portico projection is shallow and the roof stays over the building', () => {
+  const { station } = loadModel();
+  const group = station.create(threeStub(), world);
+  const named = (name) => group.children.find((child) => child.name === name);
+  const portico = named('Projecting entablature');
+  const roof = named('Pediment and cornice');
+  assert.ok(portico && roof);
+  assert.ok(portico.geometry.args[2] <= 3, 'stone portico is not a deep street awning');
+  assert.ok(portico.position.z + portico.geometry.args[2] / 2 >= 2.7,
+    'shallower cornice still covers the colonnade capitals');
+  assert.ok(roof.position.z + roof.geometry.args[2] / 2 <= 0,
+    'roof front edge does not hang out over the street');
+  assert.ok(group.userData.stationWingPavingAtStreetGrade);
+  const wings = group.children.filter((child) => child.name === 'Station wing public forecourt paving');
+  assert.equal(wings.length, 2);
+  assert.deepEqual(wings.map((wing) => wing.position.x), [-39.75, 39.75]);
+  assert.ok(wings.every((wing) => wing.position.y < 0.05),
+    'public forecourt infill remains at the old walking grade');
+});
+
+test('station and parking NPCs are adult-scale beside the Suzy avatar and stay above the lot deck', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const sim = fs.readFileSync(path.join(ROOT, 'js/gastown-sim.js'), 'utf8');
+  const expression = sim.match(/const scaleFactor = ([^;]+);/);
+  assert.ok(expression, 'shared NPC scaling formula exists');
+  const factorFor = new Function('npc', 'return ' + expression[1]);
+  // The player avatar's hair/head is about 2.1m high; authored NPC style is 1.72m.
+  for (const authored of [0.86, 0.93, 1, 1.045]) {
+    const height = 1.72 * factorFor({ silhouetteScale: authored });
+    assert.ok(height >= 1.85 && height <= 2.16, 'commuter height is comparable to Suzy: ' + height);
+  }
+  assert.match(sim, /onRaisedLot \? 0\.19 : 0/,
+    'parking pedestrians use the public deck, not the below-grade service lane');
+  assert.match(sim, /baseY, baseYaw: startYaw/,
+    'NPC movement preserves the deck-height foot placement');
+});
