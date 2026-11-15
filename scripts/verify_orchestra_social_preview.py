@@ -10,7 +10,7 @@ from PIL import Image
 import sys
 import time
 
-ARTICLE = "https://www.suzyeaston.ca/2026/11/02/the-an-orchestra-in-8gb/"
+ARTICLE = "https://www.suzyeaston.ca/2026/11/02/an-orchestra-in-8gb/"
 EXPECTED_BASENAME = "orchestra-in-8gb-social.jpg"
 
 
