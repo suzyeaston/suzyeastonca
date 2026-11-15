@@ -35,7 +35,7 @@ $vancouver_events_top = array_slice(
 	0,
 	3
 );
-$events_url = home_url( '/vancouver-tech-events/' );
+$events_url = home_url( '/vancouver-events/?yve_track=tech' );
 ?>
 <section class="vancouver-tech-home crt-block" aria-labelledby="vancouver-tech-home-title">
 	<p class="home-section-kicker pixel-font"><?php echo esc_html( 'yvr calendar' ); ?></p>
@@ -90,4 +90,5 @@ $events_url = home_url( '/vancouver-tech-events/' );
 	<?php endif; ?>
 
 	<a class="pixel-button vancouver-tech-home__cta" href="<?php echo esc_url( $events_url ); ?>"><?php echo esc_html( 'Open full calendar' ); ?></a>
+	<p class="vancouver-tech-home__intro"><a href="<?php echo esc_url( home_url( '/vancouver-tech-events/' ) ); ?>">Tech source details &amp; archive</a></p>
 </section>

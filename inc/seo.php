@@ -224,6 +224,10 @@ function se_page_meta() {
 		$meta_title = 'AFTERIMAGE / Vancouver | Creative work atlas';
 		$meta_desc  = 'An interactive map of creative employers, film and games studios, engineering jobs and emerging technology signals across Vancouver.';
 		$keywords   = 'AFTERIMAGE, Vancouver creative technology jobs, engineering, film VFX, music technology, career atlas, Suzy Easton';
+	} elseif ( function_exists( 'suzy_yvr_events_is_route' ) && suzy_yvr_events_is_route() ) {
+		$meta_title = 'Vancouver Events | Tech, Music, Art & Culture';
+		$meta_desc  = 'One source-backed Vancouver calendar for technology, independent live music, poetry, sound art, philosophy, talks and local cultural events. Filter by scene, topic and date.';
+		$keywords   = 'Vancouver events, tech events Vancouver, music events Vancouver, art, poetry, sound art, AI meetups, cultural calendar';
 	} elseif ( function_exists( 'suzy_vmc_is_route' ) && suzy_vmc_is_route() ) {
 		$meta_title = 'Vancouver Music & Culture Events | Local Sound, Poetry & Big Ideas';
 		$meta_desc  = 'An independent Vancouver calendar for local concerts, music technology, experimental sound, poetry readings, philosophy, artist talks and cultural gatherings.';
@@ -277,6 +281,9 @@ function se_page_meta() {
 
 	if ( function_exists( 'suzy_vmc_is_route' ) && suzy_vmc_is_route() ) {
 		$meta_url = home_url( '/vancouver-music-culture/' );
+	}
+	if ( function_exists( 'suzy_yvr_events_is_route' ) && suzy_yvr_events_is_route() ) {
+		$meta_url = home_url( '/vancouver-events/' );
 	}
 
 	return [

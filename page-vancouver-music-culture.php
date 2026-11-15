@@ -49,6 +49,7 @@ $format_date = static function ( array $event ): string {
             <a href="#upcoming">Upcoming happenings</a>
             <a href="#history">Historical archive</a>
             <a href="#sources">Explore the sources</a>
+            <a href="<?php echo esc_url( home_url( '/vancouver-events/' ) ); ?>">All Vancouver events</a>
             <a href="<?php echo esc_url( home_url( '/vancouver-tech-events/' ) ); ?>">Tech calendar</a>
         </nav>
     </header>
