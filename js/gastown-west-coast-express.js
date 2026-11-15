@@ -22,7 +22,7 @@
     mesh.castShadow=false;mesh.receiveShadow=true;
     parent.add(mesh);return mesh;
   }
-  function sign(THREE,parent,name,x,y,z,w,h){
+  function sign(THREE,parent,name,x,y,z,w,h,backFacing){
     if(!window.document||!window.document.createElement)return;
     const canvas=window.document.createElement('canvas');
     canvas.width=1024;canvas.height=128;
@@ -34,15 +34,23 @@
     const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
     const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
       new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,fog:false}));
-    mesh.name=name;mesh.position.set(x,y,z);parent.add(mesh);
+    mesh.name=name;mesh.position.set(x,y,z);
+    // PlaneGeometry has a front and a back. Rotate the -Z-side label so its
+    // text reads forward instead of mirrored from the platform camera.
+    if(backFacing)mesh.rotation.y=Math.PI;
+    parent.add(mesh);
   }
   function create(THREE,world){
     const station=world&&world.station;
     if(!station||!Number.isFinite(station.x)||!Number.isFinite(station.z))return null;
     const root=new THREE.Group();
     root.name='Waterfront West Coast Express platform and stationary commuter train';
-    root.position.set(station.x,-1.35,station.z);
-    root.rotation.y=Number.isFinite(station.yaw)?station.yaw:0;
+    // Station yaw describes its heritage street facade, NOT the railway.
+    // The previous WCE root rotated the commuter line by -45 degrees,
+    // sending trains across the N-Yard and toward Station East.
+    // Coordinates below are in the same +X east / +Z south frame as the yard.
+    root.position.set(0,-1.35,0);
+    root.rotation.y=0;
     const gravel=material(THREE,0x555653,0.96),
       steel=material(THREE,0xd2cec1,0.34,0.69),
       steelWeb=material(THREE,0x79716c,0.76,0.35),
@@ -56,13 +64,13 @@
       white=material(THREE,0xebede9,0.69),
       glass=material(THREE,0x1b354a,0.22,0.14),
       wheels=material(THREE,0x24252b,0.88);
-    // Track centerlines start behind Waterfront Station, then bend to stay
-    // NORTH of the Station East lot fence and The Landing's Water St frontage.
-    // This is intentionally separate from the 20-track N-Yard illustration.
+    // The three passenger tracks leave Waterfront Station eastward. They
+    // run parallel through the platform and curve gently northeast into the
+    // rail corridor. None doubles back across the eastbound freight yard.
     const routes=[0,1,2].map(row=>{
-      const offset=row*6.2;
-      return [{x:-87,z:-56-offset},{x:30,z:-56-offset},
-        {x:78,z:-82-offset},{x:177,z:-102-offset}];
+      const offset=row*5.8;
+      return [{x:-96,z:-18-offset},{x:22,z:-18-offset},
+        {x:75,z:-38-offset},{x:166,z:-60-offset}];
     });
     const ties=[],fallback=[];
     routes.forEach(route=>{
@@ -104,26 +112,27 @@
       const mesh=new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x947b68}));
       mesh.name='WCE batched timber sleeper fallback';root.add(mesh);
     }
-    // Waterfront commuter platform, immediately behind the historic concourse.
+    // Fixed city-grid platform between the station's north wall and the
+    // southernmost WCE track. No yaw inherited from the building facade.
     box(THREE,root,'West Coast Express Waterfront boarding platform',
-      -20,0.19,-49.15,114,0.31,9.15,concrete);
+      -20,0.19,-10.35,114,0.31,9.15,concrete);
     box(THREE,root,'West Coast Express yellow tactile safety strip',
-      -20,0.371,-53.53,111,0.045,0.62,yellow);
+      -20,0.371,-14.65,111,0.045,0.62,yellow);
     box(THREE,root,'West Coast Express platform roof canopy',
-      -20,5.91,-48.4,115,0.33,9.1,cream);
+      -20,5.91,-9.6,115,0.33,9.1,cream);
     for(const x of [-71,-44,-17,10,35]){
-      for(const z of [-44.7,-51.1]){
+      for(const z of [-6.7,-13.1]){
         box(THREE,root,'Waterfront platform maroon canopy post',
           x,3.02,z,0.27,5.75,0.27,maroon);
       }
     }
-    box(THREE,root,'Waterfront platform south fascia',-20,5.57,-43.8,115,0.4,0.25,maroon);
-    box(THREE,root,'Waterfront platform rail-facing fascia',-20,5.57,-53.0,115,0.4,0.25,maroon);
-    sign(THREE,root,'WEST COAST EXPRESS  ·  WATERFRONT',-15,5.05,-43.64,19.2,1.0);
+    box(THREE,root,'Waterfront platform south fascia',-20,5.57,-5.8,115,0.4,0.25,maroon);
+    box(THREE,root,'Waterfront platform rail-facing fascia',-20,5.57,-14.9,115,0.4,0.25,maroon);
+    sign(THREE,root,'WEST COAST EXPRESS  ·  WATERFRONT',-15,5.05,-5.64,19.2,1.0);
     for(const x of [-62,3]){
-      box(THREE,root,'WCE platform bench seat',x,0.92,-46.6,3.25,0.18,0.65,navy);
+      box(THREE,root,'WCE platform bench seat',x,0.92,-7.8,3.25,0.18,0.65,navy);
       for(const leg of [-1.1,1.1]){
-        box(THREE,root,'WCE platform bench leg',x+leg,0.56,-46.6,0.14,0.67,0.12,steelWeb);
+        box(THREE,root,'WCE platform bench leg',x+leg,0.56,-7.8,0.14,0.67,0.12,steelWeb);
       }
     }
     // Stationary blue/white bi-level commuter consist. Shortened to three
@@ -147,7 +156,7 @@
       // Distinctive side nameplates make the consist read as WCE, not as
       // generic bi-level railcars when the camera pans from The Landing.
       sign(THREE,coach,'WEST COAST EXPRESS',0,1.13,1.685,8.6,0.48);
-      sign(THREE,coach,'WEST COAST EXPRESS',0,1.13,-1.685,8.6,0.48);
+      sign(THREE,coach,'WEST COAST EXPRESS',0,1.13,-1.685,8.6,0.48,true);
       box(THREE,coach,'WCE blue entry door',-9.2,2.12,1.65,1.18,2.15,0.07,blue);
       for(const bogieX of [-6.7,6.7]){
         box(THREE,coach,'WCE wheel bogie',bogieX,0.54,0,3.5,0.76,2.66,wheels);
@@ -166,7 +175,7 @@
     }
     // Blue and yellow locomotive should be identifiable from either side.
     sign(THREE,locomotive,'WEST COAST EXPRESS',-2.2,3.0,1.79,9.2,0.8);
-    sign(THREE,locomotive,'WEST COAST EXPRESS',-2.2,3.0,-1.79,9.2,0.8);
+    sign(THREE,locomotive,'WEST COAST EXPRESS',-2.2,3.0,-1.79,9.2,0.8,true);
     box(THREE,locomotive,'WCE dark windshield',9.52,3.62,0,0.13,0.88,2.68,glass);
     box(THREE,locomotive,'WCE headlight',9.61,2.78,0,0.14,0.31,0.39,cream);
     for(const x of [-5.5,5.4]){
@@ -176,6 +185,9 @@
     root.userData.stagedTrainNotLive=true;
     root.userData.platformSurveyed=false;
     root.userData.railElevation=-1.35;
+    root.userData.railCoordinateFrame='world-eastbound';
+    root.userData.stationAnchor={x:station.x,z:station.z};
+    root.userData.hasIndependentBuildingYaw=true;
     root.userData.platformBelowPublicLot=true;
     root.userData.tracksSurveyed=false;
     root.userData.vehicleCount=4;
