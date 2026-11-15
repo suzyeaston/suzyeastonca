@@ -124,50 +124,5 @@ $sync_line = implode( ' · ', $sync_bits );
             <a class="pixel-button home-feature-preview__cta" href="<?php echo esc_url( home_url( '/gastown-sim/' ) ); ?>"><?php echo esc_html( 'Walk Gastown' ); ?></a>
         </article>
 
-        <article class="home-feature-preview home-feature-preview--static" aria-labelledby="home-preview-ppp-title">
-            <header class="home-feature-preview__head">
-                <p class="home-feature-preview__label pixel-font"><?php echo esc_html( 'hockey arcade' ); ?></p>
-                <h3 id="home-preview-ppp-title" class="home-feature-preview__title pixel-font"><?php echo esc_html( 'Pacific Power Play' ); ?></h3>
-                <p class="home-feature-preview__tagline"><?php echo esc_html( '1993–94 Coliseum cabinet. Tap Bure, Linden, McLean. Drop the puck.' ); ?></p>
-            </header>
-
-            <div class="home-feature-preview__terminal">
-                <div class="home-feature-preview__scan" aria-hidden="true"></div>
-                <div class="home-feature-preview__shell">
-                    <div class="home-feature-preview__shell-bar pixel-font">
-                        <span class="home-feature-preview__dots" aria-hidden="true"><i></i><i></i><i></i></span>
-                        <span class="home-feature-preview__path">ppp@yvr — arcade --period=1</span>
-                        <span class="home-feature-preview__build">build 1.0.0</span>
-                    </div>
-                    <div class="home-feature-preview__shell-body">
-                        <p class="home-feature-preview__prompt pixel-font"><span class="home-feature-preview__sigil">$</span> ./drop-puck --line=second<span class="home-feature-preview__caret" aria-hidden="true"></span></p>
-                        <p class="home-feature-preview__verdict home-feature-preview__verdict--warn"><?php echo esc_html( 'PUCK DROPPED' ); ?></p>
-                        <p class="home-feature-preview__verdict-sub"><?php echo esc_html( 'Second line on ice. Rain on the glass. Crowd loud.' ); ?></p>
-                        <p class="home-feature-preview__meta"><?php echo esc_html( 'Browser cabinet · 2P local · rain FX' ); ?></p>
-                    </div>
-                </div>
-
-                <div class="home-feature-preview__readout" aria-hidden="true">
-                    <div class="home-feature-preview__cell home-feature-preview__cell--ok">
-                        <span class="home-feature-preview__value">02</span>
-                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'GOALS' ); ?></span>
-                    </div>
-                    <div class="home-feature-preview__cell home-feature-preview__cell--warn">
-                        <span class="home-feature-preview__value">14</span>
-                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'SHOTS' ); ?></span>
-                    </div>
-                    <div class="home-feature-preview__cell home-feature-preview__cell--down">
-                        <span class="home-feature-preview__value">01</span>
-                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'PIM' ); ?></span>
-                    </div>
-                    <div class="home-feature-preview__cell home-feature-preview__cell--dim">
-                        <span class="home-feature-preview__value">P1</span>
-                        <span class="home-feature-preview__stat-label pixel-font"><?php echo esc_html( 'PERIOD' ); ?></span>
-                    </div>
-                </div>
-            </div>
-
-            <a class="pixel-button home-feature-preview__cta" href="<?php echo esc_url( home_url( '/pacific-power-play/' ) ); ?>"><?php echo esc_html( 'Play game' ); ?></a>
-        </article>
     </div>
 </section>

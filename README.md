@@ -66,7 +66,7 @@ Read [the publishing guide](content/meanwhile/README.md). The WordPress database
 - **AFTERIMAGE / Vancouver:** [page-afterimage.php](page-afterimage.php) integrates a separately hosted atlas through a constrained iframe/message bridge. The atlas application itself is not implemented in this repository.
 - **MACHINE VISIONS:** [page-ai-art.php](page-ai-art.php), a catalog/schema and [import CLI](scripts/import-ai-art-bundle.js) provide the public gallery layer. Only entries marked published should appear; the presence of a gallery is not evidence of finished works. See [docs/ai-art.md](docs/ai-art.md).
 - **Music tools:** Loop Lab, Track Analyzer, riff experiments, ASMR Lab, and music releases live alongside the main theme.
-- **Other interfaces:** Vancouver Tech Events, the retro arcade/Pacific Power Play, and recording-culture experiments remain part of the site.
+- **Other interfaces:** Vancouver event calendars and recording-culture experiments remain part of the site.
 
 ## Where the code lives
 
