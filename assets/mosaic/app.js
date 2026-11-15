@@ -2,7 +2,7 @@
   'use strict';
   const core = window.MosaicCore;
   const effects = window.MosaicEffects;
-  if (!core || !effects || !window.MosaicInstruments) return;
+  if (!core || !effects || !window.MosaicInstruments || !window.MosaicTimeline) return;
 
   const el = (id) => document.getElementById(id);
   const ui = {
@@ -21,6 +21,8 @@
     fxStrengthValue: el('fx-strength-value'), share: el('share-btn'),
     caption: el('share-caption'), copyCaption: el('copy-caption-btn'),
     formatNote: el('export-format-note'),
+    timeline: el('mosaic-arrangement'), timelineTracks: el('mosaic-arrangement-tracks'),
+    timelineDuration: el('mosaic-arrangement-duration'),
   };
   let instrumentRack = null;
   const hasArrangement = () => clips.size > 0 || !!instrumentRack?.hasLayers;
@@ -127,6 +129,76 @@
   }
   function refreshSessionDuration() {
     sessionDuration = Math.max(core.sessionSeconds(clips.values()), instrumentRack?.duration || 0);
+    renderTimeline();
+  }
+  function renderTimeline() {
+    if (!ui.timelineTracks) return;
+    ui.timelineTracks.replaceChildren();
+    const lanes = window.MosaicTimeline.makeLanes(clips.values(), instrumentRack?.layers || [], sessionDuration);
+    ui.timelineDuration.textContent = sessionDuration ? core.formatTime(sessionDuration) : 'NO CLIPS';
+    if (!lanes.length) {
+      const empty = document.createElement('p');empty.className = 'timeline-empty';
+      empty.textContent='Record a video tile or add a musical loop to start the arrangement.';
+      ui.timelineTracks.append(empty);return;
+    }
+    const total=Math.max(.1,sessionDuration);
+    for(const lane of lanes){
+      const row=document.createElement('div');row.className='mosaic-timeline-row';
+      row.dataset.kind=lane.type;row.classList.toggle('is-muted',lane.muted);
+      const heading=document.createElement('div');heading.className='timeline-lane-info';
+      const title=document.createElement('strong');title.textContent=lane.name;
+      const details=document.createElement('small');
+      details.textContent=lane.subtitle+' · '+lane.seconds.toFixed(1)+'s';
+      heading.append(title,details);
+      const rail=document.createElement('div');rail.className='timeline-lane-rail';
+      rail.setAttribute('aria-label',lane.name+' repeating every '+lane.seconds.toFixed(1)+' seconds');
+      for(const [i,part] of lane.segments.entries()){
+        const clip=document.createElement('div');clip.className='timeline-clip';
+        if(i>0)clip.classList.add('is-repeat');
+        if(part.skipped)clip.classList.add('is-many-repeats');
+        clip.style.left=(100*part.start/total)+'%';
+        clip.style.width=Math.min(100,100*part.seconds/total)+'%';
+        clip.title=part.skipped?part.skipped+' additional repetitions':lane.name;
+        if(i===0&&!part.skipped){
+          for(const event of lane.notes){
+            const note=document.createElement('i');note.className='timeline-note';
+            note.style.left=event.left+'%';note.style.top=event.top+'%';
+            clip.append(note);
+          }
+        }
+        if(part.skipped){
+          const more=document.createElement('span');more.className='timeline-more';
+          more.textContent='× '+(part.skipped+1)+' loops';clip.append(more);
+        }
+        rail.append(clip);
+      }
+      const controls=document.createElement('div');controls.className='timeline-lane-actions';
+      const mute=document.createElement('button');mute.type='button';
+      mute.textContent=lane.muted?'Unmute':'Mute';mute.disabled=busy;
+      mute.setAttribute('aria-label',(lane.muted?'Unmute ':'Mute ')+lane.name);
+      mute.addEventListener('click',()=>{
+        if(busy)return;
+        if(lane.layerId){
+          instrumentRack.change(lane.layerId,'mute');
+        }else{
+          selected=lane.index;toggleMute();
+        }
+      });
+      controls.append(mute);
+      if(lane.layerId){
+        const remove=document.createElement('button');remove.type='button';
+        remove.textContent='×';remove.title='Remove '+lane.name;
+        remove.setAttribute('aria-label','Remove '+lane.name);remove.disabled=busy;
+        remove.addEventListener('click',()=>{if(!busy)instrumentRack.change(lane.layerId,'remove');});
+        controls.append(remove);
+      }
+      row.append(heading,rail,controls);ui.timelineTracks.append(row);
+    }
+  }
+  function updateTimelinePlayhead(seconds) {
+    if(!ui.timeline)return;
+    ui.timeline.style.setProperty('--playhead',
+      (sessionDuration?Math.min(100,Math.max(0,seconds/sessionDuration*100)):0)+'%');
   }
   function releaseClip(clip) {
     if (clip && clip.url) URL.revokeObjectURL(clip.url);
@@ -254,6 +326,7 @@
       ui.grid.append(tile);
     }
     updateUI();
+    renderTimeline();
   }
   function activateTile(i) {
     if (busy) {
@@ -371,6 +444,7 @@
     }
     ui.fxPreview.hidden = true;
     updateClock(0);
+    updateTimelinePlayhead(0);
     updateUI();
   }
   function monitorPlayback() {
@@ -378,6 +452,7 @@
       if (playbackMode === 'stopped') return;
       const elapsed = (performance.now() - playbackStarted) / 1000;
       const position = core.expectedPosition(elapsed, sessionDuration);
+      updateTimelinePlayhead(position);
       instrumentRack?.tick(elapsed);
       updateClock(playbackMode === 'recording' ? (performance.now() - takeStartedAt) / 1000 :
         (instrumentRack?.isRecording ? instrumentRack.elapsed : position));
@@ -872,6 +947,7 @@
     instrumentRack = new window.MosaicInstruments.Rack({
       host:window,ensureAudioContext,onRecord:toggleInstrumentRecording,
       onChange:()=>{lastExport=null;refreshSessionDuration();updateUI();},onStatus:status,
+      onPreviewStart:()=>{if(playbackMode!=='stopped')stopPlayback();},
     });
     restorePreferences();
     db = await openDatabase();

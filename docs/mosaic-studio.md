@@ -1,13 +1,13 @@
 # MOSAIC / production deployment on suzyeaston.ca
 
 MOSAIC is a separately maintained [public GitHub repository](https://github.com/suzyeaston/mosaic-studio).
-The WordPress theme keeps a **vendored snapshot** of seven source files in `assets/mosaic/`
+The WordPress theme keeps a **vendored snapshot** of nine source files in `assets/mosaic/`
 so users can use the studio at `https://www.suzyeaston.ca/mosaic/` without GitHub Pages, another
 host, or downloading any project zip. The route is rendered through `page-mosaic.php`.
 
 ## Update source files
 1. Review the latest tested `main` revision in `suzyeaston/mosaic-studio`.
-2. Copy `index.html`, `styles.css`, `core.js`, `effects.js`, `patterns.js`, `instruments.js`, and `app.js` into `assets/mosaic/`.
+2. Copy `index.html`, `styles.css`, `core.js`, `effects.js`, `patterns.js`, `soundbank.js`, `instruments.js`, `timeline.js`, and `app.js` into `assets/mosaic/`.
 3. Run `node --test __tests__/mosaic-integration.test.js`, `php -l page-mosaic.php`,
    and `python3 scripts/theme_deploy_manifest.py validate`; merge the PR only after QA.
 4. Theme deployment copies these assets along with the page. Check that GitHub Actions succeeded
@@ -62,3 +62,11 @@ host, or downloading any project zip. The route is rendered through `page-mosaic
 - Patterns loop through the existing instrument bus, which participates in playback, video overdub monitoring, and browser-local MP4/WebM export. Existing stored layers and video takes are preserved.
 - Integration regressions verify preset IDs, bar seconds, beat events, and browser asset references. Manual browser audio QA remains necessary.
 - Cache busting uses `?v=loops6`. Future revisions should increment the query string across the self-hosted assets.
+
+## Local sound bank and video/audio timeline (2026-11, v0.6)
+- Better original Web Audio sounds in self-hosted `assets/mosaic/soundbank.js`: warm Silk Pad replaces the harsh previous Soft Orbit sawtooth patch; two local timbres each for Keys, Bass, Pad and drum kit.
+- Visitors can preview **one bar** using Hear Loop/Hear Beat before committing an independent musical clip. This output-only preview never reaches the export bus; selecting Add commits a loop as before. Browser-local source recordings remain unchanged.
+- The audio/video arrangement timeline is modelled in `assets/mosaic/timeline.js` and displayed under the video grid. It shows repeating takes, instrument note-event marks and the master playback position, with inline mute and music-layer removal. It's a track visualization, not a video/audio clip editing DAW.
+- Save per-layer sound patch IDs with locally stored note events; older saved layers default to a valid warm patch.
+- `?v=sound7` cache busts all script/style assets, including the new modules. The theme deploy manifest explicitly uploads soundbank.js before instruments.js and timeline.js before app.js.
+- User device QA still needed for sound quality, mobile preview, recording, preserving local clips, and real-time MP4 export.

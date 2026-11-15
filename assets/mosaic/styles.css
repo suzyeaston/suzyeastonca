@@ -77,3 +77,51 @@
 .instrument-step[aria-pressed="true"]{background:var(--pink);border-color:var(--pink);color:#2b1722}
 .instrument-step:focus-visible{outline:2px solid var(--mint);outline-offset:1px}
 @media(max-width:650px){.instrument-preset-controls{flex-wrap:wrap}.instrument-preset-controls label{flex-basis:100%;min-width:0}.instrument-preset-controls .instrument-bars-label{flex-basis:90px}}
+
+/* MOSAIC v0.6: iMovie-style video + musical lanes underneath the tiles */
+.mosaic-arrangement{margin-top:20px;padding:16px;border:1px solid #4b415f;border-radius:12px;background:linear-gradient(180deg,#181826,#121522);--playhead:0%}
+.mosaic-arrangement-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.mosaic-arrangement-head h2{font-size:1.06rem;margin:0 0 6px}
+.mosaic-arrangement-head .label{margin:0 0 4px}
+.mosaic-arrangement .instrument-tip{margin:8px 0 14px;max-width:75ch}
+.mosaic-arrangement-tracks{display:grid;gap:5px}
+.timeline-empty{padding:11px;margin:0;border:1px dashed #5f5778;border-radius:7px;color:var(--muted);font-size:.78rem}
+.mosaic-timeline-row{display:grid;grid-template-columns:minmax(100px,155px) minmax(80px,1fr) auto;align-items:stretch;gap:6px;min-height:45px}
+.timeline-lane-info{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0;padding:6px 8px;background:#252738;border:1px solid #44475a;border-radius:6px}
+.timeline-lane-info strong{font-size:.68rem;line-height:1.2;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.timeline-lane-info small{font:600 .56rem ui-monospace,monospace;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.timeline-lane-rail{position:relative;min-height:45px;overflow:hidden;background:#0f111b;border:1px solid #414458;border-radius:6px}
+.timeline-lane-rail:after{content:'';position:absolute;top:0;bottom:0;left:var(--playhead);width:2px;background:#f4f1fd;box-shadow:0 0 8px #fff8;pointer-events:none;z-index:4}
+.timeline-clip{position:absolute;top:6px;bottom:6px;min-width:1px;overflow:hidden;border:1px solid #c2b0d244;border-radius:3px;background:#55426d}
+.timeline-clip.is-repeat{border-left:2px solid #ffffff66;background:#49385d}
+.mosaic-timeline-row[data-kind="video"] .timeline-clip{background:#386a66}
+.mosaic-timeline-row[data-kind="video"] .timeline-clip.is-repeat{background:#2b5955}
+.mosaic-timeline-row[data-kind="audio"] .timeline-clip{background:#3b6976}
+.mosaic-timeline-row[data-kind="rhythm"] .timeline-clip{background:#8a5264}
+.mosaic-timeline-row[data-kind="rhythm"] .timeline-clip.is-repeat{background:#6d3c4b}
+.mosaic-timeline-row[data-kind="instrument"] .timeline-clip{background:#5e4e90}
+.mosaic-timeline-row[data-kind="instrument"] .timeline-clip.is-repeat{background:#4d3e79}
+.mosaic-timeline-row.is-muted .timeline-clip{opacity:.35}
+.timeline-clip.is-many-repeats{background-image:repeating-linear-gradient(45deg,transparent,transparent 9px,#eee2 9px,#eee2 12px)}
+.timeline-note{position:absolute;top:50%;width:4px;height:4px;background:#efddff;border-radius:3px;opacity:.95}
+.timeline-more{display:block;position:relative;z-index:1;font-size:.6rem;color:#f9eaff;padding:8px 4px;white-space:nowrap}
+.timeline-lane-actions{display:flex;align-items:center;gap:4px}
+.timeline-lane-actions button{font-size:.65rem;border:1px solid #625875;background:#312e41;color:#f6e6fa;border-radius:6px;padding:6px 7px;min-height:32px}
+.timeline-lane-actions button:disabled{opacity:.4}
+.instrument-layer{display:flex;flex-wrap:wrap}
+.instrument-layer-controls{display:flex;flex:1;justify-content:flex-end;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.instrument-layer-voice{max-width:170px;min-width:100px;padding:7px 6px;background:#171827;border:1px solid #625875;color:#eee8f9;border-radius:6px;font-size:.7rem}
+.instrument-rhythm-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.instrument-preview-btn{padding:11px 13px;border:1px solid #b7a3d8;border-radius:8px;background:#302940;color:#ddd0fa;font-size:.75rem;font-weight:800}
+.instrument-preview-btn:hover:not(:disabled){background:#463a61}
+.instrument-preset-controls .instrument-preview-btn{flex:0 0 auto}
+@media(max-width:570px){
+  .mosaic-arrangement{padding:10px}
+  .mosaic-timeline-row{grid-template-columns:minmax(73px,95px) minmax(70px,1fr) auto;gap:3px}
+  .timeline-lane-info{padding:4px}
+  .timeline-lane-info strong{font-size:.58rem}
+  .timeline-lane-info small{font-size:.49rem}
+  .timeline-lane-actions{gap:2px}
+  .timeline-lane-actions button{font-size:.58rem;padding:5px}
+  .instrument-layer-voice{max-width:100%}
+}
