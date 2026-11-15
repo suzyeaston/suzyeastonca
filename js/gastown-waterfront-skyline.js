@@ -41,7 +41,7 @@
       width:18, depth:20, height:107.8, scenicOnly:true
     }),
     Object.freeze({
-      id:'woodwards-w43', name:"Woodward's W43 / original W sign",
+      id:'woodwards-w43', name:"Woodward's W43 / restored W sign",
       address:'128 West Cordova Street', lat:49.28297, lon:-123.10808,
       style:'2009 red-framed glass W43 tower, historic masonry base and elevated W',
       source:'https://www.seabc.ca/wordpress/files/notable_structures/Vancouver_Notable_Structures_IABSE_SEABC_2017.pdf',
@@ -240,7 +240,7 @@
         stroke("Woodward's W crisscross steel truss",5,y,-5,y+6,0.22,frame);
       }
       const wp=[[-5,51],[-2.5,45],[0,49],[2.5,45],[5,51]];
-      for(let i=0;i<wp.length-1;i++)stroke("Woodward's original red W sign",
+      for(let i=0;i<wp.length-1;i++)stroke("Woodward's replica red W sign",
         wp[i][0],wp[i][1],wp[i+1][0],wp[i+1][1],1.1,wRed);
       g.userData.landmarkDetails='128 W Cordova W43, historic brick base, supported W';
     }
