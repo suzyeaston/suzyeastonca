@@ -100,7 +100,7 @@ test('SUZY//AI browser instruments are playable, locally layered, and mixed into
   assert.deepEqual(instrument.KINDS, ['keys','bass','pad']);
   assert.equal(Math.round(instrument.frequency(69)), 440);
   assert.equal(instrument.pitch('bass',0), 48);
-  assert.match(html, /src="instruments\.js\?v=instrument5"/);
+  assert.match(html, /src="instruments\.js\?v=[a-z0-9_-]+"/);
   assert.match(html, /id="instrument-record"/);
   assert.match(html, /id="instrument-pads"/);
   assert.match(app, /instrumentRack\?\.tick\(elapsed\)/);
