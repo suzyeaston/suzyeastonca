@@ -162,8 +162,8 @@ test('Cordova-facing Harbour Centre streetwall follows the real civic edges',()=
 test('Harbour Centre adds the 542 W Cordova Dollarama and central food court lobby',()=>{
   const harbour=model().create(threeStub(),world).children
     .find(child=>child.userData.landmark==='Harbour Centre / Spencer Building');
-  const west=harbour.children.find(node=>node.userData.streetLevelRetail==='Dollarama');
-  const east=harbour.children.find(node=>node.userData.streetLevelRetail==='Harbour Centre');
+  const west=harbour.children.find(node=>node.userData?.streetLevelRetail==='Dollarama');
+  const east=harbour.children.find(node=>node.userData?.streetLevelRetail==='Harbour Centre');
   assert.ok(west && east);
   assert.deepEqual(west.userData.civicEdge,[5,6]);
   assert.deepEqual(east.userData.civicEdge,[13,14]);
