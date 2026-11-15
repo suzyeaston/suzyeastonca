@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#11131f">
   <meta name="description" content="MOSAIC is a free, private-by-default multitrack video studio. Record a little orchestra of yourself in your browser.">
   <title>MOSAIC / multitrack video studio</title>
-  <link rel="stylesheet" href="styles.css?v=tiles3">
-  <script defer src="core.js?v=tiles3"></script>
-  <script defer src="effects.js?v=tiles3"></script>
-  <script defer src="app.js?v=tiles3"></script>
+  <link rel="stylesheet" href="styles.css?v=mp4-4">
+  <script defer src="core.js?v=mp4-4"></script>
+  <script defer src="effects.js?v=mp4-4"></script>
+  <script defer src="app.js?v=mp4-4"></script>
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
@@ -93,13 +93,14 @@
         <section class="panel delivery" aria-labelledby="delivery-title">
           <p class="label">04 / take it with you</p>
           <h2 id="delivery-title">Export your piece</h2>
-          <button id="export-btn" class="export-btn" type="button" disabled>↓ EXPORT VIDEO GRID</button>
+          <button id="export-btn" class="export-btn" type="button" disabled>↓ EXPORT MOVIE (MP4 PREFERRED)</button>
+          <p id="export-format-note" class="share-note" role="status">MOSAIC prefers social-ready MP4 with H.264/AAC. Availability depends on your browser.</p>
           <button id="share-btn" class="share-btn" type="button" disabled>↗ SHARE EXPORTED VIDEO</button>
           <label class="share-label" for="share-caption">Post caption</label>
           <textarea id="share-caption" rows="3" maxlength="400" spellcheck="true">made in MOSAIC ✳ a free multitrack video studio by Suzy Easton ♡ #MosaicStudio #Music</textarea>
           <button id="copy-caption-btn" class="copy-caption-btn" type="button">COPY CAPTION</button>
           <p class="share-note">Export first, then share the file via your device's share sheet where supported. Otherwise download it and upload directly to Instagram, TikTok, YouTube or your chosen platform. We never upload your work.</p>
-          <p>Export composites the tiles and audible tracks in real time. Keep the tab open until the download starts.</p>
+          <p>Exports your complete video and audio mix in real time. MP4 is preferred for Instagram and YouTube. If unsupported, you will receive a genuine WebM file, not a renamed one. Keep the tab open until download starts.</p>
           <button id="clear-btn" class="text-btn" type="button" disabled>Clear the whole session</button>
         </section>
       </aside>
