@@ -28,7 +28,13 @@ test('the service alley follows the supplied Google Street View positions',()=>{
  const root=scene();
  assert.ok(root);
  assert.equal(root.userData.lotElevation,0.19);
- assert.equal(root.userData.laneElevation,0.11);
+ assert.equal(root.userData.laneElevation,-3.60);
+ assert.equal(root.userData.elevatedStreetAndLot,true);
+ assert.equal(root.userData.lowerServiceRoad,true);
+ assert.ok(root.userData.gradeSeparationMetres>3.5);
+ assert.ok(root.userData.loadingDeckClearance>3.5);
+ assert.ok(root.children.some(n=>n.name==='Raised Cordova station loading deck underside'));
+ assert.equal(root.children.filter(n=>n.name==='Elevated service deck support column').length,2);
  assert.equal(root.userData.railElevation,-1.35);
  assert.ok(root.userData.railElevation<root.userData.laneElevation);
  assert.equal(root.userData.illustrativeNotSurveyed,true);
@@ -83,6 +89,12 @@ test('harbour and WCE share a lower grade and parking gameplay anchors are uncha
  assert.match(sim,/safelyCreate\('Station East rail-grade transition'/);
  assert.match(read('functions.php'),/'se-gastown-rail-grade'/);
  assert.match(read('scripts/theme_deploy_manifest.py'),/"js\/gastown-rail-grade\.js"/);
+ const parking=read('js/gastown-waterfront-places.js');
+ assert.match(parking,/upperDeck=0\.19, lowerAlley=-3\.60/);
+ assert.match(parking,/Station East elevated parking deck retaining face/);
+ assert.match(parking,/Station East raised parking deck buttress/);
+ assert.match(parking,/lowerLandingAlleyElevation=lowerAlley/);
+ assert.match(parking,/exposedRetainingWallHeight=wallHeight/);
  assert.equal(world.parkingLot.center.x,46);
  assert.equal(world.landing.address,'375 Water Street');
 });
